@@ -14,7 +14,7 @@ export default defineCall({
       note: 'B wins. The round the reader is ruling on stays at the top at full size, and a settled round keeps one line with its winner, so the chain of winners reads down the column and nothing scrolls. A lost because nine ruled tiles pushed the three open ones off the screen. C lost because a stepper hides every earlier decision behind a control nobody presses.',
     },
   ],
-  options: [
+  variants: [
     {
       key: 'a',
       round: 'r1',
@@ -23,7 +23,7 @@ export default defineCall({
         'One block per round, newest at the top, with every tile drawn at the same size. A settled round keeps its rejected tiles dimmed beside its winner, and the column scrolls.',
       cost: 'Nine of the twelve tiles have already ruled, so most of the column is history and the open round is what scrolls away first.',
       verdict: 'rejected',
-      load: () => import('./option-a'),
+      load: () => import('./variant-a'),
     },
     {
       key: 'b',
@@ -33,7 +33,7 @@ export default defineCall({
         'The open round draws at full tile size. A settled round folds to one line holding its winner as a small chip, so every pass stays in reach without taking the height of a pass that has ruled.',
       cost: 'A rejected tile is no longer visible at all, so comparing the open round against what a past round rejected needs the fold opened first.',
       verdict: 'chosen',
-      load: () => import('./option-b'),
+      load: () => import('./variant-b'),
     },
     {
       key: 'c',
@@ -43,7 +43,7 @@ export default defineCall({
         'The column shows one round only, with a stepper at its head that walks the rounds. The tiles get the full height of the column, so they are drawn large enough to compare without opening one.',
       cost: 'Nothing in the column says what the earlier rounds decided, so the chain of winners is invisible until the reader steps back through it.',
       verdict: 'rejected',
-      load: () => import('./option-c'),
+      load: () => import('./variant-c'),
     },
   ],
 });

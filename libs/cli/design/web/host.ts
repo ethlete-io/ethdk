@@ -1,4 +1,4 @@
-import type { Call, CallOption, CallRound } from '@design-explore';
+import type { Call, CallVariant, CallRound } from '@design-explore';
 import { calls, defaultCall } from 'virtual:design-explore';
 import './host.css';
 
@@ -33,21 +33,21 @@ const listLink = (name: string, list: string[], key: string) => {
 const toggleOpen = (key: string) => listLink('open', [...opened], key);
 const togglePick = (key: string) => listLink('pick', picked, key);
 
-type Band = { key: string | null; number: number; round: CallRound | null; options: CallOption[] };
+type Band = { key: string | null; number: number; round: CallRound | null; variants: CallVariant[] };
 
 /**
- * The options are the call. A band exists because an option names it, never because `rounds`
- * declares it, so an option added without its round entry still gets a band, a heading and a
+ * The variants are the call. A band exists because a variant names it, never because `rounds`
+ * declares it, so a variant added without its round entry still gets a band, a heading and a
  * menu row - all three say the bare key until somebody writes the prose.
  */
 const bandsOf = (call: Call): Band[] => {
   const declared = new Map((call.rounds ?? []).map((round) => [round.key, round]));
   const bands = new Map<string, Band>();
 
-  for (const option of call.options) {
-    const key = option.round ?? '';
-    const band = bands.get(key) ?? { key: key || null, number: 0, round: declared.get(key) ?? null, options: [] };
-    band.options.push(option);
+  for (const variant of call.variants) {
+    const key = variant.round ?? '';
+    const band = bands.get(key) ?? { key: key || null, number: 0, round: declared.get(key) ?? null, variants: [] };
+    band.variants.push(variant);
     bands.set(key, band);
   }
 
@@ -57,7 +57,7 @@ const bandsOf = (call: Call): Band[] => {
   return [...bands.values()];
 };
 
-/** Prose that no option claims is stale prose, and it is the one thing the options cannot show. */
+/** Prose that no variant claims is stale prose, and it is the one thing the variants cannot show. */
 const problemsOf = (call: Call, bands: Band[]) => {
   const keys = (call.rounds ?? []).map((round) => round.key);
   const drawn = new Set(bands.map((band) => band.key));
@@ -66,7 +66,7 @@ const problemsOf = (call: Call, bands: Band[]) => {
     ...[...new Set(keys.filter((key, index) => keys.indexOf(key) !== index))].map(
       (key) => `two rounds share the key "${key}"`,
     ),
-    ...keys.filter((key) => !drawn.has(key)).map((key) => `round "${key}" has no options`),
+    ...keys.filter((key) => !drawn.has(key)).map((key) => `round "${key}" has no variants`),
   ];
 };
 
@@ -77,10 +77,10 @@ const problemsOf = (call: Call, bands: Band[]) => {
  */
 const chainOf = (bands: Band[]) => {
   const named = bands.filter((band) => band.key);
-  const ruled = named.length > 1 && named.every((band) => band.options.every((option) => option.verdict));
+  const ruled = named.length > 1 && named.every((band) => band.variants.every((variant) => variant.verdict));
   const chain = named
-    .map((band) => band.options.find((option) => option.verdict === 'chosen'))
-    .filter((option): option is CallOption => !!option);
+    .map((band) => band.variants.find((variant) => variant.verdict === 'chosen'))
+    .filter((variant): variant is CallVariant => !!variant);
 
   return ruled && chain.length > 0 ? chain : [];
 };
@@ -133,54 +133,54 @@ if (!load) {
   const bands = bandsOf(call);
   const chain = chainOf(bands);
   const result = chain.at(-1);
-  const isView = call.options.length === 1 && !call.options[0]?.claim;
+  const isView = call.variants.length === 1 && !call.variants[0]?.claim;
   const geometry = `--frame-width:${call.frameWidth}px`;
 
-  const frame = (option: CallOption) => `
+  const frame = (variant: CallVariant) => `
     <iframe
-      src="frame.html?call=${encodeURIComponent(slug)}&option=${encodeURIComponent(option.key)}"
-      data-option="${esc(option.key)}"
-      title="${esc(option.name)}"
+      src="frame.html?call=${encodeURIComponent(slug)}&variant=${encodeURIComponent(variant.key)}"
+      data-variant="${esc(variant.key)}"
+      title="${esc(variant.name)}"
       style="width:${call.frameWidth}px"
     ></iframe>`;
 
-  const column = (option: CallOption) => `
-    <div class="column" data-verdict="${option.verdict ?? 'open'}" ${picked.includes(option.key) ? 'data-picked' : ''}>
+  const column = (variant: CallVariant) => `
+    <div class="column" data-verdict="${variant.verdict ?? 'open'}" ${picked.includes(variant.key) ? 'data-picked' : ''}>
       ${
         isView
           ? ''
           : `<h3>
-        <a href="${togglePick(option.key)}">${esc(option.name)}</a>
-        <span class="tag">${option.verdict ?? 'open'}</span>
+        <a href="${togglePick(variant.key)}">${esc(variant.name)}</a>
+        <span class="tag">${variant.verdict ?? 'open'}</span>
       </h3>`
       }
-      <div class="stage">${frame(option)}</div>
-      ${option.claim ? `<p class="claim">${esc(option.claim)}</p>` : ''}
-      ${option.cost ? `<p class="cost">${esc(option.cost)}</p>` : ''}
+      <div class="stage">${frame(variant)}</div>
+      ${variant.claim ? `<p class="claim">${esc(variant.claim)}</p>` : ''}
+      ${variant.cost ? `<p class="cost">${esc(variant.cost)}</p>` : ''}
     </div>`;
 
-  const grid = (options: CallOption[]) =>
-    options.length === 0
+  const grid = (variants: CallVariant[]) =>
+    variants.length === 0
       ? ''
-      : `<div class="grid" style="${geometry}" ${isView ? 'data-view' : ''}>${options.map(column).join('')}</div>`;
+      : `<div class="grid" style="${geometry}" ${isView ? 'data-view' : ''}>${variants.map(column).join('')}</div>`;
 
-  const rows = (options: CallOption[]) =>
-    options.length === 0
+  const rows = (variants: CallVariant[]) =>
+    variants.length === 0
       ? ''
-      : `<ul class="folded">${options
+      : `<ul class="folded">${variants
           .map(
-            (option) =>
-              `<li data-verdict="${option.verdict ?? 'open'}"><a href="${togglePick(option.key)}">${esc(
-                option.name,
-              )}</a><span class="tag">${option.verdict ?? 'open'}</span></li>`,
+            (variant) =>
+              `<li data-verdict="${variant.verdict ?? 'open'}"><a href="${togglePick(variant.key)}">${esc(
+                variant.name,
+              )}</a><span class="tag">${variant.verdict ?? 'open'}</span></li>`,
           )
           .join('')}</ul>`;
 
-  const band = ({ key, number, round, options }: Band) => {
-    const settled = options.every((option) => option.verdict);
+  const band = ({ key, number, round, variants }: Band) => {
+    const settled = variants.every((variant) => variant.verdict);
     const open = !key || !settled || opened.has(key);
-    const drawn = open ? options : chain.length > 0 ? [] : options.filter((option) => option.verdict === 'chosen');
-    const folded = options.filter((option) => !drawn.includes(option));
+    const drawn = open ? variants : chain.length > 0 ? [] : variants.filter((variant) => variant.verdict === 'chosen');
+    const folded = variants.filter((variant) => !drawn.includes(variant));
 
     const head = !key
       ? ''
@@ -191,7 +191,7 @@ if (!load) {
           ${
             settled
               ? `<a class="fold" href="${toggleOpen(key)}">${
-                  open ? `Fold ${options.length} options away` : `Show all ${options.length} options`
+                  open ? `Fold ${variants.length} variants away` : `Show all ${variants.length} variants`
                 }</a>`
               : ''
           }
@@ -208,11 +208,11 @@ if (!load) {
   /** Each step is the one before it plus a change, so the arrow is the order they were drawn in. */
   const trail = () =>
     chain
-      .map((option) => {
-        const band = bands.find((entry) => entry.options.includes(option));
-        const target = band?.key ? `${toggleOpen(band.key)}#round-${band.key}` : togglePick(option.key);
-        return `<a href="${esc(target)}" ${option === result ? 'aria-current="step"' : ''}>${esc(
-          option.key.toUpperCase(),
+      .map((variant) => {
+        const band = bands.find((entry) => entry.variants.includes(variant));
+        const target = band?.key ? `${toggleOpen(band.key)}#round-${band.key}` : togglePick(variant.key);
+        return `<a href="${esc(target)}" ${variant === result ? 'aria-current="step"' : ''}>${esc(
+          variant.key.toUpperCase(),
         )}</a>`;
       })
       .join('<span class="arrow">→</span>');
@@ -236,21 +236,21 @@ if (!load) {
         </section>`;
 
   const tray = () => {
-    const options = picked
-      .map((key) => call.options.find((option) => option.key === key))
-      .filter((option): option is CallOption => !!option);
-    if (options.length === 0) return '';
+    const variants = picked
+      .map((key) => call.variants.find((variant) => variant.key === key))
+      .filter((variant): variant is CallVariant => !!variant);
+    if (variants.length === 0) return '';
 
-    const two = options.length === 2;
+    const two = variants.length === 2;
 
     return `
       <section class="round tray">
         <div class="round-head">
-          <span class="eyebrow">Compare · ${options.length}</span>
-          <h2>${options.map((option) => esc(option.name)).join('  ·  ')}</h2>
+          <span class="eyebrow">Compare · ${variants.length}</span>
+          <h2>${variants.map((variant) => esc(variant.name)).join('  ·  ')}</h2>
           <div class="switch">
-            ${options
-              .map((option, index) => `<button data-step="${index}">${esc(option.key.toUpperCase())}</button>`)
+            ${variants
+              .map((variant, index) => `<button data-step="${index}">${esc(variant.key.toUpperCase())}</button>`)
               .join('')}
             <span class="hint">${
               two ? 'click or space to blink · arrows to wipe' : 'click or space for the next one'
@@ -259,7 +259,7 @@ if (!load) {
           <a class="fold" href="${link({ pick: null })}">Clear the comparison</a>
         </div>
         <div class="overlay" data-two="${two}" style="width:${call.frameWidth}px">
-          ${options.map(frame).join('')}
+          ${variants.map(frame).join('')}
           <div class="seam"></div>
         </div>
       </section>`;
@@ -267,14 +267,14 @@ if (!load) {
 
   const sheet = () => `
     <div class="grid sheet" style="${geometry};--de-scale:${SHEET_SCALE}">
-      ${call.options
+      ${call.variants
         .map(
-          (option) => `
-        <a class="thumb" href="${togglePick(option.key)}" data-verdict="${option.verdict ?? 'open'}" ${
-          picked.includes(option.key) ? 'data-picked' : ''
+          (variant) => `
+        <a class="thumb" href="${togglePick(variant.key)}" data-verdict="${variant.verdict ?? 'open'}" ${
+          picked.includes(variant.key) ? 'data-picked' : ''
         }>
-          <div class="thumb-frame">${frame(option)}</div>
-          <span class="thumb-name">${esc(option.name)}</span>
+          <div class="thumb-frame">${frame(variant)}</div>
+          <span class="thumb-name">${esc(variant.name)}</span>
         </a>`,
         )
         .join('')}
@@ -286,7 +286,7 @@ if (!load) {
       : `<div class="views">
           <a href="${link({ view: null })}" ${view === 'rounds' ? 'aria-current="page"' : ''}>rounds</a>
           <a href="${link({ view: 'sheet' })}" ${view === 'sheet' ? 'aria-current="page"' : ''}>all ${
-            call.options.length
+            call.variants.length
           }</a>
         </div>`;
 
@@ -345,8 +345,8 @@ const heights = new Map<string, number>();
 
 /** The overlay is as tall as its tallest pick, so no frame is cut and none of them move. */
 const size = () => {
-  for (const frame of document.querySelectorAll<HTMLIFrameElement>('iframe[data-option]')) {
-    const height = heights.get(frame.dataset.option ?? '');
+  for (const frame of document.querySelectorAll<HTMLIFrameElement>('iframe[data-variant]')) {
+    const height = heights.get(frame.dataset.variant ?? '');
     if (!height) continue;
 
     frame.style.height = `${height}px`;
@@ -359,17 +359,17 @@ const size = () => {
   if (!overlay) return;
 
   const tallest = [...overlay.querySelectorAll<HTMLIFrameElement>('iframe')]
-    .map((frame) => heights.get(frame.dataset.option ?? '') ?? 0)
+    .map((frame) => heights.get(frame.dataset.variant ?? '') ?? 0)
     .reduce((a, b) => Math.max(a, b), 0);
 
   if (tallest > 0) overlay.style.height = `${tallest}px`;
 };
 
 addEventListener('message', (event) => {
-  const data = event.data as { type?: string; option?: string; height?: number };
-  if (data?.type !== 'design-explore:height' || !data.height || !data.option) return;
+  const data = event.data as { type?: string; variant?: string; height?: number };
+  if (data?.type !== 'design-explore:height' || !data.height || !data.variant) return;
 
-  heights.set(data.option, data.height);
+  heights.set(data.variant, data.height);
   size();
 
   if (restoring) scrollTo(0, target);

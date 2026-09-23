@@ -3,7 +3,7 @@ import { loadEnv } from 'virtual:design-explore/env';
 
 const params = new URLSearchParams(location.search);
 const slug = params.get('call') ?? '';
-const key = params.get('option') ?? '';
+const key = params.get('variant') ?? '';
 
 await loadEnv(slug.split('/')[0] ?? '');
 
@@ -17,10 +17,10 @@ const fail = (message: string) => {
 const call = calls[slug];
 if (!call) fail(`design-explore: no call "${slug}"`);
 else {
-  const option = (await call()).default.options.find((o) => o.key === key);
-  if (!option) fail(`design-explore: call "${slug}" has no option "${key}"`);
+  const variant = (await call()).default.variants.find((o) => o.key === key);
+  if (!variant) fail(`design-explore: call "${slug}" has no variant "${key}"`);
   else {
-    const loaded = (await option.load()).default;
+    const loaded = (await variant.load()).default;
     const style = document.createElement('style');
 
     style.textContent = loaded.styles;
@@ -31,7 +31,7 @@ else {
 
 const report = () => {
   const height = Math.ceil(document.documentElement.getBoundingClientRect().height);
-  parent.postMessage({ type: 'design-explore:height', option: key, height }, '*');
+  parent.postMessage({ type: 'design-explore:height', variant: key, height }, '*');
 };
 
 new ResizeObserver(report).observe(document.documentElement);

@@ -12,7 +12,7 @@ export default defineCall({
       note: 'A settled decision remains the baseline. A new candidate arrives as one challenger to the winner, while previous rounds remain folded evidence instead of forcing a replay.',
     },
   ],
-  options: [
+  variants: [
     {
       key: 'a',
       round: 'r1',
@@ -20,7 +20,7 @@ export default defineCall({
       claim: 'The winner remains the baseline and the new candidate arrives as one focused challenger card.',
       cost: 'Comparing two old rejected alternatives requires opening the decision history.',
       verdict: 'chosen',
-      load: () => import('./option-a'),
+      load: () => import('./variant-a'),
     },
     {
       key: 'b',
@@ -29,7 +29,7 @@ export default defineCall({
       claim: 'Every addition appends a named round below the earlier options.',
       cost: 'The reviewer has to scroll, reconstruct context, and review old work again.',
       verdict: 'rejected',
-      load: () => import('./option-b'),
+      load: () => import('./variant-b'),
     },
     {
       key: 'c',
@@ -38,7 +38,7 @@ export default defineCall({
       claim: 'A new candidate restores every prior option to the active comparison.',
       cost: 'The decision loses its settled shape and the candidate set quickly becomes unwieldy.',
       verdict: 'rejected',
-      load: () => import('./option-c'),
+      load: () => import('./variant-c'),
     },
   ],
 });

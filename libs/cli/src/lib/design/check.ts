@@ -78,7 +78,7 @@ const runBrowser = async (options: { base: string; slug: string; wanted?: string
     return 1;
   };
 
-  /** The rounds view folds a settled round away, so only the contact sheet holds every option. */
+  /** The rounds view folds a settled round away, so only the contact sheet holds every variant. */
   await page.goto(`${base}/?call=${encodeURIComponent(slug)}&view=sheet`, { waitUntil: 'domcontentloaded' });
 
   const onPage = await page
@@ -111,17 +111,17 @@ const runBrowser = async (options: { base: string; slug: string; wanted?: string
   if (problems.length > 0) return fail(`BAD CALL ${slug}\n${problems.join('\n')}`);
 
   const keys = await page
-    .locator('iframe[data-option]')
-    .evaluateAll((frames) => frames.map((frame) => (frame as HTMLElement).dataset['option'] ?? ''));
+    .locator('iframe[data-variant]')
+    .evaluateAll((frames) => frames.map((frame) => (frame as HTMLElement).dataset['variant'] ?? ''));
   const checked = wanted ? keys.filter((key) => key === wanted) : keys;
 
   if (checked.length === 0) {
-    return fail(`NO OPTION "${wanted}" on ${slug} - it declares ${keys.length > 0 ? keys.join(', ') : 'none'}.`);
+    return fail(`NO VARIANT "${wanted}" on ${slug} - it declares ${keys.length > 0 ? keys.join(', ') : 'none'}.`);
   }
 
   for (const key of checked) {
     /** A frame reloads on every edit, which detaches a `page.frames()` handle, so locate it each time. */
-    const frame = page.frameLocator(`iframe[data-option="${key}"]`);
+    const frame = page.frameLocator(`iframe[data-variant="${key}"]`);
 
     const drew = await frame
       .locator('#root > *')
@@ -139,19 +139,19 @@ const runBrowser = async (options: { base: string; slug: string; wanted?: string
         .innerText()
         .catch(() => '(overlay present, text unreadable)');
 
-      return fail(`COMPILE ERROR on ${slug} option ${key}\n${trim(text)}`);
+      return fail(`COMPILE ERROR on ${slug} variant ${key}\n${trim(text)}`);
     }
 
     if (!drew) {
       return fail(
-        `EMPTY on ${slug} option ${key} - #root never got a child.\n` +
+        `EMPTY on ${slug} variant ${key} - #root never got a child.\n` +
           `An empty module with a 200 response means the tsconfig turned emit off.\n` +
           (consoleErrors.length > 0 ? trim(consoleErrors.join('\n')) : ''),
       );
     }
 
     const text = await frame.locator('#root').innerText();
-    if (text.startsWith('design-explore:')) return fail(`FRAME REFUSED on ${slug} option ${key}\n${text}`);
+    if (text.startsWith('design-explore:')) return fail(`FRAME REFUSED on ${slug} variant ${key}\n${text}`);
   }
 
   await browser.close();
@@ -175,15 +175,15 @@ const runBrowser = async (options: { base: string; slug: string; wanted?: string
  */
 export const checkDesign = async (options: { target: string; argv: string[]; invocation: string }): Promise<number> => {
   const { target, argv, invocation } = options;
-  const flags = parse(argv, ['--lint', '--tsconfig', '--call', '--option']);
+  const flags = parse(argv, ['--lint', '--tsconfig', '--call', '--variant']);
 
   const lintFiles = flags['--lint'] ?? [];
   const slug = flags['--call']?.[0];
-  const wanted = flags['--option']?.[0];
+  const wanted = flags['--variant']?.[0];
   const tsconfig = '--tsconfig' in flags ? (flags['--tsconfig']?.[0] ?? writeCallsTsconfig(target)) : null;
 
   if (lintFiles.length === 0 && !tsconfig && !slug) {
-    console.error(`usage: ${invocation} check [--lint <file>…] [--tsconfig [path]] [--call <slug> [--option <key>]]`);
+    console.error(`usage: ${invocation} check [--lint <file>…] [--tsconfig [path]] [--call <slug> [--variant <key>]]`);
 
     return 2;
   }

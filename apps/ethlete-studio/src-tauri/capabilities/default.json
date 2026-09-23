@@ -12,7 +12,7 @@
     "allow-agent-cancel",
     "allow-agent-list",
     "allow-agent-run",
-    "allow-design-add-options",
+    "allow-design-add-variants",
     "allow-design-project",
     "allow-design-roots",
     "allow-design-roots-add",

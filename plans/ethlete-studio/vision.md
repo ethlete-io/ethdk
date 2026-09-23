@@ -22,11 +22,11 @@ What the code shows, on top of that:
   the ordering are set by hand-editing `call.ts`. The URL knows what you picked; the
   file never learns.
 - **The prose is what goes stale**, and nothing checks it. The page detects two failure
-  modes: a duplicate round key, and a declared round with no options.
+  modes: a duplicate round key, and a declared round with no variants.
 - **A frame cannot import an `@ethlete` barrel.** Libs resolve to source, so a barrel
   dies with `ERR_INSUFFICIENT_RESOURCES`. Today `providers` is `[]` and `Wrapper` is
   `null`, so a drawing gets no DI environment at all.
-- **One `frameWidth` per call.** No viewport comparison, no per-option geometry, no
+- **One `frameWidth` per call.** No viewport comparison, no per-variant geometry, no
   light/dark toggle, no zoom beyond the fixed 0.32 contact-sheet scale.
 - **Compare caps at two.** Two picks get a wipe; three or more degrade to a blink cycle.
   Picks never cross calls.
@@ -36,9 +36,9 @@ What the code shows, on top of that:
 
 ## What carries over
 
-The **call → rounds → options** model works and stays. 22 calls exist under
-`.ethlete/design/calls`. Most have 3 to 4 options in one round; the two large
-ones are `kerbe/06-break-label` (24 options over 7 rounds) and `kerbe/08-lane-headers`
+The **call → rounds → variants** model works and stays. 22 calls exist under
+`.ethlete/design/calls`. Most have 3 to 4 variants in one round; the two large
+ones are `kerbe/06-break-label` (24 variants over 7 rounds) and `kerbe/08-lane-headers`
 (10 over 3).
 
 What must get better inside that model: **the UI has to show what changed between
@@ -47,11 +47,11 @@ prose in `claim` and `cost`. Studio should make the delta visible.
 
 ## Decisions taken
 
-| Question                                 | Answer                                                                                                                                                                                               |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Where does a project's design work live? | **In the project's own repo.** Studio is told about a checkout and writes that project's calls and option components into it. Nothing lands in `ethlete-sdk` unless the design is for `ethlete-sdk`. |
-| Wireframe mode vs design mode            | **Wireframe ignores detailed logic and hover states. It shows the bare workflow, mocked.** Design mode draws the real thing.                                                                         |
-| How do we bootstrap?                     | **Build a rough Studio by hand, then iterate on Studio inside Studio.** It will be ugly at first. Everything now in `apps/ethlete-studio/src` may be thrown away.                                    |
+| Question                                 | Answer                                                                                                                                                                                                |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Where does a project's design work live? | **In the project's own repo.** Studio is told about a checkout and writes that project's calls and variant components into it. Nothing lands in `ethlete-sdk` unless the design is for `ethlete-sdk`. |
+| Wireframe mode vs design mode            | **Wireframe ignores detailed logic and hover states. It shows the bare workflow, mocked.** Design mode draws the real thing.                                                                          |
+| How do we bootstrap?                     | **Build a rough Studio by hand, then iterate on Studio inside Studio.** It will be ugly at first. Everything now in `apps/ethlete-studio/src` may be thrown away.                                     |
 
 ## The agent bridge
 
@@ -62,10 +62,10 @@ assumes one. A missing CLI is simply an option that is not offered.
 Codex to draw the same thing, and the round comes back with more diverse answers to pick
 from. Two consequences to build for from the start, even before the feature exists:
 
-- An option records **which agent drew it, and on which model** — for example Sonnet,
+- A variant records **which agent drew it, and on which model** — for example Sonnet,
   Opus or Fable under one CLI, and Tera, Luna, Sol or Astra under another. A round can
   therefore mix both the CLI and the model, and you can see who produced which answer.
-  Two options from the same CLI on different models are a real comparison.
+  Two variants from the same CLI on different models are a real comparison.
 - **The model is never a fixed union in the code.** The list belongs to the CLI, it
   differs per CLI, and it changes without Studio changing. Studio asks the CLI what it
   offers, or stores the name as written; it never ships an enum that goes stale.
@@ -76,20 +76,20 @@ from. Two consequences to build for from the start, even before the feature exis
 
 Decided with Tom on 2026-09-17. These three answers replace the questions that stood here.
 
-**A build shows the frame and the agent's stream side by side.** The option card splits in
+**A build shows the frame and the agent's stream side by side.** The variant card splits in
 two: a live frame on the left that redraws every time the agent writes a file, and the
 agent's tool log with an elapsed timer on the right. Watching a drawing appear is the
 point, so the frame is not optional. The stream says why it looks the way it does. This
 needs a dev server per project checkout and a file watcher, and that cost is accepted.
 
-**Verbs fill an editable prompt box, and you send it.** An option carries `accept`,
+**Verbs fill an editable prompt box, and you send it.** A variant carries `accept`,
 `iterate`, `reject` and `more like this`. A verb does not run the agent. It writes a first
 draft of the prompt into a box under the round. You change the draft, then you send it. You
 always see the exact text the agent gets, so a bad result is a bad prompt you can read.
 `accept` and `reject` also write the verdict back to the call file.
 
 **The conversation stays split for now, and moves into Studio later.** Studio holds the
-claim, the cost, the verdict and the prompt behind every option. Planning a whole call, and
+claim, the cost, the verdict and the prompt behind every variant. Planning a whole call, and
 debugging a broken frame, stay in a CLI session outside Studio. Tom: "for now 1 to keep the
 scope in check, later on the chat should move fully into studio". So the first Studio runs
 one-shot jobs and records verdicts. Build nothing that a full transcript view would have to
@@ -152,12 +152,12 @@ two tests in `lib.rs` read the invoke handler and check both files.
 
 Two views. `/` opens on the checkout's projects, then lists that project's calls under one band per
 feature, with a filter box and a choice of
-order (by name, or the calls with open options first), draws every variant of the selected call in
+order (by name, or the calls with open variants first), draws every variant of the selected call in
 frames served by that checkout's design server — a column of thumbnails beside the one under study —
 and writes `accept`, `reject` and `open again` back into the call
 file. The four verbs write a first draft of the prompt into an editable box under the frame, and
 `accept` and `reject` also write the verdict. The box sends through the agent bridge, and the
-run's events read beside the frame. The selected call and option are remembered in
+run's events read beside the frame. The selected call and variant are remembered in
 `localStorage`, so a reload comes back to them. So is the agent session of each call, with the size
 it grew to; a session past 70% of the 200k limit offers the handoff described below. `/agent` is the agent console. `design_project`
 reads `.ethlete/design/config.json` from the checkout, so Studio needs no config of its own.
@@ -199,7 +199,7 @@ patterns it can read out of the repo instead of hand-rolled DOM code.
    asks. Studio then writes the round into `call.ts`, one entry per variant, and one empty component
    file per variant, and the prompt names those files. `name`, `claim` and `cost` stay empty: only
    the drawing can argue them, so the agent writes them once it has drawn. A key is taken only when
-   no option claims it **and** no `option-<key>.ts` already exists, so an orphaned file is never
+   no variant claims it **and** no `variant-<key>.ts` already exists, so an orphaned file is never
    overwritten.
 6. ~~**Tools the agent can call.**~~ Done. Studio is the tool server itself: the binary started
    with `mcp` speaks stdio MCP and answers `read_call`, `read_fixture` and `check_call`. Every tool
@@ -214,7 +214,7 @@ patterns it can read out of the repo instead of hand-rolled DOM code.
    change the fixture, one component file per variant, run `check_call` after every edit. The check
    **reports** and never blocks: Accept always works, because a small visual call is worth ruling on
    whether or not a check ran.
-7. ~~**A workbench that shows every variant at once.**~~ Done. The option tab strip is gone. A
+7. ~~**A workbench that shows every variant at once.**~~ Done. The variant tab strip is gone. A
    narrow scrolling column of thumbnails stands at the left of the stage, and the variant under
    study takes the rest of the width and the full height, because a drawing of an application is
    tall as well as wide. The verbs, the variant name, its verdict and the frame address sit under
@@ -245,7 +245,7 @@ patterns it can read out of the repo instead of hand-rolled DOM code.
 
 9. **A workflow that creates the work itself.** Studio starts a new project, adds a task under it
    and adds a call under a task, writing the config and the files each one needs. Today every one
-   of those is hand-written in an editor. The naming is open: today a drawing is an option inside a
+   of those is hand-written in an editor. The naming is open: today a drawing is a variant inside a
    call, and the new layer above is called a task here only to have a word for it.
 
 ### The names
@@ -253,9 +253,9 @@ patterns it can read out of the repo instead of hand-rolled DOM code.
 Tom settled them: **project → feature → call → variant**. A project holds features, a feature holds
 calls, and a call holds the variants drawn for it.
 
-`variant` is decided but not yet renamed. The code, the call files and the design server still say
-`option`. A rename rewrites every `call.ts`, and four call folders in the tree are another session's
-uncommitted work, so it waits for a clean tree and gets its own commit.
+~~`variant` replaces `option`.~~ Done. The code, the call files (`variants: [` and
+`variant-<key>.ts`), the design server (`?variant=`, `--variant`) and the design-exploration skill
+all say `variant`. No reader accepts the old name: no call file outside this repository used it.
 
 Open, and Tom decides: whether a live tile survives a call of two dozen variants, or the column has
 to move to captured pictures. A tile also assumes a 16:9 window, because the design server reports

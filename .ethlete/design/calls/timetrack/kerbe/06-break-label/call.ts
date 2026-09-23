@@ -43,7 +43,7 @@ export default defineCall({
       note: 'Two faults in T, both fixed in every frame here: the bars were 2px with a 3.5px gap, which centres the pair on a half pixel and renders one bar wider, and at 15m the plate overran the rules. W won: the sign shrinks and keeps its ground, so the plate that T was chosen for survives the short break. X drops the plate at 15m and puts the bars back on the hatch, which is the noise T was drawn to fix.',
     },
   ],
-  options: [
+  variants: [
     {
       key: 'a',
       round: 'r1',
@@ -52,7 +52,7 @@ export default defineCall({
         'It straddles the top hairline and cuts a gap in it, on a small plate of ground, so it reads over anything behind it and needs nothing computed.',
       cost: 'The plate covers a slice of whatever band it lands on, and one band always loses a few pixels of its top row.',
       verdict: 'rejected',
-      load: () => import('./option-a'),
+      load: () => import('./variant-a'),
     },
     {
       key: 'b',
@@ -61,7 +61,7 @@ export default defineCall({
       claim: 'It goes where the day is empty, so it covers nothing at all.',
       cost: 'Its column moves from break to break, and when every lane is busy it has no home and falls back to the gutter.',
       verdict: 'rejected',
-      load: () => import('./option-b'),
+      load: () => import('./variant-b'),
     },
     {
       key: 'c',
@@ -70,7 +70,7 @@ export default defineCall({
       claim: 'The band area is never touched. This is what the app does today.',
       cost: 'The gutter is 5rem, so the word goes and only the length is left, and a break on the hour meets an hour label.',
       verdict: 'rejected',
-      load: () => import('./option-c'),
+      load: () => import('./variant-c'),
     },
     {
       key: 'd',
@@ -80,7 +80,7 @@ export default defineCall({
         'The two rules turn into the gutter and close on a stroke at its left edge, so the break is a bracket cut into the clock. It is three lines, no fill, and its height is the length.',
       cost: 'It carries no word, so the first reading has to be learned, and a 15m break is 2rem of bracket.',
       verdict: 'rejected',
-      load: () => import('./option-d'),
+      load: () => import('./variant-d'),
     },
     {
       key: 'e',
@@ -90,7 +90,7 @@ export default defineCall({
         'A pause sign sits in the gutter, centred on the break. It is one fixed size in one fixed place, and it names the break as a sign instead of a word.',
       cost: 'The mark does not measure the break, so only the rules say how long it ran, and a sign is one more thing to learn.',
       verdict: 'rejected',
-      load: () => import('./option-e'),
+      load: () => import('./variant-e'),
     },
     {
       key: 'f',
@@ -100,7 +100,7 @@ export default defineCall({
         'Nothing is added. A stretch of day between two hairlines is a break, and the frame from call 5 is all of it.',
       cost: 'A break that holds three agent bands then looks like any other stretch of day, and nothing tells the reader which one it is.',
       verdict: 'rejected',
-      load: () => import('./option-f'),
+      load: () => import('./variant-f'),
     },
     {
       key: 'g',
@@ -110,7 +110,7 @@ export default defineCall({
         'D again, with a texture in place of the empty bracket. A hatch is the drawing convention for a stretch that is out of play, so it names the break without a word and still measures it.',
       cost: 'At 15m the column is 2rem tall and 1.2rem wide, which holds about four strokes, so the pattern barely reads.',
       verdict: 'rejected',
-      load: () => import('./option-g'),
+      load: () => import('./variant-g'),
     },
     {
       key: 'h',
@@ -120,7 +120,7 @@ export default defineCall({
         'The frame says it in its own line: an hour line is solid, a break edge is dashed. Nothing new is added anywhere, and no area is spent.',
       cost: 'A 1px dash is light, so the alpha goes up to hold the weight, and a dashed line elsewhere in the app can no longer mean anything else.',
       verdict: 'rejected',
-      load: () => import('./option-h'),
+      load: () => import('./variant-h'),
     },
     {
       key: 'i',
@@ -130,7 +130,7 @@ export default defineCall({
         'A faint hatch spans every lane between the two rules, over the bands as well as the ground. It runs through the work, so it reads as the day and not as a claim that one lane was idle.',
       cost: 'It re-opens what call 5 settled, and it lays a texture over content.',
       verdict: 'rejected',
-      load: () => import('./option-i'),
+      load: () => import('./variant-i'),
     },
     {
       key: 'j',
@@ -140,7 +140,7 @@ export default defineCall({
         'The hatch takes the whole 5rem gutter, not a 1.2rem strip of it, and the hour labels stay on top of it. It is four times the width of D and still touches no band.',
       cost: 'The clock column now carries two jobs, and a break that crosses an hour puts a label on a pattern.',
       verdict: 'rejected',
-      load: () => import('./option-j'),
+      load: () => import('./variant-j'),
     },
     {
       key: 'k',
@@ -150,7 +150,7 @@ export default defineCall({
         'The two rules go to 2px and run from the gutter to the right edge, and the lane lines stop between them. For those minutes the day has no columns, which is what a break is.',
       cost: 'Two heavy rules are the loudest thing on a quiet day, and the cut lane lines cost a pixel out of the grid.',
       verdict: 'chosen',
-      load: () => import('./option-k'),
+      load: () => import('./variant-k'),
     },
     {
       key: 'l',
@@ -159,7 +159,7 @@ export default defineCall({
       claim: 'I again, at a weight you cannot miss: a coarse hatch over every lane and over the bands.',
       cost: 'It re-opens call 5, and the texture runs over the band labels.',
       verdict: 'rejected',
-      load: () => import('./option-l'),
+      load: () => import('./variant-l'),
     },
     {
       key: 'm',
@@ -169,7 +169,7 @@ export default defineCall({
         'K, with "BREAK" in the gutter, inside the frame, set like an hour label. The word left the lanes, so it needs no ground of its own, and 5rem holds it once the length is gone.',
       cost: 'The word sits at the top, so it says nothing about how long the break ran.',
       verdict: 'rejected',
-      load: () => import('./option-m'),
+      load: () => import('./variant-m'),
     },
     {
       key: 'n',
@@ -178,7 +178,7 @@ export default defineCall({
       claim: 'M with J behind it: the gutter is hatched between the rules, and the word sits on the hatch.',
       cost: 'The pattern runs under 1.05rem type, which is the smallest type on the screen.',
       verdict: 'chosen',
-      load: () => import('./option-n'),
+      load: () => import('./variant-n'),
     },
     {
       key: 'o',
@@ -187,7 +187,7 @@ export default defineCall({
       claim: 'M with L across the lanes: the word names it, and the hatch carries it over the whole day.',
       cost: 'Same as L. It re-opens call 5, and the texture runs over the band labels.',
       verdict: 'rejected',
-      load: () => import('./option-o'),
+      load: () => import('./variant-o'),
     },
     {
       key: 'p',
@@ -197,7 +197,7 @@ export default defineCall({
         'The word runs down the gutter instead of across it, so it grows with the break and can never meet an hour label.',
       cost: 'A 15m break is 2rem, which cuts the word, and turned type is slower to read.',
       verdict: 'rejected',
-      load: () => import('./option-p'),
+      load: () => import('./variant-p'),
     },
     {
       key: 'q',
@@ -207,7 +207,7 @@ export default defineCall({
         'N with a sign in place of the word, centred in the block instead of pinned to its top. It needs no translation, and at 15m it still sits in the middle of 2rem.',
       cost: 'A pause sign is borrowed from a player, where it means a thing that was stopped by hand.',
       verdict: 'chosen',
-      load: () => import('./option-q'),
+      load: () => import('./variant-q'),
     },
     {
       key: 'r',
@@ -216,7 +216,7 @@ export default defineCall({
       claim: 'The same place and the same size, with the sign everybody already reads as a break.',
       cost: 'It names a coffee, and a break is any time away from the machine.',
       verdict: 'rejected',
-      load: () => import('./option-r'),
+      load: () => import('./variant-r'),
     },
     {
       key: 's',
@@ -226,7 +226,7 @@ export default defineCall({
         'The hatched block, the heavy frame and the open grid, and no sign at all. At 15m it is two clean rem of pattern.',
       cost: 'Nothing names the break, so the pattern has to be learned once.',
       verdict: 'rejected',
-      load: () => import('./option-s'),
+      load: () => import('./variant-s'),
     },
     {
       key: 't',
@@ -235,7 +235,7 @@ export default defineCall({
       claim: 'Q, with the hatch stopped under the bars, the same way an hour label carries its ground.',
       cost: 'A plate inside the block is a second shape to place, and at 15m it leaves 0.1rem to each rule.',
       verdict: 'chosen',
-      load: () => import('./option-t'),
+      load: () => import('./variant-t'),
     },
     {
       key: 'u',
@@ -245,7 +245,7 @@ export default defineCall({
         'The bars are drawn in the ground, so the sign is a hole in the pattern and not a mark on it. That is what the brand is named after.',
       cost: 'It reads only where the hatch runs behind it, so the sign and the block can never be separated.',
       verdict: 'rejected',
-      load: () => import('./option-u'),
+      load: () => import('./variant-u'),
     },
     {
       key: 'v',
@@ -254,7 +254,7 @@ export default defineCall({
       claim: 'No plate and no cut: 3px bars at full ink, which is the one thing in the gutter that is not a hairline.',
       cost: 'The hatch still runs between the bars, so the sign stays busier than the word it replaced.',
       verdict: 'rejected',
-      load: () => import('./option-v'),
+      load: () => import('./variant-v'),
     },
     {
       key: 'w',
@@ -264,7 +264,7 @@ export default defineCall({
         'Under 3rem the bars drop to 8px and the plate halves its padding, so the plate keeps 4px clear of each rule. The sign is one shape at two sizes.',
       cost: 'The same sign now has two sizes, and the smaller one is 8px of bar.',
       verdict: 'chosen',
-      load: () => import('./option-w'),
+      load: () => import('./variant-w'),
     },
     {
       key: 'x',
@@ -274,7 +274,7 @@ export default defineCall({
         'The bars keep one size everywhere. Under 3rem they lose the ground and sit straight on the hatch, which is only 2rem of pattern there.',
       cost: 'The sign then reads two ways, and on the short break it is back to the noise T was drawn to fix.',
       verdict: 'rejected',
-      load: () => import('./option-x'),
+      load: () => import('./variant-x'),
     },
   ],
 });

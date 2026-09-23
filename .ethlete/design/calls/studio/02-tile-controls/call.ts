@@ -14,7 +14,7 @@ export default defineCall({
       note: 'A won. The user ruled the controls out of the column: "i dont think these controls are needed there." B paid a third of every tile for two controls, and C hid them behind a pointer that a touch screen does not have. So a thumbnail stays a picture, and every verb belongs to the variant under study. The user also rejected the word on a ruled tile - "rejected also doesnt need to be text" - which call 3 takes up.',
     },
   ],
-  options: [
+  variants: [
     {
       key: 'a',
       round: 'r1',
@@ -23,7 +23,7 @@ export default defineCall({
       claim:
         'A tile holds its picture, its name and a verdict marker, and nothing that can be pressed. Every verb belongs to the large variant, so the column stays a row of pictures and the picture gets all the width the column has.',
       cost: 'Ruling on a variant takes two steps: put it large, then press the verb. Settling a round of eight is therefore sixteen actions.',
-      load: () => import('./option-a'),
+      load: () => import('./variant-a'),
     },
     {
       key: 'b',
@@ -33,7 +33,7 @@ export default defineCall({
       claim:
         'Each tile carries two small controls, accept and reject, under its picture. Settling a whole round never leaves the column, and what is already ruled reads at a glance.',
       cost: 'Two controls plus a name under every picture take about a third of the tile, so the picture shrinks in the one dimension the column can least spare.',
-      load: () => import('./option-b'),
+      load: () => import('./variant-b'),
     },
     {
       key: 'c',
@@ -43,7 +43,7 @@ export default defineCall({
       claim:
         'A tile shows its picture alone until the pointer rests on it, and then the four verbs lie over the foot of that tile. Nothing is given up in the resting state, and every verb is one action away.',
       cost: 'The controls are invisible until they are found, only one tile can show them, and a touch screen has no pointer to rest.',
-      load: () => import('./option-c'),
+      load: () => import('./variant-c'),
     },
   ],
 });

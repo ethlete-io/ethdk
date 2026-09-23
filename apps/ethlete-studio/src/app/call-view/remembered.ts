@@ -4,7 +4,7 @@ export type ViewState = {
   /** The project the window is in. An empty name means the welcome screen. */
   project: string;
   slug: string;
-  option: string;
+  variant: string;
   /** The settled feature group the explorer left unfolded. An empty name folds them all. */
   settledFeature: string;
 };
@@ -17,13 +17,13 @@ export const rememberedView = (): Partial<ViewState> => {
 
     if (!stored || typeof stored !== 'object') return {};
 
-    const { checkout, project, slug, option, settledFeature } = stored as Partial<ViewState>;
+    const { checkout, project, slug, variant, settledFeature } = stored as Partial<ViewState>;
 
     return {
       checkout: typeof checkout === 'string' ? checkout : undefined,
       project: typeof project === 'string' ? project : undefined,
       slug: typeof slug === 'string' ? slug : undefined,
-      option: typeof option === 'string' ? option : undefined,
+      variant: typeof variant === 'string' ? variant : undefined,
       settledFeature: typeof settledFeature === 'string' ? settledFeature : undefined,
     };
   } catch {

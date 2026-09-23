@@ -13,7 +13,7 @@ export default defineCall({
       note: '',
     },
   ],
-  options: [
+  variants: [
     {
       key: 'a',
       round: 'r1',
@@ -21,7 +21,7 @@ export default defineCall({
       claim:
         'KERBE in brass mono, the date at 1.3rem in --k-ink, and the day total in mono at --k-ink-3. It is the quietest bar of the four, and it says what day this is and what it came to.',
       cost: 'There is no way to reach yesterday, and no way to add an entry. The app can do both today, so this frame drops working behaviour to look calm.',
-      load: () => import('./option-a'),
+      load: () => import('./variant-a'),
     },
     {
       key: 'b',
@@ -30,7 +30,7 @@ export default defineCall({
       claim:
         'What the app ships, drawn in the new material: a previous and next day around the date, a Today step when the day is not today, and Add an entry and Debug at the right. Nothing is invented and nothing is lost.',
       cost: 'The mark and the day total both go. The four lane headers say where the day went, but no single number says what the day came to.',
-      load: () => import('./option-b'),
+      load: () => import('./variant-b'),
     },
     {
       key: 'c',
@@ -39,7 +39,7 @@ export default defineCall({
       claim:
         'B, and the total sits at the right of the row before the buttons, in mono at --k-ink-3. The bar keeps every control and says what the day came to, which is the one fact no lane header holds.',
       cost: 'Five things share one row. On a narrow window the total is the item with the least to say and the first that has to wrap.',
-      load: () => import('./option-c'),
+      load: () => import('./variant-c'),
     },
     {
       key: 'd',
@@ -48,7 +48,7 @@ export default defineCall({
       claim:
         'C, and KERBE leads the row again - in --k-ink-3, not brass. Call 6 ruled that brass says a band asks the reader for something, so the window wears the name in ink and the metal stays in the field.',
       cost: 'The mark is the one item in the bar the reader never needs. It costs the row its width and gives back only the brand.',
-      load: () => import('./option-d'),
+      load: () => import('./variant-d'),
     },
   ],
 });

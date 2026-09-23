@@ -11,12 +11,12 @@ A design exploration is a dialog. **The user is the designer. You find and frame
 chooses.** A finding is not a licence to pick the fix.
 
 The unit of work is a **call**: one open question, with every answer drawn side by side at
-the same geometry. An option wins or loses only against the other options of its call.
+the same geometry. A variant wins or loses only against the other variants of its call.
 
 ## The rules
 
-1. **One open call at a time.** Take one question. Draw its options. Stop.
-2. **Put the options in the call, then name your pick.** Two to four options, drawn for
+1. **One open call at a time.** Take one question. Draw its variants. Stop.
+2. **Put the variants in the call, then name your pick.** Two to four variants, drawn for
    real, side by side, labelled, with what each one costs. Your pick is a proposal.
 3. **Commit only when the user says commit.**
 4. **A clear rejection starts the next call.** Settle and record the rejected call, then draw
@@ -32,31 +32,31 @@ finished while the user is still talking about it.
 
 - The question, in one sentence.
 - The call slug to look at.
-- The options, labelled A, B, C, one line each.
+- The variants, labelled A, B, C, one line each.
 - Your pick, one line on why.
 - Nothing else. No next step, no second finding.
 
 **Do not send a screenshot.** The user keeps the page open. Screenshot only for your own
-check that an option renders.
+check that a variant renders.
 
 If a second defect appears, add it to the open list and give it one line. Do not draw it.
 
-## Where the options are drawn
+## Where the variants are drawn
 
 The exploration's plan file names the tool. Two shapes exist.
 
-**A repository with a `.ethlete/design` folder** draws a call per page, each option in its own
+**A repository with a `.ethlete/design` folder** draws a call per page, each variant in its own
 iframe. The tool is `et design`, from `@ethlete/cli`, so the repository itself needs no design
 tooling. A call argues in the repository it is about:
 
 ```
 .ethlete/design/
-  config.json    the port, the default call, and one entry per project
+  config.json     the port, the default call, and one entry per project
   calls/<project>/<group>/<slug>/
-    call.ts      the eyebrow, the headline, the intro, frameWidth, the options and the round prose
-    fixture.ts   the data every option shares
-    option-a.ts  one default-exported drawing per option
-    option-b.ts
+    call.ts       the eyebrow, the headline, the intro, frameWidth, the variants and the round prose
+    fixture.ts    the data every variant shares
+    variant-a.ts  one default-exported drawing per variant
+    variant-b.ts
 ```
 
 The first segment of a slug is the **project**. `config.json` gives each project its own
@@ -72,16 +72,16 @@ Ethlete Studio carries its own copy of the tool, so it draws a checkout that ins
 The machine still needs Node, and the render stage still needs `playwright` where the copy in
 use can reach it.
 
-`call.ts` calls `defineCall` from `@design-explore`. Each option carries a `key`, a `name`,
+`call.ts` calls `defineCall` from `@design-explore`. Each variant carries a `key`, a `name`,
 a `claim`, a `cost`, an optional `verdict` of `chosen` or `rejected`, and a `load` that
-imports its own module. The host greys a rejected option and shows it on hover.
+imports its own module. The host greys a rejected variant and shows it on hover.
 
-In a call that runs past about a dozen options, every option names the pass that drew it with
+In a call that runs past about a dozen variants, every variant names the pass that drew it with
 `round: 'r3'`. **That tag is the only thing that makes a round exist.** The host reads the
-options, draws one band per round in the order the options introduce them, and lists those
-same bands in the sidebar, so a new option can never leave the menu stale. A round whose
-options all carry a verdict is **settled**: the page folds it down to its winner plus one row
-per rejected option, and a link opens it again.
+variants, draws one band per round in the order the variants introduce them, and lists those
+same bands in the sidebar, so a new variant can never leave the menu stale. A round whose
+variants all carry a verdict is **settled**: the page folds it down to its winner plus one row
+per rejected variant, and a link opens it again.
 
 A call whose rounds have all ruled is **resolved**. Its winners usually form a chain, each one
 the last plus a change, so the page stops drawing them: it leads with a **Result** band holding
@@ -91,36 +91,36 @@ rows. A key in the chain opens the round that drew it.
 `rounds` is prose only. Each entry gives a `key`, a `title` and a `note` saying what came out
 of that pass, which is how the intro stays short and each pass reads as a reply to the one
 before. An untagged round still draws and still gets a menu row - it says the bare key until
-somebody writes the entry. A `rounds` entry that no option names is stale prose, and the host
+somebody writes the entry. A `rounds` entry that no variant names is stale prose, and the host
 and the check both report it. Write the note in the same pass that sets the verdicts, never
 before the user rules.
 
-A call with one option and no `claim` is a **view**: one reference picture, drawn full
+A call with one variant and no `claim` is a **view**: one reference picture, drawn full
 width with no verdict tag. Use it for a picture that answers no question.
 
 Two views, and a way to compare:
 
 - **rounds** is the default. Round headings, the result band, and the folding above.
-- **all N** is a contact sheet: every option in the call at about a third size, in one grid, so
-  a call of two dozen fits on a screen or two. Use it to find the options worth a close look.
-- Clicking an option's name anywhere - a heading, a folded row, a thumbnail - puts it in the
+- **all N** is a contact sheet: every variant in the call at about a third size, in one grid, so
+  a call of two dozen fits on a screen or two. Use it to find the variants worth a close look.
+- Clicking a variant's name anywhere - a heading, a folded row, a thumbnail - puts it in the
   **compare overlay** at the top of the page. Two drawings that differ by a few pixels can only
   be told apart in one place, so the overlay stacks every pick in one box at full size and the
   reader switches between them: click the box or press space to blink, and with two picks the
   arrow keys wipe a seam across. Nothing is scaled and nothing moves. The picks live in the URL
   under `pick`, so a comparison is a link you can send.
 
-Three constraints the tool puts on an option file:
+Three constraints the tool puts on a variant file:
 
 - **Never import a package barrel.** The libraries resolve to source, so one barrel makes
   the browser request every module in the library, and the requests fail with
   `ERR_INSUFFICIENT_RESOURCES`. Import the one file you need.
-- **The fixture is shared, and an option may not change it.** Options drawn at three
+- **The fixture is shared, and a variant may not change it.** Variants drawn at three
   geometries cannot be compared.
-- **One file per option**, so several agents can draw at once, and a broken option breaks
+- **One file per variant**, so several agents can draw at once, and a broken variant breaks
   its own frame only.
 
-**A repository with a sketch Storybook** draws every option in the **same** story, side by
+**A repository with a sketch Storybook** draws every variant in the **same** story, side by
 side, under the real geometry the thing ships in. The default Storybook is
 http://localhost:4400; an app with its own sketch Storybook names its port in the plan file.
 
@@ -129,7 +129,7 @@ Either way:
 - Sketches take inputs only and stay out of the application's build.
 - Prototype, never refactor. Do not touch the shipped component until the treatment is
   settled.
-- Keep the rejected options drawn, marked as rejected.
+- Keep the rejected variants drawn, marked as rejected.
 
 ## Check before you look
 
@@ -158,30 +158,30 @@ transpile without type checking, so the render reports `ok` on a file that does 
 compile. Open it only when the check passes and the drawing still does not appear:
 
 ```bash
-et design check --call <slug>            # every option of the call
-et design check --call <slug> --option b # one of them
+et design check --call <slug>             # every variant of the call
+et design check --call <slug> --variant b # one of them
 node check-story.mjs --tsconfig <path> --story <story-id>
 ```
 
 ## Delegating a call
 
-A call has one job per option, so it fans out. Every brief names `model: opus`.
+A call has one job per variant, so it fans out. Every brief names `model: opus`.
 
-1. **One agent per option.** Give it the call folder, the option key, the fixture it must
+1. **One agent per variant.** Give it the call folder, the variant key, the fixture it must
    not change, and the one claim its drawing has to support. Tell it to write its own
-   option file and nothing else, so two agents never touch one file.
+   variant file and nothing else, so two agents never touch one file.
 2. **One check-and-fix agent, after the drawing agents return.** Give it the changed files
    and the call slug. It runs the check above, fixes what it reports, and repeats until the
-   check says `ok`. It may not change what an option draws, only what stops it rendering.
+   check says `ok`. It may not change what a variant draws, only what stops it rendering.
 3. **One write-up agent, once the user settles the call.** Give it the verdict in the
    user's own words and the plan file. It records what won, what lost and why, it sets each
-   option's `verdict` in `call.ts`, and it writes that round's `note`. It runs while you open
+   variant's `verdict` in `call.ts`, and it writes that round's `note`. It runs while you open
    the next call.
 
 ## Screenshots
 
 **Off by default.** The user has the page open and sends you a picture when something looks
-wrong. Take one only when the code cannot tell you whether two options really differ, and
+wrong. Take one only when the code cannot tell you whether two variants really differ, and
 never to put in front of the user. Copy `shoot-template.mjs` (bundled next to this skill) to the repository
 root.
 
@@ -197,6 +197,6 @@ node shoot.mjs <story-id> 1100 760 out.png
 ## Writing it down
 
 Every settled call goes in the exploration's plan file: what won, what lost, and why. Keep
-an **Open** list for the calls not yet made. A rejected option written down stops the next
+an **Open** list for the calls not yet made. A rejected variant written down stops the next
 session from drawing it again. After a clear rejection, use that record to frame and draw the
 next call; do not wait for the user to type “continue”.

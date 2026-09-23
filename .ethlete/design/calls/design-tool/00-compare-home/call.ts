@@ -7,7 +7,7 @@ export default defineCall({
     'A comparison needs to stay available while the reviewer moves through calls and rounds. Each answer draws the same chosen work, with only the place and weight of comparison changing.',
   frameWidth: 1100,
   rounds: [{ key: 'r1', title: 'The comparison home', note: '' }],
-  options: [
+  variants: [
     {
       key: 'a',
       round: 'r1',
@@ -15,7 +15,7 @@ export default defineCall({
       claim:
         'Comparison is a persistent right-hand workbench. The reviewer can collect options, move between calls, and return to the same comparison without losing their place.',
       cost: 'The reading canvas is narrower whenever the workbench is open, and the tool needs real client-side state.',
-      load: () => import('./option-a'),
+      load: () => import('./variant-a'),
     },
     {
       key: 'b',
@@ -25,7 +25,7 @@ export default defineCall({
       claim:
         'Comparison temporarily takes over the top of the current page, keeping the original call visible directly below it.',
       cost: 'The comparison competes with the page for vertical space and still feels like an interruption rather than a place to review.',
-      load: () => import('./option-b'),
+      load: () => import('./variant-b'),
     },
     {
       key: 'c',
@@ -33,7 +33,7 @@ export default defineCall({
       name: 'C · Dedicated compare page',
       claim: 'Comparison gets an uncluttered full page, optimized for inspecting a pair at their real size.',
       cost: 'Reviewing requires a context switch, and returning to the exact round and scroll position becomes a navigation problem.',
-      load: () => import('./option-c'),
+      load: () => import('./variant-c'),
     },
   ],
 });

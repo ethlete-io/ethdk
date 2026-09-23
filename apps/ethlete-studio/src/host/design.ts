@@ -2,11 +2,11 @@ import { Channel, invoke } from '@tauri-apps/api/core';
 import { Observable } from 'rxjs';
 import { HostShellMissingError, hasHostShell, invokeHost$ } from './invoke';
 
-/** What the user ruled about an option. An option without one is still open. */
+/** What the user ruled about a variant. A variant without one is still open. */
 export type Verdict = 'chosen' | 'rejected';
 
 /** One drawn answer to a call, as the call file declares it. */
-export type CallOption = {
+export type CallVariant = {
   key: string;
   name: string;
   round: string | null;
@@ -27,7 +27,7 @@ export type CallRound = {
   title: string;
 };
 
-/** One open question of an exploration, and every option drawn for it. */
+/** One open question of an exploration, and every variant drawn for it. */
 export type Call = {
   slug: string;
   /** The feature the call belongs to. A call without one is loose. */
@@ -44,7 +44,7 @@ export type Call = {
   touched: number;
   /** Every round the call declares, in the order it wrote them. A call may declare none. */
   rounds: CallRound[];
-  options: CallOption[];
+  variants: CallVariant[];
 };
 
 /** A checkout's design work: where its calls live, which port draws them, and the calls themselves. */
@@ -86,26 +86,26 @@ export type CheckReceipt = {
   said: string;
 };
 
-/** Which option of which call a check, or a verdict, is about. */
-export type OptionAddress = {
+/** Which variant of which call a check, or a verdict, is about. */
+export type VariantAddress = {
   checkout: string;
   slug: string;
-  option: string;
+  variant: string;
 };
 
-/** Reads what the last `check_call` said about one option, or `null` when no run ever checked it. */
-export const designCheck$ = (address: OptionAddress): Observable<CheckReceipt | null> =>
+/** Reads what the last `check_call` said about one variant, or `null` when no run ever checked it. */
+export const designCheck$ = (address: VariantAddress): Observable<CheckReceipt | null> =>
   invokeHost$<CheckReceipt | null>('design_check', address);
 
-/** Which option of which call the user ruled about, and how. */
+/** Which variant of which call the user ruled about, and how. */
 export type VerdictWrite = {
   checkout: string;
   slug: string;
-  option: string;
+  variant: string;
   verdict: Verdict | null;
 };
 
-/** Writes one option's verdict into its call file. A `null` verdict opens the option again. */
+/** Writes one variant's verdict into its call file. A `null` verdict opens the variant again. */
 export const designSetVerdict$ = (write: VerdictWrite): Observable<void> =>
   invokeHost$<void>('design_set_verdict', write);
 
@@ -123,26 +123,26 @@ export type ModeWrite = {
 export const designSetMode$ = (write: ModeWrite): Observable<void> => invokeHost$<void>('design_set_mode', write);
 
 /** How many variants a call gets, and what the round they answer asks. */
-export type OptionsWrite = {
+export type VariantsWrite = {
   checkout: string;
   slug: string;
   count: number;
   roundTitle: string;
 };
 
-/** The round Studio opened, and the key of every option it created for it. */
-export type AddedOptions = {
+/** The round Studio opened, and the key of every variant it created for it. */
+export type AddedVariants = {
   round: string;
   keys: string[];
 };
 
 /**
- * Opens a new round on a call and creates one empty option per variant: a stub component file
+ * Opens a new round on a call and creates the empty variants it asks for: a stub component file
  * each, and an entry each in the call file. The name, the claim and the cost stay empty, because
  * only the drawing can argue them.
  */
-export const designAddOptions$ = (write: OptionsWrite): Observable<AddedOptions> =>
-  invokeHost$<AddedOptions>('design_add_options', write);
+export const designAddVariants$ = (write: VariantsWrite): Observable<AddedVariants> =>
+  invokeHost$<AddedVariants>('design_add_variants', write);
 
 /** What a checkout's design server is doing, and what Studio may do about it. */
 export type ServerState = {
@@ -165,18 +165,18 @@ export const designServerStart$ = (checkout: string): Observable<ServerState> =>
 export const designServerStop$ = (checkout: string): Observable<ServerState> =>
   invokeHost$<ServerState>('design_server_stop', { checkout });
 
-/** Where one option is drawn: the checkout's design server port, the call and the option. */
+/** Where one variant is drawn: the checkout's design server port, the call and the variant. */
 export type FrameAddress = {
   port: number;
   slug: string;
-  option: string;
+  variant: string;
   /** Changes when the server started again, so a frame that met a dead port loads once more. */
   epoch?: number;
 };
 
-/** The address the checkout's design server draws one option at. */
-export const frameUrl = ({ port, slug, option, epoch }: FrameAddress) =>
-  `http://localhost:${port}/frame.html?call=${encodeURIComponent(slug)}&option=${encodeURIComponent(option)}` +
+/** The address the checkout's design server draws one variant at. */
+export const frameUrl = ({ port, slug, variant, epoch }: FrameAddress) =>
+  `http://localhost:${port}/frame.html?call=${encodeURIComponent(slug)}&variant=${encodeURIComponent(variant)}` +
   (epoch ? `&epoch=${epoch}` : '');
 
 /** The checkouts Studio keeps, and the folder a scan walks for more. */

@@ -124,7 +124,7 @@ pub fn run() {
             design::design_project,
             design::design_set_verdict,
             design::design_set_mode,
-            design::design_add_options,
+            design::design_add_variants,
             design_roots::design_roots,
             design_roots::design_roots_add,
             design_roots::design_roots_forget,

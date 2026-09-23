@@ -889,20 +889,20 @@
     color: var(--et-surface-color-solid);
   }
 
-  .studio__option {
+  .studio__variant {
     display: flex;
     gap: 1.2rem;
     align-items: baseline;
     min-width: 0;
   }
 
-  .studio__option b {
+  .studio__variant b {
     flex-shrink: 0;
     font-weight: 500;
     font-size: 1.4rem;
   }
 
-  .studio__option--chosen {
+  .studio__variant--chosen {
     color: var(--et-theme-color-ink-solid);
   }
 

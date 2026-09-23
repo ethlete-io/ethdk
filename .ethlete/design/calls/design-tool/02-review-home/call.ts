@@ -13,7 +13,7 @@ export default defineCall({
       note: 'The tool opens on one active decision. Queue navigation and a central comparison minimize clicking and scrolling; the atlas and journal remain supporting views.',
     },
   ],
-  options: [
+  variants: [
     {
       key: 'a',
       round: 'r1',
@@ -22,7 +22,7 @@ export default defineCall({
         'One decision fills the workspace. Next/previous moves through a queue, comparison is central, and the result is recorded beside it.',
       cost: 'It deliberately hides unrelated options until the reviewer asks for them.',
       verdict: 'chosen',
-      load: () => import('./option-a'),
+      load: () => import('./variant-a'),
     },
     {
       key: 'b',
@@ -32,7 +32,7 @@ export default defineCall({
         'The tool opens as a compact wall of every option, built for scanning before deciding what deserves attention.',
       cost: 'Every decision begins by finding the relevant card, and the chosen comparison has less room.',
       verdict: 'rejected',
-      load: () => import('./option-b'),
+      load: () => import('./variant-b'),
     },
     {
       key: 'c',
@@ -41,7 +41,7 @@ export default defineCall({
       claim: 'The primary surface is an ordered account of rounds, decisions, and the alternatives they ruled out.',
       cost: 'It is excellent for explanation but turns active review back into scrolling through history.',
       verdict: 'rejected',
-      load: () => import('./option-c'),
+      load: () => import('./variant-c'),
     },
   ],
 });

@@ -19,7 +19,7 @@ export default defineCall({
       note: '',
     },
   ],
-  options: [
+  variants: [
     {
       key: 'a',
       round: 'r1',
@@ -27,7 +27,7 @@ export default defineCall({
       claim:
         'No frame, no plate and no change. The number is the largest thing in the row and the label sits under it in small capitals, so the reader takes three numbers and stops.',
       cost: 'Nothing says whether a number is good or bad, and a row of bare numbers has no edge to separate one tile from the next.',
-      load: () => import('./option-a'),
+      load: () => import('./variant-a'),
     },
     {
       key: 'b',
@@ -36,7 +36,7 @@ export default defineCall({
       claim:
         'Each tile takes a 1px frame and the label leads above the number. The change since yesterday reads under it in green or red, so a number gets a direction without a second screen.',
       cost: 'Three frames put nine lines in a row that carries three facts, and the colour makes the change louder than the number it belongs to.',
-      load: () => import('./option-b'),
+      load: () => import('./variant-b'),
     },
     {
       key: 'c',
@@ -45,7 +45,7 @@ export default defineCall({
       claim:
         'The frame becomes a filled plate with a soft corner, and the change sits on the number‘s own baseline. The tile reads as one object and the row needs no separator.',
       cost: 'The plates are the brightest thing on the page, and a summary row above a day is the one place that should stay quiet.',
-      load: () => import('./option-c'),
+      load: () => import('./variant-c'),
     },
     {
       key: 'd',
@@ -54,7 +54,7 @@ export default defineCall({
       claim:
         'The hairline frame stays, and the change moves onto the number‘s own baseline, so a tile is two lines. Only a small arrow carries the colour, and the amount reads in the muted ink of the label.',
       cost: 'The direction now rides on one small glyph, so a reader who scans the row at speed takes three numbers and no direction.',
-      load: () => import('./option-d'),
+      load: () => import('./variant-d'),
     },
     {
       key: 'e',
@@ -63,7 +63,7 @@ export default defineCall({
       claim:
         'One hairline box holds the whole row and a seam splits the tiles, so the row draws four lines instead of twelve. The change keeps its own line and names itself in muted ink.',
       cost: 'The row reads as one object, so a single tile is harder to take alone, and a direction with no colour must be read, not seen.',
-      load: () => import('./option-e'),
+      load: () => import('./variant-e'),
     },
     {
       key: 'f',
@@ -72,7 +72,7 @@ export default defineCall({
       claim:
         'The frame stays and the change moves up beside the label, at the label‘s own size and right of it. The colour stays, but it sits on the smallest text in the tile, so the number keeps the weight.',
       cost: 'The change stands far from the number it belongs to, and a long label pushes against it.',
-      load: () => import('./option-f'),
+      load: () => import('./variant-f'),
     },
   ],
 });

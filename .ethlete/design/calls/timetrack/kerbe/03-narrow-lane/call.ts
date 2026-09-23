@@ -6,14 +6,14 @@ export default defineCall({
   intro:
     'The break lane is 6rem wide, so "Break" and "45m" cannot share a row. Every frame below is that lane, with the three break lengths a day produces and one work band for the general case. The 15m band has no duration at any width, so all three draw it the same.',
   frameWidth: 120,
-  options: [
+  variants: [
     {
       key: 'a',
       name: 'A · The duration goes',
       claim: 'Under 10rem the band hides its duration and keeps the label on one row.',
       cost: 'In the break lane the label repeats the lane header, so the row says nothing new.',
       verdict: 'chosen',
-      load: () => import('./option-a'),
+      load: () => import('./variant-a'),
     },
     {
       key: 'b',
@@ -21,7 +21,7 @@ export default defineCall({
       claim: 'The head turns into two rows. A 15m band has room for one, so it falls back to A.',
       cost: 'Two rows in a 30m band leave no ground, and the type sits tighter than anywhere else.',
       verdict: 'rejected',
-      load: () => import('./option-b'),
+      load: () => import('./variant-b'),
     },
     {
       key: 'c',
@@ -29,7 +29,7 @@ export default defineCall({
       claim: 'The duration takes the row. The lane header already carries the name.',
       cost: 'A work lane that falls to 10rem would lose its ticket, which is the thing the reader needs.',
       verdict: 'rejected',
-      load: () => import('./option-c'),
+      load: () => import('./variant-c'),
     },
   ],
 });

@@ -5,7 +5,7 @@ const DEFAULT_PORT: u16 = 4402;
 
 #[derive(Debug, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct CallOption {
+pub struct CallVariant {
     pub key: String,
     pub name: String,
     pub round: Option<String>,
@@ -39,7 +39,7 @@ pub struct Call {
     pub touched: u64,
     /// Every round the call declares, in the order it wrote them. A call may declare none.
     pub rounds: Vec<CallRound>,
-    pub options: Vec<CallOption>,
+    pub variants: Vec<CallVariant>,
 }
 
 /// Where a session that grew too long writes down what the next one has to know.
@@ -116,7 +116,7 @@ pub const WIREFRAME_MODE: &str = "wireframe";
 pub const DESIGN_MODE: &str = "design";
 
 /// The value of a field at the call's own indent. Prose that holds the same word cannot be
-/// mistaken for it, because a field nested in a round or an option never starts at two spaces.
+/// mistaken for it, because a field nested in a round or a variant never starts at two spaces.
 fn top_field(source: &str, field: &str) -> Option<String> {
     let at = source.find(&format!("\n  {field}: '"))?;
 
@@ -140,7 +140,7 @@ fn parse_rounds(source: &str) -> Vec<CallRound> {
     };
 
     let region = &source[start..];
-    let region = region.find(OPTIONS_HEADER).map_or(region, |end| &region[..end]);
+    let region = region.find(VARIANTS_HEADER).map_or(region, |end| &region[..end]);
     let starts: Vec<usize> = region.match_indices("key:").map(|(index, _)| index).collect();
 
     starts
@@ -158,12 +158,12 @@ fn parse_rounds(source: &str) -> Vec<CallRound> {
         .collect()
 }
 
-fn options_region(source: &str) -> Option<&str> {
-    source.find("\n  options: [").map(|start| &source[start..])
+fn variants_region(source: &str) -> Option<&str> {
+    source.find("\n  variants: [").map(|start| &source[start..])
 }
 
-fn parse_options(source: &str) -> Vec<CallOption> {
-    let Some(region) = options_region(source) else {
+fn parse_variants(source: &str) -> Vec<CallVariant> {
+    let Some(region) = variants_region(source) else {
         return Vec::new();
     };
 
@@ -176,7 +176,7 @@ fn parse_options(source: &str) -> Vec<CallOption> {
             let end = starts.get(position + 1).copied().unwrap_or(region.len());
             let block = &region[*start..end];
 
-            Some(CallOption {
+            Some(CallVariant {
                 key: string_field(block, "key")?,
                 name: string_field(block, "name").unwrap_or_default(),
                 round: string_field(block, "round"),
@@ -200,7 +200,7 @@ fn parse_call(slug: &str, source: &str) -> Call {
         handoff: false,
         touched: 0,
         rounds: parse_rounds(source),
-        options: parse_options(source),
+        variants: parse_variants(source),
     }
 }
 
@@ -277,12 +277,12 @@ fn call_file(checkout: &str, slug: &str) -> Result<PathBuf, String> {
     }
 }
 
-/// Rewrite one option's verdict in place. `verdict` of `None` removes the field, which is how
-/// an option goes back to open.
-fn write_verdict(source: &str, option_key: &str, verdict: Option<&str>) -> Result<String, String> {
+/// Rewrite one variant's verdict in place. `verdict` of `None` removes the field, which is how
+/// a variant goes back to open.
+fn write_verdict(source: &str, variant_key: &str, verdict: Option<&str>) -> Result<String, String> {
     let region_start = source
-        .find("\n  options: [")
-        .ok_or_else(|| "The call declares no options.".to_owned())?;
+        .find("\n  variants: [")
+        .ok_or_else(|| "The call declares no variants.".to_owned())?;
     let region = &source[region_start..];
 
     let starts: Vec<usize> = region.match_indices("key:").map(|(index, _)| index).collect();
@@ -294,9 +294,9 @@ fn write_verdict(source: &str, option_key: &str, verdict: Option<&str>) -> Resul
                 .find(|next| *next > start)
                 .copied()
                 .unwrap_or(region.len());
-            string_field(&region[*start..end], "key").as_deref() == Some(option_key)
+            string_field(&region[*start..end], "key").as_deref() == Some(variant_key)
         })
-        .ok_or_else(|| format!("The call declares no option {option_key}."))?;
+        .ok_or_else(|| format!("The call declares no variant {variant_key}."))?;
 
     let start = starts[position];
     let end = starts.get(position + 1).copied().unwrap_or(region.len());
@@ -384,12 +384,12 @@ pub fn design_project(checkout: String) -> Result<Project, String> {
 pub fn design_set_verdict(
     checkout: String,
     slug: String,
-    option: String,
+    variant: String,
     verdict: Option<String>,
 ) -> Result<(), String> {
     let path = call_file(&checkout, &slug)?;
     let source = std::fs::read_to_string(&path).map_err(|error| format!("Unable to read the call: {error}"))?;
-    let written = write_verdict(&source, &option, verdict.as_deref())?;
+    let written = write_verdict(&source, &variant, verdict.as_deref())?;
 
     std::fs::write(&path, written).map_err(|error| format!("Unable to write the call: {error}"))
 }
@@ -447,7 +447,7 @@ pub fn design_set_mode(checkout: String, slug: String, mode: String) -> Result<(
 
 #[derive(Debug, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct AddedOptions {
+pub struct AddedVariants {
     pub round: String,
     pub keys: Vec<String>,
 }
@@ -520,10 +520,10 @@ fn next_round_key(used: &[String]) -> String {
         .expect("an unused round key")
 }
 
-/// `count` keys that no option claims and no file in `dir` already holds.
-fn next_option_keys(used: &[String], count: usize, dir: &Path) -> Vec<String> {
+/// `count` keys that no variant claims and no file in `dir` already holds.
+fn next_variant_keys(used: &[String], count: usize, dir: &Path) -> Vec<String> {
     let mut keys: Vec<String> = Vec::with_capacity(count);
-    let free = |key: &str| !used.iter().any(|taken| taken == key) && !dir.join(option_file(key)).exists();
+    let free = |key: &str| !used.iter().any(|taken| taken == key) && !dir.join(variant_file(key)).exists();
 
     for letter in b'a'..=b'z' {
         if keys.len() == count {
@@ -552,8 +552,8 @@ fn next_option_keys(used: &[String], count: usize, dir: &Path) -> Vec<String> {
     keys
 }
 
-fn option_file(key: &str) -> String {
-    format!("option-{key}.ts")
+fn variant_file(key: &str) -> String {
+    format!("variant-{key}.ts")
 }
 
 /// A single-quoted TypeScript string literal holding `value`.
@@ -616,7 +616,7 @@ fn append_entry(source: &str, header: &str, block: &str) -> Result<String, Strin
 }
 
 const ROUNDS_HEADER: &str = "\n  rounds: [";
-const OPTIONS_HEADER: &str = "\n  options: [";
+const VARIANTS_HEADER: &str = "\n  variants: [";
 
 fn round_block(key: &str, title: &str) -> String {
     format!(
@@ -626,22 +626,22 @@ fn round_block(key: &str, title: &str) -> String {
     )
 }
 
-fn option_block(key: &str, round: &str) -> String {
+fn variant_block(key: &str, round: &str) -> String {
     format!(
-        "    {{\n      key: {},\n      round: {},\n      name: '',\n      claim: '',\n      cost: '',\n      load: () => import('./option-{key}'),\n    }},\n",
+        "    {{\n      key: {},\n      round: {},\n      name: '',\n      claim: '',\n      cost: '',\n      load: () => import('./variant-{key}'),\n    }},\n",
         quoted(key),
         quoted(round)
     )
 }
 
-/// Write the new round and its empty options into the call source.
-fn add_options(source: &str, round: &str, title: &str, keys: &[String]) -> Result<String, String> {
+/// Write the new round and its empty variants into the call source.
+fn add_variants(source: &str, round: &str, title: &str, keys: &[String]) -> Result<String, String> {
     let with_round = match array_span(source, ROUNDS_HEADER) {
         Some(_) => append_entry(source, ROUNDS_HEADER, &round_block(round, title))?,
         None => {
             let at = source
-                .find(OPTIONS_HEADER)
-                .ok_or_else(|| "The call declares no options.".to_owned())?
+                .find(VARIANTS_HEADER)
+                .ok_or_else(|| "The call declares no variants.".to_owned())?
                 + 1;
 
             format!(
@@ -654,21 +654,21 @@ fn add_options(source: &str, round: &str, title: &str, keys: &[String]) -> Resul
     };
 
     keys.iter().try_fold(with_round, |carried, key| {
-        append_entry(&carried, OPTIONS_HEADER, &option_block(key, round))
+        append_entry(&carried, VARIANTS_HEADER, &variant_block(key, round))
     })
 }
 
-/// Create `count` empty options for a new round of a call: one stub file each, and one entry each
+/// Create `count` empty variants for a new round of a call: one stub file each, and one entry each
 /// in the call file. `name`, `claim` and `cost` stay empty, because only the drawing can argue.
 #[tauri::command]
-pub fn design_add_options(
+pub fn design_add_variants(
     checkout: String,
     slug: String,
     count: u32,
     round_title: String,
-) -> Result<AddedOptions, String> {
+) -> Result<AddedVariants, String> {
     if count == 0 {
-        return Err("Ask for at least one option.".to_owned());
+        return Err("Ask for at least one variant.".to_owned());
     }
 
     let path = call_file(&checkout, &slug)?;
@@ -678,19 +678,19 @@ pub fn design_add_options(
         .to_path_buf();
     let source = std::fs::read_to_string(&path).map_err(|error| format!("Unable to read the call: {error}"))?;
 
-    let used: Vec<String> = parse_options(&source).into_iter().map(|option| option.key).collect();
-    let keys = next_option_keys(&used, count as usize, &dir);
+    let used: Vec<String> = parse_variants(&source).into_iter().map(|variant| variant.key).collect();
+    let keys = next_variant_keys(&used, count as usize, &dir);
     let round = next_round_key(&round_keys(&source));
-    let written = add_options(&source, &round, &round_title, &keys)?;
+    let written = add_variants(&source, &round, &round_title, &keys)?;
 
     for key in &keys {
-        std::fs::write(dir.join(option_file(key)), stub(&slug, key))
-            .map_err(|error| format!("Unable to write {}: {error}", option_file(key)))?;
+        std::fs::write(dir.join(variant_file(key)), stub(&slug, key))
+            .map_err(|error| format!("Unable to write {}: {error}", variant_file(key)))?;
     }
 
     std::fs::write(&path, written).map_err(|error| format!("Unable to write the call: {error}"))?;
 
-    Ok(AddedOptions { round, keys })
+    Ok(AddedVariants { round, keys })
 }
 
 #[cfg(test)]
@@ -713,7 +713,7 @@ export default defineCall({
       note: 'B won.',
     },
   ],
-  options: [
+  variants: [
     {
       key: 'a',
       round: 'r1',
@@ -721,27 +721,27 @@ export default defineCall({
       claim: 'What the app draws today.',
       cost: 'Three of the five characters never change.',
       verdict: 'rejected',
-      load: () => import('./option-a'),
+      load: () => import('./variant-a'),
     },
     {
       key: 'b',
       round: 'r1',
       name: 'B · 3.4rem, the hour alone',
       claim: 'The :00 goes.',
-      load: () => import('./option-b'),
+      load: () => import('./variant-b'),
     },
   ],
 });
 "#;
 
     #[test]
-    fn a_call_reads_its_headline_and_its_options() {
+    fn a_call_reads_its_headline_and_its_variants() {
         let call = parse_call("timetrack/kerbe/09-gutter", CALL);
 
         assert_eq!(call.eyebrow, "Kerbe · call 9");
         assert_eq!(call.headline, "What the clock column costs the day");
         assert_eq!(call.frame_width, 1100);
-        assert_eq!(call.options.len(), 2);
+        assert_eq!(call.variants.len(), 2);
     }
 
     #[test]
@@ -755,7 +755,7 @@ export default defineCall({
 
     #[test]
     fn a_call_that_declares_no_round_reads_none() {
-        assert!(parse_rounds("  options: [\n    {\n      key: 'a',\n    },\n  ],").is_empty());
+        assert!(parse_rounds("  variants: [\n    {\n      key: 'a',\n    },\n  ],").is_empty());
     }
 
     #[test]
@@ -831,58 +831,58 @@ export default defineCall({
     }
 
     #[test]
-    fn an_option_carries_its_claim_and_its_cost() {
-        let options = parse_call("x", CALL).options;
+    fn a_variant_carries_its_claim_and_its_cost() {
+        let variants = parse_call("x", CALL).variants;
 
-        assert_eq!(options[0].claim, "What the app draws today.");
-        assert_eq!(options[0].cost, "Three of the five characters never change.");
-        assert_eq!(options[1].cost, "");
+        assert_eq!(variants[0].claim, "What the app draws today.");
+        assert_eq!(variants[0].cost, "Three of the five characters never change.");
+        assert_eq!(variants[1].cost, "");
     }
 
     #[test]
-    fn a_round_key_is_not_read_as_an_option() {
+    fn a_round_key_is_not_read_as_a_variant() {
         let keys: Vec<String> = parse_call("x", CALL)
-            .options
+            .variants
             .into_iter()
-            .map(|option| option.key)
+            .map(|variant| variant.key)
             .collect();
 
         assert_eq!(keys, vec!["a".to_owned(), "b".to_owned()]);
     }
 
     #[test]
-    fn an_option_carries_its_round_and_its_verdict() {
-        let options = parse_call("x", CALL).options;
+    fn a_variant_carries_its_round_and_its_verdict() {
+        let variants = parse_call("x", CALL).variants;
 
-        assert_eq!(options[0].round.as_deref(), Some("r1"));
-        assert_eq!(options[0].verdict.as_deref(), Some("rejected"));
-        assert_eq!(options[1].verdict, None);
-        assert_eq!(options[1].name, "B · 3.4rem, the hour alone");
+        assert_eq!(variants[0].round.as_deref(), Some("r1"));
+        assert_eq!(variants[0].verdict.as_deref(), Some("rejected"));
+        assert_eq!(variants[1].verdict, None);
+        assert_eq!(variants[1].name, "B · 3.4rem, the hour alone");
     }
 
     #[test]
-    fn a_verdict_lands_on_an_option_that_had_none() {
+    fn a_verdict_lands_on_a_variant_that_had_none() {
         let written = write_verdict(CALL, "b", Some("chosen")).unwrap();
-        let options = parse_call("x", &written).options;
+        let variants = parse_call("x", &written).variants;
 
-        assert_eq!(options[1].verdict.as_deref(), Some("chosen"));
-        assert_eq!(options[0].verdict.as_deref(), Some("rejected"));
-        assert!(written.contains("      verdict: 'chosen',\n      load: () => import('./option-b'),"));
+        assert_eq!(variants[1].verdict.as_deref(), Some("chosen"));
+        assert_eq!(variants[0].verdict.as_deref(), Some("rejected"));
+        assert!(written.contains("      verdict: 'chosen',\n      load: () => import('./variant-b'),"));
     }
 
     #[test]
-    fn a_verdict_replaces_the_one_an_option_had() {
+    fn a_verdict_replaces_the_one_a_variant_had() {
         let written = write_verdict(CALL, "a", Some("chosen")).unwrap();
 
-        assert_eq!(parse_call("x", &written).options[0].verdict.as_deref(), Some("chosen"));
+        assert_eq!(parse_call("x", &written).variants[0].verdict.as_deref(), Some("chosen"));
         assert!(!written.contains("rejected"));
     }
 
     #[test]
-    fn no_verdict_opens_the_option_again() {
+    fn no_verdict_opens_the_variant_again() {
         let written = write_verdict(CALL, "a", None).unwrap();
 
-        assert_eq!(parse_call("x", &written).options[0].verdict, None);
+        assert_eq!(parse_call("x", &written).variants[0].verdict, None);
         assert!(written.contains("      claim: 'What the app draws today.',"));
     }
 
@@ -895,7 +895,7 @@ export default defineCall({
     }
 
     #[test]
-    fn an_unknown_option_is_refused() {
+    fn an_unknown_variant_is_refused() {
         assert!(write_verdict(CALL, "z", Some("chosen")).is_err());
     }
 
@@ -962,7 +962,7 @@ export default defineCall({
 
         let project = design_project(path).unwrap();
 
-        assert_eq!(project.calls[0].options[1].verdict.as_deref(), Some("chosen"));
+        assert_eq!(project.calls[0].variants[1].verdict.as_deref(), Some("chosen"));
 
         std::fs::remove_dir_all(checkout).unwrap();
     }
@@ -976,8 +976,8 @@ export default defineCall({
 
     #[test]
     fn an_array_span_ignores_a_bracket_inside_a_string() {
-        let source = "x\n  options: [\n    { claim: 'a [b] c' },\n  ],\n";
-        let (start, end) = array_span(source, OPTIONS_HEADER).unwrap();
+        let source = "x\n  variants: [\n    { claim: 'a [b] c' },\n  ],\n";
+        let (start, end) = array_span(source, VARIANTS_HEADER).unwrap();
 
         assert!(source[start..end].contains("a [b] c"));
         assert_eq!(&source[end..], "],\n");
@@ -991,7 +991,7 @@ export default defineCall({
 
         let used = vec!["a".to_owned(), "b".to_owned()];
 
-        assert_eq!(next_option_keys(&used, 3, &dir), vec!["c", "d", "e"]);
+        assert_eq!(next_variant_keys(&used, 3, &dir), vec!["c", "d", "e"]);
 
         std::fs::remove_dir_all(dir).unwrap();
     }
@@ -1001,30 +1001,30 @@ export default defineCall({
         let dir = std::env::temp_dir().join(format!("ethlete-studio-{}-orphan", std::process::id()));
 
         std::fs::create_dir_all(&dir).unwrap();
-        std::fs::write(dir.join("option-c.ts"), "").unwrap();
+        std::fs::write(dir.join("variant-c.ts"), "").unwrap();
 
         let used = vec!["a".to_owned(), "b".to_owned()];
 
-        assert_eq!(next_option_keys(&used, 1, &dir), vec!["d"]);
+        assert_eq!(next_variant_keys(&used, 1, &dir), vec!["d"]);
 
         std::fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]
-    fn a_new_round_reads_back_with_its_empty_options() {
+    fn a_new_round_reads_back_with_its_empty_variants() {
         let keys = vec!["c".to_owned(), "d".to_owned()];
-        let written = add_options(CALL, "r2", "How the rail folds", &keys).unwrap();
+        let written = add_variants(CALL, "r2", "How the rail folds", &keys).unwrap();
         let call = parse_call("timetrack/kerbe/09-gutter", &written);
 
         assert_eq!(round_keys(&written), vec!["r1", "r2"]);
-        assert_eq!(call.options.len(), 4);
-        assert_eq!(call.options[2].key, "c");
-        assert_eq!(call.options[2].round.as_deref(), Some("r2"));
-        assert_eq!(call.options[2].name, "");
-        assert_eq!(call.options[2].claim, "");
-        assert!(call.options[3].verdict.is_none());
+        assert_eq!(call.variants.len(), 4);
+        assert_eq!(call.variants[2].key, "c");
+        assert_eq!(call.variants[2].round.as_deref(), Some("r2"));
+        assert_eq!(call.variants[2].name, "");
+        assert_eq!(call.variants[2].claim, "");
+        assert!(call.variants[3].verdict.is_none());
         assert!(written.contains("title: 'How the rail folds'"));
-        assert!(written.contains("load: () => import('./option-d')"));
+        assert!(written.contains("load: () => import('./variant-d')"));
     }
 
     #[test]
@@ -1036,15 +1036,15 @@ export default defineCall({
 
         assert!(array_span(&source, ROUNDS_HEADER).is_none());
 
-        let written = add_options(&source, "r1", "What it asks", &["c".to_owned()]).unwrap();
+        let written = add_variants(&source, "r1", "What it asks", &["c".to_owned()]).unwrap();
 
         assert_eq!(round_keys(&written), vec!["r1"]);
-        assert_eq!(parse_call("x", &written).options.len(), 3);
+        assert_eq!(parse_call("x", &written).variants.len(), 3);
     }
 
     #[test]
     fn a_round_title_that_holds_a_quote_stays_one_string() {
-        let written = add_options(CALL, "r2", "What the day's rail asks", &["c".to_owned()]).unwrap();
+        let written = add_variants(CALL, "r2", "What the day's rail asks", &["c".to_owned()]).unwrap();
 
         assert!(written.contains(r"title: 'What the day\'s rail asks'"));
         assert_eq!(round_keys(&written), vec!["r1", "r2"]);
@@ -1060,11 +1060,11 @@ export default defineCall({
     }
 
     #[test]
-    fn asking_for_options_writes_the_files_and_the_call() {
+    fn asking_for_variants_writes_the_files_and_the_call() {
         let checkout = a_checkout("add");
         let path = checkout.to_string_lossy().into_owned();
 
-        let added = design_add_options(
+        let added = design_add_variants(
             path.clone(),
             "timetrack/kerbe/09-gutter".to_owned(),
             2,
@@ -1077,23 +1077,23 @@ export default defineCall({
 
         let call = checkout.join(".ethlete/design/calls/timetrack/kerbe/09-gutter");
 
-        assert!(call.join("option-c.ts").exists());
-        assert!(call.join("option-d.ts").exists());
+        assert!(call.join("variant-c.ts").exists());
+        assert!(call.join("variant-d.ts").exists());
 
         let project = design_project(path).unwrap();
 
-        assert_eq!(project.calls[0].options.len(), 4);
-        assert_eq!(project.calls[0].options[3].round.as_deref(), Some("r2"));
+        assert_eq!(project.calls[0].variants.len(), 4);
+        assert_eq!(project.calls[0].variants[3].round.as_deref(), Some("r2"));
 
         std::fs::remove_dir_all(checkout).unwrap();
     }
 
     #[test]
-    fn asking_for_no_options_says_so() {
+    fn asking_for_no_variants_says_so() {
         let checkout = a_checkout("none");
         let path = checkout.to_string_lossy().into_owned();
 
-        assert!(design_add_options(path, "timetrack/kerbe/09-gutter".to_owned(), 0, String::new()).is_err());
+        assert!(design_add_variants(path, "timetrack/kerbe/09-gutter".to_owned(), 0, String::new()).is_err());
 
         std::fs::remove_dir_all(checkout).unwrap();
     }

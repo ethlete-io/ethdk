@@ -37,9 +37,9 @@ export const drawing = (drawn: Drawing): Drawing => drawn;
 
 /**
  * One drawn answer to a call. `load` resolves the module whose default export is the
- * drawing that answers it, so a broken option breaks its own frame only.
+ * drawing that answers it, so a broken variant breaks its own frame only.
  */
-export type CallOption = {
+export type CallVariant = {
   key: string;
   name: string;
   /** Left out by a view: a single drawing answers no question, so it argues nothing. */
@@ -53,8 +53,8 @@ export type CallOption = {
 };
 
 /**
- * One pass over a call: the options drawn together, and what came out of them. A round
- * whose options all carry a verdict is settled, and the page folds it down to its winner.
+ * One pass over a call: the variants drawn together, and what came out of them. A round
+ * whose variants all carry a verdict is settled, and the page folds it down to its winner.
  */
 export type CallRound = {
   key: string;
@@ -71,8 +71,8 @@ export type CallRound = {
 export type CallMode = 'wireframe' | 'design';
 
 /**
- * One open question of an exploration, with every option drawn at the same geometry.
- * A call with one option and no claim is a view: one reference picture, drawn full width.
+ * One open question of an exploration, with every variant drawn at the same geometry.
+ * A call with one variant and no claim is a view: one reference picture, drawn full width.
  */
 export type Call = {
   /** The feature this call belongs to, for example 'the hour strip'. Left out by a loose call. */
@@ -80,13 +80,13 @@ export type Call = {
   eyebrow: string;
   headline: string;
   intro: string;
-  /** The width every option frame gets, in px. The geometry the thing ships in. */
+  /** The width every variant frame gets, in px. The geometry the thing ships in. */
   frameWidth: number;
   /** Left out by a call that draws the real thing, which is what `design` means. */
   mode?: CallMode;
   /** Left out by a short call. With rounds, the intro says only what the call is about. */
   rounds?: CallRound[];
-  options: CallOption[];
+  variants: CallVariant[];
 };
 
 export const defineCall = (call: Call): Call => call;

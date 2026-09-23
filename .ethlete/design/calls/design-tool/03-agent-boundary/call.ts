@@ -13,7 +13,7 @@ export default defineCall({
       note: 'The agent drafts calls and precise action lists, while every workspace write or system command waits for explicit approval. Autopilot discovers problems too late; a raw command deck leaves coordination manual.',
     },
   ],
-  options: [
+  variants: [
     {
       key: 'a',
       round: 'r1',
@@ -22,7 +22,7 @@ export default defineCall({
         'The agent researches, draws options, and stages a precise action list; the reviewer approves each state-changing run.',
       cost: 'One approval remains before a write or command, even for trusted work.',
       verdict: 'chosen',
-      load: () => import('./option-a'),
+      load: () => import('./variant-a'),
     },
     {
       key: 'b',
@@ -32,7 +32,7 @@ export default defineCall({
         'The agent can create calls, run checks, and update the workspace continuously; the reviewer reviews its completed work.',
       cost: 'Fastest throughput, but mistakes and noisy changes are discovered after the fact.',
       verdict: 'rejected',
-      load: () => import('./option-b'),
+      load: () => import('./variant-b'),
     },
     {
       key: 'c',
@@ -41,7 +41,7 @@ export default defineCall({
       claim: 'The app exposes system commands and terminals while the human runs every action directly.',
       cost: 'It gains native access but leaves the reviewer doing the coordination work.',
       verdict: 'rejected',
-      load: () => import('./option-c'),
+      load: () => import('./variant-c'),
     },
   ],
 });

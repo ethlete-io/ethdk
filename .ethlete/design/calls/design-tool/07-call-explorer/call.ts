@@ -14,7 +14,7 @@ export default defineCall({
       note: 'B wins. The list a reader works in is the open one, and leading with it keeps that list short however long the project gets. A lost because a feature group with an open call never collapses, so the list still only grows. C lost because a list that reorders itself while you work is a list you cannot learn, and nothing in it says how a feature is doing.',
     },
   ],
-  options: [
+  variants: [
     {
       key: 'a',
       round: 'r1',
@@ -23,7 +23,7 @@ export default defineCall({
         'The feature stays the only grouping, but each group head carries how many of its calls are still open, and a group with nothing open collapses to that one line.',
       cost: 'The call a reader wants can still be the last row of the last group, and a fresh project has no collapsed groups at all.',
       verdict: 'rejected',
-      load: () => import('./option-a'),
+      load: () => import('./variant-a'),
     },
     {
       key: 'b',
@@ -33,7 +33,7 @@ export default defineCall({
         'One Open section leads the sidebar with every unsettled call across all features, each tagged with its feature. The settled calls fold into their feature groups below it.',
       cost: 'A call appears under two headings over its life, so a reader who learnt where it sat has to learn again when it settles.',
       verdict: 'chosen',
-      load: () => import('./option-b'),
+      load: () => import('./variant-b'),
     },
     {
       key: 'c',
@@ -43,7 +43,7 @@ export default defineCall({
         'No groups at all. One list, newest change first, the feature as a small tag on the row, and a filter row above that narrows by feature or by open.',
       cost: 'The list reorders itself while the reader works, and nothing shows how a feature is doing as a whole.',
       verdict: 'rejected',
-      load: () => import('./option-c'),
+      load: () => import('./variant-c'),
     },
   ],
 });

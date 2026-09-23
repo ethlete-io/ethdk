@@ -11,7 +11,7 @@ fn main() {
             "design_project",
             "design_set_verdict",
             "design_set_mode",
-            "design_add_options",
+            "design_add_variants",
             "design_roots",
             "design_roots_add",
             "design_roots_forget",

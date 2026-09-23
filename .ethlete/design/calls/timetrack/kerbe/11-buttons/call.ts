@@ -13,7 +13,7 @@ export default defineCall({
       note: '',
     },
   ],
-  options: [
+  variants: [
     {
       key: 'a',
       round: 'r1',
@@ -21,7 +21,7 @@ export default defineCall({
       claim:
         'The reference‘s own secondary rank, which carries no bracket and no wash: a plate, a 1px hairline frame, square corners. Rank is the frame‘s alpha and nothing else. It is the only one of the four the reference itself judged safe to repeat on a screen.',
       cost: 'Nothing in the row says which control the reader came for, and the set is a hairline away from the placeholder buttons call 10 already drew. The brand shows up as a typeface and a square corner.',
-      load: () => import('./option-a'),
+      load: () => import('./variant-a'),
     },
     {
       key: 'b',
@@ -30,7 +30,7 @@ export default defineCall({
       claim:
         'A, and Add an entry takes the doubled corner bracket at the geometry it was drawn at. The one figure that makes this set art deco marks the one control that does something, and every other button stays a plate.',
       cost: 'Twenty-four hairlines on one button. The arrows are 30px tall, where the inner L and its pip merge into the outer one, so they cannot carry the figure even if they wanted it.',
-      load: () => import('./option-b'),
+      load: () => import('./variant-b'),
     },
     {
       key: 'c',
@@ -39,7 +39,7 @@ export default defineCall({
       claim:
         'B, and Add an entry takes the reference‘s accent with it: the frame and an upward wash in the patina teal the reference gives its primary rank. The control that writes to the day is the only coloured thing in the frame.',
       cost: 'It puts a colour in the palette that Kerbe does not have, and the toolbar becomes the only teal on screen, above a field drawn in ink and one metal.',
-      load: () => import('./option-c'),
+      load: () => import('./variant-c'),
     },
     {
       key: 'd',
@@ -48,7 +48,7 @@ export default defineCall({
       claim:
         'C, and the travelling light: one head runs the button‘s perimeter at half pace and lights each bracket as it passes. It is the reference drawn as the reference drew it, with nothing taken out.',
       cost: 'Something moves forever, in the one frame every call since 5 worked to keep still. A toolbar sits at the top of a day the reader scans past, not at something they are asked to watch.',
-      load: () => import('./option-d'),
+      load: () => import('./variant-d'),
     },
   ],
 });

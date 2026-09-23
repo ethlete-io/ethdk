@@ -203,7 +203,7 @@ main {
   color: var(--h-ink);
 }
 
-/* A folded option keeps its name on the page, so the thread of the round is still readable. */
+/* A folded variant keeps its name on the page, so the thread of the round is still readable. */
 .folded {
   display: flex;
   max-width: 68ch;
@@ -270,7 +270,7 @@ header p {
 }
 
 /*
- * A track is as wide as the frame it holds, so the options wrap to the next band when the window
+ * A track is as wide as the frame it holds, so the variants wrap to the next band when the window
  * runs out of room. Row flow is what lets them wrap: each column takes four rows, so the next one
  * starts beside it and only a full band pushes to a new line.
  */
@@ -386,7 +386,7 @@ header p {
   transform-origin: top left;
 }
 
-/* The contact sheet draws every option at once, so one screen holds the whole call. */
+/* The contact sheet draws every variant at once, so one screen holds the whole call. */
 .grid.sheet {
   --thumb-width: calc(var(--frame-width) * var(--de-scale));
 
@@ -441,7 +441,7 @@ header p {
   outline-offset: 4px;
 }
 
-/* A rejected option stays readable, and comes back to full strength under the pointer. */
+/* A rejected variant stays readable, and comes back to full strength under the pointer. */
 .column[data-verdict='rejected'] {
   opacity: 0.45;
   transition: opacity 0.15s;

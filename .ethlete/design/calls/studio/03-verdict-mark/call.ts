@@ -14,7 +14,7 @@ export default defineCall({
       note: 'C won. The column has to say how far a round has got, and only strength separates all three states without reading anything: a rejected tile falls back to about a third, an open one stands at full strength, and the chosen one carries the accent. B put the state in a hairline, and a dim hairline on a dark panel is close to no hairline at thumbnail size. A dropped the rejected state altogether, so a settled round and an untouched one look the same. The cost stands: a faded picture can no longer be compared with the winner, so a rejected variant has to be opened again to be read.',
     },
   ],
-  options: [
+  variants: [
     {
       key: 'a',
       round: 'r1',
@@ -23,7 +23,7 @@ export default defineCall({
       claim:
         'One tile in the column carries the accent, and it is the winner. Everything else is drawn the same, so the eye finds the result of a settled round in one movement and nothing else asks for attention.',
       cost: 'A rejected tile and an open tile read the same, so the column never says how much of the round is still to rule.',
-      load: () => import('./option-a'),
+      load: () => import('./variant-a'),
     },
     {
       key: 'b',
@@ -33,7 +33,7 @@ export default defineCall({
       claim:
         'The frame around the picture says the state: the accent for chosen, a dim neutral for rejected, none at all for open. The picture is never touched, so two variants stay comparable whatever was ruled about them.',
       cost: 'A hairline at thumbnail size is a small signal, and a dim border on a dark panel is close to no border, so rejected and open are still easy to confuse.',
-      load: () => import('./option-b'),
+      load: () => import('./variant-b'),
     },
     {
       key: 'c',
@@ -43,7 +43,7 @@ export default defineCall({
       claim:
         'A rejected tile drops to about a third of its strength and falls back, an open tile stands at full strength, and the chosen one carries the accent. The three states separate at a glance, even out of the corner of the eye.',
       cost: 'A faded picture is hard to read, so a rejected variant can no longer be compared with the winner without opening it again.',
-      load: () => import('./option-c'),
+      load: () => import('./variant-c'),
     },
   ],
 });

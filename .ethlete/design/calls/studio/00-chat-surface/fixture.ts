@@ -5,25 +5,25 @@ export type Turn =
 export const TURNS: Turn[] = [
   {
     kind: 'ask',
-    text: 'Iterate: option "B · A hairline frame and the change" of the call "How a summary tile carries its number".',
+    text: 'Iterate: variant "B · A hairline frame and the change" of the call "How a summary tile carries its number".',
   },
   { kind: 'act', action: 'Read', detail: 'calls/sandbox/00-stat-tile/call.ts' },
-  { kind: 'act', action: 'Read', detail: 'calls/sandbox/00-stat-tile/option-b.ts' },
+  { kind: 'act', action: 'Read', detail: 'calls/sandbox/00-stat-tile/variant-b.ts' },
   {
     kind: 'say',
     text: 'The frame stays and the change moves onto the number‘s baseline, so a tile is two lines. I drew D, E and F for the new round.',
   },
-  { kind: 'act', action: 'Write', detail: 'calls/sandbox/00-stat-tile/option-d.ts' },
+  { kind: 'act', action: 'Write', detail: 'calls/sandbox/00-stat-tile/variant-d.ts' },
   { kind: 'ask', text: 'D is the one. Draw one more where the change carries no colour at all.' },
-  { kind: 'act', action: 'Read', detail: 'calls/sandbox/00-stat-tile/option-d.ts' },
+  { kind: 'act', action: 'Read', detail: 'calls/sandbox/00-stat-tile/variant-d.ts' },
 ];
 
 /** The action the run is doing right now. A finished run leaves this one out. */
-export const LIVE = { action: 'Write', detail: 'calls/sandbox/00-stat-tile/option-g.ts' };
+export const LIVE = { action: 'Write', detail: 'calls/sandbox/00-stat-tile/variant-g.ts' };
 
 /** What stands in the prompt box, written by a verb and not yet sent. */
 export const DRAFT =
-  'More like this: option "D · The change joins the number" of the call "How a summary tile carries its number".';
+  'More like this: variant "D · The change joins the number" of the call "How a summary tile carries its number".';
 
 /** The conversation this call continues, and how full it is. */
 export const SESSION = { id: 'd7afca82', tokens: 152_000, limit: 200_000 };

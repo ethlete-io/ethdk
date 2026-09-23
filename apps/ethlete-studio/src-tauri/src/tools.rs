@@ -99,12 +99,12 @@ impl ToolContext {
     }
 
     fn variant_file(&self) -> PathBuf {
-        self.dir().join(format!("option-{}.ts", self.variant))
+        self.dir().join(format!("variant-{}.ts", self.variant))
     }
 
     fn frame_url(&self) -> String {
         format!(
-            "http://localhost:{}/frame.html?call={}&option={}",
+            "http://localhost:{}/frame.html?call={}&variant={}",
             self.port, self.call, self.variant
         )
     }
@@ -137,8 +137,8 @@ pub struct CheckReceipt {
 
 /// What the last check said about one variant, or `None` when no run ever checked it.
 #[tauri::command]
-pub fn design_check(checkout: String, slug: String, option: String) -> Option<CheckReceipt> {
-    let source = std::fs::read_to_string(receipt_path(&checkout, &slug, &option)).ok()?;
+pub fn design_check(checkout: String, slug: String, variant: String) -> Option<CheckReceipt> {
+    let source = std::fs::read_to_string(receipt_path(&checkout, &slug, &variant)).ok()?;
 
     serde_json::from_str(&source).ok()
 }
@@ -264,7 +264,7 @@ fn check_call(context: &ToolContext) -> Result<String, String> {
         .arg("--tsconfig")
         .arg("--call")
         .arg(&context.call)
-        .arg("--option")
+        .arg("--variant")
         .arg(&context.variant)
         .output()
         .map_err(|error| format!("Unable to run {}: {error}", entry.display()))?;

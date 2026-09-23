@@ -1,12 +1,12 @@
-import { AddedOptions, Call, CallMode, CallOption } from '../../host/design';
+import { AddedVariants, Call, CallMode, CallVariant } from '../../host/design';
 
 /** The file a full session writes its state into, next to the call it worked on. */
 export const HANDOFF_FILE = 'handoff.md';
 
-/** What the user wants to happen next to one option. A verb never runs the agent on its own. */
+/** What the user wants to happen next to one variant. A verb never runs the agent on its own. */
 export type Verb = 'accept' | 'iterate' | 'reject' | 'more';
 
-/** The verdict a verb writes back to the call file. A verb without one leaves the option as it is. */
+/** The verdict a verb writes back to the call file. A verb without one leaves the variant as it is. */
 export const verdictOf = (verb: Verb) => {
   if (verb === 'accept') return 'chosen' as const;
   if (verb === 'reject') return 'rejected' as const;
@@ -21,26 +21,26 @@ export const verbLabel: Record<Verb, string> = {
   more: 'More like this',
 };
 
-/** Which option of which call the draft is about, and where the call file is. */
+/** Which variant of which call the draft is about, and where the call file is. */
 export type DraftSubject = {
   call: Call;
-  option: CallOption;
+  variant: CallVariant;
   dir: string;
   /** What Studio created for the round this verb opened. Left out by a verb that opens none. */
-  made?: AddedOptions | null;
-  /** What the user wrote on the compose card, under the verb and the option it names. */
+  made?: AddedVariants | null;
+  /** What the user wrote on the compose card, under the verb and the variant it names. */
   message?: string;
 };
 
 /**
- * What a verb press fixed. The option it names is stated on the compose card, so a draft left
+ * What a verb press fixed. The variant it names is stated on the compose card, so a draft left
  * waiting keeps its subject even when the reader opens another variant.
  */
 export type Compose = Omit<DraftSubject, 'made' | 'message'> & { verb: Verb; round: string };
 
 const task: Record<Verb, string> = {
   accept:
-    'Carry this option into the app. Keep what the claim promises, and say in your answer what you did about the cost.',
+    'Carry this variant into the app. Keep what the claim promises, and say in your answer what you did about the cost.',
   iterate: 'Draw a new round that keeps the claim and answers the cost.',
   reject:
     'This direction is closed. Draw a new round that answers the same question another way, and say in each claim how it avoids the cost above.',
@@ -90,23 +90,23 @@ const modeRules: Record<CallMode, string[]> = {
 export const opensARound = (verb: Verb) => verb !== 'accept';
 
 /** What Studio already wrote for a new round, so the run spends its budget on the drawing alone. */
-const boilerplate = (dir: string, made: AddedOptions) => [
+const boilerplate = (dir: string, made: AddedVariants) => [
   '',
-  `Studio already opened round ${made.round} and created one empty component per option:`,
-  ...made.keys.map((key) => `- ${dir}/option-${key}.ts`),
+  `Studio already opened round ${made.round} and created one empty component per variant:`,
+  ...made.keys.map((key) => `- ${dir}/variant-${key}.ts`),
   'Draw into those files. Each one holds a component with an empty template and empty styles.',
-  'Add no option to the call file: the entries are there. Write only the name, the claim and the',
-  'cost of each new option into it, and the note of the round once the user has ruled.',
+  'Add no variant to the call file: the entries are there. Write only the name, the claim and the',
+  'cost of each new variant into it, and the note of the round once the user has ruled.',
 ];
 
-/** The prompt a verb sends. The verb and the option it names are fixed at the press. */
-export const promptDraft = ({ call, option, dir, made, message }: DraftSubject, verb: Verb) =>
+/** The prompt a verb sends. The verb and the variant it names are fixed at the press. */
+export const promptDraft = ({ call, variant, dir, made, message }: DraftSubject, verb: Verb) =>
   [
-    `${verbLabel[verb]}: option "${option.name}" of the call "${call.headline}".`,
+    `${verbLabel[verb]}: variant "${variant.name}" of the call "${call.headline}".`,
     '',
     `The call file: ${dir}/call.ts`,
-    `The claim: ${option.claim || '(none written)'}`,
-    `The cost: ${option.cost || '(none written)'}`,
+    `The claim: ${variant.claim || '(none written)'}`,
+    `The cost: ${variant.cost || '(none written)'}`,
     '',
     ...(call.handoff ? [`Read ${dir}/${HANDOFF_FILE}: an earlier session of this call wrote down what it knew.`] : []),
     task[verb],

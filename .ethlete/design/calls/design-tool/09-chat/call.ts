@@ -14,7 +14,7 @@ export default defineCall({
       note: 'C wins. A verdict that is stated on the card, not typed into a line, is the one thing a draft left waiting must not get wrong: the variant the verb named is fixed at the press and cannot drift when the reader picks another tile. A lost on exactly that drift. B lost because its head repeats the tile column and takes a third of the height from a conversation that only grows.',
     },
   ],
-  options: [
+  variants: [
     {
       key: 'a',
       round: 'r1',
@@ -23,7 +23,7 @@ export default defineCall({
         'The column is the conversation and nothing else. A verb press writes its opening words into the input at the foot, puts the caret after them, and the reader finishes the sentence and sends.',
       cost: 'Nothing in the column says which variant the verb named, so a draft that waits while the reader picks a different tile now means something else.',
       verdict: 'rejected',
-      load: () => import('./option-a'),
+      load: () => import('./variant-a'),
     },
     {
       key: 'b',
@@ -33,7 +33,7 @@ export default defineCall({
         'A fixed head above the conversation carries the open call, the round, and every variant with its verdict. The verb still drafts into the input, but the column says at all times where the call stands.',
       cost: 'The head repeats what the tile column already shows, and it takes a third of the height from a conversation that only grows.',
       verdict: 'rejected',
-      load: () => import('./option-b'),
+      load: () => import('./variant-b'),
     },
     {
       key: 'c',
@@ -43,7 +43,7 @@ export default defineCall({
         'A verb press opens a card at the foot holding the verb, the variant it names and a free text box. The message is built as a form, so what it rules is fixed the moment the verb is pressed.',
       cost: 'A plain remark now needs the card dismissed first, so the cheapest thing to say is the one thing the column makes hardest.',
       verdict: 'chosen',
-      load: () => import('./option-c'),
+      load: () => import('./variant-c'),
     },
   ],
 });

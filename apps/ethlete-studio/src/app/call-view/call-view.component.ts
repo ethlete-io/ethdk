@@ -16,15 +16,15 @@ import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
 import { EMPTY, Subscription, catchError, debounceTime, finalize, map, of, switchMap, tap } from 'rxjs';
 import { AgentDescriptor, AgentEvent, AgentTools, agentList$, agentRun$ } from '../../host/agent';
 import {
-  AddedOptions,
+  AddedVariants,
   Call,
   CallMode,
-  CallOption,
+  CallVariant,
   Project,
   ServerState,
   Verdict,
   designCheck$,
-  designAddOptions$,
+  designAddVariants$,
   designChanges$,
   designProject$,
   designServerStart$,
@@ -36,7 +36,7 @@ import {
 } from '../../host/design';
 import { Compose, Verb, handoffDraft, opensARound, promptDraft, verbLabel, verdictOf } from './prompt-draft';
 import {
-  openOptions,
+  openVariants,
   projectOf,
   projectSummaries,
   roundPips,
@@ -123,7 +123,7 @@ const SETTLE_MS = 300;
                       <i [class.studio__pip--settled]="settled" class="studio__pip"></i>
                     }
                   </span>
-                  <span class="studio__count">{{ settled(call) }} of {{ call.options.length }}</span>
+                  <span class="studio__count">{{ settled(call) }} of {{ call.variants.length }}</span>
                 </span>
               </button>
             } @empty {
@@ -165,7 +165,7 @@ const SETTLE_MS = 300;
                               <i [class.studio__pip--settled]="settled" class="studio__pip"></i>
                             }
                           </span>
-                          <span class="studio__count">{{ settled(call) }} of {{ call.options.length }}</span>
+                          <span class="studio__count">{{ settled(call) }} of {{ call.variants.length }}</span>
                         </span>
                       </button>
                     }
@@ -183,10 +183,10 @@ const SETTLE_MS = 300;
         } @else if (call(); as open) {
           <ng-template #tileCard let-tile>
             <button
-              [class.studio__tile--current]="tile.key === optionKey()"
+              [class.studio__tile--current]="tile.key === variantKey()"
               [class.studio__tile--chosen]="tile.verdict === 'chosen'"
               [class.studio__tile--rejected]="tile.verdict === 'rejected'"
-              (click)="openOption(tile)"
+              (click)="openVariant(tile)"
               class="studio__tile"
               type="button"
             >
@@ -202,7 +202,7 @@ const SETTLE_MS = 300;
                     title="The variant, drawn small"
                   ></iframe>
                 }
-                @if (tile.key === optionKey()) {
+                @if (tile.key === variantKey()) {
                   <span class="studio__tile-tag">on screen</span>
                 } @else if (tile.verdict === 'chosen') {
                   <span class="studio__tile-tag studio__tile-tag--chosen">chosen</span>
@@ -253,15 +253,15 @@ const SETTLE_MS = 300;
           </aside>
 
           <div class="studio__canvas">
-            @if (option(); as drawn) {
+            @if (variant(); as drawn) {
               <div class="studio__stage">
                 <div [style.width]="frameWidth()" class="studio__frame">
                   @for (frame of frames(); track frame.key) {
                     <iframe
                       [src]="frame.source"
-                      [class.studio__drawing--off]="frame.key !== optionKey()"
+                      [class.studio__drawing--off]="frame.key !== variantKey()"
                       class="studio__drawing"
-                      title="The drawn option"
+                      title="The drawn variant"
                     ></iframe>
                   }
                 </div>
@@ -305,8 +305,8 @@ const SETTLE_MS = 300;
                 </div>
 
                 <div class="studio__bar">
-                  <div class="studio__option">
-                    <b [class.studio__option--chosen]="drawn.verdict === 'chosen'">{{ drawn.name }}</b>
+                  <div class="studio__variant">
+                    <b [class.studio__variant--chosen]="drawn.verdict === 'chosen'">{{ drawn.name }}</b>
                     <span class="studio__check">
                       <i [class.studio__dot--off]="!check()" class="studio__dot"></i>
                       {{ checkLine() }}
@@ -406,7 +406,7 @@ const SETTLE_MS = 300;
               <div class="studio__field">
                 <span class="studio__field-label">Option</span>
                 <div class="studio__stated">
-                  <span>{{ open.option.name }}</span>
+                  <span>{{ open.variant.name }}</span>
                   <span class="studio__stated-round">{{ open.round }}</span>
                 </div>
                 <span class="studio__fixed">stated by the verb press, not typed</span>
@@ -581,7 +581,7 @@ export class CallViewComponent {
   public checkout = signal('');
   protected project = signal('');
   protected slug = signal('');
-  protected optionKey = signal('');
+  protected variantKey = signal('');
   protected trouble = signal('');
   protected prompt = signal('');
   protected model = signal('');
@@ -632,13 +632,13 @@ export class CallViewComponent {
       computed(() => ({
         checkout: this.checkout(),
         slug: this.slug(),
-        option: this.optionKey(),
+        variant: this.variantKey(),
         seen: this.checkEpoch(),
       })),
     ).pipe(
-      switchMap(({ checkout, slug, option }) =>
-        checkout && slug && option
-          ? designCheck$({ checkout, slug, option }).pipe(catchError(() => of(null)))
+      switchMap(({ checkout, slug, variant }) =>
+        checkout && slug && variant
+          ? designCheck$({ checkout, slug, variant }).pipe(catchError(() => of(null)))
           : of(null),
       ),
     ),
@@ -687,13 +687,13 @@ export class CallViewComponent {
 
   protected call = computed(() => this.calls().find((call) => call.slug === this.slug()) ?? null);
 
-  protected option = computed(() => this.call()?.options.find((o) => o.key === this.optionKey()) ?? null);
+  protected variant = computed(() => this.call()?.variants.find((o) => o.key === this.variantKey()) ?? null);
 
   protected address = computed(() => {
     const port = this.design()?.port;
-    const option = this.option();
+    const variant = this.variant();
 
-    return port && option ? frameUrl({ port, slug: this.slug(), option: option.key }) : '';
+    return port && variant ? frameUrl({ port, slug: this.slug(), variant: variant.key }) : '';
   });
 
   protected checkLine = computed(() => {
@@ -712,17 +712,17 @@ export class CallViewComponent {
 
   protected roundLabel = computed(() => {
     const call = this.call();
-    const round = this.option()?.round;
+    const round = this.variant()?.round;
 
     if (!call || !round) return '';
 
-    const rounds = [...new Set(call.options.map((option) => option.round).filter(Boolean))];
+    const rounds = [...new Set(call.variants.map((variant) => variant.round).filter(Boolean))];
 
     return `Round ${rounds.indexOf(round) + 1}`;
   });
 
   /**
-   * One frame per option of the open call, all of them loaded. Switching an option changes which
+   * One frame per variant of the open call, all of them loaded. Switching a variant changes which
    * one is opaque, so a drawing never reloads. The list changes only with the call itself, which is
    * what keeps each `src` stable across a redraw.
    */
@@ -734,10 +734,10 @@ export class CallViewComponent {
 
     const epoch = this.epoch();
 
-    return call.options.map((option) => ({
-      key: option.key,
+    return call.variants.map((variant) => ({
+      key: variant.key,
       source: this.sanitizer.bypassSecurityTrustResourceUrl(
-        frameUrl({ port, slug: call.slug, option: option.key, epoch }),
+        frameUrl({ port, slug: call.slug, variant: variant.key, epoch }),
       ),
     }));
   });
@@ -752,7 +752,7 @@ export class CallViewComponent {
 
     const sources = new Map(this.frames().map((frame) => [frame.key, frame.source]));
 
-    return call.options.map((option) => ({ ...option, source: sources.get(option.key) ?? null }));
+    return call.variants.map((variant) => ({ ...variant, source: sources.get(variant.key) ?? null }));
   });
 
   /**
@@ -824,11 +824,11 @@ export class CallViewComponent {
   /** What the run can reach through Studio's own tool server. A run without an open variant gets none. */
   private tools = computed<AgentTools | null>(() => {
     const design = this.design();
-    const option = this.option();
+    const variant = this.variant();
 
-    if (!design || !option) return null;
+    if (!design || !variant) return null;
 
-    return { call: this.slug(), variant: option.key, port: design.port, callsRoot: design.callsRoot };
+    return { call: this.slug(), variant: variant.key, port: design.port, callsRoot: design.callsRoot };
   });
 
   private callDir = computed(() => {
@@ -847,7 +847,7 @@ export class CallViewComponent {
   }
 
   protected settled(call: Call) {
-    return call.options.length - openOptions(call);
+    return call.variants.length - openVariants(call);
   }
 
   protected touched(call: Call) {
@@ -933,21 +933,21 @@ export class CallViewComponent {
   protected closeProject() {
     this.project.set('');
     this.slug.set('');
-    this.optionKey.set('');
+    this.variantKey.set('');
     rememberView({ project: '' });
   }
 
-  protected openCall(call: Call, option = call.options[0]?.key ?? '') {
+  protected openCall(call: Call, variant = call.variants[0]?.key ?? '') {
     this.dismiss();
     this.fold.set(null);
     this.slug.set(call.slug);
-    this.optionKey.set(option);
-    rememberView({ checkout: this.checkout(), slug: call.slug, option });
+    this.variantKey.set(variant);
+    rememberView({ checkout: this.checkout(), slug: call.slug, variant });
   }
 
-  protected openOption(option: CallOption) {
-    this.optionKey.set(option.key);
-    rememberView({ checkout: this.checkout(), slug: this.slug(), option: option.key });
+  protected openVariant(variant: CallVariant) {
+    this.variantKey.set(variant.key);
+    rememberView({ checkout: this.checkout(), slug: this.slug(), variant: variant.key });
   }
 
   public pick(cli: AgentDescriptor | null) {
@@ -968,11 +968,11 @@ export class CallViewComponent {
   /** Opens the compose card. Nothing is written and nothing is sent until the card's Send. */
   protected draft(verb: Verb) {
     const call = this.call();
-    const option = this.option();
+    const variant = this.variant();
 
-    if (!call || !option) return;
+    if (!call || !variant) return;
 
-    this.compose.set({ verb, call, option, dir: this.callDir(), round: this.roundLabel() });
+    this.compose.set({ verb, call, variant, dir: this.callDir(), round: this.roundLabel() });
     this.message.set('');
     this.question.set('');
   }
@@ -995,7 +995,7 @@ export class CallViewComponent {
 
     this.making.set(true);
 
-    designAddOptions$({
+    designAddVariants$({
       checkout: this.checkout(),
       slug: open.call.slug,
       count: this.count(),
@@ -1018,8 +1018,8 @@ export class CallViewComponent {
       .subscribe();
   }
 
-  protected write(option: CallOption, verdict: Verdict | null) {
-    designSetVerdict$({ checkout: this.checkout(), slug: this.slug(), option: option.key, verdict })
+  protected write(variant: CallVariant, verdict: Verdict | null) {
+    designSetVerdict$({ checkout: this.checkout(), slug: this.slug(), variant: variant.key, verdict })
       .pipe(
         switchMap(() => designProject$(this.checkout())),
         tap((design) => this.design.set(design)),
@@ -1143,12 +1143,12 @@ export class CallViewComponent {
       .subscribe();
   }
 
-  private fire({ verb, call, option, dir }: Compose, made: AddedOptions | null) {
+  private fire({ verb, call, variant, dir }: Compose, made: AddedVariants | null) {
     const verdict = verdictOf(verb);
 
-    if (verdict) this.write(option, verdict);
+    if (verdict) this.write(variant, verdict);
 
-    this.prompt.set(promptDraft({ call, option, dir, made, message: this.message().trim() }, verb));
+    this.prompt.set(promptDraft({ call, variant, dir, made, message: this.message().trim() }, verb));
     this.dismiss();
     this.send();
   }
@@ -1251,12 +1251,12 @@ export class CallViewComponent {
     this.openIn({
       project: remembered.project ?? '',
       wanted: remembered.slug ?? design.defaultCall ?? '',
-      option: remembered.option,
+      variant: remembered.variant,
     });
   }
 
   /** Opens the wanted call of a project, or the project's first call when the wanted one is gone. */
-  private openIn({ project, wanted, option }: { project: string; wanted: string; option?: string }) {
+  private openIn({ project, wanted, variant }: { project: string; wanted: string; variant?: string }) {
     if (!project) return;
 
     const inProject = this.calls().filter((entry) => projectOf(entry) === project);
@@ -1264,7 +1264,7 @@ export class CallViewComponent {
 
     if (!call) return;
 
-    this.openCall(call, call.options.some((entry) => entry.key === option) ? option : undefined);
+    this.openCall(call, call.variants.some((entry) => entry.key === variant) ? variant : undefined);
   }
 
   /** A frame only draws once the port answers, so a checkout without a server gets one. */

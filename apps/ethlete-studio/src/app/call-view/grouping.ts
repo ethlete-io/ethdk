@@ -7,7 +7,7 @@ export type ProjectSummary = {
   open: number;
 };
 
-export const openOptions = (call: Call) => call.options.filter((option) => !option.verdict).length;
+export const openVariants = (call: Call) => call.variants.filter((variant) => !variant.verdict).length;
 
 /** The project a call belongs to. */
 export const projectOf = (call: Call) => call.slug.split('/')[0] ?? '';
@@ -36,17 +36,17 @@ export const callList = ({ calls, project, term }: CallListRequest): Call[] => {
 /** Every call that still has an open variant, the most recently written first. */
 export const unsettledCalls = (request: CallListRequest): Call[] =>
   callList(request)
-    .filter((call) => openOptions(call) > 0)
+    .filter((call) => openVariants(call) > 0)
     .sort((left, right) => right.touched - left.touched);
 
-/** Every round of a call, in the order its options declare them, each saying whether it is settled. */
+/** Every round of a call, in the order its variants declare them, each saying whether it is settled. */
 export const roundPips = (call: Call): boolean[] => {
   const rounds = new Map<string, boolean>();
 
-  for (const option of call.options) {
-    const key = option.round ?? option.key;
+  for (const variant of call.variants) {
+    const key = variant.round ?? variant.key;
 
-    rounds.set(key, (rounds.get(key) ?? true) && !!option.verdict);
+    rounds.set(key, (rounds.get(key) ?? true) && !!variant.verdict);
   }
 
   return [...rounds.values()];
@@ -94,7 +94,7 @@ export const featureGroups = (request: CallListRequest): FeatureGroup[] => {
   }
 
   return [...found.entries()]
-    .map(([name, calls]) => ({ name, open: calls.filter((call) => openOptions(call) > 0).length, calls }))
+    .map(([name, calls]) => ({ name, open: calls.filter((call) => openVariants(call) > 0).length, calls }))
     .sort((left, right) => rank(left.name) - rank(right.name) || left.name.localeCompare(right.name));
 };
 
@@ -102,7 +102,7 @@ const rank = (name: string) => (name === LOOSE_FEATURE ? 1 : 0);
 
 /** The settled half of the explorer: every call with no open variant left, grouped by feature. */
 export const settledGroups = (request: CallListRequest): FeatureGroup[] =>
-  featureGroups({ ...request, calls: request.calls.filter((call) => openOptions(call) === 0) });
+  featureGroups({ ...request, calls: request.calls.filter((call) => openVariants(call) === 0) });
 
 /** Every project of a checkout, by name, as the welcome screen lists them. */
 export const projectSummaries = (calls: Call[]): ProjectSummary[] => {
@@ -118,7 +118,7 @@ export const projectSummaries = (calls: Call[]): ProjectSummary[] => {
     .map(([name, entries]) => ({
       name,
       calls: entries.length,
-      open: entries.filter((call) => openOptions(call) > 0).length,
+      open: entries.filter((call) => openVariants(call) > 0).length,
     }))
     .sort((left, right) => left.name.localeCompare(right.name));
 };
