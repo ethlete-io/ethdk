@@ -22,7 +22,9 @@ import {
   QueryFormChange,
   QueryFormFields,
   QueryFormModel,
+  QueryFormPersistence,
   QueryFormSignalsObserveOptions,
+  QueryFormStorage,
   QueryFormSignalsWriteOptions,
 } from './query-form-signals.types';
 
@@ -133,6 +135,37 @@ const normalizeLive = (fieldDefs: QueryFormFields, rawLive: Dict, defaults: Dict
   }
 
   return live;
+};
+
+const resolveStorage = (storage: QueryFormPersistence['storage']): QueryFormStorage | null => {
+  if (typeof storage !== 'string') return storage;
+
+  try {
+    if (typeof globalThis.window === 'undefined') return null;
+
+    return (storage === 'session' ? globalThis.sessionStorage : globalThis.localStorage) ?? null;
+  } catch {
+    return null;
+  }
+};
+
+const readStoredParams = (persistence: QueryFormPersistence): Dict | null => {
+  try {
+    const raw = resolveStorage(persistence.storage)?.getItem(persistence.key);
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Dict) : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeStoredParams = (persistence: QueryFormPersistence, params: Dict) => {
+  try {
+    resolveStorage(persistence.storage)?.setItem(persistence.key, JSON.stringify(params));
+  } catch {
+    return;
+  }
 };
 
 const computeFilterCount = (fields: QueryFormFields, value: Dict, defaults: Dict) => {
@@ -491,6 +524,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
   const skipResetsFor = new Set<string>();
   let skipNextResetsFor: ReadonlySet<string> | undefined;
   let urlWriteVersion = 0;
+  let changesSeenAtObserve: unknown;
   const urlNavigationMarker = {};
   const pathOf = (tree: UrlTree) => router.serializeUrl(tree).split(/[?#]/)[0];
 
@@ -521,6 +555,47 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
     if (Array.isArray(value) && value.length === 0) return ET_EMPTY_ARRAY_VALUE;
 
     return value === null ? ET_NULL_VALUE : value;
+  };
+
+  const persistedKeys = () => {
+    const keys = observeOptions?.persistence?.fields ?? Object.keys(fieldDefs);
+
+    return keys.filter((key) => key in fieldDefs);
+  };
+
+  const persist = () => {
+    const persistence = observeOptions?.persistence;
+
+    if (!persistence || !observing()) return;
+
+    const value = committed() as Dict;
+    const stored: Dict = {};
+
+    for (const key of persistedKeys()) {
+      if (equal(value[key], defaults[key])) continue;
+
+      stored[key] = serialize(key, fieldDefs[key] as QueryFieldDef<unknown>, value[key]);
+    }
+
+    writeStoredParams(persistence, stored);
+  };
+
+  const restoreFromStorage = (persistence: QueryFormPersistence, urlParams: Dict) => {
+    const keys = persistedKeys();
+
+    if (keys.some((key) => urlParams[paramKey(key)] !== undefined)) return;
+
+    const stored = readStoredParams(persistence);
+
+    if (!stored) return;
+
+    const params: Dict = {};
+
+    for (const key of keys) {
+      if (stored[key] !== undefined) params[paramKey(key)] = stored[key];
+    }
+
+    applyFromUrl(params, { base: model() as Dict });
   };
 
   const deserialize = (def: QueryFieldDef<unknown>, raw: unknown): unknown => {
@@ -623,6 +698,8 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
     if (observing() && observeOptions?.writeToQueryParams !== false) {
       writeToUrl(next);
     }
+
+    persist();
   };
 
   const onLiveChange = (live: Dict) => {
@@ -659,6 +736,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
     committed.set(clone(next) as QueryFormModel<TFields>);
     // Feed the URL value into the live model & bound controls; the effect no-ops (model === committed).
     model.set(clone(next) as QueryFormModel<TFields>);
+    persist();
   };
 
   const applyFromUrl = (params: Dict, options?: { base?: Dict; onlyFieldsTheFormNeverWrites?: boolean }) => {
@@ -765,6 +843,11 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
 
       observeOptions = options;
       observing.set(true);
+      changesSeenAtObserve = untracked(queryParamChanges);
+
+      if (options?.persistence) {
+        restoreFromStorage(options.persistence, route.snapshot.queryParams as Dict);
+      }
 
       if (options?.syncOnNavigation !== false) {
         // A value written before `observe()` sits in the model only, so the URL merges onto the model
@@ -786,6 +869,8 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
       if (options?.writeToQueryParams !== false && writesAnyParam) {
         writeToUrl(committed() as Dict);
       }
+
+      persist();
 
       return queryForm;
     },
@@ -828,6 +913,10 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
 
     untracked(() => {
       if (!observing() || observeOptions?.syncOnNavigation === false) return;
+
+      // The changes are shared app-wide, so the diff present at `observe()` describes a navigation this
+      // form never saw - applying its removals would wipe a restored or seeded value.
+      if (changes === changesSeenAtObserve) return;
 
       const info = router.lastSuccessfulNavigation()?.extras.info as
         { queryForm?: object; version?: number } | undefined;

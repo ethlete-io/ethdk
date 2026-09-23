@@ -172,6 +172,7 @@ it rather than repeat it.
 | `writeToQueryParams` | `true`  | Sync the committed value to the URL.                           |
 | `syncOnNavigation`   | `true`  | Apply URL → form on navigation (back/forward, external links). |
 | `replaceUrl`         | `false` | Replace the history entry instead of pushing a new one.        |
+| `persistence`        | -       | Keep the value in a storage - see [Persistence](#persistence). |
 
 While a navigation to **another route** is in flight, the form skips its URL write
 entirely - superseding it would resolve that navigation `false` and drop the landing
@@ -194,6 +195,36 @@ Serialization rules:
 defineQueryForm({ fields: { page: queryField<number>({ defaultValue: 1 }) }, queryParamPrefix: 'users' });
 // → ?users-page=2
 ```
+
+## Persistence
+
+A list that should come back the way the user left it - after a reload, or a
+visit to a detail page and back through a plain link - opts in with `persistence`:
+
+```ts
+qf = defineQueryForm({ fields: PLAYER_LIST_FIELDS }).observe({
+  persistence: { key: 'players-list', storage: 'session', fields: ['search', 'sort', 'filter', 'page'] },
+});
+```
+
+- Every commit writes the persisted fields to `storage` under `key`, serialized the
+  way the URL serializes them (a field at its default is left out).
+- `observe()` restores them - before the first commit, so the first request carries
+  them - **only when the URL carries none of the persisted fields**. A URL asks for
+  one exact list; merging stored state into it would show something its sender
+  never saw.
+- `fields` names what is persisted and what the URL is checked for; it defaults to
+  every field. A field left out (e.g. a layout toggle) neither restores nor blocks a
+  restore.
+- `storage` is `'session'`, `'local'`, or any object with `getItem(key)` and
+  `setItem(key, value)` (`QueryFormStorage`). The two strings resolve to the
+  browser's Web Storage and to nothing on the server. A storage that throws (a
+  privacy mode, a full quota) or holds unreadable data is ignored.
+- Restored values go through each field's `queryParamToValue`, like a URL, so a
+  stale entry is coerced or dropped the same way a stale link would be. To
+  invalidate old entries after a field change, change the `key`.
+
+Nothing is persisted without the option.
 
 ## Seeing a form in the devtools
 
@@ -266,6 +297,7 @@ By default it shares the source form's injector lifetime. Code that creates a br
 | `QueryFormBranch<TFields>`       | What [`branch()`](#filter-overlays) returns.                                                                                                           |
 | `DefineQueryFormConfig<TFields>` | The argument of `defineQueryForm`.                                                                                                                     |
 | `QueryFormSignalsObserveOptions` | The argument of [`observe()`](#url-sync); `QueryFormSignalsWriteOptions` is the `{ skipResets, debounce }` bag the write methods take.                 |
+| `QueryFormPersistence`           | The [`persistence`](#persistence) option; `QueryFormStorage` is the `getItem`/`setItem` storage it accepts.                                            |
 | `QueryFormBranchWriteOptions`    | The `{ debounce }` bag a branch's write methods take.                                                                                                  |
 | `Sort`, `SortDirection`          | The sort field's value (`{ active, direction }`) and its `'asc' \| 'desc' \| ''` direction.                                                            |
 

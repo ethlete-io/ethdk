@@ -125,6 +125,36 @@ export type QueryFormSignalsObserveOptions = {
    * @default false
    */
   readonly replaceUrl?: boolean;
+
+  /**
+   * Keep the committed value in a storage and restore it when the URL carries none of the persisted fields.
+   * Off unless set.
+   */
+  readonly persistence?: QueryFormPersistence;
+};
+
+/**
+ * The storage a query form persists into. `sessionStorage` and `localStorage` satisfy it. Both methods are
+ * synchronous and may throw; the form swallows the error.
+ */
+export type QueryFormStorage = {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+};
+
+/** Where and what a query form persists - the `persistence` option of `observe()`. */
+export type QueryFormPersistence = {
+  /** The storage key. Scope it per list, e.g. `'players-list'`. */
+  readonly key: string;
+
+  /**
+   * `'session'` or `'local'` resolve to the browser's Web Storage, and to nothing on the server. Pass your own
+   * {@link QueryFormStorage} for anything else.
+   */
+  readonly storage: 'session' | 'local' | QueryFormStorage;
+
+  /** The fields to persist and to check the URL for. Defaults to every field. */
+  readonly fields?: readonly string[];
 };
 
 /**
