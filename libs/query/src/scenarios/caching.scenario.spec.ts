@@ -190,6 +190,69 @@ describe('caching scenario', () => {
     });
   });
 
+  describe('a client-level cacheAdapter', () => {
+    const scenario = useScenario({
+      clientOptions: {
+        keepUnusedFor: 0,
+        cacheAdapter: (headers) => {
+          const ttl = headers.get('x-ttl');
+
+          return ttl === null ? null : Number(ttl);
+        },
+      },
+    });
+
+    it('derives the freshness window from the headers the adapter reads', () => {
+      const s = scenario();
+      s.api.on(
+        'GET',
+        '/adapted',
+        sequence([
+          { body: { n: 1 }, headers: { 'x-ttl': '30' } },
+          { body: { n: 2 }, headers: { 'x-ttl': '30' } },
+        ]),
+      );
+
+      const getAdapted = s.get<{ response: { n: number } }>('/adapted');
+
+      const c = s.consumer();
+      const query = c.run(() => getAdapted());
+      s.tick();
+
+      s.tick(29_000);
+      query.execute({ options: { allowCache: true } });
+      s.tick();
+      expect(s.api.requestCount('GET', '/adapted')).toBe(1);
+      expect(query.response()).toEqual({ n: 1 });
+
+      s.tick(1_001);
+      query.execute({ options: { allowCache: true } });
+      s.tick();
+      expect(s.api.requestCount('GET', '/adapted')).toBe(2);
+      expect(query.response()).toEqual({ n: 2 });
+
+      c.destroy();
+    });
+
+    it('replaces the cache-control reading, so a response the adapter rates null is never fresh', () => {
+      const s = scenario();
+      s.api.on('GET', '/uncached', () => ({ body: { n: 1 }, headers: { 'cache-control': 'max-age=600' } }));
+
+      const getUncached = s.get<{ response: { n: number } }>('/uncached');
+
+      const c = s.consumer();
+      const query = c.run(() => getUncached());
+      s.tick();
+
+      s.tick(1_000);
+      query.execute({ options: { allowCache: true } });
+      s.tick();
+      expect(s.api.requestCount('GET', '/uncached')).toBe(2);
+
+      c.destroy();
+    });
+  });
+
   describe('keepUnusedFor retention', () => {
     const scenario = useScenario({ clientOptions: { keepUnusedFor: 5_000 } });
 
