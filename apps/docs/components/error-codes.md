@@ -495,3 +495,11 @@ Checked in dev mode only - `ET4900` whenever `for` changes, `ET4901` and `ET4902
 | `ET4900` | `for` was bound to something that is not an element - a component instance. | Bind a template reference variable on the element, or its `ElementRef`. |
 | `ET4901` | An `[etScrollbar]` rendered with nothing marked `etScrollbarThumb`.         | Add the thumb element inside the scrollbar.                             |
 | `ET4902` | An `[etScrollbar]` rendered with no `for`.                                  | Bind `for` to the element that scrolls.                                 |
+
+## Chart (ET51xx)
+
+Checked in dev mode only, after the first render.
+
+| Code     | Cause                                                            | Fix                                                           |
+| -------- | ---------------------------------------------------------------- | ------------------------------------------------------------- |
+| `ET5100` | An `[etBarChart]` rendered with nothing marked `etBarChartPlot`. | Add `etBarChartPlot` to the element the bars are laid out in. |

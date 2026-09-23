@@ -122,6 +122,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 - [Breadcrumb](/components/breadcrumb) - template-authored trail with an overflow popover, loading crumbs and a routed-page outlet.
 - [Card](/components/card) - generic content container with elevated, outlined and filled variants.
 - [Carousel](/components/carousel) - scroll-snapping slide track with multi-item views, autoplay and scroll-driven transitions.
+- [Chart](/components/chart) - single-series vertical bar chart with a value axis, a hairline grid and a table view.
 - [Description list](/components/description-list) - styles a native `<dl>` for term/detail rows, grid-paired without wrapper markup.
 - [Divider](/components/divider) - horizontal or vertical rule between groups of content, with a decorative mode.
 - [Grid](/components/grid) - drag & resize dashboard grid with breakpoints, keyboard editing and backend serialization.

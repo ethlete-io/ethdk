@@ -1,0 +1,83 @@
+<div [style.--_et-bar-chart-count]="chart.bars().length" class="et-bar-chart-figure">
+  <div [style.block-size.px]="chart.height()" class="et-bar-chart-value-axis" aria-hidden="true">
+    @for (tick of chart.ticks(); track tick.value) {
+      <span [style.--_et-bar-chart-tick-y.px]="tick.y" class="et-bar-chart-tick-label">{{ tick.text }}</span>
+    }
+  </div>
+
+  <div [style.block-size.px]="chart.height()" class="et-bar-chart-plot" etBarChartPlot>
+    @if (chart.plotWidth()) {
+      <svg
+        [attr.width]="chart.plotWidth()"
+        [attr.height]="chart.height()"
+        [attr.aria-label]="chart.label()"
+        class="et-bar-chart-svg"
+        role="group"
+      >
+        <svg:g class="et-bar-chart-grid" aria-hidden="true">
+          @for (tick of chart.ticks(); track tick.value) {
+            <svg:line
+              [attr.x2]="chart.plotWidth()"
+              [attr.y1]="tick.y"
+              [attr.y2]="tick.y"
+              [class.et-bar-chart-baseline]="tick.value === 0"
+              class="et-bar-chart-grid-line"
+              x1="0"
+              shape-rendering="crispEdges"
+            />
+          }
+        </svg:g>
+
+        <svg:g [etProvideColor]="colorToken()" class="et-bar-chart-bars">
+          @for (bar of chart.bars(); track bar.index) {
+            <svg:g
+              [attr.aria-label]="bar.ariaLabel"
+              [attr.data-negative]="bar.isNegative ? '' : null"
+              class="et-bar-chart-bar"
+              tabindex="0"
+              role="img"
+            >
+              <svg:rect
+                [attr.x]="bar.slotX + 1"
+                [attr.width]="bar.slotWidth - 2"
+                [attr.height]="chart.height()"
+                class="et-bar-chart-bar-target"
+                y="0"
+                rx="4"
+              />
+              <svg:path [attr.d]="bar.path" class="et-bar-chart-bar-mark" />
+            </svg:g>
+          }
+        </svg:g>
+      </svg>
+    }
+  </div>
+
+  <div class="et-bar-chart-category-axis" aria-hidden="true">
+    @for (bar of chart.bars(); track bar.index) {
+      <span class="et-bar-chart-category-label">{{ bar.datum.label }}</span>
+    }
+  </div>
+</div>
+
+<table class="et-bar-chart-table">
+  <caption>
+    {{
+      chart.label()
+    }}
+  </caption>
+  <thead>
+    <tr>
+      <th scope="col">{{ chart.categoryHeader() }}</th>
+      <th scope="col">{{ chart.valueHeader() }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (bar of chart.bars(); track bar.index) {
+      <tr>
+        <th scope="row">{{ bar.datum.label }}</th>
+        <td>{{ bar.valueText }}</td>
+      </tr>
+    }
+  </tbody>
+</table>

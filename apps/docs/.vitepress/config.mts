@@ -285,6 +285,7 @@ export default defineConfig({
             { text: 'Breadcrumb', link: '/components/breadcrumb' },
             { text: 'Card', link: '/components/card' },
             { text: 'Carousel', link: '/components/carousel' },
+            { text: 'Chart', link: '/components/chart' },
             { text: 'Description list', link: '/components/description-list' },
             { text: 'Divider', link: '/components/divider' },
             { text: 'Grid', link: '/components/grid' },
