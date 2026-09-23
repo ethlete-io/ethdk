@@ -80,6 +80,13 @@
   }
 
   .et-bar-chart-bar {
+    --_et-bar-chart-column-tint: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 6%, transparent);
+    --_et-bar-chart-mark-tint: color-mix(
+      in srgb,
+      var(--et-theme-color-primary-solid, currentColor) 85%,
+      var(--et-surface-background-solid, transparent)
+    );
+
     outline: none;
 
     .et-bar-chart-bar-target {
@@ -95,18 +102,25 @@
       animation: et-bar-chart-bar-enter var(--et-bar-chart-enter-duration) cubic-bezier(0.2, 0, 0, 1) backwards;
     }
 
-    &:hover,
     &:focus-visible {
       .et-bar-chart-bar-target {
-        fill: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 6%, transparent);
+        fill: var(--_et-bar-chart-column-tint);
       }
 
       .et-bar-chart-bar-mark {
-        fill: color-mix(
-          in srgb,
-          var(--et-theme-color-primary-solid, currentColor) 85%,
-          var(--et-surface-background-solid, transparent)
-        );
+        fill: var(--_et-bar-chart-mark-tint);
+      }
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        .et-bar-chart-bar-target {
+          fill: var(--_et-bar-chart-column-tint);
+        }
+
+        .et-bar-chart-bar-mark {
+          fill: var(--_et-bar-chart-mark-tint);
+        }
       }
     }
 

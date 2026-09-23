@@ -31,10 +31,12 @@
         <svg:g [etProvideColor]="colorToken()" class="et-bar-chart-bars">
           @for (bar of chart.bars(); track bar.index) {
             <svg:g
+              #tooltip="etTooltip"
               [attr.aria-label]="bar.datum.label"
               [attr.data-negative]="bar.isNegative ? '' : null"
               [etTooltip]="barTooltips()[bar.index] ?? null"
               [etTooltipAriaDescription]="bar.valueText"
+              (click)="tooltip.show()"
               class="et-bar-chart-bar"
               tabindex="0"
               role="img"

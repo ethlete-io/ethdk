@@ -142,16 +142,52 @@ test.describe('chart / accessibility', () => {
   });
 });
 
+async function expectNoColumnTint(barLocator: Locator): Promise<void> {
+  const fill = await barLocator.locator('.et-bar-chart-bar-target').evaluate((el) => getComputedStyle(el).fill);
+
+  expect(['none', 'transparent', 'rgba(0, 0, 0, 0)']).toContain(fill);
+}
+
 test.describe('chart / touch', () => {
   test.skip(({ isMobile }) => !isMobile, 'touch-only');
 
-  test('a tap on a bar does not leave a stuck tooltip after the finger lifts elsewhere', async ({ page }) => {
+  test('a tap on a bar shows its tooltip with the value and the category', async ({ page }) => {
     const root = await openStory(page, STORY_ID);
+    const tooltip = page.getByRole('tooltip');
 
     await tap(bar(root, 'Mar'));
-    await tap(root.getByText('Sign-ups per month', { exact: true }).first());
+
+    await expect(tooltip).toBeVisible();
+    await expect(tooltip.locator('.et-bar-chart-tooltip-value')).toHaveText('2,130');
+    await expect(tooltip.locator('.et-bar-chart-tooltip-label')).toHaveText('Mar');
+  });
+
+  test('a tap on another bar moves the tooltip to it', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const tooltip = page.getByRole('tooltip');
+
+    await tap(bar(root, 'Mar'));
+    await expect(tooltip.locator('.et-bar-chart-tooltip-label')).toHaveText('Mar');
+
+    await tap(bar(root, 'Jun'));
+
+    await expect(tooltip).toHaveCount(1);
+    await expect(tooltip.locator('.et-bar-chart-tooltip-label')).toHaveText('Jun');
+  });
+
+  test('a tap leaves no hover tint on the column, and a tap elsewhere closes the tooltip', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const tooltip = page.getByRole('tooltip');
+    const march = bar(root, 'Mar');
+
+    await tap(march);
+    await expect(tooltip).toBeVisible();
+    await expectNoColumnTint(march);
+
+    await tap(root.locator('.et-bar-chart-category-label').first());
     await settle(page, 400);
 
-    await expect(page.getByRole('tooltip')).toHaveCount(0);
+    await expect(tooltip).toHaveCount(0);
+    await expectNoColumnTint(march);
   });
 });
