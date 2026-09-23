@@ -671,3 +671,62 @@ describe('a destroyed client stops being a client the panel can act on', () => {
     clearQueryDevtoolsTombstones();
   });
 });
+
+describe('the registry labels what a creator does not name', () => {
+  const scenario = useScenario({
+    clientOptions: { keepUnusedFor: 0 },
+    providers: devtoolsProviders,
+  });
+
+  beforeEach(resetDevtoolsState);
+
+  it('records the path params of a route that inspects its params object first', async () => {
+    const s = scenario();
+
+    s.api.on('GET', '/inspected/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const isParamsObject = (value: object) => Object.prototype.toString.call(value) === '[object Object]';
+    const getInspected = s.get<{ response: { id: string }; pathParams: { id: string } }>((p) =>
+      isParamsObject(p) ? `/inspected/${p.id}` : '/inspected',
+    );
+    const query = s.consumer().run(() => getInspected(withArgs(() => ({ pathParams: { id: '7' } }))));
+    await s.settle();
+
+    expect(query.response()).toEqual({ id: '7' });
+
+    const entry = queryDevtoolsEntries().find((candidate) => candidate.handle === query);
+
+    expect(entry?.meta.route).toBe('/inspected/:id');
+  });
+
+  it('names a client and an auth provider declared with an empty name unknown', () => {
+    const s = scenario();
+    const clientRef = createQueryClient({ name: '', baseUrl: BASE_URL, keepUnusedFor: 0 });
+    const post = createPostQuery(clientRef);
+    const authRef = createBearerAuthProvider({
+      name: '',
+      queryClientRef: clientRef,
+      queries: [
+        withAuthenticationQuery('login', { queryCreator: post<TokenArgs>('/auth/login') }),
+        withRefreshQuery('refresh', { queryCreator: post<TokenArgs>('/auth/refresh') }),
+      ],
+    });
+    const getSecure = createSecureGetQuery(clientRef, authRef)<{ response: { ok: boolean } }>('/unnamed-secure');
+
+    const injector = createEnvironmentInjector(
+      [...clientRef.provide(), ...authRef.provide()],
+      s.run(() => inject(EnvironmentInjector)),
+    );
+    injector.runInContext(() => authRef.inject());
+    const query = injector.runInContext(() => getSecure());
+
+    const entry = queryDevtoolsEntries().find((candidate) => candidate.handle === query);
+
+    expect(entry?.meta.clientName).toBe('unknown');
+    expect(entry?.meta.isSecure).toBe(true);
+    expect(entry?.meta.authProviderName).toBe('unknown');
+
+    injector.destroy();
+    clearQueryDevtoolsTombstones();
+  });
+});
