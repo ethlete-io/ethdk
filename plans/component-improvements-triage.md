@@ -133,6 +133,13 @@ Recommendation: go with conditions for the fullscreen enter/leave only. The cond
 
 ## Charts: open questions (2026-09-23)
 
+**Decided 2026-09-23 (user):**
+
+- (a) Option 2. Render marks from the template with `@for`.
+- (b) Neither option. Reuse `provideColorPalette` from `@ethlete/core`, which the scheduler colour field already reads (`apps/docs/core/theming.md`, "Offering colors to a user"). Series `i` takes palette entry `i`, a series can name its own `colorToken`, and without a palette the scope accent is the fallback. The palette order is the app's categorical order.
+- (c) Option 1. Widen the core checks and `referenceElement` to `Element`, with a core scenario test.
+- (d) Use visible animations where they make sense. The `scaleY` bar entrance is allowed, not only opacity.
+
 **(a) `[innerHTML]` SVG precedent.** The precedent is `icon.directive.ts:27`, which binds a sanitized SVG string to the host.
 Option 1 keeps that: build the SVG as a string. Option 2 renders `<svg:rect>` marks from the template with `@for`.
 Recommendation: option 2, diverge. A string has no per-mark listeners, no `[etTooltip]`, no `aria-*` bindings and no signal updates without a full re-parse.
