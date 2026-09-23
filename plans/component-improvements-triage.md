@@ -205,3 +205,16 @@ The user decides these on 2026-09-24. Each slice picked the most restrained opti
 8. `provideColorPalette` is one static list, so dark mode needs a second palette from the app. Should the SDK support a palette that follows the surface?
 9. Colour follows the position in `series`. As a result, filtering series repaints the rest unless each series sets `colorToken`.
 10. `BarChartDirective.baselineY` is `@deprecated` in favour of `baseline`. Recommendation: remove it, because the chart is not released yet.
+
+### Sankey (`b64d0f519`)
+
+1. Labels: the first column puts labels left of the node, all other columns to the right. Middle labels sit over ribbons with a surface halo and an ellipsis.
+2. Label text uses the normal text colour and shows no value.
+3. Narrow screens: the plot has a 480px minimum (`--et-sankey-chart-min-width`) and scrolls sideways.
+4. Sinks stay in their longest-path column. They do not move to the last column.
+5. Nodes past the palette take the chart `colorToken` or the accent. The palette does not cycle.
+6. Link opacity: 0.35 at rest, 0.6 highlighted, 0.1 dimmed. Tokens can change these values.
+7. The node tooltip shows the name plus "In x" and "Out y", above the node. The link tooltip shows the value and "Source → Target", above the midpoint of the ribbon.
+8. Links are named with "→". Some screen readers read it as "right arrow".
+9. Entrance: nodes fade in, then ribbons after half of the 400ms duration.
+10. Links are tab stops after the nodes, with no arrow keys. Many links give many tab stops, and the table view is the faster route.
