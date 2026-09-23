@@ -30,10 +30,10 @@ async function waitForPickerEntered(page: Page): Promise<void> {
 async function expectPresetsPlaced(page: Page, placement: 'inline-start' | 'block-start'): Promise<void> {
   const presets = await boxOf(page.getByRole('group', { name: 'Presets' }));
   const calendar = await boxOf(page.locator(`${DIALOG} et-calendar`));
-  const edge =
+  const [presetsEnd, calendarStart] =
     placement === 'inline-start' ? [presets.x + presets.width, calendar.x] : [presets.y + presets.height, calendar.y];
 
-  expect(edge[0]).toBeLessThanOrEqual(edge[1]);
+  expect(presetsEnd).toBeLessThanOrEqual(calendarStart);
 }
 
 test.describe('date-inputs / date input focus', () => {
