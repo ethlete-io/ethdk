@@ -704,6 +704,16 @@ date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the
    items, carousel track, time-picker column-to-column, tag-input chips, cascader panel buttons. Pick
    the ones where the feature is otherwise unreachable (select load-more, PiP, bracket pin,
    time-picker columns) rather than the ones with a documented alternative. L
+   **Progress 2026-09-23:** select load-more **DONE** in `5093f2d57` (<kbd>ArrowDown</kbd> on the
+   last option emits `loadMore`). Time-picker columns **DONE** in `6fd4b43ab`
+   (<kbd>ArrowLeft</kbd>/<kbd>ArrowRight</kbd> move focus between columns, no wrap, RTL-mirrored).
+   PiP move **DONE** in `b79cbd510`: the title bar is a tab stop, arrows move 10px clamped to the
+   viewport padding, <kbd>Enter</kbd>/<kbd>Space</kbd> expands a collapsed window; `f08b0a150` fixed
+   the `NG0201` that broke PiP whenever `provideStreamPip()` sat in component `providers` (every
+   story). **Open, needs a design call:** PiP keyboard resize (which modifier - Ctrl+Arrow per Kendo
+   collides with macOS Spaces - or a focusable resize handle), and the bracket pin: the docs make
+   pinning deliberately consumer-driven and keep cells free of extra tab stops, so an in-grid
+   roving tab stop or a shipped `et-bracket-participants` legend is a product decision.
 9. **Missing peer-library staples, ranked.** A confirm/alert dialog primitive (the overlay docs tell
    consumers to hand-write one); `compareWith` on `et-select`; runtime column pinning + multi-sort
    priority + a global quick filter on the table; date-range presets and range-order/min-max
