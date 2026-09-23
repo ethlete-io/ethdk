@@ -10,7 +10,8 @@ const WITHOUT_DRAG_ID = 'components-date-time-scheduler--without-appointment-dra
 const BUSINESS_HOURS_ID = 'components-date-time-scheduler--business-hours';
 const WITHOUT_NOW_INDICATOR_ID = 'components-date-time-scheduler--without-now-indicator';
 
-const FIXED_NOW = new Date(2026, 6, 15, 10, 30);
+/** 10:30 wall time in the browser's `timezoneId` (Europe/Berlin, CEST in July), whatever zone the runner is in. */
+const FIXED_NOW = new Date('2026-07-15T10:30:00+02:00');
 
 const DIALOG_ROOT = '[role="dialog"]';
 
