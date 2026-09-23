@@ -82,13 +82,14 @@ Typed entry in the [time input](/components/date-time-inputs#time-input) and [da
 
 ## Keyboard
 
-Each column is a vertical listbox with a roving tabindex; selection follows focus.
+Each column is a vertical listbox with a roving tabindex; selection follows focus. Every column is its own tab stop, and the left/right arrows move between them without leaving the picker.
 
-| Key                 | Action                                             |
-| ------------------- | -------------------------------------------------- |
-| ArrowUp / ArrowDown | Previous / next option (wrapping - time is cyclic) |
-| Home / End          | First / last option                                |
-| Typing digits       | Jump to the matching option (`2`,`3` → 23)         |
+| Key                    | Action                                                                                 |
+| ---------------------- | -------------------------------------------------------------------------------------- |
+| ArrowUp / ArrowDown    | Previous / next option (wrapping - time is cyclic)                                     |
+| Home / End             | First / last option                                                                    |
+| ArrowLeft / ArrowRight | Focus the previous / next column (no wrap, mirrored in RTL); the value does not change |
+| Typing digits          | Jump to the matching option (`2`,`3` → 23)                                             |
 
 Disabled options are skipped by all of these - arrows walk to the next selectable option, Home/End go to the first/last selectable one, and a typed query that only matches disabled options selects nothing.
 

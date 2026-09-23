@@ -6,9 +6,9 @@ import { TimePickerColumn, TimePickerDirective } from './time-picker.directive';
 
 /**
  * One unit column (a vertical listbox): routes the keyboard model to the
- * picker - arrows move the selection (selection follows focus, wrapping),
- * typed characters jump to the matching option - and tracks whether focus is
- * inside.
+ * picker - up/down arrows move the selection (selection follows focus, wrapping),
+ * left/right arrows move focus to the neighbouring column, typed characters
+ * jump to the matching option - and tracks whether focus is inside.
  */
 @Directive({
   selector: '[etTimePickerColumn]',
@@ -37,6 +37,15 @@ export class TimePickerColumnDirective {
 
   constructor() {
     this.destroyRef.onDestroy(() => this.typeahead.destroy());
+
+    const unregister = this.timePicker?.registerColumn({
+      unit: () => this.column().unit,
+      focus: () => this.focusIsInside.set(true),
+    });
+
+    if (unregister) {
+      this.destroyRef.onDestroy(unregister);
+    }
 
     if (ngDevMode && !this.timePicker) {
       throw new RuntimeError(
@@ -77,6 +86,14 @@ export class TimePickerColumnDirective {
         timePicker.selectEdge(unit, 'end');
 
         return;
+      case 'ArrowLeft':
+      case 'ArrowRight': {
+        event.preventDefault();
+        const forward = (event.key === 'ArrowRight') !== this.isRightToLeft();
+        timePicker.focusAdjacentColumn(unit, forward ? 1 : -1);
+
+        return;
+      }
     }
 
     if (event.key.length === 1 && event.key !== ' ' && !event.ctrlKey && !event.metaKey && !event.altKey) {
@@ -120,5 +137,11 @@ export class TimePickerColumnDirective {
 
     this.hasScrolled = true;
     columnElement.scrollTo?.({ top, behavior });
+  }
+
+  private isRightToLeft() {
+    const element = this.elementRef.nativeElement;
+
+    return element.ownerDocument.defaultView?.getComputedStyle(element).direction === 'rtl';
   }
 }

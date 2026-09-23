@@ -70,6 +70,12 @@ export type TimePickerColumn = {
   options: TimePickerOption[];
 };
 
+/** @internal What a rendered column hands the picker so arrow keys can move focus to it. */
+export type TimePickerColumnHandle = {
+  unit: () => TimePickerUnit;
+  focus: () => void;
+};
+
 /** One end of a range, as the control that switches between the two needs it. */
 export type TimePickerSide = {
   side: TimeRangeSide;
@@ -175,6 +181,8 @@ export class TimePickerDirective {
   private now = new Date();
 
   private autoAdvanceSpent = signal(false);
+
+  private columnHandles: TimePickerColumnHandle[] = [];
 
   private pendingParts = signal<Record<TimeRangeSide, PendingTimeParts>>({ start: {}, end: {} });
 
@@ -469,6 +477,25 @@ export class TimePickerDirective {
   public setActiveSide(side: TimeRangeSide) {
     this.autoAdvanceSpent.set(true);
     this.activeSide.set(side);
+  }
+
+  /** @internal */
+  public registerColumn(handle: TimePickerColumnHandle) {
+    this.columnHandles.push(handle);
+
+    return () => {
+      this.columnHandles = this.columnHandles.filter((registered) => registered !== handle);
+    };
+  }
+
+  /** @internal Moves focus to the column before or after `unit`, without wrapping. */
+  public focusAdjacentColumn(unit: TimePickerUnit, delta: 1 | -1) {
+    const units = this.columns().map((column) => column.unit);
+    const target = units[units.indexOf(unit) + delta];
+
+    if (target) {
+      this.columnHandles.find((handle) => handle.unit() === target)?.focus();
+    }
   }
 
   /** @internal Moves a column's selection by `delta`, wrapping and skipping disabled options. */

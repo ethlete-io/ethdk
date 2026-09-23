@@ -241,6 +241,42 @@ describe('TimePickerDirective', () => {
     expect(host.value()?.getMinutes()).toBe(0);
   });
 
+  it('moves focus between columns with ArrowLeft and ArrowRight, without wrapping', async () => {
+    document.body.appendChild(fixture.nativeElement);
+    host.value.set(new Date(2026, 6, 17, 8, 30));
+    tick();
+    await fixture.whenStable();
+
+    option(fixture, 'hour', 8)?.focus();
+    press(fixture, 'hour', 'ArrowRight');
+    tick();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(option(fixture, 'minute', 30));
+
+    press(fixture, 'minute', 'ArrowRight');
+    tick();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(option(fixture, 'minute', 30));
+
+    press(fixture, 'minute', 'ArrowLeft');
+    tick();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(option(fixture, 'hour', 8));
+
+    press(fixture, 'hour', 'ArrowLeft');
+    tick();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(option(fixture, 'hour', 8));
+    expect(host.value()?.getHours()).toBe(8);
+    expect(host.value()?.getMinutes()).toBe(30);
+
+    fixture.nativeElement.remove();
+  });
+
   it('jumps to a typed option', async () => {
     host.value.set(new Date(2026, 6, 17, 8, 0));
     tick();

@@ -41,6 +41,37 @@ test.describe('time-picker / keyboard', () => {
     await expect(second).toBeFocused();
   });
 
+  test('ArrowRight and ArrowLeft move focus between the columns without changing the value, and stop at the ends', async ({
+    page,
+  }) => {
+    const root = await openStory(page, WITH_SECONDS_STORY_ID);
+    const hour = root.getByRole('listbox', { name: 'Hours' }).locator(FOCUSED_OPTION);
+    const minute = root.getByRole('listbox', { name: 'Minutes' }).locator(FOCUSED_OPTION);
+    const second = root.getByRole('listbox', { name: 'Seconds' }).locator(FOCUSED_OPTION);
+
+    await pressKey(page, 'Tab');
+    await expect(hour).toBeFocused();
+    const hourText = await hour.innerText();
+
+    await pressKey(page, 'ArrowRight');
+    await expect(minute).toBeFocused();
+
+    await pressKey(page, 'ArrowRight');
+    await expect(second).toBeFocused();
+    await expectFocusVisible(second);
+
+    await pressKey(page, 'ArrowRight');
+    await expect(second).toBeFocused();
+
+    await pressKey(page, 'ArrowLeft');
+    await expect(minute).toBeFocused();
+
+    await pressKey(page, 'ArrowLeft');
+    await pressKey(page, 'ArrowLeft');
+    await expect(hour).toBeFocused();
+    await expect(hour).toHaveText(hourText);
+  });
+
   test('Home and End jump to the first and last hour, and ArrowDown wraps from the last back to the first', async ({
     page,
   }) => {
