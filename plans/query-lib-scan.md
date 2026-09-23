@@ -363,3 +363,12 @@ than `route` or an HTTP option (e.g. `{ secure }`) is skipped without a warning;
 `prep-for-query-v3` ignores symbols reached through `import * as q`. Dead code left in place:
 `cleanup-migration.ts` `removeAnyQueryFromImports` and `describeTemplateLine`, `migration-scope.includes`,
 and the `rename-symbols.ts` scope argument, which is only ever `'all'`.
+
+### Generators follow-up (2026-09-23)
+
+The open generator items are closed, each fix with a test that failed first. A shorthand creator config
+property the v3 migration cannot carry over (`{ secure }`) now gets a report warning (`11021374c`). A
+legacy `prepare()` in an anonymous `export default class` is migrated (`1a9b929d1`). `prep-for-query-v3`
+follows `import * as q`, for renames and for `q.ExperimentalQuery.x` (`48efc25fe`). Dead code removed:
+`removeAnyQueryFromImports` and `describeTemplateLine` (`7a2a9d2d3`), `migration-scope.includes`
+(`d60515dc1`), the `pruneUnusedNamedImports` module filter (`f7bb00368`).
