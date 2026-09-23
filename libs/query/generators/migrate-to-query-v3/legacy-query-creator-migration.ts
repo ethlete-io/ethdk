@@ -392,6 +392,22 @@ const analyzeLegacyQueryCreators = (
               info.httpOptions.set(property.name.text, property.name.text);
             }
 
+            if (property.name.text !== 'route' && !HTTP_OPTION_NAMES.includes(property.name.text)) {
+              report.addWarning({
+                title: `Carry over \`${property.name.text}\` of ${creatorName}`,
+                summary: `${creatorName} passes \`${property.name.text}\` as a shorthand property in its v2 config. The migration cannot read its value, so it was not carried over to the v3 creator.`,
+                action:
+                  property.name.text === 'secure'
+                    ? 'If the value is true, switch the generated creator to the matching *Secure creator of the client by hand.'
+                    : 'Move what it configures onto the generated creator by hand.',
+                locations: [
+                  { filePath, line: sourceFile.getLineAndCharacterOfPosition(property.getStart(sourceFile)).line + 1 },
+                ],
+                source: 'legacy-query-creator-migration',
+                dedupeKey: `shorthand-config:${filePath}:${creatorName}:${property.name.text}`,
+              });
+            }
+
             return;
           }
 

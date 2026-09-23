@@ -401,6 +401,24 @@ export const getUsers = apiClient.get({ ...sharedOptions, route: '/users' });
     expect(report).toContain('spreads `shared` into its v2 config');
   });
 
+  it('should warn about a shorthand config property it cannot carry over', async () => {
+    writeClient();
+    tree.write(
+      'queries.ts',
+      "import { apiClient } from './client';\n\nconst secure = true;\nconst withCredentials = true;\n\nexport const getUsers = apiClient.get({ route: '/users', secure, withCredentials });",
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const queries = readOrEmpty('queries.ts');
+    const report = readOrEmpty('query-v3-migration-tasks.md');
+
+    expect(queries).toContain('withCredentials: withCredentials');
+    expect(report).toContain('Carry over `secure` of getUsers');
+    expect(report).toContain('*Secure creator');
+    expect(report).not.toContain('Carry over `withCredentials`');
+  });
+
   it('should keep every creator of a multi-declaration statement', async () => {
     writeClient();
     tree.write(
