@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -53,6 +55,22 @@ describe('GridItemComponent', () => {
 
     TestBed.configureTestingModule({ imports: [TestHostComponent] });
     fixture = TestBed.createComponent(TestHostComponent);
+  });
+
+  it('wraps its whole stylesheet in the components cascade layer', () => {
+    const css = readFileSync(fileURLToPath(import.meta.url).replace(/[^/]+$/, 'grid-item.component.css'), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .trim();
+    let depth = 0;
+    let layerCloseIndex = -1;
+
+    for (let index = 0; index < css.length && layerCloseIndex < 0; index++) {
+      if (css[index] === '{') depth++;
+      if (css[index] === '}' && --depth === 0) layerCloseIndex = index;
+    }
+
+    expect(css.startsWith('@layer components {')).toBe(true);
+    expect(layerCloseIndex).toBe(css.length - 1);
   });
 
   it('renders with class et-grid-item', () => {
