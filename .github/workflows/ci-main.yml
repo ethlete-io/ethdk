@@ -24,6 +24,10 @@ jobs:
   publish:
     needs: ci
     uses: ./.github/workflows/publish.yml
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
     with:
       version_command: 'yarn changeset:release'
       commit_message: 'chore: 🤖 update versions'

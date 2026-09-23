@@ -27,6 +27,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      id-token: write
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
@@ -47,6 +48,16 @@ jobs:
         run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> ~/.npmrc
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Check npm trusted publishing
+        continue-on-error: true
+        run: |
+          id_token=$(curl -sf -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=npm:registry.npmjs.org" | jq -r .value)
+          echo "::add-mask::$id_token"
+          node -e 'const c = JSON.parse(Buffer.from(process.argv[1].split(".")[1], "base64url")); console.log({ workflow_ref: c.workflow_ref, job_workflow_ref: c.job_workflow_ref })' "$id_token"
+          status=$(curl -s -o /dev/null -w '%{http_code}' -X POST -H "Authorization: Bearer $id_token" https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/@ethlete%2ftypes)
+          echo "OIDC exchange for @ethlete/types: HTTP $status"
+          [[ $status == 2* ]]
 
       - name: Publish packages
         id: changesets
