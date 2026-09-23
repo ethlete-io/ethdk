@@ -622,6 +622,64 @@ describe('DropzoneDirective', () => {
       driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-b' });
     });
 
+    it('should delete every persisted value on removeAll, skipping entries still uploading', async () => {
+      driver.host.multiple.set(true);
+      driver.host.value.set(['e1']);
+      driver.tick();
+
+      driver.dropzone.selectFiles([createFile('a.png'), createFile('b.png')]);
+      driver.tick();
+      const [uploadA, uploadB] = driver.query.httpTesting.match(UPLOAD_URL);
+      uploadA!.flush({ uuid: 'uuid-a' });
+      driver.tick();
+
+      driver.dropzone.removeAll();
+      driver.tick();
+
+      expect(uploadB!.cancelled).toBe(true);
+      driver.query.httpTesting.expectOne(deleteUrl('e1')).flush(null);
+      driver.query.httpTesting.expectOne(deleteUrl('uuid-a')).flush(null);
+
+      driver.tick();
+      await flushMicrotasks();
+      driver.tick();
+
+      expect(driver.dropzone.entries().length).toBe(0);
+      expect(driver.host.value()).toEqual([]);
+      expect(driver.dropzone.touched()).toBe(true);
+      expect([...driver.host.deleteSucceeded].sort()).toEqual(['e1', 'uuid-a']);
+    });
+
+    it('should leave the server alone on clear', async () => {
+      driver.dropzone.selectFiles([createFile()]);
+      driver.tick();
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
+      driver.tick();
+
+      driver.dropzone.clear();
+      driver.tick();
+      await flushMicrotasks();
+      driver.tick();
+
+      driver.query.httpTesting.expectNone(deleteUrl('uuid-1'));
+      expect(driver.host.value()).toBe(null);
+      expect(driver.host.deleteSucceeded).toEqual([]);
+    });
+
+    it('should not removeAll while readonly', () => {
+      driver.dropzone.selectFiles([createFile()]);
+      driver.tick();
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
+      driver.host.readonly.set(true);
+      driver.tick();
+
+      driver.dropzone.removeAll();
+      driver.tick();
+
+      expect(driver.dropzone.entries().length).toBe(1);
+      expect(driver.host.value()).toBe('uuid-1');
+    });
+
     it('should not fire a delete request for a still-uploading entry (nothing persisted yet)', () => {
       driver.dropzone.selectFiles([createFile()]);
       driver.tick();

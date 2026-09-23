@@ -303,7 +303,36 @@ export class DropzoneDirective<TValue = unknown>
     entry.handle.execute();
   }
 
-  /** Removes all entries and resets the control value. */
+  /**
+   * Removes every entry the way {@link removeEntry} does, including the upload config's `delete`
+   * request for each persisted value. Use {@link clear} for a local reset that leaves the server alone.
+   */
+  public removeAll() {
+    const entries = this.internalEntries();
+
+    if (!this.interactive() || !entries.length) {
+      return;
+    }
+
+    const deletableValues = entries
+      .map((entry) => this.deletableValueOf(entry))
+      .filter((value): value is TValue => value !== null);
+
+    for (const entry of entries) {
+      this.disposeEntry(entry);
+    }
+
+    this.internalEntries.set([]);
+    this.setRejections([]);
+    this.touched.set(true);
+    this.syncValue();
+
+    for (const value of deletableValues) {
+      this.executeDelete(value);
+    }
+  }
+
+  /** Removes all entries and resets the control value locally. Never sends a `delete` request - see {@link removeAll}. */
   public clear() {
     if (!this.interactive() || !this.internalEntries().length) {
       return;

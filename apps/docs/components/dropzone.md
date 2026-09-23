@@ -141,6 +141,13 @@ The entry disappears from the UI immediately; the delete request runs in the bac
 
 Without a `delete` config, removing an entry only updates the control locally, same as before.
 
+### `removeAll()` vs `clear()`
+
+Both empty the dropzone, but only one talks to the server:
+
+- `removeAll()` removes every entry the way `removeEntry(id)` does: in-flight uploads are cancelled and each persisted value goes through the configured `delete` under the same rules (existing values only with `deleteIncludesExisting`), reporting through `deleteSucceed` / `deleteFail`.
+- `clear()` is a local reset. It drops the entries and the control value and never sends a `delete` request - use it when the form itself is discarded and the server state belongs to someone else.
+
 `createV2DropzoneUpload` takes the same `delete` shape, with a legacy `queryCreator` in place of the new one.
 
 ## Options
@@ -176,7 +183,7 @@ rest is forwarded to the headless directive, which also carries the outputs:
 
 `readonly` and `disabled` both come from the form schema (`readonly(s.media, …)` /
 `disabled(s, …)`) and both stop every mutation - selecting, dropping, replacing,
-retrying, removing and `clear()`. They differ in what the user sees: a **read-only** dropzone
+retrying, removing, `removeAll()` and `clear()`. They differ in what the user sees: a **read-only** dropzone
 keeps its entries at full contrast, because there is nothing to operate; a
 **disabled** one dims and shows `not-allowed`. See
 [Forms](/components/forms#the-field-shell) for the shared convention.
@@ -238,7 +245,7 @@ Per-file progress requires `reportProgress: true` on the query creator **and** t
 
 ## Headless usage
 
-All behavior lives in the `etDropzone` directive (`FormValueControl` + drag & drop + upload orchestration); the `et-dropzone` component is template + tokens on top. For a custom UI, apply the directive yourself and drive it via `selectFiles(files)`, `removeEntry(id)`, `retryEntry(id)` and `clear()`, rendering from the `entries()` signal (each entry carries an `id` and its `source`, plus `name`, `size`, `previewUrl`, `status`, `progress`, `error`, `errorMessage` and `value` signals) plus `isDragOver`, `anyUploading`, `anyFailed`, `hasValue`, `interactive` and `lastRejections`. Drag & drop is handled on the directive's host; the file-picker input is yours to wire - `accept()` gives you the schema's `accept` string for it. Outputs: `filesReject`, `uploadSucceed` / `uploadFail` per entry, and - when the upload config has a `delete` option - `deleteSucceed` / `deleteFail` per removed entry (see [Deleting on remove](#deleting-on-remove)).
+All behavior lives in the `etDropzone` directive (`FormValueControl` + drag & drop + upload orchestration); the `et-dropzone` component is template + tokens on top. For a custom UI, apply the directive yourself and drive it via `selectFiles(files)`, `removeEntry(id)`, `retryEntry(id)`, `removeAll()` and `clear()` (see [`removeAll()` vs `clear()`](#removeall-vs-clear)), rendering from the `entries()` signal (each entry carries an `id` and its `source`, plus `name`, `size`, `previewUrl`, `status`, `progress`, `error`, `errorMessage` and `value` signals) plus `isDragOver`, `anyUploading`, `anyFailed`, `hasValue`, `interactive` and `lastRejections`. Drag & drop is handled on the directive's host; the file-picker input is yours to wire - `accept()` gives you the schema's `accept` string for it. Outputs: `filesReject`, `uploadSucceed` / `uploadFail` per entry, and - when the upload config has a `delete` option - `deleteSucceed` / `deleteFail` per removed entry (see [Deleting on remove](#deleting-on-remove)).
 
 ## Accessibility
 
