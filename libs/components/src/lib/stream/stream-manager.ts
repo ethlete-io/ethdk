@@ -3,10 +3,12 @@ import {
   createFlipAnimation,
   defineRootProvider,
   injectRenderer,
+  injectStyleManager,
   injectViewportSize,
   toInjectFn,
   toProvideFn,
 } from '@ethlete/core';
+import { StreamManagerStylesComponent } from './stream-manager-styles.component';
 import { StreamManager, StreamPlayerEntry, StreamPlayerId, StreamSlotEntry } from './stream-manager.types';
 
 type InternalPlayerEntry = StreamPlayerEntry & {
@@ -23,6 +25,8 @@ const STREAM_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
   (): StreamManager => {
     const document = inject(DOCUMENT);
     const renderer = injectRenderer();
+
+    injectStyleManager().mount(StreamManagerStylesComponent);
 
     const container = renderer.createElement('div');
     renderer.addClass(container, 'et-stream-manager');

@@ -1,17 +1,5 @@
 export const STREAM_SLOT_DEMO_STYLES = `
-  .et-stream-manager {
-    position: fixed;
-    top: -9999px;
-    left: -9999px;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-  }
-
   et-pip-window {
-    bottom: 24px;
-    right: 24px;
-    z-index: 9999;
     width: 320px;
     border-radius: 6px;
     overflow: hidden;

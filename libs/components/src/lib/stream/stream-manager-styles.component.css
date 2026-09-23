@@ -1,0 +1,10 @@
+@layer components {
+  .et-stream-manager {
+    position: fixed;
+    top: -9999px;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+}

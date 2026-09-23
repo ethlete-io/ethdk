@@ -5,6 +5,15 @@ const PLAYER_ID = 'youtube-abc';
 const OTHER_PLAYER_ID = 'youtube-xyz';
 
 describe('StreamManager', () => {
+  it('mounts the stylesheet that hides its body-level player container', () => {
+    const driver = createStreamDriver();
+
+    driver.addPlayer(PLAYER_ID);
+
+    expect(driver.isParked(PLAYER_ID)).toBe(true);
+    expect(document.querySelector('.et-style-manager et-stream-manager-styles')).not.toBeNull();
+  });
+
   describe('resolveBestSlot', () => {
     it('returns null while no slot claims the player, leaving it parked in the container', () => {
       const driver = createStreamDriver();

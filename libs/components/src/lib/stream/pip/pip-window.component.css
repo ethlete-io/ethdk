@@ -19,6 +19,9 @@
 
   et-pip-window {
     position: fixed;
+    right: var(--et-pip-window-offset-right, 24px);
+    bottom: var(--et-pip-window-offset-bottom, 24px);
+    z-index: var(--et-pip-window-z-index, 1000);
     display: flex;
     flex-direction: column;
     touch-action: none;

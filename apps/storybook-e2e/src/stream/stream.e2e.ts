@@ -575,6 +575,38 @@ async function openPipAndFocusTitleBar(page: Page): Promise<{ pipWindow: Locator
   return { pipWindow, titleBar };
 }
 
+test.describe('stream / placement', () => {
+  test('the body-level player container is hidden off-screen', async ({ page }) => {
+    await stubPlatformSdks(page);
+    await openStory(page, YOUTUBE_PIP_STORY_ID);
+
+    const container = page.locator('.et-stream-manager');
+
+    await expect(container).toHaveCSS('position', 'fixed');
+    await expect(container).toHaveCSS('overflow', 'hidden');
+    await expect(container).not.toBeInViewport();
+  });
+
+  test('the PiP window opens in the bottom right corner above the page', async ({ page }) => {
+    await stubPlatformSdks(page);
+    const root = await openStory(page, YOUTUBE_PIP_STORY_ID);
+
+    await root.getByRole('button', { name: 'Enter PIP' }).first().click();
+
+    const pipWindow = page.locator(PIP_WINDOW);
+    const viewport = viewportOf(page);
+
+    await expect(pipWindow).toBeVisible();
+    await expect(pipWindow).toHaveCSS('z-index', '1000');
+    await expect
+      .poll(async () => viewport.width - (await boxOf(pipWindow)).x - (await boxOf(pipWindow)).width)
+      .toBeCloseTo(24, 0);
+    await expect
+      .poll(async () => viewport.height - (await boxOf(pipWindow)).y - (await boxOf(pipWindow)).height)
+      .toBeCloseTo(24, 0);
+  });
+});
+
 test.describe('stream / pip keyboard', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard navigation');
 
