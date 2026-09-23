@@ -12,6 +12,7 @@ export * from './table-csv-export';
 export * from './table-csv-rows-from-pages';
 export * from './table-features';
 export * from './table-filter';
+export * from './table-quick-filter';
 export * from './table-footer.directive';
 export * from './table-labels';
 export * from './table-rows-from-query';

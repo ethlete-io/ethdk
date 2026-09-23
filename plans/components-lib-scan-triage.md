@@ -760,6 +760,11 @@ date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the
    drop to last), sorted headers show a priority badge with a `sortPriority` label as accessible
    description once two or more keys sort, `sortPriority(key)`; server data already gets the
    ordered `sort()` list. `ShiftMultiSort` story + e2e.
+   Table quick filter **DONE** in `feat(components): Add a quick filter to the table`: `quickFilter`
+   input, every whitespace word must appear case-insensitively in one visible column; a column is
+   searched through `quickFilterValue`, else a string/number `value`, `quickFilter: false` opts out;
+   client filter mode only, `quickFilterRows` exported; both query adapters carry `quickFilter` +
+   `setQuickFilter` (resets the page) for server search. `QuickFilter` story + e2e.
    RTE read-only viewer **DONE** in `28ebce6b8`: `et-rich-text-viewer` with a Markdown `value`,
    rendered through the editor's `markdownToHtml` (raw HTML escaped, unsafe URLs dropped) plus the
    token codec when `provideRichTextEditorTokenRendering()` is in scope. The content rules moved

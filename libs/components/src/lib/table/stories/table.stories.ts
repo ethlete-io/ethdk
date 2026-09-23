@@ -12,6 +12,7 @@ export default {
     constrainHeight: false,
     empty: false,
     multiSort: false,
+    quickFilter: false,
     expandable: false,
     subTable: false,
     loading: false,
@@ -47,6 +48,7 @@ export default {
     constrainHeight: { control: 'boolean' },
     empty: { control: 'boolean' },
     multiSort: { control: 'inline-radio', options: [false, true, 'shift'] },
+    quickFilter: { control: 'boolean' },
     expandable: { control: 'boolean' },
     subTable: { control: 'boolean' },
     loading: { control: 'boolean' },
@@ -123,6 +125,19 @@ export const ShiftMultiSort: Story = {
           'With `multiSort="shift"` a plain click sorts by that column alone, and Shift + click (or Shift + ' +
           'Enter) adds it to the sort. Once more than one column is sorted, each sorted header shows its ' +
           'priority.',
+      },
+    },
+  },
+};
+
+export const QuickFilter: Story = {
+  args: { quickFilter: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Bind a search field to `quickFilter` and the table keeps the rows that contain every typed word ' +
+          'in one of their visible columns, case-insensitively. Hide a column and its text stops matching.',
       },
     },
   },

@@ -9,7 +9,7 @@ import { TableColumnDef, TableSortDirection, TableTemplateSlot } from '../table.
  * about the column it renders into, without the row type `T` leaking into the seam (the `T`-typed
  * members are accessors and templates, which no feature touches).
  */
-export type TableColumnMeta = Omit<TableColumnDef<never>, 'value' | 'sortValue' | 'filterValue'>;
+export type TableColumnMeta = Omit<TableColumnDef<never>, 'value' | 'sortValue' | 'filterValue' | 'quickFilterValue'>;
 
 /**
  * A feature's contribution to every header cell - e.g. the filter menu's trigger, a resize grip.

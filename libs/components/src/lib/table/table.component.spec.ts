@@ -504,6 +504,35 @@ describe('TableComponent', () => {
       expect(fixture.componentInstance.rows()).toHaveLength(3);
     });
 
+    it('narrows the rendered rows to a quickFilter, in the visible columns only', () => {
+      const fixture = create(columns(), UNSORTED);
+      const driver = createTableDriver(fixture);
+      fixture.componentRef.setInput('quickFilter', 'VIEW');
+      fixture.detectChanges();
+
+      expect(driver.rowTexts()).toEqual([['Charlie', 'Viewer']]);
+
+      fixture.componentInstance.setColumnVisible('role', false);
+      fixture.detectChanges();
+
+      expect(driver.rowTexts()).toEqual([]);
+
+      fixture.componentRef.setInput('quickFilter', null);
+      fixture.detectChanges();
+
+      expect(driver.rowTexts()).toHaveLength(3);
+    });
+
+    it('leaves the rows to the backend in server filter mode, quickFilter included', () => {
+      const fixture = create(columns(), UNSORTED);
+      fixture.componentRef.setInput('filterMode', 'server');
+      fixture.componentRef.setInput('quickFilter', 'ada');
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.rows()).toHaveLength(3);
+      expect(fixture.componentInstance.quickFilter()).toBe('ada');
+    });
+
     it('renders no filter UI without the opt-in feature (the menu system stays out of the bundle)', () => {
       const fixture = create(filterableColumns(), UNSORTED);
 

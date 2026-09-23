@@ -24,7 +24,7 @@ describe('tableRowsFromV2Query', () => {
 
   const settle = () => new Promise((resolve) => setTimeout(resolve));
 
-  const captured: { sortBy?: string; page: number }[] = [];
+  const captured: { sortBy?: string; search?: string; page: number }[] = [];
 
   const createSource = (
     // Only the two signals the fixtures actually branch on - a full TableRowsQueryState would make
@@ -38,8 +38,8 @@ describe('tableRowsFromV2Query', () => {
     return TestBed.runInInjectionContext(() =>
       tableRowsFromV2Query({
         queryCreator: getUsers,
-        args: ({ sort, page }) => {
-          captured.push({ sortBy: sort()[0]?.key, page: page() });
+        args: ({ sort, page, quickFilter }) => {
+          captured.push({ sortBy: sort()[0]?.key, search: quickFilter(), page: page() });
 
           return {
             queryParams: { sortBy: sort()[0]?.key, sortOrder: sort()[0]?.direction, page: page() },
@@ -84,7 +84,21 @@ describe('tableRowsFromV2Query', () => {
     await flush();
 
     expect(source.page()).toBe(1);
-    expect(captured.at(-1)).toEqual({ sortBy: 'name', page: 1 });
+    expect(captured.at(-1)).toEqual({ sortBy: 'name', search: '', page: 1 });
+  });
+
+  it('re-executes with the quick filter and resets the page on setQuickFilter', async () => {
+    const source = createSource(() => ({ response: { items: page1, totalHits: 42, hasMore: true } }));
+    await flush();
+
+    source.setPage(2);
+    await flush();
+
+    source.setQuickFilter('ada');
+    await flush();
+
+    expect(source.page()).toBe(1);
+    expect(captured.at(-1)).toEqual({ sortBy: undefined, search: 'ada', page: 1 });
   });
 
   it('surfaces a query error as text', async () => {

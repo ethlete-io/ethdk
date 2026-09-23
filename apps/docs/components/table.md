@@ -123,6 +123,7 @@ than resetting them.
 | `sortMode`            | `'client'`   | `'client'` sorts rows in the browser; `'server'` leaves them for the backend to sort.                                |
 | `filters`             | `[]`         | Two-way bindable filter state - `{ key, values }[]`. See [Filtering](#filtering).                                    |
 | `filterMode`          | `'client'`   | `'client'` filters rows in the browser; `'server'` leaves them for the backend to filter.                            |
+| `quickFilter`         | `''`         | Free text; keeps the rows containing every word of it. See [Quick filter](#quick-filter).                            |
 | `expandedRowTemplate` | -            | Detail template for [row expansion](#row-expansion) - needs `etTableRowExpansion`. Context: `{ $implicit: row }`.    |
 | `rowInteractive`      | `false`      | Make rows clickable, emitting `(rowClick)`. See [Row clicks](#row-clicks).                                           |
 | `rowLink`             | -            | `(row: T) => string \| unknown[] \| null` - make every row a real link. See [Row links](#row-links).                 |
@@ -207,23 +208,25 @@ wrapping it in a scroller.
 
 Each value of the `TableColumns<T>` record:
 
-| Field           | Default               | Description                                                                                                                     |
-| --------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `value`         | - (required)          | `(row: T) => V` - the typed cell accessor. Rendered directly unless an `etTableCell` template is registered.                    |
-| `sortable`      | `false`               | Render a sortable header for this column.                                                                                       |
-| `sortValue`     | `value`               | Comparable to sort by (`string`/`number`/`Date`/`boolean`/`null`) when the display value isn't comparable.                      |
-| `filterable`    | `false`               | Render a filter menu on this column's header.                                                                                   |
-| `filterOptions` | -                     | The `{ label, value }[]` choices - a static list or an async provider (see [below](#searchable-async-filter-options)).          |
-| `filterSearch`  | `false`               | Add a search box to the filter menu.                                                                                            |
-| `filterValue`   | `value`               | The value matched against the selected filter values, when the display value isn't the one to match on.                         |
-| `header`        | -                     | Static header text. Ignored when an `etTableHeaderCell` template is registered.                                                 |
-| `group`         | -                     | Group label; adjacent columns sharing it span a header - needs `etTableGroupHeaders`. See [Grouped headers](#grouped-headers).  |
-| `sticky`        | -                     | `'start' \| 'end'` - pin the column while scrolling, with `etTableStickyColumns`. See [Sticky columns](#sticky-columns-footer). |
-| `interactive`   | `false`               | This column's cells hold their own controls: a [row link](#row-links) never covers them, nor is it hosted here.                 |
-| `align`         | `'start'`             | `'start' \| 'center' \| 'end'`.                                                                                                 |
-| `width`         | `'minmax(48px, 1fr)'` | Any `grid-template-columns` track value (`'200px'`, `'minmax(120px, 1fr)'`, …). See the notes below.                            |
-| `hidden`        | `false`               | Hide the column initially; toggle later via table state.                                                                        |
-| `disabled`      | `false`               | Turn off this column's header controls: its sortable header, its filter menu and its column menu.                               |
+| Field              | Default               | Description                                                                                                                     |
+| ------------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `value`            | - (required)          | `(row: T) => V` - the typed cell accessor. Rendered directly unless an `etTableCell` template is registered.                    |
+| `sortable`         | `false`               | Render a sortable header for this column.                                                                                       |
+| `sortValue`        | `value`               | Comparable to sort by (`string`/`number`/`Date`/`boolean`/`null`) when the display value isn't comparable.                      |
+| `filterable`       | `false`               | Render a filter menu on this column's header.                                                                                   |
+| `filterOptions`    | -                     | The `{ label, value }[]` choices - a static list or an async provider (see [below](#searchable-async-filter-options)).          |
+| `filterSearch`     | `false`               | Add a search box to the filter menu.                                                                                            |
+| `filterValue`      | `value`               | The value matched against the selected filter values, when the display value isn't the one to match on.                         |
+| `quickFilter`      | `true`                | Search this column with the table's [`quickFilter`](#quick-filter); `false` leaves it out.                                      |
+| `quickFilterValue` | `value`               | `(row: T) => string \| number \| null` - the text the [quick filter](#quick-filter) searches in this column.                    |
+| `header`           | -                     | Static header text. Ignored when an `etTableHeaderCell` template is registered.                                                 |
+| `group`            | -                     | Group label; adjacent columns sharing it span a header - needs `etTableGroupHeaders`. See [Grouped headers](#grouped-headers).  |
+| `sticky`           | -                     | `'start' \| 'end'` - pin the column while scrolling, with `etTableStickyColumns`. See [Sticky columns](#sticky-columns-footer). |
+| `interactive`      | `false`               | This column's cells hold their own controls: a [row link](#row-links) never covers them, nor is it hosted here.                 |
+| `align`            | `'start'`             | `'start' \| 'center' \| 'end'`.                                                                                                 |
+| `width`            | `'minmax(48px, 1fr)'` | Any `grid-template-columns` track value (`'200px'`, `'minmax(120px, 1fr)'`, …). See the notes below.                            |
+| `hidden`           | `false`               | Hide the column initially; toggle later via table state.                                                                        |
+| `disabled`         | `false`               | Turn off this column's header controls: its sortable header, its filter menu and its column menu.                               |
 
 **Every column has a floor**, `minWidth` (96px by default), and it applies whether the
 column is squeezed by a wider neighbour or dragged there by a
@@ -514,6 +517,56 @@ protected readonly COLUMNS = {
 The `filterRows({ rows, filters, columns })` helper is exported and tree-shakable.
 Use `filterValue` when the value to match on differs from the displayed value.
 
+### Quick filter
+
+Bind free text to `quickFilter` and the table keeps the rows in which **every word** of it
+appears in at least one visible column - case-insensitively, a word never spanning two
+columns. The table ships no search field: bind the one your toolbar already has.
+
+```html
+<et-form-field>
+  <et-label>Search people</et-label>
+  <et-input [formField]="search" type="search" />
+</et-form-field>
+
+<et-table [data]="users()" [columns]="COLUMNS" [quickFilter]="search().value()" />
+```
+
+<StoryEmbed id="components-data-display-table--quick-filter" height="420px" />
+
+A column is searched through its `value` when that is a string or a number. Anything else -
+an object, a `Date`, a boolean - is searched only once the column says what its text is with
+`quickFilterValue`, and `quickFilter: false` leaves a column out. A hidden column is never
+searched, so a row never matches on text the reader cannot see.
+
+```ts
+protected readonly COLUMNS = {
+  player: { header: 'Player', value: (p) => p, quickFilterValue: (p) => p.name },
+  joined: { header: 'Joined', value: (p) => p.joinedAt, quickFilterValue: (p) => p.joinedLabel },
+  id: { header: 'Id', value: (p) => p.id, quickFilter: false },
+} satisfies TableColumns<Player>;
+```
+
+It applies in client filter mode, after the column filters, and a match that leaves nothing
+shows the [empty state](#empty-state). In server mode the table leaves the rows alone:
+`tableRowsFromQuery` carries a `quickFilter` signal and a `setQuickFilter` that resets the page,
+so wire your search field to the source and read the text in `args`:
+
+```ts
+users = tableRowsFromQuery({
+  queryCreator: getUsers,
+  args: ({ quickFilter, page }) => ({ queryParams: { search: quickFilter() || undefined, page: page() } }),
+  toRows: (res) => res.items,
+});
+```
+
+```html
+<et-input [formField]="search" (input)="users.setQuickFilter(search().value())" type="search" />
+```
+
+Debounce the calls yourself if every keystroke should not reach the server. The
+`quickFilterRows({ rows, query, columns })` helper is exported and tree-shakable.
+
 ### Searchable & async filter options
 
 Set `filterSearch` to add a search box to the filter menu (client-side for a
@@ -697,11 +750,11 @@ rows reports `hasMore: false` regardless, so a load-more control can't survive o
 past the end when the end can only be inferred. Prefer an exact derivation anyway
 (`res.nextPage !== null`, `res.currentPage < res.totalPageCount`).
 
-It returns `rows`, `loading`, `error`, `total`, `hasMore`, `sort`, `filters` and
-`page` signals plus `setSort`/`setFilters`/`setPage` - the `args` builder reads
-`sort`/`filters`/`page` to build the request. `rows` keeps the previous page visible
-while the next one loads (no empty flash); `setSort`/`setFilters` reset to
-`initialPage`. Pair with `sortMode="server"` and `filterMode="server"`. Call it from
+It returns `rows`, `loading`, `error`, `total`, `hasMore`, `sort`, `filters`,
+`quickFilter` and `page` signals plus `setSort`/`setFilters`/`setQuickFilter`/`setPage` - the
+`args` builder reads `sort`/`filters`/`quickFilter`/`page` to build the request. `rows` keeps
+the previous page visible while the next one loads (no empty flash); `setSort`/`setFilters`/
+`setQuickFilter` reset to `initialPage`. Pair with `sortMode="server"` and `filterMode="server"`. Call it from
 a field initializer / constructor, like a query or query stack.
 
 For the legacy `V2QueryClient`, use **`tableRowsFromV2Query`** - the same config

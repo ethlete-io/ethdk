@@ -10,6 +10,9 @@ export type TableColumnAlign = 'start' | 'center' | 'end';
  */
 export type TableCsvValue = string | number | boolean | Date | null | undefined;
 
+/** What a column hands the quick filter to search - see {@link TableColumn.quickFilterValue}. */
+export type TableQuickFilterValue = string | number | null | undefined;
+
 /** A comparable value a column can be sorted by. */
 export type TableSortValue = string | number | Date | boolean | null | undefined;
 
@@ -231,6 +234,15 @@ export type TableColumn<T, TValue = unknown> = {
 
   /** The value matched against the selected filter values. Defaults to `value`. */
   filterValue?: (row: T) => unknown;
+
+  /**
+   * Include this column in the table's `quickFilter` search. A column whose `value` is neither a
+   * string nor a number is only searched through `quickFilterValue`. @default true
+   */
+  quickFilter?: boolean;
+
+  /** The text the `quickFilter` searches in this column. Defaults to `value` when it is a string or a number. */
+  quickFilterValue?: (row: T) => TableQuickFilterValue;
 
   /**
    * Pin this column to the inline-start or inline-end edge while the table scrolls horizontally.

@@ -35,7 +35,9 @@ export type TableRowsFromV2QueryConfig<TCreator extends AnyV2QueryCreator | AnyL
   initialSort?: TableSort[];
   /** Initial filters. @default [] */
   initialFilters?: TableFilter[];
-  /** The page `args` receives on first load; `setSort`/`setFilters` reset to it. @default 1 */
+  /** Initial free-text search. @default '' */
+  initialQuickFilter?: string;
+  /** The page `args` receives on first load; `setSort`/`setFilters`/`setQuickFilter` reset to it. @default 1 */
   initialPage?: number;
 };
 
@@ -69,9 +71,10 @@ export const tableRowsFromV2Query = <TCreator extends AnyV2QueryCreator | AnyLeg
   const sort = signal<TableSort[]>(config.initialSort ?? []);
   const filters = signal<TableFilter[]>(config.initialFilters ?? []);
   const page = signal(initialPage);
+  const quickFilter = signal(config.initialQuickFilter ?? '');
 
   const query = queryComputed<AnyV2Query | AnyLegacyQuery | null>(() => {
-    const args = config.args({ sort, filters, page });
+    const args = config.args({ sort, filters, page, quickFilter });
 
     if (args === null) return null;
 
@@ -100,6 +103,7 @@ export const tableRowsFromV2Query = <TCreator extends AnyV2QueryCreator | AnyLeg
     sort,
     filters,
     page,
+    quickFilter,
     initialPage,
     toRows: config.toRows,
     toTotal: config.toTotal,

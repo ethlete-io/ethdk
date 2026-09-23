@@ -68,6 +68,7 @@ import {
   TableStateSlice,
 } from './headless/table-features';
 import { filterRows } from './headless/table-filter';
+import { quickFilterRows } from './headless/table-quick-filter';
 import { TableFooterDirective } from './headless/table-footer.directive';
 import { TableRowsSource } from './headless/table-rows-source';
 import { injectTableLabels, TableLabels } from './headless/table-labels';
@@ -411,6 +412,13 @@ export class TableComponent<T> {
   public filterMode = input<'client' | 'server'>();
 
   /**
+   * Free text that narrows the rows to those containing every word of it, in any visible column - see
+   * {@link quickFilterRows} for the matching and the column options. Applied in `'client'` filter mode;
+   * in `'server'` mode pass the same text to your query instead.
+   */
+  public quickFilter = input<string | null | undefined>('');
+
+  /**
    * The detail template rendered as a full-width row when a row is expanded. Context:
    * `{ $implicit: row }`. Nest another `<et-table>` here for sub-tables.
    *
@@ -750,6 +758,10 @@ export class TableComponent<T> {
     this.orderedColumns().filter((column) => !this.hiddenColumns().has(column.key)),
   );
 
+  private visibleColumnRecord = computed<TableColumns<T>>(() =>
+    Object.fromEntries(this.visibleColumns().map((column) => [column.key, column])),
+  );
+
   /** Whether any visible column has a registered footer cell (drives the sticky footer row). */
   public hasFooter = computed(() => {
     const footers = this.columnTemplates().footer;
@@ -892,8 +904,8 @@ export class TableComponent<T> {
   });
 
   /**
-   * The rendered rows - client-filtered then client-sorted for whichever of
-   * `filterMode`/`sortMode` is `'client'`.
+   * The rendered rows - client-filtered (column filters and {@link quickFilter}) then client-sorted for
+   * whichever of `filterMode`/`sortMode` is `'client'`.
    */
   public rows = computed(() => {
     const columns = this.columns();
@@ -902,6 +914,7 @@ export class TableComponent<T> {
 
     if (this.resolvedFilterMode() !== 'server') {
       result = filterRows({ rows: result, filters: this.filters(), columns });
+      result = quickFilterRows({ rows: result, query: this.quickFilter(), columns: this.visibleColumnRecord() });
     }
 
     if (this.resolvedSortMode() !== 'server') {

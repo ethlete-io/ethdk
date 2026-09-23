@@ -133,6 +133,15 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
         </div>
       }
 
+      @if (quickFilter()) {
+        <div class="mb-2">
+          <et-form-field appearance="box" size="sm">
+            <et-label>Search people</et-label>
+            <et-input [formField]="searchForm.query" type="search" />
+          </et-form-field>
+        </div>
+      }
+
       @if (columnMenu()) {
         <!-- Above the table, not in a header cell: a visibility list must not hang off the header it
              edits - hiding a column relays that header out and would drag the menu with it, and hiding
@@ -155,6 +164,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
         [rowsSource]="serverPaged() ? serverRows : undefined"
         [columns]="columns()"
         [multiSort]="multiSort()"
+        [quickFilter]="quickFilter() ? searchForm.query().value() : ''"
         [rowInteractive]="rowInteractive()"
         [rowLink]="rowLinks() ? personLink : undefined"
         [rowKey]="rowKey"
@@ -386,6 +396,7 @@ export class TableStorybookComponent {
   public constrainHeight = input(false);
   public empty = input(false);
   public multiSort = input<boolean | 'shift'>(false);
+  public quickFilter = input(false);
   public expandable = input(false);
   public subTable = input(false);
   public loading = input(false);
@@ -416,6 +427,8 @@ export class TableStorybookComponent {
   public density = input<'sm' | 'md' | 'lg'>('md');
   public surface = input('dark');
   protected selection = viewChild<TableSelectionDirective<Person>>('selection');
+
+  protected searchForm = form(signal({ query: '' }));
 
   // Page-size select is a signal form, mirroring how a real form would carry it.
   public pageSizeForm = form(linkedSignal(() => ({ pageSize: 10 })));

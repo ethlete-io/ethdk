@@ -7,6 +7,7 @@ const ROW_INTERACTIVE_STORY_ID = 'components-data-display-table--row-interactive
 const EXPANDABLE_STORY_ID = 'components-data-display-table--expandable';
 const MULTI_SORT_STORY_ID = 'components-data-display-table--multi-sort';
 const SHIFT_MULTI_SORT_STORY_ID = 'components-data-display-table--shift-multi-sort';
+const QUICK_FILTER_STORY_ID = 'components-data-display-table--quick-filter';
 
 function cell(root: Locator, rowIndex: number, colKey: string): Locator {
   return root.locator('.et-table-row').nth(rowIndex).locator(`[data-col-key="${colKey}"]`);
@@ -205,6 +206,47 @@ test.describe('table / keyboard', () => {
     await expect(sortPriority(root, 'email')).toHaveCount(0);
   });
 
+  test('typing into the search field narrows the rows to the quick filter', async ({ page }) => {
+    const root = await openStory(page, QUICK_FILTER_STORY_ID);
+    const search = root.getByRole('searchbox', { name: 'Search people' });
+    const rows = root.locator('.et-table-row');
+
+    await expect(rows).toHaveCount(6);
+    await tabUntilFocused(page, search);
+    await page.keyboard.type('admin');
+
+    await expect(rows).toHaveCount(2);
+    await expect(cell(root, 0, 'name')).toHaveText('Ada Lovelace 1');
+
+    await page.keyboard.type(' kath');
+
+    await expect(rows).toHaveCount(1);
+    await expect(cell(root, 0, 'name')).toHaveText('Katherine Johnson 1');
+
+    await pressKey(page, 'ControlOrMeta+a');
+    await pressKey(page, 'Backspace');
+
+    await expect(rows).toHaveCount(6);
+  });
+
+  test('the expander button toggles aria-expanded', async ({ page }) => {
+    const root = await openStory(page, EXPANDABLE_STORY_ID);
+    const expanderButton = root.locator('.et-table-row').first().locator('.et-table-expander');
+
+    await tabUntilFocused(page, expanderButton);
+    await expectFocusVisible(expanderButton);
+    await expect(expanderButton).toHaveAttribute('aria-expanded', 'false');
+    await expect(expanderButton).toHaveAccessibleName('Expand row');
+
+    await pressKey(page, 'Enter');
+    await expect(expanderButton).toHaveAttribute('aria-expanded', 'true');
+    await expect(expanderButton).toHaveAccessibleName('Collapse row');
+  });
+});
+
+test.describe('table / pointer', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: modifier clicks and mouse input');
+
   test('Shift + click adds a header to the sort without selecting text', async ({ page }) => {
     const root = await openStory(page, SHIFT_MULTI_SORT_STORY_ID);
 
@@ -226,18 +268,14 @@ test.describe('table / keyboard', () => {
     await expect(sortPriority(root, 'name')).toHaveText('2');
   });
 
-  test('the expander button toggles aria-expanded', async ({ page }) => {
-    const root = await openStory(page, EXPANDABLE_STORY_ID);
-    const expanderButton = root.locator('.et-table-row').first().locator('.et-table-expander');
+  test('a quick filter that matches nothing shows the empty state', async ({ page }) => {
+    const root = await openStory(page, QUICK_FILTER_STORY_ID);
 
-    await tabUntilFocused(page, expanderButton);
-    await expectFocusVisible(expanderButton);
-    await expect(expanderButton).toHaveAttribute('aria-expanded', 'false');
-    await expect(expanderButton).toHaveAccessibleName('Expand row');
+    await root.getByRole('searchbox', { name: 'Search people' }).click();
+    await page.keyboard.type('nobody here');
 
-    await pressKey(page, 'Enter');
-    await expect(expanderButton).toHaveAttribute('aria-expanded', 'true');
-    await expect(expanderButton).toHaveAccessibleName('Collapse row');
+    await expect(root.locator('.et-table-row')).toHaveCount(0);
+    await expect(root.getByText('No people found')).toBeVisible();
   });
 });
 

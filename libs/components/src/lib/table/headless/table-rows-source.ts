@@ -1,4 +1,4 @@
-import { computed, effect, linkedSignal, Signal, WritableSignal } from '@angular/core';
+import { computed, effect, linkedSignal, signal, Signal, WritableSignal } from '@angular/core';
 import { TableFilter, TableSort } from '../table.types';
 
 // The client-agnostic core shared by the signals-client (`tableRowsFromQuery`) and legacy-client
@@ -13,6 +13,8 @@ export type TableRowsQueryState = {
   filters: Signal<TableFilter[]>;
   /** The current page (1-based by default). */
   page: Signal<number>;
+  /** The free-text search (feed it through `setQuickFilter`), for the backend to match rows against. */
+  quickFilter: Signal<string>;
 };
 
 /**
@@ -66,12 +68,16 @@ export type TableRowsFromQuery<TRow> = {
   filters: Signal<TableFilter[]>;
   /** The current page. */
   page: Signal<number>;
+  /** The current free-text search. */
+  quickFilter: Signal<string>;
   /** Set the sort (wire the table's `(sortChange)`); resets the page to `initialPage`. */
   setSort: (sort: TableSort[]) => void;
   /** Set the filters (wire the table's `(filtersChange)`); resets the page to `initialPage`. */
   setFilters: (filters: TableFilter[]) => void;
   /** Set the page (wire a paginator). */
   setPage: (page: number) => void;
+  /** Set the free-text search (wire a search field); resets the page to `initialPage`. */
+  setQuickFilter: (quickFilter: string) => void;
 };
 
 /** A per-client view of a running query, normalized to three signals. */
@@ -89,6 +95,7 @@ export type CreateTableRowsSourceOptions<TResponse, TRow> = {
   sort: WritableSignal<TableSort[]>;
   filters: WritableSignal<TableFilter[]>;
   page: WritableSignal<number>;
+  quickFilter?: WritableSignal<string>;
   initialPage: number;
   toRows: (response: TResponse) => TRow[];
   toTotal?: (response: TResponse) => number;
@@ -100,6 +107,7 @@ export const createTableRowsSource = <TResponse, TRow>(
   options: CreateTableRowsSourceOptions<TResponse, TRow>,
 ): TableRowsFromQuery<TRow> => {
   const { driver, sort, filters, page, initialPage, toRows, toTotal, toHasMore } = options;
+  const quickFilter = options.quickFilter ?? signal('');
 
   // Keep the previous page's rows while the next request is in flight (driver.response is null
   // between executions) so the table doesn't flash empty. linkedSignal folds synchronously on read.
@@ -141,6 +149,7 @@ export const createTableRowsSource = <TResponse, TRow>(
     sort: sort.asReadonly(),
     filters: filters.asReadonly(),
     page: page.asReadonly(),
+    quickFilter: quickFilter.asReadonly(),
     setSort: (next) => {
       sort.set(next);
       page.set(initialPage);
@@ -150,5 +159,9 @@ export const createTableRowsSource = <TResponse, TRow>(
       page.set(initialPage);
     },
     setPage: (next) => page.set(next),
+    setQuickFilter: (next) => {
+      quickFilter.set(next);
+      page.set(initialPage);
+    },
   };
 };

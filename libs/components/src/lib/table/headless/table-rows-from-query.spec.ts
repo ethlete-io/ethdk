@@ -9,7 +9,10 @@ import { TableRowsFromQuery } from './table-rows-source';
 
 type User = { id: string; name: string };
 type UsersResponse = { items: User[]; totalHits: number; hasMore: boolean };
-type UsersArgs = { queryParams: { sortBy?: string; sortOrder?: string; page: number }; response: UsersResponse };
+type UsersArgs = {
+  queryParams: { sortBy?: string; sortOrder?: string; search?: string; page: number };
+  response: UsersResponse;
+};
 
 const page1: User[] = [{ id: '1', name: 'Ada' }];
 const page2: User[] = [{ id: '2', name: 'Alan' }];
@@ -31,8 +34,13 @@ describe('tableRowsFromQuery', () => {
     return TestBed.runInInjectionContext(() =>
       tableRowsFromQuery({
         queryCreator: getUsers,
-        args: ({ sort, page }) => ({
-          queryParams: { sortBy: sort()[0]?.key, sortOrder: sort()[0]?.direction, page: page() },
+        args: ({ sort, page, quickFilter }) => ({
+          queryParams: {
+            sortBy: sort()[0]?.key,
+            sortOrder: sort()[0]?.direction,
+            search: quickFilter() || undefined,
+            page: page(),
+          },
         }),
         toRows: (response) => response.items,
         toTotal: (response) => response.totalHits,
@@ -46,7 +54,12 @@ describe('tableRowsFromQuery', () => {
     TestBed.tick();
     const req = httpMock.expectOne((r) => r.url.includes('/users'));
     const params = new URL(req.request.urlWithParams, 'https://api.example.com').searchParams;
-    const captured = { sortBy: params.get('sortBy'), sortOrder: params.get('sortOrder'), page: params.get('page') };
+    const captured = {
+      sortBy: params.get('sortBy'),
+      sortOrder: params.get('sortOrder'),
+      search: params.get('search'),
+      page: params.get('page'),
+    };
 
     if ('error' in body) {
       req.flush({ message: 'Boom' }, { status: 500, statusText: 'Server Error' });
@@ -94,6 +107,21 @@ describe('tableRowsFromQuery', () => {
     expect(captured.sortOrder).toBe('desc');
     expect(captured.page).toBe('1'); // reset to initialPage
     expect(source.page()).toBe(1);
+  });
+
+  it('re-executes with the quick filter and resets the page when setQuickFilter is called', () => {
+    const source = createSource();
+    respond({ items: page1, totalHits: 42, hasMore: true });
+
+    source.setPage(3);
+    respond({ items: page2, totalHits: 42, hasMore: true });
+
+    source.setQuickFilter('ada');
+    const captured = respond({ items: page1, totalHits: 1, hasMore: false });
+
+    expect(captured.search).toBe('ada');
+    expect(captured.page).toBe('1');
+    expect(source.quickFilter()).toBe('ada');
   });
 
   it('keeps the previous rows visible while the next page loads', () => {

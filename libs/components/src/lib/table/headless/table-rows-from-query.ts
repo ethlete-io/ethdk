@@ -28,7 +28,9 @@ export type TableRowsFromQueryConfig<TCreator extends AnyQueryCreator, TRow> = {
   initialSort?: TableSort[];
   /** Initial filters. @default [] */
   initialFilters?: TableFilter[];
-  /** The page `args` receives on first load; `setSort`/`setFilters` reset to it. @default 1 */
+  /** Initial free-text search. @default '' */
+  initialQuickFilter?: string;
+  /** The page `args` receives on first load; `setSort`/`setFilters`/`setQuickFilter` reset to it. @default 1 */
   initialPage?: number;
 };
 
@@ -78,9 +80,10 @@ export const tableRowsFromQuery = <TCreator extends AnyQueryCreator, TRow>(
   const sort = signal<TableSort[]>(config.initialSort ?? []);
   const filters = signal<TableFilter[]>(config.initialFilters ?? []);
   const page = signal(initialPage);
+  const quickFilter = signal(config.initialQuickFilter ?? '');
 
   // Created once - `withArgs` re-runs as sort/filters/page change.
-  const query = config.queryCreator(withArgs<TArgs>(() => config.args({ sort, filters, page }) ?? null));
+  const query = config.queryCreator(withArgs<TArgs>(() => config.args({ sort, filters, page, quickFilter }) ?? null));
   const toErrorMessage = config.toErrorMessage ?? firstErrorMessage;
 
   return createTableRowsSource<TResponse, TRow>({
@@ -96,6 +99,7 @@ export const tableRowsFromQuery = <TCreator extends AnyQueryCreator, TRow>(
     sort,
     filters,
     page,
+    quickFilter,
     initialPage,
     toRows: config.toRows,
     toTotal: config.toTotal,
