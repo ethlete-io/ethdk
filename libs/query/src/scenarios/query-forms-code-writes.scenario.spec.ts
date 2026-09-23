@@ -65,7 +65,7 @@ describe('query form writes from code scenario', () => {
     s.tick(1);
 
     expect(
-      s.api.requests.filter((request) => request.path === '/items').map((request) => request.query.search),
+      s.api.requests.filter((request) => request.path === '/items').map((request) => request.query['search']),
     ).toEqual([undefined, 'shoes']);
   });
 
