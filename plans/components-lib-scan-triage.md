@@ -6,6 +6,10 @@ Still open:
 
 - **Two L refactors:** merging the two date-time picker abstract bases into one (only the commit
   logic is shared so far); moving phone, otp and tag onto `TextFieldControlDirective`.
+- Phone/otp/tag onto `TextFieldControlDirective`: phone and tag done in `b1a7be050`, on a new internal
+  base `TextShellControlDirective` that `TextFieldControlDirective` now extends; extending it directly
+  would add `hidden`/`warnings` (phone also `maxLength`/`pending`) as inputs signal forms auto-binds.
+  Otp stays out: it has no `mixed`/`mixedLabel` and does not mount the shell stylesheet.
 - **Improvement 11** (comment-policy cleanup) — partly done; stays opportunistic per domain.
 
 Decision 2026-09-23 on the nine former decision items:
