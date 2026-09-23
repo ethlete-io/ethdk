@@ -250,11 +250,14 @@ export type QueryFormBranch<TFields extends QueryFormFields> = {
   readonly liveValue: Signal<QueryFormModel<TFields>>;
   /** The number of active (non-default) filters in the branch. */
   readonly activeFilterCount: Signal<number>;
-  setValue(value: QueryFormModel<TFields>): void;
-  patchValue(value: Partial<QueryFormModel<TFields>>): void;
-  resetFieldToDefault(key: keyof QueryFormModel<TFields>): void;
-  resetAllFieldsToDefault(): void;
+  setValue(value: QueryFormModel<TFields>, options?: QueryFormBranchWriteOptions): void;
+  patchValue(value: Partial<QueryFormModel<TFields>>, options?: QueryFormBranchWriteOptions): void;
+  resetFieldToDefault(key: keyof QueryFormModel<TFields>, options?: QueryFormBranchWriteOptions): void;
+  resetAllFieldsToDefault(options?: QueryFormBranchWriteOptions): void;
 };
+
+/** Options for a write to a {@link QueryFormBranch}. */
+export type QueryFormBranchWriteOptions = Pick<QueryFormSignalsWriteOptions, 'debounce'>;
 
 const createBranch = <TFields extends QueryFormFields>(
   fields: TFields,
@@ -301,6 +304,12 @@ const createBranch = <TFields extends QueryFormFields>(
     }
   };
 
+  const write = (next: QueryFormModel<TFields>, options?: QueryFormBranchWriteOptions) => {
+    model.set(next);
+
+    if (!options?.debounce) flush();
+  };
+
   effect(
     () => {
       const live = normalizedLive() as Dict;
@@ -331,13 +340,13 @@ const createBranch = <TFields extends QueryFormFields>(
     value: committed.asReadonly(),
     liveValue: model.asReadonly(),
     activeFilterCount: computed(() => computeFilterCount(fields, committed() as Dict, defaults)),
-    setValue: (value) => model.set(clone(value)),
-    patchValue: (value) => model.update((cur) => ({ ...cur, ...value })),
-    resetFieldToDefault: (key) => model.update((cur) => ({ ...cur, [key]: defaultFor(key as string) })),
-    resetAllFieldsToDefault: () => {
+    setValue: (value, options) => write(clone(value), options),
+    patchValue: (value, options) => write({ ...model(), ...value }, options),
+    resetFieldToDefault: (key, options) => write({ ...model(), [key]: defaultFor(key as string) }, options),
+    resetAllFieldsToDefault: (options) => {
       for (const key of Object.keys(fields)) defaultFor(key);
 
-      model.set(clone(defaults) as QueryFormModel<TFields>);
+      write(clone(defaults) as QueryFormModel<TFields>, options);
     },
   };
 };
@@ -502,6 +511,11 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
     const writeDefault = def.appendDefaultValueToUrl === true;
 
     if (!writeToUrl || (isDefault && !writeDefault)) return undefined;
+
+    return serialize(key, def, value);
+  };
+
+  const serialize = (key: string, def: QueryFieldDef<unknown>, value: unknown) => {
     if (def.valueToQueryParam) return def.valueToQueryParam(value);
     if (value === '' && defaults[key] === null) return undefined;
     if (Array.isArray(value) && value.length === 0) return ET_EMPTY_ARRAY_VALUE;
@@ -701,6 +715,12 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
     }
 
     model.set(next as QueryFormModel<TFields>);
+
+    if (options?.debounce) {
+      onLiveChange(next);
+    } else {
+      flush();
+    }
   };
 
   const setValue = (value: QueryFormModel<TFields>, options?: QueryFormSignalsWriteOptions) =>

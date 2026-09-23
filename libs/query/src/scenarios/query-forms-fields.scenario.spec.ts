@@ -40,7 +40,7 @@ describe('query form fields scenario', () => {
       defineQueryForm({ fields: { search: searchQueryField() } }).observe({ writeToQueryParams: false }),
     );
 
-    qf.setValue({ search: 'shoes' });
+    qf.setValue({ search: 'shoes' }, { debounce: true });
     s.tick(50);
     expect(qf.value().search).toBeNull();
 
@@ -146,7 +146,7 @@ describe('query form fields scenario', () => {
       }).observe({ writeToQueryParams: false }),
     );
 
-    qf.patchValue({ region: 'eu' });
+    qf.patchValue({ region: 'eu' }, { debounce: true });
     s.tick(100);
     expect(qf.value().region).toBeNull();
 

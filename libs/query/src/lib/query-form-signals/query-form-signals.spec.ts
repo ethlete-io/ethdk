@@ -67,9 +67,9 @@ describe('defineQueryForm', () => {
         .observe({ writeToQueryParams: false, syncOnNavigation: false }),
     );
 
-    qf.setValue({ search: 'ab' });
+    qf.setValue({ search: 'ab' }, { debounce: true });
     TestBed.tick();
-    expect(qf.value().search).toBeNull(); // still debouncing
+    expect(qf.value().search).toBeNull();
 
     vi.advanceTimersByTime(299);
     expect(qf.value().search).toBeNull();

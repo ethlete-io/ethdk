@@ -99,22 +99,44 @@ which is what makes `?tag=a` and `?tag=a&tag=b` both work.
 
 ## Form API
 
-| Member                                      | Description                                                                                                                                                                                                     |
-| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fields`                                    | The bindable signal-forms field tree (`qf.fields.search`).                                                                                                                                                      |
-| `value: Signal`                             | The committed (debounced, reset-resolved) value.                                                                                                                                                                |
-| `previousValue: Signal`                     | The committed value before the most recent change.                                                                                                                                                              |
-| `changes: Signal`                           | `{ previousValue, currentValue }` of the most recent change.                                                                                                                                                    |
-| `activeFilterCount: Signal<number>`         | Count of non-default fields, excluding the ignored keys and `skipInFilterCount`.                                                                                                                                |
-| `defaultValue`                              | The default value of the whole form.                                                                                                                                                                            |
-| `setValue(value, { skipResets? })`          | Replace the whole value.                                                                                                                                                                                        |
-| `patchValue(partial, { skipResets? })`      | Merge a partial value.                                                                                                                                                                                          |
-| `resetFieldToDefault(key, { skipResets? })` | Reset one field.                                                                                                                                                                                                |
-| `resetFieldsToDefault(keys, …)`             | Reset several fields.                                                                                                                                                                                           |
-| `resetAllFieldsToDefault({ skipFields? })`  | Reset everything (optionally skipping some fields).                                                                                                                                                             |
-| `branch()`                                  | A detached editor over the same fields - see [Filter overlays](#filter-overlays).                                                                                                                               |
-| `observe(options?)`                         | Start URL sync. Returns the form for chaining.                                                                                                                                                                  |
-| `unobserve()`                               | Stop syncing and remove this form's params from the URL, unless a navigation to another route is already in flight - that route's own params are left alone. A pending debounced edit still commits to `value`. |
+| Member                                            | Description                                                                                                                                                                                                     |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fields`                                          | The bindable signal-forms field tree (`qf.fields.search`).                                                                                                                                                      |
+| `value: Signal`                                   | The committed (debounced, reset-resolved) value.                                                                                                                                                                |
+| `previousValue: Signal`                           | The committed value before the most recent change.                                                                                                                                                              |
+| `changes: Signal`                                 | `{ previousValue, currentValue }` of the most recent change.                                                                                                                                                    |
+| `activeFilterCount: Signal<number>`               | Count of non-default fields, excluding the ignored keys and `skipInFilterCount`.                                                                                                                                |
+| `defaultValue`                                    | The default value of the whole form.                                                                                                                                                                            |
+| `setValue(value, { skipResets?, debounce? })`     | Replace the whole value. Commits at once - see [Writes from code](#writes-from-code).                                                                                                                           |
+| `patchValue(partial, { skipResets?, debounce? })` | Merge a partial value. Commits at once.                                                                                                                                                                         |
+| `resetFieldToDefault(key, { skipResets? })`       | Reset one field.                                                                                                                                                                                                |
+| `resetFieldsToDefault(keys, …)`                   | Reset several fields.                                                                                                                                                                                           |
+| `resetAllFieldsToDefault({ skipFields? })`        | Reset everything (optionally skipping some fields).                                                                                                                                                             |
+| `branch()`                                        | A detached editor over the same fields - see [Filter overlays](#filter-overlays).                                                                                                                               |
+| `observe(options?)`                               | Start URL sync. Returns the form for chaining.                                                                                                                                                                  |
+| `unobserve()`                                     | Stop syncing and remove this form's params from the URL, unless a navigation to another route is already in flight - that route's own params are left alone. A pending debounced edit still commits to `value`. |
+
+### Writes from code
+
+`setValue`, `patchValue` and the reset methods commit synchronously: `value()`,
+`previousValue()` and `activeFilterCount()` reflect the write - `isResetBy` resolved - on
+the next line, and so does a query whose args read `value()` on its next run. That holds
+before `observe()` too, so a seed written ahead of it is what the first request carries.
+
+A write from code also skips the field's `debounce`. The debounce exists to batch
+keystrokes from a bound control; a write from code is one discrete change (an "apply"
+button, a seed, a chip removal), and waiting 300 ms for it only delays the request and
+leaves `value()` stale. A control that forwards every keystroke through `patchValue`
+instead of `[formField]` passes `{ debounce: true }` to keep the field's debounce:
+
+```ts
+onInput(text: string) {
+  this.qf.patchValue({ search: text }, { debounce: true });
+}
+```
+
+The URL follows asynchronously, through a router navigation, and an edit in a bound
+control still waits its field's debounce.
 
 ### `isResetBy` is transitive
 
@@ -225,7 +247,7 @@ The branch exposes `fields`, `value`, `liveValue`, `activeFilterCount`, `setValu
 `patchValue`, `resetFieldToDefault` and `resetAllFieldsToDefault`. Its `value` is
 committed the way the source form's is - debounced per field and with the
 `isResetBy` graph applied - so a preview query bound to it does not fire per
-keystroke. `liveValue` is the raw value of the bound controls right now - including a
+keystroke. Its write methods commit at once too, unless passed `{ debounce: true }`. `liveValue` is the raw value of the bound controls right now - including a
 text field the user has just cleared to `''` - so apply that on an explicit submit; a click inside
 the debounce window would otherwise lose the last keystrokes.
 
@@ -243,7 +265,8 @@ By default it shares the source form's injector lifetime. Code that creates a br
 | `QueryFormChange<TFields>`       | `{ previousValue, currentValue }` - what `changes()` holds.                                                                                            |
 | `QueryFormBranch<TFields>`       | What [`branch()`](#filter-overlays) returns.                                                                                                           |
 | `DefineQueryFormConfig<TFields>` | The argument of `defineQueryForm`.                                                                                                                     |
-| `QueryFormSignalsObserveOptions` | The argument of [`observe()`](#url-sync); `QueryFormSignalsWriteOptions` is the `{ skipResets }` bag the write methods take.                           |
+| `QueryFormSignalsObserveOptions` | The argument of [`observe()`](#url-sync); `QueryFormSignalsWriteOptions` is the `{ skipResets, debounce }` bag the write methods take.                 |
+| `QueryFormBranchWriteOptions`    | The `{ debounce }` bag a branch's write methods take.                                                                                                  |
 | `Sort`, `SortDirection`          | The sort field's value (`{ active, direction }`) and its `'asc' \| 'desc' \| ''` direction.                                                            |
 
 ## Legacy `QueryForm`

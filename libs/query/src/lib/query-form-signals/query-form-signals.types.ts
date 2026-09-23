@@ -141,4 +141,11 @@ export type QueryFormSignalsWriteOptions = {
    * @default false
    */
   readonly skipResets?: boolean;
+
+  /**
+   * Wait the changed fields' `debounce` before committing, as a bound control does. Without it a write
+   * commits at once and `value()` reflects it on the next line.
+   * @default false
+   */
+  readonly debounce?: boolean;
 };

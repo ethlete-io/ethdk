@@ -341,7 +341,7 @@ describe('query forms scenario', () => {
     qf.setValue({ search: null, page: 4 });
     await s.settle();
 
-    qf.patchValue({ search: 'a' }, { skipResets: true });
+    qf.patchValue({ search: 'a' }, { skipResets: true, debounce: true });
     s.tick(50);
     expect(qf.value()).toEqual({ search: null, page: 4 });
 
@@ -944,7 +944,7 @@ describe('query forms scenario with the devtools attached', () => {
     expect(handle.fields().map((field) => field.debounceMs)).toEqual([300, null, null]);
     expect(handle.fields().map((field) => field.isResetBy)).toEqual([[], [], ['search']]);
 
-    qf.patchValue({ search: 'shoes' });
+    qf.patchValue({ search: 'shoes' }, { debounce: true });
     s.tick(50);
 
     expect(handle.isCommitPending()).toBe(true);
