@@ -390,7 +390,7 @@ programmatic write into the bound field. Pastes strip separators (`123-456` → 
 Editing is append/delete-at-end (the caret is pinned to the end), with the active
 segment marked visually. A `charset` RegExp is tested per character, so its `g`
 and `y` flags are ignored. Narrowing `charset` or shrinking `length` at runtime
-re-sanitizes the value that is already in the field.
+re-sanitizes the value that is already in the field, without emitting `complete`.
 
 | Token                              | Default |
 | ---------------------------------- | ------- |

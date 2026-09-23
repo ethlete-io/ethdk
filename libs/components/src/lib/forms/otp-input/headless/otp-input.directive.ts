@@ -101,6 +101,7 @@ export class OtpInputDirective
   });
 
   private completedValue: string | null = null;
+  private lastSeenValue: string | null = null;
 
   constructor() {
     super();
@@ -112,11 +113,16 @@ export class OtpInputDirective
     // re-sanitize it here, and emit `complete` from the value rather than from the `input`
     // handler, which never sees a programmatic write
     effect(() => {
-      const sanitized = this.sanitize(this.value());
+      const raw = this.value();
+      const sanitized = this.sanitize(raw);
       const isComplete = sanitized.length === this.length();
 
       untracked(() => {
-        if (sanitized !== this.value()) {
+        const written = raw !== this.lastSeenValue;
+
+        this.lastSeenValue = sanitized;
+
+        if (sanitized !== raw) {
           this.value.set(sanitized);
         }
 
@@ -128,7 +134,8 @@ export class OtpInputDirective
 
         if (sanitized !== this.completedValue) {
           this.completedValue = sanitized;
-          this.complete.emit(sanitized);
+
+          if (written) this.complete.emit(sanitized);
         }
       });
     });

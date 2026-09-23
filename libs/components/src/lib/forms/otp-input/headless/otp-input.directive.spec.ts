@@ -114,7 +114,21 @@ describe('OtpInputDirective', () => {
     expect(driver.host.value()).toBe('12');
     expect(driver.fieldValue()).toBe('12');
     expect(driver.segmentTexts()).toEqual(['1', '2']);
-    expect(driver.host.completions).toEqual(['1234', '12']);
+    expect(driver.host.completions).toEqual(['1234']);
+  });
+
+  it('does not emit completed when a length shrink lands on the new length', () => {
+    driver.type('12');
+
+    driver.host.length.set(2);
+    driver.tick();
+
+    expect(driver.host.completions).toEqual([]);
+
+    driver.type('1');
+    driver.type('13');
+
+    expect(driver.host.completions).toEqual(['13']);
   });
 
   it('strips the value when the charset narrows', () => {
