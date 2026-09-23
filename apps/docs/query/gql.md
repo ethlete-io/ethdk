@@ -89,12 +89,27 @@ Creator options are otherwise the [HTTP creator options](/query/http#creator-opt
 
 Everything else works exactly as described in the core guides, since GQL queries are regular queries underneath - [features](/query/features) like `withPolling`, [query stacks](/query/stacks) and [error handling](/query/errors).
 
+## Partial data and its errors
+
+The default drops the `errors` that arrive next to partial data. To read them, declare the response as `GqlDataWithErrors<TData>` and pass `unwrapGqlResponseWithErrors` - `response()` then holds `{ data, errors }`, with `errors` an empty array when the server sent none. A response without data still fails with `ET601` exactly as above, so `data` is never `null` on a success.
+
+```ts
+import { GqlDataWithErrors, unwrapGqlResponseWithErrors } from '@ethlete/query';
+
+const getUser = gqlQueryPost<{ response: GqlDataWithErrors<{ user: User }> }>(gqlDocument, {
+  transformResponse: unwrapGqlResponseWithErrors,
+});
+
+// userQuery.response()?.errors - each a GqlError: message, path, locations, extensions
+```
+
 ## Types
 
 A GQL creator's `TArgs` is a `GqlQueryArgs` - the core [`QueryArgs`](/query/queries#types) plus
 `variables` - and `GqlVariablesType<TArgs>` extracts that bag the way `ResponseType` extracts the
 response. `GqlRawResponseType<TArgs>` is what `transformResponse` receives: the declared
-`rawResponse`, or `{ data: TResponse }` when none was declared.
+`rawResponse`, a `GqlEnvelope<TData>` (`data` plus optional `errors`) when the response is a
+`GqlDataWithErrors<TData>`, or `{ data: TResponse }` otherwise.
 
 The document a creator takes is a `GQL`, the branded string the `gql` tag returns, and the second
 argument is a `CreateGqlQueryCreatorOptions` - the [HTTP creator options](/query/http#creator-options)

@@ -10,8 +10,10 @@ import {
   createSecureGqlQueryViaGet,
   createSecureGqlQueryViaPost,
   gql,
+  GqlDataWithErrors,
   queryErrorMessage,
   queryErrorMessages,
+  unwrapGqlResponseWithErrors,
   withArgs,
   withPolling,
 } from '../index';
@@ -267,6 +269,63 @@ describe('gql scenario', () => {
 
       expect(query.response()).toEqual({ user: { id: '1', name: 'Ada' } });
       expect(query.error()).toBeNull();
+
+      c.destroy();
+    });
+
+    it('exposes the errors next to partial data through unwrapGqlResponseWithErrors', () => {
+      const s = scenario();
+      const errors = [{ message: 'friends unavailable', path: ['user', 'friends'] }];
+      s.api.on('POST', '/', () => ({ body: { data: { user: { id: '1', name: 'Ada' } }, errors } }));
+
+      const getUser = createGqlQueryViaPost(s.clientRef)<{ response: GqlDataWithErrors<UserResponse> }>(getUserDoc, {
+        transformResponse: unwrapGqlResponseWithErrors,
+      });
+
+      const c = s.consumer();
+      const query = c.run(() => getUser());
+      s.tick();
+
+      expect(query.response()).toEqual({ data: { user: { id: '1', name: 'Ada' } }, errors });
+      expect(query.executionState()).toMatchObject({ type: 'success' });
+
+      c.destroy();
+    });
+
+    it('gives unwrapGqlResponseWithErrors an empty errors array on a clean response', () => {
+      const s = scenario();
+      s.api.on('POST', '/', () => ({ body: { data: { user: { id: '1', name: 'Ada' } } } }));
+
+      const getUser = createGqlQueryViaPost(s.clientRef)<{ response: GqlDataWithErrors<UserResponse> }>(getUserDoc, {
+        transformResponse: unwrapGqlResponseWithErrors,
+      });
+
+      const c = s.consumer();
+      const query = c.run(() => getUser());
+      s.tick();
+
+      expect(query.response()?.errors).toEqual([]);
+      expect(query.response()?.data.user.name).toBe('Ada');
+
+      c.destroy();
+    });
+
+    it('still fails a data-less 200 with ET601 through unwrapGqlResponseWithErrors', () => {
+      const s = scenario();
+      const errors = [{ message: 'User not found.' }];
+      s.api.on('POST', '/', () => ({ body: { data: null, errors } }));
+
+      const getUser = createGqlQueryViaPost(s.clientRef)<{ response: GqlDataWithErrors<UserResponse> }>(getUserDoc, {
+        transformResponse: unwrapGqlResponseWithErrors,
+      });
+
+      const c = s.consumer();
+      const query = c.run(() => getUser());
+      s.tick();
+
+      expect(query.response()).toBeNull();
+      expect(query.error()?.raw.message).toContain('ET601');
+      expect(queryErrorMessages(query.error())).toEqual(['User not found.']);
 
       c.destroy();
     });

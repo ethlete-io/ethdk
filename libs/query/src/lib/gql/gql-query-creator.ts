@@ -8,16 +8,18 @@ import {
   RouteType,
 } from '../http';
 import { createGqlQuery, GqlQueryArgs } from './gql-query';
-import { unwrapGqlResponse } from './gql-response';
+import { GqlDataWithErrors, GqlEnvelope, unwrapGqlResponse } from './gql-response';
 
 /**
- * The envelope a GraphQL endpoint puts on the wire: whatever the args declare as `rawResponse`, or
- * `{ data: TResponse }` - the GraphQL-over-HTTP envelope the default unwrapping reads - when they
- * declare none.
+ * The envelope a GraphQL endpoint puts on the wire: whatever the args declare as `rawResponse`, the
+ * `GqlEnvelope` around `TData` when the response is a `GqlDataWithErrors<TData>`, or
+ * `{ data: TResponse }` - the GraphQL-over-HTTP envelope the default unwrapping reads.
  */
 export type GqlRawResponseType<TArgs extends GqlQueryArgs> = 'rawResponse' extends keyof TArgs
   ? RawResponseType<TArgs>
-  : { data: ResponseType<TArgs> };
+  : ResponseType<TArgs> extends GqlDataWithErrors<infer TData>
+    ? GqlEnvelope<TData>
+    : { data: ResponseType<TArgs> };
 
 export type CreateGqlQueryCreatorOptions<TArgs extends GqlQueryArgs> = Omit<
   CreateQueryCreatorOptions<TArgs>,
