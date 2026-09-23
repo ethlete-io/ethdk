@@ -180,23 +180,56 @@ export class LoginFormComponent {
 }
 ```
 
-| Member                 | Description                                                                                            |
-| ---------------------- | ------------------------------------------------------------------------------------------------------ |
-| `canMatch`             | Requires a session. On a lazy route this is the one to use - the child bundle is never downloaded.     |
-| `canActivate`          | The same decision, as a `canActivate` guard.                                                           |
-| `canMatchAnonymous`    | Requires _no_ session - keeps a signed-in visitor off the login route.                                 |
-| `canActivateAnonymous` | The same decision, as a `canActivate` guard.                                                           |
-| `returnUrl()`          | The URL the guard captured before redirecting here, or `null`. Call from an injection context.         |
-| `navigateAfterLogin()` | A cold observable that navigates to `returnUrl()`, or to `defaultUrl`. Call from an injection context. |
+| Member                                  | Description                                                                                            |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `canMatch`                              | Requires a session. On a lazy route this is the one to use - the child bundle is never downloaded.     |
+| `canActivate`                           | The same decision, as a `canActivate` guard.                                                           |
+| `canMatchWith(permission, options?)`    | Requires a session the permission accepts - see [Permissions](#permissions).                           |
+| `canActivateWith(permission, options?)` | The same decision, as a `canActivate` guard.                                                           |
+| `canMatchAnonymous`                     | Requires _no_ session - keeps a signed-in visitor off the login route.                                 |
+| `canActivateAnonymous`                  | The same decision, as a `canActivate` guard.                                                           |
+| `returnUrl()`                           | The URL the guard captured before redirecting here, or `null`. Call from an injection context.         |
+| `navigateAfterLogin()`                  | A cold observable that navigates to `returnUrl()`, or to `defaultUrl`. Call from an injection context. |
 
-| Option                      | Default                | Description                                                                                       |
-| --------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------- |
-| `loginUrl`                  | required               | A path, a command array, a `UrlTree`, or `(router) => UrlTree`.                                   |
-| `defaultUrl`                | `'/'`                  | Where a login lands when nothing was captured.                                                    |
-| `returnUrlParam`            | `'returnUrl'`          | The query param carrying the attempted URL. `false` redirects without one.                        |
-| `navigationBehaviorOptions` | `{ replaceUrl: true }` | How a guard's redirect navigates - the failed attempt does not become a history entry by default. |
+| Option                      | Default                | Description                                                                                                                                                   |
+| --------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `loginUrl`                  | required               | A path, a command array, a `UrlTree`, or `(router) => UrlTree`.                                                                                               |
+| `defaultUrl`                | `'/'`                  | Where a login lands when nothing was captured.                                                                                                                |
+| `returnUrlParam`            | `'returnUrl'`          | The query param carrying the attempted URL. `false` redirects without one.                                                                                    |
+| `navigationBehaviorOptions` | `{ replaceUrl: true }` | How a guard's redirect navigates - the failed attempt does not become a history entry by default.                                                             |
+| `restoreTimeoutMs`          | `10000`                | How long a guard waits for a session restore before it decides on the session as it stands. `false` waits for as long as the restore takes.                   |
+| `redirectOnSessionEnd`      | none                   | The [session end causes](#why-the-session-ended) that send a visitor on a protected route to the login - see [When the session ends](#when-the-session-ends). |
 
 A guard **pends while a session restore is in flight** rather than deciding against a session that is about to exist - it waits for [`sessionStatus()`](#is-there-a-session) to leave `'restoring'`. That is what makes a hard reload of a protected URL stay on that URL instead of bouncing through the login page. When there is nothing to restore, `sessionStatus()` is already `'anonymous'` and the guard answers synchronously, so a never-logged-in visitor never waits.
+
+The wait is **bounded by `restoreTimeoutMs`**. A restore that has not answered by then - an API that is down, a request stuck in a captive portal - is decided as no session, so the visitor lands on the login with the return URL rather than on a blank page. Under `withEnabledBlockingInitialNavigation()` a pending guard renders nothing at all, which is why the default is not `false`. The login route's own anonymous guard does not wait a second time. If the restore succeeds later, the visitor is on the login page with a session.
+
+### Permissions
+
+`canMatchWith` and `canActivateWith` take a predicate over the provider, run in the guard's injection context once the session has settled. A visitor without a session goes to the login as with `canMatch`; one with a session the predicate rejects goes to `redirectTo`, or to `defaultUrl`:
+
+```ts
+{
+  path: 'admin',
+  canMatch: [authGuard.canMatchWith((auth) => auth.bearerData()?.roles.includes('admin') ?? false, { redirectTo: '/forbidden' })],
+  loadChildren: () => import('./admin'),
+}
+```
+
+The predicate is typed by the provider the guard was created for, so `bearerData()` carries your token's claims.
+
+### When the session ends
+
+Nothing routes anywhere when a session ends, unless you list the causes that should. With `redirectOnSessionEnd`, a visitor who is on a route guarded by `canMatch`, `canActivate`, `canMatchWith` or `canActivateWith` is sent to `loginUrl` with the URL they were on as the return URL:
+
+```ts
+export const authGuard = createAuthGuard(authProviderRef, {
+  loginUrl: '/login',
+  redirectOnSessionEnd: ['expired', 'inactivity', 'otherTab'],
+});
+```
+
+A visitor on a public route stays there. `'user'` is left out above because the button that logs out usually navigates on its own; listed, it redirects without a return URL. The redirect starts watching the first time one of the guard's session guards runs.
 
 The attempted URL is captured when the guard runs, including its query params and fragment, and written to the return-URL param unencoded - Angular's URL serializer encodes it, and parses it back. Coming the other way, a captured URL is only followed when it points back into this app: anything not starting with `/`, and anything starting with `//`, is discarded in favour of `defaultUrl`.
 
@@ -283,7 +316,7 @@ A proactive refresh that comes due while it cannot run - throttled, waiting on a
 
 In a tab that is not the elected leader, a `401` asks the leader to refresh over the leader channel rather than refreshing itself - a single-use refresh token must only be spent once, and the resulting tokens arrive back through [multi-tab sync](#multi-tab-sync). Without the feature every tab is its own leader and refreshes directly.
 
-Refresh failures retry on transient statuses (`0, 408, 425, 429, 500, 502, 503, 504` by default) with unlimited attempts (`retryConfig.maxAttempts: 0`) capped at 30s delay. By default the token extractor expects `{ accessToken, refreshToken }` in the response of both the authentication and refresh queries - override with `extractTokens`. A custom extractor's result is checked the same way: a pair without two token strings is an extraction failure, never a session. So is a `2xx` with an empty body - the login or refresh ends in `executionState()` `error`, not in a `loading` that never resolves.
+Refresh failures retry on transient statuses (`0, 408, 425, 429, 500, 502, 503, 504` by default) up to 8 times (`retryConfig.maxAttempts`, `0` for unlimited) with a delay capped at 30s. A refresh that gives up on a transient status keeps the session, and a restore that gives up ends in `sessionStatus()` `'anonymous'` with the cookie kept for the next load. By default the token extractor expects `{ accessToken, refreshToken }` in the response of both the authentication and refresh queries - override with `extractTokens`. A custom extractor's result is checked the same way: a pair without two token strings is an extraction failure, never a session. So is a `2xx` with an empty body - the login or refresh ends in `executionState()` `error`, not in a `loading` that never resolves.
 
 ### When the leader stops answering
 
@@ -467,7 +500,7 @@ The absence of a token is deliberately **not** one of those events. It is absent
 | `BearerAuthFeature`                                                                                                                                         | An entry of the `features` array; `BearerAuthFeatureType` is the constant object naming the built-in ones.                                                                                                                                                                                                           |
 | `PersistentAuthConfig`, `InactivityLogoutConfig`, `TokenExpirationWarningConfig`, `TokenRevocationConfig`, `TrackingConfig`, `BearerAuthMultiTabSyncConfig` | The argument of the matching `with*` [feature](#features). Each has a twin naming what the feature adds to the provider: `PersistentAuthFeature`, `InactivityLogoutFeature`, `TokenExpirationWarningFeature`, `TokenRevocationFeature`, `TrackingFeature` and `BearerAuthMultiTabSyncFeature`.                       |
 | `TrackingEventName`, `TrackingEventDataMap`, `TrackingEventHandler`                                                                                         | `withTracking`'s event names, the payload each carries, and a handler for one. The payloads are named individually too - `QueryExecuteEventData`, `QuerySuccessEventData`, `QueryFailureEventData`, `TokenRefreshEventData`, `LogoutEventData`, `LeaderStatusChangeEventData`, `LeaderInstanceCountChangeEventData`. |
-| `AuthGuard`, `AuthGuardConfig`, `AuthGuardTarget`                                                                                                           | What [`createAuthGuard`](#route-guards) returns, its config, and anything it accepts as a navigation target (a path, a command array, a `UrlTree`, or `(router) => UrlTree`).                                                                                                                                        |
+| `AuthGuard`, `AuthGuardConfig`, `AuthGuardTarget`, `AuthGuardPermission`, `AuthGuardPermissionOptions`                                                      | What [`createAuthGuard`](#route-guards) returns, its config, anything it accepts as a navigation target (a path, a command array, a `UrlTree`, or `(router) => UrlTree`), and the [permission](#permissions) predicate with its options.                                                                             |
 
 ## Error codes
 

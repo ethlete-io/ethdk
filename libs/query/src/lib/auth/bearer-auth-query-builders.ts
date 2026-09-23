@@ -98,7 +98,7 @@ export type TokenRefreshQueryConfig<TArgs extends QueryArgs> = AuthQueryConfig<T
 
   /**
    * Configuration for retry behavior on failed refresh attempts.
-   * @default { retryableStatusCodes: [0, 408, 425, 429, 500, 502, 503, 504], maxRetryDelayMs: 30000 }
+   * @default { retryableStatusCodes: [0, 408, 425, 429, 500, 502, 503, 504], maxRetryDelayMs: 30000, maxAttempts: 8 }
    */
   retryConfig?: {
     /**
@@ -114,9 +114,8 @@ export type TokenRefreshQueryConfig<TArgs extends QueryArgs> = AuthQueryConfig<T
      */
     maxRetryDelayMs?: number;
     /**
-     * Maximum number of retry attempts.
-     * Set to 0 for unlimited retries.
-     * @default 0 (unlimited)
+     * Maximum number of retry attempts. Set to 0 for unlimited retries.
+     * @default 8
      */
     maxAttempts?: number;
   };
@@ -287,7 +286,7 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
 ): TokenRefreshQueryBuilder<TKey, TArgs> => {
   const retryableStatusCodes = config.retryConfig?.retryableStatusCodes ?? [0, 408, 425, 429, 500, 502, 503, 504];
   const maxRetryDelayMs = config.retryConfig?.maxRetryDelayMs ?? 30000; // 30 seconds
-  const maxAttempts = config.retryConfig?.maxAttempts ?? 0; // 0 = unlimited
+  const maxAttempts = config.retryConfig?.maxAttempts ?? 8;
 
   const refreshRetryFn: ShouldRetryRequestFn = ({ error, retryCount }) => {
     const { status } = error;
