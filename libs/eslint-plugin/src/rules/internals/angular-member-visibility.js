@@ -1,6 +1,8 @@
 // @ts-check
 'use strict';
 
+const { getAngularDecoratorName } = require('./import-resolution');
+
 const fs = require('fs');
 const path = require('path');
 
@@ -10,21 +12,22 @@ const path = require('path');
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
+ * @param {import('eslint').SourceCode} sourceCode
  * @param {any} decorator
  */
-const getDecoratorCall = (decorator) => {
-  if (!decorator || decorator.type !== 'Decorator') return null;
+const getDecoratorCall = (sourceCode, decorator) => {
+  const name = getAngularDecoratorName(sourceCode, decorator);
+  if (!name) return null;
 
   const expression = decorator.expression;
   if (expression.type !== 'CallExpression') return null;
-  if (expression.callee.type !== 'Identifier') return null;
   if (expression.arguments.length === 0) return null;
 
   const metadata = expression.arguments[0];
   if (!metadata || metadata.type !== 'ObjectExpression') return null;
 
   return {
-    name: expression.callee.name,
+    name,
     metadata,
   };
 };
@@ -135,11 +138,12 @@ const isDynamicHostBindingKey = (keyName) => {
 };
 
 /**
+ * @param {import('eslint').SourceCode} sourceCode
  * @param {any} classNode
  */
-const getAngularMetadata = (classNode) => {
+const getAngularMetadata = (sourceCode, classNode) => {
   for (const decorator of classNode.decorators || []) {
-    const call = getDecoratorCall(decorator);
+    const call = getDecoratorCall(sourceCode, decorator);
     if (!call) continue;
 
     if (call.name === 'Component' || call.name === 'Directive') {
@@ -217,7 +221,7 @@ const getMemberName = (node) => {
  * @param {import('eslint').Rule.RuleContext} context
  */
 const isReferencedFromTemplateOrHost = (classNode, memberName, context) => {
-  const angularMetadata = getAngularMetadata(classNode);
+  const angularMetadata = getAngularMetadata(context.sourceCode, classNode);
 
   if (!angularMetadata) {
     return false;

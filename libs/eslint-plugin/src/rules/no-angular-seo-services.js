@@ -1,6 +1,8 @@
 // @ts-check
 'use strict';
 
+const { getImportedName, isImportedAs } = require('./internals/import-resolution');
+
 /**
  * Disallows injecting Angular's `Title` and `Meta` services from
  * `@angular/platform-browser` and importing them from that module.
@@ -48,11 +50,11 @@ const rule = {
      */
     const injectTokenName = (node) => {
       if (node.type !== 'CallExpression') return null;
-      if (node.callee.type !== 'Identifier' || node.callee.name !== 'inject') return null;
+      if (!isImportedAs(context.sourceCode, node.callee, 'inject')) return null;
       const firstArg = node.arguments[0];
       if (!firstArg) return null;
-      if (firstArg.type === 'Identifier') return firstArg.name;
-      return null;
+
+      return getImportedName(context.sourceCode, firstArg, '@angular/platform-browser');
     };
 
     return {

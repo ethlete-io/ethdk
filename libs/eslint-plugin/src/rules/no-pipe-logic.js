@@ -1,23 +1,16 @@
 // @ts-check
 'use strict';
 
+const { getAngularDecoratorName } = require('./internals/import-resolution');
+
 /**
- * Checks whether a class node has a @Pipe decorator.
- * @param {import('eslint').Rule.Node} classNode
+ * @param {import('eslint').SourceCode} sourceCode
+ * @param {any} classNode
  */
-const hasPipeDecorator = (classNode) => {
-  const decorators = /** @type {any} */ (classNode).decorators ?? [];
-  return decorators.some((/** @type {any} */ dec) => {
-    const expr = dec.expression;
-    if (expr.type === 'CallExpression') {
-      return expr.callee.type === 'Identifier' && expr.callee.name === 'Pipe';
-    }
-    if (expr.type === 'Identifier') {
-      return expr.name === 'Pipe';
-    }
-    return false;
-  });
-};
+const hasPipeDecorator = (sourceCode, classNode) =>
+  (classNode.decorators ?? []).some(
+    (/** @type {any} */ decorator) => getAngularDecoratorName(sourceCode, decorator) === 'Pipe',
+  );
 
 /** @type {import('eslint').Rule.RuleModule} */
 const noPipeLogic = {
@@ -47,7 +40,7 @@ const noPipeLogic = {
         const classNode = classBody.parent;
         if (!classNode || (classNode.type !== 'ClassDeclaration' && classNode.type !== 'ClassExpression')) return;
 
-        if (!hasPipeDecorator(classNode)) return;
+        if (!hasPipeDecorator(context.sourceCode, classNode)) return;
 
         context.report({ node, messageId: 'noLogicInTransform' });
       },
@@ -63,7 +56,7 @@ const noPipeLogic = {
         const classNode = classBody.parent;
         if (!classNode || (classNode.type !== 'ClassDeclaration' && classNode.type !== 'ClassExpression')) return;
 
-        if (!hasPipeDecorator(classNode)) return;
+        if (!hasPipeDecorator(context.sourceCode, classNode)) return;
 
         const value = /** @type {any} */ (node).value;
         if (value && (value.type === 'ArrowFunctionExpression' || value.type === 'FunctionExpression')) {

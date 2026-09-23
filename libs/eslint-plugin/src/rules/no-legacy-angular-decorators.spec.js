@@ -12,6 +12,10 @@ const tester = new RuleTester({
 
 tester.run('no-legacy-angular-decorators', rule, {
   valid: [
+    {
+      code: `import { Input } from 'some-other-lib';
+class A { @Input() value; }`,
+    },
     // Signal-based alternatives — no legacy decorators
     { code: `class Foo { value = input(); }` },
     { code: `class Foo { change = output(); }` },
@@ -32,6 +36,11 @@ tester.run('no-legacy-angular-decorators', rule, {
   ],
 
   invalid: [
+    {
+      code: `import { Input as NgInput } from '@angular/core';
+class A { @NgInput() value; }`,
+      errors: [{ messageId: 'useInput' }],
+    },
     // ── @Input() → input() ──────────────────────────────────────────────────
 
     {

@@ -1,6 +1,8 @@
 // @ts-check
 'use strict';
 
+const { getAngularDecoratorName } = require('./internals/import-resolution');
+
 /**
  * Disallows class members that exist solely as aliases for a nested property or
  * zero-arg method of another class member accessed via `this`.
@@ -81,12 +83,14 @@ const getMethodAliasInfo = (node) => {
 
 const CONTRACT_METHOD_NAMES = new Set(['blur', 'focus', 'reset']);
 
-/** @param {any} methodNode */
-const isInAngularClass = (methodNode) =>
-  methodNode.parent?.parent?.decorators?.some((decorator) => {
-    const expression = decorator.expression;
-    const callee = expression.type === 'CallExpression' ? expression.callee : expression;
-    return callee.type === 'Identifier' && (callee.name === 'Component' || callee.name === 'Directive');
+/**
+ * @param {import('eslint').SourceCode} sourceCode
+ * @param {any} methodNode
+ */
+const isInAngularClass = (sourceCode, methodNode) =>
+  methodNode.parent?.parent?.decorators?.some((/** @type {any} */ decorator) => {
+    const name = getAngularDecoratorName(sourceCode, decorator);
+    return name === 'Component' || name === 'Directive';
   }) ?? false;
 
 /** @type {import('eslint').Rule.RuleModule} */
@@ -149,7 +153,7 @@ const noMemberAlias = {
         if (!info) return;
         const classNode = node.parent?.parent;
         if (node.override || classNode?.superClass || classNode?.implements?.length) return;
-        if (isInAngularClass(node) && CONTRACT_METHOD_NAMES.has(aliasName)) return;
+        if (isInAngularClass(context.sourceCode, node) && CONTRACT_METHOD_NAMES.has(aliasName)) return;
 
         // Only flag when names match — different names indicate an intentional
         // API rename, which is not a pure alias.

@@ -13,6 +13,10 @@ const tester = new RuleTester({
 tester.run('prefer-concise-angular-host-directives', rule, {
   valid: [
     {
+      code: `import { Component } from 'some-other-lib';
+@Component({ hostDirectives: [{ directive: X }] }) class A {}`,
+    },
+    {
       code: `
 @Component({
   hostDirectives: [ColoredDirective],
@@ -44,6 +48,13 @@ class TestDirective {}
     },
   ],
   invalid: [
+    {
+      code: `import { Component as Cmp } from '@angular/core';
+@Cmp({ hostDirectives: [{ directive: X }] }) class A {}`,
+      output: `import { Component as Cmp } from '@angular/core';
+@Cmp({ hostDirectives: [X] }) class A {}`,
+      errors: [{ messageId: 'preferShorthand' }],
+    },
     {
       code: `
 @Component({

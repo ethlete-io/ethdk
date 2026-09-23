@@ -12,6 +12,10 @@ const tester = new RuleTester({
 
 tester.run('angular-decorator-property-order', rule, {
   valid: [
+    {
+      code: `import { Component } from 'some-other-lib';
+@Component({ template: '', selector: 'et-a' }) class A {}`,
+    },
     { code: `@Component({ selector: 'et-a', standalone: true, template: '' }) class A {}` },
     {
       code: `
@@ -73,6 +77,13 @@ class TestComponent {}
     },
   ],
   invalid: [
+    {
+      code: `import { Component as Cmp } from '@angular/core';
+@Cmp({ template: '', selector: 'et-a' }) class A {}`,
+      output: `import { Component as Cmp } from '@angular/core';
+@Cmp({ selector: 'et-a', template: '' }) class A {}`,
+      errors: [{ messageId: 'outOfOrder' }],
+    },
     {
       code: `
 @Component({

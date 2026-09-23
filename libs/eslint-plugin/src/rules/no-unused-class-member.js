@@ -1,6 +1,8 @@
 // @ts-check
 'use strict';
 
+const { getAngularDecoratorName } = require('./internals/import-resolution');
+
 /**
  * Disallows class members that are declared but never read within the class body.
  *
@@ -42,22 +44,17 @@ const extractIdentifiers = (str) => str.match(/\b[a-zA-Z_$][a-zA-Z0-9_$]*\b/g) ?
 
 /**
  * Returns info about the Angular decorators applied to a class node.
+ * @param {import('eslint').SourceCode} sourceCode
  * @param {any} classNode
  * @returns {{ isComponent: boolean, isAngularClass: boolean }}
  */
-const getDecoratorInfo = (classNode) => {
+const getDecoratorInfo = (sourceCode, classNode) => {
   const decorators = classNode.decorators ?? [];
   let isComponent = false;
   let isAngularClass = false;
 
   for (const dec of decorators) {
-    const expr = dec.expression;
-    const name =
-      expr?.type === 'CallExpression' && expr.callee?.type === 'Identifier'
-        ? expr.callee.name
-        : expr?.type === 'Identifier'
-          ? expr.name
-          : null;
+    const name = getAngularDecoratorName(sourceCode, dec);
 
     if (name && ANGULAR_DECORATORS.has(name)) {
       isAngularClass = true;
@@ -167,7 +164,7 @@ const noUnusedClassMember = {
     return {
       ClassBody(node) {
         const classNode = node.parent;
-        const { isComponent, isAngularClass } = getDecoratorInfo(classNode);
+        const { isComponent, isAngularClass } = getDecoratorInfo(context.sourceCode, classNode);
         const hostBound = getHostBoundMembers(classNode);
         classStack.push({
           classBody: node,

@@ -13,6 +13,10 @@ const tester = new RuleTester({
 tester.run('no-standalone-flag', rule, {
   valid: [
     {
+      code: `import { Component } from 'some-other-lib';
+@Component({ selector: 'et-a', standalone: true }) class A {}`,
+    },
+    {
       code: `@Component({ selector: 'et-test', template: '' }) class Foo {}`,
     },
     {
@@ -26,6 +30,13 @@ tester.run('no-standalone-flag', rule, {
     },
   ],
   invalid: [
+    {
+      code: `import * as ng from '@angular/core';
+@ng.Component({ selector: 'et-a', standalone: true }) class A {}`,
+      output: `import * as ng from '@angular/core';
+@ng.Component({ selector: 'et-a' }) class A {}`,
+      errors: [{ messageId: 'noStandalone' }],
+    },
     {
       code: `@Component({ selector: 'et-test', standalone: true, template: '' }) class Foo {}`,
       output: `@Component({ selector: 'et-test', template: '' }) class Foo {}`,

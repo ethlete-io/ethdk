@@ -11,6 +11,10 @@ const tester = new RuleTester({
 
 tester.run('class-constant-property', rule, {
   valid: [
+    {
+      code: `import { Pipe as NgPipe } from '@angular/core';
+@NgPipe({ name: 'x' }) class P { transform = identity; }`,
+    },
     { code: `class Foo { readonly ID = nextId++; }` },
     { code: `class Foo { readonly RESIZE_EDGES = [ResizeEdge.LEFT, ResizeEdge.RIGHT]; }` },
     { code: `class Foo { id = nextId++; update() { this.id = nextId++; } }` },

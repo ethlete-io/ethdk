@@ -13,6 +13,10 @@ const tester = new RuleTester({
 tester.run('prefer-concise-angular-style-metadata', rule, {
   valid: [
     {
+      code: `import { Component } from 'some-other-lib';
+@Component({ styleUrls: ['./a.css'] }) class A {}`,
+    },
+    {
       code: `@Component({ styleUrl: './foo.css' }) class Foo {}`,
     },
     {
@@ -32,6 +36,13 @@ tester.run('prefer-concise-angular-style-metadata', rule, {
     },
   ],
   invalid: [
+    {
+      code: `import { Component as Cmp } from '@angular/core';
+@Cmp({ styleUrls: ['./a.css'] }) class A {}`,
+      output: `import { Component as Cmp } from '@angular/core';
+@Cmp({ styleUrl: './a.css' }) class A {}`,
+      errors: [{ messageId: 'preferStyleUrl' }],
+    },
     {
       code: `@Component({ styleUrls: ['./foo.css'] }) class Foo {}`,
       output: `@Component({ styleUrl: './foo.css' }) class Foo {}`,

@@ -1,6 +1,8 @@
 // @ts-check
 'use strict';
 
+const { getAngularDecoratorName } = require('./internals/import-resolution');
+
 /**
  * Disallows legacy Angular decorators in favour of their modern signal-based
  * equivalents and the `host: {}` shorthand.
@@ -24,20 +26,6 @@
  *   ❌ @HostListener('click') onClick() {}
  *   → ✅ host: { '[class.active]': 'isActive', '(click)': 'onClick()' }
  */
-
-/**
- * Returns the identifier name of a decorator.
- * Works for both `@Foo` (Identifier) and `@Foo(...)` (CallExpression).
- *
- * @param {any} decorator
- * @returns {string | null}
- */
-const getDecoratorName = (decorator) => {
-  const expr = decorator.expression;
-  if (expr.type === 'Identifier') return expr.name;
-  if (expr.type === 'CallExpression' && expr.callee.type === 'Identifier') return expr.callee.name;
-  return null;
-};
 
 /**
  * Returns the static string key of a class member, or null for computed keys.
@@ -72,11 +60,12 @@ const getIndent = (sourceCode, node) => {
 };
 
 /**
+ * @param {import('eslint').SourceCode} sourceCode
  * @param {any} classNode
  */
-const getAngularMetadata = (classNode) => {
+const getAngularMetadata = (sourceCode, classNode) => {
   for (const decorator of classNode.decorators ?? []) {
-    const decoratorName = getDecoratorName(decorator);
+    const decoratorName = getAngularDecoratorName(sourceCode, decorator);
     if (decoratorName !== 'Component' && decoratorName !== 'Directive') continue;
 
     const expression = decorator.expression;
@@ -157,7 +146,7 @@ const buildHostBindingFix = (sourceCode, decoratorNode, memberNode, bindingKey, 
   const classNode = classBody?.parent;
   if (!classNode) return null;
 
-  const metadata = getAngularMetadata(classNode);
+  const metadata = getAngularMetadata(sourceCode, classNode);
   if (!metadata) return null;
 
   const hostProperty = findObjectProperty(metadata, 'host');
@@ -311,7 +300,7 @@ const rule = {
 
       Decorator(node) {
         const anyNode = /** @type {any} */ (node);
-        const decoratorName = getDecoratorName(anyNode);
+        const decoratorName = getAngularDecoratorName(context.sourceCode, anyNode);
         if (!decoratorName) return;
 
         // Only act on decorators attached to class members, not to the class itself

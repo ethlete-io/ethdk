@@ -1,24 +1,18 @@
 // @ts-check
 'use strict';
 
+const { getAngularDecoratorName } = require('./internals/import-resolution');
+
 const SCREAMING_CASE_RE = /^[A-Z][A-Z0-9_]*$/;
 
 /**
+ * @param {import('eslint').SourceCode} sourceCode
  * @param {any} classNode
  */
-const hasPipeDecorator = (classNode) => {
-  const decorators = classNode.decorators ?? [];
-  return decorators.some((/** @type {any} */ dec) => {
-    const expr = dec.expression;
-    if (expr.type === 'CallExpression') {
-      return expr.callee.type === 'Identifier' && expr.callee.name === 'Pipe';
-    }
-    if (expr.type === 'Identifier') {
-      return expr.name === 'Pipe';
-    }
-    return false;
-  });
-};
+const hasPipeDecorator = (sourceCode, classNode) =>
+  (classNode.decorators ?? []).some(
+    (/** @type {any} */ decorator) => getAngularDecoratorName(sourceCode, decorator) === 'Pipe',
+  );
 
 const REACTIVE_APIS = new Set([
   'signal',
@@ -353,7 +347,7 @@ const classConstantProperty = {
             continue;
           }
 
-          if (memberName === 'transform' && hasPipeDecorator(node.parent)) {
+          if (memberName === 'transform' && hasPipeDecorator(context.sourceCode, node.parent)) {
             continue;
           }
 

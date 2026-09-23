@@ -10,6 +10,10 @@ const tester = new RuleTester({
 
 tester.run('prefer-element-dimensions', rule, {
   valid: [
+    {
+      code: `import { effect } from 'some-other-lib';
+effect(() => { const w = el.offsetWidth; });`,
+    },
     // Reading size outside reactive context — fine (one-shot snapshots are valid)
     { code: `const w = el.offsetWidth;` },
     { code: `const r = el.getBoundingClientRect();` },
@@ -17,6 +21,11 @@ tester.run('prefer-element-dimensions', rule, {
     { code: `effect(() => { const d = this.dimensions(); });` },
   ],
   invalid: [
+    {
+      code: `import { effect as ngEffect } from '@angular/core';
+ngEffect(() => { const w = el.offsetWidth; });`,
+      errors: [{ messageId: 'preferElementDimensions' }],
+    },
     {
       code: `effect(() => { const w = el.offsetWidth; });`,
       errors: [{ messageId: 'preferElementDimensions' }],

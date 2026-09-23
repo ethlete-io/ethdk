@@ -10,6 +10,10 @@ const tester = new RuleTester({
 
 tester.run('no-effect-cleanup-return', rule, {
   valid: [
+    {
+      code: `import { effect } from 'some-other-lib';
+effect(() => { return () => {}; });`,
+    },
     // the supported way to tie teardown to each re-run
     { code: `effect((onCleanup) => { register(id()); onCleanup(() => unregister(id())); });` },
     // no return at all
@@ -26,6 +30,13 @@ tester.run('no-effect-cleanup-return', rule, {
     { code: `myEffect(() => { return () => cleanup(); });` },
   ],
   invalid: [
+    {
+      code: `import { effect as ngEffect } from '@angular/core';
+ngEffect(() => { return () => {}; });`,
+      output: `import { effect as ngEffect } from '@angular/core';
+ngEffect((onCleanup) => { onCleanup(() => {}); });`,
+      errors: [{ messageId: 'returnedCleanup' }],
+    },
     {
       code: `effect(() => {
   this.group?.registerItem(this);

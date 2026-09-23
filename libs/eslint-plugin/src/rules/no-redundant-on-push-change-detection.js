@@ -1,6 +1,8 @@
 // @ts-check
 'use strict';
 
+const { getAngularDecoratorName, isImportedAs } = require('./internals/import-resolution');
+
 const { getMetadataEntryRemovalRange } = require('./internals/angular-metadata-fix');
 
 /**
@@ -70,29 +72,15 @@ const getPropertyName = (key) => {
 };
 
 /**
- * @param {import('eslint').Rule.Node} node
- */
-const isComponentDecorator = (node) => {
-  const decorator = /** @type {any} */ (node);
-  if (decorator.type !== 'Decorator') return false;
-
-  const expression = decorator.expression;
-  if (expression.type === 'CallExpression') {
-    return expression.callee.type === 'Identifier' && expression.callee.name === 'Component';
-  }
-
-  return expression.type === 'Identifier' && expression.name === 'Component';
-};
-
-/**
+ * @param {import('eslint').SourceCode} sourceCode
  * @param {any} value
  */
-const isOnPushValue = (value, localName) =>
+const isOnPushValue = (sourceCode, value) =>
   value.type === 'MemberExpression' &&
-  value.object.type === 'Identifier' &&
-  value.object.name === localName &&
+  !value.computed &&
   value.property.type === 'Identifier' &&
-  value.property.name === 'OnPush';
+  value.property.name === 'OnPush' &&
+  isImportedAs(sourceCode, value.object, 'ChangeDetectionStrategy');
 
 /**
  * Range that removes a single named import specifier together with its comma.
@@ -159,12 +147,11 @@ const noRedundantOnPushChangeDetection = {
     const sourceCode = context.sourceCode;
     /** @type {any} */
     let changeDetectionSpecifier = null;
-    let changeDetectionLocalName = 'ChangeDetectionStrategy';
     const removableIdentifiers = new Set();
 
     return {
       Decorator(node) {
-        if (!isComponentDecorator(node)) return;
+        if (getAngularDecoratorName(sourceCode, node) !== 'Component') return;
 
         const expression = /** @type {any} */ (node).expression;
         if (expression.type !== 'CallExpression' || expression.arguments.length === 0) return;
@@ -175,7 +162,7 @@ const noRedundantOnPushChangeDetection = {
         const property = metadata.properties.find(
           (entry) => entry.type === 'Property' && getPropertyName(entry.key) === 'changeDetection',
         );
-        if (!property || !isOnPushValue(property.value, changeDetectionLocalName)) return;
+        if (!property || !isOnPushValue(sourceCode, property.value)) return;
         removableIdentifiers.add(property.value.object);
 
         context.report({
@@ -195,7 +182,6 @@ const noRedundantOnPushChangeDetection = {
             specifier.imported.name === 'ChangeDetectionStrategy'
           ) {
             changeDetectionSpecifier = specifier;
-            changeDetectionLocalName = specifier.local.name;
             return;
           }
         }

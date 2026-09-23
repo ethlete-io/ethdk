@@ -1,6 +1,8 @@
 // @ts-check
 'use strict';
 
+const { getAngularDecoratorName } = require('./internals/import-resolution');
+
 /** @typedef {'Component' | 'Directive'} TDecoratorName */
 /** @typedef {import('estree').Property & { range: [number, number] }} TPropertyNode */
 /** @typedef {import('estree').ArrayExpression & { elements: Array<import('estree').Expression | import('estree').SpreadElement | null> }} TArrayExpressionNode */
@@ -8,21 +10,6 @@
 /** @typedef {{ bodyText: string; hasComma: boolean; originalIndex: number; orderIndex: number; property: TPropertyNode; trailingText: string }} TPropertyEntry */
 
 const HOST_DIRECTIVE_PROPERTY_ORDER = ['directive', 'inputs', 'outputs'];
-
-/**
- * @param {import('eslint').Rule.Node} node
- */
-const getDecoratorName = (node) => {
-  const decorator = /** @type {any} */ (node);
-  if (decorator.type !== 'Decorator') return null;
-
-  const expression = decorator.expression;
-  if (expression.type === 'CallExpression') {
-    return expression.callee.type === 'Identifier' ? expression.callee.name : null;
-  }
-
-  return expression.type === 'Identifier' ? expression.name : null;
-};
 
 /**
  * @param {import('estree').Property['key']} key
@@ -187,7 +174,7 @@ const preferConciseAngularHostDirectives = {
 
     return {
       Decorator(node) {
-        const decoratorName = getDecoratorName(node);
+        const decoratorName = getAngularDecoratorName(context.sourceCode, node);
         if (decoratorName !== 'Component' && decoratorName !== 'Directive') return;
 
         const hostDirectives = getHostDirectivesArray(decoratorName, node);

@@ -1,6 +1,8 @@
 // @ts-check
 'use strict';
 
+const { getAngularDecoratorName } = require('./internals/import-resolution');
+
 const ts = require('typescript');
 
 /**
@@ -93,19 +95,6 @@ const getPropertyName = (key) => {
 };
 
 /**
- * @param {any} node
- */
-const getDecoratorName = (node) => {
-  const expression = node.expression;
-  if (!expression) return null;
-  if (expression.type === 'CallExpression') {
-    return expression.callee.type === 'Identifier' ? expression.callee.name : null;
-  }
-
-  return expression.type === 'Identifier' ? expression.name : null;
-};
-
-/**
  * The inline template text, or null when the property is not a plain non-empty string literal.
  *
  * @param {any} value
@@ -147,7 +136,7 @@ const noTemplateLiteralBeforeInlineTemplate = {
 
       /** @param {import('eslint').Rule.Node} node */
       Decorator(node) {
-        const decoratorName = getDecoratorName(node);
+        const decoratorName = getAngularDecoratorName(context.sourceCode, node);
         if (decoratorName !== 'Component' && decoratorName !== 'Directive') return;
 
         const expression = /** @type {any} */ (node).expression;

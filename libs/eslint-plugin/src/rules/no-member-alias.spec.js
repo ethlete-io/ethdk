@@ -11,6 +11,10 @@ const tester = new RuleTester({
 
 tester.run('no-member-alias', rule, {
   valid: [
+    {
+      code: `import { Component as Cmp } from '@angular/core';
+@Cmp({}) class A { focus() { this.inputRef.focus(); } }`,
+    },
     // Direct injection — not an alias, it's the real member
     { code: `class C { private svc = inject(Service); }` },
 
@@ -55,6 +59,11 @@ tester.run('no-member-alias', rule, {
     { code: `class C { private elementRef = inject(ElementRef); private element = this.elementRef.nativeElement; }` },
   ],
   invalid: [
+    {
+      code: `import { Component } from 'some-other-lib';
+@Component({}) class A { focus() { this.inputRef.focus(); } }`,
+      errors: [{ messageId: 'noAlias' }],
+    },
     // inject alias — the original motivating pattern
     {
       code: `class C {

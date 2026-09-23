@@ -1,23 +1,10 @@
 // @ts-check
 'use strict';
 
+const { getAngularDecoratorName } = require('./internals/import-resolution');
+
 /** @typedef {import('estree').Property} TPropertyNode */
 /** @typedef {import('estree').Expression | import('estree').SpreadElement | null} TArrayElement */
-
-/**
- * @param {import('eslint').Rule.Node} node
- */
-const isComponentDecorator = (node) => {
-  const decorator = /** @type {any} */ (node);
-  if (decorator.type !== 'Decorator') return false;
-
-  const expression = decorator.expression;
-  if (expression.type === 'CallExpression') {
-    return expression.callee.type === 'Identifier' && expression.callee.name === 'Component';
-  }
-
-  return expression.type === 'Identifier' && expression.name === 'Component';
-};
 
 /**
  * @param {import('estree').Property['key']} key
@@ -62,7 +49,7 @@ const preferConciseAngularStyleMetadata = {
     return {
       /** @param {import('eslint').Rule.Node} node */
       Decorator(node) {
-        if (!isComponentDecorator(node)) return;
+        if (getAngularDecoratorName(context.sourceCode, node) !== 'Component') return;
 
         const decorator = /** @type {any} */ (node);
         const expression = decorator.expression;

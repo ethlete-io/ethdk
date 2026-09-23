@@ -1,6 +1,8 @@
 // @ts-check
 'use strict';
 
+const { ANGULAR_CORE, getImportedName } = require('./internals/import-resolution');
+
 /**
  * Disallows calling .subscribe() inside Angular's effect() or computed() callbacks.
  *
@@ -50,13 +52,9 @@ const noRxjsInEffect = {
         if (current.type === 'ArrowFunctionExpression' || current.type === 'FunctionExpression') {
           crossedFunctionBoundary = true;
         }
-        if (
-          crossedFunctionBoundary &&
-          current.type === 'CallExpression' &&
-          current.callee.type === 'Identifier' &&
-          (current.callee.name === 'effect' || current.callee.name === 'computed')
-        ) {
-          return current.callee.name;
+        if (crossedFunctionBoundary && current.type === 'CallExpression') {
+          const calleeName = getImportedName(context.sourceCode, current.callee, ANGULAR_CORE);
+          if (calleeName === 'effect' || calleeName === 'computed') return calleeName;
         }
         current = current.parent;
       }

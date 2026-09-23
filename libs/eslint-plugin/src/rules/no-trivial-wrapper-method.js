@@ -1,6 +1,8 @@
 // @ts-check
 'use strict';
 
+const { getAngularDecoratorName } = require('./internals/import-resolution');
+
 /**
  * Disallows trivial wrapper methods that do nothing but forward all their
  * arguments to another call.
@@ -34,22 +36,14 @@ const CONTRACT_METHOD_NAMES = new Set(['focus', 'blur', 'reset']);
 const isSimpleParam = (param) => param.type === 'Identifier';
 
 /**
- * Whether the class holding this method is an Angular component or directive.
- * @param {import('eslint').Rule.Node} methodNode MethodDefinition node
+ * @param {import('eslint').SourceCode} sourceCode
+ * @param {any} methodNode
  */
-const isInAngularClass = (methodNode) => {
-  const classNode = methodNode.parent?.parent;
-  const decorators = classNode && 'decorators' in classNode ? classNode.decorators : null;
-
-  if (!decorators) return false;
-
-  return decorators.some((decorator) => {
-    const expression = decorator.expression;
-    const callee = expression.type === 'CallExpression' ? expression.callee : expression;
-
-    return callee.type === 'Identifier' && (callee.name === 'Component' || callee.name === 'Directive');
-  });
-};
+const isInAngularClass = (sourceCode, methodNode) =>
+  methodNode.parent?.parent?.decorators?.some((/** @type {any} */ decorator) => {
+    const name = getAngularDecoratorName(sourceCode, decorator);
+    return name === 'Component' || name === 'Directive';
+  }) ?? false;
 
 /**
  * Returns the single CallExpression in the method body when the method is a
@@ -127,7 +121,7 @@ const noTrivialWrapperMethod = {
         const classNode = node.parent?.parent;
         if (node.override || classNode?.superClass || classNode?.implements?.length) return;
         if (node.static && methodName === 'ngTemplateContextGuard') return;
-        if (CONTRACT_METHOD_NAMES.has(methodName) && isInAngularClass(node)) return;
+        if (CONTRACT_METHOD_NAMES.has(methodName) && isInAngularClass(context.sourceCode, node)) return;
 
         const callee = callExpr.callee;
         const targetName =

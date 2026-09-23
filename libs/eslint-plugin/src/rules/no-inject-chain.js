@@ -1,6 +1,8 @@
 // @ts-check
 'use strict';
 
+const { isImportedAs } = require('./internals/import-resolution');
+
 /** @type {import('eslint').Rule.RuleModule} */
 const noInjectChain = {
   meta: {
@@ -19,7 +21,7 @@ const noInjectChain = {
     return {
       MemberExpression(node) {
         const obj = node.object;
-        if (obj.type === 'CallExpression' && obj.callee.type === 'Identifier' && obj.callee.name === 'inject') {
+        if (obj.type === 'CallExpression' && isImportedAs(context.sourceCode, obj.callee, 'inject')) {
           // Allow inject(X).method() — immediately-invoked patterns like
           // inject(DestroyRef).onDestroy(...) are intentional Angular idioms.
           const parent = node.parent;

@@ -1,6 +1,8 @@
 // @ts-check
 'use strict';
 
+const { getAngularDecoratorName } = require('./internals/import-resolution');
+
 /** @typedef {'Component' | 'Directive'} TDecoratorName */
 /** @typedef {{ order: string[]; orderText: string }} TDecoratorConfig */
 /** @typedef {{ range: [number, number] }} TNodeWithRange */
@@ -80,22 +82,6 @@ const getOrderKey = (decoratorName, propertyName) => {
   return propertyName;
 };
 
-/**
- * @param {import('eslint').Rule.Node} node
- * @returns {TDecoratorName | null}
- */
-const getDecoratorName = (node) => {
-  const decorator = /** @type {any} */ (node);
-  if (decorator.type !== 'Decorator') return null;
-
-  const expression = decorator.expression;
-  if (expression.type === 'CallExpression') {
-    return expression.callee.type === 'Identifier' ? expression.callee.name : null;
-  }
-
-  return expression.type === 'Identifier' ? expression.name : null;
-};
-
 /** @type {import('eslint').Rule.RuleModule} */
 const angularDecoratorPropertyOrder = {
   meta: {
@@ -115,7 +101,7 @@ const angularDecoratorPropertyOrder = {
     return {
       /** @param {import('eslint').Rule.Node} node */
       Decorator(node) {
-        const decoratorName = getDecoratorName(node);
+        const decoratorName = getAngularDecoratorName(context.sourceCode, node);
         if (decoratorName !== 'Component' && decoratorName !== 'Directive') return;
 
         const decorator = /** @type {any} */ (node);

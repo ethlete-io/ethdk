@@ -1,6 +1,8 @@
 // @ts-check
 'use strict';
 
+const { ANGULAR_CORE, getImportedName } = require('./internals/import-resolution');
+
 /**
  * Disallows returning a cleanup function from an `effect()` callback.
  *
@@ -115,7 +117,9 @@ const noEffectCleanupReturn = {
       CallExpression(node) {
         const { callee } = node;
 
-        if (callee.type !== 'Identifier' || !EFFECT_CALLEES.has(callee.name)) {
+        const calleeName = getImportedName(context.sourceCode, callee, ANGULAR_CORE);
+
+        if (!calleeName || !EFFECT_CALLEES.has(calleeName)) {
           return;
         }
 
@@ -130,7 +134,7 @@ const noEffectCleanupReturn = {
           context.report({
             node: callback.body,
             messageId: 'returnedCleanup',
-            data: { callee: callee.name },
+            data: { callee: calleeName },
           });
 
           return;
@@ -163,7 +167,7 @@ const noEffectCleanupReturn = {
           context.report({
             node: statement.argument,
             messageId: 'returnedCleanup',
-            data: { callee: callee.name },
+            data: { callee: calleeName },
             fix:
               fixable && openParen
                 ? (fixer) => [

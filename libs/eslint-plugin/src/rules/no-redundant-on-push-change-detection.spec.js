@@ -18,6 +18,10 @@ const tester = new RuleTester({
 
 tester.run('no-redundant-on-push-change-detection (angular 22)', rule, {
   valid: [
+    {
+      code: `import { Component, ChangeDetectionStrategy } from 'some-other-lib';
+@Component({ selector: 'et-a', changeDetection: ChangeDetectionStrategy.OnPush }) class A {}`,
+    },
     // Nothing to strip.
     {
       code: `@Component({ selector: 'et-x', template: '' }) class Foo {}`,
@@ -35,6 +39,13 @@ const strat = ChangeDetectionStrategy.OnPush;
     },
   ],
   invalid: [
+    {
+      code: `import { Component as Cmp, ChangeDetectionStrategy as CDS } from '@angular/core';
+@Cmp({ selector: 'et-a', changeDetection: CDS.OnPush }) class A {}`,
+      output: `import { Component as Cmp } from '@angular/core';
+@Cmp({ selector: 'et-a' }) class A {}`,
+      errors: [{ messageId: 'redundantImport' }, { messageId: 'redundant' }],
+    },
     // Inline, last property + inline import (specifier last).
     {
       code: `import { Component, ChangeDetectionStrategy } from '@angular/core';

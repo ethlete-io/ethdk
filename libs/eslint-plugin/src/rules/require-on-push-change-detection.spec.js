@@ -14,6 +14,10 @@ const tester = new RuleTester({
 tester.run('require-on-push-change-detection', rule, {
   valid: [
     {
+      code: `import { Component } from 'some-other-lib';
+@Component({ selector: 'et-a' }) class A {}`,
+    },
+    {
       code: `
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 
@@ -34,6 +38,15 @@ class MyCmp {}`,
     },
   ],
   invalid: [
+    {
+      code: `import { Component as Cmp, ChangeDetectionStrategy as CDS } from '@angular/core';
+@Cmp({ selector: 'et-a', template: '' }) class A {}
+@Cmp({ selector: 'et-b', changeDetection: CDS.Default }) class B {}`,
+      output: `import { Component as Cmp, ChangeDetectionStrategy as CDS } from '@angular/core';
+@Cmp({ selector: 'et-a', template: '', changeDetection: CDS.OnPush }) class A {}
+@Cmp({ selector: 'et-b', changeDetection: CDS.OnPush }) class B {}`,
+      errors: [{ messageId: 'missing' }, { messageId: 'notOnPush' }],
+    },
     {
       code: `
 import { Component } from '@angular/core';

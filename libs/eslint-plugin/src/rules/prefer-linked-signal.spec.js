@@ -10,6 +10,10 @@ const tester = new RuleTester({
 
 tester.run('prefer-linked-signal', rule, {
   valid: [
+    {
+      code: `import { effect } from 'some-other-lib';
+effect(() => { a.set(b()); });`,
+    },
     // .set() in an event handler or method — fine
     { code: `class Foo { onClick() { this.selected.set(null); } }` },
     // .set() inside effect with multiple statements — not a pure derivation, exempt
@@ -22,6 +26,11 @@ tester.run('prefer-linked-signal', rule, {
     { code: `effect(() => { console.log(this.count()); });` },
   ],
   invalid: [
+    {
+      code: `import { effect as ngEffect } from '@angular/core';
+ngEffect(() => { a.set(b()); });`,
+      errors: [{ messageId: 'preferLinkedSignal' }],
+    },
     {
       // Arrow with expression body — sole statement
       code: `effect(() => this.selectedItem.set(this.items()[0] ?? null));`,

@@ -1,6 +1,8 @@
 // @ts-check
 'use strict';
 
+const { isImportedAs } = require('./internals/import-resolution');
+
 /**
  * Prefer linkedSignal over setting a signal inside an effect().
  *
@@ -44,9 +46,10 @@
  *    effect is performing side effects alongside the signal write, so they are
  *    not flagged either.
  *
+ * @param {import('eslint').SourceCode} sourceCode
  * @param {import('eslint').Rule.Node} node The `.set()` CallExpression node
  */
-const isPureSetInDirectEffectCallback = (node) => {
+const isPureSetInDirectEffectCallback = (sourceCode, node) => {
   // Find the immediate enclosing function (cross exactly one boundary).
   let current = node.parent;
   let immediateFunction = null;
@@ -66,8 +69,7 @@ const isPureSetInDirectEffectCallback = (node) => {
   if (
     !funcParent ||
     funcParent.type !== 'CallExpression' ||
-    funcParent.callee.type !== 'Identifier' ||
-    funcParent.callee.name !== 'effect' ||
+    !isImportedAs(sourceCode, funcParent.callee, 'effect') ||
     funcParent.arguments[0] !== immediateFunction
   ) {
     return false;
@@ -112,7 +114,7 @@ const preferLinkedSignal = {
           callee.type === 'MemberExpression' &&
           callee.property.type === 'Identifier' &&
           callee.property.name === 'set' &&
-          isPureSetInDirectEffectCallback(node)
+          isPureSetInDirectEffectCallback(context.sourceCode, node)
         ) {
           context.report({ node, messageId: 'preferLinkedSignal' });
         }

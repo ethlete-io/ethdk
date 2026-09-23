@@ -1,6 +1,14 @@
 // @ts-check
 'use strict';
 
+const {
+  ANGULAR_CORE,
+  getAngularDecoratorName,
+  getImportLocalName,
+  isImportedAs,
+  resolveIdentifier,
+} = require('./internals/import-resolution');
+
 const COMPONENT_ORDER = ['selector', 'template', 'styleUrl', 'encapsulation', 'changeDetection'];
 
 // OnPush became the default change detection strategy in Angular 22, so from
@@ -187,7 +195,7 @@ const getChangeDetectionInsertionTarget = (metadata) => {
  * @param {any} metadata
  */
 const buildMetadataFix = (sourceCode, metadata) => {
-  const changeDetectionText = 'changeDetection: ChangeDetectionStrategy.OnPush';
+  const changeDetectionText = `changeDetection: ${getImportLocalName(sourceCode, ANGULAR_CORE, 'ChangeDetectionStrategy') ?? 'ChangeDetectionStrategy'}.OnPush`;
   const properties = metadata.properties;
   const insertionTarget = getChangeDetectionInsertionTarget(metadata);
   const isMultiline = Boolean(metadata.loc && metadata.loc.start.line !== metadata.loc.end.line);
@@ -236,6 +244,10 @@ const buildMetadataFix = (sourceCode, metadata) => {
  * @param {any} valueNode
  */
 const buildFix = (sourceCode, metadata, valueNode) => {
+  const valueFix = valueNode && ((fixer) => fixer.replaceText(valueNode.property, 'OnPush'));
+  if (valueNode && valueNode.object.type !== 'Identifier') return valueFix;
+  if (valueNode && resolveIdentifier(sourceCode, valueNode.object)?.source) return valueFix;
+
   const fixes = [];
   const angularCoreImport = findAngularCoreImport(sourceCode);
   const importFix = angularCoreImport
@@ -244,12 +256,8 @@ const buildFix = (sourceCode, metadata, valueNode) => {
 
   if (importFix) fixes.push(importFix);
 
-  if (valueNode) {
-    fixes.push((fixer) => fixer.replaceText(valueNode, 'ChangeDetectionStrategy.OnPush'));
-  } else {
-    const metadataFix = buildMetadataFix(sourceCode, metadata);
-    if (metadataFix) fixes.push(metadataFix);
-  }
+  const metadataFix = valueFix ?? buildMetadataFix(sourceCode, metadata);
+  if (metadataFix) fixes.push(metadataFix);
 
   return (fixer) => fixes.map((applyFix) => applyFix(fixer));
 };
@@ -278,24 +286,9 @@ const requireOnPushChangeDetection = {
 
     const sourceCode = context.sourceCode;
 
-    /**
-     * @param {import('eslint').Rule.Node} node
-     */
-    const isComponentDecorator = (node) => {
-      const decorator = /** @type {any} */ (node);
-      if (decorator.type !== 'Decorator') return false;
-
-      const expression = decorator.expression;
-      if (expression.type === 'CallExpression') {
-        return expression.callee.type === 'Identifier' && expression.callee.name === 'Component';
-      }
-
-      return expression.type === 'Identifier' && expression.name === 'Component';
-    };
-
     return {
       Decorator(node) {
-        if (!isComponentDecorator(node)) return;
+        if (getAngularDecoratorName(sourceCode, node) !== 'Component') return;
 
         const decorator = /** @type {any} */ (node);
         const expression = decorator.expression;
@@ -320,8 +313,7 @@ const requireOnPushChangeDetection = {
         const value = changeDetectionProp.value;
         if (
           value.type === 'MemberExpression' &&
-          value.object.type === 'Identifier' &&
-          value.object.name === 'ChangeDetectionStrategy' &&
+          isImportedAs(sourceCode, value.object, 'ChangeDetectionStrategy') &&
           value.property.type === 'Identifier' &&
           value.property.name !== 'OnPush'
         ) {

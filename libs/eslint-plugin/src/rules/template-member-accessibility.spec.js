@@ -23,6 +23,10 @@ fs.writeFileSync(externalContractPath, ['export type PublicApi = {', '  activate
 tester.run('template-member-accessibility', rule, {
   valid: [
     {
+      code: `import { Component } from 'some-other-lib';
+@Component({ template: '{{ themeClass() }}' }) class C { themeClass = computed(() => 'x'); }`,
+    },
+    {
       code: `
         @Component({
           template: '{{ themeClass() }}',
@@ -87,6 +91,13 @@ tester.run('template-member-accessibility', rule, {
     },
   ],
   invalid: [
+    {
+      code: `import { Component as Cmp } from '@angular/core';
+@Cmp({ template: '{{ themeClass() }}' }) class C { themeClass = computed(() => 'x'); }`,
+      output: `import { Component as Cmp } from '@angular/core';
+@Cmp({ template: '{{ themeClass() }}' }) class C { public themeClass = computed(() => 'x'); }`,
+      errors: [{ messageId: 'shouldBeExplicit' }],
+    },
     {
       code: `
         @Component({

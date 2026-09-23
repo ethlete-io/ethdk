@@ -1,6 +1,8 @@
 // @ts-check
 'use strict';
 
+const { ANGULAR_CORE, getImportedName } = require('./internals/import-resolution');
+
 /**
  * Prefers signalElementDimensions / signalHostElementDimensions from @ethlete/core
  * over imperatively reading element size properties inside reactive contexts
@@ -46,10 +48,11 @@ const ELEMENT_SIZE_METHODS = new Set(['getBoundingClientRect', 'getClientRects']
 /**
  * Returns the name of the wrapping reactive context ('effect' | 'computed') if
  * the node is inside one, crossing exactly one function boundary.
+ * @param {import('eslint').SourceCode} sourceCode
  * @param {import('eslint').Rule.Node} node
  * @returns {string | null}
  */
-const getReactiveContext = (node) => {
+const getReactiveContext = (sourceCode, node) => {
   let crossedFunctionBoundary = false;
   let current = node.parent;
 
@@ -58,13 +61,9 @@ const getReactiveContext = (node) => {
       crossedFunctionBoundary = true;
     }
 
-    if (
-      crossedFunctionBoundary &&
-      current.type === 'CallExpression' &&
-      current.callee.type === 'Identifier' &&
-      (current.callee.name === 'effect' || current.callee.name === 'computed')
-    ) {
-      return current.callee.name;
+    if (crossedFunctionBoundary && current.type === 'CallExpression') {
+      const calleeName = getImportedName(sourceCode, current.callee, ANGULAR_CORE);
+      if (calleeName === 'effect' || calleeName === 'computed') return calleeName;
     }
 
     current = current.parent;
@@ -95,7 +94,7 @@ const preferElementDimensions = {
         if (node.property.type !== 'Identifier') return;
         if (!ELEMENT_SIZE_PROPS.has(node.property.name)) return;
 
-        const reactiveCtx = getReactiveContext(node);
+        const reactiveCtx = getReactiveContext(context.sourceCode, node);
         if (!reactiveCtx) return;
 
         context.report({
@@ -112,7 +111,7 @@ const preferElementDimensions = {
         if (callee.property.type !== 'Identifier') return;
         if (!ELEMENT_SIZE_METHODS.has(callee.property.name)) return;
 
-        const reactiveCtx = getReactiveContext(node);
+        const reactiveCtx = getReactiveContext(context.sourceCode, node);
         if (!reactiveCtx) return;
 
         context.report({

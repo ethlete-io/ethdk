@@ -95,7 +95,7 @@ const templateMemberAccessibility = {
 
       const classNode = node.parent && node.parent.type === 'ClassBody' ? node.parent.parent : null;
       if (!classNode || (classNode.type !== 'ClassDeclaration' && classNode.type !== 'ClassExpression')) return;
-      if (!getAngularMetadata(classNode)) return;
+      if (!getAngularMetadata(context.sourceCode, classNode)) return;
 
       const memberName = getMemberName(node);
       if (!memberName) return;
@@ -152,7 +152,7 @@ const templateMemberAccessibility = {
 
       const classNode = node.parent && node.parent.type === 'ClassBody' ? node.parent.parent : null;
       if (!classNode || (classNode.type !== 'ClassDeclaration' && classNode.type !== 'ClassExpression')) return;
-      if (!getAngularMetadata(classNode)) return;
+      if (!getAngularMetadata(context.sourceCode, classNode)) return;
 
       const memberName = getMemberName(node);
       if (!memberName) return;

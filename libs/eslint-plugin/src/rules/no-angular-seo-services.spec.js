@@ -14,6 +14,11 @@ const tester = new RuleTester({
 
 tester.run('no-angular-seo-services', rule, {
   valid: [
+    {
+      code: `import { inject } from '@angular/core';
+import { Title } from './my-tokens';
+const t = inject(Title);`,
+    },
     // Using ethlete/core SEO utilities is fine
     { code: `import { applyHeadTitleBinding } from '@ethlete/core';` },
     { code: `import { applyMetaBinding } from '@ethlete/core';` },
@@ -29,6 +34,11 @@ tester.run('no-angular-seo-services', rule, {
   ],
 
   invalid: [
+    {
+      code: `import * as pb from '@angular/platform-browser';
+const t = inject(pb.Title);`,
+      errors: [{ messageId: 'noInjectTitle' }],
+    },
     // ── inject(Title) ────────────────────────────────────────────────────────
 
     {

@@ -13,6 +13,17 @@ const tester = new RuleTester({
 tester.run('no-template-literal-before-inline-template', rule, {
   valid: [
     {
+      code: `import { Component } from 'some-other-lib';
+const makeLabel = (i) => \`Item \${i}\`;
+
+@Component({
+  selector: 'et-test',
+  template: \`<p>{{ label }}</p>\`,
+})
+class Foo {}
+`,
+    },
+    {
       name: 'no template literals at all',
       code: `
 const LABEL = 'Hello';
@@ -85,6 +96,18 @@ class Foo {}
     },
   ],
   invalid: [
+    {
+      code: `import { Component as Cmp } from '@angular/core';
+const makeLabel = (i) => \`Item \${i}\`;
+
+@Cmp({
+  selector: 'et-test',
+  template: \`<p>{{ label }}</p>\`,
+})
+class Foo {}
+`,
+      errors: [{ messageId: 'breaksLanguageService' }],
+    },
     {
       name: 'interpolated literal above an inline template',
       code: `

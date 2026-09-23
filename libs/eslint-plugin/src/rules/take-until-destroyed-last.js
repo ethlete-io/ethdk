@@ -1,6 +1,8 @@
 // @ts-check
 'use strict';
 
+const { isImportedAs } = require('./internals/import-resolution');
+
 /**
  * Requires takeUntilDestroyed() to be the last operator in a .pipe().
  *
@@ -34,7 +36,8 @@ const takeUntilDestroyedLast = {
   create(context) {
     /** @param {import('estree').Node} node */
     const isTakeUntilDestroyedCall = (node) =>
-      node.type === 'CallExpression' && node.callee.type === 'Identifier' && node.callee.name === 'takeUntilDestroyed';
+      node.type === 'CallExpression' &&
+      isImportedAs(context.sourceCode, node.callee, 'takeUntilDestroyed', '@angular/core/rxjs-interop');
 
     return {
       CallExpression(node) {

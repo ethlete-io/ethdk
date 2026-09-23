@@ -1,6 +1,8 @@
 // @ts-check
 'use strict';
 
+const { getAngularDecoratorName } = require('./internals/import-resolution');
+
 const { getMetadataEntryRemovalRange } = require('./internals/angular-metadata-fix');
 
 /** @typedef {'Component' | 'Directive' | 'Pipe'} TDecoratorName */
@@ -12,22 +14,6 @@ const getPropertyName = (key) => {
   if (key.type === 'Identifier') return key.name;
   if (key.type === 'Literal' && typeof key.value === 'string') return key.value;
   return null;
-};
-
-/**
- * @param {import('eslint').Rule.Node} node
- * @returns {TDecoratorName | null}
- */
-const getDecoratorName = (node) => {
-  const decorator = /** @type {any} */ (node);
-  if (decorator.type !== 'Decorator') return null;
-
-  const expression = decorator.expression;
-  if (expression.type === 'CallExpression') {
-    return expression.callee.type === 'Identifier' ? expression.callee.name : null;
-  }
-
-  return expression.type === 'Identifier' ? expression.name : null;
 };
 
 /** @type {import('eslint').Rule.RuleModule} */
@@ -49,7 +35,7 @@ const noStandaloneFlag = {
 
     return {
       Decorator(node) {
-        const decoratorName = getDecoratorName(node);
+        const decoratorName = getAngularDecoratorName(context.sourceCode, node);
         if (decoratorName !== 'Component' && decoratorName !== 'Directive' && decoratorName !== 'Pipe') return;
 
         const decorator = /** @type {any} */ (node);

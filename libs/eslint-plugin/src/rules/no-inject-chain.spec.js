@@ -10,6 +10,10 @@ const tester = new RuleTester({
 
 tester.run('no-inject-chain', rule, {
   valid: [
+    {
+      code: `import { inject } from 'some-other-lib';
+const t = inject(Foo).bar;`,
+    },
     // Assign to const first, then use
     { code: `const svc = inject(Service); svc.doSomething();` },
     // Immediately invoked — intentional Angular idiom
@@ -18,6 +22,11 @@ tester.run('no-inject-chain', rule, {
     { code: `inject(MyService);` },
   ],
   invalid: [
+    {
+      code: `import { inject as ngInject } from '@angular/core';
+const t = ngInject(Foo).bar;`,
+      errors: [{ messageId: 'noChain' }],
+    },
     {
       code: `const ref = inject(Service).someRef;`,
       errors: [{ messageId: 'noChain' }],

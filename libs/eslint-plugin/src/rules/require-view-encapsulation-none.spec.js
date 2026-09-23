@@ -12,6 +12,10 @@ const tester = new RuleTester({
 tester.run('require-view-encapsulation-none', rule, {
   valid: [
     {
+      code: `import { Component } from 'some-other-lib';
+@Component({ selector: 'et-a' }) class A {}`,
+    },
+    {
       code: `
 import { Component, ViewEncapsulation } from '@angular/core';
 
@@ -30,6 +34,22 @@ class MyPipe {}`,
     },
   ],
   invalid: [
+    {
+      code: `import { Component as Cmp, ViewEncapsulation as VE } from '@angular/core';
+@Cmp({ selector: 'et-a', template: '' }) class A {}
+@Cmp({ selector: 'et-b', encapsulation: VE.Emulated }) class B {}`,
+      output: `import { Component as Cmp, ViewEncapsulation as VE } from '@angular/core';
+@Cmp({ selector: 'et-a', template: '', encapsulation: VE.None }) class A {}
+@Cmp({ selector: 'et-b', encapsulation: VE.None }) class B {}`,
+      errors: [{ messageId: 'missing' }, { messageId: 'notNone' }],
+    },
+    {
+      code: `import * as ng from '@angular/core';
+@ng.Component({ selector: 'et-a', encapsulation: ng.ViewEncapsulation.Emulated }) class A {}`,
+      output: `import * as ng from '@angular/core';
+@ng.Component({ selector: 'et-a', encapsulation: ng.ViewEncapsulation.None }) class A {}`,
+      errors: [{ messageId: 'notNone' }],
+    },
     {
       code: `
 import { Component } from '@angular/core';

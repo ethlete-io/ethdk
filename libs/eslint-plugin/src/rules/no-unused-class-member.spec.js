@@ -71,6 +71,11 @@ tester.run('no-unused-class-member', rule, {
     { code: `@Directive({ host: { '[class.active]': 'active' } }) class C { private active = true; }` },
   ],
   invalid: [
+    {
+      code: `import { Directive as Dir } from '@angular/core';
+@Dir({}) class C { protected svc = inject(S); }`,
+      errors: [{ messageId: 'noUnused' }],
+    },
     // private field — never referenced
     {
       code: `class C { private document = inject(DOCUMENT); }`,

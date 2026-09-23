@@ -10,6 +10,14 @@ const tester = new RuleTester({
 
 tester.run('no-rxjs-in-effect', rule, {
   valid: [
+    {
+      code: `import { effect } from 'some-other-lib';
+effect(() => { store.subscribe(cb); });`,
+    },
+    {
+      code: `const effect = (fn) => fn();
+effect(() => { store.subscribe(cb); });`,
+    },
     // subscribe outside effect/computed
     { code: `obs$.subscribe();` },
     { code: `obs$.pipe(map(x => x)).subscribe();` },
@@ -21,6 +29,11 @@ tester.run('no-rxjs-in-effect', rule, {
     { code: `computed(() => this.items().length);` },
   ],
   invalid: [
+    {
+      code: `import { effect as ngEffect } from '@angular/core';
+ngEffect(() => { obs$.subscribe(); });`,
+      errors: [{ messageId: 'noSubscribeInEffect' }],
+    },
     {
       code: `effect(() => { this.obs$.subscribe(); });`,
       errors: [{ messageId: 'noSubscribeInEffect', data: { context: 'effect' } }],

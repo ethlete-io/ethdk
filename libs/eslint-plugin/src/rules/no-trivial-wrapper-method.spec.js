@@ -11,6 +11,10 @@ const tester = new RuleTester({
 
 tester.run('no-trivial-wrapper-method', rule, {
   valid: [
+    {
+      code: `import { Component as Cmp } from '@angular/core';
+@Cmp({}) class A { focus(options) { this.dir.focus(options); } }`,
+    },
     // Zero-param methods — intentional API surface, exempt
     { code: `class Foo { reset() { this.value.set(null); } }` },
     // Method that transforms its argument
@@ -30,6 +34,11 @@ tester.run('no-trivial-wrapper-method', rule, {
     { code: `class Foo { static ngTemplateContextGuard(dir, ctx) { return guard(dir, ctx); } }` },
   ],
   invalid: [
+    {
+      code: `import { Component } from 'some-other-lib';
+@Component({}) class A { focus(options) { this.dir.focus(options); } }`,
+      errors: [{ messageId: 'noTrivialWrapperMethod' }],
+    },
     {
       // Direct void delegation
       code: `class Foo { setValue(val) { this.value.set(val); } }`,

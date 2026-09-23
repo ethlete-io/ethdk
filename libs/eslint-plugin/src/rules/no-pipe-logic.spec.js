@@ -11,6 +11,10 @@ const tester = new RuleTester({
 
 tester.run('no-pipe-logic', rule, {
   valid: [
+    {
+      code: `import { Pipe } from 'some-other-lib';
+@Pipe({ name: 'x' }) class P { transform(v) { const a = v + 1; return a; } }`,
+    },
     // transform assigned as reference to external utility — fine
     {
       code: `
@@ -34,6 +38,11 @@ class EmptyPipe {}`,
     },
   ],
   invalid: [
+    {
+      code: `import { Pipe as NgPipe } from '@angular/core';
+@NgPipe({ name: 'x' }) class P { transform(v) { const a = v + 1; return a; } }`,
+      errors: [{ messageId: 'noLogicInTransform' }],
+    },
     {
       // Method definition with body
       code: `
