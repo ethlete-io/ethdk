@@ -2,12 +2,7 @@ import { Observable, defer, finalize, map, tap } from 'rxjs';
 import { defineOverlay } from '../overlay-definition';
 import { createOverlayOpener } from '../overlay-opener';
 import { dialogOverlayStrategy } from '../strategies/dialog.strategy';
-import {
-  ALERT_DIALOG_CONTENT,
-  ALERT_DIALOG_INITIAL_FOCUS_ATTRIBUTE,
-  AlertDialogComponent,
-  AlertDialogContent,
-} from './alert-dialog.component';
+import { ALERT_DIALOG_CONTENT, AlertDialogComponent, AlertDialogContent } from './alert-dialog.component';
 
 export type AlertDialogConfig = {
   /** The dialog's heading, and its accessible name. */
@@ -47,7 +42,7 @@ const alertDialogOverlay = /* @__PURE__ */ defineOverlay<AlertDialogComponent, b
   strategies: /* @__PURE__ */ dialogOverlayStrategy({ width: 'min(420px, 80%)' }),
   role: 'alertdialog',
   closeOnOutsidePointer: false,
-  autoFocus: `[${ALERT_DIALOG_INITIAL_FOCUS_ATTRIBUTE}]`,
+  autoFocus: '[data-et-alert-dialog-initial-focus]',
 });
 
 let nextMessageId = 0;
