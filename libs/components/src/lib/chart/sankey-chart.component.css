@@ -1,0 +1,175 @@
+@layer components {
+  @property --et-sankey-chart-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-sankey-chart-min-width {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 480px;
+  }
+
+  @property --et-sankey-chart-link-opacity {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 0.35;
+  }
+
+  @property --et-sankey-chart-link-highlight-opacity {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 0.6;
+  }
+
+  @property --et-sankey-chart-link-dim-opacity {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 0.1;
+  }
+
+  @property --et-sankey-chart-enter-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 400ms;
+  }
+
+  .et-sankey-chart {
+    display: block;
+    position: relative;
+    font-size: var(--et-sankey-chart-font-size);
+    line-height: 1.4;
+    color: var(--et-surface-color-solid, currentColor);
+
+    .et-sankey-chart-scroller {
+      overflow-x: auto;
+      padding-block: 0.7em;
+    }
+
+    .et-sankey-chart-plot {
+      position: relative;
+      min-inline-size: var(--et-sankey-chart-min-width);
+    }
+
+    .et-sankey-chart-svg {
+      display: block;
+      overflow: visible;
+    }
+
+    .et-sankey-chart-labels {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      animation: et-sankey-chart-fade var(--et-sankey-chart-enter-duration) ease-out backwards;
+    }
+
+    .et-sankey-chart-label {
+      position: absolute;
+      inset-block-start: var(--_et-sankey-chart-label-y);
+      inset-inline-start: var(--_et-sankey-chart-label-x);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      translate: 0 -50%;
+      text-shadow:
+        0 0 2px var(--et-surface-background-solid, transparent),
+        0 0 4px var(--et-surface-background-solid, transparent);
+
+      &:where([data-side='start']) {
+        translate: -100% -50%;
+        text-align: end;
+      }
+    }
+  }
+
+  .et-sankey-chart-node {
+    outline: none;
+
+    .et-sankey-chart-node-target {
+      fill: transparent;
+      stroke: transparent;
+      stroke-width: 2px;
+    }
+
+    .et-sankey-chart-node-mark {
+      fill: var(--et-theme-color-primary-solid, currentColor);
+      animation: et-sankey-chart-fade var(--et-sankey-chart-enter-duration) ease-out backwards;
+    }
+
+    &:where([data-active]) .et-sankey-chart-node-target {
+      fill: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
+    }
+
+    &:focus-visible .et-sankey-chart-node-target {
+      stroke: var(--et-theme-color-primary-solid, currentColor);
+    }
+  }
+
+  .et-sankey-chart-link {
+    outline: none;
+
+    .et-sankey-chart-link-mark {
+      fill: var(--et-theme-color-primary-solid, currentColor);
+      fill-opacity: var(--et-sankey-chart-link-opacity);
+      stroke: transparent;
+      stroke-width: 4px;
+      transition: fill-opacity 150ms ease-out;
+      animation: et-sankey-chart-fade var(--et-sankey-chart-enter-duration) ease-out
+        calc(var(--et-sankey-chart-enter-duration) / 2) backwards;
+    }
+
+    .et-sankey-chart-link-anchor {
+      fill: none;
+      pointer-events: none;
+    }
+
+    &:focus-visible .et-sankey-chart-link-mark {
+      stroke: var(--et-theme-color-primary-solid, currentColor);
+      stroke-width: 2px;
+    }
+  }
+
+  .et-sankey-chart-svg:where([data-highlight]) .et-sankey-chart-link {
+    .et-sankey-chart-link-mark {
+      fill-opacity: var(--et-sankey-chart-link-dim-opacity);
+    }
+
+    &:where([data-highlighted]) .et-sankey-chart-link-mark {
+      fill-opacity: var(--et-sankey-chart-link-highlight-opacity);
+    }
+  }
+
+  .et-sankey-chart-tooltip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 8px;
+
+    .et-sankey-chart-tooltip-total {
+      opacity: 0.75;
+    }
+
+    .et-sankey-chart-tooltip-value {
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  @keyframes et-sankey-chart-fade {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-sankey-chart .et-sankey-chart-labels,
+    .et-sankey-chart-node .et-sankey-chart-node-mark,
+    .et-sankey-chart-link .et-sankey-chart-link-mark {
+      animation: none;
+    }
+
+    .et-sankey-chart-link .et-sankey-chart-link-mark {
+      transition: none;
+    }
+  }
+}

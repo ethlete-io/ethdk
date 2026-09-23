@@ -1,0 +1,118 @@
+<div class="et-sankey-chart-scroller">
+  <div [style.block-size.px]="chart.height()" class="et-sankey-chart-plot" etChartPlot>
+    @if (chart.plotWidth()) {
+      <svg
+        [attr.width]="chart.plotWidth()"
+        [attr.height]="chart.height()"
+        [attr.aria-label]="chart.label()"
+        [attr.data-highlight]="chart.hasHighlight() ? '' : null"
+        class="et-sankey-chart-svg"
+        role="group"
+      >
+        <svg:g [etProvideColor]="colorToken()" class="et-sankey-chart-nodes">
+          @for (node of chart.renderedNodes(); track node.key) {
+            <svg:g
+              [etChartMark]="nodeTooltips()[node.index] ?? null"
+              [etChartMarkDescription]="node.description"
+              [etChartMarkAnchor]="nodeAnchor"
+              [etChartMarkPlacement]="node.placement"
+              [etProvideColor]="node.colorToken"
+              [attr.aria-label]="node.name"
+              [attr.data-active]="chart.activeNodeKey() === node.key ? '' : null"
+              (pointerenter)="hoverNode($event, node.key)"
+              (pointerleave)="chart.unhoverMark(node.key)"
+              (focus)="focusNode(node.key)"
+              (blur)="chart.blurMark(node.key)"
+              class="et-sankey-chart-node"
+            >
+              <svg:rect
+                [attr.x]="node.target.x"
+                [attr.y]="node.target.y"
+                [attr.width]="node.target.width"
+                [attr.height]="node.target.height"
+                class="et-sankey-chart-node-target"
+                rx="2"
+              />
+              <svg:rect
+                #nodeAnchor
+                [attr.x]="node.x"
+                [attr.y]="node.y"
+                [attr.width]="node.width"
+                [attr.height]="node.height"
+                class="et-sankey-chart-node-mark"
+              />
+            </svg:g>
+          }
+        </svg:g>
+
+        <svg:g [etProvideColor]="colorToken()" class="et-sankey-chart-links">
+          @for (link of chart.renderedLinks(); track link.key) {
+            <svg:g
+              [etChartMark]="linkTooltips()[link.index] ?? null"
+              [etChartMarkDescription]="link.valueText"
+              [etChartMarkAnchor]="linkAnchor"
+              [etProvideColor]="link.colorToken"
+              [attr.aria-label]="link.name"
+              [attr.data-highlighted]="chart.highlightedLinks()[link.key] ? '' : null"
+              (pointerenter)="hoverLink($event, link.key)"
+              (pointerleave)="chart.unhoverMark(link.key)"
+              (focus)="focusLink(link.key)"
+              (blur)="chart.blurMark(link.key)"
+              class="et-sankey-chart-link"
+              etChartMarkPlacement="top"
+            >
+              <svg:path [attr.d]="link.path" class="et-sankey-chart-link-mark" />
+              <svg:rect
+                #linkAnchor
+                [attr.x]="link.anchor.x"
+                [attr.y]="link.anchor.y"
+                [attr.width]="link.anchor.width"
+                [attr.height]="link.anchor.height"
+                class="et-sankey-chart-link-anchor"
+              />
+            </svg:g>
+          }
+        </svg:g>
+      </svg>
+
+      <div class="et-sankey-chart-labels" aria-hidden="true">
+        @for (node of chart.renderedNodes(); track node.key) {
+          <span
+            [attr.data-side]="node.labelSide"
+            [style.--_et-sankey-chart-label-x.px]="node.labelX"
+            [style.--_et-sankey-chart-label-y.px]="node.labelY"
+            [style.max-inline-size.px]="node.labelMaxWidth"
+            class="et-sankey-chart-label"
+            >{{ node.name }}</span
+          >
+        }
+      </div>
+    }
+  </div>
+</div>
+
+@for (node of chart.renderedNodes(); track node.key) {
+  <ng-template #nodeTooltip>
+    <span class="et-sankey-chart-tooltip">
+      <strong class="et-sankey-chart-tooltip-name">{{ node.name }}</strong>
+      @if (node.incomingText) {
+        <span class="et-sankey-chart-tooltip-total"
+          >{{ chart.incomingLabel() }} <span class="et-sankey-chart-tooltip-value">{{ node.incomingText }}</span></span
+        >
+      }
+      @if (node.outgoingText) {
+        <span class="et-sankey-chart-tooltip-total"
+          >{{ chart.outgoingLabel() }} <span class="et-sankey-chart-tooltip-value">{{ node.outgoingText }}</span></span
+        >
+      }
+    </span>
+  </ng-template>
+}
+
+@for (link of chart.renderedLinks(); track link.key) {
+  <ng-template #linkTooltip>
+    <et-chart-tooltip [value]="link.valueText" [label]="link.name" />
+  </ng-template>
+}
+
+<et-chart-data-table [caption]="chart.label()" [model]="chart.table()" />
