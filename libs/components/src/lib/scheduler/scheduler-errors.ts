@@ -11,4 +11,6 @@ export const SCHEDULER_ERROR_CODES = {
   APPOINTMENT_DRAG_OUTSIDE_SCHEDULER: 4504,
   /** An interaction requires the default edit surface, but it was not registered. */
   EDIT_SURFACE_NOT_REGISTERED: 4505,
+  /** A `businessHours` entry has a time that is not `HH:mm`, or ends before it starts. */
+  INVALID_BUSINESS_HOURS: 4506,
 } as const;

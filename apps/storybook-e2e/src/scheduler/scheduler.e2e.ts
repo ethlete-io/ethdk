@@ -1,4 +1,4 @@
-import { Page, expect, test } from '@playwright/test';
+import { Locator, Page, expect, test } from '@playwright/test';
 import { boxOf, expectFocusVisible, openStory, pressKey, touchDrag } from '../support';
 
 const DEFAULT_ID = 'components-date-time-scheduler--default';
@@ -7,6 +7,7 @@ const DAY_ID = 'components-date-time-scheduler--day';
 const AGENDA_ID = 'components-date-time-scheduler--agenda';
 const NARROW_ID = 'components-date-time-scheduler--narrow';
 const WITHOUT_DRAG_ID = 'components-date-time-scheduler--without-appointment-drag';
+const BUSINESS_HOURS_ID = 'components-date-time-scheduler--business-hours';
 
 const DIALOG_ROOT = '[role="dialog"]';
 
@@ -14,6 +15,68 @@ const DIALOG_ROOT = '[role="dialog"]';
 async function waitForEntered(page: Page): Promise<void> {
   await expect(page.locator('.et-overlay')).toHaveClass(/et-animation-enter-done/);
 }
+
+async function shadeCountsPerDay(root: Locator): Promise<number[]> {
+  return root
+    .locator('.et-scheduler-time-grid-day')
+    .evaluateAll((days) => days.map((day) => day.querySelectorAll('.et-scheduler-time-grid-non-business').length));
+}
+
+test.describe('scheduler / business hours', () => {
+  test('shades the closed stretches of every weekday and the whole of a closed day', async ({ page }) => {
+    const root = await openStory(page, BUSINESS_HOURS_ID);
+
+    await expect(root.locator('.et-scheduler-time-grid-day')).toHaveCount(7);
+
+    const counts = await shadeCountsPerDay(root);
+
+    expect([...counts].sort()).toEqual([1, 1, 2, 3, 3, 3, 3]);
+  });
+
+  test('a closed day is shaded over its full height, a weekday up to its opening hour', async ({ page }) => {
+    const root = await openStory(page, BUSINESS_HOURS_ID);
+    const counts = await shadeCountsPerDay(root);
+    const days = root.locator('.et-scheduler-time-grid-day');
+    const closedDay = days.nth(counts.indexOf(1));
+    const weekday = days.nth(counts.indexOf(3));
+
+    const hourRow = await boxOf(weekday.locator('.et-scheduler-time-grid-hour-row').first());
+    const closedColumn = await boxOf(closedDay);
+    const closedShade = await boxOf(closedDay.locator('.et-scheduler-time-grid-non-business'));
+    const morningShade = await boxOf(weekday.locator('.et-scheduler-time-grid-non-business').first());
+
+    expect(closedShade.height).toBeCloseTo(closedColumn.height, 0);
+    expect(morningShade.height).toBeCloseTo(hourRow.height * 8, 0);
+    await expect(closedDay.locator('.et-scheduler-time-grid-non-business')).not.toHaveCSS(
+      'background-color',
+      'rgba(0, 0, 0, 0)',
+    );
+  });
+});
+
+test.describe('scheduler / business hours drag', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: mouse drag');
+
+  test('dragging across a closed stretch still draws a new range', async ({ page }) => {
+    const root = await openStory(page, BUSINESS_HOURS_ID);
+    const counts = await shadeCountsPerDay(root);
+    const closedDay = root.locator('.et-scheduler-time-grid-day').nth(counts.indexOf(1));
+
+    await closedDay.scrollIntoViewIfNeeded();
+    const box = await boxOf(root.locator('.et-scheduler-time-grid-body'));
+    const column = await boxOf(closedDay);
+    const x = column.x + column.width / 2;
+    const y = box.y + 40;
+
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x, y + 120, { steps: 10 });
+
+    await expect(closedDay.locator('.et-scheduler-time-grid-draft')).toBeVisible();
+
+    await page.mouse.up();
+  });
+});
 
 test.describe('scheduler / focus', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus order');

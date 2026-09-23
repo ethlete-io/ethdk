@@ -53,15 +53,16 @@ type Appointment<TExtra = unknown> = {
 
 On `et-scheduler` (forwarded from the headless `[etScheduler]` directive):
 
-| Input                   | Type                        | Default             | Description                                                                                      |
-| ----------------------- | --------------------------- | ------------------- | ------------------------------------------------------------------------------------------------ |
-| `appointments`          | `readonly Appointment[]`    | `[]`                | Every appointment the scheduler knows about - not pre-filtered to the visible range.             |
-| `view`                  | `SchedulerView`             | `'month'`           | Which view is on screen - `'month' \| 'week' \| 'day' \| 'agenda'`.                              |
-| `focusedDate`           | `Date`                      | today               | The date the visible period is derived from.                                                     |
-| `selectedAppointmentId` | `AppointmentId \| null`     | `null`              | The currently selected appointment.                                                              |
-| `locale`                | `Locale \| null` (date-fns) | `DATE_LOCALE` token | Weekday names and the header label. Falls back to date-fns' built-in en-US.                      |
-| `firstDayOfWeek`        | `0–6`                       | locale, else `1`    | `0` = Sunday. Defaults to the locale's week start, Monday without one.                           |
-| `agendaDays`            | `number \| null`            | `null`              | How many days the agenda lists, from `focusedDate` on - see [infinite agenda](#infinite-agenda). |
+| Input                   | Type                                        | Default             | Description                                                                                                   |
+| ----------------------- | ------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `appointments`          | `readonly Appointment[]`                    | `[]`                | Every appointment the scheduler knows about - not pre-filtered to the visible range.                          |
+| `view`                  | `SchedulerView`                             | `'month'`           | Which view is on screen - `'month' \| 'week' \| 'day' \| 'agenda'`.                                           |
+| `focusedDate`           | `Date`                                      | today               | The date the visible period is derived from.                                                                  |
+| `selectedAppointmentId` | `AppointmentId \| null`                     | `null`              | The currently selected appointment.                                                                           |
+| `locale`                | `Locale \| null` (date-fns)                 | `DATE_LOCALE` token | Weekday names and the header label. Falls back to date-fns' built-in en-US.                                   |
+| `firstDayOfWeek`        | `0–6`                                       | locale, else `1`    | `0` = Sunday. Defaults to the locale's week start, Monday without one.                                        |
+| `agendaDays`            | `number \| null`                            | `null`              | How many days the agenda lists, from `focusedDate` on - see [infinite agenda](#infinite-agenda).              |
+| `businessHours`         | `readonly SchedulerBusinessHours[] \| null` | `null`              | Open hours per weekday; the time grid shades everything outside them - see [business hours](#business-hours). |
 
 | Model                   | Type                    | Description                                  |
 | ----------------------- | ----------------------- | -------------------------------------------- |
@@ -145,6 +146,26 @@ It takes no inputs of its own - like the month view, it reads its host `[etSched
 <StoryEmbed id="components-date-time-scheduler--day" height="640px" />
 
 Clicking a block (or an all-day entry) sets `selectedAppointmentId`, same as the month view. Both can also be dragged - a block to another time or day, an all-day entry across whole days - and resized by their edges: the block's top and bottom, the entry's leading and trailing. See [move and resize](#move-and-resize).
+
+### Business hours {#business-hours}
+
+`businessHours` lists the open stretches per weekday, and the time grid shades every other stretch of each day column. A weekday no entry lists is shaded all day. Several entries for the same weekday make a split day, such as a lunch break:
+
+```ts
+protected businessHours: SchedulerBusinessHours[] = [
+  { daysOfWeek: [1, 2, 3, 4], start: '08:00', end: '12:00' },
+  { daysOfWeek: [1, 2, 3, 4], start: '13:00', end: '18:00' },
+  { daysOfWeek: [5], start: '08:00', end: '14:00' },
+];
+```
+
+```html
+<et-scheduler [businessHours]="businessHours" [appointments]="appointments" />
+```
+
+`daysOfWeek` counts from `0` = Sunday. `start` and `end` are `HH:mm`, and `end` may be `24:00` to stay open until midnight. An entry that does not parse, or ends before it starts, throws `ET4506` in development. The shading is only a cue: appointments still render and can still be dragged, and a drag-to-create still starts, on a shaded stretch. The fill comes from the surface's interaction color at 6%; set `--et-scheduler-time-grid-non-business-background` to change it.
+
+<StoryEmbed id="components-date-time-scheduler--business-hours" height="640px" />
 
 ## Agenda view
 
@@ -415,7 +436,7 @@ Adding your own piece is the same mechanism: write a directive that injects `SCH
 
 ## Headless usage {#headless-usage}
 
-`[etScheduler]` owns all state - the active view, the focused date, the derived visible range, and the appointment tree. `[etSchedulerMonth]` buckets that into a month grid and is itself what `<et-scheduler-month-view>` hosts; `[etSchedulerTimeGrid]` does the same for the time grid, exposing `days()` - one entry per visible day, each with its packed `blocks` (`offset`/`span`/`inlineOffset`/`inlineSize` as percentages, `column`/`columnCount` for the overlap group it landed in - `inlineSize` can be several columns wide, so it is not `100 / columnCount`) - and `allDay()`, the all-day entries spanning across those days (`inlineOffset`/`inlineSize` as percentages of the whole visible range, `row` for the stacking row an overlapping span landed in; `allDayRowCount()` is how many rows that needs). `currentTime()` is where the clock stands on that grid - `{ dayIndex, at, offset }`, with `offset` in the same percent unit a block uses, or `null` when today is not visible - and it re-reads the clock every minute, so a custom time grid can draw its own now-line from it:
+`[etScheduler]` owns all state - the active view, the focused date, the derived visible range, and the appointment tree. `[etSchedulerMonth]` buckets that into a month grid and is itself what `<et-scheduler-month-view>` hosts; `[etSchedulerTimeGrid]` does the same for the time grid, exposing `days()` - one entry per visible day, each with its packed `blocks` (`offset`/`span`/`inlineOffset`/`inlineSize` as percentages, `column`/`columnCount` for the overlap group it landed in - `inlineSize` can be several columns wide, so it is not `100 / columnCount`) - and `allDay()`, the all-day entries spanning across those days (`inlineOffset`/`inlineSize` as percentages of the whole visible range, `row` for the stacking row an overlapping span landed in; `allDayRowCount()` is how many rows that needs). `currentTime()` is where the clock stands on that grid - `{ dayIndex, at, offset }`, with `offset` in the same percent unit a block uses, or `null` when today is not visible - and it re-reads the clock every minute, so a custom time grid can draw its own now-line from it. `nonBusinessTime()` holds one list of `{ offset, span }` segments per entry of `days()`, the stretches outside `businessHours`:
 
 ```html
 <div #scheduler="etScheduler" [appointments]="appointments" etScheduler>

@@ -18,6 +18,7 @@ import {
   SchedulerAppointmentDrag,
   SchedulerAppointmentDragMode,
   SchedulerAppointmentReschedule,
+  SchedulerBusinessHours,
   SchedulerDraftRange,
   SchedulerView,
   SchedulerVisibleRange,
@@ -71,6 +72,12 @@ export class SchedulerDirective<TExtra = unknown> {
    * the agenda on the week view's window, so switching between the two keeps the same days.
    */
   public agendaDays = input<number | null>(null);
+
+  /**
+   * The open hours per weekday. The time grid de-emphasizes every stretch outside them, and a weekday
+   * no entry lists is closed all day. `null` draws no business hours at all.
+   */
+  public businessHours = input<readonly SchedulerBusinessHours[] | null>(null);
 
   /**
    * Emits when a move or resize lands the appointment somewhere else - see

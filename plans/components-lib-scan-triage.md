@@ -745,6 +745,10 @@ date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the
    `feat(components): Add Home, End and typeahead to the selection groups`: radio, segmented and checkbox groups jump to the first/last
    enabled option and to a typed label prefix (500 ms buffer on the list, repeats cycle), moving like
    the arrows do - radio/segmented check as they move, checkbox and `readonly` only focus.
+   Scheduler business hours **DONE** in `feat(components): Add business hours to the scheduler time grid`:
+   `businessHours` (per-weekday `HH:mm` ranges, split days, `24:00`, `ET4506` on a bad entry) shades
+   the time grid outside them via `nonBusinessTime()`; surface-interaction fill with an override
+   token, drag-to-create still starts on shaded time; `BusinessHours` story + e2e.
 10. **Error-message and dev-guard quality pass.** Messages that name an API that does not exist
     (`registerScrollContainer`, `hostDirectives: [StreamPipChromeComponent]`,
     `et-filter-overlay-submit-label`, `exportTableToCsv`, the four-of-six picker host names), guards

@@ -68,3 +68,15 @@ export type SchedulerDraftRange = {
   /** Set by views that draw in whole days, so the appointment is created as an all-day one. */
   allDay?: boolean;
 };
+
+/** 0 = Sunday … 6 = Saturday. */
+export type SchedulerDayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+/** One stretch of business time, repeated on every listed weekday. */
+export type SchedulerBusinessHours = {
+  daysOfWeek: readonly SchedulerDayOfWeek[];
+  /** `HH:mm`. */
+  start: string;
+  /** `HH:mm`, later than `start`. `24:00` closes at midnight. */
+  end: string;
+};

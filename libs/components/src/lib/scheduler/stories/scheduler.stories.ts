@@ -17,6 +17,17 @@ export const Week: Story = { args: { initialView: 'week' } };
 
 export const Day: Story = { args: { initialView: 'day' } };
 
+export const BusinessHours: Story = {
+  args: {
+    initialView: 'week',
+    businessHours: [
+      { daysOfWeek: [1, 2, 3, 4], start: '08:00', end: '12:00' },
+      { daysOfWeek: [1, 2, 3, 4], start: '13:00', end: '18:00' },
+      { daysOfWeek: [5], start: '08:00', end: '14:00' },
+    ],
+  },
+};
+
 export const Agenda: Story = { args: { initialView: 'agenda' } };
 
 export const InfiniteAgenda: StoryObj<SchedulerInfiniteAgendaStorybookComponent> = {

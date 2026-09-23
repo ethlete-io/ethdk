@@ -1,12 +1,19 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Appointment } from '../scheduler.types';
+import { Appointment, SchedulerBusinessHours } from '../scheduler.types';
 import { SchedulerDirective } from './scheduler.directive';
 import { SchedulerTimeGridDirective } from './scheduler-time-grid.directive';
 
 @Component({
   template: `
-    <div [focusedDate]="focusedDate()" [appointments]="appointments()" [view]="view()" [firstDayOfWeek]="1" etScheduler>
+    <div
+      [focusedDate]="focusedDate()"
+      [appointments]="appointments()"
+      [view]="view()"
+      [businessHours]="businessHours()"
+      [firstDayOfWeek]="1"
+      etScheduler
+    >
       <div #grid="etSchedulerTimeGrid" etSchedulerTimeGrid></div>
     </div>
   `,
@@ -16,6 +23,7 @@ class SchedulerTimeGridTestHostComponent {
   appointments = signal<Appointment[]>([]);
   focusedDate = signal(new Date(2026, 6, 15));
   view = signal<'week' | 'day'>('week');
+  businessHours = signal<SchedulerBusinessHours[] | null>(null);
 }
 
 const appointment = (id: string, start: Date, end: Date): Appointment => ({
@@ -74,6 +82,23 @@ describe('SchedulerTimeGridDirective', () => {
 
   it('places no clock on a week today is not in', () => {
     expect(directive.currentTime()).toBeNull();
+  });
+
+  it('marks no time as outside business hours while none are set', () => {
+    expect(directive.nonBusinessTime()).toEqual([[], [], [], [], [], [], []]);
+  });
+
+  it('closes each visible day outside its business hours', () => {
+    host.businessHours.set([{ daysOfWeek: [1, 2, 3, 4, 5], start: '09:00', end: '17:00' }]);
+    fixture.detectChanges();
+
+    const [monday, , , , , saturday] = directive.nonBusinessTime();
+
+    expect(monday).toEqual([
+      { offset: 0, span: 37.5 },
+      { offset: (17 / 24) * 100, span: (7 / 24) * 100 },
+    ]);
+    expect(saturday).toEqual([{ offset: 0, span: 100 }]);
   });
 
   it('re-lays-out when the input signal changes', () => {

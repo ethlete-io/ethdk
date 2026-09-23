@@ -104,4 +104,32 @@ describe('SchedulerComponent', () => {
     expect(button).not.toBeNull();
     expect(driver.editSurface()).toHaveLength(1);
   });
+
+  it('shades the time outside business hours in the week view', () => {
+    const businessDriver = schedulerTestDriver({
+      view: 'week',
+      businessHours: [{ daysOfWeek: [1, 2, 3, 4, 5], start: '09:00', end: '17:00' }],
+    });
+
+    const shadesPerDay = businessDriver
+      .queryAll('.et-scheduler-time-grid-day')
+      .map((day) => day.querySelectorAll('.et-scheduler-time-grid-non-business').length);
+
+    expect(shadesPerDay).toEqual([2, 2, 2, 2, 2, 1, 1]);
+    expect(
+      businessDriver
+        .query('.et-scheduler-time-grid-non-business')
+        ?.style.getPropertyValue('--_et-scheduler-time-grid-block-span'),
+    ).toBe('37.5');
+
+    businessDriver.fixture.destroy();
+  });
+
+  it('shades nothing without business hours', () => {
+    const plainDriver = schedulerTestDriver({ view: 'week' });
+
+    expect(plainDriver.queryAll('.et-scheduler-time-grid-non-business')).toHaveLength(0);
+
+    plainDriver.fixture.destroy();
+  });
 });

@@ -5,7 +5,7 @@ import { hostDirective, query, queryAll, textOf, tick } from '../../testing/driv
 import { SchedulerEditSurfaceDirective } from '../headless/scheduler-edit-surface.directive';
 import { SchedulerComponent } from '../scheduler.component';
 import { provideSchedulerEditSurface } from '../scheduler-edit-surface.provider';
-import { Appointment, AppointmentId, SchedulerView } from '../scheduler.types';
+import { Appointment, AppointmentId, SchedulerBusinessHours, SchedulerView } from '../scheduler.types';
 
 export const testAppointment = (id: AppointmentId, overrides: Partial<Appointment> = {}): Appointment => ({
   id,
@@ -21,6 +21,7 @@ export type SchedulerTestDriverOptions = {
   view?: SchedulerView;
   selectedAppointmentId?: AppointmentId | null;
   focusedDate?: Date;
+  businessHours?: readonly SchedulerBusinessHours[] | null;
   editSurface?: boolean;
   providers?: Provider[];
 };
@@ -34,6 +35,7 @@ const SCHEDULER_TEST_OPTIONS = new InjectionToken<SchedulerTestDriverOptions>('S
       [appointments]="appointments()"
       [view]="view()"
       [focusedDate]="focusedDate()"
+      [businessHours]="businessHours()"
     />
   `,
   imports: [SchedulerComponent],
@@ -45,6 +47,7 @@ class SchedulerTestHost {
   public readonly view = signal(this.options.view ?? 'month');
   public readonly selectedAppointmentId = signal(this.options.selectedAppointmentId ?? null);
   public readonly focusedDate = signal(this.options.focusedDate ?? testAppointment('_').start);
+  public readonly businessHours = signal(this.options.businessHours ?? null);
 }
 
 export const schedulerTestDriver = (options: SchedulerTestDriverOptions = {}) => {

@@ -147,6 +147,18 @@
     }
   }
 
+  .et-scheduler-time-grid-non-business {
+    position: absolute;
+    inset-block-start: calc(var(--_et-scheduler-time-grid-block-offset, 0) * 1%);
+    inset-inline: 0;
+    block-size: calc(var(--_et-scheduler-time-grid-block-span, 0) * 1%);
+    background: var(
+      --et-scheduler-time-grid-non-business-background,
+      color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 6%, transparent)
+    );
+    pointer-events: none;
+  }
+
   .et-scheduler-time-grid-now {
     position: absolute;
     inset-block-start: calc(var(--_et-scheduler-time-grid-now-offset, 0) * 1%);

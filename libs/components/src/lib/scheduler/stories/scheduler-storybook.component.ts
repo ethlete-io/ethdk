@@ -1,6 +1,6 @@
 import { Component, ViewEncapsulation, computed, input, linkedSignal, signal } from '@angular/core';
 import { addDays, addHours, startOfWeek } from 'date-fns';
-import { Appointment, AppointmentId, SchedulerView } from '../scheduler.types';
+import { Appointment, AppointmentId, SchedulerBusinessHours, SchedulerView } from '../scheduler.types';
 import { provideSchedulerEditSurface } from '../scheduler-edit-surface.provider';
 import { SCHEDULER_IMPORTS } from '../scheduler.imports';
 
@@ -88,6 +88,7 @@ const DEMO_APPOINTMENTS: Appointment[] = [
         [(view)]="view"
         [(selectedAppointmentId)]="selectedAppointmentId"
         [appointments]="appointments()"
+        [businessHours]="businessHours()"
         [etSchedulerBadgeLocation]="{ enabled: showLocationBadge() }"
         [etSchedulerAppointmentDrag]="{ enabled: allowAppointmentDrag() }"
         (appointmentSave)="saveAppointment($event)"
@@ -107,6 +108,7 @@ export class SchedulerStorybookComponent {
   public showLocationBadge = input(true);
   public allowAppointmentDrag = input(true);
   public containerWidth = input<string | null>(null);
+  public businessHours = input<readonly SchedulerBusinessHours[] | null>(null);
   protected view = linkedSignal(() => this.initialView());
   protected appointments = signal(DEMO_APPOINTMENTS);
   protected selectedAppointmentId = signal<string | null>(null);

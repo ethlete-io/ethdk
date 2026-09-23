@@ -2,12 +2,14 @@ import { Directive, afterNextRender, computed, inject } from '@angular/core';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { eachDayOfInterval, isSameDay, startOfDay } from 'date-fns';
 import { SCHEDULER_ERROR_CODES } from '../scheduler-errors';
+import { buildSchedulerNonBusinessTime } from './internals/scheduler-business-hours';
 import { injectSchedulerClock } from './internals/scheduler-clock';
 import { buildSchedulerTimeGrid, computeInitialScrollHour } from './internals/scheduler-time-grid';
 import { SchedulerDirective } from './scheduler.directive';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+export type { SchedulerTimeGridSegment } from './internals/scheduler-business-hours';
 export type {
   SchedulerTimeGridAllDayEntry,
   SchedulerTimeGridBlock,
@@ -54,6 +56,22 @@ export class SchedulerTimeGridDirective {
 
   /** How many stacking rows {@link allDay} needs - sizes the all-day lane's reserved space. */
   public allDayRowCount = computed(() => this.grid().allDayRowCount);
+
+  /**
+   * The time outside the scheduler's `businessHours`, one list of segments per entry of {@link days},
+   * in the same percent units a block uses. Empty lists while no business hours are set.
+   */
+  public nonBusinessTime = computed(() => {
+    const businessHours = this.scheduler?.businessHours();
+    const days = this.days();
+
+    if (!businessHours) return days.map(() => []);
+
+    return buildSchedulerNonBusinessTime(
+      days.map((day) => day.date),
+      businessHours,
+    );
+  });
 
   /**
    * Which hour the body's scrollable region should open scrolled to - the current hour when today
