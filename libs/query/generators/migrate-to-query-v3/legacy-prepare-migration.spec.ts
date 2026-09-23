@@ -204,6 +204,94 @@ export class DemoComponent {
     });
   });
 
+  it('does not add destroyOnResponse to a query a later method polls through this', async () => {
+    tree.write(
+      'component.ts',
+      `
+import { createLegacyQueryCreator } from '@ethlete/query';
+
+const getUsers = {} as never;
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
+
+export class DemoComponent {
+  private users = null;
+
+  loadUsers() {
+    const users = legacyGetUsers.prepare({ id: 1 });
+    this.users = users;
+  }
+
+  startPolling() {
+    this.users.poll({ interval: 1000 });
+  }
+}
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    expect(readFile('component.ts')).not.toContain('destroyOnResponse');
+  });
+
+  it('inserts the injector member on its own line, keeping the next member indented', async () => {
+    tree.write(
+      'component.ts',
+      `
+import { createLegacyQueryCreator } from '@ethlete/query';
+
+const getUsers = {} as never;
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
+
+export class DemoComponent {
+  loadUsers() {
+    return legacyGetUsers.prepare({ id: 1 });
+  }
+}
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    expect(readFile('component.ts')).toContain(
+      'export class DemoComponent {\n  private injector = inject(Injector);\n\n  loadUsers() {',
+    );
+  });
+
+  describe('standalone functions', () => {
+    const writeStandalone = (body: string) =>
+      tree.write(
+        'standalone.ts',
+        `
+import { inject } from '@angular/core';
+import { createLegacyQueryCreator } from '@ethlete/query';
+
+const getUsers = {} as never;
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
+
+${body}
+        `.trim(),
+      );
+
+    it('declares an injector at the top of the enclosing function that calls inject', async () => {
+      writeStandalone(`export const injectUsersLoader = () => {
+  const http = inject(HttpClient);
+
+  return () => legacyGetUsers.prepare({ id: 1 });
+};`);
+
+      await migration(tree, { skipFormat: true });
+
+      const result = readFile('standalone.ts');
+
+      expect(result).toContain("import { Injector, inject } from '@angular/core';");
+      expect(result).toContain(
+        'export const injectUsersLoader = () => {\n  const injector = inject(Injector);\n  const http = inject(HttpClient);',
+      );
+      expect(result).toContain('injector: injector');
+      expect(readFile('query-v3-migration-tasks.md')).not.toContain('Review standalone prepare() usage');
+    });
+  });
+
   it('should write manual review tasks for standalone functions without inject context', async () => {
     tree.write(
       'standalone.ts',

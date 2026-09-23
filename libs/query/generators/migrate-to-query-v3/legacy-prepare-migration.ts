@@ -493,7 +493,7 @@ const addInjectorMemberToClass = (content: string, classInfo: ClassWithInjector)
     targetClass.members.length > 0 ? targetClass.members[0]!.getStart(sourceFile) : targetClass.getEnd() - 1;
 
   const indentation = getIndentation(content, classBodyStart);
-  const injectorMember = `${indentation}private ${classInfo.injectorMemberName} = inject(Injector);\n\n`;
+  const injectorMember = `private ${classInfo.injectorMemberName} = inject(Injector);\n\n${indentation}`;
 
   return content.slice(0, classBodyStart) + injectorMember + content.slice(classBodyStart);
 };
@@ -684,7 +684,7 @@ const transformPrepareCallsInFile = (
 
     injectorDeclarations.push({
       position: bodyStart,
-      text: `${getIndentation(content, bodyStart)}const ${injectorName} = inject(Injector);\n`,
+      text: `const ${injectorName} = inject(Injector);\n${getIndentation(content, bodyStart)}`,
     });
   });
 
@@ -1085,8 +1085,7 @@ const getQueryVariableName = (expression: ts.Expression): string | undefined => 
     }
 
     if (ts.isPropertyAccessExpression(currentExpression)) {
-      currentExpression = currentExpression.expression;
-      continue;
+      return currentExpression.name.text;
     }
 
     if (ts.isCallExpression(currentExpression)) {
