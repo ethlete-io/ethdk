@@ -2108,7 +2108,7 @@ provideQueryDevtools({
 
 Whoever runs the app fills the credentials in once, in the Auth tab, and they stay in that browser's
 `localStorage` - scoped to the API env in force, because a staging login is rarely a local one. In a
-build that is not a development one they stay in `sessionStorage` instead, see
+build that is not a development one they are not kept at all unless `session` is picked, see
 [the vault outside a development build](#the-vault-outside-a-development-build).
 **Log in as** then runs the provider's own login query with them, so the tokens are issued exactly
 the way the application issues them and the vault picks the session up like any other login.
@@ -2183,11 +2183,12 @@ the account fields, and `localStorage` outlives the person who opened the panel 
 So `isDevMode()` decides, and nothing else - no build flag an application has to remember to set,
 and no guess at which deployment is which. Outside a development build:
 
-- The **local** scope for **Sessions and accounts** is not on offer in Settings, and a stored
-  `local` reads back as `session`. The vault works exactly as before and dies with the tab.
-- A vault an earlier build left under `ethlete:query:devtools:auth:v1` in `localStorage` is
-  removed on the next load.
-- `none` is still on offer, for a machine where nothing of the sort may be kept.
+- The **local** scope for **Sessions and accounts** is not on offer in Settings, and a stored or
+  default `local` reads back as `none`. A plain login in the application writes no token to web
+  storage; the vault holds its sessions in memory and forgets them on reload.
+- `session` is still on offer. Pick it in Settings to keep the vault for as long as the tab.
+- A vault left under `ethlete:query:devtools:auth:v1` in a store the scope does not name - by an
+  earlier build or an earlier scope - is removed on the next load.
 
 This is separate from, and on top of, the refusal that an API env marked
 [`production`](#switching-the-api-environment) already triggers: while one is the pick, no session
@@ -2219,7 +2220,7 @@ Each kind of state picks its own scope, because `none` costs something different
 | [**Sessions and accounts**](#switching-the-user)                     | `local`\* | the other user is forgotten on every reload               |
 
 \* `local` for the session vault only in a development build. Outside one it is not on offer,
-reads back as `session`, and a vault an earlier build left in `localStorage` is dropped on the next
+reads back as `none`, and a vault an earlier build left in web storage is dropped on the next
 load. See [the vault outside a development build](#the-vault-outside-a-development-build).
 
 Changing a scope **moves** what is already stored and clears the copy the old scope left

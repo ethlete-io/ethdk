@@ -168,14 +168,15 @@ const asScope = (value: unknown, fallback: QueryDevtoolsStorageScope): QueryDevt
  * Whether the session vault may be kept in `localStorage`. Only a development build may: the vault
  * holds live access and refresh tokens plus the credentials somebody typed in, and a deployed
  * application that mounts the panel for its debugging value must not leave those on the machine of
- * whoever opened it. Every other scope stays on offer, so the vault still works for one tab.
+ * whoever opened it. Outside a development build a stored or default `local` reads back as `none`, so a
+ * plain login keeps nothing; `session` stays on offer for whoever picks it in Settings.
  *
  * Part of the devtools contract. **Not part of the general public contract.**
  */
 export const queryDevtoolsAllowsLocalAuthSessions = (): boolean => isDevMode();
 
 const clampAuthSessions = (scope: QueryDevtoolsStorageScope): QueryDevtoolsStorageScope =>
-  scope === 'local' && !queryDevtoolsAllowsLocalAuthSessions() ? 'session' : scope;
+  scope === 'local' && !queryDevtoolsAllowsLocalAuthSessions() ? 'none' : scope;
 
 const asCount = (value: unknown, limits: { min: number; max: number }, fallback: number) => {
   const count = Math.floor(Number(value));

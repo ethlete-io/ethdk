@@ -52,11 +52,19 @@ describe('query devtools settings', () => {
     withProductionBuild(() => {
       setQueryDevtoolsSettings({ authSessions: 'local' });
 
+      expect(queryDevtoolsSettings().authSessions).toBe('none');
+    });
+  });
+
+  it('should still allow session for the session vault outside a development build', () => {
+    withProductionBuild(() => {
+      setQueryDevtoolsSettings({ authSessions: 'session' });
+
       expect(queryDevtoolsSettings().authSessions).toBe('session');
     });
   });
 
-  it('should read a stored local vault scope back as session outside a development build', () => {
+  it('should read a stored local vault scope back as none outside a development build', () => {
     setQueryDevtoolsSettings({ authSessions: 'local' });
 
     expect(queryDevtoolsSettings().authSessions).toBe('local');
@@ -64,7 +72,7 @@ describe('query devtools settings', () => {
     withProductionBuild(() => {
       initQueryDevtoolsSettings();
 
-      expect(queryDevtoolsSettings().authSessions).toBe('session');
+      expect(queryDevtoolsSettings().authSessions).toBe('none');
     });
   });
 

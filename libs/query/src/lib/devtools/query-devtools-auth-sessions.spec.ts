@@ -49,6 +49,7 @@ const NAMED_AGAIN = token({ name: 'Admin', exp: 7000 });
 const NAMED_OTHER = token({ name: 'Member', exp: 7000 });
 
 const STORE_KEY = 'ethlete:query:devtools:auth:v1';
+const ACTIVE_KEY = 'ethlete:query:devtools:auth-active:v1';
 
 /** What `isDevMode()` reads. A production build of an application sets it to `false`. */
 const withProductionBuild = (run: () => void) => {
@@ -171,7 +172,7 @@ describe('query devtools auth sessions', () => {
     initQueryDevtoolsAuthSessions([]);
   });
 
-  it('should keep the vault out of localStorage outside a development build', () => {
+  it('should keep the tokens of a plain login out of web storage outside a development build', () => {
     withProductionBuild(() => {
       initQueryDevtoolsSettings();
       initQueryDevtoolsAuthSessions([]);
@@ -183,21 +184,53 @@ describe('query devtools auth sessions', () => {
 
       expect(queryDevtoolsAuthSessionsFor('hub-auth').length).toBe(1);
       expect(localStorage.getItem(STORE_KEY)).toBeNull();
+      expect(sessionStorage.getItem(STORE_KEY)).toBeNull();
+      expect(sessionStorage.getItem(ACTIVE_KEY)).toBeNull();
+
+      provider.stop();
+    });
+  });
+
+  it('should keep the vault in sessionStorage outside a development build once session is picked', () => {
+    withProductionBuild(() => {
+      setQueryDevtoolsSettings({ authSessions: 'session' });
+      initQueryDevtoolsAuthSessions([]);
+
+      const provider = createProvider('hub-auth');
+
+      provider.handle.setTokens(ADMIN, 'refresh-1');
+      flush();
+
+      expect(localStorage.getItem(STORE_KEY)).toBeNull();
       expect(sessionStorage.getItem(STORE_KEY)).not.toBeNull();
 
       provider.stop();
     });
   });
 
-  it('should drop a vault an earlier build left in localStorage', () => {
-    localStorage.setItem(STORE_KEY, JSON.stringify({ sessions: [], credentials: { a: { password: 'x' } } }));
+  it('should drop a vault an earlier build left in either store outside a development build', () => {
+    const leftover = JSON.stringify({ sessions: [], credentials: { a: { password: 'x' } } });
+
+    localStorage.setItem(STORE_KEY, leftover);
+    sessionStorage.setItem(STORE_KEY, leftover);
+    sessionStorage.setItem(ACTIVE_KEY, JSON.stringify({ 'hub-auth': 'session-1' }));
 
     withProductionBuild(() => {
       initQueryDevtoolsSettings();
       initQueryDevtoolsAuthSessions([]);
 
       expect(localStorage.getItem(STORE_KEY)).toBeNull();
+      expect(sessionStorage.getItem(STORE_KEY)).toBeNull();
+      expect(sessionStorage.getItem(ACTIVE_KEY)).toBeNull();
     });
+  });
+
+  it('should drop the copy a former scope left in the other store', () => {
+    sessionStorage.setItem(STORE_KEY, JSON.stringify({ sessions: [], credentials: {} }));
+
+    initQueryDevtoolsAuthSessions([]);
+
+    expect(sessionStorage.getItem(STORE_KEY)).toBeNull();
   });
 
   it('should forget a session that expired, tokens and all', () => {

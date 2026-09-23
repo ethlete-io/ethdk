@@ -239,7 +239,7 @@ export class QueryDevtoolsSettingsComponent {
   protected unavailableReason(row: ScopeRow, scope: QueryDevtoolsStorageScope) {
     if (row.key !== 'authSessions' || scope !== 'local' || queryDevtoolsAllowsLocalAuthSessions()) return null;
 
-    return 'Unavailable outside a development build: live access and refresh tokens, and the credentials you typed in, must not outlive this tab on a deployed origin. Session keeps the vault for as long as the tab.';
+    return 'Unavailable outside a development build: live access and refresh tokens, and the credentials you typed in, must not outlive this tab on a deployed origin. The vault keeps nothing here unless you pick Session, which keeps it for as long as the tab.';
   }
 
   protected setScope(key: ScopeKey, scope: QueryDevtoolsStorageScope) {
