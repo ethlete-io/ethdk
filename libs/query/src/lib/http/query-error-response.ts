@@ -1,6 +1,12 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { runDefaultQueryRetry, runQueryErrorParsers } from './query-error-parsing';
-import { ShouldRetryRequestFn, ShouldRetryRequestResult } from './query-retry-utils';
+import { QueryMethod } from './query-creator';
+import {
+  isIdempotentQueryMethod,
+  ShouldRetryRequestFn,
+  ShouldRetryRequestOptions,
+  ShouldRetryRequestResult,
+} from './query-retry-utils';
 
 export type QueryErrorResponseList = {
   isList: true;
@@ -65,7 +71,12 @@ const messageItemsOf = (list: unknown): QueryErrorResponseItem[] =>
 
 export const createQueryErrorResponse = (
   error: unknown,
-  retry?: { retryCount: number; retryFn?: ShouldRetryRequestFn },
+  retry?: {
+    retryCount: number;
+    retryFn?: ShouldRetryRequestFn;
+    method?: QueryMethod | null;
+    idempotent?: boolean;
+  },
 ): QueryErrorResponse => {
   let err = error instanceof HttpErrorResponse ? error : null;
 
@@ -76,7 +87,13 @@ export const createQueryErrorResponse = (
       statusText: 'Unknown Error',
     });
   }
-  const retryOptions = { retryCount: retry?.retryCount ?? 0, error: err };
+  const method = retry?.method ?? null;
+  const retryOptions: ShouldRetryRequestOptions = {
+    retryCount: retry?.retryCount ?? 0,
+    error: err,
+    method,
+    idempotent: retry?.idempotent ?? (method ? isIdempotentQueryMethod(method) : true),
+  };
   const retryState =
     typeof retry?.retryFn === 'function' ? retry.retryFn(retryOptions) : runDefaultQueryRetry(retryOptions);
 

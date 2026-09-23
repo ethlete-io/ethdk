@@ -35,7 +35,7 @@ import { QueryErrorResponse, createQueryErrorResponse } from './query-error-resp
 import { QueryHeadersInput, resolveQueryHeaders } from './query-headers';
 import { QueryRepositoryDependencies } from './query-repository';
 import { runDefaultQueryRetry } from './query-error-parsing';
-import { ShouldRetryRequestFn, ShouldRetryRequestOptions } from './query-retry-utils';
+import { isIdempotentQueryMethod, ShouldRetryRequestFn, ShouldRetryRequestOptions } from './query-retry-utils';
 
 export const SPEED_BUFFER_TIME_IN_MS = 2000;
 
@@ -96,6 +96,12 @@ export type CreateHttpRequestOptions<TArgs extends QueryArgs> = {
    * @default the `withDefaultRetry()` policy, or no retry at all without that client feature
    */
   retryFn?: ShouldRetryRequestFn;
+
+  /**
+   * Whether sending the request again is safe, handed to `retryFn` as `idempotent`.
+   * @default `false` for a `POST` or `PATCH`, `true` for every other method
+   */
+  idempotent?: boolean;
 };
 
 export type HttpRequestLoadingState = {
@@ -348,6 +354,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
   const expiresIn = signal<number | null>(null);
   const attempts = signal(1);
   const retryState = signal<HttpRequestRetryState | null>(null);
+  const idempotent = options.idempotent ?? isIdempotentQueryMethod(options.method);
   const lastDurationMs = signal<number | null>(null);
 
   // Set at the top of every `sendWithFaults` attempt (including unfaulted ones), so it always reflects
@@ -479,7 +486,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
       tap((event) => updateState(event)),
       retry({
         delay: (error, retryCount) => {
-          const retryOptions: ShouldRetryRequestOptions = { error, retryCount };
+          const retryOptions: ShouldRetryRequestOptions = { error, retryCount, method: options.method, idempotent };
 
           const retryResult = options.retryFn?.(retryOptions) || runDefaultQueryRetry(retryOptions);
 
@@ -613,6 +620,8 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     const errorRes = createQueryErrorResponse(errorResponse, {
       retryCount: attempts(),
       retryFn: options.retryFn,
+      method: options.method,
+      idempotent,
     });
 
     error.set(errorRes);

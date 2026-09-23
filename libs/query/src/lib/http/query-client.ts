@@ -114,7 +114,7 @@ export type CreateQueryClientConfigOptions = {
    * - {@link withQueryPersistence} keeps successful reads on disk so a reload renders them right away,
    * - {@link withHtmlErrorParsing} reads the sentence out of an HTML error page,
    * - {@link withSymfonyErrors} reads Symfony / class-validator violation lists,
-   * - {@link withDefaultRetry} retries connection failures, 5xx, 408/425 and 429,
+   * - {@link withDefaultRetry} retries idempotent requests on connection failures, 5xx, 408/425 and 429,
    * - {@link withEthleteApiErrors} is the three error features above in one.
    *
    * Each feature may be used at most once. The error **parsers** are installed process-wide rather

@@ -194,6 +194,18 @@ The default policy (`shouldRetryRequest`) retries up to **3 times**, doubling th
 
 `500` is deliberately not retried: an internal server error is a bug in the backend far more often than a blip, and repeating the request that triggered it does not make it go away.
 
+### Only idempotent requests are retried
+
+The default policy never retries a `POST`, a `PATCH` or a [GraphQL mutation](/query/gql), whatever the status. A `503` or a dropped connection does not tell whether the server applied the request before it failed, so sending it again can create a second order or charge a card twice. `GET`, `HEAD`, `OPTIONS`, `PUT` and `DELETE` are retried, and so is a GraphQL query sent via `POST`: it is a read, whatever its verb.
+
+Opt in per endpoint, for one that deduplicates on its own (an idempotency key, an upsert):
+
+```ts
+const createOrder = myApiPost<CreateOrderArgs>('/orders').clone({
+  retryFn: createDefaultRetryFn({ retryNonIdempotent: true }),
+});
+```
+
 ### Configuring it
 
 `withDefaultRetry()` takes the policy's numbers, and `createDefaultRetryFn()` builds the same policy as a `retryFn` for a single client or creator:
@@ -209,8 +221,16 @@ features: [withDefaultRetry({ maxAttempts: 5, maxDelayMs: 10_000 })];
 | `maxDelayMs`           | `30000`                          | Upper bound of every delay, including one a `retry-after` asked for.       |
 | `jitter`               | `0.25`                           | How far the delay is spread around its computed value. `0` makes it exact. |
 | `retryableStatusCodes` | `0`, `408`, `425`, `429`, `501`+ | Replaces the retryable statuses rather than adding to them.                |
+| `retryNonIdempotent`   | `false`                          | Also retries a `POST`, a `PATCH` and a GraphQL mutation.                   |
 
-That option bag is a `DefaultRetryOptions`. A hand-written policy is a `ShouldRetryRequestFn`: it takes `ShouldRetryRequestOptions` (`{ retryCount, error }`) and returns a `ShouldRetryRequestResult` - either `{ retry: false }` or `{ retry: true }` with the delay to wait.
+That option bag is a `DefaultRetryOptions`. A hand-written policy is a `ShouldRetryRequestFn`: it takes `ShouldRetryRequestOptions` (`{ retryCount, error, method, idempotent }`) and returns a `ShouldRetryRequestResult` - either `{ retry: false }` or `{ retry: true }` with the delay to wait.
+
+`method` is the request's HTTP method (`null` for an error built outside a request, e.g. by `createQueryErrorResponse`). `idempotent` is `false` for a `POST`, a `PATCH` and a GraphQL mutation, `true` otherwise - check it before retrying, as the default policy does:
+
+```ts
+const retryFn: ShouldRetryRequestFn = ({ error, retryCount, idempotent }) =>
+  idempotent && error.status === 503 && retryCount <= 5 ? { retry: true, delay: 1000 } : { retry: false };
+```
 
 ::: warning `maxAttempts: 0` never surfaces an error
 A query that retries forever never resolves to a `failure`: it stays `loading()` for as long as the server stays down, so a screen gated on `executionState()` shows a spinner and nothing else - no error, no retry button. Only ever right for a request nothing renders, which is why the [token refresh](/query/auth#token-refresh) uses it and the default policy does not.

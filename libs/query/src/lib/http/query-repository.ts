@@ -10,7 +10,7 @@ import { CreateQueryClientConfigOptions } from './query-client';
 import { CreateQueryCreatorOptions, QueryMethod, RouteType } from './query-creator';
 import { uncacheableRequestHasAllowCacheParam, uncacheableRequestHasCacheKeyParam } from './query-errors';
 import { RunQueryExecuteOptions } from './query-execute-utils';
-import { ShouldRetryRequestFn } from './query-retry-utils';
+import { isIdempotentQueryMethod, ShouldRetryRequestFn } from './query-retry-utils';
 
 /**
  * Why a batch of in-use entries was refreshed. The answer to "why did this refetch?", which the query
@@ -175,7 +175,8 @@ export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
   /**
    * Whether re-running the request on its own is safe, i.e. whether {@link QueryRepository.refreshInUse}
    * may fire it again. Defaults to the method being a read (`GET`/`HEAD`/`OPTIONS`); the GraphQL
-   * execute path passes `true` for a query transported via `POST`.
+   * execute path passes `true` for a query transported via `POST`. Also what the retry policy receives
+   * as `idempotent`; unset, that falls back to the method not being `POST` or `PATCH`.
    */
   isRefreshable?: boolean;
 };
@@ -558,6 +559,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       clientHeaders: config.headers,
       cacheAdapter: config.cacheAdapter,
       retryFn: options.retryFn ?? config.retryFn,
+      idempotent: options.isRefreshable ?? isIdempotentQueryMethod(options.method),
     });
 
     const executed = request.execute();

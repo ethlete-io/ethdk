@@ -1,10 +1,20 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { clamp } from '@ethlete/core';
+import { QueryMethod } from './query-creator';
 import { isSymfonyPagerfantaOutOfRangeError } from './query-error-response-utils';
 
 export type ShouldRetryRequestOptions = {
   retryCount: number;
   error: HttpErrorResponse;
+
+  /** The HTTP method of the failed request, or `null` when the error was built outside a request. */
+  method: QueryMethod | null;
+
+  /**
+   * Whether sending the request again is safe: `false` for a `POST` or `PATCH`, and for a GraphQL
+   * mutation whatever its transport; `true` for everything else, a GraphQL query sent via `POST` included.
+   */
+  idempotent: boolean;
 };
 
 export type ShouldRetryRequestResult =
@@ -53,6 +63,15 @@ export type DefaultRetryOptions = {
    * @default a connection failure (`0`), `408`, `425`, `429`, and every 5xx above `500`
    */
   retryableStatusCodes?: number[];
+
+  /**
+   * Also retries a request that is not idempotent (see {@link ShouldRetryRequestOptions.idempotent}). A
+   * `POST` whose response was lost may already have been applied, so retrying it can create a
+   * duplicate - enable this only for an endpoint that deduplicates on its own, e.g. by an idempotency key.
+   *
+   * @default false
+   */
+  retryNonIdempotent?: boolean;
 };
 
 const DEFAULT_MAX_ATTEMPTS = 3;
@@ -81,6 +100,7 @@ export const createDefaultRetryFn = (options: DefaultRetryOptions = {}): ShouldR
   const maxDelayMs = options.maxDelayMs ?? DEFAULT_MAX_DELAY_MS;
   const jitter = clamp(options.jitter ?? DEFAULT_JITTER, 0, 1);
   const retryableStatusCodes = options.retryableStatusCodes;
+  const retryNonIdempotent = options.retryNonIdempotent ?? false;
 
   const isRetryableStatus = (status: number) =>
     retryableStatusCodes ? retryableStatusCodes.includes(status) : isRetryableByDefault(status);
@@ -92,9 +112,11 @@ export const createDefaultRetryFn = (options: DefaultRetryOptions = {}): ShouldR
     return Math.round(clamp(exponential * spread, 0, maxDelayMs));
   };
 
-  return ({ retryCount, error }) => {
+  return ({ retryCount, error, idempotent }) => {
     // Not an HTTP failure at all, so nothing about it says a second attempt would go any better.
     if (!(error instanceof HttpErrorResponse)) return { retry: false };
+
+    if (!idempotent && !retryNonIdempotent) return { retry: false };
 
     if (maxAttempts > 0 && retryCount > maxAttempts) return { retry: false };
 
@@ -124,9 +146,14 @@ const defaultRetryFn = /* @__PURE__ */ createDefaultRetryFn();
 /**
  * The SDK's default retry policy, installed by {@link withDefaultRetry}: three retries with an
  * exponentially backing off, jittered delay, for a connection failure, a `408`, a `425`, a `429`
- * (honouring `retry-after`) and a 5xx above `500`.
+ * (honouring `retry-after`) and a 5xx above `500` - never for a `POST`, a `PATCH` or a GraphQL mutation.
  *
  * Pass {@link createDefaultRetryFn} options to {@link withDefaultRetry} to configure it.
  */
 export const shouldRetryRequest = (options: ShouldRetryRequestOptions | HttpErrorResponse): ShouldRetryRequestResult =>
-  defaultRetryFn(options instanceof HttpErrorResponse ? { retryCount: 0, error: options } : options);
+  defaultRetryFn(
+    options instanceof HttpErrorResponse ? { retryCount: 0, error: options, method: null, idempotent: true } : options,
+  );
+
+/** Whether a request with this method may be sent again without changing the outcome - everything but `POST` and `PATCH`. */
+export const isIdempotentQueryMethod = (method: QueryMethod) => method !== 'POST' && method !== 'PATCH';

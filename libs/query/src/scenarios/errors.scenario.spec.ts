@@ -5,13 +5,18 @@ import { Observable } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createDefaultRetryFn,
+  createGqlMutationViaGet,
+  createGqlQueryViaPost,
   executeUntilSettled,
+  gql,
   isHtmlErrorPayload,
   mapViolationsToFormErrors,
   queryErrorMessages,
   registerQueryErrorParser,
   SERVER_ERROR_KIND,
   setDefaultQueryRetryFn,
+  ShouldRetryRequestFn,
+  ShouldRetryRequestOptions,
   withDefaultRetry,
   withEthleteApiErrors,
   withErrorHandling,
@@ -1536,6 +1541,146 @@ describe('a client that asked for no retry policy', () => {
     expect(query.error()?.retryState).toEqual({ retry: false });
 
     s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 503);
+    c.destroy();
+  });
+});
+
+describe('the default retry policy and non-idempotent methods', () => {
+  const scenario = useScenario({
+    clientOptions: { keepUnusedFor: 0 },
+    clientFeatures: [withDefaultRetry({ jitter: 0 })],
+  });
+
+  const is503 = (entry: { error: unknown }) => entry.error instanceof HttpErrorResponse && entry.error.status === 503;
+
+  it('sends a POST and a PATCH that fail with a 503 exactly once', () => {
+    const s = scenario();
+    s.api.on('POST', '/orders', () => ({ status: 503 }));
+    s.api.on('PATCH', '/orders/1', () => ({ status: 503 }));
+
+    const createOrder = s.post<{ body: { item: string }; response: unknown }>('/orders');
+    const updateOrder = s.patch<{ body: { item: string }; response: unknown }>('/orders/1');
+    const c = s.consumer();
+    const create = c.run(() => createOrder());
+    const update = c.run(() => updateOrder());
+
+    create.execute({ args: { body: { item: 'ball' } } });
+    update.execute({ args: { body: { item: 'net' } } });
+    s.tick();
+    s.tick(30_000);
+
+    expect(s.api.requestCount('POST', '/orders')).toBe(1);
+    expect(s.api.requestCount('PATCH', '/orders/1')).toBe(1);
+    expect(create.error()?.retryState).toEqual({ retry: false });
+    expect(update.error()?.retryState).toEqual({ retry: false });
+
+    s.expectError(is503);
+    s.expectError(is503);
+    c.destroy();
+  });
+
+  it('still retries a PUT and a GraphQL query sent via POST', () => {
+    const s = scenario();
+    s.api.on('PUT', '/orders/1', sequence([{ status: 503 }, { body: { ok: true } }]));
+    s.api.on('POST', '/', sequence([{ status: 503 }, { body: { data: { ok: true } } }]));
+
+    const replaceOrder = s.put<{ body: { item: string }; response: { ok: boolean } }>('/orders/1');
+    const getOk = createGqlQueryViaPost(s.clientRef)<{ response: { ok: boolean } }>(gql`
+      query Ok {
+        ok
+      }
+    `);
+    const c = s.consumer();
+    const replace = c.run(() => replaceOrder());
+    const ok = c.run(() => getOk());
+
+    replace.execute({ args: { body: { item: 'ball' } } });
+    s.tick();
+    s.tick(1);
+    s.tick(2000);
+    s.tick(1);
+
+    expect(s.api.requestCount('PUT', '/orders/1')).toBe(2);
+    expect(replace.response()).toEqual({ ok: true });
+    expect(s.api.requestCount('POST', '/')).toBe(2);
+    expect(ok.response()).toEqual({ ok: true });
+
+    c.destroy();
+  });
+
+  it('never retries a GraphQL mutation', () => {
+    const s = scenario();
+    s.api.on('GET', '/', () => ({ status: 503 }));
+
+    const bumpCounter = createGqlMutationViaGet(s.clientRef)<{ response: unknown }>(gql`
+      mutation Bump {
+        bump
+      }
+    `);
+    const c = s.consumer();
+    const bump = c.run(() => bumpCounter());
+
+    bump.execute();
+    s.tick();
+    s.tick(30_000);
+
+    expect(s.api.requestCount('GET', '/')).toBe(1);
+
+    s.expectError(is503);
+    c.destroy();
+  });
+
+  it('retries a POST whose creator opts in with retryNonIdempotent', () => {
+    const s = scenario();
+    s.api.on('POST', '/orders', sequence([{ status: 503 }, { status: 201, body: { id: '1' } }]));
+
+    const createOrder = s
+      .post<{ body: { item: string }; response: { id: string } }>('/orders')
+      .clone({ retryFn: createDefaultRetryFn({ retryNonIdempotent: true, jitter: 0 }) });
+    const c = s.consumer();
+    const create = c.run(() => createOrder());
+
+    create.execute({ args: { body: { item: 'ball' } } });
+    s.tick();
+    s.tick(1);
+    s.tick(2000);
+    s.tick(1);
+
+    expect(s.api.requestCount('POST', '/orders')).toBe(2);
+    expect(create.response()).toEqual({ id: '1' });
+
+    c.destroy();
+  });
+
+  it('hands a custom retryFn the method and whether the request is idempotent', () => {
+    const s = scenario();
+    s.api.on('POST', '/orders', () => ({ status: 503 }));
+    s.api.on('DELETE', '/orders/1', () => ({ status: 503 }));
+
+    const seen: ShouldRetryRequestOptions[] = [];
+    const retryFn: ShouldRetryRequestFn = (options) => {
+      seen.push(options);
+      return { retry: false };
+    };
+    const createOrder = s.post<{ body: { item: string }; response: unknown }>('/orders').clone({ retryFn });
+    const deleteOrder = s.delete<{ response: unknown }>('/orders/1').clone({ retryFn });
+    const c = s.consumer();
+
+    c.run(() => createOrder()).execute({ args: { body: { item: 'ball' } } });
+    c.run(() => deleteOrder()).execute();
+    s.tick();
+
+    expect(seen.map(({ method, idempotent }) => ({ method, idempotent }))).toContainEqual({
+      method: 'POST',
+      idempotent: false,
+    });
+    expect(seen.map(({ method, idempotent }) => ({ method, idempotent }))).toContainEqual({
+      method: 'DELETE',
+      idempotent: true,
+    });
+
+    s.expectError(is503);
+    s.expectError(is503);
     c.destroy();
   });
 });

@@ -847,7 +847,7 @@ describe('batching scenario', () => {
 describe('batching scenario with the default retry policy', () => {
   const scenario = useScenario({
     clientOptions: { keepUnusedFor: 0 },
-    clientFeatures: [withDefaultRetry({ jitter: 0 })],
+    clientFeatures: [withDefaultRetry({ jitter: 0, retryNonIdempotent: true })],
   });
 
   it('an item still gets the per-request retries of the client, and the batch waits for them', () => {

@@ -266,7 +266,8 @@ export const withSymfonyErrors = (): QueryClientFeatureFn => () => {
 /**
  * Gives this client the SDK's default retry policy for every request that does not bring its own `retryFn`: a
  * connection failure, a 5xx above 500, a 408/425 and a 429 (honouring `retry-after`) are retried three
- * times with an exponentially backing off, jittered delay - and a Pagerfanta out-of-range page never is.
+ * times with an exponentially backing off, jittered delay - and a Pagerfanta out-of-range page never is. A `POST`,
+ * a `PATCH` and a GraphQL mutation are never retried unless the options set `retryNonIdempotent`.
  *
  * The policy belongs to the client the feature is on, so another client of the same app is not
  * affected. Without it nothing is retried automatically and `error.retryState` always reads
