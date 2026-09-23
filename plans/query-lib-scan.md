@@ -268,8 +268,8 @@ the rest).
 
 Open: the real IndexedDB adapter (`onversionchange`/`onclose`, a `QuotaExceededError` abort, a
 blocked open) has no scenario. It needs `fake-indexeddb` as a devDependency, which awaits a decision.
-The date-only scenario bites in every zone but UTC; `process.env.TZ` inside a spec has no effect in
-the threads pool, so a UTC CI runner does not catch a regression.
+The date-only scenario bites in every zone but UTC. Closed: `libs/query/vite.config.mts` sets `TZ`
+to `America/Los_Angeles` for the whole run.
 
 ### Wave 7: the recovered Low pass (2026-09-22)
 
@@ -338,3 +338,28 @@ the commit reports. `query-devtools-registry.ts` (83%) is the largest of them. T
 Dead code found, left in place: the number placeholder's `finiteNumber(schema['default'])` fallback in
 `query-devtools-schema.ts:419`; the query-count mismatch check in `paged-query-stack.ts:471-473`, which
 the `6e2e5326d` fix made unreachable.
+
+### Generators and registry pass (2026-09-23)
+
+Tom confirmed ET601. The two dead branches are gone (`7597b5d30`, drops code 502 from
+`QueryRuntimeErrorCode`). `query-devtools-registry.ts` was at 100% lines already; branches 82.6% →
+85.9% (`f5b8f2b66`), the rest are `?? ''` fallbacks for values that are always set.
+
+`libs/query/generators`, each fix with a test that failed first:
+
+- v3 prepare migration: `this.x.poll()` counts as polling; the inserted injector lines keep their
+  indentation (`12b802fbd`).
+- Opt-in features: a re-run adds no feature twice (`dd93c84fb`).
+- Query-client migration: aliased imports, shorthand `baseRoute` and options, a non-literal config, a
+  second `@ethlete/query` import, a client with no variable, shadowed names (`3490f19a4`).
+- Legacy creator migration: shorthand `route`, a spread config (report warning), `const a = …, b = …`,
+  a creator inside a function, and a barrel that made the result depend on visit order (`322cbbcf6`).
+- Renames: shorthand properties and `export { x }` follow the rename (`3360c5417`); new imports join a
+  value import, not an `import type` (`1ece2c875`).
+
+Most generator files are now at 95-100% statements. Open, not fixed: a shorthand config property other
+than `route` or an HTTP option (e.g. `{ secure }`) is skipped without a warning; an anonymous
+`export default class` with a legacy `prepare()` stays unmigrated and gets an unused `Injector` import;
+`prep-for-query-v3` ignores symbols reached through `import * as q`. Dead code left in place:
+`cleanup-migration.ts` `removeAnyQueryFromImports` and `describeTemplateLine`, `migration-scope.includes`,
+and the `rename-symbols.ts` scope argument, which is only ever `'all'`.
