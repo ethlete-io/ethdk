@@ -53,6 +53,10 @@ fs.writeFileSync(
 );
 tester.run('inject-member-accessibility', rule, {
   valid: [
+    {
+      code: `import { inject } from 'some-other-lib';
+class Foo { service = inject(MyService); }`,
+    },
     { code: `class Foo { private service = inject(MyService); }` },
     { code: `class Foo { public service = inject(MyService); }` },
     { code: `abstract class Foo { protected service = inject(MyService); }` },
@@ -91,6 +95,13 @@ tester.run('inject-member-accessibility', rule, {
     },
   ],
   invalid: [
+    {
+      code: `import { inject as ngInject } from '@angular/core';
+class Foo { service = ngInject(MyService); }`,
+      output: `import { inject as ngInject } from '@angular/core';
+class Foo { private service = ngInject(MyService); }`,
+      errors: [{ messageId: 'shouldBePrivate' }],
+    },
     {
       code: `class Foo { service = inject(MyService); }`,
       output: `class Foo { private service = inject(MyService); }`,

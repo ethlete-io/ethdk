@@ -132,11 +132,60 @@ const getImportLocalName = (sourceCode, source, importedName) => {
   return null;
 };
 
+/**
+ * Whether `identifier` refers to a global such as `document` or `setTimeout`, rather than a local,
+ * parameter or import of the same name.
+ *
+ * @param {import('eslint').SourceCode} sourceCode
+ * @param {any} identifier
+ */
+const isGlobalReference = (sourceCode, identifier) =>
+  identifier?.type === 'Identifier' && resolveIdentifier(sourceCode, identifier)?.source === null;
+
+const MODULE_REFERENCE_SELECTOR =
+  'ImportDeclaration, ExportNamedDeclaration[source], ExportAllDeclaration, ImportExpression';
+
+/**
+ * The module an import, re-export or dynamic `import('…')` references, with the names it takes by
+ * name. `export *`, a namespace or default import, and a dynamic import have no named entries.
+ *
+ * @param {any} node a node matched by `MODULE_REFERENCE_SELECTOR`
+ * @returns {{ source: string; named: { name: string; node: any }[] } | null}
+ */
+const getModuleReference = (node) => {
+  const sourceNode = node.source;
+  let source = null;
+  if (sourceNode?.type === 'Literal' && typeof sourceNode.value === 'string') source = sourceNode.value;
+  if (sourceNode?.type === 'TemplateLiteral' && sourceNode.expressions.length === 0) {
+    source = sourceNode.quasis[0].value.cooked;
+  }
+  if (source === null) return null;
+
+  /** @type {{ name: string; node: any }[]} */
+  const named = [];
+  if (node.type === 'ImportDeclaration') {
+    for (const specifier of node.specifiers) {
+      if (specifier.type !== 'ImportSpecifier') continue;
+      named.push({ name: getSpecifierImportedName(specifier), node: specifier });
+    }
+  }
+  if (node.type === 'ExportNamedDeclaration') {
+    for (const specifier of node.specifiers) {
+      named.push({ name: specifier.local.name ?? specifier.local.value, node: specifier });
+    }
+  }
+
+  return { source, named };
+};
+
 module.exports = {
   ANGULAR_CORE,
+  MODULE_REFERENCE_SELECTOR,
   getAngularDecoratorName,
   getImportedName,
   getImportLocalName,
+  getModuleReference,
+  isGlobalReference,
   isImportedAs,
   resolveIdentifier,
 };

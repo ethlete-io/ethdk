@@ -40,6 +40,12 @@ tester.run('no-legacy-query-import', rule, {
   ],
   invalid: [
     {
+      code: `export { V2QueryClient } from '@ethlete/query';`,
+      filename: 'test.ts',
+      options,
+      errors: [{ messageId: 'successor' }],
+    },
+    {
       code: `import { V2QueryClient } from '@ethlete/query';`,
       filename: 'test.ts',
       options,

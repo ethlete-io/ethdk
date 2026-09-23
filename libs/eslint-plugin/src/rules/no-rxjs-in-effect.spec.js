@@ -10,6 +10,7 @@ const tester = new RuleTester({
 
 tester.run('no-rxjs-in-effect', rule, {
   valid: [
+    { code: `effect(() => { this.player.subscribe('paused', () => {}); });` },
     {
       code: `import { effect } from 'some-other-lib';
 effect(() => { store.subscribe(cb); });`,

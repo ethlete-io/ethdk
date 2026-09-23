@@ -11,6 +11,10 @@ const tester = new RuleTester({
 
 tester.run('prefer-present-tense-output', rule, {
   valid: [
+    {
+      code: `import { output } from 'some-other-lib';
+class C { playerSelected = output<Player>(); }`,
+    },
     // Present-tense event names
     { code: `class C { playerSelect = output<Player>(); }` },
     { code: `class C { change = output<void>(); }` },
@@ -32,6 +36,11 @@ tester.run('prefer-present-tense-output', rule, {
     { code: `class C { selected = output<void>({ alias: 'playerSelect' }); }` },
   ],
   invalid: [
+    {
+      code: `import { output as ngOutput } from '@angular/core';
+class C { playerSelected = ngOutput<Player>(); }`,
+      errors: [{ messageId: 'pastTense' }],
+    },
     {
       code: `class C { playerSelected = output<Player>(); }`,
       errors: [{ messageId: 'pastTense' }],

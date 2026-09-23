@@ -19,6 +19,8 @@
  * the types this rule leaves alone), enable `@typescript-eslint/no-deprecated` alongside it.
  */
 
+const { MODULE_REFERENCE_SELECTOR, getModuleReference } = require('./internals/import-resolution');
+
 const QUERY_PACKAGE = '@ethlete/query';
 const DEFAULT_DOCS_BASE_URL = 'https://ethlete-sdk-docs.web.app';
 
@@ -60,13 +62,6 @@ const V2_SUCCESSORS = {
   V2BearerAuthProvider: { to: '`createBearerAuthProvider` plus the secure creator templates', docs: '/query/auth' },
 };
 
-/** @param {any} specifier */
-const importedName = (specifier) => {
-  if (specifier.type !== 'ImportSpecifier') return null;
-
-  return specifier.imported.name ?? specifier.imported.value ?? null;
-};
-
 /** @param {string} name */
 const isV2Symbol = (name) => /^(V2|AnyV2)[A-Z]/.test(name);
 
@@ -98,16 +93,12 @@ const noLegacyQueryImport = {
     const docsBaseUrl = (options.docsBaseUrl ?? DEFAULT_DOCS_BASE_URL).replace(/\/$/, '');
 
     return {
-      ImportDeclaration(node) {
-        const declaration = /** @type {any} */ (node);
+      [MODULE_REFERENCE_SELECTOR](node) {
+        const reference = getModuleReference(node);
 
-        if (declaration.source.value !== QUERY_PACKAGE) return;
+        if (reference?.source !== QUERY_PACKAGE) return;
 
-        for (const specifier of declaration.specifiers) {
-          const name = importedName(specifier);
-
-          if (!name) continue;
-
+        for (const { name, node: specifier } of reference.named) {
           const successor = V2_SUCCESSORS[name] ?? LEGACY_SYMBOLS[name];
 
           if (successor) {

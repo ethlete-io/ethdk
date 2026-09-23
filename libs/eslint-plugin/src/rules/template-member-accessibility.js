@@ -7,15 +7,17 @@ const {
   isReferencedFromTemplateOrHost,
 } = require('./internals/angular-member-visibility');
 const { getImplementedContractMemberNames } = require('./internals/implemented-contract-members');
+const { isImportedAs } = require('./internals/import-resolution');
 const { buildAccessibilityFix } = require('./internals/member-accessibility-fix');
 
 /**
+ * @param {import('eslint').SourceCode} sourceCode
  * @param {any} node
  */
-const isInjectCall = (node) => {
+const isInjectCall = (sourceCode, node) => {
   if (!node || node.type !== 'PropertyDefinition' || !node.value) return false;
   if (node.value.type !== 'CallExpression') return false;
-  return node.value.callee.type === 'Identifier' && node.value.callee.name === 'inject';
+  return isImportedAs(sourceCode, node.value.callee, 'inject');
 };
 
 /**
@@ -91,7 +93,7 @@ const templateMemberAccessibility = {
      */
     const checkMember = (node) => {
       if (!isSupportedMember(node)) return;
-      if (node.type === 'PropertyDefinition' && isInjectCall(node)) return;
+      if (node.type === 'PropertyDefinition' && isInjectCall(context.sourceCode, node)) return;
 
       const classNode = node.parent && node.parent.type === 'ClassBody' ? node.parent.parent : null;
       if (!classNode || (classNode.type !== 'ClassDeclaration' && classNode.type !== 'ClassExpression')) return;
@@ -148,7 +150,7 @@ const templateMemberAccessibility = {
      */
     const checkImplicitPublicMember = (node) => {
       if (!isSupportedMember(node)) return;
-      if (node.type === 'PropertyDefinition' && isInjectCall(node)) return;
+      if (node.type === 'PropertyDefinition' && isInjectCall(context.sourceCode, node)) return;
 
       const classNode = node.parent && node.parent.type === 'ClassBody' ? node.parent.parent : null;
       if (!classNode || (classNode.type !== 'ClassDeclaration' && classNode.type !== 'ClassExpression')) return;

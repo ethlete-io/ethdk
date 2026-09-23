@@ -11,6 +11,10 @@ const tester = new RuleTester({
 
 tester.run('no-typed-injected-element-ref', rule, {
   valid: [
+    {
+      code: `import { inject } from 'some-other-lib';
+const el = inject(ElementRef);`,
+    },
     // Correct: generic on inject(), plain ElementRef token
     { code: `inject<ElementRef<HTMLElement>>(ElementRef);` },
     { code: `inject<ElementRef<HTMLButtonElement>>(ElementRef);` },
@@ -21,6 +25,13 @@ tester.run('no-typed-injected-element-ref', rule, {
     { code: `inject<SomeService>(SomeService);` },
   ],
   invalid: [
+    {
+      code: `import { inject, ElementRef as ER } from '@angular/core';
+const el = inject(ER);`,
+      output: `import { inject, ElementRef as ER } from '@angular/core';
+const el = inject<ER<HTMLElement>>(ER);`,
+      errors: [{ messageId: 'missingGeneric' }],
+    },
     // No generic at all — fix: add default <ElementRef<HTMLElement>>
     {
       code: `inject(ElementRef);`,

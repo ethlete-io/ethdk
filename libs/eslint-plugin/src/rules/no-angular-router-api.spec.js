@@ -10,6 +10,12 @@ const tester = new RuleTester({
 
 tester.run('no-angular-router-api', rule, {
   valid: [
+    {
+      code: `import { inject } from 'some-other-lib';
+import { ActivatedRoute } from './route';
+inject(ActivatedRoute);`,
+    },
+    { code: `export * from '@angular/router';` },
     // @ethlete/core utilities — fine
     { code: `import { injectQueryParam } from '@ethlete/core';` },
     { code: `const route = injectRoute();` },
@@ -30,6 +36,16 @@ tester.run('no-angular-router-api', rule, {
     { code: `const x = someService.events;` },
   ],
   invalid: [
+    {
+      code: `import { inject as ngInject } from '@angular/core';
+const router = ngInject(Router);
+router.url;`,
+      errors: [{ messageId: 'noRouterStateProp' }],
+    },
+    {
+      code: `export { ActivatedRoute } from '@angular/router';`,
+      errors: [{ messageId: 'noActivatedRoute' }],
+    },
     // ── ActivatedRoute import ────────────────────────────────────────────────
     {
       code: `import { ActivatedRoute } from '@angular/router';`,

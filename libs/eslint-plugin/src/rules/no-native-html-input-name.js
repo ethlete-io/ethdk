@@ -75,7 +75,7 @@ const rule = {
   create(context) {
     return {
       PropertyDefinition(node) {
-        const io = getReactiveIo(node);
+        const io = getReactiveIo(context.sourceCode, node);
         if (!io) return;
         if (io.kind === 'output') return;
 

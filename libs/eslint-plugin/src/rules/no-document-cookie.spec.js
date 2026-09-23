@@ -10,6 +10,11 @@ const tester = new RuleTester({
 
 tester.run('no-document-cookie', rule, {
   valid: [
+    { code: `function read(document) { return document.cookie; }` },
+    {
+      code: `import { document } from './fake-dom';
+document.cookie;`,
+    },
     // Cookie utilities from @ethlete/core — fine
     { code: `import { getCookie, setCookie, hasCookie, deleteCookie } from '@ethlete/core';` },
     { code: `setCookie('name', 'value');` },

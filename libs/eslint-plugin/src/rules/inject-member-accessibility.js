@@ -2,15 +2,17 @@
 'use strict';
 
 const { getMemberName, isReferencedFromTemplateOrHost } = require('./internals/angular-member-visibility');
+const { isImportedAs } = require('./internals/import-resolution');
 const { buildAccessibilityFix } = require('./internals/member-accessibility-fix');
 
 /**
+ * @param {import('eslint').SourceCode} sourceCode
  * @param {any} node
  */
-const isInjectCall = (node) => {
+const isInjectCall = (sourceCode, node) => {
   if (!node || node.type !== 'PropertyDefinition' || !node.value) return false;
   if (node.value.type !== 'CallExpression') return false;
-  return node.value.callee.type === 'Identifier' && node.value.callee.name === 'inject';
+  return isImportedAs(sourceCode, node.value.callee, 'inject');
 };
 
 /** @type {import('eslint').Rule.RuleModule} */
@@ -36,7 +38,7 @@ const injectMemberAccessibility = {
 
     return {
       PropertyDefinition(node) {
-        if (!isInjectCall(node)) return;
+        if (!isInjectCall(context.sourceCode, node)) return;
 
         const classNode = node.parent && node.parent.type === 'ClassBody' ? node.parent.parent : null;
         if (!classNode || (classNode.type !== 'ClassDeclaration' && classNode.type !== 'ClassExpression')) return;

@@ -24,6 +24,11 @@ const { ANGULAR_CORE, getImportedName } = require('./internals/import-resolution
  *     .subscribe();
  */
 
+/**
+ * @param {any} node
+ */
+const isStringLiteral = (node) => node?.type === 'Literal' && typeof node.value === 'string';
+
 /** @type {import('eslint').Rule.RuleModule} */
 const noRxjsInEffect = {
   meta: {
@@ -67,7 +72,8 @@ const noRxjsInEffect = {
         if (
           callee.type === 'MemberExpression' &&
           callee.property.type === 'Identifier' &&
-          callee.property.name === 'subscribe'
+          callee.property.name === 'subscribe' &&
+          !isStringLiteral(node.arguments[0])
         ) {
           const reactiveContext = getReactiveContext(node);
           if (reactiveContext) {

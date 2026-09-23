@@ -10,6 +10,10 @@ const tester = new RuleTester({
 
 tester.run('prefer-clone-equal', rule, {
   valid: [
+    {
+      code: `const structuredClone = (value) => value;
+structuredClone({});`,
+    },
     // Using @ethlete/core utilities — fine
     { code: `import { clone, equal } from '@ethlete/core';` },
     { code: `const copy = clone(obj);` },
@@ -24,6 +28,14 @@ tester.run('prefer-clone-equal', rule, {
     { code: `import { throttle } from 'lodash-es';` },
   ],
   invalid: [
+    {
+      code: `export { cloneDeep } from 'lodash-es';`,
+      errors: [{ messageId: 'preferClone' }],
+    },
+    {
+      code: `const isEqual = import('lodash/isEqual');`,
+      errors: [{ messageId: 'preferEqual' }],
+    },
     // ── clone patterns ────────────────────────────────────────────────────────
     {
       code: `const copy = JSON.parse(JSON.stringify(obj));`,

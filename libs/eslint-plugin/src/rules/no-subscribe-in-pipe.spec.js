@@ -10,6 +10,10 @@ const tester = new RuleTester({
 
 tester.run('no-subscribe-in-pipe', rule, {
   valid: [
+    {
+      code: `import { Observable as Obs } from 'rxjs';
+source$.pipe(switchMap(() => new Obs((subscriber) => inner$.subscribe(subscriber))));`,
+    },
     // subscribe() is outside pipe — fine
     { code: `obs$.pipe(map(x => x)).subscribe();` },
     // switchMap composition — fine

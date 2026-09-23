@@ -10,6 +10,10 @@ const tester = new RuleTester({
 
 tester.run('require-dollar-suffix', rule, {
   valid: [
+    {
+      code: `import { merge } from 'lodash-es';
+const merged = merge({}, defaults);`,
+    },
     // Already suffixed with $
     { code: `const data$ = obs.pipe(map(x => x));` },
     { code: `const clicks$ = fromEvent(el, 'click');` },
@@ -21,6 +25,11 @@ tester.run('require-dollar-suffix', rule, {
     { code: `class Foo { data$ = this.src.pipe(filter(x => x)); }` },
   ],
   invalid: [
+    {
+      code: `import { of as rxOf } from 'rxjs';
+const value = rxOf(1);`,
+      errors: [{ messageId: 'missingSuffix' }],
+    },
     {
       code: `const data = obs.pipe(map(x => x));`,
       errors: [{ messageId: 'missingSuffix' }],

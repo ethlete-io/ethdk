@@ -12,6 +12,13 @@ const tester = new RuleTester({
 tester.run('class-member-order', rule, {
   valid: [
     {
+      code: `import { inject } from 'some-other-lib';
+class C {
+  size = input(0);
+  private service = inject(Service);
+}`,
+    },
+    {
       code: `class C {
   private service = inject(Service);
   size = input(0);
@@ -68,6 +75,19 @@ tester.run('class-member-order', rule, {
     },
   ],
   invalid: [
+    {
+      code: `import { inject as ngInject } from '@angular/core';
+class C {
+  size = input(0);
+  private service = ngInject(Service);
+}`,
+      output: `import { inject as ngInject } from '@angular/core';
+class C {
+  private service = ngInject(Service);
+  size = input(0);
+}`,
+      errors: [{ messageId: 'groupOrder' }],
+    },
     {
       code: `class C {
   size = input(0);

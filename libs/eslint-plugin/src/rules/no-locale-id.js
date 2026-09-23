@@ -14,6 +14,8 @@
  *   const locale = injectLocale();
  */
 
+const { isImportedAs } = require('./internals/import-resolution');
+
 /** @type {import('eslint').Rule.RuleModule} */
 const noLocaleId = {
   meta: {
@@ -31,10 +33,8 @@ const noLocaleId = {
   create(context) {
     return {
       CallExpression(node) {
-        const { callee } = node;
-        if (callee.type !== 'Identifier' || callee.name !== 'inject') return;
-        const arg = node.arguments[0];
-        if (arg?.type === 'Identifier' && arg.name === 'LOCALE_ID') {
+        if (!isImportedAs(context.sourceCode, node.callee, 'inject')) return;
+        if (isImportedAs(context.sourceCode, node.arguments[0], 'LOCALE_ID')) {
           context.report({ node, messageId: 'noLocaleId' });
         }
       },

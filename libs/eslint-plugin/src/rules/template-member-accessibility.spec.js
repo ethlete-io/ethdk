@@ -92,6 +92,15 @@ tester.run('template-member-accessibility', rule, {
   ],
   invalid: [
     {
+      code: `import { Component } from '@angular/core';
+import { inject } from 'some-other-lib';
+@Component({ template: '{{ store.value }}' }) class C { store = inject(Store); }`,
+      output: `import { Component } from '@angular/core';
+import { inject } from 'some-other-lib';
+@Component({ template: '{{ store.value }}' }) class C { public store = inject(Store); }`,
+      errors: [{ messageId: 'shouldBeExplicit' }],
+    },
+    {
       code: `import { Component as Cmp } from '@angular/core';
 @Cmp({ template: '{{ themeClass() }}' }) class C { themeClass = computed(() => 'x'); }`,
       output: `import { Component as Cmp } from '@angular/core';

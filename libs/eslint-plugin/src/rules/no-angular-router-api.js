@@ -35,6 +35,10 @@
  *   injectQueryParamChanges(), injectPathParamChanges()
  */
 
+const { MODULE_REFERENCE_SELECTOR, getModuleReference, isImportedAs } = require('./internals/import-resolution');
+
+const ANGULAR_ROUTER = '@angular/router';
+
 /**
  * Router properties that expose route state and must not be read directly.
  * @type {Map<string, string>}
@@ -66,6 +70,17 @@ const noAngularRouterApi = {
     schema: [],
   },
   create(context) {
+    const sourceCode = context.sourceCode;
+
+    /**
+     * @param {any} call
+     * @param {string} token
+     */
+    const isInjectOf = (call, token) =>
+      call?.type === 'CallExpression' &&
+      isImportedAs(sourceCode, call.callee, 'inject') &&
+      isImportedAs(sourceCode, call.arguments[0], token, ANGULAR_ROUTER);
+
     /**
      * Names of variables/properties assigned from inject(Router).
      * We track identifiers whose initializer is inject(Router) so we can
@@ -78,28 +93,14 @@ const noAngularRouterApi = {
       // ── Track inject(Router) bindings ──────────────────────────────────────
       // const router = inject(Router);
       VariableDeclarator(node) {
-        if (
-          node.init?.type === 'CallExpression' &&
-          node.init.callee.type === 'Identifier' &&
-          node.init.callee.name === 'inject' &&
-          node.init.arguments[0]?.type === 'Identifier' &&
-          node.init.arguments[0].name === 'Router' &&
-          node.id.type === 'Identifier'
-        ) {
+        if (isInjectOf(node.init, 'Router') && node.id.type === 'Identifier') {
           routerBindings.add(node.id.name);
         }
       },
 
       // ── Track class property assignments: router = inject(Router) ──────────
       PropertyDefinition(node) {
-        if (
-          node.value?.type === 'CallExpression' &&
-          node.value.callee.type === 'Identifier' &&
-          node.value.callee.name === 'inject' &&
-          node.value.arguments[0]?.type === 'Identifier' &&
-          node.value.arguments[0].name === 'Router' &&
-          node.key.type === 'Identifier'
-        ) {
+        if (isInjectOf(node.value, 'Router') && node.key.type === 'Identifier') {
           routerBindings.add(node.key.name);
         }
       },
@@ -130,24 +131,17 @@ const noAngularRouterApi = {
       },
 
       // ── ActivatedRoute import ───────────────────────────────────────────────
-      ImportDeclaration(node) {
-        if (node.source.value !== '@angular/router') return;
-        for (const specifier of node.specifiers) {
-          if (specifier.type !== 'ImportSpecifier') continue;
-          if (specifier.imported.name === 'ActivatedRoute') {
-            context.report({ node, messageId: 'noActivatedRoute' });
-            return;
-          }
+      [MODULE_REFERENCE_SELECTOR](node) {
+        const reference = getModuleReference(node);
+        if (reference?.source !== ANGULAR_ROUTER) return;
+        if (reference.named.some((entry) => entry.name === 'ActivatedRoute')) {
+          context.report({ node, messageId: 'noActivatedRoute' });
         }
       },
 
       // ── inject(ActivatedRoute) ──────────────────────────────────────────────
       CallExpression(node) {
-        const { callee } = node;
-        if (callee.type !== 'Identifier' || callee.name !== 'inject') return;
-        const arg = node.arguments[0];
-        if (arg?.type !== 'Identifier') return;
-        if (arg.name === 'ActivatedRoute') {
+        if (isInjectOf(node, 'ActivatedRoute')) {
           context.report({ node, messageId: 'noActivatedRoute' });
         }
       },

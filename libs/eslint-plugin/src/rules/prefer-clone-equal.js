@@ -25,6 +25,8 @@
  *   import { clone, equal } from '@ethlete/core';
  */
 
+const { MODULE_REFERENCE_SELECTOR, getModuleReference, isGlobalReference } = require('./internals/import-resolution');
+
 /** @type {import('eslint').Rule.RuleModule} */
 const preferCloneEqual = {
   meta: {
@@ -70,21 +72,21 @@ const preferCloneEqual = {
         }
 
         // ── structuredClone(expr) ─────────────────────────────────────────────
-        if (callee.type === 'Identifier' && callee.name === 'structuredClone') {
+        if (isGlobalReference(context.sourceCode, callee) && callee.name === 'structuredClone') {
           context.report({ node, messageId: 'preferClone', data: { method: 'structuredClone()' } });
         }
       },
 
-      ImportDeclaration(node) {
-        const src = node.source.value;
+      [MODULE_REFERENCE_SELECTOR](node) {
+        const reference = getModuleReference(node);
+        if (!reference) return;
+        const src = reference.source;
 
         // ── lodash cloneDeep / isEqual ────────────────────────────────────────
         // import { cloneDeep } from 'lodash' / 'lodash-es'
         // import { isEqual } from 'lodash' / 'lodash-es'
         if (src === 'lodash' || src === 'lodash-es') {
-          for (const specifier of node.specifiers) {
-            if (specifier.type !== 'ImportSpecifier') continue;
-            const name = specifier.imported.name;
+          for (const { name } of reference.named) {
             if (name === 'cloneDeep') {
               context.report({ node, messageId: 'preferClone', data: { method: 'lodash cloneDeep' } });
             } else if (name === 'isEqual') {

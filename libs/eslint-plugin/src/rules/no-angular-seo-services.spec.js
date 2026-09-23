@@ -35,6 +35,10 @@ const t = inject(Title);`,
 
   invalid: [
     {
+      code: `export { Title } from '@angular/platform-browser';`,
+      errors: [{ messageId: 'noImportTitle' }],
+    },
+    {
       code: `import * as pb from '@angular/platform-browser';
 const t = inject(pb.Title);`,
       errors: [{ messageId: 'noInjectTitle' }],

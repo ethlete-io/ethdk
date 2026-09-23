@@ -19,6 +19,8 @@
  *   fromEvent(element, 'click').pipe(takeUntilDestroyed()).subscribe(handler);
  */
 
+const { isGlobalReference } = require('./internals/import-resolution');
+
 /** @type {import('eslint').Rule.RuleModule} */
 const preferRxjsTimer = {
   meta: {
@@ -47,7 +49,7 @@ const preferRxjsTimer = {
         const { callee } = node;
 
         // ── Global timer calls ────────────────────────────────────────────────
-        if (callee.type === 'Identifier') {
+        if (isGlobalReference(context.sourceCode, callee)) {
           const { name } = callee;
           if (name === 'setTimeout') {
             context.report({ node, messageId: 'preferTimer' });

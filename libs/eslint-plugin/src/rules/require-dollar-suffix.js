@@ -1,6 +1,8 @@
 // @ts-check
 'use strict';
 
+const { getImportedName } = require('./internals/import-resolution');
+
 /**
  * Requires observable variables and class properties to be suffixed with `$`.
  *
@@ -45,9 +47,10 @@ const RXJS_SUBJECT_CTORS = new Set(['Subject', 'BehaviorSubject', 'ReplaySubject
 
 /**
  * Returns true if the expression looks like an Observable.
+ * @param {import('eslint').SourceCode} sourceCode
  * @param {any} node
  */
-const isObservableInit = (node) => {
+const isObservableInit = (sourceCode, node) => {
   if (!node) return false;
 
   // someObs.pipe(...)
@@ -61,12 +64,12 @@ const isObservableInit = (node) => {
   }
 
   // from(...), of(...), interval(...), etc.
-  if (node.type === 'CallExpression' && node.callee.type === 'Identifier' && RXJS_CREATORS.has(node.callee.name)) {
+  if (node.type === 'CallExpression' && RXJS_CREATORS.has(getImportedName(sourceCode, node.callee, 'rxjs') ?? '')) {
     return true;
   }
 
   // new Subject(), new BehaviorSubject(...), etc.
-  if (node.type === 'NewExpression' && node.callee.type === 'Identifier' && RXJS_SUBJECT_CTORS.has(node.callee.name)) {
+  if (node.type === 'NewExpression' && RXJS_SUBJECT_CTORS.has(getImportedName(sourceCode, node.callee, 'rxjs') ?? '')) {
     return true;
   }
 
@@ -92,7 +95,7 @@ const rule = {
      * @param {any} initNode
      */
     const checkBinding = (name, reportNode, initNode) => {
-      if (!isObservableInit(initNode)) return;
+      if (!isObservableInit(context.sourceCode, initNode)) return;
       if (name.endsWith('$')) return;
 
       context.report({

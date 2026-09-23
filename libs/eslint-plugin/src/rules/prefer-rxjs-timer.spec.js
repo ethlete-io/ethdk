@@ -10,6 +10,14 @@ const tester = new RuleTester({
 
 tester.run('prefer-rxjs-timer', rule, {
   valid: [
+    {
+      code: `const setTimeout = (fn) => fn;
+setTimeout(() => {});`,
+    },
+    {
+      code: `import { setInterval, clearInterval } from './scheduler';
+clearInterval(setInterval(() => {}, 10));`,
+    },
     // RxJS alternatives — fine
     { code: `timer(500).pipe(takeUntilDestroyed()).subscribe();` },
     { code: `interval(2000).pipe(takeUntilDestroyed()).subscribe();` },

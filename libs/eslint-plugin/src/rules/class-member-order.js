@@ -1,12 +1,15 @@
 // @ts-check
 'use strict';
 
+const { ANGULAR_CORE, getImportedName } = require('./internals/import-resolution');
+
 /** @typedef {'inject' | 'input' | 'output' | 'query' | 'property' | 'constructor' | 'method' | 'private-method'} TMemberGroup */
 /** @typedef {{ dependencies: Set<string>; group: TMemberGroup; groupIndex: number; name: string; node: any; originalIndex: number }} TMemberEntry */
 
 const INPUT_APIS = new Set(['input', 'model']);
 const OUTPUT_APIS = new Set(['output', 'outputFromObservable']);
 const QUERY_APIS = new Set(['viewChild', 'viewChildren', 'contentChild', 'contentChildren']);
+const ANGULAR_API_SOURCES = [ANGULAR_CORE, '@angular/core/rxjs-interop'];
 
 /** @type {TMemberGroup[]} */
 const MEMBER_GROUP_ORDER = [
@@ -70,49 +73,70 @@ const getCallRootName = (value) => {
 };
 
 /**
+ * @param {import('eslint').SourceCode} sourceCode
+ * @param {any} value
+ */
+const getAngularCallName = (sourceCode, value) => {
+  if (!value || value.type !== 'CallExpression') return null;
+
+  const { callee } = value;
+  const isRequired =
+    callee.type === 'MemberExpression' &&
+    !callee.computed &&
+    callee.property.type === 'Identifier' &&
+    callee.property.name === 'required';
+
+  return getImportedName(sourceCode, isRequired ? callee.object : callee, ANGULAR_API_SOURCES);
+};
+
+/**
+ * @param {import('eslint').SourceCode} sourceCode
  * @param {any} node
  * @param {Set<string>} apiNames
  */
-const isPropertyInitializedWith = (node, apiNames) => {
+const isPropertyInitializedWith = (sourceCode, node, apiNames) => {
   if (node.type !== 'PropertyDefinition') return false;
 
-  const apiName = getCallRootName(node.value);
+  const apiName = getAngularCallName(sourceCode, node.value);
   return apiName !== null && apiNames.has(apiName);
 };
 
 const INJECT_HELPER_NAME_PATTERN = /^inject[A-Z]/;
 
 /**
+ * @param {import('eslint').SourceCode} sourceCode
  * @param {any} node
  */
-const isPropertyInitializedWithInject = (node) => {
+const isPropertyInitializedWithInject = (sourceCode, node) => {
   if (node.type !== 'PropertyDefinition') return false;
+  if (getAngularCallName(sourceCode, node.value) === 'inject') return true;
 
-  const apiName = getCallRootName(node.value);
-  return apiName !== null && (apiName === 'inject' || INJECT_HELPER_NAME_PATTERN.test(apiName));
+  const rootName = getCallRootName(node.value);
+  return rootName !== null && INJECT_HELPER_NAME_PATTERN.test(rootName);
 };
 
 /**
+ * @param {import('eslint').SourceCode} sourceCode
  * @param {any} node
  * @returns {TMemberGroup | null}
  */
-const getMemberGroup = (node) => {
+const getMemberGroup = (sourceCode, node) => {
   if (node.static) return null;
 
   if (node.type === 'PropertyDefinition') {
-    if (isPropertyInitializedWithInject(node)) {
+    if (isPropertyInitializedWithInject(sourceCode, node)) {
       return 'inject';
     }
 
-    if (isPropertyInitializedWith(node, INPUT_APIS)) {
+    if (isPropertyInitializedWith(sourceCode, node, INPUT_APIS)) {
       return 'input';
     }
 
-    if (isPropertyInitializedWith(node, OUTPUT_APIS)) {
+    if (isPropertyInitializedWith(sourceCode, node, OUTPUT_APIS)) {
       return 'output';
     }
 
-    if (isPropertyInitializedWith(node, QUERY_APIS)) {
+    if (isPropertyInitializedWith(sourceCode, node, QUERY_APIS)) {
       return 'query';
     }
 
@@ -187,12 +211,13 @@ const getInitializerDependencies = (node) => {
 };
 
 /**
+ * @param {import('eslint').SourceCode} sourceCode
  * @param {any} node
  * @param {number} originalIndex
  * @returns {TMemberEntry | null}
  */
-const toMemberEntry = (node, originalIndex) => {
-  const group = getMemberGroup(node);
+const toMemberEntry = (sourceCode, node, originalIndex) => {
+  const group = getMemberGroup(sourceCode, node);
   const name = getMemberName(node);
 
   if (group === null || name === null) {
@@ -385,7 +410,7 @@ const classMemberOrder = {
         const members = node.body
           .map(
             /** @param {any} member @param {number} originalIndex */ (member, originalIndex) =>
-              toMemberEntry(member, originalIndex),
+              toMemberEntry(sourceCode, member, originalIndex),
           )
           .filter(Boolean);
 

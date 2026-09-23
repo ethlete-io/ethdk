@@ -10,6 +10,10 @@ const tester = new RuleTester({
 
 tester.run('prefer-match-media', rule, {
   valid: [
+    {
+      code: `import { inject } from 'some-other-lib';
+inject(BreakpointObserver);`,
+    },
     // Signal-based alternative — fine
     { code: `const isDark = injectMediaQueryIsMatched('(prefers-color-scheme: dark)');` },
     { code: `const canHover = injectCanHover();` },
@@ -24,6 +28,15 @@ tester.run('prefer-match-media', rule, {
     { code: `inject(MyService);` },
   ],
   invalid: [
+    {
+      code: `import { inject as ngInject } from '@angular/core';
+ngInject(BreakpointObserver);`,
+      errors: [{ messageId: 'noBreakpointObserver' }],
+    },
+    {
+      code: `export { BreakpointObserver } from '@angular/cdk/layout';`,
+      errors: [{ messageId: 'noBreakpointObserver' }],
+    },
     {
       code: `window.matchMedia('(prefers-color-scheme: dark)').matches;`,
       errors: [{ messageId: 'preferMatchMedia' }],

@@ -1,7 +1,12 @@
 // @ts-check
 'use strict';
 
-const { getImportedName, isImportedAs } = require('./internals/import-resolution');
+const {
+  MODULE_REFERENCE_SELECTOR,
+  getImportedName,
+  getModuleReference,
+  isImportedAs,
+} = require('./internals/import-resolution');
 
 /**
  * Disallows injecting Angular's `Title` and `Meta` services from
@@ -66,13 +71,11 @@ const rule = {
       },
 
       // Detect: import { Title, Meta } from '@angular/platform-browser'
-      ImportDeclaration(node) {
-        const decl = /** @type {any} */ (node);
-        if (decl.source.value !== '@angular/platform-browser') return;
+      [MODULE_REFERENCE_SELECTOR](node) {
+        const reference = getModuleReference(node);
+        if (reference?.source !== '@angular/platform-browser') return;
 
-        for (const specifier of decl.specifiers) {
-          if (specifier.type !== 'ImportSpecifier') continue;
-          const imported = specifier.imported.name ?? specifier.imported.value;
+        for (const { name: imported, node: specifier } of reference.named) {
           if (imported === 'Title') context.report({ node: specifier, messageId: 'noImportTitle' });
           if (imported === 'Meta') context.report({ node: specifier, messageId: 'noImportMeta' });
         }

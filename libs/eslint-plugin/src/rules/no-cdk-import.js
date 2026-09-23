@@ -4,6 +4,7 @@
 const { createRequire } = require('node:module');
 const path = require('node:path');
 const fs = require('node:fs');
+const { MODULE_REFERENCE_SELECTOR, getModuleReference } = require('./internals/import-resolution');
 
 /**
  * Disallows importing from `@ethlete/cdk`, the maintenance-mode predecessor of `@ethlete/components`,
@@ -52,13 +53,6 @@ const loadMigrationMap = (mapPath, cwd) => {
   return map;
 };
 
-/** @param {any} specifier */
-const importedName = (specifier) => {
-  if (specifier.type !== 'ImportSpecifier') return null;
-
-  return specifier.imported.name ?? specifier.imported.value ?? null;
-};
-
 /** @type {import('eslint').Rule.RuleModule} */
 const noCdkImport = {
   meta: {
@@ -95,13 +89,13 @@ const noCdkImport = {
     const entryFor = (name) => map?.[name] ?? null;
 
     return {
-      ImportDeclaration(node) {
-        const declaration = /** @type {any} */ (node);
-        const source = declaration.source.value;
+      [MODULE_REFERENCE_SELECTOR](node) {
+        const reference = getModuleReference(node);
+        const source = reference?.source;
 
-        if (typeof source !== 'string' || (source !== CDK_PACKAGE && !source.startsWith(`${CDK_PACKAGE}/`))) return;
+        if (!reference || (source !== CDK_PACKAGE && !source?.startsWith(`${CDK_PACKAGE}/`))) return;
 
-        const named = declaration.specifiers.filter(/** @param {any} s */ (s) => importedName(s));
+        const { named } = reference;
 
         if (!named.length) {
           context.report({ node, messageId: 'module', data: { cdk: CDK_PACKAGE, docs: migrationDocs } });
@@ -109,8 +103,7 @@ const noCdkImport = {
           return;
         }
 
-        for (const specifier of named) {
-          const name = /** @type {string} */ (importedName(specifier));
+        for (const { name, node: specifier } of named) {
           const entry = entryFor(name);
 
           if (!entry) {

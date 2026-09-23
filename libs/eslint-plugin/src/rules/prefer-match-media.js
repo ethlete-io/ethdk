@@ -37,6 +37,10 @@
  *   // … etc. All from @ethlete/core.
  */
 
+const { MODULE_REFERENCE_SELECTOR, getModuleReference, isImportedAs } = require('./internals/import-resolution');
+
+const CDK_LAYOUT = '@angular/cdk/layout';
+
 /** @type {import('eslint').Rule.RuleModule} */
 const preferMatchMedia = {
   meta: {
@@ -72,25 +76,17 @@ const preferMatchMedia = {
 
         // ── inject(BreakpointObserver) ────────────────────────────────────────
         if (
-          callee.type === 'Identifier' &&
-          callee.name === 'inject' &&
-          node.arguments[0]?.type === 'Identifier' &&
-          node.arguments[0].name === 'BreakpointObserver'
+          isImportedAs(context.sourceCode, callee, 'inject') &&
+          isImportedAs(context.sourceCode, node.arguments[0], 'BreakpointObserver', CDK_LAYOUT)
         ) {
           context.report({ node, messageId: 'noBreakpointObserver' });
         }
       },
 
-      ImportDeclaration(node) {
-        // ── import { BreakpointObserver } from '@angular/cdk/layout' ─────────
-        if (node.source.value !== '@angular/cdk/layout') return;
-        const hasBreakpointObserver = node.specifiers.some(
-          (s) =>
-            s.type === 'ImportSpecifier' &&
-            s.imported.type === 'Identifier' &&
-            s.imported.name === 'BreakpointObserver',
-        );
-        if (hasBreakpointObserver) {
+      [MODULE_REFERENCE_SELECTOR](node) {
+        const reference = getModuleReference(node);
+        if (reference?.source !== CDK_LAYOUT) return;
+        if (reference.named.some((entry) => entry.name === 'BreakpointObserver')) {
           context.report({ node, messageId: 'noBreakpointObserver' });
         }
       },

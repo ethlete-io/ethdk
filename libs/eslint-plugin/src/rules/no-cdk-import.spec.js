@@ -34,6 +34,19 @@ tester.run('no-cdk-import', rule, {
   ],
   invalid: [
     {
+      code: `export * from '@ethlete/cdk';`,
+      errors: [{ messageId: 'module' }],
+    },
+    {
+      code: `const cdk = import('@ethlete/cdk');`,
+      errors: [{ messageId: 'module' }],
+    },
+    {
+      code: `export { ButtonComponent } from '@ethlete/cdk';`,
+      options: withMap,
+      errors: [{ messageId: 'successor' }],
+    },
+    {
       code: `import { ButtonComponent } from '@ethlete/cdk';`,
       filename: 'test.ts',
       options: withMap,

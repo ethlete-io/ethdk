@@ -11,6 +11,10 @@ const tester = new RuleTester({
 
 tester.run('no-native-html-input-name', rule, {
   valid: [
+    {
+      code: `import { input } from 'some-other-lib';
+class C { title = input('Widget'); }`,
+    },
     // Non-global names are fine
     { code: `class C { label = input('x'); }` },
     { code: `class C { overlayId = input(''); }` },
@@ -39,6 +43,11 @@ tester.run('no-native-html-input-name', rule, {
     { code: `class C { title = input('x', { alias: 'label' }); }` },
   ],
   invalid: [
+    {
+      code: `import { input as ngInput } from '@angular/core';
+class C { title = ngInput.required<string>(); }`,
+      errors: [{ messageId: 'nativeName' }],
+    },
     {
       code: `class C { title = input('Widget'); }`,
       errors: [{ messageId: 'nativeName' }],

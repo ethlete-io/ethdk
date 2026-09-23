@@ -10,6 +10,7 @@ const tester = new RuleTester({
 
 tester.run('prefer-linked-signal', rule, {
   valid: [
+    { code: `effect(() => { this.rects.set(this.id(), this.el().getBoundingClientRect()); });` },
     {
       code: `import { effect } from 'some-other-lib';
 effect(() => { a.set(b()); });`,

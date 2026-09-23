@@ -21,6 +21,8 @@
  *   deleteCookie('name');
  */
 
+const { isGlobalReference } = require('./internals/import-resolution');
+
 /** @type {import('eslint').Rule.RuleModule} */
 const noDocumentCookie = {
   meta: {
@@ -42,6 +44,7 @@ const noDocumentCookie = {
         if (
           node.object.type === 'Identifier' &&
           node.object.name === 'document' &&
+          isGlobalReference(context.sourceCode, node.object) &&
           node.property.type === 'Identifier' &&
           node.property.name === 'cookie'
         ) {

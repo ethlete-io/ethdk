@@ -72,7 +72,7 @@ const rule = {
   create(context) {
     return {
       PropertyDefinition(node) {
-        const io = getReactiveIo(node);
+        const io = getReactiveIo(context.sourceCode, node);
         if (!io || io.kind !== 'output') return;
 
         const word = lastWord(io.name);

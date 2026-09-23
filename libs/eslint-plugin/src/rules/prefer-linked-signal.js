@@ -114,6 +114,7 @@ const preferLinkedSignal = {
           callee.type === 'MemberExpression' &&
           callee.property.type === 'Identifier' &&
           callee.property.name === 'set' &&
+          node.arguments.length === 1 &&
           isPureSetInDirectEffectCallback(context.sourceCode, node)
         ) {
           context.report({ node, messageId: 'preferLinkedSignal' });

@@ -19,6 +19,8 @@
  *   obs$.pipe(...operators).subscribe(); // ✅ subscribe on the result of pipe
  */
 
+const { isImportedAs } = require('./internals/import-resolution');
+
 /** @type {import('eslint').Rule.RuleModule} */
 const noSubscribeInPipe = {
   meta: {
@@ -48,8 +50,7 @@ const noSubscribeInPipe = {
         // be flagged even if the Observable itself is passed into a .pipe() operator.
         if (
           current.type === 'NewExpression' &&
-          current.callee.type === 'Identifier' &&
-          current.callee.name === 'Observable'
+          isImportedAs(context.sourceCode, current.callee, 'Observable', 'rxjs')
         ) {
           return false;
         }

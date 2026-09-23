@@ -10,6 +10,14 @@ const tester = new RuleTester({
 
 tester.run('no-locale-id', rule, {
   valid: [
+    {
+      code: `import { inject } from 'some-other-lib';
+inject(LOCALE_ID);`,
+    },
+    {
+      code: `import { LOCALE_ID } from './tokens';
+inject(LOCALE_ID);`,
+    },
     // injectLocale from @ethlete/core — fine
     { code: `import { injectLocale } from '@ethlete/core';` },
     { code: `const locale = injectLocale();` },
@@ -20,6 +28,11 @@ tester.run('no-locale-id', rule, {
     { code: `import { LOCALE_ID } from '@angular/core'; const provider = { provide: LOCALE_ID, useValue: 'de' };` },
   ],
   invalid: [
+    {
+      code: `import { inject as ngInject, LOCALE_ID } from '@angular/core';
+ngInject(LOCALE_ID);`,
+      errors: [{ messageId: 'noLocaleId' }],
+    },
     {
       code: `const locale = inject(LOCALE_ID);`,
       errors: [{ messageId: 'noLocaleId' }],

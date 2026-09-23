@@ -18,6 +18,10 @@
  * (or null when the property is not a reactive I/O declaration).
  */
 
+const { ANGULAR_CORE, getImportedName } = require('./import-resolution');
+
+const ANGULAR_IO_SOURCES = [ANGULAR_CORE, '@angular/core/rxjs-interop'];
+
 /** Factory identifier → I/O kind. */
 const IO_FACTORIES = {
   input: 'input',
@@ -31,42 +35,37 @@ const IO_FACTORIES = {
  * plain form (`input(...)`) and the `.required` member form
  * (`input.required(...)`).
  *
+ * @param {import('eslint').SourceCode} sourceCode
  * @param {any} callee
  * @returns {string | null}
  */
-const getFactoryName = (callee) => {
+const getFactoryName = (sourceCode, callee) => {
   if (!callee) return null;
 
-  if (callee.type === 'Identifier') return callee.name;
-
-  // input.required(...) / model.required(...)
-  if (
+  const isRequired =
     callee.type === 'MemberExpression' &&
     !callee.computed &&
-    callee.object.type === 'Identifier' &&
     callee.property.type === 'Identifier' &&
-    callee.property.name === 'required'
-  ) {
-    return callee.object.name;
-  }
+    callee.property.name === 'required';
 
-  return null;
+  return getImportedName(sourceCode, isRequired ? callee.object : callee, ANGULAR_IO_SOURCES);
 };
 
 /**
  * Classifies a class property as an Angular signal input/model/output.
  *
+ * @param {import('eslint').SourceCode} sourceCode
  * @param {any} node  PropertyDefinition
  * @returns {{ kind: 'input' | 'model' | 'output', name: string, keyNode: any } | null}
  */
-const getReactiveIo = (node) => {
+const getReactiveIo = (sourceCode, node) => {
   if (!node || node.type !== 'PropertyDefinition') return null;
   if (node.computed || node.key.type !== 'Identifier') return null;
 
   const value = node.value;
   if (!value || value.type !== 'CallExpression') return null;
 
-  const factory = getFactoryName(value.callee);
+  const factory = getFactoryName(sourceCode, value.callee);
   if (!factory) return null;
 
   if (!Object.hasOwn(IO_FACTORIES, factory)) return null;
