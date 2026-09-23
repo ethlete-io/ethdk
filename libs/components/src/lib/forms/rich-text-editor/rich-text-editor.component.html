@@ -12,7 +12,7 @@
                 <ng-container [ngComponentOutlet]="control" [ngComponentOutletInputs]="{ editor: dir }" />
               } @else {
                 <button
-                  [pressed]="def.isActive?.(dir) ?? false"
+                  [pressed]="def.isActive?.(dir)"
                   [disabled]="dir.disabled() || dir.readonly() || (def.isDisabled?.(dir) ?? false)"
                   [attr.aria-label]="toolLabel(def)"
                   (mousedown)="$event.preventDefault()"

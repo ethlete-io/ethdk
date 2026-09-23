@@ -21,7 +21,7 @@ class ButtonTestHost {
   emitAriaPressed = true;
   loading = false;
   type: 'button' | 'submit' | 'reset' = 'button';
-  pressed = false;
+  pressed: boolean | undefined = undefined;
 }
 
 @Component({
@@ -150,11 +150,25 @@ describe('ButtonDirective', () => {
         expect(button.getAttribute('data-pressed')).toBeNull();
       });
 
+      it('sets aria-pressed="false" on a toggle that is off', () => {
+        fixture.componentInstance.pressed = false;
+        fixture.detectChanges();
+        expect(button.getAttribute('aria-pressed')).toBe('false');
+        expect(button.getAttribute('data-pressed')).toBeNull();
+      });
+
       it('sets aria-pressed="true" when pressed', () => {
         fixture.componentInstance.pressed = true;
         fixture.detectChanges();
         expect(button.getAttribute('aria-pressed')).toBe('true');
         expect(button.getAttribute('data-pressed')).toBe('true');
+      });
+
+      it('sets no aria-pressed on an off toggle when emitAriaPressed=false', () => {
+        fixture.componentInstance.pressed = false;
+        fixture.componentInstance.emitAriaPressed = false;
+        fixture.detectChanges();
+        expect(button.getAttribute('aria-pressed')).toBeNull();
       });
 
       it('keeps visual pressed state without aria-pressed when emitAriaPressed=false', () => {

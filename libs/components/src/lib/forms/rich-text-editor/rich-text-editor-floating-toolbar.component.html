@@ -6,7 +6,7 @@
   <!-- Icon tools only: this bar has no room for a custom control, and every inline tool is a toggle. -->
   @if (def.icon; as icon) {
     <button
-      [pressed]="def.isActive?.(editor()) ?? false"
+      [pressed]="def.isActive?.(editor())"
       [disabled]="def.isDisabled?.(editor()) ?? false"
       [attr.aria-label]="toolLabel(def)"
       (mousedown)="$event.preventDefault()"

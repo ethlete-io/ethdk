@@ -73,7 +73,7 @@ export class ToggletipTriggerDirective {
       }
 
       toggletip.triggerInactive.set(false);
-      setInputSignal(button.pressed, false);
+      setInputSignal(button.pressed, undefined);
       setInputSignal(button.emitAriaPressed, true);
     });
   }

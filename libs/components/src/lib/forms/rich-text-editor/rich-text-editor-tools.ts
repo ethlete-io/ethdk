@@ -100,7 +100,7 @@ export { injectRichTextEditorTools };
 export type RichTextEditorToolButton = {
   icon: string;
   label: string;
-  isActive: (editor: RichTextEditorDirective) => boolean;
+  isActive?: (editor: RichTextEditorDirective) => boolean;
   run: (editor: RichTextEditorDirective) => void;
   /** Disables the button in contexts where the tool cannot apply (e.g. lists inside a table cell). */
   isDisabled?: (editor: RichTextEditorDirective) => boolean;
@@ -114,14 +114,12 @@ const richTextEditorToolButtons = (): Partial<Record<RichTextEditorTool, RichTex
   undo: {
     icon: 'et-undo',
     label: DEFAULT_RICH_TEXT_EDITOR_LABELS.undo,
-    isActive: () => false,
     run: (e) => e.undo(),
     isDisabled: (e) => !e.canUndo(),
   },
   redo: {
     icon: 'et-redo',
     label: DEFAULT_RICH_TEXT_EDITOR_LABELS.redo,
-    isActive: () => false,
     run: (e) => e.redo(),
     isDisabled: (e) => !e.canRedo(),
   },

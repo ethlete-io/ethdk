@@ -157,7 +157,7 @@ export class ButtonSurfaceStorybookComponent {
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
   public progress = input<number | null | undefined>(undefined);
-  public pressed = input(false, { transform: booleanAttribute });
+  public pressed = input<boolean | undefined>(undefined);
   public pressedColor = input<ButtonColor | undefined>(undefined);
 
   public readonly VARIANTS = SURFACE_VARIANTS;
@@ -203,7 +203,7 @@ export class ButtonIconStorybookComponent {
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
   public progress = input<number | null | undefined>(undefined);
-  public pressed = input(false, { transform: booleanAttribute });
+  public pressed = input<boolean | undefined>(undefined);
   public pressedColor = input<ButtonColor | undefined>(undefined);
 
   public readonly VARIANTS = SURFACE_VARIANTS;
@@ -337,7 +337,7 @@ export class ButtonWindowControlStorybookComponent {
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
   public progress = input<number | null | undefined>(undefined);
-  public pressed = input(false, { transform: booleanAttribute });
+  public pressed = input<boolean | undefined>(undefined);
 
   public readonly BUTTON_EXAMPLES = WINDOW_CONTROL_BUTTON_EXAMPLES;
   public readonly CLOSE_KIND = WINDOW_CONTROL_BUTTON_KINDS.CLOSE;

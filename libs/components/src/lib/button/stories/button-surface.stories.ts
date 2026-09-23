@@ -22,7 +22,7 @@ export default {
     disabled: false,
     loading: false,
     progress: undefined,
-    pressed: false,
+    pressed: undefined,
     pressedColor: undefined,
   },
 } as Meta<ButtonSurfaceStorybookComponent>;

@@ -19,7 +19,7 @@ type ButtonType = (typeof BUTTON_TYPES)[keyof typeof BUTTON_TYPES];
     '[attr.disabled]': 'IS_BUTTON && disabled() ? "" : null',
     '[attr.aria-busy]': 'loading() ? true : null',
     '[attr.aria-disabled]': 'isInactive() ? true : null',
-    '[attr.aria-pressed]': 'emitAriaPressed() && pressed() ? true : null',
+    '[attr.aria-pressed]': 'ariaPressed()',
     '[attr.type]': 'IS_BUTTON ? type() : null',
     '[attr.tabindex]': 'IS_ANCHOR && disabled() ? -1 : ownTabIndex',
     '(click)': 'blockInactiveClick($event)',
@@ -31,7 +31,13 @@ export class ButtonDirective {
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
   public type = input<ButtonType>('button');
-  public pressed = input(false, { transform: booleanAttribute });
+  /**
+   * Makes the button a toggle: any bound boolean announces `aria-pressed`, including `false` for the
+   * off state. Leave it unset on a button that is not a toggle.
+   */
+  public pressed = input<boolean | undefined, unknown>(undefined, {
+    transform: (value) => (value === undefined || value === null ? undefined : booleanAttribute(value)),
+  });
   public emitAriaPressed = input(true, { transform: booleanAttribute });
 
   /**
@@ -48,6 +54,10 @@ export class ButtonDirective {
 
   public readonly IS_BUTTON = this.elementRef.nativeElement.tagName === 'BUTTON';
   public readonly IS_ANCHOR = this.elementRef.nativeElement.tagName === 'A';
+
+  public isToggle = computed(() => this.pressed() !== undefined);
+
+  protected ariaPressed = computed(() => (this.emitAriaPressed() && this.isToggle() ? String(this.pressed()) : null));
 
   public isInactive = computed(() => this.disabled() || this.loading());
 

@@ -33,7 +33,7 @@ describe('BracketParticipantsComponent', () => {
     expect(host.getAttribute('role')).toBe('group');
     expect(host.getAttribute('aria-label')).toBe('Participants');
     expect(toggles().map((toggle) => toggle.textContent?.trim())).toEqual(['Alpha', 'Bravo']);
-    expect(toggles().map((toggle) => toggle.getAttribute('aria-pressed'))).toEqual([null, null]);
+    expect(toggles().map((toggle) => toggle.getAttribute('aria-pressed'))).toEqual(['false', 'false']);
   });
 
   it('pins a participant, moves the pin, and drops it on a second press', () => {
@@ -43,7 +43,7 @@ describe('BracketParticipantsComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.pinned()).toBe('a');
-    expect(toggles().map((toggle) => toggle.getAttribute('aria-pressed'))).toEqual(['true', null]);
+    expect(toggles().map((toggle) => toggle.getAttribute('aria-pressed'))).toEqual(['true', 'false']);
 
     toggles()[1]?.click();
     fixture.detectChanges();
@@ -62,6 +62,6 @@ describe('BracketParticipantsComponent', () => {
     fixture.componentInstance.pinned.set('b');
     fixture.detectChanges();
 
-    expect(toggles().map((toggle) => toggle.getAttribute('aria-pressed'))).toEqual([null, 'true']);
+    expect(toggles().map((toggle) => toggle.getAttribute('aria-pressed'))).toEqual(['false', 'true']);
   });
 });

@@ -62,6 +62,15 @@ describe('RichTextEditorComponent', () => {
     expect(editable?.getAttribute('aria-required')).toBe('true');
   });
 
+  it('announces a toggle tool as a toggle and an action tool as a plain button', () => {
+    const driver = mountRichTextEditor(TypingEditorTestHost);
+    const toolbarButton = (label: string) => driver.query(`.et-rte-toolbar button[aria-label="${label}"]`);
+
+    expect(toolbarButton('Bold')?.getAttribute('aria-pressed')).toBe('false');
+    expect(toolbarButton('Undo')).not.toBeNull();
+    expect(toolbarButton('Undo')?.hasAttribute('aria-pressed')).toBe(false);
+  });
+
   describe('typing', () => {
     let driver: RichTextEditorDriver<TypingEditorTestHost>;
 

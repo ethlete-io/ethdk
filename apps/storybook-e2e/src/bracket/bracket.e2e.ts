@@ -255,11 +255,11 @@ test.describe('bracket participants / keyboard', () => {
     await pressKey(page, ' ');
 
     await expect(toggles.nth(1)).toHaveAttribute('aria-pressed', 'true');
-    await expect(toggles.nth(0)).not.toHaveAttribute('aria-pressed', 'true');
+    await expect(toggles.nth(0)).toHaveAttribute('aria-pressed', 'false');
 
     await pressKey(page, ' ');
 
-    await expect(toggles.nth(1)).not.toHaveAttribute('aria-pressed', 'true');
+    await expect(toggles.nth(1)).toHaveAttribute('aria-pressed', 'false');
     await expect(bracket).not.toHaveClass(JOURNEY_FOCUSED);
   });
 
@@ -273,7 +273,7 @@ test.describe('bracket participants / keyboard', () => {
 
     await pressKey(page, 'Escape');
 
-    await expect(first).not.toHaveAttribute('aria-pressed', 'true');
+    await expect(first).toHaveAttribute('aria-pressed', 'false');
     await expect(root.locator('et-bracket')).not.toHaveClass(JOURNEY_FOCUSED);
   });
 });
