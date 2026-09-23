@@ -1,0 +1,176 @@
+@layer components {
+  @property --et-pie-chart-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-pie-chart-legend-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 24px;
+  }
+
+  @property --et-pie-chart-enter-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 400ms;
+  }
+
+  @property --et-pie-chart-enter-stagger {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 40ms;
+  }
+
+  .et-pie-chart {
+    display: block;
+    position: relative;
+    font-size: var(--et-pie-chart-font-size);
+    line-height: 1.4;
+    color: var(--et-surface-color-muted-solid, currentColor);
+  }
+
+  .et-pie-chart-figure {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--et-pie-chart-legend-gap);
+
+    .et-pie-chart-plot {
+      position: relative;
+      flex: 0 1 auto;
+      min-inline-size: 0;
+      max-inline-size: 100%;
+
+      .et-pie-chart-svg {
+        display: block;
+        overflow: visible;
+      }
+    }
+  }
+
+  .et-pie-chart-empty {
+    fill: none;
+    stroke: var(--et-surface-border-solid, currentColor);
+    stroke-width: 1px;
+  }
+
+  .et-pie-chart-slice,
+  .et-pie-chart-legend-item {
+    --_et-pie-chart-slice-fill: color-mix(
+      in oklab,
+      var(--et-theme-color-primary-solid, currentColor) var(--_et-pie-chart-accent-mix, 100%),
+      var(--et-surface-background-solid, transparent)
+    );
+  }
+
+  .et-pie-chart-slice {
+    --_et-pie-chart-slice-tint: color-mix(
+      in oklab,
+      var(--_et-pie-chart-slice-fill) 85%,
+      var(--et-surface-background-solid, transparent)
+    );
+
+    outline: none;
+    animation: et-pie-chart-slice-enter var(--et-pie-chart-enter-duration) cubic-bezier(0.2, 0, 0, 1) backwards;
+    animation-delay: calc(min(var(--_et-pie-chart-slice-order, 0), 10) * var(--et-pie-chart-enter-stagger));
+
+    .et-pie-chart-slice-mark {
+      fill: var(--_et-pie-chart-slice-fill);
+      stroke: transparent;
+      stroke-width: 2px;
+      stroke-linejoin: round;
+    }
+
+    .et-pie-chart-slice-anchor {
+      fill: none;
+      pointer-events: none;
+    }
+
+    &:focus-visible .et-pie-chart-slice-mark {
+      fill: var(--_et-pie-chart-slice-tint);
+      stroke: var(--et-surface-color-solid, currentColor);
+    }
+
+    @media (hover: hover) {
+      &:hover .et-pie-chart-slice-mark {
+        fill: var(--_et-pie-chart-slice-tint);
+      }
+    }
+  }
+
+  .et-pie-chart-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: auto;
+    inline-size: calc(var(--_et-pie-chart-hole-size) * 0.7);
+    block-size: calc(var(--_et-pie-chart-hole-size) * 0.7);
+    text-align: center;
+    pointer-events: none;
+
+    .et-pie-chart-total {
+      font-size: 1.5em;
+      line-height: 1.2;
+      color: var(--et-surface-color-solid, currentColor);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .et-pie-chart-legend {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    flex: 1 1 160px;
+    max-inline-size: 360px;
+    align-items: center;
+    column-gap: 8px;
+    row-gap: 6px;
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    .et-pie-chart-legend-item {
+      display: contents;
+    }
+
+    .et-pie-chart-legend-swatch {
+      inline-size: 10px;
+      block-size: 10px;
+      border-radius: 2px;
+      background: var(--_et-pie-chart-slice-fill);
+    }
+
+    .et-pie-chart-legend-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .et-pie-chart-legend-value,
+    .et-pie-chart-legend-percent {
+      text-align: end;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .et-pie-chart-legend-value {
+      color: var(--et-surface-color-solid, currentColor);
+    }
+  }
+
+  @keyframes et-pie-chart-slice-enter {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-pie-chart-slice {
+      animation: none;
+    }
+  }
+}

@@ -1,0 +1,79 @@
+<div [etProvideColor]="colorToken()" class="et-pie-chart-figure">
+  <div [style.inline-size.px]="chart.size()" class="et-pie-chart-plot" etChartPlot>
+    @if (chart.diameter()) {
+      <svg
+        [attr.width]="chart.diameter()"
+        [attr.height]="chart.diameter()"
+        [attr.aria-label]="chart.label()"
+        class="et-pie-chart-svg"
+        role="group"
+      >
+        @if (!chart.slices().length) {
+          <svg:circle
+            [attr.cx]="chart.radius()"
+            [attr.cy]="chart.radius()"
+            [attr.r]="chart.radius() - 0.5"
+            class="et-pie-chart-empty"
+          />
+        }
+
+        @for (slice of chart.slices(); track slice.key) {
+          <svg:g
+            [etChartMark]="sliceTooltips()[$index] ?? null"
+            [etChartMarkDescription]="slice.description"
+            [etChartMarkAnchor]="anchor"
+            [etChartMarkPlacement]="slice.placement"
+            [etProvideColor]="slice.colorToken"
+            [attr.aria-label]="slice.name"
+            [style.--_et-pie-chart-accent-mix.%]="slice.accentMix"
+            [style.--_et-pie-chart-slice-order]="$index"
+            class="et-pie-chart-slice"
+          >
+            <svg:path [attr.d]="slice.path" class="et-pie-chart-slice-mark" />
+            <svg:rect
+              #anchor
+              [attr.x]="slice.anchor.x"
+              [attr.y]="slice.anchor.y"
+              class="et-pie-chart-slice-anchor"
+              width="0"
+              height="0"
+            />
+          </svg:g>
+        }
+      </svg>
+
+      @if (chart.isDonut()) {
+        <div [style.--_et-pie-chart-hole-size.px]="chart.holeRadius() * 2" class="et-pie-chart-center">
+          @if (showTotal()) {
+            <strong class="et-pie-chart-total">{{ chart.totalText() }}</strong>
+            <span class="et-pie-chart-total-label">{{ totalLabel() }}</span>
+          }
+          <ng-content select="[etPieChartCenter]" />
+        </div>
+      }
+    }
+  </div>
+
+  <ul class="et-pie-chart-legend">
+    @for (entry of chart.entries(); track entry.key) {
+      <li
+        [etProvideColor]="entry.colorToken"
+        [style.--_et-pie-chart-accent-mix.%]="entry.accentMix"
+        class="et-pie-chart-legend-item"
+      >
+        <span class="et-pie-chart-legend-swatch" aria-hidden="true"></span>
+        <span class="et-pie-chart-legend-label">{{ entry.datum.label }}</span>
+        <span class="et-pie-chart-legend-value">{{ entry.valueText }}</span>
+        <span class="et-pie-chart-legend-percent">{{ entry.percentText }}</span>
+      </li>
+    }
+  </ul>
+</div>
+
+@for (slice of chart.slices(); track slice.key) {
+  <ng-template #sliceTooltip>
+    <et-chart-tooltip [value]="slice.valueText" [label]="slice.datum.label + ' · ' + slice.percentText" />
+  </ng-template>
+}
+
+<et-chart-data-table [caption]="chart.label()" [model]="chart.table()" />
