@@ -1,4 +1,4 @@
-# Style Guide v0.25.1
+# Style Guide v0.26.0
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -57,6 +57,7 @@ Run `npx nx lint <project> --fix` - the rules below are enforced (and mostly aut
 | No redundant `@internal` on `private` members                                                                                              | `ethlete/no-redundant-internal`                                                                                                                                                                                     |
 | Observable vars/props end with `$`                                                                                                         | `ethlete/require-dollar-suffix`                                                                                                                                                                                     |
 | No body in `subscribe()`; no `subscribe` in `pipe()`; no RxJS in `effect()`/`computed()`                                                   | `ethlete/no-subscribe-with-body`, `ethlete/no-subscribe-in-pipe`, `ethlete/no-rxjs-in-effect`                                                                                                                       |
+| `takeUntilDestroyed()` is the last operator in its `pipe()`                                                                                | `ethlete/take-until-destroyed-last`                                                                                                                                                                                 |
 | Effect teardown goes through `onCleanup` (or `DestroyRef`), never a returned cleanup function                                              | `ethlete/no-effect-cleanup-return`                                                                                                                                                                                  |
 | Prefer `linkedSignal` over an effect whose sole job is writing derived signal state                                                        | `ethlete/prefer-linked-signal`                                                                                                                                                                                      |
 | `ViewEncapsulation.None`                                                                                                                   | `ethlete/require-view-encapsulation-none`                                                                                                                                                                           |
@@ -114,7 +115,7 @@ const logMessage = (message: string, config: LogMessageConfig) => {};
 ## Signals vs RxJS
 
 - **Synchronous state → signals. Asynchronous work → RxJS.** Never model sync state with a `BehaviorSubject`; never use RxJS just to read a value back synchronously. Bridge with `toSignal()` / `toObservable()` instead of copying values across with `.subscribe()`.
-- **Tear down long-lived or manual subscriptions.** Finite streams need no artificial lifecycle operator. Prefer `takeUntilDestroyed()` for Angular lifecycle cleanup and place it after higher-order operators so their inner subscriptions are covered. Do not use `takeWhile` for destruction cleanup. Use `take(1)` or `first()` only when one emission is the operation's intended semantics. Other limiting and finalization operators have no universal last position.
+- **Tear down long-lived or manual subscriptions.** Finite streams need no artificial lifecycle operator. Prefer `takeUntilDestroyed()` for Angular lifecycle cleanup; lint requires it to be the last operator in its pipe, so higher-order operators and their inner subscriptions are covered. Do not use `takeWhile` for destruction cleanup. Use `take(1)` or `first()` only when one emission is the operation's intended semantics. Other limiting and finalization operators have no universal last position.
 - Don't reach for RxJS inside `effect()` / `computed()` - model the stream with `toObservable(signal).pipe(switchMap(...))` instead of subscribing per run.
 
 ```ts

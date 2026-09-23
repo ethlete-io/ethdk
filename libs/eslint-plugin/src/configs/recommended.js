@@ -239,6 +239,9 @@ const recommendedTs = {
     // No .subscribe() inside a .pipe() callback
     'ethlete/no-subscribe-in-pipe': 'error',
 
+    // takeUntilDestroyed() is the last operator in a .pipe()
+    'ethlete/take-until-destroyed-last': 'error',
+
     // No async/await — asynchronous work is modelled as cold Observables
     'ethlete/no-async-await': 'error',
 

@@ -60,6 +60,7 @@ const noCdkImport = require('./rules/no-cdk-import');
 const noLegacyQueryImport = require('./rules/no-legacy-query-import');
 const noAsyncAwait = require('./rules/no-async-await');
 const noEnum = require('./rules/no-enum');
+const takeUntilDestroyedLast = require('./rules/take-until-destroyed-last');
 const { recommendedTs, recommendedTemplate, recommendedSpec } = require('./configs/recommended');
 const { version } = require('../package.json');
 
@@ -74,6 +75,7 @@ const plugin = {
     'no-legacy-prepare-without-injector': noLegacyPrepareWithoutInjector,
     'no-trivial-return-type': noTrivialReturnType,
     'no-subscribe-in-pipe': noSubscribeInPipe,
+    'take-until-destroyed-last': takeUntilDestroyedLast,
     'no-rxjs-in-effect': noRxjsInEffect,
     'no-effect-cleanup-return': noEffectCleanupReturn,
     'no-readonly-signal': noReadonlySignal,
