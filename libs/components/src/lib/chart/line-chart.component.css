@@ -1,0 +1,184 @@
+@layer components {
+  @property --et-line-chart-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-line-chart-axis-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  @property --et-line-chart-line-width {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 2px;
+  }
+
+  @property --et-line-chart-area-opacity {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 0.12;
+  }
+
+  @property --et-line-chart-stacked-area-opacity {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 0.32;
+  }
+
+  @property --et-line-chart-enter-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 600ms;
+  }
+
+  .et-line-chart {
+    display: block;
+    position: relative;
+    font-size: var(--et-line-chart-font-size);
+    line-height: 1.4;
+    color: var(--et-surface-color-muted-solid, currentColor);
+
+    .et-line-chart-legend {
+      margin-block-end: calc(var(--et-line-chart-axis-gap) * 1.5);
+    }
+  }
+
+  .et-line-chart-figure {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'value-axis plot'
+      '. x-axis';
+    column-gap: var(--et-line-chart-axis-gap);
+    row-gap: var(--et-line-chart-axis-gap);
+    padding-block-start: 0.7em;
+
+    .et-line-chart-value-axis {
+      grid-area: value-axis;
+    }
+
+    .et-line-chart-x-axis {
+      grid-area: x-axis;
+    }
+
+    .et-line-chart-plot {
+      grid-area: plot;
+      min-inline-size: 0;
+
+      .et-line-chart-svg {
+        display: block;
+        overflow: visible;
+        touch-action: pan-y;
+      }
+    }
+
+    &:where([data-scale='time']) {
+      padding-inline-end: 1.5em;
+    }
+  }
+
+  .et-line-chart-series-layer {
+    animation: et-line-chart-reveal var(--et-line-chart-enter-duration) cubic-bezier(0.2, 0, 0, 1) backwards;
+  }
+
+  .et-line-chart-series {
+    .et-line-chart-line {
+      fill: none;
+      stroke: var(--et-theme-color-primary-solid, currentColor);
+      stroke-width: var(--et-line-chart-line-width);
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .et-line-chart-area {
+      fill: var(--et-theme-color-primary-solid, currentColor);
+      fill-opacity: var(--et-line-chart-area-opacity);
+    }
+
+    .et-line-chart-point {
+      fill: var(--et-theme-color-primary-solid, currentColor);
+      stroke: var(--et-surface-background-solid, transparent);
+      stroke-width: 2px;
+    }
+  }
+
+  .et-line-chart-svg:where([data-stacked]) .et-line-chart-area {
+    fill-opacity: var(--et-line-chart-stacked-area-opacity);
+  }
+
+  .et-line-chart-slice {
+    --_et-line-chart-slice-tint: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 6%, transparent);
+
+    outline: none;
+
+    .et-line-chart-slice-target {
+      fill: transparent;
+      stroke: transparent;
+      stroke-width: 2px;
+    }
+
+    .et-line-chart-crosshair {
+      stroke: var(--et-surface-color-subtle-solid, currentColor);
+      stroke-width: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .et-line-chart-slice-point {
+      fill: var(--et-theme-color-primary-solid, currentColor);
+      stroke: var(--et-surface-background-solid, transparent);
+      stroke-width: 2px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .et-line-chart-slice-anchor {
+      fill: none;
+      pointer-events: none;
+    }
+
+    &:focus-visible,
+    &:where([data-active]) {
+      .et-line-chart-crosshair,
+      .et-line-chart-slice-point {
+        opacity: 1;
+      }
+    }
+
+    @media (hover: hover) {
+      &:hover {
+        .et-line-chart-crosshair,
+        .et-line-chart-slice-point {
+          opacity: 1;
+        }
+      }
+    }
+
+    &:focus-visible .et-line-chart-slice-target {
+      fill: var(--_et-line-chart-slice-tint);
+      stroke: var(--et-theme-color-primary-solid, currentColor);
+    }
+  }
+
+  @keyframes et-line-chart-reveal {
+    from {
+      clip-path: inset(-8px 100% -8px -8px);
+      opacity: 0;
+    }
+
+    to {
+      clip-path: inset(-8px -8px -8px -8px);
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-line-chart-series-layer {
+      animation: none;
+    }
+  }
+}

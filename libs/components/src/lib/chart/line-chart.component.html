@@ -1,0 +1,111 @@
+@if (chart.legendItems().length) {
+  <et-chart-legend
+    [items]="chart.legendItems()"
+    [mark]="chart.area() ? 'rect' : 'line'"
+    [etProvideColor]="colorToken()"
+    class="et-line-chart-legend"
+  />
+}
+
+<div [attr.data-scale]="chart.isTime() ? 'time' : 'category'" class="et-line-chart-figure">
+  <et-chart-axis
+    [labels]="chart.valueLabels()"
+    [style.block-size.px]="chart.height()"
+    class="et-line-chart-value-axis"
+    orientation="vertical"
+  />
+
+  <div [style.block-size.px]="chart.height()" class="et-line-chart-plot" etChartPlot>
+    @if (chart.plotWidth()) {
+      <svg
+        [attr.width]="chart.plotWidth()"
+        [attr.height]="chart.height()"
+        [attr.aria-label]="chart.label()"
+        [attr.data-area]="chart.area() ? '' : null"
+        [attr.data-stacked]="chart.isStacked() ? '' : null"
+        [attr.data-points]="chart.points() ? '' : null"
+        class="et-line-chart-svg"
+        role="group"
+      >
+        <svg:g [ticks]="chart.ticks()" [length]="chart.plotWidth()" et-chart-grid />
+
+        <svg:g [etProvideColor]="colorToken()" class="et-line-chart-series-layer" aria-hidden="true">
+          @for (line of chart.lines(); track line.key) {
+            <svg:g [etProvideColor]="line.colorToken" class="et-line-chart-series">
+              @if (chart.area()) {
+                <svg:path [attr.d]="line.areaPath" class="et-line-chart-area" />
+              }
+              <svg:path [attr.d]="line.linePath" class="et-line-chart-line" />
+              @for (point of line.points; track point.key) {
+                @if (point.isIsolated || chart.points()) {
+                  <svg:circle [attr.cx]="point.x" [attr.cy]="point.y" class="et-line-chart-point" r="5" />
+                }
+              }
+            </svg:g>
+          }
+        </svg:g>
+
+        <svg:g [etProvideColor]="colorToken()" class="et-line-chart-slices">
+          @for (slice of chart.slices(); track slice.key) {
+            <svg:g
+              [etLineChartSlice]="slice.index"
+              [etLineChartSliceTooltip]="sliceTooltips()[slice.index] ?? null"
+              [etLineChartSliceDescription]="slice.description"
+              [etLineChartSliceAnchor]="anchor"
+              [attr.aria-label]="slice.label"
+              class="et-line-chart-slice"
+            >
+              <svg:rect
+                [attr.x]="slice.target.x"
+                [attr.y]="slice.target.y"
+                [attr.width]="slice.target.width"
+                [attr.height]="slice.target.height"
+                class="et-line-chart-slice-target"
+                rx="4"
+              />
+              <svg:line
+                [attr.x1]="slice.position"
+                [attr.x2]="slice.position"
+                [attr.y2]="chart.height()"
+                class="et-line-chart-crosshair"
+                shape-rendering="crispEdges"
+                y1="0"
+              />
+              @for (entry of slice.entries; track entry.key) {
+                <svg:circle
+                  [etProvideColor]="entry.colorToken"
+                  [attr.cx]="slice.position"
+                  [attr.cy]="entry.y"
+                  class="et-line-chart-slice-point"
+                  r="5"
+                />
+              }
+              <svg:rect
+                #anchor
+                [attr.x]="slice.anchor.x"
+                [attr.y]="slice.anchor.y"
+                class="et-line-chart-slice-anchor"
+                width="0"
+                height="0"
+              />
+            </svg:g>
+          }
+        </svg:g>
+      </svg>
+    }
+  </div>
+
+  <et-chart-axis [labels]="chart.xLabels()" class="et-line-chart-x-axis" orientation="horizontal" />
+</div>
+
+@for (slice of chart.slices(); track slice.key) {
+  <ng-template #sliceTooltip>
+    @if (chart.series().length) {
+      <et-line-chart-tooltip [label]="slice.label" [entries]="slice.entries" />
+    } @else {
+      <et-chart-tooltip [value]="slice.description" [label]="slice.label" />
+    }
+  </ng-template>
+}
+
+<et-chart-data-table [caption]="chart.label()" [model]="chart.table()" />

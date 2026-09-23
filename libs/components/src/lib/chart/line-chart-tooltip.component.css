@@ -1,0 +1,47 @@
+@layer components {
+  .et-line-chart-tooltip {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .et-line-chart-tooltip-label {
+      opacity: 0.75;
+    }
+
+    .et-line-chart-tooltip-list {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      column-gap: 6px;
+      row-gap: 2px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .et-line-chart-tooltip-row {
+      display: grid;
+      grid-column: 1 / -1;
+      grid-template-columns: subgrid;
+      align-items: baseline;
+    }
+
+    .et-line-chart-tooltip-key {
+      grid-column: 1;
+      align-self: center;
+      inline-size: 12px;
+      block-size: 2px;
+      border-radius: 1px;
+      background: var(--et-theme-color-primary-solid, currentColor);
+    }
+
+    .et-line-chart-tooltip-series {
+      grid-column: 2;
+    }
+
+    .et-line-chart-tooltip-value {
+      grid-column: 3;
+      font-variant-numeric: tabular-nums;
+      text-align: end;
+    }
+  }
+}
