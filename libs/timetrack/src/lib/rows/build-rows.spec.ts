@@ -3,6 +3,7 @@ import { AttributionRule } from '../model/attribution';
 import { ActivityBlock, ActivityContext } from '../model/block';
 import { CallWindow } from '../model/call';
 import { CalendarOccurrenceEvent } from '../model/event';
+import { TimetrackProjectLink } from '../model/project-link';
 import { StandIn } from '../model/stand-in';
 import { buildRows } from './build-rows';
 import { CALL_LANE_KEY, TIMER_LANE_KEY } from './lane';
@@ -211,6 +212,50 @@ describe('buildRows with a rule naming a stand-in', () => {
 
     expect(named.unattributed).toEqual([]);
     expect(gone.unattributed).toHaveLength(1);
+  });
+});
+
+describe('buildRows with a stand-in a sibling checkout holds', () => {
+  const FRONTEND = '/home/tom/dev/fifagg/fifagg-frontend';
+
+  const link = (path: string): TimetrackProjectLink => ({
+    id: `link-${path}`,
+    path,
+    target: { kind: 'project', projectKey: 'FIFAGG' },
+    createdAt: at(8),
+  });
+
+  const BRACKET_CHALLENGE: StandIn = {
+    id: 'stand-in:1789989837130:specs-main-context-tracks-20260819-bracket-challenge',
+    name: 'Bracket challenge',
+    openedFor: '/home/tom/dev/fifagg/specs',
+    openedForBranch: 'main',
+    openedForWorkPath: 'context/tracks/20260819_bracket-challenge',
+    projectKey: 'FIFAGG',
+    state: 'open',
+    days: [],
+    author: 'app',
+    createdAt: at(8),
+  };
+
+  it('names the band with the stand-in rather than an issue of another project seen during it', () => {
+    const rows = buildRows({
+      blocks: [
+        block({
+          from: at(9),
+          to: at(10),
+          context: { repoPath: FRONTEND, branch: 'feature/20260819_bracket-challenge' },
+        }),
+      ],
+      events: [],
+      links: [link(FRONTEND), link('/home/tom/dev/fifagg/specs')],
+      standIns: [BRACKET_CHALLENGE],
+      activity: [{ kind: 'issue-view', issueKey: 'FIP-2867', at: at(9, 30), detail: 'viewed FIP-2867' }],
+    });
+
+    expect(rows.proposals).toEqual([]);
+    expect(rows.unnamed).toHaveLength(1);
+    expect(rows.unnamed[0]?.standInId).toBe(BRACKET_CHALLENGE.id);
   });
 });
 

@@ -10,7 +10,7 @@ export type EvidenceKind =
   | 'merge-request'
   | 'issue-view'
   | 'attribution-rule'
-  /** Another checkout on the same branch slug books an issue whose parent holds this block's issue. */
+  /** Another checkout on the same branch slug names this block's work: through an issue's parent, or an open stand-in. */
   | 'sibling-checkout'
   | 'project-link'
   | 'model'

@@ -618,3 +618,235 @@ describe('attribute — the sibling-checkout rung', () => {
     expect(result.issueKey).toBe('ABC-5050');
   });
 });
+
+describe('attribute — a stand-in a sibling checkout holds', () => {
+  const FIFAGG_CONFIG = resolveGitFlowConfig({ keyPrefixes: ['FIFAGG', 'FIP'] });
+
+  const fifaggLink = (path: string): TimetrackProjectLink => ({
+    id: `link-${path}`,
+    path,
+    target: { kind: 'project', projectKey: 'FIFAGG' },
+    createdAt: new Date('2026-01-01T00:00:00Z'),
+  });
+
+  const LINKS = [fifaggLink('/home/tom/dev/fifagg/fifagg-frontend'), fifaggLink('/home/tom/dev/fifagg/specs')];
+
+  const BRACKET_CHALLENGE: StandIn = {
+    id: 'stand-in:1789989837130:specs-main-context-tracks-20260819-bracket-challenge',
+    name: 'Bracket challenge',
+    openedFor: '/home/tom/dev/fifagg/specs',
+    openedForBranch: 'main',
+    openedForWorkPath: 'context/tracks/20260819_bracket-challenge',
+    projectKey: 'FIFAGG',
+    state: 'open',
+    days: [],
+    author: 'app',
+    createdAt: new Date('2026-09-22T00:00:00Z'),
+  };
+
+  const FRONTEND = { repoPath: '/home/tom/dev/fifagg/fifagg-frontend', branch: 'feature/20260819_bracket-challenge' };
+
+  const MEETING_VIEW = mergeRequest({
+    kind: 'issue-view',
+    issueKey: 'FIP-2867',
+    branch: undefined,
+    detail: 'viewed FIP-2867',
+  });
+
+  it('takes the open stand-in of the same project whose work path carries this branch slug', () => {
+    const result = attribute({
+      block: block(FRONTEND),
+      config: FIFAGG_CONFIG,
+      links: LINKS,
+      standIns: [BRACKET_CHALLENGE],
+      activity: [MEETING_VIEW],
+    });
+
+    expect(result.standInId).toBe(BRACKET_CHALLENGE.id);
+    expect(result.issueKey).toBeUndefined();
+    expect(result.confidence).toBe('likely');
+    expect(result.evidence.at(-1)).toMatchObject({
+      kind: 'sibling-checkout',
+      detail: '`specs` holds stand-in Bracket challenge for the same branch name',
+    });
+  });
+
+  it('ignores a resolved stand-in, one of another project, and two that match', () => {
+    const run = (standIns: StandIn[]) =>
+      attribute({ block: block(FRONTEND), config: FIFAGG_CONFIG, links: LINKS, standIns }).standInId;
+
+    expect(run([{ ...BRACKET_CHALLENGE, state: 'resolved' }])).toBeUndefined();
+    expect(run([{ ...BRACKET_CHALLENGE, projectKey: 'FIP' }])).toBeUndefined();
+    expect(run([BRACKET_CHALLENGE, { ...BRACKET_CHALLENGE, id: 'stand-in:2' }])).toBeUndefined();
+  });
+
+  it('reads the slug of the branch the stand-in was opened on when that branch names work', () => {
+    const result = attribute({
+      block: block(FRONTEND),
+      config: FIFAGG_CONFIG,
+      links: LINKS,
+      standIns: [
+        { ...BRACKET_CHALLENGE, openedForBranch: 'spec/20260819_bracket-challenge', openedForWorkPath: undefined },
+      ],
+    });
+
+    expect(result.standInId).toBe(BRACKET_CHALLENGE.id);
+  });
+
+  it('needs a project link on the block', () => {
+    const result = attribute({ block: block(FRONTEND), config: FIFAGG_CONFIG, standIns: [BRACKET_CHALLENGE] });
+
+    expect(result.standInId).toBeUndefined();
+  });
+
+  it('loses to a merge request opened for this very branch', () => {
+    const result = attribute({
+      block: block(FRONTEND),
+      config: FIFAGG_CONFIG,
+      links: LINKS,
+      standIns: [BRACKET_CHALLENGE],
+      activity: [mergeRequest({ issueKey: 'FIFAGG-4040', branch: FRONTEND.branch })],
+    });
+
+    expect(result.issueKey).toBe('FIFAGG-4040');
+    expect(result.standInId).toBeUndefined();
+  });
+
+  it('loses to the real issue a sibling checkout names through its epic', () => {
+    const result = attribute({
+      block: block(FRONTEND),
+      config: FIFAGG_CONFIG,
+      links: LINKS,
+      standIns: [BRACKET_CHALLENGE],
+      epics: {
+        siblings: [
+          {
+            repoPath: '/home/tom/dev/fifagg/specs',
+            branch: 'spec/20260819_bracket-challenge',
+            issueKey: 'FIFAGG-12623',
+            parentKey: 'FIFAGG-12605',
+            parentType: 'Epic',
+            siblingKeys: ['FIFAGG-12623', 'FIFAGG-12624'],
+            truncated: false,
+          },
+        ],
+        claimed: ['FIFAGG-12623'],
+      },
+    });
+
+    expect(result.issueKey).toBe('FIFAGG-12624');
+    expect(result.standInId).toBeUndefined();
+  });
+
+  it('loses to a rule the user wrote for the checkout', () => {
+    const result = attribute({
+      block: block(FRONTEND),
+      config: FIFAGG_CONFIG,
+      links: LINKS,
+      standIns: [BRACKET_CHALLENGE],
+      rules: [{ ...REPO_RULE, repoPath: FRONTEND.repoPath, target: { kind: 'issue', issueKey: 'FIFAGG-100' } }],
+    });
+
+    expect(result.issueKey).toBe('FIFAGG-100');
+    expect(result.standInId).toBeUndefined();
+  });
+});
+
+describe('attribute — a project link guards the coincidence rungs', () => {
+  const FIFAGG_CONFIG = resolveGitFlowConfig({ keyPrefixes: ['FIFAGG', 'FIP'] });
+
+  const LINK: TimetrackProjectLink = {
+    id: 'link-frontend',
+    path: '/home/tom/dev/fifagg/fifagg-frontend',
+    target: { kind: 'project', projectKey: 'FIFAGG' },
+    createdAt: new Date('2026-01-01T00:00:00Z'),
+  };
+
+  const FRONTEND = { repoPath: '/home/tom/dev/fifagg/fifagg-frontend', branch: 'feature/20260819_bracket-challenge' };
+
+  const view = (issueKey: string, at = new Date('2026-08-11T08:30:00Z')) =>
+    mergeRequest({ kind: 'issue-view', issueKey, branch: undefined, at, detail: `viewed ${issueKey}` });
+
+  it('skips an issue of another project opened during the block, and takes one of its own', () => {
+    const result = attribute({
+      block: block(FRONTEND),
+      config: FIFAGG_CONFIG,
+      links: [LINK],
+      activity: [view('FIP-2867'), view('FIFAGG-12624', new Date('2026-08-11T08:40:00Z'))],
+    });
+
+    expect(result.issueKey).toBe('FIFAGG-12624');
+  });
+
+  it('leaves the block unnamed when only another project was seen during it', () => {
+    const result = attribute({
+      block: block(FRONTEND),
+      config: FIFAGG_CONFIG,
+      links: [LINK],
+      activity: [view('FIP-2867')],
+    });
+
+    expect(result.issueKey).toBeUndefined();
+  });
+
+  it('still takes a merge request opened for this branch in another project', () => {
+    const result = attribute({
+      block: block(FRONTEND),
+      config: FIFAGG_CONFIG,
+      links: [LINK],
+      activity: [mergeRequest({ issueKey: 'FIP-4040', branch: FRONTEND.branch })],
+    });
+
+    expect(result.issueKey).toBe('FIP-4040');
+  });
+
+  it('picks the strongest Tempo pattern of its own project, not the strongest overall', () => {
+    const result = attribute({
+      block: localBlock(FRONTEND),
+      config: FIFAGG_CONFIG,
+      links: [LINK],
+      patterns: [
+        { ...TUESDAY_PATTERN, issueKey: 'FIP-2867', occurrences: 9 },
+        { ...TUESDAY_PATTERN, issueKey: 'FIFAGG-500', occurrences: 3 },
+      ],
+    });
+
+    expect(result.issueKey).toBe('FIFAGG-500');
+  });
+
+  it('tries the next window title when the first names another project', () => {
+    const result = attribute({
+      block: block(FRONTEND, [
+        { kind: 'window-title', at: new Date('2026-08-11T08:00:00Z'), detail: '[FIP-2867] PM & Meetings - Jira' },
+        { kind: 'window-title', at: new Date('2026-08-11T08:10:00Z'), detail: '[FIFAGG-12624] Bracket - Jira' },
+      ]),
+      config: FIFAGG_CONFIG,
+      links: [LINK],
+    });
+
+    expect(result.issueKey).toBe('FIFAGG-12624');
+  });
+
+  it('drops a model inference naming another project', () => {
+    const result = attribute({
+      block: block(FRONTEND),
+      config: FIFAGG_CONFIG,
+      links: [LINK],
+      inferred: [
+        {
+          contextId: 'repo:/home/tom/dev/fifagg/fifagg-frontend@feature/20260819_bracket-challenge',
+          issueKey: 'FIP-2867',
+          reason: 'meetings',
+        },
+      ],
+    });
+
+    expect(result.issueKey).toBeUndefined();
+  });
+
+  it('changes nothing without a link', () => {
+    const result = attribute({ block: block(FRONTEND), config: FIFAGG_CONFIG, activity: [view('FIP-2867')] });
+
+    expect(result.issueKey).toBe('FIP-2867');
+  });
+});

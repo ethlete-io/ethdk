@@ -20,7 +20,8 @@ import {
   matchInferredAttribution,
 } from '../model/attribution';
 import { StandIn, findStandIn } from '../model/stand-in';
-import { EpicOptions, epicSiblingFor } from './epic-sibling';
+import { projectKeyOf } from '../ticket/project';
+import { EpicOptions, branchSlugOf, epicSiblingFor } from './epic-sibling';
 
 export type AttributedBlock = {
   block: ActivityBlock;
@@ -149,23 +150,65 @@ const resolveBranch = (options: {
 
 /**
  * A merge request opened for exactly this branch names the issue as reliably as the branch would
- * have; an issue merely opened while the block ran is a coincidence away from being wrong, so it
- * lands a tier lower.
+ * have.
  */
-const activityFor = (options: { block: ActivityBlock; activity: IssueActivity[] }) => {
+const activityOnBranch = (options: { block: ActivityBlock; activity: readonly IssueActivity[] }) => {
   const { block, activity } = options;
   const branch = block.context.branch ? stripRefPrefix(block.context.branch) : undefined;
-  const onBranch = branch
-    ? activity.find((entry) => entry.branch && stripRefPrefix(entry.branch) === branch)
-    : undefined;
 
-  if (onBranch) return { entry: onBranch, confidence: 'likely' as const };
+  return branch ? activity.find((entry) => entry.branch && stripRefPrefix(entry.branch) === branch) : undefined;
+};
 
-  const during = activity.find(
-    (entry) => entry.at.getTime() >= block.from.getTime() && entry.at.getTime() <= block.to.getTime(),
+/** An issue merely opened while the block ran is a coincidence away from being wrong. */
+const activityDuring = (options: {
+  block: ActivityBlock;
+  activity: readonly IssueActivity[];
+  inProject: (issueKey: string) => boolean;
+}) => {
+  const { block, activity, inProject } = options;
+
+  return activity.find(
+    (entry) =>
+      entry.at.getTime() >= block.from.getTime() &&
+      entry.at.getTime() <= block.to.getTime() &&
+      inProject(entry.issueKey),
+  );
+};
+
+const standInSlugOf = (options: { standIn: StandIn; config: GitFlowConfig }) => {
+  const { standIn, config } = options;
+  const fromBranch = standIn.openedForBranch ? branchSlugOf({ branch: standIn.openedForBranch, config }) : undefined;
+
+  return fromBranch ?? standIn.openedForWorkPath?.split('/').filter(Boolean).pop()?.toLowerCase();
+};
+
+/**
+ * The one open stand-in of this block's project that another checkout opened for the same branch slug.
+ * Two of them, or a block with no project link, answer nothing: which one is the open question.
+ */
+const standInSiblingFor = (options: {
+  block: ActivityBlock;
+  projectKey: string | undefined;
+  standIns: readonly StandIn[];
+  config: GitFlowConfig;
+}) => {
+  const { block, projectKey, standIns, config } = options;
+  const { branch } = block.context;
+
+  if (!branch || !projectKey) return undefined;
+
+  const slug = branchSlugOf({ branch, config });
+
+  if (!slug) return undefined;
+
+  const matches = standIns.filter(
+    (standIn) =>
+      standIn.state === 'open' &&
+      standIn.projectKey?.toUpperCase() === projectKey.toUpperCase() &&
+      standInSlugOf({ standIn, config }) === slug,
   );
 
-  return during ? { entry: during, confidence: 'weak' as const } : undefined;
+  return matches.length === 1 ? matches[0] : undefined;
 };
 
 const ruleAttribution = (options: {
@@ -225,12 +268,17 @@ const standInAttribution = (options: {
  * Scores one block against the attribution ladder. A private link is read first and answers on its
  * own: it is the user saying the time is not work, and a rung that could overrule it would make the
  * statement worthless. Everything else follows in order — branch grammar, a branch-scoped rule of the
- * user's own, merge request and issue-view activity, a project-wide rule, the issue a sibling checkout
- * sharing this branch slug points at, a recurring Tempo pattern, then a key in a window title, and last
- * of all what the reasoning provider proposed for this exact context. Deterministic down to that final rung: a conforming branch name already states both keys,
- * so nothing above it guesses. A block that reaches the end without an `issueKey` is a first-class
+ * user's own, a merge request opened for this branch, a project-wide rule, the issue a sibling checkout
+ * sharing this branch slug points at, the open stand-in another checkout of the same project holds for
+ * this branch slug, then the coincidences: an issue opened while the block ran, a recurring Tempo
+ * pattern, a key in a window title, and last of all what the reasoning provider proposed for this exact
+ * context. Deterministic down to that final rung: a conforming branch name already states both keys, so
+ * nothing above it guesses. A block that reaches the end without an `issueKey` is a first-class
  * outcome, not a failure — it is what the provider is offered, and what it leaves behind when it has
  * no answer either.
+ *
+ * Where the checkout is linked to a project, a coincidence naming an issue of another project is
+ * skipped rather than taken: the link already says which project the time belongs to. See ADR 0032.
  *
  * The two rule rungs sit apart on purpose. A rule naming one branch is as good a statement about that
  * work as the branch name would have been, so it outranks activity; a rule naming a whole repository
@@ -319,14 +367,12 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
 
   if (standIn && !epic && match?.scope === 'branch') return standInAttribution({ block, match, standIn, evidence });
 
-  const activity = options.activity?.length ? activityFor({ block, activity: options.activity }) : undefined;
+  const onBranch = options.activity?.length ? activityOnBranch({ block, activity: options.activity }) : undefined;
 
-  if (activity) {
-    const { entry } = activity;
+  if (onBranch) {
+    evidence.push({ kind: onBranch.kind, at: onBranch.at, detail: onBranch.detail, summary: onBranch.summary });
 
-    evidence.push({ kind: entry.kind, at: entry.at, detail: entry.detail, summary: entry.summary });
-
-    return { block, issueKey: entry.issueKey, confidence: activity.confidence, evidence };
+    return { block, issueKey: onBranch.issueKey, confidence: 'likely', evidence };
   }
 
   if (rule) return ruleAttribution({ block, match: rule, issueKey: rule.issueKey, evidence, confidence: 'likely' });
@@ -347,7 +393,36 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
     return { block, issueKey: epic.issueKey, storyKey: epic.parentKey, confidence: 'likely', evidence };
   }
 
-  const pattern = options.patterns?.length ? patternAt({ patterns: options.patterns, at: block.from }) : undefined;
+  const projectKey = link?.target.kind === 'project' ? link.target.projectKey : undefined;
+  const sibling = match
+    ? undefined
+    : standInSiblingFor({ block, projectKey, standIns: options.standIns ?? [], config });
+
+  if (sibling) {
+    const checkout = sibling.openedFor?.split('/').filter(Boolean).pop() ?? sibling.openedFor ?? '';
+
+    evidence.push({
+      kind: 'sibling-checkout',
+      at: block.from,
+      detail: `\`${checkout}\` holds stand-in ${sibling.name} for the same branch name`,
+    });
+
+    return { block, standInId: sibling.id, confidence: 'likely', evidence };
+  }
+
+  const inProject = (issueKey: string) => !projectKey || projectKeyOf(issueKey) === projectKey.toUpperCase();
+  const during = options.activity?.length
+    ? activityDuring({ block, activity: options.activity, inProject })
+    : undefined;
+
+  if (during) {
+    evidence.push({ kind: during.kind, at: during.at, detail: during.detail, summary: during.summary });
+
+    return { block, issueKey: during.issueKey, confidence: 'weak', evidence };
+  }
+
+  const patterns = options.patterns?.filter((entry) => inProject(entry.issueKey));
+  const pattern = patterns?.length ? patternAt({ patterns, at: block.from }) : undefined;
 
   if (pattern) {
     evidence.push({
@@ -362,7 +437,7 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
   const titleKey = block.evidence
     .filter((entry) => entry.kind === 'window-title')
     .map((entry) => issueKeyInText({ text: entry.detail, config }))
-    .find((key) => !!key);
+    .find((key) => !!key && inProject(key));
 
   if (titleKey) return { block, issueKey: titleKey, confidence: 'weak', evidence };
 
@@ -370,7 +445,7 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
     ? matchInferredAttribution({ context: block.context, inferred: options.inferred })
     : undefined;
 
-  if (inference) {
+  if (inference && inProject(inference.issueKey)) {
     evidence.push({
       kind: 'model',
       at: block.from,
