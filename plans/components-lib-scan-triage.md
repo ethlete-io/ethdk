@@ -1,5 +1,20 @@
 # Components lib scan — triage
 
+## Status (2026-09-23)
+
+Still open:
+
+- **Decision items** (need a human call before scheduling): a duplicate-registration guard in
+  `register-singleton.ts` (26 callers in 8 domains — conditional templates swap legally, so a throw
+  is not obviously right); making the scheduler's auto-open on `selectedAppointmentId` an opt-in
+  input; the missing `.et-stream-manager` / PiP-window CSS; the chip host becoming a tab stop; the
+  compact pager and `size="sm"` staying under 44px on touch; `et-dropzone`'s `clear()` firing no
+  server deletes; a mark-aware keyboard model for off-grid slider marks; a `dir`-aware mirrored
+  gradient option for the color picker; the scheduler's roving tabindex (needs a keyboard design).
+- **Two L refactors:** merging the two date-time picker abstract bases into one (only the commit
+  logic is shared so far); moving phone, otp and tag onto `TextFieldControlDirective`.
+- **Improvement 11** (comment-policy cleanup) — partly done; stays opportunistic per domain.
+
 Triage date: 2026-08-22. Source: `plans/components-lib-scan.md` (22 batches, 66 High / 148 Medium / 219 Low + per-domain
 improvement lists). Items reference findings by **domain + short label**; bodies stay in the scan.
 Effort: **S** ≈ half a day, **M** ≈ 1–2 days, **L** ≈ several days. _Fix now_ order: silent data
@@ -85,6 +100,13 @@ animate on them, so binding them elsewhere would be inert markup - making that h
 adding the enter/leave animation CSS to eight components, which is a design decision, not an id
 fix. Note also that `form-field.component.ts` keeps its own copy of the presentation state machine
 rather than using `injectFormSupport`; folding the two is what the DX item really asks for.
+
+That Medium is now **DONE 2026-09-23** in `eb0e21123 feat(components): Fade the group controls'
+support region with plain opacity` and `6a12d1880 feat(components): Fade the form-field support
+region like the group controls`: `injectFormSupport` exposes `direction`, every control including
+`form-field` binds `[data-direction]`/`[data-state]` and animates through one shared plain-opacity
+fade in `form-support-styles.component.css`, and the per-control offset/translate animation rules
+and tokens are gone.
 
 ### 5. Controls that cannot be given an accessible name · L · **DONE 2026-08-22**
 
@@ -186,9 +208,10 @@ Resolves: menu-batch High "`[etTooltip]` destroys an existing `aria-describedby`
 "`etToggletipTrigger` overwrites `etToggletipDisabled`", Medium "content changed while open keeps
 rendering the old value"; realises the DX item "make the content bindings reactive".
 Done: describedby appends via a tracked applied id; the trigger writes an internal `triggerInactive`
-signal that composes with `disabled`; the content bindings read the signal. Still open from the
-content Medium: the toggletip's `ariaLabel`/`ariaLabelledBy`/`ariaDescribedBy` overlay config is
-read once at mount and cannot refresh.
+signal that composes with `disabled`; the content bindings read the signal. The content Medium -
+the toggletip's `ariaLabel`/`ariaLabelledBy`/`ariaDescribedBy` overlay config read once at mount and
+unable to refresh - is **DONE 2026-09-23** in `5b0efed49 fix(components): Follow aria config
+changes in an open toggletip`.
 
 ### 10. Stuck-forever UI states — five unrelated one-liners, one sweep · S · **DONE 2026-08-22**
 
@@ -309,8 +332,12 @@ re-queues forever on a detached table (table High); `ScrollableNavigationCompone
 outlives the component (scrollable High); three `timer(...).subscribe()` calls in
 `pip-window-position.ts` have no teardown (stream Medium). Add the lint rule the carousel/scrollable
 batch suggests ("`takeUntilDestroyed` last") rather than only fixing the instances.
-Done: the three instances are fixed. Still open: the "`takeUntilDestroyed` last" lint rule
-(eslint-plugin work) and the shared "destroyed mid-gesture" spec helper from _Spec-coverage_ #8.
+Done: the three instances are fixed. The "`takeUntilDestroyed` last" lint rule is **DONE
+2026-09-23** in `0545198f1 feat(eslint-plugin): Add the take-until-destroyed-last rule`, applied
+across the repo in `cb6c9bce3 fix(cdk): Place takeUntilDestroyed last in every pipe`, `a9a8f51ae
+fix(components): Place takeUntilDestroyed last in every pipe` and `643542771 fix(core): Place
+takeUntilDestroyed last in every pipe`. Still open: the shared "destroyed mid-gesture" spec helper
+from _Spec-coverage_ #8 (partly landed, see there).
 
 ### 17. `[warnings]` is a hard NG0303 on every text control but `et-input` · S · **DONE 2026-08-22**
 
@@ -395,9 +422,9 @@ single-domain reach.
   the preview read one truth); `previewRange` falls back to `focusedDate()` only while that is set,
   and returns nothing at all outside `selectionView()`, which also kills the phantom band a
   drilled-out coarse grid used to paint. Left open: nothing surfaces "has the reader interacted" as
-  public API, and `hoveredDate` is still only cleared by `pointerleave` and a completed pick — a
-  programmatic `view.set()` while the pointer rests on a cell keeps the hover anchor alive, which the
-  new `selectionView()` check now hides rather than fixes.
+  public API. `hoveredDate` no longer staying alive through a programmatic `view.set()` while the
+  pointer rests on a cell is **DONE 2026-09-23** in `db8614372 fix(components): Clear the calendar
+hover preview on a view change`.
 - **`[etScrollableActiveChild]` registers nothing** — a documented, story-demonstrated,
   recipe-endorsed directive that does not exist at runtime (scrollable High). Wire it, or delete it
   plus three doc pages. M — **DONE 2026-08-22**. Wired, not deleted: the mechanism was already there
@@ -435,20 +462,19 @@ single-domain reach.
   and the row's `focusin`), so `collapse()`/`collapseAll()` hand focus to the nearest surviving
   ancestor before the rows below are destroyed, and `activeNode()` falls back to that ancestor
   instead of `rows[0]` for any path - including an outside `[(expandedValues)]` write. DOM focus
-  only moves when the tree held it. Left open: an outside write cannot restore DOM focus (the row is
-  already gone by the time we could react), only the tab stop; that would need an effect and was out
-  of scope for an S.
+  only moves when the tree held it. An outside write restoring DOM focus too (not only the tab
+  stop) is **DONE 2026-09-23** in `0bcabeefc fix(components): Move tree focus to the surviving
+ancestor after an outside collapse`.
 - **Bracket: a pinned journey breaks on any `source` change** — the whole bracket dims with nothing
   highlighted (bracket High). M — **DONE 2026-08-22**. The highlight holds the pin as an _id_ and
   resolves it per render, so an id no source knows yet marks (and dims) nothing and lights up on its
   own once a source containing it arrives; the component re-applies the marks from an
   `afterRenderEffect` keyed on `bracketGrid()` (an `effect` runs before the view refresh and marked
   the old grid), and that path always clears before re-marking, so cells re-used by `@for` cannot
-  keep a mark for a match they no longer hold. Left open: the controller is still torn down and
-  rebuilt on any `settings()` change (it reads the whole computed for one boolean) - wasteful but
-  harmless, and the rebuild is what keeps the connector paths marked through a layout change, so
-  narrowing it needs its own change. Docs: the "Participant focus" section now states what a pin
-  does across a source change.
+  keep a mark for a match they no longer hold. Docs: the "Participant focus" section now states
+  what a pin does across a source change. The controller no longer needing a full teardown and
+  rebuild on any `settings()` change to keep the journey highlight is **DONE 2026-09-23** in
+  `29f3f2b01 fix(components): Keep the bracket journey highlight across layout setting changes`.
 - **Grid items are focusable with `outline: none` and no replacement** (grid High), and **the chip
   docs' own quick-start is keyboard-unremovable** (chip High). S each — **DONE 2026-08-22**. The grid
   item keeps `outline: none` for a pointer press but draws a `:focus-visible` ring
@@ -463,9 +489,11 @@ single-domain reach.
   never becomes a tab stop, so `Backspace`/`Delete` on the chip itself remains programmatic-focus-only.
   Making the host focusable would collide with `etSelectionOption`'s roving tabindex on filter chips
   and doubles the tab stops per chip, which is a design call rather than an S; the docs now state that
-  limit. `.et-grid-item` styles are also still unlayered inline `styles`, so a consumer rule at equal
-  specificity (e.g. ea-frontend's edit-mode dotted outline) can still beat the ring; wrapping that
-  sheet in `@layer components` touches every grid rule and is its own item.
+  limit. `.et-grid-item` moving its styles from unlayered inline `styles` into `@layer components` -
+  so a consumer rule at equal specificity (e.g. ea-frontend's edit-mode dotted outline) can no
+  longer beat the ring - is **DONE 2026-09-23** in `2f0ca31b6 fix(components): Move the grid item
+styles into the components cascade layer`. The other three grid components still carry unlayered
+  inline styles.
 - **Pagination: `hidePreviousNext` ignored in compact mode; static `id` on the jump input; a
   documented 44px coarse-pointer target that no rule implements** (pagination High ×3). S —
   **DONE 2026-08-22**. `compactControls()` forwards `hidePreviousNext` to `paginate()`, so the compact
@@ -490,11 +518,10 @@ single-domain reach.
   over-long value; `complete` never fires for a programmatic value** (otp Medium ×3). S —
   **DONE 2026-08-22**. `charPattern` strips `g`/`y` off a consumer's RegExp, and one constructor
   effect now owns both re-sanitizing `value` against the current `length`/`charset` and emitting
-  `complete`, so the `input` handler is no longer the only path that can complete. Left open: a
-  runtime `length` shrink that lands the value exactly on the new length emits `complete` (it did
-  reach the full length) — suppressing that needs a "who wrote this" distinction the model signal
-  does not carry, and `length` rarely changes after mount. The caret/`data-readonly`/`hidden`
-  items from the same batch are separate entries.
+  `complete`, so the `input` handler is no longer the only path that can complete. A runtime
+  `length` shrink that lands the value exactly on the new length no longer emits `complete` is
+  **DONE 2026-09-23** in `0a1459cae fix(components): Stop a runtime otp length shrink from emitting
+complete`. The caret/`data-readonly`/`hidden` items from the same batch are separate entries.
 - **Tag input: `removeLast()` on an empty value emits a new array**, writing spuriously into the form
   model on a no-op keystroke; **paste discards the pending text**; **a full input holding rejected
   text is a keyboard dead end** (tag-input Medium ×3). S / M — **DONE 2026-08-22**. `removeAt` now
@@ -509,9 +536,10 @@ single-domain reach.
   that resolves late never lands (phone Medium). S — **DONE 2026-08-22**. `country`'s `linkedSignal`
   now carries `defaultCountry` in its _source_, so a change re-runs the computation, and the new
   default is adopted only while the previous value still equals the previous default — a country the
-  user picked or one derived from the value survives. Left open: a manual pick of exactly the current
-  default is indistinguishable from the untouched default, so it would be overwritten by a later one;
-  telling them apart needs a separate "picked" flag and was not worth the state.
+  user picked or one derived from the value survives. Telling a manual pick of exactly the current
+  default apart from the untouched default, so it survives a later default change, is **DONE
+  2026-09-23** in `ab9876f22 fix(components): Keep a manual phone country pick that equals the
+default`.
 - **Table: `etTableCsvExport` config makes every later `export({ file })` throw ET3507**; **a
   cancelled resize leaves a width override**; **selection/expansion state writes
   `"[object Object]"` without a `rowKey`** (table Medium ×3). S each — **DONE 2026-08-22**.
@@ -540,9 +568,10 @@ single-domain reach.
   and shared-class cases in the controller spec. Left open: the `resolveOrigin` half of the DX item (the
   two manager paths still resolve `origin` differently - it is a readability asymmetry, not a bug, and
   unifying it changes the no-strategies path's focused-element fallback, which `overlays.md:59` documents
-  as deliberate); the elevation is still decided once at mount, so a breakpoint switch that adds or
-  removes the backdrop does not re-elevate the pane; and `OverlayBreakpointConfig.hasBackdrop`'s wrong
-  JSDoc (its own Medium bullet) is untouched.
+  as deliberate); and `OverlayBreakpointConfig.hasBackdrop`'s wrong JSDoc (its own Medium bullet) is
+  untouched. The elevation being decided once at mount, so a breakpoint switch that added or removed
+  the backdrop never re-elevated the pane, is **DONE 2026-09-23** in `bfbaae0d0 fix(components):
+Re-elevate an open overlay when a breakpoint switch toggles its backdrop`.
 - **ARIA structure claims that do not hold — `role="grid"`/`tablist` with unowned or nested children**
   in calendar (High), scheduler (High: no `grid` owner at all), table page-sticky (Medium) and tabs
   (Medium). One shape, four domains; cheap (`role="presentation"` on layout wrappers) but needs the
@@ -555,11 +584,14 @@ single-domain reach.
   `row` and its day/gutter tracks are `presentation`; the table's page-sticky strip and scroller are
   `presentation`; and the tab bars' scrollable host, wrapper and container are `presentation` so the
   tablist owns its tabs (`scrollableRole="presentation"` plus a `role="presentation"` wrapper in
-  `et-scrollable`). Left open: the multi-month calendar rows that carry fewer than seven gridcells
-  (its own Medium — `expectUniformCellsPerRow` is in the kit but not pointed at that case yet); the
-  scheduler grids still have no `aria-label` and no roving tabindex (both separate items); the dead
-  `role`/`aria-orientation` host bindings on `TabBarDirective` under `et-tab-group` (separate tabs
-  Medium); and the `menu`→owned-roles half of #6, which no fix here needed.
+  `et-scrollable`). The multi-month calendar rows that carried fewer than seven gridcells are
+  **DONE 2026-09-23** in `0bc79ece8 fix(components): Give every multi-month calendar row seven
+gridcells`. The scheduler grids naming themselves after the shown period are **DONE 2026-09-23**
+  in `688acaa62 fix(components): Name the scheduler grids after the shown period`; the scheduler's
+  roving tabindex is still open and needs a keyboard design. The dead `role`/`aria-orientation` host
+  bindings on `TabBarDirective` under `et-tab-group` are **DONE 2026-09-23** in `1232e3a55
+fix(components): Drop the dead tablist bindings from the tab group host`. Left open: the
+  `menu`→owned-roles half of #6, which no fix here needed.
 - **`et-color-input` never reports `expanded`**, so the field drops its open-popup styling
   (color-input Medium); **the picker's thumbs use logical offsets against physical gradients**, so it
   is wrong in RTL (color-input High). S / M · **DONE 2026-08-22**
@@ -567,12 +599,14 @@ single-domain reach.
   picker, and the picker's area and tracks are pinned `direction: ltr` - which fixes the thumbs, the
   hue/alpha tracks' own pointer reading (the native range input mirrored, so an RTL press at 75%
   committed 25%) and the arrow keys in one go, while the footer, swatch row and advisory keep the
-  page direction. New shared kit `forms/testing/expanded-contract.ts`, run from the color-input and
-  select specs. Left open: the other three popup controls (cascader, date-picker, date-range-picker)
-  are not yet wired to the contract - their drivers would each need the nested-directive selector
-  `select-driver` just gained, and their `expanded` is already correct, so it is coverage, not a fix;
-  and the picker still has no `dir`-aware option for consumers who would rather see a mirrored
-  gradient, since the pointer reading in `color-picker-engine.ts` is documented as un-mirrored.
+  page direction. New shared kit `forms/testing/expanded-contract.ts`, run directly from the
+  color-input spec and indirectly from select and cascader through `overlay-control-contract.ts`.
+  The date and date range inputs are now wired directly too - **DONE 2026-09-23** in `613cb6778
+test(components): Run the expanded-state contract for the date and date range inputs`. Left open:
+  the date-time, time and range-variant pickers are still not wired to the contract - their
+  `expanded` is already correct, so it is coverage, not a fix; and the picker still has no
+  `dir`-aware option for consumers who would rather see a mirrored gradient, since the pointer
+  reading in `color-picker-engine.ts` is documented as un-mirrored.
 - **Dropzone: single-mode replace never fires the configured `delete`** (orphaned server file);
   **`clear()` ignores `disabled`/`readonly`**; **`DROPZONE_LABELS.uploading` is never read** (dropzone
   High + Medium ×2). S each · **DONE 2026-08-22**
@@ -611,10 +645,10 @@ single-domain reach.
   (`lastIndexOf` clamps a negative `fromIndex` to 0, which is what matched a trigger char the caret
   stood in front of); the char is still only ever consumed by the insert's replacement range, so a
   future autoformat rule may reserve `#`/`@` without fighting this. The table tool's `insert`/`mutate`
-  and the align tool's `select` now pass `{ boundary: true }`. Left open: the triggers directive's
-  own `syncFromDom()` calls (`insertItem`'s trailing nbsp, `deletePrecedingChip`) still omit the
-  boundary - that is a separate _rte Medium_ finding, not listed here, and it sits on the chip
-  insert path rather than the toolbar tools. Also left: the stale "three inline tags" wording was
+  and the align tool's `select` now pass `{ boundary: true }`. The triggers directive's own
+  `syncFromDom()` calls (`insertItem`'s trailing nbsp, `deletePrecedingChip`) also passing the
+  boundary is **DONE 2026-09-23** in `6c2d36dee fix(components): Commit rich text editor chip
+inserts and deletes as their own undo step`. Also left: the stale "three inline tags" wording was
   corrected, but nothing was done about the other rte findings in the same batch.
 - **Smaller singletons:** the copy-button subscription is not lifecycle-bound (dev warning only);
   `maxVisible: 0` shows every notification instead of none; the standings overlapping-zones guard only
@@ -660,7 +694,10 @@ Deduplicated across all 22 batches; several batches independently proposed the s
    overlay-backed form controls), table, bracket, scheduler, stream, carousel/scrollable/scrollbar,
    calendar/time-picker, grid/masonry, tabs, notification, RTE, `et-input`/`et-form-field`,
    duration-input, choice-field/segmented-button, match/standings. One programme over
-   `testing/driver-core.ts` with the shared fakes below — not fifteen bespoke harnesses. L
+   `testing/driver-core.ts` with the shared fakes below — not fifteen bespoke harnesses. L —
+   **DONE by 2026-09-23**: not as one programme but domain-by-domain — every domain in the list now
+   has its own driver/spec suite (see item #3's shared fakes, item #5's contract kits and
+   _Spec-coverage_ #9's full spec-file coverage), which is the outcome this item asked for.
 3. **Shared jsdom test infrastructure.** `FakeMatchMedia` (currently a 40-line copy inside
    `overlay-strategy-controller.spec.ts`), a `fakeLayout()` helper (the carousel/scrollable batch calls
    it the highest-leverage single piece), the `ResizeObserver`/`IntersectionObserver`/`clientWidth`
@@ -673,7 +710,10 @@ Deduplicated across all 22 batches; several batches independently proposed the s
    `select-panel`/`cascader-panel` (async slice, sheet chrome, breadcrumb), the two slider sheets
    (~50 % duplicated), `dropzone`, `calendar` coarse-grid/comparison/week-numbers, `notification`
    position matrix, `scheduler` drag rules, `tree` multiple-mode checkbox, `otp` support block.
-   AGENTS.md names `form-field` as next; the table sheet is larger. L
+   AGENTS.md names `form-field` as next; the table sheet is larger. L — **DONE 2026-09-23**: closed
+   by the bytes programme, marked complete in `ee3640d12 docs(repo): Mark the bundle-size programme
+complete` (`plans/components-scan/plan-bytes.md`, W0–W18) — every stylesheet in the ranked list
+   was split.
 5. **Shared behaviour contracts, next to `mixed-state-contract.ts`.** `describePickerCommitContract`
    (would have caught all four date-time Highs), `describeOverlayControlContract` (would have caught
    the cascader `touched` divergence), an `aria-describedby`-resolves assertion (four to seven
@@ -697,7 +737,16 @@ date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the
    `PHONE_COUNTRIES` and name the six `SELECT_IMPORTS` the phone input actually uses; gate floating-ui's
    `size`/`arrow`/`hide` middleware on the features being on; move RTE opt-in tool icons onto their
    providers. Add goldens for date-time, table imports and the stream barrels — the repo already has a
-   measured ~90 kB floor from this exact tuple-of-providers shape. L
+   measured ~90 kB floor from this exact tuple-of-providers shape. L — **DONE 2026-09-23**: closed by
+   the same bytes programme (`ee3640d12`, `plans/components-scan/plan-bytes.md`). The single-entry-point
+   library rules out a same-entry `@defer` for the color picker panel, so that one is dead as stated.
+   Shipped instead: `SELECT_IMPORTS` naming (W15), RTE tool icons onto their providers (W16), and
+   date-time/table/stream treeshake goldens (W0); the stream PiP opt-in by import graph (D3) and the
+   scheduler edit-surface opt-in (D2) shipped as registration-seam changes rather than defers.
+   Measured and rejected: packing `PHONE_COUNTRIES` (gzip already collapses the literals) and gating
+   floating-ui's middleware (W17 - the static registrar's imports stay regardless). Not doing: a
+   second `@ethlete/components` entry point (D4, user decision) - without one the color-picker split
+   stays unscheduled.
 8. **Keyboard reachability for pointer-only affordances.** Recurring across domains: overlay
    drag/snap points, PiP move/resize, the select's load-more row, the date/time clear buttons, the
    table header (arrow-key plane), the bracket grid (pin), the scheduler (no model beyond Tab), grid
@@ -855,11 +904,16 @@ Ranked by (bugs this class of test would have caught) × (cost once the infrastr
    the next one.
    **DONE 2026-08-22** with item #4 - `forms/testing/described-by.ts`.
 3. **A "wrapper exposes its base's inputs" loop** over the five text-control components. One test,
-   catches the `[warnings]` High and every future recurrence.
+   catches the `[warnings]` High and every future recurrence. **DONE 2026-08-22** in `623d94b2b
+test(components): Tighten the mixed state contract and extract the wrapper inputs assertion`
+   (`text-field-control-inputs.spec.ts` widened past the original five).
 4. **The three shared contract suites** — `describePickerCommitContract` (all four date-time Highs),
    `describeOverlayControlContract` (the cascader `touched` divergence, pinning select and cascader to
    one behaviour), and tightening `describeMixedStateContract` so its clear case cannot pass vacuously
-   and its two documented-but-unasserted clauses are actually asserted.
+   and its two documented-but-unasserted clauses are actually asserted. **DONE**:
+   `describePickerCommitContract` and `describeOverlayControlContract` landed **2026-09-03** in
+   `bb3ab336e test(components): Strengthen form control test drivers` (see _Improvements_ #5); the
+   `describeMixedStateContract` tightening landed **2026-08-22** in `623d94b2b` above.
 5. **Pure functions that hold a confirmed High and need no DOM:** `resolveTriggerMatch` (RTE, ~40
    lines, three-line test), `generateSteppedValues` / the `minuteStep` edges (time-picker),
    `generateBracketRoundSwissGroupMaps` + `createSwissGrid` end to end (bracket), `deserializeTableState`
@@ -875,11 +929,18 @@ Ranked by (bugs this class of test would have caught) × (cost once the infrastr
 7. **Overlay-mounted specs instead of bare-component specs.** The palette's Escape, its
    `aria-controls`/`aria-expanded` mismatch and its double-open are all invisible to a bare fixture —
    and one existing spec is green on broken behaviour because of it. Same argument for
-   `overlay-opener.ts` (282 lines, zero specs, and the API the docs push everyone toward).
+   `overlay-opener.ts` (282 lines, zero specs, and the API the docs push everyone toward). **DONE
+   2026-08-22**: the palette's Escape and double-open moved to specs mounted through
+   `injectCommandPalette().open()` in _Fix now_ #7; `overlay-opener.spec.ts` landed in the overlay
+   Medium fix under _Fix soon_ (its "domain's largest untested surface" note). The
+   `aria-controls`/`aria-expanded` mismatch itself was corrected later, **2026-09-04**, in
+   `c8b25c219` (see _Spec-coverage_ #10).
 8. **"Destroyed mid-gesture" as a shared helper.** Start a gesture, `fixture.destroy()`, assert
    nothing further runs. Pins the table reorder rAF leak plus drag-scroll and resize, and generalises
    to the scrollable/PiP/notification teardown cases; pair it with the "`takeUntilDestroyed` last"
-   lint rule.
+   lint rule. **Partly DONE 2026-09-23** in `a6965a5d2 test(components): Assert table and scrollable
+gestures stop when destroyed mid-drag` - covers table drag-scroll, table resize and scrollable.
+   PiP is still not covered.
 9. **The largest zero-coverage surfaces, in value order:** `table-reorder.directive.ts` (445 lines,
    holds the confirmed leak), `stream-manager.ts` + `pip-manager.ts` (both Highs live there, both plain
    factories over a fake element), `scheduler.component.ts`'s two overlay-opening effects (both Highs,
@@ -964,3 +1025,11 @@ Promise<void>` union, so wrapping each in a block body fixed it with no behavior
     rather than inventing a new guard. No `as any`/`as unknown as X`/`@ts-expect-error` anywhere in this
     slice; the only casts are the pre-existing `RuntimeError<number>` idiom and the `instanceof` narrowing.
     **Burn-down complete 2026-09-12**: `tsc -p libs/components/tsconfig.spec.json --noEmit` reports 0 errors, and the `typecheck` target in `libs/components/project.json` already runs exactly that command, which CI runs through `yarn nx run-many -t typecheck`.
+    **Wrong-assertion specs closed**: `table-page-sticky-header.directive.spec.ts:60-63` (locked in
+    the broken grid structure) was fixed alongside the ARIA-structure work in `277e287ec
+fix(components): Own the rows, cells and tabs the ARIA roles claim` (2026-08-22, see item #6).
+    The command palette's combobox `aria-expanded`/`aria-controls` state was corrected in
+    `c8b25c219 fix(components): Correct the command palette combobox state and shortcut`
+    (2026-09-04), which also closed the shortcut directive's second-palette-on-`mod+k` defect that
+    _Fix now_ #7 had left open. `masonry.spec.ts`'s partial vacuousness stays as found, deliberately,
+    per the note above.
