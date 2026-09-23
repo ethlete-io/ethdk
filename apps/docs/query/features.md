@@ -28,10 +28,24 @@ A function route (one using `pathParams`) requires a `withArgs` feature - creati
 
 Re-executes the query on an interval. The interval restarts when args change, and stops when the query's scope is destroyed.
 
-| Option             | Default      | Description                           |
-| ------------------ | ------------ | ------------------------------------- |
-| `interval`         | - (required) | Polling interval in milliseconds.     |
-| `executeInitially` | `false`      | Also execute immediately on creation. |
+| Option               | Default      | Description                                                                                                 |
+| -------------------- | ------------ | ----------------------------------------------------------------------------------------------------------- |
+| `interval`           | - (required) | Polling interval in milliseconds, or a signal of it - a new value re-times the next tick from the last one. |
+| `executeInitially`   | `false`      | Also execute immediately on creation.                                                                       |
+| `pauseWhileHidden`   | `false`      | Stop polling while the document is hidden.                                                                  |
+| `refetchOnFocus`     | `false`      | Execute when the window regains focus.                                                                      |
+| `refetchOnReconnect` | `false`      | Execute when the browser comes back online.                                                                 |
+
+```ts
+const interval = signal(10_000);
+
+const matchQuery = getMatch(
+  withArgs(() => ({ pathParams: { matchId: this.matchId() } })),
+  withPolling({ interval, pauseWhileHidden: true, refetchOnFocus: true, refetchOnReconnect: true }),
+);
+```
+
+With `pauseWhileHidden`, no timer runs while the tab is hidden. When it becomes visible again, a tick that fell due in the meantime runs at once; a tab hidden for less than one interval just resumes its cadence. A focus or reconnect refetch counts as a tick: the interval restarts from it. With multi-tab sync, a tab that is not polling the key (see below) skips these refetches too, like any tick.
 
 Only for `GET`/`HEAD`/`OPTIONS` queries - anything else throws.
 

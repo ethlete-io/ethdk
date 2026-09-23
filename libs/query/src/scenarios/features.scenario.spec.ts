@@ -1348,6 +1348,173 @@ describe('long polling across tabs', () => {
   });
 });
 
+describe('withPolling cadence options', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  const setHidden = (hidden: boolean) => {
+    Object.defineProperty(document, 'hidden', { get: () => hidden, configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  };
+
+  afterEach(() => {
+    delete (document as unknown as Record<string, unknown>)['hidden'];
+  });
+
+  const pollFeed = (s: Scenario) => {
+    s.api.on('GET', '/feed', () => ({ body: { ok: true } }));
+
+    return s.get<{ response: { ok: boolean } }>('/feed');
+  };
+
+  it('re-times the next tick when a signal interval changes', () => {
+    const s = scenario();
+    const getFeed = pollFeed(s);
+    const interval = signal(1_000);
+
+    const c = s.consumer();
+    c.run(() => getFeed({ onlyManualExecution: true }, withPolling({ interval })));
+
+    s.tick(1_000);
+    expect(s.api.requestCount('GET', '/feed')).toBe(1);
+
+    s.tick(400);
+    interval.set(5_000);
+    s.tick();
+
+    s.tick(4_500);
+    expect(s.api.requestCount('GET', '/feed')).toBe(1);
+
+    s.tick(100);
+    expect(s.api.requestCount('GET', '/feed')).toBe(2);
+
+    s.tick(5_000);
+    expect(s.api.requestCount('GET', '/feed')).toBe(3);
+
+    c.destroy();
+  });
+
+  it('keeps polling while hidden unless pauseWhileHidden is set', () => {
+    const s = scenario();
+    const getFeed = pollFeed(s);
+
+    const c = s.consumer();
+    c.run(() => getFeed({ onlyManualExecution: true }, withPolling({ interval: 1_000 })));
+
+    setHidden(true);
+    s.tick(3_000);
+    expect(s.api.requestCount('GET', '/feed')).toBe(3);
+
+    c.destroy();
+  });
+
+  it('pauses while hidden with pauseWhileHidden and runs the tick that fell due on becoming visible', () => {
+    const s = scenario();
+    const getFeed = pollFeed(s);
+
+    const c = s.consumer();
+    c.run(() => getFeed({ onlyManualExecution: true }, withPolling({ interval: 1_000, pauseWhileHidden: true })));
+
+    s.tick(1_000);
+    expect(s.api.requestCount('GET', '/feed')).toBe(1);
+
+    setHidden(true);
+    s.tick(10_000);
+    expect(s.api.requestCount('GET', '/feed')).toBe(1);
+    expect(vi.getTimerCount()).toBe(0);
+
+    setHidden(false);
+    s.tick();
+    expect(s.api.requestCount('GET', '/feed')).toBe(2);
+
+    s.tick(1_000);
+    expect(s.api.requestCount('GET', '/feed')).toBe(3);
+
+    c.destroy();
+  });
+
+  it('resumes on its cadence when the tab was hidden shorter than one interval', () => {
+    const s = scenario();
+    const getFeed = pollFeed(s);
+
+    const c = s.consumer();
+    c.run(() => getFeed({ onlyManualExecution: true }, withPolling({ interval: 1_000, pauseWhileHidden: true })));
+
+    s.tick(200);
+    setHidden(true);
+    s.tick(300);
+    setHidden(false);
+
+    s.tick(499);
+    expect(s.api.requestCount('GET', '/feed')).toBe(0);
+
+    s.tick(1);
+    expect(s.api.requestCount('GET', '/feed')).toBe(1);
+
+    c.destroy();
+  });
+
+  it('refetches on window focus with refetchOnFocus and restarts the interval from there', () => {
+    const s = scenario();
+    const getFeed = pollFeed(s);
+
+    const c = s.consumer();
+    c.run(() => getFeed({ onlyManualExecution: true }, withPolling({ interval: 1_000, refetchOnFocus: true })));
+
+    s.tick(600);
+    window.dispatchEvent(new Event('focus'));
+    s.tick();
+    expect(s.api.requestCount('GET', '/feed')).toBe(1);
+
+    s.tick(999);
+    expect(s.api.requestCount('GET', '/feed')).toBe(1);
+
+    s.tick(1);
+    expect(s.api.requestCount('GET', '/feed')).toBe(2);
+
+    c.destroy();
+  });
+
+  it('refetches when the browser comes back online with refetchOnReconnect', () => {
+    const s = scenario();
+    const getFeed = pollFeed(s);
+
+    const c = s.consumer();
+    c.run(() => getFeed({ onlyManualExecution: true }, withPolling({ interval: 60_000, refetchOnReconnect: true })));
+
+    s.tick();
+    window.dispatchEvent(new Event('online'));
+    s.tick();
+    expect(s.api.requestCount('GET', '/feed')).toBe(1);
+
+    c.destroy();
+  });
+
+  it('ignores focus and reconnect unless opted in, and after destroy', () => {
+    const s = scenario();
+    const getFeed = pollFeed(s);
+
+    const plain = s.consumer();
+    plain.run(() => getFeed({ onlyManualExecution: true }, withPolling({ interval: 60_000 })));
+
+    const opted = s.consumer();
+    opted.run(() =>
+      getFeed(
+        { onlyManualExecution: true },
+        withPolling({ interval: 60_000, refetchOnFocus: true, refetchOnReconnect: true }),
+      ),
+    );
+    s.tick();
+    opted.destroy();
+
+    window.dispatchEvent(new Event('focus'));
+    window.dispatchEvent(new Event('online'));
+    s.tick();
+    expect(s.api.requestCount('GET', '/feed')).toBe(0);
+
+    plain.destroy();
+  });
+});
+
 describe('the silenceMissingWithArgsFeatureError guard', () => {
   const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
 

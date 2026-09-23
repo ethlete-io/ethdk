@@ -132,8 +132,11 @@ export const withArgs = <TArgs extends QueryArgs>(args: () => NoInfer<RequestArg
 };
 
 export type WithPollingFeatureOptions = {
-  /** The interval in milliseconds at which the query should be executed */
-  interval: number;
+  /**
+   * The interval in milliseconds at which the query should be executed. A function is read
+   * reactively (pass a signal): a new value re-times the next tick from the last one.
+   */
+  interval: number | (() => number);
 
   /**
    * Whether the query should be executed initially.
@@ -141,7 +144,29 @@ export type WithPollingFeatureOptions = {
    * @default false
    */
   executeInitially?: boolean;
+
+  /**
+   * Stop polling while the document is hidden. On becoming visible, a tick that fell due while
+   * hidden runs at once; otherwise polling resumes on its cadence.
+   * @default false
+   */
+  pauseWhileHidden?: boolean;
+
+  /**
+   * Execute the query when the window regains focus, and restart the interval from there.
+   * @default false
+   */
+  refetchOnFocus?: boolean;
+
+  /**
+   * Execute the query when the browser comes back online, and restart the interval from there.
+   * @default false
+   */
+  refetchOnReconnect?: boolean;
 };
+
+const readPollingInterval = (interval: WithPollingFeatureOptions['interval']) =>
+  typeof interval === 'function' ? interval() : interval;
 
 /**
  * A query feature that will automatically execute the query at a given interval.
@@ -160,8 +185,11 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WITH_POLLING,
     devtools: () => [
-      { label: 'interval', value: formatQueryDevtoolsDuration(options.interval) },
+      { label: 'interval', value: formatQueryDevtoolsDuration(untracked(() => readPollingInterval(options.interval))) },
       { label: 'execute initially', value: options.executeInitially ? 'yes' : 'no' },
+      { label: 'pause while hidden', value: options.pauseWhileHidden ? 'yes' : 'no' },
+      { label: 'refetch on focus', value: options.refetchOnFocus ? 'yes' : 'no' },
+      { label: 'refetch on reconnect', value: options.refetchOnReconnect ? 'yes' : 'no' },
     ],
     fn: (context) => {
       if (!context.flags.shouldAutoExecuteMethod) {
@@ -169,6 +197,10 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
       }
 
       let intervalId: number | null = null;
+      let timeoutId: number | null = null;
+      let active = false;
+      let currentArgs: RequestArgs<TArgs> | null = null;
+      let lastTickAt = 0;
 
       const sync = context.deps.client.subtle.sync;
       const lockManager = sync?.isPollingDedupeEnabled && context.flags.isMultiTabSyncEnabled ? sync.lockManager : null;
@@ -213,34 +245,124 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
         });
       }
 
+      const currentInterval = () => untracked(() => readPollingInterval(options.interval));
+      const isPaused = () => options.pauseWhileHidden === true && document.hidden;
+
+      const stop = () => {
+        if (intervalId !== null) clearInterval(intervalId);
+        if (timeoutId !== null) clearTimeout(timeoutId);
+        intervalId = null;
+        timeoutId = null;
+      };
+
+      const tick = () => {
+        lastTickAt = Date.now();
+
+        // The interval keeps running while another tab is the holder, so leadership arriving
+        // mid-flight needs no restart and `executeInitially`/interval semantics stay identical.
+        if (hold && !hold.isHolder()) return;
+
+        context.execute({ args: currentArgs });
+      };
+
+      const schedule = (firstDelay: number) => {
+        stop();
+
+        if (!active || isPaused()) return;
+
+        const interval = currentInterval();
+
+        if (firstDelay >= interval) {
+          intervalId = window.setInterval(tick, interval);
+
+          return;
+        }
+
+        timeoutId = window.setTimeout(
+          () => {
+            timeoutId = null;
+            tick();
+            intervalId = window.setInterval(tick, currentInterval());
+          },
+          Math.max(0, firstDelay),
+        );
+      };
+
+      const remainingDelay = () => lastTickAt + currentInterval() - Date.now();
+
       nestedEffect(
         () => {
           const args = context.state.args();
 
           untracked(() => {
-            if (intervalId !== null) clearInterval(intervalId);
+            stop();
+
+            currentArgs = args;
 
             // Don't start polling if the query doesn't have args.
             // It should have args because a withArgs feature is present.
-            if (args === null && context.flags.hasWithArgsFeature) return;
+            active = !(args === null && context.flags.hasWithArgsFeature);
 
-            if (options.executeInitially && (!hold || hold.isHolder())) {
-              context.execute({ args });
+            if (!active) return;
+
+            lastTickAt = Date.now();
+
+            if (options.executeInitially) {
+              if (isPaused()) lastTickAt -= currentInterval();
+              else if (!hold || hold.isHolder()) context.execute({ args });
             }
 
-            intervalId = window.setInterval(() => {
-              // The interval keeps running while another tab is the holder, so leadership arriving
-              // mid-flight needs no restart and `executeInitially`/interval semantics stay identical.
-              if (hold && !hold.isHolder()) return;
-
-              context.execute({ args });
-            }, options.interval);
+            schedule(currentInterval());
           });
         },
         { injector: context.deps.injector },
       );
 
-      context.deps.destroyRef.onDestroy(() => intervalId !== null && clearInterval(intervalId));
+      if (typeof options.interval === 'function') {
+        const interval = options.interval;
+
+        nestedEffect(
+          () => {
+            interval();
+
+            untracked(() => {
+              if (intervalId === null && timeoutId === null) return;
+
+              schedule(remainingDelay());
+            });
+          },
+          { injector: context.deps.injector },
+        );
+      }
+
+      const listen = (target: EventTarget, type: string, listener: () => void) => {
+        target.addEventListener(type, listener);
+        context.deps.destroyRef.onDestroy(() => target.removeEventListener(type, listener));
+      };
+
+      if (options.pauseWhileHidden) {
+        listen(document, 'visibilitychange', () => {
+          if (!active) return;
+
+          if (document.hidden) {
+            stop();
+          } else if (intervalId === null && timeoutId === null) {
+            schedule(remainingDelay());
+          }
+        });
+      }
+
+      const refetchNow = () => {
+        if (!active || isPaused()) return;
+
+        tick();
+        schedule(currentInterval());
+      };
+
+      if (options.refetchOnFocus) listen(window, 'focus', refetchNow);
+      if (options.refetchOnReconnect) listen(window, 'online', refetchNow);
+
+      context.deps.destroyRef.onDestroy(stop);
     },
   });
 };
