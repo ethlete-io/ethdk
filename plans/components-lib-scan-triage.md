@@ -727,8 +727,11 @@ date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the
    Range validators **DONE** in `a761b8297`: `dateRangeOrder`, `timeRangeOrder`, `dateRangeBounds`
    (whole `precision` units) and `dateTimeRangeBounds`, parsing the wire strings against
    `valueFormat` (default `DATE_FORMAT`/`TIME_FORMAT`); kinds `rangeOrder`/`rangeMin`/`rangeMax`.
-   Date-range presets **PARKED on a design call**: where the preset list renders (a column beside
-   the calendar on the anchored panel, and a chip row, a tab or nothing on the bottom sheet).
+   Date-range presets **DONE** (user call: a column beside the calendar on the anchored panel, a
+   sideways-scrolling chip row above it on the bottom sheet): `presets` on `et-date-range-input` and
+   `et-date-time-range-input`, `DateRangePreset` = label + `resolve(now, { locale })`, factories
+   (`todayPreset`, `lastDaysPreset(n)`, `thisMonthPreset`, …) running 00:00-23:59, labels in
+   `DATE_TIME_LABELS`, each preset an `et-button` toggle pressed while the value equals its range.
    Select-all **DONE** in `d34e5d865`: `selectAll`
    renders a tri-state first option (`aria-checked`, accent dash while mixed) that toggles the
    visible, enabled options by value arithmetic - `createSelectionState().toggleAll` prunes values

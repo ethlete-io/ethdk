@@ -9,6 +9,7 @@ import { ControlSuffixDirective } from '../../form-field/partials';
 import { InputMaskDirective } from '../../masked-input/headless';
 import { SegmentedButtonComponent, SegmentedButtonGroupComponent } from '../../selection-list/segmented-button-group';
 import { DatePickerPanelComponent } from '../date-picker-panel.component';
+import { DateRangePresetsComponent } from '../date-range-presets.component';
 import { DateTimePickerPanesDirective } from '../internals/date-time-panes.directive';
 import { DatePickerSurfaceDirective } from '../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../picker/date-picker-trigger.directive';
@@ -32,6 +33,7 @@ const PANE_ORDER: readonly DateTimeRangePane[] = ['dates', 'times'];
     DatePickerSurfaceDirective,
     DatePickerTriggerDirective,
     DatePickerPanelComponent,
+    DateRangePresetsComponent,
     DateTimePickerPanesDirective,
     SegmentedButtonGroupComponent,
     SegmentedButtonComponent,
@@ -69,6 +71,7 @@ const PANE_ORDER: readonly DateTimeRangePane[] = ['dates', 'times'];
         'startView',
         'dateClass',
         'weekNumbers',
+        'presets',
         'minTime',
         'maxTime',
         'timeFilter',

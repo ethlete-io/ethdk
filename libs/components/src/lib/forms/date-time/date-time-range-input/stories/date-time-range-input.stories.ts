@@ -24,6 +24,7 @@ export default {
     minTime: { control: 'text' },
     maxTime: { control: 'text' },
     filter: { control: 'select', options: ['none', 'noLunchBreak', 'weekdayHours', 'endAfterStart'] },
+    withPresets: { control: 'boolean' },
     disabled: { control: 'boolean' },
     readonly: { control: 'boolean' },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
@@ -48,6 +49,7 @@ export default {
     minTime: null,
     maxTime: null,
     filter: 'none',
+    withPresets: false,
     disabled: false,
     readonly: false,
     color: 'brand',
@@ -127,4 +129,8 @@ export const TimeZone: Story = {
     displayFormat: 'MM/dd/yyyy, HH:mm',
     hint: 'Both fields read in the venue zone. The line under them is the same window where you are.',
   },
+};
+
+export const Presets: Story = {
+  args: { withPresets: true },
 };

@@ -49,48 +49,57 @@
 
 <ng-template etDatePickerSurface>
   <et-date-picker-panel [dialogLabel]="resolvedDialogLabel()">
-    <div class="et-date-time-range-input-panel">
-      <div class="et-date-time-range-input-panel-tabs">
-        <et-segmented-button-group [value]="activePane()" (valueChange)="setActivePane($event)">
-          <et-segmented-button value="dates">{{ resolvedDatesTabLabel() }}</et-segmented-button>
-          <et-segmented-button value="times">{{ resolvedTimesTabLabel() }}</et-segmented-button>
-        </et-segmented-button-group>
-      </div>
-
-      <div
-        [attr.data-active-pane]="activePane()"
-        [attr.data-nav]="paneNav()"
-        class="et-date-time-range-input-panel-panes"
-        etDateTimePickerPanes
-      >
-        <et-calendar
-          [rangeValue]="rangeInput.pickerDateRange()"
-          [min]="rangeInput.minDate()"
-          [max]="rangeInput.maxDate()"
-          [dateFilter]="rangeInput.dateFilter()"
-          [startAt]="rangeInput.startAt()"
-          [startView]="rangeInput.startView()"
-          [dateClass]="rangeInput.dateClass()"
-          [weekNumbers]="rangeInput.weekNumbers()"
-          [locale]="rangeInput.effectiveLocale()"
-          (rangeValueChange)="handleRangeSelect($event)"
-          mode="range"
+    <div class="et-date-range-presets-layout">
+      @if (rangeInput.presetList.options().length > 0) {
+        <et-date-range-presets
+          [options]="rangeInput.presetList.options()"
+          (presetSelect)="rangeInput.selectPreset($event)"
         />
+      }
 
-        <et-time-picker
-          [rangeValue]="rangeInput.pickerTimeRange()"
-          [format]="rangeInput.effectiveDisplayFormat()"
-          [locale]="rangeInput.effectiveLocale()"
-          [minuteStep]="minuteStep()"
-          [secondStep]="secondStep()"
-          [min]="rangeInput.minTime()"
-          [max]="rangeInput.maxTime()"
-          [timeFilter]="rangeInput.timeFilter()"
-          [startLabel]="startTimeLabel()"
-          [endLabel]="endTimeLabel()"
-          (timeSelect)="rangeInput.selectTime($event.side, $event.time)"
-          mode="range"
-        />
+      <div class="et-date-time-range-input-panel">
+        <div class="et-date-time-range-input-panel-tabs">
+          <et-segmented-button-group [value]="activePane()" (valueChange)="setActivePane($event)">
+            <et-segmented-button value="dates">{{ resolvedDatesTabLabel() }}</et-segmented-button>
+            <et-segmented-button value="times">{{ resolvedTimesTabLabel() }}</et-segmented-button>
+          </et-segmented-button-group>
+        </div>
+
+        <div
+          [attr.data-active-pane]="activePane()"
+          [attr.data-nav]="paneNav()"
+          class="et-date-time-range-input-panel-panes"
+          etDateTimePickerPanes
+        >
+          <et-calendar
+            [rangeValue]="rangeInput.pickerDateRange()"
+            [min]="rangeInput.minDate()"
+            [max]="rangeInput.maxDate()"
+            [dateFilter]="rangeInput.dateFilter()"
+            [startAt]="rangeInput.startAt()"
+            [startView]="rangeInput.startView()"
+            [dateClass]="rangeInput.dateClass()"
+            [weekNumbers]="rangeInput.weekNumbers()"
+            [locale]="rangeInput.effectiveLocale()"
+            (rangeValueChange)="handleRangeSelect($event)"
+            mode="range"
+          />
+
+          <et-time-picker
+            [rangeValue]="rangeInput.pickerTimeRange()"
+            [format]="rangeInput.effectiveDisplayFormat()"
+            [locale]="rangeInput.effectiveLocale()"
+            [minuteStep]="minuteStep()"
+            [secondStep]="secondStep()"
+            [min]="rangeInput.minTime()"
+            [max]="rangeInput.maxTime()"
+            [timeFilter]="rangeInput.timeFilter()"
+            [startLabel]="startTimeLabel()"
+            [endLabel]="endTimeLabel()"
+            (timeSelect)="rangeInput.selectTime($event.side, $event.time)"
+            mode="range"
+          />
+        </div>
       </div>
     </div>
   </et-date-picker-panel>

@@ -6,6 +6,13 @@ import { parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { parseTimeOfDay, resolveTimeFilterPreset } from '../../../../time-picker/stories/time-filter-presets';
 import { FORM_FIELD_IMPORTS } from '../../../form-field';
+import {
+  lastDaysPreset,
+  lastMonthPreset,
+  thisMonthPreset,
+  thisYearPreset,
+  todayPreset,
+} from '../../date-range-presets';
 import { dateRangeOrder } from '../../date-time-range-validators';
 import { DATE_TIME_RANGE_INPUT_IMPORTS } from '../date-time-range-input.imports';
 import { DateTimeRangeTimeFilterFn, DateTimeRangeValue } from '../headless';
@@ -24,6 +31,7 @@ export type DateTimeRangeFilterPreset = 'none' | 'noLunchBreak' | 'weekdayHours'
         <et-label>{{ label() }}</et-label>
         <et-date-time-range-input
           [(mixed)]="mixedState"
+          [presets]="presetList()"
           [formField]="demoForm.range"
           [mixedLabel]="mixedLabel()"
           [startPlaceholder]="startPlaceholder()"
@@ -75,6 +83,7 @@ export class DateTimeRangeInputStorybookComponent {
   public locale = input<'default' | 'de'>('default');
   public timeZone = input<string | null>(null);
   public timeZoneLabel = input<string | null>(null);
+  public withPresets = input(false);
   public disabled = input(false);
   public readonly = input(false);
   public color = input('brand');
@@ -90,6 +99,12 @@ export class DateTimeRangeInputStorybookComponent {
   private formModel = linkedSignal(() => ({
     range: { start: this.start(), end: this.end() } as DateTimeRangeValue,
   }));
+
+  protected presetList = computed(() =>
+    this.withPresets()
+      ? [todayPreset(), lastDaysPreset(7), lastDaysPreset(30), thisMonthPreset(), lastMonthPreset(), thisYearPreset()]
+      : [],
+  );
 
   public demoForm = form(this.formModel, (s) => {
     disabled(s, () => this.disabled());

@@ -3,6 +3,7 @@ import { CALENDAR_IMPORTS } from '../../../calendar';
 import { CALENDAR_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../../icon';
 import { InputMaskDirective } from '../../masked-input/headless';
 import { DatePickerPanelComponent } from '../date-picker-panel.component';
+import { DateRangePresetsComponent } from '../date-range-presets.component';
 import { DatePickerSurfaceDirective } from '../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../picker/date-picker-trigger.directive';
 import { DateRangeInputDirective, DateRangeInputFieldDirective } from './headless';
@@ -23,6 +24,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
     DatePickerSurfaceDirective,
     DatePickerTriggerDirective,
     DatePickerPanelComponent,
+    DateRangePresetsComponent,
     IconDirective,
     InputMaskDirective,
   ],
@@ -59,6 +61,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
         'rangeSelectionStrategy',
         'comparisonStart',
         'comparisonEnd',
+        'presets',
         'pickerOpen',
         'startAriaLabel',
         'endAriaLabel',

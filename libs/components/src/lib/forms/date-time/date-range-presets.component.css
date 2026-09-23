@@ -1,0 +1,60 @@
+@layer components {
+  @property --et-date-range-presets-gap {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 2px;
+  }
+
+  .et-date-range-presets-layout {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .et-date-range-presets {
+    display: flex;
+    flex-direction: column;
+    flex: none;
+    gap: var(--et-date-range-presets-gap);
+    min-inline-size: 12rem;
+    padding-inline-end: 12px;
+    border-inline-end: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.08));
+
+    .et-date-range-preset {
+      justify-content: start;
+    }
+  }
+
+  .et-overlay.et-date-picker-sheet {
+    .et-date-range-presets-layout {
+      flex-direction: column;
+      align-items: center;
+      min-inline-size: 0;
+      max-inline-size: 100%;
+    }
+
+    .et-date-range-presets {
+      --et-date-range-presets-gap: 8px;
+
+      flex-direction: row;
+      align-self: stretch;
+      min-inline-size: 0;
+      padding-inline-end: 0;
+      padding-block-end: 4px;
+      border-inline-end: none;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scrollbar-width: none;
+
+      .et-date-range-preset {
+        --et-button-border-radius: 999px;
+
+        flex: none;
+      }
+
+      .et-date-range-preset:not([data-pressed='true']) {
+        --_et-button-border-color: var(--et-surface-border-solid, rgb(255 255 255 / 0.16));
+      }
+    }
+  }
+}

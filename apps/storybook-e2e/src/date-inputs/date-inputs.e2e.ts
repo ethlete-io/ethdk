@@ -1,11 +1,21 @@
 import { Page, expect, test } from '@playwright/test';
-import { expectFieldFocusVisible, openStory, pressKey, tabUntilFocused, tap } from '../support';
+import {
+  boxOf,
+  expectFieldFocusVisible,
+  expectFocusVisible,
+  openStory,
+  pressKey,
+  tabUntilFocused,
+  tap,
+} from '../support';
 
 const DATE_INPUT_ID = 'components-forms-date-input--default';
 const DATE_INPUT_PREFILLED_ID = 'components-forms-date-input--prefilled';
 const DATE_RANGE_INPUT_ID = 'components-forms-date-range-input--default';
 const DATE_TIME_INPUT_ID = 'components-forms-date-time-input--default';
 const DATE_TIME_RANGE_INPUT_ID = 'components-forms-date-time-range-input--default';
+const DATE_RANGE_PRESETS_ID = 'components-forms-date-range-input--presets';
+const DATE_TIME_RANGE_PRESETS_ID = 'components-forms-date-time-range-input--presets';
 
 const DIALOG = '[role="dialog"]';
 const ENABLED_CELL = ".et-calendar-cell:not([aria-disabled='true'])";
@@ -14,6 +24,16 @@ const FOCUSED_CELL = ".et-calendar-weeks:not(.et-calendar-weeks--leave) .et-cale
 /** The picker overlay ignores Escape until its enter transition has started. */
 async function waitForPickerEntered(page: Page): Promise<void> {
   await expect(page.locator('.et-overlay')).toHaveClass(/et-animation-enter-done/);
+}
+
+/** The preset list sits in the given direction of the calendar, measured on the rendered boxes. */
+async function expectPresetsPlaced(page: Page, placement: 'inline-start' | 'block-start'): Promise<void> {
+  const presets = await boxOf(page.getByRole('group', { name: 'Presets' }));
+  const calendar = await boxOf(page.locator(`${DIALOG} et-calendar`));
+  const edge =
+    placement === 'inline-start' ? [presets.x + presets.width, calendar.x] : [presets.y + presets.height, calendar.y];
+
+  expect(edge[0]).toBeLessThanOrEqual(edge[1]);
 }
 
 test.describe('date-inputs / date input focus', () => {
@@ -357,5 +377,86 @@ test.describe('date-inputs / date-time range input touch', () => {
 
     await expect(timesTab).toHaveAttribute('aria-checked', 'true');
     await expect(panes).toHaveAttribute('data-active-pane', 'times');
+  });
+});
+
+test.describe('date-inputs / range presets keyboard', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: anchored panel and keyboard');
+
+  test('the presets are a labelled column of buttons beside the calendar, the first one focused', async ({ page }) => {
+    const root = await openStory(page, DATE_RANGE_PRESETS_ID);
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'Alt+ArrowDown');
+    await waitForPickerEntered(page);
+
+    await expectPresetsPlaced(page, 'inline-start');
+    await expect(page.getByRole('button', { name: 'Today' })).toBeFocused();
+    await expectFocusVisible(page.getByRole('button', { name: 'Today' }));
+    await expect(root.locator('.et-date-range-input-field').first()).toHaveValue('');
+  });
+
+  test('Tab and Enter pick a preset, which commits the range, closes the picker and shows as pressed', async ({
+    page,
+  }) => {
+    const root = await openStory(page, DATE_RANGE_PRESETS_ID);
+    const trigger = root.locator('.et-input-picker-trigger');
+
+    await trigger.click();
+    await waitForPickerEntered(page);
+    await pressKey(page, 'Tab');
+    await expect(page.getByRole('button', { name: 'Last 7 days' })).toBeFocused();
+    await pressKey(page, 'Enter');
+
+    await expect(page.locator(DIALOG)).toHaveCount(0);
+    await expect(root.locator('.et-date-range-input-field').first()).not.toHaveValue('');
+    await expect(root.locator('.et-date-range-input-field').last()).not.toHaveValue('');
+
+    await trigger.click();
+
+    await expect(page.getByRole('button', { name: 'Last 7 days' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: 'Today' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  test('a date-time range preset runs from 12:00 AM to 11:59 PM and leaves the picker open', async ({ page }) => {
+    const root = await openStory(page, DATE_TIME_RANGE_PRESETS_ID);
+    const fields = root.locator('.et-date-time-range-input-field');
+
+    await root.locator('.et-input-picker-trigger').click();
+    await waitForPickerEntered(page);
+    await page.getByRole('button', { name: 'This month' }).click();
+
+    await expect(fields.first()).toHaveValue(/, 12:00\sAM$/);
+    await expect(fields.last()).toHaveValue(/, 11:59\sPM$/);
+    await expect(page.locator(DIALOG)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'This month' })).toHaveAttribute('aria-pressed', 'true');
+  });
+});
+
+test.describe('date-inputs / range presets touch', () => {
+  test.skip(({ isMobile }) => !isMobile, 'touch-only: bottom sheet chip row');
+
+  test('the sheet shows the presets as a chip row above the calendar that scrolls sideways', async ({ page }) => {
+    const root = await openStory(page, DATE_RANGE_PRESETS_ID);
+    const presets = page.getByRole('group', { name: 'Presets' });
+
+    await tap(root.locator('.et-input-picker-trigger'));
+    await waitForPickerEntered(page);
+
+    await expectPresetsPlaced(page, 'block-start');
+    await expect(presets).toHaveCSS('overflow-x', 'auto');
+    expect(await presets.evaluate((row) => row.scrollWidth > row.clientWidth)).toBe(true);
+  });
+
+  test('a tap on a chip commits its range and closes the sheet', async ({ page }) => {
+    const root = await openStory(page, DATE_RANGE_PRESETS_ID);
+
+    await tap(root.locator('.et-input-picker-trigger'));
+    await waitForPickerEntered(page);
+    await tap(page.getByRole('button', { name: 'Last 7 days' }));
+
+    await expect(page.locator(DIALOG)).toHaveCount(0);
+    await expect(root.locator('.et-date-range-input-field').first()).not.toHaveValue('');
+    await expect(root.locator('.et-date-range-input-field').last()).not.toHaveValue('');
   });
 });

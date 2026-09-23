@@ -20,6 +20,7 @@ export default {
     precision: { control: 'select', options: ['day', 'month', 'year'] },
     mask: { control: 'boolean' },
     locale: { control: 'select', options: ['default', 'de'] },
+    withPresets: { control: 'boolean' },
     disabled: { control: 'boolean' },
     readonly: { control: 'boolean' },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
@@ -40,6 +41,7 @@ export default {
     precision: 'day',
     mask: false,
     locale: 'default',
+    withPresets: false,
     disabled: false,
     readonly: false,
     color: 'brand',
@@ -97,4 +99,8 @@ export const MonthRange: Story = {
     endPlaceholder: 'mm/yyyy',
     hint: "A month range - 07/2025 – 03/2026 - banded across the picker's month grid",
   },
+};
+
+export const Presets: Story = {
+  args: { withPresets: true },
 };

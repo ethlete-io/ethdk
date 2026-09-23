@@ -45,22 +45,31 @@
 
 <ng-template etDatePickerSurface>
   <et-date-picker-panel [dialogLabel]="resolvedDialogLabel()">
-    <et-calendar
-      [rangeValue]="rangeInput.calendarRange()"
-      [min]="rangeInput.minDate()"
-      [max]="rangeInput.maxDate()"
-      [dateFilter]="rangeInput.dateFilter()"
-      [startAt]="rangeInput.startAt()"
-      [precision]="rangeInput.precision()"
-      [startView]="rangeInput.startView()"
-      [dateClass]="rangeInput.dateClass()"
-      [weekNumbers]="rangeInput.weekNumbers()"
-      [rangeSelectionStrategy]="rangeInput.rangeSelectionStrategy()"
-      [comparisonStart]="rangeInput.comparisonStart()"
-      [comparisonEnd]="rangeInput.comparisonEnd()"
-      [locale]="rangeInput.effectiveLocale()"
-      (rangeValueChange)="rangeInput.selectCalendarRange($event)"
-      mode="range"
-    />
+    <div class="et-date-range-presets-layout">
+      @if (rangeInput.presetList.options().length > 0) {
+        <et-date-range-presets
+          [options]="rangeInput.presetList.options()"
+          (presetSelect)="rangeInput.selectPreset($event)"
+        />
+      }
+
+      <et-calendar
+        [rangeValue]="rangeInput.calendarRange()"
+        [min]="rangeInput.minDate()"
+        [max]="rangeInput.maxDate()"
+        [dateFilter]="rangeInput.dateFilter()"
+        [startAt]="rangeInput.startAt()"
+        [precision]="rangeInput.precision()"
+        [startView]="rangeInput.startView()"
+        [dateClass]="rangeInput.dateClass()"
+        [weekNumbers]="rangeInput.weekNumbers()"
+        [rangeSelectionStrategy]="rangeInput.rangeSelectionStrategy()"
+        [comparisonStart]="rangeInput.comparisonStart()"
+        [comparisonEnd]="rangeInput.comparisonEnd()"
+        [locale]="rangeInput.effectiveLocale()"
+        (rangeValueChange)="rangeInput.selectCalendarRange($event)"
+        mode="range"
+      />
+    </div>
   </et-date-picker-panel>
 </ng-template>

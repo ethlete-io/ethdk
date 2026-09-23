@@ -277,6 +277,7 @@ top of the [shared contract set](#shared-contract):
 | `dateClass`                           | `(date, view) => string \| string[] \| null` | `null`              | Per-cell classes for the picker calendar.                                               |
 | `rangeSelectionStrategy`              | `CalendarRangeSelectionStrategy \| null`     | `null`              | What a pick means - [snapping picks](/components/calendar#range-selection-strategies).  |
 | `comparisonStart` / `comparisonEnd`   | `Date \| null`                               | `null`              | The picker's [comparison band](/components/calendar#comparison-ranges). Presentational. |
+| `presets`                             | `readonly DateRangePreset[]`                 | `[]`                | Ranges offered beside the picker calendar - see [presets](#range-presets).              |
 | `startPlaceholder` / `endPlaceholder` | `string`                                     | `''`                | Placeholders of the two fields.                                                         |
 | `startAriaLabel` / `endAriaLabel`     | `string \| null`                             | `null` ³            | `aria-label`s of the two fields (`'Start date'` / `'End date'`).                        |
 | `pickerOpen`                          | `boolean` (model)                            | `false`             | The picker overlay's open state.                                                        |
@@ -310,6 +311,57 @@ Pass the control's `valueFormat` when it differs from the `DATE_FORMAT` token - 
 validators parse the wire strings and compare the dates, not the strings. `dateRangeBounds`
 compares in whole days by default, so a `min` of "now" still admits today; pass
 `precision` alongside the control's own for a month or year range.
+
+### Presets {#range-presets}
+
+`presets` offers ready-made ranges in the picker - a column beside the calendar on the
+anchored panel, a row of chips above it that scrolls sideways on the bottom sheet. Pass
+the list per control; the factories cover the common ones and read their labels from
+[`DATE_TIME_LABELS`](/components/localization):
+
+```ts
+import { lastDaysPreset, lastMonthPreset, thisMonthPreset, todayPreset } from '@ethlete/components';
+
+protected presets = [todayPreset(), lastDaysPreset(7), lastDaysPreset(30), thisMonthPreset(), lastMonthPreset()];
+```
+
+```html
+<et-date-range-input [formField]="demoForm.range" [presets]="presets" />
+```
+
+<StoryEmbed id="components-forms-date-range-input--presets" height="480px" />
+
+| Factory                                                        | Range                                            |
+| -------------------------------------------------------------- | ------------------------------------------------ |
+| `todayPreset()` / `yesterdayPreset()`                          | That one day                                     |
+| `lastDaysPreset(count)`                                        | The last `count` days, today included            |
+| `nextDaysPreset(count)`                                        | The next `count` days, from tomorrow             |
+| `thisWeekPreset()` / `lastWeekPreset()`                        | A whole week, starting on the locale's first day |
+| `thisMonthPreset()` / `lastMonthPreset()` / `thisYearPreset()` | A whole calendar month or year                   |
+
+Every factory takes `{ label }` to replace its text. A range each factory returns runs from
+00:00 on its first day to 23:59 on its last - `et-date-range-input` keeps the days (in its
+`precision`), `et-date-time-range-input` keeps the times too. Anything else is a plain
+object: a `label` (a string, or a function of the labels in effect) and
+`resolve(now, { locale })` returning `{ start, end }` as wall-clock dates. `now` is read in
+the control's `timeZone` where it has one.
+
+```ts
+const nextWeekend: DateRangePreset = {
+  label: 'Next weekend',
+  resolve: (now) => {
+    const saturday = nextSaturday(now);
+
+    return { start: saturday, end: set(addDays(saturday, 1), { hours: 23, minutes: 59 }) };
+  },
+};
+```
+
+Each preset is a toggle button inside a group named by the `presets` label (`'Presets'`),
+pressed while the value equals its range. Opening the picker focuses the first preset; Tab
+moves on to the calendar. Picking one commits both ends; the date range input closes its
+picker like after a completed range, the date-time range input stays open like after any
+other pick.
 
 ## Time input - `et-time-input` {#time-input}
 
@@ -532,31 +584,32 @@ appointment - instead of pairing two `et-date-time-input`s.
 On `et-date-time-range-input` (forwarded from the headless `[etDateTimeRangeInput]`
 directive), on top of the [shared contract set](#shared-contract):
 
-| Input                                 | Type                                                        | Default             | Description                                                                           |
-| ------------------------------------- | ----------------------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------- |
-| `valueFormat`                         | `string`                                                    | `DATE_FORMAT` token | date-fns format of both string values (token default: ISO 8601 with offset).          |
-| `displayFormat`                       | `string`                                                    | `'Pp'`              | Combined date-fns format shown in and parsed from both fields (locale-aware).         |
-| `timeZone`                            | `string \| null`                                            | `null`              | IANA zone both fields' wall clock stands for - see [time zones](#value-time-zone).    |
-| `timeZoneLabel`                       | `string \| null`                                            | `null`              | Name shown for `timeZone`. Defaults to the IANA name's last segment.                  |
-| `locale`                              | `Locale \| null` (date-fns)                                 | `DATE_LOCALE` token | Display/parse locale (also decides the time picker's 12/24-hour layout).              |
-| `minDate` / `maxDate`                 | `Date \| null`                                              | `null`              | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms).          |
-| `dateFilter`                          | `((date: Date) => boolean) \| null`                         | `null`              | Forwarded to the picker calendar.                                                     |
-| `startAt`                             | `Date \| null`                                              | `null`              | Month the picker calendar opens at while the range is empty.                          |
-| `startView`                           | `'month' \| 'year' \| 'multiYear'`                          | `'month'`           | Which grid the picker calendar opens on.                                              |
-| `dateClass`                           | `(date, view) => string \| string[] \| null`                | `null`              | Per-cell classes for the picker calendar.                                             |
-| `weekNumbers`                         | `boolean`                                                   | `false`             | Renders the picker calendar's week-number column.                                     |
-| `minuteStep` / `secondStep`           | `number`                                                    | `5` / `1`           | Forwarded to the time picker columns, clamped to at least 1.                          |
-| `minTime` / `maxTime`                 | `Date \| null`                                              | `null`              | Bound the times pane's time of day, for both ends.                                    |
-| `timeFilter`                          | `((date: Date, side: 'start' \| 'end') => boolean) \| null` | `null`              | Rejects individual times; receives the full candidate timestamp and the end it fills. |
-| `startPlaceholder` / `endPlaceholder` | `string`                                                    | `''`                | Placeholders of the two fields.                                                       |
-| `startAriaLabel` / `endAriaLabel`     | `string \| null`                                            | `null` ³            | `aria-label`s of the two fields (`'Start date and time'` / `'End date and time'`).    |
-| `startTimeLabel` / `endTimeLabel`     | `string \| null`                                            | `null` ⁵            | Names of the two ends on the time picker's own side switch.                           |
-| `datesTabLabel` / `timesTabLabel`     | `string \| null`                                            | `null` ³            | Labels of the pane tabs in the bottom sheet.                                          |
-| `pickerOpen`                          | `boolean` (model)                                           | `false`             | The picker overlay's open state.                                                      |
-| `pickerTriggerLabel`                  | `string \| null`                                            | `null` ¹            | `aria-label` of the suffix calendar button.                                           |
-| `parseErrorMessage`                   | `string \| null`                                            | `null` ²            | Message shown below the field when either side's text can't be parsed.                |
-| `clearable`                           | `boolean`                                                   | `true`              | Clear (×) button while the field is in use (label: `clearLabel`).                     |
-| `mask`                                | `boolean`                                                   | `false`             | Opt-in typing mask - needs a fixed-width `displayFormat` like `dd.MM.yyyy HH:mm`.     |
+| Input                                 | Type                                                        | Default             | Description                                                                                          |
+| ------------------------------------- | ----------------------------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------- |
+| `valueFormat`                         | `string`                                                    | `DATE_FORMAT` token | date-fns format of both string values (token default: ISO 8601 with offset).                         |
+| `displayFormat`                       | `string`                                                    | `'Pp'`              | Combined date-fns format shown in and parsed from both fields (locale-aware).                        |
+| `timeZone`                            | `string \| null`                                            | `null`              | IANA zone both fields' wall clock stands for - see [time zones](#value-time-zone).                   |
+| `timeZoneLabel`                       | `string \| null`                                            | `null`              | Name shown for `timeZone`. Defaults to the IANA name's last segment.                                 |
+| `locale`                              | `Locale \| null` (date-fns)                                 | `DATE_LOCALE` token | Display/parse locale (also decides the time picker's 12/24-hour layout).                             |
+| `minDate` / `maxDate`                 | `Date \| null`                                              | `null`              | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms).                         |
+| `dateFilter`                          | `((date: Date) => boolean) \| null`                         | `null`              | Forwarded to the picker calendar.                                                                    |
+| `startAt`                             | `Date \| null`                                              | `null`              | Month the picker calendar opens at while the range is empty.                                         |
+| `startView`                           | `'month' \| 'year' \| 'multiYear'`                          | `'month'`           | Which grid the picker calendar opens on.                                                             |
+| `dateClass`                           | `(date, view) => string \| string[] \| null`                | `null`              | Per-cell classes for the picker calendar.                                                            |
+| `weekNumbers`                         | `boolean`                                                   | `false`             | Renders the picker calendar's week-number column.                                                    |
+| `presets`                             | `readonly DateRangePreset[]`                                | `[]`                | Ranges offered beside the picker - see [presets](#range-presets). 00:00 to 23:59 from the factories. |
+| `minuteStep` / `secondStep`           | `number`                                                    | `5` / `1`           | Forwarded to the time picker columns, clamped to at least 1.                                         |
+| `minTime` / `maxTime`                 | `Date \| null`                                              | `null`              | Bound the times pane's time of day, for both ends.                                                   |
+| `timeFilter`                          | `((date: Date, side: 'start' \| 'end') => boolean) \| null` | `null`              | Rejects individual times; receives the full candidate timestamp and the end it fills.                |
+| `startPlaceholder` / `endPlaceholder` | `string`                                                    | `''`                | Placeholders of the two fields.                                                                      |
+| `startAriaLabel` / `endAriaLabel`     | `string \| null`                                            | `null` ³            | `aria-label`s of the two fields (`'Start date and time'` / `'End date and time'`).                   |
+| `startTimeLabel` / `endTimeLabel`     | `string \| null`                                            | `null` ⁵            | Names of the two ends on the time picker's own side switch.                                          |
+| `datesTabLabel` / `timesTabLabel`     | `string \| null`                                            | `null` ³            | Labels of the pane tabs in the bottom sheet.                                                         |
+| `pickerOpen`                          | `boolean` (model)                                           | `false`             | The picker overlay's open state.                                                                     |
+| `pickerTriggerLabel`                  | `string \| null`                                            | `null` ¹            | `aria-label` of the suffix calendar button.                                                          |
+| `parseErrorMessage`                   | `string \| null`                                            | `null` ²            | Message shown below the field when either side's text can't be parsed.                               |
+| `clearable`                           | `boolean`                                                   | `true`              | Clear (×) button while the field is in use (label: `clearLabel`).                                    |
+| `mask`                                | `boolean`                                                   | `false`             | Opt-in typing mask - needs a fixed-width `displayFormat` like `dd.MM.yyyy HH:mm`.                    |
 
 The host is a `role="group"` labelled by the field label. `precision` is absent, as on the
 single date-time input - both ends carry a time. It does **not** take the date range input's

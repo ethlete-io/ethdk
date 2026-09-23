@@ -4,6 +4,13 @@ import { FormField, disabled, form, readonly } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import { de } from 'date-fns/locale';
 import { FORM_FIELD_IMPORTS } from '../../../form-field';
+import {
+  lastDaysPreset,
+  lastMonthPreset,
+  thisMonthPreset,
+  thisYearPreset,
+  todayPreset,
+} from '../../date-range-presets';
 import { dateRangeOrder } from '../../date-time-range-validators';
 import { DateRangeValue } from '../headless';
 import { DATE_RANGE_INPUT_IMPORTS } from '../date-range-input.imports';
@@ -21,6 +28,7 @@ import { CalendarPrecision } from '../../../../calendar/headless';
         <et-label>{{ label() }}</et-label>
         <et-date-range-input
           [(mixed)]="mixedState"
+          [presets]="presetList()"
           [formField]="demoForm.range"
           [mixedLabel]="mixedLabel()"
           [startPlaceholder]="startPlaceholder()"
@@ -60,6 +68,7 @@ export class DateRangeInputStorybookComponent {
   public precision = input<CalendarPrecision>('day');
   public mask = input(false);
   public locale = input<'default' | 'de'>('default');
+  public withPresets = input(false);
   public disabled = input(false);
   public readonly = input(false);
   public color = input('brand');
@@ -70,6 +79,12 @@ export class DateRangeInputStorybookComponent {
   protected localeObject = computed(() => (this.locale() === 'de' ? de : null));
 
   private formModel = linkedSignal(() => ({ range: { start: this.start(), end: this.end() } as DateRangeValue }));
+
+  protected presetList = computed(() =>
+    this.withPresets()
+      ? [todayPreset(), lastDaysPreset(7), lastDaysPreset(30), thisMonthPreset(), lastMonthPreset(), thisYearPreset()]
+      : [],
+  );
 
   public demoForm = form(this.formModel, (s) => {
     disabled(s, () => this.disabled());

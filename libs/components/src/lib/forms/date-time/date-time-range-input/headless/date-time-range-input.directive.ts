@@ -21,6 +21,8 @@ import {
 import { parseDateTimeText } from '../../internals/date-time-parse';
 import { createPendingDateTime, renderPartialDateTime } from '../../internals/pending-date-time';
 import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
+import { DateRangePreset } from '../../date-range-presets';
+import { createDateRangePresets } from '../../internals/date-range-presets-state';
 
 export type { DateRangeValue as DateTimeRangeValue } from '../../internals/date-range-picker-input.directive';
 
@@ -96,6 +98,13 @@ export class DateTimeRangeInputDirective
   public maxTime = input<Date | null>(null);
   public timeFilter = input<DateTimeRangeTimeFilterFn | null>(null);
 
+  /**
+   * Ranges offered beside the picker - build them with the preset factories (`lastDaysPreset(7)`,
+   * `thisMonthPreset()`, …), which run from 00:00 to 23:59, or write your own. Picking one commits
+   * both ends; the picker stays open like after any other pick.
+   */
+  public presets = input<readonly DateRangePreset[]>([]);
+
   public effectiveDisplayFormat = this.displayFormat;
 
   public resolvedParseErrorMessage = computed(
@@ -128,6 +137,14 @@ export class DateTimeRangeInputDirective
   public override ownDescribedBy = this.localReadingId;
 
   private halfPicks = { start: createPendingDateTime(), end: createPendingDateTime() };
+
+  /** @internal */
+  public presetList = createDateRangePresets({
+    host: this,
+    presets: this.presets,
+    labels: this.dateTimeLabels,
+    normalize: (date) => date,
+  });
 
   /** The two days the picker calendar highlights - committed, else picked with no time yet. */
   public pickerDateRange = computed(() => ({
@@ -198,6 +215,14 @@ export class DateTimeRangeInputDirective
     }
 
     this.touched.set(true);
+  }
+
+  /** Commits a preset's range, dropping any held half-pick. */
+  public selectPreset(preset: DateRangePreset) {
+    if (this.presetList.apply(preset)) {
+      this.halfPicks.start.clear();
+      this.halfPicks.end.clear();
+    }
   }
 
   /** The committed text of one side, or its half-pick rendered against placeholders. */

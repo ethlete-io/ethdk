@@ -48,6 +48,27 @@ export type DateTimeLabels = {
   /** The date & time range picker's tab showing the clock. */
   timesTab: string;
 
+  /** Accessible label for the preset list in a range picker. */
+  presets: string;
+  /** {@link todayPreset}'s button. */
+  presetToday: string;
+  /** {@link yesterdayPreset}'s button. */
+  presetYesterday: string;
+  /** {@link lastDaysPreset}'s button. */
+  presetLastDays: (count: number) => string;
+  /** {@link nextDaysPreset}'s button. */
+  presetNextDays: (count: number) => string;
+  /** {@link thisWeekPreset}'s button. */
+  presetThisWeek: string;
+  /** {@link lastWeekPreset}'s button. */
+  presetLastWeek: string;
+  /** {@link thisMonthPreset}'s button. */
+  presetThisMonth: string;
+  /** {@link lastMonthPreset}'s button. */
+  presetLastMonth: string;
+  /** {@link thisYearPreset}'s button. */
+  presetThisYear: string;
+
   /** The second reading under a field whose zone is not the reader's. */
   timeZoneReading: (timeZone: string, localTime: string) => string;
 
@@ -90,6 +111,17 @@ export const DEFAULT_DATE_TIME_LABELS: DateTimeLabels = {
   timeTab: 'Time',
   datesTab: 'Dates',
   timesTab: 'Times',
+
+  presets: 'Presets',
+  presetToday: 'Today',
+  presetYesterday: 'Yesterday',
+  presetLastDays: (count) => `Last ${count} days`,
+  presetNextDays: (count) => `Next ${count} days`,
+  presetThisWeek: 'This week',
+  presetLastWeek: 'Last week',
+  presetThisMonth: 'This month',
+  presetLastMonth: 'Last month',
+  presetThisYear: 'This year',
 
   timeZoneReading: (timeZone, localTime) => `${timeZone} · ${localTime} your time`,
 

@@ -15,6 +15,8 @@ import { DateRangePickerInputDirective, DateRangeValue } from '../../internals/d
 import { parseDateValue } from '../../internals/date-value';
 import { displayFormatForPrecision } from '../../internals/precision-format';
 import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
+import { DateRangePreset } from '../../date-range-presets';
+import { createDateRangePresets } from '../../internals/date-range-presets-state';
 
 export type { DateRangeSide, DateRangeValue } from '../../internals/date-range-picker-input.directive';
 
@@ -79,7 +81,22 @@ export class DateRangeInputDirective extends DateRangePickerInputDirective imple
   /** Renders the picker calendar's week-number column. */
   public weekNumbers = input(false, { transform: booleanAttribute });
 
+  /**
+   * Ranges offered beside the picker calendar - build them with the preset factories
+   * (`lastDaysPreset(7)`, `thisMonthPreset()`, …) or write your own. Picking one commits it and
+   * closes the picker.
+   */
+  public presets = input<readonly DateRangePreset[]>([]);
+
   public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.dateTimeLabels().invalidDateRange);
+
+  /** @internal */
+  public presetList = createDateRangePresets({
+    host: this,
+    presets: this.presets,
+    labels: this.dateTimeLabels,
+    normalize: (date) => startOfCalendarUnit(date, this.precision()),
+  });
 
   /** The format in effect: this instance's `displayFormat`, else the one `precision` implies. */
   public effectiveDisplayFormat = computed(
@@ -101,6 +118,13 @@ export class DateRangeInputDirective extends DateRangePickerInputDirective imple
 
     if (range.start !== null && range.end !== null) {
       this.touched.set(true);
+      this.closePicker();
+    }
+  }
+
+  /** Commits a preset's range and closes the picker. */
+  public selectPreset(preset: DateRangePreset) {
+    if (this.presetList.apply(preset)) {
       this.closePicker();
     }
   }
