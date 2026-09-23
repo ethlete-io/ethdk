@@ -7,6 +7,9 @@ import { InputMaskDirective } from '../../../masked-input/headless';
 import { silenceExpectedConsole } from '../../../../testing/expected-console';
 import { pressKey, tick } from '../../../../testing/driver-core';
 import { DatePickerDriver, mountDatePicker, typeMasked } from '../../../testing/date-picker-driver';
+import { FORM_FIELD_IMPORTS } from '../../../form-field/form-field.imports';
+import { DATE_RANGE_INPUT_IMPORTS } from '../date-range-input.imports';
+import { describeExpandedStateContract } from '../../../testing/expanded-contract';
 import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
 import { describePickerCommitContract } from '../../../testing/picker-commit-contract';
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
@@ -644,5 +647,31 @@ describe('DateRangeInputFieldDirective errors', () => {
     expect(() => TestBed.createComponent(OrphanDateRangeInputFieldTestHost)).toThrow(
       `ET${DATE_RANGE_INPUT_ERROR_CODES.FIELD_OUTSIDE_DATE_RANGE_INPUT}`,
     );
+  });
+});
+
+@Component({
+  template: `
+    <et-form-field>
+      <et-label>Range</et-label>
+      <et-date-range-input />
+    </et-form-field>
+  `,
+  imports: [DATE_RANGE_INPUT_IMPORTS, FORM_FIELD_IMPORTS],
+})
+class DateRangeInputInFormFieldTestHost {}
+
+describe('DateRangeInputDirective in a form field', () => {
+  describeExpandedStateContract(() => {
+    const driver = mountDatePicker(DateRangeInputInFormFieldTestHost, DateRangeInputDirective, [], {
+      directiveSelector: 'et-date-range-input',
+    });
+
+    return {
+      open: () => driver.open(),
+      close: () => driver.close(),
+      trigger: () => driver.trigger(),
+      field: () => driver.query('et-form-field')!,
+    };
   });
 });

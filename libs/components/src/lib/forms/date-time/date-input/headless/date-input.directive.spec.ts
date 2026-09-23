@@ -5,6 +5,9 @@ import { pressKey, tick } from '../../../../testing/driver-core';
 import { InputMaskDirective } from '../../../masked-input/headless';
 import { silenceExpectedConsole } from '../../../../testing/expected-console';
 import { DatePickerDriver, mountDatePicker, typeMasked } from '../../../testing/date-picker-driver';
+import { FORM_FIELD_IMPORTS } from '../../../form-field/form-field.imports';
+import { DATE_INPUT_IMPORTS } from '../date-input.imports';
+import { describeExpandedStateContract } from '../../../testing/expanded-contract';
 import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
 import { describePickerCommitContract } from '../../../testing/picker-commit-contract';
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
@@ -685,5 +688,31 @@ describe('DatePickerSurfaceDirective errors', () => {
     TestBed.configureTestingModule({ imports: [OrphanDatePickerSurfaceTestHost] });
 
     expect(() => TestBed.createComponent(OrphanDatePickerSurfaceTestHost)).toThrow(EVERY_PICKER_HOST);
+  });
+});
+
+@Component({
+  template: `
+    <et-form-field>
+      <et-label>Label</et-label>
+      <et-date-input />
+    </et-form-field>
+  `,
+  imports: [DATE_INPUT_IMPORTS, FORM_FIELD_IMPORTS],
+})
+class DateInputInFormFieldTestHost {}
+
+describe('DateInputDirective in a form field', () => {
+  describeExpandedStateContract(() => {
+    const driver = mountDatePicker(DateInputInFormFieldTestHost, DateInputDirective, [], {
+      directiveSelector: 'et-date-input',
+    });
+
+    return {
+      open: () => driver.open(),
+      close: () => driver.close(),
+      trigger: () => driver.trigger(),
+      field: () => driver.query('et-form-field')!,
+    };
   });
 });

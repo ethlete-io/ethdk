@@ -1,6 +1,7 @@
 import { Provider, Type } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { blurField, focusField, pressKey, textOf, tick, typeChars, typeInField } from '../../testing/driver-core';
+import { ControlDriverOptions } from '../../testing/control-driver';
 import { createOverlayControlDriver, mountControl } from '../../testing/overlay-control-driver';
 
 /**
@@ -18,8 +19,10 @@ export const typeMasked = (field: HTMLInputElement, text: string) => typeChars(f
 export const createDatePickerDriver = <T, D extends { closePicker: () => void }>(
   fixture: ComponentFixture<T>,
   directiveType: Type<D>,
+  options: ControlDriverOptions = {},
 ) => {
   const base = createOverlayControlDriver(fixture, directiveType, {
+    ...options,
     triggerSelector: '[etdatepickertrigger]',
     hide: (control) => control.closePicker(),
   });
@@ -60,4 +63,5 @@ export const mountDatePicker = <T, D extends { closePicker: () => void }>(
   component: Type<T>,
   directiveType: Type<D>,
   providers: Provider[] = [],
-) => createDatePickerDriver(mountControl(component, providers), directiveType);
+  options: ControlDriverOptions = {},
+) => createDatePickerDriver(mountControl(component, providers), directiveType, options);
