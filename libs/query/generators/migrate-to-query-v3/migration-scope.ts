@@ -12,9 +12,6 @@ export type MigrationScope = {
   /** Visits every non-ignored file inside the scope. */
   visit: (tree: Tree, callback: (filePath: string) => void) => void;
 
-  /** Whether a file is inside the scope. */
-  includes: (filePath: string) => boolean;
-
   /** Human readable description of what is being migrated, for the console summary. */
   describe: () => string;
 };
@@ -51,12 +48,9 @@ export const createMigrationScope = (tree: Tree, options: MigrationScopeOptions)
   if (roots.length === 0) {
     return {
       visit: (targetTree, callback) => visitNotIgnoredFiles(targetTree, '', callback),
-      includes: () => true,
       describe: () => 'the whole workspace',
     };
   }
-
-  const includes = (filePath: string) => roots.some((root) => filePath === root || filePath.startsWith(`${root}/`));
 
   return {
     visit: (targetTree, callback) => {
@@ -64,7 +58,6 @@ export const createMigrationScope = (tree: Tree, options: MigrationScopeOptions)
         visitNotIgnoredFiles(targetTree, root, callback);
       }
     },
-    includes,
     describe: () => roots.join(', '),
   };
 };
