@@ -3,6 +3,11 @@ import { boxOf, openStory, pressKey, settle, tabSequence, tap } from '../support
 
 const STORY_ID = 'components-data-display-bar-chart--default';
 const NEGATIVE_STORY_ID = 'components-data-display-bar-chart--negative';
+const GROUPED_STORY_ID = 'components-data-display-bar-chart--grouped';
+const STACKED_STORY_ID = 'components-data-display-bar-chart--stacked';
+const STACKED_NEGATIVE_STORY_ID = 'components-data-display-bar-chart--stacked-negative';
+const HORIZONTAL_STORY_ID = 'components-data-display-bar-chart--horizontal';
+const TICKET_SERIES = ['Online', 'Box office', 'Partners'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
 
 function barsOf(root: Locator): Locator {
@@ -26,20 +31,37 @@ async function expectBarFocusVisible(barLocator: Locator): Promise<void> {
 
 const TOOLTIP_GAP_MAX = 10;
 
-async function tooltipOffsetFromBarEnd(page: Page, barLocator: Locator, end: 'top' | 'bottom') {
+type BarEnd = 'top' | 'bottom' | 'right';
+
+const GAP_TO_BAR_END: Record<BarEnd, (mark: Box, panel: Box) => number> = {
+  top: (mark, panel) => mark.y - (panel.y + panel.height),
+  bottom: (mark, panel) => panel.y - (mark.y + mark.height),
+  right: (mark, panel) => panel.x - (mark.x + mark.width),
+};
+
+const CENTER_ALONG_BAR_END: Record<BarEnd, (box: Box) => number> = {
+  top: (box) => box.x + box.width / 2,
+  bottom: (box) => box.x + box.width / 2,
+  right: (box) => box.y + box.height / 2,
+};
+
+type Box = Awaited<ReturnType<typeof boxOf>>;
+
+async function tooltipOffsetFromBarEnd(page: Page, barLocator: Locator, end: BarEnd) {
   const mark = await boxOf(barLocator.locator('.et-bar-chart-bar-mark'));
   const panel = await boxOf(page.locator('.et-overlay--tooltip'));
   const arrow = await boxOf(page.locator('.et-overlay--tooltip .et-overlay-arrow'));
-  const markCenter = mark.x + mark.width / 2;
+  const center = CENTER_ALONG_BAR_END[end];
+  const markCenter = center(mark);
 
   return {
-    arrowOffCenter: Math.round(Math.abs(arrow.x + arrow.width / 2 - markCenter)),
-    panelOffCenter: Math.round(Math.abs(panel.x + panel.width / 2 - markCenter)),
-    gap: Math.round(end === 'top' ? mark.y - (panel.y + panel.height) : panel.y - (mark.y + mark.height)),
+    arrowOffCenter: Math.round(Math.abs(center(arrow) - markCenter)),
+    panelOffCenter: Math.round(Math.abs(center(panel) - markCenter)),
+    gap: Math.round(GAP_TO_BAR_END[end](mark, panel)),
   };
 }
 
-async function expectTooltipAtBarEnd(page: Page, barLocator: Locator, end: 'top' | 'bottom'): Promise<void> {
+async function expectTooltipAtBarEnd(page: Page, barLocator: Locator, end: BarEnd): Promise<void> {
   await expect(page.getByRole('tooltip')).toBeVisible();
   await expect
     .poll(async () => {
@@ -89,14 +111,14 @@ test.describe('chart / keyboard', () => {
     await pressKey(page, 'Tab');
     await expect(bar(root, 'Jan')).toBeFocused();
     await expect(tooltip).toBeVisible();
-    await expect(tooltip.locator('.et-bar-chart-tooltip-value')).toHaveText('1,240');
-    await expect(tooltip.locator('.et-bar-chart-tooltip-label')).toHaveText('Jan');
+    await expect(tooltip.locator('.et-chart-tooltip-value')).toHaveText('1,240');
+    await expect(tooltip.locator('.et-chart-tooltip-label')).toHaveText('Jan');
 
     await pressKey(page, 'Tab');
     await expect(bar(root, 'Feb')).toBeFocused();
     await expect(tooltip).toHaveCount(1);
-    await expect(tooltip.locator('.et-bar-chart-tooltip-value')).toHaveText('1,580');
-    await expect(tooltip.locator('.et-bar-chart-tooltip-label')).toHaveText('Feb');
+    await expect(tooltip.locator('.et-chart-tooltip-value')).toHaveText('1,580');
+    await expect(tooltip.locator('.et-chart-tooltip-label')).toHaveText('Feb');
   });
 
   test('a negative bar shows its signed value in the tooltip', async ({ page }) => {
@@ -107,8 +129,8 @@ test.describe('chart / keyboard', () => {
     await pressKey(page, 'Tab');
     await expect(bar(root, 'Wanderers')).toBeFocused();
 
-    await expect(tooltip.locator('.et-bar-chart-tooltip-value')).toHaveText('-14');
-    await expect(tooltip.locator('.et-bar-chart-tooltip-label')).toHaveText('Wanderers');
+    await expect(tooltip.locator('.et-chart-tooltip-value')).toHaveText('-14');
+    await expect(tooltip.locator('.et-chart-tooltip-label')).toHaveText('Wanderers');
   });
 
   test('Escape closes the tooltip of the focused bar', async ({ page }) => {
@@ -147,8 +169,8 @@ test.describe('chart / pointer', () => {
     await bar(root, 'Mar').hover();
 
     await expect(tooltip).toBeVisible();
-    await expect(tooltip.locator('.et-bar-chart-tooltip-value')).toHaveText('2,130');
-    await expect(tooltip.locator('.et-bar-chart-tooltip-label')).toHaveText('Mar');
+    await expect(tooltip.locator('.et-chart-tooltip-value')).toHaveText('2,130');
+    await expect(tooltip.locator('.et-chart-tooltip-label')).toHaveText('Mar');
 
     await page.mouse.move(0, 0);
 
@@ -216,8 +238,8 @@ test.describe('chart / touch', () => {
     await tap(bar(root, 'Mar'));
 
     await expect(tooltip).toBeVisible();
-    await expect(tooltip.locator('.et-bar-chart-tooltip-value')).toHaveText('2,130');
-    await expect(tooltip.locator('.et-bar-chart-tooltip-label')).toHaveText('Mar');
+    await expect(tooltip.locator('.et-chart-tooltip-value')).toHaveText('2,130');
+    await expect(tooltip.locator('.et-chart-tooltip-label')).toHaveText('Mar');
   });
 
   test('a tap points the tooltip at the top of the bar, not the top of its column', async ({ page }) => {
@@ -243,12 +265,12 @@ test.describe('chart / touch', () => {
     const tooltip = page.getByRole('tooltip');
 
     await tap(bar(root, 'Mar'));
-    await expect(tooltip.locator('.et-bar-chart-tooltip-label')).toHaveText('Mar');
+    await expect(tooltip.locator('.et-chart-tooltip-label')).toHaveText('Mar');
 
     await tap(bar(root, 'Jun'));
 
     await expect(tooltip).toHaveCount(1);
-    await expect(tooltip.locator('.et-bar-chart-tooltip-label')).toHaveText('Jun');
+    await expect(tooltip.locator('.et-chart-tooltip-label')).toHaveText('Jun');
   });
 
   test('a tap leaves no hover tint on the column, and a tap elsewhere closes the tooltip', async ({ page }) => {
@@ -260,10 +282,157 @@ test.describe('chart / touch', () => {
     await expect(tooltip).toBeVisible();
     await expectNoColumnTint(march);
 
-    await tap(root.locator('.et-bar-chart-category-label').first());
+    await tap(root.locator('.et-bar-chart-category-axis .et-chart-axis-label').first());
     await settle(page, 400);
 
     await expect(tooltip).toHaveCount(0);
     await expectNoColumnTint(march);
+  });
+});
+
+async function expectTooltipFor(page: Page, expected: { value: string; series: string; category: string }) {
+  const tooltip = page.getByRole('tooltip');
+
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip.locator('.et-chart-tooltip-value')).toHaveText(expected.value);
+  await expect(tooltip.locator('.et-chart-tooltip-series')).toHaveText(expected.series);
+  await expect(tooltip.locator('.et-chart-tooltip-label')).toHaveText(expected.category);
+}
+
+test.describe('chart / series keyboard', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus');
+
+  test('Tab walks the bars category by category, and each series within a category', async ({ page }) => {
+    await openStory(page, GROUPED_STORY_ID);
+
+    const sequence = await tabSequence(page, 6);
+
+    expect(sequence.map((step) => step.name)).toEqual([
+      ...TICKET_SERIES.map((series) => `Jan, ${series}`),
+      ...TICKET_SERIES.map((series) => `Feb, ${series}`),
+    ]);
+  });
+
+  test('Tab walks a stack from the baseline outwards', async ({ page }) => {
+    await openStory(page, STACKED_NEGATIVE_STORY_ID);
+
+    const sequence = await tabSequence(page, 4);
+
+    expect(sequence.map((step) => step.name)).toEqual(['Q1, Sponsoring', 'Q1, Tickets', 'Q1, Salaries', 'Q1, Travel']);
+  });
+
+  test('a focused series bar shows its focus ring and its own tooltip', async ({ page }) => {
+    const root = await openStory(page, GROUPED_STORY_ID);
+
+    await tabSequence(page, 2);
+
+    await expectBarFocusVisible(bar(root, 'Jan, Box office'));
+    await expectTooltipFor(page, { value: '410', series: 'Box office', category: 'Jan' });
+  });
+});
+
+test.describe('chart / series pointer', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: hover');
+
+  test('hovering a grouped bar opens the tooltip of that series only', async ({ page }) => {
+    const root = await openStory(page, GROUPED_STORY_ID);
+
+    await bar(root, 'Mar, Partners').hover();
+    await expectTooltipFor(page, { value: '240', series: 'Partners', category: 'Mar' });
+
+    await bar(root, 'Mar, Online').hover();
+    await expectTooltipFor(page, { value: '1,210', series: 'Online', category: 'Mar' });
+    await expect(page.getByRole('tooltip')).toHaveCount(1);
+  });
+
+  test('a grouped bar points its tooltip at its own top', async ({ page }) => {
+    const root = await openStory(page, GROUPED_STORY_ID);
+    const boxOffice = bar(root, 'Apr, Box office');
+
+    await boxOffice.hover();
+
+    await expectTooltipAtBarEnd(page, boxOffice, 'top');
+  });
+
+  test('a stacked segment opens its tooltip at the top of the segment', async ({ page }) => {
+    const root = await openStory(page, STACKED_STORY_ID);
+    const boxOffice = bar(root, 'May, Box office');
+
+    await boxOffice.hover();
+
+    await expectTooltipFor(page, { value: '470', series: 'Box office', category: 'May' });
+    await expectTooltipAtBarEnd(page, boxOffice, 'top');
+  });
+
+  test('a negative stacked segment opens its tooltip below its lower end', async ({ page }) => {
+    const root = await openStory(page, STACKED_NEGATIVE_STORY_ID);
+    const travel = bar(root, 'Q2, Travel');
+
+    await travel.hover();
+
+    await expectTooltipFor(page, { value: '-45', series: 'Travel', category: 'Q2' });
+    await expectTooltipAtBarEnd(page, travel, 'bottom');
+  });
+
+  test('a horizontal bar opens its tooltip to the right of its data end', async ({ page }) => {
+    const root = await openStory(page, HORIZONTAL_STORY_ID);
+    const rovers = bar(root, 'Rovers');
+
+    await rovers.hover();
+
+    await expect(page.getByRole('tooltip').locator('.et-chart-tooltip-value')).toHaveText('41');
+    await expectTooltipAtBarEnd(page, rovers, 'right');
+  });
+});
+
+test.describe('chart / series legend', () => {
+  test('a multi-series chart names every series in its legend, in series order', async ({ page }) => {
+    const root = await openStory(page, GROUPED_STORY_ID);
+
+    await expect(root.locator('.et-chart-legend-label')).toHaveText(TICKET_SERIES);
+  });
+
+  test('each legend swatch wears the color of its series bars', async ({ page }) => {
+    const root = await openStory(page, GROUPED_STORY_ID);
+    const swatches = root.locator('.et-chart-legend-swatch');
+
+    for (const [index, series] of TICKET_SERIES.entries()) {
+      const swatch = await swatches.nth(index).evaluate((el) => getComputedStyle(el).backgroundColor);
+      const mark = await bar(root, `Jan, ${series}`)
+        .locator('.et-bar-chart-bar-mark')
+        .evaluate((el) => getComputedStyle(el).fill);
+
+      expect(swatch).toBe(mark);
+    }
+  });
+
+  test('a single-series chart has no legend', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+
+    await expect(root.locator('.et-chart-legend')).toHaveCount(0);
+  });
+});
+
+test.describe('chart / series touch', () => {
+  test.skip(({ isMobile }) => !isMobile, 'touch-only');
+
+  test('a tap on a stacked segment shows the tooltip of that segment', async ({ page }) => {
+    const root = await openStory(page, STACKED_STORY_ID);
+    const partners = bar(root, 'Mar, Partners');
+
+    await tap(partners);
+
+    await expectTooltipFor(page, { value: '240', series: 'Partners', category: 'Mar' });
+    await expectTooltipAtBarEnd(page, partners, 'top');
+  });
+
+  test('a tap on a horizontal bar opens its tooltip beside its data end', async ({ page }) => {
+    const root = await openStory(page, HORIZONTAL_STORY_ID);
+    const wanderers = bar(root, 'Wanderers');
+
+    await tap(wanderers);
+
+    await expect(page.getByRole('tooltip').locator('.et-chart-tooltip-value')).toHaveText('29');
+    await expectTooltipAtBarEnd(page, wanderers, 'right');
   });
 });
