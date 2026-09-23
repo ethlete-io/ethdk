@@ -124,6 +124,18 @@ describe('TabGroupComponent', () => {
     expectAriaTablist(fixture.nativeElement.querySelector('[role="tablist"]') as HTMLElement);
   });
 
+  it('exposes one tablist, with its orientation on the tablist and not on the host', () => {
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement.querySelector('et-tab-group') as HTMLElement;
+    const tablists = fixture.nativeElement.querySelectorAll('[role="tablist"]') as NodeListOf<HTMLElement>;
+
+    expect(host.getAttribute('role')).toBe('none');
+    expect(host.hasAttribute('aria-orientation')).toBe(false);
+    expect(tablists).toHaveLength(1);
+    expect(tablists[0]?.getAttribute('aria-orientation')).toBe('horizontal');
+  });
+
   it('restores the selected tab from session storage', () => {
     storageEntries.set(SESSION_MEMORY_STORAGE_KEY, '2');
     hostComponent.sessionMemoryKey = SESSION_MEMORY_KEY;

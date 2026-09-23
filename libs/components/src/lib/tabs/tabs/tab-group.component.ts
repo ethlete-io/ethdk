@@ -103,7 +103,6 @@ import { TabComponent } from './tab.component';
   ],
   host: {
     class: 'et-tab-group et-tab-scale',
-    role: 'none',
     '[attr.data-orientation]': 'tabGroup.tabBar.orientation()',
     '[attr.data-size]': 'size()',
     '[attr.data-fit]': 'tabGroup.tabBar.fit()',
@@ -236,6 +235,7 @@ export class TabGroupComponent {
 
     // the component renders its panels inline instead of registering [etTabPanel] directives
     this.tabGroup.managesPanelsInternally.set(true);
+    this.tabGroup.tabBar.hostRole.set('none');
   }
 
   protected isPanelHidden(index: number) {
