@@ -1,5 +1,5 @@
 import { Locator, expect, test } from '@playwright/test';
-import { expectTouchMode, focusedDescriptor, openStory, tabSequence, tap } from '../support';
+import { boxOf, expectTouchMode, focusedDescriptor, openStory, tabSequence, tap } from '../support';
 
 const DEFAULT_STORY_ID = 'components-media-picture--default';
 const FIT_STORY_ID = 'components-media-picture--fit';
@@ -120,6 +120,28 @@ test.describe('picture / structure', () => {
     const box = await img.boundingBox();
 
     expect((box?.width ?? 0) / (box?.height ?? 1)).toBeCloseTo(16 / 9, 1);
+  });
+
+  test('aspectRatio reserves the box before the URL arrives, and it does not move when the image loads', async ({
+    page,
+  }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const picture = pending(root);
+
+    await expect(picture.locator(IMG)).toHaveCount(0);
+
+    const before = await boxOf(picture);
+
+    expect(before.width).toBeGreaterThan(0);
+    expect(before.width / before.height).toBeCloseTo(16 / 9, 1);
+
+    await root.getByRole('button', { name: 'Deliver the URL' }).click();
+    await expect(picture).toHaveAttribute('data-state', 'loaded');
+
+    const after = await boxOf(picture);
+
+    expect(after.width).toBeCloseTo(before.width, 0);
+    expect(after.height).toBeCloseTo(before.height, 0);
   });
 
   test('without aspectRatio the img reserves nothing', async ({ page }) => {

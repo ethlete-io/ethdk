@@ -21,6 +21,16 @@
       block-size: auto;
     }
 
+    &:where([data-aspect-ratio]) {
+      .et-picture-picture {
+        aspect-ratio: var(--_et-picture-aspect-ratio);
+      }
+
+      .et-picture-img {
+        inline-size: 100%;
+      }
+    }
+
     .et-picture-slot {
       position: absolute;
       inset: 0;

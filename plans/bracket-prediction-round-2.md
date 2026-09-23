@@ -108,6 +108,9 @@ adapters, and the chevron rail.
   a day, then down to seconds. `libs/core` is the natural home.~~ **Done** - `signalCountdown(deadline)`
   in `libs/core/src/lib/signals/countdown.ts`; it returns the numeric breakdown and leaves the
   days-or-seconds formatting to the template.
-- `et-picture` reserves no space until the image decodes. Its `aspect-*` class sits on the `<img>`,
+- ~~`et-picture` reserves no space until the image decodes. Its `aspect-*` class sits on the `<img>`,
   which has no size until the file arrives, and behind an `@if` that costs two layout jumps rather
-  than one. The box belongs around the `et-picture`, not on it.
+  than one. The box belongs around the `et-picture`, not on it.~~ **Done** - with `aspectRatio` and
+  no `width`, the `<picture>` outside the `@if` holds the ratio and the `<img>` fills it; guarded in
+  `apps/storybook-e2e/src/picture`. The cdk `et-picture` has no `aspectRatio` input, so it keeps
+  relying on `width`/`height`, which already reserve on the `<img>`.

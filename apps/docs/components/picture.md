@@ -59,7 +59,9 @@ measures. Two ways to avoid it:
 
 - **`width` + `height`** - the intrinsic pixel dimensions. Use when you know them.
 - **`aspectRatio`** - e.g. `16 / 9`. Use when CSS decides the rendered size, which for a responsive image is
-  usually the case.
+  usually the case. Without a `width`, the image fills the host's inline size at that ratio, and the box is
+  held by the `<picture>` rather than the `<img>` - so it exists before the image loads, and before its URL
+  arrives (a `defaultSrc` that is still `null`). With a `width`, the `<img>` keeps its own box as before.
 
 The `NoAspectRatio` story exists to show what you get without either: worth looking at once.
 
@@ -196,7 +198,7 @@ string, so only the first candidate of a relative multi-candidate srcset resolve
 | `priority`    | `boolean`                         | `false` | `loading="eager"` + `fetchpriority="high"`.                        |
 | `width`       | `number \| null`                  | `null`  | Intrinsic width in px.                                             |
 | `height`      | `number \| null`                  | `null`  | Intrinsic height in px.                                            |
-| `aspectRatio` | `number \| string \| null`        | `null`  | CSS `aspect-ratio` on the `<img>`.                                 |
+| `aspectRatio` | `number \| string \| null`        | `null`  | Reserved box ratio; fills the inline size unless `width` is set.   |
 | `sizes`       | `string \| string[] \| null`      | `null`  | Fallback `sizes` for sources that don't set their own.             |
 | `fit`         | see below                         | `null`  | `object-fit` inside a box the host defines. Needs a definite box.  |
 

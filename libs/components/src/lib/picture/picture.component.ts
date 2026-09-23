@@ -54,6 +54,8 @@ import {
     '[attr.data-state]': 'state()',
     '[attr.data-fit]': 'fit()',
     '[style.--_et-picture-fit]': 'fit()',
+    '[attr.data-aspect-ratio]': 'reservedAspectRatio()',
+    '[style.--_et-picture-aspect-ratio]': 'reservedAspectRatio()',
   },
 })
 export class PictureComponent {
@@ -101,8 +103,8 @@ export class PictureComponent {
 
   /**
    * The ratio to hold the image's box at, e.g. `16 / 9`. The alternative to `width`/`height` for a responsive
-   * image whose rendered size is decided by CSS: one number reserves the space in a layout where the pixel
-   * dimensions are not known in advance.
+   * image whose rendered size is decided by CSS: without a `width`, the image fills the host's inline size at
+   * this ratio, and the box is reserved before the image - or its URL - arrives.
    */
   public aspectRatio = input<number | string | null>(null);
 
@@ -129,6 +131,8 @@ export class PictureComponent {
 
   protected placeholder = contentChild(PicturePlaceholderDirective);
   protected errorSlot = contentChild(PictureErrorDirective);
+
+  protected reservedAspectRatio = computed(() => (this.width() === null ? this.aspectRatio() : null));
 
   protected resolvedSources = computed(() =>
     this.sources().map((source) => withPictureBaseUrl(normalizePictureSource(source), this.config)),

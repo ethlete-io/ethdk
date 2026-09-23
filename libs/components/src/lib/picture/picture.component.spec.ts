@@ -63,6 +63,32 @@ describe('PictureComponent', () => {
     });
   });
 
+  describe('reserved aspect ratio', () => {
+    it('is absent without aspectRatio', () => {
+      expect(getHostEl().hasAttribute('data-aspect-ratio')).toBe(false);
+      expect(getHostEl().style.getPropertyValue('--_et-picture-aspect-ratio')).toBe('');
+    });
+
+    it('is on the host while no img exists yet', () => {
+      fixture.componentRef.setInput('defaultSrc', null);
+      fixture.componentRef.setInput('aspectRatio', '16 / 9');
+      fixture.detectChanges();
+
+      expect(getImgEl()).toBeNull();
+      expect(getHostEl().getAttribute('data-aspect-ratio')).toBe('16 / 9');
+      expect(getHostEl().style.getPropertyValue('--_et-picture-aspect-ratio')).toBe('16 / 9');
+    });
+
+    it('is left to the img when a width sizes it', () => {
+      fixture.componentRef.setInput('aspectRatio', 4 / 3);
+      fixture.componentRef.setInput('width', 400);
+      fixture.detectChanges();
+
+      expect(getHostEl().hasAttribute('data-aspect-ratio')).toBe(false);
+      expect(getImgEl().style.aspectRatio).not.toBe('');
+    });
+  });
+
   describe('natural size', () => {
     it('is null while loading', () => {
       expect(picture.naturalSize()).toBeNull();
