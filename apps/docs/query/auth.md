@@ -191,18 +191,19 @@ export class LoginFormComponent {
 | `returnUrl()`                           | The URL the guard captured before redirecting here, or `null`. Call from an injection context.         |
 | `navigateAfterLogin()`                  | A cold observable that navigates to `returnUrl()`, or to `defaultUrl`. Call from an injection context. |
 
-| Option                      | Default                | Description                                                                                                                                                   |
-| --------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `loginUrl`                  | required               | A path, a command array, a `UrlTree`, or `(router) => UrlTree`.                                                                                               |
-| `defaultUrl`                | `'/'`                  | Where a login lands when nothing was captured.                                                                                                                |
-| `returnUrlParam`            | `'returnUrl'`          | The query param carrying the attempted URL. `false` redirects without one.                                                                                    |
-| `navigationBehaviorOptions` | `{ replaceUrl: true }` | How a guard's redirect navigates - the failed attempt does not become a history entry by default.                                                             |
-| `restoreTimeoutMs`          | `10000`                | How long a guard waits for a session restore before it decides on the session as it stands. `false` waits for as long as the restore takes.                   |
-| `redirectOnSessionEnd`      | none                   | The [session end causes](#why-the-session-ended) that send a visitor on a protected route to the login - see [When the session ends](#when-the-session-ends). |
+| Option                      | Default                | Description                                                                                                                                                          |
+| --------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `loginUrl`                  | required               | A path, a command array, a `UrlTree`, or `(router) => UrlTree`.                                                                                                      |
+| `defaultUrl`                | `'/'`                  | Where a login lands when nothing was captured.                                                                                                                       |
+| `returnUrlParam`            | `'returnUrl'`          | The query param carrying the attempted URL. `false` redirects without one.                                                                                           |
+| `navigationBehaviorOptions` | `{ replaceUrl: true }` | How a guard's redirect navigates - the failed attempt does not become a history entry by default.                                                                    |
+| `restoreTimeoutMs`          | `10000`                | How long a guard waits for a session restore before it decides on the session as it stands. `false` waits for as long as the restore takes.                          |
+| `redirectOnSessionEnd`      | none                   | The [session end causes](#why-the-session-ended) that send a visitor on a protected route to the login - see [When the session ends](#when-the-session-ends).        |
+| `redirectOnSessionStart`    | `false`                | Sends a visitor on an anonymous-guarded route to the return URL, or `defaultUrl`, when a session starts there - see [When the session ends](#when-the-session-ends). |
 
 A guard **pends while a session restore is in flight** rather than deciding against a session that is about to exist - it waits for [`sessionStatus()`](#is-there-a-session) to leave `'restoring'`. That is what makes a hard reload of a protected URL stay on that URL instead of bouncing through the login page. When there is nothing to restore, `sessionStatus()` is already `'anonymous'` and the guard answers synchronously, so a never-logged-in visitor never waits.
 
-The wait is **bounded by `restoreTimeoutMs`**. A restore that has not answered by then - an API that is down, a request stuck in a captive portal - is decided as no session, so the visitor lands on the login with the return URL rather than on a blank page. Under `withEnabledBlockingInitialNavigation()` a pending guard renders nothing at all, which is why the default is not `false`. The login route's own anonymous guard does not wait a second time. If the restore succeeds later, the visitor is on the login page with a session.
+The wait is **bounded by `restoreTimeoutMs`**. A restore that has not answered by then - an API that is down, a request stuck in a captive portal - is decided as no session, so the visitor lands on the login with the return URL rather than on a blank page. Under `withEnabledBlockingInitialNavigation()` a pending guard renders nothing at all, which is why the default is not `false`. The login route's own anonymous guard does not wait a second time. If the restore succeeds later, the visitor stays on the login page with a session - unless `redirectOnSessionStart` is set.
 
 ### Permissions
 
@@ -230,6 +231,8 @@ export const authGuard = createAuthGuard(authProviderRef, {
 ```
 
 A visitor on a public route stays there. `'user'` is left out above because the button that logs out usually navigates on its own; listed, it redirects without a return URL. The redirect starts watching the first time one of the guard's session guards runs.
+
+The other direction is opt-in too. With `redirectOnSessionStart: true`, a visitor on a route guarded by `canMatchAnonymous` or `canActivateAnonymous` is sent to the return URL, or to `defaultUrl`, as soon as a session starts - a restore that lands after `restoreTimeoutMs`, or a login in another tab that multi-tab sync carries over. A login form that calls `navigateAfterLogin()` itself goes to the same place, so the two do not conflict.
 
 The attempted URL is captured when the guard runs, including its query params and fragment, and written to the return-URL param unencoded - Angular's URL serializer encodes it, and parses it back. Coming the other way, a captured URL is only followed when it points back into this app: anything not starting with `/`, and anything starting with `//`, is discarded in favour of `defaultUrl`.
 

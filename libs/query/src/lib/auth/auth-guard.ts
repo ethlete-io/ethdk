@@ -62,6 +62,15 @@ export type AuthGuardConfig = {
    * createAuthGuard(authProviderRef, { loginUrl: '/login', redirectOnSessionEnd: ['expired', 'inactivity', 'otherTab'] });
    */
   redirectOnSessionEnd?: readonly BearerAuthSessionEndCause[];
+
+  /**
+   * Sends a visitor on a route guarded by `canMatchAnonymous` or `canActivateAnonymous` to the return
+   * URL, or to {@link defaultUrl}, when a session starts there - a restore that ends after
+   * {@link restoreTimeoutMs}, or a login in another tab.
+   *
+   * @default false
+   */
+  redirectOnSessionStart?: boolean;
 };
 
 /** Decides whether an authenticated visitor may enter a route. Runs in the guard's injection context. */
@@ -170,6 +179,8 @@ export const createAuthGuard = <TRef extends AnyCreateBearerAuthProviderResult>(
   const restoreTimeoutMs = config.restoreTimeoutMs ?? DEFAULT_RESTORE_TIMEOUT_MS;
   const sessionGuards = new Set<unknown>();
   const watchedRouters = new WeakSet<Router>();
+  const anonymousGuards = new Set<unknown>();
+  const watchedStartRouters = new WeakSet<Router>();
   const timedOutRestores = new WeakSet<object>();
 
   const loginRedirect = (router: Router, returnUrl: string | null) => {
@@ -178,10 +189,43 @@ export const createAuthGuard = <TRef extends AnyCreateBearerAuthProviderResult>(
     return param && returnUrl ? withQueryParam(loginTree, param, returnUrl) : loginTree;
   };
 
-  const isSessionRoute = (route: ActivatedRouteSnapshot): boolean => {
+  const usesGuard = (route: ActivatedRouteSnapshot, guardSet: Set<unknown>): boolean => {
     const guards = [...(route.routeConfig?.canMatch ?? []), ...(route.routeConfig?.canActivate ?? [])];
 
-    return guards.some((guard) => sessionGuards.has(guard)) || route.children.some(isSessionRoute);
+    return guards.some((guard) => guardSet.has(guard)) || route.children.some((child) => usesGuard(child, guardSet));
+  };
+
+  const watchSessionStart = (router: Router, provider: BearerAuthProviderOf<TRef>) => {
+    if (!config.redirectOnSessionStart || watchedStartRouters.has(router)) return;
+
+    watchedStartRouters.add(router);
+
+    const appRef = inject(ApplicationRef);
+
+    let wasAuthenticated = untracked(provider.sessionStatus) === 'authenticated';
+
+    effect(
+      () => {
+        const isAuthenticated = provider.sessionStatus() === 'authenticated';
+        const started = isAuthenticated && !wasAuthenticated;
+
+        wasAuthenticated = isAuthenticated;
+
+        if (!started) return;
+
+        untracked(() => {
+          if (!usesGuard(router.routerState.snapshot.root, anonymousGuards)) return;
+
+          const returnUrl = readReturnUrl(router, router.url, param);
+
+          void router.navigateByUrl(
+            returnUrl ? router.parseUrl(returnUrl) : resolveTarget(router, config.defaultUrl ?? DEFAULT_URL),
+            behavior,
+          );
+        });
+      },
+      { injector: appRef.injector },
+    );
   };
 
   const watchSessionEnd = (router: Router, provider: BearerAuthProviderOf<TRef>) => {
@@ -207,7 +251,7 @@ export const createAuthGuard = <TRef extends AnyCreateBearerAuthProviderResult>(
         if (!cause || !causes.includes(cause)) return;
 
         untracked(() => {
-          if (!isSessionRoute(router.routerState.snapshot.root)) return;
+          if (!usesGuard(router.routerState.snapshot.root, sessionGuards)) return;
 
           void router.navigateByUrl(loginRedirect(router, cause === 'user' ? null : router.url), behavior);
         });
@@ -223,6 +267,7 @@ export const createAuthGuard = <TRef extends AnyCreateBearerAuthProviderResult>(
       const provider = providerRef.inject() as BearerAuthProviderOf<TRef>;
 
       if (requiresSession) watchSessionEnd(router, provider);
+      else watchSessionStart(router, provider);
 
       // Captured before the wait below: once the session settles the router has moved on, and the URL
       // the visitor actually asked for is no longer reachable from it.
@@ -301,6 +346,8 @@ export const createAuthGuard = <TRef extends AnyCreateBearerAuthProviderResult>(
 
   const requireSession = sessionGuard(guardFor(true));
   const requireAnonymous = guardFor(false);
+
+  anonymousGuards.add(requireAnonymous);
 
   return {
     canMatch: requireSession,

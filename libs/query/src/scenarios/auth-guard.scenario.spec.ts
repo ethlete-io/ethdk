@@ -74,6 +74,52 @@ describe('auth guard', () => {
     expect(router.url).toBe('/login?returnUrl=%2Fdashboard');
 
     await s.settle(60000);
+    await s.settle();
+
+    expect(auth.sessionStatus()).toBe('authenticated');
+    expect(router.url).toBe('/login?returnUrl=%2Fdashboard');
+  });
+
+  it('redirectOnSessionStart sends a visitor on the login to the return URL once a late restore lands', async () => {
+    const s = scenario();
+
+    await seedCookie(s);
+    s.api.once('POST', '/auth/refresh', () => ({
+      body: { accessToken: mintToken(), refreshToken: mintToken({ expiresInMs: 3600000 }) },
+      delay: 60000,
+    }));
+
+    const auth = s.auth({ features: [persistentAuth()] });
+    const { router } = routeTo(s, auth, { restoreTimeoutMs: 5000, redirectOnSessionStart: true });
+
+    void s.run(() => router.navigateByUrl('/dashboard'));
+    await s.settle();
+    await s.settle(5000);
+    await s.settle();
+
+    expect(router.url).toBe('/login?returnUrl=%2Fdashboard');
+
+    await s.settle(60000);
+    await s.settle();
+    await s.settle();
+
+    expect(router.url).toBe('/dashboard');
+  });
+
+  it('redirectOnSessionStart sends a visitor on the login without a return URL to the default URL', async () => {
+    const s = scenario();
+
+    const auth = s.auth();
+    const { router } = routeTo(s, auth, { redirectOnSessionStart: true });
+
+    await s.run(() => router.navigateByUrl('/login'));
+    await s.settle();
+
+    auth.setTokens(mintToken(), mintToken({ expiresInMs: 3600000 }));
+    await s.settle();
+    await s.settle();
+
+    expect(router.url).toBe('/home');
   });
 
   it('gives a restore that only meets network errors up after a bounded number of retries', async () => {
