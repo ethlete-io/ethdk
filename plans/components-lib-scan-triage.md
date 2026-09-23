@@ -724,6 +724,11 @@ date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the
    **Progress 2026-09-23:** `compareWith` on `et-select` **DONE** (default `===`, one comparator for
    selected state, labels/chips, multi toggle/remove, custom-value dupes, and data-`options` reuse
    across a refetch; `ObjectValues` story + e2e). The other staples are still open.
+   Range validators **DONE** in `a761b8297`: `dateRangeOrder`, `timeRangeOrder`, `dateRangeBounds`
+   (whole `precision` units) and `dateTimeRangeBounds`, parsing the wire strings against
+   `valueFormat` (default `DATE_FORMAT`/`TIME_FORMAT`); kinds `rangeOrder`/`rangeMin`/`rangeMax`.
+   Date-range presets **PARKED on a design call**: where the preset list renders (a column beside
+   the calendar on the anchored panel, and a chip row, a tab or nothing on the bottom sheet).
 10. **Error-message and dev-guard quality pass.** Messages that name an API that does not exist
     (`registerScrollContainer`, `hostDirectives: [StreamPipChromeComponent]`,
     `et-filter-overlay-submit-label`, `exportTableToCsv`, the four-of-six picker host names), guards
