@@ -2,6 +2,7 @@ import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DragMoveEvent } from '@ethlete/core';
 import '../../test-helpers';
+import { expectNothingRunsAfterDestroy } from '../testing/destroyed-mid-gesture';
 import { queryAll } from '../testing/driver-core';
 import { TableResizeDirective } from './table-resize.directive';
 import { TableComponent } from './table.component';
@@ -54,6 +55,28 @@ const columnMeta = (fixture: ComponentFixture<HostComponent>, key: string) => {
 };
 
 describe('TableResizeDirective', () => {
+  it('stops resizing when the table is destroyed mid-drag', async () => {
+    const fixture = create();
+    const grip = queryAll(fixture, '.et-table-resize-grip')[0]!;
+
+    await expectNothingRunsAfterDestroy({
+      fixture,
+      start: () => {
+        grip.dispatchEvent(
+          new PointerEvent('pointerdown', {
+            bubbles: true,
+            button: 0,
+            clientX: 100,
+            clientY: 10,
+            pointerId: 1,
+            pointerType: 'mouse',
+          }),
+        );
+        document.dispatchEvent(new PointerEvent('pointermove', { clientX: 140, clientY: 10, pointerId: 1 }));
+      },
+    });
+  });
+
   it('renders a grip in every header cell while there is more than one column', () => {
     const fixture = create();
 
