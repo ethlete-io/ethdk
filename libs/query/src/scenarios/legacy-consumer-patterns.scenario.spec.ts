@@ -273,8 +273,7 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy consumer patterns on the %s client', 
       legacy.destroy();
     });
 
-    // observe() replays the unchanged initial value through the debounce, a second identical request.
-    it.fails('sends one request per debounced change of a legacy QueryForm feeding the args', async () => {
+    it('sends one request per debounced change of a legacy QueryForm feeding the args', async () => {
       const s = scenario();
       const legacy = createLegacyClient(s, kind);
       s.api.on('GET', '/users', ({ query }) => ({ body: { search: query['search'] ?? null }, delay: 20 }));

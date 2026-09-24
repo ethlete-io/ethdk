@@ -402,6 +402,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
         }),
         tap(({ currentValue, previousValue }) => {
           if (changedFieldsInLastResetLoop.length) return;
+          if (equal(this._changes$.value.currentValue, currentValue)) return;
 
           this._changes$.next({
             previousValue: previousValue ?? null,
