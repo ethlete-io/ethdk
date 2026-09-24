@@ -105,6 +105,7 @@ const STRIP_ROW_REM = 2;
  * checkouts scrolls sideways rather than shrinking every lane to a sliver.
  */
 const LANE_MIN_REM = 14;
+const FULL_SPAN = { inlineOffset: 0, inlineSize: 100 };
 
 /** How wide the break lane is. It carries no ticket and no gesture, so it stays narrow. */
 const BREAK_LANE_REM = 6;
@@ -417,10 +418,12 @@ type RowDrag = {
                       [attr.aria-valuenow]="minutesOf(instantOf(boundary).getTime())"
                       [attr.aria-valuetext]="clockOf(boundary)"
                       [style.top.%]="percentOf(instantOf(boundary))"
+                      [style.left.%]="spanOf({ lane, boundary }).inlineOffset"
+                      [style.width.%]="spanOf({ lane, boundary }).inlineSize"
                       [attr.data-dragging]="draggingBoundary(boundary) || null"
                       (keydown)="nudge($event, boundary)"
                       (pointerdown)="startBoundaryDrag({ event: $event, boundary, column })"
-                      class="group absolute inset-x-0 -mt-1 flex h-2 cursor-ns-resize touch-none items-center outline-none"
+                      class="group absolute -mt-1 flex h-2 cursor-ns-resize touch-none items-center outline-none"
                       aria-orientation="horizontal"
                       role="separator"
                       tabindex="0"
@@ -429,7 +432,7 @@ type RowDrag = {
                         class="h-0.5 grow rounded-full bg-et-surface-subtle opacity-40 group-hover:bg-et-theme group-hover:opacity-100 group-focus-visible:bg-et-theme group-focus-visible:opacity-100 group-active:bg-et-theme group-active:opacity-100 group-data-[dragging]:bg-et-theme group-data-[dragging]:opacity-100"
                       ></span>
                       <span
-                        class="ml-2 shrink-0 rounded-sm bg-et-surface-interaction px-1 text-mono opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 group-active:opacity-100 group-data-[dragging]:opacity-100"
+                        class="absolute top-1/2 right-0 -translate-y-1/2 rounded-sm bg-et-surface-interaction px-1 text-mono whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 group-active:opacity-100 group-data-[dragging]:opacity-100"
                         >{{ clockOf(boundary) }}</span
                       >
                     </div>
@@ -995,6 +998,21 @@ export class DayTimelineComponent {
     };
 
     dragGestureFrom(event, column).pipe(tap(track), takeUntilDestroyed(this.destroyRef)).subscribe();
+  }
+
+  protected spanOf(options: { lane: DayLane; boundary: TimelineBoundary }) {
+    const segmentOf = (id: string, edge: 'first' | 'last') => {
+      const laid = options.lane.blocks.find((block) => rowEntryOf(block.block.node.appointment)?.row.id === id);
+
+      return edge === 'first' ? laid?.segments[0] : laid?.segments.at(-1);
+    };
+
+    const before = segmentOf(options.boundary.before.id, 'last') ?? FULL_SPAN;
+    const after = segmentOf(options.boundary.after.id, 'first') ?? FULL_SPAN;
+    const start = Math.max(before.inlineOffset, after.inlineOffset);
+    const end = Math.min(before.inlineOffset + before.inlineSize, after.inlineOffset + after.inlineSize);
+
+    return end > start ? { inlineOffset: start, inlineSize: end - start } : before;
   }
 
   protected draggingBoundary(boundary: TimelineBoundary) {

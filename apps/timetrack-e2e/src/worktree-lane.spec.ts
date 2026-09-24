@@ -1,6 +1,6 @@
 import { Page } from '@playwright/test';
 import { CollectedEvent } from '@ethlete/timetrack';
-import { E2E_REPO } from '@ethlete/timetrack/testing';
+import { E2E_ISSUE_BRANCH, E2E_REPO } from '@ethlete/timetrack/testing';
 import { E2E_DAY_KEY, E2E_NOW, expect, seedWorld, test } from './support';
 
 const WORKTREE = '/Users/e2e/dev/fut-frontend-altcha';
@@ -8,12 +8,12 @@ const WORKTREE = '/Users/e2e/dev/fut-frontend-altcha';
 /** Nine in the morning on the seeded day. The browser is pinned to UTC, so this is 09:00 on screen. */
 const at = (minutes: number) => new Date(new Date(`${E2E_DAY_KEY}T09:00:00.000Z`).getTime() + minutes * 60_000);
 
-const sessionIn = (options: { cwd: string; branch: string; from?: number }): CollectedEvent[] =>
-  Array.from({ length: 13 }, (_, step) => ({
+const sessionIn = (options: { cwd: string; branch: string; from?: number; steps?: number }): CollectedEvent[] =>
+  Array.from({ length: options.steps ?? 13 }, (_, step) => ({
     at: at((options.from ?? 0) + step * 5),
     source: 'agent-session',
     kind: 'agent-session',
-    sessionId: `session-${options.cwd}`,
+    sessionId: `session-${options.cwd}-${options.branch}`,
     cwd: options.cwd,
     gitBranch: options.branch,
   }));
@@ -106,5 +106,51 @@ test.describe('a linked worktree that overlaps its main checkout for part of an 
     expect(await hit({ x: left, y: together })).toBe(0);
     expect(await hit({ x: right, y: together })).toBe(1);
     expect(await hit({ x: left, y: later })).toBe(1);
+  });
+});
+
+/**
+ * The worktree overlaps the last half hour of the main checkout's first row, and the main checkout's
+ * next row starts where the first one ends: the boundary between the two sits beside the worktree.
+ */
+test.describe('a boundary at the end of a row the lane splits', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: [
+        ...sessionIn({ cwd: E2E_REPO, branch: E2E_ISSUE_BRANCH }),
+        ...sessionIn({ cwd: E2E_REPO, branch: 'fix/security-audit-general', from: 60 }),
+        ...sessionIn({ cwd: WORKTREE, branch: 'feat/login-altcha', from: 30, steps: 7 }),
+      ],
+      git: { extraRepos: [WORKTREE], worktrees: { [WORKTREE]: E2E_REPO } },
+    });
+    await page.goto('/day');
+    await expect(page.locator('[data-lane] [data-kind="row"]')).toHaveCount(3);
+  });
+
+  test('keeps its bar and its time beside the worktree row, not over it', async ({ page }) => {
+    const titles = await headers(page).evaluateAll((nodes) => nodes.map((node) => node.getAttribute('title')));
+    const lane = page.locator('[data-lane]').nth(titles.indexOf(`repo:${E2E_REPO}`));
+    const boundary = lane.getByRole('separator');
+
+    await expect(boundary).toHaveCount(1);
+    await boundary.hover();
+
+    const laneBox = await boxOf(lane);
+    const boundaryBox = await boxOf(boundary);
+    const labelBox = await boxOf(boundary.locator('span').last());
+    const middle = laneBox.x + laneBox.width / 2;
+
+    expect(Math.abs(boundaryBox.x - laneBox.x)).toBeLessThanOrEqual(2);
+    expect(boundaryBox.x + boundaryBox.width).toBeLessThanOrEqual(middle + 1);
+    expect(labelBox.x).toBeGreaterThanOrEqual(boundaryBox.x);
+    expect(labelBox.x + labelBox.width).toBeLessThanOrEqual(middle + 1);
+
+    const covered = await lane.evaluate(
+      (_, { x, y }) => !!document.elementFromPoint(x, y)?.closest('[role="separator"]'),
+      { x: laneBox.x + laneBox.width * 0.75, y: boundaryBox.y + boundaryBox.height / 2 },
+    );
+
+    expect(covered).toBe(false);
   });
 });
