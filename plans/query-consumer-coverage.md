@@ -89,6 +89,49 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
 - [x] S9 Export coverage gate: every runtime export of `libs/query/src/index.ts` must appear in a scenario, or be on an allowlist with a reason; CI fails otherwise
   - `yarn query:export-coverage` (`tools/export-coverage/`), in CI Checks and pre-push. 500 runtime exports (incl. `query/testing`), 330 uncovered on the allowlist.
   - `queryComputedWithForm` is not exported by `@ethlete/query`; P10 names it wrongly.
+  - Triaged: every allowlist reason is now `constant: …` (69: enums, values, tokens, error factories, type
+    guards), `spec: <path>` (148), `internal: …` (72, plumbing reached through a covered public API) or
+    `S10 <group>: needs a scenario` (29).
+- [ ] S10 Uncovered behavior exports: a scenario per group, in this order. Counts are app files importing the
+      export (bvb, vbl, dfb, dyn, fut, fifagg).
+  1. Legacy collections and pipes: `createQueryCollectionSignal` (fifagg 27, dfb 6, dyn 5, fut 3),
+     `resetPageOnError` (fifagg 5, fut 3), `createQueryCollection` (fifagg 3, fut 1), `extractQuery` (dfb, dyn,
+     fifagg; cdk and components), `filterNull` (dyn 2), `ignoreAutoRefresh`.
+  2. Legacy infinity: `skipPaginationPageParamCalculator` (bvb 2, dfb 1, fifagg 1),
+     `provideInfinityQueryResponseDelay` / `injectInfinityQueryResponseDelay` (read by the cdk and components
+     infinity directives).
+  3. Legacy devtools: mount `QueryDevtoolsComponent` (fifagg 3, dyn 2, dfb 1); only the migration spec names it.
+  4. Legacy entity: `mapToPaginated` (fifagg 4), `removeFrom`, `paginatedEntityValueUpdater`.
+  5. v3 HEAD and OPTIONS creators: `createHeadQuery`, `createSecureHeadQuery`, `createOptionsQuery`,
+     `createSecureOptionsQuery` (public, documented siblings of `createGetQuery`; no app uses them yet).
+  6. Testing helpers: `query/testing` `expectAndFlush`, `expectFlushAndWait` (documented in `testing.md`).
+  7. Persistence: `createNoopQueryPersistenceAdapter` as a consumer-passed adapter (documented).
+  8. Devtools contract, panel-only: `registerEthleteVersion`, `setQueryDevtoolsAppInfo`, `queryDevtoolsAbout`,
+     `queryDevtoolsApiEnvScope`, `queryDevtoolsApiEnvIds`, `clearQueryDevtoolsAuthCredentials`,
+     `removeQueryDevtoolsAuthAccount`, `logoutQueryDevtoolsAuthSession`, `queryDevtoolsAllowsLocalAuthSessions`.
+  - Cheap extra: the legacy state guards are `constant: type guard` but heavily used (`isQueryStateFailure` 25
+    files, `isQueryStateLoading` 21, `isQueryStatePrepared` 4, `isQueryStateCancelled` 2); name them in the S10.1
+    scenario.
+  - `@internal` candidates (no other lib or app imports them, not in `apps/docs`; not changed yet):
+    - v3 plumbing: `shouldAutoExecuteQuery`, `shouldAutoExecuteGqlQuery`, `getQueryFeatureUsage`, `maybeExecute`,
+      `createQueryObject`, `applyQueryFeatures`, `splitQueryConfig`, `isCreateGqlQueryOptions`, `createBaseQuery`,
+      `createBaseQueryCreator`, `setupQueryState`, `setupQueryExecuteState`, `resetExecuteState`, `queryExecute`,
+      `createExecuteFn`, `createSecureExecuteFn`, `createSecureExecuteFactory`, `createQuerySnapshotFn`,
+      `createHttpRequest`, `wrapAsObservableSignal`, `circularQueryDependencyChecker`,
+      `createQueryPersistenceEngine`, `wrapQuerySyncMessage`, `unwrapQuerySyncMessage`,
+      `createPersistentAuthFeature`, `createTrackingFeature`.
+    - Error factories: the 30 functions in `http/query-errors.ts` other than `QueryRuntimeErrorCode`; apps only
+      see the thrown error.
+    - Devtools: `tombstoneOf`, `queryDevtoolsStorage`, `queryDevtoolsApiEnvScope`, `queryDevtoolsApiEnvIds`,
+      `setQueryDevtoolsAppInfo` (set through `provideQueryDevtools({ about })`).
+    - Legacy v2 (deprecated, removal in v7 anyway): `request`, `computeQueryMethod`, `computeQueryBody`,
+      `computeQueryAuthHeader`, `computeQueryHeaders`, `computeQueryQueryParams`, `getDefaultHeaders`,
+      `mergeHeaders`, `serializeBody`, `transformMethod`, `detectContentTypeHeader`, `forEachHeader`,
+      `parseAllXhrResponseHeaders`, `getResponseUrl`, `transformExecStateToQueryState`, `QueryShortNamePipe`,
+      `buildTimestampFromSeconds`, `isEmptyString`, `isNaN`; `deepFreeze` is used nowhere (delete).
+    - Must stay public (imported by another lib): `emptyQueryArgs`, `createQueryKeyLockManager`,
+      `resolveQueryHeaders` (query-devtools), `shouldRetryRequest`, `createQueryErrorResponse`,
+      `symfonyQueryErrorParser` (components), `hasHeader`, `v2ShouldRetryRequest`, `isClassValidatorError` (cdk).
 - [ ] S8 Same audit for `libs/core` and `libs/components`
 
 ## v2 → v3 migration gaps (from ethlete-sdk-57, not yet triaged)
