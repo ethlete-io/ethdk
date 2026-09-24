@@ -78,6 +78,7 @@ const collectRuntimeExports = (file: string, names = new Set<string>(), visited 
   const source = stripComments(readFileSync(file, 'utf8'));
 
   for (const [, specifier] of source.matchAll(/export \* from '([^']+)'/g)) {
+    if (!specifier) continue;
     if (file === queryEntry && SKIPPED_ENTRIES.includes(specifier)) continue;
     collectRuntimeExports(resolveModule(file, specifier), names, visited);
   }
@@ -85,16 +86,16 @@ const collectRuntimeExports = (file: string, names = new Set<string>(), visited 
   for (const [, name] of source.matchAll(
     /export\s+(?:declare\s+)?(?:abstract\s+)?(?:const|let|function\*?|class|enum)\s+([A-Za-z0-9_$]+)/g,
   )) {
-    names.add(name);
+    if (name) names.add(name);
   }
 
-  for (const [, list] of source.matchAll(/export\s+\{([^}]+)\}/g)) {
+  for (const [, list = ''] of source.matchAll(/export\s+\{([^}]+)\}/g)) {
     for (const part of list.split(',').map((entry) => entry.trim())) {
       if (!part || part.startsWith('type ')) continue;
       names.add(
         part
           .split(/\s+as\s+/)
-          .at(-1)
+          .pop()
           ?.trim() ?? part,
       );
     }
