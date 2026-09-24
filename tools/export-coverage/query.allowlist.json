@@ -16,7 +16,6 @@
   "QUERY_DEVTOOLS_TOKEN_TTL_LIMIT": "constant: value",
   "QUERY_VERSION": "constant: value",
   "QueryClientFeatureType": "constant: enum",
-  "QueryDevtoolsComponent": "S10 legacy devtools: needs a scenario",
   "QueryFeatureType": "constant: enum",
   "QueryRuntimeErrorCode": "constant: enum",
   "QueryShortNamePipe": "internal: used only by the legacy QueryDevtoolsComponent template",
