@@ -83,6 +83,16 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
     eventSource: 'idle',
   },
   {
+    id: 'input',
+    name: 'Desk input',
+    reads:
+      'The Wayland idle notifier, at a one-minute threshold, to tell a prompt typed here from one sent from a phone.',
+    stores: 'Only that input stopped or returned, with the instant it happened. No keys and no content.',
+    state: 'collecting',
+    collector: 'window',
+    eventSource: 'input',
+  },
+  {
     id: 'git',
     name: 'Local git repositories',
     reads:

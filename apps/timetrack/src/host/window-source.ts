@@ -1,9 +1,11 @@
-import { CollectedEvent, PresenceEvent, WindowFocusEvent } from '@ethlete/timetrack';
+import { CollectedEvent, InputEvent, PresenceEvent, WindowFocusEvent } from '@ethlete/timetrack';
 import { Observable, map } from 'rxjs';
 import { invokeHost$ } from './invoke';
 
 type HostWindowEvent = { seq: number; atMs: number } & (
-  { kind: 'window-focus'; appId: string; title: string } | { kind: 'idle-start' | 'idle-end' }
+  | { kind: 'window-focus'; appId: string; title: string }
+  | { kind: 'idle-start' | 'idle-end' }
+  | { kind: 'input-idle' | 'input-active' }
 );
 
 type HostWindowBatch = {
@@ -51,15 +53,21 @@ export type WindowBatch = {
 const reviveEvent = (event: HostWindowEvent): CollectedEvent => {
   const at = new Date(event.atMs);
 
-  return event.kind === 'window-focus'
-    ? ({
+  switch (event.kind) {
+    case 'window-focus':
+      return {
         at,
         source: 'window',
         kind: 'window-focus',
         appId: event.appId,
         title: event.title,
-      } satisfies WindowFocusEvent)
-    : ({ at, source: 'idle', kind: event.kind } satisfies PresenceEvent);
+      } satisfies WindowFocusEvent;
+    case 'input-idle':
+    case 'input-active':
+      return { at, source: 'input', kind: event.kind } satisfies InputEvent;
+    default:
+      return { at, source: 'idle', kind: event.kind } satisfies PresenceEvent;
+  }
 };
 
 /**

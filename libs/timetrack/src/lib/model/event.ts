@@ -10,7 +10,8 @@ export type CollectedEventSource =
   | 'gitlab'
   | 'github'
   | 'editor'
-  | 'call';
+  | 'call'
+  | 'input';
 
 type CollectedEventBase<TSource extends CollectedEventSource, TKind extends string> = {
   at: Date;
@@ -36,6 +37,15 @@ export type PresenceEvent = CollectedEventBase<
   'idle',
   'idle-start' | 'idle-end' | 'lock' | 'unlock' | 'pause-start' | 'pause-end'
 >;
+
+/**
+ * Whether the seat was touched in the last minute: `input-idle` is dated when input stopped,
+ * `input-active` when it returned. It records that input happened, never which key or what content.
+ *
+ * It is no `PresenceEvent` and no `ActivityEvent`: a minute without input is reading, not a break, so
+ * it opens, ends and extends nothing. Its one reader is `promptOriginAt`.
+ */
+export type InputEvent = CollectedEventBase<'input', 'input-idle' | 'input-active'>;
 
 export type GitCheckoutEvent = CollectedEventBase<'git', 'git-checkout'> & {
   repoPath: string;
@@ -263,6 +273,7 @@ export type MergeRequestActivityEvent = CollectedEventBase<'gitlab' | 'github', 
 export type CollectedEvent =
   | WindowFocusEvent
   | PresenceEvent
+  | InputEvent
   | GitCheckoutEvent
   | GitCommitEvent
   | AgentSessionEvent
@@ -293,4 +304,5 @@ export const isActivityEvent = (event: CollectedEvent): event is ActivityEvent =
   event.source !== 'calendar' &&
   event.source !== 'gitlab' &&
   event.source !== 'agent-usage' &&
-  event.source !== 'agent-prompt';
+  event.source !== 'agent-prompt' &&
+  event.source !== 'input';

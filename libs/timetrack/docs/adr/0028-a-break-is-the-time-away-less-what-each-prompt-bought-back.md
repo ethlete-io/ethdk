@@ -77,11 +77,14 @@ had left.
   That is deliberate: nothing in a Claude Code log distinguishes them. Checked on 2026-09-15 —
   `entrypoint` is `cli` for both, `origin` is `{kind:'human'}` for both, and `promptSource` is
   `typed` or `queued`, which a desk also produces.
-- **A short input-idle notification would distinguish them**, and is not built. A second
-  `get_input_idle_notification` at about a minute reports only that somebody touched the seat, never
-  what they touched or typed, so a prompt with local input beside it is a desk prompt and a prompt
-  with none is remote. That is the universal signal for a phone, a tablet and any remote control,
-  and it costs one more Wayland object.
+- **A short input-idle notification distinguishes them**, and is recorded but not yet read by the
+  allowance. A second `get_input_idle_notification` at 60 s writes `input-idle` (dated when input
+  stopped) and `input-active` (dated when it returned) under the source `input`, never what was
+  touched or typed. `promptOriginAt` reads a prompt as `desk` when the seat was touched in the minute
+  before it, `remote` when it was not, and `unknown` on a day without the signal or before its first
+  transition. That is the universal signal for a phone, a tablet and any remote control, and it costs
+  one more Wayland object. The host needs notifier version 2 for it, and macOS does not collect it
+  yet.
 - **`maxAgentGapMs` no longer decides a break on a machine the notifier works on.** Turns arriving
   every few seconds hold a stretch open indefinitely, which is why 2026-09-15 reported no break
   before this. The idle transition is now the only thing that cuts such a stretch, so a machine whose

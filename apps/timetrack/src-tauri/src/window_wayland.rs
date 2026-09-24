@@ -12,6 +12,10 @@ use wayland_protocols_wlr::foreign_toplevel::v1::client::{
 /// splits the block.
 const IDLE_THRESHOLD_MS: u32 = 5 * 60_000;
 
+/// Short enough that a prompt typed at the desk has input beside it, long enough that it is not a
+/// keystroke log.
+const INPUT_IDLE_THRESHOLD_MS: u32 = 60_000;
+
 const NO_MANAGER: &str =
     "this compositor does not implement zwlr_foreign_toplevel_manager_v1, so no window titles are collected";
 
@@ -31,6 +35,7 @@ struct WaylandState {
     manager: Option<zwlr_foreign_toplevel_manager_v1::ZwlrForeignToplevelManagerV1>,
     notifier: Option<ext_idle_notifier_v1::ExtIdleNotifierV1>,
     notification: Option<ext_idle_notification_v1::ExtIdleNotificationV1>,
+    input_notification: Option<ext_idle_notification_v1::ExtIdleNotificationV1>,
     seat: Option<wl_seat::WlSeat>,
     /// Properties arrive one event at a time and only count once `done` closes the batch.
     pending: HashMap<ObjectId, Toplevel>,
@@ -166,27 +171,50 @@ impl Dispatch<zwlr_foreign_toplevel_handle_v1::ZwlrForeignToplevelHandleV1, ()> 
     }
 }
 
-impl Dispatch<ext_idle_notification_v1::ExtIdleNotificationV1, ()> for WaylandState {
+#[derive(Clone, Copy)]
+enum Threshold {
+    Away,
+    Input,
+}
+
+/// The notification fires a threshold *after* input stopped, and input stopped then — dating it now
+/// would bill every break its first five minutes and every desk prompt its last minute.
+fn transition(
+    threshold: Threshold,
+    event: ext_idle_notification_v1::Event,
+    now: i64,
+) -> Option<(i64, WindowEventPayload)> {
+    let (after_ms, idled, resumed) = match threshold {
+        Threshold::Away => (
+            IDLE_THRESHOLD_MS,
+            WindowEventPayload::IdleStart,
+            WindowEventPayload::IdleEnd,
+        ),
+        Threshold::Input => (
+            INPUT_IDLE_THRESHOLD_MS,
+            WindowEventPayload::InputIdle,
+            WindowEventPayload::InputActive,
+        ),
+    };
+
+    match event {
+        ext_idle_notification_v1::Event::Idled => Some((now - i64::from(after_ms), idled)),
+        ext_idle_notification_v1::Event::Resumed => Some((now, resumed)),
+        _ => None,
+    }
+}
+
+impl Dispatch<ext_idle_notification_v1::ExtIdleNotificationV1, Threshold> for WaylandState {
     fn event(
         state: &mut Self,
         _: &ext_idle_notification_v1::ExtIdleNotificationV1,
         event: ext_idle_notification_v1::Event,
-        _: &(),
+        threshold: &Threshold,
         _: &Connection,
         _: &QueueHandle<Self>,
     ) {
-        match event {
-            // The notification fires a threshold *after* input stopped, and the block ended when the
-            // input did — dating it now would bill every break its first five minutes.
-            ext_idle_notification_v1::Event::Idled => {
-                state
-                    .sink
-                    .push(now_ms() - i64::from(IDLE_THRESHOLD_MS), WindowEventPayload::IdleStart);
-            }
-            ext_idle_notification_v1::Event::Resumed => {
-                state.sink.push(now_ms(), WindowEventPayload::IdleEnd);
-            }
-            _ => {}
+        if let Some((at_ms, payload)) = transition(*threshold, event, now_ms()) {
+            state.sink.push(at_ms, payload);
         }
     }
 }
@@ -219,6 +247,7 @@ fn run(sink: WindowSource) -> Result<(), String> {
         manager: None,
         notifier: None,
         notification: None,
+        input_notification: None,
         seat: None,
         pending: HashMap::new(),
         emitted: None,
@@ -238,10 +267,16 @@ fn run(sink: WindowSource) -> Result<(), String> {
         // all day the app collects no idle transition at all. Version 2 reports input idleness, which
         // an inhibitor cannot suppress, and that is the only one of the two this app can act on.
         state.notification = Some(if notifier.version() >= 2 {
-            notifier.get_input_idle_notification(IDLE_THRESHOLD_MS, &seat, &qh, ())
+            notifier.get_input_idle_notification(IDLE_THRESHOLD_MS, &seat, &qh, Threshold::Away)
         } else {
-            notifier.get_idle_notification(IDLE_THRESHOLD_MS, &seat, &qh, ())
+            notifier.get_idle_notification(IDLE_THRESHOLD_MS, &seat, &qh, Threshold::Away)
         });
+
+        // Version 1 would report an inhibitor as input, and a video would read as a desk prompt.
+        if notifier.version() >= 2 {
+            state.input_notification =
+                Some(notifier.get_input_idle_notification(INPUT_IDLE_THRESHOLD_MS, &seat, &qh, Threshold::Input));
+        }
     }
 
     loop {
@@ -268,4 +303,35 @@ pub fn start(sink: WindowSource) {
 
         sink.set_status("none", Some(detail));
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const NOW: i64 = 10 * 60 * 60_000;
+
+    #[test]
+    fn dates_a_short_input_idle_when_input_stopped() {
+        let (at_ms, payload) = transition(Threshold::Input, ext_idle_notification_v1::Event::Idled, NOW).unwrap();
+
+        assert_eq!(at_ms, NOW - 60_000);
+        assert!(matches!(payload, WindowEventPayload::InputIdle));
+    }
+
+    #[test]
+    fn reports_returning_input_as_input_not_as_presence() {
+        let (at_ms, payload) = transition(Threshold::Input, ext_idle_notification_v1::Event::Resumed, NOW).unwrap();
+
+        assert_eq!(at_ms, NOW);
+        assert!(matches!(payload, WindowEventPayload::InputActive));
+    }
+
+    #[test]
+    fn keeps_the_five_minute_idle_as_presence() {
+        let (at_ms, payload) = transition(Threshold::Away, ext_idle_notification_v1::Event::Idled, NOW).unwrap();
+
+        assert_eq!(at_ms, NOW - 5 * 60_000);
+        assert!(matches!(payload, WindowEventPayload::IdleStart));
+    }
 }

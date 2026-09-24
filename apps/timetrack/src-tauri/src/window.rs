@@ -16,6 +16,9 @@ pub enum WindowEventPayload {
     },
     IdleStart,
     IdleEnd,
+    /// Input stopped a minute ago. Says only that the seat went untouched, never what was touched.
+    InputIdle,
+    InputActive,
 }
 
 #[derive(Clone, Serialize)]
@@ -120,7 +123,9 @@ impl WindowSource {
         match payload {
             WindowEventPayload::IdleStart => self.lock.went_idle(at_ms),
             WindowEventPayload::IdleEnd => self.lock.came_back(),
-            WindowEventPayload::WindowFocus { .. } => {}
+            WindowEventPayload::WindowFocus { .. }
+            | WindowEventPayload::InputIdle
+            | WindowEventPayload::InputActive => {}
         }
 
         self.samples.push(at_ms, payload);
@@ -317,5 +322,24 @@ mod tests {
 
         assert_eq!(json["kind"], "idle-start");
         assert!(json.get("appId").is_none());
+    }
+
+    #[test]
+    fn serializes_short_input_idleness_as_its_own_kind() {
+        let kinds: Vec<_> = [WindowEventPayload::InputIdle, WindowEventPayload::InputActive]
+            .into_iter()
+            .map(|payload| {
+                serde_json::to_value(WindowEvent {
+                    seq: 1,
+                    at_ms: 5,
+                    payload,
+                })
+                .unwrap()
+            })
+            .collect();
+
+        assert_eq!(kinds[0]["kind"], "input-idle");
+        assert_eq!(kinds[1]["kind"], "input-active");
+        assert!(kinds[0].get("appId").is_none());
     }
 }

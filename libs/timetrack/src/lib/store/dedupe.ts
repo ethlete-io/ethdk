@@ -70,6 +70,8 @@ export const dedupeKeyOf = (event: CollectedEvent) => {
     case 'unlock':
     case 'pause-start':
     case 'pause-end':
+    case 'input-idle':
+    case 'input-active':
       return keyOf([event.kind, event.at.toISOString()]);
     case 'editor-heartbeat':
       return keyOf([event.kind, event.reporter, event.at.toISOString()]);
