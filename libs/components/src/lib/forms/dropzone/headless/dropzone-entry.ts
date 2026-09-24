@@ -1,5 +1,5 @@
-import { createObjectUrlHandle, ObjectUrlHandle, randomId } from '@ethlete/core';
-import { computed, Signal } from '@angular/core';
+import { randomId } from '@ethlete/core';
+import { computed, Signal, signal } from '@angular/core';
 import {
   AnyDropzoneUploadConfig,
   DropzoneExistingFileInfo,
@@ -31,7 +31,10 @@ export type DropzoneEntry<TValue = unknown> = {
   /** File size in bytes. `null` when unknown. */
   size: Signal<number | null>;
 
-  /** Preview URL (object URL for image files, resolver-provided URL for existing values). */
+  /**
+   * Preview URL: a `data:` URL for image files, read asynchronously so it starts as `null`, or the
+   * resolver-provided URL for existing values.
+   */
   previewUrl: Signal<string | null>;
 
   status: Signal<DropzoneEntryStatus>;
@@ -51,8 +54,29 @@ export type DropzoneEntry<TValue = unknown> = {
   /** @internal The upload handle driving this entry. `null` for existing entries. */
   handle: DropzoneUploadHandle<TValue> | null;
 
-  /** @internal Object URL held for the preview, revoked when the entry is disposed. */
-  objectUrl: ObjectUrlHandle | null;
+  /** @internal Stops reading the preview, called when the entry is disposed. */
+  disposePreview: (() => void) | null;
+};
+
+/** A `data:` URL rather than an object URL: a strict `img-src` rarely allows `blob:`. */
+const readImagePreview = (file: File) => {
+  const url = signal<string | null>(null);
+
+  if (typeof FileReader === 'undefined') return { url: url.asReadonly(), dispose: () => undefined };
+
+  const reader = new FileReader();
+
+  reader.onload = () => url.set(typeof reader.result === 'string' ? reader.result : null);
+  reader.readAsDataURL(file);
+
+  return {
+    url: url.asReadonly(),
+    dispose: () => {
+      reader.onload = null;
+      if (reader.readyState === FileReader.LOADING) reader.abort();
+      url.set(null);
+    },
+  };
 };
 
 export type CreateFileDropzoneEntryOptions<TValue> = {
@@ -65,7 +89,7 @@ export const createFileDropzoneEntry = <TValue>(
 ): DropzoneEntry<TValue> => {
   const { file, handle } = options;
 
-  const objectUrl = file.type.startsWith('image/') ? createObjectUrlHandle(file) : null;
+  const preview = file.type.startsWith('image/') ? readImagePreview(file) : null;
 
   const status = computed<DropzoneEntryStatus>(() => {
     switch (handle.state()) {
@@ -83,14 +107,14 @@ export const createFileDropzoneEntry = <TValue>(
     source: { type: 'file', file },
     name: computed(() => file.name),
     size: computed(() => file.size),
-    previewUrl: computed(() => objectUrl?.url ?? null),
+    previewUrl: preview?.url ?? computed(() => null),
     status,
     progress: handle.progress,
     error: handle.error,
     errorMessage: handle.errorMessage,
     value: handle.value,
     handle,
-    objectUrl,
+    disposePreview: preview?.dispose ?? null,
   };
 };
 
@@ -118,13 +142,13 @@ export const createExistingDropzoneEntry = <TValue>(
     errorMessage: computed(() => null),
     value: computed(() => value),
     handle: null,
-    objectUrl: null,
+    disposePreview: null,
   };
 };
 
-/** Releases all resources held by an entry (object URL, in-flight upload). */
+/** Releases all resources held by an entry (preview read, in-flight upload). */
 export const disposeDropzoneEntry = <TValue>(entry: DropzoneEntry<TValue>) => {
-  entry.objectUrl?.revoke();
+  entry.disposePreview?.();
   entry.handle?.dispose();
 };
 

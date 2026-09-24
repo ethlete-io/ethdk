@@ -221,7 +221,7 @@ Dropping several files on a single-mode dropzone is the one count the control it
 
 ## Multiple files
 
-With `multiple`, entries render as a list below the drop area - image thumbnail (an object URL, revoked automatically), name, size, a progress bar while uploading and a remove button per entry:
+With `multiple`, entries render as a list below the drop area - image thumbnail (a `data:` URL, so a strict `img-src` without `blob:` still shows it), name, size, a progress bar while uploading and a remove button per entry:
 
 <StoryEmbed id="components-forms-dropzone--multiple" height="560px" />
 

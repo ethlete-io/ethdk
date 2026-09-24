@@ -115,13 +115,18 @@ describe('DropzoneComponent', () => {
     expect(driver.nativeInput().value).toBe('');
   });
 
-  it('should replace the drop area with a preview in single mode without changing its size', () => {
+  it('should replace the drop area with a preview in single mode without changing its size', async () => {
     expect(driver.previewEl()).toBe(null);
 
     driver.pickFiles([createFile()]);
     driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
-    driver.tick();
 
+    await vi.waitFor(() => {
+      driver.tick();
+      expect(driver.previewImage()).toBeTruthy();
+    });
+
+    expect(driver.previewImage()?.getAttribute('src')).toMatch(/^data:image\//);
     expect(driver.previewEl()).toBeTruthy();
     expect(driver.areaEl().getAttribute('data-has-preview')).toBe('true');
     expect(driver.previewEl()!.parentElement).toBe(driver.areaEl());

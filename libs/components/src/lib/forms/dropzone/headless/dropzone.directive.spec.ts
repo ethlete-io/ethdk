@@ -172,13 +172,14 @@ describe('DropzoneDirective', () => {
       driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
     });
 
-    it('should create an image preview object url and revoke it on remove', () => {
+    it('should preview an image as a data url a strict img-src allows, and drop it on remove', async () => {
       driver.dropzone.selectFiles([createFile()]);
       driver.tick();
 
       const entry = driver.dropzone.entries()[0]!;
-      expect(entry.previewUrl()).toMatch(/^blob:mock-/);
-      expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
+
+      await vi.waitFor(() => expect(entry.previewUrl()).toMatch(/^data:image\/png;base64,/));
+      expect(URL.createObjectURL).not.toHaveBeenCalled();
 
       driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
       driver.tick();
@@ -186,15 +187,14 @@ describe('DropzoneDirective', () => {
       driver.dropzone.removeEntry(entry.id);
       driver.tick();
 
-      expect(URL.revokeObjectURL).toHaveBeenCalledWith(entry.previewUrl());
+      expect(entry.previewUrl()).toBe(null);
     });
 
-    it('should not create an object url for non-image files', () => {
+    it('should not preview non-image files', () => {
       driver.dropzone.selectFiles([createFile('doc.pdf', 'application/pdf')]);
       driver.tick();
 
       expect(driver.dropzone.entries()[0]!.previewUrl()).toBe(null);
-      expect(URL.createObjectURL).not.toHaveBeenCalled();
 
       driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
     });
@@ -233,7 +233,7 @@ describe('DropzoneDirective', () => {
       expect(driver.dropzone.entries().length).toBe(1);
       expect(driver.dropzone.entries()[0]).not.toBe(firstEntry);
       expect(driver.host.value()).toBe(null);
-      expect(URL.revokeObjectURL).toHaveBeenCalledWith(firstEntry.previewUrl());
+      expect(firstEntry.previewUrl()).toBe(null);
 
       driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-b' });
       driver.tick();
@@ -451,12 +451,13 @@ describe('DropzoneDirective', () => {
       driver.dropzone.selectFiles([createFile()]);
       driver.tick();
 
+      const entry = driver.dropzone.entries()[0]!;
       const req = driver.query.httpTesting.expectOne(UPLOAD_URL);
 
       driver.fixture.destroy();
 
       expect(req.cancelled).toBe(true);
-      expect(URL.revokeObjectURL).toHaveBeenCalledTimes(1);
+      expect(entry.previewUrl()).toBe(null);
     });
   });
 
