@@ -455,6 +455,7 @@ export class DayTimelineComponent {
   private scheduler = viewChild.required<SchedulerDirective<TimelineEntry>>(SchedulerDirective);
 
   private rememberedScroll = signal(readViewState().timelineScroll ?? null);
+  private restoresScroll = !!this.rememberedScroll();
 
   /**
    * The bands marked for a merge. A plain click anywhere on a band clears them, and so does a step to
@@ -657,7 +658,7 @@ export class DayTimelineComponent {
         )
         .subscribe();
 
-      if (this.rememberedScroll() || !hours) return;
+      if (this.restoresScroll || !hours) return;
 
       // `offsetTop` is measured against a shared offset parent, so the difference is where the hour
       // axis starts inside the scroller — the all-day strip above it is exactly what that accounts for.
