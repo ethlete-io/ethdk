@@ -83,9 +83,49 @@ triggers, the calendar and scrollable chevrons. Those sizes come from the surrou
 so an icon you swap in via [`provideIconOverrides()`](#overriding-the-built-in-icons) needs no
 sizing either.
 
+## Your own SVG icons
+
+An app's own glyphs (a design system export, a logo mark) are `IconDefinition` constants like the built-ins. Wrap the paths in an `<svg>` that passes the dev-mode checks above - `xmlns`, `width/height="100%"`, every `fill`/`stroke` either `currentColor` or `none`:
+
+```ts
+// icons/app-icons.ts
+import { IconDefinition } from '@ethlete/components';
+
+export const APP_HOME_ICON: IconDefinition = {
+  name: 'app-home',
+  data: `
+    <svg width="100%" height="100%" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path fill="currentColor" fill-rule="evenodd" d="M12 2 2 10v12h8v-6h4v6h8V10z" />
+    </svg>
+  `,
+};
+```
+
+Register it where it is used and render it with `[etIcon]` - color and size come from CSS, as for any icon:
+
+```ts
+@Component({
+  imports: [ICON_IMPORTS],
+  providers: [provideIcons(APP_HOME_ICON)],
+  template: `<i class="size-6" etIcon="app-home"></i>`,
+})
+```
+
+`provideIcons()` is not merged across injectors: the nearest registration wins, so a component that provides its own icons hides the ones provided above it - including inside SDK components, which self-register theirs. For icons the whole app uses (a navigation set), register them once with [`provideIconOverrides()`](#overriding-the-built-in-icons) in `appConfig` instead; it is merged on top of every component's registry. Pick a prefix of your own (`app-`), since `et-` names are the SDK's.
+
 ## Typed icon names
 
-The `etIcon` input is typed against the augmentable `EthleteIconNameRegistry` interface - augment it (or use the [generator below](#generating-icons)) to get string-literal completion for your app's icon set instead of plain `string`.
+The `etIcon` input is typed against the augmentable `EthleteIconNameRegistry` interface - augment it (or use the [generator below](#generating-icons)) to get string-literal completion for your app's icon set instead of plain `string`:
+
+```ts
+declare module '@ethlete/components' {
+  interface EthleteIconNameRegistry {
+    name: 'app-home' | 'app-search' | 'et-chevron' | 'et-times';
+  }
+}
+```
+
+Once augmented, `etIcon` only accepts the listed names - include the built-in `et-*` names you render yourself.
 
 ## Generating icons
 

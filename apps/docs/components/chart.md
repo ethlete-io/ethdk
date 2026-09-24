@@ -102,6 +102,45 @@ providers: [
 
 `ocean`, `sunset` and `meadow` stand for themes the app registered. A palette is one set of colors; for a dark surface, provide a second palette with steps chosen for it, as the `GroupedDark` story does.
 
+#### A fixed color per category
+
+When a category has a color of its own - a product, a team, a game - register each color as a [color theme](/core/theming#color-themes) and hand its name to the series as `colorToken`. The color then lives in the theme files with the rest of the app's colors, never as a hex value in a component:
+
+```ts
+// themes.ts - the app's own theme names, next to its accent and semantic themes
+export const THEMES = [
+  // …the accent and the error/warning/success themes
+  {
+    name: 'product-basic',
+    primary: {
+      color: { default: '0 150 136', hover: '0 150 136', active: '0 150 136', disabled: '0 150 136' },
+      onColor: { default: '255 255 255' },
+    },
+  },
+  {
+    name: 'product-pro',
+    primary: {
+      color: { default: '255 143 88', hover: '255 143 88', active: '255 143 88', disabled: '255 143 88' },
+      onColor: { default: '255 255 255' },
+    },
+  },
+] satisfies ColorTheme[];
+```
+
+```ts
+// Keyed by the API's own category id, so a series keeps its color when others are filtered out.
+const PRODUCT_COLORS: Record<ProductId, RegisteredColorThemeName> = {
+  basic: 'product-basic',
+  pro: 'product-pro',
+};
+
+series = computed<BarChartSeries[]>(() =>
+  this.products().map((product) => ({ key: product.id, label: product.name, colorToken: PRODUCT_COLORS[product.id] })),
+);
+```
+
+Re-run the color theme generator after adding the themes so the names type-check and the CSS exists. The same `colorToken` field exists on line-chart series, pie-chart slices and sankey nodes.
+
 ## Horizontal bars
 
 `orientation="horizontal"` lists the categories top to bottom with their labels on the left, and puts the value axis under the plot. It suits long category names and many categories. The label column takes at most 40% of the chart's width and cuts a longer label off with an ellipsis. Grouped and stacked layouts work the same way.
