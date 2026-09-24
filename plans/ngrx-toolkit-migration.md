@@ -72,10 +72,45 @@ Manual (report tasks): vbl `layout` and `tournament` facades (toolkit-shaped, no
 
 ## Slices
 
-- [ ] S1 Interop handle, pipes, `joinLoading`/`joinErrors` in the new entry point. Scenarios: every handle member
-      the apps use, refetch (D3), polling with a kill switch, cross-component refresh by args.
-- [ ] S2 `toolkitCall` and the handle registry (D2). Scenario: the fifagg `createActionId` + `refresh()` pattern.
-- [ ] S3 Generator `migrate-from-ngrx-toolkit`: creators, facade rewrite, deletion of store files and module
-      wiring, the args rename, `query-toolkit-migration-tasks.md`. Specs on copies of real fifagg and vbl features.
-- [ ] S4 Run it on vbl (smaller), then fifagg, in a scratch copy. Typecheck, build, and open the main screens.
-- [ ] S5 Guide `apps/docs/query/migrating-from-ngrx-toolkit.md`, changeset.
+- [x] S1+S2 Interop `@ethlete/query/ngrx-toolkit` - b8e33174a; export-coverage entry - 5e7756a26.
+  - `toolkitCall(creator, args, { injector })`, `toolkitSelect`, `MappedEntityState`, `ActionCallArgs`,
+    `ToolkitError`, `CallState`, `SuspensePipe`/`SuspenseMultiPipe`/`NgRxToolkitModule`, `joinLoading`/`joinErrors`.
+  - 12 scenarios in `libs/query/src/scenarios/ngrx-toolkit.scenario.spec.ts`. The handle maps from
+    `executionState()`, not `response()`, so the new keep-last-response default does not change `response$`.
+  - Differences from the toolkit: a second call with the same args joins the in-flight request; `switchMap` does
+    not cancel calls with other args; `remove()` during a request drops the late result; no `isPolling$`,
+    `type$`, `entityId$`.
+- [x] S3a Generator store side - 3a350896f. S3b consumer side - 253936acd; generic fixtures - 9f935392e.
+  - Options: `--client`, `--clientImport` (required), `--publicRoutes`, `--serviceApiBase`, plus the
+    `migrate-to-query-v3` scoping. Tasks go to `query-toolkit-migration-tasks.md`, ids `NTK-*`.
+  - The interceptor is detected and reported (`NTK-AUTH-INTERCEPTOR`), not deleted.
+  - Dry runs on scratch copies (after `prep-for-query-v3` + `migrate-to-query-v3`):
+    vbl 8/8 features, 39 consumer files moved, 10 files left (the 2 non-HTTP facades);
+    fifagg 44/49 features (the rest have tasks), 127 consumer files moved, 76 files left, all with tasks.
+- [ ] S4 Real run on vbl, then fifagg, in scratch copies. Typecheck, build, and open the main screens.
+- [ ] S5 Guide `apps/docs/query/migrating-from-ngrx-toolkit.md` + sidebar link.
+
+## Continue on 2026-09-26
+
+1. **Blocker: history rewrite before any push of `next`.** 3a350896f (and 253936acd) hold client source in
+   `libs/query/generators/migrate-from-ngrx-toolkit/__fixtures__`; 9f935392e made it generic, but the old blobs
+   stay in history, and `origin` is public. The user approved a rewrite of the unpushed range from 3a350896f.
+   The permission classifier blocked it ("Git Destructive"), so the user must allow it or run it.
+   - Script: `plans/ngrx-toolkit-rewrite.sh` (dry run by default, `--apply` moves `next` with `git update-ref`, which checks
+     the old tip). Plumbing only, in a temp index: every commit that has the generator dir gets the final
+     generic tree of that dir; messages, authors and dates stay. It aborts if the final tree differs.
+     The first dry run failed at `git rm --cached` (it checks the working tree); the script now uses
+     `update-index --force-remove`, and that version has not run yet.
+   - Before `--apply`: ask ethlete-sdk-29 (and any other committing session) for a commit freeze.
+   - After: `/tmp/next-rewrite-map.txt` holds old → new shas. Fix the shas cited in
+     `plans/query-consumer-coverage.md` ("Continue on 2026-09-26" section) and in this file, then tell the sessions.
+   - Nobody pushes `next` until this is done. ethlete-sdk-29 and ethlete-sdk-57 know.
+2. **Decide:** extra keys in `toolkitSelect` / `toolkitCall` args (one real site passes `skipCache: true`, which is
+   now an excess-property type error). Either the interop accepts and drops them from the hash on both sides, or
+   the site gets a task. `extras.skipCache` → `allowCache: false` (D7) is still open.
+3. **S4 inputs:** `tsc` of the scratch vbl copy against `dist/libs/query` is untried. D6 duplicate matching compares
+   type text, so the same shape under another name counts as a mismatch (vbl reuse 9 → 5); look for false
+   mismatches. Action ids passed between components (3 fifagg sites) need a hand rewrite. vbl needs Angular 22
+   and the v2 run; fifagg needs Angular 19 → 22 first.
+4. Rules for every subagent: fixtures generic (no client names, dirs `app-a`/`app-b`), context under 150k with a
+   handoff before, commit only with `git commit -- <paths>`.
