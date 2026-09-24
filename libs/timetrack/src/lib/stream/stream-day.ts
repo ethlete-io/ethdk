@@ -19,7 +19,15 @@ import { TimetrackProjectRoots, workPathsOf, workPathsSplit } from '../model/wor
 import { BuildRowsOptions, DayRows, buildRows } from '../rows/build-rows';
 import { TimetrackCallRules } from '../settings/model';
 import { ContextObservation, ContextSpan, blocksFromSpans, clipSpans } from './blocks';
-import { BreakWindow, breakGaps, breakMs, breakWindows, remoteWorkWindows, unbookedRemoteWindows } from './breaks';
+import {
+  BreakWindow,
+  DEFAULT_MAX_REMOTE_ATTENTION_MS,
+  bookedRemoteWindows,
+  breakGaps,
+  breakMs,
+  breakWindows,
+  remoteWorkWindows,
+} from './breaks';
 import { classifyCalls, lastHostSampleAt } from './calls';
 import { promptOriginAt } from './prompt-origin';
 import { PresenceSample, presenceWindows } from './presence';
@@ -1445,6 +1453,12 @@ export const streamDay = (options: {
     remotePrompts: away.remotePrompts,
     promptAttentionMs: config.promptAttentionMs,
   };
+  const remotePrompts = remote.map((prompt) => {
+    const repoPath = checkoutOf(prompt.cwd);
+
+    return { at: prompt.at, laneKey: repoPath ? streamKey({ repoPath }) : undefined };
+  });
+  const maxRemoteAttentionMs = config.maxRemoteAttentionMs ?? DEFAULT_MAX_REMOTE_ATTENTION_MS;
   // `work` above must stay the spans presence alone allows, because the agent's spans are then clipped
   // to the gaps read off it. Clipping first would let a break widen the work span and so itself.
   const blocks = blocksFromSpans({
@@ -1473,7 +1487,8 @@ export const streamDay = (options: {
     calls,
     breaks,
     remoteWork: remoteWorkWindows(remoteOptions),
-    unbookedRemote: unbookedRemoteWindows({ ...remoteOptions, maxRemoteAttentionMs: config.maxRemoteAttentionMs }),
+    bookedRemote: bookedRemoteWindows({ ...remoteOptions, remotePrompts, maxRemoteAttentionMs }),
+    maxRemoteAttentionMs,
     cut: { ...config.rows?.cut, focusMsByStream },
   });
 

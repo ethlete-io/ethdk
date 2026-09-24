@@ -1,5 +1,6 @@
 import { CollectedEvent, PresenceEvent } from '../model/event';
 import { PresenceStatement, statementWindows } from '../model/statement';
+import { BookedRemoteWindow } from '../rows/remote-booking';
 import { DEFAULT_ROUND_OPTIONS, RoundOptions } from '../rows/round';
 import {
   TimeWindow,
@@ -159,26 +160,30 @@ export const remoteWorkWindows = (options: {
   });
 };
 
+/** A prompt `promptOriginAt` read as `remote`, with the lane of the checkout its session ran in. */
+export type RemotePrompt = { at: Date; laneKey?: string };
+
 /**
- * The parts of the remote stretches of `remoteWorkWindows` the day draws as work and never books.
+ * The parts of the remote stretches of `remoteWorkWindows` the day books. The rest of each stretch is
+ * drawn as work and never booked.
  *
  * Each remote prompt books its allowance, backwards from the prompt and inside its break; allowances
  * that overlap count once. The day books at most `maxRemoteAttentionMs` of them, earliest prompt
  * first, and the prompt that reaches the limit keeps the part nearest itself. See ADR 0033.
  */
-export const unbookedRemoteWindows = (options: {
+export const bookedRemoteWindows = (options: {
   breaks: readonly TimeWindow[];
-  remotePrompts: readonly Date[];
+  remotePrompts: readonly RemotePrompt[];
   promptAttentionMs?: number;
   maxRemoteAttentionMs?: number;
-}): TimeWindow[] => {
+}): BookedRemoteWindow[] => {
   const attentionMs = options.promptAttentionMs ?? DEFAULT_PROMPT_ATTENTION_MS;
-  const booked: TimeWindow[] = [];
+  const booked: BookedRemoteWindow[] = [];
   let leftMs = options.maxRemoteAttentionMs ?? DEFAULT_MAX_REMOTE_ATTENTION_MS;
 
-  for (const at of [...options.remotePrompts].sort((a, b) => a.getTime() - b.getTime())) {
+  for (const prompt of [...options.remotePrompts].sort((a, b) => a.at.getTime() - b.at.getTime())) {
     const allowance = clipWindows({
-      windows: [{ from: new Date(at.getTime() - attentionMs), to: at }],
+      windows: [{ from: new Date(prompt.at.getTime() - attentionMs), to: prompt.at }],
       within: options.breaks,
     });
 
@@ -187,15 +192,12 @@ export const unbookedRemoteWindows = (options: {
 
       if (takenMs <= 0) continue;
 
-      booked.push({ from: new Date(part.to.getTime() - takenMs), to: part.to });
+      booked.push({ from: new Date(part.to.getTime() - takenMs), to: part.to, laneKey: prompt.laneKey });
       leftMs -= takenMs;
     }
   }
 
-  return subtractWindows({
-    windows: remoteWorkWindows({ ...options, promptAttentionMs: attentionMs }),
-    without: mergeWindows(booked),
-  });
+  return booked.sort((a, b) => a.from.getTime() - b.from.getTime());
 };
 
 /**

@@ -346,6 +346,23 @@ describe('streamDay, on prompts the short input idleness reads as remote', () =>
     expect(phone.map((row) => [row.from, row.to, row.durationMs])).toEqual([[AT(120), AT(225), 45 * MINUTE]]);
   });
 
+  it('books the hour only on the row of the session the prompts were sent to', () => {
+    const STRETCH = { from: AT(105), to: AT(225) };
+    const insideMs = (row: { from: Date; to: Date }) =>
+      Math.max(
+        0,
+        Math.min(row.to.getTime(), STRETCH.to.getTime()) - Math.max(row.from.getTime(), STRETCH.from.getTime()),
+      );
+    const bookedInsideMs = (row: { from: Date; to: Date; durationMs: number }) =>
+      row.durationMs - (row.to.getTime() - row.from.getTime() - insideMs(row));
+    const review = reviewDay({ rows: steeredDay(EVERY_TEN, [...DESK_STOPPED, ...running(100, 230)]).rows });
+    const parallel = review.rows.filter((row) => row.issueKey !== 'ET-900' && insideMs(row) > 0);
+
+    expect(parallel.map((row) => row.issueKey)).toContain('ET-772');
+    expect(parallel.map(bookedInsideMs)).toEqual(parallel.map(() => 0));
+    expect(review.rows.reduce((sum, row) => sum + bookedInsideMs(row), 0)).toBe(45 * MINUTE);
+  });
+
   it('books the whole span of every row on a day without the signal', () => {
     const { proposals, unnamed } = steeredDay(EVERY_TEN, []).rows;
     const rows = [...proposals, ...unnamed];

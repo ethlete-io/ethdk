@@ -1,4 +1,5 @@
-import { DayRows, bookedSpanMs, dayCheckOptions } from '../rows/build-rows';
+import { DayRows, dayCheckOptions } from '../rows/build-rows';
+import { RemoteBooking, bookedSpanMs, unbookedRemoteByRow } from '../rows/remote-booking';
 import { CutOptions } from '../rows/cut';
 import { CheckDayOptions, DEFAULT_ROUND_OPTIONS, DayCheck, RoundOptions, checkDay } from '../rows/round';
 import { storedLaneKey } from '../rows/lane';
@@ -284,12 +285,16 @@ const trackPinnedRows = (options: { pinned: readonly PinnedRow[]; sources: reado
  *
  * Run after `snapRowBounds`, whose bounds are whole increments, so this books whole increments too.
  */
-const bookTheSpan = (rows: ReviewedRow[], unbookedRemote: readonly TimeWindow[] = []): ReviewedRow[] =>
-  rows.map((row) => {
-    const durationMs = bookedSpanMs(row, isManualRow(row) ? [] : unbookedRemote);
+const bookTheSpan = (rows: ReviewedRow[], remote?: RemoteBooking): ReviewedRow[] => {
+  const observed = rows.filter((row) => !isManualRow(row));
+  const unbooked = unbookedRemoteByRow({ rows: observed, remote });
+
+  return rows.map((row) => {
+    const durationMs = bookedSpanMs(row, unbooked[observed.indexOf(row)]);
 
     return durationMs === row.durationMs ? row : { ...row, durationMs };
   });
+};
 
 /**
  * Applies a day's local edits to a freshly correlated day and reports what a sync would write.
@@ -349,7 +354,7 @@ export const reviewDay = (options: {
     backgroundProjects: options.cut?.backgroundProjects,
     round: options.round,
   });
-  const rows = bookTheSpan(recut.rows, options.rows.unbookedRemote);
+  const rows = bookTheSpan(recut.rows, options.rows.remote);
 
   const replacedMs = options.rows.proposals
     .filter((proposal) => consumed.has(proposal.id))

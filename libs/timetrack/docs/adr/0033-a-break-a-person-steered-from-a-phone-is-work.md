@@ -28,7 +28,7 @@ books is only what its prompts bought: each remote prompt books `promptAttention
 itself, inside its break, and allowances that overlap count once. The day books at most
 `maxRemoteAttentionMs` (`DEFAULT_MAX_REMOTE_ATTENTION_MS`, 60 minutes) of them over every break
 together, earliest prompt first; the prompt that reaches the limit keeps only what is left, nearest
-itself. `unbookedRemoteWindows` is the rest of the stretch.
+itself. `bookedRemoteWindows` is what it books; the rest of the stretch is drawn and never booked.
 
 **A lock does not stop it.** A lock says the user left the desk, which is exactly what steering from a
 phone needs; it does not say they stopped working. The parts a remote stretch leaves keep the lock.
@@ -46,11 +46,18 @@ that an `input-active` closes was watched from end to end. A prompt in any other
   `remoteWorkWindows`, and `markAttendance` reads them beside `attendedAt`, so a band there raises no
   `unattended-time` and is not hatched.
 - **A row there books less than it spans.** The one exception to ADR 0019: `buildRows` puts the
-  unbooked windows on the row grid, each end to the nearest boundary as a drawn break is, and a row's
-  `durationMs` is its span less the unbooked time inside it — see `bookedSpanMs`. `reviewDay` books
-  the span the same way, so `proposedMs` and a sync leave the unbooked time out, and the band's label
-  reads the booked number over the wider band. A row the reviewer wrote by hand books its whole span.
-  The cap is on time, not on rows: two lanes working in one booked allowance both book it.
+  stretch and its booked parts on the row grid, each end to the nearest boundary as a drawn break is,
+  and rounding never lets the booked parts pass the hour. A row's `durationMs` is its span less the
+  unbooked time inside it — see `unbookedRemoteByRow`. `reviewDay` books the span the same way, so
+  `proposedMs` and a sync leave the unbooked time out, and the band's label reads the booked number
+  over the wider band. A row the reviewer wrote by hand books its whole span.
+- **A booked part counts on the prompt's own row, once.** A remote prompt belongs to one agent
+  session, so its allowance books only on the rows in the lane of that session's checkout. Every
+  other row over the same minutes, a parallel lane included, treats them as unbooked, so the day
+  never books more than the hour however many lanes ran. Where the prompt's lane has rows but none
+  over its allowance, the allowance stays unbooked. Where the day holds no row in that lane at all,
+  it books on exactly one row over it: one that names an issue before one that does not, then the
+  lowest lane key, then the earliest start. How ordinary parallel work books is not decided here.
 - **A day without the signal does not change.** No input transition reads every prompt `unknown`, and
   `unknown` behaves exactly as ADR 0028 describes. 2026-09-23 itself predates the signal, so it keeps
   its drawn breaks.

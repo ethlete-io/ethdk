@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CollectedEvent } from '../model/event';
 import { TimeWindow } from '../model/time-window';
-import { breakMs, breakWindows, breaksBetweenRows, unbookedRemoteWindows } from './breaks';
+import { breakMs, breakWindows, bookedRemoteWindows, breaksBetweenRows } from './breaks';
 
 const at = (hour: number, minute = 0) => new Date(2026, 8, 10, hour, minute);
 
@@ -187,42 +187,70 @@ describe('breakWindows', () => {
   });
 });
 
-describe('unbookedRemoteWindows', () => {
+describe('bookedRemoteWindows', () => {
+  const prompts = (...instants: Date[]) => instants.map((instant) => ({ at: instant }));
+
   it('books each remote prompt its allowance and leaves the stretch between them unbooked', () => {
-    const unbooked = unbookedRemoteWindows({
+    const booked = bookedRemoteWindows({
       breaks: [window([11, 0], [14, 0])],
-      remotePrompts: [at(11, 30), at(12, 0), at(12, 30)],
+      remotePrompts: prompts(at(11, 30), at(12, 0), at(12, 30)),
     });
 
-    expect(unbooked).toEqual([window([11, 30], [11, 45]), window([12, 0], [12, 15])]);
+    expect(booked).toEqual([window([11, 15], [11, 30]), window([11, 45], [12, 0]), window([12, 15], [12, 30])]);
   });
 
   it('gives the hour to the earliest prompts, counts overlapping allowances once, and leaves the rest unbooked', () => {
-    const unbooked = unbookedRemoteWindows({
+    const booked = bookedRemoteWindows({
       breaks: [window([11, 0], [14, 0])],
-      remotePrompts: [at(11, 30), at(11, 35), at(11, 50), at(12, 5), at(12, 20), at(12, 50)],
+      remotePrompts: prompts(at(11, 30), at(11, 35), at(11, 50), at(12, 5), at(12, 20), at(12, 50)),
     });
 
-    expect(unbooked).toEqual([window([12, 5], [12, 10]), window([12, 20], [12, 50])]);
+    expect(booked).toEqual([
+      window([11, 15], [11, 30]),
+      window([11, 30], [11, 35]),
+      window([11, 35], [11, 50]),
+      window([11, 50], [12, 5]),
+      window([12, 10], [12, 20]),
+    ]);
   });
 
   it('counts the hour across every break of the day', () => {
-    const unbooked = unbookedRemoteWindows({
+    const booked = bookedRemoteWindows({
       breaks: [window([11, 0], [12, 30]), window([13, 0], [15, 0])],
-      remotePrompts: [at(11, 30), at(11, 45), at(12, 0), at(13, 30), at(13, 45), at(14, 0)],
+      remotePrompts: prompts(at(11, 30), at(11, 45), at(12, 0), at(13, 30), at(13, 45), at(14, 0)),
     });
 
-    expect(unbooked).toEqual([window([13, 30], [14, 0])]);
+    expect(booked).toEqual([
+      window([11, 15], [11, 30]),
+      window([11, 30], [11, 45]),
+      window([11, 45], [12, 0]),
+      window([13, 15], [13, 30]),
+    ]);
   });
 
   it('takes the daily limit from the options', () => {
-    const unbooked = unbookedRemoteWindows({
+    const booked = bookedRemoteWindows({
       breaks: [window([11, 0], [14, 0])],
-      remotePrompts: [at(11, 30), at(12, 0), at(12, 30)],
+      remotePrompts: prompts(at(11, 30), at(12, 0), at(12, 30)),
       maxRemoteAttentionMs: 30 * 60_000,
     });
 
-    expect(unbooked).toEqual([window([11, 30], [11, 45]), window([12, 0], [12, 30])]);
+    expect(booked).toEqual([window([11, 15], [11, 30]), window([11, 45], [12, 0])]);
+  });
+
+  it('keeps the lane of the prompt that bought each part', () => {
+    const booked = bookedRemoteWindows({
+      breaks: [window([11, 0], [14, 0])],
+      remotePrompts: [
+        { at: at(11, 30), laneKey: 'repo:/a' },
+        { at: at(11, 40), laneKey: 'repo:/b' },
+      ],
+    });
+
+    expect(booked).toEqual([
+      { ...window([11, 15], [11, 30]), laneKey: 'repo:/a' },
+      { ...window([11, 30], [11, 40]), laneKey: 'repo:/b' },
+    ]);
   });
 });
 

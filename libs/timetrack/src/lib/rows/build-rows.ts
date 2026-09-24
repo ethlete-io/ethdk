@@ -4,7 +4,7 @@ import { CallWindow, callLabel } from '../model/call';
 import { CollectedEvent } from '../model/event';
 import { WorklogProposal } from '../model/proposal';
 import { ClosedTimerRun, timerRunDurationMs } from '../model/timer';
-import { TimeWindow, clipWindows, mergeWindows, windowsMs } from '../model/time-window';
+import { TimeWindow } from '../model/time-window';
 import { attendedAt, markAttendance } from './attended';
 import { AttributeOptions, attribute } from './attribute';
 import { CallMatch, dropCallWindows, matchCalls } from './calls';
@@ -19,7 +19,14 @@ import { NoWorkContextOptions, dropNoWorkContext } from './no-work-context';
 import { clipBlocks } from './overlap';
 import { PrivateTime, privateTime } from './project-link';
 import { UnnamedProposal, propose } from './propose';
-import { CheckDayOptions, DEFAULT_ROUND_OPTIONS, RoundOptions } from './round';
+import {
+  BookedRemoteWindow,
+  RemoteBooking,
+  bookedSpanMs,
+  remoteBookingOnGrid,
+  unbookedRemoteByRow,
+} from './remote-booking';
+import { CheckDayOptions, RoundOptions } from './round';
 import { TimerMatch, matchTimerRuns, timerProposesRow } from './timers';
 
 export type BuildRowsOptions = {
@@ -74,8 +81,10 @@ export type BuildRowsOptions = {
   breaks?: readonly TimeWindow[];
   /** The stretches the user worked from another device, from `remoteWorkWindows`. A band in one is attended. */
   remoteWork?: readonly TimeWindow[];
-  /** The part of `remoteWork` drawn as work and never booked, from `unbookedRemoteWindows`. */
-  unbookedRemote?: readonly TimeWindow[];
+  /** The part of `remoteWork` the day books, from `bookedRemoteWindows`. The rest is drawn and never booked. */
+  bookedRemote?: readonly BookedRemoteWindow[];
+  /** The most `bookedRemote` may book once it is on the row grid. */
+  maxRemoteAttentionMs?: number;
 };
 
 export type DayRows = {
@@ -107,21 +116,10 @@ export type DayRows = {
   /** How much of the day that time covers. It is owed to nobody and counts against no target. */
   privateMs: number;
   /**
-   * The remote stretches a row draws and does not book, on the row grid. A row's duration leaves them
-   * out — see `bookedSpanMs`.
+   * The day's remote stretches on the row grid, and the part of them it books. A row's duration leaves
+   * out the rest — see `unbookedRemoteByRow`.
    */
-  unbookedRemote?: TimeWindow[];
-};
-
-/** What a row spanning `from` to `to` books: its span, less the unbooked remote time inside it. */
-export const bookedSpanMs = (row: TimeWindow, unbooked: readonly TimeWindow[] = []) =>
-  Math.max(0, row.to.getTime() - row.from.getTime() - windowsMs(clipWindows({ windows: unbooked, within: [row] })));
-
-const onGrid = (windows: readonly TimeWindow[], round?: Partial<RoundOptions>): TimeWindow[] => {
-  const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...round };
-  const nearest = (at: Date) => new Date(Math.round(at.getTime() / incrementMs) * incrementMs);
-
-  return mergeWindows(windows.map((window) => ({ from: nearest(window.from), to: nearest(window.to) })));
+  remote?: RemoteBooking;
 };
 
 /**
@@ -250,9 +248,15 @@ export const buildRows = (
     describe: options.describe,
   });
   const secludedTime = privateTime({ blocks: secluded });
-  const unbookedRemote = onGrid(options.unbookedRemote ?? [], options.round);
-  const withoutUnbooked = <T extends WorklogProposal | UnnamedProposal>(row: T): T => {
-    const durationMs = Math.min(row.durationMs, bookedSpanMs(row, unbookedRemote));
+  const remote = remoteBookingOnGrid({
+    drawn: options.remoteWork ?? [],
+    booked: options.bookedRemote ?? [],
+    maxBookedMs: options.maxRemoteAttentionMs,
+    round: options.round,
+  });
+  const unbooked = unbookedRemoteByRow({ rows: [...proposals, ...unnamed], remote });
+  const withoutUnbooked = <T extends WorklogProposal | UnnamedProposal>(row: T, index: number): T => {
+    const durationMs = Math.min(row.durationMs, bookedSpanMs(row, unbooked[index]));
 
     return durationMs === row.durationMs ? row : { ...row, durationMs };
   };
@@ -260,7 +264,7 @@ export const buildRows = (
   return {
     proposals: proposals.map(withoutUnbooked),
     unattributed,
-    unnamed: unnamed.map(withoutUnbooked),
+    unnamed: unnamed.map((row, index) => withoutUnbooked(row, proposals.length + index)),
     unobserved,
     calls,
     timers,
@@ -272,7 +276,7 @@ export const buildRows = (
     }),
     private: secludedTime,
     privateMs: secludedTime.reduce((sum, entry) => sum + entry.observedMs, 0),
-    unbookedRemote,
+    remote,
   };
 };
 
