@@ -61,7 +61,6 @@
   "createGqlQuery": "spec: libs/query/src/lib/gql/gql-query.spec.ts",
   "createGqlQueryCreator": "spec: libs/query/src/lib/gql/gql-query-creator.spec.ts",
   "createHttpRequest": "spec: libs/query/src/lib/http/http-request.spec.ts",
-  "createNoopQueryPersistenceAdapter": "S10 persistence: needs a scenario",
   "createPersistentAuthFeature": "internal: built by withPersistentAuth(), covered by auth-persistent.scenario",
   "createQuery": "spec: libs/query/src/lib/http/query.spec.ts",
   "createQueryContext": "spec: libs/query/src/lib/http/query-snapshot.spec.ts",
