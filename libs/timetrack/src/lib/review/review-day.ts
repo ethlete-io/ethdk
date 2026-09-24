@@ -7,6 +7,7 @@ import { snapRowBounds } from '../rows/snap';
 import { AttributionRule } from '../model/attribution';
 import { streamKeyRepoPath } from '../model/block';
 import { foldShortRows } from './fold';
+import { describeCallPiece } from './call-pieces';
 import { backgroundTest, recutReviewedRows } from './recut';
 import { formatDurationMs, formatTimeOfDay } from '../model/duration';
 import { syncsWithoutReview } from '../model/evidence';
@@ -324,11 +325,14 @@ export const reviewDay = (options: {
     collides: (grower, other) => isBackground(grower) !== isBackground(other),
   });
   const tracked = trackPinnedRows({ pinned: edits.pinned, sources });
+  const calls = options.rows.calls;
   const consumed = new Set([...pinnedIds, ...tracked.matched.values()]);
   const reviewed = [
     ...sources.filter((row) => !consumed.has(row.id)).map((row) => withOverride(row, edits.overrides[row.id])),
-    ...tracked.rows.map(fromPinned).map((row) => nameFromStandInRule({ row, rules, standIns })),
-    ...tracked.leftovers.map((row) => withOverride(row, edits.overrides[row.id])),
+    ...tracked.rows
+      .map((pin) => (pin.replaces.length ? describeCallPiece({ row: fromPinned(pin), calls }) : fromPinned(pin)))
+      .map((row) => nameFromStandInRule({ row, rules, standIns })),
+    ...tracked.leftovers.map((row) => withOverride(describeCallPiece({ row, calls }), edits.overrides[row.id])),
   ]
     .map((row) => readStandIn(row, standIns))
     .sort((a, b) => a.from.getTime() - b.from.getTime() || (a.issueKey ?? '').localeCompare(b.issueKey ?? ''));

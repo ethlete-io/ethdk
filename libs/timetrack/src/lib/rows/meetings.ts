@@ -164,7 +164,7 @@ const meetingSummary = (event: CalendarOccurrenceEvent) => {
   return `${event.title} (with ${named}${rest > 0 ? ` +${rest}` : ''})`;
 };
 
-const calendarEvidence = (event: CalendarOccurrenceEvent): Evidence => ({
+export const calendarEvidence = (event: CalendarOccurrenceEvent): Evidence => ({
   kind: 'calendar',
   at: event.at,
   detail: `calendar event _${event.title}_ ${timeOfDay(event.at)}-${timeOfDay(event.until)}, you ${
