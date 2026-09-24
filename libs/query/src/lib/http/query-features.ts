@@ -280,7 +280,7 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
         // mid-flight needs no restart and `executeInitially`/interval semantics stay identical.
         if (hold && !hold.isHolder()) return;
 
-        context.execute({ args: currentArgs });
+        context.execute({ args: currentArgs, options: { triggeredBy: 'polling' } });
       };
 
       const schedule = (firstDelay: number) => {
@@ -327,7 +327,7 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
 
             if (options.executeInitially) {
               if (isPaused()) lastTickAt -= currentInterval();
-              else if (!hold || hold.isHolder()) context.execute({ args });
+              else if (!hold || hold.isHolder()) context.execute({ args, options: { triggeredBy: 'polling' } });
             }
 
             schedule(currentInterval());
@@ -735,7 +735,7 @@ export const withAutoRefresh = <TArgs extends QueryArgs>(options: WithAutoRefres
             // It should have args because a withArgs feature is present.
             if (args === null && context.flags.hasWithArgsFeature) return;
 
-            context.execute({ args });
+            context.execute({ args, options: { triggeredBy: 'auto-refresh' } });
           });
         },
         { injector: context.deps.injector },

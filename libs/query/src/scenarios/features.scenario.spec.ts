@@ -833,7 +833,7 @@ describe('features scenario', () => {
     const trigger = signal(0);
 
     const c = s.consumer();
-    c.run(() => getStatus(withAutoRefresh({ onSignalChanges: [trigger] })));
+    const query = c.run(() => getStatus(withAutoRefresh({ onSignalChanges: [trigger] })));
 
     s.tick();
     const before = s.api.requestCount('GET', '/status');
@@ -842,6 +842,7 @@ describe('features scenario', () => {
     s.tick();
 
     expect(s.api.requestCount('GET', '/status')).toBe(before + 1);
+    expect(query.triggeredBy()).toBe('auto-refresh');
 
     c.destroy();
   });
@@ -1710,6 +1711,48 @@ describe('withPolling cadence options', () => {
     window.dispatchEvent(new Event('online'));
     s.tick();
     expect(s.api.requestCount('GET', '/feed')).toBe(1);
+
+    c.destroy();
+  });
+
+  it('marks polling ticks and focus refetches with triggeredBy polling, and a manual execute with null', () => {
+    const s = scenario();
+    const getFeed = pollFeed(s);
+
+    const c = s.consumer();
+    const query = c.run(() =>
+      getFeed({ onlyManualExecution: true }, withPolling({ interval: 1_000, refetchOnFocus: true })),
+    );
+
+    advance(s, 1_100);
+    expect(s.api.requestCount('GET', '/feed')).toBe(1);
+    expect(query.triggeredBy()).toBe('polling');
+
+    query.execute();
+    s.tick();
+    expect(s.api.requestCount('GET', '/feed')).toBe(2);
+    expect(query.triggeredBy()).toBeNull();
+
+    window.dispatchEvent(new Event('focus'));
+    s.tick();
+    expect(s.api.requestCount('GET', '/feed')).toBe(3);
+    expect(query.triggeredBy()).toBe('polling');
+
+    c.destroy();
+  });
+
+  it('marks the executeInitially run with triggeredBy polling', () => {
+    const s = scenario();
+    const getFeed = pollFeed(s);
+
+    const c = s.consumer();
+    const query = c.run(() =>
+      getFeed({ onlyManualExecution: true }, withPolling({ interval: 1_000, executeInitially: true })),
+    );
+
+    s.tick();
+    expect(s.api.requestCount('GET', '/feed')).toBe(1);
+    expect(query.triggeredBy()).toBe('polling');
 
     c.destroy();
   });
