@@ -1,15 +1,4 @@
-import {
-  ApplicationRef,
-  Component,
-  createComponent,
-  EnvironmentInjector,
-  inject,
-  InjectionToken,
-  OnInit,
-  signal,
-  Type,
-  WritableSignal,
-} from '@angular/core';
+import { Component, inject, InjectionToken, OnInit, signal, WritableSignal } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { queryComputed, QueryField, QueryForm, QueryStateType } from '../index';
 import { describe, expect, it } from 'vitest';
@@ -80,15 +69,6 @@ class SearchUsersHost {
   );
 }
 
-const mount = <T>(host: Type<T>, injector: EnvironmentInjector) => {
-  const ref = createComponent(host, { environmentInjector: injector });
-
-  injector.get(ApplicationRef).attachView(ref.hostView);
-  ref.changeDetectorRef.detectChanges();
-
-  return ref;
-};
-
 describe.each(LEGACY_CLIENT_KINDS)('legacy consumer patterns on the %s client', (kind) => {
   describe('queryComputed in a component field initializer', () => {
     const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
@@ -103,7 +83,7 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy consumer patterns on the %s client', 
         { provide: GET_USER, useValue: legacy.get<GetUserArgs>((p) => `/users/${p.id}`) },
         { provide: USER_ID, useValue: id },
       ]);
-      const ref = mount(UserHost, c.injector);
+      const ref = s.mount(UserHost, c.injector);
 
       s.tick(10);
 
@@ -142,7 +122,7 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy consumer patterns on the %s client', 
         { provide: GET_USER, useValue: legacy.get<GetUserArgs>((p) => `/users/${p.id}`) },
         { provide: USER_ID, useValue: id },
       ]);
-      const ref = mount(GuardedUserHost, c.injector);
+      const ref = s.mount(GuardedUserHost, c.injector);
 
       s.tick(1000);
       expect(ref.instance.query()).toBeNull();
@@ -191,7 +171,7 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy consumer patterns on the %s client', 
         { provide: CREATE_USER, useValue: legacy.post<CreateUserArgs>('/users') },
         { provide: USER_NAME, useValue: name },
       ]);
-      const ref = mount(CreateUserHost, c.injector);
+      const ref = s.mount(CreateUserHost, c.injector);
 
       s.tick(1000);
       expect(s.api.requestCount('POST', '/users')).toBe(1);
@@ -229,7 +209,7 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy consumer patterns on the %s client', 
         { provide: GET_USER, useValue: legacy.get<GetUserArgs>((p) => `/users/${p.id}`) },
         { provide: USER_ID, useValue: signal('1') },
       ]);
-      const ref = mount(UserHost, c.injector);
+      const ref = s.mount(UserHost, c.injector);
 
       expect(ref.instance.atConstruction).not.toBeNull();
       expect(ref.instance.atInit).toBe(ref.instance.atConstruction);
@@ -253,11 +233,11 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy consumer patterns on the %s client', 
         { provide: GET_USER, useValue: legacy.get<GetUserArgs>((p) => `/users/${p.id}`) },
         { provide: USER_ID, useValue: signal('1') },
       ]);
-      const first = mount(UserHost, c.injector);
+      const first = s.mount(UserHost, c.injector);
 
       s.tick(10);
 
-      const second = mount(UserHost, c.injector);
+      const second = s.mount(UserHost, c.injector);
       first.destroy();
       s.tick(1000);
 
@@ -279,7 +259,7 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy consumer patterns on the %s client', 
       s.api.on('GET', '/users', ({ query }) => ({ body: { search: query['search'] ?? null }, delay: 20 }));
 
       const c = s.consumer([{ provide: SEARCH_USERS, useValue: legacy.get<SearchUsersArgs>('/users') }]);
-      const ref = mount(SearchUsersHost, c.injector);
+      const ref = s.mount(SearchUsersHost, c.injector);
       await s.settle(1000);
 
       const search = ref.instance.form.controls.search;
@@ -326,13 +306,13 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy consumer patterns on the %s client', 
         { provide: GET_USER, useValue: legacy.get<GetUserArgs>((p) => `/users/${p.id}`) },
         { provide: USER_ID, useValue: signal('1') },
       ]);
-      const first = mount(UserHost, c.injector);
+      const first = s.mount(UserHost, c.injector);
 
       s.tick(1000);
       first.destroy();
       s.tick(10);
 
-      const second = mount(UserHost, c.injector);
+      const second = s.mount(UserHost, c.injector);
 
       expect(second.instance.query()?.rawState).toMatchObject({
         type: QueryStateType.Success,

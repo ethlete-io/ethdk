@@ -1,5 +1,8 @@
 import { provideHttpClient, HttpBackend } from '@angular/common/http';
 import {
+  ApplicationRef,
+  ComponentRef,
+  createComponent,
   createEnvironmentInjector,
   DestroyRef,
   EnvironmentInjector,
@@ -7,6 +10,7 @@ import {
   ErrorHandler,
   Injector,
   Provider,
+  Type,
 } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
@@ -164,6 +168,12 @@ export type Scenario = {
    * component below another tab's injector instead of the scenario's root one.
    */
   consumer: (providers?: ScenarioProviders, parent?: EnvironmentInjector) => ScenarioConsumer;
+  /**
+   * Creates a real component below `parent` (a consumer's injector) and attaches its view to the
+   * `ApplicationRef`, so `tick()` runs its change detection and template effects the way an app does.
+   * `destroy()` destroys every component still mounted.
+   */
+  mount: <T>(host: Type<T>, parent?: EnvironmentInjector) => ComponentRef<T>;
   tick: (ms?: number) => void;
   settle: (ms?: number) => Promise<void>;
   flush: (maxMs?: number) => void;
@@ -255,6 +265,7 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
   const warnings: ScenarioWarningEntry[] = [];
   const allowed = new Set<InvariantName>();
   const consumers = new Set<EnvironmentInjector>();
+  const mounted = new Set<ComponentRef<unknown>>();
   const live = new Set<AnyNewQuery>();
 
   const originalXhr = globalThis.XMLHttpRequest;
@@ -376,6 +387,17 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
           childInjector.destroy();
         },
       };
+    };
+
+    const mount = <T>(host: Type<T>, parent: EnvironmentInjector = injector): ComponentRef<T> => {
+      const ref = createComponent(host, { environmentInjector: parent });
+
+      mounted.add(ref);
+      ref.onDestroy(() => mounted.delete(ref));
+      parent.get(ApplicationRef).attachView(ref.hostView);
+      ref.changeDetectorRef.detectChanges();
+
+      return ref;
     };
 
     const trackQuery = (created: unknown) => {
@@ -506,6 +528,8 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
     };
 
     const destroy = () => {
+      for (const ref of Array.from(mounted)) ref.destroy();
+
       for (const childInjector of Array.from(consumers)) {
         consumers.delete(childInjector);
         childInjector.destroy();
@@ -535,6 +559,7 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
       delete: trackCreatedQueries(createDeleteQuery(clientRef)),
       run,
       consumer,
+      mount,
       tick,
       settle,
       flush,
