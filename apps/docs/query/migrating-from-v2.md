@@ -54,6 +54,18 @@ If anything in the app relies on **upload progress** (`reportProgress` on a crea
 
 The legacy client sent its requests past `HttpClient`, so no `HttpInterceptor` ever saw them. The current one sends everything through `HttpClient`, and every interceptor the app registers now runs on every query request too. Audit them before shipping. An interceptor that adds a bearer token to every call is the usual problem: it now sends the token to third-party hosts the app queries, and it sends the header a second time on secure queries, which already get theirs from the auth provider. Limit such an interceptor to your own API's origin, and let the [auth provider](/query/auth) handle the token for secure queries.
 
+Every request `@ethlete/query` sends carries the `IS_QUERY_REQUEST` `HttpContextToken`, so such an interceptor can let query requests pass untouched:
+
+```ts
+export const appTokenInterceptor: HttpInterceptorFn = (req, next) => {
+  if (req.context.get(IS_QUERY_REQUEST)) return next(req);
+
+  return next(req.clone({ setHeaders: { Authorization: `Bearer ${readAppToken()}` } }));
+};
+```
+
+See [HTTP queries](/query/http#interceptors).
+
 ### Retries and error parsing are opt-in
 
 In v2, a failed request was retried and a Symfony or HTML error body was parsed by default. In v3 both are client [`features`](/query/errors). The generator adds `withEthleteApiErrors()` to every client it migrates, so both stay on. The retry policy is still not the one v2 used, and the task file says so:

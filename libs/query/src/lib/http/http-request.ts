@@ -1,5 +1,6 @@
 import {
   HttpClient,
+  HttpContext,
   HttpErrorResponse,
   HttpEvent,
   HttpEventType,
@@ -33,6 +34,7 @@ import { CacheAdapterFn } from './query-client';
 import { CreateQueryCreatorOptions, QueryMethod } from './query-creator';
 import { QueryErrorResponse, createQueryErrorResponse } from './query-error-response';
 import { QueryHeadersInput, resolveQueryHeaders } from './query-headers';
+import { IS_QUERY_REQUEST } from './query-http-context';
 import { QueryRepositoryDependencies } from './query-repository';
 import { runDefaultQueryRetry } from './query-error-parsing';
 import { isIdempotentQueryMethod, ShouldRetryRequestFn, ShouldRetryRequestOptions } from './query-retry-utils';
@@ -394,6 +396,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
       transferCache: clientOptions?.transferCache,
       responseType: clientOptions?.responseType || 'json',
       headers,
+      context: new HttpContext().set(IS_QUERY_REQUEST, true),
     });
 
   /**

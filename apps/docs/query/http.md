@@ -106,6 +106,23 @@ With `reportProgress: true`, `query.loading()` - an `HttpRequestLoadingState` - 
 
 In the creator options above, `responseType` is an `HttpRequestResponseType` and `transferCache` an `HttpRequestTransferCacheConfig`.
 
+## Interceptors
+
+Every query request - HTTP and GraphQL creators, secure queries, and the auth provider's login and refresh queries - goes through Angular's `HttpClient`, so the app's interceptors see it. Each one carries the `IS_QUERY_REQUEST` `HttpContextToken` set to `true`; a plain `HttpClient` call reads `false`. An interceptor that should only touch the app's own calls skips the rest:
+
+```ts
+import { HttpInterceptorFn } from '@angular/common/http';
+import { IS_QUERY_REQUEST } from '@ethlete/query';
+
+export const appTokenInterceptor: HttpInterceptorFn = (req, next) => {
+  if (req.context.get(IS_QUERY_REQUEST)) return next(req);
+
+  return next(req.clone({ setHeaders: { Authorization: `Bearer ${readAppToken()}` } }));
+};
+```
+
+The token only says a request came from `@ethlete/query`, not whether it is secure: a secure query already carries the auth provider's `Authorization` header when it reaches the interceptor.
+
 ## Error codes
 
 HTTP queries throw the [query core error codes](/query/errors#error-codes); secure queries additionally throw the [auth error codes](/query/auth#error-codes).
