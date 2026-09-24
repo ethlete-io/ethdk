@@ -24,6 +24,11 @@
     gap: var(--et-pagination-gap);
   }
 
+  /* The fit measures the host. Sized to its trimmed content, a flex item would never see room return. */
+  :where(.et-pagination-host[data-fit-width]) {
+    flex-grow: 1;
+  }
+
   /* Touch gets the comfortable 44px target. `:where()` holds this at zero specificity so the `sm` and
      compact rules below - which floor the size on purpose - still win over it. */
   @media (pointer: coarse) {

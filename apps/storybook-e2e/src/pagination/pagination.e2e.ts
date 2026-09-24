@@ -6,6 +6,7 @@ const MANY_PAGES_STORY_ID = 'components-navigation-pagination--many-pages';
 const LINKS_STORY_ID = 'components-navigation-pagination--links';
 const RANGE_AND_JUMP_STORY_ID = 'components-navigation-pagination--with-range-and-jump';
 const PAGE_SIZE_SELECT_STORY_ID = 'components-navigation-pagination--page-size-select';
+const FOOTER_ROW_STORY_ID = 'components-navigation-pagination--footer-row';
 
 const TOUCH_TARGET = 44;
 
@@ -254,5 +255,20 @@ test.describe('pagination / touch hit area', () => {
     expect(new Set(buttons.map((item) => `${item.hitWidth}x${item.hitHeight}`))).toEqual(new Set(['44x44']));
     expect(new Set(geometry.slice(0, -1).map((item) => item.gapAfter))).toEqual(new Set([4]));
     await expectTapsLandOnTheirOwnTarget(root);
+  });
+});
+
+test.describe('pagination / responsive', () => {
+  test('in a flex row the page window trims as the row narrows and comes back when it widens', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const root = await openStory(page, FOOTER_ROW_STORY_ID);
+    const items = root.locator('.et-pagination-list > li');
+    const wideCount = await items.count();
+
+    await page.setViewportSize({ width: 480, height: 800 });
+    await expect.poll(() => items.count()).toBeLessThan(wideCount);
+
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await expect.poll(() => items.count()).toBe(wideCount);
   });
 });

@@ -17,6 +17,7 @@ export default {
     showJumpTo: false,
     localized: false,
     pageSizeSelect: false,
+    footerRow: false,
     surface: 'dark',
     size: 'md',
   },
@@ -32,6 +33,7 @@ export default {
     showJumpTo: { control: 'boolean' },
     localized: { control: 'boolean' },
     pageSizeSelect: { control: 'boolean' },
+    footerRow: { control: 'boolean' },
     surface: { control: 'text' },
     size: { control: 'radio', options: ['sm', 'md'] },
   },
@@ -87,6 +89,20 @@ export const PageSizeSelect: Story = {
           'because page size is the app’s state, not the paginator’s: **changing the size does not reset ' +
           'the page**, since which page an item lands on depends on what you are paging. Here a ' +
           '`linkedSignal` sends it back to page 1, which is the usual answer.',
+      },
+    },
+  },
+};
+
+export const FooterRow: Story = {
+  args: { footerRow: true, totalPages: 50, siblingCount: 2 },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'A responsive paginator beside a page-size select, in a flex row. It grows into the free space, so ' +
+          'the page window trims as the row narrows and comes back when it widens; `justify-end` on the ' +
+          'paginator keeps its items at the far edge.',
       },
     },
   },

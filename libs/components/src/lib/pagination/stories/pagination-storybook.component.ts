@@ -26,6 +26,17 @@ import { GERMAN_LABELS } from './pagination-storybook.data';
           Page {{ resettingPage() }} of {{ pagedTotalPages() }} · {{ chosenPageSize() }} per page. Changing the size
           sends you back to page 1 - the app's decision, in one linkedSignal.
         </p>
+      } @else if (footerRow()) {
+        <div class="flex items-center gap-4">
+          <et-page-size-select [(pageSize)]="chosenPageSize" [labels]="labels()" size="sm" />
+          <et-pagination
+            [(page)]="page"
+            [totalPages]="totalPages()"
+            [siblingCount]="siblingCount()"
+            [labels]="labels()"
+            class="justify-end"
+          />
+        </div>
       } @else {
         <et-pagination
           [(page)]="page"
@@ -61,6 +72,7 @@ export class PaginationStorybookComponent {
   public showJumpTo = input(false);
   public localized = input(false);
   public pageSizeSelect = input(false);
+  public footerRow = input(false);
   public surface = input('dark');
   public size = input<'sm' | 'md'>('md');
 

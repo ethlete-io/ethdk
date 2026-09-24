@@ -70,6 +70,7 @@ const COMPACT_MAX_WIDTH = 480;
     class: 'et-pagination-host',
     '[attr.data-size]': 'size()',
     '[attr.data-compact]': 'isCompact() ? "" : null',
+    '[attr.data-fit-width]': 'fitsWidth() ? "" : null',
   },
 })
 export class PaginationComponent {
@@ -120,6 +121,8 @@ export class PaginationComponent {
 
   // Re-fit the page window whenever the paginator's own width changes (viewport resize, footer layout).
   private hostDimensions = signalHostElementDimensions();
+
+  protected fitsWidth = computed(() => this.responsive() && this.compact() !== true);
 
   /** The `[start, end]` (1-based, inclusive) item range shown on the current page, or `null` if unknown. */
   public range = computed<[number, number] | null>(() => {

@@ -238,11 +238,12 @@ The compact pager is a range readout followed by previous/next - the item range
 ("1–10 of 40") when `totalItems`/`pageSize` are set, otherwise the page position -
 with the readout _before_ the chevrons, and its width reserved for the longest range
 it can show, so the controls hold their position across page changes. `hidePreviousNext`
-applies here too, leaving the readout on its own. Because auto-collapse measures
-the paginator's own box, give it a definite
-width where it would otherwise shrink to its content (e.g. a flex item) - stretch it
-(`w-full`, `flex: 1`). Or skip measurement entirely with `[compact]="true"` for a
-Material-style controls row where the paginator sits inline with a page-size select:
+applies here too, leaving the readout on its own. Because the fit measures the
+paginator's own box, a responsive paginator in a flex row grows into the row's free space
+(`flex-grow: 1`), so the window comes back when the row widens; align its items inside that
+space with `justify-content` on the paginator (e.g. `justify-end`). Or skip measurement entirely
+with `[compact]="true"` for a Material-style controls row where the paginator sits inline with a
+page-size select and keeps its content size:
 
 ```html
 <div class="flex items-center justify-end gap-3">
