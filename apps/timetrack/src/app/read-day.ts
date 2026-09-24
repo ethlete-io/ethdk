@@ -67,18 +67,16 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
     map(({ events, edits, runs, coverage }) => {
       const at = new Date(Math.min(Date.now(), to.getTime()));
       const pauses = pauseWindows({ events, window: { from, to }, through: at });
-      const day = streamDay({
-        events,
-        options: streamDayOptionsOf({
-          repoRoots: options.repoRoots,
-          settings,
-          links: options.links,
-          patterns: options.patterns,
-          windowsSeenThroughMs: options.windowsSeenThroughMs,
-          through: at,
-          rows: { timerRuns: runs.map((run) => closeTimerRun(run, at)), pauses },
-        }),
+      const dayOptions = streamDayOptionsOf({
+        repoRoots: options.repoRoots,
+        settings,
+        links: options.links,
+        patterns: options.patterns,
+        windowsSeenThroughMs: options.windowsSeenThroughMs,
+        through: at,
+        rows: { timerRuns: runs.map((run) => closeTimerRun(run, at)), pauses },
       });
+      const day = streamDay({ events, options: dayOptions });
 
       return {
         key,
@@ -88,6 +86,7 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
         review: reviewDay({
           rows: day.rows,
           edits: edits ?? EMPTY_DAY_REVIEW_EDITS,
+          cut: dayOptions.rows?.cut,
           standIns: settings.standIns,
           rules: settings.attributionRules,
           check: { targetMs: settings.dayTargetMs, coveredMs: coveredMsOf(coverage), pausedMs: pausedMs(pauses) },

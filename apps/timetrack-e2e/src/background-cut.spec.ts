@@ -6,7 +6,7 @@ import {
   FakeJiraIssue,
   defaultSettings,
 } from '@ethlete/timetrack/testing';
-import { E2E_DAY_KEY, E2E_NOW, expect, seedWorld, test } from './support';
+import { E2E_DAY_KEY, E2E_NOW, expect, goToView, seedWorld, test } from './support';
 
 /** The checkout the fake git backend discovers, which the branch grammar names the issue in. */
 const FUT = '/Users/e2e/dev/fut-frontend';
@@ -181,3 +181,31 @@ const bands = (page: import('@playwright/test').Page) => page.locator('[data-lan
 
 const titleOf = (page: import('@playwright/test').Page, key: string) =>
   page.locator(`[data-lane] [data-kind="row"][title^="${key}"]`);
+
+test.describe('a foreground band the reviewer stretched over a band of a background project', () => {
+  test('costs the background band the same minutes in the week as on the day', async ({ page }) => {
+    await seedWorld(page, world(['XYZ']));
+    await page.goto('/day');
+
+    const row = titleOf(page, 'ABC-3010');
+    const box = await row.boundingBox();
+    const nine = await page.locator('[data-hour="9"]').boundingBox();
+    const ten = await page.locator('[data-hour="10"]').boundingBox();
+    const x = (box?.x ?? 0) + (box?.width ?? 0) / 2;
+    const y = (box?.y ?? 0) + (box?.height ?? 0) - 3;
+
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x, y + (ten?.y ?? 0) - (nine?.y ?? 0), { steps: 10 });
+    await page.mouse.up();
+
+    await expect(row).toHaveAttribute('title', 'ABC-3010 · 1h 30m');
+    await expect(bands(page)).toHaveCount(1);
+
+    // The day review saves its edits on a debounce, and the week reads them once, when it opens.
+    await page.clock.runFor(1_000);
+    await goToView(page, 'week');
+
+    await expect(page.locator(`[data-day="${E2E_DAY_KEY}"]`)).toContainText('1h 30m is not in Tempo yet');
+  });
+});
