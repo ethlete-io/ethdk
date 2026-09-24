@@ -13,6 +13,12 @@ export const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6';
  *  bare `<strong>` under the root has to be wrapped by the heading rather than turned into one. */
 export const BLOCK_SELECTOR = 'p, div, blockquote, pre, li, figure, section, article';
 
+/** Alignment persists as a class, not an inline `text-align`, so rendered content passes a strict `style-src`. */
+export const ALIGN_CLASS_PREFIX = 'et-rte-align-';
+
+export const alignClassOf = (el: Element) =>
+  [...el.classList].find((cls) => cls.startsWith(ALIGN_CLASS_PREFIX)) ?? null;
+
 export type EditableSelection = {
   selection: Selection;
   range: Range;

@@ -205,5 +205,29 @@
       margin-inline-end: 1px;
       opacity: 0.65;
     }
+
+    .et-rte-align-left {
+      text-align: left;
+    }
+
+    .et-rte-align-center {
+      text-align: center;
+    }
+
+    .et-rte-align-right {
+      text-align: right;
+    }
+
+    .et-rte-align-justify {
+      text-align: justify;
+    }
+
+    .et-rte-align-start {
+      text-align: start;
+    }
+
+    .et-rte-align-end {
+      text-align: end;
+    }
   }
 }

@@ -116,7 +116,8 @@ describe('RichTextViewerComponent', () => {
     expect(viewer.querySelector('[href^="javascript:" i], [src^="javascript:" i]')).toBeNull();
     expect(viewer.querySelectorAll('img')).toHaveLength(1);
     expect(viewer.textContent).toContain('<script>alert(1)</script>');
-    expect(viewer.querySelector('p[style]')?.getAttribute('style')).toBe('text-align: center');
+    expect(viewer.querySelector('[style]')).toBeNull();
+    expect(viewer.querySelector('p.et-rte-align-center')?.textContent).toContain('centered');
   });
 
   it('re-renders when the value changes and renders nothing for an empty value', () => {

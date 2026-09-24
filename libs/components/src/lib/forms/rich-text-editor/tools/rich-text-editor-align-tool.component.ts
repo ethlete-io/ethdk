@@ -13,6 +13,7 @@ import {
   provideIcons,
 } from '../../../icon';
 import { MENU_IMPORTS } from '../../../menu';
+import { ALIGN_CLASS_PREFIX, alignClassOf } from '../headless/internals/rich-text-editor-dom-core';
 import { RichTextEditorDirective } from '../headless/rich-text-editor.directive';
 
 export const TEXT_ALIGNS = ['left', 'center', 'right', 'justify'] as const;
@@ -20,7 +21,7 @@ export type TextAlign = (typeof TEXT_ALIGNS)[number];
 
 /**
  * The opt-in alignment tool's toolbar control: a menu of block alignments (left/center/right/justify).
- * Alignment has no Markdown form, so it is persisted as a native `text-align` style on the block (or
+ * Alignment has no Markdown form, so it is persisted as an `et-rte-align-*` class on the block (or
  * table cell) and round-tripped as raw HTML by the Markdown converter. Registered via
  * `provideRichTextEditorAlignmentTool`.
  */
@@ -92,8 +93,10 @@ export class RichTextEditorAlignToolComponent {
     const blocks = this.targetBlocks(root, range) ?? this.wrapLooseContent(root, range);
 
     for (const block of blocks) {
-      if (align === 'left') this.renderer.removeStyle(block, 'textAlign');
-      else this.renderer.setStyle(block, { textAlign: align });
+      const current = alignClassOf(block);
+
+      if (current) this.renderer.removeClass(block, current);
+      if (align !== 'left') this.renderer.addClass(block, `${ALIGN_CLASS_PREFIX}${align}`);
     }
 
     this.current.set(align);
@@ -107,7 +110,8 @@ export class RichTextEditorAlignToolComponent {
 
     if (!root || !range) return 'left';
 
-    const value = this.targetBlocks(root, range)?.[0]?.style.textAlign ?? '';
+    const block = this.targetBlocks(root, range)?.[0];
+    const value = (block && alignClassOf(block)?.slice(ALIGN_CLASS_PREFIX.length)) ?? '';
 
     return (TEXT_ALIGNS as readonly string[]).includes(value) ? (value as TextAlign) : 'left';
   }

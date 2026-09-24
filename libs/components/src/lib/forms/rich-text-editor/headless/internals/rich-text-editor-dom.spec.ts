@@ -408,15 +408,15 @@ describe('RichTextEditorDom', () => {
     });
 
     it('keeps the block alignment when re-tagging between paragraph and heading', () => {
-      const { root, dom } = setup('<p style="text-align: center">middle</p>');
+      const { root, dom } = setup('<p class="et-rte-align-center">middle</p>');
       const text = (root.firstChild as HTMLElement).firstChild as Node;
       selectRange(text, 0, text, 0);
 
       dom.headings!.toggleHeading('h2');
-      expect(root.innerHTML).toBe('<h2 style="text-align: center;">middle</h2>');
+      expect(root.innerHTML).toBe('<h2 class="et-rte-align-center">middle</h2>');
 
       dom.headings!.toggleHeading('h2');
-      expect(root.innerHTML).toBe('<p style="text-align: center;">middle</p>');
+      expect(root.innerHTML).toBe('<p class="et-rte-align-center">middle</p>');
     });
 
     it('re-tags an existing paragraph in place, keeping its inline children', () => {

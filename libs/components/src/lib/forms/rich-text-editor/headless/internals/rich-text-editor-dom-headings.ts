@@ -1,4 +1,10 @@
-import { BLOCK_SELECTOR, HEADING_SELECTOR, RichTextEditorDomCore, HeadingTag } from './rich-text-editor-dom-core';
+import {
+  alignClassOf,
+  BLOCK_SELECTOR,
+  HEADING_SELECTOR,
+  RichTextEditorDomCore,
+  HeadingTag,
+} from './rich-text-editor-dom-core';
 
 export const createRichTextEditorHeadings = (core: RichTextEditorDomCore) => {
   const {
@@ -18,10 +24,10 @@ export const createRichTextEditorHeadings = (core: RichTextEditorDomCore) => {
   const replaceBlockTag = (block: HTMLElement, tag: HeadingTag | 'p'): HTMLElement => {
     const replacement = renderer.createElement(tag);
 
-    // Alignment is the one style the editor persists on blocks, so it has to survive the re-tag.
-    if (block.style.textAlign) {
-      renderer.setStyle(replacement, { textAlign: block.style.textAlign });
-    }
+    const align = alignClassOf(block);
+
+    // Alignment is the one presentation the editor persists on blocks, so it has to survive the re-tag.
+    if (align) renderer.addClass(replacement, align);
 
     while (block.firstChild) {
       renderer.appendChild(replacement, block.firstChild);
