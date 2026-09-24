@@ -65,13 +65,26 @@ export type BehindBand = {
   span: number;
 };
 
-/** A block placed in its lane: the grid's own vertical geometry, with the inline geometry re-read. */
+/** A stretch of a block drawn at one width. `from` and `to` are fractions of the block's own length. */
+export type LaneSegment = {
+  from: number;
+  to: number;
+  /** Percent of the lane's own width the stretch starts at. */
+  inlineOffset: number;
+  /** Percent of the lane's own width the stretch occupies. */
+  inlineSize: number;
+};
+
+/**
+ * A block placed in its lane: the grid's own vertical geometry, with the inline geometry re-read.
+ * `inlineOffset` and `inlineSize` bound every segment; `clipPath` cuts the box down to them.
+ */
 export type LaneBlock = {
   block: SchedulerTimeGridBlock<TimelineEntry>;
-  /** Percent of the lane's own width the block starts at. */
   inlineOffset: number;
-  /** Percent of the lane's own width the block occupies. */
   inlineSize: number;
+  segments: LaneSegment[];
+  clipPath: string | null;
 };
 
 /** One checkout's column of the day. */
@@ -104,10 +117,11 @@ const laneKeyOfBlock = (block: SchedulerTimeGridBlock<TimelineEntry>) => {
   return entry ? laneKeyOfRow(entry.row) : NO_LANE_KEY;
 };
 
+type Timed = { block: SchedulerTimeGridBlock<TimelineEntry>; start: number; end: number; column: number };
+
 /**
- * Packs one lane's blocks into the fewest overlap-free columns, the same way a calendar packs a day.
- * One checkout rarely holds two rows at once, so an equal split of the lane is enough — a block never
- * widens into a free column beside it.
+ * Packs one lane's blocks into overlap-free columns, the same way a calendar packs a day, and splits
+ * the lane only while blocks overlap: a block is full width wherever nothing else in the lane runs.
  *
  * Whether two blocks overlap is read off the clock and never off `offset` and `span`. The end of one
  * row and the start of the next are the same instant, but the two percentages of the day computed
@@ -115,48 +129,80 @@ const laneKeyOfBlock = (block: SchedulerTimeGridBlock<TimelineEntry>) => {
  * half the lane's width.
  */
 const packLane = (blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[]): LaneBlock[] => {
-  const startOfBlock = (block: SchedulerTimeGridBlock<TimelineEntry>) => block.node.appointment.start.getTime();
-  const endOfBlock = (block: SchedulerTimeGridBlock<TimelineEntry>) => block.node.appointment.end.getTime();
-  const sorted = [...blocks].sort((a, b) => startOfBlock(a) - startOfBlock(b) || endOfBlock(a) - endOfBlock(b));
-  const placed: LaneBlock[] = [];
-
-  let cluster: { block: SchedulerTimeGridBlock<TimelineEntry>; column: number }[] = [];
-  let clusterEnd = -Infinity;
-
-  const flush = () => {
-    const columns = Math.max(1, ...cluster.map((entry) => entry.column + 1));
-
-    for (const entry of cluster) {
-      placed.push({ block: entry.block, inlineOffset: (entry.column / columns) * 100, inlineSize: 100 / columns });
-    }
-
-    cluster = [];
-    clusterEnd = -Infinity;
-  };
+  const timed = blocks
+    .map((block) => ({
+      block,
+      start: block.node.appointment.start.getTime(),
+      end: block.node.appointment.end.getTime(),
+      column: 0,
+    }))
+    .sort((a, b) => a.start - b.start || a.end - b.end);
 
   const endsPerColumn: number[] = [];
 
-  for (const block of sorted) {
-    const start = startOfBlock(block);
-    const end = endOfBlock(block);
+  for (const entry of timed) {
+    const free = endsPerColumn.findIndex((taken) => taken <= entry.start);
 
-    if (start >= clusterEnd && cluster.length) {
-      flush();
-      endsPerColumn.length = 0;
-    }
-
-    let column = endsPerColumn.findIndex((taken) => taken <= start);
-
-    if (column === -1) column = endsPerColumn.length;
-
-    endsPerColumn[column] = end;
-    cluster.push({ block, column });
-    clusterEnd = Math.max(clusterEnd, end);
+    entry.column = free === -1 ? endsPerColumn.length : free;
+    endsPerColumn[entry.column] = entry.end;
   }
 
-  if (cluster.length) flush();
+  return timed.map((entry) => placeOf(entry, timed));
+};
 
-  return placed;
+const placeOf = (entry: Timed, lane: readonly Timed[]): LaneBlock => {
+  const others = lane.filter((other) => other !== entry && other.start < entry.end && other.end > entry.start);
+  const cuts = [...new Set([entry.start, entry.end, ...others.flatMap((other) => [other.start, other.end])])]
+    .filter((at) => at >= entry.start && at <= entry.end)
+    .sort((a, b) => a - b);
+  const length = entry.end - entry.start || 1;
+  const segments: LaneSegment[] = [];
+
+  for (let at = 0; at < cuts.length - 1; at++) {
+    const from = cuts[at] ?? 0;
+    const to = cuts[at + 1] ?? 0;
+    const beside = others.filter((other) => other.start < to && other.end > from);
+    const columns = Math.max(entry.column, ...beside.map((other) => other.column)) + 1;
+    const inlineOffset = beside.length ? (entry.column / columns) * 100 : 0;
+    const inlineSize = beside.length ? 100 / columns : 100;
+    const last = segments.at(-1);
+
+    if (last && last.inlineOffset === inlineOffset && last.inlineSize === inlineSize) {
+      last.to = (to - entry.start) / length;
+    } else {
+      segments.push({ from: (from - entry.start) / length, to: (to - entry.start) / length, inlineOffset, inlineSize });
+    }
+  }
+
+  if (!segments.length) segments.push({ from: 0, to: 1, inlineOffset: 0, inlineSize: 100 });
+
+  const inlineOffset = Math.min(...segments.map((segment) => segment.inlineOffset));
+  const inlineSize = Math.max(...segments.map((segment) => segment.inlineOffset + segment.inlineSize)) - inlineOffset;
+
+  return {
+    block: entry.block,
+    inlineOffset,
+    inlineSize,
+    segments,
+    clipPath: clipPathOf({ segments, inlineOffset, inlineSize }),
+  };
+};
+
+const clipPathOf = (options: { segments: readonly LaneSegment[]; inlineOffset: number; inlineSize: number }) => {
+  if (options.segments.length < 2) return null;
+
+  const x = (lanePercent: number) => ((lanePercent - options.inlineOffset) / options.inlineSize) * 100;
+  const left = options.segments.flatMap((segment) => [
+    [x(segment.inlineOffset), segment.from * 100],
+    [x(segment.inlineOffset), segment.to * 100],
+  ]);
+  const right = options.segments.flatMap((segment) => [
+    [x(segment.inlineOffset + segment.inlineSize), segment.from * 100],
+    [x(segment.inlineOffset + segment.inlineSize), segment.to * 100],
+  ]);
+  const points = [...left, ...right.reverse()].map(([px, py]) => `${px}% ${py}%`);
+
+  return `polygon(${points.join(', ')})`;
 };
 
 const offsetOf = (options: { at: Date; dayStart: Date }) =>

@@ -37,7 +37,16 @@ import {
 import { debounceTime, filter, fromEvent, map, merge, tap } from 'rxjs';
 import { TimelineScroll, dayKeyOfDate, readViewState, rememberTimelineScroll } from '../view-state';
 import { formatClockTime } from './format';
-import { BREAK_LANE_KEY, BreakBand, DayLane, NO_LANE_KEY, lanesOf, laneKeyOfRow, worktreeColumnOf } from './lanes';
+import {
+  BREAK_LANE_KEY,
+  BreakBand,
+  DayLane,
+  LaneBlock,
+  NO_LANE_KEY,
+  lanesOf,
+  laneKeyOfRow,
+  worktreeColumnOf,
+} from './lanes';
 import {
   TimelineEntry,
   appointmentLabel,
@@ -304,6 +313,9 @@ type RowDrag = {
                       [style.height.%]="laid.block.span"
                       [style.left.%]="laid.inlineOffset"
                       [style.width.%]="laid.inlineSize"
+                      [style.clipPath]="laid.clipPath"
+                      [style.paddingInlineStart]="insetOf(laid).start"
+                      [style.paddingInlineEnd]="insetOf(laid).end"
                       [title]="LABEL_OF(laid.block.node.appointment)"
                       (pointerdown)="
                         startDrag({ event: $event, appointment: laid.block.node.appointment, column, lane })
@@ -357,6 +369,16 @@ type RowDrag = {
                           [style.height.%]="EDGE_PERCENT"
                           [style.maxHeight.px]="MAX_EDGE_PX"
                           class="absolute inset-x-0 bottom-0 cursor-ns-resize"
+                        ></span>
+                      }
+
+                      @for (segment of indentedIn(laid); track segment.from) {
+                        <span
+                          [style.top.%]="segment.from * 100"
+                          [style.height.%]="(segment.to - segment.from) * 100"
+                          [style.left.%]="((segment.inlineOffset - laid.inlineOffset) / laid.inlineSize) * 100"
+                          class="pointer-events-none absolute w-0.5 bg-et-theme"
+                          data-segment-edge
                         ></span>
                       }
 
@@ -697,6 +719,28 @@ export class DayTimelineComponent {
 
   protected detailed(span: number) {
     return remOf(span) >= DETAIL_MIN_REM;
+  }
+
+  /**
+   * Keeps the label inside the block's first segment. A padding percent is read off the lane's width,
+   * which is the unit the segments are measured in.
+   */
+  protected insetOf(laid: LaneBlock) {
+    const first = laid.segments[0];
+
+    if (!first || !laid.clipPath) return { start: null, end: null };
+
+    const start = first.inlineOffset - laid.inlineOffset;
+    const end = laid.inlineOffset + laid.inlineSize - first.inlineOffset - first.inlineSize;
+
+    return {
+      start: `calc(${start}% + var(--spacing) * 2)`,
+      end: `calc(${end}% + var(--spacing) * 2)`,
+    };
+  }
+
+  protected indentedIn(laid: LaneBlock) {
+    return laid.segments.filter((segment) => segment.inlineOffset > laid.inlineOffset);
   }
 
   /** Whether a press on the lane draws a range. Every lane does: the break lane draws a break. */
