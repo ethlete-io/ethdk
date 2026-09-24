@@ -600,6 +600,202 @@ describe('features scenario', () => {
     c.destroy();
   });
 
+  it('starts no long-polling round while enabled is false from the start, and starts the chain once it turns true', () => {
+    const s = scenario();
+    let cursor = 0;
+
+    s.api.on('GET', '/events', () => ({ body: { cursor: ++cursor } }));
+
+    const getEvents = s.get<EventsArgs>('/events');
+    const enabled = signal(false);
+
+    const c = s.consumer();
+    const query = c.run(() =>
+      getEvents(
+        withArgs(() => ({ queryParams: { cursor: null } })),
+        withLongPolling({
+          nextArgs: (response) => (response ? { queryParams: { cursor: response.cursor } } : null),
+          delay: 100,
+          enabled,
+        }),
+      ),
+    );
+
+    advance(s, 5_000);
+    expect(s.api.requestCount('GET', '/events')).toBe(0);
+    expect(vi.getTimerCount()).toBe(0);
+
+    enabled.set(true);
+    s.tick();
+    expect(s.api.requestCount('GET', '/events')).toBe(1);
+    expect(query.response()).toEqual({ cursor: 1 });
+
+    s.tick(101);
+    expect(s.api.requests[1]?.query['cursor']).toBe('1');
+
+    c.destroy();
+  });
+
+  it('aborts the long-polling round in flight when enabled turns false and re-runs it with the same args on true', () => {
+    const s = scenario();
+    let cursor = 0;
+
+    s.api.on('GET', '/events', () => ({ body: { cursor: ++cursor }, delay: 1_000 }));
+
+    const getEvents = s.get<EventsArgs>('/events');
+    const enabled = signal(true);
+
+    const c = s.consumer();
+    const query = c.run(() =>
+      getEvents(
+        withArgs(() => ({ queryParams: { cursor: null } })),
+        withLongPolling({
+          nextArgs: (response) => (response ? { queryParams: { cursor: response.cursor } } : null),
+          delay: 100,
+          enabled,
+        }),
+      ),
+    );
+
+    s.tick();
+    s.tick(1_000);
+    expect(query.response()).toEqual({ cursor: 1 });
+
+    s.tick(100);
+    expect(s.api.pending().length).toBe(1);
+    expect(s.api.requests[1]?.query['cursor']).toBe('1');
+
+    s.tick(500);
+    enabled.set(false);
+    s.tick();
+
+    expect(s.api.requests[1]?.aborted).toBe(true);
+    expect(query.response()).toEqual({ cursor: 1 });
+    expect(query.error()).toBeNull();
+    expect(query.loading()).toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
+
+    advance(s, 5_000);
+    expect(s.api.requestCount('GET', '/events')).toBe(2);
+
+    enabled.set(true);
+    s.tick();
+    expect(s.api.requestCount('GET', '/events')).toBe(3);
+    expect(s.api.requests[2]?.query['cursor']).toBe('1');
+
+    c.destroy();
+  });
+
+  it('cancels the pending long-polling delay when enabled turns false and runs that round at once on true', () => {
+    const s = scenario();
+    let cursor = 0;
+
+    s.api.on('GET', '/events', () => ({ body: { cursor: ++cursor } }));
+
+    const getEvents = s.get<EventsArgs>('/events');
+    const enabled = signal(true);
+
+    const c = s.consumer();
+    c.run(() =>
+      getEvents(
+        withArgs(() => ({ queryParams: { cursor: null } })),
+        withLongPolling({
+          nextArgs: (response) => (response ? { queryParams: { cursor: response.cursor } } : null),
+          delay: 1_000,
+          enabled,
+        }),
+      ),
+    );
+
+    s.tick();
+    expect(s.api.requestCount('GET', '/events')).toBe(1);
+
+    s.tick(500);
+    enabled.set(false);
+    s.tick();
+    expect(vi.getTimerCount()).toBe(0);
+
+    advance(s, 5_000);
+    expect(s.api.requestCount('GET', '/events')).toBe(1);
+
+    enabled.set(true);
+    s.tick();
+    expect(s.api.requestCount('GET', '/events')).toBe(2);
+    expect(s.api.requests[1]?.query['cursor']).toBe('1');
+
+    c.destroy();
+  });
+
+  it('does not restart an ended long-polling chain when enabled turns true', () => {
+    const s = scenario();
+    s.api.on('GET', '/events', () => ({ body: { cursor: 1 } }));
+
+    const getEvents = s.get<EventsArgs>('/events');
+    const enabled = signal(true);
+
+    const c = s.consumer();
+    c.run(() =>
+      getEvents(
+        withArgs(() => ({ queryParams: { cursor: null } })),
+        withLongPolling({ nextArgs: () => null, delay: 100, enabled }),
+      ),
+    );
+
+    s.tick();
+    expect(s.api.requestCount('GET', '/events')).toBe(1);
+
+    enabled.set(false);
+    s.tick();
+    enabled.set(true);
+    s.tick();
+
+    advance(s, 2_000);
+    expect(s.api.requestCount('GET', '/events')).toBe(1);
+
+    c.destroy();
+  });
+
+  it('does not restart a long-polling chain that stopAfterErrors ended when enabled turns true', () => {
+    const s = scenario();
+    s.api.on('GET', '/events', () => ({ status: 400, body: { message: 'nope' } }));
+
+    const getEvents = s.get<EventsArgs>('/events');
+    const enabled = signal(true);
+
+    const c = s.consumer();
+    const query = c.run(() =>
+      getEvents(
+        withArgs(() => ({ queryParams: { cursor: null } })),
+        withLongPolling({
+          nextArgs: (_, args) => args,
+          errorDelay: 100,
+          maxErrorDelay: 100,
+          stopAfterErrors: 2,
+          enabled,
+        }),
+      ),
+    );
+
+    s.tick();
+    advance(s, 1_000);
+    expect(s.api.requestCount('GET', '/events')).toBe(2);
+
+    enabled.set(false);
+    s.tick();
+    enabled.set(true);
+    s.tick();
+
+    advance(s, 1_000);
+    expect(s.api.requestCount('GET', '/events')).toBe(2);
+    expect(query.error()?.code).toBe(400);
+
+    c.destroy();
+
+    for (let i = 0; i < 2; i++) {
+      s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    }
+  });
+
   it('throws when withLongPolling is used on a POST query', () => {
     const s = scenario();
     s.api.on('POST', '/jobs', () => ({ body: { ok: true } }));
@@ -645,6 +841,35 @@ describe('features scenario', () => {
     trigger.set(1);
     s.tick();
 
+    expect(s.api.requestCount('GET', '/status')).toBe(before + 1);
+
+    c.destroy();
+  });
+
+  it('withAutoRefresh drops signal changes while enabled is false and does not fire when it turns true', () => {
+    const s = scenario();
+    s.api.on('GET', '/status', () => ({ body: { ok: true } }));
+
+    const getStatus = s.get<{ response: { ok: boolean } }>('/status');
+    const trigger = signal(0);
+    const enabled = signal(false);
+
+    const c = s.consumer();
+    c.run(() => getStatus(withAutoRefresh({ onSignalChanges: [trigger], enabled })));
+
+    s.tick();
+    const before = s.api.requestCount('GET', '/status');
+
+    trigger.set(1);
+    s.tick();
+    expect(s.api.requestCount('GET', '/status')).toBe(before);
+
+    enabled.set(true);
+    s.tick();
+    expect(s.api.requestCount('GET', '/status')).toBe(before);
+
+    trigger.set(2);
+    s.tick();
     expect(s.api.requestCount('GET', '/status')).toBe(before + 1);
 
     c.destroy();

@@ -80,13 +80,14 @@ const eventsQuery = getEvents(
 );
 ```
 
-| Option            | Default      | Description                                                            |
-| ----------------- | ------------ | ---------------------------------------------------------------------- |
-| `nextArgs`        | - (required) | `(response, args) => args \| null`. `null` ends the chain.             |
-| `delay`           | `250`        | Pause between one round settling and the next starting.                |
-| `errorDelay`      | `1000`       | Wait before repeating a failed round. Doubles per consecutive failure. |
-| `maxErrorDelay`   | `30000`      | Ceiling for the doubling `errorDelay`.                                 |
-| `stopAfterErrors` | `10`         | Consecutive failures that end the chain.                               |
+| Option            | Default      | Description                                                                                    |
+| ----------------- | ------------ | ---------------------------------------------------------------------------------------------- |
+| `nextArgs`        | - (required) | `(response, args) => args \| null`. `null` ends the chain.                                     |
+| `delay`           | `250`        | Pause between one round settling and the next starting.                                        |
+| `errorDelay`      | `1000`       | Wait before repeating a failed round. Doubles per consecutive failure.                         |
+| `maxErrorDelay`   | `30000`      | Ceiling for the doubling `errorDelay`.                                                         |
+| `stopAfterErrors` | `10`         | Consecutive failures that end the chain.                                                       |
+| `enabled`         | `() => true` | Run the chain only while this returns `true`. Read reactively - pass a signal or a `computed`. |
 
 `response` is `null` when the server answered without a body - a `204` on timeout, which is the usual way to say "nothing yet". Returning the args unchanged is what re-asks the same question; returning `null` ends the chain, and only a new `withArgs` value or a manual `execute()` starts it again.
 
@@ -95,6 +96,8 @@ const eventsQuery = getEvents(
 A **failed** round is repeated after a growing delay rather than ending the chain, so a transient 502 or a dropped connection does not silently deaden a live feed. That backoff sits on top of the request's own [retry policy](/query/errors#retries): a round counts as failed once its retries are exhausted. After `stopAfterErrors` consecutive failures the chain stops and the query keeps its error.
 
 A new value from the `withArgs` source cancels the pending round - the source's own re-execution starts the new chain from it. `reset()` cancels it too.
+
+When `enabled` turns `false`, the round in flight is aborted - it sets no response and no error - and a pending round is cancelled; no round starts until it turns `true`, which runs that round again at once with the same args. A chain that already ended (`nextArgs` returned `null`, or `stopAfterErrors`) stays ended.
 
 Two things this feature deliberately does not do:
 
@@ -116,6 +119,8 @@ withAutoRefresh({ onSignalChanges: [this.locale, this.currency] });
 ```
 
 Throws when combined with `onlyManualExecution` unless you pass `ignoreOnlyManualExecution: true`, and (like polling) is limited to `GET`/`HEAD`/`OPTIONS`.
+
+Pass `enabled` (a signal or a `computed`, default always on) to drop signal changes while it is `false`. Turning it `true` does not execute by itself - the next signal change does.
 
 ## Side-effect handlers
 

@@ -97,9 +97,19 @@ export const applyQueryFeatures = <TArgs extends QueryArgs>(
   }
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const maybeExecute = (options: { flags: QueryFeatureFlags; execute: InternalQueryExecute<any> }) => {
-  if (options.flags.shouldAutoExecute && !options.flags.hasRouteFunction && !options.flags.hasWithArgsFeature) {
+export const maybeExecute = <TArgs extends QueryArgs>(options: {
+  flags: QueryFeatureFlags;
+  execute: InternalQueryExecute<TArgs>;
+  state: QueryState<TArgs>;
+}) => {
+  const guard = options.state.subtle.autoExecuteGuard();
+
+  if (
+    options.flags.shouldAutoExecute &&
+    !options.flags.hasRouteFunction &&
+    !options.flags.hasWithArgsFeature &&
+    (guard === null || guard())
+  ) {
     options.execute();
   }
 };
@@ -160,6 +170,7 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
     id: wrappedId,
     createSnapshot,
     reset: execute.reset,
+    abort: execute.abort,
     asReadonly,
     executionState: wrappedExecutionState,
     subtle: {
@@ -235,7 +246,7 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
 
     applyQueryFeatures(options.features, featureFnContext);
 
-    maybeExecute({ execute, flags });
+    maybeExecute({ execute, flags, state });
 
     const query = createQueryObject({ state, execute, deps });
 

@@ -57,6 +57,12 @@ export type QueryStateSubtle<TArgs extends QueryArgs> = {
   defaultRunOptions: WritableSignal<RunQueryExecuteOptions | null>;
 
   /**
+   * Consulted before `withArgs` or creation auto-executes the query; returning `false` skips that
+   * execution. Set by a feature during creation (`withLongPolling` holds its first round back while disabled).
+   */
+  autoExecuteGuard: WritableSignal<(() => boolean) | null>;
+
+  /**
    * Installs the reactive source that backs `state.args`. The `withArgs` feature uses this so that
    * `state.args` always reflects the latest args (pulled from the reactive source on read) instead
    * of being push-updated by an effect that may not have run yet. Without a `withArgs` feature the
@@ -208,6 +214,7 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
   };
 
   const defaultRunOptions = signal<RunQueryExecuteOptions | null>(null);
+  const autoExecuteGuard = signal<(() => boolean) | null>(null);
 
   options.destroyRef?.onDestroy(() => {
     requestEventsSubscription.unsubscribe();
@@ -277,6 +284,7 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
       bindRequestEvents,
       unbindRequestEvents,
       defaultRunOptions,
+      autoExecuteGuard,
       setArgsSource,
       devtoolsStats: options.devtoolsStats ?? null,
       devtoolsFormLinks: options.devtoolsFormLinks ?? null,

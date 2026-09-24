@@ -128,7 +128,9 @@ export const withArgs = <TArgs extends QueryArgs>(args: () => NoInfer<RequestArg
           }
 
           untracked(() => {
-            if (context.flags.shouldAutoExecute) context.execute({ args: currArgsNow });
+            const guard = context.state.subtle.autoExecuteGuard();
+
+            if (context.flags.shouldAutoExecute && (guard === null || guard())) context.execute({ args: currArgsNow });
           });
         },
         { injector: context.deps.injector },
@@ -439,6 +441,13 @@ export type WithLongPollingFeatureOptions<TArgs extends QueryArgs> = {
    * @default 10
    */
   stopAfterErrors?: number;
+
+  /**
+   * Run the chain only while this returns `true`. Read reactively (pass a signal or a `computed`). Turning
+   * `false` aborts the round in flight and cancels a pending one; turning `true` runs that round again at once.
+   * @default () => true
+   */
+  enabled?: () => boolean;
 };
 
 /**
@@ -469,6 +478,7 @@ export const withLongPolling = <TArgs extends QueryArgs>(options: WithLongPollin
     type: QueryFeatureType.WITH_LONG_POLLING,
     devtools: () => [
       { label: 'delay', value: formatQueryDevtoolsDuration(options.delay ?? DEFAULT_LONG_POLLING_DELAY) },
+      ...(options.enabled ? [{ label: 'enabled', value: untracked(options.enabled) ? 'yes' : 'no' }] : []),
       ...queryDevtoolsFnDetail(options.nextArgs, 'nextArgs'),
     ],
     fn: (context) => {
@@ -489,18 +499,36 @@ export const withLongPolling = <TArgs extends QueryArgs>(options: WithLongPollin
 
       let timeoutId: ReturnType<typeof setTimeout> | null = null;
       let consecutiveErrors = 0;
+      let nextRound: { args: RequestArgs<TArgs> | null } | null = null;
 
-      const stop = () => {
+      const isEnabled = () => (options.enabled ? untracked(options.enabled) : true);
+
+      if (options.enabled) context.state.subtle.autoExecuteGuard.set(isEnabled);
+
+      const clearTimer = () => {
         if (timeoutId !== null) clearTimeout(timeoutId);
         timeoutId = null;
       };
 
+      const stop = () => {
+        clearTimer();
+        nextRound = null;
+      };
+
+      const runRound = (args: RequestArgs<TArgs> | null) => {
+        nextRound = null;
+        context.execute({ args, options: { triggeredBy: 'long-polling' } });
+      };
+
       const schedule = (args: RequestArgs<TArgs> | null, wait: number) => {
-        stop();
+        clearTimer();
+        nextRound = { args };
+
+        if (!isEnabled()) return;
 
         timeoutId = setTimeout(() => {
           timeoutId = null;
-          context.execute({ args, options: { triggeredBy: 'long-polling' } });
+          runRound(args);
         }, wait);
       };
 
@@ -545,14 +573,44 @@ export const withLongPolling = <TArgs extends QueryArgs>(options: WithLongPollin
             hasSeenArgs = true;
             seenArgs = args;
 
-            if (!hasChanged) return;
+            if (hasChanged) {
+              consecutiveErrors = 0;
+              stop();
+            }
 
-            consecutiveErrors = 0;
-            stop();
+            const autoStarts = context.flags.shouldAutoExecute && (args !== null || !context.flags.hasWithArgsFeature);
+
+            if (autoStarts && !isEnabled() && nextRound === null) nextRound = { args };
           });
         },
         { injector: context.deps.injector },
       );
+
+      if (options.enabled) {
+        const enabled = options.enabled;
+
+        nestedEffect(
+          () => {
+            const on = enabled();
+
+            untracked(() => {
+              if (!on) {
+                if (timeoutId !== null) return clearTimer();
+
+                const request = context.state.subtle.request();
+
+                if (!request?.loading()) return;
+
+                nextRound = { args: request.args };
+                request.subtle.abort();
+              } else if (nextRound !== null && timeoutId === null) {
+                runRound(nextRound.args);
+              }
+            });
+          },
+          { injector: context.deps.injector },
+        );
+      }
 
       context.deps.destroyRef.onDestroy(stop);
     },
@@ -631,6 +689,13 @@ export type WithAutoRefreshFeatureOptions = {
 
   /** Whether to ignore the `onlyManualExecution` query config flag */
   ignoreOnlyManualExecution?: boolean;
+
+  /**
+   * Refresh only while this returns `true`. Read reactively (pass a signal or a `computed`). A signal change
+   * while it is `false` is dropped - turning `true` does not execute by itself.
+   * @default () => true
+   */
+  enabled?: () => boolean;
 };
 
 /**
@@ -644,6 +709,7 @@ export const withAutoRefresh = <TArgs extends QueryArgs>(options: WithAutoRefres
     devtools: () => [
       { label: 'signals', value: String(options.onSignalChanges.length) },
       ...(options.ignoreOnlyManualExecution ? [{ label: 'ignores manual only', value: 'yes' }] : []),
+      ...(options.enabled ? [{ label: 'enabled', value: untracked(options.enabled) ? 'yes' : 'no' }] : []),
     ],
     fn: (context) => {
       if (!context.flags.shouldAutoExecuteMethod) {
@@ -661,6 +727,8 @@ export const withAutoRefresh = <TArgs extends QueryArgs>(options: WithAutoRefres
           }
 
           untracked(() => {
+            if (options.enabled && !options.enabled()) return;
+
             const args = context.state.args();
 
             // Don't start polling if the query doesn't have args.
