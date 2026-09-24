@@ -59,7 +59,8 @@ _Avoid_: bar, slot, entry
 A row that books a single increment is folded into the nearest row of the same name in its lane,
 which grows toward it by that increment (`foldShortRows`). The total stays; the placement moves. A
 row the reviewer edited never folds, and a growth that would cover another row of the lane or cross
-between background and foreground work does not happen.
+between background and foreground work does not happen. An unattended row folds only into a row it
+touches, and an attended row never folds into an unattended one.
 _Avoid_: compact, absorb
 
 **Attribution**:

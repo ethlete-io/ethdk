@@ -289,6 +289,8 @@ export type AgentApiReviewedRow = {
   disputedIssueKey?: string;
   /** The same, for a rung that named a stand-in rather than an issue. */
   disputedStandInId?: string;
+  /** Whether nobody was at the machine for the band the row was built from. */
+  unattended?: boolean;
   /** Whether a reviewer's own edit produced this row. */
   edited: boolean;
   /** Whether the row is off the timeline. A hidden row is neither written nor waiting for a name. */

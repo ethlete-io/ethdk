@@ -21,6 +21,7 @@ const band = (options: {
   standInId?: string;
   laneKey?: string;
   excluded?: boolean;
+  unattended?: boolean;
 }): UnnamedProposal => {
   const span = at(options.to).getTime() - at(options.from).getTime();
 
@@ -38,6 +39,7 @@ const band = (options: {
     evidence: [evidence(options.from)],
     state: 'suggested',
     ...(options.excluded ? { excluded: true } : {}),
+    ...(options.unattended ? { unattended: true } : {}),
   };
 };
 
@@ -225,5 +227,51 @@ describe('reviewDay folding single-increment rows', () => {
     );
 
     expect(spans(result)).toEqual(['12:15-13:45 90m', '14:45-15:00 15m']);
+  });
+
+  const bookedMs = (result: DayReview) => result.rows.reduce((sum, row) => sum + row.durationMs, 0);
+
+  it('folds an unattended short row into the row of its name it touches', () => {
+    const rows = [band({ from: '15:45', to: '17:30' }), band({ from: '17:30', to: '17:45', unattended: true })];
+    const result = review(dayRows({ unnamed: rows }));
+
+    expect(spans(result)).toEqual(['15:45-17:45 120m']);
+    expect(result.rows[0]?.unattended).toBeUndefined();
+    expect(result.rows[0]?.folded).toEqual([rows[1]?.id]);
+    expect(bookedMs(result)).toBe(120 * MINUTE);
+  });
+
+  it('joins unattended short rows of one name that touch', () => {
+    const result = review(
+      dayRows({
+        unnamed: [
+          band({ from: '17:15', to: '17:30', unattended: true }),
+          band({ from: '17:30', to: '17:45', unattended: true }),
+        ],
+      }),
+    );
+
+    expect(spans(result)).toEqual(['17:15-17:45 30m']);
+    expect(result.rows[0]?.unattended).toBe(true);
+  });
+
+  it('keeps an unattended short row that no row of its name touches', () => {
+    const result = review(
+      dayRows({
+        unnamed: [band({ from: '12:15', to: '13:45' }), band({ from: '14:45', to: '15:00', unattended: true })],
+      }),
+    );
+
+    expect(spans(result)).toEqual(['12:15-13:45 90m', '14:45-15:00 15m']);
+  });
+
+  it('never folds an attended short row into an unattended one', () => {
+    const result = review(
+      dayRows({
+        unnamed: [band({ from: '12:15', to: '13:45', unattended: true }), band({ from: '13:45', to: '14:00' })],
+      }),
+    );
+
+    expect(spans(result)).toEqual(['12:15-13:45 90m', '13:45-14:00 15m']);
   });
 });
