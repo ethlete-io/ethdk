@@ -2,6 +2,7 @@ import { resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { describe, expect, it } from 'vitest';
 import { CollectedEvent } from '../model/event';
 import { breakMs, breaksBetweenRows } from './breaks';
+import { reviewDay } from '../review/review-day';
 import { streamDay } from './stream-day';
 
 const MINUTE = 60_000;
@@ -269,61 +270,87 @@ describe('streamDay, on prompts the short input idleness reads as remote', () =>
     ]);
   });
 
-  it('books the stretch as attended work rather than as unattended time', () => {
-    const OTHER = '/home/tom/dev/fut-frontend';
-    const phone = (minute: number, source: 'agent-prompt' | 'agent-usage'): CollectedEvent =>
-      source === 'agent-prompt'
-        ? {
-            at: AT(minute),
-            source,
-            kind: source,
-            provider: 'claude-code',
-            sessionId: 'phone',
-            promptId: `phone-${minute}`,
-            cwd: OTHER,
-            gitBranch: 'feat/ET-900-steer-from-the-phone',
-            askedBy: 'human',
-          }
-        : {
-            at: AT(minute),
-            source,
-            kind: source,
-            provider: 'claude-code',
-            sessionId: 'phone',
-            turnId: `phone-${minute}`,
-            cwd: OTHER,
-            gitBranch: 'feat/ET-900-steer-from-the-phone',
-            model: 'claude-opus-5',
-            usage: { input: 3, output: 900, cacheWrite: 200, cacheRead: 60_000, thinking: 100 },
-          };
-    const steered = [120, 130, 140, 150, 160].flatMap((minute): CollectedEvent[] => [
+  const OTHER = '/home/tom/dev/fut-frontend';
+  const PHONE_BRANCH = 'feat/ET-900-steer-from-the-phone';
+  const steered = (minutes: number[]) =>
+    minutes.flatMap((minute): CollectedEvent[] => [
       {
         at: AT(minute),
         source: 'agent-session',
         kind: 'agent-session',
         sessionId: 'phone',
         cwd: OTHER,
-        gitBranch: 'feat/ET-900-steer-from-the-phone',
+        gitBranch: PHONE_BRANCH,
       },
-      phone(minute, 'agent-prompt'),
-      phone(minute + 1, 'agent-usage'),
+      {
+        at: AT(minute),
+        source: 'agent-prompt',
+        kind: 'agent-prompt',
+        provider: 'claude-code',
+        sessionId: 'phone',
+        promptId: `phone-${minute}`,
+        cwd: OTHER,
+        gitBranch: PHONE_BRANCH,
+        askedBy: 'human',
+      },
+      {
+        at: AT(minute + 1),
+        source: 'agent-usage',
+        kind: 'agent-usage',
+        provider: 'claude-code',
+        sessionId: 'phone',
+        turnId: `phone-${minute + 1}`,
+        cwd: OTHER,
+        gitBranch: PHONE_BRANCH,
+        model: 'claude-opus-5',
+        usage: { input: 3, output: 900, cacheWrite: 200, cacheRead: 60_000, thinking: 100 },
+      },
     ]);
-    const day = streamDay({
+  const steeredDay = (minutes: number[], inputs: CollectedEvent[]) =>
+    streamDay({
       events: [
         ...EVENING,
         idle(90, 'idle-start'),
-        ...steered,
+        ...steered(minutes),
         idle(240, 'idle-end'),
         focus(241),
         ...running(240, 270),
         focus(270),
-        ...DESK_STOPPED,
+        ...inputs,
       ].sort((a, b) => a.at.getTime() - b.at.getTime()),
       options: { repoRoots: [REPO, OTHER], windowsSeenThroughMs: AT(900).getTime(), rows: { config: CONFIG } },
     });
+  const EVERY_TEN = [120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220];
+
+  it('books the stretch as attended work rather than as unattended time', () => {
+    const day = steeredDay([120, 130, 140, 150, 160], DESK_STOPPED);
 
     expect(day.rows.proposals.map((row) => row.issueKey)).toContain('ET-900');
     expect(day.rows.unnamed.filter((row) => row.unattended)).toEqual([]);
+  });
+
+  it('draws the whole remote stretch as work, past the hour it books', () => {
+    const day = steeredDay(EVERY_TEN, DESK_STOPPED);
+    const phone = day.rows.proposals.filter((row) => row.issueKey === 'ET-900');
+
+    expect(day.rows.unnamed.filter((row) => row.unattended)).toEqual([]);
+    expect(day.breaks.filter((window) => window.from < AT(220) && window.to > AT(105))).toEqual([]);
+    expect(phone.map((row) => [row.from, row.to])).toEqual([[AT(120), AT(225)]]);
+    expect(phone.map((row) => row.durationMs)).toEqual([45 * MINUTE]);
+  });
+
+  it('keeps the booking a reviewer reads under the hour of remote allowance', () => {
+    const review = reviewDay({ rows: steeredDay(EVERY_TEN, DESK_STOPPED).rows });
+    const phone = review.rows.filter((row) => row.issueKey === 'ET-900');
+
+    expect(phone.map((row) => [row.from, row.to, row.durationMs])).toEqual([[AT(120), AT(225), 45 * MINUTE]]);
+  });
+
+  it('books the whole span of every row on a day without the signal', () => {
+    const { proposals, unnamed } = steeredDay(EVERY_TEN, []).rows;
+    const rows = [...proposals, ...unnamed];
+
+    expect(rows.filter((row) => row.durationMs !== row.to.getTime() - row.from.getTime())).toEqual([]);
   });
 
   it('keeps the allowance for prompts on a day without the signal', () => {

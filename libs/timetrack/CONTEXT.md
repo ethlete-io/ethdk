@@ -185,7 +185,8 @@ _Avoid_: message, input, keystroke in prose
 
 **Remote prompt**:
 A prompt sent while the app watched nobody touch the seat: the person steered from a phone or another
-device. Inside a break, the stretch from the first remote prompt to the last is work — see ADR 0033.
+device. Inside a break, the stretch from the first remote prompt to the last is drawn as work, and
+each remote prompt books its allowance of it, at most an hour a day — see ADR 0033.
 A prompt the app could not watch is neither remote nor desk, and buys back only the allowance.
 _Avoid_: phone prompt, mobile prompt, away prompt
 

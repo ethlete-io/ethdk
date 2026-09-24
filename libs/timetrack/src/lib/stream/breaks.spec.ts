@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CollectedEvent } from '../model/event';
 import { TimeWindow } from '../model/time-window';
-import { breakMs, breakWindows, breaksBetweenRows } from './breaks';
+import { breakMs, breakWindows, breaksBetweenRows, unbookedRemoteWindows } from './breaks';
 
 const at = (hour: number, minute = 0) => new Date(2026, 8, 10, hour, minute);
 
@@ -184,6 +184,45 @@ describe('breakWindows', () => {
 
   it('sums the breaks it found', () => {
     expect(breakMs(breakWindows({ presence: [MORNING, AFTERNOON] }))).toBe(90 * 60_000);
+  });
+});
+
+describe('unbookedRemoteWindows', () => {
+  it('books each remote prompt its allowance and leaves the stretch between them unbooked', () => {
+    const unbooked = unbookedRemoteWindows({
+      breaks: [window([11, 0], [14, 0])],
+      remotePrompts: [at(11, 30), at(12, 0), at(12, 30)],
+    });
+
+    expect(unbooked).toEqual([window([11, 30], [11, 45]), window([12, 0], [12, 15])]);
+  });
+
+  it('gives the hour to the earliest prompts, counts overlapping allowances once, and leaves the rest unbooked', () => {
+    const unbooked = unbookedRemoteWindows({
+      breaks: [window([11, 0], [14, 0])],
+      remotePrompts: [at(11, 30), at(11, 35), at(11, 50), at(12, 5), at(12, 20), at(12, 50)],
+    });
+
+    expect(unbooked).toEqual([window([12, 5], [12, 10]), window([12, 20], [12, 50])]);
+  });
+
+  it('counts the hour across every break of the day', () => {
+    const unbooked = unbookedRemoteWindows({
+      breaks: [window([11, 0], [12, 30]), window([13, 0], [15, 0])],
+      remotePrompts: [at(11, 30), at(11, 45), at(12, 0), at(13, 30), at(13, 45), at(14, 0)],
+    });
+
+    expect(unbooked).toEqual([window([13, 30], [14, 0])]);
+  });
+
+  it('takes the daily limit from the options', () => {
+    const unbooked = unbookedRemoteWindows({
+      breaks: [window([11, 0], [14, 0])],
+      remotePrompts: [at(11, 30), at(12, 0), at(12, 30)],
+      maxRemoteAttentionMs: 30 * 60_000,
+    });
+
+    expect(unbooked).toEqual([window([11, 30], [11, 45]), window([12, 0], [12, 30])]);
   });
 });
 

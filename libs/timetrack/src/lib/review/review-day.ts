@@ -1,4 +1,4 @@
-import { DayRows, dayCheckOptions } from '../rows/build-rows';
+import { DayRows, bookedSpanMs, dayCheckOptions } from '../rows/build-rows';
 import { CutOptions } from '../rows/cut';
 import { CheckDayOptions, DEFAULT_ROUND_OPTIONS, DayCheck, RoundOptions, checkDay } from '../rows/round';
 import { storedLaneKey } from '../rows/lane';
@@ -24,6 +24,7 @@ import {
   ReviewedRow,
   isNamedRow,
 } from './model';
+import { isManualRow } from './edits';
 
 /** What the engine offered for one band: a proposal, or a band nothing could name. */
 type RowSource = Omit<WorklogProposal, 'issueKey'> & { issueKey?: string; standInId?: string; folded?: string[] };
@@ -278,12 +279,14 @@ const trackPinnedRows = (options: { pinned: readonly PinnedRow[]; sources: reado
 /**
  * A row books the time its band covers. One number reaches the reviewer, so a band drawn 13:15 to
  * 13:45 logs 30 minutes and never a shorter time the label would then have to explain. See ADR 0019.
+ * The one exception is remote time past the day's allowance, which ADR 0033 draws and never books; a
+ * row the reviewer wrote by hand books its span regardless.
  *
  * Run after `snapRowBounds`, whose bounds are whole increments, so this books whole increments too.
  */
-const bookTheSpan = (rows: ReviewedRow[]): ReviewedRow[] =>
+const bookTheSpan = (rows: ReviewedRow[], unbookedRemote: readonly TimeWindow[] = []): ReviewedRow[] =>
   rows.map((row) => {
-    const durationMs = row.to.getTime() - row.from.getTime();
+    const durationMs = bookedSpanMs(row, isManualRow(row) ? [] : unbookedRemote);
 
     return durationMs === row.durationMs ? row : { ...row, durationMs };
   });
@@ -346,7 +349,7 @@ export const reviewDay = (options: {
     backgroundProjects: options.cut?.backgroundProjects,
     round: options.round,
   });
-  const rows = bookTheSpan(recut.rows);
+  const rows = bookTheSpan(recut.rows, options.rows.unbookedRemote);
 
   const replacedMs = options.rows.proposals
     .filter((proposal) => consumed.has(proposal.id))

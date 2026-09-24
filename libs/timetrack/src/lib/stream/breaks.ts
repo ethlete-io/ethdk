@@ -41,6 +41,12 @@ export const DEFAULT_PROMPT_ATTENTION_MS = 15 * 60_000;
  */
 export const DEFAULT_MAX_ATTENTION_SHARE = 0.5;
 
+/**
+ * The most a day books of what its remote prompts bought back, over every break together. See ADR
+ * 0033: the stretch is drawn as work, and only this much of it reaches Tempo.
+ */
+export const DEFAULT_MAX_REMOTE_ATTENTION_MS = 60 * 60_000;
+
 /** A stretch of a day nobody was at the machine. */
 export type BreakWindow = TimeWindow & {
   /** Whether the screen was locked in it. A lock is a person saying they are leaving, so it needs no length. */
@@ -150,6 +156,45 @@ export const remoteWorkWindows = (options: {
     if (!inside.length) return [];
 
     return [{ from: new Date(Math.max(from, Math.min(...inside) - attentionMs)), to: new Date(Math.max(...inside)) }];
+  });
+};
+
+/**
+ * The parts of the remote stretches of `remoteWorkWindows` the day draws as work and never books.
+ *
+ * Each remote prompt books its allowance, backwards from the prompt and inside its break; allowances
+ * that overlap count once. The day books at most `maxRemoteAttentionMs` of them, earliest prompt
+ * first, and the prompt that reaches the limit keeps the part nearest itself. See ADR 0033.
+ */
+export const unbookedRemoteWindows = (options: {
+  breaks: readonly TimeWindow[];
+  remotePrompts: readonly Date[];
+  promptAttentionMs?: number;
+  maxRemoteAttentionMs?: number;
+}): TimeWindow[] => {
+  const attentionMs = options.promptAttentionMs ?? DEFAULT_PROMPT_ATTENTION_MS;
+  const booked: TimeWindow[] = [];
+  let leftMs = options.maxRemoteAttentionMs ?? DEFAULT_MAX_REMOTE_ATTENTION_MS;
+
+  for (const at of [...options.remotePrompts].sort((a, b) => a.getTime() - b.getTime())) {
+    const allowance = clipWindows({
+      windows: [{ from: new Date(at.getTime() - attentionMs), to: at }],
+      within: options.breaks,
+    });
+
+    for (const part of subtractWindows({ windows: allowance, without: booked }).reverse()) {
+      const takenMs = Math.min(leftMs, part.to.getTime() - part.from.getTime());
+
+      if (takenMs <= 0) continue;
+
+      booked.push({ from: new Date(part.to.getTime() - takenMs), to: part.to });
+      leftMs -= takenMs;
+    }
+  }
+
+  return subtractWindows({
+    windows: remoteWorkWindows({ ...options, promptAttentionMs: attentionMs }),
+    without: mergeWindows(booked),
   });
 };
 

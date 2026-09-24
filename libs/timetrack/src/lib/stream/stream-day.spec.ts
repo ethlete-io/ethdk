@@ -591,6 +591,7 @@ describe('streamDay', () => {
         behind: [],
         private: [],
         privateMs: 0,
+        unbookedRemote: [],
       },
       spend: { usage: { input: 0, output: 0, cacheWrite: 0, cacheRead: 0, thinking: 0 }, turns: 0, models: [] },
       unattributedSpend: {

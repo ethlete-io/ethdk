@@ -19,7 +19,7 @@ import { TimetrackProjectRoots, workPathsOf, workPathsSplit } from '../model/wor
 import { BuildRowsOptions, DayRows, buildRows } from '../rows/build-rows';
 import { TimetrackCallRules } from '../settings/model';
 import { ContextObservation, ContextSpan, blocksFromSpans, clipSpans } from './blocks';
-import { BreakWindow, breakGaps, breakMs, breakWindows, remoteWorkWindows } from './breaks';
+import { BreakWindow, breakGaps, breakMs, breakWindows, remoteWorkWindows, unbookedRemoteWindows } from './breaks';
 import { classifyCalls, lastHostSampleAt } from './calls';
 import { promptOriginAt } from './prompt-origin';
 import { PresenceSample, presenceWindows } from './presence';
@@ -68,6 +68,11 @@ export type StreamDayOptions = {
    * How much of a break one prompt the user sent buys back. Defaults to `DEFAULT_PROMPT_ATTENTION_MS`.
    */
   promptAttentionMs?: number;
+  /**
+   * The most a day books of what its remote prompts bought back. Defaults to
+   * `DEFAULT_MAX_REMOTE_ATTENTION_MS`.
+   */
+  maxRemoteAttentionMs?: number;
   /**
    * The repository roots the host discovered. An agent session reports the directory it was started in,
    * which is often a subdirectory of a checkout, and without these each subdirectory becomes a stream.
@@ -1435,6 +1440,11 @@ export const streamDay = (options: {
   };
   const gaps = breakGaps(away);
   const breaks = breakWindows(away);
+  const remoteOptions = {
+    breaks: gaps,
+    remotePrompts: away.remotePrompts,
+    promptAttentionMs: config.promptAttentionMs,
+  };
   // `work` above must stay the spans presence alone allows, because the agent's spans are then clipped
   // to the gaps read off it. Clipping first would let a break widen the work span and so itself.
   const blocks = blocksFromSpans({
@@ -1462,11 +1472,8 @@ export const streamDay = (options: {
     links,
     calls,
     breaks,
-    remoteWork: remoteWorkWindows({
-      breaks: gaps,
-      remotePrompts: away.remotePrompts,
-      promptAttentionMs: config.promptAttentionMs,
-    }),
+    remoteWork: remoteWorkWindows(remoteOptions),
+    unbookedRemote: unbookedRemoteWindows({ ...remoteOptions, maxRemoteAttentionMs: config.maxRemoteAttentionMs }),
     cut: { ...config.rows?.cut, focusMsByStream },
   });
 
