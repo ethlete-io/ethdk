@@ -17,6 +17,7 @@ import { injectHostPorts } from '../../host';
 import { DayReadOptions, readDay$ } from '../read-day';
 import { injectTimetrackSettings } from '../settings/settings';
 import { readViewState, rememberViewState } from '../view-state';
+import { injectProjectLinks } from '../project-links';
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
@@ -39,6 +40,7 @@ const WEEK_REVIEW_DEF = /* @__PURE__ */ defineProvider(() => {
   const windows = injectWindowCollector();
   const agentSessions = injectAgentSessionCollector();
   const git = injectGitCollector();
+  const projectLinks = injectProjectLinks();
   const settings = injectTimetrackSettings();
 
   const start = signal(
@@ -68,6 +70,7 @@ const WEEK_REVIEW_DEF = /* @__PURE__ */ defineProvider(() => {
     start: start(),
     settings: settings.settings(),
     repoRoots: git.discovery()?.repos ?? [],
+    links: projectLinks(),
     windows: windows.lastRun(),
     sessions: agentSessions.lastRun(),
     git: git.lastRun(),
@@ -76,7 +79,13 @@ const WEEK_REVIEW_DEF = /* @__PURE__ */ defineProvider(() => {
   const loaded = toSignal(
     toObservable(probe).pipe(
       switchMap((current) =>
-        readWeek$({ ports, settings: current.settings, repoRoots: current.repoRoots, start: current.start }).pipe(
+        readWeek$({
+          ports,
+          settings: current.settings,
+          repoRoots: current.repoRoots,
+          links: current.links,
+          start: current.start,
+        }).pipe(
           map((value): Loaded => ({ start: current.start, value, failure: null })),
           catchError((error: unknown) => of<Loaded>({ start: current.start, value: null, failure: messageOf(error) })),
         ),

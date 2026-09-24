@@ -68,6 +68,29 @@ export const matchProjectLink = (options: {
     )[0];
 };
 
+/**
+ * The links, plus one per linked worktree that files it the way its main checkout is filed.
+ *
+ * `worktrees` maps a linked worktree's path to its main checkout's path, as `git worktree list` names
+ * them. A link the user put on the worktree itself is left to answer for it.
+ */
+export const withWorktreeLinks = (options: {
+  links: readonly TimetrackProjectLink[];
+  worktrees: Readonly<Record<string, string>>;
+}): readonly TimetrackProjectLink[] => {
+  const derived = Object.entries(options.worktrees).flatMap(([worktree, main]) => {
+    const path = normalize(worktree);
+
+    if (!path || options.links.some((link) => normalize(link.path) === path)) return [];
+
+    const link = matchProjectLink({ context: { repoPath: main }, links: options.links });
+
+    return link ? [{ ...link, path }] : [];
+  });
+
+  return derived.length ? [...options.links, ...derived] : options.links;
+};
+
 /** The Jira project a context files its tickets in, or nothing when no link names one. */
 export const projectKeyFor = (options: { context: ActivityContext; links: readonly TimetrackProjectLink[] }) => {
   const target = matchProjectLink(options)?.target;

@@ -36,6 +36,7 @@ import {
 import { injectGitCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
+import { injectProjectLinks } from '../project-links';
 
 const IDLE = { kind: 'idle' } as const;
 
@@ -88,6 +89,7 @@ const WORK_START_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
   const destroyRef = inject(DestroyRef);
   const settings = injectTimetrackSettings();
+  const projectLinks = injectProjectLinks();
   const git = injectGitCollector();
 
   const form = signal<WorkStartForm>(emptyForm());
@@ -272,7 +274,7 @@ const WORK_START_DEF = /* @__PURE__ */ defineRootProvider(() => {
     setRepoPath: (repoPath: string) => {
       // A link is the user's own statement about this checkout, so picking the repository answers the
       // project field too. Without one the field keeps whatever was typed for the previous choice.
-      const linked = projectKeyFor({ context: { repoPath }, links: settings.settings().projectLinks });
+      const linked = projectKeyFor({ context: { repoPath }, links: projectLinks() });
 
       update(linked ? { repoPath, projectKey: linked } : { repoPath });
       runStatus.set(IDLE);

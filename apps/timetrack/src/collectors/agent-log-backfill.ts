@@ -32,6 +32,7 @@ import {
 } from 'rxjs';
 import { injectCollectionPause } from '../app/collection-pause';
 import { injectTimetrackSettings } from '../app/settings/settings';
+import { injectProjectLinks } from '../app/project-links';
 import { injectHostPorts } from '../host';
 import { AgentLogSource } from './agent-log-source';
 
@@ -78,6 +79,7 @@ const keepPrompts: BackfillKeep = ({ result, links }) => keepPublicAgentRecords(
 const createAgentLogBackfill = (source: AgentLogSource, keep: BackfillKeep) => {
   const ports = injectHostPorts();
   const settings = injectTimetrackSettings();
+  const projectLinks = injectProjectLinks();
   const pause = injectCollectionPause();
   const lastRun = signal<AgentLogBackfillRun | null>(null);
   const remaining = signal<number | null>(null);
@@ -107,7 +109,7 @@ const createAgentLogBackfill = (source: AgentLogSource, keep: BackfillKeep) => {
     startedAt: Date;
   }): Observable<AgentLogBackfill> => {
     const { result, rewound, startedAt } = options;
-    const links = settings.settings().projectLinks;
+    const links = projectLinks();
     const rules = effectiveExclusionRules(settings.settings());
     const wanted = keep({ result, links });
     const denied = applyExclusionRules({ events: wanted, rules });

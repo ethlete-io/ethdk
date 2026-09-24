@@ -22,6 +22,7 @@ import { injectTimetrackSettings } from '../settings/settings';
 import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { streamDayOptionsOf } from '../stream-day-options';
 import { formatShare } from './format';
+import { injectProjectLinks } from '../project-links';
 
 /** How far back the panel reads. Long enough that one unusual day cannot decide which rung to build. */
 const SPAN_DAYS = 14;
@@ -197,6 +198,7 @@ export class UnnamedFocusComponent {
   private windows = injectWindowCollector();
   private calls = injectCallCollector();
   private git = injectGitCollector();
+  private projectLinks = injectProjectLinks();
   private settings = injectTimetrackSettings();
   private recurring = injectRecurringPatterns();
 
@@ -210,6 +212,7 @@ export class UnnamedFocusComponent {
   private probe = computed(() => ({
     day: localDayKey(new Date(), dayBoundaryOf(this.settings.settings())),
     repoRoots: this.git.discovery()?.repos ?? [],
+    links: this.projectLinks(),
     settings: this.settings.settings(),
     patterns: this.recurring.patterns(),
     windows: this.windows.lastRun(),
@@ -227,6 +230,7 @@ export class UnnamedFocusComponent {
         const options = streamDayOptionsOf({
           repoRoots: current.repoRoots,
           settings: current.settings,
+          links: current.links,
           patterns: current.patterns,
           windowsSeenThroughMs: current.windows?.at.getTime(),
         });

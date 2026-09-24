@@ -46,6 +46,7 @@ import { injectDayReview } from '../day-review/day-review';
 import { LANE_ISSUE_WINDOW_DAYS } from '../jira';
 import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { injectTimetrackSettings } from '../settings/settings';
+import { injectProjectLinks } from '../project-links';
 
 /** One request as the host hands it over. What is in `body` is the caller's, uninterpreted. */
 type AgentRequestEvent = { id: number; body: unknown };
@@ -80,6 +81,7 @@ const toApiIssue = (issue: JiraIssue): AgentApiIssue => ({
 const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
   const settings = injectTimetrackSettings();
+  const projectLinks = injectProjectLinks();
   const review = injectDayReview();
   const recurring = injectRecurringPatterns();
   const destroyRef = inject(DestroyRef);
@@ -162,7 +164,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const repoProject$ = (repoPath: string) => {
     const current = settings.settings();
-    const link = matchProjectLink({ context: { repoPath }, links: current.projectLinks });
+    const link = matchProjectLink({ context: { repoPath }, links: projectLinks() });
     const target = link?.target;
 
     return of({

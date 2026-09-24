@@ -19,9 +19,9 @@ import {
   streamKey,
 } from '@ethlete/timetrack';
 import { IssueSelectComponent } from '../jira';
-import { injectTimetrackSettings } from '../settings/settings';
 import { formatClockTime } from './format';
 import { UnmaskedWordsComponent } from './unmasked-words.component';
+import { injectProjectLinks } from '../project-links';
 
 export type ContextNaming = { context: UnnamedContext; target: AttributionTarget };
 
@@ -157,7 +157,7 @@ export type ContextNaming = { context: UnnamedContext; target: AttributionTarget
   ],
 })
 export class UnnamedWorkComponent {
-  private settings = injectTimetrackSettings();
+  private projectLinks = injectProjectLinks();
   public contexts = input.required<readonly UnnamedContext[]>();
   /** What the reasoning provider proposed, by context id. Empty until the user asks for it. */
   public suggestions = input<ReadonlyMap<string, InferredAttribution>>(new Map());
@@ -204,7 +204,7 @@ export class UnnamedWorkComponent {
   protected listed = computed(() => {
     const suggestions = this.suggestions();
     const rules = this.rules();
-    const links = this.settings.settings().projectLinks;
+    const links = this.projectLinks();
 
     return this.contexts().map((context) => ({
       id: context.id,

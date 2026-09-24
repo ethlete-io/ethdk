@@ -30,3 +30,10 @@ export const parseGitWorktrees = (output: string): GitWorktree[] => {
 
   return worktrees.filter((worktree) => !!worktree.path);
 };
+
+/** Each linked worktree of one `git worktree list`, mapped to the main checkout it was added to. */
+export const linkedWorktreesOf = (worktrees: readonly GitWorktree[]): Record<string, string> => {
+  const [main, ...linked] = worktrees;
+
+  return main ? Object.fromEntries(linked.map((worktree) => [worktree.path, main.path])) : {};
+};

@@ -7,6 +7,7 @@ import { injectGitCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
 import { readDay$ } from '../read-day';
 import { injectTimetrackSettings } from '../settings/settings';
+import { injectProjectLinks } from '../project-links';
 
 /**
  * How often the age is read again. An age is counted in workdays, so once an hour is far more often
@@ -25,6 +26,7 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const settings = injectTimetrackSettings();
   const ports = injectHostPorts();
   const git = injectGitCollector();
+  const projectLinks = injectProjectLinks();
   const now = signal(new Date());
 
   timer(AGE_TICK_MS, AGE_TICK_MS)
@@ -79,6 +81,7 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     days: daysToTotal(),
     settings: settings.settings(),
     repoRoots: git.discovery()?.repos ?? [],
+    links: projectLinks(),
   }));
 
   /**
@@ -93,7 +96,7 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
         probe.days.length
           ? combineLatest(
               probe.days.map((day) =>
-                readDay$({ ports, settings: probe.settings, repoRoots: probe.repoRoots, day }).pipe(
+                readDay$({ ports, settings: probe.settings, repoRoots: probe.repoRoots, links: probe.links, day }).pipe(
                   map((read) => read.review.rows),
                   catchError(() => of<ReviewedRow[]>([])),
                 ),

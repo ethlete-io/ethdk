@@ -11,8 +11,8 @@ import {
 import { Appointment, FORM_FIELD_IMPORTS, injectSchedulerEditSurfaceHost } from '@ethlete/components';
 import { projectKeyFor, streamKeyRepoPath } from '@ethlete/timetrack';
 import { IssueSelectComponent } from '../../jira';
-import { injectTimetrackSettings } from '../../settings/settings';
 import { rowEntryOf } from './row-appointment';
+import { injectProjectLinks } from '../../project-links';
 
 /** The issue the row is logged against. Replaces the surface's own title field, which writes the same key. */
 @Component({
@@ -33,7 +33,7 @@ import { rowEntryOf } from './row-appointment';
   imports: [FORM_FIELD_IMPORTS, IssueSelectComponent],
 })
 export class EditIssueComponent {
-  private settings = injectTimetrackSettings();
+  private projectLinks = injectProjectLinks();
 
   public draft = input.required<WritableSignal<Appointment>>();
 
@@ -52,7 +52,7 @@ export class EditIssueComponent {
 
     if (!repoPath) return '';
 
-    return projectKeyFor({ context: { repoPath }, links: this.settings.settings().projectLinks }) ?? '';
+    return projectKeyFor({ context: { repoPath }, links: this.projectLinks() }) ?? '';
   });
 
   protected pick(issueKey: string) {

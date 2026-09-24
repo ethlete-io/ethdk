@@ -66,6 +66,7 @@ import {
 import { injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectDayReview } from './day-review';
+import { injectProjectLinks } from '../project-links';
 
 const IDLE = { kind: 'idle' } as const;
 
@@ -139,6 +140,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
   const destroyRef = inject(DestroyRef);
   const settings = injectTimetrackSettings();
+  const projectLinks = injectProjectLinks();
   const dayReview = injectDayReview();
 
   const context = signal<UnnamedContext | null>(null);
@@ -859,7 +861,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
           rules: settings.settings().attributionRules,
           proposals: dayReview.deterministic()?.proposals ?? [],
           projectKeys: favoriteProjectKeys(settings.settings()),
-          links: settings.settings().projectLinks,
+          links: projectLinks(),
         }) ?? '';
 
       context.set(unnamed);

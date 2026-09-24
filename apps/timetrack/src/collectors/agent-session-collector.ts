@@ -33,6 +33,7 @@ import {
 } from 'rxjs';
 import { injectCollectionPause } from '../app/collection-pause';
 import { injectTimetrackSettings } from '../app/settings/settings';
+import { injectProjectLinks } from '../app/project-links';
 import { injectHostPorts } from '../host';
 import { AgentLogSource } from './agent-log-source';
 
@@ -90,6 +91,7 @@ const mergeUnlinked = (all: UnlinkedAgentSessions[], run: UnlinkedAgentSessions[
 const createAgentSessionCollector = (source: AgentLogSource) => {
   const ports = injectHostPorts();
   const settings = injectTimetrackSettings();
+  const projectLinks = injectProjectLinks();
   const pause = injectCollectionPause();
   const lastRun = signal<AgentSessionCollectorRun | null>(null);
   const totals = signal<AgentSessionCollectorTotals>({ since: new Date(), excluded: 0, unlinked: [] });
@@ -125,7 +127,7 @@ const createAgentSessionCollector = (source: AgentLogSource) => {
    * written whole stores what the two filters just denied.
    */
   const persist$ = (collection: AgentSessionCollection, startedAt: Date): Observable<AgentSessionCollection> => {
-    const links = settings.settings().projectLinks;
+    const links = projectLinks();
     const rules = effectiveExclusionRules(settings.settings());
     const linked = keepLinkedAgentSessions({ events: collection.events, links });
     const usage = keepPublicAgentRecords({ events: collection.usage, links });

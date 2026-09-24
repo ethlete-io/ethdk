@@ -1,7 +1,14 @@
 import { signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
-import { GitRepoScan, GitScanFailure, collectGitEvents$ } from '@ethlete/timetrack';
+import {
+  GitRepoScan,
+  GitScanFailure,
+  collectGitEvents$,
+  gitWorktreeArgs,
+  linkedWorktreesOf,
+  parseGitWorktrees,
+} from '@ethlete/timetrack';
 import { EMPTY, Observable, catchError, concatMap, defer, exhaustMap, from, map, of, tap, timer, toArray } from 'rxjs';
 import { injectCollectionPause } from '../app/collection-pause';
 import { injectTimetrackSettings } from '../app/settings/settings';
@@ -60,6 +67,7 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const lastRun = signal<GitCollectorRun | null>(null);
   const failure = signal<string | null>(null);
   const discovery = signal<GitRepoDiscovery | null>(null);
+  const worktrees = signal<Readonly<Record<string, string>>>({});
 
   let repos: Repo[] = [];
   let afterSeq = 0;
@@ -78,10 +86,27 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       catchError(() => of({ path })),
     );
 
+  const linkedOf$ = (path: string): Observable<Record<string, string>> =>
+    ports.processes.run$({ command: 'git', args: gitWorktreeArgs(), cwd: path }).pipe(
+      map((result) => (result.code === 0 ? linkedWorktreesOf(parseGitWorktrees(result.stdout)) : {})),
+      catchError(() => of({})),
+    );
+
   const discover$ = (): Observable<Repo[]> =>
     ports.git.repos$(settings.settings().gitScanRoots).pipe(
-      tap((found) => discovery.set(found)),
-      concatMap((found) => from(found.repos).pipe(concatMap(author$), toArray())),
+      concatMap((found) =>
+        from(found.repos).pipe(
+          concatMap(linkedOf$),
+          toArray(),
+          // A reader that sees the repositories before their worktrees would file a worktree nowhere, or
+          // under a root link, and an automatic stand-in opened then keeps that project.
+          tap((linked) => {
+            worktrees.set(Object.assign({}, ...linked));
+            discovery.set(found);
+          }),
+          concatMap(() => from(found.repos).pipe(concatMap(author$), toArray())),
+        ),
+      ),
       tap((found) => (repos = found)),
     );
 
@@ -160,7 +185,7 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
     )
     .subscribe();
 
-  return { lastRun, failure, discovery };
+  return { lastRun, failure, discovery, worktrees };
 });
 
 export const injectGitCollector = /* @__PURE__ */ toInjectFn(GIT_COLLECTOR_DEF);

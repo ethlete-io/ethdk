@@ -116,6 +116,7 @@ import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { dayRowsOptionsOf, streamDayOptionsOf } from '../stream-day-options';
 import { injectTimer } from '../timer';
 import { readViewState, rememberViewState } from '../view-state';
+import { injectProjectLinks } from '../project-links';
 
 /** How long typing settles before a day's edits are written. */
 const SAVE_DEBOUNCE_MS = 300;
@@ -173,6 +174,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const prompts = injectAgentPromptBackfill();
   const codexPrompts = injectCodexPromptBackfill();
   const git = injectGitCollector();
+  const projectLinks = injectProjectLinks();
   const timers = injectTimer();
   const settings = injectTimetrackSettings();
   const recurring = injectRecurringPatterns();
@@ -395,6 +397,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
           options: streamDayOptionsOf({
             repoRoots: git.discovery()?.repos ?? [],
             settings: settings.settings(),
+            links: projectLinks(),
             patterns: recurring.patterns(),
             epics: epics.optionsFor(day()),
             windowsSeenThroughMs: windows.lastRun()?.at.getTime(),
@@ -449,7 +452,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       checkouts: (streamed()?.streams ?? []).flatMap((stream) =>
         stream.repoPath ? [{ repoPath: stream.repoPath, branches: stream.branches, observedMs: stream.engagedMs }] : [],
       ),
-      links: settings.settings().projectLinks,
+      links: projectLinks(),
       rules: settings.settings().attributionRules,
       worklogs: recurring.worklogs(),
       loggedIssues: recurring.loggedIssues(),
@@ -515,7 +518,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     return buildRows({
       blocks: current.blocks,
       events: collected.events,
-      links: settings.settings().projectLinks,
+      links: projectLinks(),
       calls: calls(),
       breaks: current.breaks,
       inferred: proposed,
@@ -630,7 +633,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     for (const opened of autoStandIns({
       contexts: unnamed(),
       unattributed: deterministic.unattributed,
-      links: current.projectLinks,
+      links: projectLinks(),
       rules: current.attributionRules,
       config: gitFlowConfigFor(current),
       repoRoots: git.discovery()?.repos,
@@ -1161,7 +1164,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
         name: standInNameFor({ context: context.context, config: gitFlowConfigFor(current) }),
         day: day(),
         now,
-        projectKey: projectKeyFor({ context: context.context, links: current.projectLinks }),
+        projectKey: projectKeyFor({ context: context.context, links: projectLinks() }),
       });
 
       settings.nameWithStandIn({

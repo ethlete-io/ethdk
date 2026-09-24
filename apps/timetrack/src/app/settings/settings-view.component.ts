@@ -44,6 +44,7 @@ import { injectTimetrackSettings } from './settings';
 import { TicketSettingsComponent } from './ticket-settings.component';
 import { TokenFieldComponent } from './token-field.component';
 import { YourProjectsComponent } from './your-projects.component';
+import { injectProjectLinks } from '../project-links';
 
 const DAY_START_WHY = `Work at 01:00 belongs to the evening it came from, not to a two-hour Tuesday that
 describes nothing you did. Set the hour your day begins and every screen, total and booking follows it.
@@ -466,7 +467,7 @@ window title, never a file path. A suggestion never syncs on its own.`;
 
               <ethlete-agent-session-resync
                 [unlinked]="agent.totals().unlinked"
-                [links]="store.settings().projectLinks"
+                [links]="projectLinks()"
                 [busy]="agent.isCollecting()"
                 (resync)="resync($event)"
                 class="max-w-4xl"
@@ -697,6 +698,7 @@ export class SettingsViewComponent {
   protected store = injectTimetrackSettings();
 
   public git = injectGitCollector();
+  protected projectLinks = injectProjectLinks();
   protected gitlab = injectGitLabCollector();
   protected agent = injectAgentSessionCollector();
   private agentSpend = injectAgentSpendBackfill();

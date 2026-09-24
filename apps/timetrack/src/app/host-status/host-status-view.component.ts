@@ -14,6 +14,7 @@ import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector 
 import { injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
 import { BuildStampComponent } from '../build-stamp.component';
+import { injectProjectLinks } from '../project-links';
 
 /** One row per pass, because each reads its own agent's logs and each converges on its own. */
 const CURSOR_PASSES: { pass: AgentLogPass; label: string }[] = [
@@ -126,6 +127,7 @@ type StoreRepair =
 export class HostStatusViewComponent {
   private ports = injectHostPorts();
   private settings = injectTimetrackSettings();
+  private projectLinks = injectProjectLinks();
   private agentSessions = injectAgentSessionCollector();
   private windows = injectWindowCollector();
   private git = injectGitCollector();
@@ -226,7 +228,7 @@ export class HostStatusViewComponent {
           repairStoredCursors$({
             store: this.ports.events,
             passes: CURSOR_PASSES.map(({ pass }) => pass),
-            links: this.settings.settings().projectLinks,
+            links: this.projectLinks(),
             rules: effectiveExclusionRules(this.settings.settings()),
           }).pipe(map((cursors): StoreRepairReport => ({ titles, cursors }))),
         ),

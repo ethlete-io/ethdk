@@ -4,6 +4,7 @@ import {
   EMPTY_DAY_REVIEW_EDITS,
   RecurringPattern,
   StreamDay,
+  TimetrackProjectLink,
   TimetrackSettings,
   closeTimerRun,
   coveredMsOf,
@@ -32,6 +33,7 @@ export type DayReadOptions = {
   ports: HostPorts;
   settings: TimetrackSettings;
   repoRoots: readonly string[];
+  links: readonly TimetrackProjectLink[];
   /** The standing commitments the user's Tempo history holds, from `injectRecurringPatterns`. */
   patterns?: readonly RecurringPattern[];
   /**
@@ -70,6 +72,7 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
         options: streamDayOptionsOf({
           repoRoots: options.repoRoots,
           settings,
+          links: options.links,
           patterns: options.patterns,
           windowsSeenThroughMs: options.windowsSeenThroughMs,
           through: at,

@@ -3,6 +3,7 @@ import {
   EpicOptions,
   RecurringPattern,
   StreamDayOptions,
+  TimetrackProjectLink,
   TimetrackSettings,
   effectiveNoWorkContextApps,
   effectiveTransientApps,
@@ -68,6 +69,8 @@ export const dayRowsOptionsOf = (options: {
 export const streamDayOptionsOf = (options: {
   repoRoots: readonly string[];
   settings: TimetrackSettings;
+  /** From `injectProjectLinks`, so a linked worktree is filed the way its main checkout is. */
+  links: readonly TimetrackProjectLink[];
   /** The standing commitments the user's Tempo history holds, from `injectRecurringPatterns`. */
   patterns?: readonly RecurringPattern[];
   /** What a sibling checkout on the same branch name books, from `injectEpicSiblings`. */
@@ -80,7 +83,7 @@ export const streamDayOptionsOf = (options: {
   rows?: Omit<BuildRowsOptions, 'links' | 'calls'>;
 }): Partial<StreamDayOptions> => ({
   repoRoots: [...options.repoRoots],
-  links: options.settings.projectLinks,
+  links: options.links,
   ownAppIds: OWN_APP_IDS,
   windowsSeenThroughMs: options.windowsSeenThroughMs,
   callRules: options.settings.callRules,
