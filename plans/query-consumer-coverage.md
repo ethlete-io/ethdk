@@ -115,7 +115,16 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
   - Cheap extra: the legacy state guards are `constant: type guard` but heavily used (`isQueryStateFailure` 25
     files, `isQueryStateLoading` 21, `isQueryStatePrepared` 4, `isQueryStateCancelled` 2); name them in the S10.1
     scenario.
-  - `@internal` candidates (no other lib or app imports them, not in `apps/docs`; not changed yet):
+  - Done: 1-7 (`legacy-collections-and-pipes`, `legacy-infinity-patterns`, `legacy-devtools-panel`,
+    `legacy-entity-patterns`, `head-options-creators`, `testing-helpers`, `persistence-noop-adapter`). The state
+    guards are named in `legacy-collections-and-pipes` (dyn's `UploadChunk` shape). Open: 8.
+    - 1 real: on the interop, a load the query did not start (`refreshQueriesInUse()`, an invalidation) reported
+      `triggeredVia: 'program'`, so `ignoreAutoRefresh()` let it through and `*etQuery` showed `loading`, not
+      `refreshing`. Now `auto`, keyed on the request's `executeTime` (`legacy/interop/legacy-query.ts`).
+    - 2-7 not real. `testing-helpers` is a plain TestBed spec (the helpers need `HttpTestingController`, not the
+      fake API). The v2 devtools list keeps cached queries, so "Live Queries" counts every args value seen.
+  - `@internal` candidates (no other lib or app imports them, not in `apps/docs`; not changed yet). User decision
+    2026-09-25: tag these `@internal` in the next major release, not in 6.0.0.
     - v3 plumbing: `shouldAutoExecuteQuery`, `shouldAutoExecuteGqlQuery`, `getQueryFeatureUsage`, `maybeExecute`,
       `createQueryObject`, `applyQueryFeatures`, `splitQueryConfig`, `isCreateGqlQueryOptions`, `createBaseQuery`,
       `createBaseQueryCreator`, `setupQueryState`, `setupQueryExecuteState`, `resetExecuteState`, `queryExecute`,
