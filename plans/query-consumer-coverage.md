@@ -99,7 +99,10 @@ Triage (ethlete-sdk-57):
   exact; `keepUnusedFor` warned), 10 (`entity:` moved onto the legacy wrapper; gql and `ExperimentalQuery` helpers
   reported), 11 (`refreshBuffer` mapped, the guide's unit claim fixed), 13 (dropped defaults reported), 5 (guide warning
   only).
-- Waiting on the user: 5 (`HttpContextToken` marker on v3 requests), then 4, 6, 7, 9, 3, 8 one at a time.
+- Done in a80ef2411: 5 marker, `IS_QUERY_REQUEST` on every v3 `HttpClient` request.
+- 4 decided: keep the previous response on args change by default (the user expected this was already the case;
+  verified it was not), parking and `reset()` clear it, opt-out through the query config. In progress.
+- Waiting on the user, one at a time: 6, 7, 9, 3, 8.
 - To question: 14 (query button, EntityStore). Document only: 12, 15-18.
 
 1. Retries: v2 retried every method on 5xx ×4 (`legacy/request/request.util.ts:225`); v3 needs `withDefaultRetry()`.
