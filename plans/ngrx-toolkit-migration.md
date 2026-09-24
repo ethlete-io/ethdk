@@ -17,6 +17,12 @@ and behaving the same, and screens then move to signals one at a time.
 - fifagg attaches the bearer token to toolkit calls in `libs/store/src/lib/interceptors/jwt.interceptor.ts`, read
   from `ggApiClient.authProvider$` (v2). It skips contentful URLs, `/public` and `/status`.
 - The toolkit path runs after the v2 path (`migrate-to-query-v3`), or in the same upgrade. The interop needs 6.x.
+- 6.x pins `@angular/core` 22.1.6 (`libs/query/package.json`). fifagg is on Angular 19.2.4, so its Angular upgrade
+  comes first.
+- The fifagg `jwt.interceptor.ts` must go in the same run: it adds the bearer header to every `HttpClient` call, so v3
+  secure queries would get it twice and third-party calls (Bynder, Shopify) would get it too. It also reads
+  `ggApiClient.authProvider$`/`tokens$`, which v3 does not have. The generator deletes it and reports its skip list.
+- Per-call headers (`actionOptions.headers`, for example `_ssrHeader` in `team.service.ts`) map to per-request headers.
 
 ## Concept map
 
