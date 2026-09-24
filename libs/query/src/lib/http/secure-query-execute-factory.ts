@@ -1,4 +1,5 @@
 import { HttpHeaders } from '@angular/common/http';
+import { untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { EMPTY, filter, map, merge, NEVER, race, Subscription, switchMap, take, takeWhile, tap, timer } from 'rxjs';
 import { AnyBearerAuthProvider } from '../auth';
@@ -310,8 +311,10 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
     }
   };
 
-  exec['reset'] = reset;
-  exec['currentRepositoryKey'] = executeState.previousKey.asReadonly();
+  const untrackedExec = (executeArgs?: QueryExecuteArgs<TArgs>) => untracked(() => exec(executeArgs));
 
-  return exec;
+  untrackedExec['reset'] = () => untracked(reset);
+  untrackedExec['currentRepositoryKey'] = executeState.previousKey.asReadonly();
+
+  return untrackedExec;
 };

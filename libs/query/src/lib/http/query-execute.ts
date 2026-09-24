@@ -1,4 +1,4 @@
-import { Signal } from '@angular/core';
+import { Signal, untracked } from '@angular/core';
 import { QueryArgs, RequestArgs } from './query';
 import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConfig } from './query-creator';
 import { QueryDependencies } from './query-dependencies';
@@ -39,15 +39,16 @@ export const createExecuteFn = <TArgs extends QueryArgs>(
   const executeState = setupQueryExecuteState();
   const circularChecker = circularQueryDependencyChecker();
 
-  const reset = () => resetExecuteState({ executeState, executeOptions });
+  const reset = () => untracked(() => resetExecuteState({ executeState, executeOptions }));
 
-  const exec = (executeArgs?: QueryExecuteArgs<TArgs>) => {
-    const { args = executeOptions.state.args(), options } = executeArgs ?? {};
+  const exec = (executeArgs?: QueryExecuteArgs<TArgs>) =>
+    untracked(() => {
+      const { args = executeOptions.state.args(), options } = executeArgs ?? {};
 
-    circularChecker.check(args);
+      circularChecker.check(args);
 
-    queryExecute({ executeOptions, executeState, args, options });
-  };
+      queryExecute({ executeOptions, executeState, args, options });
+    });
 
   exec['reset'] = reset;
 
