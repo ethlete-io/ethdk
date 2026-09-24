@@ -39,15 +39,15 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
 | P6  | `of(q.prepare().execute()).pipe(switchQueryState(), filterSuccess(), …)` → `toSignal`                              | dyn, fut           | no                                                               |
 | P7  | `effect(() => { sig(); q()?.execute({ skipCache: true, cancelPrevious: true }) })`                                 | dfb                | no                                                               |
 | P8  | `tap(() => q()?.execute({ skipCache: true }))` after `switchQueryState()`                                          | fut                | no                                                               |
-| P9  | Legacy `QueryForm` + `QueryField` (debounce, `isResetBy`) feeding `queryComputed`                                  | bvb, dfb, dyn, fut | partial (`legacy-query-form`)                                    |
+| P9  | Legacy `QueryForm` + `QueryField` (debounce, `isResetBy`) feeding `queryComputed`                                  | bvb, dfb, dyn, fut | `legacy-query-form-patterns`                                     |
 | P10 | `queryArrayComputed`, `queryComputedTillTruthy`, `toQuerySubject`, `queryComputedWithForm`                         | fut                | no spec at all                                                   |
 | P11 | Infinity query config + `InfinityQueryDirective`                                                                   | bvb, dfb           | `legacy-infinity-trigger`                                        |
-| P12 | Bearer auth provider + `createQueryCollectionSubject` login/refresh + `takeUntilResponse`                          | bvb, dfb, dyn      | partial                                                          |
-| P13 | Client options off: `enableSmartPolling`, `autoRefreshQueriesOnWindowFocus`, `cacheAdapter: () => 0`               | vbl                | no                                                               |
-| P14 | Early v3 (`ExperimentalQuery` namespace, 5.x) client/creators, migrated by `prep-for-query-v3`, with v2 call sites | dfb                | migration spec only; no scenario on the migrated output          |
+| P12 | Bearer auth provider + `createQueryCollectionSubject` login/refresh + `takeUntilResponse`                          | bvb, dfb, dyn      | `legacy-auth-patterns`                                           |
+| P13 | Client options off: `enableSmartPolling`, `autoRefreshQueriesOnWindowFocus`, `cacheAdapter: () => 0`               | vbl                | `legacy-client-options`                                          |
+| P14 | Early v3 (`ExperimentalQuery` namespace, 5.x) client/creators, migrated by `prep-for-query-v3`, with v2 call sites | dfb                | `early-v3-patterns`                                              |
 | P15 | v3 `creator(withArgs(() => …), withPolling(…), withSuccessHandling(…))` field init                                 | fut                | generic                                                          |
 | P16 | `createQuerySubmission`, `.clone()`, `provideLegacyPrepareFallback()`                                              | fut                | `createQuerySubmission` covered (spec + 2 scenarios); rest check |
-| P17 | Manual `query.subtle.destroy()` for detached queries                                                               | dfb                | no                                                               |
+| P17 | Manual `query.subtle.destroy()` for detached queries                                                               | dfb                | `early-v3-patterns`                                              |
 
 ## Suspected defects (from reading; prove with a failing scenario first)
 
@@ -80,7 +80,11 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
   - 4 real: `retryFailed()` and paged `execute({ where })` in an effect re-ran on their own results; stack `execute()` was fine. All three now untracked.
   - 5 real for login, not for logout: auth `execute()` created its query lazily inside the effect (NG0602); now untracked.
   - 6 real: creating a query in a reactive context now throws `ET001`; `createSnapshot()` and `asObservable({ injector })` work there.
-- [ ] S6 P9, P12, P13, P14, P17
+- [x] S6 P9, P12, P13, P14, P17 (`legacy-query-form-patterns`, `legacy-auth-patterns`, `legacy-client-options`, `early-v3-patterns`)
+  - P9 real: a legacy `QueryForm` field that reset an `isResetBy` field lost its debounce (a search typed on page 2 sent its first keystroke); now debounced.
+  - P12, P13, P17 not real: collection login/refresh/logout, the three options off, and `subtle.destroy()` (aborts in flight, works from the query's own success handler) behave on both clients.
+  - P14 open, generator owned by another session: `prep-for-query-v3` flattens `E.CLEAR_QUERY_ARGS` into an import v3 no longer has, and a 5.x `withArgs` `null` ("keep the previous args", dfb ~10 sites) now parks the query. `migrating-from-v2.md` mentions neither. The scenario uses the fixed-by-hand shape (`null`).
+  - Harness gap: `s.mount` runs change detection at once, so an `input.required()` read by `queryComputed` needs a parent template (`legacy-client-options`).
 - [ ] S7 Release gate: build the SDK into one 5.x app and fut-frontend, smoke-run before publish
 - [x] S9 Export coverage gate: every runtime export of `libs/query/src/index.ts` must appear in a scenario, or be on an allowlist with a reason; CI fails otherwise
   - `yarn query:export-coverage` (`tools/export-coverage/`), in CI Checks and pre-push. 500 runtime exports (incl. `query/testing`), 330 uncovered on the allowlist.
@@ -108,7 +112,8 @@ Triage (ethlete-sdk-57):
 1. Retries: v2 retried every method on 5xx ×4 (`legacy/request/request.util.ts:225`); v3 needs `withDefaultRetry()`.
    `migrate-to-query-v3` adds no features (`query-client-migration.ts:398`). Same for Symfony error parsing.
 2. v3 `execute()` never reuses a fresh cache hit (v2 `legacy/query/query.ts:224-228`); vbl's `cacheAdapter: () => 0`
-   no longer disables caching (inferred).
+   no longer disables caching (inferred). Not so on the interop: with `cache-control: max-age` on the response, a
+   revisit and a remount still refetch (`legacy-client-options`).
 3. `withPolling` ticks call execute without `triggeredBy` (`http/query-features.ts:258`): `loading()` flips each tick;
    v2 kept `loading` false and set `refreshing`.
 4. v2 `cacheResponse: true` / `*etQuery cache: true` kept the last value across arg changes; v3 `response()` follows the
