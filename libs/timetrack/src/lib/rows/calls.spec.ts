@@ -233,13 +233,38 @@ describe('a call that ran through several meetings', () => {
   const discord = (to: Date) =>
     call({ from: new Date(2026, 7, 11, 8, 3, 45), to, title: 'Meeting #4 96kbps | Braune Digital - Discord' });
 
-  it('cuts it at the meeting boundaries and names each piece from its own meeting', () => {
+  it('cuts it between the meetings and keeps the overrun with the last one', () => {
     const found = match({ calls: [discord(at(9, 45))], occurrences: [reward, pentest, daily] });
 
     expect(found.map((entry) => [entry.group.from, entry.group.to, entry.meeting?.event.title])).toEqual([
       [new Date(2026, 7, 11, 8, 3, 45), at(9), 'Besprechung Reward System'],
+      [at(9), at(9, 45), 'Pentest Abstimmung'],
+    ]);
+  });
+
+  it('keeps an early start with the first meeting', () => {
+    const found = match({ calls: [call({ from: at(7, 40), to: at(9, 30) })], occurrences: [reward, pentest] });
+
+    expect(found.map((entry) => [entry.group.from, entry.group.to, entry.meeting?.event.title])).toEqual([
+      [at(7, 40), at(9), 'Besprechung Reward System'],
       [at(9), at(9, 30), 'Pentest Abstimmung'],
-      [at(9, 30), at(9, 45), undefined],
+    ]);
+  });
+
+  it('keeps a gap between two meetings a piece of its own', () => {
+    const later = occurrence({
+      at: at(10),
+      until: at(10, 30),
+      occurrenceId: 'occ-later',
+      recurringEventId: 'series-later',
+      title: 'Sprint Review',
+    });
+    const found = match({ calls: [call({ from: at(8), to: at(10, 30) })], occurrences: [reward, later] });
+
+    expect(found.map((entry) => [entry.group.from, entry.group.to, entry.meeting?.event.title])).toEqual([
+      [at(8), at(9), 'Besprechung Reward System'],
+      [at(9), at(10), undefined],
+      [at(10), at(10, 30), 'Sprint Review'],
     ]);
   });
 

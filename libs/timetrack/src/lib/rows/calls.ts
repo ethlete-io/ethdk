@@ -66,9 +66,11 @@ type CallPiece = {
 };
 
 /**
- * Cuts a call that ran through several accepted meetings at their boundaries, so each piece is named
- * from the meeting it overlaps. A call over one meeting stays whole, and a piece too short to propose
- * a row joins its neighbour without taking part in naming it.
+ * Cuts a call that ran through several accepted meetings at the boundaries between them, so each piece
+ * is named from the meeting it overlaps. Time before the first meeting and after the last one stays
+ * with that meeting: a call that starts early or runs over is still that meeting. A call over one
+ * meeting stays whole, and a piece too short to propose a row joins its neighbour without taking part
+ * in naming it.
  */
 const cutAtMeetings = (options: {
   window: TimeWindow;
@@ -84,11 +86,14 @@ const cutAtMeetings = (options: {
 
   if (accepted.length < 2) return [{ window, naming: window }];
 
+  const firstStart = Math.min(...accepted.map(({ event }) => event.at.getTime()));
+  const lastEnd = Math.max(...accepted.map(({ event }) => event.until.getTime()));
+
   const cuts = [
     ...new Set(
       accepted
         .flatMap(({ event }) => [event.at.getTime(), event.until.getTime()])
-        .filter((cut) => cut > from && cut < to),
+        .filter((cut) => cut > Math.max(from, firstStart) && cut < Math.min(to, lastEnd)),
     ),
   ].sort((left, right) => left - right);
   const edges = [from, ...cuts, to];
