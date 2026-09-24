@@ -87,8 +87,10 @@ pub async fn events_between(db: State<'_, Db>, from_ms: i64, to_ms: i64) -> Time
 /// past samples nothing stored.
 ///
 /// An event whose `dedupe_key` is already stored is skipped rather than inserted, which is what lets
-/// the git collector rescan a window it has already read. The count that comes back is the rows that
-/// were new, so a collector can report what it actually added instead of what it looked at.
+/// the git collector rescan a window it has already read. A calendar occurrence is the exception: it
+/// is read ahead of time, so an invitation answered after that first read replaces the stored payload.
+/// The count that comes back is the rows that were new or replaced, so a collector can report what it
+/// actually changed instead of what it looked at.
 ///
 /// An observation dated inside a pause is refused here rather than by each collector. The collectors
 /// that watch the machine are stopped while it is paused, but the ones that read history are not
@@ -115,7 +117,8 @@ fn append(
     {
         let mut insert = transaction.prepare(
             "INSERT INTO collected_event (at_ms, source, kind, payload, dedupe_key) VALUES (?1, ?2, ?3, ?4, ?5)
-             ON CONFLICT (dedupe_key) DO NOTHING",
+             ON CONFLICT (dedupe_key) DO UPDATE SET payload = excluded.payload
+             WHERE collected_event.kind = 'calendar-event' AND collected_event.payload IS NOT excluded.payload",
         )?;
         for event in events {
             if crate::pause::is_paused_at(&paused, event.at_ms) {
@@ -671,6 +674,56 @@ mod tests {
                 )
                 .unwrap(),
             "Google Chrome"
+        );
+    }
+
+    fn meeting(accepted: bool) -> StoredEvent {
+        StoredEvent {
+            at_ms: 1_000,
+            source: "calendar".to_string(),
+            kind: "calendar-event".to_string(),
+            payload: serde_json::json!({ "title": "Planning", "accepted": accepted }),
+            dedupe_key: Some("calendar-event:planning".to_string()),
+        }
+    }
+
+    fn accepted_of(connection: &Connection) -> Vec<bool> {
+        let mut statement = connection
+            .prepare("SELECT json_extract(payload, '$.accepted') FROM collected_event WHERE kind = 'calendar-event'")
+            .unwrap();
+        let rows = statement.query_map([], |row| row.get(0)).unwrap();
+
+        rows.collect::<Result<Vec<_>, _>>().unwrap()
+    }
+
+    #[test]
+    fn replaces_a_meeting_the_user_answered_after_it_was_first_read() {
+        let mut connection = store();
+
+        assert_eq!(append(&mut connection, &[meeting(false)], &[]).unwrap(), 1);
+        assert_eq!(append(&mut connection, &[meeting(true)], &[]).unwrap(), 1);
+        assert_eq!(append(&mut connection, &[meeting(true)], &[]).unwrap(), 0);
+        assert_eq!(accepted_of(&connection), vec![true]);
+    }
+
+    #[test]
+    fn keeps_the_first_observation_of_any_other_kind() {
+        let mut connection = store();
+        let mut later = commit(1_000);
+
+        later.payload = serde_json::json!({ "sha": "sha-1000", "branch": "other" });
+        append(&mut connection, &[commit(1_000)], &[]).unwrap();
+
+        assert_eq!(append(&mut connection, &[later], &[]).unwrap(), 0);
+        assert_eq!(
+            connection
+                .query_row(
+                    "SELECT json_extract(payload, '$.branch') FROM collected_event",
+                    [],
+                    |row| row.get::<_, Option<String>>(0)
+                )
+                .unwrap(),
+            None
         );
     }
 
