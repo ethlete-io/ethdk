@@ -93,6 +93,27 @@ describe('fetchGoogleCalendarEvents$', () => {
     ]);
   });
 
+  it('names the other participants, leaving out the user, rooms and whoever declined', () => {
+    const { transport } = eventTransport([
+      {
+        items: [
+          {
+            ...MEETING,
+            attendees: [
+              { self: true, email: 'me@example.com', responseStatus: 'accepted' },
+              { displayName: 'Anna Müller', email: 'anna@example.com', responseStatus: 'accepted' },
+              { email: 'ben@example.com', responseStatus: 'needsAction' },
+              { displayName: 'Raum 2', email: 'room@resource.calendar.google.com', resource: true },
+              { displayName: 'Cem Arslan', responseStatus: 'declined' },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    expect(collect(transport)[0]?.participants).toEqual(['Anna Müller', 'ben@example.com']);
+  });
+
   it('keys an occurrence google gave no id by its start, so a re-read still recognises it', () => {
     const { transport } = eventTransport([{ items: [{ ...MEETING, id: undefined }] }]);
 

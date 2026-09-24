@@ -151,13 +151,26 @@ const decisiveTitle = (options: {
   });
 };
 
+const MAX_NAMED_PARTICIPANTS = 3;
+
+const meetingSummary = (event: CalendarOccurrenceEvent) => {
+  const participants = event.participants ?? [];
+
+  if (participants.length === 0) return event.title;
+
+  const named = participants.slice(0, MAX_NAMED_PARTICIPANTS).join(', ');
+  const rest = participants.length - MAX_NAMED_PARTICIPANTS;
+
+  return `${event.title} (with ${named}${rest > 0 ? ` +${rest}` : ''})`;
+};
+
 const calendarEvidence = (event: CalendarOccurrenceEvent): Evidence => ({
   kind: 'calendar',
   at: event.at,
   detail: `calendar event _${event.title}_ ${timeOfDay(event.at)}-${timeOfDay(event.until)}, you ${
     event.accepted ? 'accepted' : 'never answered'
   }`,
-  summary: event.title,
+  summary: meetingSummary(event),
 });
 
 /**
@@ -257,7 +270,7 @@ export const rememberedIssueKey = (options: {
       kind: 'calendar',
       at: naming.createdAt,
       detail: `you named _${naming.title}_ ${naming.issueKey}, and this is the same meeting`,
-      summary: naming.title,
+      summary: meetingSummary(options.event),
     },
   };
 };

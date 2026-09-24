@@ -211,6 +211,8 @@ export type CalendarOccurrenceEvent = CollectedEventBase<'calendar', 'calendar-e
   title: string;
   accepted: boolean;
   conferenceUrl?: string;
+  /** Who else was invited and did not decline, by name or else address. Rooms are left out. */
+  participants?: string[];
 };
 
 /**

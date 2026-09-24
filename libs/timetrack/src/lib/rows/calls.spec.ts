@@ -6,6 +6,7 @@ import { TimeWindow } from '../model/time-window';
 import { CallNaming, callFeaturesOf } from '../model/call-naming';
 import { MeetingNaming } from '../model/meeting-naming';
 import { CallMatch, callBehindRow, dropCallWindows, matchCalls, meetingBehindRow } from './calls';
+import { describeWork } from './describe';
 import { CALL_LANE_KEY } from './lane';
 import { MeetingOptions } from './meetings';
 import { RecurringPattern } from '../model/recurrence';
@@ -100,6 +101,20 @@ describe('matchCalls', () => {
     expect(found?.group.issueKey).toBeUndefined();
     expect(found?.group.confidence).toBe('weak');
     expect(found?.meeting).toBeUndefined();
+  });
+
+  it('names the participants of the meeting it was matched to, once over a remembered naming', () => {
+    const [found] = match({
+      occurrences: [occurrence({ participants: ['Anna Müller', 'Ben Kurz', 'Cem Arslan', 'Dana Voss'] })],
+      meetings: {
+        namings: [{ seriesKey: 'series-standup', issueKey: 'ABC-1', title: 'Daily Standup', createdAt: at(9) }],
+      },
+    });
+
+    expect(found?.group.issueKey).toBe('ABC-1');
+    expect(found && describeWork({ group: found.group })).toBe(
+      'Daily Standup (with Anna Müller, Ben Kurz, Cem Arslan +1)',
+    );
   });
 
   it('counts no double proposal against a call a rule excluded', () => {

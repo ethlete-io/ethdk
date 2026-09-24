@@ -12,7 +12,7 @@ export type GoogleCalendarEventResource = {
   transparency?: string;
   start?: { dateTime?: string; date?: string };
   end?: { dateTime?: string; date?: string };
-  attendees?: { self?: boolean; responseStatus?: string }[];
+  attendees?: { self?: boolean; resource?: boolean; displayName?: string; email?: string; responseStatus?: string }[];
   hangoutLink?: string;
   conferenceData?: { entryPoints?: { entryPointType?: string; uri?: string }[] };
 };
@@ -46,6 +46,15 @@ const acceptedBySelf = (resource: GoogleCalendarEventResource) => {
 const declinedBySelf = (resource: GoogleCalendarEventResource) =>
   (resource.attendees ?? []).find((attendee) => attendee.self)?.responseStatus === 'declined';
 
+const participantsOf = (resource: GoogleCalendarEventResource) =>
+  (resource.attendees ?? []).flatMap((attendee) => {
+    if (attendee.self || attendee.resource || attendee.responseStatus === 'declined') return [];
+
+    const name = attendee.displayName?.trim() || attendee.email?.trim();
+
+    return name ? [name] : [];
+  });
+
 const momentOf = (value: string | undefined) => {
   if (!value) return undefined;
 
@@ -70,6 +79,8 @@ const toOccurrence = (resource: GoogleCalendarEventResource): CalendarOccurrence
   if (IGNORED_EVENT_TYPES.includes(resource.eventType ?? '')) return undefined;
   if (declinedBySelf(resource)) return undefined;
 
+  const participants = participantsOf(resource);
+
   return {
     at,
     source: 'calendar',
@@ -80,6 +91,7 @@ const toOccurrence = (resource: GoogleCalendarEventResource): CalendarOccurrence
     title: resource.summary?.trim() || 'untitled event',
     accepted: acceptedBySelf(resource),
     conferenceUrl: conferenceUrlOf(resource),
+    ...(participants.length ? { participants } : {}),
   };
 };
 
