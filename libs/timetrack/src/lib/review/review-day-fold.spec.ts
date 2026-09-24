@@ -129,7 +129,7 @@ describe('reviewDay folding single-increment rows', () => {
     expect(spans(result)).toEqual(['12:15-13:45 90m', '14:45-15:00 15m', '15:45-16:00 15m']);
   });
 
-  it('keeps a short row when the growth would cover other work in the lane', () => {
+  it('grows the far side of the neighbour when the near side would cover other work in the lane', () => {
     const result = review(
       dayRows({
         proposals: [proposal({ issueKey: 'ET-2', from: '13:45', to: '14:30' })],
@@ -137,7 +137,41 @@ describe('reviewDay folding single-increment rows', () => {
       }),
     );
 
-    expect(spans(result)).toEqual(['12:15-13:45 90m', '13:45-14:30 45m', '14:45-15:00 15m']);
+    expect(spans(result)).toEqual(['12:00-13:45 105m', '13:45-14:30 45m']);
+    expect(result.rows[0]?.id).toBe(`unnamed:${LANE}@${at('12:15').toISOString()}`);
+  });
+
+  it('grows the far side when the near side would cover a background row in another lane', () => {
+    const rows = (unnamed: UnnamedProposal[]) =>
+      dayRows({
+        proposals: [
+          proposal({ issueKey: 'ET-772', from: '13:45', to: '14:30', laneKey: 'repo:/home/tom/dev/ethlete-sdk' }),
+        ],
+        unnamed,
+      });
+    const reviewed = (unnamed: UnnamedProposal[]) =>
+      reviewDay({ rows: rows(unnamed), cut: { backgroundProjects: ['ET'] } });
+    const long = band({ from: '12:15', to: '13:45' });
+    const before = reviewed([long, band({ from: '11:45', to: '12:15' })]);
+    const result = reviewed([long, band({ from: '14:45', to: '15:00' }), band({ from: '15:45', to: '16:00' })]);
+
+    expect(spans(result)).toEqual(['11:45-13:45 120m', '13:45-14:30 45m']);
+    expect(result.rows[0]?.id).toBe(`unnamed:${LANE}@${at('12:15').toISOString()}`);
+    expect(result.check.proposedMs).toBe(before.check.proposedMs);
+  });
+
+  it('keeps a short row when both sides of the neighbour would cover other work in the lane', () => {
+    const result = review(
+      dayRows({
+        proposals: [
+          proposal({ issueKey: 'ET-2', from: '13:45', to: '14:30' }),
+          proposal({ issueKey: 'ET-3', from: '11:30', to: '12:15' }),
+        ],
+        unnamed: [band({ from: '12:15', to: '13:45' }), band({ from: '14:45', to: '15:00' })],
+      }),
+    );
+
+    expect(spans(result)).toEqual(['11:30-12:15 45m', '12:15-13:45 90m', '13:45-14:30 45m', '14:45-15:00 15m']);
   });
 
   it('folds two short rows into each other when no longer row of their name exists', () => {
