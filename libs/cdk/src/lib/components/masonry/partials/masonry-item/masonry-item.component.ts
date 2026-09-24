@@ -17,7 +17,7 @@ export const MASONRY_ITEM_TOKEN = new InjectionToken<MasonryItemComponent>('ET_M
   host: {
     class: 'et-masonry-item et-legacy',
     role: 'listitem',
-    style: 'opacity: 0;',
+    '[style.opacity]': '"0"',
   },
   providers: [{ provide: MASONRY_ITEM_TOKEN, useExisting: MasonryItemComponent }],
 })

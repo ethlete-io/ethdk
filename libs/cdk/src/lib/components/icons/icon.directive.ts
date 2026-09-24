@@ -25,7 +25,9 @@ const svgColorAttributes = ['fill', 'stroke', 'stop-color', 'stop-opacity'];
     '[innerHTML]': 'iconSrc()',
     'aria-hidden': 'true',
     '[class]': 'hostClasses()',
-    style: 'display: flex; align-items: center; justify-content: center;',
+    '[style.display]': '"flex"',
+    '[style.align-items]': '"center"',
+    '[style.justify-content]': '"center"',
   },
 })
 export class IconDirective {
