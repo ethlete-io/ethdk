@@ -40,7 +40,7 @@ it('renders the players', async () => {
 A GET query [auto-executes](/query/queries#auto-execution) once its args resolve, which happens on
 change detection: `TestBed.tick()` before `expectOne`, and again after `flush` before reading
 `response()`, `loading()` or `error()`. The request's `url` includes the query string. Mutations
-never auto-execute - call `.execute({ args })` first.
+never auto-execute - call `.execute()` first.
 
 A view whose [`withArgs`](/query/features#withargs) reads `injectQueryParam` from `@ethlete/core`
 also needs `provideRouter([])`. Change the param by navigating

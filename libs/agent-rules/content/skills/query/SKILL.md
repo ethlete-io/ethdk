@@ -121,7 +121,7 @@ post = computed(() => this.postQuery.response());
 
 - `GET`/`HEAD`/`OPTIONS` **auto-execute** - immediately when static/argless, or
   whenever `withArgs` produces new args. Mutations (`POST`/`PUT`/`PATCH`/`DELETE`)
-  never auto-execute; call `.execute({ args })`. A function route (`pathParams`)
+  never auto-execute; declare their args with `withArgs` too and call `.execute()`. A function route (`pathParams`)
   requires `withArgs` (dev-mode error otherwise).
 - A route function receives the path params themselves: `(p) => \`/posts/${p.postId}\``.
 - With bearer auth, bind the secure creators the same way:
@@ -194,3 +194,6 @@ stream: the retained previous response can be the first non-null emission. See
 - `.execute()` defaults `args` to the current `args()` when omitted.
 - Anything under a query's `subtle` namespace is an unsupported escape hatch - never
   treat it as public API.
+- Use `withArgs` for mutations too. Never reach for `execute({ args })` plus
+  `silenceMissingWithArgsFeatureError` unless the args really exist only at call time - the
+  flag is an escape hatch, not the mutation pattern.

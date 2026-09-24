@@ -116,13 +116,13 @@ const query = getPost(
 );
 ```
 
-| `QueryConfig` option                 | Default   | Description                                                                                                                                                            |
-| ------------------------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `key`                                | -         | Custom cache key. Only allowed on cacheable queries (throws otherwise).                                                                                                |
-| `onlyManualExecution`                | `false`   | Skip auto-execution - the query only runs when you call `.execute()`.                                                                                                  |
-| `silenceMissingWithArgsFeatureError` | `false`   | Allow a function route without a `withArgs` feature (you must then pass args to `.execute()`); throws if you combine it with `withArgs`.                               |
-| `keepPreviousResponse`               | see below | Keep `response()` on the previous args' response while the request for new args loads. `true` for `GET`, `HEAD`, `OPTIONS` and GraphQL queries, `false` for mutations. |
-| `injector`                           | -         | Create the query in a specific injector instead of the current injection context.                                                                                      |
+| `QueryConfig` option                 | Default   | Description                                                                                                                                                               |
+| ------------------------------------ | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`                                | -         | Custom cache key. Only allowed on cacheable queries (throws otherwise).                                                                                                   |
+| `onlyManualExecution`                | `false`   | Skip auto-execution - the query only runs when you call `.execute()`.                                                                                                     |
+| `silenceMissingWithArgsFeatureError` | `false`   | Escape hatch: allow a function route without a `withArgs` feature, for args that only exist at call time (pass them to `.execute()`). Throws if combined with `withArgs`. |
+| `keepPreviousResponse`               | see below | Keep `response()` on the previous args' response while the request for new args loads. `true` for `GET`, `HEAD`, `OPTIONS` and GraphQL queries, `false` for mutations.    |
+| `injector`                           | -         | Create the query in a specific injector instead of the current injection context.                                                                                         |
 
 Never call a creator inside a `computed`, an `effect` or a template: every re-run would build another query, so it throws `ET001`. Create the query once and drive it through `withArgs` or `.execute({ args })`. Reading, executing, `createSnapshot()` and `.asObservable({ injector })` are fine there.
 
@@ -130,7 +130,7 @@ Creators expose `.clone(additionalOptions)` to derive a variant with merged opti
 
 ## Auto-execution
 
-`GET`, `HEAD` and `OPTIONS` queries execute automatically - immediately when the route is static and argless, or whenever [`withArgs`](/query/features#withargs) produces new args. Mutating methods (`POST`, `PUT`, `PATCH`, `DELETE`) never auto-execute; call `.execute({ args })` yourself. Opt a query out entirely with `onlyManualExecution`.
+`GET`, `HEAD` and `OPTIONS` queries execute automatically - immediately when the route is static and argless, or whenever [`withArgs`](/query/features#withargs) produces new args. Mutating methods (`POST`, `PUT`, `PATCH`, `DELETE`) never auto-execute; declare their args with `withArgs` too and call `.execute()` yourself. Opt a query out entirely with `onlyManualExecution`.
 
 ## The query object
 

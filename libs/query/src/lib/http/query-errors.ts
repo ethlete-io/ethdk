@@ -83,7 +83,7 @@ export const queryCreatedInReactiveContext = () => {
 export const withArgsQueryFeatureMissingButRouteIsFunction = () => {
   return new RuntimeError(
     QueryRuntimeErrorCode.WITH_ARGS_QUERY_FEATURE_MISSING_BUT_ROUTE_IS_FUNCTION,
-    `This queries route is a function, but a "withArgs()" feature is missing.`,
+    `This queries route is a function, but a "withArgs()" feature is missing. Mutations need one too: create the query with "withArgs(() => ({ body: form.value() }))", then call ".execute()". The "silenceMissingWithArgsFeatureError" config is an escape hatch for args that only exist at call time.`,
   );
 };
 

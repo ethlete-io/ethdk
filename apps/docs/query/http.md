@@ -25,13 +25,13 @@ export const createUser = postQuery<CreateUserQueryArgs>('/users');
 ```
 
 ```ts
-// In a component: GETs run reactively, mutations run manually
+// In a component: GETs run reactively, mutations run when you call execute()
 usersQuery = getUsers(withArgs(() => ({ queryParams: { page: this.page() } })));
 
-createUserQuery = createUser();
+createUserQuery = createUser(withArgs(() => ({ body: this.form.value() })));
 
 save() {
-  this.createUserQuery.execute({ args: { body: { name: 'Ada', email: 'ada@example.com' } } });
+  this.createUserQuery.execute();
 }
 ```
 
@@ -64,7 +64,7 @@ The generic `TArgs` type passed to a creator describes the whole request/respons
 | `body`        | The request body (mutating methods).                                                                            |
 | `headers`     | Extra headers: a record, `HttpHeaders`, or a function returning either. Secure queries add `Authorization`.     |
 
-You pass everything except the type-only `response` and `rawResponse` fields when executing - via `withArgs(() => ({ … }))` or `execute({ args })`. A function route without a `withArgs` feature throws in dev mode (opt out with the `silenceMissingWithArgsFeatureError` query config if you always pass args to `execute`).
+You pass everything except the type-only `response` and `rawResponse` fields through `withArgs(() => ({ … }))` - for mutations too. A function route without a `withArgs` feature throws in dev mode (`ET100`); the `silenceMissingWithArgsFeatureError` query config is an escape hatch for args that only exist at call time, which you then pass to `execute({ args })`.
 
 ### Transforming responses
 

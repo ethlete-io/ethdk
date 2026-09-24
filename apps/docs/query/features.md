@@ -22,7 +22,17 @@ withArgs(() => ({ queryParams: { page: this.page(), search: this.search() } }));
 
 Return `null` to **park** the query: it is reset - `args()`, `response()` and `executionState()` become `null` - and polling and auto-refresh pause until args are set again. While new non-null args load, the previous args' response stays in `response()` (see [`keepPreviousResponse`](/query/queries#the-query-object)). That is how a query waits for something it depends on - see [dependent queries](/query/dependent-queries).
 
-A function route (one using `pathParams`) requires a `withArgs` feature - creating the query without one throws in dev mode (opt out via the `silenceMissingWithArgsFeatureError` [query config](/query/queries#query-creators) if you always pass args to `execute`). Setting that config together with a `withArgs` feature throws too, since the two contradict each other.
+`withArgs` is the way to give args to every query, mutations included. A mutation never auto-executes, so `withArgs` only declares its args, and `.execute()` sends the current ones:
+
+```ts
+updateUserQuery = updateUser(withArgs(() => ({ pathParams: { userId: this.userId() }, body: this.form.value() })));
+
+save() {
+  this.updateUserQuery.execute();
+}
+```
+
+A function route (one using `pathParams`) requires a `withArgs` feature - creating the query without one throws `ET100` in dev mode. The `silenceMissingWithArgsFeatureError` [query config](/query/queries#query-creators) is an escape hatch for args that only exist at call time, passed to `execute({ args })`. Setting that config together with a `withArgs` feature throws too, since the two contradict each other.
 
 ## withPolling
 

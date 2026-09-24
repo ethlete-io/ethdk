@@ -51,8 +51,10 @@ post = computed(() => this.postQuery.response());
 
 - `GET`/`HEAD`/`OPTIONS` **auto-execute** - immediately when static/argless, or
   whenever `withArgs` produces new args. Mutations (`POST`/`PUT`/`PATCH`/`DELETE`)
-  never auto-execute; call `.execute({ args })`. A function route (`pathParams`)
-  requires `withArgs` (dev-mode error otherwise).
+  never auto-execute; declare their args with `withArgs` too and call `.execute()`. A
+  function route (`pathParams`) requires `withArgs` (dev-mode error otherwise) - never
+  work around that with `execute({ args })` + `silenceMissingWithArgsFeatureError` unless
+  the args really exist only at call time.
 - Queries live in a child injector tied to the creating component; destroyed with it.
 
 ## The query object
