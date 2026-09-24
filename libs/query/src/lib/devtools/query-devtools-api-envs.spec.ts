@@ -28,7 +28,7 @@ const HUB_WITH_PRODUCTION: QueryDevtoolsApiEnvSwitch = {
   ],
 };
 
-import { QueryDevtoolsAuthPillRow, setQueryDevtoolsAuthPill } from './query-devtools-pills';
+import { QueryDevtoolsAuthPillRow, setQueryDevtoolsAuthPill, setQueryDevtoolsPillNonce } from './query-devtools-pills';
 import { provideQueryDevtools } from './query-devtools-registry';
 import { setQueryDevtoolsUiMounted } from './query-devtools-ui';
 
@@ -219,6 +219,29 @@ describe('query devtools api envs', () => {
     expect(document.getElementById('et-query-devtools-pill')).not.toBe(host);
 
     setQueryDevtoolsAuthPill({ rows: [] });
+  });
+
+  it('should carry the ngCspNonce of the page on the pill stylesheet', () => {
+    const root = document.createElement('div');
+    root.setAttribute('ngCspNonce', 'from-the-page');
+    document.body.append(root);
+
+    setQueryDevtoolsApiEnvs([HUB]);
+
+    expect(pill()?.querySelector('style')?.getAttribute('nonce')).toBe('from-the-page');
+
+    root.remove();
+  });
+
+  it('should prefer the provided CSP_NONCE on the pill stylesheet', () => {
+    setQueryDevtoolsApiEnvs([HUB]);
+    setQueryDevtoolsPillNonce('provided');
+
+    expect(pill()?.querySelector('style')?.getAttribute('nonce')).toBe('provided');
+
+    setQueryDevtoolsPillNonce(null);
+
+    expect(pill()?.querySelector('style')?.hasAttribute('nonce')).toBe(false);
   });
 
   // Keep last: a rendered application is module state nothing here can take back, so every test after

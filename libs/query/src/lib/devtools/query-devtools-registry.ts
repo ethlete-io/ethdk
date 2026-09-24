@@ -1,5 +1,6 @@
 import {
   afterNextRender,
+  CSP_NONCE,
   DestroyRef,
   EnvironmentProviders,
   inject,
@@ -14,6 +15,7 @@ import { AnyCreateQueryClientResult } from '../http/query-client';
 import { QUERY_VERSION } from '../version';
 import { QueryDevtoolsAppInfo, registerEthleteVersion, setQueryDevtoolsAppInfo } from './query-devtools-about';
 import { QueryDevtoolsApiEnvSwitch, setQueryDevtoolsApiEnvs } from './query-devtools-api-envs';
+import { setQueryDevtoolsPillNonce } from './query-devtools-pills';
 import {
   initQueryDevtoolsAuthSessions,
   QueryDevtoolsAuthAccount,
@@ -333,6 +335,8 @@ const ONE_TIME_OPTIONS = ['about', 'apiEnvs', 'authAccounts', 'responseHistory',
 const settleThePillsOnFirstRender = () =>
   provideEnvironmentInitializer(() => {
     const destroyRef = inject(DestroyRef);
+
+    setQueryDevtoolsPillNonce(inject(CSP_NONCE, { optional: true }));
 
     afterNextRender(() => {
       const settle = setTimeout(markQueryDevtoolsAppSettled, PILL_SETTLE_GRACE_MS);

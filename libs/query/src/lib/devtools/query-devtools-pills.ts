@@ -461,17 +461,29 @@ let authState: AuthPillState | null = null;
 /** What the pill on the page renders, or `null` while there is none. */
 let renderedKey: string | null = null;
 
+let providedNonce: string | null = null;
+
+/** Until the application provides `CSP_NONCE`, falls back to where Angular's own default reads it from. */
+const nonceOf = (doc: Document) =>
+  providedNonce ?? doc.body?.querySelector('[ngCspNonce]')?.getAttribute('ngCspNonce') ?? null;
+
 /**
  * Everything the pill renders, as one string. Every access-token rotation syncs the session pill
  * again, and a rebuild would close an open dropdown under whoever opened it - so a sync that renders
  * the same thing must leave the DOM alone. Whatever `render()` reads has to be in here. The callbacks
  * are not: they are new objects on every sync, and they read their own state when they run.
  */
-const keyOf = (switches: [QueryDevtoolsApiEnvSwitch, string][], rows: QueryDevtoolsAuthPillRow[], collapsed: boolean) =>
+const keyOf = (
+  switches: [QueryDevtoolsApiEnvSwitch, string][],
+  rows: QueryDevtoolsAuthPillRow[],
+  collapsed: boolean,
+  nonce: string | null,
+) =>
   JSON.stringify([
     switches,
     rows.map(({ name, current, tabLocal, options }) => [name, current, tabLocal, options]),
     collapsed,
+    nonce,
   ]);
 
 const buildAuthRow = (doc: Document, row: QueryDevtoolsAuthPillRow) => {
@@ -571,12 +583,14 @@ const render = (doc: Document) => {
   // A production pick unfolds the pills whatever is stored: the warning is the point of the pill.
   const collapsed = !production && readCollapsed();
 
+  const nonce = nonceOf(doc);
   const paints = (switches.length > 0 || rows.length > 0) && queryDevtoolsPillsAllowed();
   const key = paints
     ? keyOf(
         switches.map((apiSwitch) => [apiSwitch, storedOf(apiSwitch)]),
         rows,
         collapsed,
+        nonce,
       )
     : null;
   const painted = doc.getElementById(HOST_ID);
@@ -595,6 +609,7 @@ const render = (doc: Document) => {
   // host application's page and must be as isolated from its global CSS (resets, Tailwind) as possible.
   const shadow = host.attachShadow({ mode: 'open' });
   const style = doc.createElement('style');
+  if (nonce) style.setAttribute('nonce', nonce);
   style.textContent = STYLE;
   shadow.append(style);
 
@@ -650,6 +665,15 @@ const renderPills = () => {
 
   if (doc.body) render(doc);
   else doc.addEventListener('DOMContentLoaded', () => render(doc), { once: true });
+};
+
+/**
+ * Hands the pills the application's `CSP_NONCE`, so their stylesheet passes a strict `style-src`.
+ * @internal
+ */
+export const setQueryDevtoolsPillNonce = (nonce: string | null) => {
+  providedNonce = nonce;
+  renderPills();
 };
 
 /**
