@@ -146,7 +146,7 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       `symfonyQueryErrorParser` (components), `hasHeader`, `v2ShouldRetryRequest`, `isClassValidatorError` (cdk).
 - [ ] S8 Same audit for `libs/core` and `libs/components`
 
-## v2 → v3 migration gaps (from ethlete-sdk-57, not yet triaged)
+## v2 → v3 migration gaps (from ethlete-sdk-57)
 
 Behavior an app loses or changes when it moves call sites from v2 to v3. Each needs a decision: accept and
 document, add a feature, or teach the codemod. Some are deliberate (retry and error parsing went opt-in in
@@ -181,6 +181,44 @@ Triage (ethlete-sdk-57):
   5.x `withArgs` returning `null` meant "keep the previous args" where v3 parks the query (dfb ~10 sites). Neither is in
   `migrating-from-v2.md`. See `early-v3-patterns.scenario.spec.ts`.
 - To question: 14 (query button, EntityStore). Document only: 12, 15-18.
+
+### Continue on 2026-09-26
+
+Open work, in this order. Everything above is committed on `next`, not pushed.
+
+1. **Do not push `next`** until ethlete-sdk-28 says its history rewrite (from 3a350896f on) is done. Then replace
+   the shas in this section with its old→new map (0776126aa, 3686fe7eb, 7eaf2c3c8, a8a6f2947, 80e744c2d, 3740c6106
+   and the ones above that are newer than 3a350896f).
+2. **Type error for a missing `withArgs`** (gap 8 follow-up, user decision 2026-09-25). Blocked yesterday: the
+   permission classifier refused the edit to `query-features.ts`, so the user must allow it. Design, prototyped in
+   a standalone copy only:
+   - Brand the feature: `WithArgsQueryFeature<TArgs> = QueryFeature<TArgs> & { type: typeof QueryFeatureType.WITH_ARGS }`,
+     defined in `query-features.ts`, and the return type of `withArgs`.
+   - `QueryCreator` gets one call signature:
+     `<const TInput extends QueryCreatorInput<TArgs>>(this: WithArgsCheck<TArgs, TInput>, ...args: TInput | QueryCreatorInput<TArgs>): Query<TArgs>`,
+     with `QueryCreatorInput<T> = readonly [QueryConfig, ...QueryFeature<T>[]] | readonly QueryFeature<T>[]`. The
+     union with the concrete type keeps contextual `TArgs` inference inside `withArgs(() => …)`; a bare generic rest
+     loses it.
+   - Required when `TArgs['pathParams']` is a non-optional object (the `RouteType` rule); `any` args never. Present
+     when a tuple element has `type: 'WITH_ARGS'`; a spread of unknown length counts as present (ET100 catches it).
+     Literal `true` for `silenceMissingWithArgsFeatureError` satisfies it; `true` + `withArgs` is a type error too.
+   - The check is on `this`, so a zero-argument `getUser()` also errors. Message: `withArgs() is required: this
+query's route uses pathParams. Pass withArgs(() => ({ pathParams: … })), or set
+silenceMissingWithArgsFeatureError as an escape hatch.`
+   - The gql creator returns the same `QueryCreator<TArgs>`, so it is covered too.
+   - Risk: generic helpers that call a `QueryCreator<TArgs>` with an unresolved `TArgs` fail to compile. Count them.
+   - Still to do: type tests, tsc (lib + spec), fix and count call sites across libs and apps, a codemod output
+     check (report only), docs (`queries.md`, `http.md`, `features.md`), skill lines, changeset (check `pre.json`
+     for minor vs major), plan note.
+3. **`CLEAR_QUERY_ARGS` generator item** (the "Next generator item" bullet above). No design question. Check with
+   ethlete-sdk-28 first, because it works in `libs/query/generators`.
+4. **Document gaps 12, 15-18** in `migrating-from-v2.md`. Can run in parallel with 3.
+5. **Ask the user about gap 14** (by design, or new v3 features). Could be a project of its own.
+
+Rules learned on 2026-09-25: vitest does not type-check, so every slice also runs
+`npx tsc --noEmit -p libs/query/tsconfig.spec.json`. Parallel subagents must own disjoint files; a commit by path
+takes every hunk in that file, also another agent's. Known: `triggeredBy()` can be `'polling'` after an args change
+with `executeInitially`; the docs name `null` only for a manual `execute()`.
 
 1. Retries: v2 retried every method on 5xx ×4 (`legacy/request/request.util.ts:225`); v3 needs `withDefaultRetry()`.
    `migrate-to-query-v3` adds no features (`query-client-migration.ts:398`). Same for Symfony error parsing.
