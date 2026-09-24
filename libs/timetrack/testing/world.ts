@@ -356,6 +356,7 @@ const defaultGitLab = (): FakeGitLabState => ({
 const defaultGit = (): FakeGitState => ({
   repoPath: E2E_REPO,
   extraRepos: [],
+  worktrees: {},
   clean: true,
   branches: ['next', E2E_KEYLESS_BRANCH, E2E_ISSUE_BRANCH, E2E_PARENT_BRANCH],
   remoteBranches: ['next', E2E_KEYLESS_BRANCH, E2E_PARENT_BRANCH],

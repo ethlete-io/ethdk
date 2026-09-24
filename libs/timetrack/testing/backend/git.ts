@@ -2,6 +2,13 @@ import { FakeBackend } from './types';
 
 const MUTATING_PREFIXES = ['branch ', 'push ', 'switch ', 'fetch '];
 
+const worktreeList = (git: FakeBackend['git'], cwd: string) => {
+  const main = git.worktrees[cwd] ?? cwd;
+  const linked = Object.keys(git.worktrees).filter((path) => git.worktrees[path] === main);
+
+  return [main, ...linked].map((path) => `worktree ${path}\n`).join('\n');
+};
+
 /**
  * What the fixture's repository answers. A mutating command succeeds and changes nothing except
  * `git.ran` — a repair test is about what the app plans and reports, not about git.
@@ -20,6 +27,8 @@ export const runFakeGit = (backend: FakeBackend, spec: { args: readonly string[]
   }
 
   if (command.startsWith('reflog show')) return git.reflog[spec.cwd ?? ''] ?? '';
+
+  if (command === 'worktree list --porcelain') return worktreeList(git, spec.cwd ?? '');
 
   if (command.startsWith('log --no-walk --name-only')) {
     const shas = spec.args.slice(4);

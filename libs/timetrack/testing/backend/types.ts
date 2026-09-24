@@ -151,6 +151,8 @@ export type FakeGitState = {
   repoPath: string;
   /** More working-tree roots the host discovers, beside `repoPath`. */
   extraRepos: string[];
+  /** Each linked worktree, by path, mapped to the main checkout it was added to. Empty: none is linked. */
+  worktrees: Record<string, string>;
   /** `false` puts something in `git status --porcelain`, which every write flow must refuse on. */
   clean: boolean;
   branches: string[];

@@ -37,7 +37,7 @@ import {
 import { debounceTime, filter, fromEvent, map, merge, tap } from 'rxjs';
 import { TimelineScroll, dayKeyOfDate, readViewState, rememberTimelineScroll } from '../view-state';
 import { formatClockTime } from './format';
-import { BREAK_LANE_KEY, BreakBand, DayLane, NO_LANE_KEY, lanesOf, laneKeyOfRow } from './lanes';
+import { BREAK_LANE_KEY, BreakBand, DayLane, NO_LANE_KEY, lanesOf, laneKeyOfRow, worktreeColumnOf } from './lanes';
 import {
   TimelineEntry,
   appointmentLabel,
@@ -51,6 +51,7 @@ import { rowActionsFor } from './row-edit/row-actions';
 import { injectRowEditSurface } from './row-edit/row-edit-surface';
 import { injectDayReview } from './day-review';
 import { injectTimetrackSettings } from '../settings/settings';
+import { injectGitCollector } from '../../collectors';
 
 const markIntentOf = (event: Event) => {
   if (!(event instanceof MouseEvent)) return 'open';
@@ -428,6 +429,7 @@ export class DayTimelineComponent {
   private surface = injectRowEditSurface();
   private store = injectDayReview();
   private settings = injectTimetrackSettings();
+  private git = injectGitCollector();
 
   public focusedDate = input.required<Date>();
   public rows = input.required<readonly ReviewedRow[]>();
@@ -487,12 +489,15 @@ export class DayTimelineComponent {
   protected readonly STANDS_IN = isStandInAppointment;
 
   /** The day as one lane per checkout. The grid supplies the vertical geometry; the lane the inline. */
+  private columnOf = computed(() => worktreeColumnOf(this.git.worktrees()));
+
   protected lanes = computed<DayLane[]>(() =>
     lanesOf({
       blocks: this.grid()?.days()[0]?.blocks ?? [],
       breaks: this.breaks(),
       behind: this.behind(),
       dayStart: this.focusedDate(),
+      columnOf: this.columnOf(),
     }),
   );
 
@@ -525,7 +530,16 @@ export class DayTimelineComponent {
       });
     };
 
-    return new Map([...rowsByLane].map(([key, rows]) => [key, boundariesOf(rows)]));
+    const columnOf = this.columnOf();
+    const byColumn = new Map<string, TimelineBoundary[]>();
+
+    for (const [key, rows] of rowsByLane) {
+      const column = columnOf(key);
+
+      byColumn.set(column, [...(byColumn.get(column) ?? []), ...boundariesOf(rows)]);
+    }
+
+    return byColumn;
   });
 
   /**

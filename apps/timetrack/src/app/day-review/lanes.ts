@@ -5,7 +5,9 @@ import {
   CALL_LANE_KEY,
   ReviewedRow,
   TIMER_LANE_KEY,
+  streamKey,
   streamKeyLabel,
+  streamKeyRepoPath,
 } from '@ethlete/timetrack';
 import { TimelineEntry, rowEntryOf } from './row-edit/row-appointment';
 
@@ -84,6 +86,17 @@ export type DayLane = {
 };
 
 export const laneKeyOfRow = (row: ReviewedRow) => row.laneKey ?? NO_LANE_KEY;
+
+/**
+ * The column a row's lane is drawn in: a linked worktree's lane is drawn in its main checkout's, so
+ * the two read as one repository. The row keeps its own lane key, which is what its stand-in, its
+ * branch and its naming history are kept by.
+ */
+export const worktreeColumnOf = (worktrees: Readonly<Record<string, string>>) => (laneKey: string) => {
+  const main = worktrees[streamKeyRepoPath(laneKey) ?? ''];
+
+  return main ? streamKey({ repoPath: main }) : laneKey;
+};
 
 const laneKeyOfBlock = (block: SchedulerTimeGridBlock<TimelineEntry>) => {
   const entry = rowEntryOf(block.node.appointment);
@@ -176,11 +189,13 @@ export const lanesOf = (options: {
   behind?: readonly BehindStretch[];
   /** Midnight of the day on screen, which the break and behind geometry is measured from. */
   dayStart: Date;
+  columnOf?: (laneKey: string) => string;
 }): DayLane[] => {
+  const columnOf = options.columnOf ?? ((laneKey: string) => laneKey);
   const byLane = new Map<string, SchedulerTimeGridBlock<TimelineEntry>[]>();
 
   for (const block of options.blocks) {
-    const key = laneKeyOfBlock(block);
+    const key = columnOf(laneKeyOfBlock(block));
 
     byLane.set(key, [...(byLane.get(key) ?? []), block]);
   }
@@ -188,16 +203,17 @@ export const lanesOf = (options: {
   const behindByLane = new Map<string, BehindBand[]>();
 
   for (const stretch of options.behind ?? []) {
+    const key = columnOf(stretch.laneKey);
     const band = {
       stretch,
       offset: offsetOf({ at: stretch.from, dayStart: options.dayStart }),
       span: spanOf(stretch),
     };
 
-    behindByLane.set(stretch.laneKey, [...(behindByLane.get(stretch.laneKey) ?? []), band]);
+    behindByLane.set(key, [...(behindByLane.get(key) ?? []), band]);
     // A checkout every one of whose minutes went elsewhere has no block left to open a lane with, and
     // that is the hole this band exists to explain.
-    if (!byLane.has(stretch.laneKey)) byLane.set(stretch.laneKey, []);
+    if (!byLane.has(key)) byLane.set(key, []);
   }
 
   const startOf = (key: string, lane: SchedulerTimeGridBlock<TimelineEntry>[]) =>
