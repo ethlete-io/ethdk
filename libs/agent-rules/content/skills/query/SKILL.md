@@ -30,6 +30,7 @@ load-bearing facts, so you don't re-derive them from source or hand-build what s
 | {%docsBaseUrl%}/query/dependent-queries | GET → GET dependencies and ordered mutation chains                            |
 | {%docsBaseUrl%}/query/batching          | Bulk writes with bounded concurrency, per-item results, retry                 |
 | {%docsBaseUrl%}/query/errors            | Error object, opt-in parsers, form submission, violations, retries            |
+| {%docsBaseUrl%}/query/testing           | Specs: answering requests, `@ethlete/query/testing` helpers and fakes         |
 | {%docsBaseUrl%}/query/query-forms       | **Any filtered, searched, sorted or paged list** - `defineQueryForm`          |
 | {%docsBaseUrl%}/query/gql               | GraphQL creators over GET/POST                                                |
 | {%docsBaseUrl%}/query/ws                | socket.io rooms and live-updating responses                                   |

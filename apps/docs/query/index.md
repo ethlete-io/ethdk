@@ -21,6 +21,7 @@ import { createQueryClient, createGetQuery, withArgs } from '@ethlete/query';
 - [Persisted responses](/query/persistence) - the `withQueryPersistence()` client feature: keeping successful reads on disk so a reload, or a cold start with no network, renders the last known data.
 - [Query stacks & pagination](/query/stacks) - running many queries as one, infinite lists and paged data.
 - [Errors & retries](/query/errors) - the normalized error object, the opt-in parsers (`withEthleteApiErrors()` and friends), the retry policy and runtime error codes.
+- [Testing](/query/testing) - answering queries in a spec, and the `@ethlete/query/testing` helpers and fakes.
 
 ## HTTP & auth
 

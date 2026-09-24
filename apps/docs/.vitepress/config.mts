@@ -159,6 +159,7 @@ export default defineConfig({
             { text: 'Query stacks & pagination', link: '/query/stacks' },
             { text: 'Query forms', link: '/query/query-forms' },
             { text: 'Errors & retries', link: '/query/errors' },
+            { text: 'Testing', link: '/query/testing' },
           ],
         },
         {
