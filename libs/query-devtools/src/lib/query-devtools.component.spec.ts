@@ -129,4 +129,40 @@ describe('QueryDevtoolsComponent', () => {
     expect(release).toHaveBeenCalled();
     expect(instance.probeHold).toBe(null);
   });
+
+  it('should style the pop-out without a style attribute a strict CSP would block', () => {
+    const { createObjectURL, revokeObjectURL } = URL;
+    URL.createObjectURL = () => 'blob:popout';
+    URL.revokeObjectURL = () => undefined;
+
+    const frame = document.createElement('iframe');
+    document.body.append(frame);
+
+    const popup = frame.contentWindow as Window;
+    const nonced = document.createElement('style');
+    nonced.setAttribute('nonce', 'from-the-page');
+    document.head.append(nonced);
+    document.documentElement.style.setProperty('--qdt-spec-token', '1');
+
+    vi.spyOn(window, 'open').mockReturnValue(popup);
+
+    const fixture = mount(true);
+    const setAttribute = vi.spyOn(Element.prototype, 'setAttribute');
+
+    fixture.componentInstance.popOut();
+    popup.dispatchEvent(new Event('load'));
+
+    expect(setAttribute.mock.calls.filter(([name]) => name === 'style')).toEqual([]);
+    expect(popup.document.documentElement.style.getPropertyValue('--qdt-spec-token')).toBe('1');
+    expect(popup.document.body.style.margin).toBe('0px');
+    expect(popup.document.head.querySelector('style[nonce="from-the-page"]')).not.toBeNull();
+
+    fixture.destroy();
+    frame.remove();
+    nonced.remove();
+    document.documentElement.style.removeProperty('--qdt-spec-token');
+    URL.createObjectURL = createObjectURL;
+    URL.revokeObjectURL = revokeObjectURL;
+    vi.restoreAllMocks();
+  });
 });

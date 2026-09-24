@@ -509,7 +509,7 @@ const POPOUT_DOCUMENT = `<!doctype html>
     <meta charset="utf-8" />
     <title>Query devtools</title>
   </head>
-  <body style="margin: 0"></body>
+  <body></body>
 </html>`;
 
 /**
@@ -3294,8 +3294,9 @@ export class QueryDevtoolsComponent implements OnInit {
     const renderer = this.renderer;
 
     renderer.setAttribute(doc.documentElement, 'class', this.document.documentElement.className);
-    renderer.setAttribute(doc.documentElement, 'style', this.document.documentElement.getAttribute('style') ?? '');
+    renderer.setCssProperties(doc.documentElement, this.inlineStyleOf(this.document.documentElement));
     renderer.setAttribute(doc.body, 'class', this.document.body.className);
+    renderer.setStyle(doc.body, { margin: '0' });
 
     // Inserted before the stylesheets it applies to: a blob document's own base URL is the blob, so a
     // copied `<link href="styles.css">` - and every relative `url()` inside a copied `<style>` - would
@@ -3354,6 +3355,14 @@ export class QueryDevtoolsComponent implements OnInit {
     return tokens;
   }
 
+  private inlineStyleOf(element: HTMLElement) {
+    const styles: Record<string, string> = {};
+
+    for (const property of Array.from(element.style)) styles[property] = element.style.getPropertyValue(property);
+
+    return styles;
+  }
+
   /** Whether a `<head>` child carries CSS the pop-out needs a copy of. */
   private isStyleNode(node: Element) {
     if (node.tagName === 'STYLE') return true;
@@ -3374,6 +3383,9 @@ export class QueryDevtoolsComponent implements OnInit {
       if (!(node instanceof Element) || !this.isStyleNode(node) || copies.has(node)) return;
 
       const clone = doc.importNode(node, true);
+
+      // A nonce'd element hides its `nonce` attribute once connected, so the clone gets it from the property.
+      if (node instanceof HTMLElement && node.nonce) this.renderer.setAttribute(clone, 'nonce', node.nonce);
 
       copies.set(node, clone);
       this.renderer.appendChild(doc.head, clone);
