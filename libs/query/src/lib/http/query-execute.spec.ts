@@ -87,4 +87,30 @@ describe('query execute', () => {
       expect(state.lastTimeExecutedAt()).toBe(null);
     });
   });
+
+  it('abort returns false while nothing is in flight', () => {
+    TestBed.runInInjectionContext(() => {
+      const fn = createExecuteFn(executeOptions);
+
+      expect(fn.abort()).toBe(false);
+    });
+  });
+
+  it('abort stops the execution in flight and leaves the never-settled state behind', () => {
+    TestBed.runInInjectionContext(() => {
+      const fn = createExecuteFn(executeOptions);
+      const aborted: unknown[] = [];
+      fn.aborted$.subscribe((value) => aborted.push(value));
+
+      fn({ args });
+
+      expect(state.loading()).not.toBe(null);
+      expect(fn.abort()).toBe(true);
+      expect(state.loading()).toBe(null);
+      expect(state.executionState()).toBe(null);
+      expect(state.subtle.request()?.loading()).toBe(null);
+      expect(aborted).toHaveLength(1);
+      expect(fn.abort()).toBe(false);
+    });
+  });
 });

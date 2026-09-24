@@ -49,6 +49,7 @@ export const createInertQuery = <TArgs extends QueryArgs>(): Query<TArgs> => {
     execute: noop,
     createSnapshot,
     reset: noop,
+    abort: () => false,
     asReadonly: () => ({ ...base, createSnapshot }),
     subtle: {
       destroy: noop,

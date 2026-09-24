@@ -129,7 +129,7 @@ protected async save() {
 }
 ```
 
-- **`executeUntilSettled(query, executeArgs?)`** executes the query and resolves with a settled [snapshot](/query/queries#the-query-object) once the execution completes - the snapshot is frozen to that execution, so a later one can't swap the `response()` / `error()` you read. A cancelled execution settles too, reporting an `error()` that says the request was cancelled.
+- **`executeUntilSettled(query, executeArgs?)`** executes the query and resolves with a settled [snapshot](/query/queries#the-query-object) once the execution completes - the snapshot is frozen to that execution, so a later one can't swap the `response()` / `error()` you read. A cancelled execution settles too, reporting an `error()` that says the request was cancelled. An execution stopped by [`query.abort()`](/query/queries#the-query-object) is not an error: it resolves with a snapshot that has no `error()` and no `response()`, and the Observable form below completes without a value.
 - **`executeUntilSettled$(query, executeArgs?)`** is the same as a cold Observable, for RxJS code outside a `submit()` action: nothing is sent until you subscribe, it emits the settled snapshot once and completes, and unsubscribing before it settles aborts the request:
 
   ```ts

@@ -1,4 +1,6 @@
 import { Signal, untracked } from '@angular/core';
+import { Observable } from 'rxjs';
+import { createQueryExecutionAborter } from './internal/query-execution-aborter';
 import { QueryArgs, RequestArgs } from './query';
 import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConfig } from './query-creator';
 import { QueryDependencies } from './query-dependencies';
@@ -28,6 +30,8 @@ export type QueryExecuteArgs<TArgs extends QueryArgs> = {
 export type InternalQueryExecute<TArgs extends QueryArgs> = {
   (executeArgs?: QueryExecuteArgs<TArgs>): void;
   reset: () => void;
+  abort: () => boolean;
+  aborted$: Observable<void>;
   currentRepositoryKey: Signal<QueryKey | null>;
 };
 
@@ -38,6 +42,7 @@ export const createExecuteFn = <TArgs extends QueryArgs>(
 ): InternalQueryExecute<TArgs> => {
   const executeState = setupQueryExecuteState();
   const circularChecker = circularQueryDependencyChecker();
+  const aborter = createQueryExecutionAborter(executeOptions.state);
 
   const reset = () => untracked(() => resetExecuteState({ executeState, executeOptions }));
 
@@ -47,10 +52,13 @@ export const createExecuteFn = <TArgs extends QueryArgs>(
 
       circularChecker.check(args);
 
+      aborter.capture();
       queryExecute({ executeOptions, executeState, args, options });
     });
 
   exec['reset'] = reset;
+  exec['abort'] = () => aborter.abort();
+  exec['aborted$'] = aborter.aborted$;
 
   exec['currentRepositoryKey'] = executeState.previousKey.asReadonly();
 

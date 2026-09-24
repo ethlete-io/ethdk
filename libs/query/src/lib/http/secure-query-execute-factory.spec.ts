@@ -57,6 +57,7 @@ describe('createSecureExecuteFactory', () => {
       latestHttpEvent: signal(null),
       lastTimeExecutedAt: signal(null),
       lastTriggeredBy: signal(null),
+      events$: new Subject(),
       subtle: { request: signal(null), unbindRequestEvents: vi.fn(), defaultRunOptions: signal(null) },
     } as unknown as QueryState<QueryArgs>;
   });
@@ -244,6 +245,47 @@ describe('createSecureExecuteFactory', () => {
 
     expect(mockState.loading()).toBeTruthy();
     expect(mockState.loading()?.executeTime).toBeTruthy();
+  });
+
+  it('abort stops waiting for a pending auth query', () => {
+    const response = signal<unknown>(null);
+    const loading = signal(true);
+    const isAlive = signal(true);
+
+    mockLatestExecutedQuery.set({
+      key: 'login',
+      snapshot: {
+        response: () => response(),
+        error: () => null,
+        loading: () => loading(),
+        lastTimeExecutedAt: () => Date.now(),
+        isAlive,
+      } as unknown as AnyQuerySnapshot,
+    });
+
+    const transformSpy = vi.fn();
+    const exec = createSecureExecuteFactory({
+      authProvider: mockAuthProvider,
+      autoExecutes: true,
+      deps: mockDeps,
+      state: mockState,
+      transformAuthAndExec: transformSpy,
+    });
+
+    expect(exec.abort()).toBe(false);
+
+    TestBed.runInInjectionContext(() => exec({}));
+    TestBed.tick();
+
+    expect(exec.abort()).toBe(true);
+    expect(mockState.loading()).toBeNull();
+
+    response.set({ accessToken: 'tok' });
+    loading.set(false);
+    isAlive.set(false);
+    TestBed.tick();
+
+    expect(transformSpy).not.toHaveBeenCalled();
   });
 
   it('should handle auth query errors', () => {

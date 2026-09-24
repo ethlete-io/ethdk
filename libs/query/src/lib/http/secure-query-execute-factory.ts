@@ -3,6 +3,7 @@ import { untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { EMPTY, filter, map, merge, NEVER, race, Subscription, switchMap, take, takeWhile, tap, timer } from 'rxjs';
 import { AnyBearerAuthProvider } from '../auth';
+import { createQueryExecutionAborter } from './internal/query-execution-aborter';
 import { AnyQuerySnapshot, QueryArgs, RequestArgs } from './query';
 import { QueryDependencies } from './query-dependencies';
 import { invalidStateInsideSecureExecuteFactory, tokensNotAvailableInsideAuthAndExec } from './query-errors';
@@ -47,6 +48,7 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
 ): InternalQueryExecute<TArgs> => {
   const executeState = setupQueryExecuteState();
   const circularChecker = circularQueryDependencyChecker();
+  const aborter = createQueryExecutionAborter(options.state);
 
   let authQuerySubscription = Subscription.EMPTY;
   let tokenRefreshSubscription = Subscription.EMPTY;
@@ -61,7 +63,7 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
 
   const error$ = toObservable(options.state.error, { injector: options.deps.injector });
 
-  const reset = () => {
+  const cancelPending = () => {
     authQuerySubscription.unsubscribe();
     authQuerySubscription = Subscription.EMPTY;
     tokenRefreshSubscription.unsubscribe();
@@ -70,6 +72,10 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
     tokenWaitSubscription = Subscription.EMPTY;
     sessionRestartSubscription.unsubscribe();
     sessionRestartSubscription = Subscription.EMPTY;
+  };
+
+  const reset = () => {
+    cancelPending();
     resetExecuteState({
       executeState,
       executeOptions: { deps: options.deps, state: options.state },
@@ -208,14 +214,8 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
     hasExecuted = true;
     lastExecuteArgs = execArgsWithDefaults;
 
-    authQuerySubscription.unsubscribe();
-    authQuerySubscription = Subscription.EMPTY;
-    tokenRefreshSubscription.unsubscribe();
-    tokenRefreshSubscription = Subscription.EMPTY;
-    tokenWaitSubscription.unsubscribe();
-    tokenWaitSubscription = Subscription.EMPTY;
-    sessionRestartSubscription.unsubscribe();
-    sessionRestartSubscription = Subscription.EMPTY;
+    cancelPending();
+    aborter.capture();
 
     // Retrying with the token that just produced the 401 would 401 again, and that 401 asks for
     // another refresh - an endless refresh/retry loop for as long as the server keeps handing out
@@ -314,6 +314,8 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
   const untrackedExec = (executeArgs?: QueryExecuteArgs<TArgs>) => untracked(() => exec(executeArgs));
 
   untrackedExec['reset'] = () => untracked(reset);
+  untrackedExec['abort'] = () => aborter.abort(cancelPending);
+  untrackedExec['aborted$'] = aborter.aborted$;
   untrackedExec['currentRepositoryKey'] = executeState.previousKey.asReadonly();
 
   return untrackedExec;

@@ -13,6 +13,7 @@ import {
   RouteType,
   setupQueryExecuteState,
 } from '../http';
+import { createQueryExecutionAborter } from '../http/internal/query-execution-aborter';
 import { GqlQueryArgs } from './gql-query';
 import { AnyCreateGqlQueryCreatorOptions, InternalCreateGqlQueryCreatorOptions } from './gql-query-creator';
 import { gqlTransformerFor } from './gql-transformer';
@@ -31,6 +32,7 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
 ): InternalQueryExecute<TArgs> => {
   const executeState = setupQueryExecuteState();
   const circularChecker = circularQueryDependencyChecker();
+  const aborter = createQueryExecutionAborter(executeOptions.state);
 
   const reset = () => resetExecuteState({ executeState, executeOptions });
 
@@ -76,6 +78,7 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
       state: executeOptions.state,
     };
 
+    aborter.capture();
     queryExecute({
       executeOptions: normalizedOpts,
       executeState,
@@ -86,6 +89,8 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
   };
 
   exec['reset'] = reset;
+  exec['abort'] = () => aborter.abort();
+  exec['aborted$'] = aborter.aborted$;
 
   exec['currentRepositoryKey'] = executeState.previousKey.asReadonly();
 

@@ -133,6 +133,15 @@ export type Query<TArgs extends QueryArgs> = QueryBase<TArgs> & {
   /** Resets the query state to its initial state */
   reset: () => void;
 
+  /**
+   * Stops the execution in flight, including a retry it is waiting out, and returns whether one was.
+   * The aborted execution sets no response and no error: `response()`, `error()` and `executionState()`
+   * go back to what they were before it started (`executionState()` is `null` if the query never
+   * settled). `args()` and `lastTimeExecutedAt()` keep describing the aborted execution. The request is
+   * shared by every query bound to the same cache key, so those stop loading too.
+   */
+  abort: () => boolean;
+
   /** Returns a readonly version of the query */
   asReadonly: () => ReadonlyQuery<TArgs>;
 
@@ -140,7 +149,10 @@ export type Query<TArgs extends QueryArgs> = QueryBase<TArgs> & {
   subtle: QuerySubtle<TArgs>;
 };
 
-export type ReadonlyQuery<TArgs extends QueryArgs> = Omit<Query<TArgs>, 'execute' | 'subtle' | 'reset' | 'asReadonly'>;
+export type ReadonlyQuery<TArgs extends QueryArgs> = Omit<
+  Query<TArgs>,
+  'execute' | 'subtle' | 'reset' | 'abort' | 'asReadonly'
+>;
 
 export const createQuery = <TArgs extends QueryArgs>(options: CreateQueryOptions<TArgs>) =>
   createBaseQuery({

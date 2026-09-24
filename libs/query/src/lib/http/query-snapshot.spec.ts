@@ -8,6 +8,7 @@ import { createQueryContext } from './query-context';
 import { QueryDependencies } from './query-dependencies';
 import { createQuerySnapshotFn } from './query-snapshot';
 import { QueryState, setupQueryState } from './query-state';
+import { NEVER } from 'rxjs';
 
 type MyQueryArgs = {
   response: { foo: boolean };
@@ -74,7 +75,7 @@ describe('createQuerySnapshotFn', () => {
       snapshotFn = createQuerySnapshotFn<MyQueryArgs>({
         state,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        execute: { currentRepositoryKey: signal(null) } as any,
+        execute: { currentRepositoryKey: signal(null), aborted$: NEVER } as any,
         deps,
       });
     });

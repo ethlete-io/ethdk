@@ -8,6 +8,7 @@ import { createQueryClient, QueryClientRef } from './query-client';
 import { CreateQueryCreatorOptions } from './query-creator';
 import { InternalQueryExecute } from './query-execute';
 import { QueryFeature, QueryFeatureType } from './query-features';
+import { NEVER } from 'rxjs';
 
 type TestQueryArgs = {
   response: { data: string };
@@ -35,6 +36,8 @@ describe('createBaseQuery', () => {
     // Create a mock execute function with all required properties
     mockExecute = Object.assign(vi.fn(), {
       reset: vi.fn(),
+      abort: vi.fn(() => false),
+      aborted$: NEVER,
       currentRepositoryKey: vi.fn(() => 'test-key'),
     }) as unknown as InternalQueryExecute<TestQueryArgs>;
 
@@ -67,6 +70,7 @@ describe('createBaseQuery', () => {
     expect(query.execute).toBeDefined();
     expect(query.createSnapshot).toBeDefined();
     expect(query.reset).toBeDefined();
+    expect(query.abort).toBe(mockExecute.abort);
     expect(query.asReadonly).toBeDefined();
     expect(query.subtle).toBeDefined();
     expect(query.executionState).toBeDefined();
@@ -226,6 +230,8 @@ describe('createBaseQuery', () => {
     const autoExecute = vi.fn();
     const mockAutoExecute = Object.assign(autoExecute, {
       reset: vi.fn(),
+      abort: vi.fn(() => false),
+      aborted$: NEVER,
       currentRepositoryKey: vi.fn(() => 'test-key'),
     }) as unknown as InternalQueryExecute<TestQueryArgs>;
 
@@ -253,6 +259,8 @@ describe('createBaseQuery', () => {
     const execute = vi.fn();
     const mockPostExecute = Object.assign(execute, {
       reset: vi.fn(),
+      abort: vi.fn(() => false),
+      aborted$: NEVER,
       currentRepositoryKey: vi.fn(() => 'test-key'),
     }) as unknown as InternalQueryExecute<TestQueryArgs>;
 
@@ -305,6 +313,7 @@ describe('createBaseQuery', () => {
     // Readonly should not have execute, reset, or subtle
     expect('execute' in readonly).toBe(false);
     expect('reset' in readonly).toBe(false);
+    expect('abort' in readonly).toBe(false);
     expect('subtle' in readonly).toBe(false);
     expect('asReadonly' in readonly).toBe(false);
   });

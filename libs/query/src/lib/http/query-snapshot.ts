@@ -34,11 +34,13 @@ export const createQuerySnapshotFn = <TArgs extends QueryArgs>(options: CreateQu
       const isAlive = signal(true);
 
       let cancelSubscription = Subscription.EMPTY;
+      let abortSubscription = Subscription.EMPTY;
       let unregisterScopeListener: (() => void) | null = null;
 
       const settle = () => {
         killEffectRef.destroy();
         cancelSubscription.unsubscribe();
+        abortSubscription.unsubscribe();
         unregisterScopeListener?.();
         isAlive.set(false);
       };
@@ -87,6 +89,20 @@ export const createQuerySnapshotFn = <TArgs extends QueryArgs>(options: CreateQu
 
           settle();
         });
+
+      const abort = () =>
+        untracked(() => {
+          if (!isAlive()) return;
+
+          snapshotState.loading.set(null);
+          snapshotState.latestHttpEvent.set(CANCEL_EVENT);
+          snapshotState.rawResponse.set(null);
+          snapshotState.error.set(null);
+
+          settle();
+        });
+
+      abortSubscription = options.execute.aborted$.subscribe(abort);
 
       cancelSubscription = state.events$
         .pipe(filter((event): event is HttpCancelEvent => event.type === 'cancel'))
