@@ -1,0 +1,19 @@
+import { ActionReducerMap, createFeatureSelector } from '@ngrx/store';
+
+import { CatalogListingEffects } from './listing/listing.effects';
+import * as fromListing from './listing/listing.reducer';
+import { CatalogSessionEffects } from './session/session.effects';
+import * as fromSession from './session/session.reducer';
+
+export interface CatalogState extends fromListing.CatalogListingPartialState, fromSession.CatalogSessionPartialState {}
+
+export const CATALOG_FEATURE_KEY = 'catalog';
+
+export const catalogReducer: ActionReducerMap<CatalogState> = {
+  [fromListing.CATALOG_LISTING_FEATURE_KEY]: fromListing.reducer,
+  [fromSession.CATALOG_SESSION_FEATURE_KEY]: fromSession.reducer,
+};
+
+export const catalogEffects = [CatalogListingEffects, CatalogSessionEffects];
+
+export const getFeatureBaseState = createFeatureSelector<CatalogState>(CATALOG_FEATURE_KEY);

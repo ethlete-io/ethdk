@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "@app-a/env": ["libs/env/src/index.ts"],
+      "@app-a/queries": ["libs/queries/src/index.ts"],
+      "@app-a/store": ["libs/store/src/index.ts"],
+      "@app-a/types": ["libs/types/src/index.ts"]
+    }
+  }
+}

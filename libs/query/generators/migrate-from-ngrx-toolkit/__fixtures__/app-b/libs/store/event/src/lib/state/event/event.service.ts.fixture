@@ -1,0 +1,57 @@
+import * as Models from './event.models';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { defineResponseType, ServiceBase } from '@tomtomb/ngrx-toolkit';
+import { environment } from '@app-b/env';
+import { EntryDetailView, EventDetailView, EventListView, EventFeedListView, Paginated } from '@app-b/types';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class EventService extends ServiceBase {
+  private _http: HttpClient;
+
+  constructor() {
+    const _http = inject(HttpClient);
+
+    super(_http, environment.apiBaseURL);
+
+    this._http = _http;
+  }
+
+  getEventEntry(args: Models.GetEventEntryArgs) {
+    return this.get({
+      apiRoute: (p) => `/public/event-entries/${p.entryId}`,
+      httpOpts: args,
+      responseType: defineResponseType<EntryDetailView>(),
+      extras: { skipCache: true },
+    });
+  }
+
+  getEventFeeds(args: Models.GetEventFeedsArgs) {
+    return this.get({
+      apiRoute: (p) => `/public/events/${p.eventId}/feeds`,
+      httpOpts: args,
+      responseType: defineResponseType<EventFeedListView>(),
+      extras: { skipCache: true },
+    });
+  }
+
+  getEventBySlug(args: Models.GetEventBySlugArgs) {
+    return this.get({
+      apiRoute: (p) => `/public/events/${p.periodIdentifier}/${p.contestGroupSlug}/${p.eventSlug}`,
+      httpOpts: args,
+      responseType: defineResponseType<EventDetailView>(),
+      extras: { skipCache: true },
+    });
+  }
+
+  getEventResults(args: Models.GetEventResultsArgs) {
+    return this.get({
+      apiRoute: '/public/results',
+      httpOpts: args,
+      responseType: defineResponseType<Paginated<EventListView>>(),
+      extras: { skipCache: true },
+    });
+  }
+}

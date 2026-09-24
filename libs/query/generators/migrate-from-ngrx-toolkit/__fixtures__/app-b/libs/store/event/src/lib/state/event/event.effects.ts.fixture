@@ -1,0 +1,35 @@
+import { Injectable } from '@angular/core';
+import { Actions } from '@ngrx/effects';
+import { EffectBase } from '@tomtomb/ngrx-toolkit';
+import * as FeatureActions from './event.actions';
+import { EventService } from './event.service';
+
+@Injectable()
+export class EventEffects extends EffectBase {
+  getEventEntry$ = this.onActionMergeMap({
+    action: FeatureActions.getEventEntry,
+    serviceCall: this.featureService.getEventEntry,
+  });
+
+  getEventFeeds$ = this.onActionMergeMap({
+    action: FeatureActions.getEventFeeds,
+    serviceCall: this.featureService.getEventFeeds,
+  });
+
+  getEventBySlug$ = this.onActionMergeMap({
+    action: FeatureActions.getEventBySlug,
+    serviceCall: this.featureService.getEventBySlug,
+  });
+
+  getEventResults$ = this.onActionMergeMap({
+    action: FeatureActions.getEventResults,
+    serviceCall: this.featureService.getEventResults,
+  });
+
+  constructor(
+    private actions$: Actions,
+    private featureService: EventService,
+  ) {
+    super(actions$, featureService);
+  }
+}

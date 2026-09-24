@@ -1,0 +1,20 @@
+import * as FeatureActions from './session.actions';
+import { Actions } from '@ngrx/effects';
+import { EffectBase } from '@tomtomb/ngrx-toolkit';
+import { Injectable } from '@angular/core';
+import { CatalogSessionService } from './session.service';
+
+@Injectable()
+export class CatalogSessionEffects extends EffectBase {
+  getCatalogSessionEvent$ = this.onActionMergeMap({
+    action: FeatureActions.getCatalogSessionEvent,
+    serviceCall: this.featureService.getCatalogSessionEvent,
+  });
+
+  constructor(
+    private actions$: Actions,
+    private featureService: CatalogSessionService,
+  ) {
+    super(actions$, featureService);
+  }
+}

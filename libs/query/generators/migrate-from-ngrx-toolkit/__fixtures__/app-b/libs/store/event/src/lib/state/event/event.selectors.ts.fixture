@@ -1,0 +1,10 @@
+import * as fromReducer from './event.reducer';
+import { createEntitySelectors } from '@tomtomb/ngrx-toolkit';
+import { createFeatureSelector } from '@ngrx/store';
+
+export const getState = createFeatureSelector<fromReducer.State>(fromReducer.EVENT_FEATURE_KEY);
+
+export const entitySelectors = createEntitySelectors({
+  getState,
+  reducerAdapters: fromReducer.reducerAdapters,
+});

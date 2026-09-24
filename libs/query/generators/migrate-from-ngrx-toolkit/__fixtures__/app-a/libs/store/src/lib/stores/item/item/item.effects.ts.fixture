@@ -1,0 +1,30 @@
+import { Injectable } from '@angular/core';
+import { Actions } from '@ngrx/effects';
+import { EffectBase } from '@tomtomb/ngrx-toolkit';
+import * as FeatureActions from './item.actions';
+import { ItemService } from './item.service';
+
+@Injectable()
+export class ItemEffects extends EffectBase {
+  getItem$ = this.onActionMergeMap({
+    action: FeatureActions.getItem,
+    serviceCall: this._featureService.getItem,
+  });
+
+  getItemPublicProfileBySlug$ = this.onActionMergeMap({
+    action: FeatureActions.getItemPublicProfileBySlug,
+    serviceCall: this._featureService.getItemPublicProfileBySlug,
+  });
+
+  postCreateAndInviteMember$ = this.onActionMergeMap({
+    action: FeatureActions.postCreateAndInviteMember,
+    serviceCall: this._featureService.postCreateAndInviteMember,
+  });
+
+  constructor(
+    private _actions$: Actions,
+    private _featureService: ItemService,
+  ) {
+    super(_actions$, _featureService);
+  }
+}

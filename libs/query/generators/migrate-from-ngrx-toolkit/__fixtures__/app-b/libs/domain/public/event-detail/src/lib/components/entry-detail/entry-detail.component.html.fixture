@@ -1,0 +1,7 @@
+@if (entryStore | suspense; as s) {
+  @if (s.isLoading) {
+    <div class="mt-[50px]">
+      <app-b-loading />
+    </div>
+  }
+}

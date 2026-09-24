@@ -1,0 +1,25 @@
+import * as Actions from './session.actions';
+import * as Selectors from './session.selectors';
+import * as fromReducer from './session.reducer';
+import { Actions as ActionsNative } from '@ngrx/effects';
+import { ActionCallArgs, FacadeBase, resetFeatureStore } from '@tomtomb/ngrx-toolkit';
+import { Injectable } from '@angular/core';
+import { Store } from '@ngrx/store';
+
+@Injectable({ providedIn: 'root' })
+export class CatalogSessionFacade extends FacadeBase {
+  constructor(
+    private store: Store<fromReducer.CatalogSessionPartialState>,
+    private actions: ActionsNative,
+  ) {
+    super(store, actions, Selectors.entitySelectors);
+  }
+
+  clearFeature() {
+    this.store.dispatch(resetFeatureStore({ featureName: fromReducer.CATALOG_SESSION_FEATURE_KEY }));
+  }
+
+  getCatalogSessionEvent(args: ActionCallArgs<typeof Actions.getCatalogSessionEvent>) {
+    return this.call(Actions.getCatalogSessionEvent, args);
+  }
+}

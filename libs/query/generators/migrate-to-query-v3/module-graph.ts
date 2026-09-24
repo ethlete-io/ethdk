@@ -19,6 +19,12 @@ export type ModuleGraph = {
    * alias). `null` means "cannot prove it is ours" - callers should leave such an import alone.
    */
   findDeclaringFile: (fromFile: string, specifier: string, symbolName: string) => string | null;
+
+  /** The workspace file `specifier` points at from `fromFile`, or `null` outside the workspace. */
+  resolveFile: (fromFile: string, specifier: string) => string | null;
+
+  /** The `compilerOptions.paths` keys of the workspace tsconfig. */
+  pathAliases: () => string[];
 };
 
 const MAX_BARREL_DEPTH = 8;
@@ -204,6 +210,8 @@ export const createModuleGraph = (tree: Tree): ModuleGraph => {
   };
 
   return {
+    resolveFile: resolveEntryFile,
+    pathAliases: () => [...tsConfigPaths.keys()],
     findDeclaringFile: (fromFile, specifier, symbolName) => {
       const cacheKey = `${fromFile}|${specifier}|${symbolName}`;
       const cached = declaringFileCache.get(cacheKey);

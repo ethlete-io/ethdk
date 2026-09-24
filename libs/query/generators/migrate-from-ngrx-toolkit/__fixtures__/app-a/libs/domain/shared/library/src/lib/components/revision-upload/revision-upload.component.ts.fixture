@@ -1,0 +1,45 @@
+import { AsyncPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation, inject } from '@angular/core';
+import { createDestroy } from '@ethlete/core';
+import { LibraryFacade, getLibraryRevisions, postLibraryVersionCreate } from '@app-a/store';
+import { MappedEntityState, NgRxToolkitModule } from '@tomtomb/ngrx-toolkit';
+import { takeUntil, tap } from 'rxjs';
+
+@Component({
+  selector: 'app-a-revision-upload',
+  templateUrl: './revision-upload.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  imports: [AsyncPipe, NgRxToolkitModule],
+})
+export class RevisionUploadComponent {
+  private _libraryFacade = inject(LibraryFacade);
+  private _destroy$ = createDestroy();
+
+  @Input()
+  recipient!: string;
+
+  @Input()
+  actionId!: number | null;
+
+  store: MappedEntityState<typeof postLibraryVersionCreate> | null = null;
+
+  submit(requestData: FormData) {
+    this.store = this._libraryFacade.postLibraryVersionCreate({
+      body: requestData,
+      queryParams: { recipientId: this.recipient },
+    });
+
+    this.store.isSuccess$
+      .pipe(
+        tap((isSuccess) => {
+          if (this.actionId && isSuccess) {
+            const store = this._libraryFacade.select(getLibraryRevisions, this.actionId);
+            store.refresh();
+          }
+        }),
+        takeUntil(this._destroy$),
+      )
+      .subscribe();
+  }
+}

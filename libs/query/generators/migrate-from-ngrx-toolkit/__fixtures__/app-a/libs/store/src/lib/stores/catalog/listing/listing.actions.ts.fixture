@@ -1,0 +1,14 @@
+import { createHttpActionGroup, defineArgTypes } from '@tomtomb/ngrx-toolkit';
+import { ListingMemberView } from '@app-a/types';
+import * as Models from './listing.models';
+
+const actionScope = 'Catalog->Listing';
+
+export const getCatalogListingTopMembers = createHttpActionGroup({
+  method: 'GET',
+  name: 'Catalog Listing Top Members',
+  scope: actionScope,
+  argsTypes: defineArgTypes<{ args: Models.GetCatalogListingTopMembersArgs; response: ListingMemberView[] }>(),
+});
+
+export const CATALOG_LISTING_ACTIONS = { getCatalogListingTopMembers };

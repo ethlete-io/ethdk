@@ -1,0 +1,7 @@
+@if (content.type === 'request') {
+  @if (recipientVersionStore | suspense; as s) {
+    @if (!s.isLoading && s.cachedResponse?.length) {
+      <app-a-revision-info [actionId]="actionId" />
+    }
+  }
+}

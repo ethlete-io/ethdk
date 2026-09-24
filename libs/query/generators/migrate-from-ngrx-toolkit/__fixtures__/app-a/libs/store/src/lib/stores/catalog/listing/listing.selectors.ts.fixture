@@ -1,0 +1,12 @@
+import { createEntitySelectors } from '@tomtomb/ngrx-toolkit';
+import { createFeatureSelector, createSelector } from '@ngrx/store';
+import { getFeatureBaseState } from '..';
+import * as fromReducer from './listing.reducer';
+
+const getFeature = createFeatureSelector<fromReducer.State>(fromReducer.CATALOG_LISTING_FEATURE_KEY);
+const getState = createSelector(getFeatureBaseState, getFeature);
+
+export const entity = createEntitySelectors({
+  getState,
+  reducerAdapters: fromReducer.reducerAdapters,
+});

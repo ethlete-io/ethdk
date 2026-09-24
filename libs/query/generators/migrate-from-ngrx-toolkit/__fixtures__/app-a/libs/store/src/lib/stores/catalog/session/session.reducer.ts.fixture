@@ -1,0 +1,21 @@
+import * as Actions from './session.actions';
+import { Action } from '@ngrx/store';
+import { createReducerSlice } from '@tomtomb/ngrx-toolkit';
+
+export const CATALOG_SESSION_FEATURE_KEY = 'catalogSession';
+
+export type State = typeof initialState;
+
+export interface CatalogSessionPartialState {
+  readonly [CATALOG_SESSION_FEATURE_KEY]: State;
+}
+
+export const { reducerSlice, reducerAdapters, initialState } = createReducerSlice({
+  actions: Actions.CATALOG_SESSION_ACTIONS,
+  key: CATALOG_SESSION_FEATURE_KEY,
+  initialStateExtra: {},
+});
+
+export function reducer(state: State | undefined, action: Action) {
+  return reducerSlice(state, action);
+}

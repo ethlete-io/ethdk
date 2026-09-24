@@ -1,0 +1,17 @@
+import { WithPagination, WithSorting } from '@app-b/types';
+
+export interface GetVenueBySlugArgs {
+  queryParams: {
+    slug: string;
+  };
+}
+
+export interface GetVenueRankingArgs {
+  queryParams: {
+    venueId: string;
+  };
+}
+
+export interface GetVenuesArgs {
+  params: WithPagination & WithSorting<'name'>;
+}

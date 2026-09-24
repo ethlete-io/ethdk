@@ -1,0 +1,23 @@
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { defineResponseType, ServiceBase } from '@tomtomb/ngrx-toolkit';
+import { ListingMemberView } from '@app-a/types';
+import { environment } from '@app-a/env';
+import * as Models from './listing.models';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class CatalogListingService extends ServiceBase {
+  constructor(private _http: HttpClient) {
+    super(_http, environment.apiBaseURL);
+  }
+
+  getCatalogListingTopMembers(args: Models.GetCatalogListingTopMembersArgs) {
+    return this.get({
+      apiRoute: '/public/catalog/listing/top-members',
+      httpOpts: args,
+      responseType: defineResponseType<ListingMemberView[]>(),
+    });
+  }
+}

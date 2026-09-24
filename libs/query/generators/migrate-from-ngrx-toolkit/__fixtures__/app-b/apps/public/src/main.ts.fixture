@@ -1,0 +1,54 @@
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { enableProdMode, importProvidersFrom, provideZonelessChangeDetection } from '@angular/core';
+import { BrowserModule, bootstrapApplication } from '@angular/platform-browser';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideColorThemes } from '@ethlete/cdk';
+import { provideTranslateService } from '@ngx-translate/core';
+
+import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
+import { environment } from '@app-b/env';
+import { provideI18n } from '@app-b/i18n';
+import { StoreVenueModule } from '@app-b/store/venue';
+import { StoreContentModule } from '@app-b/store/content';
+import { StoreGroupModule } from '@app-b/store/group';
+import { StoreEventModule } from '@app-b/store/event';
+import { StoreMemberModule } from '@app-b/store/member';
+import { StoreRootModule } from '@app-b/store/root';
+import { StoreRoundModule } from '@app-b/store/round';
+import { StoreRouterModule } from '@app-b/store/router';
+import { StorePeriodModule } from '@app-b/store/period';
+import { StoreFeedModule } from '@app-b/store/feed';
+import { AppRoutingModule } from './app/app-routing.module';
+import { AppComponent } from './app/app.component';
+
+if (environment.production) {
+  enableProdMode();
+}
+
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideZonelessChangeDetection(),
+    importProvidersFrom(
+      BrowserModule,
+
+      AppRoutingModule,
+      StoreRootModule,
+      StoreRouterModule,
+      StoreVenueModule,
+      StoreGroupModule,
+      StoreEventModule,
+      StoreMemberModule,
+      StoreRoundModule,
+      StorePeriodModule,
+      StoreFeedModule,
+      StoreContentModule,
+    ),
+    provideTranslateService({
+      loader: provideTranslateHttpLoader({ prefix: './assets/i18n/', suffix: '.json' }),
+    }),
+    provideAnimations(),
+    provideHttpClient(withInterceptorsFromDi()),
+    provideI18n(),
+    provideColorThemes([]),
+  ],
+}).catch((err) => console.error(err));

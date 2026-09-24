@@ -1,0 +1,21 @@
+import { createReducerSlice } from '@tomtomb/ngrx-toolkit';
+import { Action } from '@ngrx/store';
+import * as Actions from './listing.actions';
+
+export const CATALOG_LISTING_FEATURE_KEY = 'catalogListing';
+
+export type State = typeof initialState;
+
+export interface CatalogListingPartialState {
+  readonly [CATALOG_LISTING_FEATURE_KEY]: State;
+}
+
+export const { reducerAdapters, reducerSlice, initialState } = createReducerSlice({
+  actions: Actions.CATALOG_LISTING_ACTIONS,
+  key: CATALOG_LISTING_FEATURE_KEY,
+  initialStateExtra: {},
+});
+
+export function reducer(state: State | undefined, action: Action) {
+  return reducerSlice(state, action);
+}

@@ -1,0 +1,20 @@
+import { Injectable } from '@angular/core';
+import { EffectBase } from '@tomtomb/ngrx-toolkit';
+import { Actions } from '@ngrx/effects';
+import * as FeatureActions from './listing.actions';
+import { CatalogListingService } from './listing.service';
+
+@Injectable()
+export class CatalogListingEffects extends EffectBase {
+  getCatalogListingTopMembers$ = this.onActionMergeMap({
+    action: FeatureActions.getCatalogListingTopMembers,
+    serviceCall: this._featureService.getCatalogListingTopMembers,
+  });
+
+  constructor(
+    private _actions$: Actions,
+    private _featureService: CatalogListingService,
+  ) {
+    super(_actions$, _featureService);
+  }
+}

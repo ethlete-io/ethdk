@@ -1,0 +1,12 @@
+import { ApplicationConfig, importProvidersFrom } from '@angular/core';
+import { StoreCatalogModule, StoreRootModule, StoreItemModule } from '@app-a/store';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    importProvidersFrom(
+      StoreRootModule,
+      StoreItemModule,
+      StoreCatalogModule,
+    ),
+  ],
+};

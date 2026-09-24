@@ -1,0 +1,7 @@
+import { EventEntityId } from '@app-a/types';
+
+export interface GetCatalogSessionEventArgs {
+  queryParams: {
+    eventId: EventEntityId;
+  };
+}

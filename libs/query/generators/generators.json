@@ -24,6 +24,11 @@
       "factory": "./migrate-query-opt-in-features/migration",
       "schema": "./migrate-query-opt-in-features/schema.json",
       "description": "Migrate query clients to the opt-in error pipeline and bearer auth providers to the opt-in multi-tab sync feature"
+    },
+    "migrate-from-ngrx-toolkit": {
+      "factory": "./migrate-from-ngrx-toolkit/migration",
+      "schema": "./migrate-from-ngrx-toolkit/schema.json",
+      "description": "Move @tomtomb/ngrx-toolkit features onto v3 query creators and the @ethlete/query/ngrx-toolkit interop"
     }
   }
 }

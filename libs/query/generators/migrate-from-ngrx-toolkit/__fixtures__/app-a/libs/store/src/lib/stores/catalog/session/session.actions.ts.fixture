@@ -1,0 +1,17 @@
+import * as Models from './session.models';
+import { createHttpActionGroup, defineArgTypes } from '@tomtomb/ngrx-toolkit';
+import { EventHallView } from '@app-a/types';
+
+export const SESSION_ACTION_PREFIX = 'Catalog->Session';
+
+export const getCatalogSessionEvent = createHttpActionGroup({
+  method: 'GET',
+  name: 'Event',
+  scope: SESSION_ACTION_PREFIX,
+  argsTypes: defineArgTypes<{
+    args: Models.GetCatalogSessionEventArgs;
+    response: EventHallView;
+  }>(),
+});
+
+export const CATALOG_SESSION_ACTIONS = { getCatalogSessionEvent };

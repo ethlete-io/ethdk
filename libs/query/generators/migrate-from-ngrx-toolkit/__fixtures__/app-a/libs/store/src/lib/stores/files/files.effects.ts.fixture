@@ -1,0 +1,75 @@
+import { HttpErrorResponse, HttpEvent, HttpEventType } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { MediaView, UploadStatus } from '@app-a/types';
+import { Actions, createEffect, ofType } from '@ngrx/effects';
+import { buildErrorFromHttpError } from '@tomtomb/ngrx-toolkit';
+import { of } from 'rxjs';
+import { catchError, filter, map, mergeMap, takeWhile, withLatestFrom } from 'rxjs/operators';
+import * as FilesActions from './files.actions';
+import { FilesFacade } from './files.facade';
+import { FilesService } from './files.service';
+
+@Injectable()
+export class FilesEffects {
+  uploadFile$ = createEffect(() =>
+    this._actions$.pipe(
+      ofType(FilesActions.uploadFile),
+      mergeMap(({ file, id }) =>
+        this._filesService.uploadFile(file).pipe(
+          withLatestFrom(this._filesFacade.selectFileById(id)),
+          takeWhile(([, fileState]) => fileState?.status !== UploadStatus.Canceled),
+          filter(
+            ([event]) =>
+              event.type === HttpEventType.Sent ||
+              event.type === HttpEventType.UploadProgress ||
+              event.type === HttpEventType.Response,
+          ),
+          map(([event]) => this._getActionFromHttpEvent(event, file, id)),
+          catchError((error: HttpErrorResponse) =>
+            of(FilesActions.uploadFileFailure({ error: buildErrorFromHttpError({ args: id, error }).error, file, id })),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  constructor(
+    private _actions$: Actions,
+    private _filesService: FilesService,
+    private _filesFacade: FilesFacade,
+  ) {}
+
+  private _getActionFromHttpEvent(event: HttpEvent<MediaView>, file: File, id: string) {
+    switch (event.type) {
+      case HttpEventType.Sent: {
+        return FilesActions.uploadFileStarted({ file, id });
+      }
+      case HttpEventType.UploadProgress: {
+        return FilesActions.uploadFileProgress({
+          file,
+          id,
+          progress: Math.round((100 * event.loaded) / (event.total ?? 0)),
+        });
+      }
+      case HttpEventType.Response: {
+        if (event.status === 200) {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          return FilesActions.uploadFileSuccess({ result: event.body!, file, id });
+        } else {
+          return FilesActions.uploadFileFailure({
+            error: buildErrorFromHttpError({ args: id, error: event as unknown as HttpErrorResponse }).error,
+            file,
+            id,
+          });
+        }
+      }
+      default: {
+        return FilesActions.uploadFileFailure({
+          error: buildErrorFromHttpError({ args: id, error: { code: 'unknown', message: 'Unknown error' } }).error,
+          file,
+          id,
+        });
+      }
+    }
+  }
+}

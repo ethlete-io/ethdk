@@ -1,0 +1,21 @@
+import { CreateNewMemberRequestData, ItemId } from '@app-a/types';
+
+export interface PostCreateAndInviteMemberArgs {
+  queryParams: {
+    itemId: ItemId;
+  };
+  body: CreateNewMemberRequestData;
+}
+
+export interface GetItemArgs {
+  queryParams: {
+    itemId: ItemId;
+  };
+  skipCache?: boolean;
+}
+
+export interface GetItemPublicProfileBySlugArgs {
+  queryParams: {
+    itemSlug: string;
+  };
+}
