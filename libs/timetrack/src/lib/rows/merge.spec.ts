@@ -425,7 +425,7 @@ describe('mergeBlocks and a sliver', () => {
     expect(rows[0]?.observedMs).toBe(15.2 * 60_000);
   });
 
-  it('leaves the one short touch of a lane that holds nothing else', () => {
+  it('drops the one short touch of a lane that holds nothing else', () => {
     const rows = mergeBlocks({
       blocks: [
         attributed({ fromMinute: 0, toMinute: 0.5, confidence: 'weak', repoPath: '/a' }),
@@ -433,19 +433,35 @@ describe('mergeBlocks and a sliver', () => {
       ],
     });
 
-    expect(rows).toHaveLength(2);
-    expect(rows[0]?.observedMs).toBe(0.5 * 60_000);
+    expect(rows.map((row) => row.observedMs)).toEqual([15 * 60_000]);
   });
 
-  it('leaves a sliver an hour away from the work of its own lane', () => {
+  it('drops a sliver an hour away from the work of its own lane', () => {
     const rows = mergeBlocks({
       blocks: [
-        attributed({ fromMinute: 0, toMinute: 0.5, confidence: 'weak', repoPath: '/a' }),
+        attributed({ fromMinute: 0, toMinute: 0.1, confidence: 'weak', repoPath: '/a' }),
         attributed({ fromMinute: 120, toMinute: 150, confidence: 'weak', repoPath: '/a' }),
       ],
     });
 
-    expect(rows).toHaveLength(2);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.from).toEqual(AT(120));
+  });
+
+  it('drops a named sliver no band of its lane can take', () => {
+    const rows = mergeBlocks({
+      blocks: [attributed({ fromMinute: 0, toMinute: 1, issueKey: 'FIP-1', repoPath: '/a' })],
+    });
+
+    expect(rows).toEqual([]);
+  });
+
+  it('keeps a short band once it holds the shortest band the day draws', () => {
+    const rows = mergeBlocks({
+      blocks: [attributed({ fromMinute: 0, toMinute: 2, confidence: 'weak', repoPath: '/a' })],
+    });
+
+    expect(rows).toHaveLength(1);
   });
 });
 

@@ -73,7 +73,8 @@ export type MergeOptions = {
   maxRowsPerDay: number;
   /**
    * The shortest band the day draws on its own. A shorter one is folded into the nearest band of its
-   * own lane, and it is left alone only when that lane holds no band close enough to take it.
+   * own lane, and dropped when that lane holds no band close enough to take it: a row books at least
+   * one whole increment, so a few seconds of work would claim fifteen minutes.
    *
    * The day screen draws an hour as 8rem, so a band of one minute is a sliver a reader can neither
    * read nor press. They arrive in runs: a focus flash into the editor during a call names the
@@ -310,7 +311,8 @@ const mergePass = (options: { ordered: readonly AttributedBlock[] } & PassOption
 const isSliver = (group: WorkGroup, minBandMs: number) => group.observedMs < minBandMs;
 
 /**
- * Folds every sliver into the band of its own lane it sits closest to, once the day's bands are cut.
+ * Folds every sliver into the band of its own lane it sits closest to, once the day's bands are cut,
+ * and drops the ones no band takes.
  *
  * A sliver is a band the merge left behind because the span rule refused it: the flash is minutes away
  * from the work it belongs to and holds seconds of its own, so the pair would be drawn as a rectangle
@@ -318,9 +320,8 @@ const isSliver = (group: WorkGroup, minBandMs: number) => group.observedMs < min
  * band the flash belongs to holds the hour that makes the same rectangle honest, and it is only
  * reachable once that band exists.
  *
- * The join is tested by the same rules, so a sliver no band can take is left where it is. It is the one
- * touch of a checkout that a day really did hold for ten seconds, and dropping it would take a lane off
- * the day screen.
+ * The join is tested by the same rules. A sliver no band can take is not a row of its own: a row books
+ * at least one whole increment, so ten seconds of a checkout during a call would book fifteen minutes.
  */
 const absorbSlivers = (options: { rows: readonly WorkGroup[]; minBandMs: number; pass: PassOptions }) => {
   const { minBandMs, pass } = options;
@@ -360,7 +361,7 @@ const absorbSlivers = (options: { rows: readonly WorkGroup[]; minBandMs: number;
     }
   });
 
-  return rows.filter((_, index) => !taken.has(index));
+  return rows.filter((row, index) => !taken.has(index) && !isSliver(row, minBandMs));
 };
 
 /**
@@ -383,8 +384,8 @@ const absorbSlivers = (options: { rows: readonly WorkGroup[]; minBandMs: number;
  * for a day nobody would review row by row. The span rule and the barriers hold in that pass too, so
  * a day of short touches far apart stays many rows and warns rather than lie in one band.
  *
- * A band left under `minBandMs` is then folded into the nearest band of its own lane - see
- * `absorbSlivers`, which is what keeps a call's worth of focus flashes out of the timeline.
+ * A band left under `minBandMs` is then folded into the nearest band of its own lane, or dropped when
+ * none can take it - see `absorbSlivers`, which keeps a call's worth of focus flashes out of the day.
  */
 /**
  * Re-reads a row once it is assembled. A repository rule names no branch, so a row holding two of them
