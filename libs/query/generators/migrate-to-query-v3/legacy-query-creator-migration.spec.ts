@@ -466,4 +466,39 @@ export const getUsers = apiClient.get({ ...sharedOptions, route: '/users' });
     expect(queries).toContain("const getA = apiGet('/a');");
     expect(queries).toContain('const legacyGetA = createLegacyQueryCreator(');
   });
+  it('moves an entity config onto the legacy wrapper and reports gql creators it cannot rewrite', async () => {
+    tree.write(
+      'client.ts',
+      `
+import { V2QueryClient } from '@ethlete/query';
+
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+    );
+
+    tree.write(
+      'queries.ts',
+      `
+import { apiClient } from './client';
+
+export const getUser = apiClient.get({
+  route: '/user',
+  entity: { store: userStore, id: ({ response }) => response.id, set: ({ store, response }) => store.set(response) },
+});
+export const getGqlUser = apiClient.gqlQuery({ query: USER_QUERY });
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const queries = readFile('queries.ts');
+    const report = readFile('query-v3-migration-tasks.md');
+
+    expect(queries).toContain(
+      "createLegacyQueryCreator({ name: 'legacyGetUser', creator: getUser, entity: { store: userStore, id: ({ response }) => response.id, set: ({ store, response }) => store.set(response) } });",
+    );
+    expect(report).toContain('Check the entity config carried onto legacyGetUser');
+    expect(report).toContain('Rewrite the GraphQL creator getGqlUser by hand');
+    expect(report).toContain('createGqlQueryViaPost');
+  });
 });

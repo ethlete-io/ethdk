@@ -411,4 +411,80 @@ export default new V2QueryClient({ baseRoute: 'https://api.example.com' });
 
     expect(readFile('http.ts')).toBe("export const client = inject(HttpClient);\nclient.get('/x');");
   });
+  it('keeps v2 retry and error parsing with withEthleteApiErrors and reports how the retry policy differs', async () => {
+    tree.write(
+      'client.ts',
+      `
+import { V2QueryClient } from '@ethlete/query';
+
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const client = readFile('client.ts');
+    const report = readFile('query-v3-migration-tasks.md');
+
+    expect(client).toContain('features: [withEthleteApiErrors()]');
+    expect(client).toMatch(/import \{[^}]*withEthleteApiErrors[^}]*\} from '@ethlete\/query';/);
+    expect(report).toContain('Client kept the full error pipeline');
+    expect(report).toContain('Check the retry behaviour of the migrated client');
+    expect(report).toContain('never retries a `POST`, a `PATCH` or a plain `500`');
+  });
+
+  it('does not report the retry difference for a client with its own retryFn', async () => {
+    tree.write(
+      'client.ts',
+      `
+import { V2QueryClient } from '@ethlete/query';
+
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com', request: { retryFn: myRetry } });
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    expect(readFile('client.ts')).toContain('retryFn: myRetry');
+    expect(readFile('client.ts')).toContain('features: [withEthleteApiErrors()]');
+    expect(readFile('query-v3-migration-tasks.md')).not.toContain('Check the retry behaviour of the migrated client');
+  });
+
+  it('carries a cacheAdapter over and points at keepUnusedFor and the HttpHeaders shape', async () => {
+    tree.write(
+      'client.ts',
+      `
+import { V2QueryClient } from '@ethlete/query';
+
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com', request: { cacheAdapter: () => 0 } });
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const report = readFile('query-v3-migration-tasks.md');
+
+    expect(readFile('client.ts')).toContain('cacheAdapter: () => 0');
+    expect(report).toContain('Check the carried-over cacheAdapter');
+    expect(report).toContain('also set `keepUnusedFor: 0` on the client');
+  });
+
+  it('reports the v2 defaults a client relied on by leaving them out', async () => {
+    tree.write(
+      'client.ts',
+      `
+import { V2QueryClient } from '@ethlete/query';
+
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com', request: { enableSmartPolling: false } });
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const report = readFile('query-v3-migration-tasks.md');
+
+    expect(report).toContain('Restore the v2 default "request.autoRefreshQueriesOnWindowFocus"');
+    expect(report).toContain('refetchOnFocus: true');
+    expect(report).not.toContain('request.enableSmartPolling');
+  });
 });

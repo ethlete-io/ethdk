@@ -215,3 +215,42 @@ export const addJsDocTag = (content: string, sourceFile: ts.SourceFile, node: ts
     content.slice(0, start) + `/**\n${indentation} * ${tag}\n${indentation} */\n${indentation}` + content.slice(start)
   );
 };
+
+const TUPLE_PROVIDER_ACTION =
+  'Delete the call: a v3 client, auth provider or socket is root-provided the moment something injects it. For a test or an override, provide it with `toProvideFn(ref)` from `@ethlete/core`.';
+
+export const REMOVED_EXPERIMENTAL_QUERY_HELPERS: Record<string, string> = {
+  createQueryClientConfig:
+    'Replace it with `createQueryClient({ name, baseUrl })`, which returns the provider tuple, and derive `toProvideFn` / `toInjectFn` from it.',
+  createBearerAuthProviderConfig:
+    'Replace it with `createBearerAuthProvider({ name, queryClientRef, queries, features })`, which returns the provider tuple, and derive `toProvideFn` / `toInjectFn` from it.',
+  provideQueryClient: TUPLE_PROVIDER_ACTION,
+  provideBearerAuthProvider: TUPLE_PROVIDER_ACTION,
+  provideWebSocketClient: `Build the socket with \`createWebSocketClient({ name, url, io })\`. ${TUPLE_PROVIDER_ACTION}`,
+};
+
+export const findRemovedExperimentalQueryHelpers = (sourceFile: ts.SourceFile) => {
+  const found: Array<{ name: string; line: number }> = [];
+
+  sourceFile.statements.forEach((statement) => {
+    if (
+      !ts.isImportDeclaration(statement) ||
+      !ts.isStringLiteral(statement.moduleSpecifier) ||
+      statement.moduleSpecifier.text !== '@ethlete/query' ||
+      !statement.importClause?.namedBindings ||
+      !ts.isNamedImports(statement.importClause.namedBindings)
+    ) {
+      return;
+    }
+
+    statement.importClause.namedBindings.elements.forEach((element) => {
+      const name = (element.propertyName ?? element.name).text;
+
+      if (name in REMOVED_EXPERIMENTAL_QUERY_HELPERS) {
+        found.push({ name, line: getLineNumber(element, sourceFile) });
+      }
+    });
+  });
+
+  return found;
+};

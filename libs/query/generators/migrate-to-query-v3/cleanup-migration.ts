@@ -2,7 +2,42 @@ import { Tree } from '@nx/devkit';
 import * as ts from 'typescript';
 import { MigrationScope } from './migration-scope.js';
 import { QueryV3MigrationReport } from './report.js';
-import { createSourceFile, ensureImportFromQuery, ensureNamedImports } from './shared.js';
+import {
+  REMOVED_EXPERIMENTAL_QUERY_HELPERS,
+  createSourceFile,
+  ensureImportFromQuery,
+  ensureNamedImports,
+  findRemovedExperimentalQueryHelpers,
+} from './shared.js';
+
+export const reportRemovedExperimentalQueryHelpers = (
+  tree: Tree,
+  scope: MigrationScope,
+  report: QueryV3MigrationReport,
+) => {
+  scope.visit(tree, (filePath) => {
+    if (!filePath.endsWith('.ts')) {
+      return;
+    }
+
+    const content = tree.read(filePath, 'utf-8');
+
+    if (!content?.includes('@ethlete/query')) {
+      return;
+    }
+
+    findRemovedExperimentalQueryHelpers(createSourceFile(content, filePath)).forEach(({ name, line }) => {
+      report.addWarning({
+        title: `Replace the removed helper ${name}`,
+        summary: `\`${name}\` came from the pre-v3 \`ExperimentalQuery\` namespace and is no longer exported by \`@ethlete/query\`, so this import does not compile. The migration does not rewrite it.`,
+        action: REMOVED_EXPERIMENTAL_QUERY_HELPERS[name]!,
+        locations: [{ filePath, line }],
+        source: 'cleanup-migration',
+        dedupeKey: `removed-experimental-helper:${filePath}:${name}`,
+      });
+    });
+  });
+};
 
 /**
  * Points existing devtools usage at the v3 components instead of deleting it.

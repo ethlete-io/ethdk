@@ -22,6 +22,8 @@ const LEGACY_HTTP_METHOD = {
   DELETE: 'delete',
 } as const;
 
+const LEGACY_GQL_METHODS: readonly string[] = ['gqlQuery', 'gqlMutate'];
+
 const HTTP_OPTION_NAMES: readonly string[] = ['reportProgress', 'responseType', 'transferCache', 'withCredentials'];
 
 type LegacyHttpMethod = (typeof LEGACY_HTTP_METHOD)[keyof typeof LEGACY_HTTP_METHOD];
@@ -36,6 +38,7 @@ type LegacyQueryCreatorInfo = {
   typeBody?: string;
   secure: boolean;
   httpOptions: Map<string, string>;
+  entity?: string;
 };
 
 const isLegacyHttpMethod = (value: string): value is LegacyHttpMethod => {
@@ -347,6 +350,17 @@ const analyzeLegacyQueryCreators = (
         return;
       }
 
+      if (oldClientNames.has(objectExpression.text) && LEGACY_GQL_METHODS.includes(methodExpression.text)) {
+        report.addManualReview({
+          title: `Rewrite the GraphQL creator ${node.name.text} by hand`,
+          summary: `${node.name.text} is built with \`${objectExpression.text}.${methodExpression.text}()\`. The migration only rewrites REST creators, so this one still calls a method the migrated client no longer has.`,
+          action: `Rebuild it on the v3 client with \`${methodExpression.text === 'gqlQuery' ? 'createGqlQueryViaPost' : 'createGqlMutationViaPost'}\` (or the \`ViaGet\` variant) and a \`gql\` document, then wrap it in \`createLegacyQueryCreator\` if its call sites stay on v2. See https://ethlete-sdk-docs.web.app/query/gql.`,
+          locations: [{ filePath, line: sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1 }],
+          source: 'legacy-query-creator-migration',
+          dedupeKey: `gql-creator:${filePath}:${node.name.text}`,
+        });
+      }
+
       if (!oldClientNames.has(objectExpression.text) || !isLegacyHttpMethod(methodExpression.text)) {
         ts.forEachChild(node, visit);
         return;
@@ -413,7 +427,11 @@ const analyzeLegacyQueryCreators = (
               info.httpOptions.set(property.name.text, property.name.text);
             }
 
-            if (property.name.text !== 'route' && !HTTP_OPTION_NAMES.includes(property.name.text)) {
+            if (property.name.text === 'entity') {
+              info.entity = property.name.text;
+            }
+
+            if (!['route', 'entity'].includes(property.name.text) && !HTTP_OPTION_NAMES.includes(property.name.text)) {
               warnUnreadableConfigValue(property, 'as a shorthand property');
             }
 
@@ -426,6 +444,10 @@ const analyzeLegacyQueryCreators = (
 
           if (property.name.text === 'route') {
             info.route = property.initializer.getText(sourceFile);
+          }
+
+          if (property.name.text === 'entity') {
+            info.entity = property.initializer.getText(sourceFile);
           }
 
           if (property.name.text === 'secure') {
@@ -485,6 +507,20 @@ const analyzeLegacyQueryCreators = (
 
       if (info.route) {
         creators.push(info);
+
+        if (info.entity) {
+          report.addFollowUp({
+            title: `Check the entity config carried onto ${toLegacyName(creatorName)}`,
+            summary: `${creatorName} had an \`entity\` config. It was moved onto the \`${toLegacyName(creatorName)}\` interop wrapper, which still writes to the EntityStore; the v3 creator \`${creatorName}\` does not, and v3 has no EntityStore.`,
+            action:
+              'Keep the call sites that rely on the store on the legacy wrapper. `set` now only runs on a real response, never on `prepare()` or a failure.',
+            locations: [
+              { filePath, line: sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1 },
+            ],
+            source: 'legacy-query-creator-migration',
+            dedupeKey: `entity-config:${filePath}:${creatorName}`,
+          });
+        }
       }
     }
 
@@ -726,7 +762,7 @@ const getTypeParameter = (creator: LegacyQueryCreatorInfo) => {
 const generateLegacyWrapper = (creator: LegacyQueryCreatorInfo, exportPrefix: string) => {
   // `name` is what lets a `prepare()` called outside an injection context name itself in the error
   // instead of surfacing as a bare NG0203.
-  return `/**\n * ${legacyQueryDeprecationTag(creator.name)}\n */\n${exportPrefix}const ${toLegacyName(creator.name)} = createLegacyQueryCreator({ name: '${toLegacyName(creator.name)}', creator: ${creator.name} });`;
+  return `/**\n * ${legacyQueryDeprecationTag(creator.name)}\n */\n${exportPrefix}const ${toLegacyName(creator.name)} = createLegacyQueryCreator({ name: '${toLegacyName(creator.name)}', creator: ${creator.name}${creator.entity ? `, entity: ${creator.entity}` : ''} });`;
 };
 
 type CreateAuthProvidersOptions = {
@@ -776,6 +812,15 @@ const createAuthProviders = ({
 
     tree.write(filePath, nextContent);
     createdProviders.push(filePath);
+
+    body.warnings.forEach((warning) => {
+      report.addWarning({
+        ...warning,
+        locations: [{ filePath }, ...(v2Config ? [{ filePath: v2Config.filePath, line: v2Config.line }] : [])],
+        source: 'legacy-query-creator-migration',
+        dedupeKey: `auth-provider-warning:${filePath}:${authProviderName}:${warning.title}`,
+      });
+    });
 
     if (body.isScaffolded) {
       report.addFollowUp({

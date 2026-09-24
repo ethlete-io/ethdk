@@ -11,7 +11,7 @@ type MigrationSchema = MigrationScopeOptions & {
 
 const SOURCE = 'query-opt-in-features';
 
-const CLIENT_FEATURE = 'withEthleteApiErrors';
+export const CLIENT_FEATURE = 'withEthleteApiErrors';
 const AUTH_FEATURE = 'withBearerAuthMultiTabSync';
 
 type ConfigEdit = {
@@ -20,6 +20,22 @@ type ConfigEdit = {
   text: string;
   features: string[];
 };
+
+export const reportClientErrorPipelineAdded = (
+  report: Pick<QueryOptInFeaturesMigrationReport, 'addFollowUp'>,
+  location: { filePath: string; line: number },
+  source: string,
+  summary = `\`${CLIENT_FEATURE}()\` was added so error parsing and retrying keep working exactly as before.`,
+) =>
+  report.addFollowUp({
+    title: 'Client kept the full error pipeline',
+    summary,
+    action:
+      'Narrow it: `withHtmlErrorParsing()` only for an API behind a proxy that answers HTML, `withSymfonyErrors()` only for violation-list responses, `withDefaultRetry()` only if failed requests should retry themselves.',
+    locations: [location],
+    source,
+    dedupeKey: 'client-error-pipeline',
+  });
 
 const isMigratableFile = (filePath: string) => /\.(ts|mts|cts)$/.test(filePath) && !filePath.endsWith('.d.ts');
 
@@ -130,15 +146,7 @@ const collectEdits = (filePath: string, sourceFile: ts.SourceFile, report: Query
         } else if (isClient) {
           const feature = `${CLIENT_FEATURE}()`;
 
-          report.addFollowUp({
-            title: 'Client kept the full error pipeline',
-            summary: `\`${CLIENT_FEATURE}()\` was added so error parsing and retrying keep working exactly as before.`,
-            action:
-              'Narrow it: `withHtmlErrorParsing()` only for an API behind a proxy that answers HTML, `withSymfonyErrors()` only for violation-list responses, `withDefaultRetry()` only if failed requests should retry themselves.',
-            locations: [{ filePath, line }],
-            source: SOURCE,
-            dedupeKey: 'client-error-pipeline',
-          });
+          reportClientErrorPipelineAdded(report, { filePath, line }, SOURCE);
 
           edits.push({
             start: config.getStart(sourceFile),

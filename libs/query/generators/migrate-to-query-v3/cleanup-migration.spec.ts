@@ -328,4 +328,23 @@ export const second = () => getTeams.prepare();
     expect(result).toContain('getTeams.prepare({})');
     expect(result).not.toContain('.prepare()');
   });
+  it('reports imports of ExperimentalQuery helpers that v3 no longer exports', async () => {
+    tree.write(
+      'app.config.ts',
+      `
+import { createQueryClientConfig, provideQueryClient as provideClient } from '@ethlete/query';
+
+export const clientConfig = createQueryClientConfig({ name: 'api', baseUrl: 'https://api.example.com' });
+export const appConfig = { providers: [provideClient(clientConfig)] };
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const report = readFile('query-v3-migration-tasks.md');
+
+    expect(report).toContain('Replace the removed helper createQueryClientConfig');
+    expect(report).toContain('Replace the removed helper provideQueryClient');
+    expect(report).toContain('- app.config.ts:1');
+  });
 });

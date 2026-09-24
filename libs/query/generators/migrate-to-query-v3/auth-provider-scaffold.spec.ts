@@ -73,6 +73,7 @@ export const getMe = apiClient.get({ route: '/me', secure: true });
     expect(client).toContain("name: 'et-auth',");
     expect(client).toContain("domain: '.example.com',");
     expect(client).toContain('expiresInDays: 30,');
+    expect(client).toContain('refreshStrategy: 1000,');
     expect(client).not.toContain('refreshBuffer');
     expect(client).toContain('// Derived from the v2 BearerAuthProvider in auth.ts:4.');
   });
@@ -105,5 +106,26 @@ export const provider = new V2BearerAuthProvider({
 
     expect(client).toContain('withPersistentAuth({');
     expect(client).toContain('name: cookieName,');
+  });
+  it('pins a non-literal refreshBuffer, maps the cookie options and warns about cookieEnabled', async () => {
+    writeAuth(`export const provider = new V2BearerAuthProvider({
+  refreshConfig: {
+    queryCreator: refresh,
+    cookieName: 'et-auth',
+    cookiePath: '/app',
+    cookieSameSite: 'strict',
+    cookieEnabled: false,
+    refreshBuffer: REFRESH_BUFFER,
+  },
+});`);
+
+    await migration(tree, { skipFormat: true });
+
+    const client = readFile('client.ts');
+
+    expect(client).toContain('refreshStrategy: { minBufferMs: REFRESH_BUFFER, maxBufferMs: REFRESH_BUFFER },');
+    expect(client).toContain("path: '/app',");
+    expect(client).toContain("sameSite: 'strict',");
+    expect(readFile('query-v3-migration-tasks.md')).toContain('Replace the v2 cookieEnabled switch');
   });
 });

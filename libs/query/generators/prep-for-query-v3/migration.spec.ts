@@ -427,6 +427,26 @@ export const canCache = shouldCacheQuery({});
   });
 
   describe('ExperimentalQuery namespace replacement', () => {
+    it('warns about ExperimentalQuery helpers that have no v3 export', async () => {
+      tree.write(
+        'apps/example/src/app/app.config.ts',
+        `
+import { ExperimentalQuery } from '@ethlete/query';
+
+export const clientConfig = ExperimentalQuery.createQueryClientConfig({ name: 'api', baseUrl: '/api' });
+export const providers = [ExperimentalQuery.provideQueryClient(clientConfig), ExperimentalQuery.createQuery];
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const warnings = consoleWarnSpy.mock.calls.flat().join('\n');
+
+      expect(warnings).toContain('apps/example/src/app/app.config.ts:1 createQueryClientConfig');
+      expect(warnings).toContain('apps/example/src/app/app.config.ts:1 provideQueryClient');
+      expect(warnings).not.toContain('createQuery:');
+    });
+
     it('should replace namespace import with direct imports', async () => {
       tree.write(
         'apps/example/src/app/service.ts',

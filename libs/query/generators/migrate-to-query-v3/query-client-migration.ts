@@ -1,6 +1,7 @@
 import { Tree } from '@nx/devkit';
-import { MigrationScope } from './migration-scope.js';
 import * as ts from 'typescript';
+import { CLIENT_FEATURE, reportClientErrorPipelineAdded } from '../migrate-query-opt-in-features/migration.js';
+import { MigrationScope } from './migration-scope.js';
 import { QueryV3MigrationReport } from './report.js';
 import {
   capitalizeFirstLetter,
@@ -224,6 +225,7 @@ const migrateQueryClientToConfig = ({ content, filePath, renamesOut, report }: M
         }
 
         reportDroppedClientOptions({ configArgument, sourceFile, filePath, report });
+        reportChangedClientDefaults({ configArgument, sourceFile, filePath, report });
 
         replacements.push({
           start: node.getStart(sourceFile),
@@ -276,6 +278,7 @@ const removeQueryClientImport = (content: string, keepLegacyClient: boolean) => 
     'createPostQuery',
     'createPutQuery',
     'createQueryClient',
+    CLIENT_FEATURE,
   ];
 
   if (!queryImportNode?.importClause?.namedBindings || !ts.isNamedImports(queryImportNode.importClause.namedBindings)) {
@@ -362,6 +365,17 @@ const renameVariables = (content: string, renames: Map<string, string>) => {
   return result;
 };
 
+const WINDOW_FOCUS_REPLACEMENT =
+  'Opt in per query: `withPolling({ interval, refetchOnFocus: true })` on a polled query, `withAutoRefresh({ onSignalChanges: [windowFocusSignal] })` on any other, or `injectMyClient().refreshQueriesInUse()` from a focus listener.';
+
+const SMART_POLLING_REPLACEMENT =
+  'Opt in per query: `withPolling({ interval, pauseWhileHidden: true })`. Without it v3 keeps polling in a hidden tab.';
+
+const V2_ON_BY_DEFAULT_REQUEST_OPTIONS: Record<string, string> = {
+  autoRefreshQueriesOnWindowFocus: WINDOW_FOCUS_REPLACEMENT,
+  enableSmartPolling: SMART_POLLING_REPLACEMENT,
+};
+
 /**
  * What each v2 client option turns into, or why it has nowhere to go.
  *
@@ -370,10 +384,8 @@ const renameVariables = (content: string, renames: Map<string, string>) => {
  * report from production.
  */
 const DROPPED_CLIENT_OPTIONS: Record<string, string> = {
-  'request.autoRefreshQueriesOnWindowFocus':
-    'No direct equivalent. Re-run the affected queries yourself - `withAutoRefresh({ onSignalChanges: [windowFocusSignal] })` per query, or `injectMyClient().refreshQueriesInUse()` from a focus listener.',
-  'request.enableSmartPolling':
-    'No direct equivalent. `withPolling({ interval })` polls unconditionally; pause it yourself when the tab is hidden if that matters.',
+  'request.autoRefreshQueriesOnWindowFocus': WINDOW_FOCUS_REPLACEMENT,
+  'request.enableSmartPolling': SMART_POLLING_REPLACEMENT,
   'logging.preparedQuerySubscriptions':
     'Removed. Use the v3 devtools (`provideQueryDevtools()`) or `withLogging({ logFn })` on the queries you want to trace.',
   'logging.queryStateChanges':
@@ -461,6 +473,15 @@ const reportDroppedClientOptions = ({
           return;
         }
 
+        if (
+          name === 'request' &&
+          nested.name.text in V2_ON_BY_DEFAULT_REQUEST_OPTIONS &&
+          ts.isPropertyAssignment(nested) &&
+          nested.initializer.kind === ts.SyntaxKind.FalseKeyword
+        ) {
+          return;
+        }
+
         raise(`${name}.${nested.name.text}`, nested);
       });
 
@@ -470,6 +491,83 @@ const reportDroppedClientOptions = ({
     if (!migrated.has(name)) {
       raise(name, property);
     }
+  });
+};
+
+const reportChangedClientDefaults = ({
+  configArgument,
+  sourceFile,
+  filePath,
+  report,
+}: ReportDroppedClientOptionsInput) => {
+  const location = {
+    filePath,
+    line: sourceFile.getLineAndCharacterOfPosition(configArgument.getStart(sourceFile)).line + 1,
+  };
+  const requestProperty = findProperty(configArgument, 'request');
+  const requestConfig =
+    requestProperty &&
+    ts.isPropertyAssignment(requestProperty) &&
+    ts.isObjectLiteralExpression(requestProperty.initializer)
+      ? requestProperty.initializer
+      : undefined;
+  const hasUnreadableRequestConfig =
+    (!!requestProperty && !requestConfig) || !!requestConfig?.properties.some(ts.isSpreadAssignment);
+
+  reportClientErrorPipelineAdded(
+    report,
+    location,
+    'query-client-migration',
+    `\`${CLIENT_FEATURE}()\` was added so failed requests still retry and Symfony / HTML error bodies are still parsed, as they were by default in v2.`,
+  );
+
+  if (!requestConfig || !findProperty(requestConfig, 'retryFn')) {
+    report.addWarning({
+      title: 'Check the retry behaviour of the migrated client',
+      summary:
+        'v2 retried every request method on a 5xx (500 included), 408, 425 and 429, up to four times with a linear delay. The v3 default policy that `withEthleteApiErrors()` installs retries three times with an exponential, jittered delay, never retries a `POST`, a `PATCH` or a plain `500`, and also retries a connection failure.',
+      action:
+        'Accept the v3 policy, or pass `withEthleteApiErrors({ retry: { maxAttempts, retryableStatusCodes, retryNonIdempotent } })` - only set `retryNonIdempotent` for endpoints that deduplicate on their own.',
+      locations: [location],
+      source: 'query-client-migration',
+      dedupeKey: `changed-retry-default:${filePath}`,
+    });
+  }
+
+  const cacheAdapter = requestConfig && findProperty(requestConfig, 'cacheAdapter');
+
+  if (cacheAdapter) {
+    report.addWarning({
+      title: 'Check the carried-over cacheAdapter',
+      summary:
+        'The v2 `cacheAdapter` was carried over as is and still sets the freshness TTL: a TTL of `0` means an `execute({ options: { allowCache: true } })` always hits the server, as a v2 `execute()` did. Two things differ: v3 passes Angular `HttpHeaders` (read them with `headers.get(name)`) where v2 passed a plain record, and v3 keeps an entry for `keepUnusedFor` (5 minutes) after its last consumer, rendering the old response on a remount while it refetches.',
+      action:
+        'Rewrite an adapter that reads headers for `HttpHeaders`. If the adapter was meant to switch caching off, also set `keepUnusedFor: 0` on the client.',
+      locations: [
+        { filePath, line: sourceFile.getLineAndCharacterOfPosition(cacheAdapter.getStart(sourceFile)).line + 1 },
+      ],
+      source: 'query-client-migration',
+      dedupeKey: `carried-cache-adapter:${filePath}`,
+    });
+  }
+
+  if (hasUnreadableRequestConfig) {
+    return;
+  }
+
+  Object.entries(V2_ON_BY_DEFAULT_REQUEST_OPTIONS).forEach(([option, action]) => {
+    if (requestConfig && findProperty(requestConfig, option)) {
+      return;
+    }
+
+    report.addWarning({
+      title: `Restore the v2 default "request.${option}"`,
+      summary: `The v2 client did not set \`request.${option}\`, so it ran with the v2 default \`true\`. v3 has no client-wide equivalent and the behaviour is off for every migrated query.`,
+      action,
+      locations: [location],
+      source: 'query-client-migration',
+      dedupeKey: `dropped-client-default:${filePath}:${option}`,
+    });
   });
 };
 
@@ -525,6 +623,8 @@ const migrateConfigObject = (configArgument: ts.ObjectLiteralExpression, node: t
       }
     }
   }
+
+  nextConfig.push(`features: [${CLIENT_FEATURE}()]`);
 
   return `createQueryClient({\n  ${nextConfig.join(',\n  ')}\n})`;
 };

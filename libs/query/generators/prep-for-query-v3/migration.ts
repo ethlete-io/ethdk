@@ -1,5 +1,10 @@
 import { Tree, formatFiles, visitNotIgnoredFiles } from '@nx/devkit';
 import * as ts from 'typescript';
+import {
+  REMOVED_EXPERIMENTAL_QUERY_HELPERS,
+  createSourceFile,
+  findRemovedExperimentalQueryHelpers,
+} from '../migrate-to-query-v3/shared.js';
 
 //#region Migration main
 
@@ -286,6 +291,7 @@ function updateImports(
 
 function replaceExperimentalQueryNamespace(tree: Tree): void {
   const updatedFiles: string[] = [];
+  const removedHelpers: string[] = [];
   let totalReplacements = 0;
 
   visitNotIgnoredFiles(tree, '', (filePath) => {
@@ -304,7 +310,17 @@ function replaceExperimentalQueryNamespace(tree: Tree): void {
       updatedFiles.push(filePath);
       totalReplacements += result.replacementCount;
     }
+
+    findRemovedExperimentalQueryHelpers(createSourceFile(result.content, filePath)).forEach(({ name, line }) => {
+      removedHelpers.push(`   - ${filePath}:${line} ${name}: ${REMOVED_EXPERIMENTAL_QUERY_HELPERS[name]}`);
+    });
   });
+
+  if (removedHelpers.length > 0) {
+    console.warn(
+      `\n⚠️ These ExperimentalQuery helpers no longer exist in v3 and were left for you to replace by hand (migrate-to-query-v3 lists them again in its report):\n${removedHelpers.join('\n')}`,
+    );
+  }
 
   if (updatedFiles.length > 0) {
     console.log(

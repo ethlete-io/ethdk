@@ -34,6 +34,17 @@ export type V2BearerAuthConfig = {
 
   /** Source text of `refreshConfig.expiresInPropertyName`. */
   expiresInPropertyName?: string;
+
+  cookiePath?: string;
+  cookieSameSite?: string;
+  cookieEnabled?: string;
+  refreshBuffer?: string;
+};
+
+export type AuthScaffoldWarning = {
+  title: string;
+  summary: string;
+  action: string;
 };
 
 const REFRESH_CONFIG_KEYS = new Set([
@@ -44,6 +55,10 @@ const REFRESH_CONFIG_KEYS = new Set([
   'cookieDomain',
   'cookieExpiresInDays',
   'expiresInPropertyName',
+  'cookiePath',
+  'cookieSameSite',
+  'cookieEnabled',
+  'refreshBuffer',
 ]);
 
 export const collectV2BearerAuthConfigs = (tree: Tree, scope: MigrationScope) => {
@@ -149,12 +164,15 @@ const REFRESH_QUERY_KEY = 'tokenRefresh';
  * than presented as finished.
  */
 export const renderAuthProviderBody = (config: V2BearerAuthConfig | undefined) => {
+  const warnings: AuthScaffoldWarning[] = [];
+
   if (!config?.refreshCreatorName) {
     return {
       queries: '  queries: [],',
       features: '',
       importsNeeded: [] as string[],
       isScaffolded: false,
+      warnings,
     };
   }
 
@@ -178,6 +196,19 @@ export const renderAuthProviderBody = (config: V2BearerAuthConfig | undefined) =
     refreshEntries.push(`      expiresInPropertyName: ${config.expiresInPropertyName},`);
   }
 
+  if (config.refreshBuffer) {
+    refreshEntries.push(`      refreshStrategy: ${renderRefreshStrategy(config.refreshBuffer)},`);
+  }
+
+  if (config.cookieName && config.cookieEnabled && config.cookieEnabled !== 'true') {
+    warnings.push({
+      title: 'Replace the v2 cookieEnabled switch',
+      summary: `The v2 provider set \`cookieEnabled: ${config.cookieEnabled}\`. \`withPersistentAuth\` has no switch for it: it always keeps the refresh token in the cookie, and \`setRememberMe(false)\` only turns that cookie into a session cookie. v2's \`enableCookie()\` / \`disableCookie()\` have no v3 counterpart either.`,
+      action:
+        'If the cookie was only written after an opt-in (a "remember me" box), drive `setRememberMe()` from it. If it was never written, remove `withPersistentAuth` from the scaffold.',
+    });
+  }
+
   const queries = [
     '  queries: [',
     `    // Derived from the v2 BearerAuthProvider in ${config.filePath}:${config.line}. Verify before shipping.`,
@@ -191,13 +222,15 @@ export const renderAuthProviderBody = (config: V2BearerAuthConfig | undefined) =
   const importsNeeded = ['withRefreshQuery'];
 
   if (!config.cookieName) {
-    return { queries, features: '', importsNeeded, isScaffolded: true };
+    return { queries, features: '', importsNeeded, isScaffolded: true, warnings };
   }
 
   const cookieEntries = [`      name: ${config.cookieName},`];
 
   if (config.cookieDomain) cookieEntries.push(`      domain: ${config.cookieDomain},`);
   if (config.cookieExpiresInDays) cookieEntries.push(`      expiresInDays: ${config.cookieExpiresInDays},`);
+  if (config.cookiePath) cookieEntries.push(`      path: ${config.cookiePath},`);
+  if (config.cookieSameSite) cookieEntries.push(`      sameSite: ${config.cookieSameSite},`);
 
   const features = [
     '  features: [',
@@ -216,5 +249,14 @@ export const renderAuthProviderBody = (config: V2BearerAuthConfig | undefined) =
 
   importsNeeded.push('withPersistentAuth');
 
-  return { queries, features, importsNeeded, isScaffolded: true };
+  return { queries, features, importsNeeded, isScaffolded: true, warnings };
+};
+
+// A v3 `refreshStrategy` number from 0 to 1 is a fraction of the token lifetime, not milliseconds.
+const renderRefreshStrategy = (refreshBuffer: string) => {
+  const value = Number(refreshBuffer.replace(/_/g, ''));
+
+  return Number.isFinite(value) && value > 1
+    ? refreshBuffer
+    : `{ minBufferMs: ${refreshBuffer}, maxBufferMs: ${refreshBuffer} }`;
 };
