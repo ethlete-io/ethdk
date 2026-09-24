@@ -350,14 +350,6 @@ const recommendedTs = {
     // Angular language service completions for the rest of the file
     'ethlete/no-template-literal-before-inline-template': 'error',
 
-    // ── Angular outputs ─────────────────────────────────────────────────────
-
-    // No on-prefixed outputs (onSelectDate → selectDate)
-    '@angular-eslint/no-output-on-prefix': 'error',
-
-    // No outputs named after native DOM events (change, click, etc.)
-    '@angular-eslint/no-output-native': 'error',
-
     // ── Angular components ──────────────────────────────────────────────────
 
     // Require ChangeDetectionStrategy.OnPush on Angular <= 21, where it is opt-in
@@ -403,6 +395,23 @@ const recommendedTs = {
 };
 
 /**
+ * `@angular-eslint/*` rules for TypeScript files in Angular projects; the base config must register
+ * the `@angular-eslint` plugin.
+ *
+ * @type {import('eslint').Linter.Config}
+ */
+const recommendedAngularTs = {
+  files: ['**/*.ts'],
+  rules: {
+    // No on-prefixed outputs (onSelectDate → selectDate)
+    '@angular-eslint/no-output-on-prefix': 'error',
+
+    // No outputs named after native DOM events (change, click, etc.)
+    '@angular-eslint/no-output-native': 'error',
+  },
+};
+
+/**
  * Flat config entries for Angular HTML template files.
  * @type {import('eslint').Linter.Config}
  */
@@ -444,4 +453,4 @@ const recommendedSpec = {
   },
 };
 
-module.exports = { recommendedTs, recommendedTemplate, recommendedSpec };
+module.exports = { recommendedTs, recommendedAngularTs, recommendedTemplate, recommendedSpec };

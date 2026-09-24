@@ -30,6 +30,7 @@ export default [
     ignores: ['**/*.spec.ts', '**/*.test.ts', '**/test-helpers.ts', '**/testing/**', '**/generators/**'],
     rules: {
       ...ethlete.configs.recommendedTs.rules,
+      ...ethlete.configs.recommendedAngularTs.rules,
       'ethlete/template-member-accessibility': 'off',
       'max-params': 'off',
       '@angular-eslint/directive-selector': [

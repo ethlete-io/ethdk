@@ -32,6 +32,7 @@ export default [
     ignores: ['**/*.spec.ts', '**/*.test.ts', '**/test-helpers.ts', '**/testing/**', '**/generators/**'],
     rules: {
       ...ethlete.configs.recommendedTs.rules,
+      ...ethlete.configs.recommendedAngularTs.rules,
       '@angular-eslint/directive-selector': [
         'error',
         {

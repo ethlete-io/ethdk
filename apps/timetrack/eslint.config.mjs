@@ -13,6 +13,7 @@ export default [
     ignores: ['**/*.spec.ts', '**/*.test.ts'],
     rules: {
       ...ethlete.configs.recommendedTs.rules,
+      ...ethlete.configs.recommendedAngularTs.rules,
       '@angular-eslint/directive-selector': [
         'error',
         {

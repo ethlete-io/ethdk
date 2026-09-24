@@ -22,13 +22,14 @@ export default [
 ];
 ```
 
-`recommended` is an array of three entries, also exported individually for granular composition:
+`recommended` is an array of four entries, also exported individually for granular composition:
 
-| Config                | Applies to     | Contents                                                                                                                         |
-| --------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `recommendedTs`       | `**/*.ts`      | All custom `ethlete/*` rules plus the baseline TypeScript/JavaScript rules below                                                 |
-| `recommendedTemplate` | `**/*.html`    | Angular template rules (`@angular-eslint/template/*`, `ethlete/prefer-static-boolean-properties`, `ethlete/require-form-submit`) |
-| `recommendedSpec`     | `**/*.spec.ts` | Relaxes non-null assertions, async test code, and DOM/platform access used by test fixtures and browser assertions               |
+| Config                 | Applies to     | Contents                                                                                                                         |
+| ---------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `recommendedTs`        | `**/*.ts`      | All custom `ethlete/*` rules plus the baseline TypeScript/JavaScript rules below                                                 |
+| `recommendedAngularTs` | `**/*.ts`      | The `@angular-eslint/*` TypeScript rules below. Leave it out of a non-Angular (e.g. NestJS) project                              |
+| `recommendedTemplate`  | `**/*.html`    | Angular template rules (`@angular-eslint/template/*`, `ethlete/prefer-static-boolean-properties`, `ethlete/require-form-submit`) |
+| `recommendedSpec`      | `**/*.spec.ts` | Relaxes non-null assertions, async test code, and DOM/platform access used by test fixtures and browser assertions               |
 
 The `ethlete` plugin itself is pre-wired into the configs - you don't need a `plugins:` entry for it.
 
@@ -50,6 +51,7 @@ export default [
     ignores: ['**/*.spec.ts', '**/generators/**'],
     rules: {
       ...ethlete.configs.recommendedTs.rules,
+      ...ethlete.configs.recommendedAngularTs.rules,
       // project-specific overrides / additions
       '@angular-eslint/component-selector': [
         'error',
@@ -63,7 +65,7 @@ export default [
 ```
 
 ::: warning Bring your own base config
-`recommendedTs` and `recommendedTemplate` set severities for `@typescript-eslint/*` and `@angular-eslint/*` rules but do **not** register those plugins or parsers - your base config must (Nx's `flat/angular` / `flat/angular-template` presets do). Peer requirements: Angular and Angular ESLint >= 21, ESLint >= 9, TypeScript >= 5.9 and `@typescript-eslint/eslint-plugin >= 8`.
+`recommendedTs` sets severities for `@typescript-eslint/*` rules, and `recommendedAngularTs` and `recommendedTemplate` for `@angular-eslint/*` rules, but none of them register those plugins or parsers - your base config must (Nx's `flat/angular` / `flat/angular-template` presets do). A non-Angular project (NestJS, Node tooling) uses `recommendedTs` and `recommendedSpec` alone and needs no `@angular-eslint` plugin. Peer requirements: Angular and Angular ESLint >= 21, ESLint >= 9, TypeScript >= 5.9 and `@typescript-eslint/eslint-plugin >= 8`.
 :::
 
 ## What `recommended` enforces beyond the custom rules
@@ -75,7 +77,7 @@ Besides the [custom `ethlete/*` rules](/eslint/rules), `recommendedTs` configure
 - **Code style**: `const` by default, no `var`, one declaration per statement, `===` / `!==` only, max two function parameters.
 - **Banned syntax** (`no-restricted-syntax`): `function` declarations/expressions, arrow-function class properties, `static` members (except `ngTemplateContextGuard`, which Angular's template type checker requires to be static), `#`-private members, constructor injection, legacy Angular lifecycle hooks (`ngOnChanges`, `ngAfterViewInit`, …), `@Injectable` and `@Service` (use `defineProvider` / `defineRootProvider` from `@ethlete/core`), route guards and resolvers, barrel (`index`) imports, and `on`-prefixed method names.
 - **Restricted globals**: direct `document` / `window` access - use `inject(DOCUMENT)` or a dedicated injection token.
-- **Angular outputs**: no `on` prefix (`@angular-eslint/no-output-on-prefix`), no native DOM event names (`@angular-eslint/no-output-native`).
+- **Angular outputs** (`recommendedAngularTs`): no `on` prefix (`@angular-eslint/no-output-on-prefix`), no native DOM event names (`@angular-eslint/no-output-native`).
 
 `recommendedTemplate` adds four template rules: no `$any()` (`@angular-eslint/template/no-any`), prefer plain attributes over property bindings for static strings (`@angular-eslint/template/prefer-static-string-properties`, e.g. `etIcon="foo"` instead of `[etIcon]="'foo'"`), and the same for static booleans (the custom [`ethlete/prefer-static-boolean-properties`](/eslint/rules#angular-templates), e.g. `isReadonly` instead of `[isReadonly]="true"` - suggestion-only and never offered for native boolean properties or structural directives). It also adds [`ethlete/require-form-submit`](/eslint/rules#angular-templates), which requires every `<form>` to handle its own submission.
 

@@ -47,6 +47,7 @@ const lint = (code, settings) => {
         },
         ...(settings ? { settings } : {}),
       },
+      plugin.configs.recommendedAngularTs,
     ],
     { filename: 'test.ts' },
   );
@@ -399,6 +400,28 @@ test('no-output-on-prefix: output named onSelectDate is flagged', () => {
 test('no-output-on-prefix: output named selectDate is valid', () => {
   const msgs = lint(`class Foo { selectDate = output(); }`);
   expect(ruleIds(msgs)).not.toContain('@angular-eslint/no-output-on-prefix');
+});
+
+test('recommendedTs lints a non-Angular project that registers no @angular-eslint plugin', () => {
+  const linter = new Linter({ configType: 'flat' });
+  const config = [
+    {
+      ...plugin.configs.recommendedTs,
+      plugins: { ...plugin.configs.recommendedTs.plugins, '@typescript-eslint': tsPlugin },
+      languageOptions: { parser: tsParser, ecmaVersion: 2022, sourceType: 'module' },
+    },
+    plugin.configs.recommendedSpec,
+  ];
+
+  expect(() => linter.verify(`export const port = 3000;`, config, { filename: 'main.ts' })).not.toThrow();
+});
+
+test('recommended includes the Angular TypeScript rules', () => {
+  expect(plugin.configs.recommended).toContain(plugin.configs.recommendedAngularTs);
+  expect(Object.keys(plugin.configs.recommendedAngularTs.rules)).toEqual([
+    '@angular-eslint/no-output-on-prefix',
+    '@angular-eslint/no-output-native',
+  ]);
 });
 
 // ── no-restricted-syntax: on-prefixed method names ────────────────────────────

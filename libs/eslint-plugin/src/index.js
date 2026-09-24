@@ -61,7 +61,7 @@ const noLegacyQueryImport = require('./rules/no-legacy-query-import');
 const noAsyncAwait = require('./rules/no-async-await');
 const noEnum = require('./rules/no-enum');
 const takeUntilDestroyedLast = require('./rules/take-until-destroyed-last');
-const { recommendedTs, recommendedTemplate, recommendedSpec } = require('./configs/recommended');
+const { recommendedTs, recommendedAngularTs, recommendedTemplate, recommendedSpec } = require('./configs/recommended');
 const { version } = require('../package.json');
 
 /** @type {import('eslint').ESLint.Plugin} */
@@ -150,6 +150,8 @@ const recommendedTemplateWithPlugin = {
 const configs = {
   /** TypeScript rules (merged into a files: ['**\/*.ts'] block) */
   recommendedTs: recommendedTsWithPlugin,
+  /** `@angular-eslint/*` rules for TypeScript files (files: ['**\/*.ts']) */
+  recommendedAngularTs,
   /** Angular template rules (merged into a files: ['**\/*.html'] block) */
   recommendedTemplate: recommendedTemplateWithPlugin,
   /** Relaxed rules for spec files (files: ['**\/*.spec.ts']) */
@@ -158,7 +160,7 @@ const configs = {
    * Both together as a flat array — the most common usage:
    *   export default [...baseConfig, ...ethlete.configs.recommended]
    */
-  recommended: [recommendedTsWithPlugin, recommendedTemplateWithPlugin, recommendedSpec],
+  recommended: [recommendedTsWithPlugin, recommendedAngularTs, recommendedTemplateWithPlugin, recommendedSpec],
 };
 
 const ethletePlugin = { ...plugin, configs };
