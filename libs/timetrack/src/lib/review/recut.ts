@@ -99,6 +99,31 @@ export const backgroundTest = (backgroundProjects: readonly string[] | undefined
   };
 };
 
+const lostMsOf = (stretch: BehindStretch) => stretch.durationMs ?? stretch.to.getTime() - stretch.from.getTime();
+
+/** The band spans the gaps between the pieces, so `durationMs` must stay the sum of what the pieces lost. */
+const joinOneTicket = (stretches: readonly BehindStretch[]): BehindStretch[] => {
+  const byTicket = new Map<string, BehindStretch>();
+
+  for (const stretch of joinTouching(stretches)) {
+    const key = `${stretch.laneKey}\n${stretch.issueKey}`;
+    const band = byTicket.get(key);
+
+    byTicket.set(
+      key,
+      band
+        ? {
+            ...band,
+            to: stretch.to > band.to ? stretch.to : band.to,
+            durationMs: lostMsOf(band) + lostMsOf(stretch),
+          }
+        : stretch,
+    );
+  }
+
+  return [...byTicket.values()].sort((a, b) => a.from.getTime() - b.from.getTime());
+};
+
 /**
  * Cuts the day's background rows against the rows the reviewer ended up with, and reports what they
  * lost as bands drawn behind them.
@@ -119,7 +144,7 @@ export const recutReviewedRows = (options: {
   const isBackground = backgroundTest(options.backgroundProjects);
 
   if (!options.rows.some(isBackground)) {
-    return { rows: [...options.rows], behind: [...options.behind] };
+    return { rows: [...options.rows], behind: joinOneTicket(options.behind) };
   }
 
   const covered = options.rows.filter((row) => !isBackground(row) && !takesNothing(row));
@@ -146,6 +171,8 @@ export const recutReviewedRows = (options: {
 
   return {
     rows,
-    behind: meetLaneRows({ behind: joinTouching([...options.behind, ...lost]), rows, round: options.round }),
+    behind: joinOneTicket(
+      meetLaneRows({ behind: joinTouching([...options.behind, ...lost]), rows, round: options.round }),
+    ),
   };
 };

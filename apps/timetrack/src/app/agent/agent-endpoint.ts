@@ -309,6 +309,13 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         targetMs: current.check.targetMs ?? 0,
         unattributedMs: current.check.unattributedMs,
         warnings: current.check.warnings,
+        behind: current.behind.map((stretch) => ({
+          fromMs: stretch.from.getTime(),
+          toMs: stretch.to.getTime(),
+          issueKey: stretch.issueKey,
+          laneKey: stretch.laneKey,
+          durationMs: stretch.durationMs ?? stretch.to.getTime() - stretch.from.getTime(),
+        })),
       })),
     );
 

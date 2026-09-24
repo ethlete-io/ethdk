@@ -142,7 +142,7 @@ export const appointmentOf = (options: {
  * a background project for them, and how many of them there are.
  */
 export const behindLabel = (stretch: BehindStretch) =>
-  `${stretch.issueKey} · in the background · ${formatDurationMs(stretch.to.getTime() - stretch.from.getTime())}`;
+  `${stretch.issueKey} · in the background · ${formatDurationMs(stretch.durationMs ?? stretch.to.getTime() - stretch.from.getTime())}`;
 
 /**
  * What a band two rungs named different work for adds to its label. The key it books leads, so the band

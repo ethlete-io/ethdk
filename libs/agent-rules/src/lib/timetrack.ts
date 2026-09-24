@@ -215,6 +215,7 @@ export type TimetrackDayRows = {
   targetMs: number;
   unattributedMs: number;
   warnings: { kind: string; detail: string }[];
+  behind?: { fromMs: number; toMs: number; issueKey: string; laneKey: string; durationMs: number }[];
 };
 
 /** One change to one row, named by the id `timetrackDayRows` answered. */

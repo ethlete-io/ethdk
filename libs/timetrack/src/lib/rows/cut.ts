@@ -89,6 +89,11 @@ export type BehindStretch = {
   issueKey: string;
   /** The checkout the band ran in, which is the lane it is drawn in. */
   laneKey: string;
+  /**
+   * How much of the span the ticket really lost, where the stretch was joined across time it lost
+   * none of. Absent, it lost the whole span.
+   */
+  durationMs?: number;
 };
 
 export type CutResult = {

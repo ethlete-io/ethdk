@@ -308,6 +308,17 @@ export type AgentApiDayRows = {
   /** Observed time nothing has named, which is what the day still asks about. */
   unattributedMs: number;
   warnings: DayWarning[];
+  /** The stretches a foreground row took from a background row, drawn as hatched bands in its lane. */
+  behind: AgentApiBehindStretch[];
+};
+
+export type AgentApiBehindStretch = {
+  fromMs: number;
+  toMs: number;
+  issueKey: string;
+  laneKey: string;
+  /** What the ticket lost inside the span, which is less than the span where it was joined across gaps. */
+  durationMs: number;
 };
 
 /**

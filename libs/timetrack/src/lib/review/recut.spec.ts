@@ -254,4 +254,36 @@ describe('recutReviewedRows', () => {
     expect(result.rows).toContain(untouched);
     expect(result.behind).toEqual([]);
   });
+
+  it('joins the pieces one ticket ran behind into one band that says only the minutes it lost', () => {
+    const piece = (from: string, to: string) => ({ from: at(from), to: at(to), issueKey: 'ET-772', laneKey: SDK });
+    const rows = [
+      row({ issueKey: 'FIFAGG-1', from: '09:45', to: '13:45' }),
+      row({ issueKey: 'ET-772', from: '13:45', to: '14:45' }),
+      row({ issueKey: 'FIFAGG-2', from: '14:45', to: '17:45' }),
+      row({ issueKey: 'ET-772', from: '17:45', to: '19:00' }),
+    ];
+    const result = recut({
+      rows,
+      behind: [piece('09:45', '11:30'), piece('12:15', '13:00'), piece('13:15', '13:45'), piece('14:45', '17:45')],
+    });
+
+    expect(spans(result.behind)).toEqual(['09:45-17:45']);
+    expect(result.behind[0]?.durationMs).toBe(6 * 60 * 60 * 1000);
+    expect(result.rows).toEqual(rows);
+  });
+
+  it('keeps the pieces of two tickets, or of two lanes, apart, on a day no background row is left on', () => {
+    const result = recut({
+      rows: [],
+      behind: [
+        { from: at('09:00'), to: at('10:00'), issueKey: 'ET-772', laneKey: SDK },
+        { from: at('11:00'), to: at('12:00'), issueKey: 'ET-773', laneKey: SDK },
+        { from: at('13:00'), to: at('14:00'), issueKey: 'ET-772', laneKey: 'repo:/dev/other' },
+        { from: at('15:00'), to: at('16:00'), issueKey: 'ET-772', laneKey: SDK },
+      ],
+    });
+
+    expect(spans(result.behind)).toEqual(['09:00-16:00', '11:00-12:00', '13:00-14:00']);
+  });
 });
