@@ -73,7 +73,8 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
   - 1 real: legacy `QueryForm.observe()` re-emitted its unchanged value one debounce later, a second identical request; now skipped.
 - [x] S3 P2, P3, P5 source switches; P4 poll inside `queryComputed` (`s.mount`, `legacy-template-patterns.scenario.spec.ts`)
   - 1 real: `*etQuery` over an interop query reported every failure to the `ErrorHandler` twice; now once.
-- [ ] S4 P6, P7, P8 RxJS and effect re-execute
+- [x] S4 P6, P7, P8 RxJS and effect re-execute (`legacy-rxjs-patterns.scenario.spec.ts`)
+  - 1 real: `*etInfinityQuery` over an interop query reported every failed page to the `ErrorHandler` twice; now once.
 - [x] S5 P10 specs; defects 4-6 (`legacy-signal-helpers.scenario.spec.ts`, `reactive-contract.scenario.spec.ts`)
   - P10 real: `queryComputedTillTruthy` kept executing a query per change after the first; now the computation stops at it.
   - 4 real: `retryFailed()` and paged `execute({ where })` in an effect re-ran on their own results; stack `execute()` was fine. All three now untracked.
