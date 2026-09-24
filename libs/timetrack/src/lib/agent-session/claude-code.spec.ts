@@ -570,7 +570,7 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
     const result = parse(
       [
         record({ minute: 0 }),
-        toolCall({ minute: 0, second: 5, name: 'Bash', input: { command: `cd ${ALTCHA} && git status` } }),
+        toolCall({ minute: 0, second: 5, name: 'Bash', input: { command: `cd ${ALTCHA} && yarn install` } }),
         record({ minute: 0, second: 6, type: 'user' }),
         record({ minute: 0, second: 30 }),
       ],
@@ -581,20 +581,68 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
     expect(times(result.events)).toEqual([at(0, 0), at(0, 5), at(0, 30)].map((date) => date.toISOString()));
   });
 
-  it('follows the file an edit, a write or a read names', () => {
+  it('follows the file an edit or a write names', () => {
     const file = `${ALTCHA}/libs/domain/auth/src/lib/login.ts`;
 
-    for (const name of ['Edit', 'Write', 'Read']) {
+    for (const name of ['Edit', 'Write']) {
       const result = parse([toolCall({ minute: 0, name, input: { file_path: file } })]);
 
       expect(workedIn(result.events)).toEqual([file]);
     }
+
+    const notebook = parse([toolCall({ minute: 0, name: 'NotebookEdit', input: { notebook_path: file } })]);
+
+    expect(workedIn(notebook.events)).toEqual([file]);
+  });
+
+  it('lets no read move where the work is, nor put it back', () => {
+    const sdk = '/home/tom/dev/ethlete-sdk';
+    const result = parse(
+      [
+        toolCall({ minute: 0, name: 'Edit', input: { file_path: `${ALTCHA}/libs/login.ts` } }),
+        toolCall({ minute: 2, name: 'Read', input: { file_path: `${sdk}/libs/query/src/index.ts` } }),
+        toolCall({ minute: 4, name: 'Grep', input: { pattern: 'altcha', path: sdk } }),
+        toolCall({ minute: 6, name: 'Bash', input: { command: `cd ${sdk} && git log --oneline -5 | head -3` } }),
+        toolCall({
+          minute: 8,
+          name: 'Bash',
+          input: { command: `cd ${sdk} && rg -n "retryFn" libs; sed -n 1,20p x.ts` },
+        }),
+        toolCall({ minute: 10, name: 'Bash', input: { command: 'git status --short && cat package.json' } }),
+      ],
+      { sampleIntervalMs: 60_000 },
+    );
+
+    expect(workedIn(result.events)).toEqual([`${ALTCHA}/libs/login.ts`, ...Array(5).fill(`${ALTCHA}/libs/login.ts`)]);
+  });
+
+  it('follows a command into another checkout once it builds, tests or writes there', () => {
+    const sdk = '/home/tom/dev/ethlete-sdk';
+    const result = parse(
+      [
+        toolCall({
+          minute: 0,
+          name: 'Bash',
+          input: { command: `cd ${sdk}/libs/query/src/lib/auth/features && python3 - <<'EOF'\np='x.ts'\nEOF` },
+        }),
+        toolCall({
+          minute: 2,
+          name: 'Bash',
+          input: { command: `cd ${sdk} && timeout 600 npx nx test query 2>&1 | tail -30` },
+        }),
+        toolCall({ minute: 4, name: 'Bash', input: { command: `cd ${sdk} && git diff > /tmp/query.patch` } }),
+        toolCall({ minute: 6, name: 'Bash', input: { command: `cd ${ALTCHA} && git status -sb` } }),
+      ],
+      { sampleIntervalMs: 60_000 },
+    );
+
+    expect(workedIn(result.events)).toEqual([`${sdk}/libs/query/src/lib/auth/features`, sdk, sdk, sdk]);
   });
 
   it('returns to the working directory for a command that changes into no absolute path', () => {
     const result = parse(
       [
-        toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && git status` } }),
+        toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && yarn install` } }),
         toolCall({ minute: 2, name: 'Bash', input: { command: 'git push' } }),
       ],
       { sampleIntervalMs: 60_000 },
@@ -606,7 +654,7 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
   it('keeps where the work was for a tool call that names no path', () => {
     const result = parse(
       [
-        toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && git status` } }),
+        toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && yarn install` } }),
         toolCall({ minute: 2, name: 'ToolSearch', input: { query: 'select:Monitor' } }),
       ],
       { sampleIntervalMs: 60_000 },
@@ -626,7 +674,7 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
   });
 
   it('carries it into the next read of the same log', () => {
-    const first = parse([toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && git status` } })]);
+    const first = parse([toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && yarn install` } })]);
     const next = parse([record({ minute: 3 })], {
       resume: { after: first.events.at(-1)?.at, title: first.title, cwd: CWD, session: first.session },
     });

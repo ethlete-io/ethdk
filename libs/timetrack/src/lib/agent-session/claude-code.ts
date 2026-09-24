@@ -46,9 +46,76 @@ const activityOf = (record: Record<string, unknown>): ActivityRecord | null => {
 
 const LEADING_CD = /^\s*cd\s+(?:"([^"]+)"|'([^']+)'|([^\s;&|]+))/;
 
+const READ_ONLY_PROGRAMS = new Set([
+  'cat',
+  'cut',
+  'diff',
+  'echo',
+  'find',
+  'grep',
+  'head',
+  'jq',
+  'ls',
+  'pwd',
+  'rg',
+  'sort',
+  'stat',
+  'tail',
+  'tr',
+  'uniq',
+  'wc',
+  'which',
+]);
+
+const READ_ONLY_GIT = new Set([
+  'blame',
+  'diff',
+  'for-each-ref',
+  'grep',
+  'log',
+  'ls-files',
+  'reflog',
+  'rev-parse',
+  'show',
+  'status',
+]);
+
+const WRITE_TOOLS = new Set(['Edit', 'MultiEdit', 'NotebookEdit', 'Write']);
+
+const SHELL_KEYWORDS = /^(?:do|then|else|if)\s+/;
+
+const isReadOnlyStep = (step: string) => {
+  const words = step
+    .replace(SHELL_KEYWORDS, '')
+    .replace(/^(?:\w+=\S*\s+)+/, '')
+    .split(/\s+/);
+  const [program = '', ...args] = words;
+
+  if (!program || program === 'done' || program === 'fi' || program === 'for' || program === 'cd') return true;
+  if (program === 'sed') return args.includes('-n') && !args.some((arg) => arg.startsWith('-i'));
+  if (program !== 'git') return READ_ONLY_PROGRAMS.has(program);
+
+  const subcommand = args.filter((arg, index) => !arg.startsWith('-') && args[index - 1] !== '-C')[0];
+
+  return !!subcommand && READ_ONLY_GIT.has(subcommand);
+};
+
+/** A command made only of the reads above. A redirect into a file writes, whatever the program. */
+const isReadOnlyCommand = (command: string) => {
+  const quiet = command.replace(/[0-9&]?>+\s*\/dev\/null|[0-9]>&[0-9]/g, '');
+
+  if (/(^|\s|\d)>>?\s*[^\s&]/.test(quiet)) return false;
+
+  return quiet
+    .split(/&&|\|\||[;|\n]/)
+    .map((step) => step.trim())
+    .every(isReadOnlyStep);
+};
+
 /**
- * Where one tool call worked: the absolute path it named, `null` for the working directory, and
- * `undefined` where the call says nothing about a place.
+ * Where one tool call wrote: the absolute path it named, `null` for the working directory, and
+ * `undefined` where the call says nothing about a place. A read never answers: looking something up
+ * in another checkout is not working there.
  *
  * Claude Code puts the shell back into the session's directory after a command that left it, so a
  * command reaches another checkout only by changing into it first, and every record still names the
@@ -56,17 +123,23 @@ const LEADING_CD = /^\s*cd\s+(?:"([^"]+)"|'([^']+)'|([^\s;&|]+))/;
  */
 const workedInOfTool = (block: Record<string, unknown>): string | null | undefined => {
   const input = stringAt(block, 'type') === 'tool_use' ? objectAt(block, 'input') : null;
+  const name = stringAt(block, 'name');
 
   if (!input) return undefined;
 
-  if (stringAt(block, 'name') === 'Bash') {
-    const match = LEADING_CD.exec(stringAt(input, 'command') ?? '');
+  if (name === 'Bash') {
+    const command = stringAt(input, 'command') ?? '';
+    const match = LEADING_CD.exec(command);
     const path = match?.[1] ?? match?.[2] ?? match?.[3];
+
+    if (isReadOnlyCommand(match ? command.slice(match[0].length) : command)) return undefined;
 
     return path?.startsWith('/') ? path : null;
   }
 
-  const path = stringAt(input, 'file_path') ?? stringAt(input, 'notebook_path') ?? stringAt(input, 'path');
+  if (!WRITE_TOOLS.has(name ?? '')) return undefined;
+
+  const path = stringAt(input, 'file_path') ?? stringAt(input, 'notebook_path');
 
   if (path === undefined) return undefined;
 
