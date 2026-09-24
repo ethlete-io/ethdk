@@ -1,6 +1,16 @@
-import { createEnvironmentInjector, EnvironmentInjector, inject, InjectionToken, isDevMode } from '@angular/core';
+import {
+  createEnvironmentInjector,
+  effect,
+  EnvironmentInjector,
+  inject,
+  InjectionToken,
+  isDevMode,
+  signal,
+} from '@angular/core';
 import { createQueryBatch, withArgs } from '../../index';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { MAX_EFFECT_RUNS_PER_FLUSH } from './effect-loop-guard';
+import { MAX_REQUESTS_PER_ROUTE } from './invariants';
 import { createScenario, inProductionMode, useScenario } from './scenario';
 
 type GetUserArgs = { response: { id: string }; pathParams: { id: string } };
@@ -19,6 +29,49 @@ describe('buildScenario', () => {
     expect(() => scenario()).toThrow('provider boom');
     expect(console.error).toBe(originalConsoleError);
     expect(globalThis.XMLHttpRequest).toBe(originalXhr);
+  });
+});
+
+describe('loop invariants', () => {
+  beforeEach(() =>
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] }),
+  );
+  afterEach(() => vi.useRealTimers());
+
+  it('fails a scenario that sends more requests to one route than the storm threshold', () => {
+    const s = createScenario({ clientOptions: { keepUnusedFor: 0 } })();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const getUser = s.get<GetUserArgs>((p) => `/users/${p.id}`);
+    const c = s.consumer();
+    const query = c.run(() => getUser(withArgs(() => ({ pathParams: { id: '1' } }))));
+
+    for (let i = 0; i <= MAX_REQUESTS_PER_ROUTE; i++) {
+      query.execute({ options: { allowCache: false } });
+      s.tick(200);
+    }
+
+    expect(() => s.destroy()).toThrow(
+      `requests: more than ${MAX_REQUESTS_PER_ROUTE} requests to one route: GET /users/1`,
+    );
+  });
+
+  it('stops an effect that re-dirties itself instead of looping forever', () => {
+    const s = createScenario()();
+    const count = signal(0);
+    let runs = 0;
+
+    s.run(() =>
+      effect(() => {
+        runs++;
+        count.set(count() + 1);
+      }),
+    );
+
+    expect(() => s.tick()).toThrow(/endless reactive loop/);
+    expect(runs).toBe(MAX_EFFECT_RUNS_PER_FLUSH);
+
+    s.destroy();
   });
 });
 

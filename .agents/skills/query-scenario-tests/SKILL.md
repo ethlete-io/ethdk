@@ -8,8 +8,8 @@ description: Write or run the scenario tests in libs/query/src/scenarios - consu
 The unit specs in `libs/query` mock internals and pass while the real system races or leaks.
 A scenario test boots the real client through the **public API only** (`import ... from
 '../index'`, never `../lib/...`), talks to a fake backend that behaves like a small server,
-and runs on fake timers. `scenario.destroy()` then asserts four invariants: no request in
-flight, no timer left, no cache entry left, no unexpected error. Every scenario is also a
+and runs on fake timers. `scenario.destroy()` then asserts five invariants: no request in
+flight, no timer left, no cache entry left, no unexpected error, no request storm. Every scenario is also a
 leak test.
 
 ## Run
@@ -86,6 +86,9 @@ it('dedupes identical requests', () => {
   (a one-item array stays an array) instead of parsing the URL.
 - The harness router has no routes; a cross-route navigation needs
   `router.resetConfig([{ path: 'other', children: [] }])` inline.
+- Two loop guards need no assertion: the `requests` invariant fails a scenario that sent more than
+  `MAX_REQUESTS_PER_ROUTE` (20) requests to one method+path, and an effect that runs more than
+  `MAX_EFFECT_RUNS_PER_FLUSH` (100) times in one flush throws from `tick()` instead of looping forever.
 - `s.allow('timers', 'reason')` opts out of one invariant. Every opt-out is a smell: name the
   finding or issue in the reason and mention it in your report.
 - `destroy()` destroys the consumers, resets the TestBed and then checks the invariants, so root

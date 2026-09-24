@@ -2,7 +2,9 @@ import { AnyQueryClient } from '../../index';
 import { vi } from 'vitest';
 import { FakeApi } from './fake-api';
 
-export type InvariantName = 'pending' | 'timers' | 'cache' | 'errors';
+export type InvariantName = 'pending' | 'timers' | 'cache' | 'errors' | 'requests';
+
+export const MAX_REQUESTS_PER_ROUTE = 20;
 
 export type ScenarioErrorEntry = {
   source: 'ErrorHandler' | 'console.error';
@@ -34,6 +36,23 @@ export const checkInvariants = (ctx: InvariantCheckContext) => {
     if (pending.length > 0) {
       failures.push(
         `pending: ${pending.length} request(s) still in flight: ${pending.map((r) => `${r.method} ${r.path}`).join(', ')}`,
+      );
+    }
+  }
+
+  if (!ctx.allowed.has('requests')) {
+    const counts = new Map<string, number>();
+
+    for (const r of ctx.api.requests) {
+      const key = `${r.method} ${r.path}`;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+
+    const storms = [...counts].filter(([, count]) => count > MAX_REQUESTS_PER_ROUTE);
+
+    if (storms.length > 0) {
+      failures.push(
+        `requests: more than ${MAX_REQUESTS_PER_ROUTE} requests to one route: ${storms.map(([key, count]) => `${key} (${count})`).join(', ')}`,
       );
     }
   }

@@ -36,6 +36,7 @@ import {
 } from '../../index';
 import { afterEach, beforeEach, vi } from 'vitest';
 import { createFakeApi, FakeApi } from './fake-api';
+import { provideEffectLoopGuard } from './effect-loop-guard';
 import { createFakeXhr } from './fake-xhr';
 import { checkInvariants, InvariantName, ScenarioErrorEntry, ScenarioWarningEntry } from './invariants';
 import { mintToken } from './tokens';
@@ -287,6 +288,7 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
         provideHttpClient(),
         { provide: HttpBackend, useValue: api.backend },
         provideRouter([]),
+        provideEffectLoopGuard(),
         {
           provide: ErrorHandler,
           useValue: {
