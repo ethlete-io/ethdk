@@ -1,6 +1,6 @@
 ---
 name: timetrack
-description: How to reach Jira from any repo through the running Timetrack app - look up an issue, search for one, ask which project a repo logs into, file a ticket, add a worklog row, read the user's own Tempo worklogs, read the evidence a day holds, or list the work that still waits for a ticket. Read whenever a task needs Jira data, a Jira write, or the day's own events, and never put a Jira token in a repo.
+description: How to reach Jira from any repo through the running Timetrack app - look up an issue, search for one, ask which project a repo logs into, file a ticket, add a worklog row, read the user's own Tempo worklogs, read their Google Calendar, read the evidence a day holds, or list the work that still waits for a ticket. Read whenever a task needs Jira data, a Jira write, or the day's own events, and never put a Jira token in a repo.
 kind: skill
 scope: both
 ---
@@ -46,6 +46,7 @@ nobody can rotate.
 | `standins --rename <id> --name <text>` | The name a placeholder carries is wrong, and the user asked you to fix it |
 | `naming [YYYY-MM-DD]`                  | A checkout was never offered a name and you need the step that stopped    |
 | `worklogs [from] [to]`                 | You need what the user already booked in Tempo over a span of days        |
+| `calendar [from] [to]`                 | You need the user's meetings and calendar entries over a span of days     |
 
 `git-flow start` uses the same channel, so a branch is named from the real issue rather than
 from a key you typed. Follow the repository's branch workflow when creating a branch.
@@ -236,6 +237,23 @@ Without `--json` it prints one line per booked day: the total, then minutes per 
 answers each worklog with its day, `startTime` where Tempo holds one, `durationMs`, `issueKey` and
 description. A span is at most 92 days. The descriptions are the user's own words, so quote them
 only when the task needs them.
+
+## What the calendar holds
+
+`calendar` reads the Google calendars the app watches, straight from Google and read-only. The app
+keeps the Google token:
+
+```bash
+npx ethlete-agents timetrack calendar                          # the last 7 days
+npx ethlete-agents timetrack calendar 2026-09-01 2026-09-24    # both days included
+npx ethlete-agents timetrack calendar 2026-09-01 2026-09-24 --json
+```
+
+Without `--json` it prints each day with its meeting hours, then one line per entry: start, minutes,
+title, and the user's answer where it is not a yes. All-day and declined entries are listed but not
+counted. `--json` answers each entry with `calendarId`, `day`, `startMs`, `endMs`, `allDay`, `title`,
+`attendeeCount` and `response`. A span is at most 92 days. Titles come from whoever sent the
+invitation, so quote them only when the task needs them.
 
 ## Writes
 

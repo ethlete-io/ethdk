@@ -278,6 +278,32 @@ export type AgentApiTempoWorklog = {
 
 export type AgentApiTempoWorklogs = { from: string; to: string; worklogs: AgentApiTempoWorklog[] };
 
+/** The widest span `calendar.events` reads in one request, in days, both ends included. */
+export const AGENT_CALENDAR_RANGE_DAYS = 92;
+
+/** One entry of a picked Google calendar, all-day and declined ones included. */
+export type AgentApiCalendarEvent = {
+  calendarId: string;
+  /** The local day it starts on, as `YYYY-MM-DD`. */
+  day: string;
+  startMs: number;
+  /** Exclusive. For an all-day entry, the local midnight after its last day. */
+  endMs: number;
+  allDay: boolean;
+  title: string;
+  /** Everyone invited except rooms, the user included. 0 for an entry with no attendee list. */
+  attendeeCount: number;
+  /** The user's own answer, or `organizer` where the entry has no attendee list. */
+  response: 'accepted' | 'declined' | 'tentative' | 'needsAction' | 'organizer' | 'unknown';
+};
+
+export type AgentApiCalendarEvents = {
+  from: string;
+  to: string;
+  calendarIds: string[];
+  events: AgentApiCalendarEvent[];
+};
+
 /** One row of a day as an agent reads it, and the id every edit to that row names it by. */
 export type AgentApiReviewedRow = {
   id: string;
@@ -399,6 +425,7 @@ export type AgentApiRequest =
     }
   | { op: 'naming.offers'; day: string }
   | { op: 'tempo.worklogs'; from: string; to: string }
+  | { op: 'calendar.events'; from: string; to: string }
   | { op: 'lane.issues' }
   | { op: 'agentSessions.resync'; paths: string[] };
 

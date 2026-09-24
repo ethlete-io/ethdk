@@ -1,4 +1,10 @@
-import { AGENT_TEMPO_RANGE_DAYS, AgentApiRequest, AgentApiRowEdit, AgentApiWorkCommit } from './model';
+import {
+  AGENT_CALENDAR_RANGE_DAYS,
+  AGENT_TEMPO_RANGE_DAYS,
+  AgentApiRequest,
+  AgentApiRowEdit,
+  AgentApiWorkCommit,
+} from './model';
 
 export type AgentApiRequestParse = { ok: true; request: AgentApiRequest } | { ok: false; message: string };
 
@@ -205,17 +211,17 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
     return DAY_KEY.test(day) ? { ok: true, request: { op, day } } : missing(op, 'day as YYYY-MM-DD');
   }
 
-  if (op === 'tempo.worklogs') {
+  if (op === 'tempo.worklogs' || op === 'calendar.events') {
     const from = asText(raw['from']);
     const to = asText(raw['to']);
     const fromMs = utcDayOf(from);
     const toMs = utcDayOf(to);
+    const cap = op === 'tempo.worklogs' ? AGENT_TEMPO_RANGE_DAYS : AGENT_CALENDAR_RANGE_DAYS;
 
     if (fromMs === undefined) return missing(op, 'from as YYYY-MM-DD');
     if (toMs === undefined) return missing(op, 'to as YYYY-MM-DD');
-    if (toMs < fromMs) return failed(`tempo.worklogs needs from on or before to, not ${from} after ${to}.`);
-    if ((toMs - fromMs) / DAY_MS + 1 > AGENT_TEMPO_RANGE_DAYS)
-      return failed(`tempo.worklogs reads at most ${AGENT_TEMPO_RANGE_DAYS} days at once.`);
+    if (toMs < fromMs) return failed(`${op} needs from on or before to, not ${from} after ${to}.`);
+    if ((toMs - fromMs) / DAY_MS + 1 > cap) return failed(`${op} reads at most ${cap} days at once.`);
 
     return { ok: true, request: { op, from, to } };
   }

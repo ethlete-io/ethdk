@@ -336,3 +336,78 @@ describe('timetrack worklogs', () => {
     expect(calls).toBe(0);
   });
 });
+
+describe('timetrack calendar', () => {
+  const event = (over: Record<string, unknown>) => ({
+    calendarId: 'primary',
+    day: '2026-09-01',
+    startMs: new Date(2026, 8, 1, 10, 0).getTime(),
+    endMs: new Date(2026, 8, 1, 11, 0).getTime(),
+    allDay: false,
+    title: 'Sprint Planning',
+    attendeeCount: 4,
+    response: 'accepted',
+    ...over,
+  });
+
+  it('prints each day with its meeting hours, leaving declined and all-day entries out of the sum', async () => {
+    const bodies: unknown[] = [];
+
+    await withEndpoint((request, response) => {
+      let body = '';
+
+      request.on('data', (chunk) => (body += chunk));
+      request.on('end', () => {
+        bodies.push(JSON.parse(body));
+        answered({
+          from: '2026-09-01',
+          to: '2026-09-02',
+          calendarIds: ['primary'],
+          events: [
+            event({ allDay: true, title: 'Urlaub', response: 'organizer', startMs: new Date(2026, 8, 1).getTime() }),
+            event({}),
+            event({
+              title: 'Review',
+              response: 'declined',
+              startMs: new Date(2026, 8, 1, 14, 0).getTime(),
+              endMs: new Date(2026, 8, 1, 14, 30).getTime(),
+            }),
+            event({
+              day: '2026-09-02',
+              title: 'Daily',
+              response: 'tentative',
+              startMs: new Date(2026, 8, 2, 9, 30).getTime(),
+              endMs: new Date(2026, 8, 2, 9, 45).getTime(),
+            }),
+          ],
+        })(request, response);
+      });
+    });
+
+    const lines = printedLines();
+
+    await expect(run(['calendar', '2026-09-01', '2026-09-02'])).resolves.toBe(0);
+    expect(bodies).toEqual([{ op: 'calendar.events', from: '2026-09-01', to: '2026-09-02' }]);
+    expect(lines).toEqual([
+      '2026-09-01 … 2026-09-02  4 event(s) from 1 calendar(s), 1.3h in meetings',
+      '  2026-09-01  3 event(s), 1.0h',
+      '    all-day  Urlaub',
+      '    10:00 60m  Sprint Planning',
+      '    14:00 30m  Review  declined',
+      '  2026-09-02  1 event(s), 0.3h',
+      '    09:30 15m  Daily  tentative',
+    ]);
+  });
+
+  it('refuses a range start that is not a day before asking the app', async () => {
+    let calls = 0;
+
+    await withEndpoint((request, response) => {
+      calls += 1;
+      answered({})(request, response);
+    });
+
+    await expect(run(['calendar', 'monday'])).rejects.toThrow(/YYYY-MM-DD, not monday/);
+    expect(calls).toBe(0);
+  });
+});

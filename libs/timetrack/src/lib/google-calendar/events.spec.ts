@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { CalendarOccurrenceEvent } from '../model/event';
 import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
 import { GoogleCalendarCredentials } from './client';
-import { GoogleCalendarEventResource, fetchGoogleCalendarEvents$ } from './events';
+import { GoogleCalendarEventResource, fetchGoogleCalendarEvents$, listGoogleCalendarEvents$ } from './events';
 
 const CREDENTIALS: GoogleCalendarCredentials = { accessToken: 'ya29.token' };
 
@@ -215,5 +215,66 @@ describe('fetchGoogleCalendarEvents$', () => {
 
     expect(collect(transport).map((event) => event.title)).toEqual(['Sprint Planning', 'Retro']);
     expect(requests[1]?.url).toContain('pageToken=page-2');
+  });
+});
+
+describe('listGoogleCalendarEvents$', () => {
+  const list = (items: GoogleCalendarEventResource[]) => {
+    const { transport } = eventTransport([{ items }]);
+    const seen = vi.fn();
+
+    listGoogleCalendarEvents$({
+      transport,
+      credentials: CREDENTIALS,
+      calendarId: 'team@example.com',
+      from: new Date(2026, 7, 11),
+      to: new Date(2026, 7, 12),
+    }).subscribe(seen);
+
+    return seen.mock.calls[0]?.[0];
+  };
+
+  it('keeps a declined meeting and an all-day entry, each with the answer and the attendee count', () => {
+    expect(
+      list([
+        {
+          ...MEETING,
+          attendees: [
+            { self: true, responseStatus: 'declined' },
+            { responseStatus: 'accepted' },
+            { resource: true, responseStatus: 'accepted' },
+          ],
+        },
+        { id: 'off', summary: 'Urlaub', start: { date: '2026-08-11' }, end: { date: '2026-08-12' } },
+      ]),
+    ).toEqual([
+      {
+        calendarId: 'team@example.com',
+        start: new Date(2026, 7, 11),
+        end: new Date(2026, 7, 12),
+        allDay: true,
+        title: 'Urlaub',
+        attendeeCount: 0,
+        response: 'organizer',
+      },
+      {
+        calendarId: 'team@example.com',
+        start: new Date('2026-08-11T10:00:00+02:00'),
+        end: new Date('2026-08-11T11:00:00+02:00'),
+        allDay: false,
+        title: 'Sprint Planning',
+        attendeeCount: 2,
+        response: 'declined',
+      },
+    ]);
+  });
+
+  it('drops a cancelled occurrence and a working location', () => {
+    expect(
+      list([
+        { ...MEETING, status: 'cancelled' },
+        { ...MEETING, eventType: 'workingLocation' },
+      ]),
+    ).toEqual([]);
   });
 });

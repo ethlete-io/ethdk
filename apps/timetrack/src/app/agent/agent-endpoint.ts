@@ -16,12 +16,15 @@ import {
   AgentApiStandInSplit,
   AgentApiStatus,
   AgentApiTempoWorklogs,
+  AgentApiCalendarEvents,
   JiraCredentials,
   JiraIssue,
   createJiraIssue$,
   fetchJiraIssueKeysByIds$,
   fetchJiraMyself$,
   fetchTempoWorklogs$,
+  listGoogleCalendarEvents$,
+  redactTitleUrls,
   parseTempoWallClock,
   tempoDay,
   tempoTimeOfDay,
@@ -37,6 +40,7 @@ import {
   dayBoundaryOf,
   localDayKey,
   localDayRange,
+  MIDNIGHT,
   shiftDayKey,
   matchProjectLink,
   parseAgentRequest,
@@ -47,7 +51,19 @@ import {
   workPathDays,
   workPathPieces,
 } from '@ethlete/timetrack';
-import { Observable, catchError, forkJoin, map, mergeMap, of, switchMap, throwError } from 'rxjs';
+import {
+  Observable,
+  catchError,
+  concatMap,
+  forkJoin,
+  from,
+  map,
+  mergeMap,
+  of,
+  switchMap,
+  throwError,
+  toArray,
+} from 'rxjs';
 import {
   injectAgentSessionCollector,
   injectAgentSpendBackfill,
@@ -56,6 +72,7 @@ import {
 } from '../../collectors';
 import { AGENT_REQUEST_EVENT, hostEventWith$, injectHostPorts, invokeHost$ } from '../../host';
 import { injectDayReview } from '../day-review/day-review';
+import { injectGoogleAccount } from '../google';
 import { LANE_ISSUE_WINDOW_DAYS } from '../jira';
 import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { injectTimetrackSettings } from '../settings/settings';
@@ -69,6 +86,10 @@ type AgentAnswer = { ok: true; value: unknown } | { ok: false; message: string }
 const NO_JIRA = 'Timetrack has no Jira host, account email and token yet. Set them in its Settings.';
 
 const NO_TEMPO = 'Timetrack has no Tempo token yet. Set it in its Settings.';
+
+const NO_GOOGLE = 'Timetrack has no Google account connected yet. Connect one in its Settings.';
+
+const NO_CALENDAR = 'Timetrack reads no calendar yet. Pick one in its Settings.';
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
@@ -99,6 +120,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const projectLinks = injectProjectLinks();
   const review = injectDayReview();
   const recurring = injectRecurringPatterns();
+  const googleAccount = injectGoogleAccount();
   const destroyRef = inject(DestroyRef);
   const agentLogReaders = [
     injectAgentSessionCollector(),
@@ -438,6 +460,46 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       })),
     );
 
+  const calendarEvents$ = (
+    request: Extract<AgentApiRequest, { op: 'calendar.events' }>,
+  ): Observable<AgentApiCalendarEvents> => {
+    const calendarIds = settings.settings().google.calendarIds;
+    const span = { from: localDayRange(request.from, MIDNIGHT).from, to: localDayRange(request.to, MIDNIGHT).to };
+
+    if (!calendarIds.length) return throwError(() => new Error(NO_CALENDAR));
+
+    return googleAccount.credentials$().pipe(
+      switchMap((credentials) => {
+        if (!credentials) return throwError(() => new Error(NO_GOOGLE));
+
+        return from(calendarIds).pipe(
+          concatMap((calendarId) =>
+            listGoogleCalendarEvents$({ transport: ports.transport, credentials, calendarId, ...span }),
+          ),
+          toArray(),
+        );
+      }),
+      map((perCalendar) => ({
+        from: request.from,
+        to: request.to,
+        calendarIds,
+        events: perCalendar
+          .flat()
+          .sort((left, right) => left.start.getTime() - right.start.getTime())
+          .map((event) => ({
+            calendarId: event.calendarId,
+            day: localDayKey(event.start, MIDNIGHT),
+            startMs: event.start.getTime(),
+            endMs: event.end.getTime(),
+            allDay: event.allDay,
+            title: redactTitleUrls(event.title),
+            attendeeCount: event.attendeeCount,
+            response: event.response,
+          })),
+      })),
+    );
+  };
+
   /**
    * The settings that decide what a day's work is named.
    *
@@ -652,6 +714,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return naming$(request);
       case 'tempo.worklogs':
         return tempoWorklogs$(request);
+      case 'calendar.events':
+        return calendarEvents$(request);
       case 'lane.issues':
         return laneIssues$();
       case 'agentSessions.resync':

@@ -309,4 +309,19 @@ describe('parseAgentRequest, over a day edit', () => {
       message: 'tempo.worklogs needs a from as YYYY-MM-DD.',
     });
   });
+
+  it('reads a calendar range under the same cap as a Tempo range', () => {
+    expect(parseAgentRequest({ op: 'calendar.events', from: '2026-09-01', to: '2026-09-24' })).toEqual({
+      ok: true,
+      request: { op: 'calendar.events', from: '2026-09-01', to: '2026-09-24' },
+    });
+    expect(parseAgentRequest({ op: 'calendar.events', from: '2026-06-24', to: '2026-09-24' })).toEqual({
+      ok: false,
+      message: 'calendar.events reads at most 92 days at once.',
+    });
+    expect(parseAgentRequest({ op: 'calendar.events', from: '2026-09-02', to: '2026-09-01' })).toEqual({
+      ok: false,
+      message: 'calendar.events needs from on or before to, not 2026-09-02 after 2026-09-01.',
+    });
+  });
 });

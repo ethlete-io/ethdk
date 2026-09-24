@@ -6,6 +6,7 @@ import {
   TimetrackNamingDecline,
   TimetrackStandIn,
   TimetrackTempoWorklog,
+  TimetrackCalendarEvent,
   timetrackAddWorklog,
   timetrackCreateIssue,
   TimetrackRow,
@@ -27,6 +28,7 @@ import {
   timetrackStandIns,
   timetrackStatus,
   timetrackTempoWorklogs,
+  timetrackCalendarEvents,
 } from './timetrack';
 import { plain } from './plain-text';
 import { commitAuthorOf, commitPathsOnDays, currentBranch, projectRootsOf } from './git';
@@ -270,6 +272,34 @@ const tempoDayLines = (worklogs: readonly TimetrackTempoWorklog[]) => {
     });
 };
 
+const meetingMs = (events: readonly TimetrackCalendarEvent[]) =>
+  events
+    .filter((event) => !event.allDay && event.response !== 'declined')
+    .reduce((sum, event) => sum + event.endMs - event.startMs, 0);
+
+const calendarEventLine = (event: TimetrackCalendarEvent) => {
+  const start = new Date(event.startMs);
+  const when = event.allDay
+    ? 'all-day'
+    : `${pad(start.getHours())}:${pad(start.getMinutes())} ${minutesOf(event.endMs - event.startMs)}m`;
+  const answer = event.response === 'accepted' || event.response === 'organizer' ? [] : [event.response];
+
+  return [when, event.title, ...answer].join('  ');
+};
+
+const calendarDayLines = (events: readonly TimetrackCalendarEvent[]) => {
+  const days = new Map<string, TimetrackCalendarEvent[]>();
+
+  for (const event of events) days.set(event.day, [...(days.get(event.day) ?? []), event]);
+
+  return [...days]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .flatMap(([day, dayEvents]) => [
+      `${day}  ${dayEvents.length} event(s), ${hours(meetingMs(dayEvents))}`,
+      ...dayEvents.map((event) => `  ${calendarEventLine(event)}`),
+    ]);
+};
+
 /** `--from` and `--to` take anything `Date` reads, so a caller may pass an ISO instant or a clock. */
 const instantOf = (flag: string, raw: string) => {
   const at = new Date(raw);
@@ -476,6 +506,8 @@ The app holds this machine's Jira credentials, so no repository needs a token of
                                 Cut one that covered a whole checkout into one per directory
   timetrack worklogs [from] [to]
                                 The account's own Tempo worklogs per day (default: the last 7 days)
+  timetrack calendar [from] [to]
+                                The watched calendars' events per day (default: the last 7 days)
   timetrack naming [YYYY-MM-DD] Which checkouts the day offers a name for, and why the rest do not
   timetrack resync [path]       Read the agent session logs of a checkout again, after it got a link
 
@@ -737,6 +769,25 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
 
       say(`${found.from} … ${found.to}  ${found.worklogs.length} worklog(s), ${hours(total)}`);
       tempoDayLines(found.worklogs).forEach((line) => say(`  ${line}`));
+    }
+
+    return printed(found, json);
+  }
+
+  if (subcommand === 'calendar') {
+    const to = positionalArgs(argv)[2] ?? today();
+    const from = value ?? shiftDay(to, -6);
+
+    if (!DAY.test(from)) throw new Error(`Pass a day as YYYY-MM-DD, not ${from}.`);
+    if (!DAY.test(to)) throw new Error(`Pass a day as YYYY-MM-DD, not ${to}.`);
+
+    const found = await timetrackCalendarEvents({ from, to });
+
+    if (!json) {
+      say(
+        `${found.from} … ${found.to}  ${found.events.length} event(s) from ${found.calendarIds.length} calendar(s), ${hours(meetingMs(found.events))} in meetings`,
+      );
+      calendarDayLines(found.events).forEach((line) => say(`  ${line}`));
     }
 
     return printed(found, json);

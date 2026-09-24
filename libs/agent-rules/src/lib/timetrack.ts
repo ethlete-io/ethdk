@@ -254,6 +254,27 @@ export type TimetrackTempoWorklog = {
 
 export type TimetrackTempoWorklogs = { from: string; to: string; worklogs: TimetrackTempoWorklog[] };
 
+/** One entry of a calendar the app reads, all-day and declined ones included. */
+export type TimetrackCalendarEvent = {
+  calendarId: string;
+  day: string;
+  startMs: number;
+  endMs: number;
+  allDay: boolean;
+  title: string;
+  /** Everyone invited except rooms, the user included. */
+  attendeeCount: number;
+  /** The user's own answer, or `organizer` where the entry has no attendee list. */
+  response: 'accepted' | 'declined' | 'tentative' | 'needsAction' | 'organizer' | 'unknown';
+};
+
+export type TimetrackCalendarEvents = {
+  from: string;
+  to: string;
+  calendarIds: string[];
+  events: TimetrackCalendarEvent[];
+};
+
 type Discovery = { version: number; port: number; token: string };
 
 type Answer<T> = { ok: true; value: T } | { ok: false; message: string };
@@ -443,6 +464,10 @@ export const timetrackEditDay = (options: { day: string; edits: readonly Timetra
 /** Reads the user's own Tempo worklogs from Tempo, both days included. The app caps the span at 92 days. */
 export const timetrackTempoWorklogs = (options: { from: string; to: string }) =>
   askTimetrack<TimetrackTempoWorklogs>({ op: 'tempo.worklogs', ...options });
+
+/** Reads the calendars the app watches, both days included. The app caps the span at 92 days. */
+export const timetrackCalendarEvents = (options: { from: string; to: string }) =>
+  askTimetrack<TimetrackCalendarEvents>({ op: 'calendar.events', ...options });
 
 export const timetrackRules = () => askTimetrack<TimetrackRules>({ op: 'settings.rules' });
 
