@@ -15,7 +15,9 @@ import { FACEBOOK_PLAYER_TOKEN, FacebookPlayerDirective } from './headless/faceb
   ],
   host: {
     class: 'et-facebook-player et-stream-player',
-    style: 'display: block; width: 100%; height: 100%',
+    '[style.display]': '"block"',
+    '[style.width]': '"100%"',
+    '[style.height]': '"100%"',
   },
 })
 export class FacebookPlayerComponent {

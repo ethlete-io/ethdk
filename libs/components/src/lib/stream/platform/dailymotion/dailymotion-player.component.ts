@@ -15,7 +15,9 @@ import { DAILYMOTION_PLAYER_TOKEN, DailymotionPlayerDirective } from './headless
   ],
   host: {
     class: 'et-dailymotion-player et-stream-player',
-    style: 'display: block; width: 100%; height: 100%',
+    '[style.display]': '"block"',
+    '[style.width]': '"100%"',
+    '[style.height]': '"100%"',
   },
 })
 export class DailymotionPlayerComponent {

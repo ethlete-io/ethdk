@@ -15,7 +15,9 @@ import { VIMEO_PLAYER_TOKEN, VimeoPlayerDirective } from './headless/vimeo-playe
   ],
   host: {
     class: 'et-vimeo-player et-stream-player',
-    style: 'display: block; width: 100%; height: 100%',
+    '[style.display]': '"block"',
+    '[style.width]': '"100%"',
+    '[style.height]': '"100%"',
   },
 })
 export class VimeoPlayerComponent {

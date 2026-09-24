@@ -15,7 +15,9 @@ import { TWITCH_PLAYER_TOKEN, TwitchPlayerDirective } from './headless/twitch-pl
   ],
   host: {
     class: 'et-twitch-player et-stream-player',
-    style: 'display: block; width: 100%; height: 100%',
+    '[style.display]': '"block"',
+    '[style.width]': '"100%"',
+    '[style.height]': '"100%"',
   },
 })
 export class TwitchPlayerComponent {

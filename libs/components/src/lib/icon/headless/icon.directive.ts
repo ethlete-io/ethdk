@@ -31,7 +31,9 @@ const SVG_COLOR_ATTRIBUTES = ['fill', 'stroke', 'stop-color', 'stop-opacity'];
     '[attr.role]': 'label() ? "img" : null',
     '[attr.aria-label]': 'label()',
     '[class]': 'hostClasses()',
-    style: 'display: flex; align-items: center; justify-content: center;',
+    '[style.display]': '"flex"',
+    '[style.align-items]': '"center"',
+    '[style.justify-content]': '"center"',
   },
 })
 export class IconDirective {

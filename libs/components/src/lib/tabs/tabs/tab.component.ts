@@ -25,7 +25,7 @@ import { TabLabelDirective } from './tab-label.directive';
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-tab',
-    style: 'display: none',
+    '[style.display]': '"none"',
   },
 })
 export class TabComponent {

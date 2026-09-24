@@ -68,6 +68,22 @@ describe('IconDirective', () => {
       expect(span.hasAttribute('aria-label')).toBe(false);
     });
 
+    it('centres its content without writing a style attribute a strict CSP would block', () => {
+      const setAttribute = vi.spyOn(Element.prototype, 'setAttribute');
+      const csp = TestBed.createComponent(IconTestHost);
+
+      csp.detectChanges();
+
+      const host = csp.nativeElement.querySelector('span');
+
+      expect(setAttribute.mock.calls.filter(([name]) => name === 'style')).toEqual([]);
+      expect(getComputedStyle(host).display).toBe('flex');
+      expect(host.style.alignItems).toBe('center');
+      expect(host.style.justifyContent).toBe('center');
+
+      setAttribute.mockRestore();
+    });
+
     it('sets icon-name class', () => {
       fixture.detectChanges();
       expect(span.classList.contains('et-icon--et-test')).toBe(true);

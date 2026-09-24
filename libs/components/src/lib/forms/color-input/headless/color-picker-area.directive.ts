@@ -17,7 +17,7 @@ import { fractionFromPointer } from './internals/color-picker-engine';
   exportAs: 'etColorPickerArea',
   host: {
     class: 'et-color-picker-area',
-    style: 'touch-action: none',
+    '[style.touch-action]': '"none"',
     '[style.--_et-color-picker-area-hue]': 'hueColor()',
     '(pointerdown)': 'handlePointerDown($event)',
   },

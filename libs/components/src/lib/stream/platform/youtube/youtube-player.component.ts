@@ -15,7 +15,9 @@ import { YOUTUBE_PLAYER_TOKEN, YoutubePlayerDirective } from './headless/youtube
   ],
   host: {
     class: 'et-youtube-player et-stream-player',
-    style: 'display: block; width: 100%; height: 100%',
+    '[style.display]': '"block"',
+    '[style.width]': '"100%"',
+    '[style.height]': '"100%"',
   },
 })
 export class YoutubePlayerComponent {

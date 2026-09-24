@@ -15,7 +15,9 @@ import { TIKTOK_PLAYER_TOKEN, TikTokPlayerDirective } from './headless/tiktok-pl
   ],
   host: {
     class: 'et-tiktok-player et-stream-player',
-    style: 'display: block; width: 100%; height: 100%',
+    '[style.display]': '"block"',
+    '[style.width]': '"100%"',
+    '[style.height]': '"100%"',
   },
 })
 export class TikTokPlayerComponent {
