@@ -134,6 +134,8 @@ Every change to a published package needs a changeset. Use the **`changeset`**
 skill (`.agents/skills/changeset/`) - write the file directly; don't run the
 interactive `npx changeset` CLI.
 
+Before a publish, run `yarn release:smoke`: it builds the SDK into fut-frontend and boots the app.
+
 `publish.yml` runs the vendored Changesets action in `tools/changesets-action` (upstream
 `changesets/action` v2 plus a Slack notification). Its README names the upstream commit.
 

@@ -85,7 +85,10 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
   - P12, P13, P17 not real: collection login/refresh/logout, the three options off, and `subtle.destroy()` (aborts in flight, works from the query's own success handler) behave on both clients.
   - P14 open, generator owned by another session: `prep-for-query-v3` flattens `E.CLEAR_QUERY_ARGS` into an import v3 no longer has, and a 5.x `withArgs` `null` ("keep the previous args", dfb ~10 sites) now parks the query. `migrating-from-v2.md` mentions neither. The scenario uses the fixed-by-hand shape (`null`).
   - Harness gap: `s.mount` runs change detection at once, so an `input.required()` read by `queryComputed` needs a parent template (`legacy-client-options`).
-- [ ] S7 Release gate: build the SDK into one 5.x app and fut-frontend, smoke-run before publish
+- [x] S7 Release gate: build the SDK into one 5.x app and fut-frontend, smoke-run before publish
+  - `yarn release:smoke` (`tools/release-smoke/`), local, before a publish: builds the libs, swaps them into fut-frontend's `node_modules/@ethlete/*` (restored after, also on Ctrl-C), runs `platform:build:production` (includes the type-check), serves it with the staging proxy and loads `/` (login) and a public collection page (P1 through the interop, 401 without a real token) in Chromium. Fails on a page or console error, >10 identical requests in 5s, or a main thread that stops answering.
+  - Bites: with the 85af9b224 fix reverted in the built query, the public page hangs the main thread and the gate fails. `@ethlete/query@6.0.0-next.48` itself fails the app's type-check.
+  - Limits: no login, so only the login and public pages run; the 5.x apps are on Angular 20 and `@ethlete/core` 4.x, while 6.0 peers on Angular 22.1.6 and core 5, so no 5.x app is in the gate until one is upgraded.
 - [x] S9 Export coverage gate: every runtime export of `libs/query/src/index.ts` must appear in a scenario, or be on an allowlist with a reason; CI fails otherwise
   - `yarn query:export-coverage` (`tools/export-coverage/`), in CI Checks and pre-push. 500 runtime exports (incl. `query/testing`), 330 uncovered on the allowlist.
   - `queryComputedWithForm` is not exported by `@ethlete/query`; P10 names it wrongly.
@@ -154,6 +157,7 @@ Triage (ethlete-sdk-57):
   The user confirmed the mutation default `false` on 2026-09-25.
 - 7 done by ethlete-sdk-70 in 944092f44 (`executeUntilSettled$`).
 - 6 done in 0776126aa: `withPolling({ enabled })`, optional (default always on); the user chose it.
+  `enabled` is also on `withLongPolling` and `withAutoRefresh` (user decision 2026-09-25).
 - Waiting on the user, one at a time: 9, 3, 8.
 - Next generator item (from S6): `prep-for-query-v3` turns `E.CLEAR_QUERY_ARGS` into an import v3 does not export, and
   5.x `withArgs` returning `null` meant "keep the previous args" where v3 parks the query (dfb ~10 sites). Neither is in

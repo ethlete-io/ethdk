@@ -26,6 +26,7 @@
     "prepare:release": "node ./tools/scripts/prepare-release.js",
     "query:export-coverage": "node ./tools/export-coverage/check.mjs query",
     "release": "yarn prepare:release && yarn changeset publish",
+    "release:smoke": "node ./tools/release-smoke/smoke.mjs",
     "storybook": "nx run storybook:storybook:network",
     "studio": "nx tauri:dev ethlete-studio",
     "timetrack": "nx tauri:dev timetrack-app",
