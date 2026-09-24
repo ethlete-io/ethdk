@@ -643,6 +643,43 @@ const branchMarks = (samples: readonly ActivityEvent[], roots: readonly string[]
 };
 
 /**
+ * When git or an editor said which branch each checkout had checked out, oldest first.
+ *
+ * These outrank the branch an agent session reports, which can be a stale one it started on. An
+ * agent's branch names a stretch only where neither had spoken yet.
+ */
+const witnessedBranches = (samples: readonly ActivityEvent[], roots: readonly string[]) => {
+  const found = new Map<string, BranchMark[]>();
+
+  for (const sample of samples) {
+    if (sample.kind !== 'git-checkout' && sample.kind !== 'editor-heartbeat') continue;
+
+    const state = repoStateFor(sample, roots);
+
+    if (!state?.branch) continue;
+
+    const held = found.get(state.repoPath) ?? [];
+
+    held.push({ at: sample.at, branch: state.branch });
+    found.set(state.repoPath, held);
+  }
+
+  return found;
+};
+
+const witnessedAt = (options: { marks: readonly BranchMark[] | undefined; at: Date }) => {
+  let found: string | undefined;
+
+  for (const mark of options.marks ?? []) {
+    if (mark.at.getTime() > options.at.getTime()) break;
+
+    found = mark.branch;
+  }
+
+  return found;
+};
+
+/**
  * The branch a stretch on a base branch was cut onto next, or nothing.
  *
  * A checkout is reported when it happens, so it names the branch of the minutes after it. That is the
@@ -1057,6 +1094,9 @@ export const streamDay = (options: {
       session: sessionAt({ runs: runs.get(options.repoPath), at: options.at }),
     };
   };
+  const witnessed = witnessedBranches(samples, roots);
+  const branchAt = (options: { repoPath: string; at: Date; reported: string | undefined }) =>
+    witnessedAt({ marks: witnessed.get(options.repoPath), at: options.at }) ?? options.reported;
   const lastAgentSample = new Map<string, Date>();
   const marks: Mark[] = [];
   const focusSpans: ContextSpan[] = [];
@@ -1144,7 +1184,15 @@ export const streamDay = (options: {
     // this, every page opened within the stickiness of an editor was booked to the editor's checkout.
     const holder = focused ?? (sticky?.appId === appId ? sticky?.repoPath : undefined);
     const context: ActivityContext = holder
-      ? { repoPath: holder, appId, ...workedOn({ repoPath: holder, branch: branches.get(holder), at: sample.at }) }
+      ? {
+          repoPath: holder,
+          appId,
+          ...workedOn({
+            repoPath: holder,
+            branch: branchAt({ repoPath: holder, at: sample.at, reported: branches.get(holder) }),
+            at: sample.at,
+          }),
+        }
       : { appId };
     const next = samples[index + 1];
 
@@ -1175,7 +1223,11 @@ export const streamDay = (options: {
 
     if (sample.kind === 'agent-session') {
       const cwd = repoRootOf({ path: sample.cwd, roots });
-      const ranOn = branchOf(sample.gitBranch) ?? branches.get(cwd);
+      const ranOn = branchAt({
+        repoPath: cwd,
+        at: sample.at,
+        reported: branchOf(sample.gitBranch) ?? branches.get(cwd),
+      });
       const ran: ActivityContext = { repoPath: cwd, ...workedOn({ repoPath: cwd, branch: ranOn, at: sample.at }) };
       const draft = draftFor(drafts, ran);
       // The gap between two samples is agent time only while it is one session's own gap. Read per
@@ -1205,7 +1257,11 @@ export const streamDay = (options: {
     const state =
       observed &&
       ((): RepoState => {
-        const on = observed.branch ?? branches.get(observed.repoPath);
+        const reported = observed.branch ?? branches.get(observed.repoPath);
+        const on =
+          sample.kind === 'agent-session'
+            ? branchAt({ repoPath: observed.repoPath, at: sample.at, reported })
+            : reported;
 
         return { repoPath: observed.repoPath, ...workedOn({ repoPath: observed.repoPath, branch: on, at: sample.at }) };
       })();
@@ -1219,14 +1275,21 @@ export const streamDay = (options: {
       state:
         state ??
         (holder
-          ? { repoPath: holder, ...workedOn({ repoPath: holder, branch: branches.get(holder), at: sample.at }) }
+          ? {
+              repoPath: holder,
+              ...workedOn({
+                repoPath: holder,
+                branch: branchAt({ repoPath: holder, at: sample.at, reported: branches.get(holder) }),
+                at: sample.at,
+              }),
+            }
           : null),
     });
   });
 
   for (const prompt of prompts) {
     const repoPath = checkoutOf(prompt.cwd);
-    const on = branchOf(prompt.gitBranch);
+    const on = repoPath ? branchAt({ repoPath, at: prompt.at, reported: branchOf(prompt.gitBranch) }) : undefined;
     const state: RepoState | null = repoPath
       ? { repoPath, ...workedOn({ repoPath, branch: on, at: prompt.at }) }
       : null;
@@ -1241,7 +1304,7 @@ export const streamDay = (options: {
   for (const turn of turns) {
     const repoPath = checkoutOf(turn.cwd);
 
-    const on = branchOf(turn.gitBranch);
+    const on = repoPath ? branchAt({ repoPath, at: turn.at, reported: branchOf(turn.gitBranch) }) : undefined;
 
     marks.push({
       at: turn.at,
