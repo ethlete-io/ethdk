@@ -2,6 +2,9 @@ use crate::error::TimetrackResult;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Mutex;
+#[cfg(target_os = "linux")]
+mod niri;
+
 use tauri::{AppHandle, LogicalSize, Manager, PhysicalPosition, Runtime, Webview, Window, WindowEvent};
 
 /// The window whose geometry is remembered. The widget has a size and a corner of its own.
@@ -25,13 +28,28 @@ struct Position {
     y: i32,
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct Placement {
     size: Option<Size>,
     position: Option<Position>,
     maximized: bool,
     minimized: bool,
+    niri: Option<NiriPlacement>,
+}
+
+/// Workspace ids are stable only while niri runs; the index, output and name are what is left to go by
+/// after niri has restarted.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct NiriPlacement {
+    workspace_id: Option<u64>,
+    workspace_idx: Option<u8>,
+    workspace_name: Option<String>,
+    output: Option<String>,
+    /// The tile's position in the workspace view, in logical pixels.
+    position: Option<(f64, f64)>,
+    size: Option<(i32, i32)>,
 }
 
 /// What the window looked like when it last showed its own geometry.
@@ -46,7 +64,7 @@ impl Remembered {
     }
 
     fn get(&self) -> Placement {
-        self.0.lock().map(|placement| *placement).unwrap_or_default()
+        self.0.lock().map(|placement| placement.clone()).unwrap_or_default()
     }
 
     fn set(&self, placement: Placement) {
@@ -68,7 +86,7 @@ pub fn restore<R: Runtime>(app: &AppHandle<R>) -> Placement {
         return stored;
     };
 
-    apply(app, &window, stored);
+    apply(app, &window, &stored);
 
     let _ = window.show();
 
@@ -81,7 +99,10 @@ pub fn restore<R: Runtime>(app: &AppHandle<R>) -> Placement {
 
     // After the show as well, and this is what a tiling compositor honours: it decides the geometry of
     // every window it maps, and the size it gives one is not up for discussion until it is mapped.
-    apply(app, &window, stored);
+    apply(app, &window, &stored);
+
+    #[cfg(target_os = "linux")]
+    niri::start(app.clone(), window.title().unwrap_or_default(), stored.niri.clone());
 
     stored
 }
@@ -99,10 +120,10 @@ pub fn reapply<R: Runtime>(app: &AppHandle<R>) {
         return;
     };
 
-    apply(app, &window, remembered.get());
+    apply(app, &window, &remembered.get());
 }
 
-fn apply<R: Runtime>(app: &AppHandle<R>, window: &Window<R>, placement: Placement) {
+fn apply<R: Runtime>(app: &AppHandle<R>, window: &Window<R>, placement: &Placement) {
     if let Some(size) = placement.size {
         let _ = window.set_size(LogicalSize::new(size.width, size.height));
     }
@@ -153,7 +174,7 @@ pub fn persist<R: Runtime>(app: &AppHandle<R>) {
 
     let placement = restorable(remembered.get(), live(&window));
 
-    remembered.set(placement);
+    remembered.set(placement.clone());
 
     if let Err(error) = write(app, &placement) {
         eprintln!("could not store where the window was: {error}");
@@ -166,8 +187,30 @@ fn restorable(previous: Placement, live: Placement) -> Placement {
     Placement {
         size: live.size.or(previous.size),
         position: live.position.or(previous.position),
+        niri: live.niri.or(previous.niri),
         ..live
     }
+}
+
+/// Answers false while the app is still starting and has nothing to merge it into yet.
+#[cfg(target_os = "linux")]
+fn remember_niri<R: Runtime>(app: &AppHandle<R>, niri: NiriPlacement) -> bool {
+    let Some(remembered) = app.try_state::<Remembered>() else {
+        return false;
+    };
+
+    let placement = Placement {
+        niri: Some(niri),
+        ..remembered.get()
+    };
+
+    remembered.set(placement.clone());
+
+    if let Err(error) = write(app, &placement) {
+        eprintln!("could not store where the window was: {error}");
+    }
+
+    true
 }
 
 /// `Manager::get_window` is behind Tauri's `unstable` feature, so the window is reached through the
@@ -204,6 +247,7 @@ fn live<R: Runtime>(window: &Window<R>) -> Placement {
             }),
         maximized,
         minimized,
+        niri: None,
     }
 }
 
@@ -272,6 +316,7 @@ mod tests {
             position: Some(Position { x, y }),
             maximized: false,
             minimized: false,
+            niri: None,
         }
     }
 
@@ -293,6 +338,7 @@ mod tests {
             position: None,
             maximized: true,
             minimized: false,
+            niri: None,
         };
 
         let next = restorable(placed(40, 20, 1100.0, 760.0), maximized);
@@ -330,9 +376,32 @@ mod tests {
     }
 
     #[test]
+    fn keeps_where_niri_showed_the_window_across_a_live_update() {
+        let previous = Placement {
+            niri: Some(NiriPlacement {
+                workspace_id: Some(2),
+                ..NiriPlacement::default()
+            }),
+            ..placed(0, 0, 800.0, 600.0)
+        };
+
+        let next = restorable(previous.clone(), placed(40, 20, 1100.0, 760.0));
+
+        assert_eq!(next.niri, previous.niri);
+    }
+
+    #[test]
     fn round_trips_what_it_stores() {
         let placement = Placement {
             minimized: true,
+            niri: Some(NiriPlacement {
+                workspace_id: Some(2),
+                workspace_idx: Some(2),
+                workspace_name: None,
+                output: Some("DP-1".to_owned()),
+                position: Some((1458.4, 472.8)),
+                size: Some((1180, 820)),
+            }),
             ..placed(40, 20, 1100.0, 760.0)
         };
 
