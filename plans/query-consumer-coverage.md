@@ -80,3 +80,31 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
   - `yarn query:export-coverage` (`tools/export-coverage/`), in CI Checks and pre-push. 500 runtime exports (incl. `query/testing`), 330 uncovered on the allowlist.
   - `queryComputedWithForm` is not exported by `@ethlete/query`; P10 names it wrongly.
 - [ ] S8 Same audit for `libs/core` and `libs/components`
+
+## v2 → v3 migration gaps (from ethlete-sdk-57, not yet triaged)
+
+Behavior an app loses or changes when it moves call sites from v2 to v3. Each needs a decision: accept and
+document, add a feature, or teach the codemod. Some are deliberate (retry and error parsing went opt-in in
+53fcc97ef).
+
+1. Retries: v2 retried every method on 5xx ×4 (`legacy/request/request.util.ts:225`); v3 needs `withDefaultRetry()`.
+   `migrate-to-query-v3` adds no features (`query-client-migration.ts:398`). Same for Symfony error parsing.
+2. v3 `execute()` never reuses a fresh cache hit (v2 `legacy/query/query.ts:224-228`); vbl's `cacheAdapter: () => 0`
+   no longer disables caching (inferred).
+3. `withPolling` ticks call execute without `triggeredBy` (`http/query-features.ts:258`): `loading()` flips each tick;
+   v2 kept `loading` false and set `refreshing`.
+4. v2 `cacheResponse: true` / `*etQuery cache: true` kept the last value across arg changes; v3 `response()` follows the
+   current request (`http/query-state.ts:140-164`). Conversely `withArgs(() => null)` keeps a stale response
+   (`query-features.ts:118-123`); fut added ~20 guards.
+5. v3 goes through `HttpClient`, so app interceptors see query requests: fifagg's `jwt.interceptor.ts:12-45` would send
+   its bearer token to third-party hosts, and twice on secure queries.
+6. `withPolling` has no stop predicate (`query-features.ts:134-170`); every app polls with `takeUntil`.
+7. No per-call result Observable: `execute()` is void, `executeUntilSettled` is a Promise. fut 111 and fifagg 108
+   `.execute().onSuccess` call sites.
+8. ET100 for a function route without `withArgs`, also on mutations (`base-query-factory.ts:55-62`).
+9. No abort and no cancelled state in v3 (compare `legacy/interop/legacy-query.ts:263-366`).
+10. Codemod: drops `entity:` silently (`legacy-query-creator-migration.ts:729`), skips gql creators, and has no rewrite
+    for `ExperimentalQuery` config helpers (`prep-for-query-v3/migration.ts:287`).
+11. The dyn auth scaffold ignores `refreshBuffer` / `cookieEnabled`; `migrating-from-v2.md` and `auth.md` disagree on
+    `refreshStrategy` units.
+12. Devtools: v2 clients and v3 cannot share one panel; both use the `et-query-devtools` selector.
