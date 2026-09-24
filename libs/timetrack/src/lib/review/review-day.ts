@@ -6,7 +6,8 @@ import { unnamedRowId } from '../rows/propose';
 import { snapRowBounds } from '../rows/snap';
 import { AttributionRule } from '../model/attribution';
 import { streamKeyRepoPath } from '../model/block';
-import { recutReviewedRows } from './recut';
+import { foldShortRows } from './fold';
+import { backgroundTest, recutReviewedRows } from './recut';
 import { formatDurationMs, formatTimeOfDay } from '../model/duration';
 import { syncsWithoutReview } from '../model/evidence';
 import { WorklogProposal, WorklogProposalState, syncsInState } from '../model/proposal';
@@ -24,7 +25,7 @@ import {
 } from './model';
 
 /** What the engine offered for one band: a proposal, or a band nothing could name. */
-type RowSource = Omit<WorklogProposal, 'issueKey'> & { issueKey?: string; standInId?: string };
+type RowSource = Omit<WorklogProposal, 'issueKey'> & { issueKey?: string; standInId?: string; folded?: string[] };
 
 /**
  * The state an untouched row reviews in. A well-evidenced row is accepted on sight — asking for a
@@ -310,18 +311,22 @@ export const reviewDay = (options: {
   const edits = options.edits ?? EMPTY_DAY_REVIEW_EDITS;
   const standIns = options.standIns ?? [];
   const rules = options.rules ?? [];
-  const tracked = trackPinnedRows({
-    pinned: edits.pinned,
-    sources: [...options.rows.proposals, ...options.rows.unnamed],
+  const pinnedIds = new Set(edits.pinned.flatMap((row) => [row.id, ...row.replaces]));
+  const isBackground = backgroundTest(options.cut?.backgroundProjects);
+  const sources = foldShortRows<RowSource>({
+    rows: [...options.rows.proposals, ...options.rows.unnamed],
+    incrementMs: { ...DEFAULT_ROUND_OPTIONS, ...options.round }.incrementMs,
+    fixed: (row) => pinnedIds.has(row.id),
+    canFold: (row) => !edits.overrides[row.id],
+    blockers: edits.pinned.filter((row) => !row.hidden),
+    // The re-cut below hands a background row's minutes to any foreground row over them, so a growth
+    // across that divide would take minutes a background row books, or be cut away again.
+    collides: (grower, other) => isBackground(grower) !== isBackground(other),
   });
-  const consumed = new Set([...edits.pinned.flatMap((row) => [row.id, ...row.replaces]), ...tracked.matched.values()]);
+  const tracked = trackPinnedRows({ pinned: edits.pinned, sources });
+  const consumed = new Set([...pinnedIds, ...tracked.matched.values()]);
   const reviewed = [
-    ...options.rows.proposals
-      .filter((proposal) => !consumed.has(proposal.id))
-      .map((proposal) => withOverride(proposal, edits.overrides[proposal.id])),
-    ...options.rows.unnamed
-      .filter((row) => !consumed.has(row.id))
-      .map((row) => withOverride(row, edits.overrides[row.id])),
+    ...sources.filter((row) => !consumed.has(row.id)).map((row) => withOverride(row, edits.overrides[row.id])),
     ...tracked.rows.map(fromPinned).map((row) => nameFromStandInRule({ row, rules, standIns })),
     ...tracked.leftovers.map((row) => withOverride(row, edits.overrides[row.id])),
   ]

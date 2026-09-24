@@ -22,7 +22,7 @@ const editTarget = (row: ReviewedRow): ReviewedRow => (row.recutOf ? { ...row, i
 
 /** What a row stands in for, so splitting or merging an already-edited row keeps the original's claim. */
 const replacedBy = (edits: DayReviewEdits, row: ReviewedRow) =>
-  pinnedById(edits, editIdOf(row))?.replaces ?? [editIdOf(row)];
+  pinnedById(edits, editIdOf(row))?.replaces ?? [editIdOf(row), ...(row.folded ?? [])];
 
 const withoutHidden = <T extends { hidden?: boolean }>(entry: T): T => {
   const { hidden: _hidden, ...kept } = entry;

@@ -55,6 +55,13 @@ glued by hand; the stream behind it cannot, because a stream is keyed by its che
 band shows that stream's evidence. See ADR 0011.
 _Avoid_: bar, slot, entry
 
+**Fold**:
+A row that books a single increment is folded into the nearest row of the same name in its lane,
+which grows toward it by that increment (`foldShortRows`). The total stays; the placement moves. A
+row the reviewer edited never folds, and a growth that would cover another row of the lane or cross
+between background and foreground work does not happen.
+_Avoid_: compact, absorb
+
 **Attribution**:
 The assignment of a block to a Jira issue. Distinct from a Tempo _work attribute_, which is a
 field on a worklog.

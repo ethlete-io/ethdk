@@ -88,6 +88,17 @@ const pieceOf = (options: { row: ReviewedRow; span: Span; at: number }): Reviewe
  */
 const takesNothing = (row: ReviewedRow) => (!!row.excluded && !row.issueKey) || row.state === 'rejected';
 
+/** Whether a row names an issue of one of the background projects, so the re-cut gives its minutes away. */
+export const backgroundTest = (backgroundProjects: readonly string[] | undefined) => {
+  const background = new Set((backgroundProjects ?? []).map((key) => key.trim().toUpperCase()).filter(Boolean));
+
+  return (row: { issueKey?: string }) => {
+    const project = row.issueKey ? projectKeyOf(row.issueKey) : undefined;
+
+    return !!project && background.has(project);
+  };
+};
+
 /**
  * Cuts the day's background rows against the rows the reviewer ended up with, and reports what they
  * lost as bands drawn behind them.
@@ -105,14 +116,9 @@ export const recutReviewedRows = (options: {
   backgroundProjects?: readonly string[];
   round?: Partial<RoundOptions>;
 }): { rows: ReviewedRow[]; behind: BehindStretch[] } => {
-  const background = new Set((options.backgroundProjects ?? []).map((key) => key.trim().toUpperCase()).filter(Boolean));
-  const isBackground = (row: ReviewedRow) => {
-    const project = row.issueKey ? projectKeyOf(row.issueKey) : undefined;
+  const isBackground = backgroundTest(options.backgroundProjects);
 
-    return !!project && background.has(project);
-  };
-
-  if (!background.size || !options.rows.some(isBackground)) {
+  if (!options.rows.some(isBackground)) {
     return { rows: [...options.rows], behind: [...options.behind] };
   }
 

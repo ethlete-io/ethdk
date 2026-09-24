@@ -102,6 +102,11 @@ export type ReviewedRow = Omit<WorklogProposal, 'issueKey'> & {
    * both halves are, and a piece the next re-cut does not produce leaves nothing dangling behind.
    */
   recutOf?: string;
+  /**
+   * The single-increment rows the day folded into this one. They are gone from the day, so an edit
+   * that restructures this row has to replace them along with it.
+   */
+  folded?: string[];
   /** What the engine proposed before the edit, when there is still a proposal to reset to. */
   proposed?: WorklogProposal;
   /** Whether the reviewer took this row off the timeline. See {@link DayReview.hidden}. */
