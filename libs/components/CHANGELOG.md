@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.0-next.62
+
+### Patch Changes
+
+- Icons, tabs, stream players and the color picker area set their host styles through style bindings instead of a static `style` attribute, which a strict `style-src` blocked.
+- Dropzone image previews are `data:` URLs instead of `blob:` URLs, so they show under an `img-src` that does not allow `blob:`.
+- `et-grid-debug` styles itself through classes in its own stylesheet instead of static `style` attributes, which a strict `style-src` blocked.
+- Rich text alignment now shows under a strict `style-src`: the editor and viewer style it through an `et-rte-align-*` class, while the stored Markdown keeps its `text-align` form.
+- The stream players' platform SDK scripts carry Angular's `CSP_NONCE`, and the stream guide lists the `script-src` and `frame-src` origins each player needs.
+
 ## 1.0.0-next.61
 
 ### Minor Changes

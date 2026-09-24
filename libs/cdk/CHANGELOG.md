@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.34
+
+### Patch Changes
+
+- The icon directive and masonry items set their host styles through style bindings instead of a static `style` attribute, which a strict `style-src` blocked.
+
 ## 5.0.0-next.33
 
 ### Patch Changes

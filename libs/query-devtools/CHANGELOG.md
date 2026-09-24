@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.13
+
+### Patch Changes
+
+- The pop-out window is styled without inline `style` attributes and keeps the nonce of every stylesheet it copies, so it works under a strict `style-src`.
+
 ## 1.0.0-next.12
 
 ### Patch Changes

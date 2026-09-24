@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 6.0.0-next.51
+
+### Patch Changes
+
+- The devtools pills' stylesheet now carries the application's `CSP_NONCE`, so it passes a strict `style-src`.
+
 ## 6.0.0-next.50
 
 ### Patch Changes

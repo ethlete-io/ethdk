@@ -1,5 +1,12 @@
 # @ethlete/core
 
+## 5.0.0-next.59
+
+### Patch Changes
+
+- The legacy theme stylesheets carry the page's `ngCspNonce`, and `et-structured-data` no longer writes a static `style` attribute, so both pass a strict `style-src`.
+- `markdownToHtml` renders block and table-cell alignment as an `et-rte-align-*` class instead of an inline `text-align` style, which a strict `style-src` dropped; `htmlToMarkdown` reads both.
+
 ## 5.0.0-next.58
 
 ### Minor Changes
