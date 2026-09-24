@@ -332,6 +332,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       .subscribe();
 
     let changedFieldsInLastResetLoop: string[] = [];
+    let fieldsResetInResetLoop = new Set<string>();
     let currentUniqueChangedFields: string[] = [];
 
     this.currentFormValue$
@@ -347,9 +348,10 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
             this._syncViaUrlQueryParams(currentValue, options?.replaceUrl);
           }
 
-          const didResetValues = this.skipNextResets
-            ? false
+          const resetFields = this.skipNextResets
+            ? []
             : this._handleQueryFormResets(previousValue ?? null, currentValue);
+          const didResetValues = resetFields.length > 0;
 
           this.skipNextResets = false;
           this.skipNextResetsFor = undefined;
@@ -366,9 +368,12 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
           if (didResetValues) {
             this.didValueChanges$.next(true);
             changedFieldsInLastResetLoop = changedFields;
+            resetFields.forEach((key) => fieldsResetInResetLoop.add(key));
           }
 
-          currentUniqueChangedFields = [...new Set(changedFields)];
+          currentUniqueChangedFields = [...new Set(changedFields)].filter((key) => !fieldsResetInResetLoop.has(key));
+
+          if (!didResetValues) fieldsResetInResetLoop = new Set();
         }),
         switchMap(({ currentValue, previousValue }) => {
           const skipDebounce = this.skipNextDebounce;
@@ -590,7 +595,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   }
 
   private _handleQueryFormResets(previousValue: QueryFormValue<T> | null, currentValue: QueryFormValue<T>) {
-    let didResetValues = false;
+    const resetFields: string[] = [];
 
     for (const formFieldKey in this._fields) {
       const field = this._fields[formFieldKey];
@@ -626,14 +631,14 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
           this.form.controls[formFieldKey].setValue(defaultValueForKeyToReset);
 
-          didResetValues = true;
+          resetFields.push(formFieldKey);
 
           break;
         }
       }
     }
 
-    return didResetValues;
+    return resetFields;
   }
 
   private getDefaultValue(key: string) {

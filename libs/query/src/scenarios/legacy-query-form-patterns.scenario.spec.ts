@@ -299,7 +299,7 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy QueryForm patterns on the %s client',
       legacy.destroy();
     });
 
-    it.fails('keeps the search debounce when the first keystroke resets the page', async () => {
+    it('keeps the search debounce when the first keystroke resets the page', async () => {
       const { s, legacy, c, ref, seasonSlug } = await setup();
       seasonSlug.set('2026');
       await s.settle(1000);
