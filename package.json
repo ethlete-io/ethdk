@@ -64,7 +64,7 @@
     "@swc/core": "1.13.5",
     "@swc/helpers": "0.5.17",
     "@types/jest": "30.0.0",
-    "@types/mdx": "2.0.13",
+    "@types/mdx": "2.0.14",
     "@types/node": "24.8.1",
     "@typescript-eslint/utils": "8.46.1",
     "angular-eslint": "20.4.0",
