@@ -25,6 +25,9 @@ effect(() => { a.set(b()); });`,
     { code: `selectedItem = linkedSignal(() => this.items()[0] ?? null);` },
     // effect without set
     { code: `effect(() => { console.log(this.count()); });` },
+    { code: `effect(() => { if (this.open()) { this.log('open'); this.selected.set(null); } });` },
+    { code: `effect(() => { if (this.open()) { this.selected.set(null); } else { this.close(); } });` },
+    { code: `effect(() => { if (this.open()) this.selected.set(null); this.log('done'); });` },
   ],
   invalid: [
     {
@@ -41,6 +44,14 @@ ngEffect(() => { a.set(b()); });`,
       // Block body with single set statement
       code: `effect(() => { this.selectedItem.set(this.items()[0] ?? null); });`,
       errors: [{ messageId: 'preferLinkedSignal' }],
+    },
+    {
+      code: `effect(() => { if (this.items().length) { this.selectedItem.set(this.items()[0]); } });`,
+      errors: [{ messageId: 'preferLinkedSignal' }],
+    },
+    {
+      code: `effect(() => { if (this.open()) this.selected.set(this.items()[0]); else this.selected.set(null); });`,
+      errors: [{ messageId: 'preferLinkedSignal' }, { messageId: 'preferLinkedSignal' }],
     },
   ],
 });

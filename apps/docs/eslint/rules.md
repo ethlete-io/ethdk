@@ -131,7 +131,7 @@ export class ProfileAvatarComponent {
 | `no-rxjs-in-effect`         | No `.subscribe()` inside `effect()` or `computed()` - bridge with `toObservable()` instead                        |     | error   |
 | `no-effect-cleanup-return`  | No cleanup function returned from `effect()` - Angular ignores it; use the `onCleanup` parameter or `DestroyRef`  | 🔧  | error   |
 | `no-readonly-signal`        | No `readonly` on class properties initialized with reactive APIs (`signal`, `input`, `computed`, `inject`, …)     | 🔧  | error   |
-| `prefer-linked-signal`      | `linkedSignal()` instead of calling `.set()` on a signal inside `effect()`                                        |     | warn    |
+| `prefer-linked-signal`      | `linkedSignal()` instead of an `effect()` that only calls `.set()` on a signal, also behind an `if`/`else`        |     | warn    |
 | `prefer-rxjs-timer`         | RxJS `timer` / `interval` / `fromEvent` instead of `setTimeout` / `setInterval` / `addEventListener`              |     | error   |
 
 ```ts

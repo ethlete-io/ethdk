@@ -24,27 +24,43 @@ const { isImportedAs } = require('./internals/import-resolution');
  * GOOD:
  *   selectedItem = linkedSignal(() => this.items()[0] ?? null);
  *
- * NOTE: Only flag when .set() is called directly inside an effect() callback.
- * Setting signals outside effects (in methods, event handlers, etc.) is fine.
+ * Also flagged when the write sits behind an `if`, as long as every branch only
+ * writes signals: `linkedSignal` keeps the previous value for the untaken branch.
  */
 
 /**
- * Returns true only when the `.set()` call node is a *pure derivation* inside
- * an effect() callback — meaning:
+ * @param {any} node
+ * @returns {boolean}
+ */
+const isSetCall = (node) =>
+  node.type === 'CallExpression' &&
+  node.callee.type === 'MemberExpression' &&
+  node.callee.property.type === 'Identifier' &&
+  node.callee.property.name === 'set' &&
+  node.arguments.length === 1;
+
+/**
+ * A statement that does nothing but write signals: a lone `.set()`, a block holding one, or an
+ * `if`/`else` whose every branch is one.
  *
- * 1. The IMMEDIATE enclosing function (the first function boundary walking up
- *    from the node) IS the first argument passed to `effect()`. This ensures
- *    that `.set()` calls nested inside `untracked(() => ...)` or other inner
- *    functions within the effect are NOT flagged — those are intentional
- *    write-back patterns, not derivations.
- *
- * 2. The `.set()` call is the SOLE expression in that callback:
- *    - Arrow with expression body: `effect(() => sig.set(x))`
- *    - Block body with a single ExpressionStatement: `effect(() => { sig.set(x); })`
- *
- *    Multi-statement blocks (even if they end with a `.set()`) indicate that the
- *    effect is performing side effects alongside the signal write, so they are
- *    not flagged either.
+ * @param {any} statement
+ * @returns {boolean}
+ */
+const isSetOnlyStatement = (statement) => {
+  if (!statement) return false;
+  if (statement.type === 'ExpressionStatement') return isSetCall(statement.expression);
+  if (statement.type === 'BlockStatement') return statement.body.length === 1 && isSetOnlyStatement(statement.body[0]);
+  if (statement.type === 'IfStatement') {
+    return (
+      isSetOnlyStatement(statement.consequent) && (!statement.alternate || isSetOnlyStatement(statement.alternate))
+    );
+  }
+  return false;
+};
+
+/**
+ * True when the `.set()` call sits directly in an `effect()` callback (not in a nested function such as
+ * `untracked(() => …)`) and that callback does nothing but write signals, optionally behind an `if`.
  *
  * @param {import('eslint').SourceCode} sourceCode
  * @param {import('eslint').Rule.Node} node The `.set()` CallExpression node
@@ -75,20 +91,10 @@ const isPureSetInDirectEffectCallback = (sourceCode, node) => {
     return false;
   }
 
-  // The .set() must be the sole expression — no surrounding statements.
-  // Case A: arrow with expression body — the body IS the .set() call.
-  if (immediateFunction.type === 'ArrowFunctionExpression' && immediateFunction.body === node) {
-    return true;
-  }
-
-  // Case B: block body with exactly one ExpressionStatement wrapping the .set() call.
   const body = immediateFunction.body;
-  return (
-    body.type === 'BlockStatement' &&
-    body.body.length === 1 &&
-    body.body[0].type === 'ExpressionStatement' &&
-    body.body[0].expression === node
-  );
+  if (body.type !== 'BlockStatement') return body === node;
+
+  return node.parent.type === 'ExpressionStatement' && body.body.length === 1 && isSetOnlyStatement(body.body[0]);
 };
 
 /** @type {import('eslint').Rule.RuleModule} */
@@ -108,15 +114,7 @@ const preferLinkedSignal = {
   create(context) {
     return {
       CallExpression(node) {
-        const { callee } = node;
-
-        if (
-          callee.type === 'MemberExpression' &&
-          callee.property.type === 'Identifier' &&
-          callee.property.name === 'set' &&
-          node.arguments.length === 1 &&
-          isPureSetInDirectEffectCallback(context.sourceCode, node)
-        ) {
+        if (isSetCall(node) && isPureSetInDirectEffectCallback(context.sourceCode, node)) {
           context.report({ node, messageId: 'preferLinkedSignal' });
         }
       },
