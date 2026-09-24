@@ -151,8 +151,10 @@ Triage (ethlete-sdk-57):
   for mutations (a failed second submit must not report the first response). Parking calls `reset()`. No earlier
   implementation existed (checked all branches, stashes and `experimental/`).
   The `early-v3-patterns.scenario.spec.ts` was reported as broken, but it passes at HEAD (9f822f831 + 11490012c).
+  The user confirmed the mutation default `false` on 2026-09-25.
 - 7 done by ethlete-sdk-70 in 944092f44 (`executeUntilSettled$`).
-- Waiting on the user, one at a time: 6, 9, 3, 8.
+- 6 done in 0776126aa: `withPolling({ enabled })`, optional (default always on); the user chose it.
+- Waiting on the user, one at a time: 9, 3, 8.
 - Next generator item (from S6): `prep-for-query-v3` turns `E.CLEAR_QUERY_ARGS` into an import v3 does not export, and
   5.x `withArgs` returning `null` meant "keep the previous args" where v3 parks the query (dfb ~10 sites). Neither is in
   `migrating-from-v2.md`. See `early-v3-patterns.scenario.spec.ts`.
