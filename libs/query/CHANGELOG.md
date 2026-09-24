@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 6.0.0-next.50
+
+### Patch Changes
+
+- Legacy interop: `execute()` and `abort()` read the query state untracked again, so `queryComputed(() => legacyQuery.prepare(...).execute())` no longer re-runs on every state change and floods the API until the tab runs out of memory.
+
 ## 6.0.0-next.49
 
 ### Minor Changes
