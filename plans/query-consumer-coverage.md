@@ -107,6 +107,9 @@ Triage (ethlete-sdk-57):
 - 4 decided: keep the previous response on args change by default (the user expected this was already the case;
   verified it was not), parking and `reset()` clear it, opt-out through the query config. In progress.
 - Waiting on the user, one at a time: 6, 7, 9, 3, 8.
+- Next generator item (from S6): `prep-for-query-v3` turns `E.CLEAR_QUERY_ARGS` into an import v3 does not export, and
+  5.x `withArgs` returning `null` meant "keep the previous args" where v3 parks the query (dfb ~10 sites). Neither is in
+  `migrating-from-v2.md`. See `early-v3-patterns.scenario.spec.ts`.
 - To question: 14 (query button, EntityStore). Document only: 12, 15-18.
 
 1. Retries: v2 retried every method on 5xx ×4 (`legacy/request/request.util.ts:225`); v3 needs `withDefaultRetry()`.
