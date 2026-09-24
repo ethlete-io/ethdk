@@ -13,28 +13,84 @@ Signals-first, typesafe data fetching for Angular: request dedup, caching, polli
 paged queries, bearer auth, GraphQL, and a socket.io realtime client.
 
 **The written docs are the source of truth - read the relevant page before
-non-trivial query work.** This guide is the index plus the load-bearing facts, so you
-don't re-derive them from source.
+non-trivial query work.** This guide maps every need to its API and page, plus the
+load-bearing facts, so you don't re-derive them from source or hand-build what ships.
 
-| Page                                                                   | Covers                                                                                |
-| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| {%docsBaseUrl%}/query/                                                 | Overview + the two-generations note                                                   |
-| {%docsBaseUrl%}/query/queries                                          | **Start here** - client, creators, the query object's signals, auto-execution         |
-| {%docsBaseUrl%}/query/features                                         | `withArgs`, `withPolling`, `withLongPolling`, `withAutoRefresh`, side-effect handlers |
-| {%docsBaseUrl%}/query/http                                             | REST creators, typing requests, response transforms, upload progress                  |
-| {%docsBaseUrl%}/query/auth                                             | Bearer auth: login/refresh, auto token refresh, multi-tab sync                        |
-| {%docsBaseUrl%}/query/caching · `/stacks` · `/errors` · `/gql` · `/ws` | Caching/dedup, pagination, error/retry, GraphQL, WebSockets                           |
-| {%docsBaseUrl%}/query/multi-tab                                        | Opt-in cross-tab sync: shared responses, per-key polling election, mutation fan-out   |
-| {%docsBaseUrl%}/query/query-forms                                      | **Any filtered, searched, sorted or paged list** - `defineQueryForm`, URL sync        |
-| {%docsBaseUrl%}/query/legacy                                           | The maintenance-mode `V2QueryClient`                                                  |
+| Page                                    | Covers                                                                        |
+| --------------------------------------- | ----------------------------------------------------------------------------- |
+| {%docsBaseUrl%}/query/                  | Overview, the two generations, what else the package ships                    |
+| {%docsBaseUrl%}/query/queries           | **Start here** - client, creators, the query object's signals, auto-execution |
+| {%docsBaseUrl%}/query/features          | `withArgs`, polling, auto-refresh, side-effect handlers, custom features      |
+| {%docsBaseUrl%}/query/http              | REST creators, typing requests, response transforms, upload progress          |
+| {%docsBaseUrl%}/query/auth              | Bearer auth provider, guards, token refresh, auth features                    |
+| {%docsBaseUrl%}/query/caching           | Cache keys, dedup, `keepUnusedFor`, freshness, refresh and invalidation       |
+| {%docsBaseUrl%}/query/multi-tab         | Cross-tab response sharing, one poller per key, mutation fan-out              |
+| {%docsBaseUrl%}/query/persistence       | Successful reads kept in IndexedDB for reloads and offline cold starts        |
+| {%docsBaseUrl%}/query/stacks            | Many queries of one creator, infinite lists, paged data                       |
+| {%docsBaseUrl%}/query/dependent-queries | GET → GET dependencies and ordered mutation chains                            |
+| {%docsBaseUrl%}/query/batching          | Bulk writes with bounded concurrency, per-item results, retry                 |
+| {%docsBaseUrl%}/query/errors            | Error object, opt-in parsers, form submission, violations, retries            |
+| {%docsBaseUrl%}/query/query-forms       | **Any filtered, searched, sorted or paged list** - `defineQueryForm`          |
+| {%docsBaseUrl%}/query/gql               | GraphQL creators over GET/POST                                                |
+| {%docsBaseUrl%}/query/ws                | socket.io rooms and live-updating responses                                   |
+| {%docsBaseUrl%}/query/legacy            | The maintenance-mode `V2QueryClient` and its replacements                     |
+| {%docsBaseUrl%}/query/migrating-from-v2 | Codemods and the screen-by-screen move off the legacy client                  |
+| {%docsBaseUrl%}/query-devtools/         | The devtools panel and `provideQueryDevtools()`                               |
+
+## You need → use → read
+
+Before writing a helper, find your need here. Pages are under `{%docsBaseUrl%}/query/`.
+
+| You need                                                       | Use                                                                                                                                                                                                                                    | Read                |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| One client per API                                             | `createQueryClient`, `injectApi()`                                                                                                                                                                                                     | `queries`           |
+| REST reads (auto-executing)                                    | `createGetQuery`, `createHeadQuery`, `createOptionsQuery`                                                                                                                                                                              | `http`              |
+| REST writes (manual)                                           | `createPostQuery`, `createPutQuery`, `createPatchQuery`, `createDeleteQuery`                                                                                                                                                           | `http`              |
+| The same behind a bearer token                                 | `createSecureGetQuery`, `createSecureHeadQuery`, `createSecureOptionsQuery`, `createSecurePostQuery`, `createSecurePutQuery`, `createSecurePatchQuery`, `createSecureDeleteQuery`                                                      | `http`, `auth`      |
+| Upload/download progress bar                                   | creator option `reportProgress: true`, then `loading().progress`                                                                                                                                                                       | `http`              |
+| Args that follow signals (route params, inputs, filters)       | `withArgs`                                                                                                                                                                                                                             | `features`          |
+| A filtered / searched / sorted / paged list synced to the URL  | `defineQueryForm`, `queryField`, `searchQueryField`, `sortQueryField`                                                                                                                                                                  | `query-forms`       |
+| Refetch on an interval                                         | `withPolling`                                                                                                                                                                                                                          | `features`          |
+| Next request once the previous settled, with a cursor from it  | `withLongPolling`                                                                                                                                                                                                                      | `features`          |
+| Refetch when some other signal changes                         | `withAutoRefresh`                                                                                                                                                                                                                      | `features`          |
+| Toast / log / react on success or failure                      | `withSuccessHandling`, `withErrorHandling`, `withLogging`                                                                                                                                                                              | `features`          |
+| Patch a loaded response in place (e.g. from a socket message)  | `withResponseUpdate`                                                                                                                                                                                                                   | `features`, `ws`    |
+| Page falls out of range after a filter shrinks the results     | `withPageResetOnError`, `isPageOutOfRangeError`                                                                                                                                                                                        | `features`          |
+| Package your own reusable query behavior                       | `createQueryFeature`                                                                                                                                                                                                                   | `features`          |
+| Refresh reads after a mutation (here and in other tabs)        | `injectApi().invalidateQueries({ url })`                                                                                                                                                                                               | `caching`           |
+| Refetch everything after a client-wide header changed          | `injectApi().refreshQueriesInUse()`                                                                                                                                                                                                    | `caching`           |
+| Show the previous data instantly on back navigation            | `keepUnusedFor` + `executionState().cachedResponse`                                                                                                                                                                                    | `caching`           |
+| Last known data after a reload or offline                      | `withQueryPersistence`, `createIndexedDbQueryPersistenceAdapter`, `createNoopQueryPersistenceAdapter`                                                                                                                                  | `persistence`       |
+| Tabs share responses, poll once, see each other's mutations    | `withMultiTabSync`                                                                                                                                                                                                                     | `multi-tab`         |
+| Parallel detail requests for a list of ids                     | `createQueryStack`, `transformArrayResponse`                                                                                                                                                                                           | `stacks`            |
+| Load more / infinite scroll / classic paging                   | `createPagedQueryStack`, `ethletePaginationAdapter` (and other adapters)                                                                                                                                                               | `stacks`            |
+| A GET whose args come from another GET's response              | `withArgs` reading the first query's `response()`                                                                                                                                                                                      | `dependent-queries` |
+| Run mutations in order, each using the previous result         | `querySequence`                                                                                                                                                                                                                        | `dependent-queries` |
+| Many edits with progress, time remaining and retry of failures | `createQueryBatch`                                                                                                                                                                                                                     | `batching`          |
+| Submit a signal form through a mutation, violations on fields  | `createQuerySubmission`                                                                                                                                                                                                                | `errors`            |
+| Own submit handler, or server-side validation while typing     | `executeUntilSettled`, `mapViolationsToFormErrors`, `validateWithQuery`                                                                                                                                                                | `errors`            |
+| Understand the error shapes your API returns                   | `withEthleteApiErrors` (all), `withSymfonyErrors`, `withHtmlErrorParsing`                                                                                                                                                              | `errors`            |
+| Error text for display, or an error built by hand (tests)      | `queryErrorMessage`, `queryErrorMessages`, `createQueryErrorResponse`, `<et-query-error>`                                                                                                                                              | `errors`            |
+| Retry failed requests                                          | `withDefaultRetry`, `createDefaultRetryFn`                                                                                                                                                                                             | `errors`            |
+| Login / refresh / logout with bearer tokens                    | `createBearerAuthProvider`, `withAuthenticationQuery`, `withRefreshQuery`                                                                                                                                                              | `auth`              |
+| Protect routes, check roles or permissions                     | `createAuthGuard`, `canMatchWith`                                                                                                                                                                                                      | `auth`              |
+| "Remember me" auto-login                                       | `withPersistentAuth`                                                                                                                                                                                                                   | `auth`              |
+| Log out idle users                                             | `withInactivityLogout`                                                                                                                                                                                                                 | `auth`              |
+| Warn before the session expires                                | `withTokenExpirationWarning`                                                                                                                                                                                                           | `auth`              |
+| Revoke the token on logout                                     | `withTokenRevocation`                                                                                                                                                                                                                  | `auth`              |
+| Share login/logout across tabs                                 | `withBearerAuthMultiTabSync`                                                                                                                                                                                                           | `auth`              |
+| Auth telemetry events                                          | `withTracking`                                                                                                                                                                                                                         | `auth`              |
+| Tokens from SSO or a native shell                              | `provider.setTokens(access, refresh)`                                                                                                                                                                                                  | `auth`              |
+| Which of several queries is busy (v2 query collections)        | each query's `executionState()` in a `computed`; auth: `provider.executionState()`                                                                                                                                                     | `migrating-from-v2` |
+| GraphQL                                                        | `createGqlQueryViaGet`, `createGqlQueryViaPost`, `createGqlMutationViaGet`, `createGqlMutationViaPost`, `createSecureGqlQueryViaGet`, `createSecureGqlQueryViaPost`, `createSecureGqlMutationViaGet`, `createSecureGqlMutationViaPost` | `gql`               |
+| Realtime rooms over socket.io                                  | `createWebSocketClient`                                                                                                                                                                                                                | `ws`                |
+| Inspect queries, stacks, auth and cache at runtime             | `provideQueryDevtools()` + `@ethlete/query-devtools`                                                                                                                                                                                   | `/query-devtools/`  |
 
 ## Two generations - use the current one
 
-- **Current (use this):** signals-first, provider-based. `createQueryClient`,
-  `createGetQuery`/`createPostQuery`/…, `withArgs`. Everything imports from the
-  single entry `@ethlete/query`.
-- **Legacy (maintenance mode):** class-based `V2QueryClient`, `.prepare().execute()`,
-  `queryComputed`. Don't write new code against it.
+Write new code against the signals-first system (`createQueryClient`, `createGetQuery`, …,
+`withArgs`), all from the single entry `@ethlete/query`. The class-based `V2QueryClient`
+(`.prepare().execute()`, `queryComputed`) is in maintenance mode.
 
 ## Core usage
 
@@ -100,8 +156,8 @@ filter overlays and `activeFilterCount`.
 
 ## The query object
 
-Every state member is an **`ObservableSignal`** - a `Signal` that also has
-`.asObservable()`. So each is both a signal (call it) and a stream:
+Every state member is an **`ObservableSignal`** - call it, or `.asObservable()` it without an
+injection context of your own (it emits `null` first).
 
 - `response()` → `TResponse | null` (kept while re-executing; cleared on a failed re-exec).
   To keep showing the last good data after a failure, read `cachedResponse` from the
@@ -110,75 +166,29 @@ Every state member is an **`ObservableSignal`** - a `Signal` that also has
   `executionState()` (`{ type: 'loading' | 'success' | 'failure', … } | null`, great for `@switch`).
 - Methods: `execute({ args?, options? })`, `reset()`, `createSnapshot()`, `asReadonly()`.
 
-`query.response.asObservable()` binds to the query's own injector, so callers get
-an `Observable<T | null>` **without** needing their own injection context (unlike
-raw `toObservable`). It emits `null` first - `pipe(filter(r => r !== null))`.
+## Reactive args
 
-## Reactive args & features
+- **`withArgs(() => ({ pathParams, queryParams, body }))`** runs like a `computed` and
+  re-executes on change. Return `null` to park the query (pauses polling/auto-refresh).
+- **Prefer `withArgs` over `execute({ args })`.** Declared args keep a `GET` re-executing and
+  polling/auto-refresh restarting off the same signal; a function route throws without it. A
+  mutation with `withArgs` is just `.execute()`. Reserve `execute({ args })` for a one-off
+  payload no signal holds.
+- Search-as-you-type: read a debounced value (`searchQueryField()` debounces 300ms; every
+  query field takes `debounce`) - a raw input signal sends one request per keystroke.
+- `withLongPolling` and `withPolling` throw when combined.
 
-- **`withArgs(() => ({ pathParams, queryParams, body }))`** - runs like a `computed`;
-  re-runs when a signal it reads changes and re-executes the query. For
-  **search-as-you-type**, read a `defineQueryForm` value (debounced) or another
-  debounced signal - a raw input signal sends one request per keystroke. Return `null`
-  to park the query - args reset to `null`, pausing polling/auto-refresh.
-- **Prefer `withArgs` over passing `args` to `execute()`.** Args declared on the query
-  stay reactive: a `GET` re-executes itself when they change, and `withPolling` /
-  `withAutoRefresh` restart off the same signal - none of which happens for args handed
-  to `execute()`. A function route additionally throws without it. With `withArgs` in
-  place a mutation is just `.execute()`, which reuses the current `args()`. Reserve
-  `execute({ args })` for a one-off payload no signal holds (a form submit).
-- `withPolling({ interval })`, `withAutoRefresh({ onSignalChanges: [...] })`.
-- **`withLongPolling({ nextArgs })`** for a completion-driven chain instead of an interval: each
-  round starts once the previous settled, with args (a cursor) derived from its response. `nextArgs`
-  returning `null` ends the chain. Not `withPolling` with a small interval - and the two throw when
-  combined.
-- Side-effects: `withSuccessHandling`, `withErrorHandling`, `withLogging`.
+## Bridging into RxJS or callbacks
 
-Debounce lives in the form layer: `searchQueryField()` debounces 300ms, and every query
-field takes a `debounce` option. Outside a query form, debounce the signal before
-`withArgs` reads it.
-
-After a mutation, refresh the affected reads with `injectApi().invalidateQueries({ url })`
-(see {%docsBaseUrl%}/query/caching) instead of calling `execute()` on each one.
-
-For route guards, use `createAuthGuard(authProviderRef, config)`. Its `canMatchWith(predicate)`
-checks a role or permission after the session has settled (see {%docsBaseUrl%}/query/auth).
-
-## Bridging a query into RxJS / other APIs
-
-For a callback that must start one request and return one correlated result, use a
-manual query with `executeUntilSettled()`. Its frozen snapshot cannot be replaced by a
-later execution, and the observable completes after that one result.
-
-```ts
-class ItemSource {
-  private itemsQuery = getItems({ onlyManualExecution: true });
-
-  fetch(query: string) {
-    return defer(() => executeUntilSettled(this.itemsQuery, { args: { queryParams: { q: query } } })).pipe(
-      map((snapshot) => {
-        const response = snapshot.response();
-
-        if (response === null) throw snapshot.error();
-
-        return response.items;
-      }),
-    );
-  }
-}
-```
-
-Do not set a search signal and immediately return the shared `response` stream: the
-previous response is retained during re-execution and can be the first non-null emission.
-Unsubscribing from the wrapper stops result delivery but does not by itself abort the
-promise-backed execution; use the query's reactive `withArgs` lifecycle when cancellation
-is a requirement rather than a callback contract.
+For a callback that must return one correlated result, run a manual query
+(`{ onlyManualExecution: true }`) through `defer(() => executeUntilSettled(query, { args }))` -
+its snapshot is frozen to that execution. Never set a signal and return the shared `response`
+stream: the retained previous response can be the first non-null emission. See
+{%docsBaseUrl%}/query/queries#the-query-object.
 
 ## Gotchas
 
-- Signals-first: read `query.response()` in templates/computeds; it's **nullable**
-  (`?? []` / `filter(Boolean)` as needed).
-- Don't reach for the legacy client for new code.
+- `query.response()` is **nullable** (`?? []` / `filter(Boolean)` as needed).
 - `.execute()` defaults `args` to the current `args()` when omitted.
 - Anything under a query's `subtle` namespace is an unsupported escape hatch - never
   treat it as public API.
