@@ -1,4 +1,5 @@
 import { closeSync, lstatSync, openSync, unlinkSync, writeSync } from 'fs';
+import { resolve } from 'path';
 import {
   TimetrackAttributionRule,
   TimetrackIssue,
@@ -20,6 +21,7 @@ import {
   timetrackSearch,
   timetrackRemoveStandIn,
   timetrackRenameStandIn,
+  timetrackResyncAgentSessions,
   timetrackSplitStandIn,
   timetrackStandIns,
   timetrackStatus,
@@ -439,6 +441,7 @@ The app holds this machine's Jira credentials, so no repository needs a token of
                                 [--force]
                                 Cut one that covered a whole checkout into one per directory
   timetrack naming [YYYY-MM-DD] Which checkouts the day offers a name for, and why the rest do not
+  timetrack resync [path]       Read the agent session logs of a checkout again, after it got a link
 
 Options for search
   --project <KEY>     Search this project instead of the picked ones
@@ -674,6 +677,14 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     }
 
     return printed(rules, json);
+  }
+
+  if (subcommand === 'resync') {
+    const resynced = await timetrackResyncAgentSessions([resolve(root, value ?? '.')]);
+
+    if (!json) say(`Timetrack reads the agent sessions of ${resynced.paths.join(', ')} again.`);
+
+    return printed(resynced, json);
   }
 
   if (subcommand === 'naming') {

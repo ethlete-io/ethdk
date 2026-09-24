@@ -425,6 +425,13 @@ export const timetrackEditDay = (options: { day: string; edits: readonly Timetra
 
 export const timetrackRules = () => askTimetrack<TimetrackRules>({ op: 'settings.rules' });
 
+/**
+ * Asks the app to read the agent session logs under `paths` again, so sessions it dropped while no
+ * project link held them are stored. The read runs in the background; the answer names the checkouts.
+ */
+export const timetrackResyncAgentSessions = (paths: readonly string[]) =>
+  askTimetrack<{ paths: string[] }>({ op: 'agentSessions.resync', paths });
+
 export const timetrackStandIns = async () =>
   (await askTimetrack<{ standIns: TimetrackStandIn[] }>({ op: 'standIn.list' })).standIns;
 

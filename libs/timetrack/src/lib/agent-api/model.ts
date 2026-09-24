@@ -365,7 +365,8 @@ export type AgentApiRequest =
       apply: boolean;
     }
   | { op: 'naming.offers'; day: string }
-  | { op: 'lane.issues' };
+  | { op: 'lane.issues' }
+  | { op: 'agentSessions.resync'; paths: string[] };
 
 /**
  * One commit a split reads a directory out of: the local day it counts toward, and its changed files.

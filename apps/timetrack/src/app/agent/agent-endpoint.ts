@@ -41,6 +41,12 @@ import {
   workPathPieces,
 } from '@ethlete/timetrack';
 import { Observable, catchError, forkJoin, map, mergeMap, of, switchMap, throwError } from 'rxjs';
+import {
+  injectAgentSessionCollector,
+  injectAgentSpendBackfill,
+  injectCodexSessionCollector,
+  injectCodexSpendBackfill,
+} from '../../collectors';
 import { AGENT_REQUEST_EVENT, hostEventWith$, injectHostPorts, invokeHost$ } from '../../host';
 import { injectDayReview } from '../day-review/day-review';
 import { LANE_ISSUE_WINDOW_DAYS } from '../jira';
@@ -85,6 +91,12 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const review = injectDayReview();
   const recurring = injectRecurringPatterns();
   const destroyRef = inject(DestroyRef);
+  const agentLogReaders = [
+    injectAgentSessionCollector(),
+    injectAgentSpendBackfill(),
+    injectCodexSessionCollector(),
+    injectCodexSpendBackfill(),
+  ];
 
   /** Runs a read with the configured credentials, or fails with the one message that names the cause. */
   const withCredentials$ = <T>(read$: (credentials: JiraCredentials) => Observable<T>) =>
@@ -524,6 +536,12 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       .pipe(map((days) => ({ fromDay, toDay, daysRead: days.length, uses: laneIssueUses(days) })));
   };
 
+  const resyncAgentSessions$ = (paths: readonly string[]) => {
+    agentLogReaders.forEach((reader) => reader.resync(paths));
+
+    return of({ paths });
+  };
+
   const carryOut$ = (request: AgentApiRequest): Observable<unknown> => {
     switch (request.op) {
       case 'status':
@@ -560,6 +578,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return naming$(request);
       case 'lane.issues':
         return laneIssues$();
+      case 'agentSessions.resync':
+        return resyncAgentSessions$(request.paths);
     }
   };
 

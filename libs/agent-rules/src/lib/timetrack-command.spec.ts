@@ -178,6 +178,29 @@ describe('timetrack day --out', () => {
   });
 });
 
+describe('timetrack resync', () => {
+  it('asks the app to read the agent sessions of the named checkout again, as an absolute path', async () => {
+    const bodies: unknown[] = [];
+
+    await withEndpoint((request, response) => {
+      let body = '';
+
+      request.on('data', (chunk) => (body += chunk));
+      request.on('end', () => {
+        const parsed = JSON.parse(body) as { paths: string[] };
+
+        bodies.push(parsed);
+        response.setHeader('content-type', 'application/json');
+        response.end(JSON.stringify({ ok: true, value: { paths: parsed.paths } }));
+      });
+    });
+    printedLines();
+
+    await expect(run(['resync', '../fut-frontend-altcha'])).resolves.toBe(0);
+    expect(bodies).toEqual([{ op: 'agentSessions.resync', paths: ['/fut-frontend-altcha'] }]);
+  });
+});
+
 describe('timetrack standins', () => {
   const noRules = { attributionRules: [], projectLinks: [] };
 

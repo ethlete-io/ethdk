@@ -82,6 +82,20 @@ describe('parseAgentRequest', () => {
     });
   });
 
+  it('takes the agent session resync op with its checkouts', () => {
+    expect(parseAgentRequest({ op: 'agentSessions.resync', paths: [' /home/a ', '', 3] })).toEqual({
+      ok: true,
+      request: { op: 'agentSessions.resync', paths: ['/home/a'] },
+    });
+  });
+
+  it('refuses an agent session resync that names no checkout', () => {
+    expect(parseAgentRequest({ op: 'agentSessions.resync', paths: [] })).toEqual({
+      ok: false,
+      message: 'agentSessions.resync needs a paths.',
+    });
+  });
+
   it('refuses a stand-in delete that names no id', () => {
     expect(parseAgentRequest({ op: 'standIn.remove' })).toEqual({
       ok: false,

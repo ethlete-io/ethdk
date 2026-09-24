@@ -89,6 +89,12 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
   )
     return { ok: true, request: { op } };
 
+  if (op === 'agentSessions.resync') {
+    const paths = (Array.isArray(raw['paths']) ? raw['paths'] : []).map(asText).filter(Boolean);
+
+    return paths.length ? { ok: true, request: { op, paths } } : missing(op, 'paths');
+  }
+
   if (op === 'standIn.remove') {
     const id = asText(raw['id']);
 
