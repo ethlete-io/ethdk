@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CollectedEvent } from '../model/event';
+import { AgentUsageEvent, CollectedEvent } from '../model/event';
 import { DEFAULT_EXCLUSION_RULES, applyExclusionRules, exclusionRuleError } from './exclusion';
 
 const window = (appId: string, title: string): CollectedEvent => ({
@@ -235,7 +235,7 @@ describe('applyExclusionRules, on a typed prompt', () => {
 });
 
 describe("applyExclusionRules, on a turn's token spend", () => {
-  const spend = (cwd: string, gitBranch?: string): CollectedEvent => ({
+  const spend = (cwd: string, gitBranch?: string): AgentUsageEvent => ({
     at: new Date(2026, 7, 17, 9, 0),
     source: 'agent-usage',
     kind: 'agent-usage',
