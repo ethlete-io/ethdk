@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { dirname, join } from 'path';
 import { commitMessageVars, findCommitlintConfig } from './commitlint';
 import { ContentScope } from './frontmatter';
 import { GitFlowConfig, RawGitFlowConfig, resolveGitFlowConfig } from './git-flow';
@@ -54,6 +54,21 @@ type RawConfig = {
   gitHooks?: string[];
   gitFlow?: RawGitFlowConfig;
   jira?: JiraSettings;
+};
+
+/** The nearest directory at or above `start` holding an `ethlete-agents.config.json`, else `start`. */
+export const resolveRepoRoot = (start: string) => {
+  let current = start;
+
+  while (!existsSync(join(current, CONFIG_FILE_NAME))) {
+    const parent = dirname(current);
+
+    if (parent === current) return start;
+
+    current = parent;
+  }
+
+  return current;
 };
 
 const readRawConfig = (root: string) => {

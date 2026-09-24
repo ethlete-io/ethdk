@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { existsSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { AGENT_TARGETS, AgentTarget, CONFIG_FILE_NAME, detectTargets } from './lib/config';
+import { AGENT_TARGETS, AgentTarget, CONFIG_FILE_NAME, detectTargets, resolveRepoRoot } from './lib/config';
 import { gitFlowCommand } from './lib/git-flow-command';
 import { migrate } from './lib/migrate';
 import { outputStyleCommand } from './lib/output-style-command';
@@ -29,7 +29,8 @@ const USAGE = `ethlete-agents — compile @ethlete agent rules and skills into y
 
 Options
   --targets <list>   Comma-separated subset of: ${AGENT_TARGETS.join(', ')}
-  --root <path>      Repo root to write into (default: current directory)
+  --root <path>      Repo root to write into (default: the nearest directory holding
+                     ${CONFIG_FILE_NAME}, else the current directory)
   --dry-run          Print what would change without writing (sync and migrate)
 `;
 
@@ -73,7 +74,8 @@ const init = (root: string) => {
 
 const run = (argv: string[]): number | Promise<number> => {
   const command = argv[0];
-  const root = readFlag(argv, '--root') ?? process.cwd();
+  const rootFlag = readFlag(argv, '--root');
+  const root = rootFlag ?? resolveRepoRoot(process.cwd());
   const options = { root, targets: parseTargets(argv) };
 
   switch (command) {
@@ -82,7 +84,7 @@ const run = (argv: string[]): number | Promise<number> => {
     case 'check':
       return check(options);
     case 'init':
-      return init(root);
+      return init(rootFlag ?? process.cwd());
     case 'git-flow':
       return gitFlowCommand({ root, argv: argv.slice(1) });
     case 'output-style':

@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CONFIG_FILE_NAME } from './config';
+import { CONFIG_FILE_NAME, resolveRepoRoot } from './config';
 import { check, sync } from './sync';
 
 const consumerRepo = (config: unknown) => {
@@ -73,5 +73,33 @@ describe('sync and check report', () => {
     sync({ root, dryRun: true });
 
     expect(output.filter((line) => line.includes('themeStylesheet'))).toEqual([]);
+  });
+});
+
+describe('resolveRepoRoot', () => {
+  it('walks up from a subdirectory to the directory holding the config', () => {
+    const root = consumerRepo({ targets: ['codex'] });
+    const nested = join(root, 'apps', 'api', 'src');
+
+    mkdirSync(nested, { recursive: true });
+
+    expect(resolveRepoRoot(nested)).toBe(root);
+  });
+
+  it('falls back to the start directory when no config exists above it', () => {
+    const start = mkdtempSync(join(tmpdir(), 'agent-rules-no-config-'));
+
+    expect(resolveRepoRoot(start)).toBe(start);
+  });
+
+  it('lets check run from a subdirectory report no drift after a sync', () => {
+    const root = consumerRepo({ targets: ['codex'] });
+    const nested = join(root, 'libs', 'shared');
+
+    mkdirSync(nested, { recursive: true });
+    captureOutput();
+    sync({ root });
+
+    expect(check({ root: resolveRepoRoot(nested) })).toBe(0);
   });
 });
