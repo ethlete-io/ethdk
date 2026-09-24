@@ -36,7 +36,7 @@ It takes the same `--projects` / `--include` scoping, skips anything already tag
 
 ## 2. Make it boot
 
-Three things are the difference between "it compiles" and "it works".
+These are the difference between "it compiles" and "it works".
 
 ### `provideHttpClient()` is now your job
 
@@ -50,18 +50,44 @@ export const appConfig: ApplicationConfig = {
 
 If anything in the app relies on **upload progress** (`reportProgress` on a creator), use `provideHttpClient(withXhr())`: from Angular 22 on the default backend is `fetch`, which emits download progress but no upload progress events.
 
+### Your interceptors now see query requests
+
+The legacy client sent its requests past `HttpClient`, so no `HttpInterceptor` ever saw them. The current one sends everything through `HttpClient`, and every interceptor the app registers now runs on every query request too. Audit them before shipping. An interceptor that adds a bearer token to every call is the usual problem: it now sends the token to third-party hosts the app queries, and it sends the header a second time on secure queries, which already get theirs from the auth provider. Limit such an interceptor to your own API's origin, and let the [auth provider](/query/auth) handle the token for secure queries.
+
+### Retries and error parsing are opt-in
+
+In v2, a failed request was retried and a Symfony or HTML error body was parsed by default. In v3 both are client [`features`](/query/errors). The generator adds `withEthleteApiErrors()` to every client it migrates, so both stay on. The retry policy is still not the one v2 used, and the task file says so:
+
+| v2                                                    | v3 `withEthleteApiErrors()`                                           |
+| ----------------------------------------------------- | --------------------------------------------------------------------- |
+| every method, `POST` and `PATCH` included             | idempotent methods only, unless `retry: { retryNonIdempotent: true }` |
+| any 5xx, `500` included, plus 408, 425 and 429        | 408, 425, 429 and 5xx above `500`, plus a connection failure          |
+| up to four retries, linear delay (1 s, 2 s, 3 s, 4 s) | three retries, exponential jittered delay                             |
+
+Configure the difference with `withEthleteApiErrors({ retry: { … } })` (see [retries](/query/errors)), or narrow the feature to the parts your API needs. A client that sets its own `retryFn` keeps it, and that `retryFn` wins over the feature's policy. For `createQueryClient` calls the generator did not write, for example clients migrated before the error pipeline became opt-in, run:
+
+```bash
+yarn nx g @ethlete/query:migrate-query-opt-in-features
+```
+
+Two more v2 defaults are gone: `autoRefreshQueriesOnWindowFocus` and `enableSmartPolling` were both `true` unless a client turned them off. v3 has no client-wide switch for either, so they are off unless you turn them on per query. Use `withPolling({ interval, pauseWhileHidden: true })` to stop polling in a hidden tab, and `withPolling({ refetchOnFocus: true })` or `withAutoRefresh` to refetch when the window gets focus. The generator reports every client that relied on these defaults.
+
 ### Configure the auth provider
 
 The generator scaffolds a [`createBearerAuthProvider`](/query/auth) from your `V2BearerAuthProvider` config where it can find one, but the adapters change shape between versions, so it emits them behind `TODO(query-v3)` comments. The mapping is:
 
-| v2 `refreshConfig`           | v3                                                                |
-| ---------------------------- | ----------------------------------------------------------------- |
-| `queryCreator`               | `withRefreshQuery('tokenRefresh', { queryCreator })`              |
-| `responseAdapter`            | `extractTokens` - must return `{ accessToken, refreshToken }`     |
-| `requestArgsAdapter`         | `buildArgs` - receives the refresh token alone                    |
-| `cookieName` / `cookie*`     | `withPersistentAuth({ cookie: { name, domain, expiresInDays } })` |
-| `expiresInPropertyName`      | `expiresInPropertyName` on the refresh query                      |
-| `strategy` / `refreshBuffer` | `refreshStrategy` (percentage of lifetime, clamped)               |
+| v2 `refreshConfig`              | v3                                                                |
+| ------------------------------- | ----------------------------------------------------------------- |
+| `queryCreator`                  | `withRefreshQuery('tokenRefresh', { queryCreator })`              |
+| `responseAdapter`               | `extractTokens` - must return `{ accessToken, refreshToken }`     |
+| `requestArgsAdapter`            | `buildArgs` - receives the refresh token alone                    |
+| `cookieName` / `cookie*`        | `withPersistentAuth({ cookie: { name, domain, expiresInDays } })` |
+| `expiresInPropertyName`         | `expiresInPropertyName` on the refresh query                      |
+| `cookiePath` / `cookieSameSite` | `withPersistentAuth({ cookie: { path, sameSite } })`              |
+| `cookieEnabled`                 | no switch - `setRememberMe(false)` only makes it a session cookie |
+| `strategy` / `refreshBuffer`    | `refreshStrategy: refreshBuffer` - see below                      |
+
+`refreshBuffer` and `refreshStrategy` use different units. `refreshBuffer` is always milliseconds before expiry (default 5 minutes). A `refreshStrategy` number above `1` is also milliseconds before expiry, but a number from `0` to `1` is the fraction of the token lifetime to use before refreshing. Without either setting, v3 refreshes at 75% of the lifetime, and the buffer is kept between 1 and 10 minutes. The generator copies a literal `refreshBuffer` above `1` as is. For any other value it writes `{ minBufferMs: x, maxBufferMs: x }`, which pins the buffer to exactly `x` milliseconds.
 
 Two layout rules follow from this:
 
@@ -200,6 +226,7 @@ mode warns when a second application registers.
 - **`logout()` clears the queries bound to it.** It drops the tokens, tears down every secure cache entry, and resets the secure queries still holding a response - a component mounted across the logout stops showing the previous user's data without a manual `reset()`.
 - **Responses survive a re-execution and a failed re-run.** `response()` is kept while a query re-runs and remains available if that run fails - v2 swapped the whole state, so its `Failure` carried no response at all. The exception is a **secure** query re-executed while the refresh it waits on has failed: that one reports the refresh error and clears `response()`, because the session the response belonged to is over.
 - **Interop containers follow the request method again.** `createSignal` / `createSubject` - and `behaviorSubject`, which is `createSubject` now rather than the bare `BehaviorSubject` v2 handed back - default their cleanup (`abortPrevious`, `stopPreviousPolling`, `abortOnDestroy`) to "on for cacheable requests", and an interop query now answers that question from its creator. A superseded `GET` is aborted and stops polling; a superseded `POST` that is still in flight is left alone, reaches the server, and is torn down once it has settled. A container's teardown destroys the query it holds - so a one-shot query stored in a container does not also need `destroyOnResponse`, and a `behaviorSubject` ends its query's life where v2 left it running.
+- **A `cacheAdapter` still only sets freshness.** The generator carries it over unchanged, so `cacheAdapter: () => 0` still sends every `execute({ options: { allowCache: true } })` to the server, as it did every v2 `execute()`. What is new is `keepUnusedFor`: an entry stays around for 5 minutes after its last consumer, and a remount shows its old response while it refetches. Set `keepUnusedFor: 0` on the client if that is not wanted. v3 also passes the adapter Angular `HttpHeaders`, so read a header with `headers.get(name)`.
 - **An `entity` config only sees real responses.** `set` runs on success - including a 204, whose body is legitimately `null` - and never on `prepare()` or on a failure that left a previous response in place.
 
 ## The `Any*` types
