@@ -182,6 +182,10 @@ export class LegacyQuery<
 
   private _triggeredVia: QueryTrigger = 'program';
 
+  private _lastExecuteCalledAt = 0;
+
+  private _ownLoadExecuteTime: number | null = null;
+
   private _wasAborted = false;
 
   state$: Observable<V2QueryState<Data>>;
@@ -264,13 +268,29 @@ export class LegacyQuery<
    * never run. The abort flag is the only thing that tells the two apart.
    */
   private toQueryState(execState: QueryExecutionState<QueryArgsOf<TNewQuery>> | null) {
-    const state = transformExecStateToQueryState(execState, this._triggeredVia);
+    const state = transformExecStateToQueryState(execState, this.triggerOf(execState));
 
     if (execState || !this._wasAborted) {
       return state;
     }
 
     return { type: QueryStateType.Cancelled, meta: state.meta };
+  }
+
+  /**
+   * A load this wrapper did not start - a `refreshQueriesInUse()`, an invalidation - reports as `auto`, the way
+   * v2 reported its background refreshes.
+   */
+  private triggerOf(execState: QueryExecutionState<QueryArgsOf<TNewQuery>> | null): QueryTrigger {
+    if (execState?.type !== 'loading') return this._triggeredVia;
+
+    const { executeTime } = execState.loading;
+
+    if (this._ownLoadExecuteTime === null && executeTime >= this._lastExecuteCalledAt) {
+      this._ownLoadExecuteTime = executeTime;
+    }
+
+    return executeTime === this._ownLoadExecuteTime ? this._triggeredVia : 'auto';
   }
 
   get isExpired() {
@@ -344,6 +364,8 @@ export class LegacyQuery<
 
     this._triggeredVia = options._triggeredVia ?? 'program';
     this._wasAborted = false;
+    this._lastExecuteCalledAt = Date.now();
+    this._ownLoadExecuteTime = null;
 
     untracked(() =>
       // v2 had a single `skipCache` for every method, so this cannot tell whether the underlying request is
@@ -351,6 +373,10 @@ export class LegacyQuery<
       // on a mutation instead of throwing ET301.
       this.newQuery.execute({ args: this._arguments, options: { allowCache: options.skipCache !== true } }),
     );
+
+    const started = untracked(this.newQuery.executionState);
+
+    if (started?.type === 'loading') this._ownLoadExecuteTime = started.loading.executeTime;
 
     return this;
   }

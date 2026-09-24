@@ -87,6 +87,8 @@ This table is the API-to-API map. The [migration guide](/query/migrating-from-v2
 
 The `createLegacyQueryCreator` interop lets both worlds coexist: define new endpoints with the current system and consume them from legacy-style components until those are migrated.
 
+A load an interop query did not start itself - a `client.refreshQueriesInUse()`, an invalidation - reports as `triggeredVia: 'auto'`, like a v2 background refresh: `*etQuery` sets `refreshing`, not `loading`, and `ignoreAutoRefresh()` drops it.
+
 ### Automated migration generators
 
 Two Nx generators automate large parts of this migration - run them in order:

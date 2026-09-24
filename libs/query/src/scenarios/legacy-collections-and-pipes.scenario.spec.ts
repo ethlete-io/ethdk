@@ -651,10 +651,7 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy collections and pipes on the %s clien
       window.dispatchEvent(new Event('focus'));
     };
 
-    // Fails on interop: a v3 refreshQueriesInUse() surfaces as a program load, so ignoreAutoRefresh lets it through.
-    const itOnInterop = kind === 'interop' ? it.fails : it;
-
-    itOnInterop('shows loading for arg changes but not for a background refresh', () => {
+    it('shows loading for arg changes but not for a background refresh', () => {
       const s = scenario();
       const legacy = createLegacyClient(s, kind);
       s.api.on('GET', '/seasons/:season', ({ params }) => ({ body: { season: params['season'] }, delay: 100 }));
