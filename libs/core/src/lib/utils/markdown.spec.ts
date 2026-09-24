@@ -167,8 +167,8 @@ describe('markdownToHtml', () => {
   it('applies GFM column alignment from the separator line to every cell', () => {
     const input = '| A | B | C |\n| :--- | :---: | ---: |\n| a | b | c |';
     expect(markdownToHtml(input)).toBe(
-      '<table><thead><tr><th style="text-align: left">A</th><th style="text-align: center">B</th><th style="text-align: right">C</th></tr></thead>' +
-        '<tbody><tr><td style="text-align: left">a</td><td style="text-align: center">b</td><td style="text-align: right">c</td></tr></tbody></table>',
+      '<table><thead><tr><th class="et-rte-align-left">A</th><th class="et-rte-align-center">B</th><th class="et-rte-align-right">C</th></tr></thead>' +
+        '<tbody><tr><td class="et-rte-align-left">a</td><td class="et-rte-align-center">b</td><td class="et-rte-align-right">c</td></tr></tbody></table>',
     );
   });
 
@@ -202,13 +202,19 @@ describe('markdownToHtml', () => {
 
   it('strips foreign attributes and unsafe tags from an aligned block', () => {
     expect(markdownToHtml('<p style="text-align: center" onmouseover="alert(1)">hi <script>x</script></p>')).toBe(
-      '<p style="text-align: center">hi x</p>',
+      '<p class="et-rte-align-center">hi x</p>',
     );
     expect(
       markdownToHtml(
         '<p style="text-align: right"><strong onclick="x()">b</strong> <a href="javascript:y()">l</a></p>',
       ),
-    ).toBe('<p style="text-align: right"><strong>b</strong> <a>l</a></p>');
+    ).toBe('<p class="et-rte-align-right"><strong>b</strong> <a>l</a></p>');
+  });
+
+  it('renders alignment as a class, not an inline style a strict CSP would drop', () => {
+    expect(markdownToHtml('<h2 class="et-rte-align-center">Title</h2>')).toBe(
+      '<h2 class="et-rte-align-center">Title</h2>',
+    );
   });
 
   it('converts multi-line block quotes with inline formatting per line', () => {
@@ -272,7 +278,8 @@ describe('htmlToMarkdown', () => {
   it('preserves aligned blocks as raw native HTML (no Markdown form)', () => {
     const aligned = '<p style="text-align: center">Centered</p>';
     expect(htmlToMarkdown(aligned)).toBe(aligned);
-    expect(markdownToHtml(aligned)).toBe(aligned);
+    expect(markdownToHtml(aligned)).toBe('<p class="et-rte-align-center">Centered</p>');
+    expect(htmlToMarkdown('<p class="et-rte-align-center">Centered</p>')).toBe(aligned);
     // an aligned heading round-trips too, and a normal paragraph beside it stays Markdown
     expect(htmlToMarkdown('<h2 style="text-align: right">Title</h2><p>body</p>')).toBe(
       '<h2 style="text-align: right">Title</h2>\n\nbody',
@@ -372,6 +379,11 @@ describe('htmlToMarkdown', () => {
       '<table><thead><tr><th style="text-align: center">A</th><th>B</th><th style="text-align: right">C</th></tr></thead>' +
       '<tbody><tr><td style="text-align: center">a</td><td>b</td><td style="text-align: right">c</td></tr></tbody></table>';
     expect(htmlToMarkdown(input)).toBe('| A | B | C |\n| :---: | --- | ---: |\n| a | b | c |');
+    expect(
+      htmlToMarkdown(
+        '<table><thead><tr><th class="et-rte-align-center">A</th><th class="et-rte-align-right">B</th></tr></thead></table>',
+      ),
+    ).toBe('| A | B |\n| :---: | ---: |');
   });
 
   it('round-trips table column alignment through both directions', () => {

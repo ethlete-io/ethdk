@@ -62,7 +62,13 @@ const parseSeparatorAligns = (line: string): TableAlign[] =>
 const separatorFor = (align: TableAlign) =>
   align === 'center' ? ':---:' : align === 'right' ? '---:' : align === 'left' ? ':---' : '---';
 
-const alignStyle = (align: TableAlign) => (align ? ` style="text-align: ${align}"` : '');
+const alignClass = (align: string | null) => (align ? ` class="et-rte-align-${align}"` : '');
+
+const alignOf = (attrs: string) =>
+  (
+    /\bclass\s*=\s*["'][^"']*\bet-rte-align-([a-z]+)/i.exec(attrs)?.[1] ??
+    /\bstyle\s*=\s*["'][^"']*text-align:\s*([a-z]+)/i.exec(attrs)?.[1]
+  )?.toLowerCase() ?? null;
 
 /** Wraps `content` in an emphasis `marker`, hoisting boundary whitespace outside the delimiters -
  *  CommonMark emphasis must not face whitespace on the inside (`** fett**` doesn't parse), and
@@ -402,15 +408,13 @@ export const markdownToHtml = (markdown: string) => {
       // Rebuild it instead of passing it through verbatim: only the alignment survives on the tag
       // (no other attributes, e.g. event handlers) and the inner markup is reduced to the editor's
       // own inline vocabulary.
-      const aligned = /^<(p|h[1-6]|div)\b[^>]*\bstyle=["'][^"']*text-align:\s*([a-z]+)[^>]*>([\s\S]*)<\/\1>$/i.exec(
-        trimmed,
-      );
+      const aligned = /^<(p|h[1-6]|div)\b([^>]*)>([\s\S]*)<\/\1>$/i.exec(trimmed);
+      const align = aligned ? alignOf(aligned[2] ?? '') : null;
 
-      if (aligned) {
+      if (aligned && align) {
         const tag = (aligned[1] ?? 'p').toLowerCase();
-        const align = (aligned[2] ?? 'left').toLowerCase();
 
-        return `<${tag} style="text-align: ${align}">${sanitizeInlineHtml(aligned[3] ?? '')}</${tag}>`;
+        return `<${tag}${alignClass(align)}>${sanitizeInlineHtml(aligned[3] ?? '')}</${tag}>`;
       }
 
       // Heading
@@ -430,7 +434,7 @@ export const markdownToHtml = (markdown: string) => {
         const aligns = parseSeparatorAligns(tableLines[1] ?? '');
         const headers = parseTableRow(tableLines[0] ?? '');
         const thead = `<thead><tr>${headers
-          .map((h, i) => `<th${alignStyle(aligns[i] ?? null)}>${processInline(h)}</th>`)
+          .map((h, i) => `<th${alignClass(aligns[i] ?? null)}>${processInline(h)}</th>`)
           .join('')}</tr></thead>`;
         const bodyRows = tableLines.slice(2);
         const tbody =
@@ -439,7 +443,7 @@ export const markdownToHtml = (markdown: string) => {
                 .map(
                   (row) =>
                     `<tr>${parseTableRow(row)
-                      .map((cell, i) => `<td${alignStyle(aligns[i] ?? null)}>${processInline(cell)}</td>`)
+                      .map((cell, i) => `<td${alignClass(aligns[i] ?? null)}>${processInline(cell)}</td>`)
                       .join('')}</tr>`,
                 )
                 .join('')}</tbody>`
@@ -488,8 +492,16 @@ export const htmlToMarkdown = (html: string) => {
   // inner markup stays HTML) and round-trip via a placeholder - extracted before the block passes
   // below rewrite them, restored after the final tag-strip.
   const alignedBlocks: string[] = [];
-  md = md.replace(/<(p|h[1-6]|div)\b[^>]*\bstyle="[^"]*text-align[^"]*"[^>]*>[\s\S]*?<\/\1>/gi, (match) =>
-    makePlaceholder('ALIGN', alignedBlocks.push(match) - 1),
+  md = md.replace(
+    /<(p|h[1-6]|div)\b([^>]*\b(?:style="[^"]*text-align|class="[^"]*\bet-rte-align-)[^>]*)>([\s\S]*?)<\/\1>/gi,
+    (_, tag: string, attrs: string, inner: string) => {
+      const name = tag.toLowerCase();
+
+      return makePlaceholder(
+        'ALIGN',
+        alignedBlocks.push(`<${name} style="text-align: ${alignOf(attrs)}">${inner}</${name}>`) - 1,
+      );
+    },
   );
 
   // Code blocks - process before inline code
@@ -573,9 +585,9 @@ export const htmlToMarkdown = (html: string) => {
     // GFM alignment is per column, read from the header cells' text-align styles
     const extractAligns = (row: string): TableAlign[] =>
       [...row.matchAll(/<t[hd]([^>]*)>/gi)].map((m) => {
-        const align = /text-align:\s*(left|center|right)/i.exec(m[1] ?? '')?.[1]?.toLowerCase();
+        const align = alignOf(m[1] ?? '');
 
-        return (align as TableAlign) ?? null;
+        return align === 'left' || align === 'center' || align === 'right' ? align : null;
       });
 
     const theadMatch = tableContent.match(/<thead[^>]*>([\s\S]*?)<\/thead>/i);
