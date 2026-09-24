@@ -154,48 +154,45 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy template patterns on the %s client', 
       legacy.destroy();
     });
 
-    (kind === 'interop' ? it.fails : it)(
-      'reports a failure once and clears the error once the next query succeeds',
-      () => {
-        const s = scenario();
-        const legacy = createLegacyClient(s, kind);
-        s.api.on('GET', '/users/:id', ({ params }) =>
-          params['id'] === 'missing'
-            ? { status: 404, body: { message: 'not found' }, delay: 50 }
-            : { body: { id: params['id'], name: `User ${params['id']}` }, delay: 50 },
-        );
+    it('reports a failure once and clears the error once the next query succeeds', () => {
+      const s = scenario();
+      const legacy = createLegacyClient(s, kind);
+      s.api.on('GET', '/users/:id', ({ params }) =>
+        params['id'] === 'missing'
+          ? { status: 404, body: { message: 'not found' }, delay: 50 }
+          : { body: { id: params['id'], name: `User ${params['id']}` }, delay: 50 },
+      );
 
-        const id = signal('missing');
-        const c = s.consumer([
-          { provide: GET_USER, useValue: legacy.get<GetUserArgs>((p) => `/users/${p.id}`) },
-          { provide: USER_ID, useValue: id },
-        ]);
-        const ref = s.mount(UserTemplateHost, c.injector);
+      const id = signal('missing');
+      const c = s.consumer([
+        { provide: GET_USER, useValue: legacy.get<GetUserArgs>((p) => `/users/${p.id}`) },
+        { provide: USER_ID, useValue: id },
+      ]);
+      const ref = s.mount(UserTemplateHost, c.injector);
 
-        s.tick(1000);
+      s.tick(1000);
 
-        expect(slot(ref, 'error')).toBe('404');
-        expect(slot(ref, 'loading')).toBe('false');
-        expect(s.errors).toHaveLength(kind === 'interop' ? 1 : 0);
-        if (kind === 'interop') s.expectError((entry) => (entry.error as { status?: number }).status === 404);
+      expect(slot(ref, 'error')).toBe('404');
+      expect(slot(ref, 'loading')).toBe('false');
+      expect(s.errors).toHaveLength(kind === 'interop' ? 1 : 0);
+      if (kind === 'interop') s.expectError((entry) => (entry.error as { status?: number }).status === 404);
 
-        id.set('1');
-        s.tick(10);
+      id.set('1');
+      s.tick(10);
 
-        expect(slot(ref, 'loading')).toBe('true');
-        expect(slot(ref, 'error')).toBe('-');
+      expect(slot(ref, 'loading')).toBe('true');
+      expect(slot(ref, 'error')).toBe('-');
 
-        s.tick(1000);
+      s.tick(1000);
 
-        expect(slot(ref, 'name')).toBe('User 1');
-        expect(slot(ref, 'error')).toBe('-');
-        expect(ref.instance.query()?.rawState).toMatchObject({ type: QueryStateType.Success });
+      expect(slot(ref, 'name')).toBe('User 1');
+      expect(slot(ref, 'error')).toBe('-');
+      expect(ref.instance.query()?.rawState).toMatchObject({ type: QueryStateType.Success });
 
-        ref.destroy();
-        c.destroy();
-        legacy.destroy();
-      },
-    );
+      ref.destroy();
+      c.destroy();
+      legacy.destroy();
+    });
   });
 
   describe('queryStateResponseSignal with cacheResponse over a switching source', () => {

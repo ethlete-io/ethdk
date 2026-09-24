@@ -1,7 +1,6 @@
 import {
   ChangeDetectorRef,
   Directive,
-  ErrorHandler,
   TemplateRef,
   ViewContainerRef,
   effect,
@@ -9,7 +8,7 @@ import {
   input,
   untracked,
 } from '@angular/core';
-import { AnyLegacyQuery, isLegacyQuery } from '../interop';
+import { AnyLegacyQuery } from '../interop';
 import {
   AnyQueryCollection,
   AnyV2Query,
@@ -84,7 +83,6 @@ export type QueryDirectiveType = AnyV2Query | AnyLegacyQuery | AnyQueryCollectio
   selector: '[etQuery]',
 })
 export class QueryDirective<Q extends QueryDirectiveType | null> {
-  private errorHandler = inject(ErrorHandler);
   private cdr = inject(ChangeDetectorRef);
 
   private readonly viewContext: QueryDirectiveContext<Q> = {
@@ -168,10 +166,6 @@ export class QueryDirective<Q extends QueryDirectiveType | null> {
 
         if (isQueryStateFailure(state)) {
           this.viewContext.error = state.error;
-
-          if (isLegacyQuery(extractQuery(this.query()))) {
-            this.errorHandler.handleError(state.error.httpErrorResponse);
-          }
         } else {
           this.viewContext.error = null;
         }
