@@ -2,7 +2,7 @@
   et-form-field {
     &:where([data-size='sm']) {
       --et-form-field-gap: 4px;
-      --et-form-field-control-border-radius: 4px;
+      --_et-form-field-control-border-radius: 4px;
       --et-form-field-control-padding-block: 4px;
       --et-form-field-control-padding-inline: 10px;
       --et-form-field-control-affix-gap: 6px;
@@ -15,7 +15,7 @@
        The default size must therefore also match a field that has no attribute yet. */
     &:where([data-size='md'], :not([data-size])) {
       --et-form-field-gap: 5px;
-      --et-form-field-control-border-radius: 5px;
+      --_et-form-field-control-border-radius: 5px;
       --et-form-field-control-padding-block: 6px;
       --et-form-field-control-padding-inline: 12px;
       --et-form-field-control-affix-gap: 8px;
@@ -26,7 +26,7 @@
 
     &:where([data-size='lg']) {
       --et-form-field-gap: 6px;
-      --et-form-field-control-border-radius: 6px;
+      --_et-form-field-control-border-radius: 6px;
       --et-form-field-control-padding-block: 8px;
       --et-form-field-control-padding-inline: 14px;
       --et-form-field-control-affix-gap: 10px;

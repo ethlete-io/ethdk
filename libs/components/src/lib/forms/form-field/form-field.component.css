@@ -5,12 +5,6 @@
     initial-value: 4px;
   }
 
-  @property --et-form-field-control-border-radius {
-    syntax: '<length>';
-    inherits: true;
-    initial-value: 4px;
-  }
-
   @property --et-form-field-control-border-width {
     syntax: '<length>';
     inherits: true;
@@ -170,7 +164,7 @@
       padding-block: var(--et-form-field-control-padding-block);
       padding-inline: var(--et-form-field-control-padding-inline);
       border: var(--et-form-field-control-border-width) solid var(--et-surface-border-solid, currentColor);
-      border-radius: var(--et-form-field-control-border-radius);
+      border-radius: var(--et-form-field-control-border-radius, var(--_et-form-field-control-border-radius, 4px));
       background: var(--_et-form-field-control-background);
       font-size: var(--et-form-field-control-font-size);
       line-height: var(--et-form-field-control-line-height);

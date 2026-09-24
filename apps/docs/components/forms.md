@@ -699,6 +699,9 @@ The field shell declares public design tokens; override them in your CSS scope:
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `et-form-field` | `--et-form-field-gap`, `-control-border-radius` / `-border-width` / `-padding-block` / `-padding-inline` / `-font-size` / `-line-height` / `-affix-gap` / `-disabled-opacity` / `-min-height`, `-affix-icon-size`, `-label-font-size`, `-error-font-size`, `-warning-font-size`, `-hint-font-size`, `-support-duration` |
 
+`--et-form-field-control-border-radius` is read from any ancestor, `:root` included; unset, the
+radius follows `size` (`4px` / `5px` / `6px` for `sm` / `md` / `lg`).
+
 Per-control tokens live in each control guide:
 [text inputs](/components/text-inputs#theming),
 [choice & rating](/components/choice-inputs#theming). All colors resolve through

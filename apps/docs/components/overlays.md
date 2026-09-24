@@ -250,15 +250,15 @@ Content inherits the radius through the pane, and the anchored-dialog arrow read
 
 Every overlay resolves its elevation one level **above the surface its trigger sits on**, found from the trigger's nearest surface ancestor in the DOM. This works across the portal boundary: a `select` opened from inside a dialog (elevation 1) mounts at elevation 2, a picker anchored to a field inside an elevated card elevates above the card, and a submenu elevates above its parent menu. An overlay with a backdrop is the exception - the backdrop resets the visual context, so it always mounts at elevation 1. That is resolved from the same `hasBackdrop` the active strategy renders with, so a strategy that turns the backdrop off (the anchored dialog) keeps elevating above its trigger even in the default modal mode, and a breakpoint switch that adds or removes the backdrop re-elevates the open pane.
 
-Override per instance via `panelClass` and the pane tokens:
+Override per instance via `panelClass` and the pane tokens. `--et-overlay-radius` is also read from any ancestor, so setting it on `:root` changes every boxed pane:
 
-| Token                               | Default                         |
-| ----------------------------------- | ------------------------------- |
-| `--et-overlay-surface-background`   | `--et-surface-background-solid` |
-| `--et-overlay-surface-color`        | `--et-surface-color-solid`      |
-| `--et-overlay-surface-border-color` | `--et-surface-border-solid`     |
-| `--et-overlay-surface-border-width` | `0.1rem`                        |
-| `--et-overlay-radius`               | `1.6rem`                        |
+| Token                               | Default                             |
+| ----------------------------------- | ----------------------------------- |
+| `--et-overlay-surface-background`   | `--et-surface-background-solid`     |
+| `--et-overlay-surface-color`        | `--et-surface-color-solid`          |
+| `--et-overlay-surface-border-color` | `--et-surface-border-solid`         |
+| `--et-overlay-surface-border-width` | `0.1rem`                            |
+| `--et-overlay-radius`               | `1.6rem` (`1.2rem` anchored dialog) |
 
 The backdrop behind a modal overlay dims independently of the pane's own surface:
 `--et-overlay-backdrop-color` (default `rgb(0 0 0 / 0.32)`).

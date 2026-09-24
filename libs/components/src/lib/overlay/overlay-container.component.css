@@ -20,7 +20,7 @@
     --et-overlay-surface-color: var(--et-surface-color-solid, rgb(244 244 245));
     --et-overlay-surface-border-color: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
     --et-overlay-surface-border-width: 0.1rem;
-    --et-overlay-radius: 1.6rem;
+    --_et-overlay-radius: var(--et-overlay-radius, 1.6rem);
 
     position: relative;
     display: grid;
@@ -78,12 +78,12 @@
     &.et-overlay--dialog,
     &.et-overlay--anchored-dialog {
       border: var(--et-overlay-surface-border-width) solid var(--et-overlay-surface-border-color);
-      border-radius: var(--et-overlay-radius);
+      border-radius: var(--_et-overlay-radius);
     }
 
     /* Anchored popover sits tight against its trigger, so a slightly smaller radius reads better. */
     &.et-overlay--anchored-dialog {
-      --et-overlay-radius: 1.2rem;
+      --_et-overlay-radius: var(--et-overlay-radius, 1.2rem);
     }
 
     /* Sheets are docked to one viewport edge: border everything but the docked edge and round only
@@ -91,29 +91,29 @@
     &.et-overlay--bottom-sheet {
       border: var(--et-overlay-surface-border-width) solid var(--et-overlay-surface-border-color);
       border-block-end: none;
-      border-start-start-radius: var(--et-overlay-radius);
-      border-start-end-radius: var(--et-overlay-radius);
+      border-start-start-radius: var(--_et-overlay-radius);
+      border-start-end-radius: var(--_et-overlay-radius);
     }
 
     &.et-overlay--top-sheet {
       border: var(--et-overlay-surface-border-width) solid var(--et-overlay-surface-border-color);
       border-block-start: none;
-      border-end-start-radius: var(--et-overlay-radius);
-      border-end-end-radius: var(--et-overlay-radius);
+      border-end-start-radius: var(--_et-overlay-radius);
+      border-end-end-radius: var(--_et-overlay-radius);
     }
 
     /* Side sheets span the full viewport height, so their block edges sit flush against the top and
      bottom of the screen — border only the exposed inner edge. */
     &.et-overlay--left-sheet {
       border-inline-end: var(--et-overlay-surface-border-width) solid var(--et-overlay-surface-border-color);
-      border-start-end-radius: var(--et-overlay-radius);
-      border-end-end-radius: var(--et-overlay-radius);
+      border-start-end-radius: var(--_et-overlay-radius);
+      border-end-end-radius: var(--_et-overlay-radius);
     }
 
     &.et-overlay--right-sheet {
       border-inline-start: var(--et-overlay-surface-border-width) solid var(--et-overlay-surface-border-color);
-      border-start-start-radius: var(--et-overlay-radius);
-      border-end-start-radius: var(--et-overlay-radius);
+      border-start-start-radius: var(--_et-overlay-radius);
+      border-end-start-radius: var(--_et-overlay-radius);
     }
 
     &.et-overlay--bottom-sheet .et-overlay-container-drag-handle {

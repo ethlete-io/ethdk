@@ -2014,7 +2014,8 @@ from `--et-surface-border-solid`, and the row hover tint from
 (`32px`) / `--et-table-select-width` (`44px`, matching the ≥44px touch-target
 guideline the bare label-less checkbox otherwise falls short of) - both sized to
 their control, so the expander button and the checkbox keep their own size even
-if you set these narrower. [Card rows](#card-rows) add `--et-table-row-gap` (`8px`),
+if you set these narrower. The panel appearances (`enclosed`, `zebra`, `grid`) round their
+corners by `--et-table-radius` (`10px`). [Card rows](#card-rows) add `--et-table-row-gap` (`8px`),
 `--et-table-row-radius` (`10px`) and `--et-table-row-border-color`, and paint the row itself from the
 surface one elevation above the table's.
 

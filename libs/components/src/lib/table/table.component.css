@@ -169,7 +169,7 @@
      rounded corners and keeps the sticky header inside the panel. */
   .et-table-host:where([data-appearance='enclosed'], [data-appearance='zebra'], [data-appearance='grid']) {
     border: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.3));
-    border-radius: 10px;
+    border-radius: var(--et-table-radius, 10px);
   }
 
   .et-table-host:where([data-appearance='enclosed']) {
