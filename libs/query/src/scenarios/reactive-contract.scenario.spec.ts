@@ -1,5 +1,25 @@
-import { effect, signal } from '@angular/core';
-import { createSecurePostQuery, withArgs } from '../index';
+import {
+  Component,
+  createComponent,
+  effect,
+  EnvironmentInjector,
+  inject,
+  InjectionToken,
+  input,
+  OnInit,
+  signal,
+} from '@angular/core';
+import {
+  AnyLegacyQuery,
+  AnyV2Query,
+  createLegacyQueryCreator,
+  createSecurePostQuery,
+  def,
+  queryComputed,
+  QueryStateType,
+  V2QueryClient,
+  withArgs,
+} from '../index';
 import { describe, expect, it } from 'vitest';
 import { useScenario } from './harness';
 
@@ -7,6 +27,39 @@ const BASE_URL = 'https://api.test';
 
 type User = { id: string; name: string };
 type CreateUserArgs = { body: { name: string }; response: User };
+
+const BUILD_QUERY = new InjectionToken<() => AnyLegacyQuery | AnyV2Query>('BUILD_QUERY');
+
+@Component({ template: '' })
+class SyncReadHost implements OnInit {
+  private readonly buildQuery = inject(BUILD_QUERY);
+
+  readonly query = queryComputed(() => this.buildQuery());
+  readonly atConstruction = this.query();
+  atInit: AnyLegacyQuery | AnyV2Query | null = null;
+
+  ngOnInit() {
+    this.atInit = this.query();
+  }
+}
+
+const BUILD_USER_QUERY = new InjectionToken<(id: string) => AnyLegacyQuery | AnyV2Query>('BUILD_USER_QUERY');
+
+@Component({ template: '' })
+class RequiredInputHost {
+  private readonly buildQuery = inject(BUILD_USER_QUERY);
+
+  readonly id = input.required<string>();
+  readonly query = queryComputed(() => this.buildQuery(this.id()));
+}
+
+const mountSyncReadHost = (injector: EnvironmentInjector) => {
+  const ref = createComponent(SyncReadHost, { environmentInjector: injector });
+
+  ref.changeDetectorRef.detectChanges();
+
+  return ref;
+};
 
 describe('reactive contract scenario', () => {
   const scenario = useScenario({ baseUrl: BASE_URL, clientOptions: { keepUnusedFor: 0 } });
@@ -174,6 +227,190 @@ describe('reactive contract scenario', () => {
       expect(runs).toBe(4);
 
       c.destroy();
+    });
+  });
+
+  describe('queryComputed over the interop creator', () => {
+    it('sends one POST per args change and keeps one live query', () => {
+      const s = scenario();
+      s.api.on('POST', '/users', ({ body }) => ({ status: 201, body, delay: 100 }));
+
+      const createUser = s.post<CreateUserArgs>('/users');
+      const legacyCreateUser = createLegacyQueryCreator({ creator: createUser, name: 'legacyCreateUser' });
+      const name = signal('Ada');
+
+      const c = s.consumer();
+      const query = queryComputed(() => legacyCreateUser.prepare({ body: { name: name() } }).execute(), {
+        injector: c.injector,
+      });
+
+      s.tick(1000);
+      expect(s.api.requestCount('POST', '/users')).toBe(1);
+      expect(s.liveQueries()).toHaveLength(1);
+
+      for (const [index, next] of ['Grace', 'Linus', 'Barbara'].entries()) {
+        name.set(next);
+        s.tick(1000);
+
+        expect(s.api.requestCount('POST', '/users')).toBe(index + 2);
+        expect(query()?.rawState).toMatchObject({ type: QueryStateType.Success, response: { name: next } });
+      }
+
+      c.destroy();
+    });
+  });
+
+  describe('queryComputed read synchronously', () => {
+    it('returns the executed interop query at construction and in ngOnInit', () => {
+      const s = scenario();
+      s.api.on('POST', '/users', ({ body }) => ({ status: 201, body }));
+
+      const createUser = s.post<CreateUserArgs>('/users');
+      const legacyCreateUser = createLegacyQueryCreator({ creator: createUser, name: 'legacyCreateUser' });
+
+      const c = s.consumer([
+        { provide: BUILD_QUERY, useValue: () => legacyCreateUser.prepare({ body: { name: 'Ada' } }).execute() },
+      ]);
+      const ref = mountSyncReadHost(c.injector);
+
+      expect(ref.instance.atConstruction).not.toBeNull();
+      expect(ref.instance.atInit).toBe(ref.instance.atConstruction);
+
+      s.tick();
+
+      expect(ref.instance.query()).toBe(ref.instance.atConstruction);
+      expect(s.api.requestCount('POST', '/users')).toBe(1);
+
+      ref.destroy();
+      c.destroy();
+    });
+
+    it('returns the executed native query at construction and in ngOnInit', () => {
+      const s = scenario();
+      s.api.on('POST', '/users', ({ body }) => ({ status: 201, body }));
+
+      const owner = s.consumer();
+      const client = owner.run(() => new V2QueryClient({ baseRoute: BASE_URL }));
+      const createUser = client.post({
+        route: '/users',
+        types: { args: def<{ body: { name: string } }>(), response: def<User>() },
+      });
+
+      const c = s.consumer([
+        { provide: BUILD_QUERY, useValue: () => createUser.prepare({ body: { name: 'Ada' } }).execute() },
+      ]);
+      const ref = mountSyncReadHost(c.injector);
+
+      expect(ref.instance.atConstruction).not.toBeNull();
+      expect(ref.instance.atInit).toBe(ref.instance.atConstruction);
+
+      s.tick();
+
+      expect(ref.instance.query()).toBe(ref.instance.atConstruction);
+      expect(s.api.requestCount('POST', '/users')).toBe(1);
+
+      ref.destroy();
+      c.destroy();
+      owner.destroy();
+    });
+  });
+
+  it('runs a queryComputed that reads a required input once the input is set', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
+
+    const getUser = s.get<{ response: User; pathParams: { id: string } }>((p) => `/users/${p.id}`);
+    const legacyGetUser = createLegacyQueryCreator({ creator: getUser, name: 'legacyGetUser' });
+
+    const c = s.consumer([
+      { provide: BUILD_USER_QUERY, useValue: (id: string) => legacyGetUser.prepare({ pathParams: { id } }).execute() },
+    ]);
+    const ref = createComponent(RequiredInputHost, { environmentInjector: c.injector });
+
+    ref.setInput('id', '1');
+    ref.changeDetectorRef.detectChanges();
+    s.tick();
+
+    expect(s.api.requestCount('GET', '/users/1')).toBe(1);
+    expect(ref.instance.query()?.rawState).toMatchObject({ type: QueryStateType.Success, response: { id: '1' } });
+
+    ref.destroy();
+    c.destroy();
+  });
+
+  describe('queryComputed over the native V2QueryClient', () => {
+    it('sends one POST per args change', () => {
+      const s = scenario();
+      s.api.on('POST', '/users', ({ body }) => ({ status: 201, body, delay: 100 }));
+
+      const owner = s.consumer();
+      const client = owner.run(() => new V2QueryClient({ baseRoute: BASE_URL }));
+      const createUser = client.post({
+        route: '/users',
+        types: { args: def<{ body: { name: string } }>(), response: def<User>() },
+      });
+      const name = signal('Ada');
+
+      const c = s.consumer();
+      const query = queryComputed(() => createUser.prepare({ body: { name: name() } }).execute(), {
+        injector: c.injector,
+      });
+
+      s.tick(1000);
+      expect(s.api.requestCount('POST', '/users')).toBe(1);
+
+      for (const [index, next] of ['Grace', 'Linus', 'Barbara'].entries()) {
+        name.set(next);
+        s.tick(1000);
+
+        expect(s.api.requestCount('POST', '/users')).toBe(index + 2);
+        expect(query()?.rawState).toMatchObject({ type: QueryStateType.Success, response: { name: next } });
+      }
+
+      c.destroy();
+      owner.destroy();
+    });
+
+    it('sends one GET per args change and aborts the superseded one', () => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 100 }));
+
+      const owner = s.consumer();
+      const client = owner.run(() => new V2QueryClient({ baseRoute: BASE_URL }));
+      const getUser = client.get({
+        route: (p) => `/users/${p.id}`,
+        types: { args: def<{ pathParams: { id: string } }>(), response: def<User>() },
+      });
+      const id = signal('1');
+
+      const c = s.consumer();
+      const query = queryComputed(() => getUser.prepare({ pathParams: { id: id() } }).execute(), {
+        injector: c.injector,
+      });
+
+      s.tick(10);
+
+      for (const next of ['2', '3', '4']) {
+        id.set(next);
+        s.tick(10);
+      }
+
+      s.tick(1000);
+
+      for (const done of ['1', '2', '3', '4']) {
+        expect(s.api.requestCount('GET', `/users/${done}`)).toBe(1);
+      }
+
+      expect(s.api.requests.map((request) => request.aborted)).toEqual([true, true, true, false]);
+
+      expect(query()?.rawState).toMatchObject({ type: QueryStateType.Success, response: { id: '4' } });
+
+      c.destroy();
+      client._store.forEach((stored, key) => {
+        stored.abort();
+        client._store.remove(key);
+      });
+      owner.destroy();
     });
   });
 });

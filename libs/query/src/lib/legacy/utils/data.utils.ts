@@ -1,5 +1,6 @@
 import {
   CreateComputedOptions,
+  DestroyRef,
   Injector,
   Signal,
   assertInInjectionContext,
@@ -11,6 +12,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { createWatch } from '@angular/core/primitives/signals';
 import { ToObservableOptions, ToSignalOptions, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { computedTillTruthy, createDestroy } from '@ethlete/core';
 import { Observable, Subscribable, of, pairwise, startWith, switchMap, takeUntil, tap } from 'rxjs';
@@ -285,29 +287,52 @@ export function effectComputed<T extends AnyV2Query | AnyLegacyQuery | AnyV2Quer
   computation: () => T,
   injector: Injector,
 ) {
-  let initialData = null;
+  const lastResult = signal<T>(null as T);
+  const rerun = signal(0);
+
+  const createComputationWatch = () =>
+    createWatch(
+      () => {
+        const data = runInInjectionContext(injector, () => computation());
+
+        untracked(() => {
+          if (data === lastResult()) return;
+
+          lastResult.set(data);
+        });
+      },
+      () => rerun.update((count) => count + 1),
+      true,
+    );
+
+  let watch = createComputationWatch();
+  let initialRunFailed = false;
 
   try {
-    initialData = runInInjectionContext(injector, () => computation());
+    watch.run();
   } catch {
-    // Ignore errors in the initial computation
-    // Angular might throw an error if required inputs are read but not available yet
+    // Angular throws for a required input read before it is set; the effect's first run retries.
+    initialRunFailed = true;
   }
-
-  const lastResult = signal<T>(initialData as T);
 
   effect(
     () => {
-      const data = runInInjectionContext(injector, () => computation());
+      rerun();
 
       untracked(() => {
-        if (data === lastResult()) return;
+        if (initialRunFailed) {
+          initialRunFailed = false;
+          watch.destroy();
+          watch = createComputationWatch();
+        }
 
-        lastResult.set(data);
+        watch.run();
       });
     },
     { injector },
   );
+
+  injector.get(DestroyRef).onDestroy(() => watch.destroy());
 
   return lastResult.asReadonly();
 }

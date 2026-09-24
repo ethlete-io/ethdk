@@ -65,7 +65,10 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
 ## Slices
 
 - [x] S0 Harness: request-storm + effect-loop invariants
-- [ ] S1 Defects 1-3 with failing scenarios, then fixes
+- [x] S1 Defects 1-3 with failing scenarios, then fixes (`reactive-contract.scenario.spec.ts`)
+  - 1 real: `execute()`/`reset()` in an effect looped (ET800) or reset its own response; now untracked.
+  - 2 real: `effectComputed` ran the computation twice (two POSTs, new query after the sync read); now one tracked run.
+  - 3 not real: native `rawState` is a `BehaviorSubject`, so nothing is tracked; GET scenario kept as a guard.
 - [ ] S2 P1 on both clients with changing args (`describe.each([native, interop])` helper)
 - [ ] S3 P2, P3, P5 source switches; P4 poll inside `queryComputed`
 - [ ] S4 P6, P7, P8 RxJS and effect re-execute
