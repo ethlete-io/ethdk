@@ -148,6 +148,38 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       `resolveQueryHeaders` (query-devtools), `shouldRetryRequest`, `createQueryErrorResponse`,
       `symfonyQueryErrorParser` (components), `hasHeader`, `v2ShouldRetryRequest`, `isClassValidatorError` (cdk).
 - [ ] S8 Same audit for `libs/core` and `libs/components`
+  - S8a core: list the consumer patterns of `@ethlete/core` in the apps (exposure table above), write
+    scenarios in `libs/core/src/scenarios` (`core-scenario-tests` skill), add `core` to
+    `tools/export-coverage/config.json`, triage its allowlist like S9. About 1.5-2 h of agent time.
+  - S8b components: the same for `libs/components`. Much larger; split by domain (overlay, forms, grid, …),
+    one fresh agent per domain. Behavior belongs in `apps/storybook-e2e` (`component-behavior-tests` skill)
+    where a scenario cannot drive it. About 3 h or more.
+- [ ] S11 Follow-ups from S6 (hand-written skill `.agents/skills/query-scenario-tests/SKILL.md` documents `s.mount`)
+  1. `s.mount(Component, injector)` runs change detection at once, so an `input.required()` read by
+     `queryComputed` fails. Add an `inputs` option (`componentRef.setInput` before the first change detection),
+     replace the parent-template workaround in `legacy-client-options.scenario.spec.ts`, update the skill.
+  2. A chat scenario in `early-v3-patterns.scenario.spec.ts` gave different results on identical runs when a
+     response delay sat exactly on the 50 ms step of `s.flush()`. The delay was moved off the boundary; the
+     root cause (fake clock or flush loop) is unknown. Find it and prove the fix with a test that bites.
+  3. Check whether v3 `defineQueryForm` has the S6 P9 bug (a field loses its debounce when its change resets an
+     `isResetBy` field). Scenario first; defect process if real.
+
+### Continue consumer coverage on 2026-09-26
+
+Order: S11 (one fresh agent, about 45 min), then S8a, then S8b by domain. The `@internal` tagging waits for the
+next major. P14's generator gap and the other migration gaps belong to the migration work below, not to this
+list. Open question for the user: which 5.x app moves to Angular 22 first, so that S7 can smoke it.
+
+Subagent rules that worked today: `model: "opus"`; one fresh agent per slice (stop it before its context passes
+200k); stage only own paths and commit with `git commit -m … -- <paths>`, check `git diff --cached --name-only`
+first; never amend, never `git add -A`, never `check.mjs --update` (it picks up other sessions' exports - trim the
+allowlist by hand); stop and ask before an edit in `libs/query/src/lib/http/` while another session works there;
+run `npx tsc --noEmit -p libs/query/tsconfig.spec.json`, because vitest does not type-check; zero new lint
+warnings, lint only changed files.
+
+Gotchas: a red `nx test query` is often another session's uncommitted work, so check `git status` before a
+failure is blamed on a commit. Another session's plain `git commit` swept S6's fix into 499b0b8a2; the content is
+correct, so leave it.
 
 ## v2 → v3 migration gaps (from ethlete-sdk-57)
 
