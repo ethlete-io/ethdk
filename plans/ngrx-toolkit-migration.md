@@ -80,7 +80,7 @@ Manual (report tasks): vbl `layout` and `tournament` facades (toolkit-shaped, no
   - Differences from the toolkit: a second call with the same args joins the in-flight request; `switchMap` does
     not cancel calls with other args; `remove()` during a request drops the late result; no `isPolling$`,
     `type$`, `entityId$`.
-- [x] S3a Generator store side - 3a350896f. S3b consumer side - 253936acd; generic fixtures - 9f935392e.
+- [x] S3a Generator store side - e9f3b4abb. S3b consumer side - 1d5eba6ef; generic fixtures - 7c035a588.
   - Options: `--client`, `--clientImport` (required), `--publicRoutes`, `--serviceApiBase`, plus the
     `migrate-to-query-v3` scoping. Tasks go to `query-toolkit-migration-tasks.md`, ids `NTK-*`.
   - The interceptor is detected and reported (`NTK-AUTH-INTERCEPTOR`), not deleted.
@@ -92,19 +92,7 @@ Manual (report tasks): vbl `layout` and `tournament` facades (toolkit-shaped, no
 
 ## Continue on 2026-09-26
 
-1. **Blocker: history rewrite before any push of `next`.** 3a350896f (and 253936acd) hold client source in
-   `libs/query/generators/migrate-from-ngrx-toolkit/__fixtures__`; 9f935392e made it generic, but the old blobs
-   stay in history, and `origin` is public. The user approved a rewrite of the unpushed range from 3a350896f.
-   The permission classifier blocked it ("Git Destructive"), so the user must allow it or run it.
-   - Script: `plans/ngrx-toolkit-rewrite.sh` (dry run by default, `--apply` moves `next` with `git update-ref`, which checks
-     the old tip). Plumbing only, in a temp index: every commit that has the generator dir gets the final
-     generic tree of that dir; messages, authors and dates stay. It aborts if the final tree differs.
-     The first dry run failed at `git rm --cached` (it checks the working tree); the script now uses
-     `update-index --force-remove`, and that version has not run yet.
-   - Before `--apply`: ask ethlete-sdk-29 (and any other committing session) for a commit freeze.
-   - After: `/tmp/next-rewrite-map.txt` holds old → new shas. Fix the shas cited in
-     `plans/query-consumer-coverage.md` ("Continue on 2026-09-26" section) and in this file, then tell the sessions.
-   - Nobody pushes `next` until this is done. ethlete-sdk-29 and ethlete-sdk-57 know.
+1. **Done:** the unpushed history from the S3a commit was rewritten on 2026-09-25 (plumbing, `plans/ngrx-toolkit-rewrite.sh`), so no commit holds client code. Cited shas in the plans were updated. `next` may be pushed again.
 2. **Decide:** extra keys in `toolkitSelect` / `toolkitCall` args (one real site passes `skipCache: true`, which is
    now an excess-property type error). Either the interop accepts and drops them from the hash on both sides, or
    the site gets a task. `extras.skipCache` → `allowCache: false` (D7) is still open.

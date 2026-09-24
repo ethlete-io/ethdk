@@ -200,15 +200,15 @@ Triage (ethlete-sdk-57):
   The `early-v3-patterns.scenario.spec.ts` was reported as broken, but it passes at HEAD (9f822f831 + 11490012c).
   The user confirmed the mutation default `false` on 2026-09-25.
 - 7 done by ethlete-sdk-70 in 944092f44 (`executeUntilSettled$`).
-- 6 done in 0776126aa: `withPolling({ enabled })`, optional (default always on); the user chose it.
-  `enabled` is also on `withLongPolling` and `withAutoRefresh` (user decision 2026-09-25), landed in 3686fe7eb.
+- 6 done in 5d706cdba: `withPolling({ enabled })`, optional (default always on); the user chose it.
+  `enabled` is also on `withLongPolling` and `withAutoRefresh` (user decision 2026-09-25), landed in d4884a9ec.
 - 8 by design (user 2026-09-25): withArgs is the encouraged path for mutations; ET100 message, docs and agent skill
-  updated in a8a6f2947. Next: a type-level check at the creator call (withArgs required when the args have
+  updated in e2d93c484. Next: a type-level check at the creator call (withArgs required when the args have
   pathParams); ET100 stays as the runtime backup.
-- 9 done in 7eaf2c3c8: `query.abort()`; the user chose no Cancelled state. After an abort `executionState()` is the
+- 9 done in 1386121dc: `query.abort()`; the user chose no Cancelled state. After an abort `executionState()` is the
   value from before the aborted execution, or `null`; `executeUntilSettled$` completes empty and the Promise resolves a
   snapshot with a cancel event. The legacy interop keeps `reset()` for the v2 Cancelled state.
-- 3 done in 80e744c2d: the user chose `triggeredBy` + docs, no new signal. `withPolling` executions pass
+- 3 done in b62b57981: the user chose `triggeredBy` + docs, no new signal. `withPolling` executions pass
   `triggeredBy: 'polling'`, `withAutoRefresh` passes `'auto-refresh'`; `features.md` and `migrating-from-v2.md` show
   the `loading() && !response()` spinner and the background-refresh `executionState()`.
 - Waiting on the user: nothing.
@@ -221,9 +221,9 @@ Triage (ethlete-sdk-57):
 
 Open work, in this order. Everything above is committed on `next`, not pushed.
 
-1. **Do not push `next`** until ethlete-sdk-28 says its history rewrite (from 3a350896f on) is done. Then replace
-   the shas in this section with its old→new map (0776126aa, 3686fe7eb, 7eaf2c3c8, a8a6f2947, 80e744c2d, 3740c6106
-   and the ones above that are newer than 3a350896f).
+1. **Do not push `next`** until ethlete-sdk-28 says its history rewrite (from e9f3b4abb on) is done. Then replace
+   the shas in this section with its old→new map (5d706cdba, d4884a9ec, 1386121dc, e2d93c484, b62b57981, 2d6ca2e8b
+   and the ones above that are newer than e9f3b4abb).
 2. **Type error for a missing `withArgs`** (gap 8 follow-up, user decision 2026-09-25). Blocked yesterday: the
    permission classifier refused the edit to `query-features.ts`, so the user must allow it. Design, prototyped in
    a standalone copy only:
