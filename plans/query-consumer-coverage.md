@@ -93,6 +93,15 @@ Behavior an app loses or changes when it moves call sites from v2 to v3. Each ne
 document, add a feature, or teach the codemod. Some are deliberate (retry and error parsing went opt-in in
 53fcc97ef).
 
+Triage (ethlete-sdk-57):
+
+- Done in 4b31a2308 + a569506d4: 1 (`withEthleteApiErrors()` added, remaining differences reported), 2 (mapping was
+  exact; `keepUnusedFor` warned), 10 (`entity:` moved onto the legacy wrapper; gql and `ExperimentalQuery` helpers
+  reported), 11 (`refreshBuffer` mapped, the guide's unit claim fixed), 13 (dropped defaults reported), 5 (guide warning
+  only).
+- Waiting on the user: 5 (`HttpContextToken` marker on v3 requests), then 4, 6, 7, 9, 3, 8 one at a time.
+- To question: 14 (query button, EntityStore). Document only: 12, 15-18.
+
 1. Retries: v2 retried every method on 5xx ×4 (`legacy/request/request.util.ts:225`); v3 needs `withDefaultRetry()`.
    `migrate-to-query-v3` adds no features (`query-client-migration.ts:398`). Same for Symfony error parsing.
 2. v3 `execute()` never reuses a fresh cache hit (v2 `legacy/query/query.ts:224-228`); vbl's `cacheAdapter: () => 0`
