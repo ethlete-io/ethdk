@@ -57,6 +57,58 @@ const MIN_PROPOSED_CALL_MS = 5 * 60_000;
 const sharedMs = (left: TimeWindow, right: TimeWindow) =>
   Math.max(0, Math.min(left.to.getTime(), right.to.getTime()) - Math.max(left.from.getTime(), right.from.getTime()));
 
+const lengthOf = (window: TimeWindow) => window.to.getTime() - window.from.getTime();
+
+type CallPiece = {
+  window: TimeWindow;
+  /** The stretch the piece is named from: its own meeting's, without a scrap folded into it. */
+  naming: TimeWindow;
+};
+
+/**
+ * Cuts a call that ran through several accepted meetings at their boundaries, so each piece is named
+ * from the meeting it overlaps. A call over one meeting stays whole, and a piece too short to propose
+ * a row joins its neighbour without taking part in naming it.
+ */
+const cutAtMeetings = (options: {
+  window: TimeWindow;
+  occurrences: readonly CalendarOccurrenceEvent[];
+}): CallPiece[] => {
+  const { window } = options;
+  const from = window.from.getTime();
+  const to = window.to.getTime();
+  const accepted = candidatesFor({
+    occurrences: options.occurrences.filter((event) => event.accepted),
+    window,
+  });
+
+  if (accepted.length < 2) return [{ window, naming: window }];
+
+  const cuts = [
+    ...new Set(
+      accepted
+        .flatMap(({ event }) => [event.at.getTime(), event.until.getTime()])
+        .filter((cut) => cut > from && cut < to),
+    ),
+  ].sort((left, right) => left - right);
+  const edges = [from, ...cuts, to];
+  const pieces = edges.slice(1).map((end, index) => ({ from: new Date(edges[index] as number), to: new Date(end) }));
+
+  return pieces.reduce<CallPiece[]>((kept, piece) => {
+    const previous = kept[kept.length - 1];
+
+    if (!previous) return [{ window: piece, naming: piece }];
+
+    const joined = { from: previous.window.from, to: piece.to };
+
+    if (lengthOf(piece) < MIN_PROPOSED_CALL_MS) return [...kept.slice(0, -1), { ...previous, window: joined }];
+    if (lengthOf(previous.window) < MIN_PROPOSED_CALL_MS)
+      return [...kept.slice(0, -1), { window: joined, naming: piece }];
+
+    return [...kept, { window: piece, naming: piece }];
+  }, []);
+};
+
 const pad = (value: number) => String(value).padStart(2, '0');
 
 const timeOfDay = (date: Date) => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
@@ -196,6 +248,7 @@ const disputedBy = (options: {
 const matchOne = (options: {
   call: CallWindow;
   window: TimeWindow;
+  naming: TimeWindow;
   after?: string;
   blocks: readonly ActivityBlock[];
   titled: readonly ActivityBlock[];
@@ -203,7 +256,7 @@ const matchOne = (options: {
   meetings: MeetingOptions;
 }): CallMatch => {
   const { call, window, blocks, meetings } = options;
-  const candidates = candidatesFor({ occurrences: options.occurrences, window });
+  const candidates = candidatesFor({ occurrences: options.occurrences, window: options.naming });
   const features = callFeaturesOf({ appId: call.appId, from: window.from, to: window.to, after: options.after });
 
   if (!call.countsAsWork) {
@@ -211,7 +264,7 @@ const matchOne = (options: {
     return { call, overlapMs: 0, candidates, features, group: excludedRow({ call, window }) };
   }
 
-  const picked = pickCandidate({ call, window, candidates, blocks: options.titled });
+  const picked = pickCandidate({ call, window: options.naming, candidates, blocks: options.titled });
   const answered = rememberedCallNaming({ features, meetings });
   /**
    * An answer of the user's about this call outranks an occurrence the calendar only guessed at. A
@@ -385,11 +438,13 @@ export const matchCalls = (options: {
   return inOrder
     .flatMap((call) =>
       subtractWindows({ windows: [{ from: call.from, to: call.to }], without: options.claimed })
-        .filter((window) => window.to.getTime() - window.from.getTime() >= MIN_PROPOSED_CALL_MS)
-        .map((window) =>
+        .filter((window) => lengthOf(window) >= MIN_PROPOSED_CALL_MS)
+        .flatMap((window) => cutAtMeetings({ window, occurrences }))
+        .map(({ window, naming }) =>
           matchOne({
             call,
             window,
+            naming,
             after: after.get(call),
             blocks: options.blocks,
             titled,

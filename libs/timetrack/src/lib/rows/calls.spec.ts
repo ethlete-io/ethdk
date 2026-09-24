@@ -192,6 +192,70 @@ describe('matchCalls', () => {
   });
 });
 
+describe('a call that ran through several meetings', () => {
+  const reward = occurrence({
+    at: at(8),
+    until: at(9),
+    occurrenceId: 'occ-reward',
+    recurringEventId: 'series-reward',
+    title: 'Besprechung Reward System',
+  });
+  const pentest = occurrence({
+    at: at(9),
+    until: at(9, 30),
+    occurrenceId: 'occ-pentest',
+    recurringEventId: 'series-pentest',
+    title: 'Pentest Abstimmung',
+  });
+  const daily = occurrence({
+    at: at(12),
+    until: at(12, 30),
+    occurrenceId: 'occ-daily',
+    recurringEventId: 'series-daily',
+    title: 'Daily / Update EA',
+    accepted: false,
+  });
+  const discord = (to: Date) =>
+    call({ from: new Date(2026, 7, 11, 8, 3, 45), to, title: 'Meeting #4 96kbps | Braune Digital - Discord' });
+
+  it('cuts it at the meeting boundaries and names each piece from its own meeting', () => {
+    const found = match({ calls: [discord(at(9, 45))], occurrences: [reward, pentest, daily] });
+
+    expect(found.map((entry) => [entry.group.from, entry.group.to, entry.meeting?.event.title])).toEqual([
+      [new Date(2026, 7, 11, 8, 3, 45), at(9), 'Besprechung Reward System'],
+      [at(9), at(9, 30), 'Pentest Abstimmung'],
+      [at(9, 30), at(9, 45), undefined],
+    ]);
+  });
+
+  it('re-cuts the call as it keeps running', () => {
+    const early = match({ calls: [discord(at(8, 40))], occurrences: [reward, pentest, daily] });
+    const later = match({ calls: [discord(at(9, 20))], occurrences: [reward, pentest, daily] });
+
+    expect(early.map((entry) => entry.meeting?.event.title)).toEqual(['Besprechung Reward System']);
+    expect(later.map((entry) => entry.meeting?.event.title)).toEqual([
+      'Besprechung Reward System',
+      'Pentest Abstimmung',
+    ]);
+  });
+
+  it('folds a scrap too short to propose a row into the piece beside it', () => {
+    const found = match({ calls: [discord(at(9, 2))], occurrences: [reward, pentest] });
+
+    expect(found.map((entry) => [entry.group.to, entry.meeting?.event.title])).toEqual([
+      [at(9, 2), 'Besprechung Reward System'],
+    ]);
+  });
+
+  it('keeps a call over a single meeting whole', () => {
+    const found = match({ calls: [call({ from: at(9, 50), to: at(11, 20) })], occurrences: [occurrence()] });
+
+    expect(found.map((entry) => [entry.group.from, entry.group.to, entry.meeting?.event.title])).toEqual([
+      [at(9, 50), at(11, 20), 'Daily Standup'],
+    ]);
+  });
+});
+
 describe('dropCallWindows', () => {
   const app = (options: { from: Date; to: Date; appId: string; repoPath?: string }): ActivityBlock => ({
     from: options.from,
