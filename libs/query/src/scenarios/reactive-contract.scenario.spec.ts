@@ -1,5 +1,7 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
+  computed,
   createComponent,
   effect,
   EnvironmentInjector,
@@ -7,19 +9,25 @@ import {
   InjectionToken,
   input,
   OnInit,
+  Provider,
   signal,
 } from '@angular/core';
 import {
   AnyLegacyQuery,
   AnyV2Query,
   createLegacyQueryCreator,
+  createPagedQueryStack,
+  createQueryStack,
   createSecurePostQuery,
   def,
+  ethletePaginationAdapter,
+  provideQueryDevtools,
   queryComputed,
   QueryStateType,
   V2QueryClient,
   withArgs,
 } from '../index';
+import { Paginated } from '@ethlete/types';
 import { describe, expect, it } from 'vitest';
 import { useScenario } from './harness';
 
@@ -414,3 +422,305 @@ describe('reactive contract scenario', () => {
     });
   });
 });
+
+describe('reactive contract scenario: stacks and auth inside an effect', () => {
+  const scenario = useScenario({ baseUrl: BASE_URL, clientOptions: { keepUnusedFor: 0 } });
+
+  type ItemArgs = { response: { id: string }; pathParams: { id: string } };
+
+  it('re-executes every stack query once per trigger from execute() in an effect', () => {
+    const s = scenario();
+    s.api.on('GET', '/items/:id', ({ params }) => ({ body: { id: params['id'] }, delay: 10 }));
+
+    const getItem = s.get<ItemArgs>((p) => `/items/${p.id}`);
+    const ids = signal(['1', '2']);
+    const trigger = signal(0);
+
+    const c = s.consumer();
+    const stack = c.run(() =>
+      createQueryStack({ queryCreator: getItem, args: () => ids().map((id) => ({ pathParams: { id } })) }),
+    );
+
+    s.tick(100);
+
+    c.run(() =>
+      effect(() => {
+        if (!trigger()) return;
+
+        stack.execute({ allowCache: false });
+      }),
+    );
+
+    for (const count of [1, 2, 3]) {
+      trigger.set(count);
+      s.tick(100);
+
+      expect(s.api.requestCount('GET', '/items/1')).toBe(count + 1);
+      expect(s.api.requestCount('GET', '/items/2')).toBe(count + 1);
+    }
+
+    for (const next of [['3'], ['4'], ['5']]) {
+      ids.set(next);
+      s.tick(100);
+
+      expect(s.api.requestCount('GET', `/items/${next[0]}`)).toBe(1);
+    }
+
+    c.destroy();
+  });
+
+  // retryFailed() reads each query's error tracked, so the effect retries again
+  it.fails('retries the failed stack query once per trigger from retryFailed() in an effect', () => {
+    const s = scenario();
+    s.api.on('GET', '/failing/:id', ({ params }) =>
+      params['id'] === '2' ? { status: 500, body: { message: 'boom' }, delay: 10 } : { body: { id: params['id'] } },
+    );
+
+    const getItem = s.get<ItemArgs>((p) => `/failing/${p.id}`);
+    const trigger = signal(0);
+
+    const c = s.consumer();
+    const stack = c.run(() =>
+      createQueryStack({
+        queryCreator: getItem,
+        args: () => [{ pathParams: { id: '1' } }, { pathParams: { id: '2' } }],
+      }),
+    );
+
+    s.tick(100);
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 500);
+
+    c.run(() =>
+      effect(() => {
+        if (!trigger()) return;
+
+        stack.retryFailed();
+      }),
+    );
+
+    for (const count of [1, 2, 3]) {
+      trigger.set(count);
+      s.tick(100);
+
+      expect(s.api.requestCount('GET', '/failing/2')).toBe(count + 1);
+      s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 500);
+    }
+
+    expect(s.api.requestCount('GET', '/failing/1')).toBe(1);
+
+    c.destroy();
+  });
+
+  // execute({ where }) reads the responses tracked, so the effect re-runs on its own result
+  it.fails(
+    're-executes the matching page and its neighbours once per trigger from execute({ where }) in an effect',
+    () => {
+      const s = scenario();
+      s.api.on('GET', '/pages', ({ query }) => ({
+        body: {
+          items: [{ id: Number(query['page']) }],
+          currentPage: Number(query['page']),
+          nextPage: Number(query['page']) < 5 ? Number(query['page']) + 1 : null,
+          totalPageCount: 5,
+          itemsPerPage: 1,
+          totalHits: 5,
+        },
+        delay: 10,
+      }));
+
+      const getPages = s.get<{ response: Paginated<{ id: number }>; queryParams: { page: number } }>('/pages');
+      const target = signal(0);
+
+      const c = s.consumer();
+      const pages = c.run(() =>
+        createPagedQueryStack({
+          queryCreator: getPages,
+          responseNormalizer: ethletePaginationAdapter,
+          args: (page) => ({ queryParams: { page } }),
+        }),
+      );
+
+      s.tick(100);
+
+      for (let page = 2; page <= 5; page++) {
+        pages.fetchNextPage();
+        s.tick(100);
+      }
+
+      c.run(() =>
+        effect(() => {
+          const id = target();
+
+          if (!id) return;
+
+          pages.execute({ where: (item) => item.id === id });
+        }),
+      );
+
+      const requestCount = (page: number) =>
+        s.api.requests.filter((request) => request.query['page'] === String(page)).length;
+
+      target.set(2);
+      s.tick(100);
+      expect([1, 2, 3, 4, 5].map(requestCount)).toEqual([2, 2, 2, 1, 1]);
+
+      target.set(4);
+      s.tick(100);
+      expect([1, 2, 3, 4, 5].map(requestCount)).toEqual([2, 2, 3, 2, 2]);
+
+      target.set(5);
+      s.tick(100);
+      expect([1, 2, 3, 4, 5].map(requestCount)).toEqual([2, 2, 3, 3, 3]);
+
+      c.destroy();
+    },
+  );
+
+  // the login query is created lazily inside the effect, NG0602
+  it.fails('sends one login per signal change from login.execute() in an effect', () => {
+    const s = scenario();
+    const auth = s.auth();
+    const email = signal('a@test.com');
+
+    const c = s.consumer();
+    c.run(() => effect(() => auth.queries.login.execute({ body: { email: email() } })));
+
+    s.tick(100);
+    expect(s.api.requestCount('POST', '/auth/login')).toBe(1);
+
+    for (const [index, next] of ['b@test.com', 'c@test.com', 'd@test.com'].entries()) {
+      email.set(next);
+      s.tick(100);
+
+      expect(s.api.requestCount('POST', '/auth/login')).toBe(index + 2);
+      expect(auth.isAuthenticated()).toBe(true);
+    }
+
+    c.destroy();
+  });
+
+  it('logs out once per trigger from logout() in an effect', () => {
+    const s = scenario();
+    const auth = s.auth();
+    const logoutRequested = signal(0);
+    let runs = 0;
+
+    const c = s.consumer();
+
+    c.run(() =>
+      effect(() => {
+        if (!logoutRequested()) return;
+
+        runs++;
+        auth.logout();
+      }),
+    );
+
+    for (const count of [1, 2, 3]) {
+      c.run(() => auth.queries.login.execute({ body: {} }));
+      s.tick(100);
+      expect(auth.isAuthenticated()).toBe(true);
+
+      logoutRequested.set(count);
+      s.tick(100);
+
+      expect(auth.isAuthenticated()).toBe(false);
+      expect(runs).toBe(count);
+    }
+
+    expect(s.api.requestCount('POST', '/auth/login')).toBe(3);
+
+    c.destroy();
+  });
+});
+
+const describeComputedContract = (label: string, providers?: () => Provider[]) =>
+  describe(`reactive contract scenario: query objects inside a computed (${label})`, () => {
+    const scenario = useScenario({ baseUrl: BASE_URL, clientOptions: { keepUnusedFor: 0 }, providers });
+
+    type UserArgs = { response: User; pathParams: { id: string } };
+
+    // query creation throws NG0602 / NG0600
+    it.fails('throws ET001 instead of NG0602 when a query is created inside a computed', () => {
+      const s = scenario();
+      const getUser = s.get<UserArgs>((p) => `/users/${p.id}`);
+
+      const c = s.consumer();
+      const query = computed(() =>
+        getUser(
+          { injector: c.injector },
+          withArgs(() => ({ pathParams: { id: '1' } })),
+        ),
+      );
+
+      expect(() => query()).toThrow(/^ET001/);
+      expect(s.liveQueries()).toEqual([]);
+
+      c.destroy();
+    });
+
+    // createSnapshot() creates an effect, NG0602
+    it.fails('creates one snapshot per args change inside a computed', () => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 100 }));
+
+      const getUser = s.get<UserArgs>((p) => `/users/${p.id}`);
+      const id = signal('1');
+
+      const c = s.consumer();
+      const query = c.run(() => getUser(withArgs(() => ({ pathParams: { id: id() } }))));
+      const snapshot = computed(() => {
+        query.args();
+
+        return query.createSnapshot();
+      });
+
+      s.tick(10);
+      expect(snapshot().args()).toMatchObject({ pathParams: { id: '1' } });
+
+      for (const next of ['2', '3', '4']) {
+        id.set(next);
+        s.tick(10);
+
+        expect(snapshot().args()).toMatchObject({ pathParams: { id: next } });
+      }
+
+      s.tick(1000);
+
+      expect(s.api.requests.map((request) => request.aborted)).toEqual([true, true, true, false]);
+      expect(snapshot().response()).toMatchObject({ id: '4' });
+      expect(snapshot().isAlive()).toBe(false);
+
+      c.destroy();
+    });
+
+    // asObservable({ injector }) creates an effect, NG0602
+    it.fails('bridges a query signal with asObservable({ injector }) inside a computed', () => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
+
+      const getUser = s.get<UserArgs>((p) => `/users/${p.id}`);
+      const id = signal('1');
+
+      const c = s.consumer();
+      const query = c.run(() => getUser(withArgs(() => ({ pathParams: { id: id() } }))));
+      const response$ = computed(() => query.response.asObservable({ injector: c.injector }));
+      const seen: (string | undefined)[] = [];
+
+      response$().subscribe((response) => seen.push(response?.id));
+      s.tick();
+
+      for (const next of ['2', '3', '4']) {
+        id.set(next);
+        s.tick();
+      }
+
+      expect(response$()).toBe(response$());
+      expect(seen.filter((value) => value !== undefined)).toEqual(['1', '2', '3', '4']);
+
+      c.destroy();
+    });
+  });
+
+describeComputedContract('devtools off');
+describeComputedContract('devtools on', () => [provideQueryDevtools()]);

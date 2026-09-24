@@ -235,6 +235,7 @@
   "queryStateAlreadyHasKeyError": "uncovered",
   "queryStateCannotTransformError": "uncovered",
   "queryStateDoesNotContainKeyError": "uncovered",
+  "queryStateLoadingSignal": "pending: S3",
   "readQueryDevtoolsAuthSeed": "uncovered",
   "readQueryDevtoolsAuthSeedFor": "uncovered",
   "readQueryDevtoolsStore": "uncovered",
