@@ -1227,6 +1227,19 @@ a template (which gets the row list) or projected content:
 
 Just changing the wording? That is the `empty` [label](#localization), not a template.
 
+An [`<et-empty-state>`](/components/empty-state) fills the cell with the app's usual empty layout
+(import `EMPTY_STATE_IMPORTS`):
+
+```html
+<et-table [data]="rows()" [columns]="COLUMNS" [emptyTemplate]="nothing">
+  <ng-template #nothing>
+    <et-empty-state heading="No users" description="Nobody matches these filters.">
+      <button (click)="clearFilters()" et-button etEmptyStateAction type="button">Clear filters</button>
+    </et-empty-state>
+  </ng-template>
+</et-table>
+```
+
 ## Loading & error states
 
 `loading` and `error` take a query's own signals as they are, so a fetched table needs
@@ -1305,6 +1318,25 @@ default text; for anything more use `errorTemplate` (it gets the error value) or
 ```
 
 <StoryEmbed id="components-data-display-table--errored" height="300px" />
+
+For the app's standard failure panel - status heading, message or violation list, and a retry
+that re-executes the query - put an [`<et-query-error>`](/components/query-error) in the template
+(import `QUERY_ERROR_IMPORTS`). The template's `error` is typed `unknown`, so bind the query's own
+`error()`, which is what `et-query-error` expects:
+
+```html
+<et-table
+  [data]="usersQuery.response()?.items ?? []"
+  [columns]="COLUMNS"
+  [loading]="usersQuery.loading()"
+  [error]="usersQuery.error()"
+  [errorTemplate]="failure"
+>
+  <ng-template #failure>
+    <et-query-error [error]="usersQuery.error()" [query]="usersQuery" />
+  </ng-template>
+</et-table>
+```
 
 The error mark takes the app's **error color theme** (the one registered with
 `type: 'error'`). A table in an app that registers none still renders - the mark just
