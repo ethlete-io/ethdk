@@ -409,19 +409,21 @@ export const createQueryStack = <
     return transform?.(responses) ?? responses;
   }) as Signal<TTransform>;
 
-  const execute = (options?: { allowCache?: boolean }) => {
-    for (const query of queries()) {
-      query.execute({ options: { allowCache: options?.allowCache } });
-    }
-  };
-
-  const retryFailed = () => {
-    for (const query of queries()) {
-      if (query.error()) {
-        query.execute({ options: { allowCache: false } });
+  const execute = (options?: { allowCache?: boolean }) =>
+    untracked(() => {
+      for (const query of queries()) {
+        query.execute({ options: { allowCache: options?.allowCache } });
       }
-    }
-  };
+    });
+
+  const retryFailed = () =>
+    untracked(() => {
+      for (const query of queries()) {
+        if (query.error()) {
+          query.execute({ options: { allowCache: false } });
+        }
+      }
+    });
 
   const stack: QueryStack<QueryType, TCreator, TTransform> = {
     queries: queries.asReadonly(),

@@ -74,7 +74,11 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
 - [x] S3 P2, P3, P5 source switches; P4 poll inside `queryComputed` (`s.mount`, `legacy-template-patterns.scenario.spec.ts`)
   - 1 real: `*etQuery` over an interop query reported every failure to the `ErrorHandler` twice; now once.
 - [ ] S4 P6, P7, P8 RxJS and effect re-execute
-- [ ] S5 P10 specs; defects 4-6
+- [x] S5 P10 specs; defects 4-6 (`legacy-signal-helpers.scenario.spec.ts`, `reactive-contract.scenario.spec.ts`)
+  - P10 real: `queryComputedTillTruthy` kept executing a query per change after the first; now the computation stops at it.
+  - 4 real: `retryFailed()` and paged `execute({ where })` in an effect re-ran on their own results; stack `execute()` was fine. All three now untracked.
+  - 5 real for login, not for logout: auth `execute()` created its query lazily inside the effect (NG0602); now untracked.
+  - 6 real: creating a query in a reactive context now throws `ET001`; `createSnapshot()` and `asObservable({ injector })` work there.
 - [ ] S6 P9, P12, P13, P14, P17
 - [ ] S7 Release gate: build the SDK into one 5.x app and fut-frontend, smoke-run before publish
 - [x] S9 Export coverage gate: every runtime export of `libs/query/src/index.ts` must appear in a scenario, or be on an allowlist with a reason; CI fails otherwise

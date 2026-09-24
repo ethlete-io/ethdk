@@ -5,6 +5,7 @@ import { RuntimeError } from '@ethlete/core';
 export const QueryRuntimeErrorCode = {
   // Query
   QUERY_FEATURE_USED_MULTIPLE_TIMES: 0,
+  QUERY_CREATED_IN_REACTIVE_CONTEXT: 1,
 
   // Query features
   WITH_ARGS_QUERY_FEATURE_MISSING_BUT_ROUTE_IS_FUNCTION: 100,
@@ -69,6 +70,13 @@ export const queryFeatureUsedMultipleTimes = (type: string) => {
   return new RuntimeError(
     QueryRuntimeErrorCode.QUERY_FEATURE_USED_MULTIPLE_TIMES,
     `The query feature "${type}()" was used multiple times.`,
+  );
+};
+
+export const queryCreatedInReactiveContext = () => {
+  return new RuntimeError(
+    QueryRuntimeErrorCode.QUERY_CREATED_IN_REACTIVE_CONTEXT,
+    `A query was created inside a reactive context (a computed, an effect or a template). Every re-run would create another query that lives until its injector is destroyed. Create the query in a field initializer or constructor and change its args instead.`,
   );
 };
 

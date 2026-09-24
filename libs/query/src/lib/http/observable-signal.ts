@@ -1,4 +1,4 @@
-import { computed, DestroyRef, Injector, Signal } from '@angular/core';
+import { computed, DestroyRef, Injector, Signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 
@@ -26,7 +26,9 @@ export const wrapAsObservableSignal = <T>(source: Signal<T>, defaultInjector: In
 
     if (existing) return existing;
 
-    const override$ = toObservable(source, { injector }).pipe(takeUntilDestroyed(defaultInjector.get(DestroyRef)));
+    const override$ = untracked(() =>
+      toObservable(source, { injector }).pipe(takeUntilDestroyed(defaultInjector.get(DestroyRef))),
+    );
     overrides.set(injector, override$);
 
     return override$;

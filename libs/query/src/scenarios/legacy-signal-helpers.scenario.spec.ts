@@ -2,6 +2,7 @@ import { signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import {
   addQueryContainerHandling,
+  AnyLegacyQuery,
   effectComputed,
   queryArrayComputed,
   queryComputedTillTruthy,
@@ -37,7 +38,9 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy signal helpers on the %s client', (ki
       const ids = signal(['1', '2']);
 
       const queries = c.run(() =>
-        queryArrayComputed(() => ids().map((id) => getUser.prepare({ pathParams: { id } }).execute())),
+        queryArrayComputed(
+          () => ids().map((id) => getUser.prepare({ pathParams: { id } }).execute()) as AnyLegacyQuery[],
+        ),
       );
 
       s.tick(10);
@@ -47,7 +50,7 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy signal helpers on the %s client', (ki
         s.tick(10);
 
         expect(legacy.liveQueries()).toHaveLength(next.length);
-        expect(legacy.liveQueries()).toEqual(expect.arrayContaining(queries() ?? []));
+        expect(legacy.liveQueries()).toEqual(expect.arrayContaining<LegacyClientQuery>(queries() ?? []));
       }
 
       s.tick(1000);
@@ -70,7 +73,9 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy signal helpers on the %s client', (ki
       const ids = signal<string[]>([]);
 
       const queries = c.run(() =>
-        queryArrayComputed(() => ids().map((id) => getUser.prepare({ pathParams: { id } }).execute())),
+        queryArrayComputed(
+          () => ids().map((id) => getUser.prepare({ pathParams: { id } }).execute()) as AnyLegacyQuery[],
+        ),
       );
 
       for (const next of [['1', '2'], [], ['3']]) {
@@ -90,8 +95,7 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy signal helpers on the %s client', (ki
   });
 
   describe('queryComputedTillTruthy', () => {
-    // the underlying effectComputed keeps executing a query per change
-    it.fails('stops reacting once the first query exists and keeps that one live', () => {
+    it('stops reacting once the first query exists and keeps that one live', () => {
       const { s, legacy, getUser, c } = setup();
       const id = signal<string | null>(null);
 

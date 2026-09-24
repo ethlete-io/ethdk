@@ -655,31 +655,32 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
     // attempt or token refresh grows all of that for as long as the tab lives.
     let query: Query<QueryArgs> | null = null;
 
-    const execute = (args?: RequestArgs<QueryArgs>, options?: { triggeredBy?: string }) => {
-      query ??= builder.config.queryCreator({ onlyManualExecution: true, injector });
+    const execute = (args?: RequestArgs<QueryArgs>, options?: { triggeredBy?: string }) =>
+      untracked(() => {
+        query ??= builder.config.queryCreator({ onlyManualExecution: true, injector });
 
-      query.execute({ args, options });
-      const snapshot = query.createSnapshot();
+        query.execute({ args, options });
+        const snapshot = query.createSnapshot();
 
-      const stateType = deriveExecutionStateType(builder, options?.triggeredBy);
-      const isRevocation = stateType === 'revocation';
+        const stateType = deriveExecutionStateType(builder, options?.triggeredBy);
+        const isRevocation = stateType === 'revocation';
 
-      if (!isRevocation) {
-        latestExecutedQuery.set({ key: builder.key, snapshot });
-        if (!snapshot.triggeredBy()) {
-          latestNonInternalQuery.set({ key: builder.key, snapshot });
+        if (!isRevocation) {
+          latestExecutedQuery.set({ key: builder.key, snapshot });
+          if (!snapshot.triggeredBy()) {
+            latestNonInternalQuery.set({ key: builder.key, snapshot });
+          }
         }
-      }
-      executionState.set({ type: stateType, state: 'loading' });
+        executionState.set({ type: stateType, state: 'loading' });
 
-      if (stateType === 'autoLogin') {
-        sessionStatus.set('restoring');
-      }
+        if (stateType === 'autoLogin') {
+          sessionStatus.set('restoring');
+        }
 
-      currentExecution.set({ id: isRevocation ? null : ++latestExecutionId, type: stateType, snapshot });
-      querySnapshot.set(snapshot);
-      return snapshot;
-    };
+        currentExecution.set({ id: isRevocation ? null : ++latestExecutionId, type: stateType, snapshot });
+        querySnapshot.set(snapshot);
+        return snapshot;
+      });
 
     queries[builder.key as ExtractQueryKey<TBuilders[number]>] = {
       execute,

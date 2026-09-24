@@ -365,8 +365,17 @@ export function queryComputedTillTruthy<T extends AnyV2Query | AnyLegacyQuery | 
   options?: CreateComputedOptions<T> & QueryContainerConfig & ToObservableOptions,
 ): Signal<T | null> {
   const injector = options?.injector ?? inject(Injector);
+  let first: T | null = null;
 
-  const c = computedTillTruthy(effectComputed(computation, injector));
+  const c = computedTillTruthy(
+    effectComputed(() => {
+      if (first) return first;
+
+      first = computation() || null;
+
+      return first as T;
+    }, injector),
+  );
   const obs = toObservable(c, options);
 
   addQueryContainerHandling(obs, () => c(), options);

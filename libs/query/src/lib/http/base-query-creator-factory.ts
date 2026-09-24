@@ -1,5 +1,7 @@
+import { getActiveConsumer } from '@angular/core/primitives/signals';
 import { Query, QueryArgs } from './query';
 import { BaseQueryCreatorOptions, QueryConfig, QueryCreator, splitQueryConfig } from './query-creator';
+import { queryCreatedInReactiveContext } from './query-errors';
 import { QueryFeature } from './query-features';
 
 export type BaseQueryCreatorFactoryOptions<TArgs extends QueryArgs, TOptions, TInternals> = {
@@ -25,6 +27,8 @@ export const createBaseQueryCreator = <TArgs extends QueryArgs, TOptions, TInter
   function queryCreator(queryConfig: QueryConfig, ...features: QueryFeature<TArgs>[]): Query<TArgs>;
 
   function queryCreator(...args: (QueryFeature<TArgs> | QueryConfig)[]): Query<TArgs> {
+    if (getActiveConsumer() !== null) throw queryCreatedInReactiveContext();
+
     const { features, queryConfig } = splitQueryConfig<TArgs>(args);
 
     return config.queryFactory({

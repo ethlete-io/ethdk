@@ -502,51 +502,52 @@ export const createPagedQueryStack = <
     return stack.queries().length === 1 && !!stack.lastQuery()?.loading();
   });
 
-  const execute = (options?: PagedQueryStackExecuteOptions<TArgs>) => {
-    const whereFn = options?.where;
+  const execute = (options?: PagedQueryStackExecuteOptions<TArgs>) =>
+    untracked(() => {
+      const whereFn = options?.where;
 
-    if (whereFn) {
-      const queriesToExecute = new Set<Query<TArgs>>();
-      const all = stack.response();
+      if (whereFn) {
+        const queriesToExecute = new Set<Query<TArgs>>();
+        const all = stack.response();
 
-      for (const [index, query] of stack.queries().entries()) {
-        const res = query.response();
-        const err = query.error();
+        for (const [index, query] of stack.queries().entries()) {
+          const res = query.response();
+          const err = query.error();
 
-        if (err) {
-          queriesToExecute.add(query);
-        } else if (res) {
-          if (responseNormalizer(res, all).items.some((item, i, a) => whereFn(item, i, a))) {
+          if (err) {
             queriesToExecute.add(query);
+          } else if (res) {
+            if (responseNormalizer(res, all).items.some((item, i, a) => whereFn(item, i, a))) {
+              queriesToExecute.add(query);
 
-            // Also execute the previous and next query to the one that matched the condition.
+              // Also execute the previous and next query to the one that matched the condition.
 
-            if (index !== 0) {
-              const prevQuery = stack.queries()[index - 1];
+              if (index !== 0) {
+                const prevQuery = stack.queries()[index - 1];
 
-              if (prevQuery) {
-                queriesToExecute.add(prevQuery);
+                if (prevQuery) {
+                  queriesToExecute.add(prevQuery);
+                }
               }
-            }
 
-            if (index !== stack.queries().length - 1) {
-              const nextQuery = stack.queries()[index + 1];
+              if (index !== stack.queries().length - 1) {
+                const nextQuery = stack.queries()[index + 1];
 
-              if (nextQuery) {
-                queriesToExecute.add(nextQuery);
+                if (nextQuery) {
+                  queriesToExecute.add(nextQuery);
+                }
               }
             }
           }
         }
-      }
 
-      for (const query of queriesToExecute) {
-        query.execute({ options: { allowCache: options.allowCache } });
+        for (const query of queriesToExecute) {
+          query.execute({ options: { allowCache: options.allowCache } });
+        }
+      } else {
+        stack.execute({ allowCache: options?.allowCache });
       }
-    } else {
-      stack.execute({ allowCache: options?.allowCache });
-    }
-  };
+    });
 
   const pagedQuery: PagedQueryStack<Query<TArgs>, TNormPagination> = {
     maxPagination,

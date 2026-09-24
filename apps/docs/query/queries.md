@@ -123,6 +123,8 @@ const query = getPost(
 | `silenceMissingWithArgsFeatureError` | `false` | Allow a function route without a `withArgs` feature (you must then pass args to `.execute()`); throws if you combine it with `withArgs`. |
 | `injector`                           | -       | Create the query in a specific injector instead of the current injection context.                                                        |
 
+Never call a creator inside a `computed`, an `effect` or a template: every re-run would build another query, so it throws `ET001`. Create the query once and drive it through `withArgs` or `.execute({ args })`. Reading, executing, `createSnapshot()` and `.asObservable({ injector })` are fine there.
+
 Creators expose `.clone(additionalOptions)` to derive a variant with merged options (e.g. a custom `retryFn`).
 
 ## Auto-execution
