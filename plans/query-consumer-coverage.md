@@ -95,7 +95,7 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
   - Triaged: every allowlist reason is now `constant: …` (69: enums, values, tokens, error factories, type
     guards), `spec: <path>` (148), `internal: …` (72, plumbing reached through a covered public API) or
     `S10 <group>: needs a scenario` (29).
-- [ ] S10 Uncovered behavior exports: a scenario per group, in this order. Counts are app files importing the
+- [x] S10 Uncovered behavior exports: a scenario per group, in this order. Counts are app files importing the
       export (bvb, vbl, dfb, dyn, fut, fifagg).
   1. Legacy collections and pipes: `createQueryCollectionSignal` (fifagg 27, dfb 6, dyn 5, fut 3),
      `resetPageOnError` (fifagg 5, fut 3), `createQueryCollection` (fifagg 3, fut 1), `extractQuery` (dfb, dyn,
@@ -116,13 +116,16 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
     files, `isQueryStateLoading` 21, `isQueryStatePrepared` 4, `isQueryStateCancelled` 2); name them in the S10.1
     scenario.
   - Done: 1-7 (`legacy-collections-and-pipes`, `legacy-infinity-patterns`, `legacy-devtools-panel`,
-    `legacy-entity-patterns`, `head-options-creators`, `testing-helpers`, `persistence-noop-adapter`). The state
-    guards are named in `legacy-collections-and-pipes` (dyn's `UploadChunk` shape). Open: 8.
+    `legacy-entity-patterns`, `head-options-creators`, `testing-helpers`, `persistence-noop-adapter`), 8
+    (`devtools-panel-contract`). The state guards are named in `legacy-collections-and-pipes` (dyn's `UploadChunk`
+    shape).
     - 1 real: on the interop, a load the query did not start (`refreshQueriesInUse()`, an invalidation) reported
       `triggeredVia: 'program'`, so `ignoreAutoRefresh()` let it through and `*etQuery` showed `loading`, not
       `refreshing`. Now `auto`, keyed on the request's `executeTime` (`legacy/interop/legacy-query.ts`).
     - 2-7 not real. `testing-helpers` is a plain TestBed spec (the helpers need `HttpTestingController`, not the
       fake API). The v2 devtools list keeps cached queries, so "Live Queries" counts every args value seen.
+    - 8 not real: about, env scope and ids, account scoping, clear/remove, logout (keeps the session) and the
+      dev-build-only local vault behave as the panel expects.
   - `@internal` candidates (no other lib or app imports them, not in `apps/docs`; not changed yet). User decision
     2026-09-25: tag these `@internal` in the next major release, not in 6.0.0.
     - v3 plumbing: `shouldAutoExecuteQuery`, `shouldAutoExecuteGqlQuery`, `getQueryFeatureUsage`, `maybeExecute`,
