@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmdirSync, rmSync, wr
 import { dirname, join, relative } from 'path';
 import { AgentTarget, loadConfig } from './config';
 import { collectOwnedPaths } from './owned-paths';
-import { buildPlan } from './plan';
+import { buildPlan, SyncPlan } from './plan';
 
 export type RunOptions = {
   root: string;
@@ -55,20 +55,31 @@ const describe = (change: Change) => {
   return `  ${label} ${change.path}`;
 };
 
-export const sync = (options: RunOptions) => {
-  const config = loadConfig({ root: options.root, targetOverride: options.targets });
-  const { files, skipped, warnings } = buildPlan({ config });
-  const changes = diffPlan({ root: options.root, files, owned: collectOwnedPaths(options.root) });
-
-  console.log(`Targets: ${config.targets.join(', ')}`);
-
-  for (const warning of warnings) {
+const reportPlan = (plan: SyncPlan) => {
+  for (const warning of plan.warnings) {
     console.warn(`  warn   ${warning}`);
   }
 
-  for (const entry of skipped) {
+  const outOfScope = plan.skipped.filter((entry) => entry.cause === 'scope');
+  const listed = plan.skipped.filter((entry) => entry.cause !== 'scope');
+
+  for (const entry of listed) {
     console.log(`  skip   ${entry.name} — ${entry.reason}`);
   }
+
+  if (outOfScope.length > 0) {
+    console.log(`  skip   ${outOfScope.length} item(s) not meant for this profile`);
+  }
+};
+
+export const sync = (options: RunOptions) => {
+  const config = loadConfig({ root: options.root, targetOverride: options.targets });
+  const plan = buildPlan({ config });
+  const { files } = plan;
+  const changes = diffPlan({ root: options.root, files, owned: collectOwnedPaths(options.root) });
+
+  console.log(`Targets: ${config.targets.join(', ')}`);
+  reportPlan(plan);
 
   if (changes.length === 0) {
     console.log('Everything is already up to date.');
@@ -107,12 +118,10 @@ export const sync = (options: RunOptions) => {
 
 export const check = (options: RunOptions) => {
   const config = loadConfig({ root: options.root, targetOverride: options.targets });
-  const { files, warnings } = buildPlan({ config });
-  const changes = diffPlan({ root: options.root, files, owned: collectOwnedPaths(options.root) });
+  const plan = buildPlan({ config });
+  const changes = diffPlan({ root: options.root, files: plan.files, owned: collectOwnedPaths(options.root) });
 
-  for (const warning of warnings) {
-    console.warn(`  warn   ${warning}`);
-  }
+  reportPlan(plan);
 
   if (changes.length === 0) {
     console.log('Agent rules are in sync.');

@@ -184,9 +184,23 @@ const collectExcludeWarnings = (items: ContentItem[], exclude: string[]) => {
   ];
 };
 
+const PATH_VARS = ['themeStylesheet'];
+
+const collectPathVarWarnings = (config: SyncConfig) =>
+  PATH_VARS.flatMap((name) => {
+    const value = config.vars[name];
+
+    if (typeof value !== 'string' || existsSync(join(config.root, value))) return [];
+
+    return [
+      `vars.${name} points at ${value}, which does not exist — the guides that read it will send agents to a missing file.`,
+    ];
+  });
+
 const collectWarnings = (config: SyncConfig, items: ContentItem[]) => {
   const warnings: string[] = [
     ...collectLocalConfigWarnings(config.root),
+    ...collectPathVarWarnings(config),
     ...collectGitHookWarnings(config),
     ...collectExcludeWarnings(items, config.exclude),
   ];

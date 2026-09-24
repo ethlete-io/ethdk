@@ -3,8 +3,11 @@ import { join } from 'path';
 import { SyncConfig } from './config';
 import { ContentItem } from './load-content';
 
+export type SkipCause = 'excluded' | 'scope' | 'requires' | 'vars';
+
 export type SkippedItem = {
   name: string;
+  cause: SkipCause;
   reason: string;
 };
 
@@ -48,26 +51,26 @@ export const filterContent = (items: ContentItem[], config: SyncConfig): FilterR
     const { name, scope, requires, vars } = item.frontmatter;
 
     if (config.exclude.includes(name)) {
-      skipped.push({ name, reason: 'excluded by config' });
+      skipped.push({ name, cause: 'excluded', reason: 'excluded by config' });
       continue;
     }
 
     if (!config.scopes.includes(scope)) {
-      skipped.push({ name, reason: `scope "${scope}" is not emitted for this profile` });
+      skipped.push({ name, cause: 'scope', reason: `scope "${scope}" is not emitted for this profile` });
       continue;
     }
 
     const missingPackage = requires.find((packageName) => !isPackageInstalled(config.root, packageName));
 
     if (missingPackage) {
-      skipped.push({ name, reason: `requires ${missingPackage}, which is not installed` });
+      skipped.push({ name, cause: 'requires', reason: `requires ${missingPackage}, which is not installed` });
       continue;
     }
 
     const missingVar = vars.find((varName) => config.vars[varName] === undefined);
 
     if (missingVar) {
-      skipped.push({ name, reason: `needs the "${missingVar}" variable — set it in vars` });
+      skipped.push({ name, cause: 'vars', reason: `needs the "${missingVar}" variable — set it in vars` });
       continue;
     }
 

@@ -44,7 +44,7 @@ describe('exclude warnings', () => {
     const plan = planWithConfig({ exclude: ['timetrack'] });
 
     expect(plan.warnings).toEqual([]);
-    expect(plan.skipped).toContainEqual({ name: 'timetrack', reason: 'excluded by config' });
+    expect(plan.skipped).toContainEqual({ name: 'timetrack', cause: 'excluded', reason: 'excluded by config' });
   });
 
   it('warns about names that do not match packaged content', () => {
@@ -59,8 +59,8 @@ describe('exclude warnings', () => {
 
     expect(plan.skipped).toEqual(
       expect.arrayContaining([
-        { name: 'story-styling', reason: 'excluded by config' },
-        { name: 'verify-in-storybook', reason: 'excluded by config' },
+        { name: 'story-styling', cause: 'excluded', reason: 'excluded by config' },
+        { name: 'verify-in-storybook', cause: 'excluded', reason: 'excluded by config' },
       ]),
     );
     expect(generated).not.toContain('story-styling');
