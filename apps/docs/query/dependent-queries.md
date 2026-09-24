@@ -23,7 +23,7 @@ Each query keeps its own signals, dedup and caching. This is the right tool when
 
 ## Imperative waterfalls (dependent mutations)
 
-Mutations (`POST`/`PUT`/`PATCH`/`DELETE`) never auto-execute, so a dependent chain of them is inherently imperative - triggered by a button or a form submit, with each step feeding the next and a failure aborting the rest. `querySequence` orchestrates exactly that on top of [`executeUntilSettled`](/query/queries#the-query-object).
+Mutations (`POST`/`PUT`/`PATCH`/`DELETE`) never auto-execute, so a dependent chain of them is inherently imperative - triggered by a button or a form submit, with each step feeding the next and a failure aborting the rest. `querySequence` orchestrates exactly that on top of [`executeUntilSettled`](/query/queries#the-query-object). For a single dependent step in RxJS code, `executeUntilSettled$(query, executeArgs?)` is its cold Observable form - chain it with `switchMap`.
 
 ```ts
 import { querySequence } from '@ethlete/query';

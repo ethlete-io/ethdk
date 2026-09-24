@@ -69,7 +69,7 @@ Before writing a helper, find your need here. Pages are under `{%docsBaseUrl%}/q
 | Run mutations in order, each using the previous result         | `querySequence`                                                                                                                                                                                                                        | `dependent-queries` |
 | Many edits with progress, time remaining and retry of failures | `createQueryBatch`                                                                                                                                                                                                                     | `batching`          |
 | Submit a signal form through a mutation, violations on fields  | `createQuerySubmission`                                                                                                                                                                                                                | `errors`            |
-| Own submit handler, or server-side validation while typing     | `executeUntilSettled`, `mapViolationsToFormErrors`, `validateWithQuery`                                                                                                                                                                | `errors`            |
+| Own submit handler, or server-side validation while typing     | `executeUntilSettled`, `executeUntilSettled$`, `mapViolationsToFormErrors`, `validateWithQuery`                                                                                                                                        | `errors`            |
 | Understand the error shapes your API returns                   | `withEthleteApiErrors` (all), `withSymfonyErrors`, `withHtmlErrorParsing`                                                                                                                                                              | `errors`            |
 | Error text for display, or an error built by hand (tests)      | `queryErrorMessage`, `queryErrorMessages`, `createQueryErrorResponse`, `<et-query-error>`                                                                                                                                              | `errors`            |
 | Retry failed requests                                          | `withDefaultRetry`, `createDefaultRetryFn`                                                                                                                                                                                             | `errors`            |
@@ -182,8 +182,9 @@ injection context of your own (it emits `null` first).
 ## Bridging into RxJS or callbacks
 
 For a callback that must return one correlated result, run a manual query
-(`{ onlyManualExecution: true }`) through `defer(() => executeUntilSettled(query, { args }))` -
-its snapshot is frozen to that execution. Never set a signal and return the shared `response`
+(`{ onlyManualExecution: true }`) through `executeUntilSettled$(query, { args })` - cold, its
+snapshot is frozen to that execution, and unsubscribing aborts the request. Keep the Promise
+`executeUntilSettled` for an `async` signal-forms `submit()`. Never set a signal and return the shared `response`
 stream: the retained previous response can be the first non-null emission. See
 {%docsBaseUrl%}/query/queries#the-query-object.
 

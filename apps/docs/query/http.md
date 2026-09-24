@@ -129,16 +129,9 @@ export class UsersExportComponent {
   exportQuery = exportUsers({ onlyManualExecution: true });
 
   download() {
-    this.exportQuery.execute({ args: { queryParams: { search: this.search() } } });
-
-    const snapshot = this.exportQuery.createSnapshot();
-
-    snapshot.isAlive
-      .asObservable()
+    executeUntilSettled$(this.exportQuery, { args: { queryParams: { search: this.search() } } })
       .pipe(
-        filter((isAlive) => !isAlive),
-        take(1),
-        map(() => {
+        map((snapshot) => {
           const state = snapshot.executionState();
 
           return state?.type === 'success' ? state.response : null;
@@ -162,7 +155,7 @@ export class UsersExportComponent {
 ```
 
 - `onlyManualExecution` keeps the GET from running on creation; each `execute()` requests a fresh file, since `allowCache` is off by default.
-- The snapshot is frozen to that one execution, so a failed download never saves the blob of an earlier one. A failure lands in `exportQuery.error()` as usual - render it with [`<et-query-error>`](/components/query-error).
+- [`executeUntilSettled$`](/query/queries#the-query-object) emits a snapshot frozen to that one execution, so a failed download never saves the blob of an earlier one. Leaving the page before it settles aborts the request. A failure lands in `exportQuery.error()` as usual - render it with [`<et-query-error>`](/components/query-error).
 - Revoke the object URL a tick after the click: the browser has started the download by then.
 - The file name can come from the server instead - read `Content-Disposition` off `snapshot.latestHttpEvent()`, an `HttpResponse` once settled.
 

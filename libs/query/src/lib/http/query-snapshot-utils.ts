@@ -1,30 +1,48 @@
-import { filter, firstValueFrom } from 'rxjs';
+import { untracked } from '@angular/core';
+import { defaultIfEmpty, defer, filter, finalize, firstValueFrom, map, Observable, take } from 'rxjs';
 import { Query, QueryArgs, QuerySnapshot } from './query';
 import { QueryExecuteArgs } from './query-execute';
 
 /**
- * Executes the query and resolves once that execution has settled (response or error received).
- * The returned snapshot is frozen to the awaited execution, so a later execution can't swap the
- * `response()` / `error()` you read from it.
+ * Executes the query on subscribe and emits once that execution has settled (response or error
+ * received), then completes. Cold: nothing is sent until it is subscribed to. The emitted snapshot is
+ * frozen to that execution, so a later execution can't swap the `response()` / `error()` you read.
  *
- * Designed for imperative flows that need a mutation's outcome in place - e.g. a signal-forms
- * `submit()` action mapping server violations onto the form via `mapViolationsToFormErrors`.
+ * Unsubscribing before it settles aborts the in-flight request, like unsubscribing from `HttpClient`.
  *
  * A cancelled execution settles too - the entry was evicted, unbound by a logout, or the scope that
  * owns the query was destroyed. The snapshot then reports the execution as a failure whose error
  * says the request was cancelled, and its `latestHttpEvent()` is `{ type: 'cancel' }`.
  */
-export const executeUntilSettled = async <TArgs extends QueryArgs>(
+export const executeUntilSettled$ = <TArgs extends QueryArgs>(
   query: Query<TArgs>,
   executeArgs?: QueryExecuteArgs<TArgs>,
-): Promise<QuerySnapshot<TArgs>> => {
-  query.execute(executeArgs);
+): Observable<QuerySnapshot<TArgs>> =>
+  defer(() => {
+    query.execute(executeArgs);
 
-  const snapshot = query.createSnapshot();
+    const snapshot = query.createSnapshot();
 
-  // The stream completes without emitting when the query's injector is torn down mid-execution;
-  // without a default `firstValueFrom` rejects with an rxjs `EmptyError` nobody catches.
-  await firstValueFrom(snapshot.isAlive.asObservable().pipe(filter((isAlive) => !isAlive)), { defaultValue: false });
+    return snapshot.isAlive.asObservable().pipe(
+      filter((isAlive) => !isAlive),
+      take(1),
+      // The stream completes without emitting when the query's injector is torn down mid-execution.
+      defaultIfEmpty(false),
+      map(() => snapshot),
+      finalize(() =>
+        untracked(() => {
+          if (snapshot.isAlive()) query.subtle.request()?.subtle.abort();
+        }),
+      ),
+    );
+  });
 
-  return snapshot;
-};
+/**
+ * The Promise form of {@link executeUntilSettled$}, for APIs that require an `async` function - e.g. a
+ * signal-forms `submit()` action mapping server violations onto the form via
+ * `mapViolationsToFormErrors`. Executes immediately. Prefer {@link executeUntilSettled$} in RxJS code.
+ */
+export const executeUntilSettled = <TArgs extends QueryArgs>(
+  query: Query<TArgs>,
+  executeArgs?: QueryExecuteArgs<TArgs>,
+): Promise<QuerySnapshot<TArgs>> => firstValueFrom(executeUntilSettled$(query, executeArgs));

@@ -130,6 +130,14 @@ protected async save() {
 ```
 
 - **`executeUntilSettled(query, executeArgs?)`** executes the query and resolves with a settled [snapshot](/query/queries#the-query-object) once the execution completes - the snapshot is frozen to that execution, so a later one can't swap the `response()` / `error()` you read. A cancelled execution settles too, reporting an `error()` that says the request was cancelled.
+- **`executeUntilSettled$(query, executeArgs?)`** is the same as a cold Observable, for RxJS code outside a `submit()` action: nothing is sent until you subscribe, it emits the settled snapshot once and completes, and unsubscribing before it settles aborts the request:
+
+  ```ts
+  executeUntilSettled$(this.deleteUserQuery, { args: { pathParams: { id } } })
+    .pipe(takeUntilDestroyed(this.destroyRef))
+    .subscribe((snapshot) => (snapshot.error() ? this.notifyFailure() : this.close()));
+  ```
+
 - **`mapViolationsToFormErrors({ fieldTree, error, rewritePath?, onUnmappedViolation? })`** accepts the error in any shape it may reach you: a `QueryErrorResponse`, a raw `HttpErrorResponse`, an error body, or a plain violation array (there's also a standalone `extractFormViolations(error)` if you only need the list). Each violation's `propertyPath` - dot and bracket notation, e.g. `items[2].name` - is resolved against `fieldTree`:
   - **Resolved** → an error with `kind: 'etServerViolation'`, the violation's `message`, and the matched field. Signal forms shows it on that field and clears it when the field is edited.
   - **Unresolved** (no matching field, or a `null` path) → a form-level error on the submitted field by default; pass `onUnmappedViolation` to replace it (return `null` to drop the violation).

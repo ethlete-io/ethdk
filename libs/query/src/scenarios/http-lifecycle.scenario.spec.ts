@@ -7,6 +7,7 @@ import {
   createSecurePatchQuery,
   createSecurePutQuery,
   executeUntilSettled,
+  executeUntilSettled$,
   withArgs,
   withLogging,
   withLongPolling,
@@ -238,6 +239,62 @@ describe('http lifecycle scenario', () => {
 
     expect(snapshot?.response()).toEqual({ got: { n: 1 } });
     expect(query.response()).toEqual({ got: { n: 2 } });
+
+    c.destroy();
+  });
+
+  it('executeUntilSettled$ is cold, emits the settled snapshot once and completes', () => {
+    const s = scenario();
+    s.api.on('POST', '/cold-things', ({ body }) => ({ body: { got: body }, delay: 50 }));
+
+    const createThing = s.post<{ response: { got: unknown }; body: { n: number } }>('/cold-things');
+
+    const c = s.consumer();
+    const query = c.run(() => createThing());
+
+    const settled$ = executeUntilSettled$(query, { args: { body: { n: 1 } } });
+    s.tick(100);
+    expect(s.api.requestCount('POST', '/cold-things')).toBe(0);
+
+    const emitted: unknown[] = [];
+    let completed = false;
+    settled$.subscribe({ next: (snap) => emitted.push(snap.response()), complete: () => (completed = true) });
+
+    s.tick(50);
+
+    expect(s.api.requestCount('POST', '/cold-things')).toBe(1);
+    expect(emitted).toEqual([{ got: { n: 1 } }]);
+    expect(completed).toBe(true);
+
+    c.destroy();
+  });
+
+  it('executeUntilSettled$ aborts the in-flight request when unsubscribed before it settles', () => {
+    const s = scenario();
+    s.api.on('POST', '/abandoned-things', () => ({ body: { ok: true }, delay: 500 }));
+
+    const createThing = s.post<{ response: { ok: boolean }; body: { n: number } }>('/abandoned-things');
+
+    const c = s.consumer();
+    const query = c.run(() => createThing());
+
+    const emitted: unknown[] = [];
+    const subscription = executeUntilSettled$(query, { args: { body: { n: 1 } } }).subscribe((snap) =>
+      emitted.push(snap),
+    );
+
+    s.tick(50);
+    expect(s.api.pending()).toHaveLength(1);
+
+    subscription.unsubscribe();
+    s.tick(1);
+
+    expect(s.api.pending()).toHaveLength(0);
+    expect(query.loading()).toBeNull();
+
+    s.tick(1000);
+    expect(emitted).toEqual([]);
+    expect(query.response()).toBeNull();
 
     c.destroy();
   });

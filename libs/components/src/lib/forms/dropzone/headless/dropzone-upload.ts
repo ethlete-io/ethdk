@@ -1,11 +1,11 @@
 import { computed, Injector, runInInjectionContext, signal, Signal, untracked } from '@angular/core';
-import { filter, firstValueFrom, Observable, of, take } from 'rxjs';
+import { filter, finalize, firstValueFrom, map, Observable, of, take } from 'rxjs';
 import {
   AnyLegacyQuery,
   AnyLegacyQueryCreator,
   AnyV2Query,
   AnyV2QueryCreator,
-  executeUntilSettled,
+  executeUntilSettled$,
   extractQuery,
   isQueryStateFailure,
   isQueryStateLoading,
@@ -422,9 +422,12 @@ const createNewQueryDeleteExecutor = <TArgs extends QueryArgs, TValue>(config: {
     const query = queryCreator({ injector, silenceMissingWithArgsFeatureError: true });
     const args = createArgs(value);
 
-    return executeUntilSettled(query, { args })
-      .then((snapshot) => snapshot.error())
-      .finally(() => query.subtle.destroy());
+    return firstValueFrom(
+      executeUntilSettled$(query, { args }).pipe(
+        map((snapshot) => snapshot.error()),
+        finalize(() => query.subtle.destroy()),
+      ),
+    );
   };
 };
 
