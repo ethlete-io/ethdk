@@ -28,6 +28,16 @@ DOM/`window`, output naming, class-member + decorator-metadata order, no
 <button [disabled]="disabled()"></button>
 ```
 
+- **Per-row formatting belongs in the data, not in a method per row.** Map the rows once
+  in a `computed()` and bind the prepared fields. A pure, module-level formatting function
+  is acceptable too; a component method called for each row in `@for` is not.
+
+```ts
+// ❌ <td>{{ formatDate(row.createdAt) }}</td> - re-runs for every row, every CD cycle
+// ✅
+rows = computed(() => this.items().map((item) => ({ ...item, createdAtLabel: formatDate(item.createdAt) })));
+```
+
 ## Lifecycle
 
 - **Prefer the `constructor`** (runs in the injection context) over `ngOnInit` /
@@ -40,12 +50,25 @@ DOM/`window`, output naming, class-member + decorator-metadata order, no
   `createRootProvider` and the `injectX()` helper pattern from `@ethlete/core`
   rather than an `@Injectable` or `@Service`. (Both decorators are lint-banned;
   choosing a function over a service at all is the judgment.)
+- **Repeated component logic → one `injectX()` function.** When two components carry the
+  same signals, effects or subscriptions, extract them into an `injectX()` that runs in the
+  injection context and returns what the components bind. Do not copy the block, and do not
+  reach for a base class.
 - **Directives → plain functions where possible.** With signal APIs, move the core
   logic into a function so it's reusable without applying a directive; keep a
   directive only when a host element genuinely needs it. Avoid common input/output
   names that clash with the host component.
 - **Pipes → a `computed()` calling a utility function.** Pipes carry no logic;
   most can be dropped in favour of a `computed`.
+
+## Query params
+
+- **Read** them with the `@ethlete/core` signals: `injectQueryParam(key)`,
+  `injectQueryParams()`. `ActivatedRoute` and `router.url` are lint-banned.
+- **Write** them with `inject(Router).navigate([], { queryParams, queryParamsHandling: 'merge' })`.
+  `merge` keeps the params you do not set; `null` removes a param.
+- **Filter, sort and page state bound to the URL** is a query form: with `@ethlete/query`,
+  use `defineQueryForm` instead of writing the params by hand.
 
 ## Components
 

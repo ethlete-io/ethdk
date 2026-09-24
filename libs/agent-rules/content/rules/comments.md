@@ -20,6 +20,8 @@ smaller function, or a type; fix that instead of narrating it.
    limitation) and linking it where a link exists, so the next reader can tell when it may go.
 4. **Public API JSDoc** — what it does and how to call it, on something a lib actually
    exports. One or two sentences. Not internals, not history, not why it is shaped that way.
+   In an application nothing is public API unless it lives in a shared lib other projects
+   import, so this case rarely applies to app code.
 
 Nothing else qualifies. Not "this is subtle", not "worth noting", not a heading over a group
 of members, not a summary of the function underneath it.
@@ -43,7 +45,8 @@ years.
   annotation, a factory instead of a literal, a helper moved into its own file. The type, the
   annotation and the import already say what happens.
 - **Migration narration** — "moved here from X", "used to be a tuple", "so Y no longer pulls
-  Z", "renamed for clarity". Git knows; the next reader does not care.
+  Z", "renamed for clarity", "see ADR-0012". Git and the ADR index know; the next reader does
+  not care.
 - **The same explanation at every call site.** Explain a pattern once where it is defined (the
   helper's JSDoc, the lint rule's message, the guide) and let every use site stay silent.
 - **Commented-out code.**

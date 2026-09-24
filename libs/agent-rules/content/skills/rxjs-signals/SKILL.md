@@ -63,6 +63,26 @@ toObservable(page)
   .subscribe();
 ```
 
+## An effect that only writes a signal is a derivation
+
+If an `effect()` does nothing but `.set()` a signal, even behind an `if`, the value is derived
+state: use `computed()` when it is read-only, `linkedSignal()` when the user can still
+overwrite it. `ethlete/prefer-linked-signal` flags the plain cases. Keep `effect()` for work
+that leaves the signal graph: DOM, storage, logging, third-party APIs.
+
+```ts
+// ❌
+effect(() => {
+  if (this.items().length) this.selected.set(this.items()[0]);
+});
+
+// ✅ the previous value stays when the list is empty
+selected = linkedSignal<Item[], Item | null>({
+  source: this.items,
+  computation: (items, previous) => items[0] ?? previous?.value ?? null,
+});
+```
+
 ## Prefer `@ethlete/core` helpers
 
 Lint nudges these, but reach for them by default: `injectViewportSize()`,
