@@ -106,6 +106,36 @@ test.describe('what the focused-window source reads on this machine', () => {
   });
 });
 
+/** Only the Wayland idle notifier reports desk input, so the row must not claim it anywhere else. */
+test.describe('the desk input row', () => {
+  test('collects on a Wayland compositor', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, windowSource: WAYLAND_WLR });
+    await page.goto('/sources');
+
+    await expect(row(page, 'input')).toContainText('collecting');
+  });
+
+  test('is not running on macOS, and says why', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      windowSource: {
+        kind: 'macos-ax',
+        detail: null,
+        capabilities: [
+          { reads: 'app-id', available: true, detail: null },
+          { reads: 'title', available: true, detail: null },
+          { reads: 'working-directory', available: false, detail: "No source reads a window's working directory yet." },
+        ],
+      },
+    });
+    await page.goto('/sources');
+
+    await expect(row(page, 'input')).toContainText('not running');
+    await expect(row(page, 'input')).toContainText('macOS does not collect it yet');
+    await expect(row(page, 'window')).toContainText('collecting');
+  });
+});
+
 /**
  * A shell-out source holds no token in this app's keychain, so nothing here can go stale the way a
  * personal access token does. What can go away instead is the binary and the login, and those are two

@@ -498,14 +498,19 @@ export class SourcesViewComponent {
    * `collecting` is the row that claims something reaches the database. The window and call sources
    * report `none` on a platform they have no implementation for, and the ingest endpoint reports it
    * until it has started, so on Linux the badge would otherwise say a microphone is being watched
-   * that nothing is watching.
+   * that nothing is watching. A source only some host kinds collect reads `not-running` on the others.
    */
   private stateOf(source: EvidenceSource): EvidenceSourceState {
     if (source.login) return this.loginDetailOf(source) ? 'configured' : source.state;
 
     if (source.credential) return this.settings.credentials()[source.credential] ? source.state : 'configured';
 
-    if (source.state === 'collecting' && this.hostStatusKindOf(source) === 'none') return 'not-running';
+    const kind = this.hostStatusKindOf(source);
+
+    if (source.state === 'collecting' && kind === 'none') return 'not-running';
+    if (source.state === 'collecting' && kind && source.collectsOn && !source.collectsOn.includes(kind)) {
+      return 'not-running';
+    }
 
     return source.state;
   }

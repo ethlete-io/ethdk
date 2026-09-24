@@ -55,6 +55,8 @@ export type EvidenceSource = {
     | 'call';
   /** The `source` its events carry in the store, for counting what it has actually put there. */
   eventSource?: CollectedEventSource;
+  /** The host status kinds that collect it. On any other the row reads `not-running`, with `detail` saying why. */
+  collectsOn?: readonly string[];
 };
 
 /**
@@ -89,8 +91,10 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
       'The Wayland idle notifier, at a one-minute threshold, to tell a prompt typed here from one sent from a phone.',
     stores: 'Only that input stopped or returned, with the instant it happened. No keys and no content.',
     state: 'collecting',
+    detail: 'Only a Wayland compositor reports it. macOS does not collect it yet.',
     collector: 'window',
     eventSource: 'input',
+    collectsOn: ['wayland-wlr'],
   },
   {
     id: 'git',
