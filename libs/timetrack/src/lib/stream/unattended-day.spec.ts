@@ -344,6 +344,7 @@ describe('streamDay, on prompts the short input idleness reads as remote', () =>
     const phone = review.rows.filter((row) => row.issueKey === 'ET-900');
 
     expect(phone.map((row) => [row.from, row.to, row.durationMs])).toEqual([[AT(120), AT(225), 45 * MINUTE]]);
+    expect(phone.map((row) => row.unbookedMs)).toEqual([60 * MINUTE]);
   });
 
   it('books the hour only on the row of the session the prompts were sent to', () => {

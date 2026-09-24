@@ -14,7 +14,7 @@ import { formatDurationMs, formatTimeOfDay } from '../model/duration';
 import { syncsWithoutReview } from '../model/evidence';
 import { WorklogProposal, WorklogProposalState, syncsInState } from '../model/proposal';
 import { StandIn, matchStandIn } from '../model/stand-in';
-import { TimeWindow, subtractWindows } from '../model/time-window';
+import { TimeWindow, subtractWindows, windowsMs } from '../model/time-window';
 import {
   DayReview,
   DayReviewEdits,
@@ -290,9 +290,15 @@ const bookTheSpan = (rows: ReviewedRow[], remote?: RemoteBooking): ReviewedRow[]
   const unbooked = unbookedRemoteByRow({ rows: observed, remote });
 
   return rows.map((row) => {
-    const durationMs = bookedSpanMs(row, unbooked[observed.indexOf(row)]);
+    const windows = unbooked[observed.indexOf(row)] ?? [];
+    const durationMs = bookedSpanMs(row, windows);
+    const unbookedMs = windowsMs(windows) || undefined;
 
-    return durationMs === row.durationMs ? row : { ...row, durationMs };
+    if (durationMs === row.durationMs && unbookedMs === row.unbookedMs) return row;
+
+    const { unbookedMs: _stale, ...rest } = row;
+
+    return unbookedMs ? { ...rest, durationMs, unbookedMs } : { ...rest, durationMs };
   });
 };
 

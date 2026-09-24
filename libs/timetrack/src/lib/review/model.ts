@@ -111,6 +111,8 @@ export type ReviewedRow = Omit<WorklogProposal, 'issueKey'> & {
   proposed?: WorklogProposal;
   /** Whether the reviewer took this row off the timeline. See {@link DayReview.hidden}. */
   hidden: boolean;
+  /** The remote time the row draws and does not book, when there is any. See ADR 0033. */
+  unbookedMs?: number;
 };
 
 /** A row that names an issue. It is the only kind a sync writes, and the only kind Tempo can take. */

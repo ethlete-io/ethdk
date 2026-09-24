@@ -54,6 +54,7 @@ import {
   behindLabel,
   isStandInAppointment,
   rowEntryOf,
+  unbookedLabel,
   unnamedLabelOf,
 } from './row-edit/row-appointment';
 import { rowActionsFor } from './row-edit/row-actions';
@@ -317,7 +318,7 @@ type RowDrag = {
                       [style.clipPath]="laid.clipPath"
                       [style.paddingInlineStart]="insetOf(laid).start"
                       [style.paddingInlineEnd]="insetOf(laid).end"
-                      [title]="LABEL_OF(laid.block.node.appointment)"
+                      [title]="LABEL_OF(laid.block.node.appointment) + UNBOOKED_OF(laid.block.node.appointment)"
                       (pointerdown)="
                         startDrag({ event: $event, appointment: laid.block.node.appointment, column, lane })
                       "
@@ -402,7 +403,12 @@ type RowDrag = {
                       }
 
                       @if (labelled(laid.block.span)) {
-                        <span class="block truncate">{{ LABEL_OF(laid.block.node.appointment) }}</span>
+                        <span class="block truncate">
+                          {{ LABEL_OF(laid.block.node.appointment) }}
+                          @if (UNBOOKED_OF(laid.block.node.appointment); as unbooked) {
+                            <span class="text-et-surface-muted" data-unbooked>{{ unbooked }}</span>
+                          }
+                        </span>
                       }
                       @if (detailed(laid.block.span) && descriptionOf(laid.block.node.appointment); as description) {
                         <span class="block truncate text-et-surface-muted">{{ description }}</span>
@@ -511,6 +517,7 @@ export class DayTimelineComponent {
   protected readonly COUNT_DESCENDANTS = countDescendants;
   protected readonly LABEL_OF = appointmentLabel;
   protected readonly BEHIND_LABEL_OF = behindLabel;
+  protected readonly UNBOOKED_OF = unbookedLabel;
   protected readonly STANDS_IN = isStandInAppointment;
 
   /** The day as one lane per checkout. The grid supplies the vertical geometry; the lane the inline. */

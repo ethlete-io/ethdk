@@ -169,6 +169,13 @@ export const appointmentLabel = (appointment: Appointment) => {
   return `${named} · ${formatDurationMs(entry.durationMs)}${alone}${disputed}${isManualRow(entry.row) ? ' · by hand' : ''}`;
 };
 
+/** What a band adds when part of the time it draws is remote work the day does not book. See ADR 0033. */
+export const unbookedLabel = (appointment: Appointment) => {
+  const unbookedMs = rowEntryOf(appointment)?.row.unbookedMs;
+
+  return unbookedMs ? ` · ${formatDurationMs(unbookedMs)} not booked` : '';
+};
+
 /** Whether a band is waiting on a ticket, so the timeline can mark it as provisional. */
 export const isStandInAppointment = (appointment: Appointment) => {
   const row = rowEntryOf(appointment)?.row;
