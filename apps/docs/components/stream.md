@@ -158,6 +158,23 @@ All stream chrome resolves its colors from the [surface/color theme systems](/co
 - PiP grid: the featured-cell ring uses the color theme's primary; override via `--et-stream-pip-chrome-featured-ring-color`.
 - Consent gate and error overlay: `--et-stream-consent-*` and `--et-stream-player-error-*` families covering padding, gap, icon size, border radius and heading/description typography.
 
+## Content Security Policy
+
+The YouTube, Vimeo, Twitch and Facebook players load their platform SDK as a `<script>` that carries Angular's `CSP_NONCE`. Each SDK then loads more script and creates its own iframe, so its origin is still needed in `script-src` (or `'strict-dynamic'`). The other players are plain iframes.
+
+| Player      | `script-src`                   | `frame-src`                                               |
+| ----------- | ------------------------------ | --------------------------------------------------------- |
+| YouTube     | `https://www.youtube.com`      | `https://www.youtube.com`                                 |
+| Vimeo       | `https://player.vimeo.com`     | `https://player.vimeo.com`                                |
+| Twitch      | `https://embed.twitch.tv`      | `https://embed.twitch.tv`                                 |
+| Facebook    | `https://connect.facebook.net` | `https://www.facebook.com`                                |
+| Dailymotion | -                              | `https://www.dailymotion.com`                             |
+| Kick        | -                              | `https://player.kick.com`                                 |
+| TikTok      | -                              | `https://www.tiktok.com`                                  |
+| SOOP        | -                              | `https://play.afreecatv.com`, `https://vod.afreecatv.com` |
+
+The YouTube poster image comes from `https://img.youtube.com`.
+
 ## Error codes
 
 Consent/PiP wiring problems and platform SDK failures throw [`ET16xx` errors](/components/error-codes#stream-et16xx) - the SDK/loading failures also in production.

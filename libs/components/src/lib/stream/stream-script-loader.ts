@@ -1,4 +1,4 @@
-import { DOCUMENT, inject } from '@angular/core';
+import { CSP_NONCE, DOCUMENT, inject } from '@angular/core';
 import { defineRootProvider, injectRenderer, RuntimeError, toInjectFn } from '@ethlete/core';
 import { Observable, shareReplay } from 'rxjs';
 import { STREAM_ERROR_CODES } from './stream-errors';
@@ -9,6 +9,7 @@ const STREAM_SCRIPT_LOADER_DEF = /* @__PURE__ */ defineRootProvider(
     const cache = new Map<string, Observable<void>>();
     const mountedScripts = new Set<string>();
     const renderer = injectRenderer();
+    const nonce = inject(CSP_NONCE, { optional: true });
 
     const load = (src: string): Observable<void> => {
       const cached = cache.get(src);
@@ -28,6 +29,8 @@ const STREAM_SCRIPT_LOADER_DEF = /* @__PURE__ */ defineRootProvider(
         const script = renderer.createElement('script');
         script.src = src;
         script.async = true;
+
+        if (nonce) renderer.setAttribute(script, 'nonce', nonce);
 
         renderer.listen(script, 'load', () => {
           subscriber.next();
