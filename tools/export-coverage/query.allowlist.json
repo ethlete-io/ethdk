@@ -173,8 +173,6 @@
   "parseQueryRoute": "spec: libs/query/src/lib/devtools/query-devtools-registry.spec.ts",
   "patchQueryDevtoolsTokenPayload": "internal: devtools hook, wired by provideQueryDevtools() in the devtools-* scenarios",
   "pathParamsMissingInRouteFunctionError": "constant: error factory",
-  "query/testing:expectAndFlush": "S10 testing helpers: needs a scenario",
-  "query/testing:expectFlushAndWait": "S10 testing helpers: needs a scenario",
   "query/testing:setupAuthTest": "spec: libs/query/src/lib/auth/features/bearer-auth-persistent-auth.spec.ts (used by most auth specs)",
   "query/testing:setupQueryTest": "spec: libs/query/testing/query-test-setup.spec.ts",
   "queryBatchAlreadyRunning": "constant: error factory",
