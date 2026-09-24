@@ -71,7 +71,8 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
   - 3 not real: native `rawState` is a `BehaviorSubject`, so nothing is tracked; GET scenario kept as a guard.
 - [x] S2 P1 on both clients with changing args (`harness/legacy-clients.ts`, `legacy-consumer-patterns.scenario.spec.ts`)
   - 1 real: legacy `QueryForm.observe()` re-emitted its unchanged value one debounce later, a second identical request; now skipped.
-- [ ] S3 P2, P3, P5 source switches; P4 poll inside `queryComputed`
+- [x] S3 P2, P3, P5 source switches; P4 poll inside `queryComputed` (`s.mount`, `legacy-template-patterns.scenario.spec.ts`)
+  - 1 real: `*etQuery` over an interop query reported every failure to the `ErrorHandler` twice; now once.
 - [ ] S4 P6, P7, P8 RxJS and effect re-execute
 - [ ] S5 P10 specs; defects 4-6
 - [ ] S6 P9, P12, P13, P14, P17
