@@ -162,7 +162,6 @@
   "isQueryStateFailure": "uncovered",
   "isQueryStateLoading": "uncovered",
   "isQueryStatePrepared": "uncovered",
-  "isQueryStateSuccess": "uncovered",
   "isRequestError": "uncovered",
   "isSymfonyError": "uncovered",
   "isSymfonyFormViolationListError": "uncovered",
