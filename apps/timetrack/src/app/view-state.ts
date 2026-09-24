@@ -1,6 +1,6 @@
 /**
- * Where the reviewer was when the window last closed: the view, the day under review and the week the
- * catch-up list was on.
+ * Where the reviewer was when the window last closed: the view, the day under review, where its
+ * timeline was scrolled to and the week the catch-up list was on.
  *
  * `localStorage` rather than the encrypted store, for two reasons. It answers synchronously, so the
  * first paint is already the right view instead of the default one followed by a jump. And it holds no
@@ -16,6 +16,8 @@ export type ViewState = {
   day?: string;
   /** The Monday the week view was on, as `YYYY-MM-DD`. */
   weekStart?: string;
+  /** The day timeline's scroll offsets, in CSS pixels. */
+  timelineScroll?: { top: number; left: number };
 };
 
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
@@ -31,6 +33,23 @@ const dayAt = (state: Record<string, unknown>, key: string) => {
   const value = stringAt(state, key);
 
   return value && DAY_KEY.test(value) ? value : undefined;
+};
+
+const offsetAt = (state: Record<string, unknown>, key: string) => {
+  const value = state[key];
+
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined;
+};
+
+const scrollAt = (state: Record<string, unknown>, key: string) => {
+  const value = state[key];
+
+  if (typeof value !== 'object' || value === null) return undefined;
+
+  const top = offsetAt(value as Record<string, unknown>, 'top');
+  const left = offsetAt(value as Record<string, unknown>, 'left');
+
+  return top === undefined || left === undefined ? undefined : { top, left };
 };
 
 /**
@@ -53,6 +72,7 @@ export const readViewState = (): ViewState => {
       view: view && VIEW_PATH.test(view) ? view : undefined,
       day: dayAt(state, 'day'),
       weekStart: dayAt(state, 'weekStart'),
+      timelineScroll: scrollAt(state, 'timelineScroll'),
     };
   } catch {
     return {};

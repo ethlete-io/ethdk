@@ -4,6 +4,7 @@ import {
   ElementRef,
   ViewEncapsulation,
   afterNextRender,
+  afterRenderEffect,
   computed,
   inject,
   input,
@@ -33,7 +34,8 @@ import {
   TimeWindow,
   formatDurationMs,
 } from '@ethlete/timetrack';
-import { tap } from 'rxjs';
+import { debounceTime, filter, fromEvent, merge, take, tap } from 'rxjs';
+import { readViewState, rememberViewState } from '../view-state';
 import { formatClockTime } from './format';
 import { BREAK_LANE_KEY, BreakBand, DayLane, NO_LANE_KEY, lanesOf, laneKeyOfRow } from './lanes';
 import {
@@ -101,6 +103,7 @@ const BREAK_LANE_REM = 6;
 const remOf = (span: number) => (span / 100) * 24 * HOUR_REM;
 
 const HOUR_MS = 60 * 60_000;
+const SCROLL_REMEMBER_DEBOUNCE_MS = 200;
 const DAY_MS = 24 * HOUR_MS;
 
 /**
@@ -451,6 +454,8 @@ export class DayTimelineComponent {
   public grid = viewChild(SchedulerTimeGridDirective);
   private scheduler = viewChild.required<SchedulerDirective<TimelineEntry>>(SchedulerDirective);
 
+  private rememberedScroll = signal(readViewState().timelineScroll ?? null);
+
   /**
    * The bands marked for a merge. A plain click anywhere on a band clears them, and so does a step to
    * another day: the ids belong to one day's rows and name nothing on the next.
@@ -612,6 +617,21 @@ export class DayTimelineComponent {
 
   constructor() {
     /**
+     * A reload renders the grid before the day's rows arrive, and a scroller without its lanes clamps
+     * the sideways offset to zero. So the remembered offsets are applied again on every render until
+     * the rows are drawn, and no scroll is remembered before that.
+     */
+    afterRenderEffect(() => {
+      const remembered = this.rememberedScroll();
+
+      if (!remembered) return;
+
+      this.body().nativeElement.scrollTo(remembered);
+
+      if (this.rows().length) this.rememberedScroll.set(null);
+    });
+
+    /**
      * Once, on mount: a 24-hour grid opened at midnight shows an empty screen. Scrolling on every
      * day change instead would yank the reviewer's own scroll position back each time they step a day.
      */
@@ -619,7 +639,25 @@ export class DayTimelineComponent {
       const body = this.body().nativeElement;
       const hours = this.dayColumn()?.nativeElement;
 
-      if (!hours) return;
+      // eslint-disable-next-line ethlete/prefer-scroll-state
+      fromEvent(body, 'scroll')
+        .pipe(
+          filter(() => !this.rememberedScroll()),
+          debounceTime(SCROLL_REMEMBER_DEBOUNCE_MS),
+          tap(() => rememberViewState({ timelineScroll: { top: body.scrollTop, left: body.scrollLeft } })),
+          takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe();
+
+      merge(fromEvent(body, 'wheel'), fromEvent(body, 'pointerdown'), fromEvent(body, 'keydown'))
+        .pipe(
+          take(1),
+          tap(() => this.rememberedScroll.set(null)),
+          takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe();
+
+      if (this.rememberedScroll() || !hours) return;
 
       // `offsetTop` is measured against a shared offset parent, so the difference is where the hour
       // axis starts inside the scroller — the all-day strip above it is exactly what that accounts for.
