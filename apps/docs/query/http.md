@@ -106,6 +106,66 @@ With `reportProgress: true`, `query.loading()` - an `HttpRequestLoadingState` - 
 
 In the creator options above, `responseType` is an `HttpRequestResponseType` and `transferCache` an `HttpRequestTransferCacheConfig`.
 
+## Downloading a file
+
+A plain `<a href download>` cannot carry the bearer token, so fetch an authenticated file through a secure query with `responseType: 'blob'` and hand the blob to the browser:
+
+```ts
+type ExportUsersArgs = {
+  response: Blob;
+  queryParams: { search?: string };
+};
+
+export const exportUsers = createSecureGetQuery(client, authProvider)<ExportUsersArgs>('/users/export.csv', {
+  responseType: 'blob',
+});
+```
+
+```ts
+export class UsersExportComponent {
+  private document = inject(DOCUMENT);
+  private destroyRef = inject(DestroyRef);
+
+  exportQuery = exportUsers({ onlyManualExecution: true });
+
+  download() {
+    this.exportQuery.execute({ args: { queryParams: { search: this.search() } } });
+
+    const snapshot = this.exportQuery.createSnapshot();
+
+    snapshot.isAlive
+      .asObservable()
+      .pipe(
+        filter((isAlive) => !isAlive),
+        take(1),
+        map(() => {
+          const state = snapshot.executionState();
+
+          return state?.type === 'success' ? state.response : null;
+        }),
+        filter((file): file is Blob => file !== null),
+        switchMap((file) => {
+          const url = URL.createObjectURL(file);
+          const anchor = this.document.createElement('a');
+
+          anchor.href = url;
+          anchor.download = 'users.csv';
+          anchor.click();
+
+          return timer(0).pipe(tap(() => URL.revokeObjectURL(url)));
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+}
+```
+
+- `onlyManualExecution` keeps the GET from running on creation; each `execute()` requests a fresh file, since `allowCache` is off by default.
+- The snapshot is frozen to that one execution, so a failed download never saves the blob of an earlier one. A failure lands in `exportQuery.error()` as usual - render it with [`<et-query-error>`](/components/query-error).
+- Revoke the object URL a tick after the click: the browser has started the download by then.
+- The file name can come from the server instead - read `Content-Disposition` off `snapshot.latestHttpEvent()`, an `HttpResponse` once settled.
+
 ## Interceptors
 
 Every query request - HTTP and GraphQL creators, secure queries, and the auth provider's login and refresh queries - goes through Angular's `HttpClient`, so the app's interceptors see it. Each one carries the `IS_QUERY_REQUEST` `HttpContextToken` set to `true`; a plain `HttpClient` call reads `false`. An interceptor that should only touch the app's own calls skips the rest:
