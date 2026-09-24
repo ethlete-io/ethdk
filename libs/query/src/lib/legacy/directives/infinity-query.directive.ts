@@ -2,7 +2,6 @@
 import {
   ChangeDetectorRef,
   Directive,
-  ErrorHandler,
   inject,
   InjectionToken,
   Injector,
@@ -15,7 +14,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { createDestroy } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, Subject, takeUntil, tap, withLatestFrom } from 'rxjs';
 import { InfinityQuery, InfinityQueryConfig, InfinityQueryOf } from '../infinite-query';
-import { AnyLegacyQueryCreator, isLegacyQuery } from '../interop';
+import { AnyLegacyQueryCreator } from '../interop';
 import {
   BaseArguments,
   isQueryStateFailure,
@@ -92,7 +91,6 @@ export class InfinityQueryDirective<
   private cdr = inject(ChangeDetectorRef);
   private viewContainerRef = inject(ViewContainerRef);
   private mainTemplateRef = inject(TemplateRef<InfinityQueryContext<Q>>);
-  private errorHandler = inject(ErrorHandler);
   private injector = inject(Injector);
   private infinityQueryResponseDelay = injectInfinityQueryResponseDelay({ host: true });
 
@@ -176,10 +174,6 @@ export class InfinityQueryDirective<
             this.viewContext.loading = false;
             this.viewContext.error = state.error;
             this.viewContext.isFirstLoad = false;
-
-            if (isLegacyQuery(currentQuery)) {
-              this.errorHandler.handleError(state.error.httpErrorResponse);
-            }
           } else if (isQueryStateSuccess(state)) {
             this.viewContext.loading = false;
             this.viewContext.error = null;

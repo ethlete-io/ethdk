@@ -99,8 +99,8 @@ Prettier rewrites them and `check` then reports drift on every run:
   `.agents/skills/` is the cross-tool baseline) and adds `claude`, `cursor` or `copilot`
   when their directory exists; or list an explicit subset.
 - **`profile`** - `"consumer"` (default) emits `scope: consumer` and `scope: both`
-  content. `"sdk"` emits only `both`; the SDK repo uses it so its own hand-written,
-  authoring-side guides are not overwritten by the consumer-side versions.
+  content. `"sdk"` emits `scope: sdk` and `scope: both`; the SDK repo uses it so its own
+  hand-written, authoring-side guides are not overwritten by the consumer-side versions.
 - **`vars`** - values for the template tokens a guide declares. Defaults live in
   `content/defaults.json`; a guide whose variable has no default and no value is
   skipped with a warning rather than emitted with a dangling placeholder. Some are

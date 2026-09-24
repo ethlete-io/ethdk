@@ -2,7 +2,7 @@
 name: styling
 description: Component CSS is plain CSS in @layer components, and hardcoded colours are never primary values.
 kind: rule
-scope: both
+scope: sdk
 requires: ['@ethlete/core']
 ---
 

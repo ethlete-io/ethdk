@@ -487,8 +487,7 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy rxjs patterns on the %s client', (kin
   describe('*etInfinityQuery with a failing page', () => {
     const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
 
-    // The directive reports a failed interop page to the ErrorHandler a second time, on top of the query's own report.
-    (kind === 'interop' ? it.fails : it)('shows the error and reports it once', () => {
+    it('shows the error and reports it once', () => {
       const s = scenario();
       const legacy = createLegacyClient(s, kind);
       s.api.on('GET', '/users', ({ query }) => {

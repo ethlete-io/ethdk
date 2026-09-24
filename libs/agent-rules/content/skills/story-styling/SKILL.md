@@ -12,9 +12,10 @@ vars: [themeStylesheet]
 
 Two separate rules, often confused:
 
-1. **Component source is plain CSS, never Tailwind.** The `.css` next to a
-   component, wrapped in `@layer components`, using surface/color tokens - see
-   {%skill:theming%}.
+1. **A library component's source is plain CSS, never Tailwind.** The `.css` next
+   to a component a library ships, wrapped in `@layer components`, using
+   surface/color tokens - see {%skill:theming%}. Application components are the
+   opposite: they use Tailwind utilities in their templates.
 2. **Story files may use Tailwind** (`*.stories.ts`, anything under a `stories/`
    folder) for demo layout only - the frame around the component, not the
    component's own look.

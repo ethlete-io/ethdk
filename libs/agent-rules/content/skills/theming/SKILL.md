@@ -102,16 +102,15 @@ the interactive element itself, never on a wrapper.
   with no error. Percentages and viewport units (`vh`, `vw`, `dvh`) are fine. When the
   default has to be relative, use `syntax: '*'` with no `initial-value` and put the
   default in a fallback at each use site: `var(--et-skeleton-size, 1em)`.
-  `yarn lint:css-properties` checks this, and pre-commit runs it on staged files.
 - `--et-theme-color-primary-*` always resolves to the **nearest color scope**. A
   hardcoded semantic color in CSS can't be replaced by it unless the right theme is
   provided on that element.
 - A static fallback (`var(--et-surface-border-solid, rgb(255 255 255 / 0.1))`) is
   permitted for theme-less setups, but themes make it unnecessary. `injectErrorTheme()`
   is a hard requirement wherever it is used.
-- **Cascade layers, not `:where()`, are what let a Tailwind utility override component
-  CSS.** Wrap every component CSS file in `@layer components { … }`; `:where()` only
-  flattens a component's own modifiers to single-class weight. See the `styling` rule.
+- **Cascade layers, not `:where()`, decide who wins against SDK component CSS.** SDK
+  styles live in `@layer components`, so a utility or unlayered app CSS overrides them.
+  An app rule inside `@layer components` loses. See the `app-styling` rule.
 
 Styling a **story** file rather than a component? The colour rule is the same. Check the
 repository's Storybook guidance before assuming a Tailwind utility exists.

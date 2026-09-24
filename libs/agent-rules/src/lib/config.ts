@@ -177,7 +177,7 @@ export const loadConfig = (options: { root: string; targetOverride?: AgentTarget
   return {
     root,
     targets,
-    scopes: raw.profile === 'sdk' ? ['both'] : ['consumer', 'both'],
+    scopes: raw.profile === 'sdk' ? ['sdk', 'both'] : ['consumer', 'both'],
     vars: {
       ...loadDefaultVars(),
       ...gitFlowVars(gitFlow),

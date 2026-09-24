@@ -34,13 +34,33 @@ Page URLs follow `{%docsBaseUrl%}/<lib>/<topic>`. The library sections:
 
 Component domains under `/components/`:
 
-`accordion` `bracket` `bracket-rounds-list` `breadcrumb` `button` `calendar` `carousel`
-`cascader` `chip` `choice-inputs` `date-time-inputs` `dropzone` `error-codes`
-`filter-overlay` `floating-action` `focus-ring` `forms` `grid` `icon` `loader`
-`localization` `masonry` `match` `menu` `mixed-state` `notification` `overlay-openers`
-`overlays` `pagination` `picture` `query-devtools` `query-error` `rich-text-editor`
-`scrollable` `select` `skeleton` `slider` `sport-recipes` `standings` `stream` `table`
-`tabs` `text-inputs` `time-picker` `toggletip` `tooltip`
+`accordion` `avatar` `badge` `banner` `bracket` `bracket-prediction` `bracket-rounds-list`
+`breadcrumb` `button` `calendar` `card` `carousel` `cascader` `chart` `chip`
+`choice-inputs` `command-palette` `copy-button` `date-time-inputs` `description-list`
+`divider` `dropzone` `empty-state` `error-codes` `filter-overlay` `floating-action`
+`focus-ring` `forms` `grid` `icon` `kbd` `line-chart` `loader` `localization` `masonry`
+`match` `menu` `mixed-state` `notification` `overlay-openers` `overlays` `pagination`
+`picture` `pie-chart` `progress-steps` `query-error` `rich-text-editor` `sankey-chart`
+`scheduler` `scrollable` `scrollbar` `select` `skeleton` `slider` `sport-recipes`
+`standings` `standings-pick` `stream` `table` `tabs` `text-inputs` `time-picker`
+`timeline` `toggletip` `toolbar` `tooltip` `tree`
+
+**Check this list before you build any UI by hand.** Some needs hide behind a name you
+would not guess:
+
+| You need                                   | Read                                      |
+| ------------------------------------------ | ----------------------------------------- |
+| Bar or stacked bar chart, series legend    | `chart`                                   |
+| Line, pie, flow chart                      | `line-chart`, `pie-chart`, `sankey-chart` |
+| Progress bar, spinner                      | `loader`                                  |
+| Initials or user picture in a circle       | `avatar`                                  |
+| "No results" or empty table state          | `empty-state`                             |
+| Failed request with a retry button         | `query-error`                             |
+| Status pill, count                         | `badge`                                   |
+| Tab strip that switches a view or a filter | `tabs` (nav tabs)                         |
+| Dialog, bottom sheet, side panel           | `overlays`, `overlay-openers`             |
+| Label and value pairs                      | `description-list`                        |
+| Stepper, wizard progress                   | `progress-steps`                          |
 
 So the table guide is `{%docsBaseUrl%}/components/table`, the menu guide
 `{%docsBaseUrl%}/components/menu`, and so on.

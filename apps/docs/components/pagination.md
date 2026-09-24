@@ -281,7 +281,7 @@ With the [table](/components/table)'s `tableRowsFromQuery` adapter:
 <et-pagination [page]="rows.page()" [totalPages]="totalPages()" (pageChange)="rows.setPage($event)" />
 ```
 
-With the signals-first [QueryForm](/query/) (`page` becomes a query arg; changing
+With the signals-first [query form](/query/query-forms) (`page` becomes a query arg; changing
 filters resets it via `isResetBy`):
 
 ```ts
