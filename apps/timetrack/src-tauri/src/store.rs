@@ -37,6 +37,14 @@ pub struct AgentSessionCursorRow {
     pub session_json: Option<String>,
 }
 
+/// The span one calendar read covered, as `from` and `to` of the read itself.
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CalendarWindow {
+    pub from_ms: i64,
+    pub to_ms: i64,
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SourceTally {
@@ -96,23 +104,46 @@ pub async fn events_between(db: State<'_, Db>, from_ms: i64, to_ms: i64) -> Time
 /// that watch the machine are stopped while it is paused, but the ones that read history are not
 /// bounded by when they run - a git scan reaches a day or a month back - so this is what keeps a
 /// resume from collecting exactly the stretch the pause was taken to keep out.
+///
+/// With a `calendar_window`, `events` is the whole answer of a calendar read over that window. A
+/// stored meeting that starts inside it and is missing from the answer was declined, cancelled or
+/// moved since it was stored, so it is deleted.
 #[tauri::command]
 pub async fn events_append(
     db: State<'_, Db>,
     events: Vec<StoredEvent>,
     cursors: Vec<AgentSessionCursorRow>,
+    calendar_window: Option<CalendarWindow>,
 ) -> TimetrackResult<i64> {
-    db.run(move |connection| append(connection, &events, &cursors)).await
+    db.run(move |connection| append(connection, &events, &cursors, calendar_window.as_ref()))
+        .await
 }
 
 fn append(
     connection: &mut Connection,
     events: &[StoredEvent],
     cursors: &[AgentSessionCursorRow],
+    calendar_window: Option<&CalendarWindow>,
 ) -> TimetrackResult<i64> {
     let transaction = connection.transaction()?;
     let paused = crate::pause::pause_ranges(&transaction)?;
     let mut appended = 0i64;
+
+    if let Some(window) = calendar_window {
+        let answered = serde_json::to_string(
+            &events
+                .iter()
+                .filter(|event| event.kind == "calendar-event")
+                .filter_map(|event| event.dedupe_key.as_deref())
+                .collect::<Vec<_>>(),
+        )?;
+
+        transaction.execute(
+            "DELETE FROM collected_event WHERE kind = 'calendar-event' AND at_ms >= ?1 AND at_ms < ?2
+             AND (dedupe_key IS NULL OR dedupe_key NOT IN (SELECT value FROM json_each(?3)))",
+            params![window.from_ms, window.to_ms, answered],
+        )?;
+    }
 
     {
         let mut insert = transaction.prepare(
@@ -625,7 +656,7 @@ mod tests {
     fn pages_the_stored_titles_by_id() {
         let mut connection = store();
 
-        append(&mut connection, &[focus(1_000, "a"), focus(2_000, "b")], &[]).unwrap();
+        append(&mut connection, &[focus(1_000, "a"), focus(2_000, "b")], &[], None).unwrap();
 
         let first = titles_after(&connection, 0, 1).unwrap();
 
@@ -642,7 +673,7 @@ mod tests {
     fn offers_no_row_for_an_event_that_carries_no_title() {
         let mut connection = store();
 
-        append(&mut connection, &[commit(1_000)], &[]).unwrap();
+        append(&mut connection, &[commit(1_000)], &[], None).unwrap();
 
         assert!(titles_after(&connection, 0, 10).unwrap().is_empty());
     }
@@ -651,7 +682,7 @@ mod tests {
     fn rewrites_a_title_and_leaves_the_rest_of_the_payload_standing() {
         let mut connection = store();
 
-        append(&mut connection, &[focus(1_000, "example.com/a?token=x")], &[]).unwrap();
+        append(&mut connection, &[focus(1_000, "example.com/a?token=x")], &[], None).unwrap();
         let id = titles_after(&connection, 0, 10).unwrap()[0].id;
 
         let updated = set_titles(
@@ -700,10 +731,61 @@ mod tests {
     fn replaces_a_meeting_the_user_answered_after_it_was_first_read() {
         let mut connection = store();
 
-        assert_eq!(append(&mut connection, &[meeting(false)], &[]).unwrap(), 1);
-        assert_eq!(append(&mut connection, &[meeting(true)], &[]).unwrap(), 1);
-        assert_eq!(append(&mut connection, &[meeting(true)], &[]).unwrap(), 0);
+        assert_eq!(append(&mut connection, &[meeting(false)], &[], None).unwrap(), 1);
+        assert_eq!(append(&mut connection, &[meeting(true)], &[], None).unwrap(), 1);
+        assert_eq!(append(&mut connection, &[meeting(true)], &[], None).unwrap(), 0);
         assert_eq!(accepted_of(&connection), vec![true]);
+    }
+
+    fn meeting_at(at_ms: i64, key: &str) -> StoredEvent {
+        StoredEvent {
+            at_ms,
+            source: "calendar".to_string(),
+            kind: "calendar-event".to_string(),
+            payload: serde_json::json!({ "title": key }),
+            dedupe_key: Some(key.to_string()),
+        }
+    }
+
+    fn meeting_keys(connection: &Connection) -> Vec<String> {
+        let mut statement = connection
+            .prepare("SELECT dedupe_key FROM collected_event WHERE kind = 'calendar-event' ORDER BY at_ms")
+            .unwrap();
+        let rows = statement.query_map([], |row| row.get(0)).unwrap();
+
+        rows.collect::<Result<Vec<_>, _>>().unwrap()
+    }
+
+    #[test]
+    fn deletes_a_meeting_a_later_read_of_its_window_no_longer_returns() {
+        let mut connection = store();
+        let window = CalendarWindow {
+            from_ms: 1_000,
+            to_ms: 5_000,
+        };
+
+        append(
+            &mut connection,
+            &[
+                meeting_at(500, "before"),
+                meeting_at(2_000, "kept"),
+                meeting_at(3_000, "declined"),
+                commit(3_000),
+            ],
+            &[],
+            None,
+        )
+        .unwrap();
+        append(
+            &mut connection,
+            &[meeting_at(2_000, "kept"), meeting_at(4_000, "moved")],
+            &[],
+            Some(&window),
+        )
+        .unwrap();
+
+        assert_eq!(meeting_keys(&connection), vec!["before", "kept", "moved"]);
+        assert_eq!(stored_at(&connection), vec![3_000]);
     }
 
     #[test]
@@ -712,9 +794,9 @@ mod tests {
         let mut later = commit(1_000);
 
         later.payload = serde_json::json!({ "sha": "sha-1000", "branch": "other" });
-        append(&mut connection, &[commit(1_000)], &[]).unwrap();
+        append(&mut connection, &[commit(1_000)], &[], None).unwrap();
 
-        assert_eq!(append(&mut connection, &[later], &[]).unwrap(), 0);
+        assert_eq!(append(&mut connection, &[later], &[], None).unwrap(), 0);
         assert_eq!(
             connection
                 .query_row(
@@ -734,7 +816,7 @@ mod tests {
         crate::pause::write(&mut connection, true, 1_000).unwrap();
         crate::pause::write(&mut connection, false, 2_000).unwrap();
 
-        let appended = append(&mut connection, &[commit(500), commit(1_500), commit(3_000)], &[]).unwrap();
+        let appended = append(&mut connection, &[commit(500), commit(1_500), commit(3_000)], &[], None).unwrap();
 
         assert_eq!(appended, 2);
         assert_eq!(stored_at(&connection), vec![500, 3_000]);
@@ -759,6 +841,7 @@ mod tests {
                 read_through_ms: None,
                 session_json: None,
             }],
+            None,
         )
         .unwrap();
 
@@ -789,8 +872,14 @@ mod tests {
             session_json: None,
         };
 
-        append(&mut connection, &[], &[cursor(42, Some(1_000), Some("a session"))]).unwrap();
-        append(&mut connection, &[], &[cursor(0, None, None)]).unwrap();
+        append(
+            &mut connection,
+            &[],
+            &[cursor(42, Some(1_000), Some("a session"))],
+            None,
+        )
+        .unwrap();
+        append(&mut connection, &[], &[cursor(0, None, None)], None).unwrap();
 
         assert_eq!(
             connection
@@ -823,7 +912,13 @@ mod tests {
             session_json: None,
         };
 
-        append(&mut connection, &[], &[cursor("agent-session", 42), cursor("spend", 7)]).unwrap();
+        append(
+            &mut connection,
+            &[],
+            &[cursor("agent-session", 42), cursor("spend", 7)],
+            None,
+        )
+        .unwrap();
 
         let mut statement = connection
             .prepare("SELECT kind, next_line FROM agent_session_cursor WHERE id = 'session-a' ORDER BY kind")

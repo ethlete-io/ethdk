@@ -52,7 +52,8 @@ export type CalendarCollectorRun = {
  * path as a commit or a focus sample.
  *
  * Every read overlaps the last one by design — a moved meeting is only visible by reading its window
- * again — and `dedupeKeyOf` is what keeps the overlap from storing the same occurrence twice.
+ * again — and `dedupeKeyOf` is what keeps the overlap from storing the same occurrence twice. A meeting the
+ * read no longer returns was declined, cancelled or moved, and the store deletes it.
  */
 const CALENDAR_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
@@ -64,6 +65,10 @@ const CALENDAR_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const read$ = (calendarIds: string[]): Observable<unknown> => {
     const at = new Date();
+    const span = {
+      from: new Date(at.getTime() - CALENDAR_WINDOW_BEFORE_MS),
+      to: new Date(at.getTime() + CALENDAR_WINDOW_AFTER_MS),
+    };
 
     return account.credentials$().pipe(
       switchMap((credentials) => {
@@ -75,8 +80,8 @@ const CALENDAR_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
               transport: ports.transport,
               credentials,
               calendarId,
-              from: new Date(at.getTime() - CALENDAR_WINDOW_BEFORE_MS),
-              to: new Date(at.getTime() + CALENDAR_WINDOW_AFTER_MS),
+              from: span.from,
+              to: span.to,
             }),
           ),
           toArray(),
@@ -93,7 +98,7 @@ const CALENDAR_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
           rules: effectiveExclusionRules(settings.settings()),
         });
 
-        return ports.events.appendCounted$(redactEventTitles(kept)).pipe(
+        return ports.events.appendCalendarRead$({ events: redactEventTitles(kept), span }).pipe(
           tap((stored) => {
             lastRun.set({
               at,

@@ -159,6 +159,21 @@ export const createFakePorts = (): HostPorts => {
         return done();
       },
       appendCounted$: (appended) => ok(appendEvents(appended)),
+      appendCalendarRead$: ({ events: answered, span }) => {
+        const answeredKeys = new Set(answered.map(dedupeKeyOf));
+        const replaced = events.filter(
+          (event) =>
+            event.kind === 'calendar-event' &&
+            (answeredKeys.has(dedupeKeyOf(event)) || (event.at >= span.from && event.at < span.to)),
+        );
+
+        for (const event of replaced) {
+          events.splice(events.indexOf(event), 1);
+          dedupeKeys.delete(dedupeKeyOf(event));
+        }
+
+        return ok(appendEvents(answered));
+      },
       appendWithCursors$: (options) => {
         const added = appendEvents(options.events);
 

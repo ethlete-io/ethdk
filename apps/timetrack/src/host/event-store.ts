@@ -116,6 +116,8 @@ export type TauriEventStore = TimetrackEventStore &
   TimetrackCursorRepairStore & {
     /** Resolves with the rows that were new — an event the store already holds under its dedupe key is skipped. */
     appendCounted$(events: CollectedEvent[]): Observable<number>;
+    /** The whole answer of a calendar read, which also deletes the stored meetings in its span it no longer returns. */
+    appendCalendarRead$(options: { events: CollectedEvent[]; span: { from: Date; to: Date } }): Observable<number>;
     /** The same, and moves the cursors of one pass over the agent logs in the same transaction. */
     appendWithCursors$(options: {
       events: CollectedEvent[];
@@ -143,6 +145,12 @@ export const createTauriEventStore = (): TauriEventStore => {
 
   return {
     appendCounted$,
+    appendCalendarRead$: ({ events, span }) =>
+      invokeHost$<number>('events_append', {
+        events: events.map(toStored),
+        cursors: [],
+        calendarWindow: { fromMs: span.from.getTime(), toMs: span.to.getTime() },
+      }),
     appendWithCursors$,
     writeCursors$: ({ pass, cursors }) => appendWithCursors$({ events: [], cursors: [...cursors], pass }),
     append$: (events) => appendCounted$(events).pipe(map(() => undefined)),
