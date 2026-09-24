@@ -232,6 +232,7 @@ export default defineConfig({
           text: 'Components',
           items: [
             { text: 'Overview', link: '/components/' },
+            { text: 'App setup', link: '/components/setup' },
             { text: 'Localization', link: '/components/localization' },
           ],
         },

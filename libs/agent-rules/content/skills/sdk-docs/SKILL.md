@@ -20,6 +20,13 @@ Two sources, both authoritative for different things:
 | **Docs site** | {%docsBaseUrl%}     | Prose guides: what a thing is for, options, defaults, behaviour, migration notes                 |
 | **Storybook** | {%sdkStorybookUrl%} | The live component: every variant rendered, the real controls, and the exact markup a story uses |
 
+## First: app setup
+
+Before the first component, work through `{%docsBaseUrl%}/components/setup` - the 62.5% root
+font size, Tailwind 4 theme generation, a `type: 'error'` color theme, and the providers
+(`provideOverlay`, `provideDateLocale`, label tokens, …). Missing any of them fails at runtime,
+not at compile time.
+
 ## Finding the right page
 
 Page URLs follow `{%docsBaseUrl%}/<lib>/<topic>`. The library sections:
@@ -41,7 +48,7 @@ Component domains under `/components/`:
 `focus-ring` `forms` `grid` `icon` `kbd` `line-chart` `loader` `localization` `masonry`
 `match` `menu` `mixed-state` `notification` `overlay-openers` `overlays` `pagination`
 `picture` `pie-chart` `progress-steps` `query-error` `rich-text-editor` `sankey-chart`
-`scheduler` `scrollable` `scrollbar` `select` `skeleton` `slider` `sport-recipes`
+`scheduler` `scrollable` `scrollbar` `select` `setup` `skeleton` `slider` `sport-recipes`
 `standings` `standings-pick` `stream` `table` `tabs` `text-inputs` `time-picker`
 `timeline` `toggletip` `toolbar` `tooltip` `tree`
 
@@ -61,6 +68,7 @@ would not guess:
 | Dialog, bottom sheet, side panel           | `overlays`, `overlay-openers`             |
 | Label and value pairs                      | `description-list`                        |
 | Stepper, wizard progress                   | `progress-steps`                          |
+| Providers and styles a new app needs       | `setup`                                   |
 
 So the table guide is `{%docsBaseUrl%}/components/table`, the menu guide
 `{%docsBaseUrl%}/components/menu`, and so on.

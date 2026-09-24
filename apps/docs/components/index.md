@@ -10,6 +10,10 @@ The active Angular UI library of the Ethlete SDK - overlays, menus, buttons, for
 Components take `color` / `surface` inputs, but the theme **names** are registered by your app (via the [surface/color theming providers](/core/theming)), not shipped by the SDK. Wherever these guides use names like `color="brand"` or `danger`, those are the themes this repo's Storybook registers - substitute your own. Semantic behavior (e.g. destructive menu items, form errors) resolves themes by `type` (like `type: 'error'`), so register one theme per semantic type you use.
 :::
 
+::: warning Set the root font size to 62.5%
+Every component is sized in `rem` against a 10px root (`1rem = 10px`). Set `html { font-size: 62.5%; }` in your global styles, or every control renders 1.6× too large. The [App setup](/components/setup) checklist lists this and every provider an app needs.
+:::
+
 ## Boolean and numeric inputs
 
 Boolean inputs (`multiple`, `clearable`, `autosize`, `divider`, …) use Angular's `booleanAttribute`
@@ -77,6 +81,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 
 ## Guides
 
+- [App setup](/components/setup) - **start here**: the root font size, Tailwind 4 theme generation, and every provider an app registers at bootstrap.
 - [Localization](/components/localization) - the one recipe for every user-facing string: the locale signal, the date-fns locale, and the label token each domain exposes.
 
 ### Floating & overlays
