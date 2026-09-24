@@ -15,6 +15,10 @@ const isInput = (event: CollectedEvent): event is InputEvent => event.source ===
  *
  * An `input-idle` that follows another one, with no `input-active` between them, is a notifier that
  * restarted with nobody at the seat and says nothing about input.
+ *
+ * A prompt is `remote` only inside an idle stretch an `input-active` closes. A restarted notifier's
+ * first transition is always `input-idle`, so that closing edge is the proof the app watched the seat
+ * the whole time; a stretch the app was closed in reads `unknown`.
  */
 export const promptOriginAt = (options: {
   events: readonly CollectedEvent[];
@@ -28,10 +32,15 @@ export const promptOriginAt = (options: {
   let active: boolean | undefined;
   let activeAtFrom: boolean | undefined;
 
+  let next: InputEvent | undefined;
+
   for (const event of inputs) {
     const instant = event.at.getTime();
 
-    if (instant > until) break;
+    if (instant > until) {
+      next = event;
+      break;
+    }
 
     if (instant >= from) {
       if (event.kind === 'input-active' || active) return 'desk';
@@ -43,6 +52,7 @@ export const promptOriginAt = (options: {
   }
 
   if (activeAtFrom === undefined) return 'unknown';
+  if (activeAtFrom) return 'desk';
 
-  return activeAtFrom ? 'desk' : 'remote';
+  return next?.kind === 'input-active' ? 'remote' : 'unknown';
 };

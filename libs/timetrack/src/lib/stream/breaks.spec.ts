@@ -88,6 +88,62 @@ describe('breakWindows', () => {
     expect(breaks).toEqual([{ from: at(11, 0), to: at(11, 5), locked: true }]);
   });
 
+  it('counts the stretch from the first remote prompt to the last as work, past the half-break cap', () => {
+    const breaks = breakWindows({
+      presence: [MORNING, window([14, 0], [17, 0])],
+      remotePrompts: [at(11, 20), at(12, 10), at(13, 40)],
+    });
+
+    expect(breaks).toEqual([{ from: at(13, 40), to: at(14, 0), locked: false }]);
+  });
+
+  it('splits a break a remote stretch sits in the middle of', () => {
+    const breaks = breakWindows({
+      presence: [MORNING, window([14, 0], [17, 0])],
+      remotePrompts: [at(12, 0), at(12, 30)],
+    });
+
+    expect(breaks).toEqual([
+      { from: at(11, 0), to: at(11, 45), locked: false },
+      { from: at(12, 30), to: at(14, 0), locked: false },
+    ]);
+  });
+
+  it('drops what a remote stretch leaves of a break under the limit', () => {
+    const breaks = breakWindows({
+      presence: [MORNING, window([12, 0], [17, 0])],
+      remotePrompts: [at(11, 20), at(11, 50)],
+    });
+
+    expect(breaks).toEqual([]);
+  });
+
+  it('cuts a remote stretch out of a locked break as well', () => {
+    const breaks = breakWindows({
+      presence: [MORNING, window([14, 0], [17, 0])],
+      events: [lock(11, 1)],
+      remotePrompts: [at(12, 0), at(12, 30)],
+    });
+
+    expect(breaks).toEqual([
+      { from: at(11, 0), to: at(11, 45), locked: true },
+      { from: at(12, 30), to: at(14, 0), locked: true },
+    ]);
+  });
+
+  it('still caps a desk prompt beside a remote stretch at the part it ends', () => {
+    const breaks = breakWindows({
+      presence: [MORNING, window([14, 0], [17, 0])],
+      remotePrompts: [at(11, 30)],
+      prompts: [at(14, 0)],
+    });
+
+    expect(breaks).toEqual([
+      { from: at(11, 0), to: at(11, 15), locked: false },
+      { from: at(11, 30), to: at(13, 45), locked: false },
+    ]);
+  });
+
   it('says nothing about a gap the user had stopped collection for', () => {
     const breaks = breakWindows({ presence: [MORNING, AFTERNOON], pauses: [window([11, 30], [12, 0])] });
 

@@ -302,7 +302,7 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
  * instant. A calendar occurrence or a GitLab event proves nothing: both are read from an API and both
  * carry an instant the app was not there for.
  */
-const HOST_SAMPLED: readonly CollectedEvent['source'][] = ['window', 'idle', 'call'];
+const HOST_SAMPLED: readonly CollectedEvent['source'][] = ['window', 'idle', 'input', 'call'];
 
 /**
  * The last instant the app can be shown to have been running, or `undefined` if it cannot be shown at

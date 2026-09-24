@@ -275,6 +275,19 @@ describe('closeAbandonedCalls', () => {
     expect(ends[0]!.stoppedWatching).toBe(true);
   });
 
+  it('reads the short input idleness as the app still watching', () => {
+    const ends = closeAbandonedCalls({
+      events: [
+        call(0, 'call-start', 'pw-record'),
+        focus(12, 'chrome', 'a tab'),
+        { at: at(20), source: 'input', kind: 'input-idle' },
+      ],
+      watchingSince: at(30),
+    });
+
+    expect(ends[0]!.at).toEqual(at(20));
+  });
+
   it('ends it where the watching stopped, not where the app came back', () => {
     const ends = closeAbandonedCalls({
       events: [call(0, 'call-start', 'pw-record'), focus(12, 'chrome', 'a tab')],

@@ -72,6 +72,8 @@ export type BuildRowsOptions = {
    * so the work before it and the work after it are two stretches.
    */
   breaks?: readonly TimeWindow[];
+  /** The stretches the user worked from another device, from `remoteWorkWindows`. A band in one is attended. */
+  remoteWork?: readonly TimeWindow[];
 };
 
 export type DayRows = {
@@ -214,10 +216,13 @@ export const buildRows = (
       ...calls.map((call) => call.group),
       ...timers.filter((timer) => timerProposesRow(timer.run)).map((timer) => timer.group),
     ],
-    at: attendedAt({
-      events: options.events,
-      graceMs: options.fill?.maxFillGapMs ?? DEFAULT_FILL_OPTIONS.maxFillGapMs,
-    }),
+    at: [
+      ...attendedAt({
+        events: options.events,
+        graceMs: options.fill?.maxFillGapMs ?? DEFAULT_FILL_OPTIONS.maxFillGapMs,
+      }),
+      ...(options.remoteWork ?? []),
+    ],
     claimed: [...unwatched, ...booked.map((call) => ({ from: call.group.from, to: call.group.to }))],
   }).sort((a, b) => a.from.getTime() - b.from.getTime());
   const { proposals, unattributed, unnamed } = propose({

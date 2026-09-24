@@ -42,13 +42,21 @@ describe('promptOriginAt', () => {
   });
 
   it('reads input that stopped just over a minute before the prompt as remote', () => {
-    const events = [input('input-active', '2026-09-15T09:00:00Z'), input('input-idle', '2026-09-15T09:58:59Z')];
+    const events = [
+      input('input-active', '2026-09-15T09:00:00Z'),
+      input('input-idle', '2026-09-15T09:58:59Z'),
+      input('input-active', '2026-09-15T10:30:00Z'),
+    ];
 
     expect(promptOriginAt({ events, at: at('10:00:00') })).toBe('remote');
   });
 
   it('does not read a restarted notifier going idle again as input', () => {
-    const events = [input('input-idle', '2026-09-15T09:00:00Z'), input('input-idle', '2026-09-15T09:59:30Z')];
+    const events = [
+      input('input-idle', '2026-09-15T09:00:00Z'),
+      input('input-idle', '2026-09-15T09:59:30Z'),
+      input('input-active', '2026-09-15T10:30:00Z'),
+    ];
 
     expect(promptOriginAt({ events, at: at('10:00:00') })).toBe('remote');
   });
@@ -60,9 +68,31 @@ describe('promptOriginAt', () => {
   });
 
   it('reads the events in time order whatever order they arrive in', () => {
-    const events = [input('input-idle', '2026-09-15T09:30:00Z'), input('input-active', '2026-09-15T09:00:00Z')];
+    const events = [
+      input('input-active', '2026-09-15T10:30:00Z'),
+      input('input-idle', '2026-09-15T09:30:00Z'),
+      input('input-active', '2026-09-15T09:00:00Z'),
+    ];
 
     expect(promptOriginAt({ events, at: at('10:00:00') })).toBe('remote');
+  });
+
+  it('cannot tell when no returning input shows the app watched the seat through the prompt', () => {
+    const events = [input('input-active', '2026-09-15T09:00:00Z'), input('input-idle', '2026-09-15T09:30:00Z')];
+
+    expect(promptOriginAt({ events, at: at('10:00:00') })).toBe('unknown');
+  });
+
+  it('cannot tell when the app was closed and restarted after the seat went idle', () => {
+    const events = [
+      input('input-active', '2026-09-15T09:00:00Z'),
+      input('input-idle', '2026-09-15T09:30:00Z'),
+      input('input-idle', '2026-09-15T10:31:00Z'),
+      input('input-active', '2026-09-15T11:00:00Z'),
+    ];
+
+    expect(promptOriginAt({ events, at: at('10:00:00') })).toBe('unknown');
+    expect(promptOriginAt({ events, at: at('10:45:00') })).toBe('remote');
   });
 
   it('widens the window when asked to', () => {

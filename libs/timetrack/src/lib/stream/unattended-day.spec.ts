@@ -225,3 +225,128 @@ describe('streamDay, on work the user steered from a phone', () => {
     expect(breakMs(drawn)).toBeLessThanOrEqual(breakMs(day.breaks));
   });
 });
+
+describe('streamDay, on prompts the short input idleness reads as remote', () => {
+  const input = (minute: number, kind: 'input-idle' | 'input-active'): CollectedEvent => ({
+    at: AT(minute),
+    source: 'input',
+    kind,
+  });
+
+  /**
+   * 2026-09-23: Tom left the desk for three hours and steered two agents from his phone in the
+   * middle of them. The seat stopped at 89 and was touched again at 240.
+   */
+  const AWAY: CollectedEvent[] = [
+    ...EVENING,
+    idle(90, 'idle-start'),
+    ...running(90, 240),
+    prompt(130, 'human'),
+    prompt(145, 'human'),
+    prompt(160, 'human'),
+    idle(240, 'idle-end'),
+    focus(241),
+    commit(245, 'docs(repo): Mark the timetrack naming gaps as built'),
+  ];
+  const DESK_STOPPED: CollectedEvent[] = [
+    input(0, 'input-active'),
+    input(89, 'input-idle'),
+    input(240, 'input-active'),
+  ];
+
+  const breaksAway = (events: CollectedEvent[]) =>
+    dayOf(events)
+      .breaks.filter((window) => window.from.getTime() >= AT(90).getTime())
+      .map((window) => [
+        (window.from.getTime() - DAY_START.getTime()) / MINUTE,
+        (window.to.getTime() - DAY_START.getTime()) / MINUTE,
+      ]);
+
+  it('splits the break around the stretch he steered from the phone', () => {
+    expect(breaksAway([...AWAY, ...DESK_STOPPED])).toEqual([
+      [90, 115],
+      [160, 241],
+    ]);
+  });
+
+  it('books the stretch as attended work rather than as unattended time', () => {
+    const OTHER = '/home/tom/dev/fut-frontend';
+    const phone = (minute: number, source: 'agent-prompt' | 'agent-usage'): CollectedEvent =>
+      source === 'agent-prompt'
+        ? {
+            at: AT(minute),
+            source,
+            kind: source,
+            provider: 'claude-code',
+            sessionId: 'phone',
+            promptId: `phone-${minute}`,
+            cwd: OTHER,
+            gitBranch: 'feat/ET-900-steer-from-the-phone',
+            askedBy: 'human',
+          }
+        : {
+            at: AT(minute),
+            source,
+            kind: source,
+            provider: 'claude-code',
+            sessionId: 'phone',
+            turnId: `phone-${minute}`,
+            cwd: OTHER,
+            gitBranch: 'feat/ET-900-steer-from-the-phone',
+            model: 'claude-opus-5',
+            usage: { input: 3, output: 900, cacheWrite: 200, cacheRead: 60_000, thinking: 100 },
+          };
+    const steered = [120, 130, 140, 150, 160].flatMap((minute): CollectedEvent[] => [
+      {
+        at: AT(minute),
+        source: 'agent-session',
+        kind: 'agent-session',
+        sessionId: 'phone',
+        cwd: OTHER,
+        gitBranch: 'feat/ET-900-steer-from-the-phone',
+      },
+      phone(minute, 'agent-prompt'),
+      phone(minute + 1, 'agent-usage'),
+    ]);
+    const day = streamDay({
+      events: [
+        ...EVENING,
+        idle(90, 'idle-start'),
+        ...steered,
+        idle(240, 'idle-end'),
+        focus(241),
+        ...running(240, 270),
+        focus(270),
+        ...DESK_STOPPED,
+      ].sort((a, b) => a.at.getTime() - b.at.getTime()),
+      options: { repoRoots: [REPO, OTHER], windowsSeenThroughMs: AT(900).getTime(), rows: { config: CONFIG } },
+    });
+
+    expect(day.rows.proposals.map((row) => row.issueKey)).toContain('ET-900');
+    expect(day.rows.unnamed.filter((row) => row.unattended)).toEqual([]);
+  });
+
+  it('keeps the allowance for prompts on a day without the signal', () => {
+    expect(breaksAway(AWAY)).toEqual([[90, 196]]);
+  });
+
+  it('keeps the allowance for prompts typed at the desk', () => {
+    const touched = [130, 145, 160].flatMap((minute) => [
+      input(minute - 1, 'input-active'),
+      input(minute, 'input-idle'),
+    ]);
+
+    expect(breaksAway([...AWAY, input(0, 'input-active'), input(89, 'input-idle'), ...touched])).toEqual([[90, 196]]);
+  });
+
+  it('keeps the allowance when the app was closed while the seat was idle', () => {
+    const restarted = [
+      input(0, 'input-active'),
+      input(89, 'input-idle'),
+      input(200, 'input-idle'),
+      input(240, 'input-active'),
+    ];
+
+    expect(breaksAway([...AWAY, ...restarted])).toEqual([[90, 196]]);
+  });
+});

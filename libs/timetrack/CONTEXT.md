@@ -183,6 +183,12 @@ It is the one agent evidence that says somebody was at the keyboard — see ADR 
 turn are kept for a checkout no project link covers, and both drop for a private one.
 _Avoid_: message, input, keystroke in prose
 
+**Remote prompt**:
+A prompt sent while the app watched nobody touch the seat: the person steered from a phone or another
+device. Inside a break, the stretch from the first remote prompt to the last is work — see ADR 0033.
+A prompt the app could not watch is neither remote nor desk, and buys back only the allowance.
+_Avoid_: phone prompt, mobile prompt, away prompt
+
 **Agent session**:
 One run of an agent CLI in one checkout, identified by the provider's own session id. A subagent
 runs inside its parent's session and belongs to the same stream.

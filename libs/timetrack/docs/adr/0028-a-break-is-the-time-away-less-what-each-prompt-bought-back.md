@@ -77,11 +77,11 @@ had left.
   That is deliberate: nothing in a Claude Code log distinguishes them. Checked on 2026-09-15 —
   `entrypoint` is `cli` for both, `origin` is `{kind:'human'}` for both, and `promptSource` is
   `typed` or `queued`, which a desk also produces.
-- **A short input-idle notification distinguishes them**, and is recorded but not yet read by the
-  allowance. A second `get_input_idle_notification` at 60 s writes `input-idle` (dated when input
+- **A short input-idle notification distinguishes them**, and [ADR 0033](./0033-a-break-a-person-steered-from-a-phone-is-work.md)
+  reads it: a remote prompt is not held to the bounds above. A second `get_input_idle_notification` at 60 s writes `input-idle` (dated when input
   stopped) and `input-active` (dated when it returned) under the source `input`, never what was
   touched or typed. `promptOriginAt` reads a prompt as `desk` when the seat was touched in the minute
-  before it, `remote` when it was not, and `unknown` on a day without the signal or before its first
+  before it, `remote` when it was not and the app watched the seat throughout, and `unknown` on a day without the signal or before its first
   transition. That is the universal signal for a phone, a tablet and any remote control, and it costs
   one more Wayland object. The host needs notifier version 2 for it, and macOS does not collect it
   yet.

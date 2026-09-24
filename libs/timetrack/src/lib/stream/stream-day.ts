@@ -19,8 +19,9 @@ import { TimetrackProjectRoots, workPathsOf, workPathsSplit } from '../model/wor
 import { BuildRowsOptions, DayRows, buildRows } from '../rows/build-rows';
 import { TimetrackCallRules } from '../settings/model';
 import { ContextObservation, ContextSpan, blocksFromSpans, clipSpans } from './blocks';
-import { BreakWindow, breakGaps, breakMs, breakWindows } from './breaks';
+import { BreakWindow, breakGaps, breakMs, breakWindows, remoteWorkWindows } from './breaks';
 import { classifyCalls, lastHostSampleAt } from './calls';
+import { promptOriginAt } from './prompt-origin';
 import { PresenceSample, presenceWindows } from './presence';
 import { UnnamedFocus, UnnamedFocusReason, mergeUnnamedTitles } from './unnamed-focus';
 import { fileAgentEventsByWork } from './worked-in';
@@ -1417,24 +1418,29 @@ export const streamDay = (options: {
     ...clipSpans({ spans: rebuiltSpans, within: rebuilt }),
   ];
 
+  const inputs = events.filter((event) => event.source === 'input');
+  // A prompt the agent gave itself buys nothing back: nobody read anything and nobody typed. See
+  // ADR 0018.
+  const typed = prompts.filter((prompt) => prompt.askedBy !== 'machine');
+  const remote = typed.filter((prompt) => promptOriginAt({ events: inputs, at: prompt.at }) === 'remote');
   const away = {
     presence,
     events,
     pauses: config.rows?.pauses,
     work: attendedSpans,
     minBreakMs: config.minBreakMs,
-    // A prompt the agent gave itself buys nothing back: nobody read anything and nobody typed. See
-    // ADR 0018.
-    prompts: prompts.filter((prompt) => prompt.askedBy !== 'machine').map((prompt) => prompt.at),
+    prompts: typed.filter((prompt) => !remote.includes(prompt)).map((prompt) => prompt.at),
+    remotePrompts: remote.map((prompt) => prompt.at),
     promptAttentionMs: config.promptAttentionMs,
   };
+  const gaps = breakGaps(away);
   const breaks = breakWindows(away);
   // `work` above must stay the spans presence alone allows, because the agent's spans are then clipped
   // to the gaps read off it. Clipping first would let a break widen the work span and so itself.
   const blocks = blocksFromSpans({
     spans: [
       ...clipSpans({ spans: focusSpans, within: seen }),
-      ...clipSpans({ spans: agentSpans, within: mergeWindows([...presence, ...breakGaps(away)]) }),
+      ...clipSpans({ spans: agentSpans, within: mergeWindows([...presence, ...gaps]) }),
       ...clipSpans({ spans: rebuiltSpans, within: rebuilt }),
     ],
     observations,
@@ -1456,6 +1462,11 @@ export const streamDay = (options: {
     links,
     calls,
     breaks,
+    remoteWork: remoteWorkWindows({
+      breaks: gaps,
+      remotePrompts: away.remotePrompts,
+      promptAttentionMs: config.promptAttentionMs,
+    }),
     cut: { ...config.rows?.cut, focusMsByStream },
   });
 

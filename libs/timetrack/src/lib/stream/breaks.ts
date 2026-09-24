@@ -84,8 +84,10 @@ export const breakGaps = (options: {
   minBreakMs?: number;
   /** The longest gap that is still a break. A longer one is time away from the day, lock or no lock. */
   maxBreakMs?: number;
-  /** When the user prompted an agent. Each prompt buys back the attention it took to write. */
+  /** When the user prompted an agent at the desk, or from nowhere `promptOriginAt` could tell. */
   prompts?: readonly Date[];
+  /** When the user prompted an agent from another device, read `remote` by `promptOriginAt`. */
+  remotePrompts?: readonly Date[];
   /** How much of a break one prompt buys back. Defaults to `DEFAULT_PROMPT_ATTENTION_MS`. */
   promptAttentionMs?: number;
   /** The most of one break its prompts may buy back. Defaults to `DEFAULT_MAX_ATTENTION_SHARE`. */
@@ -130,20 +132,59 @@ export const breakGaps = (options: {
 };
 
 /**
- * The breaks a day reports: the gaps of `breakGaps`, each one shortened by what its prompts bought.
- *
- * Each prompt shortens the break it ends by `promptAttentionMs`, down to `minBreakMs` and never past
- * it. A person who waits on an agent and answers it is working; a person who answers it twice in
- * forty minutes was away for the rest, and that rest is what this reports.
+ * The stretches of each break the user worked from another device: from the first remote prompt's
+ * allowance to the last remote prompt, inside the break. See ADR 0033.
  */
-export const breakWindows = (options: Parameters<typeof breakGaps>[0]): BreakWindow[] =>
-  attended({
-    breaks: breakGaps(options),
+export const remoteWorkWindows = (options: {
+  breaks: readonly TimeWindow[];
+  remotePrompts: readonly Date[];
+  promptAttentionMs?: number;
+}): TimeWindow[] => {
+  const attentionMs = options.promptAttentionMs ?? DEFAULT_PROMPT_ATTENTION_MS;
+
+  return options.breaks.flatMap((window) => {
+    const from = window.from.getTime();
+    const to = window.to.getTime();
+    const inside = options.remotePrompts.map((at) => at.getTime()).filter((at) => at >= from && at <= to);
+
+    if (!inside.length) return [];
+
+    return [{ from: new Date(Math.max(from, Math.min(...inside) - attentionMs)), to: new Date(Math.max(...inside)) }];
+  });
+};
+
+/**
+ * The breaks a day reports: the gaps of `breakGaps`, with what the user worked from another device
+ * cut out, and each part left shortened by what its desk prompts bought.
+ *
+ * A remote stretch is cut out whole, lock or no lock, and may split a break in two; a part shorter
+ * than `minBreakMs` is dropped. Each desk prompt then shortens the part it ends by
+ * `promptAttentionMs`, down to `minBreakMs` and never past it.
+ */
+export const breakWindows = (options: Parameters<typeof breakGaps>[0]): BreakWindow[] => {
+  const minBreakMs = options.minBreakMs ?? DEFAULT_MIN_BREAK_MS;
+  const gaps = breakGaps(options);
+  const remote = remoteWorkWindows({
+    breaks: gaps,
+    remotePrompts: options.remotePrompts ?? [],
+    promptAttentionMs: options.promptAttentionMs,
+  });
+  const left = gaps.flatMap((window) =>
+    remote.some((stretch) => windowsOverlap(stretch, window))
+      ? subtractWindows({ windows: [window], without: remote })
+          .filter((part) => part.to.getTime() - part.from.getTime() >= minBreakMs)
+          .map((part) => ({ ...part, locked: window.locked }))
+      : [window],
+  );
+
+  return attended({
+    breaks: left,
     prompts: options.prompts ?? [],
     attentionMs: options.promptAttentionMs ?? DEFAULT_PROMPT_ATTENTION_MS,
-    minBreakMs: options.minBreakMs ?? DEFAULT_MIN_BREAK_MS,
+    minBreakMs,
     maxAttentionShare: options.maxAttentionShare ?? DEFAULT_MAX_ATTENTION_SHARE,
   });
+};
 
 /**
  * The breaks with each prompt's attention taken out of them.
