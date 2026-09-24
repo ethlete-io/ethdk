@@ -165,6 +165,8 @@ Headers can be a plain record, so this needs no `HttpInterceptor` and no `@angul
 } }
 ```
 
+v2 kept `loading` false during a polling or auto-refresh load and set `refreshing` instead. v3 has no `refreshing`: every execution sets `loading()`, so a spinner bound to it flashes on each tick. Show it only while there is nothing to render yet, with `@if (postQuery.loading() && !postQuery.response())`, and read a background refresh from `executionState()` (`type: 'loading'`, `hasCachedResponse: true`) and `triggeredBy()` (`'polling'`, `'auto-refresh'`). See [withPolling](/query/features#withpolling).
+
 [`queryErrorMessages(error)`](/query/errors#rendering-error-messages) flattens the single/list split of a `QueryErrorResponse` into a plain string array; `queryErrorMessage(error)` takes the first one. Use them instead of hand-rolling the branch.
 
 `[etInfinityQuery]` has no replacement either - infinite lists are [paged query stacks](/query/stacks#paged-queries) now.

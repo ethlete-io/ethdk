@@ -1891,7 +1891,7 @@ describe('withPolling cadence options', () => {
     class MatchFeed {
       readonly match = getMatch(
         withArgs(() => ({ pathParams: { id: '7' } })),
-        withPolling({ interval: 5_000, enabled: () => !this.finished() }),
+        withPolling({ interval: 5_000, enabled: (): boolean => !this.finished() }),
       );
 
       readonly finished = computed(() => this.match.response()?.status === 'finished');

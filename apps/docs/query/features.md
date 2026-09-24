@@ -61,13 +61,25 @@ const matchQuery = getMatch(
 ```ts
 readonly match = getMatch(
   withArgs(() => ({ pathParams: { matchId: this.matchId() } })),
-  withPolling({ interval: 5_000, enabled: () => !this.finished() }),
+  withPolling({ interval: 5_000, enabled: (): boolean => !this.finished() }),
 );
 
 readonly finished = computed(() => this.match.response()?.status === 'finished');
 ```
 
+The `enabled` function reads `finished`, which reads `match`, so TypeScript cannot infer its type - the explicit `boolean` return type breaks that cycle.
+
 While `enabled` is `false` no tick runs - neither `executeInitially` nor a focus or reconnect refetch. When it turns `true`, a tick that fell due in the meantime runs at once; otherwise polling resumes on its cadence. It does not stop a manual `execute()` or an args change from fetching.
+
+Every tick sets `loading()`, like any execution. To show a spinner only on the first load and keep a polled screen still, check for a response too:
+
+```html
+@if (feed.loading() && !feed.response()) {
+<et-spinner />
+}
+```
+
+A background refresh is `executionState()` `{ type: 'loading', hasCachedResponse: true }`, with the previous data in `cachedResponse`. `triggeredBy()` names what started the current execution: `'polling'` for a tick, `executeInitially`, or a focus or reconnect refetch; `'long-polling'` and `'auto-refresh'` for the features below; `null` for a manual `execute()`.
 
 With `pauseWhileHidden`, no timer runs while the tab is hidden. When it becomes visible again, a tick that fell due in the meantime runs at once; a tab hidden for less than one interval just resumes its cadence. A focus or reconnect refetch counts as a tick: the interval restarts from it. With multi-tab sync, a tab that is not polling the key (see below) skips these refetches too, like any tick.
 
