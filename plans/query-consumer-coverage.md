@@ -108,3 +108,14 @@ document, add a feature, or teach the codemod. Some are deliberate (retry and er
 11. The dyn auth scaffold ignores `refreshBuffer` / `cookieEnabled`; `migrating-from-v2.md` and `auth.md` disagree on
     `refreshStrategy` units.
 12. Devtools: v2 clients and v3 cannot share one panel; both use the `et-query-devtools` selector.
+13. bvb relies on the v2 defaults `autoRefreshQueriesOnWindowFocus` and `enableSmartPolling` (both `true`); the codemod
+    only warns about written-out options (`query-client-migration.ts:396-470`), and `pauseWhileHidden` defaults to
+    `false`, so bvb's 8 polls run in hidden tabs.
+14. No v3 replacement for the query button (cdk `QueryButtonDirective` accepts only v2/legacy queries; dyn 45, fut 39
+    uses), query collections (dyn/dfb 27, fifagg 54), the infinite-scroll trigger (bvb 5, fifagg 16) or EntityStore
+    (bvb 13, dyn 18, fifagg 8 stores, cross-store writes in fifagg `broadcast.queries.ts:24-62`).
+15. dfb scopes its GG client, auth and WebSocket to a route (`match-lobby/match-lobby-initialization.ts:28-31`); v3
+    providers are root-only (inferred).
+16. `validateWithQuery` targets signal forms only; dfb and dyn run queries in reactive-forms `AsyncValidatorFn`s.
+17. A client header function cannot `inject()` app state (fut `preview.provider.ts:51` keeps an interceptor; inferred).
+18. v3 peers pin `@angular/core` 22.1.6 exactly (`libs/query/package.json:9`); fifagg is on 19.2.4.
