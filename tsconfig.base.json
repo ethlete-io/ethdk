@@ -32,6 +32,7 @@
       "@ethlete/query-devtools": ["libs/query-devtools/src/index.ts"],
       "@ethlete/query-devtools/lazy": ["libs/query-devtools/lazy/index.ts"],
       "@ethlete/query-devtools/toggle": ["libs/query-devtools/toggle/index.ts"],
+      "@ethlete/query/ngrx-toolkit": ["libs/query/ngrx-toolkit/index.ts"],
       "@ethlete/query/testing": ["libs/query/testing/index.ts"],
       "@ethlete/timetrack": ["libs/timetrack/src/index.ts"],
       "@ethlete/timetrack/testing": ["libs/timetrack/testing/index.ts"],
