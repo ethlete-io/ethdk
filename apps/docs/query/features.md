@@ -33,6 +33,7 @@ Re-executes the query on an interval. The interval restarts when args change, an
 | `interval`           | - (required) | Polling interval in milliseconds, or a signal of it - a new value re-times the next tick from the last one. |
 | `executeInitially`   | `false`      | Also execute immediately on creation.                                                                       |
 | `pauseWhileHidden`   | `false`      | Stop polling while the document is hidden.                                                                  |
+| `enabled`            | `() => true` | Poll only while this returns `true`. Read reactively - pass a signal or a `computed`.                       |
 | `refetchOnFocus`     | `false`      | Execute when the window regains focus.                                                                      |
 | `refetchOnReconnect` | `false`      | Execute when the browser comes back online.                                                                 |
 
@@ -44,6 +45,19 @@ const matchQuery = getMatch(
   withPolling({ interval, pauseWhileHidden: true, refetchOnFocus: true, refetchOnReconnect: true }),
 );
 ```
+
+`enabled` stops and resumes polling from app state, including the query's own response - a match feed that stops once the match is over:
+
+```ts
+readonly match = getMatch(
+  withArgs(() => ({ pathParams: { matchId: this.matchId() } })),
+  withPolling({ interval: 5_000, enabled: () => !this.finished() }),
+);
+
+readonly finished = computed(() => this.match.response()?.status === 'finished');
+```
+
+While `enabled` is `false` no tick runs - neither `executeInitially` nor a focus or reconnect refetch. When it turns `true`, a tick that fell due in the meantime runs at once; otherwise polling resumes on its cadence. It does not stop a manual `execute()` or an args change from fetching.
 
 With `pauseWhileHidden`, no timer runs while the tab is hidden. When it becomes visible again, a tick that fell due in the meantime runs at once; a tab hidden for less than one interval just resumes its cadence. A focus or reconnect refetch counts as a tick: the interval restarts from it. With multi-tab sync, a tab that is not polling the key (see below) skips these refetches too, like any tick.
 

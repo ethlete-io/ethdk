@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { createEnvironmentInjector, EnvironmentInjector, inject, signal, untracked } from '@angular/core';
+import { computed, createEnvironmentInjector, EnvironmentInjector, inject, signal, untracked } from '@angular/core';
 import {
   FakeBroadcastChannelHandle,
   FakeWebLocksHandle,
@@ -1485,6 +1485,168 @@ describe('withPolling cadence options', () => {
     window.dispatchEvent(new Event('online'));
     s.tick();
     expect(s.api.requestCount('GET', '/feed')).toBe(1);
+
+    c.destroy();
+  });
+
+  it('never ticks or refetches while enabled is false from the start', () => {
+    const s = scenario();
+    const getFeed = pollFeed(s);
+    const enabled = signal(false);
+
+    const c = s.consumer();
+    c.run(() =>
+      getFeed(
+        { onlyManualExecution: true },
+        withPolling({ interval: 1_000, enabled, refetchOnFocus: true, refetchOnReconnect: true }),
+      ),
+    );
+
+    s.tick(10_000);
+    window.dispatchEvent(new Event('focus'));
+    window.dispatchEvent(new Event('online'));
+    s.tick();
+    expect(s.api.requestCount('GET', '/feed')).toBe(0);
+    expect(vi.getTimerCount()).toBe(0);
+
+    c.destroy();
+  });
+
+  it('stops polling when enabled turns false', () => {
+    const s = scenario();
+    const getFeed = pollFeed(s);
+    const enabled = signal(true);
+
+    const c = s.consumer();
+    c.run(() => getFeed({ onlyManualExecution: true }, withPolling({ interval: 1_000, enabled })));
+
+    s.tick(2_000);
+    expect(s.api.requestCount('GET', '/feed')).toBe(2);
+
+    enabled.set(false);
+    s.tick(10_000);
+    expect(s.api.requestCount('GET', '/feed')).toBe(2);
+    expect(vi.getTimerCount()).toBe(0);
+
+    c.destroy();
+  });
+
+  it('runs the tick that fell due at once when enabled turns true after a full interval', () => {
+    const s = scenario();
+    const getFeed = pollFeed(s);
+    const enabled = signal(true);
+
+    const c = s.consumer();
+    c.run(() => getFeed({ onlyManualExecution: true }, withPolling({ interval: 1_000, enabled })));
+
+    s.tick(1_000);
+    expect(s.api.requestCount('GET', '/feed')).toBe(1);
+
+    enabled.set(false);
+    s.tick(5_000);
+
+    enabled.set(true);
+    s.tick();
+    expect(s.api.requestCount('GET', '/feed')).toBe(2);
+
+    s.tick(999);
+    expect(s.api.requestCount('GET', '/feed')).toBe(2);
+
+    s.tick(1);
+    expect(s.api.requestCount('GET', '/feed')).toBe(3);
+
+    c.destroy();
+  });
+
+  it('resumes on its cadence when enabled turns true before the next tick is due', () => {
+    const s = scenario();
+    const getFeed = pollFeed(s);
+    const enabled = signal(true);
+
+    const c = s.consumer();
+    c.run(() => getFeed({ onlyManualExecution: true }, withPolling({ interval: 1_000, enabled })));
+
+    s.tick(200);
+    enabled.set(false);
+    s.tick(300);
+    enabled.set(true);
+    s.tick();
+
+    s.tick(499);
+    expect(s.api.requestCount('GET', '/feed')).toBe(0);
+
+    s.tick(1);
+    expect(s.api.requestCount('GET', '/feed')).toBe(1);
+
+    c.destroy();
+  });
+
+  it('holds back executeInitially while disabled and runs it once enabled', () => {
+    const s = scenario();
+    const getFeed = pollFeed(s);
+    const enabled = signal(false);
+
+    const c = s.consumer();
+    c.run(() =>
+      getFeed({ onlyManualExecution: true }, withPolling({ interval: 1_000, executeInitially: true, enabled })),
+    );
+
+    s.tick(300);
+    expect(s.api.requestCount('GET', '/feed')).toBe(0);
+
+    enabled.set(true);
+    s.tick();
+    expect(s.api.requestCount('GET', '/feed')).toBe(1);
+
+    s.tick(1_000);
+    expect(s.api.requestCount('GET', '/feed')).toBe(2);
+
+    c.destroy();
+  });
+
+  it('stops a match-feed poll once a computed over its own response says the match finished', () => {
+    type Match = { id: string; status: 'live' | 'finished'; score: number };
+
+    const s = scenario();
+    s.api.on(
+      'GET',
+      '/matches/:id',
+      sequence([
+        { body: { id: '7', status: 'live', score: 0 } },
+        { body: { id: '7', status: 'live', score: 1 } },
+        { body: { id: '7', status: 'finished', score: 2 } },
+      ]),
+    );
+
+    const getMatch = s.get<{ response: Match; pathParams: { id: string } }>((p) => `/matches/${p.id}`);
+
+    class MatchFeed {
+      readonly match = getMatch(
+        withArgs(() => ({ pathParams: { id: '7' } })),
+        withPolling({ interval: 5_000, enabled: () => !this.finished() }),
+      );
+
+      readonly finished = computed(() => this.match.response()?.status === 'finished');
+    }
+
+    const c = s.consumer();
+    const feed = c.run(() => new MatchFeed());
+
+    s.tick();
+    expect(feed.match.response()?.score).toBe(0);
+
+    s.tick(5_000);
+    s.tick(1);
+    expect(feed.match.response()?.score).toBe(1);
+
+    s.tick(5_000);
+    s.tick(1);
+    expect(feed.finished()).toBe(true);
+    expect(feed.match.response()?.score).toBe(2);
+
+    s.tick(60_000);
+    expect(s.api.requestCount('GET', '/matches/7')).toBe(3);
+    expect(vi.getTimerCount()).toBe(0);
 
     c.destroy();
   });

@@ -84,6 +84,8 @@ yarn nx g @ethlete/query:migrate-query-opt-in-features
 
 Two more v2 defaults are gone: `autoRefreshQueriesOnWindowFocus` and `enableSmartPolling` were both `true` unless a client turned them off. v3 has no client-wide switch for either, so they are off unless you turn them on per query. Use `withPolling({ interval, pauseWhileHidden: true })` to stop polling in a hidden tab, and `withPolling({ refetchOnFocus: true })` or `withAutoRefresh` to refetch when the window gets focus. The generator reports every client that relied on these defaults.
 
+A v2 poll stopped by piping the query into `takeUntil` becomes `withPolling({ interval, enabled })`: pass a signal or a `computed` - over the query's own `response()` if the stop condition is in the data - and polling runs only while it is `true`. See [withPolling](/query/features#withpolling).
+
 ### Configure the auth provider
 
 The generator scaffolds a [`createBearerAuthProvider`](/query/auth) from your `V2BearerAuthProvider` config where it can find one, but the adapters change shape between versions, so it emits them behind `TODO(query-v3)` comments. The mapping is:

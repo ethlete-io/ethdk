@@ -159,6 +159,14 @@ export type WithPollingFeatureOptions = {
   pauseWhileHidden?: boolean;
 
   /**
+   * Poll only while this returns `true`. Read reactively (pass a signal or a `computed`). While it is
+   * `false` no tick runs; when it turns `true`, a tick that fell due in between runs at once,
+   * otherwise polling resumes on its cadence.
+   * @default () => true
+   */
+  enabled?: () => boolean;
+
+  /**
    * Execute the query when the window regains focus, and restart the interval from there.
    * @default false
    */
@@ -194,6 +202,7 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
       { label: 'interval', value: formatQueryDevtoolsDuration(untracked(() => readPollingInterval(options.interval))) },
       { label: 'execute initially', value: options.executeInitially ? 'yes' : 'no' },
       ...(options.pauseWhileHidden ? [{ label: 'pause while hidden', value: 'yes' }] : []),
+      ...(options.enabled ? [{ label: 'enabled', value: untracked(options.enabled) ? 'yes' : 'no' }] : []),
       ...(options.refetchOnFocus ? [{ label: 'refetch on focus', value: 'yes' }] : []),
       ...(options.refetchOnReconnect ? [{ label: 'refetch on reconnect', value: 'yes' }] : []),
     ],
@@ -252,7 +261,8 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
       }
 
       const currentInterval = () => untracked(() => readPollingInterval(options.interval));
-      const isPaused = () => options.pauseWhileHidden === true && document.hidden;
+      const isEnabled = () => (options.enabled ? untracked(options.enabled) : true);
+      const isPaused = () => (options.pauseWhileHidden === true && document.hidden) || !isEnabled();
 
       const stop = () => {
         if (intervalId !== null) clearInterval(intervalId);
@@ -341,21 +351,36 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
         );
       }
 
+      const resumeOrStop = () => {
+        if (!active) return;
+
+        if (isPaused()) {
+          stop();
+        } else if (intervalId === null && timeoutId === null) {
+          schedule(remainingDelay());
+        }
+      };
+
+      if (options.enabled) {
+        const enabled = options.enabled;
+
+        nestedEffect(
+          () => {
+            enabled();
+
+            untracked(resumeOrStop);
+          },
+          { injector: context.deps.injector },
+        );
+      }
+
       const listen = (target: EventTarget, type: string, listener: () => void) => {
         target.addEventListener(type, listener);
         context.deps.destroyRef.onDestroy(() => target.removeEventListener(type, listener));
       };
 
       if (options.pauseWhileHidden) {
-        listen(document, 'visibilitychange', () => {
-          if (!active) return;
-
-          if (document.hidden) {
-            stop();
-          } else if (intervalId === null && timeoutId === null) {
-            schedule(remainingDelay());
-          }
-        });
+        listen(document, 'visibilitychange', resumeOrStop);
       }
 
       const refetchNow = () => {
