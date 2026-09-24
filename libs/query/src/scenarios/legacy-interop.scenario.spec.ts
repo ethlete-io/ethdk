@@ -13,6 +13,7 @@ import {
   InfinityQueryTriggerDirective,
   provideLegacyPrepareFallback,
   QueryDirective,
+  queryComputed,
   QueryStateType,
   V2QueryState,
 } from '../index';
@@ -286,6 +287,26 @@ describe('legacy interop scenario', () => {
       expect(query.rawState).toMatchObject({ type: QueryStateType.Success, response: { id: '1', name: 'Ada' } });
 
       recorded.stop();
+      c.destroy();
+    });
+
+    it('sends one request for a prepare().execute() inside queryComputed', () => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', () => ({ body: { id: '1', name: 'Ada' }, delay: 100 }));
+
+      const getUser = s.get<GetUserArgs>((p) => `/users/${p.id}`);
+      const legacyGetUser = createLegacyQueryCreator({ creator: getUser, name: 'legacyGetUser' });
+
+      const c = s.consumer();
+      const query = queryComputed(() => legacyGetUser.prepare({ pathParams: { id: '1' } }).execute(), {
+        injector: c.injector,
+      });
+
+      s.tick(1000);
+
+      expect(s.api.requestCount('GET', '/users/1')).toBe(1);
+      expect(query()?.rawState).toMatchObject({ type: QueryStateType.Success });
+
       c.destroy();
     });
 

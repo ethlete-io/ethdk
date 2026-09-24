@@ -332,7 +332,9 @@ export class LegacyQuery<
   }
 
   execute(options: ExecuteQueryOptions = {}) {
-    if (isQueryStateLoading(this.rawState)) {
+    // Untracked: `prepare().execute()` inside `queryComputed` would otherwise re-run the computation on every
+    // state change and send a new request each time.
+    if (isQueryStateLoading(untracked(() => this.rawState))) {
       if (options.cancelPrevious !== true) {
         return this;
       }
@@ -354,7 +356,7 @@ export class LegacyQuery<
   }
 
   abort() {
-    if (!isQueryStateLoading(this.rawState)) {
+    if (!isQueryStateLoading(untracked(() => this.rawState))) {
       return this;
     }
 
