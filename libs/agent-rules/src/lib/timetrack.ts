@@ -238,6 +238,22 @@ export type TimetrackWorklog = {
   durationMs: number;
 };
 
+/** One of the user's own Tempo worklogs, whoever wrote it. */
+export type TimetrackTempoWorklog = {
+  id: string;
+  day: string;
+  /** The local start as `HH:MM`. Absent where Tempo holds no start time. */
+  startTime?: string;
+  startMs: number;
+  durationMs: number;
+  /** Absent where Jira no longer resolves the issue Tempo names. */
+  issueKey?: string;
+  issueId: string;
+  description: string;
+};
+
+export type TimetrackTempoWorklogs = { from: string; to: string; worklogs: TimetrackTempoWorklog[] };
+
 type Discovery = { version: number; port: number; token: string };
 
 type Answer<T> = { ok: true; value: T } | { ok: false; message: string };
@@ -423,6 +439,10 @@ export const timetrackDayRows = (day: string) => askTimetrack<TimetrackDayRows>(
  */
 export const timetrackEditDay = (options: { day: string; edits: readonly TimetrackRowEdit[] }) =>
   askTimetrack<TimetrackEditedDay>({ op: 'day.edits', ...options });
+
+/** Reads the user's own Tempo worklogs from Tempo, both days included. The app caps the span at 92 days. */
+export const timetrackTempoWorklogs = (options: { from: string; to: string }) =>
+  askTimetrack<TimetrackTempoWorklogs>({ op: 'tempo.worklogs', ...options });
 
 export const timetrackRules = () => askTimetrack<TimetrackRules>({ op: 'settings.rules' });
 

@@ -258,6 +258,26 @@ export type AgentApiWorklog = {
   durationMs: number;
 };
 
+/** The widest span `tempo.worklogs` reads in one request, in days, both ends included. */
+export const AGENT_TEMPO_RANGE_DAYS = 92;
+
+/** One of the user's own Tempo worklogs, whoever wrote it. */
+export type AgentApiTempoWorklog = {
+  id: string;
+  /** The local day it is booked on, as `YYYY-MM-DD`. */
+  day: string;
+  /** The local start as `HH:MM`. Absent where Tempo holds midnight, which is what it stores for no time. */
+  startTime?: string;
+  startMs: number;
+  durationMs: number;
+  /** Absent where Jira no longer resolves the issue id Tempo names, or the token cannot see it. */
+  issueKey?: string;
+  issueId: string;
+  description: string;
+};
+
+export type AgentApiTempoWorklogs = { from: string; to: string; worklogs: AgentApiTempoWorklog[] };
+
 /** One row of a day as an agent reads it, and the id every edit to that row names it by. */
 export type AgentApiReviewedRow = {
   id: string;
@@ -378,6 +398,7 @@ export type AgentApiRequest =
       apply: boolean;
     }
   | { op: 'naming.offers'; day: string }
+  | { op: 'tempo.worklogs'; from: string; to: string }
   | { op: 'lane.issues' }
   | { op: 'agentSessions.resync'; paths: string[] };
 

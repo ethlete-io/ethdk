@@ -5,6 +5,7 @@ import {
   TimetrackIssue,
   TimetrackNamingDecline,
   TimetrackStandIn,
+  TimetrackTempoWorklog,
   timetrackAddWorklog,
   timetrackCreateIssue,
   TimetrackRow,
@@ -25,6 +26,7 @@ import {
   timetrackSplitStandIn,
   timetrackStandIns,
   timetrackStatus,
+  timetrackTempoWorklogs,
 } from './timetrack';
 import { plain } from './plain-text';
 import { commitAuthorOf, commitPathsOnDays, currentBranch, projectRootsOf } from './git';
@@ -236,6 +238,38 @@ const rowLine = (row: TimetrackRow) =>
     row.laneKey ?? 'no lane',
   ].join('  ');
 
+const shiftDay = (day: string, days: number) => {
+  const [year, month, date] = day.split('-').map(Number) as [number, number, number];
+  const shifted = new Date(year, month - 1, date + days);
+
+  return `${shifted.getFullYear()}-${pad(shifted.getMonth() + 1)}-${pad(shifted.getDate())}`;
+};
+
+const minutesOf = (ms: number) => Math.round(ms / MINUTE_MS);
+
+const tempoDayLines = (worklogs: readonly TimetrackTempoWorklog[]) => {
+  const days = new Map<string, Map<string, number>>();
+
+  for (const worklog of worklogs) {
+    const issues = days.get(worklog.day) ?? new Map<string, number>();
+    const key = worklog.issueKey ?? `#${worklog.issueId}`;
+
+    issues.set(key, (issues.get(key) ?? 0) + worklog.durationMs);
+    days.set(worklog.day, issues);
+  }
+
+  return [...days]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([day, issues]) => {
+      const total = [...issues.values()].reduce((sum, ms) => sum + ms, 0);
+      const parts = [...issues]
+        .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+        .map(([key, ms]) => `${key} ${minutesOf(ms)}m`);
+
+      return `${day}  ${hours(total)}  ${parts.join('  ')}`;
+    });
+};
+
 /** `--from` and `--to` take anything `Date` reads, so a caller may pass an ISO instant or a clock. */
 const instantOf = (flag: string, raw: string) => {
   const at = new Date(raw);
@@ -440,6 +474,8 @@ The app holds this machine's Jira credentials, so no repository needs a token of
   timetrack standins --split <id> [--repo <dir>] [--paths <dir>,<dir>] [--claim <dir>] [--author <email>]
                                 [--force]
                                 Cut one that covered a whole checkout into one per directory
+  timetrack worklogs [from] [to]
+                                The account's own Tempo worklogs per day (default: the last 7 days)
   timetrack naming [YYYY-MM-DD] Which checkouts the day offers a name for, and why the rest do not
   timetrack resync [path]       Read the agent session logs of a checkout again, after it got a link
 
@@ -685,6 +721,25 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     if (!json) say(`Timetrack reads the agent sessions of ${resynced.paths.join(', ')} again.`);
 
     return printed(resynced, json);
+  }
+
+  if (subcommand === 'worklogs') {
+    const to = positionalArgs(argv)[2] ?? today();
+    const from = value ?? shiftDay(to, -6);
+
+    if (!DAY.test(from)) throw new Error(`Pass a day as YYYY-MM-DD, not ${from}.`);
+    if (!DAY.test(to)) throw new Error(`Pass a day as YYYY-MM-DD, not ${to}.`);
+
+    const found = await timetrackTempoWorklogs({ from, to });
+
+    if (!json) {
+      const total = found.worklogs.reduce((sum, worklog) => sum + worklog.durationMs, 0);
+
+      say(`${found.from} … ${found.to}  ${found.worklogs.length} worklog(s), ${hours(total)}`);
+      tempoDayLines(found.worklogs).forEach((line) => say(`  ${line}`));
+    }
+
+    return printed(found, json);
   }
 
   if (subcommand === 'naming') {

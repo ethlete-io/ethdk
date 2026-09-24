@@ -1,4 +1,4 @@
-import { AgentApiRequest, AgentApiRowEdit, AgentApiWorkCommit } from './model';
+import { AGENT_TEMPO_RANGE_DAYS, AgentApiRequest, AgentApiRowEdit, AgentApiWorkCommit } from './model';
 
 export type AgentApiRequestParse = { ok: true; request: AgentApiRequest } | { ok: false; message: string };
 
@@ -17,6 +17,17 @@ const failed = (message: string): AgentApiRequestParse => ({ ok: false, message 
 const missing = (op: string, field: string) => failed(`${op} needs a ${field}.`);
 
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
+
+const DAY_MS = 24 * 60 * 60_000;
+
+const utcDayOf = (day: string) => {
+  if (!DAY_KEY.test(day)) return undefined;
+
+  const [year, month, date] = day.split('-').map(Number) as [number, number, number];
+  const ms = Date.UTC(year, month - 1, date);
+
+  return new Date(ms).getUTCDate() === date ? ms : undefined;
+};
 
 /**
  * Reads one row edit, or nothing where the caller named no row or no change this endpoint makes.
@@ -192,6 +203,21 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
     const day = asText(raw['day']);
 
     return DAY_KEY.test(day) ? { ok: true, request: { op, day } } : missing(op, 'day as YYYY-MM-DD');
+  }
+
+  if (op === 'tempo.worklogs') {
+    const from = asText(raw['from']);
+    const to = asText(raw['to']);
+    const fromMs = utcDayOf(from);
+    const toMs = utcDayOf(to);
+
+    if (fromMs === undefined) return missing(op, 'from as YYYY-MM-DD');
+    if (toMs === undefined) return missing(op, 'to as YYYY-MM-DD');
+    if (toMs < fromMs) return failed(`tempo.worklogs needs from on or before to, not ${from} after ${to}.`);
+    if ((toMs - fromMs) / DAY_MS + 1 > AGENT_TEMPO_RANGE_DAYS)
+      return failed(`tempo.worklogs reads at most ${AGENT_TEMPO_RANGE_DAYS} days at once.`);
+
+    return { ok: true, request: { op, from, to } };
   }
 
   if (op === 'day.events' || op === 'day.rows') {

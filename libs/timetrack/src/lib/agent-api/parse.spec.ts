@@ -277,4 +277,36 @@ describe('parseAgentRequest, over a day edit', () => {
       message: 'day.rows needs a day as YYYY-MM-DD.',
     });
   });
+
+  it('reads a Tempo worklog range with both ends included', () => {
+    expect(parseAgentRequest({ op: 'tempo.worklogs', from: ' 2026-06-25 ', to: '2026-09-24' })).toEqual({
+      ok: true,
+      request: { op: 'tempo.worklogs', from: '2026-06-25', to: '2026-09-24' },
+    });
+  });
+
+  it('refuses a Tempo range one day wider than the cap', () => {
+    expect(parseAgentRequest({ op: 'tempo.worklogs', from: '2026-06-24', to: '2026-09-24' })).toEqual({
+      ok: false,
+      message: 'tempo.worklogs reads at most 92 days at once.',
+    });
+  });
+
+  it('refuses a Tempo range that runs backwards', () => {
+    expect(parseAgentRequest({ op: 'tempo.worklogs', from: '2026-09-02', to: '2026-09-01' })).toEqual({
+      ok: false,
+      message: 'tempo.worklogs needs from on or before to, not 2026-09-02 after 2026-09-01.',
+    });
+  });
+
+  it('refuses a Tempo range end that names no calendar day', () => {
+    expect(parseAgentRequest({ op: 'tempo.worklogs', from: '2026-02-01', to: '2026-02-30' })).toEqual({
+      ok: false,
+      message: 'tempo.worklogs needs a to as YYYY-MM-DD.',
+    });
+    expect(parseAgentRequest({ op: 'tempo.worklogs', to: '2026-02-03' })).toEqual({
+      ok: false,
+      message: 'tempo.worklogs needs a from as YYYY-MM-DD.',
+    });
+  });
 });

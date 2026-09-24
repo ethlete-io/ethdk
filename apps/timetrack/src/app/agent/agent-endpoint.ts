@@ -15,9 +15,16 @@ import {
   AgentApiStandIn,
   AgentApiStandInSplit,
   AgentApiStatus,
+  AgentApiTempoWorklogs,
   JiraCredentials,
   JiraIssue,
   createJiraIssue$,
+  fetchJiraIssueKeysByIds$,
+  fetchJiraMyself$,
+  fetchTempoWorklogs$,
+  parseTempoWallClock,
+  tempoDay,
+  tempoTimeOfDay,
   describeJiraHierarchy$,
   favoriteProjectKeys,
   fetchJiraFields$,
@@ -60,6 +67,8 @@ type AgentRequestEvent = { id: number; body: unknown };
 type AgentAnswer = { ok: true; value: unknown } | { ok: false; message: string };
 
 const NO_JIRA = 'Timetrack has no Jira host, account email and token yet. Set them in its Settings.';
+
+const NO_TEMPO = 'Timetrack has no Tempo token yet. Set it in its Settings.';
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
@@ -372,6 +381,63 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       })),
     );
 
+  const tempoWorklogs$ = (
+    request: Extract<AgentApiRequest, { op: 'tempo.worklogs' }>,
+  ): Observable<AgentApiTempoWorklogs> =>
+    forkJoin({
+      jira: readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }),
+      tempo: readTempoCredentials$({ secrets: ports.secrets }),
+    }).pipe(
+      switchMap(({ jira, tempo }) => {
+        if (!jira) return throwError(() => new Error(NO_JIRA));
+        if (!tempo) return throwError(() => new Error(NO_TEMPO));
+
+        const from = parseTempoWallClock(request.from, undefined);
+        const to = parseTempoWallClock(request.to, undefined);
+
+        if (!from || !to) return throwError(() => new Error('tempo.worklogs needs days as YYYY-MM-DD.'));
+
+        return fetchJiraMyself$({ transport: ports.transport, credentials: jira }).pipe(
+          switchMap((account) =>
+            fetchTempoWorklogs$({
+              transport: ports.transport,
+              credentials: tempo,
+              accountId: account.accountId,
+              from,
+              to,
+            }),
+          ),
+          switchMap((worklogs) =>
+            fetchJiraIssueKeysByIds$({
+              transport: ports.transport,
+              credentials: jira,
+              ids: worklogs.map((worklog) => worklog.issueId),
+            }).pipe(map((keysByIssueId) => ({ worklogs, keysByIssueId }))),
+          ),
+        );
+      }),
+      map(({ worklogs, keysByIssueId }) => ({
+        from: request.from,
+        to: request.to,
+        worklogs: [...worklogs]
+          .sort((left, right) => left.from.getTime() - right.from.getTime())
+          .map((worklog) => {
+            const startTime = tempoTimeOfDay(worklog.from).slice(0, 5);
+
+            return {
+              id: worklog.id,
+              day: tempoDay(worklog.from),
+              startTime: startTime === '00:00' ? undefined : startTime,
+              startMs: worklog.from.getTime(),
+              durationMs: worklog.durationMs,
+              issueKey: keysByIssueId.get(worklog.issueId),
+              issueId: worklog.issueId,
+              description: worklog.description,
+            };
+          }),
+      })),
+    );
+
   /**
    * The settings that decide what a day's work is named.
    *
@@ -584,6 +650,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return splitStandIn$(request);
       case 'naming.offers':
         return naming$(request);
+      case 'tempo.worklogs':
+        return tempoWorklogs$(request);
       case 'lane.issues':
         return laneIssues$();
       case 'agentSessions.resync':

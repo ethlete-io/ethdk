@@ -278,3 +278,61 @@ describe('timetrack standins', () => {
     expect(asked).toContain('standIn.remove');
   });
 });
+
+describe('timetrack worklogs', () => {
+  const worklog = (over: Record<string, unknown>) => ({
+    id: '1',
+    day: '2026-09-01',
+    startMs: 0,
+    durationMs: 30 * 60_000,
+    issueKey: 'FIP-1',
+    issueId: '10',
+    description: 'private note',
+    ...over,
+  });
+
+  it('sums each day per issue and prints no description', async () => {
+    const bodies: unknown[] = [];
+
+    await withEndpoint((request, response) => {
+      let body = '';
+
+      request.on('data', (chunk) => (body += chunk));
+      request.on('end', () => {
+        bodies.push(JSON.parse(body));
+        answered({
+          from: '2026-09-01',
+          to: '2026-09-02',
+          worklogs: [
+            worklog({ id: '1' }),
+            worklog({ id: '2', issueKey: 'FIP-2', durationMs: 90 * 60_000 }),
+            worklog({ id: '3', durationMs: 15 * 60_000 }),
+            worklog({ id: '4', day: '2026-09-02', issueKey: undefined, issueId: '77' }),
+          ],
+        })(request, response);
+      });
+    });
+
+    const lines = printedLines();
+
+    await expect(run(['worklogs', '2026-09-01', '2026-09-02'])).resolves.toBe(0);
+    expect(bodies).toEqual([{ op: 'tempo.worklogs', from: '2026-09-01', to: '2026-09-02' }]);
+    expect(lines).toEqual([
+      '2026-09-01 … 2026-09-02  4 worklog(s), 2.8h',
+      '  2026-09-01  2.3h  FIP-2 90m  FIP-1 45m',
+      '  2026-09-02  0.5h  #77 30m',
+    ]);
+  });
+
+  it('refuses a range end that is not a day before asking the app', async () => {
+    let calls = 0;
+
+    await withEndpoint((request, response) => {
+      calls += 1;
+      answered({})(request, response);
+    });
+
+    await expect(run(['worklogs', '2026-09-01', 'friday'])).rejects.toThrow(/YYYY-MM-DD, not friday/);
+    expect(calls).toBe(0);
+  });
+});
