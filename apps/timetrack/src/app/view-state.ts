@@ -16,9 +16,13 @@ export type ViewState = {
   day?: string;
   /** The Monday the week view was on, as `YYYY-MM-DD`. */
   weekStart?: string;
-  /** The day timeline's scroll offsets, in CSS pixels. */
-  timelineScroll?: { top: number; left: number };
+  /** The day timeline's scroll offsets in CSS pixels, per `YYYY-MM-DD` day. */
+  timelineScroll?: Record<string, TimelineScroll>;
 };
+
+export type TimelineScroll = { top: number; left: number };
+
+const REMEMBERED_SCROLL_DAYS = 60;
 
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
 const VIEW_PATH = /^[a-z-]+$/;
@@ -41,15 +45,27 @@ const offsetAt = (state: Record<string, unknown>, key: string) => {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined;
 };
 
-const scrollAt = (state: Record<string, unknown>, key: string) => {
-  const value = state[key];
-
+const scrollOf = (value: unknown): TimelineScroll | undefined => {
   if (typeof value !== 'object' || value === null) return undefined;
 
   const top = offsetAt(value as Record<string, unknown>, 'top');
   const left = offsetAt(value as Record<string, unknown>, 'left');
 
   return top === undefined || left === undefined ? undefined : { top, left };
+};
+
+const scrollsAt = (state: Record<string, unknown>, key: string) => {
+  const value = state[key];
+
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return undefined;
+
+  const days = Object.entries(value).flatMap(([day, scroll]): [string, TimelineScroll][] => {
+    const valid = DAY_KEY.test(day) ? scrollOf(scroll) : undefined;
+
+    return valid ? [[day, valid]] : [];
+  });
+
+  return Object.fromEntries(days.sort(([a], [b]) => b.localeCompare(a)).slice(0, REMEMBERED_SCROLL_DAYS));
 };
 
 /**
@@ -72,12 +88,20 @@ export const readViewState = (): ViewState => {
       view: view && VIEW_PATH.test(view) ? view : undefined,
       day: dayAt(state, 'day'),
       weekStart: dayAt(state, 'weekStart'),
-      timelineScroll: scrollAt(state, 'timelineScroll'),
+      timelineScroll: scrollsAt(state, 'timelineScroll'),
     };
   } catch {
     return {};
   }
 };
+
+/** The local calendar day of an instant, as `YYYY-MM-DD`. */
+export const dayKeyOfDate = (at: Date) =>
+  `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, '0')}-${String(at.getDate()).padStart(2, '0')}`;
+
+/** Keeps where one day's timeline was scrolled to, next to the other days'. */
+export const rememberTimelineScroll = (day: string, scroll: TimelineScroll) =>
+  rememberViewState({ timelineScroll: { ...readViewState().timelineScroll, [day]: scroll } });
 
 /** Keeps one field of the state. A storage that refuses the write costs the restore, never the app. */
 export const rememberViewState = (patch: ViewState) => {
