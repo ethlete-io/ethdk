@@ -29,25 +29,25 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
 
 ## Patterns, by exposure
 
-| #   | Pattern                                                                                              | Apps               | Covered                        |
-| --- | ---------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------ |
-| P1  | `queryComputed(() => q.prepare(args(sig)).execute())`, changing args                                 | all (~250 files)   | static args, GET, interop only |
-| P2  | `*etQuery="q() as x; loading as loading; cache: true"`, source query swapped                         | all                | static query only              |
-| P3  | `queryStateResponseSignal(q, { cacheResponse: true })` / `queryStateLoadingSignal`                   | bvb, vbl, dfb      | partial; no source switch      |
-| P4  | `queryComputed(() => q.prepare(x).execute().poll({ interval, takeUntil }))`                          | vbl                | no                             |
-| P5  | `creator.createSignal()` + `.set(q.prepare(x).execute())` from a handler                             | bvb, vbl           | no                             |
-| P6  | `of(q.prepare().execute()).pipe(switchQueryState(), filterSuccess(), …)` → `toSignal`                | dyn, fut           | no                             |
-| P7  | `effect(() => { sig(); q()?.execute({ skipCache: true, cancelPrevious: true }) })`                   | dfb                | no                             |
-| P8  | `tap(() => q()?.execute({ skipCache: true }))` after `switchQueryState()`                            | fut                | no                             |
-| P9  | Legacy `QueryForm` + `QueryField` (debounce, `isResetBy`) feeding `queryComputed`                    | bvb, dfb, dyn, fut | partial (`legacy-query-form`)  |
-| P10 | `queryArrayComputed`, `queryComputedTillTruthy`, `toQuerySubject`, `queryComputedWithForm`           | fut                | no spec at all                 |
-| P11 | Infinity query config + `InfinityQueryDirective`                                                     | bvb, dfb           | `legacy-infinity-trigger`      |
-| P12 | Bearer auth provider + `createQueryCollectionSubject` login/refresh + `takeUntilResponse`            | bvb, dfb, dyn      | partial                        |
-| P13 | Client options off: `enableSmartPolling`, `autoRefreshQueriesOnWindowFocus`, `cacheAdapter: () => 0` | vbl                | no                             |
-| P14 | `ExperimentalQuery` client/creators with v2 call sites                                               | dfb                | no                             |
-| P15 | v3 `creator(withArgs(() => …), withPolling(…), withSuccessHandling(…))` field init                   | fut                | generic                        |
-| P16 | `createQuerySubmission`, `.clone()`, `provideLegacyPrepareFallback()`                                | fut                | check                          |
-| P17 | Manual `query.subtle.destroy()` for detached queries                                                 | dfb                | no                             |
+| #   | Pattern                                                                                                            | Apps               | Covered                                                          |
+| --- | ------------------------------------------------------------------------------------------------------------------ | ------------------ | ---------------------------------------------------------------- |
+| P1  | `queryComputed(() => q.prepare(args(sig)).execute())`, changing args                                               | all (~250 files)   | static args, GET, interop only                                   |
+| P2  | `*etQuery="q() as x; loading as loading; cache: true"`, source query swapped                                       | all                | static query only                                                |
+| P3  | `queryStateResponseSignal(q, { cacheResponse: true })` / `queryStateLoadingSignal`                                 | bvb, vbl, dfb      | partial; no source switch                                        |
+| P4  | `queryComputed(() => q.prepare(x).execute().poll({ interval, takeUntil }))`                                        | vbl                | no                                                               |
+| P5  | `creator.createSignal()` + `.set(q.prepare(x).execute())` from a handler                                           | bvb, vbl           | no                                                               |
+| P6  | `of(q.prepare().execute()).pipe(switchQueryState(), filterSuccess(), …)` → `toSignal`                              | dyn, fut           | no                                                               |
+| P7  | `effect(() => { sig(); q()?.execute({ skipCache: true, cancelPrevious: true }) })`                                 | dfb                | no                                                               |
+| P8  | `tap(() => q()?.execute({ skipCache: true }))` after `switchQueryState()`                                          | fut                | no                                                               |
+| P9  | Legacy `QueryForm` + `QueryField` (debounce, `isResetBy`) feeding `queryComputed`                                  | bvb, dfb, dyn, fut | partial (`legacy-query-form`)                                    |
+| P10 | `queryArrayComputed`, `queryComputedTillTruthy`, `toQuerySubject`, `queryComputedWithForm`                         | fut                | no spec at all                                                   |
+| P11 | Infinity query config + `InfinityQueryDirective`                                                                   | bvb, dfb           | `legacy-infinity-trigger`                                        |
+| P12 | Bearer auth provider + `createQueryCollectionSubject` login/refresh + `takeUntilResponse`                          | bvb, dfb, dyn      | partial                                                          |
+| P13 | Client options off: `enableSmartPolling`, `autoRefreshQueriesOnWindowFocus`, `cacheAdapter: () => 0`               | vbl                | no                                                               |
+| P14 | Early v3 (`ExperimentalQuery` namespace, 5.x) client/creators, migrated by `prep-for-query-v3`, with v2 call sites | dfb                | migration spec only; no scenario on the migrated output          |
+| P15 | v3 `creator(withArgs(() => …), withPolling(…), withSuccessHandling(…))` field init                                 | fut                | generic                                                          |
+| P16 | `createQuerySubmission`, `.clone()`, `provideLegacyPrepareFallback()`                                              | fut                | `createQuerySubmission` covered (spec + 2 scenarios); rest check |
+| P17 | Manual `query.subtle.destroy()` for detached queries                                                               | dfb                | no                                                               |
 
 ## Suspected defects (from reading; prove with a failing scenario first)
 
@@ -72,4 +72,5 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
 - [ ] S5 P10 specs; defects 4-6
 - [ ] S6 P9, P12, P13, P14, P17
 - [ ] S7 Release gate: build the SDK into one 5.x app and fut-frontend, smoke-run before publish
+- [ ] S9 Export coverage gate: every runtime export of `libs/query/src/index.ts` must appear in a scenario, or be on an allowlist with a reason; CI fails otherwise
 - [ ] S8 Same audit for `libs/core` and `libs/components`
