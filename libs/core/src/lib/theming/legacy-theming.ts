@@ -7,6 +7,16 @@ import {
   ɵProvideColorThemesPrefix,
 } from './color-theme.util';
 
+/** Reads the nonce where Angular's default `CSP_NONCE` does, since these run outside any injector. */
+const createNoncedStyle = () => {
+  const style = document.createElement('style');
+  const nonce = document.body?.querySelector('[ngCspNonce]')?.getAttribute('ngCspNonce');
+
+  if (nonce) style.setAttribute('nonce', nonce);
+
+  return style;
+};
+
 /**
  * @deprecated Migrate to Tailwind v4. Intent to remove in v6.
  */
@@ -101,7 +111,7 @@ export const createRootThemeCss = (themes: ColorTheme[]) => {
   `;
 
   document.getElementById('et-root-themes')?.remove();
-  const style = document.createElement('style');
+  const style = createNoncedStyle();
   style.id = `et-root-themes`;
   style.appendChild(document.createTextNode(css));
   document.head.appendChild(style);
@@ -132,7 +142,7 @@ export const createThemeStyle = (theme: ColorTheme, isAlt: boolean) => {
   `;
 
   document.getElementById(`${classPrefix}--${cssThemeName}`)?.remove();
-  const style = document.createElement('style');
+  const style = createNoncedStyle();
   style.id = `${classPrefix}--${cssThemeName}`;
   style.appendChild(document.createTextNode(css));
   document.head.appendChild(style);

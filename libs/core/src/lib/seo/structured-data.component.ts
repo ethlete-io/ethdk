@@ -7,7 +7,7 @@ import * as JsonLD from './json-ld';
   template: '',
   encapsulation: ViewEncapsulation.None,
   host: {
-    style: 'display: none',
+    '[style.display]': '"none"',
     '[innerHTML]': 'jsonLD()',
   },
 })
