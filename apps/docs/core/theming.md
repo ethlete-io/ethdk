@@ -137,6 +137,77 @@ It returns `null` for an app that registers a default per surface type. `prefers
 decides which of the two `:root` paints, so the root surface of such an app cannot be resolved at
 runtime. Scope a surface explicitly with `etProvideSurface` where a subtree must elevate anyway.
 
+### A dark-only app
+
+The smallest complete setup: dark surfaces only, one per elevation the app stacks, one accent, and an error theme (form fields resolve their error state through [`injectErrorTheme()`](#semantic-themes) and throw without one). Every name below is the app's own:
+
+```ts
+// surface-themes.ts
+export const SURFACE_THEMES = [
+  {
+    name: 'page',
+    type: 'dark',
+    elevation: 0,
+    isDefault: true,
+    background: '18 18 18',
+    color: '255 255 255',
+    colorMuted: '163 163 163',
+    colorSubtle: '115 115 115',
+    border: '64 64 64',
+    interactionColor: {
+      color: {
+        default: '255 255 255',
+        hover: '255 255 255',
+        focus: '255 255 255',
+        active: '255 255 255',
+        disabled: '255 255 255',
+      },
+    },
+  },
+  {
+    name: 'card',
+    type: 'dark',
+    elevation: 1,
+    background: '30 30 30',
+    color: '255 255 255',
+    colorMuted: '163 163 163',
+    colorSubtle: '115 115 115',
+    border: '64 64 64',
+    interactionColor: {
+      color: {
+        default: '255 255 255',
+        hover: '255 255 255',
+        focus: '255 255 255',
+        active: '255 255 255',
+        disabled: '255 255 255',
+      },
+    },
+  },
+] satisfies SurfaceTheme[];
+
+// themes.ts
+export const THEMES = [
+  {
+    name: 'accent',
+    isDefault: true,
+    primary: {
+      color: { default: '0 200 150', hover: '0 180 135', active: '0 160 120', disabled: '0 80 60' },
+      onColor: { default: '0 20 20' },
+    },
+  },
+  {
+    name: 'error',
+    type: 'error',
+    primary: {
+      color: { default: '255 88 88', hover: '235 80 80', active: '215 70 70', disabled: '120 40 40' },
+      onColor: { default: '0 20 20' },
+    },
+  },
+] satisfies ColorTheme[];
+```
+
+Keep the definitions literal objects: the generators read the files statically, without running them. Register both and run both generators as in [Registering themes](#registering-themes). With a single `type`, the `page` surface lands on plain `:root` and `color-scheme: dark` comes with it - there is no light counterpart to write. `[etAutoSurface]` inside the page resolves `card`; register an `elevation: 2` surface as well if panels nest a level deeper.
+
 ### Surface directives
 
 | Directive                     | Selector                 | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
@@ -217,6 +288,17 @@ providers: [
 `token` must name a registered theme; `label` is what a user reads next to the swatch, already translated. Provide it wherever the picker can see it - app-wide in `appConfig`, or on a single feature's component.
 
 Nothing in the SDK requires a palette. A component reads it with `injectColorPalette({ optional: true })` and falls back to accepting a raw theme name when there is none - see the [scheduler's color field](/components/scheduler#fields).
+
+### Categorical colors
+
+There is no separate categorical-color system: a categorical color is a registered color theme with no `type`, and the palette above is the app's categorical order. Register one theme per category (a product, a team, a data series), list them in `provideColorPalette` where the order is what matters, and address a single category by its theme name where the category owns its color:
+
+```html
+<!-- `product-pro` is one of this app's registered themes -->
+<et-badge color="product-pro">Pro</et-badge>
+```
+
+The charts read the palette for series order and take a per-series `colorToken` - see [chart series colors](/components/chart#series-colors). Inside CSS, the category's color is `--et-theme-color-primary-solid` under that scope; never repeat its hex value in a stylesheet.
 
 ## Semantic themes
 
