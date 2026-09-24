@@ -1,4 +1,5 @@
 import { AgentPromptEvent, AgentSessionEvent, AgentUsageEvent, PromptAskedBy, TokenUsage } from '../model/event';
+import { pathIsUnder } from '../model/project-link';
 import { asJsonObject, countAt, objectAt, stringAt } from './record';
 import { AgentSessionLogParseOptions, AgentSessionLogParser, DEFAULT_AGENT_SESSION_SAMPLE_INTERVAL_MS } from './source';
 
@@ -9,6 +10,8 @@ export const CLAUDE_CODE_PROVIDER = 'claude-code';
 const SYNTHETIC_MODEL = '<synthetic>';
 
 type ActivityRecord = { at: Date; sessionId: string; cwd: string; gitBranch?: string };
+
+type WorkedRecord = ActivityRecord & { workedIn: string };
 
 type TitleCandidates = { custom?: string; generated?: string; firstPrompt?: string };
 
@@ -41,6 +44,51 @@ const activityOf = (record: Record<string, unknown>): ActivityRecord | null => {
   return Number.isNaN(at.getTime()) ? null : { at, sessionId, cwd, gitBranch: branchOf(record) };
 };
 
+const LEADING_CD = /^\s*cd\s+(?:"([^"]+)"|'([^']+)'|([^\s;&|]+))/;
+
+/**
+ * Where one tool call worked: the absolute path it named, `null` for the working directory, and
+ * `undefined` where the call says nothing about a place.
+ *
+ * Claude Code puts the shell back into the session's directory after a command that left it, so a
+ * command reaches another checkout only by changing into it first, and every record still names the
+ * directory the session started in.
+ */
+const workedInOfTool = (block: Record<string, unknown>): string | null | undefined => {
+  const input = stringAt(block, 'type') === 'tool_use' ? objectAt(block, 'input') : null;
+
+  if (!input) return undefined;
+
+  if (stringAt(block, 'name') === 'Bash') {
+    const match = LEADING_CD.exec(stringAt(input, 'command') ?? '');
+    const path = match?.[1] ?? match?.[2] ?? match?.[3];
+
+    return path?.startsWith('/') ? path : null;
+  }
+
+  const path = stringAt(input, 'file_path') ?? stringAt(input, 'notebook_path') ?? stringAt(input, 'path');
+
+  if (path === undefined) return undefined;
+
+  return path.startsWith('/') ? path : null;
+};
+
+const workedInOfRecord = (record: Record<string, unknown>): string | null | undefined => {
+  const content = objectAt(record, 'message')?.['content'];
+  let found: string | null | undefined;
+
+  if (!Array.isArray(content)) return undefined;
+
+  for (const block of content) {
+    const tool = objectAt({ block }, 'block');
+    const said = tool ? workedInOfTool(tool) : undefined;
+
+    if (said !== undefined) found = said;
+  }
+
+  return found;
+};
+
 /**
  * The turn's own counts, from the top level of `usage` only. `usage.iterations` restates them per API
  * call, so reading it as well would count a turn twice.
@@ -59,7 +107,7 @@ const tokenUsageOf = (usage: Record<string, unknown>): TokenUsage => ({
  * A subagent's records name the parent session in `sessionId` and the subagent in `agentId`, so a
  * subagent's spend already lands in the stream that asked for it.
  */
-const usageOf = (record: Record<string, unknown>): AgentUsageEvent | null => {
+const usageOf = (record: Record<string, unknown>, workedIn: string | undefined): AgentUsageEvent | null => {
   const activity = activityOf(record);
   const message = objectAt(record, 'message');
   const usage = message ? objectAt(message, 'usage') : null;
@@ -77,6 +125,7 @@ const usageOf = (record: Record<string, unknown>): AgentUsageEvent | null => {
     turnId,
     cwd: activity.cwd,
     gitBranch: activity.gitBranch,
+    workedIn: workedIn ?? activity.cwd,
     model,
     usage: tokenUsageOf(usage),
     agentId: stringAt(record, 'agentId'),
@@ -118,7 +167,7 @@ const askedByOf = (record: Record<string, unknown>): PromptAskedBy | undefined =
  * A prompt nobody asked for is still emitted, with `askedBy: 'machine'`. It is what the session ran
  * on, so the day needs it to say what happened; it simply may not say that a person was there.
  */
-const promptOf = (record: Record<string, unknown>): AgentPromptEvent | null => {
+const promptOf = (record: Record<string, unknown>, workedIn: string | undefined): AgentPromptEvent | null => {
   if (stringAt(record, 'type') !== 'user') return null;
   if (record['toolUseResult'] !== undefined && record['toolUseResult'] !== null) return null;
   if (record['isMeta'] === true || record['isSidechain'] === true) return null;
@@ -140,6 +189,7 @@ const promptOf = (record: Record<string, unknown>): AgentPromptEvent | null => {
     promptId,
     cwd: activity.cwd,
     gitBranch: activity.gitBranch,
+    workedIn: workedIn ?? activity.cwd,
     ...(askedBy ? { askedBy } : {}),
   };
 };
@@ -176,7 +226,23 @@ const fromPrompt = (prompt: string | undefined, fallback: AgentSessionLogParseOp
   return oneLine.length > fallback.maxLength ? `${oneLine.slice(0, fallback.maxLength).trimEnd()}…` : oneLine;
 };
 
-const contextOf = (record: ActivityRecord) => `${record.cwd}\u0000${record.gitBranch ?? ''}`;
+/**
+ * The path one level below where `workedIn` parts from `cwd`, or nothing while it stays inside. Coarse,
+ * so a session editing many files of another checkout emits on entering it rather than per file.
+ */
+const leftCwdFor = (record: WorkedRecord) => {
+  if (pathIsUnder(record.cwd, record.workedIn)) return '';
+
+  const from = record.cwd.split('/');
+  const to = record.workedIn.split('/');
+  let shared = 0;
+
+  while (shared < from.length && from[shared] === to[shared]) shared++;
+
+  return to.slice(0, shared + 1).join('/');
+};
+
+const contextOf = (record: WorkedRecord) => `${record.cwd}\u0000${record.gitBranch ?? ''}\u0000${leftCwdFor(record)}`;
 
 /**
  * Reads a Claude Code session log — the JSONL file under `~/.claude/projects/<cwd-slug>/` — into
@@ -196,13 +262,14 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
   const interval = options.sampleIntervalMs ?? DEFAULT_AGENT_SESSION_SAMPLE_INTERVAL_MS;
   const after = options.resume?.after;
   const titles: TitleCandidates = {};
-  const records: ActivityRecord[] = [];
+  const records: WorkedRecord[] = [];
   // One assistant message is written as several records — one per content block — and each of them
   // restates the same `message.usage`. Measured over this machine's logs: 46 % of usage records repeat
   // an id, and a repeated id never carried different counts. So the first one wins.
   const usageByTurnId = new Map<string, AgentUsageEvent>();
   const promptById = new Map<string, AgentPromptEvent>();
   let unparsedLines = 0;
+  let workedIn = options.resume?.session?.workedIn;
 
   for (const line of options.lines) {
     if (!line.trim()) continue;
@@ -216,7 +283,11 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
 
     readTitle(parsed, titles);
 
-    const spend = usageOf(parsed);
+    const said = workedInOfRecord(parsed);
+
+    if (said !== undefined) workedIn = said ?? undefined;
+
+    const spend = usageOf(parsed, workedIn);
 
     // No `after` guard: `after` follows the thinned samples, and a turn behind it is spend, not a
     // repeat. The store's dedupe key — the provider and the turn id — is what makes a re-read safe.
@@ -224,7 +295,7 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
 
     // Kept behind `after` for the same reason spend is: the record's own id is what the store
     // deduplicates a prompt on, so a re-read appends nothing.
-    const prompt = promptOf(parsed);
+    const prompt = promptOf(parsed, workedIn);
 
     if (prompt && !promptById.has(prompt.promptId)) promptById.set(prompt.promptId, prompt);
 
@@ -232,7 +303,7 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
 
     if (!record || (after && record.at.getTime() <= after.getTime())) continue;
 
-    records.push(record);
+    records.push({ ...record, workedIn: workedIn ?? record.cwd });
   }
 
   records.sort((a, b) => a.at.getTime() - b.at.getTime());
@@ -249,7 +320,7 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
   const emitted = new Map<string, { at: number; context: string }>();
   const events: AgentSessionEvent[] = [];
 
-  const emit = (record: ActivityRecord) => {
+  const emit = (record: WorkedRecord) => {
     emitted.set(record.sessionId, { at: record.at.getTime(), context: contextOf(record) });
     events.push({
       at: record.at,
@@ -258,6 +329,7 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
       sessionId: record.sessionId,
       cwd: record.cwd,
       gitBranch: record.gitBranch,
+      workedIn: record.workedIn,
       title,
     });
   };
@@ -280,5 +352,5 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
   const usage = [...usageByTurnId.values()].sort((a, b) => a.at.getTime() - b.at.getTime());
   const prompts = [...promptById.values()].sort((a, b) => a.at.getTime() - b.at.getTime());
 
-  return { events, usage, prompts, title, unparsedLines };
+  return { events, usage, prompts, title, session: workedIn ? { workedIn } : undefined, unparsedLines };
 };

@@ -8,7 +8,11 @@ export type UnlinkedAgentSessions = {
 };
 
 /** Anything an agent produced inside a checkout: an activity sample, or one turn's token spend. */
-type AgentSessionRecord = { at: Date; cwd: string };
+type AgentSessionRecord = { at: Date; cwd: string; workedIn?: string };
+
+/** A record whose work touched a private checkout is private, whichever directory it was started in. */
+const workedPrivately = (event: AgentSessionRecord, links: readonly TimetrackProjectLink[]) =>
+  !!event.workedIn && matchProjectLink({ context: { repoPath: event.workedIn }, links })?.target.kind === 'private';
 
 export type LinkedAgentSessions<TEvent extends AgentSessionRecord> = {
   kept: TEvent[];
@@ -35,6 +39,8 @@ export const keepLinkedAgentSessions = <TEvent extends AgentSessionRecord>(optio
   const unlinked = new Map<string, UnlinkedAgentSessions>();
 
   for (const event of options.events) {
+    if (workedPrivately(event, options.links)) continue;
+
     const target = matchProjectLink({ context: { repoPath: event.cwd }, links: options.links })?.target;
 
     if (target?.kind === 'project') {
@@ -76,5 +82,7 @@ export const keepPublicAgentRecords = <TEvent extends AgentSessionRecord>(option
   links: readonly TimetrackProjectLink[];
 }): TEvent[] =>
   options.events.filter(
-    (event) => matchProjectLink({ context: { repoPath: event.cwd }, links: options.links })?.target.kind !== 'private',
+    (event) =>
+      !workedPrivately(event, options.links) &&
+      matchProjectLink({ context: { repoPath: event.cwd }, links: options.links })?.target.kind !== 'private',
   );

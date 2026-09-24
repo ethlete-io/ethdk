@@ -11,11 +11,14 @@ export const DEFAULT_AGENT_SESSION_SAMPLE_INTERVAL_MS = 60_000;
  * on every record.
  *
  * Codex names the session on a header record and the model on a turn boundary, so a read that resumes
- * mid-turn sees neither. Claude Code repeats both on every record and carries nothing.
+ * mid-turn sees neither. Claude Code repeats both on every record, and carries only where its last tool
+ * call worked.
  */
 export type AgentLogSessionState = {
   sessionId?: string;
   model?: string;
+  /** Where the last tool call worked, which a record without a tool call carries on. */
+  workedIn?: string;
 };
 
 export type AgentSessionLogParseOptions = {

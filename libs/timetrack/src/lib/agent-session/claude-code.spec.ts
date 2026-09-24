@@ -106,6 +106,7 @@ describe('parseClaudeCodeSessionLog', () => {
         sessionId: SESSION,
         cwd: CWD,
         gitBranch: BRANCH,
+        workedIn: CWD,
         title: 'Handoff resume SDK release',
       },
       { ...result.events[1], at: at(5) },
@@ -327,6 +328,7 @@ describe('parseClaudeCodeSessionLog, on token spend', () => {
         turnId: 'msg_0',
         cwd: CWD,
         gitBranch: BRANCH,
+        workedIn: CWD,
         model: 'claude-opus-5',
         usage: { input: 2, output: 289, cacheWrite: 17_421, cacheRead: 18_910, thinking: 96 },
         agentId: undefined,
@@ -454,6 +456,7 @@ describe('parseClaudeCodeSessionLog prompts', () => {
         promptId: 'prompt-5-0',
         cwd: CWD,
         gitBranch: BRANCH,
+        workedIn: CWD,
       },
     ]);
   });
@@ -532,5 +535,102 @@ describe('parseClaudeCodeSessionLog prompts', () => {
 
   it('keeps one copy of a prompt whose record repeats', () => {
     expect(parse([prompt({ minute: 5 }), prompt({ minute: 5 })]).prompts).toHaveLength(1);
+  });
+});
+
+const ALTCHA = '/home/tom/dev/fut-frontend-altcha';
+
+const toolCall = (options: { minute: number; second?: number; name: string; input: Record<string, unknown> }) =>
+  JSON.stringify({
+    type: 'assistant',
+    uuid: `tool-${options.minute}-${options.second ?? 0}`,
+    timestamp: at(options.minute, options.second).toISOString(),
+    cwd: CWD,
+    sessionId: SESSION,
+    gitBranch: BRANCH,
+    message: {
+      id: `msg_tool_${options.minute}_${options.second ?? 0}`,
+      model: 'claude-opus-5',
+      role: 'assistant',
+      content: [{ type: 'tool_use', id: 'toolu_1', name: options.name, input: options.input }],
+      usage: { input_tokens: 1, output_tokens: 1 },
+    },
+  });
+
+const workedIn = (events: { workedIn?: string }[]) => events.map((event) => event.workedIn);
+
+describe('parseClaudeCodeSessionLog, on where the work happened', () => {
+  it('reads the working directory as where a session worked until a tool call names another path', () => {
+    const result = parse([record({ minute: 0 })]);
+
+    expect(workedIn(result.events)).toEqual([CWD]);
+  });
+
+  it('follows a command that changes into another checkout first, and emits there inside the interval', () => {
+    const result = parse(
+      [
+        record({ minute: 0 }),
+        toolCall({ minute: 0, second: 5, name: 'Bash', input: { command: `cd ${ALTCHA} && git status` } }),
+        record({ minute: 0, second: 6, type: 'user' }),
+        record({ minute: 0, second: 30 }),
+      ],
+      { sampleIntervalMs: 60_000 },
+    );
+
+    expect(workedIn(result.events)).toEqual([CWD, ALTCHA, ALTCHA]);
+    expect(times(result.events)).toEqual([at(0, 0), at(0, 5), at(0, 30)].map((date) => date.toISOString()));
+  });
+
+  it('follows the file an edit, a write or a read names', () => {
+    const file = `${ALTCHA}/libs/domain/auth/src/lib/login.ts`;
+
+    for (const name of ['Edit', 'Write', 'Read']) {
+      const result = parse([toolCall({ minute: 0, name, input: { file_path: file } })]);
+
+      expect(workedIn(result.events)).toEqual([file]);
+    }
+  });
+
+  it('returns to the working directory for a command that changes into no absolute path', () => {
+    const result = parse(
+      [
+        toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && git status` } }),
+        toolCall({ minute: 2, name: 'Bash', input: { command: 'git push' } }),
+      ],
+      { sampleIntervalMs: 60_000 },
+    );
+
+    expect(workedIn(result.events)).toEqual([ALTCHA, CWD]);
+  });
+
+  it('keeps where the work was for a tool call that names no path', () => {
+    const result = parse(
+      [
+        toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && git status` } }),
+        toolCall({ minute: 2, name: 'ToolSearch', input: { query: 'select:Monitor' } }),
+      ],
+      { sampleIntervalMs: 60_000 },
+    );
+
+    expect(workedIn(result.events)).toEqual([ALTCHA, ALTCHA]);
+  });
+
+  it('stamps the turn and the prompt with it as well', () => {
+    const result = parse([
+      toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && yarn test` } }),
+      prompt({ minute: 1 }),
+    ]);
+
+    expect(workedIn(result.usage)).toEqual([ALTCHA]);
+    expect(workedIn(result.prompts)).toEqual([ALTCHA]);
+  });
+
+  it('carries it into the next read of the same log', () => {
+    const first = parse([toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && git status` } })]);
+    const next = parse([record({ minute: 3 })], {
+      resume: { after: first.events.at(-1)?.at, title: first.title, cwd: CWD, session: first.session },
+    });
+
+    expect(workedIn(next.events)).toEqual([ALTCHA]);
   });
 });

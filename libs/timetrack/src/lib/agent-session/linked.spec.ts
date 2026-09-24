@@ -75,6 +75,15 @@ describe('keepPublicAgentRecords', () => {
 
     expect(keepPublicAgentRecords({ events: [dropped], links: LINKS })).toEqual([]);
   });
+
+  it('drops a turn that worked in a private checkout, wherever it was started', () => {
+    const dropped = {
+      ...spend('/home/tom/dev/fut-frontend', '2026-09-07T10:04:00Z'),
+      workedIn: '/home/tom/dev/side/x.ts',
+    };
+
+    expect(keepPublicAgentRecords({ events: [dropped], links: LINKS })).toEqual([]);
+  });
 });
 
 describe('keepLinkedAgentSessions', () => {
@@ -88,6 +97,12 @@ describe('keepLinkedAgentSessions', () => {
     const kept = session('/home/tom/dev/fut-frontend/apps/web', '2026-08-17T09:00:00Z');
 
     expect(keepLinkedAgentSessions({ events: [kept], links: LINKS }).kept).toEqual([kept]);
+  });
+
+  it('drops a session that worked in a private checkout without reporting it as unlinked', () => {
+    const worked = { ...session('/home/tom/dev/fut-frontend', '2026-08-17T09:00:00Z'), workedIn: '/home/tom/dev/side' };
+
+    expect(keepLinkedAgentSessions({ events: [worked], links: LINKS })).toEqual({ kept: [], unlinked: [] });
   });
 
   it('drops a private session without reporting it as unlinked, because it has its answer', () => {

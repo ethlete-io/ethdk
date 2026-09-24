@@ -97,6 +97,7 @@ pub async fn events_between(db: State<'_, Db>, from_ms: i64, to_ms: i64) -> Time
 /// An event whose `dedupe_key` is already stored is skipped rather than inserted, which is what lets
 /// the git collector rescan a window it has already read. A calendar occurrence is the exception: it
 /// is read ahead of time, so an invitation answered after that first read replaces the stored payload.
+/// So is an agent's event: a log read again from the top re-files what an older parser placed wrong.
 /// The count that comes back is the rows that were new or replaced, so a collector can report what it
 /// actually changed instead of what it looked at.
 ///
@@ -149,7 +150,8 @@ fn append(
         let mut insert = transaction.prepare(
             "INSERT INTO collected_event (at_ms, source, kind, payload, dedupe_key) VALUES (?1, ?2, ?3, ?4, ?5)
              ON CONFLICT (dedupe_key) DO UPDATE SET payload = excluded.payload
-             WHERE collected_event.kind = 'calendar-event' AND collected_event.payload IS NOT excluded.payload",
+             WHERE collected_event.kind IN ('calendar-event', 'agent-session', 'agent-usage', 'agent-prompt')
+               AND collected_event.payload IS NOT excluded.payload",
         )?;
         for event in events {
             if crate::pause::is_paused_at(&paused, event.at_ms) {
@@ -735,6 +737,42 @@ mod tests {
         assert_eq!(append(&mut connection, &[meeting(true)], &[], None).unwrap(), 1);
         assert_eq!(append(&mut connection, &[meeting(true)], &[], None).unwrap(), 0);
         assert_eq!(accepted_of(&connection), vec![true]);
+    }
+
+    fn agent_sample(worked_in: Option<&str>) -> StoredEvent {
+        StoredEvent {
+            at_ms: 1_000,
+            source: "agent-session".to_string(),
+            kind: "agent-session".to_string(),
+            payload: serde_json::json!({ "cwd": "/home/tom/dev/fut-frontend", "workedIn": worked_in }),
+            dedupe_key: Some("agent-session:s1:1000".to_string()),
+        }
+    }
+
+    fn worked_in_of(connection: &Connection) -> Vec<Option<String>> {
+        let mut statement = connection
+            .prepare("SELECT json_extract(payload, '$.workedIn') FROM collected_event WHERE kind = 'agent-session'")
+            .unwrap();
+        let rows = statement.query_map([], |row| row.get(0)).unwrap();
+
+        rows.collect::<Result<Vec<_>, _>>().unwrap()
+    }
+
+    #[test]
+    fn replaces_an_agent_sample_a_re_read_of_its_log_placed_elsewhere() {
+        let mut connection = store();
+        let worktree = Some("/home/tom/dev/fut-frontend-altcha");
+
+        assert_eq!(append(&mut connection, &[agent_sample(None)], &[], None).unwrap(), 1);
+        assert_eq!(
+            append(&mut connection, &[agent_sample(worktree)], &[], None).unwrap(),
+            1
+        );
+        assert_eq!(
+            append(&mut connection, &[agent_sample(worktree)], &[], None).unwrap(),
+            0
+        );
+        assert_eq!(worked_in_of(&connection), vec![worktree.map(str::to_string)]);
     }
 
     fn meeting_at(at_ms: i64, key: &str) -> StoredEvent {

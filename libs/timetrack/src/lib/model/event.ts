@@ -60,6 +60,12 @@ export type AgentSessionEvent = CollectedEventBase<'agent-session', 'agent-sessi
   sessionId: string;
   cwd: string;
   gitBranch?: string;
+  /**
+   * Where the work happened: the absolute path the latest tool call named, else `cwd`. An agent can
+   * work in another checkout than the one it was started in, and `cwd` alone never says so. Absent on
+   * everything a parser that did not read tool calls wrote.
+   */
+  workedIn?: string;
   /** The session's own summary line, when it has one. */
   title?: string;
 };
@@ -102,6 +108,12 @@ export type AgentUsageEvent = CollectedEventBase<'agent-usage', 'agent-usage'> &
   turnId: string;
   cwd: string;
   gitBranch?: string;
+  /**
+   * Where the work happened: the absolute path the latest tool call named, else `cwd`. An agent can
+   * work in another checkout than the one it was started in, and `cwd` alone never says so. Absent on
+   * everything a parser that did not read tool calls wrote.
+   */
+  workedIn?: string;
   model: string;
   usage: TokenUsage;
   /** The subagent that ran the turn. Its spend belongs to the stream of `sessionId`. */
@@ -130,6 +142,12 @@ export type AgentPromptEvent = CollectedEventBase<'agent-prompt', 'agent-prompt'
   promptId: string;
   cwd: string;
   gitBranch?: string;
+  /**
+   * Where the work happened: the absolute path the latest tool call named, else `cwd`. An agent can
+   * work in another checkout than the one it was started in, and `cwd` alone never says so. Absent on
+   * everything a parser that did not read tool calls wrote.
+   */
+  workedIn?: string;
   /**
    * Who asked, where the log says so. `machine` is a scheduled run, a task notification or a message
    * from another session, and it is the one value that denies presence — nobody was at the keyboard

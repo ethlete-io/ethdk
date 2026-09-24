@@ -58,7 +58,7 @@ const pathOf = (event: CollectedEvent) => {
   }
 
   if (event.kind === 'agent-usage' || event.kind === 'agent-prompt') {
-    return [event.cwd, event.gitBranch].filter(Boolean).join(' ');
+    return [event.cwd, event.gitBranch, event.workedIn].filter(Boolean).join(' ');
   }
 
   return undefined;

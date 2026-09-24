@@ -267,6 +267,15 @@ describe("applyExclusionRules, on a turn's token spend", () => {
     expect(result.kept).toEqual([]);
   });
 
+  it('tests a title pattern against the path the turn worked in', () => {
+    const result = applyExclusionRules({
+      events: [{ ...spend('/home/tom/dev/fut-frontend'), workedIn: '/home/tom/dev/invoices/ledger.ts' }],
+      rules: [{ kind: 'title-pattern', pattern: 'invoices' }],
+    });
+
+    expect(result.kept).toEqual([]);
+  });
+
   it('keeps a turn no rule names, and reports no name in the summary', () => {
     const kept = spend('/home/tom/dev/fut-frontend', 'next');
 

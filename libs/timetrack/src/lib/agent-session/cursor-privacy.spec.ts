@@ -56,6 +56,10 @@ describe('sanitizeAgentSessionCursors', () => {
     });
   });
 
+  it('drops them for a log whose last tool call worked in a private checkout', () => {
+    expect(sanitized({ session: { workedIn: '/home/tom/dev/side/notes.md' } }).session).toBeUndefined();
+  });
+
   it('drops them for a checkout below a private directory too', () => {
     expect(sanitized({ cwd: '/home/tom/dev/side/experiment' }).cwd).toBeUndefined();
   });

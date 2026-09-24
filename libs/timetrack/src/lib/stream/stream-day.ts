@@ -23,6 +23,7 @@ import { BreakWindow, breakGaps, breakMs, breakWindows } from './breaks';
 import { classifyCalls, lastHostSampleAt } from './calls';
 import { PresenceSample, presenceWindows } from './presence';
 import { UnnamedFocus, UnnamedFocusReason, mergeUnnamedTitles } from './unnamed-focus';
+import { fileAgentEventsByWork } from './worked-in';
 
 /** The key of the one line every application with no checkout folds into. */
 export const OTHER_APPLICATIONS_KEY = 'other-applications';
@@ -948,10 +949,11 @@ export const streamDay = (options: {
   const config = { ...DEFAULT_STREAM_DAY_OPTIONS, ...options.options };
   const roots = config.repoRoots ?? [];
   const links = config.links ?? [];
+  const events = fileAgentEventsByWork({ events: options.events, roots });
   const ownAppIds = new Set((config.ownAppIds ?? []).map((id) => id.toLowerCase()));
   const noWorkContextApps = new Set((config.noWorkContextApps ?? []).map((id) => id.toLowerCase()));
   const transientApps = new Set((config.transientApps ?? []).map((id) => id.toLowerCase()));
-  const observed = options.events
+  const observed = events
     .filter(isActivityEvent)
     .filter((sample) => READ_SOURCES.includes(sample.source))
     // A heartbeat naming no checkout has no job here: it is not presence, and the directory it carries
@@ -975,13 +977,13 @@ export const streamDay = (options: {
     return !repoPath || !isPrivate({ repoPath, links });
   });
 
-  const prompts = options.events
+  const prompts = events
     .filter((event): event is AgentPromptEvent => event.source === 'agent-prompt')
     .filter((prompt) => !isPrivate({ repoPath: repoRootOf({ path: prompt.cwd, roots }), links }))
     .slice()
     .sort((a, b) => a.at.getTime() - b.at.getTime());
 
-  const usage = options.events
+  const usage = events
     .filter((event): event is AgentUsageEvent => event.source === 'agent-usage')
     .filter((turn) => !turn.cwd || !isPrivate({ repoPath: repoRootOf({ path: turn.cwd, roots }), links }));
 
@@ -1003,13 +1005,13 @@ export const streamDay = (options: {
   ].sort((a, b) => a.at.getTime() - b.at.getTime());
 
   const calls = classifyCalls({
-    events: options.events,
+    events,
     rules: config.callRules ?? { countsAsWork: [], neverCountsAsWork: [] },
     // Where a call nothing has ended yet is cut: the later of what the sources have reported through
     // and the last sample a source took. A call with neither has no known duration and reads as none.
     // Only a sample the host took, never a calendar occurrence: an invitation is read from an API
     // hours before it happens, and taking it would run the open microphone forward into it.
-    until: new Date(Math.max(config.windowsSeenThroughMs ?? 0, +(lastHostSampleAt(options.events) ?? 0))),
+    until: new Date(Math.max(config.windowsSeenThroughMs ?? 0, +(lastHostSampleAt(events) ?? 0))),
   });
 
   // A call is a stretch rather than a point, so it is unioned in rather than sampled: two edges an hour
@@ -1417,7 +1419,7 @@ export const streamDay = (options: {
 
   const away = {
     presence,
-    events: options.events,
+    events,
     pauses: config.rows?.pauses,
     work: attendedSpans,
     minBreakMs: config.minBreakMs,
@@ -1450,7 +1452,7 @@ export const streamDay = (options: {
   const rows = buildRows({
     ...config.rows,
     blocks,
-    events: options.events,
+    events,
     links,
     calls,
     breaks,

@@ -41,12 +41,12 @@ export const sanitizeAgentSessionCursors = (options: {
   const denial = titleRuleDenial(options.rules);
 
   return options.cursors.map((cursor) => {
-    const cwd = cursor.cwd;
+    for (const path of [cursor.cwd, cursor.session?.workedIn]) {
+      if (!path) continue;
 
-    if (cwd) {
-      const target = matchProjectLink({ context: { repoPath: cwd }, links: options.links })?.target;
+      const target = matchProjectLink({ context: { repoPath: path }, links: options.links })?.target;
 
-      if (target?.kind === 'private' || denial(cwd)) return progressOnly(cursor);
+      if (target?.kind === 'private' || denial(path)) return progressOnly(cursor);
     }
 
     const title = cursor.title;
