@@ -15,6 +15,8 @@ export type SetupQueryStateOptions<TArgs extends QueryArgs> = {
 
   destroyRef?: DestroyRef;
 
+  keepPreviousResponse?: boolean;
+
   /**
    * The devtools stats recorder to feed from this state's executions, or nothing when the devtools are
    * not installed.
@@ -137,9 +139,26 @@ const neverRetry: ShouldRetryRequestFn = () => ({ retry: false });
 export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStateOptions<TArgs>) => {
   const request = signal<HttpRequest<TArgs> | null>(null);
 
-  const rawResponse = linkedSignal(() => {
-    const raw = request()?.response() ?? null;
-    return options.devtoolsOverrides ? (options.devtoolsOverrides.apply(raw) as typeof raw) : raw;
+  const rawResponse = linkedSignal<
+    { request: HttpRequest<TArgs> | null; raw: RawResponseType<TArgs> | null; settled: boolean },
+    RawResponseType<TArgs> | null
+  >({
+    source: () => {
+      const current = request();
+      const raw = current?.response() ?? null;
+
+      return {
+        request: current,
+        raw: options.devtoolsOverrides ? (options.devtoolsOverrides.apply(raw) as typeof raw) : raw,
+        settled: current?.currentEvent()?.type === HttpEventType.Response,
+      };
+    },
+    computation: (current, previous) => {
+      const carriesPrevious =
+        options.keepPreviousResponse && current.request !== null && current.raw === null && !current.settled;
+
+      return carriesPrevious ? (previous?.value ?? null) : current.raw;
+    },
   });
   const transformed = computed<{ response: ResponseType<TArgs> | null; error: QueryErrorResponse | null }>(() => {
     const raw = rawResponse();

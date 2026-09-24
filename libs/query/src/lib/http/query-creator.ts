@@ -240,6 +240,13 @@ export type QueryConfig = {
   silenceUncacheableAllowCacheError?: boolean;
 
   /**
+   * Keeps `response()` on the previous args' response while a request for new args loads, reported as
+   * `executionState().cachedResponse`. Defaults to `true` for queries that execute themselves (GET, HEAD,
+   * OPTIONS, GraphQL queries) and to `false` for mutations.
+   */
+  keepPreviousResponse?: boolean;
+
+  /**
    * A custom injector to use for this query.
    */
   injector?: Injector;

@@ -20,7 +20,7 @@ Reactively supplies request args. The function runs in a reactive context - like
 withArgs(() => ({ queryParams: { page: this.page(), search: this.search() } }));
 ```
 
-Return `null` to **park** the query: its args reset to `null`, and polling and auto-refresh pause until args are set again. That is how a query waits for something it depends on - see [dependent queries](/query/dependent-queries).
+Return `null` to **park** the query: it is reset - `args()`, `response()` and `executionState()` become `null` - and polling and auto-refresh pause until args are set again. While new non-null args load, the previous args' response stays in `response()` (see [`keepPreviousResponse`](/query/queries#the-query-object)). That is how a query waits for something it depends on - see [dependent queries](/query/dependent-queries).
 
 A function route (one using `pathParams`) requires a `withArgs` feature - creating the query without one throws in dev mode (opt out via the `silenceMissingWithArgsFeatureError` [query config](/query/queries#query-creators) if you always pass args to `execute`). Setting that config together with a `withArgs` feature throws too, since the two contradict each other.
 

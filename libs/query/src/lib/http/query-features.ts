@@ -98,8 +98,8 @@ export const createQueryFeature = <TArgs extends QueryArgs>(config: {
  * A query feature that allows you to set the arguments of the query.
  * The arguments are read within a computed function, so you can use reactive values.
  *
- * Return `null` to park the query: its args are reset to `null`, and polling and auto refresh
- * pause until args are set again.
+ * Return `null` to park the query: it is reset (`response()` and `executionState()` become `null`),
+ * and polling and auto refresh pause until args are set again.
  *
  * Changing arguments will automatically trigger a new execution of the query if it is eligible for auto execution (e.g. a GET request).
  */
@@ -119,7 +119,13 @@ export const withArgs = <TArgs extends QueryArgs>(args: () => NoInfer<RequestArg
         () => {
           const currArgsNow = context.state.args();
 
-          if (currArgsNow === null) return;
+          if (currArgsNow === null) {
+            untracked(() => {
+              if (context.state.subtle.request() !== null || context.state.loading() !== null) context.execute.reset();
+            });
+
+            return;
+          }
 
           untracked(() => {
             if (context.flags.shouldAutoExecute) context.execute({ args: currArgsNow });

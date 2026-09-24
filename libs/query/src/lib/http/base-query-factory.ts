@@ -208,14 +208,15 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
     const devtoolsFormLinks = createQueryDevtoolsFormLinksRecorder();
     const devtoolsOverrides = createQueryDevtoolsOverridesRecorder();
 
+    const flags = getQueryFeatureUsage(options as unknown as Parameters<typeof getQueryFeatureUsage>[0]);
     const state = setupQueryState<TArgs>({
       transformResponse: options.creator?.transformResponse,
       destroyRef: deps.destroyRef,
+      keepPreviousResponse: options.queryConfig.keepPreviousResponse ?? flags.shouldAutoExecuteMethod,
       devtoolsStats,
       devtoolsFormLinks,
       devtoolsOverrides,
     });
-    const flags = getQueryFeatureUsage(options as unknown as Parameters<typeof getQueryFeatureUsage>[0]);
 
     const execute = options.executeFactory({
       deps,

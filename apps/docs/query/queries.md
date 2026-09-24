@@ -116,12 +116,13 @@ const query = getPost(
 );
 ```
 
-| `QueryConfig` option                 | Default | Description                                                                                                                              |
-| ------------------------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `key`                                | -       | Custom cache key. Only allowed on cacheable queries (throws otherwise).                                                                  |
-| `onlyManualExecution`                | `false` | Skip auto-execution - the query only runs when you call `.execute()`.                                                                    |
-| `silenceMissingWithArgsFeatureError` | `false` | Allow a function route without a `withArgs` feature (you must then pass args to `.execute()`); throws if you combine it with `withArgs`. |
-| `injector`                           | -       | Create the query in a specific injector instead of the current injection context.                                                        |
+| `QueryConfig` option                 | Default   | Description                                                                                                                                                            |
+| ------------------------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`                                | -         | Custom cache key. Only allowed on cacheable queries (throws otherwise).                                                                                                |
+| `onlyManualExecution`                | `false`   | Skip auto-execution - the query only runs when you call `.execute()`.                                                                                                  |
+| `silenceMissingWithArgsFeatureError` | `false`   | Allow a function route without a `withArgs` feature (you must then pass args to `.execute()`); throws if you combine it with `withArgs`.                               |
+| `keepPreviousResponse`               | see below | Keep `response()` on the previous args' response while the request for new args loads. `true` for `GET`, `HEAD`, `OPTIONS` and GraphQL queries, `false` for mutations. |
+| `injector`                           | -         | Create the query in a specific injector instead of the current injection context.                                                                                      |
 
 Never call a creator inside a `computed`, an `effect` or a template: every re-run would build another query, so it throws `ET001`. Create the query once and drive it through `withArgs` or `.execute({ args })`. Reading, executing, `createSnapshot()` and `.asObservable({ injector })` are fine there.
 
@@ -135,23 +136,23 @@ Creators expose `.clone(additionalOptions)` to derive a variant with merged opti
 
 Every state property is a signal - and every one of them is an `ObservableSignal`, so `query.response.asObservable()` hands you an RxJS stream when you need one.
 
-| Signal                 | Type                              | Description                                                                              |
-| ---------------------- | --------------------------------- | ---------------------------------------------------------------------------------------- |
-| `response()`           | `TResponse \| null`               | Latest (transformed) response. Kept while re-executing and if that re-execution fails.   |
-| `loading()`            | `HttpRequestLoadingState \| null` | Loading state incl. `progress` (`percentage`, `speed`, `remainingTime`).                 |
-| `error()`              | `QueryErrorResponse \| null`      | Normalized error - see [Errors & retries](/query/errors).                                |
-| `executionState()`     | discriminated union               | `{ type: 'loading' \| 'success' \| 'failure', … } \| null` - handy for `@switch` blocks. |
-| `args()`               | `RequestArgs \| null`             | Args of the latest execution.                                                            |
-| `latestHttpEvent()`    | `HttpEvent \| null`               | Last raw Angular HTTP event.                                                             |
-| `lastTimeExecutedAt()` | `number \| null`                  | Timestamp of the latest execution.                                                       |
-| `triggeredBy()`        | `string \| null`                  | Who triggered the execution (`null` for user-triggered).                                 |
-| `id()`                 | `QueryKey \| null`                | Current repository cache key.                                                            |
+| Signal                 | Type                              | Description                                                                                        |
+| ---------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `response()`           | `TResponse \| null`               | Latest (transformed) response. Kept while re-executing or loading new args, and if that run fails. |
+| `loading()`            | `HttpRequestLoadingState \| null` | Loading state incl. `progress` (`percentage`, `speed`, `remainingTime`).                           |
+| `error()`              | `QueryErrorResponse \| null`      | Normalized error - see [Errors & retries](/query/errors).                                          |
+| `executionState()`     | discriminated union               | `{ type: 'loading' \| 'success' \| 'failure', … } \| null` - handy for `@switch` blocks.           |
+| `args()`               | `RequestArgs \| null`             | Args of the latest execution.                                                                      |
+| `latestHttpEvent()`    | `HttpEvent \| null`               | Last raw Angular HTTP event.                                                                       |
+| `lastTimeExecutedAt()` | `number \| null`                  | Timestamp of the latest execution.                                                                 |
+| `triggeredBy()`        | `string \| null`                  | Who triggered the execution (`null` for user-triggered).                                           |
+| `id()`                 | `QueryKey \| null`                | Current repository cache key.                                                                      |
 
 Methods:
 
 - `execute({ args?, options? })` - `options.allowCache` reuses a fresh cached response, `options.triggeredBy` tags the run, and `options.keepUnusedFor` overrides the creator's and the client's [retention](/query/caching#keeping-unused-entries-around) for this execution. An entry shared by several queries keeps the shortest retention of the queries currently bound to it, so a shorter one only applies until that query releases the entry.
 - `reset()` - back to the never-executed state.
-- `createSnapshot()` - a frozen copy of the current state with an `isAlive` signal. Useful for "the request I started", untouched by later executions. The standalone `executeUntilSettled(query, executeArgs?)` combines both: it executes and resolves with the settled snapshot - handy in `async` flows like a signal-forms [`submit()` action](/query/errors#mapping-violations-onto-signal-forms). For a chain of dependent mutations built on top of it, see [Dependent queries](/query/dependent-queries).
+- `createSnapshot()` - a frozen copy of the current state with an `isAlive` signal. Useful for "the request I started", untouched by later executions. The standalone `executeUntilSettled$(query, executeArgs?)` combines both: a cold Observable that executes on subscribe, emits the settled snapshot and completes; unsubscribing before it settles aborts the request. `executeUntilSettled(query, executeArgs?)` is its Promise form for APIs that need an `async` function, like a signal-forms [`submit()` action](/query/errors#mapping-violations-onto-signal-forms). For a chain of dependent mutations built on top of it, see [Dependent queries](/query/dependent-queries).
 - `asReadonly()` - the query without its mutating methods.
 
 Some objects also carry a `subtle` namespace - everything under it is an unsupported escape hatch: if you touch it and it breaks, that's on you.
@@ -159,6 +160,31 @@ Some objects also carry a `subtle` namespace - everything under it is an unsuppo
 Both the `loading` and `failure` variants of `executionState()` report `hasCachedResponse: true` and
 carry `cachedResponse` when a previous response is still available. This lets a screen keep rendering
 known data while showing that its refresh is in progress or failed.
+
+That includes new args. When `withArgs` produces new args, `response()` keeps the previous args' response
+until the new request answers, and `executionState()` is
+`{ type: 'loading', hasCachedResponse: true, cachedResponse }` in between. A failure on the new args is a
+`failure` with that `cachedResponse`; a successful answer - an empty `204` included - replaces it. The
+superseded request is still aborted, so the previous response never replaces a newer one.
+
+```ts
+const search = searchPosts(withArgs(() => ({ queryParams: { term: term() } })));
+```
+
+```html
+@let state = search.executionState(); @if (state?.type === 'loading' && state.hasCachedResponse) {
+<!-- the previous term's results, shown dimmed while the new term loads -->
+}
+```
+
+Pass `keepPreviousResponse: false` in the `QueryConfig` when showing the previous args' data would be
+wrong, for example a detail page whose id changed. Mutations never carry a response over: a second
+`execute()` with a new body starts from `null`, so `executeUntilSettled` never reports an earlier
+submission's response.
+
+Two things still clear the response: `reset()`, and parking - a `withArgs` source that returns `null`
+resets the query, so `response()` and `executionState()` are both `null` until args arrive again. A
+logout resets every secure query the same way.
 
 Queries live in a child injector parented to the component (or `queryConfig.injector`) that created them - when that scope is destroyed, the query is torn down and its cache reference released. Calling `execute()` on a query after that is a no-op: nothing is requested, and in dev mode a `console.warn` names the route so the stale reference can be found.
 
@@ -179,7 +205,7 @@ endpoint, a [custom feature](/query/features#authoring-custom-features).
 | `QueryClient`, `QueryClientRef`                                                    | The client object and the provider definition `createQueryClient` returns - `AnyCreateQueryClientResult` is an alias of the latter, and what the secure creator templates take. `AnyQueryClient` is the injected client, and `CreateQueryClientConfigOptions` the [options bag](#the-query-client).                                                                                                               |
 | `QueryConfig`, `BaseQueryCreatorOptions`                                           | The [per-query config](#query-creators) and the [creator options](/query/http#creator-options).                                                                                                                                                                                                                                                                                                                   |
 | `QueryExecutionState<TArgs>`                                                       | The `executionState()` union: `QueryExecutionStateSuccess`, `QueryExecutionStateLoading` and `QueryExecutionStateFailure`. The latter two are themselves unions of a `…WithCachedResponse` and a `…WithNoResponse` half - `QueryExecutionStateLoadingWithCachedResponse`, `QueryExecutionStateLoadingWithNoResponse`, `QueryExecutionStateFailureWithCachedResponse`, `QueryExecutionStateFailureWithNoResponse`. |
-| `QuerySnapshot<TArgs>`                                                             | What `createSnapshot()` and `executeUntilSettled()` return; `AnyQuerySnapshot` erases the args.                                                                                                                                                                                                                                                                                                                   |
+| `QuerySnapshot<TArgs>`                                                             | What `createSnapshot()`, `executeUntilSettled$()` and `executeUntilSettled()` return; `AnyQuerySnapshot` erases the args.                                                                                                                                                                                                                                                                                                                   |
 | `QueryKey`, `QueryMethod`, `RouteString`, `RouteType<TArgs>`                       | The cache key, the HTTP method union, and a route as a creator takes it - a `` `/${string}` `` literal, or a function of the path params.                                                                                                                                                                                                                                                                         |
 | `QueryExecute<TArgs>`                                                              | The `execute` method's type. Its whole argument is a `QueryExecuteArgs<TArgs>` (`{ args?, options? }`), whose `options` is a `RunQueryExecuteOptions` - `allowCache`, `triggeredBy` and a per-execution `keepUnusedFor`.                                                                                                                                                                                          |
 | `ObservableSignal<T>`                                                              | A signal that also has `.asObservable()` - the type of every signal on a query.                                                                                                                                                                                                                                                                                                                                   |
