@@ -279,7 +279,11 @@ class UploaderHost {
   private readonly creator = inject(UPLOAD_CHUNK);
   private readonly injector = injectHandlerInjector();
 
-  readonly chunks = [1, 2, 3].map((n) => new UploadChunk(this.creator, n, this.injector));
+  readonly chunks = [1, 2, 3].map((n) => new UploadChunk(this.creator, n, this.injector)) as [
+    UploadChunk,
+    UploadChunk,
+    UploadChunk,
+  ];
   readonly states = this.chunks.map((chunk) => toSignal(chunk.state$, { initialValue: 'idle' as const }));
 }
 

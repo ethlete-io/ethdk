@@ -23,7 +23,7 @@ const STORAGE_KEY = 'ethlete:query:devtools';
 })
 class UserPage {
   private readonly getUser = inject(API_CLIENT).get({
-    route: (p: { id: string }) => `/users/${p.id}`,
+    route: (p: { id: string }) => `/users/${p.id}` as const,
     types: { args: def<{ pathParams: { id: string } }>(), response: def<User>() },
   });
   private readonly id = inject(USER_ID);

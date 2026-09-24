@@ -70,12 +70,12 @@ const createCreators = (s: Scenario, kind: LegacyClientKind, store: EntityStore<
 
   return {
     getLayouts: client.get({
-      route: (p: ListArgs['pathParams']) => `/collections/${p.collectionId}/layouts`,
+      route: (p: ListArgs['pathParams']) => `/collections/${p.collectionId}/layouts` as const,
       types: { args: def<ListArgs>(), response: def<Paginated<Layout>>() },
       entity: entity.list as never,
     }) as unknown as LegacyClientCreator<ListArgs>,
     renameLayout: client.post({
-      route: (p: RenameArgs['pathParams']) => `/layouts/${p.id}`,
+      route: (p: RenameArgs['pathParams']) => `/layouts/${p.id}` as const,
       types: { args: def<RenameArgs>(), response: def<Layout>() },
       entity: entity.single as never,
     }) as unknown as LegacyClientCreator<RenameArgs>,
@@ -112,6 +112,7 @@ class LayoutManagerHost {
 const page = (items: Layout[]): Paginated<Layout> => ({
   items,
   currentPage: 1,
+  nextPage: null,
   itemsPerPage: 10,
   totalHits: items.length,
   totalPageCount: 1,

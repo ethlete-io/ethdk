@@ -110,8 +110,8 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy infinity patterns on the %s client', 
       const legacy = createLegacyClient(s, kind);
       serveNews(s, 7);
 
-      expect(skipPaginationPageParamCalculator({ page: 1, itemsPerPage: 20 })).toBe(0);
-      expect(skipPaginationPageParamCalculator({ page: 3, itemsPerPage: 20 })).toBe(40);
+      expect(skipPaginationPageParamCalculator({ page: 1, totalPages: null, itemsPerPage: 20 })).toBe(0);
+      expect(skipPaginationPageParamCalculator({ page: 3, totalPages: 5, itemsPerPage: 20 })).toBe(40);
 
       const c = s.consumer([{ provide: NEWS_CONFIG, useValue: newsConfig(legacy) }]);
       const ref = s.mount(NewsListHost, c.injector);
