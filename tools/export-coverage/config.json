@@ -1,0 +1,11 @@
+{
+  "query": {
+    "tsconfig": "libs/query/tsconfig.spec.json",
+    "entryPoints": {
+      "query": "libs/query/src/index.ts",
+      "query/testing": "libs/query/testing/index.ts"
+    },
+    "scenarios": ["libs/query/src/scenarios/**/*.scenario.spec.ts"],
+    "allowlist": "tools/export-coverage/query.allowlist.json"
+  }
+}

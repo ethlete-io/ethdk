@@ -11,4 +11,5 @@ yarn nx format:check --base="$base" --head=HEAD
 yarn agents:check
 yarn versions:check
 yarn lint:changesets
+yarn query:export-coverage
 yarn nx affected -t typecheck lint --base="$base" --head=HEAD

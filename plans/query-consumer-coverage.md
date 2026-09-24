@@ -75,5 +75,7 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
 - [ ] S5 P10 specs; defects 4-6
 - [ ] S6 P9, P12, P13, P14, P17
 - [ ] S7 Release gate: build the SDK into one 5.x app and fut-frontend, smoke-run before publish
-- [ ] S9 Export coverage gate: every runtime export of `libs/query/src/index.ts` must appear in a scenario, or be on an allowlist with a reason; CI fails otherwise
+- [x] S9 Export coverage gate: every runtime export of `libs/query/src/index.ts` must appear in a scenario, or be on an allowlist with a reason; CI fails otherwise
+  - `yarn query:export-coverage` (`tools/export-coverage/`), in CI Checks and pre-push. 500 runtime exports (incl. `query/testing`), 330 uncovered on the allowlist.
+  - `queryComputedWithForm` is not exported by `@ethlete/query`; P10 names it wrongly.
 - [ ] S8 Same audit for `libs/core` and `libs/components`

@@ -61,6 +61,10 @@ jobs:
       # Only unreleased entries are checked - anything listed in .changeset/pre.json is locked.
       - run: yarn lint:changesets
 
+      # Every runtime export of @ethlete/query must be referenced by a scenario or allowlisted with
+      # a reason in tools/export-coverage/query.allowlist.json. Stale allowlist entries fail too.
+      - run: yarn query:export-coverage
+
       # Spec files are excluded from every lib's build tsconfig, so this is the only step that
       # type-checks them.
       - run: yarn nx run-many -t typecheck
