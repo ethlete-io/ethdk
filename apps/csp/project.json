@@ -1,0 +1,41 @@
+{
+  "name": "csp-app",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/csp/src",
+  "prefix": "app",
+  "tags": ["type:app", "scope:components"],
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "outputs": ["{options.outputPath}"],
+      "dependsOn": [],
+      "defaultConfiguration": "production",
+      "options": {
+        "browser": "apps/csp/src/main.ts",
+        "outputPath": "dist/apps/csp",
+        "index": "apps/csp/src/index.html",
+        "tsConfig": "apps/csp/tsconfig.app.json",
+        "assets": [],
+        "styles": ["apps/csp/src/styles.css"]
+      },
+      "configurations": {
+        "production": {
+          "outputHashing": "all",
+          "optimization": true
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p apps/csp/tsconfig.app.json --noEmit"
+      }
+    }
+  }
+}
