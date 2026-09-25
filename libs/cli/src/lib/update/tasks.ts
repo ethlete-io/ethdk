@@ -15,6 +15,12 @@ export const NEXT_DOCS_BASE_URL = 'https://ethlete-sdk-docs-next.web.app';
 /** The docs site of a version's release line: `main` deploys the stable site, `next` the prerelease one. */
 export const docsBaseUrl = (version: string) => (prereleaseTag(version) ? NEXT_DOCS_BASE_URL : DOCS_BASE_URL);
 
+/** The agent rules sync of an update that failed, with the command to run again by hand. */
+export type SyncFailure = {
+  command: string;
+  reason: string;
+};
+
 export type UpdateTask = {
   packageName: string;
   name: string;
@@ -97,8 +103,9 @@ export const renderTasks = (options: {
   updates: readonly UpdatedPackage[];
   outcomes: readonly MigrationOutcome[];
   tasks: readonly UpdateTask[];
+  syncFailure?: SyncFailure;
 }) => {
-  const { updates, outcomes, tasks } = options;
+  const { updates, outcomes, tasks, syncFailure } = options;
   const applied = outcomes.filter((outcome) => outcome.state === 'applied');
   const failed = outcomes.filter((outcome) => outcome.state === 'failed');
 
@@ -127,6 +134,12 @@ export const renderTasks = (options: {
           ...failed.map(
             (outcome) => `- \`${outcome.pending.packageName}\` ${outcome.pending.migration.name} — ${outcome.reason}`,
           ),
+          '',
+        ]
+      : []),
+    ...(syncFailure
+      ? [
+          `The agent rules sync failed — ${syncFailure.reason}. Run \`${syncFailure.command}\` again by hand and read its output.`,
           '',
         ]
       : []),
@@ -222,8 +235,9 @@ export const writeUpdateTasks = (options: {
   outcomes: readonly MigrationOutcome[];
   manager: PackageManager;
   generatedAt: string;
+  syncFailure?: SyncFailure;
 }): WrittenTasks => {
-  const { root, updates, outcomes, manager, generatedAt } = options;
+  const { root, updates, outcomes, manager, generatedAt, syncFailure } = options;
   const collected = collectTasks({ outcomes, manager, updates });
   const earlier = unfinishedEarlierTasks(root).filter((task) => !collected.some((next) => sameTask(task, next)));
   const tasks = [...earlier, ...collected];
@@ -253,7 +267,11 @@ export const writeUpdateTasks = (options: {
   const reportPath = join(UPDATE_DIR, TASKS_FILE);
   const dataPath = join(UPDATE_DIR, TASKS_DATA_FILE);
 
-  writeFileSync(join(root, reportPath), `${renderTasks({ updates, outcomes, tasks }).trimEnd()}\n`, 'utf8');
+  writeFileSync(
+    join(root, reportPath),
+    `${renderTasks({ updates, outcomes, tasks, syncFailure }).trimEnd()}\n`,
+    'utf8',
+  );
   writeFileSync(
     join(root, dataPath),
     `${JSON.stringify(
@@ -274,6 +292,7 @@ export const writeUpdateTasks = (options: {
             name: outcome.pending.migration.name,
             reason: outcome.reason ?? null,
           })),
+        ...(syncFailure ? { syncFailed: syncFailure } : {}),
         tasks,
       },
       null,

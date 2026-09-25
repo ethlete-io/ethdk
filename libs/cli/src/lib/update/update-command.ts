@@ -33,7 +33,7 @@ import {
 } from './pending';
 import { fetchRegistryPackage, registryUrl } from './registry';
 import { MigrationOutcome, hasNx, runInstall, runPendingMigrations } from './run-migrations';
-import { UPDATE_DIR, writeUpdateTasks } from './tasks';
+import { SyncFailure, UPDATE_DIR, writeUpdateTasks } from './tasks';
 
 export type UpdateCommandOptions = {
   /** Arguments after `update`, for example `['core', '--tag', 'next']`. */
@@ -178,16 +178,19 @@ const printMigrations = (pending: readonly PendingMigration[]) => {
   }
 };
 
-const printOutcomes = (outcomes: readonly MigrationOutcome[]) => {
+const printOutcomes = (outcomes: readonly MigrationOutcome[], syncFailure: SyncFailure | undefined) => {
   const applied = outcomes.filter((outcome) => outcome.state === 'applied').length;
   const failed = outcomes.filter((outcome) => outcome.state === 'failed');
   const tasks = outcomes.filter((outcome) => outcome.state === 'task' || outcome.state === 'unsupported').length;
+  const failedCount = failed.length + (syncFailure ? 1 : 0);
 
-  console.log(`\n  ${applied} codemod(s) applied, ${tasks} task(s) left, ${failed.length} failed`);
+  console.log(`\n  ${applied} codemod(s) applied, ${tasks} task(s) left, ${failedCount} failed`);
 
   for (const outcome of failed) {
     console.error(`  - ${outcome.pending.packageName} ${outcome.pending.migration.name}: ${outcome.reason}`);
   }
+
+  if (syncFailure) console.error(`  - ${syncFailure.command}: ${syncFailure.reason}`);
 };
 
 const syncAgentRules = (options: {
@@ -195,11 +198,11 @@ const syncAgentRules = (options: {
   manager: PackageManager;
   updates: readonly UpdatedPackage[];
   dryRun: boolean;
-}) => {
+}): SyncFailure | undefined => {
   const { root, manager, updates, dryRun } = options;
   const plan = planAgentRulesSync({ root, manager, updates });
 
-  if (plan.state === 'not-updated') return true;
+  if (plan.state === 'not-updated') return undefined;
 
   const command = plan.command.join(' ');
 
@@ -208,22 +211,24 @@ const syncAgentRules = (options: {
       `\n  ${AGENT_RULES_PACKAGE} moved, but this repo has no config for it. Run \`${command}\` where it has one.`,
     );
 
-    return true;
+    return undefined;
   }
 
   if (dryRun) {
     console.log(`\n  ${AGENT_RULES_PACKAGE} moved: a real run regenerates the agent rules with \`${command}\`.`);
 
-    return true;
+    return undefined;
   }
 
   console.log(`\n  ${AGENT_RULES_PACKAGE} moved, so the agent rules and skills are regenerated.\n\n  ${command}\n`);
 
   const outcome = runAgentRulesSync(plan, root);
 
-  if (outcome.state === 'failed') console.error(`  The agent rules sync failed: ${outcome.reason}`);
+  if (outcome.state !== 'failed') return undefined;
 
-  return outcome.state !== 'failed';
+  console.error(`  The agent rules sync failed: ${outcome.reason}`);
+
+  return { command, reason: outcome.reason };
 };
 
 const runMigrationPhase = (options: {
@@ -251,12 +256,12 @@ const runMigrationPhase = (options: {
   for (const problem of collected.problems) console.error(`  ${problem}`);
 
   // Before the tasks and any --ai run: the tasks assume the skills of the version that was installed.
-  const synced = syncAgentRules({ root, manager, updates, dryRun });
+  const syncFailure = syncAgentRules({ root, manager, updates, dryRun });
 
   if (collected.pending.length === 0) {
     console.log('\nNo migration is pending for those versions.');
 
-    return { failed: collected.problems.length > 0 || !synced };
+    return { failed: collected.problems.length > 0 || syncFailure !== undefined };
   }
 
   console.log(`\n${collected.pending.length} migration(s) to run:\n`);
@@ -268,7 +273,7 @@ const runMigrationPhase = (options: {
 
   const outcomes = runPendingMigrations({ root, manager, pending: collected.pending, dryRun });
 
-  printOutcomes(outcomes);
+  printOutcomes(outcomes, syncFailure);
 
   if (!dryRun) {
     const applied = outcomes
@@ -290,6 +295,7 @@ const runMigrationPhase = (options: {
     outcomes,
     manager,
     generatedAt: new Date().toISOString(),
+    syncFailure,
   });
 
   if (written.tasks.length > 0) {
@@ -313,7 +319,10 @@ const runMigrationPhase = (options: {
   }
 
   return {
-    failed: outcomes.some((outcome) => outcome.state === 'failed') || collected.problems.length > 0 || !synced,
+    failed:
+      outcomes.some((outcome) => outcome.state === 'failed') ||
+      collected.problems.length > 0 ||
+      syncFailure !== undefined,
   };
 };
 

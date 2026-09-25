@@ -1,8 +1,9 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readPendingUpdate, writePendingUpdate } from './pending';
+import { TASKS_FILE, UPDATE_DIR } from './tasks';
 import { updateCommand } from './update-command';
 
 const spawnSync = vi.hoisted(() => vi.fn<(binary: string, args: string[]) => { status: number }>());
@@ -106,5 +107,31 @@ describe('et update --check', () => {
 
     expect(await updateCommand({ argv: ['--check'], root })).toBe(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('--continue'));
+  });
+});
+
+describe('a failed agent rules sync', () => {
+  it('is counted as a failure and written to tasks.md', async () => {
+    const root = makeRepo();
+
+    writeJson(join(root, 'node_modules', '@ethlete', 'agent-rules', 'package.json'), { name: '@ethlete/agent-rules' });
+    writeJson(join(root, 'ethlete-agents.config.json'), {});
+    writePendingUpdate({
+      root,
+      pending: {
+        startedAt: 'then',
+        packages: [
+          { name: '@ethlete/core', from: '5.0.0', to: '5.1.0' },
+          { name: '@ethlete/agent-rules', from: '0.1.0', to: '0.2.0' },
+        ],
+      },
+    });
+    spawnSync.mockImplementation((_binary, args) => ({ status: args.includes('ethlete-agents') ? 1 : 0 }));
+
+    expect(await updateCommand({ argv: ['--continue'], root })).toBe(1);
+    expect(console.log).toHaveBeenCalledWith(expect.stringContaining('2 codemod(s) applied, 0 task(s) left, 1 failed'));
+    expect(readFileSync(join(root, UPDATE_DIR, TASKS_FILE), 'utf8')).toContain(
+      'The agent rules sync failed — yarn exited with 1. Run `yarn ethlete-agents sync` again by hand',
+    );
   });
 });
