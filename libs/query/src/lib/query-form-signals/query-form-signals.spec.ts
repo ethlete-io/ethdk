@@ -239,7 +239,7 @@ describe('defineQueryForm', () => {
     const { injector, router, mod } = await setup();
 
     const qf = runInInjectionContext(injector, () =>
-      mod.defineQueryForm({ fields: { region: mod.queryField<string>({ defaultValue: 'all' }) } }).observe(),
+      mod.defineQueryForm({ fields: { region: mod.queryField<string | null>({ defaultValue: 'all' }) } }).observe(),
     );
 
     qf.setValue({ region: null });

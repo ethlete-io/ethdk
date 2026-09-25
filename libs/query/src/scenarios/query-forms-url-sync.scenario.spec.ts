@@ -10,6 +10,7 @@ import {
   searchQueryField,
   sortQueryField,
   stringArrayQueryField,
+  transformToNumber,
 } from '../index';
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { useScenario } from './harness';
@@ -26,7 +27,11 @@ describe('query forms URL sync scenario', () => {
 
     const qf = s.run(() =>
       defineQueryForm({
-        fields: { offset: queryField<number>(), ratio: queryField<number>(), negative: queryField<number>() },
+        fields: {
+          offset: queryField<number>({ queryParamToValue: transformToNumber }),
+          ratio: queryField<number>({ queryParamToValue: transformToNumber }),
+          negative: queryField<number>({ queryParamToValue: transformToNumber }),
+        },
       }).observe(),
     );
     s.tick();
@@ -365,7 +370,7 @@ describe('query forms URL sync scenario', () => {
     const s = scenario();
     const router = TestBed.inject(Router);
 
-    const fields = { status: queryField<string>({ defaultValue: 'all' }), region: queryField<string>() };
+    const fields = { status: queryField<string | null>({ defaultValue: 'all' }), region: queryField<string>() };
 
     const c = s.consumer();
     const qf = c.run(() => defineQueryForm({ fields }).observe());

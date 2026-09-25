@@ -91,7 +91,11 @@ describe('query form devtools instrumentation', { timeout: 30_000 }, () => {
     const { mod, injector } = await setup();
 
     runInInjectionContext(injector, () =>
-      mod.defineQueryForm({ name: 'teams', queryParamPrefix: 'teams', fields: { page: mod.queryField<number>({}) } }),
+      mod.defineQueryForm({
+        name: 'teams',
+        queryParamPrefix: 'teams',
+        fields: { page: mod.queryField<number>({ defaultValue: 1 }) },
+      }),
     );
 
     expect(handleOf(mod, 'teams').handle.fields()[0]?.paramKey).toBe('teams-page');

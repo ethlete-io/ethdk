@@ -16,7 +16,7 @@ import { ET_PROPERTY_REMOVED, clone, equal, injectQueryParamChanges } from '@eth
 import { QueryDevtoolsFormField, QueryDevtoolsFormHandle } from '../devtools/query-devtools-form';
 import { noteQueryFormReads } from '../devtools/query-devtools-form-links';
 import { isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools/query-devtools-hook';
-import { transformToBoolean, transformToNumber } from '../query-form/query-form.utils';
+import { transformToNumber } from '../query-form/query-form.utils';
 import {
   QueryFieldDef,
   QueryFormChange,
@@ -73,22 +73,12 @@ const MAX_RESET_PASSES = 10;
 const changedKeysBetween = (previous: Dict | null, current: Dict): string[] =>
   Object.keys(current).filter((key) => !equal(previous?.[key], current[key]));
 
-/** Best-effort URL string → value coercion, mirroring the auto-transform of the legacy QueryForm. */
+/** Reads a URL string into the type of the field's default; `null` means the default's type cannot hold it. */
 const autoCoerce = (raw: unknown, defaultValue: unknown): unknown => {
   if (typeof raw !== 'string') return raw;
-
   if (Array.isArray(defaultValue)) return [raw];
-
-  const defaultIsNumber = typeof defaultValue === 'number';
-  const looksNumeric = raw.trim() === raw && !/^-?0\d/.test(raw) && !raw.endsWith('.') && !isNaN(Number(raw));
-
-  if (defaultIsNumber || (looksNumeric && raw !== '')) {
-    return transformToNumber(raw);
-  }
-
-  if (raw === 'true' || raw === 'false') {
-    return transformToBoolean(raw);
-  }
+  if (typeof defaultValue === 'number') return transformToNumber(raw);
+  if (typeof defaultValue === 'boolean') return raw === 'true' ? true : raw === 'false' ? false : null;
 
   return raw;
 };

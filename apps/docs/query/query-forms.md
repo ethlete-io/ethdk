@@ -57,7 +57,7 @@ export class UsersComponent {
 
 | Creator                            | Value type          | Notes                                                                                                                                                  |
 | ---------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `queryField<T>()`                  | `T \| null`         | Generic field. Auto-coerces URL strings to number/boolean unless told otherwise; with an array default a single URL value reads as a one-item array.   |
+| `queryField<T>()`                  | `T` / `T \| null`   | Generic field - see [Generic fields](#generic-fields).                                                                                                 |
 | `searchQueryField()`               | `string`            | Empty is `''`, which writes no param. Debounced 300ms; clearing applies immediately. Reads the URL back as a string, so `?search=2024` stays `'2024'`. |
 | `sortQueryField()`                 | `Sort \| null`      | Serialized as `active:direction` (e.g. `name:asc`).                                                                                                    |
 | `stringArrayQueryField()`          | `string[] \| null`  |                                                                                                                                                        |
@@ -77,10 +77,72 @@ Every creator accepts the same options:
 | `appendToUrl`             | `true`                           | Write the field to the URL. `false` makes the field a read-only mirror: it still tracks the param another owner writes. |
 | `appendDefaultValueToUrl` | `false`                          | Write the field even when it holds its default.                                                                         |
 | `isResetBy`               | -                                | Sibling field(s) whose change resets this field to its default (single key or list). Transitive - see below.            |
-| `skipInFilterCount`       | `false`                          | Exclude from `activeFilterCount`.                                                                                       |
-| `skipAutoTransform`       | `false`                          | Skip the URL string → number/boolean coercion.                                                                          |
+| `skipInFilterCount`       | `false` (`true` for search/sort) | Exclude from `activeFilterCount`.                                                                                       |
+| `skipAutoTransform`       | `false`                          | Keep the raw URL value: no number/boolean coercion and no `ET_NULL__`/`ET_EMPTY_ARRAY__` sentinels.                     |
 | `queryParamToValue`       | -                                | Custom URL → value transform.                                                                                           |
 | `valueToQueryParam`       | -                                | Custom value → URL transform.                                                                                           |
+
+### Generic fields
+
+`queryField<T>()` is typed by its `defaultValue`:
+
+| Declaration                                                    | Value type       | Reads the URL back as                                                     |
+| -------------------------------------------------------------- | ---------------- | ------------------------------------------------------------------------- |
+| `queryField<number>({ defaultValue: 1 })`                      | `number`         | a number; `?page=abc` falls back to the default                           |
+| `queryField<boolean>({ defaultValue: false })`                 | `boolean`        | `true` for `'true'`, `false` for `'false'`, the default for anything else |
+| `queryField<string>({ defaultValue: 'all' })`                  | `string`         | the string as written, so `?status=7` stays `'7'`                         |
+| `queryField<string[]>({ defaultValue: [] })`                   | `string[]`       | a list; a single value reads as a one-item list                           |
+| `queryField<string>()`                                         | `string \| null` | the string as written; `null` when absent                                 |
+| `queryField<number>({ queryParamToValue: transformToNumber })` | `number \| null` | whatever `queryParamToValue` returns                                      |
+
+On a field with a non-null default, a reset, an unreadable URL value and a `queryParamToValue` that
+returns `null` all fall back to the default. Declare `T | null` to allow an
+explicit `null` beside a default - `queryField<string | null>({ defaultValue: 'all' })` - which the URL
+carries as `ET_NULL__`. A native `<input type="number">` writes `null` when cleared, so a field bound
+to one needs `number | null`.
+
+Any other type needs a `queryParamToValue`, and the type check says so: `queryField<number>()`
+without a default, and a `Date` or object default. The URL does not say whether `?id=123` is a
+number or a string, so the field does not guess.
+
+### Binding pagination, page size and a table sort
+
+`et-pagination` and `et-page-size-select` are not signal-forms controls, so `[formField]` does not
+bind them. Both take a two-way `model`, which binds to the field's writable value signal. The edit
+commits like a bound control's, so `isResetBy` applies:
+
+```ts
+qf = defineQueryForm({
+  fields: {
+    limit: queryField<number>({ defaultValue: 25 }),
+    page: queryField<number>({ defaultValue: 1, isResetBy: ['search', 'limit'] }),
+  },
+}).observe();
+```
+
+```html
+<et-page-size-select [(pageSize)]="qf.fields.limit().value" />
+<et-pagination [(page)]="qf.fields.page().value" [totalPages]="totalPages()" />
+```
+
+The table's `sort` is a `TableSort[]` (`{ key, direction }`), not the field's `Sort`
+(`{ active, direction }`), so map it both ways:
+
+```ts
+tableSort = computed<TableSort[]>(() => {
+  const sort = this.qf.value().sort;
+
+  return sort?.direction ? [{ key: sort.active, direction: sort.direction }] : [];
+});
+
+onSortChange([first]: TableSort[]) {
+  this.qf.patchValue({ sort: first ? { active: first.key, direction: first.direction } : null });
+}
+```
+
+```html
+<et-table [sort]="tableSort()" (sortChange)="onSortChange($event)" sortMode="server" … />
+```
 
 ### Binding a date control
 
@@ -179,7 +241,9 @@ The whole cascade settles before the value is committed, so it drives **one** qu
 
 Counts fields that differ from their default, excluding navigation state:
 `page`, `skip`, `take`, `limit`, `sort`, `sortBy`, `sortOrder`, `query`, `search`
-are always ignored, plus any field created with `skipInFilterCount`. That list is
+are always ignored, plus any field created with `skipInFilterCount` - which
+`searchQueryField()` and `sortQueryField()` set, so a search named `q` does not
+count either. That list is
 exported as `IGNORED_FILTER_COUNT_FIELDS`, so a UI that explains the count can read
 it rather than repeat it.
 
@@ -206,8 +270,7 @@ Serialization rules:
   emptied list (`[]`) on a field whose default is `null` commits as `null`.
 - **`null`** is written as the `ET_NULL__` sentinel and an empty list as `ET_EMPTY_ARRAY__` (only when
   it isn't the default), so both survive a reload.
-- **Sort** is `active:direction` (`name:asc`). This matches the table system's URL
-  adapter, so the two interoperate.
+- **Sort** is `active:direction` (`name:asc`).
 - **`queryParamPrefix`** namespaces every key (`prefix-page`), so two forms can
   share a route:
 

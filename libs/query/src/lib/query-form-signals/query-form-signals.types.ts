@@ -49,20 +49,20 @@ export type QueryFieldDef<T> = {
    * Exclude this field from `activeFilterCount`. The common pagination/sort/search
    * keys are excluded automatically (see `IGNORED_FILTER_COUNT_FIELDS`).
    *
-   * @default false
+   * @default false (`true` for `searchQueryField` and `sortQueryField`)
    */
   readonly skipInFilterCount?: boolean;
 
   /**
-   * Skip the best-effort auto-coercion (numeric strings → number, `'true'`/`'false'`
-   * → boolean, the null and empty-list sentinels → `null` and `[]`) when reading the value back from the URL.
+   * Skip the auto-coercion (a URL string read into the type of a number or boolean default, the null and
+   * empty-list sentinels → `null` and `[]`) when reading the value back from the URL.
    *
    * @default false
    */
   readonly skipAutoTransform?: boolean;
 
-  /** Transform a raw URL query-param value into the field's value type. */
-  readonly queryParamToValue?: (raw: unknown) => T;
+  /** Transform a raw URL query-param value into the field's value type. `null` falls back to the default. */
+  readonly queryParamToValue?: (raw: unknown) => T | null;
 
   /**
    * Transform the field's value into a raw URL query-param value.

@@ -17,6 +17,7 @@ import {
   queryField,
   searchQueryField,
   sortQueryField,
+  transformToDate,
   withArgs,
   withPageResetOnError,
 } from '../index';
@@ -246,7 +247,9 @@ describe('query forms scenario', () => {
     const s = scenario();
 
     const qf = s.run(() =>
-      defineQueryForm({ fields: { stamp: queryField<Date>({ defaultValue: () => new Date(0) }) } }).observe({
+      defineQueryForm({
+        fields: { stamp: queryField<Date>({ defaultValue: () => new Date(0), queryParamToValue: transformToDate }) },
+      }).observe({
         writeToQueryParams: false,
       }),
     );

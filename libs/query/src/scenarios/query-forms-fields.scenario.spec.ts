@@ -8,10 +8,12 @@ import {
   dateQueryField,
   DateQueryField,
   defineQueryForm,
+  QueryFieldDef,
   QueryForm,
   queryField,
   searchQueryField,
   sortQueryField,
+  transformToNumber,
 } from '../index';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import { useScenario } from './harness';
@@ -27,7 +29,12 @@ describe('query form fields scenario', () => {
     s.tick();
 
     const qf = s.run(() =>
-      defineQueryForm({ fields: { enabled: queryField<boolean>(), archived: queryField<boolean>() } }).observe(),
+      defineQueryForm({
+        fields: {
+          enabled: queryField<boolean>({ defaultValue: false }),
+          archived: queryField<boolean>({ defaultValue: true }),
+        },
+      }).observe(),
     );
     s.tick();
 
@@ -202,7 +209,10 @@ describe('query form fields scenario', () => {
 
     const qf = s.run(() =>
       defineQueryForm({
-        fields: { code: queryField<string>({ skipAutoTransform: true }), amount: queryField<number>() },
+        fields: {
+          code: queryField<string>({ skipAutoTransform: true }),
+          amount: queryField<number>({ defaultValue: 0 }),
+        },
       }).observe(),
     );
     s.tick();
@@ -233,7 +243,12 @@ describe('query form fields scenario', () => {
 
     const qf = s.run(() =>
       defineQueryForm({
-        fields: { amount: queryField<number>({ valueToQueryParam: (value) => (value === null ? null : `n${value}`) }) },
+        fields: {
+          amount: queryField<number>({
+            queryParamToValue: transformToNumber,
+            valueToQueryParam: (value) => (value === null ? null : `n${value}`),
+          }),
+        },
       }).observe(),
     );
 
@@ -306,6 +321,81 @@ describe('query form fields scenario', () => {
     s.tick();
 
     expect(qf.value().tags).toEqual(tags);
+  });
+
+  it('types a field with a default as non-null and keeps it non-null through a reset and an unreadable URL', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    await router.navigate([], { queryParams: { page: 'abc', wide: '1' } });
+    s.tick();
+
+    const qf = s.run(() =>
+      defineQueryForm({
+        fields: {
+          page: queryField<number>({ defaultValue: 1 }),
+          wide: queryField<boolean>({ defaultValue: false }),
+          status: queryField<string>({ defaultValue: 'all' }),
+          label: queryField<string>(),
+        },
+      }).observe(),
+    );
+    s.tick();
+
+    expectTypeOf(qf.value().page).toEqualTypeOf<number>();
+    expectTypeOf(qf.fields.page().value).toEqualTypeOf<WritableSignal<number>>();
+    expectTypeOf(qf.value().status).toEqualTypeOf<string>();
+    expectTypeOf(qf.value().label).toEqualTypeOf<string | null>();
+    expectTypeOf(queryField<string | null>({ defaultValue: 'all' })).toEqualTypeOf<QueryFieldDef<string | null>>();
+    expect(qf.value()).toEqual({ page: 1, wide: false, status: 'all', label: null });
+
+    qf.patchValue({ page: 4 });
+    qf.resetFieldToDefault('page');
+    expect(qf.value().page).toBe(1);
+
+    // @ts-expect-error a field with a non-null default does not hold null
+    qf.patchValue({ page: null });
+    // @ts-expect-error only a string field reads the URL back without a queryParamToValue
+    queryField<number>();
+    // @ts-expect-error a Date default needs a queryParamToValue
+    queryField<Date>({ defaultValue: () => new Date(0) });
+  });
+
+  it('keeps a numeric URL value a string in a string field, with and without a default', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    await router.navigate([], { queryParams: { tournament: '123', status: '7', flag: 'true' } });
+    s.tick();
+
+    const qf = s.run(() =>
+      defineQueryForm({
+        fields: {
+          tournament: queryField<string>(),
+          status: queryField<string>({ defaultValue: 'all' }),
+          flag: queryField<string>(),
+        },
+      }).observe(),
+    );
+    s.tick();
+
+    expect(qf.value()).toEqual({ tournament: '123', status: '7', flag: 'true' });
+  });
+
+  it('does not count a search or sort field as a filter, whatever its key', () => {
+    const s = scenario();
+
+    const qf = s.run(() =>
+      defineQueryForm({
+        fields: { q: searchQueryField(), order: sortQueryField(), region: queryField<string>() },
+      }).observe({ writeToQueryParams: false }),
+    );
+
+    qf.patchValue({ q: 'shoes', order: { active: 'name', direction: 'asc' } });
+    expect(qf.activeFilterCount()).toBe(0);
+
+    qf.patchValue({ region: 'eu' });
+    expect(qf.activeFilterCount()).toBe(1);
   });
 });
 
