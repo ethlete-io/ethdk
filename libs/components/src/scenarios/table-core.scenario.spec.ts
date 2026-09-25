@@ -16,6 +16,7 @@ import {
   TABLE_LABELS,
   TableCardSurfaceDirective,
   TableCellDirective,
+  TableCellStateValue,
   TableColumns,
   TableComponent,
   TableFeatureConfig,
@@ -74,6 +75,7 @@ const COLUMNS = {
       [appearance]="appearance()"
       [labels]="labels()"
       [quickFilter]="search()"
+      [cellState]="cellState()"
       (rowClick)="clicked.set($event)"
       rowInteractive
     >
@@ -102,6 +104,7 @@ class RosterComponent {
   sort = signal<TableSort[]>([]);
   filters = signal<TableFilter[]>([]);
   clicked = signal<Member | null>(null);
+  cellState = signal<((member: Member, key: string) => TableCellStateValue | null) | undefined>(undefined);
   total = computed(() => this.members().reduce((sum, member) => sum + member.score, 0));
   table = viewChild.required(TableComponent<Member>);
   headerTemplate = viewChild.required(TableHeaderCellDirective);
@@ -513,6 +516,24 @@ describe('table core scenarios', () => {
     ]);
     expect(quickFilterRows({ rows: MEMBERS, query: 'blue north', columns: COLUMNS })).toEqual([MEMBERS[0]]);
     expect(quickFilterRows({ rows: MEMBERS, query: '30', columns: COLUMNS })).toEqual([]);
+  });
+
+  it('names the failed-cell icon with its message when no tooltip feature draws the mark', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(RosterComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    fixture.componentInstance.cellState.set((member, key) =>
+      member.id === 2 && key === 'score' ? { state: 'error', message: 'Score rejected' } : null,
+    );
+    s.flush();
+
+    const icon = query(host, '.et-table-cell[data-state="error"] .et-table-cell-error-icon');
+
+    expect(icon.getAttribute('role')).toBe('img');
+    expect(icon.getAttribute('aria-label')).toBe('Score rejected');
+    expect(icon.hasAttribute('aria-hidden')).toBe(false);
+    expect(icon.getAttribute('title')).toBe('Score rejected');
   });
 });
 

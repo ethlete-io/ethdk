@@ -244,8 +244,7 @@
                   <i
                     [etProvideColor]="errorColorTheme"
                     [attr.title]="cell.message"
-                    [attr.aria-label]="cell.message"
-                    [attr.aria-hidden]="cell.message ? null : 'true'"
+                    [label]="cell.message"
                     class="et-table-cell-error-icon"
                     etIcon="et-triangle-exclamation"
                   ></i>
