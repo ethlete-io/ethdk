@@ -442,7 +442,7 @@ describe('overlay dialog scenarios', () => {
     scoped.destroy();
   });
 
-  it.fails('leaves <html> scroll-locked when an app is destroyed with a modal overlay open', async () => {
+  it('unlocks <html> scrolling when an app is destroyed with a modal overlay open', async () => {
     const s = scenario();
     const app = await s.app([provideOverlay()]);
 

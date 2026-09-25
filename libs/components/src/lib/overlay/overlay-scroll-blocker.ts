@@ -1,4 +1,4 @@
-import { DOCUMENT, computed, inject } from '@angular/core';
+import { DOCUMENT, DestroyRef, computed, inject } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
   createDocumentElementSignal,
@@ -29,6 +29,28 @@ const OVERLAY_SCROLL_BLOCKER_DEF = /* @__PURE__ */ defineRootProvider(
     const root = document.documentElement;
     let savedTop: number | null = null;
 
+    const unlock = () => {
+      if (savedTop === null) return;
+
+      const top = savedTop;
+      savedTop = null;
+
+      renderer.setStyle(root, {
+        position: null,
+        top: null,
+        left: null,
+        right: null,
+        overflowY: null,
+        scrollBehavior: 'auto',
+      });
+
+      document.defaultView?.scrollTo(0, top);
+
+      renderer.setStyle(root, { scrollBehavior: null });
+    };
+
+    inject(DestroyRef).onDestroy(unlock);
+
     combineLatest([toObservable(hasBlockingOverlay), toObservable(documentScrollState)])
       .pipe(
         tap(([hasOpenOverlays, scrollState]) => {
@@ -42,22 +64,8 @@ const OVERLAY_SCROLL_BLOCKER_DEF = /* @__PURE__ */ defineRootProvider(
               right: '0',
               overflowY: 'scroll',
             });
-          } else if (!hasOpenOverlays && savedTop !== null) {
-            const top = savedTop;
-            savedTop = null;
-
-            renderer.setStyle(root, {
-              position: null,
-              top: null,
-              left: null,
-              right: null,
-              overflowY: null,
-              scrollBehavior: 'auto',
-            });
-
-            document.defaultView?.scrollTo(0, top);
-
-            renderer.setStyle(root, { scrollBehavior: null });
+          } else if (!hasOpenOverlays) {
+            unlock();
           }
         }),
         takeUntilDestroyed(),
