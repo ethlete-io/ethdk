@@ -195,6 +195,12 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       Friction: a slot exposes state but no playback control; `width="480"` on Vimeo or Facebook gives an invalid CSS
       width; the stream error codes are not exported. E2E gaps: PiP drag, collapse and resize; the FLIP and scale
       animations; an iframe that moves between slots; the placeholder pulse (needs a real IntersectionObserver).
+      Table in progress (2026-09-25), split in two parallel subagents: part A (core, labels, row sources, sort and
+      filter, state persistence, CSV export, skeleton, virtual scroll, group headers) writes
+      `table-core*.scenario.spec.ts`; part B (selection, expansion, inline edit, cell errors, column chooser and menu,
+      filters, keyboard nav, reorder, resize, drag scroll, sticky columns, page sticky header, row router link) writes
+      `table-features*.scenario.spec.ts`. Neither edits the allowlist; the lead removes covered entries after both
+      report. If a session ends first: run both files, match their exports against the `S8b table` allowlist entries.
 - [x] S11 Follow-ups from S6 (hand-written skill `.agents/skills/query-scenario-tests/SKILL.md` documents `s.mount`)
   1. Done in 47f4d25da: `s.mount(Component, injector, { inputs })` sets inputs before the first change detection;
      `legacy-client-options` mounts `MatchListComponent` directly.
