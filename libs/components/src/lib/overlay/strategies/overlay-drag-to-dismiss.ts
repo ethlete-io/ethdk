@@ -25,7 +25,7 @@ export type DragDismissMomentum = {
 
 export type DragToDismissContext = {
   element: HTMLElement;
-  overlayRef: OverlayRef<object, unknown>;
+  overlayRef: Pick<OverlayRef, 'closeVia' | 'afterClosed'>;
   config: OverlayDragToDismissConfig;
   renderer: AngularRenderer;
 

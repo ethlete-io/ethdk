@@ -2,7 +2,7 @@ import { Location } from '@angular/common';
 import {
   DestroyRef,
   InjectionToken,
-  Provider,
+  StaticProvider,
   Signal,
   Type,
   WritableSignal,
@@ -522,7 +522,7 @@ export const provideOverlayRouterService = /* @__PURE__ */ toProvideFn(OVERLAY_R
 export const injectOverlayRouter = /* @__PURE__ */ toInjectFn(OVERLAY_ROUTER_DEF);
 export const OVERLAY_ROUTER_TOKEN = /* @__PURE__ */ toToken(OVERLAY_ROUTER_DEF);
 
-export const provideOverlayRouterConfig = (config: OverlayRouterConfig): Provider[] => {
+export const provideOverlayRouterConfig = (config: OverlayRouterConfig): StaticProvider[] => {
   return [
     {
       provide: OVERLAY_ROUTER_CONFIG_TOKEN,
@@ -541,6 +541,6 @@ export const provideOverlayRouterConfig = (config: OverlayRouterConfig): Provide
  *   providers: [provideOverlayRouter({ routes: [...] })],
  * });
  */
-export const provideOverlayRouter = (config: OverlayRouterConfig): Provider[] => {
+export const provideOverlayRouter = (config: OverlayRouterConfig): StaticProvider[] => {
   return [...provideOverlayRouterConfig(config), ...provideOverlayRouterService()];
 };

@@ -250,14 +250,10 @@ describe('overlay strategy scenarios', () => {
       ref.afterClosedEvent().subscribe((event) => sources.push(event.source));
       makeDraggable(elementsOf(ref).paneElement);
 
-      const contentRef = ref.componentInstance()?.ref;
-
-      if (!contentRef) throw new Error('content did not mount');
-
       const drag = s.run(() =>
         enableDragToDismiss({
           element: elementsOf(ref).paneElement,
-          overlayRef: contentRef,
+          overlayRef: ref,
           renderer: injectRenderer(),
           config: { direction: 'to-bottom' },
         }),

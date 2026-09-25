@@ -1,4 +1,4 @@
-import { ElementRef, inject, InjectionToken, InjectOptions, Provider, TemplateRef } from '@angular/core';
+import { ElementRef, inject, InjectionToken, InjectOptions, StaticProvider, TemplateRef } from '@angular/core';
 import { isObject } from '../object';
 import { createComponentId } from './component-id';
 
@@ -32,14 +32,14 @@ export type InjectFn<T> = {
  * {@link toToken} - never by destructuring, see {@link defineProvider}.
  */
 export type ProviderDefinition<T> = {
-  readonly provide: () => Provider[];
+  readonly provide: () => StaticProvider[];
   readonly inject: InjectFn<T>;
   readonly token: InjectionToken<T>;
 };
 
 /** {@link ProviderDefinition} for a value provider, whose `provide` takes a partial override. */
 export type StaticProviderDefinition<T> = {
-  readonly provide: (valueOverride?: Partial<T>) => Provider[];
+  readonly provide: (valueOverride?: Partial<T>) => StaticProvider[];
   readonly inject: InjectFn<T>;
   readonly token: InjectionToken<T>;
 };
@@ -58,7 +58,7 @@ const createProviders = <T>(
   token: InjectionToken<T>,
   factory: () => T,
   extraToken?: InjectionToken<unknown>,
-): Provider[] => [
+): StaticProvider[] => [
   { provide: token, useFactory: factory },
   ...(extraToken ? [{ provide: extraToken, useExisting: token }] : []),
 ];
@@ -156,7 +156,7 @@ const createValueProviders = <T>(
   defaultValue: T | undefined,
   valueOverride: Partial<T> | undefined,
   options: ProviderDefinitionOptions | undefined,
-): Provider[] => [
+): StaticProvider[] => [
   { provide: token, useValue: maybeMergeValues(defaultValue, valueOverride) },
   ...(options?.extraInjectionToken ? [{ provide: options.extraInjectionToken, useExisting: token }] : []),
 ];

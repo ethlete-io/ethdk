@@ -1,6 +1,6 @@
 import {
   InjectionToken,
-  Provider,
+  StaticProvider,
   Signal,
   TemplateRef,
   WritableSignal,
@@ -133,7 +133,7 @@ export const provideSidebarOverlayService = /* @__PURE__ */ toProvideFn(SIDEBAR_
 export const injectSidebarOverlay = /* @__PURE__ */ toInjectFn(SIDEBAR_OVERLAY_DEF);
 export const SIDEBAR_OVERLAY_TOKEN = /* @__PURE__ */ toToken(SIDEBAR_OVERLAY_DEF);
 
-export const provideSidebarOverlayConfig = (config: SidebarOverlayConfig): Provider[] => {
+export const provideSidebarOverlayConfig = (config: SidebarOverlayConfig): StaticProvider[] => {
   return [
     {
       provide: SIDEBAR_OVERLAY_CONFIG,
@@ -146,6 +146,6 @@ export const provideSidebarOverlayConfig = (config: SidebarOverlayConfig): Provi
  * Provides both the sidebar config and the sidebar overlay service in one call, mirroring
  * {@link provideOverlayRouter}. Requires an overlay router to also be provided.
  */
-export const provideSidebarOverlay = (config: SidebarOverlayConfig = {}): Provider[] => {
+export const provideSidebarOverlay = (config: SidebarOverlayConfig = {}): StaticProvider[] => {
   return [...provideSidebarOverlayConfig(config), ...provideSidebarOverlayService()];
 };

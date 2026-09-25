@@ -182,7 +182,7 @@ const openSettings = <T extends object = SettingsOverlayComponent>(
     injectOverlayManager().open<T>(component, {
       strategies: dialogOverlayStrategy(),
       autoFocus: false,
-      providers: [providers],
+      providers: [...providers],
     }),
   );
 
