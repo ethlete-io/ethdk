@@ -1,6 +1,7 @@
 import { Tree, getProjects } from '@nx/devkit';
 import * as ts from 'typescript';
 import { ModuleGraph } from '../migrate-to-query-v3/module-graph.js';
+import { toolkitArgsFitCreator } from './args-assignability.js';
 import { capitalizeFirstLetter, createSourceFile } from '../migrate-to-query-v3/shared.js';
 import { HTTP_VERBS, HttpVerb, ToolkitCall, ToolkitFeature, findTypeDeclaration } from './feature.js';
 import { TOOLKIT_TASK, ToolkitMigrationReport } from './report.js';
@@ -42,6 +43,7 @@ export type ExistingCreator = {
   responseType: string | null;
   /** `null` when the args type is not written as literals and plain interfaces the generator can read. */
   args: CreatorArgTexts | null;
+  argsTypeText: string | null;
   line: number;
 };
 
@@ -256,6 +258,7 @@ export const indexExistingCreators = (
           pathParams: route.pathParams,
           responseType: responseTypeOf(call.typeArguments?.[0], sourceFile),
           args: creatorArgsOf(tree, graph, filePath, sourceFile, call.typeArguments?.[0]),
+          argsTypeText: call.typeArguments?.[0]?.getText(sourceFile) ?? null,
           line: lineOf(sourceFile, declaration.getStart(sourceFile)),
         });
       }
@@ -352,11 +355,19 @@ const decideReuse = (
   const argTexts = toolkitArgTexts(call);
   const argMismatch = (creator: ExistingCreator) =>
     COMPARED_ARG_KEYS.find((key) => creator.args?.[key] !== argTexts[key]) ?? null;
+  const argsFit = (creator: ExistingCreator) =>
+    argMismatch(creator) === null ||
+    toolkitArgsFitCreator(
+      tree,
+      graph,
+      { file: feature.files.actions, typeText: call.args?.typeText ?? null },
+      { file: creator.filePath, typeText: creator.argsTypeText },
+    );
   const match = sameRoute.find(
     (creator) =>
       creator.responseType === response &&
       creator.pathParams.join(',') === call.route.pathParams.join(',') &&
-      argMismatch(creator) === null,
+      argsFit(creator),
   );
 
   if (!match) {

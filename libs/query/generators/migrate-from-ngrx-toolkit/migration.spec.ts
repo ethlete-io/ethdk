@@ -221,21 +221,64 @@ describe('migrate-from-ngrx-toolkit', () => {
       expect(queries).toContain(
         "export const getVenueBySlug = publicApiGet<{ pathParams: Models.GetVenueBySlugArgs['queryParams']; response: VenueDetailView }>((p) => `/public/venues/by-slug/${p.slug}`);",
       );
-      expect(stats.creatorsReused).toBe(1);
+      expect(stats.creatorsReused).toBe(2);
     });
 
-    it('writes a second creator when the existing one takes other query params', () => {
+    const mismatches = () =>
+      report.tasks.filter((task) => task.id === TOOLKIT_TASK.DUPLICATE_ROUTE_MISMATCH).map((task) => task.summary);
+
+    const replaceIn = (path: string, from: string, to: string) => {
+      const content = read(path);
+
+      expect(content).toContain(from);
+      tree.write(path, content.replace(from, to));
+    };
+
+    const VENUE_MODELS = `${APP_B.venue}/venue.models.ts`;
+    const VENUE_TYPES = 'libs/queries/src/lib/venue/venue.types.ts';
+
+    it('reuses a creator whose query params are an assignable intersection behind another alias', () => {
+      migrateToolkitStores(tree, APP_B_OPTIONS, report);
+
+      expect(read(featureFile(APP_B.event, 'queries'))).toContain(
+        "export { getEventsResults as getEventResults } from '@app-b/queries';",
+      );
+      expect(mismatches()).not.toContainEqual(expect.stringContaining('`getEventResults`'));
+    });
+
+    it('reuses a creator whose query params only differ in null on optional members', () => {
+      replaceIn(
+        VENUE_MODELS,
+        "params: WithPagination & WithSorting<'name'>;",
+        'params: { search?: string; resultsPerPage?: number | null; page?: number | null };',
+      );
+      replaceIn(VENUE_TYPES, 'page?: number | null;', 'page?: number;');
+      migrateToolkitStores(tree, APP_B_OPTIONS, report);
+
+      expect(read(featureFile(APP_B.venue, 'queries'))).toContain(
+        "export { getVenueSearch as getVenues } from '@app-b/queries';",
+      );
+      expect(mismatches()).toEqual([]);
+    });
+
+    it('reuses a creator whose query params are written as an intersection of literals', () => {
+      replaceIn(
+        VENUE_MODELS,
+        "params: WithPagination & WithSorting<'name'>;",
+        'params: { search?: string | null } & { resultsPerPage?: number | null; page?: number | null };',
+      );
+      migrateToolkitStores(tree, APP_B_OPTIONS, report);
+
+      expect(read(featureFile(APP_B.venue, 'queries'))).toContain(
+        "export { getVenueSearch as getVenues } from '@app-b/queries';",
+      );
+    });
+
+    it('writes a second creator when the existing one lacks a query param the toolkit sends', () => {
       migrateToolkitStores(tree, APP_B_OPTIONS, report);
 
       expect(read(featureFile(APP_B.venue, 'queries'))).toContain('export const getVenues = publicApiGet<');
-      expect(read(featureFile(APP_B.event, 'queries'))).toContain('export const getEventResults = publicApiGet<');
-
-      const summaries = report.tasks
-        .filter((task) => task.id === TOOLKIT_TASK.DUPLICATE_ROUTE_MISMATCH)
-        .map((task) => task.summary);
-
-      expect(summaries).toEqual([
-        expect.stringContaining('`getEventResults` got its own creator: `getEventsResults`'),
+      expect(mismatches()).toEqual([
         expect.stringContaining(
           "`getVenues` got its own creator: `getVenueSearch` (libs/queries/src/lib/venue/venue.queries.ts:13) has the same GET route, but its query params are `{ search?: string | null; resultsPerPage?: number | null; page?: number | null }`, not `WithPagination & WithSorting<'name'>`.",
         ),
