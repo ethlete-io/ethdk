@@ -11,6 +11,8 @@ yarn nx g @ethlete/query:prep-for-query-v3   # rename colliding legacy symbols, 
 yarn nx g @ethlete/query:migrate-to-query-v3
 ```
 
+`prep-for-query-v3` also warns about installed dependencies whose `.d.ts` files import a renamed v2 name (`QueryClient`, `QueryCreator`, ...) from `@ethlete/query`. No codemod can fix a prebuilt package: run the prep in its own repository and release a rebuild before upgrading.
+
 `migrate-to-query-v3` converts clients, generates current-system creators, wraps them in `legacy*` interop creators, rewrites `.prepare()` call sites, and writes **`query-v3-migration-tasks.md`** - a task list with stable ids for everything it could not finish. Read that file before reading the diff.
 
 In a monorepo, scope the run instead of rewriting every app at once:

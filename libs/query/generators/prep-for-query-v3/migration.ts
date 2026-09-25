@@ -1,4 +1,4 @@
-import { Tree, formatFiles, visitNotIgnoredFiles } from '@nx/devkit';
+import { Tree, formatFiles, joinPathFragments, readJson, visitNotIgnoredFiles } from '@nx/devkit';
 import * as ts from 'typescript';
 import {
   REMOVED_EXPERIMENTAL_QUERY_HELPERS,
@@ -17,6 +17,7 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
 
   renameConflictingSymbols(tree);
   replaceExperimentalQueryNamespace(tree);
+  reportPrebuiltPackagesImportingRenamedSymbols(tree);
 
   if (!schema.skipFormat) {
     await formatFiles(tree);
@@ -507,6 +508,119 @@ function applyReplacements(
     });
 
   return { content: result, modified: replacements.length > 0, replacementCount };
+}
+
+//#endregion
+
+//#region Prebuilt packages
+
+type RootPackageJson = {
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  optionalDependencies?: Record<string, string>;
+};
+
+const isRenamedSymbol = (name: string) => TYPE_RENAMES.has(name) || FUNCTION_RENAMES.has(name);
+
+function reportPrebuiltPackagesImportingRenamedSymbols(tree: Tree): void {
+  if (!tree.exists('package.json')) return;
+
+  const packageJson = readJson<RootPackageJson>(tree, 'package.json');
+  const packageNames = new Set(
+    [packageJson.dependencies, packageJson.devDependencies, packageJson.optionalDependencies].flatMap((deps) =>
+      Object.keys(deps ?? {}),
+    ),
+  );
+
+  const hits: string[] = [];
+
+  [...packageNames]
+    .filter((name) => !name.startsWith('@ethlete/'))
+    .sort()
+    .forEach((packageName) => {
+      const importedNames = new Set<string>();
+
+      collectDeclarationFiles(tree, joinPathFragments('node_modules', packageName)).forEach((filePath) => {
+        const content = tree.read(filePath, 'utf-8');
+        if (!content?.includes('@ethlete/query')) return;
+
+        findRenamedSymbolsInDeclaration(createSourceFile(content, filePath)).forEach((name) => importedNames.add(name));
+      });
+
+      if (importedNames.size > 0) {
+        hits.push(`   - ${packageName}: ${[...importedNames].sort().join(', ')}`);
+      }
+    });
+
+  if (hits.length > 0) {
+    console.warn(
+      `\n⚠️ These installed packages were built against @ethlete/query v2 and import names v3 no longer exports. No codemod can fix them here: run prep-for-query-v3 in each package's own repository and release a rebuild before upgrading this workspace:\n${hits.join('\n')}`,
+    );
+  }
+}
+
+function collectDeclarationFiles(tree: Tree, dir: string): string[] {
+  if (!tree.exists(dir)) return [];
+
+  return tree.children(dir).flatMap((child) => {
+    if (child === 'node_modules') return [];
+
+    const childPath = joinPathFragments(dir, child);
+
+    if (tree.isFile(childPath)) {
+      return /\.d\.(c|m)?ts$/.test(child) ? [childPath] : [];
+    }
+
+    return collectDeclarationFiles(tree, childPath);
+  });
+}
+
+function findRenamedSymbolsInDeclaration(sourceFile: ts.SourceFile): Set<string> {
+  const names = new Set<string>();
+  const namespaceAliases = collectQueryNamespaceAliases(sourceFile);
+  const isQueryModule = (node: ts.Node | undefined) =>
+    !!node && ts.isStringLiteral(node) && node.text === '@ethlete/query';
+
+  function visit(node: ts.Node) {
+    if (ts.isImportDeclaration(node) && isQueryModule(node.moduleSpecifier)) {
+      const namedBindings = node.importClause?.namedBindings;
+
+      if (namedBindings && ts.isNamedImports(namedBindings)) {
+        namedBindings.elements.forEach((element) => names.add((element.propertyName ?? element.name).text));
+      }
+    }
+
+    if (ts.isExportDeclaration(node) && isQueryModule(node.moduleSpecifier) && node.exportClause) {
+      if (ts.isNamedExports(node.exportClause)) {
+        node.exportClause.elements.forEach((element) => names.add((element.propertyName ?? element.name).text));
+      }
+    }
+
+    if (
+      ts.isImportTypeNode(node) &&
+      ts.isLiteralTypeNode(node.argument) &&
+      isQueryModule(node.argument.literal) &&
+      node.qualifier
+    ) {
+      names.add(getLeftmostIdentifier(node.qualifier).text);
+    }
+
+    const namespaceMember = getNamespaceMember(node, namespaceAliases)?.member;
+
+    if (namespaceMember) {
+      names.add(namespaceMember.text);
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  return new Set([...names].filter(isRenamedSymbol));
+}
+
+function getLeftmostIdentifier(name: ts.EntityName): ts.Identifier {
+  return ts.isIdentifier(name) ? name : getLeftmostIdentifier(name.left);
 }
 
 //#endregion

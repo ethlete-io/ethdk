@@ -1,4 +1,4 @@
-import { Tree } from '@nx/devkit';
+import { Tree, updateJson } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { MockInstance } from 'vitest';
 import migration from './migration';
@@ -612,6 +612,58 @@ export const myQuery: Query<any> = null as any;
       expect(content).toContain('export const myQuery: V2Query<any> = null as any;');
     });
   });
+  describe('Prebuilt packages', () => {
+    const declareDependencies = (
+      dependencies: Record<string, string>,
+      devDependencies: Record<string, string> = {},
+    ) => {
+      tree.write('.gitignore', 'node_modules\n');
+      updateJson(tree, 'package.json', (json) => ({ ...json, dependencies, devDependencies }));
+    };
+
+    it('reports installed packages whose declarations import names the v3 package renames', async () => {
+      declareDependencies({ '@acme/data-access': '1.0.0' }, { '@acme/testing': '1.0.0' });
+      tree.write(
+        'node_modules/@acme/data-access/lib/api.d.ts',
+        `import { QueryClient, QueryCreator, def } from '@ethlete/query';\nexport declare const client: QueryClient;\n`,
+      );
+      tree.write(
+        'node_modules/@acme/data-access/lib/types.d.ts',
+        `export type Q = import('@ethlete/query').AnyQuery;\n`,
+      );
+      tree.write(
+        'node_modules/@acme/testing/index.d.ts',
+        `import * as legacy from '@ethlete/query';\nexport declare const creator: legacy.QueryCreator<any, any, any, any, any>;\n`,
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const warnings = consoleWarnSpy.mock.calls.flat().join('\n');
+
+      expect(warnings).toContain('@acme/data-access: AnyQuery, QueryClient, QueryCreator');
+      expect(warnings).toContain('@acme/testing: QueryCreator');
+      expect(tree.read('node_modules/@acme/data-access/lib/api.d.ts', 'utf-8')).toContain('QueryClient, QueryCreator');
+    });
+
+    it('ignores packages that import only kept names, undeclared packages and @ethlete packages', async () => {
+      declareDependencies({ '@acme/kept': '1.0.0', '@ethlete/cdk': '5.0.0' });
+      tree.write(
+        'node_modules/@acme/kept/index.d.ts',
+        `import { def } from '@ethlete/query';\nexport declare const x: typeof def;\n`,
+      );
+      tree.write('node_modules/@ethlete/cdk/index.d.ts', `import { QueryClient } from '@ethlete/query';\n`);
+      tree.write('node_modules/undeclared/index.d.ts', `import { QueryClient } from '@ethlete/query';\n`);
+
+      await migration(tree, { skipFormat: true });
+
+      const warnings = consoleWarnSpy.mock.calls.flat().join('\n');
+
+      expect(warnings).not.toContain('@acme/kept');
+      expect(warnings).not.toContain('@ethlete/cdk');
+      expect(warnings).not.toContain('undeclared');
+    });
+  });
+
   it('runs the formatter when skipFormat is not set', async () => {
     tree.write(
       'apps/example/src/app/service.ts',
