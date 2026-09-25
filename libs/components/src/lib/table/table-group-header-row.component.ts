@@ -49,8 +49,9 @@ export class TableGroupHeaderRowComponent {
   protected table = injectTableFeatureHost('etTableGroupHeaders');
 
   // Measured so the column-header row can stick just below this one - see the feature's host binding.
+  // Every group cell shares one grid row, so the first one's height is the row's.
   private groupCells = viewChildren<ElementRef<HTMLElement>>('groupCell');
-  private groupCellDimensions = signalElementDimensions(computed(() => [...this.groupCells()]));
+  private groupCellDimensions = signalElementDimensions(computed(() => this.groupCells()[0] ?? null));
 
   /** Rendered height of the row, for the header row's sticky offset. */
   public blockSize = computed(() => this.groupCellDimensions()?.offset?.height ?? 0);
