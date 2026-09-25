@@ -89,6 +89,17 @@ describe('parseAgentRequest', () => {
     });
   });
 
+  it('reads a replacing agent session resync only from a literal true', () => {
+    expect(parseAgentRequest({ op: 'agentSessions.resync', paths: ['/home/a'], replace: true })).toEqual({
+      ok: true,
+      request: { op: 'agentSessions.resync', paths: ['/home/a'], replace: true },
+    });
+    expect(parseAgentRequest({ op: 'agentSessions.resync', paths: ['/home/a'], replace: 'yes' })).toEqual({
+      ok: true,
+      request: { op: 'agentSessions.resync', paths: ['/home/a'] },
+    });
+  });
+
   it('refuses an agent session resync that names no checkout', () => {
     expect(parseAgentRequest({ op: 'agentSessions.resync', paths: [] })).toEqual({
       ok: false,

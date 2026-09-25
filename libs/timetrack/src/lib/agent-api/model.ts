@@ -427,7 +427,12 @@ export type AgentApiRequest =
   | { op: 'tempo.worklogs'; from: string; to: string }
   | { op: 'calendar.events'; from: string; to: string }
   | { op: 'lane.issues' }
-  | { op: 'agentSessions.resync'; paths: string[] };
+  | {
+      op: 'agentSessions.resync';
+      paths: string[];
+      /** Overwrites what the store holds for the re-read sessions instead of keeping the first read. */
+      replace?: true;
+    };
 
 /**
  * One commit a split reads a directory out of: the local day it counts toward, and its changed files.

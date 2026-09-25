@@ -3,7 +3,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   AgentSessionCollection,
+  AgentSessionSpan,
   UnlinkedAgentSessions,
+  agentSessionSpansUnder,
   applyExclusionRules,
   collectAgentSessions$,
   effectiveExclusionRules,
@@ -109,6 +111,7 @@ const createAgentSessionCollector = (source: AgentLogSource) => {
    * be written over a rewind made in the meantime — the logs would then never be re-read.
    */
   let pendingResync: string[] = [];
+  let pendingReplace: string[] = [];
   const resyncAsked$ = new Subject<void>();
 
   /**
@@ -126,7 +129,12 @@ const createAgentSessionCollector = (source: AgentLogSource) => {
    * Both filters reach the cursors too. A cursor carries the log's last title and checkout, so a cursor
    * written whole stores what the two filters just denied.
    */
-  const persist$ = (collection: AgentSessionCollection, startedAt: Date): Observable<AgentSessionCollection> => {
+  const persist$ = (options: {
+    collection: AgentSessionCollection;
+    startedAt: Date;
+    replacing: readonly AgentSessionSpan[];
+  }): Observable<AgentSessionCollection> => {
+    const { collection, startedAt, replacing } = options;
     const links = projectLinks();
     const rules = effectiveExclusionRules(settings.settings());
     const linked = keepLinkedAgentSessions({ events: collection.events, links });
@@ -143,6 +151,7 @@ const createAgentSessionCollector = (source: AgentLogSource) => {
         events: redactEventTitles(kept),
         cursors: sanitizeAgentSessionCursors({ cursors: collection.cursors, links, rules }),
         pass: source.pass,
+        replacing,
       })
       .pipe(
         map(() => collection),
@@ -171,8 +180,10 @@ const createAgentSessionCollector = (source: AgentLogSource) => {
     defer(() => {
       const startedAt = new Date();
       const resyncPaths = pendingResync;
+      const replacePaths = pendingReplace;
 
       pendingResync = [];
+      pendingReplace = [];
       isCollecting.set(true);
 
       return settings.ready$.pipe(
@@ -186,9 +197,18 @@ const createAgentSessionCollector = (source: AgentLogSource) => {
             modifiedAfter: resyncPaths.length ? undefined : modifiedAfter,
           }),
         ),
-        switchMap((collection) => persist$(collection, startedAt)),
+        switchMap((collection) =>
+          persist$({
+            collection,
+            startedAt,
+            replacing: replacePaths.length
+              ? agentSessionSpansUnder({ events: collection.events, paths: replacePaths })
+              : [],
+          }),
+        ),
         catchError((error: unknown) => {
           pendingResync = [...new Set([...resyncPaths, ...pendingResync])];
+          pendingReplace = [...new Set([...replacePaths, ...pendingReplace])];
           failure.set(error instanceof Error ? error.message : String(error));
 
           return EMPTY;
@@ -204,12 +224,13 @@ const createAgentSessionCollector = (source: AgentLogSource) => {
    * re-read reports whatever is still skipped. A run already in flight finishes first — the next tick
    * picks the rewind up, within one poll interval.
    */
-  const resync = (paths: readonly string[]) => {
+  const resync = (paths: readonly string[], options: { replace?: boolean } = {}) => {
     const wanted = paths.map((path) => path.trim()).filter(Boolean);
 
     if (!wanted.length) return;
 
     pendingResync = [...new Set([...pendingResync, ...wanted])];
+    if (options.replace) pendingReplace = [...new Set([...pendingReplace, ...wanted])];
     totals.update((all) => ({
       ...all,
       unlinked: all.unlinked.filter((entry) => !wanted.some((path) => pathIsUnder(path, entry.cwd))),

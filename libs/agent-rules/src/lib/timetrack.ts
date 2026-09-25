@@ -474,9 +474,16 @@ export const timetrackRules = () => askTimetrack<TimetrackRules>({ op: 'settings
 /**
  * Asks the app to read the agent session logs under `paths` again, so sessions it dropped while no
  * project link held them are stored. The read runs in the background; the answer names the checkouts.
+ *
+ * With `replace`, the re-read overwrites the samples, spend and prompts the store holds for those
+ * sessions, which is how a parser fix reaches days already stored.
  */
-export const timetrackResyncAgentSessions = (paths: readonly string[]) =>
-  askTimetrack<{ paths: string[] }>({ op: 'agentSessions.resync', paths });
+export const timetrackResyncAgentSessions = (paths: readonly string[], options: { replace?: boolean } = {}) =>
+  askTimetrack<{ paths: string[]; replace?: true }>({
+    op: 'agentSessions.resync',
+    paths,
+    ...(options.replace ? { replace: true } : {}),
+  });
 
 export const timetrackStandIns = async () =>
   (await askTimetrack<{ standIns: TimetrackStandIn[] }>({ op: 'standIn.list' })).standIns;

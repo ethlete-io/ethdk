@@ -2,6 +2,7 @@ import {
   AgentLogPass,
   AgentLogSessionState,
   AgentSessionCursor,
+  AgentSessionSpan,
   CollectedEvent,
   StoredTitle,
   TimetrackCursorRepairStore,
@@ -118,11 +119,15 @@ export type TauriEventStore = TimetrackEventStore &
     appendCounted$(events: CollectedEvent[]): Observable<number>;
     /** The whole answer of a calendar read, which also deletes the stored meetings in its span it no longer returns. */
     appendCalendarRead$(options: { events: CollectedEvent[]; span: { from: Date; to: Date } }): Observable<number>;
-    /** The same, and moves the cursors of one pass over the agent logs in the same transaction. */
+    /**
+     * The same, and moves the cursors of one pass over the agent logs in the same transaction. The
+     * samples stored inside a `replacing` span are deleted first, so a re-read replaces them.
+     */
     appendWithCursors$(options: {
       events: CollectedEvent[];
       cursors: AgentSessionCursor[];
       pass: AgentLogPass;
+      replacing?: readonly AgentSessionSpan[];
     }): Observable<number>;
     bySource$(): Observable<SourceTally[]>;
     compactedThrough$(): Observable<Date | null>;
@@ -130,14 +135,15 @@ export type TauriEventStore = TimetrackEventStore &
   };
 
 export const createTauriEventStore = (): TauriEventStore => {
-  const appendWithCursors$ = (options: {
-    events: CollectedEvent[];
-    cursors: AgentSessionCursor[];
-    pass: AgentLogPass;
-  }) =>
+  const appendWithCursors$: TauriEventStore['appendWithCursors$'] = (options) =>
     invokeHost$<number>('events_append', {
       events: options.events.map(toStored),
       cursors: options.cursors.map((cursor) => toStoredCursor(cursor, options.pass)),
+      replacedSessions: (options.replacing ?? []).map((span) => ({
+        sessionId: span.sessionId,
+        fromMs: span.from.getTime(),
+        toMs: span.to.getTime(),
+      })),
     });
 
   const appendCounted$ = (events: CollectedEvent[]) =>

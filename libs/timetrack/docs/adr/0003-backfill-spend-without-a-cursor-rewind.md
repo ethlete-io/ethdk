@@ -1,5 +1,11 @@
 # Backfill spend with a read from the top, never with a cursor rewind
 
+> **Amended.** An `agent-session` sample now keys on its session and instant, and the store overwrites
+> a keyed agent event a re-read produces again, so a re-read can change what is stored. A resync with
+> `replace` goes further for samples: it deletes what the store holds for each re-read session inside
+> the span the re-read covers, because thinning after a parser fix emits at other instants and a wrong
+> sample the upsert never meets would stay. The backfill still never moves the collector's cursor.
+
 Spend collection started after months of agent logs had already been read, so the stored days hold
 no spend. To fill them, a backfill pass reads every agent log from the first line and appends only
 `agent-usage` events. It never moves an agent-session cursor.

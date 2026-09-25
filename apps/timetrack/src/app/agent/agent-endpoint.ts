@@ -122,12 +122,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const recurring = injectRecurringPatterns();
   const googleAccount = injectGoogleAccount();
   const destroyRef = inject(DestroyRef);
-  const agentLogReaders = [
-    injectAgentSessionCollector(),
-    injectAgentSpendBackfill(),
-    injectCodexSessionCollector(),
-    injectCodexSpendBackfill(),
-  ];
+  const agentSessionCollectors = [injectAgentSessionCollector(), injectCodexSessionCollector()];
+  const agentSpendBackfills = [injectAgentSpendBackfill(), injectCodexSpendBackfill()];
 
   /** Runs a read with the configured credentials, or fails with the one message that names the cause. */
   const withCredentials$ = <T>(read$: (credentials: JiraCredentials) => Observable<T>) =>
@@ -672,10 +668,13 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       .pipe(map((days) => ({ fromDay, toDay, daysRead: days.length, uses: laneIssueUses(days) })));
   };
 
-  const resyncAgentSessions$ = (paths: readonly string[]) => {
-    agentLogReaders.forEach((reader) => reader.resync(paths));
+  const resyncAgentSessions$ = (request: Extract<AgentApiRequest, { op: 'agentSessions.resync' }>) => {
+    const { paths, replace } = request;
 
-    return of({ paths });
+    agentSessionCollectors.forEach((collector) => collector.resync(paths, { replace }));
+    agentSpendBackfills.forEach((backfill) => backfill.resync(paths));
+
+    return of(replace ? { paths, replace } : { paths });
   };
 
   const carryOut$ = (request: AgentApiRequest): Observable<unknown> => {
@@ -719,7 +718,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       case 'lane.issues':
         return laneIssues$();
       case 'agentSessions.resync':
-        return resyncAgentSessions$(request.paths);
+        return resyncAgentSessions$(request);
     }
   };
 

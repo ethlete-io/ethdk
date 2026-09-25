@@ -45,6 +45,15 @@ pub struct CalendarWindow {
     pub to_ms: i64,
 }
 
+/// The stretch of one agent session a re-read from the top produced samples for, both ends included.
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReplacedSession {
+    pub session_id: String,
+    pub from_ms: i64,
+    pub to_ms: i64,
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SourceTally {
@@ -109,26 +118,59 @@ pub async fn events_between(db: State<'_, Db>, from_ms: i64, to_ms: i64) -> Time
 /// With a `calendar_window`, `events` is the whole answer of a calendar read over that window. A
 /// stored meeting that starts inside it and is missing from the answer was declined, cancelled or
 /// moved since it was stored, so it is deleted.
+///
+/// With `replaced_sessions`, the stored samples of each session inside its span are deleted before
+/// `events` is written, so a re-read replaces a session's samples rather than adding to them.
 #[tauri::command]
 pub async fn events_append(
     db: State<'_, Db>,
     events: Vec<StoredEvent>,
     cursors: Vec<AgentSessionCursorRow>,
     calendar_window: Option<CalendarWindow>,
+    replaced_sessions: Option<Vec<ReplacedSession>>,
 ) -> TimetrackResult<i64> {
-    db.run(move |connection| append(connection, &events, &cursors, calendar_window.as_ref()))
-        .await
+    db.run(move |connection| {
+        append_replacing(
+            connection,
+            &events,
+            &cursors,
+            calendar_window.as_ref(),
+            replaced_sessions.as_deref().unwrap_or_default(),
+        )
+    })
+    .await
 }
 
+#[cfg(test)]
 fn append(
     connection: &mut Connection,
     events: &[StoredEvent],
     cursors: &[AgentSessionCursorRow],
     calendar_window: Option<&CalendarWindow>,
 ) -> TimetrackResult<i64> {
+    append_replacing(connection, events, cursors, calendar_window, &[])
+}
+
+fn append_replacing(
+    connection: &mut Connection,
+    events: &[StoredEvent],
+    cursors: &[AgentSessionCursorRow],
+    calendar_window: Option<&CalendarWindow>,
+    replaced_sessions: &[ReplacedSession],
+) -> TimetrackResult<i64> {
     let transaction = connection.transaction()?;
     let paused = crate::pause::pause_ranges(&transaction)?;
     let mut appended = 0i64;
+
+    {
+        let mut delete = transaction.prepare(
+            "DELETE FROM collected_event WHERE kind = 'agent-session' AND at_ms >= ?2 AND at_ms <= ?3
+             AND json_extract(payload, '$.sessionId') = ?1",
+        )?;
+        for session in replaced_sessions {
+            delete.execute(params![session.session_id, session.from_ms, session.to_ms])?;
+        }
+    }
 
     if let Some(window) = calendar_window {
         let answered = serde_json::to_string(
@@ -773,6 +815,86 @@ mod tests {
             0
         );
         assert_eq!(worked_in_of(&connection), vec![worktree.map(str::to_string)]);
+    }
+
+    fn sample_of(session_id: &str, at_ms: i64, worked_in: &str) -> StoredEvent {
+        StoredEvent {
+            at_ms,
+            source: "agent-session".to_string(),
+            kind: "agent-session".to_string(),
+            payload: serde_json::json!({ "sessionId": session_id, "workedIn": worked_in }),
+            dedupe_key: Some(format!("agent-session:{session_id}:{at_ms}")),
+        }
+    }
+
+    fn samples_of(connection: &Connection) -> Vec<(String, i64, String)> {
+        let mut statement = connection
+            .prepare(
+                "SELECT json_extract(payload, '$.sessionId'), at_ms, json_extract(payload, '$.workedIn')
+                 FROM collected_event WHERE kind = 'agent-session' ORDER BY json_extract(payload, '$.sessionId'), at_ms",
+            )
+            .unwrap();
+        let rows = statement
+            .query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))
+            .unwrap();
+
+        rows.collect::<Result<Vec<_>, _>>().unwrap()
+    }
+
+    #[test]
+    fn replaces_the_samples_of_a_re_read_session_inside_its_span() {
+        let mut connection = store();
+        let sdk = "/home/tom/dev/ethlete-sdk";
+        let foreign = "/home/tom/dev/fut-frontend";
+
+        append(
+            &mut connection,
+            &[
+                sample_of("s1", 500, sdk),
+                sample_of("s1", 1_000, foreign),
+                sample_of("s1", 1_500, foreign),
+                sample_of("s1", 3_500, sdk),
+                sample_of("s2", 1_500, foreign),
+            ],
+            &[],
+            None,
+        )
+        .unwrap();
+        append_replacing(
+            &mut connection,
+            &[sample_of("s1", 1_000, sdk), sample_of("s1", 2_000, sdk)],
+            &[],
+            None,
+            &[ReplacedSession {
+                session_id: "s1".to_string(),
+                from_ms: 1_000,
+                to_ms: 2_000,
+            }],
+        )
+        .unwrap();
+
+        assert_eq!(
+            samples_of(&connection),
+            vec![
+                ("s1".to_string(), 500, sdk.to_string()),
+                ("s1".to_string(), 1_000, sdk.to_string()),
+                ("s1".to_string(), 2_000, sdk.to_string()),
+                ("s1".to_string(), 3_500, sdk.to_string()),
+                ("s2".to_string(), 1_500, foreign.to_string()),
+            ]
+        );
+    }
+
+    #[test]
+    fn keeps_a_sample_whose_instant_a_plain_re_read_no_longer_produces() {
+        let mut connection = store();
+        let sdk = "/home/tom/dev/ethlete-sdk";
+        let foreign = "/home/tom/dev/fut-frontend";
+
+        append(&mut connection, &[sample_of("s1", 1_500, foreign)], &[], None).unwrap();
+        append(&mut connection, &[sample_of("s1", 1_000, sdk)], &[], None).unwrap();
+
+        assert_eq!(samples_of(&connection).len(), 2);
     }
 
     fn meeting_at(at_ms: i64, key: &str) -> StoredEvent {

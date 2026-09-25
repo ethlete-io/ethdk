@@ -175,6 +175,21 @@ export const createFakePorts = (): HostPorts => {
         return ok(appendEvents(answered));
       },
       appendWithCursors$: (options) => {
+        for (const span of options.replacing ?? []) {
+          const replaced = events.filter(
+            (event) =>
+              event.kind === 'agent-session' &&
+              event.sessionId === span.sessionId &&
+              event.at >= span.from &&
+              event.at <= span.to,
+          );
+
+          for (const event of replaced) {
+            events.splice(events.indexOf(event), 1);
+            dedupeKeys.delete(dedupeKeyOf(event));
+          }
+        }
+
         const added = appendEvents(options.events);
 
         moveCursors(options.pass, options.cursors);

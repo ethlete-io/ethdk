@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { TimetrackProjectLink } from '../model/project-link';
 import { AgentSessionCursor } from './collect';
 import { UnlinkedAgentSessions } from './linked';
-import { agentSessionResyncOffers, resyncAgentSessionCursors, rewindAgentBackfillCursors } from './resync';
+import { AgentSessionEvent } from '../model/event';
+import {
+  agentSessionResyncOffers,
+  agentSessionSpansUnder,
+  resyncAgentSessionCursors,
+  rewindAgentBackfillCursors,
+} from './resync';
 
 const cursor = (id: string, cwd?: string): AgentSessionCursor => ({
   id,
@@ -171,5 +177,54 @@ describe('rewindAgentBackfillCursors', () => {
     const cursors = [spendCursor('a', { cwd: '/home/tom/dev/fut-frontend', readThrough: false })];
 
     expect(rewindAgentBackfillCursors({ cursors, paths: ['/home/tom/dev/fut-frontend'] })).toEqual([]);
+  });
+});
+
+const sample = (sessionId: string, at: string, cwd: string): AgentSessionEvent => ({
+  at: new Date(at),
+  source: 'agent-session',
+  kind: 'agent-session',
+  sessionId,
+  cwd,
+});
+
+describe('agentSessionSpansUnder', () => {
+  it('spans each session from its first sample to its last, whichever order they came in', () => {
+    const spans = agentSessionSpansUnder({
+      events: [
+        sample('s1', '2026-09-24T10:30:00Z', '/home/tom/dev/ethlete-sdk'),
+        sample('s1', '2026-09-24T09:00:00Z', '/home/tom/dev/ethlete-sdk'),
+        sample('s1', '2026-09-24T11:00:00Z', '/home/tom/dev/ethlete-sdk'),
+      ],
+      paths: ['/home/tom/dev/ethlete-sdk'],
+    });
+
+    expect(spans).toEqual([
+      { sessionId: 's1', from: new Date('2026-09-24T09:00:00Z'), to: new Date('2026-09-24T11:00:00Z') },
+    ]);
+  });
+
+  it('leaves out a session no sample of which was taken under the paths', () => {
+    const spans = agentSessionSpansUnder({
+      events: [
+        sample('s1', '2026-09-24T09:00:00Z', '/home/tom/dev/ethlete-sdk/apps/timetrack'),
+        sample('s2', '2026-09-24T09:00:00Z', '/home/tom/dev/fut-frontend'),
+      ],
+      paths: ['/home/tom/dev/ethlete-sdk'],
+    });
+
+    expect(spans.map((span) => span.sessionId)).toEqual(['s1']);
+  });
+
+  it('spans the samples a session took in another checkout too', () => {
+    const [span] = agentSessionSpansUnder({
+      events: [
+        sample('s1', '2026-09-24T09:00:00Z', '/home/tom/dev/ethlete-sdk'),
+        sample('s1', '2026-09-24T12:00:00Z', '/home/tom/dev/fut-frontend'),
+      ],
+      paths: ['/home/tom/dev/ethlete-sdk'],
+    });
+
+    expect(span?.to).toEqual(new Date('2026-09-24T12:00:00Z'));
   });
 });

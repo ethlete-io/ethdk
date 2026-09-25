@@ -1,4 +1,5 @@
 import { TimetrackProjectLink, pathIsUnder, projectKeyFor } from '../model/project-link';
+import { AgentSessionEvent } from '../model/event';
 import { AgentSessionCursor } from './collect';
 import { UnlinkedAgentSessions } from './linked';
 
@@ -47,6 +48,40 @@ export const rewindAgentBackfillCursors = (options: {
 
     return [{ id: cursor.id, nextLine: 0, cwd }];
   });
+
+/** The stretch of one session a re-read produced samples for, from its first sample to its last. */
+export type AgentSessionSpan = { sessionId: string; from: Date; to: Date };
+
+/**
+ * Per session with a sample under `paths`, the stretch from its first to its last sample in `events`.
+ * A replacing resync deletes the samples the store holds inside it before writing the re-read ones.
+ *
+ * `events` must hold every log of the session read from the top: a subagent's log shares its parent's
+ * session id, and a span taken from the parent alone would delete the subagent's samples.
+ */
+export const agentSessionSpansUnder = (options: {
+  events: readonly AgentSessionEvent[];
+  paths: readonly string[];
+}): AgentSessionSpan[] => {
+  const replaced = new Set(
+    options.events
+      .filter((event) => options.paths.some((path) => pathIsUnder(path, event.cwd)))
+      .map((event) => event.sessionId),
+  );
+  const spans = new Map<string, AgentSessionSpan>();
+
+  for (const event of options.events) {
+    if (!replaced.has(event.sessionId)) continue;
+
+    const span = spans.get(event.sessionId);
+
+    if (!span) spans.set(event.sessionId, { sessionId: event.sessionId, from: event.at, to: event.at });
+    else if (event.at < span.from) span.from = event.at;
+    else if (event.at > span.to) span.to = event.at;
+  }
+
+  return [...spans.values()];
+};
 
 /** A checkout whose skipped sessions a link now files into a project, so a re-read would store them. */
 export type AgentSessionResyncOffer = UnlinkedAgentSessions & { projectKey: string };

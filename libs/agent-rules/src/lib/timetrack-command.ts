@@ -509,7 +509,7 @@ The app holds this machine's Jira credentials, so no repository needs a token of
   timetrack calendar [from] [to]
                                 The watched calendars' events per day (default: the last 7 days)
   timetrack naming [YYYY-MM-DD] Which checkouts the day offers a name for, and why the rest do not
-  timetrack resync [path]       Read the agent session logs of a checkout again, after it got a link
+  timetrack resync [path…]      Read the agent session logs of checkouts again, after they got a link
 
 Options for search
   --project <KEY>     Search this project instead of the picked ones
@@ -533,6 +533,9 @@ Options for log
 Options for day
   --out <path>        Write the raw answer to a new file, readable by you alone
   --overwrite         Replace the file --out names, which is refused otherwise
+
+Options for resync
+  --replace           Overwrite what the store holds for those sessions, after a parser fix
 
 Options for edit — pass exactly one change
   --day <YYYY-MM-DD>  The day the row is on (default: today)
@@ -748,9 +751,19 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
   }
 
   if (subcommand === 'resync') {
-    const resynced = await timetrackResyncAgentSessions([resolve(root, value ?? '.')]);
+    const named = positionalArgs(argv).slice(1);
+    const resynced = await timetrackResyncAgentSessions(
+      (named.length ? named : ['.']).map((path) => resolve(root, path)),
+      {
+        replace: argv.includes('--replace'),
+      },
+    );
 
-    if (!json) say(`Timetrack reads the agent sessions of ${resynced.paths.join(', ')} again.`);
+    if (!json) {
+      const how = resynced.replace ? ', replacing what it stored for them' : '';
+
+      say(`Timetrack reads the agent sessions of ${resynced.paths.join(', ')} again${how}.`);
+    }
 
     return printed(resynced, json);
   }

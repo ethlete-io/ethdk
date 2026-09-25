@@ -199,6 +199,28 @@ describe('timetrack resync', () => {
     await expect(run(['resync', '../fut-frontend-altcha'])).resolves.toBe(0);
     expect(bodies).toEqual([{ op: 'agentSessions.resync', paths: ['/fut-frontend-altcha'] }]);
   });
+
+  it('asks for a replacing re-read of every named checkout with --replace', async () => {
+    const bodies: unknown[] = [];
+
+    await withEndpoint((request, response) => {
+      let body = '';
+
+      request.on('data', (chunk) => (body += chunk));
+      request.on('end', () => {
+        const parsed = JSON.parse(body) as { paths: string[]; replace?: true };
+
+        bodies.push(parsed);
+        response.setHeader('content-type', 'application/json');
+        response.end(JSON.stringify({ ok: true, value: parsed }));
+      });
+    });
+    const lines = printedLines();
+
+    await expect(run(['resync', '../a', '../b', '--replace'])).resolves.toBe(0);
+    expect(bodies).toEqual([{ op: 'agentSessions.resync', paths: ['/a', '/b'], replace: true }]);
+    expect(lines.join('\n')).toContain('replacing what it stored for them');
+  });
 });
 
 describe('timetrack standins', () => {
