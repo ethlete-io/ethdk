@@ -12,7 +12,12 @@
         "outputPath": "dist/libs/agent-rules",
         "main": "libs/agent-rules/src/index.ts",
         "tsConfig": "libs/agent-rules/tsconfig.lib.json",
-        "assets": ["libs/agent-rules/*.md", "libs/agent-rules/content/**/*"]
+        "assets": [
+          "libs/agent-rules/*.md",
+          "libs/agent-rules/content/**/*",
+          "libs/agent-rules/migrations.json",
+          "libs/agent-rules/migrations/**/*"
+        ]
       }
     },
     "lint": {

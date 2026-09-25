@@ -23,6 +23,17 @@ Commit the generated files, and add a drift check to CI:
 yarn ethlete-agents check  # exits non-zero when the generated files are stale
 ```
 
+Install [`@ethlete/cli`](/cli/update) too. The `sdk-update` skill is only written while it is
+installed, and it is what teaches an agent to update the SDK with `et update`.
+
+## Updating
+
+Update the package with `et update`, not by hand. It regenerates the rules and skills with
+`ethlete-agents sync` after the install, and a release that corrects guidance ships a migration
+for the code the old guidance produced: an `assisted` task under `.ethlete/update` that names the
+grep patterns, the correct pattern and the call sites to leave alone. Workspace layout changes are
+`manual` tasks, because moving projects is the team's decision.
+
 ## What gets written
 
 Content comes in two kinds. **Rules** are short and always loaded; **skills** are

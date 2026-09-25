@@ -104,6 +104,13 @@ only ever looks up the `type`.
 - **`provideLocale('de')`** - the locale signal label tokens and date formatting react to.
   Defaults to `'en'`; skip it for an English-only app.
 
+## Tooling
+
+- **`@ethlete/cli`** as a dev dependency. `et update` moves the `@ethlete/*` packages and runs
+  the migrations each release ships ([Updating the SDK](/cli/update)). Without it a repo that
+  uses `@ethlete/agent-rules` never gets the `sdk-update` skill, so its agent bumps versions by
+  hand and skips every migration.
+
 ## Framework
 
 - **`provideHttpClient()`** from `@angular/common/http` if you use `@ethlete/query`'s HTTP

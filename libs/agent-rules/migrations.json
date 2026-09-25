@@ -1,0 +1,43 @@
+{
+  "migrations": [
+    {
+      "name": "app-styling-utilities",
+      "version": "0.1.0-next.17",
+      "kind": "assisted",
+      "description": "App components styled with BEM classes or layout CSS files move to Tailwind utilities in their templates.",
+      "instructions": "./migrations/app-styling-utilities.md",
+      "docs": "/components/setup"
+    },
+    {
+      "name": "list-state-query-form",
+      "version": "0.1.0-next.17",
+      "kind": "assisted",
+      "description": "Filters, search, sort and paging synced to the URL by hand move to defineQueryForm.",
+      "instructions": "./migrations/list-state-query-form.md",
+      "docs": "/query/query-forms"
+    },
+    {
+      "name": "search-query-field",
+      "version": "0.1.0-next.17",
+      "kind": "assisted",
+      "description": "A hand-debounced search that feeds a query moves to searchQueryField.",
+      "instructions": "./migrations/search-query-field.md",
+      "docs": "/query/query-forms"
+    },
+    {
+      "name": "sdk-components-over-hand-built-ui",
+      "version": "0.1.0-next.17",
+      "kind": "assisted",
+      "description": "Hand-built bar charts, avatars and progress bars move to the SDK components that exist for them.",
+      "instructions": "./migrations/sdk-components-over-hand-built-ui.md",
+      "docs": "/components/"
+    },
+    {
+      "name": "nx-layout",
+      "version": "0.1.0-next.17",
+      "kind": "manual",
+      "description": "Compare the workspace with the Nx layout rule, and decide whether any project moves.",
+      "instructions": "./migrations/nx-layout.md"
+    }
+  ]
+}
