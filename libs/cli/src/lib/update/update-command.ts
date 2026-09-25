@@ -1,6 +1,7 @@
 import { hasUncommittedChanges } from '../api/git';
 import { readLocalConfig } from '../config/local-config';
 import { AGENT_COMMAND_KEY, assistedTasks, runAgentTasks } from './ai';
+import { AGENT_RULES_PACKAGE, planAgentRulesSync, runAgentRulesSync } from './agent-rules-sync';
 import { parseUpdateArgs } from './args';
 import { readPackageMigrations } from './migration-manifest';
 import { PackageManager, detectPackageManager } from './package-manager';
@@ -180,6 +181,42 @@ const printOutcomes = (outcomes: readonly MigrationOutcome[]) => {
   }
 };
 
+const syncAgentRules = (options: {
+  root: string;
+  manager: PackageManager;
+  updates: readonly UpdatedPackage[];
+  dryRun: boolean;
+}) => {
+  const { root, manager, updates, dryRun } = options;
+  const plan = planAgentRulesSync({ root, manager, updates });
+
+  if (plan.state === 'not-updated') return true;
+
+  const command = plan.command.join(' ');
+
+  if (plan.state === 'no-config') {
+    console.log(
+      `\n  ${AGENT_RULES_PACKAGE} moved, but this repo has no config for it. Run \`${command}\` where it has one.`,
+    );
+
+    return true;
+  }
+
+  if (dryRun) {
+    console.log(`\n  ${AGENT_RULES_PACKAGE} moved: a real run regenerates the agent rules with \`${command}\`.`);
+
+    return true;
+  }
+
+  console.log(`\n  ${AGENT_RULES_PACKAGE} moved, so the agent rules and skills are regenerated.\n\n  ${command}\n`);
+
+  const outcome = runAgentRulesSync(plan, root);
+
+  if (outcome.state === 'failed') console.error(`  The agent rules sync failed: ${outcome.reason}`);
+
+  return outcome.state !== 'failed';
+};
+
 const runMigrationPhase = (options: {
   root: string;
   manager: PackageManager;
@@ -195,10 +232,13 @@ const runMigrationPhase = (options: {
 
   for (const problem of collected.problems) console.error(`  ${problem}`);
 
+  // Before the tasks and any --ai run: the tasks assume the skills of the version that was installed.
+  const synced = syncAgentRules({ root, manager, updates, dryRun });
+
   if (collected.pending.length === 0) {
     console.log('\nNo migration is pending for those versions.');
 
-    return { failed: collected.problems.length > 0 };
+    return { failed: collected.problems.length > 0 || !synced };
   }
 
   console.log(`\n${collected.pending.length} migration(s) to run:\n`);
@@ -246,7 +286,9 @@ const runMigrationPhase = (options: {
     }
   }
 
-  return { failed: outcomes.some((outcome) => outcome.state === 'failed') || collected.problems.length > 0 };
+  return {
+    failed: outcomes.some((outcome) => outcome.state === 'failed') || collected.problems.length > 0 || !synced,
+  };
 };
 
 const resume = (options: { root: string; manager: PackageManager; argv: ReturnType<typeof parseUpdateArgs> }) => {

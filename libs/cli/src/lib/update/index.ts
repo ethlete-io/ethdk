@@ -1,3 +1,4 @@
+export * from './agent-rules-sync';
 export * from './ai';
 export * from './args';
 export * from './migration-manifest';

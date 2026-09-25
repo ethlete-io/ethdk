@@ -42,7 +42,12 @@ yarn et update
 
 In order, it writes the new ranges into every `package.json` in the repo that declares the package -
 an Nx library manifest included, not only the root one - runs the install, reads the migrations out of
-the freshly installed packages, runs every codemod, and writes what is left to `.ethlete/update`.
+the freshly installed packages, runs every codemod, regenerates the agent rules and skills with
+`ethlete-agents sync` when `@ethlete/agent-rules` moved, and writes what is left to `.ethlete/update`.
+
+An older `@ethlete/cli` skips the sync. If the run moved `@ethlete/agent-rules` and printed no
+`ethlete-agents sync` line, run `yarn ethlete-agents sync` yourself before the first task: the
+tasks assume the guidance of the new version.
 
 If the install or a codemod fails, the run stops and leaves `.ethlete/update/pending.json` behind.
 Fix the cause, then continue - do not start over, or the migrations of the versions already installed

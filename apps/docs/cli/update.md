@@ -18,7 +18,8 @@ Never bump an `@ethlete/*` range by hand. The version that lands is what selects
 6. Runs the install with the package manager the repo already uses.
 7. Reads the migration manifest out of every **freshly installed** package, and selects the migrations the update crossed.
 8. Runs each codemod, oldest version first.
-9. Writes everything that needs a decision to `.ethlete/update`.
+9. Runs `ethlete-agents sync` when the update moved `@ethlete/agent-rules` and the repo has an `ethlete-agents.config.json`, so the rules and skills match the tasks the update writes.
+10. Writes everything that needs a decision to `.ethlete/update`.
 
 Step 7 is why the install comes first: the migrations of a version ship inside that version.
 
@@ -112,7 +113,9 @@ An `assisted` task file states one change and how to apply it. Hand it to an age
 
 Nothing runs an agent unless `--ai` is passed, and no agent is auto-detected: without the key, `--ai` names the key and stops.
 
-Repos that use `@ethlete/agent-rules` also get the `sdk-update` skill, which teaches an agent how to work the whole list on its own.
+Repos that use `@ethlete/agent-rules` also get the `sdk-update` skill, which teaches an agent how to work the whole list on its own. The skill is only written while `@ethlete/cli` is installed, so install both.
+
+`@ethlete/agent-rules` ships migrations of its own. When a guidance fix means code written under the old guidance should change, the release carries an `assisted` task that tells an agent how to find that code and when to leave it alone.
 
 ## Requirements
 

@@ -57,6 +57,9 @@ The install runs before the migrations are read, because the migrations of a ver
 version. A run that stops leaves `.ethlete/update/pending.json` behind, and `--continue` picks it up -
 starting over would skip every migration the stopped run had not reached.
 
+When the update moved `@ethlete/agent-rules`, it runs `ethlete-agents sync` next, so the rules and
+skills match the tasks it writes.
+
 Everything a codemod cannot decide is written to `.ethlete/update`: `tasks.md` for you, `tasks.json`
 for an agent, and one file per task holding the instructions the package ships. A task is `manual` (it
 needs a decision), `assisted` (written as a prompt for an agent) or `unsupported` (a codemod this repo
