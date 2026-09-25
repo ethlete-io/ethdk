@@ -432,9 +432,17 @@ export const updateCommand = async ({
   for (const problem of resolved.problems) console.error(`  ${problem}`);
 
   if (resolved.updates.length === 0) {
+    if (resolved.problems.length > 0) {
+      console.error(
+        `\n${resolved.problems.length} lookup(s) failed, ${resolved.upToDate.length} package(s) on their newest version.`,
+      );
+
+      return 1;
+    }
+
     console.log(`\nEvery @ethlete package is on its newest version (${resolved.upToDate.length} checked).`);
 
-    return resolved.problems.length > 0 ? 1 : 0;
+    return 0;
   }
 
   console.log('');

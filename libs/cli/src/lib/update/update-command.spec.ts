@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -107,6 +107,20 @@ describe('et update --check', () => {
 
     expect(await updateCommand({ argv: ['--check'], root })).toBe(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('--continue'));
+  });
+
+  it('does not call the packages up to date when every lookup failed', async () => {
+    const root = makeRepo();
+
+    rmSync(join(root, UPDATE_DIR), { recursive: true });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('', { status: 404 })),
+    );
+
+    expect(await updateCommand({ argv: ['--check'], root })).toBe(1);
+    expect(console.log).not.toHaveBeenCalledWith(expect.stringContaining('newest version'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('lookup(s) failed'));
   });
 });
 
