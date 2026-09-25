@@ -38,7 +38,9 @@ search text, filters, sort, page or page size.
 
 1. Declare one `defineQueryForm({ fields })` per list, with a field creator per param
    (`searchQueryField`, `sortQueryField`, `queryField<number>` for the page, and the typed array and
-   date creators for filters), and call `.observe()` on it.
+   date creators for filters), and call `.observe()` on it. A date field bound to an `et-date-input`,
+   `et-date-time-input` or `et-time-input` needs `dateQueryField({ as: 'string' })`, because those
+   controls hold a string.
 2. Give the page field `isResetBy` for the fields that must send the list back to page 1.
 3. Feed the query from `withArgs(() => … this.qf.value() …)`.
 4. Bind each control with `[formField]="qf.fields.<name>"`.
