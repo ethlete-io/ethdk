@@ -44,7 +44,9 @@ export const appConfig: ApplicationConfig = {
   }
   ```
 
-  Size your own text in `rem` on the same 10px scale (or in `px`).
+  Size your own text in `rem` on the same 10px scale (or in `px`). Tailwind's rem-based scales
+  shrink with the root, so scale them back in your `@theme` - `--spacing: 0.4rem` restores the
+  default 4px step.
 
   In dev mode, `provideSurfaceThemesWithTailwind4()` logs a console warning once the page has
   loaded if the root font size is still the browser default. Any other root size (a fixed `10px`,
