@@ -213,9 +213,9 @@ type RowDrag = {
                   [style.left.%]="entry.inlineOffset"
                   [style.width.%]="entry.inlineSize"
                   [title]="entry.node.appointment.title"
+                  [style]="{ height: '1.6rem' }"
                   (click)="select(entry.node.appointment, $event)"
                   class="absolute flex cursor-pointer items-center gap-2 truncate rounded-sm border-l-2 border-l-et-theme bg-et-theme/10 px-2 text-left text-small outline-none hover:bg-et-theme/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-et-theme-ink"
-                  style="height: 1.6rem"
                   type="button"
                 >
                   <span class="truncate">{{ entry.node.appointment.title }}</span>
