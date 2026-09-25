@@ -181,6 +181,7 @@ export default defineConfig({
           items: [
             { text: 'Legacy client (V2)', link: '/query/legacy' },
             { text: 'Migrating from V2', link: '/query/migrating-from-v2' },
+            { text: 'Migrating from NgRx Toolkit', link: '/query/migrating-from-ngrx-toolkit' },
           ],
         },
       ],
