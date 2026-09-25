@@ -16,6 +16,7 @@
     "changeset:prerelease": "node ./tools/scripts/enter-prerelease-mode.js && yarn changeset version && yarn versions:sync && yarn install --mode=update-lockfile",
     "changeset:release": "node ./tools/scripts/exit-prerelease-mode.js && yarn changeset version && yarn versions:sync && yarn install --mode=update-lockfile",
     "commit": "yarn dlx @commitlint/prompt-cli",
+    "core:export-coverage": "node ./tools/export-coverage/check.mjs core",
     "design": "nx build cli && node dist/libs/cli/src/index.js design",
     "design:check": "nx build cli && node dist/libs/cli/src/index.js design check",
     "docs": "nx serve docs",

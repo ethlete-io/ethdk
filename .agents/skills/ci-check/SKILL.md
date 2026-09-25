@@ -31,6 +31,7 @@ yarn agents:check                         # 3. generated agent files vs libs/age
 yarn versions:check                       # 4. libs/*/src/lib/version.ts vs each package.json
 yarn lint:changesets                      # 5. unreleased changeset notes: ≤40 words, 1 paragraph, ≤3 bullets
 yarn query:export-coverage                # 5b. every @ethlete/query runtime export: scenario or allowlist
+yarn core:export-coverage                 # 5c. the same for @ethlete/core
 yarn nx run-many -t typecheck             # 6. spec-file types (nothing else checks them)
 yarn nx run-many -t lint                  # 7. ESLint, incl. @nx/dependency-checks
 yarn nx run-many -t test                  # 8. all unit tests
@@ -78,8 +79,8 @@ nor `apps/timetrack`.
   right after a release bump; because `build` regenerates these files as a target dependency,
   running build first silently fixes the drift instead of reporting it - which is why the
   check runs before build.
-- **`query:export-coverage`** - an export no scenario references needs a scenario, or an entry
-  with a reason in `tools/export-coverage/query.allowlist.json`. A stale entry (covered now, or
+- **`query:export-coverage`** / **`core:export-coverage`** - an export no scenario references needs
+  a scenario, or an entry with a reason in `tools/export-coverage/<lib>.allowlist.json`. A stale entry (covered now, or
   no longer exported) must be deleted. `--list` prints every gap with its reason.
 - **`typecheck`** - every lib's build tsconfig excludes the spec files, so this is the only
   step that type-checks them. Read the current list with

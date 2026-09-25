@@ -8,5 +8,13 @@
     },
     "scenarios": ["libs/query/src/scenarios/**/*.scenario.spec.ts"],
     "allowlist": "tools/export-coverage/query.allowlist.json"
+  },
+  "core": {
+    "tsconfig": "libs/core/tsconfig.spec.json",
+    "entryPoints": {
+      "core": "libs/core/src/index.ts"
+    },
+    "scenarios": ["libs/core/src/scenarios/**/*.scenario.spec.ts"],
+    "allowlist": "tools/export-coverage/core.allowlist.json"
   }
 }
