@@ -9,7 +9,7 @@ cleared input at once.
 
 `et update` regenerates the skills when it moves `@ethlete/agent-rules`. If
 `.agents/skills/ethlete-query/SKILL.md` does not mention `searchQueryField`, run
-`npx ethlete-agents sync` first.
+`ethlete-agents sync` with this repo's package manager (`yarn`, `pnpm exec` or `npx`) first.
 
 ## Find the call sites
 
@@ -27,6 +27,9 @@ A call site is in scope when the debounced value ends up in the args of a query.
 2. Call `.observe()` on it. Pass `{ writeToQueryParams: false }` when the search must not reach the
    URL, for example a search inside a dialog.
 3. Read `this.qf.value().search` in `withArgs`, and bind the input with `[formField]="qf.fields.search"`.
+   Until `searchQueryField()` is typed for it, that binding fails on an `<et-input>` under
+   `strictTemplates`: forward the input's value with `qf.patchValue({ search }, { debounce: true })`
+   instead.
 4. Delete the debounce, the subject or timer, and the intermediate signal.
 5. Pass `debounce` to the field when the old delay was deliberately different from 300ms.
 
@@ -41,4 +44,5 @@ If the `list-state-query-form` task already moved this list to a query form, the
 
 Run the type check, the lint task and the tests of every project you changed.
 
-The field creators and their options are at <https://ethlete-sdk-docs.web.app/query/query-forms>.
+The guide the `Docs` line at the top of this file links (`/query/query-forms` on the SDK docs site)
+has the field creators and their options.

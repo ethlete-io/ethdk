@@ -11,7 +11,7 @@ workspace unless the team asks for it.
 ## What to decide
 
 1. Read the rule (in `AGENTS.md`, or under `.claude/rules/ethlete/`). If it is missing, run
-   `npx ethlete-agents sync`.
+   `ethlete-agents sync` with this repo's package manager (`yarn`, `pnpm exec` or `npx`).
 2. List where the workspace deviates: feature code inside `apps/`, queries or themes inside an app,
    `feature/ui/data-access/util` folders, aliases that do not mirror the path, missing `scope:*` tags.
 3. Decide per deviation: move it now, move it when that area is next touched, or keep it.

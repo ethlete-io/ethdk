@@ -105,12 +105,13 @@ Prettier rewrites them and `check` then reports drift on every run:
   `content/defaults.json`; a guide whose variable has no default and no value is
   skipped with a warning rather than emitted with a dangling placeholder. Some are
   derived from the repo instead of defaulted - the `gitFlow*` ones from the `gitFlow`
-  block, and `commitRuleSource` / `commitValidation` from whether a commitlint config
+  block, `packageRunner` (`yarn`, `pnpm exec`, `bunx` or `npx`) from the root
+  `package.json`'s `packageManager` or the lockfile, and `commitRuleSource` / `commitValidation` from whether a commitlint config
   exists (`commitlint.config.*`, `.commitlintrc*`, or a `commitlint` key in
   `package.json`). Without one, the git-commit guide presents the format as the repo's
   convention and never mentions a `commitlint` run - an agent that goes looking for a
   promised validator and finds nothing reports the discrepancy instead of just
-  committing. Setting either one in `vars` overrides the detection.
+  committing. Setting any derived var in `vars` overrides the detection.
 - **`exclude`** - rule or skill names to skip entirely for every configured agent and
   developer. For example, `"exclude": ["git-flow", "handoff"]` prevents those skills
   from being generated; the next `sync` also removes copies generated previously. Unknown

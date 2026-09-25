@@ -4,6 +4,7 @@ import { commitMessageVars, findCommitlintConfig } from './commitlint';
 import { ContentScope } from './frontmatter';
 import { GitFlowConfig, RawGitFlowConfig, resolveGitFlowConfig } from './git-flow';
 import { loadDefaultVars } from './load-content';
+import { detectPackageRunner } from './package-runner';
 
 export const AGENT_TARGETS = ['claude', 'codex', 'cursor', 'copilot'] as const;
 
@@ -195,6 +196,7 @@ export const loadConfig = (options: { root: string; targetOverride?: AgentTarget
     scopes: raw.profile === 'sdk' ? ['sdk', 'both'] : ['consumer', 'both'],
     vars: {
       ...loadDefaultVars(),
+      packageRunner: detectPackageRunner(root),
       ...gitFlowVars(gitFlow),
       ...commitMessageVars(findCommitlintConfig(root)),
       ...(raw.vars ?? {}),

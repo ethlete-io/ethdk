@@ -9,7 +9,7 @@ needs to them.
 
 `et update` regenerates the skills when it moves `@ethlete/agent-rules`. If
 `.agents/skills/ethlete-sdk-docs/SKILL.md` has no "Check this list before you build any UI by hand"
-table, run `npx ethlete-agents sync` first. Read that table: it covers more than the three below.
+table, run `ethlete-agents sync` with this repo's package manager (`yarn`, `pnpm exec` or `npx`) first. Read that table: it covers more than the three below.
 
 ## Find the call sites
 
@@ -47,4 +47,5 @@ Skip every hit that already uses an `et-` element.
 Run the type check, the lint task and the tests of every project you changed, and compare each
 replaced view in the browser with how it looked before.
 
-Every component domain is listed at <https://ethlete-sdk-docs.web.app/components/>.
+The page the `Docs` line at the top of this file links (`/components/` on the SDK docs site) lists
+every component domain.

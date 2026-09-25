@@ -16,10 +16,10 @@ what gets deployed to a test environment and, once accepted, merged into
 **Never name a branch by hand - `start` does it from the grammar:**
 
 ```bash
-npx ethlete-agents git-flow start FIP-2178        # reads the issue, names it, branches off the right base
-npx ethlete-agents git-flow check                 # is the current branch conforming?
-npx ethlete-agents git-flow explain <branch>      # what the parser sees, and what it expects
-npx ethlete-agents git-flow repair <branch>       # rename a non-conforming one, retarget its MRs
+{%packageRunner%} ethlete-agents git-flow start FIP-2178        # reads the issue, names it, branches off the right base
+{%packageRunner%} ethlete-agents git-flow check                 # is the current branch conforming?
+{%packageRunner%} ethlete-agents git-flow explain <branch>      # what the parser sees, and what it expects
+{%packageRunner%} ethlete-agents git-flow repair <branch>       # rename a non-conforming one, retarget its MRs
 ```
 
 `start` prints its plan (branch, base, MR target) and asks before writing anything; add

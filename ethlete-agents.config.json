@@ -2,6 +2,7 @@
   "profile": "sdk",
   "targets": ["claude", "codex"],
   "vars": {
+    "packageRunner": "npx",
     "lintCommand": "npx nx lint <project>",
     "lintFixCommand": "npx nx lint <project> --fix",
     "formatCommand": "npx prettier --write <files>",

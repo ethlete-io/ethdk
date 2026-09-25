@@ -16,7 +16,7 @@ the migrations, so a hand-written bump skips every one of them silently.
 ## 1. See what is pending
 
 ```bash
-yarn et update --check
+{%packageRunner%} et update --check
 ```
 
 It prints one line per package, `installed → target`, and exits 1 while an update is pending. It
@@ -26,9 +26,9 @@ prerelease stays on `next`.
 Name a package to limit the run, short or in full:
 
 ```bash
-yarn et update core            # only @ethlete/core
-yarn et update core --to 5.0.0-next.55
-yarn et update --tag latest    # leave the prerelease line
+{%packageRunner%} et update core            # only @ethlete/core
+{%packageRunner%} et update core --to 5.0.0-next.55
+{%packageRunner%} et update --tag latest    # leave the prerelease line
 ```
 
 ## 2. Run it
@@ -37,7 +37,7 @@ The working tree must be clean - the codemods rewrite files, and you need a diff
 Commit or stash first, then:
 
 ```bash
-yarn et update
+{%packageRunner%} et update
 ```
 
 In order, it writes the new ranges into every `package.json` in the repo that declares the package -
@@ -46,7 +46,7 @@ the freshly installed packages, runs every codemod, regenerates the agent rules 
 `ethlete-agents sync` when `@ethlete/agent-rules` moved, and writes what is left to `.ethlete/update`.
 
 An older `@ethlete/cli` skips the sync. If the run moved `@ethlete/agent-rules` and printed no
-`ethlete-agents sync` line, run `yarn ethlete-agents sync` yourself before the first task: the
+`ethlete-agents sync` line, run `{%packageRunner%} ethlete-agents sync` yourself before the first task: the
 tasks assume the guidance of the new version.
 
 If the install or a codemod fails, the run stops and leaves `.ethlete/update/pending.json` behind.
@@ -54,7 +54,7 @@ Fix the cause, then continue - do not start over, or the migrations of the versi
 are skipped:
 
 ```bash
-yarn et update --continue
+{%packageRunner%} et update --continue
 ```
 
 ## 3. Work the task list

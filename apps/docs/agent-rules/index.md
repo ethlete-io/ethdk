@@ -105,15 +105,15 @@ The command is idempotent - every step detects the migrated state and skips itse
 }
 ```
 
-| Option                    | Default      | What it does                                                                                                                                                                               |
-| ------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `targets`                 | `"auto"`     | `"auto"` always emits `codex` (`AGENTS.md` + `.agents/skills/` is the cross-tool baseline) and adds `claude`, `cursor`, `copilot` when their directory exists; or list an explicit subset. |
-| `profile`                 | `"consumer"` | `"consumer"` emits `scope: consumer` and `scope: both` content; `"sdk"` emits only `both` (used by the SDK repo itself).                                                                   |
-| `vars`                    | -            | Values for the template tokens a guide declares. A guide whose variable has no default and no value is skipped with a warning.                                                             |
-| `exclude`                 | `[]`         | Rule or skill names to skip for every configured agent and developer. `sync` removes previously generated copies and warns about unknown names.                                            |
-| `claudeMdImportsAgentsMd` | `false`      | Set (usually by `migrate`) when `CLAUDE.md` imports `AGENTS.md`; skips `.claude/rules/ethlete/` so rules don't load twice. `sync` warns when the flag is set but the import is missing.    |
-| `hooks`                   | `[]`         | Opt-in Claude Code and Codex hooks, see below.                                                                                                                                             |
-| `gitHooks`                | `[]`         | Opt-in checks appended to existing Husky hooks, see below.                                                                                                                                 |
+| Option                    | Default      | What it does                                                                                                                                                                                                                          |
+| ------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `targets`                 | `"auto"`     | `"auto"` always emits `codex` (`AGENTS.md` + `.agents/skills/` is the cross-tool baseline) and adds `claude`, `cursor`, `copilot` when their directory exists; or list an explicit subset.                                            |
+| `profile`                 | `"consumer"` | `"consumer"` emits `scope: consumer` and `scope: both` content; `"sdk"` emits only `both` (used by the SDK repo itself).                                                                                                              |
+| `vars`                    | -            | Values for the template tokens a guide declares. A guide whose variable has no default and no value is skipped with a warning. `packageRunner` (`yarn`, `pnpm exec`, `bunx`, `npx`) is derived from `packageManager` or the lockfile. |
+| `exclude`                 | `[]`         | Rule or skill names to skip for every configured agent and developer. `sync` removes previously generated copies and warns about unknown names.                                                                                       |
+| `claudeMdImportsAgentsMd` | `false`      | Set (usually by `migrate`) when `CLAUDE.md` imports `AGENTS.md`; skips `.claude/rules/ethlete/` so rules don't load twice. `sync` warns when the flag is set but the import is missing.                                               |
+| `hooks`                   | `[]`         | Opt-in Claude Code and Codex hooks, see below.                                                                                                                                                                                        |
+| `gitHooks`                | `[]`         | Opt-in checks appended to existing Husky hooks, see below.                                                                                                                                                                            |
 
 If your repo runs Prettier over everything, exclude the generated paths - otherwise
 Prettier rewrites them and `check` reports drift on every run:

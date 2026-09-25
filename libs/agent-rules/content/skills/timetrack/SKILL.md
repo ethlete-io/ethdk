@@ -11,12 +11,12 @@ scope: both
 in this machine's keychain, and every repository asks it:
 
 ```bash
-npx ethlete-agents timetrack status                 # is the app reachable, and what does it hold?
-npx ethlete-agents timetrack issue FIP-2177         # one issue: summary, type, parent, subject
-npx ethlete-agents timetrack search "password"      # open issues of the picked projects
-npx ethlete-agents timetrack project                # which project does this repo log into?
-npx ethlete-agents timetrack instance               # the instance's own levels and custom fields
-npx ethlete-agents timetrack standins               # work the user named that Jira does not hold yet
+{%packageRunner%} ethlete-agents timetrack status                 # is the app reachable, and what does it hold?
+{%packageRunner%} ethlete-agents timetrack issue FIP-2177         # one issue: summary, type, parent, subject
+{%packageRunner%} ethlete-agents timetrack search "password"      # open issues of the picked projects
+{%packageRunner%} ethlete-agents timetrack project                # which project does this repo log into?
+{%packageRunner%} ethlete-agents timetrack instance               # the instance's own levels and custom fields
+{%packageRunner%} ethlete-agents timetrack standins               # work the user named that Jira does not hold yet
 ```
 
 Add `--json` to any of them when you need to read a field rather than a line.
@@ -56,8 +56,8 @@ from a key you typed. Follow the repository's branch workflow when creating a br
 The app's store is encrypted, so no shell reads a day off disk. `day` is the only way in:
 
 ```bash
-npx ethlete-agents timetrack day                       # today: how many events, and of which kind
-npx ethlete-agents timetrack day 2026-09-10 --out /tmp/day.json
+{%packageRunner%} ethlete-agents timetrack day                       # today: how many events, and of which kind
+{%packageRunner%} ethlete-agents timetrack day 2026-09-10 --out /tmp/day.json
 ```
 
 A real day holds thousands of events, so **never print them**. Write them to a file with
@@ -74,17 +74,17 @@ day as it was observed - window titles, paths and messages - so delete it when y
 timeline, with the id every edit names a row by, the day's totals and its warnings.
 
 ```bash
-npx ethlete-agents timetrack rows                      # today
-npx ethlete-agents timetrack rows 2026-09-10 --json
+{%packageRunner%} ethlete-agents timetrack rows                      # today
+{%packageRunner%} ethlete-agents timetrack rows 2026-09-10 --json
 ```
 
 `edit` changes one row. Pass exactly one change per call:
 
 ```bash
-npx ethlete-agents timetrack edit 'ABC-1@2026-09-10T11:00:00.000Z' --day 2026-09-10 \
+{%packageRunner%} ethlete-agents timetrack edit 'ABC-1@2026-09-10T11:00:00.000Z' --day 2026-09-10 \
   --from 2026-09-10T13:15:00Z --to 2026-09-10T17:00:00Z
-npx ethlete-agents timetrack edit '<row-id>' --issue ABC-2
-npx ethlete-agents timetrack edit '<row-id>' --state rejected
+{%packageRunner%} ethlete-agents timetrack edit '<row-id>' --issue ABC-2
+{%packageRunner%} ethlete-agents timetrack edit '<row-id>' --state rejected
 ```
 
 Both commands move the app's own review to that day, so the user sees what you read and what you
@@ -101,8 +101,8 @@ the background projects and the applications the user has ruled in or out. It ho
 account and no token, so it is safe to quote back to the user.
 
 ```bash
-npx ethlete-agents timetrack rules            # a summary of the rules
-npx ethlete-agents timetrack rules --json     # the whole answer
+{%packageRunner%} ethlete-agents timetrack rules            # a summary of the rules
+{%packageRunner%} ethlete-agents timetrack rules --json     # the whole answer
 ```
 
 Read it before claiming a band should have been named something: a rule that donates its time
@@ -115,8 +115,8 @@ A **stand-in** is a name the user gave work that Jira does not hold yet. It take
 days and across checkouts, and it books nothing. `standins` lists them:
 
 ```bash
-npx ethlete-agents timetrack standins         # the open ones, oldest first
-npx ethlete-agents timetrack standins --json  # the whole answer, resolved ones included
+{%packageRunner%} ethlete-agents timetrack standins         # the open ones, oldest first
+{%packageRunner%} ethlete-agents timetrack standins --json  # the whole answer, resolved ones included
 ```
 
 **Never open or resolve a stand-in.** The name is the user's own word for their work, and the
@@ -152,7 +152,7 @@ reading `--json` yourself.
 The name is only wrong, and the work behind it is right:
 
 ```bash
-npx ethlete-agents timetrack standins --rename <id> --name '20260921 competition navigation rework'
+{%packageRunner%} ethlete-agents timetrack standins --rename <id> --name '20260921 competition navigation rework'
 ```
 
 The days it holds and the rules that name it stay, which is what a delete and a fresh record would
@@ -165,8 +165,8 @@ A record covering a whole checkout is repaired rather than deleted, because a de
 days. `--split` re-cuts it into one record per directory, and moves each day onto the right one:
 
 ```bash
-npx ethlete-agents timetrack standins --split <id>              # the plan, writes nothing
-npx ethlete-agents timetrack standins --split <id> --force      # carry it out
+{%packageRunner%} ethlete-agents timetrack standins --split <id>              # the plan, writes nothing
+{%packageRunner%} ethlete-agents timetrack standins --split <id> --force      # carry it out
 ```
 
 Without `--force` it prints every directory the commits name, with its commit count and its days,
@@ -193,7 +193,7 @@ the split refuses it.
 You may delete one, because that takes a name away rather than putting one on the day:
 
 ```bash
-npx ethlete-agents timetrack standins --remove <id>
+{%packageRunner%} ethlete-agents timetrack standins --remove <id>
 ```
 
 The rule that named it goes with it, and what happens next is worth knowing before you ask:
@@ -213,8 +213,8 @@ card is either drawn or it is not, and every step that can stop it is invisible 
 `naming` names the step:
 
 ```bash
-npx ethlete-agents timetrack naming              # today
-npx ethlete-agents timetrack naming 2026-09-14
+{%packageRunner%} ethlete-agents timetrack naming              # today
+{%packageRunner%} ethlete-agents timetrack naming 2026-09-14
 ```
 
 It reports whether a Tempo token is stored, how far the read of the worklog history got, and for each
@@ -228,9 +228,9 @@ of `failed` or `no-token` explains every checkout at once, so read that line fir
 read-only, and the app keeps the Tempo token:
 
 ```bash
-npx ethlete-agents timetrack worklogs                          # the last 7 days
-npx ethlete-agents timetrack worklogs 2026-09-01 2026-09-24    # both days included
-npx ethlete-agents timetrack worklogs 2026-09-01 2026-09-24 --json
+{%packageRunner%} ethlete-agents timetrack worklogs                          # the last 7 days
+{%packageRunner%} ethlete-agents timetrack worklogs 2026-09-01 2026-09-24    # both days included
+{%packageRunner%} ethlete-agents timetrack worklogs 2026-09-01 2026-09-24 --json
 ```
 
 Without `--json` it prints one line per booked day: the total, then minutes per issue. `--json`
@@ -244,9 +244,9 @@ only when the task needs them.
 keeps the Google token:
 
 ```bash
-npx ethlete-agents timetrack calendar                          # the last 7 days
-npx ethlete-agents timetrack calendar 2026-09-01 2026-09-24    # both days included
-npx ethlete-agents timetrack calendar 2026-09-01 2026-09-24 --json
+{%packageRunner%} ethlete-agents timetrack calendar                          # the last 7 days
+{%packageRunner%} ethlete-agents timetrack calendar 2026-09-01 2026-09-24    # both days included
+{%packageRunner%} ethlete-agents timetrack calendar 2026-09-01 2026-09-24 --json
 ```
 
 Without `--json` it prints each day with its meeting hours, then one line per entry: start, minutes,
@@ -260,8 +260,8 @@ invitation, so quote them only when the task needs them.
 Two commands write, so both need the user to have asked for them in this conversation:
 
 ```bash
-npx ethlete-agents timetrack create --summary "Reset password mail is not sent" --project FIP
-npx ethlete-agents timetrack log --issue FIP-2177 --minutes 45 --description "pairing call"
+{%packageRunner%} ethlete-agents timetrack create --summary "Reset password mail is not sent" --project FIP
+{%packageRunner%} ethlete-agents timetrack log --issue FIP-2177 --minutes 45 --description "pairing call"
 ```
 
 - **`create`** files the issue with the instance's own ticket settings - its type, its parent
