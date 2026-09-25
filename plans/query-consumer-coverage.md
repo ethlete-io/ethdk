@@ -157,7 +157,7 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
 - [x] S11 Follow-ups from S6 (hand-written skill `.agents/skills/query-scenario-tests/SKILL.md` documents `s.mount`)
   1. Done in 47f4d25da: `s.mount(Component, injector, { inputs })` sets inputs before the first change detection;
      `legacy-client-options` mounts `MatchListComponent` directly.
-  2. Root cause found, not fixed. Not the fake clock and not the flush loop: Angular's zoneless scheduler switches
+  2. Root cause found and fixed. Not the fake clock and not the flush loop: Angular's zoneless scheduler switches
      to `queueMicrotask` after every tick it runs itself (`switchToMicrotaskScheduler`) and back on the next real
      microtask. The harness never drains microtasks inside `tick()`, so an effect a timer dirtied runs at that
      fake instant only while no scheduler tick happened since the last `await`; otherwise it waits for the next
@@ -168,8 +168,11 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
      keepPreviousResponse work) under the same runs. Tried fix: wrap the fake `setTimeout`/`setInterval` so each
      callback is followed by `TestBed.tick()`. The chat case then no longer depends on the `await`, but four
      suites change timing (`dependent-queries` parks-then-executes, `auth` in-flight refresh, two
-     `auth-features` expiry windows), so it was reverted. Open: decide whether to take that harness change and
-     re-baseline those four suites.
+     `auth-features` expiry windows), so it was reverted. Done: the user took the harness change. All four were a
+     timing shift, no bug: a zero-delay timer armed inside a timer callback is clamped to 1 ms by fake-timers, so the
+     dependent GET, the refresh answer and the first expiry check land 1 ms later. Proof in `harness/scenario.spec.ts`
+     (`timer-driven effects`): the dependent request goes out 30 ms after its dependency, with or without an
+     `await`; without the wrap it is 50 and 31.
   3. Done in dfe00b5d7: v3 `defineQueryForm` does not have the P9 bug - the reset is resolved at commit time, so
      the debounce comes from the edited field only. Covered for a bound field and `patchValue({ debounce })`.
 

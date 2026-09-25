@@ -148,8 +148,8 @@ describe('auth scenario', () => {
     expect(s.api.requestCount('GET', '/secure/profile')).toBe(0);
     expect(secureQuery.loading()).not.toBeNull();
 
-    s.tick(); // the refresh resolves and applies a new token
-    s.tick(); // the secure query resumes and its GET resolves
+    s.tick(1); // the refresh resolves and applies a new token
+    s.tick(1); // the secure query resumes and its GET resolves
 
     expect(auth.accessToken()).not.toBe(tokenAtWait);
     expect(s.api.requestCount('GET', '/secure/profile')).toBe(1);

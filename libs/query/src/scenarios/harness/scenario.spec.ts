@@ -192,3 +192,51 @@ describe('scenario controls', () => {
     c.destroy();
   });
 });
+
+describe('timer-driven effects', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  it.each([false, true])(
+    'sends a dependent request at the instant its dependency lands (await before: %s)',
+    async (awaitBefore) => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'] }, delay: 30 }));
+      s.api.on('GET', '/perms/:userId', ({ params }) => ({ body: { userId: params['userId'] } }));
+
+      const getUser = s.get<GetUserArgs>((p) => `/users/${p.id}`);
+      const getPermissions = s.get<{ response: { userId: string }; pathParams: { userId: string } }>(
+        (p) => `/perms/${p.userId}`,
+      );
+
+      const userId = signal('1');
+      const c = s.consumer();
+      c.run(() => {
+        const userQuery = getUser(withArgs(() => ({ pathParams: { id: userId() } })));
+        getPermissions(
+          withArgs(() => {
+            const user = userQuery.response();
+            return user ? { pathParams: { userId: user.id } } : null;
+          }),
+        );
+      });
+
+      s.tick(50);
+      s.tick(50);
+
+      if (awaitBefore) await Promise.resolve();
+
+      userId.set('2');
+      s.tick(50);
+
+      const userRequest = s.api.requests.find((r) => r.path === '/users/2');
+      const permsRequest = s.api.requests.find((r) => r.path === '/perms/2');
+
+      expect(userRequest).toBeDefined();
+      expect(permsRequest).toBeDefined();
+      expect((permsRequest?.at ?? 0) - (userRequest?.at ?? 0)).toBe(30);
+
+      c.destroy();
+      s.flush();
+    },
+  );
+});

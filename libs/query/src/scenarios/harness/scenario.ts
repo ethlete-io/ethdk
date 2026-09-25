@@ -262,6 +262,49 @@ export const inProductionMode = <T>(fn: () => T): T => {
   }
 };
 
+type TickingTimerFn = { scenarioTicking?: true };
+
+type TimerFn = typeof setTimeout | typeof setInterval;
+
+// Angular's zoneless scheduler switches to `queueMicrotask` after every tick it runs by itself, and fake
+// time never drains microtasks, so without the tick an effect a timer dirtied would wait for the next
+// `s.tick()` step unless an `await` came before.
+const installTickingTimers = (isAlive: () => boolean): (() => void) => {
+  if (!vi.isFakeTimers() || (globalThis.setTimeout as TickingTimerFn).scenarioTicking) {
+    return () => undefined;
+  }
+
+  const originalSetTimeout = globalThis.setTimeout;
+  const originalSetInterval = globalThis.setInterval;
+
+  const wrap = <T extends TimerFn>(original: T): T => {
+    const wrapped = ((callback: unknown, ms?: number, ...args: unknown[]) => {
+      if (typeof callback !== 'function') return original(callback as () => void, ms, ...args);
+
+      return original(
+        (...callbackArgs: unknown[]) => {
+          callback(...callbackArgs);
+          if (isAlive()) TestBed.tick();
+        },
+        ms,
+        ...args,
+      );
+    }) as unknown as T;
+
+    (wrapped as TickingTimerFn).scenarioTicking = true;
+
+    return wrapped;
+  };
+
+  globalThis.setTimeout = wrap(originalSetTimeout);
+  globalThis.setInterval = wrap(originalSetInterval);
+
+  return () => {
+    globalThis.setTimeout = originalSetTimeout;
+    globalThis.setInterval = originalSetInterval;
+  };
+};
+
 const buildScenario = (config: ScenarioConfig): Scenario => {
   const baseUrl = config.baseUrl ?? 'https://api.test';
   const name = config.name ?? `scenario-${Math.random().toString(36).slice(2)}`;
@@ -275,6 +318,9 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
 
   const originalXhr = globalThis.XMLHttpRequest;
   globalThis.XMLHttpRequest = createFakeXhr(api);
+
+  let alive = true;
+  const restoreTimers = installTickingTimers(() => alive);
 
   const originalConsoleError = console.error;
   console.error = (...args: unknown[]) => {
@@ -294,6 +340,8 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
     console.error = originalConsoleError;
     if (console.warn === captureWarning) console.warn = originalConsoleWarn;
     globalThis.XMLHttpRequest = originalXhr;
+    alive = false;
+    restoreTimers();
   };
 
   // A failure below has to hand the patched globals back: `useScenario`'s `afterEach` has no scenario to
@@ -546,6 +594,7 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
         childInjector.destroy();
       }
 
+      alive = false;
       TestBed.resetTestingModule();
       restoreGlobals();
 

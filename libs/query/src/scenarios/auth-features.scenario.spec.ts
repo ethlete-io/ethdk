@@ -338,20 +338,21 @@ describe('auth features without the devtools', () => {
     const c = s.consumer();
     c.run(() => auth.queries.login.execute({ body: {} }));
     await s.settle();
+    expect(auth.features.tokenExpirationWarning.expiresIn()).toBeNull();
 
+    await s.settle(1);
+    expect(auth.features.tokenExpirationWarning.expiresIn()).not.toBeNull();
     expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(false);
 
-    await s.settle(7000); // t=7000: still outside the 12s warning window
+    await s.settle(7000); // t=7001: still outside the 12s warning window
     expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(false);
 
-    await s.settle(1000); // t=8000: 12s from the 20s expiry - the window opens
+    await s.settle(1000); // t=8001: 12s from the 20s expiry - the window opens
     expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(true);
     expect(auth.features.tokenExpirationWarning.expiresIn()).toBeLessThanOrEqual(12000);
     expect(auth.features.tokenExpirationWarning.expiresIn()).toBeGreaterThan(10000);
 
     await s.settle(3000);
-    // The warning re-arms its timer one effect flush after the refresh lands; settle() advances once.
-    s.tick();
 
     expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
     expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(false);
@@ -390,7 +391,7 @@ describe('auth features without the devtools', () => {
 
     expect(auth.features.tokenExpirationWarning.expiresAt()).not.toBeNull();
 
-    await s.settle(1000);
+    await s.settle(1001);
 
     expect(auth.features.tokenExpirationWarning.expiresIn()).toBeGreaterThan(18000);
     expect(auth.features.tokenExpirationWarning.expiresIn()).toBeLessThanOrEqual(19000);

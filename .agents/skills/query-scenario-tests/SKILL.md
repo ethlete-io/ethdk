@@ -111,7 +111,7 @@ it('dedupes identical requests', () => {
    `advanceTimersByTime` boundary needs one more `s.tick(1)`. `settle()` advances fake time once and
    then awaits microtasks; `flush()` advances repeatedly and never awaits. A cascade in which each
    round arms its next timer one microtask later (401, refresh, retry, 401, ...) needs a loop of
-   `await Promise.resolve(); s.tick(50);` - see the streak-cap test in `auth-features.scenario.spec.ts`. Angular's scheduler runs an effect a timer dirtied at that fake instant only until it has ticked once by itself; from then until a real microtask (any `await`) it waits for the next `s.tick()` step, so an `await` can move a dependent request inside a `flush()` step - do not assert on the exact instant a chain crosses a 50 ms step. `mintToken` floors `exp` to whole seconds, so a proactive refresh lands up to 999 ms early: assert around a 1 s window, not at an exact instant.
+   `await Promise.resolve(); s.tick(50);` - see the streak-cap test in `auth-features.scenario.spec.ts`. The harness follows every fake timer callback with a `TestBed.tick()`, so an effect a timer dirtied (a response landing, a debounce firing) runs at that fake instant, with or without an `await` before. A zero-delay timer armed inside a timer callback lands 1 ms later (fake-timers clamps it), so a request a response triggered answers after one more `s.tick(1)`. `mintToken` floors `exp` to whole seconds, so a proactive refresh lands up to 999 ms early: assert around a 1 s window, not at an exact instant.
 5. The harness lives in `harness/` and changes only with a coordinator's say; suites work
    around a gap inside their own file and report it.
 6. Devtools: `provideQueryDevtools()` enables the bridge process-wide on its first call and it

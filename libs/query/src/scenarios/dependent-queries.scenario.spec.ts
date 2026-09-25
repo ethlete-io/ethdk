@@ -61,18 +61,18 @@ describe('dependent queries scenario', () => {
 
       s.tick(1);
       expect(userQuery.response()).toEqual({ id: '1' });
-
-      s.tick();
       expect(s.api.requestCount('GET', '/perms/1')).toBe(1);
+
+      s.tick(1);
       expect(permsQuery.response()).toEqual({ scopes: ['scopes-for-1'] });
 
       userId.set('2');
       s.tick(100);
       expect(s.api.requestCount('GET', '/users/2')).toBe(1);
       expect(userQuery.response()).toEqual({ id: '2' });
-
-      s.tick();
       expect(s.api.requestCount('GET', '/perms/2')).toBe(1);
+
+      s.tick(1);
       expect(permsQuery.response()).toEqual({ scopes: ['scopes-for-2'] });
 
       expect(s.api.requests.map((r) => r.url)).toEqual([
