@@ -205,7 +205,7 @@ export const writeUpdateTasks = (options: {
   const reportPath = join(UPDATE_DIR, TASKS_FILE);
   const dataPath = join(UPDATE_DIR, TASKS_DATA_FILE);
 
-  writeFileSync(join(root, reportPath), `${renderTasks({ updates, outcomes, tasks })}\n`, 'utf8');
+  writeFileSync(join(root, reportPath), `${renderTasks({ updates, outcomes, tasks }).trimEnd()}\n`, 'utf8');
   writeFileSync(
     join(root, dataPath),
     `${JSON.stringify(

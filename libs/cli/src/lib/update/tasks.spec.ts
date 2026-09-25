@@ -1,6 +1,7 @@
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { check, resolveConfig } from 'prettier';
 import { describe, expect, it } from 'vitest';
 import { Migration } from './migration-manifest';
 import { PackageManager } from './package-manager';
@@ -247,5 +248,40 @@ describe('writeUpdateTasks', () => {
       { package: '@ethlete/core', name: 'a-change', generator: '@ethlete/core:migrate-a-change' },
     ]);
     expect(data.failed).toEqual([{ package: '@ethlete/core', name: 'broken', reason: 'exit 1' }]);
+  });
+
+  it('writes markdown that prettier leaves as it is', async () => {
+    const root = makeRoot();
+    const manifestPath = instructionsFixture('Ask the designer which colour.\n');
+
+    const written = writeUpdateTasks({
+      root,
+      updates: [{ name: '@ethlete/core', from: '5.0.0', to: '5.1.0' }],
+      outcomes: [
+        outcome(),
+        outcome({ pending: pending({ migration: migration({ name: 'broken' }) }), state: 'failed', reason: 'exit 1' }),
+        outcome({
+          pending: pending({
+            migration: migration({
+              name: 'decide',
+              kind: 'manual',
+              generator: undefined,
+              instructions: './migrations/a.md',
+            }),
+            manifestPath,
+          }),
+          state: 'task',
+        }),
+      ],
+      manager: yarn,
+      generatedAt: '2026-08-21T00:00:00.000Z',
+    });
+
+    for (const path of [written.reportPath, join(UPDATE_DIR, 'core-decide.md')]) {
+      const filepath = join(root, path);
+      const options = { ...(await resolveConfig(join(__dirname, 'tasks.md'))), filepath };
+
+      expect(await check(readFileSync(filepath, 'utf8'), options), path).toBe(true);
+    }
   });
 });
