@@ -71,7 +71,7 @@ const usage = (invocation: string) =>
 
 const padded = (value: string, width: number) => value.padEnd(width);
 
-const printUpdates = (updates: readonly PackageUpdate[]) => {
+const printUpdates = (updates: readonly (UpdatedPackage & { tag?: string })[]) => {
   const width = Math.max(...updates.map((update) => update.name.length));
 
   for (const update of updates) {
@@ -172,6 +172,8 @@ const collectMigrations = (options: {
 };
 
 const printMigrations = (pending: readonly PendingMigration[]) => {
+  if (pending.length === 0) console.log('  none');
+
   for (const entry of pending) {
     console.log(
       `  ${entry.migration.version}  ${entry.packageName}  ${entry.migration.name} (${entry.migration.kind})`,
@@ -405,9 +407,7 @@ const resume = (options: {
     to: entry.to,
   }));
 
-  for (const update of updates) {
-    console.log(`  ${update.name}  ${update.from ?? 'not installed'} → ${update.to}`);
-  }
+  printUpdates(updates);
 
   const result = runMigrationPhase({
     root,
@@ -525,6 +525,8 @@ export const updateCommand = async ({
     if (args.check || args.dryRun) return 0;
 
     if (agent !== undefined) return workOpenTasks({ root, agent, invocation });
+
+    refreshUpdateTasks(root);
 
     return 0;
   }

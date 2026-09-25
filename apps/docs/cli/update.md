@@ -88,7 +88,7 @@ A codemod cannot make a decision about your product, and some changes have no co
 | `<package>-<migration>.md` | One task in full: what moved, plus the instructions the package ships. |
 | `pending.json`             | Only while a run is unfinished.                                        |
 
-The list is yours, not the repo's: `et update` adds `.ethlete/update/` to the root `.gitignore` unless git already ignores it, so the next run still finds a clean tree. Commit that `.gitignore` line with the update. A later run keeps the tasks an earlier one left: delete a task file once the task is done, and the next run drops it from the list.
+The list is yours, not the repo's: `et update` adds `.ethlete/update/` to the root `.gitignore` unless git already ignores it, so the next run still finds a clean tree. Commit that `.gitignore` line with the update. A later run keeps the tasks an earlier one left: delete a task file once the task is done, and the next run drops it from the list - also a run that finds nothing to update.
 
 Each task links the docs of the release line the package moved to: `https://ethlete-sdk-docs-next.web.app` for a prerelease, `https://ethlete-sdk-docs.web.app` for a release.
 

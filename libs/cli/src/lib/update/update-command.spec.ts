@@ -312,3 +312,64 @@ describe('et update --ai', () => {
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('et update --ai` again'));
   });
 });
+
+describe('the task list', () => {
+  it('drops a deleted task from tasks.md on a run that has nothing to update', async () => {
+    const root = withOpenTasks(makeRepo());
+
+    rmSync(join(root, PENDING_FILE));
+    stubRegistry('5.1.0');
+
+    expect(await updateCommand({ argv: [], root })).toBe(0);
+
+    const report = readFileSync(join(root, UPDATE_DIR, TASKS_FILE), 'utf8');
+
+    expect(report).toContain('### @ethlete/core — open');
+    expect(report).not.toContain('— done');
+    expect(JSON.parse(readFileSync(join(root, UPDATE_DIR, TASKS_DATA_FILE), 'utf8')).tasks).toHaveLength(1);
+  });
+
+  it('drops a deleted task from tasks.md on a --continue with no migration left', async () => {
+    const root = withOpenTasks(makeRepo());
+
+    writePendingUpdate({
+      root,
+      pending: {
+        startedAt: 'then',
+        packages: [{ name: '@ethlete/core', from: '5.0.0', to: '5.1.0' }],
+        finished: [
+          { packageName: '@ethlete/core', name: 'first' },
+          { packageName: '@ethlete/core', name: 'second' },
+        ],
+      },
+    });
+    rmSync(join(root, 'node_modules', '@ethlete', 'core', 'migrations.json'));
+    writeJson(join(root, 'node_modules', '@ethlete', 'core', 'migrations.json'), { migrations: [] });
+    spawnSync.mockReturnValue({ status: 0 });
+
+    expect(await updateCommand({ argv: ['--continue'], root })).toBe(0);
+    expect(readFileSync(join(root, UPDATE_DIR, TASKS_FILE), 'utf8')).not.toContain('— done');
+  });
+});
+
+describe('the printed plan', () => {
+  it('says so when the installed versions know no migration', async () => {
+    const root = makeRepo();
+
+    stubRegistry('5.2.0');
+
+    expect(await updateCommand({ argv: ['--dry-run'], root })).toBe(0);
+    expect(console.log).toHaveBeenCalledWith('  none');
+  });
+
+  it('aligns the packages of a --continue', async () => {
+    const root = withAgentRules(makeRepo());
+
+    spawnSync.mockReturnValue({ status: 0 });
+
+    await updateCommand({ argv: ['--continue', '--dry-run'], root });
+
+    expect(console.log).toHaveBeenCalledWith('  @ethlete/core         5.0.0 → 5.1.0');
+    expect(console.log).toHaveBeenCalledWith('  @ethlete/agent-rules  0.1.0 → 0.2.0');
+  });
+});
