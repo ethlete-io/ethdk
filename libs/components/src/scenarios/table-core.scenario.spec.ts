@@ -1,5 +1,6 @@
 import { Component, computed, Directive, input, reflectComponentType, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { ProvideSurfaceDirective, provideSurfaceThemesWithTailwind4, SurfaceTheme } from '@ethlete/core';
 import {
   createTableRowsSource,
   DEFAULT_TABLE_LABELS,
@@ -13,12 +14,16 @@ import {
   TABLE_FEATURE_HOST,
   TABLE_IMPORTS,
   TABLE_LABELS,
+  TableCardSurfaceDirective,
   TableCellDirective,
   TableColumns,
   TableComponent,
   TableFeatureConfig,
   tableFeatureConfig,
   TableFilter,
+  TableFooterCellDirective,
+  TableFooterDirective,
+  TableHeaderCellDirective,
   TableRowBoxStylesComponent,
   TableRowsSource,
   TableSort,
@@ -33,6 +38,20 @@ const MEMBERS: Member[] = [
   { id: 3, name: 'Cleo East', team: 'Blue', score: 21 },
   { id: 4, name: 'Dan West', team: null, score: 12 },
 ];
+
+const surface = (name: string, elevation: number, isDefault?: boolean): SurfaceTheme => ({
+  name,
+  type: 'dark',
+  elevation,
+  isDefault,
+  background: '10 10 10',
+  color: '250 250 250',
+  colorMuted: '180 180 180',
+  colorSubtle: '90 90 90',
+  border: '40 40 40',
+});
+
+const SURFACES = [surface('night', 0, true), surface('night-raised', 1)];
 
 const COLUMNS = {
   name: { header: 'Name', value: (member: Member) => member.name, sortable: true },
@@ -85,6 +104,22 @@ class RosterComponent {
   clicked = signal<Member | null>(null);
   total = computed(() => this.members().reduce((sum, member) => sum + member.score, 0));
   table = viewChild.required(TableComponent<Member>);
+  headerTemplate = viewChild.required(TableHeaderCellDirective);
+  footerTemplate = viewChild.required(TableFooterCellDirective);
+  footerSlot = viewChild(TableFooterDirective);
+}
+
+@Component({
+  selector: 'et-scenario-card-tile',
+  imports: [TableCardSurfaceDirective, ProvideSurfaceDirective],
+  template: `
+    <div etProvideSurface>
+      <div [etTableCardSurface]="card()" class="tile"></div>
+    </div>
+  `,
+})
+class CardTileComponent {
+  card = signal(true);
 }
 
 type NoteConfig = TableFeatureConfig & { initial?: string };
@@ -221,6 +256,9 @@ describe('table core scenarios', () => {
     expect(query(host, '.et-table-row [data-col-key="score"]').dataset['align']).toBe('end');
     expect(query(host, '.score-total').textContent).toBe('75');
     expect(query(host, '.et-table-footer .pager').textContent).toBe('Page 1');
+    expect(fixture.componentInstance.headerTemplate().column()).toBe(COLUMNS.score);
+    expect(fixture.componentInstance.footerTemplate().column()).toBe(COLUMNS.score);
+    expect(fixture.componentInstance.footerSlot()).toBeInstanceOf(TableFooterDirective);
   });
 
   it('sorts by a header click through the ascending, descending and cleared states', () => {
@@ -319,6 +357,19 @@ describe('table core scenarios', () => {
     expect(row.classList).toContain('et-table-row--box');
     expect(row.classList).toContain('et-table-row--card-tint');
     expect(document.querySelectorAll(boxStyles)).toHaveLength(1);
+  });
+
+  it('tints a standalone card surface when the app registers no surface themes', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(CardTileComponent);
+    const tile = query(fixture.nativeElement as HTMLElement, '.tile');
+
+    s.flush();
+    expect(tile.classList).toContain('et-table-row--card-tint');
+
+    fixture.componentInstance.card.set(false);
+    s.tick();
+    expect(tile.classList).not.toContain('et-table-row--card-tint');
   });
 
   it('lets an app-authored feature register on the table host and contribute a state slice', () => {
@@ -516,5 +567,23 @@ describe('table core scenarios with app labels', () => {
     expect(reader.labels().columns).toBe('Visible columns');
     expect(reader.labels().empty).toBe(DEFAULT_TABLE_LABELS.empty);
     expect(typeof TestBed.inject(TABLE_LABELS)).toBe('object');
+  });
+});
+
+describe('table core scenarios with surface themes', () => {
+  const themedScenario = useScenario({ providers: [provideSurfaceThemesWithTailwind4(SURFACES)] });
+
+  it('lifts a card surface one elevation above its parent surface', () => {
+    const s = themedScenario();
+    const fixture = TestBed.createComponent(CardTileComponent);
+    const tile = query(fixture.nativeElement as HTMLElement, '.tile');
+
+    s.flush();
+    expect(tile.classList).not.toContain('et-table-row--card-tint');
+    expect(tile.className).toContain('night-raised');
+
+    fixture.componentInstance.card.set(false);
+    s.tick();
+    expect(tile.className).not.toContain('night-raised');
   });
 });

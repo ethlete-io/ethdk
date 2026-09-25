@@ -11,6 +11,7 @@ import {
   TABLE_ROW_EXPANSION_IMPORTS,
   TABLE_SKELETON_IMPORTS,
   TABLE_VIRTUAL_SCROLL_IMPORTS,
+  TableCellSkeletonDirective,
   TableCellStateValue,
   TableColumns,
   TableComponent,
@@ -70,6 +71,7 @@ class LoadingPlayersComponent {
   config = signal<TableSkeletonConfig | ''>({ rows: 3 });
   cellState = signal<((row: Player, key: string) => TableCellStateValue | null) | undefined>(undefined);
   skeleton = viewChild.required(TableSkeletonDirective);
+  nameBone = viewChild.required(TableCellSkeletonDirective);
 }
 
 @Component({
@@ -280,6 +282,7 @@ describe('table skeleton, virtual scroll and group header scenarios', () => {
     expect(loadingCell.dataset['colKey']).toBe('rank');
     expect(loadingCell.querySelector('et-skeleton-item')).not.toBeNull();
     expect(loading.skeleton().measuredRowHeight()).toBeNull();
+    expect(loading.nameBone().column()).toBe(COLUMNS.name);
   });
 
   it('renders a window of a long table and mounts the virtual scroll styles once', () => {
