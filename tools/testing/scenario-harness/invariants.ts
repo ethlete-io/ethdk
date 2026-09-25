@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { overlayViewportInsets } from '../../index';
+import { overlayViewportInsets } from '../../../libs/core/src/index';
 import { ListenerRecord } from './listeners';
 
 export type InvariantName =

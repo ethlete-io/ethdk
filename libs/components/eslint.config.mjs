@@ -13,6 +13,7 @@ export default [
           ignoredFiles: [
             '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
             '{projectRoot}/src/**/stories/**',
+            '{projectRoot}/src/scenarios/**',
             '{projectRoot}/vite.config.{js,cjs,mjs,ts,mts}',
           ],
           checkObsoleteDependencies: false,

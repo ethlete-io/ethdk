@@ -6,7 +6,7 @@
     "declarationMap": true,
     "inlineSources": true
   },
-  "exclude": ["src/**/*.spec.ts", "src/test-setup.mjs", "src/**/*.test.ts", "src/**/testing/**"],
+  "exclude": ["src/**/*.spec.ts", "src/test-setup.mjs", "src/**/*.test.ts", "src/**/testing/**", "src/scenarios"],
   "include": ["src/**/*.ts"],
   "angularCompilerOptions": {
     "extendedDiagnostics": {

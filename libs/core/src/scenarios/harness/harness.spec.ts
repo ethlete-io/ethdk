@@ -1,6 +1,6 @@
 import { ErrorHandler, inject } from '@angular/core';
 import { reserveOverlayViewportSpace } from '../../index';
-import { createScenario, useScenario } from './scenario';
+import { createScenario, useScenario } from './index';
 
 const withFakeTimers = (fn: () => void) => {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date', 'performance'] });

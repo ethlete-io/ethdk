@@ -49,4 +49,4 @@ npx vitest run --config libs/core/vite.config.mts libs/core/src/scenarios/seo.sc
 1. Every bug fix in `libs/core` adds a scenario that failed before the fix. Prove it against a local
    revert.
 2. `s.allow(...)` is a smell: name the finding in the reason and report it.
-3. The harness in `harness/` has its own spec (`harness.spec.ts`); change both together.
+3. The harness lives in `tools/testing/scenario-harness` (shared with `libs/components/src/scenarios`); `harness/` re-exports it and holds its spec (`harness.spec.ts`). Change both together and re-run both libs' scenarios.
