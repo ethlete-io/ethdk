@@ -12,11 +12,11 @@ Every component in this workspace (views, pages, shells, shared UI in `libs/`) i
 and styled with **Tailwind utility classes in its template**, including the generated
 theme utilities (`bg-et-surface-bg`, `border-et-surface-border`, `text-et-<theme>`). Do not
 invent a BEM class system, and do not write a `.css` file for layout, spacing or
-typography a utility expresses. Keep Angular's default view encapsulation: do not set
-`ViewEncapsulation.None` on an app component. That is how SDK library source ships its CSS, not
-how an app styles its own views. Use `None` only for CSS that must reach elements the component
-does not render itself, such as an overlay or an SDK component's internals, and scope every
-selector under the component's host class.
+typography a utility expresses. Every app component sets `encapsulation: ViewEncapsulation.None`,
+as the `require-view-encapsulation-none` lint rule requires. Its CSS is then global, so give the
+component a host class (`host: { class: 'app-player-card' }`) and scope every selector under it,
+the way SDK components scope theirs under their `et-` classes. Never write a bare element or
+unprefixed class selector in a component stylesheet.
 
 Write CSS only for what utilities cannot express. Keep that CSS **unlayered** or in
 `@layer utilities` — never in `@layer components`, and that includes the global stylesheet. SDK component styles are injected into

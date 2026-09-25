@@ -30,12 +30,12 @@ done | sort -u
 ```
 
 BEM classes in templates, app rules in `@layer components` (global stylesheets included), and the
-components that turned off view encapsulation:
+components that do not set `ViewEncapsulation.None` yet:
 
 ```bash
 grep -rnE 'class="[^"]*\b[a-z0-9-]+__[a-z0-9-]+' apps libs --include='*.html' --include='*.ts'
 grep -rlE '@layer components' apps libs --include='*.css' --include='*.scss'
-grep -rlE 'ViewEncapsulation\.None' apps libs --include='*.ts'
+grep -rlE '@Component\(' apps libs --include='*.ts' | xargs grep -LE 'ViewEncapsulation\.None'
 ```
 
 ## What to change
@@ -56,14 +56,14 @@ grep -rlE 'ViewEncapsulation\.None' apps libs --include='*.ts'
    templates that use them.
 5. To restyle an SDK component, set its `--et-*` tokens first, then a utility on the element.
 6. Delete a stylesheet that ends up empty, and its `styleUrl`.
-7. Remove `encapsulation: ViewEncapsulation.None` from each app component. Keep it only when the CSS
-   that is left must reach elements the component does not render itself, such as an overlay or an
-   SDK component's internals, and scope every selector under the component's host class.
+7. Keep `encapsulation: ViewEncapsulation.None` on every app component, and add it where it is
+   missing: the `require-view-encapsulation-none` lint rule requires it. The CSS that is left is then
+   global, so give the component a host class (`host: { class: 'app-…' }`) and scope every selector
+   under it, the way the SDK scopes its CSS under `et-` classes.
 
 ## Leave these alone
 
-- A library that ships its own CSS to other repos, and component source in an SDK-style library
-  built with `ViewEncapsulation.None`. The rule is about app components.
+- A library that ships its own CSS to other repos. The rule is about app components.
 - In the global stylesheet: the Tailwind and theme imports, `@theme`, `html { font-size: 62.5%; }`
   and the `@layer base` rules for elements (`html`, `body`, `a`).
 - Generated theme files, such as the surface and colour themes `@ethlete/core` writes.
