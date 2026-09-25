@@ -1,5 +1,40 @@
 # @ethlete/query
 
+## 6.0.0-next.52
+
+### Major Changes
+
+- **Breaking:** `queryField<T>()` with a default is typed `T`, not `T | null`, and reads the URL into the default's type instead of guessing; without a default, a non-string `T` needs a `queryParamToValue`.
+- **Breaking:** `searchQueryField()` is typed `string` and starts at `''` instead of `null`, so `[formField]` binds it to `<et-input>` under `strictTemplates`; write `''` where you wrote `search: null`.
+
+### Minor Changes
+
+- Add `query.abort()`, which stops the execution in flight and puts `response()`, `error()` and `executionState()` back to where they were before it.
+- `dateQueryField({ as: 'string' })` types the field `string | null`, so `[formField]` binds it to `<et-date-input>`, `<et-date-time-input>` and `<et-time-input>` under `strictTemplates`; the URL carries the control's `valueFormat` string verbatim. `dateQueryField()` without the option still holds a `Date`.
+- Query: add `executeUntilSettled$`, a cold Observable that executes on subscribe, emits the settled snapshot and aborts the request when unsubscribed early; the dropzone delete executor now uses it.
+- Every query request now carries the exported `IS_QUERY_REQUEST` `HttpContextToken`, so an app `HttpInterceptor` can skip requests sent by `@ethlete/query`.
+- Queries keep the previous response while new `withArgs` args load (as `executionState().cachedResponse`) and clear it when parked; opt out per query with `keepPreviousResponse: false`.
+- Add the `@ethlete/query:migrate-from-ngrx-toolkit` generator, which moves `@tomtomb/ngrx-toolkit` features onto v3 query creators and `toolkitCall` facades, points their consumers at `@ethlete/query/ngrx-toolkit`, and lists what is left in `query-toolkit-migration-tasks.md`.
+- New `@ethlete/query/ngrx-toolkit` entry point runs `@tomtomb/ngrx-toolkit` facades and templates on query v3: `toolkitCall`, `toolkitSelect`, the `suspense` pipes, `joinLoading` and `joinErrors`.
+- Query: `withPolling`, `withLongPolling` and `withAutoRefresh` take an `enabled` signal and run only while it is `true`, which replaces stopping a poll with `takeUntil`.
+- `activeFilterCount` no longer counts a `searchQueryField()` or `sortQueryField()`, whatever its key.
+
+### Patch Changes
+
+- `*etQuery` over an interop legacy query no longer reports each failed request to the `ErrorHandler` a second time.
+- `*etInfinityQuery` over an interop legacy query no longer reports each failed page to the `ErrorHandler` a second time.
+- Interop queries now report a load they did not start (`refreshQueriesInUse()`, an invalidation) as an `auto` refresh, so `*etQuery` shows `refreshing` instead of `loading` and `ignoreAutoRefresh()` filters it.
+- Legacy `queryComputed` no longer runs its computation twice on creation, which sent a mutation twice and replaced the query it returned synchronously.
+- The legacy `QueryForm` no longer re-emits its unchanged value one debounce after `observe()`, which sent a second identical request from a `queryComputed` reading `currentValue()`.
+- Legacy `QueryForm`: a debounced field that resets an `isResetBy` field (a search resetting the page) keeps its debounce instead of committing its first keystroke at once.
+- Calling `execute()` or `reset()` on a query inside an `effect` no longer re-runs the effect in an endless request loop.
+- `withPolling` executions now report `triggeredBy()` as `'polling'` and `withAutoRefresh` executions as `'auto-refresh'`, so a UI can tell a background refresh from a user-started load.
+- `prep-for-query-v3` now warns about installed dependencies whose declarations import names `@ethlete/query` v3 renames, so they can be rebuilt before the upgrade.
+- Stack, paged-stack and auth `execute()` calls, `createSnapshot()` and `asObservable({ injector })` now work inside an effect or computed, `queryComputedTillTruthy` stops after its first query, and creating a query there throws `ET001`.
+- A migration task covers the `searchQueryField()` change from `null` to `''`.
+- `migrate-to-query-v3` now adds `withEthleteApiErrors()` to migrated clients, carries `entity` and more auth options, and reports the v2 defaults, gql creators and `ExperimentalQuery` helpers it cannot migrate.
+- The `ET100` error now says mutations need `withArgs` too and calls `silenceMissingWithArgsFeatureError` an escape hatch; the query skill recommends `withArgs` for mutations.
+
 ## 6.0.0-next.51
 
 ### Patch Changes

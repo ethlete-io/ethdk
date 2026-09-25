@@ -1,5 +1,31 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.17
+
+### Minor Changes
+
+- `et update` now leaves tasks to fix code written under the earlier guidance: app styling, URL-bound list state, hand-debounced search, hand-built charts, avatars and progress bars, and the Nx layout.
+- `timetrack resync --replace` re-reads a checkout's agent logs and replaces the samples the store already holds for those sessions, so a parser fix reaches stored days.
+
+### Patch Changes
+
+- The Angular and signals skills cover shared `injectX()` logic, per-row formatting, writing query params and effects that only write a signal; the comment rule says app code rarely has public API.
+- Add the consumer skills `verify-in-app` (drive the served app headlessly with Playwright) and `app-testing` (specs for query, router and overlay code), and link the new query testing docs page from the query skill.
+- The `app-styling` rule and its migration now keep `ViewEncapsulation.None` on app components, as the `require-view-encapsulation-none` lint rule requires, and scope the remaining CSS under the component's host class.
+- Consumer repos get an `app-styling` rule (Tailwind in app templates, 10px rem root) instead of the SDK's component styling rule, and the `query` and `sdk-docs` skills now point to `defineQueryForm` and every component domain.
+- Query skill: bridge a correlated result into RxJS with `executeUntilSettled$`, keeping the Promise form for signal-forms `submit()`.
+- The `list-state-query-form` task binds pagination, page size and a table sort the way that works, and keeps `replaceUrl: true`. The query skill names `observe({ replaceUrl: true })`.
+- The guidance migrations find the call sites they missed in a real app, and generated commands use the repo's package manager.
+- The `app-styling-utilities`, `sdk-components-over-hand-built-ui` and `nx-layout` migration tasks name the real theme utilities, find more call sites, and stop before overriding a repo's own rules or the generated `AGENTS.md` block.
+- Consumer Nx workspaces get an `nx-layout` rule: thin apps, feature code in `libs/domain`, and shared `queries`, `types`, `uikit`, `theme` and `env` libs with `scope:*` tags.
+- The consumer query skill now maps every @ethlete/query capability to its docs page, so agents find APIs like `defineQueryForm` instead of hand-building them.
+- `ethlete-agents` commands run from a subdirectory now use the nearest directory holding `ethlete-agents.config.json` as the repo root, so `check` no longer reports false drift there.
+- The `sdk-docs` skill points consumer agents at the new App setup docs page first: root font size, theme generation and the providers an app needs.
+- `sync` and `check` now name every skill or rule skipped for an unmet `requires` or missing var, and warn when a path var like `themeStylesheet` points at a missing file.
+- `vars.themeStylesheet` may now name a folder of theme files. The `story-styling` skill searches it recursively.
+- `recommendedTs` now uses `ethlete/consistent-type-definitions` instead of `@typescript-eslint/consistent-type-definitions`, so `--fix` no longer turns an interface inside `declare module` or `declare global` (such as the theme-name registry the `@ethlete/core` generators emit) into a type alias that merges into nothing.
+- The `ET100` error now says mutations need `withArgs` too and calls `silenceMissingWithArgsFeatureError` an escape hatch; the query skill recommends `withArgs` for mutations.
+
 ## 0.1.0-next.16
 
 ### Patch Changes

@@ -1,5 +1,19 @@
 # @ethlete/core
 
+## 5.0.0-next.60
+
+### Minor Changes
+
+- `provideSurfaceThemesWithTailwind4` now warns in dev mode when the page leaves the root font size at the browser default instead of setting `html { font-size: 62.5%; }`.
+
+### Patch Changes
+
+- Element signals such as `signalElementIntersection` now accept a signal of a read-only array, so a `viewChildren` signal can be passed directly.
+- `htmlToMarkdown` keeps block alignment as an `et-rte-align-*` class instead of a `style` attribute a strict CSP blocks, and structured-data scripts carry the `CSP_NONCE`. Other renderers need CSS for that class.
+- The `provideX` functions from `defineProvider`, `defineRootProvider` and `defineStaticProvider` return `StaticProvider[]` instead of `Provider[]`. You can now spread them into a `StaticProvider[]`, for example into `Injector.create` or an overlay's `providers`.
+- `defineStaticProvider` and `defineStaticRootProvider` now replace an array or other non-object default with the override, instead of spreading the array into an object. Only two plain objects are merged.
+- `migrate-to-v5` lists every file that still uses the removed `@Memo` decorator or props module (`createProps`, `[etProps]`, …), which have no replacement.
+
 ## 5.0.0-next.59
 
 ### Patch Changes

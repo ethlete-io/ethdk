@@ -1,5 +1,18 @@
 # @ethlete/timetrack
 
+## 0.1.0-next.8
+
+### Minor Changes
+
+- `timetrack resync --replace` re-reads a checkout's agent logs and replaces the samples the store already holds for those sessions, so a parser fix reaches stored days.
+
+### Patch Changes
+
+- An agent that only reads another repository no longer files its time there; a shell command moves the work only when it clearly writes.
+- A ticket's background band no longer bridges time nobody worked, such as a night: pieces join only across gaps other rows cover.
+- A call over a meeting you accepted now counts as work and is named after that meeting, unless a "never counted" rule denies it.
+- A linked worktree no longer books minutes its main checkout already holds: the two count as one attention, and the losing band is drawn behind instead of as an overlapping row.
+
 ## 0.1.0-next.7
 
 ### Patch Changes
