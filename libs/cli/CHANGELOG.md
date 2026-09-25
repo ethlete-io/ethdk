@@ -1,5 +1,19 @@
 # @ethlete/cli
 
+## 2.1.0-next.11
+
+### Minor Changes
+
+- `et update` runs `ethlete-agents sync` after the install when it moved `@ethlete/agent-rules` and the repo has an `ethlete-agents.config.json`, so the regenerated rules and skills match the tasks the update writes.
+
+### Patch Changes
+
+- `et update --ai` stops before any change when `updateAgentCommand` is missing, hands the agent a real prompt, reports each task, and works on the tasks an earlier run left.
+- `et update` gitignores its task list, so a later run no longer needs `--force`, and `--continue` keeps the `--from` versions and the codemods an earlier run applied.
+- Fix `et update` for a real consumer: the `et` bin runs, `--continue` skips applied codemods, `--check` reports an unfinished run, lookups use the repo's registry, task links point at the right docs site, and failed syncs are reported.
+- `yarn et update` on yarn 1 installs from the registry the repo's `.npmrc` or `.yarnrc` names, not the default registry yarn exports to scripts.
+- `et update` drops deleted tasks from `tasks.md` even when nothing is pending, prints "none" for an empty dry-run migration list, and aligns the `--continue` plan.
+
 ## 2.1.0-next.10
 
 ### Patch Changes

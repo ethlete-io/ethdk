@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.0.0-next.63
+
+### Minor Changes
+
+- Overlay and form field: `--et-overlay-radius` and `--et-form-field-control-border-radius` set on `:root` or any ancestor now apply. Table: new `--et-table-radius` token for the panel appearances.
+
+### Patch Changes
+
+- A loading button and a disabled link button now stop the click before a template `(click)` handler on the same element runs.
+- `provideOverlayRouter`, `provideOverlayRouterConfig`, `provideSidebarOverlay` and `provideSidebarOverlayConfig` return `StaticProvider[]`, so you can spread them into an overlay's `providers`. `enableDragToDismiss` accepts a typed `OverlayRef`. It needs only `closeVia` and `afterClosed`.
+- The overlay scroll blocker unlocks `<html>` scrolling when its injector is destroyed, for example when an app is destroyed with a modal overlay open. Before, `<html>` kept `position: fixed`.
+- Pagination: a `responsive` paginator in a flex row now grows into the free space, so its page window comes back when the row widens instead of staying trimmed.
+- Query: add `executeUntilSettled$`, a cold Observable that executes on subscribe, emits the settled snapshot and aborts the request when unsubscribed early; the dropzone delete executor now uses it.
+- Rich-text editor: pasting HTML with inline `style` attributes no longer reports `style-src-attr` violations under a strict CSP, and still keeps pasted alignment.
+- Destroying the app now removes the stream manager's `.et-stream-manager` container from `<body>`.
+- Destroying the app while a stream plays in picture-in-picture no longer logs `NG0406` (`ApplicationRef` already destroyed).
+- `provideStreamPip({ pipWindow })` accepts a partial window config, e.g. `{ pipWindow: { desiredSize: 480 } }`; omitted sizes keep their defaults.
+- Retrying a stream player that failed to load now clears its error and shows the loading overlay while it reloads, instead of keeping the error card until the retry succeeds.
+- The table's failed-cell icon, drawn when no `etTableCellErrorTooltip` is present, now carries its message as its accessible name. It was `aria-hidden` with no label, because the icon's own bindings overwrote the template's.
+- The failed-cell mark of `etTableCellErrorTooltip` now carries its message as its accessible name. It was focusable but `aria-hidden` with no label, because the icon's own bindings overwrote the template's.
+- A table with `etTableGroupHeaders` no longer logs "More than one element is bound to the signal" in development when it renders more than one group cell.
+
 ## 1.0.0-next.62
 
 ### Patch Changes

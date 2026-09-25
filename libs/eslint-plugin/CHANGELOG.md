@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.0-next.25
+
+### Minor Changes
+
+- The `@angular-eslint/*` output rules moved from `recommendedTs` into a new `recommendedAngularTs` config, which `recommended` includes, so NestJS and other non-Angular projects can use `recommendedTs` without the `@angular-eslint` plugin.
+- `recommendedTs` now uses `ethlete/consistent-type-definitions` instead of `@typescript-eslint/consistent-type-definitions`, so `--fix` no longer turns an interface inside `declare module` or `declare global` (such as the theme-name registry the `@ethlete/core` generators emit) into a type alias that merges into nothing.
+- New `no-csp-unsafe` rule (error in `recommendedTs` and `recommendedTemplate`) flags style attributes, un-nonced `<script>`/`<style>` elements, `eval` and string timers that a strict CSP blocks.
+- `et update` turns the type aliases the old `consistent-type-definitions` fix left in `declare module` and `declare global` blocks back into interfaces, and renames the rule in `eslint-disable` directives.
+- `prefer-linked-signal` now also reports an `effect()` that only calls `.set()` behind an `if`/`else`.
+
+### Patch Changes
+
+- `ethlete/no-csp-unsafe` fixes a static template `style="…"` attribute. It rewrites `style="width: 40%; margin-top: 4px"` to `[style]="{ width: '40%', 'margin-top': '4px' }"`, which a strict CSP allows. A value with a quote, `url(`, `!important` or a comment stays a manual fix.
+
 ## 1.0.0-next.24
 
 ### Minor Changes
