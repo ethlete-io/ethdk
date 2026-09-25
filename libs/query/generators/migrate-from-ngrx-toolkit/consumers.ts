@@ -207,6 +207,16 @@ const readActionId = (node: ts.Expression | undefined, createActionId: string) =
   return { group: inner.expression.expression.text, args: property.initializer };
 };
 
+const selectArgsText = (args: ts.Expression, sourceFile: ts.SourceFile) => {
+  if (!ts.isObjectLiteralExpression(args)) return args.getText(sourceFile);
+
+  const kept = args.properties.filter((property) => property.name?.getText(sourceFile) !== 'skipCache');
+
+  if (kept.length === args.properties.length) return args.getText(sourceFile);
+
+  return `{ ${kept.map((property) => property.getText(sourceFile)).join(', ')} }`;
+};
+
 const isFacadeSelect = (node: ts.Node): node is ts.CallExpression =>
   ts.isCallExpression(node) &&
   ts.isPropertyAccessExpression(node.expression) &&
@@ -353,7 +363,7 @@ const planRefreshSites = (
           plan.edits.push({
             start: node.getStart(sourceFile),
             end: node.getEnd(),
-            text: `toolkitSelect(${group}, ${source.args.getText(sourceFile)}, { injector: this.${injector} })`,
+            text: `toolkitSelect(${group}, ${selectArgsText(source.args, sourceFile)}, { injector: this.${injector} })`,
           });
           consumedActionIds.add(inline ? idArgument : local!.initializer);
 

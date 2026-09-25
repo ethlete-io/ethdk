@@ -67,7 +67,7 @@ const toToolkitError = (error: QueryErrorResponse): ToolkitError => ({
   data: error.raw.error ?? null,
 });
 
-const toQueryArgs = (args: Record<string, unknown>) => {
+export const toQueryArgs = (args: Record<string, unknown>) => {
   const actionOptions = args['actionOptions'] as { headers?: unknown } | undefined;
   const queryArgs: Record<string, unknown> = {};
 

@@ -1,6 +1,6 @@
 import { assertInInjectionContext, EnvironmentInjector, inject, Injector } from '@angular/core';
 import { AnyQueryCreator } from '@ethlete/query';
-import { createToolkitHandle, ToolkitHandleEntry } from './toolkit-handle';
+import { createToolkitHandle, ToolkitHandleEntry, toQueryArgs } from './toolkit-handle';
 import { ActionCallArgs, MappedEntityState } from './toolkit-types';
 
 export type ToolkitCallOptions = {
@@ -55,7 +55,7 @@ const resolveEntry = <TCreator extends AnyQueryCreator>(
     registry.set(creator, entries);
   }
 
-  const key = hashArgs(args);
+  const key = hashArgs(toQueryArgs(args as Record<string, unknown>));
   let entry = entries.get(key);
 
   if (!entry) {
@@ -68,8 +68,9 @@ const resolveEntry = <TCreator extends AnyQueryCreator>(
 
 /**
  * Returns the handle for a creator and args without executing it - the `FacadeBase.select(group, actionId)` of
- * `@tomtomb/ngrx-toolkit`. Equal args (in any key order) give the same handle `toolkitCall` returns, so
- * `toolkitSelect(getTeam, args, { injector }).refresh()` re-runs a request another component started.
+ * `@tomtomb/ngrx-toolkit`. Args that build the same request (in any key order, other keys ignored) give the same
+ * handle `toolkitCall` returns, so `toolkitSelect(getTeam, args, { injector }).refresh()` re-runs a request another
+ * component started.
  */
 export const toolkitSelect = <TCreator extends AnyQueryCreator>(
   creator: TCreator,

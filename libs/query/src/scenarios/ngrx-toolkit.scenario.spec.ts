@@ -232,6 +232,16 @@ describe('ngrx-toolkit interop', () => {
     response.subscription.unsubscribe();
   });
 
+  it('finds the handle a facade started with wider args, ignoring keys that never reach the request', () => {
+    const s = scenario();
+    const legacyArgs = { queryParams: { teamId: '1' }, skipCache: true };
+
+    const started = facade().getTeam(legacyArgs);
+    s.tick(100);
+
+    expect(facade().select({ queryParams: { teamId: '1' } })).toBe(started);
+  });
+
   it('maps toolkit args to path params, query string, body and per-call headers', () => {
     const s = scenario();
     s.api.on('POST', '/teams/:teamId/members', () => ({ body: { ok: true } }));

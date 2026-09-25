@@ -65,8 +65,8 @@ Manual (report tasks): vbl `layout` and `tournament` facades (toolkit-shaped, no
   prefix list (`--publicRoutes=/public,/status`); a secure creator elsewhere.
 - **D6 Duplicate routes.** Proposal: if a creator for the same method and route exists, the facade uses it and the
   generator writes no new one. Different response types for the same route go to the report.
-- **D7 `skipCache` and the GET cache.** vbl sets `cacheAdapter: () => 0`. Map `extras.skipCache` to
-  `allowCache: false`; check what fifagg's client caches.
+- **D7 `skipCache` and the GET cache.** Closed: every `toolkitCall` sends the request, so the generator drops
+  `skipCache`.
 - **D8 `isUnique` and `resetFeatureStore`.** Neither app uses `isUnique`. `resetFeatureStore` has one call site; a
   report task, not an API.
 
@@ -93,9 +93,9 @@ Manual (report tasks): vbl `layout` and `tournament` facades (toolkit-shaped, no
 ## Continue on 2026-09-26
 
 1. **Done:** the unpushed history from the S3a commit was rewritten on 2026-09-25 (plumbing, `plans/ngrx-toolkit-rewrite.sh`), so no commit holds client code. Cited shas in the plans were updated. `next` may be pushed again.
-2. **Decide:** extra keys in `toolkitSelect` / `toolkitCall` args (one real site passes `skipCache: true`, which is
-   now an excess-property type error). Either the interop accepts and drops them from the hash on both sides, or
-   the site gets a task. `extras.skipCache` → `allowCache: false` (D7) is still open.
+2. **Done (user decision 2026-09-26):** the generator drops `skipCache` from `toolkitSelect` args, and the interop hashes
+   only the keys that reach the request, so a facade that passes wider args still shares the handle. D7 is moot: every
+   `toolkitCall` sends the request.
 3. **S4 inputs:** `tsc` of the scratch vbl copy against `dist/libs/query` is untried. D6 duplicate matching compares
    type text, so the same shape under another name counts as a mismatch (vbl reuse 9 → 5); look for false
    mismatches. Action ids passed between components (3 fifagg sites) need a hand rewrite. vbl needs Angular 22

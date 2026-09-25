@@ -71,7 +71,7 @@ describe('migrate-from-ngrx-toolkit consumers', () => {
       const profile = read(PROFILE);
 
       expect(profile).toContain(
-        'this.itemStore = toolkitSelect(getItem, { queryParams: { itemId: this.itemId }, skipCache: true }, { injector: this.injector });',
+        'this.itemStore = toolkitSelect(getItem, { queryParams: { itemId: this.itemId } }, { injector: this.injector });',
       );
       expect(profile).toContain('private injector = inject(Injector);');
       expect(profile).toContain(
