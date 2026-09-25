@@ -15,6 +15,9 @@ workspace unless the team asks for it.
 2. List where the workspace deviates: feature code inside `apps/`, queries or themes inside an app,
    `feature/ui/data-access/util` folders, aliases that do not mirror the path, missing `scope:*` tags.
 3. Decide per deviation: move it now, move it when that area is next touched, or keep it.
-4. Keep what you decided in the repo's own `AGENTS.md`, so an agent stops flagging it.
+4. Keep what you decided where an agent reads it, so it stops flagging it: in `AGENTS.md` above the
+   `<!-- ethlete:agent-rules:start -->` line or below `<!-- ethlete:agent-rules:end -->`, or in the
+   repo's `CONTEXT.md` or an ADR. Never between the two markers: `ethlete-agents sync` rewrites that
+   block and drops the edit. If `AGENTS.md` holds nothing but the block, add the decisions above it.
 
 An agent may prepare the list in step 2. It must not move a project without that decision.

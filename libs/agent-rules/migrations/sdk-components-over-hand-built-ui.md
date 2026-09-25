@@ -16,10 +16,13 @@ table, run `ethlete-agents sync` with this repo's package manager (`yarn`, `pnpm
 ```bash
 grep -rnE 'chart|bar-?graph|<rect ' apps libs --include='*.html' --include='*.ts'
 grep -rnE 'avatar|initials' apps libs --include='*.html' --include='*.ts' --include='*.css'
+grep -rnE '\b[A-Z0-9_]*(INITIALS|AVATAR|ABBR)[A-Z0-9_]*\b' apps libs --include='*.ts'
+grep -rnE '\.(charAt\(0\)|at\(0\)|\[0\])[^;]*\.toUpperCase\(\)|split\(.*\)\.map\(.*\[0\]' apps libs --include='*.ts' --include='*.html'
 grep -rnE 'progress' apps libs --include='*.html' --include='*.ts' --include='*.css'
 ```
 
-Skip every hit that already uses an `et-` element.
+The third and fourth catch initials built by hand: a constant map from a name or key to its letters, and
+first letters taken and upper-cased. Skip every hit that already uses an `et-` element.
 
 ## The replacement for each
 
@@ -34,6 +37,21 @@ Skip every hit that already uses an `et-` element.
 1. Read the guide of the component, and map the data the hand-built one received onto its inputs.
 2. Replace the markup, and delete the component, the CSS and the helpers only it used.
 3. Style it through its `--et-*` tokens, not by overriding its internals.
+
+## When the SDK component cannot cover it
+
+Check every feature of the hand-built one against the component's inputs, slots and `--et-*`
+tokens before you replace it. Known gaps:
+
+- `et-bar-chart` renders every category label and only truncates it, so a long axis cannot be
+  thinned. It has no slot for a title, a note or an empty state.
+- `et-avatar` derives initials from `name` only, so explicit initials (a constant map, a team
+  abbreviation) cannot be passed. Its fill and text colour come from a colour theme only; there is
+  no `--et-avatar-*` colour token.
+
+When a feature has no counterpart, keep the hand-built one and record the gap for the user: which
+view, which feature, which component. Do not drop the feature to make the component fit, and do not
+register or invent a colour theme to reach a colour the component has no token for.
 
 ## Leave these alone
 
