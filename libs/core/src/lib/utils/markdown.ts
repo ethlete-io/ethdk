@@ -488,9 +488,9 @@ export const htmlToMarkdown = (html: string) => {
 
   let md = html;
 
-  // Aligned blocks: text-align has no Markdown form, so preserve them verbatim as native HTML (their
-  // inner markup stays HTML) and round-trip via a placeholder - extracted before the block passes
-  // below rewrite them, restored after the final tag-strip.
+  // Aligned blocks: text-align has no Markdown form, so preserve them as HTML (their inner markup
+  // stays HTML) and round-trip via a placeholder - extracted before the block passes below rewrite
+  // them, restored after the final tag-strip.
   const alignedBlocks: string[] = [];
   md = md.replace(
     /<(p|h[1-6]|div)\b([^>]*\b(?:style="[^"]*text-align|class="[^"]*\bet-rte-align-)[^>]*)>([\s\S]*?)<\/\1>/gi,
@@ -499,7 +499,7 @@ export const htmlToMarkdown = (html: string) => {
 
       return makePlaceholder(
         'ALIGN',
-        alignedBlocks.push(`<${name} style="text-align: ${alignOf(attrs)}">${inner}</${name}>`) - 1,
+        alignedBlocks.push(`<${name}${alignClass(alignOf(attrs))}>${inner}</${name}>`) - 1,
       );
     },
   );

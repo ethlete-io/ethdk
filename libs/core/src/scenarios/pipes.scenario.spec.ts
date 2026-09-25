@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatchListView } from '@ethlete/types';
 import {
+  HtmlToMarkdownPipe,
   MarkdownToHtmlPipe,
   normalizeMatchParticipant,
   NormalizeGameResultTypePipe,
@@ -27,6 +28,15 @@ const match = (overrides: Partial<Record<'status' | 'home' | 'away', unknown>>) 
 })
 class TextWidgetComponent {
   markdown = signal('**Hello** partner');
+}
+
+@Component({
+  selector: 'et-scenario-aligned-source',
+  imports: [HtmlToMarkdownPipe],
+  template: '<div class="source" [innerHTML]="html() | htmlToMarkdown"></div>',
+})
+class AlignedSourceComponent {
+  html = signal('<p style="text-align: center">Centered</p><p>body</p>');
 }
 
 @Component({
@@ -78,6 +88,19 @@ describe('pipe scenarios', () => {
     s.tick();
 
     expect(text().querySelector('script')).toBeNull();
+
+    fixture.destroy();
+  });
+
+  it('keeps block alignment in markdown as a class, not a style attribute a strict CSP blocks', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(AlignedSourceComponent);
+    const source = () => (fixture.nativeElement as HTMLElement).querySelector('.source') as HTMLElement;
+
+    s.tick();
+
+    expect(source().querySelector('p.et-rte-align-center')?.textContent).toBe('Centered');
+    expect(source().querySelector('[style]')).toBeNull();
 
     fixture.destroy();
   });

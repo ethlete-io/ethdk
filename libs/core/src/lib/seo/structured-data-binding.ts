@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { inject, signal } from '@angular/core';
+import { CSP_NONCE, inject, signal } from '@angular/core';
 import { injectRenderer } from '../providers';
 import { MaybeSignal } from '../signals';
 import { defineRootProvider, defineStaticRootProvider, toInjectFn, toProvideFn } from '../utils';
@@ -35,6 +35,7 @@ const STRUCTURED_DATA_STORE_DEF = /* @__PURE__ */ defineRootProvider(
     const document = inject(DOCUMENT);
     const renderer = injectRenderer();
     const config = injectStructuredDataConfig();
+    const nonce = inject(CSP_NONCE, { optional: true });
     const scripts = signal<Map<symbol, HTMLScriptElement>>(new Map());
 
     const getTargetElement = (): HTMLElement => {
@@ -53,6 +54,7 @@ const STRUCTURED_DATA_STORE_DEF = /* @__PURE__ */ defineRootProvider(
         const script = renderer.createElement('script');
 
         renderer.setAttributes(script, { type: 'application/ld+json' });
+        if (nonce) renderer.setAttribute(script, 'nonce', nonce);
         renderer.setTextContent(script, JSON.stringify(data));
 
         const target = getTargetElement();

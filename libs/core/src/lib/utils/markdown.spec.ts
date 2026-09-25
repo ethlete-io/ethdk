@@ -275,14 +275,15 @@ describe('htmlToMarkdown', () => {
     expect(markdownToHtml('a <u>**b**</u> c')).toBe('<p>a <u><strong>b</strong></u> c</p>');
   });
 
-  it('preserves aligned blocks as raw native HTML (no Markdown form)', () => {
-    const aligned = '<p style="text-align: center">Centered</p>';
+  it('preserves aligned blocks as raw HTML with an alignment class (no Markdown form)', () => {
+    const aligned = '<p class="et-rte-align-center">Centered</p>';
     expect(htmlToMarkdown(aligned)).toBe(aligned);
-    expect(markdownToHtml(aligned)).toBe('<p class="et-rte-align-center">Centered</p>');
-    expect(htmlToMarkdown('<p class="et-rte-align-center">Centered</p>')).toBe(aligned);
+    expect(markdownToHtml(aligned)).toBe(aligned);
+    expect(htmlToMarkdown('<p style="text-align: center">Centered</p>')).toBe(aligned);
+    expect(markdownToHtml('<p style="text-align: center">Centered</p>')).toBe(aligned);
     // an aligned heading round-trips too, and a normal paragraph beside it stays Markdown
     expect(htmlToMarkdown('<h2 style="text-align: right">Title</h2><p>body</p>')).toBe(
-      '<h2 style="text-align: right">Title</h2>\n\nbody',
+      '<h2 class="et-rte-align-right">Title</h2>\n\nbody',
     );
   });
 
