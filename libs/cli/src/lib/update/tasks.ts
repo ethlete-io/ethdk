@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { instructionsPath } from './migration-manifest';
 import { PackageManager } from './package-manager';
@@ -166,6 +166,44 @@ export const renderTaskFile = (options: { task: UpdateTask; instructions: string
   ].join('\n');
 };
 
+const TASK_KINDS: readonly string[] = ['manual', 'assisted', 'unsupported'] satisfies UpdateTask['kind'][];
+
+const isTask = (value: unknown): value is UpdateTask => {
+  if (typeof value !== 'object' || value === null) return false;
+
+  const record = value as Record<string, unknown>;
+
+  return (
+    ['packageName', 'name', 'version', 'description'].every((key) => typeof record[key] === 'string') &&
+    typeof record['kind'] === 'string' &&
+    TASK_KINDS.includes(record['kind'])
+  );
+};
+
+/** The tasks an earlier run left whose file is still there: deleting a task file is how a task is done. */
+const unfinishedEarlierTasks = (root: string): UpdateTask[] => {
+  const path = join(root, UPDATE_DIR, TASKS_DATA_FILE);
+
+  if (!existsSync(path)) return [];
+
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(readFileSync(path, 'utf8'));
+  } catch {
+    return [];
+  }
+
+  const tasks = typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>)['tasks'] : [];
+
+  return Array.isArray(tasks)
+    ? tasks.filter(isTask).filter((task) => task.instructionsFile && existsSync(join(root, task.instructionsFile)))
+    : [];
+};
+
+const sameTask = (left: UpdateTask, right: UpdateTask) =>
+  left.packageName === right.packageName && left.name === right.name;
+
 export type WrittenTasks = {
   /** Repo-relative path of the report. */
   reportPath: string;
@@ -175,7 +213,8 @@ export type WrittenTasks = {
 
 /**
  * Writes the report, the machine-readable task list an agent reads, and a copy of every instructions
- * file, so the whole task list stands on its own once `node_modules` changes again.
+ * file, so the whole task list stands on its own once `node_modules` changes again. A task an earlier
+ * run left is kept while its file is still there.
  */
 export const writeUpdateTasks = (options: {
   root: string;
@@ -185,7 +224,9 @@ export const writeUpdateTasks = (options: {
   generatedAt: string;
 }): WrittenTasks => {
   const { root, updates, outcomes, manager, generatedAt } = options;
-  const tasks = collectTasks({ outcomes, manager, updates });
+  const collected = collectTasks({ outcomes, manager, updates });
+  const earlier = unfinishedEarlierTasks(root).filter((task) => !collected.some((next) => sameTask(task, next)));
+  const tasks = [...earlier, ...collected];
   const directory = join(root, UPDATE_DIR);
 
   mkdirSync(directory, { recursive: true });
@@ -195,7 +236,7 @@ export const writeUpdateTasks = (options: {
       manifestPath: outcome.pending.manifestPath,
       migration: outcome.pending.migration,
     });
-    const task = tasks.find(
+    const task = collected.find(
       (candidate) =>
         candidate.packageName === outcome.pending.packageName && candidate.name === outcome.pending.migration.name,
     );

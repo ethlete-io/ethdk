@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { check, resolveConfig } from 'prettier';
@@ -308,5 +308,34 @@ describe('writeUpdateTasks', () => {
 
       expect(await check(readFileSync(filepath, 'utf8'), options), path).toBe(true);
     }
+  });
+
+  it('keeps the unfinished tasks of an earlier run, and drops the ones whose file is gone', () => {
+    const root = makeRoot();
+    const task = (name: string) =>
+      outcome({
+        pending: pending({
+          migration: migration({ name, kind: 'manual', generator: undefined, instructions: './migrations/a.md' }),
+          manifestPath: instructionsFixture('Decide.'),
+        }),
+        state: 'task',
+      });
+    const run = (outcomes: MigrationOutcome[]) =>
+      writeUpdateTasks({
+        root,
+        updates: [{ name: '@ethlete/core', from: '5.0.0', to: '5.1.0' }],
+        outcomes,
+        manager: yarn,
+        generatedAt: '2026-08-21T00:00:00.000Z',
+      });
+
+    run([task('open'), task('done')]);
+    rmSync(join(root, UPDATE_DIR, 'core-done.md'));
+
+    const written = run([task('new')]);
+
+    expect(written.tasks.map((entry) => entry.name)).toEqual(['open', 'new']);
+    expect(JSON.parse(readFileSync(join(root, written.dataPath), 'utf8')).tasks).toHaveLength(2);
+    expect(readFileSync(join(root, written.reportPath), 'utf8')).toContain('### @ethlete/core — open');
   });
 });
