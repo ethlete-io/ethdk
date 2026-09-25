@@ -1,4 +1,4 @@
-import { Component, signal, viewChild } from '@angular/core';
+import { Component, reflectComponentType, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { FormField } from '@angular/forms/signals';
@@ -295,8 +295,11 @@ describe('table feature scenarios: rows', () => {
     s.flush();
 
     expect(editor.editTemplate()).toBeInstanceOf(TableCellEditDirective);
-    expect(document.querySelectorAll('.et-style-manager > et-table-inline-edit-styles')).toHaveLength(1);
-    expect(TableInlineEditStylesComponent).toBeDefined();
+    expect(
+      document.querySelectorAll(
+        `.et-style-manager > ${reflectComponentType(TableInlineEditStylesComponent)?.selector}`,
+      ),
+    ).toHaveLength(1);
 
     const titleCell = () => cellsOf(bodyRows(host)[0] as HTMLElement)[0] as HTMLElement;
 
