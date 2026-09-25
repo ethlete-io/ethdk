@@ -41,9 +41,7 @@ search text, filters, sort, page or page size.
    date creators for filters), and call `.observe()` on it.
 2. Give the page field `isResetBy` for the fields that must send the list back to page 1.
 3. Feed the query from `withArgs(() => … this.qf.value() …)`.
-4. Bind each control with `[formField]="qf.fields.<name>"`. Until `searchQueryField()` is typed for
-   it, `[formField]` on an `<et-input>` fails under `strictTemplates`: forward the input's value with
-   `qf.patchValue({ search }, { debounce: true })` instead.
+4. Bind each control with `[formField]="qf.fields.<name>"`.
 5. Delete the hand-written reads, writes, draft signals and effects the form replaces.
 6. Keep the param names the URL already uses, so saved links keep working. Each field is one param,
    named by its key. Use `queryParamPrefix` when two lists share a route.
