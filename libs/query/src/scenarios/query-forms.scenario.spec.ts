@@ -325,6 +325,48 @@ describe('query forms scenario', () => {
     expect(qf.value()).toEqual({ search: 'shoes', page: 1 });
   });
 
+  it.each(['bound field', 'patchValue'] as const)(
+    'a debounced field keeps its debounce when its change resets an undebounced field (%s)',
+    (writer) => {
+      const s = scenario();
+      s.api.on('GET', '/items', ({ query }) => ({ body: { search: query['search'] ?? null, page: query['page'] } }));
+      const getItems = s.get<{ response: unknown; queryParams: { search: string | null; page: number | null } }>(
+        '/items',
+      );
+
+      const c = s.consumer();
+      const qf = c.run(() =>
+        defineQueryForm({
+          fields: {
+            search: queryField<string>({ debounce: 300 }),
+            page: queryField<number>({ defaultValue: 1, isResetBy: 'search' }),
+          },
+        }).observe({ writeToQueryParams: false }),
+      );
+      c.run(() => getItems(withArgs(() => ({ queryParams: qf.value() }))));
+
+      qf.setValue({ search: null, page: 3 });
+      s.tick();
+      expect(s.api.requests.map((request) => request.query['page'])).toEqual(['3']);
+
+      if (writer === 'bound field') {
+        qf.fields.search().value.set('shoes');
+      } else {
+        qf.patchValue({ search: 'shoes' }, { debounce: true });
+      }
+
+      s.tick(299);
+      expect(qf.value()).toEqual({ search: null, page: 3 });
+      expect(s.api.requests).toHaveLength(1);
+
+      s.tick(1);
+      expect(qf.value()).toEqual({ search: 'shoes', page: 1 });
+
+      s.tick();
+      expect(s.api.requests.map((request) => request.query)).toEqual([{ page: '3' }, { search: 'shoes', page: '1' }]);
+    },
+  );
+
   it('a navigation that lands during a skipResets write does not carry the skip over to the next change', async () => {
     const s = scenario();
     const router = TestBed.inject(Router);
