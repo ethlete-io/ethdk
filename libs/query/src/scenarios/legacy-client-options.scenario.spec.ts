@@ -8,7 +8,6 @@ import {
   OnDestroy,
   signal,
   untracked,
-  viewChild,
   WritableSignal,
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
@@ -30,7 +29,6 @@ type GetMatchesArgs = {
 
 const GET_MATCHES = new InjectionToken<LegacyClientCreator<GetMatchesArgs>>('GET_MATCHES');
 const SELECTED_ROUND = new InjectionToken<WritableSignal<string | null>>('SELECTED_ROUND');
-const ROUND_ID = new InjectionToken<WritableSignal<string | null>>('ROUND_ID');
 
 @Component({ selector: 'vbl-match-list', template: '' })
 class MatchListComponent implements OnDestroy {
@@ -75,15 +73,6 @@ class MatchListComponent implements OnDestroy {
   }
 }
 
-@Component({
-  imports: [MatchListComponent],
-  template: '<vbl-match-list [roundId]="roundId()" />',
-})
-class MatchListHost {
-  readonly roundId = inject(ROUND_ID);
-  readonly list = viewChild.required(MatchListComponent);
-}
-
 const VBL_CLIENT_REQUEST_OPTIONS = {
   autoRefreshQueriesOnWindowFocus: false,
   enableSmartPolling: false,
@@ -110,15 +99,13 @@ describe.each(LEGACY_CLIENT_KINDS)(
       }));
 
       const selectedRound = signal(selected);
-      const round = signal<string | null>(roundId);
       const c = s.consumer([
         { provide: GET_MATCHES, useValue: legacy.get<GetMatchesArgs>('/matches') },
         { provide: SELECTED_ROUND, useValue: selectedRound },
-        { provide: ROUND_ID, useValue: round },
       ]);
-      const ref = s.mount(MatchListHost, c.injector);
+      const ref = s.mount(MatchListComponent, c.injector, { inputs: { roundId } });
 
-      return { s, legacy, c, ref, list: () => ref.instance.list(), round, selectedRound };
+      return { s, legacy, c, ref, list: () => ref.instance, selectedRound };
     };
 
     it('keeps polling in a blurred window and refreshes nothing on focus', () => {
@@ -156,12 +143,12 @@ describe.each(LEGACY_CLIENT_KINDS)(
     });
 
     it('requests a round again on every revisit and keeps the last response while it loads', () => {
-      const { s, legacy, c, ref, list, round } = setup('r1', null);
+      const { s, legacy, c, ref, list } = setup('r1', null);
 
       s.tick(1000);
 
       for (const next of ['r2', 'r3', 'r1']) {
-        round.set(next);
+        ref.setInput('roundId', next);
         s.tick(10);
 
         expect(list().matchesResponse()).not.toBeNull();
@@ -185,9 +172,9 @@ describe.each(LEGACY_CLIENT_KINDS)(
       ref.destroy();
       s.tick(1000);
 
-      const again = s.mount(MatchListHost, c.injector);
+      const again = s.mount(MatchListComponent, c.injector, { inputs: { roundId: 'r1' } });
       s.tick(1000);
-      expect(again.instance.list().matchesResponse()).toEqual({ items: ['match of r1'] });
+      expect(again.instance.matchesResponse()).toEqual({ items: ['match of r1'] });
       expect(rounds(s)).toEqual(['r1', 'r1']);
 
       again.destroy();

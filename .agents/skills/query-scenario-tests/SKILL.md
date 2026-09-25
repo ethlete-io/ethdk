@@ -66,7 +66,9 @@ it('dedupes identical requests', () => {
   `consumer.run(...)`; `consumer.destroy()` ends its lifetime.
 - `s.mount(Component, c.injector)` creates a real component attached to the `ApplicationRef`, so
   `tick()` runs its change detection; an unattached view never re-renders and a `queryComputed` in
-  it never reacts to its signals. `destroy()` destroys what is still mounted.
+  it never reacts to its signals. It runs change detection at once, so pass an `input.required()` as
+  `s.mount(Component, c.injector, { inputs: { id: '1' } })` and change it with `ref.setInput`, not through
+  a parent template. `destroy()` destroys what is still mounted.
 - `s.auth({...})` builds a bearer auth provider with login and refresh routes on the fake API. A second
   authenticated tab passes `clientRef` (that tab's client), `injector` (that tab's client injector) and a
   `name` both tabs share, then hangs its consumers off `s.consumer([], auth.injector)` - see

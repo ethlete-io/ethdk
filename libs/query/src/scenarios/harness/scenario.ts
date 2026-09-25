@@ -66,6 +66,10 @@ export type ScenarioConsumer = {
   destroy: () => void;
 };
 
+export type ScenarioMountOptions = {
+  inputs?: Record<string, unknown>;
+};
+
 type AnyAuthFeatureBuilder = (
   context: BearerAuthProviderFeatureContext<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -171,9 +175,10 @@ export type Scenario = {
   /**
    * Creates a real component below `parent` (a consumer's injector) and attaches its view to the
    * `ApplicationRef`, so `tick()` runs its change detection and template effects the way an app does.
+   * `inputs` are set before the first change detection, so an `input.required()` can be read at once.
    * `destroy()` destroys every component still mounted.
    */
-  mount: <T>(host: Type<T>, parent?: EnvironmentInjector) => ComponentRef<T>;
+  mount: <T>(host: Type<T>, parent?: EnvironmentInjector, options?: ScenarioMountOptions) => ComponentRef<T>;
   tick: (ms?: number) => void;
   settle: (ms?: number) => Promise<void>;
   flush: (maxMs?: number) => void;
@@ -389,8 +394,14 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
       };
     };
 
-    const mount = <T>(host: Type<T>, parent: EnvironmentInjector = injector): ComponentRef<T> => {
+    const mount = <T>(
+      host: Type<T>,
+      parent: EnvironmentInjector = injector,
+      options: ScenarioMountOptions = {},
+    ): ComponentRef<T> => {
       const ref = createComponent(host, { environmentInjector: parent });
+
+      for (const [name, value] of Object.entries(options.inputs ?? {})) ref.setInput(name, value);
 
       mounted.add(ref);
       ref.onDestroy(() => mounted.delete(ref));
