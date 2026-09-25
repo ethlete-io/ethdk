@@ -1,4 +1,4 @@
-import { CallEvent, CollectedEvent, WindowFocusEvent } from '../model/event';
+import { CalendarOccurrenceEvent, CallEvent, CollectedEvent, WindowFocusEvent } from '../model/event';
 import { TimetrackCallRules } from '../settings/model';
 import { DEFAULT_MIN_ATTENDED_MS, classifyCalls, closeAbandonedCalls } from './calls';
 
@@ -636,5 +636,65 @@ describe('classifyCalls, a room held across a restart of the app', () => {
     expect(windows).toHaveLength(1);
     expect(windows[0]!.from).toEqual(at(0));
     expect(windows[0]!.to).toEqual(at(120));
+  });
+});
+
+describe('classifyCalls, a call over a meeting the user accepted', () => {
+  const SLACK = 'com.tinyspeck.slackmacgap';
+  const daily = (over: Partial<CalendarOccurrenceEvent> = {}): CalendarOccurrenceEvent => ({
+    at: at(0),
+    source: 'calendar',
+    kind: 'calendar-event',
+    occurrenceId: 'daily',
+    until: at(30),
+    title: 'Team Daily',
+    accepted: true,
+    ...over,
+  });
+  const huddle = [
+    focus(10, SLACK, 'office (Channel) - Braune Digital - Slack'),
+    call(10, 'call-start', SLACK),
+    focus(11, 'code', 'calls.ts - timetrack'),
+    call(50, 'call-end', SLACK),
+  ];
+
+  it('counts it as work though no rule names its application', () => {
+    const windows = classify([daily(), ...huddle], { countsAsWork: ['Discord'] });
+
+    expect(windows[0]!.countsAsWork).toBe(true);
+  });
+
+  it('still lets a deny rule beat the meeting', () => {
+    const windows = classify([daily(), ...huddle], { neverCountsAsWork: ['tinyspeck'] });
+
+    expect(windows[0]!.countsAsWork).toBe(false);
+  });
+
+  it('counts nothing for a meeting the user did not accept', () => {
+    const windows = classify([daily({ accepted: false }), ...huddle]);
+
+    expect(windows[0]!.countsAsWork).toBe(false);
+  });
+
+  it('labels it after the meeting rather than the window in front when the microphone opened', () => {
+    const windows = classify([daily(), ...huddle]);
+
+    expect(windows[0]!.title).toBe('Team Daily');
+  });
+
+  it('labels it after the meeting it shares the most time with', () => {
+    const windows = classify([
+      daily(),
+      daily({ occurrenceId: 'review', at: at(25), until: at(90), title: 'Sprint Review' }),
+      ...huddle,
+    ]);
+
+    expect(windows[0]!.title).toBe('Sprint Review');
+  });
+
+  it('matches the rules against the window title, not the meeting', () => {
+    const windows = classify([daily(), ...huddle], { neverCountsAsWork: ['office'] });
+
+    expect(windows[0]!.countsAsWork).toBe(false);
   });
 });

@@ -221,7 +221,8 @@ export const clampStandInOverdueMs = (value: number) =>
  * call would drop a presence sample, so the hours in an open voice room would become **absence** rather
  * than unclassified time — the bug `ownAppIds` avoided by deciding at read time as well.
  *
- * `neverCountsAsWork` beats `countsAsWork`, and a call neither list names is not work. The process
+ * `neverCountsAsWork` beats `countsAsWork`, and a call neither list names is not work unless it overlaps
+ * a meeting the user accepted; `neverCountsAsWork` beats that too. The process
  * matters on its own, because a huddle's title may not name the workspace at all and "every Slack call
  * is work" should be one line.
  */

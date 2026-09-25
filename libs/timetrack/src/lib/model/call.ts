@@ -4,7 +4,10 @@ export type CallWindow = {
   to: Date;
   /** The process that held the microphone, raw. This is what a rule matched, and what a rule may match. */
   appId: string;
-  /** The window title the call was named from — see `titleAt`. Empty when the application had none. */
+  /**
+   * The title of the accepted meeting the call overlaps, else the window title it was named from — see
+   * `titleAt`. Empty when neither exists. Rules match the window title, never the meeting's.
+   */
   title: string;
   /**
    * How long the call's own application held the focus inside this window.
@@ -14,7 +17,10 @@ export type CallWindow = {
    * read at all.
    */
   attendedMs: number;
-  /** Whether the user attended, and a rule said this was work. Nothing saying so means no — see `classifyCalls`. */
+  /**
+   * Whether the user attended, and a rule or an accepted meeting over it said this was work. Nothing
+   * saying so means no, and a deny rule beats both — see `classifyCalls`.
+   */
   countsAsWork: boolean;
   /**
    * Whether the user was in the room, which is presence whatever the work rules made of the call. A

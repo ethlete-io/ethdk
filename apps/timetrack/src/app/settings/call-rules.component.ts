@@ -7,7 +7,8 @@ import { TimetrackCallRules } from '@ethlete/timetrack';
  *
  * Deliberately not an exclusion rule: a call is a presence sample, so denying one before the store
  * would turn the hours in an open voice room into absence rather than into unclassified time. These
- * decide at read time instead, and a call neither list names is simply not counted.
+ * decide at read time instead, and a call neither list names is not counted unless it overlaps an accepted
+ * meeting.
  */
 @Component({
   selector: 'ethlete-call-rules',
@@ -18,7 +19,8 @@ import { TimetrackCallRules } from '@ethlete/timetrack';
         <p class="text-small text-et-surface-muted">
           A call is recognised by which application holds the microphone, so every meeting tool counts at once and no
           token is needed. Whether a call was work is yours to say: an open voice room and a client meeting look
-          identical, and an application's own mute is invisible. A call no rule names is not counted.
+          identical, and an application's own mute is invisible. A call no rule names is not counted, unless it overlaps
+          a meeting you accepted.
         </p>
       </div>
 

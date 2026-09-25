@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ActivityBlock } from '../model/block';
-import { CallWindow } from '../model/call';
+import { CallWindow, callLabel } from '../model/call';
 import { CalendarOccurrenceEvent } from '../model/event';
 import { TimeWindow } from '../model/time-window';
 import { CallNaming, callFeaturesOf } from '../model/call-naming';
@@ -10,6 +10,7 @@ import { describeWork } from './describe';
 import { CALL_LANE_KEY } from './lane';
 import { MeetingOptions } from './meetings';
 import { RecurringPattern } from '../model/recurrence';
+import { classifyCalls } from '../stream/calls';
 
 const at = (hour: number, minute = 0) => new Date(2026, 7, 11, hour, minute);
 
@@ -603,5 +604,30 @@ describe('a call the calendar never held', () => {
 
     expect(callBehindRow({ row: callRow, calls: matches })?.call).toBe(room);
     expect(callBehindRow({ row: meetingRow, calls: matches })).toBeUndefined();
+  });
+});
+
+describe('a call over an accepted meeting no rule counts', () => {
+  const SLACK = 'com.tinyspeck.slackmacgap';
+
+  it('is named after the meeting it overlaps', () => {
+    const daily = occurrence({ at: at(9, 45), until: at(10, 15), title: 'Team Daily' });
+    const calls = classifyCalls({
+      events: [
+        { at: at(9, 56), source: 'window', kind: 'window-focus', appId: SLACK, title: 'office (Channel) - Slack' },
+        { at: at(9, 56), source: 'call', kind: 'call-start', appId: SLACK },
+        { at: at(9, 57), source: 'window', kind: 'window-focus', appId: 'code', title: 'calls.ts' },
+        { at: at(10, 36), source: 'call', kind: 'call-end', appId: SLACK },
+        daily,
+      ],
+      rules: { countsAsWork: ['Discord'], neverCountsAsWork: [] },
+      until: at(12),
+    });
+
+    const [found] = match({ calls, occurrences: [daily] });
+
+    expect(found?.group.bookable).not.toBe(false);
+    expect(found?.meeting?.event.occurrenceId).toBe('occ-standup');
+    expect(callLabel(found!.call)).toBe('Team Daily');
   });
 });

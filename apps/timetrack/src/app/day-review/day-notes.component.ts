@@ -121,8 +121,9 @@ const NO_DIRECTORY =
 
         <span class="text-small text-et-surface-subtle">
           A call is presence: an hour spent listening leaves no keystroke, so nothing else sees it. Whether it was work
-          is your call, and a call no rule names is not counted. Write the rule in Settings. A call you never brought to
-          the front is read as a voice room left open, and is not counted either.
+          is your call, and a call no rule names is not counted unless it overlaps a meeting you accepted. Write the
+          rule in Settings. A call you never brought to the front is read as a voice room left open, and is not counted
+          either, unless it overlaps a meeting you accepted.
         </span>
       </div>
     }

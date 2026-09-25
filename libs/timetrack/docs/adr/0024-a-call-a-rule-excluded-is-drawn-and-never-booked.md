@@ -41,6 +41,9 @@ from the moment it holds an issue it reads as any other row.
 
 ## Consequences
 
+- A call that overlaps a meeting the user accepted counts as work although no rule names it, because
+  the acceptance says what the rules would have (2026-09-25, a Slack huddle over the daily). Only
+  `neverCountsAsWork` still excludes it.
 - A room open for hours draws one long band that books nothing. That is the point: it is the shape of
   the day, and the reviewer can cut a row out of it on the day it held a meeting.
 - `too-many-rows` counts it, as ADR 0020 already decided for every drawn row.

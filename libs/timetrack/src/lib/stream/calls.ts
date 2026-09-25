@@ -1,6 +1,6 @@
 import { CallWindow } from '../model/call';
 import { CalendarOccurrenceEvent, CallEvent, CollectedEvent, WindowFocusEvent } from '../model/event';
-import { TimeWindow, clipWindows, windowsMs, windowsOverlap } from '../model/time-window';
+import { TimeWindow, clipWindows, windowsMs } from '../model/time-window';
 import { TimetrackCallRules } from '../settings/model';
 
 export type ClassifyCallsOptions = {
@@ -111,14 +111,17 @@ const matches = (patterns: readonly string[], named: Named) =>
   });
 
 /**
- * Whether this call counts as work. Deny beats allow, and nothing saying so is no.
+ * Whether this call counts as work. Deny beats everything, and nothing saying so is no — except a
+ * meeting the user accepted over the same minutes, which says so on its own.
  *
  * Default-deny is the only default that cannot silently invent hours: an open voice room and a client
- * meeting are the same signal, and an application's own mute is invisible. The price is that the rules
- * do nothing on the first day.
+ * meeting are the same signal, and an application's own mute is invisible. An accepted meeting is the
+ * one signal that tells them apart without a rule, so a huddle over the daily counts even when no rule
+ * names the application it was held in.
  */
-const countsAsWork = (rules: TimetrackCallRules, named: Named) =>
-  !matches(rules.neverCountsAsWork, named) && matches(rules.countsAsWork, named);
+const countsAsWork = (options: { rules: TimetrackCallRules; named: Named; expected: boolean }) =>
+  !matches(options.rules.neverCountsAsWork, options.named) &&
+  (options.expected || matches(options.rules.countsAsWork, options.named));
 
 /** Each focus in order, holding until the next one takes over, and the last until the cut-off. */
 type HeldFocus = TimeWindow & { appId: string };
@@ -167,6 +170,16 @@ const titleAt = (focus: readonly WindowFocusEvent[], call: { appId: string; at: 
 
   return (settled ?? before)?.title ?? '';
 };
+
+/** The accepted meeting that shares the most time with the call, if any shares some. */
+const acceptedMeetingOver = (invited: readonly CalendarOccurrenceEvent[], call: TimeWindow) =>
+  invited
+    .map((event) => ({
+      event,
+      sharedMs: windowsMs(clipWindows({ windows: [{ from: event.at, to: event.until }], within: [call] })),
+    }))
+    .filter(({ sharedMs }) => sharedMs > 0)
+    .sort((left, right) => right.sharedMs - left.sharedMs)[0]?.event;
 
 /** A call, from the edge that opened it to the edge that closed it. */
 type PairedCall = {
@@ -257,7 +270,7 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
   const titleSettleMs = options.titleSettleMs ?? DEFAULT_CALL_TITLE_SETTLE_MS;
 
   const toWindow = (call: PairedCall): CallWindow => {
-    const title = titleAt(focus, { appId: call.appId, at: call.from, settleMs: titleSettleMs });
+    const focusTitle = titleAt(focus, { appId: call.appId, at: call.from, settleMs: titleSettleMs });
     const attended = attendedMs(held, call);
     // A day with no window-focus event at all cannot be judged on attendance, and must not be gated on
     // it: a platform whose window source is off would otherwise lose every call it ever recorded.
@@ -265,9 +278,13 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
     // A meeting the user accepted over the same minutes is the evidence the focus gate stands in for,
     // so it is read instead of the gate. Without this a meeting the user only listened to is dropped,
     // and after the calendar stopped proposing rows of its own nothing else would propose it.
-    const expected = invited.some((event) => windowsOverlap(call, { from: event.at, to: event.until }));
+    const meeting = acceptedMeetingOver(invited, call);
+    const expected = !!meeting;
+    // The focus at the microphone opening can say nothing about the call — at app start it is the first
+    // window of the day. Rules keep reading the focus title, which is what the user wrote them against.
+    const title = meeting?.title || focusTitle;
 
-    const named = { appId: call.appId, title };
+    const named = { appId: call.appId, title: focusTitle };
     // Attendance, not the work rules: a room nobody sat in is the one call that says nothing about
     // where the user was, and a rule denying the work still leaves them in the meeting. See ADR 0024.
     const attendedCall = !readable || expected || attended >= minAttendedMs;
@@ -278,7 +295,7 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
       to: call.to,
       title,
       attendedMs: attended,
-      countsAsWork: attendedCall && countsAsWork(options.rules, named),
+      countsAsWork: attendedCall && countsAsWork({ rules: options.rules, named, expected }),
       isPresence: attendedCall && !matches(options.rules.neverCountsAsWork, named),
     };
   };
