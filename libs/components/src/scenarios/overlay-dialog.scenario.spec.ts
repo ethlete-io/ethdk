@@ -5,6 +5,7 @@ import {
   ALERT_DIALOG_LABELS,
   createAlertDialogOpener,
   createOverlayOpener,
+  createOverlayRef,
   createOverlaySingleSlot,
   createOverlayUnsavedChangesGuard,
   DEFAULT_ALERT_DIALOG_LABELS,
@@ -205,6 +206,17 @@ const backdropOf = (ref: { readonly elements: OverlayRef['elements'] }) => {
 
   return backdrop;
 };
+
+@Component({
+  selector: 'et-scenario-inline-preview',
+  imports: [RegionsOverlayComponent],
+  providers: [{ provide: OVERLAY_REF, useFactory: () => createOverlayRef({}) }],
+  template: '<et-scenario-regions-overlay />',
+})
+class InlinePreviewComponent {
+  ref = inject(OVERLAY_REF);
+  regions = viewChild.required(RegionsOverlayComponent);
+}
 
 const query = <T extends HTMLElement = HTMLElement>(selector: string, root: ParentNode = document) => {
   const element = root.querySelector<T>(selector);
@@ -478,6 +490,48 @@ describe('overlay dialog scenarios', () => {
     expect(() => stray.detectChanges()).toThrow(`ET${OVERLAY_ERROR_CODES.MISSING_OVERLAY_MAIN}`);
     stray.destroy();
     s.flush();
+  });
+
+  it('renders overlay content inline against a detached ref', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(InlinePreviewComponent);
+
+    s.flush();
+
+    const preview = fixture.componentInstance;
+
+    expect(preview.ref.elements).toBeNull();
+    expect(preview.ref.componentInstance()).toBeNull();
+    expect(preview.regions().probes()).toHaveLength(3);
+    preview.ref.close();
+    s.flush();
+    expect(overlayRoots()).toBe(0);
+  });
+
+  it('vetoes a close with a close guard until it is forced', () => {
+    const s = scenario();
+    const ref = s.run(() =>
+      injectOverlayManager().open<NoteOverlayComponent, string>(NoteOverlayComponent, {
+        strategies: dialogOverlayStrategy(),
+        autoFocus: false,
+      }),
+    );
+    const closed: string[] = [];
+
+    ref.afterClosedEvent().subscribe((event) => closed.push(`${event.source}:${event.result}`));
+    s.flush();
+
+    const unregister = ref.registerCloseGuard(() => false);
+
+    ref.close('first');
+    s.keydown('Escape');
+    s.flush();
+    expect(closed).toEqual([]);
+
+    ref.forceClose('api', 'forced');
+    s.flush();
+    expect(closed).toEqual(['api:forced']);
+    unregister();
   });
 
   it('asks the unsaved-changes guard before a dirty overlay closes and before a single slot replaces it', async () => {
