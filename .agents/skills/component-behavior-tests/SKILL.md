@@ -154,3 +154,23 @@ while it is uncommitted; `HEAD` is the state without it. Copy the file aside ins
   screenshots are not.
 - The `verify-in-storybook` skill is the one-off exploration tool. When a check from that
   session is worth keeping, move it into a suite here.
+
+## The strict-CSP suite (`apps/csp-e2e`)
+
+A second, separate Playwright project proves the SDK runs under a consumer's nonce-based CSP
+(`script-src`/`style-src 'self' 'nonce-…'`, no `'unsafe-inline'`). `apps/csp` is a small Angular
+app built in production mode from the workspace sources. Its root is
+`<app-root ngCspNonce="CSP_NONCE_PLACEHOLDER">`, and `apps/csp-e2e/serve-csp.mjs` swaps in a fresh
+nonce on every request and sends the header. Each route mounts one risky feature: overlays, menu
+and tooltip, style-manager CSS, virtual table, theming (including the legacy runtime themes),
+markdown, the rich-text editor, skeleton, and the query devtools shell. A test fails on any
+`securitypolicyviolation` event or CSP console message, and prints the directive and the sample.
+
+```bash
+npx nx e2e csp-e2e   # builds csp-app, serves it on :4431, runs the suite
+```
+
+`self-test` must keep detecting the nonce-less `<style>` on `/negative-control`; if it passes
+without a violation, the watcher is broken. A new CSP-sensitive feature gets a route in
+`apps/csp/src/app/app.routes.ts` and a test in `apps/csp-e2e/src/csp.e2e.ts`. A known violation
+is marked `test.fail()` with the file and directive, same as above. CI runs it in the `csp-e2e` job.
