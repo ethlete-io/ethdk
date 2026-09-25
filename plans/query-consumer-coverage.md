@@ -219,11 +219,9 @@ Triage (ethlete-sdk-57):
 
 ### Continue on 2026-09-26
 
-Open work, in this order. Everything above is committed on `next`, not pushed.
+Open work, in this order.
 
-1. **Do not push `next`** until ethlete-sdk-28 says its history rewrite (from e9f3b4abb on) is done. Then replace
-   the shas in this section with its old→new map (5d706cdba, d4884a9ec, 1386121dc, e2d93c484, b62b57981, 2d6ca2e8b
-   and the ones above that are newer than e9f3b4abb).
+1. **Done:** the history rewrite finished on 2026-09-25, the shas above are the new ones, and `next` is pushed.
 2. **Type error for a missing `withArgs`** (gap 8 follow-up, user decision 2026-09-25). Blocked yesterday: the
    permission classifier refused the edit to `query-features.ts`, so the user must allow it. Design, prototyped in
    a standalone copy only:
