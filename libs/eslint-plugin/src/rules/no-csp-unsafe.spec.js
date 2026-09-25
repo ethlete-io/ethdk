@@ -138,11 +138,55 @@ templateTester.run('no-csp-unsafe', rule, {
   invalid: [
     {
       code: `<div style="color: red"></div>`,
+      output: `<div [style]="{ color: 'red' }"></div>`,
       filename: 'test.html',
       errors: [{ messageId: 'templateStyleAttribute' }],
     },
     {
       code: `@if (a) { <et-skeleton-item style="block-size: 12px" /> }`,
+      output: `@if (a) { <et-skeleton-item [style]="{ 'block-size': '12px' }" /> }`,
+      filename: 'test.html',
+      errors: [{ messageId: 'templateStyleAttribute' }],
+    },
+    {
+      code: `<et-skeleton-item class="a" style="width: 40%;  margin-top:4px; --et-size: 2rem;" />`,
+      output: `<et-skeleton-item class="a" [style]="{ width: '40%', 'margin-top': '4px', '--et-size': '2rem' }" />`,
+      filename: 'test.html',
+      errors: [{ messageId: 'templateStyleAttribute' }],
+    },
+    {
+      code: `<div style="font-family: 'Inter'"></div>`,
+      output: null,
+      filename: 'test.html',
+      errors: [{ messageId: 'templateStyleAttribute' }],
+    },
+    {
+      code: `<div style="color: red !important"></div>`,
+      output: null,
+      filename: 'test.html',
+      errors: [{ messageId: 'templateStyleAttribute' }],
+    },
+    {
+      code: `<div style="background: url(a.png)"></div>`,
+      output: null,
+      filename: 'test.html',
+      errors: [{ messageId: 'templateStyleAttribute' }],
+    },
+    {
+      code: `<div style="color"></div>`,
+      output: null,
+      filename: 'test.html',
+      errors: [{ messageId: 'templateStyleAttribute' }],
+    },
+    {
+      code: `<div style=""></div>`,
+      output: null,
+      filename: 'test.html',
+      errors: [{ messageId: 'templateStyleAttribute' }],
+    },
+    {
+      code: `<div style="color: red" [style]="styles()"></div>`,
+      output: null,
       filename: 'test.html',
       errors: [{ messageId: 'templateStyleAttribute' }],
     },

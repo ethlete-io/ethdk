@@ -25,11 +25,48 @@
  * `processInlineTemplates`; in TypeScript it skips a decorator's `template` string for that reason.
  */
 
+const fs = require('node:fs');
 const { isGlobalReference } = require('./internals/import-resolution');
 
 const NONCED_ELEMENTS = new Set(['script', 'style']);
 const TIMER_FUNCTIONS = new Set(['setTimeout', 'setInterval']);
 const HTML_STYLE_ATTRIBUTE = /<[a-zA-Z][^<>]*\sstyle\s*=/;
+const UNFIXABLE_STYLE_VALUE = /['"\\]|\/\*|!important|url\(/i;
+const PLAIN_STYLE_PROPERTY = /^[a-zA-Z]+$/;
+const STYLE_PROPERTY = /^-{0,2}[a-zA-Z][\w-]*$/;
+const QUOTED_INLINE_TEMPLATE = /\btemplate\s*:\s*['"]/;
+
+/**
+ * Turns `a: b; c-d: e` into `{ a: 'b', 'c-d': 'e' }`, or returns null when the declarations cannot be
+ * rewritten without changing what they mean.
+ *
+ * @param {string} css
+ */
+const toStyleObjectLiteral = (css) => {
+  if (UNFIXABLE_STYLE_VALUE.test(css)) return null;
+
+  const entries = [];
+
+  for (const declaration of css.split(';')) {
+    if (!declaration.trim()) continue;
+
+    const colon = declaration.indexOf(':');
+
+    if (colon === -1) return null;
+
+    const property = declaration.slice(0, colon).trim();
+    const value = declaration
+      .slice(colon + 1)
+      .trim()
+      .replace(/\s+/g, ' ');
+
+    if (!STYLE_PROPERTY.test(property) || !value) return null;
+
+    entries.push(`${PLAIN_STYLE_PROPERTY.test(property) ? property : `'${property}'`}: '${value}'`);
+  }
+
+  return entries.length ? `{ ${entries.join(', ')} }` : null;
+};
 
 /** @param {any} node */
 const stringValue = (node) => (node?.type === 'Literal' && typeof node.value === 'string' ? node.value : null);
@@ -109,6 +146,7 @@ const boundTarget = (node) => {
 const noCspUnsafe = {
   meta: {
     type: 'problem',
+    fixable: 'code',
     docs: {
       description:
         "Disallow code a strict Content Security Policy (no 'unsafe-inline', no 'unsafe-eval') blocks at runtime.",
@@ -136,11 +174,40 @@ const noCspUnsafe = {
       const reportSpan = (span, messageId) =>
         context.report({ loc: parserServices.convertNodeSourceSpanToLoc(span), messageId });
 
+      let quotedInlineTemplate = /** @type {boolean | undefined} */ (undefined);
+
+      // The fix writes single quotes, which would end a quoted `template: '…'` string in the component.
+      const canFixTemplate = () => {
+        if (context.physicalFilename === context.filename || !context.physicalFilename.endsWith('.ts')) return true;
+
+        quotedInlineTemplate ??= QUOTED_INLINE_TEMPLATE.test(fs.readFileSync(context.physicalFilename, 'utf8'));
+
+        return !quotedInlineTemplate;
+      };
+
       return {
         /** @param {any} node */
         Element(node) {
+          const hasStyleBinding = (node.inputs ?? []).some(
+            /** @param {any} input */ (input) => input.name === 'style' && String(input.keySpan) === 'style',
+          );
+
           for (const attribute of node.attributes ?? []) {
-            if (attribute.name === 'style') reportSpan(attribute.sourceSpan, 'templateStyleAttribute');
+            if (attribute.name !== 'style') continue;
+
+            const literal = hasStyleBinding || !canFixTemplate() ? null : toStyleObjectLiteral(attribute.value);
+
+            context.report({
+              loc: parserServices.convertNodeSourceSpanToLoc(attribute.sourceSpan),
+              messageId: 'templateStyleAttribute',
+              fix: literal
+                ? (fixer) =>
+                    fixer.replaceTextRange(
+                      [attribute.sourceSpan.start.offset, attribute.sourceSpan.end.offset],
+                      `[style]="${literal}"`,
+                    )
+                : null,
+            });
           }
 
           for (const input of node.inputs ?? []) {
