@@ -16,27 +16,28 @@ paged queries, bearer auth, GraphQL, and a socket.io realtime client.
 non-trivial query work.** This guide maps every need to its API and page, plus the
 load-bearing facts, so you don't re-derive them from source or hand-build what ships.
 
-| Page                                    | Covers                                                                        |
-| --------------------------------------- | ----------------------------------------------------------------------------- |
-| {%docsBaseUrl%}/query/                  | Overview, the two generations, what else the package ships                    |
-| {%docsBaseUrl%}/query/queries           | **Start here** - client, creators, the query object's signals, auto-execution |
-| {%docsBaseUrl%}/query/features          | `withArgs`, polling, auto-refresh, side-effect handlers, custom features      |
-| {%docsBaseUrl%}/query/http              | REST creators, typing requests, response transforms, upload progress          |
-| {%docsBaseUrl%}/query/auth              | Bearer auth provider, guards, token refresh, auth features                    |
-| {%docsBaseUrl%}/query/caching           | Cache keys, dedup, `keepUnusedFor`, freshness, refresh and invalidation       |
-| {%docsBaseUrl%}/query/multi-tab         | Cross-tab response sharing, one poller per key, mutation fan-out              |
-| {%docsBaseUrl%}/query/persistence       | Successful reads kept in IndexedDB for reloads and offline cold starts        |
-| {%docsBaseUrl%}/query/stacks            | Many queries of one creator, infinite lists, paged data                       |
-| {%docsBaseUrl%}/query/dependent-queries | GET → GET dependencies and ordered mutation chains                            |
-| {%docsBaseUrl%}/query/batching          | Bulk writes with bounded concurrency, per-item results, retry                 |
-| {%docsBaseUrl%}/query/errors            | Error object, opt-in parsers, form submission, violations, retries            |
-| {%docsBaseUrl%}/query/testing           | Specs: answering requests, `@ethlete/query/testing` helpers and fakes         |
-| {%docsBaseUrl%}/query/query-forms       | **Any filtered, searched, sorted or paged list** - `defineQueryForm`          |
-| {%docsBaseUrl%}/query/gql               | GraphQL creators over GET/POST                                                |
-| {%docsBaseUrl%}/query/ws                | socket.io rooms and live-updating responses                                   |
-| {%docsBaseUrl%}/query/legacy            | The maintenance-mode `V2QueryClient` and its replacements                     |
-| {%docsBaseUrl%}/query/migrating-from-v2 | Codemods and the screen-by-screen move off the legacy client                  |
-| {%docsBaseUrl%}/query-devtools/         | The devtools panel and `provideQueryDevtools()`                               |
+| Page                                              | Covers                                                                        |
+| ------------------------------------------------- | ----------------------------------------------------------------------------- |
+| {%docsBaseUrl%}/query/                            | Overview, the two generations, what else the package ships                    |
+| {%docsBaseUrl%}/query/queries                     | **Start here** - client, creators, the query object's signals, auto-execution |
+| {%docsBaseUrl%}/query/features                    | `withArgs`, polling, auto-refresh, side-effect handlers, custom features      |
+| {%docsBaseUrl%}/query/http                        | REST creators, typing requests, response transforms, upload progress          |
+| {%docsBaseUrl%}/query/auth                        | Bearer auth provider, guards, token refresh, auth features                    |
+| {%docsBaseUrl%}/query/caching                     | Cache keys, dedup, `keepUnusedFor`, freshness, refresh and invalidation       |
+| {%docsBaseUrl%}/query/multi-tab                   | Cross-tab response sharing, one poller per key, mutation fan-out              |
+| {%docsBaseUrl%}/query/persistence                 | Successful reads kept in IndexedDB for reloads and offline cold starts        |
+| {%docsBaseUrl%}/query/stacks                      | Many queries of one creator, infinite lists, paged data                       |
+| {%docsBaseUrl%}/query/dependent-queries           | GET → GET dependencies and ordered mutation chains                            |
+| {%docsBaseUrl%}/query/batching                    | Bulk writes with bounded concurrency, per-item results, retry                 |
+| {%docsBaseUrl%}/query/errors                      | Error object, opt-in parsers, form submission, violations, retries            |
+| {%docsBaseUrl%}/query/testing                     | Specs: answering requests, `@ethlete/query/testing` helpers and fakes         |
+| {%docsBaseUrl%}/query/query-forms                 | **Any filtered, searched, sorted or paged list** - `defineQueryForm`          |
+| {%docsBaseUrl%}/query/gql                         | GraphQL creators over GET/POST                                                |
+| {%docsBaseUrl%}/query/ws                          | socket.io rooms and live-updating responses                                   |
+| {%docsBaseUrl%}/query/legacy                      | The maintenance-mode `V2QueryClient` and its replacements                     |
+| {%docsBaseUrl%}/query/migrating-from-v2           | Codemods and the screen-by-screen move off the legacy client                  |
+| {%docsBaseUrl%}/query/migrating-from-ngrx-toolkit | The generator and interop that move a store off `@tomtomb/ngrx-toolkit`       |
+| {%docsBaseUrl%}/query-devtools/                   | The devtools panel and `provideQueryDevtools()`                               |
 
 ## You need → use → read
 
