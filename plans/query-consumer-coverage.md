@@ -151,6 +151,19 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
   - S8a core: list the consumer patterns of `@ethlete/core` in the apps (exposure table above), write
     scenarios in `libs/core/src/scenarios` (`core-scenario-tests` skill), add `core` to
     `tools/export-coverage/config.json`, triage its allowlist like S9. About 1.5-2 h of agent time.
+    - [x] Done: scenarios for router state, breakpoints, providers (fix efa7c8d04), template directives
+          (`etRepeat`, `etClickOutside`), `signalDeferredLoading`, `injectFileDownload`, colour and surface
+          provide directives, semantic themes, host bindings and synced signals. No new bug.
+          `yarn core:export-coverage` in CI Checks and pre-push: 395 runtime exports, 94 covered, 301 on
+          `core.allowlist.json` - `spec:` 68, `constant:` 39, `internal:` 119 (a building block of another lib,
+          plumbing, or a DI accessor), `unused:` 52 (no app or other lib imports it; candidates for `@internal`
+          or removal in the next major), `S8c <group>: needs a scenario` 23.
+  - S8c core follow-ups: the 23 app-imported exports with neither a spec nor a scenario - element signals
+    (`signalElementIntersection`, `signalElementScrollState`, `signalHostElementDimensions`, …), pipes
+    (`ToArrayPipe`, `NormalizeMatchParticipantsPipe`, …), animations (`AnimatableDirective`,
+    `createFlipAnimation`, `nextFrame`, `forceReflow`), utils (`clamp`, `createLogger`, `createComponentId`,
+    `canUseSessionMemory`), seo (`applyTwitterCardBindings`, `provideTitleConfig`), `TypedQueryList`,
+    `injectLocale`. `check.mjs core --list | grep S8c` lists them.
   - S8b components: the same for `libs/components`. Much larger; split by domain (overlay, forms, grid, …),
     one fresh agent per domain. Behavior belongs in `apps/storybook-e2e` (`component-behavior-tests` skill)
     where a scenario cannot drive it. About 3 h or more.
