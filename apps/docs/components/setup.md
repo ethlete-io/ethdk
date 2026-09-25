@@ -46,6 +46,10 @@ export const appConfig: ApplicationConfig = {
 
   Size your own text in `rem` on the same 10px scale (or in `px`).
 
+  In dev mode, `provideSurfaceThemesWithTailwind4()` logs a console warning once the page has
+  loaded if the root font size is still the browser default. Any other root size (a fixed `10px`,
+  a responsive rule) is taken as intentional and stays silent.
+
 - **Tailwind CSS v4.** The theme generators emit Tailwind 4 CSS (`@theme` blocks and
   utilities), and component styles sit in `@layer components` so utilities can override
   them - see [Overriding component styles](/components/#overriding-component-styles).

@@ -1,4 +1,5 @@
 import { defineStaticProvider, toInjectFn, toProvideFn } from '../utils';
+import { provideRootFontSizeCheck } from './root-font-size-check';
 
 export const SURFACE_TYPE = {
   LIGHT: 'light',
@@ -98,9 +99,14 @@ const SURFACE_THEMES_PREFIX_DEF = /* @__PURE__ */ defineStaticProvider('et', {
 export const ɵProvideSurfaceThemesPrefix = /* @__PURE__ */ toProvideFn(SURFACE_THEMES_PREFIX_DEF);
 export const injectSurfaceThemesPrefix = /* @__PURE__ */ toInjectFn(SURFACE_THEMES_PREFIX_DEF);
 
+/**
+ * Registers the app's surface themes. In dev mode it also warns once the page has loaded if the root
+ * font size is still the browser default, i.e. the app is missing `html { font-size: 62.5%; }`.
+ */
 export const provideSurfaceThemesWithTailwind4 = (themes: SurfaceTheme[], prefix = 'et') => [
   ɵProvideSurfaceThemes(themes),
   ɵProvideSurfaceThemesPrefix(prefix),
+  provideRootFontSizeCheck(),
 ];
 
 /**

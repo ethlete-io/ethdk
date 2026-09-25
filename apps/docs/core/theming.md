@@ -35,6 +35,8 @@ Each generator emits a `.css` file (import it in your global styles; default `ge
 
 When several apps share one theme definition set (a monorepo) but need different defaults, pick the default at the generation invocation instead of in the definitions: `--defaultTheme=<name>` (color generator) and `--defaultLightTheme=<name>` / `--defaultDarkTheme=<name>` (surface generator, per surface `type`) make the named theme the default, overriding any `isDefault` flags - the definitions then don't need `isDefault` at all.
 
+In dev mode `provideSurfaceThemesWithTailwind4()` also warns once the page has loaded if the root font size is still the browser default - the SDK's `rem` sizes need `html { font-size: 62.5%; }`, see [Setup](/components/setup#styles).
+
 Both provider factories and generators accept a custom prefix (default `'et'`); the provider `prefix` argument must match the generator's `runtimePrefix`.
 
 For code that needs to know the currently active surface (e.g. pickers rendering into overlays), `provideSurfaceContextTracker()` / `injectSurfaceContextTracker()` maintain a registration stack of surface `type` + `elevation` - each open overlay registers its own surface together with its pane element. `surfaceForElement(host)` returns the surface of the innermost overlay whose pane actually **contains** `host` in the DOM, or `null` when `host` sits outside every open overlay. `AutoSurfaceDirective` uses it so opening an overlay only affects auto-surfaces rendered inside it - see below. A layer that renders outside every pane (the notification stack) resolves its own surface instead of following what is open, so it never re-shades while it is on screen.
