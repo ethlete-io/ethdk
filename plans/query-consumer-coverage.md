@@ -171,6 +171,16 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
   - S8b components: the same for `libs/components`. Much larger; split by domain (overlay, forms, grid, …),
     one fresh agent per domain. Behavior belongs in `apps/storybook-e2e` (`component-behavior-tests` skill)
     where a scenario cannot drive it. About 3 h or more.
+    - S8b progress: the harness is shared (`tools/testing/scenario-harness`, re-exported by
+      `libs/components/src/scenarios/harness`); `yarn components:export-coverage` runs in CI Checks and pre-push.
+      Button done (`libs/components/src/scenarios/button.scenario.spec.ts` is the pattern to copy): 1382 runtime
+      exports, 22 covered, 1360 on `components.allowlist.json`, every entry tagged `S8b <domain>` (forms split
+      per control, e.g. `S8b forms/select`). Largest left: overlay 127, stream 114, table 91, icon 69,
+      forms/date-time 69, forms/rich-text-editor 56, scheduler 52, grid 51, forms/form-field 50, bracket 50.
+      Bug, two `it.fails` specs: a template `(click)` on an `et-button` still runs while it is loading or a
+      disabled link - `ButtonDirective`'s host listener runs after it, so `stopImmediatePropagation` is too late.
+      E2E gaps: split-button focus and keyboard, focus ring on icon/fab/window-control buttons, pressed toggle via
+      Space, hover/active colour states.
 - [x] S11 Follow-ups from S6 (hand-written skill `.agents/skills/query-scenario-tests/SKILL.md` documents `s.mount`)
   1. Done in 47f4d25da: `s.mount(Component, injector, { inputs })` sets inputs before the first change detection;
      `legacy-client-options` mounts `MatchListComponent` directly.

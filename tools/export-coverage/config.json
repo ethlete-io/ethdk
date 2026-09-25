@@ -16,5 +16,13 @@
     },
     "scenarios": ["libs/core/src/scenarios/**/*.scenario.spec.ts"],
     "allowlist": "tools/export-coverage/core.allowlist.json"
+  },
+  "components": {
+    "tsconfig": "libs/components/tsconfig.spec.json",
+    "entryPoints": {
+      "components": "libs/components/src/index.ts"
+    },
+    "scenarios": ["libs/components/src/scenarios/**/*.scenario.spec.ts"],
+    "allowlist": "tools/export-coverage/components.allowlist.json"
   }
 }

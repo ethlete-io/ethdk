@@ -65,6 +65,7 @@ jobs:
       # allowlisted with a reason in tools/export-coverage/<lib>.allowlist.json. Stale entries fail too.
       - run: yarn query:export-coverage
       - run: yarn core:export-coverage
+      - run: yarn components:export-coverage
 
       # Spec files are excluded from every lib's build tsconfig, so this is the only step that
       # type-checks them.
