@@ -6,7 +6,9 @@ import { readPendingUpdate, writePendingUpdate } from './pending';
 import { TASKS_FILE, UPDATE_DIR } from './tasks';
 import { updateCommand } from './update-command';
 
-const spawnSync = vi.hoisted(() => vi.fn<(binary: string, args: string[]) => { status: number }>());
+const spawnSync = vi.hoisted(() =>
+  vi.fn<(binary: string, args: string[], options?: { env?: NodeJS.ProcessEnv }) => { status: number }>(),
+);
 
 vi.mock('child_process', async (importOriginal) => ({
   ...(await importOriginal<typeof import('child_process')>()),
@@ -63,6 +65,33 @@ beforeEach(() => {
 afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+});
+
+const stubRegistry = (latest: string) =>
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => new Response(JSON.stringify({ 'dist-tags': { latest }, versions: { [latest]: {} } }))),
+  );
+
+describe('et update under yarn run', () => {
+  it('does not hand the registry yarn 1 exports to the install', async () => {
+    const root = makeRepo();
+
+    rmSync(join(root, UPDATE_DIR), { recursive: true });
+    stubRegistry('5.2.0');
+    vi.stubEnv('npm_lifecycle_event', 'et');
+    vi.stubEnv('npm_config_registry', 'https://registry.yarnpkg.com');
+    spawnSync.mockReturnValue({ status: 0 });
+
+    expect(await updateCommand({ argv: [], root })).toBe(0);
+
+    const install = spawnSync.mock.calls.find(([binary, args]) => binary === 'yarn' && args[0] === 'install');
+
+    expect(install?.[2]?.env).toBeDefined();
+    expect(install?.[2]?.env).not.toHaveProperty('npm_config_registry');
+    expect(install?.[2]?.env).toHaveProperty('npm_lifecycle_event', 'et');
+  });
 });
 
 describe('et update --continue', () => {

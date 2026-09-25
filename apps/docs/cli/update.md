@@ -127,6 +127,7 @@ Repos that use `@ethlete/agent-rules` also get the `sdk-update` skill, which tea
 
 - A `package.json` at the repo root. Library manifests deeper in the repo are found from there.
 - Network access to the registry the repo installs from: the `@ethlete` scope or the registry of `.yarnrc.yml` (yarn 2+), `.yarnrc` and `.npmrc` (yarn 1), or `.npmrc` (npm, pnpm, bun), then `npm_config_registry`, then the public registry.
+  The install reads the same files: yarn 1 exports its default registry to `yarn et update` as `npm_config_registry`, and `et update` drops that variable before it installs.
 - Nx, for the codemods. The migrations ship as Nx generators, so a repo without Nx gets each one reported as a command instead. Everything else works.
 
 ## Authoring a migration

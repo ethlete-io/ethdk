@@ -2,7 +2,7 @@ import { spawnSync } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { Migration } from './migration-manifest';
-import { PackageManager, nxCommand } from './package-manager';
+import { PackageManager, installEnv, nxCommand } from './package-manager';
 import { PendingMigration } from './plan';
 
 export type MigrationState = 'applied' | 'failed' | 'unsupported' | 'task' | 'planned';
@@ -54,13 +54,13 @@ export const runAutoMigration = (options: {
   return { pending, state: dryRun ? 'planned' : 'applied' };
 };
 
-export const runInstall = (options: { root: string; manager: PackageManager }) => {
-  const { root, manager } = options;
+export const runInstall = (options: { root: string; manager: PackageManager; env?: NodeJS.ProcessEnv }) => {
+  const { root, manager, env } = options;
   const [binary, ...args] = manager.install;
 
   if (binary === undefined) return { ok: false, reason: 'no install command' };
 
-  const result = spawnSync(binary, args, { cwd: root, stdio: 'inherit' });
+  const result = spawnSync(binary, args, { cwd: root, stdio: 'inherit', env: installEnv(env) });
 
   if (result.error) return { ok: false, reason: result.error.message };
 

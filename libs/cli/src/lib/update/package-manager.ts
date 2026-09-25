@@ -54,6 +54,20 @@ export const detectPackageManager = (options: {
   return MANAGERS[found?.[1] ?? 'npm'];
 };
 
+const INJECTED_REGISTRY = /^npm_config_(@[^:]+:)?registry$/i;
+
+/**
+ * The environment for the install `et update` spawns. Inside a package manager script, yarn 1 exports
+ * its own default registry as `npm_config_registry`, which the child install would read over the
+ * repo's `.npmrc` and `.yarnrc`. Dropping it lets the child read the repo's config, as it does when
+ * `et` runs outside a script.
+ */
+export const installEnv = (env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv => {
+  if (env['npm_lifecycle_event'] === undefined) return env;
+
+  return Object.fromEntries(Object.entries(env).filter(([key]) => !INJECTED_REGISTRY.test(key)));
+};
+
 /** The command that runs an `nx` from this repo, for example `yarn nx generate …`. */
 export const nxCommand = (options: { manager: PackageManager; args: readonly string[] }) => [
   ...options.manager.run,
