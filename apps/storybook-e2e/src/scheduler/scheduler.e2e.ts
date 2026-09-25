@@ -67,7 +67,9 @@ test.describe('scheduler / business hours drag', () => {
     const closedDay = root.locator('.et-scheduler-time-grid-day').nth(counts.indexOf(1));
 
     await closedDay.scrollIntoViewIfNeeded();
-    const box = await boxOf(root.locator('.et-scheduler-time-grid-body'));
+    const body = root.locator('.et-scheduler-time-grid-body');
+    await body.evaluate((element) => (element.scrollTop = 0));
+    const box = await boxOf(body);
     const column = await boxOf(closedDay);
     const x = column.x + column.width / 2;
     const y = box.y + 40;
