@@ -148,6 +148,16 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       `resolveQueryHeaders` (query-devtools), `shouldRetryRequest`, `createQueryErrorResponse`,
       `symfonyQueryErrorParser` (components), `hasHeader`, `v2ShouldRetryRequest`, `isClassValidatorError` (cdk).
 - [ ] S8 Same audit for `libs/core` and `libs/components`
+      **Remaining S8b scope (2026-09-25, after table):** 1039 `S8b` entries in 69 domains on
+      `tools/export-coverage/components.allowlist.json`; 343 covered. 11 stay on purpose (`overlay e2e` 6, `stream` 5).
+      Order by size: icon 69, forms/date-time 69, forms/rich-text-editor 56, scheduler 52, grid 51, forms/form-field 50,
+      bracket 50, then forms/select 31 … forms/dropzone 22 (nine domains, 236), then 53 domains of 20 or fewer (~400).
+      Run one opus subagent per domain of 50+, and group small domains up to ~80 exports per subagent. Budget per
+      subagent: 200k tokens (stream at 114 exports went past it; table split in two stayed inside). Subagents do not
+      edit the allowlist; the lead removes the entries `check.mjs` reports as covered and writes the progress note
+      below before starting the next subagent. Open from table: the numeric `rowKey` `it.fails` in
+      `libs/components/src/scenarios/table-features-rows.scenario.spec.ts`. After S8b: turn the "E2E gaps" of each note
+      into `apps/storybook-e2e` suites.
   - S8a core: list the consumer patterns of `@ethlete/core` in the apps (exposure table above), write
     scenarios in `libs/core/src/scenarios` (`core-scenario-tests` skill), add `core` to
     `tools/export-coverage/config.json`, triage its allowlist like S9. About 1.5-2 h of agent time.
