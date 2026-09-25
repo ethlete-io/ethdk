@@ -141,7 +141,7 @@ Manual (report tasks): vbl `layout` and `tournament` facades (toolkit-shaped, no
     - Build: the libs stop at `queries` (`StringTemplate`) and `uikit-matches` (`Memo`). The apps fail on the same
       errors plus the cause B errors (producer 37 error lines, public and widgets 2 each). Bundling is not reached,
       and the app was not served.
-- [ ] S5 Guide `apps/docs/query/migrating-from-ngrx-toolkit.md` + sidebar link.
+- [x] S5 Guide `apps/docs/query/migrating-from-ngrx-toolkit.md` + sidebar link (6a05d2d23).
 
 ## Continue on 2026-09-26
 
