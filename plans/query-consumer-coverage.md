@@ -164,6 +164,10 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
     `createFlipAnimation`, `nextFrame`, `forceReflow`), utils (`clamp`, `createLogger`, `createComponentId`,
     `canUseSessionMemory`), seo (`applyTwitterCardBindings`, `provideTitleConfig`), `TypedQueryList`,
     `injectLocale`. `check.mjs core --list | grep S8c` lists them.
+    - [x] Done in b29eb2a2e, 081cd6a23, 010c73ede: `element-signals`, `pipes`, `animations` and `utils`
+          scenarios, twitter cards and title config/locale in `seo`. All 23 off the allowlist (plus
+          `ANIMATABLE_TOKEN`, now covered): 277 left, no `S8c` entry. No bug. Friction: a `viewChildren` signal
+          (`readonly ElementRef[]`) is not a `SignalElementBindingType`, so apps map it through a `computed`.
   - S8b components: the same for `libs/components`. Much larger; split by domain (overlay, forms, grid, …),
     one fresh agent per domain. Behavior belongs in `apps/storybook-e2e` (`component-behavior-tests` skill)
     where a scenario cannot drive it. About 3 h or more.
