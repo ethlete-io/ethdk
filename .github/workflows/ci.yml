@@ -233,6 +233,22 @@ jobs:
         env:
           TIMETRACK_E2E_DIST: dist/apps/timetrack-e2e/browser
 
+  csp-e2e:
+    name: Strict CSP e2e
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+
+      - uses: ./.github/actions/setup
+        with:
+          nx-cache-key: csp-e2e
+
+      - run: yarn playwright install --with-deps chromium
+
+      - run: yarn nx e2e csp-e2e
+
   rust:
     name: Rust host
     runs-on: ubuntu-latest
@@ -298,7 +314,7 @@ jobs:
     # A single check for a branch rule or a Mergify condition to name. Skipped jobs pass: a run
     # that leaves out Storybook on purpose is still a green run.
     if: always()
-    needs: [checks, test, build, storybook, storybook-test, storybook-e2e, timetrack-e2e, rust]
+    needs: [checks, test, build, storybook, storybook-test, storybook-e2e, timetrack-e2e, csp-e2e, rust]
     runs-on: ubuntu-latest
     steps:
       - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
@@ -307,7 +323,7 @@ jobs:
   deploy:
     name: Deploy
     if: inputs.deploy
-    needs: [checks, test, build, storybook, storybook-test, storybook-e2e, timetrack-e2e, rust]
+    needs: [checks, test, build, storybook, storybook-test, storybook-e2e, timetrack-e2e, csp-e2e, rust]
     runs-on: ubuntu-latest
     permissions:
       contents: read

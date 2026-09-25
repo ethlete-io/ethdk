@@ -18,7 +18,7 @@ const IGNORED = [
   /(^|\/)Cargo\.(toml|lock)$/,
   /^\.(changeset|agents|claude|codex|ethlete|husky|vscode)\//,
   /^(plans|docs)\//,
-  /^apps\/(docs|docs-mcp|playground|ethlete-studio|timetrack[^/]*)\//,
+  /^apps\/(docs|docs-mcp|playground|ethlete-studio|csp[^/]*|timetrack[^/]*)\//,
   /^apps\/storybook\/src\/stories\//,
   /^libs\/(eslint-plugin|agent-rules|timetrack|cli|contentful|query-devtools)\//,
   /^libs\/cdk\/(?!.*\.css$)/,
