@@ -15,8 +15,8 @@ const recommendedTs = {
   rules: {
     // ── TypeScript ──────────────────────────────────────────────────────────
 
-    // No interface — use type
-    '@typescript-eslint/consistent-type-definitions': ['error', 'type'],
+    // No interface — use type (owned by ethlete/consistent-type-definitions)
+    '@typescript-eslint/consistent-type-definitions': 'off',
 
     // No any
     '@typescript-eslint/no-explicit-any': 'error',
@@ -247,6 +247,9 @@ const recommendedTs = {
 
     // No enum / const enum — use a const object with `as const` plus a derived union type
     'ethlete/no-enum': 'error',
+
+    // No interface — use type; an interface augmenting a module or the global scope is exempt
+    'ethlete/consistent-type-definitions': 'error',
 
     // No .subscribe() inside effect() or computed()
     'ethlete/no-rxjs-in-effect': 'error',

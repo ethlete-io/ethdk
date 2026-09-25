@@ -1,6 +1,6 @@
 # @ethlete/eslint-plugin
 
-Custom ESLint rules and shareable flat configs that enforce the Ethlete Angular styleguide - 61 custom rules covering signals vs RxJS usage, class member accessibility, Angular component metadata, templates, input/output naming, DOM/platform access, TypeScript style and migrating off the maintenance-mode packages. Most rules ship with an auto-fixer, so `eslint --fix` (or `nx lint --fix`) does the bulk of the work.
+Custom ESLint rules and shareable flat configs that enforce the Ethlete Angular styleguide - 62 custom rules covering signals vs RxJS usage, class member accessibility, Angular component metadata, templates, input/output naming, DOM/platform access, TypeScript style and migrating off the maintenance-mode packages. Most rules ship with an auto-fixer, so `eslint --fix` (or `nx lint --fix`) does the bulk of the work.
 
 ```bash
 yarn add --dev @ethlete/eslint-plugin
@@ -72,7 +72,7 @@ export default [
 
 Besides the [custom `ethlete/*` rules](/eslint/rules), `recommendedTs` configures a baseline of built-in and third-party rules:
 
-- **TypeScript**: no `any` (`@typescript-eslint/no-explicit-any`); `type` instead of `interface`; strict unused-variable checking (`_`-prefixed args exempt).
+- **TypeScript**: no `any` (`@typescript-eslint/no-explicit-any`); `type` instead of `interface` (owned by the custom [`ethlete/consistent-type-definitions`](/eslint/rules#typescript-code-style), which leaves an interface inside `declare module` / `declare global` alone so a module augmentation keeps merging); strict unused-variable checking (`_`-prefixed args exempt).
 - **Naming**: camelCase / PascalCase / UPPER_CASE via `@typescript-eslint/naming-convention` - no leading/trailing underscores on types and methods, `T`-prefixed generic parameters (`TValue`, never bare `T`).
 - **Code style**: `const` by default, no `var`, one declaration per statement, `===` / `!==` only, max two function parameters.
 - **Banned syntax** (`no-restricted-syntax`): `function` declarations/expressions, arrow-function class properties, `static` members (except `ngTemplateContextGuard`, which Angular's template type checker requires to be static), `#`-private members, constructor injection, legacy Angular lifecycle hooks (`ngOnChanges`, `ngAfterViewInit`, …), `@Injectable` and `@Service` (use `defineProvider` / `defineRootProvider` from `@ethlete/core`), route guards and resolvers, barrel (`index`) imports, and `on`-prefixed method names.

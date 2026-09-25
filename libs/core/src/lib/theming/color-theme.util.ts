@@ -65,7 +65,7 @@ export type ColorTheme = {
  */
 // This must stay an `interface`: consumers register their theme names by augmenting it from a
 // `declare module` block, which only works for interfaces.
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface, @typescript-eslint/consistent-type-definitions
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface, ethlete/consistent-type-definitions
 export interface EthleteColorThemeNameRegistry {
   // Intentionally empty - see doc comment above.
 }

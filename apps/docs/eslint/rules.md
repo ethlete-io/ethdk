@@ -7,15 +7,16 @@ Reference for all custom rules in `@ethlete/eslint-plugin`. Every rule is used w
 
 ## TypeScript & code style
 
-| Rule                                | What it enforces                                                                                                                                  | Fix | Default |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
-| `no-enum`                           | No `enum` and no `const enum` - use a const object with `as const` plus a derived union type                                                      | 🔧  | error   |
-| `no-trivial-return-type`            | No explicit return types TypeScript can infer on block-bodied implementations; concise arrows keep annotations that may narrow their API contract | 🔧  | error   |
-| `no-type-only-import`               | No `import type { Foo }` or `import { type Foo }` - use a regular value import                                                                    | 🔧  | error   |
-| `no-trivial-wrapper-method`         | No wrapper methods that only forward all arguments to another call; inherited, implemented and Angular/DOM contract methods are exempt            |     | error   |
-| `no-screaming-case-local`           | No SCREAMING_CASE variable names inside function bodies - locals are camelCase                                                                    |     | error   |
-| `guard-return-newline`              | Empty line before a `return` in a multi-statement if-block (guard clause)                                                                         | 🔧  | error   |
-| `no-empty-newlines-between-imports` | No blank lines between consecutive import declarations                                                                                            | 🔧  | error   |
+| Rule                                | What it enforces                                                                                                                                                                 | Fix | Default |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| `consistent-type-definitions`       | `type` instead of `interface`; an interface inside `declare module`, `declare global` or a `namespace` is exempt, because only an interface merges into an augmented declaration | 🔧  | error   |
+| `no-enum`                           | No `enum` and no `const enum` - use a const object with `as const` plus a derived union type                                                                                     | 🔧  | error   |
+| `no-trivial-return-type`            | No explicit return types TypeScript can infer on block-bodied implementations; concise arrows keep annotations that may narrow their API contract                                | 🔧  | error   |
+| `no-type-only-import`               | No `import type { Foo }` or `import { type Foo }` - use a regular value import                                                                                                   | 🔧  | error   |
+| `no-trivial-wrapper-method`         | No wrapper methods that only forward all arguments to another call; inherited, implemented and Angular/DOM contract methods are exempt                                           |     | error   |
+| `no-screaming-case-local`           | No SCREAMING_CASE variable names inside function bodies - locals are camelCase                                                                                                   |     | error   |
+| `guard-return-newline`              | Empty line before a `return` in a multi-statement if-block (guard clause)                                                                                                        | 🔧  | error   |
+| `no-empty-newlines-between-imports` | No blank lines between consecutive import declarations                                                                                                                           | 🔧  | error   |
 
 ```ts
 // ❌
@@ -44,6 +45,17 @@ export const MatchState = {
 } as const;
 
 export type MatchState = (typeof MatchState)[keyof typeof MatchState];
+```
+
+`consistent-type-definitions` replaces `@typescript-eslint/consistent-type-definitions`, which the recommended config turns off. The upstream fix rewrites a module augmentation into a type alias; a type alias merges into nothing, and under `skipLibCheck` the registration silently disappears. Keep augmentations as interfaces, and rename an existing `eslint-disable` for the upstream rule to `ethlete/consistent-type-definitions`.
+
+```ts
+// ✅ stays an interface
+declare module '@ethlete/core' {
+  interface EthleteColorThemeNameRegistry {
+    name: 'brand' | 'danger';
+  }
+}
 ```
 
 `no-enum` fixes an enum whose members all have a string literal initializer; a numeric or computed

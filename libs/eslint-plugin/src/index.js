@@ -61,6 +61,7 @@ const noCdkImport = require('./rules/no-cdk-import');
 const noLegacyQueryImport = require('./rules/no-legacy-query-import');
 const noAsyncAwait = require('./rules/no-async-await');
 const noEnum = require('./rules/no-enum');
+const consistentTypeDefinitions = require('./rules/consistent-type-definitions');
 const takeUntilDestroyedLast = require('./rules/take-until-destroyed-last');
 const { recommendedTs, recommendedAngularTs, recommendedTemplate, recommendedSpec } = require('./configs/recommended');
 const { version } = require('../package.json');
@@ -133,6 +134,7 @@ const plugin = {
     'no-legacy-query-import': noLegacyQueryImport,
     'no-async-await': noAsyncAwait,
     'no-enum': noEnum,
+    'consistent-type-definitions': consistentTypeDefinitions,
   },
 };
 

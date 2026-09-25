@@ -128,16 +128,24 @@ test('recommendedSpec relaxes DOM and async test code', () => {
   expect(ruleIds(messages)).not.toContain('no-restricted-globals');
 });
 
-// ── @typescript-eslint/consistent-type-definitions ──────────────────────────
+// ── ethlete/consistent-type-definitions ─────────────────────────────────────
 
 test('consistent-type-definitions: interface is flagged', () => {
   const msgs = lint(`interface Foo { bar: string; }`);
-  expect(ruleIds(msgs)).toContain('@typescript-eslint/consistent-type-definitions');
+  expect(ruleIds(msgs)).toContain('ethlete/consistent-type-definitions');
 });
 
 test('consistent-type-definitions: type is valid', () => {
   const msgs = lint(`type Foo = { bar: string; };`);
-  expect(ruleIds(msgs)).not.toContain('@typescript-eslint/consistent-type-definitions');
+  expect(ruleIds(msgs)).not.toContain('ethlete/consistent-type-definitions');
+});
+
+test('consistent-type-definitions: --fix keeps a module augmentation an interface', () => {
+  const code = `declare module '@ethlete/core' {\n  interface EthleteColorThemeNameRegistry {\n    name: 'brand';\n  }\n}\n\nexport {};\n`;
+  const { output, messages } = lintAndFix(code);
+  expect(output).toBe(code);
+  expect(ruleIds(messages)).not.toContain('ethlete/consistent-type-definitions');
+  expect(ruleIds(messages)).not.toContain('@typescript-eslint/consistent-type-definitions');
 });
 
 // ── @typescript-eslint/no-explicit-any ──────────────────────────────────────
