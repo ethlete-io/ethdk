@@ -423,7 +423,12 @@ export const rewriteConsumer = (
 
   const elements = toolkitImports.flatMap(elementsOf);
 
-  if (elements.some((element) => STORE_SIDE_SYMBOLS.has(element.imported))) return null;
+  const isInterop = (element: ToolkitImportElement) =>
+    INTEROP_SYMBOLS.has(RENAMED_SYMBOLS.get(element.imported) ?? element.imported);
+
+  const hasStoreSide = elements.some((element) => STORE_SIDE_SYMBOLS.has(element.imported));
+
+  if (hasStoreSide && !elements.some(isInterop)) return null;
 
   const handleTypeNames = new Set(
     elements.filter((element) => HANDLE_TYPES.has(element.imported)).map((element) => element.local),
@@ -431,6 +436,8 @@ export const rewriteConsumer = (
   const unconverted = unconvertedTypeQueries(tree, graph, filePath, sourceFile, handleTypeNames);
 
   if (unconverted.length > 0) {
+    if (hasStoreSide) return null;
+
     return {
       content,
       rewritten: false,

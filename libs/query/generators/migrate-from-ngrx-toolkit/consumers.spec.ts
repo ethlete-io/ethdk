@@ -172,6 +172,43 @@ describe('migrate-from-ngrx-toolkit consumers', () => {
       );
     });
 
+    it('moves the interop names of a file that also imports store-side names', () => {
+      const path = 'libs/domain/catalog/src/lib/catalog.facade.ts';
+
+      tree.write(
+        path,
+        [
+          "import { FacadeBase, ToolkitError, joinLoading } from '@tomtomb/ngrx-toolkit';",
+          '',
+          'export class CatalogFacade extends FacadeBase {',
+          '  loading = joinLoading([]);',
+          '  error?: ToolkitError;',
+          '}',
+          '',
+        ].join('\n'),
+      );
+      migrateToolkitStores(tree, APP_A_OPTIONS, report);
+
+      expect(read(path)).toBe(
+        [
+          "import { ToolkitError, joinLoading } from '@ethlete/query/ngrx-toolkit';",
+          "import { FacadeBase } from '@tomtomb/ngrx-toolkit';",
+          '',
+          'export class CatalogFacade extends FacadeBase {',
+          '  loading = joinLoading([]);',
+          '  error?: ToolkitError;',
+          '}',
+          '',
+        ].join('\n'),
+      );
+      expect(tasksOf(CONSUMER_TASK.UNSUPPORTED_IMPORT)).toContainEqual(
+        expect.objectContaining({
+          summary: 'Still imports `FacadeBase` from `@tomtomb/ngrx-toolkit`.',
+          locations: [{ filePath: path }],
+        }),
+      );
+    });
+
     it('leaves a consumer of a feature that stayed on the toolkit alone', () => {
       const path = 'libs/domain/catalog/src/lib/event.component.ts';
       const content = [
