@@ -19,7 +19,7 @@ export type SignalElementBindingComplexType =
   | HTMLElement
   | ElementRef<HTMLElement>
   | QueryList<ElementRef<HTMLElement> | HTMLElement>
-  | Array<ElementRef<HTMLElement> | HTMLElement>
+  | ReadonlyArray<ElementRef<HTMLElement> | HTMLElement>
   | null
   | undefined;
 

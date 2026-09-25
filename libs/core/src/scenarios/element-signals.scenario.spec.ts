@@ -47,10 +47,7 @@ class ChatComponent {
   messageRefs = viewChildren<ElementRef<HTMLElement>>('message');
 
   loadMoreIntersection = signalElementIntersection(this.loadMore, { root: this.container, threshold: 0.1 });
-  messageIntersections = signalElementIntersection(
-    computed(() => this.messageRefs().map((ref) => ref.nativeElement)),
-    { enabled: this.observeMessages },
-  );
+  messageIntersections = signalElementIntersection(this.messageRefs, { enabled: this.observeMessages });
   scrollState = signalElementScrollState(this.container);
   canScroll = computed(() => this.scrollState().canScrollVertically);
   lastScrollDirection = signalElementLastScrollDirection(this.container);
