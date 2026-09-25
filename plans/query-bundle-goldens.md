@@ -26,4 +26,7 @@ response, and an `HttpContext` token on every request (a80ef2411).
    tree-shaking defect and gets fixed like step 3.
 5. Update the goldens only for the accepted growth: `npx nx run treeshake:bundle-goldens:update`. Commit only
    `tools/treeshake/goldens.json` with a message that names the accepted features and sizes.
-6. A fix in `libs/query` gets a changeset (`fix`, patch). Run `ci-check` for the treeshake and query targets.
+6. Core: e7e9e710f (another session) added a dev-mode root font-size check to `provideSurfaceThemesWithTailwind4`.
+   A dev-mode check must vanish from a production build, so the core rows must not grow. If they grow, the check is
+   not guarded by `ngDevMode`; report it to the author and do not accept the growth.
+7. A fix in `libs/query` gets a changeset (`fix`, patch). Run `ci-check` for the treeshake and query targets.
