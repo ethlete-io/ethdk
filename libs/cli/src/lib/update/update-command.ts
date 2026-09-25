@@ -292,7 +292,7 @@ const runMigrationPhase = (options: {
   const written = writeUpdateTasks({
     root,
     updates,
-    outcomes,
+    outcomes: [...skipped.map((entry): MigrationOutcome => ({ pending: entry, state: 'applied' })), ...outcomes],
     manager,
     generatedAt: new Date().toISOString(),
     syncFailure,

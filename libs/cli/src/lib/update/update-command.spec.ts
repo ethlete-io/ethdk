@@ -83,6 +83,9 @@ describe('et update --continue', () => {
     expect(await updateCommand({ argv: ['--continue'], root })).toBe(0);
     expect(generatorsRun()).toEqual(['@ethlete/core:second']);
     expect(readPendingUpdate(root)).toBeUndefined();
+    expect(readFileSync(join(root, UPDATE_DIR, TASKS_FILE), 'utf8')).toContain(
+      '- `@ethlete/core` first (@ethlete/core:first)\n- `@ethlete/core` second (@ethlete/core:second)',
+    );
   });
 
   it('migrates from the --from version of the run it continues', async () => {
