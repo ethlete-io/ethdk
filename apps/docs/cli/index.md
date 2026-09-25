@@ -3,8 +3,10 @@
 Repo tooling. The package installs a single binary, `et`, with five commands: `et release` turns pending changesets into a tagged, pushed release commit, [`et api`](/cli/api) runs the backend an app talks to from a checkout on your own machine, [`et auth`](/cli/auth) writes the git host token a private dependency needs, [`et update`](/cli/update) moves the `@ethlete/*` packages to a newer version and runs the migrations they ship, and [`et doctor`](/cli/config#et-doctor) checks that machine's setup.
 
 ```bash
-yarn add --dev @ethlete/cli
+yarn add --dev @ethlete/cli@next
 ```
+
+`et update` ships on the `next` tag; the `latest` release does not have it yet.
 
 `et release` needs no configuration: it drives the tools already present in your repo (`git`, `yarn`, and your existing `.changeset/` setup). `et api` and `et doctor` read two files described in [Local APIs](/cli/api) and [Local config](/cli/config).
 

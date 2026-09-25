@@ -20,7 +20,7 @@ export type LocalConfig = {
   apiRepoPaths?: Record<string, string>;
   /** Branch that represents each API's deployed state, keyed by app name. `"*"` matches any app. */
   apiRepoBranches?: Record<string, string>;
-  /** Command `et update --ai` hands an assisted migration task to, for example `claude -p`. */
+  /** Command `et update --ai` hands an assisted migration task to, for example `claude --permission-mode acceptEdits -p`. */
   updateAgentCommand?: string;
 };
 

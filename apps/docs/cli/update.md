@@ -60,7 +60,7 @@ A range no single version can be written into - `workspace:*`, `>=5 <6` - is rep
 | `--from <p@ver>` | The version a package migrates from, when the installed one is already newer than what the migrations expect. |
 | `--no-install`   | Write `package.json` and stop. Install yourself, then run `--continue`.                                       |
 | `--continue`     | Run the migrations of an update that was written but never finished.                                          |
-| `--ai`           | Hand every agent-assisted task to the command in [`updateAgentCommand`](/cli/config).                         |
+| `--ai`           | Hand every open agent-assisted task to the command in [`updateAgentCommand`](/cli/config).                    |
 | `--force`        | Update even when the working tree has uncommitted changes.                                                    |
 
 The working tree must be clean, because the codemods rewrite files and you need a diff you can read. `--force` skips that check.
@@ -105,19 +105,19 @@ An `assisted` task file states one change and how to apply it. Hand it to an age
 
 ```json
 {
-  "updateAgentCommand": "claude -p"
+  "updateAgentCommand": "claude --permission-mode acceptEdits -p"
 }
 ```
 
-`et update --ai` runs it once per assisted task, in order, so each run has one change to make. The path of the task file replaces `<prompt>` in the command, or is appended when the command names no place for it:
+The agent runs headless, so it has to be allowed to edit files without asking: a plain `claude -p` can read the task but not apply it.
 
-```json
-{
-  "updateAgentCommand": "claude --permission-mode acceptEdits -p \"Apply the migration in <prompt>\""
-}
-```
+`et update --ai` runs the command once per assisted task, in order, so each run has one change to make. Each run gets a prompt that names the task file and asks the agent to delete it once the change is complete. The prompt is appended to the command, or replaces `<prompt>` in it; `<file>` is replaced by the path of the task file alone, for a command that brings its own prompt.
 
-Nothing runs an agent unless `--ai` is passed, and no agent is auto-detected: without the key, `--ai` names the key and stops.
+Each task is reported as its run ends: **done** when the agent deleted the task file, **still open** when it exited `0` but left the file, and **failed** when it exited with another code. Nothing runs between two tasks - no build, no lint - so review the diff before you commit it. A failed run makes `et update` exit `1`.
+
+`--ai` also works when there is nothing to update: `et update --ai`, or `et update --continue --ai` with no unfinished run, hands the tasks still open in `.ethlete/update/tasks.json` to the agent. Run it again to retry the ones that are left.
+
+Nothing runs an agent unless `--ai` is passed, and no agent is auto-detected: without the key, `--ai` names the key and stops before it changes anything.
 
 Repos that use `@ethlete/agent-rules` also get the `sdk-update` skill, which teaches an agent how to work the whole list on its own. The skill is only written while `@ethlete/cli` is installed, so install both.
 

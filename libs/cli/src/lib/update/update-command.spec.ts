@@ -2,8 +2,8 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { readPendingUpdate, writePendingUpdate } from './pending';
-import { TASKS_FILE, UPDATE_DIR } from './tasks';
+import { PENDING_FILE, readPendingUpdate, writePendingUpdate } from './pending';
+import { TASKS_DATA_FILE, TASKS_FILE, UPDATE_DIR } from './tasks';
 import { updateCommand } from './update-command';
 
 const spawnSync = vi.hoisted(() =>
@@ -227,5 +227,88 @@ describe('a failed agent rules sync', () => {
     expect(readFileSync(join(root, UPDATE_DIR, TASKS_FILE), 'utf8')).toContain(
       'The agent rules sync failed — yarn exited with 1. Run `yarn ethlete-agents sync` again by hand',
     );
+  });
+});
+
+const withAgent = (root: string) => {
+  writeJson(join(root, 'ethlete.config.local.json'), { updateAgentCommand: 'agent -p' });
+
+  return root;
+};
+
+const assistedTask = (name: string) => ({
+  packageName: '@ethlete/core',
+  name,
+  version: '5.1.0',
+  kind: 'assisted',
+  description: `Change ${name}`,
+  instructionsFile: join(UPDATE_DIR, `core-${name}.md`),
+});
+
+const withOpenTasks = (root: string) => {
+  writeJson(join(root, UPDATE_DIR, TASKS_DATA_FILE), {
+    generatedAt: 'then',
+    updates: [{ package: '@ethlete/core', from: '5.0.0', to: '5.1.0' }],
+    applied: [],
+    failed: [],
+    tasks: [assistedTask('open'), assistedTask('done')],
+  });
+  writeFileSync(join(root, UPDATE_DIR, 'core-open.md'), 'Change it.', 'utf8');
+  writeFileSync(join(root, UPDATE_DIR, TASKS_FILE), '### @ethlete/core — done\n', 'utf8');
+
+  return root;
+};
+
+const agentCommands = () =>
+  spawnSync.mock.calls.map(([command]) => command).filter((command) => command.startsWith('agent -p'));
+
+describe('et update --ai', () => {
+  it('fails before it changes anything when no agent command is configured', async () => {
+    const root = makeRepo();
+
+    rmSync(join(root, UPDATE_DIR), { recursive: true });
+    stubRegistry('5.2.0');
+    spawnSync.mockReturnValue({ status: 0 });
+
+    expect(await updateCommand({ argv: ['--ai'], root })).toBe(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('--ai needs "updateAgentCommand"'));
+    expect(spawnSync).not.toHaveBeenCalled();
+    expect(JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).dependencies['@ethlete/core']).toBe('5.1.0');
+  });
+
+  it('hands the open tasks of an earlier run to the agent when every package is up to date', async () => {
+    const root = withOpenTasks(withAgent(makeRepo()));
+
+    rmSync(join(root, PENDING_FILE));
+    stubRegistry('5.1.0');
+    spawnSync.mockReturnValue({ status: 0 });
+
+    expect(await updateCommand({ argv: ['--ai'], root })).toBe(0);
+    expect(agentCommands()).toEqual([expect.stringContaining(join(root, UPDATE_DIR, 'core-open.md'))]);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('the agent left'));
+  });
+
+  it('hands the open tasks to the agent from --continue when no update is unfinished', async () => {
+    const root = withOpenTasks(withAgent(makeRepo()));
+
+    rmSync(join(root, PENDING_FILE));
+    spawnSync.mockImplementation((command: string) => {
+      if (command.startsWith('agent -p')) rmSync(join(root, UPDATE_DIR, 'core-open.md'));
+
+      return { status: 0 };
+    });
+
+    expect(await updateCommand({ argv: ['--continue', '--ai'], root })).toBe(0);
+    expect(agentCommands()).toHaveLength(1);
+  });
+
+  it('exits 1 when an agent run fails', async () => {
+    const root = withOpenTasks(withAgent(makeRepo()));
+
+    rmSync(join(root, PENDING_FILE));
+    spawnSync.mockReturnValue({ status: 3 });
+
+    expect(await updateCommand({ argv: ['--continue', '--ai'], root })).toBe(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('et update --ai` again'));
   });
 });

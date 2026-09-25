@@ -5,7 +5,7 @@ Repo tooling - installs the `et` binary.
 ## Installation
 
 ```bash
-yarn add --dev @ethlete/cli
+yarn add --dev @ethlete/cli@next
 ```
 
 ## `et release`
@@ -66,8 +66,9 @@ for an agent, and one file per task holding the instructions the package ships. 
 needs a decision), `assisted` (written as a prompt for an agent) or `unsupported` (a codemod this repo
 has no Nx to run, with the command to run it by hand).
 
-`--ai` hands each assisted task to the command in `updateAgentCommand` in
-`ethlete.config.local.json`, one run per task. No agent is detected automatically.
+`--ai` hands each open assisted task to the command in `updateAgentCommand` in
+`ethlete.config.local.json` (for example `claude --permission-mode acceptEdits -p`), one run per task,
+and reports each run. It also works on the tasks an earlier run left. No agent is detected automatically.
 
 A package declares its migrations in `migrations.json` at its own root, pointed at from `package.json`
 with `"ethlete": { "migrations": "./migrations.json" }`. The full format is on the docs site.

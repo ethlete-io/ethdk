@@ -99,15 +99,36 @@ const renderGroup = (kind: UpdateTask['kind'], tasks: readonly UpdateTask[]) => 
   return [`## ${KIND_HEADINGS[kind]}`, '', ...group.map(renderTask)];
 };
 
-export const renderTasks = (options: {
+type AppliedCodemod = { package: string; name: string; generator: string | null };
+
+type FailedCodemod = { package: string; name: string; reason: string | null };
+
+const appliedOf = (outcomes: readonly MigrationOutcome[]): AppliedCodemod[] =>
+  outcomes
+    .filter((outcome) => outcome.state === 'applied')
+    .map((outcome) => ({
+      package: outcome.pending.packageName,
+      name: outcome.pending.migration.name,
+      generator: outcome.pending.migration.generator ?? null,
+    }));
+
+const failedOf = (outcomes: readonly MigrationOutcome[]): FailedCodemod[] =>
+  outcomes
+    .filter((outcome) => outcome.state === 'failed')
+    .map((outcome) => ({
+      package: outcome.pending.packageName,
+      name: outcome.pending.migration.name,
+      reason: outcome.reason ?? null,
+    }));
+
+const renderReport = (options: {
   updates: readonly UpdatedPackage[];
-  outcomes: readonly MigrationOutcome[];
+  applied: readonly AppliedCodemod[];
+  failed: readonly FailedCodemod[];
   tasks: readonly UpdateTask[];
   syncFailure?: SyncFailure;
 }) => {
-  const { updates, outcomes, tasks, syncFailure } = options;
-  const applied = outcomes.filter((outcome) => outcome.state === 'applied');
-  const failed = outcomes.filter((outcome) => outcome.state === 'failed');
+  const { updates, applied, failed, tasks, syncFailure } = options;
 
   return [
     '# Ethlete update: what is left to do',
@@ -120,10 +141,7 @@ export const renderTasks = (options: {
       ? [
           'It applied these codemods:',
           '',
-          ...applied.map(
-            (outcome) =>
-              `- \`${outcome.pending.packageName}\` ${outcome.pending.migration.name} (${outcome.pending.migration.generator})`,
-          ),
+          ...applied.map((codemod) => `- \`${codemod.package}\` ${codemod.name} (${codemod.generator})`),
           '',
         ]
       : []),
@@ -131,9 +149,7 @@ export const renderTasks = (options: {
       ? [
           'These codemods failed. Run each one again by hand and read its output:',
           '',
-          ...failed.map(
-            (outcome) => `- \`${outcome.pending.packageName}\` ${outcome.pending.migration.name} — ${outcome.reason}`,
-          ),
+          ...failed.map((codemod) => `- \`${codemod.package}\` ${codemod.name} — ${codemod.reason}`),
           '',
         ]
       : []),
@@ -154,6 +170,20 @@ export const renderTasks = (options: {
         ]),
   ].join('\n');
 };
+
+export const renderTasks = (options: {
+  updates: readonly UpdatedPackage[];
+  outcomes: readonly MigrationOutcome[];
+  tasks: readonly UpdateTask[];
+  syncFailure?: SyncFailure;
+}) =>
+  renderReport({
+    updates: options.updates,
+    applied: appliedOf(options.outcomes),
+    failed: failedOf(options.outcomes),
+    tasks: options.tasks,
+    syncFailure: options.syncFailure,
+  });
 
 /**
  * One task as its own file: what moved and where to read more, then the instructions the package ships.
@@ -193,26 +223,48 @@ const isTask = (value: unknown): value is UpdateTask => {
   );
 };
 
-/** The tasks an earlier run left whose file is still there: deleting a task file is how a task is done. */
-const unfinishedEarlierTasks = (root: string): UpdateTask[] => {
+type TaskData = {
+  generatedAt?: string;
+  updates: { package: string; from: string | null; to: string }[];
+  applied: AppliedCodemod[];
+  failed: FailedCodemod[];
+  syncFailed?: SyncFailure;
+  tasks: UpdateTask[];
+};
+
+const arrayOf = (value: unknown) => (Array.isArray(value) ? (value as unknown[]) : []);
+
+const readTaskData = (root: string): TaskData | undefined => {
   const path = join(root, UPDATE_DIR, TASKS_DATA_FILE);
 
-  if (!existsSync(path)) return [];
+  if (!existsSync(path)) return undefined;
 
   let parsed: unknown;
 
   try {
     parsed = JSON.parse(readFileSync(path, 'utf8'));
   } catch {
-    return [];
+    return undefined;
   }
 
-  const tasks = typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>)['tasks'] : [];
+  if (typeof parsed !== 'object' || parsed === null) return undefined;
 
-  return Array.isArray(tasks)
-    ? tasks.filter(isTask).filter((task) => task.instructionsFile && existsSync(join(root, task.instructionsFile)))
-    : [];
+  const record = parsed as Record<string, unknown>;
+
+  return {
+    ...(record as Partial<TaskData>),
+    updates: arrayOf(record['updates']) as TaskData['updates'],
+    applied: arrayOf(record['applied']) as AppliedCodemod[],
+    failed: arrayOf(record['failed']) as FailedCodemod[],
+    tasks: arrayOf(record['tasks']).filter(isTask),
+  };
 };
+
+/** Deleting a task file is how a task is done, so a task is open while its file is still there. */
+const openTasksOf = (root: string, tasks: readonly UpdateTask[]) =>
+  tasks.filter((task) => task.instructionsFile && existsSync(join(root, task.instructionsFile)));
+
+const unfinishedEarlierTasks = (root: string): UpdateTask[] => openTasksOf(root, readTaskData(root)?.tasks ?? []);
 
 const sameTask = (left: UpdateTask, right: UpdateTask) =>
   left.packageName === right.packageName && left.name === right.name;
@@ -278,20 +330,8 @@ export const writeUpdateTasks = (options: {
       {
         generatedAt,
         updates: updates.map((update) => ({ package: update.name, from: update.from ?? null, to: update.to })),
-        applied: outcomes
-          .filter((outcome) => outcome.state === 'applied')
-          .map((outcome) => ({
-            package: outcome.pending.packageName,
-            name: outcome.pending.migration.name,
-            generator: outcome.pending.migration.generator ?? null,
-          })),
-        failed: outcomes
-          .filter((outcome) => outcome.state === 'failed')
-          .map((outcome) => ({
-            package: outcome.pending.packageName,
-            name: outcome.pending.migration.name,
-            reason: outcome.reason ?? null,
-          })),
+        applied: appliedOf(outcomes),
+        failed: failedOf(outcomes),
         ...(syncFailure ? { syncFailed: syncFailure } : {}),
         tasks,
       },
@@ -302,4 +342,31 @@ export const writeUpdateTasks = (options: {
   );
 
   return { reportPath, dataPath, tasks };
+};
+
+/**
+ * Rewrites the task list of an earlier run without the tasks whose file was deleted, and returns the
+ * tasks still open. `undefined` when no run has written a task list.
+ */
+export const refreshUpdateTasks = (root: string): UpdateTask[] | undefined => {
+  const data = readTaskData(root);
+
+  if (!data) return undefined;
+
+  const tasks = openTasksOf(root, data.tasks);
+
+  writeFileSync(
+    join(root, UPDATE_DIR, TASKS_FILE),
+    `${renderReport({
+      updates: data.updates.map((update) => ({ name: update.package, from: update.from ?? undefined, to: update.to })),
+      applied: data.applied,
+      failed: data.failed,
+      tasks,
+      syncFailure: data.syncFailed,
+    }).trimEnd()}\n`,
+    'utf8',
+  );
+  writeFileSync(join(root, UPDATE_DIR, TASKS_DATA_FILE), `${JSON.stringify({ ...data, tasks }, null, 2)}\n`, 'utf8');
+
+  return tasks;
 };

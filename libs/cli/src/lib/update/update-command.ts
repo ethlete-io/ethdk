@@ -1,6 +1,6 @@
 import { hasUncommittedChanges } from '../api/git';
 import { readLocalConfig } from '../config/local-config';
-import { AGENT_COMMAND_KEY, assistedTasks, runAgentTasks } from './ai';
+import { AGENT_COMMAND_EXAMPLE, AGENT_COMMAND_KEY, AgentRunState, assistedTasks, runAgentTasks } from './ai';
 import { AGENT_RULES_PACKAGE, planAgentRulesSync, runAgentRulesSync } from './agent-rules-sync';
 import { parseUpdateArgs } from './args';
 import { UPDATE_IGNORE_ENTRY, ignoreUpdateDir } from './gitignore';
@@ -34,7 +34,7 @@ import {
 } from './pending';
 import { fetchRegistryPackage, registryUrl } from './registry';
 import { MigrationOutcome, hasNx, runInstall, runPendingMigrations } from './run-migrations';
-import { SyncFailure, UPDATE_DIR, writeUpdateTasks } from './tasks';
+import { SyncFailure, UPDATE_DIR, UpdateTask, refreshUpdateTasks, writeUpdateTasks } from './tasks';
 
 export type UpdateCommandOptions = {
   /** Arguments after `update`, for example `['core', '--tag', 'next']`. */
@@ -65,7 +65,7 @@ const usage = (invocation: string) =>
     '  --from <p@ver>  The version a package migrates from, when the installed one is already newer',
     '  --no-install    Write package.json, then stop. Install yourself and re-run with --continue',
     '  --continue      Run the migrations of an update that was written but never finished',
-    '  --ai            Hand every agent-assisted task to the command in updateAgentCommand',
+    '  --ai            Hand every open agent-assisted task to the command in updateAgentCommand',
     '  --force         Update even when the working tree has uncommitted changes',
   ].join('\n');
 
@@ -232,6 +232,27 @@ const syncAgentRules = (options: {
   return { command, reason: outcome.reason };
 };
 
+/** Hands the open assisted tasks to the agent and reports the runs. False when one of them failed. */
+const handToAgent = (options: { root: string; template: string; tasks: readonly UpdateTask[] }) => {
+  const { root, template, tasks } = options;
+
+  if (assistedTasks(tasks).length === 0) {
+    console.log('\n  --ai had nothing to do: no open task is agent-assisted.');
+
+    return true;
+  }
+
+  const runs = runAgentTasks({ root, template, tasks });
+  const count = (state: AgentRunState) => runs.filter((run) => run.state === state).length;
+
+  console.log(`\n  ${count('done')} agent task(s) done, ${count('open')} still open, ${count('failed')} failed`);
+
+  return count('failed') === 0;
+};
+
+const agentFailedHint = (invocation: string) =>
+  `\nAn agent run failed. Run \`${invocation} --ai\` again to hand it the tasks that are still open.`;
+
 const runMigrationPhase = (options: {
   root: string;
   manager: PackageManager;
@@ -239,9 +260,9 @@ const runMigrationPhase = (options: {
   updates: readonly UpdatedPackage[];
   from: Record<string, string>;
   dryRun: boolean;
-  ai: boolean;
+  agent: string | undefined;
 }) => {
-  const { root, manager, pendingUpdate, updates, from, dryRun, ai } = options;
+  const { root, manager, pendingUpdate, updates, from, dryRun, agent } = options;
   const finished = pendingUpdate.finished ?? [];
   const collected = collectMigrations({ root, updates, from });
   const skipped = collected.pending.filter((entry) =>
@@ -259,22 +280,21 @@ const runMigrationPhase = (options: {
   // Before the tasks and any --ai run: the tasks assume the skills of the version that was installed.
   const syncFailure = syncAgentRules({ root, manager, updates, dryRun });
 
-  if (collected.pending.length === 0) {
-    console.log('\nNo migration is pending for those versions.');
+  const nothingPending = collected.pending.length === 0;
 
-    return { failed: collected.problems.length > 0 || syncFailure !== undefined };
-  }
+  if (nothingPending) console.log('\nNo migration is pending for those versions.');
+  else {
+    console.log(`\n${collected.pending.length} migration(s) to run:\n`);
+    printMigrations(collected.pending);
 
-  console.log(`\n${collected.pending.length} migration(s) to run:\n`);
-  printMigrations(collected.pending);
-
-  if (!hasNx(root)) {
-    console.log('\n  This repo has no Nx, so every codemod is reported as a command to run by hand.');
+    if (!hasNx(root)) {
+      console.log('\n  This repo has no Nx, so every codemod is reported as a command to run by hand.');
+    }
   }
 
   const outcomes = runPendingMigrations({ root, manager, pending: collected.pending, dryRun });
 
-  printOutcomes(outcomes, syncFailure);
+  if (!nothingPending) printOutcomes(outcomes, syncFailure);
 
   if (!dryRun) {
     const applied = outcomes
@@ -285,9 +305,12 @@ const runMigrationPhase = (options: {
   }
 
   if (dryRun) {
-    console.log('\nDry run: no report was written.');
+    if (!nothingPending) console.log('\nDry run: no report was written.');
 
-    return { failed: false };
+    return {
+      failed: nothingPending && (collected.problems.length > 0 || syncFailure !== undefined),
+      agentFailed: false,
+    };
   }
 
   const written = writeUpdateTasks({
@@ -304,22 +327,10 @@ const runMigrationPhase = (options: {
     console.log(`  The same list for an agent: ${written.dataPath}`);
   }
 
-  if (ai) {
-    const template = readLocalConfig(root).config.updateAgentCommand;
-    const assisted = assistedTasks(written.tasks);
-
-    if (assisted.length === 0) console.log('\n  --ai had nothing to do: no task is agent-assisted.');
-    else if (!template) {
-      console.error(`\n  --ai needs "${AGENT_COMMAND_KEY}" in ethlete.config.local.json, for example "claude -p".`);
-    } else {
-      const runs = runAgentTasks({ root, template, tasks: written.tasks });
-      const failed = runs.filter((run) => !run.ok);
-
-      for (const run of failed) console.error(`  ${run.task.name}: ${run.reason}`);
-    }
-  }
+  const agentOk = agent === undefined || handToAgent({ root, template: agent, tasks: written.tasks });
 
   return {
+    agentFailed: !agentOk,
     failed:
       outcomes.some((outcome) => outcome.state === 'failed') ||
       collected.problems.length > 0 ||
@@ -336,14 +347,47 @@ const ignoreTaskList = (root: string) => {
 const continueHint = (invocation: string) =>
   `\nRun \`${invocation} --continue\` again once the failures above are fixed.`;
 
+/** Hands the tasks an earlier run left to the agent, for an `--ai` run that has no update to make. */
+const workOpenTasks = (options: { root: string; agent: string; invocation: string }) => {
+  const { root, agent, invocation } = options;
+  const tasks = refreshUpdateTasks(root);
+
+  if (tasks === undefined) {
+    console.log(`\n  --ai had nothing to do: ${UPDATE_DIR} holds no task list.`);
+
+    return 0;
+  }
+
+  if (handToAgent({ root, template: agent, tasks })) return 0;
+
+  console.error(agentFailedHint(invocation));
+
+  return 1;
+};
+
+const exitAfterAgent = (options: { agentFailed: boolean; invocation: string }) => {
+  if (!options.agentFailed) return 0;
+
+  console.error(agentFailedHint(options.invocation));
+
+  return 1;
+};
+
 const resume = (options: {
   root: string;
   manager: PackageManager;
   argv: ReturnType<typeof parseUpdateArgs>;
   invocation: string;
+  agent: string | undefined;
 }) => {
-  const { root, manager, argv, invocation } = options;
+  const { root, manager, argv, invocation, agent } = options;
   const pending = readPendingUpdate(root);
+
+  if (!pending && agent !== undefined && !argv.dryRun) {
+    console.log(`No update to continue: handing the open tasks in ${UPDATE_DIR} to the agent.`);
+
+    return workOpenTasks({ root, agent, invocation });
+  }
 
   if (!pending) {
     console.error(`Nothing to continue: ${PENDING_FILE} is not there.`);
@@ -372,7 +416,7 @@ const resume = (options: {
     updates,
     from: { ...pending.from, ...argv.from },
     dryRun: argv.dryRun,
-    ai: argv.ai,
+    agent,
   });
 
   if (argv.dryRun) return result.failed ? 1 : 0;
@@ -385,7 +429,7 @@ const resume = (options: {
 
   clearPendingUpdate(root);
 
-  return 0;
+  return exitAfterAgent({ agentFailed: result.agentFailed, invocation });
 };
 
 /**
@@ -411,6 +455,17 @@ export const updateCommand = async ({
     return 1;
   }
 
+  const agent = args.ai ? readLocalConfig(root).config.updateAgentCommand : undefined;
+
+  if (args.ai && !agent) {
+    console.error(
+      `--ai needs "${AGENT_COMMAND_KEY}" in ethlete.config.local.json, for example "${AGENT_COMMAND_EXAMPLE}".\n` +
+        'Nothing was changed.',
+    );
+
+    return 1;
+  }
+
   const manifest = readManifest(root);
 
   if (!manifest) {
@@ -432,7 +487,7 @@ export const updateCommand = async ({
     return 1;
   }
 
-  if (args.resume) return resume({ root, manager, argv: args, invocation });
+  if (args.resume) return resume({ root, manager, argv: args, invocation, agent });
 
   const manifests = findManifests(root);
   const all = declaredEthletePackages({ root, manifests });
@@ -466,6 +521,10 @@ export const updateCommand = async ({
     }
 
     console.log(`\nEvery @ethlete package is on its newest version (${resolved.upToDate.length} checked).`);
+
+    if (args.check || args.dryRun) return 0;
+
+    if (agent !== undefined) return workOpenTasks({ root, agent, invocation });
 
     return 0;
   }
@@ -560,7 +619,7 @@ export const updateCommand = async ({
     updates: writable,
     from: args.from,
     dryRun: false,
-    ai: args.ai,
+    agent,
   });
 
   if (result.failed) {
@@ -572,6 +631,8 @@ export const updateCommand = async ({
   clearPendingUpdate(root);
 
   console.log(`\nDone. Read ${UPDATE_DIR} for anything left to do.`);
+
+  if (result.agentFailed) return exitAfterAgent({ agentFailed: true, invocation });
 
   return rangeProblems.length > 0 ? 1 : 0;
 };
