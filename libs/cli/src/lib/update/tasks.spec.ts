@@ -12,6 +12,7 @@ import {
   TASKS_FILE,
   UPDATE_DIR,
   collectTasks,
+  docsBaseUrl,
   renderTaskFile,
   renderTasks,
   taskFileName,
@@ -49,7 +50,31 @@ describe('taskFileName', () => {
   });
 });
 
+describe('docsBaseUrl', () => {
+  it('links a prerelease to the docs of the next line', () => {
+    expect(docsBaseUrl('1.0.0-next.63')).toBe('https://ethlete-sdk-docs-next.web.app');
+  });
+
+  it('links a release to the stable docs', () => {
+    expect(docsBaseUrl('1.0.0')).toBe('https://ethlete-sdk-docs.web.app');
+  });
+});
+
 describe('collectTasks', () => {
+  it('links the docs of the release line the package moved to', () => {
+    const manual = outcome({
+      pending: pending({
+        migration: migration({ kind: 'manual', generator: undefined, version: '5.0.0-next.3', docs: '/core' }),
+      }),
+      state: 'task',
+    });
+    const docsFor = (to: string) =>
+      collectTasks({ outcomes: [manual], manager: yarn, updates: [{ name: '@ethlete/core', to }] })[0]?.docsUrl;
+
+    expect(docsFor('5.0.0-next.60')).toBe('https://ethlete-sdk-docs-next.web.app/core');
+    expect(docsFor('5.0.0')).toBe('https://ethlete-sdk-docs.web.app/core');
+  });
+
   it('takes a manual migration', () => {
     const tasks = collectTasks({
       outcomes: [

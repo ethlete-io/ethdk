@@ -4,11 +4,16 @@ import { instructionsPath } from './migration-manifest';
 import { PackageManager } from './package-manager';
 import { UpdatedPackage } from './plan';
 import { MigrationOutcome, manualGeneratorCommand } from './run-migrations';
+import { prereleaseTag } from './semver';
 
 export const UPDATE_DIR = join('.ethlete', 'update');
 export const TASKS_FILE = 'tasks.md';
 export const TASKS_DATA_FILE = 'tasks.json';
 export const DOCS_BASE_URL = 'https://ethlete-sdk-docs.web.app';
+export const NEXT_DOCS_BASE_URL = 'https://ethlete-sdk-docs-next.web.app';
+
+/** The docs site of a version's release line: `main` deploys the stable site, `next` the prerelease one. */
+export const docsBaseUrl = (version: string) => (prereleaseTag(version) ? NEXT_DOCS_BASE_URL : DOCS_BASE_URL);
 
 export type UpdateTask = {
   packageName: string;
@@ -32,20 +37,22 @@ export const taskFileName = (options: { packageName: string; name: string }) =>
 export const collectTasks = (options: {
   outcomes: readonly MigrationOutcome[];
   manager: PackageManager;
+  updates?: readonly UpdatedPackage[];
 }): UpdateTask[] => {
-  const { outcomes, manager } = options;
+  const { outcomes, manager, updates = [] } = options;
   const tasks: UpdateTask[] = [];
 
   for (const outcome of outcomes) {
     const { migration, packageName, manifestPath } = outcome.pending;
     const source = instructionsPath({ manifestPath, migration });
+    const target = updates.find((update) => update.name === packageName)?.to ?? migration.version;
     const shared = {
       packageName,
       name: migration.name,
       version: migration.version,
       description: migration.description,
       instructionsFile: source ? join(UPDATE_DIR, taskFileName({ packageName, name: migration.name })) : undefined,
-      docsUrl: migration.docs ? `${DOCS_BASE_URL}${migration.docs}` : undefined,
+      docsUrl: migration.docs ? `${docsBaseUrl(target)}${migration.docs}` : undefined,
     };
 
     if (outcome.state === 'unsupported') {
@@ -178,7 +185,7 @@ export const writeUpdateTasks = (options: {
   generatedAt: string;
 }): WrittenTasks => {
   const { root, updates, outcomes, manager, generatedAt } = options;
-  const tasks = collectTasks({ outcomes, manager });
+  const tasks = collectTasks({ outcomes, manager, updates });
   const directory = join(root, UPDATE_DIR);
 
   mkdirSync(directory, { recursive: true });
