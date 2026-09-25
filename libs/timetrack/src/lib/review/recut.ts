@@ -1,5 +1,6 @@
 import { BehindStretch, LaneRow, joinTouching, meetLaneRows } from '../rows/cut';
 import { RoundOptions } from '../rows/round';
+import { DEFAULT_MIN_BREAK_MS } from '../stream/breaks';
 import { projectKeyOf } from '../ticket/project';
 import { ReviewedRow } from './model';
 
@@ -101,17 +102,46 @@ export const backgroundTest = (backgroundProjects: readonly string[] | undefined
 
 const lostMsOf = (stretch: BehindStretch) => stretch.durationMs ?? stretch.to.getTime() - stretch.from.getTime();
 
-/** The band spans the gaps between the pieces, so `durationMs` must stay the sum of what the pieces lost. */
-const joinOneTicket = (stretches: readonly BehindStretch[]): BehindStretch[] => {
-  const byTicket = new Map<string, BehindStretch>();
+/** Whether no stretch of the gap longer than a break is left uncovered by a row that books time. */
+const workedAcross = (options: { from: number; to: number; rows: readonly ReviewedRow[] }) => {
+  const windows = options.rows
+    .filter((row) => !takesNothing(row))
+    .map((row) => ({ from: Math.max(options.from, row.from.getTime()), to: Math.min(options.to, row.to.getTime()) }))
+    .filter((window) => window.to > window.from)
+    .sort((left, right) => left.from - right.from);
 
-  for (const stretch of joinTouching(stretches)) {
+  let at = options.from;
+
+  for (const window of windows) {
+    if (window.from - at > DEFAULT_MIN_BREAK_MS) return false;
+
+    at = Math.max(at, window.to);
+  }
+
+  return options.to - at <= DEFAULT_MIN_BREAK_MS;
+};
+
+/**
+ * One band per ticket and lane across worked time. A gap no row accounts for starts a new band, or a
+ * band would claim the night. `durationMs` stays the sum of what the pieces lost.
+ */
+const joinOneTicket = (options: {
+  stretches: readonly BehindStretch[];
+  rows: readonly ReviewedRow[];
+}): BehindStretch[] => {
+  const open = new Map<string, BehindStretch>();
+  const bands: BehindStretch[] = [];
+
+  for (const stretch of joinTouching(options.stretches)) {
     const key = `${stretch.laneKey}\n${stretch.issueKey}`;
-    const band = byTicket.get(key);
+    const band = open.get(key);
+    const joins = band && workedAcross({ from: band.to.getTime(), to: stretch.from.getTime(), rows: options.rows });
 
-    byTicket.set(
+    if (band && !joins) bands.push(band);
+
+    open.set(
       key,
-      band
+      band && joins
         ? {
             ...band,
             to: stretch.to > band.to ? stretch.to : band.to,
@@ -121,7 +151,7 @@ const joinOneTicket = (stretches: readonly BehindStretch[]): BehindStretch[] => 
     );
   }
 
-  return [...byTicket.values()].sort((a, b) => a.from.getTime() - b.from.getTime());
+  return [...bands, ...open.values()].sort((a, b) => a.from.getTime() - b.from.getTime());
 };
 
 /**
@@ -144,7 +174,7 @@ export const recutReviewedRows = (options: {
   const isBackground = backgroundTest(options.backgroundProjects);
 
   if (!options.rows.some(isBackground)) {
-    return { rows: [...options.rows], behind: joinOneTicket(options.behind) };
+    return { rows: [...options.rows], behind: joinOneTicket({ stretches: options.behind, rows: options.rows }) };
   }
 
   const covered = options.rows.filter((row) => !isBackground(row) && !takesNothing(row));
@@ -171,8 +201,9 @@ export const recutReviewedRows = (options: {
 
   return {
     rows,
-    behind: joinOneTicket(
-      meetLaneRows({ behind: joinTouching([...options.behind, ...lost]), rows, round: options.round }),
-    ),
+    behind: joinOneTicket({
+      stretches: meetLaneRows({ behind: joinTouching([...options.behind, ...lost]), rows, round: options.round }),
+      rows,
+    }),
   };
 };

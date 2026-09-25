@@ -273,9 +273,36 @@ describe('recutReviewedRows', () => {
     expect(result.rows).toEqual(rows);
   });
 
+  it('starts a new band across a night nobody worked, instead of bridging it', () => {
+    const piece = (from: string, to: string) => ({ from: at(from), to: at(to), issueKey: 'ET-772', laneKey: SDK });
+    const result = recut({
+      rows: [
+        row({ issueKey: 'FIFAGG-1', from: '00:15', to: '00:30' }),
+        row({ issueKey: 'FIFAGG-2', from: '10:15', to: '12:00' }),
+      ],
+      behind: [piece('00:15', '00:30'), piece('10:15', '10:45')],
+    });
+
+    expect(spans(result.behind)).toEqual(['00:15-00:30', '10:15-10:45']);
+  });
+
+  it('bridges a gap no longer than a break, which is not time away from the ticket', () => {
+    const piece = (from: string, to: string) => ({ from: at(from), to: at(to), issueKey: 'ET-772', laneKey: SDK });
+    const result = recut({
+      rows: [
+        row({ issueKey: 'FIFAGG-1', from: '09:00', to: '10:00' }),
+        row({ issueKey: 'FIFAGG-2', from: '10:15', to: '11:00' }),
+      ],
+      behind: [piece('09:00', '10:00'), piece('10:15', '11:00')],
+    });
+
+    expect(spans(result.behind)).toEqual(['09:00-11:00']);
+    expect(result.behind[0]?.durationMs).toBe(105 * 60 * 1000);
+  });
+
   it('keeps the pieces of two tickets, or of two lanes, apart, on a day no background row is left on', () => {
     const result = recut({
-      rows: [],
+      rows: [row({ issueKey: 'FIFAGG-1', from: '09:00', to: '16:00' })],
       behind: [
         { from: at('09:00'), to: at('10:00'), issueKey: 'ET-772', laneKey: SDK },
         { from: at('11:00'), to: at('12:00'), issueKey: 'ET-773', laneKey: SDK },
