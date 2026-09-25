@@ -44,78 +44,275 @@ const activityOf = (record: Record<string, unknown>): ActivityRecord | null => {
   return Number.isNaN(at.getTime()) ? null : { at, sessionId, cwd, gitBranch: branchOf(record) };
 };
 
-const LEADING_CD = /^\s*cd\s+(?:"([^"]+)"|'([^']+)'|([^\s;&|]+))/;
+type ShellStep = { words: string[]; redirects: string[] };
 
-const READ_ONLY_PROGRAMS = new Set([
-  'cat',
-  'cut',
-  'diff',
-  'echo',
-  'find',
-  'grep',
-  'head',
-  'jq',
+const HEREDOC = /^<<-?\s*(?:'([^']*)'|"([^"]*)"|([^\s;&|<>]+))/;
+
+const CLOSERS: Record<string, string> = { "'": "'", '"': '"', '`': '`', '(': ')', '{': '}' };
+
+const closingOf = (command: string, openAt: number) => {
+  const open = command[openAt] ?? '';
+  const close = CLOSERS[open];
+  let depth = 1;
+
+  for (let index = openAt + 1; index < command.length; index++) {
+    const char = command[index];
+
+    if (char === '\\' && open !== "'") index++;
+    else if (char === close && --depth === 0) return index;
+    else if (char === open) depth++;
+    else if (char === "'" && open === '(') index = closingOf(command, index);
+  }
+
+  return command.length;
+};
+
+const shellStepsOf = (command: string): ShellStep[] => {
+  const steps: ShellStep[] = [];
+  const heredocs: string[] = [];
+  let step: ShellStep = { words: [], redirects: [] };
+  let word = '';
+  let inWord = false;
+  let target: 'word' | 'redirect' | 'input' = 'word';
+
+  const endWord = () => {
+    if (!inWord) return;
+    if (target === 'redirect') step.redirects.push(word);
+    else if (target === 'word') step.words.push(word);
+    word = '';
+    inWord = false;
+    target = 'word';
+  };
+  const endStep = () => {
+    endWord();
+    if (step.words.length || step.redirects.length) steps.push(step);
+    step = { words: [], redirects: [] };
+  };
+  const append = (text: string) => {
+    word += text;
+    inWord = true;
+  };
+
+  for (let index = 0; index < command.length; index++) {
+    const char = command[index] ?? '';
+    const next = command[index + 1];
+
+    if (char === '\\') {
+      if (next !== '\n') append(next ?? '');
+      index++;
+    } else if (char === "'") {
+      const end = closingOf(command, index);
+
+      append(command.slice(index + 1, end));
+      index = end;
+    } else if (char === '"') {
+      const end = closingOf(command, index);
+
+      append(command.slice(index + 1, end).replace(/\\(.)/g, '$1'));
+      index = end;
+    } else if (char === '$' && next === '(') {
+      append('$()');
+      index = closingOf(command, index + 1);
+    } else if (char === '$' && next === '{') {
+      append('${}');
+      index = closingOf(command, index + 1);
+    } else if (char === '`') {
+      append('$()');
+      index = closingOf(command, index);
+    } else if (char === '<' && next === '<' && command[index + 2] !== '<') {
+      const match = HEREDOC.exec(command.slice(index));
+
+      if (match) heredocs.push(match[1] ?? match[2] ?? match[3] ?? '');
+      endWord();
+      index += (match?.[0].length ?? 2) - 1;
+    } else if (char === '<') {
+      endWord();
+      target = 'input';
+      if (next === '<') index++;
+    } else if (char === '>' || (char === '&' && next === '>')) {
+      if (inWord && /^\d+$/.test(word)) {
+        word = '';
+        inWord = false;
+      } else endWord();
+
+      index += char === '&' ? 1 : 0;
+      if (command[index + 1] === '>' || command[index + 1] === '|') index++;
+
+      if (command[index + 1] === '&') {
+        index++;
+        while (/[\d-]/.test(command[index + 1] ?? '')) index++;
+      } else target = 'redirect';
+    } else if (char === '\n') {
+      endStep();
+
+      for (const delimiter of heredocs.splice(0)) {
+        const end = command.slice(index + 1).search(new RegExp(`^\\s*${delimiter.replace(/\W/g, '\\$&')}\\s*$`, 'm'));
+
+        if (end < 0) return steps;
+
+        index = command.indexOf('\n', index + 1 + end);
+        if (index < 0) return steps;
+      }
+    } else if (char === ';' || char === '|' || char === '&' || char === '(' || char === ')') {
+      endStep();
+    } else if (/\s/.test(char)) {
+      endWord();
+    } else {
+      append(char);
+    }
+  }
+
+  endStep();
+
+  return steps;
+};
+
+const PREFIX_WORDS = new Set([
+  '!',
+  '{',
+  '}',
+  'builtin',
+  'command',
+  'do',
+  'elif',
+  'else',
+  'env',
+  'exec',
+  'if',
+  'nice',
+  'nohup',
+  'sudo',
+  'then',
+  'time',
+  'until',
+  'while',
+]);
+
+const XARGS_OPTIONS_WITH_VALUE = new Set(['-a', '-d', '-E', '-I', '-L', '-n', '-P', '-s']);
+
+const programOf = (words: string[]) => {
+  let rest = words;
+
+  for (;;) {
+    const [first = '', ...tail] = rest;
+
+    if (PREFIX_WORDS.has(first) || /^\w+=/.test(first)) rest = tail;
+    else if (first === 'timeout') rest = tail.slice(tail.findIndex((arg) => !arg.startsWith('-')) + 1);
+    else if (first === 'xargs') {
+      const at = tail.findIndex(
+        (arg, index) => !arg.startsWith('-') && !XARGS_OPTIONS_WITH_VALUE.has(tail[index - 1] ?? ''),
+      );
+
+      rest = at < 0 ? [] : tail.slice(at);
+    } else return rest;
+  }
+};
+
+const isScratchPath = (path: string) =>
+  path.startsWith('$') || /^(?:\/dev|\/tmp|\/var\/tmp|\/proc)(?:\/|$)/.test(path) || path === '-';
+
+const operandsOf = (args: string[]) => args.filter((arg) => !arg.startsWith('-'));
+
+const touchesRealFile = (paths: string[]) => paths.some((path) => !isScratchPath(path));
+
+const WRITING_GIT = new Set([
+  'add',
+  'am',
+  'apply',
+  'checkout',
+  'cherry-pick',
+  'clean',
+  'commit',
+  'merge',
+  'mv',
+  'pull',
+  'rebase',
+  'reset',
+  'restore',
+  'revert',
+  'rm',
+  'stash',
+  'switch',
+]);
+
+const GIT_OPTIONS_WITH_VALUE = new Set(['-C', '-c', '--git-dir', '--work-tree']);
+
+const READING_STASH = new Set(['list', 'show']);
+
+const isWritingGit = (args: string[]) => {
+  const operands = args.filter(
+    (arg, index) => !arg.startsWith('-') && !GIT_OPTIONS_WITH_VALUE.has(args[index - 1] ?? ''),
+  );
+  const [subcommand = '', action] = operands;
+
+  if (subcommand === 'stash') return !READING_STASH.has(action ?? '');
+
+  return WRITING_GIT.has(subcommand);
+};
+
+const FILE_WRITERS = new Set(['cp', 'ln', 'mkdir', 'mv', 'rm', 'rmdir', 'touch']);
+
+const TREE_WRITERS = new Set(['bun', 'bunx', 'cargo', 'make', 'npm', 'npx', 'nx', 'pnpm', 'yarn']);
+
+const READING_PACKAGE_COMMANDS = new Set([
+  'bin',
+  'config',
+  'explain',
+  'info',
+  'list',
   'ls',
-  'pwd',
-  'rg',
-  'sort',
-  'stat',
-  'tail',
-  'tr',
-  'uniq',
-  'wc',
-  'which',
+  'outdated',
+  'prefix',
+  'root',
+  'search',
+  'view',
+  'why',
 ]);
 
-const READ_ONLY_GIT = new Set([
-  'blame',
-  'diff',
-  'for-each-ref',
-  'grep',
-  'log',
-  'ls-files',
-  'reflog',
-  'rev-parse',
-  'show',
-  'status',
-]);
+const isWritingStep = ({ words, redirects }: ShellStep): boolean => {
+  if (touchesRealFile(redirects)) return true;
+
+  const [program = '', ...args] = programOf(words);
+  const operands = operandsOf(args);
+
+  switch (program) {
+    case 'sed':
+      return args.some((arg) => /^-[a-zA-Z]*i/.test(arg) || arg.startsWith('--in-place'));
+    case 'perl':
+      return args.some((arg) => /^-[a-zA-Z]*i/.test(arg));
+    case 'tee':
+      return touchesRealFile(operands);
+    case 'git':
+      return isWritingGit(args);
+    case 'find': {
+      const exec = args.findIndex((arg) => arg === '-exec' || arg === '-execdir');
+
+      return args.includes('-delete') || (exec >= 0 && isWritingStep({ words: args.slice(exec + 1), redirects: [] }));
+    }
+    case 'bash':
+    case 'sh':
+    case 'zsh':
+      return args.includes('-c') && isWritingCommand(args[args.indexOf('-c') + 1] ?? '');
+    case 'cp':
+    case 'mv':
+    case 'ln':
+      return touchesRealFile(operands.slice(-1));
+  }
+
+  if (FILE_WRITERS.has(program)) return touchesRealFile(operands);
+  if (TREE_WRITERS.has(program)) return !READING_PACKAGE_COMMANDS.has(operands[0] ?? '') && !args.includes('--version');
+
+  return false;
+};
+
+const isWritingCommand = (command: string) => shellStepsOf(command).some(isWritingStep);
 
 const WRITE_TOOLS = new Set(['Edit', 'MultiEdit', 'NotebookEdit', 'Write']);
 
-const SHELL_KEYWORDS = /^(?:do|then|else|if)\s+/;
-
-const isReadOnlyStep = (step: string) => {
-  const words = step
-    .replace(SHELL_KEYWORDS, '')
-    .replace(/^(?:\w+=\S*\s+)+/, '')
-    .split(/\s+/);
-  const [program = '', ...args] = words;
-
-  if (!program || program === 'done' || program === 'fi' || program === 'for' || program === 'cd') return true;
-  if (program === 'sed') return args.includes('-n') && !args.some((arg) => arg.startsWith('-i'));
-  if (program !== 'git') return READ_ONLY_PROGRAMS.has(program);
-
-  const subcommand = args.filter((arg, index) => !arg.startsWith('-') && args[index - 1] !== '-C')[0];
-
-  return !!subcommand && READ_ONLY_GIT.has(subcommand);
-};
-
-/** A command made only of the reads above. A redirect into a file writes, whatever the program. */
-const isReadOnlyCommand = (command: string) => {
-  const quiet = command.replace(/[0-9&]?>+\s*\/dev\/null|[0-9]>&[0-9]/g, '');
-
-  if (/(^|\s|\d)>>?\s*[^\s&]/.test(quiet)) return false;
-
-  return quiet
-    .split(/&&|\|\||[;|\n]/)
-    .map((step) => step.trim())
-    .every(isReadOnlyStep);
-};
-
 /**
  * Where one tool call wrote: the absolute path it named, `null` for the working directory, and
- * `undefined` where the call says nothing about a place. A read never answers: looking something up
- * in another checkout is not working there.
+ * `undefined` where the call says nothing about a place. Only a clear write answers: a command that
+ * merely might write, like a script or a program this list does not know, counts as a read.
  *
  * Claude Code puts the shell back into the session's directory after a command that left it, so a
  * command reaches another checkout only by changing into it first, and every record still names the
@@ -129,10 +326,11 @@ const workedInOfTool = (block: Record<string, unknown>): string | null | undefin
 
   if (name === 'Bash') {
     const command = stringAt(input, 'command') ?? '';
-    const match = LEADING_CD.exec(command);
-    const path = match?.[1] ?? match?.[2] ?? match?.[3];
 
-    if (isReadOnlyCommand(match ? command.slice(match[0].length) : command)) return undefined;
+    if (!isWritingCommand(command)) return undefined;
+
+    const [first] = shellStepsOf(command);
+    const path = first?.words[0] === 'cd' ? first.words[1] : undefined;
 
     return path?.startsWith('/') ? path : null;
   }

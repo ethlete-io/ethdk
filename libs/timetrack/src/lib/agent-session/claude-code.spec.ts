@@ -623,7 +623,9 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
         toolCall({
           minute: 0,
           name: 'Bash',
-          input: { command: `cd ${sdk}/libs/query/src/lib/auth/features && python3 - <<'EOF'\np='x.ts'\nEOF` },
+          input: {
+            command: `cd ${sdk}/libs/query/src/lib/auth/features && cat > x.ts <<'EOF'\nexport const x = 1;\nEOF`,
+          },
         }),
         toolCall({
           minute: 2,
@@ -639,11 +641,43 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
     expect(workedIn(result.events)).toEqual([`${sdk}/libs/query/src/lib/auth/features`, sdk, sdk, sdk]);
   });
 
+  it.each([
+    `grep -rn "provideIcons\\|injectIcons" libs | head -20`,
+    `rg -n "altcha|captcha" libs/domain`,
+    `find libs -name '*.ts' | xargs grep -l "retryFn"`,
+    `awk -F: '{print $1}' package.json | sort -u`,
+    `sed -E 's/a|b/c/' package.json`,
+    `for d in */; do echo "$d"; git -C "$d" log -1 --oneline; done`,
+    `f=$(git rev-parse --show-toplevel); [ -f "$f/nx.json" ] && cat "$f/nx.json"`,
+    `rsync -an --stats libs/ /tmp/libs-copy/`,
+    `git diff > /tmp/fut.patch && git stash list`,
+    `cat > /tmp/notes.txt <<'EOF'\nrm -rf libs\ngit commit -am x\nEOF`,
+    `npm ls @angular/core 2>/dev/null; yarn why rxjs`,
+  ])('keeps a read-only command in another checkout where the work was: %s', (command) => {
+    const result = parse([toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && ${command}` } })]);
+
+    expect(workedIn(result.events)).toEqual([CWD]);
+  });
+
+  it.each([
+    `sed -i 's/a/b/' package.json`,
+    `git add -A && git commit -m "a | b"`,
+    `echo a > notes.txt`,
+    `printf x | tee -a CHANGELOG.md`,
+    `rm -rf dist && mkdir dist`,
+    `grep -l x libs/*.ts | xargs sed -i 's/x/y/'`,
+    `npx nx lint app --fix`,
+  ])('follows a command that clearly writes into another checkout: %s', (command) => {
+    const result = parse([toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && ${command}` } })]);
+
+    expect(workedIn(result.events)).toEqual([ALTCHA]);
+  });
+
   it('returns to the working directory for a command that changes into no absolute path', () => {
     const result = parse(
       [
         toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && yarn install` } }),
-        toolCall({ minute: 2, name: 'Bash', input: { command: 'git push' } }),
+        toolCall({ minute: 2, name: 'Bash', input: { command: 'git commit -m "fix"' } }),
       ],
       { sampleIntervalMs: 60_000 },
     );
