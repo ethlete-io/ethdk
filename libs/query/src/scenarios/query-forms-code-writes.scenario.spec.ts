@@ -18,15 +18,15 @@ describe('query form writes from code scenario', () => {
     const s = scenario();
     const qf = s.run(() => defineListForm().observe({ writeToQueryParams: false }));
 
-    qf.setValue({ search: null, region: null, page: 4 });
-    expect(qf.value()).toEqual({ search: null, region: null, page: 4 });
+    qf.setValue({ search: '', region: null, page: 4 });
+    expect(qf.value()).toEqual({ search: '', region: null, page: 4 });
 
     qf.patchValue({ search: 'shoes' });
     expect(qf.value()).toEqual({ search: 'shoes', region: null, page: 1 });
-    expect(qf.previousValue()).toEqual({ search: null, region: null, page: 4 });
+    expect(qf.previousValue()).toEqual({ search: '', region: null, page: 4 });
 
     qf.resetAllFieldsToDefault();
-    expect(qf.value()).toEqual({ search: null, region: null, page: 1 });
+    expect(qf.value()).toEqual({ search: '', region: null, page: 1 });
   });
 
   it('a write before observe() is current at once and is what the first request carries', async () => {

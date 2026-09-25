@@ -397,7 +397,7 @@ describe('query forms URL sync scenario', () => {
     await s.settle(300);
     await s.settle();
 
-    expect(commits).toEqual(['object:null', 'string:2024']);
+    expect(commits).toEqual(['string:', 'string:2024']);
     expect(qf.value().search).toBe('2024');
   });
 
@@ -530,7 +530,7 @@ describe('query forms URL sync scenario', () => {
     const c = s.consumer();
     const qf = c.run(() => defineQueryForm({ fields }).observe());
 
-    qf.setValue({ tags: [], flags: null, search: null });
+    qf.setValue({ tags: [], flags: null, search: '' });
     await s.settle();
 
     const queryParams = router.parseUrl(router.url).queryParams;
@@ -543,7 +543,7 @@ describe('query forms URL sync scenario', () => {
     const restored = s.run(() => defineQueryForm({ fields }).observe());
     s.tick();
 
-    expect(restored.value()).toEqual({ tags: [], flags: null, search: null });
+    expect(restored.value()).toEqual({ tags: [], flags: null, search: '' });
   });
 
   it('keeps the URL fragment through its own writes', async () => {

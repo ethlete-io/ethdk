@@ -1,3 +1,4 @@
+import { WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { FormControl } from '@angular/forms';
@@ -12,7 +13,7 @@ import {
   searchQueryField,
   sortQueryField,
 } from '../index';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import { useScenario } from './harness';
 
 describe('query form fields scenario', () => {
@@ -42,15 +43,15 @@ describe('query form fields scenario', () => {
 
     qf.setValue({ search: 'shoes' }, { debounce: true });
     s.tick(50);
-    expect(qf.value().search).toBeNull();
+    expect(qf.value().search).toBe('');
 
     s.tick(300);
     expect(qf.value().search).toBe('shoes');
 
-    qf.setValue({ search: null });
+    qf.setValue({ search: '' });
     s.tick();
 
-    expect(qf.value().search).toBeNull();
+    expect(qf.value().search).toBe('');
   });
 
   it('writes a sort to the URL as active:direction and restores it', async () => {
@@ -253,6 +254,38 @@ describe('query form fields scenario', () => {
     s.tick();
 
     expect(qf.value().search).toBe(search);
+  });
+
+  it('types a search field as a string that is empty at the default and writes no param while empty', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    const c = s.consumer();
+    const qf = c.run(() => defineQueryForm({ fields: { search: searchQueryField() } }).observe());
+    s.tick();
+
+    expectTypeOf(qf.fields.search().value).toEqualTypeOf<WritableSignal<string>>();
+    expectTypeOf(qf.value().search).toEqualTypeOf<string>();
+    expect(qf.value().search).toBe('');
+
+    qf.fields.search().value.set('shoes');
+    await s.settle(300);
+    await s.settle();
+    expect(router.parseUrl(router.url).queryParams).toEqual({ search: 'shoes' });
+
+    qf.fields.search().value.set('');
+    await s.settle();
+    await s.settle();
+    expect(router.parseUrl(router.url).queryParams).toEqual({});
+    expect(qf.value().search).toBe('');
+    c.destroy();
+
+    await s.reloadAt('/');
+    const restored = s.run(() => defineQueryForm({ fields: { search: searchQueryField() } }).observe());
+    s.tick();
+
+    expect(restored.value().search).toBe('');
+    expect(router.parseUrl(router.url).queryParams).toEqual({});
   });
 
   it.each([

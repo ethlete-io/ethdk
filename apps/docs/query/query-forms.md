@@ -55,22 +55,22 @@ export class UsersComponent {
 
 ## Field creators
 
-| Creator                    | Value type          | Notes                                                                                                                                                |
-| -------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `queryField<T>()`          | `T \| null`         | Generic field. Auto-coerces URL strings to number/boolean unless told otherwise; with an array default a single URL value reads as a one-item array. |
-| `searchQueryField()`       | `string \| null`    | Debounced 300ms; clearing applies immediately (`disableDebounceIfFalsy`). Reads the URL back as a string, so `?search=2024` stays `'2024'`.          |
-| `sortQueryField()`         | `Sort \| null`      | Serialized as `active:direction` (e.g. `name:asc`).                                                                                                  |
-| `stringArrayQueryField()`  | `string[] \| null`  |                                                                                                                                                      |
-| `numberArrayQueryField()`  | `number[] \| null`  |                                                                                                                                                      |
-| `booleanArrayQueryField()` | `boolean[] \| null` |                                                                                                                                                      |
-| `dateQueryField()`         | `Date \| null`      | Expects a `Date`-parseable string in the URL; `2026-09-01` reads as local midnight.                                                                  |
-| `dateArrayQueryField()`    | `Date[] \| null`    |                                                                                                                                                      |
+| Creator                    | Value type          | Notes                                                                                                                                                  |
+| -------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `queryField<T>()`          | `T \| null`         | Generic field. Auto-coerces URL strings to number/boolean unless told otherwise; with an array default a single URL value reads as a one-item array.   |
+| `searchQueryField()`       | `string`            | Empty is `''`, which writes no param. Debounced 300ms; clearing applies immediately. Reads the URL back as a string, so `?search=2024` stays `'2024'`. |
+| `sortQueryField()`         | `Sort \| null`      | Serialized as `active:direction` (e.g. `name:asc`).                                                                                                    |
+| `stringArrayQueryField()`  | `string[] \| null`  |                                                                                                                                                        |
+| `numberArrayQueryField()`  | `number[] \| null`  |                                                                                                                                                        |
+| `booleanArrayQueryField()` | `boolean[] \| null` |                                                                                                                                                        |
+| `dateQueryField()`         | `Date \| null`      | Expects a `Date`-parseable string in the URL; `2026-09-01` reads as local midnight.                                                                    |
+| `dateArrayQueryField()`    | `Date[] \| null`    |                                                                                                                                                        |
 
 Every creator accepts the same options:
 
 | Option                    | Default                          | Description                                                                                                             |
 | ------------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `defaultValue`            | `null`                           | Value the field starts at. Elided from the URL and ignored by the filter count. A function is evaluated lazily.         |
+| `defaultValue`            | `null` (`''` for search)         | Value the field starts at. Elided from the URL and ignored by the filter count. A function is evaluated lazily.         |
 | `debounce`                | - (`300` for `searchQueryField`) | Milliseconds to wait before committing a change.                                                                        |
 | `disableDebounceIfFalsy`  | `false` (`true` for search)      | Commit immediately when the new value is falsy (e.g. clearing a search).                                                |
 | `appendToUrl`             | `true`                           | Write the field to the URL. `false` makes the field a read-only mirror: it still tracks the param another owner writes. |

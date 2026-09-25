@@ -107,7 +107,7 @@ describe('query form persistence scenario', () => {
 
     const restored = s.run(() => defineQueryForm({ fields: listFields() }).observe({ persistence }));
 
-    expect(restored.value()).toEqual({ query: null, sort: null, from: null, wide: false, page: 2 });
+    expect(restored.value()).toEqual({ query: '', sort: null, from: null, wide: false, page: 2 });
   });
 
   it('persists and checks only the listed fields', async () => {
@@ -179,7 +179,7 @@ describe('query form persistence scenario', () => {
       }),
     );
 
-    expect(other.value().query).toBeNull();
+    expect(other.value().query).toBe('');
     await s.settle();
   });
 });

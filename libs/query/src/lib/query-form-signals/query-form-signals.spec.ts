@@ -53,7 +53,7 @@ describe('defineQueryForm', () => {
         .observe({ writeToQueryParams: false, syncOnNavigation: false }),
     );
 
-    expect(qf.value()).toEqual({ search: null, page: 1 });
+    expect(qf.value()).toEqual({ search: '', page: 1 });
     expect(qf.activeFilterCount()).toBe(0);
   });
 
@@ -69,18 +69,18 @@ describe('defineQueryForm', () => {
 
     qf.setValue({ search: 'ab' }, { debounce: true });
     TestBed.tick();
-    expect(qf.value().search).toBeNull();
+    expect(qf.value().search).toBe('');
 
     vi.advanceTimersByTime(299);
-    expect(qf.value().search).toBeNull();
+    expect(qf.value().search).toBe('');
 
     vi.advanceTimersByTime(1);
     expect(qf.value().search).toBe('ab');
 
     // Clearing a search bypasses the debounce.
-    qf.setValue({ search: null });
+    qf.setValue({ search: '' });
     TestBed.tick();
-    expect(qf.value().search).toBeNull();
+    expect(qf.value().search).toBe('');
   });
 
   it('commits an undebounced field immediately', async () => {

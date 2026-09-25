@@ -30,7 +30,7 @@ describe('query form branch scenario', () => {
       s.tick(50);
     }
 
-    expect(draft.value().search).toBeNull();
+    expect(draft.value().search).toBe('');
     expect(s.api.requestCount('GET', '/teams')).toBe(1);
 
     s.tick(300);
@@ -66,7 +66,7 @@ describe('query form branch scenario', () => {
     c.destroy();
     s.tick(300);
 
-    expect(draft.value().search).toBeNull();
+    expect(draft.value().search).toBe('');
   });
 
   it('branch resets chain through isResetBy the way the source form does', () => {
@@ -160,7 +160,7 @@ describe('query form branch scenario', () => {
     s.tick(50);
 
     expect(draft.liveValue().search).toBe('che');
-    expect(draft.value().search).toBeNull();
+    expect(draft.value().search).toBe('');
 
     qf.setValue(draft.liveValue());
     s.tick(400);

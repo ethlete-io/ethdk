@@ -2,8 +2,7 @@
  * The internal, fully-resolved definition of a single query-form field.
  *
  * Produced by the field creators (`queryField()`, `searchQueryField()`, …) and
- * consumed by `defineQueryForm()`. `T` is the field's value type and always
- * includes `null` (a field can be cleared).
+ * consumed by `defineQueryForm()`. `T` is the field's value type.
  */
 export type QueryFieldDef<T> = {
   /**

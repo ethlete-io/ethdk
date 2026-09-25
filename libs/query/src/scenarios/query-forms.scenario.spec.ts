@@ -49,7 +49,7 @@ describe('query forms scenario', () => {
     await s.settle();
     expect(router.parseUrl(router.url).queryParams).toEqual({ search: 'shoes', page: '3' });
 
-    qf.setValue({ search: null, page: 1 });
+    qf.setValue({ search: '', page: 1 });
     await s.settle();
     expect(router.parseUrl(router.url).queryParams).toEqual({});
   });
@@ -380,12 +380,12 @@ describe('query forms scenario', () => {
       }).observe(),
     );
 
-    qf.setValue({ search: null, page: 4 });
+    qf.setValue({ search: '', page: 4 });
     await s.settle();
 
     qf.patchValue({ search: 'a' }, { skipResets: true, debounce: true });
     s.tick(50);
-    expect(qf.value()).toEqual({ search: null, page: 4 });
+    expect(qf.value()).toEqual({ search: '', page: 4 });
 
     await router.navigate([], { queryParams: { search: 'from-url' }, queryParamsHandling: 'merge' });
     await s.settle();
@@ -410,7 +410,7 @@ describe('query forms scenario', () => {
       }).observe({ writeToQueryParams: false }),
     );
 
-    qf.setValue({ search: null, limit: 10, page: 4 });
+    qf.setValue({ search: '', limit: 10, page: 4 });
     s.tick();
 
     qf.patchValue({ search: 'shoes' });
@@ -979,7 +979,7 @@ describe('query forms scenario with the devtools attached', () => {
 
     expect(handle.isObserving()).toBe(true);
     expect(handle.isAtDefaults()).toBe(true);
-    expect(handle.defaultValue).toEqual({ search: null, region: null, page: 1 });
+    expect(handle.defaultValue).toEqual({ search: '', region: null, page: 1 });
     expect(handle.fields().map((field) => field.key)).toEqual(['search', 'region', 'page']);
     expect(handle.fields().map((field) => field.paramKey)).toEqual(['users-search', 'users-region', 'users-page']);
     expect(handle.fields().map((field) => field.countsAsFilter)).toEqual([false, true, false]);
@@ -991,7 +991,7 @@ describe('query forms scenario with the devtools attached', () => {
 
     expect(handle.isCommitPending()).toBe(true);
     expect(handle.fields().find((field) => field.key === 'search')).toMatchObject({
-      value: null,
+      value: '',
       liveValue: 'shoes',
       isDefault: true,
       queryParam: undefined,
@@ -1007,7 +1007,7 @@ describe('query forms scenario with the devtools attached', () => {
       queryParam: 'shoes',
     });
     expect(handle.value()).toEqual({ search: 'shoes', region: null, page: 1 });
-    expect(handle.previousValue()).toEqual({ search: null, region: null, page: 1 });
+    expect(handle.previousValue()).toEqual({ search: '', region: null, page: 1 });
     expect(handle.isAtDefaults()).toBe(false);
     expect(handle.activeFilterCount()).toBe(0);
 
