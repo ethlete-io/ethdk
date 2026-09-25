@@ -28,7 +28,6 @@
   "EthleteValidators": "constant: value",
   "FOCUSABLE_SELECTOR": "constant: value",
   "FOCUS_VISIBLE_TRACKER_TOKEN": "constant: injection token",
-  "HtmlToMarkdownPipe": "internal: pipe wrapper around an exported transform; no app or lib imports it",
   "IS_ARRAY_NOT_EMPTY": "constant: value",
   "IS_EMAIL": "constant: value",
   "InferMimeTypePipe": "internal: pipe wrapper around an exported transform; no app or lib imports it",
