@@ -28,6 +28,11 @@
       "type": "boolean",
       "description": "Migrate theme naming to color naming (ProvideThemeDirective -> ProvideColorDirective, etc.)",
       "default": true
+    },
+    "reportRemovedExports": {
+      "type": "boolean",
+      "description": "List imports of exports removed in v5 without a replacement (Memo, the props module)",
+      "default": true
     }
   },
   "required": []
