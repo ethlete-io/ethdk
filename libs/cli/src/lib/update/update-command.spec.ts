@@ -75,6 +75,7 @@ describe('et update --continue', () => {
 
     expect(await updateCommand({ argv: ['--continue'], root })).toBe(1);
     expect(readPendingUpdate(root)?.finished).toEqual([{ packageName: '@ethlete/core', name: 'first' }]);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('et update --continue` again'));
 
     spawnSync.mockReset();
     spawnSync.mockReturnValue({ status: 0 });

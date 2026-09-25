@@ -326,8 +326,16 @@ const runMigrationPhase = (options: {
   };
 };
 
-const resume = (options: { root: string; manager: PackageManager; argv: ReturnType<typeof parseUpdateArgs> }) => {
-  const { root, manager, argv } = options;
+const continueHint = (invocation: string) =>
+  `\nRun \`${invocation} --continue\` again once the failures above are fixed.`;
+
+const resume = (options: {
+  root: string;
+  manager: PackageManager;
+  argv: ReturnType<typeof parseUpdateArgs>;
+  invocation: string;
+}) => {
+  const { root, manager, argv, invocation } = options;
   const pending = readPendingUpdate(root);
 
   if (!pending) {
@@ -358,9 +366,17 @@ const resume = (options: { root: string; manager: PackageManager; argv: ReturnTy
     ai: argv.ai,
   });
 
-  if (!result.failed && !argv.dryRun) clearPendingUpdate(root);
+  if (argv.dryRun) return result.failed ? 1 : 0;
 
-  return result.failed ? 1 : 0;
+  if (result.failed) {
+    console.error(continueHint(invocation));
+
+    return 1;
+  }
+
+  clearPendingUpdate(root);
+
+  return 0;
 };
 
 /**
@@ -407,7 +423,7 @@ export const updateCommand = async ({
     return 1;
   }
 
-  if (args.resume) return resume({ root, manager, argv: args });
+  if (args.resume) return resume({ root, manager, argv: args, invocation });
 
   const manifests = findManifests(root);
   const all = declaredEthletePackages({ root, manifests });
@@ -537,7 +553,7 @@ export const updateCommand = async ({
   });
 
   if (result.failed) {
-    console.error(`\nRun \`${invocation} --continue\` again once the failures above are fixed.`);
+    console.error(continueHint(invocation));
 
     return 1;
   }
