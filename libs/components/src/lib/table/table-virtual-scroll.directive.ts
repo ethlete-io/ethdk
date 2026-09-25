@@ -17,10 +17,10 @@ export type TableVirtualScrollConfig = TableFeatureConfig & {
  * standing in for the rest so the scrollbar still reflects the whole row count.
  *
  * The table is its own scroll container, so give it a bounded height (e.g.
- * `style="block-size: 24rem"`) for the window to track.
+ * `[style.block-size.rem]="24"` or a class) for the window to track.
  *
  * @example
- * <et-table [data]="manyRows()" [columns]="COLUMNS" style="block-size: 24rem" etTableVirtualScroll />
+ * <et-table [data]="manyRows()" [columns]="COLUMNS" [style.block-size.rem]="24" etTableVirtualScroll />
  *
  * <!-- with options -->
  * <et-table [etTableVirtualScroll]="{ estimateRowHeight: 52 }" … />

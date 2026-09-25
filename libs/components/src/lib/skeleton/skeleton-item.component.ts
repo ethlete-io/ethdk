@@ -10,8 +10,8 @@ export type SkeletonShape = 'text' | 'rect' | 'circle';
  *
  * @example
  * <et-skeleton-item shape="text" />
- * <et-skeleton-item shape="circle" style="--et-skeleton-size: 40px" />
- * <et-skeleton-item style="block-size: 120px; border-radius: 12px" />
+ * <et-skeleton-item shape="circle" [style.--et-skeleton-size.px]="40" />
+ * <et-skeleton-item [style.block-size.px]="120" [style.border-radius.px]="12" />
  */
 @Component({
   selector: 'et-skeleton-item',

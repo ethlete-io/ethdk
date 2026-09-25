@@ -16,10 +16,10 @@ import { SKELETON_IMPORTS } from '@ethlete/components';
 ```html
 <et-skeleton>
   <div class="flex items-center gap-3">
-    <et-skeleton-item shape="circle" style="--et-skeleton-size: 40px" />
+    <et-skeleton-item [style.--et-skeleton-size.px]="40" shape="circle" />
     <et-skeleton-text lines="2" />
   </div>
-  <et-skeleton-item shape="rect" style="block-size: 140px" />
+  <et-skeleton-item [style.block-size.px]="140" shape="rect" />
 </et-skeleton>
 ```
 

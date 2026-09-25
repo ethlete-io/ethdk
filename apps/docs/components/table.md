@@ -996,7 +996,7 @@ bounded height and the header row stays pinned (`position: sticky`) while the bo
 scrolls:
 
 ```html
-<et-table [data]="rows()" [columns]="COLUMNS" style="block-size: 320px" />
+<et-table [data]="rows()" [columns]="COLUMNS" [style.block-size.px]="320" />
 ```
 
 ### On a page that scrolls instead
@@ -1131,7 +1131,7 @@ scroll viewport. Its context is the rendered rows, so it can aggregate:
 @Component({
   imports: [TABLE_IMPORTS],
   template: `
-    <et-table [data]="orders()" [columns]="COLUMNS" style="block-size: 24rem">
+    <et-table [data]="orders()" [columns]="COLUMNS" [style.block-size.rem]="24">
       <ng-template [etTableFooterCell]="COLUMNS.id" let-rows>{{ rows.length }} orders</ng-template>
       <ng-template [etTableFooterCell]="COLUMNS.total" let-rows>{{ sum(rows) | currency }}</ng-template>
     </et-table>
@@ -1165,13 +1165,13 @@ to the adapter's `page` / `setPage`, and let the page-size select drive the quer
 ```ts
 @Component({
   template: `
-    <et-table [data]="rows.rows()" [columns]="COLUMNS" sortMode="server" style="block-size: 32rem">
+    <et-table [data]="rows.rows()" [columns]="COLUMNS" sortMode="server" [style.block-size.rem]="32">
       <!-- Material-style controls row: label + page-size select + range + prev/next, right-aligned. -->
       <div class="flex flex-wrap items-center justify-end gap-3" etTableFooter>
         <span class="et-table-footer-label">Items per page:</span>
         <!-- `sm` keeps the field compact; pull its 12px control text back to the 14px of the label and
              readout either side of it, so the row reads as one size -->
-        <et-form-field appearance="underline" size="sm" style="--et-form-field-control-font-size: 14px">
+        <et-form-field appearance="underline" size="sm" [style.--et-form-field-control-font-size.px]="14">
           <!-- a page-size trigger is narrower than its option rows, so let the panel size itself -->
           <et-select [formField]="pageSizeForm.pageSize" [clearable]="false" [mirrorPanelWidth]="false" />
         </et-form-field>
@@ -1292,7 +1292,12 @@ to be as tall as the rows they stand in for. Two things get that right:
 
   <!-- the same cell while loading: the chip's own height and pill radius -->
   <ng-template [etTableCellSkeleton]="COLUMNS.role">
-    <et-skeleton-item shape="rect" style="inline-size: 64px; block-size: 24px; --et-skeleton-radius: 999px" />
+    <et-skeleton-item
+      [style.inline-size.px]="64"
+      [style.block-size.px]="24"
+      [style.--et-skeleton-radius.px]="999"
+      shape="rect"
+    />
   </ng-template>
 </et-table>
 ```
@@ -1476,7 +1481,7 @@ As always, the table is its own scroll container - give it a bounded height so t
 window has a viewport to track:
 
 ```html
-<et-table [data]="rows()" [columns]="COLUMNS" style="block-size: 24rem" etTableVirtualScroll />
+<et-table [data]="rows()" [columns]="COLUMNS" [style.block-size.rem]="24" etTableVirtualScroll />
 ```
 
 <StoryEmbed id="components-data-display-table--virtualized" height="440px" />

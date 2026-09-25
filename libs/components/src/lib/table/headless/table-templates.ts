@@ -152,7 +152,7 @@ export class TableFilterOptionDirective<T> {
  * @example
  * <!-- the Role column renders a chip, so its placeholder is chip-shaped -->
  * <ng-template [etTableCellSkeleton]="COLUMNS.role">
- *   <et-skeleton-item shape="rect" style="inline-size: 64px; block-size: 24px; --et-skeleton-radius: 999px" />
+ *   <et-skeleton-item shape="rect" [style.inline-size.px]="64" [style.block-size.px]="24" [style.--et-skeleton-radius.px]="999" />
  * </ng-template>
  */
 @Directive({

@@ -135,7 +135,7 @@ Two optional projected templates, for the states an image spends real time in:
 ```html
 <et-picture [defaultSrc]="photo()?.url" [aspectRatio]="16 / 9" alt="…">
   <ng-template etPicturePlaceholder>
-    <et-skeleton-item shape="rect" style="block-size: 100%; inline-size: 100%" />
+    <et-skeleton-item [style.block-size.%]="100" [style.inline-size.%]="100" shape="rect" />
   </ng-template>
 
   <ng-template etPictureError>

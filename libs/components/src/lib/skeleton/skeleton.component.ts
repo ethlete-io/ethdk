@@ -11,7 +11,7 @@ import { injectLoaderLabels } from '../loader';
  *
  * @example
  * <et-skeleton>
- *   <et-skeleton-item shape="circle" style="--et-skeleton-size: 40px" />
+ *   <et-skeleton-item shape="circle" [style.--et-skeleton-size.px]="40" />
  *   <et-skeleton-text lines="3" />
  * </et-skeleton>
  */

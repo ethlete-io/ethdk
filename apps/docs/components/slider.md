@@ -68,7 +68,7 @@ A reversed tuple is normalized for display (`[80, 20]` renders as 20–80). Drag
 `orientation="vertical"` turns either slider into a vertical one. A vertical track runs **bottom→up** - the minimum sits at the bottom, and unlike the horizontal track it is **not mirrored in RTL** (the ARIA/W3C convention). Its length comes from `--et-slider-vertical-size` (`160px`), so give it whatever height the layout needs:
 
 ```html
-<et-slider [formField]="form.volume" style="--et-slider-vertical-size: 220px" orientation="vertical">
+<et-slider [formField]="form.volume" [style.--et-slider-vertical-size.px]="220" orientation="vertical">
   <et-label>Volume</et-label>
 </et-slider>
 ```
