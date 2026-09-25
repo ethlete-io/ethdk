@@ -187,6 +187,14 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       and the overlay `provideX` functions return `StaticProvider[]`, so they spread into `providers`. E2E gaps: the full-screen morph from its origin (`OverlayOriginCloneComponent`, the five
       `*FullscreenAnimation*` functions), the inline sidebar above `renderSidebarFrom` (pane width), focus moving
       into a pane by `first-tabbable` (jsdom has no client rects).
+      Stream done (`stream-{players,consent,custom-player,pip}.scenario.spec.ts`, 7525153ad): 109 of 114 covered;
+      `PipCollapseOverlayDirective`, `PipTitleBarDirective` need e2e, `providePipManager`, `providePipChromeManager`,
+      `injectPipChromeManager` are reachable only through `provideStreamPip`. Bugs fixed: the manager container
+      stayed in `<body>` after destroy (0b3917340), retry kept the error card (66a1b95d5), destroy in PiP logged
+      `NG0406` (1891c2e98), `provideStreamPip({ pipWindow: { desiredSize } })` did not type-check (85916c415).
+      Friction: a slot exposes state but no playback control; `width="480"` on Vimeo or Facebook gives an invalid CSS
+      width; the stream error codes are not exported. E2E gaps: PiP drag, collapse and resize; the FLIP and scale
+      animations; an iframe that moves between slots; the placeholder pulse (needs a real IntersectionObserver).
 - [x] S11 Follow-ups from S6 (hand-written skill `.agents/skills/query-scenario-tests/SKILL.md` documents `s.mount`)
   1. Done in 47f4d25da: `s.mount(Component, injector, { inputs })` sets inputs before the first change detection;
      `legacy-client-options` mounts `MatchListComponent` directly.
