@@ -203,8 +203,8 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       windowing and measured row height; the group row sticky offset; the refetch busy bar; the real CSV download.
       Part B done (`table-features-{rows,columns}.scenario.spec.ts`): all 42 covered, allowlist updated. Bug fixed
       (c8868313d): the focusable failed-cell mark had `aria-hidden` and no label, because `IconDirective`'s host
-      bindings overwrite a template `aria-label`; use `[label]`. Open (subagent at work 2026-09-25): the same bug on the core
-      error icon in `table.component.html`; fix is `[label]="cell.message"`. `it.fails`: a numeric `rowKey` is turned into a string, so
+      bindings overwrite a template `aria-label`; use `[label]`. Also fixed (44c7786b4): the same bug on the core
+      error icon in `table.component.html`. `it.fails`: a numeric `rowKey` is turned into a string, so
       `new Set([3])` in the selection or expanded signal matches nothing. Friction: menus throw without an
       `error`-typed colour theme. E2E gaps: reorder, resize and drag-scroll by pointer; sticky offsets on a narrow
       viewport; page sticky header pinning; the detail-row animation.
