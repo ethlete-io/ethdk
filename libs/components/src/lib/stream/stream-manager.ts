@@ -1,4 +1,4 @@
-import { DOCUMENT, inject } from '@angular/core';
+import { DestroyRef, DOCUMENT, inject } from '@angular/core';
 import {
   createFlipAnimation,
   defineRootProvider,
@@ -31,6 +31,7 @@ const STREAM_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
     const container = renderer.createElement('div');
     renderer.addClass(container, 'et-stream-manager');
     renderer.appendChild(document.body, container);
+    inject(DestroyRef).onDestroy(() => container.remove());
 
     const viewportSize = injectViewportSize();
 
