@@ -742,10 +742,13 @@ export class DayTimelineComponent {
 
     const start = first.inlineOffset - laid.inlineOffset;
     const end = laid.inlineOffset + laid.inlineSize - first.inlineOffset - first.inlineSize;
+    // A border-box grows past its width once the padding outgrows it, and the percent clip path then
+    // cuts the grown box, so a narrow segment spilled into the column beside it.
+    const gap = `clamp(0px, ${first.inlineSize / 2}% - 1px, var(--spacing) * 2)`;
 
     return {
-      start: `calc(${start}% + var(--spacing) * 2)`,
-      end: `calc(${end}% + var(--spacing) * 2)`,
+      start: `calc(${start}% + ${gap})`,
+      end: `calc(${end}% + ${gap})`,
     };
   }
 
