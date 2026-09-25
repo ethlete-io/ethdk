@@ -110,6 +110,37 @@ Manual (report tasks): vbl `layout` and `tournament` facades (toolkit-shaped, no
       (`creators.ts` `decideReuse`); report installed packages whose `.d.ts` import the renamed v2 names
       (prep or `migrate-to-query-v3`). Open: S4 must also run `@ethlete/core:migrate-to-v5` and
       `@ethlete/cdk:migrate-to-v5` to reach a build. Whether `migrate-from-cdk` belongs in the run is a decision.
+  - S4 run 2, 2026-09-25 (SDK `a90b33106`, dist copied to `/tmp/s4-dist`; scratch commits `ccbffac`..`af54e69` on
+    top of step 1c, logs `/tmp/s4-vbl-logs/run2-*`). Steps: core `migrate-to-v5`, cdk `migrate-to-v5` (no
+    `migrate-from-cdk`, user decision), `prep-for-query-v3`, `migrate-to-query-v3`, `migrate-from-ngrx-toolkit`.
+    `migrate-to-query-v3` has to run before the toolkit generator, which needs the v3 client helpers.
+    - Generators: no errors. The toolkit generator: 8/8 features, 20 creators written, 7 reused, 40 consumer files,
+      48 files deleted, 6 tasks (2 `NTK-FACADE-WITHOUT-HTTP`, 3 `NTK-DUPLICATE-ROUTE-MISMATCH`, 1
+      `NTK-UNSUPPORTED-IMPORT` for the `FacadeBase` import that is left in a non-HTTP facade).
+    - Cause C is gone: the non-HTTP facade now takes `MappedEntityState`/`ToolkitError` from the interop and keeps
+      `FacadeBase` on the toolkit. Zero errors in the store libs.
+    - D6 is fixed: the 2 false mismatches are now reused (`getContent`, `getMatchResults`), and the 3 left are the
+      real ones.
+    - Cause B: prep now names the 4 prebuilt internal packages and the v2 names each imports. It is still the hard
+      blocker. One package's FESM imports the `QueryClient` value, so the bundle cannot link. In `tsc` it shows up as
+      20 `TS7006` implicit-any errors (creators typed with v2 `QueryCreator`) and 5 `_updateBaseRoute` errors on a
+      package's client.
+    - `tsc` (57 projects): 129 unique errors. 93 were already there before the SDK update (story files: `Story`,
+      `HttpClientModule`, missing mdx/modules). Of the 36 new ones, 25 are cause B. The other 11 do not come from
+      the query generators:
+      - Defect: after core `migrate-to-v5` renames `ProvideThemeDirective` → `ProvideColorDirective`, cdk
+        `migrate-to-v5` does not move the import, because `THEMING_EXPORTS` in
+        `libs/cdk/generators/migrate-to-v5/color-themes.ts` only lists the old name. Result: 9 files
+        `import { ProvideColorDirective } from '@ethlete/cdk'` (TS2459). Repro: that import alone, run cdk
+        `migrate-to-v5`, and it stays unchanged.
+      - Gap: core 5 removed `Memo` and `StringTemplate` (experimental props module, 4c49a55d3). Core `migrate-to-v5`
+        neither rewrites nor reports them, and no changeset names them. 1 site each.
+      - Manual: `@ethlete/types` 2.x makes `MatchListView.startTime` `string | null` (1 site).
+      - Manual: cdk `migrate-to-v5` drops `@ethlete/theming` from `package.json`, so `yarn install` is needed. It
+        was skipped here because the SDK comes from the dist copy.
+    - Build: the libs stop at `queries` (`StringTemplate`) and `uikit-matches` (`Memo`). The apps fail on the same
+      errors plus the cause B errors (producer 37 error lines, public and widgets 2 each). Bundling is not reached,
+      and the app was not served.
 - [ ] S5 Guide `apps/docs/query/migrating-from-ngrx-toolkit.md` + sidebar link.
 
 ## Continue on 2026-09-26
