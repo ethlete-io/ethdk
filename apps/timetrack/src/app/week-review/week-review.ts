@@ -71,6 +71,7 @@ const WEEK_REVIEW_DEF = /* @__PURE__ */ defineProvider(() => {
     settings: settings.settings(),
     repoRoots: git.discovery()?.repos ?? [],
     links: projectLinks(),
+    worktrees: git.worktrees(),
     windows: windows.lastRun(),
     sessions: agentSessions.lastRun(),
     git: git.lastRun(),
@@ -84,6 +85,7 @@ const WEEK_REVIEW_DEF = /* @__PURE__ */ defineProvider(() => {
           settings: current.settings,
           repoRoots: current.repoRoots,
           links: current.links,
+          worktrees: current.worktrees,
           start: current.start,
         }).pipe(
           map((value): Loaded => ({ start: current.start, value, failure: null })),

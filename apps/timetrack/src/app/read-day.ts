@@ -34,6 +34,8 @@ export type DayReadOptions = {
   settings: TimetrackSettings;
   repoRoots: readonly string[];
   links: readonly TimetrackProjectLink[];
+  /** Each linked worktree mapped to its main checkout, from the git collector's `worktrees()`. */
+  worktrees: Readonly<Record<string, string>>;
   /** The standing commitments the user's Tempo history holds, from `injectRecurringPatterns`. */
   patterns?: readonly RecurringPattern[];
   /**
@@ -71,6 +73,7 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
         repoRoots: options.repoRoots,
         settings,
         links: options.links,
+        worktrees: options.worktrees,
         patterns: options.patterns,
         windowsSeenThroughMs: options.windowsSeenThroughMs,
         through: at,

@@ -136,6 +136,7 @@ const EPIC_SIBLINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     settings: settings.settings(),
     repoRoots: git.discovery()?.repos ?? [],
     links: projectLinks(),
+    worktrees: git.worktrees(),
   }));
 
   const read = toSignal(
@@ -147,6 +148,7 @@ const EPIC_SIBLINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
               settings: current.settings,
               repoRoots: current.repoRoots,
               links: current.links,
+              worktrees: current.worktrees,
               day: current.day,
             }).pipe(
               map((day) =>

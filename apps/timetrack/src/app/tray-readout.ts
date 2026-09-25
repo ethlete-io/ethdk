@@ -198,6 +198,7 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       settings: current,
       repoRoots: git.discovery()?.repos ?? [],
       links: projectLinks(),
+      worktrees: git.worktrees(),
       windowsSeenThroughMs: windows.lastRun()?.at.getTime(),
     }).pipe(
       map(({ events, day, review }) => {

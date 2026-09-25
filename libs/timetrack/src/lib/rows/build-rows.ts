@@ -8,7 +8,7 @@ import { TimeWindow } from '../model/time-window';
 import { attendedAt, markAttendance } from './attended';
 import { AttributeOptions, attribute } from './attribute';
 import { CallMatch, dropCallWindows, matchCalls } from './calls';
-import { BehindStretch, CutOptions, cutBackground, cutUnwatched, meetLaneRows } from './cut';
+import { BehindStretch, CutOptions, cutBackground, cutUnwatched, joinTouching, meetLaneRows } from './cut';
 import { DescribeOptions } from './describe';
 import { DonateOptions, donateBlocks } from './donate';
 import { DEFAULT_FILL_OPTIONS, FillOptions, fillGaps } from './fill';
@@ -50,6 +50,11 @@ export type BuildRowsOptions = {
   donate?: Partial<DonateOptions>;
   /** Which projects run behind the day, and the focus that ranks two of them — see `cutBackground`. */
   cut?: CutOptions;
+  /**
+   * Each linked worktree mapped to its main checkout, from `linkedWorktreesOf`. A checkout and its
+   * worktrees are one attention — see `cutUnwatched`.
+   */
+  worktrees?: Readonly<Record<string, string>>;
   /** The longest idle gap that joins the work before it. `maxFillGapMs: 0` fills nothing. */
   fill?: Partial<FillOptions>;
   /** How a meeting is named. `config` and `patterns` are taken from the day's own, not repeated here. */
@@ -188,8 +193,14 @@ export const buildRows = (
   const working = attributed.filter((entry) => !entry.privateLink);
   // Before donation rather than after: a minute another session of the same checkout already books
   // must not lend its time to the work beside it either.
-  const watched = cutUnwatched({ blocks: working, events: options.events });
-  const donated = donateBlocks({ blocks: watched, rules: options.rules, options: options.donate });
+  const watched = cutUnwatched({
+    blocks: working,
+    events: options.events,
+    worktrees: options.worktrees,
+    focusByStream: options.cut?.focusByStream,
+    round: options.round,
+  });
+  const donated = donateBlocks({ blocks: watched.blocks, rules: options.rules, options: options.donate });
   // Before the gaps are filled rather than after: a filled minute is idle time joined to the work
   // around it, and cutting one away afterwards would leave `filledMs` claiming time no row holds.
   // The calls are handed in raw rather than as the rows `matchCalls` builds later: a call is the
@@ -270,7 +281,7 @@ export const buildRows = (
     timers,
     filledMs: filled.filledMs,
     behind: meetLaneRows({
-      behind: cut.behind,
+      behind: joinTouching([...watched.behind, ...cut.behind]),
       rows: [...proposals, ...unnamed],
       round: options.round,
     }),

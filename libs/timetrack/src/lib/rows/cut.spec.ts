@@ -367,7 +367,7 @@ describe('cutUnwatched', () => {
     const kept = cutUnwatched({
       blocks: [ran({ session: 'a', from: '10:15', to: '11:30' }), ran({ session: 'b', from: '11:15', to: '11:45' })],
       events: [typed({ session: 'a', clock: '10:15' }), typed({ session: 'b', clock: '11:15' })],
-    });
+    }).blocks;
 
     expect(held(kept)).toEqual([
       { session: 'a', from: '10:15', to: '11:15' },
@@ -383,7 +383,7 @@ describe('cutUnwatched', () => {
         typed({ session: 'b', clock: '11:00' }),
         typed({ session: 'a', clock: '11:30' }),
       ],
-    });
+    }).blocks;
 
     expect(held(kept)).toEqual([
       { session: 'a', from: '10:15', to: '11:00' },
@@ -396,7 +396,7 @@ describe('cutUnwatched', () => {
     const kept = cutUnwatched({
       blocks: [ran({ session: 'a', from: '10:15', to: '12:00' }), ran({ session: 'b', from: '11:00', to: '11:10' })],
       events: [typed({ session: 'a', clock: '10:15' }), typed({ session: 'b', clock: '11:00' })],
-    });
+    }).blocks;
 
     expect(held(kept)).toEqual([
       { session: 'a', from: '10:15', to: '11:00' },
@@ -409,7 +409,7 @@ describe('cutUnwatched', () => {
     const kept = cutUnwatched({
       blocks: [ran({ session: 'a', from: '10:15', to: '11:30' }), ran({ session: 'b', from: '11:15', to: '11:45' })],
       events: [],
-    });
+    }).blocks;
 
     expect(held(kept)).toEqual([
       { session: 'a', from: '10:15', to: '11:30' },
@@ -423,12 +423,85 @@ describe('cutUnwatched', () => {
       ran({ session: 'b', from: '11:00', to: '11:45', repoPath: SDK }),
     ];
 
-    expect(held(cutUnwatched({ blocks, events: [typed({ session: 'b', clock: '11:00' })] }))).toEqual(held(blocks));
+    expect(held(cutUnwatched({ blocks, events: [typed({ session: 'b', clock: '11:00' })] }).blocks)).toEqual(
+      held(blocks),
+    );
   });
 
   it('leaves a checkout that ran no agent untouched', () => {
     const blocks = [attributed({ repoPath: APP, from: '10:15', to: '11:30' })];
 
-    expect(cutUnwatched({ blocks, events: [] })).toEqual(blocks);
+    expect(cutUnwatched({ blocks, events: [] }).blocks).toEqual(blocks);
+  });
+
+  describe('across a checkout and its linked worktrees', () => {
+    const WORKTREE = `${APP}-altcha`;
+    const worktrees = { [WORKTREE]: APP };
+    const focused = (options: { from: string; to: string }): AttributedBlock =>
+      attributed({ repoPath: APP, ...options });
+    const inWorktree = (options: { session: string; from: string; to: string }): AttributedBlock => ({
+      ...ran({ ...options, repoPath: WORKTREE }),
+      issueKey: 'ABC-7',
+    });
+
+    it('books an instant once, to the checkout the focused window was on', () => {
+      const result = cutUnwatched({
+        blocks: [focused({ from: '14:15', to: '18:00' }), inWorktree({ session: 'w', from: '15:00', to: '16:00' })],
+        events: [typed({ session: 'w', clock: '15:30' })],
+        worktrees,
+        focusByStream: { [streamKey({ repoPath: APP })]: [{ from: at('14:15'), to: at('18:00') }] },
+      });
+
+      expect(result.blocks.map((entry) => entry.block.context.repoPath)).toEqual([APP]);
+      expect(result.behind).toEqual([
+        { from: at('15:00'), to: at('16:00'), issueKey: 'ABC-7', laneKey: streamKey({ repoPath: WORKTREE }) },
+      ]);
+    });
+
+    it('keeps what the worktree ran outside the time of its main checkout', () => {
+      const result = cutUnwatched({
+        blocks: [focused({ from: '14:15', to: '15:30' }), inWorktree({ session: 'w', from: '15:00', to: '16:00' })],
+        events: [],
+        worktrees,
+        focusByStream: { [streamKey({ repoPath: APP })]: [{ from: at('14:15'), to: at('15:30') }] },
+      });
+
+      expect(held(result.blocks)).toEqual([
+        { session: undefined, from: '14:15', to: '15:30' },
+        { session: 'w', from: '15:30', to: '16:00' },
+      ]);
+    });
+
+    it('gives an instant nobody focused to the session the user prompted last', () => {
+      const result = cutUnwatched({
+        blocks: [
+          ran({ session: 'a', from: '10:00', to: '11:00' }),
+          inWorktree({ session: 'w', from: '10:00', to: '11:00' }),
+        ],
+        events: [typed({ session: 'a', clock: '10:00' }), typed({ session: 'w', clock: '10:30' })],
+        worktrees,
+      });
+
+      expect(held(result.blocks)).toEqual([
+        { session: 'a', from: '10:00', to: '10:30' },
+        { session: 'w', from: '10:30', to: '11:00' },
+      ]);
+    });
+
+    it('still cuts nothing between two repositories that are not worktrees of each other', () => {
+      const blocks = [
+        focused({ from: '14:15', to: '18:00' }),
+        { ...ran({ session: 's', from: '15:00', to: '16:00', repoPath: SDK }), issueKey: 'ABC-7' },
+      ];
+      const result = cutUnwatched({
+        blocks,
+        events: [],
+        worktrees,
+        focusByStream: { [streamKey({ repoPath: APP })]: [{ from: at('14:15'), to: at('18:00') }] },
+      });
+
+      expect(result.blocks).toEqual(blocks);
+      expect(result.behind).toEqual([]);
+    });
   });
 });

@@ -71,6 +71,8 @@ export const streamDayOptionsOf = (options: {
   settings: TimetrackSettings;
   /** From `injectProjectLinks`, so a linked worktree is filed the way its main checkout is. */
   links: readonly TimetrackProjectLink[];
+  /** Each linked worktree mapped to its main checkout, from the git collector's `worktrees()`. */
+  worktrees: Readonly<Record<string, string>>;
   /** The standing commitments the user's Tempo history holds, from `injectRecurringPatterns`. */
   patterns?: readonly RecurringPattern[];
   /** What a sibling checkout on the same branch name books, from `injectEpicSiblings`. */
@@ -98,6 +100,7 @@ export const streamDayOptionsOf = (options: {
       epics: options.epics,
       through: options.through,
     }),
+    worktrees: options.worktrees,
     ...options.rows,
   },
 });

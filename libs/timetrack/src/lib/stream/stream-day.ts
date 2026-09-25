@@ -1469,15 +1469,20 @@ export const streamDay = (options: {
     ],
     observations,
   });
-  // The focus ranks two background bands against each other. It is derived here because only this
-  // pass holds it, and `buildRows` takes blocks that no longer say which stream they came from.
+  // The focus ranks two background bands against each other, and decides which of a checkout and its
+  // worktrees keeps an instant both held. It is derived here because only this pass holds it, and
+  // `buildRows` takes blocks that no longer say which stream they came from.
   const focusMsByStream: Record<string, number> = {};
+  const focusByStream: Record<string, TimeWindow[]> = {};
 
   for (const span of clipSpans({ spans: focusSpans, within: seen })) {
     const key = streamKey(span.context);
 
     focusMsByStream[key] = (focusMsByStream[key] ?? 0) + (span.to.getTime() - span.from.getTime());
+    (focusByStream[key] ??= []).push({ from: span.from, to: span.to });
   }
+
+  for (const key of Object.keys(focusByStream)) focusByStream[key] = mergeWindows(focusByStream[key] ?? []);
 
   const rows = buildRows({
     ...config.rows,
@@ -1489,7 +1494,7 @@ export const streamDay = (options: {
     remoteWork: remoteWorkWindows(remoteOptions),
     bookedRemote: bookedRemoteWindows({ ...remoteOptions, remotePrompts, maxRemoteAttentionMs }),
     maxRemoteAttentionMs,
-    cut: { ...config.rows?.cut, focusMsByStream },
+    cut: { ...config.rows?.cut, focusMsByStream, focusByStream },
   });
 
   const presenceMs = windowsMs(presence);

@@ -82,6 +82,7 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     settings: settings.settings(),
     repoRoots: git.discovery()?.repos ?? [],
     links: projectLinks(),
+    worktrees: git.worktrees(),
   }));
 
   /**
@@ -96,7 +97,14 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
         probe.days.length
           ? combineLatest(
               probe.days.map((day) =>
-                readDay$({ ports, settings: probe.settings, repoRoots: probe.repoRoots, links: probe.links, day }).pipe(
+                readDay$({
+                  ports,
+                  settings: probe.settings,
+                  repoRoots: probe.repoRoots,
+                  links: probe.links,
+                  worktrees: probe.worktrees,
+                  day,
+                }).pipe(
                   map((read) => read.review.rows),
                   catchError(() => of<ReviewedRow[]>([])),
                 ),

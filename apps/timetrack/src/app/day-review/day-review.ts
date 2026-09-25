@@ -398,6 +398,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
             repoRoots: git.discovery()?.repos ?? [],
             settings: settings.settings(),
             links: projectLinks(),
+            worktrees: git.worktrees(),
             patterns: recurring.patterns(),
             epics: epics.optionsFor(day()),
             windowsSeenThroughMs: windows.lastRun()?.at.getTime(),

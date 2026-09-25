@@ -213,6 +213,7 @@ export class UnnamedFocusComponent {
     day: localDayKey(new Date(), dayBoundaryOf(this.settings.settings())),
     repoRoots: this.git.discovery()?.repos ?? [],
     links: this.projectLinks(),
+    worktrees: this.git.worktrees(),
     settings: this.settings.settings(),
     patterns: this.recurring.patterns(),
     windows: this.windows.lastRun(),
@@ -231,6 +232,7 @@ export class UnnamedFocusComponent {
           repoRoots: current.repoRoots,
           settings: current.settings,
           links: current.links,
+          worktrees: current.worktrees,
           patterns: current.patterns,
           windowsSeenThroughMs: current.windows?.at.getTime(),
         });

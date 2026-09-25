@@ -20,6 +20,11 @@ export type CutOptions = {
    */
   focusMsByStream?: Readonly<Record<string, number>>;
   /**
+   * The focused window's time per `streamKey`, from the same spans. It decides which of a checkout and
+   * its linked worktrees keeps an instant both held — see `cutUnwatched`.
+   */
+  focusByStream?: Readonly<Record<string, readonly TimeWindow[]>>;
+  /**
    * Windows the day already holds as work outside its blocks — the calls a rule counts as work. A
    * meeting is the foreground of the minutes it runs in, and it carries no block for the cut to read
    * it off, so it has to be handed in.
@@ -219,8 +224,10 @@ export const joinTouching = (stretches: readonly BehindStretch[]): BehindStretch
  * which projects those are; no rule can read it off a day, because the same repository is background
  * on one day and the whole of the work on the next.
  *
- * Only a background band ever loses time. Two foreground bands that overlap are a day that ran two
- * things at once, which is what `concurrency` is for and not a defect to resolve. Two background bands
+ * Only a background band ever loses time. Two foreground bands of two repositories that overlap are a
+ * day that ran two things at once, which is what `concurrency` is for and not a defect to resolve. A
+ * checkout and its linked worktrees are one attention, and `cutUnwatched` has already resolved them
+ * before this runs. Two background bands
  * are ranked against each other by the focus their streams held, then by which started first, so the
  * cut always resolves and never asks the reviewer to.
  *
@@ -291,6 +298,11 @@ export const cutBackground = (options: { blocks: readonly AttributedBlock[] } & 
  * minutes go to the session the user prompted last, because a prompt is the only direct evidence of
  * attention a day holds — `plans/timetrack/one-session-one-piece.md` decides it.
  *
+ * A checkout and its linked worktrees are one attention — ADR 0034. Where two of them hold the same
+ * instant, the one the focused window was on keeps it, else the one holding the session the user
+ * prompted last. What the others lose is reported as `behind`, the way `cutBackground` reports it.
+ * Two checkouts that are not worktrees of each other are two things at once and keep their minutes.
+ *
  * Only an instant two sessions really held is cut. A session running alone keeps its minutes whatever
  * the last prompt named: nothing else claims them, so nothing would be booked twice.
  *
@@ -304,80 +316,158 @@ export const cutBackground = (options: { blocks: readonly AttributedBlock[] } & 
 export const cutUnwatched = (options: {
   blocks: readonly AttributedBlock[];
   events: readonly CollectedEvent[];
-}): AttributedBlock[] => {
+  /** Each linked worktree mapped to its main checkout, as `linkedWorktreesOf` builds it. */
+  worktrees?: Readonly<Record<string, string>>;
+  focusByStream?: CutOptions['focusByStream'];
+  round?: Partial<RoundOptions>;
+}): CutResult => {
   const prompts = watchPrompts(options.events);
-  const byStream = new Map<string, AttributedBlock[]>();
+  const worktrees = options.worktrees ?? {};
+  const attentionOf = (entry: AttributedBlock) => {
+    const main = worktrees[entry.block.context.repoPath ?? ''];
+
+    return main ? streamKey({ repoPath: main }) : streamKey(entry.block.context);
+  };
+  const unitOf = (entry: AttributedBlock) =>
+    `${streamKey(entry.block.context)}\u0000${entry.block.context.session ?? ''}`;
+  const byAttention = new Map<string, AttributedBlock[]>();
 
   for (const entry of options.blocks) {
-    if (!entry.block.context.session) continue;
+    if (!entry.block.context.session && !entry.block.context.repoPath) continue;
 
-    const key = streamKey(entry.block.context);
-    const found = byStream.get(key);
+    const key = attentionOf(entry);
+    const found = byAttention.get(key);
 
     if (found) found.push(entry);
-    else byStream.set(key, [entry]);
+    else byAttention.set(key, [entry]);
   }
 
-  const cutKey = (stream: string, session: string) => `${stream}\u0000${session}`;
   const unwatched = new Map<string, TimeWindow[]>();
+  const lost = new Map<string, TimeWindow[]>();
+  const push = (into: Map<string, TimeWindow[]>, cut: { unit: string; window: TimeWindow }) => {
+    const found = into.get(cut.unit);
 
-  for (const [stream, entries] of byStream) {
-    const startedAt = new Map<string, number>();
+    if (found) found.push(cut.window);
+    else into.set(cut.unit, [cut.window]);
+  };
 
-    for (const entry of entries) {
-      const session = entry.block.context.session ?? '';
+  for (const entries of byAttention.values()) {
+    const streams = new Set(entries.map((entry) => streamKey(entry.block.context)));
+    const candidates = streams.size > 1 ? entries : entries.filter((entry) => entry.block.context.session);
+    const units = new Map<string, { stream: string; session?: string; startedAt: number }>();
+
+    for (const entry of candidates) {
+      const unit = unitOf(entry);
       const from = entry.block.from.getTime();
+      const found = units.get(unit);
 
-      startedAt.set(session, Math.min(startedAt.get(session) ?? from, from));
+      units.set(unit, {
+        stream: streamKey(entry.block.context),
+        session: entry.block.context.session,
+        startedAt: Math.min(found?.startedAt ?? from, from),
+      });
     }
 
-    if (startedAt.size < 2) continue;
+    if (units.size < 2) continue;
 
-    // A prompt is an edge as much as a block boundary is: attention moves to another session in the
-    // middle of a stretch both of them held, and an interval that spans the move has two answers.
+    const sessions = new Set([...units.values()].flatMap((unit) => (unit.session ? [unit.session] : [])));
+    const focus = new Map([...streams].map((stream) => [stream, options.focusByStream?.[stream] ?? []]));
+    // A prompt and a focus switch are edges as much as a block boundary is: attention moves in the
+    // middle of a stretch two units held, and an interval that spans the move has two answers.
     const edges = [
       ...new Set([
-        ...entries.flatMap((entry) => [entry.block.from.getTime(), entry.block.to.getTime()]),
-        ...prompts.filter((prompt) => startedAt.has(prompt.sessionId)).map((prompt) => prompt.at.getTime()),
+        ...candidates.flatMap((entry) => [entry.block.from.getTime(), entry.block.to.getTime()]),
+        ...prompts.filter((prompt) => sessions.has(prompt.sessionId)).map((prompt) => prompt.at.getTime()),
+        ...(streams.size > 1
+          ? [...focus.values()].flatMap((windows) => windows.flatMap((w) => [w.from.getTime(), w.to.getTime()]))
+          : []),
       ]),
     ].sort((left, right) => left - right);
+    const olderFirst = (left: string, right: string) =>
+      (units.get(left)?.startedAt ?? 0) - (units.get(right)?.startedAt ?? 0) || left.localeCompare(right);
 
     for (let index = 0; index < edges.length - 1; index++) {
       const from = edges[index] ?? 0;
       const to = edges[index + 1] ?? 0;
+      const window = { from: new Date(from), to: new Date(to) };
       const covering = new Set(
-        entries
-          .filter((entry) => entry.block.from.getTime() <= from && entry.block.to.getTime() >= to)
-          .map((entry) => entry.block.context.session ?? ''),
+        candidates.filter((entry) => entry.block.from.getTime() <= from && entry.block.to.getTime() >= to).map(unitOf),
       );
 
       if (covering.size < 2) continue;
 
-      const oldest = [...covering].sort(
-        (left, right) => (startedAt.get(left) ?? 0) - (startedAt.get(right) ?? 0) || left.localeCompare(right),
-      )[0];
-      const watched = watchedAt({ prompts, among: covering, at: new Date(from) }) ?? oldest;
+      const held = new Set([...covering].map((unit) => units.get(unit)?.stream ?? ''));
+      let watchedStream = [...held][0] ?? '';
 
-      for (const session of covering) {
-        if (session === watched) continue;
+      if (held.size > 1) {
+        const focused = [...held].find((stream) =>
+          (focus.get(stream) ?? []).some((w) => w.from.getTime() <= from && w.to.getTime() >= to),
+        );
+        const coveringSessions = new Set(
+          [...covering].flatMap((unit) => {
+            const session = units.get(unit)?.session;
 
-        const key = cutKey(stream, session);
-        const found = unwatched.get(key);
+            return session ? [session] : [];
+          }),
+        );
+        const prompted = watchedAt({ prompts, among: coveringSessions, at: window.from });
+        const promptedUnit = [...covering].find((unit) => prompted && units.get(unit)?.session === prompted);
+        const oldest = [...covering].sort(olderFirst)[0] ?? '';
 
-        if (found) found.push({ from: new Date(from), to: new Date(to) });
-        else unwatched.set(key, [{ from: new Date(from), to: new Date(to) }]);
+        watchedStream = focused ?? units.get(promptedUnit ?? oldest)?.stream ?? '';
+
+        for (const unit of covering) {
+          if (units.get(unit)?.stream === watchedStream) continue;
+
+          push(unwatched, { unit, window });
+          push(lost, { unit, window });
+        }
       }
+
+      const running = [...covering].filter((unit) => {
+        const found = units.get(unit);
+
+        return found?.stream === watchedStream && !!found.session;
+      });
+
+      if (running.length < 2) continue;
+
+      const among = new Set(running.map((unit) => units.get(unit)?.session ?? ''));
+      const watchedSession = watchedAt({ prompts, among, at: window.from });
+      const watched =
+        running.find((unit) => units.get(unit)?.session === watchedSession) ?? [...running].sort(olderFirst)[0];
+
+      for (const unit of running) if (unit !== watched) push(unwatched, { unit, window });
     }
   }
 
-  if (!unwatched.size) return [...options.blocks];
+  if (!unwatched.size) return { blocks: [...options.blocks], behind: [] };
 
-  return options.blocks
-    .flatMap((entry) => {
-      const session = entry.block.context.session;
-      const windows = session ? unwatched.get(cutKey(streamKey(entry.block.context), session)) : undefined;
+  const behind: BehindStretch[] = [];
+  const blocks = options.blocks.flatMap((entry) => {
+    const unit = unitOf(entry);
+    const windows = unwatched.get(unit);
 
-      return windows?.length ? piecesOf(entry, windows) : [entry];
-    })
-    .sort((left, right) => left.block.from.getTime() - right.block.from.getTime());
+    if (!windows?.length) return [entry];
+
+    const losses = lost.get(unit);
+    const issueKey = entry.issueKey;
+
+    if (losses?.length && issueKey) {
+      behind.push(
+        ...holesOf({ block: entry.block, kept: piecesOf(entry, losses).map((piece) => piece.block) }).map((hole) => ({
+          ...hole,
+          issueKey,
+          laneKey: streamKey(entry.block.context),
+        })),
+      );
+    }
+
+    return piecesOf(entry, windows);
+  });
+
+  return {
+    blocks: blocks.sort((left, right) => left.block.from.getTime() - right.block.from.getTime()),
+    behind: snapStretches(joinTouching(behind), options.round),
+  };
 };
