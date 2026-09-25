@@ -311,6 +311,10 @@ const recommendedTs = {
     // — use getCookie / setCookie / hasCookie / deleteCookie from '@ethlete/core' instead
     'ethlete/no-document-cookie': 'error',
 
+    // No code a strict CSP (no 'unsafe-inline' / 'unsafe-eval') blocks: style attributes,
+    // un-nonced <script>/<style> elements, eval / new Function / string timers
+    'ethlete/no-csp-unsafe': 'error',
+
     // Injected providers must be private by default, and protected only when
     // referenced from an Angular template or host binding.
     'ethlete/inject-member-accessibility': 'error',
@@ -428,6 +432,8 @@ const recommendedTemplate = {
     'ethlete/prefer-static-boolean-properties': 'warn',
     // A form must handle its own submission
     'ethlete/require-form-submit': 'error',
+    // No static style attribute or [attr.style] binding - a strict CSP blocks both
+    'ethlete/no-csp-unsafe': 'error',
   },
 };
 
@@ -441,6 +447,7 @@ const recommendedSpec = {
     '@typescript-eslint/no-non-null-assertion': 'off',
     'no-restricted-globals': 'off',
     'ethlete/no-async-await': 'off',
+    'ethlete/no-csp-unsafe': 'off',
     'ethlete/no-direct-dom-manipulation': 'off',
     'ethlete/no-document-cookie': 'off',
     'ethlete/no-dom-query': 'off',

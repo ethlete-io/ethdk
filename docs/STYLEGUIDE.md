@@ -1,4 +1,4 @@
-# Style Guide v0.26.0
+# Style Guide v0.27.0
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -72,6 +72,7 @@ Run `npx nx lint <project> --fix` - the rules below are enforced (and mostly aut
 | No interpolated template literal above an inline `template:` - it kills Angular language service completions in that file                  | `ethlete/no-template-literal-before-inline-template`                                                                                                                                                                |
 | Routing components: `-view` path + `ViewComponent` class name                                                                              | `ethlete/enforce-routing-view-naming`                                                                                                                                                                               |
 | No direct `document` / `window` / DOM query / observers / cookies / `window.location`                                                      | `no-restricted-globals`, `ethlete/no-direct-dom-manipulation`, `ethlete/no-dom-query`, `ethlete/no-native-observers`, `ethlete/no-document-cookie`, `ethlete/no-window-location`                                    |
+| Nothing a strict CSP blocks: no `style` attributes, no `<script>`/`<style>` without a nonce, no `eval` / `new Function` / string timers    | `ethlete/no-csp-unsafe`                                                                                                                                                                                             |
 | Prefer reactive element dimensions and managed scroll listeners                                                                            | `ethlete/prefer-element-dimensions`, `ethlete/prefer-scroll-state`                                                                                                                                                  |
 | No barrel (index) imports - import from the source file                                                                                    | `no-restricted-syntax`                                                                                                                                                                                              |
 | Prefer `@ethlete/core` utils over raw APIs (clone/equal, rxjs timers, media query, viewport size, SEO, locale, router state)               | `ethlete/prefer-clone-equal`, `ethlete/prefer-rxjs-timer`, `ethlete/prefer-match-media`, `ethlete/prefer-viewport-size`, `ethlete/no-angular-seo-services`, `ethlete/no-locale-id`, `ethlete/no-angular-router-api` |

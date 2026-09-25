@@ -30,6 +30,7 @@ const noLegacyAngularDecorators = require('./rules/no-legacy-angular-decorators'
 const noAngularSeoServices = require('./rules/no-angular-seo-services');
 const preferCloneEqual = require('./rules/prefer-clone-equal');
 const noDocumentCookie = require('./rules/no-document-cookie');
+const noCspUnsafe = require('./rules/no-csp-unsafe');
 const injectMemberAccessibility = require('./rules/inject-member-accessibility');
 const noRedundantInternal = require('./rules/no-redundant-internal');
 const templateMemberAccessibility = require('./rules/template-member-accessibility');
@@ -102,6 +103,7 @@ const plugin = {
     'no-angular-seo-services': noAngularSeoServices,
     'prefer-clone-equal': preferCloneEqual,
     'no-document-cookie': noDocumentCookie,
+    'no-csp-unsafe': noCspUnsafe,
     'inject-member-accessibility': injectMemberAccessibility,
     'no-redundant-internal': noRedundantInternal,
     'template-member-accessibility': templateMemberAccessibility,

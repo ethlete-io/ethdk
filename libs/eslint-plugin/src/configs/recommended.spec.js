@@ -702,6 +702,22 @@ test('no-document-cookie: setCookie from @ethlete/core is valid', () => {
   expect(ruleIds(msgs)).not.toContain('ethlete/no-document-cookie');
 });
 
+// ── ethlete/no-csp-unsafe ─────────────────────────────────────────────────────
+test('no-csp-unsafe: setAttribute style is flagged', () => {
+  const msgs = lint(`el.setAttribute('style', 'color: red');`);
+  expect(ruleIds(msgs)).toContain('ethlete/no-csp-unsafe');
+});
+
+test('no-csp-unsafe: CSSOM style is valid', () => {
+  const msgs = lint(`el.style.setProperty('color', 'red');`);
+  expect(ruleIds(msgs)).not.toContain('ethlete/no-csp-unsafe');
+});
+
+test('no-csp-unsafe: off in spec files', () => {
+  const msgs = lintSpec(`it('works', () => { el.setAttribute('style', 'color: red'); });`);
+  expect(ruleIds(msgs)).not.toContain('ethlete/no-csp-unsafe');
+});
+
 // ── ethlete/no-angular-router-api ─────────────────────────────────────────────
 test('no-angular-router-api: import ActivatedRoute is flagged', () => {
   const msgs = lint(`import { ActivatedRoute } from '@angular/router';`);

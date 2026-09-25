@@ -83,4 +83,11 @@ export default [
     ...ethlete.configs.recommendedSpec,
     files: [...ethlete.configs.recommendedSpec.files, '**/testing/**/*.ts', '**/test-helpers.ts'],
   },
+  // Storybook and the spec-only drivers never run under an application's CSP.
+  {
+    files: ['**/stories/**', '**/*.stories.ts', '**/testing/**'],
+    rules: {
+      'ethlete/no-csp-unsafe': 'off',
+    },
+  },
 ];

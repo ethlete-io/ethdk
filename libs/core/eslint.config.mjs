@@ -125,4 +125,11 @@ export default [
   },
   // Relaxed rules for spec files (non-null assertions are common and intentional in tests)
   ethlete.configs.recommendedSpec,
+  // Storybook and the spec-only drivers never run under an application's CSP.
+  {
+    files: ['**/stories/**', '**/*.stories.ts', '**/testing/**'],
+    rules: {
+      'ethlete/no-csp-unsafe': 'off',
+    },
+  },
 ];

@@ -305,6 +305,17 @@ These rules steer code away from raw browser and Angular platform APIs toward th
 | `no-angular-seo-services`    | No Angular `Title` / `Meta` services - use `applyHeadTitleBinding()`, `applyMetaBinding()` and `applyLinkBinding()`                      |     | error   |
 | `no-locale-id`               | No `inject(LOCALE_ID)` for application locale state - use `injectLocale()`; Angular provider registration remains allowed                |     | error   |
 | `prefer-clone-equal`         | `clone()` / `equal()` instead of JSON round-trips, `structuredClone` or lodash `cloneDeep` / `isEqual`                                   |     | error   |
+| `no-csp-unsafe`              | No code a strict CSP (no `'unsafe-inline'` / `'unsafe-eval'`) blocks - see below                                                         |     | error   |
+
+`no-csp-unsafe` keeps code working under a policy like `script-src 'self' 'nonce-…'; style-src 'self' 'nonce-…'`. In TypeScript it flags `setAttribute('style', …)` (on an element or a renderer), a `style` key in `setAttributes()` or in a decorator's `host` (including `'[attr.style]'`), a `createElement('script' | 'style')` whose element never gets a `nonce` in the same function (`el.nonce = …`, `el.setAttribute('nonce', …)`, `renderer.setAttribute(el, 'nonce', …)`), `eval`, `new Function`, and `setTimeout` / `setInterval` with a string, plus any string or template literal that looks like HTML with a `style=` attribute (`<p style="…">`). It also runs in `recommendedTemplate`, where it flags a static `style="…"` attribute and an `[attr.style]` binding - inline `template:` strings are covered there through `processInlineTemplates`, so the TypeScript check skips them. CSSOM writes stay allowed: `el.style.x = …`, `style.setProperty()`, `[style.x]` and `[style]` bindings. The rule is off in `recommendedSpec`.
+
+```html
+<!-- ❌ a static style attribute is blocked without 'unsafe-inline' -->
+<et-skeleton-item style="block-size: 120px" />
+
+<!-- ✅ a style binding goes through CSSOM -->
+<et-skeleton-item [style.block-size.px]="120" />
+```
 
 ```ts
 // ❌ one-shot read, not reactive
