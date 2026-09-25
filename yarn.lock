@@ -4601,9 +4601,13 @@ __metadata:
   peerDependencies:
     "@angular-eslint/eslint-plugin-template": ">=21.0.0"
     "@angular/core": ">=21.0.0"
+    "@nx/devkit": ">=21.0.0"
     "@typescript-eslint/eslint-plugin": ">=8.0.0"
     eslint: ">=9.0.0"
     typescript: ">=5.9.0"
+  peerDependenciesMeta:
+    "@nx/devkit":
+      optional: true
   languageName: unknown
   linkType: soft
 

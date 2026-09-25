@@ -49,6 +49,8 @@ export type MatchState = (typeof MatchState)[keyof typeof MatchState];
 
 `consistent-type-definitions` replaces `@typescript-eslint/consistent-type-definitions`, which the recommended config turns off. The upstream fix rewrites a module augmentation into a type alias; a type alias merges into nothing, and under `skipLibCheck` the registration silently disappears. Keep augmentations as interfaces, and rename an existing `eslint-disable` for the upstream rule to `ethlete/consistent-type-definitions`.
 
+[`et update`](/cli/update) repairs both when it moves a repo past `1.0.0-next.24`: it turns every object-literal type alias directly inside a `declare module` or `declare global` block back into an interface, lists the aliases of any other shape for review, and renames the rule in `eslint-disable` and `eslint-enable` directives. Run it by hand with `nx g @ethlete/eslint-plugin:restore-module-augmentation-interfaces`.
+
 ```ts
 // ✅ stays an interface
 declare module '@ethlete/core' {

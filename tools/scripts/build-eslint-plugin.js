@@ -5,7 +5,7 @@ const workspaceRoot = path.join(__dirname, '..', '..');
 const sourceRoot = path.join(workspaceRoot, 'libs', 'eslint-plugin');
 const outputRoot = path.join(workspaceRoot, 'dist', 'libs', 'eslint-plugin');
 
-const filesToCopy = ['CHANGELOG.md', 'README.md', 'package.json'];
+const filesToCopy = ['CHANGELOG.md', 'README.md', 'package.json', 'migrations.json'];
 
 fs.rmSync(outputRoot, { force: true, recursive: true });
 fs.mkdirSync(outputRoot, { recursive: true });

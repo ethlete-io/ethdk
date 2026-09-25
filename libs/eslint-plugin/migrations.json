@@ -1,0 +1,12 @@
+{
+  "migrations": [
+    {
+      "name": "module-augmentation-interfaces",
+      "version": "1.0.0-next.25",
+      "kind": "auto",
+      "description": "Turn the type aliases the old consistent-type-definitions fix left in declare module / declare global blocks back into interfaces, and rename its eslint-disable directives to ethlete/consistent-type-definitions.",
+      "generator": "@ethlete/eslint-plugin:restore-module-augmentation-interfaces",
+      "docs": "/eslint/rules"
+    }
+  ]
+}

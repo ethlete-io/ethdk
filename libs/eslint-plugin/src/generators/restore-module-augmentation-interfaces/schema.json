@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "restore-module-augmentation-interfaces",
+  "title": "Restore module augmentation interfaces",
+  "type": "object",
+  "properties": {
+    "skipFormat": {
+      "type": "boolean",
+      "description": "Skip formatting files after migration",
+      "default": false
+    }
+  },
+  "required": []
+}
