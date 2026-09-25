@@ -14,9 +14,12 @@ import {
   applyResourceHintsBindings,
   applyRobotsBinding,
   applyStructuredDataBinding,
+  applyTwitterCardBindings,
+  injectLocale,
   JsonLD,
   LinkConfig,
   MetaTagConfig,
+  provideTitleConfig,
   RobotsConfig,
   StructuredDataComponent,
 } from '../index';
@@ -189,6 +192,33 @@ describe('seo scenarios', () => {
     c.destroy();
   });
 
+  it('binds twitter card tags next to open graph tags and drops them with their owner', async () => {
+    const s = scenario();
+    const c = s.consumer();
+    const title = signal<string | null>('Winner');
+    const image = signal<string | null>('/winner.png');
+
+    c.run(() => applyTwitterCardBindings({ title, description: 'The vote is in', image, card: 'summary_large_image' }));
+    await settle(s);
+
+    expect(metaContent('name="twitter:card"')).toEqual(['summary_large_image']);
+    expect(metaContent('name="twitter:title"')).toEqual(['Winner']);
+    expect(metaContent('name="twitter:description"')).toEqual(['The vote is in']);
+    expect(metaContent('name="twitter:image"')).toEqual(['/winner.png']);
+
+    title.set('Runner-up');
+    image.set(null);
+    await settle(s);
+
+    expect(metaContent('name="twitter:title"')).toEqual(['Runner-up']);
+    expect(metaContent('name="twitter:image"')).toEqual([]);
+
+    c.destroy();
+    await settle(s);
+
+    expect(metaContent('name^="twitter:"')).toEqual([]);
+  });
+
   it('follows a signal-driven title and falls back to the default when it empties', async () => {
     const s = scenario();
     const c = s.consumer();
@@ -263,5 +293,42 @@ describe('seo scenarios', () => {
     expect(host.children).toHaveLength(0);
 
     fixture.destroy();
+  });
+});
+
+describe('seo title config scenarios', () => {
+  const scenario = useScenario({
+    providers: [
+      provideRouter([{ path: '', children: [] }]),
+      provideLocationMocks(),
+      provideTitleConfig({
+        suffixPart: { text: 'Partner Hub' },
+        transformer: (title, locale) => (locale === 'de' ? `${title} (de)` : title),
+      }),
+    ],
+  });
+
+  it('appends the configured suffix to every title and follows the locale', async () => {
+    const s = scenario();
+    const c = s.consumer();
+    const hadTitleElement = !!document.head.querySelector('title');
+
+    await s.run(() => inject(Router)).navigateByUrl('/');
+    c.run(() => {
+      applyHeadTitleBinding('Teams');
+      applyHeadTitleBinding('Details');
+    });
+    await settle(s);
+
+    expect(document.title).toBe('Teams | Details | Partner Hub');
+
+    s.run(() => injectLocale()).currentLocale.set('de');
+    await settle(s);
+
+    expect(document.title).toBe('Teams (de) | Details (de) | Partner Hub (de)');
+
+    c.destroy();
+    document.title = '';
+    if (!hadTitleElement) document.head.querySelector('title')?.remove();
   });
 });
