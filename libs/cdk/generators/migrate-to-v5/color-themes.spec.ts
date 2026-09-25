@@ -1,6 +1,8 @@
 import { Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { MockInstance } from 'vitest';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- @ethlete/core exports no entry point for its generators
+import migrateCoreColorNaming from '../../../core/generators/migrate-to-v5/color-naming';
 import migrateColorThemes from './color-themes';
 
 describe('migrate-to-v5 -> provideThemes to provideColorThemes and import migration to @ethlete/core', () => {
@@ -764,5 +766,33 @@ export class MyComponent {}`,
       expect(libPackageJson.peerDependencies['@ethlete/theming']).toBeUndefined();
       expect(libPackageJson.peerDependencies['@ethlete/cdk']).toBe('^2.0.0');
     });
+  });
+
+  it('should move the renamed ProvideColorDirective and COLOR_PROVIDER from @ethlete/cdk', async () => {
+    tree.write('component.ts', `import { COLOR_PROVIDER, ProvideColorDirective } from '@ethlete/cdk';\n`);
+
+    await migrateColorThemes(tree);
+
+    const result = tree.read('component.ts', 'utf-8');
+    expect(result).toContain("import { COLOR_PROVIDER, ProvideColorDirective } from '@ethlete/core'");
+    expect(result).not.toContain('@ethlete/cdk');
+  });
+
+  it('should move ProvideThemeDirective after core migrate-to-v5 renamed it', async () => {
+    tree.write(
+      'component.ts',
+      `import { ProvideThemeDirective, SomeUtil } from '@ethlete/cdk';
+
+export const directives = [ProvideThemeDirective, SomeUtil];
+`,
+    );
+
+    await migrateCoreColorNaming(tree);
+    await migrateColorThemes(tree);
+
+    const result = tree.read('component.ts', 'utf-8');
+    expect(result).toContain("import { ProvideColorDirective } from '@ethlete/core'");
+    expect(result).toContain("import { SomeUtil } from '@ethlete/cdk'");
+    expect(result).toContain('[ProvideColorDirective, SomeUtil]');
   });
 });

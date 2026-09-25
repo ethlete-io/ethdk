@@ -25,7 +25,9 @@ const CSS_REPLACEMENTS: [string, string][] = [
 // Theming-related exports that moved from @ethlete/theming and @ethlete/cdk to @ethlete/core
 const THEMING_EXPORTS = new Set([
   'ProvideThemeDirective',
+  'ProvideColorDirective',
   'THEME_PROVIDER',
+  'COLOR_PROVIDER',
   'Theme',
   'ThemeSwatch',
   'OnThemeColorMap',
