@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { apiCommand, authCommand, designCommand, doctorCommand, release, repoInvocation, updateCommand } from './lib';
 
 const USAGE_ROWS = [
