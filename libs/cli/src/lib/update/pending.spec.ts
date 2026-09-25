@@ -17,7 +17,7 @@ describe('writePendingUpdate', () => {
 
     writePendingUpdate({ root, pending });
 
-    expect(readPendingUpdate(root)).toEqual(pending);
+    expect(readPendingUpdate(root)).toEqual({ ...pending, finished: [] });
   });
 });
 

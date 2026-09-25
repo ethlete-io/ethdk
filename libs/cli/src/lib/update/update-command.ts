@@ -23,7 +23,14 @@ import {
   orderMigrations,
   pendingMigrations,
 } from './plan';
-import { PENDING_FILE, clearPendingUpdate, readPendingUpdate, writePendingUpdate } from './pending';
+import {
+  PENDING_FILE,
+  PendingUpdate,
+  clearPendingUpdate,
+  isFinished,
+  readPendingUpdate,
+  writePendingUpdate,
+} from './pending';
 import { fetchRegistryPackage, registryUrl } from './registry';
 import { MigrationOutcome, hasNx, runInstall, runPendingMigrations } from './run-migrations';
 import { UPDATE_DIR, writeUpdateTasks } from './tasks';
@@ -222,13 +229,22 @@ const syncAgentRules = (options: {
 const runMigrationPhase = (options: {
   root: string;
   manager: PackageManager;
+  pendingUpdate: PendingUpdate;
   updates: readonly UpdatedPackage[];
   from: Record<string, string>;
   dryRun: boolean;
   ai: boolean;
 }) => {
-  const { root, manager, updates, from, dryRun, ai } = options;
+  const { root, manager, pendingUpdate, updates, from, dryRun, ai } = options;
+  const finished = pendingUpdate.finished ?? [];
   const collected = collectMigrations({ root, updates, from });
+  const skipped = collected.pending.filter((entry) =>
+    isFinished({ finished, packageName: entry.packageName, name: entry.migration.name }),
+  );
+
+  collected.pending = collected.pending.filter((entry) => !skipped.includes(entry));
+
+  if (skipped.length > 0) console.log(`\n  ${skipped.length} codemod(s) already applied in the earlier run.`);
 
   for (const note of collected.notes) console.log(`  ${note}`);
 
@@ -253,6 +269,14 @@ const runMigrationPhase = (options: {
   const outcomes = runPendingMigrations({ root, manager, pending: collected.pending, dryRun });
 
   printOutcomes(outcomes);
+
+  if (!dryRun) {
+    const applied = outcomes
+      .filter((outcome) => outcome.state === 'applied')
+      .map((outcome) => ({ packageName: outcome.pending.packageName, name: outcome.pending.migration.name }));
+
+    writePendingUpdate({ root, pending: { ...pendingUpdate, finished: [...finished, ...applied] } });
+  }
 
   if (dryRun) {
     console.log('\nDry run: no report was written.');
@@ -318,6 +342,7 @@ const resume = (options: { root: string; manager: PackageManager; argv: ReturnTy
   const result = runMigrationPhase({
     root,
     manager,
+    pendingUpdate: pending,
     updates,
     from: argv.from,
     dryRun: argv.dryRun,
@@ -439,13 +464,12 @@ export const updateCommand = async ({
 
   const changedManifests = writeRanges({ root, writes: writable.flatMap((update) => update.writes) });
 
-  writePendingUpdate({
-    root,
-    pending: {
-      startedAt: new Date().toISOString(),
-      packages: writable.map((update) => ({ name: update.name, from: update.from ?? null, to: update.to })),
-    },
-  });
+  const pendingUpdate: PendingUpdate = {
+    startedAt: new Date().toISOString(),
+    packages: writable.map((update) => ({ name: update.name, from: update.from ?? null, to: update.to })),
+  };
+
+  writePendingUpdate({ root, pending: pendingUpdate });
 
   const manifestNote =
     changedManifests.length === 1
@@ -476,6 +500,7 @@ export const updateCommand = async ({
   const result = runMigrationPhase({
     root,
     manager,
+    pendingUpdate,
     updates: writable,
     from: args.from,
     dryRun: false,

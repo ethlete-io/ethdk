@@ -11,9 +11,16 @@ export type PendingPackage = {
   to: string;
 };
 
+/** A codemod that already applied, so `--continue` does not run it a second time. */
+export type FinishedMigration = {
+  packageName: string;
+  name: string;
+};
+
 export type PendingUpdate = {
   startedAt: string;
   packages: PendingPackage[];
+  finished?: FinishedMigration[];
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -50,10 +57,21 @@ export const readPendingUpdate = (root: string): PendingUpdate | undefined => {
       isRecord(entry) && typeof entry['name'] === 'string' && typeof entry['to'] === 'string',
   );
 
+  const finished = Array.isArray(parsed['finished'])
+    ? parsed['finished'].filter(
+        (entry): entry is FinishedMigration =>
+          isRecord(entry) && typeof entry['packageName'] === 'string' && typeof entry['name'] === 'string',
+      )
+    : [];
+
   return {
     startedAt: typeof parsed['startedAt'] === 'string' ? parsed['startedAt'] : 'an earlier run',
     packages: packages.map((entry) => ({ name: entry.name, from: entry.from ?? null, to: entry.to })),
+    finished: finished.map((entry) => ({ packageName: entry.packageName, name: entry.name })),
   };
 };
+
+export const isFinished = (options: { finished: readonly FinishedMigration[]; packageName: string; name: string }) =>
+  options.finished.some((entry) => entry.packageName === options.packageName && entry.name === options.name);
 
 export const clearPendingUpdate = (root: string) => rmSync(join(root, PENDING_FILE), { force: true });
