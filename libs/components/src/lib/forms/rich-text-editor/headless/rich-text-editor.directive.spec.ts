@@ -148,6 +148,17 @@ describe('RichTextEditorDirective', () => {
       expect(editable.innerHTML).toContain('<strong>world</strong>');
     });
 
+    it('keeps the alignment of pasted inline styles without rewriting other attributes or text', () => {
+      dir.pasteHtml(
+        '<p title="a style=x" STYLE="text-align: center">style="kept" text</p><p style=\'text-align:right\'>right</p>',
+      );
+
+      expect(dir.value()).toContain('style="kept" text');
+      expect(editable.innerHTML).toContain('et-rte-align-center');
+      expect(editable.innerHTML).toContain('et-rte-align-right');
+      expect(editable.innerHTML).not.toContain('data-et-paste-style');
+    });
+
     it('drops style and script elements including their text content', () => {
       dir.pasteHtml('<style>.x { color: red; }</style><script>evil()</script><p>hi</p>');
 

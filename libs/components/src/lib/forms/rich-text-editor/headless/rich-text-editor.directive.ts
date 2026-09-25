@@ -48,6 +48,18 @@ import { FormFieldRichTextStylesComponent } from '../../form-field/form-field-ri
 
 const EMPTY_INLINE_SWEEP_SELECTOR = /* @__PURE__ */ [...INLINE_TAGS, 'a'].join(', ');
 
+const INERT_STYLE_ATTRIBUTE = 'data-et-paste-style';
+const HTML_START_TAG = /<[a-z][^\s/>]*(?:\s+[^\s/>=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?)*\s*\/?>/gi;
+const HTML_ATTRIBUTE = /(\s+)([^\s/>=]+)((?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?)/g;
+
+const renameStyleAttribute = (attribute: string, ...[space, name, value]: string[]) =>
+  name?.toLowerCase() === 'style' ? `${space}${INERT_STYLE_ATTRIBUTE}${value}` : attribute;
+
+const renameStyleAttributes = (html: string) =>
+  html.replace(HTML_START_TAG, (tag) => tag.replace(HTML_ATTRIBUTE, renameStyleAttribute));
+
+const restoreStyleAttributes = (html: string) => html.replaceAll(` ${INERT_STYLE_ATTRIBUTE}="`, ' style="');
+
 /** Every call must sit inside an `ngDevMode` branch - that is what keeps these strings out of a production bundle. */
 const missingDomFeature = (method: string, provider: string) =>
   new RuntimeError(
@@ -545,9 +557,9 @@ export class RichTextEditorDirective
 
     this.clearPendingMarks();
 
-    // DOMParser yields an inert document: clipboard scripts never run and images never load
-    // while the foreign markup is being reduced.
-    const body = new DOMParser().parseFromString(html, 'text/html').body;
+    // Chromium checks style-src-attr for every parsed style attribute, even in a DOMParser,
+    // createHTMLDocument or <template> document, so the attribute is renamed before parsing.
+    const body = new DOMParser().parseFromString(renameStyleAttributes(html), 'text/html').body;
 
     // eslint-disable-next-line ethlete/no-dom-query -- clipboard HTML (e.g. from Word) embeds <style> blocks whose CSS text would survive the tag-strip as plain text
     body.querySelectorAll('style, script, noscript, meta, link, title').forEach((junk) => junk.remove());
@@ -556,7 +568,7 @@ export class RichTextEditorDirective
 
     codec?.serialize(body);
 
-    const markdown = this.parseTokenText(htmlToMarkdown(body.innerHTML));
+    const markdown = this.parseTokenText(htmlToMarkdown(restoreStyleAttributes(body.innerHTML)));
 
     if (!markdown) return false;
 

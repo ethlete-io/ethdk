@@ -71,9 +71,6 @@ test.describe('SDK under a strict nonce-based CSP', () => {
   });
 
   test('rich-text editor with pasted HTML', async ({ page }) => {
-    // Known violation: pasteHtml in libs/components/src/lib/forms/rich-text-editor/headless/rich-text-editor.directive.ts
-    // parses the clipboard with DOMParser, which inherits the page's CSP and reports every pasted style attribute (style-src-attr).
-    test.fail();
     const csp = await watchCsp(page);
     await page.goto('/rich-text');
     const editable = editorOf(page);
