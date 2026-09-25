@@ -79,12 +79,43 @@ export const booleanArrayQueryField = (
   ...normalizeConfig(config),
 });
 
-/** A single date field (expects an ISO/`Date`-parseable string in the URL). */
-export const dateQueryField = (config?: QueryFieldConfig<Date | null>): QueryFieldDef<Date | null> => ({
-  defaultValue: null,
-  queryParamToValue: transformToDate,
-  ...normalizeConfig(config),
-});
+/** Options of {@link dateQueryField}; `as: 'string'` keeps the control's wire string instead of a `Date`. */
+export type DateQueryFieldConfig = QueryFieldConfig<Date | null> & { readonly as?: 'date' };
+
+/** Options of {@link dateQueryField} with `as: 'string'`. */
+export type DateStringQueryFieldConfig = QueryFieldConfig<string | null> & { readonly as: 'string' };
+
+/**
+ * A single date field. By default it holds a `Date` read from an ISO/`Date`-parseable string in the URL.
+ * `as: 'string'` types it `string | null` like the `@ethlete/components` date and time controls, so
+ * `[formField]` binds it to them; the URL then carries the control's `valueFormat` string verbatim.
+ *
+ * @example
+ * dateQueryField({ as: 'string' }) // <et-date-input [formField]="qf.fields.from" valueFormat="yyyy-MM-dd" />
+ */
+export function dateQueryField(config: DateStringQueryFieldConfig): QueryFieldDef<string | null>;
+export function dateQueryField(config?: DateQueryFieldConfig): QueryFieldDef<Date | null>;
+export function dateQueryField(
+  config?: DateQueryFieldConfig | DateStringQueryFieldConfig,
+): QueryFieldDef<Date | null> | QueryFieldDef<string | null> {
+  if (config?.as === 'string') {
+    const { as: _as, ...rest } = config;
+
+    return {
+      defaultValue: null,
+      queryParamToValue: (raw) => (typeof raw === 'string' && raw !== '' ? raw : null),
+      ...normalizeConfig(rest),
+    };
+  }
+
+  const { as: _as, ...rest } = config ?? {};
+
+  return {
+    defaultValue: null,
+    queryParamToValue: transformToDate,
+    ...normalizeConfig(rest),
+  };
+}
 
 /** A field holding a list of dates. */
 export const dateArrayQueryField = (config?: QueryFieldConfig<Date[] | null>): QueryFieldDef<Date[] | null> => ({

@@ -128,6 +128,9 @@ A date control combining typed entry with an anchored
 
 <StoryEmbed id="components-forms-date-input--default" height="560px" />
 
+In a [query form](/query/query-forms#binding-a-date-control), bind it to
+`dateQueryField({ as: 'string' })` - the plain `dateQueryField()` holds a `Date`.
+
 The value is a `string | null`. On `et-date-input` (forwarded from the headless
 `[etDateInput]` directive), on top of the [shared contract set](#shared-contract):
 

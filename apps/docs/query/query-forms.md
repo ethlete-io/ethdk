@@ -55,16 +55,17 @@ export class UsersComponent {
 
 ## Field creators
 
-| Creator                    | Value type          | Notes                                                                                                                                                  |
-| -------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `queryField<T>()`          | `T \| null`         | Generic field. Auto-coerces URL strings to number/boolean unless told otherwise; with an array default a single URL value reads as a one-item array.   |
-| `searchQueryField()`       | `string`            | Empty is `''`, which writes no param. Debounced 300ms; clearing applies immediately. Reads the URL back as a string, so `?search=2024` stays `'2024'`. |
-| `sortQueryField()`         | `Sort \| null`      | Serialized as `active:direction` (e.g. `name:asc`).                                                                                                    |
-| `stringArrayQueryField()`  | `string[] \| null`  |                                                                                                                                                        |
-| `numberArrayQueryField()`  | `number[] \| null`  |                                                                                                                                                        |
-| `booleanArrayQueryField()` | `boolean[] \| null` |                                                                                                                                                        |
-| `dateQueryField()`         | `Date \| null`      | Expects a `Date`-parseable string in the URL; `2026-09-01` reads as local midnight.                                                                    |
-| `dateArrayQueryField()`    | `Date[] \| null`    |                                                                                                                                                        |
+| Creator                            | Value type          | Notes                                                                                                                                                  |
+| ---------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `queryField<T>()`                  | `T \| null`         | Generic field. Auto-coerces URL strings to number/boolean unless told otherwise; with an array default a single URL value reads as a one-item array.   |
+| `searchQueryField()`               | `string`            | Empty is `''`, which writes no param. Debounced 300ms; clearing applies immediately. Reads the URL back as a string, so `?search=2024` stays `'2024'`. |
+| `sortQueryField()`                 | `Sort \| null`      | Serialized as `active:direction` (e.g. `name:asc`).                                                                                                    |
+| `stringArrayQueryField()`          | `string[] \| null`  |                                                                                                                                                        |
+| `numberArrayQueryField()`          | `number[] \| null`  |                                                                                                                                                        |
+| `booleanArrayQueryField()`         | `boolean[] \| null` |                                                                                                                                                        |
+| `dateQueryField()`                 | `Date \| null`      | Expects a `Date`-parseable string in the URL; `2026-09-01` reads as local midnight.                                                                    |
+| `dateQueryField({ as: 'string' })` | `string \| null`    | For the date and time controls: the URL carries the control's `valueFormat` string verbatim - see [Binding a date control](#binding-a-date-control).   |
+| `dateArrayQueryField()`            | `Date[] \| null`    |                                                                                                                                                        |
 
 Every creator accepts the same options:
 
@@ -80,6 +81,25 @@ Every creator accepts the same options:
 | `skipAutoTransform`       | `false`                          | Skip the URL string → number/boolean coercion.                                                                          |
 | `queryParamToValue`       | -                                | Custom URL → value transform.                                                                                           |
 | `valueToQueryParam`       | -                                | Custom value → URL transform.                                                                                           |
+
+### Binding a date control
+
+The `@ethlete/components` date and time controls (`et-date-input`, `et-date-time-input`,
+`et-time-input`) hold a `string | null` in their `valueFormat`, not a `Date`, so a plain
+`dateQueryField()` does not bind to them under `strictTemplates`. Pass `as: 'string'`:
+
+```ts
+@Component({
+  imports: [FormField, DATE_INPUT_IMPORTS],
+  template: `<et-date-input [formField]="qf.fields.from" valueFormat="yyyy-MM-dd" />`,
+})
+export class EventsComponent {
+  qf = defineQueryForm({ fields: { from: dateQueryField({ as: 'string' }) } }).observe();
+}
+```
+
+The field writes the control's string to the URL as is (`?from=2026-09-01`) and reads it back
+unchanged, so a year-precision `2026` stays a string. Empty is `null`, which writes no param.
 
 ### The transforms the typed creators use
 

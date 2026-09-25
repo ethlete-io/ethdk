@@ -11,7 +11,7 @@ import {
   sortQueryField,
   stringArrayQueryField,
 } from '../index';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { useScenario } from './harness';
 
 describe('query forms URL sync scenario', () => {
@@ -91,6 +91,35 @@ describe('query forms URL sync scenario', () => {
     s.tick();
 
     expect(restored.value().from?.getTime()).toBe(from.getTime());
+  });
+
+  it('a string date field writes the wire string verbatim and reads it back as a string', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+    const fields = () => ({ day: dateQueryField({ as: 'string' }), year: dateQueryField({ as: 'string' }) });
+
+    const c = s.consumer();
+    const qf = c.run(() => defineQueryForm({ fields: fields() }).observe());
+
+    expectTypeOf(qf.value().day).toEqualTypeOf<string | null>();
+
+    qf.setValue({ day: '2026-09-01', year: '2026' });
+    await s.settle();
+    expect(router.parseUrl(router.url).queryParams).toEqual({ day: '2026-09-01', year: '2026' });
+
+    const url = router.url;
+    c.destroy();
+
+    await s.reloadAt(url);
+
+    const restored = s.run(() => defineQueryForm({ fields: fields() }).observe());
+    s.tick();
+
+    expect(restored.value()).toEqual({ day: '2026-09-01', year: '2026' });
+
+    restored.setValue({ day: null, year: '2026' });
+    await s.settle();
+    expect(router.parseUrl(router.url).queryParams).toEqual({ year: '2026' });
   });
 
   it('a string array survives the URL round trip, including one item', async () => {
