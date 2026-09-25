@@ -111,6 +111,12 @@ only ever looks up the `type`.
   uses `@ethlete/agent-rules` never gets the `sdk-update` skill, so its agent bumps versions by
   hand and skips every migration.
 
+```bash
+yarn add -D @ethlete/cli@next
+```
+
+Install it from `next`: `latest` still points at a 2.x release without `et update`.
+
 ## Framework
 
 - **`provideHttpClient()`** from `@angular/common/http` if you use `@ethlete/query`'s HTTP
