@@ -182,11 +182,9 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       E2E gaps: split-button focus and keyboard, focus ring on icon/fab/window-control buttons, pressed toggle via
       Space, hover/active colour states.
       Overlay done (`overlay-{dialog,strategies,headless,routing}.scenario.spec.ts`): 121 of 127 covered, 143
-      covered in total, 1239 on the allowlist. Bug, one `it.fails`: destroying an app with a modal overlay open
-      leaves `position: fixed` on `<html>` - the scroll blocker's subscription dies with its injector without
-      unlocking. Friction: `enableDragToDismiss` takes `OverlayRef<object, unknown>`, so a typed ref needs the
-      untyped `OVERLAY_REF` instead; `provideOverlayRouter` returns `Provider[]`, which only fits `providers`
-      nested, not spread. E2E gaps: the full-screen morph from its origin (`OverlayOriginCloneComponent`, the five
+      covered in total, 1239 on the allowlist. Bug fixed (5f4566e51): destroying an app with a modal overlay open
+      left `position: fixed` on `<html>`. Friction fixed (1a5f42eda): `enableDragToDismiss` takes a typed ref,
+      and the overlay `provideX` functions return `StaticProvider[]`, so they spread into `providers`. E2E gaps: the full-screen morph from its origin (`OverlayOriginCloneComponent`, the five
       `*FullscreenAnimation*` functions), the inline sidebar above `renderSidebarFrom` (pane width), focus moving
       into a pane by `first-tabbable` (jsdom has no client rects).
 - [x] S11 Follow-ups from S6 (hand-written skill `.agents/skills/query-scenario-tests/SKILL.md` documents `s.mount`)
