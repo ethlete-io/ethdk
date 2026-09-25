@@ -251,7 +251,7 @@ describe('button scenarios', () => {
     expect(docs.hasAttribute('tabindex')).toBe(false);
   });
 
-  it.fails('keeps a template (click) handler from running while the button is loading', () => {
+  it('keeps a template (click) handler from running while the button is loading', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(SaveFormComponent);
 
@@ -262,7 +262,7 @@ describe('button scenarios', () => {
     expect(fixture.componentInstance.saves()).toBe(0);
   });
 
-  it.fails('keeps a template (click) handler from running on a disabled link', () => {
+  it('keeps a template (click) handler from running on a disabled link', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(SaveFormComponent);
 

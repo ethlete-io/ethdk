@@ -1,4 +1,14 @@
-import { Directive, ElementRef, booleanAttribute, computed, inject, input, numberAttribute } from '@angular/core';
+import {
+  DestroyRef,
+  Directive,
+  ElementRef,
+  Renderer2,
+  booleanAttribute,
+  computed,
+  inject,
+  input,
+  numberAttribute,
+} from '@angular/core';
 import { SurfaceInteractiveDirective } from '@ethlete/core';
 
 export const BUTTON_TYPES = {
@@ -22,7 +32,6 @@ type ButtonType = (typeof BUTTON_TYPES)[keyof typeof BUTTON_TYPES];
     '[attr.aria-pressed]': 'ariaPressed()',
     '[attr.type]': 'IS_BUTTON ? type() : null',
     '[attr.tabindex]': 'IS_ANCHOR && disabled() ? -1 : ownTabIndex',
-    '(click)': 'blockInactiveClick($event)',
   },
 })
 export class ButtonDirective {
@@ -63,9 +72,21 @@ export class ButtonDirective {
 
   public hasProgress = computed(() => this.progress() !== null);
 
-  // A loading button sets no native `disabled`, so it keeps DOM focus and its place in the tab
-  // order. Nothing else stops the click a keyboard activation dispatches.
-  protected blockInactiveClick(event: MouseEvent) {
+  constructor() {
+    // Must stay a capture listener: at the target, capture listeners run before every bubble
+    // listener, so this beats a consumer's template `(click)` on the same element. As a bubble
+    // listener it runs after them, and a loading button or disabled link fires the consumer's handler.
+    const unlisten = inject(Renderer2).listen(
+      this.elementRef.nativeElement,
+      'click',
+      (event: MouseEvent) => this.blockInactiveClick(event),
+      { capture: true },
+    );
+
+    inject(DestroyRef).onDestroy(unlisten);
+  }
+
+  private blockInactiveClick(event: MouseEvent) {
     if (!this.isInactive()) {
       return;
     }
