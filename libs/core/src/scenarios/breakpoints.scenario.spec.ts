@@ -4,6 +4,8 @@ import {
   injectBreakpointIsMatched,
   injectCanHover,
   injectCurrentBreakpoint,
+  injectIsLg,
+  injectIsMd,
   injectIsSm,
   injectIsXs,
   injectObserveBreakpoint,
@@ -83,6 +85,8 @@ class LayoutComponent {
   breakpoint = injectCurrentBreakpoint();
   isXs = injectIsXs();
   isSm = injectIsSm();
+  isMd = injectIsMd();
+  isLg = injectIsLg();
   canHover = injectCanHover();
   startedDesktop = injectBreakpointIsMatched({ min: 'md' });
   columns = computed(() => (this.isWide() ? 3 : this.isDesktop() ? 2 : 1));
@@ -113,6 +117,7 @@ describe('breakpoint scenarios', () => {
       const layout = fixture.componentInstance;
 
       expect(layout.breakpoint()).toBe('lg');
+      expect(layout.isLg()).toBe(true);
       expect(layout.startedDesktop).toBe(true);
       expect(layout.canHover()).toBe(true);
 
@@ -120,6 +125,8 @@ describe('breakpoint scenarios', () => {
       s.tick();
 
       expect(layout.breakpoint()).toBe('md');
+      expect(layout.isMd()).toBe(true);
+      expect(layout.isLg()).toBe(false);
       expect(layout.columns()).toBe(2);
 
       media.update({ width: 700 });

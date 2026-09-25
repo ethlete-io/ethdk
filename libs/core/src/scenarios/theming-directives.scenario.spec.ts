@@ -4,7 +4,11 @@ import {
   AutoSurfaceDirective,
   ColorTheme,
   ColorThemeInput,
+  injectColorThemes,
+  injectErrorTheme,
+  injectSuccessTheme,
   injectSurfaceContextTracker,
+  injectWarningTheme,
   provideColorThemesWithTailwind4,
   ProvideColorDirective,
   ProvideSurfaceDirective,
@@ -22,6 +26,8 @@ const swatch = (value: `${number} ${number} ${number}`): ThemeSwatch => ({
 const COLOR_THEMES: ColorTheme[] = [
   { name: 'brand', isDefault: true, primary: swatch('0 90 200') },
   { name: 'alert', type: 'error', primary: swatch('200 20 20') },
+  { name: 'caution', type: 'warning', primary: swatch('220 160 0') },
+  { name: 'done', type: 'success', primary: swatch('20 160 60') },
   { name: 'darkAccent', primary: swatch('20 20 60') },
 ];
 
@@ -170,6 +176,27 @@ describe('theming directive scenarios', () => {
     expect(classOf(fixture.nativeElement as HTMLElement, '.action')).toBe('action et-color--missing');
 
     fixture.destroy();
+  });
+
+  it('resolves the semantic themes by type, and throws where the app registered none', () => {
+    const s = scenario();
+    const resolved = s.run(() => ({
+      themes: injectColorThemes().map((theme) => theme.name),
+      error: injectErrorTheme().name,
+      warning: injectWarningTheme().name,
+      success: injectSuccessTheme().name,
+    }));
+
+    expect(resolved).toEqual({
+      themes: ['brand', 'alert', 'caution', 'done', 'darkAccent'],
+      error: 'alert',
+      warning: 'caution',
+      success: 'done',
+    });
+
+    const bare = s.consumer([provideColorThemesWithTailwind4([COLOR_THEMES[0] as ColorTheme])]);
+
+    expect(() => bare.run(() => injectErrorTheme())).toThrow(/No color theme with type "error"/);
   });
 
   it('raises each auto surface one elevation above the surface it sits on, and stops at the top', () => {
