@@ -37,16 +37,24 @@ search text, filters, sort, page or page size.
 ## What to change
 
 1. Declare one `defineQueryForm({ fields })` per list, with a field creator per param
-   (`searchQueryField`, `sortQueryField`, `queryField<number>` for the page, and the typed array and
-   date creators for filters), and call `.observe()` on it. A date field bound to an `et-date-input`,
-   `et-date-time-input` or `et-time-input` needs `dateQueryField({ as: 'string' })`, because those
-   controls hold a string.
+   (`searchQueryField`, `sortQueryField`, `queryField<number>({ defaultValue: 1 })` for the page, and
+   the typed array and date creators for filters), and call `.observe()` on it. Give a `queryField`
+   a `defaultValue` wherever the old code had one: the field is then typed without `null`, so reads
+   need no `?? DEFAULT`. A `queryField<T>()` without a default reads the URL as a string, so any
+   other `T` needs a `queryParamToValue` such as `transformToNumber`. A date field bound to an
+   `et-date-input`, `et-date-time-input` or `et-time-input` needs `dateQueryField({ as: 'string' })`,
+   because those controls hold a string.
 2. Give the page field `isResetBy` for the fields that must send the list back to page 1.
 3. Feed the query from `withArgs(() => … this.qf.value() …)`.
-4. Bind each control with `[formField]="qf.fields.<name>"`.
+4. Bind each form control with `[formField]="qf.fields.<name>"`. `et-pagination` and
+   `et-page-size-select` are not form controls; bind their two-way `model` to the field's value
+   signal instead: `[(page)]="qf.fields.page().value"`, `[(pageSize)]="qf.fields.limit().value"`.
+   A table sort needs a mapping both ways; see "Sort from a table" below.
 5. Delete the hand-written reads, writes, draft signals and effects the form replaces.
 6. Keep the param names the URL already uses, so saved links keep working. Each field is one param,
    named by its key. Use `queryParamPrefix` when two lists share a route.
+7. If the old code navigated with `replaceUrl: true`, so filtering did not add history entries, pass
+   `observe({ replaceUrl: true })`. Without it every commit pushes an entry.
 
 ### Sort and direction in two params
 
@@ -57,9 +65,28 @@ params, so a URL with separate params such as `?sort=name&dir=asc` needs a decis
   `dir: queryField<'asc' | 'desc'>(…)`, each with a `defaultValue` and a `queryParamToValue` that
   maps an unknown value to the default. Give `dir` `skipInFilterCount: true`: only `sort` is on the
   list of names `activeFilterCount` ignores. Put both in the page field's `isResetBy`.
-- **Move to `sortQueryField()`** only when the list binds a table sort that syncs to the URL itself,
-  since the table uses the same `active:direction` format. This changes the URL: old links with a
-  `dir` param lose their direction. Say so in the commit message.
+- **Move to `sortQueryField()`** when you are free to change the URL. Old links with a `dir` param
+  lose their direction. Say so in the commit message.
+
+### Sort from a table
+
+`et-table` holds its sort as `TableSort[]` (`{ key, direction }`); `sortQueryField()` holds one
+`Sort` (`{ active, direction }`). Nothing converts between them and the table does not write the
+URL, so map both ways in the component:
+
+```ts
+tableSort = computed<TableSort[]>(() => {
+  const sort = this.qf.value().sort;
+
+  return sort?.direction ? [{ key: sort.active, direction: sort.direction }] : [];
+});
+
+onSortChange([first]: TableSort[]) {
+  this.qf.patchValue({ sort: first ? { active: first.key, direction: first.direction } : null });
+}
+```
+
+Bind `[sort]="tableSort()"` and `(sortChange)="onSortChange($event)"`.
 
 ## Leave these alone
 

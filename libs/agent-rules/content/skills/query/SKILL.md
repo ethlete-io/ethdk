@@ -152,8 +152,9 @@ users = getUsers(
 );
 ```
 
-Bind controls with `[formField]="qf.fields.search"`. `qf.value()` is the committed,
-debounced value. See {%docsBaseUrl%}/query/query-forms for the other field creators,
+Bind form controls with `[formField]="qf.fields.search"`. `et-pagination` and
+`et-page-size-select` are not form controls: bind their `model` to the field's value signal,
+`[(page)]="qf.fields.page().value"`. `qf.value()` is the committed, debounced value. See {%docsBaseUrl%}/query/query-forms for the other field creators,
 filter overlays and `activeFilterCount`.
 
 ## The query object
