@@ -29,7 +29,7 @@ const PIP_CHROME_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
 
     const destroyPipChrome = () => {
       if (!pipChromeRef) return;
-      appRef.detachView(pipChromeRef.hostView);
+      if (!appRef.destroyed) appRef.detachView(pipChromeRef.hostView);
       pipChromeRef.destroy();
       pipChromeRef = null;
     };
