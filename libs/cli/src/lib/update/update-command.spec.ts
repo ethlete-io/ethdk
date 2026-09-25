@@ -61,6 +61,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe('et update --continue', () => {
@@ -90,5 +91,20 @@ describe('et update --continue', () => {
     await updateCommand({ argv: ['--continue', '--dry-run'], root });
 
     expect(readPendingUpdate(root)?.finished).toEqual([]);
+  });
+});
+
+describe('et update --check', () => {
+  it('reports an update that was started but never finished', async () => {
+    const root = makeRepo();
+    const upToDate = { 'dist-tags': { latest: '5.1.0' }, versions: { '5.1.0': {} } };
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(JSON.stringify(upToDate))),
+    );
+
+    expect(await updateCommand({ argv: ['--check'], root })).toBe(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('--continue'));
   });
 });

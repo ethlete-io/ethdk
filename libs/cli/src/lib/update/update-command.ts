@@ -387,6 +387,17 @@ export const updateCommand = async ({
 
   const manager = detectPackageManager({ root, manifest });
 
+  const unfinished = args.check ? readPendingUpdate(root) : undefined;
+
+  if (unfinished) {
+    console.error(
+      `\nThe update started at ${unfinished.startedAt} is not finished (${PENDING_FILE}).\n` +
+        `Run \`${invocation} --continue\` to finish it.`,
+    );
+
+    return 1;
+  }
+
   if (args.resume) return resume({ root, manager, argv: args });
 
   const manifests = findManifests(root);
