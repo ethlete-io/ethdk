@@ -17,9 +17,11 @@ Never bump an `@ethlete/*` range by hand. The version that lands is what selects
 5. Records the plan in `.ethlete/update/pending.json`, so an interrupted run can be continued.
 6. Runs the install with the package manager the repo already uses.
 7. Reads the migration manifest out of every **freshly installed** package, and selects the migrations the update crossed.
-8. Runs each codemod, oldest version first.
-9. Runs `ethlete-agents sync` when the update moved `@ethlete/agent-rules` and the repo has an `ethlete-agents.config.json`, so the rules and skills match the tasks the update writes.
+8. Runs `ethlete-agents sync` when the update moved `@ethlete/agent-rules` and the repo has an `ethlete-agents.config.json`, so the rules and skills match the tasks the update writes.
+9. Runs each codemod, oldest version first.
 10. Writes everything that needs a decision to `.ethlete/update`.
+
+The sync comes before the codemods because the tasks, and an agent that works them, follow the guidance of the new version.
 
 Step 7 is why the install comes first: the migrations of a version ship inside that version.
 
@@ -51,7 +53,7 @@ A range no single version can be written into - `workspace:*`, `>=5 <6` - is rep
 
 | Flag             | Effect                                                                                                        |
 | ---------------- | ------------------------------------------------------------------------------------------------------------- |
-| `--check`        | Print the plan and exit 1 while an update is pending. Writes nothing, so CI can run it.                       |
+| `--check`        | Print the plan and exit 1 while an update is pending or unfinished. Writes nothing, so CI can run it.         |
 | `--dry-run`      | Print the plan, plus the migrations the **installed** versions know about. The target may ship more.          |
 | `--tag <tag>`    | The dist tag to update to, instead of the one the installed version is on.                                    |
 | `--to <version>` | An exact version. Name exactly one package with it.                                                           |
@@ -65,11 +67,13 @@ The working tree must be clean, because the codemods rewrite files and you need 
 
 ## When something fails
 
-An install or a codemod that fails stops the run and leaves `.ethlete/update/pending.json` behind. Fix the cause, then continue:
+An install, a codemod or the agent rules sync that fails stops the run and leaves `.ethlete/update/pending.json` behind. Fix the cause, then continue:
 
 ```bash
 yarn et update --continue
 ```
+
+`pending.json` records every codemod that already applied, so `--continue` runs only the rest. `--check` exits 1 while the file is there.
 
 Do not start over. `package.json` already holds the new versions, so a fresh run finds nothing pending and skips every migration the interrupted run had not reached yet.
 
@@ -84,7 +88,9 @@ A codemod cannot make a decision about your product, and some changes have no co
 | `<package>-<migration>.md` | One task in full: what moved, plus the instructions the package ships. |
 | `pending.json`             | Only while a run is unfinished.                                        |
 
-`.ethlete/` is gitignored, so the list is yours, not the repo's.
+`.ethlete/` is gitignored, so the list is yours, not the repo's. A later run keeps the tasks an earlier one left: delete a task file once the task is done, and the next run drops it from the list.
+
+Each task links the docs of the release line the package moved to: `https://ethlete-sdk-docs-next.web.app` for a prerelease, `https://ethlete-sdk-docs.web.app` for a release.
 
 Each task carries a kind:
 
@@ -120,7 +126,7 @@ Repos that use `@ethlete/agent-rules` also get the `sdk-update` skill, which tea
 ## Requirements
 
 - A `package.json` at the repo root. Library manifests deeper in the repo are found from there.
-- Network access to the registry, which is read from `npm_config_registry` when npm set it.
+- Network access to the registry the repo installs from: the `@ethlete` scope or the registry of `.yarnrc.yml` (yarn 2+), `.yarnrc` and `.npmrc` (yarn 1), or `.npmrc` (npm, pnpm, bun), then `npm_config_registry`, then the public registry.
 - Nx, for the codemods. The migrations ship as Nx generators, so a repo without Nx gets each one reported as a command instead. Everything else works.
 
 ## Authoring a migration

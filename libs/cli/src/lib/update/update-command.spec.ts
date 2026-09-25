@@ -110,22 +110,40 @@ describe('et update --check', () => {
   });
 });
 
+const withAgentRules = (root: string) => {
+  writeJson(join(root, 'node_modules', '@ethlete', 'agent-rules', 'package.json'), { name: '@ethlete/agent-rules' });
+  writeJson(join(root, 'ethlete-agents.config.json'), {});
+  writePendingUpdate({
+    root,
+    pending: {
+      startedAt: 'then',
+      packages: [
+        { name: '@ethlete/core', from: '5.0.0', to: '5.1.0' },
+        { name: '@ethlete/agent-rules', from: '0.1.0', to: '0.2.0' },
+      ],
+    },
+  });
+
+  return root;
+};
+
+describe('the agent rules sync', () => {
+  it('runs before the codemods, so the tasks follow the new guidance', async () => {
+    const root = withAgentRules(makeRepo());
+
+    spawnSync.mockReturnValue({ status: 0 });
+
+    expect(await updateCommand({ argv: ['--continue'], root })).toBe(0);
+    expect(
+      spawnSync.mock.calls.map(([, args]) => args.find((arg) => /ethlete-agents|@ethlete\/core:/.test(arg))),
+    ).toEqual(['ethlete-agents', '@ethlete/core:first', '@ethlete/core:second']);
+  });
+});
+
 describe('a failed agent rules sync', () => {
   it('is counted as a failure and written to tasks.md', async () => {
-    const root = makeRepo();
+    const root = withAgentRules(makeRepo());
 
-    writeJson(join(root, 'node_modules', '@ethlete', 'agent-rules', 'package.json'), { name: '@ethlete/agent-rules' });
-    writeJson(join(root, 'ethlete-agents.config.json'), {});
-    writePendingUpdate({
-      root,
-      pending: {
-        startedAt: 'then',
-        packages: [
-          { name: '@ethlete/core', from: '5.0.0', to: '5.1.0' },
-          { name: '@ethlete/agent-rules', from: '0.1.0', to: '0.2.0' },
-        ],
-      },
-    });
     spawnSync.mockImplementation((_binary, args) => ({ status: args.includes('ethlete-agents') ? 1 : 0 }));
 
     expect(await updateCommand({ argv: ['--continue'], root })).toBe(1);
