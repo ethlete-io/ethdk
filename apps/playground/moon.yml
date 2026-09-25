@@ -1,0 +1,44 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+layer: 'application'
+language: 'typescript'
+dependsOn:
+  - 'cdk'
+  - 'components'
+
+tasks:
+  build:
+    command: 'ng build playground --configuration production'
+    options:
+      runFromWorkspaceRoot: true
+    deps:
+      - '^:build'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(configs)'
+      - '/angular.json'
+    outputs:
+      - '/dist/apps/playground'
+
+  storybook:
+    command: 'ng run playground:storybook'
+    options:
+      runFromWorkspaceRoot: true
+      cache: false
+      persistent: true
+
+  build-storybook:
+    command: 'ng run playground:build-storybook'
+    options:
+      runFromWorkspaceRoot: true
+    deps:
+      - '^:build'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(configs)'
+      - '.storybook/**/*'
+      - '/libs/**/*.stories.ts'
+      - '/libs/**/*.docs.mdx'
+      - '/libs/**/*-page.mdx'
+    outputs:
+      - '/dist/storybook/playground'

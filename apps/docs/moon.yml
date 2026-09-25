@@ -1,0 +1,39 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+layer: 'application'
+language: 'typescript'
+tags:
+  - 'scope-docs'
+dependsOn:
+  - 'cdk'
+  - 'contentful'
+  - 'core'
+  - 'query'
+  - 'types'
+
+tasks:
+  lint: null
+
+  serve:
+    command: 'vitepress dev apps/docs'
+    options:
+      runFromWorkspaceRoot: true
+      cache: false
+      persistent: true
+
+  build:
+    command: 'vitepress build apps/docs'
+    options:
+      runFromWorkspaceRoot: true
+    inputs:
+      - '**/*'
+      - '!cache/**/*'
+    outputs:
+      - '/dist/apps/docs'
+
+  preview:
+    command: 'vitepress preview apps/docs'
+    options:
+      runFromWorkspaceRoot: true
+      cache: false
+      persistent: true

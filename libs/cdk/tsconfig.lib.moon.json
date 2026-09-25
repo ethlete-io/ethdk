@@ -1,0 +1,3 @@
+{
+  "extends": ["./tsconfig.lib.prod.json", "../../tsconfig.dist-paths.json"]
+}

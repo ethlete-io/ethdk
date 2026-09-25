@@ -1,0 +1,99 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "cli": {
+    "analytics": false
+  },
+  "projects": {
+    "playground": {
+      "projectType": "application",
+      "root": "apps/playground",
+      "sourceRoot": "apps/playground/src",
+      "prefix": "ethlete",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "defaultConfiguration": "production",
+          "options": {
+            "browser": "apps/playground/src/main.ts",
+            "outputPath": "dist/apps/playground",
+            "index": "apps/playground/src/index.html",
+            "tsConfig": "apps/playground/tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": ["apps/playground/src/favicon.ico", "apps/playground/src/assets"],
+            "styles": ["apps/playground/src/styles.scss", "libs/cdk/src/lib/styles/easing.css"],
+            "scripts": []
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "2mb",
+                  "maximumError": "5mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "24kb",
+                  "maximumError": "32kb"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          }
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "defaultConfiguration": "development",
+          "configurations": {
+            "production": {
+              "buildTarget": "playground:build:production"
+            },
+            "development": {
+              "buildTarget": "playground:build:development"
+            }
+          }
+        },
+        "storybook": {
+          "builder": "@storybook/angular:start-storybook",
+          "options": {
+            "port": 4400,
+            "configDir": "apps/playground/.storybook",
+            "browserTarget": "playground:build-storybook",
+            "compodoc": false,
+            "open": false,
+            "styles": ["libs/cdk/src/lib/styles/index.css", "apps/playground/src/styles/storybook.css"]
+          },
+          "configurations": {
+            "ci": {
+              "quiet": true
+            },
+            "network": {
+              "host": "0.0.0.0"
+            }
+          }
+        },
+        "build-storybook": {
+          "builder": "@storybook/angular:build-storybook",
+          "options": {
+            "outputDir": "dist/storybook/playground",
+            "configDir": "apps/playground/.storybook",
+            "browserTarget": "playground:build-storybook",
+            "compodoc": false,
+            "styles": ["libs/cdk/src/lib/styles/index.css", "apps/playground/src/styles/storybook.css"]
+          },
+          "configurations": {
+            "ci": {
+              "quiet": true
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+services:
+  bazel-remote:
+    image: buchgr/bazel-remote-cache:v2.6.2
+    user: '1000:1000'
+    restart: unless-stopped
+    volumes:
+      - ${MOON_CACHE_DIR:-/srv/moon-cache}:/data
+    ports:
+      - '9092:9092'
+      # /status and /metrics, reachable only from the host itself.
+      - '127.0.0.1:8080:8080'
+    command:
+      # --storage_mode must match `remote.cache.compression` in .moon/workspace.yml.
+      # zstd blobs are unreadable by a server running uncompressed, and vice versa.
+      - --dir=/data
+      - --max_size=${MOON_CACHE_MAX_SIZE:-50}
+      - --storage_mode=zstd
+      - --grpc_address=0.0.0.0:9092
+      - --http_address=0.0.0.0:8080
+      - --access_log_level=none

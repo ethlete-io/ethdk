@@ -1,0 +1,25 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+layer: 'automation'
+language: 'javascript'
+dependsOn:
+  - 'components'
+  - 'contentful'
+  - 'core'
+  - 'query'
+
+tasks:
+  lint: null
+
+  bundle-goldens:
+    command: 'node tools/treeshake/check-goldens.mjs'
+    options:
+      runFromWorkspaceRoot: true
+    deps:
+      - '^:build'
+    inputs:
+      - '**/*'
+      - '/dist/libs/components/**/*'
+      - '/dist/libs/contentful/**/*'
+      - '/dist/libs/core/**/*'
+      - '/dist/libs/query/**/*'

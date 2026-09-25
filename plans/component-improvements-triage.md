@@ -61,7 +61,7 @@ Ranked by value per unit of risk, not by size.
 > `resolveHeaders()` node. The editor half was bigger than the section implied, because most of those
 > values cannot survive JSON at all; they are now preserved rather than replayed as `{}`. Every
 > remaining query devtools item was `A` as of that date - two `B`s were reported on 2026-08-10 and
-> are in the `S` table.
+> are in the `S` table, and the entry-point split reported the same day is `C`,`D` at #2.
 >
 > **Shipped 2026-08-09.** Both remaining auth `S` items, and with them the "logged out after being
 > idle" shortlist entry (was #1). The diagnosis it asked for turned up something larger than the
@@ -151,6 +151,14 @@ modifier-click` question was settled by the user in favour of the **menu**: `⧉
    its three open questions first - chiefly whether an unchecked tile still reads as selectable -
    because they are design calls, not code.
 
+2. **Query devtools into its own entry point** - `M`, `C`,`D`.
+   Measured 2026-08-10: the panel is ~480 kB of `fut-frontend`'s platform initial bundle and ~300 kB
+   of hub's, in production, and this release's devtools growth broke platform's build budget outright.
+   Consumers cannot fix it - `@defer` resolves to the barrel and made hub's `main` 820 kB _bigger_ -
+   and neither can the library, because ng-packagr inlines dynamic imports into the single FESM. A
+   secondary entry point is the only shape that works. Settle one thing first: the barrel cannot
+   re-export it, so the import path breaks.
+
 ## Everything else, by effort
 
 ### S - small, additive, low risk
@@ -186,6 +194,7 @@ modifier-click` question was settled by the user in favour of the **menu**: `⧉
 | Query: long polling                                | `A`,`D` | A completion-driven chain, not an interval - `withPolling` can't express it. Needs next-args-from-last-response, which is the reusable part                                                                |
 | Query devtools: Web Locks inspector                | `A`,`D` | Origin-wide, so it sees other tabs - but `LockInfo` has no tab identity and Web Locks has no change event. The `isLeader` chip shipped                                                                     |
 | Number input: drag-to-scrub + step modifiers       | `A`,`D` | User-raised 2026-08-10. One `stepBy(direction, multiplier)` serves both halves. Settle the multiplier vocabulary once, and which surface the drag lives on - the stepper buttons already own `pointerdown` |
+| Query devtools: own secondary entry point          | `C`,`D` | See #2 - ~480 kB of a consumer's initial bundle today, and neither `@defer` nor an in-library dynamic import can shift it. Breaking: the barrel cannot re-export it                                        |
 
 ### L - projects, not tickets
 

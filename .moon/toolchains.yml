@@ -1,0 +1,19 @@
+$schema: 'https://moonrepo.dev/schemas/toolchains.json'
+
+yarn:
+  version: '4.17.1'
+
+javascript:
+  packageManager: 'yarn'
+  inferTasksFromScripts: false
+  syncPackageManagerField: false
+  # Cross-lib links are peerDependencies curated by hand and validated by the
+  # @nx/dependency-checks lint rule; letting moon rewrite them fights that.
+  syncProjectWorkspaceDependencies: false
+
+typescript:
+  # Every lib already hand-maintains its tsconfig references and paths.
+  syncProjectReferences: false
+  createMissingConfig: false
+  includeProjectReferenceSources: false
+  rootOptionsConfigFileName: 'tsconfig.base.json'

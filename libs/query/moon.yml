@@ -1,0 +1,25 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+layer: 'library'
+language: 'typescript'
+dependsOn:
+  - 'core'
+  - 'types'
+
+tasks:
+  build:
+    command: 'ng-packagr -p ng-package.json -c tsconfig.lib.moon.json'
+    deps:
+      - '^:build'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(configs)'
+      - 'testing/**/*'
+    outputs:
+      - '/dist/libs/query'
+
+  test:
+    command: 'vitest run'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'

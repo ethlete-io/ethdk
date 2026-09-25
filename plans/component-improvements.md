@@ -555,6 +555,44 @@ Related, and already there: `withTracking` emits `leaderStatusChange` when leade
 (`bearer-auth-tracking.ts`), so the events tab has a source for "this tab became the leader" with
 nothing new to record.
 
+## Query devtools: the panel is initial-bundle weight in every consuming app
+
+Measured 2026-08-10 in `fut-frontend` against a local build of the `next.42` release.
+`QueryDevtoolsComponent` is imported into both apps' root `AppComponent`, so the whole panel is
+initial-bundle weight for every user, in production, permanently. Removing it and
+`provideQueryDevtools()` takes platform's initial bundle from 2.28 MB to **1.80 MB** and hub's from
+2.75 MB to **2.45 MB** - ~480 kB and ~300 kB. This release's own devtools growth was ~81 kB (the
+float panel, the settings and about tabs, the `et-menu` unification, the path-grouped list), which
+pushed platform 31.20 kB past its 2.25 MB budget and **broke its production build**; the app raised
+the budget to 2.4 MB to take the release at all.
+
+**A consumer cannot fix this themselves.** `@defer` on the panel makes Angular emit
+`import('@ethlete/components')` - the barrel - so nothing tree-shakes. In platform that produced a
+1.85 MB lazy chunk holding most of the library; in hub esbuild folded it back into `main`, which
+grew 820 kB (total emitted JS 2.80 MB → 3.63 MB) with the devtools code still sitting in `main`.
+Deferring is measurably worse than not deferring, in the app where it is most needed.
+
+**The library cannot fix it internally either.** ng-packagr 22 emits a single FESM
+(`fesm2022/ethlete-components.mjs`, 5.58 MB) and inlines dynamic imports into it. A probe -
+`export const p = () => import('./lib/query-devtools/query-devtools.component')` added to the public
+API - produced no extra chunk and left no `import(` anywhere in the output. So a `@defer` or a
+dynamic import written _inside_ the library is a no-op for consumers.
+
+What works is a **secondary entry point**: `@ethlete/components/query-devtools`, with its own
+`ng-package.json` and therefore its own FESM. That is a real module boundary, so a consumer's
+`@defer` against the deep path yields a chunk containing only devtools code. The files under
+`lib/query-devtools/` move as a unit.
+
+The decision it needs first: **the barrel must not re-export it.** A re-export puts the code back
+into the main FESM and buys nothing, so the import path changes for everyone who renders the panel -
+breaking. Components is already major this cycle, which is the cheap moment to take that.
+
+Two things not to conflate with it. `provideQueryDevtools()` lives in `@ethlete/query`, not
+components, and only installs module-level registrar state (`setQueryDevtoolsRegistrar`) - it is not
+what drags the UI in, and a panel created later still finds a populated registry, so the split does
+not change what the panel can show. Whether query's own devtools instrumentation deserves the same
+treatment is a separate question, and unmeasured here.
+
 ## Overlay responsiveness: resolved, and it was not systemic
 
 The premise of this section was wrong; recorded here so the next pass does not

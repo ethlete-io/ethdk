@@ -1,0 +1,15 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+layer: 'tool'
+language: 'typescript'
+
+tasks:
+  build:
+    command: 'node ../../tools/scripts/build-tsc-lib.mjs cli'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(configs)'
+      - '*.md'
+      - '/tools/scripts/build-tsc-lib.mjs'
+    outputs:
+      - '/dist/libs/cli'

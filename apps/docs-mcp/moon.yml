@@ -1,0 +1,24 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+layer: 'application'
+language: 'typescript'
+tags:
+  - 'scope-docs'
+
+tasks:
+  build:
+    script: 'npx tsc -p apps/docs-mcp/tsconfig.app.json && cp apps/docs-mcp/functions.package.json dist/apps/docs-mcp/package.json'
+    options:
+      runFromWorkspaceRoot: true
+    inputs:
+      - '@globs(sources)'
+      - '@globs(configs)'
+      - 'functions.package.json'
+    outputs:
+      - '/dist/apps/docs-mcp'
+
+  test:
+    command: 'vitest run'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'

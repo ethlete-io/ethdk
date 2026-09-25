@@ -1,0 +1,16 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+layer: 'tool'
+language: 'typescript'
+
+tasks:
+  build:
+    command: 'node ../../tools/scripts/build-tsc-lib.mjs agent-rules content'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(configs)'
+      - 'content/**/*'
+      - '*.md'
+      - '/tools/scripts/build-tsc-lib.mjs'
+    outputs:
+      - '/dist/libs/agent-rules'

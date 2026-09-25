@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "@ethlete/cdk": ["dist/libs/cdk"],
+      "@ethlete/components": ["dist/libs/components"],
+      "@ethlete/contentful": ["dist/libs/contentful"],
+      "@ethlete/core": ["dist/libs/core"],
+      "@ethlete/query": ["dist/libs/query"],
+      "@ethlete/query/testing": ["dist/libs/query/testing"],
+      "@ethlete/types": ["dist/libs/types"]
+    }
+  }
+}

@@ -1,0 +1,37 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+layer: 'library'
+language: 'typescript'
+tags:
+  - 'scope-components'
+dependsOn:
+  - 'core'
+  - 'query'
+  - 'types'
+
+tasks:
+  build-generators:
+    script: 'rm -rf generators/dist && tsc -p generators/tsconfig.json'
+    inputs:
+      - 'generators/**/*'
+      - '!generators/dist/**/*'
+    outputs:
+      - 'generators/dist'
+
+  build:
+    command: 'ng-packagr -p ng-package.json -c tsconfig.lib.moon.json'
+    deps:
+      - '^:build'
+      - '~:build-generators'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(configs)'
+    outputs:
+      - '/dist/libs/components'
+
+  test:
+    command: 'vitest run'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - 'generators/**/*'

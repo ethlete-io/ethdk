@@ -69,3 +69,9 @@ Thumbs.db
 
 .claude/settings.local.json
 ethlete-agents.config.local.json
+# moon
+.moon/cache
+.moon/docker
+
+# mTLS client certs materialised in CI for the remote cache
+.certs

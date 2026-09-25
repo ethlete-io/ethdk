@@ -1,0 +1,36 @@
+$schema: 'https://moonrepo.dev/schemas/tasks.json'
+
+fileGroups:
+  sources:
+    - 'src/**/*'
+    - '!src/**/*.spec.ts'
+    - '!src/**/*.test.ts'
+    - '!src/**/*.stories.ts'
+    - '!src/test-setup.*'
+  tests:
+    - 'src/**/*.spec.ts'
+    - 'src/**/*.test.ts'
+    - 'src/test-setup.*'
+    - 'tsconfig.spec.json'
+    - 'vite.config.mts'
+    - 'vitest.config.mts'
+  configs:
+    - 'package.json'
+    - 'ng-package.json'
+    - 'tsconfig*.json'
+
+implicitInputs:
+  - '/tsconfig.base.json'
+  - '/tsconfig.dist-paths.json'
+  - '/package.json'
+  - '/yarn.lock'
+
+tasks:
+  lint:
+    command: 'eslint .'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - 'eslint.config.mjs'
+      - '/eslint.config.mjs'
+      - '/tools/eslint-rules/**/*'

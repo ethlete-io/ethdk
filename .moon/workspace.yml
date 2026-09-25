@@ -1,0 +1,26 @@
+$schema: 'https://moonrepo.dev/schemas/workspace.json'
+
+projects:
+  - 'apps/*'
+  - 'libs/*'
+  - 'tools/treeshake'
+
+vcs:
+  defaultBranch: 'main'
+  provider: 'github'
+
+# Dependencies are installed by `yarn install --immutable` in CI and by the
+# developer locally; moon must not race that with an install of its own.
+pipeline:
+  installDependencies: false
+
+hasher:
+  optimization: 'accuracy'
+  walkStrategy: 'vcs'
+
+# Remote caching is opt-in via MOON_REMOTE_HOST, which must point at any Bazel
+# Remote Execution v2 cache (bazel-remote, NativeLink, …). The server has to run
+# with --storage_mode zstd to match the compression configured here.
+remote:
+  cache:
+    compression: 'zstd'

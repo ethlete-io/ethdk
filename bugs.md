@@ -1,0 +1,2 @@
+- after auto refresh token some already existing queries seem to use the old token and fail with 401. sometimes it even causes a endless loop of 401s and refreshes
+- query devtools locate often returns not on screen
