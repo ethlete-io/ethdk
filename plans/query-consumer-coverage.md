@@ -154,15 +154,24 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
   - S8b components: the same for `libs/components`. Much larger; split by domain (overlay, forms, grid, …),
     one fresh agent per domain. Behavior belongs in `apps/storybook-e2e` (`component-behavior-tests` skill)
     where a scenario cannot drive it. About 3 h or more.
-- [ ] S11 Follow-ups from S6 (hand-written skill `.agents/skills/query-scenario-tests/SKILL.md` documents `s.mount`)
-  1. `s.mount(Component, injector)` runs change detection at once, so an `input.required()` read by
-     `queryComputed` fails. Add an `inputs` option (`componentRef.setInput` before the first change detection),
-     replace the parent-template workaround in `legacy-client-options.scenario.spec.ts`, update the skill.
-  2. A chat scenario in `early-v3-patterns.scenario.spec.ts` gave different results on identical runs when a
-     response delay sat exactly on the 50 ms step of `s.flush()`. The delay was moved off the boundary; the
-     root cause (fake clock or flush loop) is unknown. Find it and prove the fix with a test that bites.
-  3. Check whether v3 `defineQueryForm` has the S6 P9 bug (a field loses its debounce when its change resets an
-     `isResetBy` field). Scenario first; defect process if real.
+- [x] S11 Follow-ups from S6 (hand-written skill `.agents/skills/query-scenario-tests/SKILL.md` documents `s.mount`)
+  1. Done in 47f4d25da: `s.mount(Component, injector, { inputs })` sets inputs before the first change detection;
+     `legacy-client-options` mounts `MatchListComponent` directly.
+  2. Root cause found, not fixed. Not the fake clock and not the flush loop: Angular's zoneless scheduler switches
+     to `queueMicrotask` after every tick it runs itself (`switchToMicrotaskScheduler`) and back on the next real
+     microtask. The harness never drains microtasks inside `tick()`, so an effect a timer dirtied runs at that
+     fake instant only while no scheduler tick happened since the last `await`; otherwise it waits for the next
+     `TestBed.tick()` (the 50 ms step in `flush()`). Probe: in the chat abort scenario with the POST delay at
+     100, one `await Promise.resolve()` before `dfbMatchId.set('2')` moves the dependent `/gg/matches/gg-2`
+     request from +50 to +31. At HEAD the scenario is deterministic (40 runs, also under load, also with shifted
+     wall-clock starts); the S6 flip happened while another session edited `libs/query/src/lib/http` (the
+     keepPreviousResponse work) under the same runs. Tried fix: wrap the fake `setTimeout`/`setInterval` so each
+     callback is followed by `TestBed.tick()`. The chat case then no longer depends on the `await`, but four
+     suites change timing (`dependent-queries` parks-then-executes, `auth` in-flight refresh, two
+     `auth-features` expiry windows), so it was reverted. Open: decide whether to take that harness change and
+     re-baseline those four suites.
+  3. Done in dfe00b5d7: v3 `defineQueryForm` does not have the P9 bug - the reset is resolved at commit time, so
+     the debounce comes from the edited field only. Covered for a bound field and `patchValue({ debounce })`.
 
 ### Continue consumer coverage on 2026-09-26
 
