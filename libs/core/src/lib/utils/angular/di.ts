@@ -1,4 +1,5 @@
 import { ElementRef, inject, InjectionToken, InjectOptions, Provider, TemplateRef } from '@angular/core';
+import { isObject } from '../object';
 import { createComponentId } from './component-id';
 
 export const injectHostElement = <T = HTMLElement>() => inject<ElementRef<T>>(ElementRef).nativeElement;
@@ -161,7 +162,7 @@ const createValueProviders = <T>(
 ];
 
 const maybeMergeValues = <T>(defaultValue: T | undefined, valueOverride?: Partial<T>) => {
-  if (valueOverride && defaultValue && typeof defaultValue === 'object') {
+  if (isObject(valueOverride) && isObject(defaultValue)) {
     return { ...defaultValue, ...valueOverride };
   }
 
