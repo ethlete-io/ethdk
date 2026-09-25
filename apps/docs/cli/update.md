@@ -73,7 +73,7 @@ An install, a codemod or the agent rules sync that fails stops the run and leave
 yarn et update --continue
 ```
 
-`pending.json` records every codemod that already applied, so `--continue` runs only the rest. `--check` exits 1 while the file is there.
+`pending.json` records every codemod that already applied and the `--from` versions you passed, so `--continue` runs only the rest, from the same versions. The report still lists the codemods the earlier run applied. `--check` exits 1 while the file is there.
 
 Do not start over. `package.json` already holds the new versions, so a fresh run finds nothing pending and skips every migration the interrupted run had not reached yet.
 
@@ -88,7 +88,7 @@ A codemod cannot make a decision about your product, and some changes have no co
 | `<package>-<migration>.md` | One task in full: what moved, plus the instructions the package ships. |
 | `pending.json`             | Only while a run is unfinished.                                        |
 
-`.ethlete/` is gitignored, so the list is yours, not the repo's. A later run keeps the tasks an earlier one left: delete a task file once the task is done, and the next run drops it from the list.
+The list is yours, not the repo's: `et update` adds `.ethlete/update/` to the root `.gitignore` unless git already ignores it, so the next run still finds a clean tree. Commit that `.gitignore` line with the update. A later run keeps the tasks an earlier one left: delete a task file once the task is done, and the next run drops it from the list.
 
 Each task links the docs of the release line the package moved to: `https://ethlete-sdk-docs-next.web.app` for a prerelease, `https://ethlete-sdk-docs.web.app` for a release.
 

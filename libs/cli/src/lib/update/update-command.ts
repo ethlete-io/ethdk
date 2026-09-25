@@ -3,6 +3,7 @@ import { readLocalConfig } from '../config/local-config';
 import { AGENT_COMMAND_KEY, assistedTasks, runAgentTasks } from './ai';
 import { AGENT_RULES_PACKAGE, planAgentRulesSync, runAgentRulesSync } from './agent-rules-sync';
 import { parseUpdateArgs } from './args';
+import { UPDATE_IGNORE_ENTRY, ignoreUpdateDir } from './gitignore';
 import { readPackageMigrations } from './migration-manifest';
 import { PackageManager, detectPackageManager } from './package-manager';
 import {
@@ -326,6 +327,12 @@ const runMigrationPhase = (options: {
   };
 };
 
+const ignoreTaskList = (root: string) => {
+  if (!ignoreUpdateDir(root)) return;
+
+  console.log(`\n  ${UPDATE_IGNORE_ENTRY} added to .gitignore: the task list is yours, not the repo's.`);
+};
+
 const continueHint = (invocation: string) =>
   `\nRun \`${invocation} --continue\` again once the failures above are fixed.`;
 
@@ -343,6 +350,8 @@ const resume = (options: {
 
     return 1;
   }
+
+  if (!argv.dryRun) ignoreTaskList(root);
 
   console.log(`\nContinuing the update started at ${pending.startedAt}:\n`);
 
@@ -505,6 +514,8 @@ export const updateCommand = async ({
 
     return 1;
   }
+
+  ignoreTaskList(root);
 
   const changedManifests = writeRanges({ root, writes: writable.flatMap((update) => update.writes) });
 

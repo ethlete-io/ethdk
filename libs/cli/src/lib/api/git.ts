@@ -27,6 +27,15 @@ export const uncommittedChanges = (cwd: string) => {
   return stdout.length > 0 ? stdout.split('\n') : [];
 };
 
+/** Whether git ignores a repo-relative path, or `undefined` outside a git checkout. */
+export const ignoredByGit = (cwd: string, path: string) => {
+  const { status } = git(cwd, ['check-ignore', '--quiet', '--no-index', path]);
+
+  if (status === 0) return true;
+
+  return status === 1 ? false : undefined;
+};
+
 export const hasUncommittedChanges = (cwd: string) => uncommittedChanges(cwd).length > 0;
 
 /** Commits on any local branch that no remote holds, so work is never removed with a checkout. */

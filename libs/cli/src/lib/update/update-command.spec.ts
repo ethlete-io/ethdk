@@ -108,6 +108,15 @@ describe('et update --continue', () => {
     expect(generatorsRun()).toEqual(['@ethlete/core:second']);
   });
 
+  it('adds the task list to .gitignore, so the next run finds a clean tree', async () => {
+    const root = makeRepo();
+
+    spawnSync.mockImplementation((_binary, args) => ({ status: args.includes('check-ignore') ? 1 : 0 }));
+
+    expect(await updateCommand({ argv: ['--continue'], root })).toBe(0);
+    expect(readFileSync(join(root, '.gitignore'), 'utf8')).toBe('.ethlete/update/\n');
+  });
+
   it('leaves the pending file alone on a dry run', async () => {
     const root = makeRepo();
 
@@ -173,7 +182,7 @@ describe('the agent rules sync', () => {
 
     expect(await updateCommand({ argv: ['--continue'], root })).toBe(0);
     expect(
-      spawnSync.mock.calls.map(([, args]) => args.find((arg) => /ethlete-agents|@ethlete\/core:/.test(arg))),
+      spawnSync.mock.calls.flatMap(([, args]) => args.filter((arg) => /ethlete-agents|@ethlete\/core:/.test(arg))),
     ).toEqual(['ethlete-agents', '@ethlete/core:first', '@ethlete/core:second']);
   });
 });
