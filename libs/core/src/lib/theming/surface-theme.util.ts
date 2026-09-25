@@ -106,7 +106,7 @@ export const injectSurfaceThemesPrefix = /* @__PURE__ */ toInjectFn(SURFACE_THEM
 export const provideSurfaceThemesWithTailwind4 = (themes: SurfaceTheme[], prefix = 'et') => [
   ɵProvideSurfaceThemes(themes),
   ɵProvideSurfaceThemesPrefix(prefix),
-  provideRootFontSizeCheck(),
+  ngDevMode ? provideRootFontSizeCheck() : [],
 ];
 
 /**
