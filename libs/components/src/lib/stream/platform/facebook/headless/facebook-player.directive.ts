@@ -172,10 +172,11 @@ export class FacebookPlayerDirective implements StreamPlayer {
 
   constructor() {
     effect(() => {
-      const error = this.playerResource.error();
+      const isLoading = this.playerResource.isLoading();
+      const error = isLoading ? undefined : this.playerResource.error();
       this.state.update((s) => ({
         ...s,
-        isLoading: error !== undefined ? false : this.playerResource.isLoading(),
+        isLoading: error !== undefined ? false : isLoading,
         error: error ?? null,
       }));
     });
