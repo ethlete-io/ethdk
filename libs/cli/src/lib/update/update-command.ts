@@ -89,12 +89,14 @@ type ResolveResult = {
 };
 
 const resolveUpdates = async (options: {
+  root: string;
+  manager: PackageManager;
   declared: readonly DeclaredPackage[];
   version?: string;
   tag?: string;
 }): Promise<ResolveResult> => {
-  const { declared, version, tag } = options;
-  const registry = registryUrl();
+  const { root, manager, declared, version, tag } = options;
+  const registry = registryUrl({ root, manager: manager.name });
   const result: ResolveResult = { updates: [], problems: [], upToDate: [] };
 
   const lookups = await Promise.all(
@@ -380,7 +382,7 @@ export const updateCommand = async ({
     return 0;
   }
 
-  const resolved = await resolveUpdates({ declared, version: args.version, tag: args.tag });
+  const resolved = await resolveUpdates({ root, manager, declared, version: args.version, tag: args.tag });
 
   for (const problem of resolved.problems) console.error(`  ${problem}`);
 

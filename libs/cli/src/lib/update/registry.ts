@@ -1,3 +1,6 @@
+import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
+import { PackageManagerName } from './package-manager';
 import { prereleaseTag } from './semver';
 
 const TIMEOUT_MS = 15_000;
@@ -11,9 +14,118 @@ export type RegistryPackage = {
 
 export type RegistryLookup = { ok: true; package: RegistryPackage } | { ok: false; reason: string };
 
-/** The registry npm would use, so a run inside a repo with its own registry reads the same one. */
-export const registryUrl = (env: NodeJS.ProcessEnv = process.env) =>
-  (env['npm_config_@ethlete:registry'] ?? env['npm_config_registry'] ?? DEFAULT_REGISTRY).replace(/\/+$/, '');
+const SCOPE = '@ethlete';
+
+type RegistryConfig = { scoped?: string; registry?: string };
+
+const unquote = (value: string) => value.trim().replace(/^(["'])(.*)\1$/, '$2');
+
+const readText = (path: string) => (existsSync(path) ? readFileSync(path, 'utf8') : undefined);
+
+const configLines = (text: string) =>
+  text.split(/\r?\n/).filter((line) => line.trim() !== '' && !/^\s*[#;]/.test(line));
+
+const readNpmrc = (text: string): RegistryConfig => {
+  const config: RegistryConfig = {};
+
+  for (const line of configLines(text)) {
+    const separator = line.indexOf('=');
+
+    if (separator < 0) continue;
+
+    const key = line.slice(0, separator).trim();
+    const value = unquote(line.slice(separator + 1));
+
+    if (key === `${SCOPE}:registry`) config.scoped = value;
+    if (key === 'registry') config.registry = value;
+  }
+
+  return config;
+};
+
+const readYarnrc = (text: string): RegistryConfig => {
+  const config: RegistryConfig = {};
+
+  for (const line of configLines(text)) {
+    const match = /^\s*("[^"]+"|\S+)\s+(.+)$/.exec(line);
+
+    if (!match) continue;
+
+    const key = unquote(match[1] as string);
+    const value = unquote(match[2] as string);
+
+    if (key === `${SCOPE}:registry`) config.scoped = value;
+    if (key === 'registry') config.registry = value;
+  }
+
+  return config;
+};
+
+const readYarnrcYml = (text: string): RegistryConfig => {
+  const config: RegistryConfig = {};
+  const path: { indent: number; key: string }[] = [];
+
+  for (const line of configLines(text)) {
+    const match = /^(\s*)([^:\s]+)\s*:\s*(.*)$/.exec(line);
+
+    if (!match) continue;
+
+    const indent = (match[1] as string).length;
+    const key = unquote(match[2] as string);
+    const value = unquote(match[3] as string);
+
+    while ((path[path.length - 1]?.indent ?? -1) >= indent) path.pop();
+
+    const keys = [...path.map((entry) => entry.key), key].join('.');
+
+    if (value === '') path.push({ indent, key });
+    else if (keys === 'npmRegistryServer') config.registry = value;
+    else if (keys === `npmScopes.${SCOPE.slice(1)}.npmRegistryServer`) config.scoped = value;
+  }
+
+  return config;
+};
+
+/** The registry settings of a repo's own config files, in the order its package manager reads them. */
+const projectRegistryConfig = (root: string, manager: PackageManagerName): RegistryConfig => {
+  const npmrc = readText(join(root, '.npmrc'));
+  const sources: (RegistryConfig | undefined)[] = [];
+
+  if (manager === 'yarn') {
+    const berry = readText(join(root, '.yarnrc.yml'));
+
+    if (berry !== undefined) return readYarnrcYml(berry);
+
+    const classic = readText(join(root, '.yarnrc'));
+
+    sources.push(classic === undefined ? undefined : readYarnrc(classic));
+  }
+
+  sources.push(npmrc === undefined ? undefined : readNpmrc(npmrc));
+
+  return {
+    scoped: sources.find((source) => source?.scoped)?.scoped,
+    registry: sources.find((source) => source?.registry)?.registry,
+  };
+};
+
+/**
+ * The registry the repo's package manager installs `@ethlete/*` from: the repo's `.npmrc`, `.yarnrc` or
+ * `.yarnrc.yml` first, since yarn 1 exports its default registry to scripts even when an `.npmrc` sets
+ * another one, then the environment, then the public registry.
+ */
+export const registryUrl = (options: { root?: string; manager?: PackageManagerName; env?: NodeJS.ProcessEnv } = {}) => {
+  const { root = process.cwd(), manager = 'npm', env = process.env } = options;
+  const project = projectRegistryConfig(root, manager);
+
+  return (
+    project.scoped ??
+    env[`npm_config_${SCOPE}:registry`] ??
+    project.registry ??
+    env['npm_config_registry'] ??
+    DEFAULT_REGISTRY
+  ).replace(/\/+$/, '');
+};
 
 export const packageUrl = (options: { registry: string; packageName: string }) =>
   `${options.registry}/${options.packageName.replace('/', '%2f')}`;
