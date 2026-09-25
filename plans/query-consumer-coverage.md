@@ -195,12 +195,12 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       Friction: a slot exposes state but no playback control; `width="480"` on Vimeo or Facebook gives an invalid CSS
       width; the stream error codes are not exported. E2E gaps: PiP drag, collapse and resize; the FLIP and scale
       animations; an iframe that moves between slots; the placeholder pulse (needs a real IntersectionObserver).
-      Table in progress (2026-09-25), split in two parallel subagents: part A (core, labels, row sources, sort and
-      filter, state persistence, CSV export, skeleton, virtual scroll, group headers) writes
-      `table-core*.scenario.spec.ts`; part B (selection, expansion, inline edit, cell errors, column chooser and menu,
-      filters, keyboard nav, reorder, resize, drag scroll, sticky columns, page sticky header, row router link) writes
-      `table-features*.scenario.spec.ts`. Neither edits the allowlist; the lead removes covered entries after both
-      report. If a session ends first: run both files, match their exports against the `S8b table` allowlist entries.
+      Table done (91 of 91). Part A (`table-core{,-state-csv,-features}.scenario.spec.ts`): all 47 covered. Bug fixed
+      (b9895aa4b): the group header row bound every group cell to one dimensions signal and logged a dev warning.
+      Friction: scenarios take no per-test providers; a dev `RuntimeError` in render adds a stray
+      `console.error({ element })` to `s.errors`; a failed signals-client query reports to the ErrorHandler;
+      `s.flush()`/`s.settle()` never settle while a query client lives (use `s.tick()`). E2E gaps: virtual scroll
+      windowing and measured row height; the group row sticky offset; the refetch busy bar; the real CSV download.
       Part B done (`table-features-{rows,columns}.scenario.spec.ts`): all 42 covered, allowlist updated. Bug fixed
       (c8868313d): the focusable failed-cell mark had `aria-hidden` and no label, because `IconDirective`'s host
       bindings overwrite a template `aria-label`; use `[label]`. Open: the same bug on the core error icon in
