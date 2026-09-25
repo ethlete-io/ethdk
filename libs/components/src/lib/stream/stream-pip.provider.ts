@@ -18,8 +18,12 @@ const DEFAULT_STREAM_PIP_OPTIONS: StreamPipOptions = {
   },
 };
 
+export type StreamPipProviderOptions = Partial<Omit<StreamPipOptions, 'pipWindow'>> & {
+  pipWindow?: Partial<StreamPipOptions['pipWindow']>;
+};
+
 /** Registers the floating picture-in-picture window and controls for stream player slots in scope. */
-export const provideStreamPip = (options: Partial<StreamPipOptions> = {}): Provider[] => {
+export const provideStreamPip = (options: StreamPipProviderOptions = {}): Provider[] => {
   const streamPipOptions = {
     ...DEFAULT_STREAM_PIP_OPTIONS,
     ...options,
