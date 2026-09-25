@@ -34,11 +34,11 @@ error and no warning, the element just renders unstyled. A theme that does this:
 leaves `bg-blue-500`, `text-gray-700` and `text-sm` as dead strings, even though
 they are "real" Tailwind classes.
 
-**Read the theme before reaching for an unfamiliar utility.** This project's is
-`{%themeStylesheet%}`:
+**Read the theme before reaching for an unfamiliar utility.** This project's lives in
+`{%themeStylesheet%}` (a file, or a folder of theme files):
 
 ```bash
-grep -nE -- '--(color|text|font|spacing)-' {%themeStylesheet%}
+grep -rnE -- '--(color|text|font|spacing)-' {%themeStylesheet%}
 ```
 
 If `@theme` doesn't define the token, the class doesn't exist. Check rather than
