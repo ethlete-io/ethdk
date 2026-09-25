@@ -20,6 +20,10 @@
       "entry": "import { clamp } from '@ethlete/core';\nconsole.log(clamp);",
       "gzip": 974
     },
+    "core-surface-themes": {
+      "entry": "import { provideSurfaceThemesWithTailwind4 } from '@ethlete/core';\nconsole.log(provideSurfaceThemesWithTailwind4);",
+      "gzip": 1262
+    },
     "query-floor": {
       "entry": "import { transformToString } from '@ethlete/query';\nconsole.log(transformToString);",
       "gzip": 1151
