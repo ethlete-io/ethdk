@@ -21,6 +21,8 @@ export type PendingUpdate = {
   startedAt: string;
   packages: PendingPackage[];
   finished?: FinishedMigration[];
+  /** The `--from` versions of the run, so `--continue` migrates from the same place. */
+  from?: Record<string, string>;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -64,10 +66,17 @@ export const readPendingUpdate = (root: string): PendingUpdate | undefined => {
       )
     : [];
 
+  const from = isRecord(parsed['from'])
+    ? Object.fromEntries(
+        Object.entries(parsed['from']).filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
+      )
+    : undefined;
+
   return {
     startedAt: typeof parsed['startedAt'] === 'string' ? parsed['startedAt'] : 'an earlier run',
     packages: packages.map((entry) => ({ name: entry.name, from: entry.from ?? null, to: entry.to })),
     finished: finished.map((entry) => ({ packageName: entry.packageName, name: entry.name })),
+    ...(from ? { from } : {}),
   };
 };
 

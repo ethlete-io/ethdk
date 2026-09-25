@@ -84,6 +84,26 @@ describe('et update --continue', () => {
     expect(readPendingUpdate(root)).toBeUndefined();
   });
 
+  it('migrates from the --from version of the run it continues', async () => {
+    const root = makeRepo();
+    const newer = { 'dist-tags': { latest: '5.2.0' }, versions: { '5.1.0': {}, '5.2.0': {} } };
+
+    rmSync(join(root, UPDATE_DIR), { recursive: true });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(JSON.stringify(newer))),
+    );
+    spawnSync.mockImplementation((_binary, args) => ({ status: args.includes('@ethlete/core:second') ? 1 : 0 }));
+
+    expect(await updateCommand({ argv: ['--from', 'core@5.0.0'], root })).toBe(1);
+
+    spawnSync.mockReset();
+    spawnSync.mockReturnValue({ status: 0 });
+
+    expect(await updateCommand({ argv: ['--continue'], root })).toBe(0);
+    expect(generatorsRun()).toEqual(['@ethlete/core:second']);
+  });
+
   it('leaves the pending file alone on a dry run', async () => {
     const root = makeRepo();
 

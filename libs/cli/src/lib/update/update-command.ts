@@ -353,7 +353,7 @@ const resume = (options: { root: string; manager: PackageManager; argv: ReturnTy
     manager,
     pendingUpdate: pending,
     updates,
-    from: argv.from,
+    from: { ...pending.from, ...argv.from },
     dryRun: argv.dryRun,
     ai: argv.ai,
   });
@@ -495,6 +495,7 @@ export const updateCommand = async ({
   const pendingUpdate: PendingUpdate = {
     startedAt: new Date().toISOString(),
     packages: writable.map((update) => ({ name: update.name, from: update.from ?? null, to: update.to })),
+    ...(Object.keys(args.from).length > 0 ? { from: args.from } : {}),
   };
 
   writePendingUpdate({ root, pending: pendingUpdate });
