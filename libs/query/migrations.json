@@ -39,6 +39,22 @@
       "description": "Mark the remaining createLegacyQueryCreator wrappers as deprecated, so their call sites surface as still on v2.",
       "generator": "@ethlete/query:deprecate-legacy-queries",
       "docs": "/query/legacy"
+    },
+    {
+      "name": "search-query-field-string",
+      "version": "6.0.0-next.52",
+      "kind": "assisted",
+      "description": "searchQueryField() is typed string and starts at '' instead of null; writes and checks of null move to ''.",
+      "instructions": "./migrations/search-query-field-string.md",
+      "docs": "/query/query-forms"
+    },
+    {
+      "name": "query-field-default-types",
+      "version": "6.0.0-next.52",
+      "kind": "assisted",
+      "description": "queryField() is typed by its default and reads the URL into that type; fields without a default or with a non-primitive one need a queryParamToValue.",
+      "instructions": "./migrations/query-field-default-types.md",
+      "docs": "/query/query-forms"
     }
   ]
 }
