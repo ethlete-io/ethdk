@@ -7,6 +7,7 @@ import {
   createGqlQueryViaPost,
   createInfinityQueryConfig,
   createLegacyQueryCreator,
+  createSecureGetQuery,
   filterSuccess,
   gql,
   InfinityQueryDirective,
@@ -353,6 +354,36 @@ describe('legacy interop scenario', () => {
       } finally {
         warn.mockRestore();
       }
+    });
+    it('reports a secure load that waited for a login as the trigger it was started with', async () => {
+      const s = scenario();
+      const auth = s.auth();
+      s.api.protect('/users/**');
+      s.api.on('GET', '/users/me', () => ({ body: { id: 'me', name: 'Ada' }, delay: 20 }));
+
+      const getUserMe = createSecureGetQuery(s.clientRef, auth.ref)<{ response: User }>('/users/me');
+      const legacyGetUserMe = createLegacyQueryCreator({ creator: getUserMe, name: 'legacyGetUserMe' });
+
+      const c = s.consumer();
+      const query = c.run(() => legacyGetUserMe.prepare({}));
+      const recorded = recordStates(query);
+
+      query.execute({ _triggeredVia: 'program' });
+      s.tick(10);
+      c.run(() => auth.queries.login.execute({ body: {} }));
+      await s.settle();
+      s.flush();
+
+      expect(query.rawState).toMatchObject({ type: QueryStateType.Success, response: { id: 'me' } });
+      const loadingTriggers = recorded.states
+        .filter((state) => state.type === QueryStateType.Loading)
+        .map((state) => state.meta.triggeredVia);
+
+      expect(loadingTriggers.length).toBeGreaterThan(1);
+      expect(new Set(loadingTriggers)).toEqual(new Set(['program']));
+
+      recorded.stop();
+      c.destroy();
     });
   });
 

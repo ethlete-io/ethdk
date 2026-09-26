@@ -186,6 +186,10 @@ export class LegacyQuery<
 
   private _ownLoadExecuteTime: number | null = null;
 
+  private _responseAtExecute: unknown = null;
+
+  private _errorAtExecute: unknown = null;
+
   private _wasAborted = false;
 
   state$: Observable<V2QueryState<Data>>;
@@ -279,7 +283,8 @@ export class LegacyQuery<
 
   /**
    * A load this wrapper did not start - a `refreshQueriesInUse()`, an invalidation - reports as `auto`, the way
-   * v2 reported its background refreshes.
+   * v2 reported its background refreshes. A secure query that waits for a token reports a synthetic loading
+   * state first and the request's own later, so a new load that starts before this one settled is still its own.
    */
   private triggerOf(execState: QueryExecutionState<QueryArgsOf<TNewQuery>> | null): QueryTrigger {
     if (execState?.type !== 'loading') return this._triggeredVia;
@@ -290,7 +295,22 @@ export class LegacyQuery<
       this._ownLoadExecuteTime = executeTime;
     }
 
-    return executeTime === this._ownLoadExecuteTime ? this._triggeredVia : 'auto';
+    if (executeTime === this._ownLoadExecuteTime) return this._triggeredVia;
+
+    if (this._ownLoadExecuteTime !== null && !this.hasOwnLoadSettled()) {
+      this._ownLoadExecuteTime = executeTime;
+
+      return this._triggeredVia;
+    }
+
+    return 'auto';
+  }
+
+  private hasOwnLoadSettled() {
+    return (
+      untracked(this.newQuery.response) !== this._responseAtExecute ||
+      untracked(this.newQuery.error) !== this._errorAtExecute
+    );
   }
 
   get isExpired() {
@@ -366,6 +386,8 @@ export class LegacyQuery<
     this._wasAborted = false;
     this._lastExecuteCalledAt = Date.now();
     this._ownLoadExecuteTime = null;
+    this._responseAtExecute = untracked(this.newQuery.response);
+    this._errorAtExecute = untracked(this.newQuery.error);
 
     untracked(() =>
       // v2 had a single `skipCache` for every method, so this cannot tell whether the underlying request is
