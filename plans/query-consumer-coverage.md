@@ -234,7 +234,8 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       Rich-text editor done (56 of 56, `forms-rich-text-editor{,-tools}.scenario.spec.ts`, 3955ac869, 94d0300cc).
       Bugs fixed: blur marked no signal-form field touched; a token chip without `description` showed a "null"
       tooltip. `it.fails`: `htmlToMarkdown` escapes no Markdown, so literal `- x` or `**x**` reloads as formatting.
-      Also open: a pasted `javascript:` link survives as a Markdown link in the value. The user wants both fixed.
+      Also a pasted `javascript:` link survived as a Markdown link.
+      Both fixed (542b3ea3e, 28839d83a; new core export `isSafeLinkUrl`); stored values now carry backslash escapes.
       Friction: a headless `[etRichTextEditor]` cannot attach its editable element (`editorDom` is `@internal`);
       the token popup's host `id` overwrites TestBed's root id; rAF loops need an `s.flush()` at the end. E2E gaps:
       caret, IME and soft breaks; toolbar and popover positioning; the touch-docked toolbar; image drag and drop;
@@ -245,7 +246,7 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       detection; `nowIndicator` keeps a timer, so `s.flush()` never settles. E2E gaps: pointer drag-to-create,
       move and resize; edit surface placement and the fullscreen dialog below `md`; scroll to the initial hour;
       RTL swipe; long-press drag versus swipe; the "+N more" overflow menu.
-      In progress (2026-09-26): the Markdown escape and `javascript:` paste fixes; `grid`; `forms/form-field`.
+      In progress (2026-09-26): tokens stay unescaped in Markdown; `grid`; `forms/form-field`.
 - [x] S11 Follow-ups from S6 (hand-written skill `.agents/skills/query-scenario-tests/SKILL.md` documents `s.mount`)
   1. Done in 47f4d25da: `s.mount(Component, injector, { inputs })` sets inputs before the first change detection;
      `legacy-client-options` mounts `MatchListComponent` directly.
