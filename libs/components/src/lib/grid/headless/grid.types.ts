@@ -72,7 +72,7 @@ export type GridItemActionsComponent<TData = unknown> = Type<{
 
 /**
  * One entry of `provideGridConfig({ registrations })`: the component rendered for grid items of
- * `type`, plus optional span constraints and a config component for edit mode.
+ * `type`, plus optional span constraints.
  *
  * The component's `data` must be declared with `input<T>()` - the grid binds it as an input. The
  * read-only `Signal` type here does not enforce that.
@@ -81,15 +81,4 @@ export type GridComponentRegistration<TData = unknown> = {
   component: Type<{ data: Signal<TData> }>;
   type: string;
   constraints?: GridItemConstraintsConfig;
-  configComponent?: Type<unknown>;
 };
-
-/**
- * Injectable reference provided to configComponent instances: the item's current data, and the
- * ability to save or cancel.
- */
-export abstract class GridItemRef<TData = unknown> {
-  abstract readonly data: Signal<TData | undefined>;
-  abstract save(data: TData): void;
-  abstract close(): void;
-}

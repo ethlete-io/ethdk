@@ -1,5 +1,5 @@
 import { JsonPipe } from '@angular/common';
-import { Component, inject, input, signal, Signal, viewChild, ViewEncapsulation } from '@angular/core';
+import { Component, inject, input, signal, viewChild, ViewEncapsulation } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import {
@@ -15,7 +15,6 @@ import {
   GridItemConfig,
   GridItemDirective,
   GridItemPosition,
-  GridItemRef,
   GridResizeDirective,
   GridSerializedState,
   provideGridConfig,
@@ -143,45 +142,6 @@ class DebugBoardComponent {
   items = signal(TILES);
   breakpoints = BREAKPOINTS;
   grid = viewChild.required(GridComponent<Tile>);
-}
-
-class TileSettingsRef extends GridItemRef<Tile> {
-  saved: Tile[] = [];
-  closed = 0;
-
-  constructor(public readonly data: Signal<Tile | undefined>) {
-    super();
-  }
-
-  save(data: Tile) {
-    this.saved.push(data);
-  }
-
-  close() {
-    this.closed++;
-  }
-}
-
-@Component({
-  selector: 'et-scenario-tile-settings',
-  template: `
-    <button (click)="ref.save({ title: 'Renamed' })" class="scenario-save" type="button">Save</button>
-    <button (click)="ref.close()" class="scenario-close" type="button">Close</button>
-    <span class="scenario-settings-title">{{ ref.data()?.title }}</span>
-  `,
-})
-class TileSettingsComponent {
-  ref = inject(GridItemRef<Tile>);
-}
-
-@Component({
-  selector: 'et-scenario-settings-host',
-  imports: [TileSettingsComponent],
-  providers: [{ provide: GridItemRef, useFactory: () => new TileSettingsRef(signal({ title: 'Tile a' })) }],
-  template: `<et-scenario-tile-settings />`,
-})
-class SettingsHostComponent {
-  ref = inject(GridItemRef) as TileSettingsRef;
 }
 
 @Component({
@@ -429,23 +389,6 @@ describe('grid headless scenarios', () => {
     s.tick(2000);
     expect(panel.querySelector('.et-grid-debug-copied')).toBeNull();
     expect(fixture.debugElement.query(By.directive(GridDebugComponent))).toBeTruthy();
-
-    s.flush();
-  });
-
-  it('hands an app-provided GridItemRef to a settings component', () => {
-    const s = scenario();
-    const fixture = TestBed.createComponent(SettingsHostComponent);
-    const host = fixture.nativeElement as HTMLElement;
-
-    s.tick();
-    expect(host.querySelector('.scenario-settings-title')?.textContent).toBe('Tile a');
-
-    host.querySelector<HTMLButtonElement>('.scenario-save')!.click();
-    host.querySelector<HTMLButtonElement>('.scenario-close')!.click();
-
-    expect(fixture.componentInstance.ref.saved).toEqual([{ title: 'Renamed' }]);
-    expect(fixture.componentInstance.ref.closed).toBe(1);
 
     s.flush();
   });
