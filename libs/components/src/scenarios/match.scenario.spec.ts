@@ -83,7 +83,6 @@ const ethleteMatch = (overrides: Partial<EthleteMatchInput> = {}): EthleteMatchI
   selector: 'et-scenario-live-match',
   imports: [MatchCardComponent],
   template: `
-    <!-- eslint-disable-next-line @angular-eslint/template/elements-content -->
     <a
       [match]="match()"
       [size]="size()"
@@ -175,7 +174,6 @@ class OwnCardComponent {
   selector: 'et-scenario-roster',
   imports: [MATCH_PARTICIPANT_IMPORTS],
   template: `
-    <!-- eslint-disable-next-line @angular-eslint/template/elements-content -->
     <button [participant]="seeded" class="player" et-match-participant showSeed type="button"></button>
     <et-match-participant [participant]="seeded" class="compact" compact />
     <et-match-participant [participant]="null" class="tbd" />

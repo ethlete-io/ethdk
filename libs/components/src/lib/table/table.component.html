@@ -284,8 +284,6 @@
                A child of the row, not of a cell: a cell that is pinned is `position: sticky` and would
                therefore be the anchor's containing block, shrinking the row's hit area to that one
                column. The row box is the containing block that spans every cell. -->
-          <!-- eslint-disable-next-line @angular-eslint/template/elements-content -- the rule's
-               allowList knows `aria-label` but not `aria-labelledby`, which names it just as well. -->
           <a
             [attr.href]="rowVm.href"
             [attr.aria-labelledby]="rowVm.linkLabelId"

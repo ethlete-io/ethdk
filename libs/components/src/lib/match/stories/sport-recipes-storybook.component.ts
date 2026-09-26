@@ -104,7 +104,6 @@ export class SportRecipesMatchRailStorybookComponent {
             >
               <!-- On an anchor: the whole participant is the link, named after the participant rather than
                    after its emblem's alt text plus the same name again. -->
-              <!-- eslint-disable-next-line @angular-eslint/template/elements-content -->
               <a [participant]="participant" (click)="stayHere($event)" et-match-participant href="#" showSeed></a>
               <span class="text-small opacity-60">10 matches · 8 wins</span>
             </div>

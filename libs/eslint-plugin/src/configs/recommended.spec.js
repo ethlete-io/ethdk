@@ -866,3 +866,22 @@ test('prefer-static-boolean-properties: bare attribute is valid', () => {
   const msgs = lintTemplate(`<my-cmp isReadonly />`);
   expect(ruleIds(msgs)).not.toContain('ethlete/prefer-static-boolean-properties');
 });
+
+test('template/elements-content: an empty anchor or button is flagged', () => {
+  expect(ruleIds(lintTemplate(`<a href="/x"></a>`))).toContain('@angular-eslint/template/elements-content');
+  expect(ruleIds(lintTemplate(`<button type="button"></button>`))).toContain(
+    '@angular-eslint/template/elements-content',
+  );
+});
+
+test('template/elements-content: hosts that render their own content are valid', () => {
+  const templates = [
+    `<a et-match-card href="/x"></a>`,
+    `<button et-match-participant type="button"></button>`,
+    `<a href="/x" aria-labelledby="label"></a>`,
+    `<a href="/x" aria-label="Open"></a>`,
+  ];
+  for (const template of templates) {
+    expect(ruleIds(lintTemplate(template))).not.toContain('@angular-eslint/template/elements-content');
+  }
+});

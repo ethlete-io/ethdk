@@ -33,11 +33,7 @@ class HostComponent {
 }
 
 @Component({
-  template: `
-    <!-- The primitive renders its own content and its own name, neither visible to the linter. -->
-    <!-- eslint-disable-next-line @angular-eslint/template/elements-content -->
-    <a [participant]="participant()" et-match-participant href="#"></a>
-  `,
+  template: `<a [participant]="participant()" et-match-participant href="#"></a>`,
   imports: [MatchParticipantComponent],
 })
 class LinkHostComponent {

@@ -429,6 +429,12 @@ const recommendedTemplate = {
     '@angular-eslint/template/no-any': 'error',
     // Prefer plain attribute over unnecessary property binding for static strings: etIcon="foo" not [etIcon]="'foo'"
     '@angular-eslint/template/prefer-static-string-properties': 'error',
+    // Merged with the rule's own allowList (aria-label, title, innerText, ...), not replacing it.
+    // The et-* hosts render their own content and accessible name.
+    '@angular-eslint/template/elements-content': [
+      'error',
+      { allowList: ['aria-labelledby', 'et-match-card', 'et-match-participant'] },
+    ],
     // Prefer plain attribute over unnecessary property binding for static booleans: isReadonly not [isReadonly]="true"
     // (warn + suggestion-only: the rewrite is only safe when the input has a booleanAttribute transform,
     // which a template rule cannot verify)

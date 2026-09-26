@@ -62,11 +62,7 @@ class HostComponent {
 }
 
 @Component({
-  template: `
-    <!-- The card renders its own content and its own accessible name, neither visible to the linter. -->
-    <!-- eslint-disable-next-line @angular-eslint/template/elements-content -->
-    <a [match]="match()" et-match-card href="#"></a>
-  `,
+  template: `<a [match]="match()" et-match-card href="#"></a>`,
   imports: [MATCH_CARD_IMPORTS],
 })
 class LinkHostComponent {

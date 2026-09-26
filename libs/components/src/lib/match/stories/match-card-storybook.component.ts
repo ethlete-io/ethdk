@@ -24,9 +24,6 @@ import { NormalizedMatch, NormalizedMatchParticipant, NormalizedMatchResultKind 
              what its name says - and here the exact width is the thing being demonstrated. -->
         <div [style.inline-size.px]="width()">
           @if (interactive()) {
-            <!-- The card renders its own content and its own accessible name (an aria-label bound by the
-                 headless directive), neither of which the template linter can see. -->
-            <!-- eslint-disable-next-line @angular-eslint/template/elements-content -->
             <a
               [match]="match()"
               [size]="size()"
