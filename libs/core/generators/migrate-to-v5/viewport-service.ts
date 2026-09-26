@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Tree, logger } from '@nx/devkit';
 import * as ts from 'typescript';
+import { applyReplacements } from './apply-replacements';
 
 export default async function migrateViewportService(tree: Tree) {
   logger.log('\n🔄 Migrating ViewportService to standalone utilities...\n');
@@ -118,7 +119,7 @@ export default async function migrateViewportService(tree: Tree) {
       });
 
       // Check if any replacements use toObservable or toSignal
-      for (const [original, replacement] of [...context.replacements].sort((a, b) => b[0].length - a[0].length)) {
+      for (const replacement of context.replacements.values()) {
         if (replacement.includes('toObservable(')) {
           allImportsNeeded['@angular/core/rxjs-interop'].add('toObservable');
         }
@@ -128,10 +129,7 @@ export default async function migrateViewportService(tree: Tree) {
       }
 
       // Apply replacements FIRST (before adding members)
-      for (const [original, replacement] of context.replacements) {
-        const regex = new RegExp(escapeRegExp(original), 'g');
-        updatedContent = updatedContent.replace(regex, replacement);
-      }
+      updatedContent = applyReplacements(updatedContent, context.replacements);
 
       // Then add new members to the updated content
       if (context.membersToAdd.length > 0) {

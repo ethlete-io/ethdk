@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Tree } from '@nx/devkit';
 import * as ts from 'typescript';
+import { applyReplacements } from './apply-replacements';
 
 type ImportsByPackage = {
   '@ethlete/core': Set<string>;
@@ -1356,7 +1357,7 @@ export default async function migrateRouterStateService(tree: Tree) {
         }
       });
 
-      for (const [original, replacement] of [...context.replacements].sort((a, b) => b[0].length - a[0].length)) {
+      for (const replacement of context.replacements.values()) {
         if (replacement.includes('toObservable(')) {
           allImportsNeeded['@angular/core/rxjs-interop'].add('toObservable');
         }
@@ -1365,10 +1366,7 @@ export default async function migrateRouterStateService(tree: Tree) {
         }
       }
 
-      for (const [original, replacement] of context.replacements) {
-        const regex = new RegExp(escapeRegExp(original), 'g');
-        updatedContent = updatedContent.replace(regex, replacement);
-      }
+      updatedContent = applyReplacements(updatedContent, context.replacements);
 
       if (context.membersToAdd.length > 0) {
         const sourceFileUpdated = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);

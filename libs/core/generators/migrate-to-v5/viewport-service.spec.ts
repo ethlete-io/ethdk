@@ -237,6 +237,25 @@ constructor() {
       expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
       expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
+    it('should not rewrite isLg$ when isLg is replaced in the same class', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+
+  base = this.viewportService.isLg;
+  base$ = this.viewportService.isLg$;
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      const output = tree.read('test.ts', 'utf-8')!;
+
+      expect(output).not.toContain('()$');
+      expect(output).toContain('base = injectIsLg();');
+      expect(output).toContain('base$ = toObservable(injectIsLg());');
+    });
   });
 
   describe('observable properties', () => {

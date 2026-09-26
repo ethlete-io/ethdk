@@ -83,6 +83,25 @@ export class MyComponent {
 
       expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
     });
+    it('should not rewrite route$ when route is replaced in the same class', async () => {
+      const input = `import { RouterStateService } from '@ethlete/core';
+
+export class MyComponent {
+  private _routerStateService = inject(RouterStateService);
+
+  route = this._routerStateService.route;
+  route$ = this._routerStateService.route$;
+}`;
+
+      tree.write('test.ts', input);
+      await migrateRouterStateService(tree);
+
+      const output = tree.read('test.ts', 'utf-8')!;
+
+      expect(output).not.toContain('()$');
+      expect(output).toContain('route = injectRoute();');
+      expect(output).toContain('route$ = toObservable(injectRoute());');
+    });
   });
 
   describe('method calls', () => {
