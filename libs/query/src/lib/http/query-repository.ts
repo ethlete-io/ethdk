@@ -435,6 +435,9 @@ export type CreateQueryRepositoryConfig = CreateQueryClientConfigOptions & {
    * @default true
    */
   retentionEnabled?: boolean;
+
+  /** Whether the client itself carries a retry policy, via its own `retryFn` or a feature. */
+  hasRetryPolicy?: () => boolean;
 };
 
 const generateUuid = () => randomId();
@@ -562,6 +565,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       clientHeaders: config.headers,
       cacheAdapter: config.cacheAdapter,
       retryFn: options.retryFn ?? config.retryFn,
+      hasRetryPolicy: !!options.retryFn || (config.hasRetryPolicy?.() ?? !!config.retryFn),
       idempotent: options.isRefreshable ?? isIdempotentQueryMethod(options.method),
     });
 

@@ -113,3 +113,69 @@ describe('retryState without a retry feature', () => {
     c.destroy();
   });
 });
+
+describe('retryState with a configured policy', () => {
+  describe('on a client whose retryableStatusCodes leave the status out', () => {
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [withDefaultRetry({ retryableStatusCodes: [429], baseDelayMs: 100, jitter: 0 })],
+    });
+
+    it('offers no manual retry', () => {
+      const s = scenario();
+      s.api.on('GET', '/down', () => ({ status: 503, body: { message: 'down' } }));
+
+      const getDown = s.get<{ response: unknown }>('/down');
+      const c = s.consumer();
+      const query = c.run(() => getDown());
+
+      s.flush();
+
+      expect(s.api.requestCount('GET', '/down')).toBe(1);
+      expect(query.error()?.retryState).toEqual({ retry: false });
+
+      s.expectError(isStatus(503));
+      c.destroy();
+    });
+  });
+
+  describe('on a client with its own retryFn', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0, retryFn: () => ({ retry: false }) } });
+
+    it('offers no manual retry when the policy declines', () => {
+      const s = scenario();
+      s.api.on('GET', '/down', () => ({ status: 503, body: { message: 'down' } }));
+
+      const getDown = s.get<{ response: unknown }>('/down');
+      const c = s.consumer();
+      const query = c.run(() => getDown());
+
+      s.flush();
+
+      expect(query.error()?.retryState).toEqual({ retry: false });
+
+      s.expectError(isStatus(503));
+      c.destroy();
+    });
+  });
+
+  describe('on a creator with its own retryFn', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('offers no manual retry when the policy declines', () => {
+      const s = scenario();
+      s.api.on('GET', '/down', () => ({ status: 503, body: { message: 'down' } }));
+
+      const getDown = s.get<{ response: unknown }>('/down').clone({ retryFn: () => ({ retry: false }) });
+      const c = s.consumer();
+      const query = c.run(() => getDown());
+
+      s.flush();
+
+      expect(query.error()?.retryState).toEqual({ retry: false });
+
+      s.expectError(isStatus(503));
+      c.destroy();
+    });
+  });
+});

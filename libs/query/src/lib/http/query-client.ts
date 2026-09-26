@@ -18,7 +18,7 @@ import {
 } from './query-client-features';
 import { queryClientFeatureUsedMultipleTimes } from './query-errors';
 import { QueryHeadersInput } from './query-headers';
-import { runDefaultQueryRetry } from './query-error-parsing';
+import { hasDefaultQueryRetry, runDefaultQueryRetry } from './query-error-parsing';
 import { createQueryRepository, QueryRepository } from './query-repository';
 import { ShouldRetryRequestFn } from './query-retry-utils';
 import { QuerySyncEngine } from './sync/query-sync-engine';
@@ -251,6 +251,7 @@ export const createQueryClient = (options: CreateQueryClientConfigOptions): Quer
         // a per-request injector for the whole window, so retention is browser only.
         retentionEnabled: isBrowser,
         retryFn: (retryOptions) => clientRetryFn?.(retryOptions) ?? runDefaultQueryRetry(retryOptions),
+        hasRetryPolicy: () => !!clientRetryFn || hasDefaultQueryRetry(),
         dependencies: { httpClient, ngErrorHandler, injector },
       });
 

@@ -36,7 +36,7 @@ import { QueryErrorResponse, createQueryErrorResponse } from './query-error-resp
 import { QueryHeadersInput, resolveQueryHeaders } from './query-headers';
 import { IS_QUERY_REQUEST } from './query-http-context';
 import { QueryRepositoryDependencies } from './query-repository';
-import { runDefaultQueryRetry } from './query-error-parsing';
+import { hasDefaultQueryRetry, runDefaultQueryRetry } from './query-error-parsing';
 import {
   isIdempotentQueryMethod,
   shouldRetryRequest,
@@ -103,6 +103,13 @@ export type CreateHttpRequestOptions<TArgs extends QueryArgs> = {
    * @default the `withDefaultRetry()` policy, or no retry at all without that client feature
    */
   retryFn?: ShouldRetryRequestFn;
+
+  /**
+   * Whether `retryFn` is a policy somebody configured. Without one, `error.retryState` falls back to the
+   * built-in classification of transient failures.
+   * @default `true` when `retryFn` is set
+   */
+  hasRetryPolicy?: boolean;
 
   /**
    * Whether sending the request again is safe, handed to `retryFn` as `idempotent`.
@@ -630,9 +637,11 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     if (!(errorResponse instanceof HttpErrorResponse)) return { retry: false } as const;
 
     const firstRetry = { ...retryOptions, retryCount: 1 };
-    const policyVerdict = options.retryFn?.(firstRetry) || runDefaultQueryRetry(firstRetry);
+    const hasRetryPolicy = options.hasRetryPolicy ?? (!!options.retryFn || hasDefaultQueryRetry());
 
-    return policyVerdict.retry ? policyVerdict : shouldRetryRequest(firstRetry);
+    if (!hasRetryPolicy) return shouldRetryRequest(firstRetry);
+
+    return options.retryFn?.(firstRetry) || runDefaultQueryRetry(firstRetry);
   };
 
   const updateErrorState = (errorResponse: unknown) => {

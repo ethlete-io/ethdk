@@ -246,7 +246,7 @@ A query that retries forever never resolves to a `failure`: it stays `loading()`
 
 ### `retryState` answers "is a manual retry worth offering?"
 
-`error.retryState.retry` is `true` for a failure that asking again can fix - a connection failure, a `408`, `425`, `429` or a 5xx above `500` on an idempotent request, or whatever else the request's `retryFn` would retry - no matter how many automatic retries were already spent on it, and also on a client without any retry policy. `<et-query-error>` shows its Retry button from it. The `retryCount` a `retryFn` sees numbers the retry it decides on, from `1` for the first.
+`error.retryState.retry` is `true` for a failure that asking again can fix - a connection failure, a `408`, `425`, `429` or a 5xx above `500` on an idempotent request, no matter how many automatic retries were already spent on it. With a configured policy (`withDefaultRetry()`, a client or creator `retryFn`) that policy alone decides, so a status its `retryableStatusCodes` leave out reads `false`; the built-in classification applies only when nothing is configured. `<et-query-error>` shows its Retry button from it. The `retryCount` a `retryFn` sees numbers the retry it decides on, from `1` for the first.
 
 Override the policy per client (the `retryFn` [client option](/query/queries#the-query-client)) or per creator (the `retryFn` [creator option](/query/http#creator-options), or `.clone({ retryFn })`):
 

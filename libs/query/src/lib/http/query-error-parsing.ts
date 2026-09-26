@@ -50,4 +50,7 @@ export const setDefaultQueryRetryFn = (fn: ShouldRetryRequestFn) => {
 };
 
 /** @internal */
+export const hasDefaultQueryRetry = () => defaultRetryFn !== null;
+
+/** @internal */
 export const runDefaultQueryRetry = (options: ShouldRetryRequestOptions) => defaultRetryFn?.(options) ?? NO_RETRY;
