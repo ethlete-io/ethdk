@@ -151,6 +151,7 @@ describe('features scenario', () => {
 
     const c = s.consumer();
 
+    // @ts-expect-error the missing withArgs is what this test is about
     expect(() => c.run(() => getUser())).toThrow(/withArgs/);
 
     c.destroy();
@@ -1958,6 +1959,7 @@ describe('the silenceMissingWithArgsFeatureError guard', () => {
 
     expect(() =>
       c.run(() =>
+        // @ts-expect-error silencing next to withArgs is what this test is about
         getUser(
           { silenceMissingWithArgsFeatureError: true },
           withArgs(() => ({ pathParams: { id: '1' } })),

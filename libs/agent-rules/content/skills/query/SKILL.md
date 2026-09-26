@@ -123,7 +123,7 @@ post = computed(() => this.postQuery.response());
 - `GET`/`HEAD`/`OPTIONS` **auto-execute** - immediately when static/argless, or
   whenever `withArgs` produces new args. Mutations (`POST`/`PUT`/`PATCH`/`DELETE`)
   never auto-execute; declare their args with `withArgs` too and call `.execute()`. A function route (`pathParams`)
-  requires `withArgs` (dev-mode error otherwise).
+  requires `withArgs` (a type error, and a dev-mode error).
 - A route function receives the path params themselves: `(p) => \`/posts/${p.postId}\``.
 - With bearer auth, bind the secure creators the same way:
   `const secureGetQuery = createSecureGetQuery(apiClient, authProviderRef)`.

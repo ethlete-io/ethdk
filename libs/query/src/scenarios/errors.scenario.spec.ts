@@ -1516,6 +1516,7 @@ describe('dev-mode misuse errors', () => {
     const getThing = s.get<{ response: unknown; pathParams: { id: string } }>((p) => `/things/${p.id}`);
     const c = s.consumer();
 
+    // @ts-expect-error the missing withArgs is what this test is about
     expect(() => c.run(() => getThing())).toThrow(/withArgs/);
 
     c.destroy();

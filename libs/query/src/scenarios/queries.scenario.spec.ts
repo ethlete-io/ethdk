@@ -290,6 +290,7 @@ describe('queries scenario', () => {
 
     const c = s.consumer();
 
+    // @ts-expect-error the missing withArgs is what this test is about
     expect(() => c.run(() => getUser())).toThrow(/ET100|withArgs/);
 
     const query = c.run(() => getUser({ silenceMissingWithArgsFeatureError: true }));

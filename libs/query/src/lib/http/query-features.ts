@@ -86,6 +86,10 @@ export type QueryFeature<TArgs extends QueryArgs> = {
   devtools?: QueryDevtoolsFeatureDescriber;
 };
 
+export type WithArgsQueryFeature<TArgs extends QueryArgs> = QueryFeature<TArgs> & {
+  type: typeof QueryFeatureType.WITH_ARGS;
+};
+
 export const createQueryFeature = <TArgs extends QueryArgs>(config: {
   type: QueryFeatureType | (string & {});
   fn: QueryFeatureFn<TArgs>;
@@ -103,7 +107,9 @@ export const createQueryFeature = <TArgs extends QueryArgs>(config: {
  *
  * Changing arguments will automatically trigger a new execution of the query if it is eligible for auto execution (e.g. a GET request).
  */
-export const withArgs = <TArgs extends QueryArgs>(args: () => NoInfer<RequestArgs<TArgs>> | null) => {
+export const withArgs = <TArgs extends QueryArgs>(
+  args: () => NoInfer<RequestArgs<TArgs>> | null,
+): WithArgsQueryFeature<TArgs> => {
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WITH_ARGS,
     fn: (context) => {
@@ -136,7 +142,7 @@ export const withArgs = <TArgs extends QueryArgs>(args: () => NoInfer<RequestArg
         { injector: context.deps.injector },
       );
     },
-  });
+  }) as WithArgsQueryFeature<TArgs>;
 };
 
 export type WithPollingFeatureOptions = {

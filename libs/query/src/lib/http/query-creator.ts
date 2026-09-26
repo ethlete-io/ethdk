@@ -3,7 +3,7 @@ import { createBaseQueryCreator } from './base-query-creator-factory';
 import { HttpRequestResponseType, HttpRequestTransferCacheConfig } from './http-request';
 import { AnyNewQuery, PathParamsType, Query, QueryArgs, RawResponseType, ResponseType, createQuery } from './query';
 import { AnyCreateQueryClientResult } from './query-client';
-import { QueryFeature } from './query-features';
+import { QueryFeature, QueryFeatureType } from './query-features';
 import { ShouldRetryRequestFn } from './query-retry-utils';
 
 export type RouteType<TArgs extends QueryArgs> =
@@ -163,9 +163,52 @@ export type CreateQueryCreatorOptions<TArgs extends QueryArgs = QueryArgs> = Bas
         transformResponse?: (rawResponse: RawResponseType<TArgs>) => ResponseType<TArgs>;
       });
 
+export type QueryCreatorInput<TArgs extends QueryArgs> =
+  readonly [QueryConfig, ...QueryFeature<TArgs>[]] | readonly QueryFeature<TArgs>[];
+
+type IsAny<T> = 0 extends 1 & T ? true : false;
+
+type RequiresWithArgs<TArgs extends QueryArgs> =
+  IsAny<TArgs> extends true ? false : PathParamsType<TArgs> extends { [key: string]: unknown } ? true : false;
+
+type HasWithArgsFeature<TInput extends readonly unknown[]> = number extends TInput['length']
+  ? true
+  : TInput extends readonly [infer THead, ...infer TRest]
+    ? THead extends { type: typeof QueryFeatureType.WITH_ARGS }
+      ? true
+      : HasWithArgsFeature<TRest>
+    : false;
+
+type IsWithArgsErrorSilenced<TInput extends readonly unknown[]> = TInput extends readonly [infer THead, ...unknown[]]
+  ? THead extends { silenceMissingWithArgsFeatureError: true }
+    ? true
+    : false
+  : false;
+
+type MissingWithArgsError =
+  "withArgs() is required: this query's route uses pathParams. Pass withArgs(() => ({ pathParams: … })), or set silenceMissingWithArgsFeatureError as an escape hatch.";
+
+type SilencedWithArgsError =
+  'silenceMissingWithArgsFeatureError: true is set, but withArgs() is passed. Remove one of them.';
+
+export type WithArgsCheck<TArgs extends QueryArgs, TInput extends readonly unknown[]> =
+  IsWithArgsErrorSilenced<TInput> extends true
+    ? HasWithArgsFeature<TInput> extends true
+      ? number extends TInput['length']
+        ? unknown
+        : SilencedWithArgsError
+      : unknown
+    : RequiresWithArgs<TArgs> extends true
+      ? HasWithArgsFeature<TInput> extends true
+        ? unknown
+        : MissingWithArgsError
+      : unknown;
+
 export type QueryCreator<TArgs extends QueryArgs> = {
-  (...features: QueryFeature<TArgs>[]): Query<TArgs>;
-  (queryConfig: QueryConfig, ...features: QueryFeature<TArgs>[]): Query<TArgs>;
+  <const TInput extends QueryCreatorInput<TArgs>>(
+    this: WithArgsCheck<TArgs, TInput>,
+    ...args: TInput | QueryCreatorInput<TArgs>
+  ): Query<TArgs>;
 
   /**
    * Creates a new query creator with merged options.

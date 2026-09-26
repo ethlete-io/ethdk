@@ -1,5 +1,6 @@
 import { QueryArgs, RawResponseType, RequestArgs, ResponseType } from './query';
-import { RequiresTransform } from './query-creator';
+import { QueryCreator, RequiresTransform } from './query-creator';
+import { QueryFeature, withArgs } from './query-features';
 
 describe('query creator', () => {
   describe('RequestArgs type', () => {
@@ -113,6 +114,61 @@ describe('query creator', () => {
       const result: Result = 42;
 
       expect(typeof result).toBe('number');
+    });
+  });
+
+  describe('withArgs type check', () => {
+    type UserArgs = { response: { id: string }; pathParams: { id: string } };
+    type OptionalPathParamsArgs = { response: string; pathParams?: { id: string } };
+    type ListArgs = { response: string[]; queryParams: { page: number } };
+
+    const typeOnly = (
+      getUser: QueryCreator<UserArgs>,
+      getOptional: QueryCreator<OptionalPathParamsArgs>,
+      getList: QueryCreator<ListArgs>,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      getAny: QueryCreator<any>,
+      features: QueryFeature<UserArgs>[],
+      log: QueryFeature<UserArgs>,
+    ) => {
+      getUser(withArgs(() => ({ pathParams: { id: '1' } })));
+      getUser(
+        log,
+        withArgs(() => ({ pathParams: { id: '1' } })),
+      );
+      getUser(
+        { key: 'user' },
+        withArgs(() => ({ pathParams: { id: '1' } })),
+      );
+      getUser(withArgs((): null => null));
+      getUser(...features);
+      getUser({ key: 'user' }, ...features);
+      getUser({ silenceMissingWithArgsFeatureError: true });
+      getUser({ silenceMissingWithArgsFeatureError: true }, log);
+      getOptional();
+      getList();
+      getList(withArgs(() => ({ queryParams: { page: 1 } })));
+      getAny();
+
+      // @ts-expect-error pathParams without withArgs
+      getUser();
+      // @ts-expect-error pathParams without withArgs
+      getUser(log);
+      // @ts-expect-error pathParams without withArgs
+      getUser({ key: 'user' });
+      // @ts-expect-error the silence flag has to be the literal true
+      getUser({ silenceMissingWithArgsFeatureError: false });
+      // @ts-expect-error silenced and withArgs at once
+      getUser(
+        { silenceMissingWithArgsFeatureError: true },
+        withArgs(() => ({ pathParams: { id: '1' } })),
+      );
+      // @ts-expect-error the route needs an id
+      getUser(withArgs(() => ({ pathParams: {} })));
+    };
+
+    it('only runs in tsc', () => {
+      expect(typeof typeOnly).toBe('function');
     });
   });
 });

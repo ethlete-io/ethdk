@@ -41,27 +41,10 @@ Triage (ethlete-sdk-57):
 Open work, in this order.
 
 1. **Done:** the history rewrite finished on 2026-09-25, the shas above are the new ones, and `next` is pushed.
-2. **Type error for a missing `withArgs`** (gap 8 follow-up, user decision 2026-09-25). Blocked yesterday: the
-   permission classifier refused the edit to `query-features.ts`, so the user must allow it. Design, prototyped in
-   a standalone copy only:
-   - Brand the feature: `WithArgsQueryFeature<TArgs> = QueryFeature<TArgs> & { type: typeof QueryFeatureType.WITH_ARGS }`,
-     defined in `query-features.ts`, and the return type of `withArgs`.
-   - `QueryCreator` gets one call signature:
-     `<const TInput extends QueryCreatorInput<TArgs>>(this: WithArgsCheck<TArgs, TInput>, ...args: TInput | QueryCreatorInput<TArgs>): Query<TArgs>`,
-     with `QueryCreatorInput<T> = readonly [QueryConfig, ...QueryFeature<T>[]] | readonly QueryFeature<T>[]`. The
-     union with the concrete type keeps contextual `TArgs` inference inside `withArgs(() => …)`; a bare generic rest
-     loses it.
-   - Required when `TArgs['pathParams']` is a non-optional object (the `RouteType` rule); `any` args never. Present
-     when a tuple element has `type: 'WITH_ARGS'`; a spread of unknown length counts as present (ET100 catches it).
-     Literal `true` for `silenceMissingWithArgsFeatureError` satisfies it; `true` + `withArgs` is a type error too.
-   - The check is on `this`, so a zero-argument `getUser()` also errors. Message: `withArgs() is required: this
-query's route uses pathParams. Pass withArgs(() => ({ pathParams: … })), or set
-silenceMissingWithArgsFeatureError as an escape hatch.`
-   - The gql creator returns the same `QueryCreator<TArgs>`, so it is covered too.
-   - Risk: generic helpers that call a `QueryCreator<TArgs>` with an unresolved `TArgs` fail to compile. Count them.
-   - Still to do: type tests, tsc (lib + spec), fix and count call sites across libs and apps, a codemod output
-     check (report only), docs (`queries.md`, `http.md`, `features.md`), skill lines, changeset (check `pre.json`
-     for minor vs major), plan note.
+2. **Done:** type error for a missing `withArgs` (gap 8 follow-up). `WithArgsQueryFeature` brand plus a
+   `this: WithArgsCheck<TArgs, TInput>` signature on `QueryCreator`. No call site in libs or apps failed; every
+   generic helper passes `withArgs` or the literal silence flag. Codemod output stays on the legacy wrapper, which
+   silences, so it compiles.
 3. **`CLEAR_QUERY_ARGS` generator item** (the "Next generator item" bullet above). No design question. Check with
    ethlete-sdk-28 first, because it works in `libs/query/generators`.
 4. **Document gaps 12, 15-18** in `migrating-from-v2.md`. Can run in parallel with 3.

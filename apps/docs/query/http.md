@@ -64,7 +64,7 @@ The generic `TArgs` type passed to a creator describes the whole request/respons
 | `body`        | The request body (mutating methods).                                                                            |
 | `headers`     | Extra headers: a record, `HttpHeaders`, or a function returning either. Secure queries add `Authorization`.     |
 
-You pass everything except the type-only `response` and `rawResponse` fields through `withArgs(() => ({ … }))` - for mutations too. A function route without a `withArgs` feature throws in dev mode (`ET100`); the `silenceMissingWithArgsFeatureError` query config is an escape hatch for args that only exist at call time, which you then pass to `execute({ args })`.
+You pass everything except the type-only `response` and `rawResponse` fields through `withArgs(() => ({ … }))` - for mutations too. Calling the creator of a function route without a `withArgs` feature is a type error, and throws in dev mode (`ET100`); the `silenceMissingWithArgsFeatureError` query config is an escape hatch for args that only exist at call time, which you then pass to `execute({ args })`.
 
 ### Transforming responses
 

@@ -116,13 +116,13 @@ const query = getPost(
 );
 ```
 
-| `QueryConfig` option                 | Default   | Description                                                                                                                                                               |
-| ------------------------------------ | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `key`                                | -         | Custom cache key. Only allowed on cacheable queries (throws otherwise).                                                                                                   |
-| `onlyManualExecution`                | `false`   | Skip auto-execution - the query only runs when you call `.execute()`.                                                                                                     |
-| `silenceMissingWithArgsFeatureError` | `false`   | Escape hatch: allow a function route without a `withArgs` feature, for args that only exist at call time (pass them to `.execute()`). Throws if combined with `withArgs`. |
-| `keepPreviousResponse`               | see below | Keep `response()` on the previous args' response while the request for new args loads. `true` for `GET`, `HEAD`, `OPTIONS` and GraphQL queries, `false` for mutations.    |
-| `injector`                           | -         | Create the query in a specific injector instead of the current injection context.                                                                                         |
+| `QueryConfig` option                 | Default   | Description                                                                                                                                                                                                                                                |
+| ------------------------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`                                | -         | Custom cache key. Only allowed on cacheable queries (throws otherwise).                                                                                                                                                                                    |
+| `onlyManualExecution`                | `false`   | Skip auto-execution - the query only runs when you call `.execute()`.                                                                                                                                                                                      |
+| `silenceMissingWithArgsFeatureError` | `false`   | Escape hatch: allow a function route without a `withArgs` feature, for args that only exist at call time (pass them to `.execute()`). Only the literal `true` satisfies the type check. Throws if combined with `withArgs`, and is a type error there too. |
+| `keepPreviousResponse`               | see below | Keep `response()` on the previous args' response while the request for new args loads. `true` for `GET`, `HEAD`, `OPTIONS` and GraphQL queries, `false` for mutations.                                                                                     |
+| `injector`                           | -         | Create the query in a specific injector instead of the current injection context.                                                                                                                                                                          |
 
 Never call a creator inside a `computed`, an `effect` or a template: every re-run would build another query, so it throws `ET001`. Create the query once and drive it through `withArgs` or `.execute({ args })`. Reading, executing, `createSnapshot()` and `.asObservable({ injector })` are fine there.
 
