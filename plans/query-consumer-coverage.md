@@ -239,7 +239,13 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       the token popup's host `id` overwrites TestBed's root id; rAF loops need an `s.flush()` at the end. E2E gaps:
       caret, IME and soft breaks; toolbar and popover positioning; the touch-docked toolbar; image drag and drop;
       real clipboard events; `beforeinput historyUndo`; table picker hover.
-      In progress (2026-09-26): `scheduler`; the Markdown escape and `javascript:` paste fixes.
+      Scheduler done (52 of 52, `scheduler{,-composition}.scenario.spec.ts`, ac9ee4dcc). No bug. Friction: a custom
+      `SchedulerFeatureHost` or `SchedulerEditSurfaceHost` re-implements register/filter/sort (no helper); an
+      `appointments` input collides with the host's `appointments()` method; ET4505 and ET4506 throw out of change
+      detection; `nowIndicator` keeps a timer, so `s.flush()` never settles. E2E gaps: pointer drag-to-create,
+      move and resize; edit surface placement and the fullscreen dialog below `md`; scroll to the initial hour;
+      RTL swipe; long-press drag versus swipe; the "+N more" overflow menu.
+      In progress (2026-09-26): the Markdown escape and `javascript:` paste fixes; `grid`; `forms/form-field`.
 - [x] S11 Follow-ups from S6 (hand-written skill `.agents/skills/query-scenario-tests/SKILL.md` documents `s.mount`)
   1. Done in 47f4d25da: `s.mount(Component, injector, { inputs })` sets inputs before the first change detection;
      `legacy-client-options` mounts `MatchListComponent` directly.
