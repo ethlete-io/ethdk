@@ -188,7 +188,7 @@ describe('query error scenarios', () => {
     http.verify();
   });
 
-  const failTwice = (s: Scenario, http: HttpTestingController, status: number, body: unknown) => {
+  const failTwice = (s: Scenario, http: HttpTestingController, status: number, body: object | null) => {
     settle(s);
     http.expectOne('https://api.example.com/teams').flush(body, { status, statusText: 'x' });
     settle(s);
