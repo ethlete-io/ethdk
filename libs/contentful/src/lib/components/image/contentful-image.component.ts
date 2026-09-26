@@ -74,17 +74,19 @@ export class ContentfulImageComponent {
 
   protected sourcesValue = computed(() => {
     const asset = this.asset();
-    const backgroundColor = this.backgroundColor();
-    const srcsetSizes = this.srcsetSizes();
-    const quality = this.quality();
-    const focusArea = this.focusArea();
-    const resizeBehavior = this.resizeBehavior();
+    const options = {
+      srcsetSizes: this.srcsetSizes(),
+      backgroundColor: this.backgroundColor(),
+      quality: this.quality(),
+      focusArea: this.focusArea(),
+      resizeBehavior: this.resizeBehavior(),
+    };
 
     if (!asset) {
       return [];
     }
 
-    return generateContentfulImageSources(asset, srcsetSizes, backgroundColor, quality, focusArea, resizeBehavior);
+    return generateContentfulImageSources(asset, options);
   });
 
   protected defaultSrcValue = computed(() => {

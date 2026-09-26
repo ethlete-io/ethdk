@@ -8,14 +8,16 @@ const text = (value: string, marks: string[] = []): Text => ({
   data: {},
 });
 
-const block = (nodeType: string, content: (Block | Inline | Text)[] = [], data: Record<string, unknown> = {}) =>
-  ({ nodeType, content, data }) as unknown as Block;
+const block = (nodeType: string, content: (Block | Inline | Text)[] = []) =>
+  ({ nodeType, content, data: {} }) as unknown as Block;
+
+const withData = (node: Block, data: Record<string, unknown>) => ({ ...node, data }) as Block;
 
 const paragraph = (...content: (Block | Inline | Text)[]) => block('paragraph', content);
 
 const heading = (level: 1 | 2 | 3, value: string) => block(`heading-${level}`, [text(value)]);
 
-const hyperlink = (uri: string, value: string) => block('hyperlink', [text(value)], { uri });
+const hyperlink = (uri: string, value: string) => withData(block('hyperlink', [text(value)]), { uri });
 
 const listItem = (...content: (Block | Inline | Text)[]) => block('list-item', [paragraph(...content)]);
 
@@ -23,17 +25,17 @@ const cell = (header: boolean, value: string) =>
   block(header ? 'table-header-cell' : 'table-cell', [paragraph(text(value))]);
 
 const embeddedAsset = (id: string) =>
-  block('embedded-asset-block', [], { target: { sys: { type: 'Link', linkType: 'Asset', id } } });
+  withData(block('embedded-asset-block'), { target: { sys: { type: 'Link', linkType: 'Asset', id } } });
 
 const embeddedEntry = (id: string) =>
-  block('embedded-entry-block', [], { target: { sys: { type: 'Link', linkType: 'Entry', id } } });
+  withData(block('embedded-entry-block'), { target: { sys: { type: 'Link', linkType: 'Entry', id } } });
 
 const inlineEntry = (id: string) =>
-  block('embedded-entry-inline', [], { target: { sys: { type: 'Link', linkType: 'Entry', id } } });
+  withData(block('embedded-entry-inline'), { target: { sys: { type: 'Link', linkType: 'Entry', id } } });
 
 const document = (...content: Block[]): RichTextResponse => ({ nodeType: 'document', data: {}, content });
 
-const asset = (id: string, title: string, url: string): ContentfulRestAsset =>
+const asset = (id: string, { title, url }: { title: string; url: string }): ContentfulRestAsset =>
   ({
     sys: { type: 'Asset', id, createdAt: '', updatedAt: '', locale: 'en-US' },
     fields: {
@@ -49,7 +51,7 @@ const asset = (id: string, title: string, url: string): ContentfulRestAsset =>
     metadata: { tags: [] },
   }) satisfies ContentfulRestAsset;
 
-const entry = (id: string, contentTypeId: string, fields: Record<string, unknown>): ContentfulEntry => ({
+const entry = (id: string, contentTypeId: string): ContentfulEntry => ({
   sys: {
     type: 'Entry',
     id,
@@ -58,7 +60,7 @@ const entry = (id: string, contentTypeId: string, fields: Record<string, unknown
     locale: 'en-US',
     contentType: { sys: { type: 'Link', linkType: 'ContentType', id: contentTypeId } },
   },
-  fields,
+  fields: {},
   metadata: { tags: [] },
 });
 
@@ -71,7 +73,7 @@ const collection = (
     total: 1,
     skip: 0,
     limit: 1,
-    items: [{ ...entry('page-1', 'page', {}), fields: { html: richText } }],
+    items: [{ ...entry('page-1', 'page'), fields: { html: richText } }],
     includes: { Asset: includes.Asset ?? [], Entry: includes.Entry ?? [] },
   }) as ContentfulCollection;
 
@@ -110,11 +112,17 @@ export const RICH_TEXT_EMBEDS = collection(
     paragraph(text('An inline entry sits in the text flow: '), inlineEntry('product-teaser-1'), text(' - like that.')),
   ),
   {
-    Asset: [asset('asset-1', 'Placeholder', PLACEHOLDER_IMAGE)],
+    Asset: [asset('asset-1', { title: 'Placeholder', url: PLACEHOLDER_IMAGE })],
     Entry: [
-      entry(CALLOUT_ENTRY_ID, 'callout', { title: 'Heads up', body: 'A callout rendered by a consumer component.' }),
-      entry('stat-card-1', 'statCard', { label: 'Monthly active users', value: '12,480', trend: '+4.2%' }),
-      entry('product-teaser-1', 'productTeaser', { name: 'Starter plan' }),
+      {
+        ...entry(CALLOUT_ENTRY_ID, 'callout'),
+        fields: { title: 'Heads up', body: 'A callout rendered by a consumer component.' },
+      },
+      {
+        ...entry('stat-card-1', 'statCard'),
+        fields: { label: 'Monthly active users', value: '12,480', trend: '+4.2%' },
+      },
+      { ...entry('product-teaser-1', 'productTeaser'), fields: { name: 'Starter plan' } },
     ],
   },
 );

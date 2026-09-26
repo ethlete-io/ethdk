@@ -846,7 +846,7 @@ export class ContentfulRichTextRendererComponent {
 
       const rootNode = this.getComponentRootNode(componentRef);
 
-      this.renderInsertOrAppend(rootNode, parentElement, nextElement);
+      this.renderInsertOrAppend(rootNode, { parentElement, nextElement });
 
       this.executedCommandsCache.set(command.id, {
         command,
@@ -884,7 +884,7 @@ export class ContentfulRichTextRendererComponent {
         }
       }
 
-      this.renderInsertOrAppend(span, parentElement, nextElement);
+      this.renderInsertOrAppend(span, { parentElement, nextElement });
 
       this.executedCommandsCache.set(command.id, {
         command,
@@ -897,7 +897,7 @@ export class ContentfulRichTextRendererComponent {
         this.renderer.setAttribute(element, key, value);
       }
 
-      this.renderInsertOrAppend(element, parentElement, nextElement);
+      this.renderInsertOrAppend(element, { parentElement, nextElement });
 
       this.executedCommandsCache.set(command.id, {
         command,
@@ -949,7 +949,7 @@ export class ContentfulRichTextRendererComponent {
       const newParentElement = this.findParent(command);
       const nextElement = this.findFollowingElement(command);
 
-      this.renderInsertOrAppend(rootNode, newParentElement, nextElement);
+      this.renderInsertOrAppend(rootNode, { parentElement: newParentElement, nextElement });
 
       cached.inputs.set(command.inputs);
 
@@ -1051,8 +1051,7 @@ export class ContentfulRichTextRendererComponent {
 
   private renderInsertOrAppend(
     nodeToRender: HTMLElement,
-    parentElement: HTMLElement,
-    nextElement: HTMLElement | undefined,
+    { parentElement, nextElement }: { parentElement: HTMLElement; nextElement: HTMLElement | undefined },
   ) {
     if (nextElement) {
       this.renderer.insertBefore(parentElement, nodeToRender, nextElement);

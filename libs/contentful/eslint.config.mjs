@@ -32,7 +32,6 @@ export default [
       ...ethlete.configs.recommendedTs.rules,
       ...ethlete.configs.recommendedAngularTs.rules,
       'ethlete/template-member-accessibility': 'off',
-      'max-params': 'off',
       '@angular-eslint/directive-selector': [
         'error',
         {

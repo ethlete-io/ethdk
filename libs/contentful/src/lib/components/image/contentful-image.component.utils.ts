@@ -61,14 +61,26 @@ export const parseContentfulImageSize = (size: string): { width: number | null; 
 
 const SOURCE_TYPES = ['image/avif', 'image/webp'];
 
+export type ContentfulImageSourcesOptions = {
+  srcsetSizes?: string[];
+  backgroundColor?: string | null;
+  quality?: number | null;
+  focusArea?: ContentfulImageFocusArea | null;
+  resizeBehavior?: ContentfulImageResizeBehavior | null;
+};
+
+/**
+ * Builds AVIF and WebP `<source>` entries for a Contentful asset through the Contentful Images API.
+ *
+ * @example
+ * generateContentfulImageSources(asset, { srcsetSizes: ['400w', '800w'], quality: 80 });
+ */
 export const generateContentfulImageSources = (
   data: ContentfulRestAsset | ContentfulGqlAsset,
-  srcsetSizes: string[],
-  backgroundColor: string | null,
-  quality: number | null,
-  focusArea: ContentfulImageFocusArea | null,
-  resizeBehavior: ContentfulImageResizeBehavior | null,
+  options: ContentfulImageSourcesOptions = {},
 ): PictureSource[] => {
+  const { srcsetSizes = [], backgroundColor = null, quality = null, focusArea = null, resizeBehavior = null } = options;
+
   const isGqlAsset = isContentfulGqlAsset(data);
   const baseUrl = isGqlAsset ? data.url : data.fields.file.url;
 
@@ -101,7 +113,7 @@ export const generateContentfulImageSources = (
       queryParams.push(`fit=${resizeBehavior}`);
     }
 
-    if (srcsetSizes?.length) {
+    if (srcsetSizes.length) {
       const urlWithParams = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}${queryParams.join('&')}`;
 
       for (const size of srcsetSizes) {

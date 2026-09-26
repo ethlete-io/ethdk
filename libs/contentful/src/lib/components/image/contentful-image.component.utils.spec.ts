@@ -68,13 +68,13 @@ describe('parseContentfulImageSize', () => {
 
 describe('generateContentfulImageSources', () => {
   it('creates one source per supported image type', () => {
-    const sources = generateContentfulImageSources(createRestAsset(), ['400w'], null, null, null, null);
+    const sources = generateContentfulImageSources(createRestAsset(), { srcsetSizes: ['400w'] });
 
     expect(sources.map((s) => s.type)).toEqual(['image/avif', 'image/webp']);
   });
 
   it('assembles the format query param and a width descriptor srcset', () => {
-    const sources = generateContentfulImageSources(createRestAsset(), ['400w', '800w'], null, null, null, null);
+    const sources = generateContentfulImageSources(createRestAsset(), { srcsetSizes: ['400w', '800w'] });
 
     expect(sources[0]?.srcset).toBe(
       '//images.ctfassets.net/foo.png?fm=avif&w=400 400w, //images.ctfassets.net/foo.png?fm=avif&w=800 800w',
@@ -82,19 +82,25 @@ describe('generateContentfulImageSources', () => {
   });
 
   it('derives a valid width descriptor when only a height was given', () => {
-    const sources = generateContentfulImageSources(createRestAsset(), ['300h'], null, null, null, null);
+    const sources = generateContentfulImageSources(createRestAsset(), { srcsetSizes: ['300h'] });
 
     expect(sources[1]?.srcset).toBe('//images.ctfassets.net/foo.png?fm=webp&w=400&h=300 400w');
   });
 
   it('uses the width descriptor when both width and height were given', () => {
-    const sources = generateContentfulImageSources(createRestAsset(), ['400x300'], null, null, null, null);
+    const sources = generateContentfulImageSources(createRestAsset(), { srcsetSizes: ['400x300'] });
 
     expect(sources[1]?.srcset).toBe('//images.ctfassets.net/foo.png?fm=webp&w=400&h=300 400w');
   });
 
   it('assembles bg, q, f and fit query params in order', () => {
-    const sources = generateContentfulImageSources(createRestAsset(), ['400w'], '000000', 80, 'faces', 'fill');
+    const sources = generateContentfulImageSources(createRestAsset(), {
+      srcsetSizes: ['400w'],
+      backgroundColor: '000000',
+      quality: 80,
+      focusArea: 'faces',
+      resizeBehavior: 'fill',
+    });
 
     expect(sources[1]?.srcset).toBe(
       '//images.ctfassets.net/foo.png?fm=webp&bg=rgb:000000&q=80&f=faces&fit=fill&w=400 400w',
@@ -102,32 +108,30 @@ describe('generateContentfulImageSources', () => {
   });
 
   it('includes a quality of 0 (only null is skipped)', () => {
-    const sources = generateContentfulImageSources(createRestAsset(), ['400w'], null, 0, null, null);
+    const sources = generateContentfulImageSources(createRestAsset(), { srcsetSizes: ['400w'], quality: 0 });
 
     expect(sources[0]?.srcset).toContain('q=0');
   });
 
   it('falls back to the plain url with query params when no sizes were given', () => {
-    const sources = generateContentfulImageSources(createRestAsset(), [], null, null, null, null);
+    const sources = generateContentfulImageSources(createRestAsset());
 
     expect(sources[1]).toEqual({ type: 'image/webp', srcset: '//images.ctfassets.net/foo.png?fm=webp' });
   });
 
   it('uses the flat url of a gql asset', () => {
-    const sources = generateContentfulImageSources(createGqlAsset(), ['400w'], null, null, null, null);
+    const sources = generateContentfulImageSources(createGqlAsset(), { srcsetSizes: ['400w'] });
 
     expect(sources[0]?.srcset).toBe('//images.ctfassets.net/gql.png?fm=avif&w=400 400w');
   });
 
   it('returns no sources when an asset has no url', () => {
-    expect(generateContentfulImageSources(createRestAsset({ url: null }), ['400w'], null, null, null, null)).toEqual(
-      [],
-    );
-    expect(generateContentfulImageSources(createGqlAsset({ url: null }), ['400w'], null, null, null, null)).toEqual([]);
+    expect(generateContentfulImageSources(createRestAsset({ url: null }), { srcsetSizes: ['400w'] })).toEqual([]);
+    expect(generateContentfulImageSources(createGqlAsset({ url: null }), { srcsetSizes: ['400w'] })).toEqual([]);
   });
 
   it('does not emit an invalid quality parameter', () => {
-    const sources = generateContentfulImageSources(createRestAsset(), ['400w'], null, Number.NaN, null, null);
+    const sources = generateContentfulImageSources(createRestAsset(), { srcsetSizes: ['400w'], quality: Number.NaN });
 
     expect(sources[0]?.srcset).not.toContain('q=');
   });
