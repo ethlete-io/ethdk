@@ -20,8 +20,8 @@ export type AuthQueryConfig<TArgs extends QueryArgs> = {
    */
   extractTokens?: (response: ResponseType<TArgs>) => BearerAuthProviderTokens;
   /**
-   * Custom retry function for HTTP requests.
-   * @internal Used internally by token refresh queries
+   * Decides whether a failed request of this query is retried, replacing the query creator's policy.
+   * @default the query creator's `retryFn` for an authentication query, a built-in backoff for a refresh query
    */
   retryFn?: ShouldRetryRequestFn;
 };
