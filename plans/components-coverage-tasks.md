@@ -13,12 +13,11 @@ agent that works alone, batch by batch.
 
 - Done: button, overlay, stream, table, icon, forms/date-time, forms/rich-text-editor, scheduler, grid,
   forms/form-field, bracket, tabs, forms/select, notification, menu, match, forms/cascader, forms/dropzone,
-  forms/color-input. Components: 959 of 1381 covered. Per-domain notes are under "Domain notes" below.
+  forms/color-input, breadcrumb, command-palette, carousel. Components: 959 of 1381 covered. Per-domain notes are under "Domain notes" below.
 - In progress: nothing. Start with task 1.
 - Removed on 2026-09-26 by user decision: `GridItemRef` and `configComponent` (e519882bc). Added:
   `FormFieldDirective.controlSuffixTemplate` (e38133536).
-- In progress 2026-09-27: breadcrumb, command-palette, carousel (task 1); scrollable, forms/selection-list,
-  query-error, filter-overlay (task 2).
+- In progress 2026-09-27: scrollable, forms/selection-list, query-error, filter-overlay (task 2).
 
 ## Rules for every batch
 
@@ -45,7 +44,7 @@ agent that works alone, batch by batch.
 
 ## Task list
 
-1. breadcrumb 23, command-palette 20, carousel 19 (62).
+1. Done 2026-09-27: breadcrumb, command-palette, carousel.
 2. scrollable 18, forms/selection-list 16, query-error 15, filter-overlay 15 (64).
 3. chart 17, calendar 15, standings 14, forms/slider 14 (60). Before chart: run `ListAgents` and tell any session
    that works in chart stories.
@@ -212,3 +211,14 @@ agent that works alone, batch by batch.
   position in anchored mode (jsdom always picks the bottom sheet); cascader column slide and window animation;
   sheet back-navigation and title animations; dropzone remove and FLIP animation, progress bars, image preview;
   the eyedropper; focus rings.
+
+### breadcrumb, command-palette, carousel
+
+- Friction: anything but the separator projected into `<et-breadcrumb-outlet>` disappears (`et-breadcrumb` has no
+  `ng-content`); breadcrumb collapse needs patched `clientWidth`/`scrollWidth`; `mod` shortcuts need `KBD_PLATFORM`
+  pinned; carousel movement needs fake rects, a resize, a real macrotask for the MutationObserver, and the
+  scroll-observer edge markers reported by hand (zero-size rects mark them visible); carousel MISSING_ITEMS throws
+  from an effect into change detection.
+- E2E gaps: breadcrumb collapse on resize, overflow toggletip focus and return; Ctrl/Cmd+K on real platforms, active
+  row `scrollIntoView`, palette focus return and colour context; carousel touch swipe with snap, loop seam jump,
+  dim/wipe transitions, autoplay ring, hover/focus pause, reduced motion.
