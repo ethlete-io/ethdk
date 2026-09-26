@@ -202,3 +202,17 @@ test.describe('toggletip / touch', () => {
     await expect(dialog).toBeHidden();
   });
 });
+
+test.describe('toggletip / chrome', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: click trigger');
+
+  test('the content root does not clip the panel shadow to a square', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+
+    await root.getByRole('button', { name: 'Text toggletip' }).click();
+
+    const toggletip = page.locator('.et-toggletip-panel > .et-toggletip');
+    await expect(toggletip).toBeVisible();
+    await expect(toggletip).toHaveCSS('overflow', 'visible');
+  });
+});

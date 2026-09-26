@@ -132,3 +132,17 @@ test.describe('tooltip / touch', () => {
     await expect(page.getByRole('tooltip')).toHaveCount(0);
   });
 });
+
+test.describe('tooltip / chrome', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: hover trigger');
+
+  test('the content root does not clip the panel shadow to a square', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+
+    await root.getByRole('button', { name: 'Text tooltip' }).hover();
+
+    const tooltip = page.getByRole('tooltip');
+    await expect(tooltip).toBeVisible();
+    await expect(tooltip).toHaveCSS('overflow', 'visible');
+  });
+});

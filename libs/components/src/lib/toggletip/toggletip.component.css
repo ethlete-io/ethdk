@@ -35,7 +35,7 @@
     box-shadow: none;
   }
 
-  .et-overlay--toggletip > :nth-child(2) {
+  .et-overlay.et-overlay--toggletip > :not(.et-overlay-container-drag-handle):not(.et-overlay-arrow) {
     display: block;
     overflow: visible;
   }

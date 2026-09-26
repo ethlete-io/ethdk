@@ -42,7 +42,7 @@
     box-shadow: none;
   }
 
-  .et-overlay--tooltip > :nth-child(2) {
+  .et-overlay.et-overlay--tooltip > :not(.et-overlay-container-drag-handle):not(.et-overlay-arrow) {
     display: block;
     overflow: visible;
   }
