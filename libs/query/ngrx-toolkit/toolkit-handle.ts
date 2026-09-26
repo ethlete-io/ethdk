@@ -15,6 +15,7 @@ import {
   interval,
   map,
   Observable,
+  of,
   startWith,
   Subject,
   Subscription,
@@ -41,6 +42,7 @@ export type ToolkitHandleEntry = {
   handle: AnyMappedEntityState;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   call: (args: ActionCallArgs<any>) => void;
+  releaseWhenSettled: () => void;
 };
 
 const EMPTY_SNAPSHOT: ToolkitHandleSnapshot = {
@@ -111,7 +113,7 @@ export const createToolkitHandle = <TCreator extends AnyQueryCreator>(
 
   const changes = new Subject<ToolkitHandleSnapshot>();
 
-  effect(
+  const changesEffect = effect(
     () => {
       const current = snapshot();
       untracked(() => changes.next(current));
@@ -119,8 +121,13 @@ export const createToolkitHandle = <TCreator extends AnyQueryCreator>(
     { injector },
   );
 
+  let releasedSnapshot: ToolkitHandleSnapshot | null = null;
+
   const select = <T>(pick: (current: ToolkitHandleSnapshot) => T): Observable<T> =>
-    defer(() => changes.pipe(startWith(untracked(snapshot)))).pipe(map(pick), distinctUntilChanged());
+    defer(() => (releasedSnapshot ? of(releasedSnapshot) : changes.pipe(startWith(untracked(snapshot))))).pipe(
+      map(pick),
+      distinctUntilChanged(),
+    );
 
   const call = (args: ActionCallArgs<TCreator>) => {
     calledArgs.set(args);
@@ -154,10 +161,31 @@ export const createToolkitHandle = <TCreator extends AnyQueryCreator>(
     query.reset();
   };
 
-  injector.get(DestroyRef).onDestroy(() => {
+  const removeDestroyListener = injector.get(DestroyRef).onDestroy(() => {
     stopPolling();
     changes.complete();
   });
+
+  const release = () => {
+    releasedSnapshot = untracked(snapshot);
+    stopPolling();
+    changesEffect.destroy();
+    removeDestroyListener();
+    changes.complete();
+    query.subtle.destroy();
+  };
+
+  const releaseWhenSettled = () => {
+    const releaseEffect = effect(
+      () => {
+        if (snapshot().callState === CallState.LOADING) return;
+
+        releaseEffect.destroy();
+        untracked(release);
+      },
+      { injector },
+    );
+  };
 
   type TResponse = ResponseType<QueryArgsOf<TCreator>>;
 
@@ -180,5 +208,5 @@ export const createToolkitHandle = <TCreator extends AnyQueryCreator>(
     stopPolling,
   };
 
-  return { handle, call };
+  return { handle, call, releaseWhenSettled };
 };

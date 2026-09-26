@@ -299,6 +299,37 @@ describe('ngrx-toolkit interop', () => {
     s.tick();
   });
 
+  it('keeps at most one query alive across unshared uploads, and still delivers every result', () => {
+    const s = scenario();
+    s.api.on('POST', '/teams/:teamId/uploads', () => ({ body: { ok: true }, delay: 100 }));
+
+    const upload = () => {
+      const body = new FormData();
+      body.append('file', 'x');
+
+      return facade().upload({ queryParams: { teamId: '1' }, body });
+    };
+
+    const sequential = [upload(), upload(), upload()].map((store) => record(store.response$));
+    s.tick(100);
+
+    expect(sequential.map((r) => r.values.at(-1))).toEqual([{ ok: true }, { ok: true }, { ok: true }]);
+    expect(s.liveQueries().length).toBeLessThanOrEqual(1);
+
+    for (let index = 0; index < 3; index++) {
+      const store = upload();
+      const response = record(store.response$);
+      s.tick(100);
+
+      expect(response.values.at(-1)).toEqual({ ok: true });
+      expect(s.liveQueries().length).toBeLessThanOrEqual(1);
+      response.subscription.unsubscribe();
+    }
+
+    expect(s.api.requestCount('POST', '/teams/1/uploads')).toBe(6);
+    for (const r of sequential) r.subscription.unsubscribe();
+  });
+
   it('keys a Date by its time value', () => {
     const s = scenario();
     s.api.on('POST', '/teams/:teamId/uploads', () => ({ body: { ok: true } }));

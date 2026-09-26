@@ -141,7 +141,7 @@ export class TeamFacade {
 ```
 
 - **Args identify a handle by the request only.** The key is built from `queryParams`, `params`, `body` and `actionOptions.headers`, in any key order. Anything else in the args does not count. So a facade that passes wider args still gets the handle another component created, and `toolkitSelect(...).refresh()` re-runs it. Each call sends its own args, and `args$` emits the latest ones.
-- **Args the key cannot represent never share a handle.** A `FormData`, `Blob`, `File`, `Map`, `Set` or class instance anywhere in them gives every call a new handle. A `Date` counts by its time value.
+- **Args the key cannot represent never share a handle.** A `FormData`, `Blob`, `File`, `Map`, `Set` or class instance anywhere in them gives every call a new handle. Once the next such call on the same creator starts and its own request has settled, a handle stops updating and keeps emitting its last state, so uploads do not pile up queries. A `Date` counts by its time value.
 - **`response$` and `cachedResponse$` keep their toolkit meaning.** `response$` goes to `null` when a new call starts, and `cachedResponse$` keeps the last response.
 - **Errors keep the toolkit shape.** `error$` emits `{ status, message, data }` as `ToolkitError`.
 - **A second call with the same args joins the one in flight** instead of sending another request.

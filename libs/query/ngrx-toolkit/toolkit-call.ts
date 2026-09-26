@@ -11,7 +11,10 @@ export type ToolkitCallOptions = {
   injector?: Injector;
 };
 
-type ToolkitRegistry = WeakMap<AnyQueryCreator, Map<string, ToolkitHandleEntry>>;
+type ToolkitRegistry = {
+  shared: WeakMap<AnyQueryCreator, Map<string, ToolkitHandleEntry>>;
+  latestUnshared: WeakMap<AnyQueryCreator, ToolkitHandleEntry>;
+};
 
 const registries = /* @__PURE__ */ new WeakMap<EnvironmentInjector, ToolkitRegistry>();
 
@@ -46,7 +49,10 @@ const hashableHeaders = (headers: QueryHeaders | undefined) => {
     .map((name) => [name, resolved.getAll(name)]);
 };
 
-/** Returns `null` for args holding a value JSON cannot represent (FormData, Blob, Map, ...); those never share a handle. */
+/**
+ * Returns `null` for args holding a value JSON cannot represent (FormData, Blob, Map, ...). Those never share a handle,
+ * and each one is released once the next one for the same creator starts and its own call has settled.
+ */
 const hashArgs = (args: RequestArgs<never>) => {
   const { headers, ...rest } = args as { headers?: QueryHeaders };
 
@@ -75,20 +81,27 @@ const resolveEntry = <TCreator extends AnyQueryCreator>(
   let registry = registries.get(injector);
 
   if (!registry) {
-    registry = new WeakMap();
+    registry = { shared: new WeakMap(), latestUnshared: new WeakMap() };
     registries.set(injector, registry);
-  }
-
-  let entries = registry.get(creator);
-
-  if (!entries) {
-    entries = new Map();
-    registry.set(creator, entries);
   }
 
   const key = hashArgs(toQueryArgs(args as Record<string, unknown>));
 
-  if (key === null) return createToolkitHandle(creator, injector);
+  if (key === null) {
+    const entry = createToolkitHandle(creator, injector);
+
+    registry.latestUnshared.get(creator)?.releaseWhenSettled();
+    registry.latestUnshared.set(creator, entry);
+
+    return entry;
+  }
+
+  let entries = registry.shared.get(creator);
+
+  if (!entries) {
+    entries = new Map();
+    registry.shared.set(creator, entries);
+  }
 
   let entry = entries.get(key);
 
