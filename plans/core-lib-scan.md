@@ -1,10 +1,7 @@
 # Core lib scan — open findings
 
 Scan of `libs/core` from 2026-08-19. Fixed findings were removed on 2026-09-26 (git history has
-them). Still open: 1 High (in progress), 5 Medium, 22 Low, 18 spec-coverage items.
-
-**In progress:** migrate-to-v5 `.foo` rewrites `.foo$` — the longest-first sort is on the import loop
-(`viewport-service.ts:121`), not the replace loop (`:131-134`); twin at `router-state-service.ts:1368-1371`. S
+them). Still open: 5 Medium, 22 Low, 18 spec-coverage items.
 
 ## signals
 
@@ -56,7 +53,7 @@ them). Still open: 1 High (in progress), 5 Medium, 22 Low, 18 spec-coverage item
 - Low: dead code hidden by file-level eslint-disable (`router-state-service.ts:1,662,682`, `viewport-service.ts:1`). S
 - Low: comments at `create-provider.ts:9,55,73,78…`, `router-state-service.ts:155,312,849`. S
 - Low: `migration.ts:36` has no router-state bullet; `console.log` and `logger` mixed. S
-- Spec: no regression cases for the High fixes (two components per file, `.foo` next to `.foo$`, local `RouterStateService`, two classes per file, `type`/aliased imports, name in a template comment). M
+- Spec: no regression cases for the High fixes (two components per file, local `RouterStateService`, two classes per file, `type`/aliased imports, name in a template comment). M
 - Spec: `migration.spec.ts` tests only `skipFormat`; nothing asserts reported counts/log output. S
 - Spec: no `node_modules` fixture, no byte-identical check on an unrelated file. S
 
