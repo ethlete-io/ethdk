@@ -15,10 +15,9 @@ agent that works alone, batch by batch.
   forms/form-field, bracket, tabs, forms/select, notification, menu, match, forms/cascader, forms/dropzone,
   forms/color-input, breadcrumb, command-palette, carousel, scrollable, forms/selection-list, query-error,
   filter-overlay, forms/phone-input, forms/input, accordion, picture, pagination. `KBD_PLATFORM` and `DescriptionComponent` are covered by the palette and selection-list scenarios. Components: 959 of 1381 covered. Per-domain notes are under "Domain notes" below.
-- In progress: nothing. Start with task 1.
 - Removed on 2026-09-26 by user decision: `GridItemRef` and `configComponent` (e519882bc). Added:
   `FormFieldDirective.controlSuffixTemplate` (e38133536).
-- In progress 2026-09-27: chart, calendar, standings, forms/slider (task 3); tree, time-picker, chip, kbd, floating-action, forms/masked-input, loader
+- In progress 2026-09-27: tree, time-picker, chip, kbd, floating-action, forms/masked-input, loader
   (task 5); forms/multi-language-rich-text-editor, banner, toggletip, overlay, stream, scrollbar, progress-steps
   (task 6a).
 
@@ -49,8 +48,7 @@ agent that works alone, batch by batch.
 
 1. Done 2026-09-27: breadcrumb, command-palette, carousel.
 2. Done 2026-09-27: scrollable, forms/selection-list, query-error, filter-overlay.
-3. chart 17, calendar 15, standings 14, forms/slider 14 (60). Before chart: run `ListAgents` and tell any session
-   that works in chart stories.
+3. Done 2026-09-27: chart, calendar, standings, forms/slider.
 4. Done 2026-09-27: forms/phone-input, forms/input, accordion, picture, pagination.
 5. tree 10, time-picker 10, chip 10, kbd 9, floating-action 9, forms/masked-input 8, loader 7 (63).
 6. forms/multi-language-rich-text-editor 7, banner 7, toggletip 6, overlay 6, stream 5, scrollbar 5,
@@ -66,6 +64,9 @@ agent that works alone, batch by batch.
 9. Before any push: ask the user, then run the `ci-check` skill.
 
 ## Open items that need the user (do not decide alone)
+
+- `etSlider` `min`/`max` have no `numberAttribute`, so a static `min="60"` is a string in JIT and breaks clamping;
+  `etRangeSlider` names them `minValue`/`maxValue` and transforms them. Align the two?
 
 - A bare native `input[etInput|etNumberInput|etPasswordInput]` never sets `focused` or `touched`
   (`TextFieldControlDirective` has no focus/blur listeners), so signal-form errors never show outside
@@ -256,3 +257,15 @@ agent that works alone, batch by batch.
   media/type/DPR, lazy loading, `object-fit`; input stepper hold-to-repeat, scrub drag cursor, real Caps Lock,
   reveal icon swap; phone country panel keyboard and search, focus to the number after a pick, clear animation, emoji
   flags.
+
+### chart, calendar, standings, forms/slider
+
+- Friction: many dev errors throw into change detection (`MARKS_TOO_DENSE`, `OVERLAPPING_ZONES`, `MIXED_X_TYPES`, the
+  sankey errors) while `MISSING_PLOT` goes to the ErrorHandler; `DUPLICATE_MARK_TEMPLATE` throws from the
+  constructor; a slider tap with no move commits the press value; the standings participant text includes the emblem
+  initial, and two zone notes join with no space; calendar Enter/Space needs the native button click; `xHeader`
+  falls back to "Category"; a plot needs a faked `clientWidth`.
+- E2E gaps: slider pointer drag with capture, touch pan, RTL, vertical, focus ring after press, value label position;
+  standings drag reorder, container-query density, zone colours, zone notes in a screen reader; calendar month and
+  header transitions, focus during re-render, hover preview, multi-month layout; chart touch drag on a line plot,
+  tooltip placement and hover, horizontal bars, sankey labels and scroller, pie entry animation.
