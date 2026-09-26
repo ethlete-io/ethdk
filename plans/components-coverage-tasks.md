@@ -67,10 +67,6 @@ agent that works alone, batch by batch.
 
 ## Open items that need the user (do not decide alone)
 
-- `it.fails` in `query-error.scenario.spec.ts` (libs/query): the error's `retryState` uses the already spent retry
-  count, so `<et-query-error>` shows Retry only with `alwaysAllowRetry`; `createQueryErrorResponse` gets
-  `attempts()` as `retryCount`, one ahead. Sent to the query session.
-
 - `it.fails` in `table-features-rows.scenario.spec.ts`: a numeric `rowKey` turns into a string, so a
   `new Set([3])` selection matches nothing.
 - Headless tab bar: after `.focus()` on a trigger, the arrow keys move from the selected tab. Find out whether
@@ -232,7 +228,7 @@ agent that works alone, batch by batch.
 
 ### scrollable, forms/selection-list, query-error, filter-overlay
 
-- Friction: see the query-error `it.fails` in the open items (the scrollable edge bug is fixed in c1bae1a1f); a legacy error offers no retry without
+- Friction: two bugs fixed (scrollable edge in c1bae1a1f, query-error `retryState` in d414289ef); a legacy error offers no retry without
   `setDefaultQueryRetryFn`; a module-level `V2QueryClient` leaks its GC interval; `provideFilterOverlay` needs
   `FilterOverlayConfig<typeof FIELDS>`, not `Partial<Parameters<...>>`; a preview without `totalHits` shows "Show
   results" in production silently; `SelectionState` has no selected count; selection-list `aria-checked` needs
