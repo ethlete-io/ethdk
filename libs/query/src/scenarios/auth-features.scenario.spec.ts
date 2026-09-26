@@ -575,6 +575,28 @@ describe('auth features without the devtools', () => {
     c.destroy();
   });
 
+  it('a negative refreshStrategy counts as 0 and refreshes at expiry, not after it', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    const auth = s.auth({ accessTokenExpiresInMs: 20000, refreshStrategy: -5000 });
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    await s.settle(18000);
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(0);
+
+    await s.settle(2000);
+    s.tick(1);
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+
+    c.destroy();
+  });
+
   it('the object form of refreshStrategy clamps the percentage buffer to minBufferMs', async () => {
     const s = scenario();
 

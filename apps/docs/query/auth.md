@@ -303,7 +303,7 @@ It behaves exactly like a successful auth query: `bearerData` / `isAuthenticated
 
 - **Proactive** - a timer computed from the JWT's expiration claim (`expiresInPropertyName`, default `'exp'`) and the `refreshStrategy` (default: refresh at **75%** of the token lifetime, clamped between 1 and 10 minutes before expiry). With multi-tab sync active, only the elected leader tab refreshes: a follower's timer comes due at the same instant (the tabs share the token), so it skips the tick rather than asking the leader for a refresh the leader is already doing - until the token is nearly expired, at which point the leader has provably not acted and the follower [takes it over](#when-the-leader-stops-answering).
 
-A numeric `refreshStrategy` from `0` to `1` is the fraction of the token lifetime to use before refreshing; a larger number is a fixed buffer in milliseconds before expiry. The object form adds minimum and maximum buffer clamps.
+A numeric `refreshStrategy` from `0` to `1` is the fraction of the token lifetime to use before refreshing; a larger number is a fixed buffer in milliseconds before expiry. A negative number counts as `0`, so the refresh fires at expiry rather than after it. The object form adds minimum and maximum buffer clamps.
 
 - **Reactive** - any secure query failing with a `401` triggers a refresh (`autoRetryOn401`, default `true`), then re-executes.
 

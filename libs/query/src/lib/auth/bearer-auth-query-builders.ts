@@ -51,7 +51,7 @@ export type TokenRefreshQueryConfig<TArgs extends QueryArgs> = AuthQueryConfig<T
    * Strategy for determining when to refresh the token.
    * Can be either:
    * - A percentage (0-1) of the token's lifetime (e.g., 0.75 = refresh at 75% of lifetime)
-   * - A fixed time in milliseconds before expiration
+   * - A fixed time in milliseconds before expiration (above 1; a negative number counts as 0)
    * - An object with both percentage and min/max constraints
    * @default { percentage: 0.75, minBufferMs: 60000, maxBufferMs: 600000 }
    */
@@ -550,7 +550,7 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
       if (typeof config.refreshStrategy === 'number') {
         return config.refreshStrategy >= 0 && config.refreshStrategy <= 1
           ? tokenLifetimeMs * (1 - config.refreshStrategy)
-          : config.refreshStrategy;
+          : Math.max(config.refreshStrategy, 0);
       }
 
       const percentage = config.refreshStrategy?.percentage ?? 0.75;
