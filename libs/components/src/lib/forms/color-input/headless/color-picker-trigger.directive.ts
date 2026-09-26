@@ -1,4 +1,4 @@
-import { Directive, ElementRef, afterNextRender, inject } from '@angular/core';
+import { Directive, ElementRef, afterNextRender, inject, input } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { registerSingleton } from '../../form-field/headless';
 import { COLOR_INPUT_ERROR_CODES } from '../color-input-errors';
@@ -15,7 +15,7 @@ import { COLOR_INPUT_TOKEN } from './color-input.directive';
     '[attr.aria-required]': 'colorInput?.required() || null',
     '[attr.aria-invalid]': 'colorInput?.shouldDisplayError() || null',
     '[attr.aria-describedby]': 'colorInput?.describedBy() || null',
-    '[attr.aria-label]': 'colorInput?.ariaLabel() || null',
+    '[attr.aria-label]': 'colorInput?.ariaLabel() || fallbackAriaLabel() || null',
     '[attr.aria-labelledby]': 'colorInput?.labelId() || null',
     '[attr.aria-readonly]': 'colorInput?.readonly() || null',
     '[attr.data-readonly]': 'colorInput?.readonly() || null',
@@ -29,6 +29,9 @@ export class ColorPickerTriggerDirective {
   /** @internal */
   public colorInput = inject(COLOR_INPUT_TOKEN, { optional: true });
   public elementRef = inject<ElementRef<HTMLButtonElement>>(ElementRef);
+
+  /** The accessible name used while the color input has no `aria-label` of its own. */
+  public fallbackAriaLabel = input<string | null>(null);
 
   constructor() {
     const colorInput = this.colorInput;
