@@ -91,7 +91,7 @@ export const rankCommands = (commands: readonly CommandPaletteCommand[], query: 
     if (a.score !== b.score) return b.score - a.score;
 
     const priority = (b.command.priority ?? 0) - (a.command.priority ?? 0);
-    if (priority !== 0) return priority;
+    if (priority !== 0 || !trimmed) return priority;
 
     if (a.command.label.length !== b.command.label.length) {
       return a.command.label.length - b.command.label.length;
