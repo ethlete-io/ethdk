@@ -31,7 +31,7 @@ Triage (ethlete-sdk-57):
   `triggeredBy: 'polling'`, `withAutoRefresh` passes `'auto-refresh'`; `features.md` and `migrating-from-v2.md` show
   the `loading() && !response()` spinner and the background-refresh `executionState()`.
 - Waiting on the user: nothing.
-- Next generator item (from S6): `prep-for-query-v3` turns `E.CLEAR_QUERY_ARGS` into an import v3 does not export, and
+- Done in 163cd5074 (from S6): `prep-for-query-v3` turns `E.CLEAR_QUERY_ARGS` into an import v3 does not export, and
   5.x `withArgs` returning `null` meant "keep the previous args" where v3 parks the query (dfb ~10 sites). Neither is in
   `migrating-from-v2.md`. See `early-v3-patterns.scenario.spec.ts`.
 - To question: 14 (query button, EntityStore). Document only: 12, 15-18.
@@ -41,13 +41,11 @@ Triage (ethlete-sdk-57):
 Open work, in this order.
 
 1. **Done:** the history rewrite finished on 2026-09-25, the shas above are the new ones, and `next` is pushed.
-2. **Done:** type error for a missing `withArgs` (gap 8 follow-up). `WithArgsQueryFeature` brand plus a
-   `this: WithArgsCheck<TArgs, TInput>` signature on `QueryCreator`. No call site in libs or apps failed; every
-   generic helper passes `withArgs` or the literal silence flag. Codemod output stays on the legacy wrapper, which
-   silences, so it compiles.
-3. **`CLEAR_QUERY_ARGS` generator item** (the "Next generator item" bullet above). No design question. Check with
-   ethlete-sdk-28 first, because it works in `libs/query/generators`.
-4. **Document gaps 12, 15-18** in `migrating-from-v2.md`. Can run in parallel with 3.
+2. **Done** in 468119602, b916b31e9: type error for a missing `withArgs` (gap 8 follow-up). Known limits: a generic
+   helper calling `c()` errors; `const f: QueryFeature<X> = withArgs(...)` no longer counts as `withArgs`; a spread
+   hides a missing `withArgs` until ET100 at runtime.
+3. **Done** in 163cd5074, fe5ad95b8: the `CLEAR_QUERY_ARGS` generator item.
+4. **Done** in dfd3a236d, b028cc01d: gaps 12, 15-18 documented. Gap 15 was wrong: route-scoped providers work.
 5. **Ask the user about gap 14** (by design, or new v3 features). Could be a project of its own.
 
 Rules learned on 2026-09-25: vitest does not type-check, so every slice also runs
