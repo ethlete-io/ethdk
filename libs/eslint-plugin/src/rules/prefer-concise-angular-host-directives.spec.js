@@ -156,5 +156,23 @@ class TestComponent {}
 `,
       errors: [{ messageId: 'hostDirectiveOrder' }],
     },
+    {
+      code: `
+@Component({
+  hostDirectives: [{ outputs: ['themeChange'], // the change stream
+    directive: ProvideColorDirective, }],
+})
+class TestComponent {}
+`,
+      output: `
+@Component({
+  hostDirectives: [{
+    directive: ProvideColorDirective, outputs: ['themeChange'], // the change stream
+ }],
+})
+class TestComponent {}
+`,
+      errors: [{ messageId: 'hostDirectiveOrder' }],
+    },
   ],
 });

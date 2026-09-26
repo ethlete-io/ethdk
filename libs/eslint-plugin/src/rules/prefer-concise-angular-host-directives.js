@@ -7,7 +7,7 @@ const { getAngularDecoratorName } = require('./internals/import-resolution');
 /** @typedef {import('estree').Property & { range: [number, number] }} TPropertyNode */
 /** @typedef {import('estree').ArrayExpression & { elements: Array<import('estree').Expression | import('estree').SpreadElement | null> }} TArrayExpressionNode */
 /** @typedef {import('estree').ObjectExpression & { properties: Array<TPropertyNode | import('estree').SpreadElement> }} TObjectExpressionNode */
-/** @typedef {{ bodyText: string; hasComma: boolean; originalIndex: number; orderIndex: number; property: TPropertyNode; trailingText: string }} TPropertyEntry */
+/** @typedef {{ bodyText: string; endsWithLineComment: boolean; hasComma: boolean; originalIndex: number; orderIndex: number; property: TPropertyNode; trailingText: string }} TPropertyEntry */
 
 const HOST_DIRECTIVE_PROPERTY_ORDER = ['directive', 'inputs', 'outputs'];
 
@@ -67,6 +67,11 @@ const getHostDirectiveConfigProperties = (node) => {
 };
 
 /**
+ * @param {string} text
+ */
+const startsWithLineBreak = (text) => /^\s*/.exec(text)?.[0].includes('\n') ?? false;
+
+/**
  * @param {TObjectExpressionNode} node
  * @param {import('eslint').SourceCode} sourceCode
  */
@@ -98,6 +103,7 @@ const buildSortedObjectText = (node, sourceCode) => {
 
       return {
         bodyText,
+        endsWithLineComment: trailingComment?.type === 'Line',
         hasComma: Boolean(comma),
         originalIndex,
         orderIndex: orderIndexMap.get(getPropertyName(property.key)) ?? HOST_DIRECTIVE_PROPERTY_ORDER.length,
@@ -120,10 +126,12 @@ const buildSortedObjectText = (node, sourceCode) => {
   return (
     '{' +
     sortedEntries
-      .map(
-        (entry, index) =>
-          `${entry.bodyText}${index < sortedEntries.length - 1 || trailingComma ? ',' : ''}${entry.trailingText}`,
-      )
+      .map((entry, index) => {
+        const followingText = sortedEntries[index + 1]?.bodyText ?? suffix;
+        const needsLineBreak = entry.endsWithLineComment && !startsWithLineBreak(followingText);
+
+        return `${entry.bodyText}${index < sortedEntries.length - 1 || trailingComma ? ',' : ''}${entry.trailingText}${needsLineBreak ? '\n' : ''}`;
+      })
       .join('') +
     suffix +
     '}'
