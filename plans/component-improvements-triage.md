@@ -55,7 +55,6 @@ listed first. Decide them one slice at a time.
 6. Category x: points sit at band centres, and labels thin out below 48px per category. A time axis runs edge to edge.
 7. Missing values are left out of the tooltip. An x with no values reads "–".
 8. Focus ring: a full-height rounded ring around the focused column. It gets thin on daily data.
-9. Shared tooltip bug: a square light-grey patch shows behind the rounded corners of the tooltip panel, in the bar chart too.
 
 ## Stat tile
 
