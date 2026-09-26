@@ -525,6 +525,11 @@ A token codec must be installed - by `etRichTextEditorTriggers` or
 `provideRichTextEditorTokenRendering(triggers)` - or the call throws in dev (tokens can't
 (de)serialize without one).
 
+A codec provided directly through `RICH_TEXT_EDITOR_TOKEN_CODEC` may set `markdownPattern`, a
+`RegExp` matching one token in the Markdown value. The editor and `et-rich-text-viewer` pass it to
+`markdownToHtml` as `verbatim`, so Markdown characters in a token id (`{{field:__x__}}`) stay
+literal. The built-in codec sets it.
+
 ### Built-in token palette
 
 For a ready-made button row, drop in `et-rich-text-editor-token-palette`, driven by the same

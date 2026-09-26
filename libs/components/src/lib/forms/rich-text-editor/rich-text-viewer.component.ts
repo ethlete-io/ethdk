@@ -34,7 +34,7 @@ export class RichTextViewerComponent {
   public value = input<string | null | undefined>('');
 
   private html = computed(() => {
-    const html = markdownToHtml(this.value() ?? '');
+    const html = markdownToHtml(this.value() ?? '', { verbatim: this.tokenCodec?.markdownPattern });
 
     return this.tokenCodec ? this.tokenCodec.render(html) : html;
   });

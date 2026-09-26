@@ -587,7 +587,7 @@ export class RichTextEditorDirective
 
     if (!markdown) return false;
 
-    const normalized = markdownToHtml(markdown);
+    const normalized = markdownToHtml(markdown, { verbatim: codec?.markdownPattern });
 
     this.editorDom.insertNormalizedHtml(codec ? codec.render(normalized) : normalized);
 
@@ -834,7 +834,7 @@ export class RichTextEditorDirective
     if (!root) return false;
 
     const codec = this.tokenCodec();
-    const html = markdownToHtml(markdown);
+    const html = markdownToHtml(markdown, { verbatim: codec?.markdownPattern });
 
     root.innerHTML = codec ? codec.render(html) : html;
     codec?.hydrate(root);

@@ -96,6 +96,8 @@ export type RichTextEditorTokenCodec = {
   hydrate: (root: HTMLElement) => void;
   resolveChip: (type: string, id: string) => RichTextEditorTokenChip;
   parseTokenText: (text: string) => string;
+  /** Matches a token in the Markdown value; the editor hands it to `markdownToHtml` as `verbatim`, so Markdown characters in a token stay literal. */
+  markdownPattern?: RegExp;
 };
 
 export const createRichTextEditorTokenCodec = (
@@ -212,5 +214,5 @@ export const createRichTextEditorTokenCodec = (
     return out;
   };
 
-  return { serialize, render, hydrate, resolveChip, parseTokenText };
+  return { serialize, render, hydrate, resolveChip, parseTokenText, markdownPattern: TOKEN_MARKDOWN_RE };
 };

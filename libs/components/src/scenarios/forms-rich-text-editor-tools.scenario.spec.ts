@@ -875,6 +875,28 @@ describe('forms rich-text-editor tool scenarios', () => {
     s.flush();
   });
 
+  it('keeps paired emphasis markers in a token id literal through a reload', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(TemplatePageComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const text = fixture.componentInstance.text;
+    const stored = '{{field:_a_b_}} and {{field:__x__}}';
+    const chipIds = () =>
+      Array.from(textbox(host).querySelectorAll('[data-et-token]')).map((chip) => chip.getAttribute('data-token-id'));
+
+    text.set(stored);
+    s.tick();
+    expect(chipIds()).toEqual(['_a_b_', '__x__']);
+
+    text.set('');
+    s.tick();
+    text.set(stored);
+    s.tick();
+    expect(chipIds()).toEqual(['_a_b_', '__x__']);
+    expect(text()).toBe(stored);
+    s.flush();
+  });
+
   it('searches people through a query-backed trigger', () => {
     const s = scenario();
     const http = TestBed.inject(HttpTestingController);
