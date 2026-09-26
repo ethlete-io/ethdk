@@ -472,3 +472,35 @@ test.describe('scheduler / touch', () => {
     await expect(header).not.toHaveText(before ?? '', { timeout: 5_000 });
   });
 });
+
+const HIDE_SURFACE_BODY = '.et-scheduler-edit-surface > :not(:first-child) { display: none !important; }';
+
+test.describe('scheduler / edit surface placement', () => {
+  test.skip(({ isMobile }) => isMobile, 'the anchored surface is a desktop layout');
+
+  test('flips to the roomier side when its content grows after it opened below', async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 850 });
+
+    const root = await openStory(page, DAY_ID);
+    const block = root.locator('.et-scheduler-time-grid-block').first();
+
+    await block.evaluate((el) => {
+      const body = el.closest<HTMLElement>('.et-scheduler-time-grid-body');
+
+      body?.scrollBy(0, el.getBoundingClientRect().top - (body.getBoundingClientRect().bottom - 60));
+    });
+    const style = await page.addStyleTag({ content: HIDE_SURFACE_BODY });
+
+    await block.click({ position: { x: 20, y: 8 } });
+    await waitForEntered(page);
+
+    const pane = page.locator('.et-scheduler-edit-surface-panel');
+
+    await expect(pane).toHaveAttribute('data-overlay-placement', 'bottom');
+
+    await style.evaluate((el) => el.remove());
+
+    await expect(pane).toHaveAttribute('data-overlay-placement', 'top');
+    expect((await boxOf(pane)).height).toBeGreaterThan(400);
+  });
+});

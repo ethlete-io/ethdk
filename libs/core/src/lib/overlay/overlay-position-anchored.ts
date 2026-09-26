@@ -8,6 +8,8 @@ import {
   offset,
   Padding,
   Placement,
+  platform,
+  Platform,
   shift,
   SideObject,
 } from '@floating-ui/dom';
@@ -151,6 +153,52 @@ const paddingWithInsets = (padding: Padding, insets: OverlayViewportInset): Side
     right: own.right + insets.right,
     bottom: own.bottom + insets.bottom,
     left: own.left + insets.left,
+  };
+};
+
+/**
+ * A platform whose first measurement of the pane, in each `computePosition` run, ignores the cap
+ * `size` set in the previous run. `flip` reads that first measurement: against a capped pane, the side
+ * the pane was squeezed onto always fits, so a pane whose content grows after it opened never flips
+ * to the roomier side. Later measurements in the same run see the cap, and `size` resets with them,
+ * so the final position is computed from the pane as it renders.
+ */
+const platformMeasuringUncappedPaneFirst = (paneElement: HTMLElement, renderer: AngularRenderer): Platform => {
+  let measuredUncapped = false;
+
+  return {
+    ...platform,
+    getDimensions: (element) => {
+      if (element !== paneElement || measuredUncapped) return platform.getDimensions(element);
+
+      measuredUncapped = true;
+
+      const maxWidth = paneElement.style.getPropertyValue('--et-overlay-max-width');
+      const maxHeight = paneElement.style.getPropertyValue('--et-overlay-max-height');
+
+      if (!maxWidth && !maxHeight) return platform.getDimensions(element);
+
+      // The uncapped layout clamps the scroll offset of every scroller the cap made scrollable.
+      const scrolled = [...paneElement.querySelectorAll<HTMLElement>('*')]
+        .filter((el) => el.scrollTop || el.scrollLeft)
+        .map((el) => ({ el, top: el.scrollTop, left: el.scrollLeft }));
+
+      renderer.setCssProperties(paneElement, { '--et-overlay-max-width': null, '--et-overlay-max-height': null });
+
+      const dimensions = platform.getDimensions(element);
+
+      renderer.setCssProperties(paneElement, {
+        '--et-overlay-max-width': maxWidth || null,
+        '--et-overlay-max-height': maxHeight || null,
+      });
+
+      for (const { el, top, left } of scrolled) {
+        el.scrollTop = top;
+        el.scrollLeft = left;
+      }
+
+      return dimensions;
+    },
   };
 };
 
@@ -303,6 +351,10 @@ export const createAnchoredPositionCleanup = (
       placement: strategy.placement ?? 'bottom',
       strategy: 'absolute',
       middleware,
+      platform:
+        strategy.autoResize && strategy.minAvailableSpace === undefined
+          ? platformMeasuringUncappedPaneFirst(paneElement, renderer)
+          : platform,
     }).then(({ x, y, placement, middlewareData }) => {
       if (destroyed || currentUpdateId !== updateId) return;
 
