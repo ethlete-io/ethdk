@@ -6,6 +6,8 @@ The realistic order is: **prepare → run the codemod → make it boot → migra
 
 ## 1. Prepare and run the generators
 
+The current `@ethlete/query` peer-pins `@angular/core`, `@angular/common`, `@angular/forms` and `@angular/router` to an exact version (`22.1.6` at the time of writing, see the package's `package.json`), and so do `@ethlete/core` and `@ethlete/components`. The legacy client ships in the same package, so there is no v3 for an older Angular: an app on Angular 19 upgrades Angular first, to the pinned minor.
+
 ```bash
 yarn nx g @ethlete/query:prep-for-query-v3   # rename colliding legacy symbols, then upgrade the package
 yarn nx g @ethlete/query:migrate-to-query-v3
@@ -139,6 +141,23 @@ injectApi().refreshQueriesInUse(); // re-runs every bound GET/HEAD/OPTIONS, in f
 
 Headers can be a plain record, so this needs no `HttpInterceptor` and no `@angular/*` import. An interceptor also works, but it only affects _subsequent_ requests - anything already resolved keeps data fetched under the old header.
 
+The header function runs on every request, outside any injection context, so it cannot call `inject()`. Read app state through a signal it closes over, as above, and let a service write that signal. Where the value only exists in DI, keep an `HttpInterceptor` - it now sees query requests too, and can check `IS_QUERY_REQUEST` to pick them out.
+
+### Clients can still be scoped to a route
+
+A client, an auth provider and a WebSocket client are root-provided on first `inject()`, but each definition also has a `provide` half that gives a subtree its own instance. A v2 client scoped to a route's `providers` stays scoped:
+
+```ts
+export const provideGgApi = toProvideFn(GG_API);
+export const provideGgAuth = toProvideFn(GG_AUTH);
+
+export const routes: Routes = [
+  { path: 'lobby/:id', providers: [provideGgApi(), provideGgAuth()], component: MatchLobby },
+];
+```
+
+Provide them together. An auth provider injects its client from its own injector, so a root auth provider next to a route client talks to a second, root instance of the client.
+
 ## 3. Migrate screens
 
 ### Templates read signals, not directives
@@ -180,9 +199,26 @@ Both versions render `<et-query-devtools>`, so templates need no change. Only tw
 - the per-client `provideQueryClientForDevtools({ client, displayName })` calls collapse into a single `provideQueryDevtools()` - v3 registers every client and auth provider at once;
 - `QueryDevtoolsComponent` is imported from `@ethlete/query-devtools` instead of `@ethlete/query`, so that package has to be a dependency of the app.
 
+The two panels do not merge. The current one lists current-system queries, and the `legacy*` interop queries, which are real queries underneath; a client still on `V2QueryClient` only shows up in the legacy panel. Both panels use the `et-query-devtools` selector, so one template cannot import both. While some clients are still on v2, mount the current panel through its [lazy shell](/query-devtools/), `<et-query-devtools-lazy>`, next to the legacy `<et-query-devtools>`. The two keep their settings under different storage keys.
+
 ### Query collections become `executionState`
 
 A v2 query collection tracked "which of these queries is currently doing something". For auth that role belongs to [`provider.executionState()`](/query/auth#execution-state); for everything else, read the queries' own `executionState()` signals and combine them in a `computed`.
+
+### Reactive-forms async validators
+
+[`validateWithQuery`](/query/errors#validating-against-the-server-as-the-user-types) is for signal forms only. A reactive-forms `AsyncValidatorFn` that ran a v2 query keeps working on the interop query. To move it to the current system, create the query once in an injection context and run it with `executeUntilSettled$` (a function route also needs `silenceMissingWithArgsFeatureError: true`):
+
+```ts
+private emailValidate = postEmailValidate();
+
+emailTaken: AsyncValidatorFn = (control) =>
+  executeUntilSettled$(this.emailValidate, { args: { body: { email: control.value } } }).pipe(
+    map((snapshot) => (snapshot.error() ? { server: queryErrorMessage(snapshot.error()) } : null)),
+  );
+```
+
+Moving the form to signal forms and `validateWithQuery` gets the debounce, the abort of a superseded round and the violation mapping for free.
 
 ### `prepare()` needs an injector
 
@@ -236,6 +272,30 @@ throws there. Passing `injector` at the call site stays the better answer where 
 With several applications on one page, the first one that provided the fallback answers every `prepare()`
 made outside an injection context - whichever application made the call - until it is destroyed, and dev
 mode warns when a second application registers.
+
+### Early v3 call sites: `withArgs` and `null`
+
+Code written against the current system while it shipped in `@ethlete/query` 5.x needs one change of its own. In 5.x, a `withArgs` source that returned `null` kept the previous args, and `CLEAR_QUERY_ARGS` parked the query. Now `CLEAR_QUERY_ARGS` is gone and `null` parks: `args()`, `response()` and `executionState()` become `null`, and polling pauses (see [`withArgs`](/query/features#withargs)).
+
+- Replace `CLEAR_QUERY_ARGS` with `null`.
+- Where `null` meant "keep the previous args", keep them yourself, for example with a `linkedSignal` that holds on to the last non-null value:
+
+```ts
+type MatchArgs = { pathParams: { matchId: string } } | null;
+
+private lastMatchArgs = linkedSignal<MatchArgs, MatchArgs>({
+  source: () => {
+    const id = this.matchId();
+
+    return id ? { pathParams: { matchId: id } } : null;
+  },
+  computation: (next, previous) => next ?? previous?.value ?? null,
+});
+
+matchQuery = getMatch(withArgs(() => this.lastMatchArgs()));
+```
+
+Search for every `withArgs` source that can return `null` - it compiles in both versions and only behaves differently.
 
 ## Behavior worth knowing before you debug it
 
