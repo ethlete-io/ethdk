@@ -527,7 +527,7 @@ A token codec must be installed - by `etRichTextEditorTriggers` or
 
 A codec provided directly through `RICH_TEXT_EDITOR_TOKEN_CODEC` may set `markdownPattern`, a
 `RegExp` matching one token in the Markdown value. The editor and `et-rich-text-viewer` pass it to
-`markdownToHtml` as `verbatim`, so Markdown characters in a token id (`{{field:__x__}}`) stay
+`markdownToHtml` as `verbatim`, so Markdown characters in a token id (<span v-pre>`{{field:__x__}}`</span>) stay
 literal. The built-in codec sets it.
 
 ### Built-in token palette
