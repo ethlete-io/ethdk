@@ -14,12 +14,11 @@ agent that works alone, batch by batch.
 - Done: button, overlay, stream, table, icon, forms/date-time, forms/rich-text-editor, scheduler, grid,
   forms/form-field, bracket, tabs, forms/select, notification, menu, match, forms/cascader, forms/dropzone,
   forms/color-input, breadcrumb, command-palette, carousel, scrollable, forms/selection-list, query-error,
-  filter-overlay. `KBD_PLATFORM` and `DescriptionComponent` are covered by the palette and selection-list scenarios. Components: 959 of 1381 covered. Per-domain notes are under "Domain notes" below.
+  filter-overlay, forms/phone-input, forms/input, accordion, picture, pagination. `KBD_PLATFORM` and `DescriptionComponent` are covered by the palette and selection-list scenarios. Components: 959 of 1381 covered. Per-domain notes are under "Domain notes" below.
 - In progress: nothing. Start with task 1.
 - Removed on 2026-09-26 by user decision: `GridItemRef` and `configComponent` (e519882bc). Added:
   `FormFieldDirective.controlSuffixTemplate` (e38133536).
-- In progress 2026-09-27: chart, calendar, standings, forms/slider (task 3); forms/phone-input, forms/input,
-  accordion, picture, pagination (task 4); tree, time-picker, chip, kbd, floating-action, forms/masked-input, loader
+- In progress 2026-09-27: chart, calendar, standings, forms/slider (task 3); tree, time-picker, chip, kbd, floating-action, forms/masked-input, loader
   (task 5).
 
 ## Rules for every batch
@@ -51,7 +50,7 @@ agent that works alone, batch by batch.
 2. Done 2026-09-27: scrollable, forms/selection-list, query-error, filter-overlay.
 3. chart 17, calendar 15, standings 14, forms/slider 14 (60). Before chart: run `ListAgents` and tell any session
    that works in chart stories.
-4. forms/phone-input 14, forms/input 13, accordion 13, picture 11, pagination 11 (62).
+4. Done 2026-09-27: forms/phone-input, forms/input, accordion, picture, pagination.
 5. tree 10, time-picker 10, chip 10, kbd 9, floating-action 9, forms/masked-input 8, loader 7 (63).
 6. forms/multi-language-rich-text-editor 7, banner 7, toggletip 6, overlay 6, stream 5, scrollbar 5,
    progress-steps 5, masonry 5, badge 5, avatar 5, tooltip 4, toolbar 4, skeleton 4, forms/tag-input 4,
@@ -66,6 +65,10 @@ agent that works alone, batch by batch.
 9. Before any push: ask the user, then run the `ci-check` skill.
 
 ## Open items that need the user (do not decide alone)
+
+- A bare native `input[etInput|etNumberInput|etPasswordInput]` never sets `focused` or `touched`
+  (`TextFieldControlDirective` has no focus/blur listeners), so signal-form errors never show outside
+  `et-form-field`. Fix only if a bare native input is a supported mode.
 
 - `it.fails` in `table-features-rows.scenario.spec.ts`: a numeric `rowKey` turns into a string, so a
   `new Set([3])` selection matches nothing.
@@ -238,3 +241,17 @@ agent that works alone, batch by batch.
   pages, floating-action badge; segmented sliding background, checkmark/radio animations, card hover and focus
   rings, tabs-variant underline; real scroll snap, smooth scroll, mask gradients, sticky buttons, dot track past 5
   dots, drag momentum, vertical direction, `scrollOrigin`/`scrollMargin`.
+
+### forms/phone-input, forms/input, accordion, picture, pagination
+
+- Friction: fixed in f3db50c36: `etNumberInput`/`etPasswordInput` on a native host ignored typing. Open: the default
+  accordion header joins label and hint with no space ("Returns30 days"); `openAll()` does nothing with
+  `autoCloseOthers`; the page size select does not reset the page; `PaginationSeoDirective.pageTitle` waits for a
+  first navigation; a bound `[type]` on a native `input[etInput]` does not reach the DOM; the password reveal needs
+  `et-form-field`; phone display groups by 3 for every country; the phone country `aria-label` lands on the trigger;
+  the picture missing-`defaultSrc` warning comes from a computed and can repeat.
+- E2E gaps: accordion collapse animation, find-in-page with `visibility`, chevron, `inert` focus; pagination
+  responsive trimming and compact switch, stable readout width, modified-click links; picture `<source>` choice by
+  media/type/DPR, lazy loading, `object-fit`; input stepper hold-to-repeat, scrub drag cursor, real Caps Lock,
+  reveal icon swap; phone country panel keyboard and search, focus to the number after a pick, clear animation, emoji
+  flags.
