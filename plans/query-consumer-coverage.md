@@ -255,9 +255,8 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       an actions toolbar), removed in e519882bc; the grid renders nothing before its host has a width; ET1902 throws out of change
       detection. E2E gaps: pointer drag and resize, auto-scroll, CSS transitions, container resize, reduced motion.
       Form field done (49 of 49, `forms-form-field{,-custom-control}.scenario.spec.ts`, 1d138d455). No bug.
-      Friction: a schema-`hidden` field logs NG01916, but the docs present `hidden` as the way to remove a field;
-      a custom `[etFormField]` chrome cannot render a control's `etControlSuffix` (`registeredControlSuffix` is
-      `@internal`); `createAnchoredPanelController` needs the unexported `OverlayTemplateHostComponent`;
+      Friction: a schema-`hidden` field logs NG01916 (docs now say to remove it with `@if`, e38133536); a custom
+      `[etFormField]` chrome now renders a control's suffix from `controlSuffixTemplate` (e38133536); `createAnchoredPanelController` needs the unexported `OverlayTemplateHostComponent`;
       `FORM_FIELD_LABELS` holds only the overrides; `s.flush()` runs no change detection when nothing is pending.
       E2E gaps: support region animations, floating label layout, busy spinner timing, anchored panel position,
       the bottom sheet below `md`, the focus ring.
