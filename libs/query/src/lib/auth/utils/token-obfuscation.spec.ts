@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { deobfuscateToken, obfuscateToken, isObfuscated, resetObfuscationKey } from './token-obfuscation';
+import { deobfuscateToken, obfuscateToken, resetObfuscationKey } from './token-obfuscation';
+
+const xor = (text: string, key: string) =>
+  Array.from(text, (char, i) => String.fromCharCode(char.charCodeAt(0) ^ key.charCodeAt(i % key.length))).join('');
 
 describe('token-obfuscation', () => {
   let localStorageMock: {
@@ -47,7 +50,7 @@ describe('token-obfuscation', () => {
       const obfuscated = obfuscateToken(token);
 
       // Base64 pattern
-      expect(obfuscated).toMatch(/^[A-Za-z0-9+/]+=*$/);
+      expect(obfuscated).toMatch(/^1\.[A-Za-z0-9+/]+=*$/);
     });
 
     it('should use stored key from localStorage', () => {
@@ -112,6 +115,29 @@ describe('token-obfuscation', () => {
       expect(revealed).toBe(token);
     });
 
+    it('should return null for a value obfuscated under another key', () => {
+      const obfuscated = obfuscateToken('eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.signature');
+
+      resetObfuscationKey();
+      localStorageMock._storage.set('__eth_ek', btoa('a-sibling-origin-key'));
+
+      expect(deobfuscateToken(obfuscated)).toBeNull();
+    });
+
+    it('should reveal a value in the format before the checksum', () => {
+      obfuscateToken('warm-up');
+      const key = localStorageMock._storage.get('__eth_ek') ?? '';
+      const legacy = btoa(xor('legacy-refresh-token', key));
+
+      expect(deobfuscateToken(legacy)).toBe('legacy-refresh-token');
+    });
+
+    it('should return null for a value in the old format obfuscated under another key', () => {
+      const legacy = btoa(xor('eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.signature', btoa('a-sibling-origin-key')));
+
+      expect(deobfuscateToken(legacy)).toBeNull();
+    });
+
     it('should handle JWT-like tokens', () => {
       const jwtToken =
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
@@ -122,34 +148,13 @@ describe('token-obfuscation', () => {
     });
   });
 
-  describe('isObfuscated', () => {
-    it('should return true for obfuscated tokens', () => {
-      const token = 'my-secret-token-123';
-      const obfuscated = obfuscateToken(token);
-
-      expect(isObfuscated(obfuscated)).toBe(true);
-    });
-
-    it('should return false for unobfuscated tokens', () => {
-      expect(isObfuscated('plain-token')).toBe(false);
-    });
-
-    it('should return false for empty string', () => {
-      expect(isObfuscated('')).toBe(false);
-    });
-
-    it('should return false for short base64-like strings', () => {
-      expect(isObfuscated('abc=')).toBe(false);
-    });
-  });
-
   describe('obfuscation round-trip', () => {
     it('should maintain token integrity through multiple operations', () => {
       const token = 'original-token';
 
       const obfuscated1 = obfuscateToken(token);
       const revealed1 = deobfuscateToken(obfuscated1);
-      const obfuscated2 = obfuscateToken(revealed1);
+      const obfuscated2 = obfuscateToken(revealed1 ?? '');
       const revealed2 = deobfuscateToken(obfuscated2);
 
       expect(revealed1).toBe(token);
@@ -161,7 +166,7 @@ describe('token-obfuscation', () => {
       const obfuscated = obfuscateToken(token);
       const doubleObfuscated = obfuscateToken(obfuscated);
       const revealedOnce = deobfuscateToken(doubleObfuscated);
-      const revealedTwice = deobfuscateToken(revealedOnce);
+      const revealedTwice = deobfuscateToken(revealedOnce ?? '');
 
       expect(revealedTwice).toBe(token);
     });

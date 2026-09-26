@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { createEnvironmentInjector, effect, EnvironmentInjector, inject } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
 import { isObservable, Observable } from 'rxjs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   BearerAuthProviderFeatureContext,
   createAuthGuard,
@@ -849,6 +849,104 @@ describe('withPersistentAuth', () => {
 
     second.destroy();
     document.cookie = `${COOKIE_NAME}=; max-age=0; path=/; domain=localhost`;
+  });
+
+  describe('on a sibling subdomain sharing the cookie through cookie.domain', () => {
+    const KEY_STORAGE = '__eth_ek';
+    const SIBLING_KEY = btoa('a-sibling-origin-key');
+
+    let ownKey: string | null = null;
+
+    beforeEach(() => {
+      ownKey = localStorage.getItem(KEY_STORAGE);
+    });
+
+    afterEach(() => {
+      if (ownKey) localStorage.setItem(KEY_STORAGE, ownKey);
+      else localStorage.removeItem(KEY_STORAGE);
+
+      document.cookie = `${COOKIE_NAME}=; max-age=0; path=/; domain=localhost`;
+    });
+
+    const xor = (text: string, key: string) =>
+      Array.from(text, (char, i) => String.fromCharCode(char.charCodeAt(0) ^ key.charCodeAt(i % key.length))).join('');
+
+    const serveIssuedRefreshTokensOnly = (s: Scenario) => {
+      const issued = new Set<string>();
+      const pair = () => {
+        const refreshToken = mintToken({ expiresInMs: 60 * 60 * 1000 });
+        issued.add(refreshToken);
+
+        return { accessToken: mintToken({ expiresInMs: 15 * 60 * 1000 }), refreshToken };
+      };
+
+      s.api.on('POST', '/auth/login', () => ({ body: pair() }));
+      s.api.on('POST', '/auth/refresh', ({ body }) =>
+        issued.has((body as TokenArgs['body']).token ?? '')
+          ? { body: pair() }
+          : { status: 401, body: { message: 'unknown token' } },
+      );
+
+      return issued;
+    };
+
+    const loadPageWithKey = async (s: Scenario, key: string) => {
+      localStorage.setItem(KEY_STORAGE, key);
+      vi.resetModules();
+      const lib = await import('../index');
+      const tab = boot(s, { lib, features: [persistentAuth({}, { domain: 'localhost' }, lib)] });
+
+      await s.settle();
+      s.flush();
+      await s.settle();
+
+      return tab;
+    };
+
+    it('neither sends nor deletes a cookie another origin wrote under its own key', async () => {
+      const s = scenario();
+
+      serveIssuedRefreshTokensOnly(s);
+
+      const first = await loadPageWithKey(s, btoa('the-first-origin-key'));
+      persistentFeatureOf(first.auth).setRememberMe(true);
+      await login(s, first);
+      first.destroy();
+
+      const cookieBefore = document.cookie;
+      const sibling = await loadPageWithKey(s, SIBLING_KEY);
+
+      expect(s.api.requestCount('POST', '/auth/refresh')).toBe(0);
+      expect(sibling.auth.sessionStatus()).toBe('anonymous');
+      expect(document.cookie).toBe(cookieBefore);
+
+      sibling.destroy();
+    });
+
+    it.each([
+      ['restores a session from', btoa('the-first-origin-key'), 1],
+      ['neither sends nor deletes', SIBLING_KEY, 0],
+    ])('%s a cookie in the format before the checksum', async (_, readerKey, refreshes) => {
+      const s = scenario();
+      const writerKey = btoa('the-first-origin-key');
+      const issued = serveIssuedRefreshTokensOnly(s);
+
+      const writer = await loadPageWithKey(s, writerKey);
+      await login(s, writer);
+      writer.destroy();
+
+      const [refreshToken] = [...issued];
+      document.cookie = `${COOKIE_NAME}=${btoa(xor(refreshToken ?? '', writerKey))}; path=/; domain=localhost`;
+
+      const reader = await loadPageWithKey(s, readerKey);
+
+      expect(s.api.requestCount('POST', '/auth/refresh')).toBe(refreshes);
+      expect(s.api.requests.at(-1)?.body).toEqual(refreshes ? { token: refreshToken } : {});
+      expect(reader.auth.sessionStatus()).toBe(refreshes ? 'authenticated' : 'anonymous');
+      expect(hasCookie()).toBe(true);
+
+      reader.destroy();
+    });
   });
 
   it('deletes the cookie when the server answers the auto-login with a 403', async () => {

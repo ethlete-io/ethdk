@@ -31,7 +31,8 @@ export type PersistentAuthConfig<
     name?: string;
     /**
      * The domain of the cookie. If not set, the cookie is host-only: it belongs to the exact host that
-     * wrote it and no subdomain of it. Set this only when sibling subdomains must share the session.
+     * wrote it and no subdomain of it. A sibling subdomain cannot read a cookie another origin wrote, so
+     * setting this does not share a session between them.
      */
     domain?: string;
     /**
@@ -298,6 +299,9 @@ export const createPersistentAuthFeature = <
     if (!storedToken) return;
 
     const revealedToken = deobfuscateToken(storedToken);
+
+    if (!revealedToken) return;
+
     const args = buildAutoLoginArgs(revealedToken);
 
     context.queries[config.autoLogin.queryKey].execute(args, { triggeredBy: 'persistent-auth' });
