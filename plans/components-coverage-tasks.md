@@ -19,7 +19,7 @@ agent that works alone, batch by batch.
   `FormFieldDirective.controlSuffixTemplate` (e38133536).
 - In progress 2026-09-27: tree, time-picker, chip, kbd, floating-action, forms/masked-input, loader
   (task 5); forms/multi-language-rich-text-editor, banner, toggletip, overlay, stream, scrollbar, progress-steps
-  (task 6a).
+  (task 6a); masonry, badge, avatar, tooltip, toolbar, skeleton, forms/tag-input, forms/rating (task 6b).
 
 ## Rules for every batch
 
