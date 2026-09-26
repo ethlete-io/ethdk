@@ -4,13 +4,16 @@ import { createEnvironmentInjector, effect, EnvironmentInjector, inject } from '
 import { RedirectCommand, Router } from '@angular/router';
 import { isObservable } from 'rxjs';
 import {
+  BearerAuthProviderFeatureContext,
   BearerAuthSessionEndCause,
   clearQueryDevtoolsTokenTtl,
   createAuthGuard,
   createBearerAuthProvider,
+  createPersistentAuthFeature,
   createPostQuery,
   createQueryClient,
   createSecureGetQuery,
+  createTrackingFeature,
   isQueryDevtoolsEnabled,
   provideQueryDevtools,
   queryDevtoolsEntries,
@@ -483,6 +486,48 @@ describe('auth features without the devtools', () => {
     expect(events).toEqual(['loginSuccess']);
 
     c2.destroy();
+  });
+
+  it('createTrackingFeature and createPersistentAuthFeature work when called outside an injection context', async () => {
+    const s = scenario();
+
+    expect(isQueryDevtoolsEnabled()).toBe(false);
+
+    let captured: BearerAuthProviderFeatureContext<unknown, ScenarioAuthBuilders> | null = null;
+    const captureContext = (context: BearerAuthProviderFeatureContext<unknown, ScenarioAuthBuilders>) => {
+      captured = context;
+
+      return { type: 'CAPTURE_CONTEXT', instance: null };
+    };
+
+    const auth = s.auth({ features: [captureContext] });
+    const context = captured as BearerAuthProviderFeatureContext<unknown, ScenarioAuthBuilders> | null;
+
+    if (!context) throw new Error('the feature context was not captured');
+
+    const tracking = createTrackingFeature(context);
+    const persistent = createPersistentAuthFeature<ScenarioAuthBuilders>(
+      { autoLogin: { queryKey: 'refresh', buildArgs: (token: string) => ({ body: { token } }) } },
+      context,
+    );
+    const events: string[] = [];
+
+    tracking.on('loginSuccess', () => events.push('loginSuccess'));
+    persistent.setRememberMe(true);
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    expect(events).toEqual(['loginSuccess']);
+    expect(document.cookie).toContain('etAuth=');
+
+    s.run(() => auth.logout());
+    s.tick();
+
+    expect(document.cookie).not.toContain('etAuth=');
+
+    c.destroy();
   });
 
   it('a fractional refreshStrategy uses that fraction of the token lifetime, without the object form clamps', async () => {

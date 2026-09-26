@@ -1,4 +1,4 @@
-import { effect, isDevMode, Signal, untracked } from '@angular/core';
+import { effect, isDevMode, runInInjectionContext, Signal, untracked } from '@angular/core';
 import { QueryArgs, QueryErrorResponse, QuerySnapshot, RequestArgs } from '../../http';
 import {
   AnyQueryBuilder,
@@ -131,7 +131,7 @@ export const withTracking = <TBuilders extends readonly AnyQueryBuilder[]>(confi
   };
 };
 
-export const createTrackingFeature = <TBuilders extends readonly AnyQueryBuilder[]>(
+const buildTrackingFeature = <TBuilders extends readonly AnyQueryBuilder[]>(
   context: BearerAuthProviderFeatureContext<unknown, TBuilders>,
   config?: TrackingConfig<TBuilders>,
 ): TrackingFeature<TBuilders> => {
@@ -344,3 +344,12 @@ export const createTrackingFeature = <TBuilders extends readonly AnyQueryBuilder
     off,
   };
 };
+
+/**
+ * Builds the `withTracking` feature against a provider's feature context. It runs in
+ * `context.injector`, so it can be called outside an injection context.
+ */
+export const createTrackingFeature = <TBuilders extends readonly AnyQueryBuilder[]>(
+  context: BearerAuthProviderFeatureContext<unknown, TBuilders>,
+  config?: TrackingConfig<TBuilders>,
+): TrackingFeature<TBuilders> => runInInjectionContext(context.injector, () => buildTrackingFeature(context, config));

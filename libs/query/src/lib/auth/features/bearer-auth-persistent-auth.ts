@@ -1,4 +1,4 @@
-import { Signal, effect, signal } from '@angular/core';
+import { Signal, effect, runInInjectionContext, signal } from '@angular/core';
 import { deleteCookie as coreDeleteCookie, getCookie, injectRoute, setCookie } from '@ethlete/core';
 import { RequestArgs } from '../../http';
 import {
@@ -146,7 +146,7 @@ const writeRememberMe = (key: string, enabled: boolean) => {
   }
 };
 
-export const createPersistentAuthFeature = <
+const buildPersistentAuthFeature = <
   TBuilders extends readonly AnyQueryBuilder[],
   TKey extends ExtractQueryKey<TBuilders[number]> = ExtractQueryKey<TBuilders[number]>,
 >(
@@ -356,3 +356,15 @@ export const createPersistentAuthFeature = <
     tryLogin,
   };
 };
+
+/**
+ * Builds the `withPersistentAuth` feature against a provider's feature context. It runs in
+ * `context.injector`, so it can be called outside an injection context.
+ */
+export const createPersistentAuthFeature = <
+  TBuilders extends readonly AnyQueryBuilder[],
+  TKey extends ExtractQueryKey<TBuilders[number]> = ExtractQueryKey<TBuilders[number]>,
+>(
+  config: PersistentAuthConfig<TBuilders, TKey>,
+  context: BearerAuthProviderFeatureContext<unknown, TBuilders>,
+): PersistentAuthFeature => runInInjectionContext(context.injector, () => buildPersistentAuthFeature(config, context));
