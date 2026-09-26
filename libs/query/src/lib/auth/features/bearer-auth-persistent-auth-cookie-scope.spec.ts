@@ -3,7 +3,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { QueryTestSetup, setupAuthTest, setupQueryTest } from '@ethlete/query/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { encryptToken } from '../utils';
+import { obfuscateToken } from '../utils';
 import { withPersistentAuth } from './bearer-auth-persistent-auth';
 
 // Every other spec in this folder mocks the cookie utils away, so none of them can see what a browser
@@ -64,32 +64,32 @@ describe('bearer-auth-persistent-auth cookie scope', () => {
   const tokenSentToAutoLogin = () => setup.httpTesting.expectOne('https://api.test.com/auth/refresh').request.body;
 
   it('keeps only the host-only cookie when both scopes hold one', () => {
-    plantCookie(encryptToken('stale-token'), PARENT_DOMAIN);
-    plantCookie(encryptToken('fresh-token'));
+    plantCookie(obfuscateToken('stale-token'), PARENT_DOMAIN);
+    plantCookie(obfuscateToken('fresh-token'));
 
     expect(readCookies()).toHaveLength(2);
 
     startProvider();
 
-    expect(readCookies()).toEqual([encryptToken('fresh-token')]);
+    expect(readCookies()).toEqual([obfuscateToken('fresh-token')]);
     expect(tokenSentToAutoLogin()).toEqual({ token: 'fresh-token' });
   });
 
   it('clears a cookie on a domain between the host and the registrable one', () => {
-    plantCookie(encryptToken('middle-token'), MIDDLE_DOMAIN);
-    plantCookie(encryptToken('parent-token'), PARENT_DOMAIN);
-    plantCookie(encryptToken('fresh-token'));
+    plantCookie(obfuscateToken('middle-token'), MIDDLE_DOMAIN);
+    plantCookie(obfuscateToken('parent-token'), PARENT_DOMAIN);
+    plantCookie(obfuscateToken('fresh-token'));
 
     expect(readCookies()).toHaveLength(3);
 
     startProvider();
 
-    expect(readCookies()).toEqual([encryptToken('fresh-token')]);
+    expect(readCookies()).toEqual([obfuscateToken('fresh-token')]);
     expect(tokenSentToAutoLogin()).toEqual({ token: 'fresh-token' });
   });
 
   it('carries a cookie left on the registrable domain over to the host-only scope', () => {
-    plantCookie(encryptToken('carried-token'), PARENT_DOMAIN);
+    plantCookie(obfuscateToken('carried-token'), PARENT_DOMAIN);
 
     startProvider();
 
@@ -99,22 +99,22 @@ describe('bearer-auth-persistent-auth cookie scope', () => {
     // can tell on its own.
     dropCookie(PARENT_DOMAIN);
 
-    expect(readCookies()).toEqual([encryptToken('carried-token')]);
+    expect(readCookies()).toEqual([obfuscateToken('carried-token')]);
   });
 
   it('keeps only the domain cookie when a domain is configured', () => {
-    plantCookie(encryptToken('host-only-token'));
-    plantCookie(encryptToken('domain-token'), PARENT_DOMAIN);
+    plantCookie(obfuscateToken('host-only-token'));
+    plantCookie(obfuscateToken('domain-token'), PARENT_DOMAIN);
 
     startProvider(PARENT_DOMAIN);
 
-    expect(readCookies()).toEqual([encryptToken('domain-token')]);
+    expect(readCookies()).toEqual([obfuscateToken('domain-token')]);
     expect(tokenSentToAutoLogin()).toEqual({ token: 'domain-token' });
   });
 
   it('deletes both scopes on logout', () => {
-    plantCookie(encryptToken('stale-token'), PARENT_DOMAIN);
-    plantCookie(encryptToken('fresh-token'));
+    plantCookie(obfuscateToken('stale-token'), PARENT_DOMAIN);
+    plantCookie(obfuscateToken('fresh-token'));
 
     const authSetup = startProvider();
 

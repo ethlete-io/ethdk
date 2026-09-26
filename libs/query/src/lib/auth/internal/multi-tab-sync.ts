@@ -1,7 +1,7 @@
 import { DestroyRef, effect, inject, isDevMode, Signal, untracked } from '@angular/core';
 import { Subject } from 'rxjs';
 import { BearerAuthActivityCoordination, BearerAuthSessionEndCause } from '../bearer-auth-provider';
-import { decryptToken, encryptToken } from '../utils';
+import { deobfuscateToken, obfuscateToken } from '../utils';
 
 type SyncMessage =
   | {
@@ -174,8 +174,8 @@ export const setupMultiTabSync = (config: MultiTabSyncConfig, context: MultiTabS
 
     channel.postMessage({
       type: 'tokens-updated',
-      accessToken: encryptToken(access),
-      refreshToken: encryptToken(refresh),
+      accessToken: obfuscateToken(access),
+      refreshToken: obfuscateToken(refresh),
     } satisfies SyncMessage);
   };
 
@@ -208,8 +208,8 @@ export const setupMultiTabSync = (config: MultiTabSyncConfig, context: MultiTabS
 
     if (message.type !== 'tokens-updated' || !syncTokens) return;
 
-    const access = decryptToken(message.accessToken);
-    const refresh = decryptToken(message.refreshToken);
+    const access = deobfuscateToken(message.accessToken);
+    const refresh = deobfuscateToken(message.refreshToken);
 
     if (!access || !refresh) return;
 
@@ -312,8 +312,8 @@ export const setupMultiTabSync = (config: MultiTabSyncConfig, context: MultiTabS
 
       const message: SyncMessage = {
         type: 'tokens-updated',
-        accessToken: encryptToken(access),
-        refreshToken: encryptToken(refresh),
+        accessToken: obfuscateToken(access),
+        refreshToken: obfuscateToken(refresh),
       };
 
       channel.postMessage(message);

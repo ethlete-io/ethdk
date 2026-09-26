@@ -13,7 +13,7 @@ import {
   setupQueryTest,
 } from '@ethlete/query/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { encryptToken } from '../utils';
+import { obfuscateToken } from '../utils';
 import { withBearerAuthMultiTabSync } from './bearer-auth-multi-tab-sync';
 import { withPersistentAuth } from './bearer-auth-persistent-auth';
 
@@ -61,7 +61,7 @@ describe('bearer-auth-persistent-auth', () => {
 
       TestBed.tick();
 
-      expect(setCookie).toHaveBeenCalledWith('testAuth', encryptToken('refresh-token-123'), 30, null, '/', 'lax');
+      expect(setCookie).toHaveBeenCalledWith('testAuth', obfuscateToken('refresh-token-123'), 30, null, '/', 'lax');
     });
 
     it('should use default cookie name if not provided', () => {
@@ -83,7 +83,7 @@ describe('bearer-auth-persistent-auth', () => {
 
       TestBed.tick();
 
-      expect(setCookie).toHaveBeenCalledWith('etAuth', encryptToken('refresh'), 30, null, '/', 'lax');
+      expect(setCookie).toHaveBeenCalledWith('etAuth', obfuscateToken('refresh'), 30, null, '/', 'lax');
     });
 
     it('should use custom cookie configuration', () => {
@@ -112,7 +112,14 @@ describe('bearer-auth-persistent-auth', () => {
 
       TestBed.tick();
 
-      expect(setCookie).toHaveBeenCalledWith('customAuth', encryptToken('refresh'), 7, 'custom.com', '/app', 'strict');
+      expect(setCookie).toHaveBeenCalledWith(
+        'customAuth',
+        obfuscateToken('refresh'),
+        7,
+        'custom.com',
+        '/app',
+        'strict',
+      );
     });
 
     it('should delete a same name host only cookie when a domain is configured', () => {
@@ -136,7 +143,7 @@ describe('bearer-auth-persistent-auth', () => {
       TestBed.tick();
 
       expect(deleteCookie).toHaveBeenCalledWith('testAuth', '/', null);
-      expect(setCookie).toHaveBeenCalledWith('testAuth', encryptToken('refresh'), 30, 'test.com', '/', 'lax');
+      expect(setCookie).toHaveBeenCalledWith('testAuth', obfuscateToken('refresh'), 30, 'test.com', '/', 'lax');
     });
 
     it('should delete cookie on logout', () => {
@@ -168,7 +175,7 @@ describe('bearer-auth-persistent-auth', () => {
     });
 
     it('should keep the cookie while the auto-login it triggered is still in flight', () => {
-      vi.mocked(getCookie).mockReturnValue(encryptToken('stored-refresh-token'));
+      vi.mocked(getCookie).mockReturnValue(obfuscateToken('stored-refresh-token'));
 
       setupAuthTest({
         querySetup: setup,
@@ -193,7 +200,7 @@ describe('bearer-auth-persistent-auth', () => {
     });
 
     it('should delete the cookie when the server rejects the stored token', () => {
-      vi.mocked(getCookie).mockReturnValue(encryptToken('stored-refresh-token'));
+      vi.mocked(getCookie).mockReturnValue(obfuscateToken('stored-refresh-token'));
 
       setupAuthTest({
         querySetup: setup,
@@ -220,7 +227,7 @@ describe('bearer-auth-persistent-auth', () => {
     });
 
     it('ends the session as expired when the server rejects the stored token', () => {
-      vi.mocked(getCookie).mockReturnValue(encryptToken('stored-refresh-token'));
+      vi.mocked(getCookie).mockReturnValue(obfuscateToken('stored-refresh-token'));
 
       const authSetup = setupAuthTest({
         querySetup: setup,
@@ -249,7 +256,7 @@ describe('bearer-auth-persistent-auth', () => {
     });
 
     it('runs onRefreshFailure outside a reactive context', () => {
-      vi.mocked(getCookie).mockReturnValue(encryptToken('stored-refresh-token'));
+      vi.mocked(getCookie).mockReturnValue(obfuscateToken('stored-refresh-token'));
 
       let activeConsumerDuringFailure: unknown = 'not called';
 
@@ -283,7 +290,7 @@ describe('bearer-auth-persistent-auth', () => {
     });
 
     it('hands a rejected stored token to onRefreshFailure, which may keep the session state', () => {
-      vi.mocked(getCookie).mockReturnValue(encryptToken('stored-refresh-token'));
+      vi.mocked(getCookie).mockReturnValue(obfuscateToken('stored-refresh-token'));
 
       const seen: number[] = [];
       const authSetup = setupAuthTest({
@@ -313,7 +320,7 @@ describe('bearer-auth-persistent-auth', () => {
     });
 
     it('keeps a session that arrived while the auto-login was in flight', () => {
-      vi.mocked(getCookie).mockReturnValue(encryptToken('stored-refresh-token'));
+      vi.mocked(getCookie).mockReturnValue(obfuscateToken('stored-refresh-token'));
 
       const authSetup = setupAuthTest({
         querySetup: setup,
@@ -346,7 +353,7 @@ describe('bearer-auth-persistent-auth', () => {
     });
 
     it('should keep the cookie when the auto-login fails without the server rejecting the token', () => {
-      vi.mocked(getCookie).mockReturnValue(encryptToken('stored-refresh-token'));
+      vi.mocked(getCookie).mockReturnValue(obfuscateToken('stored-refresh-token'));
 
       setupAuthTest({
         querySetup: setup,
@@ -521,7 +528,7 @@ describe('bearer-auth-persistent-auth', () => {
       expect(authSetup.auth.features.persistentAuth?.rememberMe()).toBe(false);
       expect(localStorageMock.setItem).toHaveBeenCalledWith('testAuth-rememberMe', 'false');
       // Should set session cookie (no expiry)
-      expect(setCookie).toHaveBeenCalledWith('testAuth', encryptToken('refresh'), null, null, '/', 'lax');
+      expect(setCookie).toHaveBeenCalledWith('testAuth', obfuscateToken('refresh'), null, null, '/', 'lax');
     });
 
     it('should save session cookie (no expiry) when rememberMe=false', () => {
@@ -554,7 +561,7 @@ describe('bearer-auth-persistent-auth', () => {
 
       TestBed.tick();
 
-      expect(setCookie).toHaveBeenCalledWith('testAuth', encryptToken('refresh'), null, null, '/', 'lax');
+      expect(setCookie).toHaveBeenCalledWith('testAuth', obfuscateToken('refresh'), null, null, '/', 'lax');
     });
 
     it('should change to persistent cookie when setRememberMe(true) is called', () => {
@@ -594,7 +601,7 @@ describe('bearer-auth-persistent-auth', () => {
       expect(authSetup.auth.features.persistentAuth?.rememberMe()).toBe(true);
       expect(localStorageMock.setItem).toHaveBeenCalledWith('testAuth-rememberMe', 'true');
       // Should set persistent cookie with expiry
-      expect(setCookie).toHaveBeenCalledWith('testAuth', encryptToken('refresh'), 30, null, '/', 'lax');
+      expect(setCookie).toHaveBeenCalledWith('testAuth', obfuscateToken('refresh'), 30, null, '/', 'lax');
     });
   });
 
@@ -888,8 +895,8 @@ describe('bearer-auth-persistent-auth', () => {
 
         leaderChannel.postMessage({
           type: 'tokens-updated',
-          accessToken: encryptToken('live-access'),
-          refreshToken: encryptToken('live-refresh'),
+          accessToken: obfuscateToken('live-access'),
+          refreshToken: obfuscateToken('live-refresh'),
         });
       };
 

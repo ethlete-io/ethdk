@@ -759,7 +759,7 @@ describe('withPersistentAuth', () => {
     tab.destroy();
   });
 
-  it('writes a host-only cookie with a 30 day lifetime, sameSite lax, and an encrypted value', async () => {
+  it('writes a host-only cookie with a 30 day lifetime, sameSite lax, and an obfuscated value', async () => {
     const s = scenario();
 
     serve(s);

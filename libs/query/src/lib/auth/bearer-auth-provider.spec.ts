@@ -9,7 +9,7 @@ import { createPostQuery, createQueryClient, createSecureGetQuery, QueryClientRe
 import { createBearerAuthProvider } from './bearer-auth-provider';
 import { withAuthenticationQuery, withRefreshQuery } from './bearer-auth-query-builders';
 import { withBearerAuthMultiTabSync, withPersistentAuth } from './features';
-import { encryptToken, resetEncryptionKey } from './utils';
+import { obfuscateToken, resetObfuscationKey } from './utils';
 
 vi.mock('@ethlete/core', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@ethlete/core')>();
@@ -1527,8 +1527,8 @@ describe('createBearerAuthProvider', () => {
     };
 
     beforeEach(() => {
-      // Reset encryption key for consistent test behavior
-      resetEncryptionKey();
+      // Reset the obfuscation key for consistent test behavior
+      resetObfuscationKey();
 
       originalBroadcastChannel = globalThis.BroadcastChannel;
       mockChannel = {
@@ -1618,7 +1618,7 @@ describe('createBearerAuthProvider', () => {
         req.flush({ accessToken: 'access-token', refreshToken: 'refresh-token' });
         TestBed.tick();
 
-        // Tokens should be encrypted when broadcast
+        // Tokens should be obfuscated when broadcast
         const calls = mockChannel.postMessage.mock.calls;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const tokenUpdateCall = calls.find((call: any[]) => call[0]?.type === 'tokens-updated');
@@ -1626,8 +1626,8 @@ describe('createBearerAuthProvider', () => {
         expect(tokenUpdateCall).toBeDefined();
         expect(tokenUpdateCall?.[0]).toEqual({
           type: 'tokens-updated',
-          accessToken: encryptToken('access-token'),
-          refreshToken: encryptToken('refresh-token'),
+          accessToken: obfuscateToken('access-token'),
+          refreshToken: obfuscateToken('refresh-token'),
         });
       });
     });
@@ -2203,8 +2203,8 @@ describe('createBearerAuthProvider', () => {
     });
 
     it('should use autoLogin as type for persistent auth triggered queries', () => {
-      vi.mocked(getCookie).mockReturnValue(encryptToken('stored-refresh-token'));
-      resetEncryptionKey();
+      vi.mocked(getCookie).mockReturnValue(obfuscateToken('stored-refresh-token'));
+      resetObfuscationKey();
 
       const postQuery = createPostQuery(queryClientRef);
       const login = postQuery<{
@@ -2386,8 +2386,8 @@ describe('createBearerAuthProvider', () => {
     });
 
     it('should be restoring while the auto-login is in flight, then authenticated', () => {
-      vi.mocked(getCookie).mockReturnValue(encryptToken('stored-refresh-token'));
-      resetEncryptionKey();
+      vi.mocked(getCookie).mockReturnValue(obfuscateToken('stored-refresh-token'));
+      resetObfuscationKey();
 
       const { inject: injectAuthProvider } = createProvider(true);
 
@@ -2406,8 +2406,8 @@ describe('createBearerAuthProvider', () => {
     });
 
     it('should be anonymous once a failed auto-login has settled', () => {
-      vi.mocked(getCookie).mockReturnValue(encryptToken('stored-refresh-token'));
-      resetEncryptionKey();
+      vi.mocked(getCookie).mockReturnValue(obfuscateToken('stored-refresh-token'));
+      resetObfuscationKey();
 
       const { inject: injectAuthProvider } = createProvider(true);
 

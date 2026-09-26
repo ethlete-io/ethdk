@@ -1,1 +1,1 @@
-export * from './token-encryption';
+export * from './token-obfuscation';

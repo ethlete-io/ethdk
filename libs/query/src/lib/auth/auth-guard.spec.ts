@@ -10,7 +10,7 @@ import { AuthGuardConfig, createAuthGuard } from './auth-guard';
 import { createBearerAuthProvider } from './bearer-auth-provider';
 import { withAuthenticationQuery } from './bearer-auth-query-builders';
 import { withPersistentAuth } from './features';
-import { encryptToken, resetEncryptionKey } from './utils';
+import { obfuscateToken, resetObfuscationKey } from './utils';
 
 vi.mock('@ethlete/core', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@ethlete/core')>();
@@ -142,8 +142,8 @@ describe('createAuthGuard', () => {
   });
 
   it('pends while a session restore is in flight instead of redirecting', async () => {
-    vi.mocked(getCookie).mockReturnValue(encryptToken('stored-refresh-token'));
-    resetEncryptionKey();
+    vi.mocked(getCookie).mockReturnValue(obfuscateToken('stored-refresh-token'));
+    resetObfuscationKey();
 
     const { harness, injector, providerRef, router } = await setup({ persistent: true });
 
@@ -163,8 +163,8 @@ describe('createAuthGuard', () => {
   });
 
   it('redirects once a session restore fails', async () => {
-    vi.mocked(getCookie).mockReturnValue(encryptToken('stored-refresh-token'));
-    resetEncryptionKey();
+    vi.mocked(getCookie).mockReturnValue(obfuscateToken('stored-refresh-token'));
+    resetObfuscationKey();
 
     const { harness, injector, providerRef, router } = await setup({ persistent: true });
 

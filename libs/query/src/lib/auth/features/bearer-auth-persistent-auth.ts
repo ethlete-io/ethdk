@@ -8,7 +8,7 @@ import {
   ExtractQueryArgs,
   ExtractQueryKey,
 } from '../bearer-auth-provider';
-import { decryptToken, encryptToken } from '../utils';
+import { deobfuscateToken, obfuscateToken } from '../utils';
 
 export type PersistentAuthConfig<
   TBuilders extends readonly AnyQueryBuilder[],
@@ -177,10 +177,10 @@ export const createPersistentAuthFeature = <
   const cookiePath = () => config.cookie?.path ?? '/';
   const cookieExpiry = (rememberMe: boolean) => (rememberMe ? (config.cookie?.expiresInDays ?? 30) : null);
 
-  const writeCookie = (encryptedToken: string, expiresInDays: number | null) =>
+  const writeCookie = (obfuscatedToken: string, expiresInDays: number | null) =>
     setCookie(
       cookieName,
-      encryptedToken,
+      obfuscatedToken,
       expiresInDays,
       cookieDomain(),
       cookiePath(),
@@ -257,7 +257,7 @@ export const createPersistentAuthFeature = <
     if (!token) return;
 
     removeOtherScopeCookies();
-    writeCookie(encryptToken(token), cookieExpiry(rememberMe));
+    writeCookie(obfuscateToken(token), cookieExpiry(rememberMe));
   });
 
   effect(() => {
@@ -297,8 +297,8 @@ export const createPersistentAuthFeature = <
 
     if (!storedToken) return;
 
-    const decryptedToken = decryptToken(storedToken);
-    const args = buildAutoLoginArgs(decryptedToken);
+    const revealedToken = deobfuscateToken(storedToken);
+    const args = buildAutoLoginArgs(revealedToken);
 
     context.queries[config.autoLogin.queryKey].execute(args, { triggeredBy: 'persistent-auth' });
   };

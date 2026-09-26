@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BearerAuthSessionEndCause } from '../bearer-auth-provider';
-import { encryptToken, resetEncryptionKey } from '../utils';
+import { obfuscateToken, resetObfuscationKey } from '../utils';
 import { MultiTabSyncConfig, setupMultiTabSync } from './multi-tab-sync';
 
 describe('setupMultiTabSync', () => {
@@ -55,8 +55,8 @@ describe('setupMultiTabSync', () => {
       configurable: true,
     });
 
-    // Reset encryption key
-    resetEncryptionKey();
+    // Reset the obfuscation key
+    resetObfuscationKey();
 
     // Mock BroadcastChannel
     originalBroadcastChannel = globalThis.BroadcastChannel;
@@ -128,8 +128,8 @@ describe('setupMultiTabSync', () => {
 
       expect(mockChannel.postMessage).toHaveBeenCalledWith({
         type: 'tokens-updated',
-        accessToken: encryptToken('access-token'),
-        refreshToken: encryptToken('refresh-token'),
+        accessToken: obfuscateToken('access-token'),
+        refreshToken: obfuscateToken('refresh-token'),
       });
     });
   });
@@ -242,8 +242,8 @@ describe('setupMultiTabSync', () => {
       mockChannel.onmessage?.({
         data: {
           type: 'tokens-updated',
-          accessToken: encryptToken('external-access'),
-          refreshToken: encryptToken('external-refresh'),
+          accessToken: obfuscateToken('external-access'),
+          refreshToken: obfuscateToken('external-refresh'),
         },
       } as MessageEvent);
 
@@ -260,8 +260,8 @@ describe('setupMultiTabSync', () => {
       mockChannel.onmessage?.({
         data: {
           type: 'tokens-updated',
-          accessToken: encryptToken('adopted-access'),
-          refreshToken: encryptToken('adopted-refresh'),
+          accessToken: obfuscateToken('adopted-access'),
+          refreshToken: obfuscateToken('adopted-refresh'),
         },
       } as MessageEvent);
 
@@ -279,8 +279,8 @@ describe('setupMultiTabSync', () => {
       mockChannel.onmessage?.({
         data: {
           type: 'tokens-updated',
-          accessToken: encryptToken('rotated-access'),
-          refreshToken: encryptToken('rotated-refresh'),
+          accessToken: obfuscateToken('rotated-access'),
+          refreshToken: obfuscateToken('rotated-refresh'),
         },
       } as MessageEvent);
 
@@ -289,12 +289,12 @@ describe('setupMultiTabSync', () => {
     });
   });
 
-  it('should ignore an incoming pair that decrypts to an empty token', () => {
+  it('should ignore an incoming pair that reveals an empty token', () => {
     TestBed.runInInjectionContext(() => {
       setup();
 
       mockChannel.onmessage?.({
-        data: { type: 'tokens-updated', accessToken: encryptToken('external-access'), refreshToken: '' },
+        data: { type: 'tokens-updated', accessToken: obfuscateToken('external-access'), refreshToken: '' },
       } as MessageEvent);
 
       expect(applyTokens).not.toHaveBeenCalled();
@@ -324,8 +324,8 @@ describe('setupMultiTabSync', () => {
       mockChannel.onmessage?.({
         data: {
           type: 'tokens-updated',
-          accessToken: encryptToken('external-access'),
-          refreshToken: encryptToken('external-refresh'),
+          accessToken: obfuscateToken('external-access'),
+          refreshToken: obfuscateToken('external-refresh'),
         },
       } as MessageEvent);
 
@@ -385,8 +385,8 @@ describe('setupMultiTabSync', () => {
       mockChannel.onmessage?.({
         data: {
           type: 'tokens-updated',
-          accessToken: encryptToken('external-access'),
-          refreshToken: encryptToken('external-refresh'),
+          accessToken: obfuscateToken('external-access'),
+          refreshToken: obfuscateToken('external-refresh'),
         },
       } as MessageEvent);
 
@@ -430,8 +430,8 @@ describe('setupMultiTabSync', () => {
 
       expect(mockChannel.postMessage).toHaveBeenCalledWith({
         type: 'tokens-updated',
-        accessToken: encryptToken('local-access'),
-        refreshToken: encryptToken('local-refresh'),
+        accessToken: obfuscateToken('local-access'),
+        refreshToken: obfuscateToken('local-refresh'),
       });
     });
   });
@@ -586,8 +586,8 @@ describe('setupMultiTabSync', () => {
 
         expect(mockChannel.postMessage).toHaveBeenCalledWith({
           type: 'tokens-updated',
-          accessToken: encryptToken('access-token'),
-          refreshToken: encryptToken('refresh-token'),
+          accessToken: obfuscateToken('access-token'),
+          refreshToken: obfuscateToken('refresh-token'),
         });
       });
     });
@@ -605,8 +605,8 @@ describe('setupMultiTabSync', () => {
 
         expect(mockChannel.postMessage).toHaveBeenCalledWith({
           type: 'tokens-updated',
-          accessToken: encryptToken('access-token'),
-          refreshToken: encryptToken('refresh-token'),
+          accessToken: obfuscateToken('access-token'),
+          refreshToken: obfuscateToken('refresh-token'),
         });
       });
     });
@@ -659,8 +659,8 @@ describe('setupMultiTabSync', () => {
         mockChannel.onmessage?.({
           data: {
             type: 'tokens-updated',
-            accessToken: encryptToken('incoming-access'),
-            refreshToken: encryptToken('incoming-refresh'),
+            accessToken: obfuscateToken('incoming-access'),
+            refreshToken: obfuscateToken('incoming-refresh'),
           },
         } as MessageEvent);
 

@@ -1,7 +1,7 @@
 import { computed, DestroyRef, effect, inject, signal, Signal } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { createQueryKeyLockManager } from '../../http/sync/query-key-lock-manager';
-import { decryptToken, encryptToken } from '../utils';
+import { deobfuscateToken, obfuscateToken } from '../utils';
 
 /**
  * Namespace and key of the one lock the whole election is: whoever holds it is the leader, and every
@@ -180,7 +180,7 @@ export const setupLeaderElection = (options: { name: string }): InternalLeaderEl
   const announce = () => post({ type: 'presence' });
 
   const requestRefresh = (accessToken?: string | null) =>
-    post({ type: 'refresh-requested', accessToken: accessToken ? encryptToken(accessToken) : undefined });
+    post({ type: 'refresh-requested', accessToken: accessToken ? obfuscateToken(accessToken) : undefined });
 
   const announceRefreshStart = () => post({ type: 'refresh-started' });
 
@@ -285,7 +285,7 @@ export const setupLeaderElection = (options: { name: string }): InternalLeaderEl
 
       // Every tab hears the request; only the one that may spend the refresh token acts on it.
       if (message?.type === 'refresh-requested' && isLeader()) {
-        refreshRequests.next(message.accessToken ? decryptToken(message.accessToken) : null);
+        refreshRequests.next(message.accessToken ? deobfuscateToken(message.accessToken) : null);
       }
     };
   }
