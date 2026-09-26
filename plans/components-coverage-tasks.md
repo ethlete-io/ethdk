@@ -69,7 +69,6 @@ agent that works alone, batch by batch.
   this is a bug before you fix it.
 - `BracketMatchComponent` in `@ethlete/bracket` lacks `bracketRoundSwissGroup`, which `et-bracket` always binds
   (NG0303 for a custom card typed by it). Widening the type is likely right; it is outside S8b.
-- The docs recommend `<a et-match-card></a>`, but `@angular-eslint/template/elements-content` rejects it.
 
 ## Gotchas
 
@@ -191,8 +190,7 @@ agent that works alone, batch by batch.
 
 ### notification, menu, match
 
-- Friction: the docs recommend `<a et-match-card></a>` and `<button et-match-participant></button>`, but
-  `@angular-eslint/template/elements-content` rejects both; `normalizeEthleteParticipant` returns a nullable type
+- Friction: `normalizeEthleteParticipant` returns a nullable type
   for a non-null input; a menu open at destroy leaves the overlay leave frame pending.
 - E2E gaps: menu placement, flip, arrow and context-menu repositioning, resize animation, focus ring; notification
   stack FLIP, enter and leave animations, swipe distance thresholds, RTL swipe; match container-query layouts under
