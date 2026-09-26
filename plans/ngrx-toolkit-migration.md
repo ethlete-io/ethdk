@@ -87,7 +87,8 @@ Manual (report tasks): vbl `layout` and `tournament` facades (toolkit-shaped, no
   - Dry runs on scratch copies (after `prep-for-query-v3` + `migrate-to-query-v3`):
     vbl 8/8 features, 39 consumer files moved, 10 files left (the 2 non-HTTP facades);
     fifagg 44/49 features (the rest have tasks), 127 consumer files moved, 76 files left, all with tasks.
-- [ ] S4 Real run on vbl, then fifagg, in scratch copies. Typecheck, build, and open the main screens.
+- [x] S4 Real run on vbl, then fifagg, in scratch copies. Closed on 2026-09-26 with the `tsc` result (user
+      decision). No app was built or served: see "Left outside the SDK".
   - vbl run 2026-09-25 (scratch copy, SDK `next` dist). Blocked at the build; the app was not served.
     - Angular 20 → 22 through `nx migrate` 22.7.12 then 23.1.0 (no `angular.json`, so not `ng update`): no new
       `tsc` errors; the build had 5 Angular 22 host/template errors in app code (fixed by hand). The old
@@ -160,15 +161,10 @@ Manual (report tasks): vbl `layout` and `tournament` facades (toolkit-shaped, no
       stays, and cdk v5 moves the old name to `@ethlete/core`. Both fixed in fa443b717.
 - [x] S5 Guide `apps/docs/query/migrating-from-ngrx-toolkit.md` + sidebar link (6a05d2d23).
 
-## Continue on 2026-09-26
+## Left outside the SDK
 
-1. **Done:** the unpushed history from the S3a commit was rewritten on 2026-09-25 (plumbing, `plans/ngrx-toolkit-rewrite.sh`), so no commit holds client code. Cited shas in the plans were updated. `next` may be pushed again.
-2. **Done (user decision 2026-09-26):** the generator drops `skipCache` from `toolkitSelect` args, and the interop hashes
-   only the keys that reach the request, so a facade that passes wider args still shares the handle. D7 is moot: every
-   `toolkitCall` sends the request.
-3. **S4 inputs:** `tsc` of the scratch vbl copy against `dist/libs/query` is untried. D6 duplicate matching compares
-   type text, so the same shape under another name counts as a mismatch (vbl reuse 9 → 5); look for false
-   mismatches. Action ids passed between components (3 fifagg sites) need a hand rewrite. vbl needs Angular 22
-   and the v2 run; fifagg needs Angular 19 → 22 first.
-4. Rules for every subagent: fixtures generic (no client names, dirs `app-a`/`app-b`), context under 150k with a
-   handoff before, commit only with `git commit -- <paths>`.
+- vbl: `@ethlete-producer/admin`, `queries`, `score` and `uikit` need a rebuild with `prep-for-query-v3` applied,
+  in their own repository, before the app can bundle.
+- fifagg: the Angular 19 → 22 upgrade comes before a build. Hop 1 (`nx migrate` to Angular 20) takes more than
+  30 minutes on this codebase.
+- Both apps: a real build and a check of the main screens happen in the app upgrade itself.
