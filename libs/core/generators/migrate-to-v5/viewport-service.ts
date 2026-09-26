@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Tree, logger } from '@nx/devkit';
 import * as ts from 'typescript';
-import { applyReplacements } from './apply-replacements';
+import { applyReplacements } from './apply-replacements.js';
 
 export default async function migrateViewportService(tree: Tree) {
   logger.log('\n🔄 Migrating ViewportService to standalone utilities...\n');

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Tree } from '@nx/devkit';
 import * as ts from 'typescript';
-import { applyReplacements } from './apply-replacements';
+import { applyReplacements } from './apply-replacements.js';
 
 type ImportsByPackage = {
   '@ethlete/core': Set<string>;

@@ -31,6 +31,24 @@ export class AppComponent {}`,
     expect(result).not.toContain("'etProvideTheme:theme'");
   });
 
+  it('should rename ProvideThemeDirective imported from @ethlete/theming', async () => {
+    tree.write(
+      'src/app.component.ts',
+      `import { ProvideThemeDirective } from '@ethlete/theming';
+
+@Component({
+  hostDirectives: [ProvideThemeDirective],
+})
+export class AppComponent {}`,
+    );
+
+    await migrateColorNaming(tree);
+
+    const result = tree.read('src/app.component.ts', 'utf-8');
+    expect(result).toContain("import { ProvideColorDirective } from '@ethlete/theming';");
+    expect(result).not.toContain('ProvideThemeDirective');
+  });
+
   it('should rename ColorThemedDirective to ColorInteractiveDirective', async () => {
     tree.write(
       'src/my.component.ts',

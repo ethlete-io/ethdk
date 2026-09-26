@@ -121,7 +121,7 @@ function migrateTypeScriptFile(tree: Tree, filePath: string): boolean {
 
   const original = content;
 
-  if (!/from\s+['"]@ethlete\/(?:core|cdk)['"]/.test(content)) return false;
+  if (!/from\s+['"]@ethlete\/(?:core|cdk|theming)['"]/.test(content)) return false;
 
   // Rename symbols
   for (const [oldName, newName] of Object.entries(TS_SYMBOL_RENAMES)) {
