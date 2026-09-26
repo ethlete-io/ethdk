@@ -12,10 +12,9 @@ agent that works alone, batch by batch.
 ## State
 
 - Done: button, overlay, stream, table, icon, forms/date-time, forms/rich-text-editor, scheduler, grid,
-  forms/form-field, bracket, tabs, forms/select, notification, menu, match. Components: 933 of 1381 covered
-  (before the cascader batch). Per-domain notes are under "Domain notes" below.
-- In progress on 2026-09-26: forms/cascader + forms/dropzone + forms/color-input (64), run by a subagent. If
-  `check.mjs components` still reports those as "allowlisted but covered", do task 0 first.
+  forms/form-field, bracket, tabs, forms/select, notification, menu, match, forms/cascader, forms/dropzone,
+  forms/color-input. Components: 959 of 1381 covered. Per-domain notes are under "Domain notes" below.
+- In progress: nothing. Start with task 1.
 - Removed on 2026-09-26 by user decision: `GridItemRef` and `configComponent` (e519882bc). Added:
   `FormFieldDirective.controlSuffixTemplate` (e38133536).
 
@@ -44,8 +43,6 @@ agent that works alone, batch by batch.
 
 ## Task list
 
-0. Finish the cascader batch if it is still open: remove its covered entries (`S8b forms/(cascader|dropzone|color-input)`),
-   domain notes, one commit.
 1. breadcrumb 23, command-palette 20, carousel 19 (62).
 2. scrollable 18, forms/selection-list 16, query-error 15, filter-overlay 15 (64).
 3. chart 17, calendar 15, standings 14, forms/slider 14 (60). Before chart: run `ListAgents` and tell any session
@@ -200,3 +197,18 @@ agent that works alone, batch by batch.
 - E2E gaps: menu placement, flip, arrow and context-menu repositioning, resize animation, focus ring; notification
   stack FLIP, enter and leave animations, swipe distance thresholds, RTL swipe; match container-query layouts under
   `auto`, score roll and flash timing, picture fallback.
+
+### forms/cascader, forms/dropzone, forms/color-input
+
+- Friction: in leaf mode a search result without `isLeaf` counts as a branch, so Enter browses into it (the
+  `cascaderFromQuery` JSDoc `toResults` example has this flaw); `cascaderFromQuery` infers `TValue` as `{}` unless
+  `args` is annotated; `createDefaultDropzoneArgs` returns `RequestArgs<QueryArgs>`, so typed args need
+  `body as FormData`; `DropzoneDirective` has no `exportAs`; `createFileDropzoneEntry` needs a handle only the
+  `@internal` `createUploadHandle` builds; the dropzone `delete` request is cancelled on destroy, so a removed file
+  is never deleted on the server if the user navigates away; a static `aria-label` on a headless select, cascader or
+  colour trigger is erased (put it on the control host); a custom colour surface cannot commit a colour
+  (`picker.commitColor` is `@internal`).
+- E2E gaps: colour area drag; real drag and drop with a native DataTransfer and hover styling; focus return and
+  position in anchored mode (jsdom always picks the bottom sheet); cascader column slide and window animation;
+  sheet back-navigation and title animations; dropzone remove and FLIP animation, progress bars, image preview;
+  the eyedropper; focus rings.
