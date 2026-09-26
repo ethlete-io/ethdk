@@ -1,8 +1,15 @@
 import { HttpHeaders } from '@angular/common/http';
-import { effect, Signal, signal, untracked } from '@angular/core';
+import { computed, effect, Signal, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, take } from 'rxjs';
-import { AnyQuerySnapshot, QueryArgs, QuerySnapshot, RequestArgs, resolveQueryHeaders } from '../../http';
+import {
+  AnyQuerySnapshot,
+  QueryArgs,
+  QuerySnapshot,
+  RequestArgs,
+  resolveQueryHeaders,
+  wrapAsObservableSignal,
+} from '../../http';
 import {
   AnyQueryBuilder,
   BearerAuthFeatureType,
@@ -57,8 +64,8 @@ export type TokenRevocationConfig<
 export type TokenRevocationFeature<TQuerySnapshot extends AnyQuerySnapshot> = {
   /**
    * Manually revoke the current tokens.
-   * Returns `null` if there are no tokens to revoke
-   * Returns the revocation query snapshot if revocation was attempted
+   * Returns `null` if there are no tokens to revoke, else the snapshot of the revocation that sends them -
+   * one queued behind a revocation in flight stays `isAlive()` until its own request settles.
    */
   revoke: () => TQuerySnapshot | null;
   /**
@@ -112,7 +119,52 @@ export const withTokenRevocation = <
     let previousRefreshToken: string | null = null;
     let currentRevocationSnapshot: RevocationSnapshot | null = null;
     let currentTokens: RevocationTokens | null = null;
-    const queuedTokens: RevocationTokens[] = [];
+
+    type QueuedRevocation = {
+      tokens: RevocationTokens;
+      snapshot: RevocationSnapshot;
+      start: (snapshot: RevocationSnapshot) => void;
+    };
+
+    const queue: QueuedRevocation[] = [];
+    const queueDropped = signal(false);
+
+    const queueRevocation = (tokens: RevocationTokens): QueuedRevocation => {
+      const target = signal<RevocationSnapshot | null>(null);
+      const follow = <T>(read: (snapshot: RevocationSnapshot) => T) =>
+        wrapAsObservableSignal(
+          computed(() => {
+            const snapshot = target();
+
+            return snapshot ? read(snapshot) : null;
+          }),
+          context.injector,
+        );
+
+      const snapshot: RevocationSnapshot = {
+        args: follow((s) => s.args()),
+        response: follow((s) => s.response()),
+        latestHttpEvent: follow((s) => s.latestHttpEvent()),
+        loading: follow((s) => s.loading()),
+        error: follow((s) => s.error()),
+        lastTimeExecutedAt: follow((s) => s.lastTimeExecutedAt()),
+        triggeredBy: follow((s) => s.triggeredBy()),
+        id: follow((s) => s.id()),
+        executionState: follow((s) => s.executionState()),
+        isAlive: wrapAsObservableSignal(
+          computed(() => target()?.isAlive() ?? !queueDropped()),
+          context.injector,
+        ),
+      };
+
+      const queued = { tokens, snapshot, start: (started: RevocationSnapshot) => target.set(started) };
+
+      queue.push(queued);
+
+      return queued;
+    };
+
+    context.destroyRef.onDestroy(() => queueDropped.set(true));
 
     const executeRevocation = (tokens: RevocationTokens) => {
       const args = withBearerHeader(
@@ -140,9 +192,9 @@ export const withTokenRevocation = <
           currentRevocationSnapshot = null;
           currentTokens = null;
 
-          const next = queuedTokens.shift();
+          const next = queue.shift();
 
-          if (next) executeRevocation(next);
+          if (next) next.start(executeRevocation(next.tokens));
         });
 
       return snapshot;
@@ -156,11 +208,9 @@ export const withTokenRevocation = <
       const tokens: RevocationTokens = { accessToken, refreshToken };
 
       if (currentRevocationSnapshot?.isAlive()) {
-        if (!isSamePair(currentTokens, tokens) && !queuedTokens.some((queued) => isSamePair(queued, tokens))) {
-          queuedTokens.push(tokens);
-        }
+        if (isSamePair(currentTokens, tokens)) return currentRevocationSnapshot;
 
-        return currentRevocationSnapshot;
+        return (queue.find((queued) => isSamePair(queued.tokens, tokens)) ?? queueRevocation(tokens)).snapshot;
       }
 
       return executeRevocation(tokens);

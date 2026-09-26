@@ -184,6 +184,47 @@ describe('auth scan 2026-09-27', () => {
     destroy();
   });
 
+  it('a revoke() queued behind a revocation in flight resolves with the revocation of its own pair', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens);
+    s.api.on('POST', '/auth/revoke', () => ({ body: { ok: true }, delay: 1000 }));
+
+    const { auth, destroy } = createTab(s);
+    const signIn = () => {
+      auth.queries.login.execute({ body: {} });
+      s.tick();
+
+      return { accessToken: auth.accessToken(), refreshToken: auth.refreshToken() };
+    };
+
+    signIn();
+    const first = auth.features.tokenRevocation.revoke();
+    const secondPair = signIn();
+    const second = auth.features.tokenRevocation.revoke();
+
+    expect(second).not.toBe(first);
+    expect(auth.features.tokenRevocation.revoke()).toBe(second);
+
+    await s.settle(1000);
+
+    expect(first?.isAlive()).toBe(false);
+    expect(second?.isAlive()).toBe(true);
+
+    await s.settle(1000);
+    await s.settle();
+
+    expect(second?.isAlive()).toBe(false);
+    expect(second?.args()).toEqual({ body: secondPair });
+    expect(second?.response()).toEqual({ ok: true });
+    expect(s.api.requestCount('POST', '/auth/revoke')).toBe(2);
+
+    auth.logout();
+    await s.settle(1000);
+    await s.settle();
+
+    destroy();
+  });
+
   describe('multi-tab', () => {
     let bus: FakeBroadcastChannelHandle;
     let locks: FakeWebLocksHandle;
