@@ -66,6 +66,7 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
   let closedByOutsidePointer = false;
   let closedByFocusLeave = false;
   let closedFromBottomSheet = false;
+  let destroyed = false;
 
   const detachInteractionListeners = () => {
     interactionListenersCleanup?.();
@@ -188,7 +189,7 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
       .pipe(
         take(1),
         tap(() => {
-          if (overlayRef() !== currentRef) {
+          if (overlayRef() !== currentRef || destroyed) {
             return;
           }
 
@@ -264,6 +265,8 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
   });
 
   destroyRef.onDestroy(() => {
+    // the host's models and outputs are already destroyed here, so the close must not write them
+    destroyed = true;
     detachInteractionListeners();
     overlayRef()?.close();
   });
