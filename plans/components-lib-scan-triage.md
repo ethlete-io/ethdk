@@ -753,7 +753,7 @@ Deduplicated across all 22 batches; several batches independently proposed the s
    position matrix, `scheduler` drag rules, `tree` multiple-mode checkbox, `otp` support block.
    AGENTS.md names `form-field` as next; the table sheet is larger. L — **DONE 2026-09-23**: closed
    by the bytes programme, marked complete in `ee3640d12 docs(repo): Mark the bundle-size programme
-complete` (`plans/components-scan/plan-bytes.md`, W0–W18) — every stylesheet in the ranked list
+complete` (W0–W18) — every stylesheet in the ranked list
    was split.
 5. **Shared behaviour contracts, next to `mixed-state-contract.ts`.** `describePickerCommitContract`
    (would have caught all four date-time Highs), `describeOverlayControlContract` (would have caught
@@ -779,7 +779,7 @@ date/time range inputs' layout shell`), `et-pip-player` rules in two sheets, the
    `size`/`arrow`/`hide` middleware on the features being on; move RTE opt-in tool icons onto their
    providers. Add goldens for date-time, table imports and the stream barrels — the repo already has a
    measured ~90 kB floor from this exact tuple-of-providers shape. L — **DONE 2026-09-23**: closed by
-   the same bytes programme (`ee3640d12`, `plans/components-scan/plan-bytes.md`). The single-entry-point
+   the same bytes programme (`ee3640d12`). The single-entry-point
    library rules out a same-entry `@defer` for the color picker panel, so that one is dead as stated.
    Shipped instead: `SELECT_IMPORTS` naming (W15), RTE tool icons onto their providers (W16), and
    date-time/table/stream treeshake goldens (W0); the stream PiP opt-in by import graph (D3) and the
