@@ -476,6 +476,21 @@ describe('forms rich-text-editor tool scenarios', () => {
     s.flush();
     expect(document.querySelector('et-rich-text-editor-link-editor')).toBeNull();
     expect(text()).toBe('read docs');
+
+    selectText(editable, 0, 4);
+    button('Link', host).click();
+    s.flush();
+
+    const unsafePopover = query('et-rich-text-editor-link-editor');
+
+    fill(s, query<HTMLInputElement>('input[type="url"]', unsafePopover), 'java\tscript:steal()');
+    buttonByText('Add', unsafePopover).click();
+    s.flush();
+    expect(document.querySelector('et-rich-text-editor-link-editor')).not.toBeNull();
+    expect(editable.querySelector('a')).toBeNull();
+    press(s, unsafePopover, 'Escape');
+    s.flush();
+    expect(text()).toBe('read docs');
   });
 
   it('opens a link in a new tab when the popover asks for it', () => {

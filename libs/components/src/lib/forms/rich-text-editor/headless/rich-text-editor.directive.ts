@@ -5,6 +5,7 @@ import {
   htmlToMarkdown,
   injectRenderer,
   injectStyleManager,
+  isSafeLinkUrl,
   markdownToHtml,
   mountEasingTokens,
   RuntimeError,
@@ -494,6 +495,8 @@ export class RichTextEditorDirective
     }
 
     const url = href.trim();
+
+    if (url && !isSafeLinkUrl(url)) return;
 
     this.runCommand(() => (url ? links.applyLink(url, options) : links.removeLink()));
   }

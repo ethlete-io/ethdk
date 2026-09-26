@@ -10,7 +10,7 @@ import {
   untracked,
   ViewEncapsulation,
 } from '@angular/core';
-import { AutoSurfaceDirective, COLOR_PROVIDER, ProvideColorDirective } from '@ethlete/core';
+import { AutoSurfaceDirective, COLOR_PROVIDER, isSafeLinkUrl, ProvideColorDirective } from '@ethlete/core';
 import { BUTTON_IMPORTS } from '../../button';
 import { IconDirective, provideIcons, TIMES_ICON } from '../../icon';
 import { CHECKBOX_IMPORTS } from '../checkbox';
@@ -92,7 +92,7 @@ export class RichTextEditorLinkEditorComponent {
   protected save() {
     const href = this.urlValue().trim();
 
-    if (!href) return;
+    if (!href || !isSafeLinkUrl(href)) return;
 
     this.saveLink.emit({ href, text: this.textValue().trim(), newTab: this.newTabValue() });
   }

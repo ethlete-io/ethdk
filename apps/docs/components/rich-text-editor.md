@@ -33,6 +33,10 @@ The editable region is a `role="textbox" aria-multiline="true"` with full invali
 
 Pasted HTML is normalized into the editor's own schema before it is inserted: the clipboard markup is reduced through the Markdown pipeline, so foreign tags, inline styles, classes and scripts never enter the editor - only formatting the editor itself can produce survives (token chips copied from an editor keep their identity). Plain-text pastes stay literal text - the one exception being text that spells out a [token](#building-blocks-triggers).
 
+Text that would read as Markdown is backslash-escaped in the value, so typing `- not a list` or
+`**x**` with autoformat off stores `\- not a list` / `\*\*x\*\*` and reloads as the same literal
+text. Only syntax that would otherwise be interpreted is escaped, and code is stored as typed.
+
 ## Markdown autoformat while typing
 
 Add `provideRichTextEditorAutoformat()` and typing Markdown converts live (disable per instance with
@@ -220,7 +224,9 @@ so those tools disable themselves accordingly.
 
 New-tab links are stored in the Markdown value as raw HTML
 (`<a href="…" target="_blank" rel="noopener noreferrer">…</a>`) since Markdown has no `target`
-syntax; ordinary links stay `[text](url)`.
+syntax; ordinary links stay `[text](url)`. Only `http:`, `https:`, `mailto:`, `tel:`, relative and
+fragment URLs become links: a pasted link with any other scheme (`javascript:`, `data:`, ...) keeps
+just its text, and the link editor and the `prompt()` fallback refuse such a URL.
 
 Links are opt-in in two independent steps: `provideRichTextEditorLinkTool()` gives the editor links at
 all, and `provideRichTextEditorLinkEditor()` decides what the tool opens.

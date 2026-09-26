@@ -404,11 +404,11 @@ describe('forms rich-text-editor scenarios', () => {
     caretInEmpty(editable);
     typeText(s, editable, '- not a list');
     expect(editable.querySelector('ul')).toBeNull();
-    expect(box.note()).toBe('- not a list');
+    expect(box.note()).toBe('\\- not a list');
     s.flush();
   });
 
-  it.fails('keeps Markdown syntax typed as literal text literal once the value is loaded again', () => {
+  it('keeps Markdown syntax typed as literal text literal once the value is loaded again', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(NoteBoxComponent);
     const host = fixture.nativeElement as HTMLElement;
@@ -494,14 +494,14 @@ describe('forms rich-text-editor scenarios', () => {
     });
 
     expect(event.defaultPrevented).toBe(true);
-    expect(editable.innerHTML).toBe('Hi <strong>there</strong> [x](javascript:steal())');
+    expect(editable.innerHTML).toBe('Hi <strong>there</strong> x');
     expect(editable.querySelector('a, script, style, [onclick], [style]')).toBeNull();
-    expect(note()).toBe('Hi **there** [x](javascript:steal())');
+    expect(note()).toBe('Hi **there** x');
 
     const file = paste(s, editable, { files: [new File(['x'], 'shot.png', { type: 'image/png' })] });
 
     expect(file.defaultPrevented).toBe(true);
-    expect(note()).toBe('Hi **there** [x](javascript:steal())');
+    expect(note()).toBe('Hi **there** x');
   });
 
   it('configures the toolbar per scope and per instance, and falls back to the native prompt for links', () => {
@@ -549,6 +549,15 @@ describe('forms rich-text-editor scenarios', () => {
     s.tick();
     expect(box.comment()).toBe('read docs');
     expect(promptSpy).toHaveBeenCalledOnce();
+
+    promptSpy.mockReturnValue(' JavaScript:steal()');
+    selectText(editable, 5, 9);
+    s.tick();
+    toolButton(host, 'Link').click();
+    s.tick();
+    expect(promptSpy).toHaveBeenCalledTimes(2);
+    expect(editable.querySelector('a')).toBeNull();
+    expect(box.comment()).toBe('read docs');
     s.flush();
   });
 
