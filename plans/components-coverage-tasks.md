@@ -17,7 +17,8 @@ agent that works alone, batch by batch.
 - In progress: nothing. Start with task 1.
 - Removed on 2026-09-26 by user decision: `GridItemRef` and `configComponent` (e519882bc). Added:
   `FormFieldDirective.controlSuffixTemplate` (e38133536).
-- In progress 2026-09-27: scrollable, forms/selection-list, query-error, filter-overlay (task 2).
+- In progress 2026-09-27: scrollable, forms/selection-list, query-error, filter-overlay (task 2); chart, calendar,
+  standings, forms/slider (task 3).
 
 ## Rules for every batch
 
