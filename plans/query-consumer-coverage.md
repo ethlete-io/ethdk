@@ -218,6 +218,7 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       `new Set([3])` in the selection or expanded signal matches nothing. Friction: menus throw without an
       `error`-typed colour theme. E2E gaps: reorder, resize and drag-scroll by pointer; sticky offsets on a narrow
       viewport; page sticky header pinning; the detail-row animation.
+      In progress (2026-09-26): `icon` and `forms/date-time`, one subagent each.
 - [x] S11 Follow-ups from S6 (hand-written skill `.agents/skills/query-scenario-tests/SKILL.md` documents `s.mount`)
   1. Done in 47f4d25da: `s.mount(Component, injector, { inputs })` sets inputs before the first change detection;
      `legacy-client-options` mounts `MatchListComponent` directly.
