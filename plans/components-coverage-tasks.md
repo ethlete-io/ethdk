@@ -69,8 +69,6 @@ agent that works alone, batch by batch.
 - `it.fails` in `query-error.scenario.spec.ts` (libs/query): the error's `retryState` uses the already spent retry
   count, so `<et-query-error>` shows Retry only with `alwaysAllowRetry`; `createQueryErrorResponse` gets
   `attempts()` as `retryCount`, one ahead. Sent to the query session.
-- `it.fails` in `scrollable.scenario.spec.ts` (libs/core): `getElementScrollCoordinates` with origin `nearest`
-  compares `elLeft > conRight` strictly, so a child that starts at the container edge is not scrolled into view.
 
 - `it.fails` in `table-features-rows.scenario.spec.ts`: a numeric `rowKey` turns into a string, so a
   `new Set([3])` selection matches nothing.
@@ -233,7 +231,7 @@ agent that works alone, batch by batch.
 
 ### scrollable, forms/selection-list, query-error, filter-overlay
 
-- Friction: see the two `it.fails` in the open items; a legacy error offers no retry without
+- Friction: see the query-error `it.fails` in the open items (the scrollable edge bug is fixed in c1bae1a1f); a legacy error offers no retry without
   `setDefaultQueryRetryFn`; a module-level `V2QueryClient` leaks its GC interval; `provideFilterOverlay` needs
   `FilterOverlayConfig<typeof FIELDS>`, not `Partial<Parameters<...>>`; a preview without `totalHits` shows "Show
   results" in production silently; `SelectionState` has no selected count; selection-list `aria-checked` needs
