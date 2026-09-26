@@ -6,6 +6,7 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     include: ['src/**/*.spec.ts'],
+    setupFiles: ['./vitest.setup.ts'],
     reporters: ['default'],
     coverage: {
       reportsDirectory: '../../coverage/libs/agent-rules',
