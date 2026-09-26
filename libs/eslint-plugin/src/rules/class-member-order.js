@@ -345,6 +345,42 @@ const getSegments = (sourceCode, classBodyNode) => {
   };
 };
 
+const ASI_HAZARD_TOKENS = new Set(['[', '(', '*', '`', 'in', 'instanceof']);
+
+/**
+ * @param {any} node
+ */
+const endsWithOwnBlock = (node) => node.type === 'StaticBlock' || (node.type === 'MethodDefinition' && node.value.body);
+
+/**
+ * @param {import('eslint').SourceCode} sourceCode
+ * @param {any} node
+ * @param {string} segmentText
+ * @param {any} nextNode
+ * @param {string} nextText
+ */
+const joinMovedSegment = (sourceCode, node, segmentText, nextNode, nextText) => {
+  const nextLeadingText = nextNode
+    ? nextText.slice(0, nextText.length - (getMemberEnd(sourceCode, nextNode) - nextNode.range[0]))
+    : nextText;
+  const nextStartsOnNewLine = nextLeadingText.includes('\n');
+  const lastToken = sourceCode.getLastToken(node);
+  const needsSemicolon =
+    lastToken?.value !== ';' &&
+    !endsWithOwnBlock(node) &&
+    nextNode &&
+    (!nextStartsOnNewLine || ASI_HAZARD_TOKENS.has(sourceCode.getFirstToken(nextNode)?.value ?? ''));
+
+  const memberEnd = getMemberEnd(sourceCode, node);
+  const nodeEnd = segmentText.length - (memberEnd - node.range[1]);
+  const withSemicolon = needsSemicolon ? `${segmentText.slice(0, nodeEnd)};${segmentText.slice(nodeEnd)}` : segmentText;
+  const endsWithLineComment = sourceCode
+    .getCommentsAfter(node)
+    .some((comment) => comment.type === 'Line' && comment.range?.[1] === memberEnd);
+
+  return endsWithLineComment && !nextStartsOnNewLine ? `${withSemicolon}\n` : withSemicolon;
+};
+
 /**
  * @param {import('eslint').SourceCode} sourceCode
  * @param {any} classBodyNode
@@ -373,11 +409,24 @@ const buildClassOrderFix = (sourceCode, classBodyNode, members) => {
   const rankedIndexes = new Set(members.map((member) => member.originalIndex));
   let nextSortedMember = 0;
 
+  const order = segmentTexts.map((_, index) =>
+    rankedIndexes.has(index) ? sortedMembers[nextSortedMember++].originalIndex : index,
+  );
+
   const reorderedBody =
-    segmentTexts
-      .map((segmentText, index) =>
-        rankedIndexes.has(index) ? segmentTexts[sortedMembers[nextSortedMember++].originalIndex] : segmentText,
-      )
+    order
+      .map((originalIndex, position) => {
+        const nextIndex = order[position + 1] ?? segmentTexts.length;
+        if (nextIndex === originalIndex + 1) return segmentTexts[originalIndex];
+
+        return joinMovedSegment(
+          sourceCode,
+          classBodyNode.body[originalIndex],
+          segmentTexts[originalIndex],
+          classBodyNode.body[nextIndex] ?? null,
+          segmentTexts[nextIndex] ?? suffix,
+        );
+      })
       .join('') + suffix;
 
   return (/** @type {import('eslint').Rule.RuleFixer} */ fixer) =>

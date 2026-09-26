@@ -190,5 +190,52 @@ class C {
 }`,
       errors: [{ messageId: 'groupOrder' }],
     },
+    {
+      code: `class C { focus() {}
+  private a = inject(A) }`,
+      output: `class C {
+  private a = inject(A); focus() {} }`,
+      errors: [{ messageId: 'groupOrder' }],
+    },
+    {
+      code: `class C {
+  focus() {}
+  private a = inject(A)
+}`,
+      output: `class C {
+  private a = inject(A)
+  focus() {}
+}`,
+      errors: [{ messageId: 'groupOrder' }],
+    },
+    {
+      code: `class C {
+  *items() {}
+  private a = inject(A)
+}`,
+      output: `class C {
+  private a = inject(A);
+  *items() {}
+}`,
+      errors: [{ messageId: 'groupOrder' }],
+    },
+    {
+      code: `class C { focus() {}
+  private a = inject(A) // the a
+}`,
+      output: `class C {
+  private a = inject(A); // the a
+ focus() {}
+}`,
+      errors: [{ messageId: 'groupOrder' }],
+    },
+    {
+      code: `class C { focus() {} // focuses
+  private a = inject(A) }`,
+      output: `class C {
+  private a = inject(A); focus() {} // focuses
+ }`,
+      errors: [{ messageId: 'groupOrder' }],
+    },
   ],
 });
