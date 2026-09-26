@@ -468,6 +468,10 @@ export class DropzoneDirective<TValue = unknown>
     }
 
     execute({ value, injector: this.injector }).then((error) => {
+      if (this.destroyRef.destroyed) {
+        return;
+      }
+
       if (error) {
         this.deleteFail.emit({ value, error });
       } else {

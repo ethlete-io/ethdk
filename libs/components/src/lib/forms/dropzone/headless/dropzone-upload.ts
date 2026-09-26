@@ -425,7 +425,10 @@ const createNewQueryDeleteExecutor = <TArgs extends QueryArgs, TValue>(config: {
     return firstValueFrom(
       executeUntilSettled$(query, { args }).pipe(
         map((snapshot) => snapshot.error()),
-        finalize(() => query.subtle.destroy()),
+        // the scope's teardown already destroyed the query - destroying it again throws NG0205
+        finalize(() => {
+          if (!query.subtle.destroyRef.destroyed) query.subtle.destroy();
+        }),
       ),
     );
   };
