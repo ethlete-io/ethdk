@@ -248,7 +248,19 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       RTL swipe; long-press drag versus swipe; the "+N more" overflow menu.
       Tokens stay verbatim (1299adcff, core export `MARKDOWN_VERBATIM_ATTR`). `markdownToHtml` no longer reads
       paired markers inside a token as emphasis (7fd69ef08 option `verbatim`, 89e26a5a1 codec `markdownPattern`).
-      In progress (2026-09-26): `grid`; `forms/form-field`.
+      Grid done (51 of 51, `grid{,-headless,-layout}.scenario.spec.ts`, 47f5b13a2). Bugs fixed (3abd0b603): one
+      `items` update that added or removed an item dropped another item's `data` change; a projected item removed
+      on `(remove)` raised a false ET1904 during its leave animation. Friction: `GridItemRef` and
+      `GridComponentRegistration.configComponent` are dead API (nothing renders or provides them; implement an
+      edit mode or remove both); the grid renders nothing before its host has a width; ET1902 throws out of change
+      detection. E2E gaps: pointer drag and resize, auto-scroll, CSS transitions, container resize, reduced motion.
+      Form field done (49 of 49, `forms-form-field{,-custom-control}.scenario.spec.ts`, 1d138d455). No bug.
+      Friction: a schema-`hidden` field logs NG01916, but the docs present `hidden` as the way to remove a field;
+      a custom `[etFormField]` chrome cannot render a control's `etControlSuffix` (`registeredControlSuffix` is
+      `@internal`); `createAnchoredPanelController` needs the unexported `OverlayTemplateHostComponent`;
+      `FORM_FIELD_LABELS` holds only the overrides; `s.flush()` runs no change detection when nothing is pending.
+      E2E gaps: support region animations, floating label layout, busy spinner timing, anchored panel position,
+      the bottom sheet below `md`, the focus ring.
 - [x] S11 Follow-ups from S6 (hand-written skill `.agents/skills/query-scenario-tests/SKILL.md` documents `s.mount`)
   1. Done in 47f4d25da: `s.mount(Component, injector, { inputs })` sets inputs before the first change detection;
      `legacy-client-options` mounts `MatchListComponent` directly.
