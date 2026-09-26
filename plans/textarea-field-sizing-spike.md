@@ -6,8 +6,7 @@
 engines that ignore it. Remove the fallback once Firefox ESR and iOS 26 both support
 `field-sizing`.
 
-Spike for the "Native textarea autosizing" row in `component-improvements-triage.md`
-(tags `C`,`D`). Run 2026-08-21.
+Spike for native textarea autosizing. Run 2026-08-21.
 
 **Question:** can `field-sizing: content` replace the JS measurement path in
 `libs/components/src/lib/forms/textarea`, so `textarea-autosize.ts`, its spec, the
