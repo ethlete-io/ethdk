@@ -246,7 +246,9 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       detection; `nowIndicator` keeps a timer, so `s.flush()` never settles. E2E gaps: pointer drag-to-create,
       move and resize; edit surface placement and the fullscreen dialog below `md`; scroll to the initial hour;
       RTL swipe; long-press drag versus swipe; the "+N more" overflow menu.
-      In progress (2026-09-26): tokens stay unescaped in Markdown; `grid`; `forms/form-field`.
+      Tokens stay verbatim (1299adcff, core export `MARKDOWN_VERBATIM_ATTR`). Open: `markdownToHtml` reads paired
+      markers inside a token as emphasis (`{{field:_a_b_}}`); a fix needs a verbatim option fed by the codec.
+      In progress (2026-09-26): `grid`; `forms/form-field`.
 - [x] S11 Follow-ups from S6 (hand-written skill `.agents/skills/query-scenario-tests/SKILL.md` documents `s.mount`)
   1. Done in 47f4d25da: `s.mount(Component, injector, { inputs })` sets inputs before the first change detection;
      `legacy-client-options` mounts `MatchListComponent` directly.
