@@ -1,482 +1,310 @@
 # The roadmap
 
-Agreed with Tom on 2026-09-10. It answers one question: in which order does the rest of the app
-get built, and what ends each step.
+The live Timetrack work, grouped by milestone. It lists only what is not built yet. Plan a slice
+end to end with the `ethlete-grilling` skill before building it. The terms are in
+`libs/timetrack/CONTEXT.md`, and the hard-to-reverse decisions are in `libs/timetrack/docs/adr/`.
 
-It holds no design. Each milestone below names the slices it holds, the test that ends it, and
-what has to be decided before that slice can be planned. A slice is then planned end to end with
-the `ethlete-grill-with-docs` skill, and gets its own plan in this directory.
-
-## Which plan wins
-
-This plan owns **the order**. It replaces the slice table in
-[`vertical-slices.md`](./vertical-slices.md), and that plan stays right about everything else:
-where v2 lives, what slice 1 does, the rules that carry over, and the no-git-flow decision.
-
-A per-slice plan owns **the detail** of its own slice. Where it disagrees with this plan about
-detail, it wins. Where it disagrees about order, this plan wins.
-
-## A slice number is a name, not a position
-
-Slices 1 to 6 keep the numbers `vertical-slices.md` gave them. Other plans and four ADRs already
-name those numbers, and a renumber would make every one of them wrong. New work gets slice 7 and
-up, whatever position the roadmap gives it.
-
-## Where the work stands, on 2026-09-10
-
-| Part                                                | State                                                                    |
-| --------------------------------------------------- | ------------------------------------------------------------------------ |
-| Rust host, keychain, encrypted store, tray, widget  | Built. Proven on Linux and macOS.                                        |
-| Collectors: window, idle, git, agent sessions, call | Built. Being hardened now.                                               |
-| Providers: Jira, Tempo, GitLab, GitHub, Google      | Built, and verified against the real instances.                          |
-| `streamDay` and the one day screen                  | Built. Slices 1 and 2a are on screen.                                    |
-| Naming the unnamed window                           | Two rungs built. The rest waits on five more workdays of measurement.    |
-| Slices 2a to 2c                                     | M2 built, its exit test unread. M3 and M4 planned.                       |
-| Slices 5, 6, 9 to 12                                | One paragraph of outline each.                                           |
-| A production Tempo worklog                          | **Never written.** No day has left this machine.                         |
-| A day that spans two machines                       | **Not built.** Each machine reports only what it saw.                    |
-| A commit's provenance                               | **Not built.** A commit a `git pull` brought in still reads as presence. |
-| Autostart, an updater, a packaged build             | Not built. `tauri:build` runs by hand.                                   |
-| `correlate/` and the v1 screens                     | Deleted. One day screen, on `streamDay`. See ADR 0016.                   |
-
-## The seven answers this plan is built on
-
-Tom decided all seven on 2026-09-10:
-
-1. **The audience is Tom first, then the Braune Digital team.** So a milestone exists for the
-   install, and it comes after booking works.
-2. **The current phase ends when no worklog is typed by hand.** So slices 2 and 3 are the next
-   feature work.
-3. **The cost side is a first-class goal, not a report that rides along.** So it gets two
-   milestones and its own hardening slice.
-4. **Reliability is its own milestone, and an early one.** A day the app did not watch is a day
-   nobody can book, so it comes before booking.
-5. **Drawing the day comes before naming it, and naming it comes before everything else.** A match
-   with nothing to attach it to is not a product. So M2 draws, M3 names, and both precede booking.
-6. **A day spans every machine the user owns, and it syncs over the LAN.** The whole day merges, not
-   presence alone, for any number of the user's own machines. It sits **after** booking, unlike
-   reliability: it is convenience across machines Tom owns, and a lost day is not.
-7. **The basic app is the timeline, the match and the draft.** Everything else is nice to have. In
-   Tom's words: "if the basic app doesnt work then the auto update wont help either." This answer
-   outranks the other six wherever they disagree about order.
-
-## The milestones
+A slice number is a name, not a position. ADRs cite slice numbers, so never renumber them. New work
+gets the next free number. Every new flow needs the three e2e tests in
+[`apps/timetrack/TESTING.md`](../../apps/timetrack/TESTING.md) ("Every new flow").
 
 | #   | Name                            | Slices | Ends when                                                          |
 | --- | ------------------------------- | ------ | ------------------------------------------------------------------ |
-| M1  | The day it shows is true        | 1      | Three replayed real days read as true, with no edit.               |
-| M2  | The day, drawn                  | 2a, 4  | Tom reads a real day on one screen, and cuts it where he wants.    |
-| M3  | The day, named                  | 2b     | Every band of a real day carries the right issue, or says why not. |
-| M4  | The day, ticketed               | 2c     | A real week: every gap holds a stand-in, a ticket or a report.     |
 | M5  | No day is lost                  | 7      | A reboot, a crash and two hours off all reconcile on the screen.   |
 | M6  | Book it                         | 3      | One real week reaches Tempo, and the second sync writes nothing.   |
 | M7  | One day, every machine          | 8      | A day worked on two machines reads the same on both, once.         |
 | M8  | What a day cost                 | 5, 9   | A real day shows a cost Tom recognises, and names what it missed.  |
 | M9  | The week, and the price of work | 6, 10  | Time and cost per issue and per project, over a week.              |
 | M10 | A second person installs it     | 11     | A colleague books a day from a build, with no help from this repo. |
-| M11 | The noisy tail                  | 12     | Codex logs, the browser reporter and a Figma plugin.               |
+| M11 | The noisy tail                  | 12     | The browser reporter, if needed, and a Figma plugin.               |
 
-Reordered on 2026-09-10, after Tom described the product he wants. His words: "thats where you come
-in and thats why we should prioritize this part now since everthing else is nice to have. if the
-basic app doesnt work then the auto update wont help either." So the block he called the basic app
-— a timeline, a match, a draft — becomes M2, M3 and M4, and everything else moves down behind it.
+M1 to M4 are built. Their leftovers come first below.
 
-Old M6 ("the whole day": meetings, timers and pauses appear as themselves) is dissolved. A timeline
-that hides a meeting is not the timeline he asked for, so that work sits inside M2 and M3.
+## M1 leftover: naming a browser tab
 
-## M1: The day it shows is true
+Take the fourth reading of unnamed focus (five workdays, due after 2026-09-09; not recorded yet).
+Then decide between these, together:
 
-**In flight.** Another agent works on it now.
+- A title rule that says "no work". Tom named YouTube, Jellyfin, Spotify and Home Assistant tab
+  titles. `DEFAULT_NO_WORK_CONTEXT_APPS` matches `app_id` only, so `verdictFor` reads them as a gap.
+  Decide whether they belong to a no-work-context rule (keeps the minute, marks it) or an exclusion
+  rule (drops the event). A no-work title rule may need its own kind: `title-pattern` in
+  `store/exclusion.ts` only denies.
+- A title rule that names an issue. A Chrome block over two minutes is dropped by
+  `dropNoWorkContext` before the ladder runs (`rows/build-rows.ts`), so a browser tab that is the
+  whole record of the work (e.g. a Claude chat on ET-772) gets no row and no question. `holdsWorkApps`
+  would make any rule on it app-wide.
+- A browser reporter (M11). It would read `location.host`, GitHub repos and Jira keys directly. It
+  needs an `Origin` exception in `src-tauri/src/ingest.rs` and a native messaging host, because an
+  extension cannot read the discovery file.
+- Nothing: a timer or a hand-written row covers it.
 
-The screen exists. What is not finished is the collection under it: the unnamed window, the
-liveness of each source, and the call source outside macOS.
+Minor: a private project's browser host still shows in the unnamed-focus panel, and no private link
+covers it.
 
-Exit test: the slice 1 test in `vertical-slices.md`, over 2026-08-12, 2026-08-17 and 2026-08-18,
-plus the exit test in [`name-the-window.md`](./name-the-window.md).
+## M3 leftover: an absence entry is not a meeting
 
-Decided before the next rung is built: which mechanism names a browser tab, and whether a title
-rule is one of them. That plan holds the reading it waits for. Do not pick a rung before it.
+A hand-written calendar entry such as "Tom Tom unterwegs" is drawn as a meeting, and the edit
+surface offers "Use its time". Google only sets `eventType: 'outOfOffice'` for its own Out of office
+type, which `google-calendar/events.ts:25` already drops. Decide what tells an absence from a
+meeting: a single attendee, no call observed over it, or a wording the user teaches once. ADR 0010
+says an accepted occurrence with no call observed proposes nothing, so the "Use its time" offer
+contradicts it. Settle that too.
 
-## M2: The day, drawn
+## M4 leftovers: creating in Jira
 
-**Slices 2a and 4.** Planned in [`draw-the-day.md`](./draw-the-day.md). The screen Tom described: "a clear timeline of what i did and when i did it".
+- **The create guard is incomplete.** Task creates have a pre-flight duplicate search
+  (`ticket/file.ts`). The epic or parent create (`app/day-review/ticket-draft.ts:508`) has only
+  `exhaustMap`, and the agent endpoint `jira.create` (`app/agent/agent-endpoint.ts:241`) has no guard.
+  Move the in-flight lock and the pre-flight search under `createJiraIssue$` (`jira/create.ts`), as
+  ADR 0022 says. The search matches project, exact summary, creator and a short time window.
+- **Required fields the app cannot fill.** `createmeta` parses `requiredFieldIds`, and nothing reads
+  it. The design: learn the dominant value with one JQL per project and issue type through
+  `searchJiraIssues$`; fill it when it is `likely` or better; otherwise open the Jira create screen
+  with summary and description filled in; after a hand-off, read the issue back and store the chosen
+  value per project, issue type and field. Confirm with Tom that this is still wanted.
+- **The report for the project manager.** "Copy the report" was never built. Decide whether it stays
+  as copied text once the project manager says what they want.
 
-Today shows streams in an accordion with no time axis. Day Review draws a real 24-hour axis beside a
-table of bookable rows. Two screens mean he reads the same day twice in two shapes, so they merge.
-ADR 0011 records the decision and its cost.
+## One session, one piece
 
-What the milestone holds:
-
-- One day screen. `DayTimelineComponent` moves onto it; it already draws a proportional axis on top
-  of `SchedulerTimeGridDirective` from `libs/components`.
-- **A band is a row, not a stream.** A row splits, merges and moves its boundary already. A stream is
-  keyed by its checkout under ADR 0001 and cannot be cut. The stream becomes the evidence behind a
-  band, shown when the band is opened.
-- Split and glue, which Tom asked for by name. `splitRow`, `mergeRows` and `moveRowBoundary` exist.
-- `PinnedRow.issueKey` becomes optional, so a fresh cut can stand with neither half named.
-- Meetings, timers and pauses appear as themselves rather than as gaps. This is the old slice 4: the
-  call source, the calendar provider, the timer and the hard pause are all built, and what is
-  missing is their place in `streamDay` and on the screen.
-- Two windows of the same application separated by a short gap are one call. Every Google Meet opens
-  the microphone twice, because its pre-join screen runs a device check. Measured on 2026-09-10.
-- **A break never covers a call, and the user can remove and restore one.** Planned in
-  [`mind-the-break.md`](./mind-the-break.md), from a day Tom read on 2026-09-16: a 15m break was
-  drawn over the last quarter hour of a meeting. A call does not hold presence yet, and the snap
-  moves a band end by up to half an increment. The edit is a statement about a stretch of the day,
-  not an edit of a break object, because a break has no id a re-run keeps.
-- **A band that books nothing never takes minutes from a background band.** Built, as planned in
-  [`not-counted-takes-nothing.md`](./not-counted-takes-nothing.md), from the same day read at 12:00:
-  a voice room the call rules deny took the last quarter hour of `ET-772`, which then booked nothing.
-  ADR 0024 already rules that an excluded call claims nothing, and `recutReviewedRows` now holds the
-  rule as well. A rejected row takes nothing either; naming an excluded call still overrules the rule.
-
-It writes local edits to `day_review` and never reaches Tempo.
-
-Exit test: Tom reads a real day on one screen, and cuts it where he wants it cut.
-
-Both questions this milestone inherited from the dissolved slice 4 are now answered, in
-[`draw-the-day.md`](./draw-the-day.md). A call is presence, and the exception is a record that marks
-a room as not presence. Two bands over the same hour both book in full, and the overlap is marked
-rather than resolved. Two decisions were added: the screen is built on `streamDay` and `correlate/`
-is deleted (ADR 0014), and a day starts at a configured hour rather than at midnight (ADR 0015).
-
-## M3: The day, named
-
-**Slice 2b.** Planned in [`name-the-ticket.md`](./name-the-ticket.md), grilled with Tom over five
-rounds on 2026-09-10 against four of his real tickets and one live meeting.
-
-Three decisions carry it, and each has an ADR:
-
-1. **The branch slug names the epic, not the issue** (ADR 0009). The epic plus the checkout names the
-   task, and the checkout is what cuts one task from its sibling. **Built** (ADR 0029): the task is
-   found by elimination over the parent's open children, less every key another checkout books. That
-   needs the day's own answers, so the day is read twice and never in a loop, and a day the other
-   rungs answered in full costs no Jira read.
-2. **A call is the fact and the calendar is a candidate list** (ADR 0010). An accepted occurrence
-   with no call observed proposes nothing.
-3. **A remembered naming outranks a branch parse** (ADR 0012). One learned store at rung 2, seeded
-   from Tempo history, written by a naming of Tom's, never written by a model.
-
-When two rungs disagree, the band books the higher answer and offers the other. A record whose
-ticket Jira has recorded no change on for a quarter is reported on every day that books it.
-
-**Open, found on the screen on 2026-09-15.** An entry Tom named "Tom Tom unterwegs" is drawn as a
-meeting, and the edit surface offers "Use its time". It marks an absence, so its time is not work.
-Google sets `eventType: 'outOfOffice'` only on an entry made through its own Out of office type, and
-`libs/timetrack/src/lib/google-calendar/events.ts:25` already drops that one. A plain entry the user
-wrote by hand carries nothing that says the same. What evidence tells an absence from a meeting is
-undecided: the candidates are a single attendee, no call observed over it, and a wording the user
-teaches the app once. ADR 0010 already says an accepted occurrence with no call observed proposes
-nothing, so the offer on the edit surface and that rule disagree.
-
-Exit test: every band of a real day carries the right issue, or states in words why it cannot name
-one. Tom writes the answers down before the screen is opened, and judges it in writing.
-
-## M4: The day, ticketed
-
-**Slice 2c.** Planned in [`ticket-the-day.md`](./ticket-the-day.md), grilled with Tom over seven
-rounds on 2026-09-14 against one live case: a feature with no epic and no ticket under it. What
-happens where the ladder found nothing.
-
-- **A stand-in**: a name the user gives the work before Jira holds one. It takes bands across days and
-  across checkouts, it books nothing, and it is resolved to an issue in one act. Without it a gap the
-  project manager has to answer asks the same question on every day of the work. See ADR 0021.
-- A drafted ticket: a title, a body, and the epic it goes under, shown with the reason that epic was
-  chosen. It is created only on a press. `writeTicketWithAgent$` already drafts wording.
-- **The app files an epic**, on a press, where `createmeta` says this user may create one in this
-  project. The report for the project manager stays, for every project where they own epics, and it is
-  never hidden by a permission. A created issue cannot be deleted, so the create carries an in-flight
-  lock and a pre-flight search, both under `createJiraIssue$`. See ADR 0022.
-- The model call, on a press, with the full prompt shown first and the answer stored so the same
-  question never costs twice. This changes the path that exists: `reasoning.enabled` is a setting
-  today, and once it is on the call runs during day review with no press and no preview.
-- The anonymiser (ADR 0013). Names inside free text become pseudonyms derived from the name list, and
-  no map is stored. A Jira project key prefix is a project name, so it is pseudonymised too.
-- The app meters its own model spend, on its own line, never charged to the band it asked about.
-
-The model's jobs, in order: draft a ticket, write a description, propose a pattern Tom accepts. It
-never names a band the ladder could not, and it never writes to the naming store.
-
-Exit test: two, and the slice passes on both. The live case end to end - a stand-in opened on day 1,
-three days of work across two checkouts, the epic and both tasks filed from the card, and all three
-days book with no row typed by hand. And one real week where every band carries a Jira key or a
-stand-in that names the work in Tom's own words, and every stand-in is resolved or waits on somebody
-who is not Tom.
-
-Two scenarios against the fake backend are a condition of shipping: a write whose response is dropped
-must not file twice, and the fake account holds no delete permission, so no test cleans up by deleting.
-
-The name list question is answered in [`ticket-the-day.md`](./ticket-the-day.md): grown by hand, seeded
-only from the Jira project names the app already fetches. Still to decide:
-
-- Whether the report stays as copied text once the project manager says what they want.
-
-**The CLI does report its token use in print mode**, so the fallback of a call count is not needed. A
-`--output-format json` run answers a `usage` block beside its answer, and `meteredRunner` records it as
-an `agent-usage` event under the reserved provider `timetrack`. The day reports it on a line of its
-own: outside every stream, outside `spend` and `unattributedSpend`, and rebuilding no presence.
+Slices 4 and 5 are open. See [`one-session-one-piece.md`](./one-session-one-piece.md).
 
 ## M5: No day is lost
 
-**Slice 7. New, and it is a slice of its own.**
-
-The app now starts because Tom starts it. Every hour it is not running is an hour no screen can
-show and no pipeline can rebuild, and the app does not say which hours those were.
-
-What the slice holds:
+Slice 7. Nothing is built: no autostart plugin in `Cargo.toml`, no crash restart, no tray-only start.
 
 - Autostart on login, and a start into the tray with no window.
 - A restart after a crash, and a day that spans a reboot.
 - A stretch the app did not watch, stated on the day screen as such.
-- The rebuilt-time path of ADR 0006, proven from end to end rather than from one measurement.
+- The rebuilt-time path of ADR 0006, proven end to end.
+- A tag-triggered desktop release workflow (none in `.github/workflows`).
 
-Exit test: three interruptions on one real day. Reboot in the middle of it. Kill the process.
-Quit the app for two hours. The day screen reconciles all three, and it names each stretch it
-did not watch.
+Exit test: three interruptions on one real day. Reboot, kill the process, and quit for two hours.
+The day screen reconciles all three and names each stretch it did not watch.
 
-To decide before this is planned:
+To decide first:
 
 - Is autostart on by default, or offered on first run?
 - Does the tray say the app is collecting, or only that it runs?
 - What does a day hold for the time before the first login of the morning?
 
-Held back on purpose: the updater. It belongs to M10, because it only matters once somebody else
-holds a build.
+The updater belongs to M10.
 
 ## M6: Book it
 
-**Slice 3.** This is the milestone the current phase ends on: no worklog typed by hand.
+Slice 3. The sync write and its idempotence are built (`sync-write.spec.ts`).
 
-M3 named the day, and M4 filled its gaps with tickets.
+- **The ownership marker.** Pick `none` or `description-suffix`. It is hardwired to `none` at
+  `app/sync/sync.ts:151`, and the plan and the writes must change together. A worklog with no marker
+  is foreign for good once the local ledger is lost. Pick before the first production write.
+- **The working-hours policy.** Is work at 23:00 proposed at all? Does the day target vary per
+  person or contract? ADR 0015 and ADR 0020 cover part of it.
+- **Undo.** A wrong row that reached Tempo needs a way back out. The ledger is the only record of
+  what the app wrote.
+- **The first production write** gets its own gate: one day, one issue, one hour, checked by hand in
+  the Tempo UI before a week is synced.
 
-**No gate on a day that sums past its wall clock.** Concurrent work books in full on every band, so a
-day may legitimately hold more booked hours than it has clock hours. Tom, on 2026-09-10: "both
-parties need to pay for the work that got done. everything else makes no sense." The sync must not
-refuse such a day. This slice books it. Tempo sync for accepted rows only, one day at a time, through the `tempo/`
-module that is already built and already idempotent. It deletes `day-review/`.
-
-Exit test: one real week reaches Tempo through the app. Tom types no worklog by hand for code
-work in that week. Every day syncs twice, and the second sync writes nothing new.
-
-To decide before slice 3 is planned:
-
-- **The ownership marker.** Open question 4 of `plans/timetrack.md` leaves `description-suffix`
-  and `none` both built and neither picked. A worklog with no marker is foreign for good once the
-  local ledger is lost. Pick it before the first production write.
-- **The working-hours policy.** Open question 5 is still open. Is work at 23:00 proposed at all?
-- **The undo.** A wrong row that reached Tempo needs a way back out, and the ledger is the only
-  record of what the app wrote.
-- **The first production write is a one-way step.** It gets its own gate: one day, one issue, one
-  hour, checked in the Tempo UI by hand before a week is ever synced.
-
-**A tension this milestone used to carry, and no longer does.** Meetings arrived in the old M6,
-after booking, so a booked day still missed a meeting. Under the new order they arrive in M2 and are
-named in M3, both ahead of this. The milestone's name is now true for the whole day, not only for
-code work.
+Exit test: one real week reaches Tempo through the app. Tom types no worklog by hand for code work.
+Every day syncs twice, and the second sync writes nothing.
 
 ## M7: One day, every machine
 
-**Slice 8. New.** It is the largest slice on this roadmap, and it is the one with the heaviest
-consequences. Raised on 2026-09-09, scoped on 2026-09-10.
+Slice 8. Nothing is built. Tom works on a second machine during meetings, and this machine reports
+those hours as unattended. Until M7 ships, that row is typed by hand.
 
-Tom works on a second machine during meetings. This machine then reports those hours as
-unattended, because only its own collectors saw the day. ADR 0006's rebuilt time cannot help: a
-machine that observed nothing has no keystrokes and no commits to read back.
+Scope: the whole day merges (events, streams, spend), for any number of the user's own machines. A
+colleague's machine never pairs. The privacy ruling is ADR 0013. Record the merge and the
+event-identity change in an ADR before code.
 
-So the day is wrong before anything books it, and the hours it loses are exactly the ones a
-hand-typed row would cover.
-
-**It moved below booking on 2026-09-10.** On 2026-09-09 it sat ahead of M6 for that reason. Tom
-then named the timeline, the match and the draft as the product, and everything else as nice to
-have. Sync across his own machines is that: convenience across machines he owns, not a step
-booking cannot happen without. Reliability keeps its place ahead of booking, because a lost day
-makes a wrong worklog and a worklog is the one act that cannot be taken back. The cost of the move
-is stated plainly: until this ships, a day worked on a second machine books short, and Tom types
-that row by hand.
-
-### The scope Tom set
-
-- **The whole day merges**, not presence alone. Events, streams and spend.
-- **Any number of the user's own machines.** Discovery and pairing for N devices, not a fixed pair.
-- **No colleague's machine, ever.** That would cross the ruling against any view over other
-  people's time, and this slice does not touch that ruling.
-
-### The privacy ruling this changes
-
-`plans/timetrack.md` locks "strictly local, the data never leaves the machine" and lists
-cross-device sync as out of the plan. That sentence now has to become two:
-
-- **No hosted backend, no cloud, no third party.** Unchanged, and this slice adds none.
-- **A machine of the same person, paired by hand, on the same network, is in.**
-
-This is the hardest-to-reverse privacy decision in the app, so it needs its own ADR before a line
-is written. A window title, a prompt and a checkout name all leave one machine under it.
-
-### What the slice holds
-
-- Discovery on the local network, and pairing by hand. No port anything can simply join.
-- A per-pair secret, held in each machine's keychain, and an encrypted transport.
-- The merge: presence unions with every overlap counted once, engaged time sums per stream, and
-  spend stays with the machine that spent it.
-- **Attendance travels, not presence alone.** A minute is attended if any of Tom's machines saw
-  attendance in it, and unattended if work ran and none did — see
-  [ADR 0018](../../libs/timetrack/docs/adr/0018-a-prompt-nobody-asked-for-is-not-presence.md). A merge
-  that dropped unattended time would make a real day on the second machine book short again, which is
-  the failure this slice exists to remove. A merge that sent it as presence would book a night nobody
-  worked, which is what 2026-09-12 did on one machine.
+- Discovery on the local network and pairing by hand. No port anything can simply join.
+- A per-pair secret in each keychain, and an encrypted transport.
+- The merge: presence unions with overlaps counted once, engaged time sums per stream, spend stays
+  with the machine that spent it.
+- Attendance travels, not only presence (ADR 0018). A minute is attended if any machine saw
+  attendance in it.
 - Exactly one machine books a day.
-- A machine that is off, said out loud. An incomplete day reads as incomplete rather than as a
-  short one.
+- A machine that is off is named, and the day reads as incomplete, not short.
+- Schema: `collected_event.id` is a local `AUTOINCREMENT`. Add an origin and a stable id per event
+  in a new migration past version 13. Never edit a migration that has run.
 
-### The store change under it
+Exit test: one real workday on both machines, with a meeting on the second. Both show the same
+presence, engaged time, spend and concurrency, and no hour counts twice. One machine books the day,
+and the other refuses to book it again. Switch the second off for an hour: both screens say the day
+is incomplete and name the missing machine.
 
-`collected_event.id` is a local `AUTOINCREMENT` integer, so an event has no identity two machines
-can agree on. A merge therefore needs an origin and a stable id per event, which is a schema
-migration past version 13. `db.rs` states the rule: never edit a migration that has run, add the
-next one. This is the part that cannot be undone once real days hold it.
+To decide first:
 
-### Exit test
-
-One real workday, worked on both machines, with a meeting on the second one.
-
-1. Both machines show the same presence, the same engaged time and the same spend.
-2. Neither counts one hour twice, and the concurrency on both reads the same.
-3. One machine books the day. The other says it is booked, and refuses to book it again.
-4. The second machine is then switched off for an hour. Both screens say the day is incomplete,
-   and they name the machine that is missing.
-
-### To decide before it is planned
-
-- **Which machine owns a day.** A fixed one, or the one the user books from.
-- **Clock skew.** Presence is wall-clock time, so two machines that disagree by a minute either
-  double-count an overlap or drop one. Name the tolerance, and what happens past it.
-- **The stream key across machines.** `CONTEXT.md` keys a stream by the checkout. Two machines
-  with a checkout of the same name are then one stream or two, and the answer changes every total.
-- **Whether the merge is continuous or on demand**, and what a machine does with a day that
-  changed after it already merged it.
-- **What a paired machine needs.** Only collectors, or the whole Jira, Tempo and Google stack.
-- **Retention and redaction over what arrives.** A title from the other machine must obey the same
-  redaction rules and the same private-project link as a title collected here.
+1. Which machine owns a day: a fixed one, or the one the user books from.
+2. Clock skew: the tolerance, and what happens past it.
+3. The stream key: two machines with a checkout of the same name are one stream or two.
+4. Continuous or on-demand merge, and what happens when a merged day changes later.
+5. What a paired machine needs: only collectors, or the whole Jira, Tempo and Google stack.
+6. Retention and redaction over what arrives, including the private-project link.
 
 ## M8: What a day cost
 
-**Slice 5, plus slice 9.**
+Slices 5 and 9. `unattributedSpend` is built and shown in `day-notes`.
 
-Slice 5 is the price table: a token count becomes money, per model and per day.
+- The price table (slice 5). It turns tokens into money per model and day. It ships empty, and a
+  price is dated, so re-reading an old day never reprices it. No `ModelPrice` exists yet.
+- A cost on the day, with the share of spend no stream took stated, not folded in.
+- A second, per-plan price mode, if subscription days are used for pricing.
+- Whether a model-call press refreshes the day. `probe` in `day-review.ts` tracks collector
+  `lastRun()`, so the own-spend line appears only on the next collector pass.
 
-Slice 9 is new, and it is the hardening the cost goal needs. Spend that no stream can hold is the
-cost side's version of the unnamed window. It has to be measured, then either attributed or
-reported as unattributed. `CONTEXT.md` already reserves the word.
-
-Exit test: a real day shows a cost Tom recognises, and it states the share of spend no stream
-took, rather than folding it into a line.
-
-To decide: where a price lives when it changes. A day in June and a day in September use different
-prices for the same model, so a price is dated, and a re-read of an old day must not reprice it.
-
-To decide: whether a press refreshes the day. `probe` in `day-review.ts` tracks each collector's
-`lastRun()`, and the app's own model call is no collector, so the own-spend line appears only on the
-next collector pass. Found 2026-09-15; the e2e steps off the day and back to force the read.
+Exit test: a real day shows a cost Tom recognises, and states the share of spend no stream took.
 
 ## M9: The week, and the price of work
 
-**Slice 6, plus slice 10.**
+Slices 6 and 10. The week already reads `readDay$`.
 
-Slice 6 is the week: time and cost per issue and per project, over seven days. It is the slice
-that takes the week view and the tray readout off `correlate`, and it lets `correlate/` be
-deleted.
+- Spend and cost per issue and per project over a week.
+- Cost per issue against its estimate, and a total per project per month.
 
-Slice 10 is the product goal behind the cost side: what one piece of work cost. Cost per issue
-against its estimate, and a total per project per month.
+Exit test: a week that shows both numbers per issue and per project.
 
-Exit test: a week that shows both numbers per issue and per project, and a `correlate/` directory
-that is gone.
-
-**The open product question, and it is the sharpest one on this roadmap.** The number a company
-wants is what issue FIP-2929 cost, over everybody who touched it. M4 makes a day whole across the
-user's **own** machines, and it changes nothing here: `plans/timetrack.md` still rules out any
-aggregate view over other people's time and any hosted backend. So the cost of an issue is one
-person's cost of it. If the first-class cost goal means the company-wide number, that ruling has
-to be revisited, and it is a decision about the whole product rather than about a slice. Answer it
-before M8 is planned.
+Decide before M9 is planned: does the cost goal mean one person's cost of an issue, or the
+company-wide cost? The company-wide number would need an aggregate view over other people's time,
+which is ruled out. That is a product decision, not a slice decision.
 
 ## M10: A second person installs it
 
-**Slice 11.** It is one milestone with several parts, and it may split when it is planned.
+Slice 11. It may split when planned.
 
-- A packaged and signed build, per operating system, from CI rather than from this checkout.
-- An updater, and what an update does to a day that is being collected.
-- First run: the keychain, the database, and the autostart choice from M3.
-- Per-user setup for Jira, Tempo and Google. Each user registers their own OAuth clients, and the
-  README's Google walkthrough is not a setup screen.
-- A Windows collector. Focus and idle both have plain Win32 answers.
-- The reporter install wizard, at least its detect-and-report half.
+- A packaged, signed build per operating system, from CI.
+- An updater, and what an update does to a day being collected.
+- First run: the keychain, the database, and the autostart choice from M5.
+- Per-user OAuth and credential setup for Jira, Tempo and Google, as a guided screen.
+- The window lock verified on macOS in a signed build, and on Windows at all.
+- The collector gaps below.
 
-Exit test: one colleague installs a build on their own machine, connects their own Jira, Tempo and
-Calendar, and books a day. They use no file from this checkout, and they ask no question this
-roadmap did not expect.
+Exit test: a colleague installs a build, connects their own Jira, Tempo and Calendar, and books a day.
+They use no file from this checkout.
 
-To decide: which operating systems the first team build covers, and who pays for an Apple
-Developer identity if macOS is one of them. Also, what pairing means here: a colleague's machine
-never pairs with Tom's, and the install must make that impossible rather than merely unlikely.
+To decide: which operating systems the first build covers, and who pays for an Apple Developer
+identity. The install must make pairing with another person's machine impossible.
+
+### Collector gaps
+
+- **Windows window source:** `GetForegroundWindow` + `GetWindowText`, and `GetLastInputInfo` for
+  idle. No `window_windows.rs` exists.
+- **Windows call source:** WASAPI `IAudioSessionManager2`, then `IAudioSessionControl2::GetProcessId`,
+  named by pid. The portable half (`calls.rs`, `stream/calls.ts`) is done. It cannot be verified
+  without a Windows machine or target.
+- **Linux window fallbacks,** only if Linux users matter: X11 via `_NET_ACTIVE_WINDOW` +
+  `_NET_WM_NAME`, GNOME/Mutter (needs a shell extension; document it as a gap), and logind `IdleHint`
+  plus `Lock`/`Unlock`/`PrepareForSleep` for idle.
+- **macOS title path:** verify window titles on a Mac with Accessibility granted. It has only run
+  ungranted.
 
 ## M11: The noisy tail
 
-**Slice 12.** Phase 3 of `plans/timetrack.md`, every entry over the ingest seam:
+Slice 12. Every entry is a source over the ingest seam.
 
-- **Codex session logs.**
-- **The browser reporter.** Whether it is ever needed is still open - see "What this plan does not
-  decide" in [`name-the-window.md`](./name-the-window.md).
-- **A Figma plugin**, added on 2026-09-14. Tom's words: "a figma plugin that reports to timetrack so
-  designers also get some detailed tracking."
+- **The browser reporter,** only if the M1 decision says it is needed.
+- **A Figma plugin,** so designers get detailed tracking. Only an inventory entry exists
+  (`sources/inventory.ts:205`). It differs from the other reporters:
+  - It cannot read the `0600` discovery file. A pairing code shown in the app and kept in
+    `figma.clientStorage` is the likely shape. Measure first whether a plugin may reach the loopback
+    port at all.
+  - A Figma file key names the time, not a checkout. It needs a link table beside `projectLinks`, and
+    the private-project rule must hold on it.
+  - It must add what the window title cannot: the file, the page, and whether the person edited.
+  - Decide whether it ships before M10, and whether a file-key link is a rung or its own source.
+- **Optional:** a `PostToolUse` hook on the Agent tool in `@ethlete/agent-rules`. It writes one JSONL
+  line per spawn (`agentId`, `description`, `subagent_type`, `model`, parent `sessionId`, instant), so
+  subagent spend can be named. The collector joins on `agentId`.
 
-Gmail notification parsing was dropped on 2026-09-14 - `glab` and `gh` read the same events from the
-forge, so the mails carry nothing new.
+## Security
 
-Every entry here is a source, and every source is cheap once the pipeline is trusted. That is why
-they sit last. None of them is a reason to distrust a number, and none of them blocks a booking.
+- **SEC-04 remainder.** Native data commands have no lock check, e.g. `events_between` at
+  `src-tauri/src/store.rs:80`. Agent clients have no per-client or per-operation scopes.
+- **SEC-08.** Build compaction first: a caller for `set_compacted_through` and a block store. Then
+  schedule `planRetention` / `deleteEventsBefore$` (ADR 0002). `retention.ts` is unused today.
+- **Capability gating has no test.** The e2e suite fakes `HOST_PORTS` and never crosses Tauri IPC.
+  Run `yarn timetrack` once, open the widget, toggle the pause, press "Open Timetrack", and check the
+  webview console for a refused command.
+- **Packaged-build verification.** With a locked release build, try raw evidence reads, review edits,
+  Jira creation, secret access and lock-setting changes through their real entry points. Check the
+  keychain and file permissions. None of this is recorded.
 
-### The Figma plugin is not one more reporter
+## Design (Kerbe)
 
-The other two report for someone who writes code, and the whole naming pipeline reads a checkout.
-This one reports for someone who writes none, so three things in it have no precedent here:
+The calls live in `.ethlete/design/calls/timetrack/kerbe/`, served by `yarn design` on :4402.
 
-- **It cannot pair the way a reporter pairs.** Every reporter reads the `0600` discovery file at each
-  post, because the token is new at every app start. A Figma plugin reads no local file. The token
-  has to reach it another way - a pairing code shown in the app and held in `figma.clientStorage` is
-  the obvious shape. Whether a plugin may reach the host's loopback port at all has to be measured
-  before this is planned, not assumed.
-- **What names the time is a file, not a checkout.** A Figma file key would need a link table beside
-  `projectLinks`, and the private-project rule has to hold on it the same way.
-- **Figma already reaches the day as a window title**, so the plugin has to add what the title cannot:
-  which file, which page, and whether the person edited or only looked.
+- Call 11 (`kerbe/11-buttons`) has no verdict. It blocks call 10 (`kerbe/10-chrome`), which is left
+  with options B and C, differing only in whether the day total stays.
+- Not drawn yet: resize handles, the drag ghost, how the lane reflows during a move, a band being
+  added, and a break the user adds, edits or removes.
+- Not drawn yet: the active band that is still collecting, and the current-time marker.
+- Data question: does work landing inside a derived break shorten the break?
 
-To decide before it is planned: whether it ships before M10, given that a designer is a second person
-and M10 is what makes a second person possible; and whether a file-key link is a fourth rung or a
-source of its own.
+## Exit tests only Tom can judge
 
-## What runs beside every milestone
+None of these is recorded as done:
 
-Not milestones. They are part of each slice, in the way the changeset is:
+- M1: three replayed days (2026-08-12, 2026-08-17, 2026-08-18) read as true with no edit.
+- M2: Tom reads and cuts a real day on one screen, and writes down his judgment.
+- M3: Tom writes the issues down before opening the screen, then judges every band in writing.
+- M4: the live case end to end (a stand-in on day 1, three days across two checkouts, the epic and
+  both tasks filed from the card, no row typed by hand), plus one real week where every band has a
+  key or a stand-in.
 
-- **The proof.** [`e2e-strategy.md`](./e2e-strategy.md) holds the fake backend, the seed and the
-  clock. Each slice extends it. What stays manual is named there.
-- **Privacy.** A new field that holds a title, a path or a prompt needs an entry in the retention
-  and redaction rules, and it needs the private-project link to keep working.
-- **The vocabulary and the records.** A new term goes in `libs/timetrack/CONTEXT.md`. A decision
-  that is hard to reverse gets an ADR in `libs/timetrack/docs/adr/`.
-- **The changeset.** `timetrack-app` is versioned like every published package.
+## Open questions
 
-## Not on this roadmap
+- Is Kerbe still headed into the app? Then its palette becomes an app theme and its fonts are
+  self-hosted, not loaded from Google.
+- Is `conferenceUrl` stored whole, or redacted?
+- Should an editor heartbeat extend presence past `maxUnobservedMs`? It needs a day where the two
+  answers differ, or park it.
+- Repair the duplicate worktree rows stored before the worktree fix, or leave them?
+- Is the masking name list seeded from the Jira project names yet?
+- Is the concurrency ceiling warning (off by default) still wanted?
+- Does outbound model payload privacy need a separate review beyond ADR 0013?
+- Does ADR 0007 still owe a rebuild of the sync and start routes?
+- The sources banner heading "Degraded" (`sources-view.component.ts:302`) is wrong for a source the
+  platform never had. Pick a better word.
+- Optional: Playwright screenshot comparisons for the day timeline.
 
-From `plans/timetrack.md`: any manager or aggregate view over other people's time, a hosted
-backend, a Jira Data Center provider, and a worklog target that is not Tempo.
+## Settled - do not re-open
 
-**Cross-device sync has come off this list, and only in one shape.** M4 builds it for the user's
-own machines, over the local network, paired by hand. A cloud, a relay and a third party stay out,
-and so does any machine that is not the user's own.
-
-One more entry, still deferred:
-
-- **Auto-resume and auto-pause on standby.** It is in tension with the hard pause, which promises
-  that nothing collects until the user says so. If both ever ship they are two controls, never one.
+- No hosted backend, cloud or relay. No view over other people's time. No Jira Data Center, no
+  worklog target but Tempo. Only one person's own paired machines may sync (ADR 0013).
+- A model runs only on an explicit press, with the prompt shown first and names pseudonymised
+  (ADR 0013, 0023). Its answer is never above `weak`, never becomes a rule without a click, and never
+  writes the naming store. The only write gate is the sync, and the agent endpoint lists stand-ins
+  and writes none.
+- No vendor call APIs (Slack huddle state, a Discord bot). The microphone holder is the signal.
+- No Gmail source. The forge sources shell out to `glab` and `gh` and hold no token. A forge event is
+  evidence, never time. Commit subjects never carry the issue key.
+- Concurrent streams each book their full time, and a day may exceed its wall clock. No gate, no
+  scaling. Sessions of one checkout, and a checkout with its worktrees, book once to the watched band
+  (ADR 0034). `scaleToPresence` only if an invoice needs it.
+- The price table ships empty. No price is hardcoded.
+- No git flow is assumed. Never push subtasks or a branch per issue (ADR 0001, 0009).
+- One app, one store, one day screen on `streamDay` (ADR 0004, 0011, 0014).
+- A parent issue is pre-selected only when the ranking clearly leads. Once the app files an epic,
+  Jira owns the hierarchy (ADR 0022). No invitation attendees for naming.
+- Only evidence names a checkout: no guessed session sticky, no `app_id`-to-process match, no
+  `path-prefix` exclusion, no widened `title-pattern`. The private project link is the privacy
+  control. Never change `repoStickinessMs` in the same change as a mechanism.
+- A break is corrected by `present`/`away` statements over a stretch, never by break id. A statement
+  outranks every derived rule.
+- A band that is not work takes nothing from a background band (ADR 0024).
+- The timeline axis is a fixed 24 hours and is never cropped or rescaled.
+- Auto-pause and auto-resume on standby stay deferred, and never share a control with the hard pause.
+- No global hotkey on Wayland: `timetrack open` plus a compositor binding. The window lock uses the OS
+  account credential, not TOTP, a passkey or a passphrase.
+- No retention pass without compaction (ADR 0002).
+- A rejected Google refresh token is not deleted automatically, and a refused revocation keeps it.
+  "Remove on this machine only" is a separate action.
+- The agent proof is answered before the token and lock checks. An unlinked checkout's cursor keeps
+  its `cwd`; a private one loses it. `cargo-audit` is pinned from crates.io, its CI target is not
+  cached, `unmaintained` is not denied, and glib RUSTSEC-2024-0429 is accepted.
+- Heartbeats are reported per reporter, not per editor. Other agent CLIs (Cursor, Copilot, Gemini)
+  are out of scope. No `tauri-driver` run for now. No client titles or keys in `libs/timetrack`
+  fixtures.
+- Band design: the metal says what a band asks of the reader, not how sure the matcher was. No
+  ornament on anything that repeats about 20 times on a screen. Ornament marks a threshold, never a
+  workspace.

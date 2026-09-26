@@ -51,6 +51,16 @@ The spec files are in `apps/timetrack-e2e/src/`.
 | 18      | Lock and PAM, tray, widget, idle   | e2e, `cargo test`, manual | `window-lock` (tray text on lock, a lock read that fails stays locked); `lock.rs`, `lock_linux.rs`, `pause.rs`, `placement.rs` | The OS lock signal, the password check, the tray, the widget, the idle notifier, decorations                 |
 | —       | Store, pause, migrations, recovery | `cargo test`              | `store.rs`, `db.rs`, `pause.rs`, `recovery.rs`                                                                                 | Retention and compaction                                                                                     |
 
+### Every new flow
+
+A slice is not done until its flow has an e2e test. Each flow gets three:
+
+1. **The happy path.** It does the thing, and the screen says so.
+2. **The refusal.** The one case the flow must refuse (a dirty tree, an empty project list, a 401)
+   refuses, and says why.
+3. **The round trip, where it writes.** Read the fake backend and assert what reached it. Run it
+   again and assert the second run wrote nothing.
+
 ## 1. Start the app
 
 `cargo` is not on the default PATH. Export it first, or the Tauri build stops at once.
