@@ -276,9 +276,8 @@ agent that works alone, batch by batch.
 
 ### tree, time-picker, chip, kbd, floating-action, forms/masked-input, loader
 
-- Friction: fixed in ec0d0ada3: a leading minus in `createCurrencyMask({ allowNegative: true })` was dropped. Open:
-  `InputComponent.syncNativeValue` ignores `nativeSyncSuppressed`, so the mask breaks an IME composition (`it.fails`
-  in `forms-masked-input.scenario.spec.ts`, fix in progress); `parseKbdKeys('mod++')` drops the `+` (write `plus`);
+- Friction: fixed in ec0d0ada3: a leading minus in `createCurrencyMask({ allowNegative: true })` was dropped. Fixed in 3f8119efd: the mask broke an IME composition
+  in `et-input`. Open: `parseKbdKeys('mod++')` drops the `+` (write `plus`);
   chip does not move focus after a remove; the harness `s.intersect` sends `rootBounds: null` (floating-action wraps
   it); time-picker column focus waits for a microtask and `new Date()` is read at construction; tree
   `loadingLabel`/`emptyLabel`/`retryLabel` are plain inputs, no `provideTreeLabels`.
