@@ -277,8 +277,8 @@ mode warns when a second application registers.
 
 Code written against the current system while it shipped in `@ethlete/query` 5.x needs one change of its own. In 5.x, a `withArgs` source that returned `null` kept the previous args, and `CLEAR_QUERY_ARGS` parked the query. Now `CLEAR_QUERY_ARGS` is gone and `null` parks: `args()`, `response()` and `executionState()` become `null`, and polling pauses (see [`withArgs`](/query/features#withargs)).
 
-- Replace `CLEAR_QUERY_ARGS` with `null`.
-- Where `null` meant "keep the previous args", keep them yourself, for example with a `linkedSignal` that holds on to the last non-null value:
+- `prep-for-query-v3` rewrites `CLEAR_QUERY_ARGS` (and the `ClearQueryArgs` type) to `null`.
+- It also lists every `withArgs` callback that returns `null`, with a warning. Where one relied on keeping the old args, return those args yourself, for example with a `linkedSignal` that holds on to the last non-null value:
 
 ```ts
 type MatchArgs = { pathParams: { matchId: string } } | null;
@@ -295,7 +295,7 @@ private lastMatchArgs = linkedSignal<MatchArgs, MatchArgs>({
 matchQuery = getMatch(withArgs(() => this.lastMatchArgs()));
 ```
 
-Search for every `withArgs` source that can return `null` - it compiles in both versions and only behaves differently.
+A callback on that list compiles in both versions and only behaves differently, so check each one.
 
 ## Behavior worth knowing before you debug it
 
