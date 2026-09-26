@@ -13,12 +13,12 @@ agent that works alone, batch by batch.
 
 - Done: button, overlay, stream, table, icon, forms/date-time, forms/rich-text-editor, scheduler, grid,
   forms/form-field, bracket, tabs, forms/select, notification, menu, match, forms/cascader, forms/dropzone,
-  forms/color-input, breadcrumb, command-palette, carousel. Components: 959 of 1381 covered. Per-domain notes are under "Domain notes" below.
+  forms/color-input, breadcrumb, command-palette, carousel, scrollable, forms/selection-list, query-error,
+  filter-overlay. `KBD_PLATFORM` and `DescriptionComponent` are covered by the palette and selection-list scenarios. Components: 959 of 1381 covered. Per-domain notes are under "Domain notes" below.
 - In progress: nothing. Start with task 1.
 - Removed on 2026-09-26 by user decision: `GridItemRef` and `configComponent` (e519882bc). Added:
   `FormFieldDirective.controlSuffixTemplate` (e38133536).
-- In progress 2026-09-27: scrollable, forms/selection-list, query-error, filter-overlay (task 2); chart, calendar,
-  standings, forms/slider (task 3).
+- In progress 2026-09-27: chart, calendar, standings, forms/slider (task 3).
 
 ## Rules for every batch
 
@@ -46,7 +46,7 @@ agent that works alone, batch by batch.
 ## Task list
 
 1. Done 2026-09-27: breadcrumb, command-palette, carousel.
-2. scrollable 18, forms/selection-list 16, query-error 15, filter-overlay 15 (64).
+2. Done 2026-09-27: scrollable, forms/selection-list, query-error, filter-overlay.
 3. chart 17, calendar 15, standings 14, forms/slider 14 (60). Before chart: run `ListAgents` and tell any session
    that works in chart stories.
 4. forms/phone-input 14, forms/input 13, accordion 13, picture 11, pagination 11 (62).
@@ -64,6 +64,12 @@ agent that works alone, batch by batch.
 9. Before any push: ask the user, then run the `ci-check` skill.
 
 ## Open items that need the user (do not decide alone)
+
+- `it.fails` in `query-error.scenario.spec.ts` (libs/query): the error's `retryState` uses the already spent retry
+  count, so `<et-query-error>` shows Retry only with `alwaysAllowRetry`; `createQueryErrorResponse` gets
+  `attempts()` as `retryCount`, one ahead. Sent to the query session.
+- `it.fails` in `scrollable.scenario.spec.ts` (libs/core): `getElementScrollCoordinates` with origin `nearest`
+  compares `elLeft > conRight` strictly, so a child that starts at the container edge is not scrolled into view.
 
 - `it.fails` in `table-features-rows.scenario.spec.ts`: a numeric `rowKey` turns into a string, so a
   `new Set([3])` selection matches nothing.
@@ -223,3 +229,16 @@ agent that works alone, batch by batch.
 - E2E gaps: breadcrumb collapse on resize, overflow toggletip focus and return; Ctrl/Cmd+K on real platforms, active
   row `scrollIntoView`, palette focus return and colour context; carousel touch swipe with snap, loop seam jump,
   dim/wipe transitions, autoplay ring, hover/focus pause, reduced motion.
+
+### scrollable, forms/selection-list, query-error, filter-overlay
+
+- Friction: see the two `it.fails` in the open items; a legacy error offers no retry without
+  `setDefaultQueryRetryFn`; a module-level `V2QueryClient` leaks its GC interval; `provideFilterOverlay` needs
+  `FilterOverlayConfig<typeof FIELDS>`, not `Partial<Parameters<...>>`; a preview without `totalHits` shows "Show
+  results" in production silently; `SelectionState` has no selected count; selection-list `aria-checked` needs
+  frames drained before destroy; scrollable `isAtStart`/`isAtEnd` start `true` (buttons start disabled); element
+  mode rounds a 0.5 intersection to fully visible and skips that child when paging.
+- E2E gaps: query-error `role="alert"` and error theme; filter-overlay animation, focus in and back, routed sub
+  pages, floating-action badge; segmented sliding background, checkmark/radio animations, card hover and focus
+  rings, tabs-variant underline; real scroll snap, smooth scroll, mask gradients, sticky buttons, dot track past 5
+  dots, drag momentum, vertical direction, `scrollOrigin`/`scrollMargin`.
