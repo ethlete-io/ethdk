@@ -1,4 +1,4 @@
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Component, inject, Injectable, Injector } from '@angular/core';
 import {
   ActionCallArgs,
@@ -27,9 +27,16 @@ type PostMemberArgs = {
   body: { name: string };
 };
 
+type UploadArgs = {
+  response: { ok: boolean };
+  pathParams: { teamId: string };
+  body: FormData | Blob | Map<string, string> | { scheduledAt: Date };
+};
+
 type Api = {
   getTeam: QueryCreator<GetTeamArgs>;
   postMember: QueryCreator<PostMemberArgs>;
+  upload: QueryCreator<UploadArgs>;
 };
 
 let api: Api;
@@ -44,6 +51,10 @@ class TeamFacade {
 
   postMember(args: ActionCallArgs<Api['postMember']>) {
     return toolkitCall(api.postMember, args, { injector: this.injector });
+  }
+
+  upload(args: ActionCallArgs<Api['upload']>) {
+    return toolkitCall(api.upload, args, { injector: this.injector });
   }
 
   select(args: ActionCallArgs<Api['getTeam']>) {
@@ -75,6 +86,7 @@ const useTeamScenario = () => {
     api = {
       getTeam: s.get<GetTeamArgs>((p) => `/teams/${p.teamId}`),
       postMember: s.post<PostMemberArgs>((p) => `/teams/${p.teamId}/members`),
+      upload: s.post<UploadArgs>((p) => `/teams/${p.teamId}/uploads`),
     };
   });
 
@@ -263,6 +275,77 @@ describe('ngrx-toolkit interop', () => {
     expect(response.values.at(-1)).toEqual({ ok: true });
 
     response.subscription.unsubscribe();
+  });
+
+  it('never shares a handle between FormData, Blob or Map bodies, so each call sends its own body', () => {
+    const s = scenario();
+    s.api.on('POST', '/teams/:teamId/uploads', () => ({ body: { ok: true } }));
+
+    const firstForm = new FormData();
+    firstForm.append('file', 'first');
+    const secondForm = new FormData();
+    secondForm.append('file', 'second');
+    const firstBlob = new Blob(['first']);
+    const secondBlob = new Blob(['second']);
+    const map = new Map([['file', 'first']]);
+
+    const bodies = [firstForm, secondForm, firstBlob, secondBlob, map, map];
+    const stores = bodies.map((body) => facade().upload({ queryParams: { teamId: '1' }, body }));
+    s.tick();
+
+    expect(new Set(stores).size).toBe(bodies.length);
+    expect(s.api.requests.map((request) => request.body)).toEqual(bodies);
+    expect(facade().upload({ queryParams: { teamId: '1' }, body: firstForm })).not.toBe(stores[0]);
+    s.tick();
+  });
+
+  it('keys a Date by its time value', () => {
+    const s = scenario();
+    s.api.on('POST', '/teams/:teamId/uploads', () => ({ body: { ok: true } }));
+
+    const first = facade().upload({ queryParams: { teamId: '1' }, body: { scheduledAt: new Date(1000) } });
+    const same = facade().upload({ queryParams: { teamId: '1' }, body: { scheduledAt: new Date(1000) } });
+    const later = facade().upload({ queryParams: { teamId: '1' }, body: { scheduledAt: new Date(2000) } });
+    s.tick();
+
+    expect(same).toBe(first);
+    expect(later).not.toBe(first);
+    expect(s.api.requests.at(-1)?.body).toEqual({ scheduledAt: new Date(2000) });
+  });
+
+  it("sends the latest call's headers and args, and reports them on args$", () => {
+    const s = scenario();
+
+    const first = facade().getTeam({
+      queryParams: { teamId: '1' },
+      actionOptions: { headers: new HttpHeaders({ 'x-version': '1' }) },
+    });
+    s.tick(100);
+
+    const second = facade().getTeam({
+      queryParams: { teamId: '1' },
+      actionOptions: { headers: new HttpHeaders({ 'x-version': '2' }) },
+    });
+    s.tick(100);
+
+    expect(second).not.toBe(first);
+    expect(s.api.requests.map((request) => request.headers.get('x-version'))).toEqual(['1', '2']);
+
+    const withExtras = { queryParams: { teamId: '2' }, actionOptions: { extras: { skipCache: true } } };
+    const latest = { queryParams: { teamId: '2' } };
+    const store = facade().getTeam(withExtras);
+    s.tick(100);
+    const args = record(store.args$);
+
+    expect(facade().getTeam(latest)).toBe(store);
+    s.tick(100);
+    store.refresh();
+    s.tick(100);
+
+    expect(args.values).toEqual([withExtras, latest]);
+    expect(s.api.requestCount('GET', '/teams/2')).toBe(3);
+
+    args.subscription.unsubscribe();
   });
 
   it('maps a failed request to the toolkit error shape', () => {

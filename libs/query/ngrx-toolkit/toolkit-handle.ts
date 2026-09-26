@@ -39,7 +39,8 @@ type ToolkitHandleSnapshot = {
 
 export type ToolkitHandleEntry = {
   handle: AnyMappedEntityState;
-  call: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  call: (args: ActionCallArgs<any>) => void;
 };
 
 const EMPTY_SNAPSHOT: ToolkitHandleSnapshot = {
@@ -81,11 +82,9 @@ export const toQueryArgs = (args: Record<string, unknown>) => {
 
 export const createToolkitHandle = <TCreator extends AnyQueryCreator>(
   creator: TCreator,
-  args: ActionCallArgs<TCreator>,
   injector: EnvironmentInjector,
 ): ToolkitHandleEntry => {
   const query = creator({ injector, onlyManualExecution: true, silenceMissingWithArgsFeatureError: true });
-  const queryArgs = toQueryArgs(args as Record<string, unknown>);
 
   const calledArgs = signal<ActionCallArgs<TCreator> | null>(null);
   const toolkitError = computed(() => {
@@ -123,13 +122,15 @@ export const createToolkitHandle = <TCreator extends AnyQueryCreator>(
   const select = <T>(pick: (current: ToolkitHandleSnapshot) => T): Observable<T> =>
     defer(() => changes.pipe(startWith(untracked(snapshot)))).pipe(map(pick), distinctUntilChanged());
 
-  const call = () => {
+  const call = (args: ActionCallArgs<TCreator>) => {
     calledArgs.set(args);
-    query.execute({ args: queryArgs });
+    query.execute({ args: toQueryArgs(args as Record<string, unknown>) });
   };
 
   const refresh = () => {
-    if (untracked(calledArgs)) call();
+    const lastArgs = untracked(calledArgs);
+
+    if (lastArgs) call(lastArgs);
   };
 
   let pollingSubscription = Subscription.EMPTY;

@@ -1,5 +1,5 @@
 import { assertInInjectionContext, EnvironmentInjector, inject, Injector } from '@angular/core';
-import { AnyQueryCreator } from '@ethlete/query';
+import { AnyQueryCreator, QueryHeaders, RequestArgs, resolveQueryHeaders } from '@ethlete/query';
 import { createToolkitHandle, ToolkitHandleEntry, toQueryArgs } from './toolkit-handle';
 import { ActionCallArgs, MappedEntityState } from './toolkit-types';
 
@@ -15,18 +15,49 @@ type ToolkitRegistry = WeakMap<AnyQueryCreator, Map<string, ToolkitHandleEntry>>
 
 const registries = /* @__PURE__ */ new WeakMap<EnvironmentInjector, ToolkitRegistry>();
 
-const sortedValue = (value: unknown): unknown => {
-  if (Array.isArray(value)) return value.map(sortedValue);
+class UnhashableValueError extends Error {}
+
+const isPlainObject = (value: object) => {
+  const prototype = Object.getPrototypeOf(value);
+
+  return prototype === Object.prototype || prototype === null;
+};
+
+const hashableValue = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(hashableValue);
   if (typeof value !== 'object' || value === null) return value;
+  if (value instanceof Date) return { '\u0000date': value.getTime() };
+  if (!isPlainObject(value)) throw new UnhashableValueError();
 
   return Object.fromEntries(
     Object.keys(value)
       .sort()
-      .map((key) => [key, sortedValue((value as Record<string, unknown>)[key])]),
+      .map((key) => [key, hashableValue((value as Record<string, unknown>)[key])]),
   );
 };
 
-const hashArgs = (args: unknown) => JSON.stringify(sortedValue(args ?? null));
+const hashableHeaders = (headers: QueryHeaders | undefined) => {
+  const resolved = resolveQueryHeaders(headers);
+
+  return resolved
+    ?.keys()
+    .map((name) => name.toLowerCase())
+    .sort()
+    .map((name) => [name, resolved.getAll(name)]);
+};
+
+/** Returns `null` for args holding a value JSON cannot represent (FormData, Blob, Map, ...); those never share a handle. */
+const hashArgs = (args: RequestArgs<never>) => {
+  const { headers, ...rest } = args as { headers?: QueryHeaders };
+
+  try {
+    return JSON.stringify([hashableValue(rest), hashableHeaders(headers) ?? null]);
+  } catch (error) {
+    if (error instanceof UnhashableValueError) return null;
+
+    throw error;
+  }
+};
 
 const resolveEnvironmentInjector = (fn: (...args: never[]) => unknown, options?: ToolkitCallOptions) => {
   if (options?.injector) return options.injector.get(EnvironmentInjector);
@@ -56,10 +87,13 @@ const resolveEntry = <TCreator extends AnyQueryCreator>(
   }
 
   const key = hashArgs(toQueryArgs(args as Record<string, unknown>));
+
+  if (key === null) return createToolkitHandle(creator, injector);
+
   let entry = entries.get(key);
 
   if (!entry) {
-    entry = createToolkitHandle(creator, args, injector);
+    entry = createToolkitHandle(creator, injector);
     entries.set(key, entry);
   }
 
@@ -103,7 +137,7 @@ export const toolkitCall = <TCreator extends AnyQueryCreator>(
 ): MappedEntityState<TCreator> => {
   const entry = resolveEntry(creator, args, resolveEnvironmentInjector(toolkitCall, options));
 
-  entry.call();
+  entry.call(args);
 
   return entry.handle;
 };
