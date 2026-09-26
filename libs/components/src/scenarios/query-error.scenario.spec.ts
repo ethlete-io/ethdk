@@ -82,7 +82,7 @@ class TeamListComponent {
   selector: 'et-scenario-team-sign-in-error',
   imports: [QUERY_ERROR_IMPORTS],
   template: `
-    <div #queryError="etQueryError" [error]="teams.error()" [alwaysAllowRetry]="true" etQueryError>
+    <div #queryError="etQueryError" [error]="teams.error()" alwaysAllowRetry etQueryError>
       @if (queryError.view(); as view) {
         <strong class="headline">{{ view.title }}</strong>
         <span class="status">{{ view.status }}</span>
@@ -93,7 +93,7 @@ class TeamListComponent {
     </div>
 
     @if (teams.error(); as error) {
-      <et-query-error [error]="error" [labels]="{ retry: 'Reload teams' }" [alwaysAllowRetry]="true">
+      <et-query-error [error]="error" [labels]="{ retry: 'Reload teams' }" alwaysAllowRetry>
         <ng-template etQueryErrorTitle let-view>
           {{ view.status === 401 ? 'You are signed out' : view.title }}
         </ng-template>
