@@ -44,3 +44,42 @@ Open risks:
 - `refresh()` on a released ngrx handle only warns.
 - `prep-for-query-v3` does not handle `export { CLEAR_QUERY_ARGS }`, shadowed names, or `withArgs` callbacks passed
   by reference.
+
+## Scan 2026-09-27 wave 2
+
+1. `createQuerySubmission` treats an aborted or superseded execution as success: `onSuccess(null)` runs and `submit()` resolves `true`
+   (`http/query-submission.ts:88-97`, `executeUntilSettled` settles an abort with `error: null`). Scenario, confirmed.
+2. `querySequence` pushes an aborted step as a success with a `null` response, so the next `mapArgs` gets `null` and throws, or the
+   waterfall carries on after the user aborted (`http/query-sequence.ts:181-199`). Scenario, confirmed.
+3. Two signal query forms on one route committing in the same tick: the landed navigation carries only the last form's `info`
+   marker, so the other re-parses its own output via `applyFromUrl` (lossy: Date loses ms, spurious commit and refetch, pending
+   debounce dropped) (`query-form-signals/query-form-signals.ts:614-634`, `911-924`). Scenario, confirmed.
+4. `migrate-to-query-v3` client rename rewrites every same-named identifier in the workspace, whatever module it comes from: foreign
+   imports, top-level shadowing declarations' uses, shorthand object keys (`generators/migrate-to-query-v3/query-client-migration.ts:801-894`,
+   `renameVariables` ~310-365; `isShadowedByLocalDeclaration` stops before the SourceFile). Generator spec, confirmed.
+5. Import rewrites lose modifiers: `updateImportsInFile` drops default imports and `import type` (`query-client-migration.ts:827-832`,
+   also `shared.ts:62-66` `ensureNamedImports`); `pruneUnusedNamedImports` drops `type` (`rename-symbols.ts:209-213`,
+   `cleanup-migration.ts:285`, used by ngrx migration via `ts-edits.ts:121`) - TS1484 under `verbatimModuleSyntax`. Generator spec, confirmed.
+6. An aliased `QueryDevtoolsComponent as X` import keeps the legacy component while `provideQueryClientForDevtools` is replaced, so the
+   component throws NullInjectorError on its non-optional token (`cleanup-migration.ts:171-208`, `272-275` compare the local alias).
+   Generator spec for the output, runtime read; confirmed.
+7. `.prepare()` -> `.prepare({})` is applied to any receiver in any file, no `@ethlete/query` import check
+   (`cleanup-migration.ts:130-155`, `349-384`). Generator spec, confirmed.
+8. Paged stack `isLastPageLoaded` is `false` for an empty result (`totalPages: 0`) and when `totalPages` shrinks: `===` instead of `>=`
+   (`http/paged-query-stack.ts:370-374`). Infinite scroll shows a loader forever. Scenario, confirmed.
+9. Paged stack `fetchNextPage()` while a page loads throws ET401 (dev) / returns `null`, contradicting `apps/docs/query/stacks.md:60`
+   for `blockExecutionDuringLoading: false` (`paged-query-stack.ts:346-353`, `420-426`). Scenario, confirmed.
+10. `createQueryBatch`: unsubscribing mid-run skips `settleRun`, so in-flight and queued items are never marked `cancelled`;
+    `retryFailed()` then sends nothing and reports `success` at 25% (`http/query-batch.ts:480-488`, `499-510`). Scenario, confirmed.
+11. The web socket client never reconnects after an `io server disconnect` or a middleware-rejected handshake (socket.io stops
+    auto-reconnecting there); `isConnected` stays false forever and the rotated `auth` never reaches a handshake, against
+    `apps/docs/query/ws.md` (`ws/web-socket-client.ts:351-356` ignores the reason). Read, likely.
+12. The web socket client has no platform guard: on the server every SSR request opens a real socket.io connection and emits room joins
+    until app destroy (`ws/web-socket-client.ts:188-205`, `405`), unlike the query client's `isPlatformBrowser` check. Read, confirmed.
+
+Also seen, lower priority: `executeUntilSettled` on a destroyed query rejects with NG0205 (`query-snapshot.ts:48-79`);
+`migrate-to-query-v3` overwrites `query-v3-migration-tasks.md` on each scoped run (`report.ts:107-108`); a DataCloneError in one body
+drops the whole persistence batch and disables writes for the session (`persistence/query-persistence-indexed-db.ts:150-167`); test
+fakes diverge: `installFakeBroadcastChannel` delivers on a microtask (`testing/multi-tab-test-utils.ts:70`), the socket double's
+`disconnect()` fires no `disconnect` listener and keeps one listener per event (`testing/web-socket-test-utils.ts:87`, `94`), the
+persistence fake's gated `read` sees later removals (`testing/persistence-test-utils.ts:102-111`).
