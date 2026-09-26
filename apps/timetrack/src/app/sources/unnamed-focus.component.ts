@@ -82,8 +82,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
  * screen: every minute it holds is already on that screen, folded into the Other applications line,
  * and this is the only place that says which applications the line is made of.
  *
- * It is permanent. Each rung of `plans/timetrack/name-the-window.md` changes this number, and the exit
- * test of that plan reads it before a rung and after it.
+ * It is permanent. Each naming rung changes this number, so it is read before a rung ships and after.
  */
 @Component({
   selector: 'ethlete-unnamed-focus',
@@ -288,8 +287,8 @@ export class UnnamedFocusComponent {
    * The part nothing can judge yet.
    *
    * An application that never named a checkout is either no work context at all or one this app cannot
-   * read a name for, and rungs 1 and 2 of `plans/timetrack/name-the-window.md` are what tell the two
-   * apart. To call it a defect before then reports a number nobody can act on.
+   * read a name for, and nothing tells the two apart yet. To call it a defect reports a number nobody
+   * can act on.
    */
   protected unknown = computed(() => {
     const read = this.current();

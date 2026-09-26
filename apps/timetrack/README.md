@@ -5,7 +5,7 @@ model, the day pipeline and the providers, and it never makes a call or touches 
 app is the half that does: it owns the encrypted database, the keychain, every outbound request, and
 the collectors that watch the day.
 
-`plans/timetrack.md` in the repo root is the living spec.
+`plans/timetrack/roadmap.md` in the repo root lists the work still to build.
 
 ## Prerequisites
 
@@ -179,5 +179,4 @@ The consent screen now lives under **Google Auth Platform**, in the **Overview**
 
 ## Still to build
 
-The confirm step that executes a Tempo sync, and the hard pause. See the phase 1 list in
-`plans/timetrack.md`.
+See `plans/timetrack/roadmap.md`.

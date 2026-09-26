@@ -4,8 +4,9 @@ The framework-agnostic core of the Ethlete time-tracking helper: it turns raw ob
 a working day into blocks, and blocks into issue attributions, so a desktop shell can present a
 reviewable set of worklogs. It is private to this repo and not published to npm.
 
-The design and its rationale live in `plans/timetrack.md`; the branch grammar this consumes is
-`@ethlete/agent-rules/git-flow`, specified in `plans/git-flow-system.md`.
+The vocabulary lives in `CONTEXT.md` and the decisions in `docs/adr/`; the live work is in
+`plans/timetrack/roadmap.md`. The branch grammar this consumes is `@ethlete/agent-rules/git-flow`,
+implemented in `libs/agent-rules/src/lib/git-flow/`.
 
 ## What is here today
 

@@ -225,8 +225,8 @@ export type StreamDay = {
    * The part of `focusMs` no checkout took, per application and cause. It sums to the focused-window
    * part of the other-applications line, because the same pass produces both.
    *
-   * Ordered longest first. It is the measurement `plans/timetrack/name-the-window.md` asks for, and the
-   * only place the day says which applications the folded line is made of.
+   * Ordered longest first. It is the only place the day says which applications the folded line is
+   * made of.
    */
   unnamedFocus: UnnamedFocus[];
   /**

@@ -147,7 +147,7 @@ _Avoid_: unattributed focus (spend is unattributed), folded time, orphan time
 
 **Gap**:
 Unnamed focus of an application that named a checkout at another time in the span. The application
-holds work, so the stretch it lost is the defect `plans/timetrack/name-the-window.md` fixes.
+holds work, so the stretch it lost is a defect.
 _Avoid_: defect, miss, wrong time
 
 **Unknown focus**:
