@@ -199,7 +199,7 @@ describe('the bracket default cards', () => {
       fixture.componentInstance.matches = [bracketMatch()];
       fixture.detectChanges();
 
-      expect(text(fixture, '.et-bracket-default-continue-text')).toBe('1 winner advance');
+      expect(text(fixture, '.et-bracket-default-continue-text')).toBe('1 winner advances');
     });
 
     it('takes its strings from the bracket labels', () => {

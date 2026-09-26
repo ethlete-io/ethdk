@@ -55,8 +55,8 @@ export type BracketLabels = {
 /** The built-in English labels. */
 export const DEFAULT_BRACKET_LABELS: BracketLabels = {
   roundMatchCount: (matches) => `${matches} ${matches === 1 ? 'match' : 'matches'}`,
-  winnersAdvance: (winners) => `${winners} ${winners === 1 ? 'winner' : 'winners'} advance`,
-  continueLabel: (winners) => `${winners} ${winners === 1 ? 'winner' : 'winners'} advance to the next stage`,
+  winnersAdvance: (winners) => `${winners} ${winners === 1 ? 'winner advances' : 'winners advance'}`,
+  continueLabel: (winners) => `${winners} ${winners === 1 ? 'winner advances' : 'winners advance'} to the next stage`,
   champion: (participant) => `Champion: ${participant}`,
   championPending: 'Champion not decided yet',
   upperBracketSection: 'Upper bracket',
