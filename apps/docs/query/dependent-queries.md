@@ -83,7 +83,7 @@ Steps take **query instances**, not creators - consistent with `executeUntilSett
 ```ts
 type QuerySequenceResult<T extends unknown[]> =
   | { ok: true; responses: T; snapshots: QuerySnapshot[] }
-  | { ok: false; failedAt: number; error: QueryErrorResponse; snapshots: QuerySnapshot[] };
+  | { ok: false; failedAt: number; error: QueryErrorResponse | null; snapshots: QuerySnapshot[] };
 ```
 
 The chain object itself is a `QuerySequence<TResponses>`, `status()` a `QuerySequenceStatus`, and the seed/step args a `QuerySequenceStepArgs<TArgs>` - the same `{ args }` shape `query.execute()` takes.
@@ -100,7 +100,7 @@ The sequence also exposes signals mirroring [`createQueryStack`](/query/stacks),
 | `running`       | `Signal<boolean>`                                     | `true` while a run is in flight.                    |
 | `currentStep`   | `Signal<number>`                                      | 1-based index of the in-flight step; `0` when idle. |
 | `total`         | `number`                                              | Step count of the fully-built chain.                |
-| `error`         | `Signal<QueryErrorResponse \| null>`                  | The failing step's error.                           |
+| `error`         | `Signal<QueryErrorResponse \| null>`                  | The failing step's error; `null` for an abort.      |
 | `failedAt`      | `Signal<number \| null>`                              | Zero-based index of the failing step.               |
 | `snapshots`     | `Signal<QuerySnapshot[]>`                             | Settled snapshots so far.                           |
 | `responses`     | `Signal<Partial<T>>`                                  | Responses so far.                                   |
@@ -127,3 +127,4 @@ Every `.then()` returns a new object, but all of them read the same run - so a r
 - **Abort only.** The first error stops the waterfall - dependent steps can't run without their upstream data anyway. There is no continue-on-error mode. For _independent_ calls that should tolerate a partial failure, use a [query batch](/query/batching) instead.
 - **No rollback.** A mid-chain failure leaves earlier steps' server effects in place; `failedAt` and `snapshots` tell you exactly how far it got, and any compensation is up to you.
 - **Cancellation** (inherited from `executeUntilSettled`): if the host scope is destroyed mid-flight - or the step's cache entry is evicted - the in-flight query is torn down and the run stops there like any other failure, resolving with `{ ok: false, failedAt, error }` whose error says the request was cancelled.
+- **Abort.** A step stopped by [`query.abort()`](/query/queries#the-query-object) stops the waterfall too: no later step runs, `status()` is `error` and the run resolves with `{ ok: false, failedAt, error: null }` - `error` is `null` because an aborted execution sets none.

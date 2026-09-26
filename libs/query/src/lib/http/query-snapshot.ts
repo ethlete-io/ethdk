@@ -1,8 +1,8 @@
 import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
 import { effect, signal, untracked } from '@angular/core';
-import { filter, Subscription } from 'rxjs';
+import { filter, of, Subscription } from 'rxjs';
 import { HttpCancelEvent } from './http-request';
-import { wrapAsObservableSignal } from './observable-signal';
+import { ObservableSignal, wrapAsObservableSignal } from './observable-signal';
 import { QueryArgs, QuerySnapshot } from './query';
 import { injectQueryContext } from './query-context';
 import { QueryDependencies } from './query-dependencies';
@@ -24,12 +24,38 @@ const createCancelledError = () =>
     { retryCount: 0, retryFn: () => ({ retry: false }) },
   );
 
+const frozenObservableSignal = <T>(value: T): ObservableSignal<T> =>
+  Object.assign(signal(value).asReadonly(), { asObservable: () => of(value) });
+
+const createDestroyedSnapshot = <TArgs extends QueryArgs>(
+  state: QueryState<TArgs>,
+  execute: InternalQueryExecute<TArgs>,
+): QuerySnapshot<TArgs> => {
+  const error = createCancelledError();
+
+  return {
+    args: frozenObservableSignal(state.args()),
+    response: frozenObservableSignal(null),
+    latestHttpEvent: frozenObservableSignal(CANCEL_EVENT),
+    loading: frozenObservableSignal(null),
+    error: frozenObservableSignal(error),
+    lastTimeExecutedAt: frozenObservableSignal(state.lastTimeExecutedAt()),
+    triggeredBy: frozenObservableSignal(state.lastTriggeredBy()),
+    isAlive: frozenObservableSignal(false),
+    id: frozenObservableSignal(execute.currentRepositoryKey()),
+    executionState: frozenObservableSignal({ type: 'failure', error, hasCachedResponse: false }),
+  };
+};
+
 export const createQuerySnapshotFn = <TArgs extends QueryArgs>(options: CreateQuerySnapshotOptions<TArgs>) => {
   const { state } = options;
   const context = injectQueryContext();
 
   const snapshotFn = () =>
     untracked(() => {
+      // Every signal below binds to the query's injector, which throws NG0205 once it is destroyed.
+      if (context.deps.destroyRef.destroyed) return createDestroyedSnapshot(state, options.execute);
+
       const snapshotState = setupQueryState<TArgs>({});
       const isAlive = signal(true);
 

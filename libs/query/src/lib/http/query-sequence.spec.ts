@@ -188,7 +188,7 @@ describe('querySequence', () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.failedAt).toBe(0);
-      expect(result.error.code).toBe(422);
+      expect(result.error?.code).toBe(422);
       expect(result.snapshots).toHaveLength(1);
     }
     expect(seq.status()).toBe('error');

@@ -22,13 +22,13 @@ export type QuerySequenceStepArgs<TArgs extends QueryArgs> = {
  * The outcome of a settled {@link QuerySequence.run}.
  *
  * A discriminated union: on success `responses` is the fully-typed tuple of every step's response;
- * on failure `failedAt` is the zero-based index of the step that errored and `error` is its
- * normalized {@link QueryErrorResponse}. `snapshots` always holds the settled snapshots of every
- * step that ran - up to and including the failing one.
+ * on failure `failedAt` is the zero-based index of the step that errored or was aborted, and `error`
+ * is its normalized {@link QueryErrorResponse} - `null` for an aborted step. `snapshots` always holds
+ * the settled snapshots of every step that ran - up to and including the failing one.
  */
 export type QuerySequenceResult<TResponses extends unknown[]> =
   | { ok: true; responses: TResponses; snapshots: AnyQuerySnapshot[] }
-  | { ok: false; failedAt: number; error: QueryErrorResponse; snapshots: AnyQuerySnapshot[] };
+  | { ok: false; failedAt: number; error: QueryErrorResponse | null; snapshots: AnyQuerySnapshot[] };
 
 /**
  * An imperative waterfall of dependent queries - usually mutations (`POST`/`PUT`/`PATCH`/`DELETE`)
@@ -75,7 +75,7 @@ export type QuerySequence<TResponses extends unknown[]> = {
   /** The query objects backing each step, in order. Useful for devtools / advanced introspection. */
   queries: AnyNewQuery[];
 
-  /** The error of the step that failed, or `null` while running / on success. */
+  /** The error of the step that failed, or `null` while running, on success, or when a step was aborted. */
   error: Signal<QueryErrorResponse | null>;
 
   /** The zero-based index of the step that failed, or `null` while running / on success. */
@@ -103,7 +103,8 @@ export type QuerySequence<TResponses extends unknown[]> = {
    *
    * Cancellation (inherited from `executeUntilSettled`): a step whose request is cancelled - a
    * destroyed host scope, an evicted cache entry - stops the waterfall like any other failure, with
-   * an error that says the request was cancelled.
+   * an error that says the request was cancelled. A step stopped by `query.abort()` stops it too: the
+   * status is `error`, `failedAt` points at that step and `error` is `null`.
    */
   run: () => Promise<QuerySequenceResult<TResponses>>;
 };
@@ -185,7 +186,7 @@ const buildSequence = <TResponses extends unknown[]>(
 
         const error = snapshot.error();
 
-        if (error) {
+        if (error || snapshot.latestHttpEvent()?.type === 'cancel') {
           state.status.set('error');
           state.error.set(error);
           state.failedAt.set(i);

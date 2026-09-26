@@ -223,7 +223,7 @@ describe('dependent queries scenario', () => {
       expect(result?.ok).toBe(false);
       if (result && !result.ok) {
         expect(result.failedAt).toBe(1);
-        expect(result.error.code).toBe(402);
+        expect(result.error?.code).toBe(402);
         expect(result.snapshots).toHaveLength(2);
       }
       expect(checkout.status()).toBe('error');
