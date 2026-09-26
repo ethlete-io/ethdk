@@ -1,4 +1,5 @@
 import { HttpEventType } from '@angular/common/http';
+import { equal } from '@ethlete/core';
 import { CreateEffectOptions, effect, Signal, untracked, WritableSignal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { getActiveConsumer, setActiveConsumer } from '@angular/core/primitives/signals';
@@ -314,6 +315,11 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
 
       const remainingDelay = () => lastTickAt + currentInterval() - Date.now();
 
+      // Without an args source, `state.args` only changes when `execute({ args })` records them - and
+      // that execution already sent the request.
+      const wasJustExecutedWith = (args: RequestArgs<TArgs> | null) =>
+        !context.state.subtle.hasArgsSource() && args !== null && equal(context.state.subtle.request()?.args, args);
+
       nestedEffect(
         () => {
           const args = context.state.args();
@@ -331,7 +337,7 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
 
             lastTickAt = Date.now();
 
-            if (options.executeInitially) {
+            if (options.executeInitially && !wasJustExecutedWith(args)) {
               if (isPaused()) lastTickAt -= currentInterval();
               else if (!hold || hold.isHolder()) context.execute({ args, options: { triggeredBy: 'polling' } });
             }

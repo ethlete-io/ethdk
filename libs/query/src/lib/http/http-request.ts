@@ -265,8 +265,7 @@ export type HttpRequest<TArgs extends QueryArgs> = {
 
   /**
    * The args this request was built from - the resolved path params, query params, body and headers
-   * behind {@link HttpRequest.url}. Read by the query devtools to show what a query actually sent,
-   * which a query executed imperatively (`execute({ args })`) does not keep on its own `args` signal.
+   * behind {@link HttpRequest.url}. Read by the query devtools to show what a query actually sent.
    */
   args: RequestArgs<TArgs> | null;
 

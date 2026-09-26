@@ -123,6 +123,41 @@ describe('http scan 2026-09-27 scenario', () => {
     });
   });
 
+  describe('execute({ args }) on a withPolling({ executeInitially }) query without withArgs', () => {
+    it('sends one request, and polling continues from it', () => {
+      const s = scenario();
+      s.api.on('GET', '/scores', ({ query }) => ({ body: { page: Number(query['page'] ?? 0) } }));
+
+      const getScores = s.get<{ response: { page: number }; queryParams: { page?: number } }>('/scores');
+
+      const c = s.consumer();
+      const query = c.run(() => getScores(withPolling({ interval: 1_000, executeInitially: true })));
+      s.tick();
+
+      expect(s.api.requestCount('GET', '/scores')).toBe(1);
+
+      s.tick(400);
+      query.execute({ args: { queryParams: { page: 2 } } });
+      s.tick();
+
+      expect(s.api.requestCount('GET', '/scores')).toBe(2);
+      expect(query.triggeredBy()).toBeNull();
+
+      s.tick(999);
+
+      expect(s.api.requestCount('GET', '/scores')).toBe(2);
+
+      s.tick(1);
+
+      expect(s.api.requestCount('GET', '/scores')).toBe(3);
+      expect(query.response()).toEqual({ page: 2 });
+      expect(query.triggeredBy()).toBe('polling');
+
+      c.destroy();
+      s.tick();
+    });
+  });
+
   describe('refreshInUse executions', () => {
     it.each([
       { name: 'refreshQueriesInUse', refresh: (s: ReturnType<typeof scenario>) => s.client.refreshQueriesInUse() },
