@@ -116,6 +116,13 @@ the shell uses between the affixes and the control, so it tracks `size` (6/8/10p
 Projected affix content and the spinner render at `0.78` opacity so they recede; a control's own
 affordances render at full strength, because they are controls rather than decoration.
 
+A custom field chrome built on `etFormField` renders these affordances itself, from the directive's
+`controlSuffixTemplate` signal:
+
+```html
+<ng-container [ngTemplateOutlet]="field.controlSuffixTemplate()" />
+```
+
 #### The transient ones take no space
 
 The clear button and the busy spinner come and go while the reader is working in the field, so they
@@ -337,8 +344,9 @@ The field chrome handles error display and aria wiring uniformly:
   `radiogroup` of `radio`s; a multi-select checkbox group is a `role="group"` of
   `role="checkbox"` items (and the tri-state select-all is a `checkbox`, not an
   `option`).
-- A schema-`hidden` field (signal-forms `hidden`) removes the whole
-  `et-form-field` from layout and the accessibility tree.
+- Remove a schema-`hidden` field (signal-forms `hidden`) with `@if (!form.x().hidden())`.
+  If a hidden field stays rendered, `et-form-field` sets `display: none` on it as a
+  fallback, and Angular logs `NG01916` in dev mode.
 - Dev mode throws an actionable error if an `et-form-field` contains no control
   ([`ET2200`](/components/error-codes#form-field-et22xx)) or a control with no
   accessible name - no `et-label` and no `aria-label`/`aria-labelledby`

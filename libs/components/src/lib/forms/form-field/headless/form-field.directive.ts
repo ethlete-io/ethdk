@@ -43,6 +43,12 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
   /** @internal */
   public registeredControlSuffix = signal<ControlSuffixBase | null>(null);
 
+  /**
+   * The control's own in-field affordances (clear button, picker trigger, reveal toggle). A custom field
+   * chrome renders it with `ngTemplateOutlet` in its suffix slot.
+   */
+  public controlSuffixTemplate = computed(() => this.registeredControlSuffix()?.templateRef ?? null);
+
   /** Set by the form-field component; read by overlay-based controls (e.g. the select) as their anchor. */
   public controlFrameElement = signal<HTMLElement | null>(null);
 

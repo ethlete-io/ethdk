@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
   afterNextRender,
   Component,
@@ -165,12 +166,15 @@ class ChipToggleComponent {
 
 @Component({
   selector: 'et-scenario-plain-field',
-  imports: [AnimatableDirective, FormErrorComponent, FormWarningComponent],
+  imports: [AnimatableDirective, FormErrorComponent, FormWarningComponent, NgTemplateOutlet],
   hostDirectives: [FormFieldDirective],
   providers: [provideFormSupport()],
   template: `
     <div (mousedown)="frameDown($event)" class="plain-frame">
       <ng-content />
+    </div>
+    <div class="plain-suffix">
+      <ng-container [ngTemplateOutlet]="field.controlSuffixTemplate()" />
     </div>
     @if (support.shouldRenderError()) {
       <p #errorContent #errorAnimatable="etAnimatable" [id]="support.errorId()" class="plain-errors" etAnimatable>
@@ -475,12 +479,18 @@ describe('forms form-field custom control scenarios', () => {
     native.blur();
     native.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
     query('et-input input', plain).dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-    expect(plain.querySelector('.slug-clear')).toBeNull();
     expect(settings.plain().frameActivations).toBe(1);
     expect(INTERACTIVE_TAGS).toContain(native.tagName);
     expect(isInteractiveElement(query('.plain-decoration', plain))).toBeFalsy();
     expect(isInteractiveElement(native)).toBe(true);
+
+    type(s, native, 'handle');
     render(s);
+    const clear = query<HTMLButtonElement>('.plain-suffix .slug-clear', plain);
+    clear.click();
+    render(s);
+    expect(native.value).toBe('');
+    expect(settings.plain().frameActivations).toBe(1);
   });
 
   it('opens a consumer picker panel through createAnchoredPanelController and closes it on an outside pointer', () => {
