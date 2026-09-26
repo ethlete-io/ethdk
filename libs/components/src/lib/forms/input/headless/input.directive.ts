@@ -77,11 +77,6 @@ export class InputDirective extends TextFieldControlDirective implements FormVal
     this.nativeSyncSuppressed = false;
   }
 
-  /**
-   * Keeps the model in sync while typing. The wrapper components also bind `(input)` on their
-   * inner element, so this is redundant there (it routes through the same sync); its real job is
-   * the standalone `input[etInput]` case, which otherwise has no listener updating the model.
-   */
   protected handleNativeInput(event: Event) {
     if (this.nativeSyncSuppressed || event.target !== this.nativeControl()) {
       return;

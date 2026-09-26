@@ -255,7 +255,7 @@ describe('forms masked-input scenarios', () => {
     expect(Number(page.model().amount.replace(',', '.'))).toBe(-1234.56);
   });
 
-  it.fails('waits for an IME composition to end before masking', () => {
+  it('waits for an IME composition to end before masking', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(PaymentFormComponent);
 
