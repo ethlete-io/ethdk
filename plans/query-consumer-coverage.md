@@ -278,7 +278,14 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       failed `selectOptionsFromQuery` request also reaches the ErrorHandler. E2E gaps: panel position and width
       mirroring, real windowing, the `etSelectViewport` min-width lock, pointer hover, touch and bottom sheet,
       busy animations, the clear button on hover, the leave animation.
-      In progress 2026-09-26: notification + menu + match (76), forms/cascader + dropzone + color-input (64).
+      Notification, menu, match done (76 of 76, `notification`, `menu{,-selection}`, `match` scenario specs,
+      6554542af, 0fe66cb79, f069fca2a). No bug. Friction: the docs recommend `<a et-match-card></a>` and
+      `<button et-match-participant></button>`, but `@angular-eslint/template/elements-content` rejects both;
+      `normalizeEthleteParticipant` returns a nullable type for a non-null input; a menu open at destroy leaves
+      the overlay leave frame pending. E2E gaps: menu placement, flip, arrow and context-menu repositioning, resize
+      animation, focus ring; notification stack FLIP, enter and leave animations, swipe distance thresholds, RTL
+      swipe; match container-query layouts under `auto`, score roll and flash timing, picture fallback.
+      In progress 2026-09-26: forms/cascader + dropzone + color-input (64).
 - [x] S11 Follow-ups from S6 (hand-written skill `.agents/skills/query-scenario-tests/SKILL.md` documents `s.mount`)
   1. Done in 47f4d25da: `s.mount(Component, injector, { inputs })` sets inputs before the first change detection;
      `legacy-client-options` mounts `MatchListComponent` directly.
