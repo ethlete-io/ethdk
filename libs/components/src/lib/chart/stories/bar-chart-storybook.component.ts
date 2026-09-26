@@ -1,5 +1,4 @@
 import { Component, computed, input, ViewEncapsulation } from '@angular/core';
-import { ProvideSurfaceDirective } from '@ethlete/core';
 import { CHART_IMPORTS } from '../chart.imports';
 import {
   BarChartDatum,
@@ -88,11 +87,7 @@ const DATASETS: Record<BarChartStoryDataset, StoryDataset> = {
 @Component({
   selector: 'et-sb-bar-chart',
   template: `
-    <div
-      [etProvideSurface]="surface()"
-      class="text-medium flex flex-col gap-4 p-8 font-sans"
-      style="background: var(--et-surface-background-solid); color: var(--et-surface-color-solid)"
-    >
+    <div class="text-medium flex flex-col gap-4 p-8 font-sans">
       <p class="text-small m-0 opacity-60">{{ story().label }}</p>
       <div [style.inline-size]="boxWidth()">
         <et-bar-chart
@@ -109,10 +104,9 @@ const DATASETS: Record<BarChartStoryDataset, StoryDataset> = {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [CHART_IMPORTS, ProvideSurfaceDirective],
+  imports: [CHART_IMPORTS],
 })
 export class BarChartStorybookComponent {
-  public surface = input('light');
   public dataset = input<BarChartStoryDataset>('sign-ups');
   public layout = input<BarChartLayout>('grouped');
   public orientation = input<BarChartOrientation>('vertical');

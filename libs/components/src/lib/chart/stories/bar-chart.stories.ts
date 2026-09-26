@@ -2,21 +2,14 @@ import { provideColorPalette } from '@ethlete/core';
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { BarChartStorybookComponent } from './bar-chart-storybook.component';
 
-const LIGHT_PALETTE = provideColorPalette([
+const PALETTE = provideColorPalette([
   { token: 'chart-blue', label: 'Blue' },
   { token: 'chart-orange', label: 'Orange' },
   { token: 'chart-aqua', label: 'Aqua' },
   { token: 'chart-yellow', label: 'Yellow' },
 ]);
 
-const DARK_PALETTE = provideColorPalette([
-  { token: 'chart-blue-dark', label: 'Blue' },
-  { token: 'chart-orange-dark', label: 'Orange' },
-  { token: 'chart-aqua-dark', label: 'Aqua' },
-  { token: 'chart-yellow-dark', label: 'Yellow' },
-]);
-
-const withPalette = (palette: typeof LIGHT_PALETTE) =>
+const withPalette = (palette: typeof PALETTE) =>
   moduleMetadata({ imports: [BarChartStorybookComponent], providers: [palette] });
 
 export default {
@@ -24,7 +17,6 @@ export default {
   component: BarChartStorybookComponent,
   decorators: [moduleMetadata({ imports: [BarChartStorybookComponent] })],
   args: {
-    surface: 'light',
     dataset: 'sign-ups',
     layout: 'grouped',
     orientation: 'vertical',
@@ -35,7 +27,6 @@ export default {
     lastSeriesColorToken: '',
   },
   argTypes: {
-    surface: { control: 'text' },
     dataset: { control: 'inline-radio', options: ['sign-ups', 'goal-difference', 'goals', 'tickets', 'budget'] },
     layout: { control: 'inline-radio', options: ['grouped', 'stacked'] },
     orientation: { control: 'inline-radio', options: ['vertical', 'horizontal'] },
@@ -50,10 +41,6 @@ export default {
 type Story = StoryObj<BarChartStorybookComponent>;
 
 export const Default: Story = {};
-
-export const Dark: Story = {
-  args: { surface: 'dark' },
-};
 
 export const Negative: Story = {
   args: { dataset: 'goal-difference', colorToken: 'success' },
@@ -70,7 +57,7 @@ export const Negative: Story = {
 
 export const Grouped: Story = {
   args: { dataset: 'tickets' },
-  decorators: [withPalette(LIGHT_PALETTE)],
+  decorators: [withPalette(PALETTE)],
   parameters: {
     docs: {
       description: {
@@ -84,12 +71,12 @@ export const Grouped: Story = {
 
 export const Stacked: Story = {
   args: { dataset: 'tickets', layout: 'stacked' },
-  decorators: [withPalette(LIGHT_PALETTE)],
+  decorators: [withPalette(PALETTE)],
 };
 
 export const StackedNegative: Story = {
   args: { dataset: 'budget', layout: 'stacked' },
-  decorators: [withPalette(LIGHT_PALETTE)],
+  decorators: [withPalette(PALETTE)],
   parameters: {
     docs: {
       description: {
@@ -105,12 +92,12 @@ export const Horizontal: Story = {
 
 export const HorizontalStacked: Story = {
   args: { dataset: 'budget', layout: 'stacked', orientation: 'horizontal' },
-  decorators: [withPalette(LIGHT_PALETTE)],
+  decorators: [withPalette(PALETTE)],
 };
 
 export const SeriesColorToken: Story = {
   args: { dataset: 'tickets', lastSeriesColorToken: 'neutral' },
-  decorators: [withPalette(LIGHT_PALETTE)],
+  decorators: [withPalette(PALETTE)],
   parameters: {
     docs: {
       description: {
@@ -118,21 +105,4 @@ export const SeriesColorToken: Story = {
       },
     },
   },
-};
-
-export const GroupedDark: Story = {
-  args: { dataset: 'tickets', surface: 'dark' },
-  decorators: [withPalette(DARK_PALETTE)],
-  parameters: {
-    docs: {
-      description: {
-        story: 'The dark surface gets its own palette steps, provided as a second `provideColorPalette` palette.',
-      },
-    },
-  },
-};
-
-export const StackedDark: Story = {
-  args: { dataset: 'budget', layout: 'stacked', surface: 'dark' },
-  decorators: [withPalette(DARK_PALETTE)],
 };

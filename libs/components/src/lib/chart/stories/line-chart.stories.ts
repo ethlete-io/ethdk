@@ -2,21 +2,14 @@ import { provideColorPalette } from '@ethlete/core';
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { LineChartStorybookComponent } from './line-chart-storybook.component';
 
-const LIGHT_PALETTE = provideColorPalette([
+const PALETTE = provideColorPalette([
   { token: 'chart-blue', label: 'Blue' },
   { token: 'chart-orange', label: 'Orange' },
   { token: 'chart-aqua', label: 'Aqua' },
   { token: 'chart-yellow', label: 'Yellow' },
 ]);
 
-const DARK_PALETTE = provideColorPalette([
-  { token: 'chart-blue-dark', label: 'Blue' },
-  { token: 'chart-orange-dark', label: 'Orange' },
-  { token: 'chart-aqua-dark', label: 'Aqua' },
-  { token: 'chart-yellow-dark', label: 'Yellow' },
-]);
-
-const withPalette = (palette: typeof LIGHT_PALETTE) =>
+const withPalette = (palette: typeof PALETTE) =>
   moduleMetadata({ imports: [LineChartStorybookComponent], providers: [palette] });
 
 export default {
@@ -24,7 +17,6 @@ export default {
   component: LineChartStorybookComponent,
   decorators: [moduleMetadata({ imports: [LineChartStorybookComponent] })],
   args: {
-    surface: 'light',
     dataset: 'visitors',
     area: false,
     stacked: false,
@@ -34,7 +26,6 @@ export default {
     colorToken: '',
   },
   argTypes: {
-    surface: { control: 'text' },
     dataset: { control: 'inline-radio', options: ['visitors', 'tickets', 'daily', 'gaps', 'channels', 'intraday'] },
     area: { control: 'boolean' },
     stacked: { control: 'boolean' },
@@ -55,7 +46,7 @@ export const Points: Story = {
 
 export const MultiSeries: Story = {
   args: { dataset: 'tickets' },
-  decorators: [withPalette(LIGHT_PALETTE)],
+  decorators: [withPalette(PALETTE)],
   parameters: {
     docs: {
       description: {
@@ -86,7 +77,7 @@ export const Intraday: Story = {
 
 export const Gaps: Story = {
   args: { dataset: 'gaps', points: true },
-  decorators: [withPalette(LIGHT_PALETTE)],
+  decorators: [withPalette(PALETTE)],
   parameters: {
     docs: {
       description: {
@@ -103,22 +94,5 @@ export const Area: Story = {
 
 export const StackedArea: Story = {
   args: { dataset: 'channels', area: true, stacked: true },
-  decorators: [withPalette(LIGHT_PALETTE)],
-};
-
-export const Dark: Story = {
-  args: { dataset: 'tickets', surface: 'dark' },
-  decorators: [withPalette(DARK_PALETTE)],
-  parameters: {
-    docs: {
-      description: {
-        story: 'The dark surface gets its own palette steps, provided as a second `provideColorPalette` palette.',
-      },
-    },
-  },
-};
-
-export const StackedAreaDark: Story = {
-  args: { dataset: 'channels', area: true, stacked: true, surface: 'dark' },
-  decorators: [withPalette(DARK_PALETTE)],
+  decorators: [withPalette(PALETTE)],
 };

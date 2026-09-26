@@ -170,50 +170,6 @@ export const CHART_YELLOW_THEME: ColorTheme = {
   },
 };
 
-export const CHART_BLUE_DARK_THEME: ColorTheme = {
-  name: 'chart-blue-dark',
-  primary: {
-    color: {
-      default: '57 135 229',
-      hover: '57 135 229',
-      focus: '57 135 229',
-      active: '57 135 229',
-      disabled: '57 135 229',
-    },
-    onColor: { default: '255 255 255', disabled: '255 255 255' },
-  },
-};
-
-export const CHART_ORANGE_DARK_THEME: ColorTheme = {
-  name: 'chart-orange-dark',
-  primary: {
-    color: { default: '217 89 38', hover: '217 89 38', focus: '217 89 38', active: '217 89 38', disabled: '217 89 38' },
-    onColor: { default: '255 255 255', disabled: '255 255 255' },
-  },
-};
-
-export const CHART_AQUA_DARK_THEME: ColorTheme = {
-  name: 'chart-aqua-dark',
-  primary: {
-    color: {
-      default: '25 158 112',
-      hover: '25 158 112',
-      focus: '25 158 112',
-      active: '25 158 112',
-      disabled: '25 158 112',
-    },
-    onColor: { default: '255 255 255', disabled: '255 255 255' },
-  },
-};
-
-export const CHART_YELLOW_DARK_THEME: ColorTheme = {
-  name: 'chart-yellow-dark',
-  primary: {
-    color: { default: '201 133 0', hover: '201 133 0', focus: '201 133 0', active: '201 133 0', disabled: '201 133 0' },
-    onColor: { default: '255 255 255', disabled: '255 255 255' },
-  },
-};
-
 export const THEMES = [
   BRAND_THEME,
   DANGER_THEME,
@@ -225,8 +181,4 @@ export const THEMES = [
   CHART_ORANGE_THEME,
   CHART_AQUA_THEME,
   CHART_YELLOW_THEME,
-  CHART_BLUE_DARK_THEME,
-  CHART_ORANGE_DARK_THEME,
-  CHART_AQUA_DARK_THEME,
-  CHART_YELLOW_DARK_THEME,
 ];

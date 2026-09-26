@@ -2,21 +2,14 @@ import { provideColorPalette } from '@ethlete/core';
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { PieChartStorybookComponent } from './pie-chart-storybook.component';
 
-const LIGHT_PALETTE = provideColorPalette([
+const PALETTE = provideColorPalette([
   { token: 'chart-blue', label: 'Blue' },
   { token: 'chart-orange', label: 'Orange' },
   { token: 'chart-aqua', label: 'Aqua' },
   { token: 'chart-yellow', label: 'Yellow' },
 ]);
 
-const DARK_PALETTE = provideColorPalette([
-  { token: 'chart-blue-dark', label: 'Blue' },
-  { token: 'chart-orange-dark', label: 'Orange' },
-  { token: 'chart-aqua-dark', label: 'Aqua' },
-  { token: 'chart-yellow-dark', label: 'Yellow' },
-]);
-
-const withPalette = (palette: typeof LIGHT_PALETTE) =>
+const withPalette = (palette: typeof PALETTE) =>
   moduleMetadata({ imports: [PieChartStorybookComponent], providers: [palette] });
 
 export default {
@@ -24,7 +17,6 @@ export default {
   component: PieChartStorybookComponent,
   decorators: [moduleMetadata({ imports: [PieChartStorybookComponent] })],
   args: {
-    surface: 'light',
     dataset: 'devices',
     width: 520,
     size: 200,
@@ -34,7 +26,6 @@ export default {
     colorToken: '',
   },
   argTypes: {
-    surface: { control: 'text' },
     dataset: { control: 'inline-radio', options: ['devices', 'channels', 'single', 'with-zero'] },
     width: { control: { type: 'range', min: 200, max: 1000, step: 20 } },
     size: { control: { type: 'range', min: 80, max: 400, step: 10 } },
@@ -48,16 +39,16 @@ export default {
 type Story = StoryObj<PieChartStorybookComponent>;
 
 export const Default: Story = {
-  decorators: [withPalette(LIGHT_PALETTE)],
+  decorators: [withPalette(PALETTE)],
 };
 
 export const Donut: Story = {
-  decorators: [withPalette(LIGHT_PALETTE)],
+  decorators: [withPalette(PALETTE)],
   args: { innerRadius: 0.6 },
 };
 
 export const DonutTotal: Story = {
-  decorators: [withPalette(LIGHT_PALETTE)],
+  decorators: [withPalette(PALETTE)],
   args: { innerRadius: 0.6, showTotal: true },
   parameters: {
     docs: {
@@ -69,7 +60,7 @@ export const DonutTotal: Story = {
 };
 
 export const DonutCenterContent: Story = {
-  decorators: [withPalette(LIGHT_PALETTE)],
+  decorators: [withPalette(PALETTE)],
   args: { innerRadius: 0.6, centerText: 'Last 30 days' },
   parameters: {
     docs: {
@@ -81,7 +72,7 @@ export const DonutCenterContent: Story = {
 };
 
 export const ManySlices: Story = {
-  decorators: [withPalette(LIGHT_PALETTE)],
+  decorators: [withPalette(PALETTE)],
   args: { dataset: 'channels', innerRadius: 0.6 },
   parameters: {
     docs: {
@@ -95,12 +86,12 @@ export const ManySlices: Story = {
 };
 
 export const SingleSlice: Story = {
-  decorators: [withPalette(LIGHT_PALETTE)],
+  decorators: [withPalette(PALETTE)],
   args: { dataset: 'single' },
 };
 
 export const WithZero: Story = {
-  decorators: [withPalette(LIGHT_PALETTE)],
+  decorators: [withPalette(PALETTE)],
   args: { dataset: 'with-zero' },
   parameters: {
     docs: {
@@ -117,18 +108,6 @@ export const NoPalette: Story = {
     docs: {
       description: {
         story: 'Without a palette, every slice is drawn in its own step of the accent, from full strength to 40%.',
-      },
-    },
-  },
-};
-
-export const Dark: Story = {
-  args: { surface: 'dark', innerRadius: 0.6, showTotal: true },
-  decorators: [withPalette(DARK_PALETTE)],
-  parameters: {
-    docs: {
-      description: {
-        story: 'The dark surface gets its own palette steps, provided as a second `provideColorPalette` palette.',
       },
     },
   },

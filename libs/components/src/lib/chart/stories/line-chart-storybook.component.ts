@@ -1,5 +1,4 @@
 import { Component, computed, input, ViewEncapsulation } from '@angular/core';
-import { ProvideSurfaceDirective } from '@ethlete/core';
 import { LineChartDatum, LineChartSeries, LineChartSeriesDatum } from '../headless/line-chart.directive';
 import { LineChartComponent } from '../line-chart.component';
 
@@ -97,11 +96,7 @@ const DATASETS: Record<LineChartStoryDataset, StoryDataset> = {
 @Component({
   selector: 'et-sb-line-chart',
   template: `
-    <div
-      [etProvideSurface]="surface()"
-      class="text-medium flex flex-col gap-4 p-8 font-sans"
-      style="background: var(--et-surface-background-solid); color: var(--et-surface-color-solid)"
-    >
+    <div class="text-medium flex flex-col gap-4 p-8 font-sans">
       <p class="text-small m-0 opacity-60">{{ story().label }}</p>
       <div [style.inline-size]="boxWidth()">
         <et-line-chart
@@ -118,10 +113,9 @@ const DATASETS: Record<LineChartStoryDataset, StoryDataset> = {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [LineChartComponent, ProvideSurfaceDirective],
+  imports: [LineChartComponent],
 })
 export class LineChartStorybookComponent {
-  public surface = input('light');
   public dataset = input<LineChartStoryDataset>('visitors');
   public area = input(false);
   public stacked = input(false);

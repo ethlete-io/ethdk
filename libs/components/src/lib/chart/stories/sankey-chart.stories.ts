@@ -2,21 +2,14 @@ import { provideColorPalette } from '@ethlete/core';
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { SankeyChartStorybookComponent } from './sankey-chart-storybook.component';
 
-const LIGHT_PALETTE = provideColorPalette([
+const PALETTE = provideColorPalette([
   { token: 'chart-blue', label: 'Blue' },
   { token: 'chart-orange', label: 'Orange' },
   { token: 'chart-aqua', label: 'Aqua' },
   { token: 'chart-yellow', label: 'Yellow' },
 ]);
 
-const DARK_PALETTE = provideColorPalette([
-  { token: 'chart-blue-dark', label: 'Blue' },
-  { token: 'chart-orange-dark', label: 'Orange' },
-  { token: 'chart-aqua-dark', label: 'Aqua' },
-  { token: 'chart-yellow-dark', label: 'Yellow' },
-]);
-
-const withPalette = (palette: typeof LIGHT_PALETTE) =>
+const withPalette = (palette: typeof PALETTE) =>
   moduleMetadata({ imports: [SankeyChartStorybookComponent], providers: [palette] });
 
 export default {
@@ -24,7 +17,6 @@ export default {
   component: SankeyChartStorybookComponent,
   decorators: [moduleMetadata({ imports: [SankeyChartStorybookComponent] })],
   args: {
-    surface: 'light',
     dataset: 'match-day',
     width: 720,
     height: 320,
@@ -33,7 +25,6 @@ export default {
     colorToken: 'neutral',
   },
   argTypes: {
-    surface: { control: 'text' },
     dataset: { control: 'inline-radio', options: ['match-day', 'budget', 'traffic'] },
     width: { control: { type: 'range', min: 240, max: 1200, step: 20 } },
     height: { control: { type: 'range', min: 160, max: 640, step: 20 } },
@@ -46,12 +37,12 @@ export default {
 type Story = StoryObj<SankeyChartStorybookComponent>;
 
 export const Default: Story = {
-  decorators: [withPalette(LIGHT_PALETTE)],
+  decorators: [withPalette(PALETTE)],
 };
 
 export const MultiLevel: Story = {
   args: { dataset: 'budget', height: 400 },
-  decorators: [withPalette(LIGHT_PALETTE)],
+  decorators: [withPalette(PALETTE)],
   parameters: {
     docs: {
       description: {
@@ -66,17 +57,5 @@ export const MultiLevel: Story = {
 
 export const ManyNodes: Story = {
   args: { dataset: 'traffic', width: 960, height: 480 },
-  decorators: [withPalette(LIGHT_PALETTE)],
-};
-
-export const Dark: Story = {
-  args: { dataset: 'budget', surface: 'dark', height: 400 },
-  decorators: [withPalette(DARK_PALETTE)],
-  parameters: {
-    docs: {
-      description: {
-        story: 'The dark surface gets its own palette steps, provided as a second `provideColorPalette` palette.',
-      },
-    },
-  },
+  decorators: [withPalette(PALETTE)],
 };
