@@ -1,5 +1,5 @@
 import { spawnSync } from 'child_process';
-import { existsSync, mkdtempSync, writeFileSync } from 'fs';
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { homedir, networkInterfaces, tmpdir } from 'os';
 import { join } from 'path';
 
@@ -33,7 +33,13 @@ const PODMAN_REGISTRIES_CONF = `unqualified-search-registries = ["docker.io"]\ns
 let podmanRegistriesConfPath: string | undefined;
 
 const writePodmanRegistriesConf = () => {
-  podmanRegistriesConfPath ??= join(mkdtempSync(join(tmpdir(), 'ethlete-api-')), 'registries.conf');
+  if (podmanRegistriesConfPath === undefined) {
+    const directory = mkdtempSync(join(tmpdir(), 'ethlete-api-'));
+
+    process.once('exit', () => rmSync(directory, { recursive: true, force: true }));
+    podmanRegistriesConfPath = join(directory, 'registries.conf');
+  }
+
   writeFileSync(podmanRegistriesConfPath, PODMAN_REGISTRIES_CONF, 'utf8');
 
   return podmanRegistriesConfPath;
