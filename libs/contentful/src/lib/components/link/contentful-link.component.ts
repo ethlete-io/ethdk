@@ -61,6 +61,7 @@ export class ContentfulLinkComponent {
   href = input.required<string>();
   text = input.required<string>();
   textClass = input('');
+  anchorClass = input('');
 
   protected usesRouterLink = computed(() => {
     const href = this.href();
@@ -90,10 +91,5 @@ export class ContentfulLinkComponent {
 
   protected internalUrlTree = computed(() => this.router.parseUrl(this.internalPath()));
 
-  protected linkClass = computed(() => {
-    const base = 'et-contentful-rich-text-default-element et-contentful-rich-text-default-a';
-    const extra = this.textClass();
-
-    return extra ? `${base} ${extra}` : base;
-  });
+  protected linkClass = computed(() => [this.anchorClass(), this.textClass()].filter(Boolean).join(' ') || null);
 }

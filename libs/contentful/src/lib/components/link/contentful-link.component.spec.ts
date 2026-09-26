@@ -4,7 +4,7 @@ import { provideRouter, RouterLink } from '@angular/router';
 import { provideContentfulConfig } from '../../utils/contentful.util';
 import { ContentfulLinkComponent } from './contentful-link.component';
 
-const setup = (href: string, internalHosts: string[] = []) => {
+const setup = (href: string, internalHosts: string[] = [], inputs: Record<string, string> = {}) => {
   TestBed.configureTestingModule({
     imports: [ContentfulLinkComponent],
     providers: [provideRouter([]), provideContentfulConfig({ internalHosts })],
@@ -13,6 +13,11 @@ const setup = (href: string, internalHosts: string[] = []) => {
   const fixture = TestBed.createComponent(ContentfulLinkComponent);
   fixture.componentRef.setInput('href', href);
   fixture.componentRef.setInput('text', 'Link');
+
+  for (const [name, value] of Object.entries(inputs)) {
+    fixture.componentRef.setInput(name, value);
+  }
+
   fixture.detectChanges();
 
   return fixture;
@@ -51,5 +56,18 @@ describe('ContentfulLinkComponent', () => {
     expect(fixture.debugElement.query(By.directive(RouterLink))).toBeNull();
     expect(anchor.target).toBe('_blank');
     expect(anchor.rel).toBe('noopener noreferrer');
+  });
+
+  it('renders a standalone anchor without the rich-text classes', () => {
+    const anchor = setup('https://example.com').nativeElement.querySelector('a') as HTMLAnchorElement;
+
+    expect(anchor.getAttribute('class')).toBeNull();
+  });
+
+  it('puts anchorClass and textClass on the anchor', () => {
+    const fixture = setup('https://example.com', [], { anchorClass: 'rich', textClass: 'mark' });
+    const anchor = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
+
+    expect([...anchor.classList].sort()).toEqual(['mark', 'rich']);
   });
 });

@@ -151,7 +151,7 @@ The source-generation helpers (`generateContentfulImageSources`, `generateDefaul
 
 ### Links
 
-`<et-contentful-link>` (inputs: `href`, `text` required; `textClass` default `''`) renders hyperlink nodes and decides between router navigation and a plain anchor:
+`<et-contentful-link>` (inputs: `href`, `text` required; `textClass` and `anchorClass` default `''`, both placed on the anchor) renders hyperlink nodes and decides between router navigation and a plain anchor. The renderer passes the rich-text classes (`et-contentful-rich-text-default-element et-contentful-rich-text-default-a`) through `anchorClass`, so a standalone link carries none of them; a custom `components.link` receives them too if it declares an `anchorClass` input:
 
 - Relative application paths and absolute HTTP(S) URLs whose hostname matches the current page or a configured `internalHosts` entry use `[routerLink]`. A configured hostname covers its subdomains, but never unrelated hosts that merely share a public suffix.
 - Native destinations such as `mailto:`, `tel:`, `ftp:` and fragment-only links use a plain `<a href>`. External HTTP(S) links open in a new tab with `rel="noopener noreferrer"`.

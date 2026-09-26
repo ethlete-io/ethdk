@@ -588,6 +588,10 @@ describe('ContentfulRichTextRendererComponent', () => {
 
       expect(anchor?.getAttribute('href')).toBe('https://example.com');
       expect(anchor?.textContent).toBe('Example');
+      expect([...(anchor?.classList ?? [])].sort()).toEqual([
+        'et-contentful-rich-text-default-a',
+        'et-contentful-rich-text-default-element',
+      ]);
     });
 
     it('passes the collected marks as the textClass', () => {

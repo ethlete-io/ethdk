@@ -80,6 +80,8 @@ type RenderInstruction = {
 
 type MarkTagName = 'strong' | 'em' | 'u' | 'code' | 's' | 'sub' | 'sup';
 
+const DEFAULT_ANCHOR_CLASS = 'et-contentful-rich-text-default-element et-contentful-rich-text-default-a';
+
 const MARK_TAG_MAP: Record<string, MarkTagName> = {
   bold: 'strong',
   italic: 'em',
@@ -612,7 +614,7 @@ export class ContentfulRichTextRendererComponent {
               domPosition,
               index: commandIndex++,
               attributes: {
-                class: 'et-contentful-rich-text-default-element et-contentful-rich-text-default-a',
+                class: DEFAULT_ANCHOR_CLASS,
                 href,
               },
               tagName: 'a',
@@ -688,7 +690,7 @@ export class ContentfulRichTextRendererComponent {
             domPosition,
             index: commandIndex++,
             component: linkComponent,
-            inputs: { href, text: linkText, textClass },
+            inputs: { href, text: linkText, textClass, anchorClass: DEFAULT_ANCHOR_CLASS },
             id: linkId,
           });
 
