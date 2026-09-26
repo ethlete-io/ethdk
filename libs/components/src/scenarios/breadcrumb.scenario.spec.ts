@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, inject, signal, ViewEncapsulation } from '@angular/core';
+import { Component, getDebugNode, inject, signal, ViewEncapsulation } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ColorTheme, provideColorThemesWithTailwind4, ThemeSwatch } from '@ethlete/core';
 import {
@@ -175,7 +175,7 @@ class TeamDetailViewComponent {
 
 @Component({
   selector: 'et-scenario-pinned-view',
-  imports: [BREADCRUMB_IMPORTS],
+  imports: [BreadcrumbSegmentDirective, BreadcrumbItemTemplateDirective, BreadcrumbItemDirective],
   template: `
     <ng-template [order]="-1" etBreadcrumbSegment>
       <ng-template etBreadcrumbItemTemplate name="Home" url="https://example.com/">
@@ -201,6 +201,7 @@ class TrailReaderComponent {
   imports: [
     BreadcrumbOutletComponent,
     BreadcrumbSeparatorDirective,
+    BreadcrumbCollapseDirective,
     BREADCRUMB_SEO_IMPORTS,
     TeamsViewComponent,
     TeamDetailViewComponent,
@@ -209,7 +210,7 @@ class TrailReaderComponent {
   ],
   providers: [provideBreadcrumbManager()],
   template: `
-    <et-breadcrumb-outlet [labels]="{ navigation: 'Where you are' }" [etBreadcrumbSeo]="seo()">
+    <et-breadcrumb-outlet [labels]="{ navigation: 'Where you are' }" [etBreadcrumbSeo]="seo()" etBreadcrumbCollapse>
       <ng-template etBreadcrumbSeparator>›</ng-template>
     </et-breadcrumb-outlet>
     <et-scenario-trail-reader />
@@ -464,6 +465,8 @@ describe('breadcrumb scenarios', () => {
     expect(trail()).toEqual(['Home', '…', 'team-a']);
 
     const overflow = query('et-breadcrumb-overflow');
+
+    expect(getDebugNode(overflow)?.componentInstance).toBeInstanceOf(BreadcrumbOverflowComponent);
     const toggle = query<HTMLButtonElement>('.et-breadcrumb-overflow-trigger', overflow);
 
     expect(overflow.classList).toContain('et-breadcrumb-overflow');
@@ -519,13 +522,6 @@ describe('breadcrumb scenarios', () => {
       String(BREADCRUMB_ERROR_CODES.SEO_OUTSIDE_BREADCRUMB),
     );
     s.errors.length = 0;
-  });
-
-  it('keeps the collapse, segment and seo directives importable one by one', () => {
-    expect([BreadcrumbCollapseDirective]).toEqual([...BREADCRUMB_COLLAPSE_IMPORTS]);
-    expect([BreadcrumbSeoDirective]).toEqual([...BREADCRUMB_SEO_IMPORTS]);
-    expect(BREADCRUMB_IMPORTS).toContain(BreadcrumbSegmentDirective);
-    expect(BreadcrumbOverflowComponent).toBeDefined();
   });
 });
 
