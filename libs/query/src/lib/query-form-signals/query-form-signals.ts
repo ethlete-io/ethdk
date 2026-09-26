@@ -52,6 +52,10 @@ export const IGNORED_FILTER_COUNT_FIELDS: readonly string[] = [
 
 type Dict = Record<string, unknown>;
 
+type QueryFormNavigationInfo = { queryFormWrites?: ReadonlyMap<object, number> };
+
+const queryFormWritesOf = (info: unknown) => (info as QueryFormNavigationInfo | undefined)?.queryFormWrites;
+
 const resolveDefault = (def: QueryFieldDef<unknown>): unknown => {
   const { defaultValue } = def;
 
@@ -609,9 +613,9 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
   /**
    * Merged onto the navigation still in flight, not onto the committed URL: the router supersedes an unfinished
    * navigation with the next one, so a second form (or a second commit) writing in the same tick would otherwise
-   * drop the first one's params.
+   * drop the first one's params and its write marker.
    */
-  const navigateWithParams = (params: Dict, extras: Pick<NavigationExtras, 'replaceUrl' | 'info'>) => {
+  const navigateWithParams = (params: Dict, extras: Pick<NavigationExtras, 'replaceUrl'> & { version?: number }) => {
     queueMicrotask(() => {
       const pending = router.getCurrentNavigation();
       const base = pending?.finalUrl ?? pending?.extractedUrl ?? router.parseUrl(router.url);
@@ -626,11 +630,18 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
         if (queryParams[key] === undefined) delete queryParams[key];
       }
 
+      const writes = new Map(queryFormWritesOf(pending?.extras.info));
+
+      if (extras.version !== undefined) writes.set(urlNavigationMarker, extras.version);
+
+      const info: QueryFormNavigationInfo | undefined = writes.size ? { queryFormWrites: writes } : undefined;
+
       router.navigate([], {
         queryParams,
         queryParamsHandling: 'replace',
         fragment: base.fragment ?? undefined,
-        ...extras,
+        replaceUrl: extras.replaceUrl,
+        info,
       });
     });
   };
@@ -649,7 +660,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
 
     navigateWithParams(queryParams, {
       replaceUrl: observeOptions?.replaceUrl,
-      info: { queryForm: urlNavigationMarker, version },
+      version,
     });
   };
 
@@ -908,11 +919,12 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
       // form never saw - applying its removals would wipe a restored or seeded value.
       if (changes === changesSeenAtObserve) return;
 
-      const info = router.lastSuccessfulNavigation()?.extras.info as
-        { queryForm?: object; version?: number } | undefined;
+      const writtenVersion = queryFormWritesOf(router.lastSuccessfulNavigation()?.extras.info)?.get(
+        urlNavigationMarker,
+      );
       // Including the newest write: re-parsing the form's own output would coerce a committed
       // string back to a number and drop the milliseconds of a committed Date.
-      if (info?.queryForm === urlNavigationMarker && (info.version ?? 0) <= urlWriteVersion) {
+      if (writtenVersion !== undefined && writtenVersion <= urlWriteVersion) {
         // A field with `appendToUrl: false` mirrors a param another owner writes, and the commit
         // merges onto the navigation in flight - so this is the only place a foreign write to that
         // param can still reach the form.

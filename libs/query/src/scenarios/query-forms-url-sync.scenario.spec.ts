@@ -76,6 +76,34 @@ describe('query forms URL sync scenario', () => {
     expect(router.parseUrl(router.url).queryParams).toEqual({ 'users-page': '2', 'teams-page': '3' });
   });
 
+  it('two forms committing in the same tick do not re-parse their own writes', async () => {
+    const s = scenario();
+    const from = new Date(2026, 0, 15, 10, 30, 0, 123);
+    const commits: unknown[] = [];
+
+    const users = s.run(() =>
+      defineQueryForm({ fields: { from: dateQueryField() }, queryParamPrefix: 'users' }).observe(),
+    );
+    const teams = s.run(() =>
+      defineQueryForm({
+        fields: { page: queryField<number>({ defaultValue: 1 }) },
+        queryParamPrefix: 'teams',
+      }).observe(),
+    );
+
+    s.run(() => effect(() => commits.push(users.value().from)));
+    s.tick();
+
+    users.setValue({ from });
+    teams.setValue({ page: 3 });
+    await s.settle();
+    await s.settle();
+
+    expect(users.value().from?.getTime()).toBe(from.getTime());
+    expect(teams.value().page).toBe(3);
+    expect(commits).toHaveLength(2);
+  });
+
   it('a Date survives the URL round trip', async () => {
     const s = scenario();
     const router = TestBed.inject(Router);
