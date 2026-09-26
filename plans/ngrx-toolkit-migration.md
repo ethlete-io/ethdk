@@ -144,8 +144,19 @@ Manual (report tasks): vbl `layout` and `tournament` facades (toolkit-shaped, no
   - After run 2: the cdk `ProvideColorDirective` defect is fixed (ce22c68d4), and core `migrate-to-v5` reports
     `Memo` and `StringTemplate` (887fbf5b1). vbl stays blocked on cause B: `@ethlete-producer/admin`, `queries`,
     `score` and `uikit` need a rebuild with prep applied, in their own repository. fifagg has no such package.
-  - fifagg run, in progress 2026-09-26: scratch copy `/tmp/s4-fifagg` (from `2c211769d0`), logs
-    `/tmp/s4-fifagg-logs`. Step 1: Angular 19 → 22 with `nx migrate`. Step 2: the SDK generators, as in vbl run 2.
+  - fifagg run 2026-09-26, generators + `tsc` only (user decision: no Angular upgrade, no build). Scratch copy
+    `/tmp/s4-fifagg` (Angular 19), SDK dist `ad37c388a`, logs `/tmp/s4-fifagg-logs/ntk-*`.
+    - Toolkit generator: 44/49 features, 153 creators written, 65 reused, 127 consumer files, 225 files deleted,
+      87 tasks. `--serviceApiBase` is needed: the services use 2 API bases.
+    - `tsc`: 212 new errors. 108 come before the toolkit step (38 theming, 36 v2 → v3 query, 33 core/cdk v5
+      removals, 1 types). 104 come from the toolkit step.
+    - Toolkit errors: 16 are a defect. Consumers call `facade.on([group.success])` on a migrated facade, and no
+      task reports it (`consumers.ts` detects only `select`). 4 are the listed action-id tasks. 84 are in 14 files
+      that stay on the toolkit (`NTK-UNCONVERTED-ACTION-GROUP`), but now get interop handles from migrated
+      facades. The task text must say that the file does not typecheck until it is converted.
+    - Core v5 defects: f764e7037 imports `./apply-replacements` without `.js`, so the generator fails to load.
+      `color-naming.ts:124` skips files that import only from `@ethlete/theming`, so `ProvideThemeDirective`
+      stays, and cdk v5 moves the old name to `@ethlete/core`. Both fixed in fa443b717.
 - [x] S5 Guide `apps/docs/query/migrating-from-ngrx-toolkit.md` + sidebar link (6a05d2d23).
 
 ## Continue on 2026-09-26
