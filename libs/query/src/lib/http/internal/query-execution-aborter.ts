@@ -23,6 +23,7 @@ export const createQueryExecutionAborter = <TArgs extends QueryArgs>(
 ): QueryExecutionAborter => {
   const read = () => ({
     rawResponse: state.rawResponse(),
+    response: state.response(),
     error: state.error(),
     latestHttpEvent: state.latestHttpEvent(),
   });
@@ -56,6 +57,7 @@ export const createQueryExecutionAborter = <TArgs extends QueryArgs>(
       // `state.error` is derived from `state.rawResponse`, so a write to the response resets an
       // error set before it. Restore the response first.
       state.rawResponse.set(settled.rawResponse);
+      state.response.set(settled.response);
       state.error.set(settled.error);
       state.latestHttpEvent.set(settled.latestHttpEvent);
       state.loading.set(null);

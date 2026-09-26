@@ -9,7 +9,12 @@ import { QueryDependencies } from './query-dependencies';
 import { invalidStateInsideSecureExecuteFactory, tokensNotAvailableInsideAuthAndExec } from './query-errors';
 import { InternalQueryExecute, QueryExecuteArgs } from './query-execute';
 import { resolveQueryHeaders } from './query-headers';
-import { circularQueryDependencyChecker, resetExecuteState, setupQueryExecuteState } from './query-execute-utils';
+import {
+  circularQueryDependencyChecker,
+  recordExecutionArgs,
+  resetExecuteState,
+  setupQueryExecuteState,
+} from './query-execute-utils';
 import { QueryState } from './query-state';
 
 const AUTH_HEADER = 'Authorization';
@@ -216,6 +221,7 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
 
     cancelPending();
     aborter.capture();
+    recordExecutionArgs(options.state, execArgsWithDefaults.args ?? null, execArgsWithDefaults.options);
 
     // Retrying with the token that just produced the 401 would 401 again, and that 401 asks for
     // another refresh - an endless refresh/retry loop for as long as the server keeps handing out

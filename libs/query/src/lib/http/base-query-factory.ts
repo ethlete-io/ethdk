@@ -11,9 +11,9 @@ import {
 import { CreateGqlQueryOptions } from '../gql/gql-query';
 import { isCreateGqlQueryOptions } from './internal/gql-options-guard';
 import { AnyCreateGqlQueryCreatorOptions, GqlQueryMethod } from '../gql/gql-query-creator';
-import { HttpRequestLoadingState } from './http-request';
+import { HttpRequest, HttpRequestLoadingState } from './http-request';
 import { wrapAsObservableSignal } from './observable-signal';
-import { CreateQueryOptions, Query, QueryArgs, RawResponseType, ReadonlyQuery, ResponseType } from './query';
+import { CreateQueryOptions, Query, QueryArgs, ReadonlyQuery, ResponseType } from './query';
 import { QueryErrorResponse } from './query-error-response';
 import { AnyCreateQueryClientResult } from './query-client';
 import {
@@ -114,6 +114,26 @@ export const maybeExecute = <TArgs extends QueryArgs>(options: {
   }
 };
 
+const trackRefreshedExecutions = <TArgs extends QueryArgs>(options: {
+  state: QueryState<TArgs>;
+  deps: QueryDependencies;
+}) => {
+  const { state, deps } = options;
+
+  const subscription = deps.client.repository.events$.subscribe((event) => {
+    if (event.type !== 'queries-refreshed') return;
+
+    const request = state.subtle.request();
+
+    if (!request || !event.requests.includes(request as HttpRequest<QueryArgs>)) return;
+
+    state.lastTimeExecutedAt.set(Date.now());
+    state.lastTriggeredBy.set(null);
+  });
+
+  deps.destroyRef.onDestroy(() => subscription.unsubscribe());
+};
+
 export type CreateQueryObjectOptions<TArgs extends QueryArgs> = {
   state: QueryState<TArgs>;
   deps: QueryDependencies;
@@ -124,7 +144,7 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
   const { state, execute, deps } = options;
 
   const destroy = () => deps.injector.destroy();
-  const setResponse = (response: ResponseType<TArgs>) => state.rawResponse.set(response as RawResponseType<TArgs>);
+  const setResponse = (response: ResponseType<TArgs>) => state.response.set(response);
   const setLoading = (loading: HttpRequestLoadingState | null) => state.loading.set(loading);
   const setError = (error: QueryErrorResponse | null) => state.error.set(error);
   const createSnapshot = createQuerySnapshotFn({ state, execute, deps });
@@ -247,6 +267,8 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
     applyQueryFeatures(options.features, featureFnContext);
 
     maybeExecute({ execute, flags, state });
+
+    trackRefreshedExecutions({ state, deps });
 
     const query = createQueryObject({ state, execute, deps });
 

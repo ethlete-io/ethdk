@@ -70,6 +70,9 @@ export type QueryStateSubtle<TArgs extends QueryArgs> = {
    */
   setArgsSource: (source: () => RequestArgs<TArgs> | null) => void;
 
+  /** Whether {@link setArgsSource} installed a source. Without one, an execution's args are written to `state.args`. */
+  hasArgsSource: Signal<boolean>;
+
   /** @see SetupQueryStateOptions.devtoolsStats */
   devtoolsStats: QueryDevtoolsStatsRecorder | null;
 
@@ -79,7 +82,7 @@ export type QueryStateSubtle<TArgs extends QueryArgs> = {
 
 export type QueryState<TArgs extends QueryArgs> = {
   rawResponse: WritableSignal<RawResponseType<TArgs> | null>;
-  response: Signal<ResponseType<TArgs> | null>;
+  response: WritableSignal<ResponseType<TArgs> | null>;
   args: WritableSignal<RequestArgs<TArgs> | null>;
   latestHttpEvent: WritableSignal<RequestHttpEvent<TArgs> | null>;
   loading: WritableSignal<HttpRequestLoadingState | null>;
@@ -197,7 +200,11 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
   // set is overridden again the next time the source's dependencies change.
   const argsSource = signal<() => RequestArgs<TArgs> | null>(() => null);
   const args = linkedSignal(() => argsSource()());
-  const setArgsSource = (source: () => RequestArgs<TArgs> | null) => argsSource.set(source);
+  const hasArgsSource = signal(false);
+  const setArgsSource = (source: () => RequestArgs<TArgs> | null) => {
+    argsSource.set(source);
+    hasArgsSource.set(true);
+  };
 
   const lastTimeExecutedAt = signal<number | null>(null);
   const lastTriggeredBy = signal<string | null>(null);
@@ -286,6 +293,7 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
       defaultRunOptions,
       autoExecuteGuard,
       setArgsSource,
+      hasArgsSource: hasArgsSource.asReadonly(),
       devtoolsStats: options.devtoolsStats ?? null,
       devtoolsFormLinks: options.devtoolsFormLinks ?? null,
     },

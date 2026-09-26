@@ -3,6 +3,7 @@ import { QueryArgs, RequestArgs } from './query';
 import { buildQueryCacheKey } from './query-cache-utils';
 import { circularQueryDependency, queryExecutedAfterDestroyMessage } from './query-errors';
 import { CreateQueryExecuteOptions } from './query-execute';
+import { QueryState } from './query-state';
 
 export type ResetExecuteStateOptions<TArgs extends QueryArgs> = {
   executeOptions: Pick<CreateQueryExecuteOptions<TArgs>, 'state' | 'deps'>;
@@ -98,6 +99,23 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
   state.subtle.bindRequestEvents(request);
   state.subtle.devtoolsStats?.recordExecution({ didRequest: executed, body: args?.body, url: request.url });
 };
+
+/**
+ * Writes the args an execution runs with to `state.args`, so a later bare `execute()` re-sends them.
+ * A `withArgs` source owns `state.args`, and a `withLongPolling` round must not look like a new
+ * args value, so neither is written.
+ */
+export const recordExecutionArgs = <TArgs extends QueryArgs>(
+  state: QueryState<TArgs>,
+  args: RequestArgs<TArgs> | null,
+  options?: RunQueryExecuteOptions,
+) => {
+  if (state.subtle.hasArgsSource() || options?.triggeredBy === LONG_POLLING_TRIGGER) return;
+
+  state.args.set(args);
+};
+
+const LONG_POLLING_TRIGGER = 'long-polling';
 
 const CIRCULAR_DEPENDENCY_WINDOW_MS = 100;
 const CIRCULAR_DEPENDENCY_MAX_REPEATS = 5;

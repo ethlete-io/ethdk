@@ -7,6 +7,7 @@ import { QueryDependencies } from './query-dependencies';
 import {
   circularQueryDependencyChecker,
   queryExecute,
+  recordExecutionArgs,
   resetExecuteState,
   RunQueryExecuteOptions,
   setupQueryExecuteState,
@@ -53,6 +54,7 @@ export const createExecuteFn = <TArgs extends QueryArgs>(
       circularChecker.check(args);
 
       aborter.capture();
+      recordExecutionArgs(executeOptions.state, args, options);
       queryExecute({ executeOptions, executeState, args, options });
     });
 

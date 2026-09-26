@@ -98,7 +98,7 @@ export type QuerySubtle<TArgs extends QueryArgs> = {
   /** Destroys the query and cleans up all resources. The query should not be used after this method is called. */
   destroy: () => void;
 
-  /** Manually sets the response of the query. This will not trigger a new execution of the query. */
+  /** Sets the response the query shows, as the consumer reads it: `transformResponse` does not run on it. Does not execute the query. */
   setResponse: (response: ResponseType<TArgs>) => void;
 
   /**
