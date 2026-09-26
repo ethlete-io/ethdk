@@ -498,7 +498,7 @@ test.describe('scheduler / edit surface placement', () => {
 
     await expect(pane).toHaveAttribute('data-overlay-placement', 'bottom');
 
-    await style.evaluate((el) => el.remove());
+    await style.evaluate((el) => el.parentNode?.removeChild(el));
 
     await expect(pane).toHaveAttribute('data-overlay-placement', 'top');
     expect((await boxOf(pane)).height).toBeGreaterThan(400);
