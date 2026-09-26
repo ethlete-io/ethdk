@@ -43,6 +43,10 @@ describe('marksToTags', () => {
     ]);
   });
 
+  it('maps strikethrough, subscript and superscript to their semantic elements', () => {
+    expect(marksToTags([mark('strikethrough'), mark('subscript'), mark('superscript')])).toEqual(['s', 'sub', 'sup']);
+  });
+
   it('returns an empty array for no marks', () => {
     expect(marksToTags([])).toEqual([]);
   });

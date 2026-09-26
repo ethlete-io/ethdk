@@ -309,6 +309,18 @@ describe('ContentfulRichTextRendererComponent', () => {
       expect(spans[1]?.textContent).toBe('strong');
     });
 
+    it('renders strikethrough, subscript and superscript marks', () => {
+      const { fixture } = setup({
+        richText: doc(
+          block('paragraph', [text('gone', ['strikethrough']), text('2', ['subscript']), text('n', ['superscript'])]),
+        ),
+      });
+
+      const spans = renderRoot(fixture).querySelectorAll('p > span');
+
+      expect(Array.from(spans).map((span) => span.innerHTML)).toEqual(['<s>gone</s>', '<sub>2</sub>', '<sup>n</sup>']);
+    });
+
     it('renders nested lists', () => {
       const { fixture } = setup({
         richText: doc(
