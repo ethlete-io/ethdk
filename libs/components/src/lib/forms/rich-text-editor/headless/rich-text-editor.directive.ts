@@ -6,6 +6,7 @@ import {
   injectRenderer,
   injectStyleManager,
   isSafeLinkUrl,
+  MARKDOWN_VERBATIM_ATTR,
   markdownToHtml,
   mountEasingTokens,
   RuntimeError,
@@ -60,6 +61,15 @@ const renameStyleAttributes = (html: string) =>
   html.replace(HTML_START_TAG, (tag) => tag.replace(HTML_ATTRIBUTE, renameStyleAttribute));
 
 const restoreStyleAttributes = (html: string) => html.replaceAll(` ${INERT_STYLE_ATTRIBUTE}="`, ' style="');
+
+const collectTextNodes = (root: HTMLElement) => {
+  const walker = root.ownerDocument.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes: Text[] = [];
+
+  while (walker.nextNode()) nodes.push(walker.currentNode as Text);
+
+  return nodes;
+};
 
 /** Every call must sit inside an `ngDevMode` branch - that is what keeps these strings out of a production bundle. */
 const missingDomFeature = (method: string, provider: string) =>
@@ -571,7 +581,7 @@ export class RichTextEditorDirective
 
     const codec = this.tokenCodec();
 
-    codec?.serialize(body);
+    this.serializeTokens(body);
 
     const markdown = this.parseTokenText(htmlToMarkdown(restoreStyleAttributes(body.innerHTML)));
 
@@ -706,11 +716,31 @@ export class RichTextEditorDirective
     for (const tool of this.registeredTools ?? []) tool.normalize?.(root);
   }
 
+  private serializeTokens(root: HTMLElement) {
+    const codec = this.tokenCodec();
+
+    if (!codec) return;
+
+    const existing = new Set(collectTextNodes(root));
+
+    codec.serialize(root);
+
+    for (const node of collectTextNodes(root)) {
+      if (existing.has(node) || !node.data) continue;
+
+      const verbatim = this.renderer.createElement('span') as HTMLElement;
+
+      this.renderer.setAttribute(verbatim, MARKDOWN_VERBATIM_ATTR, '');
+      node.replaceWith(verbatim);
+      this.renderer.appendChild(verbatim, node);
+    }
+  }
+
   private serializeCleanHtml(root: HTMLElement) {
     const clone = root.cloneNode(true) as HTMLElement;
 
     // Must run before the HTML→markdown pass strips unknown tags, which would flatten a chip to its label.
-    this.tokenCodec()?.serialize(clone);
+    this.serializeTokens(clone);
 
     let removed = true;
 

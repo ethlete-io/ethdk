@@ -1,4 +1,4 @@
-import { htmlToMarkdown, isSafeLinkUrl, markdownToHtml } from '../index';
+import { htmlToMarkdown, isSafeLinkUrl, MARKDOWN_VERBATIM_ATTR, markdownToHtml } from '../index';
 import { useScenario } from './harness';
 
 const roundTrip = (html: string) => markdownToHtml(htmlToMarkdown(html));
@@ -66,6 +66,17 @@ describe('markdown scenarios', () => {
 
     expect(htmlToMarkdown(block)).toBe('```md\n- a\n# b\n**c** \\d\n```');
     expect(roundTrip(block)).toBe(block);
+  });
+
+  it('writes text marked verbatim without escaping it', () => {
+    scenario();
+
+    const html = `<p>a_ <span ${MARKDOWN_VERBATIM_ATTR}="">{{user:_x*y}}</span> *b <span ${MARKDOWN_VERBATIM_ATTR}>&lt;[c]&gt;</span></p>`;
+
+    expect(htmlToMarkdown(html)).toBe('a\\_ {{user:_x*y}} \\*b <[c]>');
+    expect(
+      markdownToHtml(htmlToMarkdown(`<p><span ${MARKDOWN_VERBATIM_ATTR}="">{{user:_first_name}}</span></p>`)),
+    ).toBe('<p>{{user:_first_name}}</p>');
   });
 
   it('escapes link labels but not link targets', () => {

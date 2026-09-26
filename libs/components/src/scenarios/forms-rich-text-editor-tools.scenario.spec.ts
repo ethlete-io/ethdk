@@ -845,6 +845,36 @@ describe('forms rich-text-editor tool scenarios', () => {
     s.flush();
   });
 
+  it('stores a token whose id holds Markdown characters verbatim and renders it as a chip again', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(TemplatePageComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const text = fixture.componentInstance.text;
+    const token = '{{field:_first_name}}';
+
+    text.set(token);
+    s.tick();
+
+    const editable = textbox(host);
+    const palette = query('et-rte-token-palette, et-rich-text-editor-token-palette', host);
+
+    palette.querySelector('button')!.click();
+    s.tick();
+
+    const stored = text();
+
+    expect(stored).toBe(`${token}\n{{field:first-name}}`);
+
+    text.set('');
+    s.tick();
+    text.set(stored);
+    s.tick();
+    expect(
+      Array.from(editable.querySelectorAll('[data-et-token]')).map((chip) => chip.getAttribute('data-token-id')),
+    ).toEqual(['_first_name', 'first-name']);
+    s.flush();
+  });
+
   it('searches people through a query-backed trigger', () => {
     const s = scenario();
     const http = TestBed.inject(HttpTestingController);

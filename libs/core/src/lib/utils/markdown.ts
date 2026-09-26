@@ -11,6 +11,16 @@ const escapeHtmlPreservingEntities = (str: string) =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
+/** Attribute that makes `htmlToMarkdown` write an element's text verbatim, without Markdown escaping:
+ *  `<span data-markdown-verbatim>{{user:_x}}</span>` becomes `{{user:_x}}`. The element must hold
+ *  text only. */
+export const MARKDOWN_VERBATIM_ATTR = 'data-markdown-verbatim';
+
+const VERBATIM_RE = /* @__PURE__ */ new RegExp(
+  `<span\\b[^>]*\\b${MARKDOWN_VERBATIM_ATTR}\\b[^>]*>([^<]*)<\\/span>`,
+  'gi',
+);
+
 const decodeUrlCharacterReferences = (url: string) =>
   url
     .replace(/&#(\d+);?/g, (_, value: string) => String.fromCodePoint(Number(value)))
@@ -535,13 +545,17 @@ export const markdownToHtml = (markdown: string) => {
  * Converts an HTML string to markdown.
  * Covers headings, bold, italic, strikethrough, inline code, fenced code blocks,
  * links, images, block quotes, unordered/ordered lists, tables, horizontal rules, and paragraphs.
- * Text that would read as Markdown is backslash-escaped (code is left as is), and a link whose URL
+ * Text that would read as Markdown is backslash-escaped (code and {@link MARKDOWN_VERBATIM_ATTR}
+ * elements are left as is), and a link whose URL
  * fails {@link isSafeLinkUrl} keeps only its text.
  */
 export const htmlToMarkdown = (html: string) => {
   if (!html) return '';
 
-  let md = html;
+  const verbatims: string[] = [];
+  let md = html.replace(VERBATIM_RE, (_, text: string) =>
+    makePlaceholder('VERB', verbatims.push(unescapeHtml(text)) - 1),
+  );
 
   // Aligned blocks: text-align has no Markdown form, so preserve them as HTML (their inner markup
   // stays HTML) and round-trip via a placeholder - extracted before the block passes below rewrite
@@ -689,5 +703,8 @@ export const htmlToMarkdown = (html: string) => {
   // their own Markdown block
   md = md.replace(placeholderRe('ALIGN'), (_, i) => `\n\n${alignedBlocks[+i] ?? ''}\n\n`);
 
-  return escapeLineStarts(md.replace(/\n{3,}/g, '\n\n').trim());
+  return escapeLineStarts(md.replace(/\n{3,}/g, '\n\n').trim()).replace(
+    placeholderRe('VERB'),
+    (_, i) => verbatims[+i] ?? '',
+  );
 };
