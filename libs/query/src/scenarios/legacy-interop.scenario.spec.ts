@@ -385,6 +385,45 @@ describe('legacy interop scenario', () => {
       recorded.stop();
       c.destroy();
     });
+    it('reports a refresh after an empty secure load as auto', async () => {
+      const s = scenario();
+      const auth = s.auth();
+      s.api.protect('/users/**');
+      s.api.on('GET', '/users/empty', () => ({ status: 204, delay: 20 }));
+
+      const getEmpty = createSecureGetQuery(s.clientRef, auth.ref)<{ response: null }>('/users/empty');
+      const legacyGetEmpty = createLegacyQueryCreator({ creator: getEmpty, name: 'legacyGetEmpty' });
+
+      const c = s.consumer();
+      c.run(() => auth.queries.login.execute({ body: {} }));
+      await s.settle();
+      s.flush();
+
+      const query = c.run(() => legacyGetEmpty.prepare({}));
+      const recorded = recordStates(query);
+
+      query.execute({ _triggeredVia: 'program' });
+      await s.settle();
+      s.flush();
+
+      expect(query.rawState.type).toBe(QueryStateType.Success);
+
+      s.tick(5);
+      recorded.states.length = 0;
+      s.client.refreshQueriesInUse();
+      s.flush();
+
+      const loadingTriggers = recorded.states
+        .filter((state) => state.type === QueryStateType.Loading)
+        .map((state) => state.meta.triggeredVia);
+
+      expect(loadingTriggers).not.toHaveLength(0);
+      expect(new Set(loadingTriggers)).toEqual(new Set(['auto']));
+
+      await s.settle();
+      recorded.stop();
+      c.destroy();
+    });
   });
 
   describe('infinity query', () => {

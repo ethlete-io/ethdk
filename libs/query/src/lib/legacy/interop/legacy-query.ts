@@ -190,6 +190,8 @@ export class LegacyQuery<
 
   private _errorAtExecute: unknown = null;
 
+  private _ownLoadSettled = false;
+
   private _wasAborted = false;
 
   state$: Observable<V2QueryState<Data>>;
@@ -287,7 +289,11 @@ export class LegacyQuery<
    * state first and the request's own later, so a new load that starts before this one settled is still its own.
    */
   private triggerOf(execState: QueryExecutionState<QueryArgsOf<TNewQuery>> | null): QueryTrigger {
-    if (execState?.type !== 'loading') return this._triggeredVia;
+    if (execState?.type !== 'loading') {
+      if (this._ownLoadExecuteTime !== null) this._ownLoadSettled = true;
+
+      return this._triggeredVia;
+    }
 
     const { executeTime } = execState.loading;
 
@@ -308,6 +314,7 @@ export class LegacyQuery<
 
   private hasOwnLoadSettled() {
     return (
+      this._ownLoadSettled ||
       untracked(this.newQuery.response) !== this._responseAtExecute ||
       untracked(this.newQuery.error) !== this._errorAtExecute
     );
@@ -386,6 +393,7 @@ export class LegacyQuery<
     this._wasAborted = false;
     this._lastExecuteCalledAt = Date.now();
     this._ownLoadExecuteTime = null;
+    this._ownLoadSettled = false;
     this._responseAtExecute = untracked(this.newQuery.response);
     this._errorAtExecute = untracked(this.newQuery.error);
 
