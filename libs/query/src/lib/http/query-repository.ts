@@ -276,13 +276,16 @@ export type ApplyPersistedResponseOptions = {
 /**
  * The query repository is responsible for managing all requests and their consumers.
  * It will cache requests if they can be cached and reuse them if they are already cached.
- * It will also destroy requests if there are no more consumers left.
+ * It will also destroy requests once no consumers are left, unless `keepUnusedFor` retains their response.
  */
 export type QueryRepository = {
   /** Creates a new request. If the request is already cached, it will be reused. */
   request: <TArgs extends QueryArgs>(options: QueryRepositoryRequestOptions<TArgs>) => QueryRepositoryItem<TArgs>;
 
-  /** Removes a consumer from a request by its key. Destroys the request if there are no more consumers left. */
+  /**
+   * Removes a consumer from a request by its key. With no consumers left, the request is destroyed, or
+   * kept for `keepUnusedFor` if that is above 0 and it has a response.
+   */
   unbind: (key: QueryKey | null, consumerDestroyRef: DestroyRef) => boolean;
 
   /** Removes all secure requests and their consumers */
