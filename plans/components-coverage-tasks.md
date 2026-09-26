@@ -17,6 +17,8 @@ agent that works alone, batch by batch.
 - In progress: nothing. Start with task 1.
 - Removed on 2026-09-26 by user decision: `GridItemRef` and `configComponent` (e519882bc). Added:
   `FormFieldDirective.controlSuffixTemplate` (e38133536).
+- In progress 2026-09-27: breadcrumb, command-palette, carousel (task 1); scrollable, forms/selection-list,
+  query-error, filter-overlay (task 2).
 
 ## Rules for every batch
 
@@ -36,7 +38,7 @@ agent that works alone, batch by batch.
   with zero new warnings; `npx prettier --write <changed files>`.
 - Git: NEVER `git stash`, `git add -A`, `--amend` or worktrees. `git add -- <new>` then
   `git commit -m "type(scope): Subject" -- <paths>`. No Co-Authored-By trailer. Generic fixtures (team-a), no client
-  names. `export TMPDIR=/home/tom/.cache/tmp-s8b NX_NO_CLOUD=true`.
+  names. `export TMPDIR=/Users/tom/.cache/tmp-s8b NX_NO_CLOUD=true`.
 - Comments: almost none (AGENTS.md allowlist).
 - If you delegate a batch, use `model: "opus"`, a fresh subagent per batch, and pass these rules verbatim. The
   subagent must not edit the allowlist or this file.
