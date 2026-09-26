@@ -267,7 +267,18 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       animation, card pixel layout (final at `size: auto`, compact emblems below 150px), pin drop on a click in
       empty space, horizontal scroll to `focusRoundId`, a measured width for `bracketFitsWidth`, pick-card focus
       rings.
-      In progress 2026-09-26: tabs + forms/select (60), notification + menu + match (76).
+      Tabs done (30 of 30, `tabs{,-nav}.scenario.spec.ts`, 6ebeb242b). No bug. Friction: in the headless tab bar,
+      after `.focus()` on a trigger the arrow keys move from the selected tab, not the focused one (check whether
+      this is a bug); a nav link with `[queryParams]` is active only when the URL carries them. E2E gaps: the
+      underline FLIP animation, scrolling the selected trigger into view, the overflow scroll buttons, focus ring.
+      Select done (30 of 30, `forms-select{,-headless,-query}.scenario.spec.ts`, 1e455840c). Bug fixed (f0b68ebff):
+      destroying a control with its anchored panel open logged two NG0953 warnings (select, date picker, cascader,
+      colour input share the controller). Friction: select-all appends in click order, so chips follow value order;
+      the first Escape in a searchable select only clears the query; `SELECT_LABELS` holds only the overrides; a
+      failed `selectOptionsFromQuery` request also reaches the ErrorHandler. E2E gaps: panel position and width
+      mirroring, real windowing, the `etSelectViewport` min-width lock, pointer hover, touch and bottom sheet,
+      busy animations, the clear button on hover, the leave animation.
+      In progress 2026-09-26: notification + menu + match (76).
 - [x] S11 Follow-ups from S6 (hand-written skill `.agents/skills/query-scenario-tests/SKILL.md` documents `s.mount`)
   1. Done in 47f4d25da: `s.mount(Component, injector, { inputs })` sets inputs before the first change detection;
      `legacy-client-options` mounts `MatchListComponent` directly.
