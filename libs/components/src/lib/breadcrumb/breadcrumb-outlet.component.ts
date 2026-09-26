@@ -1,16 +1,18 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, ViewEncapsulation, booleanAttribute, input } from '@angular/core';
+import { Component, ViewEncapsulation, booleanAttribute, contentChild, input } from '@angular/core';
 import { injectBreadcrumbManager } from './breadcrumb-manager';
 import { BreadcrumbLabels } from './breadcrumb-labels';
 import { BreadcrumbComponent } from './breadcrumb.component';
+import { BreadcrumbSeparatorDirective } from './headless';
+import { BREADCRUMB_OUTLET_TOKEN } from './headless/breadcrumb-outlet.token';
 
 /**
  * Renders the trail composed from every `<ng-template etBreadcrumbSegment>` currently on screen, in view
  * order. Put one in the app shell; the views below contribute their own crumbs and never restate their
  * ancestors'.
  *
- * Renders nothing while no view has contributed a crumb. Anything you project into it lands inside the
- * breadcrumb - which is how a shell-wide `<ng-template etBreadcrumbSeparator>` is set.
+ * Renders nothing while no view has contributed a crumb. A `<ng-template etBreadcrumbSeparator>`
+ * projected into it sets the separator of the composed trail.
  *
  * @example
  * <et-breadcrumb-outlet />
@@ -35,6 +37,7 @@ import { BreadcrumbComponent } from './breadcrumb.component';
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [BreadcrumbComponent, NgTemplateOutlet],
+  providers: [{ provide: BREADCRUMB_OUTLET_TOKEN, useExisting: BreadcrumbOutletComponent }],
   host: {
     class: 'et-breadcrumb-outlet',
   },
@@ -54,4 +57,7 @@ export class BreadcrumbOutletComponent {
 
   /** Forwarded to the composed breadcrumb: per-instance overrides for its accessible labels. */
   public labels = input<Partial<BreadcrumbLabels> | null>(null);
+
+  /** @internal */
+  public separatorTemplate = contentChild(BreadcrumbSeparatorDirective, { descendants: true });
 }

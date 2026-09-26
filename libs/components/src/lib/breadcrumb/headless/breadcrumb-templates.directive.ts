@@ -1,6 +1,7 @@
 import { DestroyRef, Directive, afterNextRender, booleanAttribute, inject, input, signal } from '@angular/core';
 import { RuntimeError, injectHostElement, injectTemplateRef } from '@ethlete/core';
 import { BREADCRUMB_ERROR_CODES } from '../breadcrumb-errors';
+import { BREADCRUMB_OUTLET_TOKEN } from './breadcrumb-outlet.token';
 import { BREADCRUMB_SEGMENT_TOKEN, BREADCRUMB_TOKEN } from './breadcrumb.tokens';
 
 const selectorOf = (directiveName: string) => `et${directiveName.replace('Directive', '')}`;
@@ -14,7 +15,7 @@ const assertInsideBreadcrumb = (hasHost: boolean, directiveName: string) => {
         throw new RuntimeError(
           BREADCRUMB_ERROR_CODES.PART_OUTSIDE_BREADCRUMB,
           `[${directiveName}] ${selectorOf(directiveName)} must be placed inside an [etBreadcrumb] element ` +
-            '(e.g. <et-breadcrumb>) or an <ng-template etBreadcrumbSegment>.',
+            '(e.g. <et-breadcrumb>), an <et-breadcrumb-outlet> or an <ng-template etBreadcrumbSegment>.',
           { element },
         );
       }
@@ -91,10 +92,11 @@ export class BreadcrumbItemTemplateDirective {
 })
 export class BreadcrumbSeparatorDirective {
   private breadcrumb = inject(BREADCRUMB_TOKEN, { optional: true });
+  private outlet = inject(BREADCRUMB_OUTLET_TOKEN, { optional: true });
 
   public templateRef = injectTemplateRef();
 
   constructor() {
-    assertInsideBreadcrumb(!!this.breadcrumb, 'BreadcrumbSeparatorDirective');
+    assertInsideBreadcrumb(!!this.breadcrumb || !!this.outlet, 'BreadcrumbSeparatorDirective');
   }
 }

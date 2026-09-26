@@ -18,6 +18,7 @@ import { RuntimeError, signalHostElementScrollState } from '@ethlete/core';
 import { BREADCRUMB_ERROR_CODES } from '../breadcrumb-errors';
 import { BreadcrumbLabels, injectBreadcrumbLabels } from '../breadcrumb-labels';
 import { BreadcrumbCrumb, BreadcrumbRenderItem } from '../breadcrumb.types';
+import { BREADCRUMB_OUTLET_TOKEN } from './breadcrumb-outlet.token';
 import { BREADCRUMB_COLLAPSE_TOKEN, BREADCRUMB_TOKEN } from './breadcrumb.tokens';
 import { BreadcrumbItemTemplateDirective, BreadcrumbSeparatorDirective } from './breadcrumb-templates.directive';
 
@@ -50,6 +51,7 @@ export class BreadcrumbDirective {
   private injectedLabels = injectBreadcrumbLabels();
 
   private collapseAffordance = inject(BREADCRUMB_COLLAPSE_TOKEN, { optional: true });
+  private outlet = inject(BREADCRUMB_OUTLET_TOKEN, { optional: true });
 
   /**
    * Move the middle crumbs into an overflow control when the trail doesn't fit. Turn it off to let the
@@ -71,8 +73,10 @@ export class BreadcrumbDirective {
 
   private declaredCrumbs = contentChildren(BreadcrumbItemTemplateDirective, { descendants: true });
 
+  private declaredSeparator = contentChild(BreadcrumbSeparatorDirective, { descendants: true });
+
   /** @internal */
-  public separatorTemplate = contentChild(BreadcrumbSeparatorDirective, { descendants: true });
+  public separatorTemplate = computed(() => this.declaredSeparator() ?? this.outlet?.separatorTemplate());
 
   private canCollapse = computed(() => this.collapse() && !!this.collapseAffordance);
 
