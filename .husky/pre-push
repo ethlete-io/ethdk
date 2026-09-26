@@ -6,12 +6,24 @@ set -e
 export NX_NO_CLOUD=true
 
 base=$(git rev-parse --verify --quiet '@{upstream}' || git merge-base HEAD origin/main)
+logs=$(mktemp -d "${TMPDIR:-/tmp}/pre-push.XXXXXX")
+trap 'rm -rf "$logs"' EXIT
+
+pids=""
+for check in agents:check versions:check lint:changesets query:export-coverage core:export-coverage components:export-coverage; do
+  yarn "$check" >"$logs/$check.log" 2>&1 &
+  pids="$pids $!:$check"
+done
 
 yarn nx format:check --base="$base" --head=HEAD
-yarn agents:check
-yarn versions:check
-yarn lint:changesets
-yarn query:export-coverage
-yarn core:export-coverage
-yarn components:export-coverage
-yarn nx affected -t typecheck lint --base="$base" --head=HEAD
+yarn nx affected -t typecheck lint --base="$base" --head=HEAD --parallel=8
+
+failed=0
+for entry in $pids; do
+  if ! wait "${entry%%:*}"; then
+    echo "pre-push: yarn ${entry#*:} failed:"
+    cat "$logs/${entry#*:}.log"
+    failed=1
+  fi
+done
+exit "$failed"
