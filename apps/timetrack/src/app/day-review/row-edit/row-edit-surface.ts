@@ -9,7 +9,6 @@ import {
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import { ReviewedRow, syncsInState } from '@ethlete/timetrack';
 import { injectDayReview } from '../day-review';
-import { EditDurationDirective } from './edit-duration.component';
 import { EditEvidenceDirective } from './edit-evidence.component';
 import { EditIssueDirective } from './edit-issue.component';
 import { EditMeetingDirective } from './edit-meeting.component';
@@ -17,6 +16,7 @@ import { EditStandInWaitingDirective } from './edit-stand-in-waiting.component';
 import { EditStandInDirective } from './edit-stand-in.component';
 import { EditDisputedDirective } from './edit-disputed.component';
 import { EditUnattendedDirective } from './edit-unattended.component';
+import { EditWhenDirective } from './edit-when.component';
 import { EditStateDirective } from './edit-state.component';
 import { RowActionsDirective } from './row-actions.directive';
 import { appointmentOf, rowEntryOf } from './row-appointment';
@@ -31,8 +31,9 @@ const DISABLED = { enabled: false } as const;
  * duration, whether a sync writes the row, and the evidence behind it. Each is a field the surface
  * stamps, reached through the open call's `directives` because the surface has no template of ours.
  *
- * The built-in title, location and colour fields are switched off: the issue field writes the title
- * itself, and neither a place nor a colour is something a worklog carries.
+ * The built-in title, time range, location and colour fields are switched off: the issue field writes
+ * the title, the when field the span on the row's own day, and neither a place nor a colour is
+ * something a worklog carries.
  */
 const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const store = injectDayReview();
@@ -75,6 +76,7 @@ const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     inputBinding('appointment', () => appointment),
     inputBinding('appointments', () => appointments),
     inputBinding('etSchedulerEditTitle', () => DISABLED),
+    inputBinding('etSchedulerEditTimeRange', () => DISABLED),
     inputBinding('etSchedulerEditLocation', () => DISABLED),
     inputBinding('etSchedulerEditColor', () => DISABLED),
     inputBinding('etSchedulerActionAddSubAppointment', () => DISABLED),
@@ -97,7 +99,7 @@ const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
           EditIssueDirective,
           EditStandInDirective,
           EditStateDirective,
-          EditDurationDirective,
+          EditWhenDirective,
           EditEvidenceDirective,
           RowActionsDirective,
         ],
@@ -106,7 +108,7 @@ const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     /**
      * Opens the surface for a range drawn on empty grid, which is the ask for a row nothing observed.
-     * There is no duration field: a hand-written row logs the span it was drawn over.
+     * The when field shows no duration: a hand-written row logs the span it was drawn over.
      *
      * `laneKey` is the column the range was drawn in, and the row is kept there. Leave it out where
      * the reviewer had no column in front of them, so the row lands beside the work nothing placed.
@@ -117,7 +119,7 @@ const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
           if (result?.kind === 'save') addRow(result.appointment, range.laneKey);
         },
         bindings: surfaceBindings({ id: 'draft', parentId: null, title: '', start: range.from, end: range.to }, []),
-        directives: [EditIssueDirective, EditMeetingDirective],
+        directives: [EditIssueDirective, EditMeetingDirective, EditWhenDirective],
       });
     },
   };

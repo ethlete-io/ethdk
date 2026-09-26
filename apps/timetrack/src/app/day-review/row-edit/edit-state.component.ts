@@ -37,11 +37,11 @@ const CONFIDENCE_TONE: Record<Confidence, string> = {
         <et-label>Log this time</et-label>
       </et-choice-field>
 
-      <span [class]="tone()" class="text-small">{{ confidence() }}</span>
-
       @if (edited()) {
         <et-badge size="sm">edited</et-badge>
       }
+
+      <span [class]="tone()" class="ml-auto text-small">{{ confidence() }} match</span>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,

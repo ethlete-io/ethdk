@@ -8,7 +8,14 @@ import {
   inject,
   input,
 } from '@angular/core';
-import { Appointment, FORM_FIELD_IMPORTS, SELECT_IMPORTS, injectSchedulerEditSurfaceHost } from '@ethlete/components';
+import {
+  Appointment,
+  FORM_FIELD_IMPORTS,
+  SELECT_IMPORTS,
+  SchedulerEditSurfaceDirective,
+  injectSchedulerEditSurfaceHost,
+} from '@ethlete/components';
+import { isStandInRow } from '@ethlete/timetrack';
 import { injectDayReview } from '../day-review';
 import { rowEntryOf } from './row-appointment';
 
@@ -77,14 +84,25 @@ export class EditStandInComponent {
 @Directive({ selector: '[ethleteEditStandIn]' })
 export class EditStandInDirective {
   private host = injectSchedulerEditSurfaceHost('ethleteEditStandIn');
+  private surface = inject(SchedulerEditSurfaceDirective);
   private store = injectDayReview();
+
+  private enabled = computed(() => {
+    const draft = this.surface.draft();
+    const row = rowEntryOf(draft)?.row;
+    const standInRow = !!row && isStandInRow(row);
+
+    if (!standInRow && !this.store.openStandIns().length) return false;
+
+    return standInRow || !draft.title.trim();
+  });
 
   constructor() {
     this.host.registerEditField({
       component: EditStandInComponent,
       injector: inject(Injector),
       order: 1,
-      enabled: computed(() => this.store.openStandIns().length > 0),
+      enabled: this.enabled,
     });
   }
 }

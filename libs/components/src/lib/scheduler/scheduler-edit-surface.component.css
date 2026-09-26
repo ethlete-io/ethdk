@@ -51,6 +51,10 @@
     gap: 16px;
   }
 
+  .et-scheduler-edit-surface-fields > :empty {
+    display: none;
+  }
+
   .et-scheduler-edit-time-range {
     display: flex;
     gap: 12px;
