@@ -2,7 +2,7 @@
   @for (item of group.items; track item.id) {
     <button
       [disabled]="item.disabled || editorInactive()"
-      [title]="item.description || null"
+      [attr.title]="item.description || null"
       (click)="insert(group.trigger, item)"
       (mousedown)="$event.preventDefault()"
       et-button
