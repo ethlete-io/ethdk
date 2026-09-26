@@ -56,7 +56,7 @@
   (click)="interceptClick($event)"
   (pointerdown)="dir.clearPendingMarks()"
   (focus)="dir.focused.set(true)"
-  (blur)="dir.focused.set(false); dir.touched.set(true)"
+  (blur)="dir.focused.set(false); dir.touched.set(true); dir.touch.emit()"
   class="et-rte-content"
   role="textbox"
   aria-multiline="true"

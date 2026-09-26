@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { booleanAttribute, computed, DestroyRef, Directive, inject, input, model, signal } from '@angular/core';
+import { booleanAttribute, computed, DestroyRef, Directive, inject, input, model, output, signal } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import {
   htmlToMarkdown,
@@ -116,6 +116,8 @@ export class RichTextEditorDirective
    * Prefer `provideRichTextEditorLabels` for app-wide localization; use this for a one-off wording.
    */
   public labels = input<Partial<RichTextEditorLabels> | null>(null);
+
+  public touch = output<void>();
 
   private history = createRichTextEditorHistory();
 

@@ -107,7 +107,7 @@ const provideRichTextEditorIcons = () =>
         'labels',
         ...ACCESSIBLE_NAME_INPUTS,
       ],
-      outputs: ['valueChange', 'touchedChange'],
+      outputs: ['valueChange', 'touchedChange', 'touch'],
     },
   ],
   host: {
