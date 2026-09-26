@@ -1,9 +1,12 @@
+import { isPlatformServer } from '@angular/common';
 import {
+  assertInInjectionContext,
   computed,
   DestroyRef,
   effect,
   inject,
   isDevMode,
+  PLATFORM_ID,
   Signal,
   signal,
   untracked,
@@ -46,6 +49,8 @@ export type WebSocketDevtoolsHandle = {
 };
 
 const MAX_DEVTOOLS_MESSAGES = 100;
+const RECONNECT_BASE_DELAY = 1000;
+const RECONNECT_MAX_DELAY = 30_000;
 
 export type CreateWebSocketClientTransport = 'polling' | 'websocket' | 'webtransport';
 
@@ -65,10 +70,17 @@ export type WebSocketClientSocket = {
   connect: () => void;
   disconnect: () => void;
   emit: (event: string, data: unknown) => void;
-  on: (event: 'connect' | 'disconnect', listener: () => void) => void;
+  on: {
+    (event: 'connect', listener: () => void): void;
+    (event: 'disconnect', listener: (reason: string) => void): void;
+    (event: 'connect_error', listener: (error: Error) => void): void;
+  };
   onAny: (listener: (eventName: string, ...args: unknown[]) => void) => void;
   onAnyOutgoing: (listener: (eventName: string, ...args: unknown[]) => void) => void;
   readonly recovered: boolean;
+
+  /** `false` once socket.io gave up reconnecting on its own - after a rejected handshake, for example. */
+  readonly active?: boolean;
 };
 
 /**
@@ -187,6 +199,8 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
 ): WebSocketClientResult<TMessageData> => {
   return defineRootProvider(
     () => {
+      if (isPlatformServer(inject(PLATFORM_ID))) return createServerWebSocketClient<TMessageData>();
+
       const auth = options.auth;
       const socket = options.io(options.url, {
         withCredentials: options.withCredentials ?? true,
@@ -322,6 +336,24 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
         joinedRoom.messages.complete();
       };
 
+      let reconnectAttempt = 0;
+      let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+      let connectedAt: number | null = null;
+      let destroyed = false;
+
+      /** socket.io stops reconnecting after a server disconnect or a rejected handshake, so the client takes over. */
+      const scheduleReconnect = () => {
+        if (reconnectTimer !== null || destroyed) return;
+
+        const delay = Math.min(RECONNECT_BASE_DELAY * 2 ** reconnectAttempt, RECONNECT_MAX_DELAY);
+        reconnectAttempt++;
+
+        reconnectTimer = setTimeout(() => {
+          reconnectTimer = null;
+          socket.connect();
+        }, delay);
+      };
+
       const setupWebSocketConnectionListener = () => {
         socket.onAnyOutgoing((eventName, room) => {
           if (eventName === 'join-room' && typeof room === 'string') joinsDeliveredThisConnection.add(room);
@@ -330,6 +362,7 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
         // socket.io flushes the joins it buffered before firing `connect`, so by now they are in the set.
         socket.on('connect', () => {
           isConnected.set(true);
+          connectedAt = Date.now();
 
           const joinedByClosedConnection = [...joinsDeliveredToClosedConnection];
           joinsDeliveredToClosedConnection.clear();
@@ -348,11 +381,20 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
             emit({ event: 'join-room', data: room, room });
           }
         });
-        socket.on('disconnect', () => {
+        socket.on('disconnect', (reason) => {
           isConnected.set(false);
 
           for (const room of joinsDeliveredThisConnection) joinsDeliveredToClosedConnection.add(room);
           joinsDeliveredThisConnection.clear();
+
+          if (reason !== 'io server disconnect') return;
+
+          if (connectedAt !== null && Date.now() - connectedAt >= RECONNECT_MAX_DELAY) reconnectAttempt = 0;
+
+          scheduleReconnect();
+        });
+        socket.on('connect_error', () => {
+          if (socket.active === false) scheduleReconnect();
         });
       };
 
@@ -395,6 +437,8 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
       };
 
       inject(DestroyRef).onDestroy(() => {
+        destroyed = true;
+        if (reconnectTimer !== null) clearTimeout(reconnectTimer);
         socket.disconnect();
 
         for (const room of rooms.values()) room.messages.complete();
@@ -436,4 +480,21 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
       name: `WebSocketClient_${options.name}`,
     },
   );
+};
+
+const createServerWebSocketClient = <TMessageData extends SocketMessageView>(): WebSocketClient<TMessageData> => {
+  const noRoom = signal<WebSocketRoom<TMessageData> | null>(null).asReadonly();
+
+  return {
+    joinRoom: () => {
+      assertInInjectionContext(createServerWebSocketClient);
+
+      return noRoom;
+    },
+    isConnected: signal(false).asReadonly(),
+    send: () => undefined,
+    subtle: {
+      leaveRoom: () => undefined,
+    },
+  };
 };

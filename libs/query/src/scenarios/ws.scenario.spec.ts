@@ -1,4 +1,4 @@
-import { EnvironmentInjector, createEnvironmentInjector, signal } from '@angular/core';
+import { EnvironmentInjector, PLATFORM_ID, createEnvironmentInjector, signal } from '@angular/core';
 import {
   SocketMessageView,
   WebSocketDevtoolsHandle,
@@ -621,11 +621,11 @@ describe('ws scenario', () => {
     s.tick();
 
     expect(instance.isConnected()).toBe(false);
-    expect(double.state()).toEqual({ connectRequested: true, disconnected: false });
+    expect(double.state()).toMatchObject({ connectRequested: true, disconnected: false });
 
     scope.destroy();
 
-    expect(double.state()).toEqual({ connectRequested: true, disconnected: true });
+    expect(double.state()).toMatchObject({ connectRequested: true, disconnected: true });
   });
 
   it('leaves the previous room, joins the new one and routes messages to the new room when the room function returns a new name', () => {
@@ -785,5 +785,145 @@ describe('ws devtools scenario', () => {
     // timer invariant reports real leaks only.
     s.tick();
     s.tick(600);
+  });
+});
+
+describe('ws scenario: reconnects socket.io gives up on', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  const createAuthedSocket = (s: Scenario) => {
+    const double = createWebSocketTestDouble();
+    const token = signal('token-1');
+    const client = createWebSocketClient({
+      name: `ws-scenario-${socketCounter++}`,
+      url: 'ws://localhost',
+      io: double.io,
+      auth: () => ({ token: token() }),
+    });
+
+    const instance = s.run(() => client.inject());
+
+    return { double, instance, token };
+  };
+
+  it('reconnects after an io server disconnect with the rotated auth, and re-joins its rooms', () => {
+    const s = scenario();
+    const { double, instance, token } = createAuthedSocket(s);
+
+    const c = s.consumer();
+    c.run(() => instance.joinRoom('lobby'));
+    s.tick();
+    double.serverConnect();
+
+    token.set('token-2');
+    double.serverDisconnect({ reason: 'io server disconnect' });
+
+    expect(instance.isConnected()).toBe(false);
+    expect(double.state().connectCalls).toBe(1);
+
+    s.tick(999);
+    expect(double.state().connectCalls).toBe(1);
+
+    s.tick(1);
+    expect(double.state().connectCalls).toBe(2);
+
+    double.serverConnect();
+
+    expect(instance.isConnected()).toBe(true);
+    expect(double.handshakes()).toEqual([{ token: 'token-1' }, { token: 'token-2' }]);
+    expect(double.delivered().filter((m) => m.event === 'join-room')).toEqual([
+      { event: 'join-room', data: 'lobby' },
+      { event: 'join-room', data: 'lobby' },
+    ]);
+
+    c.destroy();
+  });
+
+  it('retries a rejected handshake with a growing backoff and the current auth each time', () => {
+    const s = scenario();
+    const { double, instance, token } = createAuthedSocket(s);
+
+    double.serverRejectHandshake('expired');
+    token.set('token-2');
+
+    s.tick(1000);
+    expect(double.state().connectCalls).toBe(2);
+
+    double.serverRejectHandshake('expired');
+
+    s.tick(1999);
+    expect(double.state().connectCalls).toBe(2);
+
+    s.tick(1);
+    expect(double.state().connectCalls).toBe(3);
+
+    token.set('token-3');
+    double.serverConnect();
+
+    expect(instance.isConnected()).toBe(true);
+    expect(double.handshakes()).toEqual([{ token: 'token-1' }, { token: 'token-2' }, { token: 'token-3' }]);
+  });
+
+  it('leaves a transport close to socket.io, which reconnects on its own', () => {
+    const s = scenario();
+    const { double } = createAuthedSocket(s);
+
+    double.serverConnect();
+    double.serverDisconnect();
+    s.tick(60_000);
+
+    expect(double.state().connectCalls).toBe(1);
+  });
+
+  it('cancels a scheduled reconnect when the client is destroyed', () => {
+    const s = scenario();
+    const double = createWebSocketTestDouble();
+    const client = createWebSocketClient({
+      name: `ws-scenario-${socketCounter++}`,
+      url: 'ws://localhost',
+      io: double.io,
+    });
+
+    const scope = createEnvironmentInjector([client.provide()], s.injector.get(EnvironmentInjector));
+    scope.runInContext(() => client.inject());
+    double.serverConnect();
+    double.serverDisconnect({ reason: 'io server disconnect' });
+
+    scope.destroy();
+    s.tick(60_000);
+
+    expect(double.state().connectCalls).toBe(1);
+  });
+});
+
+describe('ws scenario: server render', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  it('opens no connection, joins no room and reports not connected', () => {
+    const s = scenario();
+    const double = createWebSocketTestDouble();
+    const client = createWebSocketClient({
+      name: `ws-scenario-${socketCounter++}`,
+      url: 'ws://localhost',
+      io: double.io,
+    });
+
+    const scope = createEnvironmentInjector(
+      [{ provide: PLATFORM_ID, useValue: 'server' }, client.provide()],
+      s.injector.get(EnvironmentInjector),
+    );
+    const instance = scope.runInContext(() => client.inject());
+    const c = s.consumer([], scope);
+    const room = c.run(() => instance.joinRoom('lobby'));
+    instance.send({ event: 'cheer', data: null });
+    s.tick();
+
+    expect(double.connection()).toBeNull();
+    expect(double.sent()).toEqual([]);
+    expect(room()).toBeNull();
+    expect(instance.isConnected()).toBe(false);
+
+    c.destroy();
+    scope.destroy();
   });
 });

@@ -114,6 +114,14 @@ this.socket.send({ event: 'cheer', data: { team: 'home' } });
 
 `isConnected()` reflects the socket connection. After a reconnect, the client automatically **re-joins every known room**, so consumers keep receiving messages without any handling on your side.
 
+socket.io stops reconnecting on its own when the server disconnects the socket (`io server disconnect`)
+or a server middleware rejects the handshake. The client takes over there: it calls `connect()` again
+after 1 s, doubling the delay on each further attempt up to 30 s, and every attempt reads `auth` afresh -
+so a rotated token reaches the next handshake. Any other drop is left to socket.io's own reconnection.
+
+In a server render (`isPlatformServer`) the client opens no connection: `isConnected()` stays `false`,
+`joinRoom()` returns a signal holding `null`, and `send()` does nothing.
+
 ## Server protocol
 
 The client speaks a small convention on top of socket.io:
@@ -174,6 +182,8 @@ expect(room()?.latestMessage()).toEqual({ room: 'lobby', event: 'score', data: {
 ```
 
 `serverSendRaw()` delivers an unparsable frame, for the malformed-message path.
+`serverDisconnect({ reason: 'io server disconnect' })` kicks the socket and `serverRejectHandshake()`
+fails the handshake like a middleware would; `state().connectCalls` counts the client's retries.
 `serverPingExpire()` makes the socket buffer emits while it still reports itself connected, and
 `serverConnect({ recovered: true })` reconnects with connection state recovery, so no room is
 re-joined. `delivered()` lists what reached the server, `sent()` everything the client emitted,

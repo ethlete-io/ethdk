@@ -25,8 +25,12 @@ export type WebSocketTestDouble = {
   /** Every message that reached the server, newest last. An emit buffered while offline lands here on the next connect. */
   delivered: () => { event: string; data: unknown }[];
 
-  /** Whether the client asked the socket to connect, and whether it has since disconnected it. */
-  state: () => { connectRequested: boolean; disconnected: boolean };
+  /**
+   * Whether the client asked the socket to connect, and whether it has since disconnected it. `active` is
+   * socket.io's own flag - `false` after a server disconnect or a rejected handshake, until the next
+   * `connect()`; `connectCalls` counts every `connect()`.
+   */
+  state: () => { connectRequested: boolean; disconnected: boolean; active: boolean; connectCalls: number };
 
   /**
    * Complete the handshake: flush every buffered emit, then turn the client's `isConnected` true. Pass
@@ -34,8 +38,18 @@ export type WebSocketTestDouble = {
    */
   serverConnect: (options?: { recovered?: boolean }) => void;
 
-  /** Drop the connection, so `isConnected` turns false. */
-  serverDisconnect: () => void;
+  /**
+   * Drop the connection, so `isConnected` turns false. The default reason, `'transport close'`, is one
+   * socket.io recovers from itself; `'io server disconnect'` is the server kicking the socket, after which
+   * socket.io only reconnects when `connect()` is called again.
+   */
+  serverDisconnect: (options?: { reason?: 'transport close' | 'io server disconnect' }) => void;
+
+  /**
+   * Reject the handshake the way a server middleware does: the `auth` payload is recorded in
+   * {@link handshakes}, `connect_error` fires and the socket stops reconnecting on its own.
+   */
+  serverRejectHandshake: (message?: string) => void;
 
   /**
    * Let the ping expire: the socket still reports itself connected, but buffers every emit like socket.io
@@ -63,7 +77,11 @@ export const createWebSocketTestDouble = (): WebSocketTestDouble => {
   const sent: { event: string; data: unknown }[] = [];
   const delivered: { event: string; data: unknown }[] = [];
   const buffered: { event: string; data: unknown }[] = [];
-  const listeners = new Map<'connect' | 'disconnect', () => void>();
+  const listeners = {
+    connect: [] as (() => void)[],
+    disconnect: [] as ((reason: string) => void)[],
+    connect_error: [] as ((error: Error) => void)[],
+  };
   const anyListeners: ((eventName: string, ...args: unknown[]) => void)[] = [];
   const outgoingListeners: ((eventName: string, ...args: unknown[]) => void)[] = [];
 
@@ -74,6 +92,8 @@ export const createWebSocketTestDouble = (): WebSocketTestDouble => {
   let connectRequested = false;
   let disconnected = false;
   let connected = false;
+  let active = false;
+  let connectCalls = 0;
   let pingExpired = false;
   let recovered = false;
 
@@ -82,20 +102,43 @@ export const createWebSocketTestDouble = (): WebSocketTestDouble => {
     delivered.push(message);
   };
 
+  const recordHandshake = () => {
+    if (auth) auth((data) => handshakes.push(data));
+    else handshakes.push(null);
+  };
+
+  const disconnect = (reason: string) => {
+    connected = false;
+    pingExpired = false;
+    for (const listener of listeners.disconnect) listener(reason);
+  };
+
   const socket: WebSocketClientSocket = {
-    connect: () => void (connectRequested = true),
-    disconnect: () => void (disconnected = true),
+    connect: () => {
+      connectRequested = true;
+      active = true;
+      connectCalls++;
+    },
+    disconnect: () => {
+      disconnected = true;
+      active = false;
+      if (connected) disconnect('io client disconnect');
+    },
     emit: (event, data) => {
       sent.push({ event, data });
 
       if (connected && !pingExpired) deliver({ event, data });
       else buffered.push({ event, data });
     },
-    on: (event, listener) => void listeners.set(event, listener),
+    on: (event: 'connect' | 'disconnect' | 'connect_error', listener: (arg: never) => void) =>
+      void (listeners[event] as ((arg: never) => void)[]).push(listener),
     onAny: (listener) => void anyListeners.push(listener),
     onAnyOutgoing: (listener) => void outgoingListeners.push(listener),
     get recovered() {
       return recovered;
+    },
+    get active() {
+      return active;
     },
   };
 
@@ -111,23 +154,32 @@ export const createWebSocketTestDouble = (): WebSocketTestDouble => {
     handshakes: () => [...handshakes],
     sent: () => [...sent],
     delivered: () => [...delivered],
-    state: () => ({ connectRequested, disconnected }),
+    state: () => ({ connectRequested, disconnected, active, connectCalls }),
     serverConnect: (options) => {
-      if (auth) auth((data) => handshakes.push(data));
-      else handshakes.push(null);
+      recordHandshake();
 
+      active = true;
       recovered = options?.recovered ?? false;
       connected = true;
       pingExpired = false;
 
       for (const message of buffered.splice(0)) deliver(message);
 
-      listeners.get('connect')?.();
+      for (const listener of listeners.connect) listener();
     },
-    serverDisconnect: () => {
-      connected = false;
-      pingExpired = false;
-      listeners.get('disconnect')?.();
+    serverDisconnect: (options) => {
+      const reason = options?.reason ?? 'transport close';
+
+      if (reason === 'io server disconnect') active = false;
+
+      disconnect(reason);
+    },
+    serverRejectHandshake: (message) => {
+      recordHandshake();
+
+      active = false;
+
+      for (const listener of listeners.connect_error) listener(new Error(message ?? 'unauthorized'));
     },
     serverPingExpire: () => void (pingExpired = true),
     serverSend: (message) => {
