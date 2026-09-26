@@ -231,7 +231,15 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       `injectDateTimeLabels()`); the harness lacks `ResizeObserver`, `matchMedia` and `Element.animate` polyfills;
       an open picker at destroy leaves a pending frame. E2E gaps: masked typing, calendar and time-column
       keyboard navigation, panel layout and animation, other time zones, focus return after close.
-      In progress (2026-09-26): `forms/rich-text-editor`.
+      Rich-text editor done (56 of 56, `forms-rich-text-editor{,-tools}.scenario.spec.ts`, 3955ac869, 94d0300cc).
+      Bugs fixed: blur marked no signal-form field touched; a token chip without `description` showed a "null"
+      tooltip. `it.fails`: `htmlToMarkdown` escapes no Markdown, so literal `- x` or `**x**` reloads as formatting.
+      Also open: a pasted `javascript:` link survives as a Markdown link in the value. The user wants both fixed.
+      Friction: a headless `[etRichTextEditor]` cannot attach its editable element (`editorDom` is `@internal`);
+      the token popup's host `id` overwrites TestBed's root id; rAF loops need an `s.flush()` at the end. E2E gaps:
+      caret, IME and soft breaks; toolbar and popover positioning; the touch-docked toolbar; image drag and drop;
+      real clipboard events; `beforeinput historyUndo`; table picker hover.
+      In progress (2026-09-26): `scheduler`; the Markdown escape and `javascript:` paste fixes.
 - [x] S11 Follow-ups from S6 (hand-written skill `.agents/skills/query-scenario-tests/SKILL.md` documents `s.mount`)
   1. Done in 47f4d25da: `s.mount(Component, injector, { inputs })` sets inputs before the first change detection;
      `legacy-client-options` mounts `MatchListComponent` directly.
