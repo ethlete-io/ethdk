@@ -37,7 +37,12 @@ import { QueryHeadersInput, resolveQueryHeaders } from './query-headers';
 import { IS_QUERY_REQUEST } from './query-http-context';
 import { QueryRepositoryDependencies } from './query-repository';
 import { runDefaultQueryRetry } from './query-error-parsing';
-import { isIdempotentQueryMethod, ShouldRetryRequestFn, ShouldRetryRequestOptions } from './query-retry-utils';
+import {
+  isIdempotentQueryMethod,
+  shouldRetryRequest,
+  ShouldRetryRequestFn,
+  ShouldRetryRequestOptions,
+} from './query-retry-utils';
 
 export const SPEED_BUFFER_TIME_IN_MS = 2000;
 
@@ -619,10 +624,21 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     event$.next(event);
   };
 
+  // Judged as the first retry of a fresh execution, which is what a manual retry starts, so automatic
+  // retries already spent on this error do not hide it.
+  const manualRetryVerdict = (errorResponse: unknown, retryOptions: ShouldRetryRequestOptions) => {
+    if (!(errorResponse instanceof HttpErrorResponse)) return { retry: false } as const;
+
+    const firstRetry = { ...retryOptions, retryCount: 1 };
+    const policyVerdict = options.retryFn?.(firstRetry) || runDefaultQueryRetry(firstRetry);
+
+    return policyVerdict.retry ? policyVerdict : shouldRetryRequest(firstRetry);
+  };
+
   const updateErrorState = (errorResponse: unknown) => {
     const errorRes = createQueryErrorResponse(errorResponse, {
-      retryCount: attempts(),
-      retryFn: options.retryFn,
+      retryCount: attempts() - 1,
+      retryFn: (retryOptions) => manualRetryVerdict(errorResponse, retryOptions),
       method: options.method,
       idempotent,
     });

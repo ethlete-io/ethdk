@@ -235,7 +235,7 @@ describe('query error scenarios', () => {
     http.verify();
   });
 
-  it.fails('offers a retry for a transient failure once the automatic retries are exhausted', () => {
+  it('offers a retry for a transient failure once the automatic retries are exhausted', () => {
     const s = scenario();
     const http = TestBed.inject(HttpTestingController);
     const fixture = TestBed.createComponent(TeamListComponent);

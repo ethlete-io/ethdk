@@ -1409,7 +1409,7 @@ describe('client-scoped default retry', () => {
 
     expect(s.api.requestCount('GET', '/retrying')).toBe(3);
     expect(s.api.requestCount('GET', '/plain')).toBe(1);
-    expect(plainQuery.error()?.retryState).toEqual({ retry: false });
+    expect(plainQuery.error()?.retryState.retry).toBe(true);
     expect(retryingQuery.error()?.code).toBe(503);
 
     s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 503);

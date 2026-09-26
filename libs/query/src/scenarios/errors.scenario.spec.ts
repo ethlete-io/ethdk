@@ -185,7 +185,7 @@ describe('baseline error normalization (no client features)', () => {
 
     s.tick();
 
-    expect(query.error()?.retryState).toEqual({ retry: false });
+    expect(query.error()?.retryState.retry).toBe(true);
     expect(s.api.requestCount('GET', '/unretried-503')).toBe(1);
 
     s.tick(30_000);
@@ -490,7 +490,7 @@ describe('withEthleteApiErrors with its own retry options', () => {
     s.tick(1);
     expect(s.api.requestCount('GET', '/reports-once')).toBe(2);
     expect(query.error()?.code).toBe(503);
-    expect(query.error()?.retryState).toEqual({ retry: false });
+    expect(query.error()?.retryState.retry).toBe(true);
 
     s.tick(30_000);
     expect(s.api.requestCount('GET', '/reports-once')).toBe(2);
@@ -622,7 +622,7 @@ describe('the default retry policy (withDefaultRetry)', () => {
 
     expect(s.api.requestCount('GET', '/always-503')).toBe(4);
     expect(query.error()?.code).toBe(503);
-    expect(query.error()?.retryState).toEqual({ retry: false });
+    expect(query.error()?.retryState.retry).toBe(true);
 
     s.tick(30_000);
     expect(s.api.requestCount('GET', '/always-503')).toBe(4);
@@ -1217,7 +1217,7 @@ describe('configuring the default retry policy', () => {
 
       expect(s.api.requestCount('GET', '/always-503-five')).toBe(6);
       expect(query.error()?.code).toBe(503);
-      expect(query.error()?.retryState).toEqual({ retry: false });
+      expect(query.error()?.retryState.retry).toBe(true);
 
       s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 503);
       c.destroy();
@@ -1308,7 +1308,7 @@ describe('configuring the default retry policy', () => {
 
       s.tick();
       s.tick(1);
-      expect(droppedQuery.error()?.retryState).toEqual({ retry: false });
+      expect(droppedQuery.error()?.code).toBe(503);
 
       s.tick(2_000);
       s.tick(1);
@@ -1526,7 +1526,7 @@ describe('dev-mode misuse errors', () => {
 describe('a client that asked for no retry policy', () => {
   const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
 
-  it('does not retry a 503 and leaves retryState at { retry: false }', () => {
+  it('does not retry a 503 but still offers a manual retry', () => {
     const s = scenario();
     s.api.on('GET', '/unstable', () => ({ status: 503, body: { message: 'down' } }));
 
@@ -1539,7 +1539,7 @@ describe('a client that asked for no retry policy', () => {
 
     expect(s.api.requestCount('GET', '/unstable')).toBe(1);
     expect(query.error()?.code).toBe(503);
-    expect(query.error()?.retryState).toEqual({ retry: false });
+    expect(query.error()?.retryState.retry).toBe(true);
 
     s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 503);
     c.destroy();

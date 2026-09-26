@@ -14,7 +14,7 @@ Everything beyond that ladder is a **query client feature**, because an app that
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
 | `withHtmlErrorParsing()` | [HTML error pages](#html-error-pages) - a proxy's `502`, a maintenance page (~0.9 kB gz).                                     |
 | `withSymfonyErrors()`    | Symfony/API-Platform violation lists (`{ violations: [...] }`), bare violation arrays, and class-validator `{ message: [] }`. |
-| `withDefaultRetry()`     | The [default retry policy](#retries). Without it nothing is retried and `retryState` always reads `{ retry: false }`.         |
+| `withDefaultRetry()`     | The [default retry policy](#retries). Without it nothing is retried automatically.                                            |
 | `withEthleteApiErrors()` | All three at once - the pre-6.0 behavior, and the right default for a Symfony backend behind a proxy.                         |
 
 ```ts
@@ -243,6 +243,10 @@ const retryFn: ShouldRetryRequestFn = ({ error, retryCount, idempotent }) =>
 ::: warning `maxAttempts: 0` never surfaces an error
 A query that retries forever never resolves to a `failure`: it stays `loading()` for as long as the server stays down, so a screen gated on `executionState()` shows a spinner and nothing else - no error, no retry button. Only ever right for a request nothing renders, which is why the [token refresh](/query/auth#token-refresh) uses it and the default policy does not.
 :::
+
+### `retryState` answers "is a manual retry worth offering?"
+
+`error.retryState.retry` is `true` for a failure that asking again can fix - a connection failure, a `408`, `425`, `429` or a 5xx above `500` on an idempotent request, or whatever else the request's `retryFn` would retry - no matter how many automatic retries were already spent on it, and also on a client without any retry policy. `<et-query-error>` shows its Retry button from it. The `retryCount` a `retryFn` sees numbers the retry it decides on, from `1` for the first.
 
 Override the policy per client (the `retryFn` [client option](/query/queries#the-query-client)) or per creator (the `retryFn` [creator option](/query/http#creator-options), or `.clone({ retryFn })`):
 

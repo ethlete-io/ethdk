@@ -270,8 +270,7 @@ export const withSymfonyErrors = (): QueryClientFeatureFn => () => {
  * a `PATCH` and a GraphQL mutation are never retried unless the options set `retryNonIdempotent`.
  *
  * The policy belongs to the client the feature is on, so another client of the same app is not
- * affected. Without it nothing is retried automatically and `error.retryState` always reads
- * `{ retry: false }`. A per-client or per-creator `retryFn` wins over it.
+ * affected. Without it nothing is retried automatically. A per-client or per-creator `retryFn` wins over it.
  *
  * @example
  * const MY_CLIENT = createQueryClient({
