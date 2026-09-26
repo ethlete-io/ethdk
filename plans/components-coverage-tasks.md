@@ -18,7 +18,8 @@ agent that works alone, batch by batch.
 - Removed on 2026-09-26 by user decision: `GridItemRef` and `configComponent` (e519882bc). Added:
   `FormFieldDirective.controlSuffixTemplate` (e38133536).
 - In progress 2026-09-27: forms/multi-language-rich-text-editor, banner, toggletip, overlay, stream, scrollbar, progress-steps
-  (task 6a); masonry, badge, avatar, tooltip, toolbar, skeleton, forms/tag-input, forms/rating (task 6b).
+  (task 6a); masonry, badge, avatar, tooltip, toolbar, skeleton, forms/tag-input, forms/rating (task 6b); task 7 (all
+  of it).
 
 ## Rules for every batch
 
