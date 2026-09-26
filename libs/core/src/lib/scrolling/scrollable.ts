@@ -223,14 +223,14 @@ export const getElementScrollCoordinates = (options: ScrollToElementOptions): Sc
   };
 
   const calculateScrollToNearest = () => {
-    const isAbove = elBottom < conTop;
+    const isAbove = elBottom <= conTop;
     const isPartialAbove = elTop < conTop && elBottom > conTop;
-    const isBelow = elTop > conBottom;
+    const isBelow = elTop >= conBottom;
     const isPartialBelow = elTop < conBottom && elBottom > conBottom;
 
-    const isLeft = elRight < conLeft;
+    const isLeft = elRight <= conLeft;
     const isPartialLeft = elLeft < conLeft && elRight > conLeft;
-    const isRight = elLeft > conRight;
+    const isRight = elLeft >= conRight;
     const isPartialRight = elLeft < conRight && elRight > conRight;
 
     if (isAbove || isPartialAbove || isLeft || isPartialLeft) {

@@ -203,6 +203,42 @@ describe('getElementScrollCoordinates', () => {
     expect(getElementScrollCoordinates({ container, element })).toEqual({ behavior: 'smooth', left: 30, top: 40 });
   });
 
+  describe('nearest origin at the container edges', () => {
+    const container = () =>
+      elementWithLayout({
+        clientHeight: 100,
+        clientWidth: 200,
+        scrollHeight: 500,
+        scrollLeft: 30,
+        scrollTop: 40,
+        scrollWidth: 600,
+      });
+    const item = (left: number, top: number) =>
+      elementWithLayout({ clientHeight: 20, clientWidth: 20, left, scrollHeight: 20, scrollWidth: 20, top });
+
+    it.each([
+      ['right', 'inline', 200, 50, { left: 50 }],
+      ['left', 'inline', -20, 50, { left: 10 }],
+      ['bottom', 'block', 50, 100, { top: 60 }],
+      ['top', 'block', 50, -20, { top: 20 }],
+    ] as const)('scrolls an element that touches the %s edge from outside', (_, direction, left, top, expected) => {
+      expect(
+        getElementScrollCoordinates({ container: container(), direction, element: item(left, top) }),
+      ).toMatchObject(expected);
+    });
+
+    it.each([
+      ['top left', 0, 0],
+      ['bottom right', 180, 80],
+    ] as const)('leaves an element flush with the %s corner inside the container', (_, left, top) => {
+      expect(getElementScrollCoordinates({ container: container(), element: item(left, top) })).toEqual({
+        behavior: 'smooth',
+        left: 30,
+        top: 40,
+      });
+    });
+  });
+
   it('uses the nearest clipped edge and respects the requested direction', () => {
     const { container, element } = createPair();
 

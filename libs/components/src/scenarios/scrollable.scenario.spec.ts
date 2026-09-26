@@ -278,7 +278,7 @@ describe('scrollable scenarios', () => {
     s.frame(2);
   });
 
-  it.fails('opens the track on an active child that starts exactly at the track end', () => {
+  it('opens the track on an active child that starts exactly at the track end', () => {
     const s = scenario();
     const track = overflowingTrack();
 
