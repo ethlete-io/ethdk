@@ -55,7 +55,7 @@ import {
   TokenExpirationWarningFeature,
   TrackingFeature,
 } from './features';
-import { BearerAuthSessionAdoption } from './internal';
+import { BearerAuthSessionAdoption, registerSessionEnd, SessionEndEvent } from './internal';
 
 export type { AnyQueryBuilder } from './bearer-auth-query-builders';
 
@@ -178,8 +178,11 @@ export type BearerAuthProviderEarlySetupContext = {
    */
   setTokens: (access: string, refresh: string) => void;
 
-  /** Ends the session, exactly as the provider's own `logout()` does. */
-  logout: (cause?: BearerAuthSessionEndCause) => void;
+  /**
+   * Ends the session, exactly as the provider's own `logout()` does. Pass `fromOtherTab` for a logout
+   * another tab started, so this tab does not revoke the tokens a second time.
+   */
+  logout: (cause?: BearerAuthSessionEndCause, options?: { fromOtherTab?: boolean }) => void;
 
   /** Why the last session ended, as {@link BearerAuthProvider.sessionEndCause} reports it. */
   sessionEndCause: Signal<BearerAuthSessionEndCause | null>;
@@ -832,6 +835,7 @@ const createBearerAuthProviderImpl = <
   const executionState = signal<BearerAuthExecutionState | null>(null);
   const sessionStatus = signal<BearerAuthSessionStatus>('unknown');
   const sessionEndCause = signal<BearerAuthSessionEndCause | null>(null);
+  const sessionEnd = signal<SessionEndEvent | null>(null);
 
   const applyTokens = (access: string, refresh: string) => {
     accessToken.set(access);
@@ -870,7 +874,7 @@ const createBearerAuthProviderImpl = <
     },
   );
 
-  const logout = (cause: BearerAuthSessionEndCause = 'user') => {
+  const logout = (cause: BearerAuthSessionEndCause = 'user', options?: { fromOtherTab?: boolean }) => {
     invalidateTokenIssuingExecutions();
     accessToken.set(null);
     refreshToken.set(null);
@@ -880,6 +884,7 @@ const createBearerAuthProviderImpl = <
     executionState.set({ type: 'logout', state: 'success' });
     sessionStatus.set('anonymous');
     sessionEndCause.set(cause);
+    sessionEnd.set({ cause, fromOtherTab: options?.fromOtherTab ?? false });
 
     // Unsaved edits can no longer be saved once the session is gone. Guarding them past this point
     // only strands a "discard your changes?" dialog over the login page the app redirects to, and
@@ -989,6 +994,8 @@ const createBearerAuthProviderImpl = <
     sessionEndCause: sessionEndCause.asReadonly(),
   };
 
+  registerSessionEnd(featureSetupContext, sessionEnd);
+
   const { features, applied: appliedFeatures } = setupFeatures(config.features, featureSetupContext);
 
   // Runs after the features, because `withPersistentAuth` starts its auto-login during setup. Still
@@ -1030,6 +1037,8 @@ const createBearerAuthProviderImpl = <
     logout,
     afterTokenRefresh$,
   } as BearerAuthProvider<TBuilders, TFeatures, TBearerData>;
+
+  registerSessionEnd(provider, sessionEnd);
 
   if (isQueryDevtoolsEnabled()) {
     const unregister = registerQueryDevtoolsEntry({

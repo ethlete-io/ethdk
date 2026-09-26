@@ -1,5 +1,7 @@
 import { HttpHeaders } from '@angular/common/http';
 import { effect, Signal, signal, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { filter, take } from 'rxjs';
 import { AnyQuerySnapshot, QueryArgs, QuerySnapshot, RequestArgs, resolveQueryHeaders } from '../../http';
 import {
   AnyQueryBuilder,
@@ -9,8 +11,14 @@ import {
   ExtractQueryArgs,
   ExtractQueryKey,
 } from '../bearer-auth-provider';
+import { readSessionEnd, SessionEndEvent } from '../internal';
 
 const AUTH_HEADER = 'Authorization';
+
+type RevocationTokens = { accessToken: string | null; refreshToken: string | null };
+
+const isSamePair = (a: RevocationTokens | null | undefined, b: RevocationTokens) =>
+  !!a && a.accessToken === b.accessToken && a.refreshToken === b.refreshToken;
 
 export type TokenRevocationConfig<
   TBuilders extends readonly AnyQueryBuilder[],
@@ -33,7 +41,9 @@ export type TokenRevocationConfig<
    */
   revokeOnLogout?: boolean;
   /**
-   * The session end causes that revoke automatically. Leave it out to revoke on every cause.
+   * The session end causes that revoke automatically. Leave it out to revoke on every cause but
+   * `otherTab`. A tab that multi-tab sync logged out reads as `otherTab` here whatever the cause was, so
+   * only the tab the logout started in revokes unless this names `otherTab`.
    * @example revokeOn: ['user'] // for an API whose revocation ends the sessions on all devices
    */
   revokeOn?: readonly BearerAuthSessionEndCause[];
@@ -76,6 +86,7 @@ export const withTokenRevocation = <
     type RevocationSnapshot = QuerySnapshot<RevocationArgs>;
 
     const revokeOnLogout = config.revokeOnLogout ?? true;
+    const sessionEnd = readSessionEnd(context) ?? signal<SessionEndEvent | null>(null);
 
     const withBearerHeader = (args: RequestArgs<RevocationArgs>, accessToken: string | null) => {
       if (!config.bearer || !accessToken) return args;
@@ -90,33 +101,69 @@ export const withTokenRevocation = <
       return { ...args, headers };
     };
 
-    const shouldRevokeFor = (cause: BearerAuthSessionEndCause | null) =>
-      !config.revokeOn || (cause !== null && config.revokeOn.includes(cause));
+    const shouldRevokeFor = ({ cause, fromOtherTab }: SessionEndEvent) => {
+      if (config.revokeOn) return config.revokeOn.includes(fromOtherTab ? 'otherTab' : cause);
+
+      return !fromOtherTab && cause !== 'otherTab';
+    };
 
     const enabled = signal(true);
     let previousAccessToken: string | null = null;
     let previousRefreshToken: string | null = null;
     let currentRevocationSnapshot: RevocationSnapshot | null = null;
+    let currentTokens: RevocationTokens | null = null;
+    const queuedTokens: RevocationTokens[] = [];
 
-    const revokeWithTokens = (accessToken: string | null, refreshToken: string | null) => {
-      if (currentRevocationSnapshot?.isAlive()) return currentRevocationSnapshot;
-
-      if (!accessToken && !refreshToken) {
-        return null;
-      }
-
+    const executeRevocation = (tokens: RevocationTokens) => {
       const args = withBearerHeader(
-        config.buildArgs?.({ accessToken, refreshToken }) ?? ({} as RequestArgs<RevocationArgs>),
-        accessToken,
+        config.buildArgs?.(tokens) ?? ({} as RequestArgs<RevocationArgs>),
+        tokens.accessToken,
       );
 
       context.executionState.set({ type: 'revocation', state: 'loading' });
 
-      currentRevocationSnapshot = context.queries[config.queryKey].execute(args, {
+      const snapshot = context.queries[config.queryKey].execute(args, {
         triggeredBy: 'token-revocation',
       });
 
-      return currentRevocationSnapshot;
+      currentRevocationSnapshot = snapshot;
+      currentTokens = tokens;
+
+      snapshot.isAlive
+        .asObservable()
+        .pipe(
+          filter((isAlive) => !isAlive),
+          take(1),
+          takeUntilDestroyed(context.destroyRef),
+        )
+        .subscribe(() => {
+          currentRevocationSnapshot = null;
+          currentTokens = null;
+
+          const next = queuedTokens.shift();
+
+          if (next) executeRevocation(next);
+        });
+
+      return snapshot;
+    };
+
+    const revokeWithTokens = (accessToken: string | null, refreshToken: string | null) => {
+      if (!accessToken && !refreshToken) {
+        return currentRevocationSnapshot?.isAlive() ? currentRevocationSnapshot : null;
+      }
+
+      const tokens: RevocationTokens = { accessToken, refreshToken };
+
+      if (currentRevocationSnapshot?.isAlive()) {
+        if (!isSamePair(currentTokens, tokens) && !queuedTokens.some((queued) => isSamePair(queued, tokens))) {
+          queuedTokens.push(tokens);
+        }
+
+        return currentRevocationSnapshot;
+      }
+
+      return executeRevocation(tokens);
     };
 
     const revoke = () => {
@@ -137,13 +184,12 @@ export const withTokenRevocation = <
           const currentToken = context.accessToken();
           const currentRefreshToken = context.refreshToken();
 
-          if (
-            previousAccessToken &&
-            !currentToken &&
-            enabled() &&
-            shouldRevokeFor(untracked(context.sessionEndCause))
-          ) {
-            untracked(() => revokeWithTokens(previousAccessToken, previousRefreshToken));
+          if (previousAccessToken && !currentToken && enabled()) {
+            const end = untracked(sessionEnd);
+
+            if (end && shouldRevokeFor(end)) {
+              untracked(() => revokeWithTokens(previousAccessToken, previousRefreshToken));
+            }
           }
 
           previousAccessToken = currentToken;

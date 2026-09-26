@@ -1,4 +1,5 @@
-import { Signal, signal } from '@angular/core';
+import { isPlatformServer } from '@angular/common';
+import { inject, PLATFORM_ID, Signal, signal } from '@angular/core';
 import {
   AnyQueryBuilder,
   BearerAuthFeatureType,
@@ -121,8 +122,10 @@ export const withBearerAuthMultiTabSync = <TBuilders extends readonly AnyQueryBu
 
     // A tab the devtools handed a session of its own is not part of this app's shared session: it must
     // not push its tokens at its siblings, adopt theirs, or log them out - and it refreshes for itself,
-    // because a leader that speaks for a session it is not on would refresh the wrong one.
-    if (context.isTabLocalSession()) {
+    // because a leader that speaks for a session it is not on would refresh the wrong one. A server
+    // render has no siblings, but Node has `BroadcastChannel` and `navigator.locks`, which would couple
+    // concurrent renders.
+    if (context.isTabLocalSession() || isPlatformServer(inject(PLATFORM_ID))) {
       pendingSetups.push({ instance: SINGLE_TAB, channelName });
 
       return {};

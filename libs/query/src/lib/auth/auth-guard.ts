@@ -11,10 +11,10 @@ import {
 import { defer, from, Observable } from 'rxjs';
 import {
   AnyCreateBearerAuthProviderResult,
-  BearerAuthExecutionState,
   BearerAuthProviderOf,
   BearerAuthSessionEndCause,
 } from './bearer-auth-provider';
+import { readSessionEnd, SessionEndEvent } from './internal';
 
 /** Anything {@link createAuthGuard} accepts as a navigation target. */
 export type AuthGuardTarget = string | readonly unknown[] | UrlTree | ((router: Router) => UrlTree);
@@ -237,18 +237,23 @@ export const createAuthGuard = <TRef extends AnyCreateBearerAuthProviderResult>(
 
     const appRef = inject(ApplicationRef);
 
-    let handled: BearerAuthExecutionState | null = untracked(provider.executionState);
+    const sessionEnd = readSessionEnd(provider);
+
+    if (!sessionEnd) return;
+
+    let handled: SessionEndEvent | null = untracked(sessionEnd);
 
     effect(
       () => {
-        const state = provider.executionState();
-        const cause = provider.sessionEndCause();
+        const end = sessionEnd();
 
-        if (state === handled || state?.type !== 'logout') return;
+        if (!end || end === handled) return;
 
-        handled = state;
+        handled = end;
 
-        if (!cause || !causes.includes(cause)) return;
+        const cause = end.cause;
+
+        if (!causes.includes(cause)) return;
 
         untracked(() => {
           if (!usesGuard(router.routerState.snapshot.root, sessionGuards)) return;

@@ -199,7 +199,7 @@ describe('setupMultiTabSync', () => {
 
       mockChannel.onmessage?.({ data: { type: 'logout', cause: 'inactivity' } } as MessageEvent);
 
-      expect(logout).toHaveBeenCalledWith('inactivity');
+      expect(logout).toHaveBeenCalledWith('inactivity', { fromOtherTab: true });
     });
   });
 
@@ -213,7 +213,7 @@ describe('setupMultiTabSync', () => {
 
       mockChannel.onmessage?.({ data: { type: 'logout', cause: 'user' } } as MessageEvent);
 
-      expect(logout).toHaveBeenCalledWith('otherTab');
+      expect(logout).toHaveBeenCalledWith('otherTab', { fromOtherTab: true });
     });
   });
 
@@ -311,7 +311,7 @@ describe('setupMultiTabSync', () => {
 
       mockChannel.onmessage?.({ data: { type: 'logout' } } as MessageEvent);
 
-      expect(logout).toHaveBeenCalledWith('otherTab');
+      expect(logout).toHaveBeenCalledWith('otherTab', { fromOtherTab: true });
       expect(accessToken()).toBeNull();
       expect(refreshToken()).toBeNull();
     });

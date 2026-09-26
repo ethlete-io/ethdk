@@ -69,7 +69,7 @@ export type MultiTabSyncContext = {
    * logged out elsewhere reports `{ type: 'logout' }` and abandons its unsaved changes like the tab
    * the logout started in.
    */
-  logout: (cause?: BearerAuthSessionEndCause) => void;
+  logout: (cause?: BearerAuthSessionEndCause, options?: { fromOtherTab?: boolean }) => void;
 };
 
 /**
@@ -201,7 +201,7 @@ export const setupMultiTabSync = (config: MultiTabSyncConfig, context: MultiTabS
 
       lastSyncedState = LOGGED_OUT;
       hadTokens = false;
-      context.logout(incomingCause(message.cause));
+      context.logout(incomingCause(message.cause), { fromOtherTab: true });
 
       return;
     }
