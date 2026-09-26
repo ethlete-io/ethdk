@@ -172,7 +172,7 @@ protected save() {
 
 ## Text & data
 
-- `markdownToHtml(markdown)` / `htmlToMarkdown(html)` - the dependency-free converters behind the [pipes](/core/directives-pipes#pipes), covering the common Markdown feature set including GFM tables and fenced code blocks. `markdownToHtml` escapes raw HTML in the Markdown text (so its output is safe to bind as HTML) and refuses script-running URL schemes in links and images.
+- `markdownToHtml(markdown)` / `htmlToMarkdown(html)` - the dependency-free converters behind the [pipes](/core/directives-pipes#pipes), covering the common Markdown feature set including GFM tables and fenced code blocks. `markdownToHtml` escapes raw HTML in the Markdown text (so its output is safe to bind as HTML) and refuses script-running URL schemes in links and images. It honours backslash escapes, and `htmlToMarkdown` backslash-escapes text that would otherwise read as Markdown (not code), so the round trip is lossless; it keeps only the text of a link that fails `isSafeLinkUrl(url)`, which allows `http:`, `https:`, `mailto:`, `tel:`, relative and fragment URLs.
 - `clone(value)` - deep clone (objects, arrays, Map/Set, Date, RegExp, typed arrays).
 - `equal(a, b)` - deep structural equality; used as the `equal` function for many of the SDK's computed signals.
 - `getObjectProperty(obj, 'a.b[2].c')` - nested property access by path; `isObject` / `isArray` type guards.

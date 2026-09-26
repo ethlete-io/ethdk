@@ -28,6 +28,16 @@ const isSafeUrl = (url: string) => {
   );
 };
 
+/** Whether `url` may become a link: `http:`, `https:`, `mailto:` and `tel:` URLs, relative paths and
+ *  fragments pass; any other scheme (`javascript:`, `data:`, `vbscript:`, ...) is refused, however
+ *  it is cased, spaced or entity-encoded. */
+export const isSafeLinkUrl = (url: string) => {
+  // eslint-disable-next-line no-control-regex -- URL parsers ignore these characters inside schemes.
+  const normalized = decodeUrlCharacterReferences(url).replace(/[\s\u0000-\u001f]/g, '');
+
+  return !/^[a-z][a-z0-9+.-]*:/i.test(normalized) || /^(?:https?|mailto|tel):/i.test(normalized);
+};
+
 const unescapeHtml = (str: string) =>
   str
     .replace(/&amp;/g, '&')
@@ -115,10 +125,12 @@ const sanitizeInlineHtml = (html: string) => {
 
 const processInline = (text: string): string => {
   const inlineCodes: string[] = [];
-  text = text.replace(/`([^`]+)`/g, (_, code: string) => {
-    const idx = inlineCodes.push(`<code>${escapeHtml(code)}</code>`) - 1;
-    return makePlaceholder('IC', idx);
-  });
+  const escapes: string[] = [];
+  text = text.replace(/\\([!-/:-@[-`{-~])|`([^`]+)`/g, (_, escaped: string | undefined, code: string | undefined) =>
+    escaped !== undefined
+      ? makePlaceholder('ESC', escapes.push(escapeHtml(escaped)) - 1)
+      : makePlaceholder('IC', inlineCodes.push(`<code>${escapeHtml(code ?? '')}</code>`) - 1),
+  );
 
   // "Open in new tab" links round-trip as raw HTML because Markdown has no `target` syntax. Extract
   // them before the raw-HTML escape below, keeping only a safe href, `target="_blank"` and a forced
@@ -159,9 +171,11 @@ const processInline = (text: string): string => {
     isSafeUrl(href) ? `<a href="${href}">${label}</a>` : match,
   );
 
+  // New-tab links first: their inner markup still holds this call's code and escape placeholders.
   return text
-    .replace(placeholderRe('IC'), (_, i) => inlineCodes[+i] ?? '')
-    .replace(placeholderRe('NTLINK'), (_, i) => newTabLinks[+i] ?? '');
+    .replace(placeholderRe('NTLINK'), (_, i) => newTabLinks[+i] ?? '')
+    .replace(placeholderRe('IC'), (match, i) => inlineCodes[+i] ?? match)
+    .replace(placeholderRe('ESC'), (match, i) => escapes[+i] ?? match);
 };
 
 /** The first top-level `<ul>`/`<ol>` in `html`, matched with balanced nesting. */
@@ -373,10 +387,49 @@ const buildListHtml = (lines: ParsedListLine[], start: number, baseIndent: numbe
   return { html: `<${tag}>${items}</${tag}>`, next: i };
 };
 
+const escapeMarkdownText = (text: string) =>
+  text
+    .replace(/[\\`[\]]/g, '\\$&')
+    .replace(/(?<!\s)\*|\*(?!\s)/g, '\\*')
+    .replace(/_+/g, (run, offset: number, whole: string) =>
+      run.length === 1 && /[a-z0-9]/i.test(whole[offset - 1] ?? '') && /[a-z0-9]/i.test(whole[offset + 1] ?? '')
+        ? run
+        : run.replace(/_/g, '\\_'),
+    )
+    .replace(/~{2,}/g, (run) => run.replace(/~/g, '\\~'))
+    .replace(/&lt;(?=\/?(?:u|a|p|h[1-6]|div)\b)/gi, '\\&lt;')
+    .replace(/(^|\n)([ \t]*)(?=[-+*#|:]|&gt;|\d+\.)/g, '$1$2\u{E002}');
+
+const escapeTextNodes = (html: string) => {
+  let codeDepth = 0;
+
+  return html.replace(/(<[^>]*>)|([^<]+)/g, (_, tag: string | undefined, text: string | undefined) => {
+    if (tag) {
+      const code = /^<(\/?)(?:pre|code)\b/i.exec(tag);
+
+      if (code) codeDepth = Math.max(0, codeDepth + (code[1] ? -1 : 1));
+
+      return tag;
+    }
+
+    return codeDepth > 0 ? (text ?? '') : escapeMarkdownText(text ?? '');
+  });
+};
+
+const escapeLineStarts = (md: string) =>
+  md
+    .replace(
+      /^([ \t]*(?:>[ \t]?)*)\u{E002}(?:([-+*])(?=[ \t]|$|--[ \t]*$)|(#{1,6})(?=[ \t]|$)|([>|])|(\d+)\.(?=[ \t]|$)|(?=[-:| \t]*\|[-:| \t]*$)(?=.*-))/gmu,
+      (_, prefix: string, bullet?: string, hashes?: string, marker?: string, digits?: string) =>
+        digits !== undefined ? `${prefix}${digits}\\.` : `${prefix}\\${bullet ?? hashes ?? marker ?? ''}`,
+    )
+    .replace(/\u{E002}/gu, '');
+
 /**
  * Converts a markdown string to HTML.
  * Covers headings, bold, italic, strikethrough, inline code, fenced code blocks,
  * links, images, block quotes, unordered/ordered (and nested) lists, tables, horizontal rules, and paragraphs.
+ * A backslash before a punctuation character keeps that character literal.
  */
 export const markdownToHtml = (markdown: string) => {
   if (!markdown) return '';
@@ -482,6 +535,8 @@ export const markdownToHtml = (markdown: string) => {
  * Converts an HTML string to markdown.
  * Covers headings, bold, italic, strikethrough, inline code, fenced code blocks,
  * links, images, block quotes, unordered/ordered lists, tables, horizontal rules, and paragraphs.
+ * Text that would read as Markdown is backslash-escaped (code is left as is), and a link whose URL
+ * fails {@link isSafeLinkUrl} keeps only its text.
  */
 export const htmlToMarkdown = (html: string) => {
   if (!html) return '';
@@ -503,6 +558,8 @@ export const htmlToMarkdown = (html: string) => {
       );
     },
   );
+
+  md = escapeTextNodes(md);
 
   // Code blocks - process before inline code
   md = md.replace(
@@ -544,6 +601,8 @@ export const htmlToMarkdown = (html: string) => {
   const newTabLinks: string[] = [];
   md = md.replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, (_, attrs: string, inner: string) => {
     const href = /\bhref\s*=\s*"([^"]*)"/i.exec(attrs)?.[1] ?? '';
+
+    if (!isSafeLinkUrl(href)) return inner;
 
     if (/\btarget\s*=\s*"_blank"/i.test(attrs) && href) {
       const anchor = `<a href="${href}" target="_blank" rel="noopener noreferrer">${inner}</a>`;
@@ -630,5 +689,5 @@ export const htmlToMarkdown = (html: string) => {
   // their own Markdown block
   md = md.replace(placeholderRe('ALIGN'), (_, i) => `\n\n${alignedBlocks[+i] ?? ''}\n\n`);
 
-  return md.replace(/\n{3,}/g, '\n\n').trim();
+  return escapeLineStarts(md.replace(/\n{3,}/g, '\n\n').trim());
 };
