@@ -268,7 +268,7 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       animation, card pixel layout (final at `size: auto`, compact emblems below 150px), pin drop on a click in
       empty space, horizontal scroll to `focusRoundId`, a measured width for `bracketFitsWidth`, pick-card focus
       rings.
-      In progress 2026-09-26: tabs + forms/select (60).
+      In progress 2026-09-26: tabs + forms/select (60), notification + menu + match (76).
 - [x] S11 Follow-ups from S6 (hand-written skill `.agents/skills/query-scenario-tests/SKILL.md` documents `s.mount`)
   1. Done in 47f4d25da: `s.mount(Component, injector, { inputs })` sets inputs before the first change detection;
      `legacy-client-options` mounts `MatchListComponent` directly.
