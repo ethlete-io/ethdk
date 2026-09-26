@@ -20,7 +20,7 @@ import {
   injectRenderer,
   injectViewportSize,
 } from '@ethlete/core';
-import { exhaustMap, finalize, merge, switchMap, take, takeUntil, tap, timer } from 'rxjs';
+import { exhaustMap, merge, switchMap, take, takeUntil, tap, timer } from 'rxjs';
 import { PipWindowParamsDirective } from '../pip-window-params.directive';
 import { animateScaleFadeOut } from './pip-animation';
 import { PipWindowSize } from './pip-window-size';
@@ -488,8 +488,12 @@ export const createPipWindowPosition = (options: PipWindowPositionOptions): PipW
             startResize();
             return outputToObservable(handles.resizeMoved).pipe(
               tap((event) => applyResizeDelta(event)),
-              takeUntil(merge(outputToObservable(handles.resizeEnded), outputToObservable(handles.resizeCancelled))),
-              finalize(() => endResize()),
+              takeUntil(
+                merge(outputToObservable(handles.resizeEnded), outputToObservable(handles.resizeCancelled)).pipe(
+                  take(1),
+                  tap(() => endResize()),
+                ),
+              ),
             );
           }),
         ),
@@ -508,8 +512,12 @@ export const createPipWindowPosition = (options: PipWindowPositionOptions): PipW
               tap((event) => applyDragStep(event)),
               // A window the user drags anywhere has no position to revert to, so a cancelled gesture
               // just ends it - but it has to end, or the pip stays stuck in drag mode.
-              takeUntil(merge(outputToObservable(handle.dragEnded), outputToObservable(handle.dragCancelled))),
-              finalize(() => endDrag()),
+              takeUntil(
+                merge(outputToObservable(handle.dragEnded), outputToObservable(handle.dragCancelled)).pipe(
+                  take(1),
+                  tap(() => endDrag()),
+                ),
+              ),
             );
           }),
         ),

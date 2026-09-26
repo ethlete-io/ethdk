@@ -979,9 +979,9 @@ test(components): Tighten the mixed state contract and extract the wrapper input
 8. **"Destroyed mid-gesture" as a shared helper.** Start a gesture, `fixture.destroy()`, assert
    nothing further runs. Pins the table reorder rAF leak plus drag-scroll and resize, and generalises
    to the scrollable/PiP/notification teardown cases; pair it with the "`takeUntilDestroyed` last"
-   lint rule. **Partly DONE 2026-09-23** in `a6965a5d2 test(components): Assert table and scrollable
-gestures stop when destroyed mid-drag` - covers table drag-scroll, table resize and scrollable.
-   PiP is still not covered.
+   lint rule. **DONE.** `a6965a5d2` (2026-09-23) covers table drag-scroll, table resize and
+   scrollable; PiP window drag and resize followed 2026-09-26 in `pip-window.component.spec.ts`, which
+   caught a real leak: the gesture's `finalize` snapped the window after destroy.
 9. **The largest zero-coverage surfaces, in value order:** `table-reorder.directive.ts` (445 lines,
    holds the confirmed leak), `stream-manager.ts` + `pip-manager.ts` (both Highs live there, both plain
    factories over a fake element), `scheduler.component.ts`'s two overlay-opening effects (both Highs,
