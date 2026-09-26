@@ -278,7 +278,7 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       failed `selectOptionsFromQuery` request also reaches the ErrorHandler. E2E gaps: panel position and width
       mirroring, real windowing, the `etSelectViewport` min-width lock, pointer hover, touch and bottom sheet,
       busy animations, the clear button on hover, the leave animation.
-      In progress 2026-09-26: notification + menu + match (76).
+      In progress 2026-09-26: notification + menu + match (76), forms/cascader + dropzone + color-input (64).
 - [x] S11 Follow-ups from S6 (hand-written skill `.agents/skills/query-scenario-tests/SKILL.md` documents `s.mount`)
   1. Done in 47f4d25da: `s.mount(Component, injector, { inputs })` sets inputs before the first change detection;
      `legacy-client-options` mounts `MatchListComponent` directly.
