@@ -17,6 +17,11 @@ export const RICH_TEXT_RENDERER_ERRORS = {
   text_parent_not_found: 'The parent node is not found. This structure is not supported.',
   text_parent_wrong_type:
     'The parent node neither a html element nor a custom component. This structure is not supported.',
+
+  cached_command_not_found: 'No rendered node was found for a render command. The renderer state is out of sync.',
+  cached_command_not_component:
+    'The rendered node for a component command is not a component. The renderer state is out of sync.',
+  command_not_found: 'A render command preceding the current one is missing. The renderer state is out of sync.',
 } as const;
 
 const RICH_TEXT_RENDERER_ERROR_CODES: Record<keyof typeof RICH_TEXT_RENDERER_ERRORS, number> = {
@@ -29,6 +34,9 @@ const RICH_TEXT_RENDERER_ERROR_CODES: Record<keyof typeof RICH_TEXT_RENDERER_ERR
   custom_component_not_found: 6,
   text_parent_not_found: 7,
   text_parent_wrong_type: 8,
+  cached_command_not_found: 9,
+  cached_command_not_component: 10,
+  command_not_found: 11,
 };
 
 export const richTextRendererError = (code: keyof typeof RICH_TEXT_RENDERER_ERRORS, data?: unknown) => {

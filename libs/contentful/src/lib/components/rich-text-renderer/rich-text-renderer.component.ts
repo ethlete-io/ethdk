@@ -910,12 +910,12 @@ export class ContentfulRichTextRendererComponent {
     const cached = this.executedCommandsCache.get(command.id);
 
     if (!cached) {
-      throw new Error('Cached command not found!');
+      throw richTextRendererError('cached_command_not_found', { command });
     }
 
     if (command.kind === 'component') {
       if (!isExecutedComponentCommandCacheItem(cached)) {
-        throw new Error('Cached command is not a component command!');
+        throw richTextRendererError('cached_command_not_component', { command });
       }
 
       cached.inputs.set(command.inputs);
@@ -931,12 +931,12 @@ export class ContentfulRichTextRendererComponent {
     const cached = this.executedCommandsCache.get(command.id);
 
     if (!cached) {
-      throw new Error('Cached command not found!');
+      throw richTextRendererError('cached_command_not_found', { command });
     }
 
     if (command.kind === 'component') {
       if (!isExecutedComponentCommandCacheItem(cached)) {
-        throw new Error('Cached command is not a component command!');
+        throw richTextRendererError('cached_command_not_component', { command });
       }
 
       const rootNode = cached.element;
@@ -968,12 +968,12 @@ export class ContentfulRichTextRendererComponent {
         return;
       }
 
-      throw new Error('Cached command not found!');
+      throw richTextRendererError('cached_command_not_found', { command });
     }
 
     if (command.kind === 'component') {
       if (!isExecutedComponentCommandCacheItem(cached)) {
-        throw new Error('Cached command is not a component command!');
+        throw richTextRendererError('cached_command_not_component', { command });
       }
 
       cached.componentRef.destroy();
@@ -1005,7 +1005,7 @@ export class ContentfulRichTextRendererComponent {
         const cmd = allCommands[i];
 
         if (!cmd) {
-          throw new Error('Command not found!');
+          throw richTextRendererError('command_not_found', { command });
         }
 
         if (cmd.nestingLevel === command.nestingLevel - 1 && cmd.kind === 'htmlOpen') {

@@ -184,3 +184,6 @@ The rich-text renderer throws `RuntimeError`s with renderer-local codes (`ET` + 
 | ET006 | No `customComponents` entry is registered for an embedded entry's content type.           |
 | ET007 | A text node's parent node was not found.                                                  |
 | ET008 | A text node's parent is neither an HTML element nor a custom component.                   |
+| ET009 | An internal render update found no rendered node for its command.                         |
+| ET010 | An internal render update expected a component but found a plain node.                    |
+| ET011 | An internal parent lookup hit a missing render command.                                   |
