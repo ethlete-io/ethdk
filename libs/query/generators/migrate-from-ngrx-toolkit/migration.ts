@@ -192,7 +192,10 @@ export const migrateToolkitStores = (
   }
 
   const removal = removeFeatureStores(tree, graph, inScope, ready, report);
-  const consumers = migrateToolkitConsumers(tree, createModuleGraph(tree), inScope, report);
+  const migratedFacades = new Set(
+    ready.map((feature) => feature.files.facade).filter((file): file is string => !!file),
+  );
+  const consumers = migrateToolkitConsumers(tree, createModuleGraph(tree), inScope, report, migratedFacades);
 
   return {
     featuresFound: discovered.features.length,

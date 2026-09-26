@@ -113,8 +113,9 @@ The feature is untouched. Fix the cause, then re-run the generator.
 | Task                           | What to do                                                                                                                                                                                                                                                                                 |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `NTK-UNSUPPORTED-IMPORT`       | The file still imports names the interop does not export. Rewrite the code that uses them and drop the import. A file that imports interop names together with store-side names (`FacadeBase` next to `MappedEntityState`) gets the interop names moved and keeps the rest with this task. |
-| `NTK-UNCONVERTED-ACTION-GROUP` | A `MappedEntityState` / `ActionCallArgs` type names an action group whose feature is still on the toolkit, so the file was left alone. Resolve that feature's task, then re-run.                                                                                                           |
+| `NTK-UNCONVERTED-ACTION-GROUP` | A `MappedEntityState` / `ActionCallArgs` type names an action group whose feature is still on the toolkit, so the file was left alone. It does not typecheck where it takes handles from migrated facades. Resolve that feature's task, then re-run.                                       |
 | `NTK-SELECT-BY-ACTION-ID`      | A handle is looked up by an action id that the generator could not trace back to its args. The interop has no action ids: pass the args to where the handle is needed and call `toolkitSelect(creator, args, { injector })`.                                                               |
+| `NTK-FACADE-ON`                | A consumer calls `on()` / `once()` on a migrated facade. The facade has no such methods and the creators have no `.success` actions. React to the `response$` / `error$` of the handle instead, or subscribe to the creator's result.                                                      |
 | `NTK-AUTH-INTERCEPTOR`         | An interceptor attaches the bearer token to every `HttpClient` call. Secure creators already send it. Delete the interceptor and its registration. Routes it skipped must use public creators: add their prefixes to `--publicRoutes` and re-run.                                          |
 
 ### Leftovers
@@ -145,7 +146,7 @@ export class TeamFacade {
 - **A second call with the same args joins the one in flight** instead of sending another request.
 - **Calls with other args are not cancelled.** A toolkit `onActionSwitchMap` aborted the previous call of the group; each args set is its own query now. Check screens that relied on that.
 - **`remove()` during a request drops the late result.**
-- **Not in the interop:** `isPolling$`, `type$`, `entityId$`, action ids, `sideUpdates`, `on()` / `once()`. They show up as `NTK-UNSUPPORTED-IMPORT` where used.
+- **Not in the interop:** `isPolling$`, `type$`, `entityId$`, action ids, `sideUpdates`, `on()` / `once()`. They show up as `NTK-UNSUPPORTED-IMPORT`, or as `NTK-FACADE-ON` for `on()` / `once()` on a migrated facade.
 
 ## 5. Migrate screens
 

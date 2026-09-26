@@ -12,6 +12,7 @@ export const CONSUMER_TASK = {
   UNCONVERTED_ACTION_GROUP: 'NTK-UNCONVERTED-ACTION-GROUP',
   SELECT_BY_ACTION_ID: 'NTK-SELECT-BY-ACTION-ID',
   AUTH_INTERCEPTOR: 'NTK-AUTH-INTERCEPTOR',
+  FACADE_ON: 'NTK-FACADE-ON',
 } as const;
 
 const defineConsumerTasks = (report: ToolkitMigrationReport) => {
@@ -23,12 +24,17 @@ const defineConsumerTasks = (report: ToolkitMigrationReport) => {
   report.define(CONSUMER_TASK.UNCONVERTED_ACTION_GROUP, {
     title: 'Consumer types name an action group that is still on the toolkit',
     action:
-      'The file was left on `@tomtomb/ngrx-toolkit` because a `MappedEntityState` / `ActionCallArgs` type names an action group whose feature was not converted. Resolve that feature’s task, then re-run the generator.',
+      'The file was left on `@tomtomb/ngrx-toolkit` because a `MappedEntityState` / `ActionCallArgs` type names an action group whose feature was not converted. Until then the file does not typecheck where it takes handles from facades that were migrated: the interop `MappedEntityState` has no `isPolling$`, `type$` or `entityId$`, and other generics. Resolve that feature’s task, then re-run the generator.',
   });
   report.define(CONSUMER_TASK.SELECT_BY_ACTION_ID, {
     title: 'Handle looked up by action id',
     action:
       'The interop has no action ids. Pass the args instead and look the handle up with `toolkitSelect(creator, args, { injector })` - equal args return the handle `toolkitCall` created.',
+  });
+  report.define(CONSUMER_TASK.FACADE_ON, {
+    title: 'Facade `on()` / `once()` call on a migrated facade',
+    action:
+      'The migrated facade has no `on()` / `once()`, and the v3 creators have no `.success` / `.failure` actions, so the call does not typecheck. Rewrite it by hand: react to the `response$` / `error$` of the handle the facade method returns, or subscribe to the creator’s result.',
   });
   report.define(CONSUMER_TASK.AUTH_INTERCEPTOR, {
     title: 'HTTP interceptor attaches the bearer token',
@@ -608,12 +614,109 @@ const findInterceptors = (
   return tasks;
 };
 
+const migratedFacadeNames = (
+  graph: ModuleGraph,
+  migratedFacades: ReadonlySet<string>,
+  filePath: string,
+  sourceFile: ts.SourceFile,
+) => {
+  const names = new Set<string>();
+
+  for (const statement of sourceFile.statements) {
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
+
+    const bindings = statement.importClause?.namedBindings;
+
+    if (!bindings || !ts.isNamedImports(bindings)) continue;
+
+    for (const element of bindings.elements) {
+      const imported = element.propertyName?.text ?? element.name.text;
+      const declaringFile = graph.findDeclaringFile(filePath, statement.moduleSpecifier.text, imported);
+
+      if (declaringFile && migratedFacades.has(declaringFile)) names.add(element.name.text);
+    }
+  }
+
+  return names;
+};
+
+const findFacadeEventCalls = (
+  graph: ModuleGraph,
+  migratedFacades: ReadonlySet<string>,
+  filePath: string,
+  content: string,
+): ToolkitTaskInput[] => {
+  if (!/\.(on|once)\s*\(/.test(content)) return [];
+
+  const sourceFile = createSourceFile(content, filePath);
+  const facadeNames = migratedFacadeNames(graph, migratedFacades, filePath, sourceFile);
+
+  if (facadeNames.size === 0) return [];
+
+  const isFacadeType = (type: ts.TypeNode | undefined) =>
+    !!type && ts.isTypeReferenceNode(type) && ts.isIdentifier(type.typeName) && facadeNames.has(type.typeName.text);
+
+  const isFacadeInject = (node: ts.Node | undefined) =>
+    !!node && isCall(node, 'inject') && !!node.arguments[0] && facadeNames.has(node.arguments[0].getText(sourceFile));
+
+  const bound = new Set<string>();
+
+  const collect = (node: ts.Node) => {
+    if (
+      (ts.isPropertyDeclaration(node) || ts.isParameter(node) || ts.isVariableDeclaration(node)) &&
+      ts.isIdentifier(node.name) &&
+      (isFacadeType(node.type) || isFacadeInject(node.initializer))
+    ) {
+      bound.add(node.name.text);
+    }
+
+    ts.forEachChild(node, collect);
+  };
+
+  collect(sourceFile);
+
+  const isFacade = (receiver: ts.Expression) => {
+    if (isFacadeInject(receiver)) return true;
+    if (ts.isIdentifier(receiver)) return bound.has(receiver.text);
+
+    return (
+      ts.isPropertyAccessExpression(receiver) &&
+      receiver.expression.kind === ts.SyntaxKind.ThisKeyword &&
+      bound.has(receiver.name.text)
+    );
+  };
+
+  const tasks: ToolkitTaskInput[] = [];
+
+  const visit = (node: ts.Node) => {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      ['on', 'once'].includes(node.expression.name.text) &&
+      isFacade(node.expression.expression)
+    ) {
+      tasks.push({
+        id: CONSUMER_TASK.FACADE_ON,
+        summary: `${code(node.getText(sourceFile).replace(/\s+/g, ' '))} listens to toolkit actions the migrated facade no longer emits.`,
+        locations: [{ filePath, line: lineOf(sourceFile, node.getStart(sourceFile)) }],
+      });
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+
+  return tasks;
+};
+
 /** Runs the consumer side of the migration on every scoped file that still imports `@tomtomb/ngrx-toolkit`. */
 export const migrateToolkitConsumers = (
   tree: Tree,
   graph: ModuleGraph,
   inScope: ReadonlySet<string>,
   report: ToolkitMigrationReport,
+  migratedFacades: ReadonlySet<string>,
 ): ToolkitConsumerStats => {
   defineConsumerTasks(report);
 
@@ -635,6 +738,8 @@ export const migrateToolkitConsumers = (
 
     interceptors.forEach((task) => report.add(task));
     stats.interceptorsFound += interceptors.length;
+
+    findFacadeEventCalls(graph, migratedFacades, filePath, content).forEach((task) => report.add(task));
 
     if (!content.includes(TOOLKIT_MODULE)) continue;
 

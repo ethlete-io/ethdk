@@ -235,6 +235,63 @@ describe('migrate-from-ngrx-toolkit consumers', () => {
       ]);
     });
 
+    it('says that a file left on the toolkit does not typecheck against migrated facades', () => {
+      tree.write(
+        'libs/domain/catalog/src/lib/event.component.ts',
+        [
+          "import { getCatalogSessionEvent } from '@app-a/store';",
+          "import { MappedEntityState } from '@tomtomb/ngrx-toolkit';",
+          '',
+          'export type EventStore = MappedEntityState<typeof getCatalogSessionEvent>;',
+          '',
+        ].join('\n'),
+      );
+      migrateToolkitStores(tree, APP_A_OPTIONS, report);
+      report.writeToTree(tree);
+
+      expect(read(TOOLKIT_MIGRATION_REPORT_PATH)).toContain(
+        'Until then the file does not typecheck where it takes handles from facades that were migrated',
+      );
+    });
+
+    it('records a task for on() and once() calls on a migrated facade', () => {
+      const path = 'libs/domain/admin/src/lib/members/item-listener.component.ts';
+
+      tree.write(
+        path,
+        [
+          "import { Component, inject } from '@angular/core';",
+          "import { CatalogSessionFacade, ItemFacade, getItem } from '@app-a/store';",
+          '',
+          "@Component({ selector: 'app-a-item-listener', template: '' })",
+          'export class ItemListenerComponent {',
+          '  private _sessionFacade = inject(CatalogSessionFacade);',
+          '',
+          '  constructor(private _itemFacade: ItemFacade) {',
+          '    this._itemFacade.on([getItem.success]).subscribe();',
+          '    inject(ItemFacade).once(getItem.failure).subscribe();',
+          '    this._sessionFacade.on([getItem.success]).subscribe();',
+          '  }',
+          '}',
+          '',
+        ].join('\n'),
+      );
+      migrateToolkitStores(tree, APP_A_OPTIONS, report);
+
+      expect(tasksOf(CONSUMER_TASK.FACADE_ON)).toEqual([
+        expect.objectContaining({
+          summary:
+            '`this._itemFacade.on([getItem.success])` listens to toolkit actions the migrated facade no longer emits.',
+          locations: [{ filePath: path, line: 9 }],
+        }),
+        expect.objectContaining({
+          summary:
+            '`inject(ItemFacade).once(getItem.failure)` listens to toolkit actions the migrated facade no longer emits.',
+          locations: [{ filePath: path, line: 10 }],
+        }),
+      ]);
+    });
+
     it('keeps typeof on a namespace import once it points at the queries file', () => {
       const path = 'libs/store/src/lib/stores/item/item/item-list.component.ts';
 
