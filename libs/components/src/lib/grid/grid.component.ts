@@ -216,8 +216,10 @@ export class GridComponent<TData = unknown> {
           );
         }
 
+        const leavingIds = this.grid.leavingIds();
         const unrenderedItems = items.filter(
-          (item) => !projectedIds.has(item.id) && !registrations.some((r) => r.type === item.type),
+          (item) =>
+            !leavingIds.has(item.id) && !projectedIds.has(item.id) && !registrations.some((r) => r.type === item.type),
         );
 
         if (unrenderedItems.length > 0) {

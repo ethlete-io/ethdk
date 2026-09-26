@@ -399,24 +399,12 @@ export class GridDirective<TData = unknown> {
             return;
           }
 
-          // Copy `data` alone: an existing config's `layout` holds what `moveItem` last wrote, which is
-          // ahead of the host's snapshot, so setting `initial` wholesale here would revert the moves.
-          const changedData = initial.filter((incoming) => currentById.get(incoming.id)?.data !== incoming.data);
-
-          if (changedData.length > 0) {
-            const dataById = new Map(changedData.map((item) => [item.id, item.data]));
-
-            this.itemConfigs.update((items) =>
-              items.map((item) => {
-                const incoming = dataById.get(item.id);
-
-                return dataById.has(item.id) ? { ...item, data: incoming as TData } : item;
-              }),
-            );
-          }
+          this.copyChangedData(initial, currentById);
 
           return;
         }
+
+        this.copyChangedData(initial, currentById);
 
         // Silent: the host is the source of these items, so echoing them back as a `layoutChange`
         // would read as a user edit to anything treating that output as a dirty flag.
@@ -831,6 +819,27 @@ export class GridDirective<TData = unknown> {
     }
 
     this.layoutOverrides.set(overrides);
+  }
+
+  // Copies `data` alone: an existing config's `layout` holds what `moveItem` last wrote, which is
+  // ahead of the host's snapshot, so taking the incoming configs wholesale would revert the moves.
+  private copyChangedData(
+    incoming: GridItemConfig<string, TData>[],
+    currentById: ReadonlyMap<string, GridItemConfig<string, TData>>,
+  ) {
+    const changedData = incoming.filter((item) => {
+      const existing = currentById.get(item.id);
+
+      return existing !== undefined && existing.data !== item.data;
+    });
+
+    if (changedData.length === 0) return;
+
+    const dataById = new Map(changedData.map((item) => [item.id, item.data]));
+
+    this.itemConfigs.update((items) =>
+      items.map((item) => (dataById.has(item.id) ? { ...item, data: dataById.get(item.id) as TData } : item)),
+    );
   }
 
   private columnsForBreakpoint(breakpoint: GridBreakpointName) {
