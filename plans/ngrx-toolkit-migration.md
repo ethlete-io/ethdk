@@ -153,7 +153,8 @@ Manual (report tasks): vbl `layout` and `tournament` facades (toolkit-shaped, no
     - Toolkit errors: 16 are a defect. Consumers call `facade.on([group.success])` on a migrated facade, and no
       task reports it (`consumers.ts` detects only `select`). 4 are the listed action-id tasks. 84 are in 14 files
       that stay on the toolkit (`NTK-UNCONVERTED-ACTION-GROUP`), but now get interop handles from migrated
-      facades. The task text must say that the file does not typecheck until it is converted.
+      facades. Both fixed in 0928e2198: the new task `NTK-FACADE-ON`, and the unconverted task text names the
+      typecheck gap.
     - Core v5 defects: f764e7037 imports `./apply-replacements` without `.js`, so the generator fails to load.
       `color-naming.ts:124` skips files that import only from `@ethlete/theming`, so `ProvideThemeDirective`
       stays, and cdk v5 moves the old name to `@ethlete/core`. Both fixed in fa443b717.
