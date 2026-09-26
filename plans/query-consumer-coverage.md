@@ -261,6 +261,7 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       `FORM_FIELD_LABELS` holds only the overrides; `s.flush()` runs no change detection when nothing is pending.
       E2E gaps: support region animations, floating label layout, busy spinner timing, anchored panel position,
       the bottom sheet below `md`, the focus ring.
+      In progress 2026-09-26: bracket (50), tabs + forms/select (60).
 - [x] S11 Follow-ups from S6 (hand-written skill `.agents/skills/query-scenario-tests/SKILL.md` documents `s.mount`)
   1. Done in 47f4d25da: `s.mount(Component, injector, { inputs })` sets inputs before the first change detection;
      `legacy-client-options` mounts `MatchListComponent` directly.
