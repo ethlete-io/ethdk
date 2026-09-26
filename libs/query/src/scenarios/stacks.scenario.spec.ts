@@ -1686,6 +1686,84 @@ describe('paged stack edge cases', () => {
     c.destroy();
   });
 
+  it('reports the last page as loaded for an empty result', () => {
+    const s = scenario();
+    s.api.on('GET', '/empty-pages', () => ({ body: { ...ethletePage(1, 0), items: [], nextPage: null } }));
+
+    const getPage = s.get<PagedQueryArgs>('/empty-pages');
+    const c = s.consumer();
+    const pages = c.run(() =>
+      createPagedQueryStack({
+        queryCreator: getPage,
+        responseNormalizer: ethletePaginationAdapter,
+        args: (page) => ({ queryParams: { page } }),
+      }),
+    );
+
+    s.tick();
+
+    expect(pages.items()).toEqual([]);
+    expect(pages.isLastPageLoaded()).toBe(true);
+    expect(pages.canFetchNextPage()).toBe(false);
+
+    c.destroy();
+  });
+
+  it('reports the last page as loaded when the page count shrinks below the loaded page', () => {
+    const s = scenario();
+    let totalPageCount = 3;
+    s.api.on('GET', '/shrinking-pages', ({ query }) => ({ body: ethletePage(Number(query['page']), totalPageCount) }));
+
+    const getPage = s.get<PagedQueryArgs>('/shrinking-pages');
+    const c = s.consumer();
+    const pages = c.run(() =>
+      createPagedQueryStack({
+        queryCreator: getPage,
+        responseNormalizer: ethletePaginationAdapter,
+        args: (page) => ({ queryParams: { page } }),
+      }),
+    );
+
+    s.tick();
+    pages.fetchNextPage();
+    s.tick();
+    expect(pages.isLastPageLoaded()).toBe(false);
+
+    totalPageCount = 1;
+    pages.execute();
+    s.tick();
+
+    expect(pages.maxPagination()?.totalPages).toBe(1);
+    expect(pages.isLastPageLoaded()).toBe(true);
+    expect(pages.canFetchNextPage()).toBe(false);
+
+    c.destroy();
+  });
+
+  it('runs a fetchNextPage call made while the next page loads, with blockExecutionDuringLoading: false', () => {
+    const s = scenario();
+    const { c, pages } = pagedStack(s, '/overlapping-pages', { delay: 50 });
+
+    s.tick(50);
+    const second = pages.fetchNextPage();
+    s.tick();
+
+    expect(pages.loading()).toBe(true);
+
+    let third: ReturnType<typeof pages.fetchNextPage> = null;
+    expect(() => (third = pages.fetchNextPage())).not.toThrow();
+    expect(third).not.toBeNull();
+
+    s.tick(50);
+
+    expect(second?.response()?.currentPage).toBe(2);
+    expect(pages.items()).toEqual([{ id: 1 }, { id: 2 }, { id: 3 }]);
+    expect(pages.isLastPageLoaded()).toBe(true);
+    expect(s.api.requests.map((r) => r.query['page'])).toEqual(['1', '2', '3']);
+
+    c.destroy();
+  });
+
   it('fetchPreviousPage returns null and keeps its position when its args repeat a loaded page', () => {
     const s = scenario();
     s.api.on('GET', '/clamped-pages', ({ query }) => ({ body: ethletePage(Number(query['page']), 3) }));

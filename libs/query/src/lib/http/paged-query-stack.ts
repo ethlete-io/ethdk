@@ -370,7 +370,7 @@ export const createPagedQueryStack = <
   const isLastPageLoaded = computed(() => {
     const max = maxPagination();
 
-    return max ? loadedMaxPage() === max.totalPages : false;
+    return max ? loadedMaxPage() >= max.totalPages : false;
   });
 
   const fetchPreviousPage = () => {
@@ -408,9 +408,22 @@ export const createPagedQueryStack = <
     return query;
   };
 
+  const latestSettledPagination = () => {
+    const all = stack.response();
+    const queries = stack.queries();
+
+    for (let i = queries.length - 1; i >= 0; i--) {
+      const res = queries[i]?.response();
+
+      if (res) return responseNormalizer(res, all);
+    }
+
+    return null;
+  };
+
   const fetchNextPage = () => {
     const page = loadedMaxPage() + 1;
-    const currentPagination = maxPagination();
+    const currentPagination = latestSettledPagination();
     const allResponses = stack.response();
 
     if (!canFetchNewPage(page)) {

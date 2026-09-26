@@ -477,13 +477,22 @@ export const createQueryBatch = <TCreator extends AnyQueryCreator, TItem>(
       runStartedAt.set(Date.now());
       lastSettleAt.set(null);
 
+      let erred = false;
+
       return from(entries).pipe(
         mergeMap((entry) => runEntry(entry), concurrency),
         toArray(),
         map(() => settleRun(entries)),
+        tap({ error: () => (erred = true) }),
         finalize(() => {
-          if (status() === 'running') status.set('idle');
-          running.set(false);
+          if (!running()) return;
+
+          if (erred) {
+            status.set('idle');
+            running.set(false);
+          } else {
+            settleRun(entries);
+          }
         }),
       );
     });

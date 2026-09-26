@@ -330,6 +330,45 @@ describe('batching scenario', () => {
     c.destroy();
   });
 
+  it('unsubscribing mid-run marks the in-flight and queued items cancelled, and retryFailed() resends them', () => {
+    const s = scenario();
+    s.api.on('PATCH', '/posts/:id', ({ params }) => ({ body: { id: params['id'] }, delay: 100 }));
+
+    const c = s.consumer();
+    const batch = c.run(() =>
+      createQueryBatch({
+        queryCreator: patchPosts(s),
+        args: (post: Post) => ({ pathParams: { id: post.id } }),
+        concurrency: 1,
+      }),
+    );
+
+    const subscription = batch.run(posts('1', '2', '3', '4')).subscribe();
+    s.tick(100);
+    s.tick();
+
+    expect(batch.completed()).toBe(1);
+    expect(s.api.pending().map((r) => r.path)).toEqual(['/posts/2']);
+
+    subscription.unsubscribe();
+
+    expect(s.api.pending().length).toBe(0);
+    expect(batch.running()).toBe(false);
+    expect(batch.status()).toBe('cancelled');
+    expect(batch.results().map((r) => r.status)).toEqual(['success', 'cancelled', 'cancelled', 'cancelled']);
+    expect(batch.progress()).toBe(100);
+
+    const retry = capture(batch.retryFailed());
+    s.flush();
+
+    expect(s.api.requests.map((r) => r.path)).toEqual(['/posts/1', '/posts/2', '/posts/2', '/posts/3', '/posts/4']);
+    expect(retry.value?.ok).toBe(true);
+    expect(ids(retry.value?.succeeded ?? [])).toEqual(['1', '2', '3', '4']);
+    expect(batch.status()).toBe('success');
+
+    c.destroy();
+  });
+
   it('retryFailed() never resends a successful item and clears the errors it recovers from', () => {
     const s = scenario();
     s.api.on('PATCH', '/posts/2', sequence([{ status: 500, body: { message: 'boom' } }, { body: { id: '2' } }]));

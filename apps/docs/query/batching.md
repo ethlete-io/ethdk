@@ -153,7 +153,7 @@ retry() {
 
 - **Skip an item** by returning `null` from `args`. It is recorded as `skipped`, not as a failure, and `ok` stays `true`.
 - **`stopOnError: true`** stops the batch at the first failure. Everything still queued becomes `notAttempted`; requests already in flight are left to settle.
-- **`cancel()`** does the same on demand. It deliberately does **not** abort in-flight requests: a mutation the server may already have applied has to be recorded, so those items settle into the results as normal. (Unsubscribing from the run _does_ abort them - prefer `cancel()`.)
+- **`cancel()`** does the same on demand. It deliberately does **not** abort in-flight requests: a mutation the server may already have applied has to be recorded, so those items settle into the results as normal. (Unsubscribing from the run _does_ abort them, and settles the run: the aborted and queued items become `notAttempted`, so `retryFailed()` resends them - prefer `cancel()`.)
 
 ## Notes
 
