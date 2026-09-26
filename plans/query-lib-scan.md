@@ -377,3 +377,12 @@ legacy `prepare()` in an anonymous `export default class` is migrated (`1a9b929d
 follows `import * as q`, for renames and for `q.ExperimentalQuery.x` (`48efc25fe`). Dead code removed:
 `removeAnyQueryFromImports` and `describeTemplateLine` (`7a2a9d2d3`), `migration-scope.includes`
 (`d60515dc1`), the `pruneUnusedNamedImports` module filter (`f7bb00368`). A non-literal `secure` value (`secure: isProd`) gets the same warning instead of a silently non-secure creator (`14580fe71`).
+
+### Auth leftovers (2026-09-26)
+
+The six leftovers are closed, each bug fix with a scenario that failed first. The cookie token helpers
+are renamed to obfuscation and the guide says so (`f3cb22f50`). A cookie another origin wrote under
+`cookie.domain` is detected by a checksum and neither sent nor deleted; old-format cookies still restore
+(`a5f32c6a0`). `createPersistentAuthFeature` and `createTrackingFeature` run in `context.injector`
+(`27832c3d1`). A negative numeric `refreshStrategy` counts as `0` (`c434c9dc7`). The `unbind` JSDoc
+names retention (`5c381d007`). `AuthQueryConfig.retryFn` is no longer `@internal` (`676201261`).
