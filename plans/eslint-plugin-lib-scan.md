@@ -1,14 +1,8 @@
 # eslint-plugin lib scan — open findings
 
 Scan of `libs/eslint-plugin` from 2026-08-19. Fixed findings were removed on 2026-09-26 (git history
-has them). Still open: 24 Medium, 48 Low, ~38 spec-coverage items. Paths are relative to
+has them). Still open: 22 Medium, 48 Low, ~37 spec-coverage items. Paths are relative to
 `libs/eslint-plugin/src/rules/` unless shown in full.
-
-## Highest value: fixers that produce unparsable code
-
-- Medium: `prefer-concise-angular-host-directives` reorder breaks parsing when a comment precedes a same-line `}]` (`[{ outputs: ['x'], // c\n directive: X, }]` → "'}' expected"). Prettier-formatted input is fine. S
-- Medium: `class-member-order` on non-semicolon members sharing a line (`focus() {}\n private a = inject(A) }` → `private a = inject(A) focus() {}`). S
-- Spec: no shared "fix twice, then parse" assertion — would have caught both. M
 
 ## ordering & naming
 
