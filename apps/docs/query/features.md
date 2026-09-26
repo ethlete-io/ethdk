@@ -32,7 +32,7 @@ save() {
 }
 ```
 
-A function route (one using `pathParams`) requires a `withArgs` feature. Calling the creator without one is a type error, and throws `ET100` in dev mode where the compiler cannot tell (a spread of features, an `any`-typed creator). The `silenceMissingWithArgsFeatureError` [query config](/query/queries#query-creators) is an escape hatch for args that only exist at call time, passed to `execute({ args })`; it satisfies the type check only as the literal `true`. Setting that config together with a `withArgs` feature is an error too, at compile time and at runtime, since the two contradict each other.
+A function route (one using `pathParams`) requires a `withArgs` feature. Calling the creator without one is a type error, and throws `ET100` in dev mode where the compiler cannot tell (a spread of features, an `any`-typed creator). The check reads the type `withArgs()` returns, so a feature stored in a variable annotated as plain `QueryFeature` does not count - let its type be inferred. The `silenceMissingWithArgsFeatureError` [query config](/query/queries#query-creators) is an escape hatch for args that only exist at call time, passed to `execute({ args })`; it satisfies the type check only as the literal `true`. Setting that config together with a `withArgs` feature is an error too, at compile time and at runtime, since the two contradict each other.
 
 ```ts
 getPost(); // type error: withArgs() is required: this query's route uses pathParams. …

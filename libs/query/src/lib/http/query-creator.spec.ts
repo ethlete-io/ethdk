@@ -167,8 +167,41 @@ describe('query creator', () => {
       getUser(withArgs(() => ({ pathParams: {} })));
     };
 
+    const typeOnlyCallSites = (getUser: QueryCreator<UserArgs>, log: QueryFeature<UserArgs>) => {
+      const api = { getUser };
+      const { getUser: extracted } = api;
+      const stored = getUser;
+      const forward = <T extends QueryArgs>(creator: QueryCreator<T>, ...features: QueryFeature<T>[]) =>
+        creator(...features);
+
+      class UserService {
+        readonly getUser = getUser;
+        readonly user = this.getUser(withArgs(() => ({ pathParams: { id: '1' } })));
+        // @ts-expect-error pathParams without withArgs
+        readonly broken = this.getUser();
+      }
+
+      api.getUser(withArgs(() => ({ pathParams: { id: '1' } })));
+      extracted(withArgs(() => ({ pathParams: { id: '1' } })));
+      stored(withArgs(() => ({ pathParams: { id: '1' } })));
+      forward(
+        getUser,
+        withArgs(() => ({ pathParams: { id: '1' } })),
+      );
+
+      // @ts-expect-error pathParams without withArgs
+      api.getUser();
+      // @ts-expect-error pathParams without withArgs
+      extracted(log);
+      // @ts-expect-error the flag has to be the literal true, not boolean
+      getUser({ silenceMissingWithArgsFeatureError: Boolean(log) });
+
+      return UserService;
+    };
+
     it('only runs in tsc', () => {
       expect(typeof typeOnly).toBe('function');
+      expect(typeof typeOnlyCallSites).toBe('function');
     });
   });
 });
