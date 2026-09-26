@@ -17,8 +17,7 @@ agent that works alone, batch by batch.
   filter-overlay, forms/phone-input, forms/input, accordion, picture, pagination. `KBD_PLATFORM` and `DescriptionComponent` are covered by the palette and selection-list scenarios. Components: 959 of 1381 covered. Per-domain notes are under "Domain notes" below.
 - Removed on 2026-09-26 by user decision: `GridItemRef` and `configComponent` (e519882bc). Added:
   `FormFieldDirective.controlSuffixTemplate` (e38133536).
-- In progress 2026-09-27: tree, time-picker, chip, kbd, floating-action, forms/masked-input, loader
-  (task 5); forms/multi-language-rich-text-editor, banner, toggletip, overlay, stream, scrollbar, progress-steps
+- In progress 2026-09-27: forms/multi-language-rich-text-editor, banner, toggletip, overlay, stream, scrollbar, progress-steps
   (task 6a); masonry, badge, avatar, tooltip, toolbar, skeleton, forms/tag-input, forms/rating (task 6b).
 
 ## Rules for every batch
@@ -50,7 +49,7 @@ agent that works alone, batch by batch.
 2. Done 2026-09-27: scrollable, forms/selection-list, query-error, filter-overlay.
 3. Done 2026-09-27: chart, calendar, standings, forms/slider.
 4. Done 2026-09-27: forms/phone-input, forms/input, accordion, picture, pagination.
-5. tree 10, time-picker 10, chip 10, kbd 9, floating-action 9, forms/masked-input 8, loader 7 (63).
+5. Done 2026-09-27: tree, time-picker, chip, kbd, floating-action, forms/masked-input, loader.
 6. forms/multi-language-rich-text-editor 7, banner 7, toggletip 6, overlay 6, stream 5, scrollbar 5,
    progress-steps 5, masonry 5, badge 5, avatar 5, tooltip 4, toolbar 4, skeleton 4, forms/tag-input 4,
    forms/rating 4 (76).
@@ -64,6 +63,10 @@ agent that works alone, batch by batch.
 9. Before any push: ask the user, then run the `ci-check` skill.
 
 ## Open items that need the user (do not decide alone)
+
+- The `LoaderLabels.loading` JSDoc says the spinner announces "Loading", but `SpinnerComponent` has no `aria-label`
+  and `apps/docs/components/loader.md` says spinner and progress bar have no accessible name by default. Change the
+  JSDoc or the component?
 
 - `etSlider` `min`/`max` have no `numberAttribute`, so a static `min="60"` is a string in JIT and breaks clamping;
   `etRangeSlider` names them `minValue`/`maxValue` and transforms them. Align the two?
@@ -269,3 +272,17 @@ agent that works alone, batch by batch.
   standings drag reorder, container-query density, zone colours, zone notes in a screen reader; calendar month and
   header transitions, focus during re-render, hover preview, multi-month layout; chart touch drag on a line plot,
   tooltip placement and hover, horizontal bars, sankey labels and scroller, pie entry animation.
+
+### tree, time-picker, chip, kbd, floating-action, forms/masked-input, loader
+
+- Friction: fixed in ec0d0ada3: a leading minus in `createCurrencyMask({ allowNegative: true })` was dropped. Open:
+  `InputComponent.syncNativeValue` ignores `nativeSyncSuppressed`, so the mask breaks an IME composition (`it.fails`
+  in `forms-masked-input.scenario.spec.ts`, fix in progress); `parseKbdKeys('mod++')` drops the `+` (write `plus`);
+  chip does not move focus after a remove; the harness `s.intersect` sends `rootBounds: null` (floating-action wraps
+  it); time-picker column focus waits for a microtask and `new Date()` is read at construction; tree
+  `loadingLabel`/`emptyLabel`/`retryLabel` are plain inputs, no `provideTreeLabels`.
+- E2E gaps: macOS Option keys and spoken kbd labels; spinner/brand animations, reduced motion, `currentColor` in
+  colour scopes; chip remove focus ring and Backspace focus handoff; real IME, dead keys, caret after paste, soft
+  keyboards; floating-action move and scale, no anchor jump, smooth `scrollToTop`; time-picker selected-option
+  centring, scrollbar auto-hide, RTL, range bands, touch scroll; tree chevron, indent, focused-row `scrollIntoView`,
+  RTL keys, check mark.
