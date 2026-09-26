@@ -147,7 +147,11 @@ The source-generation helpers (`generateContentfulImageSources`, `generateDefaul
 
 - `<et-contentful-video>` - native `<video controls>` with one `<source>`; `videoClass` input.
 - `<et-contentful-audio>` - `<figure>` with the asset title as `<figcaption>` and a native `<audio controls>`; `audioClass`, `figureClass`, `figcaptionClass` inputs.
-- `<et-contentful-file>` - a download link (`target="_blank"`, `rel="noopener noreferrer"`) showing the file's title and size; `fileClass` input.
+- `<et-contentful-file>` - a download link (`target="_blank"`, `rel="noopener noreferrer"`) showing the file's title and size, scaled with `formatFileSize` from `@ethlete/components` (e.g. `(1.5 MB)`); `fileClass` input. Reword the size with `provideContentfulFileLabels`, the same label system every `@ethlete/components` domain uses:
+
+```ts
+provideContentfulFileLabels({ fileSize: (bytes) => `(${formatFileSize(bytes).replace('.', ',')})` });
+```
 
 ### Links
 

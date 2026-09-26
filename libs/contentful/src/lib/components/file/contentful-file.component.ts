@@ -3,6 +3,7 @@ import { Component, ViewEncapsulation, computed, input } from '@angular/core';
 import { NgClassType } from '@ethlete/core';
 import { ContentfulGqlAsset, isContentfulGqlAsset } from '../../gql';
 import { ContentfulRestAsset } from '../../types';
+import { injectContentfulFileLabels } from './contentful-file-labels';
 
 @Component({
   selector: 'et-contentful-file',
@@ -11,7 +12,7 @@ import { ContentfulRestAsset } from '../../types';
       <a [href]="data.url" [ngClass]="fileClass()" target="_blank" rel="noopener noreferrer">
         {{ data.title }}
         @if (data.size !== null) {
-          ({{ data.size }} Bytes)
+          {{ labels().fileSize(data.size) }}
         }
       </a>
     }
@@ -23,6 +24,8 @@ import { ContentfulRestAsset } from '../../types';
   },
 })
 export class ContentfulFileComponent {
+  protected labels = injectContentfulFileLabels();
+
   asset = input.required<ContentfulRestAsset | ContentfulGqlAsset | null | undefined>();
   fileClass = input<NgClassType>(null);
 
