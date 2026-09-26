@@ -38,7 +38,7 @@ const PLAYERS = Array.from({ length: 95 }, (_, index) => `Player ${index + 1}`);
       [totalPages]="totalPages()"
       [totalItems]="players.length"
       [pageSize]="pageSize()"
-      [responsive]="false"
+      responsive="false"
       showJumpTo
     />
   `,
@@ -67,7 +67,7 @@ class RosterComponent {
       [urlForPage]="urlFor"
       [etPaginationSeo]="urlFor"
       [pageTitle]="titleFor"
-      [responsive]="false"
+      responsive="false"
       renderAs="links"
       totalPages="4"
       hideFirstLast
@@ -96,11 +96,12 @@ class NewsArchiveComponent {
   ],
   template: `
     <et-page-size-select [(pageSize)]="pageSize" [labels]="{ pageSize: 'Zeilen' }" size="sm" />
-    <et-pagination [(page)]="page" [compact]="true" [labels]="{ next: 'Weiter' }" totalPages="3" size="sm" />
+    <et-pagination [(page)]="page" [compact]="forceCompact" [labels]="{ next: 'Weiter' }" totalPages="3" size="sm" />
     <p class="probe">{{ labels().first }}</p>
   `,
 })
 class CompactFooterComponent {
+  forceCompact = true;
   page = signal(1);
   pageSize = signal(25);
   labels = injectPaginationLabels();
