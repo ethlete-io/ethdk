@@ -261,7 +261,14 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       `FORM_FIELD_LABELS` holds only the overrides; `s.flush()` runs no change detection when nothing is pending.
       E2E gaps: support region animations, floating label layout, busy spinner timing, anchored panel position,
       the bottom sheet below `md`, the focus ring.
-      In progress 2026-09-26: bracket (50), tabs + forms/select (60).
+      Bracket done (50 of 50, `bracket{,-layout,-picks}.scenario.spec.ts`, 0950e808e). Bug fixed (8acfbccbf): the
+      continue card said "1 winner advance". Friction: the `BracketMatchComponent` type in `@ethlete/bracket`
+      lacks `bracketRoundSwissGroup`, which `et-bracket` always binds, so a custom card typed by it fails with
+      NG0303; `BRACKET_LABELS` holds only the overrides. E2E gaps: hover journey highlight and connector
+      animation, card pixel layout (final at `size: auto`, compact emblems below 150px), pin drop on a click in
+      empty space, horizontal scroll to `focusRoundId`, a measured width for `bracketFitsWidth`, pick-card focus
+      rings.
+      In progress 2026-09-26: tabs + forms/select (60).
 - [x] S11 Follow-ups from S6 (hand-written skill `.agents/skills/query-scenario-tests/SKILL.md` documents `s.mount`)
   1. Done in 47f4d25da: `s.mount(Component, injector, { inputs })` sets inputs before the first change detection;
      `legacy-client-options` mounts `MatchListComponent` directly.
