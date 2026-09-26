@@ -4,7 +4,7 @@ Branch: next. Other sessions share the checkout and may have uncommitted files. 
 
 ## Goal
 
-Consumer coverage (`plans/query-consumer-coverage.md`, step S8b): scenario tests for what apps use of
+Consumer coverage (S8b): scenario tests for what apps use of
 `@ethlete/components`, guarded by `tools/export-coverage` (`node tools/export-coverage/check.mjs`). Each bug a
 scenario finds gets a fix, a changeset, and a test that fails without the fix. This file is a task list for one
 agent that works alone, batch by batch.
@@ -13,7 +13,7 @@ agent that works alone, batch by batch.
 
 - Done: button, overlay, stream, table, icon, forms/date-time, forms/rich-text-editor, scheduler, grid,
   forms/form-field, bracket, tabs, forms/select, notification, menu, match. Components: 933 of 1381 covered
-  (before the cascader batch). Per-domain notes are under "S8b progress" in the plan.
+  (before the cascader batch). Per-domain notes are under "Domain notes" below.
 - In progress on 2026-09-26: forms/cascader + forms/dropzone + forms/color-input (64), run by a subagent. If
   `check.mjs components` still reports those as "allowlisted but covered", do task 0 first.
 - Removed on 2026-09-26 by user decision: `GridItemRef` and `configComponent` (e519882bc). Added:
@@ -21,8 +21,8 @@ agent that works alone, batch by batch.
 
 ## Rules for every batch
 
-- Before a batch: add or update the line `In progress <date>: <domains>` at the end of the S8b notes in the plan,
-  and commit it alone. A usage limit then loses nothing.
+- Before a batch: add or update the line `In progress <date>: <domains>` at the end of the `## State` section in
+  this file, and commit it alone. A usage limit then loses nothing.
 - Name files `libs/components/src/scenarios/<domain>*.scenario.spec.ts` (forms: `forms-<control>*`). Pattern files:
   `forms-select.scenario.spec.ts`, `bracket.scenario.spec.ts`, `menu.scenario.spec.ts`, `grid.scenario.spec.ts`.
 - An export counts as covered when the scenario imports it from `../index` and uses it as an app would. Test real
@@ -30,7 +30,7 @@ agent that works alone, batch by batch.
 - Get a batch's exports: `node tools/export-coverage/check.mjs components --list | grep -E "S8b (a|b|c)$"`.
 - After the scenarios are committed: remove only the entries that `check.mjs components` reports as
   "allowlisted but covered" AND whose reason is `S8b <domain>` of this batch. Never `check.mjs --update`. Commit the
-  allowlist and a plan note (done count, commit shas, bugs, friction, E2E gaps) together. Stale entries fail
+  allowlist and a plan note (a `### <domain>` block under `## Domain notes`: open friction, E2E gaps) together. Stale entries fail
   `.husky/pre-push` for every session, so commit the removal at once.
 - Checks per batch: `npx vitest run --config libs/components/vite.config.mts <files>`;
   `npx tsc --noEmit -p libs/components/tsconfig.spec.json` (vitest does not type-check); `npx eslint <changed files>`
@@ -40,12 +40,12 @@ agent that works alone, batch by batch.
   names. `export TMPDIR=/home/tom/.cache/tmp-s8b NX_NO_CLOUD=true`.
 - Comments: almost none (AGENTS.md allowlist).
 - If you delegate a batch, use `model: "opus"`, a fresh subagent per batch, and pass these rules verbatim. The
-  subagent must not edit the allowlist or the plan.
+  subagent must not edit the allowlist or this file.
 
 ## Task list
 
 0. Finish the cascader batch if it is still open: remove its covered entries (`S8b forms/(cascader|dropzone|color-input)`),
-   plan note, one commit.
+   domain notes, one commit.
 1. breadcrumb 23, command-palette 20, carousel 19 (62).
 2. scrollable 18, forms/selection-list 16, query-error 15, filter-overlay 15 (64).
 3. chart 17, calendar 15, standings 14, forms/slider 14 (60). Before chart: run `ListAgents` and tell any session
@@ -58,8 +58,8 @@ agent that works alone, batch by batch.
 7. timeline, forms/textarea, forms/form, forms/choice-field, description-list, card (3 each), forms/switch,
    forms/otp-input, forms/description, forms/checkbox, empty-state, divider, copy-button (2 each), version,
    forms/selection-card, focus-ring (1 each) (35). Then `check.mjs components --list | grep -c S8b` must be 0.
-   Mark S8b done in `plans/query-consumer-coverage.md`, and delete this file.
-8. E2E: turn the "E2E gaps" of each S8b note into `apps/storybook-e2e` suites. Read the
+   Delete this file.
+8. E2E: turn the "E2E gaps" of each `## Domain notes` block into `apps/storybook-e2e` suites. Read the
    `component-behavior-tests` skill first. One commit per domain, biggest user impact first (select, menu,
    date-time, overlay, tabs).
 9. Before any push: ask the user, then run the `ci-check` skill.
@@ -90,3 +90,113 @@ agent that works alone, batch by batch.
 - `node tools/export-coverage/check.mjs`
 - `npx vitest run --config libs/components/vite.config.mts libs/components/src/scenarios`
 - `npx tsc --noEmit -p libs/components/tsconfig.spec.json`
+
+## Domain notes
+
+### button
+
+- Friction: `it.fails` (two specs): a template `(click)` on an `et-button` still runs while it is loading or a
+  disabled link. `ButtonDirective`'s host listener runs after it, so `stopImmediatePropagation` is too late.
+- E2E gaps: split-button focus and keyboard; focus ring on icon, fab and window-control buttons; pressed toggle via
+  Space; hover and active colour states.
+
+### overlay
+
+- Friction: none open.
+- E2E gaps: the full-screen morph from its origin (`OverlayOriginCloneComponent`, the five
+  `*FullscreenAnimation*` functions); the inline sidebar above `renderSidebarFrom` (pane width); focus moving into
+  a pane by `first-tabbable` (jsdom has no client rects).
+
+### stream
+
+- Friction: a slot exposes state but no playback control; `width="480"` on Vimeo or Facebook gives an invalid CSS
+  width; the stream error codes are not exported.
+- E2E gaps: `PipCollapseOverlayDirective` and `PipTitleBarDirective`; PiP drag, collapse and resize; the FLIP and
+  scale animations; an iframe that moves between slots; the placeholder pulse (needs a real IntersectionObserver).
+
+### table
+
+- Friction: `it.fails`: a numeric `rowKey` is turned into a string, so `new Set([3])` in the selection or expanded
+  signal matches nothing. Scenarios take no per-test providers; a dev `RuntimeError` in render adds a stray
+  `console.error({ element })` to `s.errors`; a failed signals-client query reports to the ErrorHandler;
+  `s.flush()`/`s.settle()` never settle while a query client lives (use `s.tick()`); menus throw without an
+  `error`-typed colour theme.
+- E2E gaps: virtual scroll windowing and measured row height; the group row sticky offset; the refetch busy bar;
+  the real CSV download; reorder, resize and drag-scroll by pointer; sticky offsets on a narrow viewport; page
+  sticky header pinning; the detail-row animation.
+
+### icon
+
+- Friction: an unknown name or a bad SVG throws during change detection and takes the view down; "no icons
+  provided" throws from the constructor.
+- E2E gaps: real sizing (`width/height="100%"`) and `currentColor` from the theme.
+
+### date-time
+
+- Friction: in a required field unparseable text shows the `required` message, not `parseErrorMessage`; an hour
+  alone does not commit; `DATE_TIME_LABELS` holds only the partial override (read `injectDateTimeLabels()`); an
+  open picker at destroy leaves a pending frame.
+- E2E gaps: masked typing; calendar and time-column keyboard navigation; panel layout and animation; other time
+  zones; focus return after close.
+
+### rich-text editor
+
+- Friction: a headless `[etRichTextEditor]` cannot attach its editable element (`editorDom` is `@internal`); the
+  token popup's host `id` overwrites TestBed's root id; rAF loops need an `s.flush()` at the end.
+- E2E gaps: caret, IME and soft breaks; toolbar and popover positioning; the touch-docked toolbar; image drag and
+  drop; real clipboard events; `beforeinput historyUndo`; table picker hover.
+
+### scheduler
+
+- Friction: a custom `SchedulerFeatureHost` or `SchedulerEditSurfaceHost` re-implements register/filter/sort (no
+  helper); an `appointments` input collides with the host's `appointments()` method; ET4505 and ET4506 throw out of
+  change detection; `nowIndicator` keeps a timer, so `s.flush()` never settles.
+- E2E gaps: pointer drag-to-create, move and resize; edit surface placement and the fullscreen dialog below `md`;
+  scroll to the initial hour; RTL swipe; long-press drag versus swipe; the "+N more" overflow menu.
+
+### grid
+
+- Friction: the grid renders nothing before its host has a width; ET1902 throws out of change detection.
+- E2E gaps: pointer drag and resize; auto-scroll; CSS transitions; container resize; reduced motion.
+
+### form field
+
+- Friction: a schema-`hidden` field logs NG01916 (the docs say to remove it with `@if`);
+  `createAnchoredPanelController` needs the unexported `OverlayTemplateHostComponent`; `FORM_FIELD_LABELS` holds
+  only the overrides; `s.flush()` runs no change detection when nothing is pending.
+- E2E gaps: support region animations; floating label layout; busy spinner timing; anchored panel position; the
+  bottom sheet below `md`; the focus ring.
+
+### bracket
+
+- Friction: the `BracketMatchComponent` type in `@ethlete/bracket` lacks `bracketRoundSwissGroup`, which
+  `et-bracket` always binds, so a custom card typed by it fails with NG0303; `BRACKET_LABELS` holds only the
+  overrides.
+- E2E gaps: hover journey highlight and connector animation; card pixel layout (final at `size: auto`, compact
+  emblems below 150px); pin drop on a click in empty space; horizontal scroll to `focusRoundId`; a measured width
+  for `bracketFitsWidth`; pick-card focus rings.
+
+### tabs
+
+- Friction: in the headless tab bar, after `.focus()` on a trigger the arrow keys move from the selected tab, not
+  the focused one (check whether this is a bug); a nav link with `[queryParams]` is active only when the URL
+  carries them.
+- E2E gaps: the underline FLIP animation; scrolling the selected trigger into view; the overflow scroll buttons;
+  the focus ring.
+
+### select
+
+- Friction: select-all appends in click order, so chips follow value order; the first Escape in a searchable
+  select only clears the query; `SELECT_LABELS` holds only the overrides; a failed `selectOptionsFromQuery` request
+  also reaches the ErrorHandler.
+- E2E gaps: panel position and width mirroring; real windowing; the `etSelectViewport` min-width lock; pointer
+  hover; touch and bottom sheet; busy animations; the clear button on hover; the leave animation.
+
+### notification, menu, match
+
+- Friction: the docs recommend `<a et-match-card></a>` and `<button et-match-participant></button>`, but
+  `@angular-eslint/template/elements-content` rejects both; `normalizeEthleteParticipant` returns a nullable type
+  for a non-null input; a menu open at destroy leaves the overlay leave frame pending.
+- E2E gaps: menu placement, flip, arrow and context-menu repositioning, resize animation, focus ring; notification
+  stack FLIP, enter and leave animations, swipe distance thresholds, RTL swipe; match container-query layouts under
+  `auto`, score roll and flash timing, picture fallback.

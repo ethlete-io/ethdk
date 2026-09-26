@@ -119,5 +119,10 @@ it('dedupes identical requests', () => {
    providers as a factory (`providers: () => [provideQueryDevtools()]`), and assert
    `isQueryDevtoolsEnabled()` in both halves. Mocks, faults, envs and the tab-local flag are
    module state: clear them in `beforeEach` and give each test its own route and provider name.
+7. Build the query **inside** the reactive function, the way the app does. Never pass a prebuilt `() => query`.
+8. Never wrap the call under test in `untracked()` - consumers do not.
+9. Use a POST or `s.liveQueries()` when checking for double execution; GET dedup hides a second execute.
+10. Change signal args at least 3 times; assert one request per change and that the superseded one aborts.
+11. Legacy patterns run on both clients: native `V2QueryClient` and the interop creator (`describe.each`).
 
 Open query findings live in `plans/query-lib-scan.md`.
