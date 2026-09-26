@@ -17,6 +17,8 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
 
   renameConflictingSymbols(tree);
   replaceExperimentalQueryNamespace(tree);
+  reportWithArgsNullReturns(tree);
+  replaceClearQueryArgs(tree);
   reportPrebuiltPackagesImportingRenamedSymbols(tree);
 
   if (!schema.skipFormat) {
@@ -372,16 +374,16 @@ function replaceNamespaceInFile(
     return applyReplacements(content, namespaceReplacements, namespaceReplacements.length);
   }
 
+  const getAliasMember = (node: ts.Node) =>
+    getNamespaceMember(node, new Set([experimentalQueryAlias as string]))?.member;
+
   // Second pass: collect used symbols
   function findUsages(node: ts.Node) {
     // Find usages: ExperimentalQuery.someSymbol or E.someSymbol (if aliased)
-    if (
-      ts.isPropertyAccessExpression(node) &&
-      ts.isIdentifier(node.expression) &&
-      node.expression.text === experimentalQueryAlias
-    ) {
-      const symbolName = node.name.text;
-      usedSymbols.add(symbolName);
+    const member = getAliasMember(node);
+
+    if (member) {
+      usedSymbols.add(member.text);
     }
 
     ts.forEachChild(node, findUsages);
@@ -444,15 +446,13 @@ function replaceNamespaceInFile(
     }
 
     // Replace usages: ExperimentalQuery.someSymbol → someSymbol
-    if (
-      ts.isPropertyAccessExpression(node) &&
-      ts.isIdentifier(node.expression) &&
-      node.expression.text === experimentalQueryAlias
-    ) {
+    const member = getAliasMember(node);
+
+    if (member) {
       replacements.push({
         start: node.getStart(sourceFile),
         end: node.getEnd(),
-        replacement: node.name.text,
+        replacement: member.text,
       });
     }
 
@@ -508,6 +508,236 @@ function applyReplacements(
     });
 
   return { content: result, modified: replacements.length > 0, replacementCount };
+}
+
+//#endregion
+
+//#region withArgs null returns
+
+function reportWithArgsNullReturns(tree: Tree): void {
+  const sites: string[] = [];
+
+  visitQueryFiles(tree, ['withArgs'], (filePath, content) => {
+    const sourceFile = createSourceFile(content, filePath);
+
+    findWithArgsNullReturns(sourceFile).forEach((line) => sites.push(`   - ${filePath}:${line}`));
+  });
+
+  if (sites.length > 0) {
+    console.warn(
+      `\n⚠️ These withArgs callbacks return null. Before v3, null kept the previous args; v3 parks the query instead (args, response and executionState become null, and polling pauses). Check each one: a null that should park the query is fine, one that relied on keeping the previous args must now return those args itself:\n${sites.join('\n')}`,
+    );
+  }
+}
+
+function findWithArgsNullReturns(sourceFile: ts.SourceFile): number[] {
+  const localNames = collectNamedQueryImports(sourceFile, 'withArgs');
+  const namespaceAliases = collectQueryNamespaceAliases(sourceFile);
+  const lines: number[] = [];
+
+  const isWithArgsCallee = (callee: ts.Expression) =>
+    (ts.isIdentifier(callee) && localNames.has(callee.text)) ||
+    getNamespaceMember(callee, namespaceAliases)?.member.text === 'withArgs';
+
+  function visit(node: ts.Node) {
+    if (ts.isCallExpression(node) && isWithArgsCallee(node.expression)) {
+      const [source] = node.arguments;
+
+      if (source && (ts.isArrowFunction(source) || ts.isFunctionExpression(source))) {
+        collectNullReturns(source).forEach((nullNode) => {
+          lines.push(sourceFile.getLineAndCharacterOfPosition(nullNode.getStart(sourceFile)).line + 1);
+        });
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  return lines;
+}
+
+function collectNullReturns(fn: ts.ArrowFunction | ts.FunctionExpression): ts.Node[] {
+  if (!ts.isBlock(fn.body)) {
+    return findNullResults(fn.body);
+  }
+
+  const found: ts.Node[] = [];
+
+  function visit(node: ts.Node) {
+    if (ts.isFunctionLike(node)) return;
+
+    if (ts.isReturnStatement(node) && node.expression) {
+      found.push(...findNullResults(node.expression));
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  ts.forEachChild(fn.body, visit);
+
+  return found;
+}
+
+function findNullResults(expression: ts.Expression): ts.Node[] {
+  if (expression.kind === ts.SyntaxKind.NullKeyword) return [expression];
+
+  if (ts.isParenthesizedExpression(expression) || ts.isAsExpression(expression)) {
+    return findNullResults(expression.expression);
+  }
+
+  if (ts.isConditionalExpression(expression)) {
+    return [...findNullResults(expression.whenTrue), ...findNullResults(expression.whenFalse)];
+  }
+
+  if (
+    ts.isBinaryExpression(expression) &&
+    [ts.SyntaxKind.QuestionQuestionToken, ts.SyntaxKind.BarBarToken, ts.SyntaxKind.AmpersandAmpersandToken].includes(
+      expression.operatorToken.kind,
+    )
+  ) {
+    return findNullResults(expression.right);
+  }
+
+  return [];
+}
+
+//#endregion
+
+//#region CLEAR_QUERY_ARGS replacement
+
+const CLEAR_QUERY_ARGS_NAMES = new Set(['CLEAR_QUERY_ARGS', 'ClearQueryArgs']);
+
+function replaceClearQueryArgs(tree: Tree): void {
+  const updatedFiles: string[] = [];
+
+  visitQueryFiles(tree, [...CLEAR_QUERY_ARGS_NAMES], (filePath, content) => {
+    const result = replaceClearQueryArgsInFile(content, filePath);
+
+    if (result !== content) {
+      tree.write(filePath, result);
+      updatedFiles.push(filePath);
+    }
+  });
+
+  if (updatedFiles.length > 0) {
+    console.log(
+      `\n🅿️ Replaced CLEAR_QUERY_ARGS with null (the v3 park value) in ${updatedFiles.length} files: ${updatedFiles.join(', ')}`,
+    );
+  }
+}
+
+function replaceClearQueryArgsInFile(content: string, filePath: string): string {
+  const sourceFile = createSourceFile(content, filePath);
+  const namespaceAliases = collectQueryNamespaceAliases(sourceFile);
+  const localNames = new Set<string>();
+  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+
+  sourceFile.statements.forEach((statement) => {
+    const namedBindings = getQueryNamedImports(statement);
+
+    if (!namedBindings) return;
+
+    const kept = namedBindings.elements.filter((element) => {
+      if (!CLEAR_QUERY_ARGS_NAMES.has((element.propertyName ?? element.name).text)) return true;
+
+      localNames.add(element.name.text);
+
+      return false;
+    });
+
+    if (kept.length === namedBindings.elements.length) return;
+
+    const importClause = (statement as ts.ImportDeclaration).importClause;
+
+    if (kept.length === 0 && !importClause?.name) {
+      const end = content[statement.getEnd()] === '\n' ? statement.getEnd() + 1 : statement.getEnd();
+
+      replacements.push({ start: statement.getStart(sourceFile), end, replacement: '' });
+
+      return;
+    }
+
+    replacements.push({
+      start: namedBindings.getStart(sourceFile),
+      end: namedBindings.getEnd(),
+      replacement: `{ ${kept.map((element) => element.getText(sourceFile)).join(', ')} }`,
+    });
+  });
+
+  function visit(node: ts.Node) {
+    const namespaceMember = getNamespaceMember(node, namespaceAliases)?.member;
+    const isClearQueryArgs =
+      (namespaceMember && CLEAR_QUERY_ARGS_NAMES.has(namespaceMember.text)) ||
+      (ts.isIdentifier(node) && localNames.has(node.text) && isReference(node));
+
+    if (isClearQueryArgs) {
+      const target = ts.isTypeQueryNode(node.parent) ? node.parent : node;
+
+      replacements.push({ start: target.getStart(sourceFile), end: target.getEnd(), replacement: 'null' });
+
+      return;
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  sourceFile.statements.forEach((statement) => {
+    if (!ts.isImportDeclaration(statement)) visit(statement);
+  });
+
+  return applyReplacements(content, replacements, replacements.length).content;
+}
+
+function isReference(identifier: ts.Identifier): boolean {
+  const parent = identifier.parent;
+
+  return !(
+    (ts.isPropertyAccessExpression(parent) && parent.name === identifier) ||
+    (ts.isQualifiedName(parent) && parent.right === identifier) ||
+    (ts.isPropertyAssignment(parent) && parent.name === identifier)
+  );
+}
+
+function visitQueryFiles(tree: Tree, markers: string[], visitor: (filePath: string, content: string) => void): void {
+  visitNotIgnoredFiles(tree, '', (filePath) => {
+    if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts')) return;
+
+    const content = tree.read(filePath, 'utf-8');
+
+    if (!content?.includes('@ethlete/query') || !markers.some((marker) => content.includes(marker))) return;
+
+    visitor(filePath, content);
+  });
+}
+
+function getQueryNamedImports(statement: ts.Statement): ts.NamedImports | undefined {
+  if (
+    !ts.isImportDeclaration(statement) ||
+    !ts.isStringLiteral(statement.moduleSpecifier) ||
+    statement.moduleSpecifier.text !== '@ethlete/query'
+  ) {
+    return undefined;
+  }
+
+  const namedBindings = statement.importClause?.namedBindings;
+
+  return namedBindings && ts.isNamedImports(namedBindings) ? namedBindings : undefined;
+}
+
+function collectNamedQueryImports(sourceFile: ts.SourceFile, importedName: string): Set<string> {
+  const localNames = new Set<string>();
+
+  sourceFile.statements.forEach((statement) => {
+    getQueryNamedImports(statement)?.elements.forEach((element) => {
+      if ((element.propertyName ?? element.name).text === importedName) {
+        localNames.add(element.name.text);
+      }
+    });
+  });
+
+  return localNames;
 }
 
 //#endregion

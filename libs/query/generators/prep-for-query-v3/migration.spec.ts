@@ -784,4 +784,129 @@ export const config: QueryConfig = inject(TOKEN);
     expect(content).toContain('export const client = createQueryClient({');
     expect(content).not.toContain('ExperimentalQuery');
   });
+
+  describe('CLEAR_QUERY_ARGS', () => {
+    it('replaces ExperimentalQuery.CLEAR_QUERY_ARGS with null and imports nothing for it', async () => {
+      tree.write(
+        'apps/example/src/app/match.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+
+export const matchQuery = getMatch(E.withArgs(() => (id() ? { pathParams: { id: id() } } : E.CLEAR_QUERY_ARGS)));
+export type Source = () => Args | E.ClearQueryArgs;
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const content = tree.read('apps/example/src/app/match.ts', 'utf-8')!;
+
+      expect(content).toContain("import { withArgs } from '@ethlete/query';");
+      expect(content).toContain('withArgs(() => (id() ? { pathParams: { id: id() } } : null))');
+      expect(content).toContain('export type Source = () => Args | null;');
+      expect(content).not.toContain('CLEAR_QUERY_ARGS');
+      expect(content).not.toContain('ClearQueryArgs');
+      expect(consoleWarnSpy.mock.calls.flat().join('\n')).not.toContain('withArgs callbacks return null');
+    });
+
+    it('replaces a named CLEAR_QUERY_ARGS import from an early v3 and drops the import', async () => {
+      tree.write(
+        'apps/example/src/app/match.ts',
+        `
+import { CLEAR_QUERY_ARGS as CLEAR, withArgs } from '@ethlete/query';
+import { ClearQueryArgs } from '@ethlete/query';
+
+const source = (): Args | ClearQueryArgs | typeof CLEAR => CLEAR;
+export const matchQuery = getMatch(withArgs(() => source()));
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const content = tree.read('apps/example/src/app/match.ts', 'utf-8')!;
+
+      expect(content).toContain("import { withArgs } from '@ethlete/query';");
+      expect(content).toContain('const source = (): Args | null | null => null;');
+      expect(content).not.toContain('ClearQueryArgs');
+      expect(content).not.toContain('CLEAR');
+    });
+
+    it('replaces CLEAR_QUERY_ARGS reached through a namespace import', async () => {
+      tree.write(
+        'apps/example/src/app/match.ts',
+        `
+import * as Q from '@ethlete/query';
+
+export const matchQuery = getMatch(Q.ExperimentalQuery.withArgs(() => Q.ExperimentalQuery.CLEAR_QUERY_ARGS));
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      expect(tree.read('apps/example/src/app/match.ts', 'utf-8')).toContain('getMatch(Q.withArgs(() => null));');
+    });
+  });
+
+  describe('withArgs returning null', () => {
+    it('reports every null a withArgs callback can return', async () => {
+      tree.write(
+        'apps/example/src/app/lobby.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+
+export const matchQuery = getMatch(
+  E.withArgs(() => {
+    const id = matchId();
+    if (!side()) return null;
+    const unrelated = () => null;
+    return id ? { pathParams: { id } } : null;
+  }),
+);
+export const otherQuery = getOther(E.withArgs(() => ({ pathParams: { id: matchId() } })));
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const warnings = consoleWarnSpy.mock.calls.flat().join('\n');
+
+      expect(warnings).toContain('v3 parks the query');
+      expect(warnings).toContain('apps/example/src/app/lobby.ts:6');
+      expect(warnings).toContain('apps/example/src/app/lobby.ts:8');
+      expect(warnings).not.toContain('apps/example/src/app/lobby.ts:7');
+      expect(warnings).not.toContain('apps/example/src/app/lobby.ts:11');
+      expect(tree.read('apps/example/src/app/lobby.ts', 'utf-8')).toContain(': null;');
+    });
+
+    it('reports a null from an already imported withArgs', async () => {
+      tree.write(
+        'apps/example/src/app/lobby.ts',
+        `
+import { withArgs as args } from '@ethlete/query';
+
+export const matchQuery = getMatch(args(() => matchId() ?? null));
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      expect(consoleWarnSpy.mock.calls.flat().join('\n')).toContain('apps/example/src/app/lobby.ts:3');
+    });
+
+    it('ignores a withArgs that does not come from @ethlete/query', async () => {
+      tree.write(
+        'apps/example/src/app/lobby.ts',
+        `
+import { withArgs } from './local';
+import { V2Query } from '@ethlete/query';
+
+export const matchQuery = withArgs(() => null);
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      expect(consoleWarnSpy.mock.calls.flat().join('\n')).not.toContain('withArgs callbacks return null');
+    });
+  });
 });
