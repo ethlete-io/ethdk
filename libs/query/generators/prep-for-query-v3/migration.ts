@@ -583,7 +583,12 @@ function collectNullReturns(fn: ts.ArrowFunction | ts.FunctionExpression): ts.No
 function findNullResults(expression: ts.Expression): ts.Node[] {
   if (expression.kind === ts.SyntaxKind.NullKeyword) return [expression];
 
-  if (ts.isParenthesizedExpression(expression) || ts.isAsExpression(expression)) {
+  if (
+    ts.isParenthesizedExpression(expression) ||
+    ts.isAsExpression(expression) ||
+    ts.isSatisfiesExpression(expression) ||
+    ts.isTypeAssertionExpression(expression)
+  ) {
     return findNullResults(expression.expression);
   }
 
@@ -674,8 +679,9 @@ function replaceClearQueryArgsInFile(content: string, filePath: string): string 
 
     if (isClearQueryArgs) {
       const target = ts.isTypeQueryNode(node.parent) ? node.parent : node;
+      const replacement = ts.isShorthandPropertyAssignment(node.parent) ? `${node.getText(sourceFile)}: null` : 'null';
 
-      replacements.push({ start: target.getStart(sourceFile), end: target.getEnd(), replacement: 'null' });
+      replacements.push({ start: target.getStart(sourceFile), end: target.getEnd(), replacement });
 
       return;
     }
@@ -693,11 +699,11 @@ function replaceClearQueryArgsInFile(content: string, filePath: string): string 
 function isReference(identifier: ts.Identifier): boolean {
   const parent = identifier.parent;
 
-  return !(
-    (ts.isPropertyAccessExpression(parent) && parent.name === identifier) ||
-    (ts.isQualifiedName(parent) && parent.right === identifier) ||
-    (ts.isPropertyAssignment(parent) && parent.name === identifier)
-  );
+  if (ts.isShorthandPropertyAssignment(parent)) return true;
+  if (ts.isPropertyAccessExpression(parent)) return parent.expression === identifier;
+  if (ts.isQualifiedName(parent)) return parent.left === identifier;
+
+  return !('name' in parent && parent.name === identifier);
 }
 
 function visitQueryFiles(tree: Tree, markers: string[], visitor: (filePath: string, content: string) => void): void {

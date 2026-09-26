@@ -845,6 +845,28 @@ export const matchQuery = getMatch(Q.ExperimentalQuery.withArgs(() => Q.Experime
 
       expect(tree.read('apps/example/src/app/match.ts', 'utf-8')).toContain('getMatch(Q.withArgs(() => null));');
     });
+    it('keeps a shorthand property and member names intact', async () => {
+      tree.write(
+        'apps/example/src/app/match.ts',
+        `
+import { CLEAR_QUERY_ARGS, withArgs } from '@ethlete/query';
+
+export const sentinels = { CLEAR_QUERY_ARGS };
+export class Holder {
+  CLEAR_QUERY_ARGS = CLEAR_QUERY_ARGS;
+}
+export const matchQuery = getMatch(withArgs(() => (id() ? { pathParams: { id: id() } } : (CLEAR_QUERY_ARGS satisfies unknown))));
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const content = tree.read('apps/example/src/app/match.ts', 'utf-8')!;
+
+      expect(content).toContain('export const sentinels = { CLEAR_QUERY_ARGS: null };');
+      expect(content).toContain('  CLEAR_QUERY_ARGS = null;');
+      expect(content).toContain("import { withArgs } from '@ethlete/query';");
+    });
   });
 
   describe('withArgs returning null', () => {
