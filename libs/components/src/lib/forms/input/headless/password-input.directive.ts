@@ -6,6 +6,9 @@ import { scorePasswordStrength } from './internals/password-strength';
 @Directive({
   selector: '[etPasswordInput]',
   exportAs: 'etPasswordInput',
+  host: {
+    '(input)': 'handleNativeInput($event)',
+  },
 })
 export class PasswordInputDirective extends TextFieldControlDirective implements FormValueControl<string> {
   public value = model('');
@@ -63,6 +66,13 @@ export class PasswordInputDirective extends TextFieldControlDirective implements
       this.nativeControl.set(hostElement as HTMLInputElement);
       this.focusTarget.set(hostElement);
     }
+  }
+
+  /** @internal Keeps the model in sync while typing into a standalone native host. */
+  protected handleNativeInput(event: Event) {
+    if (event.target !== this.nativeControl()) return;
+
+    this.syncFromNativeInput(event.target as HTMLInputElement);
   }
 
   /**

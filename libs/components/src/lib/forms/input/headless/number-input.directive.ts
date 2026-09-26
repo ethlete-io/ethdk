@@ -33,6 +33,7 @@ const PAGE_STEP_MULTIPLIER = 100;
   selector: '[etNumberInput]',
   host: {
     '(keydown)': 'handleStepKeydown($event)',
+    '(input)': 'handleNativeInput($event)',
   },
 })
 export class NumberInputDirective extends TextFieldControlDirective implements FormValueControl<number | null> {
@@ -156,6 +157,13 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
     // plain step lands on top of the multiplied one
     event.preventDefault();
     this.stepBy(direction, { multiplier });
+  }
+
+  /** @internal Keeps the model in sync while typing into a standalone native host. */
+  protected handleNativeInput(event: Event) {
+    if (event.target !== this.nativeControl()) return;
+
+    this.syncFromNativeInput(event.target as HTMLInputElement);
   }
 
   /**
