@@ -440,11 +440,24 @@ const escapeLineStarts = (md: string) =>
  * Covers headings, bold, italic, strikethrough, inline code, fenced code blocks,
  * links, images, block quotes, unordered/ordered (and nested) lists, tables, horizontal rules, and paragraphs.
  * A backslash before a punctuation character keeps that character literal.
+ * Text matching `options.verbatim` is emitted as plain text, untouched by any Markdown syntax:
+ * `markdownToHtml('{{field:__x__}}', { verbatim: /\{\{[^}]+\}\}/ })` returns `<p>{{field:__x__}}</p>`.
  */
-export const markdownToHtml = (markdown: string) => {
+export const markdownToHtml = (markdown: string, options: { verbatim?: RegExp } = {}) => {
   if (!markdown) return '';
 
   let text = markdown.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  const verbatims: string[] = [];
+  const { verbatim } = options;
+
+  if (verbatim) {
+    const pattern = new RegExp(verbatim.source, verbatim.flags.includes('g') ? verbatim.flags : `${verbatim.flags}g`);
+
+    text = text.replace(pattern, (match) =>
+      match ? makePlaceholder('VERB', verbatims.push(escapeHtmlPreservingEntities(match)) - 1) : match,
+    );
+  }
 
   // Extract fenced code blocks before any other processing
   const codeBlocks: string[] = [];
@@ -538,7 +551,9 @@ export const markdownToHtml = (markdown: string) => {
     .filter(Boolean)
     .join('\n');
 
-  return html.replace(placeholderRe('CODE'), (_, i) => codeBlocks[+i] ?? '');
+  return html
+    .replace(placeholderRe('CODE'), (_, i) => codeBlocks[+i] ?? '')
+    .replace(placeholderRe('VERB'), (match, i) => verbatims[+i] ?? match);
 };
 
 /**

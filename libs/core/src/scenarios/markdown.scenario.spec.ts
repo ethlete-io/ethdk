@@ -79,6 +79,23 @@ describe('markdown scenarios', () => {
     ).toBe('<p>{{user:_first_name}}</p>');
   });
 
+  it('leaves text matching the verbatim pattern out of Markdown parsing', () => {
+    scenario();
+
+    const verbatim = /\{\{[a-z]+:[^}]+\}\}/;
+    const markdown = '{{field:_a_b_}} *b* {{field:__x__}} {{field:\\*<y>}}';
+
+    expect(markdownToHtml(markdown, { verbatim })).toBe(
+      '<p>{{field:_a_b_}} <em>b</em> {{field:__x__}} {{field:\\*&lt;y&gt;}}</p>',
+    );
+    expect(markdownToHtml('- {{field:__x__}}\n- `{{field:_a_}}`', { verbatim })).toBe(
+      '<ul><li>{{field:__x__}}</li><li><code>{{field:_a_}}</code></li></ul>',
+    );
+    expect(markdownToHtml(markdown)).toBe(
+      '<p>{{field:<em>a_b</em>}} <em>b</em> {{field:<strong>x</strong>}} {{field:*&lt;y&gt;}}</p>',
+    );
+  });
+
   it('escapes link labels but not link targets', () => {
     scenario();
 
