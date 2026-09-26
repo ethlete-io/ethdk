@@ -46,6 +46,24 @@ the way unless the user asks for it.
 - Masking: `apps/timetrack/src/app/day-review/unmasked-words.component.ts`
 - AI: `libs/timetrack/src/lib/ticket/write.ts` (Ask AI), `match.ts` (find a match)
 
+## Screenshot harness
+
+The ticket dialog has no Storybook story, so draw it through `apps/timetrack-e2e`. Write a
+throwaway spec, for example `src/zz-ticket-shot.spec.ts`, and delete it before the commit. It
+runs on macOS as it does on Linux: no Tauri, no real window, no network.
+
+- Run it with `NX_NO_CLOUD=true npx playwright test -c apps/timetrack-e2e/playwright.config.ts zz-ticket-shot`.
+  The config's `webServer` starts `nx serve timetrack-app --configuration=e2e` on :4211 with
+  in-memory host fakes.
+- Add `test.use({ colorScheme: 'dark' })`. The app is designed dark, and its CSS reads
+  `prefers-color-scheme`.
+- Seed through `src/support/day-screen.ts`. Copy the stand-in setup from
+  `disputed-naming.spec.ts` or `row-marking.spec.ts`.
+- `defaultEvents()` and `e2eAt()` compute the day from the real clock, not from the seeded day
+  (2026-08-12). Shift the events onto the seeded day.
+- Before a screenshot, wait until the pane's finite animations end. Do not use a fixed sleep.
+- Save only the pane: `locator.screenshot({ path })`, then look at it.
+
 ## Open
 
 - The stand-ins panel opened from the sidebar keeps its list. Decide if its rows get the same
