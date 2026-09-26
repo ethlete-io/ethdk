@@ -1,150 +1,38 @@
 # One session, one piece
 
-Read out of the running app on 2026-09-22, after Tom reported that one stand-in held work of more
-than one ticket. It changes the grain an auto stand-in is opened at, which
-[`ticket-the-day.md`](./ticket-the-day.md) set to the branch.
+An auto stand-in should open per piece of work, not per branch. Slices 1 to 3 are built: the
+session is carried in `ActivityContext.session`, two sessions of one checkout are parallel
+stretches, and an overlap books once to the watched band (`rows/cut.ts` `cutUnwatched`). Lanes
+already draw overlapping bands side by side. Slices 4 and 5 are open.
 
-## What the day really looked like
+## What Tom decided (2026-09-22)
 
-Two checkouts, two stand-ins, and both of them wrong:
-
-| Band        | Checkout          | Stand-in                    |
-| ----------- | ----------------- | --------------------------- |
-| 10:15-12:30 | `fut-frontend`    | Totw 16 9 special layout    |
-| 11:30-12:30 | `fifagg-frontend` | Competition journey overlay |
-
-The agent sessions underneath them are the pieces of work, and they overlap:
-
-| Session    | Checkout          | Branch                                         | Ran         | Directory               |
-| ---------- | ----------------- | ---------------------------------------------- | ----------- | ----------------------- |
-| `257b3d53` | `fut-frontend`    | `fix/totw-16-9-special-layout`                 | 10:17-11:32 | `.../social`            |
-| `f4eee250` | `fut-frontend`    | `fix/totw-16-9-special-layout`                 | 11:18-11:40 | `apps/hub/src/app`      |
-| `a8251c7d` | `fut-frontend`    | `fix/totw-16-9-special-layout`                 | 11:33-12:12 | `.../graphics-renderer` |
-| `578af125` | `fifagg-frontend` | `feature/20260911_competition-journey-overlay` | 11:35-11:57 |                         |
-| `e9e4ac84` | `fifagg-frontend` | `dev-tappp-finals`, then `next`                | 11:58-12:12 |                         |
-
-`257b3d53` and `f4eee250` ran at the same time for fourteen minutes, on one branch, in two parts of
-the checkout that share no ticket. The merge request of that branch was accepted at 10:28, and the
-work after it is a second piece by any reading.
-
-## Why the app could not see it
-
-Three facts, each true and each too coarse:
-
-1. `streamDay` is one sequence. Every instant of the day belongs to one context, so two sessions in
-   one checkout collapse into one stretch and the second one is invisible.
-2. `ActivityContext` holds `repoPath`, `branch` and `workPath`, and no session. `contextKey` cannot
-   tell two sessions apart, so nothing downstream can either.
-3. `groupByWork` in `auto-stand-in.ts` keys on `repoPath@branch#workPath`. A `workPath` is only read
-   when the checkout's commits spread over several declared project roots, which neither checkout's
-   commits did on this day.
-
-## What Tom decided, on 2026-09-22
-
-- **The agent session is the grain.** A session in a checkout is one piece of work, whatever branch
-  it sits on. Neither the branch switch nor the accepted merge request becomes a cut of its own.
-- **A lane draws parallel bands side by side.** Two sessions that overlap in time are drawn
-  overlapping, rather than the day picking one of them.
-- **Two sessions can be one piece.** The session is the finest grain, not the answer. `257b3d53` and
-  `a8251c7d` both worked on the totw layout in the same directory, one after the other, and they
-  belong on one ticket. So the grain cuts and something else joins - the day must not turn into a
+- **The agent session is the finest grain.** A branch switch or an accepted merge request is not a
+  cut of its own.
+- **Two sessions can be one piece.** Sessions that worked on the same thing one after the other
+  belong on one ticket. The grain cuts and something else joins, so the day must not turn into one
   stand-in per session.
-- **An overlap books once, to the watched band.** Where two sessions of one checkout ran at the same
-  time, the minutes go to the session the user's own window was on. The other band is drawn for those
-  minutes and books nothing. The day's booked time therefore never rises above the time the user was
-  present.
 
-## Slices
+## Slice 4: join the sessions that are one piece
 
-1. ~~**Carry the session.**~~ Done on 2026-09-22. `ActivityContext.session` and `contextKey` carry
-   it, and `sessionAt` in `streamDay` answers it for every stretch of a checkout rather than only for
-   the stretches an `agent-session` sample covers - a session and the window watching it are one
-   piece, and a key that told them apart would book those minutes twice. The day is still one
-   sequence, so an instant two sessions both ran in goes to the oldest of them; that answer only ever
-   moves forward, where reading the nearest sample would flap between the two. `lastAgentSample` is
-   now keyed per session, so the gap between one session ending and the next starting stopped
-   counting as an agent running. The branch and the work path leave the key where a session answers,
-   the way a feature branch already keeps its directories from splitting it.
-2. ~~**Cut the day into parallel stretches.**~~ Done on 2026-09-22. An agent stretch carries the
-   session that ran it rather than the one `sessionAt` hands the checkout, so two sessions of one
-   checkout that ran at the same time are two stretches that overlap. A stream holds its windows per
-   piece - the key `blocksFromSpans` already cut blocks at - and unions inside a piece where it used
-   to union across the checkout. Tom decided on 2026-09-22 that the checkout **books both**, the way
-   two checkouts running at once already do, so `engagedMs` sums the pieces and `concurrency` sees a
-   second agent inside one lane. `sessionAt` stays for the stretches nothing but the checkout is known
-   about: the focused window and the rebuilt marks. Which session the window was really on is slice 3.
-3. ~~**Book it once.**~~ Done on 2026-09-22. `cutUnwatched` in `rows/cut.ts` takes an instant away
-   from every session of a checkout but the one the user prompted last, and `buildRows` runs it before
-   donation - a minute another session already books must not lend its time to the work beside it
-   either. `watchedAt` in `rows/watched.ts` reads the day's `agent-prompt` events, skipping the ones an
-   agent gave itself, which is the reading `attendedAt` and `breakWindows` already take of `askedBy`.
-   `engagedMs` is untouched, as slice 2 left it on purpose - that number says what ran, and this one
-   says what is booked.
+Before any stand-in opens, gather the sessions of one checkout into pieces. The join criterion is
+not decided. The candidates are the directory their commits touched, the branch they sat on, and the
+user saying so by hand. A wrong join is cheap to undo through `standIn.split`; a wrong cut leaves a
+list nobody answers.
 
-   Only an instant two sessions really held is cut: a session running alone keeps its minutes whatever
-   the last prompt named, because nothing else claims them. A prompt is an edge of the sweep as much as
-   a block boundary is, or attention could not move inside a stretch both sessions held. Where the user
-   prompted neither, the older session keeps the minutes - the answer `sessionAt` already gives the rest
-   of the checkout, and it resolves rather than asking the reviewer to.
+The stand-in list also needs the reverse of `standIn.split`: a join the user can ask for when the
+automatic one cut too finely.
 
-   Measured on the real day of 2026-09-22, read through the running app: the evidence behind the day's
-   rows falls from 429 to 349 minutes, and only in the two checkouts that ran sessions at once -
-   `fut-frontend` 220 → 180, `ethlete-sdk` 121 → 81. The other three lanes are untouched. Those are
-   minutes one checkout held twice, and the day no longer holds them twice.
+## Slice 5: open one stand-in per piece
 
-   The time the day would **write** rose on that same day, from 405 to 450 minutes. That is
-   `snapRowBounds`, not this cut: a row books its whole snapped span, and the rule pulls an earlier
-   row's end back only while a later row needs the room. Three rows held more evidence than their span,
-   so shrinking them let the snap give each its own length back. Whether a row that observed more than
-   it is drawn for should book its span at all is a question for the rounding, and this slice does not
-   answer it. The day over-books its presence by far more than either number either way - 179 minutes of
-   presence against 481 engaged - which is the remote-work question in _Open questions_, not this one.
-
-   The stretch the unwatched band lost is **not** reported as a `BehindStretch` yet. Both sessions share
-   one lane until slice 6 draws them side by side, so a stretch reported now would be drawn over the very
-   row that took it. Nothing on screen is missing either: `openFor` still folds a checkout into one band,
-   so the cut only makes that band honest. Report it with slice 6.
-
-   **Which session was watched is decided by the last prompt the user typed** - Tom, 2026-09-22. An
-   `agent-prompt` event carries a `sessionId`, so the session the user last prompted holds the checkout
-   until they prompt another one. It is the only direct evidence of attention the day holds. A prompt
-   sent through Claude remote names a session without adding presence of its own, which is the right
-   reading: it says which session the user was on, not that they were at the machine. The two rejected
-   candidates were the oldest running session, which books the minutes to whichever started first, and
-   the session whose directory the window title names, which says nothing where two sessions share a
-   directory.
-
-4. **Join the sessions that are one piece.** Before any stand-in opens, sessions of one checkout are
-   gathered into pieces. What joins them is not decided yet - the candidates are the directory their
-   commits touched, the branch they sat on, and the user saying so by hand. A wrong join is cheap to
-   undo through `standIn.split`; a wrong cut leaves a list nobody answers.
-5. **Open one stand-in per piece.** `groupByWork` keys on the piece, and `alreadyWaiting` and
-   `alreadyAnswered` follow it. A rule stored against `repo@branch` still has to match, or every
-   answer the user already gave is lost.
-
-   The day screen shows nothing of slice 1 until this lands. `trackOf` in `rows/merge.ts:183` does key
-   on `contextKey`, so four sessions are four tracks - but when a track has no open row `openFor`
-   (`merge.ts:264-277`) falls back to `lastOfStream`, keyed by `streamKey`, which carries neither the
-   branch nor the session. Any unnamed row of the checkout therefore absorbs every session's blocks,
-   and `absorbSlivers` does the same for the short ones. That fallback is what slice 5 has to replace
-   with the piece - and not before slice 4, or a checkout turns into a row per session, which is the
-   grain Tom ruled out.
-
-6. **Draw them side by side.** `lanes.ts` and `day-timeline.component.ts` lay out a lane that holds
-   more than one band at an instant.
-
-## Open questions
-
-- **Answered by slice 1.** A session that is not an agent session - the user's own editor and
-  terminal - has no session id, so it carries none and keys exactly as it did before: the checkout
-  and the branch. A checkout that ran no agent all day is untouched.
-- **Answered by slice 1.** The branch leaves the key where a session answers, so a session that
-  switched branch twice is one stretch rather than three overlapping ones. A merged block is then
-  named after the branch that held the most of its time, because a key no longer fixes the branch
-  behind it - see `longestContext` in `blocks.ts`. On the real day of 2026-09-22 this took the whole
-  day's overlapping block time from 2.9 minutes down to 1.0, below what it was before sessions were
-  carried at all.
-- Tom works through Claude remote, where a prompt leaves no local presence. A remote session's band
-  is a band of work with nothing underneath it.
-- `standIn.split` exists for the opposite problem. Once sessions are joined into pieces, the list
-  needs the reverse too: a join the user can ask for when the automatic one cut too finely.
+- Key `groupByWork` in `ticket/auto-stand-in.ts` on the piece. Today it keys on
+  `repoPath@branch#workPath`. `alreadyWaiting` and `alreadyAnswered` follow the piece.
+- A rule stored against `repo@branch` must still match, or every answer the user gave is lost.
+- Replace the `lastOfStream` fallback in `rows/merge.ts`. `trackOf` (`merge.ts:183`) keys on
+  `contextKey`, so sessions are separate tracks. But when a track has no open row, `openFor`
+  (`merge.ts:264-277`) falls back to `lastOfStream`, keyed by `streamKey`, which carries neither
+  branch nor session. So any unnamed row of the checkout absorbs every session's blocks, and
+  `absorbSlivers` does the same for short ones. Replace that fallback with the piece, and not before
+  slice 4, or a checkout turns into a row per session.
+- Once rows are per session, report the stretch an unwatched session lost as a `BehindStretch`, the
+  way worktrees already do (ADR 0034).
