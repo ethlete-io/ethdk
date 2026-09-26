@@ -141,6 +141,11 @@ Manual (report tasks): vbl `layout` and `tournament` facades (toolkit-shaped, no
     - Build: the libs stop at `queries` (`StringTemplate`) and `uikit-matches` (`Memo`). The apps fail on the same
       errors plus the cause B errors (producer 37 error lines, public and widgets 2 each). Bundling is not reached,
       and the app was not served.
+  - After run 2: the cdk `ProvideColorDirective` defect is fixed (ce22c68d4), and core `migrate-to-v5` reports
+    `Memo` and `StringTemplate` (887fbf5b1). vbl stays blocked on cause B: `@ethlete-producer/admin`, `queries`,
+    `score` and `uikit` need a rebuild with prep applied, in their own repository. fifagg has no such package.
+  - fifagg run, in progress 2026-09-26: scratch copy `/tmp/s4-fifagg` (from `2c211769d0`), logs
+    `/tmp/s4-fifagg-logs`. Step 1: Angular 19 → 22 with `nx migrate`. Step 2: the SDK generators, as in vbl run 2.
 - [x] S5 Guide `apps/docs/query/migrating-from-ngrx-toolkit.md` + sidebar link (6a05d2d23).
 
 ## Continue on 2026-09-26
