@@ -221,7 +221,15 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       Icon done (69 of 69, `icon.scenario.spec.ts`, c305b358b). No bug. Friction: an unknown name or a bad SVG
       throws during change detection and takes the view down; "no icons provided" throws from the constructor.
       E2E gaps: real sizing (`width/height="100%"`) and `currentColor` from the theme.
-      In progress (2026-09-26): `forms/date-time`, `forms/rich-text-editor`, one subagent each.
+      Date-time done (69 of 69, `forms-date-time{,-range}.scenario.spec.ts`, fa4fd3050). Bug, `it.fails`: no
+      form control except the rich-text editor has a `touch` output, and Angular 22 signal forms mark a field
+      touched only through it (`listenToCustomControlOutput('touch', …)`), so a blur never marks the field touched.
+      Friction: in a required field unparseable text shows the `required` message, not `parseErrorMessage`; an
+      hour alone does not commit; `DATE_TIME_LABELS` holds only the partial override (read
+      `injectDateTimeLabels()`); the harness lacks `ResizeObserver`, `matchMedia` and `Element.animate` polyfills;
+      an open picker at destroy leaves a pending frame. E2E gaps: masked typing, calendar and time-column
+      keyboard navigation, panel layout and animation, other time zones, focus return after close.
+      In progress (2026-09-26): `forms/rich-text-editor`; the `touch` output fix.
 - [x] S11 Follow-ups from S6 (hand-written skill `.agents/skills/query-scenario-tests/SKILL.md` documents `s.mount`)
   1. Done in 47f4d25da: `s.mount(Component, injector, { inputs })` sets inputs before the first change detection;
      `legacy-client-options` mounts `MatchListComponent` directly.
