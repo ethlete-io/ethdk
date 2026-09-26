@@ -251,8 +251,8 @@ The 5.x apps run their unchanged v2 code through the interop layer once they upg
       Grid done (51 of 51, `grid{,-headless,-layout}.scenario.spec.ts`, 47f5b13a2). Bugs fixed (3abd0b603): one
       `items` update that added or removed an item dropped another item's `data` change; a projected item removed
       on `(remove)` raised a false ET1904 during its leave animation. Friction: `GridItemRef` and
-      `GridComponentRegistration.configComponent` are dead API (nothing renders or provides them; implement an
-      edit mode or remove both); the grid renders nothing before its host has a width; ET1902 throws out of change
+      `GridComponentRegistration.configComponent` were dead API (fut-frontend builds its own edit overlay from
+      an actions toolbar), removed in e519882bc; the grid renders nothing before its host has a width; ET1902 throws out of change
       detection. E2E gaps: pointer drag and resize, auto-scroll, CSS transitions, container resize, reduced motion.
       Form field done (49 of 49, `forms-form-field{,-custom-control}.scenario.spec.ts`, 1d138d455). No bug.
       Friction: a schema-`hidden` field logs NG01916, but the docs present `hidden` as the way to remove a field;
