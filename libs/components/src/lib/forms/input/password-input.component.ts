@@ -28,7 +28,7 @@ import { TEXT_FIELD_CONTROL_INPUTS } from '../form-field/headless/text-field-con
     {
       directive: PasswordInputDirective,
       inputs: ['placeholder', 'autocomplete', 'value', 'revealed', ...TEXT_FIELD_CONTROL_INPUTS],
-      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'revealedChange'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch', 'revealedChange'],
     },
     ColorInteractiveDirective,
   ],

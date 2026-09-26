@@ -13,7 +13,7 @@ import { MENU_SELECTION_GROUP_MULTIPLE, MenuSelectionGroupDirective } from './he
     {
       directive: MenuSelectionGroupDirective,
       inputs: ['value', 'touched', 'disabled', 'invalid', 'errors', 'required', 'name'],
-      outputs: ['valueChange', 'touchedChange'],
+      outputs: ['valueChange', 'touchedChange', 'touch'],
     },
   ],
   host: {

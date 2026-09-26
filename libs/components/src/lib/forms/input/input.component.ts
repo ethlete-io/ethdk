@@ -12,7 +12,7 @@ import { InputDirective } from './headless';
     {
       directive: InputDirective,
       inputs: ['type', 'placeholder', 'autocomplete', 'textAlign', 'value', ...TEXT_FIELD_CONTROL_INPUTS],
-      outputs: ['valueChange', 'mixedChange', 'touchedChange'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch'],
     },
     ColorInteractiveDirective,
   ],

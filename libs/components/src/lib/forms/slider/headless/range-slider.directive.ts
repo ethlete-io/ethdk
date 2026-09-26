@@ -10,6 +10,7 @@ import {
   numberAttribute,
   signal,
 } from '@angular/core';
+import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
@@ -32,6 +33,7 @@ import {
   SliderThumbLabelBase,
 } from './slider.tokens';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
+import { controlTouches } from '../../../internals/touch-output';
 
 export type RangeSliderValue = [number, number];
 
@@ -81,6 +83,7 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
 
   /** Snaps commits onto the marks instead of the `step` grid. No effect without `marks`. */
   public snapToMarks = input(false, { transform: booleanAttribute });
+  public touch = outputFromObservable(controlTouches(this.touched));
 
   /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
   public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);

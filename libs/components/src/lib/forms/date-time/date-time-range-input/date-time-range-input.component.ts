@@ -80,7 +80,7 @@ const PANE_ORDER: readonly DateTimeRangePane[] = ['dates', 'times'];
         'endAriaLabel',
         ...ACCESSIBLE_NAME_INPUTS,
       ],
-      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'pickerOpenChange'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch', 'pickerOpenChange'],
     },
   ],
   host: {

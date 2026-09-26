@@ -15,7 +15,7 @@ import { TEXT_FIELD_CONTROL_INPUTS } from '../form-field/headless/text-field-con
     {
       directive: ColorInputDirective,
       inputs: ['value', 'alpha', 'swatches', 'notations', 'pickerOpen', ...TEXT_FIELD_CONTROL_INPUTS],
-      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'pickerOpenChange'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch', 'pickerOpenChange'],
     },
     ColorInteractiveDirective,
   ],

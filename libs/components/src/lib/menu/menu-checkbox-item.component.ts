@@ -18,7 +18,7 @@ import { MENU_SELECTION_ITEM_KIND, MenuItemDirective, MenuSelectionItemDirective
     {
       directive: MenuSelectionItemDirective,
       inputs: ['value', 'checked', 'indeterminate', 'touched', 'disabled', 'invalid', 'errors', 'required', 'name'],
-      outputs: ['checkedChange', 'indeterminateChange', 'touchedChange'],
+      outputs: ['checkedChange', 'indeterminateChange', 'touchedChange', 'touch'],
     },
   ],
   host: {

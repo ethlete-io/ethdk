@@ -9,6 +9,7 @@ import {
   model,
   signal,
 } from '@angular/core';
+import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { ValidationError } from '@angular/forms/signals';
 import {
   AccessibleNameControlDirective,
@@ -16,6 +17,7 @@ import {
   FORM_FIELD_TOKEN,
   FormFieldControl,
 } from '../../form-field/headless';
+import { controlTouches } from '../../../internals/touch-output';
 
 @Directive({
   selector: '[etSwitch]',
@@ -59,6 +61,7 @@ export class SwitchDirective extends AccessibleNameControlDirective implements F
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
   public required = input(false, { transform: booleanAttribute });
   public name = input('');
+  public touch = outputFromObservable(controlTouches(this.touched));
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
 

@@ -75,6 +75,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
       outputs: [
         'valueChange',
         'touchedChange',
+        'touch',
         'filesReject',
         'uploadSucceed',
         'uploadFail',

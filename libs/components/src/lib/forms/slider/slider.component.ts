@@ -34,7 +34,7 @@ import { SliderDirective, SliderThumbDirective, SliderThumbLabelContext, SliderT
         'marks',
         'snapToMarks',
       ],
-      outputs: ['valueChange', 'mixedChange', 'touchedChange'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch'],
     },
     { directive: ProvideColorDirective, inputs: ['etProvideColor:color'] },
   ],

@@ -11,6 +11,7 @@ import {
   model,
   signal,
 } from '@angular/core';
+import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { ValidationError } from '@angular/forms/signals';
 import { Locale } from 'date-fns';
 import { AccessibleNameControlDirective, FORM_FIELD_TOKEN, FormFieldControlType } from '../../form-field/headless';
@@ -21,6 +22,7 @@ import { injectDateLocale } from '../date-time-formats';
 import { DatePickerHost, DatePickerSurfaceBase, DatePickerTriggerBase } from '../picker/date-picker-host';
 import { createDatePickerOverlay } from './date-picker-overlay';
 import { maskPatternFromDisplayFormat } from './display-format-mask';
+import { controlTouches } from '../../../internals/touch-output';
 
 /** The registered text field a date-picker input focuses and anchors to. */
 export type DatePickerInputFieldBase = {
@@ -93,6 +95,7 @@ export abstract class PickerInputBaseDirective extends AccessibleNameControlDire
   public mask = input(false, { transform: booleanAttribute });
 
   public pickerOpen = model(false);
+  public touch = outputFromObservable(controlTouches(this.touched));
 
   public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
 

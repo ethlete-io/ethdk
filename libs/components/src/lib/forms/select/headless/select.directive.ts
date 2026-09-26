@@ -17,7 +17,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, outputFromObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import {
   RuntimeError,
@@ -56,6 +56,7 @@ import { SelectViewportDirective } from './select-viewport.directive';
 import { SelectCompareWith, SelectItem, SelectOptionData, SelectSelectedEntry } from './select.tokens';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
+import { controlTouches } from '../../../internals/touch-output';
 
 export const SELECT_FILTER_MODES = {
   /** The select never filters - a search input is purely informational for the consumer. */
@@ -186,6 +187,7 @@ export class SelectDirective
    * as they are. Ignored for single and `pickOnly` selects.
    */
   public selectAll = input(false, { transform: booleanAttribute });
+  public touch = outputFromObservable(controlTouches(this.touched));
 
   public queryChange = output<string>();
   public loadMore = output<void>();

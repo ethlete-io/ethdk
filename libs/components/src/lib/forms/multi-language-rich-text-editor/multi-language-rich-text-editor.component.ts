@@ -22,7 +22,7 @@ import {
     {
       directive: MultiLanguageRichTextEditorDirective,
       inputs: ['value', 'touched', 'disabled', 'readonly', 'invalid', 'errors', 'required', 'name', 'languages'],
-      outputs: ['valueChange', 'touchedChange'],
+      outputs: ['valueChange', 'touchedChange', 'touch'],
     },
   ],
   host: { class: 'et-multi-language-rich-text-editor' },

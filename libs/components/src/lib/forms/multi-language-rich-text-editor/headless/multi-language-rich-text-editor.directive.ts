@@ -1,4 +1,5 @@
 import { booleanAttribute, computed, Directive, effect, input, linkedSignal, model } from '@angular/core';
+import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { RuntimeError } from '@ethlete/core';
 import {
@@ -6,6 +7,7 @@ import {
   MultiLanguageRichTextEditorValue,
 } from '../multi-language-rich-text-editor-config';
 import { MULTI_LANGUAGE_RICH_TEXT_EDITOR_ERROR_CODES } from '../multi-language-rich-text-editor-errors';
+import { controlTouches } from '../../../internals/touch-output';
 
 @Directive({
   selector: '[etMultiLanguageRichTextEditor]',
@@ -22,6 +24,7 @@ export class MultiLanguageRichTextEditorDirective implements FormValueControl<Mu
 
   /** The languages to offer, in switcher order. Consumer-provided - no languages are hard-wired. */
   public languages = input.required<readonly MultiLanguageRichTextEditorLanguage[]>();
+  public touch = outputFromObservable(controlTouches(this.touched));
 
   /** The language currently being edited. Kept valid across `languages` changing: if the active code
    *  is removed, it falls back to the first remaining language. */

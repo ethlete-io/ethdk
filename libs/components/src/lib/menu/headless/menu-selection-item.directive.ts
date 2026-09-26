@@ -9,7 +9,7 @@ import {
   input,
   model,
 } from '@angular/core';
-import { outputToObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { outputToObservable, takeUntilDestroyed, outputFromObservable } from '@angular/core/rxjs-interop';
 import { ValidationError } from '@angular/forms/signals';
 import { tap } from 'rxjs';
 import { RuntimeError } from '@ethlete/core';
@@ -20,6 +20,7 @@ import {
   MENU_SELECTION_ITEM_KIND,
   MenuSelectionItemKind,
 } from './menu-selection-group.tokens';
+import { controlTouches } from '../../internals/touch-output';
 
 @Directive({
   selector: '[etMenuSelectionItem]',
@@ -45,6 +46,7 @@ export class MenuSelectionItemDirective {
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
   public required = input(false, { transform: booleanAttribute });
   public name = input('');
+  public touch = outputFromObservable(controlTouches(this.touched));
 
   public kind = computed<MenuSelectionItemKind>(() => {
     if (this.kindOverride) {

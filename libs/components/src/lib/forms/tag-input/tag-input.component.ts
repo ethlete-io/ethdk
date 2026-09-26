@@ -34,7 +34,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
         'maxTags',
         ...ACCESSIBLE_NAME_INPUTS,
       ],
-      outputs: ['valueChange', 'mixedChange', 'touchedChange'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch'],
     },
     ColorInteractiveDirective,
   ],

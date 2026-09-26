@@ -314,6 +314,9 @@ The field chrome handles error display and aria wiring uniformly:
   (`aria-live="polite"`), replacing the hint with an animated transition. While
   erroring, the field forces the app's error color theme (the theme registered
   with `type: 'error'`).
+- Every control emits a `touch` output whenever it marks itself touched - signal
+  forms listens to it, so the bound field's `touched()` follows the user leaving
+  the control. Outside signal forms, `[(touched)]` still works.
 - A **parse error** (unparseable typed text in the date/time/date-time/duration
   inputs) is surfaced the same way once touched: its `parseErrorMessage` renders
   as an error, with matching `aria-invalid` and `aria-describedby` - no more

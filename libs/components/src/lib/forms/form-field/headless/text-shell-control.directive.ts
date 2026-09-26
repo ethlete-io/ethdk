@@ -1,9 +1,11 @@
 import { booleanAttribute, computed, DestroyRef, Directive, inject, input, model, signal, Signal } from '@angular/core';
+import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { ValidationError } from '@angular/forms/signals';
 import { AccessibleNameControlDirective } from './accessible-name-control.directive';
 import { FORM_FIELD_TOKEN, FormFieldControl, FormFieldControlType } from './form-field.tokens';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 import { mountTextFieldShellStyles } from '../form-field-text-shell-styles.component';
+import { controlTouches } from '../../../internals/touch-output';
 
 /** Must be extended by an `@Directive` - Angular only surfaces inherited inputs/outputs from a decorated base. */
 @Directive({
@@ -33,6 +35,7 @@ export abstract class TextShellControlDirective extends AccessibleNameControlDir
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
   public required = input(false, { transform: booleanAttribute });
   public name = input('');
+  public touch = outputFromObservable(controlTouches(this.touched));
 
   /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
   public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);

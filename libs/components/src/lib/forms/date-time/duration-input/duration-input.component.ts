@@ -30,7 +30,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
         'durationFormat',
         ...ACCESSIBLE_NAME_INPUTS,
       ],
-      outputs: ['valueChange', 'mixedChange', 'touchedChange'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch'],
     },
   ],
   host: {

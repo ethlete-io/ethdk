@@ -14,6 +14,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { FORM_FIELD, FormValueControl, ValidationError } from '@angular/forms/signals';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import {
@@ -37,6 +38,7 @@ import {
   DROPZONE_FILE_REJECTION_REASONS,
   DropzoneFileRejection,
 } from './dropzone-validation';
+import { controlTouches } from '../../../internals/touch-output';
 
 const isValueInControl = <TValue>(entry: DropzoneEntry<TValue>) => {
   const status = entry.status();
@@ -93,6 +95,7 @@ export class DropzoneDirective<TValue = unknown>
 
   /** Whether multiple files can be uploaded. The control value becomes an array. */
   public multiple = input(false, { transform: booleanAttribute });
+  public touch = outputFromObservable(controlTouches(this.touched));
 
   /** Emits all files of a selection that were rejected, with the reason per file. */
   public filesReject = output<DropzoneFileRejection[]>();

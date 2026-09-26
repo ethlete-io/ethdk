@@ -15,7 +15,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, outputFromObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { RuntimeError, injectHostElement, nextFrame } from '@ethlete/core';
 import { EMPTY, Subscription, catchError, fromEvent, merge, switchMap, take, tap } from 'rxjs';
@@ -47,6 +47,7 @@ import {
 } from './internals/cascader-tree';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
+import { controlTouches } from '../../../internals/touch-output';
 
 export const CASCADER_SELECTABLE_LEVELS = {
   /** Only terminal leaves commit a value (default). */
@@ -132,6 +133,7 @@ export class CascaderDirective<T = unknown>
    * breadcrumb row (min 1).
    */
   public maxVisibleColumns = input(3, { transform: (value: number) => Math.max(1, Math.floor(value)) });
+  public touch = outputFromObservable(controlTouches(this.touched));
 
   public afterOpen = output<void>();
   public afterClose = output<void>();

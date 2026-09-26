@@ -9,6 +9,7 @@ import {
   model,
   signal,
 } from '@angular/core';
+import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import {
   AccessibleNameControlDirective,
@@ -18,6 +19,7 @@ import {
 } from '../../form-field/headless';
 import { RatingIconDirective } from './rating-icon.directive';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
+import { controlTouches } from '../../../internals/touch-output';
 
 export type RatingIconState = 'full' | 'half' | 'empty';
 
@@ -79,6 +81,7 @@ export class RatingDirective
    */
   public max = input<number | undefined>(5);
   public allowHalf = input(false, { transform: booleanAttribute });
+  public touch = outputFromObservable(controlTouches(this.touched));
 
   /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
   public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);

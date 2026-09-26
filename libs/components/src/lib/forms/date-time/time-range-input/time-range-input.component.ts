@@ -57,7 +57,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
         'endAriaLabel',
         ...ACCESSIBLE_NAME_INPUTS,
       ],
-      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'pickerOpenChange'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch', 'pickerOpenChange'],
     },
   ],
   host: {

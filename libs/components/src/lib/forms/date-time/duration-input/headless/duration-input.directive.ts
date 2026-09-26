@@ -1,4 +1,5 @@
 import { DestroyRef, Directive, booleanAttribute, computed, inject, input, model, signal } from '@angular/core';
+import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import {
   AccessibleNameControlDirective,
@@ -11,6 +12,7 @@ import { DurationInputFieldDirective } from './duration-input-field.directive';
 import { injectFormFieldLabels } from '../../../../forms/form-field/form-field-labels';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
 import { mountTextFieldShellStyles } from '../../../form-field/form-field-text-shell-styles.component';
+import { controlTouches } from '../../../../internals/touch-output';
 
 /**
  * A duration form control whose value is a **total elapsed time in milliseconds**
@@ -55,6 +57,7 @@ export class DurationInputDirective
 
   /** The segment layout: `h`/`m`/`s`/`S` token runs plus separators. @default `'mm:ss'` */
   public durationFormat = input('mm:ss');
+  public touch = outputFromObservable(controlTouches(this.touched));
 
   public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
 

@@ -13,6 +13,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import {
   AccessibleNameControlDirective,
@@ -20,6 +21,7 @@ import {
   FORM_FIELD_TOKEN,
   FormFieldControl,
 } from '../../form-field/headless';
+import { controlTouches } from '../../../internals/touch-output';
 
 export type OtpInputCharset = 'numeric' | 'alphanumeric' | RegExp;
 
@@ -54,6 +56,7 @@ export class OtpInputDirective
   public charset = input<OtpInputCharset>('numeric');
   /** Renders dots instead of the typed characters (PIN entry). */
   public masked = input(false, { transform: booleanAttribute });
+  public touch = outputFromObservable(controlTouches(this.touched));
 
   /** Emits once each time the value reaches the full length. */
   public complete = output<string>();

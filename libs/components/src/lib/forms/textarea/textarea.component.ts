@@ -22,7 +22,7 @@ import { TEXT_FIELD_CONTROL_INPUTS } from '../form-field/headless/text-field-con
         'value',
         ...TEXT_FIELD_CONTROL_INPUTS,
       ],
-      outputs: ['valueChange', 'mixedChange', 'touchedChange'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch'],
     },
     ColorInteractiveDirective,
   ],

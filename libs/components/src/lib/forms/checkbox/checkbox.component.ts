@@ -34,7 +34,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
         'name',
         ...ACCESSIBLE_NAME_INPUTS,
       ],
-      outputs: ['checkedChange', 'indeterminateChange', 'touchedChange'],
+      outputs: ['checkedChange', 'indeterminateChange', 'touchedChange', 'touch'],
     },
     ColorInteractiveDirective,
     FocusRingDirective,

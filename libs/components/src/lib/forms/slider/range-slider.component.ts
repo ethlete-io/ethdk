@@ -36,7 +36,7 @@ import { injectSliderLabels } from '../../forms/slider/slider-labels';
         'marks',
         'snapToMarks',
       ],
-      outputs: ['valueChange', 'mixedChange', 'touchedChange'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch'],
     },
     { directive: ProvideColorDirective, inputs: ['etProvideColor:color'] },
   ],

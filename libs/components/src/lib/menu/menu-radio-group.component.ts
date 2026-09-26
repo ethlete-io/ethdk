@@ -12,7 +12,7 @@ import { MenuSelectionGroupDirective } from './headless';
     {
       directive: MenuSelectionGroupDirective,
       inputs: ['value', 'touched', 'disabled', 'invalid', 'errors', 'required', 'name'],
-      outputs: ['valueChange', 'touchedChange'],
+      outputs: ['valueChange', 'touchedChange', 'touch'],
     },
   ],
   host: {

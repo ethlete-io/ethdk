@@ -1,4 +1,5 @@
 import { booleanAttribute, computed, DestroyRef, Directive, inject, input, model, signal } from '@angular/core';
+import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { ValidationError } from '@angular/forms/signals';
 import {
   AccessibleNameControlDirective,
@@ -14,6 +15,7 @@ import {
   SelectionListDirectiveBase,
   SelectionListItem,
 } from './selection-list.tokens';
+import { controlTouches } from '../../../internals/touch-output';
 
 @Directive({
   selector: '[etSelectionList]',
@@ -57,6 +59,7 @@ export class SelectionListDirective
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
   public required = input(false, { transform: booleanAttribute });
   public name = input('');
+  public touch = outputFromObservable(controlTouches(this.touched));
 
   public multiple = computed(() => this.multipleOverride ?? this.multipleInput());
 

@@ -73,6 +73,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
         'valueChange',
         'mixedChange',
         'touchedChange',
+        'touch',
         'openChange',
         'queryChange',
         'loadMore',

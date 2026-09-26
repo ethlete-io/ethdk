@@ -1,4 +1,5 @@
 import { booleanAttribute, Directive, computed, effect, inject, input, model, signal, untracked } from '@angular/core';
+import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { ValidationError } from '@angular/forms/signals';
 import {
   MENU_SELECTION_GROUP_MULTIPLE,
@@ -6,6 +7,7 @@ import {
   MenuSelectionGroupDirectiveBase,
   MenuSelectionGroupItem,
 } from './menu-selection-group.tokens';
+import { controlTouches } from '../../internals/touch-output';
 
 @Directive({
   selector: '[etMenuSelectionGroup]',
@@ -29,6 +31,7 @@ export class MenuSelectionGroupDirective implements MenuSelectionGroupDirectiveB
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
   public required = input(false, { transform: booleanAttribute });
   public name = input('');
+  public touch = outputFromObservable(controlTouches(this.touched));
 
   public multiple = computed(() => this.multipleOverride ?? this.multipleInput());
   public items = signal<MenuSelectionGroupItem[]>([]);

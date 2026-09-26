@@ -9,6 +9,7 @@ import {
   model,
   signal,
 } from '@angular/core';
+import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { FormCheckboxControl, ValidationError } from '@angular/forms/signals';
 import {
   AccessibleNameControlDirective,
@@ -16,6 +17,7 @@ import {
   FORM_FIELD_TOKEN,
   FormFieldControl,
 } from '../../form-field/headless';
+import { controlTouches } from '../../../internals/touch-output';
 
 @Directive({
   selector: '[etCheckbox]',
@@ -53,6 +55,7 @@ export class CheckboxDirective extends AccessibleNameControlDirective implements
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
   public required = input(false, { transform: booleanAttribute });
   public name = input('');
+  public touch = outputFromObservable(controlTouches(this.touched));
 
   public ariaChecked = computed(() => {
     if (this.indeterminate()) {

@@ -74,7 +74,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
         'name',
         ...ACCESSIBLE_NAME_INPUTS,
       ],
-      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'openChange', 'afterOpen', 'afterClose'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch', 'openChange', 'afterOpen', 'afterClose'],
     },
     ColorInteractiveDirective,
   ],

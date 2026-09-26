@@ -30,7 +30,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
         'name',
         ...ACCESSIBLE_NAME_INPUTS,
       ],
-      outputs: ['valueChange', 'mixedChange', 'touchedChange'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch'],
     },
     { directive: ProvideColorDirective, inputs: ['etProvideColor:color'] },
   ],

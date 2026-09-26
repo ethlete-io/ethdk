@@ -390,7 +390,7 @@ describe('forms date-time scenarios', () => {
     expect(field.hasAttribute('aria-invalid')).toBe(true);
   });
 
-  it.fails('marks the bound signal-form field touched when the user leaves the field', () => {
+  it('marks the bound signal-form field touched when the user leaves the field', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(BookingComponent);
 
