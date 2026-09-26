@@ -7,6 +7,7 @@ import {
   QueryDependencies,
   queryExecute,
   QueryExecuteArgs,
+  recordExecutionArgs,
   QueryState,
   RequestArgs,
   resetExecuteState,
@@ -79,6 +80,7 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
     };
 
     aborter.capture();
+    recordExecutionArgs(executeOptions.state, args, options);
     queryExecute({
       executeOptions: normalizedOpts,
       executeState,

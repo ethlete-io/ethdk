@@ -1,5 +1,5 @@
 import { signal } from '@angular/core';
-import { withArgs, withLongPolling, withPolling } from '../index';
+import { createGqlMutationViaPost, gql, withArgs, withLongPolling, withPolling } from '../index';
 import { describe, expect, it } from 'vitest';
 import { useScenario } from './harness';
 
@@ -39,6 +39,37 @@ describe('http scan 2026-09-27 scenario', () => {
       ]);
       expect(query.args()).toEqual({ body: { text: 'second' } });
       expect(query.response()).toEqual({ saved: { text: 'second' } });
+    });
+
+    it('records the args of a gql mutation, and a bare execute() re-sends them', () => {
+      const s = scenario();
+      s.api.on('POST', '/', () => ({ body: { data: { renameUser: { ok: true } } } }));
+
+      const renameUser = createGqlMutationViaPost(s.clientRef)<{
+        response: { renameUser: { ok: boolean } };
+        variables: { name: string };
+      }>(gql`
+        mutation RenameUser($name: String!) {
+          renameUser(name: $name) {
+            ok
+          }
+        }
+      `);
+
+      const c = s.consumer();
+      const query = c.run(() => renameUser());
+
+      query.execute({ args: { variables: { name: 'Ada' } } });
+      s.tick();
+
+      expect(query.args()).toEqual({ variables: { name: 'Ada' } });
+
+      query.execute();
+      s.tick();
+
+      const sent = s.api.httpRequests('POST', '/').map((request) => (request.body as { variables: unknown }).variables);
+
+      expect(sent).toEqual([{ name: 'Ada' }, { name: 'Ada' }]);
     });
 
     it('lets withArgs keep owning args()', () => {
