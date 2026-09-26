@@ -382,7 +382,7 @@ Neither message is echoed back out, so a login or logout settles in one round of
 
 Without the feature every tab is its own leader and refreshes its own token - exactly right for a single-tab app, a kiosk or an embedded webview, which then ship neither the channel nor the Web Locks election.
 
-The feature is inert in a server render: Node has both `BroadcastChannel` and `navigator.locks`, but a render has no sibling tabs, so it opens no channel, takes no lock, arms no timer and reaches `sessionStatus()` `'anonymous'` as a single tab does.
+The feature is inert in a server render: Node has both `BroadcastChannel` and `navigator.locks`, but a render has no sibling tabs, so it opens no channel, takes no lock, arms no timer and resolves `sessionStatus()` as a single tab does - `'restoring'` while a [`withPersistentAuth`](#features) auto-login runs, `'anonymous'` right away without one.
 
 With [`withTokenRevocation`](#features) only the tab a logout started in revokes the tokens - the tabs the logout reaches over the channel do not send the same revocation again. List `'otherTab'` in `revokeOn` to make them revoke as well.
 
