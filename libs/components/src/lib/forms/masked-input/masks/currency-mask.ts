@@ -62,7 +62,7 @@ export const createCurrencyMask = (options: CurrencyMaskOptions = {}): MaskSpec 
     const normalized = fraction === undefined ? trimmedInteger : `${trimmedInteger}${decimalSeparator}${fraction}`;
 
     if (!normalized.length) {
-      return '';
+      return negative ? '-' : '';
     }
 
     return negative ? `-${normalized}` : normalized;
@@ -75,6 +75,11 @@ export const createCurrencyMask = (options: CurrencyMaskOptions = {}): MaskSpec 
 
     const negative = raw.startsWith('-');
     const unsigned = negative ? raw.slice(1) : raw;
+
+    if (!unsigned.length) {
+      return `${prefix}-${suffix}`;
+    }
+
     const [integer = '', fraction] = unsigned.split(decimalSeparator);
     const grouped = (integer || '0').replace(/\B(?=(\d{3})+(?!\d))/g, groupSeparator);
     const amount = fraction === undefined ? grouped : `${grouped}${decimalSeparator}${fraction}`;

@@ -60,6 +60,8 @@ describe('createCurrencyMask', () => {
     expect(signed.toRaw('-1234')).toBe('-1234');
     expect(signed.toDisplay('-1234')).toBe('-1.234');
     expect(signed.toRaw(signed.toDisplay('-1234,5'))).toBe('-1234,5');
+    expect(signed.toRaw('-')).toBe('-');
+    expect(createCurrencyMask({ allowNegative: true, prefix: '€ ' }).toDisplay('-')).toBe('€ -');
   });
 });
 
