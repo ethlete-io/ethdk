@@ -1,5 +1,5 @@
 import { Page, expect, test } from '@playwright/test';
-import { openStory, pressKey, tap } from '../support';
+import { openStory, pressKey, pressKeys, tap } from '../support';
 
 const STORY_ID = 'components-overlays-command-palette--default';
 
@@ -7,6 +7,31 @@ async function shortcutChord(page: Page): Promise<string> {
   const isApple = await page.evaluate(() => /mac|iphone|ipad|ipod/i.test(navigator.platform || navigator.userAgent));
 
   return isApple ? 'Meta+K' : 'Control+K';
+}
+
+async function fakePlatform(page: Page, platform: string): Promise<void> {
+  await page.addInitScript((value) => {
+    Object.defineProperty(Navigator.prototype, 'platform', { get: () => value, configurable: true });
+  }, platform);
+}
+
+async function expectActiveOptionInsideList(page: Page): Promise<void> {
+  const inside = await page.evaluate(() => {
+    const option = document.querySelector('[role="option"][aria-selected="true"]');
+    const scroller = option?.closest('.et-command-palette-list');
+    const optionRect = option?.getBoundingClientRect();
+    const scrollerRect = scroller?.getBoundingClientRect();
+
+    return (
+      !!optionRect &&
+      !!scrollerRect &&
+      (scroller?.scrollTop ?? 0) > 0 &&
+      optionRect.top >= scrollerRect.top - 1 &&
+      optionRect.bottom <= scrollerRect.bottom + 1
+    );
+  });
+
+  expect(inside).toBe(true);
 }
 
 test.describe('command-palette / keyboard', () => {
@@ -132,6 +157,97 @@ test.describe('command-palette / keyboard', () => {
     await expect.poll(() => search.getAttribute('aria-controls')).toBeNull();
     await expect(page.getByRole('listbox')).toHaveCount(0);
     await expect(page.getByText('No matching command')).toBeVisible();
+  });
+});
+
+test.describe('command-palette / platform', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard shortcut');
+
+  test('on an Apple platform Cmd+K opens the palette and Ctrl+K does not', async ({ page }) => {
+    await fakePlatform(page, 'MacIntel');
+    await openStory(page, STORY_ID);
+
+    await pressKey(page, 'Control+K');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+
+    await pressKey(page, 'Meta+K');
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.getByRole('combobox')).toBeFocused();
+  });
+
+  test('on a non-Apple platform Ctrl+K opens the palette and Cmd+K does not', async ({ page }) => {
+    await fakePlatform(page, 'Win32');
+    await openStory(page, STORY_ID);
+
+    await pressKey(page, 'Meta+K');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+
+    await pressKey(page, 'Control+K');
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.getByRole('combobox')).toBeFocused();
+  });
+
+  test('the shortcut hint prints the modifier of the platform', async ({ page }) => {
+    await fakePlatform(page, 'MacIntel');
+    const appleRoot = await openStory(page, STORY_ID);
+    await expect(appleRoot.locator('et-kbd').first()).toContainText('⌘');
+
+    const other = await page.context().newPage();
+    await fakePlatform(other, 'Win32');
+    const otherRoot = await openStory(other, STORY_ID);
+    await expect(otherRoot.locator('et-kbd').first()).toContainText('Ctrl');
+    await other.close();
+  });
+});
+
+test.describe('command-palette / scrolling and focus return', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard navigation');
+
+  test('the active row scrolls into view when arrow keys move it past the visible part of the list', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 900, height: 360 });
+    await openStory(page, STORY_ID);
+    await pressKey(page, await shortcutChord(page));
+    await expect(page.getByRole('combobox')).toBeFocused();
+
+    await pressKeys(
+      page,
+      Array.from({ length: 7 }, () => 'ArrowDown'),
+    );
+
+    await expectActiveOptionInsideList(page);
+  });
+
+  test('running a command from the open button returns focus to that button', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const openButton = root.getByRole('button', { name: 'Open the palette' });
+
+    await pressKey(page, 'Tab');
+    await expect(openButton).toBeFocused();
+    await pressKey(page, 'Enter');
+    await expect(page.getByRole('combobox')).toBeFocused();
+
+    await page.getByRole('combobox').fill('create');
+    await pressKey(page, 'Enter');
+
+    await expect(page.getByRole('dialog')).toBeHidden();
+    await expect(openButton).toBeFocused();
+  });
+
+  test('closing with the shortcut returns focus to the element focused before it opened', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const toggle = root.getByRole('button', { name: 'Select a row' });
+    const chord = await shortcutChord(page);
+
+    await toggle.focus();
+    await pressKey(page, chord);
+    await expect(page.getByRole('combobox')).toBeFocused();
+
+    await pressKey(page, chord);
+
+    await expect(page.getByRole('dialog')).toBeHidden();
+    await expect(toggle).toBeFocused();
   });
 });
 
