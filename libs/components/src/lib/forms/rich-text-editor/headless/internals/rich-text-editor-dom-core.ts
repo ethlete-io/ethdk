@@ -114,6 +114,36 @@ export const createRichTextEditorDomCore = (doc: Document, renderer: EditorRende
     selection.addRange(range);
   };
 
+  const caretRangeAtPoint = (x: number, y: number): Range | null => {
+    if (doc.caretPositionFromPoint) {
+      const position = doc.caretPositionFromPoint(x, y);
+
+      if (!position) return null;
+
+      const range = doc.createRange();
+      range.setStart(position.offsetNode, position.offset);
+
+      return range;
+    }
+
+    return doc.caretRangeFromPoint?.(x, y) ?? null;
+  };
+
+  const placeCaretAtPoint = (x: number, y: number) => {
+    const el = root();
+    const selection = doc.getSelection();
+    const range = caretRangeAtPoint(x, y);
+
+    if (!el || !selection || !range || !el.contains(range.startContainer)) return false;
+
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    lastRange = range.cloneRange();
+
+    return true;
+  };
+
   const collapseAfter = (node: Node) => {
     const selection = doc.getSelection();
 
@@ -398,6 +428,7 @@ export const createRichTextEditorDomCore = (doc: Document, renderer: EditorRende
     resolveStartNode,
     markStates,
     ensureCaret,
+    placeCaretAtPoint,
     insertToken,
   };
 };

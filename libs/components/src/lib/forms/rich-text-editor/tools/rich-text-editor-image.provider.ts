@@ -255,10 +255,12 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
   const handleDrop = (editor: RichTextEditorDirective, event: DragEvent) => {
     const files = imageFilesOf(event.dataTransfer, accept);
 
-    if (!files.length || editor.disabled() || editor.readonly() || editor.codeBlockActive()) return false;
+    if (!files.length || editor.disabled() || editor.readonly()) return false;
 
-    // Drop lands where it was dropped, not where the caret was - the browser has already moved the
-    // caret there by the time this runs, so the placeholder goes in at the drop point.
+    editor.editorDom.placeCaretAtPoint(event.clientX, event.clientY);
+
+    if (editor.editorDom.markStates()?.codeBlock) return false;
+
     upload(editor, files);
 
     return true;
