@@ -68,15 +68,19 @@ const firstErrorMessage = (error: QueryErrorResponse) => {
  * ```ts
  * competitions = cascaderFromQuery({
  *   queryCreator: getCompetitionChildren,
- *   args: (parent) => ({ queryParams: { parent: parent?.value ?? null } }),
  *   toNodes: (res) => res.items.map((item) => ({ value: item.id, label: item.name, isLeaf: item.isMatch })),
+ *   args: (parent) => ({ queryParams: { parent: parent?.value ?? null } }),
  *   search: {
  *     queryCreator: searchCompetitions,
  *     args: (query) => ({ queryParams: { q: query } }),
- *     toResults: (res) => res.matches.map((match) => match.path.map((p) => ({ value: p.id, label: p.name }))),
+ *     toResults: (res) =>
+ *       res.matches.map((match) => match.path.map((p) => ({ value: p.id, label: p.name, isLeaf: p.isMatch }))),
  *   },
  * });
  * ```
+ *
+ * Write `toNodes` before `args` (or annotate `parent`): TypeScript infers the node value type from the
+ * properties in order, and an unannotated `args` written first fixes it to `{}`.
  *
  * Call it from a field initializer / constructor (injection context), the same place you'd create
  * a query or a query stack.

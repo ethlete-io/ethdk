@@ -80,17 +80,18 @@ For levels served by an [`@ethlete/query`](/query/) API, `cascaderFromQuery` bui
 ```ts
 competitions = cascaderFromQuery({
   queryCreator: getCompetitionChildren,
-  args: (parent) => ({ queryParams: { parent: parent?.value ?? null } }),
   toNodes: (res) => res.items.map((item) => ({ value: item.id, label: item.name, isLeaf: item.isMatch })),
+  args: (parent) => ({ queryParams: { parent: parent?.value ?? null } }),
   search: {
     queryCreator: searchCompetitions,
     args: (query) => ({ queryParams: { q: query } }),
-    toResults: (res) => res.matches.map((match) => match.path.map((p) => ({ value: p.id, label: p.name }))),
+    toResults: (res) =>
+      res.matches.map((match) => match.path.map((p) => ({ value: p.id, label: p.name, isLeaf: p.isMatch }))),
   },
 });
 ```
 
-Call it from a field initializer / constructor (injection context) - the same place you'd create a query - and bind the result to `[dataSource]`. `args` builds the request for a `parent` (the root when `null`; return `null` to skip and show the level as empty), `toNodes(response, parent)` maps the response to the level's nodes. The optional `search` block wires the [flat search](#flat-search) the same way (`toResults` maps to root → match path chains) and debounces requests (`debounceTime`, default 300ms; `minQueryLength`, default 1). A failed request surfaces as the column's (or the result list's) error row with **Retry** - the text comes from `toErrorMessage` (default: the response's first error message). A `resolvePath` implementation passes straight through to the data source.
+Call it from a field initializer / constructor (injection context) - the same place you'd create a query - and bind the result to `[dataSource]`. `args` builds the request for a `parent` (the root when `null`; return `null` to skip and show the level as empty), `toNodes(response, parent)` maps the response to the level's nodes. Write `toNodes` before `args` (or annotate `parent`): TypeScript infers the node value type from the properties in order, so an unannotated `args` written first leaves it `{}`. Mark every leaf with `isLeaf` (or `hasChildren: false`), search results included - in leaf mode a node without either counts as a branch and cannot be committed. The optional `search` block wires the [flat search](#flat-search) the same way (`toResults` maps to root → match path chains) and debounces requests (`debounceTime`, default 300ms; `minQueryLength`, default 1). A failed request surfaces as the column's (or the result list's) error row with **Retry** - the text comes from `toErrorMessage` (default: the response's first error message). A `resolvePath` implementation passes straight through to the data source.
 
 ## Multi-select
 
