@@ -136,6 +136,43 @@ describe('rating scenarios', () => {
     expect(slider().getAttribute('aria-valuetext')).toBe('0.5 of 10');
   });
 
+  it('caps aria-valuenow and the keyboard start at a lowered max', () => {
+    const s = scenario();
+    const fixture = render(s);
+    const page = fixture.componentInstance;
+
+    page.model.set({ stars: 5 });
+    page.max.set(3);
+    s.tick();
+
+    expect(slider().getAttribute('aria-valuemax')).toBe('3');
+    expect(slider().getAttribute('aria-valuenow')).toBe('3');
+    expect(slider().getAttribute('aria-valuetext')).toBe('3 of 3');
+
+    press(s, 'ArrowLeft');
+    expect(page.model().stars).toBe(2);
+  });
+
+  it('flips the horizontal arrow keys in RTL', () => {
+    const s = scenario();
+    const fixture = render(s);
+    const page = fixture.componentInstance;
+
+    slider().style.direction = 'rtl';
+    page.model.set({ stars: 2 });
+    s.tick();
+
+    press(s, 'ArrowLeft');
+    expect(page.model().stars).toBe(3);
+
+    press(s, 'ArrowRight');
+    press(s, 'ArrowRight');
+    expect(page.model().stars).toBe(1);
+
+    press(s, 'ArrowUp');
+    expect(page.model().stars).toBe(2);
+  });
+
   it('renders a custom icon per step with its state', () => {
     const s = scenario();
     const fixture = render(s);

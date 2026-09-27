@@ -34,7 +34,7 @@ export type RatingIconState = 'full' | 'half' | 'empty';
     '[attr.aria-valuemax]': 'effectiveMax()',
     // a removed aria-valuenow is the ARIA-sanctioned "indeterminate value" - the valuetext
     // then carries the mixed label so assistive tech announces the bulk-edit state
-    '[attr.aria-valuenow]': 'mixed() ? null : (value() ?? 0)',
+    '[attr.aria-valuenow]': 'mixed() ? null : (clampedValue() ?? 0)',
     '[attr.aria-valuetext]': 'valueText()',
     '[attr.data-mixed]': 'mixed() || null',
     '[attr.aria-readonly]': 'readonly() || null',
@@ -90,6 +90,13 @@ export class RatingDirective
 
   public step = computed(() => (this.allowHalf() ? 0.5 : 1));
 
+  /** The committed value capped at `max` - a lowered `max` leaves the model untouched for its validator to report. */
+  public clampedValue = computed(() => {
+    const value = this.value();
+
+    return value === null ? null : Math.min(value, this.effectiveMax());
+  });
+
   /** The value previewed under the pointer, set by the rendered icons. */
   public hoverValue = signal<number | null>(null);
 
@@ -97,7 +104,7 @@ export class RatingDirective
    * What the icons render: the hover preview wins over the committed value. While mixed,
    * the hidden raw value contributes nothing - no icon fills until the user hovers or commits.
    */
-  public displayValue = computed(() => this.hoverValue() ?? (this.mixed() ? 0 : (this.value() ?? 0)));
+  public displayValue = computed(() => this.hoverValue() ?? (this.mixed() ? 0 : (this.clampedValue() ?? 0)));
 
   public interactive = computed(() => !this.disabled() && !this.readonly());
 
@@ -116,7 +123,7 @@ export class RatingDirective
       return this.resolvedMixedLabel();
     }
 
-    const value = this.value();
+    const value = this.clampedValue();
 
     return value === null ? 'No rating' : `${value} of ${this.effectiveMax()}`;
   });
@@ -179,7 +186,7 @@ export class RatingDirective
       return;
     }
 
-    this.value.set(clamped === this.value() ? null : clamped);
+    this.value.set(clamped === this.clampedValue() ? null : clamped);
   }
 
   protected handleBlur() {
@@ -194,9 +201,12 @@ export class RatingDirective
 
     const step = this.step();
     // while mixed, nothing reads as filled - keyboard steps start from that visible zero
-    const current = this.mixed() ? 0 : (this.value() ?? 0);
+    const current = this.mixed() ? 0 : (this.clampedValue() ?? 0);
+    const rtl = getComputedStyle(this.elementRef.nativeElement).direction === 'rtl';
+    const key =
+      rtl && event.key === 'ArrowLeft' ? 'ArrowRight' : rtl && event.key === 'ArrowRight' ? 'ArrowLeft' : event.key;
 
-    switch (event.key) {
+    switch (key) {
       case 'ArrowRight':
       case 'ArrowUp': {
         event.preventDefault();
