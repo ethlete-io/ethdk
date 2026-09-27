@@ -162,8 +162,8 @@ const joinOneTicket = (options: {
  * meeting over a background row afterwards leaves both claiming the same minutes, and the day books
  * them twice. Only a background row ever gives way, the same rule the first cut follows.
  *
- * A row naming no issue gives way to a row written by hand in any lane: the hand-written row says what
- * those minutes were, and a stand-in left holding them would book them again once it resolves.
+ * A row naming no issue, or the issue a row written by hand books, gives way to that row in any lane:
+ * the hand-written row says what those minutes were, and the other would book them to Tempo again.
  *
  * A row it empties out is dropped: every minute it held went to the row that took them, and the band
  * left behind is what still says the work happened.
@@ -181,6 +181,10 @@ export const recutReviewedRows = (options: {
   const isBackground = (row: ReviewedRow) => onBackground(row) && !isStated(row);
   const isUnbooked = (row: ReviewedRow) => !row.issueKey && !isStated(row) && !takesNothing(row);
   const stated = options.rows.filter((row) => isStated(row) && !takesNothing(row));
+  const statedOn = (row: ReviewedRow) =>
+    row.issueKey && !isStated(row) && !isBackground(row) && !takesNothing(row)
+      ? stated.filter((other) => other.issueKey === row.issueKey)
+      : [];
   const hasBackground = options.rows.some(isBackground);
 
   if (!hasBackground && !stated.length) {
@@ -194,6 +198,13 @@ export const recutReviewedRows = (options: {
   for (const row of options.rows) {
     if (isUnbooked(row)) {
       rows.push(...keptSpansOf({ row, covered: stated }).map((span, at) => pieceOf({ row, span, at })));
+      continue;
+    }
+
+    const sameIssue = statedOn(row);
+
+    if (sameIssue.length) {
+      rows.push(...keptSpansOf({ row, covered: sameIssue }).map((span, at) => pieceOf({ row, span, at })));
       continue;
     }
 

@@ -1418,6 +1418,38 @@ describe('reviewDay over a row written by hand beside a stand-in', () => {
     expect(spans(reviewed(logged(named, '09:00', '13:00')), SDK)).toEqual([[at('09:00'), at('12:00')]]);
     expect(spans(reviewed(logged(named, '09:00', '13:00')), APP)).toEqual([]);
   });
+
+  it('cuts a row of another lane that books the same issue', () => {
+    const edits = addManualRow({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: { issueKey: 'ET-1', description: 'sdk', from: at('11:00'), to: at('12:30') },
+    });
+
+    expect(spans(reviewed(edits), SDK)).toEqual([[at('09:00'), at('11:00')]]);
+  });
+
+  it('cuts a stand-in row that resolved to the issue the hand-written rows book', () => {
+    const resolved: StandIn = { ...standIn, state: 'resolved', issueKey: 'FIFAGG-1' };
+    const review = reviewDay({
+      rows: day,
+      edits: logged(logged(named, '09:00', '10:00'), '11:00', '12:00'),
+      standIns: [resolved],
+    });
+
+    expect(spans(review, APP)).toEqual([
+      [at('10:00'), at('11:00')],
+      [at('12:00'), at('13:00')],
+    ]);
+    expect(review.rows.filter((row) => row.laneKey === APP).every((row) => row.issueKey === 'FIFAGG-1')).toBe(true);
+  });
+
+  it('keeps a stand-in row that resolved to another issue whole, and warns', () => {
+    const resolved: StandIn = { ...standIn, state: 'resolved', issueKey: 'FIFAGG-2' };
+    const review = reviewDay({ rows: day, edits: logged(named, '09:00', '13:00'), standIns: [resolved] });
+
+    expect(spans(review, APP)).toEqual([[at('09:00'), at('13:00')]]);
+    expect(review.check.warnings.map((warning) => warning.kind)).toContain('rows-overlap');
+  });
 });
 
 describe('reviewDay over a row the reviewer built in a checkout a stand-in covers', () => {
