@@ -60,14 +60,38 @@ const withQuery = (url: string, query: TempoQuery | undefined) => {
     : `${url}?${params.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`).join('&')}`;
 };
 
-const messageFor = (options: { status: number; describe: string }) => {
+const MAX_REASON_LENGTH = 300;
+
+const reasonIn = (body: unknown) => {
+  if (typeof body !== 'object' || body === null) return undefined;
+
+  const { errors, message } = body as { errors?: unknown; message?: unknown };
+  const messages = [
+    ...(Array.isArray(errors) ? errors.map((error) => (error as { message?: unknown } | null)?.message) : []),
+    message,
+  ].filter((text): text is string => typeof text === 'string' && text.trim() !== '');
+
+  if (messages.length === 0) return undefined;
+
+  const reason = messages.join('; ');
+
+  return reason.length > MAX_REASON_LENGTH ? `${reason.slice(0, MAX_REASON_LENGTH - 1)}…` : reason;
+};
+
+const statusMessageFor = (options: { status: number; describe: string }) => {
   const { status, describe } = options;
 
-  if (status === 401 || status === 403) return `Tempo rejected the token (${status}) for ${describe}.`;
-  if (status === 404) return `Tempo has no ${describe}, or the token cannot see it.`;
-  if (status === 429) return `Tempo rate-limited the request for ${describe}.`;
+  if (status === 401 || status === 403) return `Tempo rejected the token (${status}) for ${describe}`;
+  if (status === 404) return `Tempo has no ${describe}, or the token cannot see it`;
+  if (status === 429) return `Tempo rate-limited the request for ${describe}`;
 
-  return `Tempo responded ${status} for ${describe}.`;
+  return `Tempo responded ${status} for ${describe}`;
+};
+
+const messageFor = (options: { status: number; describe: string; body: unknown }) => {
+  const reason = reasonIn(options.body);
+
+  return reason ? `${statusMessageFor(options)}: ${reason}` : `${statusMessageFor(options)}.`;
 };
 
 /**
@@ -141,7 +165,7 @@ export const tempoRequest$ = <T>(options: {
         throw new TempoRequestError({
           status: response.status,
           describe,
-          message: messageFor({ status: response.status, describe }),
+          message: messageFor({ status: response.status, describe, body: response.body }),
         });
       }
 

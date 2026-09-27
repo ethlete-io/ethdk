@@ -105,6 +105,44 @@ describe('tempoRequest$', () => {
     expect(error.status).toBe(status);
     expect(error.message).toBe(message);
   });
+
+  it.each([
+    [
+      400,
+      { errors: [{ message: 'Worklog must have a start time' }, { message: 'Account is closed' }] },
+      'Tempo responded 400 for the new worklog: Worklog must have a start time; Account is closed',
+    ],
+    [403, { message: 'Missing scope' }, 'Tempo rejected the token (403) for the new worklog: Missing scope'],
+    [400, 'not json', 'Tempo responded 400 for the new worklog.'],
+  ])('appends the reason tempo gives for a %i', (status, body, message) => {
+    const { transport } = stubTransport([{ status, body }]);
+    const failed = vi.fn();
+
+    tempoRequest$({
+      transport,
+      credentials: CREDENTIALS,
+      path: '/worklogs',
+      describe: 'the new worklog',
+      method: 'POST',
+      body: {},
+    }).subscribe({ error: failed });
+
+    expect((failed.mock.calls[0]?.[0] as TempoRequestError).message).toBe(message);
+  });
+
+  it('caps a long tempo reason and never echoes the token', () => {
+    const { transport } = stubTransport([{ status: 400, body: { errors: [{ message: 'x'.repeat(1000) }] } }]);
+    const failed = vi.fn();
+
+    tempoRequest$({ transport, credentials: CREDENTIALS, path: '/worklogs', describe: 'it' }).subscribe({
+      error: failed,
+    });
+
+    const error = failed.mock.calls[0]?.[0] as TempoRequestError;
+
+    expect(error.message.length).toBeLessThan(400);
+    expect(error.message).not.toContain(CREDENTIALS.token);
+  });
 });
 
 const page = (results: number[], next?: string): TempoPage<{ n: number }> => ({
