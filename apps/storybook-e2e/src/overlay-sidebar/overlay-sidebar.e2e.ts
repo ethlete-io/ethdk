@@ -168,6 +168,44 @@ test.describe('overlay sidebar / pointer', () => {
   });
 });
 
+test.describe('overlay sidebar / pane width', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: viewport sizes are set per test');
+
+  test('the sidebar stays inline while the pane is at least renderSidebarFrom wide, even below the breakpoint', async ({
+    page,
+  }) => {
+    await openSidebarOverlay(page);
+    await expect(page.locator(SIDEBAR)).toHaveClass(/et-overlay-sidebar--visible/);
+
+    await page.setViewportSize({ width: 600, height: 720 });
+    await expect(page.locator(PANE)).toHaveClass(/et-overlay--full-screen-dialog/);
+    await expect(page.locator(SIDEBAR)).toHaveClass(/et-overlay-sidebar--visible/);
+    await expect(page.getByRole('tab')).toHaveCount(3);
+
+    await page.setViewportSize({ width: 470, height: 720 });
+    await expect(page.locator(SIDEBAR)).not.toHaveClass(/et-overlay-sidebar--visible/);
+    await expect(page.getByRole('tab')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: '☰ Menu' })).toBeVisible();
+
+    await page.setViewportSize({ width: 700, height: 720 });
+    await expect(page.locator(SIDEBAR)).toHaveClass(/et-overlay-sidebar--visible/);
+    await expect(page.getByRole('tab')).toHaveCount(3);
+    await expect(page.getByRole('button', { name: '☰ Menu' })).toHaveCount(0);
+  });
+
+  test('focus stays inside the pane when a widening pane removes the focused menu link', async ({ page }) => {
+    await openSidebarOverlay(page);
+
+    await page.setViewportSize({ width: 470, height: 720 });
+    await expect(page.getByRole('button', { name: '☰ Menu' })).toBeFocused();
+
+    await page.setViewportSize({ width: 700, height: 720 });
+    await expect(page.getByRole('tab')).toHaveCount(3);
+
+    await expect.poll(() => page.evaluate(() => !!document.activeElement?.closest('.et-overlay'))).toBe(true);
+  });
+});
+
 test.describe('overlay sidebar / touch', () => {
   test.skip(({ isMobile }) => !isMobile, 'touch-only: collapsed sidebar on a narrow pane');
 
