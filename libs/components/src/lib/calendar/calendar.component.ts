@@ -15,6 +15,7 @@ import { CHEVRON_ICON, IconDirective, provideIcons } from '../icon';
 import { CalendarCellDirective, CalendarDirective, CalendarGridDirective } from './headless';
 import { injectCalendarLabels } from '../calendar/calendar-labels';
 import { CalendarHeaderDirective } from './calendar-header.directive';
+import { CalendarWeeksDirective } from './calendar-weeks.directive';
 import { CalendarCoarseGridStylesComponent } from './calendar-coarse-grid-styles.component';
 import { CalendarComparisonBandStylesComponent } from './calendar-comparison-band-styles.component';
 import { CalendarWeekNumbersStylesComponent } from './calendar-week-numbers-styles.component';
@@ -24,7 +25,14 @@ import { CalendarWeekNumbersStylesComponent } from './calendar-week-numbers-styl
   templateUrl: './calendar.component.html',
   styleUrl: './calendar.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [CalendarCellDirective, CalendarGridDirective, IconButtonComponent, IconDirective, NgTemplateOutlet],
+  imports: [
+    CalendarCellDirective,
+    CalendarGridDirective,
+    CalendarWeeksDirective,
+    IconButtonComponent,
+    IconDirective,
+    NgTemplateOutlet,
+  ],
   providers: [provideIcons(CHEVRON_ICON)],
   hostDirectives: [
     {

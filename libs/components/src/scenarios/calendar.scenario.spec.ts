@@ -382,6 +382,30 @@ describe('calendar scenarios', () => {
     expect(startOfCalendarUnit(new Date(2026, 7, 4, 18, 30), 'day')).toEqual(app.days()[0]);
   });
 
+  it('makes the leaving week grid inert while the next month takes over', () => {
+    const s = scenario();
+
+    vi.setSystemTime(new Date(2026, 7, 10, 12));
+
+    const fixture = TestBed.createComponent(MatchDayComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+    s.flush();
+
+    const august = query('.et-calendar-weeks', host);
+
+    expect(august.hasAttribute('inert')).toBe(false);
+
+    click(s, query('.et-calendar-nav-button--next', host));
+
+    const september = query('.et-calendar-weeks', host);
+
+    expect(september).not.toBe(august);
+    expect(september.hasAttribute('inert')).toBe(false);
+    expect(august.hasAttribute('inert')).toBe(true);
+  });
+
   it.each([
     ['a grid', StrayGridComponent, CALENDAR_ERROR_CODES.GRID_OUTSIDE_CALENDAR],
     ['a cell', StrayCellComponent, CALENDAR_ERROR_CODES.CELL_OUTSIDE_CALENDAR],
