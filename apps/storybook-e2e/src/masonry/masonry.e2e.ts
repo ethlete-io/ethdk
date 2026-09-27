@@ -312,6 +312,123 @@ test.describe('masonry / layout', () => {
   });
 });
 
+type TransitionLogWindow = Window & { __translateRuns?: number[] };
+
+/** Records the index of every item a `translate` transition starts on, from now on. */
+async function recordTranslateTransitions(masonry: Locator): Promise<void> {
+  await masonry.evaluate((el) => {
+    const log: number[] = [];
+    (window as TransitionLogWindow).__translateRuns = log;
+
+    el.addEventListener('transitionrun', (event) => {
+      const item = (event.target as HTMLElement).closest('.et-masonry-item');
+
+      if ((event as TransitionEvent).propertyName === 'translate' && item) log.push([...el.children].indexOf(item));
+    });
+  });
+}
+
+function translateTransitionRuns(page: Page): Promise<number[]> {
+  return page.evaluate(() => [...((window as TransitionLogWindow).__translateRuns ?? [])]);
+}
+
+test.describe('masonry / motion and direction', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: desktop container widths and window resizes');
+
+  test('in a right-to-left container the first column is the rightmost one', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const masonry = root.locator(MASONRY);
+
+    await setMasonryInlineSize(page, masonry, 1000);
+    await masonry.evaluate((el) => el.setAttribute('dir', 'rtl'));
+
+    const geometry = await readGeometry(masonry);
+    const columns = expectedColumns(1000, DEFAULT_COLUMN_WIDTH, DEFAULT_GAP);
+
+    expect(itemAt(geometry, 0).column).toBe(0);
+
+    for (const item of geometry.items) {
+      const inlineEnd = 1000 - item.column * (columns.inlineSize + DEFAULT_GAP);
+
+      expect(item.x + item.width).toBeCloseTo(inlineEnd, 1);
+    }
+  });
+
+  test('every card fades in to full opacity once it has a place', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID, { args: { itemCount: 8 } });
+    const masonry = root.locator(MASONRY);
+    const items = root.locator(ITEM);
+
+    await waitForSettled(masonry);
+    await readGeometry(masonry);
+
+    expect(await items.evaluateAll((els) => els.map((el) => getComputedStyle(el).opacity))).toEqual(
+      Array.from({ length: 8 }, () => '1'),
+    );
+    expect(await items.first().evaluate((el) => getComputedStyle(el).transitionProperty)).toContain('opacity');
+  });
+
+  test('reduced motion drops the fade and the move transitions', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+
+    const root = await openStory(page, DEFAULT_STORY_ID, { args: { itemCount: 8 } });
+    const masonry = root.locator(MASONRY);
+    const items = root.locator(ITEM);
+
+    await waitForSettled(masonry);
+
+    expect(await items.evaluateAll((els) => els.map((el) => getComputedStyle(el).transitionDuration))).toEqual(
+      Array.from({ length: 8 }, () => '0s'),
+    );
+    expect(await items.evaluateAll((els) => els.every((el) => getComputedStyle(el).opacity === '1'))).toBe(true);
+  });
+
+  test('appended cards appear in place instead of sliding in from the corner', async ({ page }) => {
+    const root = await openStory(page, APPENDING_STORY_ID);
+    const masonry = root.locator(MASONRY);
+    const items = root.locator(ITEM);
+
+    await waitForSettled(masonry);
+    const placedCount = await items.count();
+    await recordTranslateTransitions(masonry);
+
+    await root.getByRole('button', { name: 'Load more' }).click();
+    await expect(items).toHaveCount(placedCount + 6);
+    await waitForSettled(masonry);
+    await readGeometry(masonry);
+
+    expect(await translateTransitionRuns(page)).toEqual([]);
+  });
+
+  test('a card moved by a neighbour growing slides to its new place', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const masonry = root.locator(MASONRY);
+
+    await setMasonryInlineSize(page, masonry, 1000);
+    await readGeometry(masonry);
+    await recordTranslateTransitions(masonry);
+
+    await root.locator(ITEM).first().getByRole('button', { name: 'Show more' }).click();
+    await waitForSettled(masonry);
+
+    await expect.poll(() => translateTransitionRuns(page)).not.toEqual([]);
+  });
+
+  test('cards snap rather than slide while the container itself is being resized', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const masonry = root.locator(MASONRY);
+
+    await setMasonryInlineSize(page, masonry, 1000);
+    await readGeometry(masonry);
+    await recordTranslateTransitions(masonry);
+
+    await setMasonryInlineSize(page, masonry, 600);
+    await readGeometry(masonry);
+
+    expect(await translateTransitionRuns(page)).toEqual([]);
+  });
+});
+
 test.describe('masonry / focus', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: tab order');
 

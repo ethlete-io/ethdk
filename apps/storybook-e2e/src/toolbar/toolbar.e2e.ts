@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test';
-import { countClicks, expectFocusVisible, openStory, pressKey, tap } from '../support';
+import { Locator, expect, test } from '@playwright/test';
+import { countClicks, expectFocusVisible, openStory, pressKey, settle, tap } from '../support';
 
 const DEFAULT_STORY_ID = 'components-layout-toolbar--default';
 const VERTICAL_STORY_ID = 'components-layout-toolbar--vertical';
@@ -117,6 +117,68 @@ test.describe('toolbar / keyboard', () => {
 
     await pressKey(page, 'Tab');
     await pressKey(page, 'Shift+Tab');
+
+    await expect(root.getByRole('button', { name: 'Italic' })).toBeFocused();
+  });
+});
+
+async function setDirection(root: Locator, dir: 'rtl' | 'ltr'): Promise<void> {
+  await root.locator('.et-toolbar').evaluate((el, value) => el.setAttribute('dir', value), dir);
+}
+
+test.describe('toolbar / rtl', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard navigation');
+
+  test('in a right-to-left toolbar the first control sits at the right edge', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    await setDirection(root, 'rtl');
+
+    const bold = await root.getByRole('button', { name: 'Bold' }).boundingBox();
+    const link = await root.getByRole('button', { name: 'Link' }).boundingBox();
+
+    expect(bold?.x).toBeGreaterThan(link?.x ?? Infinity);
+  });
+
+  test('ArrowLeft moves to the next control and ArrowRight to the previous one', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    await setDirection(root, 'rtl');
+
+    await pressKey(page, 'Tab');
+    await expect(root.getByRole('button', { name: 'Bold' })).toBeFocused();
+
+    await pressKey(page, 'ArrowLeft');
+    await expect(root.getByRole('button', { name: 'Italic' })).toBeFocused();
+
+    await pressKey(page, 'ArrowRight');
+    await expect(root.getByRole('button', { name: 'Bold' })).toBeFocused();
+
+    await pressKey(page, 'ArrowRight');
+    await expect(root.getByRole('button', { name: 'Link' })).toBeFocused();
+  });
+
+  test('Home and End keep to DOM order in a right-to-left toolbar', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    await setDirection(root, 'rtl');
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'End');
+    await expect(root.getByRole('button', { name: 'Link' })).toBeFocused();
+
+    await pressKey(page, 'Home');
+    await expect(root.getByRole('button', { name: 'Bold' })).toBeFocused();
+  });
+
+  test('a vertical toolbar keeps ArrowDown in RTL and ignores the horizontal arrows', async ({ page }) => {
+    const root = await openStory(page, VERTICAL_STORY_ID);
+    await setDirection(root, 'rtl');
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'ArrowDown');
+    await expect(root.getByRole('button', { name: 'Italic' })).toBeFocused();
+
+    await pressKey(page, 'ArrowLeft');
+    await pressKey(page, 'ArrowRight');
+    await settle(page, 50);
 
     await expect(root.getByRole('button', { name: 'Italic' })).toBeFocused();
   });
