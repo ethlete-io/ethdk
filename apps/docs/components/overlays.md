@@ -49,16 +49,16 @@ Again: this is the raw layer - in app code, prefer an [overlay opener](/componen
 
 Defaults worth knowing:
 
-| Option                                   | Default                                                                                                                    |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `mode`                                   | `'modal'` - set `'non-modal'` for popover-style overlays                                                                   |
-| `role`                                   | `'dialog'` when modal                                                                                                      |
-| `hasBackdrop`                            | The strategy's own default when it sets one, otherwise follows `mode` (modal → backdrop)                                   |
-| `closeOnEscape`, `closeOnOutsidePointer` | `true`; `disableClose: true` forces both off                                                                               |
-| Position                                 | Anchored to `origin` when it's an element, otherwise centered                                                              |
-| `origin` (with strategies)               | Falls back to the currently focused element (used as transform origin too)                                                 |
-| `customAnimated`                         | `false` - set `true` to disable the built-in animations and drive your own via the [animation lifecycle](/core/animations) |
-| `zIndex`                                 | The level declared by the nearest `data-et-overlay-layer` ancestor of `origin`, else `2147483003`                          |
+| Option                                   | Default                                                                                                                             |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `mode`                                   | `'modal'` - set `'non-modal'` for popover-style overlays                                                                            |
+| `role`                                   | `'dialog'` when modal                                                                                                               |
+| `hasBackdrop`                            | The strategy's own default when it sets one, otherwise follows `mode` (modal → backdrop)                                            |
+| `closeOnEscape`, `closeOnOutsidePointer` | `true`; `disableClose: true` forces both off                                                                                        |
+| Position                                 | Anchored to `origin` when it's an element, otherwise centered                                                                       |
+| `origin` (with strategies)               | Falls back to the currently focused element (used as transform origin too); `null` opens without one, so anchored strategies center |
+| `customAnimated`                         | `false` - set `true` to disable the built-in animations and drive your own via the [animation lifecycle](/core/animations)          |
+| `zIndex`                                 | The level declared by the nearest `data-et-overlay-layer` ancestor of `origin`, else `2147483003`                                   |
 
 Data goes in via `bindings` (Angular's `inputBinding` / `outputBinding` / `twoWayBinding`) and `providers` - see [passing data](/components/overlay-openers#passing-data-into-the-overlay).
 

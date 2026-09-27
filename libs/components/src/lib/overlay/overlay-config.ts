@@ -15,9 +15,10 @@ export type OverlayConfig = {
   /**
    * The element or event the overlay was opened from. Used as the anchor reference
    * for anchored positioning and as the transform origin for strategy animations.
-   * When omitted and strategies are used, falls back to the currently focused element.
+   * When omitted and strategies are used, falls back to the currently focused element; pass `null`
+   * to open without an origin, which centers an anchored strategy.
    */
-  origin?: Element | Event;
+  origin?: Element | Event | null;
 
   role?: OverlayRole;
   hasBackdrop?: boolean;

@@ -193,7 +193,7 @@ export const createOverlayStrategyController = (
       lifecycle,
       config: strategyConfig,
       previousConfig,
-      origin,
+      origin: origin ?? undefined,
     };
   };
 

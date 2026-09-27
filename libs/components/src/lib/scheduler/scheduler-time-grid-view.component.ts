@@ -367,9 +367,7 @@ export class SchedulerTimeGridViewComponent {
         if (!draft) return this.draftHourFrom(this.draftTimeAt(column, event.clientY));
         if (draft.phase !== 'dragging') return;
 
-        // the preview is what the create surface anchors to, so hand it over before committing
-        scheduler.surfaceAnchor.set(this.draftBlock()?.nativeElement ?? null);
-        scheduler.commitDraftRange();
+        this.commitDraftOnPreview();
       },
       cancel: () => scheduler.clearDraftRange(),
     });
@@ -508,6 +506,22 @@ export class SchedulerTimeGridViewComponent {
     const locale = this.scheduler?.effectiveLocale();
 
     return format(date, 'PPPP', locale ? { locale } : undefined);
+  }
+
+  // the preview is what the create surface anchors to, and a fast drag can end before it rendered
+  private commitDraftOnPreview() {
+    const scheduler = this.scheduler;
+
+    if (!scheduler) return;
+
+    const commit = () => {
+      scheduler.surfaceAnchor.set(this.draftBlock()?.nativeElement ?? null);
+      scheduler.commitDraftRange();
+    };
+
+    if (this.draftBlock()) return commit();
+
+    afterNextRender(commit, { injector: this.hostInjector });
   }
 
   private draftHourFrom(at: Date) {

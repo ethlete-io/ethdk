@@ -356,12 +356,12 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     });
   }
 
-  private takeSurfaceAnchor(): HTMLElement | undefined {
+  private takeSurfaceAnchor() {
     const anchor = this.headless.surfaceAnchor();
 
     this.headless.surfaceAnchor.set(null);
 
-    return anchor ?? undefined;
+    return anchor;
   }
 
   private editSurfaceBindings(appointment: Appointment) {

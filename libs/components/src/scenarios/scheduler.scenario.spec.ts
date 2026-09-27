@@ -413,6 +413,51 @@ describe('scheduler scenarios', () => {
     finish(s);
   });
 
+  it('centers the edit surface for an appointment picked from the "+N more" menu', () => {
+    const viewport = Object.getOwnPropertyDescriptor(window, 'matchMedia');
+
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: (media: string) => ({
+        media,
+        matches: media.includes('min-width'),
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      }),
+    });
+
+    try {
+      const s = scenario();
+      const fixture = TestBed.createComponent(PlannerComponent);
+      const host = fixture.nativeElement as HTMLElement;
+
+      s.tick();
+
+      const trigger = query('.et-scheduler-month-view-overflow-trigger', monthCell(host, 22));
+
+      trigger.focus();
+      trigger.click();
+      s.tick(1000);
+      button('Four').click();
+      s.tick(1000);
+
+      expect(query('.et-scheduler-edit-surface-title', surface()!).textContent?.trim()).toBe('Four');
+      expect(query('.et-scheduler-edit-surface-panel').style.position).toBe('relative');
+      expect(query('.et-scheduler-edit-surface-panel').parentElement?.style.placeItems).toBe('center center');
+
+      button('Cancel', surface()!).click();
+      s.tick(1000);
+      query('.et-scheduler-appointment[title="Kickoff"]', host).click();
+      s.tick(1000);
+
+      expect(query('.et-scheduler-edit-surface-panel').style.position).toBe('absolute');
+
+      finish(s);
+    } finally {
+      if (viewport) Object.defineProperty(window, 'matchMedia', viewport);
+    }
+  });
+
   it('walks the chain inside the edit surface, adds a sub-appointment and deletes with descendants', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(PlannerComponent);

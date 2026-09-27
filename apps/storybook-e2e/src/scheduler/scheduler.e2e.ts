@@ -643,8 +643,6 @@ test.describe('scheduler / month overflow', () => {
   });
 
   test('"+N more" lists the hidden appointments and picking one opens a centered surface', async ({ page }) => {
-    test.fail(true, 'no origin falls back to document.activeElement, so the surface anchors to the "+N more" trigger');
-
     const root = await openStory(page, DEFAULT_ID);
     const trigger = root.locator('.et-scheduler-month-view-overflow-trigger');
 

@@ -33,8 +33,8 @@ const isValidOriginElement = (element: Element | null): element is Element => {
   return tagName !== 'html' && tagName !== 'body';
 };
 
-const resolveOrigin = (origin: Element | Event | undefined, document: Document) => {
-  if (origin) return origin;
+const resolveOrigin = (origin: Element | Event | null | undefined, document: Document) => {
+  if (origin !== undefined) return origin ?? undefined;
 
   const activeElement = document.activeElement;
   return isValidOriginElement(activeElement) ? activeElement : undefined;
@@ -44,7 +44,7 @@ const resolveOrigin = (origin: Element | Event | undefined, document: Document) 
  * The document an overlay mounts into: its origin's, so an overlay opened from an element living in
  * another same-origin window (e.g. a panel adopted by a pop-up) opens in that window.
  */
-const resolveOriginDocument = (origin: Element | Event | undefined, fallback: Document) => {
+const resolveOriginDocument = (origin: Element | Event | null | undefined, fallback: Document) => {
   if (isElement(origin)) return origin.ownerDocument;
   if (origin && origin.target instanceof Node) return origin.target.ownerDocument ?? fallback;
 
@@ -56,7 +56,7 @@ const resolveOriginDocument = (origin: Element | Event | undefined, fallback: Do
  * declaring `data-et-overlay-layer` says, so an overlay opened from inside an always-on-top surface
  * (the query devtools panel, say) is not painted behind it.
  */
-const resolveZIndex = (origin: Element | Event | undefined, document: Document) => {
+const resolveZIndex = (origin: Element | Event | null | undefined, document: Document) => {
   const resolved = resolveOrigin(origin, document);
 
   if (isElement(resolved)) {
