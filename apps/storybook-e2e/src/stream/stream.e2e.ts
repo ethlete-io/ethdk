@@ -602,8 +602,12 @@ test.describe('stream / placement', () => {
     await expect(pipWindow).toBeVisible();
     await expect(pipWindow).toHaveCSS('z-index', '1000');
     await expect
-      .poll(async () => viewport.width - (await boxOf(pipWindow)).x - (await boxOf(pipWindow)).width)
-      .toBeCloseTo(24, 0);
+      .poll(async () => {
+        const box = await boxOf(pipWindow);
+
+        return viewport.width - box.x - box.width - Math.min(24, viewport.width - PIP_VIEWPORT_PADDING - box.width);
+      })
+      .toBeCloseTo(0, 0);
     await expect
       .poll(async () => viewport.height - (await boxOf(pipWindow)).y - (await boxOf(pipWindow)).height)
       .toBeCloseTo(24, 0);
@@ -1157,14 +1161,15 @@ test.describe('stream / pip touch', () => {
     const { pipWindow, titleBar } = await openPip(page);
 
     await expect(titleBar).toHaveCSS('opacity', '1');
+    await expectInsideViewportPadding(page, pipWindow);
 
     const before = await boxOf(pipWindow);
     const grip = centerOf(await boxOf(titleBar.locator('.et-pip-window__title-bar-spacer')));
 
-    await touchDrag(page, grip, { x: grip.x - 100, y: grip.y - 200 });
+    await touchDrag(page, grip, { x: grip.x, y: grip.y - 200 });
 
-    await expect.poll(async () => (await boxOf(pipWindow)).x).toBeCloseTo(before.x - 100, 0);
     await expect.poll(async () => (await boxOf(pipWindow)).y).toBeCloseTo(before.y - 200, 0);
+    expect((await boxOf(pipWindow)).x).toBeCloseTo(before.x, 0);
   });
 
   test('a swipe off the edge collapses the window and a tap on the peek brings it back', async ({ page }) => {

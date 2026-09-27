@@ -295,8 +295,32 @@ export const createPipWindowPosition = (options: PipWindowPositionOptions): PipW
     deriveStickyEdges();
   };
 
+  const keepUnpositionedWindowInViewport = () => {
+    if (positionInitialized() || size.get().w === null) return;
+
+    const rect = el.nativeElement.getBoundingClientRect();
+    const vw = viewportSize().width;
+    const vh = viewportSize().height;
+    const pad = params.viewportPadding();
+
+    if (rect.left >= pad && rect.top >= pad && rect.right <= vw - pad && rect.bottom <= vh - pad) return;
+
+    initPosition();
+    pos.set({
+      x: Math.max(pad, Math.min(vw - pad - rect.width, rect.left)),
+      y: Math.max(pad, Math.min(vh - pad - rect.height, rect.top)),
+    });
+    deriveStickyEdges();
+  };
+
   afterRenderEffect(() => {
-    untracked(() => applyInitialSize());
+    size.w();
+    size.h();
+    viewportSize();
+    untracked(() => {
+      applyInitialSize();
+      keepUnpositionedWindowInViewport();
+    });
   });
 
   const nudge = ({ dx, dy }: { dx: number; dy: number }) => {
