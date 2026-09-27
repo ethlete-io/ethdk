@@ -1,6 +1,6 @@
 import { BehaviorSubject, Observable, combineLatest, map, of, shareReplay, switchMap, tap } from 'rxjs';
 import { AnyLegacyQueryCreator } from '../interop';
-import { filterSuccess } from '../query';
+import { filterSuccess, isQueryStateFailure } from '../query';
 import { AnyV2QueryCreator, ConstructQuery, QueryDataOf, V2QueryArgsOf } from '../query-creator';
 import { InfinityQueryConfig, InfinityQueryParamLocation } from './infinity-query.types';
 
@@ -140,6 +140,14 @@ export class InfinityQuery<
   }
 
   nextPage() {
+    const lastQuery = this.queries$.value[this.queries$.value.length - 1];
+
+    if (lastQuery && isQueryStateFailure(lastQuery.rawState)) {
+      lastQuery.execute({ skipCache: true });
+
+      return;
+    }
+
     const newPage = (this._currentPage$.value ?? 0) + 1;
     const calculatedPage =
       this._config?.pageParam?.valueCalculator?.({

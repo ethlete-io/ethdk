@@ -147,6 +147,55 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy infinity patterns on the %s client', 
     });
   });
 
+  describe('a page that fails', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('re-requests the failed page on the next loadNextPage() and renders every page once it lands', () => {
+      const s = scenario();
+      const legacy = createLegacyClient(s, kind);
+      let failSkip: number | null = 2;
+
+      s.api.on('GET', '/news', ({ query }) => {
+        const skip = Number(query['skip']);
+
+        if (skip === failSkip) return { status: 400, body: { message: 'boom' }, delay: 50 };
+
+        return {
+          body: { items: [{ id: `n${skip}` }, { id: `n${skip + 1}` }], total: 6 } satisfies NewsPage,
+          delay: 50,
+        };
+      });
+
+      const c = s.consumer([{ provide: NEWS_CONFIG, useValue: newsConfig(legacy) }]);
+      const ref = s.mount(NewsListHost, c.injector);
+
+      s.tick(1000);
+      expect(slot(ref, 'items')).toBe('n0,n1');
+
+      clickMore(ref);
+      s.tick(1000);
+      expect(slot(ref, 'loading')).toBe('false');
+      expect(slot(ref, 'items')).toBe('n0,n1');
+      expect(s.errors).toHaveLength(kind === 'interop' ? 1 : 0);
+      if (kind === 'interop') s.expectError((entry) => (entry.error as { status?: number }).status === 400);
+
+      failSkip = null;
+      clickMore(ref);
+      s.tick(1000);
+      expect(slot(ref, 'items')).toBe('n0,n1,n2,n3');
+
+      clickMore(ref);
+      s.tick(1000);
+      expect(slot(ref, 'items')).toBe('n0,n1,n2,n3,n4,n5');
+
+      expect(s.api.requests.map((request) => request.query['skip'])).toEqual(['0', '2', '2', '4']);
+
+      ref.destroy();
+      c.destroy();
+      legacy.destroy();
+    });
+  });
+
   describe('a masonry child holding the response through injectInfinityQueryResponseDelay', () => {
     const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
 
