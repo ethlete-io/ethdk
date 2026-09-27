@@ -17,8 +17,10 @@ agent that works alone, batch by batch.
   filter-overlay, forms/phone-input, forms/input, accordion, picture, pagination. `KBD_PLATFORM` and `DescriptionComponent` are covered by the palette and selection-list scenarios. Components: 959 of 1381 covered. Per-domain notes are under "Domain notes" below.
 - Removed on 2026-09-26 by user decision: `GridItemRef` and `configComponent` (e519882bc). Added:
   `FormFieldDirective.controlSuffixTemplate` (e38133536).
-- In progress 2026-09-27: the 36 non-constant S8b entries that tasks 6 and 7 missed (their `--list` grep matched
-  only constants).
+- Done 2026-09-27: the 36 non-constant S8b entries that tasks 6 and 7 missed (1f9f8e8d5, 465da426b, a932b4e55).
+  Components: 1370 of 1381 covered; the 11 left are E2E-only. Open: headless `etTextarea`/`etInput` never write
+  `[(value)]` into the native host (`it.fails` in `forms-textarea`), and they set no touched/focused on blur.
+  `etFocusRing` press state needs an E2E check.
 
 ## Rules for every batch
 
