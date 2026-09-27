@@ -1398,6 +1398,12 @@ was grabbed - a column that carried no width override keeps none, so it stays fl
 <et-table [data]="rows()" [columns]="COLUMNS" etTableReorder />
 ```
 
+On **touch**, a **long press** (about 400 ms) on a header starts the reorder: the
+ghost appears while the finger is still down, and from then on the gesture drags the
+column instead of scrolling. A finger that moves or lifts sooner is left to the
+browser, so a quick swipe across the header still scrolls the table. Mouse and pen
+drags start as soon as the pointer moves.
+
 [Pinned columns](#sticky-columns-footer) are excluded from dragging - they anchor
 to an edge, so moving one into the scrolling middle would strand the layout -
 though `moveColumn` can still reposition anything programmatically.

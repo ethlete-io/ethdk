@@ -1,6 +1,16 @@
 import { Locator, Page, expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
-import { Box, boxOf, expectFocusVisible, openStory, pressKey, tabUntilFocused, tap, touchDrag } from '../support';
+import {
+  Box,
+  boxOf,
+  expectFocusVisible,
+  openStory,
+  pressKey,
+  tabUntilFocused,
+  tap,
+  touchDrag,
+  touchSwipe,
+} from '../support';
 
 const KEYBOARD_NAV_STORY_ID = 'components-data-display-table--keyboard-navigation';
 const SELECTABLE_STORY_ID = 'components-data-display-table--selectable';
@@ -720,11 +730,7 @@ test.describe('table / touch', () => {
     await expect.poll(async () => (await boxOf(headerCell(root, 'name'))).width).toBeCloseTo(before.width + 60, -1);
   });
 
-  test('a touch drag on a header reorders the column', async ({ page }) => {
-    test.fail(
-      true,
-      'reorderable header cells lack touch-action: none, so the browser takes the pan and cancels the drag',
-    );
+  test('a long press on a header reorders the column by touch', async ({ page }) => {
     const root = await openStory(page, REORDERABLE_STORY_ID);
     const name = await boxOf(headerCell(root, 'name'));
     const email = await boxOf(headerCell(root, 'email'));
@@ -733,8 +739,23 @@ test.describe('table / touch', () => {
       page,
       { x: name.x + 30, y: name.y + name.height / 2 },
       { x: email.x + email.width - 10, y: name.y + name.height / 2 },
+      { holdMs: 600 },
     );
 
     await expect.poll(() => headerKeys(root), { timeout: 2000 }).toEqual(['email', 'name', 'role', 'joined']);
+  });
+
+  test('a quick swipe across the header scrolls the table instead of reordering', async ({ page }) => {
+    const root = await openStory(page, REORDERABLE_STORY_ID);
+    const table = root.locator('et-table');
+    const tableBox = await boxOf(table);
+    const header = await boxOf(headerCell(root, 'email'));
+    const start = { x: tableBox.x + tableBox.width - 40, y: header.y + header.height / 2 };
+
+    await touchSwipe(page, start, { x: start.x - 150, y: start.y });
+
+    await expect.poll(() => table.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+    await expect(root.locator('.et-table-drag-ghost')).toHaveCount(0);
+    expect(await headerKeys(root)).toEqual(['name', 'email', 'role', 'joined']);
   });
 });

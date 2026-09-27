@@ -10,6 +10,7 @@
     ) {
     cursor: grab;
     user-select: none;
+    -webkit-touch-callout: none;
   }
 
   /* The source header stays in place, dimmed, while its floating ghost is dragged. */

@@ -1,5 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { tick } from '../testing/driver-core';
 import '../../test-helpers';
 import { expectNothingRunsAfterDestroy } from '../testing/destroyed-mid-gesture';
 import { createTableDriver } from './testing/table-driver';
@@ -138,5 +139,119 @@ describe('TableReorderDirective', () => {
 
     expect(driver.query('.et-table-drag-ghost')).toBeNull();
     expect(driver.columnKeys()).toEqual(['name', 'role']);
+  });
+
+  describe('on touch', () => {
+    const TOUCH = { pointerType: 'touch' } as const;
+
+    const touchMove = (cell: HTMLElement) => {
+      const move = new Event('touchmove', { bubbles: true, cancelable: true });
+
+      cell.dispatchEvent(move);
+
+      return move;
+    };
+
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    const hold = () => {
+      vi.advanceTimersByTime(400);
+      tick();
+    };
+
+    it('starts the reorder after a long press, showing the ghost before the finger moves', () => {
+      const { driver } = create();
+      const drag = driver.grabColumn('role', TOUCH);
+
+      expect(driver.query('.et-table-drag-ghost')).toBeNull();
+
+      hold();
+
+      expect(driver.query('.et-table-drag-ghost')?.textContent?.trim()).toBe('Role');
+
+      drag.moveOver('name', 'before');
+      drag.drop();
+
+      expect(driver.columnKeys()).toEqual(['role', 'name']);
+    });
+
+    it('leaves a touch that moves before the hold elapses to the browser as a scroll', () => {
+      const { driver } = create();
+      const drag = driver.grabColumn('role', TOUCH);
+
+      drag.moveOver('name', 'before');
+      hold();
+
+      expect(driver.query('.et-table-drag-ghost')).toBeNull();
+      expect(touchMove(driver.headerCell('role')!).defaultPrevented).toBe(false);
+
+      drag.drop();
+
+      expect(driver.columnKeys()).toEqual(['name', 'role']);
+    });
+
+    it('blocks native scrolling only while a long-pressed reorder is active', () => {
+      const { driver } = create();
+      const cell = driver.headerCell('role')!;
+      const drag = driver.grabColumn('role', TOUCH);
+
+      expect(touchMove(cell).defaultPrevented).toBe(false);
+
+      hold();
+
+      expect(touchMove(cell).defaultPrevented).toBe(true);
+
+      drag.drop();
+
+      expect(touchMove(cell).defaultPrevented).toBe(false);
+    });
+
+    it('suppresses the long-press context menu on the held header', () => {
+      const { driver } = create();
+      const cell = driver.headerCell('role')!;
+
+      driver.grabColumn('role', TOUCH);
+      hold();
+
+      const menu = new Event('contextmenu', { bubbles: true, cancelable: true });
+
+      cell.dispatchEvent(menu);
+
+      expect(menu.defaultPrevented).toBe(true);
+    });
+
+    it('reverts a long press lifted without moving', () => {
+      const { driver } = create();
+      const drag = driver.grabColumn('role', TOUCH);
+
+      hold();
+      drag.drop();
+
+      expect(driver.query('.et-table-drag-ghost')).toBeNull();
+      expect(driver.columnKeys()).toEqual(['name', 'role']);
+    });
+
+    it('drops the pending hold when the table is destroyed', () => {
+      const { driver, fixture } = create();
+
+      driver.grabColumn('role', TOUCH);
+      fixture.destroy();
+
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('keeps a mouse drag immediate, with no hold', () => {
+      const { driver } = create();
+      const drag = driver.grabColumn('role');
+
+      drag.moveOver('name', 'before');
+
+      expect(driver.query('.et-table-drag-ghost')).not.toBeNull();
+
+      drag.drop();
+
+      expect(driver.columnKeys()).toEqual(['role', 'name']);
+    });
   });
 });

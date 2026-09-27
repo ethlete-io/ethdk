@@ -30,6 +30,11 @@ export type TableColumnDrag = {
   moveOver: (overKey: string, side: TableDropSide) => void;
 };
 
+export type TableGrabOptions = {
+  /** `touch` goes through the long-press path; the default is a mouse. */
+  pointerType?: 'mouse' | 'pen' | 'touch';
+};
+
 export type TableScrollExtent = {
   /** The scroll viewport's measured inline size. */
   viewportWidth: number;
@@ -157,7 +162,7 @@ export const createTableDriver = (fixture: ComponentFixture<unknown>) => {
      * Starts a reorder drag on a column's header, from the middle of its resting slot. The returned
      * drag has to travel before the gesture commits - a `pointerdown` alone reorders nothing.
      */
-    grabColumn: (key: string): TableColumnDrag => {
+    grabColumn: (key: string, { pointerType = 'mouse' }: TableGrabOptions = {}): TableColumnDrag => {
       const bounds = restingBoundsOf(key);
       const cell = headerCell(key)!;
       const clientY = 10;
@@ -167,10 +172,11 @@ export const createTableDriver = (fixture: ComponentFixture<unknown>) => {
         clientX: (bounds.start + bounds.end) / 2,
         clientY,
         pointerId: POINTER_ID,
+        pointerType,
       });
 
       const moveTo = (clientX: number) =>
-        pointerEvent(document, 'pointermove', { clientX, clientY, pointerId: POINTER_ID });
+        pointerEvent(document, 'pointermove', { clientX, clientY, pointerId: POINTER_ID, pointerType });
       let lastX = (bounds.start + bounds.end) / 2;
 
       return {
@@ -188,8 +194,10 @@ export const createTableDriver = (fixture: ComponentFixture<unknown>) => {
           lastX = side === 'before' ? middle - width / 4 : middle + width / 4;
           moveTo(lastX);
         },
-        drop: () => pointerEvent(document, 'pointerup', { clientX: lastX, clientY, pointerId: POINTER_ID }),
-        cancel: () => pointerEvent(document, 'pointercancel', { clientX: lastX, clientY, pointerId: POINTER_ID }),
+        drop: () =>
+          pointerEvent(document, 'pointerup', { clientX: lastX, clientY, pointerId: POINTER_ID, pointerType }),
+        cancel: () =>
+          pointerEvent(document, 'pointercancel', { clientX: lastX, clientY, pointerId: POINTER_ID, pointerType }),
       };
     },
   };

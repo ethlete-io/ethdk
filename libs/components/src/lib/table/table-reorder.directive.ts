@@ -9,9 +9,23 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { dragGestureFrom, injectPrefersReducedMotion, injectRenderer } from '@ethlete/core';
-import { EMPTY, exhaustMap, fromEvent, tap } from 'rxjs';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { DragGestureEvent, dragGestureFrom, injectPrefersReducedMotion, injectRenderer } from '@ethlete/core';
+import {
+  defer,
+  EMPTY,
+  exhaustMap,
+  filter,
+  finalize,
+  fromEvent,
+  merge,
+  Observable,
+  switchMap,
+  take,
+  takeUntil,
+  tap,
+  timer,
+} from 'rxjs';
 import { injectTableFeatureHost, TableFeatureConfig, tableFeatureConfig } from './headless/table-features';
 import { TableReorderOverlayComponent } from './table-reorder-overlay.component';
 
@@ -29,6 +43,10 @@ const AUTO_SCROLL_ZONE_PX = 56;
 
 /** Fastest the edge auto-scroll runs, in px per frame - reached with the pointer on the edge itself. */
 const AUTO_SCROLL_MAX_STEP_PX = 18;
+
+const TOUCH_HOLD_MS = 400;
+
+const TOUCH_HOLD_SLOP_PX = 8;
 
 /** The column order that dropping `key` next to `overKey` (on the given side) would produce. */
 const landingOrder = (order: readonly string[], move: { key: string; overKey: string; before: boolean }) => {
@@ -108,6 +126,8 @@ export class TableReorderDirective {
   private pointerX = 0;
   private autoScrollFrame: number | null = null;
   private autoScrollStep = 0;
+  private touchReorderActive = false;
+  private touchHoldPending = false;
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.stopAutoScroll());
@@ -125,6 +145,24 @@ export class TableReorderDirective {
       this.renderer[method](this.table.element, 'et-table-host--reorderable');
     });
 
+    // Chromium only lets a touchmove be cancelled when a non-passive listener was already on the
+    // target at touchstart, so these stay on while the table is reorderable and only act on a touch
+    // gesture this feature holds.
+    toObservable(computed(() => (this.enabled() ? this.table.headerCellElements() : [])))
+      .pipe(
+        switchMap((cells) =>
+          merge(
+            fromEvent<TouchEvent>(cells, 'touchmove', { passive: false }).pipe(
+              filter((move) => this.touchReorderActive && move.cancelable),
+            ),
+            fromEvent<MouseEvent>(cells, 'contextmenu').pipe(filter(() => this.touchHoldPending)),
+          ),
+        ),
+        tap((event) => event.preventDefault()),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
     // A delegated pointerdown on the table sees every header cell, without the table having to know
     // this feature exists (and without it importing any drag code).
     fromEvent<PointerEvent>(this.table.element, 'pointerdown')
@@ -140,18 +178,61 @@ export class TableReorderDirective {
           // pans the table out from under it at the same time.
           this.table.claimPointerGesture(event, 'etTableReorder');
 
-          return dragGestureFrom(event, hit.cell).pipe(
-            tap((gesture) => {
-              if (gesture.type === 'start') this.start(hit.key, gesture.data);
-              if (gesture.type === 'move') this.move(gesture.data);
-              if (gesture.type === 'end') this.end();
-              if (gesture.type === 'cancelled') this.cancel();
-            }),
-          );
+          if (event.pointerType === 'touch') return this.touchReorder(event, hit);
+
+          return dragGestureFrom(event, hit.cell).pipe(tap((gesture) => this.handleGesture(hit.key, gesture)));
         }),
         takeUntilDestroyed(),
       )
       .subscribe();
+  }
+
+  private touchReorder(event: PointerEvent, hit: { cell: HTMLElement; key: string }): Observable<unknown> {
+    const { pointerId, clientX, clientY } = event;
+    const document = hit.cell.ownerDocument;
+    const ofPointer = filter((candidate: PointerEvent) => candidate.pointerId === pointerId);
+
+    const abandoned$ = merge(
+      fromEvent<PointerEvent>(document, 'pointermove').pipe(
+        ofPointer,
+        filter(
+          (move) =>
+            Math.abs(move.clientX - clientX) > TOUCH_HOLD_SLOP_PX ||
+            Math.abs(move.clientY - clientY) > TOUCH_HOLD_SLOP_PX,
+        ),
+      ),
+      fromEvent<PointerEvent>(document, 'pointerup').pipe(ofPointer),
+      fromEvent<PointerEvent>(document, 'pointercancel').pipe(ofPointer),
+    ).pipe(take(1));
+
+    const hold$ = timer(TOUCH_HOLD_MS).pipe(
+      takeUntil(abandoned$),
+      exhaustMap(() => {
+        this.start(hit.key, { clientX, clientY });
+        this.touchReorderActive = true;
+
+        return dragGestureFrom(event, hit.cell, { commitThreshold: 0 }).pipe(
+          tap((gesture) => {
+            if (gesture.type === 'tapped') this.end();
+            else if (gesture.type !== 'start') this.handleGesture(hit.key, gesture);
+          }),
+          finalize(() => (this.touchReorderActive = false)),
+        );
+      }),
+    );
+
+    return defer(() => {
+      this.touchHoldPending = true;
+
+      return hold$.pipe(finalize(() => (this.touchHoldPending = false)));
+    });
+  }
+
+  private handleGesture(key: string, gesture: DragGestureEvent) {
+    if (gesture.type === 'start') this.start(key, gesture.data);
+    if (gesture.type === 'move') this.move(gesture.data);
+    if (gesture.type === 'end') this.end();
+    if (gesture.type === 'cancelled') this.cancel();
   }
 
   /** The reorderable header cell a pointerdown landed in, or `null` when the drag must not start. */
