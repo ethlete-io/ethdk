@@ -244,6 +244,7 @@ test.describe('accordion / collapse', () => {
     await expect(trigger.locator('.et-accordion-chevron')).not.toHaveCSS('transition-property', /rotate/);
 
     await trigger.click();
+    await expect(panel).not.toHaveAttribute('data-open');
 
     expect(await panelHeight(panel)).toBe(0);
     await expect(panel).toHaveCSS('visibility', 'hidden');
