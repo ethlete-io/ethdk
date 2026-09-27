@@ -2,6 +2,7 @@ import { Locator, expect, test } from '@playwright/test';
 import { expectTouchMode, focusedDescriptor, openStory, tabSequence, tap } from '../support';
 
 const DEFAULT_STORY_ID = 'components-data-display-icon--default';
+const ICON_BUTTON_STORY_ID = 'components-actions-button-icon--default';
 
 const ICON = '.et-icon';
 
@@ -18,6 +19,37 @@ function readBoxes(icons: Locator): Promise<IconBox[]> {
       return {
         host: Math.round(el.getBoundingClientRect().width),
         svg: Math.round(svg.getBoundingClientRect().width),
+      };
+    }),
+  );
+}
+
+interface ThemedIcon {
+  buttonColor: string;
+  paints: string[];
+  iconWidth: number;
+  svgWidth: number;
+}
+
+function readThemedIcons(root: Locator): Promise<ThemedIcon[]> {
+  return root.locator('[et-icon-button]').evaluateAll((buttons) =>
+    buttons.map((button) => {
+      const icon = button.querySelector('.et-icon') as HTMLElement;
+      const svg = icon.querySelector('svg') as SVGElement;
+      const paints = Array.from(svg.querySelectorAll('*')).flatMap((shape) => {
+        const style = getComputedStyle(shape);
+
+        return [
+          ...(shape.getAttribute('fill') === 'currentColor' ? [style.fill] : []),
+          ...(shape.getAttribute('stroke') === 'currentColor' ? [style.stroke] : []),
+        ];
+      });
+
+      return {
+        buttonColor: getComputedStyle(button).color,
+        paints,
+        iconWidth: Math.round(icon.getBoundingClientRect().width),
+        svgWidth: Math.round(svg.getBoundingClientRect().width),
       };
     }),
   );
@@ -132,6 +164,31 @@ test.describe('icon / structure', () => {
       .evaluateAll((els) => els.map((el) => (el as HTMLElement).style.cssText.replace(/\s+/g, ' ').trim()));
 
     expect(inline.every((it) => it === 'display: flex; align-items: center; justify-content: center;')).toBe(true);
+  });
+});
+
+test.describe('icon / theming', () => {
+  test('an icon in a themed button paints in the colour the theme gives the button', async ({ page }) => {
+    const root = await openStory(page, ICON_BUTTON_STORY_ID, { args: { color: 'danger' } });
+    const icons = await readThemedIcons(root);
+
+    expect(icons.length).toBeGreaterThan(0);
+    expect(icons.every((icon) => icon.paints.length > 0)).toBe(true);
+    expect(icons.every((icon) => icon.paints.every((paint) => paint === icon.buttonColor))).toBe(true);
+    expect(icons.every((icon) => icon.svgWidth === icon.iconWidth && icon.iconWidth > 0)).toBe(true);
+  });
+
+  test('another colour theme repaints the same icon', async ({ page }) => {
+    const root = await openStory(page, ICON_BUTTON_STORY_ID, { args: { color: 'danger' } });
+    const danger = (await readThemedIcons(root))[0];
+
+    await openStory(page, ICON_BUTTON_STORY_ID, { args: { color: 'brand' } });
+    const brand = (await readThemedIcons(root))[0];
+
+    expect(danger?.paints[0]).toBeDefined();
+    expect(brand?.paints[0]).toBeDefined();
+    expect(brand?.paints[0]).not.toBe(danger?.paints[0]);
+    expect(brand?.paints.every((paint) => paint === brand.buttonColor)).toBe(true);
   });
 });
 
