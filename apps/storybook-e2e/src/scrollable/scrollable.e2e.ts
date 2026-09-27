@@ -6,6 +6,8 @@ const VERTICAL_STORY_ID = 'components-layout-scrollable--vertical';
 const NAVIGATION_STORY_ID = 'components-layout-scrollable--with-navigation';
 const SNAP_STORY_ID = 'components-layout-scrollable--with-snap';
 const FOOTER_BUTTONS_STORY_ID = 'components-layout-scrollable--footer-buttons';
+const STICKY_BUTTONS_STORY_ID = 'components-layout-scrollable--sticky-buttons';
+const BORDER_MASK_STORY_ID = 'components-layout-scrollable--border-mask';
 
 const HOST = '.et-scrollable';
 const CONTAINER = '.et-scrollable-container';
@@ -15,6 +17,9 @@ const PREVIOUS_BUTTON = '.et-scrollable-button--start';
 const NEXT_BUTTON = '.et-scrollable-button--end';
 const DOT = '.et-scrollable-navigation-item';
 const SENTINEL = '.et-scroll-observer-first-element';
+const START_MASK = '.et-scrollable-mask--start';
+const END_MASK = '.et-scrollable-mask--end';
+const DOTS_CONTAINER = '.et-scrollable-dots-container';
 
 /** The story renders two toolbar buttons above the track, so the third Tab lands on its first child. */
 const TABS_TO_FIRST_CHILD = 3;
@@ -29,6 +34,60 @@ function readScrollTop(container: Locator): Promise<number> {
 
 function readItemOffsets(root: Locator): Promise<number[]> {
   return root.locator(ITEM).evaluateAll((els) => els.map((el) => (el as HTMLElement).offsetLeft));
+}
+
+function scrollTrackTo(container: Locator, to: 'start' | 'middle' | 'end'): Promise<void> {
+  return container.evaluate((el, target) => {
+    const max = el.scrollWidth - el.clientWidth;
+    el.scrollLeft = { start: 0, middle: max / 2, end: max }[target];
+  }, to);
+}
+
+function maskOpacities(root: Locator): Promise<[number, number]> {
+  return Promise.all([
+    root.locator(START_MASK).evaluate((el) => Number(getComputedStyle(el).opacity)),
+    root.locator(END_MASK).evaluate((el) => Number(getComputedStyle(el).opacity)),
+  ]);
+}
+
+function childOffsets(root: Locator): Promise<{ start: number; end: number; width: number }[]> {
+  return root.locator(CONTAINER).evaluate((container) => {
+    const box = container.getBoundingClientRect();
+
+    return [...container.querySelectorAll('.et-sb-scrollable-item')].map((item) => {
+      const rect = item.getBoundingClientRect();
+
+      return { start: Math.round(rect.left - box.left), end: Math.round(rect.right - box.left), width: box.width };
+    });
+  });
+}
+
+async function expectAChildCentred(root: Locator): Promise<void> {
+  await expect
+    .poll(async () =>
+      (await childOffsets(root)).some((child) => Math.abs((child.start + child.end) / 2 - child.width / 2) <= 1),
+    )
+    .toBe(true);
+}
+
+/** Samples `scrollLeft` once per frame after a click, so a smooth scroll shows its in-between positions. */
+function sampleScrollAfterClick(root: Locator, frames: number): Promise<number[]> {
+  return root.locator(HOST).evaluate(async (host, count) => {
+    const container = host.querySelector('.et-scrollable-container');
+    host.querySelector<HTMLElement>('.et-scrollable-button--end')?.click();
+    const samples: number[] = [];
+
+    for (let frame = 0; frame < count; frame++) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      samples.push(Math.round(container?.scrollLeft ?? 0));
+    }
+
+    return samples;
+  }, frames);
+}
+
+function translateOf(locator: Locator): Promise<number> {
+  return locator.evaluate((el) => new DOMMatrixReadOnly(getComputedStyle(el).transform).m41);
 }
 
 /** Polls until two consecutive reads of `scrollLeft` agree, then yields that offset. */
@@ -231,6 +290,139 @@ test.describe('scrollable / pointer', () => {
   });
 });
 
+test.describe('scrollable / edges and chrome', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: desktop viewport sizes');
+
+  test('the gradient masks show only on the edges that still have content beyond them', async ({ page }) => {
+    await page.setViewportSize({ width: 600, height: 720 });
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const container = root.locator(CONTAINER);
+
+    await scrollTrackTo(container, 'start');
+    await expect.poll(() => maskOpacities(root)).toEqual([0, 1]);
+
+    await scrollTrackTo(container, 'middle');
+    await expect.poll(() => maskOpacities(root)).toEqual([1, 1]);
+
+    await scrollTrackTo(container, 'end');
+    await expect.poll(() => maskOpacities(root)).toEqual([1, 0]);
+
+    expect(await root.locator(START_MASK).evaluate((el) => getComputedStyle(el).backgroundImage)).toContain(
+      'linear-gradient',
+    );
+  });
+
+  test('the border mask variant draws an edge line instead of a gradient', async ({ page }) => {
+    await page.setViewportSize({ width: 600, height: 720 });
+    const root = await openStory(page, BORDER_MASK_STORY_ID);
+
+    await scrollTrackTo(root.locator(CONTAINER), 'middle');
+    await expect.poll(() => maskOpacities(root)).toEqual([1, 1]);
+
+    const style = await root.locator(START_MASK).evaluate((el) => {
+      const computed = getComputedStyle(el);
+
+      return { backgroundImage: computed.backgroundImage, borderWidth: computed.borderInlineStartWidth };
+    });
+    expect(style).toEqual({ backgroundImage: 'none', borderWidth: '1px' });
+  });
+
+  test('the next button scrolls smoothly through in-between positions', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    await scrollTrackTo(root.locator(CONTAINER), 'start');
+    await expect(root.locator(NEXT_BUTTON)).toBeEnabled();
+
+    const samples = await sampleScrollAfterClick(root, 40);
+    const final = samples.at(-1) ?? 0;
+    const inBetween = new Set(samples.filter((value) => value > 0 && value < final));
+
+    expect(final).toBeGreaterThan(0);
+    expect(inBetween.size).toBeGreaterThan(2);
+  });
+
+  test('sticky buttons hold their place in the viewport while the page scrolls past a tall track', async ({ page }) => {
+    const root = await openStory(page, STICKY_BUTTONS_STORY_ID);
+    const next = root.locator(NEXT_BUTTON);
+    const container = root.locator(CONTAINER);
+
+    await expect(root.locator(HOST)).toHaveClass(/et-scrollable--sticky-buttons/);
+    const before = { button: (await boxOf(next)).y, track: (await boxOf(container)).y };
+
+    await page.evaluate(() => window.scrollBy(0, 150));
+    await expect.poll(async () => (await boxOf(container)).y).toBeLessThan(before.track - 100);
+
+    expect(Math.abs((await boxOf(next)).y - before.button)).toBeLessThanOrEqual(1);
+  });
+
+  test('past five dots the dot track slides so the active dot stays inside the visible window', async ({ page }) => {
+    const root = await openStory(page, NAVIGATION_STORY_ID);
+    const container = root.locator(CONTAINER);
+    const dots = root.locator(DOT);
+
+    expect(await dots.count()).toBeGreaterThan(5);
+
+    await scrollTrackTo(container, 'start');
+    await expect.poll(() => translateOf(root.locator(DOTS_CONTAINER))).toBe(0);
+
+    await scrollTrackTo(container, 'end');
+    await expect.poll(() => translateOf(root.locator(DOTS_CONTAINER))).toBeLessThan(0);
+    await expect(dots.last()).toHaveClass(/et-scrollable-navigation-item--active/);
+
+    const bar = await boxOf(root.locator('.et-scrollable-progress-bar'));
+    await expect
+      .poll(async () => {
+        const dot = await boxOf(dots.last());
+
+        return dot.x >= bar.x - 1 && dot.x + dot.width <= bar.x + bar.width + 1;
+      })
+      .toBe(true);
+  });
+
+  test('a vertical track scrolls on the block axis from its next button', async ({ page }) => {
+    const root = await openStory(page, VERTICAL_STORY_ID);
+    const container = root.locator(CONTAINER);
+    await container.evaluate((el) => {
+      el.scrollTop = 0;
+    });
+    await expect(root.locator(NEXT_BUTTON)).toBeEnabled();
+
+    await root.locator(NEXT_BUTTON).click();
+
+    await expect.poll(() => readScrollTop(container)).toBeGreaterThan(0);
+    expect(await readScrollLeft(container)).toBe(0);
+  });
+});
+
+test.describe('scrollable / scroll origin and margin', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: button clicks');
+
+  test('scrollOrigin "center" lands the next child in the middle of the track', async ({ page }) => {
+    await page.setViewportSize({ width: 600, height: 720 });
+    const root = await openStory(page, DEFAULT_STORY_ID, { args: { scrollMode: 'element', scrollOrigin: 'center' } });
+    await expectAChildCentred(root);
+    const before = await readScrollLeft(root.locator(CONTAINER));
+
+    await root.locator(NEXT_BUTTON).click();
+
+    await expect.poll(() => readScrollLeft(root.locator(CONTAINER))).toBeGreaterThan(before);
+    await settledScrollLeft(root.locator(CONTAINER));
+    await expectAChildCentred(root);
+  });
+
+  test('scrollMargin keeps a scrolled-to child that far from the start edge', async ({ page }) => {
+    await page.setViewportSize({ width: 600, height: 720 });
+    const root = await openStory(page, DEFAULT_STORY_ID, {
+      args: { scrollMode: 'element', scrollOrigin: 'start', scrollMargin: 40 },
+    });
+
+    await settledScrollLeft(root.locator(CONTAINER));
+
+    await expect
+      .poll(async () => (await childOffsets(root)).some((child) => Math.abs(child.start - 40) <= 1))
+      .toBe(true);
+  });
+});
+
 test.describe('scrollable / touch', () => {
   test.skip(({ isMobile }) => !isMobile, 'touch-only: swipe gestures');
 
@@ -250,10 +442,11 @@ test.describe('scrollable / touch', () => {
     await expect.poll(() => readScrollLeft(container)).toBeGreaterThan(before);
   });
 
-  test('a swipe on a snapping track comes to rest on a child', async ({ page }) => {
+  test('a swipe on a snapping track comes to rest on a child or at the end of the track', async ({ page }) => {
     const root = await openStory(page, SNAP_STORY_ID);
     const container = root.locator(CONTAINER);
-    const offsets = await readItemOffsets(root);
+    const maxScroll = await container.evaluate((el) => el.scrollWidth - el.clientWidth);
+    const offsets = [...(await readItemOffsets(root)), maxScroll];
 
     const box = await boxOf(container);
 
