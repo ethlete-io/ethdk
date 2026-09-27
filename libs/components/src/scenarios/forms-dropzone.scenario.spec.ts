@@ -86,7 +86,7 @@ class ContractUploadComponent {
       response: { id: string };
     }>('/documents'),
     createArgs: (picked) => ({
-      body: createDefaultDropzoneArgs(picked).body as FormData,
+      body: createDefaultDropzoneArgs(picked).body,
       queryParams: { folder: 'contracts' },
     }),
     selectValue: (response) => response.id,
@@ -131,7 +131,7 @@ class GalleryUploadComponent {
       types: { args: def<{ body: FormData }>(), response: def<{ uuid: string }>() },
     }),
     createArgs: (picked) => ({
-      body: createDefaultDropzoneArgs(picked).body as FormData,
+      body: createDefaultDropzoneArgs(picked).body,
       mock: picked.name.startsWith('broken')
         ? { delay: 5, error: brokenUpload }
         : { delay: 5, response: { uuid: `photo-${picked.name}` } },

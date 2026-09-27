@@ -281,14 +281,13 @@ const firstV2ErrorMessage = (error: RequestError): string | null => {
   return error.statusText || null;
 };
 
-const buildFileFormDataBody = (file: File) => {
+/** Builds the default upload args for one file: a `FormData` body with the file appended as `"file"`. */
+export const createDefaultDropzoneArgs = (file: File): { body: FormData } => {
   const body = new FormData();
   body.append('file', file, file.name);
 
   return { body };
 };
-
-export const createDefaultDropzoneArgs = (file: File): RequestArgs<QueryArgs> => buildFileFormDataBody(file);
 
 const createNewQueryUploadHandle = <TArgs extends QueryArgs, TValue>(
   options: DropzoneUploadHandleOptions & {
@@ -345,7 +344,7 @@ const createV2QueryUploadHandle = <TCreator extends AnyV2QueryCreator | AnyLegac
   runInInjectionContext(options.injector, () => {
     const { file, injector, queryCreator, createArgs, selectValue } = options;
 
-    const args = (createArgs ?? (buildFileFormDataBody as (file: File) => V2DropzonePrepareArgsOf<TCreator>))(file);
+    const args = (createArgs ?? (createDefaultDropzoneArgs as (file: File) => V2DropzonePrepareArgsOf<TCreator>))(file);
     const currentQuery = signal<AnyV2Query | AnyLegacyQuery | null>(null);
     const state = queryStateSignal(currentQuery);
 
