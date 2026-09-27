@@ -153,5 +153,5 @@ and disappears at once.
 
 ## Error codes
 
-The scrollbar throws in the `ET49xx` range - see
+The scrollbar reports errors in the `ET49xx` range to the `ErrorHandler` - see
 [error codes](/components/error-codes#scrollbar-et49xx).

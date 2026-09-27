@@ -26,6 +26,7 @@ import {
   signalHostStyles,
 } from '@ethlete/core';
 import { EMPTY, concat, fromEvent, map, merge, of, scan, share, switchMap, tap, timer } from 'rxjs';
+import { injectReportError } from '../../internals/report-error';
 import { SCROLLBAR_ERROR_CODES } from '../scrollbar-errors';
 import {
   NO_SCROLLBAR_GEOMETRY,
@@ -71,6 +72,7 @@ const ELEMENT_NODE_TYPE = 1;
 export class ScrollbarDirective {
   private hostElement = injectHostElement();
   private destroyRef = inject(DestroyRef);
+  private reportError = injectReportError();
   private renderer = injectRenderer();
 
   /** The scroll container to mirror. */
@@ -230,11 +232,13 @@ export class ScrollbarDirective {
 
         if (value === null || value === undefined || this.targetElement()) return;
 
-        throw new RuntimeError(
-          SCROLLBAR_ERROR_CODES.INVALID_TARGET,
-          '[ScrollbarDirective] `for` must be an element or an ElementRef. ' +
-            'A template reference variable on a component gives the component instance - read its element instead.',
-          { value },
+        this.reportError(
+          new RuntimeError(
+            SCROLLBAR_ERROR_CODES.INVALID_TARGET,
+            '[ScrollbarDirective] `for` must be an element or an ElementRef. ' +
+              'A template reference variable on a component gives the component instance - read its element instead.',
+            { value },
+          ),
         );
       });
 
