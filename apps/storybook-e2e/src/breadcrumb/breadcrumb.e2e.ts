@@ -7,6 +7,7 @@ import {
   pressKey,
   tabSequence,
   tap,
+  viewportOf,
 } from '../support';
 
 const DEFAULT_STORY_ID = 'components-navigation-breadcrumb--default';
@@ -316,6 +317,39 @@ test.describe('breadcrumb / keyboard', () => {
 
     await expect(page).toHaveURL(/#\/$/);
     await expectTrail(root, ['Home']);
+  });
+});
+
+test.describe('breadcrumb / resize', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: a desktop viewport that is resized');
+
+  test('narrowing the viewport collapses the trail behind the overflow trigger', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const nav = breadcrumb(root);
+
+    await expect(nav).not.toHaveAttribute('data-collapsed', '');
+    await expect(root.getByRole('button', { name: OVERFLOW_LABEL })).toHaveCount(0);
+
+    await page.setViewportSize({ width: 360, height: 720 });
+
+    await expect(nav).toHaveAttribute('data-collapsed', '');
+    await expectTrail(root, ['Home', 'Chemie Leipzig vs. Lok']);
+    await expect(root.getByRole('button', { name: OVERFLOW_LABEL })).toBeVisible();
+  });
+
+  test('widening the viewport again expands the full trail and removes the trigger', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const nav = breadcrumb(root);
+    const { width, height } = viewportOf(page);
+
+    await page.setViewportSize({ width: 360, height });
+    await expect(nav).toHaveAttribute('data-collapsed', '');
+
+    await page.setViewportSize({ width, height });
+
+    await expect(nav).not.toHaveAttribute('data-collapsed', '');
+    await expect(crumbs(root)).toHaveCount(5);
+    await expect(root.getByRole('button', { name: OVERFLOW_LABEL })).toHaveCount(0);
   });
 });
 
