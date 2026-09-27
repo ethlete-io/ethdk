@@ -1,6 +1,14 @@
 import { AttributionRule, standInIdOf } from '../model/attribution';
 import { describeProjectLink } from '../model/project-link';
-import { StandIn, StandInRefusal, openStandIn, standInBranches, standInDays } from '../model/stand-in';
+import { WriteSource, mayWrite } from '../model/field-source';
+import {
+  StandIn,
+  StandInRefusal,
+  openStandIn,
+  standInBranches,
+  standInDays,
+  standInResolutionSourceOf,
+} from '../model/stand-in';
 import { humanized } from '../ticket/draft';
 import { withReplacedAttributionRule } from './attribution';
 import { TimetrackSettings } from './model';
@@ -341,12 +349,15 @@ export const resolveStandIn = (options: {
   settings: TimetrackSettings;
   id: string;
   issueKey: string;
+  source?: WriteSource;
 }): TimetrackSettings => {
   const { settings, id } = options;
+  const source = options.source ?? 'human';
   const issueKey = options.issueKey.trim().toUpperCase();
   const standIn = settings.standIns.find((entry) => entry.id === id);
 
   if (!standIn || standIn.state === 'resolved' || !issueKey) return settings;
+  if (!mayWrite({ source, current: standInResolutionSourceOf(standIn) })) return settings;
 
   const branches = standIn.heldOn ?? [];
   const replacements = new Map(
@@ -359,7 +370,7 @@ export const resolveStandIn = (options: {
   return {
     ...settings,
     standIns: settings.standIns.map((entry) =>
-      entry.id === id ? { ...entry, state: 'resolved', issueKey, resolvedRuleIds } : entry,
+      entry.id === id ? { ...entry, state: 'resolved', issueKey, resolvedRuleIds, resolutionSource: source } : entry,
     ),
     attributionRules: settings.attributionRules.flatMap((rule) => replacements.get(rule.id) ?? rule),
   };
@@ -374,18 +385,26 @@ export const resolveStandIn = (options: {
  * The caller decides whether it may be undone at all. A day that already reached Tempo holds the key
  * in a worklog nothing here can reach, so undoing it there would leave the two disagreeing.
  */
-export const reopenStandIn = (options: { settings: TimetrackSettings; id: string }): TimetrackSettings => {
+export const reopenStandIn = (options: {
+  settings: TimetrackSettings;
+  id: string;
+  source?: WriteSource;
+}): TimetrackSettings => {
   const { settings, id } = options;
+  const source = options.source ?? 'human';
   const standIn = settings.standIns.find((entry) => entry.id === id);
 
   if (!standIn || standIn.state !== 'resolved') return settings;
+  if (!mayWrite({ source, current: standInResolutionSourceOf(standIn) })) return settings;
 
   const rewritten = standIn.resolvedRuleIds ?? [];
 
   return {
     ...settings,
     standIns: settings.standIns.map((entry) =>
-      entry.id === id ? { ...entry, state: 'open', issueKey: undefined, resolvedRuleIds: undefined } : entry,
+      entry.id === id
+        ? { ...entry, state: 'open', issueKey: undefined, resolvedRuleIds: undefined, resolutionSource: source }
+        : entry,
     ),
     attributionRules: settings.attributionRules.map((rule) =>
       rewritten.includes(rule.id) ? { ...rule, target: { kind: 'stand-in', standInId: id } } : rule,

@@ -323,6 +323,43 @@ describe('reopenStandIn', () => {
   });
 });
 
+describe('stand-in resolution source', () => {
+  it('lets auto mode resolve a stand-in nobody decided yet, and marks the resolve as its own', () => {
+    const settings = resolveStandIn({
+      settings: settingsWith(),
+      id: 'stand-in-1',
+      issueKey: 'FIP-100',
+      source: 'auto',
+    });
+
+    expect(settings.standIns[0]?.state).toBe('resolved');
+    expect(settings.standIns[0]?.resolutionSource).toBe('auto');
+  });
+
+  it('keeps auto mode from resolving a stand-in the user reopened', () => {
+    const resolved = resolveStandIn({
+      settings: settingsWith(),
+      id: 'stand-in-1',
+      issueKey: 'FIP-100',
+      source: 'auto',
+    });
+    const reopened = reopenStandIn({ settings: resolved, id: 'stand-in-1' });
+
+    expect(reopened.standIns[0]?.resolutionSource).toBe('human');
+    expect(resolveStandIn({ settings: reopened, id: 'stand-in-1', issueKey: 'FIP-200', source: 'auto' })).toBe(
+      reopened,
+    );
+  });
+
+  it('keeps auto mode from reopening a stand-in the user resolved, stored without a source', () => {
+    const settings = settingsWith({
+      standIns: [standIn({ state: 'resolved', issueKey: 'FIP-100', resolvedRuleIds: ['rule-1'] })],
+    });
+
+    expect(reopenStandIn({ settings, id: 'stand-in-1', source: 'auto' })).toBe(settings);
+  });
+});
+
 describe('withStandInDay', () => {
   const BASE = ['next', 'main'];
 

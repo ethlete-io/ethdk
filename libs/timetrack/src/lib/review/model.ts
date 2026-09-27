@@ -3,6 +3,7 @@ import { DayCheck } from '../rows/round';
 import { Confidence, Evidence } from '../model/evidence';
 import { PresenceStatement } from '../model/statement';
 import { WorklogProposal } from '../model/proposal';
+import { RowFieldSources } from '../model/field-source';
 
 /** The fields a reviewer can change on a machine-proposed row, keyed by the proposal's id. */
 export type ProposalOverride = {
@@ -24,6 +25,8 @@ export type ProposalOverride = {
   state?: 'accepted' | 'rejected';
   /** Whether the reviewer took this row off the timeline. See {@link DayReview.hidden}. */
   hidden?: boolean;
+  /** Who set each field this override holds. A field set without one is the user's. */
+  sources?: RowFieldSources;
 };
 
 /**
@@ -76,6 +79,8 @@ export type PinnedRow = {
   excluded?: boolean;
   unattended?: boolean;
   withheldIssueKey?: string;
+  /** Who set each field. A field holding a value without one is the user's. */
+  sources?: RowFieldSources;
 };
 
 /** Everything a reviewer changed about one day. The engine's own output is never stored alongside it. */
@@ -113,6 +118,8 @@ export type ReviewedRow = Omit<WorklogProposal, 'issueKey'> & {
   hidden: boolean;
   /** The remote time the row draws and does not book, when there is any. See ADR 0033. */
   unbookedMs?: number;
+  /** Who set each field. A field absent here holds what the engine observed. See `rowFieldSourceOf`. */
+  sources?: RowFieldSources;
 };
 
 /** A row that names an issue. It is the only kind a sync writes, and the only kind Tempo can take. */

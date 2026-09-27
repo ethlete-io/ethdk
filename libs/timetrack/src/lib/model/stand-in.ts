@@ -1,4 +1,5 @@
 import { ActivityContext } from './block';
+import { FieldSource, storedSourceOf } from './field-source';
 import { AttributionRule, NamingAuthor, matchAttributionRule, standInIdOf } from './attribution';
 
 /**
@@ -73,6 +74,11 @@ export type StandIn = {
    */
   resolvedRuleIds?: string[];
   /**
+   * Who last resolved or reopened it. A resolved one without it was resolved by the user, an open one
+   * without it was never touched. See `FieldSource`.
+   */
+  resolutionSource?: FieldSource;
+  /**
    * The local day keys that hold bands of it, oldest first.
    *
    * Stored rather than recomputed: `collected_event` is pruned by retention, and a stand-in open past
@@ -82,6 +88,10 @@ export type StandIn = {
   author: NamingAuthor;
   createdAt: Date;
 };
+
+/** Who decided whether the stand-in is resolved. See {@link StandIn.resolutionSource}. */
+export const standInResolutionSourceOf = (standIn: Pick<StandIn, 'state' | 'resolutionSource'>): FieldSource =>
+  storedSourceOf({ set: standIn.state === 'resolved', source: standIn.resolutionSource });
 
 const standInId = (options: { now: Date; key?: string }) => {
   const key = (options.key ?? '')

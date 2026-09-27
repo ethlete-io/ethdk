@@ -293,6 +293,17 @@ describe('parseTimetrackSettings', () => {
     expect(settings.standIns[0]?.resolvedRuleIds).toEqual(['rule-1', 'rule-2']);
   });
 
+  it('reads back who resolved a stand-in, and drops a source it does not know', () => {
+    const settings = parseTimetrackSettings({
+      standIns: [
+        { id: 'stand-in-1', name: 'Journey', state: 'resolved', issueKey: 'ABC-1', resolutionSource: 'auto' },
+        { id: 'stand-in-2', name: 'Ranking', state: 'resolved', issueKey: 'ABC-2', resolutionSource: 'robot' },
+      ],
+    });
+
+    expect(settings.standIns.map((standIn) => standIn.resolutionSource)).toEqual(['auto', undefined]);
+  });
+
   it('reads back the branches a placeholder held, so a resolve after a restart still cuts the rule back', () => {
     const settings = parseTimetrackSettings({
       standIns: [{ id: 'stand-in-1', name: 'User management', heldOn: ['feat/x', 'feat/y'] }],

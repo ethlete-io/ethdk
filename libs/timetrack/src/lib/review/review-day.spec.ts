@@ -1547,6 +1547,13 @@ describe('reviewDay over a row the reviewer built in a checkout a stand-in cover
   it('takes no stand-in from a rule that names an issue instead', () => {
     expect(reviewed({ rules: [rule({ kind: 'issue', issueKey: 'ABC-9' })] }).standInId).toBeUndefined();
   });
+
+  it('leaves a row the reviewer cleared the name of unnamed', () => {
+    const cleared = setRowIssue({ edits: pinned, row: reviewDay({ rows: day, edits: pinned }).rows[0]!, issueKey: '' });
+    const row = reviewed({ rules: [rule({ kind: 'stand-in', standInId: standIn.id })], edits: cleared });
+
+    expect(row).toMatchObject({ issueKey: '', standInId: undefined });
+  });
 });
 
 describe('reviewDay, a band a rule excluded that the reviewer resized', () => {

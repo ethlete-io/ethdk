@@ -1,5 +1,6 @@
 import { ProjectLinkTarget, TimetrackProjectLink } from '../model/project-link';
 import { AttributionRule, AttributionTarget, NamedTarget, NamingAuthor } from '../model/attribution';
+import { FieldSource } from '../model/field-source';
 import { StandIn, StandInRefusal } from '../model/stand-in';
 import { CallNaming } from '../model/call-naming';
 import { MeetingNaming } from '../model/meeting-naming';
@@ -142,6 +143,10 @@ const asNamedTarget = (value: unknown): NamedTarget | null => {
 const asAttributionTarget = (value: unknown): AttributionTarget | null =>
   asRecord(value)['kind'] === 'donate' ? { kind: 'donate' } : asNamedTarget(value);
 
+const FIELD_SOURCES: readonly FieldSource[] = ['human', 'auto', 'observed'];
+
+const asFieldSource = (value: unknown) => FIELD_SOURCES.find((source) => source === value);
+
 /**
  * A stand-in with no name is dropped: the name is the whole of what it is, and a band labelled with
  * an empty string would read as one the app failed to name rather than one the user is waiting on.
@@ -175,6 +180,7 @@ const asStandIn = (value: unknown, index: number): StandIn | null => {
     heldOn: heldOn.length ? heldOn : undefined,
     /** Without it a resolve read back from disk has nothing to point back, so the undo puts back nothing. */
     resolvedRuleIds: resolvedRuleIds.length ? resolvedRuleIds : undefined,
+    resolutionSource: asFieldSource(raw['resolutionSource']),
     days: asTextList(raw['days']).sort(),
     author: asAuthor(raw['author']),
     createdAt: asDate(raw['createdAt']),

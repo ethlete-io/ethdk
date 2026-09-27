@@ -6,6 +6,7 @@ export * from './context';
 export * from './duration';
 export * from './event';
 export * from './evidence';
+export * from './field-source';
 export * from './meeting-naming';
 export * from './naming-age';
 export * from './project-link';

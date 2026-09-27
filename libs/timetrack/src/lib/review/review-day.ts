@@ -26,6 +26,7 @@ import {
   isNamedRow,
 } from './model';
 import { isManualRow } from './edits';
+import { mayAutoWrite, rowFieldSourceOf, storedSourceOf } from '../model/field-source';
 
 /** What the engine offered for one band: a proposal, or a band nothing could name. */
 type RowSource = Omit<WorklogProposal, 'issueKey'> & { issueKey?: string; standInId?: string; folded?: string[] };
@@ -68,6 +69,13 @@ const withOverride = (row: RowSource, override: ProposalOverride | undefined): R
     edited: changed || override.state !== undefined,
     hidden: override.hidden === true,
     proposed,
+    sources: {
+      issue: storedSourceOf({
+        set: override.issueKey !== undefined || override.standInId !== undefined,
+        source: override.sources?.issue,
+      }),
+      description: storedSourceOf({ set: override.description !== undefined, source: override.sources?.description }),
+    },
   };
 };
 
@@ -90,6 +98,10 @@ const fromPinned = (row: PinnedRow): ReviewedRow => ({
   state: row.state ?? 'edited',
   edited: true,
   hidden: row.hidden === true,
+  sources: {
+    issue: storedSourceOf({ set: !!row.issueKey || !!row.standInId, source: row.sources?.issue }),
+    description: storedSourceOf({ set: !!row.description, source: row.sources?.description }),
+  },
 });
 
 /**
@@ -127,7 +139,7 @@ const nameFromStandInRule = (options: {
 }): ReviewedRow => {
   const { row } = options;
 
-  if (row.issueKey || row.standInId) return row;
+  if (row.issueKey || row.standInId || !mayAutoWrite(rowFieldSourceOf(row, 'issue'))) return row;
 
   const repoPath = row.laneKey ? streamKeyRepoPath(row.laneKey) : undefined;
 

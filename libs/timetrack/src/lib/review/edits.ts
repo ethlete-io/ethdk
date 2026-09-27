@@ -2,6 +2,7 @@ import { dominantConfidence, mergeEvidence } from '../rows/merge';
 import { DEFAULT_ROUND_OPTIONS, RoundOptions, roundDurationUp } from '../rows/round';
 import { storedLaneKey } from '../rows/lane';
 import { Evidence } from '../model/evidence';
+import { RowField, RowFieldSources, WriteSource, mayWrite, rowFieldSourceOf } from '../model/field-source';
 import { DayReviewEdits, PinnedRow, ProposalOverride, ReviewedRow } from './model';
 
 const pinnedById = (edits: DayReviewEdits, id: string) => edits.pinned.find((row) => row.id === id);
@@ -48,6 +49,11 @@ const pinnedIdFor = (options: { issueKey?: string; from: Date; taken: ReadonlySe
   return id;
 };
 
+const sourcesOf = (row: ReviewedRow) => ({
+  issue: rowFieldSourceOf(row, 'issue'),
+  description: rowFieldSourceOf(row, 'description'),
+});
+
 const asPinned = (row: ReviewedRow, replaces: readonly string[]): PinnedRow => ({
   id: row.id,
   replaces: [...replaces],
@@ -65,6 +71,7 @@ const asPinned = (row: ReviewedRow, replaces: readonly string[]): PinnedRow => (
   excluded: row.excluded,
   unattended: row.unattended,
   withheldIssueKey: row.withheldIssueKey,
+  sources: sourcesOf(row),
   /**
    * A rejection has to survive being split or merged, or restructuring a row somebody had already
    * thrown out would quietly put its time back into the sync. Anything else re-reviews as `edited`.
@@ -77,25 +84,51 @@ const overrideOn = (options: { edits: DayReviewEdits; row: ReviewedRow; change: 
   const id = editIdOf(row);
   const pinned = pinnedById(edits, id);
 
+  const merged = <T extends { sources?: RowFieldSources }>(entry: T): T =>
+    change.sources
+      ? { ...entry, ...change, sources: { ...entry.sources, ...change.sources } }
+      : { ...entry, ...change };
+
   if (pinned) {
-    return {
-      ...edits,
-      pinned: edits.pinned.map((entry) => (entry.id === id ? { ...entry, ...change } : entry)),
-    };
+    return { ...edits, pinned: edits.pinned.map((entry) => (entry.id === id ? merged(entry) : entry)) };
   }
 
-  return {
-    ...edits,
-    overrides: { ...edits.overrides, [id]: { ...edits.overrides[id], ...change } },
-  };
+  return { ...edits, overrides: { ...edits.overrides, [id]: merged(edits.overrides[id] ?? {}) } };
+};
+
+/**
+ * Writes one field auto mode can also set, stamped with who wrote it. An `auto` write to a field the
+ * user set returns the edits unchanged.
+ */
+const fieldOn = (options: {
+  edits: DayReviewEdits;
+  row: ReviewedRow;
+  field: RowField;
+  change: Omit<ProposalOverride, 'sources'>;
+  source?: WriteSource;
+}): DayReviewEdits => {
+  const source = options.source ?? 'human';
+
+  if (!mayWrite({ source, current: rowFieldSourceOf(options.row, options.field) })) return options.edits;
+
+  return overrideOn({
+    edits: options.edits,
+    row: options.row,
+    change: { ...options.change, sources: { [options.field]: source } },
+  });
 };
 
 /** Re-attributes a row to a different issue. The evidence chain is untouched — it is what was seen. */
-export const setRowIssue = (options: { edits: DayReviewEdits; row: ReviewedRow; issueKey: string }) => {
+export const setRowIssue = (options: {
+  edits: DayReviewEdits;
+  row: ReviewedRow;
+  issueKey: string;
+  source?: WriteSource;
+}) => {
   const laneKey = storedLaneKey(options.row.laneKey);
   const change = laneKey ? { issueKey: options.issueKey, laneKey } : { issueKey: options.issueKey };
 
-  return overrideOn({ edits: options.edits, row: options.row, change });
+  return fieldOn({ edits: options.edits, row: options.row, field: 'issue', change, source: options.source });
 };
 
 /**
@@ -105,11 +138,33 @@ export const setRowIssue = (options: { edits: DayReviewEdits; row: ReviewedRow; 
  * the reviewer, and a row holding both would read as bookable through `isNamedRow` while showing the
  * stand-in's name.
  */
-export const setRowStandIn = (options: { edits: DayReviewEdits; row: ReviewedRow; standInId: string }) =>
-  overrideOn({ edits: options.edits, row: options.row, change: { standInId: options.standInId, issueKey: '' } });
+export const setRowStandIn = (options: {
+  edits: DayReviewEdits;
+  row: ReviewedRow;
+  standInId: string;
+  source?: WriteSource;
+}) =>
+  fieldOn({
+    edits: options.edits,
+    row: options.row,
+    field: 'issue',
+    change: { standInId: options.standInId, issueKey: '' },
+    source: options.source,
+  });
 
-export const setRowDescription = (options: { edits: DayReviewEdits; row: ReviewedRow; description: string }) =>
-  overrideOn({ edits: options.edits, row: options.row, change: { description: options.description } });
+export const setRowDescription = (options: {
+  edits: DayReviewEdits;
+  row: ReviewedRow;
+  description: string;
+  source?: WriteSource;
+}) =>
+  fieldOn({
+    edits: options.edits,
+    row: options.row,
+    field: 'description',
+    change: { description: options.description },
+    source: options.source,
+  });
 
 /** Sets a row's logged duration. `observedMs` stays put: what was observed did not change. */
 /**
@@ -553,6 +608,7 @@ export const mergeRows = (options: { edits: DayReviewEdits; rows: readonly Revie
     description: first.description,
     confidence: dominantConfidence(rows),
     evidence: mergeEvidence(rows.map((row) => row.evidence)),
+    sources: sourcesOf(first),
     /** Only a merge of nothing but rejected rows is still a rejection — the rest is time being kept. */
     state: rows.every((row) => row.state === 'rejected') ? 'rejected' : undefined,
   };
