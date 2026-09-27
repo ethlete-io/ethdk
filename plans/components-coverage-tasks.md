@@ -62,29 +62,19 @@ agent that works alone, batch by batch.
    date-time, overlay, tabs).
 9. Before any push: ask the user, then run the `ci-check` skill.
 
-## Open items that need the user (do not decide alone)
+## Accepted fixes (user decision 2026-09-27, one Opus agent each, not started)
 
-- `et-rating` `aria-valuetext` and the multi-language RTE switcher dots ("has content"/"empty") are hardcoded
-  English, outside the label sets. Add label keys? (Rating max clamp and RTL keys fixed in 739688923.)
-- `et-progress-steps` state is visual only: no `aria-current="step"`, the guide calls it deliberate. Change it?
-
-- The `LoaderLabels.loading` JSDoc says the spinner announces "Loading", but `SpinnerComponent` has no `aria-label`
-  and `apps/docs/components/loader.md` says spinner and progress bar have no accessible name by default. Change the
-  JSDoc or the component?
-
-- `etSlider` `min`/`max` have no `numberAttribute`, so a static `min="60"` is a string in JIT and breaks clamping;
-  `etRangeSlider` names them `minValue`/`maxValue` and transforms them. Align the two?
-
-- A bare native `input[etInput|etNumberInput|etPasswordInput]` never sets `focused` or `touched`
-  (`TextFieldControlDirective` has no focus/blur listeners), so signal-form errors never show outside
-  `et-form-field`. Fix only if a bare native input is a supported mode.
-
-- `it.fails` in `table-features-rows.scenario.spec.ts`: a numeric `rowKey` turns into a string, so a
-  `new Set([3])` selection matches nothing.
-- Headless tab bar: after `.focus()` on a trigger, the arrow keys move from the selected tab. Find out whether
-  this is a bug before you fix it.
-- `BracketMatchComponent` in `@ethlete/bracket` lacks `bracketRoundSwissGroup`, which `et-bracket` always binds
-  (NG0303 for a custom card typed by it). Widening the type is likely right; it is outside S8b.
+1. `TextFieldControlDirective`: add focus/blur host listeners so a bare native `input[etInput|etNumberInput|
+etPasswordInput]` sets `focused`/`touched` and shows signal-form errors.
+2. `etSlider` `min`/`max`: add `numberAttribute`; keep the names.
+3. Spinner: keep no default accessible name; correct the `LoaderLabels.loading` JSDoc to match the loader guide.
+4. Add label keys for the rating `aria-valuetext` ("No rating", "N of M") and the multi-language RTE switcher dots
+   ("has content"/"empty") to their existing label sets.
+5. `et-progress-steps`: set `aria-current="step"` on the current step; update the guide.
+6. Table: keep a numeric `rowKey` as the consumer's type and compare by value; flip the `it.fails` in
+   `table-features-rows.scenario.spec.ts`.
+7. Headless tab bar: arrow keys move from the focused trigger (WAI-ARIA), not the selected one.
+8. `@ethlete/bracket` `BracketMatchComponent`: widen the type with `bracketRoundSwissGroup`.
 
 ## Gotchas
 
