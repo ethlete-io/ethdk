@@ -192,7 +192,7 @@ The wire response arrived, but the creator's `transformResponse` could not map i
 
 ## Retries
 
-Retrying is opt-in: add `withDefaultRetry()` (or `withEthleteApiErrors()`) to the client's `features`, or bring your own `retryFn`. Without either, a failed request is not retried. The policy applies to that client only, and a `retryFn` on the client or on a creator wins over it.
+Retrying is opt-in: add `withDefaultRetry()` (or `withEthleteApiErrors()`) to the client's `features`, or bring your own `retryFn`. Without either, a failed request is not retried. The policy applies to that client only, and a `retryFn` on the client or on a creator wins over it. Every retry resolves the request's headers again, so a retry after a token refresh sends the new bearer and the current result of a header function.
 
 The default policy (`shouldRetryRequest`) retries up to **3 times**, doubling the delay each time (2s, 4s, 8s) and spreading each one randomly over ±25% so the tabs that failed together do not retry together:
 
@@ -264,17 +264,17 @@ A request retries only while something is bound to it. When the last consumer of
 
 ## Error codes
 
-Misuse throws dev-mode `RuntimeError`s with numeric codes, grouped by area:
+Misuse throws `RuntimeError`s with numeric codes in every build, grouped by area. Only the paged-stack and WebSocket checks are dev mode only:
 
-| Range     | Area                                                                                                                                                                                                                         |
-| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0–199     | Query core - e.g. a feature used twice, `withPolling` on a `POST`, a function route without `withArgs`.                                                                                                                      |
-| 800       | A circular query dependency: the same query ran with identical args more than five times in a row, each run less than 100 ms after the last. Fast runs with _different_ args (a search box, a slider) never count.           |
-| 200–299   | [Auth](/query/auth#error-codes) - missing token properties, an auth feature used twice.                                                                                                                                      |
-| 400–499   | [Paged query stacks](/query/stacks#paged-queries) - e.g. fetching past the last page.                                                                                                                                        |
-| 500–599   | [Query stacks](/query/stacks#query-stacks) - e.g. `withArgs` passed as a stack feature.                                                                                                                                      |
-| 600–699   | [GraphQL](/query/gql#typing-args) - thrown by the default `{ data }` unwrapping in every build, not only in dev mode: `ET600` for a `200` with neither `data` nor `errors`, `ET601` for a `200` with `errors` and no `data`. |
-| 900–999   | [Query sequences and batches](/query/batching) plus [legacy interop](/query/migrating-from-v2#prepare-needs-an-injector) - e.g. a second `run()` while one is in flight, or `prepare()` called with no injection context.    |
-| 1000–1999 | [WebSockets](/query/ws#error-codes) - leaving a room that was never joined, malformed messages.                                                                                                                              |
+| Range     | Area                                                                                                                                                                                                                      |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0–199     | Query core - e.g. a feature used twice, `withPolling` on a `POST`, a function route without `withArgs`.                                                                                                                   |
+| 800       | A circular query dependency: the same query ran with identical args more than five times in a row, each run less than 100 ms after the last. Fast runs with _different_ args (a search box, a slider) never count.        |
+| 200–299   | [Auth](/query/auth#error-codes) - missing token properties, an auth feature used twice.                                                                                                                                   |
+| 400–499   | [Paged query stacks](/query/stacks#paged-queries) - e.g. fetching past the last page. Dev mode only.                                                                                                                      |
+| 500–599   | [Query stacks](/query/stacks#query-stacks) - e.g. `withArgs` passed as a stack feature.                                                                                                                                   |
+| 600–699   | [GraphQL](/query/gql#typing-args) - thrown by the default `{ data }` unwrapping: `ET600` for a `200` with neither `data` nor `errors`, `ET601` for a `200` with `errors` and no `data`.                                   |
+| 900–999   | [Query sequences and batches](/query/batching) plus [legacy interop](/query/migrating-from-v2#prepare-needs-an-injector) - e.g. a second `run()` while one is in flight, or `prepare()` called with no injection context. |
+| 1000–1999 | [WebSockets](/query/ws#error-codes) - leaving a room that was never joined, malformed messages. Dev mode only.                                                                                                            |
 
 The error message names the problem and the fix; the codes exist so you can grep for them. Every code is also a member of the exported `QueryRuntimeErrorCode` object (and of the union type of the same name), so a spec can assert on one by name rather than by number.

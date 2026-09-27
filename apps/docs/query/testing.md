@@ -120,6 +120,16 @@ expect(auth.accessToken()).toBe('a');
 ```
 
 `login(body, response)` and `refresh(token, response)` execute the query and answer its request.
-`makeSecureRequest(route)` sends a secure `GET` through the client. The config takes `loginPath`
-(default `'/auth/login'`), `refreshPath` (default `'/auth/refresh'`), `autoRetryOn401` (default
-`false`), `features`, and the refresh options of [`withRefreshQuery`](/query/auth).
+`refresh` sends what the real provider would: `buildRefreshArgs(token)` when it is configured,
+`{ body: { token } }` otherwise. `makeSecureRequest(route)` sends a secure `GET` through the client.
+
+| Option                                                                                                   | Default                                | What it sets                                                               |
+| -------------------------------------------------------------------------------------------------------- | -------------------------------------- | -------------------------------------------------------------------------- |
+| `querySetup`                                                                                             | required                               | The `QueryTestSetup` whose client the provider uses                        |
+| `loginPath` / `refreshPath`                                                                              | `'/auth/login'` / `'/auth/refresh'`    | The routes of the two `POST` queries                                       |
+| `autoRetryOn401`                                                                                         | `false`                                | Refresh and retry a secure request that answers `401`                      |
+| `extractLoginTokens` / `extractRefreshTokens`                                                            | reads `accessToken` and `refreshToken` | Maps each response to its tokens                                           |
+| `buildRefreshArgs`                                                                                       | `{ body: { token } }`                  | The refresh request for a refresh token (`withRefreshQuery`'s `buildArgs`) |
+| `features`                                                                                               | none                                   | Auth [features](/query/auth#features) such as `withPersistentAuth()`       |
+| `bearerDecryptFn`                                                                                        | JWT decoding                           | Turns an access token into the provider's bearer data                      |
+| `refreshStrategy`, `minRefreshInterval`, `refreshIfExpired`, `expiresInPropertyName`, `onRefreshFailure` | the provider's own                     | Passed through to [`withRefreshQuery`](/query/auth#token-refresh)          |

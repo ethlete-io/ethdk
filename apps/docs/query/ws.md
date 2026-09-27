@@ -8,7 +8,7 @@ socket.io itself is not a dependency of `@ethlete/query` - install it in the app
 yarn add socket.io-client
 ```
 
-Like the [query client](/query/queries#the-query-client), `createWebSocketClient` returns a root-provider tuple. You pass in socket.io's own `io` factory:
+Like the [query client](/query/queries#the-query-client), `createWebSocketClient` returns a root-provider definition (`{ provide, inject, token }`). You pass in socket.io's own `io` factory:
 
 ```ts
 import { toInjectFn } from '@ethlete/core';

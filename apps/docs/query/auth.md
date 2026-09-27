@@ -511,4 +511,4 @@ The absence of a token is deliberately **not** one of those events. It is absent
 
 ## Error codes
 
-The auth provider throws dev-mode `RuntimeError`s with codes **200–299** - missing token properties in a login/refresh response, or an auth feature used twice.
+The auth provider raises `RuntimeError`s with codes **200–299** in every build. An auth feature used twice throws; missing token properties in a login/refresh response become that query's error in [`executionState()`](#execution-state).

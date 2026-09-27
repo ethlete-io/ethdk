@@ -55,16 +55,16 @@ The request method is part of the [cache key](/query/caching), so a `HEAD` and a
 
 The generic `TArgs` type passed to a creator describes the whole request/response contract:
 
-| Field         | Description                                                                                                     |
-| ------------- | --------------------------------------------------------------------------------------------------------------- |
-| `response`    | The (transformed) response type - what `query.response()` returns.                                              |
-| `rawResponse` | The wire response type, when it differs from `response`. Declaring it makes `transformResponse` **required**.   |
-| `pathParams`  | `Record<string, string \| number>` - declaring it requires a **function route**: `(p) => `/users/${p.userId}``. |
-| `queryParams` | Serialized into the query string using the client's `queryString` config.                                       |
-| `body`        | The request body (mutating methods).                                                                            |
-| `headers`     | Extra headers: a record, `HttpHeaders`, or a function returning either. Secure queries add `Authorization`.     |
+| Field         | Description                                                                                                                                                                |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `response`    | The (transformed) response type - what `query.response()` returns.                                                                                                         |
+| `rawResponse` | The wire response type, when it differs from `response`. Declaring it makes `transformResponse` **required**.                                                              |
+| `pathParams`  | `Record<string, string \| number>` - declaring it requires a **function route**: `(p) => `/users/${p.userId}``.                                                            |
+| `queryParams` | Serialized into the query string using the client's `queryString` config. A `Date` is sent as its ISO string (`toISOString()`); an invalid `Date` is left out, like `NaN`. |
+| `body`        | The request body (mutating methods).                                                                                                                                       |
+| `headers`     | Extra headers: a record, `HttpHeaders`, or a function returning either. Secure queries add `Authorization`.                                                                |
 
-You pass everything except the type-only `response` and `rawResponse` fields through `withArgs(() => ({ … }))` - for mutations too. Calling the creator of a function route without a `withArgs` feature is a type error, and throws in dev mode (`ET100`); the `silenceMissingWithArgsFeatureError` query config is an escape hatch for args that only exist at call time, which you then pass to `execute({ args })`.
+You pass everything except the type-only `response` and `rawResponse` fields through `withArgs(() => ({ … }))` - for mutations too. Calling the creator of a function route without a `withArgs` feature is a type error, and throws at runtime (`ET100`); the `silenceMissingWithArgsFeatureError` query config is an escape hatch for args that only exist at call time, which you then pass to `execute({ args })`.
 
 ### Transforming responses
 

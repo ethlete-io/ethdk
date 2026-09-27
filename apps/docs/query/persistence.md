@@ -271,7 +271,7 @@ const first = createQueryClient({
   features: [withQueryPersistence({ adapter: store.adapter })],
 });
 // …drive a query, then:
-await TestBed.inject(first[2]).subtle.persistence!.flush();
+await TestBed.inject(first.token).subtle.persistence!.flush();
 
 const second = createQueryClient({
   name: 'second',

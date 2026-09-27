@@ -110,7 +110,7 @@ The generator scaffolds a [`createBearerAuthProvider`](/query/auth) from your `V
 Two layout rules follow from this:
 
 - **Auth queries belong in the client file.** The provider needs the login and refresh creators, and the secure creators need the provider. If the creators stay in a separate `auth.queries.ts` that imports the client, the two files form an import cycle. Define them above the provider, and let `auth.queries.ts` import them back for its `legacy*` wrappers.
-- **Nothing goes into `app.config.ts`.** Both the client and the auth provider are root-provided the moment something injects them; the `provide` half of the tuple exists for tests and overrides.
+- **Nothing goes into `app.config.ts`.** Both the client and the auth provider are root-provided the moment something injects them; the `provide` member of the definition exists for tests and overrides.
 
 ### Default headers move onto the client
 
