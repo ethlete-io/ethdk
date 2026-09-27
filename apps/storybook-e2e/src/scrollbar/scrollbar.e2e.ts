@@ -29,6 +29,49 @@ async function wheelUntilScrolled(page: Page, container: Locator): Promise<void>
   }).toPass();
 }
 
+interface Gutter {
+  scrollbarWidth: string;
+  inline: number;
+  block: number;
+}
+
+/** The space the browser takes from the container for its own scrollbar, borders excluded. */
+function nativeGutter(container: Locator): Promise<Gutter> {
+  return container.evaluate((el: HTMLElement) => {
+    const style = getComputedStyle(el);
+    const border = (a: string, b: string) =>
+      parseFloat(style.getPropertyValue(a)) + parseFloat(style.getPropertyValue(b));
+
+    return {
+      scrollbarWidth: style.scrollbarWidth,
+      inline: el.offsetWidth - el.clientWidth - border('border-left-width', 'border-right-width'),
+      block: el.offsetHeight - el.clientHeight - border('border-top-width', 'border-bottom-width'),
+    };
+  });
+}
+
+test.describe('scrollbar / native bar', () => {
+  test('a vertical container hides the native bar and gives up no width for it', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+
+    expect(await nativeGutter(root.locator(VERTICAL_CONTAINER))).toEqual({
+      scrollbarWidth: 'none',
+      inline: 0,
+      block: 0,
+    });
+  });
+
+  test('a horizontal container hides the native bar and gives up no height for it', async ({ page }) => {
+    const root = await openStory(page, HORIZONTAL_STORY_ID);
+
+    expect(await nativeGutter(root.locator(HORIZONTAL_CONTAINER))).toEqual({
+      scrollbarWidth: 'none',
+      inline: 0,
+      block: 0,
+    });
+  });
+});
+
 test.describe('scrollbar / focus', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus order');
 
