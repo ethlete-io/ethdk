@@ -18,6 +18,10 @@ function retryCounter(root: Locator): Locator {
   return root.getByText(/^Retries triggered: \d+$/);
 }
 
+function themePrimary(locator: Locator): Promise<string> {
+  return locator.evaluate((element) => getComputedStyle(element).getPropertyValue('--et-theme-color-primary-solid'));
+}
+
 function openRetryableStory(page: Page): Promise<Locator> {
   return openStory(page, RETRYABLE_STORY_ID, { args: { alwaysAllowRetry: true } });
 }
@@ -132,6 +136,38 @@ test.describe('query-error / focus', () => {
 
     await expect(root.locator(PANEL)).toHaveAttribute('role', 'alert');
     await expect(root.locator(PANEL)).toHaveAttribute('data-status', '500');
+  });
+});
+
+test.describe('query-error / colour', () => {
+  test('the banner resolves the error theme instead of the surrounding colour context', async ({ page }) => {
+    const root = await openRetryableStory(page);
+    const panel = root.locator(PANEL);
+    const banner = root.locator(BANNER);
+
+    await expect(banner).toHaveClass(/et-color--/);
+    expect(await themePrimary(banner)).not.toBe(await themePrimary(panel));
+  });
+
+  test('the retry button inherits the error theme from the banner', async ({ page }) => {
+    const root = await openRetryableStory(page);
+    const banner = root.locator(BANNER);
+    const retry = root.locator(RETRY_BUTTON);
+
+    await expect(retry).toBeVisible();
+    expect(await themePrimary(retry)).toBe(await themePrimary(banner));
+    await expect(retry).toHaveCSS(
+      'background-color',
+      await banner.evaluate((element) => {
+        const probe = document.createElement('div');
+        probe.style.color = getComputedStyle(element).getPropertyValue('--et-theme-color-primary-solid');
+        element.append(probe);
+        const resolved = getComputedStyle(probe).color;
+        probe.remove();
+
+        return resolved;
+      }),
+    );
   });
 });
 
