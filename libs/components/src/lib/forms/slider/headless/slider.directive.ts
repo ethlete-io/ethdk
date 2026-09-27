@@ -34,6 +34,9 @@ import {
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 import { controlTouches } from '../../../internals/touch-output';
 
+const optionalNumberAttribute = (value: unknown) =>
+  value === undefined || value === null || value === '' ? undefined : numberAttribute(value);
+
 @Directive({
   selector: '[etSlider]',
   exportAs: 'etSlider',
@@ -65,8 +68,8 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
 
   // `min`/`max` satisfy the signal-forms `FormValueControl` contract (`NonNullable<TValue> | undefined`),
   // so schema `min(...)` / `max(...)` validators bind straight into these inputs.
-  public min = input<number | undefined>(undefined);
-  public max = input<number | undefined>(undefined);
+  public min = input(undefined, { transform: optionalNumberAttribute });
+  public max = input(undefined, { transform: optionalNumberAttribute });
   public step = input(1, { transform: numberAttribute });
 
   /** Axis the slider runs along. A vertical slider runs bottom→up and is not mirrored in RTL. */

@@ -48,6 +48,19 @@ class VolumeFormComponent {
 }
 
 @Component({
+  selector: 'et-scenario-rating-scale',
+  imports: [FORM_FIELD_IMPORTS, SliderComponent],
+  template: `
+    <et-slider [(value)]="score" min="1" max="10" step="3">
+      <et-label>Score</et-label>
+    </et-slider>
+  `,
+})
+class RatingScaleComponent {
+  score = signal(4);
+}
+
+@Component({
   selector: 'et-scenario-price-filter',
   imports: [SLIDER_IMPORTS],
   providers: [provideSliderLabels({ minimum: 'Von' })],
@@ -240,6 +253,39 @@ describe('forms slider scenarios', () => {
     thumb.blur();
     s.tick();
     expect(app.settings.volume().touched()).toBe(true);
+  });
+
+  it('reads static string bounds as numbers', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(RatingScaleComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const app = fixture.componentInstance;
+
+    s.tick();
+    s.flush();
+
+    const thumb = query('[role="slider"]', host);
+
+    expect(thumb.getAttribute('aria-valuemin')).toBe('1');
+    expect(thumb.getAttribute('aria-valuemax')).toBe('10');
+    expect(thumb.getAttribute('aria-valuenow')).toBe('4');
+
+    thumb.focus();
+    s.keydown('ArrowRight', thumb);
+    s.tick();
+    expect(app.score()).toBe(7);
+
+    s.keydown('End', thumb);
+    s.tick();
+    expect(app.score()).toBe(10);
+
+    s.keydown('Home', thumb);
+    s.tick();
+    expect(app.score()).toBe(1);
+
+    app.score.set(50);
+    s.tick();
+    expect(thumb.getAttribute('aria-valuenow')).toBe('10');
   });
 
   it('drags the thumb along a measured track and commits a labelled tick exactly', () => {
