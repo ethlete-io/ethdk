@@ -1,3 +1,4 @@
+export * from './lock-gate';
 export * from './model';
 export * from './parse';
 export * from './tempo-delete';

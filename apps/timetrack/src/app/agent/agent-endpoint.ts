@@ -19,6 +19,7 @@ import {
   AgentApiTempoSync,
   AgentApiTempoWorklogs,
   AgentApiCalendarEvents,
+  agentApiLockRefusal,
   JiraCredentials,
   JiraIssue,
   createJiraIssue$,
@@ -84,6 +85,7 @@ import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectProjectLinks } from '../project-links';
 import { injectTempoSync } from '../sync/sync';
+import { injectWindowLock } from '../window-lock';
 
 /** One request as the host hands it over. What is in `body` is the caller's, uninterpreted. */
 type AgentRequestEvent = { id: number; body: unknown };
@@ -129,6 +131,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const tempoSync = injectTempoSync();
   const recurring = injectRecurringPatterns();
   const googleAccount = injectGoogleAccount();
+  const windowLock = injectWindowLock();
   const destroyRef = inject(DestroyRef);
   const agentSessionCollectors = [injectAgentSessionCollector(), injectCodexSessionCollector()];
   const agentSpendBackfills = [injectAgentSpendBackfill(), injectCodexSpendBackfill()];
@@ -773,6 +776,10 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   };
 
   const answer$ = (body: unknown): Observable<AgentAnswer> => {
+    const refusal = agentApiLockRefusal({ locked: windowLock.isLocked() });
+
+    if (refusal) return of({ ok: false, message: refusal });
+
     const parsed = parseAgentRequest(body);
 
     if (!parsed.ok) return of({ ok: false, message: parsed.message });

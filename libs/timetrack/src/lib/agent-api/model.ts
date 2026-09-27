@@ -557,6 +557,38 @@ export type AgentApiLaneIssues = {
 export type AgentApiOp = AgentApiRequest['op'];
 
 /**
+ * How much consent an op needs: `read` answers while unlocked, `local` changes only this machine's
+ * day or settings, `external` writes to Jira, and `human-only` waits for the user's own press.
+ */
+export type OpClass = 'read' | 'local' | 'external' | 'human-only';
+
+/** The class of every op. A user setting may make one stricter, never looser. */
+export const AGENT_API_OP_CLASSES: Record<AgentApiOp, OpClass> = {
+  status: 'read',
+  'jira.instance': 'read',
+  'jira.issue': 'read',
+  'jira.search': 'read',
+  'repo.project': 'read',
+  'jira.create': 'external',
+  'worklog.add': 'local',
+  'day.events': 'read',
+  'day.rows': 'read',
+  'day.edits': 'local',
+  'settings.rules': 'read',
+  'standIn.list': 'read',
+  'standIn.remove': 'human-only',
+  'standIn.rename': 'local',
+  'standIn.split': 'local',
+  'naming.offers': 'read',
+  'tempo.worklogs': 'read',
+  'tempo.sync': 'human-only',
+  'tempo.delete': 'human-only',
+  'calendar.events': 'read',
+  'lane.issues': 'read',
+  'agentSessions.resync': 'local',
+};
+
+/**
  * What the endpoint writes back. `ok` is the operation's own verdict rather than the endpoint's: a key
  * Jira does not know is a failed operation over a working endpoint, and the HTTP status stays 200.
  */

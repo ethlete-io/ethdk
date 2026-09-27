@@ -1,6 +1,6 @@
 # Auto mode and the approval queue
 
-Status: slice 1 in progress (2026-09-28).
+Status: slice 1 done (2026-09-28); slice 2 next.
 
 ## Goal
 
@@ -55,7 +55,7 @@ settings: the user can move an action to a stricter class, never to a looser one
 
 ## Slices
 
-1. **Lock gate and op classes.** The endpoint refuses every op while locked. Add the class table in
+1. **Lock gate and op classes.** Done. The endpoint refuses every op while locked. Add the class table in
    `libs/timetrack/src/lib/agent-api/model.ts`. Unit specs for the gate and the table.
 2. **Approval queue.** Store, `approval.status` op, queue panel in the app with approve, reject and
    "Approve all". Route every non-read CLI op through it. e2e: a queued `jira.create` files only
