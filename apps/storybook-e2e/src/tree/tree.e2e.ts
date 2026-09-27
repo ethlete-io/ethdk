@@ -232,11 +232,15 @@ test.describe('tree / keyboard', () => {
   });
 
   test('the lazy tree shows a loading state, then its root rows', async ({ page }) => {
+    await page.clock.install();
+    await page.clock.pauseAt(Date.now() + 60_000);
     const root = await openStory(page, LAZY_LOADING_STORY_ID);
 
     await expect(root.getByRole('treeitem', { name: 'Loading…' })).toBeVisible();
 
-    await expect(root.getByRole('treeitem', { name: 'docs' })).toBeVisible({ timeout: 3_000 });
+    await page.clock.resume();
+
+    await expect(root.getByRole('treeitem', { name: 'docs' })).toBeVisible();
     await expect(root.getByRole('treeitem', { name: 'Loading…' })).toHaveCount(0);
   });
 
