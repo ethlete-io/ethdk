@@ -1,6 +1,8 @@
 # Gap 14: v3 replacements for the query button, collections, infinite scroll and EntityStore
 
-Research for gap 14 of `plans/query-v3-migration-gaps.md`, 2026-09-27. Consumer evidence: fut
+Gap 14 of the v2 → v3 migration: v3 has no replacement for the cdk `QueryButtonDirective`, query collections,
+the infinite-scroll trigger or EntityStore (dyn 45 / fut 39 buttons, dyn/dfb 27 / fifagg 54 collections, bvb 5 /
+fifagg 16 triggers, bvb 13 / dyn 18 / fifagg 8 stores). The other gaps shipped. Research from 2026-09-27. Consumer evidence: fut
 (`~/dev/ea-frontend`) and fifagg (`~/dev/fifagg-frontend`), both read-only. The hub (`apps/hub`,
 `libs/domain/hub` in fut) is fut's v3-native code. The Dyn frontend is not checked out on this machine, so its
 numbers are the ones the gap already names and are not verified. Paths start at the repo root of the app named.

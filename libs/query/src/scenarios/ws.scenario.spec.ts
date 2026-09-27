@@ -370,7 +370,7 @@ describe('ws scenario', () => {
     c.destroy();
   });
 
-  it('never joins a room whose consumer is destroyed before its effect flushes, and leaves a still-mounted joiner untouched - plans/query-lib-scan.md ws finding 1', () => {
+  it('never joins a room whose consumer is destroyed before its effect flushes, and leaves a still-mounted joiner untouched', () => {
     const s = scenario();
     const { double, instance } = createSocket(s);
 
@@ -394,7 +394,7 @@ describe('ws scenario', () => {
     ]);
   });
 
-  it('leaves the room it actually joined, not the one the signal changed to, when destroyed before the next flush - plans/query-lib-scan.md ws finding 2', () => {
+  it('leaves the room it actually joined, not the one the signal changed to, when destroyed before the next flush', () => {
     const s = scenario();
     const { double, instance } = createSocket(s);
 
