@@ -73,6 +73,7 @@ const STATE_ICONS: Partial<Record<ProgressStepState, RegisteredIconName>> = {
   host: {
     class: 'et-progress-step',
     '[attr.data-state]': 'state()',
+    '[attr.aria-current]': 'ariaCurrent()',
   },
 })
 export class ProgressStepComponent {
@@ -82,6 +83,7 @@ export class ProgressStepComponent {
   public state = input<ProgressStepState>(PROGRESS_STEP_STATES.UPCOMING);
 
   protected markerIcon = computed(() => STATE_ICONS[this.state()] ?? null);
+  protected ariaCurrent = computed(() => (this.state() === PROGRESS_STEP_STATES.CURRENT ? 'step' : null));
 
   constructor() {
     // Only the theme actually in use is injected, and only once a step renders in that state: a row

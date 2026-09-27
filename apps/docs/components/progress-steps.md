@@ -148,6 +148,10 @@ A plain step renders `<span>`s with no ARIA role or live region of its own - a s
 nothing to announce beyond the labels' own text. If a step's completion should be announced as it
 changes, wrap the group in your own `aria-live` region.
 
+The step in the `current` state carries `aria-current="step"`, and every other step carries no
+`aria-current`, so a screen reader announces where the user is in the sequence. Keep exactly one step
+`current` at a time.
+
 A step written as an `<a>` or `<button>` is keyboard-reachable and focus-ringed by virtue of being a
 real link or button; nothing is layered on top of it, so its accessible name is the content you
 projected, and a `disabled` button or `aria-disabled` link is inert exactly as it would be anywhere

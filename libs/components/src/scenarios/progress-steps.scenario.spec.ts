@@ -124,6 +124,32 @@ describe('progress steps scenarios', () => {
     expect(s.errors).toEqual([]);
   });
 
+  it('marks only the current step with aria-current="step" and moves it with the state', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(CheckoutStepsComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const app = fixture.componentInstance;
+
+    s.tick();
+
+    const steps = Array.from(host.querySelectorAll<HTMLElement>('.et-progress-step'));
+    const ariaCurrent = () => steps.map((step) => step.getAttribute('aria-current'));
+
+    expect(ariaCurrent()).toEqual([null, 'step', null, null]);
+
+    app.shipping.set(PROGRESS_STEP_STATES.COMPLETE);
+    app.payment.set(PROGRESS_STEP_STATES.CURRENT);
+    s.tick();
+
+    expect(ariaCurrent()).toEqual([null, null, 'step', null]);
+
+    app.payment.set(PROGRESS_STEP_STATES.ERROR);
+    s.tick();
+
+    expect(ariaCurrent()).toEqual([null, null, null, null]);
+    expect(s.errors).toEqual([]);
+  });
+
   it('keeps the consumer link and buttons interactive, and a disabled one inert', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(CheckoutStepsComponent);
