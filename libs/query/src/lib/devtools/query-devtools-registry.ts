@@ -45,12 +45,21 @@ import {
 } from './query-devtools-override-persistence';
 import { createQueryDevtoolsOverrides } from './query-devtools-overrides';
 import { markQueryDevtoolsAppSettled } from './query-devtools-ui';
-import { initQueryDevtoolsMocks, resolveQueryDevtoolsMockForAttempt } from './query-devtools-mocks';
+import {
+  initQueryDevtoolsMocks,
+  noteQueryDevtoolsClientBaseUrl,
+  resolveQueryDevtoolsMockForAttempt,
+} from './query-devtools-mocks';
 import { QueryDevtoolsSchemaLoaders, setQueryDevtoolsSchemaLoader } from './query-devtools-schema';
 import { initQueryDevtoolsSettings } from './query-devtools-settings';
 import { createQueryDevtoolsStats, setQueryDevtoolsResponseHistory } from './query-devtools-stats';
 import { applyQueryDevtoolsTokenTtl } from './query-devtools-token-ttl';
-import { MAX_QUERY_BATCH_TOMBSTONES, MAX_QUERY_DEVTOOLS_TOMBSTONES, tombstoneOf } from './query-devtools-tombstone';
+import {
+  MAX_QUERY_BATCH_TOMBSTONE_BUCKETS,
+  MAX_QUERY_BATCH_TOMBSTONES,
+  MAX_QUERY_DEVTOOLS_TOMBSTONES,
+  tombstoneOf,
+} from './query-devtools-tombstone';
 
 const entries = /* @__PURE__ */ signal<QueryDevtoolsEntry[]>([]);
 
@@ -161,6 +170,9 @@ const registerEntry = (registration: QueryDevtoolsRegistration): (() => void) =>
   }
 
   if (registration.clientRef) meta.clientName = getQueryClientName(registration.clientRef);
+  if (meta.clientName && meta.clientBaseUrl !== undefined) {
+    noteQueryDevtoolsClientBaseUrl(meta.clientName, meta.clientBaseUrl);
+  }
 
   if (registration.authProviderRef) {
     meta.isSecure = true;
@@ -232,7 +244,9 @@ const oldestOver = (bucket: QueryDevtoolsEntry[], cap: number) =>
  * Caps the tombstones the registry holds. A batch's items are counted per batch rather than against the
  * shared budget: a batch destroys one query per item as it settles, so a single 500-item run would
  * otherwise fill the whole buffer and evict every tombstone the panel is actually read for - the `401`
- * that took its component down with it. Each batch keeps its own recent tail instead.
+ * that took its component down with it. Each batch keeps its own recent tail instead, and only the
+ * batches that settled an item most recently keep one - a destroyed batch's tail stays inspectable until
+ * newer batches push it out.
  */
 const capTombstones = (list: QueryDevtoolsEntry[]) => {
   const shared: QueryDevtoolsEntry[] = [];
@@ -256,8 +270,14 @@ const capTombstones = (list: QueryDevtoolsEntry[]) => {
 
   const doomed = new Set(oldestOver(shared, MAX_QUERY_DEVTOOLS_TOMBSTONES));
 
-  for (const bucket of perBatch.values()) {
-    for (const entry of oldestOver(bucket, MAX_QUERY_BATCH_TOMBSTONES)) doomed.add(entry);
+  const newestFirst = [...perBatch.values()]
+    .map((bucket, seen) => ({ bucket, seen, newest: Math.max(...bucket.map((entry) => entry.destroyedAt ?? 0)) }))
+    .sort((a, b) => b.newest - a.newest || b.seen - a.seen);
+
+  for (const [rank, { bucket }] of newestFirst.entries()) {
+    const evicted = rank >= MAX_QUERY_BATCH_TOMBSTONE_BUCKETS ? bucket : oldestOver(bucket, MAX_QUERY_BATCH_TOMBSTONES);
+
+    for (const entry of evicted) doomed.add(entry);
   }
 
   return doomed.size ? list.filter((e) => !doomed.has(e)) : list;

@@ -327,7 +327,15 @@ const listenForOtherTabs = () => {
   window.addEventListener('storage', (event) => {
     if (event.key !== STORE_KEY) return;
 
-    store.set(sanitize(event.newValue ? (JSON.parse(event.newValue) as Partial<Store>) : null));
+    let next: Partial<Store> | null;
+
+    try {
+      next = event.newValue ? (JSON.parse(event.newValue) as Partial<Store>) : null;
+    } catch {
+      return;
+    }
+
+    store.set(sanitize(next));
     syncPill();
   });
 };

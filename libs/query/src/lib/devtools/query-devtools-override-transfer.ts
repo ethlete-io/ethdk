@@ -51,7 +51,11 @@ const OP_TYPES: ReadonlySet<string> = /* @__PURE__ */ new Set<OverrideOp['type']
 const isJsonPath = (value: unknown): value is JsonPath =>
   Array.isArray(value) && value.every((step) => typeof step === 'string' || typeof step === 'number');
 
-const isOverrideOp = (value: unknown): value is OverrideOp => {
+/**
+ * Whether a value parsed from outside - a paste, a stored set - is an op this build can replay.
+ * @internal
+ */
+export const isOverrideOp = (value: unknown): value is OverrideOp => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
 
   const op = value as { type?: unknown; path?: unknown };

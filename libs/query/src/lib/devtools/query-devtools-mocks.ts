@@ -152,9 +152,33 @@ export const initQueryDevtoolsMocks = () => {
   armedRestored.set(inherited.length > 0);
 };
 
-/** The path of a request URL, without its origin or query string - what a pattern is matched against. */
-export const queryDevtoolsRequestPath = (url: string) => {
+const clientBaseUrls = /* @__PURE__ */ new Map<string, string>();
+
+/**
+ * Records the base URL a query client resolves its routes against, so a mock pattern is matched against
+ * the route rather than the full URL path. Called by the registry for every query it registers.
+ * @internal
+ */
+export const noteQueryDevtoolsClientBaseUrl = (clientName: string, baseUrl: string) => {
+  clientBaseUrls.set(clientName, baseUrl);
+};
+
+/**
+ * The path of a request URL relative to the client's `baseUrl` (base path included), without its query
+ * string - what a pattern is matched against. A URL outside `baseUrl`, or no `baseUrl` at all, falls
+ * back to the path without its origin.
+ */
+export const queryDevtoolsRequestPath = (url: string, baseUrl?: string) => {
   const withoutQuery = url.split('?')[0] ?? '';
+  const base = baseUrl?.replace(/\/+$/, '');
+
+  if (base && withoutQuery.startsWith(base)) {
+    const rest = withoutQuery.slice(base.length);
+
+    if (!rest) return '/';
+    if (rest.startsWith('/')) return rest;
+  }
+
   const schemeEnd = withoutQuery.indexOf('://');
 
   if (schemeEnd === -1) return withoutQuery;
@@ -193,6 +217,12 @@ export const matchesQueryDevtoolsMockPattern = (pattern: string, path: string) =
   if (patternSegments.length !== pathSegments.length) return false;
 
   return patternSegments.every((segment, index) => segment.startsWith(':') || segment === pathSegments[index]);
+};
+
+const matchesTrailingSegments = (pattern: string, path: string) => {
+  const trailing = segmentsOf(path).slice(-segmentsOf(pattern).length);
+
+  return matchesQueryDevtoolsMockPattern(pattern, `/${trailing.join('/')}`);
 };
 
 /**
@@ -275,7 +305,13 @@ export const resolveQueryDevtoolsMockForAttempt = (
 
   if (!ids.size) return null;
 
-  const path = queryDevtoolsRequestPath(target.url);
+  const baseUrl = clientBaseUrls.get(target.clientName);
+  const path = queryDevtoolsRequestPath(target.url, baseUrl);
+
+  // A query executing on creation sends its first request before the registry has seen its client, so
+  // the base path is unknown for that one attempt and the pattern may sit behind any prefix.
+  const matchesPath = (pattern: string) =>
+    matchesQueryDevtoolsMockPattern(pattern, path) || (baseUrl === undefined && matchesTrailingSegments(pattern, path));
 
   const mock = mocks()
     .filter(
@@ -283,7 +319,7 @@ export const resolveQueryDevtoolsMockForAttempt = (
         ids.has(candidate.id) &&
         candidate.clientName === target.clientName &&
         candidate.method === target.method &&
-        matchesQueryDevtoolsMockPattern(candidate.pattern, path) &&
+        matchesPath(candidate.pattern) &&
         matchesQueryDevtoolsMockQuery(candidate.query, target.url),
     )
     // The most specific armed mock answers: one that names `page=2` beats one that takes any query, so

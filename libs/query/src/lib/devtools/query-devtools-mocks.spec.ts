@@ -62,6 +62,21 @@ describe('query devtools mocks', () => {
       expect(queryDevtoolsRequestPath('https://api.example.com')).toBe('/');
     });
 
+    it('should read the path relative to a base url that has a path of its own', () => {
+      expect(
+        queryDevtoolsRequestPath('https://api.example.com/v1/posts/12?draft=true', 'https://api.example.com/v1'),
+      ).toBe('/posts/12');
+      expect(queryDevtoolsRequestPath('https://api.example.com/v1/posts/12', 'https://api.example.com/v1/')).toBe(
+        '/posts/12',
+      );
+      expect(queryDevtoolsRequestPath('https://api.example.com/v1', 'https://api.example.com/v1')).toBe('/');
+      expect(queryDevtoolsRequestPath('https://api.example.com/posts/12', 'https://api.example.com')).toBe('/posts/12');
+      expect(queryDevtoolsRequestPath('https://api.example.com/v10/posts', 'https://api.example.com/v1')).toBe(
+        '/v10/posts',
+      );
+      expect(queryDevtoolsRequestPath('https://auth.example.com/token', 'https://api.example.com/v1')).toBe('/token');
+    });
+
     it('should match a param segment against any single segment', () => {
       expect(matchesQueryDevtoolsMockPattern('/posts/:id', '/posts/12')).toBe(true);
       expect(matchesQueryDevtoolsMockPattern('/posts/:id', '/posts/anything')).toBe(true);
@@ -341,6 +356,36 @@ describe('query devtools mocks', () => {
       makeQuery();
 
       httpTesting.expectOne('https://api.example.com/posts/12').flush({ title: 'real' });
+    });
+
+    it('should serve a client whose base url has a path', () => {
+      const versioned = createQueryClient({ baseUrl: 'https://api.example.com/v1', name: 'mock-versioned' });
+      arm({ clientName: 'mock-versioned' });
+
+      const makeVersionedQuery = (route: RouteString) =>
+        TestBed.runInInjectionContext(() =>
+          createQuery({
+            creatorInternals: { client: versioned, method: 'GET', route },
+            features: [],
+            queryConfig: {},
+          }),
+        );
+
+      const first = makeVersionedQuery('/posts/12');
+      vi.advanceTimersByTime(0);
+
+      httpTesting.expectNone('https://api.example.com/v1/posts/12');
+      expect(first.response()).toEqual({ title: 'designed' });
+
+      const again = makeVersionedQuery('/posts/13');
+      vi.advanceTimersByTime(0);
+
+      expect(again.response()).toEqual({ title: 'designed' });
+
+      makeVersionedQuery('/admin/posts/12');
+      vi.advanceTimersByTime(0);
+
+      httpTesting.expectOne('https://api.example.com/v1/admin/posts/12').flush({ title: 'real' });
     });
 
     it('should stop serving everything at once', () => {

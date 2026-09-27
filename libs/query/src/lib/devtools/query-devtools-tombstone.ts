@@ -13,6 +13,13 @@ export const MAX_QUERY_DEVTOOLS_TOMBSTONES = 50;
  */
 export const MAX_QUERY_BATCH_TOMBSTONES = 20;
 
+/**
+ * How many batches keep their item tombstones at all - the ones whose items settled most recently, live
+ * or destroyed. An older batch loses its whole tail, so the total stays at this times
+ * {@link MAX_QUERY_BATCH_TOMBSTONES} however many batches a page creates.
+ */
+export const MAX_QUERY_BATCH_TOMBSTONE_BUCKETS = 5;
+
 const frozen =
   <T>(value: T) =>
   () =>

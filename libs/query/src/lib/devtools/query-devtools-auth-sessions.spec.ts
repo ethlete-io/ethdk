@@ -857,6 +857,29 @@ describe('query devtools auth sessions', () => {
 
       expect(queryDevtoolsAuthSessions()).toEqual([]);
     });
+
+    it('should ignore a vault value another tab left unparseable', () => {
+      const provider = createProvider('garbled-auth');
+      const errors: unknown[] = [];
+      const onError = (event: ErrorEvent) => {
+        errors.push(event.error);
+        event.preventDefault();
+      };
+
+      provider.handle.setTokens(ADMIN, 'refresh-1');
+      flush();
+
+      window.addEventListener('error', onError);
+
+      try {
+        window.dispatchEvent(new StorageEvent('storage', { key: STORE_KEY, newValue: '{not json' }));
+      } finally {
+        window.removeEventListener('error', onError);
+      }
+
+      expect(errors).toEqual([]);
+      expect(queryDevtoolsAuthSessionsFor('garbled-auth').length).toBe(1);
+    });
   });
 
   describe('keeping sessions apart', () => {

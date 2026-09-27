@@ -9,7 +9,7 @@ import { createQueryClient } from '../http/query-client';
 import { createPatchQuery } from '../http/query-creator-templates';
 import { QueryDevtoolsEntry } from './query-devtools-hook';
 import { provideQueryDevtools, queryDevtoolsEntries } from './query-devtools-registry';
-import { MAX_QUERY_BATCH_TOMBSTONES } from './query-devtools-tombstone';
+import { MAX_QUERY_BATCH_TOMBSTONE_BUCKETS, MAX_QUERY_BATCH_TOMBSTONES } from './query-devtools-tombstone';
 
 type UpdatePostArgs = {
   pathParams: { id: number };
@@ -159,6 +159,27 @@ describe('query batch devtools instrumentation', () => {
 
     expect(itemEntries(batch)).toHaveLength(MAX_QUERY_BATCH_TOMBSTONES);
     expect(queryDevtoolsEntries().some((entry) => entry.meta.route === '/bystander')).toBe(true);
+  });
+
+  it('keeps item tombstones for the most recent batches only, so the total stays bounded', async () => {
+    const batches = Array.from({ length: MAX_QUERY_BATCH_TOMBSTONE_BUCKETS + 2 }, () => makeBatch(1));
+    let id = 0;
+
+    for (const batch of batches) {
+      start(batch.run(posts(3).map((post) => ({ id: post.id + id }))));
+
+      for (let item = 0; item < 3; item++) {
+        await tick();
+        flushPost(++id);
+      }
+
+      await tick();
+    }
+
+    const kept = batches.map((batch) => itemEntries(batch).length);
+
+    expect(kept.slice(0, 2)).toEqual([0, 0]);
+    expect(kept.slice(2)).toEqual(Array.from({ length: MAX_QUERY_BATCH_TOMBSTONE_BUCKETS }, () => 3));
   });
 
   it('unregisters the batch when its host is destroyed', () => {

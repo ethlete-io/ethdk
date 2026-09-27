@@ -141,6 +141,29 @@ describe('query devtools override persistence', () => {
     expect(restoredQueryDevtoolsOverrides()).toEqual([]);
   });
 
+  it('should drop stored ops this build cannot replay, keeping the valid ones', () => {
+    setQueryDevtoolsOverridePersistence(true);
+    sessionStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        enabled: true,
+        ops: {
+          'query|api|GET|/posts#0': [{ type: 'set', path: ['a'], value: 1 }, { type: 'explode', path: ['b'] }, null],
+          'query|api|GET|/broken#0': [{ type: 'set', path: 'not-a-path' }],
+          'query|api|GET|/odd#0': 'not a list',
+        },
+      }),
+    );
+    initQueryDevtoolsOverridePersistence();
+
+    expect(
+      register('query|api|GET|/posts#0')
+        .list()
+        .map((entry) => entry.op),
+    ).toEqual([{ type: 'set', path: ['a'], value: 1 }]);
+    expect(restoredQueryDevtoolsOverrides()).toEqual([{ id: 'query|api|GET|/posts#0', count: 1, armed: true }]);
+  });
+
   it('should keep them in localStorage when that scope is picked', () => {
     setQueryDevtoolsOverridesScope('local');
     register('query|api|GET|/posts#0').arm({ type: 'set', path: ['a'], value: 1 });

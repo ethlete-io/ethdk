@@ -82,7 +82,7 @@ export type AuthTestSetup<
   >;
   /** Helper to login a user and flush the HTTP request */
   login: (credentials: TLoginArgs['body'], response: TLoginArgs['response']) => void;
-  /** Helper to trigger a refresh and flush the HTTP request */
+  /** Helper to trigger a refresh and flush the HTTP request. Sends `buildRefreshArgs(token)` when configured, else `{ body: { token } }` */
   refresh: (token: string, response: TRefreshArgs['response']) => void;
   /** Helper to make a secure request that requires authentication */
   makeSecureRequest: (route: string) => void;
@@ -174,7 +174,7 @@ export const setupAuthTest = <
   const refreshHelper = (token: string, response: TRefreshArgs['response']) => {
     TestBed.runInInjectionContext(() => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      auth.queries.refresh.execute({ body: { token } as any } as any);
+      auth.queries.refresh.execute((buildRefreshArgs?.(token) ?? { body: { token } }) as any);
     });
     const fullUrl = `${querySetup.baseUrl}${refreshPath}`;
     expectFlushAndWait(querySetup.httpTesting, fullUrl, response);

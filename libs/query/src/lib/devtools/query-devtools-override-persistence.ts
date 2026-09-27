@@ -1,4 +1,5 @@
 import { computed, Signal, signal } from '@angular/core';
+import { isOverrideOp } from './query-devtools-override-transfer';
 import { OverrideOp, QueryDevtoolsOverridesRecorder } from './query-devtools-overrides';
 import {
   clearQueryDevtoolsStore,
@@ -63,8 +64,15 @@ const readStore = (): PersistedOverrides => {
   const parsed = readQueryDevtoolsStore<Partial<PersistedOverrides>>(scope(), STORAGE_KEY);
   const stored = parsed?.ops;
   const usable = !!stored && typeof stored === 'object' && !Array.isArray(stored);
+  const valid: Record<string, OverrideOp[]> = {};
 
-  return { enabled: parsed?.enabled === true, ops: usable ? (stored as Record<string, OverrideOp[]>) : {} };
+  for (const [id, list] of usable ? Object.entries(stored) : []) {
+    const replayable = Array.isArray(list) ? list.filter(isOverrideOp) : [];
+
+    if (replayable.length) valid[id] = replayable;
+  }
+
+  return { enabled: parsed?.enabled === true, ops: valid };
 };
 
 const writeStore = () => {
