@@ -16,6 +16,10 @@ export default defineConfig(() => ({
     include: ['{src,tests,generators}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     setupFiles: ['src/test-setup.mjs'],
     reporters: ['default'],
+    // The analog plugin defaults to `vmThreads`, whose heap grows across files. Vitest's default
+    // recycle point (1/maxWorkers of system memory) sits above a worker thread's V8 heap cap, so
+    // without this a worker dies with "Worker exited unexpectedly" before it is recycled.
+    vmMemoryLimit: '1536MB',
     onConsoleLog: (log: string, type: 'stdout' | 'stderr') => {
       // every spec that bootstraps an ApplicationRef prints it, and a spec run is always dev mode
       if (log.includes('Angular is running in development mode')) {
