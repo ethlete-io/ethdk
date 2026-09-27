@@ -330,6 +330,32 @@ describe('ngrx-toolkit interop', () => {
     for (const r of sequential) r.subscription.unsubscribe();
   });
 
+  it('ignores refresh() and startPolling() on a released upload handle, with one warning that names the release', () => {
+    const s = scenario();
+    s.api.on('POST', '/teams/:teamId/uploads', () => ({ body: { ok: true }, delay: 100 }));
+
+    const upload = () => facade().upload({ queryParams: { teamId: '1' }, body: new FormData() });
+
+    const released = upload();
+    s.tick(100);
+    upload();
+    s.tick(100);
+    expect(s.api.requestCount('POST', '/teams/1/uploads')).toBe(2);
+
+    released.refresh();
+    released.refresh();
+    const killSwitch = new Subject<boolean>();
+    released.startPolling({ intervalDuration: 100, killSwitch });
+    s.tick(1000);
+    killSwitch.next(true);
+
+    expect(s.api.requestCount('POST', '/teams/1/uploads')).toBe(2);
+    expect(s.warnings.map((entry) => String(entry.warning))).toEqual([
+      expect.stringMatching(/^refresh\(\) was called on a toolkit handle that a newer toolkitCall\(\) released/),
+    ]);
+    s.expectWarning(/call toolkitCall\(\) again/);
+  });
+
   it('keys a Date by its time value', () => {
     const s = scenario();
     s.api.on('POST', '/teams/:teamId/uploads', () => ({ body: { ok: true } }));

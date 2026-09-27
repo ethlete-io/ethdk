@@ -27,13 +27,11 @@ future scan must not report the settled items again.
 - A legacy `[etInfinityQuery]` keeps `canLoadMore: true` while the current page failed or retries.
 - `withPolling({ executeInitially })` passes `triggeredBy: 'polling'`, also after an args change.
 - No consumer `HttpContext` tokens on queries until a consumer needs one (ea-frontend has none).
+- `refresh()` / `startPolling()` on a released ngrx-toolkit handle are no-ops with one dev warning per handle that
+  names the release; no throw, no re-create.
 
 ## Open
 
 - The type error for a missing `withArgs` has limits: a generic helper that calls `c()` errors,
   `const f: QueryFeature<X> = withArgs(...)` no longer counts as `withArgs`, and a spread hides a missing `withArgs`
   until ET100 at runtime. Accept, or tighten?
-- `refresh()` on a released ngrx-toolkit handle (an unhashable-args handle a newer call replaced) is a no-op
-  with the generic "executed after the scope was destroyed" dev warning, which blames the consumer for a release
-  it cannot see; `startPolling()` on it warns on every tick until the kill switch. Silent no-op, an accurate
-  warning, or re-create the query on `refresh()`? A throw would break code that holds an old upload handle.

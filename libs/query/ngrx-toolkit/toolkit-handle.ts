@@ -1,4 +1,4 @@
-import { computed, DestroyRef, effect, EnvironmentInjector, signal, untracked } from '@angular/core';
+import { computed, DestroyRef, effect, EnvironmentInjector, isDevMode, signal, untracked } from '@angular/core';
 import {
   AnyQueryCreator,
   QueryArgsOf,
@@ -70,6 +70,12 @@ const toToolkitError = (error: QueryErrorResponse): ToolkitError => ({
   data: error.raw.error ?? null,
 });
 
+const handleReleasedMessage = (method: 'refresh' | 'startPolling') =>
+  `${method}() was called on a toolkit handle that a newer toolkitCall() released. Args that cannot be hashed ` +
+  `(FormData, Blob, Map, ...) never share a handle, so the next call for the same creator releases the previous ` +
+  `handle once its request settles. The call was ignored - call toolkitCall() again with the args instead of ` +
+  `reusing the old handle. This warning is shown once per handle.`;
+
 export const toQueryArgs = (args: Record<string, unknown>) => {
   const actionOptions = args['actionOptions'] as { headers?: unknown } | undefined;
   const queryArgs: Record<string, unknown> = {};
@@ -122,6 +128,18 @@ export const createToolkitHandle = <TCreator extends AnyQueryCreator>(
   );
 
   let releasedSnapshot: ToolkitHandleSnapshot | null = null;
+  let warnedAboutRelease = false;
+
+  const ignoredAfterRelease = (method: 'refresh' | 'startPolling') => {
+    if (!releasedSnapshot) return false;
+
+    if (isDevMode() && !warnedAboutRelease) {
+      warnedAboutRelease = true;
+      console.warn(handleReleasedMessage(method));
+    }
+
+    return true;
+  };
 
   const select = <T>(pick: (current: ToolkitHandleSnapshot) => T): Observable<T> =>
     defer(() => (releasedSnapshot ? of(releasedSnapshot) : changes.pipe(startWith(untracked(snapshot))))).pipe(
@@ -135,6 +153,8 @@ export const createToolkitHandle = <TCreator extends AnyQueryCreator>(
   };
 
   const refresh = () => {
+    if (ignoredAfterRelease('refresh')) return;
+
     const lastArgs = untracked(calledArgs);
 
     if (lastArgs) call(lastArgs);
@@ -145,7 +165,7 @@ export const createToolkitHandle = <TCreator extends AnyQueryCreator>(
   const stopPolling = () => pollingSubscription.unsubscribe();
 
   const startPolling = ({ intervalDuration, killSwitch }: ToolkitPollingOptions) => {
-    if (!pollingSubscription.closed) return;
+    if (ignoredAfterRelease('startPolling') || !pollingSubscription.closed) return;
 
     pollingSubscription = interval(intervalDuration)
       .pipe(
