@@ -1,5 +1,5 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { boxOf, openStory, pressKey, tap, touchSwipe, viewportOf } from '../support';
+import { Box, boxOf, openStory, pressKey, tap, touchSwipe, viewportOf } from '../support';
 
 const STORY_ID = 'components-overlays-overlay--default';
 
@@ -300,6 +300,161 @@ test.describe('dialog / full-screen touch', () => {
     await expect(trigger).toHaveCSS('opacity', '0');
 
     await tap(page.locator(PANE).getByRole('button', { name: 'Cancel' }));
+
+    await expect(page.locator(PANE)).toHaveCount(0);
+    await expectOriginRestored(page, trigger);
+  });
+});
+
+async function holdCloneMorph(page: Page): Promise<void> {
+  await page.waitForFunction((selector) => {
+    const running = document.querySelector(selector)?.getAnimations() ?? [];
+
+    running.forEach((animation) => animation.pause());
+
+    return running.length > 0;
+  }, ORIGIN_CLONE);
+}
+
+/**
+ * Also holds the pane: its own `leave` ending runs the cleanup, which removes a clone still
+ * leaving after a timeout.
+ */
+async function holdEveryMorph(page: Page): Promise<void> {
+  await page.waitForFunction((selector) => {
+    const cloneRunning = document.querySelector(selector)?.getAnimations().length ?? 0;
+
+    document.getAnimations().forEach((animation) => animation.pause());
+
+    return cloneRunning > 0;
+  }, ORIGIN_CLONE);
+}
+
+async function seekCloneMorph(page: Page, time: number): Promise<void> {
+  await page.locator(ORIGIN_CLONE).evaluate((clone, t) => {
+    clone.getAnimations().forEach((animation) => (animation.currentTime = t));
+  }, time);
+}
+
+async function releaseEveryMorph(page: Page): Promise<void> {
+  await page.evaluate(() => document.getAnimations().forEach((animation) => animation.play()));
+}
+
+async function roundedBoxOf(locator: Locator): Promise<number[]> {
+  const box = await boxOf(locator);
+
+  return [box.x, box.y, box.width, box.height].map(Math.round);
+}
+
+async function expectCloneOnBox(page: Page, expected: Box): Promise<void> {
+  await expect
+    .poll(() => roundedBoxOf(page.locator(ORIGIN_CLONE)))
+    .toEqual([expected.x, expected.y, expected.width, expected.height].map(Math.round));
+}
+
+function morphStylesLeftOn(page: Page): Promise<number> {
+  return page.evaluate(
+    () =>
+      document.querySelectorAll('[style*="--origin-"], [data-et-origin-opacity], [data-et-origin-hidden-count]').length,
+  );
+}
+
+async function expectNoMorphLeftovers(page: Page, origin: Locator): Promise<void> {
+  await expect(page.locator(ORIGIN_CLONE)).toHaveCount(0);
+  await expect.poll(() => morphStylesLeftOn(page)).toBe(0);
+  await expect.poll(() => origin.evaluate((el) => [el.style.opacity, el.style.transition])).toEqual(['', '']);
+  await expect(origin).toHaveCSS('opacity', '1');
+}
+
+test.describe('dialog / full-screen morph', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: viewport sizes are set per test');
+
+  test('the origin clone starts on the trigger box and grows to cover the viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 400, height: 720 });
+    const root = await openStory(page, STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Full-screen dialog' });
+    const triggerBox = await boxOf(trigger);
+
+    await trigger.click();
+    await holdEveryMorph(page);
+
+    await seekCloneMorph(page, 0);
+    await expectCloneOnBox(page, triggerBox);
+    await expect(page.locator(ORIGIN_CLONE)).toHaveClass(/et-animation-enter-active/);
+    await expect(trigger).toHaveCSS('opacity', '0');
+
+    await releaseEveryMorph(page);
+
+    await expect(page.locator(ORIGIN_CLONE)).toHaveClass(/et-animation-enter-done/);
+    await expectCloneOnBox(page, { x: 0, y: 0, width: 400, height: 720 });
+    await expect(page.locator(ORIGIN_CLONE)).toHaveCSS('opacity', '0');
+    await waitForEntered(page);
+    await expectPaneCoversViewport(page);
+  });
+
+  test('on close the clone shrinks from the viewport back onto the trigger and is removed with its styles', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 400, height: 720 });
+    const root = await openStory(page, STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Full-screen dialog' });
+    const triggerBox = await boxOf(trigger);
+
+    await trigger.click();
+    await waitForEntered(page);
+    await expect(page.locator(ORIGIN_CLONE)).toHaveClass(/et-animation-enter-done/);
+
+    await pressKey(page, 'Escape', 0);
+    await holdEveryMorph(page);
+
+    await expect(page.locator(ORIGIN_CLONE)).toHaveClass(/et-animation-leave-active/);
+    await seekCloneMorph(page, 0);
+    await expectCloneOnBox(page, { x: 0, y: 0, width: 400, height: 720 });
+
+    await releaseEveryMorph(page);
+
+    await expect(page.locator(PANE)).toHaveCount(0);
+    await expectNoMorphLeftovers(page, trigger);
+    await expect(trigger).toHaveCSS('opacity', '1');
+    expect(await roundedBoxOf(trigger)).toEqual(
+      [triggerBox.x, triggerBox.y, triggerBox.width, triggerBox.height].map(Math.round),
+    );
+  });
+
+  test('closing during the morph reverses it and leaves no clone or origin styles behind', async ({ page }) => {
+    await page.setViewportSize({ width: 400, height: 720 });
+    const root = await openStory(page, STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Full-screen dialog' });
+
+    await trigger.click();
+    await holdCloneMorph(page);
+    await expect(page.locator(ORIGIN_CLONE)).toHaveClass(/et-animation-enter-active/);
+
+    await pressKey(page, 'Escape', 0);
+
+    await expect(page.locator(PANE)).toHaveCount(0);
+    await expectNoMorphLeftovers(page, trigger);
+    await expect(page.locator('html')).not.toHaveClass(FULL_SCREEN_DOCUMENT);
+  });
+
+  test('a strategy switch during the morph aborts it and clears the clone and the pane origin styles', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 500, height: 720 });
+    const root = await openStory(page, STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Full-screen → dialog' });
+
+    await trigger.click();
+    await holdCloneMorph(page);
+    await expect(page.locator(PANE)).toHaveClass(/et-overlay--full-screen-dialog/);
+    await expect.poll(() => morphStylesLeftOn(page)).toBeGreaterThan(0);
+
+    await page.setViewportSize({ width: 1280, height: 720 });
+
+    await expect(page.locator(PANE)).toHaveClass(/et-overlay--dialog/);
+    await expectNoMorphLeftovers(page, trigger);
+
+    await pressKey(page, 'Escape');
 
     await expect(page.locator(PANE)).toHaveCount(0);
     await expectOriginRestored(page, trigger);
