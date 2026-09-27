@@ -206,7 +206,7 @@ compared on the same scale, so `order="0"` pins a segment to the front).
 
 The outlet forwards `collapse` and `labels` to the breadcrumb it renders, and reads an
 `etBreadcrumbSeparator` projected into it - which is how a shell-wide separator is set. Nothing else
-projected into the outlet is rendered:
+projected into the outlet is rendered, and in dev mode it warns about anything else it finds:
 
 ```html
 <et-breadcrumb-outlet [collapse]="true">

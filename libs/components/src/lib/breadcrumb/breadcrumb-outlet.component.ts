@@ -1,5 +1,16 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, ViewEncapsulation, booleanAttribute, contentChild, input } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  ViewEncapsulation,
+  afterNextRender,
+  booleanAttribute,
+  contentChild,
+  input,
+  viewChild,
+} from '@angular/core';
+import { RuntimeError } from '@ethlete/core';
+import { BREADCRUMB_ERROR_CODES } from './breadcrumb-errors';
 import { injectBreadcrumbManager } from './breadcrumb-manager';
 import { BreadcrumbLabels } from './breadcrumb-labels';
 import { BreadcrumbComponent } from './breadcrumb.component';
@@ -31,8 +42,12 @@ import { BREADCRUMB_OUTLET_TOKEN } from './headless/breadcrumb-outlet.token';
 
     @if (manager.crumbs().length) {
       <et-breadcrumb [crumbs]="manager.crumbs()" [collapse]="collapse()" [labels]="labels()">
-        <ng-content />
+        <ng-content select="[etBreadcrumbSeparator]" />
       </et-breadcrumb>
+    }
+
+    @if (IS_DEV_MODE) {
+      <div #unsupportedContent class="et-breadcrumb-outlet-unsupported" hidden><ng-content /></div>
     }
   `,
   encapsulation: ViewEncapsulation.None,
@@ -60,4 +75,30 @@ export class BreadcrumbOutletComponent {
 
   /** @internal */
   public separatorTemplate = contentChild(BreadcrumbSeparatorDirective, { descendants: true });
+
+  private unsupportedContent = viewChild<ElementRef<HTMLElement>>('unsupportedContent');
+
+  protected readonly IS_DEV_MODE = ngDevMode;
+
+  constructor() {
+    if (ngDevMode) {
+      afterNextRender(() => {
+        const nodes = Array.from(this.unsupportedContent()?.nativeElement.childNodes ?? []);
+        const hasContent = nodes.some(
+          (node) =>
+            node.nodeType === Node.ELEMENT_NODE || (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()),
+        );
+
+        if (!hasContent) return;
+
+        console.warn(
+          new RuntimeError(
+            BREADCRUMB_ERROR_CODES.OUTLET_UNSUPPORTED_CONTENT,
+            '[et-breadcrumb-outlet] only an <ng-template etBreadcrumbSeparator> is rendered from its content; ' +
+              'everything else is dropped. Contribute crumbs from an <ng-template etBreadcrumbSegment> instead.',
+          ).message,
+        );
+      });
+    }
+  }
 }

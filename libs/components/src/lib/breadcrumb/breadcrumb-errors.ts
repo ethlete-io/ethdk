@@ -6,4 +6,6 @@ export const BREADCRUMB_ERROR_CODES = {
   MISSING_ITEMS: 3701,
   /** `etBreadcrumbSeo` can reach neither an `etBreadcrumb` on its element nor a breadcrumb manager. */
   SEO_OUTSIDE_BREADCRUMB: 3702,
+  /** Something other than an `etBreadcrumbSeparator` was projected into `et-breadcrumb-outlet`, which renders nothing else. */
+  OUTLET_UNSUPPORTED_CONTENT: 3703,
 } as const;
