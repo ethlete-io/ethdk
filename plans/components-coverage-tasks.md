@@ -41,8 +41,11 @@ agent that works alone, batch by batch.
   (60b10493c), filter-overlay (fb77033cc), scrollable (d720e38d9), selection-list (902562c2f). Open, user call: when the
   breadcrumb trail collapses while a middle crumb has focus, focus falls to `<body>` (proposal: move it to the overflow
   trigger). Command-palette colour context skipped (story has no colour provider).
-- In progress 2026-09-27: task 8 for phone-input + chart groups; tree + task 7 groups. Left: masonry group, banner
-  group (non-RTE part). Also running: decisions (a), (b), and the device check (c) on the local simulators.
+- Done 2026-09-27: task 8 for slider (ea2af2c1f), accordion (9bd1e075e), pagination (b3f19a411), input (cd33462df),
+  phone-input (c29c6b5cb), standings (b621cee3e), calendar (8736fef10), chart (26baaae51); picture skipped (needs a
+  story with type/DPR sources). Decision (b) done in 77e89d86a. Open, user call: the leaving calendar grid (~140 ms)
+  is not `inert` (proposal: `inert` on `.et-calendar-weeks--leave`).
+- In progress 2026-09-27: task 8 for tree + task 7 groups, masonry + banner groups; decision (a); device check (c).
 - User decisions 2026-09-27: (a) scheduler "+N more" pick opens a centered dialog (explicit no-anchor in
   `takeSurfaceAnchor`); (b) cascader nodes get the shared focus ring; (c) check the touch column reorder long press on
   real iOS/Android with `verify-on-apple-devices` after task 8, before "b7 done". (a) and (b) in progress.
