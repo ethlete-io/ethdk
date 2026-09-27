@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, computed, input, output, signal } from '@angular/core';
+import { Component, ViewEncapsulation, computed, input, output } from '@angular/core';
 import {
   BANNER_IMPORTS,
   BUTTON_IMPORTS,
@@ -20,6 +20,7 @@ import {
   formatDurationMs,
 } from '@ethlete/timetrack';
 import { ProjectSelectComponent } from '../jira';
+import { CreateTicketPressComponent } from './create-ticket-press.component';
 import { AgentMatch, ParentForm, TicketForm } from './ticket-draft';
 import { UnmaskedWordsComponent } from './unmasked-words.component';
 
@@ -45,14 +46,14 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
         }
 
         @if (canWrite() && form()) {
-          <button [disabled]="isWriting()" (click)="write.emit()" et-button variant="transparent" size="sm">
+          <button [disabled]="isWriting()" (click)="write.emit()" et-text-button>
             @if (isWriting()) {
               <et-spinner size="sm" />
             }
             Ask AI
           </button>
           @if (canMatch()) {
-            <button [disabled]="isMatching()" (click)="match.emit()" et-button variant="transparent" size="sm">
+            <button [disabled]="isMatching()" (click)="match.emit()" et-text-button>
               @if (isMatching()) {
                 <et-spinner size="sm" />
               }
@@ -62,7 +63,7 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
         }
 
         @if (!embedded()) {
-          <button (click)="dismiss.emit()" et-button variant="transparent" size="sm">Close</button>
+          <button (click)="dismiss.emit()" et-text-button>Close</button>
         }
       </div>
 
@@ -275,22 +276,14 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
                   File the {{ parent.issueTypeName || 'parent' }}
                 </button>
 
-                <button (click)="closeParentForm.emit()" et-button variant="transparent" size="sm">Cancel</button>
+                <button (click)="closeParentForm.emit()" et-text-button>Cancel</button>
 
                 <span class="text-small text-et-surface-muted">It is filed with no parent of its own.</span>
               </div>
             </div>
           } @else if (parentTypeNames().length) {
             <div>
-              <button
-                [disabled]="!draft.projectKey"
-                (click)="openParentForm.emit()"
-                et-button
-                variant="transparent"
-                size="sm"
-              >
-                New parent
-              </button>
+              <button [disabled]="!draft.projectKey" (click)="openParentForm.emit()" et-text-button>New parent</button>
             </div>
           }
         </div>
@@ -320,22 +313,15 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
           <et-banner [description]="reason" type="warning" heading="Jira does not permit this create" />
         }
 
-        <div class="flex flex-wrap items-center gap-3">
-          <button [disabled]="!canCreate() || isCreating()" (click)="pressCreate()" et-button variant="filled">
-            @if (isCreating()) {
-              <et-spinner size="sm" />
-            }
-            {{ isArmed() ? 'File it now' : 'Create in Jira' }}
-          </button>
-
-          @if (isArmed()) {
-            <button (click)="disarm()" et-button variant="transparent" size="sm">Cancel</button>
-          }
-
-          @if (isArmed()) {
-            <span class="text-small text-et-surface-muted">{{ ARMED_NOTE }}</span>
-          }
-        </div>
+        @if (!embedded()) {
+          <div class="flex flex-wrap items-center justify-end gap-3">
+            <ethlete-create-ticket-press
+              [canCreate]="canCreate()"
+              [isCreating]="isCreating()"
+              (create)="create.emit()"
+            />
+          </div>
+        }
       }
     </div>
   `,
@@ -343,6 +329,7 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
   imports: [
     BANNER_IMPORTS,
     BUTTON_IMPORTS,
+    CreateTicketPressComponent,
     FORM_FIELD_IMPORTS,
     INPUT_IMPORTS,
     ProjectSelectComponent,
@@ -466,25 +453,6 @@ export class CreateTicketComponent {
 
     return [...found, ...matched];
   });
-
-  protected readonly ARMED_NOTE = 'Jira holds no delete, so a filed ticket stays whatever happens next.';
-
-  protected isArmed = signal(false);
-
-  protected pressCreate() {
-    if (!this.isArmed()) {
-      this.isArmed.set(true);
-
-      return;
-    }
-
-    this.isArmed.set(false);
-    this.create.emit();
-  }
-
-  protected disarm() {
-    this.isArmed.set(false);
-  }
 
   protected pickParent(value: unknown) {
     this.parentKeyChange.emit(typeof value === 'string' ? value : null);

@@ -44,14 +44,7 @@ const COLLAPSED_EVIDENCE_COUNT = 3;
         </ul>
 
         @if (hiddenCount()) {
-          <button
-            (click)="expanded.set(true)"
-            class="self-start"
-            et-button
-            size="sm"
-            type="button"
-            variant="transparent"
-          >
+          <button (click)="expanded.set(true)" class="self-start" et-text-button type="button">
             Show all {{ evidence().length }}
           </button>
         }

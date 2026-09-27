@@ -1,12 +1,14 @@
 import {
   Component,
   Directive,
+  EnvironmentInjector,
   Injector,
   ViewEncapsulation,
   WritableSignal,
   computed,
   inject,
   input,
+  runInInjectionContext,
 } from '@angular/core';
 import {
   Appointment,
@@ -51,7 +53,8 @@ export class EditStandInWaitingComponent {
   private surfaceRef = inject<OverlayRef>(OVERLAY_REF, { optional: true });
 
   public draft = input.required<WritableSignal<Appointment>>();
-  private panel = createOverlayOpener(STAND_INS_OVERLAY);
+  /** Made on the app's injector: the press closes this surface, and the dialog outlives it. */
+  private panel = runInInjectionContext(inject(EnvironmentInjector), () => createOverlayOpener(STAND_INS_OVERLAY));
 
   protected standIn = computed(() => {
     const id = rowEntryOf(this.draft()())?.row.standInId;

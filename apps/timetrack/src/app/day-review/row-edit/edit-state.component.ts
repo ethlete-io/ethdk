@@ -41,7 +41,7 @@ const CONFIDENCE_TONE: Record<Confidence, string> = {
         <et-badge size="sm">edited</et-badge>
       }
 
-      <span [class]="tone()" class="ml-auto text-small">{{ confidence() }} match</span>
+      <span [class]="tone()" class="text-small">{{ confidence() }} match</span>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,

@@ -3,6 +3,7 @@ import { BUTTON_IMPORTS, EMPTY_STATE_IMPORTS, FORM_FIELD_IMPORTS } from '@ethlet
 import { ProvideColorDirective } from '@ethlete/core';
 import { StandIn, formatDurationMs, standInWhere } from '@ethlete/timetrack';
 import { CreateTicketComponent } from '../day-review/create-ticket.component';
+import { formatDayRangeLabel, formatWeekdayLabel } from '../day-review/format';
 import { injectTicketDraft } from '../day-review/ticket-draft';
 import { IssueSelectComponent } from '../jira';
 import { injectStandIns } from './stand-ins';
@@ -76,15 +77,7 @@ import { injectStandIns } from './stand-ins';
                 }
 
                 @if (!only()) {
-                  <button
-                    (click)="store.remove(entry.id)"
-                    et-button
-                    variant="transparent"
-                    size="sm"
-                    etProvideColor="danger"
-                  >
-                    Delete
-                  </button>
+                  <button (click)="store.remove(entry.id)" et-text-button etProvideColor="danger">Delete</button>
                 }
               </div>
             } @else {
@@ -227,5 +220,9 @@ const daysLabel = (standIn: StandIn) => {
 
   if (!count) return 'no day yet';
 
-  return count === 1 ? `on ${standIn.days[0]}` : `${count} days, ${standIn.days[0]} – ${standIn.days[count - 1]}`;
+  const first = standIn.days[0] as string;
+
+  return count === 1
+    ? `on ${formatWeekdayLabel(first)}`
+    : `${count} days, ${formatDayRangeLabel(first, standIn.days[count - 1] as string)}`;
 };

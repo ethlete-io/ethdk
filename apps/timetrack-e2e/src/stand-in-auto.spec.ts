@@ -149,6 +149,32 @@ test.describe('the ticket a stand-in was waiting for', () => {
 
     await expect(card.locator('ethlete-create-ticket')).toHaveCount(0);
   });
+
+  test('files from the footer of the dialog the band opened', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: { ...defaultSettings(), projectLinks: [LINKS_THE_CHECKOUT] },
+    });
+    await page.goto('/day');
+    await expect(band(page)).toHaveCount(1);
+
+    await openBand(page, (await band(page).getAttribute('title')) as string);
+    await editSurface(page).getByRole('button', { name: 'File its ticket' }).click();
+
+    const dialog = page.locator('ethlete-stand-ins');
+    const footer = dialog.locator('[etOverlayFooter]');
+
+    await footer.getByRole('button', { name: 'Create in Jira' }).click();
+
+    await expect(footer).toContainText('Jira holds no delete');
+    await expect(footer.getByRole('button', { name: 'Close' })).toHaveCount(0);
+
+    await footer.getByRole('button', { name: 'File it now' }).click();
+
+    await expect(dialog).toContainText(/Filed ABC-/);
+    await expect(footer.getByRole('button', { name: 'File it now' })).toHaveCount(0);
+    await expect(band(page)).toHaveCount(0);
+  });
 });
 
 const goTo = (page: Page, view: 'Day' | 'Settings') =>

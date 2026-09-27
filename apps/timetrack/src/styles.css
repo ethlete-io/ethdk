@@ -56,6 +56,24 @@ body {
 }
 
 /*
+ * Field labels and hints start on the field's border, the edge every heading, summary and text
+ * button in the app starts on.
+ */
+et-form-field {
+  .et-form-field-label-area:not(.et-form-field-label-area--floating) {
+    margin-inline-start: calc(
+      -1 * (var(--et-form-field-control-padding-inline) + var(--et-form-field-control-border-width))
+    );
+  }
+
+  .et-form-field-hint,
+  .et-form-field-errors,
+  .et-form-field-warnings {
+    padding-inline-start: 0;
+  }
+}
+
+/*
  * The fire beside the concurrency readout. `--_et-heat` runs 0 to 1 across the tiers, so the glow and
  * the flicker keep growing between them. The static filter is what a reduced-motion reader sees, and
  * the animation's first keyframe repeats it so the two agree.

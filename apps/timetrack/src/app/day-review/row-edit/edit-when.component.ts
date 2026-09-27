@@ -86,7 +86,9 @@ export class EditWhenComponent {
   protected observed = computed(() => {
     const observedMs = this.entry()?.row.observedMs;
 
-    return observedMs === undefined ? null : formatDurationMs(observedMs);
+    if (observedMs === undefined || observedMs === this.durationMs()) return null;
+
+    return formatDurationMs(observedMs);
   });
 
   protected setRange(value: TimeRangeValue) {
