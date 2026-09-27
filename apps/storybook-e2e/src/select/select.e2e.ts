@@ -1,5 +1,5 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { expectFieldFocusVisible, expectTouchMode, openStory, pressKey, settle, tap } from '../support';
+import { boxOf, expectFieldFocusVisible, expectTouchMode, openStory, pressKey, settle, tap } from '../support';
 
 const DEFAULT_STORY_ID = 'components-forms-select--default';
 const PRESELECTED_STORY_ID = 'components-forms-select--preselected';
@@ -8,6 +8,7 @@ const SEARCHABLE_LONG_LABEL_STORY_ID = 'components-forms-select--searchable-long
 const ASYNC_OPTIONS_STORY_ID = 'components-forms-select--async-options';
 const OBJECT_VALUES_STORY_ID = 'components-forms-select--object-values';
 const SELECT_ALL_STORY_ID = 'components-forms-select--select-all';
+const MANY_OPTIONS_STORY_ID = 'components-forms-select--many-options';
 
 /** The option's `id`, which `aria-activedescendant` must carry. No id is a failure, not a pass. */
 const idOf = async (option: Locator) => {
@@ -43,6 +44,16 @@ const startResizeWidthSampling = (page: Page) =>
 
 const readResizeWidthSamples = (page: Page) =>
   page.evaluate(() => (window as unknown as { resizeWidthSamples: ResizeWidthSample[] }).resizeWidthSamples);
+
+const TRANSPARENT = 'rgba(0, 0, 0, 0)';
+
+const backgroundOf = (locator: Locator) => locator.evaluate((element) => getComputedStyle(element).backgroundColor);
+
+async function pressArrowDown(page: Page, times: number): Promise<void> {
+  for (let press = 0; press < times; press++) await page.keyboard.press('ArrowDown');
+
+  await settle(page, 200);
+}
 
 test.describe('select / focus', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus order');
@@ -248,6 +259,140 @@ test.describe('select / layout', () => {
 
     expect(samples.length).toBeGreaterThan(0);
     expect(Math.max(...samples.map(({ panel, pane }) => panel - pane))).toBeLessThanOrEqual(1);
+  });
+});
+
+test.describe('select / position', () => {
+  test('the panel opens below the field and mirrors the control frame width', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const frame = root.locator('.et-form-field-control-frame');
+
+    await root.getByRole('combobox').click();
+    await expect(page.locator('.et-select-overlay-pane.et-animation-enter-done')).toBeVisible();
+
+    const field = await boxOf(frame);
+    const panel = await boxOf(page.locator('.et-select-panel'));
+
+    expect(panel.y).toBeGreaterThanOrEqual(field.y + field.height - 1);
+    expect(Math.abs(panel.x - field.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(panel.width - field.width)).toBeLessThanOrEqual(1);
+  });
+});
+
+test.describe('select / pointer', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: hover');
+
+  test('a click anywhere on the control frame opens the panel', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const frame = await boxOf(root.locator('.et-form-field-control-frame'));
+
+    await page.mouse.click(frame.x + frame.width - 4, frame.y + frame.height / 2);
+
+    await expect(root.getByRole('combobox')).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByRole('listbox')).toBeVisible();
+  });
+
+  test('hovering an option moves the active option, leaving the list clears its highlight, a keyboard highlight stays', async ({
+    page,
+  }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const trigger = root.getByRole('combobox');
+    const cherry = page.getByRole('option', { name: 'Cherry' });
+
+    await trigger.click();
+    await expect(page.locator('.et-select-overlay-pane.et-animation-enter-done')).toBeVisible();
+
+    await cherry.hover();
+    await expect(cherry).toHaveAttribute('data-active', 'true');
+    await expect(trigger).toHaveAttribute('aria-activedescendant', await idOf(cherry));
+
+    await expect.poll(() => backgroundOf(cherry)).not.toBe(TRANSPARENT);
+
+    const listbox = await boxOf(page.locator('.et-select-panel'));
+
+    await page.mouse.move(listbox.x + listbox.width + 40, listbox.y + listbox.height / 2);
+    await expect.poll(() => backgroundOf(cherry)).toBe(TRANSPARENT);
+
+    await pressKey(page, 'ArrowDown');
+    const dragonfruit = page.getByRole('option', { name: 'Dragonfruit' });
+
+    await expect(dragonfruit).toHaveAttribute('data-active', 'true');
+    await expect.poll(() => backgroundOf(dragonfruit)).not.toBe(TRANSPARENT);
+
+    await page.mouse.click(listbox.x + listbox.width + 40, listbox.y + listbox.height / 2);
+    await expect(page.getByRole('listbox')).toHaveCount(0);
+  });
+
+  test('the clear button shows on a filled focused field and clears the value without moving focus', async ({
+    page,
+  }) => {
+    const root = await openStory(page, PRESELECTED_STORY_ID);
+    const trigger = root.getByRole('combobox');
+    const clear = root.locator('.et-input-clear');
+
+    await expect(clear).toHaveCount(0);
+
+    await pressKey(page, 'Tab');
+    await expect(trigger).toBeFocused();
+    await expect(clear).toBeVisible();
+
+    await clear.click();
+
+    await expect(trigger).toContainText('Pick a fruit');
+    await expect(trigger).toBeFocused();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(clear).toHaveCount(0);
+  });
+});
+
+test.describe('select / virtualization', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: wheel and keyboard');
+
+  test('a 2000-option list renders only a window of rows and scrolling moves the window', async ({ page }) => {
+    const root = await openStory(page, MANY_OPTIONS_STORY_ID);
+    const options = page.getByRole('option');
+
+    await root.getByRole('combobox').click();
+    await expect(page.getByRole('option', { name: 'Item 1 -', exact: false }).first()).toBeVisible();
+
+    expect(await options.count()).toBeLessThan(60);
+
+    await options.first().hover();
+    await page.mouse.wheel(0, 20000);
+
+    await expect(page.getByRole('option', { name: 'Item 1 - ' })).toHaveCount(0);
+    await expect(options.first()).toBeVisible();
+    expect(await options.count()).toBeLessThan(60);
+  });
+
+  test('ArrowDown past the rendered window keeps the active option rendered and in view', async ({ page }) => {
+    const root = await openStory(page, MANY_OPTIONS_STORY_ID);
+    const trigger = root.getByPlaceholder('Search 2000 items');
+    const target = page.getByRole('option', { name: /^Item 80 - / });
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'ArrowDown');
+    await expect(page.getByRole('option', { name: /^Item 1 - / })).toHaveAttribute('data-active', 'true');
+    await expect(target).toHaveCount(0);
+
+    await pressArrowDown(page, 79);
+
+    await expect(target).toHaveAttribute('data-active', 'true');
+    await expect(target).toBeInViewport();
+    await expect(trigger).toHaveAttribute('aria-activedescendant', await idOf(target));
+  });
+
+  test('the search filters across the full data set, not just the rendered window', async ({ page }) => {
+    const root = await openStory(page, MANY_OPTIONS_STORY_ID);
+    const search = page.getByPlaceholder('Search 2000 items');
+
+    await root.getByRole('combobox').click();
+    await expect(search).toBeFocused();
+
+    await search.pressSequentially('Item 1999 ');
+
+    await expect(page.getByRole('option')).toHaveCount(1);
+    await expect(page.getByRole('option')).toContainText('Item 1999 -');
   });
 });
 
