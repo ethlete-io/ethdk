@@ -1,4 +1,4 @@
-import { BaseArguments } from '../query/query.types';
+import { BaseArguments, WithHeaders } from '../query/query.types';
 import { Method } from '../request';
 
 /**
@@ -15,12 +15,22 @@ export const v2ShouldCacheQuery = (method: Method) => {
  *
  * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
  */
-export const v2BuildQueryCacheKey = (route: string, args: BaseArguments | undefined, method?: Method) => {
+export const v2BuildQueryCacheKey = (
+  route: string,
+  args: (BaseArguments & WithHeaders) | undefined,
+  method?: Method,
+) => {
   const serialized = JSON.stringify(args?.variables || {});
   const variables = serialized.startsWith('{') && serialized.endsWith('}') ? serialized.slice(1, -1) : serialized;
 
+  const headers = Object.entries(args?.headers ?? {})
+    .map(([name, value]) => [name.toLowerCase(), value] as const)
+    .filter(([name]) => name !== 'authorization')
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+
+  const headerInput = headers.length ? `...${JSON.stringify(headers)}` : '';
   const methodInput = method && method !== 'GET' ? `...${method}` : '';
-  const seed = `${route}...${variables}${methodInput}`;
+  const seed = `${route}...${variables}${headerInput}${methodInput}`;
 
   let hash = 0;
 

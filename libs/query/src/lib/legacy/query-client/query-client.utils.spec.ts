@@ -44,6 +44,29 @@ describe('buildQueryCacheKey', () => {
 
     expect(new Set([headKey, optionsKey, gqlKey, getKey]).size).toBe(4);
   });
+
+  it('should give two requests that differ only in headers different keys', () => {
+    const route = '/posts';
+
+    const deKey = v2BuildQueryCacheKey(route, { variables: { id: 123 }, headers: { 'Accept-Language': 'de' } });
+    const enKey = v2BuildQueryCacheKey(route, { variables: { id: 123 }, headers: { 'Accept-Language': 'en' } });
+
+    expect(deKey).not.toBe(enKey);
+    expect(deKey).not.toBe('1769813287');
+  });
+
+  it('should ignore header order and name case', () => {
+    const route = '/posts';
+
+    const a = v2BuildQueryCacheKey(route, { headers: { 'Accept-Language': 'de', 'X-Tenant': '1' } });
+    const b = v2BuildQueryCacheKey(route, { headers: { 'x-tenant': '1', 'accept-language': 'de' } });
+
+    expect(a).toBe(b);
+  });
+
+  it('should keep the key for empty headers unchanged', () => {
+    expect(v2BuildQueryCacheKey('/posts', { variables: { id: 123 }, headers: {} })).toBe('1769813287');
+  });
 });
 
 describe('shouldCacheQuery', () => {
