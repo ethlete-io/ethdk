@@ -61,6 +61,7 @@
     font-weight: 500;
     line-height: 1.4;
     white-space: nowrap;
+    -webkit-user-select: none;
     user-select: none;
 
     .et-segmented-button-label {

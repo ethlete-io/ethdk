@@ -19,6 +19,7 @@
        only right while the stretched picker keeps its columns vertically centered. */
     justify-content: center;
     gap: 10px;
+    -webkit-user-select: none;
     user-select: none;
 
     .et-time-picker-columns {

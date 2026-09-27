@@ -118,6 +118,7 @@
       letter-spacing: -0.01em;
       color: var(--et-surface-color-muted-solid, currentColor);
       cursor: text;
+      -webkit-user-select: none;
       user-select: none;
       min-inline-size: 0;
       transition:

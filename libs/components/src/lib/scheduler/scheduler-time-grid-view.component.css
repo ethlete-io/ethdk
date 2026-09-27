@@ -151,6 +151,7 @@
 
     /* drag-to-create arms on a long press, which is also what raises iOS' selection callout */
     -webkit-touch-callout: none;
+    -webkit-user-select: none;
     user-select: none;
 
     &:where([data-today]) {

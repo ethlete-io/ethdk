@@ -98,6 +98,7 @@
     min-inline-size: var(--et-pagination-item-size);
     block-size: var(--et-pagination-item-size);
     color: var(--et-surface-color-muted-solid, CanvasText);
+    -webkit-user-select: none;
     user-select: none;
   }
 

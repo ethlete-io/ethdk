@@ -60,6 +60,7 @@
     inline-size: max-content;
     max-inline-size: var(--_et-tooltip-max-width);
     pointer-events: none;
+    -webkit-user-select: none;
     user-select: none;
     color: var(--_et-tooltip-color);
     font-family: var(--et-font-family, inherit);

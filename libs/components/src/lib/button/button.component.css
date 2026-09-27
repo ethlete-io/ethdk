@@ -21,6 +21,7 @@
     text-decoration: none;
     appearance: none;
     box-sizing: border-box;
+    -webkit-user-select: none;
     user-select: none;
     /* no double-tap-zoom wait on touch — taps activate immediately */
     touch-action: manipulation;

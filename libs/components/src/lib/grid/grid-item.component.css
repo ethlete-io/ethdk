@@ -33,10 +33,12 @@
 
     &:is(.et-grid-item--dragging) {
       cursor: grabbing;
+      -webkit-user-select: none;
       user-select: none;
     }
 
     &:is(.et-grid-item--resizing) {
+      -webkit-user-select: none;
       user-select: none;
     }
 

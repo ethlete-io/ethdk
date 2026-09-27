@@ -35,6 +35,7 @@
     font-size: var(--et-avatar-font-size);
     font-weight: var(--et-avatar-font-weight);
     line-height: 1;
+    -webkit-user-select: none;
     user-select: none;
 
     &:where([data-size='xs']) {

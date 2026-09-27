@@ -44,6 +44,7 @@
         linear-gradient(to right, var(--et-theme-color-primary-solid, currentColor) 0 0) no-repeat left bottom /
           var(--_et-rte-image-progress, 0%) 3px,
         color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
+      -webkit-user-select: all;
       user-select: all;
 
       /* The spinner, above the label. */

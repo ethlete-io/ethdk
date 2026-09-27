@@ -39,6 +39,7 @@
     transition: opacity var(--et-scrollbar-fade-duration) ease;
     pointer-events: none;
     touch-action: none;
+    -webkit-user-select: none;
     user-select: none;
 
     /* The thumb offset is a distance from the start edge, which is the right edge in a right-to-left

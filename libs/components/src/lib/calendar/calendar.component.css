@@ -9,6 +9,7 @@
     display: inline-flex;
     flex-direction: column;
     gap: 4px;
+    -webkit-user-select: none;
     user-select: none;
 
     .et-calendar-header {

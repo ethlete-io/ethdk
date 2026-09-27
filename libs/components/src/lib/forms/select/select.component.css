@@ -21,6 +21,7 @@
       min-inline-size: 0;
       text-align: start;
       cursor: pointer;
+      -webkit-user-select: none;
       user-select: none;
       touch-action: manipulation;
 

@@ -27,6 +27,7 @@
     cursor: var(--et-button-cursor);
     appearance: none;
     box-sizing: border-box;
+    -webkit-user-select: none;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     overflow: hidden;

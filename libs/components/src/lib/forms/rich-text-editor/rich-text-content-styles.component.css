@@ -197,6 +197,7 @@
       color: var(--et-theme-color-ink-solid, inherit);
       font-weight: 500;
       white-space: nowrap;
+      -webkit-user-select: all;
       user-select: all;
       cursor: default;
     }

@@ -54,6 +54,7 @@
     border-block-end: 1px solid var(--et-surface-border-solid);
 
     -webkit-touch-callout: none;
+    -webkit-user-select: none;
     user-select: none;
 
     &:focus-visible {

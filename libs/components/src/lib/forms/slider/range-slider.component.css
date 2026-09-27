@@ -83,6 +83,7 @@
       line-height: 1.2;
       letter-spacing: -0.01em;
       color: var(--et-surface-color-muted-solid, currentColor);
+      -webkit-user-select: none;
       user-select: none;
     }
 
@@ -172,6 +173,7 @@
       font-size: var(--et-slider-mark-label-font-size);
       line-height: 1.2;
       color: var(--et-surface-color-muted-solid, currentColor);
+      -webkit-user-select: none;
       user-select: none;
     }
 
@@ -197,6 +199,7 @@
       line-height: 1.4;
       color: var(--et-surface-color-solid, currentColor);
       pointer-events: none;
+      -webkit-user-select: none;
       user-select: none;
     }
 

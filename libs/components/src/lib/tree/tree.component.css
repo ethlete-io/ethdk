@@ -94,6 +94,7 @@
 
   .et-tree-node {
     cursor: pointer;
+    -webkit-user-select: none;
     user-select: none;
     /* The tint is the only animated property — a row never moves on hover. */
     transition: background-color var(--et-tree-duration) ease;

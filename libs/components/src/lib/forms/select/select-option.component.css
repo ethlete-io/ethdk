@@ -48,6 +48,7 @@
     border-radius: var(--et-select-option-border-radius);
     font-size: var(--et-select-option-font-size);
     cursor: pointer;
+    -webkit-user-select: none;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     /* The intrinsic size must stay 0: it sizes the content box, so a row height here stacks on

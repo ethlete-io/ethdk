@@ -20,6 +20,7 @@
     cursor: pointer;
     position: relative;
     white-space: nowrap;
+    -webkit-user-select: none;
     user-select: none;
     transition:
       color 150ms ease,

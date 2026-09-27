@@ -4,6 +4,7 @@
     align-items: center;
     gap: var(--et-checkbox-option-gap, 10px);
     cursor: pointer;
+    -webkit-user-select: none;
     user-select: none;
     outline: none;
   }

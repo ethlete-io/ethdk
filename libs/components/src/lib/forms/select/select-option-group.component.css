@@ -24,6 +24,7 @@
       letter-spacing: 0.02em;
       text-transform: uppercase;
       color: var(--et-surface-color-muted-solid, currentColor);
+      -webkit-user-select: none;
       user-select: none;
     }
   }

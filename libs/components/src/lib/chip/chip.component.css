@@ -54,6 +54,7 @@
     box-sizing: border-box;
     background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 14%, transparent);
     color: var(--et-surface-color-solid, currentColor);
+    -webkit-user-select: none;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
 

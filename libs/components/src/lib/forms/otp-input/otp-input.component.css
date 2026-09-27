@@ -74,6 +74,7 @@
       line-height: 1.2;
       letter-spacing: -0.01em;
       color: var(--et-surface-color-muted-solid, currentColor);
+      -webkit-user-select: none;
       user-select: none;
     }
 
@@ -97,6 +98,7 @@
       border-radius: var(--et-otp-input-segment-radius);
       font-size: calc(var(--et-otp-input-segment-size) * 0.45);
       font-variant-numeric: tabular-nums;
+      -webkit-user-select: none;
       user-select: none;
 
       &[data-caret] {
@@ -158,6 +160,7 @@
       opacity: 0.4;
 
       .et-otp-input-segment {
+        -webkit-user-select: none;
         user-select: none;
       }
     }

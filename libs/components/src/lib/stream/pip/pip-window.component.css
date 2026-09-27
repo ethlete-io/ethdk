@@ -142,6 +142,7 @@
   .et-pip-interacting iframe,
   .et-pip-interacting [contenteditable] {
     pointer-events: none !important;
+    -webkit-user-select: none !important;
     user-select: none !important;
   }
 
