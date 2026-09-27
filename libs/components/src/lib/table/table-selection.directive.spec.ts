@@ -164,7 +164,7 @@ describe('TableSelectionDirective', () => {
       selection.setSelected(PEOPLE[0]!, true);
 
       const snapshot = table.state();
-      expect(snapshot.features?.['selection']).toEqual([String(PEOPLE[0]!.id)]);
+      expect(snapshot.features?.['selection']).toEqual([PEOPLE[0]!.id]);
 
       fixture.componentInstance.selection.set(new Set());
       table.restoreState(snapshot);

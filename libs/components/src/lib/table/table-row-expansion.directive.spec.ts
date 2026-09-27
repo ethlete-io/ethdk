@@ -139,7 +139,7 @@ describe('TableRowExpansionDirective', () => {
 
       const snapshot = table.state();
       // the string form of the numeric rowKey, under the feature's own slice - not a top-level key
-      expect(snapshot.features?.['expansion']).toEqual([String(PEOPLE[0]!.id)]);
+      expect(snapshot.features?.['expansion']).toEqual([PEOPLE[0]!.id]);
       expect(snapshot.v).toBe(3);
 
       fixture.componentInstance.expanded.set(new Set());

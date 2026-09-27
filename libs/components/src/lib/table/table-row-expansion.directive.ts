@@ -100,10 +100,11 @@ export class TableRowExpansionDirective<T> {
 
         const keys = [...this.expanded()()];
 
-        return keys.length ? keys.map(String) : undefined;
+        return keys.length ? keys : undefined;
       },
       write: (value) => {
-        if (this.table.hasRowKey() && Array.isArray(value)) this.expanded().set(new Set(value.map(String)));
+        if (this.table.hasRowKey() && Array.isArray(value))
+          this.expanded().set(new Set(value.filter((key) => typeof key === 'string' || typeof key === 'number')));
       },
     });
 

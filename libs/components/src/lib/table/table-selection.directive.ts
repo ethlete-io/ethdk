@@ -105,9 +105,8 @@ export class TableSelectionDirective<T> {
     });
 
     // The selection is the feature's own state, so it travels in `state().features.selection` rather
-    // than in the base table's column entries - see TableStateSlice. Keys serialize as strings, which
-    // is what a `rowKey` produces anyway; a table without a `rowKey` keys by row reference and has
-    // nothing stable to write, so it contributes nothing.
+    // than in the base table's column entries - see TableStateSlice. A table without a `rowKey` keys by
+    // row reference and has nothing stable to write, so it contributes nothing.
     this.table.registerStateSlice({
       key: 'selection',
       read: () => {
@@ -115,10 +114,11 @@ export class TableSelectionDirective<T> {
 
         const keys = [...this.selection()()];
 
-        return keys.length ? keys.map(String) : undefined;
+        return keys.length ? keys : undefined;
       },
       write: (value) => {
-        if (this.table.hasRowKey() && Array.isArray(value)) this.selection().set(new Set(value.map(String)));
+        if (this.table.hasRowKey() && Array.isArray(value))
+          this.selection().set(new Set(value.filter((key) => typeof key === 'string' || typeof key === 'number')));
       },
     });
   }

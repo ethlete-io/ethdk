@@ -121,7 +121,7 @@ describe('TableStatePersistenceDirective', () => {
     expect(saved.columns.find((column) => column.key === 'name')?.sort).toBe('desc');
     expect(saved.columns.find((column) => column.key === 'role')?.hidden).toBe(true);
     // The selection is the feature's own slice, not a column entry.
-    expect(saved.features?.['selection']).toEqual(['1']);
+    expect(saved.features?.['selection']).toEqual([1]);
 
     // A second table over the same store comes up as the first was left.
     first.destroy();
@@ -130,7 +130,7 @@ describe('TableStatePersistenceDirective', () => {
 
     expect(second.componentInstance.table().sort()).toEqual([{ key: 'name', direction: 'desc' }]);
     expect(second.componentInstance.table().isColumnVisible('role')).toBe(false);
-    expect([...second.componentInstance.selected()]).toEqual(['1']);
+    expect([...second.componentInstance.selected()]).toEqual([1]);
   });
 
   it('clear() forgets the stored setup', () => {

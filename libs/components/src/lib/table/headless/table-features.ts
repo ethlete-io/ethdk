@@ -400,7 +400,7 @@ export type TableFeatureHost = {
   rows(): readonly unknown[];
   /** Emit `rowClick` for a `rowInteractive` table's row - Enter on a cell with nothing of its own to open. */
   activateRowAt(rowIndex: number): void;
-  /** Stable identity for a row - `rowKey`'s string form, else the row reference. */
+  /** Stable identity for a row - `rowKey`'s value, else the row reference. */
   rowIdentity(row: unknown): unknown;
   /** Whether a `rowKey` is bound, i.e. whether row identity is stable enough to serialize. */
   hasRowKey(): boolean;

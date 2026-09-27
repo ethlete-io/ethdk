@@ -1810,17 +1810,17 @@ export class TableComponent<T> {
   }
 
   /**
-   * Stable identity for row-keyed state (change tracking, expansion, selection): the string form of
-   * `rowKey` (so it matches its serialized form regardless of string/number), or the row reference.
+   * Stable identity for row-keyed state (change tracking, expansion, selection): `rowKey`'s value as
+   * the consumer returns it, or the row reference.
    */
   public rowIdentity(row: T): unknown {
     const rowKey = this.rowKey();
 
-    return rowKey ? String(rowKey(row)) : row;
+    return rowKey ? rowKey(row) : row;
   }
 
   /**
-   * Whether a `rowKey` is bound, i.e. whether {@link rowIdentity} is a stable string rather than the
+   * Whether a `rowKey` is bound, i.e. whether {@link rowIdentity} is a stable key rather than the
    * row reference - which is what a feature needs before it can serialize row-keyed state.
    */
   public hasRowKey() {

@@ -17,6 +17,7 @@ import {
   TableCellErrorTooltipDirective,
   TableCellStateValue,
   TableColumns,
+  TableComponent,
   TableExpanderCellComponent,
   TableInlineEditDirective,
   TableInlineEditStylesComponent,
@@ -88,6 +89,7 @@ class TaskBoardComponent {
   unlocked = (task: Task) => !task.locked;
   selection = viewChild.required(TableSelectionDirective<Task>);
   expansion = viewChild.required(TableRowExpansionDirective<Task>);
+  table = viewChild.required(TableComponent<Task>);
 }
 
 @Component({
@@ -181,14 +183,14 @@ describe('table feature scenarios: rows', () => {
     checkboxIn(query(bodyRows(host)[0] as HTMLElement, 'et-table-select-cell')).click();
     s.flush();
 
-    expect([...board.selected()]).toEqual(['1']);
+    expect([...board.selected()]).toEqual([1]);
     expect(board.selection().isPartiallySelected()).toBe(true);
     expect(bodyRows(host)[0]?.classList).toContain('et-table-row--selected');
 
     selectAll.click();
     s.flush();
 
-    expect([...board.selected()].sort()).toEqual(['1', '3']);
+    expect([...board.selected()].sort()).toEqual([1, 3]);
     expect(board.selection().isAllSelected()).toBe(true);
     expect(
       board
@@ -208,7 +210,7 @@ describe('table feature scenarios: rows', () => {
     const board = fixture.componentInstance;
 
     s.flush();
-    board.selected.set(new Set(['3']));
+    board.selected.set(new Set([3]));
     board.tasks.set(TASKS.map((task) => ({ ...task })).reverse());
     s.flush();
 
@@ -221,7 +223,7 @@ describe('table feature scenarios: rows', () => {
     expect(bodyRows(fixture.nativeElement as HTMLElement)[0]?.classList).toContain('et-table-row--selected');
   });
 
-  it.fails('selects a row from a numeric key the consumer writes into the selection signal', () => {
+  it('selects a row from a numeric key the consumer writes into the selection signal', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(TaskBoardComponent);
 
@@ -258,7 +260,7 @@ describe('table feature scenarios: rows', () => {
     toggle.click();
     s.flush();
 
-    expect([...board.expanded()]).toEqual(['1']);
+    expect([...board.expanded()]).toEqual([1]);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(toggle.getAttribute('aria-label')).toBe('Collapse row');
     expect(query(host, 'et-table-row-detail .task-detail').textContent).toBe('Owned by Team A');
@@ -277,13 +279,38 @@ describe('table feature scenarios: rows', () => {
     const host = fixture.nativeElement as HTMLElement;
 
     s.flush();
-    fixture.componentInstance.expanded.set(new Set(['2', '3']));
+    fixture.componentInstance.expanded.set(new Set([2, 3]));
     s.flush();
 
     expect(queryAll(host, 'et-table-row-detail .task-detail').map((detail) => detail.textContent)).toEqual([
       'Owned by Team A',
     ]);
     expect(fixture.componentInstance.expansion().isExpanded(TASKS[2] as Task)).toBe(true);
+  });
+
+  it('persists numeric row keys as numbers and restores them onto the same rows', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(TaskBoardComponent);
+    const board = fixture.componentInstance;
+
+    s.flush();
+    board.selected.set(new Set([3]));
+    board.expanded.set(new Set([1]));
+    s.flush();
+
+    const state = board.table().state();
+
+    expect(state.features?.['selection']).toEqual([3]);
+    expect(state.features?.['expansion']).toEqual([1]);
+
+    board.selected.set(new Set());
+    board.expanded.set(new Set());
+    board.table().restoreState(JSON.parse(JSON.stringify(state)));
+    s.flush();
+
+    expect([...board.selected()]).toEqual([3]);
+    expect(board.selection().isSelected(TASKS[2] as Task)).toBe(true);
+    expect(board.expansion().isExpanded(TASKS[0] as Task)).toBe(true);
   });
 
   it('edits a cell by double click, commits with Enter and cancels with Escape', () => {
