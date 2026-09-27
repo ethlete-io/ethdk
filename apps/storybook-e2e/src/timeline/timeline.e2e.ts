@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { Locator, expect, test } from '@playwright/test';
 import { focusedDescriptor, openStory } from '../support';
 
 const DEFAULT_STORY_ID = 'components-data-display-timeline--default';
@@ -10,6 +10,92 @@ const MARKER = '.et-timeline-item-marker';
 
 const EVENT_LABELS = ['Squad announced', 'Goal by A. Rossi', 'Second yellow for L. Turner', 'Fulltime - 2:1'];
 const EVENT_TIMES = ['18:30', "23'", "67'", "90+4'"];
+
+interface RailSegment {
+  lineTop: number;
+  lineBottom: number;
+  lineCentreX: number;
+  markerTop: number;
+  markerCentreY: number;
+  markerCentreX: number;
+}
+
+/** One entry per item: its rail line (null on the last item) and its marker, in viewport pixels. */
+function railGeometry(root: Locator): Promise<(RailSegment | null)[]> {
+  return root.locator(ITEM).evaluateAll((items) =>
+    items.map((item) => {
+      const rail = item.querySelector('.et-timeline-item-rail');
+      const marker = item.querySelector('.et-timeline-item-marker');
+
+      if (!rail || !marker) return null;
+
+      const railRect = rail.getBoundingClientRect();
+      const line = getComputedStyle(rail, '::before');
+      const markerRect = marker.getBoundingClientRect();
+      const lineTop = railRect.top + parseFloat(line.top);
+
+      return {
+        lineTop,
+        lineBottom: lineTop + parseFloat(line.height),
+        lineCentreX: railRect.left + parseFloat(line.left) + parseFloat(line.width) / 2,
+        markerTop: markerRect.top,
+        markerCentreY: markerRect.top + markerRect.height / 2,
+        markerCentreX: markerRect.left + markerRect.width / 2,
+      };
+    }),
+  );
+}
+
+function segmentsWithLine(segments: (RailSegment | null)[]): { current: RailSegment; next: RailSegment }[] {
+  return segments.slice(0, -1).map((current, index) => {
+    const next = segments[index + 1];
+
+    if (!current || !next) throw new Error(`timeline item ${index} has no rail or marker`);
+
+    return { current, next };
+  });
+}
+
+async function expectRailThroughMarkerCentres(root: Locator): Promise<void> {
+  const pairs = segmentsWithLine(await railGeometry(root));
+
+  expect(pairs.length).toBeGreaterThan(0);
+
+  for (const { current } of pairs) {
+    expect(Math.abs(current.lineCentreX - current.markerCentreX)).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(current.lineTop - current.markerCentreY)).toBeLessThanOrEqual(0.5);
+  }
+}
+
+async function expectRailReachesNextMarker(root: Locator): Promise<void> {
+  for (const { current, next } of segmentsWithLine(await railGeometry(root))) {
+    expect(current.lineBottom).toBeGreaterThanOrEqual(next.markerTop - 0.5);
+  }
+}
+
+test.describe('timeline / rail geometry', () => {
+  test('the line leaves every marker from its centre, on the same axis, in every density', async ({ page }) => {
+    await expectRailThroughMarkerCentres(await openStory(page, DEFAULT_STORY_ID));
+    await expectRailThroughMarkerCentres(await openStory(page, WITH_MARKERS_STORY_ID));
+    await expectRailThroughMarkerCentres(await openStory(page, COMPACT_STORY_ID));
+  });
+
+  test('with projected markers the line runs unbroken into the next marker', async ({ page }) => {
+    await expectRailReachesNextMarker(await openStory(page, WITH_MARKERS_STORY_ID));
+  });
+
+  test('with the default dots the line runs unbroken into the next dot', async ({ page }) => {
+    test.fail(true, 'the line stops at the next item top, leaving a gap above each inset dot');
+
+    await expectRailReachesNextMarker(await openStory(page, DEFAULT_STORY_ID));
+  });
+
+  test('the compact dots keep the line unbroken too', async ({ page }) => {
+    test.fail(true, 'the line stops at the next item top, leaving a gap above each inset dot');
+
+    await expectRailReachesNextMarker(await openStory(page, COMPACT_STORY_ID));
+  });
+});
 
 test.describe('timeline / structure', () => {
   test('renders as a list with one listitem per event, in order', async ({ page }) => {
