@@ -3,7 +3,7 @@ import { createHmac } from 'crypto';
 import { IncomingMessage, Server, ServerResponse, createServer } from 'http';
 import { platform, tmpdir } from 'os';
 import { join } from 'path';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { timetrackCommand } from './timetrack-command';
 
 type Handler = (request: IncomingMessage, response: ServerResponse) => void;
@@ -28,7 +28,7 @@ const withEndpoint = async (handler: Handler) => {
   const port = typeof address === 'object' && address ? address.port : 0;
   const path = join(mkdtempSync(join(tmpdir(), 'agent-rules-command-')), 'agent.json');
 
-  writeFileSync(path, JSON.stringify({ version: 2, port, token: 'secret' }));
+  writeFileSync(path, JSON.stringify({ version: 3, port, token: 'secret' }));
   process.env['TIMETRACK_AGENT_DISCOVERY'] = path;
 };
 
@@ -78,7 +78,13 @@ const standIn = (over: Record<string, unknown>) => ({
 
 const run = (argv: string[]) => timetrackCommand({ root: '/repo', argv });
 
+beforeEach(() => {
+  vi.stubEnv('TIMETRACK_CLIENT', '');
+  vi.stubEnv('CLAUDECODE', '');
+});
+
 afterEach(async () => {
+  vi.unstubAllEnvs();
   vi.restoreAllMocks();
   delete process.env['TIMETRACK_AGENT_DISCOVERY'];
 
@@ -460,8 +466,8 @@ describe('timetrack worklog --delete', () => {
     description: 'Logout on idle',
   };
 
-  it('asks the app to delete the one worklog, and prints what went', async () => {
-    const { handler, bodies } = recordingBodies({ ok: true, value: { deleted } });
+  it('asks the app to delete the one worklog, and prints that it waits for the approval', async () => {
+    const { handler, bodies } = recordingBodies({ ok: true, value: { status: 'queued', approvalId: 'a1' } });
 
     await withEndpoint(handler);
 
@@ -469,7 +475,10 @@ describe('timetrack worklog --delete', () => {
 
     await expect(run(['worklog', '--delete', '98765', '--day', '2026-09-07'])).resolves.toBe(0);
     expect(bodies).toEqual([{ op: 'tempo.delete', day: '2026-09-07', worklogId: '98765' }]);
-    expect(lines).toEqual(['Deleted worklog 98765  FIP-3010  2026-09-07 09:15  90m  Logout on idle']);
+    expect(lines).toEqual([
+      "Queued in Timetrack for the user's approval: delete Tempo worklog 98765 on 2026-09-07.",
+      'Nothing is written until they approve it. Read the outcome with: timetrack approval a1',
+    ]);
   });
 
   it('refuses a delete without a day or a numeric id, and asks nothing of the app', async () => {
@@ -495,15 +504,18 @@ describe('timetrack worklog --delete', () => {
     await expect(run(['worklog', '--delete', '11111', '--day', '2026-09-07'])).rejects.toThrow(/hold no worklog 11111/);
   });
 
-  it('exits non-zero when the ledger kept the entry of the deleted worklog', async () => {
-    const { handler } = recordingBodies({ ok: true, value: { deleted, unrecorded: 'store is locked' } });
+  it('exits non-zero once approved when the ledger kept the entry of the deleted worklog', async () => {
+    const { handler } = recordingBodies({
+      ok: true,
+      value: { status: 'approved', approvalId: 'a1', result: { deleted, unrecorded: 'store is locked' } },
+    });
 
     await withEndpoint(handler);
 
     const lines = printedLines();
 
-    await expect(run(['worklog', '--delete', '98765', '--day', '2026-09-07'])).resolves.toBe(1);
-    expect(lines[1]).toMatch(/ledger kept its entry: store is locked/);
+    await expect(run(['approval', 'a1'])).resolves.toBe(1);
+    expect(lines[2]).toMatch(/ledger did not follow: store is locked/);
   });
 });
 
@@ -595,23 +607,40 @@ describe('timetrack sync', () => {
     expect(bodies).toEqual([]);
   });
 
-  it('fails with the app refusal when the plan changed since it was confirmed', async () => {
-    const { handler, bodies } = recording(() => ({
-      ok: false,
-      message: 'The plan for 2026-09-07 is 99999999 now, not 1a2b3c4d, so nothing was written.',
-    }));
+  it('queues the write of the confirmed plan', async () => {
+    const { handler, bodies } = recording({ status: 'queued', approvalId: 'a1' });
 
     await withEndpoint(handler);
 
-    await expect(run(['sync', '2026-09-07', '--write', '--plan', '1a2b3c4d'])).rejects.toThrow(
-      /is 99999999 now, not 1a2b3c4d/,
-    );
+    const lines = printedLines();
+
+    await expect(run(['sync', '2026-09-07', '--write', '--plan', '1a2b3c4d'])).resolves.toBe(0);
     expect(bodies).toEqual([{ op: 'tempo.sync', day: '2026-09-07', planHash: '1a2b3c4d' }]);
+    expect(lines.join('\n')).toContain('timetrack approval a1');
   });
 
-  it('prints each row a write attempted, and exits non-zero while a row still waits for a retry', async () => {
-    const { handler } = recording(
-      plan({
+  it('fails once approved with the app refusal when the plan changed since it was confirmed', async () => {
+    const { handler } = recording({
+      status: 'approved',
+      approvalId: 'a1',
+      error: 'The plan for 2026-09-07 is 99999999 now, not 1a2b3c4d, so nothing was written.',
+    });
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await expect(run(['approval', 'a1'])).resolves.toBe(1);
+    expect(lines).toEqual([
+      'a1  approved, but it failed: The plan for 2026-09-07 is 99999999 now, not 1a2b3c4d, so nothing was written.',
+    ]);
+  });
+
+  it('prints each row an approved write attempted, and exits non-zero while a row waits for a retry', async () => {
+    const { handler } = recording({
+      status: 'approved',
+      approvalId: 'a1',
+      result: plan({
         run: {
           rows: [
             { kind: 'create', proposalId: 'p1', status: 'written', issueKey: 'FIP-1', tempoWorklogId: '716401' },
@@ -627,18 +656,54 @@ describe('timetrack sync', () => {
           retryCount: 1,
         },
       }),
-    );
+    });
 
     await withEndpoint(handler);
 
     const lines = printedLines();
 
-    await expect(run(['sync', '2026-09-07', '--write', '--plan', '1a2b3c4d'])).resolves.toBe(1);
+    await expect(run(['approval', 'a1'])).resolves.toBe(1);
     expect(lines.slice(-3)).toEqual([
       'written  create  FIP-1  worklog 716401',
       'blocked  update  FIP-2  worklog 71  needs a description',
       "1 row(s) did not land. Retry them on the Sync page, which retries this run's own plan: a new plan read straight after a write can miss what Tempo just took.",
     ]);
     expect(lines.join('\n')).not.toContain('Once the user');
+  });
+});
+
+describe('timetrack create', () => {
+  it('queues the issue, naming this caller for the approval queue', async () => {
+    const bodies: unknown[] = [];
+
+    await withEndpoint((request, response) => {
+      let body = '';
+
+      request.on('data', (chunk) => (body += chunk));
+      request.on('end', () => {
+        bodies.push(JSON.parse(body));
+        response.setHeader('content-type', 'application/json');
+        response.end(JSON.stringify({ ok: true, value: { status: 'queued', approvalId: 'a1' } }));
+      });
+    });
+    vi.stubEnv('TIMETRACK_CLIENT', 'Codex');
+
+    const lines = printedLines();
+
+    await expect(run(['create', '--summary', 'Pdf export', '--project', 'ABC'])).resolves.toBe(0);
+    expect(bodies).toEqual([{ op: 'jira.create', summary: 'Pdf export', projectKey: 'ABC', client: 'Codex' }]);
+    expect(lines).toEqual([
+      "Queued in Timetrack for the user's approval: file the issue Pdf export.",
+      'Nothing is written until they approve it. Read the outcome with: timetrack approval a1',
+    ]);
+  });
+
+  it('says a queued write still waits', async () => {
+    await withEndpoint(answered({ status: 'queued', approvalId: 'a1' }));
+
+    const lines = printedLines();
+
+    await expect(run(['approval', 'a1'])).resolves.toBe(0);
+    expect(lines).toEqual(["a1  still waits for the user's approval in Timetrack."]);
   });
 });

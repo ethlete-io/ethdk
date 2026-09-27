@@ -12,7 +12,7 @@ use tokio::sync::oneshot;
 
 /// The shape of the contract with a caller. A caller refuses a discovery file whose version it does
 /// not know, so bumping this turns every older caller off rather than letting it guess.
-const PROTOCOL_VERSION: u32 = 2;
+const PROTOCOL_VERSION: u32 = 3;
 
 const DISCOVERY_FILENAME: &str = "agent.json";
 const PATH: &str = "/agent";

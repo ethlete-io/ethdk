@@ -21,6 +21,20 @@ npx ethlete-agents timetrack standins               # work the user named that J
 
 Add `--json` to any of them when you need to read a field rather than a line.
 
+**Every write waits for the user's approval in the app.** `create`, `log`, `edit`, `standins
+--remove | --rename | --split --force`, `sync --write`, `worklog --delete` and `resync` answer at
+once with an approval id and write nothing yet. The user approves or rejects the request in
+Timetrack; `approval <id>` reads the outcome:
+
+```bash
+npx ethlete-agents timetrack approval <id>          # queued, approved (with the result), rejected or expired
+```
+
+Tell the user a request waits in Timetrack, then read `approval` once they say they decided -
+do not poll in a loop. A request that is still waiting at the end of the day it was asked on
+expires; ask again rather than assuming it landed. Set `TIMETRACK_CLIENT` to name yourself in the
+queue (Claude Code is named without it).
+
 **Never ask the user for a Jira token, and never write one into a file.** If a command reports
 that the app is not running, say so and ask the user to start it. That is the whole fix -
 there is no per-repo fallback, by design: a secret copied into every checkout is a secret
@@ -49,6 +63,7 @@ nobody can rotate.
 | `calendar [from] [to]`                     | You need the user's meetings and calendar entries over a span of days     |
 | `sync <YYYY-MM-DD>`                        | The user asks what a Tempo sync of a day would write, or asks to sync it  |
 | `worklog --delete <id> --day <YYYY-MM-DD>` | The user asked you to delete one of their own Tempo worklogs              |
+| `approval <id>`                            | A write you queued: whether the user approved it, and what it answered    |
 
 `git-flow start` uses the same channel, so a branch is named from the real issue rather than
 from a key you typed. Follow the repository's branch workflow when creating a branch.
@@ -89,9 +104,10 @@ npx ethlete-agents timetrack edit '<row-id>' --issue ABC-2
 npx ethlete-agents timetrack edit '<row-id>' --state rejected
 ```
 
-Both commands move the app's own review to that day, so the user sees what you read and what you
-changed. `applied` says how many edits found their row: a running day is re-cut on every collector
-tick, so read `rows` again rather than reusing an id from minutes ago.
+`rows` moves the app's own review to that day, so the user sees what you read. An edit is queued
+like every write; once approved, its result's `applied` says how many edits found their row. A
+running day is re-cut on every collector tick, so read `rows` again rather than reusing an id from
+minutes ago.
 
 An edit may correct a row's times, its name, its note and whether it syncs. It may not split, merge
 or delete one - restructuring a day is the user's own decision, made on the screen.
@@ -168,7 +184,7 @@ days. `--split` re-cuts it into one record per directory, and moves each day ont
 
 ```bash
 npx ethlete-agents timetrack standins --split <id>              # the plan, writes nothing
-npx ethlete-agents timetrack standins --split <id> --force      # carry it out
+npx ethlete-agents timetrack standins --split <id> --force      # queue it for approval
 ```
 
 Without `--force` it prints every directory the commits name, with its commit count and its days,
@@ -279,10 +295,12 @@ printed:
 npx ethlete-agents timetrack sync 2026-09-07 --write --plan 1a2b3c4d
 ```
 
-The app plans the day again and refuses, writing nothing, when the hash differs - the day changed
-since the user saw it, so read it again and ask again. `--write` without `--plan` is refused too.
-A write prints each row as `written`, `blocked`, `skipped` or `failed`, with the worklog id or the
-error, and exits non-zero while a row did not land. Never re-run the write to retry: a plan read
+The write is queued, and the user approves it in the app as well - "Approve all" never includes
+it. On approval the app plans the day again and refuses, writing nothing, when the hash differs -
+the day changed since the user saw it, so read it again and ask again. `--write` without `--plan`
+is refused at once. Once approved, `approval <id>` prints each row as `written`, `blocked`,
+`skipped` or `failed`, with the worklog id or the error, and exits non-zero while a row did not
+land. Never re-run the write to retry: a plan read
 straight after a write can miss what Tempo just took and log it twice. The Sync page shows the run
 and retries from its own plan. A "written, but not recorded" line means Tempo holds worklogs the
 app no longer owns; tell the user to delete them in Tempo before this day is written again.
@@ -300,20 +318,22 @@ npx ethlete-agents timetrack worklog --delete 98765 --day 2026-09-07
 
 It is a Tempo write, so the same rule holds: **name the worklog to the user, and delete only after
 they confirmed that one in this conversation.** The app refuses, deleting nothing, an id that is not
-among the account's own worklogs on that day. It prints one line naming what went, and drops the
-app's own record of the worklog, so the next `sync` of the day plans from what Tempo holds.
+among the account's own worklogs on that day. The delete is queued for the user's approval like
+`sync --write`; once approved, `approval <id>` answers what went, and the app drops its own record
+of the worklog, so the next `sync` of the day plans from what Tempo holds.
 
 ## Writes
 
-Four commands write, so all need the user to have asked for them in this conversation - `sync
---write` and `worklog --delete` are described above:
+Four commands write to Jira or Tempo, so all need the user to have asked for them in this
+conversation - `sync --write` and `worklog --delete` are described above. Each is queued for the
+user's approval in the app:
 
 ```bash
 npx ethlete-agents timetrack create --summary "Reset password mail is not sent" --project FIP
 npx ethlete-agents timetrack log --issue FIP-2177 --minutes 45 --description "pairing call"
 ```
 
-- **`create`** files the issue with the instance's own ticket settings - its type, its parent
+- **`create`** files the issue, once approved, with the instance's own ticket settings - its type, its parent
   rule and its subject field all come from the app, so the ticket is shaped like every other.
   `--project` is needed unless the app holds exactly one picked project.
 - **`log`** adds a row to the day in Timetrack. It is **not** a Tempo entry: the user reviews

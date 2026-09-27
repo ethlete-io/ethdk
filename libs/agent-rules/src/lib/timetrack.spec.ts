@@ -3,7 +3,7 @@ import { createServer, IncomingMessage, Server, ServerResponse } from 'http';
 import { mkdtempSync, writeFileSync } from 'fs';
 import { platform, tmpdir } from 'os';
 import { join } from 'path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { askTimetrack, timetrackDiscoveryPath, timetrackIssue } from './timetrack';
 
 type Handler = (request: IncomingMessage, response: ServerResponse) => void;
@@ -44,7 +44,7 @@ const withEndpoint = async (options: { handler: Handler; version?: number; token
   const port = typeof address === 'object' && address ? address.port : 0;
   const path = join(mkdtempSync(join(tmpdir(), 'agent-rules-timetrack-')), 'agent.json');
 
-  writeFileSync(path, JSON.stringify({ version: options.version ?? 2, port, token }));
+  writeFileSync(path, JSON.stringify({ version: options.version ?? 3, port, token }));
   process.env['TIMETRACK_AGENT_DISCOVERY'] = path;
 
   return path;
@@ -57,7 +57,13 @@ const answered =
     response.end(JSON.stringify(body));
   };
 
+beforeEach(() => {
+  vi.stubEnv('TIMETRACK_CLIENT', '');
+  vi.stubEnv('CLAUDECODE', '');
+});
+
 afterEach(async () => {
+  vi.unstubAllEnvs();
   delete process.env['TIMETRACK_AGENT_DISCOVERY'];
 
   const running = server;
@@ -96,7 +102,7 @@ describe('askTimetrack', () => {
   it('refuses a contract version it does not speak', async () => {
     await withEndpoint({ handler: answered({ ok: true, value: {} }), version: 99 });
 
-    await expect(askTimetrack({ op: 'status' })).rejects.toThrow(/version 99 .* speaks 2/);
+    await expect(askTimetrack({ op: 'status' })).rejects.toThrow(/version 99 .* speaks 3/);
   });
 
   it('carries the run token and returns the value', async () => {

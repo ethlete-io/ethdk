@@ -1,7 +1,9 @@
 import { closeSync, lstatSync, openSync, unlinkSync, writeSync } from 'fs';
 import { resolve } from 'path';
 import {
+  TimetrackApprovalStatus,
   TimetrackAttributionRule,
+  TimetrackQueued,
   TimetrackIssue,
   TimetrackNamingDecline,
   TimetrackStandIn,
@@ -9,6 +11,8 @@ import {
   TimetrackTempoWorklog,
   TimetrackCalendarEvent,
   timetrackAddWorklog,
+  timetrackApplyStandInSplit,
+  timetrackApprovalStatus,
   timetrackCreateIssue,
   TimetrackRow,
   TimetrackRowEdit,
@@ -30,6 +34,7 @@ import {
   timetrackStatus,
   timetrackTempoDelete,
   timetrackTempoSync,
+  timetrackTempoSyncWrite,
   timetrackTempoWorklogs,
   timetrackCalendarEvents,
 } from './timetrack';
@@ -461,6 +466,56 @@ const printed = (value: unknown, json: boolean) => {
   return 0;
 };
 
+/** Every write waits in the app for the user's press, so what a write prints is where to look next. */
+const queuedLines = (queued: TimetrackQueued, what: string) => [
+  `Queued in Timetrack for the user's approval: ${what}.`,
+  `Nothing is written until they approve it. Read the outcome with: timetrack approval ${queued.approvalId}`,
+];
+
+const printedQueued = (options: { queued: TimetrackQueued; what: string; json: boolean }) => {
+  if (!options.json) queuedLines(options.queued, options.what).forEach(say);
+
+  return printed(options.queued, options.json);
+};
+
+const isSyncWithRun = (value: unknown): value is TimetrackTempoSync & { run: NonNullable<TimetrackTempoSync['run']> } =>
+  typeof value === 'object' && value !== null && 'run' in value && typeof value.run === 'object';
+
+const UNDECIDED = {
+  queued: "still waits for the user's approval in Timetrack.",
+  rejected: 'the user rejected it. Nothing was written.',
+  expired: 'expired at the end of the day it was asked on. Nothing was written. Ask again.',
+};
+
+const approvalLines = (found: TimetrackApprovalStatus) => {
+  if (found.status !== 'approved') return [`${found.approvalId}  ${UNDECIDED[found.status]}`];
+  if (found.error !== undefined) return [`${found.approvalId}  approved, but it failed: ${found.error}`];
+
+  const unrecorded = unrecordedOf(found.result);
+
+  return [
+    `${found.approvalId}  approved and carried out.`,
+    ...(isSyncWithRun(found.result) ? syncRunLines(found.result.run) : ['Pass --json for what it answered.']),
+    ...(unrecorded && !isSyncWithRun(found.result)
+      ? [`Carried out, but the app's ledger did not follow: ${unrecorded}. A later sync may undo it.`]
+      : []),
+  ];
+};
+
+const unrecordedOf = (value: unknown) =>
+  typeof value === 'object' && value !== null && 'unrecorded' in value && typeof value.unrecorded === 'string'
+    ? value.unrecorded
+    : undefined;
+
+/** Non-zero for anything that did not land in full, so a caller polling in a script can tell. */
+const approvalExitCode = (found: TimetrackApprovalStatus) => {
+  if (found.status === 'queued') return 0;
+  if (found.status !== 'approved' || found.error !== undefined) return 1;
+  if (unrecordedOf(found.result)) return 1;
+
+  return isSyncWithRun(found.result) && (found.result.run.retryCount || found.result.run.unrecorded) ? 1 : 0;
+};
+
 /**
  * Cuts a placeholder that covered a whole checkout into one per directory its commits worked in.
  *
@@ -504,16 +559,8 @@ const splitStandIn = async (options: { id: string; argv: string[]; json: boolean
   const claim = flagValue(argv, '--claim');
   const apply = argv.includes('--force');
   const projectRoots = projectRootsOf(checkout);
-  const answer = await timetrackSplitStandIn({
-    id,
-    branch,
-    repoPath,
-    commits,
-    projectRoots,
-    paths,
-    claim,
-    apply,
-  });
+  const request = { id, branch, repoPath, commits, projectRoots, paths, claim };
+  const answer = await timetrackSplitStandIn(request);
 
   if (!json) {
     say(`${standIn.name}  ${standIn.days.length} day(s), branch ${branch}`);
@@ -522,9 +569,7 @@ const splitStandIn = async (options: { id: string; argv: string[]; json: boolean
 
     if (!answer.pieces.length) {
       say('None of them is an automatic grain. Pick the pieces with --paths <dir>,<dir>.');
-    } else if (apply) {
-      say(`Split into ${answer.pieces.length}, and the rule that named it rewritten one per directory.`);
-    } else {
+    } else if (!apply) {
       say(`Would write ${answer.pieces.map((piece) => piece.workPath).join(', ')}. Pass --force to carry it out.`);
     }
 
@@ -543,12 +588,19 @@ const splitStandIn = async (options: { id: string; argv: string[]; json: boolean
     }
   }
 
+  if (apply && answer.pieces.length) {
+    const queued = await timetrackApplyStandInSplit(request);
+
+    return printedQueued({ queued, what: `split ${standIn.name} into ${answer.pieces.length}`, json });
+  }
+
   return printed(answer, json);
 };
 
 const USAGE = `ethlete-agents timetrack — ask the running Timetrack app about Jira
 
 The app holds this machine's Jira credentials, so no repository needs a token of its own.
+Every write waits in the app until the user approves it there, and prints an approval id.
 
   timetrack status              Whether the app is reachable, and which projects it holds
   timetrack instance            The instance's own levels and its branch-subject candidates
@@ -581,6 +633,7 @@ The app holds this machine's Jira credentials, so no repository needs a token of
                                 Delete one of the account's own Tempo worklogs, once the user asked for it
   timetrack naming [YYYY-MM-DD] Which checkouts the day offers a name for, and why the rest do not
   timetrack resync [path…]      Read the agent session logs of checkouts again, after they got a link
+  timetrack approval <id>       Where a queued write stands, and what it answered once approved
 
 Options for search
   --project <KEY>     Search this project instead of the picked ones
@@ -609,7 +662,8 @@ Options for resync
   --replace           Overwrite what the store holds for those sessions, after a parser fix
 
 Options for sync
-  --write             Write the plan. Refused without --plan, and when the plan changed since
+  --write             Queue the write of the plan. Refused without --plan; the app refuses it on
+                      approval when the plan changed since
   --plan <hash>       The plan hash the read printed, for the rows the user confirmed
 
 Options for edit — pass exactly one change
@@ -714,7 +768,7 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
 
     if (!summary) throw new Error('Pass --summary "…".');
 
-    const issue = await timetrackCreateIssue({
+    const queued = await timetrackCreateIssue({
       summary,
       description: flagValue(argv, '--description'),
       projectKey: flagValue(argv, '--project'),
@@ -723,9 +777,7 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
       subject: flagValue(argv, '--subject'),
     });
 
-    if (!json) say(`${issue.key}  ${summary}`);
-
-    return printed(issue, json);
+    return printedQueued({ queued, what: `file the issue ${summary}`, json });
   }
 
   if (subcommand === 'log') {
@@ -735,19 +787,16 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     if (!issueKey) throw new Error('Pass --issue <KEY>.');
     if (!minutes || minutes <= 0) throw new Error('Pass --minutes <n> above zero.');
 
-    const worklog = await timetrackAddWorklog({
+    const queued = await timetrackAddWorklog({
       issueKey,
       description: flagValue(argv, '--description'),
       fromMs: instantFlag(argv),
       durationMs: Math.round(minutes * 60_000),
     });
 
-    if (!json) {
-      say(`${worklog.issueKey}  ${minutes}m on ${worklog.day}`);
-      say('It is a row on the day, not a Tempo entry — review the day in Timetrack, then sync it.');
-    }
+    if (!json) say('Once approved it is a row on the day, not a Tempo entry — the day still needs a sync.');
 
-    return printed(worklog, json);
+    return printedQueued({ queued, what: `a ${minutes}m row for ${issueKey}`, json });
   }
 
   if (subcommand === 'day') {
@@ -798,15 +847,9 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     if (!value) throw new Error('Pass the row id to edit, as `timetrack rows` prints it.');
     if (!DAY.test(day)) throw new Error(`Pass a day as YYYY-MM-DD, not ${day}.`);
 
-    const edited = await timetrackEditDay({ day, edits: [editOf({ argv, rowId: value })] });
+    const queued = await timetrackEditDay({ day, edits: [editOf({ argv, rowId: value })] });
 
-    if (!json) {
-      say(`${edited.day}  ${edited.applied} of 1 edit landed`);
-      edited.rows.forEach((row) => say(`  ${rowLine(row)}`));
-      edited.warnings.forEach((warning) => say(`  ! ${warning.kind}: ${warning.detail}`));
-    }
-
-    return printed(edited, json);
+    return printedQueued({ queued, what: `an edit of row ${value} on ${day}`, json });
   }
 
   if (subcommand === 'rules') {
@@ -827,20 +870,12 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
 
   if (subcommand === 'resync') {
     const named = positionalArgs(argv).slice(1);
-    const resynced = await timetrackResyncAgentSessions(
-      (named.length ? named : ['.']).map((path) => resolve(root, path)),
-      {
-        replace: argv.includes('--replace'),
-      },
-    );
+    const paths = (named.length ? named : ['.']).map((path) => resolve(root, path));
+    const replace = argv.includes('--replace');
+    const queued = await timetrackResyncAgentSessions(paths, { replace });
+    const how = replace ? ', replacing what it stored for them' : '';
 
-    if (!json) {
-      const how = resynced.replace ? ', replacing what it stored for them' : '';
-
-      say(`Timetrack reads the agent sessions of ${resynced.paths.join(', ')} again${how}.`);
-    }
-
-    return printed(resynced, json);
+    return printedQueued({ queued, what: `read the agent sessions of ${paths.join(', ')} again${how}`, json });
   }
 
   if (subcommand === 'worklogs') {
@@ -876,23 +911,9 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
       throw new Error('Pass the Tempo worklog id to delete with --delete <id>.');
     if (!day || !DAY.test(day)) throw new Error('Pass the day the worklog is on with --day <YYYY-MM-DD>.');
 
-    const answer = await timetrackTempoDelete({ day, worklogId });
-    const { deleted } = answer;
+    const queued = await timetrackTempoDelete({ day, worklogId });
 
-    if (!json) {
-      say(
-        `Deleted worklog ${deleted.id}  ${deleted.issueKey ?? '(unknown issue)'}  ${deleted.day} ${deleted.startTime}  ${deleted.minutes}m  ${deleted.description || '(no description)'}`,
-      );
-      if (answer.unrecorded) {
-        say(
-          `Deleted, but the app's ledger kept its entry: ${answer.unrecorded}. A later sync of ${deleted.day} may write it again.`,
-        );
-      }
-    }
-
-    printed(answer, json);
-
-    return answer.unrecorded ? 1 : 0;
+    return printedQueued({ queued, what: `delete Tempo worklog ${worklogId} on ${day}`, json });
   }
 
   if (subcommand === 'sync') {
@@ -914,20 +935,25 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
       return 1;
     }
 
-    const found = await timetrackTempoSync(write ? { day: value, planHash } : { day: value });
+    if (write && planHash) {
+      const queued = await timetrackTempoSyncWrite({ day: value, planHash });
+
+      if (!json) say('The app checks the plan again on approval, and refuses it if the day changed since.');
+
+      return printedQueued({ queued, what: `write plan ${planHash} of ${value} to Tempo`, json });
+    }
+
+    const found = await timetrackTempoSync(value);
 
     if (!json) {
       syncPlanLines(found).forEach(say);
 
-      if (found.run) syncRunLines(found.run).forEach(say);
-      else if (found.writes.length) {
+      if (found.writes.length) {
         say(`Once the user has confirmed these rows: timetrack sync ${found.day} --write --plan ${found.planHash}`);
       }
     }
 
-    printed(found, json);
-
-    return found.run && (found.run.retryCount || found.run.unrecorded) ? 1 : 0;
+    return printed(found, json);
   }
 
   if (subcommand === 'calendar') {
@@ -970,6 +996,18 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     return printed(naming, json);
   }
 
+  if (subcommand === 'approval') {
+    if (!value) throw new Error('Pass the approval id a write printed, e.g. `timetrack approval <id>`.');
+
+    const found = await timetrackApprovalStatus(value);
+
+    if (!json) approvalLines(found).forEach(say);
+
+    printed(found, json);
+
+    return approvalExitCode(found);
+  }
+
   if (subcommand === 'standins') {
     const split = flagValue(argv, '--split');
 
@@ -985,11 +1023,9 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     }
 
     if (rename && name) {
-      const renamed = await timetrackRenameStandIn({ id: rename, name });
+      const queued = await timetrackRenameStandIn({ id: rename, name });
 
-      if (!json) say(`Renamed ${rename} to ${name}.`);
-
-      return printed(renamed, json);
+      return printedQueued({ queued, what: `rename ${rename} to ${name}`, json });
     }
 
     const remove = flagValue(argv, '--remove');
@@ -1003,14 +1039,19 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
       return 1;
     }
 
-    const standIns = remove ? await timetrackRemoveStandIn(remove) : await timetrackStandIns();
+    if (remove) {
+      const queued = await timetrackRemoveStandIn(remove);
+
+      return printedQueued({ queued, what: `delete ${remove} and the rule that named it`, json });
+    }
+
+    const standIns = await timetrackStandIns();
     const rules = json ? [] : (await timetrackRules()).attributionRules;
     const open = standIns
       .filter((standIn) => standIn.state === 'open')
       .sort((left, right) => left.createdAtMs - right.createdAtMs);
 
     if (!json) {
-      if (remove) say(`Deleted ${remove}, and the rule that named it.`);
       say(`${open.length} open, ${standIns.length - open.length} resolved`);
       open.forEach((standIn) => say(`  ${describeStandIn({ standIn, rules })}`));
       if (open.length) say('Only the app opens or resolves one — you may delete one, not write one.');

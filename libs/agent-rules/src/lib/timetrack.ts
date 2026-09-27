@@ -12,13 +12,21 @@ const DISCOVERY_FILENAME = 'agent.json';
  * The contract version this client speaks. The app writes its own into the discovery file, and a
  * mismatch stops here rather than at a field that is missing for a reason nobody can see.
  */
-const PROTOCOL_VERSION = 2;
+const PROTOCOL_VERSION = 3;
 
 /** A Jira search behind a slow instance is the long case; the app's own deadline is 60 seconds. */
 const TIMEOUT_MS = 70_000;
 
 const PATH = '/agent';
 const PROOF_PATH = '/agent/proof';
+
+/** What every write answers: it waits in the app until the user approves or rejects it. */
+export type TimetrackQueued = { status: 'queued'; approvalId: string };
+
+/** Where a queued write stands. `result` is what the op answered once approved and carried out. */
+export type TimetrackApprovalStatus =
+  | { status: 'queued' | 'rejected' | 'expired'; approvalId: string }
+  | { status: 'approved'; approvalId: string; result?: unknown; error?: string };
 
 export type TimetrackIssue = {
   key: string;
@@ -392,6 +400,13 @@ const readDiscovery = (): Discovery => {
   return { version: discovery.version, port: discovery.port, token: discovery.token };
 };
 
+/**
+ * The name the approval queue shows for this caller: `TIMETRACK_CLIENT` when set, Claude Code when it
+ * runs this, and nothing otherwise.
+ */
+export const timetrackClientName = () =>
+  process.env['TIMETRACK_CLIENT']?.trim() || (process.env['CLAUDECODE'] ? 'Claude Code' : undefined);
+
 const IMPOSTOR = [
   'Something other than Timetrack answers on the port its discovery file names.',
   'The app writes a new port and a new token at every start — restart Timetrack, then try again.',
@@ -435,6 +450,7 @@ const proveTheServer = async (discovery: Discovery) => {
  */
 export const askTimetrack = async <T>(request: Record<string, unknown> & { op: string }): Promise<T> => {
   const discovery = readDiscovery();
+  const client = timetrackClientName();
 
   await proveTheServer(discovery);
 
@@ -444,7 +460,7 @@ export const askTimetrack = async <T>(request: Record<string, unknown> & { op: s
     response = await fetch(`http://127.0.0.1:${discovery.port}${PATH}`, {
       method: 'POST',
       headers: { authorization: `Bearer ${discovery.token}`, 'content-type': 'application/json' },
-      body: JSON.stringify(request),
+      body: JSON.stringify(client ? { ...request, client } : request),
       redirect: 'error',
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
@@ -486,52 +502,57 @@ export const timetrackSearch = async (options: {
 export const timetrackRepoProject = (repoPath: string) =>
   askTimetrack<TimetrackRepoProject>({ op: 'repo.project', repoPath });
 
-export const timetrackCreateIssue = async (options: {
+/** Queues a new issue, filed with the app's own ticket settings once the user approves it. */
+export const timetrackCreateIssue = (options: {
   summary: string;
   description?: string;
   projectKey?: string;
   issueTypeName?: string;
   parentKey?: string;
   subject?: string;
-}) => (await askTimetrack<{ issue: { key: string; id: string } }>({ op: 'jira.create', ...options })).issue;
+}) => askTimetrack<TimetrackQueued>({ op: 'jira.create', ...options });
 
-export const timetrackAddWorklog = async (options: {
+/** Queues a row for the day it belongs to. It is a row on the day once approved, not a Tempo entry. */
+export const timetrackAddWorklog = (options: {
   issueKey: string;
   description?: string;
   fromMs: number;
   durationMs: number;
-}) => (await askTimetrack<{ worklog: TimetrackWorklog }>({ op: 'worklog.add', ...options })).worklog;
+}) => askTimetrack<TimetrackQueued>({ op: 'worklog.add', ...options });
 
 export const timetrackDayEvents = (day: string) => askTimetrack<TimetrackDayEvents>({ op: 'day.events', day });
 
 export const timetrackDayRows = (day: string) => askTimetrack<TimetrackDayRows>({ op: 'day.rows', day });
 
 /**
- * Makes the stated edits to a day's rows and answers the day as it reads afterwards.
+ * Queues the stated edits to a day's rows. Once approved, the result is the day as it reads afterwards.
  *
- * The app moves its own review to that day, so the user sees what changed. `applied` counts the edits
- * that found their row: a day the collectors keep changing can drop a row a caller read a moment ago.
+ * `applied` in that result counts the edits that found their row: a day the collectors keep changing
+ * can drop a row a caller read a moment ago.
  */
 export const timetrackEditDay = (options: { day: string; edits: readonly TimetrackRowEdit[] }) =>
-  askTimetrack<TimetrackEditedDay>({ op: 'day.edits', ...options });
+  askTimetrack<TimetrackQueued>({ op: 'day.edits', ...options });
 
 /** Reads the user's own Tempo worklogs from Tempo, both days included. The app caps the span at 92 days. */
 export const timetrackTempoWorklogs = (options: { from: string; to: string }) =>
   askTimetrack<TimetrackTempoWorklogs>({ op: 'tempo.worklogs', ...options });
 
 /**
- * Plans a Tempo sync of one day exactly as the app's Sync page does. With `planHash` it writes that
- * plan, and the app refuses when a fresh plan hashes differently. The app moves its review to the day.
+ * Plans a Tempo sync of one day exactly as the app's Sync page does. It writes nothing, so it is
+ * answered at once. The app moves its review to the day.
  */
-export const timetrackTempoSync = (options: { day: string; planHash?: string }) =>
-  askTimetrack<TimetrackTempoSync>({ op: 'tempo.sync', ...options });
+export const timetrackTempoSync = (day: string) => askTimetrack<TimetrackTempoSync>({ op: 'tempo.sync', day });
+
+/** Queues the write of the plan whose hash the user confirmed. The app checks the hash again on approval. */
+export const timetrackTempoSyncWrite = (options: { day: string; planHash: string }) =>
+  askTimetrack<TimetrackQueued>({ op: 'tempo.sync', ...options });
 
 /**
- * Deletes one of the user's own Tempo worklogs. The app refuses an id that is not among the account's
- * own worklogs on `day`, and drops the ledger entry that owned it.
+ * Queues the delete of one of the user's own Tempo worklogs. Once approved, the app refuses an id that
+ * is not among the account's own worklogs on `day`, and drops the ledger entry that owned it.
  */
 export const timetrackTempoDelete = (options: { day: string; worklogId: string }) =>
-  askTimetrack<TimetrackTempoDelete>({ op: 'tempo.delete', ...options });
+  askTimetrack<TimetrackQueued>({ op: 'tempo.delete', ...options });
 
 /** Reads the calendars the app watches, both days included. The app caps the span at 92 days. */
 export const timetrackCalendarEvents = (options: { from: string; to: string }) =>
@@ -540,14 +561,14 @@ export const timetrackCalendarEvents = (options: { from: string; to: string }) =
 export const timetrackRules = () => askTimetrack<TimetrackRules>({ op: 'settings.rules' });
 
 /**
- * Asks the app to read the agent session logs under `paths` again, so sessions it dropped while no
- * project link held them are stored. The read runs in the background; the answer names the checkouts.
+ * Queues a read of the agent session logs under `paths` again, so sessions the app dropped while no
+ * project link held them are stored. Once approved, the read runs in the background.
  *
  * With `replace`, the re-read overwrites the samples, spend and prompts the store holds for those
  * sessions, which is how a parser fix reaches days already stored.
  */
 export const timetrackResyncAgentSessions = (paths: readonly string[], options: { replace?: boolean } = {}) =>
-  askTimetrack<{ paths: string[]; replace?: true }>({
+  askTimetrack<TimetrackQueued>({
     op: 'agentSessions.resync',
     paths,
     ...(options.replace ? { replace: true } : {}),
@@ -557,28 +578,27 @@ export const timetrackStandIns = async () =>
   (await askTimetrack<{ standIns: TimetrackStandIn[] }>({ op: 'standIn.list' })).standIns;
 
 /**
- * Deletes one placeholder and answers with the list as it reads afterwards.
+ * Queues the delete of one placeholder. Once approved, the result is the list as it reads afterwards.
  *
  * The rule pointing at it goes with it. A record the app opened for one branch refuses that branch as
  * it goes, so no second one opens for it; a record naming no branch refuses nothing, and the next
  * pass may open one at whatever grain the day reads.
  */
-export const timetrackRemoveStandIn = async (id: string) =>
-  (await askTimetrack<{ standIns: TimetrackStandIn[] }>({ op: 'standIn.remove', id })).standIns;
+export const timetrackRemoveStandIn = (id: string) => askTimetrack<TimetrackQueued>({ op: 'standIn.remove', id });
 
 /**
- * Gives one placeholder another name and answers with the list as it reads afterwards.
+ * Queues another name for one placeholder. Once approved, the result is the list as it reads afterwards.
  *
  * Only the name changes. The days it holds and the rules that name it stay, which is what a delete
  * and a fresh record would lose.
  */
-export const timetrackRenameStandIn = async (options: { id: string; name: string }) =>
-  (await askTimetrack<{ standIns: TimetrackStandIn[] }>({ op: 'standIn.rename', ...options })).standIns;
+export const timetrackRenameStandIn = (options: { id: string; name: string }) =>
+  askTimetrack<TimetrackQueued>({ op: 'standIn.rename', ...options });
 
 /**
- * Cuts one placeholder into one per directory it turned out to cover.
+ * Plans the cut of one placeholder into one per directory it turned out to cover, and writes nothing.
  *
- * Without `apply` it answers the plan and writes nothing. The commits come from the caller: one
+ * The commits come from the caller: one
  * collected before Timetrack read file paths carries none, so only `git log --name-only` can say.
  * A checkout whose commits name more directories than a grain can hold has no automatic reading,
  * and `paths` is how the user picks which of them are the pieces.
@@ -595,5 +615,12 @@ export const timetrackSplitStandIn = (options: {
   paths: readonly string[];
   /** The directory that takes every day of the record no commit claims. */
   claim?: string;
-  apply: boolean;
-}) => askTimetrack<TimetrackStandInSplit>({ op: 'standIn.split', ...options });
+}) => askTimetrack<TimetrackStandInSplit>({ op: 'standIn.split', ...options, apply: false });
+
+/** Queues the split `timetrackSplitStandIn` planned, with the same options. */
+export const timetrackApplyStandInSplit = (options: Parameters<typeof timetrackSplitStandIn>[0]) =>
+  askTimetrack<TimetrackQueued>({ op: 'standIn.split', ...options, apply: true });
+
+/** Where a write this caller queued stands, and what it answered once the user approved it. */
+export const timetrackApprovalStatus = (id: string) =>
+  askTimetrack<TimetrackApprovalStatus>({ op: 'approval.status', id });
