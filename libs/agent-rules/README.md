@@ -248,9 +248,15 @@ npx ethlete-agents timetrack search "password"     # open issues of the picked p
 npx ethlete-agents timetrack project               # which project does this repo log into?
 npx ethlete-agents timetrack create --summary "…"  # file a ticket with the instance's settings
 npx ethlete-agents timetrack log --issue FIP-2177 --minutes 45
+npx ethlete-agents timetrack approval <id>         # where a queued write stands
 ```
 
 `--json` prints the raw answer instead of lines. `git-flow start` uses the same channel.
+
+**Every write waits for the user.** `create`, `log` and every other write answer at once with an
+approval id and write nothing; the user approves or rejects the request in the app, and
+`approval <id>` reads the outcome. A request still waiting at the end of its day expires.
+`TIMETRACK_CLIENT` names the caller in the queue.
 
 **How it connects.** The app binds a loopback socket and writes its port and a fresh token
 into `agent.json` in its own data directory (`~/.local/share/io.ethlete.timetrack/` on Linux,
