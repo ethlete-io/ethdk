@@ -247,7 +247,18 @@ Per-file progress requires `reportProgress: true` on the query creator **and** t
 
 ## Headless usage
 
-All behavior lives in the `etDropzone` directive (`FormValueControl` + drag & drop + upload orchestration); the `et-dropzone` component is template + tokens on top. For a custom UI, apply the directive yourself and drive it via `selectFiles(files)`, `removeEntry(id)`, `retryEntry(id)`, `removeAll()` and `clear()` (see [`removeAll()` vs `clear()`](#removeall-vs-clear)), rendering from the `entries()` signal (each entry carries an `id` and its `source`, plus `name`, `size`, `previewUrl`, `status`, `progress`, `error`, `errorMessage` and `value` signals) plus `isDragOver`, `anyUploading`, `anyFailed`, `hasValue`, `interactive` and `lastRejections`. Drag & drop is handled on the directive's host; the file-picker input is yours to wire - `accept()` gives you the schema's `accept` string for it. Outputs: `filesReject`, `uploadSucceed` / `uploadFail` per entry, and - when the upload config has a `delete` option - `deleteSucceed` / `deleteFail` per removed entry (see [Deleting on remove](#deleting-on-remove)).
+All behavior lives in the `etDropzone` directive (`FormValueControl` + drag & drop + upload orchestration); the `et-dropzone` component is template + tokens on top. For a custom UI, apply the directive yourself (grab it with `#zone="etDropzone"` or `viewChild(DropzoneDirective)`) and drive it via `selectFiles(files)`, `removeEntry(id)`, `retryEntry(id)`, `removeAll()` and `clear()` (see [`removeAll()` vs `clear()`](#removeall-vs-clear)), rendering from the `entries()` signal (each entry carries an `id` and its `source`, plus `name`, `size`, `previewUrl`, `status`, `progress`, `error`, `errorMessage` and `value` signals) plus `isDragOver`, `anyUploading`, `anyFailed`, `hasValue`, `interactive` and `lastRejections`. Drag & drop is handled on the directive's host; the file-picker input is yours to wire - `accept()` gives you the schema's `accept` string for it. Outputs: `filesReject`, `uploadSucceed` / `uploadFail` per entry, and - when the upload config has a `delete` option - `deleteSucceed` / `deleteFail` per removed entry (see [Deleting on remove](#deleting-on-remove)).
+
+To build an entry outside the directive - an upload history, a paste target - create a handle from the
+upload config and turn it into an entry with `createFileDropzoneEntry`. The handle uploads on
+`execute()`, and `disposeDropzoneEntry(entry)` releases it again:
+
+```ts
+const handle = this.upload.createUploadHandle({ file, injector: this.injector });
+const entry = createFileDropzoneEntry({ file, handle });
+
+handle.execute();
+```
 
 ## Accessibility
 

@@ -43,7 +43,6 @@ export type DropzoneUploadError = QueryErrorResponse | RequestError;
 export type DropzoneUploadState = 'uploading' | 'success' | 'error';
 
 /**
- * @internal
  * A per-file upload handle. It hides which query system runs the upload (the new
  * `@ethlete/query` API or the legacy `V2QueryClient`) behind a uniform set of signals plus
  * `execute`/`dispose`.
@@ -70,7 +69,6 @@ export type DropzoneUploadHandle<TValue> = {
   dispose: () => void;
 };
 
-/** @internal */
 export type DropzoneUploadHandleOptions = {
   file: File;
   injector: Injector;
@@ -103,7 +101,10 @@ export type ResolvedDropzoneUploadConfig<TValue = unknown> = {
    */
   resolveExisting?: (value: TValue) => DropzoneExistingFileInfo;
 
-  /** @internal Creates a per-file upload handle. */
+  /**
+   * Creates the upload handle for one file. Pass it to `createFileDropzoneEntry` to build an entry;
+   * the upload runs when the handle's `execute()` is called.
+   */
   createUploadHandle: (options: DropzoneUploadHandleOptions) => DropzoneUploadHandle<TValue>;
 
   /**
