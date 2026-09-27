@@ -9,6 +9,41 @@ const RADIO_GROUP_DEFAULT = 'components-forms-selection-list-radio-group--defaul
 const RADIO_GROUP_HORIZONTAL = 'components-forms-selection-list-radio-group--horizontal';
 const CHECKBOX_GROUP_DEFAULT = 'components-forms-selection-list-checkbox-group--default';
 const SEGMENTED_BUTTON_GROUP_DEFAULT = 'components-forms-selection-list-segmented-button-group--default';
+const SEGMENTED_BUTTON_GROUP_TABS = 'components-forms-selection-list-segmented-button-group--tabs';
+
+interface SegmentBackground {
+  opacity: number;
+  height: number;
+  hostHeight: number;
+  bottomGap: number;
+}
+
+function segmentBackground(segment: Locator): Promise<SegmentBackground> {
+  return segment.evaluate((host) => {
+    const background = host.querySelector('.et-segmented-button-bg');
+    const rect = background?.getBoundingClientRect();
+    const hostRect = host.getBoundingClientRect();
+
+    return {
+      opacity: Number(background ? getComputedStyle(background).opacity : 0),
+      height: Math.round(rect?.height ?? 0),
+      hostHeight: Math.round(hostRect.height),
+      bottomGap: Math.round(hostRect.bottom - (rect?.bottom ?? 0)),
+    };
+  });
+}
+
+/** Presses the key and reads the checked background's first FLIP keyframe before the 250ms slide ends. */
+async function pressAndReadSlideStart(segment: Locator, key: string): Promise<number | null> {
+  await segment.page().keyboard.press(key);
+
+  return segment.evaluate((host) => {
+    const [animation] = host.querySelector('.et-segmented-button-bg')?.getAnimations() ?? [];
+    const first = (animation?.effect as KeyframeEffect | null)?.getKeyframes()[0];
+
+    return typeof first?.['transform'] === 'string' ? new DOMMatrixReadOnly(first['transform']).m41 : null;
+  });
+}
 
 /** The switch and radio family draw the focus ring on a child, not on the focused host. */
 async function expectChildFocusVisible(control: Locator, childSelector: string): Promise<void> {
@@ -204,6 +239,69 @@ test.describe('choice-inputs / keyboard', () => {
     await pressKey(page, 'ArrowRight');
     await expect(list).toBeFocused();
     await expect(list).toHaveAttribute('aria-checked', 'true');
+  });
+});
+
+test.describe('choice-inputs / segmented presentation', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard selection');
+
+  test('the pill variant fills the checked segment and slides the fill in from the previous one', async ({ page }) => {
+    const root = await openStory(page, SEGMENTED_BUTTON_GROUP_DEFAULT);
+    const list = root.getByRole('radio', { name: 'List' });
+    const grid = root.getByRole('radio', { name: 'Grid' });
+
+    await expect(grid).toHaveAttribute('data-can-animate', 'true');
+    expect(await segmentBackground(list)).toMatchObject({ opacity: 1 });
+    expect((await segmentBackground(list)).height).toBe((await segmentBackground(list)).hostHeight);
+
+    await pressKey(page, 'Tab');
+    await expect(list).toBeFocused();
+
+    expect(await pressAndReadSlideStart(grid, 'ArrowRight')).toBeLessThan(0);
+    await expect(grid).toHaveAttribute('aria-checked', 'true');
+    await expect.poll(async () => (await segmentBackground(grid)).opacity).toBe(1);
+    await expect.poll(async () => (await segmentBackground(list)).opacity).toBe(0);
+  });
+
+  test('the fill slides back towards the start when the selection moves left', async ({ page }) => {
+    const root = await openStory(page, SEGMENTED_BUTTON_GROUP_DEFAULT);
+    const list = root.getByRole('radio', { name: 'List' });
+    const grid = root.getByRole('radio', { name: 'Grid' });
+    const table = root.getByRole('radio', { name: 'Table' });
+
+    await expect(grid).toHaveAttribute('data-can-animate', 'true');
+    await pressKey(page, 'Tab');
+    await expect(list).toBeFocused();
+    await pressKey(page, 'End');
+    await expect(table).toHaveAttribute('aria-checked', 'true');
+    await expect.poll(async () => (await segmentBackground(list)).opacity).toBe(0);
+
+    expect(await pressAndReadSlideStart(grid, 'ArrowLeft')).toBeGreaterThan(0);
+    await expect(grid).toHaveAttribute('aria-checked', 'true');
+  });
+
+  test('the tabs variant underlines the checked segment on a baseline instead of filling it', async ({ page }) => {
+    const root = await openStory(page, SEGMENTED_BUTTON_GROUP_TABS);
+    const list = root.getByRole('radio', { name: 'List' });
+    const grid = root.getByRole('radio', { name: 'Grid' });
+
+    const underline = await segmentBackground(list);
+    expect(underline.opacity).toBe(1);
+    expect(underline.height).toBeGreaterThan(0);
+    expect(underline.height).toBeLessThan(underline.hostHeight / 4);
+    expect(underline.bottomGap).toBe(0);
+    expect((await segmentBackground(grid)).opacity).toBe(0);
+
+    const baseline = await root
+      .locator('.et-segmented-button-group-buttons')
+      .evaluate((el) => getComputedStyle(el).boxShadow);
+    expect(baseline).toContain('inset');
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'ArrowRight');
+
+    await expect.poll(async () => (await segmentBackground(grid)).opacity).toBe(1);
+    await expect.poll(async () => (await segmentBackground(list)).opacity).toBe(0);
   });
 });
 

@@ -142,6 +142,24 @@ test.describe('selection card / pointer', () => {
     expect(await labelColorOf(pepperoni)).not.toBe(await labelColorOf(cheese));
   });
 
+  test('hovering an unchecked card changes its border, and a checked card keeps its accent border', async ({
+    page,
+  }) => {
+    const root = await openStory(page, CHECKBOX_GROUP_CARD_STORY_ID);
+    const cheese = cardOf(root.getByRole('checkbox', { name: 'Cheese' }));
+    const pepperoni = cardOf(root.getByRole('checkbox', { name: 'Pepperoni' }));
+    const restingCheese = await borderColorOf(cheese);
+    const restingPepperoni = await borderColorOf(pepperoni);
+
+    await cheese.hover();
+    await expect.poll(() => borderColorOf(cheese)).not.toBe(restingCheese);
+    expect(await borderColorOf(cheese)).not.toBe(restingPepperoni);
+
+    await pepperoni.hover();
+    await expect.poll(() => borderColorOf(cheese)).toBe(restingCheese);
+    expect(await borderColorOf(pepperoni)).not.toBe(await borderColorOf(cheese));
+  });
+
   test('by default the control trails the trailing slot', async ({ page }) => {
     const root = await openStory(page, RADIO_CARD_SLOTS_STORY_ID);
     const card = root.getByRole('radio', { name: 'Team' });
