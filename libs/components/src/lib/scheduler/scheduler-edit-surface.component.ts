@@ -1,5 +1,5 @@
 import { NgComponentOutlet } from '@angular/common';
-import { Component, computed, ElementRef, inject, signal, ViewEncapsulation } from '@angular/core';
+import { Component, computed, ElementRef, inject, ViewEncapsulation } from '@angular/core';
 import { outputToObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { injectStyleManager } from '@ethlete/core';
 import { format } from 'date-fns';
@@ -28,6 +28,7 @@ import { SchedulerEditColorDirective } from './scheduler-edit-color.directive';
 import { SchedulerEditDescriptionDirective } from './scheduler-edit-description.directive';
 import {
   AppointmentTreeNode,
+  createSchedulerRegistry,
   SCHEDULER_EDIT_SURFACE_HOST,
   SchedulerAppointmentAction,
   SchedulerDirective,
@@ -106,20 +107,8 @@ export class SchedulerEditSurfaceComponent implements SchedulerEditSurfaceHost {
 
   public headerLabel = computed(() => this.surface.currentAppointment().title || this.untitledLabel());
 
-  private editFieldList = signal<SchedulerEditField[]>([]);
-  private appointmentActionList = signal<SchedulerAppointmentAction[]>([]);
-
-  public editFields = computed(() =>
-    this.editFieldList()
-      .filter((field) => field.enabled?.() ?? true)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
-  );
-
-  public appointmentActions = computed(() =>
-    this.appointmentActionList()
-      .filter((action) => action.enabled?.() ?? true)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
-  );
+  private editFieldRegistry = createSchedulerRegistry<SchedulerEditField>();
+  private appointmentActionRegistry = createSchedulerRegistry<SchedulerAppointmentAction>();
 
   public canSave = computed(() => this.editFields().every((field) => field.valid?.() ?? true));
 
@@ -153,6 +142,14 @@ export class SchedulerEditSurfaceComponent implements SchedulerEditSurfaceHost {
       .subscribe();
   }
 
+  public editFields() {
+    return this.editFieldRegistry.entries();
+  }
+
+  public appointmentActions() {
+    return this.appointmentActionRegistry.entries();
+  }
+
   public get element(): HTMLElement {
     return this.elementRef.nativeElement;
   }
@@ -166,11 +163,11 @@ export class SchedulerEditSurfaceComponent implements SchedulerEditSurfaceHost {
   }
 
   public registerEditField(field: SchedulerEditField) {
-    this.editFieldList.update((list) => [...list, field]);
+    this.editFieldRegistry.register(field);
   }
 
   public registerAppointmentAction(action: SchedulerAppointmentAction) {
-    this.appointmentActionList.update((list) => [...list, action]);
+    this.appointmentActionRegistry.register(action);
   }
 
   protected save() {

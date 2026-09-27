@@ -463,6 +463,29 @@ Adding your own piece is the same mechanism: write a directive that injects `SCH
 
 `SCHEDULER_FEATURE_HOST` (injected via `injectSchedulerFeatureHost()`) is the read-only surface an opt-in scheduler feature reaches on its host `<et-scheduler>`: `appointments()` (visible-range-filtered), `appointmentTree()`, `selectedAppointment()`, the scheduler's own `element`, `registerBadgeAdornment()` / `badgeAdornments()` (see [badge composability](#badge-composability)), and `registerToolbarAction()` / `toolbarActions()` (see [toolbar](#toolbar)). It's modeled on the [table](/components/table)'s feature host. `addAppointment()` opens the default edit surface for a brand-new appointment - the same "only meaningful with that default surface" caveat as `etSchedulerActionAddAppointment`, exposed here so the built-in toolbar action can call it without importing `SchedulerComponent` directly. The [edit surface](#edit-surface) has its own, separately-scoped host - see [edit-surface feature host](#edit-surface-feature-host).
 
+### Hosting features on your own component {#own-feature-host}
+
+A shell of your own that provides `SCHEDULER_FEATURE_HOST` (or `SCHEDULER_EDIT_SURFACE_HOST`) so the built-in feature directives can register on it does not need to rewrite the registration lists. `createSchedulerRegistry<T>()` is the one `<et-scheduler>` and `<et-scheduler-edit-surface>` use: `register` appends an entry, `entries()` returns the enabled ones sorted by `order`. Use one per `register…`/list pair:
+
+```ts
+@Component({
+  providers: [{ provide: SCHEDULER_FEATURE_HOST, useExisting: MyShellComponent }],
+  // ...
+})
+export class MyShellComponent implements SchedulerFeatureHost {
+  private adornments = createSchedulerRegistry<SchedulerBadgeAdornment>();
+  private actions = createSchedulerRegistry<SchedulerToolbarAction>();
+
+  badgeAdornments = this.adornments.entries;
+  registerBadgeAdornment = this.adornments.register;
+  toolbarActions = this.actions.entries;
+  registerToolbarAction = this.actions.register;
+  // appointments(), appointmentTree(), selectedAppointment(), element, addAppointment()
+}
+```
+
+The same works for `editFields` / `registerEditField` and `appointmentActions` / `registerAppointmentAction` on an edit-surface host.
+
 ## Keyboard {#keyboard}
 
 The month grid and the time grid each follow the ARIA grid pattern the [calendar](/components/calendar#accessibility) uses: the whole grid is **one Tab stop**, and the arrow keys move a roving focus between its cells. Only the focused cell has `tabindex="0"`; every other cell, every appointment and the "+N more" trigger have `tabindex="-1"`, so Tab leaves the grid in one press. The grid's stop starts on `focusedDate`'s day - on the time grid, at the hour the body opens scrolled to.

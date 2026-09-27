@@ -21,6 +21,7 @@ import {
   AppointmentTreeNode,
   countDescendants,
   createOverlayOpener,
+  createSchedulerRegistry,
   defineOverlay,
   injectDialogStrategy,
   injectSchedulerEditSurfaceHost,
@@ -229,30 +230,19 @@ class ShellComponent implements SchedulerFeatureHost {
   showSubtasks = signal(true);
   addRequests = signal(0);
   rescheduled = signal<Appointment | null>(null);
-  private adornments = signal<SchedulerBadgeAdornment[]>([]);
-  private actions = signal<SchedulerToolbarAction[]>([]);
+  private adornments = createSchedulerRegistry<SchedulerBadgeAdornment>();
+  private actions = createSchedulerRegistry<SchedulerToolbarAction>();
 
-  badgeAdornments = computed(() =>
-    this.adornments()
-      .filter((adornment) => adornment.enabled?.() ?? true)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
-  );
-
-  toolbarActions = computed(() => this.actions().filter((action) => action.enabled?.() ?? true));
+  badgeAdornments = this.adornments.entries;
+  registerBadgeAdornment = this.adornments.register;
+  toolbarActions = this.actions.entries;
+  registerToolbarAction = this.actions.register;
 
   appointmentTree = () => this.calendar().appointmentTree();
   selectedAppointment = () => this.calendar().selectedAppointment();
 
   appointments() {
     return this.calendar().visibleAppointments();
-  }
-
-  registerBadgeAdornment(adornment: SchedulerBadgeAdornment) {
-    this.adornments.update((list) => [...list, adornment]);
-  }
-
-  registerToolbarAction(action: SchedulerToolbarAction) {
-    this.actions.update((list) => [...list, action]);
   }
 
   addAppointment() {
@@ -393,32 +383,17 @@ class EditSheetComponent implements SchedulerEditSurfaceHost {
   appointment = input.required<Appointment>();
   appointments = input<readonly Appointment[]>([]);
   element = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
-  private fields = signal<SchedulerEditField[]>([]);
-  private actions = signal<SchedulerAppointmentAction[]>([]);
+  private fields = createSchedulerRegistry<SchedulerEditField>();
+  private actions = createSchedulerRegistry<SchedulerAppointmentAction>();
 
-  editFields = computed(() =>
-    this.fields()
-      .filter((field) => field.enabled?.() ?? true)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
-  );
-
-  appointmentActions = computed(() =>
-    this.actions()
-      .filter((action) => action.enabled?.() ?? true)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
-  );
+  editFields = this.fields.entries;
+  registerEditField = this.fields.register;
+  appointmentActions = this.actions.entries;
+  registerAppointmentAction = this.actions.register;
 
   canSave = computed(() => this.editFields().every((field) => field.valid?.() ?? true));
 
   appointmentTree = () => this.surface().appointmentTree();
-
-  registerEditField(field: SchedulerEditField) {
-    this.fields.update((list) => [...list, field]);
-  }
-
-  registerAppointmentAction(action: SchedulerAppointmentAction) {
-    this.actions.update((list) => [...list, action]);
-  }
 
   close(result: SchedulerEditSurfaceResult) {
     this.overlayRef.close(result);

@@ -1,8 +1,49 @@
-import { inject, InjectionToken, Injector, InputSignal, Signal, Type, WritableSignal } from '@angular/core';
+import {
+  computed,
+  inject,
+  InjectionToken,
+  Injector,
+  InputSignal,
+  Signal,
+  signal,
+  Type,
+  WritableSignal,
+} from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { SCHEDULER_ERROR_CODES } from '../scheduler-errors';
 import { Appointment } from '../scheduler.types';
 import { AppointmentTreeNode } from './internals/scheduler-tree';
+
+/** What every registration point on a scheduler host shares: an optional render order and on/off switch. */
+export type SchedulerRegistryEntry = {
+  order?: number;
+  enabled?: Signal<boolean>;
+};
+
+export type SchedulerRegistry<T extends SchedulerRegistryEntry> = {
+  /** The registered entries, enabled ones only, sorted by `order` (registration order breaks ties). */
+  entries: Signal<readonly T[]>;
+  /** Adds an entry. Unbound-safe, so it can be assigned straight onto a host as its `register…` method. */
+  register: (entry: T) => void;
+};
+
+/**
+ * The registration list behind every `register…`/list pair on {@link SchedulerFeatureHost} and
+ * {@link SchedulerEditSurfaceHost}. Use one per pair when implementing either host on your own
+ * component: `badgeAdornments = registry.entries; registerBadgeAdornment = registry.register;`.
+ */
+export const createSchedulerRegistry = <T extends SchedulerRegistryEntry>(): SchedulerRegistry<T> => {
+  const list = signal<readonly T[]>([]);
+
+  return {
+    entries: computed(() =>
+      list()
+        .filter((entry) => entry.enabled?.() ?? true)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    ),
+    register: (entry) => list.update((current) => [...current, entry]),
+  };
+};
 
 /**
  * A feature's contribution to every appointment badge/block - e.g. the title, a time range, the
