@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { Locator, Page, expect, test } from '@playwright/test';
 import { boxOf, expectFocusVisible, openStory, pressKey, settle, tap, touchDrag } from '../support';
 
 const DEFAULT_STORY_ID = 'components-layout-grid--default';
@@ -200,5 +200,131 @@ test.describe('grid / touch', () => {
     await tap(items.first().locator(REMOVE_BUTTON));
 
     await expect(items).toHaveCount(3);
+  });
+});
+
+const GRID = '.et-grid';
+
+async function inlineTransition(locator: Locator): Promise<string> {
+  return locator.evaluate((element: HTMLElement) => element.style.transition);
+}
+
+function waitForItemTransition(page: Page, value: string) {
+  return page.waitForFunction(
+    (expected) => document.querySelector<HTMLElement>('.et-grid-item')?.style.transition === expected,
+    value,
+    { polling: 'raf' },
+  );
+}
+
+async function expectSameRow(a: Locator, b: Locator): Promise<void> {
+  expect((await boxOf(a)).y).toBeCloseTo((await boxOf(b)).y, 0);
+}
+
+async function expectStackedFullWidth(grid: Locator, items: Locator[]): Promise<void> {
+  const gridBox = await boxOf(grid);
+  const boxes = await Promise.all(items.map((item) => boxOf(item)));
+
+  for (const [index, box] of boxes.entries()) {
+    expect(box.width).toBeCloseTo(gridBox.width, 0);
+    expect(box.y).toBeGreaterThan(boxes[index - 1]?.y ?? gridBox.y - 1);
+  }
+}
+
+test.describe('grid / motion', () => {
+  test('items and the container animate their geometry once the grid has settled', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+
+    await expect.poll(() => inlineTransition(root.locator(ITEM).first())).toContain('translate');
+    expect(await inlineTransition(root.locator(ITEM).first())).toContain('width');
+    expect(await inlineTransition(root.locator(GRID))).toContain('height');
+  });
+
+  test('reduced motion turns every item and container transition off', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    await settle(page, 200);
+
+    const transitions = await root
+      .locator(ITEM)
+      .evaluateAll((items) => items.map((item) => (item as HTMLElement).style.transition));
+
+    expect(transitions).toEqual(['none', 'none', 'none', 'none']);
+    expect(await inlineTransition(root.locator(GRID))).toBe('none');
+  });
+});
+
+test.describe('grid / pointer motion', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: mouse drag');
+
+  test('the dragged item follows the pointer untransitioned while its neighbours keep animating', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const dragged = root.locator(ITEM).nth(2);
+    const neighbour = root.locator(ITEM).nth(3);
+    const grab = await boxOf(dragged.locator(ITEM_CONTENT));
+    const x = grab.x + grab.width / 2;
+    const y = grab.y + grab.height / 2;
+
+    await expect.poll(() => inlineTransition(dragged)).toContain('translate');
+
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + 150, y, { steps: 10 });
+
+    await expect(dragged).toHaveClass(/et-grid-item--dragging/);
+    expect(await inlineTransition(dragged)).toBe('none');
+    expect(await inlineTransition(neighbour)).toContain('translate');
+
+    await page.mouse.up();
+
+    await expect.poll(() => inlineTransition(dragged)).toContain('translate');
+  });
+
+  test('dragging an item to the bottom edge of the viewport scrolls the page', async ({ page }) => {
+    await page.setViewportSize({ width: 1000, height: 600 });
+
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const item = root.locator(ITEM).first();
+    const grab = await boxOf(item.locator(ITEM_CONTENT));
+    const x = grab.x + grab.width / 2;
+
+    await page.mouse.move(x, grab.y + 20);
+    await page.mouse.down();
+    await page.mouse.move(x, 590, { steps: 10 });
+
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(50);
+
+    await page.mouse.up();
+
+    await expect(item).not.toHaveClass(/et-grid-item--dragging/);
+  });
+});
+
+test.describe('grid / container resize', () => {
+  test.skip(({ isMobile }) => isMobile, 'resizes a desktop viewport across the lg, md and sm breakpoints');
+
+  test('crossing a breakpoint reflows the items to its columns without animating the jump', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const grid = root.locator(GRID);
+    const items = [0, 1, 2, 3].map((index) => root.locator(ITEM).nth(index));
+    const first = root.locator(ITEM).nth(0);
+
+    await expectSameRow(first, root.locator(ITEM).nth(1));
+    await expect.poll(() => inlineTransition(first)).toContain('translate');
+
+    const suppressed = waitForItemTransition(page, 'none');
+    await page.setViewportSize({ width: 900, height: 720 });
+    await suppressed;
+
+    await expect.poll(async () => (await boxOf(first)).width).toBeCloseTo((await boxOf(grid)).width, 0);
+    await expectStackedFullWidth(grid, items);
+    await expect.poll(() => inlineTransition(first)).toContain('translate');
+
+    await page.setViewportSize({ width: 500, height: 720 });
+
+    await expect.poll(async () => (await boxOf(grid)).width).toBeLessThan(500);
+    await expect.poll(async () => (await boxOf(first)).width).toBeCloseTo((await boxOf(grid)).width, 0);
+    await expectStackedFullWidth(grid, items);
   });
 });
