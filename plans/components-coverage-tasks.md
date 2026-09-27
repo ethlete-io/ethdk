@@ -38,6 +38,9 @@ agent that works alone, batch by batch.
   cascader + colour input + dropzone (29a5b7553). Open: a focused cascader node shows only a background change, no
   outline, so `expectFocusVisible` fails on it.
 - In progress 2026-09-27: task 8 for breadcrumb + scrollable groups; phone-input + chart groups; tree + task 7 groups.
+- User decisions 2026-09-27: (a) scheduler "+N more" pick opens a centered dialog (explicit no-anchor in
+  `takeSurfaceAnchor`); (b) cascader nodes get the shared focus ring; (c) check the touch column reorder long press on
+  real iOS/Android with `verify-on-apple-devices` after task 8, before "b7 done". (a) and (b) in progress.
 
 ## Rules for every batch
 
