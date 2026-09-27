@@ -51,6 +51,18 @@ class MatchReviewComponent {
 class DoubleIconRatingComponent {}
 
 @Component({
+  selector: 'et-scenario-wrapped-rating',
+  imports: [RATING_IMPORTS, FORM_FIELD_IMPORTS],
+  template: `
+    <et-form-field>
+      <et-label>Match rating</et-label>
+      <et-rating />
+    </et-form-field>
+  `,
+})
+class WrappedRatingComponent {}
+
+@Component({
   selector: 'et-scenario-venue-rating',
   imports: [RatingComponent, RatingIconDirective, RatingDirective],
   template: `
@@ -297,6 +309,18 @@ describe('rating scenarios', () => {
     press(s, 'ArrowRight', hearts());
     expect(fixture.componentInstance.hearts()).toBe(3);
     expect(states()).toEqual(['full', 'full', 'full', 'empty', 'empty']);
+  });
+
+  it('tells a rating wrapped in et-form-field to take the label itself', () => {
+    const s = scenario();
+
+    TestBed.createComponent(WrappedRatingComponent);
+    s.tick(1);
+
+    s.expectError(/ET2200.*<et-rating> is a field of its own/s);
+    s.expectError(/ET2201.*<et-rating> sits inside another field \(<et-form-field>\)/s);
+    s.errors.splice(0);
+    s.frame(2);
   });
 
   it('reports a second icon template', () => {
