@@ -28,9 +28,13 @@ agent that works alone, batch by batch.
 - Done 2026-09-27: task 8 for button + focus ring (c7a047ba3, window-control focus ring fix), form field (02b29b09e),
   table (f8b697d5d), icon (17fedf28e). User decision 2026-09-27: table column reorder on touch starts after a ~400 ms still
   long press (non-passive `touchmove` `preventDefault()` once active); keep `touch-action: auto`, no `pan-y`, no grip.
-  In progress.
+  Done in 3c91e551f (listener sits on the cells from touchstart; Chromium ignores one added later). Not checked on
+  a real iOS/Android device.
 - User 2026-09-27: finish ALL of task 8 before "b7 done".
-- In progress 2026-09-27: task 8 for stream + notification, scheduler + grid.
+- Done 2026-09-27: task 8 for stream (eba6e2fad), notification (cde3247ad), match (54cf45769), scheduler (5b7bcc9c0,
+  swipe-opens-create fix), grid (2ace28486). Open, user call: an appointment picked from the scheduler "+N more" menu
+  anchors to the trigger, the docs say centered (`test.fail`).
+- In progress 2026-09-27: task 8 for rich-text editor; bracket + cascader group; breadcrumb + scrollable groups.
 
 ## Rules for every batch
 
