@@ -128,16 +128,18 @@ describe('createV2DropzoneUpload', () => {
 
       handle.execute();
       await flush();
-      await settle(35);
-      TestBed.tick();
+      await vi.waitFor(() => {
+        TestBed.tick();
+        expect(handle.progress()).toBeGreaterThan(0);
+      });
 
       expect(handle.state()).toBe('uploading');
-      expect(handle.progress()).toBeGreaterThan(0);
 
-      await settle(80);
-      TestBed.tick();
+      await vi.waitFor(() => {
+        TestBed.tick();
+        expect(handle.state()).toBe('success');
+      });
 
-      expect(handle.state()).toBe('success');
       expect(handle.progress()).toBeNull();
     });
 
