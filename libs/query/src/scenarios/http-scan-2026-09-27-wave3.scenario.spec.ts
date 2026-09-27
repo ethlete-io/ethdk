@@ -210,4 +210,27 @@ describe('http scan 2026-09-27 wave 3 scenario with devtools', () => {
     entry.overrides.clearAll();
     c.destroy();
   });
+
+  it('still applies a root-path override to a response that settled as null', () => {
+    const s = scenario();
+    s.api.on('GET', '/root-override-null', () => ({ body: null }));
+
+    const getItem = s.get<{ response: { title: string } | null }>('/root-override-null');
+    const c = s.consumer();
+    const query = c.run(() => getItem());
+    s.tick();
+
+    expect(query.response()).toBeNull();
+
+    const entry = queryDevtoolsEntries().find((candidate) => candidate.handle === query);
+
+    if (!entry?.overrides) throw new Error('wave 3 scenario: the query registered no overrides recorder');
+
+    entry.overrides.arm({ type: 'set', path: [], value: { title: 'Designed' } });
+
+    expect(query.response()).toEqual({ title: 'Designed' });
+
+    entry.overrides.clearAll();
+    c.destroy();
+  });
 });

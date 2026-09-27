@@ -155,11 +155,13 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
     source: () => {
       const current = request();
       const raw = current?.response() ?? null;
+      const settled = current?.currentEvent()?.type === HttpEventType.Response;
+      const overrides = raw !== null || settled ? options.devtoolsOverrides : null;
 
       return {
         request: current,
-        raw: options.devtoolsOverrides && raw !== null ? (options.devtoolsOverrides.apply(raw) as typeof raw) : raw,
-        settled: current?.currentEvent()?.type === HttpEventType.Response,
+        raw: overrides ? (overrides.apply(raw) as typeof raw) : raw,
+        settled,
       };
     },
     computation: (current, previous) => {
