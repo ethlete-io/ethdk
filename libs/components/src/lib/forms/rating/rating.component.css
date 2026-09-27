@@ -96,6 +96,10 @@
     .et-rating-row--fill {
       pointer-events: none;
       clip-path: inset(0 calc(100% - var(--_et-rating-fill-width)) 0 0);
+
+      &:dir(rtl) {
+        clip-path: inset(0 0 0 calc(100% - var(--_et-rating-fill-width)));
+      }
     }
 
     &[data-readonly] {
@@ -145,6 +149,10 @@
          icon so a custom icon template, which renders one row and no fill, is left alone. */
       .et-rating-row:has(.et-rating-icon-base) {
         clip-path: inset(0 0 0 var(--_et-rating-fill-width));
+
+        &:dir(rtl) {
+          clip-path: inset(0 var(--_et-rating-fill-width) 0 0);
+        }
       }
 
       .et-rating-icon-base {

@@ -243,6 +243,42 @@ describe('rating scenarios', () => {
     expect(page.model().stars).toBe(2);
   });
 
+  it('reads the star under the pointer from the inline start in RTL', () => {
+    const s = scenario();
+    const fixture = render(s);
+    const page = fixture.componentInstance;
+    const icons = [
+      ...slider().querySelectorAll<HTMLElement>('.et-rating-row:not(.et-rating-row--fill) .et-rating-icon'),
+    ];
+    const surface = slider().querySelector<HTMLElement>('.et-rating-icons')!;
+
+    slider().style.direction = 'rtl';
+    icons.forEach((icon, position) => {
+      const left = 200 - position * 28;
+
+      icon.getBoundingClientRect = () => DOMRect.fromRect({ x: left, y: 0, width: 24, height: 24 });
+    });
+
+    surface.dispatchEvent(new MouseEvent('pointermove', { clientX: 210, bubbles: true }));
+    s.tick();
+    expect(surface.style.getPropertyValue('--_et-rating-fill-icons')).toBe('1');
+
+    surface.dispatchEvent(new MouseEvent('pointermove', { clientX: 150, bubbles: true }));
+    s.tick();
+    expect(surface.style.getPropertyValue('--_et-rating-fill-icons')).toBe('3');
+
+    page.allowHalf.set(true);
+    s.tick();
+
+    icons[1]!.dispatchEvent(new MouseEvent('click', { clientX: 190, bubbles: true }));
+    s.tick();
+    expect(page.model().stars).toBe(1.5);
+
+    icons[1]!.dispatchEvent(new MouseEvent('click', { clientX: 175, bubbles: true }));
+    s.tick();
+    expect(page.model().stars).toBe(2);
+  });
+
   it('renders a custom icon per step with its state', () => {
     const s = scenario();
     const fixture = render(s);

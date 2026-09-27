@@ -50,6 +50,7 @@ export class RatingComponent {
   public support = injectFormSupport();
   protected rating = inject(RatingDirective);
   private destroyRef = inject(DestroyRef);
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   private baseIcons = viewChildren<ElementRef<HTMLElement>>('baseIcon');
 
@@ -121,7 +122,7 @@ export class RatingComponent {
 
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
 
-    this.rating.commitPointer(event.clientX - rect.left < rect.width / 2 ? index - 0.5 : index);
+    this.rating.commitPointer(this.offsetFromInlineStart(rect, event.clientX) < rect.width / 2 ? index - 0.5 : index);
   }
 
   public focus(options?: FocusOptions) {
@@ -165,14 +166,21 @@ export class RatingComponent {
     icons.forEach((icon, position) => {
       const rect = icon.getBoundingClientRect();
       const index = position + 1;
+      const offset = this.offsetFromInlineStart(rect, clientX);
 
-      if (clientX >= rect.right) {
+      if (offset >= rect.width) {
         value = index;
-      } else if (clientX >= rect.left) {
-        value = this.rating.allowHalf() && clientX < rect.left + rect.width / 2 ? Math.max(0.5, index - 0.5) : index;
+      } else if (offset >= 0) {
+        value = this.rating.allowHalf() && offset < rect.width / 2 ? Math.max(0.5, index - 0.5) : index;
       }
     });
 
     return value;
+  }
+
+  private offsetFromInlineStart(rect: DOMRect, clientX: number) {
+    return getComputedStyle(this.elementRef.nativeElement).direction === 'rtl'
+      ? rect.right - clientX
+      : clientX - rect.left;
   }
 }
