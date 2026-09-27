@@ -102,11 +102,21 @@ function renameConflictingSymbols(tree: Tree): void {
 
 function renameSymbolsInFile(content: string, filePath: string, symbolUsageCounts: Map<string, number>): string {
   const sourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
+  const checker = createBindingChecker(sourceFile);
   const replacements: Array<{ start: number; end: number; replacement: string; oldName: string }> = [];
-
-  // Track which symbols are imported from @ethlete/query
-  const importedSymbols = new Set<string>();
   const namespaceAliases = collectQueryNamespaceAliases(sourceFile);
+  const renamedImports = new Map<ts.Symbol, { oldName: string; newName: string }>();
+
+  sourceFile.statements.forEach((statement) => {
+    getQueryNamedImports(statement)?.elements.forEach((element) => {
+      const newName = TYPE_RENAMES.get(element.name.text) || FUNCTION_RENAMES.get(element.name.text);
+      const symbol = checker.getSymbolAtLocation(element.name);
+
+      if (!element.propertyName && newName && symbol) {
+        renamedImports.set(symbol, { oldName: element.name.text, newName });
+      }
+    });
+  });
 
   function visit(node: ts.Node) {
     const namespaceMember = getNamespaceMember(node, namespaceAliases)?.member;
@@ -122,56 +132,20 @@ function renameSymbolsInFile(content: string, filePath: string, symbolUsageCount
       });
     }
 
-    // Track imports from @ethlete/query
-    if (ts.isImportDeclaration(node)) {
-      const moduleSpecifier = node.moduleSpecifier;
-      if (ts.isStringLiteral(moduleSpecifier) && moduleSpecifier.text === '@ethlete/query') {
-        const namedBindings = node.importClause?.namedBindings;
-        if (namedBindings && ts.isNamedImports(namedBindings)) {
-          namedBindings.elements.forEach((element) => {
-            const importedName = element.propertyName?.text || element.name.text;
-            if (TYPE_RENAMES.has(importedName) || FUNCTION_RENAMES.has(importedName)) {
-              importedSymbols.add(importedName);
-            }
-          });
-        }
+    if (ts.isIdentifier(node) && !ts.isImportSpecifier(node.parent)) {
+      const symbol = resolveReferenceSymbol(checker, node);
+      const rename = symbol && renamedImports.get(symbol);
+
+      if (rename) {
+        replacements.push({
+          start: node.getStart(sourceFile),
+          end: node.getEnd(),
+          replacement: ts.isShorthandPropertyAssignment(node.parent)
+            ? `${rename.oldName}: ${rename.newName}`
+            : rename.newName,
+          oldName: rename.oldName,
+        });
       }
-    }
-
-    // Rename identifiers that match our rename maps
-    if (ts.isIdentifier(node)) {
-      const name = node.text;
-      const parent = node.parent;
-
-      // Only rename if this symbol was imported from @ethlete/query
-      if (!importedSymbols.has(name)) {
-        ts.forEachChild(node, visit);
-        return;
-      }
-
-      const newName = TYPE_RENAMES.get(name) || FUNCTION_RENAMES.get(name);
-      if (!newName) {
-        ts.forEachChild(node, visit);
-        return;
-      }
-
-      // Skip if it's the imported name in an import specifier (we'll handle that separately)
-      if (
-        (ts.isImportSpecifier(parent) && (parent.propertyName === node || parent.name === node)) ||
-        (ts.isPropertyAccessExpression(parent) && parent.name === node) ||
-        (ts.isQualifiedName(parent) && parent.right === node)
-      ) {
-        ts.forEachChild(node, visit);
-        return;
-      }
-
-      // Rename the identifier
-      replacements.push({
-        start: node.getStart(sourceFile),
-        end: node.getEnd(),
-        replacement: newName,
-        oldName: name,
-      });
     }
 
     ts.forEachChild(node, visit);
@@ -179,17 +153,14 @@ function renameSymbolsInFile(content: string, filePath: string, symbolUsageCount
 
   visit(sourceFile);
 
-  // Update imports in @ethlete/query import declarations
   const importReplacements = updateImports(sourceFile);
   replacements.push(...importReplacements);
 
-  // Count usages
   replacements.forEach((r) => {
     const count = symbolUsageCounts.get(r.oldName) || 0;
     symbolUsageCounts.set(r.oldName, count + 1);
   });
 
-  // Apply replacements in reverse order
   let result = content;
   replacements.sort((a, b) => b.start - a.start);
 
@@ -198,6 +169,33 @@ function renameSymbolsInFile(content: string, filePath: string, symbolUsageCount
   }
 
   return result;
+}
+
+function createBindingChecker(sourceFile: ts.SourceFile): ts.TypeChecker {
+  const options: ts.CompilerOptions = { noLib: true, noResolve: true, types: [] };
+  const host = ts.createCompilerHost(options);
+
+  host.getSourceFile = (fileName) => (fileName === sourceFile.fileName ? sourceFile : undefined);
+  host.fileExists = (fileName) => fileName === sourceFile.fileName;
+  host.readFile = (fileName) => (fileName === sourceFile.fileName ? sourceFile.text : undefined);
+
+  return ts.createProgram([sourceFile.fileName], options, host).getTypeChecker();
+}
+
+function resolveReferenceSymbol(checker: ts.TypeChecker, identifier: ts.Identifier): ts.Symbol | undefined {
+  const parent = identifier.parent;
+
+  if (ts.isShorthandPropertyAssignment(parent) && parent.name === identifier) {
+    return checker.getShorthandAssignmentValueSymbol(parent);
+  }
+
+  if (ts.isExportSpecifier(parent)) {
+    return (parent.propertyName ?? parent.name) === identifier && !parent.parent.parent.moduleSpecifier
+      ? checker.getExportSpecifierLocalTargetSymbol(parent)
+      : undefined;
+  }
+
+  return checker.getSymbolAtLocation(identifier);
 }
 
 function collectQueryNamespaceAliases(sourceFile: ts.SourceFile): Set<string> {
@@ -516,11 +514,13 @@ function applyReplacements(
 
 function reportWithArgsNullReturns(tree: Tree): void {
   const sites: string[] = [];
+  const uncheckedSites: string[] = [];
 
   visitQueryFiles(tree, ['withArgs'], (filePath, content) => {
-    const sourceFile = createSourceFile(content, filePath);
+    const { nullLines, uncheckedLines } = findWithArgsNullReturns(createSourceFile(content, filePath));
 
-    findWithArgsNullReturns(sourceFile).forEach((line) => sites.push(`   - ${filePath}:${line}`));
+    nullLines.forEach((line) => sites.push(`   - ${filePath}:${line}`));
+    uncheckedLines.forEach((line) => uncheckedSites.push(`   - ${filePath}:${line}`));
   });
 
   if (sites.length > 0) {
@@ -528,25 +528,98 @@ function reportWithArgsNullReturns(tree: Tree): void {
       `\n⚠️ These withArgs callbacks return null. Before v3, null kept the previous args; v3 parks the query instead (args, response and executionState become null, and polling pauses). Check each one: a null that should park the query is fine, one that relied on keeping the previous args must now return those args itself:\n${sites.join('\n')}`,
     );
   }
+
+  if (uncheckedSites.length > 0) {
+    console.warn(
+      `\n⚠️ TODO: These withArgs callbacks are passed by reference from somewhere this file does not declare, so they could not be checked for a null return. Check each one by hand - v3 parks the query on null, where earlier versions kept the previous args:\n${uncheckedSites.join('\n')}`,
+    );
+  }
 }
 
-function findWithArgsNullReturns(sourceFile: ts.SourceFile): number[] {
-  const localNames = collectNamedQueryImports(sourceFile, 'withArgs');
-  const namespaceAliases = collectQueryNamespaceAliases(sourceFile);
-  const lines: number[] = [];
+type CheckableFunction = ts.FunctionLikeDeclaration & { body: ts.ConciseBody };
 
-  const isWithArgsCallee = (callee: ts.Expression) =>
-    (ts.isIdentifier(callee) && localNames.has(callee.text)) ||
-    getNamespaceMember(callee, namespaceAliases)?.member.text === 'withArgs';
+const isCheckableFunction = (node: ts.Node | undefined): node is CheckableFunction =>
+  !!node &&
+  (ts.isArrowFunction(node) ||
+    ts.isFunctionExpression(node) ||
+    ts.isFunctionDeclaration(node) ||
+    ts.isMethodDeclaration(node)) &&
+  !!node.body;
+
+function resolveCallbackReference(checker: ts.TypeChecker, source: ts.Expression): CheckableFunction | undefined {
+  const name = ts.isPropertyAccessExpression(source) ? source.name : source;
+
+  if (!ts.isIdentifier(name)) return undefined;
+
+  const declaration = checker.getSymbolAtLocation(name)?.valueDeclaration;
+
+  if (isCheckableFunction(declaration)) return declaration;
+
+  if (!declaration || !(ts.isVariableDeclaration(declaration) || ts.isPropertyDeclaration(declaration))) {
+    return undefined;
+  }
+
+  const initializer = declaration.initializer && skipOuterExpressions(declaration.initializer);
+
+  if (isCheckableFunction(initializer)) return initializer;
+
+  if (
+    initializer &&
+    ts.isCallExpression(initializer) &&
+    ts.isIdentifier(initializer.expression) &&
+    initializer.expression.text === 'computed'
+  ) {
+    const [computation] = initializer.arguments;
+
+    return isCheckableFunction(computation) ? computation : undefined;
+  }
+
+  return undefined;
+}
+
+function skipOuterExpressions(expression: ts.Expression): ts.Expression {
+  return ts.isParenthesizedExpression(expression) ||
+    ts.isAsExpression(expression) ||
+    ts.isSatisfiesExpression(expression)
+    ? skipOuterExpressions(expression.expression)
+    : expression;
+}
+
+function findWithArgsNullReturns(sourceFile: ts.SourceFile): { nullLines: number[]; uncheckedLines: number[] } {
+  const checker = createBindingChecker(sourceFile);
+  const withArgsImports = new Set<ts.Symbol>();
+  const namespaceAliases = collectQueryNamespaceAliases(sourceFile);
+  const nullLines: number[] = [];
+  const uncheckedLines: number[] = [];
+  const lineOf = (node: ts.Node) => sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
+
+  sourceFile.statements.forEach((statement) => {
+    getQueryNamedImports(statement)?.elements.forEach((element) => {
+      const symbol = checker.getSymbolAtLocation(element.name);
+
+      if ((element.propertyName ?? element.name).text === 'withArgs' && symbol) withArgsImports.add(symbol);
+    });
+  });
+
+  const isWithArgsCallee = (callee: ts.Expression) => {
+    if (ts.isIdentifier(callee)) {
+      const symbol = checker.getSymbolAtLocation(callee);
+
+      return !!symbol && withArgsImports.has(symbol);
+    }
+
+    return getNamespaceMember(callee, namespaceAliases)?.member.text === 'withArgs';
+  };
 
   function visit(node: ts.Node) {
     if (ts.isCallExpression(node) && isWithArgsCallee(node.expression)) {
       const [source] = node.arguments;
+      const callback = source && (isCheckableFunction(source) ? source : resolveCallbackReference(checker, source));
 
-      if (source && (ts.isArrowFunction(source) || ts.isFunctionExpression(source))) {
-        collectNullReturns(source).forEach((nullNode) => {
-          lines.push(sourceFile.getLineAndCharacterOfPosition(nullNode.getStart(sourceFile)).line + 1);
-        });
+      if (callback) {
+        collectNullReturns(callback).forEach((nullNode) => nullLines.push(lineOf(nullNode)));
+      } else if (source) {
+        uncheckedLines.push(lineOf(source));
       }
     }
 
@@ -555,10 +628,10 @@ function findWithArgsNullReturns(sourceFile: ts.SourceFile): number[] {
 
   visit(sourceFile);
 
-  return lines;
+  return { nullLines: [...new Set(nullLines)].sort((a, b) => a - b), uncheckedLines };
 }
 
-function collectNullReturns(fn: ts.ArrowFunction | ts.FunctionExpression): ts.Node[] {
+function collectNullReturns(fn: CheckableFunction): ts.Node[] {
   if (!ts.isBlock(fn.body)) {
     return findNullResults(fn.body);
   }
@@ -616,14 +689,17 @@ const CLEAR_QUERY_ARGS_NAMES = new Set(['CLEAR_QUERY_ARGS', 'ClearQueryArgs']);
 
 function replaceClearQueryArgs(tree: Tree): void {
   const updatedFiles: string[] = [];
+  const reExports: string[] = [];
 
   visitQueryFiles(tree, [...CLEAR_QUERY_ARGS_NAMES], (filePath, content) => {
     const result = replaceClearQueryArgsInFile(content, filePath);
 
-    if (result !== content) {
-      tree.write(filePath, result);
+    if (result.content !== content) {
+      tree.write(filePath, result.content);
       updatedFiles.push(filePath);
     }
+
+    result.reExportLines.forEach((line) => reExports.push(`   - ${filePath}:${line}`));
   });
 
   if (updatedFiles.length > 0) {
@@ -631,13 +707,23 @@ function replaceClearQueryArgs(tree: Tree): void {
       `\n🅿️ Replaced CLEAR_QUERY_ARGS with null (the v3 park value) in ${updatedFiles.length} files: ${updatedFiles.join(', ')}`,
     );
   }
+
+  if (reExports.length > 0) {
+    console.warn(
+      `\n⚠️ These files re-exported CLEAR_QUERY_ARGS or ClearQueryArgs. They now export a local \`null\` under the same name, so their importers keep compiling. Replace each import of it with \`null\`, then delete the export:\n${reExports.join('\n')}`,
+    );
+  }
 }
 
-function replaceClearQueryArgsInFile(content: string, filePath: string): string {
+function replaceClearQueryArgsInFile(content: string, filePath: string): { content: string; reExportLines: number[] } {
   const sourceFile = createSourceFile(content, filePath);
+  const checker = createBindingChecker(sourceFile);
   const namespaceAliases = collectQueryNamespaceAliases(sourceFile);
-  const localNames = new Set<string>();
+  const clearImports = new Map<ts.Symbol, string>();
   const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+  const reExportLines: number[] = [];
+  const statementEnd = (statement: ts.Statement) =>
+    content[statement.getEnd()] === '\n' ? statement.getEnd() + 1 : statement.getEnd();
 
   sourceFile.statements.forEach((statement) => {
     const namedBindings = getQueryNamedImports(statement);
@@ -645,9 +731,13 @@ function replaceClearQueryArgsInFile(content: string, filePath: string): string 
     if (!namedBindings) return;
 
     const kept = namedBindings.elements.filter((element) => {
-      if (!CLEAR_QUERY_ARGS_NAMES.has((element.propertyName ?? element.name).text)) return true;
+      const importedName = (element.propertyName ?? element.name).text;
 
-      localNames.add(element.name.text);
+      if (!CLEAR_QUERY_ARGS_NAMES.has(importedName)) return true;
+
+      const symbol = checker.getSymbolAtLocation(element.name);
+
+      if (symbol) clearImports.set(symbol, importedName);
 
       return false;
     });
@@ -657,9 +747,7 @@ function replaceClearQueryArgsInFile(content: string, filePath: string): string 
     const importClause = (statement as ts.ImportDeclaration).importClause;
 
     if (kept.length === 0 && !importClause?.name) {
-      const end = content[statement.getEnd()] === '\n' ? statement.getEnd() + 1 : statement.getEnd();
-
-      replacements.push({ start: statement.getStart(sourceFile), end, replacement: '' });
+      replacements.push({ start: statement.getStart(sourceFile), end: statementEnd(statement), replacement: '' });
 
       return;
     }
@@ -671,13 +759,73 @@ function replaceClearQueryArgsInFile(content: string, filePath: string): string 
     });
   });
 
+  sourceFile.statements.forEach((statement) => {
+    if (!ts.isExportDeclaration(statement) || !statement.exportClause || !ts.isNamedExports(statement.exportClause)) {
+      return;
+    }
+
+    const fromQuery = isQueryModuleSpecifier(statement.moduleSpecifier);
+
+    if (statement.moduleSpecifier && !fromQuery) return;
+
+    const clearedName = (element: ts.ExportSpecifier) => {
+      if (fromQuery) {
+        const exportedName = (element.propertyName ?? element.name).text;
+
+        return CLEAR_QUERY_ARGS_NAMES.has(exportedName) ? exportedName : undefined;
+      }
+
+      const symbol = checker.getExportSpecifierLocalTargetSymbol(element);
+
+      return symbol && clearImports.get(symbol);
+    };
+
+    const elements = statement.exportClause.elements;
+    const nullExports = elements.flatMap((element) => {
+      const name = clearedName(element);
+
+      if (!name) return [];
+
+      return [`export ${name === 'ClearQueryArgs' ? 'type' : 'const'} ${element.name.text} = null;`];
+    });
+
+    if (nullExports.length === 0) return;
+
+    reExportLines.push(sourceFile.getLineAndCharacterOfPosition(statement.getStart(sourceFile)).line + 1);
+
+    const kept = elements.filter((element) => !clearedName(element));
+
+    if (kept.length === 0) {
+      replacements.push({
+        start: statement.getStart(sourceFile),
+        end: statement.getEnd(),
+        replacement: nullExports.join('\n'),
+      });
+
+      return;
+    }
+
+    replacements.push({
+      start: statement.exportClause.getStart(sourceFile),
+      end: statement.exportClause.getEnd(),
+      replacement: `{ ${kept.map((element) => element.getText(sourceFile)).join(', ')} }`,
+    });
+    replacements.push({
+      start: statement.getEnd(),
+      end: statement.getEnd(),
+      replacement: `\n${nullExports.join('\n')}`,
+    });
+  });
+
   function visit(node: ts.Node) {
     const namespaceMember = getNamespaceMember(node, namespaceAliases)?.member;
-    const isClearQueryArgs =
-      (namespaceMember && CLEAR_QUERY_ARGS_NAMES.has(namespaceMember.text)) ||
-      (ts.isIdentifier(node) && localNames.has(node.text) && isReference(node));
+    const referencesImport = () => {
+      const symbol = ts.isIdentifier(node) ? resolveReferenceSymbol(checker, node) : undefined;
 
-    if (isClearQueryArgs) {
+      return !!symbol && clearImports.has(symbol);
+    };
+
+    if ((namespaceMember && CLEAR_QUERY_ARGS_NAMES.has(namespaceMember.text)) || referencesImport()) {
       const target = ts.isTypeQueryNode(node.parent) ? node.parent : node;
       const replacement = ts.isShorthandPropertyAssignment(node.parent) ? `${node.getText(sourceFile)}: null` : 'null';
 
@@ -690,20 +838,14 @@ function replaceClearQueryArgsInFile(content: string, filePath: string): string 
   }
 
   sourceFile.statements.forEach((statement) => {
-    if (!ts.isImportDeclaration(statement)) visit(statement);
+    if (!ts.isImportDeclaration(statement) && !ts.isExportDeclaration(statement)) visit(statement);
   });
 
-  return applyReplacements(content, replacements, replacements.length).content;
+  return { content: applyReplacements(content, replacements, replacements.length).content, reExportLines };
 }
 
-function isReference(identifier: ts.Identifier): boolean {
-  const parent = identifier.parent;
-
-  if (ts.isShorthandPropertyAssignment(parent)) return true;
-  if (ts.isPropertyAccessExpression(parent)) return parent.expression === identifier;
-  if (ts.isQualifiedName(parent)) return parent.left === identifier;
-
-  return !('name' in parent && parent.name === identifier);
+function isQueryModuleSpecifier(node: ts.Node | undefined): boolean {
+  return !!node && ts.isStringLiteral(node) && node.text === '@ethlete/query';
 }
 
 function visitQueryFiles(tree: Tree, markers: string[], visitor: (filePath: string, content: string) => void): void {
@@ -730,20 +872,6 @@ function getQueryNamedImports(statement: ts.Statement): ts.NamedImports | undefi
   const namedBindings = statement.importClause?.namedBindings;
 
   return namedBindings && ts.isNamedImports(namedBindings) ? namedBindings : undefined;
-}
-
-function collectNamedQueryImports(sourceFile: ts.SourceFile, importedName: string): Set<string> {
-  const localNames = new Set<string>();
-
-  sourceFile.statements.forEach((statement) => {
-    getQueryNamedImports(statement)?.elements.forEach((element) => {
-      if ((element.propertyName ?? element.name).text === importedName) {
-        localNames.add(element.name.text);
-      }
-    });
-  });
-
-  return localNames;
 }
 
 //#endregion

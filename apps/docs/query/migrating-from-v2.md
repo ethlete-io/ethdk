@@ -277,8 +277,8 @@ mode warns when a second application registers.
 
 Code written against the current system while it shipped in `@ethlete/query` 5.x needs one change of its own. In 5.x, a `withArgs` source that returned `null` kept the previous args, and `CLEAR_QUERY_ARGS` parked the query. Now `CLEAR_QUERY_ARGS` is gone and `null` parks: `args()`, `response()` and `executionState()` become `null`, and polling pauses (see [`withArgs`](/query/features#withargs)).
 
-- `prep-for-query-v3` rewrites `CLEAR_QUERY_ARGS` (and the `ClearQueryArgs` type) to `null`.
-- It also warns about every inline `withArgs` callback that returns a literal `null`. A callback passed by reference, or one that returns a variable holding `null`, is not listed, so search for those yourself. Where one relied on keeping the old args, return those args yourself, for example with a `linkedSignal` that holds on to the last non-null value:
+- `prep-for-query-v3` rewrites `CLEAR_QUERY_ARGS` (and the `ClearQueryArgs` type) to `null`. A local name that shadows the import is left alone. A file that re-exports either name exports a local `null` under that name instead, and the prep lists it: replace the importers' uses with `null`, then delete the export.
+- It also warns about every `withArgs` callback that returns a literal `null`, inline or passed by a reference the file declares (a function, a method, an arrow in a variable or field, a `computed`). A reference it cannot follow, such as an imported function, is listed as unchecked. One that returns a variable holding `null` is not listed, so search for those yourself. Where one relied on keeping the old args, return those args yourself, for example with a `linkedSignal` that holds on to the last non-null value:
 
 ```ts
 type MatchArgs = { pathParams: { matchId: string } } | null;

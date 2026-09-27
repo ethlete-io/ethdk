@@ -314,6 +314,51 @@ export class MyService {
         expect(content).toContain('otherQuery: OtherQuery;');
       });
 
+      it('should not rename a local name that shadows an imported symbol', async () => {
+        tree.write(
+          'apps/example/src/app/service.ts',
+          `
+import { Query, buildQueryCacheKey } from '@ethlete/query';
+
+export const key = buildQueryCacheKey('a', {});
+export function local<Query>(value: Query): Query {
+  const buildQueryCacheKey = () => 'local';
+
+  return buildQueryCacheKey() as Query;
+}
+export const read = (query: Query<any>) => query;
+          `.trim(),
+        );
+
+        await migration(tree, { skipFormat: true });
+
+        const content = tree.read('apps/example/src/app/service.ts', 'utf-8')!;
+
+        expect(content).toContain("import { V2Query, v2BuildQueryCacheKey } from '@ethlete/query';");
+        expect(content).toContain("export const key = v2BuildQueryCacheKey('a', {});");
+        expect(content).toContain('export function local<Query>(value: Query): Query {');
+        expect(content).toContain("  const buildQueryCacheKey = () => 'local';");
+        expect(content).toContain('  return buildQueryCacheKey() as Query;');
+        expect(content).toContain('export const read = (query: V2Query<any>) => query;');
+      });
+
+      it('should rename an imported function used as a shorthand property without changing the key', async () => {
+        tree.write(
+          'apps/example/src/app/service.ts',
+          `
+import { buildQueryCacheKey } from '@ethlete/query';
+
+export const helpers = { buildQueryCacheKey };
+          `.trim(),
+        );
+
+        await migration(tree, { skipFormat: true });
+
+        expect(tree.read('apps/example/src/app/service.ts', 'utf-8')).toContain(
+          'export const helpers = { buildQueryCacheKey: v2BuildQueryCacheKey };',
+        );
+      });
+
       it('should not rename symbols in files without @ethlete/query imports', async () => {
         tree.write(
           'apps/example/src/app/other.ts',
@@ -867,6 +912,79 @@ export const matchQuery = getMatch(withArgs(() => (id() ? { pathParams: { id: id
       expect(content).toContain('  CLEAR_QUERY_ARGS = null;');
       expect(content).toContain("import { withArgs } from '@ethlete/query';");
     });
+
+    it('turns a re-export from @ethlete/query into a local null export and warns about it', async () => {
+      tree.write(
+        'libs/shared/src/index.ts',
+        `
+export { CLEAR_QUERY_ARGS, ClearQueryArgs as Cleared, withArgs } from '@ethlete/query';
+export { CLEAR_QUERY_ARGS as CLEAR } from '@ethlete/query';
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const content = tree.read('libs/shared/src/index.ts', 'utf-8')!;
+
+      expect(content).toContain("export { withArgs } from '@ethlete/query';");
+      expect(content).toContain('export const CLEAR_QUERY_ARGS = null;');
+      expect(content).toContain('export type Cleared = null;');
+      expect(content).toContain('export const CLEAR = null;');
+      expect(content).not.toContain("CLEAR } from '@ethlete/query'");
+
+      const warnings = consoleWarnSpy.mock.calls.flat().join('\n');
+
+      expect(warnings).toContain('libs/shared/src/index.ts:1');
+      expect(warnings).toContain('libs/shared/src/index.ts:2');
+    });
+
+    it('turns a local re-export of an imported CLEAR_QUERY_ARGS into a null export', async () => {
+      tree.write(
+        'libs/shared/src/index.ts',
+        `
+import { CLEAR_QUERY_ARGS, withArgs } from '@ethlete/query';
+
+export { CLEAR_QUERY_ARGS, withArgs };
+export { CLEAR_QUERY_ARGS as CLEAR };
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const content = tree.read('libs/shared/src/index.ts', 'utf-8')!;
+
+      expect(content).toContain("import { withArgs } from '@ethlete/query';");
+      expect(content).toContain('export { withArgs };');
+      expect(content).toContain('export const CLEAR_QUERY_ARGS = null;');
+      expect(content).toContain('export const CLEAR = null;');
+      expect(content).not.toMatch(/export \{ CLEAR/);
+    });
+
+    it('leaves a local name that shadows CLEAR_QUERY_ARGS alone', async () => {
+      tree.write(
+        'apps/example/src/app/match.ts',
+        `
+import { CLEAR_QUERY_ARGS, withArgs } from '@ethlete/query';
+
+const pick = (CLEAR_QUERY_ARGS: string) => CLEAR_QUERY_ARGS.trim();
+function build() {
+  const CLEAR_QUERY_ARGS = 1;
+
+  return CLEAR_QUERY_ARGS + 1;
+}
+export const matchQuery = getMatch(withArgs(() => (id() ? { pathParams: { id: id() } } : CLEAR_QUERY_ARGS)));
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const content = tree.read('apps/example/src/app/match.ts', 'utf-8')!;
+
+      expect(content).toContain('const pick = (CLEAR_QUERY_ARGS: string) => CLEAR_QUERY_ARGS.trim();');
+      expect(content).toContain('  const CLEAR_QUERY_ARGS = 1;');
+      expect(content).toContain('  return CLEAR_QUERY_ARGS + 1;');
+      expect(content).toContain('getMatch(withArgs(() => (id() ? { pathParams: { id: id() } } : null)));');
+    });
   });
 
   describe('withArgs returning null', () => {
@@ -913,6 +1031,78 @@ export const matchQuery = getMatch(args(() => matchId() ?? null));
       await migration(tree, { skipFormat: true });
 
       expect(consoleWarnSpy.mock.calls.flat().join('\n')).toContain('apps/example/src/app/lobby.ts:3');
+    });
+
+    it('reports a null from a callback passed by reference', async () => {
+      tree.write(
+        'apps/example/src/app/lobby.ts',
+        `
+import { withArgs } from '@ethlete/query';
+
+const source = () => (matchId() ? { pathParams: { id: matchId() } } : null);
+function other() {
+  return null;
+}
+export class Lobby {
+  private args = computed(() => (matchId() ? { pathParams: { id: matchId() } } : null));
+  private build() {
+    return null;
+  }
+  a = getA(withArgs(source));
+  b = getB(withArgs(other));
+  c = getC(withArgs(this.args));
+  d = getD(withArgs(this.build));
+}
+          `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const warnings = consoleWarnSpy.mock.calls.flat().join('\n');
+
+      expect(warnings).toContain('v3 parks the query');
+      for (const line of [3, 5, 8, 10])
+        expect(warnings).toMatch(new RegExp(`apps/example/src/app/lobby.ts:${line}$`, 'm'));
+      expect(warnings).not.toContain('could not be checked');
+    });
+
+    it('warns about a callback passed by reference that it cannot follow', async () => {
+      tree.write(
+        'apps/example/src/app/lobby.ts',
+        `
+import { withArgs } from '@ethlete/query';
+import { matchArgs } from './args';
+
+export const a = getA(withArgs(matchArgs));
+export const b = getB(withArgs(store.matchArgs));
+export const c = getC(withArgs(() => ({ pathParams: { id: '1' } })));
+          `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const warnings = consoleWarnSpy.mock.calls.flat().join('\n');
+
+      expect(warnings).toContain('could not be checked');
+      expect(warnings).toContain('apps/example/src/app/lobby.ts:4');
+      expect(warnings).toContain('apps/example/src/app/lobby.ts:5');
+      expect(warnings).not.toContain('apps/example/src/app/lobby.ts:6');
+    });
+
+    it('ignores a local name that shadows withArgs', async () => {
+      tree.write(
+        'apps/example/src/app/lobby.ts',
+        `
+import { withArgs } from '@ethlete/query';
+
+export const run = (withArgs: (fn: () => null) => void) => withArgs(() => null);
+export const matchQuery = getMatch(withArgs(() => ({ pathParams: { id: '1' } })));
+          `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      expect(consoleWarnSpy.mock.calls.flat().join('\n')).not.toContain('withArgs callbacks return null');
     });
 
     it('ignores a withArgs that does not come from @ethlete/query', async () => {
