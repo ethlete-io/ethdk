@@ -38,7 +38,8 @@ describe('user-select CSS prefixing', () => {
 
       for (const body of ownRuleBodies(css)) {
         for (const match of body.matchAll(/(^|[^-\w])user-select:\s*([^;]+);/g)) {
-          const value = match[2].trim();
+          const value = match[2]?.trim();
+          if (!value) continue;
 
           expect(body, `${relativeFile}: user-select: ${value} has no -webkit-user-select in the same rule`).toMatch(
             new RegExp(`-webkit-user-select:\\s*${escapeRegExp(value)}\\s*;`),
