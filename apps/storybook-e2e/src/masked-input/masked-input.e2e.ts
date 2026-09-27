@@ -229,8 +229,19 @@ test.describe('masked-input / clipboard and composition', () => {
 test.describe('masked-input / touch', () => {
   test.skip(({ isMobile }) => !isMobile, 'touch-only: tap interaction');
 
-  test('a tap focuses the field and it keeps the default text keyboard', async ({ page }) => {
+  test('a tap focuses a digit-only pattern field and it asks for the numeric keyboard', async ({ page }) => {
     const root = await openStory(page, DEFAULT_ID);
+    const field = root.locator('.et-input-native');
+
+    await tap(field);
+
+    await expect(field).toBeFocused();
+    await expect(field).toHaveAttribute('type', 'text');
+    await expect(field).toHaveAttribute('inputmode', 'numeric');
+  });
+
+  test('a tap focuses an alphanumeric mask field and it keeps the default text keyboard', async ({ page }) => {
+    const root = await openStory(page, IBAN_ID);
     const field = root.locator('.et-input-native');
 
     await tap(field);
