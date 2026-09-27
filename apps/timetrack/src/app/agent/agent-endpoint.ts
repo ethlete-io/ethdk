@@ -15,12 +15,14 @@ import {
   AgentApiStandIn,
   AgentApiStandInSplit,
   AgentApiStatus,
+  AgentApiTempoDelete,
   AgentApiTempoSync,
   AgentApiTempoWorklogs,
   AgentApiCalendarEvents,
   JiraCredentials,
   JiraIssue,
   createJiraIssue$,
+  deleteOwnTempoWorklog$,
   fetchJiraIssueKeysByIds$,
   fetchJiraMyself$,
   fetchTempoWorklogs$,
@@ -480,6 +482,26 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       }),
     );
 
+  const tempoDelete$ = (request: Extract<AgentApiRequest, { op: 'tempo.delete' }>): Observable<AgentApiTempoDelete> =>
+    forkJoin({
+      jira: readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }),
+      tempo: readTempoCredentials$({ secrets: ports.secrets }),
+    }).pipe(
+      switchMap(({ jira, tempo }) => {
+        if (!jira) return throwError(() => new Error(NO_JIRA));
+        if (!tempo) return throwError(() => new Error(NO_TEMPO));
+
+        return deleteOwnTempoWorklog$({
+          transport: ports.transport,
+          jira,
+          tempo,
+          ledger: ports.ledger,
+          day: request.day,
+          worklogId: request.worklogId,
+        });
+      }),
+    );
+
   const calendarEvents$ = (
     request: Extract<AgentApiRequest, { op: 'calendar.events' }>,
   ): Observable<AgentApiCalendarEvents> => {
@@ -739,6 +761,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return tempoWorklogs$(request);
       case 'tempo.sync':
         return tempoSync$(request);
+      case 'tempo.delete':
+        return tempoDelete$(request);
       case 'calendar.events':
         return calendarEvents$(request);
       case 'lane.issues':

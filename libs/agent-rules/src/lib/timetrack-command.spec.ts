@@ -434,6 +434,79 @@ describe('timetrack calendar', () => {
   });
 });
 
+describe('timetrack worklog --delete', () => {
+  const recordingBodies = (value: unknown) => {
+    const bodies: Record<string, unknown>[] = [];
+    const handler: Handler = (request, response) => {
+      let body = '';
+
+      request.on('data', (chunk) => (body += chunk));
+      request.on('end', () => {
+        bodies.push(JSON.parse(body) as Record<string, unknown>);
+        response.setHeader('content-type', 'application/json');
+        response.end(JSON.stringify(value));
+      });
+    };
+
+    return { handler, bodies };
+  };
+
+  const deleted = {
+    id: '98765',
+    day: '2026-09-07',
+    startTime: '09:15',
+    minutes: 90,
+    issueKey: 'FIP-3010',
+    description: 'Logout on idle',
+  };
+
+  it('asks the app to delete the one worklog, and prints what went', async () => {
+    const { handler, bodies } = recordingBodies({ ok: true, value: { deleted } });
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await expect(run(['worklog', '--delete', '98765', '--day', '2026-09-07'])).resolves.toBe(0);
+    expect(bodies).toEqual([{ op: 'tempo.delete', day: '2026-09-07', worklogId: '98765' }]);
+    expect(lines).toEqual(['Deleted worklog 98765  FIP-3010  2026-09-07 09:15  90m  Logout on idle']);
+  });
+
+  it('refuses a delete without a day or a numeric id, and asks nothing of the app', async () => {
+    const { handler, bodies } = recordingBodies({ ok: true, value: { deleted } });
+
+    await withEndpoint(handler);
+    printedLines();
+
+    await expect(run(['worklog', '--delete', '98765'])).rejects.toThrow(/--day <YYYY-MM-DD>/);
+    await expect(run(['worklog', '--day', '2026-09-07'])).rejects.toThrow(/--delete <id>/);
+    await expect(run(['worklog', '--delete', 'FIP-1', '--day', '2026-09-07'])).rejects.toThrow(/--delete <id>/);
+    expect(bodies).toEqual([]);
+  });
+
+  it('fails with the app refusal for a worklog the account does not hold on that day', async () => {
+    const { handler } = recordingBodies({
+      ok: false,
+      message: 'Your Tempo worklogs on 2026-09-07 hold no worklog 11111. Nothing was deleted.',
+    });
+
+    await withEndpoint(handler);
+
+    await expect(run(['worklog', '--delete', '11111', '--day', '2026-09-07'])).rejects.toThrow(/hold no worklog 11111/);
+  });
+
+  it('exits non-zero when the ledger kept the entry of the deleted worklog', async () => {
+    const { handler } = recordingBodies({ ok: true, value: { deleted, unrecorded: 'store is locked' } });
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await expect(run(['worklog', '--delete', '98765', '--day', '2026-09-07'])).resolves.toBe(1);
+    expect(lines[1]).toMatch(/ledger kept its entry: store is locked/);
+  });
+});
+
 describe('timetrack sync', () => {
   const at = (hour: number, minute = 0) => new Date(2026, 8, 7, hour, minute).getTime();
   const plan = (over: Record<string, unknown> = {}) => ({

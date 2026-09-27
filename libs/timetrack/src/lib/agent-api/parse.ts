@@ -24,6 +24,8 @@ const missing = (op: string, field: string) => failed(`${op} needs a ${field}.`)
 
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
+const TEMPO_WORKLOG_ID = /^\d+$/;
+
 const DAY_MS = 24 * 60 * 60_000;
 
 const utcDayOf = (day: string) => {
@@ -235,6 +237,16 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
     if (!DAY_KEY.test(day)) return missing(op, 'day as YYYY-MM-DD');
 
     return { ok: true, request: planHash ? { op, day, planHash } : { op, day } };
+  }
+
+  if (op === 'tempo.delete') {
+    const day = asText(raw['day']);
+    const worklogId = asText(raw['worklogId']);
+
+    if (utcDayOf(day) === undefined) return missing(op, 'day as YYYY-MM-DD');
+    if (!TEMPO_WORKLOG_ID.test(worklogId)) return missing(op, 'numeric worklogId');
+
+    return { ok: true, request: { op, day, worklogId } };
   }
 
   if (op === 'day.events' || op === 'day.rows') {

@@ -278,6 +278,21 @@ export type AgentApiTempoWorklog = {
 
 export type AgentApiTempoWorklogs = { from: string; to: string; worklogs: AgentApiTempoWorklog[] };
 
+export type AgentApiTempoDeletedWorklog = {
+  id: string;
+  day: string;
+  startTime: string;
+  minutes: number;
+  issueKey?: string;
+  description: string;
+};
+
+export type AgentApiTempoDelete = {
+  deleted: AgentApiTempoDeletedWorklog;
+  /** Set when Tempo dropped the worklog but the ledger kept the entry that owned it. */
+  unrecorded?: string;
+};
+
 /** The widest span `calendar.events` reads in one request, in days, both ends included. */
 export const AGENT_CALENDAR_RANGE_DAYS = 92;
 
@@ -491,6 +506,7 @@ export type AgentApiRequest =
   | { op: 'naming.offers'; day: string }
   | { op: 'tempo.worklogs'; from: string; to: string }
   | { op: 'tempo.sync'; day: string; planHash?: string }
+  | { op: 'tempo.delete'; day: string; worklogId: string }
   | { op: 'calendar.events'; from: string; to: string }
   | { op: 'lane.issues' }
   | {

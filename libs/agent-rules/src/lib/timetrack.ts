@@ -254,6 +254,12 @@ export type TimetrackTempoWorklog = {
 
 export type TimetrackTempoWorklogs = { from: string; to: string; worklogs: TimetrackTempoWorklog[] };
 
+export type TimetrackTempoDelete = {
+  deleted: { id: string; day: string; startTime: string; minutes: number; issueKey?: string; description: string };
+  /** Set when Tempo dropped the worklog but the app's ledger kept the entry that owned it. */
+  unrecorded?: string;
+};
+
 export type TimetrackTempoSyncWrite = {
   kind: 'create' | 'update' | 'delete';
   proposalId: string;
@@ -519,6 +525,13 @@ export const timetrackTempoWorklogs = (options: { from: string; to: string }) =>
  */
 export const timetrackTempoSync = (options: { day: string; planHash?: string }) =>
   askTimetrack<TimetrackTempoSync>({ op: 'tempo.sync', ...options });
+
+/**
+ * Deletes one of the user's own Tempo worklogs. The app refuses an id that is not among the account's
+ * own worklogs on `day`, and drops the ledger entry that owned it.
+ */
+export const timetrackTempoDelete = (options: { day: string; worklogId: string }) =>
+  askTimetrack<TimetrackTempoDelete>({ op: 'tempo.delete', ...options });
 
 /** Reads the calendars the app watches, both days included. The app caps the span at 92 days. */
 export const timetrackCalendarEvents = (options: { from: string; to: string }) =>

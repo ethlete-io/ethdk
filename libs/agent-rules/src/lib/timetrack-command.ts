@@ -28,6 +28,7 @@ import {
   timetrackSplitStandIn,
   timetrackStandIns,
   timetrackStatus,
+  timetrackTempoDelete,
   timetrackTempoSync,
   timetrackTempoWorklogs,
   timetrackCalendarEvents,
@@ -59,6 +60,7 @@ const FLAGS_WITH_VALUE = [
   '--claim',
   '--author',
   '--plan',
+  '--delete',
 ];
 
 /** Every human-readable line, with anything a terminal would act on printed rather than obeyed. */
@@ -575,6 +577,8 @@ The app holds this machine's Jira credentials, so no repository needs a token of
   timetrack sync <YYYY-MM-DD>   What a Tempo sync of the day would write, as the Sync page plans it
   timetrack sync <YYYY-MM-DD> --write --plan <hash>
                                 Write that plan to Tempo, once the user confirmed its rows
+  timetrack worklog --delete <id> --day <YYYY-MM-DD>
+                                Delete one of the account's own Tempo worklogs, once the user asked for it
   timetrack naming [YYYY-MM-DD] Which checkouts the day offers a name for, and why the rest do not
   timetrack resync [path…]      Read the agent session logs of checkouts again, after they got a link
 
@@ -856,6 +860,39 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     }
 
     return printed(found, json);
+  }
+
+  if (subcommand === 'worklog') {
+    if (argv.includes('--help')) {
+      say(USAGE);
+
+      return 0;
+    }
+
+    const worklogId = flagValue(argv, '--delete');
+    const day = flagValue(argv, '--day');
+
+    if (!worklogId || !/^\d+$/.test(worklogId))
+      throw new Error('Pass the Tempo worklog id to delete with --delete <id>.');
+    if (!day || !DAY.test(day)) throw new Error('Pass the day the worklog is on with --day <YYYY-MM-DD>.');
+
+    const answer = await timetrackTempoDelete({ day, worklogId });
+    const { deleted } = answer;
+
+    if (!json) {
+      say(
+        `Deleted worklog ${deleted.id}  ${deleted.issueKey ?? '(unknown issue)'}  ${deleted.day} ${deleted.startTime}  ${deleted.minutes}m  ${deleted.description || '(no description)'}`,
+      );
+      if (answer.unrecorded) {
+        say(
+          `Deleted, but the app's ledger kept its entry: ${answer.unrecorded}. A later sync of ${deleted.day} may write it again.`,
+        );
+      }
+    }
+
+    printed(answer, json);
+
+    return answer.unrecorded ? 1 : 0;
   }
 
   if (subcommand === 'sync') {

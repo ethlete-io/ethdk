@@ -311,6 +311,32 @@ describe('parseAgentRequest, over a day edit', () => {
     });
   });
 
+  it('reads a Tempo delete of one worklog on one day', () => {
+    expect(parseAgentRequest({ op: 'tempo.delete', day: ' 2026-09-07 ', worklogId: ' 98765 ' })).toEqual({
+      ok: true,
+      request: { op: 'tempo.delete', day: '2026-09-07', worklogId: '98765' },
+    });
+  });
+
+  it('refuses a Tempo delete without a calendar day or a numeric worklog id', () => {
+    expect(parseAgentRequest({ op: 'tempo.delete', day: '2026-02-30', worklogId: '98765' })).toEqual({
+      ok: false,
+      message: 'tempo.delete needs a day as YYYY-MM-DD.',
+    });
+    expect(parseAgentRequest({ op: 'tempo.delete', worklogId: '98765' })).toEqual({
+      ok: false,
+      message: 'tempo.delete needs a day as YYYY-MM-DD.',
+    });
+    expect(parseAgentRequest({ op: 'tempo.delete', day: '2026-09-07' })).toEqual({
+      ok: false,
+      message: 'tempo.delete needs a numeric worklogId.',
+    });
+    expect(parseAgentRequest({ op: 'tempo.delete', day: '2026-09-07', worklogId: '98765; DROP' })).toEqual({
+      ok: false,
+      message: 'tempo.delete needs a numeric worklogId.',
+    });
+  });
+
   it('refuses a Tempo range one day wider than the cap', () => {
     expect(parseAgentRequest({ op: 'tempo.worklogs', from: '2026-06-24', to: '2026-09-24' })).toEqual({
       ok: false,
