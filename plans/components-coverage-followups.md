@@ -20,13 +20,9 @@ consumer needs it.
 
 ## E2E gaps not covered
 
-- Nested toolbar: needs a story first.
-- Picture: `<source>` choice by type and DPR needs a story with those sources.
-- The 11 E2E-only entries in `tools/export-coverage/components.allowlist.json`.
-- Command palette: colour context (the story has no colour provider).
-- Calendar: month and header transitions. Select: the leave animation. Grid: auto-scroll while dragging.
-- Rating: fill animation timing. Badge: icon sizing. Phone input: clear animation.
-- Masked input: dead keys and soft keyboards on a real device.
+The headless gaps were covered on 2026-09-27. One is left:
+
+- Masked input: dead keys and soft keyboards need a real device (`verify-on-apple-devices` skill).
 
 ## Rules kept
 
