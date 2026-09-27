@@ -1,4 +1,4 @@
-import { Component, TemplateRef, viewChild } from '@angular/core';
+import { Component, ErrorHandler, TemplateRef, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { setInputSignal } from '@ethlete/core';
@@ -171,13 +171,17 @@ describe('ToggletipDirective', () => {
     expect(document.activeElement).toBe(input);
   });
 
-  it('throws when template content is used without an accessible label', () => {
+  it('reports template content without an accessible label and stays closed', () => {
+    const handleError = vi.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => undefined);
+
     setInputSignal(toggletipDirective.content, fixture.componentInstance.toggletipTemplate());
     fixture.detectChanges();
+    toggletipDirective.show();
 
-    expect(() => {
-      toggletipDirective.show();
-      fixture.detectChanges();
-    }).toThrow(/Template toggletips require etToggletipAriaLabel or etToggletipAriaLabelledBy/);
+    expect(() => fixture.detectChanges()).not.toThrow();
+    expect(String(handleError.mock.calls[0]?.[0])).toMatch(
+      /ET1500: .*Template toggletips require etToggletipAriaLabel or etToggletipAriaLabelledBy/,
+    );
+    expect(document.querySelector('et-toggletip')).toBeNull();
   });
 });

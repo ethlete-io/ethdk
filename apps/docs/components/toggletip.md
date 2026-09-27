@@ -84,4 +84,4 @@ Public design tokens: `--et-toggletip-font-size`, `--et-toggletip-line-height`, 
 
 ## Error codes
 
-Toggletip misuse throws [`ET15xx` errors](/components/error-codes#toggletip-et15xx) in dev mode - a missing accessible name or a trigger without button/toggletip directives.
+Toggletip misuse reports [`ET15xx` errors](/components/error-codes#toggletip-et15xx) to the `ErrorHandler` in dev mode - a missing accessible name (the toggletip then stays closed) or a trigger without button/toggletip directives.

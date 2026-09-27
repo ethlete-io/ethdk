@@ -211,10 +211,11 @@ describe('toggletip scenarios', () => {
 
     const unlabelled = query<HTMLButtonElement>('.unlabelled');
 
-    expect(() => {
-      unlabelled.click();
-      s.tick();
-    }).toThrow(String(TOGGLETIP_ERROR_CODES.TEMPLATE_TOGGLETIP_REQUIRES_LABEL));
+    unlabelled.click();
+    expect(() => TestBed.tick()).not.toThrow();
+    expect(takeError(s, TOGGLETIP_ERROR_CODES.TEMPLATE_TOGGLETIP_REQUIRES_LABEL)?.message).toContain(
+      'Template toggletips require etToggletipAriaLabel',
+    );
     expect(document.querySelector('et-toggletip')).toBeNull();
     expect(s.errors.map((entry) => (entry.error as { element?: HTMLElement }).element?.className.split(' '))).toEqual([
       ['plain'],
