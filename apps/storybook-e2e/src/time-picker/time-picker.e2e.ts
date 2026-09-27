@@ -320,6 +320,7 @@ test.describe('time-picker / touch', () => {
   });
 
   test('a swipe scrolls a column natively without changing the selection', async ({ page }) => {
+    await page.clock.setFixedTime(new Date('2026-07-13T09:30:00+02:00'));
     const root = await openStory(page, DEFAULT_STORY_ID);
     const minutes = root.getByRole('listbox', { name: 'Minutes' });
     const selectedBefore = await minutes.locator('[aria-selected="true"]').allInnerTexts();
