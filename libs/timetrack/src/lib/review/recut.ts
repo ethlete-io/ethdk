@@ -169,9 +169,12 @@ export const recutReviewedRows = (options: {
   rows: readonly ReviewedRow[];
   behind: readonly BehindStretch[];
   backgroundProjects?: readonly string[];
+  /** Rows the reviewer wrote by hand. Their range is a statement, so they claim minutes and never give any. */
+  stated?: ReadonlySet<string>;
   round?: Partial<RoundOptions>;
 }): { rows: ReviewedRow[]; behind: BehindStretch[] } => {
-  const isBackground = backgroundTest(options.backgroundProjects);
+  const onBackground = backgroundTest(options.backgroundProjects);
+  const isBackground = (row: ReviewedRow) => onBackground(row) && !options.stated?.has(row.id);
 
   if (!options.rows.some(isBackground)) {
     return { rows: [...options.rows], behind: joinOneTicket({ stretches: options.behind, rows: options.rows }) };

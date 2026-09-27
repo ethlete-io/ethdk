@@ -1289,6 +1289,49 @@ describe('reviewDay over a meeting inside a background row', () => {
   });
 });
 
+describe('reviewDay over a row written by hand on a background project', () => {
+  const SDK = 'repo:/dev/sdk';
+  const day = dayRows({
+    proposals: [{ ...proposal({ issueKey: 'ET-772', from: '17:00', to: '18:00', minutes: 60 }), laneKey: SDK }],
+    unnamed: [
+      {
+        id: `unnamed:${SDK}@${at('11:00').toISOString()}`,
+        from: at('11:00'),
+        to: at('17:00'),
+        durationMs: 360 * MINUTE,
+        observedMs: 360 * MINUTE,
+        laneKey: SDK,
+        description: 'unattributed activity',
+        confidence: 'weak',
+        evidence: [],
+        state: 'suggested',
+      },
+    ],
+  });
+
+  const reviewed = (edits: DayReviewEdits) => reviewDay({ rows: day, edits, cut: { backgroundProjects: ['ET'] } });
+  const logged = (row: ManualRow) => addManualRow({ edits: EMPTY_DAY_REVIEW_EDITS, row });
+
+  it('keeps the whole row over an observed band', () => {
+    const review = reviewed(
+      logged({ issueKey: 'ET-772', description: 'review', from: at('12:00'), to: at('15:15'), laneKey: SDK }),
+    );
+    const manual = review.rows.filter((row) => row.issueKey === 'ET-772' && row.observedMs === 0);
+
+    expect(manual.map((row) => [row.from, row.to, row.durationMs])).toEqual([[at('12:00'), at('15:15'), 195 * MINUTE]]);
+  });
+
+  it('still cuts an observed background row the hand-written row covers', () => {
+    const review = reviewed(
+      logged({ issueKey: 'FIFAGG-1', description: 'call', from: at('17:00'), to: at('17:30'), laneKey: 'call' }),
+    );
+
+    expect(review.rows.filter((row) => row.issueKey === 'ET-772').map((row) => [row.from, row.to])).toEqual([
+      [at('17:30'), at('18:00')],
+    ]);
+  });
+});
+
 describe('reviewDay over a row named to a stand-in', () => {
   const day = dayRows({ proposals: [proposal({ issueKey: 'ABC-1', from: '08:00', to: '10:00', minutes: 120 })] });
   const standIn = openStandIn({ name: 'the invite flow', day: '2026-08-11', now: at('07:00') });

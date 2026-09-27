@@ -358,6 +358,7 @@ export const reviewDay = (options: {
     rows: snapRowBounds({ rows: reviewed.filter((row) => !row.hidden), options: options.round }),
     behind: options.rows.behind,
     backgroundProjects: options.cut?.backgroundProjects,
+    stated: new Set(edits.pinned.filter((row) => !row.replaces.length).map((row) => row.id)),
     round: options.round,
   });
   const rows = bookTheSpan(recut.rows, options.rows.remote);
