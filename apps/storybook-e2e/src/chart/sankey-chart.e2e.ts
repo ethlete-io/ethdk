@@ -43,7 +43,9 @@ async function expectNodeFocusVisible(node: Locator): Promise<void> {
 }
 
 async function expectNodeTooltip(page: Page, name: string, totals: string[]): Promise<void> {
-  const tooltip = page.getByRole('tooltip');
+  const tooltip = page
+    .getByRole('tooltip')
+    .filter({ has: page.locator('.et-sankey-chart-tooltip-name').getByText(name, { exact: true }) });
 
   await expect(tooltip).toBeVisible();
   await expect(tooltip.locator('.et-sankey-chart-tooltip-name')).toHaveText(name);
@@ -51,7 +53,9 @@ async function expectNodeTooltip(page: Page, name: string, totals: string[]): Pr
 }
 
 async function expectLinkTooltip(page: Page, name: string, value: string): Promise<void> {
-  const tooltip = page.getByRole('tooltip');
+  const tooltip = page
+    .getByRole('tooltip')
+    .filter({ has: page.locator('.et-chart-tooltip-label').getByText(name, { exact: true }) });
 
   await expect(tooltip).toBeVisible();
   await expect(tooltip.locator('.et-chart-tooltip-label')).toHaveText(name);

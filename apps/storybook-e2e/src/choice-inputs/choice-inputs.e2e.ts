@@ -33,16 +33,34 @@ function segmentBackground(segment: Locator): Promise<SegmentBackground> {
   });
 }
 
-/** Presses the key and reads the checked background's first FLIP keyframe before the 250ms slide ends. */
+/**
+ * Presses the key and reads the checked background's first FLIP keyframe before the 250ms slide ends.
+ * The slide starts in the change detection after the key press, so it is polled for per frame.
+ */
 async function pressAndReadSlideStart(segment: Locator, key: string): Promise<number | null> {
   await segment.page().keyboard.press(key);
 
-  return segment.evaluate((host) => {
-    const [animation] = host.querySelector('.et-segmented-button-bg')?.getAnimations() ?? [];
-    const first = (animation?.effect as KeyframeEffect | null)?.getKeyframes()[0];
+  return segment.evaluate(
+    (host) =>
+      new Promise<number | null>((resolve) => {
+        const deadline = performance.now() + 1000;
 
-    return typeof first?.['transform'] === 'string' ? new DOMMatrixReadOnly(first['transform']).m41 : null;
-  });
+        const read = () => {
+          const [animation] = host.querySelector('.et-segmented-button-bg')?.getAnimations() ?? [];
+          const first = (animation?.effect as KeyframeEffect | null)?.getKeyframes()[0];
+
+          if (typeof first?.['transform'] === 'string') {
+            resolve(new DOMMatrixReadOnly(first['transform']).m41);
+          } else if (performance.now() > deadline) {
+            resolve(null);
+          } else {
+            requestAnimationFrame(read);
+          }
+        };
+
+        read();
+      }),
+  );
 }
 
 /** The switch and radio family draw the focus ring on a child, not on the focused host. */
