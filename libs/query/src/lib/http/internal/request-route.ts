@@ -98,7 +98,11 @@ export const buildQueryString = (params: QueryParams, config?: BuildQueryStringC
 
   const queryParams: string[] = [];
 
-  function processValue(key: string, value: unknown): boolean | void {
+  function processValue(key: string, rawValue: unknown): boolean | void {
+    if (rawValue instanceof Date && Number.isNaN(rawValue.getTime())) return false;
+
+    const value = rawValue instanceof Date ? rawValue.toISOString() : rawValue;
+
     if (config?.objectNotation === 'json-stringify') {
       if (value === undefined) {
         return false;

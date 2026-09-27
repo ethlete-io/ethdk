@@ -221,7 +221,7 @@ export type HttpRequestSubtle<TArgs extends QueryArgs> = {
   resolveHeaders: () => HttpHeaders | undefined;
 
   /**
-   * The headers the most recent execution actually went out with. Unlike {@link resolveHeaders} it
+   * The headers the most recent attempt actually went out with. Unlike {@link resolveHeaders} it
    * does not re-resolve the header providers, so after a token refresh it still reports the token
    * the request was sent with. `undefined` until the first execution.
    */
@@ -384,8 +384,8 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     return expiresInTs === null || expiresInTs <= Date.now();
   };
 
-  // Resolved per execution rather than once at creation, so a client whose headers are a function
-  // reading a signal (a preview token, a tenant id) sees the current value on every re-run.
+  // Resolved per attempt rather than once at creation, so a client whose headers are a function
+  // reading a signal (a preview token, a tenant id) sees the current value on every re-run and retry.
   const resolveHeaders = () => {
     const clientHeaders = resolveQueryHeaders(options.clientHeaders);
     const argHeaders = resolveQueryHeaders(args?.headers);
@@ -492,9 +492,16 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     });
 
   const createStream = () => {
-    const headers = resolveHeaders();
-    lastSentHeaders = headers;
-    const source$ = isQueryDevtoolsRequestInterceptionEnabled() ? sendWithFaults(headers) : send(headers);
+    let headers = resolveHeaders();
+    let isFirstAttempt = true;
+
+    const source$ = defer(() => {
+      if (!isFirstAttempt) headers = resolveHeaders();
+      isFirstAttempt = false;
+      lastSentHeaders = headers;
+
+      return isQueryDevtoolsRequestInterceptionEnabled() ? sendWithFaults(headers) : send(headers);
+    });
 
     return source$.pipe(
       tap((event) => updateState(event)),
