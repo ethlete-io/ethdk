@@ -68,7 +68,13 @@ export abstract class TextFieldControlDirective extends TextShellControlDirectiv
   /** @internal For a directive placed on the native element itself - a wrapper component binds these in its template. */
   protected mirrorOntoNativeHost(
     element: HTMLInputElement | HTMLTextAreaElement,
-    state: { value: () => string; type?: () => string; skip?: () => boolean },
+    state: {
+      value: () => string;
+      placeholder: () => string;
+      type?: () => string;
+      attributes?: () => Record<string, string | null>;
+      skip?: () => boolean;
+    },
   ) {
     effect(() => {
       const value = state.value();
@@ -83,6 +89,21 @@ export abstract class TextFieldControlDirective extends TextShellControlDirectiv
     if (type) {
       effect(() => this.nativeHostRenderer.setProperty(element, 'type', type()));
     }
+
+    effect(() =>
+      this.nativeHostRenderer.setProperties(element, {
+        disabled: this.disabled(),
+        readOnly: this.readonly(),
+        required: this.required(),
+      }),
+    );
+
+    effect(() =>
+      this.nativeHostRenderer.setAttributes(element, {
+        placeholder: state.placeholder() || null,
+        ...state.attributes?.(),
+      }),
+    );
   }
 
   protected focusControl(options?: FocusOptions) {

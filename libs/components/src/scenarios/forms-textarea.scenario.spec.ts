@@ -36,6 +36,28 @@ class NativeNotesComponent {
 }
 
 @Component({
+  selector: 'et-scenario-native-bound-notes',
+  imports: [TextareaDirective],
+  template: `
+    <textarea
+      [placeholder]="hint()"
+      [disabled]="locked()"
+      [readonly]="frozen()"
+      [required]="needed()"
+      autosize="false"
+      etTextarea
+      aria-label="Notes"
+    ></textarea>
+  `,
+})
+class NativeBoundNotesComponent {
+  hint = signal('What happened?');
+  locked = signal(false);
+  frozen = signal(false);
+  needed = signal(false);
+}
+
+@Component({
   selector: 'et-scenario-native-required-notes',
   imports: [FORM_FIELD_IMPORTS, TextareaDirective, FormField],
   template: `
@@ -149,5 +171,34 @@ describe('textarea scenarios', () => {
     fixture.componentInstance.notes.set('Full time');
     s.tick();
     expect(textarea.value).toBe('Full time');
+  });
+
+  it('renders the bound placeholder into a native textarea', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(NativeBoundNotesComponent);
+    const textarea = (fixture.nativeElement as HTMLElement).querySelector('textarea')!;
+
+    s.tick();
+    expect(textarea.placeholder).toBe('What happened?');
+
+    fixture.componentInstance.hint.set('');
+    s.tick();
+    expect(textarea.hasAttribute('placeholder')).toBe(false);
+  });
+
+  it('renders the bound disabled, readonly and required state into a native textarea', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(NativeBoundNotesComponent);
+    const app = fixture.componentInstance;
+    const textarea = (fixture.nativeElement as HTMLElement).querySelector('textarea')!;
+
+    s.tick();
+    expect([textarea.disabled, textarea.readOnly, textarea.required]).toEqual([false, false, false]);
+
+    app.locked.set(true);
+    app.frozen.set(true);
+    app.needed.set(true);
+    s.tick();
+    expect([textarea.disabled, textarea.readOnly, textarea.required]).toEqual([true, true, true]);
   });
 });
