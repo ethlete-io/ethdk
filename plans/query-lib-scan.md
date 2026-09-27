@@ -134,5 +134,9 @@ Fixed: 1, 5, 8 `0971093ce`; 2 `cd6fa3743`; 3 `234c13f63`; 4 `708ab2ad6` + `d71de
 tail, at most 100 item tombstones), 9 and both "also seen" items `cd178cd6d`; 10 `a1a480241` (plus the `Date` and retry-header
 notes). The `triggeredBy()` claim in 10 was stale: a client-level refresh already resets it to `null`; `0971093ce` pins it.
 
+Review: `0971093ce` also stopped a root override from applying to a response that settled as `null`; `6ff8005d1`
+restores it. `33dc55e8a` adds scenarios for 6 and 7. Open: a legacy `InfinityQuery` whose last page (or first page)
+failed reports `canLoadMore: false`, so a trigger gated on it cannot reach the new retry.
+
 Open, needs a decision: a query cannot carry consumer `HttpContext` tokens (every request builds a fresh context); `queryParams`
 key order is not canonicalised, so `{a,b}` and `{b,a}` are separate cache entries.
