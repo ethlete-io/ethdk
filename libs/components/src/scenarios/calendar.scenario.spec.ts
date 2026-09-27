@@ -406,6 +406,30 @@ describe('calendar scenarios', () => {
     expect(august.hasAttribute('inert')).toBe(true);
   });
 
+  it('makes the leaving header label inert, so only the new month is announced', () => {
+    const s = scenario();
+
+    vi.setSystemTime(new Date(2026, 7, 10, 12));
+
+    const fixture = TestBed.createComponent(MatchDayComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+    s.flush();
+
+    const august = query('.et-calendar-header-label-value', host);
+
+    expect(august.hasAttribute('inert')).toBe(false);
+
+    click(s, query('.et-calendar-nav-button--next', host));
+
+    const september = query('.et-calendar-header-label-value', host);
+
+    expect(september).not.toBe(august);
+    expect(september.hasAttribute('inert')).toBe(false);
+    expect(august.hasAttribute('inert')).toBe(true);
+  });
+
   it.each([
     ['a grid', StrayGridComponent, CALENDAR_ERROR_CODES.GRID_OUTSIDE_CALENDAR],
     ['a cell', StrayCellComponent, CALENDAR_ERROR_CODES.CELL_OUTSIDE_CALENDAR],

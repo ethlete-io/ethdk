@@ -15,7 +15,7 @@ import { CHEVRON_ICON, IconDirective, provideIcons } from '../icon';
 import { CalendarCellDirective, CalendarDirective, CalendarGridDirective } from './headless';
 import { injectCalendarLabels } from '../calendar/calendar-labels';
 import { CalendarHeaderDirective } from './calendar-header.directive';
-import { CalendarWeeksDirective } from './calendar-weeks.directive';
+import { CalendarInertOnLeaveDirective } from './calendar-inert-on-leave.directive';
 import { CalendarCoarseGridStylesComponent } from './calendar-coarse-grid-styles.component';
 import { CalendarComparisonBandStylesComponent } from './calendar-comparison-band-styles.component';
 import { CalendarWeekNumbersStylesComponent } from './calendar-week-numbers-styles.component';
@@ -28,7 +28,7 @@ import { CalendarWeekNumbersStylesComponent } from './calendar-week-numbers-styl
   imports: [
     CalendarCellDirective,
     CalendarGridDirective,
-    CalendarWeeksDirective,
+    CalendarInertOnLeaveDirective,
     IconButtonComponent,
     IconDirective,
     NgTemplateOutlet,

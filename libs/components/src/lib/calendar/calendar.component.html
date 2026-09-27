@@ -66,7 +66,7 @@
       [attr.data-nav]="calendar.navigationDirection()"
       class="et-calendar-weeks"
       animate.leave="et-calendar-weeks--leave"
-      etCalendarWeeks
+      etCalendarInertOnLeave
       role="rowgroup"
     >
       @switch (calendar.view()) {
@@ -138,6 +138,7 @@
     [attr.data-nav]="calendar.navigationDirection()"
     class="et-calendar-header-label-value"
     animate.leave="et-calendar-header-label-value--leave"
+    etCalendarInertOnLeave
     >{{ calendar.headerLabel() }}</span
   >
 </ng-template>
