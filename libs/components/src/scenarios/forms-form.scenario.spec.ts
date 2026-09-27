@@ -1,10 +1,12 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FieldTree, form, FormField, required } from '@angular/forms/signals';
 import { provideColorThemes } from '@ethlete/core';
 import {
   FORM_FIELD_IMPORTS,
   FORM_IMPORTS,
+  focusFirstInvalidField,
+  FormDirective,
   INPUT_IMPORTS,
   TEXTAREA_IMPORTS,
   TEXTAREA_RESIZE_MODES,
@@ -54,6 +56,34 @@ class FeedbackFormComponent {
       },
     },
   );
+}
+
+@Component({
+  selector: 'et-scenario-signup-steps',
+  imports: [FormDirective, FORM_FIELD_IMPORTS, INPUT_IMPORTS, FormField],
+  template: `
+    <form [etForm]="signup">
+      @if (showEmail()) {
+        <et-form-field class="email">
+          <et-label>Email</et-label>
+          <et-input [formField]="signup.email" />
+        </et-form-field>
+      }
+      <et-form-field class="team">
+        <et-label>Team</et-label>
+        <et-input [formField]="signup.team" />
+      </et-form-field>
+    </form>
+  `,
+})
+class SignupStepsComponent {
+  showEmail = signal(false);
+  model = signal({ email: '', team: '' });
+  signup = form(this.model, (path) => {
+    required(path.email, { message: 'Email is required' });
+    required(path.team, { message: 'Team is required' });
+  });
+  formDirective = viewChild.required(FormDirective);
 }
 
 describe('form scenarios', () => {
@@ -149,6 +179,34 @@ describe('form scenarios', () => {
     s.tick();
 
     expect(textarea.getAttribute('data-resize')).toBe('none');
+    s.flush();
+  });
+
+  it('lands a hand-written submit on the first rendered invalid field', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(SignupStepsComponent);
+    const app = fixture.componentInstance;
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+
+    expect(app.formDirective().field()).toBe(app.signup);
+    expect(focusFirstInvalidField(app.signup, { focus: false, behavior: 'auto' })).toBe(true);
+    expect(scrolled).toEqual([host.querySelector('et-form-field.team')]);
+    expect(document.activeElement).not.toBe(host.querySelector('.team input'));
+
+    app.showEmail.set(true);
+    s.tick();
+
+    expect(focusFirstInvalidField(app.signup)).toBe(true);
+    expect(scrolled.at(-1)).toBe(host.querySelector('et-form-field.email'));
+    expect(document.activeElement).toBe(host.querySelector('.email input'));
+
+    app.model.set({ email: 'coach@team-a.test', team: 'team-a' });
+    s.tick();
+
+    expect(focusFirstInvalidField(app.signup)).toBe(false);
+    expect(scrolled.length).toBe(2);
     s.flush();
   });
 });

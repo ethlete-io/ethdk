@@ -1,8 +1,15 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField, maxLength } from '@angular/forms/signals';
 import { provideColorThemes } from '@ethlete/core';
-import { FORM_FIELD_IMPORTS, TAG_INPUT_ERROR_CODES, TAG_INPUT_IMPORTS } from '../index';
+import {
+  FORM_FIELD_IMPORTS,
+  TAG_INPUT_ERROR_CODES,
+  TAG_INPUT_IMPORTS,
+  TagInputComponent,
+  TagInputDirective,
+  TagInputFieldDirective,
+} from '../index';
 import { TEST_COLOR_THEMES } from '../lib/testing/color-themes';
 import '../test-helpers';
 import { Scenario, useScenario } from './harness';
@@ -40,6 +47,28 @@ class TeamTagsComponent {
   template: `<input class="stray" etTagInputField aria-label="Stray" />`,
 })
 class StrayTagFieldComponent {}
+
+@Component({
+  selector: 'et-scenario-custom-tags',
+  imports: [TagInputComponent, TagInputDirective, TagInputFieldDirective],
+  template: `
+    <et-tag-input [(value)]="labels" [readonly]="readonly()" class="labels" aria-label="Labels" />
+    <div #tags="etTagInput" [(value)]="skills" [separators]="[';']" [maxTags]="2" class="skills" etTagInput>
+      @for (skill of tags.effectiveValues(); track skill) {
+        <button (click)="tags.remove(skill)" class="skill" type="button">{{ skill }}</button>
+      }
+      <input class="skill-field" etTagInputField aria-label="Skills" />
+    </div>
+  `,
+})
+class CustomTagsComponent {
+  labels = signal(['keeper']);
+  skills = signal<string[]>([]);
+  readonly = signal(false);
+  labelInput = viewChild.required(TagInputComponent);
+  skillInput = viewChild.required('tags', { read: TagInputDirective });
+  skillField = viewChild.required(TagInputFieldDirective);
+}
 
 const code = (value: number) => `ET${value}`;
 
@@ -183,5 +212,57 @@ describe('tag input scenarios', () => {
     const context = s.errors.splice(index, 1)[0]?.error as { element?: HTMLElement } | undefined;
 
     expect(context?.element?.classList).toContain('stray');
+  });
+
+  it('drives custom chips with the headless directives and keeps a readonly one untouched', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(CustomTagsComponent);
+    const app = fixture.componentInstance;
+    const host = fixture.nativeElement as HTMLElement;
+
+    document.body.appendChild(host);
+    s.tick();
+    s.frame(2);
+
+    const skillField = host.querySelector<HTMLInputElement>('.skill-field')!;
+    const skills = () => Array.from(host.querySelectorAll('.skill')).map((skill) => skill.textContent?.trim());
+
+    expect(app.skillField().elementRef.nativeElement).toBe(skillField);
+
+    skillField.value = 'Passing;';
+    skillField.dispatchEvent(new Event('input', { bubbles: true }));
+    s.tick();
+
+    expect(app.skills()).toEqual(['Passing']);
+
+    skillField.value = 'Tackling';
+    app.skillField().commitPending();
+    s.tick();
+
+    expect(skills()).toEqual(['Passing', 'Tackling']);
+    expect(app.skillInput().isFull()).toBe(true);
+    expect(skillField.readOnly).toBe(true);
+
+    host.querySelector<HTMLButtonElement>('.skill')!.click();
+    s.tick();
+
+    expect(app.skills()).toEqual(['Tackling']);
+    expect(skillField.readOnly).toBe(false);
+
+    app.readonly.set(true);
+    s.tick();
+
+    const labels = host.querySelector<HTMLElement>('.labels')!;
+    const labelField = labels.querySelector<HTMLInputElement>('input')!;
+
+    app.labelInput().focus();
+    expect(document.activeElement).toBe(labelField);
+
+    s.keydown('Backspace', labelField);
+    s.tick();
+
+    expect(app.labels()).toEqual(['keeper']);
+    expect(labels.getAttribute('data-readonly')).toBe('true');
+    s.flush();
   });
 });

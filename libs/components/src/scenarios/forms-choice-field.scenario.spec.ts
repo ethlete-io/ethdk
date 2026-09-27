@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField, required } from '@angular/forms/signals';
 import { provideColorThemes } from '@ethlete/core';
@@ -6,7 +6,11 @@ import {
   CHECKBOX_IMPORTS,
   CHOICE_FIELD_IMPORTS,
   CHOICE_FIELD_VARIANTS,
+  ChoiceFieldComponent,
   ChoiceFieldVariant,
+  FORM_FIELD_SIZES,
+  FormFieldSize,
+  LabelDirective,
   SELECTION_CARD_CONTROL_POSITIONS,
   SelectionCardControlPosition,
   SWITCH_IMPORTS,
@@ -38,6 +42,25 @@ class NotificationSettingsComponent {
   settings = form(this.model, (path) => {
     required(path.terms, { message: 'Accept the terms to continue' });
   });
+}
+
+@Component({
+  selector: 'et-scenario-newsletter-opt-in',
+  imports: [ChoiceFieldComponent, LabelDirective, CHECKBOX_IMPORTS, FormField],
+  template: `
+    <et-choice-field [size]="size()">
+      <et-checkbox [formField]="optIn.newsletter" />
+      <et-label>Send me the newsletter</et-label>
+    </et-choice-field>
+  `,
+})
+class NewsletterOptInComponent {
+  size = signal<FormFieldSize>(FORM_FIELD_SIZES.SM);
+  model = signal({ newsletter: false });
+  optIn = form(this.model, (path) => {
+    required(path.newsletter, { message: 'Required to continue' });
+  });
+  field = viewChild.required(ChoiceFieldComponent);
 }
 
 const query = <T extends Element = HTMLElement>(host: Element, selector: string) => {
@@ -140,6 +163,29 @@ describe('choice field scenarios', () => {
     s.tick();
 
     expect(fixture.componentInstance.model().terms).toBe(true);
+    s.flush();
+  });
+
+  it('sizes the row and exposes whether it shows an error', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(NewsletterOptInComponent);
+    const app = fixture.componentInstance;
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+
+    const field = query(host, 'et-choice-field');
+
+    expect(field.getAttribute('data-size')).toBe('sm');
+    expect(app.field().support.displaysError()).toBe(false);
+
+    app.size.set(FORM_FIELD_SIZES.LG);
+    app.optIn.newsletter().markAsTouched();
+    s.tick();
+
+    expect(field.getAttribute('data-size')).toBe('lg');
+    expect(app.field().support.displaysError()).toBe(true);
+    expect(field.textContent).toContain('Required to continue');
     s.flush();
   });
 });

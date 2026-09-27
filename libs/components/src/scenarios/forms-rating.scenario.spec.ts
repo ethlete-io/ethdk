@@ -1,8 +1,15 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField, required } from '@angular/forms/signals';
 import { provideColorThemes } from '@ethlete/core';
-import { FORM_FIELD_IMPORTS, RATING_ERROR_CODES, RATING_IMPORTS } from '../index';
+import {
+  FORM_FIELD_IMPORTS,
+  RATING_ERROR_CODES,
+  RATING_IMPORTS,
+  RatingComponent,
+  RatingDirective,
+  RatingIconDirective,
+} from '../index';
 import { TEST_COLOR_THEMES } from '../lib/testing/color-themes';
 import '../test-helpers';
 import { Scenario, useScenario } from './harness';
@@ -41,6 +48,38 @@ class MatchReviewComponent {
   `,
 })
 class DoubleIconRatingComponent {}
+
+@Component({
+  selector: 'et-scenario-venue-rating',
+  imports: [RatingComponent, RatingIconDirective, RatingDirective],
+  template: `
+    <et-rating [(value)]="venue" [readonly]="readonly()" class="venue" aria-label="Venue">
+      <ng-template let-state etRatingIcon>
+        <b class="dot">{{ state }}</b>
+      </ng-template>
+    </et-rating>
+    <div #stars="etRating" [(value)]="custom" [max]="3" class="custom" etRating allowHalf aria-label="Custom">
+      @for (index of [1, 2, 3]; track index) {
+        <button
+          [attr.data-state]="stars.iconState(index)"
+          (click)="stars.commitPointer(index)"
+          (pointerenter)="stars.setHoverValue(index - 0.5)"
+          tabindex="-1"
+          type="button"
+        >
+          {{ index }}
+        </button>
+      }
+    </div>
+  `,
+})
+class VenueRatingComponent {
+  venue = signal<number | null>(4);
+  custom = signal<number | null>(null);
+  readonly = signal(false);
+  rating = viewChild.required(RatingComponent);
+  headless = viewChild.required('stars', { read: RatingDirective });
+}
 
 const code = (value: number) => `ET${value}`;
 
@@ -209,5 +248,62 @@ describe('rating scenarios', () => {
 
     expect(context?.element?.nodeType).toBe(Node.COMMENT_NODE);
     s.errors.splice(0, s.errors.length);
+  });
+
+  it('builds a readonly custom-icon rating and a fully headless one', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(VenueRatingComponent);
+    const app = fixture.componentInstance;
+    const host = fixture.nativeElement as HTMLElement;
+    const venue = host.querySelector<HTMLElement>('.venue')!;
+    const custom = host.querySelector<HTMLElement>('.custom')!;
+    const states = () => Array.from(custom.querySelectorAll('button')).map((button) => button.dataset['state']);
+
+    document.body.appendChild(host);
+    s.tick();
+    s.frame(2);
+
+    expect(Array.from(venue.querySelectorAll('.dot')).map((dot) => dot.textContent)).toEqual([
+      'full',
+      'full',
+      'full',
+      'full',
+      'empty',
+    ]);
+
+    app.readonly.set(true);
+    s.tick();
+    s.keydown('ArrowRight', venue);
+    s.tick();
+
+    expect(app.venue()).toBe(4);
+    expect(venue.getAttribute('aria-readonly')).toBe('true');
+
+    app.rating().focus();
+    expect(document.activeElement).toBe(venue);
+
+    expect(custom.getAttribute('role')).toBe('slider');
+    expect(custom.getAttribute('aria-valuemax')).toBe('3');
+    expect(custom.getAttribute('aria-valuetext')).toBe('No rating');
+
+    custom.querySelectorAll('button')[1]!.dispatchEvent(new Event('pointerenter'));
+    s.tick();
+
+    expect(states()).toEqual(['full', 'half', 'empty']);
+
+    custom.dispatchEvent(new Event('pointerleave'));
+    custom.querySelectorAll('button')[2]!.click();
+    s.tick();
+
+    expect(app.custom()).toBe(3);
+    expect(custom.getAttribute('aria-valuetext')).toBe('3 of 3');
+
+    s.keydown('ArrowLeft', custom);
+    s.tick();
+
+    expect(app.custom()).toBe(2.5);
+    expect(app.headless().hasValue()).toBe(true);
+    expect(states()).toEqual(['full', 'full', 'half']);
+    s.flush();
   });
 });
