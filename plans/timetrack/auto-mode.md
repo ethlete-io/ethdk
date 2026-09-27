@@ -1,6 +1,6 @@
 # Auto mode and the approval queue
 
-Status: slice 1 done (2026-09-28); slice 2 in progress.
+Status: slices 1 and 2 done (2026-09-28); slice 3 next.
 
 ## Goal
 
@@ -57,9 +57,11 @@ settings: the user can move an action to a stricter class, never to a looser one
 
 1. **Lock gate and op classes.** Done. The endpoint refuses every op while locked. Add the class table in
    `libs/timetrack/src/lib/agent-api/model.ts`. Unit specs for the gate and the table.
-2. **Approval queue.** Store, `approval.status` op, queue panel in the app with approve, reject and
+2. **Approval queue.** Done. Store, `approval.status` op, queue panel in the app with approve, reject and
    "Approve all". Route every non-read CLI op through it. e2e: a queued `jira.create` files only
-   after the press; "Approve all" skips `tempo.sync`.
+   after the press; "Approve all" skips `tempo.sync`. Plan-only `standIn.split` (no `apply`) and
+   `tempo.sync` (no `planHash`) stay direct answers. The class comes from the table on every read,
+   never from the store. Contract v3; the CLI names itself via `TIMETRACK_CLIENT` or Claude Code.
 3. **Field sources.** Add `human | auto | observed` to the row fields auto mode can set (issue,
    description, parent, stand-in resolution). Any UI edit sets `human`. Spec: an auto pass after a
    human edit changes nothing.
@@ -71,7 +73,6 @@ settings: the user can move an action to a stricter class, never to a looser one
 
 ## Open questions
 
-- Does a CLI call wait for the decision, or only return `queued`? The plan says `queued`, because
-  a CLI that blocks for minutes looks hung.
-- How long until a queued item expires? Proposal: end of the day it was asked on.
+- Settled in slice 2: a CLI write returns `queued` at once and never blocks; a queued item expires
+  at the end of the day it was asked on, and a decided one is kept for 7 days.
 - Does auto mode run on past days, or only on today and new evidence?
