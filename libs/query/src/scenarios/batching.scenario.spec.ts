@@ -330,7 +330,7 @@ describe('batching scenario', () => {
     c.destroy();
   });
 
-  it('unsubscribing mid-run marks the in-flight and queued items cancelled, and retryFailed() resends them', () => {
+  it('unsubscribing mid-run marks the in-flight and queued items cancelled, and retryFailed() resends only the queued ones', () => {
     const s = scenario();
     s.api.on('PATCH', '/posts/:id', ({ params }) => ({ body: { id: params['id'] }, delay: 100 }));
 
@@ -361,10 +361,22 @@ describe('batching scenario', () => {
     const retry = capture(batch.retryFailed());
     s.flush();
 
-    expect(s.api.requests.map((r) => r.path)).toEqual(['/posts/1', '/posts/2', '/posts/2', '/posts/3', '/posts/4']);
-    expect(retry.value?.ok).toBe(true);
-    expect(ids(retry.value?.succeeded ?? [])).toEqual(['1', '2', '3', '4']);
-    expect(batch.status()).toBe('success');
+    expect(s.api.requests.map((r) => r.path)).toEqual(['/posts/1', '/posts/2', '/posts/3', '/posts/4']);
+    expect(ids(retry.value?.succeeded ?? [])).toEqual(['1', '3', '4']);
+    expect(ids(retry.value?.notAttempted ?? [])).toEqual(['2']);
+    expect(retry.value?.ok).toBe(false);
+
+    const again = capture(batch.retryFailed());
+    s.flush();
+
+    expect(s.api.requestCount('PATCH', '/posts/2')).toBe(1);
+    expect(ids(again.value?.notAttempted ?? [])).toEqual(['2']);
+
+    const rerun = capture(batch.run(posts('2')));
+    s.flush();
+
+    expect(s.api.requestCount('PATCH', '/posts/2')).toBe(2);
+    expect(rerun.value?.ok).toBe(true);
 
     c.destroy();
   });

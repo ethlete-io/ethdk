@@ -135,7 +135,7 @@ protected archive = createQueryBatch({
 
 ## Retrying
 
-A partial failure is the normal case for a bulk edit, and re-running the whole list would resend the mutations that already worked. `retryFailed()` resends **only** the items that did not succeed - the failed ones plus anything a `cancel()` left unattempted - and merges the outcomes back into the same result set:
+A partial failure is the normal case for a bulk edit, and re-running the whole list would resend the mutations that already worked. `retryFailed()` resends **only** the items that did not succeed - the failed ones plus anything a `cancel()`, `stopOnError` or an unsubscribe left unattempted - and merges the outcomes back into the same result set:
 
 ```html
 @if (archive.failed()) {
@@ -153,7 +153,7 @@ retry() {
 
 - **Skip an item** by returning `null` from `args`. It is recorded as `skipped`, not as a failure, and `ok` stays `true`.
 - **`stopOnError: true`** stops the batch at the first failure. Everything still queued becomes `notAttempted`; requests already in flight are left to settle.
-- **`cancel()`** does the same on demand. It deliberately does **not** abort in-flight requests: a mutation the server may already have applied has to be recorded, so those items settle into the results as normal. (Unsubscribing from the run _does_ abort them, and settles the run: the aborted and queued items become `notAttempted`, so `retryFailed()` resends them - prefer `cancel()`.)
+- **`cancel()`** does the same on demand. It deliberately does **not** abort in-flight requests: a mutation the server may already have applied has to be recorded, so those items settle into the results as normal. (Unsubscribing from the run _does_ abort them, and settles the run: the aborted and queued items become `notAttempted`. `retryFailed()` resends the queued ones but never an aborted one, since the server may already have applied it - pass it to `run()` yourself if you know it did not. Prefer `cancel()`.)
 
 ## Notes
 

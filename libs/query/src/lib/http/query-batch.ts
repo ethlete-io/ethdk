@@ -155,8 +155,9 @@ export type QueryBatch<TItem, TArgs extends QueryArgs> = {
 
   /**
    * Re-runs only the items that did not succeed - the failed ones plus anything left unattempted by
-   * a `cancel()` or `stopOnError`. Successful items are never sent twice, which is what makes this
-   * safe to put behind a retry button in a bulk edit. Cold, like {@link QueryBatch.run}.
+   * a `cancel()`, `stopOnError` or an unsubscribe. Successful items, and items an unsubscribe aborted
+   * in flight, are never sent twice, which is what makes this safe to put behind a retry button in a
+   * bulk edit. Cold, like {@link QueryBatch.run}.
    */
   retryFailed: () => Observable<QueryBatchResult<TItem, TArgs>>;
 
@@ -166,7 +167,7 @@ export type QueryBatch<TItem, TArgs extends QueryArgs> = {
    * normal and the run emits once they do.
    *
    * Unsubscribing from the run does abort everything in flight, which for a mutation is rarely what
-   * you want. Prefer this.
+   * you want: those items stay `cancelled` and `retryFailed()` does not resend them. Prefer this.
    */
   cancel: () => void;
 
@@ -294,6 +295,7 @@ export const createQueryBatch = <TCreator extends AnyQueryCreator, TItem>(
   const completedBeforeRun = signal(0);
 
   let settled: (ItemResult | undefined)[] = [];
+  const abortedInFlight = new Set<number>();
   let cancelRequested = false;
   let hostDestroyed = false;
 
@@ -424,6 +426,8 @@ export const createQueryBatch = <TCreator extends AnyQueryCreator, TItem>(
         finalize(() => {
           inFlight.update((count) => count - 1);
 
+          if (!settled[entry.index]) abortedInFlight.add(entry.index);
+
           // The host's destruction already tore the query's injector down; destroying it again throws.
           if (!hostDestroyed) query.subtle.destroy();
         }),
@@ -500,6 +504,7 @@ export const createQueryBatch = <TCreator extends AnyQueryCreator, TItem>(
   const run = (items: readonly TItem[]) =>
     runEntries(() => {
       settled = new Array(items.length);
+      abortedInFlight.clear();
       total.set(items.length);
 
       return items.map((item, index) => ({ item, index }));
@@ -508,7 +513,7 @@ export const createQueryBatch = <TCreator extends AnyQueryCreator, TItem>(
   const retryFailed = () =>
     runEntries(() => {
       const entries = results()
-        .filter((r) => r.status === 'error' || r.status === 'cancelled')
+        .filter((r) => r.status === 'error' || (r.status === 'cancelled' && !abortedInFlight.has(r.index)))
         .map((r) => ({ item: r.item, index: r.index }));
 
       for (const entry of entries) {
@@ -546,6 +551,7 @@ export const createQueryBatch = <TCreator extends AnyQueryCreator, TItem>(
       if (running()) return;
 
       settled = [];
+      abortedInFlight.clear();
       total.set(0);
       results.set([]);
       status.set('idle');
