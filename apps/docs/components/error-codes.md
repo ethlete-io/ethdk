@@ -19,7 +19,9 @@ Some errors carry extra context (the offending config, element, …). That paylo
 Two kinds of checks produce these errors:
 
 - **Structural checks** (a directive placed outside its required parent, a missing required template) run **in dev mode only**, after the first render. Production builds skip them, so fix them during development - the broken structure will silently misbehave in production.
-- **Runtime failures** (an icon name that isn't registered, a player SDK that fails to load) throw in production too.
+- **Runtime failures** (an icon name that isn't registered, a player SDK that fails to load) happen in production too.
+
+A configuration error that is found while the app renders - an unknown icon name, invalid chart data, a duplicate grid item id - does not throw out of change detection. It goes to Angular's `ErrorHandler`, and the component renders nothing (or its empty state) until the input is fixed. Provide your own `ErrorHandler` to collect these. A setup mistake that makes the component unusable from the start, such as `ET1800` (no icons provided), still throws.
 
 Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU_ERROR_CODES`, `OVERLAY_ERROR_CODES`) if you need to match on them programmatically.
 
@@ -239,7 +241,7 @@ Checked in dev mode only. Every check throws while the directive is constructed,
 | `ET1805` | The icon uses a hardcoded `fill`/`stroke` color.                        | Use `currentColor` so the icon follows the text color, or set `[allowHardcodedColor]="true"`. |
 | `ET1806` | Two icons were registered with the same name/variant combination.       | Make every name/variant combination unique.                                                   |
 
-`ET1802`–`ET1805` are dev-mode-only SVG validations; `ET1800`/`ET1801` also throw in production.
+`ET1802`–`ET1805` are dev-mode-only SVG validations; `ET1800`/`ET1801` are raised in production too. `ET1800` throws while the icon is created; the others go to the `ErrorHandler`, and the icon renders empty.
 
 ## Grid (ET19xx)
 

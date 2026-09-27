@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, ErrorHandler, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
 import * as iconExports from './index';
@@ -116,14 +116,17 @@ describe('IconDirective', () => {
   });
 
   describe('error handling (devMode)', () => {
-    it('throws when icon name is not in the registry', () => {
+    it('reports an icon name that is not in the registry and renders nothing', () => {
+      const handleError = vi.fn();
       TestBed.configureTestingModule({
         imports: [IconTestHost],
-        providers: [provideIcons(VALID_ICON)],
+        providers: [provideIcons(VALID_ICON), { provide: ErrorHandler, useValue: { handleError } }],
       });
       const fixture = TestBed.createComponent(IconTestHost);
       fixture.componentInstance.name = 'et-nonexistent';
-      expect(() => fixture.detectChanges()).toThrow(`ET${ICON_ERROR_CODES.ICON_NOT_FOUND}`);
+      expect(() => fixture.detectChanges()).not.toThrow();
+      expect(String(handleError.mock.calls[0]?.[0])).toContain(`ET${ICON_ERROR_CODES.ICON_NOT_FOUND}`);
+      expect(fixture.nativeElement.querySelector('svg')).toBeNull();
     });
   });
 
@@ -236,11 +239,13 @@ describe('IconDirective', () => {
 
     let fixture: ComponentFixture<VariantHost>;
     let span: HTMLSpanElement;
+    const handleError = vi.fn();
 
     beforeEach(() => {
+      handleError.mockClear();
       TestBed.configureTestingModule({
         imports: [VariantHost],
-        providers: [provideIcons(SHIELD_SOLID, SHIELD_LIGHT)],
+        providers: [provideIcons(SHIELD_SOLID, SHIELD_LIGHT), { provide: ErrorHandler, useValue: { handleError } }],
       });
       fixture = TestBed.createComponent(VariantHost);
       span = fixture.nativeElement.querySelector('span');
@@ -258,9 +263,11 @@ describe('IconDirective', () => {
       expect(span.classList.contains('et-icon--shield--light')).toBe(true);
     });
 
-    it('throws when the requested variant is not registered', () => {
+    it('reports a requested variant that is not registered and renders nothing', () => {
       fixture.componentInstance.variant = 'thin';
-      expect(() => fixture.detectChanges()).toThrow(`ET${ICON_ERROR_CODES.ICON_NOT_FOUND}`);
+      expect(() => fixture.detectChanges()).not.toThrow();
+      expect(String(handleError.mock.calls[0]?.[0])).toContain(`ET${ICON_ERROR_CODES.ICON_NOT_FOUND}`);
+      expect(span.querySelector('svg')).toBeNull();
     });
   });
 });
