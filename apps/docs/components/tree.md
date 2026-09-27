@@ -62,9 +62,13 @@ Two nodes sharing a value expand, select and focus as one. For a file tree that 
 | `compareWith`    | `(a: T, b: T) => boolean`          | `(a, b) => a === b` | Value equality. Override when node values are objects.                            |
 | `disabled`       | `boolean`                          | `false`             | Nothing expands or selects; rows stay readable and reachable.                     |
 | `toErrorMessage` | `(error: unknown) => string`       | `Error.message`     | Turns a failed load into the text shown on the branch.                            |
-| `loadingLabel`   | `string`                           | `'Loading…'`        | Shown while the root level loads.                                                 |
-| `emptyLabel`     | `string`                           | `'Nothing to show'` | Shown when the root loaded no nodes.                                              |
-| `retryLabel`     | `string`                           | `'select to retry'` | Appended to a failed level's message.                                             |
+| `loadingLabel`   | `string \| null`                   | `null`              | Shown while the root level loads. `null` uses `TREE_LABELS.loading`.              |
+| `emptyLabel`     | `string \| null`                   | `null`              | Shown when the root loaded no nodes. `null` uses `TREE_LABELS.empty`.             |
+| `retryLabel`     | `string \| null`                   | `null`              | Appended to a failed level's message. `null` uses `TREE_LABELS.retry`.            |
+
+The defaults are `'Loading…'`, `'Nothing to show'` and `'select to retry'`. Localize them app-wide with
+`provideTreeLabels({ loading: 'Lädt…', empty: 'Keine Einträge', retry: 'zum Wiederholen auswählen' })` -
+see the [localization guide](/components/localization).
 
 `nodeActivate` fires with the `TreeNode<T>` whenever a row is clicked or <kbd>Enter</kbd>ed - branches included, and regardless of `selectionMode`. It is how a `selectionMode="none"` tree navigates somewhere instead of holding a value.
 

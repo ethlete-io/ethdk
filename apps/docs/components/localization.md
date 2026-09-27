@@ -118,6 +118,7 @@ that provides labels needs no per-instance wiring at all.
 | `RICH_TEXT_EDITOR_LABELS` | `provideRichTextEditorLabels` | Toolbars, every tool, link editor, table/align tools, token popup                                                        |
 | `CHIP_LABELS`             | `provideChipLabels`           | A removable chip's remove button                                                                                         |
 | `TABLE_LABELS`            | `provideTableLabels`          | Empty/error text, sorting, filtering, column menu, selection                                                             |
+| `TREE_LABELS`             | `provideTreeLabels`           | Root loading and empty states, a failed level's retry hint                                                               |
 | `PAGINATION_LABELS`       | `providePaginationLabels`     | Controls, page items, range readouts, jump-to-page                                                                       |
 | `BREADCRUMB_LABELS`       | `provideBreadcrumbLabels`     | Landmark name, overflow control                                                                                          |
 | `CAROUSEL_LABELS`         | `provideCarouselLabels`       | Region, slides, prev/next, play/pause, dots                                                                              |

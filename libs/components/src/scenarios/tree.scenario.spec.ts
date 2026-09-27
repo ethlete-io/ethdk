@@ -1,10 +1,14 @@
-import { Component, signal, ViewEncapsulation } from '@angular/core';
+import { Component, inject, signal, ViewEncapsulation } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { delay, of, throwError, timer } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import {
+  DEFAULT_TREE_LABELS,
+  injectTreeLabels,
+  provideTreeLabels,
   TREE_ERROR_CODES,
   TREE_IMPORTS,
+  TREE_LABELS,
   TREE_LEVEL_STATUSES,
   TREE_MARKERS,
   TREE_SELECTION_MODES,
@@ -151,6 +155,19 @@ class FailingRootComponent {
     },
   };
   toMessage = (error: unknown) => `Could not load (${String(error)})`;
+}
+
+@Component({
+  selector: 'et-scenario-localized-failing-root',
+  styles: [UNSTYLED_BLOCKS],
+  encapsulation: ViewEncapsulation.None,
+  imports: [TreeComponent],
+  providers: [provideTreeLabels({ empty: 'Keine Teams', retry: 'zum Wiederholen auswählen' })],
+  template: `<et-tree [dataSource]="source" [toErrorMessage]="toMessage" />`,
+})
+class LocalizedFailingRootComponent extends FailingRootComponent {
+  labels = injectTreeLabels();
+  labelsFromToken = inject(TREE_LABELS);
 }
 
 @Component({
@@ -444,6 +461,29 @@ describe('tree scenarios', () => {
 
     expect(fixture.componentInstance.attempts).toBe(2);
     expect(text(document.querySelector('.et-tree-status'))).toBe('No teams');
+  });
+
+  it('localizes the status and retry text app-wide through provideTreeLabels', async () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(LocalizedFailingRootComponent);
+    const page = fixture.componentInstance;
+
+    settle(s);
+    await Promise.resolve();
+    await Promise.resolve();
+    settle(s);
+
+    expect(page.labels().loading).toBe(DEFAULT_TREE_LABELS.loading);
+    expect(page.labelsFromToken).toBeDefined();
+
+    const status = document.querySelector<HTMLElement>('.et-tree-status--error')!;
+
+    expect(text(status)).toBe('Could not load (offline) · zum Wiederholen auswählen');
+
+    s.keydown('Enter', status);
+    settle(s);
+
+    expect(text(document.querySelector('.et-tree-status'))).toBe('Keine Teams');
   });
 
   it('expands and collapses everything loaded from a headless navigation tree', () => {
