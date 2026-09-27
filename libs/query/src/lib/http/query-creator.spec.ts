@@ -1,6 +1,6 @@
 import { QueryArgs, RawResponseType, RequestArgs, ResponseType } from './query';
 import { QueryCreator, RequiresTransform } from './query-creator';
-import { QueryFeature, withArgs } from './query-features';
+import { QueryFeature, withArgs, WithArgsQueryFeature } from './query-features';
 
 describe('query creator', () => {
   describe('RequestArgs type', () => {
@@ -199,9 +199,38 @@ describe('query creator', () => {
       return UserService;
     };
 
+    const typeOnlyGenericHelpers = (getUser: QueryCreator<UserArgs>) => {
+      const withGenericArgs = <T extends QueryArgs>(creator: QueryCreator<T>, args: () => RequestArgs<T>) =>
+        creator(withArgs(args));
+      const withGenericArgsAndConfig = <T extends QueryArgs>(creator: QueryCreator<T>, args: () => RequestArgs<T>) =>
+        creator({ key: 'user' }, withArgs(args));
+      const silencedGeneric = <T extends QueryArgs>(creator: QueryCreator<T>) =>
+        creator({ silenceMissingWithArgsFeatureError: true });
+      // @ts-expect-error without withArgs, a generic TArgs cannot be proven to lack pathParams
+      const withoutArgsGeneric = <T extends QueryArgs>(creator: QueryCreator<T>) => creator();
+      const silencedWithArgsGeneric = <T extends QueryArgs>(creator: QueryCreator<T>, args: () => RequestArgs<T>) =>
+        // @ts-expect-error silenced and withArgs at once
+        creator({ silenceMissingWithArgsFeatureError: true }, withArgs(args));
+
+      withGenericArgs(getUser, () => ({ pathParams: { id: '1' } }));
+
+      return [withGenericArgsAndConfig, silencedGeneric, withoutArgsGeneric, silencedWithArgsGeneric];
+    };
+
+    const typeOnlyAnnotations = (getUser: QueryCreator<UserArgs>) => {
+      const annotated: WithArgsQueryFeature<UserArgs> = withArgs(() => ({ pathParams: { id: '1' } }));
+      const widened: QueryFeature<UserArgs> = withArgs(() => ({ pathParams: { id: '1' } }));
+
+      getUser(annotated);
+      // @ts-expect-error a plain QueryFeature annotation drops the withArgs mark
+      getUser(widened);
+    };
+
     it('only runs in tsc', () => {
       expect(typeof typeOnly).toBe('function');
       expect(typeof typeOnlyCallSites).toBe('function');
+      expect(typeof typeOnlyGenericHelpers).toBe('function');
+      expect(typeof typeOnlyAnnotations).toBe('function');
     });
   });
 });

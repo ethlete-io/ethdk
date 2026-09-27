@@ -29,9 +29,4 @@ future scan must not report the settled items again.
 - No consumer `HttpContext` tokens on queries until a consumer needs one (ea-frontend has none).
 - `refresh()` / `startPolling()` on a released ngrx-toolkit handle are no-ops with one dev warning per handle that
   names the release; no throw, no re-create.
-
-## Open
-
-- The type error for a missing `withArgs` has limits: a generic helper that calls `c()` errors,
-  `const f: QueryFeature<X> = withArgs(...)` no longer counts as `withArgs`, and a spread hides a missing `withArgs`
-  until ET100 at runtime. Accept, or tighten?
+- The `withArgs` type check: generic helpers that pass `withArgs` compile, a `QueryFeature` annotation drops the mark (use `WithArgsQueryFeature`), a spread is left to ET100.
