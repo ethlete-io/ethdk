@@ -303,6 +303,7 @@ export const createPipWindowPosition = (options: PipWindowPositionOptions): PipW
     const vh = viewportSize().height;
     const pad = params.viewportPadding();
 
+    if (!rect.width || !rect.height) return;
     if (rect.left >= pad && rect.top >= pad && rect.right <= vw - pad && rect.bottom <= vh - pad) return;
 
     initPosition();
