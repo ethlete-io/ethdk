@@ -25,6 +25,7 @@ import {
   providePipSlotPlaceholderConfig,
   provideStreamConfig,
   provideStreamPip,
+  STREAM_ERROR_CODES,
   STREAM_IMPORTS,
   STREAM_KICK_IMPORTS,
   STREAM_PIP_IMPORTS,
@@ -481,6 +482,6 @@ describe('stream picture-in-picture with a chrome that forgets its ref', () => {
     s.flush();
     fixture.componentInstance.slots()[0]?.slotDirective.slot.pipActivate();
 
-    expect(() => s.tick()).toThrow('PIP_CHROME_REF_TOKEN');
+    expect(() => s.tick()).toThrow(`ET${STREAM_ERROR_CODES.MISSING_PIP_CHROME_TOKEN}`);
   });
 });
