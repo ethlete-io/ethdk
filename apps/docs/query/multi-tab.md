@@ -223,7 +223,8 @@ bus.restore();
 locks.restore();
 ```
 
-Both fakes are process-wide while installed, deliver on a microtask (never synchronously), and never
-deliver a message back to the channel that posted it - so both sides run the real production code
-path. `bus.posted` lists everything broadcast; `locks.heldNames()` and `locks.pendingNames()` show the
-election.
+Both fakes are process-wide while installed and never act synchronously: the channel delivers a
+message as a task, a lock is granted on a microtask, and `flushMultiTabSync()` waits for both, even
+under fake timers. A message is never delivered back to the channel that posted it - so both sides
+run the real production code path. `bus.posted` lists everything broadcast; `locks.heldNames()` and
+`locks.pendingNames()` show the election.

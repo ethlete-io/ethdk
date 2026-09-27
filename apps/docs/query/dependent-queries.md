@@ -48,7 +48,7 @@ export class CheckoutComponent {
     const result = await this.checkout.run();
 
     if (!result.ok) {
-      // result.failedAt, result.error (QueryErrorResponse), result.snapshots (up to the failure)
+      // result.failedAt, result.error (QueryErrorResponse, or null for an abort), result.snapshots (up to the failure)
       return;
     }
 
