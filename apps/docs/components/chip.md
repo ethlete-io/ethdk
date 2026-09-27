@@ -80,6 +80,8 @@ A widget that owns the tab order around its chips - a select trigger, a tag inpu
 export class MyTagList {}
 ```
 
+The same widget can provide `CHIP_REMOVE_FOCUS_FALLBACK`, a `() => void` that takes focus when a removed chip has no focusable neighbour - the tag input focuses its text field, the select its trigger.
+
 ## Accessibility
 
 - The chip host mirrors its state as `aria-disabled` plus `data-disabled` / `data-removable` attributes.

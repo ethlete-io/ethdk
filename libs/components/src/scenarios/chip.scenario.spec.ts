@@ -4,6 +4,7 @@ import {
   CHIP_ERROR_CODES,
   CHIP_IMPORTS,
   CHIP_LABELS,
+  CHIP_REMOVE_FOCUS_FALLBACK,
   CHIP_REMOVE_TAB_STOP,
   ChipComponent,
   ChipDirective,
@@ -72,6 +73,26 @@ class DepartmentChipsComponent {
 
     this.departments.update((departments) => departments.filter((entry) => entry !== department));
   }
+}
+
+@Component({
+  selector: 'et-scenario-chip-list-with-field',
+  imports: [ChipComponent],
+  providers: [
+    {
+      provide: CHIP_REMOVE_FOCUS_FALLBACK,
+      useValue: () => document.querySelector<HTMLInputElement>('.list-field')?.focus(),
+    },
+  ],
+  template: `
+    @if (!removed()) {
+      <et-chip (remove)="removed.set(true)" removable>team-a</et-chip>
+    }
+    <input class="list-field" aria-label="Add" />
+  `,
+})
+class ChipListWithFieldComponent {
+  removed = signal(false);
 }
 
 @Component({
@@ -209,6 +230,22 @@ describe('chip scenarios', () => {
 
     expect(queryAll('et-chip')).toHaveLength(0);
     expect(document.activeElement).toBe(query('.after'));
+  });
+
+  it('hands focus to the host widget fallback once the last chip is removed', () => {
+    const s = scenario();
+
+    TestBed.createComponent(ChipListWithFieldComponent);
+    s.tick();
+
+    const removeButton = query('et-chip .et-chip-remove-button');
+
+    removeButton.focus();
+    s.keydown('Delete', removeButton);
+    s.tick();
+
+    expect(queryAll('et-chip')).toHaveLength(0);
+    expect(document.activeElement).toBe(query('.list-field'));
   });
 
   it('moves focus between focusable chip hosts when one is removed', () => {

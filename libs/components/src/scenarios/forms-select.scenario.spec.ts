@@ -342,6 +342,25 @@ describe('forms select scenarios', () => {
     expect(trigger.getAttribute('aria-disabled')).toBe('true');
   });
 
+  it('focuses the trigger once the last chip is removed from the keyboard', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(LegacyTeamFormComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    fixture.componentInstance.control.setValue(['handball']);
+    s.tick();
+    s.flush();
+
+    const removeButton = query('et-chip .et-chip-remove-button', host);
+
+    removeButton.focus();
+    s.keydown('Backspace', removeButton);
+    s.tick();
+
+    expect(fixture.componentInstance.control.value).toEqual([]);
+    expect(document.activeElement).toBe(query('[role="combobox"]', host));
+  });
+
   it('filters by the search query, keeps options in none mode and shows the custom value template', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(CountrySearchComponent);
