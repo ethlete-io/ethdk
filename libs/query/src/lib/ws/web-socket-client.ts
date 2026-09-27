@@ -338,7 +338,6 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
 
       let reconnectAttempt = 0;
       let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-      let connectedAt: number | null = null;
       let destroyed = false;
 
       /** socket.io stops reconnecting after a server disconnect or a rejected handshake, so the client takes over. */
@@ -362,7 +361,7 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
         // socket.io flushes the joins it buffered before firing `connect`, so by now they are in the set.
         socket.on('connect', () => {
           isConnected.set(true);
-          connectedAt = Date.now();
+          reconnectAttempt = 0;
 
           const joinedByClosedConnection = [...joinsDeliveredToClosedConnection];
           joinsDeliveredToClosedConnection.clear();
@@ -388,8 +387,6 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
           joinsDeliveredThisConnection.clear();
 
           if (reason !== 'io server disconnect') return;
-
-          if (connectedAt !== null && Date.now() - connectedAt >= RECONNECT_MAX_DELAY) reconnectAttempt = 0;
 
           scheduleReconnect();
         });

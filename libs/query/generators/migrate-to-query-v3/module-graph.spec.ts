@@ -239,4 +239,52 @@ export function getPerson(): Person {
     expect(consumer).toContain("import { legacyGetPerson } from '@app/api';");
     expect(consumer).toContain("export { legacyGetPerson } from '@app/api';");
   });
+
+  it('resolves an import written with a .js extension to its .ts source', async () => {
+    const consumer = await migrateConsumer(
+      'libs/api/src/consumer.ts',
+      "import { apiClient } from './client.js';\nimport { getPerson } from './queries.js';\n\nexport const refs = [apiClient, getPerson];",
+    );
+
+    expect(consumer).toContain("import { apiClientConfig } from './client.js';");
+    expect(consumer).toContain("import { legacyGetPerson } from './queries.js';");
+    expect(consumer).toContain('export const refs = [apiClientConfig, legacyGetPerson];');
+  });
+
+  it('resolves path alias targets and bare specifiers against the tsconfig baseUrl', async () => {
+    tree.write(
+      'tsconfig.base.json',
+      JSON.stringify({ compilerOptions: { baseUrl: 'libs', paths: { '@app/api': ['api/src/index.ts'] } } }),
+    );
+    tree.write(
+      'libs/app/src/base-url.ts',
+      "import { apiClient } from 'api/src/client';\n\nexport const client = apiClient;",
+    );
+
+    const consumer = await migrateConsumer(
+      'libs/app/src/alias.ts',
+      "import { apiClient, getPerson } from '@app/api';\n\nexport const refs = [apiClient, getPerson];",
+    );
+
+    expect(consumer).toContain("import { apiClientConfig, legacyGetPerson } from '@app/api';");
+    expect(readOrEmpty('libs/app/src/base-url.ts')).toContain("import { apiClientConfig } from 'api/src/client';");
+    expect(readOrEmpty('query-v3-migration-tasks.md')).not.toContain('Check the client rename');
+  });
+
+  it('renames an unresolvable workspace import of the client by name and reports the file', async () => {
+    writePaths({ '@app/broken': ['libs/broken/index.ts'] });
+
+    const consumer = await migrateConsumer(
+      'libs/app/src/unresolved.ts',
+      "import { apiClient } from '@app/broken';\n\nexport const client = apiClient;",
+    );
+
+    expect(consumer).toContain("import { apiClientConfig } from '@app/broken';");
+    expect(consumer).toContain('export const client = apiClientConfig;');
+
+    const tasks = readOrEmpty('query-v3-migration-tasks.md');
+
+    expect(tasks).toContain('Check the client rename in libs/app/src/unresolved.ts');
+    expect(tasks).toContain('`@app/broken`');
+  });
 });

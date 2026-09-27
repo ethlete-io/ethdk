@@ -444,4 +444,24 @@ export class Component {
     expect(readFile('query-v3-migration-tasks.md')).toContain('Check the empty prepare() call on query');
     expect(readFile('query-v3-migration-tasks.md')).toContain('- component.ts:6');
   });
+
+  it('reports an empty prepare() it cannot resolve in a file that does not import @ethlete/query', async () => {
+    tree.write(
+      'component.ts',
+      `
+export class Component {
+  q = inject(SomeQuery);
+  run() {
+    return this.q.prepare();
+  }
+}
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    expect(readFile('component.ts')).toContain('this.q.prepare();');
+    expect(readFile('query-v3-migration-tasks.md')).toContain('Check the empty prepare() call on this.q');
+    expect(readFile('query-v3-migration-tasks.md')).toContain('- component.ts:4');
+  });
 });

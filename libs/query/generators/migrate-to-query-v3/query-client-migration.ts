@@ -125,7 +125,12 @@ export const generateQueryCreators = (tree: Tree, queryClientFiles: Map<string, 
   }
 };
 
-export const updateImportsAcrossWorkspace = (tree: Tree, renames: ClientVariableRenames, scope: MigrationScope) => {
+export const updateImportsAcrossWorkspace = (
+  tree: Tree,
+  renames: ClientVariableRenames,
+  scope: MigrationScope,
+  report: QueryV3MigrationReport,
+) => {
   if (renames.size === 0) {
     return;
   }
@@ -146,7 +151,18 @@ export const updateImportsAcrossWorkspace = (tree: Tree, renames: ClientVariable
       return;
     }
 
-    const nextContent = updateImportsInFile(content, filePath, renames, graph);
+    const { content: nextContent, renamedByName } = updateImportsInFile(content, filePath, renames, graph);
+
+    if (renamedByName.size > 0) {
+      report.addManualReview({
+        title: `Check the client rename in ${filePath}`,
+        summary: `The migration could not resolve ${[...renamedByName].map((specifier) => `\`${specifier}\``).join(', ')} to a file, so it renamed the imported client by its name alone.`,
+        action: 'Confirm the renamed import really is the migrated query client, and revert it if it is not.',
+        locations: [{ filePath }],
+        source: 'query-client-migration',
+        dedupeKey: `client-rename-by-name:${filePath}`,
+      });
+    }
 
     if (nextContent !== content) {
       originalContents.set(filePath, content);
@@ -817,19 +833,29 @@ const generateCreatorsForConfig = (configName: string) => {
 /**
  * Points imports and re-exports of a renamed client at its new name, and renames the references to
  * each unaliased import. Only a binding the module graph resolves to the client's declaring file is
- * touched; a same-named symbol from any other module stays as it is.
+ * touched; a same-named symbol from any other module stays as it is. A workspace specifier the graph
+ * cannot resolve falls back to the rename by name and is returned in `renamedByName` for the report.
  */
 const updateImportsInFile = (content: string, filePath: string, renames: ClientVariableRenames, graph: ModuleGraph) => {
   const sourceFile = createSourceFile(content, filePath);
   const replacements: Array<{ start: number; end: number; replacement: string }> = [];
   const localRenames = new Map<string, string>();
+  const renamedByName = new Set<string>();
 
   const resolveRename = (specifier: string, importedName: string) => {
     const declaringFile = graph.findDeclaringFile(filePath, specifier, importedName);
 
-    return declaringFile && declaringFile !== filePath
-      ? renames.get(declaringFile)?.renames.get(importedName)
-      : undefined;
+    if (declaringFile) {
+      return declaringFile !== filePath ? renames.get(declaringFile)?.renames.get(importedName) : undefined;
+    }
+
+    if (!graph.isWorkspaceSpecifier(specifier)) return undefined;
+
+    const nextName = [...renames.values()].find((entry) => entry.renames.has(importedName))?.renames.get(importedName);
+
+    if (nextName) renamedByName.add(specifier);
+
+    return nextName;
   };
 
   for (const statement of sourceFile.statements) {
@@ -913,5 +939,5 @@ const updateImportsInFile = (content: string, filePath: string, renames: ClientV
     visit(sourceFile);
   }
 
-  return applyReplacements(content, replacements);
+  return { content: applyReplacements(content, replacements), renamedByName };
 };

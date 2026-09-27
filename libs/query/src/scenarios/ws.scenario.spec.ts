@@ -864,6 +864,33 @@ describe('ws scenario: reconnects socket.io gives up on', () => {
     expect(double.handshakes()).toEqual([{ token: 'token-1' }, { token: 'token-2' }, { token: 'token-3' }]);
   });
 
+  it('starts the backoff over after a successful connect', () => {
+    const s = scenario();
+    const { double } = createAuthedSocket(s);
+
+    double.serverRejectHandshake('expired');
+    s.tick(1000);
+    double.serverRejectHandshake('expired');
+    s.tick(2000);
+    expect(double.state().connectCalls).toBe(3);
+
+    double.serverConnect();
+    double.serverDisconnect({ reason: 'io server disconnect' });
+
+    s.tick(999);
+    expect(double.state().connectCalls).toBe(3);
+
+    s.tick(1);
+    expect(double.state().connectCalls).toBe(4);
+
+    double.serverRejectHandshake('expired');
+    s.tick(1999);
+    expect(double.state().connectCalls).toBe(4);
+
+    s.tick(1);
+    expect(double.state().connectCalls).toBe(5);
+  });
+
   it('leaves a transport close to socket.io, which reconnects on its own', () => {
     const s = scenario();
     const { double } = createAuthedSocket(s);

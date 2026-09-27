@@ -16,7 +16,7 @@ export type ModuleGraph = {
   /**
    * The file that declares `symbolName` when imported from `specifier` in `fromFile`, or `null`
    * when the specifier does not resolve inside the workspace (an npm package, a missing path
-   * alias). `null` means "cannot prove it is ours" - callers should leave such an import alone.
+   * alias). `null` means "cannot prove it is ours".
    */
   findDeclaringFile: (fromFile: string, specifier: string, symbolName: string) => string | null;
 
@@ -25,6 +25,9 @@ export type ModuleGraph = {
 
   /** The `compilerOptions.paths` keys of the workspace tsconfig. */
   pathAliases: () => string[];
+
+  /** Whether `specifier` is relative or matches a workspace tsconfig path alias. */
+  isWorkspaceSpecifier: (specifier: string) => boolean;
 };
 
 const MAX_BARREL_DEPTH = 8;
@@ -48,8 +51,9 @@ const normalizePath = (path: string) => {
 
 const dirName = (path: string) => path.slice(0, Math.max(0, path.lastIndexOf('/')));
 
-const readTsConfigPaths = (tree: Tree) => {
+const readTsConfig = (tree: Tree) => {
   const paths = new Map<string, string[]>();
+  let baseUrl: string | null = null;
 
   for (const configPath of ['tsconfig.base.json', 'tsconfig.json']) {
     const raw = tree.read(configPath, 'utf-8');
@@ -60,7 +64,11 @@ const readTsConfigPaths = (tree: Tree) => {
       // tsconfig files are JSONC in practice; the TS parser is the only thing that reliably reads
       // them, comments and trailing commas included.
       const parsed = ts.parseConfigFileTextToJson(configPath, raw).config as
-        { compilerOptions?: { paths?: Record<string, string[]> } } | undefined;
+        { compilerOptions?: { paths?: Record<string, string[]>; baseUrl?: string } } | undefined;
+
+      const configBaseUrl = parsed?.compilerOptions?.baseUrl;
+
+      if (baseUrl === null && typeof configBaseUrl === 'string') baseUrl = normalizePath(configBaseUrl);
 
       Object.entries(parsed?.compilerOptions?.paths ?? {}).forEach(([key, targets]) => {
         if (!paths.has(key)) paths.set(key, targets);
@@ -70,54 +78,61 @@ const readTsConfigPaths = (tree: Tree) => {
     }
   }
 
-  return paths;
+  return { paths, baseUrl };
 };
 
+/** The part of `specifier` the `*` of `pattern` stands for, `''` for an exact match, or `null`. */
+const matchPathAlias = (pattern: string, specifier: string) => {
+  const wildcardIndex = pattern.indexOf('*');
+
+  if (wildcardIndex === -1) return pattern === specifier ? '' : null;
+
+  const prefix = pattern.slice(0, wildcardIndex);
+  const patternSuffix = pattern.slice(wildcardIndex + 1);
+
+  if (!specifier.startsWith(prefix) || !specifier.endsWith(patternSuffix)) return null;
+
+  return specifier.slice(prefix.length, specifier.length - patternSuffix.length);
+};
+
+const JS_EXTENSION = /\.(m?)js$/;
+
 /** The files a specifier could point at, most specific first. */
-const candidateFiles = (base: string) => [
-  base.endsWith('.ts') ? base : `${base}.ts`,
-  `${base}/index.ts`,
-  `${base}.d.ts`,
-];
+const candidateFiles = (base: string) => {
+  if (base.endsWith('.ts')) return [base];
+
+  const jsExtension = JS_EXTENSION.exec(base);
+
+  if (jsExtension) {
+    const stem = base.slice(0, -jsExtension[0].length);
+
+    return [`${stem}.${jsExtension[1]}ts`, `${stem}.ts`, `${stem}.d.ts`, `${base}/index.ts`];
+  }
+
+  return [`${base}.ts`, `${base}/index.ts`, `${base}.d.ts`];
+};
 
 export const createModuleGraph = (tree: Tree): ModuleGraph => {
-  const tsConfigPaths = readTsConfigPaths(tree);
+  const { paths: tsConfigPaths, baseUrl } = readTsConfig(tree);
+  const findCandidate = (base: string) => candidateFiles(base).find((candidate) => tree.exists(candidate)) ?? null;
   const declaringFileCache = new Map<string, string | null>();
 
   const resolveEntryFile = (fromFile: string, specifier: string) => {
-    if (specifier.startsWith('.')) {
-      const base = normalizePath(`${dirName(fromFile)}/${specifier}`);
-
-      return candidateFiles(base).find((candidate) => tree.exists(candidate)) ?? null;
-    }
+    if (specifier.startsWith('.')) return findCandidate(normalizePath(`${dirName(fromFile)}/${specifier}`));
 
     for (const [pattern, targets] of tsConfigPaths.entries()) {
-      const wildcardIndex = pattern.indexOf('*');
+      const wildcard = matchPathAlias(pattern, specifier);
 
-      let suffix: string;
-
-      if (wildcardIndex === -1) {
-        if (pattern !== specifier) continue;
-
-        suffix = '';
-      } else {
-        const prefix = pattern.slice(0, wildcardIndex);
-        const patternSuffix = pattern.slice(wildcardIndex + 1);
-
-        if (!specifier.startsWith(prefix) || !specifier.endsWith(patternSuffix)) continue;
-
-        suffix = specifier.slice(prefix.length, specifier.length - patternSuffix.length);
-      }
+      if (wildcard === null) continue;
 
       for (const target of targets) {
-        const resolvedTarget = normalizePath(target.replace('*', suffix));
-        const candidate = candidateFiles(resolvedTarget).find((option) => tree.exists(option));
+        const candidate = findCandidate(normalizePath(`${baseUrl ?? ''}/${target.replace('*', wildcard)}`));
 
         if (candidate) return candidate;
       }
     }
 
-    return null;
+    return baseUrl === null ? null : findCandidate(normalizePath(`${baseUrl}/${specifier}`));
   };
 
   const declaresSymbol = (sourceFile: ts.SourceFile, symbolName: string) => {
@@ -212,6 +227,9 @@ export const createModuleGraph = (tree: Tree): ModuleGraph => {
   return {
     resolveFile: resolveEntryFile,
     pathAliases: () => [...tsConfigPaths.keys()],
+    isWorkspaceSpecifier: (specifier) =>
+      specifier.startsWith('.') ||
+      [...tsConfigPaths.keys()].some((pattern) => matchPathAlias(pattern, specifier) !== null),
     findDeclaringFile: (fromFile, specifier, symbolName) => {
       const cacheKey = `${fromFile}|${specifier}|${symbolName}`;
       const cached = declaringFileCache.get(cacheKey);

@@ -458,7 +458,7 @@ const classifyBinding = (
 
   const declaringFile = graph.findDeclaringFile(filePath, binding.specifier, binding.importedName);
 
-  if (!declaringFile) return binding.specifier.startsWith('.') ? 'unknown' : 'foreign';
+  if (!declaringFile) return graph.isWorkspaceSpecifier(binding.specifier) ? 'unknown' : 'foreign';
 
   const declaringContent = tree.read(declaringFile, 'utf-8');
 
@@ -491,7 +491,6 @@ const transformEmptyPrepareCalls = (tree: Tree, graph: ModuleGraph, filePath: st
   const sourceFile = createSourceFile(content, filePath);
   const replacements: Array<{ start: number; end: number; replacement: string }> = [];
   const unresolved: Array<{ line: number; receiver: string }> = [];
-  const usesQuery = queryImports(sourceFile).length > 0;
 
   const visit = (node: ts.Node) => {
     if (
@@ -509,7 +508,7 @@ const transformEmptyPrepareCalls = (tree: Tree, graph: ModuleGraph, filePath: st
           end: node.arguments.end,
           replacement: '{}',
         });
-      } else if (kind === 'unknown' && usesQuery) {
+      } else if (kind === 'unknown') {
         unresolved.push({
           line: getLineNumber(node, sourceFile),
           receiver: node.expression.expression.getText(sourceFile),

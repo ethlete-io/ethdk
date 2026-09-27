@@ -39,7 +39,7 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
   }
 
   if (variableRenames.size > 0) {
-    updateImportsAcrossWorkspace(tree, variableRenames, scope);
+    updateImportsAcrossWorkspace(tree, variableRenames, scope, report);
   }
 
   replaceAnyQueryWithLegacy(tree, scope);
