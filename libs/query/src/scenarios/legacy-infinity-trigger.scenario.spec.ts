@@ -62,6 +62,24 @@ class ObservedTriggerHost {
   ids = (items: { id: string }[] | null) => (items ?? []).map((item) => item.id).join(',');
 }
 
+@Component({
+  imports: [InfinityQueryDirective, InfinityQueryTriggerDirective],
+  template: `
+    <div *etInfinityQuery="config(); let items; let canLoadMore = canLoadMore">
+      <span data-slot="items">{{ ids(items) }}</span>
+      <span data-slot="canLoadMore">{{ canLoadMore }}</span>
+      @if (canLoadMore) {
+        <et-infinity-query-trigger />
+      }
+    </div>
+  `,
+})
+class GuardedObservedTriggerHost {
+  config = input.required<AnyInfinityQueryConfig>();
+
+  ids = (items: { id: string }[] | null) => (items ?? []).map((item) => item.id).join(',');
+}
+
 class FakeIntersectionObserver {
   static instances: FakeIntersectionObserver[] = [];
 
@@ -69,12 +87,17 @@ class FakeIntersectionObserver {
     FakeIntersectionObserver.instances.push(this);
   }
 
+  private target: Element | null = null;
+
   observe(target: Element) {
-    setTimeout(() =>
-      this.callback(
-        [{ isIntersecting: true, target } as IntersectionObserverEntry],
-        this as unknown as IntersectionObserver,
-      ),
+    this.target = target;
+    setTimeout(() => this.reenter());
+  }
+
+  reenter() {
+    this.callback(
+      [{ isIntersecting: true, target: this.target } as IntersectionObserverEntry],
+      this as unknown as IntersectionObserver,
     );
   }
 
@@ -155,6 +178,46 @@ describe('legacy infinity query trigger scenario', () => {
 
         fixture.destroy();
         expect(FakeIntersectionObserver.instances).toHaveLength(0);
+      });
+    });
+
+    it('keeps a canLoadMore-gated trigger mounted through a failing last page instead of retrying it in a loop', () => {
+      const s = scenario();
+      s.api.on('GET', '/users', ({ query }) => {
+        const page = Number(query['page'] ?? '1');
+
+        if (page === 2) return { status: 400, body: { message: 'boom' }, delay: 100 };
+
+        return { body: { items: [{ id: `${page}a` }, { id: `${page}b` }], totalPages: 2 }, delay: 100 };
+      });
+
+      withLegacyClient(s, (client) => {
+        const fixture = TestBed.createComponent(GuardedObservedTriggerHost);
+
+        fixture.componentRef.setInput('config', pagedUsers(client));
+        fixture.detectChanges();
+
+        for (let round = 0; round < 10; round++) {
+          s.tick(100);
+          fixture.detectChanges();
+        }
+
+        expect(slotText(fixture, 'items')).toBe('1a,1b');
+        expect(slotText(fixture, 'canLoadMore')).toBe('true');
+        expect(s.api.requests.map((request) => request.query['page'])).toEqual(['1', '2']);
+
+        FakeIntersectionObserver.instances[0]?.reenter();
+
+        for (let round = 0; round < 10; round++) {
+          s.tick(100);
+          fixture.detectChanges();
+        }
+
+        expect(slotText(fixture, 'canLoadMore')).toBe('true');
+        expect(FakeIntersectionObserver.instances).toHaveLength(1);
+        expect(s.api.requests.map((request) => request.query['page'])).toEqual(['1', '2', '2']);
+
+        fixture.destroy();
       });
     });
   });

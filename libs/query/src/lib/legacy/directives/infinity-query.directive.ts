@@ -148,6 +148,8 @@ export class InfinityQueryDirective<
       this.destroy$,
     ) as InfinityQueryOf<Q>;
 
+    let failedQuery: unknown = null;
+
     combineLatest([
       instance.currentQuery$.pipe(switchQueryState(), withLatestFrom(instance.currentQuery$)),
       this.infinityQueryResponseDelay.enabled$,
@@ -158,22 +160,27 @@ export class InfinityQueryDirective<
           this.viewContext.currentPage = instance.currentPage;
           this.viewContext.totalPages = instance.totalPages;
           this.viewContext.itemsPerPage = instance.itemsPerPage;
+          if (isQueryStateFailure(state)) failedQuery = currentQuery;
+          else if (!isQueryStateLoading(state)) failedQuery = null;
+
+          // A gated trigger must stay mounted while a failed page retries: remounting re-arms its
+          // intersection observer, which retries again at once.
           this.viewContext.canLoadMore =
+            (!!failedQuery && failedQuery === currentQuery) ||
             (instance.totalPages !== null &&
               instance.currentPage !== null &&
-              instance.totalPages > instance.currentPage) ||
-            false;
+              instance.totalPages > instance.currentPage);
           this.viewContext.currentCalculatedPage = instance.currentCalculatedPage;
           this.viewContext.currentQuery = currentQuery;
 
-          if (isQueryStateLoading(state) || isDelayed || !infinityArray) {
-            this.viewContext.loading = state ? state.meta.triggeredVia !== 'poll' : true;
-            this.viewContext.error = null;
-            this.viewContext.isFirstLoad = this.context.etInfinityQuery === null;
-          } else if (isQueryStateFailure(state)) {
+          if (isQueryStateFailure(state)) {
             this.viewContext.loading = false;
             this.viewContext.error = state.error;
             this.viewContext.isFirstLoad = false;
+          } else if (isQueryStateLoading(state) || isDelayed || !infinityArray) {
+            this.viewContext.loading = state ? state.meta.triggeredVia !== 'poll' : true;
+            this.viewContext.error = null;
+            this.viewContext.isFirstLoad = this.context.etInfinityQuery === null;
           } else if (isQueryStateSuccess(state)) {
             this.viewContext.loading = false;
             this.viewContext.error = null;

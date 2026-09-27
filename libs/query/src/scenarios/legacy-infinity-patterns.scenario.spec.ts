@@ -70,6 +70,25 @@ class MasonryNewsHost {
   ids = (items: News[] | null) => (items ?? []).map((item) => item.id).join(',');
 }
 
+@Component({
+  imports: [InfinityQueryDirective, InfinityQueryTriggerDirective],
+  template: `
+    <div *etInfinityQuery="config; let items; let loading = loading; let canLoadMore = canLoadMore">
+      <span data-slot="items">{{ ids(items) }}</span>
+      <span data-slot="loading">{{ loading }}</span>
+      <span data-slot="canLoadMore">{{ canLoadMore }}</span>
+      @if (canLoadMore) {
+        <button data-slot="more" etInfinityQueryTrigger type="button">more</button>
+      }
+    </div>
+  `,
+})
+class GatedNewsListHost {
+  readonly config = inject(NEWS_CONFIG);
+
+  ids = (items: News[] | null) => (items ?? []).map((item) => item.id).join(',');
+}
+
 const slot = (ref: ComponentRef<unknown>, name: string) =>
   ((ref.location.nativeElement as HTMLElement).querySelector(`[data-slot="${name}"]`)?.textContent ?? '').trim();
 
@@ -189,6 +208,84 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy infinity patterns on the %s client', 
       expect(slot(ref, 'items')).toBe('n0,n1,n2,n3,n4,n5');
 
       expect(s.api.requests.map((request) => request.query['skip'])).toEqual(['0', '2', '2', '4']);
+
+      ref.destroy();
+      c.destroy();
+      legacy.destroy();
+    });
+  });
+
+  describe('a trigger rendered only while canLoadMore is true', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    const failingNews = (s: Scenario, failing: { skip: number | null }) =>
+      s.api.on('GET', '/news', ({ query }) => {
+        const skip = Number(query['skip']);
+
+        if (skip === failing.skip) return { status: 400, body: { message: 'boom' }, delay: 50 };
+
+        return {
+          body: { items: [{ id: `n${skip}` }, { id: `n${skip + 1}` }], total: 4 } satisfies NewsPage,
+          delay: 50,
+        };
+      });
+
+    const expectInteropError = (s: Scenario) => {
+      if (kind === 'interop') s.expectError((entry) => (entry.error as { status?: number }).status === 400);
+    };
+
+    it('stays reachable after the last page fails and retries that page', () => {
+      const s = scenario();
+      const legacy = createLegacyClient(s, kind);
+      const failing = { skip: 2 as number | null };
+      failingNews(s, failing);
+
+      const c = s.consumer([{ provide: NEWS_CONFIG, useValue: newsConfig(legacy) }]);
+      const ref = s.mount(GatedNewsListHost, c.injector);
+
+      s.tick(1000);
+      expect(slot(ref, 'canLoadMore')).toBe('true');
+
+      clickMore(ref);
+      s.tick(1000);
+      expectInteropError(s);
+      expect(slot(ref, 'items')).toBe('n0,n1');
+      expect(slot(ref, 'loading')).toBe('false');
+      expect(slot(ref, 'canLoadMore')).toBe('true');
+
+      failing.skip = null;
+      clickMore(ref);
+      s.tick(1000);
+      expect(slot(ref, 'items')).toBe('n0,n1,n2,n3');
+      expect(slot(ref, 'canLoadMore')).toBe('false');
+      expect(s.api.requests.map((request) => request.query['skip'])).toEqual(['0', '2', '2']);
+
+      ref.destroy();
+      c.destroy();
+      legacy.destroy();
+    });
+
+    it('stays reachable after the first page fails and retries that page', () => {
+      const s = scenario();
+      const legacy = createLegacyClient(s, kind);
+      const failing = { skip: 0 as number | null };
+      failingNews(s, failing);
+
+      const c = s.consumer([{ provide: NEWS_CONFIG, useValue: newsConfig(legacy) }]);
+      const ref = s.mount(GatedNewsListHost, c.injector);
+
+      s.tick(1000);
+      expectInteropError(s);
+      expect(slot(ref, 'items')).toBe('');
+      expect(slot(ref, 'loading')).toBe('false');
+      expect(slot(ref, 'canLoadMore')).toBe('true');
+
+      failing.skip = null;
+      clickMore(ref);
+      s.tick(1000);
+      expect(slot(ref, 'items')).toBe('n0,n1');
+      expect(slot(ref, 'canLoadMore')).toBe('true');
+      expect(s.api.requests.map((request) => request.query['skip'])).toEqual(['0', '0']);
 
       ref.destroy();
       c.destroy();
