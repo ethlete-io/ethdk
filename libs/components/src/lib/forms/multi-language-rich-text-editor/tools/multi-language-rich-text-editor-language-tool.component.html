@@ -21,7 +21,7 @@
               <span class="et-ml-rte-lang-item-label">{{ language.label }}</span>
               <span
                 [class.et-ml-rte-lang-dot--filled]="isFilled(language.code)"
-                [attr.aria-label]="isFilled(language.code) ? 'has content' : 'empty'"
+                [attr.aria-label]="isFilled(language.code) ? labels().languageFilled : labels().languageEmpty"
                 class="et-ml-rte-lang-dot"
               ></span>
             </span>

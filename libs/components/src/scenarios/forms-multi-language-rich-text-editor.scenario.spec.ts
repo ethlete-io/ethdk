@@ -10,6 +10,7 @@ import {
   MultiLanguageRichTextEditorLanguageToolComponent,
   MultiLanguageRichTextEditorValue,
   provideOverlay,
+  provideRichTextEditorLabels,
   provideRichTextEditorLanguageTool,
   RICH_TEXT_EDITOR_IMPORTS,
   RICH_TEXT_EDITOR_LANGUAGE_TOOL,
@@ -136,6 +137,19 @@ class TranslatedArticleComponent {
 }
 
 @Component({
+  selector: 'et-scenario-localized-article',
+  styles: [UNSTYLED_BLOCKS],
+  encapsulation: ViewEncapsulation.None,
+  imports: [MultiLanguageRichTextEditorComponent],
+  providers: [provideRichTextEditorLabels({ languageFilled: 'Übersetzt', languageEmpty: 'Fehlt' })],
+  template: ` <et-multi-language-rich-text-editor [(value)]="body" [languages]="languages" aria-label="Body" /> `,
+})
+class LocalizedArticleComponent {
+  languages = LANGUAGES.slice(0, 2);
+  body = signal<MultiLanguageRichTextEditorValue>({ de: 'Hallo' });
+}
+
+@Component({
   selector: 'et-scenario-custom-translation-box',
   imports: [RICH_TEXT_EDITOR_IMPORTS],
   providers: [provideRichTextEditorLanguageTool()],
@@ -238,6 +252,21 @@ describe('forms multi-language rich-text-editor scenarios', () => {
         .errors()
         .map((error) => error.message),
     ).toEqual(['Missing translations: en, de']);
+    expect(s.errors).toEqual([]);
+  });
+
+  it('announces each language status dot with the consumer-provided labels', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(LocalizedArticleComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.flush();
+    trigger(host).click();
+    s.flush();
+
+    expect(languageItems().map((item) => item.content)).toEqual(['Fehlt', 'Übersetzt']);
+
+    pickLanguage(s, 'Deutsch');
     expect(s.errors).toEqual([]);
   });
 

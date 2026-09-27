@@ -363,7 +363,8 @@ assistive tech (it reflects `aria-checked="mixed"`; the switch keeps
   themselves touched on blur; `readonly` keeps them focusable via
   `aria-readonly`.
 - The rating host is a `role="slider"` with a single keyboard stop and a spoken
-  `aria-valuetext`.
+  `aria-valuetext` - `'No rating'` or `'3 of 5'`, localized through
+  [`FORM_FIELD_LABELS`](/components/localization) (`ratingEmpty`, `ratingValue: (value, max) => string`).
 - An option's `et-description` is wired as its `aria-describedby`, so the
   secondary text is announced after the option's name instead of folding into
   it.

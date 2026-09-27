@@ -11,6 +11,10 @@ export type FormFieldLabels = {
   clear: string;
   /** The select-all row of a checkbox group (`<et-checkbox-group-select-all>`) and a multi `et-select` (`selectAll`). */
   selectAll: string;
+  /** A rating's `aria-valuetext` while it holds no value. */
+  ratingEmpty: string;
+  /** A rating's `aria-valuetext` for a value out of its `max`, e.g. `'3 of 5'`. */
+  ratingValue: (value: number, max: number) => string;
 };
 
 /** The built-in English labels. */
@@ -18,6 +22,8 @@ export const DEFAULT_FORM_FIELD_LABELS: FormFieldLabels = {
   mixed: 'Mixed',
   clear: 'Clear',
   selectAll: 'Select all',
+  ratingEmpty: 'No rating',
+  ratingValue: (value, max) => `${value} of ${max}`,
 };
 
 const FORM_FIELD_LABELS_DEF = /* @__PURE__ */ defineLabels<FormFieldLabels>(

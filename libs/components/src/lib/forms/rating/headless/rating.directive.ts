@@ -125,7 +125,9 @@ export class RatingDirective
 
     const value = this.clampedValue();
 
-    return value === null ? 'No rating' : `${value} of ${this.effectiveMax()}`;
+    const labels = this.formFieldLabels();
+
+    return value === null ? labels.ratingEmpty : labels.ratingValue(value, this.effectiveMax());
   });
 
   constructor() {

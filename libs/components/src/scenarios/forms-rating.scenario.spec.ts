@@ -4,6 +4,7 @@ import { form, FormField, required } from '@angular/forms/signals';
 import { provideColorThemes } from '@ethlete/core';
 import {
   FORM_FIELD_IMPORTS,
+  provideFormFieldLabels,
   RATING_ERROR_CODES,
   RATING_IMPORTS,
   RatingComponent,
@@ -81,6 +82,18 @@ class VenueRatingComponent {
   headless = viewChild.required('stars', { read: RatingDirective });
 }
 
+@Component({
+  selector: 'et-scenario-localized-rating',
+  imports: [RATING_IMPORTS],
+  providers: [
+    provideFormFieldLabels({ ratingEmpty: 'Keine Bewertung', ratingValue: (value, max) => `${value} von ${max}` }),
+  ],
+  template: `<et-rating [(value)]="stars" [max]="4" class="localized" aria-label="Bewertung" />`,
+})
+class LocalizedRatingComponent {
+  stars = signal<number | null>(null);
+}
+
 const code = (value: number) => `ET${value}`;
 
 const slider = () => document.querySelector<HTMLElement>('.stars')!;
@@ -148,6 +161,24 @@ describe('rating scenarios', () => {
 
     expect(page.review.stars().touched()).toBe(true);
     expect(slider().getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('announces its value text through the consumer-provided form field labels', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(LocalizedRatingComponent);
+    const rating = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.localized')!;
+
+    document.body.appendChild(fixture.nativeElement);
+    s.tick();
+
+    expect(rating.getAttribute('aria-valuetext')).toBe('Keine Bewertung');
+
+    press(s, 'ArrowRight', rating);
+    press(s, 'ArrowRight', rating);
+
+    expect(fixture.componentInstance.stars()).toBe(2);
+    expect(rating.getAttribute('aria-valuetext')).toBe('2 von 4');
+    s.flush();
   });
 
   it('commits a clicked star, clears it on a second click and steps in halves when allowed', () => {

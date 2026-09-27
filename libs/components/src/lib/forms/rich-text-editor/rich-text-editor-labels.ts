@@ -141,6 +141,10 @@ export type RichTextEditorLabels = {
   language: string;
   /** Accessible name for the language switcher's trigger, given the active language's own name. */
   languageTrigger: (currentLanguage: string) => string;
+  /** Accessible label for a language switcher entry's status dot while that language has content. */
+  languageFilled: string;
+  /** Accessible label for a language switcher entry's status dot while that language is still empty. */
+  languageEmpty: string;
 };
 
 /** The built-in English labels. */
@@ -212,6 +216,8 @@ export const DEFAULT_RICH_TEXT_EDITOR_LABELS: RichTextEditorLabels = {
   image: 'Image',
   language: 'Language',
   languageTrigger: (currentLanguage) => `Language: ${currentLanguage}`,
+  languageFilled: 'has content',
+  languageEmpty: 'empty',
 };
 
 const RICH_TEXT_EDITOR_LABELS_DEF = /* @__PURE__ */ defineLabels<RichTextEditorLabels>(

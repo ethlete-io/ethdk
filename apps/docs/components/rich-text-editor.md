@@ -629,7 +629,8 @@ field chrome all work the same - the switcher tool is prepended to the toolbar a
 **Seeing which languages still need content.** The toolbar switcher shows the active language code
 with a badge dot while any language is empty. Opening it marks the active language with a leading
 check and shows a trailing status dot per language - solid when it has content, hollow while it is
-still empty. Emptiness is "trimmed Markdown is blank", so it reflects real content, not just edits.
+still empty (announced as `RICH_TEXT_EDITOR_LABELS.languageFilled` / `languageEmpty`, `'has content'` /
+`'empty'`). Emptiness is "trimmed Markdown is blank", so it reflects real content, not just edits.
 Translations stored under a code not in `languages` are preserved untouched (never dropped) and
 don't affect the status counts.
 
