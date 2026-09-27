@@ -1,6 +1,6 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, viewChild, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MASONRY_ERROR_CODES, MASONRY_IMPORTS, MASONRY_TOKEN } from '../index';
+import { MASONRY_ERROR_CODES, MASONRY_IMPORTS, MASONRY_TOKEN, MasonryDirective, MasonryItemDirective } from '../index';
 import { createMasonryHarness } from '../lib/masonry/testing/masonry-driver';
 import '../test-helpers';
 import { useScenario } from './harness';
@@ -79,6 +79,27 @@ const layout = (host: Element) =>
     column: item.getAttribute('data-column'),
     block: item.style.getPropertyValue('--_et-masonry-item-block-offset'),
   }));
+
+@Component({
+  selector: 'et-scenario-pin-board',
+  imports: [MasonryDirective, MasonryItemDirective],
+  template: `
+    <div [columnWidth]="300" [gap]="0" etMasonry>
+      @for (pin of pins; track pin.id) {
+        <article [attr.data-test-height]="pin.height" etMasonryItem>{{ pin.id }}</article>
+      }
+    </div>
+  `,
+})
+class PinBoardComponent {
+  pins = [
+    { id: 'p1', height: 120 },
+    { id: 'p2', height: 40 },
+    { id: 'p3', height: 60 },
+  ];
+  masonry = viewChild.required(MasonryDirective);
+  items = viewChildren(MasonryItemDirective);
+}
 
 describe('masonry scenarios', () => {
   const scenario = useScenario();
@@ -212,5 +233,30 @@ describe('masonry scenarios', () => {
 
     s.tick(200);
     s.errors.splice(0, s.errors.length);
+  });
+
+  it("exposes each pin's placement to an app that reads the directives", () => {
+    const s = scenario();
+    const harness = createMasonryHarness({ containerWidth: 600 });
+    const fixture = TestBed.createComponent(PinBoardComponent);
+    const app = fixture.componentInstance;
+
+    s.tick();
+    harness.settle(fixture);
+    s.tick();
+
+    const [first, second, third] = app.items();
+
+    expect(app.masonry().columns().count).toBe(2);
+    expect(app.masonry().isSettled()).toBe(true);
+    expect(app.masonry().blockSize()).toBe(120);
+    expect(second!.blockSize()).toBe(40);
+    expect([first, second, third].map((item) => item!.placement()?.column)).toEqual([0, 1, 1]);
+    expect(app.masonry().placementOf(third!)).toEqual(third!.placement());
+    expect(third!.placement()?.blockOffset).toBe(40);
+    expect(third!.elementRef.nativeElement.textContent?.trim()).toBe('p3');
+
+    s.frame(3);
+    s.tick(200);
   });
 });

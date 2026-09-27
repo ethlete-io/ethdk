@@ -1,7 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
-import { COPY_BUTTON_IMPORTS, IconButtonComponent } from '../index';
+import { COPY_BUTTON_IMPORTS, CopyButtonDirective, IconButtonComponent } from '../index';
 import { TEST_COLOR_THEMES } from '../lib/testing/color-themes';
 import '../test-helpers';
 import { Scenario, useScenario } from './harness';
@@ -40,6 +40,17 @@ const drain = async (s: Scenario) => {
   s.tick();
   s.frame();
 };
+
+@Component({
+  selector: 'et-scenario-invite-code',
+  imports: [CopyButtonDirective],
+  template: `<button (copySuccess)="copied.push(code)" etCopyButton text="TEAM-A-42" type="button">Copy code</button>`,
+})
+class InviteCodeComponent {
+  code = 'TEAM-A-42';
+  copied: string[] = [];
+  copyButton = viewChild.required(CopyButtonDirective);
+}
 
 describe('copy button scenarios', () => {
   const scenario = useScenario({ providers: [provideColorThemes([...TEST_COLOR_THEMES])] });
@@ -156,6 +167,31 @@ describe('copy button scenarios', () => {
 
     expect(fixture.componentInstance.copies()).toBe(0);
     expect(button.hasAttribute('data-copied')).toBe(false);
+    s.flush();
+  });
+
+  it('copies from a keyboard shortcut through requestCopy, not only from a click', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    stubClipboard({ writeText });
+
+    const s = scenario();
+    const fixture = TestBed.createComponent(InviteCodeComponent);
+    const app = fixture.componentInstance;
+
+    s.tick();
+
+    expect(app.copyButton().resetDelay()).toBe(1200);
+
+    app.copyButton().requestCopy();
+    await drain(s);
+
+    expect(writeText).toHaveBeenCalledWith('TEAM-A-42');
+    expect(app.copied).toEqual(['TEAM-A-42']);
+    expect(app.copyButton().copied()).toBe(true);
+
+    s.tick(1200);
+
+    expect(app.copyButton().copied()).toBe(false);
     s.flush();
   });
 });

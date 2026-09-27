@@ -1,6 +1,6 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { DIVIDER_IMPORTS, DividerOrientation } from '../index';
+import { DIVIDER_IMPORTS, DividerComponent, DividerOrientation } from '../index';
 import '../test-helpers';
 import { useScenario } from './harness';
 
@@ -23,6 +23,15 @@ import { useScenario } from './harness';
 class EditorActionsComponent {
   orientation = signal<DividerOrientation>('vertical');
   decorative = signal(false);
+}
+
+@Component({
+  selector: 'et-scenario-menu-sections',
+  imports: [DividerComponent],
+  template: `<et-divider decorative />`,
+})
+class MenuSectionsComponent {
+  divider = viewChild.required(DividerComponent);
 }
 
 describe('divider scenarios', () => {
@@ -66,5 +75,18 @@ describe('divider scenarios', () => {
 
     expect(divider.getAttribute('role')).toBe('separator');
     expect(divider.hasAttribute('aria-hidden')).toBe(false);
+  });
+
+  it('reads a bare decorative attribute as true', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(MenuSectionsComponent);
+    const divider = (fixture.nativeElement as HTMLElement).querySelector('et-divider')!;
+
+    s.tick();
+
+    expect(fixture.componentInstance.divider().decorative()).toBe(true);
+    expect(fixture.componentInstance.divider().orientation()).toBe('horizontal');
+    expect(divider.getAttribute('role')).toBe('presentation');
+    expect(divider.getAttribute('aria-hidden')).toBe('true');
   });
 });

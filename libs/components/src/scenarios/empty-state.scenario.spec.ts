@@ -1,6 +1,6 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { EMPTY_STATE_IMPORTS } from '../index';
+import { EMPTY_STATE_IMPORTS, EmptyStateComponent } from '../index';
 import '../test-helpers';
 import { useScenario } from './harness';
 
@@ -34,6 +34,16 @@ class SearchResultsComponent {
   clearFilters() {
     this.filter.set('');
   }
+}
+
+@Component({
+  selector: 'et-scenario-inbox',
+  imports: [EmptyStateComponent],
+  template: `<et-empty-state [heading]="heading()" />`,
+})
+class InboxComponent {
+  heading = signal<string | undefined>(undefined);
+  emptyState = viewChild.required(EmptyStateComponent);
 }
 
 describe('empty state scenarios', () => {
@@ -86,5 +96,24 @@ describe('empty state scenarios', () => {
 
     expect(host.querySelector('et-empty-state')).toBeNull();
     expect(Array.from(host.querySelectorAll('li')).map((li) => li.textContent)).toEqual(['team-a', 'team-b']);
+  });
+
+  it('adds a heading the app sets later and stays empty without one', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(InboxComponent);
+    const app = fixture.componentInstance;
+    const state = (fixture.nativeElement as HTMLElement).querySelector('et-empty-state')!;
+
+    s.tick();
+
+    expect(state.classList).toContain('et-empty-state');
+    expect(state.querySelector('p')).toBeNull();
+
+    app.heading.set('Inbox zero');
+    s.tick();
+
+    expect(app.emptyState().heading()).toBe('Inbox zero');
+    expect(state.querySelector('.et-empty-state-title')?.textContent).toBe('Inbox zero');
+    expect(state.querySelector('.et-empty-state-description')).toBeNull();
   });
 });

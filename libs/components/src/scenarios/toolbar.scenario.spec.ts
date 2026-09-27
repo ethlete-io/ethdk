@@ -1,6 +1,12 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { TOOLBAR_IMPORTS, TOOLBAR_ORIENTATIONS, ToolbarOrientation } from '../index';
+import {
+  TOOLBAR_IMPORTS,
+  TOOLBAR_ORIENTATIONS,
+  ToolbarComponent,
+  ToolbarDirective,
+  ToolbarOrientation,
+} from '../index';
 import '../test-helpers';
 import { useScenario } from './harness';
 
@@ -46,6 +52,25 @@ const tabStops = (host: Element) =>
   Array.from(host.querySelectorAll<HTMLElement>('button, a'))
     .filter((control) => control.tabIndex === 0)
     .map(text);
+
+@Component({
+  selector: 'et-scenario-player-controls',
+  imports: [ToolbarComponent, ToolbarDirective],
+  template: `
+    <div et-toolbar aria-label="Player">
+      <button type="button">Play</button>
+      <button type="button">Mute</button>
+    </div>
+    <div #zoom class="custom" role="toolbar" aria-label="Zoom" etToolbar orientation="vertical">
+      <button type="button">In</button>
+      <button type="button">Out</button>
+    </div>
+  `,
+})
+class PlayerControlsComponent {
+  toolbar = viewChild.required(ToolbarComponent, { read: ToolbarDirective });
+  zoom = viewChild.required('zoom', { read: ToolbarDirective });
+}
 
 describe('toolbar scenarios', () => {
   const scenario = useScenario();
@@ -173,5 +198,38 @@ describe('toolbar scenarios', () => {
 
     host.querySelector<HTMLButtonElement>('button')!.click();
     expect(page.log).toEqual(['bold']);
+  });
+
+  it('jumps back to the first control on demand, from the component or a plain etToolbar', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(PlayerControlsComponent);
+    const app = fixture.componentInstance;
+    const host = fixture.nativeElement as HTMLElement;
+
+    document.body.appendChild(host);
+    s.tick();
+
+    host.querySelectorAll<HTMLButtonElement>('[et-toolbar] button')[0]!.focus();
+    press('ArrowRight');
+    s.tick();
+
+    expect(focused()).toBe('Mute');
+
+    app.toolbar().focusFirst();
+
+    expect(focused()).toBe('Play');
+
+    const zoom = host.querySelector<HTMLElement>('.custom')!;
+
+    expect(zoom.getAttribute('aria-orientation')).toBe('vertical');
+
+    app.zoom().focusFirst();
+    expect(focused()).toBe('In');
+
+    press('ArrowDown');
+    s.tick();
+
+    expect(focused()).toBe('Out');
+    expect(tabStops(zoom)).toEqual(['Out']);
   });
 });

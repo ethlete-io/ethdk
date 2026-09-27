@@ -1,7 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideSurfaceThemesWithTailwind4, SurfaceTheme } from '@ethlete/core';
-import { CARD_IMPORTS, CARD_VARIANTS, CardVariant } from '../index';
+import { CARD_IMPORTS, CARD_VARIANTS, CardComponent, CardVariant } from '../index';
 import '../test-helpers';
 import { useScenario } from './harness';
 
@@ -38,6 +38,23 @@ class RevenueTileComponent {
   template: `<et-card><p>Plain</p></et-card>`,
 })
 class DefaultCardComponent {}
+
+@Component({
+  selector: 'et-scenario-stat-grid',
+  imports: [CardComponent],
+  template: `
+    @for (stat of stats; track stat.label) {
+      <et-card [variant]="stat.variant">{{ stat.label }}</et-card>
+    }
+  `,
+})
+class StatGridComponent {
+  stats = [
+    { label: 'Wins', variant: CARD_VARIANTS.ELEVATED },
+    { label: 'Losses', variant: CARD_VARIANTS.FILLED },
+  ];
+  cards = viewChildren(CardComponent);
+}
 
 describe('card scenarios', () => {
   const scenario = useScenario({
@@ -85,5 +102,20 @@ describe('card scenarios', () => {
     s.tick();
 
     expect(card.classList).not.toContain('et-surface--paper-raised');
+  });
+
+  it('renders one card per stat when imported on its own', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(StatGridComponent);
+
+    s.tick();
+
+    const cards = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('et-card'));
+
+    expect(fixture.componentInstance.cards().map((card) => card.variant())).toEqual(['elevated', 'filled']);
+    expect(cards.map((card) => [card.textContent?.trim(), card.getAttribute('data-variant')])).toEqual([
+      ['Wins', 'elevated'],
+      ['Losses', 'filled'],
+    ]);
   });
 });

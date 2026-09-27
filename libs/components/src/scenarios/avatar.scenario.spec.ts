@@ -1,6 +1,14 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, viewChild, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { AVATAR_IMPORTS, AVATAR_SHAPES, AVATAR_SIZES, AvatarShape, AvatarSize } from '../index';
+import {
+  AVATAR_IMPORTS,
+  AVATAR_SHAPES,
+  AVATAR_SIZES,
+  AvatarComponent,
+  AvatarGroupComponent,
+  AvatarShape,
+  AvatarSize,
+} from '../index';
 import '../test-helpers';
 import { useScenario } from './harness';
 
@@ -53,6 +61,23 @@ const shown = (host: Element) =>
   Array.from(host.querySelectorAll<HTMLElement>('et-avatar-group > et-avatar:not(.et-avatar-group-overflow)'))
     .filter((avatar) => !avatar.hidden)
     .map((avatar) => avatar.textContent?.trim() || avatar.querySelector('img')?.getAttribute('alt'));
+
+@Component({
+  selector: 'et-scenario-reviewers',
+  imports: [AvatarComponent, AvatarGroupComponent],
+  template: `
+    <et-avatar-group [maxVisible]="limit()">
+      <et-avatar name="Jane Doe" size="lg" />
+      <et-avatar name="Team A" />
+      <et-avatar name="Team B" />
+    </et-avatar-group>
+  `,
+})
+class ReviewersComponent {
+  limit = signal<string | number | null>('2');
+  group = viewChild.required(AvatarGroupComponent);
+  avatars = viewChildren(AvatarComponent);
+}
 
 describe('avatar scenarios', () => {
   const scenario = useScenario();
@@ -143,5 +168,26 @@ describe('avatar scenarios', () => {
     expect(shown(host)).toEqual(['M', 'AL', 'TA', 'TB']);
     expect(overflow()).toBeNull();
     expect(s.errors).toEqual([]);
+  });
+
+  it('reads a string maxVisible and treats an empty one as unset', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(ReviewersComponent);
+    const app = fixture.componentInstance;
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+
+    expect(app.group().maxVisible()).toBe(2);
+    expect(app.avatars().map((avatar) => avatar.name())).toEqual(['Jane Doe', 'Team A', 'Team B']);
+    expect(shown(host)).toEqual(['JD', 'TA']);
+    expect(host.querySelector('.et-avatar-group-overflow')?.getAttribute('data-size')).toBe('lg');
+
+    app.limit.set('');
+    s.tick();
+
+    expect(app.group().maxVisible()).toBeUndefined();
+    expect(shown(host)).toEqual(['JD', 'TA', 'TB']);
+    expect(host.querySelector('.et-avatar-group-overflow')).toBeNull();
   });
 });

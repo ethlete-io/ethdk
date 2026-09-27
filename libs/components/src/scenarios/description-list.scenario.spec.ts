@@ -1,6 +1,11 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { DESCRIPTION_LIST_IMPORTS, DESCRIPTION_LIST_VARIANTS, DescriptionListVariant } from '../index';
+import {
+  DESCRIPTION_LIST_IMPORTS,
+  DESCRIPTION_LIST_VARIANTS,
+  DescriptionListComponent,
+  DescriptionListVariant,
+} from '../index';
 import '../test-helpers';
 import { useScenario } from './harness';
 
@@ -22,6 +27,20 @@ class PlayerDetailsComponent {
     { term: 'Name', detail: 'Jane Doe' },
     { term: 'Team', detail: 'team-a' },
   ]);
+}
+
+@Component({
+  selector: 'et-scenario-match-facts',
+  imports: [DescriptionListComponent],
+  template: `
+    <dl variant="stacked" et-description-list>
+      <dt>Venue</dt>
+      <dd>Main stadium</dd>
+    </dl>
+  `,
+})
+class MatchFactsComponent {
+  list = viewChild.required(DescriptionListComponent);
 }
 
 describe('description list scenarios', () => {
@@ -63,5 +82,17 @@ describe('description list scenarios', () => {
     s.tick();
 
     expect(list.getAttribute('data-variant')).toBe('stacked');
+  });
+
+  it('takes a static stacked variant when imported on its own', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(MatchFactsComponent);
+    const list = (fixture.nativeElement as HTMLElement).querySelector('dl')!;
+
+    s.tick();
+
+    expect(fixture.componentInstance.list().variant()).toBe('stacked');
+    expect(list.getAttribute('data-variant')).toBe('stacked');
+    expect(list.querySelector('dt + dd')?.textContent).toBe('Main stadium');
   });
 });

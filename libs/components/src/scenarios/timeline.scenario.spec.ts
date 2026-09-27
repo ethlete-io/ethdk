@@ -1,7 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, viewChild, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
-import { TIMELINE_IMPORTS } from '../index';
+import { TIMELINE_IMPORTS, TimelineComponent, TimelineItemComponent } from '../index';
 import { TEST_COLOR_THEMES, TEST_SEMANTIC_COLOR_THEMES } from '../lib/testing/color-themes';
 import '../test-helpers';
 import { useScenario } from './harness';
@@ -34,6 +34,23 @@ class MatchReportComponent {
 
 const texts = (host: Element, selector: string) =>
   Array.from(host.querySelectorAll(selector)).map((element) => element.textContent?.trim());
+
+@Component({
+  selector: 'et-scenario-changelog',
+  imports: [TimelineComponent, TimelineItemComponent],
+  template: `
+    <et-timeline aria-label="Changelog">
+      @for (entry of entries(); track entry) {
+        <et-timeline-item>{{ entry }}</et-timeline-item>
+      }
+    </et-timeline>
+  `,
+})
+class ChangelogComponent {
+  entries = signal(['v1', 'v2']);
+  items = viewChildren(TimelineItemComponent);
+  timeline = viewChild.required(TimelineComponent);
+}
 
 describe('timeline scenarios', () => {
   const scenario = useScenario({
@@ -92,5 +109,24 @@ describe('timeline scenarios', () => {
 
     expect(goal!.classList).toContain('et-color--grass');
     expect(kickOff!.className).not.toContain('et-color--grass');
+  });
+
+  it('adds and removes items the app renders into a standalone timeline', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(ChangelogComponent);
+    const app = fixture.componentInstance;
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+
+    expect(app.timeline()).toBeInstanceOf(TimelineComponent);
+    expect(app.items().length).toBe(2);
+    expect(host.querySelector('et-timeline')?.getAttribute('role')).toBe('list');
+
+    app.entries.set(['v1', 'v2', 'v3']);
+    s.tick();
+
+    expect(app.items().length).toBe(3);
+    expect(texts(host, 'et-timeline-item[role="listitem"]')).toEqual(['v1', 'v2', 'v3']);
   });
 });

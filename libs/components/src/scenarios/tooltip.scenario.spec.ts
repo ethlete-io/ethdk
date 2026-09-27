@@ -1,7 +1,7 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
-import { TOOLTIP_ERROR_CODES, TOOLTIP_IMPORTS, TooltipDirective } from '../index';
+import { TOOLTIP_ERROR_CODES, TOOLTIP_IMPORTS, TooltipComponent, TooltipDirective } from '../index';
 import { TEST_COLOR_THEMES } from '../lib/testing/color-themes';
 import '../test-helpers';
 import { Scenario, useScenario } from './harness';
@@ -70,6 +70,15 @@ const render = (s: Scenario) => {
 
   return fixture;
 };
+
+@Component({
+  selector: 'et-scenario-save-hint',
+  imports: [TooltipDirective, TooltipComponent],
+  template: `<button #hint="etTooltip" class="save" etTooltip="Save the draft" type="button">Save</button>`,
+})
+class SaveHintComponent {
+  hint = viewChild.required('hint', { read: TooltipDirective });
+}
 
 describe('tooltip scenarios', () => {
   const scenario = useScenario({ providers: [provideColorThemes([...TEST_COLOR_THEMES])] });
@@ -231,5 +240,34 @@ describe('tooltip scenarios', () => {
 
     expect(tooltip()).toBeNull();
     expect(query('.broken').hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('hands the open overlay a TooltipComponent that carries the text and the described-by id', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(SaveHintComponent);
+
+    document.body.appendChild(fixture.nativeElement);
+    s.tick();
+
+    const trigger = query('.save');
+
+    hover(s, trigger);
+    s.tick(300);
+    settle(s);
+
+    const instance = fixture.componentInstance.hint().overlayRef()?.componentInstance();
+
+    expect(instance).toBeInstanceOf(TooltipComponent);
+
+    const component = instance as TooltipComponent;
+
+    expect(component.hasTemplate()).toBe(false);
+    expect(component.contentText()).toBe('Save the draft');
+    expect(describedBy(trigger)).toContain(component.tooltipId());
+    expect(tooltip()?.id).toBe(component.tooltipId());
+
+    leave(s, trigger);
+
+    expect(fixture.componentInstance.hint().overlayRef()).toBeNull();
   });
 });

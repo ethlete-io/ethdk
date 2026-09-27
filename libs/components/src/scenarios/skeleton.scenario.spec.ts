@@ -1,6 +1,12 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideLoaderLabels, SKELETON_IMPORTS } from '../index';
+import {
+  provideLoaderLabels,
+  SKELETON_IMPORTS,
+  SkeletonComponent,
+  SkeletonItemComponent,
+  SkeletonTextComponent,
+} from '../index';
 import '../test-helpers';
 import { useScenario } from './harness';
 
@@ -30,6 +36,22 @@ const widths = (host: Element) =>
   Array.from(host.querySelectorAll<HTMLElement>('.et-skeleton-text > et-skeleton-item')).map(
     (item) => item.style.inlineSize,
   );
+
+@Component({
+  selector: 'et-scenario-article-placeholder',
+  imports: [SkeletonComponent, SkeletonItemComponent, SkeletonTextComponent],
+  template: `
+    <et-skeleton loadingAllyText="Loading article" animated="false">
+      <et-skeleton-item shape="rect" />
+      <et-skeleton-text lines="2" lastLineWidth="25" />
+    </et-skeleton>
+  `,
+})
+class ArticlePlaceholderComponent {
+  skeleton = viewChild.required(SkeletonComponent);
+  item = viewChild.required(SkeletonItemComponent);
+  text = viewChild.required(SkeletonTextComponent);
+}
 
 describe('skeleton scenarios', () => {
   const scenario = useScenario();
@@ -93,5 +115,21 @@ describe('skeleton scenarios with app loader labels', () => {
     s.tick();
 
     expect((fixture.nativeElement as HTMLElement).querySelector('.et-skeleton-ally-text')?.textContent).toBe('Lädt…');
+  });
+
+  it('takes static attributes when the parts are imported one by one', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(ArticlePlaceholderComponent);
+    const app = fixture.componentInstance;
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+
+    expect(app.skeleton().animated()).toBe(false);
+    expect(host.querySelector('et-skeleton')?.classList).not.toContain('et-skeleton--animated');
+    expect(host.textContent).toContain('Loading article');
+    expect(app.item().shape()).toBe('rect');
+    expect(app.text().lines()).toBe(2);
+    expect(widths(host)).toEqual(['100%', '25%']);
   });
 });

@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ColorTheme, provideColorThemesWithTailwind4, ThemeSwatch } from '@ethlete/core';
 import {
@@ -6,6 +6,7 @@ import {
   BADGE_IMPORTS,
   BADGE_SIZES,
   BADGE_VARIANTS,
+  BadgeComponent,
   BadgeIconAlignment,
   BadgeSize,
   BadgeVariant,
@@ -49,6 +50,16 @@ const children = (host: Element) =>
     .map((node) =>
       node.nodeType === Node.ELEMENT_NODE ? (node as Element).className : `text:${node.textContent?.trim()}`,
     );
+
+@Component({
+  selector: 'et-scenario-plan-badge',
+  imports: [BadgeComponent],
+  template: `<et-badge [variant]="variant()" size="lg">Pro</et-badge>`,
+})
+class PlanBadgeComponent {
+  variant = signal<BadgeVariant>(BADGE_VARIANTS.OUTLINE);
+  badge = viewChild.required(BadgeComponent);
+}
 
 describe('badge scenarios', () => {
   const scenario = useScenario({ providers: [provideColorThemesWithTailwind4(COLOR_THEMES)] });
@@ -94,5 +105,24 @@ describe('badge scenarios', () => {
     expect(status.getAttribute('data-size')).toBe('lg');
     expect(status.getAttribute('data-icon-alignment')).toBe('end');
     expect(s.errors).toEqual([]);
+  });
+
+  it('works as a standalone import and leaves the colour to the app theme', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(PlanBadgeComponent);
+    const app = fixture.componentInstance;
+    const badge = (fixture.nativeElement as HTMLElement).querySelector('et-badge')!;
+
+    s.tick();
+
+    expect(app.badge().variant()).toBe('outline');
+    expect(app.badge().size()).toBe('lg');
+    expect(badge.getAttribute('data-size')).toBe('lg');
+    expect(badge.classList).not.toContain('et-color--positive');
+
+    app.variant.set(BADGE_VARIANTS.FILLED);
+    s.tick();
+
+    expect(badge.getAttribute('data-variant')).toBe('filled');
   });
 });
