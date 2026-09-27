@@ -376,7 +376,7 @@ class HeadlessVimeoComponent {
   selector: 'et-scenario-documentary',
   imports: [HeadlessVimeoComponent, STREAM_VIMEO_IMPORTS],
   template: `
-    <et-vimeo-player [videoId]="4242" [width]="480" />
+    <et-vimeo-player [videoId]="4242" width="480" />
     <et-scenario-headless-vimeo [startTime]="12" videoId="777" />
     <et-vimeo-player-slot videoId="88" />
   `,
@@ -401,7 +401,7 @@ class HeadlessFacebookComponent {
   imports: [HeadlessFacebookComponent, STREAM_IMPORTS, STREAM_FACEBOOK_IMPORTS],
   template: `
     @if (headless()) {
-      <et-scenario-headless-facebook [width]="500" videoId="clip-1" />
+      <et-scenario-headless-facebook width="500" videoId="clip-1" />
       <et-facebook-player videoId="clip-3" />
     } @else {
       <et-facebook-player-slot videoId="clip-2" />
