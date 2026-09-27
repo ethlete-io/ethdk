@@ -9,6 +9,7 @@
       .et-table-expander-cell
     ) {
     cursor: grab;
+    -webkit-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;
   }
