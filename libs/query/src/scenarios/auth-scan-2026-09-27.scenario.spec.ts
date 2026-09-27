@@ -225,6 +225,78 @@ describe('auth scan 2026-09-27', () => {
     destroy();
   });
 
+  it('a logout revocation queued behind one in flight is dropped when its pair is live again', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens);
+    s.api.on('POST', '/auth/revoke', () => ({ body: { ok: true }, delay: 1000 }));
+
+    const { auth, destroy } = createTab(s);
+    const signInAndOut = () => {
+      auth.queries.login.execute({ body: {} });
+      s.tick();
+
+      const pair = { accessToken: auth.accessToken(), refreshToken: auth.refreshToken() };
+
+      auth.logout();
+      s.tick();
+
+      return pair;
+    };
+
+    const first = signInAndOut();
+    const second = signInAndOut();
+
+    auth.setTokens(second.accessToken!, second.refreshToken!);
+    s.tick();
+
+    await s.settle(1000);
+    await s.settle(1000);
+    await s.settle();
+
+    expect(s.api.requests.filter((r) => r.path === '/auth/revoke').map((r) => r.body)).toEqual([first]);
+    expect(auth.accessToken()).toBe(second.accessToken);
+
+    auth.logout();
+    await s.settle(1000);
+    await s.settle();
+
+    expect(s.api.requests.filter((r) => r.path === '/auth/revoke').map((r) => r.body)).toEqual([first, second]);
+
+    destroy();
+  });
+
+  it('a revoke() of the live pair queued behind a logout revocation is still sent', async () => {
+    const s = scenario();
+    s.api.on('POST', '/auth/login', issueTokens);
+    s.api.on('POST', '/auth/revoke', () => ({ body: { ok: true }, delay: 1000 }));
+
+    const { auth, destroy } = createTab(s);
+
+    auth.queries.login.execute({ body: {} });
+    s.tick();
+    auth.logout();
+    s.tick();
+
+    auth.queries.login.execute({ body: {} });
+    s.tick();
+    const live = { accessToken: auth.accessToken(), refreshToken: auth.refreshToken() };
+    const queued = auth.features.tokenRevocation.revoke();
+
+    await s.settle(1000);
+    await s.settle(1000);
+    await s.settle();
+
+    expect(queued?.isAlive()).toBe(false);
+    expect(queued?.args()).toEqual({ body: live });
+    expect(s.api.requestCount('POST', '/auth/revoke')).toBe(2);
+
+    auth.logout();
+    await s.settle(1000);
+    await s.settle();
+
+    destroy();
+  });
+
   describe('multi-tab', () => {
     let bus: FakeBroadcastChannelHandle;
     let locks: FakeWebLocksHandle;

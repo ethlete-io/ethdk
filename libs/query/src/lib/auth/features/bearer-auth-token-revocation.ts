@@ -122,15 +122,18 @@ export const withTokenRevocation = <
 
     type QueuedRevocation = {
       tokens: RevocationTokens;
+      fromLogout: boolean;
       snapshot: RevocationSnapshot;
       start: (snapshot: RevocationSnapshot) => void;
+      drop: () => void;
     };
 
     const queue: QueuedRevocation[] = [];
     const queueDropped = signal(false);
 
-    const queueRevocation = (tokens: RevocationTokens): QueuedRevocation => {
+    const queueRevocation = (tokens: RevocationTokens, fromLogout: boolean): QueuedRevocation => {
       const target = signal<RevocationSnapshot | null>(null);
+      const dropped = signal(false);
       const follow = <T>(read: (snapshot: RevocationSnapshot) => T) =>
         wrapAsObservableSignal(
           computed(() => {
@@ -152,12 +155,18 @@ export const withTokenRevocation = <
         id: follow((s) => s.id()),
         executionState: follow((s) => s.executionState()),
         isAlive: wrapAsObservableSignal(
-          computed(() => target()?.isAlive() ?? !queueDropped()),
+          computed(() => target()?.isAlive() ?? !(dropped() || queueDropped())),
           context.injector,
         ),
       };
 
-      const queued = { tokens, snapshot, start: (started: RevocationSnapshot) => target.set(started) };
+      const queued: QueuedRevocation = {
+        tokens,
+        fromLogout,
+        snapshot,
+        start: (started) => target.set(started),
+        drop: () => dropped.set(true),
+      };
 
       queue.push(queued);
 
@@ -165,6 +174,25 @@ export const withTokenRevocation = <
     };
 
     context.destroyRef.onDestroy(() => queueDropped.set(true));
+
+    const holdsLiveToken = ({ accessToken, refreshToken }: RevocationTokens) => {
+      const live = untracked(() => ({ accessToken: context.accessToken(), refreshToken: context.refreshToken() }));
+
+      return (
+        (!!accessToken && accessToken === live.accessToken) || (!!refreshToken && refreshToken === live.refreshToken)
+      );
+    };
+
+    const startNextQueued = () => {
+      let next = queue.shift();
+
+      while (next?.fromLogout && holdsLiveToken(next.tokens)) {
+        next.drop();
+        next = queue.shift();
+      }
+
+      if (next) next.start(executeRevocation(next.tokens));
+    };
 
     const executeRevocation = (tokens: RevocationTokens) => {
       const args = withBearerHeader(
@@ -192,15 +220,13 @@ export const withTokenRevocation = <
           currentRevocationSnapshot = null;
           currentTokens = null;
 
-          const next = queue.shift();
-
-          if (next) next.start(executeRevocation(next.tokens));
+          startNextQueued();
         });
 
       return snapshot;
     };
 
-    const revokeWithTokens = (accessToken: string | null, refreshToken: string | null) => {
+    const revokeWithTokens = (accessToken: string | null, refreshToken: string | null, fromLogout: boolean) => {
       if (!accessToken && !refreshToken) {
         return currentRevocationSnapshot?.isAlive() ? currentRevocationSnapshot : null;
       }
@@ -210,14 +236,20 @@ export const withTokenRevocation = <
       if (currentRevocationSnapshot?.isAlive()) {
         if (isSamePair(currentTokens, tokens)) return currentRevocationSnapshot;
 
-        return (queue.find((queued) => isSamePair(queued.tokens, tokens)) ?? queueRevocation(tokens)).snapshot;
+        const queued = queue.find((entry) => isSamePair(entry.tokens, tokens));
+
+        if (!queued) return queueRevocation(tokens, fromLogout).snapshot;
+
+        queued.fromLogout = fromLogout;
+
+        return queued.snapshot;
       }
 
       return executeRevocation(tokens);
     };
 
     const revoke = () => {
-      return revokeWithTokens(context.accessToken(), context.refreshToken());
+      return revokeWithTokens(context.accessToken(), context.refreshToken(), false);
     };
 
     const enable = () => {
@@ -238,7 +270,7 @@ export const withTokenRevocation = <
             const end = untracked(sessionEnd);
 
             if (end && shouldRevokeFor(end)) {
-              untracked(() => revokeWithTokens(previousAccessToken, previousRefreshToken));
+              untracked(() => revokeWithTokens(previousAccessToken, previousRefreshToken, true));
             }
           }
 
