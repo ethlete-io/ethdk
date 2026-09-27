@@ -96,6 +96,7 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
     if (hostElement?.tagName === 'INPUT') {
       this.nativeControl.set(hostElement as HTMLInputElement);
       this.focusTarget.set(hostElement);
+      this.mirrorOntoNativeHost(hostElement as HTMLInputElement, { value: () => `${this.displayValue()}` });
     }
   }
 

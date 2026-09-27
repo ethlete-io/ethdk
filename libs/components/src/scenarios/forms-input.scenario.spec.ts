@@ -72,6 +72,30 @@ class NativeInputsComponent {
 }
 
 @Component({
+  selector: 'et-scenario-native-prefilled-inputs',
+  imports: [InputDirective, NumberInputDirective, PasswordInputDirective],
+  template: `
+    <input [(value)]="contact" [type]="kind()" etInput aria-label="Contact" />
+    <input [(value)]="goals" etNumberInput aria-label="Goals" type="number" />
+    <input
+      #pw="etPasswordInput"
+      [(value)]="secret"
+      (keydown)="pw.syncCapsLock($event)"
+      etPasswordInput
+      aria-label="Secret"
+      type="password"
+    />
+  `,
+})
+class NativePrefilledInputsComponent {
+  contact = signal('coach@team-a.test');
+  kind = signal<(typeof INPUT_TYPES)[keyof typeof INPUT_TYPES]>(INPUT_TYPES.EMAIL);
+  goals = signal<number | null>(2);
+  secret = signal('Kick0ff');
+  password = viewChild.required(PasswordInputDirective);
+}
+
+@Component({
   selector: 'et-scenario-native-required-inputs',
   imports: [FORM_FIELD_IMPORTS, InputDirective, NumberInputDirective, PasswordInputDirective, FormField],
   template: `
@@ -317,6 +341,40 @@ describe('forms input scenarios', () => {
     app.password().toggleRevealed();
     s.tick();
     expect(secret.type).toBe('text');
+  });
+
+  it('renders the bound value and type into native inputs and clears Caps Lock on blur', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(NativePrefilledInputsComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const app = fixture.componentInstance;
+
+    s.tick();
+
+    const [contact, goals, secret] = Array.from(host.querySelectorAll('input'));
+
+    if (!contact || !goals || !secret) throw new Error('missing inputs');
+
+    expect([contact.value, goals.value, secret.value]).toEqual(['coach@team-a.test', '2', 'Kick0ff']);
+    expect(contact.type).toBe('email');
+
+    app.kind.set(INPUT_TYPES.TEL);
+    app.contact.set('+49 30 1234');
+    app.goals.set(null);
+    s.tick();
+    expect(contact.type).toBe('tel');
+    expect(contact.value).toBe('+49 30 1234');
+    expect(goals.value).toBe('');
+
+    secret.focus();
+    secret.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true, modifierCapsLock: true }));
+    s.tick();
+    expect(app.password().capsLockOn()).toBe(true);
+
+    secret.blur();
+    s.tick();
+    expect(app.password().capsLockOn()).toBe(false);
+    expect(app.password().touched()).toBe(true);
   });
 
   it('marks a bare native input touched on blur and shows its signal-form error', () => {

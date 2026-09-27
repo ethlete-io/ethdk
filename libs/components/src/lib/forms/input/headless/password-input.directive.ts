@@ -67,6 +67,7 @@ export class PasswordInputDirective extends TextFieldControlDirective implements
     if (hostElement?.tagName === 'INPUT') {
       this.nativeControl.set(hostElement as HTMLInputElement);
       this.focusTarget.set(hostElement);
+      this.mirrorOntoNativeHost(hostElement as HTMLInputElement, { value: this.displayValue });
     }
   }
 
@@ -92,6 +93,13 @@ export class PasswordInputDirective extends TextFieldControlDirective implements
     }
 
     this.value.set(inputElement.value);
+  }
+
+  protected override handleNativeBlur(event: FocusEvent) {
+    if (event.target !== this.focusTarget()) return;
+
+    super.handleNativeBlur(event);
+    this.syncCapsLock(event);
   }
 
   public toggleRevealed() {

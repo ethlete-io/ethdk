@@ -137,7 +137,7 @@ describe('textarea scenarios', () => {
     s.flush();
   });
 
-  it.fails('renders the bound value into a native textarea', () => {
+  it('renders the bound value into a native textarea', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(NativeNotesComponent);
     const textarea = (fixture.nativeElement as HTMLElement).querySelector('textarea')!;
@@ -145,5 +145,9 @@ describe('textarea scenarios', () => {
     s.tick();
 
     expect(textarea.value).toBe('Half time');
+
+    fixture.componentInstance.notes.set('Full time');
+    s.tick();
+    expect(textarea.value).toBe('Full time');
   });
 });

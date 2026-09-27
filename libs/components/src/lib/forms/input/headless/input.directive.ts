@@ -78,6 +78,11 @@ export class InputDirective extends TextFieldControlDirective implements FormVal
     if (hostElement?.tagName === 'INPUT') {
       this.nativeControl.set(hostElement as HTMLInputElement);
       this.focusTarget.set(hostElement);
+      this.mirrorOntoNativeHost(hostElement as HTMLInputElement, {
+        value: this.displayValue,
+        type: this.type,
+        skip: () => this.nativeSyncSuppressed,
+      });
     }
   }
 

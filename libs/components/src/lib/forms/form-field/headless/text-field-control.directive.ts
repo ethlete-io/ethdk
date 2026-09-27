@@ -1,4 +1,5 @@
-import { booleanAttribute, Directive, input, signal } from '@angular/core';
+import { booleanAttribute, Directive, effect, input, signal } from '@angular/core';
+import { injectRenderer } from '@ethlete/core';
 import { ACCESSIBLE_NAME_INPUTS } from './accessible-name-control.directive';
 import { FieldWarningResult } from './field-warnings';
 import { TextShellControlDirective } from './text-shell-control.directive';
@@ -34,6 +35,8 @@ export const TEXT_FIELD_CONTROL_INPUTS = [
  */
 @Directive()
 export abstract class TextFieldControlDirective extends TextShellControlDirective {
+  private nativeHostRenderer = injectRenderer();
+
   // eslint-disable-next-line ethlete/no-native-html-input-name -- form-field hidden state deliberately mirrors the native attribute
   public hidden = input(false, { transform: booleanAttribute });
 
@@ -61,6 +64,26 @@ export abstract class TextFieldControlDirective extends TextShellControlDirectiv
 
   /** @internal The element `focus()` targets - the native control by default. */
   public focusTarget = signal<HTMLElement | null>(null);
+
+  /** @internal For a directive placed on the native element itself - a wrapper component binds these in its template. */
+  protected mirrorOntoNativeHost(
+    element: HTMLInputElement | HTMLTextAreaElement,
+    state: { value: () => string; type?: () => string; skip?: () => boolean },
+  ) {
+    effect(() => {
+      const value = state.value();
+
+      if (!state.skip?.() && element.value !== value) {
+        this.nativeHostRenderer.setProperty(element, 'value', value);
+      }
+    });
+
+    const type = state.type;
+
+    if (type) {
+      effect(() => this.nativeHostRenderer.setProperty(element, 'type', type()));
+    }
+  }
 
   protected focusControl(options?: FocusOptions) {
     this.focusTarget()?.focus(options);
