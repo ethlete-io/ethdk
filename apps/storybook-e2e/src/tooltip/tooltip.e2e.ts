@@ -1,5 +1,5 @@
-import { Locator, expect, test } from '@playwright/test';
-import { openStory, pressKey, pressKeys, settle, tap } from '../support';
+import { Locator, Page, expect, test } from '@playwright/test';
+import { boxOf, openStory, pressKey, pressKeys, settle, tap } from '../support';
 
 const STORY_ID = 'components-feedback-tooltip--default';
 const IN_DIALOG_STORY_ID = 'components-feedback-tooltip-in-dialog--default';
@@ -11,6 +11,65 @@ async function describedByElement(trigger: Locator): Promise<Locator> {
 
   return trigger.page().locator(`#${id}`);
 }
+
+/** Gives the story room to scroll and puts `trigger` at the very top of the viewport. */
+async function scrollToViewportTop(page: Page, trigger: Locator): Promise<void> {
+  await page.evaluate(() => {
+    document.body.style.paddingBottom = '300vh';
+  });
+  await trigger.evaluate((el) => el.scrollIntoView({ block: 'start' }));
+}
+
+test.describe('tooltip / placement', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: hover triggers the tooltip');
+
+  test('a tooltip that would cross the left edge shifts in and keeps its arrow on the trigger', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Text tooltip' });
+
+    await trigger.hover();
+    const tooltip = page.getByRole('tooltip');
+    await expect(page.locator('.et-tooltip-panel')).toHaveClass(/et-animation-enter-done/);
+
+    const triggerBox = await boxOf(trigger);
+    const tooltipBox = await boxOf(tooltip);
+    const arrowBox = await boxOf(page.locator('.et-tooltip-panel .et-overlay-arrow'));
+
+    expect(tooltipBox.width / 2).toBeGreaterThan(triggerBox.x + triggerBox.width / 2);
+    expect(tooltipBox.x).toBeGreaterThanOrEqual(0);
+    expect(arrowBox.x + arrowBox.width / 2).toBeCloseTo(triggerBox.x + triggerBox.width / 2, 0);
+  });
+
+  test('a top tooltip with no room above its trigger flips below it', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Text tooltip' });
+
+    await scrollToViewportTop(page, trigger);
+    await trigger.hover();
+
+    const panel = page.locator('.et-tooltip-panel');
+    await expect(panel).toHaveAttribute('data-overlay-placement', 'bottom');
+
+    const triggerBox = await boxOf(trigger);
+    const tooltipBox = await boxOf(page.getByRole('tooltip'));
+
+    expect(tooltipBox.y).toBeGreaterThanOrEqual(triggerBox.y + triggerBox.height);
+  });
+
+  test('a tooltip whose trigger scrolls out of view closes', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Text tooltip' });
+
+    await pressKey(page, 'Tab');
+    await expect(trigger).toBeFocused();
+    await scrollToViewportTop(page, trigger);
+    await expect(page.getByRole('tooltip')).toBeVisible();
+
+    await page.evaluate(() => window.scrollBy(0, 400));
+
+    await expect(page.getByRole('tooltip')).toHaveCount(0);
+  });
+});
 
 test.describe('tooltip / focus', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: hover and keyboard-focus triggers');
@@ -80,6 +139,35 @@ test.describe('tooltip / inside a dialog', () => {
     await page.locator('.et-overlay-runtime-backdrop').click({ position: { x: 5, y: 5 } });
 
     await expect(dialog).toHaveCount(0);
+  });
+
+  test('a tooltip inside a dialog paints above the dialog', async ({ page }) => {
+    const root = await openStory(page, IN_DIALOG_STORY_ID);
+    await root.getByRole('button', { name: 'Open dialog' }).click();
+    await expect(page.locator('.et-overlay')).toHaveClass(/et-animation-enter-done/);
+
+    await page.getByRole('button', { name: 'Tooltip inside the dialog' }).hover();
+    const tooltip = page.getByRole('tooltip');
+    await expect(tooltip).toBeVisible();
+
+    await expect(tooltip).toHaveCSS('pointer-events', 'none');
+
+    const box = await boxOf(tooltip);
+    const hit = await page.evaluate(
+      ({ x, y }) => {
+        const probe = document.createElement('style');
+        probe.textContent = '[role="tooltip"], [role="tooltip"] * { pointer-events: auto !important; }';
+        document.head.append(probe);
+
+        const topmost = document.elementFromPoint(x, y)?.closest('[role="tooltip"]') !== null;
+        probe.remove();
+
+        return topmost;
+      },
+      { x: box.x + box.width / 2, y: box.y + box.height / 2 },
+    );
+
+    expect(hit).toBe(true);
   });
 
   test('Escape hides the tooltip first and closes the dialog next', async ({ page }) => {

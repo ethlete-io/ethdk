@@ -1,5 +1,5 @@
-import { Locator, expect, test } from '@playwright/test';
-import { expectFocusVisible, openStory, pressKey, pressKeys, tap } from '../support';
+import { Locator, Page, expect, test } from '@playwright/test';
+import { boxOf, expectFocusVisible, openStory, pressKey, pressKeys, tap, touchSwipe, viewportOf } from '../support';
 
 const DEFAULT_STORY_ID = 'components-feedback-toggletip--default';
 const BOTTOM_STORY_ID = 'components-feedback-toggletip--bottom';
@@ -10,6 +10,55 @@ async function waitForPanelEntered(dialog: Locator): Promise<void> {
   await expect(dialog).toBeVisible();
   await expect(dialog.locator('.et-toggletip-panel')).toHaveClass(/et-animation-enter-done/);
 }
+
+/** Gives the story room to scroll and puts `trigger` at the very top of the viewport. */
+async function scrollToViewportTop(page: Page, trigger: Locator): Promise<void> {
+  await page.evaluate(() => {
+    document.body.style.paddingBottom = '300vh';
+  });
+  await trigger.evaluate((el) => el.scrollIntoView({ block: 'start' }));
+}
+
+test.describe('toggletip / placement and scroll', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: click trigger');
+
+  test('a top toggletip with no room above its trigger flips below it', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Interactive toggletip' });
+
+    await scrollToViewportTop(page, trigger);
+    await trigger.click();
+
+    const panel = page.locator('.et-toggletip-panel');
+    await expect(panel).toHaveAttribute('data-overlay-placement', 'bottom');
+    await expect(panel).toHaveClass(/et-animation-enter-done/);
+
+    const triggerBox = await boxOf(trigger);
+    const panelBox = await boxOf(panel);
+
+    expect(panelBox.y).toBeGreaterThanOrEqual(triggerBox.y + triggerBox.height);
+  });
+
+  test('scrolling the trigger out of view closes the toggletip and hands focus back without scrolling back', async ({
+    page,
+  }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Interactive toggletip' });
+
+    await scrollToViewportTop(page, trigger);
+    await trigger.click();
+    await waitForPanelEntered(page.getByRole('dialog'));
+    await expect(page.getByRole('button', { name: 'Secondary Action' })).toBeFocused();
+
+    await page.evaluate(() => window.scrollBy(0, 400));
+    const scrolledTo = await page.evaluate(() => window.scrollY);
+
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(await page.evaluate(() => window.scrollY)).toBe(scrolledTo);
+  });
+});
 
 test.describe('toggletip / focus', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: click and outside-click behavior');
@@ -200,6 +249,27 @@ test.describe('toggletip / touch', () => {
     await page.locator('body').tap({ position: { x: 5, y: 5 } });
 
     await expect(dialog).toBeHidden();
+  });
+
+  test('a swipe on the panel that scrolls the trigger away closes the toggletip', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Text toggletip' });
+    const dialog = page.getByRole('dialog');
+
+    await page.evaluate(() => {
+      document.body.style.paddingBlock = '300vh';
+    });
+    await trigger.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    await tap(trigger);
+    await waitForPanelEntered(dialog);
+
+    const scrolledFrom = await page.evaluate(() => window.scrollY);
+    const panel = await boxOf(dialog);
+    const start = { x: panel.x + panel.width / 2, y: panel.y + panel.height / 2 };
+    await touchSwipe(page, start, { x: start.x, y: viewportOf(page).height - 5 });
+
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(scrolledFrom - 300);
+    await expect(dialog).toHaveCount(0);
   });
 });
 
