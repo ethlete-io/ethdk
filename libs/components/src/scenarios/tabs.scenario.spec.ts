@@ -302,6 +302,25 @@ describe('tabs scenarios', () => {
     expect(fixture.componentInstance.selected()).toBe(2);
   });
 
+  it('moves the arrow keys from the trigger that holds focus, not the selected one', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(AccountTabsComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+    s.flush();
+
+    triggerAt(2, host).focus();
+    press(s, 'ArrowRight');
+    expect(document.activeElement).toBe(triggerAt(3, host));
+    expect(fixture.componentInstance.selected()).toBe(0);
+
+    triggerAt(2, host).focus();
+    press(s, 'ArrowLeft');
+    expect(document.activeElement).toBe(triggerAt(1, host));
+    expect(fixture.componentInstance.selected()).toBe(0);
+  });
+
   it('skips a disabled tab that the binding points at', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(AccountTabsComponent);

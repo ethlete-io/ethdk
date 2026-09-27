@@ -179,8 +179,7 @@ test.describe('tabs / keyboard walk', () => {
     await expect(tabs.nth(1)).toBeFocused();
   });
 
-  test.fail('arrow keys move from a trigger that holds focus without being selected', async ({ page }) => {
-    // The bar moves from the selected tab, not the focused one; tracked in plans/components-coverage-tasks.md (tabs).
+  test('arrow keys move from a trigger that holds focus without being selected', async ({ page }) => {
     const root = await openStory(page, DEFAULT_STORY_ID);
     const tabs = root.locator(GROUP_SELECTOR).locator('[role="tab"]');
 

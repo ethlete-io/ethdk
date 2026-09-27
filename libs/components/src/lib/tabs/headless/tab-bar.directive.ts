@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import {
   afterNextRender,
   booleanAttribute,
@@ -36,6 +37,7 @@ let nextTabBarId = 0;
 })
 export class TabBarDirective {
   private destroyRef = inject(DestroyRef);
+  private document = inject(DOCUMENT);
 
   public orientation = input<TabBarOrientation>(TAB_BAR_ORIENTATIONS.HORIZONTAL);
   public fit = input<TabBarFit>(TAB_BAR_FITS.CONTENT);
@@ -160,10 +162,11 @@ export class TabBarDirective {
       return;
     }
 
-    let currentIndex = this.focusedIndex();
+    const activeElement = this.document.activeElement;
+    let currentIndex = all.findIndex((trigger) => trigger.getElement() === activeElement);
 
     if (currentIndex === -1) {
-      currentIndex = this.selectedIndex();
+      currentIndex = this.focusedIndex() === -1 ? this.selectedIndex() : this.focusedIndex();
     }
 
     let nextIndex = currentIndex;
