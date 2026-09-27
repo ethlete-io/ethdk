@@ -279,6 +279,7 @@ describe('forms select headless scenarios', () => {
     const trigger = query('.tag-trigger', host);
 
     expect(trigger.getAttribute('role')).toBe('combobox');
+    expect(trigger.getAttribute('aria-label')).toBe('Tags');
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
     expect(trigger.hasAttribute('tabindex')).toBe(false);
     expect(app.trigger().isOpen()).toBe(false);
@@ -314,7 +315,7 @@ describe('forms select headless scenarios', () => {
 
     query('.tag-all').click();
     s.tick();
-    expect(app.tags()).toEqual(['rookie', 'junior', 'senior']);
+    expect(app.tags()).toEqual(['junior', 'senior', 'rookie']);
     expect(query('.tag-all').getAttribute('aria-checked')).toBe('true');
     expect(queryAll('.tag-row').map((row) => row.getAttribute('aria-selected'))).toEqual([
       'true',
@@ -325,7 +326,7 @@ describe('forms select headless scenarios', () => {
 
     queryAll('.tag-row')[1]?.click();
     s.tick();
-    expect(app.tags()).toEqual(['rookie', 'junior']);
+    expect(app.tags()).toEqual(['junior', 'rookie']);
 
     query('.tag-done').click();
     s.tick();

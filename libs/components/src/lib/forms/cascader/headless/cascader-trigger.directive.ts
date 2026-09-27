@@ -1,4 +1,4 @@
-import { Directive, ElementRef, afterNextRender, computed, inject } from '@angular/core';
+import { Directive, ElementRef, HostAttributeToken, afterNextRender, computed, inject } from '@angular/core';
 import { registerSingleton } from '../../form-field/headless';
 import { RuntimeError, createComponentId } from '@ethlete/core';
 import { CASCADER_ERROR_CODES } from '../cascader-errors';
@@ -17,7 +17,7 @@ import { CascaderDirective } from './cascader.directive';
     '[attr.aria-disabled]': 'cascader?.disabled() || null',
     '[attr.aria-required]': 'cascader?.required() || null',
     '[attr.aria-invalid]': 'cascader?.shouldDisplayError() || null',
-    '[attr.aria-label]': 'cascader?.ariaLabel() || null',
+    '[attr.aria-label]': 'cascader?.ariaLabel() || staticAriaLabel',
     '[attr.aria-labelledby]': 'cascader?.labelId()',
     '[attr.aria-describedby]': 'cascader?.describedBy()',
     '[attr.tabindex]': 'isNativeButton ? null : cascader?.disabled() ? -1 : 0',
@@ -31,6 +31,7 @@ import { CascaderDirective } from './cascader.directive';
 export class CascaderTriggerDirective {
   public cascader = inject(CascaderDirective, { optional: true });
   public elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  protected staticAriaLabel = inject(new HostAttributeToken('aria-label'), { optional: true });
 
   public readonly id: string;
   public readonly isNativeButton: boolean;

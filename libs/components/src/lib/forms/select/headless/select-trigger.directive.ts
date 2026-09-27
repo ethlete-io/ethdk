@@ -1,4 +1,4 @@
-import { Directive, ElementRef, afterNextRender, computed, inject } from '@angular/core';
+import { Directive, ElementRef, HostAttributeToken, afterNextRender, computed, inject } from '@angular/core';
 import { registerSingleton } from '../../form-field/headless';
 import { RuntimeError, createComponentId } from '@ethlete/core';
 import { SELECT_ERROR_CODES } from '../select-errors';
@@ -16,7 +16,7 @@ import { SelectDirective } from './select.directive';
     '[attr.aria-required]': 'hasSearch() ? null : select?.required() || null',
     '[attr.aria-invalid]': 'hasSearch() ? null : select?.shouldDisplayError() || null',
     '[attr.aria-describedby]': 'hasSearch() ? null : select?.describedBy() || null',
-    '[attr.aria-label]': 'select?.ariaLabel() || null',
+    '[attr.aria-label]': 'select?.ariaLabel() || staticAriaLabel',
     '[attr.aria-labelledby]': 'labelledBy()',
     '[attr.aria-disabled]': 'select?.disabled() || null',
     '[attr.data-disabled]': 'select?.disabled() || null',
@@ -33,6 +33,7 @@ export class SelectTriggerDirective {
   /** @internal */
   public select = inject(SelectDirective, { optional: true });
   public elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  protected staticAriaLabel = inject(new HostAttributeToken('aria-label'), { optional: true });
 
   protected hasSearch = computed(() => !!this.select?.registeredSearch());
 

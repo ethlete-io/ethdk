@@ -224,6 +224,7 @@ describe('forms cascader headless scenarios', () => {
     const trigger = query('.team-trigger', host);
 
     expect(trigger.getAttribute('role')).toBe('combobox');
+    expect(trigger.getAttribute('aria-label')).toBe('Team');
     expect(trigger.hasAttribute('tabindex')).toBe(false);
     expect(app.surface().templateRef).toBeTruthy();
 

@@ -205,6 +205,7 @@ describe('forms color input headless scenarios', () => {
     const trigger = query<HTMLButtonElement>('.styled-trigger', host);
 
     expect(trigger.getAttribute('aria-readonly')).toBe('true');
+    expect(trigger.getAttribute('aria-label')).toBe('Brand');
     trigger.click();
     settle(s);
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
