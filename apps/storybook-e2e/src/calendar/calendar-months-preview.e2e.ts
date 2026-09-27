@@ -52,11 +52,11 @@ test.describe('calendar / focus across re-render', () => {
     const before = await focusedLabel(page);
 
     await pressKey(page, 'PageDown');
+    await expect.poll(async () => monthOfLabel(await focusedLabel(page))).toBe((monthOfLabel(before) + 1) % 12);
     await expectOneLiveGrid(root);
 
     const after = await focusedLabel(page);
 
-    expect(monthOfLabel(after)).toBe((monthOfLabel(before) + 1) % 12);
     expect(dayOfLabel(after)).toBe(dayOfLabel(before));
     await expectCellFocusVisible(focused);
   });
@@ -90,8 +90,8 @@ test.describe('calendar / focus across re-render', () => {
     await page.keyboard.press('PageDown');
     await page.keyboard.press('PageDown');
 
+    await expect.poll(async () => monthOfLabel(await focusedLabel(page))).toBe((monthOfLabel(before) + 3) % 12);
     await expectOneLiveGrid(root);
-    expect(monthOfLabel(await focusedLabel(page))).toBe((monthOfLabel(before) + 3) % 12);
     await expectCellFocusVisible(focused);
   });
 
