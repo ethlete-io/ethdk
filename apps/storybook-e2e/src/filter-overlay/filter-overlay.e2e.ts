@@ -1,4 +1,4 @@
-import { Page, expect, test } from '@playwright/test';
+import { Locator, Page, expect, test } from '@playwright/test';
 import { focusedDescriptor, openStory, pressKey, tabSequence, tap } from '../support';
 
 const DEFAULT_STORY_ID = 'components-overlays-filter-overlay--default';
@@ -11,6 +11,29 @@ const RESET_BUTTON = '.et-filter-overlay-reset';
 
 async function waitForEntered(page: Page): Promise<void> {
   await expect(page.locator(PANE)).toHaveClass(/et-animation-enter-done/);
+}
+
+async function press(locator: Locator, isMobile: boolean): Promise<void> {
+  await (isMobile ? tap(locator) : locator.click());
+}
+
+async function openAndApply(trigger: Locator, dialog: Locator, isMobile: boolean, path: [string, string]) {
+  const page = trigger.page();
+
+  await press(trigger, isMobile);
+  await waitForEntered(page);
+  await press(dialog.getByRole('button', { name: path[0] }), isMobile);
+  await press(dialog.getByRole('radio', { name: path[1] }), isMobile);
+  await press(page.locator(SUBMIT_BUTTON), isMobile);
+  await expect(dialog).toHaveCount(0);
+}
+
+async function openAndReset(page: Page, trigger: Locator, isMobile: boolean) {
+  await press(trigger, isMobile);
+  await waitForEntered(page);
+  await press(page.locator(RESET_BUTTON), isMobile);
+  await press(page.locator(SUBMIT_BUTTON), isMobile);
+  await expect(page.locator(DIALOG_ROOT)).toHaveCount(0);
 }
 
 test.describe('filter-overlay / focus', () => {
@@ -148,6 +171,70 @@ test.describe('filter-overlay / keyboard', () => {
     const submitButton = page.locator(SUBMIT_BUTTON);
     await expect(submitButton).toHaveText('Show results');
     await expect(submitButton).toBeEnabled();
+  });
+});
+
+test.describe('filter-overlay / routed pages', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus on navigation');
+
+  test('a sub page takes focus, and its choice is kept in the draft when Back returns to the main page', async ({
+    page,
+  }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    await root.getByRole('button', { name: 'Filters', exact: true }).click();
+    await waitForEntered(page);
+
+    const dialog = page.locator(DIALOG_ROOT);
+    await dialog.getByRole('button', { name: 'Region - All regions' }).click();
+
+    await expect(dialog.getByRole('heading')).toHaveText('Region');
+    await expect(dialog.getByRole('radio', { name: 'All regions' })).toBeFocused();
+
+    await pressKey(page, 'ArrowDown');
+    await expect(dialog.getByRole('radio', { name: 'Europe' })).toBeChecked();
+
+    await dialog.getByRole('button', { name: 'Back' }).click();
+
+    await expect(dialog.getByRole('heading')).toHaveText('Filters');
+    await expect(page.getByRole('textbox', { name: 'Search' })).toBeFocused();
+    await expect(dialog.getByRole('button', { name: 'Region - Europe' })).toBeVisible();
+    await expect(page.locator(SUBMIT_BUTTON)).toHaveText('Show 8 results');
+  });
+
+  test('submitting from a sub page applies its choice and closes the overlay', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    await root.getByRole('button', { name: 'Filters', exact: true }).click();
+    await waitForEntered(page);
+
+    const dialog = page.locator(DIALOG_ROOT);
+    await dialog.getByRole('button', { name: 'Division - All divisions' }).click();
+    await dialog.getByRole('radio', { name: 'Youth' }).click();
+    await page.locator(SUBMIT_BUTTON).click();
+
+    await expect(dialog).toHaveCount(0);
+    await expect(root.locator('.et-sb-applied')).toHaveText('search=- region=all division=youth');
+  });
+});
+
+test.describe('filter-overlay / floating action badge', () => {
+  test('the trigger shows the active filter count once filters are applied and drops it on reset', async ({
+    page,
+    isMobile,
+  }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const trigger = root.getByRole('button', { name: /^Filters/ });
+    const dialog = page.locator(DIALOG_ROOT);
+
+    await expect(trigger.locator('et-chip')).toHaveCount(0);
+
+    await openAndApply(trigger, dialog, isMobile, ['Region - All regions', 'Europe']);
+    await expect(trigger.locator('et-chip')).toHaveText('1');
+
+    await openAndApply(trigger, dialog, isMobile, ['Division - All divisions', 'First division']);
+    await expect(trigger.locator('et-chip')).toHaveText('2');
+
+    await openAndReset(page, trigger, isMobile);
+    await expect(trigger.locator('et-chip')).toHaveCount(0);
   });
 });
 
