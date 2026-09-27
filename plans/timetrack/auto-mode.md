@@ -23,7 +23,8 @@ the app is unlocked, and every write it asks for waits in the app for a confirm.
 ## Invariants
 
 1. The Tempo sync is a human press. No auto mode action and no CLI call writes to Tempo without it.
-   A CLI `tempo.sync` request waits in the queue, and "Approve all" never includes it.
+   A CLI `tempo.sync` or `tempo.delete` request waits in the queue, and "Approve all" never
+   includes it.
 2. A human edit wins. Every field auto mode can set carries its source: `human`, `auto` or
    `observed`. Auto mode never writes a field whose source is `human`. Any edit in the UI sets
    `human`. A reset in the UI is the only way back to `auto`.
@@ -38,7 +39,7 @@ the app is unlocked, and every write it asks for waits in the app for a confirm.
 | `read`       | yes             | yes, when unlocked | `day.rows`, `jira.search`, `standIn.list`, `tempo.worklogs`                              |
 | `local`      | yes, reversible | queued             | name a band with an existing issue, resolve a stand-in, pick a parent, rename a stand-in |
 | `external`   | queued          | queued             | `jira.create` (ticket or epic), a Jira status change                                     |
-| `human-only` | never           | queued, one by one | `tempo.sync`, `standIn.remove`, settings, rules, masked names                            |
+| `human-only` | never           | queued, one by one | `tempo.sync`, `tempo.delete`, `standIn.remove`, settings, rules, masked names            |
 
 Every `local` action auto mode takes shows as `auto` on its field and has an undo. Classes are
 settings: the user can move an action to a stricter class, never to a looser one than the table.
