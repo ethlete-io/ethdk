@@ -292,6 +292,12 @@ describe('standings scenarios', () => {
       [],
       ['Relegated'],
     ]);
+    expect(rows.map((row) => text(row.querySelector('th')))).toEqual([
+      '1 Playoffs',
+      '2 Playoffs Your team',
+      '3',
+      '4 Relegated',
+    ]);
     expect(rows.map((row) => row.hasAttribute('data-zone'))).toEqual([true, true, false, true]);
     expect(rows[1]!.getAttribute('aria-current')).toBe('true');
     expect(queryAll('.et-standings-form-result', rows[0]).map((result) => result.getAttribute('aria-label'))).toEqual([

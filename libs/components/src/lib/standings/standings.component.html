@@ -56,10 +56,10 @@
             {{ renderRow.row.position }}
             @if (renderRow.zone; as zone) {
               <!-- The band's meaning in text, so the banding isn't colour-only. -->
-              <span class="et-standings-zone-note">{{ zone.label }}</span>
+              <span class="et-standings-zone-note"> {{ zone.label }}</span>
             }
             @if (renderRow.isHighlighted) {
-              <span class="et-standings-zone-note">{{ labels().highlightedRow }}</span>
+              <span class="et-standings-zone-note"> {{ labels().highlightedRow }}</span>
             }
           </th>
 
