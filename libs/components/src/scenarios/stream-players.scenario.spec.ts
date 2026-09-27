@@ -1,4 +1,4 @@
-import { Component, CSP_NONCE, inject, signal, viewChild } from '@angular/core';
+import { Component, CSP_NONCE, inject, signal, viewChild, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ColorTheme, provideColorThemesWithTailwind4, ThemeSwatch } from '@ethlete/core';
 import { firstValueFrom } from 'rxjs';
@@ -26,6 +26,8 @@ import {
   KickPlayerDirective,
   KickPlayerParamsDirective,
   KickPlayerSlotComponent,
+  NO_STREAM_PLAYER_CAPABILITIES,
+  provideStreamConfig,
   provideStreamLabels,
   provideStreamManager,
   provideStreamPlayerErrorConfig,
@@ -41,12 +43,14 @@ import {
   STREAM_IMPORTS,
   STREAM_KICK_IMPORTS,
   STREAM_LABELS,
+  STREAM_PLAYER_SLOT_TOKEN,
   STREAM_PLAYER_TOKEN,
   STREAM_SOOP_IMPORTS,
   STREAM_TIKTOK_IMPORTS,
   STREAM_TWITCH_IMPORTS,
   STREAM_VIMEO_IMPORTS,
   STREAM_YOUTUBE_IMPORTS,
+  StreamConsentComponent,
   StreamPlayer,
   StreamPlayerErrorComponent,
   StreamPlayerLoadingComponent,
@@ -541,6 +545,43 @@ class StreamSettingsComponent {
 })
 class StandaloneChromeComponent {}
 
+@Component({
+  selector: 'et-scenario-slot-controls',
+  template: '',
+})
+class SlotControlsComponent {
+  slot = inject(STREAM_PLAYER_SLOT_TOKEN).slot;
+
+  toggle() {
+    return this.slot.currentState().isPlaying ? this.slot.pause() : this.slot.play();
+  }
+}
+
+@Component({
+  selector: 'et-scenario-gated-playback',
+  imports: [STREAM_IMPORTS, STREAM_YOUTUBE_IMPORTS, STREAM_KICK_IMPORTS, SlotControlsComponent],
+  providers: [provideStreamConfig({ consentComponent: StreamConsentComponent })],
+  template: `
+    <et-youtube-player-slot class="final" videoId="final"><et-scenario-slot-controls /></et-youtube-player-slot>
+    <et-kick-player-slot class="arena" channel="arena"><et-scenario-slot-controls /></et-kick-player-slot>
+  `,
+})
+class GatedPlaybackComponent {
+  controls = viewChildren(SlotControlsComponent);
+}
+
+@Component({
+  selector: 'et-scenario-second-screen',
+  imports: [STREAM_IMPORTS, STREAM_YOUTUBE_IMPORTS, SlotControlsComponent],
+  template: `
+    <et-youtube-player-slot class="main" videoId="final" />
+    <et-youtube-player-slot class="second" videoId="final"><et-scenario-slot-controls /></et-youtube-player-slot>
+  `,
+})
+class SecondScreenComponent {
+  controls = viewChild.required(SlotControlsComponent);
+}
+
 describe('stream player scenarios', () => {
   const scenario = useScenario({
     providers: [
@@ -985,6 +1026,82 @@ describe('stream player scenarios', () => {
       s.flush();
       expect(slotHost.querySelector('et-stream-player-loading')).toBeNull();
     }
+  });
+
+  it('lets slot content play, pause and seek its player once consent and the SDK allow it', async () => {
+    const s = scenario();
+    const players = installYoutube();
+    const fixture = TestBed.createComponent(GatedPlaybackComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.flush();
+
+    const [youtube, kick] = fixture.componentInstance.controls();
+
+    if (!youtube || !kick) throw new Error('no slot controls');
+
+    expect(youtube.slot.capabilities()).toEqual(NO_STREAM_PLAYER_CAPABILITIES);
+    expect(youtube.toggle()).toBe(false);
+
+    query('.final et-stream-consent button', host).click();
+    query('.arena et-stream-consent button', host).click();
+    s.flush();
+    fireScript(s, YT_API_URL);
+
+    const [yt] = players;
+
+    if (!yt) throw new Error('no YT.Player');
+
+    expect(youtube.slot.capabilities().canSeek).toBe(true);
+    expect(youtube.toggle()).toBe(false);
+    expect(yt.calls).toEqual([]);
+
+    yt.config.events?.onReady?.({ target: yt as never });
+    await s.settle();
+
+    expect(youtube.toggle()).toBe(true);
+    yt.config.events?.onStateChange?.({ target: yt as never, data: 1 });
+    s.tick();
+    expect(youtube.slot.currentState().isPlaying).toBe(true);
+
+    expect(youtube.toggle()).toBe(true);
+    expect(youtube.slot.seek(75)).toBe(true);
+    expect(youtube.slot.mute()).toBe(true);
+    expect(youtube.slot.unmute()).toBe(true);
+    expect(yt.calls).toEqual(['play', 'pause', 'seek:75', 'mute', 'unmute']);
+
+    loadIframe(s, query('.arena', host));
+
+    expect(kick.slot.currentState().isReady).toBe(true);
+    expect(kick.slot.capabilities()).toMatchObject({ canPlay: false, canPause: false, canSeek: false });
+    expect(kick.toggle()).toBe(false);
+    expect(kick.slot.seek(10)).toBe(false);
+
+    fixture.destroy();
+  });
+
+  it('controls a player from a second slot bound to the same video', async () => {
+    const s = scenario();
+    const players = installYoutube();
+    const fixture = TestBed.createComponent(SecondScreenComponent);
+
+    s.flush();
+    fireScript(s, YT_API_URL);
+
+    const [yt] = players;
+
+    if (!yt) throw new Error('no YT.Player');
+
+    yt.config.events?.onReady?.({ target: yt as never });
+    await s.settle();
+
+    const second = fixture.componentInstance.controls();
+
+    expect(players).toHaveLength(1);
+    expect(second.slot.currentState().isReady).toBe(true);
+    expect(second.slot.seek(120)).toBe(true);
+    expect(second.toggle()).toBe(true);
+    expect(yt.calls).toEqual(['seek:120', 'play']);
   });
 
   it('moves one live player between slots without recreating its iframe', () => {

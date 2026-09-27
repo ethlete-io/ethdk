@@ -62,9 +62,42 @@ Every slot additionally accepts `width` / `height` (iframe sizing - usually leav
 
 ## Player state & control
 
-Every player implements the shared `StreamPlayer` interface: a `state` signal (`isReady`, `isLoading`, `isPlaying`, `isMuted`, `isEnded`, `currentTime`, `duration` - `null` for live streams, `error`) and `play()` / `pause()` / `mute()` / `unmute()` / `seek(seconds)` / `retry()`. From a slot, read state via `slot.slotDirective.slot.currentState()`.
+Every player implements the shared `StreamPlayer` interface: a `state` signal (`isReady`, `isLoading`, `isPlaying`, `isMuted`, `isEnded`, `currentTime`, `duration` - `null` for live streams, `error`) and `play()` / `pause()` / `mute()` / `unmute()` / `seek(seconds)` / `retry()`.
 
 Not every platform supports every control - each player exposes a static `CAPABILITIES` (`canPlay`, `canPause`, `canMute`, `canSeek`, `canGetDuration`, `isLiveCapable`, `hasThumbnail`). Methods without the capability are no-ops, so check it to decide which controls to render.
+
+| Platform                | play / pause / mute / seek |
+| ----------------------- | -------------------------- |
+| YouTube, Twitch, Vimeo  | yes                        |
+| Facebook, TikTok        | yes (no live streams)      |
+| Kick, SOOP, Dailymotion | no - plain iframe embeds   |
+
+A slot exposes the same controls for whatever player it holds, on `slot.slotDirective.slot` (or `inject(STREAM_PLAYER_SLOT_TOKEN).slot` from content projected into the slot): `currentState()`, `capabilities()`, and `play()` / `pause()` / `mute()` / `unmute()` / `seek(seconds)`. Each control returns `true` when the command reached the player and `false` when it could not - the slot has no player yet (consent gate still up), the player is not ready, or the platform lacks the capability. `capabilities()` is `NO_STREAM_PLAYER_CAPABILITIES` (all `false`) until the player exists. A second slot bound to the same player id controls that same player.
+
+```ts
+@Component({
+  selector: 'app-play-toggle',
+  template: `
+    @if (slot.capabilities().canPause) {
+      <button (click)="toggle()" et-button>{{ slot.currentState().isPlaying ? 'Pause' : 'Play' }}</button>
+    }
+  `,
+})
+export class PlayToggleComponent {
+  protected slot = inject(STREAM_PLAYER_SLOT_TOKEN).slot;
+
+  protected toggle() {
+    if (this.slot.currentState().isPlaying) this.slot.pause();
+    else this.slot.play();
+  }
+}
+```
+
+```html
+<et-youtube-player-slot [videoId]="videoId()">
+  <app-play-toggle />
+</et-youtube-player-slot>
+```
 
 ## Consent gating
 

@@ -154,7 +154,13 @@ const STREAM_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
     const getPlayerEntry = (playerId: StreamPlayerId): StreamPlayerEntry | null => {
       const entry = players.get(playerId);
       if (!entry) return null;
-      return { id: entry.id, element: entry.element, onDestroy: entry.onDestroy, thumbnail: entry.thumbnail };
+      return {
+        id: entry.id,
+        element: entry.element,
+        onDestroy: entry.onDestroy,
+        thumbnail: entry.thumbnail,
+        player: entry.player,
+      };
     };
 
     const getSlot = (element: HTMLElement): StreamSlotEntry | null => slots.get(element) ?? null;
