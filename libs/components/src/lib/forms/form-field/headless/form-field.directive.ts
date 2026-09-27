@@ -171,7 +171,10 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
   /** Whether a warning is the message the field shows: it has one, and no error is taking the slot. */
   public displaysWarning = computed(() => !this.displaysErrorMessage() && this.warnings().length > 0);
 
-  public describedById = computed(() => {
+  /** @internal The id of an `<et-description>` the field's chrome renders, set by that chrome. */
+  public descriptionId = signal<string | null>(null);
+
+  private supportMessageId = computed(() => {
     if (this.displaysErrorMessage()) {
       return this.errorId();
     }
@@ -185,6 +188,13 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
     }
 
     return null;
+  });
+
+  /** Every id the control's `aria-describedby` points at, space-separated, in reading order. */
+  public describedById = computed(() => {
+    const ids = [this.descriptionId(), this.supportMessageId()].filter((id) => id !== null);
+
+    return ids.length > 0 ? ids.join(' ') : null;
   });
 
   constructor() {

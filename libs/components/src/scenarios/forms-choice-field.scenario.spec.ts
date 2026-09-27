@@ -6,6 +6,7 @@ import {
   CHECKBOX_IMPORTS,
   CHOICE_FIELD_IMPORTS,
   CHOICE_FIELD_VARIANTS,
+  DESCRIPTION_IMPORTS,
   ChoiceFieldComponent,
   ChoiceFieldVariant,
   FORM_FIELD_SIZES,
@@ -61,6 +62,25 @@ class NewsletterOptInComponent {
     required(path.newsletter, { message: 'Required to continue' });
   });
   field = viewChild.required(ChoiceFieldComponent);
+}
+
+@Component({
+  selector: 'et-scenario-described-consent',
+  imports: [CHOICE_FIELD_IMPORTS, CHECKBOX_IMPORTS, DESCRIPTION_IMPORTS, FormField],
+  template: `
+    <et-choice-field>
+      <et-checkbox [formField]="consent.photos" />
+      <et-label>Share match photos</et-label>
+      <et-description>Shown on the club page</et-description>
+      <et-hint>Ask a guardian first</et-hint>
+    </et-choice-field>
+  `,
+})
+class DescribedConsentComponent {
+  model = signal({ photos: false });
+  consent = form(this.model, (path) => {
+    required(path.photos, { message: 'Consent is required' });
+  });
 }
 
 const query = <T extends Element = HTMLElement>(host: Element, selector: string) => {
@@ -186,6 +206,28 @@ describe('choice field scenarios', () => {
     expect(field.getAttribute('data-size')).toBe('lg');
     expect(app.field().support.displaysError()).toBe(true);
     expect(field.textContent).toContain('Required to continue');
+    s.flush();
+  });
+
+  it('describes the control by its description and its hint or error together', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(DescribedConsentComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+
+    const checkbox = query(host, 'et-checkbox');
+    const description = query(host, '.et-choice-field-label-area > et-description');
+    const describedBy = () => checkbox.getAttribute('aria-describedby')?.split(' ');
+
+    expect(description.textContent).toBe('Shown on the club page');
+    expect(describedBy()).toEqual([description.id, query(host, '.et-form-support-hint').id]);
+    expect(checkbox.getAttribute('aria-labelledby')?.split(' ')).not.toContain(description.id);
+
+    fixture.componentInstance.consent.photos().markAsTouched();
+    s.tick();
+
+    expect(describedBy()).toEqual([description.id, query(host, '.et-form-support-errors').id]);
     s.flush();
   });
 });

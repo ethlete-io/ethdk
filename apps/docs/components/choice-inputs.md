@@ -57,6 +57,9 @@ Boolean controls pair with a label inside `et-choice-field` (instead of
   toggled - distinct from the dimmed `disabled` state.
 - `et-choice-field` accepts `size: 'sm' | 'md' | 'lg'` (default `'md'`), scaling
   the control and label together.
+- An `et-description` projected into `et-choice-field` renders under the label
+  and joins the control's `aria-describedby`, ahead of the hint, warning or error
+  the field is showing.
 - When validation changes between a hint, warning, and error, the support message
   moves in severity order; reduced-motion preferences collapse that transition.
 
@@ -367,7 +370,8 @@ assistive tech (it reflects `aria-checked="mixed"`; the switch keeps
   [`FORM_FIELD_LABELS`](/components/localization) (`ratingEmpty`, `ratingValue: (value, max) => string`).
 - An option's `et-description` is wired as its `aria-describedby`, so the
   secondary text is announced after the option's name instead of folding into
-  it.
+  it. In `et-choice-field` the description and the support message are both
+  listed, description first.
 - Every group/control needs an accessible name - a projected `et-label` or your
   own `aria-label`/`aria-labelledby`. See
   [Validation & accessibility](/components/forms#validation-accessibility).

@@ -1,4 +1,4 @@
-import { Component, effect, input, ViewEncapsulation } from '@angular/core';
+import { Component, contentChild, effect, inject, input, ViewEncapsulation } from '@angular/core';
 import {
   ColorInteractiveContainerDirective,
   ColorInteractiveDirective,
@@ -13,6 +13,7 @@ import { SELECTION_CARD_CONTROL_POSITIONS, SelectionCardControlPosition } from '
 import { FormSupportComponent } from '../form-field/partials/form-support.component';
 import { FORM_FIELD_SIZES, FormFieldSize } from '../form-field/form-field.variants';
 import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../form-field/headless';
+import { DescriptionComponent } from '../description/description.component';
 
 /** How a choice field presents itself. See {@link ChoiceFieldComponent.variant}. */
 export const CHOICE_FIELD_VARIANTS = {
@@ -65,9 +66,16 @@ export class ChoiceFieldComponent {
    */
   public controlPosition = input<SelectionCardControlPosition>(SELECTION_CARD_CONTROL_POSITIONS.END);
 
+  private description = contentChild(DescriptionComponent);
+
   public canAnimate = createCanAnimateSignal();
 
   constructor() {
+    const formField = inject(FormFieldDirective);
+
+    // eslint-disable-next-line ethlete/prefer-linked-signal
+    effect(() => formField.descriptionId.set(this.description()?.id ?? null));
+
     effect(() => {
       if (this.variant() === CHOICE_FIELD_VARIANTS.CARD) {
         this.styleManager.mount(SelectionCardStylesComponent);
