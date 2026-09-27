@@ -38,8 +38,8 @@ const withoutOverrides = (overrides: Record<string, ProposalOverride>, ids: read
   return kept;
 };
 
-const pinnedIdFor = (options: { issueKey?: string; from: Date; taken: ReadonlySet<string> }) => {
-  const base = `${options.issueKey ?? 'unnamed'}@${options.from.toISOString()}`;
+const pinnedIdFor = (options: { issueKey?: string; from: Date; taken: ReadonlySet<string>; prefix?: string }) => {
+  const base = `${options.prefix ?? ''}${options.issueKey ?? 'unnamed'}@${options.from.toISOString()}`;
   let id = base;
   let suffix = 2;
 
@@ -382,7 +382,13 @@ export const addManualRow = (options: {
     pinned: [
       ...edits.pinned,
       {
-        id: pinnedIdFor({ issueKey, from: row.from, taken: new Set(edits.pinned.map((entry) => entry.id)) }),
+        // A proposal's id is its issue and start too; sharing one would drop the proposal from the day.
+        id: pinnedIdFor({
+          prefix: 'manual:',
+          issueKey,
+          from: row.from,
+          taken: new Set(edits.pinned.map((entry) => entry.id)),
+        }),
         replaces: [],
         issueKey,
         storyKey: row.storyKey,

@@ -1452,6 +1452,28 @@ describe('reviewDay over a row written by hand beside a stand-in', () => {
   });
 });
 
+describe('reviewDay over a row written by hand at the start of an observed row on its issue', () => {
+  const day = dayRows({ proposals: [proposal({ issueKey: 'KEY-1', from: '09:00', to: '11:00', minutes: 120 })] });
+  const edits = addManualRow({
+    edits: EMPTY_DAY_REVIEW_EDITS,
+    row: { issueKey: 'KEY-1', description: 'by hand', from: at('09:00'), to: at('10:00') },
+  });
+  const review = reviewDay({ rows: day, edits });
+
+  it('keeps the observed row beside it, cut to the minutes the hand-written row leaves', () => {
+    const rows = [...review.rows].sort((a, b) => a.from.getTime() - b.from.getTime());
+
+    expect(rows.map((row) => [isManualRow(row), row.from, row.to])).toEqual([
+      [true, at('09:00'), at('10:00')],
+      [false, at('10:00'), at('11:00')],
+    ]);
+  });
+
+  it('gives the two rows distinct ids', () => {
+    expect(new Set(review.rows.map((row) => row.id)).size).toBe(2);
+  });
+});
+
 describe('reviewDay over a row the reviewer built in a checkout a stand-in covers', () => {
   const REPO = '/home/tom/dev/app';
   const standIn = openStandIn({ name: 'the competition journey', day: '2026-08-11', now: at('07:00') });
