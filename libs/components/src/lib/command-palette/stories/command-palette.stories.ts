@@ -1,3 +1,4 @@
+import { ProvideColorDirective } from '@ethlete/core';
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { CommandPaletteStorybookComponent } from './command-palette-storybook.component';
 
@@ -10,3 +11,10 @@ export default {
 type Story = StoryObj<CommandPaletteStorybookComponent>;
 
 export const Default: Story = {};
+
+export const ColorContext: Story = {
+  decorators: [moduleMetadata({ imports: [ProvideColorDirective] })],
+  render: () => ({
+    template: `<div etProvideColor="danger"><et-sb-command-palette /></div>`,
+  }),
+};

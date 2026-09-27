@@ -2,6 +2,7 @@ import { Page, expect, test } from '@playwright/test';
 import { openStory, pressKey, pressKeys, tap } from '../support';
 
 const STORY_ID = 'components-overlays-command-palette--default';
+const COLOR_CONTEXT_STORY_ID = 'components-overlays-command-palette--color-context';
 
 async function shortcutChord(page: Page): Promise<string> {
   const isApple = await page.evaluate(() => /mac|iphone|ipad|ipod/i.test(navigator.platform || navigator.userAgent));
@@ -271,5 +272,78 @@ test.describe('command-palette / touch', () => {
 
     await expect(page.getByRole('dialog')).toBeHidden();
     await expect(root.getByText('Last run: Add user')).toBeVisible();
+  });
+});
+
+interface PaletteColors {
+  originPrimary: string;
+  originInk: string;
+  palettePrimary: string;
+  paletteInk: string;
+  matchColor: string;
+}
+
+function paletteColors(page: Page): Promise<PaletteColors> {
+  return page.evaluate(() => {
+    const resolve = (scope: Element, token: string) => {
+      const probe = document.createElement('span');
+      probe.style.color = `var(${token})`;
+      scope.appendChild(probe);
+      const color = getComputedStyle(probe).color;
+      probe.remove();
+
+      return color;
+    };
+    const origin = document.querySelector('et-sb-command-palette');
+    const palette = document.querySelector('et-command-palette');
+    const match = document.querySelector('.et-command-palette-item-match');
+
+    if (!origin || !palette || !match || origin.contains(palette)) {
+      throw new Error('Expected the palette open in its own overlay pane, with a highlighted match.');
+    }
+
+    return {
+      originPrimary: resolve(origin, '--et-theme-color-primary-solid'),
+      originInk: resolve(origin, '--et-theme-color-ink-solid'),
+      palettePrimary: resolve(palette, '--et-theme-color-primary-solid'),
+      paletteInk: resolve(palette, '--et-theme-color-ink-solid'),
+      matchColor: getComputedStyle(match).color,
+    };
+  });
+}
+
+async function openPaletteWithQuery(page: Page, query: string): Promise<void> {
+  await page.getByRole('button', { name: 'Open the palette' }).click();
+  await expect(page.getByRole('combobox')).toBeFocused();
+  await page.getByRole('combobox').fill(query);
+  await expect(page.locator('.et-command-palette-item-match').first()).toBeVisible();
+}
+
+test.describe('command-palette / colour context', () => {
+  test('the palette re-applies the colour theme of the scope it was opened from', async ({ page }) => {
+    await openStory(page, COLOR_CONTEXT_STORY_ID);
+    await openPaletteWithQuery(page, 'row');
+
+    await expect(page.locator('et-command-palette')).toHaveClass(/\bet-color--danger\b/);
+
+    const colors = await paletteColors(page);
+
+    expect(colors.originPrimary).toBe('rgb(220, 38, 38)');
+    expect(colors.palettePrimary).toBe(colors.originPrimary);
+    expect(colors.paletteInk).toBe(colors.originInk);
+    expect(colors.matchColor).toBe(colors.originInk);
+  });
+
+  test('without a colour scope around it the palette keeps the default theme', async ({ page }) => {
+    await openStory(page, STORY_ID);
+    await openPaletteWithQuery(page, 'row');
+
+    await expect(page.locator('et-command-palette')).toHaveClass(/\bet-color--inherited\b/);
+
+    const colors = await paletteColors(page);
+
+    expect(colors.originPrimary).toBe('rgb(0, 255, 161)');
+    expect(colors.palettePrimary).toBe(colors.originPrimary);
+    expect(colors.matchColor).toBe(colors.originInk);
   });
 });
