@@ -285,6 +285,8 @@ provideBreadcrumbLabels({ navigation: 'Brotkrumen', overflow: 'Ausgeblendete Ebe
   it opens a toggletip, moves focus into it, and returns focus to the button on <kbd>Escape</kbd> or
   outside click. The hidden crumbs stay a plain list of links inside it - deliberately not a
   `role="menu"`, which may only contain menu items.
+- If the trail collapses while a crumb that moves into the overflow has focus, focus moves to the
+  overflow button rather than falling to the page.
 - A `loading` crumb renders a [skeleton](/components/skeleton), which announces the wait via
   `role="status"`.
 

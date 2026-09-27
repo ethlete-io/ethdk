@@ -1,4 +1,5 @@
 import {
+  DOCUMENT,
   Directive,
   ElementRef,
   afterNextRender,
@@ -48,6 +49,7 @@ const MIN_COLLAPSIBLE_ITEMS = 3;
 })
 export class BreadcrumbDirective {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private document = inject(DOCUMENT);
   private injectedLabels = injectBreadcrumbLabels();
 
   private collapseAffordance = inject(BREADCRUMB_COLLAPSE_TOKEN, { optional: true });
@@ -148,7 +150,19 @@ export class BreadcrumbDirective {
     ];
   });
 
+  private hadFocusBeforeCollapse = false;
+
   constructor() {
+    // Must run before the breadcrumb's own view swaps the crumbs out, while the focused crumb is still in
+    // the DOM. A directive effect runs with its declaring view, ahead of the host component's template.
+    effect(() => {
+      if (!this.isCollapsed()) return;
+
+      untracked(() => {
+        this.hadFocusBeforeCollapse = this.elementRef.nativeElement.contains(this.document.activeElement);
+      });
+    });
+
     effect(() => {
       const items = this.items();
 
@@ -187,6 +201,19 @@ export class BreadcrumbDirective {
         }
       });
     }
+  }
+
+  /**
+   * @internal
+   * Whether collapsing removed the element that had focus. Call it once the collapsed trail has
+   * rendered; it answers for that one collapse.
+   */
+  public takeFocusLostToCollapse() {
+    const lost = this.hadFocusBeforeCollapse && !this.elementRef.nativeElement.contains(this.document.activeElement);
+
+    this.hadFocusBeforeCollapse = false;
+
+    return lost;
   }
 
   private recordMeasurement(client: number, scroll: number) {

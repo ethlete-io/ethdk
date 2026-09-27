@@ -285,6 +285,25 @@ const structuredData = () =>
     (script) => JSON.parse(script.textContent ?? '') as { itemListElement: { name: string; item?: string }[] },
   );
 
+const fakeTrailLayout = (available: () => number) => {
+  fakeLayout([{ match: 'et-breadcrumb', clientWidth: available }]);
+
+  const original = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollWidth');
+
+  Object.defineProperty(Element.prototype, 'scrollWidth', {
+    configurable: true,
+    get(this: Element) {
+      if (!this.matches('et-breadcrumb')) return (original?.get?.call(this) as number | undefined) ?? 0;
+
+      return this.hasAttribute('data-collapsed') ? 150 : 420;
+    },
+  });
+  onTestFinished(() => {
+    if (original) Object.defineProperty(Element.prototype, 'scrollWidth', original);
+    else Reflect.deleteProperty(Element.prototype, 'scrollWidth');
+  });
+};
+
 describe('breadcrumb scenarios', () => {
   const scenario = useScenario({ providers: [provideColorThemesWithTailwind4(COLOR_THEMES)] });
 
@@ -428,22 +447,7 @@ describe('breadcrumb scenarios', () => {
     const observer = fakeResizeObserver();
     let available = 600;
 
-    fakeLayout([{ match: 'et-breadcrumb', clientWidth: () => available }]);
-
-    const original = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollWidth');
-
-    Object.defineProperty(Element.prototype, 'scrollWidth', {
-      configurable: true,
-      get(this: Element) {
-        if (!this.matches('et-breadcrumb')) return (original?.get?.call(this) as number | undefined) ?? 0;
-
-        return this.hasAttribute('data-collapsed') ? 150 : 420;
-      },
-    });
-    onTestFinished(() => {
-      if (original) Object.defineProperty(Element.prototype, 'scrollWidth', original);
-      else Reflect.deleteProperty(Element.prototype, 'scrollWidth');
-    });
+    fakeTrailLayout(() => available);
 
     const fixture = TestBed.createComponent(LongTrailComponent);
 
@@ -501,6 +505,63 @@ describe('breadcrumb scenarios', () => {
 
     expect(nav.hasAttribute('data-collapsed')).toBe(false);
     expect(document.querySelector('et-breadcrumb-overflow')).toBeNull();
+
+    fixture.destroy();
+    settle(s);
+  });
+
+  it('moves focus to the overflow trigger when the crumb that had it collapses away', () => {
+    const s = scenario();
+    const observer = fakeResizeObserver();
+    let available = 600;
+
+    fakeTrailLayout(() => available);
+
+    const fixture = TestBed.createComponent(LongTrailComponent);
+
+    s.tick();
+    observer.fire();
+    s.tick();
+
+    const middle = query<HTMLAnchorElement>('a[href="/league/teams"]');
+
+    middle.focus();
+    expect(document.activeElement).toBe(middle);
+
+    available = 300;
+    observer.fire();
+    s.tick();
+
+    expect(trail()).toEqual(['Home', '…', 'team-a']);
+    expect(document.activeElement).toBe(query('.et-breadcrumb-overflow-trigger'));
+
+    fixture.destroy();
+    settle(s);
+  });
+
+  it('leaves focus alone when a crumb that stays visible has it as the trail collapses', () => {
+    const s = scenario();
+    const observer = fakeResizeObserver();
+    let available = 600;
+
+    fakeTrailLayout(() => available);
+
+    const fixture = TestBed.createComponent(LongTrailComponent);
+
+    s.tick();
+    observer.fire();
+    s.tick();
+
+    const home = query<HTMLAnchorElement>('a[href="/"]');
+
+    home.focus();
+
+    available = 300;
+    observer.fire();
+    s.tick();
+
+    expect(trail()).toEqual(['Home', '…', 'team-a']);
+    expect(document.activeElement).toBe(home);
 
     fixture.destroy();
     settle(s);

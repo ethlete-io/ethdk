@@ -1,5 +1,14 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, TemplateRef, ViewEncapsulation, inject, input } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  TemplateRef,
+  ViewEncapsulation,
+  afterNextRender,
+  inject,
+  input,
+  viewChild,
+} from '@angular/core';
 import { BUTTON_IMPORTS } from '../button';
 import { ELLIPSIS_ICON, IconDirective, provideIcons } from '../icon';
 import { TOGGLETIP_IMPORTS } from '../toggletip';
@@ -14,6 +23,7 @@ import { BreadcrumbDirective } from './headless';
   selector: 'et-breadcrumb-overflow',
   template: `
     <button
+      #trigger
       [etToggletip]="overflow"
       [etToggletipAriaLabel]="breadcrumb.resolvedLabels().overflow"
       [attr.aria-label]="breadcrumb.resolvedLabels().overflow"
@@ -54,4 +64,12 @@ export class BreadcrumbOverflowComponent {
 
   /** The breadcrumb's crumb template, so an overflowed crumb renders exactly like an inline one. */
   public crumbTemplate = input.required<TemplateRef<{ $implicit: BreadcrumbCrumb }>>();
+
+  private trigger = viewChild.required('trigger', { read: ElementRef<HTMLButtonElement> });
+
+  constructor() {
+    afterNextRender(() => {
+      if (this.breadcrumb.takeFocusLostToCollapse()) this.trigger().nativeElement.focus();
+    });
+  }
 }
