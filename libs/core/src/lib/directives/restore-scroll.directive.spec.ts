@@ -41,10 +41,23 @@ const ROUTES: Routes = [
 ];
 
 const settle = async (ms = 60) => {
-  await new Promise((resolve) => setTimeout(resolve, ms));
+  await vi.advanceTimersByTimeAsync(ms);
 };
 
 describe('RestoreScrollDirective', () => {
+  // The restore deadline is measured with `Date.now()` across animation frames. On real time a busy
+  // machine can stretch a 60 ms settle past the 100 ms deadline, so the restore clamps before the
+  // content grows.
+  beforeEach(() => {
+    vi.useFakeTimers({
+      toFake: ['setTimeout', 'clearTimeout', 'requestAnimationFrame', 'cancelAnimationFrame', 'Date'],
+    });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   const setup = async () => {
     TestBed.configureTestingModule({ providers: [provideRouter(ROUTES), provideLocationMocks()] });
 
