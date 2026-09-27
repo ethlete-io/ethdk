@@ -1139,6 +1139,7 @@ test.describe('stream / pip pointer', () => {
     const viewport = viewportOf(page);
 
     await mouseDrag(page, grip, { x: PIP_VIEWPORT_PADDING + 100, y: PIP_VIEWPORT_PADDING + 10 });
+    await expect.poll(async () => (await boxOf(pipWindow)).x).toBeCloseTo(PIP_VIEWPORT_PADDING, 0);
 
     const from = centerOf(await boxOf(pipWindow.locator('.et-resize-handle--se')));
 
