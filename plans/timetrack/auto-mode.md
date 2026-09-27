@@ -1,6 +1,6 @@
 # Auto mode and the approval queue
 
-Status: slices 1 and 2 done (2026-09-28); slice 3 next.
+Status: slices 1 and 2 done (2026-09-28); slice 3 in progress.
 
 ## Goal
 
