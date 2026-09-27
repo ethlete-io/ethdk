@@ -1,8 +1,11 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { boxOf, expectFocusVisible, openStory, pressKey, settle, tap, touchDrag } from '../support';
+import { TouchPoint, boxOf, expectFocusVisible, openStory, pressKey, settle, tap, touchDrag } from '../support';
 
 const DEFAULT_STORY_ID = 'components-layout-grid--default';
 const READONLY_STORY_ID = 'components-layout-grid--read-only';
+const SCROLLABLE_CONTAINER_STORY_ID = 'components-layout-grid--scrollable-container';
+/** The story's default `rowHeight` plus `gap`. */
+const ROW_PITCH = 116;
 
 const ITEM = '.et-grid-item';
 const ITEM_CONTENT = '.et-grid-item__content';
@@ -326,5 +329,113 @@ test.describe('grid / container resize', () => {
     await expect.poll(async () => (await boxOf(grid)).width).toBeLessThan(500);
     await expect.poll(async () => (await boxOf(first)).width).toBeCloseTo((await boxOf(grid)).width, 0);
     await expectStackedFullWidth(grid, items);
+  });
+});
+
+interface HeldDrag {
+  moveTo: (to: TouchPoint) => Promise<void>;
+  release: () => Promise<void>;
+}
+
+async function holdMouse(page: Page, from: TouchPoint): Promise<HeldDrag> {
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+
+  return {
+    moveTo: (to) => page.mouse.move(to.x, to.y, { steps: 10 }),
+    release: () => page.mouse.up(),
+  };
+}
+
+async function holdFinger(page: Page, from: TouchPoint): Promise<HeldDrag> {
+  const cdp = await page.context().newCDPSession(page);
+  let at = from;
+
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [from] });
+
+  return {
+    moveTo: async (to) => {
+      for (let step = 1; step <= 10; step++) {
+        const point = { x: at.x + ((to.x - at.x) * step) / 10, y: at.y + ((to.y - at.y) * step) / 10 };
+
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point] });
+      }
+
+      at = to;
+    },
+    release: async () => {
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    },
+  };
+}
+
+const offsetInGrid = (locator: Locator) =>
+  locator.evaluate((el) => {
+    const grid = el.closest('.et-grid')?.getBoundingClientRect();
+    const rect = el.getBoundingClientRect();
+
+    return { x: Math.round(rect.left - (grid?.left ?? 0)), y: Math.round(rect.top - (grid?.top ?? 0)) };
+  });
+
+const scrollStateOf = (container: Locator) =>
+  container.evaluate((el) => ({ top: el.scrollTop, max: el.scrollHeight - el.clientHeight }));
+
+async function expectAutoScrollDropsIntoTheGhostSlot(
+  page: Page,
+  hold: (page: Page, from: TouchPoint) => Promise<HeldDrag>,
+): Promise<void> {
+  const root = await openStory(page, SCROLLABLE_CONTAINER_STORY_ID);
+  const container = root.getByTestId('grid-scroll-container');
+  const item = root.locator(ITEM).first();
+  const ghost = root.locator('.et-grid-ghost');
+
+  await expect.poll(() => inlineTransition(item)).toContain('translate');
+
+  const visibleHeight = await container.evaluate((el) => el.clientHeight);
+  const edge = await boxOf(container);
+  const grab = await boxOf(item.locator(ITEM_CONTENT));
+  const x = grab.x + grab.width / 2;
+
+  const drag = await hold(page, { x, y: grab.y + 20 });
+  await drag.moveTo({ x, y: edge.y + edge.height - 8 });
+
+  await expect(item).toHaveClass(/et-grid-item--dragging/);
+  await expect.poll(async () => (await scrollStateOf(container)).top).toBeGreaterThan(0);
+  await expect
+    .poll(async () => {
+      const state = await scrollStateOf(container);
+      return state.max - state.top;
+    })
+    .toBe(0);
+
+  const slot = await offsetInGrid(ghost);
+  expect(slot.y).toBeGreaterThan(visibleHeight);
+  expect(slot.y % ROW_PITCH).toBe(0);
+
+  await drag.release();
+
+  await expect(item).not.toHaveClass(/et-grid-item--dragging/);
+  await expect(ghost).toHaveCount(0);
+  await expect.poll(() => offsetInGrid(item)).toEqual(slot);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+}
+
+test.describe('grid / auto-scroll', () => {
+  test('a mouse drag at the bottom edge of a scroll container scrolls it and drops into the projected slot', async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(isMobile, 'pointer-only: mouse drag');
+
+    await expectAutoScrollDropsIntoTheGhostSlot(page, holdMouse);
+  });
+
+  test('a touch drag at the bottom edge of a scroll container scrolls it and drops into the projected slot', async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(!isMobile, 'touch-only: touchscreen drag');
+
+    await expectAutoScrollDropsIntoTheGhostSlot(page, holdFinger);
   });
 });

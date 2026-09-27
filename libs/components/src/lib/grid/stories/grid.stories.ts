@@ -83,6 +83,26 @@ export const SixColumnGrid: Story = {
   },
 };
 
+export const ScrollableContainer: Story = {
+  render: (args) => ({
+    props: args,
+    template: `
+      <div class="overflow-y-auto" style="height: 280px" data-testid="grid-scroll-container">
+        <et-sb-grid [rowHeight]="rowHeight" [gap]="gap" [readOnly]="readOnly" />
+      </div>
+    `,
+  }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The grid inside a fixed-height scroll container. Dragging or resizing an item near the ' +
+          "container's top or bottom edge scrolls the container instead of the page.",
+      },
+    },
+  },
+};
+
 export const PerBreakpointConstraints: StoryObj<GridConstraintsStorybookComponent> = {
   // Drops the meta's registrations: this story writes its own et-grid-item per widget, and an item
   // covered by both a registration and a projected item renders twice (ET1905).
