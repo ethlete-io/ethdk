@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { DestroyRef, effect, inject, Signal, untracked, WritableSignal } from '@angular/core';
+import { DestroyRef, effect, inject, inputBinding, Signal, untracked, WritableSignal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { getFocusableElements, isOnHigherOverlayLayer, resolveOverlayLayer } from '@ethlete/core';
 import { delay, filter, fromEvent, Subscription, take, tap } from 'rxjs';
@@ -33,8 +33,13 @@ export type CreateAnchoredPanelControllerOptions = {
   surface: Signal<AnchoredPanelSurfaceLike | null>;
   /** The element the pane anchors to (and whose pointerdowns must not count as "outside"). */
   anchor: () => HTMLElement | null | undefined;
-  /** Builds the per-control overlay config (strategies, panel class, escape/focus flags, context). */
+  /**
+   * Builds the per-control overlay config (strategies, panel class, escape/focus flags). Leave
+   * `bindings` out and the controller renders the surface template with `context`.
+   */
   config: (input: { origin: HTMLElement | undefined; templateRef: unknown }) => OverlayConfig;
+  /** Extra template context for the surface, next to the `close` function the controller always provides. */
+  context?: () => Record<string, unknown>;
   /** Runs after the surface is resolved but before the pane mounts (e.g. reset browse state). */
   onBeforeMount?: () => void;
   /** Runs right after the pane mounts (e.g. seed focus, emit `opened`). */
@@ -177,7 +182,13 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
     options.onBeforeMount?.();
 
     const config = options.config({ origin: options.anchor() ?? undefined, templateRef: surface.templateRef });
-    const currentRef = overlayManager.open<OverlayTemplateHostComponent>(OverlayTemplateHostComponent, config);
+    const currentRef = overlayManager.open<OverlayTemplateHostComponent>(OverlayTemplateHostComponent, {
+      ...config,
+      bindings: config.bindings ?? [
+        inputBinding('template', () => surface.templateRef),
+        inputBinding('context', () => ({ close: requestClose, ...options.context?.() })),
+      ],
+    });
 
     overlayRef.set(currentRef);
     options.onMounted?.(currentRef);
