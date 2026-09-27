@@ -587,6 +587,58 @@ pub async fn set_app_settings(
     Ok(())
 }
 
+/// Refuses both halves of the approval queue while the window is locked. A locked app answers no
+/// agent op, and the queue says what agents asked for.
+fn refuse_while_locked(lock: &crate::lock::WindowLock) -> TimetrackResult<()> {
+    if lock.is_locked() {
+        return Err(TimetrackError::Rejected(
+            "the window is locked, so the approval queue is hidden".to_string(),
+        ));
+    }
+
+    Ok(())
+}
+
+/// The approval queue document, or `None` while no agent has asked for a write.
+#[tauri::command]
+pub async fn approval_queue(
+    db: State<'_, Db>,
+    lock: State<'_, crate::lock::WindowLock>,
+) -> TimetrackResult<Option<serde_json::Value>> {
+    refuse_while_locked(&lock)?;
+
+    db.run(move |connection| {
+        let stored = connection
+            .query_row("SELECT document FROM approval_queue WHERE id = 1", [], |row| {
+                row.get::<_, String>(0)
+            })
+            .optional()?;
+
+        Ok(stored.and_then(|document| serde_json::from_str(&document).ok()))
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn set_approval_queue(
+    db: State<'_, Db>,
+    lock: State<'_, crate::lock::WindowLock>,
+    queue: serde_json::Value,
+) -> TimetrackResult<()> {
+    refuse_while_locked(&lock)?;
+
+    db.run(move |connection| {
+        connection.execute(
+            "INSERT INTO approval_queue (id, document) VALUES (1, ?1)
+             ON CONFLICT (id) DO UPDATE SET document = ?1",
+            params![serde_json::to_string(&queue)?],
+        )?;
+
+        Ok(())
+    })
+    .await
+}
+
 #[tauri::command]
 pub async fn set_day_review_edits(
     db: State<'_, Db>,

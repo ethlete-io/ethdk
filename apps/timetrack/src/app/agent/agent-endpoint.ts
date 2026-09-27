@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   AGENT_API_VERSION,
+  AgentApiAnswer,
   AgentApiInstance,
   AgentApiIssue,
   AgentApiLaneIssues,
@@ -19,6 +20,7 @@ import {
   AgentApiTempoSync,
   AgentApiTempoWorklogs,
   AgentApiCalendarEvents,
+  agentApiClientOf,
   agentApiLockRefusal,
   JiraCredentials,
   JiraIssue,
@@ -54,6 +56,7 @@ import {
   readJiraCredentials$,
   readTempoCredentials$,
   ReviewedRow,
+  routesThroughApproval,
   suggestProjectForRepo,
   workPathDays,
   workPathPieces,
@@ -68,6 +71,7 @@ import {
   mergeMap,
   of,
   switchMap,
+  tap,
   throwError,
   toArray,
 } from 'rxjs';
@@ -77,7 +81,7 @@ import {
   injectCodexSessionCollector,
   injectCodexSpendBackfill,
 } from '../../collectors';
-import { AGENT_REQUEST_EVENT, hostEventWith$, injectHostPorts, invokeHost$ } from '../../host';
+import { injectHostPorts } from '../../host';
 import { injectDayReview } from '../day-review/day-review';
 import { injectGoogleAccount } from '../google';
 import { LANE_ISSUE_WINDOW_DAYS } from '../jira';
@@ -86,11 +90,7 @@ import { injectTimetrackSettings } from '../settings/settings';
 import { injectProjectLinks } from '../project-links';
 import { injectTempoSync } from '../sync/sync';
 import { injectWindowLock } from '../window-lock';
-
-/** One request as the host hands it over. What is in `body` is the caller's, uninterpreted. */
-type AgentRequestEvent = { id: number; body: unknown };
-
-type AgentAnswer = { ok: true; value: unknown } | { ok: false; message: string };
+import { injectApprovalQueue } from './approval-queue';
 
 const NO_JIRA = 'Timetrack has no Jira host, account email and token yet. Set them in its Settings.';
 
@@ -132,6 +132,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const recurring = injectRecurringPatterns();
   const googleAccount = injectGoogleAccount();
   const windowLock = injectWindowLock();
+  const approvals = injectApprovalQueue();
   const destroyRef = inject(DestroyRef);
   const agentSessionCollectors = [injectAgentSessionCollector(), injectCodexSessionCollector()];
   const agentSpendBackfills = [injectAgentSpendBackfill(), injectCodexSpendBackfill()];
@@ -772,10 +773,18 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return laneIssues$();
       case 'agentSessions.resync':
         return resyncAgentSessions$(request);
+      case 'approval.status':
+        return approvals.status$(request.id);
     }
   };
 
-  const answer$ = (body: unknown): Observable<AgentAnswer> => {
+  const answered = (value$: Observable<unknown>): Observable<AgentApiAnswer> =>
+    value$.pipe(
+      map((value): AgentApiAnswer => ({ ok: true, value })),
+      catchError((error: unknown) => of<AgentApiAnswer>({ ok: false, message: messageOf(error) })),
+    );
+
+  const answer$ = (body: unknown): Observable<AgentApiAnswer> => {
     const refusal = agentApiLockRefusal({ locked: windowLock.isLocked() });
 
     if (refusal) return of({ ok: false, message: refusal });
@@ -784,22 +793,33 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     if (!parsed.ok) return of({ ok: false, message: parsed.message });
 
-    return carryOut$(parsed.request).pipe(
-      map((value): AgentAnswer => ({ ok: true, value })),
-      catchError((error: unknown) => of<AgentAnswer>({ ok: false, message: messageOf(error) })),
-    );
+    const { request } = parsed;
+
+    if (routesThroughApproval(request)) {
+      return answered(approvals.enqueue$({ request, client: agentApiClientOf(body) }));
+    }
+
+    return answered(carryOut$(request));
   };
 
   // `mergeMap`: two repositories asking at once are two questions, and neither has to wait for the
   // other's Jira call. The host pairs every answer back to its own request by id.
-  hostEventWith$<AgentRequestEvent>(AGENT_REQUEST_EVENT)
+  ports.agent
+    .requests$()
     .pipe(
       mergeMap((received) =>
         answer$(received.body).pipe(
-          switchMap((answer) => invokeHost$<void>('agent_reply', { id: received.id, answer })),
+          switchMap((answer) => ports.agent.reply$(received.id, answer)),
           catchError(() => of(undefined)),
         ),
       ),
+      takeUntilDestroyed(destroyRef),
+    )
+    .subscribe();
+
+  approvals.approved$
+    .pipe(
+      mergeMap((item) => answered(carryOut$(item.request)).pipe(tap((answer) => approvals.finish(item.id, answer)))),
       takeUntilDestroyed(destroyRef),
     )
     .subscribe();

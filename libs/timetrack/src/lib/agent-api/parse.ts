@@ -122,6 +122,12 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
     return id ? { ok: true, request: { op, id } } : missing(op, 'id');
   }
 
+  if (op === 'approval.status') {
+    const id = asText(raw['id']);
+
+    return id ? { ok: true, request: { op, id } } : missing(op, 'id');
+  }
+
   if (op === 'standIn.rename') {
     const id = asText(raw['id']);
     const name = asText(raw['name']);

@@ -201,6 +201,15 @@ DELETE FROM collected_event WHERE dedupe_key IS NULL AND EXISTS (
 );
 ";
 
+/// The writes an agent asked for and the user has not decided yet, as one JSON document read and
+/// written whole, like `app_setting`. Its shape belongs to the core.
+const SCHEMA_V16: &str = "
+CREATE TABLE IF NOT EXISTS approval_queue (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  document TEXT NOT NULL
+);
+";
+
 /// Repairs a store whose v11 ran before `read_through_ms` was part of it.
 ///
 /// The column was added to `SCHEMA_V11` after that migration had already run on real stores, and a
@@ -455,6 +464,10 @@ pub fn migrate(connection: &Connection) -> TimetrackResult<()> {
         step(connection, 15, repair_agent_session_cursor)?;
     }
 
+    if version < 16 {
+        step(connection, 16, |connection| Ok(connection.execute_batch(SCHEMA_V16)?))?;
+    }
+
     Ok(())
 }
 
@@ -529,7 +542,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            15
+            16
         );
         assert_eq!(connection.execute(INSERT, params![1_i64, "git-commit:abc"]).unwrap(), 1);
     }
@@ -653,7 +666,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            15
+            16
         );
     }
 

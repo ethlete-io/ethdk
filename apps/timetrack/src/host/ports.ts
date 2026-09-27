@@ -1,6 +1,8 @@
 import { InjectionToken, inject } from '@angular/core';
 import { AgentSessionLogReader, TimetrackPorts, meteredRunner } from '@ethlete/timetrack';
+import { TauriAgentChannel, createTauriAgentChannel } from './agent-channel';
 import { createTauriAgentSessionLogReader } from './agent-session-log-reader';
+import { TauriApprovalStore, createTauriApprovalStore } from './approval-store';
 import { TauriCallSource, createTauriCallSource } from './call-source';
 import { TauriCollectionPause, createTauriCollectionPause } from './collection-pause';
 import { createTauriCoverageStore } from './coverage-store';
@@ -25,6 +27,8 @@ import { TauriWindowLock, createTauriWindowLock } from './window-lock';
 import { TauriWindowSource, createTauriWindowSource } from './window-source';
 
 export type HostPorts = TimetrackPorts & {
+  agent: TauriAgentChannel;
+  approvals: TauriApprovalStore;
   calls: TauriCallSource;
   collection: TauriCollectionPause;
   events: TauriEventStore;
@@ -45,6 +49,8 @@ export const createHostPorts = (): HostPorts => {
   const events = createTauriEventStore();
 
   return {
+    agent: createTauriAgentChannel(),
+    approvals: createTauriApprovalStore(),
     transport: createTauriTransport(),
     secrets: createTauriSecretStore(),
     calls: createTauriCallSource(),

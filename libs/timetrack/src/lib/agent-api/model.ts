@@ -509,6 +509,7 @@ export type AgentApiRequest =
   | { op: 'tempo.delete'; day: string; worklogId: string }
   | { op: 'calendar.events'; from: string; to: string }
   | { op: 'lane.issues' }
+  | { op: 'approval.status'; id: string }
   | {
       op: 'agentSessions.resync';
       paths: string[];
@@ -585,6 +586,7 @@ export const AGENT_API_OP_CLASSES: Record<AgentApiOp, OpClass> = {
   'tempo.delete': 'human-only',
   'calendar.events': 'read',
   'lane.issues': 'read',
+  'approval.status': 'read',
   'agentSessions.resync': 'local',
 };
 

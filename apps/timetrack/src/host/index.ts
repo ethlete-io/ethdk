@@ -1,5 +1,7 @@
+export * from './agent-channel';
 export * from './agent-session-log-reader';
 export * from './app-info';
+export * from './approval-store';
 export * from './call-source';
 export * from './collection-pause';
 export * from './coverage-store';

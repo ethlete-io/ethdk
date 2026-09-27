@@ -1,4 +1,6 @@
 import {
+  AgentApiAnswer,
+  AgentApproval,
   AgentLogPass,
   AgentSessionCursor,
   AgentSessionLogReader,
@@ -15,12 +17,14 @@ import {
   TimetrackRequest,
   TimetrackResponse,
   TimetrackSettings,
+  parseApprovalQueue,
   parseTimetrackSettings,
   dedupeKeyOf,
   meteredRunner,
 } from '@ethlete/timetrack';
 import {
   FakeAgentLog,
+  TIMETRACK_E2E_AGENT_KEY,
   TIMETRACK_E2E_BACKEND_KEY,
   TIMETRACK_E2E_SEED_KEY,
   TIMETRACK_E2E_CURSORS_KEY,
@@ -39,7 +43,8 @@ import {
   runFakeGit,
   runFakeGlab,
 } from '@ethlete/timetrack/testing';
-import { EMPTY, Observable, delay, of, throwError } from 'rxjs';
+import { EMPTY, Observable, Subject, delay, of, throwError } from 'rxjs';
+import { AgentRequestEvent } from '../host/agent-channel';
 import { HostPorts } from '../host/ports';
 
 const ok = <T>(value: T): Observable<T> => of(value);
@@ -101,6 +106,19 @@ export const createFakePorts = (): HostPorts => {
 
   (globalThis as Record<string, unknown>)[TIMETRACK_E2E_BACKEND_KEY] = backend;
 
+  const agentRequests$ = new Subject<AgentRequestEvent>();
+  const agentReplies = new Map<number, (answer: AgentApiAnswer) => void>();
+  let approvalQueue: string | null = null;
+  let agentRequestCount = 0;
+
+  (globalThis as Record<string, unknown>)[TIMETRACK_E2E_AGENT_KEY] = (body: unknown) =>
+    new Promise<AgentApiAnswer>((resolve) => {
+      const id = ++agentRequestCount;
+
+      agentReplies.set(id, resolve);
+      agentRequests$.next({ id, body });
+    });
+
   /**
    * Appends what the store does not already hold, and answers how many rows were new. The real store
    * refuses a second row under one dedupe key, so a fake that appends blindly would let a collector's
@@ -134,6 +152,26 @@ export const createFakePorts = (): HostPorts => {
   };
 
   return {
+    agent: {
+      requests$: () => agentRequests$.asObservable(),
+      reply$: (id, answer) => {
+        agentReplies.get(id)?.(answer);
+        agentReplies.delete(id);
+
+        return done();
+      },
+    },
+
+    // Stored as JSON, so a read goes through the same parse the real store's answer does.
+    approvals: {
+      read$: () => ok(parseApprovalQueue(approvalQueue === null ? null : JSON.parse(approvalQueue))),
+      save$: (queue: readonly AgentApproval[]) => {
+        approvalQueue = JSON.stringify(queue);
+
+        return done();
+      },
+    },
+
     transport: { request$: <T>(request: TimetrackRequest) => ok(respond(backend, request) as TimetrackResponse<T>) },
 
     secrets: {

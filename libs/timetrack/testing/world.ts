@@ -168,6 +168,12 @@ export const TIMETRACK_E2E_TRAY_KEY = '__timetrackE2eTray';
  */
 export const TIMETRACK_E2E_CURSORS_KEY = '__timetrackE2eCursors';
 
+/**
+ * Where the fake host publishes its loopback endpoint: a function that takes a request body and
+ * resolves with the answer the window replied, as the `timetrack` CLI would read it.
+ */
+export const TIMETRACK_E2E_AGENT_KEY = '__timetrackE2eAgent';
+
 /** The day the default fixture describes, so a test can drive the view straight to it. */
 export const e2eDay = () => {
   const now = new Date();
