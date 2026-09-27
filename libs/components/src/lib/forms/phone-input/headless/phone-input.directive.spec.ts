@@ -209,7 +209,7 @@ describe('PhoneInputDirective', () => {
     expect(driver.phone.isPlausible()).toBe(true);
   });
 
-  it('names the country trigger with countryLabel, the active country and its dial code', async () => {
+  it('names the country trigger with countryLabel, the active country and its dial code, closed and open', async () => {
     const trigger = driver.query('.et-phone-input-country-trigger')!;
     const [countryLabelId, selfId] = trigger.getAttribute('aria-labelledby')?.split(' ') ?? [];
 
@@ -230,6 +230,7 @@ describe('PhoneInputDirective', () => {
 
     expect(search).not.toBeNull();
     expect(resolveAccessibleName(search!)).toBe('Select country');
+    expect(trigger.getAttribute('aria-labelledby')).toBe(`${countryLabelId} ${trigger.id}`);
   });
 
   describe('mixed', () => {

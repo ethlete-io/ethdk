@@ -57,10 +57,6 @@ export class SelectTriggerDirective {
   });
 
   protected labelledBy = computed(() => {
-    if (this.hasSearch()) {
-      return null;
-    }
-
     const labelId = this.select?.labelId();
 
     return labelId ? `${labelId} ${this.elementRef.nativeElement.id}` : null;
