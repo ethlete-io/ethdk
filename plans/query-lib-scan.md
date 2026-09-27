@@ -83,3 +83,19 @@ drops the whole persistence batch and disables writes for the session (`persiste
 fakes diverge: `installFakeBroadcastChannel` delivers on a microtask (`testing/multi-tab-test-utils.ts:70`), the socket double's
 `disconnect()` fires no `disconnect` listener and keeps one listener per event (`testing/web-socket-test-utils.ts:87`, `94`), the
 persistence fake's gated `read` sees later removals (`testing/persistence-test-utils.ts:102-111`).
+
+### Wave 2 status
+
+Fixed: 1-2 `8b306b7e2` + `66bf78fcf` (an aborted submission resolves with no form error); 3 `87ea260ed`; 4-7 `3a9faa92d`;
+8-10 `db41bf850`; 11-12 `d4def7b9b`. Also seen: NG0205 `8b306b7e2`; task report overwrite `3a9faa92d`; DataCloneError batch,
+broadcast/persistence fakes `f8872d309`; socket double `d4def7b9b`; docs `cd7e4beca`.
+
+Open:
+- The module graph does not resolve a `./file.js` specifier or `baseUrl`-relative `paths`, so the v3 migration now leaves such an
+  import of a renamed client (and its legacy creators) unmigrated; the old name-based rename covered it.
+- An empty `.prepare()` on a receiver the migration cannot follow (`this.query.prepare()`) is only reported in files that import
+  `@ethlete/query`, otherwise left silently. Harmless at runtime (`args` is optional).
+- The ws backoff counter only resets after a connection that lasted 30 s and then got kicked; a later rejected handshake keeps the
+  earlier attempt count (capped at 30 s).
+- Unsubscribing a batch run records the aborted in-flight items as `cancelled`, so `retryFailed()` resends mutations the server
+  may already have applied.
