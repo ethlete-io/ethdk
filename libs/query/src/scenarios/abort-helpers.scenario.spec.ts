@@ -1,13 +1,7 @@
 import { signal } from '@angular/core';
 import { form, submit } from '@angular/forms/signals';
 import { describe, expect, it, vi } from 'vitest';
-import {
-  createQuerySubmission,
-  executeUntilSettled,
-  querySequence,
-  queryErrorMessage,
-  SUBMISSION_ABORTED_ERROR_KIND,
-} from '../index';
+import { createQuerySubmission, executeUntilSettled, querySequence, queryErrorMessage } from '../index';
 import { Scenario, useScenario } from './harness';
 
 type Model = { name: string };
@@ -30,7 +24,7 @@ describe('abort helpers scenario', () => {
   const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
 
   describe('createQuerySubmission', () => {
-    it('does not run onSuccess and resolves submit() with false when the execution is aborted', async () => {
+    it('does not run onSuccess when the execution is aborted', async () => {
       const s = scenario();
       s.api.on('POST', '/items', () => ({ body: { id: 1 }, delay: 500 }));
 
@@ -49,16 +43,16 @@ describe('abort helpers scenario', () => {
 
       const result = await drive(s, submitted);
 
-      expect(result).toBe(false);
+      expect(result).toBe(true);
       expect(onSuccess).not.toHaveBeenCalled();
       expect(testForm().submitting()).toBe(false);
-      expect(testForm().errors()).toEqual([expect.objectContaining({ kind: SUBMISSION_ABORTED_ERROR_KIND })]);
+      expect(testForm().errors()).toEqual([]);
       expect(s.api.requestCount('POST', '/items')).toBe(1);
 
       c.destroy();
     });
 
-    it('still runs onSuccess for the execution that follows an aborted one', async () => {
+    it('runs onSuccess when the same value is resubmitted after an abort', async () => {
       const s = scenario();
       s.api.on('POST', '/items', () => ({ body: { id: 1 }, delay: 500 }));
 
@@ -73,9 +67,9 @@ describe('abort helpers scenario', () => {
       const first = submit(testForm);
       s.tick(50);
       submission.query.abort();
-      expect(await drive(s, first)).toBe(false);
+      expect(await drive(s, first)).toBe(true);
+      expect(onSuccess).not.toHaveBeenCalled();
 
-      testForm.name().value.set('b');
       const second = submit(testForm);
       s.tick(600);
 

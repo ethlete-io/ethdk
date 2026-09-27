@@ -1,21 +1,9 @@
-import { FieldTree, TreeValidationResult, ValidationError } from '@angular/forms/signals';
+import { FieldTree, TreeValidationResult } from '@angular/forms/signals';
 import { FormViolationView } from '@ethlete/types';
 import { Query, RequestArgs, ResponseType } from './query';
 import { AnyQueryCreator, QueryArgsOf } from './query-creator';
 import { mapViolationsToFormErrors } from './query-signal-forms';
 import { executeUntilSettled } from './query-snapshot-utils';
-
-/**
- * `kind` of the form-level error a {@link createQuerySubmission} action returns when its execution was
- * aborted, so `submit()` resolves `false`. Like every submission error it clears on the next value change.
- */
-export const SUBMISSION_ABORTED_ERROR_KIND = 'etSubmissionAborted';
-
-/** The form-level error of an aborted {@link createQuerySubmission}. */
-export type SubmissionAbortedValidationError = ValidationError.WithOptionalFieldTree & {
-  kind: typeof SUBMISSION_ABORTED_ERROR_KIND;
-  message: string;
-};
 
 /** Config for {@link createQuerySubmission}. */
 export type CreateQuerySubmissionConfig<TCreator extends AnyQueryCreator, TModel> = {
@@ -31,7 +19,7 @@ export type CreateQuerySubmissionConfig<TCreator extends AnyQueryCreator, TModel
   args?: (value: TModel, field: FieldTree<TModel>) => RequestArgs<QueryArgsOf<TCreator>> | null;
   /**
    * Runs after the request succeeded, before the action resolves and the form leaves its submitting
-   * state - notify, close the overlay, navigate. An aborted execution is not a success and skips it.
+   * state - notify, close the overlay, navigate. An aborted submission does not call it.
    */
   onSuccess?: (response: ResponseType<QueryArgsOf<TCreator>>, field: FieldTree<TModel>) => void;
   /**
@@ -106,14 +94,7 @@ export const createQuerySubmission = <TCreator extends AnyQueryCreator, TModel>(
         : mapViolationsToFormErrors({ fieldTree: field, error, rewritePath: config.rewritePath });
     }
 
-    if (snapshot.latestHttpEvent()?.type === 'cancel') {
-      const aborted: SubmissionAbortedValidationError = {
-        kind: SUBMISSION_ABORTED_ERROR_KIND,
-        message: 'The submission was aborted.',
-      };
-
-      return aborted;
-    }
+    if (snapshot.latestHttpEvent()?.type === 'cancel') return undefined;
 
     config.onSuccess?.(snapshot.response() as ResponseType<TArgs>, field);
 
