@@ -18,7 +18,7 @@ agent that works alone, batch by batch.
 - Removed on 2026-09-26 by user decision: `GridItemRef` and `configComponent` (e519882bc). Added:
   `FormFieldDirective.controlSuffixTemplate` (e38133536).
 - In progress 2026-09-27: forms/multi-language-rich-text-editor, banner, toggletip, overlay, stream, scrollbar, progress-steps
-  (task 6a); masonry, badge, avatar, tooltip, toolbar, skeleton, forms/tag-input, forms/rating (task 6b).
+  (task 6a).
 
 ## Rules for every batch
 
@@ -63,6 +63,9 @@ agent that works alone, batch by batch.
 9. Before any push: ask the user, then run the `ci-check` skill.
 
 ## Open items that need the user (do not decide alone)
+
+- `et-rating`: `aria-valuetext` is hardcoded English ("No rating", "N of M") and not in a labels provider; a lower
+  `max` does not clamp the value (`aria-valuenow` > `aria-valuemax`); arrow keys do not flip in RTL.
 
 - The `LoaderLabels.loading` JSDoc says the spinner announces "Loading", but `SpinnerComponent` has no `aria-label`
   and `apps/docs/components/loader.md` says spinner and progress bar have no accessible name by default. Change the
@@ -295,3 +298,13 @@ agent that works alone, batch by batch.
 - E2E gaps: real clipboard permission and the `execCommand` fallback in Safari; vertical divider sizing; timeline rail
   geometry; choice-field card states and control positions; smooth scroll to the first invalid field; textarea
   autosize and resize handle.
+
+### masonry, badge, avatar, tooltip, toolbar, skeleton, forms/tag-input, forms/rating
+
+- Friction: see the rating open item; `et-rating` in `et-form-field` throws ET2200/ET2201 with no hint; masonry needs
+  `createMasonryHarness` and a 150 ms debounce drained; tooltip keyboard focus needs a microtask after Tab; a throw
+  from `show()` in a click listener becomes an uncaught error; tag-input paste needs a hand-built `clipboardData`.
+- E2E gaps: badge icon sizing and theme visuals; avatar image load/failure and group rings; skeleton shimmer and
+  reduced motion; toolbar Tab in/out, RTL, nested; masonry late image load, drag snap, RTL, fade-in; tooltip placement
+  near edges, touch suppression, above a dialog; tag-input real paste, IME, soft keyboard Enter; rating pointer drag,
+  hover preview, half-star hit areas, fill animation.
