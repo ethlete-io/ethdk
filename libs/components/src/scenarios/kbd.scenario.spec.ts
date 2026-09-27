@@ -156,7 +156,7 @@ describe('kbd scenarios on an Apple platform', () => {
 describe('kbd key helpers', () => {
   it('parse, canonicalize, label and name keys for a custom shortcut hint', () => {
     expect(parseKbdKeys(' mod + shift +k ')).toEqual(['mod', 'shift', 'k']);
-    expect(parseKbdKeys('mod++')).toEqual(['mod']);
+    expect(parseKbdKeys('mod++')).toEqual(['mod', '+']);
     expect(canonicalKbdKey(' Command ')).toBe('meta');
     expect(canonicalKbdKey('Escape')).toBe('esc');
     expect(canonicalKbdKey('F5')).toBe('f5');
