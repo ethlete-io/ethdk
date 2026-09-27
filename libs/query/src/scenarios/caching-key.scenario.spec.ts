@@ -1,5 +1,8 @@
+import { def, V2QueryClient, withArgs } from '../index';
 import { describe, expect, it } from 'vitest';
 import { useScenario } from './harness';
+
+type Filter = { status: string; sort: { field: string; dir: string }; since?: Date };
 
 describe('cache key scenario', () => {
   const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
@@ -51,5 +54,88 @@ describe('cache key scenario', () => {
 
     a.destroy();
     b.destroy();
+  });
+
+  it('shares one cache entry between query params written in a different key order', () => {
+    const s = scenario();
+    s.api.on('GET', '/posts', () => ({ body: { items: ['a'] } }));
+
+    const getPosts = s.get<{ response: { items: string[] }; queryParams: Filter }>('/posts');
+    const since = new Date('2026-09-01T10:00:00.000Z');
+
+    const a = s.consumer();
+    const b = s.consumer();
+    const first = a.run(() =>
+      getPosts(withArgs(() => ({ queryParams: { status: 'open', sort: { field: 'date', dir: 'asc' }, since } }))),
+    );
+    const second = b.run(() =>
+      getPosts(
+        withArgs(() => ({
+          queryParams: { since: new Date(since), sort: { dir: 'asc', field: 'date' }, status: 'open' },
+        })),
+      ),
+    );
+
+    s.tick();
+
+    expect(first.id()).toBe(second.id());
+    expect(s.api.requestCount('GET', '/posts')).toBe(1);
+    expect(s.api.requests[0]?.url).toBe(
+      'https://api.test/posts?status=open&sort%5Bfield%5D=date&sort%5Bdir%5D=asc&since=2026-09-01T10%3A00%3A00.000Z',
+    );
+    expect(second.response()).toEqual({ items: ['a'] });
+
+    a.destroy();
+    b.destroy();
+  });
+
+  it('keeps a Date query param that changes on a separate cache entry', () => {
+    const s = scenario();
+    s.api.on('GET', '/posts', () => ({ body: { items: [] } }));
+
+    const getPosts = s.get<{ response: { items: string[] }; queryParams: Pick<Filter, 'since'> }>('/posts');
+
+    const a = s.consumer();
+    const b = s.consumer();
+    const first = a.run(() => getPosts(withArgs(() => ({ queryParams: { since: new Date('2026-09-01T00:00:00Z') } }))));
+    const second = b.run(() =>
+      getPosts(withArgs(() => ({ queryParams: { since: new Date('2026-09-02T00:00:00Z') } }))),
+    );
+
+    s.tick();
+
+    expect(first.id()).not.toBe(second.id());
+    expect(s.api.requestCount('GET', '/posts')).toBe(2);
+
+    a.destroy();
+    b.destroy();
+  });
+
+  it('gives a legacy query the same store key for query params written in a different key order', () => {
+    const s = scenario();
+    const owner = s.consumer();
+    const client = owner.run(() => new V2QueryClient({ baseRoute: 'https://api.test' }));
+    const getPosts = client.get({
+      route: '/posts',
+      types: { args: def<{ queryParams: Filter }>(), response: def<{ items: string[] }>() },
+    });
+    const since = new Date('2026-09-01T10:00:00.000Z');
+
+    const first = getPosts.prepare({ queryParams: { status: 'open', sort: { field: 'date', dir: 'asc' }, since } });
+    const second = getPosts.prepare({
+      queryParams: { since: new Date(since), sort: { dir: 'asc', field: 'date' }, status: 'open' },
+    });
+    const other = getPosts.prepare({
+      queryParams: { status: 'open', sort: { field: 'date', dir: 'asc' }, since: new Date('2026-09-02T10:00:00Z') },
+    });
+
+    expect(second).toBe(first);
+    expect(other).not.toBe(first);
+    expect(first._routeWithParams).toBe(
+      'https://api.test/posts?status=open&sort%5Bfield%5D=date&sort%5Bdir%5D=asc&since=2026-09-01T10%3A00%3A00.000Z',
+    );
+
+    client._store.forEach((_query, key) => client._store.remove(key));
+    owner.destroy();
   });
 });

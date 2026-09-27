@@ -15,6 +15,7 @@ import {
   WithHeaders,
   WithMock,
 } from '../query/query.types';
+import { sortQueryParamKeys } from '../../http/internal/request-route';
 import { buildRoute } from '../request';
 import { QueryContainerConfig, addQueryContainerHandling } from '../utils';
 import { QueryPrepareFn } from './query-creator.types';
@@ -35,16 +36,20 @@ export class V2QueryCreator<
   prepare: QueryPrepareFn<Arguments, Response, Route, Store, Data, Id> = (
     args?: Arguments & WithHeaders & WithConfig & WithMock<Response>,
   ) => {
-    const route = buildRoute({
+    const queryParams = computeQueryQueryParams({ config: this._queryConfig, client: this._client, args });
+    const routeOptions = {
       base: this._client.config.baseRoute,
       route: this._queryConfig.route as AnyRoute,
       pathParams: args?.pathParams,
-      queryParams: computeQueryQueryParams({ config: this._queryConfig, client: this._client, args }),
       queryParamConfig: this._client.config.request?.queryParams,
-    }) as Route;
+    };
+    const route = buildRoute({ ...routeOptions, queryParams }) as Route;
+    const keyRoute = queryParams
+      ? buildRoute({ ...routeOptions, queryParams: sortQueryParamKeys(queryParams) as object })
+      : (route as string);
 
     const cacheKey =
-      (args?.config?.queryStoreCacheKey ?? '') + v2BuildQueryCacheKey(route as string, args, this._queryConfig.method);
+      (args?.config?.queryStoreCacheKey ?? '') + v2BuildQueryCacheKey(keyRoute, args, this._queryConfig.method);
 
     if (v2ShouldCacheQuery(this._queryConfig.method) && !args?.config?.skipQueryStore) {
       const existingQuery = this._store.get<V2Query<Response, Arguments, Route, Store, Data, Id>>(cacheKey);

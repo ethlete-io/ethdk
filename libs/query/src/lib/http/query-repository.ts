@@ -2,7 +2,7 @@ import { randomId } from '@ethlete/core';
 import { HttpClient, HttpErrorResponse, HttpEventType } from '@angular/common/http';
 import { DestroyRef, ErrorHandler, Injector, Signal, signal } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
-import { buildRoute } from './internal/request-route';
+import { buildRoute, QueryParams, sortQueryParamKeys } from './internal/request-route';
 import { createHttpRequest, HttpRequest } from './http-request';
 import { QueryArgs, RequestArgs } from './query';
 import { buildQueryCacheKey, shouldCacheQuery } from './query-cache-utils';
@@ -496,9 +496,20 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       queryParamConfig: config.queryString,
     });
 
+    const keyRoute =
+      shouldCache && args?.queryParams
+        ? buildRoute({
+            base: config.baseUrl,
+            route: options.route,
+            pathParams: args.pathParams,
+            queryParams: sortQueryParamKeys(args.queryParams) as QueryParams,
+            queryParamConfig: config.queryString,
+          })
+        : route;
+
     const cacheKey = shouldCache
       ? buildQueryCacheKey(
-          `${options.key ? options.key + '_' : ''}${route}`,
+          `${options.key ? options.key + '_' : ''}${keyRoute}`,
           {
             body: args?.body,
             queryParams: args?.queryParams,

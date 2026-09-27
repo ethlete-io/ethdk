@@ -173,6 +173,26 @@ export const buildQueryString = (params: QueryParams, config?: BuildQueryStringC
   return queryParams.length ? queryParams.join('&') : null;
 };
 
+const isPlainObject = (value: unknown): value is Record<string, unknown> => {
+  if (!value || typeof value !== 'object') return false;
+
+  const proto = Object.getPrototypeOf(value);
+
+  return proto === Object.prototype || proto === null;
+};
+
+/** Copies query params with every plain object's keys sorted, so key order never reaches a cache key. */
+export const sortQueryParamKeys = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(sortQueryParamKeys);
+  if (!isPlainObject(value)) return value;
+
+  return Object.fromEntries(
+    Object.keys(value)
+      .sort()
+      .map((key) => [key, sortQueryParamKeys(value[key])]),
+  );
+};
+
 export const buildRoute = (options: {
   base: string;
   route: RouteInput | null | undefined;
