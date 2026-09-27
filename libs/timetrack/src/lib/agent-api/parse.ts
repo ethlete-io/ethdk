@@ -228,6 +228,15 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
     return { ok: true, request: { op, from, to } };
   }
 
+  if (op === 'tempo.sync') {
+    const day = asText(raw['day']);
+    const planHash = asText(raw['planHash']);
+
+    if (!DAY_KEY.test(day)) return missing(op, 'day as YYYY-MM-DD');
+
+    return { ok: true, request: planHash ? { op, day, planHash } : { op, day } };
+  }
+
   if (op === 'day.events' || op === 'day.rows') {
     const day = asText(raw['day']);
 

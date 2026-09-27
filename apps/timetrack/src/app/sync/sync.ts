@@ -5,6 +5,7 @@ import {
   TempoSyncOutcome,
   TempoSyncPlan,
   TempoSyncPreview,
+  WorklogProposal,
   dayBoundaryOf,
   executeTempoSync$,
   fetchTempoWorkAttributes$,
@@ -14,16 +15,22 @@ import {
   readTempoCredentials$,
 } from '@ethlete/timetrack';
 import {
+  EMPTY,
   Observable,
   Subject,
   catchError,
   combineLatest,
   concat,
+  defer,
   exhaustMap,
+  filter,
   map,
+  merge,
   of,
+  share,
   startWith,
   switchMap,
+  take,
   throwError,
   toArray,
 } from 'rxjs';
@@ -47,7 +54,9 @@ type SyncRunStatus =
   | { kind: 'written'; day: string; outcome: TempoSyncOutcome; unrecorded: string | null }
   | { kind: 'failed'; day: string; message: string };
 
-type SyncRequest = { day: string; plan: TempoSyncPlan; authorAccountId: string };
+export type SyncRequest = { day: string; plan: TempoSyncPlan; authorAccountId: string };
+
+type FinishedRun = Extract<SyncRunStatus, { kind: 'written' | 'failed' }>;
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
@@ -73,9 +82,8 @@ const SYNC_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const requests$ = new Subject<void>();
 
-  const load$ = (): Observable<SyncPreviewStatus> => {
-    const day = dayReview.dayKey();
-    const proposals = dayReview.rows().filter(isNamedRow);
+  const preview$ = (options: { day: string; proposals: WorklogProposal[] }): Observable<TempoSyncPreview> => {
+    const { day, proposals } = options;
 
     return combineLatest({
       jira: readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }),
@@ -102,6 +110,13 @@ const SYNC_DEF = /* @__PURE__ */ defineRootProvider(() => {
           map(() => preview),
         ),
       ),
+    );
+  };
+
+  const load$ = (): Observable<SyncPreviewStatus> => {
+    const day = dayReview.dayKey();
+
+    return preview$({ day, proposals: dayReview.rows().filter(isNamedRow) }).pipe(
       map((preview): SyncPreviewStatus => ({ kind: 'ready', day, preview })),
       catchError((error: unknown) => of<SyncPreviewStatus>({ kind: 'failed', day, message: messageOf(error) })),
     );
@@ -180,12 +195,11 @@ const SYNC_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   // `exhaustMap`, never `switchMap`: cancelling a run in flight would abandon writes Tempo has already
   // taken, leaving them unowned.
-  const runStatus = toSignal(
-    runs$.pipe(
-      exhaustMap((request) => write$(request).pipe(startWith<SyncRunStatus>({ kind: 'writing', day: request.day }))),
-    ),
-    { initialValue: IDLE as SyncRunStatus },
+  const runStates$ = runs$.pipe(
+    exhaustMap((request) => write$(request).pipe(startWith<SyncRunStatus>({ kind: 'writing', day: request.day }))),
+    share(),
   );
+  const runStatus = toSignal(runStates$, { initialValue: IDLE as SyncRunStatus });
 
   const run = computed((): SyncRunStatus => {
     const value = runStatus();
@@ -200,6 +214,35 @@ const SYNC_DEF = /* @__PURE__ */ defineRootProvider(() => {
   });
 
   const isWriting = computed(() => run().kind === 'writing');
+
+  /**
+   * Runs a plan an agent confirmed through the same queue the page's own button uses, so the page
+   * shows its rows and its retry. A preview the page holds for that day is spent by it.
+   */
+  const writeDay$ = (request: SyncRequest): Observable<FinishedRun> =>
+    defer(() => {
+      if (runStatus().kind === 'writing') {
+        return throwError(() => new Error('A sync is already writing. Wait for it to finish, then plan again.'));
+      }
+
+      const preview = ready();
+
+      if (preview && dayReview.dayKey() === request.day) submitted.set(preview);
+
+      // The result is listened for before the request is sent: a run that fails synchronously emits
+      // its result inside `next`, before a later subscription could see it.
+      return merge(
+        runStates$.pipe(
+          filter((state): state is FinishedRun => state.kind === 'written' || state.kind === 'failed'),
+          take(1),
+        ),
+        defer(() => {
+          runs$.next(request);
+
+          return EMPTY;
+        }),
+      );
+    });
 
   const submit = (plan: TempoSyncPlan) => {
     const preview = ready();
@@ -255,6 +298,9 @@ const SYNC_DEF = /* @__PURE__ */ defineRootProvider(() => {
     }),
 
     refresh: () => requests$.next(),
+    /** What a sync of any day would write, without touching the page's own preview. */
+    preview$,
+    writeDay$,
     sync: () => {
       const preview = ready();
 

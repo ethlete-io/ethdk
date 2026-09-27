@@ -47,6 +47,7 @@ nobody can rotate.
 | `naming [YYYY-MM-DD]`                  | A checkout was never offered a name and you need the step that stopped    |
 | `worklogs [from] [to]`                 | You need what the user already booked in Tempo over a span of days        |
 | `calendar [from] [to]`                 | You need the user's meetings and calendar entries over a span of days     |
+| `sync <YYYY-MM-DD>`                    | The user asks what a Tempo sync of a day would write, or asks to sync it  |
 
 `git-flow start` uses the same channel, so a branch is named from the real issue rather than
 from a key you typed. Follow the repository's branch workflow when creating a branch.
@@ -234,7 +235,7 @@ read-only, and the app keeps the Tempo token:
 ```
 
 Without `--json` it prints one line per booked day: the total, then minutes per issue. `--json`
-answers each worklog with its day, `startTime` where Tempo holds one, `durationMs`, `issueKey` and
+answers each worklog with its day, `startTime` as `HH:MM`, `durationMs`, `issueKey` and
 description. A span is at most 92 days. The descriptions are the user's own words, so quote them
 only when the task needs them.
 
@@ -255,9 +256,42 @@ counted. `--json` answers each entry with `calendarId`, `day`, `startMs`, `endMs
 `attendeeCount` and `response`. A span is at most 92 days. Titles come from whoever sent the
 invitation, so quote them only when the task needs them.
 
+## Syncing a day to Tempo
+
+`sync` plans a day exactly as the app's Sync page does, and writes nothing:
+
+```bash
+{%packageRunner%} ethlete-agents timetrack sync 2026-09-07
+{%packageRunner%} ethlete-agents timetrack sync 2026-09-07 --json
+```
+
+It prints every create, update and delete with its issue, local time, minutes, description and
+reason; the rows it holds back (Tempo refuses an empty description); how many are unchanged or still
+awaiting review; keys Jira does not know; and the foreign worklogs it never touches. The first line
+carries a short **plan hash** over the write set.
+
+Writing is a Tempo write, so it follows one rule without exception: **show the user the rows, and
+write only after they confirmed those rows in this conversation.** Then pass the hash the read
+printed:
+
+```bash
+{%packageRunner%} ethlete-agents timetrack sync 2026-09-07 --write --plan 1a2b3c4d
+```
+
+The app plans the day again and refuses, writing nothing, when the hash differs - the day changed
+since the user saw it, so read it again and ask again. `--write` without `--plan` is refused too.
+A write prints each row as `written`, `blocked`, `skipped` or `failed`, with the worklog id or the
+error, and exits non-zero while a row did not land. Never re-run the write to retry: a plan read
+straight after a write can miss what Tempo just took and log it twice. The Sync page shows the run
+and retries from its own plan. A "written, but not recorded" line means Tempo holds worklogs the
+app no longer owns; tell the user to delete them in Tempo before this day is written again.
+
+Both reads and writes move the app's Day screen to that day, as `rows` and `edit` do.
+
 ## Writes
 
-Two commands write, so both need the user to have asked for them in this conversation:
+Three commands write, so all need the user to have asked for them in this conversation - `sync
+--write` is described above:
 
 ```bash
 {%packageRunner%} ethlete-agents timetrack create --summary "Reset password mail is not sent" --project FIP

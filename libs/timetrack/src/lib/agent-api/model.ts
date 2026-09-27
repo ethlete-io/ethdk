@@ -266,8 +266,8 @@ export type AgentApiTempoWorklog = {
   id: string;
   /** The local day it is booked on, as `YYYY-MM-DD`. */
   day: string;
-  /** The local start as `HH:MM`. Absent where Tempo holds midnight, which is what it stores for no time. */
-  startTime?: string;
+  /** The local start as `HH:MM`. */
+  startTime: string;
   startMs: number;
   durationMs: number;
   /** Absent where Jira no longer resolves the issue id Tempo names, or the token cannot see it. */
@@ -387,6 +387,71 @@ export type AgentApiRowEdit =
 /** What a write of edits reports: how many landed, and the day as it reads afterwards. */
 export type AgentApiEditedDay = AgentApiDayRows & { applied: number };
 
+export type AgentApiTempoSyncWriteKind = 'create' | 'update' | 'delete';
+
+/** One write a sync of a day would send to Tempo. A delete names the worklog Tempo holds now. */
+export type AgentApiTempoSyncWrite = {
+  kind: AgentApiTempoSyncWriteKind;
+  proposalId: string;
+  /** Absent on a delete whose worklog names an issue Jira no longer resolves. */
+  issueKey?: string;
+  fromMs: number;
+  durationMs: number;
+  description: string;
+  reason: string;
+  /** The worklog an update or a delete targets. Absent on a create. */
+  tempoWorklogId?: string;
+  /** Why the row would be held back rather than sent. */
+  blocked?: string;
+};
+
+export type AgentApiTempoSyncForeign = {
+  id: string;
+  issueKey?: string;
+  issueId: string;
+  fromMs: number;
+  durationMs: number;
+  description: string;
+};
+
+/**
+ * What a sync of one day would write, as the Sync page plans it.
+ *
+ * `planHash` covers the write set only. A write names the hash it was confirmed with, and the app
+ * refuses it when a fresh plan hashes differently.
+ */
+export type AgentApiTempoSyncPlan = {
+  day: string;
+  planHash: string;
+  writes: AgentApiTempoSyncWrite[];
+  unchanged: number;
+  skipped: number;
+  unresolvedKeys: string[];
+  foreign: AgentApiTempoSyncForeign[];
+  /** What foreign worklogs already cover of the day's rows, so the plan leaves it out. */
+  coveredMs: number;
+};
+
+export type AgentApiTempoSyncRowResult = {
+  kind: AgentApiTempoSyncWriteKind;
+  proposalId: string;
+  status: 'written' | 'blocked' | 'skipped' | 'failed';
+  issueKey?: string;
+  tempoWorklogId?: string;
+  /** What a row that did not land waits for, or what Tempo answered. */
+  detail?: string;
+};
+
+export type AgentApiTempoSyncRun = {
+  rows: AgentApiTempoSyncRowResult[];
+  /** The rows that did not land. The Sync page retries them from this run's plan. */
+  retryCount: number;
+  /** Set when Tempo took writes the ledger did not record, so the app no longer owns them. */
+  unrecorded?: string;
+};
+
+export type AgentApiTempoSync = AgentApiTempoSyncPlan & { run?: AgentApiTempoSyncRun };
+
 export type AgentApiRequest =
   | { op: 'status' }
   | { op: 'jira.instance' }
@@ -425,6 +490,7 @@ export type AgentApiRequest =
     }
   | { op: 'naming.offers'; day: string }
   | { op: 'tempo.worklogs'; from: string; to: string }
+  | { op: 'tempo.sync'; day: string; planHash?: string }
   | { op: 'calendar.events'; from: string; to: string }
   | { op: 'lane.issues' }
   | {

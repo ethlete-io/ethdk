@@ -242,7 +242,7 @@ export type TimetrackWorklog = {
 export type TimetrackTempoWorklog = {
   id: string;
   day: string;
-  /** The local start as `HH:MM`. Absent where Tempo holds no start time. */
+  /** The local start as `HH:MM`. An app older than this CLI leaves it out for a worklog at midnight. */
   startTime?: string;
   startMs: number;
   durationMs: number;
@@ -253,6 +253,54 @@ export type TimetrackTempoWorklog = {
 };
 
 export type TimetrackTempoWorklogs = { from: string; to: string; worklogs: TimetrackTempoWorklog[] };
+
+export type TimetrackTempoSyncWrite = {
+  kind: 'create' | 'update' | 'delete';
+  proposalId: string;
+  issueKey?: string;
+  fromMs: number;
+  durationMs: number;
+  description: string;
+  reason: string;
+  /** The worklog an update or a delete targets. */
+  tempoWorklogId?: string;
+  /** Why the row would be held back rather than sent. */
+  blocked?: string;
+};
+
+export type TimetrackTempoSyncRowResult = {
+  kind: 'create' | 'update' | 'delete';
+  proposalId: string;
+  status: 'written' | 'blocked' | 'skipped' | 'failed';
+  issueKey?: string;
+  tempoWorklogId?: string;
+  detail?: string;
+};
+
+/** What a sync of one day would write, and what a confirmed write did. */
+export type TimetrackTempoSync = {
+  day: string;
+  /** Covers the write set only. A write must name it, and the app refuses one a fresh plan does not match. */
+  planHash: string;
+  writes: TimetrackTempoSyncWrite[];
+  unchanged: number;
+  skipped: number;
+  unresolvedKeys: string[];
+  foreign: {
+    id: string;
+    issueKey?: string;
+    issueId: string;
+    fromMs: number;
+    durationMs: number;
+    description: string;
+  }[];
+  coveredMs: number;
+  run?: {
+    rows: TimetrackTempoSyncRowResult[];
+    retryCount: number;
+    unrecorded?: string;
+  };
+};
 
 /** One entry of a calendar the app reads, all-day and declined ones included. */
 export type TimetrackCalendarEvent = {
@@ -464,6 +512,13 @@ export const timetrackEditDay = (options: { day: string; edits: readonly Timetra
 /** Reads the user's own Tempo worklogs from Tempo, both days included. The app caps the span at 92 days. */
 export const timetrackTempoWorklogs = (options: { from: string; to: string }) =>
   askTimetrack<TimetrackTempoWorklogs>({ op: 'tempo.worklogs', ...options });
+
+/**
+ * Plans a Tempo sync of one day exactly as the app's Sync page does. With `planHash` it writes that
+ * plan, and the app refuses when a fresh plan hashes differently. The app moves its review to the day.
+ */
+export const timetrackTempoSync = (options: { day: string; planHash?: string }) =>
+  askTimetrack<TimetrackTempoSync>({ op: 'tempo.sync', ...options });
 
 /** Reads the calendars the app watches, both days included. The app caps the span at 92 days. */
 export const timetrackCalendarEvents = (options: { from: string; to: string }) =>

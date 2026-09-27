@@ -5,6 +5,7 @@ import {
   TimetrackIssue,
   TimetrackNamingDecline,
   TimetrackStandIn,
+  TimetrackTempoSync,
   TimetrackTempoWorklog,
   TimetrackCalendarEvent,
   timetrackAddWorklog,
@@ -27,6 +28,7 @@ import {
   timetrackSplitStandIn,
   timetrackStandIns,
   timetrackStatus,
+  timetrackTempoSync,
   timetrackTempoWorklogs,
   timetrackCalendarEvents,
 } from './timetrack';
@@ -56,6 +58,7 @@ const FLAGS_WITH_VALUE = [
   '--paths',
   '--claim',
   '--author',
+  '--plan',
 ];
 
 /** Every human-readable line, with anything a terminal would act on printed rather than obeyed. */
@@ -271,6 +274,67 @@ const tempoDayLines = (worklogs: readonly TimetrackTempoWorklog[]) => {
       return `${day}  ${hours(total)}  ${parts.join('  ')}`;
     });
 };
+
+const syncWriteLine = (write: TimetrackTempoSync['writes'][number]) =>
+  [
+    write.kind.padEnd(6),
+    write.issueKey ?? write.proposalId,
+    `${clock(write.fromMs)}-${clock(write.fromMs + write.durationMs)}`,
+    `${minutesOf(write.durationMs)}m`,
+    write.reason,
+    ...(write.tempoWorklogId ? [`worklog ${write.tempoWorklogId}`] : []),
+    write.description || '(no description)',
+    ...(write.blocked ? [`HELD BACK: ${write.blocked}`] : []),
+  ].join('  ');
+
+/** What a sync of a day would write, row by row, and what it leaves alone. */
+const syncPlanLines = (plan: TimetrackTempoSync) => {
+  const count = (kind: string) => plan.writes.filter((write) => write.kind === kind).length;
+  const blocked = plan.writes.filter((write) => write.blocked).length;
+
+  return [
+    plan.writes.length
+      ? `${plan.day}  plan ${plan.planHash}  ${count('create')} create, ${count('update')} update, ${count('delete')} delete`
+      : `${plan.day}  nothing to write`,
+    ...plan.writes.map((write) => `  ${syncWriteLine(write)}`),
+    `${plan.unchanged} unchanged, ${plan.skipped} skipped (still awaiting review)`,
+    ...(blocked ? [`${blocked} row(s) held back: Tempo would refuse them until they are fixed on the day.`] : []),
+    ...(plan.unresolvedKeys.length
+      ? [`Jira does not know ${plan.unresolvedKeys.join(', ')}, so nothing is written for those rows.`]
+      : []),
+    ...(plan.coveredMs
+      ? [`${minutesOf(plan.coveredMs)}m of the day is already logged by foreign worklogs, so it is left out.`]
+      : []),
+    `Foreign worklogs (${plan.foreign.length}), never touched`,
+    ...plan.foreign.map(
+      (worklog) =>
+        `  ${worklog.issueKey ?? `#${worklog.issueId}`}  ${clock(worklog.fromMs)}  ${minutesOf(worklog.durationMs)}m  ${worklog.description || '(no description)'}`,
+    ),
+  ];
+};
+
+/** Every row a write attempted, and what the user has to do about the ones that did not land. */
+const syncRunLines = (run: NonNullable<TimetrackTempoSync['run']>) => [
+  ...run.rows.map((row) =>
+    [
+      row.status.padEnd(7),
+      row.kind.padEnd(6),
+      row.issueKey ?? row.proposalId,
+      ...(row.tempoWorklogId ? [`worklog ${row.tempoWorklogId}`] : []),
+      ...(row.detail ? [row.detail] : []),
+    ].join('  '),
+  ),
+  ...(run.retryCount
+    ? [
+        `${run.retryCount} row(s) did not land. Retry them on the Sync page, which retries this run's own plan: a new plan read straight after a write can miss what Tempo just took.`,
+      ]
+    : []),
+  ...(run.unrecorded
+    ? [
+        `Written, but not recorded: ${run.unrecorded}. Tempo holds these worklogs and the app no longer owns them. Delete them in Tempo before writing this day again, or the time is logged twice.`,
+      ]
+    : []),
+];
 
 const meetingMs = (events: readonly TimetrackCalendarEvent[]) =>
   events
@@ -508,6 +572,9 @@ The app holds this machine's Jira credentials, so no repository needs a token of
                                 The account's own Tempo worklogs per day (default: the last 7 days)
   timetrack calendar [from] [to]
                                 The watched calendars' events per day (default: the last 7 days)
+  timetrack sync <YYYY-MM-DD>   What a Tempo sync of the day would write, as the Sync page plans it
+  timetrack sync <YYYY-MM-DD> --write --plan <hash>
+                                Write that plan to Tempo, once the user confirmed its rows
   timetrack naming [YYYY-MM-DD] Which checkouts the day offers a name for, and why the rest do not
   timetrack resync [path…]      Read the agent session logs of checkouts again, after they got a link
 
@@ -536,6 +603,10 @@ Options for day
 
 Options for resync
   --replace           Overwrite what the store holds for those sessions, after a parser fix
+
+Options for sync
+  --write             Write the plan. Refused without --plan, and when the plan changed since
+  --plan <hash>       The plan hash the read printed, for the rows the user confirmed
 
 Options for edit — pass exactly one change
   --day <YYYY-MM-DD>  The day the row is on (default: today)
@@ -785,6 +856,41 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     }
 
     return printed(found, json);
+  }
+
+  if (subcommand === 'sync') {
+    if (!value || !DAY.test(value)) throw new Error('Pass the day to sync as YYYY-MM-DD.');
+
+    const planHash = flagValue(argv, '--plan');
+    const write = argv.includes('--write');
+
+    if (write && !planHash) {
+      say(`A write names the plan the user confirmed. Read it with \`timetrack sync ${value}\`, show the rows,`);
+      say('and pass the hash it prints with --plan once they agree.');
+
+      return 1;
+    }
+
+    if (planHash && !write) {
+      say('--plan only means something with --write. Nothing was written.');
+
+      return 1;
+    }
+
+    const found = await timetrackTempoSync(write ? { day: value, planHash } : { day: value });
+
+    if (!json) {
+      syncPlanLines(found).forEach(say);
+
+      if (found.run) syncRunLines(found.run).forEach(say);
+      else if (found.writes.length) {
+        say(`Once the user has confirmed these rows: timetrack sync ${found.day} --write --plan ${found.planHash}`);
+      }
+    }
+
+    printed(found, json);
+
+    return found.run && (found.run.retryCount || found.run.unrecorded) ? 1 : 0;
   }
 
   if (subcommand === 'calendar') {

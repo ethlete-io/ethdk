@@ -15,6 +15,7 @@ import {
   AgentApiStandIn,
   AgentApiStandInSplit,
   AgentApiStatus,
+  AgentApiTempoSync,
   AgentApiTempoWorklogs,
   AgentApiCalendarEvents,
   JiraCredentials,
@@ -26,14 +27,17 @@ import {
   listGoogleCalendarEvents$,
   redactTitleUrls,
   parseTempoWallClock,
-  tempoDay,
-  tempoTimeOfDay,
+  toAgentApiTempoWorklog,
   describeJiraHierarchy$,
   favoriteProjectKeys,
   fetchJiraFields$,
   fetchJiraIssuePicks$,
   fetchJiraIssues$,
   issueKeyOf,
+  isNamedRow,
+  tempoSyncWriteRefusal,
+  toAgentApiTempoSyncPlan,
+  toAgentApiTempoSyncRun,
   laneIssueUses,
   standInIdOf,
   jiraSubjectFieldCandidates,
@@ -77,6 +81,7 @@ import { LANE_ISSUE_WINDOW_DAYS } from '../jira';
 import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectProjectLinks } from '../project-links';
+import { injectTempoSync } from '../sync/sync';
 
 /** One request as the host hands it over. What is in `body` is the caller's, uninterpreted. */
 type AgentRequestEvent = { id: number; body: unknown };
@@ -119,6 +124,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const settings = injectTimetrackSettings();
   const projectLinks = injectProjectLinks();
   const review = injectDayReview();
+  const tempoSync = injectTempoSync();
   const recurring = injectRecurringPatterns();
   const googleAccount = injectGoogleAccount();
   const destroyRef = inject(DestroyRef);
@@ -439,21 +445,39 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         to: request.to,
         worklogs: [...worklogs]
           .sort((left, right) => left.from.getTime() - right.from.getTime())
-          .map((worklog) => {
-            const startTime = tempoTimeOfDay(worklog.from).slice(0, 5);
-
-            return {
-              id: worklog.id,
-              day: tempoDay(worklog.from),
-              startTime: startTime === '00:00' ? undefined : startTime,
-              startMs: worklog.from.getTime(),
-              durationMs: worklog.durationMs,
-              issueKey: keysByIssueId.get(worklog.issueId),
-              issueId: worklog.issueId,
-              description: worklog.description,
-            };
-          }),
+          .map((worklog) => toAgentApiTempoWorklog(worklog, keysByIssueId)),
       })),
+    );
+
+  /**
+   * Plans a sync of one day exactly as the Sync page does, and writes it only when the caller names
+   * the hash of the plan the user confirmed. A fresh plan that hashes differently is refused.
+   */
+  const tempoSync$ = (request: Extract<AgentApiRequest, { op: 'tempo.sync' }>): Observable<AgentApiTempoSync> =>
+    review.reviewOfDay$(request.day).pipe(
+      switchMap((current) => tempoSync.preview$({ day: request.day, proposals: current.rows.filter(isNamedRow) })),
+      switchMap((preview) => {
+        const plan = toAgentApiTempoSyncPlan({ day: request.day, preview });
+
+        if (request.planHash === undefined) return of(plan);
+
+        const refusal = tempoSyncWriteRefusal({ plan, planHash: request.planHash });
+
+        if (refusal) return throwError(() => new Error(refusal));
+
+        return tempoSync
+          .writeDay$({ day: request.day, plan: preview.plan, authorAccountId: preview.account.accountId })
+          .pipe(
+            map((finished) => {
+              if (finished.kind === 'failed') throw new Error(`The write failed: ${finished.message}`);
+
+              return {
+                ...plan,
+                run: toAgentApiTempoSyncRun({ plan, outcome: finished.outcome, unrecorded: finished.unrecorded }),
+              };
+            }),
+          );
+      }),
     );
 
   const calendarEvents$ = (
@@ -713,6 +737,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return naming$(request);
       case 'tempo.worklogs':
         return tempoWorklogs$(request);
+      case 'tempo.sync':
+        return tempoSync$(request);
       case 'calendar.events':
         return calendarEvents$(request);
       case 'lane.issues':

@@ -433,3 +433,139 @@ describe('timetrack calendar', () => {
     expect(calls).toBe(0);
   });
 });
+
+describe('timetrack sync', () => {
+  const at = (hour: number, minute = 0) => new Date(2026, 8, 7, hour, minute).getTime();
+  const plan = (over: Record<string, unknown> = {}) => ({
+    day: '2026-09-07',
+    planHash: '1a2b3c4d',
+    writes: [
+      {
+        kind: 'create',
+        proposalId: 'p1',
+        issueKey: 'FIP-1',
+        fromMs: at(9),
+        durationMs: 60 * 60_000,
+        description: 'Logout on idle',
+        reason: 'new',
+      },
+      {
+        kind: 'update',
+        proposalId: 'p2',
+        issueKey: 'FIP-2',
+        fromMs: at(10),
+        durationMs: 30 * 60_000,
+        description: '',
+        reason: 'content-changed',
+        tempoWorklogId: '71',
+        blocked: 'needs a description, Tempo refuses an empty one',
+      },
+    ],
+    unchanged: 3,
+    skipped: 1,
+    unresolvedKeys: ['NOPE-1'],
+    foreign: [
+      { id: '9', issueKey: 'FIP-9', issueId: '90', fromMs: at(8), durationMs: 15 * 60_000, description: 'By hand' },
+    ],
+    coveredMs: 15 * 60_000,
+    ...over,
+  });
+
+  const recording = (value: unknown | ((body: Record<string, unknown>) => unknown)) => {
+    const bodies: Record<string, unknown>[] = [];
+    const handler: Handler = (request, response) => {
+      let body = '';
+
+      request.on('data', (chunk) => (body += chunk));
+      request.on('end', () => {
+        const parsed = JSON.parse(body) as Record<string, unknown>;
+
+        bodies.push(parsed);
+        response.setHeader('content-type', 'application/json');
+        response.end(JSON.stringify(typeof value === 'function' ? value(parsed) : { ok: true, value }));
+      });
+    };
+
+    return { handler, bodies };
+  };
+
+  it('prints every write with its time, note and hold-back, and the command that writes this plan', async () => {
+    const { handler, bodies } = recording(plan());
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await expect(run(['sync', '2026-09-07'])).resolves.toBe(0);
+    expect(bodies).toEqual([{ op: 'tempo.sync', day: '2026-09-07' }]);
+    expect(lines).toEqual([
+      '2026-09-07  plan 1a2b3c4d  1 create, 1 update, 0 delete',
+      '  create  FIP-1  09:00-10:00  60m  new  Logout on idle',
+      '  update  FIP-2  10:00-10:30  30m  content-changed  worklog 71  (no description)  HELD BACK: needs a description, Tempo refuses an empty one',
+      '3 unchanged, 1 skipped (still awaiting review)',
+      '1 row(s) held back: Tempo would refuse them until they are fixed on the day.',
+      'Jira does not know NOPE-1, so nothing is written for those rows.',
+      '15m of the day is already logged by foreign worklogs, so it is left out.',
+      'Foreign worklogs (1), never touched',
+      '  FIP-9  08:00  15m  By hand',
+      'Once the user has confirmed these rows: timetrack sync 2026-09-07 --write --plan 1a2b3c4d',
+    ]);
+  });
+
+  it('refuses a write that names no plan, and asks nothing of the app', async () => {
+    const { handler, bodies } = recording(plan());
+
+    await withEndpoint(handler);
+    printedLines();
+
+    await expect(run(['sync', '2026-09-07', '--write'])).resolves.toBe(1);
+    expect(bodies).toEqual([]);
+  });
+
+  it('fails with the app refusal when the plan changed since it was confirmed', async () => {
+    const { handler, bodies } = recording(() => ({
+      ok: false,
+      message: 'The plan for 2026-09-07 is 99999999 now, not 1a2b3c4d, so nothing was written.',
+    }));
+
+    await withEndpoint(handler);
+
+    await expect(run(['sync', '2026-09-07', '--write', '--plan', '1a2b3c4d'])).rejects.toThrow(
+      /is 99999999 now, not 1a2b3c4d/,
+    );
+    expect(bodies).toEqual([{ op: 'tempo.sync', day: '2026-09-07', planHash: '1a2b3c4d' }]);
+  });
+
+  it('prints each row a write attempted, and exits non-zero while a row still waits for a retry', async () => {
+    const { handler } = recording(
+      plan({
+        run: {
+          rows: [
+            { kind: 'create', proposalId: 'p1', status: 'written', issueKey: 'FIP-1', tempoWorklogId: '716401' },
+            {
+              kind: 'update',
+              proposalId: 'p2',
+              status: 'blocked',
+              issueKey: 'FIP-2',
+              tempoWorklogId: '71',
+              detail: 'needs a description',
+            },
+          ],
+          retryCount: 1,
+        },
+      }),
+    );
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await expect(run(['sync', '2026-09-07', '--write', '--plan', '1a2b3c4d'])).resolves.toBe(1);
+    expect(lines.slice(-3)).toEqual([
+      'written  create  FIP-1  worklog 716401',
+      'blocked  update  FIP-2  worklog 71  needs a description',
+      "1 row(s) did not land. Retry them on the Sync page, which retries this run's own plan: a new plan read straight after a write can miss what Tempo just took.",
+    ]);
+    expect(lines.join('\n')).not.toContain('Once the user');
+  });
+});

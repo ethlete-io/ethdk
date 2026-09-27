@@ -296,6 +296,21 @@ describe('parseAgentRequest, over a day edit', () => {
     });
   });
 
+  it('reads a Tempo sync of one day, with the plan hash a write names', () => {
+    expect(parseAgentRequest({ op: 'tempo.sync', day: '2026-09-07' })).toEqual({
+      ok: true,
+      request: { op: 'tempo.sync', day: '2026-09-07' },
+    });
+    expect(parseAgentRequest({ op: 'tempo.sync', day: '2026-09-07', planHash: ' 1a2b3c4d ' })).toEqual({
+      ok: true,
+      request: { op: 'tempo.sync', day: '2026-09-07', planHash: '1a2b3c4d' },
+    });
+    expect(parseAgentRequest({ op: 'tempo.sync', day: 'today' })).toEqual({
+      ok: false,
+      message: 'tempo.sync needs a day as YYYY-MM-DD.',
+    });
+  });
+
   it('refuses a Tempo range one day wider than the cap', () => {
     expect(parseAgentRequest({ op: 'tempo.worklogs', from: '2026-06-24', to: '2026-09-24' })).toEqual({
       ok: false,
