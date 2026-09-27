@@ -33,6 +33,13 @@ const CHARSET_PATTERNS: Record<'numeric' | 'alphanumeric', RegExp> = {
 @Directive({
   selector: '[etOtpInput]',
   exportAs: 'etOtpInput',
+  host: {
+    '(input)': 'isFromNativeControl($event) && handleNativeInput()',
+    '(focus)': 'isFromNativeControl($event) && handleNativeFocus()',
+    '(blur)': 'isFromNativeControl($event) && handleNativeBlur()',
+    '(keyup)': 'isFromNativeControl($event) && handleNativeSelectionEvent()',
+    '(mouseup)': 'isFromNativeControl($event) && handleNativeSelectionEvent()',
+  },
 })
 export class OtpInputDirective
   extends AccessibleNameControlDirective
@@ -171,6 +178,10 @@ export class OtpInputDirective
       .filter((char) => pattern.test(char))
       .join('')
       .slice(0, this.length());
+  }
+
+  protected isFromNativeControl(event: Event) {
+    return event.target === this.nativeControl();
   }
 
   /** @internal Wired to the native input's `input` event. */

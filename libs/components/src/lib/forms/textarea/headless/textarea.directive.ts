@@ -32,6 +32,9 @@ export type TextareaResizeMode = (typeof TEXTAREA_RESIZE_MODES)[keyof typeof TEX
 
 @Directive({
   selector: '[etTextarea]',
+  host: {
+    '(input)': 'handleNativeInput($event)',
+  },
 })
 export class TextareaDirective extends TextFieldControlDirective implements FormValueControl<string> {
   private renderer = injectRenderer();
@@ -148,6 +151,14 @@ export class TextareaDirective extends TextFieldControlDirective implements Form
 
       untracked(() => this.resizeToFit(textarea, { bounds, value }));
     });
+  }
+
+  protected handleNativeInput(event: Event) {
+    if (event.target !== this.nativeControl()) {
+      return;
+    }
+
+    this.syncFromNativeInput(event.target as HTMLTextAreaElement);
   }
 
   /**

@@ -13,7 +13,6 @@
   [attr.aria-label]="textareaDir.ariaLabel() || null"
   [attr.aria-labelledby]="textareaDir.labelId() || null"
   [attr.data-resize]="textareaDir.effectiveResize()"
-  (input)="syncNativeValue($event)"
   (focus)="textareaDir.focused.set(true)"
   (blur)="textareaDir.focused.set(false); textareaDir.touched.set(true)"
   class="et-textarea-native"
