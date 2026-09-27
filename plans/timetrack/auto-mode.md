@@ -1,6 +1,6 @@
 # Auto mode and the approval queue
 
-Status: slices 1 and 2 done (2026-09-28); slice 3 in progress.
+Status: slices 1, 2 and 3 done (2026-09-28); slice 4 next.
 
 ## Goal
 
@@ -64,7 +64,14 @@ settings: the user can move an action to a stricter class, never to a looser one
    never from the store. Contract v3; the CLI names itself via `TIMETRACK_CLIENT` or Claude Code.
 3. **Field sources.** Add `human | auto | observed` to the row fields auto mode can set (issue,
    description, parent, stand-in resolution). Any UI edit sets `human`. Spec: an auto pass after a
-   human edit changes nothing.
+   human edit changes nothing. Done. `FieldSource` in `libs/timetrack/src/lib/model/field-source.ts`.
+   A row's `issue` (key or stand-in) and `description` carry `sources` on `ProposalOverride` and
+   `PinnedRow`; a stand-in carries `resolutionSource`. Setters take `source` (default `human`) and an
+   `auto` write to a `human` field returns its input. A stored value without a source reads `human`.
+   Approved CLI writes (`day.edits`, `worklog.add`) are `human`: the approve press is the user's. The
+   existing "Reset to the proposal" row action is the UI reset. Open for slice 4: no stored slot for a
+   drafted parent yet (the create form ranks it live), no way back to `auto` for a stand-in the user
+   reopened, and `day.rows` does not report sources.
 4. **Auto mode.** New ADR first. A setting to turn it on. On each new unnamed band or open stand-in:
    run the match; if one matches, apply it as `local`; if none matches, draft the ticket and pick
    its epic, then queue the create as `external`.
