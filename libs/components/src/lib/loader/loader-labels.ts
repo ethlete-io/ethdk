@@ -1,15 +1,18 @@
 import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
- * What a busy indicator announces. A spinner, a brand loader and a skeleton are all shapes with no
- * text, so this is the only thing a screen reader has to go on.
+ * What a busy indicator announces. A brand loader and a skeleton are shapes with no text, so this is
+ * the only thing a screen reader has to go on.
  *
  * One set for all of them on purpose: an app that translates "Loading" should not have to say so once
  * per component. `et-skeleton`'s `loadingAllyText` still overrides it per instance where something more
  * specific reads better ("Loading results").
  */
 export type LoaderLabels = {
-  /** Announced by an indeterminate loader - the spinner, the brand loader, a stream's loading overlay. */
+  /**
+   * The `aria-label` of the brand loader and a stream's loading overlay. The spinner never uses it and has no
+   * accessible name unless you give it an `aria-label`.
+   */
   loading: string;
   /** Announced in place of a skeleton's shapes, which are `aria-hidden`. */
   loadingContent: string;

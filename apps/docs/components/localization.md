@@ -122,7 +122,7 @@ that provides labels needs no per-instance wiring at all.
 | `BREADCRUMB_LABELS`       | `provideBreadcrumbLabels`     | Landmark name, overflow control                                                                                          |
 | `CAROUSEL_LABELS`         | `provideCarouselLabels`       | Region, slides, prev/next, play/pause, dots                                                                              |
 | `GRID_LABELS`             | `provideGridLabels`           | Interactive/read-only grid names, item remove                                                                            |
-| `LOADER_LABELS`           | `provideLoaderLabels`         | What spinners, brand loaders and skeletons announce                                                                      |
+| `LOADER_LABELS`           | `provideLoaderLabels`         | What brand loaders, stream loading overlays and skeletons announce                                                       |
 | `NOTIFICATION_LABELS`     | `provideNotificationLabels`   | The dismiss button                                                                                                       |
 | `ALERT_DIALOG_LABELS`     | `provideAlertDialogLabels`    | The confirm, cancel and acknowledge actions of `createAlertDialogOpener` dialogs                                         |
 | `STREAM_LABELS`           | `provideStreamLabels`         | Consent gate, failure overlay, PiP placeholder and controls, frame title                                                 |

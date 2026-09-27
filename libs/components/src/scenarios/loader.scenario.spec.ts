@@ -201,4 +201,19 @@ describe('loader scenarios with localized labels', () => {
     expect(query('et-brand-loader').getAttribute('aria-label')).toBe('Lädt');
     expect(query('et-scenario-label-probe').textContent).toBe(`Lädt|${DEFAULT_LOADER_LABELS.loadingContent}`);
   });
+
+  it('leaves a spinner without an aria-label unnamed, whatever the loader labels say', () => {
+    const s = scenario();
+
+    TestBed.createComponent(UploadProgressComponent);
+    s.run(() => injectLocale().currentLocale.set('de-DE'));
+    s.tick();
+
+    const inline = query('et-spinner.inline');
+
+    expect(inline.getAttribute('role')).toBe('progressbar');
+    expect(inline.hasAttribute('aria-label')).toBe(false);
+    expect(inline.hasAttribute('aria-labelledby')).toBe(false);
+    expect(inline.textContent?.trim()).toBe('');
+  });
 });
