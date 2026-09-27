@@ -133,7 +133,7 @@ describe('accordion scenarios', () => {
       '3',
       '3',
     ]);
-    expect(triggers.map(text)).toEqual(['Shipping', 'Returns30 days', 'Revenue', 'Archive']);
+    expect(triggers.map(text)).toEqual(['Shipping', 'Returns 30 days', 'Revenue', 'Archive']);
     expect(host.querySelector('.returns-label')).not.toBeNull();
     expect(text(host.querySelector('.et-accordion-hint'))).toBe('30 days');
     expect(triggers.map((trigger) => trigger.getAttribute('aria-expanded'))).toEqual([
