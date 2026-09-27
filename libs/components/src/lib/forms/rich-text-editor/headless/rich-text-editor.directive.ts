@@ -37,6 +37,7 @@ import {
   provideRichTextEditorDom,
   RichTextMarkStates,
 } from './internals/rich-text-editor-dom';
+import { EditorRenderer } from './internals/rich-text-editor-dom-core';
 import { createRichTextEditorHistory, RichTextEditorHistoryEntry } from './internals/rich-text-editor-history';
 import {
   assertValidToken,
@@ -51,6 +52,28 @@ import { FormFieldRichTextStylesComponent } from '../../form-field/form-field-ri
 const EMPTY_INLINE_SWEEP_SELECTOR = /* @__PURE__ */ [...INLINE_TAGS, 'a'].join(', ');
 
 const INERT_STYLE_ATTRIBUTE = 'data-et-paste-style';
+
+const INLINE_RUN_BOUNDARY = /^(?:P|DIV|H[1-6]|UL|OL|BLOCKQUOTE|PRE|TABLE|FIGURE|HR)$/;
+
+const hasContent = (node: Node) =>
+  (node.textContent ?? '').trim().length > 0 || (node instanceof Element && node.tagName !== 'BR');
+
+// Chrome's native Enter after a first line typed into an empty editor leaves that line a bare text
+// run and puts the next one in a `<div>`; unwrapped, the paragraph break serializes as a soft one.
+const wrapLineBeforeNativeDiv = (root: HTMLElement, renderer: EditorRenderer) => {
+  const nodes = [...root.childNodes];
+  const boundary = nodes.findIndex((node) => node instanceof Element && INLINE_RUN_BOUNDARY.test(node.tagName));
+  const run = nodes.slice(0, boundary);
+  const [first] = run;
+
+  if (!first || boundary < 1 || (nodes[boundary] as Element).tagName !== 'DIV' || !run.some(hasContent)) return;
+
+  const paragraph = renderer.createElement('p') as HTMLElement;
+
+  renderer.insertBefore(root, paragraph, first);
+  for (const node of run) renderer.appendChild(paragraph, node);
+};
+
 const HTML_START_TAG = /<[a-z][^\s/>]*(?:\s+[^\s/>=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?)*\s*\/?>/gi;
 const HTML_ATTRIBUTE = /(\s+)([^\s/>=]+)((?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?)/g;
 
@@ -741,6 +764,7 @@ export class RichTextEditorDirective
 
     // Must run before the HTML→markdown pass strips unknown tags, which would flatten a chip to its label.
     this.serializeTokens(clone);
+    wrapLineBeforeNativeDiv(clone, this.renderer);
 
     let removed = true;
 

@@ -103,6 +103,13 @@ describe('RichTextEditorComponent', () => {
       expect(driver.value()).toBe('- item');
     });
 
+    it('keeps the paragraph break Enter adds after a first line typed into an empty editor', () => {
+      driver.setHtml('first<div>second</div>');
+      driver.editable().dispatchEvent(new Event('input'));
+
+      expect(driver.value()).toBe('first\n\nsecond');
+    });
+
     it('leaves an unclosed inline run as literal text', () => {
       driver.type('*not bold');
 
