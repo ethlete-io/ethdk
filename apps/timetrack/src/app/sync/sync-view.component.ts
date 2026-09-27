@@ -350,7 +350,10 @@ export class SyncViewComponent {
       id: `${options.kind}:${options.id}`,
       kind: options.kind,
       color: BADGE_COLORS[options.kind],
-      reason: options.reason,
+      reason:
+        options.kind !== 'delete' && row && !row.description.trim()
+          ? 'needs a description, Tempo refuses an empty one'
+          : options.reason,
       issueKey: row?.issueKey ?? options.id,
       clock: row ? `${formatClockTime(row.from)} – ${formatClockTime(row.to)}` : '—',
       duration: row ? formatDurationMs(row.durationMs) : '—',
@@ -360,7 +363,14 @@ export class SyncViewComponent {
 
   private detailOf(row: TempoSyncRow) {
     if (row.status === 'written') return row.tempoWorklogId ? `worklog ${row.tempoWorklogId}` : 'done';
-    if (row.status === 'blocked') return `needs ${(row.missing ?? []).map((attribute) => attribute.name).join(', ')}`;
+    if (row.status === 'blocked') {
+      const needs = [
+        ...(row.missingDescription ? ['a description'] : []),
+        ...(row.missing ?? []).map((attribute) => attribute.name),
+      ];
+
+      return `needs ${needs.join(', ')}`;
+    }
 
     return row.error?.message ?? 'did not land';
   }

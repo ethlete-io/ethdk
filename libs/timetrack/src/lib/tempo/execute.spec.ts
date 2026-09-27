@@ -294,6 +294,32 @@ describe('executeTempoSync$', () => {
     expect(outcome.retry.creates).toHaveLength(1);
   });
 
+  it('blocks a row without a description, which Tempo refuses', () => {
+    const { transport, requests } = stubTransport([]);
+    const outcome = execute({
+      transport,
+      plan: planWith({
+        creates: [createOf(proposal({ description: '' }))],
+        updates: [updateOf(proposal({ id: 'p2', description: '  ' }))],
+      }),
+    });
+
+    expect(requests).toEqual([]);
+    expect(outcome.rows).toEqual([
+      { kind: 'create', proposalId: 'p1', status: 'blocked', missing: [], missingDescription: true },
+      {
+        kind: 'update',
+        proposalId: 'p2',
+        status: 'blocked',
+        tempoWorklogId: 'w1',
+        missing: [],
+        missingDescription: true,
+      },
+    ]);
+    expect(outcome.retry.creates).toHaveLength(1);
+    expect(outcome.retry.updates).toHaveLength(1);
+  });
+
   it('writes the row once the required attribute has a value', () => {
     const { transport, requests } = stubTransport([{ status: 200, body: { tempoWorklogId: 555 } }]);
     const outcome = execute({

@@ -24,6 +24,8 @@ export type TempoSyncRow = {
   tempoWorklogId?: string;
   /** The required attributes a `blocked` row is waiting for. */
   missing?: TempoWorkAttribute[];
+  /** Tempo refuses a worklog whose description is empty. */
+  missingDescription?: boolean;
   error?: Error;
 };
 
@@ -72,6 +74,15 @@ const valuesFor = (options: TempoSyncOptions, proposal: WorklogProposal) =>
     attributes: options.attributesByProposalId?.[proposal.id],
   });
 
+const blockersOf = (options: TempoSyncOptions, values: ReturnType<typeof valuesFor>) => {
+  const missing = missingRequiredAttributes({ attributes: options.workAttributes ?? [], values: values.attributes });
+  const missingDescription = !values.description.trim();
+
+  if (!missing.length && !missingDescription) return null;
+
+  return { missing, ...(missingDescription ? { missingDescription } : {}) };
+};
+
 const deleteStep$ = (options: TempoSyncOptions, entry: TempoSyncDelete): Observable<ExecutedRow> => {
   const row = (status: TempoSyncRowStatus, error?: Error): ExecutedRow => ({
     row: {
@@ -116,10 +127,11 @@ const createStep$ = (context: CreateContext, entry: TempoSyncCreate): Observable
     });
   }
 
-  const { description, attributes } = valuesFor(options, entry.proposal);
-  const missing = missingRequiredAttributes({ attributes: options.workAttributes ?? [], values: attributes });
+  const values = valuesFor(options, entry.proposal);
+  const { description, attributes } = values;
+  const blockers = blockersOf(options, values);
 
-  if (missing.length > 0) return of<ExecutedRow>({ row: { kind: 'create', proposalId, status: 'blocked', missing } });
+  if (blockers) return of<ExecutedRow>({ row: { kind: 'create', proposalId, status: 'blocked', ...blockers } });
 
   return createTempoWorklog$({
     transport: options.transport,
@@ -149,12 +161,13 @@ const createStep$ = (context: CreateContext, entry: TempoSyncCreate): Observable
 
 const updateStep$ = (options: TempoSyncOptions, entry: TempoSyncUpdate): Observable<ExecutedRow> => {
   const proposalId = entry.proposal.id;
-  const { description, attributes } = valuesFor(options, entry.proposal);
-  const missing = missingRequiredAttributes({ attributes: options.workAttributes ?? [], values: attributes });
+  const values = valuesFor(options, entry.proposal);
+  const { description, attributes } = values;
+  const blockers = blockersOf(options, values);
 
-  if (missing.length > 0) {
+  if (blockers) {
     return of<ExecutedRow>({
-      row: { kind: 'update', proposalId, status: 'blocked', tempoWorklogId: entry.tempoWorklogId, missing },
+      row: { kind: 'update', proposalId, status: 'blocked', tempoWorklogId: entry.tempoWorklogId, ...blockers },
     });
   }
 
