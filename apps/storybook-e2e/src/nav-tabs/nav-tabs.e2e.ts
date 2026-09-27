@@ -314,6 +314,19 @@ test.describe('nav-tabs / keyboard', () => {
     expect((await scrollState(root, 3))?.scrollOffset).toBeGreaterThan(0);
   });
 
+  test('the end scroll button scrolls an overflowing bar without navigating', async ({ page }) => {
+    await page.setViewportSize({ width: 260, height: 720 });
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const start = bar(root).locator('.et-scrollable-button--start');
+
+    await expect(start).toBeDisabled();
+    await bar(root).locator('.et-scrollable-button--end').click();
+
+    await expect.poll(async () => (await scrollState(root, 3))?.scrollOffset).toBeGreaterThan(0);
+    await expect(start).toBeEnabled();
+    await expect(links(root).first()).toHaveAttribute('aria-selected', 'true');
+  });
+
   test('the arrow keys skip disabled links', async ({ page }) => {
     const root = await openStory(page, DISABLED_STORY_ID);
 
