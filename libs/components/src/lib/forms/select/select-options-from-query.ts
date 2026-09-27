@@ -115,7 +115,7 @@ export const selectOptionsFromQuery = <TCreator extends AnyQueryCreator, TOption
     computation: () => initialPage,
   });
 
-  const query = config.queryCreator(
+  const query = config.queryCreator.clone({ reportErrors: false })(
     withArgs<TArgs>(() => {
       if (skipped()) {
         return null;
