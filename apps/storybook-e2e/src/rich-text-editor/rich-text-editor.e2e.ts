@@ -685,6 +685,7 @@ test.describe('rich-text-editor / touch toolbar', () => {
     await expect(editor).toHaveClass(/et-rich-text-editor--docked-toolbar/);
     await expect(dock).toHaveCSS('opacity', '1');
     await expect(dock).toHaveCSS('position', 'fixed');
+    await expect(dock).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
 
     const box = await boxOf(dock);
     const viewport = viewportOf(page);
