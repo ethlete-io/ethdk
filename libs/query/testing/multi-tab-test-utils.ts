@@ -30,6 +30,10 @@ export type FakeBroadcastChannelHandle = {
   restore: () => void;
 };
 
+// Captured at import, before a spec can call `vi.useFakeTimers()`: delivery must not wait on a faked clock.
+const scheduleTask: (callback: () => void) => void =
+  typeof setImmediate === 'function' ? setImmediate.bind(globalThis) : setTimeout.bind(globalThis);
+
 type FakeChannelInstance = {
   name: string;
   closed: boolean;
@@ -40,9 +44,9 @@ type FakeChannelInstance = {
  * Replaces `globalThis.BroadcastChannel` with an in-memory bus.
  *
  * Messages are structured-cloned at post time (so a non-cloneable payload throws exactly like the
- * real API does), delivered on a microtask (never synchronously), and never delivered back to the
- * channel that posted them - all three matching browser behavior. `await Promise.resolve()` in a
- * spec is enough to flush delivery.
+ * real API does), delivered as a task (never synchronously, and after every pending microtask), and
+ * never delivered back to the channel that posted them - all three matching browser behavior. Delivery
+ * does not depend on fake timers; `await flushMultiTabSync()` in a spec flushes it.
  */
 export const installFakeBroadcastChannel = (): FakeBroadcastChannelHandle => {
   const original = (globalThis as any).BroadcastChannel;
@@ -67,7 +71,7 @@ export const installFakeBroadcastChannel = (): FakeBroadcastChannelHandle => {
       for (const instance of instances) {
         if (instance === this || instance.closed || instance.name !== this.name) continue;
 
-        queueMicrotask(() => {
+        scheduleTask(() => {
           if (instance.closed) return;
 
           instance.onmessage?.({ data: structuredClone(clone) } as MessageEvent<unknown>);
@@ -288,8 +292,8 @@ export const installFakeWebLocks = (): FakeWebLocksHandle => {
 };
 
 /**
- * Flushes the microtask queue, which is where both fakes schedule their work - message delivery and
- * lock grants. Awaiting it once is enough for a single hop; a grant that has to wait for another
- * tab's release needs one await per hop.
+ * Waits for the fakes' pending work - message delivery (a task) and lock grants (a microtask) - even
+ * under fake timers. Awaiting it once is enough for a single hop; a grant that has to wait for another
+ * tab's release, or a reply to a delivered message, needs one await per hop.
  */
-export const flushMultiTabSync = () => Promise.resolve();
+export const flushMultiTabSync = () => new Promise<void>((resolve) => scheduleTask(resolve));

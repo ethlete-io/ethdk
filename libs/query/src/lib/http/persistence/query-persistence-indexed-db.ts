@@ -1,3 +1,4 @@
+import { isDevMode } from '@angular/core';
 import { QueryKey } from '../query-repository';
 import {
   PersistedQueryBody,
@@ -19,6 +20,9 @@ type PersistedBodyRecord = {
   key: QueryKey;
   body: unknown;
 };
+
+const isDataCloneError = (error: unknown) =>
+  typeof error === 'object' && error !== null && (error as { name?: unknown }).name === 'DataCloneError';
 
 const toPromise = <T>(request: IDBRequest<T>) =>
   new Promise<T>((resolve, reject) => {
@@ -152,11 +156,29 @@ export const createIndexedDbQueryPersistenceAdapter = (
     const meta = transaction.objectStore(META_STORE);
     const bodies = transaction.objectStore(BODY_STORE);
 
-    // A put that throws (a `DataCloneError`) leaves the transaction to auto-commit the puts before it.
+    // A put that throws leaves the transaction to auto-commit the puts before it.
     try {
       for (const { body, ...entryMeta } of entries) {
+        try {
+          bodies.put({ key: entryMeta.key, body } satisfies PersistedBodyRecord);
+        } catch (error) {
+          if (!isDataCloneError(error)) throw error;
+
+          // The previous body under this key would otherwise hydrate in place of the one just dropped.
+          meta.delete(entryMeta.key);
+          bodies.delete(entryMeta.key);
+
+          if (isDevMode()) {
+            console.warn(
+              `[@ethlete/query] The response of "${entryMeta.url}" cannot be structured-cloned and was not persisted.`,
+              error,
+            );
+          }
+
+          continue;
+        }
+
         meta.put(entryMeta);
-        bodies.put({ key: entryMeta.key, body } satisfies PersistedBodyRecord);
       }
     } catch (error) {
       transaction.abort();

@@ -1,4 +1,44 @@
-import { flushMultiTabSync, installFakeWebLocks, type FakeWebLocksHandle } from './multi-tab-test-utils';
+import {
+  flushMultiTabSync,
+  installFakeBroadcastChannel,
+  installFakeWebLocks,
+  type FakeBroadcastChannelHandle,
+  type FakeWebLocksHandle,
+} from './multi-tab-test-utils';
+
+describe('installFakeBroadcastChannel', () => {
+  let bus: FakeBroadcastChannelHandle;
+
+  beforeEach(() => {
+    bus = installFakeBroadcastChannel();
+  });
+
+  afterEach(() => {
+    bus.restore();
+    vi.useRealTimers();
+  });
+
+  it('delivers as a task, after pending microtasks, even under fake timers', async () => {
+    vi.useFakeTimers();
+
+    const sender = new BroadcastChannel('bus');
+    const receiver = new BroadcastChannel('bus');
+    const received: unknown[] = [];
+    receiver.onmessage = (event) => received.push(event.data);
+
+    sender.postMessage('hello');
+    for (let i = 0; i < 10; i++) await Promise.resolve();
+
+    expect(received).toEqual([]);
+
+    await flushMultiTabSync();
+
+    expect(received).toEqual(['hello']);
+
+    sender.close();
+    receiver.close();
+  });
+});
 
 describe('installFakeWebLocks', () => {
   let locks: FakeWebLocksHandle;

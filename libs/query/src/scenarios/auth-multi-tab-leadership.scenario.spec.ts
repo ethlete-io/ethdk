@@ -1330,10 +1330,10 @@ describe('auth multi-tab leadership scenario', () => {
     s.tick(3000);
     await sync(s);
 
-    // Lands between the takeover's lock request and its grant.
     const seeded = issueTokens(15 * 60 * 1000)().body;
-    c.auth.setTokens(seeded.accessToken, seeded.refreshToken);
     s.tick(3000);
+    // Lands between the takeover's lock request and its grant: nothing awaited since the tick.
+    b.auth.setTokens(seeded.accessToken, seeded.refreshToken);
     await sync(s);
 
     expect(b.auth.accessToken()).toBe(seeded.accessToken);

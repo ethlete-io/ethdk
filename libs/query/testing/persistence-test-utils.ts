@@ -38,7 +38,7 @@ export type FakeQueryPersistenceStoreHandle = {
   /**
    * Holds every subsequent `read` pending until {@link flushReads} is called, for testing the window
    * between a cold mount and its hydration (a slow disk, or a mount that happened before startup
-   * finished).
+   * finished). Each held read returns what the store held when it started, as `loadIndex` does.
    */
   deferReads: () => void;
 
@@ -102,13 +102,14 @@ export const createFakeQueryPersistenceStore = (): FakeQueryPersistenceStoreHand
   const read = async (key: string) => {
     calls.read++;
 
+    const entry = store.get(key);
+    const snapshot = entry ? { body: clone(entry.body), version: entry.version } : null;
+
     if (isDeferringReads) {
       await new Promise<void>((resolve) => deferredReads.push(resolve));
     }
 
-    const entry = store.get(key);
-
-    return entry ? { body: clone(entry.body), version: entry.version } : null;
+    return snapshot;
   };
 
   const write = async (entries: PersistedQueryEntry[]) => {

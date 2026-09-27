@@ -11,6 +11,7 @@ import { TestBed } from '@angular/core/testing';
 import {
   createFakeQueryPersistenceStore,
   FakeQueryPersistenceStoreHandle,
+  flushMultiTabSync,
   installFakeBroadcastChannel,
   FakeBroadcastChannelHandle,
 } from '@ethlete/query/testing';
@@ -585,6 +586,7 @@ describe('query persistence', () => {
       queryA.query.execute();
       flushNext({ version: 2 });
       await flushStore();
+      await flushMultiTabSync();
 
       expect(queryB.query.response()).toEqual({ version: 2 });
 

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { installFakeBroadcastChannel, setupAuthTest, setupQueryTest } from '@ethlete/query/testing';
+import { flushMultiTabSync, installFakeBroadcastChannel, setupAuthTest, setupQueryTest } from '@ethlete/query/testing';
 import { withBearerAuthMultiTabSync } from './bearer-auth-multi-tab-sync';
 import { withInactivityLogout } from './bearer-auth-inactivity-logout';
 
@@ -338,7 +338,7 @@ describe('bearer-auth-inactivity-logout', () => {
       TestBed.tick();
 
       otherTab.postMessage({ type: 'activity' });
-      await Promise.resolve();
+      await flushMultiTabSync();
       TestBed.tick();
 
       vi.advanceTimersByTime(4000);
@@ -363,7 +363,7 @@ describe('bearer-auth-inactivity-logout', () => {
       login({ username: 'test' }, { accessToken: 'token', refreshToken: 'refresh' });
 
       otherTab.postMessage({ type: 'activity' });
-      await Promise.resolve();
+      await flushMultiTabSync();
       TestBed.tick();
 
       expect(bus.posted.filter((message) => (message.data as { type: string }).type === 'activity')).toHaveLength(1);

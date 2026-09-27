@@ -2292,24 +2292,32 @@ describe('persistence scenario over IndexedDB', () => {
     later.destroy();
   });
 
-  it('leaves no record behind when a put in the write batch throws', async () => {
+  it('skips a body that cannot be cloned, writes the rest of its batch and keeps persisting', async () => {
     const s = scenario();
     await s.client.whenPersistenceReady;
 
     s.api.on('GET', '/uncloneable', () => ({ body: { format: () => 'not structured-cloneable' } }));
+    s.api.on('GET', '/cloneable', () => ({ body: { path: '/cloneable' } }));
 
     const getUncloneable = s.get<{ response: { format: () => string } }>('/uncloneable', { persistence: true });
+    const getCloneable = s.get<{ response: { path: string } }>('/cloneable', { persistence: true });
     const c = s.consumer();
     c.run(() => getUncloneable());
+    c.run(() => getCloneable());
     s.tick();
 
     await s.client.subtle.persistence?.flush();
     await s.settle();
 
-    s.expectWarning(/disabled for this session/);
-    expect(await persistedUrls(s)).toEqual([]);
+    s.expectWarning(/cannot be structured-cloned/);
+    expect(await persistedUrls(s)).toEqual(['https://api.test/cloneable']);
+
+    const later = await persist(s, '/later');
+
+    expect(await persistedUrls(s)).toEqual(['https://api.test/cloneable', 'https://api.test/later']);
 
     c.destroy();
+    later.destroy();
   });
 
   it('frees space and retries once when a write aborts with QuotaExceededError', async () => {
