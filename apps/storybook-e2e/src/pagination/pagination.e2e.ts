@@ -1,5 +1,5 @@
 import { Locator, expect, test } from '@playwright/test';
-import { expectFocusVisible, expectTouchMode, openStory, pressKey, tabSequence, tap } from '../support';
+import { boxOf, expectFocusVisible, expectTouchMode, openStory, pressKey, tabSequence, tap } from '../support';
 
 const DEFAULT_STORY_ID = 'components-navigation-pagination--default';
 const MANY_PAGES_STORY_ID = 'components-navigation-pagination--many-pages';
@@ -271,4 +271,113 @@ test.describe('pagination / responsive', () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await expect.poll(() => items.count()).toBe(wideCount);
   });
+});
+
+const MODIFIED_CLICKS: { name: string; options: Parameters<Locator['click']>[0] }[] = [
+  { name: 'Ctrl/Cmd+click', options: { modifiers: ['ControlOrMeta'] } },
+  { name: 'Shift+click', options: { modifiers: ['Shift'] } },
+  { name: 'a middle click', options: { button: 'middle' } },
+];
+
+const widthOf = async (locator: Locator) => (await boxOf(locator)).width;
+
+test.describe('pagination / compact switch', () => {
+  test('a narrow paginator collapses to the compact pager and a wide one brings the page numbers back', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const pageOne = root.getByRole('button', { name: 'Page 1', exact: true });
+    const readout = root.locator('.et-pagination-readout-text');
+
+    await expect(pageOne).toBeVisible();
+    await expect(readout).toHaveCount(0);
+
+    await page.setViewportSize({ width: 320, height: 800 });
+
+    await expect(readout).toHaveText('1 / 10');
+    await expect(pageOne).toHaveCount(0);
+    await expect(root.getByRole('button', { name: 'Next page' })).toBeVisible();
+
+    await page.setViewportSize({ width: 1280, height: 800 });
+
+    await expect(pageOne).toBeVisible();
+    await expect(readout).toHaveCount(0);
+  });
+
+  test('the compact pager keeps the page it was on across the switch', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const root = await openStory(page, DEFAULT_STORY_ID);
+
+    await root.getByRole('button', { name: 'Page 3', exact: true }).click();
+    await page.setViewportSize({ width: 320, height: 800 });
+
+    await expect(root.locator('.et-pagination-readout-text')).toHaveText('3 / 10');
+
+    await root.getByRole('button', { name: 'Next page' }).click();
+    await page.setViewportSize({ width: 1280, height: 800 });
+
+    await expect(root.getByRole('button', { name: 'Page 4', exact: true })).toHaveAttribute('aria-current', 'page');
+  });
+});
+
+test.describe('pagination / stable readout', () => {
+  test('the range readout keeps its width from the first page to the last', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const root = await openStory(page, RANGE_AND_JUMP_STORY_ID);
+    const range = root.locator('.et-pagination-range');
+    const readout = root.locator('.et-pagination-readout-text');
+    const firstWidth = await widthOf(range);
+
+    await root.getByRole('button', { name: 'Last page' }).click();
+
+    await expect(readout).toHaveText('Showing 481–500 of 500');
+    expect(await widthOf(range)).toBe(firstWidth);
+  });
+
+  test('the compact readout keeps the chevrons in place while the page count gains a digit', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 800 });
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const previous = root.getByRole('button', { name: 'Previous page' });
+    const next = root.getByRole('button', { name: 'Next page' });
+    const readout = root.locator('.et-pagination-readout-text');
+
+    const before = await boxOf(previous);
+
+    await expect(readout).toHaveText('1 / 10');
+    await expect(readout).toHaveCSS('font-variant-numeric', 'tabular-nums');
+
+    await clickThroughToLastPage(next);
+
+    await expect(readout).toHaveText('10 / 10');
+    expect((await boxOf(previous)).x).toBe(before.x);
+  });
+});
+
+async function clickThroughToLastPage(next: Locator) {
+  for (let i = 0; i < 9; i++) {
+    await next.click();
+  }
+}
+
+test.describe('pagination / links modified click', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard modifiers and the middle button');
+
+  for (const { name, options } of MODIFIED_CLICKS) {
+    test(`${name} on a page link opens its URL in a new page and leaves the current page alone`, async ({
+      page,
+      context,
+    }) => {
+      const root = await openStory(page, LINKS_STORY_ID);
+      const secondPageLink = root.getByRole('link', { name: 'Page 2', exact: true });
+      const urlBefore = page.url();
+
+      const [opened] = await Promise.all([context.waitForEvent('page'), secondPageLink.click(options)]);
+
+      await expect.poll(() => opened.url()).toContain('page=2');
+      await expect(root.getByRole('link', { name: 'Page 1', exact: true })).toHaveAttribute('aria-current', 'page');
+      await expect(secondPageLink).not.toHaveAttribute('aria-current');
+      expect(page.url()).toBe(urlBefore);
+    });
+  }
 });
