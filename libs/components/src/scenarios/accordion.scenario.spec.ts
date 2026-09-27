@@ -205,6 +205,7 @@ describe('accordion scenarios', () => {
     app.group().openAll();
     s.tick();
     expect(expanded()).toEqual([false, false, true, false]);
+    s.expectWarning(`ET${ACCORDION_ERROR_CODES.OPEN_ALL_WITH_AUTO_CLOSE_OTHERS}`);
 
     app.keepOne.set(true);
     s.tick();

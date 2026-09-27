@@ -1,6 +1,7 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
+import { ACCORDION_ERROR_CODES } from './accordion-errors';
 import { AccordionGroupComponent } from './accordion-group.component';
 import { AccordionComponent } from './accordion.component';
 import { ACCORDION_IMPORTS } from './accordion.imports';
@@ -196,11 +197,18 @@ describe('AccordionGroupComponent', () => {
     fixture.detectChanges();
     expect(openStates(fixture)).toEqual([false, false, false]);
 
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
     fixture.componentInstance.autoCloseOthers.set(true);
     fixture.detectChanges();
     group.openAll();
     fixture.detectChanges();
     expect(openStates(fixture)).toEqual([false, false, false]);
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining(`ET${ACCORDION_ERROR_CODES.OPEN_ALL_WITH_AUTO_CLOSE_OTHERS}`),
+    );
+
+    warn.mockRestore();
   });
 
   describe('preventCloseLast', () => {
