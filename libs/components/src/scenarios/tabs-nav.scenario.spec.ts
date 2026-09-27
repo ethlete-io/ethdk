@@ -254,6 +254,43 @@ describe('nav tabs scenarios', () => {
       expect(selectedLabels(host)).toEqual(['Reports']);
     });
 
+    it('keeps a link with query params active when the URL carries other query params', async () => {
+      const s = scenario();
+      const fixture = TestBed.createComponent(TeamNavComponent);
+      const host = fixture.nativeElement as HTMLElement;
+
+      await navigate(s, '/members');
+      expect(selectedLabels(host)).toEqual(['Members']);
+
+      await navigate(s, '/members?sort=age&page=2');
+      expect(selectedLabels(host)).toEqual(['Members']);
+    });
+
+    it('lets a consumer-supplied routerLinkActiveOptions win over the default', async () => {
+      @Component({
+        imports: [NAV_TAB_IMPORTS],
+        template: `
+          <et-nav-tabs>
+            <a et-nav-tab-link="/overview">Overview</a>
+            <a [queryParams]="{ sort: 'name' }" [routerLinkActiveOptions]="{ exact: true }" et-nav-tab-link="/members"
+              >Members</a
+            >
+          </et-nav-tabs>
+        `,
+      })
+      class ExactNavComponent {}
+
+      const s = scenario();
+      const fixture = TestBed.createComponent(ExactNavComponent);
+      const host = fixture.nativeElement as HTMLElement;
+
+      await navigate(s, '/members?sort=name');
+      expect(tab('Members', host).classList.contains('et-nav-tab-link--active')).toBe(true);
+
+      await navigate(s, '/members');
+      expect(tab('Members', host).classList.contains('et-nav-tab-link--active')).toBe(false);
+    });
+
     it('drops the href of a disabled link and keeps it out of the roving tab order', async () => {
       const s = scenario();
       const fixture = TestBed.createComponent(TeamNavComponent);

@@ -1,10 +1,17 @@
 import { Component, ElementRef, ViewEncapsulation, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { IsActiveMatchOptions, RouterLink, RouterLinkActive } from '@angular/router';
 import { FocusRingDirective } from '../../focus-ring';
 import { TabBarTriggerDirective } from '../headless/tab-bar-trigger.directive';
 import { TabBarUnderlineDirective } from '../headless/tab-bar-underline.directive';
 import { NavTabLinkDirective } from './headless/nav-tab-link.directive';
 import { mountNavTabLinkStyles } from './nav-tab-link-styles.component';
+
+const NAV_TAB_LINK_ACTIVE_OPTIONS: IsActiveMatchOptions = {
+  paths: 'subset',
+  queryParams: 'ignored',
+  fragment: 'ignored',
+  matrixParams: 'ignored',
+};
 
 @Component({
   selector: 'a[et-nav-tab-link]',
@@ -49,8 +56,10 @@ export class NavTabLinkComponent {
   protected navTabLink = inject(NavTabLinkDirective);
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   protected routerLink = inject(RouterLink, { self: true });
+  private routerLinkActive = inject(RouterLinkActive, { self: true });
 
   constructor() {
+    this.routerLinkActive.routerLinkActiveOptions = NAV_TAB_LINK_ACTIVE_OPTIONS;
     mountNavTabLinkStyles();
   }
 
