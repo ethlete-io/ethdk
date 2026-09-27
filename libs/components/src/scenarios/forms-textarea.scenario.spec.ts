@@ -159,6 +159,27 @@ describe('textarea scenarios', () => {
     s.flush();
   });
 
+  it('renders the invalid state and the error id into a native textarea', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(NativeRequiredNotesComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const textarea = host.querySelector('textarea')!;
+
+    s.tick();
+    expect(textarea.hasAttribute('aria-invalid')).toBe(false);
+    expect(textarea.hasAttribute('aria-describedby')).toBe(false);
+
+    textarea.focus();
+    textarea.blur();
+    s.tick();
+
+    expect(textarea.getAttribute('aria-invalid')).toBe('true');
+    const describedBy = textarea.getAttribute('aria-describedby');
+
+    expect(host.querySelector(`[id="${describedBy}"]`)?.textContent).toContain('Notes are required');
+    s.flush();
+  });
+
   it('renders the bound value into a native textarea', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(NativeNotesComponent);

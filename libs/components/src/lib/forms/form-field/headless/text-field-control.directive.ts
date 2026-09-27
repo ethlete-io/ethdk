@@ -98,9 +98,14 @@ export abstract class TextFieldControlDirective extends TextShellControlDirectiv
       }),
     );
 
+    const staticDescribedBy = element.getAttribute('aria-describedby');
+
     effect(() =>
       this.nativeHostRenderer.setAttributes(element, {
         placeholder: state.placeholder() || null,
+        name: this.name() || null,
+        'aria-invalid': this.shouldDisplayError() ? 'true' : null,
+        'aria-describedby': [staticDescribedBy, this.describedBy()].filter(Boolean).join(' ') || null,
         ...state.attributes?.(),
       }),
     );
