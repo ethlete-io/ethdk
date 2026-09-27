@@ -17,8 +17,8 @@ agent that works alone, batch by batch.
   filter-overlay, forms/phone-input, forms/input, accordion, picture, pagination. `KBD_PLATFORM` and `DescriptionComponent` are covered by the palette and selection-list scenarios. Components: 959 of 1381 covered. Per-domain notes are under "Domain notes" below.
 - Removed on 2026-09-26 by user decision: `GridItemRef` and `configComponent` (e519882bc). Added:
   `FormFieldDirective.controlSuffixTemplate` (e38133536).
-- In progress 2026-09-27: forms/multi-language-rich-text-editor, banner, toggletip, overlay, stream, scrollbar, progress-steps
-  (task 6a).
+- In progress 2026-09-27: the 36 non-constant S8b entries that tasks 6 and 7 missed (their `--list` grep matched
+  only constants).
 
 ## Rules for every batch
 
@@ -64,8 +64,9 @@ agent that works alone, batch by batch.
 
 ## Open items that need the user (do not decide alone)
 
-- `et-rating`: `aria-valuetext` is hardcoded English ("No rating", "N of M") and not in a labels provider; a lower
-  `max` does not clamp the value (`aria-valuenow` > `aria-valuemax`); arrow keys do not flip in RTL.
+- `et-rating` `aria-valuetext` and the multi-language RTE switcher dots ("has content"/"empty") are hardcoded
+  English, outside the label sets. Add label keys? (Rating max clamp and RTL keys fixed in 739688923.)
+- `et-progress-steps` state is visual only: no `aria-current="step"`, the guide calls it deliberate. Change it?
 
 - The `LoaderLabels.loading` JSDoc says the spinner announces "Loading", but `SpinnerComponent` has no `aria-label`
   and `apps/docs/components/loader.md` says spinner and progress bar have no accessible name by default. Change the
@@ -308,3 +309,13 @@ agent that works alone, batch by batch.
   reduced motion; toolbar Tab in/out, RTL, nested; masonry late image load, drag snap, RTL, fade-in; tooltip placement
   near edges, touch suppression, above a dialog; tag-input real paste, IME, soft keyboard Enter; rating pointer drag,
   hover preview, half-star hit areas, fill animation.
+
+### banner, toggletip, progress-steps, scrollbar, forms/multi-language-rich-text-editor
+
+- Friction: ET1500, ET4900 and ET2600/2601 throw out of change detection; binding a component instance to scrollbar
+  `for` in a failing test hangs vitest; banner scenarios need `success`/`warning`/`error`-typed themes.
+- E2E gaps: banner tints, dismiss focus ring, live region; toggletip placement, focus into a template panel and back,
+  outside press, auto-hide on scroll; progress-steps counter numbers, connector, vertical layout, focus ring; scrollbar
+  drag, paging, RTL, auto-hide, native bar hiding; RTE focus return after a language pick, touch menu focus.
+- Left for E2E (not scenarios): the overlay `*FullscreenAnimation*` functions and `OverlayOriginCloneComponent`; the
+  stream PiP chrome parts and managers.
