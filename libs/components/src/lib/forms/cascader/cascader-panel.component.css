@@ -200,8 +200,11 @@
       animation: et-cascader-column-grow-in 180ms ease;
     }
 
+    /* the column scrolls and clips, so the default 3px outward ring would be cut off on a node
+       scrolled to its edge */
     .et-cascader-node,
     .et-cascader-search-option {
+      --_et-focus-ring-offset: -2px;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -216,7 +219,6 @@
       color: inherit;
       cursor: pointer;
       appearance: none;
-      outline: none;
       transition: background 120ms ease;
 
       @media (hover: hover) {

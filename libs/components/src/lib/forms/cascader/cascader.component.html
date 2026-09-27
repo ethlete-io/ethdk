@@ -189,6 +189,7 @@
                 [disabled]="resultDisabled(result)"
                 class="et-cascader-search-option"
                 etCascaderSearchOption
+                etFocusRing
                 type="button"
               >
                 @if (cascader.multiple()) {
@@ -249,7 +250,14 @@
         @default {
           @if (column.nodes.length) {
             @for (node of column.nodes; track $index) {
-              <button [node]="node" [disabled]="node.disabled" class="et-cascader-node" etCascaderNode type="button">
+              <button
+                [node]="node"
+                [disabled]="node.disabled"
+                class="et-cascader-node"
+                etCascaderNode
+                etFocusRing
+                type="button"
+              >
                 @if (cascader.multiple()) {
                   <span class="et-cascader-check" aria-hidden="true"></span>
                 }

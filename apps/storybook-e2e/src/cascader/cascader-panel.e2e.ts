@@ -1,5 +1,5 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { boxOf, openStory, pressKey, tap } from '../support';
+import { boxOf, expectFocusVisible, openStory, pressKey, tap } from '../support';
 
 const DEFAULT_STORY_ID = 'components-forms-cascader--default';
 const DEEP_STORY_ID = 'components-forms-cascader--deep-nesting';
@@ -33,8 +33,7 @@ async function inlineOffsetsInWindow(page: Page, columns: Locator) {
 }
 
 async function expectNodeFocusVisible(node: Locator, unfocused: Locator) {
-  await expect(node).toBeFocused();
-  expect(await node.evaluate((el) => el.matches(':focus-visible'))).toBe(true);
+  await expectFocusVisible(node);
 
   const background = (el: Element) => getComputedStyle(el).backgroundColor;
 
@@ -90,7 +89,7 @@ test.describe('cascader panel / anchored', () => {
     await expect(trigger).not.toBeFocused();
   });
 
-  test('a node reached with the arrow keys is marked by its own background', async ({ page }) => {
+  test('a node reached with the arrow keys shows the focus ring and its own background', async ({ page }) => {
     await openStory(page, DEFAULT_STORY_ID);
 
     await openWithKeyboard(page);

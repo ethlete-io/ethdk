@@ -7,6 +7,7 @@ import {
   signalDeferredLoading,
 } from '@ethlete/core';
 import { TextButtonComponent } from '../../button';
+import { FocusRingDirective } from '../../focus-ring';
 import { CHEVRON_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../icon';
 import { SpinnerComponent } from '../../loader';
 import { ScrollbarComponent } from '../../scrollbar';
@@ -47,6 +48,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
     SpinnerComponent,
     TextButtonComponent,
     ProvideColorDirective,
+    FocusRingDirective,
   ],
   providers: [provideIcons(CHEVRON_ICON, TIMES_ICON)],
   hostDirectives: [
