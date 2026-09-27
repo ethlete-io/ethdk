@@ -1,4 +1,6 @@
 import { Directive, booleanAttribute, computed, effect, input, signal, untracked } from '@angular/core';
+import { RuntimeError } from '@ethlete/core';
+import { ACCORDION_ERROR_CODES } from '../accordion-errors';
 import { ACCORDION_GROUP_TOKEN } from './accordion.tokens';
 import { AccordionDirective } from './accordion.directive';
 
@@ -92,9 +94,21 @@ export class AccordionGroupDirective {
     }
   }
 
-  /** Expand every accordion in the group. Does nothing while `autoCloseOthers` is on - it would immediately undo itself. */
+  /** Expand every accordion in the group. Does nothing, and warns in dev mode, while `autoCloseOthers` is on - it would immediately undo itself. */
   public openAll() {
-    if (this.autoCloseOthers()) return;
+    if (this.autoCloseOthers()) {
+      if (ngDevMode) {
+        console.warn(
+          new RuntimeError(
+            ACCORDION_ERROR_CODES.OPEN_ALL_WITH_AUTO_CLOSE_OTHERS,
+            '[AccordionGroupDirective] openAll() does nothing while autoCloseOthers is on - it would immediately ' +
+              'undo itself. Turn autoCloseOthers off before expanding every accordion.',
+          ).message,
+        );
+      }
+
+      return;
+    }
 
     for (const accordion of this.accordions()) {
       accordion.open();

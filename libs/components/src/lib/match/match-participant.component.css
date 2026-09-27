@@ -76,6 +76,11 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* Generated content keeps the letter out of the participant's textContent. */
+  .et-match-participant-emblem-mark::before {
+    content: attr(data-mark);
+  }
+
   /* One column for the two lines, so the emblem stays centred against both of them. */
   .et-match-participant-names {
     display: flex;

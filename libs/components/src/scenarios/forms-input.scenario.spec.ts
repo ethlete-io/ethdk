@@ -96,6 +96,54 @@ class NativePrefilledInputsComponent {
 }
 
 @Component({
+  selector: 'et-scenario-native-bound-attributes',
+  imports: [InputDirective, NumberInputDirective, PasswordInputDirective],
+  template: `
+    <input
+      [placeholder]="hint()"
+      [disabled]="locked()"
+      [readonly]="frozen()"
+      [required]="needed()"
+      [name]="fieldName()"
+      etInput
+      aria-label="Club"
+      aria-describedby="club-note"
+    />
+    <input
+      [placeholder]="hint()"
+      [disabled]="locked()"
+      [readonly]="frozen()"
+      [required]="needed()"
+      [min]="lowest()"
+      [max]="highest()"
+      [step]="stride()"
+      etNumberInput
+      aria-label="Goals"
+      type="number"
+    />
+    <input
+      [placeholder]="hint()"
+      [disabled]="locked()"
+      [readonly]="frozen()"
+      [required]="needed()"
+      etPasswordInput
+      aria-label="Secret"
+      type="password"
+    />
+  `,
+})
+class NativeBoundAttributesComponent {
+  hint = signal('Team A');
+  locked = signal(false);
+  frozen = signal(false);
+  needed = signal(false);
+  lowest = signal<number | undefined>(0);
+  highest = signal<number | undefined>(9);
+  stride = signal<number | null>(0.5);
+  fieldName = signal('club');
+}
+
+@Component({
   selector: 'et-scenario-native-required-inputs',
   imports: [FORM_FIELD_IMPORTS, InputDirective, NumberInputDirective, PasswordInputDirective, FormField],
   template: `
@@ -377,6 +425,66 @@ describe('forms input scenarios', () => {
     expect(app.password().touched()).toBe(true);
   });
 
+  it('renders the bound placeholder into native inputs', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(NativeBoundAttributesComponent);
+    const inputs = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('input'));
+
+    s.tick();
+    expect(inputs.map((input) => input.placeholder)).toEqual(['Team A', 'Team A', 'Team A']);
+
+    fixture.componentInstance.hint.set('');
+    s.tick();
+    expect(inputs.map((input) => input.hasAttribute('placeholder'))).toEqual([false, false, false]);
+  });
+
+  it('renders the bound disabled, readonly and required state into native inputs', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(NativeBoundAttributesComponent);
+    const app = fixture.componentInstance;
+    const inputs = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('input'));
+    const states = () => inputs.map((input) => [input.disabled, input.readOnly, input.required]);
+
+    s.tick();
+    expect(states()).toEqual([
+      [false, false, false],
+      [false, false, false],
+      [false, false, false],
+    ]);
+
+    app.locked.set(true);
+    app.frozen.set(true);
+    app.needed.set(true);
+    s.tick();
+    expect(states()).toEqual([
+      [true, true, true],
+      [true, true, true],
+      [true, true, true],
+    ]);
+
+    app.locked.set(false);
+    s.tick();
+    expect(inputs.map((input) => input.disabled)).toEqual([false, false, false]);
+  });
+
+  it('renders the bound min, max and step into a native number input', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(NativeBoundAttributesComponent);
+    const app = fixture.componentInstance;
+    const goals = (fixture.nativeElement as HTMLElement).querySelectorAll('input')[1]!;
+
+    s.tick();
+    expect([goals.min, goals.max, goals.step]).toEqual(['0', '9', '0.5']);
+
+    app.lowest.set(undefined);
+    app.highest.set(3);
+    app.stride.set(null);
+    s.tick();
+    expect(goals.hasAttribute('min')).toBe(false);
+    expect(goals.max).toBe('3');
+    expect(goals.hasAttribute('step')).toBe(false);
+  });
+
   it('marks a bare native input touched on blur and shows its signal-form error', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(NativeRequiredInputsComponent);
@@ -413,6 +521,52 @@ describe('forms input scenarios', () => {
     });
 
     s.flush();
+  });
+
+  it('renders the name, invalid state and description ids into native inputs', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(NativeRequiredInputsComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const app = fixture.componentInstance;
+
+    s.tick();
+    s.flush();
+
+    const fields = Array.from(host.querySelectorAll('et-form-field'));
+    const dirs = [app.text(), app.number(), app.password()];
+
+    fields.forEach((formField, index) => {
+      const input = query<HTMLInputElement>('input', formField);
+
+      expect(input.getAttribute('name')).toBe(dirs[index]!.name() || null);
+      expect(input.hasAttribute('aria-invalid')).toBe(false);
+      expect(input.hasAttribute('aria-describedby')).toBe(false);
+
+      input.focus();
+      input.blur();
+      s.tick();
+
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+      const describedBy = input.getAttribute('aria-describedby')!;
+
+      expect(query(`[id="${describedBy}"]`, formField).textContent).toContain('required');
+    });
+
+    s.flush();
+  });
+
+  it('keeps a static aria-describedby and a bound name on a native input', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(NativeBoundAttributesComponent);
+    const club = (fixture.nativeElement as HTMLElement).querySelector('input')!;
+
+    s.tick();
+    expect(club.getAttribute('name')).toBe('club');
+    expect(club.getAttribute('aria-describedby')).toBe('club-note');
+
+    fixture.componentInstance.fieldName.set('');
+    s.tick();
+    expect(club.hasAttribute('name')).toBe(false);
   });
 
   it('localizes stepper and reveal labels app-wide, per instance and through the token', () => {

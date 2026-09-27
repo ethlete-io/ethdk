@@ -10,6 +10,7 @@ import {
   provideStreamConsentConfig,
   provideStreamLabels,
   STREAM_CONSENT_TOKEN,
+  STREAM_ERROR_CODES,
   STREAM_IMPORTS,
   STREAM_KICK_IMPORTS,
   STREAM_USER_CONSENT_PROVIDER_TOKEN,
@@ -226,7 +227,7 @@ describe('stream consent scenarios', () => {
 
     const host = fixture.nativeElement as HTMLElement;
 
-    s.expectError('STREAM_CONSENT_TOKEN');
+    s.expectError(`ET${STREAM_ERROR_CODES.MISSING_CONSENT_TOKEN}`);
 
     const payload = s.errors.findIndex((entry) => entry.source === 'console.error' && typeof entry.error === 'object');
 

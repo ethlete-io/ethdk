@@ -323,7 +323,11 @@ describe('icon scenarios', () => {
     expect(fixture.nativeElement.querySelector('svg')).not.toBeNull();
 
     fixture.componentInstance.name.set(name);
-    expect(() => s.tick()).toThrow(`ET${code}`);
+    expect(() => fixture.detectChanges()).not.toThrow();
+    s.tick();
+
+    s.expectError(`ET${code}`);
+    expect(fixture.nativeElement.querySelector('svg')).toBeNull();
   });
 });
 
@@ -356,7 +360,9 @@ describe('icon override scenarios', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(UnregisteredComponent);
 
-    expect(() => s.tick()).toThrow(`ET${ICON_ERROR_CODES.ICON_NOT_FOUND}`);
+    expect(() => fixture.detectChanges()).not.toThrow();
+
+    s.expectError(`ET${ICON_ERROR_CODES.ICON_NOT_FOUND}`);
     expect(fixture.nativeElement.querySelector('svg')).toBeNull();
   });
 });

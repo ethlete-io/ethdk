@@ -280,6 +280,13 @@ describe('standings scenarios', () => {
       'Team C',
       'TBD',
     ]);
+    expect(rows.map((row) => text(row.querySelector('et-match-participant')))).toEqual([
+      'Team A',
+      'Team B',
+      'Team C',
+      'TBD',
+    ]);
+    expect(rows[0]!.querySelector('.et-match-participant-emblem-mark')?.getAttribute('data-mark')).toBe('T');
     expect(rows.map((row) => queryAll('td[data-column="detail"]', row).at(-1)?.textContent?.trim())).toEqual([
       '+5',
       '0',

@@ -2,6 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
 import { TREE_SELECTION_MODES, TreeDirective, TreeNodeDirective, TreeRow } from './headless';
 import { TREE_MARKERS, TreeMarker, TreeMarkerComponent } from './tree-marker.component';
+import { injectTreeLabels } from './tree-labels';
 
 const markerFor = (row: TreeRow<unknown>): TreeMarker => {
   if (row.childrenStatus === 'loading') return TREE_MARKERS.SPINNER;
@@ -42,14 +43,20 @@ const markerFor = (row: TreeRow<unknown>): TreeMarker => {
 export class TreeComponent<T = unknown> {
   protected tree = inject<TreeDirective<T>>(TreeDirective);
 
-  /** Shown while the root level loads. */
-  public loadingLabel = input('Loading…');
+  private labels = injectTreeLabels();
 
-  /** Shown when the root level loaded no nodes at all. */
-  public emptyLabel = input('Nothing to show');
+  /** Shown while the root level loads. Overrides `TREE_LABELS` for this tree. */
+  public loadingLabel = input<string | null>(null);
 
-  /** Appended to a failed level's message, to say that selecting the row loads it again. */
-  public retryLabel = input('select to retry');
+  /** Shown when the root level loaded no nodes at all. Overrides `TREE_LABELS` for this tree. */
+  public emptyLabel = input<string | null>(null);
+
+  /** Appended to a failed level's message, to say that selecting the row loads it again. Overrides `TREE_LABELS` for this tree. */
+  public retryLabel = input<string | null>(null);
+
+  protected resolvedLoadingLabel = computed(() => this.loadingLabel() ?? this.labels().loading);
+  protected resolvedEmptyLabel = computed(() => this.emptyLabel() ?? this.labels().empty);
+  protected resolvedRetryLabel = computed(() => this.retryLabel() ?? this.labels().retry);
 
   /**
    * The rows plus their marker and template context, built together so each row's context object

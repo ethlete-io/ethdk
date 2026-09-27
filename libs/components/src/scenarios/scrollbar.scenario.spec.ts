@@ -249,12 +249,16 @@ describe('scrollbar scenarios', () => {
     expect(s.errors.map((entry) => entry.source)).toEqual(['console.error', 'console.error']);
     s.errors.length = 0;
 
-    expect(() => {
-      TestBed.createComponent(MisboundScrollbarComponent);
-      s.tick();
-    }).toThrow(`ET${SCROLLBAR_ERROR_CODES.INVALID_TARGET}: [ScrollbarDirective] \`for\` must be an element`);
-    s.tick(1);
+    const misbound = TestBed.createComponent(MisboundScrollbarComponent);
+
+    expect(() => misbound.detectChanges()).not.toThrow();
+    expect(takeError(s, SCROLLBAR_ERROR_CODES.INVALID_TARGET)?.message).toContain(
+      `ET${SCROLLBAR_ERROR_CODES.INVALID_TARGET}: [ScrollbarDirective] \`for\` must be an element`,
+    );
     expect(s.errors.map((entry) => entry.source)).toEqual(['console.error']);
     s.errors.length = 0;
+    expect(query('et-scrollbar', misbound.nativeElement).style.getPropertyValue('--_et-scrollbar-thumb-size')).toBe(
+      '0px',
+    );
   });
 });

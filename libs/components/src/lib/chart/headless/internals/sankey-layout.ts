@@ -67,7 +67,7 @@ type Edge = { index: number; source: number; target: number; value: number };
 const DEFAULT_ITERATIONS = 6;
 const MAX_GAP_SHARE = 0.5;
 
-const EMPTY_LAYOUT: SankeyLayout = { nodes: [], links: [], columnCount: 0, pixelsPerValue: 0, gap: 0 };
+export const EMPTY_SANKEY_LAYOUT: SankeyLayout = { nodes: [], links: [], columnCount: 0, pixelsPerValue: 0, gap: 0 };
 
 /** `null` when the links form a cycle. */
 export const assignSankeyColumns = (nodeCount: number, edges: readonly Omit<Edge, 'index'>[]): number[] | null => {
@@ -127,11 +127,12 @@ export const countSankeyCrossings = (
 
 const readEdges = (nodes: readonly SankeyLayoutNodeInput[], links: readonly SankeyLayoutLinkInput[]) => {
   const indexById = new Map<string, number>();
+  let error: RuntimeError<number> | null = null;
 
   nodes.forEach((node, index) => {
     if (indexById.has(node.id)) {
       if (ngDevMode) {
-        throw new RuntimeError(
+        error ??= new RuntimeError(
           SANKEY_CHART_ERROR_CODES.DUPLICATE_NODE,
           `[SankeyChartDirective] Two nodes share the id "${node.id}". Give every node its own id.`,
         );
@@ -153,7 +154,7 @@ const readEdges = (nodes: readonly SankeyLayoutNodeInput[], links: readonly Sank
       if (ngDevMode) {
         const missing = source === undefined ? link.source : link.target;
 
-        throw new RuntimeError(
+        error ??= new RuntimeError(
           SANKEY_CHART_ERROR_CODES.UNKNOWN_NODE,
           `[SankeyChartDirective] A link points at the node "${missing}", which is not in nodes.`,
         );
@@ -165,7 +166,7 @@ const readEdges = (nodes: readonly SankeyLayoutNodeInput[], links: readonly Sank
     const valid = Number.isFinite(link.value) && link.value >= 0;
 
     if (!valid && ngDevMode) {
-      throw new RuntimeError(
+      error ??= new RuntimeError(
         SANKEY_CHART_ERROR_CODES.INVALID_VALUE,
         `[SankeyChartDirective] The link "${link.source}" -> "${link.target}" has the value ${link.value}. ` +
           'Link values must be finite and not negative.',
@@ -175,7 +176,7 @@ const readEdges = (nodes: readonly SankeyLayoutNodeInput[], links: readonly Sank
     if (valid && link.value > 0) edges.push({ index, source, target, value: link.value });
   });
 
-  return { indexById, edges };
+  return { indexById, edges, error };
 };
 
 type ColumnPlacement = {
@@ -250,7 +251,32 @@ const ribbonPath = ({ x0, x1, y0, y1, width }: Ribbon) => {
   );
 };
 
-/** Throws in dev mode for invalid data; in production a cycle lays out empty and an invalid link is skipped. */
+/**
+ * The first problem with the data - a duplicate node, a link to an unknown node, an invalid value or a
+ * cycle - or `null`. Dev mode only; always `null` in production.
+ */
+export const findSankeyDataError = (
+  nodes: readonly SankeyLayoutNodeInput[],
+  links: readonly SankeyLayoutLinkInput[],
+): RuntimeError<number> | null => {
+  if (!ngDevMode) return null;
+
+  const { edges, error } = readEdges(nodes, links);
+
+  if (error) return error;
+
+  if (nodes.length && !assignSankeyColumns(nodes.length, edges)) {
+    return new RuntimeError(
+      SANKEY_CHART_ERROR_CODES.CYCLE,
+      '[SankeyChartDirective] The links form a cycle, so the nodes cannot flow left to right. ' +
+        'Remove a link that leads back to an earlier node.',
+    );
+  }
+
+  return null;
+};
+
+/** A cycle lays out empty and an invalid link is skipped. Check the data with `findSankeyDataError` first. */
 export const computeSankeyLayout = ({
   nodes: nodeInputs,
   links: linkInputs,
@@ -259,21 +285,11 @@ export const computeSankeyLayout = ({
   const { edges } = readEdges(nodeInputs, linkInputs);
   const nodeCount = nodeInputs.length;
 
-  if (!nodeCount) return EMPTY_LAYOUT;
+  if (!nodeCount) return EMPTY_SANKEY_LAYOUT;
 
   const columnOf = assignSankeyColumns(nodeCount, edges);
 
-  if (!columnOf) {
-    if (ngDevMode) {
-      throw new RuntimeError(
-        SANKEY_CHART_ERROR_CODES.CYCLE,
-        '[SankeyChartDirective] The links form a cycle, so the nodes cannot flow left to right. ' +
-          'Remove a link that leads back to an earlier node.',
-      );
-    }
-
-    return EMPTY_LAYOUT;
-  }
+  if (!columnOf) return EMPTY_SANKEY_LAYOUT;
 
   const columnCount = Math.max(...columnOf) + 1;
   const incoming = new Array<number>(nodeCount).fill(0);

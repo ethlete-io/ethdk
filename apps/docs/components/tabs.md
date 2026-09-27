@@ -52,6 +52,8 @@ import { NAV_TAB_IMPORTS } from '@ethlete/components';
 
 `a[et-nav-tab-link]` forwards the usual `RouterLink` inputs (`queryParams`, `fragment`, `relativeTo`, …) and supports `disabled` just like content tabs - a disabled link keeps `aria-disabled` but drops its `href`, so it cannot be followed. The optional `et-nav-tabs-outlet` wrapper gives the routed region proper `role="tabpanel"` semantics - place it as a sibling of `et-nav-tabs` (as above); it finds the bar that labels it automatically.
 
+A nav tab link is active on its route whatever the URL's query params - it defaults `routerLinkActiveOptions` to `{ paths: 'subset', queryParams: 'ignored', fragment: 'ignored', matrixParams: 'ignored' }`, so a link carrying `[queryParams]` (a default sort, say) stays selected after the user changes them. Bind `[routerLinkActiveOptions]` yourself (e.g. `{ exact: true }`) to match query params again.
+
 <StoryEmbed id="components-navigation-tabs-nav-tabs--default" height="380px" />
 
 ### Nav tabs in an overlay

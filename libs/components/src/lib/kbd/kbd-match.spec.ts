@@ -65,6 +65,13 @@ describe('matchesKbdChord', () => {
     expect(matchesKbdChord(questionMark, { keys: 'mod+?', platform: 'apple' })).toBe(true);
   });
 
+  it('matches the plus key written as plus or as a lone +', () => {
+    const ctrlPlus = keydown({ key: '+', code: 'Equal', ctrlKey: true, shiftKey: true });
+
+    expect(matchesKbdChord(ctrlPlus, { keys: 'mod+plus', platform: 'other' })).toBe(true);
+    expect(matchesKbdChord(ctrlPlus, { keys: 'mod++', platform: 'other' })).toBe(true);
+  });
+
   it('never matches a chord of modifiers alone', () => {
     expect(matchesKbdChord(keydown({ key: 'Meta', metaKey: true }), { keys: 'mod', platform: 'apple' })).toBe(false);
   });

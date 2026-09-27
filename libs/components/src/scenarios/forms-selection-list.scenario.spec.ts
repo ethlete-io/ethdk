@@ -1,4 +1,4 @@
-import { Component, computed, getDebugNode, inject, signal } from '@angular/core';
+import { Component, getDebugNode, inject, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField, required, validate } from '@angular/forms/signals';
 import { provideColorThemes } from '@ethlete/core';
@@ -120,11 +120,10 @@ class StandingsViewComponent {
 
 @Component({
   selector: 'et-scenario-picked-count',
-  template: `{{ picked() }} picked`,
+  template: `{{ list.selection.selectedCount() }} picked`,
 })
 class PickedCountComponent {
   list = inject(SELECTION_LIST_TOKEN);
-  picked = computed(() => this.list.selection.items().filter((item) => item.checked()).length);
 }
 
 @Component({
@@ -364,6 +363,7 @@ describe('forms selection list scenarios', () => {
     press(s, 'Enter', all);
     expect(app.teams()).toEqual(['team-a', 'team-b']);
     expect(all.getAttribute('aria-checked')).toBe('true');
+    expect(text(query('.count', host))).toBe('2 picked');
 
     const listDirective = getDebugNode(list)?.injector.get(SelectionListDirective);
 

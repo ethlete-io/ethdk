@@ -1,5 +1,5 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { boxOf, openStory, pressKey, tap, touchDrag } from '../support';
+import { boxOf, openStory, pressKey, settle, tap, touchDrag } from '../support';
 
 const DEFAULT_ID = 'components-forms-rating--default';
 const HALF_STEPS_ID = 'components-forms-rating--half-steps';
@@ -314,5 +314,122 @@ test.describe('rating / touch', () => {
 
     await expect(slider).toHaveAttribute('aria-valuenow', valueBefore ?? '');
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
+  });
+});
+
+interface FillTransition {
+  property: string;
+  duration: number;
+  easing: string;
+}
+
+/**
+ * Pauses the next fill-row clip-path transition the moment it is created, so a test can read its
+ * timing and then finish it on demand instead of racing the 160ms it runs for.
+ */
+async function captureNextFillTransition(root: Locator): Promise<void> {
+  await root.locator('.et-rating-row--fill').evaluate((row) => {
+    const target = window as unknown as { __etFillTransition?: FillTransition | null };
+    target.__etFillTransition = null;
+
+    row.addEventListener(
+      'transitionrun',
+      (event) => {
+        const transition = row
+          .getAnimations()
+          .find((animation) => animation instanceof CSSTransition && animation.transitionProperty === 'clip-path');
+
+        transition?.pause();
+
+        const timing = transition?.effect?.getTiming();
+
+        target.__etFillTransition = {
+          property: (event as TransitionEvent).propertyName,
+          duration: Number(timing?.duration ?? 0),
+          easing: timing?.easing ?? '',
+        };
+      },
+      { once: true },
+    );
+  });
+}
+
+function capturedFillTransition(page: Page): Promise<FillTransition | null> {
+  return page.evaluate(
+    () => (window as unknown as { __etFillTransition?: FillTransition | null }).__etFillTransition ?? null,
+  );
+}
+
+async function finishFillAnimations(root: Locator): Promise<void> {
+  await root.locator('.et-rating-row--fill').evaluate(async (row) => {
+    const animations = row.getAnimations();
+
+    animations.forEach((animation) => animation.finish());
+    await Promise.all(animations.map((animation) => animation.finished));
+  });
+}
+
+function runningFillAnimations(root: Locator): Promise<number> {
+  return root.locator('.et-rating-row--fill').evaluate((row) => row.getAnimations().length);
+}
+
+function fillReveal(root: Locator, stars: number): Promise<{ revealed: number; expected: number }> {
+  return root.locator('.et-rating-icons').evaluate((el, count) => {
+    const row = el.querySelector('.et-rating-row--fill');
+    const star = el.querySelectorAll('.et-rating-row:not(.et-rating-row--fill) .et-rating-icon')[count - 1];
+    const clip = row ? getComputedStyle(row).clipPath : '';
+    const revealed = /^inset\(0px calc\(100% - ([\d.]+)px\) 0px 0px\)$/.exec(clip)?.[1];
+
+    return {
+      revealed: Number(revealed ?? Number.NaN),
+      expected: (star?.getBoundingClientRect().right ?? 0) - (row?.getBoundingClientRect().left ?? 0),
+    };
+  }, stars);
+}
+
+test.describe('rating / fill animation', () => {
+  test('a value change sweeps the fill with the 160ms ease transition from the component CSS and ends on the new value', async ({
+    page,
+  }) => {
+    const root = await openStory(page, DEFAULT_ID, { args: { value: 2 } });
+    const slider = root.getByRole('slider');
+
+    await expect(root.locator('et-rating')).toHaveAttribute('data-can-animate', 'true');
+    await captureNextFillTransition(root);
+
+    await slider.focus();
+    await page.keyboard.press('ArrowRight');
+
+    await expect
+      .poll(() => capturedFillTransition(page))
+      .toEqual({ property: 'clip-path', duration: 160, easing: 'ease' });
+    await expect(slider).toHaveAttribute('aria-valuenow', '3');
+
+    await finishFillAnimations(root);
+
+    expect(await runningFillAnimations(root)).toBe(0);
+
+    const reveal = await fillReveal(root, 3);
+    expect(reveal.revealed).toBeCloseTo(reveal.expected, 0);
+  });
+
+  test('under reduced motion the fill jumps to the new value without a transition', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    const root = await openStory(page, DEFAULT_ID, { args: { value: 2 } });
+    const slider = root.getByRole('slider');
+
+    await expect(root.locator('et-rating')).toHaveAttribute('data-can-animate', 'true');
+    await captureNextFillTransition(root);
+
+    await slider.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(slider).toHaveAttribute('aria-valuenow', '3');
+    await settle(page, 50);
+
+    expect(await capturedFillTransition(page)).toBeNull();
+    expect(await runningFillAnimations(root)).toBe(0);
+
+    const reveal = await fillReveal(root, 3);
+    expect(reveal.revealed).toBeCloseTo(reveal.expected, 0);
   });
 });

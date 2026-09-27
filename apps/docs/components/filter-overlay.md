@@ -86,7 +86,9 @@ Debouncing is the query form's job. The branch's value is already debounced wher
 typing in a search box does not fire a request per keystroke.
 
 For a count that doesn't come from a single query - a local collection, an aggregate of several endpoints - write
-the `FilterOverlayPreview` shape yourself: three signals (`loading`, `hasError`, `totalHits`).
+the `FilterOverlayPreview` shape yourself: three signals (`loading`, `hasError`, `totalHits`). A preview whose `totalHits` is
+`null` while it neither loads nor fails - `args` returned `null` for the draft, say - shows the plain "Show results",
+enabled.
 
 **Without a preview** the button simply reads "Show results", enabled.
 
@@ -109,6 +111,7 @@ submit button. Fixed here.
 | `2 … maxCountedHits`  | "Show N results"           | yes     |
 | `> maxCountedHits`    | "Show more than N results" | yes     |
 | no preview configured | "Show results"             | yes     |
+| no `totalHits`        | "Show results"             | yes     |
 
 `maxCountedHits` defaults to `250`: past a few hundred the exact number stops telling the reader anything they can
 act on. Strings come from `injectLocale()` (English and German ship) and can be overridden with

@@ -34,8 +34,8 @@ scalar - see below) shares one design:
 - **Typed entry + anchored picker.** Typed text is parsed against `displayFormat`
   (strictly for dates, leniently for times). Unparseable text stays visible, the
   `parseError` signal turns on and the value clears to `null` - once touched,
-  it's announced as a real error (`parseErrorMessage`) with matching
-  `aria-invalid`/`aria-describedby`. <kbd>Alt</kbd>+<kbd>ArrowDown</kbd> opens the
+  it's announced as a real error (`parseErrorMessage`, in place of the field's
+  own errors such as `required`) with matching `aria-invalid`/`aria-describedby`. <kbd>Alt</kbd>+<kbd>ArrowDown</kbd> opens the
   picker. <kbd>Escape</kbd> closes it and returns focus to the field; tabbing out of
   it closes it and leaves focus where it went, on single and range inputs alike.
 - **A commit is an edit, and only an edit.** Typed text commits on blur and on

@@ -383,9 +383,12 @@ describe('forms date-time scenarios', () => {
     expect(field.value).toBe('31.02.2026');
     expect(field.getAttribute('aria-invalid')).toBe('true');
     expect(fixture.componentInstance.input()).toBeInstanceOf(DateInputComponent);
-    expect(query('et-form-error', host).textContent).toContain('Pick an arrival day');
+    expect(query('et-form-error', host).textContent).toContain('Use dd.mm.yyyy');
+    expect(query('et-form-error', host).textContent).not.toContain('Pick an arrival day');
 
     typeAndBlur(s, field, '');
+    s.flush();
+    expect(query('et-form-error', host).textContent).toContain('Pick an arrival day');
     expect(fixture.componentInstance.model().arrival).toBeNull();
     expect(field.hasAttribute('aria-invalid')).toBe(true);
   });
@@ -644,6 +647,19 @@ describe('forms date-time scenarios', () => {
     s.flush();
     dropUnstyledScrollbarErrors(s);
     expect(field.value).toBe('20.07.2026 08:45');
+  });
+
+  it('tears down cleanly when destroyed with the picker open', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(MeetingComponent);
+
+    s.flush();
+    fixture.componentInstance.control().openPicker();
+    s.flush();
+    dropUnstyledScrollbarErrors(s);
+
+    expect(document.querySelector('et-date-picker-panel')).not.toBeNull();
+    fixture.destroy();
   });
 
   it('commits a date-time through the bare headless field', () => {

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { afterNextRender, Component, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { disabled, form, FormField, required } from '@angular/forms/signals';
 import { By } from '@angular/platform-browser';
@@ -157,6 +157,26 @@ class ArticleViewComponent {
   template: `<et-rich-text-editor aria-label="Bare" />`,
 })
 class BareEditorComponent {}
+
+@Component({
+  selector: 'et-scenario-headless-notes',
+  imports: [RichTextEditorDirective],
+  template: `
+    <div #notesEditor="etRichTextEditor" [(value)]="notes" etRichTextEditor aria-label="Notes">
+      <button (click)="notesEditor.toggleBold()" type="button">Bold</button>
+      <div #editable (input)="notesEditor.syncFromDom()" class="notes-editable" contenteditable="true"></div>
+    </div>
+  `,
+})
+class HeadlessNotesComponent {
+  notes = signal('Draft **one**');
+  editor = viewChild.required(RichTextEditorDirective);
+  editable = viewChild.required<ElementRef<HTMLElement>>('editable');
+
+  constructor() {
+    afterNextRender(() => this.editor().attachEditable(this.editable().nativeElement));
+  }
+}
 
 const query = <E extends HTMLElement = HTMLElement>(selector: string, root: ParentNode = document) => {
   const element = root.querySelector<E>(selector);
@@ -637,5 +657,31 @@ describe('forms rich-text-editor scenarios', () => {
     view.body.set(null);
     s.tick();
     expect(viewer.innerHTML).toBe('');
+  });
+  it('lets a headless host attach its own editable element and edit through it', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(HeadlessNotesComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const page = fixture.componentInstance;
+
+    s.flush();
+
+    const editable = query('.notes-editable', host);
+
+    expect(editable.innerHTML).toBe('<p>Draft <strong>one</strong></p>');
+
+    editable.focus();
+    caretAtEnd(editable);
+    typeText(s, editable, ' more');
+    expect(page.notes()).toBe('Draft **one more**');
+
+    selectText(editable, 0, 5);
+    query<HTMLButtonElement>('button', host).click();
+    s.tick();
+    expect(page.notes()).toBe('**Draft** **one more**');
+
+    page.notes.set('Replaced');
+    s.tick();
+    expect(editable.innerHTML).toBe('<p>Replaced</p>');
   });
 });

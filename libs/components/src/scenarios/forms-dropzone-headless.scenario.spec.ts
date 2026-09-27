@@ -37,9 +37,16 @@ const avatarUpload = () => {
   selector: 'et-scenario-avatar-picker',
   imports: [DropzoneDirective],
   template: `
-    <div [(value)]="avatars" [upload]="upload" (filesReject)="rejected = $event.length" etDropzone multiple>
-      <p class="avatar-count">{{ zone().entries().length }} files</p>
-      @for (entry of zone().entries(); track entry.id) {
+    <div
+      #avatarZone="etDropzone"
+      [(value)]="avatars"
+      [upload]="upload"
+      (filesReject)="rejected = $event.length"
+      etDropzone
+      multiple
+    >
+      <p class="avatar-count">{{ avatarZone.entries().length }} files</p>
+      @for (entry of avatarZone.entries(); track entry.id) {
         <span [attr.data-status]="entry.status()" class="avatar-entry">{{ entry.name() }}</span>
       }
     </div>
@@ -68,12 +75,10 @@ class AvatarPickerComponent {
   }
 
   uploadOutside(picked: File) {
-    const entry = createFileDropzoneEntry({
-      file: picked,
-      handle: this.upload.createUploadHandle({ file: picked, injector: this.injector }),
-    });
+    const handle = this.upload.createUploadHandle({ file: picked, injector: this.injector });
+    const entry = createFileDropzoneEntry({ file: picked, handle });
 
-    entry.handle?.execute();
+    handle.execute();
     this.history.update((entries) => [...entries, entry]);
 
     return entry;

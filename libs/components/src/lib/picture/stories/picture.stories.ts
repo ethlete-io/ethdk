@@ -1,5 +1,6 @@
 import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 import { PictureFitStorybookComponent } from './picture-fit-storybook.component';
+import { PictureFormatsStorybookComponent } from './picture-formats-storybook.component';
 import { PictureStorybookComponent } from './picture-storybook.component';
 
 export default {
@@ -37,6 +38,20 @@ export const Fit: StoryObj<PictureFitStorybookComponent> = {
         story:
           'Every `fit` mode against one 16:9 source in a fixed 180x120 box, plus the natural size the browser ' +
           'reports back once it has decoded the image.',
+      },
+    },
+  },
+};
+
+export const FormatsAndDensity: StoryObj<PictureFormatsStorybookComponent> = {
+  decorators: [moduleMetadata({ imports: [PictureFormatsStorybookComponent] })],
+  render: () => ({ template: '<et-sb-picture-formats />' }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Sources that differ by `type` and by density descriptor. The browser skips a type it cannot decode, ' +
+          'then picks the `1x` or `2x` candidate of the first supported source by device pixel ratio.',
       },
     },
   },

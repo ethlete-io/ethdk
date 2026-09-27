@@ -412,5 +412,5 @@ to configure.
 
 ## Error codes
 
-The carousel throws `ET38xx` in dev mode - see
+The carousel reports `ET38xx` to the `ErrorHandler` in dev mode - see
 [error codes](/components/error-codes#carousel-et38xx).

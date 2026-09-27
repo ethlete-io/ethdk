@@ -17,6 +17,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { COLOR_PROVIDER, RuntimeError, injectRenderer } from '@ethlete/core';
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
 import { tap } from 'rxjs';
+import { injectReportError } from '../../internals/report-error';
 import { OverlayConfig, OverlayRef, anchoredOverlayStrategy } from '../../overlay';
 import { mountFloatingPanelStyles } from '../../overlay/floating-panel-styles.component';
 import { injectOverlayManager } from '../../overlay/overlay-manager';
@@ -40,6 +41,7 @@ export type ToggletipContent = string | TemplateRef<unknown>;
 })
 export class ToggletipDirective {
   private destroyRef = inject(DestroyRef);
+  private reportError = injectReportError();
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private colorProvider = inject(COLOR_PROVIDER, { optional: true });
   private renderer = injectRenderer();
@@ -190,9 +192,11 @@ export class ToggletipDirective {
 
     if (content instanceof TemplateRef && !this.ariaLabel() && !this.ariaLabelledBy()) {
       if (ngDevMode) {
-        throw new RuntimeError(
-          TOGGLETIP_ERROR_CODES.TEMPLATE_TOGGLETIP_REQUIRES_LABEL,
-          '[ToggletipDirective] Template toggletips require etToggletipAriaLabel or etToggletipAriaLabelledBy so the dialog has an accessible name.',
+        this.reportError(
+          new RuntimeError(
+            TOGGLETIP_ERROR_CODES.TEMPLATE_TOGGLETIP_REQUIRES_LABEL,
+            '[ToggletipDirective] Template toggletips require etToggletipAriaLabel or etToggletipAriaLabelledBy so the dialog has an accessible name.',
+          ),
         );
       }
 

@@ -1,6 +1,7 @@
 import { booleanAttribute, computed, Directive, inject, InjectionToken, input, InputSignal } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { RuntimeError } from '@ethlete/core';
+import { injectReportError } from '../../internals/report-error';
 import { ICON_ERROR_CODES } from './icon-errors';
 import {
   DEFAULT_ICON_VARIANT,
@@ -40,6 +41,7 @@ export class IconDirective {
   private icons = inject(ICONS_TOKEN, { optional: true });
   private iconOverrides = inject(ICON_OVERRIDES_TOKEN, { optional: true });
   private sanitizer = inject(DomSanitizer);
+  private reportError = injectReportError();
 
   public iconNameToUse: InputSignal<RegisteredIconName> = input.required<RegisteredIconName>({ alias: 'etIcon' });
 
@@ -86,12 +88,16 @@ export class IconDirective {
       }
     }
 
-    throw new RuntimeError(
-      ICON_ERROR_CODES.ICON_NOT_FOUND,
-      `[IconDirective] Icon "${name}"${
-        variant ? ` (variant "${variant}")` : ''
-      } not found. Available icons: ${Object.keys(this.registry).join(', ')}.`,
+    this.reportError(
+      new RuntimeError(
+        ICON_ERROR_CODES.ICON_NOT_FOUND,
+        `[IconDirective] Icon "${name}"${
+          variant ? ` (variant "${variant}")` : ''
+        } not found. Available icons: ${Object.keys(this.registry).join(', ')}.`,
+      ),
     );
+
+    return null;
   });
 
   public iconSrc = computed(() => {
@@ -104,40 +110,12 @@ export class IconDirective {
     const svg = icon.data.trim();
     const label = iconRegistryKey(icon.name, icon.variant);
 
-    if (ngDevMode) {
-      if (!svg.includes('<svg')) {
-        throw new RuntimeError(
-          ICON_ERROR_CODES.INVALID_SVG,
-          `[IconDirective] Icon "${label}" is not a valid SVG. The data must contain an <svg> element.`,
-        );
-      }
+    const svgError = ngDevMode ? this.svgError(svg, label) : null;
 
-      if (!svg.includes('xmlns="http://www.w3.org/2000/svg"')) {
-        throw new RuntimeError(
-          ICON_ERROR_CODES.MISSING_XMLNS,
-          `[IconDirective] Icon "${label}" is missing xmlns="http://www.w3.org/2000/svg". Add the attribute to the <svg> element.`,
-        );
-      }
+    if (svgError) {
+      this.reportError(svgError);
 
-      if (!svg.includes('width="100%"') || !svg.includes('height="100%"')) {
-        throw new RuntimeError(
-          ICON_ERROR_CODES.MISSING_DIMENSIONS,
-          `[IconDirective] Icon "${label}" is missing width="100%" and/or height="100%". Add both attributes to the <svg> element.`,
-        );
-      }
-
-      if (!this.allowHardcodedColor()) {
-        for (const colorAttribute of SVG_COLOR_ATTRIBUTES) {
-          for (const [, value] of svg.matchAll(new RegExp(`\\b${colorAttribute}="([^"]*)"`, 'g'))) {
-            if (value !== 'currentColor' && value !== 'none') {
-              throw new RuntimeError(
-                ICON_ERROR_CODES.HARDCODED_COLOR,
-                `[IconDirective] Icon "${label}" uses the hardcoded value "${value}" for "${colorAttribute}". Use currentColor instead, or set [allowHardcodedColor]="true".`,
-              );
-            }
-          }
-        }
-      }
+      return null;
     }
 
     return this.sanitizer.bypassSecurityTrustHtml(svg);
@@ -158,5 +136,43 @@ export class IconDirective {
         '[IconDirective] No icons provided. Register icons via provideIcons() in the component or application providers.',
       );
     }
+  }
+
+  private svgError(svg: string, label: string) {
+    if (!svg.includes('<svg')) {
+      return new RuntimeError(
+        ICON_ERROR_CODES.INVALID_SVG,
+        `[IconDirective] Icon "${label}" is not a valid SVG. The data must contain an <svg> element.`,
+      );
+    }
+
+    if (!svg.includes('xmlns="http://www.w3.org/2000/svg"')) {
+      return new RuntimeError(
+        ICON_ERROR_CODES.MISSING_XMLNS,
+        `[IconDirective] Icon "${label}" is missing xmlns="http://www.w3.org/2000/svg". Add the attribute to the <svg> element.`,
+      );
+    }
+
+    if (!svg.includes('width="100%"') || !svg.includes('height="100%"')) {
+      return new RuntimeError(
+        ICON_ERROR_CODES.MISSING_DIMENSIONS,
+        `[IconDirective] Icon "${label}" is missing width="100%" and/or height="100%". Add both attributes to the <svg> element.`,
+      );
+    }
+
+    if (this.allowHardcodedColor()) return null;
+
+    for (const colorAttribute of SVG_COLOR_ATTRIBUTES) {
+      for (const [, value] of svg.matchAll(new RegExp(`\\b${colorAttribute}="([^"]*)"`, 'g'))) {
+        if (value !== 'currentColor' && value !== 'none') {
+          return new RuntimeError(
+            ICON_ERROR_CODES.HARDCODED_COLOR,
+            `[IconDirective] Icon "${label}" uses the hardcoded value "${value}" for "${colorAttribute}". Use currentColor instead, or set [allowHardcodedColor]="true".`,
+          );
+        }
+      }
+    }
+
+    return null;
   }
 }

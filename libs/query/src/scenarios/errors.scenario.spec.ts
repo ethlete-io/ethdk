@@ -194,6 +194,26 @@ describe('baseline error normalization (no client features)', () => {
     s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 503);
     c.destroy();
   });
+
+  it('keeps a failed request away from the ErrorHandler with reportErrors: false, on the creator and on a clone', () => {
+    const s = scenario();
+    s.api.on('GET', '/quiet-failure', () => ({ status: 500, body: { message: 'quiet' } }));
+    s.api.on('GET', '/cloned-quiet-failure', () => ({ status: 500, body: { message: 'quiet' } }));
+
+    const getQuiet = s.get<{ response: unknown }>('/quiet-failure', { reportErrors: false });
+    const getClonedQuiet = s.get<{ response: unknown }>('/cloned-quiet-failure').clone({ reportErrors: false });
+    const c = s.consumer();
+    const quiet = c.run(() => getQuiet());
+    const clonedQuiet = c.run(() => getClonedQuiet());
+
+    s.tick();
+
+    expect(quiet.error()?.code).toBe(500);
+    expect(quiet.executionState()?.type).toBe('failure');
+    expect(clonedQuiet.error()?.code).toBe(500);
+    expect(s.errors).toEqual([]);
+    c.destroy();
+  });
 });
 
 describe('connection failures (status 0)', () => {

@@ -16,6 +16,8 @@ import {
 
 let uniqueIdCounter = 0;
 
+const tagOf = (element: HTMLElement) => `<${element.tagName.toLowerCase()}>`;
+
 @Directive({
   selector: '[etFormField]',
   providers: [{ provide: FORM_FIELD_TOKEN, useExisting: FormFieldDirective }],
@@ -26,7 +28,9 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
 
   // `self` matters - without it an outer `[formField]` binding would leak in.
   private ownFieldBinding = inject(FORM_FIELD, { optional: true, self: true });
+  private outerField = inject(FORM_FIELD_TOKEN, { optional: true, skipSelf: true });
   private wrappedFieldBindings = contentChildren(FORM_FIELD, { descendants: true });
+  private nestedFields = contentChildren(FORM_FIELD_TOKEN, { descendants: true });
 
   /** @internal */
   public registeredControl = signal<FormFieldControl | null>(null);
@@ -167,7 +171,10 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
   /** Whether a warning is the message the field shows: it has one, and no error is taking the slot. */
   public displaysWarning = computed(() => !this.displaysErrorMessage() && this.warnings().length > 0);
 
-  public describedById = computed(() => {
+  /** @internal The id of an `<et-description>` the field's chrome renders, set by that chrome. */
+  public descriptionId = signal<string | null>(null);
+
+  private supportMessageId = computed(() => {
     if (this.displaysErrorMessage()) {
       return this.errorId();
     }
@@ -181,6 +188,13 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
     }
 
     return null;
+  });
+
+  /** Every id the control's `aria-describedby` points at, space-separated, in reading order. */
+  public describedById = computed(() => {
+    const ids = [this.descriptionId(), this.supportMessageId()].filter((id) => id !== null);
+
+    return ids.length > 0 ? ids.join(' ') : null;
   });
 
   constructor() {
@@ -198,10 +212,15 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
       afterNextRender(() => {
         const control = this.registeredControl();
 
+        const nestedField = this.nestedFields()[0];
+
         if (!control) {
           throw new RuntimeError(
             FORM_FIELD_ERROR_CODES.MISSING_CONTROL,
-            '[FormFieldDirective] No form control found. Add <et-input> or <et-checkbox> inside <et-form-field>.',
+            nestedField
+              ? `[FormFieldDirective] No form control found. ${tagOf(nestedField.element)} is a field of its own: ` +
+                  `remove the ${tagOf(this.element)} around it and project the <et-label> and <et-hint> into it.`
+              : '[FormFieldDirective] No form control found. Add <et-input> or <et-checkbox> inside <et-form-field>.',
             { element: this.element },
           );
         }
@@ -209,9 +228,13 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
         if (!this.registeredLabel() && !(control.hasCustomAccessibleName?.() ?? false)) {
           throw new RuntimeError(
             FORM_FIELD_ERROR_CODES.MISSING_LABEL,
-            '[FormFieldDirective] The control has no accessible name. Project an <et-label> into the ' +
-              '<et-form-field>, or set aria-label / aria-labelledby on the control. A placeholder is not ' +
-              'an accessible name.',
+            this.outerField
+              ? `[FormFieldDirective] The control has no accessible name. ${tagOf(this.element)} sits inside ` +
+                  `another field (${tagOf(this.outerField.element)}), whose <et-label> does not reach it: move the ` +
+                  `<et-label> into ${tagOf(this.element)}, or set aria-label / aria-labelledby on it.`
+              : '[FormFieldDirective] The control has no accessible name. Project an <et-label> into the ' +
+                  '<et-form-field>, or set aria-label / aria-labelledby on the control. A placeholder is not ' +
+                  'an accessible name.',
             { element: this.element },
           );
         }

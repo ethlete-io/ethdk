@@ -1,6 +1,23 @@
-import { assignSankeyColumns, computeSankeyLayout, countSankeyCrossings, SankeyLayoutLinkInput } from './sankey-layout';
+import {
+  assignSankeyColumns,
+  computeSankeyLayout,
+  countSankeyCrossings,
+  findSankeyDataError,
+  SankeyLayoutInput,
+  SankeyLayoutLinkInput,
+} from './sankey-layout';
 
-const OPTIONS = { width: 400, height: 200, nodeWidth: 10, nodeGap: 10, insetStart: 0, insetEnd: 0 };
+const OPTIONS = {
+  width: 400,
+  height: 200,
+  nodeWidth: 10,
+  nodeGap: 10,
+  insetStart: 0,
+  insetEnd: 0,
+};
+
+const reportedBy = ({ nodes, links }: Pick<SankeyLayoutInput, 'nodes' | 'links'>) =>
+  String(findSankeyDataError(nodes, links));
 
 const nodesOf = (...ids: string[]) => ids.map((id) => ({ id }));
 
@@ -184,36 +201,33 @@ describe('computeSankeyLayout', () => {
     expect(layout.nodes.every((node) => node.height === 0)).toBe(true);
   });
 
-  it('throws ET5160 for a cycle', () => {
+  it('finds ET5160 for a cycle, which lays out empty', () => {
     const links = [
       { source: 'a', target: 'b', value: 1 },
       { source: 'b', target: 'a', value: 1 },
     ];
 
-    expect(() => computeSankeyLayout({ nodes: nodesOf('a', 'b'), links, ...OPTIONS })).toThrow(/ET5160/);
-    expect(() =>
-      computeSankeyLayout({ nodes: nodesOf('a'), links: [{ source: 'a', target: 'a', value: 1 }], ...OPTIONS }),
-    ).toThrow(/ET5160/);
+    expect(reportedBy({ nodes: nodesOf('a', 'b'), links })).toMatch(/ET5160/);
+    expect(computeSankeyLayout({ nodes: nodesOf('a', 'b'), links, ...OPTIONS }).nodes).toEqual([]);
+    expect(reportedBy({ nodes: nodesOf('a'), links: [{ source: 'a', target: 'a', value: 1 }] })).toMatch(/ET5160/);
   });
 
-  it('throws ET5161 for a link to an unknown node', () => {
-    expect(() =>
-      computeSankeyLayout({ nodes: nodesOf('a'), links: [{ source: 'a', target: 'z', value: 1 }], ...OPTIONS }),
-    ).toThrow(/ET5161.*"z"/);
+  it('finds ET5161 for a link to an unknown node', () => {
+    expect(reportedBy({ nodes: nodesOf('a'), links: [{ source: 'a', target: 'z', value: 1 }] })).toMatch(/ET5161.*"z"/);
   });
 
-  it('throws ET5162 for a duplicate node id', () => {
-    expect(() => computeSankeyLayout({ nodes: nodesOf('a', 'a'), links: [], ...OPTIONS })).toThrow(/ET5162/);
+  it('finds nothing wrong with valid data', () => {
+    expect(findSankeyDataError(nodesOf('a', 'b'), [{ source: 'a', target: 'b', value: 1 }])).toBeNull();
   });
 
-  it('throws ET5163 for a negative or non-finite value', () => {
+  it('finds ET5162 for a duplicate node id', () => {
+    expect(reportedBy({ nodes: nodesOf('a', 'a'), links: [] })).toMatch(/ET5162/);
+  });
+
+  it('finds ET5163 for a negative or non-finite value', () => {
     const nodes = nodesOf('a', 'b');
 
-    expect(() =>
-      computeSankeyLayout({ nodes: nodes, links: [{ source: 'a', target: 'b', value: -1 }], ...OPTIONS }),
-    ).toThrow(/ET5163/);
-    expect(() =>
-      computeSankeyLayout({ nodes: nodes, links: [{ source: 'a', target: 'b', value: NaN }], ...OPTIONS }),
-    ).toThrow(/ET5163/);
+    expect(reportedBy({ nodes, links: [{ source: 'a', target: 'b', value: -1 }] })).toMatch(/ET5163/);
+    expect(reportedBy({ nodes, links: [{ source: 'a', target: 'b', value: NaN }] })).toMatch(/ET5163/);
   });
 });

@@ -50,6 +50,8 @@ import { LineChartTooltipComponent } from './line-chart-tooltip.component';
         'dateFormatter',
         'timeZone',
         'xHeader',
+        'categoryHeader',
+        'dateHeader',
         'valueHeader',
       ],
     },

@@ -584,6 +584,32 @@ describe('breadcrumb scenarios', () => {
     );
     s.errors.length = 0;
   });
+
+  it('warns about content other than the separator projected into the outlet', () => {
+    @Component({
+      styles: [UNSTYLED_BLOCKS],
+      encapsulation: ViewEncapsulation.None,
+      imports: [BreadcrumbOutletComponent, BreadcrumbSeparatorDirective, TeamsViewComponent],
+      providers: [provideBreadcrumbManager()],
+      template: `
+        <et-breadcrumb-outlet>
+          <a class="stray-home" href="/">Home</a>
+          <ng-template etBreadcrumbSeparator>›</ng-template>
+        </et-breadcrumb-outlet>
+        <et-scenario-teams-view />
+      `,
+    })
+    class StrayOutletContentComponent {}
+
+    const s = scenario();
+
+    TestBed.createComponent(StrayOutletContentComponent);
+    s.tick();
+
+    s.expectWarning(`ET${BREADCRUMB_ERROR_CODES.OUTLET_UNSUPPORTED_CONTENT}`);
+    expect(trail()).toEqual(['Teams']);
+    expect(document.querySelector('et-breadcrumb .stray-home')).toBeNull();
+  });
 });
 
 @Component({

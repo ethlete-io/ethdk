@@ -1,4 +1,4 @@
-import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -197,9 +197,7 @@ describe('forms select query scenarios', () => {
       s.frame(2);
 
       expect(text(query('.et-select-state--error'))).toBe('Search index rebuilding');
-      expect(s.errors.splice(0).map((entry) => entry.error instanceof HttpErrorResponse && entry.error.status)).toEqual(
-        [500],
-      );
+      expect(s.errors).toEqual([]);
 
       type(s, input, '4');
       s.tick(200);

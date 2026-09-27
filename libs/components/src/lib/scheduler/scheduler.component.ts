@@ -16,6 +16,7 @@ import { BUTTON_IMPORTS } from '../button';
 import { FLOATING_ACTION_IMPORTS } from '../floating-action';
 import { LabelDirective, SEGMENTED_BUTTON_IMPORTS } from '../forms';
 import { CALENDAR_ICON, CHEVRON_ICON, IconDirective, PLUS_ICON, provideIcons } from '../icon';
+import { injectReportError } from '../internals/report-error';
 import { OverlayRef, createOverlayOpener } from '../overlay';
 import {
   SCHEDULER_FEATURE_HOST,
@@ -93,6 +94,7 @@ const NARROW_CONTAINER_WIDTH = 480;
 export class SchedulerComponent implements SchedulerFeatureHost {
   private labels = injectSchedulerLabels();
   private editSurface = inject(SCHEDULER_EDIT_SURFACE, { optional: true });
+  private reportError = injectReportError();
 
   /**
    * The headless directive behind this scheduler - everything `[etScheduler]` exposes, for chrome
@@ -280,9 +282,11 @@ export class SchedulerComponent implements SchedulerFeatureHost {
 
     if (!this.editSurfaceOpener) {
       if (ngDevMode) {
-        throw new RuntimeError(
-          SCHEDULER_ERROR_CODES.EDIT_SURFACE_NOT_REGISTERED,
-          '[Scheduler] An appointment was selected without the default edit surface. Add provideSchedulerEditSurface() to a parent injector.',
+        this.reportError(
+          new RuntimeError(
+            SCHEDULER_ERROR_CODES.EDIT_SURFACE_NOT_REGISTERED,
+            '[Scheduler] An appointment was selected without the default edit surface. Add provideSchedulerEditSurface() to a parent injector.',
+          ),
         );
       }
 
@@ -315,9 +319,11 @@ export class SchedulerComponent implements SchedulerFeatureHost {
   private openAddSurface(appointment: Appointment) {
     if (!this.addSurfaceOpener) {
       if (ngDevMode) {
-        throw new RuntimeError(
-          SCHEDULER_ERROR_CODES.EDIT_SURFACE_NOT_REGISTERED,
-          '[Scheduler] An appointment was added without the default edit surface. Add provideSchedulerEditSurface() to a parent injector.',
+        this.reportError(
+          new RuntimeError(
+            SCHEDULER_ERROR_CODES.EDIT_SURFACE_NOT_REGISTERED,
+            '[Scheduler] An appointment was added without the default edit surface. Add provideSchedulerEditSurface() to a parent injector.',
+          ),
         );
       }
 
@@ -330,9 +336,11 @@ export class SchedulerComponent implements SchedulerFeatureHost {
   private openDraftSurface(draft: SchedulerDraftRange) {
     if (!this.editSurfaceOpener) {
       if (ngDevMode) {
-        throw new RuntimeError(
-          SCHEDULER_ERROR_CODES.EDIT_SURFACE_NOT_REGISTERED,
-          '[Scheduler] A draft range was committed without the default edit surface. Add provideSchedulerEditSurface() to a parent injector.',
+        this.reportError(
+          new RuntimeError(
+            SCHEDULER_ERROR_CODES.EDIT_SURFACE_NOT_REGISTERED,
+            '[Scheduler] A draft range was committed without the default edit surface. Add provideSchedulerEditSurface() to a parent injector.',
+          ),
         );
       }
 

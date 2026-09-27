@@ -85,7 +85,7 @@ keeps working.
 
 The group's directive also exposes `openAll()` and `closeAll()` for a "expand
 everything" control - grab it with `#group="etAccordionGroup"`. `openAll()` does
-nothing while `autoCloseOthers` is on, since it would immediately undo itself.
+nothing while `autoCloseOthers` is on, since it would immediately undo itself, and warns in dev mode.
 
 ## Rich headers
 

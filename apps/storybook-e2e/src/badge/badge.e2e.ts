@@ -71,6 +71,55 @@ function readMetrics(badge: Locator): Promise<BadgeMetrics> {
   });
 }
 
+interface Edges {
+  top: number;
+  bottom: number;
+  right: number;
+  width: number;
+  height: number;
+}
+
+interface IconGeometry {
+  fontSize: string;
+  iconStyle: { inlineSize: string; blockSize: string };
+  icon: Edges;
+  slot: Edges;
+  badge: Edges;
+  labelLeft: number;
+}
+
+function readIconGeometry(badge: Locator): Promise<IconGeometry> {
+  return badge.evaluate((el) => {
+    const edges = (rect: DOMRect) => ({
+      top: rect.top,
+      bottom: rect.bottom,
+      right: rect.right,
+      width: rect.width,
+      height: rect.height,
+    });
+    const icon = el.querySelector('.et-icon') as HTMLElement;
+    const slot = el.querySelector('.et-badge-icon') as HTMLElement;
+    const label = Array.from(el.childNodes).find(
+      (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
+    );
+    const range = document.createRange();
+
+    range.selectNodeContents(label as Node);
+
+    const iconStyle = getComputedStyle(icon);
+    const labelRects = Array.from(range.getClientRects()).filter((rect) => rect.width > 0);
+
+    return {
+      fontSize: getComputedStyle(el).fontSize,
+      iconStyle: { inlineSize: iconStyle.inlineSize, blockSize: iconStyle.blockSize },
+      icon: edges(icon.getBoundingClientRect()),
+      slot: edges(slot.getBoundingClientRect()),
+      badge: edges(el.getBoundingClientRect()),
+      labelLeft: Math.min(...labelRects.map((rect) => rect.left)),
+    };
+  });
+}
+
 function explicitlySizedBadges(root: Locator): Locator {
   return root.locator(`${BADGE}[data-size='sm'], ${BADGE}[data-size='lg']`);
 }
@@ -114,6 +163,8 @@ test.describe('badge / structure', () => {
   test('each size scales padding, minimum height and font size together', async ({ page }) => {
     const root = await openStory(page, DEFAULT_STORY_ID);
 
+    await expect(explicitlySizedBadges(root)).toHaveCount(2);
+
     const sizes = await explicitlySizedBadges(root).evaluateAll((els) =>
       els.map((el) => {
         const style = getComputedStyle(el);
@@ -130,6 +181,8 @@ test.describe('badge / structure', () => {
 
   test('md inherits a token set on an ancestor, while sm and lg set their own and win over it', async ({ page }) => {
     const root = await openStory(page, DEFAULT_STORY_ID);
+
+    await expect(explicitlySizedBadges(root)).toHaveCount(2);
 
     const fontSizes = await root.evaluate((el) => {
       const host = el.querySelector('et-sb-badge') as HTMLElement;
@@ -232,6 +285,32 @@ test.describe('badge / structure', () => {
       expect(Math.round(sized.height), id).toBe(expected);
     }
   });
+
+  for (const [size, fontSize, gap, minBlockSize] of [
+    ['sm', 10, 3, 16],
+    ['md', 11, 4, 20],
+    ['lg', 12, 5, 24],
+  ] as const) {
+    test(`a ${size} badge sizes its icon to its ${fontSize}px font, centred, one gap from the label`, async ({
+      page,
+    }) => {
+      const root = await openStory(page, DEFAULT_STORY_ID, { args: { size } });
+      const badge = root.locator(BADGE, { has: page.locator(ICON) }).first();
+
+      await expect(badge).toHaveAttribute('data-size', size);
+
+      const measured = await readIconGeometry(badge);
+
+      expect(measured.fontSize).toBe(`${fontSize}px`);
+      expect(measured.iconStyle).toEqual({ inlineSize: `${fontSize}px`, blockSize: `${fontSize}px` });
+      expect(measured.icon.width).toBeCloseTo(fontSize, 1);
+      expect(measured.icon.height).toBeCloseTo(fontSize, 1);
+      expect(measured.slot.width).toBeCloseTo(fontSize, 1);
+      expect(measured.badge.height).toBeGreaterThanOrEqual(minBlockSize);
+      expect(measured.icon.top - measured.badge.top).toBeCloseTo(measured.badge.bottom - measured.icon.bottom, 0);
+      expect(measured.labelLeft - measured.slot.right).toBeCloseTo(gap, 0);
+    });
+  }
 
   test('an icon next to a label is decorative and hidden from assistive tech', async ({ page }) => {
     const root = await openStory(page, DEFAULT_STORY_ID);

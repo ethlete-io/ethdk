@@ -79,8 +79,18 @@ describe('parseKbdKeys', () => {
     expect(parseKbdKeys(' mod + shift + k ')).toEqual(['mod', 'shift', 'k']);
   });
 
-  it('drops empty segments', () => {
+  it('reads a + standing alone between separators as the plus key', () => {
+    expect(parseKbdKeys('+')).toEqual(['+']);
+    expect(parseKbdKeys('mod++')).toEqual(['mod', '+']);
+    expect(parseKbdKeys('mod+++shift')).toEqual(['mod', '+', 'shift']);
+    expect(parseKbdKeys('mod + + ')).toEqual(['mod', '+']);
+    expect(parseKbdKeys('mod+plus')).toEqual(['mod', 'plus']);
+  });
+
+  it('drops an empty segment that is not a plus key', () => {
     expect(parseKbdKeys('mod++k')).toEqual(['mod', 'k']);
+    expect(parseKbdKeys('mod+k+')).toEqual(['mod', 'k']);
+    expect(parseKbdKeys('')).toEqual([]);
   });
 });
 

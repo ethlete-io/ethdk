@@ -15,7 +15,7 @@
     </span>
 
     @if (entry.row.childrenError; as error) {
-      <span class="et-tree-node-error">{{ error }} · {{ retryLabel() }}</span>
+      <span class="et-tree-node-error">{{ error }} · {{ resolvedRetryLabel() }}</span>
     }
   </div>
 }
@@ -26,7 +26,7 @@
 @if (tree.rootStatus() === 'loading') {
   <div class="et-tree-status" aria-disabled="true" aria-level="1" aria-selected="false" role="treeitem">
     <et-tree-marker marker="spinner" />
-    {{ loadingLabel() }}
+    {{ resolvedLoadingLabel() }}
   </div>
 } @else if (tree.rootError(); as error) {
   <div
@@ -39,10 +39,10 @@
     tabindex="0"
   >
     <et-tree-marker marker="warning" />
-    {{ error }} · {{ retryLabel() }}
+    {{ error }} · {{ resolvedRetryLabel() }}
   </div>
 } @else if (!rows().length) {
   <div class="et-tree-status" aria-disabled="true" aria-level="1" aria-selected="false" role="treeitem">
-    {{ emptyLabel() }}
+    {{ resolvedEmptyLabel() }}
   </div>
 }

@@ -133,7 +133,7 @@ describe('accordion scenarios', () => {
       '3',
       '3',
     ]);
-    expect(triggers.map(text)).toEqual(['Shipping', 'Returns30 days', 'Revenue', 'Archive']);
+    expect(triggers.map(text)).toEqual(['Shipping', 'Returns 30 days', 'Revenue', 'Archive']);
     expect(host.querySelector('.returns-label')).not.toBeNull();
     expect(text(host.querySelector('.et-accordion-hint'))).toBe('30 days');
     expect(triggers.map((trigger) => trigger.getAttribute('aria-expanded'))).toEqual([
@@ -205,6 +205,7 @@ describe('accordion scenarios', () => {
     app.group().openAll();
     s.tick();
     expect(expanded()).toEqual([false, false, true, false]);
+    s.expectWarning(`ET${ACCORDION_ERROR_CODES.OPEN_ALL_WITH_AUTO_CLOSE_OTHERS}`);
 
     app.keepOne.set(true);
     s.tick();

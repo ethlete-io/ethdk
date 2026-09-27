@@ -61,6 +61,7 @@ const valuesEqual = (a: unknown, b: unknown) => {
 
 @Directive({
   selector: '[etDropzone]',
+  exportAs: 'etDropzone',
   host: {
     '[attr.data-drag-over]': 'isDragOver() || null',
     '[attr.data-disabled]': 'disabled() || null',

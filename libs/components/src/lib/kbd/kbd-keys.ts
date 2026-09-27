@@ -101,14 +101,27 @@ const resolveKey = (key: string, platform: KbdPlatform): KbdKeyRendering => {
 };
 
 /**
- * Splits a chord such as `mod+shift+k` into its keys. Whitespace around a key is ignored; use `plus`
- * for the literal `+` key.
+ * Splits a chord such as `mod+shift+k` into its keys. Whitespace around a key is ignored. The literal
+ * `+` key is spelled `plus`, or written as a `+` standing alone in a key's place: `+`, `mod++`,
+ * `mod+++shift`. Any other empty segment is dropped, so `mod++k` is `mod+k`.
  */
-export const parseKbdKeys = (keys: string): string[] =>
-  keys
-    .split('+')
-    .map((key) => key.trim())
-    .filter((key) => key.length > 0);
+export const parseKbdKeys = (keys: string): string[] => {
+  const segments = keys.split('+').map((key) => key.trim());
+  const parsed: string[] = [];
+
+  for (let index = 0; index < segments.length; index++) {
+    const segment = segments[index] ?? '';
+
+    if (segment) {
+      parsed.push(segment);
+    } else if (segments[index + 1] === '') {
+      parsed.push('+');
+      index++;
+    }
+  }
+
+  return parsed;
+};
 
 /** The glyph or word printed on a key for the given platform, e.g. `mod` → `⌘` on Apple, `Ctrl` elsewhere. */
 export const kbdKeyLabel = (key: string, platform: KbdPlatform) => resolveKey(key, platform).label;

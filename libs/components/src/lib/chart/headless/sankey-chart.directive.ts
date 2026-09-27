@@ -1,11 +1,12 @@
-import { computed, Directive, input, numberAttribute, signal } from '@angular/core';
+import { computed, Directive, effect, input, numberAttribute, signal } from '@angular/core';
 import { injectColorPalette, injectLocale, RegisteredColorThemeName } from '@ethlete/core';
+import { injectReportError } from '../../internals/report-error';
 import { ChartRect, ChartTableModel, ChartTooltipPlacement } from '../chart.types';
 import { CHART_PLOT_HOST, ChartPlotDirective, ChartPlotHost } from './chart-plot.directive';
 import { ChartValueFormatter, resolveChartValueFormatter } from './internals/chart-format';
 import { assertChartPlot } from './internals/chart-plot-check';
 import { resolveChartSeriesColors } from './internals/chart-series';
-import { computeSankeyLayout } from './internals/sankey-layout';
+import { computeSankeyLayout, EMPTY_SANKEY_LAYOUT, findSankeyDataError } from './internals/sankey-layout';
 
 /** A node of a sankey chart: a stage the flow passes through. */
 export type SankeyChartNodeInput = {
@@ -107,6 +108,7 @@ const MIN_NODE_HEIGHT = 1;
 export class SankeyChartDirective implements ChartPlotHost {
   private palette = injectColorPalette({ optional: true });
   private locale = injectLocale();
+  private reportError = injectReportError();
 
   /** The stages of the flow. Their order sets their palette colour and the first ordering guess. */
   public nodes = input.required<readonly SankeyChartNodeInput[]>();
@@ -161,17 +163,21 @@ export class SankeyChartDirective implements ChartPlotHost {
   /** The color theme per entry of `nodes`, resolved against the palette. */
   public nodeColors = computed(() => resolveChartSeriesColors(this.nodes(), this.palette));
 
+  private dataError = computed(() => findSankeyDataError(this.nodes(), this.links()));
+
   private layout = computed(() =>
-    computeSankeyLayout({
-      nodes: this.nodes(),
-      links: this.links(),
-      width: this.plotWidth(),
-      height: this.height(),
-      nodeWidth: this.nodeWidth(),
-      nodeGap: this.nodeGap(),
-      insetStart: this.labelWidth(),
-      insetEnd: this.labelWidth(),
-    }),
+    this.dataError()
+      ? EMPTY_SANKEY_LAYOUT
+      : computeSankeyLayout({
+          nodes: this.nodes(),
+          links: this.links(),
+          width: this.plotWidth(),
+          height: this.height(),
+          nodeWidth: this.nodeWidth(),
+          nodeGap: this.nodeGap(),
+          insetStart: this.labelWidth(),
+          insetEnd: this.labelWidth(),
+        }),
   );
 
   /** The nodes, column by column and top to bottom - the order they are tab stops in. */
@@ -316,6 +322,12 @@ export class SankeyChartDirective implements ChartPlotHost {
 
   constructor() {
     assertChartPlot(this, 'SankeyChartDirective');
+
+    effect(() => {
+      const error = this.dataError();
+
+      if (error) this.reportError(error);
+    });
   }
 
   /** Marks a node or link as hovered, e.g. on `pointerenter` from a device that can hover. */

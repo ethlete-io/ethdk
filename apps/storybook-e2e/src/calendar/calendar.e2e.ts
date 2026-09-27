@@ -239,3 +239,121 @@ test.describe('calendar / touch', () => {
     await expect.poll(() => header.textContent()).not.toBe(initialLabel);
   });
 });
+
+const LEAVING_WEEKS = '.et-calendar-weeks--leave';
+const LEAVING_HEADER_LABEL_VALUE = '.et-calendar-header-label-value--leave';
+const LIVE_WEEKS = '.et-calendar-weeks:not(.et-calendar-weeks--leave)';
+
+/**
+ * Freezes CSS animations and the page clock, so Angular's `animate.leave` keeps the leaving element until
+ * `page.clock.runFor` passes its fallback timer.
+ */
+async function freezeTransitions(page: Page): Promise<void> {
+  const cdp = await page.context().newCDPSession(page);
+
+  await cdp.send('Animation.enable');
+  await cdp.send('Animation.setPlaybackRate', { playbackRate: 0 });
+  await page.clock.pauseAt(Date.now() + 60_000);
+}
+
+const animationNamesOf = (locator: Locator) =>
+  locator.evaluate((el) => el.getAnimations().map((animation) => (animation as CSSAnimation).animationName));
+
+function monthLabelAfter(label: string, months: number): string {
+  const start = new Date(`1 ${label}`);
+
+  return new Date(start.getFullYear(), start.getMonth() + months, 1).toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+test.describe('calendar / transitions', () => {
+  test('the next-month button keeps the leaving weeks and header label inert beside the entering ones until the leave animation ends', async ({
+    page,
+  }) => {
+    await page.clock.install();
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const header = root.locator(HEADER_LABEL_VALUE);
+    const initialLabel = (await header.textContent()) ?? '';
+
+    await freezeTransitions(page);
+    await root.locator('.et-calendar-nav-button--next').click();
+    await page.clock.runFor(20);
+
+    const leavingWeeks = root.locator(LEAVING_WEEKS);
+    const leavingLabel = root.locator(LEAVING_HEADER_LABEL_VALUE);
+
+    await expect(leavingWeeks).toHaveCount(1);
+    await expect(leavingLabel).toHaveText(initialLabel);
+    await expect(leavingWeeks).toHaveAttribute('inert', '');
+    await expect(leavingLabel).toHaveAttribute('inert', '');
+    await expect.poll(() => animationNamesOf(leavingWeeks)).toContain('et-calendar-weeks-out');
+    await expect.poll(() => animationNamesOf(leavingLabel)).toContain('et-calendar-label-out');
+
+    await expect(header).toHaveText(monthLabelAfter(initialLabel, 1));
+    await expect(root.locator(LIVE_WEEKS)).not.toHaveAttribute('inert', '');
+    await expect(header).not.toHaveAttribute('inert', '');
+    await expect.poll(() => animationNamesOf(root.locator(LIVE_WEEKS))).toContain('et-calendar-weeks-in-forward');
+    await expect.poll(() => animationNamesOf(header)).toContain('et-calendar-label-in-forward');
+
+    await page.clock.runFor(1000);
+
+    await expect(leavingWeeks).toHaveCount(0);
+    await expect(leavingLabel).toHaveCount(0);
+    await expect(root.locator('.et-calendar-weeks')).toHaveCount(1);
+    await expect(root.locator('.et-calendar-header-label-value')).toHaveText(monthLabelAfter(initialLabel, 1));
+  });
+
+  test('the previous-month button animates backward and leaves only the previous month', async ({ page }) => {
+    await page.clock.install();
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const header = root.locator(HEADER_LABEL_VALUE);
+    const initialLabel = (await header.textContent()) ?? '';
+
+    await freezeTransitions(page);
+    await root.locator('.et-calendar-nav-button--previous').click();
+    await page.clock.runFor(20);
+
+    await expect(root.locator(LEAVING_WEEKS)).toHaveAttribute('inert', '');
+    await expect(root.locator(LEAVING_HEADER_LABEL_VALUE)).toHaveAttribute('inert', '');
+    await expect.poll(() => animationNamesOf(root.locator(LIVE_WEEKS))).toContain('et-calendar-weeks-in-backward');
+    await expect.poll(() => animationNamesOf(header)).toContain('et-calendar-label-in-backward');
+
+    await page.clock.runFor(1000);
+
+    await expect(root.locator('.et-calendar-weeks')).toHaveCount(1);
+    await expect(root.locator('.et-calendar-header-label-value')).toHaveText(monthLabelAfter(initialLabel, -1));
+  });
+
+  test('a fast double click on the next-month button ends two months ahead with a single grid and label', async ({
+    page,
+  }) => {
+    await page.clock.install();
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const header = root.locator(HEADER_LABEL_VALUE);
+    const next = root.locator('.et-calendar-nav-button--next');
+    const initialLabel = (await header.textContent()) ?? '';
+
+    await freezeTransitions(page);
+    await next.click();
+    await page.clock.runFor(20);
+    await expect(root.locator(LEAVING_WEEKS)).toHaveCount(1);
+
+    await next.click();
+    await page.clock.runFor(20);
+
+    await expect(header).toHaveText(monthLabelAfter(initialLabel, 2));
+    await expect(root.locator(`${LEAVING_WEEKS}:not([inert])`)).toHaveCount(0);
+    await expect(root.locator(`${LEAVING_HEADER_LABEL_VALUE}:not([inert])`)).toHaveCount(0);
+
+    await page.clock.runFor(1000);
+
+    await expect(root.locator('.et-calendar-weeks')).toHaveCount(1);
+    await expect(root.locator('.et-calendar-header-label-value')).toHaveText(monthLabelAfter(initialLabel, 2));
+    await expect(root.locator(`${LIVE_WEEKS} .et-calendar-cell:not([data-outside-month])`).first()).toHaveAttribute(
+      'aria-label',
+      new RegExp(`${monthLabelAfter(initialLabel, 2).split(' ')[0]} 1st`),
+    );
+  });
+});

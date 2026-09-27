@@ -221,7 +221,7 @@ describe('SelectDirective (selectAll, data-driven with compareWith)', () => {
     driver.paneEl('.et-select-all-option')?.click();
     driver.tick();
 
-    expect((driver.host.value() as Fruit[]).map((value) => value.id)).toEqual([2, 1, 3]);
+    expect((driver.host.value() as Fruit[]).map((value) => value.id)).toEqual([1, 2, 3]);
 
     driver.paneEl('.et-select-all-option')?.click();
     driver.tick();

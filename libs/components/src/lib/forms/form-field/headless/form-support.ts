@@ -50,15 +50,9 @@ const formSupportFactory = () => {
   const counterDimensions = signalElementDimensions(counterContent);
 
   const effectiveErrors = computed<readonly ValidationError.WithOptionalFieldTree[]>(() => {
-    const errors = formFieldDir.errors();
-
-    if (errors.length > 0) {
-      return errors;
-    }
-
     const parseMessage = formFieldDir.parseError() ? formFieldDir.parseErrorMessage() : null;
 
-    return parseMessage ? [{ kind: 'etParseError', message: parseMessage }] : [];
+    return parseMessage ? [{ kind: 'etParseError', message: parseMessage }] : formFieldDir.errors();
   });
 
   const semanticSupportState = computed<SupportContentState>(() => {

@@ -6,7 +6,6 @@ import {
   Directive,
   ElementRef,
   inject,
-  inputBinding,
   model,
   signal,
   TemplateRef,
@@ -298,8 +297,9 @@ class SwatchPanelComponent {
     <button #anchor [attr.aria-expanded]="open()" (click)="open.set(!open())" class="swatch-trigger" type="button">
       {{ value() }}
     </button>
-    <ng-template #surface let-close="close">
+    <ng-template #surface let-close="close" let-current="current">
       <et-scenario-swatch-panel>
+        <span class="swatch-current">{{ current }}</span>
         <button (click)="value.set('teal'); close()" class="swatch-option" type="button">teal</button>
       </et-scenario-swatch-panel>
     </ng-template>
@@ -321,11 +321,7 @@ class SwatchPickerComponent {
     overlayRef: this.overlayRef,
     surface: computed(() => ({ templateRef: this.surfaceRef() })),
     anchor: () => this.anchor().nativeElement,
-    config: ({ origin, templateRef }) => ({
-      bindings: [
-        inputBinding('template', () => templateRef),
-        inputBinding('context', () => ({ close: () => this.open.set(false) })),
-      ],
+    config: ({ origin }) => ({
       mode: 'non-modal',
       autoFocus: false,
       restoreFocus: false,
@@ -335,6 +331,7 @@ class SwatchPickerComponent {
       panelClass: 'swatch-pane',
       strategies: anchoredOverlayStrategy({ containerClass: 'swatch-anchored', placement: 'bottom-start' }),
     }),
+    context: () => ({ current: this.value() }),
     onAfterClosed: (info) =>
       this.closes.push({ byOutsidePointer: info.byOutsidePointer, byFocusLeave: info.byFocusLeave }),
   });
@@ -509,6 +506,7 @@ describe('forms form-field custom control scenarios', () => {
     expect(pane?.classList).toContain('swatch-pane');
     expect(query('.swatch-trigger', host).getAttribute('aria-expanded')).toBe('true');
     expect(query('et-scenario-swatch-panel', pane).classList).toContain('et-color--inherited');
+    expect(query('.swatch-current', pane).textContent).toBe('none');
 
     query('.swatch-option', pane).click();
     render(s);

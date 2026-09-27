@@ -1139,6 +1139,7 @@ test.describe('stream / pip pointer', () => {
     const viewport = viewportOf(page);
 
     await mouseDrag(page, grip, { x: PIP_VIEWPORT_PADDING + 100, y: PIP_VIEWPORT_PADDING + 10 });
+    await expect.poll(async () => (await boxOf(pipWindow)).x).toBeCloseTo(PIP_VIEWPORT_PADDING, 0);
 
     const from = centerOf(await boxOf(pipWindow.locator('.et-resize-handle--se')));
 
@@ -1181,6 +1182,60 @@ test.describe('stream / pip touch', () => {
     await tap(pipWindow.locator(COLLAPSE_OVERLAY));
 
     await expect(pipWindow).not.toHaveClass(/et-pip-window--collapsed/);
+    await expectInsideViewportPadding(page, pipWindow);
+  });
+});
+
+async function leftEdgeGrip(page: Page, handles: PipHandles): Promise<TouchPoint> {
+  await revealTitleBar(handles.pipWindow);
+
+  const spacer = await boxOf(handles.titleBar.locator('.et-pip-window__title-bar-spacer'));
+
+  return { x: spacer.x + 2, y: spacer.y + spacer.height / 2 };
+}
+
+test.describe('stream / pip edges', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only');
+
+  test('a window dragged past the right edge keeps its viewport padding on screen while held and collapses on release', async ({
+    page,
+  }) => {
+    const handles = await openPip(page);
+    const { pipWindow } = handles;
+    const viewport = viewportOf(page);
+    const grip = await leftEdgeGrip(page, handles);
+
+    await page.mouse.move(grip.x, grip.y);
+    await page.mouse.down();
+    await page.mouse.move(viewport.width + 200, grip.y, { steps: 20 });
+
+    await expect(pipWindow).toHaveClass(/et-pip-window--dragging/);
+    await expect.poll(async () => (await boxOf(pipWindow)).x).toBeCloseTo(viewport.width - PIP_VIEWPORT_PADDING, 0);
+
+    await page.mouse.up();
+
+    await expectCollapsedAtRightEdge(page, pipWindow);
+  });
+
+  test('a window dragged more than halfway off the bottom collapses to a peek at the bottom edge and comes back on a click', async ({
+    page,
+  }) => {
+    const handles = await openPip(page);
+    const { pipWindow } = handles;
+    const viewport = viewportOf(page);
+    const grip = await titleBarGrip(page, handles);
+
+    await mouseDrag(page, grip, { x: grip.x, y: viewport.height - 1 });
+
+    await expect(pipWindow).toHaveClass(/et-pip-window--collapsed/);
+    await expect.poll(async () => (await boxOf(pipWindow)).y).toBeCloseTo(viewport.height - PIP_COLLAPSE_PEEK, 0);
+
+    const overlay = await boxOf(pipWindow.locator(COLLAPSE_OVERLAY));
+
+    await page.mouse.click(overlay.x + overlay.width / 2, viewport.height - PIP_COLLAPSE_PEEK / 2);
+
+    await expect(pipWindow).not.toHaveClass(/et-pip-window--collapsed/);
+    await expect(pipWindow.locator(COLLAPSE_OVERLAY)).toHaveCount(0);
     await expectInsideViewportPadding(page, pipWindow);
   });
 });

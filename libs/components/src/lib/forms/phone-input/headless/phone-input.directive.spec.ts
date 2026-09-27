@@ -8,6 +8,7 @@ import { resolveAccessibleName } from '../../testing/accessible-name';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { mountPhoneInput, PhoneInputDriver } from '../../testing/phone-input-driver';
 import { PHONE_INPUT_IMPORTS } from '../phone-input.imports';
+import { phoneCountryName } from './phone-countries';
 import { matchCountryByDialCode, phoneCountryFlag } from './phone-countries';
 
 @Component({
@@ -208,10 +209,16 @@ describe('PhoneInputDirective', () => {
     expect(driver.phone.isPlausible()).toBe(true);
   });
 
-  it('names the country trigger with countryLabel, closed and with the panel open', async () => {
+  it('names the country trigger with countryLabel, the active country and its dial code, closed and open', async () => {
     const trigger = driver.query('.et-phone-input-country-trigger')!;
+    const [countryLabelId, selfId] = trigger.getAttribute('aria-labelledby')?.split(' ') ?? [];
 
-    expect(resolveAccessibleName(trigger)).toBe('Select country');
+    expect(document.getElementById(countryLabelId!)?.textContent).toBe('Select country');
+    expect(selfId).toBe(trigger.id);
+    expect(trigger.hasAttribute('aria-label')).toBe(false);
+    expect(trigger.querySelector('.et-phone-input-country-flag')?.getAttribute('aria-hidden')).toBe('true');
+    expect(trigger.querySelector('.et-phone-input-country-name')?.textContent).toBe(phoneCountryName('de'));
+    expect(trigger.querySelector('.et-phone-input-dial-code')?.textContent).toBe('+49');
 
     driver.click(trigger);
     await flushFrames();
@@ -219,8 +226,11 @@ describe('PhoneInputDirective', () => {
     await flushFrames();
     driver.tick();
 
-    expect(latestPane()?.querySelector('input[etselectsearch]')).not.toBeNull();
-    expect(resolveAccessibleName(trigger)).toBe('Select country');
+    const search = latestPane()?.querySelector('input[etselectsearch]');
+
+    expect(search).not.toBeNull();
+    expect(resolveAccessibleName(search!)).toBe('Select country');
+    expect(trigger.getAttribute('aria-labelledby')).toBe(`${countryLabelId} ${trigger.id}`);
   });
 
   describe('mixed', () => {

@@ -1,4 +1,4 @@
-import { Locator, Page, expect, test } from '@playwright/test';
+import { CDPSession, Locator, Page, expect, test } from '@playwright/test';
 import { boxOf, expectFieldFocusVisible, expectTouchMode, openStory, pressKey, settle, tap } from '../support';
 
 const DEFAULT_STORY_ID = 'components-forms-select--default';
@@ -502,5 +502,73 @@ test.describe('select / touch', () => {
 
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
     await expect(trigger).toContainText('Cherry');
+  });
+});
+
+/** Playback rate 0 holds every animation in place; the overlay removes its pane only once they finish. */
+async function freezeAnimations(page: Page): Promise<CDPSession> {
+  const cdp = await page.context().newCDPSession(page);
+
+  await cdp.send('Animation.enable');
+  await cdp.send('Animation.setPlaybackRate', { playbackRate: 0 });
+
+  return cdp;
+}
+
+const resumeAnimations = (cdp: CDPSession) => cdp.send('Animation.setPlaybackRate', { playbackRate: 1 });
+
+const SELECT_PANE = '.et-select-overlay-pane';
+
+test.describe('select / leave animation', () => {
+  test('the closed panel stays in the DOM while its leave animation runs, then it is removed', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const trigger = root.getByRole('combobox');
+    const pane = page.locator(SELECT_PANE);
+
+    await trigger.click();
+    await expect(pane).toHaveClass(/et-animation-enter-done/);
+
+    const cdp = await freezeAnimations(page);
+    await page.getByRole('option', { name: 'Cherry' }).click();
+
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(trigger).toContainText('Cherry');
+    await expect(pane).toHaveClass(/et-animation-leave-active/);
+    await expect(pane.getByRole('listbox')).toHaveCount(1);
+    await expect.poll(() => pane.evaluate((el) => el.getAnimations().length)).toBeGreaterThan(0);
+
+    await resumeAnimations(cdp);
+
+    await expect(pane).toHaveCount(0);
+    await expect(page.getByRole('listbox')).toHaveCount(0);
+  });
+
+  test('reopening during the leave animation ends with one open, interactive panel', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const trigger = root.getByRole('combobox');
+    const pane = page.locator(SELECT_PANE);
+
+    await trigger.click();
+    await expect(pane).toHaveClass(/et-animation-enter-done/);
+
+    const cdp = await freezeAnimations(page);
+    await page.getByRole('option', { name: 'Cherry' }).click();
+    await expect(pane).toHaveClass(/et-animation-leave-active/);
+
+    await trigger.click();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+    await resumeAnimations(cdp);
+
+    await expect(pane).toHaveCount(1);
+    await expect(pane).toHaveClass(/et-animation-enter-done/);
+    await expect(pane).toHaveCSS('opacity', '1');
+    await expect(page.getByRole('listbox')).toBeVisible();
+
+    await page.getByRole('option', { name: 'Banana' }).click();
+
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(trigger).toContainText('Banana');
+    await expect(pane).toHaveCount(0);
   });
 });

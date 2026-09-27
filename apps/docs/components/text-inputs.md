@@ -284,6 +284,22 @@ notation the validators accept - `#f00`, `#rrggbbaa`, `rgb()`, `rgba()`, `hsl()`
 `hsla()`. A value that arrived from an API in one of those forms displays correctly
 and is not rewritten until the user picks something.
 
+### A custom surface
+
+A headless `[etColorInput]` renders whatever `<ng-template etColorPickerSurface>` it holds. The
+template's implicit context is the color input, so a surface of your own commits through
+`commitColor()` - it takes any notation the validators accept, emits the same normalized hex as
+the built-in panel, and returns `false` without touching the value when the color does not parse:
+
+```html
+<div [(value)]="color" aria-label="Kit color" etColorInput>
+  <button etColorPickerTrigger>{{ color() }}</button>
+  <ng-template etColorPickerSurface let-input let-close="close">
+    <button (click)="input.commitColor('rgb(0 128 128)'); close()" type="button">Teal</button>
+  </ng-template>
+</div>
+```
+
 ### Design tokens
 
 | Token                            | Default                                                 |
@@ -477,7 +493,7 @@ regional-indicator emoji.
 | -------------------- | ---------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `defaultCountry`     | `string`         | `'us'`   | ISO alpha-2 country used while the value carries none. A late change (a locale or geo lookup that resolves after the first render) still applies, as long as the country has not been picked or derived from the value since. |
 | `preferredCountries` | `string[]`       | `[]`     | Listed on top of the country dropdown.                                                                                                                                                                                        |
-| `countryLabel`       | `string \| null` | `null` ¹ | `aria-label` of the flag/dial-code country trigger.                                                                                                                                                                           |
+| `countryLabel`       | `string \| null` | `null` ¹ | Leads the country trigger's accessible name, followed by the active country and its dial code (`Select country Germany +49`).                                                                                                 |
 
 ¹ `null` falls through to [`PHONE_INPUT_LABELS.selectCountry`](/components/localization) (`'Select country'`).
 
@@ -531,7 +547,8 @@ the overview. Control-specific notes:
 - The password reveal toggle exposes `aria-pressed`; the Caps Lock warning is a
   `role="status"`.
 - The phone-input's tel field is labelled by the field label (or the control's
-  own `aria-label`); the country trigger takes its own `countryLabel`.
+  own `aria-label`); the country trigger is labelled by its `countryLabel`, the
+  active country's name (visually hidden) and the dial code.
 
 ## Theming
 

@@ -277,6 +277,29 @@ These panels are not modal, so nothing traps <kbd>Tab</kbd> inside them. A point
 focus move into a popover the panel itself opened - a nested select, a menu, a tooltip - does
 not count as outside.
 
+A control of your own gets the same rules from `createAnchoredPanelController`. Hand it the open
+model, the surface template and the anchor; it renders the template in the pane with a `close`
+function in its context, next to anything `context` returns:
+
+```ts
+overlayRef = signal<AnchoredPanelOverlayRef | null>(null);
+
+panel = createAnchoredPanelController({
+  canOpen: computed(() => !this.disabled()),
+  open: this.open,
+  overlayRef: this.overlayRef,
+  surface: computed(() => ({ templateRef: this.surfaceRef() })),
+  anchor: () => this.anchor().nativeElement,
+  context: () => ({ current: this.value() }),
+  config: ({ origin }) => ({
+    mode: 'non-modal',
+    closeOnOutsidePointer: false,
+    origin,
+    strategies: anchoredOverlayStrategy({ placement: 'bottom-start' }),
+  }),
+});
+```
+
 ## Mixed values (bulk editing)
 
 When one form edits several records whose values disagree, every value control

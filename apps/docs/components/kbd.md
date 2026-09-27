@@ -50,7 +50,7 @@ Key names are case-insensitive and several spellings resolve to the same key, so
 | `home`, `end`  |                          | `Home`, `End` | `Home`, `End` |
 | `plus`         |                          | `+`           | `+`           |
 
-Anything not in the table renders as written with its first letter capitalized, so `f5` becomes `F5` and single letters are uppercased. Because `+` separates the keys, the literal plus key is spelled `plus`: `mod+plus`.
+Anything not in the table renders as written with its first letter capitalized, so `f5` becomes `F5` and single letters are uppercased. Because `+` separates the keys, the literal plus key is spelled `plus` - `mod+plus` - or written as a `+` standing alone in a key's place: `+`, `mod++`, `mod+++shift`. Any other empty segment is dropped, so `mod++k` reads as `mod+k`.
 
 ## Pinning the platform
 

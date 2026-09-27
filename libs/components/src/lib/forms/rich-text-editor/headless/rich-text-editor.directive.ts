@@ -1,5 +1,17 @@
 import { DOCUMENT } from '@angular/common';
-import { booleanAttribute, computed, DestroyRef, Directive, inject, input, model, output, signal } from '@angular/core';
+import {
+  booleanAttribute,
+  computed,
+  DestroyRef,
+  Directive,
+  effect,
+  inject,
+  input,
+  model,
+  output,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import {
   htmlToMarkdown,
@@ -11,6 +23,7 @@ import {
   mountEasingTokens,
   RuntimeError,
 } from '@ethlete/core';
+import { fromEvent, tap } from 'rxjs';
 import {
   AccessibleNameControlDirective,
   FORM_FIELD_CONTROL_TYPES,
@@ -275,6 +288,35 @@ export class RichTextEditorDirective
 
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
+
+    fromEvent(this.document, 'selectionchange')
+      .pipe(
+        tap(() => {
+          this.refreshActiveMarks();
+          this.recordHistorySelection();
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    // Skips the user's own edits: those already match `lastEmittedMarkdown`, and re-rendering them would reset the caret.
+    effect(() => {
+      const markdown = this.value();
+
+      if (markdown === this.lastEmittedMarkdown) return;
+
+      this.renderExternalValue(markdown);
+    });
+  }
+
+  /**
+   * Attaches the `contenteditable` element this editor edits and renders the current value into it.
+   * A headless host calls it once its element exists, and forwards the element's `input` event to `syncFromDom()`.
+   */
+  public attachEditable(element: HTMLElement | null) {
+    this.editorDom.root.set(element);
+
+    if (element) this.renderExternalValue();
   }
 
   public activate() {

@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, ErrorHandler, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideColorPalette } from '@ethlete/core';
@@ -188,11 +188,14 @@ describe('SankeyChartComponent', () => {
     expect(element.querySelector('.et-chart-table caption')?.textContent?.trim()).toBe('Budget');
   });
 
-  it('throws ET5160 when the links form a cycle', () => {
-    const { fixture } = setup();
+  it('reports ET5160 when the links form a cycle and draws nothing', () => {
+    const handleError = vi.fn();
+    const { fixture, element } = setup([{ provide: ErrorHandler, useValue: { handleError } }]);
 
     fixture.componentInstance.links.update((links) => [...links, { source: 'd', target: 'a', value: 5 }]);
 
-    expect(() => fixture.detectChanges()).toThrow(/ET5160/);
+    expect(() => fixture.detectChanges()).not.toThrow();
+    expect(String(handleError.mock.calls[0]?.[0])).toMatch(/ET5160/);
+    expect(element.querySelector('.et-sankey-chart-node, .et-sankey-chart-link')).toBeNull();
   });
 });

@@ -648,6 +648,38 @@ demoForm = form(this.model, (s) => {
 });
 ```
 
+## Headless editor
+
+`[etRichTextEditor]` carries the value, history, tools and formatting commands without a template of
+its own. Render your own `contenteditable`, hand it to the directive with `attachEditable()` once it
+exists, and forward its `input` event to `syncFromDom()`. The directive renders the value into the
+element and keeps it in sync when the value changes from outside.
+
+```ts
+@Component({
+  imports: [RichTextEditorDirective],
+  template: `
+    <div #notesEditor="etRichTextEditor" [(value)]="notes" etRichTextEditor aria-label="Notes">
+      <button (click)="notesEditor.toggleBold()" type="button">Bold</button>
+      <div #editable (input)="notesEditor.syncFromDom()" contenteditable="true" role="textbox"></div>
+    </div>
+  `,
+})
+export class NotesComponent {
+  notes = signal('');
+  editor = viewChild.required(RichTextEditorDirective);
+  editable = viewChild.required<ElementRef<HTMLElement>>('editable');
+
+  constructor() {
+    afterNextRender(() => this.editor().attachEditable(this.editable().nativeElement));
+  }
+}
+```
+
+The keyboard handling of `et-rich-text-editor` (undo shortcuts, list indentation, leaving a code
+block) belongs to the component, so a headless editor gets the browser's native `contenteditable`
+keys unless you bind them to the directive's commands yourself.
+
 ## Localization
 
 Every string the editor renders - both toolbars' names, each tool, the block-style menu, the link

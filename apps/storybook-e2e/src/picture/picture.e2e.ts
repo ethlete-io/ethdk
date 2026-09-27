@@ -4,6 +4,7 @@ import { boxOf, expectTouchMode, focusedDescriptor, openStory, tabSequence, tap 
 const DEFAULT_STORY_ID = 'components-media-picture--default';
 const FIT_STORY_ID = 'components-media-picture--fit';
 const NO_ASPECT_RATIO_STORY_ID = 'components-media-picture--no-aspect-ratio';
+const FORMATS_STORY_ID = 'components-media-picture--formats-and-density';
 
 const PICTURE = '.et-picture';
 const IMG = '.et-picture-img';
@@ -26,6 +27,63 @@ function pending(root: Locator): Locator {
 function broken(root: Locator): Locator {
   return root.locator(PICTURE).nth(2);
 }
+
+function chosenSource(picture: Locator): Promise<string> {
+  return picture.locator(IMG).evaluate(async (el) => {
+    const img = el as HTMLImageElement;
+
+    await img.decode();
+
+    return new URL(img.currentSrc).pathname;
+  });
+}
+
+test.describe('picture / format selection', () => {
+  test('a source whose type the browser cannot decode is skipped for the first supported one', async ({ page }) => {
+    const root = await openStory(page, FORMATS_STORY_ID);
+    const picture = root.locator(PICTURE).first();
+
+    await expect(picture.locator('source')).toHaveCount(3);
+    await expect(picture.locator('source').first()).toHaveAttribute('type', 'image/x-et-unsupported');
+
+    const currentSrc = await chosenSource(picture);
+
+    expect(currentSrc).toMatch(/^\/assets\/picture\/avif-[12]x\.svg$/);
+    await expect(picture).toHaveAttribute('data-state', 'loaded');
+  });
+
+  test('with no decodable source the img loads its own fallback', async ({ page }) => {
+    const root = await openStory(page, FORMATS_STORY_ID);
+    const picture = root.locator(PICTURE).nth(1);
+
+    expect(await chosenSource(picture)).toBe('/assets/picture/jpeg-fallback.svg');
+    await expect(picture).toHaveAttribute('data-state', 'loaded');
+  });
+});
+
+test.describe('picture / density at 1x', () => {
+  test.skip(({ isMobile }) => isMobile, 'desktop-only: the touch device fixes its own pixel ratio');
+  test.use({ deviceScaleFactor: 1 });
+
+  test('a 1x display picks the 1x candidate of the chosen source', async ({ page }) => {
+    const root = await openStory(page, FORMATS_STORY_ID);
+
+    expect(await page.evaluate(() => window.devicePixelRatio)).toBe(1);
+    expect(await chosenSource(root.locator(PICTURE).first())).toBe('/assets/picture/avif-1x.svg');
+  });
+});
+
+test.describe('picture / density at 2x', () => {
+  test.skip(({ isMobile }) => isMobile, 'desktop-only: the touch device fixes its own pixel ratio');
+  test.use({ deviceScaleFactor: 2 });
+
+  test('a 2x display picks the 2x candidate of the chosen source', async ({ page }) => {
+    const root = await openStory(page, FORMATS_STORY_ID);
+
+    expect(await page.evaluate(() => window.devicePixelRatio)).toBe(2);
+    expect(await chosenSource(root.locator(PICTURE).first())).toBe('/assets/picture/avif-2x.svg');
+  });
+});
 
 test.describe('picture / structure', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: tab order and a wide viewport');
@@ -297,6 +355,13 @@ test.describe('picture / touch', () => {
       .evaluate((el) => decodeURIComponent((el as HTMLImageElement).currentSrc));
 
     expect(currentSrc).toContain('tall 3:4');
+  });
+
+  test('a high-density touch screen picks the 2x candidate', async ({ page }) => {
+    const root = await openStory(page, FORMATS_STORY_ID);
+
+    expect(await page.evaluate(() => window.devicePixelRatio)).toBeGreaterThan(1.5);
+    expect(await chosenSource(root.locator(PICTURE).first())).toBe('/assets/picture/avif-2x.svg');
   });
 
   test('the image fits the touch viewport without overflowing it', async ({ page }) => {
