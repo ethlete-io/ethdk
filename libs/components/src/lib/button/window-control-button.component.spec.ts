@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import '../../test-helpers';
 import {
   WINDOW_CONTROL_BUTTON_KINDS,
@@ -64,5 +66,16 @@ describe('WindowControlButtonComponent', () => {
   it('renders the icon wrapper', () => {
     fixture.detectChanges();
     expect(host.querySelector('.et-window-control-button-icon')).not.toBeNull();
+  });
+
+  describe('focus ring', () => {
+    it('leaves the outline to the shared focus ring', () => {
+      const css = readFileSync(
+        fileURLToPath(import.meta.url).replace(/[^/]+$/, 'window-control-button.component.css'),
+        'utf8',
+      ).replace(/\/\*[\s\S]*?\*\//g, '');
+
+      expect(css).not.toMatch(/outline\s*:/);
+    });
   });
 });

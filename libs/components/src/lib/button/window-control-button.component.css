@@ -73,7 +73,6 @@
     &:focus-visible {
       --et-theme-color-primary-opacity: 0.18;
       --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.18);
-      outline: none;
     }
 
     &:active {
