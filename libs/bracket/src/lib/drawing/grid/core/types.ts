@@ -1,4 +1,4 @@
-import { BracketMatch, BracketRound } from '../../../linked';
+import { BracketMatch, BracketRound, BracketRoundSwissGroup } from '../../../linked';
 
 export type BracketComponentType<TInputs> = new (...args: never[]) => TInputs;
 export type BracketComponentInput<TValue> = () => TValue;
@@ -19,6 +19,7 @@ export type Spacing = {
 
 export type BracketRoundHeaderComponent<TRoundData, TMatchData> = BracketComponentType<{
   bracketRound: BracketComponentInput<BracketRound<TRoundData, TMatchData>>;
+  bracketRoundSwissGroup?: BracketComponentInput<BracketRoundSwissGroup<TRoundData, TMatchData> | null>;
 }>;
 
 export type ComponentInputValue<T> = () => {
@@ -28,6 +29,7 @@ export type ComponentInputValue<T> = () => {
 export type BracketMatchComponent<TRoundData, TMatchData> = BracketComponentType<{
   bracketRound: BracketComponentInput<BracketRound<TRoundData, TMatchData>>;
   bracketMatch: BracketComponentInput<BracketMatch<TRoundData, TMatchData>>;
+  bracketRoundSwissGroup?: BracketComponentInput<BracketRoundSwissGroup<TRoundData, TMatchData> | null>;
 }>;
 
 export type BracketContinueComponent<TRoundData, TMatchData> = BracketComponentType<{

@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, input, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   BRACKET_DATA_LAYOUT,
@@ -10,6 +10,7 @@ import {
   BracketDataSource,
   BracketLayout,
   BracketMap,
+  BracketMatchComponent,
   BracketRoundsListComponent,
   bracketFitsWidth,
   bracketNaturalWidth,
@@ -164,6 +165,32 @@ class BracketCanvasComponent {
   swissColors = signal<Partial<Record<string, string>> | undefined>(undefined);
 }
 
+type SwissMatchCardInputs =
+  BracketMatchComponent<null, null> extends new (...args: never[]) => infer TInputs ? TInputs : never;
+type InputValue<TInput> = TInput extends () => infer TValue ? TValue : never;
+
+@Component({
+  selector: 'et-scenario-swiss-group-card',
+  template: `<span class="scenario-swiss-card">{{ bracketMatch().id }} {{ bracketRoundSwissGroup()?.name }}</span>`,
+})
+class SwissGroupMatchCardComponent implements SwissMatchCardInputs {
+  bracketRound = input.required<InputValue<SwissMatchCardInputs['bracketRound']>>();
+  bracketMatch = input.required<InputValue<SwissMatchCardInputs['bracketMatch']>>();
+  bracketRoundSwissGroup = input.required<InputValue<SwissMatchCardInputs['bracketRoundSwissGroup']>>();
+}
+
+@Component({
+  selector: 'et-scenario-bracket-swiss-cards',
+  imports: [BracketComponent],
+  providers: [provideBracketConfig({ matchNormalizer: normalize })],
+  template: `<et-bracket [source]="source" [layouts]="layouts" [matchComponent]="card" />`,
+})
+class BracketSwissCardsComponent {
+  source = SWISS;
+  layouts = ALL_LAYOUTS;
+  card = SwissGroupMatchCardComponent;
+}
+
 @Component({
   selector: 'et-scenario-bracket-list',
   imports: [BracketRoundsListComponent],
@@ -304,6 +331,24 @@ describe('bracket layout scenarios', () => {
     );
 
     expect(strokes).toEqual(['rgb(1, 1, 1)', 'rgb(2, 2, 2)', 'rgb(4, 4, 4)', 'rgb(4, 4, 4)']);
+  });
+
+  it("hands a custom match component its round's swiss group, typed from BracketMatchComponent", () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(BracketSwissCardsComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+    s.flush();
+
+    expect(Array.from(host.querySelectorAll('.scenario-swiss-card')).map(text)).toEqual([
+      'w1-1 0-0',
+      'w1-2 0-0',
+      'w2-1 1-0',
+      'w2-2 0-1',
+      'w3-1 1-1',
+    ]);
+    expect(s.errors).toEqual([]);
   });
 
   it('lists double elimination rounds under upper, lower and finals sections', () => {
