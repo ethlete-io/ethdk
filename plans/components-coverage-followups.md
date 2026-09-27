@@ -5,58 +5,55 @@
 The open items left after the components consumer-coverage work (tasks 1-8) finished on 2026-09-27: the bugs
 and user calls the scenarios and E2E suites found but did not fix, and the E2E gaps no suite covers.
 
-## Open bugs and user calls
+## Open user calls
 
-- Headless `etTextarea`/`etInput` never write `[(value)]` into the native host (`it.fails` in
-  `libs/components/src/scenarios/forms-textarea.scenario.spec.ts`).
-- A bare `input[etPasswordInput]` does not clear Caps Lock on blur (`handleNativeBlur` skips `syncCapsLock`).
-- Table state saved before 53497453e loses numeric row keys once.
-- Floating action: the anchor holds the fixed size if the page first renders scrolled past it
-  (`libs/components/src/lib/floating-action/headless`).
-- Calendar: the leaving header label is not `inert`, text only (`libs/components/src/lib/calendar/calendar.component.html`).
-- Stream: a slot exposes state but no playback control; `width="480"` on Vimeo or Facebook gives an invalid CSS
-  width; the stream error codes are not exported.
-- Icon: an unknown name or a bad SVG throws during change detection; "no icons provided" throws from the constructor.
-- Date-time: in a required field unparseable text shows `required`, not `parseErrorMessage`; an hour alone does not
-  commit; an open picker at destroy leaves a pending frame.
+The clear bugs were fixed on 2026-09-27. Each item below needs a decision first; the proposal comes from the
+investigation.
+
+### Errors thrown out of change detection
+
+Icon (unknown name, bad SVG; "no icons provided" from the constructor), scheduler ET4505/ET4506, grid ET1902,
+carousel MISSING_ITEMS, most chart dev errors (while `MISSING_PLOT` goes to the ErrorHandler), ET1500, ET4900 and
+ET2600/2601. Decide one policy for all of them.
+
+### New public API
+
+- Stream: a slot exposes state but no playback control; the stream error codes are not exported.
 - Rich-text editor: a headless `[etRichTextEditor]` cannot attach its editable element (`editorDom` is `@internal`).
-- Scheduler: a custom feature or edit-surface host re-implements register/filter/sort; ET4505/ET4506 throw out of
-  change detection.
-- Grid: renders nothing before its host has a width; ET1902 throws out of change detection.
-- Form field: a schema-`hidden` field logs NG01916; `createAnchoredPanelController` needs the unexported
-  `OverlayTemplateHostComponent`.
-- Tabs: a nav link with `[queryParams]` is active only when the URL carries them.
-- Select: select-all appends in click order; a failed `selectOptionsFromQuery` request also reaches the ErrorHandler.
-- Menu: a menu open at destroy leaves the overlay leave frame pending. Match: `normalizeEthleteParticipant` returns
-  a nullable type for a non-null input.
-- Cascader: in leaf mode a result without `isLeaf` counts as a branch (the `cascaderFromQuery` `toResults` JSDoc
-  example has this flaw); `cascaderFromQuery` infers `TValue` as `{}` unless `args` is annotated.
-- Dropzone: `createDefaultDropzoneArgs` returns untyped args; no `exportAs`; `createFileDropzoneEntry` needs the
-  `@internal` `createUploadHandle`; a remove followed by navigation cancels the server `delete`.
-- A static `aria-label` on a headless select, cascader or colour trigger is erased; a custom colour surface cannot
-  commit (`picker.commitColor` is `@internal`).
-- Breadcrumb: anything but the separator projected into `<et-breadcrumb-outlet>` disappears. Carousel:
-  MISSING_ITEMS throws from an effect into change detection.
+- Scheduler: a custom feature or edit-surface host re-implements register/filter/sort.
+- Form field: `createAnchoredPanelController` needs the unexported `OverlayTemplateHostComponent`.
+- Dropzone: no `exportAs`; `createFileDropzoneEntry` needs the `@internal` `createUploadHandle`.
+- Colour: a custom surface cannot commit (`picker.commitColor` is `@internal`).
+- Selection list: `SelectionState` has no selected count. Tree: labels are plain inputs, no `provideTreeLabels`.
+- Query: `@ethlete/query` sends every failed request to the ErrorHandler with no opt-out
+  (`libs/query/src/lib/http/http-request.ts`), so a failed `selectOptionsFromQuery` also reaches it.
+- Cascader: `cascaderFromQuery` infers `TValue` as `{}` when an unannotated `args` comes before `toNodes`. The
+  examples now put `toNodes` first; a real fix changes the API.
+
+### Behavior
+
+- Headless native hosts: `[placeholder]`, `[disabled]`, `[readonly]`, `[required]` and `[min]`/`[max]`/`[step]` on
+  number input do not reach the DOM. Proposal: extend `mirrorOntoNativeHost` in `text-field-control.directive.ts`.
+- `et-description` in `et-choice-field` describes nothing. Proposal: a `select="et-description"` slot and a
+  `describedById` that joins many ids, or document `et-hint` as the only secondary line.
+- Phone input: the trigger's `aria-label` hides the country and dial code. Proposal: `aria-labelledby` on the label
+  and the dial-code span. Display groups by 3 for every country; the lib has no per-country format data.
+- Cascader: in leaf mode a node without `isLeaf` counts as a branch (lazy discovery). Proposal: keep and document
+  (a docs note exists), or treat the last node of a search path as a leaf.
+- Tabs: a nav link with `[queryParams]` is active only when the URL carries them (`RouterLinkActive` default
+  `subset`). Proposal: default to `queryParams: 'ignored'`, or document `routerLinkActiveOptions`.
+- Kbd: `parseKbdKeys('mod++')` drops the `+`, as documented (`plus`). Proposal: read a doubled or lone `+` as plus.
+- Standings: `textContent` of a participant includes the `aria-hidden` emblem initial. Proposal: render it with
+  `::before { content: attr(data-mark) }`.
+- Breadcrumb: only a separator projected into `<et-breadcrumb-outlet>` renders (docs corrected). Proposal: a dev
+  warning for other nodes, or a named slot on `et-breadcrumb`.
+- Accordion: `openAll()` does nothing with `autoCloseOthers`, as documented. Proposal: a dev warning.
+- Table: state saved before 53497453e loses numeric row keys once. Recommendation: leave it; a fix needs the row
+  data, which arrives after the restore.
 - Query error: a legacy error offers no retry without `setDefaultQueryRetryFn`. Filter overlay: a preview without
   `totalHits` shows "Show results" silently.
-- Selection list: `SelectionState` has no selected count. Scrollable: `isAtStart`/`isAtEnd` start `true`; element
-  mode rounds a 0.5 intersection to fully visible and skips that child when paging.
-- Accordion: the default header joins label and hint with no space; `openAll()` does nothing with `autoCloseOthers`.
-- Pagination: the page size select does not reset the page; `PaginationSeoDirective.pageTitle` waits for a first
-  navigation.
-- Input: a bound `[type]` on a native `input[etInput]` does not reach the DOM; the password reveal needs
-  `et-form-field`.
-- Phone input: display groups by 3 for every country; the country `aria-label` lands on the trigger.
-- Picture: the missing-`defaultSrc` warning comes from a computed and can repeat.
-- Chart: most dev errors throw into change detection while `MISSING_PLOT` goes to the ErrorHandler; `xHeader`
-  falls back to "Category".
-- Slider: a tap with no move commits the press value. Standings: the participant text includes the emblem initial;
-  two zone notes join with no space.
-- Kbd: `parseKbdKeys('mod++')` drops the `+`. Tree: labels are plain inputs, no `provideTreeLabels`; the E2E "lazy
-  tree shows a loading state" is flaky under parallel load.
-- `et-icon-button` projects only `[etIcon]`; an `et-description` in `et-choice-field` describes nothing.
-- Rating: `et-rating` in `et-form-field` throws ET2200/ET2201 with no hint. ET1500, ET4900 and ET2600/2601 throw out
-  of change detection.
+- Input: the password reveal needs `et-form-field`. `et-icon-button` projects only `[etIcon]`.
+- Chart: `xHeader` falls back to "Category". Slider: a tap with no move commits the press value.
 
 ## E2E gaps not covered
 
