@@ -62,12 +62,14 @@ class TeamPhotoComponent {
       aspectRatio="2"
       priority
     />
-    <et-picture [sources]="['media/orphan.webp']" alt="No fallback">
+    <et-picture [sources]="orphanSources()" alt="No fallback">
       <ng-template etPictureError><p class="orphan-error">Nothing to show</p></ng-template>
     </et-picture>
   `,
 })
-class HeroComponent {}
+class HeroComponent {
+  orphanSources = signal(['media/orphan.webp']);
+}
 
 const query = <E extends HTMLElement = HTMLElement>(selector: string, root: ParentNode = document) => {
   const element = root.querySelector<E>(selector);
@@ -183,8 +185,12 @@ describe('picture scenarios', () => {
     expect(orphan?.querySelector('img')).toBeNull();
     expect(orphan?.getAttribute('data-state')).toBe(PICTURE_STATES.ERROR);
     expect(orphan?.querySelector('.orphan-error')?.textContent).toBe('Nothing to show');
+    fixture.componentInstance.orphanSources.set(['media/orphan.avif', 'media/orphan.webp']);
+    s.tick();
+
+    expect(orphan?.getAttribute('data-state')).toBe(PICTURE_STATES.ERROR);
     s.expectWarning('`sources` is set but `defaultSrc` is not');
-    s.warnings.length = 0;
+    expect(s.warnings).toHaveLength(0);
   });
 
   it('resolves sources with the exported helpers the way the component does', () => {

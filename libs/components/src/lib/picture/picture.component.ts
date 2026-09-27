@@ -5,6 +5,7 @@ import {
   booleanAttribute,
   computed,
   contentChild,
+  effect,
   input,
   linkedSignal,
   numberAttribute,
@@ -164,24 +165,14 @@ export class PictureComponent {
     computation: () => null,
   });
 
+  private isMissingDefaultSrc = computed(() => !!this.sources().length && !this.defaultSrcUrl());
+
   /**
    * Where the image has got to, as a signal rather than only a pair of events - so a template can react to it
    * without keeping its own copy. Also on the host as `data-state`, for styling. Sources without a
    * `defaultSrc` render no `<img>`, so nothing can ever load - that is an error, not a pending load.
    */
-  public state = computed(() => {
-    if (this.sources().length && !this.defaultSrcUrl()) {
-      if (ngDevMode) {
-        console.warn(
-          '[et-picture] `sources` is set but `defaultSrc` is not. Without it no <img> renders and nothing loads - pass `defaultSrc`.',
-        );
-      }
-
-      return PICTURE_STATES.ERROR;
-    }
-
-    return this.loadState();
-  });
+  public state = computed(() => (this.isMissingDefaultSrc() ? PICTURE_STATES.ERROR : this.loadState()));
 
   /**
    * The image's intrinsic pixel dimensions, once the browser has decoded them. `null` while loading and after a
@@ -198,6 +189,21 @@ export class PictureComponent {
 
     return size && size.height ? size.width / size.height : null;
   });
+
+  constructor() {
+    if (ngDevMode) {
+      let warned = false;
+
+      effect(() => {
+        if (warned || !this.isMissingDefaultSrc()) return;
+
+        warned = true;
+        console.warn(
+          '[et-picture] `sources` is set but `defaultSrc` is not. Without it no <img> renders and nothing loads - pass `defaultSrc`.',
+        );
+      });
+    }
+  }
 
   protected markLoaded(event: Event) {
     const img = event.target as HTMLImageElement;
