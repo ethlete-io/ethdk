@@ -126,3 +126,13 @@ Also seen: persisted override ops are not validated on read (`query-devtools-ove
 
 Decisions: a `Date` in `queryParams` goes on the wire as `toISOString()` (what `JSON.stringify` and the cache key already use);
 misuse errors keep throwing in every mode and the docs say "throws".
+
+### Wave 3 status
+
+Fixed: 1, 5, 8 `0971093ce`; 2 `cd6fa3743`; 3 `234c13f63`; 4 `708ab2ad6` + `d71def980` (the interop `LegacyQuery` had the same bug);
+6 `cd178cd6d` + `d034b9246` (the mock target carries the client `baseUrl`); 7 (the 5 most recently settled batches keep their
+tail, at most 100 item tombstones), 9 and both "also seen" items `cd178cd6d`; 10 `a1a480241` (plus the `Date` and retry-header
+notes). The `triggeredBy()` claim in 10 was stale: a client-level refresh already resets it to `null`; `0971093ce` pins it.
+
+Open, needs a decision: a query cannot carry consumer `HttpContext` tokens (every request builds a fresh context); `queryParams`
+key order is not canonicalised, so `{a,b}` and `{b,a}` are separate cache entries.
