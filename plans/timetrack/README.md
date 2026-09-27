@@ -4,5 +4,6 @@
   decisions.
 - [`one-session-one-piece.md`](./one-session-one-piece.md) and [`ticket-flow.md`](./ticket-flow.md) are the open
   feature plans.
+- [`booking-lessons.md`](./booking-lessons.md) holds the rules a manual month of booking taught.
 - The glossary is [`libs/timetrack/CONTEXT.md`](../../libs/timetrack/CONTEXT.md), and the decision
   records are in [`libs/timetrack/docs/adr/`](../../libs/timetrack/docs/adr/).
