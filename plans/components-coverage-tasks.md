@@ -22,7 +22,10 @@ agent that works alone, batch by batch.
   `[(value)]` into the native host (`it.fails` in `forms-textarea`), and they set no touched/focused on blur.
   `etFocusRing` press state needs an E2E check.
 - Done 2026-09-27: task 8 for date-time, overlay, tabs (3327a7bd9, 219ca0ddb, a91567691; fix d25a6db1e).
-- In progress 2026-09-27: accepted fixes 1, 4, 6, 7 (wave 1), then 2, 3, 5, 8 (wave 2).
+- Done 2026-09-27: the 8 accepted fixes (56faa5290, 96b529406, 6d1d90fe8, 0011859ab, b4c48fb96, 53497453e, 89a61f0a6,
+  8559a833f). Open: a bare password input does not update Caps Lock on blur; state saved before 53497453e loses
+  numeric table keys once.
+- In progress 2026-09-27: task 8 for button + form field + focus ring, table + icon.
 
 ## Rules for every batch
 
@@ -66,7 +69,7 @@ agent that works alone, batch by batch.
    date-time, overlay, tabs).
 9. Before any push: ask the user, then run the `ci-check` skill.
 
-## Accepted fixes (user decision 2026-09-27, one Opus agent each, not started)
+## Accepted fixes (user decision 2026-09-27, all done)
 
 1. `TextFieldControlDirective`: add focus/blur host listeners so a bare native `input[etInput|etNumberInput|
 etPasswordInput]` sets `focused`/`touched` and shows signal-form errors.
