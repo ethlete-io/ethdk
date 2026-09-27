@@ -21,6 +21,8 @@ agent that works alone, batch by batch.
   Components: 1370 of 1381 covered; the 11 left are E2E-only. Open: headless `etTextarea`/`etInput` never write
   `[(value)]` into the native host (`it.fails` in `forms-textarea`), and they set no touched/focused on blur.
   `etFocusRing` press state needs an E2E check.
+- Done 2026-09-27: task 8 for date-time, overlay, tabs (3327a7bd9, 219ca0ddb, a91567691; fix d25a6db1e).
+- In progress 2026-09-27: accepted fixes 1, 4, 6, 7 (wave 1), then 2, 3, 5, 8 (wave 2).
 
 ## Rules for every batch
 
