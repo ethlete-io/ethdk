@@ -53,11 +53,12 @@ agent that works alone, batch by batch.
   composition (needs a `composing` signal in `InputDirective`, not small). Flaky: "lazy tree shows a loading state"
   under parallel load.
 - Device check (c) 2026-09-27: Android passes; iOS long press starts text selection (Safari 18.6 needs
-  `-webkit-user-select`). Fix in progress.
-- In progress 2026-09-27: task 8 for masonry + banner groups; decision (a); iOS selection fix.
+  `-webkit-user-select`). Fixed in fc6769391; sweep of 25 more declarations in progress.
+- In progress 2026-09-27: task 8 for masonry + banner groups; the `user-select` prefix sweep.
 - User decisions 2026-09-27: (a) scheduler "+N more" pick opens a centered dialog (explicit no-anchor in
   `takeSurfaceAnchor`); (b) cascader nodes get the shared focus ring; (c) check the touch column reorder long press on
-  real iOS/Android with `verify-on-apple-devices` after task 8, before "b7 done". (a) and (b) in progress.
+  real iOS/Android with `verify-on-apple-devices` after task 8, before "b7 done". (a) done in 58c0d1007 (new public `origin: null`
+  overlay value, minor), (b) done.
 
 ## Rules for every batch
 
