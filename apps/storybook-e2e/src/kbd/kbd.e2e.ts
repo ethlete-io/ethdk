@@ -55,6 +55,45 @@ function detectedModifierCap(page: Page): Promise<string> {
   return page.evaluate(() => (/mac|iphone|ipad|ipod/i.test(navigator.platform || navigator.userAgent) ? '⌘' : 'Ctrl'));
 }
 
+async function fakePlatform(page: Page, platform: string, userAgent?: string): Promise<void> {
+  await page.addInitScript(
+    ({ fakedPlatform, fakedUserAgent }) => {
+      Object.defineProperty(Navigator.prototype, 'platform', { get: () => fakedPlatform, configurable: true });
+
+      if (fakedUserAgent) {
+        Object.defineProperty(Navigator.prototype, 'userAgent', { get: () => fakedUserAgent, configurable: true });
+      }
+    },
+    { fakedPlatform: platform, fakedUserAgent: userAgent },
+  );
+}
+
+const IPHONE_USER_AGENT =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+
+test.describe('kbd / detected platform', () => {
+  test('a Mac browser with no platform set prints Command and Option glyphs and spells them out', async ({ page }) => {
+    await fakePlatform(page, 'MacIntel');
+    const root = await openStory(page, DEFAULT_STORY_ID);
+
+    expect(await readChords(root)).toEqual(APPLE_CHORDS);
+  });
+
+  test('a Windows browser with no platform set prints Ctrl and Alt', async ({ page }) => {
+    await fakePlatform(page, 'Win32');
+    const root = await openStory(page, DEFAULT_STORY_ID);
+
+    expect(await readChords(root)).toEqual(OTHER_CHORDS);
+  });
+
+  test('an iPhone that reports no platform is detected from its user agent', async ({ page }) => {
+    await fakePlatform(page, '', IPHONE_USER_AGENT);
+    const root = await openStory(page, DEFAULT_STORY_ID);
+
+    expect(await readChords(root)).toEqual(APPLE_CHORDS);
+  });
+});
+
 test.describe('kbd / structure', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus order');
 

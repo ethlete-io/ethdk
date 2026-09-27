@@ -70,6 +70,21 @@ test.describe('chip / keyboard', () => {
     await expect(root.getByText('Design', { exact: true })).toHaveCount(0);
   });
 
+  test('removing a chip from the keyboard hands focus to the neighbouring remove button', async ({ page }) => {
+    test.fail(true, 'et-chip leaves focus on <body> once the consumer drops the removed chip');
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const removeButtons = root.locator('.et-chip-remove-button');
+    const countBefore = await removeButtons.count();
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'Backspace');
+
+    await expect(root.getByText('Engineering', { exact: true })).toHaveCount(0);
+    await expect(removeButtons).toHaveCount(countBefore - 1);
+    await expectFocusVisible(removeButtons.nth(1));
+  });
+
   test('a disabled chip is skipped in the tab order and its remove button cannot be activated', async ({ page }) => {
     const root = await openStory(page, DISABLED_STORY_ID);
     const removeButton = root.locator('.et-chip-remove-button').first();
