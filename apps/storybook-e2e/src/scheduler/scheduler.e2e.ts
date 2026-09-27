@@ -1,5 +1,5 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { boxOf, expectFocusVisible, openStory, pressKey, pressKeys, touchDrag } from '../support';
+import { boxOf, expectFocusVisible, openStory, pressKey, pressKeys, touchDrag, viewportOf } from '../support';
 
 const DEFAULT_ID = 'components-date-time-scheduler--default';
 const WEEK_ID = 'components-date-time-scheduler--week';
@@ -470,6 +470,7 @@ test.describe('scheduler / touch', () => {
     await touchDrag(page, { x: box.x + 300, y }, { x: box.x + 40, y });
 
     await expect(header).not.toHaveText(before ?? '', { timeout: 5_000 });
+    await expect(page.locator(DIALOG_ROOT)).toHaveCount(0);
   });
 });
 
@@ -479,6 +480,7 @@ test.describe('scheduler / edit surface placement', () => {
   test.skip(({ isMobile }) => isMobile, 'the anchored surface is a desktop layout');
 
   test('flips to the roomier side when its content grows after it opened below', async ({ page }) => {
+    await page.clock.install({ time: new Date('2026-07-13T10:30:00+02:00') });
     await page.setViewportSize({ width: 1400, height: 850 });
 
     const root = await openStory(page, DAY_ID);
@@ -502,5 +504,279 @@ test.describe('scheduler / edit surface placement', () => {
 
     await expect(pane).toHaveAttribute('data-overlay-placement', 'top');
     expect((await boxOf(pane)).height).toBeGreaterThan(400);
+  });
+});
+
+const PANE = '.et-scheduler-edit-surface-panel';
+const TUESDAY = 1;
+
+async function mouseDrag(page: Page, from: { x: number; y: number }, to: { x: number; y: number }): Promise<void> {
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 10 });
+  await page.mouse.up();
+}
+
+async function hourRowHeight(root: Locator): Promise<number> {
+  return (await boxOf(root.locator('.et-scheduler-time-grid-body .et-scheduler-time-grid-hour-row').first())).height;
+}
+
+async function bodyScrollTop(root: Locator): Promise<number> {
+  return root.locator('.et-scheduler-time-grid-body').evaluate((element) => element.scrollTop);
+}
+
+async function pointInColumn(root: Locator, dayIndex: number, hoursBelowTop: number) {
+  const body = await boxOf(root.locator('.et-scheduler-time-grid-body'));
+  const column = await boxOf(root.locator('.et-scheduler-time-grid-day').nth(dayIndex));
+  const hour = await hourRowHeight(root);
+
+  return { x: column.x + column.width / 2, y: body.y + hour * hoursBelowTop + 2 };
+}
+
+test.describe('scheduler / initial scroll', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.clock.install({ time: FIXED_NOW });
+  });
+
+  test('the week view opens scrolled to an hour before now and keeps a user scroll when paging', async ({ page }) => {
+    const root = await openStory(page, WEEK_ID);
+    const hour = await hourRowHeight(root);
+
+    await expect.poll(() => bodyScrollTop(root)).toBeCloseTo(9 * hour, 0);
+
+    await root.locator('.et-scheduler-time-grid-body').evaluate((element) => (element.scrollTop = 0));
+    await root.getByRole('button', { name: 'Next' }).click();
+
+    await expect(root.locator('.et-scheduler-time-grid-header-day[data-today]')).toHaveCount(0);
+    expect(await bodyScrollTop(root)).toBe(0);
+  });
+});
+
+test.describe('scheduler / drag to create', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: mouse drag');
+
+  test.beforeEach(async ({ page }) => {
+    await page.clock.install({ time: FIXED_NOW });
+  });
+
+  test('dragging down an empty column draws a snapped range and opens the surface beside it', async ({ page }) => {
+    const root = await openStory(page, WEEK_ID);
+    const hour = await hourRowHeight(root);
+    const from = await pointInColumn(root, TUESDAY, 2);
+
+    await mouseDrag(page, from, { x: from.x, y: from.y + hour * 2 });
+
+    const draft = root.locator('.et-scheduler-time-grid-draft');
+    await expect(draft).toHaveAttribute('data-committed', '');
+    expect((await boxOf(draft)).height).toBeCloseTo(hour * 2, -1);
+
+    const pane = page.locator(PANE);
+    await expect(pane).toHaveAttribute('data-overlay-placement', /.+/);
+    await waitForEntered(page);
+    expect((await boxOf(pane)).x).toBeGreaterThanOrEqual((await boxOf(draft)).x + (await boxOf(draft)).width - 1);
+
+    await pressKey(page, 'Escape');
+
+    await expect(page.locator(DIALOG_ROOT)).toHaveCount(0);
+    await expect(draft).toHaveCount(0);
+    await expect(
+      root.locator('.et-scheduler-time-grid-day').nth(TUESDAY).locator('.et-scheduler-time-grid-block'),
+    ).toHaveCount(0);
+  });
+
+  test('a click on an empty slot creates a one-hour default range', async ({ page }) => {
+    const root = await openStory(page, WEEK_ID);
+    const hour = await hourRowHeight(root);
+    const at = await pointInColumn(root, TUESDAY, 3);
+
+    await page.mouse.click(at.x, at.y);
+
+    const draft = root.locator('.et-scheduler-time-grid-draft');
+    await expect(draft).toHaveAttribute('data-committed', '');
+    expect((await boxOf(draft)).height).toBeCloseTo(hour, -1);
+    await expect(page.locator(PANE)).toBeVisible();
+  });
+});
+
+test.describe('scheduler / resize', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: mouse drag');
+
+  test.beforeEach(async ({ page }) => {
+    await page.clock.install({ time: FIXED_NOW });
+  });
+
+  test('dragging the bottom edge down by an hour lengthens the block without opening the surface', async ({ page }) => {
+    const root = await openStory(page, WEEK_ID);
+    const hour = await hourRowHeight(root);
+    const block = root.locator('.et-scheduler-time-grid-block[title="Launch project"]');
+    const before = await boxOf(block);
+    const edge = await boxOf(block.locator('.et-scheduler-time-grid-block-resize[data-edge="end"]'));
+    const from = { x: edge.x + edge.width / 2, y: edge.y + edge.height / 2 };
+
+    await mouseDrag(page, from, { x: from.x, y: from.y + hour });
+
+    await expect.poll(async () => (await boxOf(block)).height).toBeCloseTo(before.height + hour, -1);
+    expect((await boxOf(block)).y).toBeCloseTo(before.y, 0);
+    await expect(page.locator(DIALOG_ROOT)).toHaveCount(0);
+  });
+
+  test('an edge dragged past the other end stops at one 15-minute slot', async ({ page }) => {
+    const root = await openStory(page, WEEK_ID);
+    const hour = await hourRowHeight(root);
+    const block = root.locator('.et-scheduler-time-grid-block[title="Launch project"]');
+    const before = await boxOf(block);
+    const edge = await boxOf(block.locator('.et-scheduler-time-grid-block-resize[data-edge="end"]'));
+    const from = { x: edge.x + edge.width / 2, y: edge.y + edge.height / 2 };
+
+    await mouseDrag(page, from, { x: from.x, y: before.y - hour * 2 });
+
+    await expect.poll(async () => (await boxOf(block)).height).toBeCloseTo(hour / 4, -1);
+    expect((await boxOf(block)).y).toBeCloseTo(before.y, 0);
+  });
+});
+
+test.describe('scheduler / month overflow', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: the menu popover and the centered surface');
+
+  test.beforeEach(async ({ page }) => {
+    await page.clock.install({ time: FIXED_NOW });
+  });
+
+  test('"+N more" lists the hidden appointments and picking one opens a centered surface', async ({ page }) => {
+    test.fail(true, 'no origin falls back to document.activeElement, so the surface anchors to the "+N more" trigger');
+
+    const root = await openStory(page, DEFAULT_ID);
+    const trigger = root.locator('.et-scheduler-month-view-overflow-trigger');
+
+    await expect(trigger).toHaveText('+4 more');
+
+    await trigger.click();
+
+    const items = page.getByRole('menuitem');
+    await expect(items).toHaveCount(4);
+
+    await items.last().click();
+
+    await expect(page.locator(PANE)).toHaveClass(/et-animation-enter-done/);
+    await expect(page.getByRole('menu')).toHaveCount(0);
+    await expectCenteredIn(page.locator(PANE), page);
+  });
+
+  test('a press on "+N more" opens the menu and never draws a range', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_ID);
+    const trigger = root.locator('.et-scheduler-month-view-overflow-trigger');
+    const box = await boxOf(trigger);
+
+    await mouseDrag(page, { x: box.x + 4, y: box.y + box.height / 2 }, { x: box.x + 200, y: box.y + box.height / 2 });
+
+    await expect(root.locator('.et-scheduler-month-view [data-draft]')).toHaveCount(0);
+    await expect(page.locator(PANE)).toHaveCount(0);
+  });
+});
+
+test.describe('scheduler / edit surface presentation', () => {
+  test.skip(({ isMobile }) => isMobile, 'md and up');
+
+  test('the toolbar add action opens a centered dialog, an appointment an anchored one', async ({ page }) => {
+    await page.clock.install({ time: FIXED_NOW });
+
+    const root = await openStory(page, WEEK_ID);
+    const pane = page.locator(PANE);
+
+    await root.getByRole('button', { name: 'Add appointment' }).click();
+    await waitForEntered(page);
+    await expect(pane).toHaveClass(/et-overlay--dialog/);
+    await expectCenteredIn(pane, page);
+
+    await pressKey(page, 'Escape');
+    await expect(pane).toHaveCount(0);
+
+    const block = root.locator('.et-scheduler-time-grid-block[title="Daily standup"]');
+    await block.click();
+    await waitForEntered(page);
+
+    await expect(pane).not.toHaveClass(/et-overlay--dialog/);
+    expect((await boxOf(pane)).x).toBeGreaterThanOrEqual((await boxOf(block)).x + (await boxOf(block)).width - 1);
+  });
+});
+
+async function expectCenteredIn(pane: Locator, page: Page): Promise<void> {
+  const box = await boxOf(pane);
+
+  expect(box.x + box.width / 2).toBeCloseTo(viewportOf(page).width / 2, -1);
+}
+
+async function expectFullScreen(pane: Locator, page: Page): Promise<void> {
+  const { width, height } = viewportOf(page);
+
+  expect(await boxOf(pane)).toEqual({ x: 0, y: 0, width, height });
+}
+
+test.describe('scheduler / touch surfaces and gestures', () => {
+  test.skip(({ isMobile }) => !isMobile, 'touch-only: below md and touch gestures');
+
+  test.beforeEach(async ({ page }) => {
+    await page.clock.install({ time: FIXED_NOW });
+  });
+
+  test('a tap on an appointment and the add action both open the surface full screen', async ({ page }) => {
+    const root = await openStory(page, WEEK_ID);
+    const pane = page.locator(PANE);
+
+    await root.locator('.et-scheduler-time-grid-block[title="Launch project"]').tap();
+    await waitForEntered(page);
+    await expect(pane).toHaveClass(/et-overlay--full-screen-dialog/);
+    await expectFullScreen(pane, page);
+
+    await page.locator(DIALOG_ROOT).getByRole('button', { name: 'Cancel' }).tap();
+    await expect(pane).toHaveCount(0);
+
+    await root.getByRole('button', { name: 'Add appointment' }).tap();
+    await waitForEntered(page);
+    await expectFullScreen(pane, page);
+  });
+
+  test('a long press then drag on an empty column draws a range instead of swiping', async ({ page }) => {
+    const root = await openStory(page, WEEK_ID);
+    const header = root.locator('.et-scheduler-header-label');
+    const before = await header.textContent();
+    const hour = await hourRowHeight(root);
+    const from = await pointInColumn(root, TUESDAY, 2);
+
+    await touchDrag(page, from, { x: from.x - 120, y: from.y + hour * 2 }, { holdMs: 500 });
+
+    await expect(page.locator(PANE)).toHaveClass(/et-overlay--full-screen-dialog/);
+    await expect(header).toHaveText(before ?? '');
+  });
+
+  test('a quick vertical drag scrolls the body and draws nothing', async ({ page }) => {
+    const root = await openStory(page, WEEK_ID);
+    const scrollBefore = await bodyScrollTop(root);
+    const from = await pointInColumn(root, TUESDAY, 5);
+
+    await touchDrag(page, from, { x: from.x, y: from.y - 200 });
+
+    await expect.poll(() => bodyScrollTop(root)).toBeGreaterThan(scrollBefore + 50);
+    await expect(root.locator('.et-scheduler-time-grid-draft')).toHaveCount(0);
+    await expect(page.locator(PANE)).toHaveCount(0);
+  });
+
+  test('in RTL a swipe toward the inline start (rightwards) steps to the next period', async ({ page }) => {
+    const root = await openStory(page, WEEK_ID);
+    const header = root.locator('.et-scheduler-header-label');
+    const before = (await header.textContent()) ?? '';
+
+    await page.evaluate(() => (document.documentElement.dir = 'rtl'));
+
+    const box = await boxOf(root.locator('.et-scheduler-time-grid-body'));
+    const y = box.y + box.height / 2;
+    await touchDrag(page, { x: box.x + 40, y }, { x: box.x + 300, y });
+
+    await expect(header).not.toHaveText(before);
+    await expect(page.locator(DIALOG_ROOT)).toHaveCount(0);
+
+    await root.getByRole('button', { name: 'Previous' }).tap();
+
+    await expect(header).toHaveText(before);
   });
 });

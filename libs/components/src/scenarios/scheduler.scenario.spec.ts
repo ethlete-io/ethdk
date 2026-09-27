@@ -576,6 +576,38 @@ describe('scheduler scenarios', () => {
 
     finish(s);
   });
+
+  it('creates nothing when a touch on an empty slot moves before the long press arms', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(PlannerComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const planner = fixture.componentInstance;
+
+    planner.view.set('week');
+    planner.nowIndicator.set(false);
+    s.tick();
+
+    const tuesday = host.querySelectorAll<HTMLElement>('.et-scheduler-time-grid-day')[1]!;
+    const pointer = { pointerId: 1, isPrimary: true, pointerType: 'touch', button: 0, bubbles: true };
+
+    tuesday.setPointerCapture = () => undefined;
+    tuesday.dispatchEvent(new PointerEvent('pointerdown', { ...pointer, clientX: 300, clientY: 200 }));
+    document.dispatchEvent(new PointerEvent('pointermove', { ...pointer, clientX: 200, clientY: 200 }));
+    document.dispatchEvent(new PointerEvent('pointermove', { ...pointer, clientX: 100, clientY: 200 }));
+    document.dispatchEvent(new PointerEvent('pointerup', { ...pointer, clientX: 100, clientY: 200 }));
+    s.tick(1000);
+
+    expect(host.querySelector('.et-scheduler-time-grid-draft')).toBeNull();
+    expect(surface()).toBeNull();
+
+    tuesday.dispatchEvent(new PointerEvent('pointerdown', { ...pointer, clientX: 300, clientY: 200 }));
+    document.dispatchEvent(new PointerEvent('pointerup', { ...pointer, clientX: 300, clientY: 200 }));
+    s.tick(1000);
+
+    expect(surface()).not.toBeNull();
+
+    finish(s);
+  });
 });
 
 describe('scheduler scenarios with app-wide labels', () => {

@@ -49,8 +49,10 @@ export const startSchedulerDragGesture = (options: SchedulerDragGestureOptions) 
         if (!armed) return arming?.unsubscribe();
 
         return track(gesture.data.clientX, gesture.data.clientY);
-      // a long press released without moving still tracked once, so it settles like a drag
+      // a finger that moved unarmed was a swipe or a scroll - settling it would create at the press point
       case 'end':
+        return armed ? settle() : cancel();
+      // a long press released without moving still tracked once, so it settles like a drag
       case 'tapped':
         return settle();
       case 'cancelled':
