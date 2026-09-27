@@ -670,7 +670,9 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     currentEvent.set(errorEvent);
     event$.next(errorEvent);
 
-    options.dependencies.ngErrorHandler.handleError(errorRes.raw);
+    if (clientOptions?.reportErrors !== false) {
+      options.dependencies.ngErrorHandler.handleError(errorRes.raw);
+    }
   };
 
   const updateLoadingState = (event: HttpProgressEvent) => {

@@ -94,6 +94,7 @@ The second argument of a creator factory - a `BaseQueryCreatorOptions`, required
 | `withCredentials`   | `false`  | Send cookies on cross-origin requests.                                                                                                                |
 | `transferCache`     | -        | Angular SSR transfer-cache config.                                                                                                                    |
 | `retryFn`           | client's | Per-endpoint retry override.                                                                                                                          |
+| `reportErrors`      | `true`   | Pass a failed request to Angular's `ErrorHandler` - see [Errors](/query/errors#reporting-to-angular-s-errorhandler).                                  |
 | `keepUnusedFor`     | client's | Per-endpoint override for how long an unused cache entry is kept - see [Caching](/query/caching#keeping-unused-entries-around).                       |
 
 ## Secure queries

@@ -186,6 +186,19 @@ protected form = form(signal({ email: '' }), this.emailSchema);
 - **On the legacy `V2QueryClient`?** Use **`validateWithV2Query`** - same
   signature and behavior, for `V2Query` creators (`hubApiClient.post(...)`).
 
+## Reporting to Angular's `ErrorHandler`
+
+Every failed request is also passed to Angular's `ErrorHandler`, once per execution after the last retry, so an app-wide handler can log or display it. When the UI already shows the error itself, opt the creator out with `reportErrors: false`; `error()` and `executionState()` report the failure either way.
+
+```ts
+export const searchUsers = getQuery<SearchUsersArgs>('/users', { reportErrors: false });
+
+// or only for one use of an existing creator
+const quietSearchUsers = searchUsers.clone({ reportErrors: false });
+```
+
+Cached queries with the same key share one request, and that request follows the options of the creator that started it.
+
 ## A `transformResponse` that throws
 
 The wire response arrived, but the creator's `transformResponse` could not map it. The query does not stay in `loading()` and `response()` does not throw on read: it reports a `failure` whose `error()` carries the thrown value as `raw.error` with code `0`, and `response()` stays at whatever the last good response was. It is never retried - the server did answer - and the next execution that transforms cleanly clears it. `withSuccessHandling` does not run for such a response - it would otherwise repeat the last good one. `withErrorHandling` and `events$` see the HTTP events the request received, so they report the response, not the transform failure.

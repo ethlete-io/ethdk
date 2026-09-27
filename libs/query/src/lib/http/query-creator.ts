@@ -72,6 +72,14 @@ export type BaseQueryCreatorOptions<TArgs extends QueryArgs = QueryArgs> = {
   retryFn?: ShouldRetryRequestFn;
 
   /**
+   * Whether a failed request is passed to Angular's `ErrorHandler`. Set to `false` when the UI already
+   * shows the error itself; `error()` and `executionState()` report the failure either way.
+   *
+   * @default true
+   */
+  reportErrors?: boolean;
+
+  /**
    * How long (in ms) this query's cache entry is kept after its last consumer was destroyed.
    * Overrides the client level `keepUnusedFor`. Use `0` for responses that should never outlive their
    * consumer (very large payloads, or data that must not be shown stale).
