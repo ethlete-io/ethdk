@@ -91,8 +91,8 @@ Fixed: 1-2 `8b306b7e2` + `66bf78fcf` (an aborted submission resolves with no for
 broadcast/persistence fakes `f8872d309`; socket double `d4def7b9b`; docs `cd7e4beca`.
 
 Fixed later in `5b0e7b1a8`: the module graph resolves `./file.js` and `baseUrl`, and an unresolvable workspace import of a
-renamed client is renamed by name and reported; an unresolved empty `.prepare()` is reported in any file; the ws backoff resets on
-every successful connect.
+renamed client is renamed by name and reported; an unresolved empty `.prepare()` is reported in any file; the ws backoff resets once a
+connection stayed up for 10 s (`RECONNECT_STABLE_AFTER`), so a connect-then-kick loop keeps doubling.
 
 Open:
 
