@@ -61,7 +61,7 @@ export class QueryV3MigrationReport {
     }
 
     const nextTask: MigrationTask = {
-      id: `QV3-${String(this.tasks.length + 1).padStart(3, '0')}`,
+      id: formatTaskId(this.tasks.length + 1),
       kind: input.kind,
       title: input.title,
       summary: input.summary,
@@ -104,12 +104,51 @@ export class QueryV3MigrationReport {
     console.warn(`\n📄 See ${QUERY_V3_MIGRATION_REPORT_PATH} for the AI-ready follow-up list.`);
   }
 
-  writeToTree(tree: Tree) {
-    tree.write(QUERY_V3_MIGRATION_REPORT_PATH, renderMigrationReportMarkdown(this.tasks));
+  /**
+   * Writes the report. A scoped run (`scopeLabel` set) replaces its own section of an existing report
+   * or appends one, so the tasks of earlier runs over other projects survive.
+   */
+  writeToTree(tree: Tree, scopeLabel?: string) {
+    const existing = scopeLabel ? tree.read(QUERY_V3_MIGRATION_REPORT_PATH, 'utf-8') : null;
+
+    if (!scopeLabel || !existing) {
+      tree.write(QUERY_V3_MIGRATION_REPORT_PATH, renderMigrationReportMarkdown(this.tasks, scopeLabel));
+
+      return;
+    }
+
+    tree.write(QUERY_V3_MIGRATION_REPORT_PATH, mergeScopedSection(existing, this.tasks, scopeLabel));
   }
 }
 
-export const renderMigrationReportMarkdown = (tasks: readonly MigrationTask[]) => {
+const sectionStart = (scopeLabel: string) => `<!-- migrate-to-query-v3 scope: ${scopeLabel} -->`;
+const SECTION_END = '<!-- /migrate-to-query-v3 scope -->';
+
+const mergeScopedSection = (existing: string, tasks: readonly MigrationTask[], scopeLabel: string) => {
+  const start = sectionStart(scopeLabel);
+  const startIndex = existing.indexOf(start);
+  const endIndex = startIndex === -1 ? -1 : existing.indexOf(SECTION_END, startIndex);
+
+  const [before, after] =
+    startIndex === -1 || endIndex === -1
+      ? [existing.trimEnd(), '']
+      : [existing.slice(0, startIndex).trimEnd(), existing.slice(endIndex + SECTION_END.length).trimStart()];
+
+  const highestId = Math.max(
+    0,
+    ...Array.from(`${before}\n${after}`.matchAll(/QV3-(\d+)/g), (match) => Number(match[1])),
+  );
+  const renumbered = tasks.map((task, index) => ({ ...task, id: formatTaskId(highestId + index + 1) }));
+
+  return [before, renderTasksSection(renumbered, scopeLabel), after]
+    .filter((part) => part.length > 0)
+    .join('\n\n')
+    .concat('\n');
+};
+
+const formatTaskId = (index: number) => `QV3-${String(index).padStart(3, '0')}`;
+
+export const renderMigrationReportMarkdown = (tasks: readonly MigrationTask[], scopeLabel?: string) => {
   const header = [
     '# Query V3 Migration Follow-Up',
     '',
@@ -131,8 +170,19 @@ export const renderMigrationReportMarkdown = (tasks: readonly MigrationTask[]) =
     '',
   ].join('\n');
 
+  return `${header}${renderTasksSection(tasks, scopeLabel)}\n`;
+};
+
+const renderTasksSection = (tasks: readonly MigrationTask[], scopeLabel?: string) => {
+  const heading = scopeLabel ? `## Tasks (scope: ${scopeLabel})` : '## Tasks';
+  const body = renderTasksBody(tasks);
+
+  return scopeLabel ? `${sectionStart(scopeLabel)}\n${heading}\n\n${body}\n${SECTION_END}` : `${heading}\n\n${body}`;
+};
+
+const renderTasksBody = (tasks: readonly MigrationTask[]) => {
   if (tasks.length === 0) {
-    return `${header}## Tasks\n\nNo open follow-up tasks were recorded during this migration run.\n`;
+    return 'No open follow-up tasks were recorded during this migration run.';
   }
 
   const tasksSection = tasks
@@ -183,8 +233,7 @@ export const renderMigrationReportMarkdown = (tasks: readonly MigrationTask[]) =
       ];
     }),
     '```',
-    '',
   ].join('\n');
 
-  return `${header}## Tasks\n\n${tasksSection}${machineSection}`;
+  return `${tasksSection}${machineSection}`;
 };

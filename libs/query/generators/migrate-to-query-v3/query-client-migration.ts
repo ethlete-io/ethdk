@@ -2,6 +2,8 @@ import { Tree } from '@nx/devkit';
 import * as ts from 'typescript';
 import { CLIENT_FEATURE, reportClientErrorPipelineAdded } from '../migrate-query-opt-in-features/migration.js';
 import { MigrationScope } from './migration-scope.js';
+import { ModuleGraph, createModuleGraph } from './module-graph.js';
+import { isNamePosition, isShadowedInNestedScope, renamedReference } from './rename-symbols.js';
 import { QueryV3MigrationReport } from './report.js';
 import {
   capitalizeFirstLetter,
@@ -10,11 +12,15 @@ import {
   ensureImportFromEthleteCore,
   ensureImportFromQuery,
   getVariableStatementEnd,
+  printImportDeclaration,
 } from './shared.js';
+
+/** Per declaring file, its content before the migration and the client variables it renamed. */
+export type ClientVariableRenames = Map<string, { originalContent: string; renames: Map<string, string> }>;
 
 export type QueryClientMigrationResult = {
   queryClientFiles: Map<string, string[]>;
-  variableRenames: Map<string, string>;
+  variableRenames: ClientVariableRenames;
 };
 
 type MigrateSingleClientOptions = {
@@ -30,7 +36,7 @@ export const migrateQueryClients = (
   scope: MigrationScope,
 ): QueryClientMigrationResult => {
   const queryClientFiles = new Map<string, string[]>();
-  const variableRenames = new Map<string, string>();
+  const variableRenames: ClientVariableRenames = new Map();
 
   scope.visit(tree, (filePath) => {
     if (!filePath.endsWith('.ts')) {
@@ -46,9 +52,9 @@ export const migrateQueryClients = (
     const renames = new Map<string, string>();
     const nextContent = migrateQueryClientToConfig({ content, filePath, renamesOut: renames, report });
 
-    renames.forEach((newName, oldName) => {
-      variableRenames.set(oldName, newName);
-    });
+    if (renames.size > 0) {
+      variableRenames.set(filePath, { originalContent: content, renames });
+    }
 
     const configNames = extractClientConfigNames(nextContent);
 
@@ -119,10 +125,15 @@ export const generateQueryCreators = (tree: Tree, queryClientFiles: Map<string, 
   }
 };
 
-export const updateImportsAcrossWorkspace = (tree: Tree, renames: Map<string, string>, scope: MigrationScope) => {
+export const updateImportsAcrossWorkspace = (tree: Tree, renames: ClientVariableRenames, scope: MigrationScope) => {
   if (renames.size === 0) {
     return;
   }
+
+  const originalContents = new Map(
+    Array.from(renames.entries()).map(([filePath, { originalContent }]) => [filePath, originalContent]),
+  );
+  const graph = createModuleGraph(withOriginalContents(tree, originalContents));
 
   scope.visit(tree, (filePath) => {
     if (!filePath.endsWith('.ts')) {
@@ -135,13 +146,39 @@ export const updateImportsAcrossWorkspace = (tree: Tree, renames: Map<string, st
       return;
     }
 
-    const nextContent = updateImportsInFile(content, renames);
+    const nextContent = updateImportsInFile(content, filePath, renames, graph);
 
     if (nextContent !== content) {
+      originalContents.set(filePath, content);
       tree.write(filePath, nextContent);
     }
   });
 };
+
+/**
+ * A view of `tree` that still reads the pre-migration content of `originalContents`, so the module
+ * graph resolves a client import by the name it had when the import was written.
+ */
+const withOriginalContents = (tree: Tree, originalContents: ReadonlyMap<string, string>): Tree =>
+  new Proxy(tree, {
+    get: (target, property) => {
+      if (property === 'read') {
+        return (filePath: string, encoding?: BufferEncoding) => {
+          const original = originalContents.get(filePath);
+
+          if (original === undefined) {
+            return encoding ? target.read(filePath, encoding) : target.read(filePath);
+          }
+
+          return encoding ? original : Buffer.from(original);
+        };
+      }
+
+      const value = Reflect.get(target, property, target);
+
+      return typeof value === 'function' ? value.bind(target) : value;
+    },
+  });
 
 const hasQueryClientInstantiation = (content: string) => {
   const sourceFile = createSourceFile(content);
@@ -292,13 +329,42 @@ const removeQueryClientImport = (content: string, keepLegacyClient: boolean) => 
   const nextImports = new Set<string>(requiredImports);
   existingElements.forEach((element) => nextImports.add(element.getText(sourceFile)));
 
-  const nextImportStatement = `import { ${Array.from(nextImports).sort().join(', ')} } from '@ethlete/query';`;
+  const nextImportStatement = printImportDeclaration(queryImportNode, sourceFile, Array.from(nextImports).sort());
 
   return (
     content.slice(0, queryImportNode.getStart(sourceFile)) +
     nextImportStatement +
     content.slice(queryImportNode.getEnd())
   );
+};
+
+const isTopLevelVariableName = (node: ts.Identifier) => {
+  const declaration = node.parent;
+
+  return (
+    ts.isVariableDeclaration(declaration) &&
+    declaration.name === node &&
+    ts.isVariableStatement(declaration.parent.parent) &&
+    ts.isSourceFile(declaration.parent.parent.parent)
+  );
+};
+
+const renameInDeclaringFile = (node: ts.Identifier, nextName: string) => {
+  const parent = node.parent;
+
+  if (isTopLevelVariableName(node)) {
+    return nextName;
+  }
+
+  if (ts.isExportSpecifier(parent) && !parent.parent.parent.moduleSpecifier) {
+    return (parent.propertyName ?? parent.name) === node ? nextName : undefined;
+  }
+
+  if (isNamePosition(node) || isShadowedInNestedScope(node)) {
+    return undefined;
+  }
+
+  return renamedReference(node, nextName);
 };
 
 const renameVariables = (content: string, renames: Map<string, string>) => {
@@ -310,30 +376,11 @@ const renameVariables = (content: string, renames: Map<string, string>) => {
   const replacements: Array<{ start: number; end: number; replacement: string }> = [];
 
   const visit = (node: ts.Node) => {
-    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name)) {
-      const nextName = renames.get(node.name.text);
+    const nextName = ts.isIdentifier(node) ? renames.get(node.text) : undefined;
+    const replacement = nextName && renameInDeclaringFile(node as ts.Identifier, nextName);
 
-      if (nextName) {
-        replacements.push({
-          start: node.name.getStart(sourceFile),
-          end: node.name.getEnd(),
-          replacement: nextName,
-        });
-      }
-    } else if (ts.isIdentifier(node)) {
-      const nextName = renames.get(node.text);
-
-      if (nextName) {
-        const parent = node.parent;
-
-        if (!ts.isPropertyAssignment(parent) || parent.name !== node) {
-          replacements.push({
-            start: node.getStart(sourceFile),
-            end: node.getEnd(),
-            replacement: nextName,
-          });
-        }
-      }
+    if (replacement) {
+      replacements.push({ start: node.getStart(sourceFile), end: node.getEnd(), replacement });
     }
 
     ts.forEachChild(node, visit);
@@ -341,26 +388,20 @@ const renameVariables = (content: string, renames: Map<string, string>) => {
 
   visit(sourceFile);
 
-  const seen = new Set<string>();
-  const uniqueReplacements = replacements.filter((replacement) => {
-    const key = `${replacement.start}:${replacement.end}`;
+  return applyReplacements(content, replacements);
+};
 
-    if (seen.has(key)) {
-      return false;
-    }
-
-    seen.add(key);
-
-    return true;
-  });
-
+const applyReplacements = (
+  content: string,
+  replacements: Array<{ start: number; end: number; replacement: string }>,
+) => {
   let result = content;
 
-  uniqueReplacements.sort((left, right) => right.start - left.start);
-
-  uniqueReplacements.forEach(({ start, end, replacement }) => {
-    result = result.slice(0, start) + replacement + result.slice(end);
-  });
+  [...replacements]
+    .sort((left, right) => right.start - left.start)
+    .forEach(({ start, end, replacement }) => {
+      result = result.slice(0, start) + replacement + result.slice(end);
+    });
 
   return result;
 };
@@ -773,148 +814,104 @@ const generateCreatorsForConfig = (configName: string) => {
   ].join('\n');
 };
 
-const declaresName = (declarations: readonly ts.NamedDeclaration[], name: string) =>
-  declarations.some(
-    (declaration) => declaration.name && ts.isIdentifier(declaration.name) && declaration.name.text === name,
-  );
-
-const isShadowedByLocalDeclaration = (identifier: ts.Identifier) => {
-  for (let scope: ts.Node | undefined = identifier.parent; scope && !ts.isSourceFile(scope); scope = scope.parent) {
-    if (ts.isFunctionLike(scope) && declaresName(scope.parameters, identifier.text)) {
-      return true;
-    }
-
-    if (
-      ts.isBlock(scope) &&
-      scope.statements.some(
-        (statement) =>
-          ts.isVariableStatement(statement) && declaresName(statement.declarationList.declarations, identifier.text),
-      )
-    ) {
-      return true;
-    }
-  }
-
-  return false;
-};
-
-const updateImportsInFile = (content: string, renames: Map<string, string>) => {
-  const sourceFile = createSourceFile(content);
+/**
+ * Points imports and re-exports of a renamed client at its new name, and renames the references to
+ * each unaliased import. Only a binding the module graph resolves to the client's declaring file is
+ * touched; a same-named symbol from any other module stays as it is.
+ */
+const updateImportsInFile = (content: string, filePath: string, renames: ClientVariableRenames, graph: ModuleGraph) => {
+  const sourceFile = createSourceFile(content, filePath);
   const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+  const localRenames = new Map<string, string>();
 
-  const visit = (node: ts.Node) => {
+  const resolveRename = (specifier: string, importedName: string) => {
+    const declaringFile = graph.findDeclaringFile(filePath, specifier, importedName);
+
+    return declaringFile && declaringFile !== filePath
+      ? renames.get(declaringFile)?.renames.get(importedName)
+      : undefined;
+  };
+
+  for (const statement of sourceFile.statements) {
     if (
-      ts.isImportDeclaration(node) &&
-      node.importClause?.namedBindings &&
-      ts.isNamedImports(node.importClause.namedBindings)
+      ts.isImportDeclaration(statement) &&
+      ts.isStringLiteral(statement.moduleSpecifier) &&
+      statement.importClause?.namedBindings &&
+      ts.isNamedImports(statement.importClause.namedBindings)
     ) {
-      const nextElements: string[] = [];
+      const specifier = statement.moduleSpecifier.text;
       let hasChanges = false;
 
-      node.importClause.namedBindings.elements.forEach((element) => {
-        const nextName = renames.get(element.propertyName?.text ?? element.name.text);
+      const nextElements = statement.importClause.namedBindings.elements.map((element) => {
+        const nextName = resolveRename(specifier, (element.propertyName ?? element.name).text);
 
         if (!nextName) {
-          nextElements.push(element.getText(sourceFile));
-
-          return;
+          return element.getText(sourceFile);
         }
 
         hasChanges = true;
-        nextElements.push(element.propertyName ? `${nextName} as ${element.name.text}` : nextName);
+
+        const typePrefix = element.isTypeOnly ? 'type ' : '';
+
+        if (element.propertyName) {
+          return `${typePrefix}${nextName} as ${element.name.text}`;
+        }
+
+        localRenames.set(element.name.text, nextName);
+
+        return `${typePrefix}${nextName}`;
       });
 
       if (hasChanges) {
         replacements.push({
-          start: node.getStart(sourceFile),
-          end: node.getEnd(),
-          replacement: `import { ${nextElements.join(', ')} } from '${(node.moduleSpecifier as ts.StringLiteral).text}';`,
+          start: statement.getStart(sourceFile),
+          end: statement.getEnd(),
+          replacement: printImportDeclaration(statement, sourceFile, nextElements),
         });
       }
     }
 
-    if (ts.isIdentifier(node)) {
-      const nextName = renames.get(node.text);
+    if (
+      ts.isExportDeclaration(statement) &&
+      statement.moduleSpecifier &&
+      ts.isStringLiteral(statement.moduleSpecifier) &&
+      statement.exportClause &&
+      ts.isNamedExports(statement.exportClause)
+    ) {
+      const specifier = statement.moduleSpecifier.text;
 
-      if (!nextName) {
-        ts.forEachChild(node, visit);
-        return;
-      }
+      statement.exportClause.elements.forEach((element) => {
+        const exportedFrom = element.propertyName ?? element.name;
+        const nextName = ts.isIdentifier(exportedFrom) ? resolveRename(specifier, exportedFrom.text) : undefined;
 
-      const parent = node.parent;
+        if (nextName) {
+          replacements.push({
+            start: exportedFrom.getStart(sourceFile),
+            end: exportedFrom.getEnd(),
+            replacement: nextName,
+          });
+        }
+      });
+    }
+  }
 
-      if (ts.isImportSpecifier(parent)) {
-        ts.forEachChild(node, visit);
-        return;
-      }
+  const visit = (node: ts.Node) => {
+    const nextName = ts.isIdentifier(node) ? localRenames.get(node.text) : undefined;
 
-      if (ts.isVariableDeclaration(parent) && parent.name === node) {
-        ts.forEachChild(node, visit);
-        return;
-      }
-
-      if (ts.isFunctionDeclaration(parent) && parent.name === node) {
-        ts.forEachChild(node, visit);
-        return;
-      }
-
-      if (ts.isMethodDeclaration(parent) && parent.name === node) {
-        ts.forEachChild(node, visit);
-        return;
-      }
-
-      if (ts.isParameter(parent) && parent.name === node) {
-        ts.forEachChild(node, visit);
-        return;
-      }
-
-      if (ts.isPropertyDeclaration(parent) && parent.name === node) {
-        ts.forEachChild(node, visit);
-        return;
-      }
-
-      if (ts.isPropertyAccessExpression(parent) && parent.name === node) {
-        ts.forEachChild(node, visit);
-        return;
-      }
-
-      if ((ts.isPropertyAssignment(parent) && parent.name === node) || isShadowedByLocalDeclaration(node)) {
-        ts.forEachChild(node, visit);
-        return;
-      }
-
+    if (nextName && !isNamePosition(node as ts.Identifier) && !isShadowedInNestedScope(node as ts.Identifier)) {
       replacements.push({
         start: node.getStart(sourceFile),
         end: node.getEnd(),
-        replacement: nextName,
+        replacement: renamedReference(node as ts.Identifier, nextName),
       });
     }
 
     ts.forEachChild(node, visit);
   };
 
-  visit(sourceFile);
+  if (localRenames.size > 0) {
+    visit(sourceFile);
+  }
 
-  let result = content;
-
-  const seen = new Set<string>();
-  const uniqueReplacements = replacements.filter((replacement) => {
-    const key = `${replacement.start}:${replacement.end}`;
-
-    if (seen.has(key)) {
-      return false;
-    }
-
-    seen.add(key);
-
-    return true;
-  });
-
-  uniqueReplacements.sort((left, right) => right.start - left.start);
-
-  uniqueReplacements.forEach(({ start, end, replacement }) => {
-    result = result.slice(0, start) + replacement + result.slice(end);
-  });
-
-  return result;
+  return applyReplacements(content, replacements);
 };

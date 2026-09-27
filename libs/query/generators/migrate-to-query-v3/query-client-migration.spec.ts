@@ -377,6 +377,64 @@ export const ref = apiClient;
     expect(consumer).toContain('ref = apiClientConfig;');
   });
 
+  it('only renames identifiers bound to the migrated client', async () => {
+    tree.write(
+      'client.ts',
+      `
+import { V2QueryClient } from '@ethlete/query';
+
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
+export const clients = { apiClient };
+      `.trim(),
+    );
+    tree.write(
+      'consumer.ts',
+      `
+import { apiClient } from './client';
+
+export const holder = { apiClient };
+      `.trim(),
+    );
+    tree.write('foreign.ts', "import { apiClient } from 'some-sdk';\n\nexport const ref = apiClient;");
+    tree.write('local.ts', 'const apiClient = createThing();\n\nexport const ref = apiClient;');
+
+    await migration(tree, { skipFormat: true });
+
+    expect(readFile('client.ts')).toContain('export const clients = { apiClient: apiClientConfig };');
+    expect(readFile('consumer.ts')).toContain("import { apiClientConfig } from './client';");
+    expect(readFile('consumer.ts')).toContain('export const holder = { apiClient: apiClientConfig };');
+    expect(readFile('foreign.ts')).toBe("import { apiClient } from 'some-sdk';\n\nexport const ref = apiClient;");
+    expect(readFile('local.ts')).toBe('const apiClient = createThing();\n\nexport const ref = apiClient;');
+  });
+
+  it('keeps default imports and type modifiers when renaming a client import', async () => {
+    tree.write(
+      'client.ts',
+      `
+import { V2QueryClient } from '@ethlete/query';
+
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
+export default apiClient;
+      `.trim(),
+    );
+    tree.write(
+      'consumer.ts',
+      `
+import client, { apiClient } from './client';
+import type { apiClient as ApiClientType } from './client';
+
+export const refs = [client, apiClient] as ApiClientType[];
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const consumer = readFile('consumer.ts');
+
+    expect(consumer).toContain("import client, { apiClientConfig } from './client';");
+    expect(consumer).toContain("import type { apiClientConfig as ApiClientType } from './client';");
+  });
+
   it('removes the V2QueryClient import when the file has a second @ethlete/query import', async () => {
     tree.write(
       'client.ts',

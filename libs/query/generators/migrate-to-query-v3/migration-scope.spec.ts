@@ -47,4 +47,25 @@ describe('migrate-to-query-v3 migration scope', () => {
     expect(log).toHaveBeenCalledWith('   Scope: the whole workspace');
     expect(readOrEmpty('libs/outside/client.ts')).toContain('createQueryClient');
   });
+
+  it('keeps the report of an earlier scoped run when another scope is migrated', async () => {
+    await migration(tree, { skipFormat: true, include: ['libs/inside'] });
+    await migration(tree, { skipFormat: true, include: ['libs/outside'] });
+
+    const report = readOrEmpty('query-v3-migration-tasks.md');
+
+    expect(report).toContain('## Tasks (scope: libs/inside)');
+    expect(report).toContain('## Tasks (scope: libs/outside)');
+    expect(report).toContain('- libs/inside/client.ts');
+    expect(report).toContain('- libs/outside/client.ts');
+    expect(report.match(/# Query V3 Migration Follow-Up/g)).toHaveLength(1);
+    expect(new Set(report.match(/### QV3-\d+/g)).size).toBe(report.match(/### QV3-\d+/g)!.length);
+  });
+
+  it('replaces the section of a re-run scope instead of appending it twice', async () => {
+    await migration(tree, { skipFormat: true, include: ['libs/inside'] });
+    await migration(tree, { skipFormat: true, include: ['libs/inside'] });
+
+    expect(readOrEmpty('query-v3-migration-tasks.md').match(/## Tasks \(scope: libs\/inside\)/g)).toHaveLength(1);
+  });
 });

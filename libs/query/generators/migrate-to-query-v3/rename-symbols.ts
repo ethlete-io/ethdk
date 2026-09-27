@@ -1,5 +1,5 @@
 import * as ts from 'typescript';
-import { createSourceFile } from './shared.js';
+import { createSourceFile, printImportDeclaration } from './shared.js';
 
 export type SymbolRenameResult = {
   content: string;
@@ -13,7 +13,7 @@ export type SymbolRenameResult = {
  * right-hand side of a member access. Renaming those is what turned `PeopleDetailDataSource.getPerson`
  * and the `postLogin` property of a config type into `legacy…` during the first migration run.
  */
-const isNamePosition = (node: ts.Identifier) => {
+export const isNamePosition = (node: ts.Identifier) => {
   const parent = node.parent;
 
   if (!parent) return false;
@@ -58,13 +58,60 @@ const isNamePosition = (node: ts.Identifier) => {
   return false;
 };
 
-const renamedReference = (node: ts.Identifier, nextName: string) => {
+export const renamedReference = (node: ts.Identifier, nextName: string) => {
   const parent = node.parent;
 
   if (ts.isShorthandPropertyAssignment(parent)) return `${node.text}: ${nextName}`;
   if (ts.isExportSpecifier(parent) && !parent.propertyName) return `${nextName} as ${node.text}`;
 
   return nextName;
+};
+
+const bindingDeclares = (name: ts.BindingName, text: string): boolean =>
+  ts.isIdentifier(name)
+    ? name.text === text
+    : name.elements.some((element) => !ts.isOmittedExpression(element) && bindingDeclares(element.name, text));
+
+const statementDeclares = (statement: ts.Statement, text: string) =>
+  (ts.isVariableStatement(statement) &&
+    statement.declarationList.declarations.some((declaration) => bindingDeclares(declaration.name, text))) ||
+  ((ts.isFunctionDeclaration(statement) || ts.isClassDeclaration(statement) || ts.isEnumDeclaration(statement)) &&
+    statement.name?.text === text);
+
+export const isShadowedInNestedScope = (identifier: ts.Identifier) => {
+  const text = identifier.text;
+
+  for (let scope: ts.Node | undefined = identifier.parent; scope && !ts.isSourceFile(scope); scope = scope.parent) {
+    if (ts.isFunctionLike(scope) && scope.parameters.some((parameter) => bindingDeclares(parameter.name, text))) {
+      return true;
+    }
+
+    if ((ts.isFunctionExpression(scope) || ts.isClassExpression(scope)) && scope.name?.text === text) {
+      return true;
+    }
+
+    if (
+      (ts.isBlock(scope) || ts.isModuleBlock(scope) || ts.isCaseClause(scope) || ts.isDefaultClause(scope)) &&
+      scope.statements.some((statement) => statementDeclares(statement, text))
+    ) {
+      return true;
+    }
+
+    if (
+      (ts.isForStatement(scope) || ts.isForInStatement(scope) || ts.isForOfStatement(scope)) &&
+      scope.initializer &&
+      ts.isVariableDeclarationList(scope.initializer) &&
+      scope.initializer.declarations.some((declaration) => bindingDeclares(declaration.name, text))
+    ) {
+      return true;
+    }
+
+    if (ts.isCatchClause(scope) && scope.variableDeclaration && bindingDeclares(scope.variableDeclaration.name, text)) {
+      return true;
+    }
+  }
+
+  return false;
 };
 
 /** Every name the file declares itself - a local by the same name means the import is shadowed. */
@@ -196,22 +243,20 @@ export const pruneUnusedNamedImports = (content: string) => {
 
     if (kept.length === node.importClause.namedBindings.elements.length) continue;
 
-    const hasDefaultImport = !!node.importClause.name;
+    const nextImport = printImportDeclaration(
+      node,
+      sourceFile,
+      kept.map((element) => element.getText(sourceFile)),
+    );
 
-    if (kept.length === 0 && !hasDefaultImport) {
+    if (!nextImport) {
       const end = content[node.getEnd()] === '\n' ? node.getEnd() + 1 : node.getEnd();
 
       replacements.push({ start: node.getStart(sourceFile), end, replacement: '' });
       continue;
     }
 
-    const defaultPart = hasDefaultImport ? `${node.importClause.name!.text}, ` : '';
-
-    replacements.push({
-      start: node.getStart(sourceFile),
-      end: node.getEnd(),
-      replacement: `import ${defaultPart}{ ${kept.map((element) => element.getText(sourceFile)).join(', ')} } from '${node.moduleSpecifier.text}';`,
-    });
+    replacements.push({ start: node.getStart(sourceFile), end: node.getEnd(), replacement: nextImport });
   }
 
   let result = content;

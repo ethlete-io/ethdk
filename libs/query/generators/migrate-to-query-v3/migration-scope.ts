@@ -14,6 +14,9 @@ export type MigrationScope = {
 
   /** Human readable description of what is being migrated, for the console summary. */
   describe: () => string;
+
+  /** Whether the run is limited to some projects or paths rather than the whole workspace. */
+  isScoped: boolean;
 };
 
 const stripTrailingSlash = (value: string) => (value.endsWith('/') ? value.slice(0, -1) : value);
@@ -49,6 +52,7 @@ export const createMigrationScope = (tree: Tree, options: MigrationScopeOptions)
     return {
       visit: (targetTree, callback) => visitNotIgnoredFiles(targetTree, '', callback),
       describe: () => 'the whole workspace',
+      isScoped: false,
     };
   }
 
@@ -59,5 +63,6 @@ export const createMigrationScope = (tree: Tree, options: MigrationScopeOptions)
       }
     },
     describe: () => roots.join(', '),
+    isScoped: true,
   };
 };

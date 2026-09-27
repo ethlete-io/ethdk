@@ -27,6 +27,35 @@ export const ensureConfigSuffix = (name: string) => {
   return `${name}Config`;
 };
 
+const importSpecifierText = (element: ts.ImportSpecifier) =>
+  element.propertyName ? `${element.propertyName.text} as ${element.name.text}` : element.name.text;
+
+/**
+ * Prints `node` with `namedElements` as its named bindings, keeping the default import, the
+ * `import type` modifier, the quote style and any import attributes. Returns an empty string when
+ * nothing would be left to import.
+ */
+export const printImportDeclaration = (
+  node: ts.ImportDeclaration,
+  sourceFile: ts.SourceFile,
+  namedElements: readonly string[],
+) => {
+  const clause = node.importClause;
+  const defaultName = clause?.name?.text;
+  const bindings = [defaultName, namedElements.length > 0 ? `{ ${namedElements.join(', ')} }` : undefined].filter(
+    (part) => !!part,
+  );
+
+  if (bindings.length === 0) {
+    return '';
+  }
+
+  const typePrefix = clause?.isTypeOnly ? 'type ' : '';
+  const attributes = node.attributes ? ` ${node.attributes.getText(sourceFile)}` : '';
+
+  return `import ${typePrefix}${bindings.join(', ')} from ${node.moduleSpecifier.getText(sourceFile)}${attributes};`;
+};
+
 export const ensureNamedImports = ({ content, importsNeeded, moduleSpecifier }: EnsureNamedImportsOptions) => {
   const sourceFile = createSourceFile(content);
 
@@ -53,6 +82,7 @@ export const ensureNamedImports = ({ content, importsNeeded, moduleSpecifier }: 
 
     namedBindings.elements.forEach((element) => {
       missingImports.delete(element.name.text);
+      missingImports.delete(importSpecifierText(element));
     });
 
     if (missingImports.size === 0) {
@@ -61,7 +91,7 @@ export const ensureNamedImports = ({ content, importsNeeded, moduleSpecifier }: 
 
     const existingImports = namedBindings.elements.map((element) => element.getText(sourceFile));
     const nextImports = [...existingImports, ...Array.from(missingImports).sort()].sort();
-    const nextImportStatement = `import { ${nextImports.join(', ')} } from '${moduleSpecifier}';`;
+    const nextImportStatement = printImportDeclaration(importNode, sourceFile, nextImports);
 
     return content.slice(0, importNode.getStart(sourceFile)) + nextImportStatement + content.slice(importNode.getEnd());
   }

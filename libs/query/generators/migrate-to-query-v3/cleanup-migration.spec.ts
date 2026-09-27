@@ -315,6 +315,11 @@ export const cmsConfig = {
     tree.write(
       'prepare.ts',
       `
+import { createLegacyQueryCreator } from '@ethlete/query';
+
+const getUsers = createLegacyQueryCreator({ creator: {} as never });
+const getTeams = createLegacyQueryCreator({ creator: {} as never });
+
 export const first = () => getUsers.prepare();
 export const second = () => getTeams.prepare();
       `.trim(),
@@ -346,5 +351,97 @@ export const appConfig = { providers: [provideClient(clientConfig)] };
     expect(report).toContain('Replace the removed helper createQueryClientConfig');
     expect(report).toContain('Replace the removed helper provideQueryClient');
     expect(report).toContain('- app.config.ts:1');
+  });
+
+  it('migrates an aliased QueryDevtoolsComponent import like an unaliased one', async () => {
+    tree.write(
+      'app.component.ts',
+      `
+import { QueryDevtoolsComponent as Devtools, provideQueryClientForDevtools } from '@ethlete/query';
+
+export const component = {
+  imports: [Devtools],
+  providers: [provideQueryClientForDevtools({ client: apiClient, displayName: 'API' })],
+};
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const result = readFile('app.component.ts');
+
+    expect(result).toContain("import { QueryDevtoolsComponent as Devtools } from '@ethlete/query-devtools';");
+    expect(result).toContain("import { provideQueryDevtools } from '@ethlete/query';");
+    expect(result).not.toContain('QueryDevtoolsComponent as Devtools, provideQueryClientForDevtools');
+  });
+
+  it('keeps the type-only @ethlete/query import when dropping the devtools names', async () => {
+    tree.write(
+      'app.config.ts',
+      `
+import type { QueryDevtoolsComponent, QueryConfig } from '@ethlete/query';
+
+export type Config = QueryConfig;
+export type Devtools = QueryDevtoolsComponent;
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    expect(readFile('app.config.ts')).toContain("import type { QueryConfig } from '@ethlete/query';");
+  });
+
+  it('only adds {} to an empty prepare() whose receiver is a legacy query creator', async () => {
+    tree.write(
+      'queries.ts',
+      `
+import { createLegacyQueryCreator } from '@ethlete/query';
+
+export const legacyGetUsers = createLegacyQueryCreator({ creator: {} as never });
+      `.trim(),
+    );
+    tree.write(
+      'consumer.ts',
+      `
+import { legacyGetUsers } from './queries';
+import { statement } from 'some-sql-lib';
+
+const builder = createBuilder();
+
+export const users = () => legacyGetUsers.prepare();
+export const sql = () => statement.prepare();
+export const built = () => builder.prepare();
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const consumer = readFile('consumer.ts');
+
+    expect(consumer).toContain('legacyGetUsers.prepare({})');
+    expect(consumer).toContain('statement.prepare();');
+    expect(consumer).toContain('builder.prepare();');
+  });
+
+  it('reports an empty prepare() it cannot resolve in a file that uses @ethlete/query', async () => {
+    tree.write(
+      'component.ts',
+      `
+import { injectQueryClient } from '@ethlete/query';
+
+export class Component {
+  client = injectQueryClient();
+  run(query: { prepare: () => void }) {
+    return query.prepare();
+  }
+}
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    expect(readFile('component.ts')).toContain('query.prepare();');
+    expect(readFile('query-v3-migration-tasks.md')).toContain('Check the empty prepare() call on query');
+    expect(readFile('query-v3-migration-tasks.md')).toContain('- component.ts:6');
   });
 });

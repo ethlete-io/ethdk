@@ -44,7 +44,7 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
 
   replaceAnyQueryWithLegacy(tree, scope);
   migrateDevtoolsUsage(tree, scope, report);
-  migrateEmptyPrepareCalls(tree, scope);
+  migrateEmptyPrepareCalls(tree, scope, report);
   migrateLegacyPrepareCalls(tree, report, scope);
   reportRemovedExperimentalQueryHelpers(tree, scope, report);
 
@@ -53,7 +53,7 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
     reportDefaultHeaderUsages(tree, report, scope);
   }
 
-  report.writeToTree(tree);
+  report.writeToTree(tree, scope.isScoped ? scope.describe() : undefined);
   report.printSummary();
 
   if (!schema.skipFormat) {

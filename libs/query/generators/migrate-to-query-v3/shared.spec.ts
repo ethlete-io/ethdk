@@ -1,3 +1,4 @@
+import { pruneUnusedNamedImports } from './rename-symbols';
 import { ensureNamedImports } from './shared';
 
 describe('ensureNamedImports', () => {
@@ -38,5 +39,35 @@ describe('ensureNamedImports', () => {
     expect(result).toBe(
       "import type { QueryConfig } from '@ethlete/query';\nimport { provideQueryDevtools } from '@ethlete/query';",
     );
+  });
+
+  it('keeps the default import when adding to a named import', () => {
+    const content = "import Query, { a } from '@ethlete/query';";
+
+    const result = ensureNamedImports({ content, importsNeeded: ['b'], moduleSpecifier: '@ethlete/query' });
+
+    expect(result).toBe("import Query, { a, b } from '@ethlete/query';");
+  });
+});
+
+describe('pruneUnusedNamedImports', () => {
+  it('keeps import type and inline type modifiers', () => {
+    const content = [
+      "import type { A, Unused } from './types';",
+      "import { type B, unusedValue } from './values';",
+      '',
+      'export const value: A | B = null!;',
+    ].join('\n');
+
+    const result = pruneUnusedNamedImports(content);
+
+    expect(result).toContain("import type { A } from './types';");
+    expect(result).toContain("import { type B } from './values';");
+  });
+
+  it('keeps a default import once every named import is pruned', () => {
+    const result = pruneUnusedNamedImports("import value, { unused } from './values';\n\nexport const x = value;");
+
+    expect(result).toBe("import value from './values';\n\nexport const x = value;");
   });
 });
