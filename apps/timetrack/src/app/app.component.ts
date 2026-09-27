@@ -8,7 +8,7 @@ import {
   injectCodexSessionCollector,
   injectCodexSpendBackfill,
 } from '../collectors';
-import { injectAgentEndpoint } from './agent';
+import { ApprovalBannerComponent, injectAgentEndpoint } from './agent';
 import { BuildStampComponent } from './build-stamp.component';
 import { injectCollectionPause } from './collection-pause';
 import { LockViewComponent } from './lock-view.component';
@@ -56,6 +56,8 @@ const viewPathOf = (route: string) => route.split('/').filter(Boolean)[0];
 
         <ethlete-nudge-banner />
 
+        <ethlete-approval-banner />
+
         <div class="flex min-h-0 grow">
           <div
             class="flex w-56 shrink-0 flex-col gap-6 overflow-y-auto border-r border-et-surface-border py-6 pr-4 pl-3"
@@ -80,6 +82,7 @@ const viewPathOf = (route: string) => route.split('/').filter(Boolean)[0];
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
+    ApprovalBannerComponent,
     BuildStampComponent,
     LockViewComponent,
     LogoComponent,
