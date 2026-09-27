@@ -182,4 +182,37 @@ describe('getScrollItemTarget', () => {
       origin: 'end',
     });
   });
+
+  it('stays on an item exactly half visible instead of rounding it up to fully visible', () => {
+    const container = elementAt(0, 0, 100, 100);
+    const first = elementAt(-20, 0, 40, 20);
+    const second = elementAt(20, 0, 40, 20);
+    const third = elementAt(60, 0, 80, 20);
+    const entries = [entry(first, 0.5), entry(second, 1), entry(third, 0.5)];
+
+    expect(getScrollItemTarget(entries, container, 'start', 'auto', 'horizontal')).toEqual({
+      element: first,
+      index: 0,
+      origin: 'start',
+    });
+    expect(getScrollItemTarget(entries, container, 'end', 'auto', 'horizontal')).toEqual({
+      element: third,
+      index: 2,
+      origin: 'end',
+    });
+  });
+
+  it('treats a sub-pixel shortfall as fully visible', () => {
+    const container = elementAt(0, 0, 100, 100);
+    const first = elementAt(0, 0, 50, 20);
+    const second = elementAt(50, 0, 50, 20);
+    const third = elementAt(100, 0, 50, 20);
+    const entries = [entry(first, 1), entry(second, 0.995), entry(third, 0)];
+
+    expect(getScrollItemTarget(entries, container, 'end', 'auto', 'horizontal')).toEqual({
+      element: third,
+      index: 2,
+      origin: 'end',
+    });
+  });
 });

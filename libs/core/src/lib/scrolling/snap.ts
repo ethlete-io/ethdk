@@ -1,4 +1,5 @@
 const MIN_SNAP_DELTA_PX = 1;
+const FULLY_VISIBLE_RATIO = 0.99;
 
 export type ScrollSnapOrigin = 'auto' | 'start' | 'center' | 'end';
 
@@ -175,7 +176,7 @@ export const getScrollItemTarget = (
   const entry = direction === 'start' ? firstVisible : lastVisible;
   const entryIndex = direction === 'start' ? firstIndex : lastIndex;
 
-  if (Math.round(entry.intersectionRatio) === 1) {
+  if (entry.intersectionRatio >= FULLY_VISIBLE_RATIO) {
     if (direction === 'start' && entryIndex === 0) return null;
     if (direction === 'end' && entryIndex === entries.length - 1) return null;
 

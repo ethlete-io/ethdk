@@ -278,6 +278,33 @@ describe('scrollable scenarios', () => {
     s.frame(2);
   });
 
+  it('measures the start and end sentinels before the first intersection callback', () => {
+    const s = scenario();
+
+    overflowingTrack();
+    fakeLayout([
+      { match: '.et-scroll-observer-first-element', rect: { left: 0, width: 0, height: 80 } },
+      { match: '.et-scroll-observer-last-element', rect: { left: TRACK_WIDTH * 2, width: 0, height: 80 } },
+    ]);
+    fakeIntersectionObserver();
+    fakeElementScroll();
+    const fixture = TestBed.createComponent(TeamRailComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    fixture.componentInstance.active.set('team-a');
+    settle(s);
+
+    try {
+      const [start, end] = queryAll<HTMLButtonElement>('.et-scrollable-button', host);
+
+      expect(fixture.componentInstance.states.at(-1)).toEqual({ canScroll: true, isAtStart: true, isAtEnd: false });
+      expect([start?.disabled, end?.disabled]).toEqual([true, false]);
+    } finally {
+      fixture.destroy();
+      s.frame(2);
+    }
+  });
+
   it('opens the track on an active child that starts exactly at the track end', () => {
     const s = scenario();
     const track = overflowingTrack();
@@ -338,7 +365,7 @@ describe('scrollable scenarios', () => {
     settle(s);
     query<HTMLButtonElement>('.et-scrollable-button--end', host).click();
     expect(scroll.lastCall()).toMatchObject({ method: 'scroll', target: container });
-    expect(scroll.lastCall()?.options.left).toBe(2 * SLIDE_WIDTH);
+    expect(scroll.lastCall()?.options.left).toBe(SLIDE_WIDTH);
 
     const scrollsBefore = scroll.calls().length;
 
