@@ -365,6 +365,7 @@ export class V2Query<
     this.currentPollConfig = null;
     this.pollStopSubscription?.unsubscribe();
     this.pollStopSubscription = null;
+    this._isPollingPaused = false;
 
     return this;
   }

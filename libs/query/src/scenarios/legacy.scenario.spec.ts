@@ -17,6 +17,7 @@ import {
   filterSuccess,
   InfinityQueryDirective,
   InfinityQueryTriggerDirective,
+  isQueryStateSuccess,
   provideQueryClientForDevtools,
   QUERY_CLIENT_DEVTOOLS_TOKEN,
   QueryDirective,
@@ -422,6 +423,28 @@ describe('legacy scenario', () => {
       });
     });
 
+    it('keeps two prepare() calls that differ only in headers apart', () => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', ({ params, headers }) => ({
+        body: { id: params['id'], name: headers.get('Accept-Language') === 'de' ? 'Ada DE' : 'Ada EN' },
+        headers: { 'cache-control': 'max-age=60' },
+      }));
+
+      withLegacyClient(s, {}, (client, track) => {
+        const getUser = createGetUser(client);
+        const de = track(getUser.prepare({ pathParams: { id: '1' }, headers: { 'Accept-Language': 'de' } }).execute());
+        const en = track(getUser.prepare({ pathParams: { id: '1' }, headers: { 'Accept-Language': 'en' } }).execute());
+
+        s.tick();
+
+        expect(en).not.toBe(de);
+        expect(s.api.requestCount('GET', '/users/1')).toBe(2);
+        expect(isQueryStateSuccess(de.rawState) && de.rawState.response.name).toBe('Ada DE');
+        expect(isQueryStateSuccess(en.rawState) && en.rawState.response.name).toBe('Ada EN');
+        expect(getUser.prepare({ pathParams: { id: '1' }, headers: { 'accept-language': 'de' } })).toBe(de);
+      });
+    });
+
     it('serves a cache-control response from cache until it expires', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({
@@ -794,6 +817,41 @@ describe('legacy scenario', () => {
 
         expect(query.isPolling).toBe(false);
         expect(s.api.requestCount('GET', '/users/1')).toBe(afterStop);
+      });
+    });
+
+    it('polls again after stopPolling() was called while the window was blurred', () => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
+
+      withLegacyClient(s, {}, (client, track) => {
+        const stopPolling$ = new Subject<void>();
+        const query = track(
+          createGetUser(client)
+            .prepare({ pathParams: { id: '1' } })
+            .execute(),
+        );
+
+        s.tick();
+        query.poll({ interval: 1_000, takeUntil: stopPolling$ });
+        s.tick(1_000);
+
+        window.dispatchEvent(new Event('blur'));
+        s.tick(6_000);
+        query.stopPolling();
+
+        window.dispatchEvent(new Event('focus'));
+        s.tick(1);
+
+        const beforePoll = s.api.requestCount('GET', '/users/1');
+
+        query.poll({ interval: 1_000, takeUntil: stopPolling$ });
+        s.tick(2_000);
+
+        expect(query.isPolling).toBe(true);
+        expect(s.api.requestCount('GET', '/users/1')).toBe(beforePoll + 2);
+
+        query.stopPolling();
       });
     });
 
