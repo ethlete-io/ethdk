@@ -46,13 +46,13 @@ import { NormalizedMatchParticipant } from './match.types';
           fit="contain"
         >
           <ng-template etPictureError>
-            <span class="et-match-participant-emblem-mark" aria-hidden="true">{{ emblemMark() }}</span>
+            <span [attr.data-mark]="emblemMark()" class="et-match-participant-emblem-mark" aria-hidden="true"></span>
           </ng-template>
         </et-picture>
       } @else if (loading()) {
         <et-skeleton-item class="et-match-participant-bone" shape="circle" />
       } @else if (participant()) {
-        <span class="et-match-participant-emblem-mark" aria-hidden="true">{{ emblemMark() }}</span>
+        <span [attr.data-mark]="emblemMark()" class="et-match-participant-emblem-mark" aria-hidden="true"></span>
       }
     </span>
 

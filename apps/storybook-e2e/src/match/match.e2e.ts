@@ -457,7 +457,7 @@ test.describe('match / emblem fallback', () => {
     });
 
     await expect(emblem.locator('et-picture')).toHaveAttribute('data-state', 'error');
-    await expect(emblem.locator('.et-match-participant-emblem-mark')).toHaveText('F');
+    await expect(emblem.locator('.et-match-participant-emblem-mark')).toHaveAttribute('data-mark', 'F');
     await expect(emblem.locator('.et-match-participant-emblem-mark')).toHaveAttribute('aria-hidden', 'true');
 
     const after = await boxOf(emblem);

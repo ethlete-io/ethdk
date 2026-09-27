@@ -114,7 +114,7 @@ describe('MatchParticipantComponent', () => {
 
   describe('the emblem', () => {
     const mark = (fixture: ComponentFixture<HostComponent>) =>
-      host(fixture).querySelector('.et-match-participant-emblem-mark')?.textContent?.trim();
+      host(fixture).querySelector('.et-match-participant-emblem-mark')?.getAttribute('data-mark');
 
     it('stands in with the participant’s first letter when there is none', () => {
       const fixture = create();
