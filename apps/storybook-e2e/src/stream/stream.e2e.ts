@@ -1,5 +1,7 @@
 import { Locator, Page, expect, test } from '@playwright/test';
 import {
+  Box,
+  TouchPoint,
   boxOf,
   expectFocusVisible,
   expectTouchMode,
@@ -9,6 +11,7 @@ import {
   tabSequence,
   tabUntilFocused,
   tap,
+  touchDrag,
   viewportOf,
 } from '../support';
 
@@ -800,5 +803,384 @@ test.describe('stream / touch', () => {
 
     await expect.poll(() => attempts).toBe(2);
     await expect(slotAt(root).locator(ERROR)).toBeVisible();
+  });
+});
+
+const PIP_COLLAPSE_PEEK = 40;
+const PIP_TITLE_BAR_HEIGHT = 32;
+const PIP_CONTENT_RATIO = 16 / 9;
+const COLLAPSE_OVERLAY = '.et-pip-window__collapse-overlay';
+const PLAYER_TAG = 'data-e2e-player';
+
+interface PipHandles {
+  root: Locator;
+  pipWindow: Locator;
+  titleBar: Locator;
+}
+
+async function openPip(page: Page): Promise<PipHandles> {
+  await stubPlatformSdks(page);
+  const root = await openStory(page, YOUTUBE_PIP_STORY_ID);
+
+  await root.getByRole('button', { name: 'Enter PIP' }).first().click();
+
+  const pipWindow = page.locator(PIP_WINDOW);
+
+  await expect(pipWindow).toBeVisible();
+
+  return { root, pipWindow, titleBar: pipWindow.locator(PIP_TITLE_BAR) };
+}
+
+async function revealTitleBar(pipWindow: Locator): Promise<void> {
+  await pipWindow.hover();
+  await expect(pipWindow.locator(PIP_TITLE_BAR)).toHaveCSS('opacity', '1');
+}
+
+async function titleBarGrip(page: Page, { pipWindow, titleBar }: PipHandles): Promise<TouchPoint> {
+  await revealTitleBar(pipWindow);
+
+  const spacer = await boxOf(titleBar.locator('.et-pip-window__title-bar-spacer'));
+
+  return { x: spacer.x + spacer.width / 2, y: spacer.y + spacer.height / 2 };
+}
+
+async function mouseDrag(page: Page, from: TouchPoint, to: TouchPoint): Promise<void> {
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 20 });
+  await page.mouse.up();
+}
+
+function centerOf(box: Box): TouchPoint {
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+}
+
+function contentRatioOf(box: Box): number {
+  return box.width / (box.height - PIP_TITLE_BAR_HEIGHT);
+}
+
+async function expectInsideViewportPadding(page: Page, pipWindow: Locator): Promise<void> {
+  const viewport = viewportOf(page);
+
+  await expect
+    .poll(async () => {
+      const box = await boxOf(pipWindow);
+
+      return (
+        box.x >= PIP_VIEWPORT_PADDING - 1 &&
+        box.y >= PIP_VIEWPORT_PADDING - 1 &&
+        box.x + box.width <= viewport.width - PIP_VIEWPORT_PADDING + 1 &&
+        box.y + box.height <= viewport.height - PIP_VIEWPORT_PADDING + 1
+      );
+    })
+    .toBe(true);
+}
+
+async function expectCollapsedAtRightEdge(page: Page, pipWindow: Locator): Promise<void> {
+  const viewport = viewportOf(page);
+
+  await expect(pipWindow).toHaveClass(/et-pip-window--collapsed/);
+  await expect.poll(async () => (await boxOf(pipWindow)).x).toBeCloseTo(viewport.width - PIP_COLLAPSE_PEEK, 0);
+  await expect(pipWindow.locator(COLLAPSE_OVERLAY)).toHaveCount(1);
+  await expect(pipWindow.locator('et-resize-handles')).toHaveAttribute('inert', '');
+}
+
+async function tagFirstPlayer(root: Locator): Promise<void> {
+  await root
+    .locator('et-youtube-player')
+    .first()
+    .evaluate((el, tag) => el.setAttribute(tag, 'page-a'), PLAYER_TAG);
+}
+
+function taggedPlayer(scope: Locator): Locator {
+  return scope.locator(`et-youtube-player[${PLAYER_TAG}="page-a"]`);
+}
+
+function youtubeEmbedCount(page: Page): Promise<number> {
+  return page.evaluate(() => (window as StubWindow).__etYoutubeEmbeds?.length ?? 0);
+}
+
+async function recordBringBackPulses(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const animate = Element.prototype.animate;
+    const record = window as Window & { __etBringBackPulses?: number };
+
+    record.__etBringBackPulses = 0;
+    Element.prototype.animate = function (this: Element, ...args: Parameters<Element['animate']>) {
+      record.__etBringBackPulses = (record.__etBringBackPulses ?? 0) + (this.hasAttribute('etpipbringback') ? 1 : 0);
+
+      return animate.apply(this, args);
+    };
+  });
+}
+
+function bringBackPulseCount(page: Page): Promise<number> {
+  return page.evaluate(() => (window as Window & { __etBringBackPulses?: number }).__etBringBackPulses ?? 0);
+}
+
+test.describe('stream / pip slots', () => {
+  test('entering PiP moves the slot player itself into the window and leaves a placeholder', async ({ page }) => {
+    await stubPlatformSdks(page);
+    const root = await openStory(page, YOUTUBE_PIP_STORY_ID);
+    const slot = slotAt(root);
+
+    await expect(slot.locator('et-youtube-player')).toHaveCount(1);
+    await tagFirstPlayer(root);
+    const embeds = await youtubeEmbedCount(page);
+
+    await root.getByRole('button', { name: 'Enter PIP' }).first().click();
+
+    await expect(taggedPlayer(page.locator(PIP_WINDOW))).toHaveCount(1);
+    await expect(slot.locator('et-youtube-player')).toHaveCount(0);
+    await expect(slot.getByText('Playing in picture-in-picture')).toBeVisible();
+    expect(await youtubeEmbedCount(page)).toBe(embeds);
+  });
+
+  test('"Back to player" returns the same player to its slot and closes the window', async ({ page }) => {
+    await stubPlatformSdks(page);
+    const root = await openStory(page, YOUTUBE_PIP_STORY_ID);
+    const slot = slotAt(root);
+
+    await expect(slot.locator('et-youtube-player')).toHaveCount(1);
+    await tagFirstPlayer(root);
+    const embeds = await youtubeEmbedCount(page);
+
+    await root.getByRole('button', { name: 'Enter PIP' }).first().click();
+    await expect(page.locator(PIP_WINDOW)).toBeVisible();
+    await slot.getByRole('button', { name: 'Back to player' }).click();
+
+    await expect(page.locator(PIP_WINDOW)).toHaveCount(0);
+    await expect(taggedPlayer(slot)).toHaveCount(1);
+    await expect(slot.getByText('Playing in picture-in-picture')).toHaveCount(0);
+    expect(await youtubeEmbedCount(page)).toBe(embeds);
+  });
+
+  test('closing the window returns the same player to its slot', async ({ page }) => {
+    await stubPlatformSdks(page);
+    const root = await openStory(page, YOUTUBE_PIP_STORY_ID);
+    const slot = slotAt(root);
+
+    await expect(slot.locator('et-youtube-player')).toHaveCount(1);
+    await tagFirstPlayer(root);
+
+    await root.getByRole('button', { name: 'Enter PIP' }).first().click();
+    await revealTitleBar(page.locator(PIP_WINDOW));
+    await page.locator(PIP_WINDOW).getByRole('button', { name: 'Close' }).click();
+
+    await expect(page.locator(PIP_WINDOW)).toHaveCount(0);
+    await expect(taggedPlayer(slot)).toHaveCount(1);
+  });
+
+  test('the window keeps playing while its page is away, and its focus button leads back to a pulsing placeholder', async ({
+    page,
+  }) => {
+    await recordBringBackPulses(page);
+    const { root, pipWindow } = await openPip(page);
+
+    await root.getByRole('button', { name: 'Next →' }).first().click();
+    await expect(root.getByText('Page B - Lofi Girl')).toBeVisible();
+    await expect(pipWindow.locator('et-youtube-player')).toHaveCount(1);
+
+    await revealTitleBar(pipWindow);
+    await pipWindow.getByRole('button', { name: 'Focus' }).click();
+
+    const bringBack = root.getByRole('button', { name: 'Back to player' });
+
+    await expect(bringBack).toBeInViewport();
+    await expect.poll(() => bringBackPulseCount(page)).toBe(1);
+  });
+});
+
+test.describe('stream / pip pointer', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only');
+
+  test('dragging the title bar moves the window with the pointer and blocks the player while it lasts', async ({
+    page,
+  }) => {
+    const handles = await openPip(page);
+    const { pipWindow } = handles;
+    const grip = await titleBarGrip(page, handles);
+    const before = await boxOf(pipWindow);
+
+    await page.mouse.move(grip.x, grip.y);
+    await page.mouse.down();
+    await page.mouse.move(grip.x - 300, grip.y - 200, { steps: 20 });
+
+    await expect(pipWindow).toHaveClass(/et-pip-window--dragging/);
+    await expect(page.locator('body')).toHaveClass(/et-pip-interacting/);
+    await expect(pipWindow.locator('et-resize-handles')).toHaveAttribute('inert', '');
+
+    await page.mouse.up();
+
+    await expect(pipWindow).not.toHaveClass(/et-pip-window--dragging/);
+    await expect(page.locator('body')).not.toHaveClass(/et-pip-interacting/);
+    await expect.poll(async () => (await boxOf(pipWindow)).x).toBeCloseTo(before.x - 300, 0);
+    await expect.poll(async () => (await boxOf(pipWindow)).y).toBeCloseTo(before.y - 200, 0);
+  });
+
+  test('a window released partly past the edge snaps back inside the viewport padding', async ({ page }) => {
+    const handles = await openPip(page);
+    const { pipWindow } = handles;
+    const viewport = viewportOf(page);
+    const grip = await titleBarGrip(page, handles);
+
+    await mouseDrag(page, grip, { x: grip.x + 100, y: grip.y });
+
+    await expect(pipWindow).not.toHaveClass(/et-pip-window--collapsed/);
+    await expect
+      .poll(async () => {
+        const box = await boxOf(pipWindow);
+
+        return box.x + box.width;
+      })
+      .toBeCloseTo(viewport.width - PIP_VIEWPORT_PADDING, 0);
+  });
+
+  test('a window dragged more than halfway off the edge collapses to a peek behind a collapse overlay', async ({
+    page,
+  }) => {
+    const handles = await openPip(page);
+    const grip = await titleBarGrip(page, handles);
+
+    await mouseDrag(page, grip, { x: grip.x + 300, y: grip.y });
+
+    await expectCollapsedAtRightEdge(page, handles.pipWindow);
+  });
+
+  test('dragging the collapse overlay back into the page expands the window', async ({ page }) => {
+    const handles = await openPip(page);
+    const { pipWindow } = handles;
+    const grip = await titleBarGrip(page, handles);
+
+    await mouseDrag(page, grip, { x: grip.x + 300, y: grip.y });
+    await expectCollapsedAtRightEdge(page, pipWindow);
+
+    const viewport = viewportOf(page);
+    const overlay = await boxOf(pipWindow.locator(COLLAPSE_OVERLAY));
+    const from = { x: viewport.width - PIP_COLLAPSE_PEEK / 2, y: overlay.y + overlay.height / 2 };
+
+    await mouseDrag(page, from, { x: from.x - 400, y: from.y });
+
+    await expect(pipWindow).not.toHaveClass(/et-pip-window--collapsed/);
+    await expect(pipWindow.locator(COLLAPSE_OVERLAY)).toHaveCount(0);
+    await expectInsideViewportPadding(page, pipWindow);
+  });
+
+  test('a click on the collapse overlay brings the window back into view', async ({ page }) => {
+    const handles = await openPip(page);
+    const { pipWindow } = handles;
+    const grip = await titleBarGrip(page, handles);
+
+    await mouseDrag(page, grip, { x: grip.x + 300, y: grip.y });
+    await expectCollapsedAtRightEdge(page, pipWindow);
+
+    const viewport = viewportOf(page);
+    const overlay = await boxOf(pipWindow.locator(COLLAPSE_OVERLAY));
+
+    await page.mouse.click(viewport.width - PIP_COLLAPSE_PEEK / 2, overlay.y + overlay.height / 2);
+
+    await expect(pipWindow).not.toHaveClass(/et-pip-window--collapsed/);
+    await expectInsideViewportPadding(page, pipWindow);
+  });
+
+  test('the south-east handle resizes from the top left corner and keeps the aspect ratio', async ({ page }) => {
+    const handles = await openPip(page);
+    const { pipWindow } = handles;
+    const grip = await titleBarGrip(page, handles);
+
+    await mouseDrag(page, grip, { x: grip.x - 300, y: grip.y - 200 });
+
+    const before = await boxOf(pipWindow);
+    const handle = await boxOf(pipWindow.locator('.et-resize-handle--se'));
+    const from = centerOf(handle);
+
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(from.x + 80, from.y + 10, { steps: 20 });
+
+    await expect(pipWindow).toHaveClass(/et-pip-window--resizing/);
+    await expect(pipWindow.locator(PIP_TITLE_BAR)).toHaveCSS('opacity', '1');
+
+    await page.mouse.up();
+
+    await expect.poll(async () => (await boxOf(pipWindow)).width).toBeCloseTo(before.width + 80, 0);
+
+    const after = await boxOf(pipWindow);
+
+    expect(after.x).toBeCloseTo(before.x, 0);
+    expect(after.y).toBeCloseTo(before.y, 0);
+    expect(contentRatioOf(after)).toBeCloseTo(PIP_CONTENT_RATIO, 1);
+  });
+
+  test('the west handle keeps the right edge in place', async ({ page }) => {
+    const handles = await openPip(page);
+    const { pipWindow } = handles;
+    const grip = await titleBarGrip(page, handles);
+
+    await mouseDrag(page, grip, { x: grip.x - 200, y: grip.y - 200 });
+
+    const before = await boxOf(pipWindow);
+    const from = centerOf(await boxOf(pipWindow.locator('.et-resize-handle--w')));
+
+    await mouseDrag(page, from, { x: from.x - 60, y: from.y });
+
+    await expect.poll(async () => (await boxOf(pipWindow)).width).toBeCloseTo(before.width + 60, 0);
+
+    const after = await boxOf(pipWindow);
+
+    expect(after.x + after.width).toBeCloseTo(before.x + before.width, 0);
+    expect(contentRatioOf(after)).toBeCloseTo(PIP_CONTENT_RATIO, 1);
+  });
+
+  test('a pointer resize stops at the maximum width', async ({ page }) => {
+    const handles = await openPip(page);
+    const { pipWindow } = handles;
+    const grip = await titleBarGrip(page, handles);
+    const viewport = viewportOf(page);
+
+    await mouseDrag(page, grip, { x: PIP_VIEWPORT_PADDING + 100, y: PIP_VIEWPORT_PADDING + 10 });
+
+    const from = centerOf(await boxOf(pipWindow.locator('.et-resize-handle--se')));
+
+    await mouseDrag(page, from, { x: viewport.width - 1, y: from.y });
+
+    await expect.poll(async () => (await boxOf(pipWindow)).width).toBeCloseTo(PIP_MAX_WIDTH, 0);
+    await expectInsideViewportPadding(page, pipWindow);
+  });
+});
+
+test.describe('stream / pip touch', () => {
+  test.skip(({ isMobile }) => !isMobile, 'touch-only');
+
+  test('the title bar is shown without a hover and follows a touch drag', async ({ page }) => {
+    const { pipWindow, titleBar } = await openPip(page);
+
+    await expect(titleBar).toHaveCSS('opacity', '1');
+
+    const before = await boxOf(pipWindow);
+    const grip = centerOf(await boxOf(titleBar.locator('.et-pip-window__title-bar-spacer')));
+
+    await touchDrag(page, grip, { x: grip.x - 100, y: grip.y - 200 });
+
+    await expect.poll(async () => (await boxOf(pipWindow)).x).toBeCloseTo(before.x - 100, 0);
+    await expect.poll(async () => (await boxOf(pipWindow)).y).toBeCloseTo(before.y - 200, 0);
+  });
+
+  test('a swipe off the edge collapses the window and a tap on the peek brings it back', async ({ page }) => {
+    const { pipWindow, titleBar } = await openPip(page);
+    const viewport = viewportOf(page);
+
+    await expect(titleBar).toHaveCSS('opacity', '1');
+
+    const spacer = await boxOf(titleBar.locator('.et-pip-window__title-bar-spacer'));
+    const grip = { x: spacer.x + 2, y: spacer.y + spacer.height / 2 };
+
+    await touchDrag(page, grip, { x: viewport.width - 1, y: grip.y });
+    await expectCollapsedAtRightEdge(page, pipWindow);
+
+    await tap(pipWindow.locator(COLLAPSE_OVERLAY));
+
+    await expect(pipWindow).not.toHaveClass(/et-pip-window--collapsed/);
+    await expectInsideViewportPadding(page, pipWindow);
   });
 });
