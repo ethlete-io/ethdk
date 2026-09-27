@@ -35,6 +35,8 @@ export type SelectionState<TValue = unknown, TItem extends SelectionStateItem<TV
   items: Signal<TItem[]>;
   allSelected: Signal<boolean>;
   someSelected: Signal<boolean>;
+  /** How many registered items are checked, disabled ones included. */
+  selectedCount: Signal<number>;
   registerItem: (item: TItem) => void;
   unregisterItem: (item: TItem) => void;
   select: (item: TItem) => void;
@@ -98,6 +100,8 @@ export const createSelectionState = <
 
     return checkedCount > 0 && checkedCount < list.length;
   });
+
+  const selectedCount = computed(() => items().filter((item) => item.checked()).length);
 
   effect(() => {
     const currentValue = config.value();
@@ -246,6 +250,7 @@ export const createSelectionState = <
     items: items.asReadonly(),
     allSelected,
     someSelected,
+    selectedCount,
     registerItem,
     unregisterItem,
     select,

@@ -146,6 +146,19 @@ to be able to say. Its text comes from the shared `selectAll`
 The tri-state logic is the headless `[etSelectionListControl]`, which this composes - reach for the
 directive directly only when you want entirely different markup.
 
+A child of the group reads the same state through `SELECTION_LIST_TOKEN`: `selection.allSelected()`,
+`selection.someSelected()` and `selection.selectedCount()`, e.g. for a "3 picked" summary:
+
+```ts
+@Component({
+  selector: 'app-picked-count',
+  template: `{{ list.selection.selectedCount() }} picked`,
+})
+export class PickedCountComponent {
+  list = inject(SELECTION_LIST_TOKEN);
+}
+```
+
 ### Orientation {#orientation}
 
 `et-checkbox-group` and `et-radio-group` take `orientation="horizontal"` to flow their options in a
