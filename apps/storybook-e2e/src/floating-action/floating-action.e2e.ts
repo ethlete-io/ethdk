@@ -1,5 +1,5 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { countClicks, expectFocusVisible, expectTouchMode, openStory, pressKey, tap } from '../support';
+import { boxOf, countClicks, expectFocusVisible, expectTouchMode, openStory, pressKey, tap } from '../support';
 
 const STORY_ID = 'components-actions-floating-action--default';
 const DISABLED_STORY_ID = 'components-actions-floating-action--disabled';
@@ -71,6 +71,47 @@ function cornerGaps(trigger: Locator): Promise<{ inlineEnd: number; blockEnd: nu
   });
 }
 
+function documentTop(root: Locator, selector: string): Promise<number> {
+  return root.evaluate((el, target) => {
+    const node = el.querySelector(target);
+
+    if (!node) throw new Error(`no element matched "${target}"`);
+
+    return Math.round(node.getBoundingClientRect().top + window.scrollY);
+  }, selector);
+}
+
+function scale(trigger: Locator): Promise<string> {
+  return trigger.evaluate((el) => getComputedStyle(el).scale);
+}
+
+/** Every window.scrollY seen on the next `frames` animation frames, starting before `action` runs. */
+async function scrollPositionsDuring(page: Page, action: () => Promise<void>, frames = 60): Promise<number[]> {
+  await page.evaluate((count) => {
+    const samples: number[] = [];
+    const record = () => {
+      samples.push(Math.round(window.scrollY));
+
+      if (samples.length < count) requestAnimationFrame(record);
+    };
+
+    (window as Window & { __scrollSamples?: number[] }).__scrollSamples = samples;
+    requestAnimationFrame(record);
+  }, frames);
+
+  await action();
+
+  await expect
+    .poll(() => page.evaluate(() => (window as Window & { __scrollSamples?: number[] }).__scrollSamples?.length ?? 0))
+    .toBeGreaterThanOrEqual(frames);
+
+  return page.evaluate(() => (window as Window & { __scrollSamples?: number[] }).__scrollSamples ?? []);
+}
+
+function distinctPositions(samples: number[]): number {
+  return new Set(samples).size;
+}
+
 test.describe('floating-action / scroll', () => {
   test('the trigger sits in the flow while its anchor is on screen', async ({ page }) => {
     const root = await openStory(page, STORY_ID);
@@ -126,6 +167,35 @@ test.describe('floating-action / scroll', () => {
     await expect(root.locator(HOST)).toHaveAttribute('data-state', 'hidden');
     await expect(root.locator(TRIGGER)).toHaveCount(1);
     expect(await identity()).toBe(1);
+  });
+
+  test('the content after the anchor does not move when the trigger detaches', async ({ page }) => {
+    test.fail(true, 'the anchor collapses to 0px once its trigger is position: fixed, so the content below shifts up');
+    const root = await openStory(page, STORY_ID);
+    const scopeTop = await documentTop(root, SCOPE);
+    const anchorHeight = await root.locator(ANCHOR).evaluate((el) => el.getBoundingClientRect().height);
+
+    await scrollPast(page, ANCHOR);
+    await expect(root.locator(HOST)).toHaveAttribute('data-state', 'floating');
+
+    expect(await documentTop(root, SCOPE)).toBe(scopeTop);
+    expect(await root.locator(ANCHOR).evaluate((el) => el.getBoundingClientRect().height)).toBe(anchorHeight);
+  });
+
+  test('the floating trigger ends at full size, and the hidden one scales down to nothing', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const trigger = root.locator(TRIGGER);
+    const inlineWidth = Math.round((await boxOf(trigger)).width);
+
+    await scrollPast(page, ANCHOR);
+    await expect(root.locator(HOST)).toHaveAttribute('data-state', 'floating');
+
+    await expect.poll(async () => Math.round((await boxOf(trigger)).width)).toBe(inlineWidth);
+
+    await scrollPast(page, SCOPE);
+    await expect(root.locator(HOST)).toHaveAttribute('data-state', 'hidden');
+
+    await expect.poll(() => scale(trigger)).toBe('0');
   });
 
   test('a disabled floating action keeps the trigger in the flow at any scroll position', async ({ page }) => {
@@ -249,6 +319,21 @@ test.describe('floating-action / keyboard', () => {
 
     await expect(root.getByRole('heading', { name: 'Results' })).toBeInViewport();
     await expect(root.locator(HOST)).toHaveAttribute('data-state', 'inline');
+  });
+
+  test('scrollToTop glides back over several frames instead of jumping', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const trigger = root.locator(TRIGGER);
+
+    await scrollToBottom(page);
+    await scrollPast(page, ANCHOR);
+    await expect(root.locator(HOST)).toHaveAttribute('data-state', 'floating');
+    await trigger.focus();
+
+    const samples = await scrollPositionsDuring(page, () => pressKey(page, 'Enter'));
+
+    expect(distinctPositions(samples)).toBeGreaterThan(3);
+    await expect(root.getByRole('heading', { name: 'Results' })).toBeInViewport();
   });
 });
 
