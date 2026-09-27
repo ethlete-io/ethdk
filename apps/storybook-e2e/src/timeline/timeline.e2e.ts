@@ -85,14 +85,10 @@ test.describe('timeline / rail geometry', () => {
   });
 
   test('with the default dots the line runs unbroken into the next dot', async ({ page }) => {
-    test.fail(true, 'the line stops at the next item top, leaving a gap above each inset dot');
-
     await expectRailReachesNextMarker(await openStory(page, DEFAULT_STORY_ID));
   });
 
   test('the compact dots keep the line unbroken too', async ({ page }) => {
-    test.fail(true, 'the line stops at the next item top, leaving a gap above each inset dot');
-
     await expectRailReachesNextMarker(await openStory(page, COMPACT_STORY_ID));
   });
 });

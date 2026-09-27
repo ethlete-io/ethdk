@@ -48,13 +48,14 @@
       justify-content: center;
       inline-size: var(--et-timeline-marker-size);
 
-      /* One line per item, spanning from this marker's center down through the gap to the next
-         item's marker - the markers paint over it, which is what makes the rail read as unbroken.
-         Both this and the marker must stay positioned, or the marker no longer wins on paint order. */
+      /* One line per item, spanning from this marker's center to the next item's marker center -
+         the markers paint over it, which is what makes the rail read as unbroken. Ending it at the
+         next item's top instead leaves a gap above an inset default dot. Both this and the marker
+         must stay positioned, or the marker no longer wins on paint order. */
       &::before {
         content: '';
         position: absolute;
-        inset-block: calc(var(--et-timeline-marker-size) / 2) 0;
+        inset-block: calc(var(--et-timeline-marker-size) / 2) calc(var(--et-timeline-marker-size) / -2);
         inline-size: var(--et-timeline-line-thickness);
         background: var(--et-timeline-line-color, var(--et-surface-border-solid, rgb(255 255 255 / 0.1)));
       }
