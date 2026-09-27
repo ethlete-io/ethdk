@@ -609,7 +609,11 @@ describe('grid scenarios', () => {
     );
 
     board.items.set([note('a', at(0, 0)), note('a', at(1, 0))]);
-    expect(() => s.tick()).toThrow(code(GRID_ERROR_CODES.DUPLICATE_ITEM_ID));
+    expect(() => fixture.detectChanges()).not.toThrow();
+    s.tick();
+    s.expectError(code(GRID_ERROR_CODES.DUPLICATE_ITEM_ID));
+    expect(board.grid().grid.currentItems()).toEqual([]);
+    expect(fixture.nativeElement.querySelector('et-grid-item, .et-grid-item')).toBeNull();
 
     board.items.set([{ id: 'p', type: 'note', data: { title: 'Partial' }, layout: { lg: at(0, 0) } }]);
     s.tick(200);

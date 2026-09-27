@@ -225,4 +225,4 @@ The `BackendIntegration` story shows the full round trip. A `<et-grid-debug />` 
 
 ## Error codes
 
-Misplaced pieces, duplicate item ids, items nothing renders (or two things render), and invalid serialized states throw [`ET19xx` errors](/components/error-codes#grid-et19xx) in dev mode.
+Misplaced pieces, duplicate item ids, items nothing renders (or two things render), and invalid serialized states raise [`ET19xx` errors](/components/error-codes#grid-et19xx) in dev mode. `restoreState()` throws; the rest go to the `ErrorHandler`, and a grid with duplicate item ids renders no items.

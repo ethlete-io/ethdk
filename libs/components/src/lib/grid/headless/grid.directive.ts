@@ -18,6 +18,7 @@ import {
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { equal, injectPrefersReducedMotion, RuntimeError, signalHostElementDimensions, randomId } from '@ethlete/core';
 import { filter, switchMap, tap, timer } from 'rxjs';
+import { injectReportError } from '../../internals/report-error';
 import { GRID_ERROR_CODES } from '../grid-errors';
 import { injectGridConfig } from './grid-config';
 import { GRID_TOKEN } from './grid.tokens';
@@ -164,6 +165,7 @@ export class GridDirective<TData = unknown> {
   public elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private gridConfig = injectGridConfig();
   private reducedMotion = injectPrefersReducedMotion();
+  private reportError = injectReportError();
 
   public breakpoints = input<GridBreakpointConfig[]>(DEFAULT_BREAKPOINTS);
   public rowHeight = input(100, { transform: numberAttribute });
@@ -354,7 +356,14 @@ export class GridDirective<TData = unknown> {
         if (initial.length === 0 && this.itemConfigs().length === 0) return;
 
         if (ngDevMode) {
-          this.assertValidItemConfigs(initial);
+          const error = this.itemConfigsError(initial);
+
+          if (error) {
+            this.reportError(error);
+            this.itemConfigs.set([]);
+
+            return;
+          }
         }
 
         const current = this.itemConfigs();
@@ -787,7 +796,9 @@ export class GridDirective<TData = unknown> {
 
   public restoreState(state: GridSerializedState<TData>) {
     if (ngDevMode) {
-      this.assertValidItemConfigs(state.items);
+      const error = this.itemConfigsError(state.items);
+
+      if (error) throw error;
 
       const known = this.breakpoints().map((b) => b.name);
       const unknown = Object.keys(state.columns).filter((bp) => !known.includes(bp));
@@ -846,12 +857,12 @@ export class GridDirective<TData = unknown> {
     return this.breakpoints().find((b) => b.name === breakpoint)?.columns ?? 12;
   }
 
-  private assertValidItemConfigs(items: GridItemConfig[]) {
+  private itemConfigsError(items: GridItemConfig[]) {
     const seen = new Set<string>();
 
     for (const item of items) {
       if (seen.has(item.id)) {
-        throw new RuntimeError(
+        return new RuntimeError(
           GRID_ERROR_CODES.DUPLICATE_ITEM_ID,
           `[GridDirective] Multiple grid item configs share the id "${item.id}". Item ids must be unique.`,
           items.filter((i) => i.id === item.id),
@@ -862,6 +873,8 @@ export class GridDirective<TData = unknown> {
     }
 
     this.warnAboutUncoveredBreakpoints(items);
+
+    return null;
   }
 
   private warnAboutUncoveredBreakpoints(items: GridItemConfig[]) {
