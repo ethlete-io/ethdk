@@ -7,7 +7,6 @@ import {
   inject,
   inputBinding,
   output,
-  signal,
   untracked,
 } from '@angular/core';
 import { RuntimeError, randomId, signalHostElementDimensions } from '@ethlete/core';
@@ -19,6 +18,7 @@ import { CALENDAR_ICON, CHEVRON_ICON, IconDirective, PLUS_ICON, provideIcons } f
 import { injectReportError } from '../internals/report-error';
 import { OverlayRef, createOverlayOpener } from '../overlay';
 import {
+  createSchedulerRegistry,
   SCHEDULER_FEATURE_HOST,
   SchedulerBadgeAdornment,
   SchedulerDirective,
@@ -149,21 +149,8 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     return format(this.headless.focusedDate(), 'LLLL yyyy', options);
   });
 
-  private badgeAdornmentList = signal<SchedulerBadgeAdornment[]>([]);
-
-  public badgeAdornments = computed(() =>
-    this.badgeAdornmentList()
-      .filter((adornment) => adornment.enabled?.() ?? true)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
-  );
-
-  private toolbarActionList = signal<SchedulerToolbarAction[]>([]);
-
-  public toolbarActions = computed(() =>
-    this.toolbarActionList()
-      .filter((action) => action.enabled?.() ?? true)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
-  );
+  private badgeAdornmentRegistry = createSchedulerRegistry<SchedulerBadgeAdornment>();
+  private toolbarActionRegistry = createSchedulerRegistry<SchedulerToolbarAction>();
 
   private editSurfaceRef: OverlayRef<object, SchedulerEditSurfaceResult> | null = null;
 
@@ -224,6 +211,14 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     });
   }
 
+  public badgeAdornments() {
+    return this.badgeAdornmentRegistry.entries();
+  }
+
+  public toolbarActions() {
+    return this.toolbarActionRegistry.entries();
+  }
+
   public setView(value: unknown) {
     this.headless.view.set(value as SchedulerView);
   }
@@ -260,11 +255,11 @@ export class SchedulerComponent implements SchedulerFeatureHost {
   }
 
   public registerBadgeAdornment(adornment: SchedulerBadgeAdornment) {
-    this.badgeAdornmentList.update((list) => [...list, adornment]);
+    this.badgeAdornmentRegistry.register(adornment);
   }
 
   public registerToolbarAction(action: SchedulerToolbarAction) {
-    this.toolbarActionList.update((list) => [...list, action]);
+    this.toolbarActionRegistry.register(action);
   }
 
   /**

@@ -39,6 +39,13 @@ const parsePattern = (pattern: string): PatternToken[] => {
   return tokens;
 };
 
+/** Whether the pattern has slots and every one of them is a digit slot - literals are allowed. */
+export const isDigitOnlyPattern = (pattern: string) => {
+  const slots = parsePattern(pattern).filter((token) => token.kind === 'slot');
+
+  return slots.length > 0 && slots.every((token) => token.slotClass === 'digit');
+};
+
 export type PatternMaskOptions = {
   /** Renders unfilled slots with this character in the focused-state guide display. */
   placeholderChar?: string | null;

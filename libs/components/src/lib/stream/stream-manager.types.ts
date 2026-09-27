@@ -1,5 +1,6 @@
 import { InjectionToken, Signal, Type } from '@angular/core';
 import { StreamPipChromeConfig } from './pip/pip-chrome.config';
+import { StreamPlayer } from './stream-player';
 
 /**
  * Unique id for a stream player entry.
@@ -59,6 +60,9 @@ export type StreamPlayerEntry = {
 
   /** Reactive thumbnail URL from the player, forwarded to PIP entries. */
   thumbnail?: Signal<string | null>;
+
+  /** The player instance, so every slot bound to this id can read its state and control it. */
+  player?: StreamPlayer;
 };
 
 export type StreamPipEntry = {

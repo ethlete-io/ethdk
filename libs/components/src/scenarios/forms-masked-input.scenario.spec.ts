@@ -153,6 +153,26 @@ class PinComponent {
 })
 class StrayMaskComponent {}
 
+@Component({
+  selector: 'et-scenario-keyboard-hints',
+  imports: [INPUT_IMPORTS, MASKED_INPUT_IMPORTS],
+  template: `
+    <et-input [etInputMask]="codeMask()" class="code" aria-label="Code" />
+    <input
+      [etInputMask]="codeMask()"
+      class="consumer"
+      aria-label="Consumer"
+      etInput
+      inputmode="decimal"
+      autocorrect="on"
+      spellcheck="true"
+    />
+  `,
+})
+class KeyboardHintsComponent {
+  codeMask = signal<string | null>('00-00-0000');
+}
+
 describe('forms masked-input scenarios', () => {
   const scenario = useScenario({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
 
@@ -376,5 +396,61 @@ describe('forms masked-input scenarios', () => {
     const context = s.errors.splice(index, 1)[0]?.error as { element?: HTMLElement } | undefined;
 
     expect(context?.element).toBe(document.querySelector('.stray'));
+  });
+
+  it('turns off autocorrect and asks for a numeric keyboard while a digit-only mask is attached', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(KeyboardHintsComponent);
+    const page = fixture.componentInstance;
+
+    settle(s);
+
+    const input = field('.code');
+    const hints = () => ({
+      autocorrect: input.getAttribute('autocorrect'),
+      autocapitalize: input.getAttribute('autocapitalize'),
+      spellcheck: input.getAttribute('spellcheck'),
+      inputmode: input.getAttribute('inputmode'),
+    });
+
+    expect(hints()).toEqual({ autocorrect: 'off', autocapitalize: 'off', spellcheck: 'false', inputmode: 'numeric' });
+
+    page.codeMask.set('aaa-000');
+    settle(s);
+
+    expect(hints()).toEqual({ autocorrect: 'off', autocapitalize: 'off', spellcheck: 'false', inputmode: null });
+
+    page.codeMask.set(null);
+    settle(s);
+
+    expect(hints()).toEqual({ autocorrect: null, autocapitalize: null, spellcheck: null, inputmode: null });
+
+    page.codeMask.set('000');
+    settle(s);
+
+    expect(hints().inputmode).toBe('numeric');
+  });
+
+  it('keeps keyboard hints the consumer set on the native input', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(KeyboardHintsComponent);
+    const page = fixture.componentInstance;
+
+    settle(s);
+
+    const input = field('.consumer');
+
+    expect(input.getAttribute('inputmode')).toBe('decimal');
+    expect(input.getAttribute('autocorrect')).toBe('on');
+    expect(input.getAttribute('spellcheck')).toBe('true');
+    expect(input.getAttribute('autocapitalize')).toBe('off');
+
+    page.codeMask.set(null);
+    settle(s);
+
+    expect(input.getAttribute('inputmode')).toBe('decimal');
+    expect(input.getAttribute('autocorrect')).toBe('on');
+    expect(input.getAttribute('spellcheck')).toBe('true');
+    expect(input.getAttribute('autocapitalize')).toBeNull();
   });
 });

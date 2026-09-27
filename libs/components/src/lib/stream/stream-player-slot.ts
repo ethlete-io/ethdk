@@ -27,7 +27,12 @@ import { STREAM_ERROR_CODES } from './stream-errors';
 import { injectStreamManager } from './stream-manager';
 import { StreamPlayerId } from './stream-manager.types';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from './stream-player';
-import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerState } from './stream.types';
+import {
+  DEFAULT_STREAM_PLAYER_STATE,
+  NO_STREAM_PLAYER_CAPABILITIES,
+  StreamPlayerCapabilities,
+  StreamPlayerState,
+} from './stream.types';
 
 export type StreamPlayerSlotOptions = {
   /** Reactive player id derived from platform-specific params (e.g. `computed(() => \`youtube-\${params.videoId()}\`)`). */
@@ -51,6 +56,17 @@ export type StreamPlayerSlotOptions = {
 export type StreamPlayerSlotHandle = {
   currentPlayerIdSignal: WritableSignal<StreamPlayerId | null>;
   currentState: Signal<StreamPlayerState>;
+  /** What the slot's player supports. All `false` while the slot has no player yet. */
+  capabilities: Signal<StreamPlayerCapabilities>;
+  /**
+   * Playback controls for the slot's player. Each returns `true` if the command was sent, and `false` if
+   * the slot has no ready player or the player lacks the matching capability.
+   */
+  play(): boolean;
+  pause(): boolean;
+  mute(): boolean;
+  unmute(): boolean;
+  seek(seconds: number): boolean;
   pipActivate(onBack?: () => void): void;
   pipDeactivate(): void;
 };
@@ -70,6 +86,7 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
   const currentPlayerIdSignal = signal<StreamPlayerId | null>(null);
   const currentPlayer = signal<StreamPlayer | null>(null);
   const currentState = computed(() => currentPlayer()?.state() ?? DEFAULT_STREAM_PLAYER_STATE);
+  const capabilities = computed(() => currentPlayer()?.CAPABILITIES ?? NO_STREAM_PLAYER_CAPABILITIES);
   let consentComponentRef: ComponentRef<unknown> | null = null;
   let pipPlaceholderComponentRef: ComponentRef<unknown> | null = null;
   let loadingComponentRef: ComponentRef<unknown> | null = null;
@@ -122,6 +139,7 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
       id: currentPlayerId,
       element: playerElement,
       thumbnail: player.thumbnail,
+      player,
       onDestroy: () => {
         appRef.detachView(componentRef.hostView);
         componentRef.destroy();
@@ -264,7 +282,10 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
     const currentPlayerId = options.playerId();
     currentPlayerIdSignal.set(currentPlayerId);
 
-    if (streamManager.getPlayerElement(currentPlayerId)) {
+    const existingPlayer = streamManager.getPlayerEntry(currentPlayerId);
+
+    if (existingPlayer) {
+      currentPlayer.set(existingPlayer.player ?? null);
       streamManager.registerSlot({
         playerId: currentPlayerId,
         priority: options.streamSlotPriority(),
@@ -353,8 +374,35 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
     }
   };
 
+  const control = (capability: keyof StreamPlayerCapabilities, command: (player: StreamPlayer) => void) => {
+    const player = currentPlayer();
+
+    if (!player?.CAPABILITIES[capability] || !player.state().isReady) return false;
+
+    command(player);
+
+    return true;
+  };
+
+  const play = () => control('canPlay', (player) => player.play());
+  const pause = () => control('canPause', (player) => player.pause());
+  const mute = () => control('canMute', (player) => player.mute());
+  const unmute = () => control('canMute', (player) => player.unmute());
+  const seek = (seconds: number) => control('canSeek', (player) => player.seek(seconds));
+
   afterNextRender(() => init());
   destroyRef.onDestroy(() => destroy());
 
-  return { currentPlayerIdSignal, currentState, pipActivate, pipDeactivate };
+  return {
+    currentPlayerIdSignal,
+    currentState,
+    capabilities,
+    play,
+    pause,
+    mute,
+    unmute,
+    seek,
+    pipActivate,
+    pipDeactivate,
+  };
 };
