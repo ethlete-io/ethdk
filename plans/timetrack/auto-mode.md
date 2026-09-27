@@ -1,6 +1,6 @@
 # Auto mode and the approval queue
 
-Status: planned, not started (2026-09-27).
+Status: slice 1 in progress (2026-09-28).
 
 ## Goal
 
