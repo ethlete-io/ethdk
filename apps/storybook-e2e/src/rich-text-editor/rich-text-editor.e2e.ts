@@ -310,7 +310,7 @@ const writeHtmlToClipboard = (page: Page, html: string, text: string) =>
           'text/plain': new Blob([plain], { type: 'text/plain' }),
         }),
       ]),
-    [html, text],
+    [html, text] as [string, string],
   );
 
 const rangeOf = (content: Locator, text: string, select: boolean) =>

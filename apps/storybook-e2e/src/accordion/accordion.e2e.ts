@@ -182,11 +182,17 @@ const chevronRotation = (trigger: Locator) =>
 
 const panelHeight = async (panel: Locator) => (await boxOf(panel)).height;
 
+declare global {
+  interface Window {
+    find(search: string): boolean;
+  }
+}
+
 const findInPage = (page: Page, text: string) =>
   page.evaluate((query) => {
     window.getSelection()?.removeAllRanges();
 
-    return (window as Window & { find: (q: string) => boolean }).find(query);
+    return window.find(query);
   }, text);
 
 async function addButtonToPanel(panel: Locator) {
