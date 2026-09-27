@@ -61,12 +61,17 @@ export const normalizeEthleteMedia = (media: EthleteMediaInput | null | undefine
   return src ? { defaultSrc: src } : null;
 };
 
+type NormalizeEthleteParticipant = {
+  (participant: EthleteParticipantInput): NormalizedMatchParticipant;
+  (participant: EthleteParticipantInput | null | undefined): NormalizedMatchParticipant | null;
+};
+
 /**
  * `EthleteParticipantInput` → {@link NormalizedMatchParticipant}. A player participant's `gamertag` is
  * the name people actually know them by, so it wins over the account's `name`; a team has no gamertag
  * and falls through to it.
  */
-export const normalizeEthleteParticipant = (
+export const normalizeEthleteParticipant = ((
   participant: EthleteParticipantInput | null | undefined,
 ): NormalizedMatchParticipant | null => {
   if (!participant) return null;
@@ -83,7 +88,7 @@ export const normalizeEthleteParticipant = (
     // The list views carry no seeding; a consumer with one fills it in after normalizing.
     seed: null,
   };
-};
+}) as NormalizeEthleteParticipant;
 
 /**
  * `EthleteMatchStatusInput` → the three states presentation turns on. `preparing` is "not started yet";

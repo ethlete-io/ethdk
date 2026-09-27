@@ -182,9 +182,9 @@ class OwnCardComponent {
 })
 class RosterComponent {
   seeded: NormalizedMatchParticipant = {
-    ...(normalizeEthleteParticipant(
+    ...normalizeEthleteParticipant(
       team('team-a', { gamertag: 'ace', emblem: { original: null, path: '/media/team-a.png' } }),
-    ) as NormalizedMatchParticipant),
+    ),
     seed: 3,
     subtitle: 'Club A',
   };
