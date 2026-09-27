@@ -351,6 +351,29 @@ test.describe('breadcrumb / resize', () => {
     await expect(crumbs(root)).toHaveCount(5);
     await expect(root.getByRole('button', { name: OVERFLOW_LABEL })).toHaveCount(0);
   });
+
+  test('a focused middle crumb that collapses away hands focus to the overflow trigger', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const { height } = viewportOf(page);
+
+    await root.getByRole('link', { name: 'Competitions' }).focus();
+    await page.setViewportSize({ width: 360, height });
+
+    await expect(breadcrumb(root)).toHaveAttribute('data-collapsed', '');
+    await expect(root.getByRole('button', { name: OVERFLOW_LABEL })).toBeFocused();
+  });
+
+  test('a focused crumb that stays visible keeps focus when the trail collapses', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const { height } = viewportOf(page);
+    const home = root.getByRole('link', { name: 'Home' });
+
+    await home.focus();
+    await page.setViewportSize({ width: 360, height });
+
+    await expect(breadcrumb(root)).toHaveAttribute('data-collapsed', '');
+    await expect(home).toBeFocused();
+  });
 });
 
 test.describe('breadcrumb / touch', () => {
