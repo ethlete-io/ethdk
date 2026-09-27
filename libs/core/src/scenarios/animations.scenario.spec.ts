@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { of, startWith, switchMap } from 'rxjs';
 import {
   ANIMATABLE_TOKEN,
+  AnimatedLifecycleDirective,
   AnimatableDirective,
   AnimationEndEvent,
   createFlipAnimation,
@@ -66,6 +67,15 @@ class HeaderComponent implements AfterViewInit {
   expand() {
     nextFrame(() => this.isExpanded.set(true));
   }
+}
+
+@Component({
+  selector: 'et-scenario-lifecycle-host',
+  template: '',
+  hostDirectives: [AnimatedLifecycleDirective],
+})
+class LifecycleHostComponent {
+  lifecycle = inject(AnimatedLifecycleDirective);
 }
 
 const fire = (element: Element, type: string) => element.dispatchEvent(new Event(type));
@@ -181,6 +191,22 @@ describe('animation scenarios', () => {
 
     s.frame();
     expect(header.isExpanded()).toBe(true);
+
+    fixture.destroy();
+  });
+
+  it('cancels a pending nextFrame when the lifecycle leaving through it is destroyed', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(LifecycleHostComponent);
+
+    s.flush();
+    fixture.componentInstance.lifecycle.enter();
+    s.frame(4);
+    s.flush();
+    expect(fixture.componentInstance.lifecycle.state$.value).toBe('entered');
+
+    fixture.componentInstance.lifecycle.leave();
+    s.frame();
 
     fixture.destroy();
   });

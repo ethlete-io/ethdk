@@ -1,22 +1,25 @@
 import { Observable } from 'rxjs';
 
+/** Runs `cb` two frames from now. Returns a function that cancels it if it has not run yet. */
 export const nextFrame = (cb: () => void) => {
   if (typeof requestAnimationFrame === 'undefined') {
-    return;
+    return () => undefined;
   }
 
-  requestAnimationFrame(() => {
-    requestAnimationFrame(cb);
+  let id = requestAnimationFrame(() => {
+    id = requestAnimationFrame(cb);
   });
+
+  return () => cancelAnimationFrame(id);
 };
 
 export const fromNextFrame = () => {
-  return new Observable<void>((observer) => {
+  return new Observable<void>((observer) =>
     nextFrame(() => {
       observer.next();
       observer.complete();
-    });
-  });
+    }),
+  );
 };
 
 export const forceReflow = (element?: HTMLElement) => {

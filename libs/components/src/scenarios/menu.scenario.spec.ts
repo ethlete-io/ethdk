@@ -460,4 +460,13 @@ describe('menu scenarios', () => {
       ]),
     );
   });
+
+  it('leaves no pending frame when the page is destroyed with the menu open', () => {
+    const s = scenario();
+    const fixture = openFileMenu(s);
+
+    expect(document.querySelector('.et-menu-overlay-pane')).not.toBeNull();
+
+    fixture.destroy();
+  });
 });
