@@ -31,8 +31,10 @@ export type FakeBroadcastChannelHandle = {
 };
 
 // Captured at import, before a spec can call `vi.useFakeTimers()`: delivery must not wait on a faked clock.
-const scheduleTask: (callback: () => void) => void =
-  typeof setImmediate === 'function' ? setImmediate.bind(globalThis) : setTimeout.bind(globalThis);
+const nodeSetImmediate = (globalThis as { setImmediate?: (callback: () => void) => unknown }).setImmediate;
+const scheduleTask: (callback: () => void) => void = nodeSetImmediate
+  ? nodeSetImmediate.bind(globalThis)
+  : setTimeout.bind(globalThis);
 
 type FakeChannelInstance = {
   name: string;
