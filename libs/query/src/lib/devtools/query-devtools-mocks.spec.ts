@@ -87,6 +87,7 @@ describe('query devtools mocks', () => {
       expect(matchesQueryDevtoolsMockPattern('/posts/:id', '/users/12')).toBe(false);
       expect(matchesQueryDevtoolsMockPattern('/posts/:id', '/posts/12/comments')).toBe(false);
       expect(matchesQueryDevtoolsMockPattern('/posts/:id', '/posts')).toBe(false);
+      expect(matchesQueryDevtoolsMockPattern('/posts/:id', '/users/posts/12')).toBe(false);
     });
 
     it('should require every query parameter it declares, and ignore the rest', () => {
@@ -358,7 +359,7 @@ describe('query devtools mocks', () => {
       httpTesting.expectOne('https://api.example.com/posts/12').flush({ title: 'real' });
     });
 
-    it('should serve a client whose base url has a path', () => {
+    it('should serve a client whose base url has a path, from its very first request', () => {
       const versioned = createQueryClient({ baseUrl: 'https://api.example.com/v1', name: 'mock-versioned' });
       arm({ clientName: 'mock-versioned' });
 
@@ -382,10 +383,10 @@ describe('query devtools mocks', () => {
 
       expect(again.response()).toEqual({ title: 'designed' });
 
-      makeVersionedQuery('/admin/posts/12');
+      makeVersionedQuery('/users/posts/12');
       vi.advanceTimersByTime(0);
 
-      httpTesting.expectOne('https://api.example.com/v1/admin/posts/12').flush({ title: 'real' });
+      httpTesting.expectOne('https://api.example.com/v1/users/posts/12').flush({ title: 'real' });
     });
 
     it('should stop serving everything at once', () => {

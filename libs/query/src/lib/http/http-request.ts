@@ -84,6 +84,9 @@ export type CreateHttpRequestOptions<TArgs extends QueryArgs> = {
   /** Display name of the owning query client. Scopes devtools fault injection, which is armed per client. */
   clientName?: string;
 
+  /** Base URL of the owning query client, so a devtools mock pattern is matched against the route. */
+  clientBaseUrl?: string;
+
   /**
    * Headers configured on the query client, applied to every request it makes. Per-request
    * `args.headers` are merged on top and win per header name.
@@ -430,6 +433,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
   const sendOrMock = (headers: HttpHeaders | undefined) => {
     const mock = resolveQueryDevtoolsMock({
       clientName: options.clientName ?? '',
+      baseUrl: options.clientBaseUrl ?? '',
       method: options.method,
       url: options.fullPath,
     });

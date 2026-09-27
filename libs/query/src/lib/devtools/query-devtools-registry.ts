@@ -45,11 +45,7 @@ import {
 } from './query-devtools-override-persistence';
 import { createQueryDevtoolsOverrides } from './query-devtools-overrides';
 import { markQueryDevtoolsAppSettled } from './query-devtools-ui';
-import {
-  initQueryDevtoolsMocks,
-  noteQueryDevtoolsClientBaseUrl,
-  resolveQueryDevtoolsMockForAttempt,
-} from './query-devtools-mocks';
+import { initQueryDevtoolsMocks, resolveQueryDevtoolsMockForAttempt } from './query-devtools-mocks';
 import { QueryDevtoolsSchemaLoaders, setQueryDevtoolsSchemaLoader } from './query-devtools-schema';
 import { initQueryDevtoolsSettings } from './query-devtools-settings';
 import { createQueryDevtoolsStats, setQueryDevtoolsResponseHistory } from './query-devtools-stats';
@@ -170,9 +166,6 @@ const registerEntry = (registration: QueryDevtoolsRegistration): (() => void) =>
   }
 
   if (registration.clientRef) meta.clientName = getQueryClientName(registration.clientRef);
-  if (meta.clientName && meta.clientBaseUrl !== undefined) {
-    noteQueryDevtoolsClientBaseUrl(meta.clientName, meta.clientBaseUrl);
-  }
 
   if (registration.authProviderRef) {
     meta.isSecure = true;

@@ -342,8 +342,11 @@ export type QueryDevtoolsResolvedFault = {
   status: number | null;
 };
 
-/** What a mock resolver matches against - the same three things a fault resolver sees. */
-export type QueryDevtoolsMockTarget = QueryDevtoolsFaultTarget;
+/** What a mock resolver matches against - what a fault resolver sees, plus the client's base URL. */
+export type QueryDevtoolsMockTarget = QueryDevtoolsFaultTarget & {
+  /** Base URL of the owning query client; the pattern is matched against the path after it. */
+  baseUrl: string;
+};
 
 /** The response the devtools want served instead of one upcoming attempt. */
 export type QueryDevtoolsResolvedMock = {

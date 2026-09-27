@@ -885,14 +885,14 @@ That is what makes it usable before the endpoint exists. **New mock** takes a cl
 pattern, the query parameters that must be present, a status, a latency and a JSON body - none of it
 checked against the registry, because a route no query has ever called is the point.
 
-| Field       | Matched                                                                                                                                   |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| **Client**  | by name, the same identity faults use                                                                                                     |
-| **Method**  | exactly                                                                                                                                   |
-| **Path**    | segment by segment; `:name` matches any one segment, so `/posts/:id/comments` answers the route rather than one URL                       |
-| **Query**   | every parameter you name has to be on the request; anything else it asks for is ignored. Empty answers whatever the query string is       |
-| **Status**  | `400` and above arrive as a real `HttpErrorResponse`, body and all - so error handling sees a designed failure the way it sees a real one |
-| **Latency** | ms before the mocked response settles, so a mocked route still has a loading state to render                                              |
+| Field       | Matched                                                                                                                                                                      |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Client**  | by name, the same identity faults use                                                                                                                                        |
+| **Method**  | exactly                                                                                                                                                                      |
+| **Path**    | segment by segment, relative to the client's `baseUrl` (base path included); `:name` matches any one segment, so `/posts/:id/comments` answers the route rather than one URL |
+| **Query**   | every parameter you name has to be on the request; anything else it asks for is ignored. Empty answers whatever the query string is                                          |
+| **Status**  | `400` and above arrive as a real `HttpErrorResponse`, body and all - so error handling sees a designed failure the way it sees a real one                                    |
+| **Latency** | ms before the mocked response settles, so a mocked route still has a loading state to render                                                                                 |
 
 When two armed mocks could both answer, **the one naming more query parameters wins** - so a special case
 armed on top of a general mock is what answers, rather than whichever was designed first.
