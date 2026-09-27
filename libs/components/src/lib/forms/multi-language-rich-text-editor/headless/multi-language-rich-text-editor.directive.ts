@@ -7,12 +7,14 @@ import {
   MultiLanguageRichTextEditorValue,
 } from '../multi-language-rich-text-editor-config';
 import { MULTI_LANGUAGE_RICH_TEXT_EDITOR_ERROR_CODES } from '../multi-language-rich-text-editor-errors';
+import { injectReportError } from '../../../internals/report-error';
 import { controlTouches } from '../../../internals/touch-output';
 
 @Directive({
   selector: '[etMultiLanguageRichTextEditor]',
 })
 export class MultiLanguageRichTextEditorDirective implements FormValueControl<MultiLanguageRichTextEditorValue> {
+  private reportError = injectReportError();
   public value = model<MultiLanguageRichTextEditorValue>({});
   public touched = model(false);
   public disabled = input(false, { transform: booleanAttribute });
@@ -25,6 +27,9 @@ export class MultiLanguageRichTextEditorDirective implements FormValueControl<Mu
   /** The languages to offer, in switcher order. Consumer-provided - no languages are hard-wired. */
   public languages = input.required<readonly MultiLanguageRichTextEditorLanguage[]>();
   public touch = outputFromObservable(controlTouches(this.touched));
+
+  /** The problem with `languages` - none given, or a duplicate code - or `null`. The editor renders nothing while set. */
+  public languagesError = computed(() => findLanguagesError(this.languages()));
 
   /** The language currently being edited. Kept valid across `languages` changing: if the active code
    *  is removed, it falls back to the first remaining language. */
@@ -49,9 +54,11 @@ export class MultiLanguageRichTextEditorDirective implements FormValueControl<Mu
   public hasValue = computed(() => Object.values(this.value()).some((markdown) => markdown.trim().length > 0));
 
   constructor() {
-    if (ngDevMode) {
-      effect(() => this.assertLanguages(this.languages()));
-    }
+    effect(() => {
+      const error = this.languagesError();
+
+      if (error) this.reportError(error);
+    });
   }
 
   /** Whether the given language's stored Markdown is non-empty (trimmed). */
@@ -66,26 +73,28 @@ export class MultiLanguageRichTextEditorDirective implements FormValueControl<Mu
 
     this.value.update((record) => (record[code] === markdown ? record : { ...record, [code]: markdown }));
   }
+}
 
-  private assertLanguages(languages: readonly MultiLanguageRichTextEditorLanguage[]) {
-    if (languages.length === 0) {
-      throw new RuntimeError(
-        MULTI_LANGUAGE_RICH_TEXT_EDITOR_ERROR_CODES.NO_LANGUAGES_CONFIGURED,
-        '[etMultiLanguageRichTextEditor] requires at least one language in its `languages` input.',
+const findLanguagesError = (languages: readonly MultiLanguageRichTextEditorLanguage[]) => {
+  if (languages.length === 0) {
+    return new RuntimeError(
+      MULTI_LANGUAGE_RICH_TEXT_EDITOR_ERROR_CODES.NO_LANGUAGES_CONFIGURED,
+      '[etMultiLanguageRichTextEditor] requires at least one language in its `languages` input.',
+    );
+  }
+
+  const seen = new Set<string>();
+
+  for (const language of languages) {
+    if (seen.has(language.code)) {
+      return new RuntimeError(
+        MULTI_LANGUAGE_RICH_TEXT_EDITOR_ERROR_CODES.DUPLICATE_LANGUAGE_CODE,
+        `[etMultiLanguageRichTextEditor] has a duplicate language code "${language.code}". Codes must be unique.`,
       );
     }
 
-    const seen = new Set<string>();
-
-    for (const language of languages) {
-      if (seen.has(language.code)) {
-        throw new RuntimeError(
-          MULTI_LANGUAGE_RICH_TEXT_EDITOR_ERROR_CODES.DUPLICATE_LANGUAGE_CODE,
-          `[etMultiLanguageRichTextEditor] has a duplicate language code "${language.code}". Codes must be unique.`,
-        );
-      }
-
-      seen.add(language.code);
-    }
+    seen.add(language.code);
   }
-}
+
+  return null;
+};

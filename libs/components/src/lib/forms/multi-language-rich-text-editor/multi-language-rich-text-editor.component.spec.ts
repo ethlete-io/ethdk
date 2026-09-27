@@ -1,4 +1,5 @@
-import { Component, signal } from '@angular/core';
+import { Component, ErrorHandler, signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
 import { flushFrames, latestPane, textOf, tick } from '../../testing/driver-core';
 import { mountRichTextEditor, RichTextEditorDriver } from '../testing/rich-text-editor-driver';
@@ -148,17 +149,30 @@ describe('MultiLanguageRichTextEditorComponent', () => {
     expect(trigger().hasAttribute('disabled')).toBe(true);
   });
 
-  it('rejects an empty language list', () => {
-    expect(() => driver.host.languages.set([])).not.toThrow();
-    expect(() => tick()).toThrow(`ET${MULTI_LANGUAGE_RICH_TEXT_EDITOR_ERROR_CODES.NO_LANGUAGES_CONFIGURED}`);
+  it('reports an empty language list and renders no editor', () => {
+    const handleError = vi.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => undefined);
+
+    driver.host.languages.set([]);
+
+    expect(() => tick()).not.toThrow();
+    expect(String(handleError.mock.calls[0]?.[0])).toContain(
+      `ET${MULTI_LANGUAGE_RICH_TEXT_EDITOR_ERROR_CODES.NO_LANGUAGES_CONFIGURED}`,
+    );
+    expect(driver.fixture.nativeElement.querySelector('et-rich-text-editor')).toBeNull();
   });
 
-  it('rejects a duplicate language code', () => {
+  it('reports a duplicate language code and renders no editor', () => {
+    const handleError = vi.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => undefined);
+
     driver.host.languages.set([
       { code: 'en', label: 'English' },
       { code: 'en', label: 'English (US)' },
     ]);
 
-    expect(() => tick()).toThrow(`ET${MULTI_LANGUAGE_RICH_TEXT_EDITOR_ERROR_CODES.DUPLICATE_LANGUAGE_CODE}`);
+    expect(() => tick()).not.toThrow();
+    expect(String(handleError.mock.calls[0]?.[0])).toContain(
+      `ET${MULTI_LANGUAGE_RICH_TEXT_EDITOR_ERROR_CODES.DUPLICATE_LANGUAGE_CODE}`,
+    );
+    expect(driver.fixture.nativeElement.querySelector('et-rich-text-editor')).toBeNull();
   });
 });

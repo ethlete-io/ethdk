@@ -302,24 +302,30 @@ describe('forms multi-language rich-text-editor scenarios', () => {
     expect(s.errors).toEqual([]);
   });
 
-  it('rejects an empty language list and a duplicate language code', () => {
+  it('reports an empty language list and a duplicate language code and renders no editor', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(TranslatedArticleComponent);
+    const host = fixture.nativeElement as HTMLElement;
 
     s.flush();
 
-    expect(() => {
-      fixture.componentInstance.languages.set([]);
-      s.tick();
-    }).toThrow(`ET${MULTI_LANGUAGE_RICH_TEXT_EDITOR_ERROR_CODES.NO_LANGUAGES_CONFIGURED}`);
+    fixture.componentInstance.languages.set([]);
+    expect(() => fixture.detectChanges()).not.toThrow();
+    s.tick();
+    s.expectError(`ET${MULTI_LANGUAGE_RICH_TEXT_EDITOR_ERROR_CODES.NO_LANGUAGES_CONFIGURED}`);
+    expect(host.querySelector('et-rich-text-editor')).toBeNull();
 
-    expect(() => {
-      fixture.componentInstance.languages.set([...LANGUAGES, { code: 'de', label: 'German' }]);
-      s.tick();
-    }).toThrow(
+    fixture.componentInstance.languages.set([...LANGUAGES, { code: 'de', label: 'German' }]);
+    expect(() => fixture.detectChanges()).not.toThrow();
+    s.tick();
+    s.expectError(
       `ET${MULTI_LANGUAGE_RICH_TEXT_EDITOR_ERROR_CODES.DUPLICATE_LANGUAGE_CODE}: [etMultiLanguageRichTextEditor] has a duplicate language code "de"`,
     );
+    expect(host.querySelector('et-rich-text-editor')).toBeNull();
 
-    s.errors.length = 0;
+    fixture.componentInstance.languages.set(LANGUAGES);
+    s.tick();
+    expect(host.querySelector('et-rich-text-editor')).not.toBeNull();
+    s.flush();
   });
 });
