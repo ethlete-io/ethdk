@@ -1,5 +1,6 @@
 import { Locator, Page, expect, test } from '@playwright/test';
 import {
+  boxOf,
   countClicks,
   expectFocusVisible,
   expectTouchMode,
@@ -372,5 +373,96 @@ test.describe('match / touch', () => {
     await tap(side(root, 'home').locator('.et-match-participant-picture'));
 
     await expect(matchCard).toHaveJSProperty('__clicks', 1);
+  });
+});
+
+async function resizeCardContainer(root: Locator, widthPx: number): Promise<void> {
+  await card(root).evaluate((el, width) => {
+    (el as HTMLElement).style.setProperty('--et-match-card-min-inline-size', '0px');
+    (el.parentElement as HTMLElement).style.inlineSize = `${width}px`;
+  }, widthPx);
+}
+
+async function expectDenseRow(root: Locator): Promise<void> {
+  await expect(card(root).locator('.et-match-card-meta')).toHaveCSS('display', 'none');
+  await expect(card(root).locator('.et-match-card-versus')).toHaveCSS('display', 'none');
+  await expect(card(root).locator('.et-match-participant-emblem').first()).toHaveCSS('display', 'grid');
+}
+
+async function expectFeaturedCard(root: Locator): Promise<void> {
+  await expect(card(root).locator('.et-match-card-meta')).toHaveCSS('display', 'flex');
+  await expect(card(root).locator('.et-match-card-label')).toHaveCSS('display', 'block');
+  await expect(card(root).locator('.et-match-card-versus')).toHaveCSS('display', 'none');
+}
+
+async function expectSidesFacingEachOther(root: Locator): Promise<void> {
+  await expect(card(root).locator('.et-match-card-versus')).toHaveCSS('display', 'block');
+  await expect(card(root).locator('.et-match-card-sides')).toHaveCSS('grid-template-columns', /^\S+ \S+ \S+$/);
+}
+
+test.describe('match / container layouts', () => {
+  test('under size auto, the dense row turns into the featured card at 320px', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID, { args: { width: 319 } });
+
+    await expectDenseRow(root);
+
+    await resizeCardContainer(root, 320);
+
+    await expectFeaturedCard(root);
+  });
+
+  test('under size auto, the two sides face each other from 560px on', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID, { args: { width: 559 } });
+
+    await expectFeaturedCard(root);
+
+    await resizeCardContainer(root, 560);
+
+    await expectSidesFacingEachOther(root);
+  });
+
+  test('under size auto, a card narrower than 150px drops its emblems', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID, { args: { width: 220 } });
+
+    await resizeCardContainer(root, 149);
+
+    await expect(card(root).locator('.et-match-participant-emblem')).toHaveCount(2);
+    await expect(card(root).locator('.et-match-participant-emblem').first()).toHaveCSS('display', 'none');
+    await expect(card(root).locator('.et-match-participant-emblem').last()).toHaveCSS('display', 'none');
+  });
+
+  test('a pinned size ignores the width it is given', async ({ page }) => {
+    const compact = await openStory(page, DEFAULT_STORY_ID, { args: { width: 620, size: 'compact' } });
+
+    await expectDenseRow(compact);
+
+    const expanded = await openStory(page, DEFAULT_STORY_ID, { args: { width: 220, size: 'expanded' } });
+
+    await expectFeaturedCard(expanded);
+  });
+});
+
+test.describe('match / emblem fallback', () => {
+  test('an emblem that fails to load is replaced by the first letter of the name in the same frame', async ({
+    page,
+  }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const emblem = side(root, 'home').locator('.et-match-participant-emblem');
+
+    await expect(emblem.locator('et-picture')).toHaveAttribute('data-state', 'loaded');
+    const frame = await boxOf(emblem);
+
+    await emblem.locator('img').evaluate((img) => {
+      (img as HTMLImageElement).srcset = '/missing-emblem.png';
+    });
+
+    await expect(emblem.locator('et-picture')).toHaveAttribute('data-state', 'error');
+    await expect(emblem.locator('.et-match-participant-emblem-mark')).toHaveText('F');
+    await expect(emblem.locator('.et-match-participant-emblem-mark')).toHaveAttribute('aria-hidden', 'true');
+
+    const after = await boxOf(emblem);
+
+    expect(after.width).toBeCloseTo(frame.width, 0);
+    expect(after.height).toBeCloseTo(frame.height, 0);
   });
 });
