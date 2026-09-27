@@ -324,3 +324,107 @@ test.describe('phone-input / touch', () => {
     await expect(field).toHaveValue('123456789');
   });
 });
+
+interface ClearAnimation {
+  name: string;
+  duration: number;
+  easing: string;
+  fill: string;
+}
+
+async function recordClearAnimations(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const target = window as unknown as { __etClearAnimations: ClearAnimation[] };
+    target.__etClearAnimations = [];
+
+    document.addEventListener(
+      'animationstart',
+      (event) => {
+        const button = event.target as HTMLElement;
+
+        if (!button.classList.contains('et-input-clear')) {
+          return;
+        }
+
+        const animation = button
+          .getAnimations()
+          .find((running) => running instanceof CSSAnimation && running.animationName === event.animationName);
+        const style = getComputedStyle(button);
+
+        target.__etClearAnimations.push({
+          name: event.animationName,
+          duration: Number(animation?.effect?.getTiming().duration ?? 0),
+          easing: style.animationTimingFunction,
+          fill: style.animationFillMode,
+        });
+      },
+      true,
+    );
+  });
+}
+
+function recordedClearAnimations(page: Page): Promise<ClearAnimation[]> {
+  return page.evaluate(() => (window as unknown as { __etClearAnimations: ClearAnimation[] }).__etClearAnimations);
+}
+
+async function expectClearedAndFocused(root: Locator): Promise<void> {
+  await expect(root.locator('.et-input-clear')).toHaveCount(0);
+  await expect(numberField(root)).toHaveValue('');
+  await expect(numberField(root)).toBeFocused();
+  await expect(dialCode(root)).toHaveText('+33');
+  await expectFormValue(root, '');
+}
+
+const CLEAR_ENTER = { name: 'et-input-clear-in', duration: 150, easing: 'ease', fill: 'none' };
+const CLEAR_LEAVE = { name: 'et-input-clear-out', duration: 120, easing: 'ease', fill: 'forwards' };
+
+test.describe('phone-input / clear animation', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: the clear button is clicked');
+
+  test('the clear button fades in, and a click fades it out, empties the number and keeps the field focused', async ({
+    page,
+  }) => {
+    const root = await openStory(page, PREFILLED_STORY_ID);
+    await recordClearAnimations(page);
+
+    await numberField(root).click();
+    await expect(root.locator('.et-input-clear')).toBeVisible();
+    await expect.poll(() => recordedClearAnimations(page)).toEqual([CLEAR_ENTER]);
+
+    await root.locator('.et-input-clear').click();
+
+    await expect.poll(() => recordedClearAnimations(page)).toEqual([CLEAR_ENTER, CLEAR_LEAVE]);
+    await expectClearedAndFocused(root);
+  });
+
+  test('under reduced motion the clear button leaves without an animation', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    const root = await openStory(page, PREFILLED_STORY_ID);
+    await recordClearAnimations(page);
+
+    await numberField(root).click();
+    await expect(root.locator('.et-input-clear')).toBeVisible();
+
+    await root.locator('.et-input-clear').click();
+
+    await expectClearedAndFocused(root);
+    expect(await recordedClearAnimations(page)).toEqual([]);
+  });
+});
+
+test.describe('phone-input / clear animation on touch', () => {
+  test.skip(({ isMobile }) => !isMobile, 'touch-only: the clear button is tapped');
+
+  test('a tap on the clear button fades it out, empties the number and keeps the field focused', async ({ page }) => {
+    const root = await openStory(page, PREFILLED_STORY_ID);
+    await recordClearAnimations(page);
+
+    await tap(numberField(root));
+    await expect(root.locator('.et-input-clear')).toBeVisible();
+
+    await tap(root.locator('.et-input-clear'));
+
+    await expect.poll(() => recordedClearAnimations(page)).toEqual([CLEAR_ENTER, CLEAR_LEAVE]);
+    await expectClearedAndFocused(root);
+  });
+});
