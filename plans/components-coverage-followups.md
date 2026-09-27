@@ -7,11 +7,9 @@ and user calls the scenarios and E2E suites found but did not fix, and the E2E g
 
 ## Decided: not now
 
-The approved calls shipped on 2026-09-27. These items were decided against or deferred; reopen one only when a
-consumer needs it.
+The approved calls and the deferred stream slot controls and scheduler registry shipped on 2026-09-27. These items
+were decided against; reopen one only when a consumer needs it.
 
-- Deferred until a consumer needs it: a stream slot playback control; a scheduler register/filter/sort helper for a
-  custom feature or edit-surface host.
 - Kept as is: phone input groups by 3 for every country (no per-country format data); cascader leaf mode counts a
   node without `isLeaf` as a branch (documented); `cascaderFromQuery` infers `TValue` as `{}` when an unannotated
   `args` comes before `toNodes` (examples put `toNodes` first); table state saved before 53497453e loses numeric row
@@ -22,7 +20,9 @@ consumer needs it.
 
 The headless gaps were covered on 2026-09-27. One is left:
 
-- Masked input: dead keys and soft keyboards need a real device (`verify-on-apple-devices` skill).
+- Masked input: soft keyboard, paste and backspace passed on the iOS Simulator (iPhone 16, iOS 18.6). Dead keys and
+  IME composition need a hardware keyboard or a real device: the team Mac has no `ethlete-mac` SSH alias here, and
+  `apple-remote.sh` uses Linux-only `ip route` and `grep -oP`.
 
 ## Rules kept
 
