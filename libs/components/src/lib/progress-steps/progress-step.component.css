@@ -32,7 +32,7 @@
     &:not(:last-child)::after {
       content: '';
       position: absolute;
-      inset-block-start: calc(var(--et-progress-step-marker-size) / 2);
+      inset-block-start: calc(var(--et-progress-step-marker-size) / 2 - 1px);
       inset-inline-start: 50%;
       /* +gap: the connector spans from this marker's center to the next one's, and steps sit
          `--et-progress-steps-gap` apart - without it the line falls short by exactly that gap. */
