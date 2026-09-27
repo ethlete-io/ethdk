@@ -152,6 +152,14 @@ export class ColorInputDirective extends TextFieldControlDirective implements Fo
     this.pickerOpen.set(false);
   }
 
+  /**
+   * Commits a color from a custom surface, in any notation the color validators accept, as the
+   * control's normalized hex value. Returns `false`, leaving the value alone, when `color` does not parse.
+   */
+  public commitColor(color: string | null) {
+    return this.picker.commitColor(color);
+  }
+
   public togglePicker() {
     if (this.pickerOpen()) {
       this.closePicker();

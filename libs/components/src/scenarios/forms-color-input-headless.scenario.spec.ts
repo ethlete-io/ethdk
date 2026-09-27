@@ -113,6 +113,29 @@ class StrayAreaComponent {}
 })
 class StrayChannelComponent {}
 
+@Component({
+  selector: 'et-scenario-swatch-picker',
+  imports: [ColorInputDirective, ColorPickerTriggerDirective, ColorPickerSurfaceDirective],
+  template: `
+    <div [(value)]="color" [(pickerOpen)]="open" aria-label="Kit color" etColorInput>
+      <button class="swatch-trigger" etColorPickerTrigger>{{ color() ?? 'none' }}</button>
+      <ng-template etColorPickerSurface let-input let-close="close">
+        <button (click)="committed.set(input.commitColor('rgb(0 128 128)')); close()" class="swatch-teal" type="button">
+          Teal
+        </button>
+        <button (click)="committed.set(input.commitColor('not a color'))" class="swatch-broken" type="button">
+          Broken
+        </button>
+      </ng-template>
+    </div>
+  `,
+})
+class SwatchPickerComponent {
+  color = signal<string | null>('#ff0000');
+  open = signal(false);
+  committed = signal<boolean | null>(null);
+}
+
 const query = <E extends HTMLElement = HTMLElement>(selector: string, root: ParentNode = document) => {
   const element = root.querySelector<E>(selector);
 
@@ -193,6 +216,28 @@ describe('forms color input headless scenarios', () => {
     app.colorInput().closePicker();
     settle(s);
     expect(document.querySelector('.readout')).toBeNull();
+  });
+
+  it('commits a color from a custom surface as a normalized hex value', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(SwatchPickerComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const app = fixture.componentInstance;
+
+    settle(s);
+    query('.swatch-trigger', host).click();
+    settle(s);
+
+    query('.swatch-broken').click();
+    settle(s);
+    expect(app.committed()).toBe(false);
+    expect(app.color()).toBe('#ff0000');
+
+    query('.swatch-teal').click();
+    settle(s);
+    expect(app.committed()).toBe(true);
+    expect(app.color()).toBe('#008080');
+    expect(app.open()).toBe(false);
   });
 
   it('opens the styled panel read-only from a readonly headless control', () => {

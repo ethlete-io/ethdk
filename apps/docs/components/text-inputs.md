@@ -284,6 +284,22 @@ notation the validators accept - `#f00`, `#rrggbbaa`, `rgb()`, `rgba()`, `hsl()`
 `hsla()`. A value that arrived from an API in one of those forms displays correctly
 and is not rewritten until the user picks something.
 
+### A custom surface
+
+A headless `[etColorInput]` renders whatever `<ng-template etColorPickerSurface>` it holds. The
+template's implicit context is the color input, so a surface of your own commits through
+`commitColor()` - it takes any notation the validators accept, emits the same normalized hex as
+the built-in panel, and returns `false` without touching the value when the color does not parse:
+
+```html
+<div [(value)]="color" aria-label="Kit color" etColorInput>
+  <button etColorPickerTrigger>{{ color() }}</button>
+  <ng-template etColorPickerSurface let-input let-close="close">
+    <button (click)="input.commitColor('rgb(0 128 128)'); close()" type="button">Teal</button>
+  </ng-template>
+</div>
+```
+
 ### Design tokens
 
 | Token                            | Default                                                 |
