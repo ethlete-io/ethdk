@@ -672,11 +672,15 @@ test.describe('stream / pip keyboard', () => {
   test('Enter on the title bar brings a collapsed PiP window back into view', async ({ page }) => {
     const { pipWindow, titleBar } = await openPipAndFocusTitleBar(page);
     const viewport = viewportOf(page);
-    const bar = await boxOf(titleBar);
 
-    await page.mouse.move(bar.x + 8, bar.y + bar.height / 2);
+    await expect(titleBar).toHaveCSS('opacity', '1');
+
+    const spacer = await boxOf(titleBar.locator('.et-pip-window__title-bar-spacer'));
+    const gripY = spacer.y + spacer.height / 2;
+
+    await page.mouse.move(spacer.x + 8, gripY);
     await page.mouse.down();
-    await page.mouse.move(viewport.width - 2, bar.y + bar.height / 2, { steps: 20 });
+    await page.mouse.move(viewport.width - 2, gripY, { steps: 20 });
     await page.mouse.up();
     await expect(pipWindow).toHaveClass(/et-pip-window--collapsed/);
 
