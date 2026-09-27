@@ -1,5 +1,6 @@
 import { Component, inject, InjectionToken, OnInit, signal, WritableSignal } from '@angular/core';
 import { FormControl } from '@angular/forms';
+import { Subject } from 'rxjs';
 import { queryComputed, QueryField, QueryForm, QueryStateType } from '../index';
 import { describe, expect, it } from 'vitest';
 import {
@@ -329,6 +330,40 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy consumer patterns on the %s client', 
       expect(legacy.liveQueries()).toEqual([second.instance.query()]);
 
       second.destroy();
+      c.destroy();
+      legacy.destroy();
+    });
+  });
+
+  describe('polling stopped while paused', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('polls again on the next poll() call', () => {
+      const s = scenario();
+      const legacy = createLegacyClient(s, kind);
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
+
+      const c = s.consumer();
+      const getUser = legacy.get<GetUserArgs>((p) => `/users/${p.id}`);
+      const query = c.run(() => getUser.prepare({ pathParams: { id: '1' }, injector: c.injector }).execute());
+      const stopPolling$ = new Subject<void>();
+
+      s.tick(10);
+      query.poll({ interval: 1_000, takeUntil: stopPolling$ });
+      s.tick(1_000);
+
+      query.pausePolling();
+      query.stopPolling();
+
+      const beforePoll = s.api.requestCount('GET', '/users/1');
+
+      query.poll({ interval: 1_000, takeUntil: stopPolling$ });
+      s.tick(2_000);
+
+      expect(query.isPolling).toBe(true);
+      expect(s.api.requestCount('GET', '/users/1')).toBe(beforePoll + 2);
+
+      query.stopPolling();
       c.destroy();
       legacy.destroy();
     });

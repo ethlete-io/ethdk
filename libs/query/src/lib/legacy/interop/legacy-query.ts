@@ -448,6 +448,7 @@ export class LegacyQuery<
     this._pollingSubscription?.unsubscribe();
     this._pollingSubscription = null;
     this._currentPollConfig = null;
+    this._isPollingPaused = false;
 
     return this;
   }
