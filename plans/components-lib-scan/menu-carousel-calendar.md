@@ -1,0 +1,37 @@
+# menu, carousel, calendar scan - open findings
+
+Scan of `libs/components/src/lib/menu/`, `libs/components/src/lib/carousel/`, `libs/components/src/lib/calendar/` from 2026-09-28. 0 High, 8 Medium, 11 Low, 3 Spec (verified 2026-09-28). No security findings. Skipped: stories, specs (read only for coverage), `testing/` drivers, `scrollable/` internals the carousel calls into.
+
+## menu
+
+- Medium: a multiple selection group rebuilds `value` from the items registered right now (`menu/headless/menu-selection-group.directive.ts:86-92`). With `etMenuSearch` filtering the `@for`, one pick drops every checked value whose row is filtered out. Toggle the picked value in the current array instead of re-deriving it from `items()`. S Verified.
+- Medium: `ArrowRight` opens and `ArrowLeft` closes a submenu whatever the direction, and `resolvedPlacement` always says `right-start` (`menu/headless/menu.directive.ts:386-403,863,866`). In RTL the chevron flips (`menu-item-submenu-icon.component.css:14`), but the submenu opens to the right and the keys point the wrong way. Swap keys and placement when the host resolves to `dir=rtl`. M Verified.
+- Low: when `autoFocus` is off and the menu is open, `ArrowDown`/`ArrowUp` on the trigger do nothing (`menu/headless/menu-trigger.directive.ts:87-94`), and the document listener handles only Escape. A keyboard user cannot get into the panel. Move focus into the panel on arrow keys while open. S
+- Low: typeahead always matches from the first enabled item (`menu/headless/menu.directive.ts:466-467`). Pressing the same letter again does not cycle to the next item with that letter. S
+- Low: hardcoded shadow colour `rgb(0 0 0 / 0.16)` as the primary value (`menu/menu.component.css:124`). Take it from a token. S
+- Low: comments outside the allowlist: restating the code at `menu/headless/menu.directive.ts:609-610,706-707`; JSDoc with rationale on `@internal` `MenuSearchStylesComponent` (`menu/menu-search-styles.component.ts:3-10`). S
+
+## carousel
+
+- Medium: `requestedDomIndex` clears only on a settle that rests on the requested child, or on `pointerdown` (`carousel/headless/carousel.directive.ts:361-369`). With `slideAlign="center"` and no loop, `goTo(0)` clamps the scroll at 0, the nearest resting child is slide 1, and the request never clears. `activeIndex`, dots and `data-active` then freeze while the reader scrolls with wheel or keyboard. Clear the request on every settle, or compare against the clamped target offset. M Verified. It sticks only when slides are narrower than about half the viewport; wider slides leave slide 0 nearest.
+- Medium: every `<et-carousel>` mounts `CarouselAutoplayStylesComponent`, also with `autoplay` off (`carousel/headless/carousel-autoplay.directive.ts:193-198`). The host directive's effect runs before the component's `enabledOverride` effect (`carousel/carousel.component.ts:190`), so on the first run `isEnabled()` reads the default `enabled = true`. Set the override before the directive's first effect run, for example from the component constructor. S Verified.
+- Medium: autoplay pauses on `mouseenter`/`mouseleave` (`carousel/headless/carousel-autoplay.directive.ts:63-64`). On touch devices a tap fires a compatibility `mouseenter` and no `mouseleave`, so one tap pauses autoplay with reason `'hover'` until the user taps somewhere else. Use `pointerenter`/`pointerleave` and ignore `pointerType === 'touch'`, like `MenuItemDirective` does. S Verified.
+- Medium: seamless looping and slide progress compare `offsetLeft` with `scrollLeft` (`carousel/headless/internals/carousel-loop.ts:38,111-121`, `carousel/headless/internals/carousel-slide-progress.ts:67,80`). In RTL `scrollLeft` is 0 or negative and `trackLength` comes out negative, so it falls to 0. The track starts parked on a lead clone and never crosses the seam. Normalise offsets for RTL, or turn off seamless looping there. M Verified.
+- Low: the play toggle changes its `aria-label` (play/pause) and also sets `aria-pressed` (`carousel/headless/carousel-controls.directive.ts:94,109-115`). A screen reader announces "Pause automatic slide show, pressed", which reads as the opposite state. Keep one of the two. S
+- Low: under reduced motion (or off-screen) the toggle offers "Start" but `start()` changes nothing, because `isStopped` is already false (`carousel/headless/carousel-autoplay.directive.ts:253-259`). The control looks broken. Hide the toggle or disable it when the pause reason is `'reduced-motion'`. S
+- Low: `<et-carousel>` always attaches `CarouselAutoplayDirective`, so each instance runs a host IntersectionObserver and a document-visibility listener with autoplay off (`carousel/carousel.component.ts:91-94`, `carousel/headless/carousel-autoplay.directive.ts:103`). Create the intersection signal only when enabled. M
+- Low: public and `@internal` JSDoc well past the 1-2 sentence rule, with measurements and history (`carousel/headless/carousel.directive.ts:138-151`, `carousel/headless/carousel-autoplay.directive.ts:105-114,135-144`, `carousel/headless/internals/carousel-loop.ts:27-36,55-81`). The CSS carries essay comments with narration ("what this file used to be") at `carousel/carousel-transition-styles.component.css:1-60`, and template comments at `carousel/carousel.component.html:43-49,74-77`. Cut to the allowlist. M
+
+## calendar
+
+- Medium: arrow keys ignore reading direction (`calendar/headless/internals/calendar-keyboard.ts:19-22,44-47,70-73`). In RTL the grid is mirrored, so `ArrowRight` moves focus visually left. Swap left and right when the grid resolves to `dir=rtl`. S Verified.
+- Low: keyboard navigation does not respect `min`/`max` (`calendar/headless/calendar.directive.ts:691-708,815-829`). `PageUp`/`PageDown` and the arrows move the visible month past the limits while the previous and next buttons are disabled (`canGoPrev`/`canGoNext`). Clamp the target date to `[min, max]` before `moveFocus`. S Re-rated from Medium: the calendar guide documents that disabled days stay focusable, so only paging into whole months past the limits is inconsistent.
+- Medium: range strategies can return an end that is disabled or after `max`, and `commitSelection` stores it without a check (`calendar/headless/calendar-range-strategy.ts:90-94`, `calendar/headless/calendar.directive.ts:744-751`). `createFixedLengthRangeStrategy({ days: 7 })` picked 3 days before `max` gives a range that ends past `max`. Clamp or reject a resolved range outside the availability. S Verified.
+- Low: the default strategy previews a band from the hovered day to the start when you hover before the start (`calendar/headless/calendar-range-strategy.ts:114-123`), but a click there restarts the range at that day (`:104-105`). The preview promises a different result than the click gives. Make the two agree. S
+- Low: `today` is read once at construction (`calendar/headless/calendar.directive.ts:223`). A calendar left open past midnight marks the wrong day with `aria-current="date"` and uses the wrong fallback anchor. S
+
+## Spec gaps
+
+- Spec: no test for a multiple selection group under an active search filter (the value-loss case above). S
+- Spec: no calendar test for keyboard paging against `min`/`max`, and none for a range strategy result outside the availability. S
+- Spec: no carousel test for a `goTo` whose target the scroll cannot reach (`slideAlign="center"` at an edge without loop), and none for touch-tap autoplay pausing. M
