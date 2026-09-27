@@ -46,7 +46,8 @@ Open work, in this order.
    hides a missing `withArgs` until ET100 at runtime.
 3. **Done** in 163cd5074, fe5ad95b8: the `CLEAR_QUERY_ARGS` generator item.
 4. **Done** in dfd3a236d, b028cc01d: gaps 12, 15-18 documented. Gap 15 was wrong: route-scoped providers work.
-5. **Ask the user about gap 14** (by design, or new v3 features). Could be a project of its own.
+5. **Ask the user about gap 14.** Research and API proposals are in `plans/query-v3-gap-14.md`; its open questions
+   need answers before any code.
 
 Rules learned on 2026-09-25: vitest does not type-check, so every slice also runs
 `npx tsc --noEmit -p libs/query/tsconfig.spec.json`. Parallel subagents must own disjoint files; a commit by path
