@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, booleanAttribute, computed, inject, input } from '@angular/core';
-import { ColorInteractiveDirective, injectLocale } from '@ethlete/core';
+import { ColorInteractiveDirective, createComponentId, injectLocale } from '@ethlete/core';
 import { IconDirective, TIMES_ICON, provideIcons } from '../../icon';
 import {
   SelectDirective,
@@ -77,7 +77,7 @@ export class PhoneInputComponent {
   protected phone = inject(PhoneInputDirective);
   private locale = injectLocale();
 
-  /** Accessible name of the country-picker trigger - its only visible content is the flag + dial code. */
+  /** Leads the country trigger's accessible name, ahead of the active country and its dial code. */
   public countryLabel = input<string | null>(null);
   /** Shows a clear (×) control while a number is set and the field is in use. */
   public clearable = input(true, { transform: booleanAttribute });
@@ -85,6 +85,10 @@ export class PhoneInputComponent {
 
   /** The string in effect: this instance's `countryLabel`, else the domain's label set. */
   protected resolvedCountryLabel = computed(() => this.countryLabel() ?? this.phoneInputLabels().selectCountry);
+
+  protected countryLabelId = createComponentId('et-phone-input-country-label');
+
+  protected activeCountryName = computed(() => phoneCountryName(this.phone.country(), this.locale.currentLocale()));
 
   /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);

@@ -493,7 +493,7 @@ regional-indicator emoji.
 | -------------------- | ---------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `defaultCountry`     | `string`         | `'us'`   | ISO alpha-2 country used while the value carries none. A late change (a locale or geo lookup that resolves after the first render) still applies, as long as the country has not been picked or derived from the value since. |
 | `preferredCountries` | `string[]`       | `[]`     | Listed on top of the country dropdown.                                                                                                                                                                                        |
-| `countryLabel`       | `string \| null` | `null` ¹ | `aria-label` of the flag/dial-code country trigger.                                                                                                                                                                           |
+| `countryLabel`       | `string \| null` | `null` ¹ | Leads the country trigger's accessible name, followed by the active country and its dial code (`Select country Germany +49`).                                                                                                 |
 
 ¹ `null` falls through to [`PHONE_INPUT_LABELS.selectCountry`](/components/localization) (`'Select country'`).
 
@@ -547,7 +547,8 @@ the overview. Control-specific notes:
 - The password reveal toggle exposes `aria-pressed`; the Caps Lock warning is a
   `role="status"`.
 - The phone-input's tel field is labelled by the field label (or the control's
-  own `aria-label`); the country trigger takes its own `countryLabel`.
+  own `aria-label`); the country trigger is labelled by its `countryLabel`, the
+  active country's name (visually hidden) and the dial code.
 
 ## Theming
 

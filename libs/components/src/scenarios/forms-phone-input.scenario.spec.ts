@@ -126,8 +126,16 @@ describe('forms phone input scenarios', () => {
     expect(field.placeholder).toBe('171 234 5678');
     expect(field.getAttribute('aria-required')).toBe('true');
     expect(field.getAttribute('aria-labelledby')).toBe(query('et-label', host).id);
-    expect(text(trigger)).toBe('de+49');
-    expect(trigger.getAttribute('aria-label')).toBe(DEFAULT_PHONE_INPUT_LABELS.selectCountry);
+    const [countryLabelId, selfId] = trigger.getAttribute('aria-labelledby')?.split(' ') ?? [];
+    const countryLabel = query(`#${countryLabelId}`, host);
+
+    expect(selfId).toBe(trigger.id);
+    expect(trigger.hasAttribute('aria-label')).toBe(false);
+    expect(countryLabel.hidden).toBe(true);
+    expect(text(countryLabel)).toBe(DEFAULT_PHONE_INPUT_LABELS.selectCountry);
+    expect(text(query('.et-phone-input-country-flag', trigger))).toBe('de');
+    expect(text(query('.et-phone-input-country-name', trigger))).toBe(phoneCountryName('de'));
+    expect(text(query('.et-phone-input-dial-code', trigger))).toBe('+49');
     expect(text(query('.probe', host))).toBe('No countries found');
 
     field.focus();
@@ -180,7 +188,8 @@ describe('forms phone input scenarios', () => {
     s.flush();
     expect(app.model().phone).toBe('+431712345678');
     expect(app.phone().country()).toBe('at');
-    expect(text(trigger)).toBe('at+43');
+    expect(text(query('.et-phone-input-country-name', trigger))).toBe(phoneCountryName('at'));
+    expect(text(query('.et-phone-input-dial-code', trigger))).toBe('+43');
     expect(document.activeElement).toBe(field);
 
     s.tick();

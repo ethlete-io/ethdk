@@ -37,10 +37,10 @@ test.describe('phone-input / focus', () => {
     expect(at(stops, 1).tag).toBe('INPUT');
   });
 
-  test('the country trigger carries the documented countryLabel as its accessible name', async ({ page }) => {
+  test('the country trigger is named by countryLabel, the active country and its dial code', async ({ page }) => {
     const root = await openStory(page, DEFAULT_STORY_ID);
 
-    await expect(countryTrigger(root)).toHaveAttribute('aria-label', 'Select country');
+    await expect(countryTrigger(root)).toHaveAccessibleName(/^Select country Germany ?\+49$/);
   });
 
   test('the country trigger draws a visible focus ring', async ({ page }) => {
