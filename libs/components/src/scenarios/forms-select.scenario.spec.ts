@@ -323,7 +323,7 @@ describe('forms select scenarios', () => {
 
     selectAll.click();
     s.tick();
-    expect(control.value).toEqual(['basketball', 'football', 'handball']);
+    expect(control.value).toEqual(['football', 'basketball', 'handball']);
     expect(selectAll.getAttribute('aria-checked')).toBe('true');
 
     selectAll.click();

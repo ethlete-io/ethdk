@@ -917,22 +917,27 @@ export class SelectDirective
     const targets = this.selectAllTargets();
     const current = this.value();
     const values = this.mixed() || !Array.isArray(current) ? [] : current;
+    const valuesMatch = this.valuesMatch();
+    const others = values.filter((value) => !targets.some((item) => valuesMatch(item.value(), value)));
 
     if (this.selectAllState() === 'all') {
-      const valuesMatch = this.valuesMatch();
-
-      this.value.set(values.filter((value) => !targets.some((item) => valuesMatch(item.value(), value))));
+      this.value.set(others);
 
       return;
     }
 
-    const room = (this.maxSelection() ?? Infinity) - values.length;
-    const additions = targets
-      .map((item) => item.value())
-      .filter((value) => !this.includesValue(values, value))
-      .slice(0, Math.max(0, room));
+    let room = (this.maxSelection() ?? Infinity) - values.length;
+    const selected = targets.flatMap((item) => {
+      const index = values.findIndex((value) => valuesMatch(value, item.value()));
 
-    this.value.set([...values, ...additions]);
+      if (index !== -1) {
+        return [values[index]];
+      }
+
+      return room-- > 0 ? [item.value()] : [];
+    });
+
+    this.value.set([...others, ...selected]);
     this.mixed.set(false);
   }
 
