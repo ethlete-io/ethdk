@@ -37,7 +37,12 @@ agent that works alone, batch by batch.
 - Done 2026-09-27: task 8 for rich-text editor (4b68a4706; first-Enter soft-break fix 186f1f0cd), bracket (713ffbd43),
   cascader + colour input + dropzone (29a5b7553). Open: a focused cascader node shows only a background change, no
   outline, so `expectFocusVisible` fails on it.
-- In progress 2026-09-27: task 8 for breadcrumb + scrollable groups; phone-input + chart groups; tree + task 7 groups.
+- Done 2026-09-27: task 8 for breadcrumb (9811ede5d), command-palette (4f8e8d855), carousel (988fb8de8), query-error
+  (60b10493c), filter-overlay (fb77033cc), scrollable (d720e38d9), selection-list (902562c2f). Open, user call: when the
+  breadcrumb trail collapses while a middle crumb has focus, focus falls to `<body>` (proposal: move it to the overflow
+  trigger). Command-palette colour context skipped (story has no colour provider).
+- In progress 2026-09-27: task 8 for phone-input + chart groups; tree + task 7 groups. Left: masonry group, banner
+  group (non-RTE part). Also running: decisions (a), (b), and the device check (c) on the local simulators.
 - User decisions 2026-09-27: (a) scheduler "+N more" pick opens a centered dialog (explicit no-anchor in
   `takeSurfaceAnchor`); (b) cascader nodes get the shared focus ring; (c) check the touch column reorder long press on
   real iOS/Android with `verify-on-apple-devices` after task 8, before "b7 done". (a) and (b) in progress.
