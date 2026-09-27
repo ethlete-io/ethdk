@@ -125,7 +125,9 @@ test.describe('standings / structure', () => {
     const rows = root.locator(ROW);
 
     const zoneNotes = await rows.evaluateAll((els) =>
-      els.map((el) => Array.from(el.querySelectorAll('.et-standings-zone-note')).map((note) => note.textContent)),
+      els.map((el) =>
+        Array.from(el.querySelectorAll('.et-standings-zone-note')).map((note) => note.textContent?.trim()),
+      ),
     );
 
     expect(zoneNotes).toEqual([[ADVANCES_LABEL], [ADVANCES_LABEL, HIGHLIGHTED_LABEL], [], [], [], [RELEGATED_LABEL]]);
