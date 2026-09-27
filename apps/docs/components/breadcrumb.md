@@ -204,8 +204,9 @@ compared on the same scale, so `order="0"` pins a segment to the front).
 
 ### Configuring the composed breadcrumb
 
-The outlet forwards `collapse` and `labels` to the breadcrumb it renders, and anything you project into
-it lands inside - which is how a shell-wide separator is set:
+The outlet forwards `collapse` and `labels` to the breadcrumb it renders, and reads an
+`etBreadcrumbSeparator` projected into it - which is how a shell-wide separator is set. Nothing else
+projected into the outlet is rendered:
 
 ```html
 <et-breadcrumb-outlet [collapse]="true">
