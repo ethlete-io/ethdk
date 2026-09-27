@@ -4,6 +4,7 @@ import { By } from '@angular/platform-browser';
 import '../../test-helpers';
 import { expectNothingRunsAfterDestroy } from '../testing/destroyed-mid-gesture';
 import { fakeElementScroll } from '../testing/fake-layout';
+import { ScrollableDirective } from './headless/scrollable.directive';
 import { ScrollableNavigationComponent } from './headless/scrollable-navigation.component';
 import { createScrollableDriver } from './testing/scrollable-driver';
 import { ScrollableComponent } from './scrollable.component';
@@ -77,6 +78,29 @@ describe('ScrollableComponent opt-in features', () => {
     expect(scrollable.classList.contains('et-scrollable--sticky-buttons')).toBe(true);
     expect(scrollable.classList.contains('et-scrollable--darken-non-intersecting-items')).toBe(true);
     expect(scrollable.getAttribute('snap')).toBe('');
+  });
+});
+
+describe('ScrollableComponent buttons without masks', () => {
+  @Component({
+    template: `
+      <et-scrollable etScrollableButtons renderMasks="false" scrollMode="element">
+        <div>One</div>
+        <div>Two</div>
+      </et-scrollable>
+    `,
+    imports: [SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS],
+  })
+  class TestHostComponent {}
+
+  it('turns on the child intersections the item-wise buttons scroll by', () => {
+    const activate = vi.spyOn(ScrollableDirective.prototype, 'activateChildIntersections');
+    const fixture = TestBed.createComponent(TestHostComponent);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('et-scrollable-masks')).toBeNull();
+    expect(activate).toHaveBeenCalled();
+    activate.mockRestore();
   });
 });
 

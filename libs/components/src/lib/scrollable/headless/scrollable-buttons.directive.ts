@@ -48,6 +48,7 @@ export class ScrollableButtonsDirective {
   public enabled = computed(() => this.resolved().enabled ?? true);
 
   constructor() {
+    this.scrollable.activateChildIntersections();
     this.scrollable.registerChrome({
       key: 'buttons',
       slot: computed(() => (this.position() === 'footer' ? 'footer' : 'overlay')),
