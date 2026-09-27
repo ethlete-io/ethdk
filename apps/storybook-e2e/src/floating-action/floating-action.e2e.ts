@@ -170,7 +170,6 @@ test.describe('floating-action / scroll', () => {
   });
 
   test('the content after the anchor does not move when the trigger detaches', async ({ page }) => {
-    test.fail(true, 'the anchor collapses to 0px once its trigger is position: fixed, so the content below shifts up');
     const root = await openStory(page, STORY_ID);
     const scopeTop = await documentTop(root, SCOPE);
     const anchorHeight = await root.locator(ANCHOR).evaluate((el) => el.getBoundingClientRect().height);

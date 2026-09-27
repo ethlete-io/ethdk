@@ -11,6 +11,7 @@ import {
   FloatingActionTopDirective,
   FloatingActionTriggerDirective,
 } from '../index';
+import { fakeLayout, fakeResizeObserver } from '../lib/testing/fake-layout';
 import '../test-helpers';
 import { Scenario, useScenario } from './harness';
 
@@ -214,6 +215,50 @@ describe('floating-action scenarios', () => {
     intersections.scroll(s, query('.anchor'), IN_VIEW);
     expect(host.getAttribute('data-state')).toBe(FLOATING_ACTION_STATES.INLINE);
     expect(badge.textContent).toBe(FLOATING_ACTION_STATES.INLINE);
+  });
+
+  it("holds the trigger's in-flow size on the anchor while it floats, so the results below never move", () => {
+    const s = scenario();
+    const resize = fakeResizeObserver();
+    const size = { width: 96, height: 40 };
+
+    fakeLayout([{ match: '.filter', offsetWidth: () => size.width, offsetHeight: () => size.height }]);
+    TestBed.createComponent(ResultsPageComponent);
+    settle(s);
+
+    const anchor = query('.anchor');
+    const trigger = query('.filter');
+    const reserved = () => [
+      anchor.style.getPropertyValue('min-inline-size'),
+      anchor.style.getPropertyValue('min-block-size'),
+    ];
+
+    expect(resize.targets()).toContain(trigger);
+    expect(reserved()).toEqual(['', '']);
+
+    intersections.scroll(s, anchor, ABOVE);
+    expect(reserved()).toEqual(['96px', '40px']);
+
+    size.width = 56;
+    size.height = 56;
+    resize.fire(trigger);
+    s.tick();
+    expect(reserved()).toEqual(['96px', '40px']);
+
+    intersections.scroll(s, query('.results'), ABOVE);
+    expect(query('.et-floating-action').getAttribute('data-state')).toBe(FLOATING_ACTION_STATES.HIDDEN);
+    expect(reserved()).toEqual(['96px', '40px']);
+
+    intersections.scroll(s, query('.results'), IN_VIEW);
+    intersections.scroll(s, anchor, IN_VIEW);
+    expect(reserved()).toEqual(['', '']);
+
+    size.width = 120;
+    size.height = 48;
+    resize.fire(trigger);
+    s.tick();
+    intersections.scroll(s, anchor, ABOVE);
+    expect(reserved()).toEqual(['120px', '48px']);
   });
 
   it('keeps the trigger inline in a layout that disables floating', () => {

@@ -6,9 +6,17 @@ import {
   computed,
   inject,
   input,
+  linkedSignal,
   signal,
 } from '@angular/core';
-import { RuntimeError, injectStyleManager, mountEasingTokens } from '@ethlete/core';
+import {
+  ElementSize,
+  LogicalSize,
+  RuntimeError,
+  injectStyleManager,
+  mountEasingTokens,
+  signalElementDimensions,
+} from '@ethlete/core';
 import { FLOATING_ACTION_ERROR_CODES } from '../floating-action-errors';
 import { FloatingActionStylesComponent } from '../floating-action-styles.component';
 import { FLOATING_ACTION_STATES, FloatingActionState } from '../floating-action.types';
@@ -100,6 +108,24 @@ export class FloatingActionDirective {
 
   /** Whether the trigger is currently pinned to the viewport. */
   public isFloating = computed(() => this.state() === FLOATING_ACTION_STATES.FLOATING);
+
+  private triggerDimensions = signalElementDimensions(computed(() => this.trigger()?.elementRef.nativeElement));
+
+  /**
+   * @internal The trigger's last in-flow size, which the anchor holds while the trigger is fixed. Frozen outside
+   * `inline`: a fixed trigger may lay out at a different size, and that must not leak back into the flow.
+   */
+  public reservedSize = linkedSignal<{ inline: boolean; offset: ElementSize | null }, LogicalSize | null>({
+    source: () => ({
+      inline: this.state() === FLOATING_ACTION_STATES.INLINE,
+      offset: this.triggerDimensions().offset,
+    }),
+    computation: ({ inline, offset }, previous) => {
+      const measured = offset ? { inlineSize: offset.width, blockSize: offset.height } : null;
+
+      return inline ? measured : (previous?.value ?? measured);
+    },
+  });
 
   constructor() {
     mountEasingTokens();

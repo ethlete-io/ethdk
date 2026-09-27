@@ -1,6 +1,7 @@
-import { Directive, ElementRef, afterNextRender, inject } from '@angular/core';
+import { Directive, ElementRef, afterNextRender, computed, inject } from '@angular/core';
 import { injectHostElement, RuntimeError, signalHostElementIntersection } from '@ethlete/core';
 import { FLOATING_ACTION_ERROR_CODES } from '../floating-action-errors';
+import { FLOATING_ACTION_STATES } from '../floating-action.types';
 import { FLOATING_ACTION_TOKEN } from './floating-action.tokens';
 
 /** Dev-mode guard: a part outside a floating action registers with nothing and silently does nothing. */
@@ -38,17 +39,29 @@ const assertInsideFloatingAction = (floatingAction: unknown, directiveName: stri
 @Directive({
   selector: '[etFloatingActionAnchor]',
   exportAs: 'etFloatingActionAnchor',
-  host: { class: 'et-floating-action-anchor' },
+  host: {
+    class: 'et-floating-action-anchor',
+    '[style.min-inline-size.px]': 'heldSize()?.inlineSize',
+    '[style.min-block-size.px]': 'heldSize()?.blockSize',
+  },
 })
 export class FloatingActionAnchorDirective {
+  private floatingAction = inject(FLOATING_ACTION_TOKEN, { optional: true });
+
   /** @internal Where the anchor sits relative to the viewport - the input to the whole state machine. */
   public intersection = signalHostElementIntersection();
 
-  constructor() {
-    const floatingAction = inject(FLOATING_ACTION_TOKEN, { optional: true });
+  /** @internal */
+  public heldSize = computed(() => {
+    // Read while inline too: the reserved size only remembers in-flow measurements it has been asked for.
+    const reserved = this.floatingAction?.reservedSize() ?? null;
 
-    floatingAction?.anchor.set(this);
-    assertInsideFloatingAction(floatingAction, 'FloatingActionAnchorDirective');
+    return this.floatingAction?.state() === FLOATING_ACTION_STATES.INLINE ? null : reserved;
+  });
+
+  constructor() {
+    this.floatingAction?.anchor.set(this);
+    assertInsideFloatingAction(this.floatingAction, 'FloatingActionAnchorDirective');
   }
 }
 

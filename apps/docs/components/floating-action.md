@@ -39,7 +39,8 @@ Five parts, of which two are optional:
 **The anchor has to be a separate element from the trigger**, and that is the whole trick. Once the trigger is
 `position: fixed` it is _always_ on screen, so observing it would say "come back", then "go away", forever. The
 anchor never moves, so its visibility is a stable question - and it keeps the trigger's space in the flow, so
-nothing jumps when the trigger detaches.
+nothing jumps when the trigger detaches. The trigger's size is measured while it sits in the flow, and the anchor
+holds it as an inline `min-inline-size` / `min-block-size` for as long as the trigger is `floating` or `hidden`.
 
 ## Three states
 
