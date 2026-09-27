@@ -246,7 +246,6 @@
   "resolveSurfaceByElevation": "internal: building block of @ethlete/cdk, @ethlete/components, no app imports it",
   "round": "unused: no app or other lib imports it",
   "routerDisableScrollTop": "spec: libs/core/src/lib/signals/recipes/scroll-restoration.spec.ts",
-  "scrollToElement": "spec: libs/core/src/lib/scrolling/scrollable.spec.ts",
   "setBackdropStyles": "internal: plumbing of overlay/overlay-runtime.ts, no app or lib imports it",
   "setBaseElementStyles": "internal: plumbing of overlay/overlay-runtime.ts, no app or lib imports it",
   "setCookie": "spec: libs/core/src/lib/utils/cookie.spec.ts",
