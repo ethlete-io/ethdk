@@ -16,6 +16,9 @@ const DATE_TIME_INPUT_ID = 'components-forms-date-time-input--default';
 const DATE_TIME_RANGE_INPUT_ID = 'components-forms-date-time-range-input--default';
 const DATE_RANGE_PRESETS_ID = 'components-forms-date-range-input--presets';
 const DATE_TIME_RANGE_PRESETS_ID = 'components-forms-date-time-range-input--presets';
+const DATE_INPUT_MASKED_ID = 'components-forms-date-input--masked';
+const DATE_RANGE_MASKED_ID = 'components-forms-date-range-input--masked';
+const DATE_TIME_ZONE_ID = 'components-forms-date-time-input--time-zone';
 
 const DIALOG = '[role="dialog"]';
 const ENABLED_CELL = ".et-calendar-cell:not([aria-disabled='true'])";
@@ -473,5 +476,144 @@ test.describe('date-inputs / range presets touch', () => {
     await expect(page.locator(DIALOG)).toHaveCount(0);
     await expect(root.locator('.et-date-range-input-field').first()).not.toHaveValue('');
     await expect(root.locator('.et-date-range-input-field').last()).not.toHaveValue('');
+  });
+});
+
+test.describe('date-inputs / masked typing', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: hardware keyboard typing');
+
+  test('the masked date input shows its guide, inserts separators, ignores letters and commits on blur', async ({
+    page,
+  }) => {
+    const root = await openStory(page, DATE_INPUT_MASKED_ID);
+    const field = root.locator('.et-date-input-field');
+
+    await expect(field).toHaveValue('');
+    await pressKey(page, 'Tab');
+    await expect(field).toHaveValue('__.__.____');
+
+    await page.keyboard.type('18a03');
+    await expect(field).toHaveValue('18.03.____');
+
+    await pressKey(page, 'Backspace');
+    await expect(field).toHaveValue('18.0_.____');
+
+    await page.keyboard.type('32026');
+    await expect(field).toHaveValue('18.03.2026');
+    await pressKey(page, 'Tab');
+
+    await expect(root.getByText('Form value: "2026-03-18"')).toBeVisible();
+  });
+
+  test('leaving an untouched masked field drops the guide again', async ({ page }) => {
+    const root = await openStory(page, DATE_INPUT_MASKED_ID);
+    const field = root.locator('.et-date-input-field');
+
+    await pressKey(page, 'Tab');
+    await expect(field).toHaveValue('__.__.____');
+    await pressKey(page, 'Tab');
+
+    await expect(field).toHaveValue('');
+    await expect(root.getByText('Form value: null')).toBeVisible();
+  });
+
+  test('the masked range input guides only the focused side and commits each one', async ({ page }) => {
+    const root = await openStory(page, DATE_RANGE_MASKED_ID);
+    const fields = root.locator('.et-date-range-input-field');
+
+    await pressKey(page, 'Tab');
+    await expect(fields.first()).toHaveValue('__.__.____');
+    await expect(fields.last()).toHaveValue('');
+
+    await page.keyboard.type('08072026');
+    await pressKey(page, 'Tab');
+    await expect(fields.last()).toHaveValue('__.__.____');
+
+    await page.keyboard.type('23072026');
+    await pressKey(page, 'Enter');
+
+    await expect(fields.first()).toHaveValue('08.07.2026');
+    await expect(fields.last()).toHaveValue('23.07.2026');
+  });
+});
+
+test.describe('date-inputs / picker focus return', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard picking');
+
+  test('Enter on a day in the keyboard-opened picker commits it, closes the picker and returns focus to the field', async ({
+    page,
+  }) => {
+    const root = await openStory(page, DATE_INPUT_ID);
+    const field = root.locator('.et-date-input-field');
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'Alt+ArrowDown');
+    await waitForPickerEntered(page);
+    await tabUntilFocused(page, page.locator(FOCUSED_CELL));
+    await pressKey(page, 'Enter');
+
+    await expect(page.locator(DIALOG)).toHaveCount(0);
+    await expect(field).not.toHaveValue('');
+    await expect(field).toBeFocused();
+  });
+
+  test('a clicked day returns focus to the field', async ({ page }) => {
+    const root = await openStory(page, DATE_INPUT_ID);
+
+    await root.locator('.et-input-picker-trigger').click();
+    await waitForPickerEntered(page);
+    await page.locator(ENABLED_CELL).first().click();
+
+    await expect(page.locator(DIALOG)).toHaveCount(0);
+    await expect(root.locator('.et-date-input-field')).toBeFocused();
+  });
+});
+
+test.describe('date-inputs / time zone', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: typed entry');
+
+  test('a typed time is read in the venue zone, written with its offset and shown in the reader zone', async ({
+    page,
+  }) => {
+    const root = await openStory(page, DATE_TIME_ZONE_ID);
+    const field = root.locator('.et-date-time-input-field');
+
+    await expect(field).toHaveValue('08/18/2026, 14:00');
+    await expect(root.getByText('Tokyo · 07:00 your time')).toBeVisible();
+
+    await field.focus();
+    await field.fill('08/19/2026, 09:30');
+    await pressKey(page, 'Enter');
+
+    await expect(root.getByText('Form value: "2026-08-19T09:30:00+09:00"')).toBeVisible();
+    await expect(root.getByText('Tokyo · 02:30 your time')).toBeVisible();
+  });
+
+  test('the reader-zone line carries the date when the reader is on another day', async ({ page }) => {
+    const root = await openStory(page, DATE_TIME_ZONE_ID);
+    const field = root.locator('.et-date-time-input-field');
+
+    await field.focus();
+    await field.fill('08/19/2026, 06:00');
+    await pressKey(page, 'Enter');
+
+    await expect(root.getByText('Form value: "2026-08-19T06:00:00+09:00"')).toBeVisible();
+    await expect(root.getByText('Tokyo · 08/18/2026, 23:00 your time')).toBeVisible();
+  });
+
+  test('the picker opens on the venue-zone day and time', async ({ page }) => {
+    const root = await openStory(page, DATE_TIME_ZONE_ID);
+
+    await root.locator('.et-date-time-input-field').focus();
+    await pressKey(page, 'Alt+ArrowDown');
+    await waitForPickerEntered(page);
+
+    const dialog = page.locator(DIALOG);
+    await expect(dialog.locator(".et-calendar-cell[aria-selected='true']")).toHaveAttribute(
+      'aria-label',
+      /August 18th, 2026/,
+    );
+    await expect(dialog.getByRole('option', { name: '14', selected: true })).toHaveCount(1);
+    await expect(dialog.getByRole('option', { name: '00', selected: true })).toHaveCount(1);
   });
 });
