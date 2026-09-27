@@ -38,6 +38,7 @@ type WorklogBody = {
   startTime?: string;
   timeSpentSeconds?: number;
   billableSeconds?: number;
+  remainingEstimateSeconds?: number;
   description?: string;
   attributes?: { key: string; value: unknown }[];
 };
@@ -127,6 +128,14 @@ describe('createTempoWorklog$', () => {
 
     expect(errors[0]?.status).toBe(400);
   });
+
+  it('sends a zero remaining estimate, which jira refuses to leave empty', () => {
+    const { transport, requests } = stubTransport([{ status: 200, body: { tempoWorklogId: 1 } }]);
+
+    createTempoWorklog$({ transport, credentials: CREDENTIALS, write: write() }).subscribe();
+
+    expect(bodyOf(requests[0]).remainingEstimateSeconds).toBe(0);
+  });
 });
 
 describe('updateTempoWorklog$', () => {
@@ -146,6 +155,14 @@ describe('updateTempoWorklog$', () => {
 
     expect(bodyOf(requests[0]).issueId).toBeUndefined();
     expect(bodyOf(requests[0]).timeSpentSeconds).toBe(3600);
+  });
+
+  it('sends a zero remaining estimate, which jira refuses to leave empty', () => {
+    const { transport, requests } = stubTransport([{ status: 200, body: {} }]);
+
+    updateTempoWorklog$({ transport, credentials: CREDENTIALS, tempoWorklogId: '555', write: write() }).subscribe();
+
+    expect(bodyOf(requests[0]).remainingEstimateSeconds).toBe(0);
   });
 });
 

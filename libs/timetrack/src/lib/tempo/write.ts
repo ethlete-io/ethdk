@@ -25,6 +25,7 @@ const timeFields = (write: TempoWorklogWrite) => ({
   startTime: tempoTimeOfDay(write.from),
   timeSpentSeconds: asSeconds(write.durationMs),
   ...(write.billableMs === undefined ? {} : { billableSeconds: asSeconds(write.billableMs) }),
+  remainingEstimateSeconds: 0,
   description: write.description,
   attributes: attributeValues(write.attributes),
 });
