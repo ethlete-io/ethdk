@@ -45,7 +45,16 @@ agent that works alone, batch by batch.
   phone-input (c29c6b5cb), standings (b621cee3e), calendar (8736fef10), chart (26baaae51); picture skipped (needs a
   story with type/DPR sources). Decision (b) done in 77e89d86a. Open, user call: the leaving calendar grid (~140 ms)
   is not `inert` (proposal: `inert` on `.et-calendar-weeks--leave`).
-- In progress 2026-09-27: task 8 for tree + task 7 groups, masonry + banner groups; decision (a); device check (c).
+- Done 2026-09-27: task 8 for tree (356a71111), time-picker (9cd280417), kbd + chip (66acacaf4), floating-action
+  (d1d21f157), copy-button (bea359d99), form submission (ab94199e0), timeline (7a8dc8115), masked-input (9ee3ba4f4).
+  Open `test.fail`s, user calls: chip keyboard remove drops focus to `<body>` (which neighbour gets focus);
+  floating-action anchor collapses to 0px when fixed (hold the inline size, ResizeObserver); timeline rail leaves a
+  6px/4px gap above default/compact dots (designer call); masked-input IME torn down by `et-input` `[value]` mid-
+  composition (needs a `composing` signal in `InputDirective`, not small). Flaky: "lazy tree shows a loading state"
+  under parallel load.
+- Device check (c) 2026-09-27: Android passes; iOS long press starts text selection (Safari 18.6 needs
+  `-webkit-user-select`). Fix in progress.
+- In progress 2026-09-27: task 8 for masonry + banner groups; decision (a); iOS selection fix.
 - User decisions 2026-09-27: (a) scheduler "+N more" pick opens a centered dialog (explicit no-anchor in
   `takeSurfaceAnchor`); (b) cascader nodes get the shared focus ring; (c) check the touch column reorder long press on
   real iOS/Android with `verify-on-apple-devices` after task 8, before "b7 done". (a) and (b) in progress.
