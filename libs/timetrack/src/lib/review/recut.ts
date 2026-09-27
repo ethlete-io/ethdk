@@ -162,6 +162,9 @@ const joinOneTicket = (options: {
  * meeting over a background row afterwards leaves both claiming the same minutes, and the day books
  * them twice. Only a background row ever gives way, the same rule the first cut follows.
  *
+ * A row naming no issue gives way to a row written by hand in any lane: the hand-written row says what
+ * those minutes were, and a stand-in left holding them would book them again once it resolves.
+ *
  * A row it empties out is dropped: every minute it held went to the row that took them, and the band
  * left behind is what still says the work happened.
  */
@@ -173,10 +176,14 @@ export const recutReviewedRows = (options: {
   stated?: ReadonlySet<string>;
   round?: Partial<RoundOptions>;
 }): { rows: ReviewedRow[]; behind: BehindStretch[] } => {
+  const isStated = (row: ReviewedRow) => !!options.stated?.has(row.id);
   const onBackground = backgroundTest(options.backgroundProjects);
-  const isBackground = (row: ReviewedRow) => onBackground(row) && !options.stated?.has(row.id);
+  const isBackground = (row: ReviewedRow) => onBackground(row) && !isStated(row);
+  const isUnbooked = (row: ReviewedRow) => !row.issueKey && !isStated(row) && !takesNothing(row);
+  const stated = options.rows.filter((row) => isStated(row) && !takesNothing(row));
+  const hasBackground = options.rows.some(isBackground);
 
-  if (!options.rows.some(isBackground)) {
+  if (!hasBackground && !stated.length) {
     return { rows: [...options.rows], behind: joinOneTicket({ stretches: options.behind, rows: options.rows }) };
   }
 
@@ -185,6 +192,11 @@ export const recutReviewedRows = (options: {
   const lost: BehindStretch[] = [];
 
   for (const row of options.rows) {
+    if (isUnbooked(row)) {
+      rows.push(...keptSpansOf({ row, covered: stated }).map((span, at) => pieceOf({ row, span, at })));
+      continue;
+    }
+
     if (!isBackground(row) || !row.issueKey) {
       rows.push(row);
       continue;
@@ -201,6 +213,8 @@ export const recutReviewedRows = (options: {
 
     rows.push(...kept.map((span, at) => pieceOf({ row, span, at })));
   }
+
+  if (!hasBackground) return { rows, behind: joinOneTicket({ stretches: options.behind, rows }) };
 
   return {
     rows,

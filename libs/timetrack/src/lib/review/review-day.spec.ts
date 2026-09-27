@@ -243,7 +243,7 @@ describe('reviewDay', () => {
     expect(review.check.warnings.map((warning) => warning.kind)).not.toContain('stale-edit');
   });
 
-  it('leaves a row the reviewer added beside the band it overlaps in the same lane', () => {
+  it('keeps the part of the band a row the reviewer added in the same lane does not cover', () => {
     const laneKey = 'repo:/home/tom/dev/example';
     const base = dayRows({
       proposals: [],
@@ -267,7 +267,13 @@ describe('reviewDay', () => {
       row: { issueKey: 'ABC-9', from: at('08:30'), to: at('09:30'), laneKey, description: 'by hand' },
     });
 
-    expect(reviewDay({ rows: base, edits }).rows).toHaveLength(2);
+    const rows = [...reviewDay({ rows: base, edits }).rows].sort((a, b) => a.from.getTime() - b.from.getTime());
+
+    expect(rows.map((row) => [row.issueKey, row.from, row.to])).toEqual([
+      [undefined, at('08:00'), at('08:30')],
+      ['ABC-9', at('08:30'), at('09:30')],
+      [undefined, at('09:30'), at('10:00')],
+    ]);
   });
 
   it('leaves an edited row alone while one of its proposals survives', () => {
@@ -1357,6 +1363,60 @@ describe('reviewDay over a row named to a stand-in', () => {
 
     expect(row.standInId).toBeUndefined();
     expect(isNamedRow(row)).toBe(false);
+  });
+});
+
+describe('reviewDay over a row written by hand beside a stand-in', () => {
+  const APP = 'repo:/dev/app';
+  const SDK = 'repo:/dev/sdk';
+  const standIn = openStandIn({ name: 'bracket challenge', day: '2026-08-11', now: at('07:00') });
+  const day = dayRows({
+    proposals: [{ ...proposal({ issueKey: 'ET-1', from: '09:00', to: '12:00', minutes: 180 }), laneKey: SDK }],
+    unnamed: [
+      {
+        id: `unnamed:${APP}@${at('09:00').toISOString()}`,
+        from: at('09:00'),
+        to: at('13:00'),
+        durationMs: 240 * MINUTE,
+        observedMs: 240 * MINUTE,
+        laneKey: APP,
+        description: 'unattributed activity',
+        confidence: 'weak',
+        evidence: [],
+        state: 'suggested',
+      },
+    ],
+  });
+  const band = reviewDay({ rows: day }).rows.find((row) => row.laneKey === APP);
+
+  if (!band) throw new Error('the day draws no band in the app lane');
+
+  const named = setRowStandIn({ edits: EMPTY_DAY_REVIEW_EDITS, row: band, standInId: standIn.id });
+  const logged = (edits: DayReviewEdits, from: string, to: string) =>
+    addManualRow({ edits, row: { issueKey: 'FIFAGG-1', description: 'bracket', from: at(from), to: at(to) } });
+  const reviewed = (edits: DayReviewEdits) => reviewDay({ rows: day, edits, standIns: [standIn] });
+  const spans = (review: DayReview, lane: string) =>
+    review.rows.filter((row) => row.laneKey === lane).map((row) => [row.from, row.to]);
+
+  it('gives the stand-in row up where the hand-written rows cover it', () => {
+    const review = reviewed(logged(logged(named, '09:00', '10:00'), '11:00', '12:00'));
+
+    expect(spans(review, APP)).toEqual([
+      [at('10:00'), at('11:00')],
+      [at('12:00'), at('13:00')],
+    ]);
+    expect(review.rows.filter((row) => row.laneKey === APP).every((row) => row.standInId === standIn.id)).toBe(true);
+  });
+
+  it('gives an unnamed row up the same way', () => {
+    expect(spans(reviewed(logged(EMPTY_DAY_REVIEW_EDITS, '09:00', '12:30')), APP)).toEqual([
+      [at('12:30'), at('13:00')],
+    ]);
+  });
+
+  it('keeps a named row of a parallel lane whole', () => {
+    expect(spans(reviewed(logged(named, '09:00', '13:00')), SDK)).toEqual([[at('09:00'), at('12:00')]]);
+    expect(spans(reviewed(logged(named, '09:00', '13:00')), APP)).toEqual([]);
   });
 });
 
