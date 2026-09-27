@@ -34,7 +34,10 @@ agent that works alone, batch by batch.
 - Done 2026-09-27: task 8 for stream (eba6e2fad), notification (cde3247ad), match (54cf45769), scheduler (5b7bcc9c0,
   swipe-opens-create fix), grid (2ace28486). Open, user call: an appointment picked from the scheduler "+N more" menu
   anchors to the trigger, the docs say centered (`test.fail`).
-- In progress 2026-09-27: task 8 for rich-text editor; bracket + cascader group; breadcrumb + scrollable groups.
+- Done 2026-09-27: task 8 for rich-text editor (4b68a4706; first-Enter soft-break fix 186f1f0cd), bracket (713ffbd43),
+  cascader + colour input + dropzone (29a5b7553). Open: a focused cascader node shows only a background change, no
+  outline, so `expectFocusVisible` fails on it.
+- In progress 2026-09-27: task 8 for breadcrumb + scrollable groups; phone-input + chart groups; tree + task 7 groups.
 
 ## Rules for every batch
 
