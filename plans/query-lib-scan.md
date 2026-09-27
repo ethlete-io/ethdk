@@ -98,3 +98,31 @@ Open:
 
 - Unsubscribing a batch run records the aborted in-flight items as `cancelled`, so `retryFailed()` resends mutations the server
   may already have applied.
+
+## Scan 2026-09-27 wave 3
+
+1. A `Date` in `queryParams` is dropped from the URL and the cache key: `buildQueryString` walks it as a plain object
+   (`http/internal/request-route.ts:139-146`), so `withArgs(() => ({ queryParams: qf.value() }))` loses date filters. v2 `buildRoute` too. Spec, confirmed.
+2. Legacy v2 cache key ignores `args.headers`: two `prepare()` calls differing only in `Accept-Language` share one query
+   (`legacy/query-client/query-client.utils.ts:18-26`). Read, confirmed.
+3. Legacy `InfinityQuery` freezes after a failed page: `_data$` combines `filterSuccess()` streams, and `nextPage()` advances past
+   the failed page (`legacy/infinite-query/infinity-query.ts`). Read, confirmed.
+4. Legacy polling dies for good when stopped while blur-paused: `stopPolling()` never resets `_isPollingPaused` (`legacy/query/query.ts`). Read.
+5. Retries resend the first attempt's headers (stale bearer after a refresh): headers resolve once outside the retried stream
+   (`http/http-request.ts:~495-530`). Read.
+6. Devtools mocks never match a client whose `baseUrl` has a path (`/v1`): the match path strips only the origin
+   (`devtools/query-devtools-mocks.ts:175-214`). Scratch spec, confirmed.
+7. Batch item tombstones are capped per batch but the number of batch buckets is unbounded (600 after 30 batches)
+   (`devtools/query-devtools-registry.ts:230-257`). Scratch spec, confirmed.
+8. A root-path devtools override turns a `null` response into the override value while loading or failed
+   (`http/query-state.ts:161`, `devtools/query-devtools-overrides.ts:103`). Scratch spec, confirmed.
+9. `setupAuthTest().refresh` ignores `buildRefreshArgs` and always sends `{ body: { token } }` (`testing/auth-test-utils.ts:180-187`). Read.
+10. False docs: `persistence.md:274` `first[2]` (no tuple); `queries.md:148` `triggeredBy()` is not `null` after
+    `refreshQueriesInUse()`; "throws in dev mode" for misuse errors that throw in every mode (`features.md`, `http.md`, `caching.md`,
+    `errors.md`, `auth.md`); `testing.md:124` `setupAuthTest` options; `ws.md:11` "tuple".
+
+Also seen: persisted override ops are not validated on read (`query-devtools-override-persistence.ts:65-70`); the auth vault's
+`storage` listener parses without a try (`query-devtools-auth-sessions.ts:327-332`).
+
+Decisions: a `Date` in `queryParams` goes on the wire as `toISOString()` (what `JSON.stringify` and the cache key already use);
+misuse errors keep throwing in every mode and the docs say "throws".
