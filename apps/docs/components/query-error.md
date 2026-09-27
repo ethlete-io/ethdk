@@ -135,8 +135,11 @@ private usersError = legacyQueryErrorSource({
 ```
 
 The conversion is nearly free - a legacy `RequestError` carries the raw `HttpErrorResponse` it came from, so the
-current client's own normalizer does the classifying and the same retry policy judges it. `queryErrorResponseFromLegacyError`
-is exported on its own if you only need the shape conversion.
+current client's own normalizer does the classifying. `queryErrorResponseFromLegacyError` is exported on its own if you
+only need the shape conversion.
+
+A legacy error is not judged by any client's retry policy - the V2 client has none the adapter can reach, and
+`withDefaultRetry()` applies only to a current client. It offers a retry only with `alwaysAllowRetry`.
 
 The error is passed in rather than read off the query because legacy query state is an `Observable`, not a
 signal - how you get from `state$` to a signal is your app's choice, not this adapter's.
