@@ -103,7 +103,7 @@ export class TagInputFieldDirective {
     const tagInput = this.tagInput;
     const element = this.elementRef.nativeElement;
 
-    if (!tagInput) {
+    if (!tagInput || event.isComposing) {
       return;
     }
 

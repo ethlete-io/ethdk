@@ -53,6 +53,19 @@ describe('TagInputDirective', () => {
     expect(driver.chipLabels()).toEqual(['alpha']);
   });
 
+  it('leaves the Enter that confirms an IME composition to the IME', () => {
+    const field = driver.field();
+    field.value = 'にほん';
+
+    const event = new KeyboardEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true, cancelable: true });
+    field.dispatchEvent(event);
+    driver.tick();
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(driver.host.value()).toEqual([]);
+    expect(driver.fieldValue()).toBe('にほん');
+  });
+
   it('commits when a separator character is typed', () => {
     driver.type('beta,');
 
