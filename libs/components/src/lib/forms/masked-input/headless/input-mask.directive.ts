@@ -9,12 +9,12 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { injectHostElement, RuntimeError } from '@ethlete/core';
+import { injectHostElement, injectRenderer, RuntimeError } from '@ethlete/core';
 import { MASKED_INPUT_ERROR_CODES } from '../masked-input-errors';
 import { INPUT_MASK_HOST } from './input-mask-host';
 import { MASK_VALUE_MODES, MaskSpec, MaskValueMode } from './input-mask.types';
 import { advanceCaretPastLiterals, applyMaskEdit, caretForRawCount, renderMaskDisplay } from './internals/mask-engine';
-import { compilePatternMask } from './internals/pattern-mask';
+import { compilePatternMask, isDigitOnlyPattern } from './internals/pattern-mask';
 
 /**
  * Layers input masking onto an existing input control - place it on the same element
@@ -34,6 +34,7 @@ import { compilePatternMask } from './internals/pattern-mask';
 export class InputMaskDirective {
   private host = inject(INPUT_MASK_HOST, { optional: true });
   private hostElement = injectHostElement();
+  private renderer = injectRenderer();
 
   /**
    * The mask: a pattern string (`0` digit, `9` optional digit, `a` letter, `*`
@@ -84,6 +85,23 @@ export class InputMaskDirective {
    */
   public complete = computed(() => this.spec()?.isComplete?.(this.rawValue()) ?? null);
 
+  private nativeAttributes = computed<Record<string, string>>(() => {
+    const mask = this.mask();
+
+    if (!this.spec()) {
+      return {};
+    }
+
+    return {
+      autocorrect: 'off',
+      autocapitalize: 'off',
+      spellcheck: 'false',
+      ...(typeof mask === 'string' && isDigitOnlyPattern(mask) ? { inputmode: 'numeric' } : {}),
+    };
+  });
+
+  private appliedAttributes: { element: HTMLInputElement; attributes: Record<string, string> } | null = null;
+
   /**
    * The raw value as of the last reconciliation - `applyMaskEdit` needs the pre-edit
    * raw to detect edits that only removed formatting. Kept as a plain field (not the
@@ -117,6 +135,11 @@ export class InputMaskDirective {
         }
       });
     }
+
+    // runs after render so a consumer's own attribute (static or bound) is already on the element
+    afterRenderEffect(() => {
+      this.applyNativeAttributes(this.host?.nativeControl() ?? null, this.nativeAttributes());
+    });
 
     // keep the model in its declared shape - this also normalizes programmatic
     // writes (a form reset with masked text, a consumer setting raw text, …)
@@ -209,6 +232,34 @@ export class InputMaskDirective {
 
     // `compositionend` carries the committed text; reconcile it now that the IME is done
     this.reconcile((event as unknown as InputEvent).inputType);
+  }
+
+  private applyNativeAttributes(element: HTMLInputElement | null, wanted: Record<string, string>) {
+    const previous = this.appliedAttributes;
+    const kept: Record<string, string> = {};
+
+    if (previous) {
+      for (const [name, value] of Object.entries(previous.attributes)) {
+        const stillOurs = previous.element.getAttribute(name) === value;
+
+        if (stillOurs && previous.element === element && wanted[name] === value) {
+          kept[name] = value;
+        } else if (stillOurs) {
+          this.renderer.removeAttribute(previous.element, name);
+        }
+      }
+    }
+
+    if (element) {
+      for (const [name, value] of Object.entries(wanted)) {
+        if (!(name in kept) && !element.hasAttribute(name)) {
+          this.renderer.setAttribute(element, name, value);
+          kept[name] = value;
+        }
+      }
+    }
+
+    this.appliedAttributes = element && Object.keys(kept).length ? { element, attributes: kept } : null;
   }
 
   private reconcile(inputType: string | undefined) {

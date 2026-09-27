@@ -356,6 +356,12 @@ window is never torn down. `et-input` itself holds any model write back from the
 native field until the composition ends, too. Custom masks implement `MaskSpec` (`toRaw`/`toDisplay`
 plus optional caret metadata) - see the type's docs.
 
+While a mask is attached, the native input gets `autocorrect="off"`,
+`autocapitalize="off"` and `spellcheck="false"` - mobile keyboards would otherwise
+rewrite the masked text - and a pattern whose slots are all digits (`0`/`9`)
+adds `inputmode="numeric"`. An attribute the consumer set on the native input
+wins, and the mask removes what it added when it is set to `null`.
+
 The directive exposes two signals (via `exportAs: 'etInputMask'`): `rawValue()` -
 the unmasked text regardless of `maskValueMode` - and `complete()` - whether
 every required slot is filled (`0`/`a`/`*` required, `9` optional; `null` for
