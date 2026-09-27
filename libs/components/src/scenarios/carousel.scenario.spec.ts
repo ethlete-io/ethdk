@@ -541,10 +541,12 @@ describe('carousel scenarios', () => {
 
     s.errors.splice(0, s.errors.length);
 
-    expect(() => {
-      TestBed.createComponent(ItemlessCarouselComponent);
-      step(s, 1);
-    }).toThrow(`ET${CAROUSEL_ERROR_CODES.MISSING_ITEMS}`);
+    const itemless = TestBed.createComponent(ItemlessCarouselComponent);
+
+    expect(() => itemless.detectChanges()).not.toThrow();
+    step(s, 1);
+    s.expectError(`ET${CAROUSEL_ERROR_CODES.MISSING_ITEMS}`);
+    expect(itemless.nativeElement.querySelector('[aria-roledescription="slide"]')).toBeNull();
 
     s.tick(1);
     s.frame(3);

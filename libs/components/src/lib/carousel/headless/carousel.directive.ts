@@ -16,6 +16,7 @@ import {
   injectStyleManager,
   mountEasingTokens,
 } from '@ethlete/core';
+import { injectReportError } from '../../internals/report-error';
 import { ScrollableDirective, ScrollableItemSize } from '../../scrollable';
 import { CAROUSEL_ERROR_CODES } from '../carousel-errors';
 import { CarouselLabels, injectCarouselLabels } from '../carousel-labels';
@@ -105,6 +106,7 @@ export class CarouselDirective {
   private prefersReducedMotion = injectPrefersReducedMotion();
   private styleManager = injectStyleManager();
   private hostElement = injectHostElement();
+  private reportError = injectReportError();
 
   private ownScrollable = inject(ScrollableDirective, { optional: true });
 
@@ -403,11 +405,13 @@ export class CarouselDirective {
         hasCheckedItems = true;
 
         if (itemCount === 0) {
-          throw new RuntimeError(
-            CAROUSEL_ERROR_CODES.MISSING_ITEMS,
-            '[CarouselDirective] This carousel has children but none of them is a slide, so it can neither ' +
-              'label them nor tell which one is current. Add the etCarouselItem directive to each slide.',
-            { element: this.hostElement },
+          this.reportError(
+            new RuntimeError(
+              CAROUSEL_ERROR_CODES.MISSING_ITEMS,
+              '[CarouselDirective] This carousel has children but none of them is a slide, so it can neither ' +
+                'label them nor tell which one is current. Add the etCarouselItem directive to each slide.',
+              { element: this.hostElement },
+            ),
           );
         }
       });
