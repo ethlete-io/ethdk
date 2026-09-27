@@ -153,6 +153,24 @@ class BackToTopComponent {}
 })
 class StrayFloatingPartsComponent {}
 
+@Component({
+  selector: 'et-scenario-late-filter',
+  imports: [FLOATING_ACTION_IMPORTS],
+  template: `
+    <section etFloatingAction>
+      <div class="anchor" etFloatingActionAnchor>
+        @if (filtersLoaded()) {
+          <button class="filter" etFloatingActionTrigger type="button">Filter</button>
+        }
+      </div>
+      <ul class="results" etFloatingActionScope></ul>
+    </section>
+  `,
+})
+class LateFilterComponent {
+  filtersLoaded = signal(false);
+}
+
 const query = <T extends HTMLElement = HTMLElement>(selector: string) => {
   const element = document.querySelector<T>(selector);
 
@@ -259,6 +277,47 @@ describe('floating-action scenarios', () => {
     s.tick();
     intersections.scroll(s, anchor, ABOVE);
     expect(reserved()).toEqual(['120px', '48px']);
+  });
+
+  it('holds no size for a trigger that first appears while its anchor is already scrolled past', () => {
+    const s = scenario();
+    const resize = fakeResizeObserver();
+    const isFloating = (element: Element) =>
+      element.closest('.et-floating-action')?.getAttribute('data-state') !== FLOATING_ACTION_STATES.INLINE;
+
+    fakeLayout([
+      {
+        match: '.filter',
+        offsetWidth: (element) => (isFloating(element) ? 56 : 96),
+        offsetHeight: (element) => (isFloating(element) ? 56 : 40),
+      },
+    ]);
+
+    const fixture = TestBed.createComponent(LateFilterComponent);
+
+    settle(s);
+
+    const anchor = query('.anchor');
+    const reserved = () => [
+      anchor.style.getPropertyValue('min-inline-size'),
+      anchor.style.getPropertyValue('min-block-size'),
+    ];
+
+    intersections.scroll(s, anchor, ABOVE);
+    intersections.scroll(s, query('.results'), IN_VIEW);
+    fixture.componentInstance.filtersLoaded.set(true);
+    settle(s);
+    resize.fire(query('.filter'));
+    s.tick();
+
+    expect(query('.et-floating-action').getAttribute('data-state')).toBe(FLOATING_ACTION_STATES.FLOATING);
+    expect(reserved()).toEqual(['', '']);
+
+    intersections.scroll(s, anchor, IN_VIEW);
+    resize.fire(query('.filter'));
+    s.tick();
+    intersections.scroll(s, anchor, ABOVE);
+    expect(reserved()).toEqual(['96px', '40px']);
   });
 
   it('keeps the trigger inline in a layout that disables floating', () => {

@@ -123,7 +123,7 @@ export class FloatingActionDirective {
     computation: ({ inline, offset }, previous) => {
       const measured = offset ? { inlineSize: offset.width, blockSize: offset.height } : null;
 
-      return inline ? measured : (previous?.value ?? measured);
+      return inline ? measured : (previous?.value ?? null);
     },
   });
 
