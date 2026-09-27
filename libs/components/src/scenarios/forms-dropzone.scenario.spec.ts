@@ -331,7 +331,7 @@ describe('forms dropzone scenarios', () => {
     http.verify();
   });
 
-  it('drops an in-flight delete request quietly when the dropzone is destroyed', async () => {
+  it('lets an in-flight delete request finish quietly when the dropzone is destroyed', async () => {
     const s = scenario();
     const http = TestBed.inject(HttpTestingController);
     const fixture = TestBed.createComponent(ContractUploadComponent);
@@ -347,9 +347,14 @@ describe('forms dropzone scenarios', () => {
     s.tick();
     s.frame(20);
     s.tick(500);
-    http.expectOne('https://api.example.com/documents/doc-1');
+    const deleteRequest = http.expectOne('https://api.example.com/documents/doc-1');
 
     fixture.destroy();
+    s.tick();
+
+    expect(deleteRequest.cancelled).toBe(false);
+
+    deleteRequest.flush(null);
     s.tick();
     await microtasks();
 

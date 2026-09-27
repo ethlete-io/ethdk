@@ -119,6 +119,8 @@ protected upload = createDropzoneUpload<UploadMediaArgs, string>({
 
 `createArgs` builds the request args from the entry's control value, the same way the top-level `createArgs` builds them from a `File`. Removing an entry that's still uploading just cancels the in-flight request; nothing was persisted yet, so no delete request is made.
 
+A delete request outlives the dropzone: navigating away right after a removal still lets it reach the server. Only `deleteSucceed` / `deleteFail` stay silent once the dropzone is destroyed.
+
 Picking a new file in single mode is a removal too: the value it replaces is deleted under exactly the same rules, so "Replace file" and remove-then-pick leave the server in the same state.
 
 ### Existing values are not deleted by default

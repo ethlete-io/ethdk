@@ -6,6 +6,7 @@ import {
   Directive,
   effect,
   EffectRef,
+  EnvironmentInjector,
   inject,
   Injector,
   input,
@@ -78,6 +79,7 @@ export class DropzoneDirective<TValue = unknown>
   private signalFormField = inject(FORM_FIELD, { optional: true });
   private destroyRef = inject(DestroyRef);
   private injector = inject(Injector);
+  private environmentInjector = inject(EnvironmentInjector);
   private hostElement = injectHostElement();
 
   public value = model<TValue | TValue[] | null>(null);
@@ -467,7 +469,7 @@ export class DropzoneDirective<TValue = unknown>
       return;
     }
 
-    execute({ value, injector: this.injector }).then((error) => {
+    execute({ value, injector: this.environmentInjector }).then((error) => {
       if (this.destroyRef.destroyed) {
         return;
       }
