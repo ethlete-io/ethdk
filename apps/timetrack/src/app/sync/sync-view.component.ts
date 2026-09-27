@@ -80,7 +80,29 @@ const STATUS_COLORS: Record<TempoSyncRowStatus, string> = {
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-col gap-1">
           <h2 class="text-h3">Sync</h2>
-          <p class="text-small text-et-surface-muted">{{ dayLabel() }} — plan this day, then write it to Tempo.</p>
+          <div class="flex items-center gap-2">
+            <button
+              [disabled]="store.isWriting()"
+              (click)="store.shiftDay(-1)"
+              et-button
+              variant="outline"
+              size="sm"
+              aria-label="Previous day"
+            >
+              ←
+            </button>
+            <p class="text-small text-et-surface-muted">{{ dayLabel() }} — plan this day, then write it to Tempo.</p>
+            <button
+              [disabled]="store.isWriting()"
+              (click)="store.shiftDay(1)"
+              et-button
+              variant="outline"
+              size="sm"
+              aria-label="Next day"
+            >
+              →
+            </button>
+          </div>
         </div>
 
         <div class="flex items-center gap-2">

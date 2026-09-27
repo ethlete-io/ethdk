@@ -212,6 +212,7 @@ const SYNC_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   return {
     dayKey: dayReview.dayKey,
+    shiftDay: dayReview.shiftDay,
     /** The rows the next preview would be built from, so the view can say what it is about to plan. */
     rows: dayReview.rows,
     status: current,
