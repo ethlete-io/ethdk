@@ -163,28 +163,7 @@ export class RichTextEditorComponent {
     this.trackEditingActive();
 
     afterNextRender(() => {
-      this.dir.editorDom.root.set(this.editable().nativeElement ?? null);
-      this.dir.renderExternalValue();
-    });
-
-    fromEvent(this.document, 'selectionchange')
-      .pipe(
-        tap(() => {
-          this.dir.refreshActiveMarks();
-          this.dir.recordHistorySelection();
-        }),
-        takeUntilDestroyed(),
-      )
-      .subscribe();
-
-    // Render programmatic (external) value changes into the DOM. Skip the user's own edits -
-    // those already match `lastEmittedMarkdown`, so re-rendering would reset the caret.
-    effect(() => {
-      const markdown = this.dir.value();
-
-      if (markdown === this.dir.lastEmittedMarkdown) return;
-
-      this.dir.renderExternalValue(markdown);
+      this.dir.attachEditable(this.editable().nativeElement);
     });
   }
 
