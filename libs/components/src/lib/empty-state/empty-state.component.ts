@@ -2,7 +2,7 @@ import { Component, input, ViewEncapsulation } from '@angular/core';
 
 /**
  * A placeholder for a section or page that currently has nothing to show - no results, an empty
- * list, a not-yet-configured feature. Project an icon via `[etIcon]`, set `title`/`description`,
+ * list, a not-yet-configured feature. Project an icon via `[etIcon]`, set `heading`/`description`,
  * and project an action (e.g. a button) via `[etEmptyStateAction]`.
  *
  * @example
