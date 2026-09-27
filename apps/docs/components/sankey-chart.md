@@ -126,7 +126,7 @@ Nodes and ribbons use `--et-theme-color-primary-solid` from the node's colour sc
 
 ## Error codes
 
-The sankey chart owns `ET5160`-`ET5179` of the chart range, checked in dev mode:
+The sankey chart owns `ET5160`-`ET5179` of the chart range. They are checked in dev mode and reported to the `ErrorHandler`, and the chart draws no nodes or links until the data is fixed:
 
 | Code     | Cause                                                           |
 | -------- | --------------------------------------------------------------- |

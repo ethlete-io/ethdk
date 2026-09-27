@@ -24,22 +24,24 @@ visitors: LineChartDatum[] = [
 
 ## Options
 
-| Input            | Type                                                           | Default   | Description                                                                                                      |
-| ---------------- | -------------------------------------------------------------- | --------- | ---------------------------------------------------------------------------------------------------------------- |
-| `data`           | `readonly LineChartDatum[] \| readonly LineChartSeriesDatum[]` | -         | Required. The points: `{ x, value }` for one series, `{ x, values }` with `series`. `x` is a string or a `Date`. |
-| `label`          | `string`                                                       | -         | Required. Names the chart for assistive tech and captions the table view.                                        |
-| `series`         | `readonly LineChartSeries[]`                                   | `[]`      | The series to draw from each datum's `values`. Empty draws one series from each datum's `value`.                 |
-| `area`           | `boolean`                                                      | `false`   | Fills the space under each line.                                                                                 |
-| `stacked`        | `boolean`                                                      | `false`   | Stacks the series on each other instead of drawing each from zero. Needs two or more series.                     |
-| `points`         | `boolean`                                                      | `false`   | Draws a dot at every point, not only at points no line segment shows.                                            |
-| `height`         | `number`                                                       | `240`     | Height of the plot area in px. The axis labels sit outside it.                                                   |
-| `tickCount`      | `number`                                                       | `5`       | Roughly how many value-axis intervals to draw.                                                                   |
-| `valueFormatter` | `((value: number) => string) \| null`                          | `null`    | Formats values on the axis, in the tooltip and in the table.                                                     |
-| `dateFormatter`  | `((date: Date) => string) \| null`                             | `null`    | Formats a time axis' instants in the tooltip, the accessible names and the table. Axis ticks keep their format.  |
-| `timeZone`       | `string \| null`                                               | `null`    | The IANA time zone a time axis is laid out and labelled in. `null` is the viewer's time zone.                    |
-| `xHeader`        | `string \| null`                                               | `null`    | The table view's x column header. `null` reads `Date` on a time axis, else `Category`.                           |
-| `valueHeader`    | `string`                                                       | `'Value'` | The table view's value column header in a single-series chart.                                                   |
-| `colorToken`     | registered color theme name \| `null`                          | `null`    | The color theme a single-series chart is drawn in, and the fallback for a series without a color.                |
+| Input            | Type                                                           | Default      | Description                                                                                                      |
+| ---------------- | -------------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `data`           | `readonly LineChartDatum[] \| readonly LineChartSeriesDatum[]` | -            | Required. The points: `{ x, value }` for one series, `{ x, values }` with `series`. `x` is a string or a `Date`. |
+| `label`          | `string`                                                       | -            | Required. Names the chart for assistive tech and captions the table view.                                        |
+| `series`         | `readonly LineChartSeries[]`                                   | `[]`         | The series to draw from each datum's `values`. Empty draws one series from each datum's `value`.                 |
+| `area`           | `boolean`                                                      | `false`      | Fills the space under each line.                                                                                 |
+| `stacked`        | `boolean`                                                      | `false`      | Stacks the series on each other instead of drawing each from zero. Needs two or more series.                     |
+| `points`         | `boolean`                                                      | `false`      | Draws a dot at every point, not only at points no line segment shows.                                            |
+| `height`         | `number`                                                       | `240`        | Height of the plot area in px. The axis labels sit outside it.                                                   |
+| `tickCount`      | `number`                                                       | `5`          | Roughly how many value-axis intervals to draw.                                                                   |
+| `valueFormatter` | `((value: number) => string) \| null`                          | `null`       | Formats values on the axis, in the tooltip and in the table.                                                     |
+| `dateFormatter`  | `((date: Date) => string) \| null`                             | `null`       | Formats a time axis' instants in the tooltip, the accessible names and the table. Axis ticks keep their format.  |
+| `timeZone`       | `string \| null`                                               | `null`       | The IANA time zone a time axis is laid out and labelled in. `null` is the viewer's time zone.                    |
+| `xHeader`        | `string \| null`                                               | `null`       | The table view's x column header. `null` reads `dateHeader` on a time axis, else `categoryHeader`.               |
+| `categoryHeader` | `string`                                                       | `'Category'` | The table view's x column header on a category axis, while `xHeader` is `null`. Set it to translate the header.  |
+| `dateHeader`     | `string`                                                       | `'Date'`     | The table view's x column header on a time axis, while `xHeader` is `null`. Set it to translate the header.      |
+| `valueHeader`    | `string`                                                       | `'Value'`    | The table view's value column header in a single-series chart.                                                   |
+| `colorToken`     | registered color theme name \| `null`                          | `null`       | The color theme a single-series chart is drawn in, and the fallback for a series without a color.                |
 
 Values are formatted with `Intl.NumberFormat` in the locale from `injectLocale()` (`@ethlete/core`) unless you pass a `valueFormatter`.
 
@@ -51,7 +53,7 @@ When every `x` is a `Date`, the chart draws a time axis instead. Points sit at t
 
 The tooltip and the table name each instant at the resolution the data has: the month (`March 2025`) when every instant is the first of a month, the date (`Mar 30, 2025`) when every instant is a midnight, and date and time otherwise. `dateFormatter` replaces that.
 
-Mixing `Date` and string `x` values throws `ET5120` in dev mode.
+Mixing `Date` and string `x` values reports `ET5120` to the `ErrorHandler` in dev mode, and the chart draws nothing.
 
 <StoryEmbed id="components-data-display-line-chart--time-axis" height="380px" />
 

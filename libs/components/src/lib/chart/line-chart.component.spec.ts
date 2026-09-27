@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, ErrorHandler, Provider, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideColorPalette } from '@ethlete/core';
@@ -22,6 +22,8 @@ import { LineChartComponent } from './line-chart.component';
       [stacked]="stacked()"
       [height]="200"
       [timeZone]="timeZone()"
+      [categoryHeader]="categoryHeader()"
+      [dateHeader]="dateHeader()"
       label="Visitors"
     />
   `,
@@ -39,6 +41,8 @@ class LineChartHostComponent {
   area = signal(false);
   stacked = signal(false);
   timeZone = signal<string | null>('Europe/Berlin');
+  categoryHeader = signal('Category');
+  dateHeader = signal('Date');
 }
 
 const PLOT_WIDTH = 500;
@@ -48,8 +52,8 @@ const PALETTE = provideColorPalette([
   { token: 'sunset', label: 'Sunset' },
 ]);
 
-const setup = () => {
-  TestBed.configureTestingModule({ providers: [PALETTE] });
+const setup = (providers: Provider[] = []) => {
+  TestBed.configureTestingModule({ providers: [PALETTE, ...providers] });
 
   const fixture = TestBed.createComponent(LineChartHostComponent);
   fixture.detectChanges();
@@ -271,14 +275,32 @@ describe('LineChartComponent', () => {
     expect(element.querySelector('.et-chart-legend')?.getAttribute('data-mark')).toBe('line');
   });
 
-  it('throws in dev mode when the data mixes dates and categories', () => {
-    const { host, fixture } = setup();
+  it('names the x column with the translated category and date headers', () => {
+    const { host, fixture, chart } = setup();
+
+    host.categoryHeader.set('Kategorie');
+    host.dateHeader.set('Datum');
+    fixture.detectChanges();
+    expect(chart.table().columns[0]).toBe('Kategorie');
+
+    host.data.set([{ x: new Date('2025-01-01T00:00:00Z'), value: 1 }]);
+    fixture.detectChanges();
+    expect(chart.table().columns[0]).toBe('Datum');
+  });
+
+  it('reports data that mixes dates and categories and draws nothing', () => {
+    const handleError = vi.fn();
+    const { host, fixture, chart, element } = setup([{ provide: ErrorHandler, useValue: { handleError } }]);
 
     host.data.set([
       { x: new Date('2025-01-01T00:00:00Z'), value: 1 },
       { x: 'Feb', value: 2 },
     ]);
 
-    expect(() => fixture.detectChanges()).toThrow(/ET5120/);
+    expect(() => fixture.detectChanges()).not.toThrow();
+    expect(String(handleError.mock.calls[0]?.[0])).toMatch(/ET5120/);
+    expect(chart.slices()).toEqual([]);
+    expect(chart.table().rows).toEqual([]);
+    expect(element.querySelector('.et-line-chart-slice, .et-line-chart-point')).toBeNull();
   });
 });

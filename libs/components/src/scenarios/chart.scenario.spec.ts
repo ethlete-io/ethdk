@@ -373,10 +373,15 @@ describe('chart scenarios', () => {
     const s = scenario();
 
     measurePlots();
-    TestBed.createComponent(MixedLineComponent);
+    const fixture = TestBed.createComponent(MixedLineComponent);
 
-    expect(() => s.tick()).toThrow(`ET${LINE_CHART_ERROR_CODES.MIXED_X_TYPES}`);
-    s.allow('frames', 'the throw aborts the render that would run the queued frame');
+    expect(() => fixture.detectChanges()).not.toThrow();
+    s.tick();
+    s.flush();
+
+    s.expectError(`ET${LINE_CHART_ERROR_CODES.MIXED_X_TYPES}`);
+    expect(queryAll('.et-line-chart-slice', fixture.nativeElement)).toHaveLength(0);
+    expect(tableRows(fixture.nativeElement)).toEqual([]);
   });
 
   it('draws a donut with its total, a percentage legend and projected centre content', () => {
@@ -492,8 +497,13 @@ describe('chart scenarios', () => {
       fixture.componentInstance.nodes.set(nodes);
       fixture.componentInstance.links.set(links);
 
-      expect(() => s.tick()).toThrow(`ET${code}`);
-      s.allow('frames', 'the throw aborts the render that would run the queued frame');
+      expect(() => fixture.detectChanges()).not.toThrow();
+      s.tick();
+      s.flush();
+
+      s.expectError(`ET${code}`);
+      expect(queryAll('.et-sankey-chart-node', fixture.nativeElement)).toHaveLength(0);
+      expect(queryAll('.et-sankey-chart-link', fixture.nativeElement)).toHaveLength(0);
     },
   );
 

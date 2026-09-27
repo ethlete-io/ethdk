@@ -19,6 +19,7 @@ import {
 } from '@ethlete/core';
 import { filter, fromEvent, tap } from 'rxjs';
 import { ChartAxisLabel, ChartLegendItem, ChartRect, ChartTableModel, ChartTick } from '../chart.types';
+import { injectReportError } from '../../internals/report-error';
 import { LINE_CHART_ERROR_CODES } from '../line-chart-errors';
 import { CHART_PLOT_HOST, ChartPlotDirective, ChartPlotHost } from './chart-plot.directive';
 import { ChartValueFormatter, resolveChartValueFormatter } from './internals/chart-format';
@@ -161,6 +162,7 @@ export class LineChartDirective implements ChartPlotHost {
   private locale = injectLocale();
   private hostElement = injectHostElement();
   private destroyRef = inject(DestroyRef);
+  private reportError = injectReportError();
 
   /**
    * The points, in order. `{ x, value }` per point for one series; with `series`, `{ x, values }`
@@ -201,8 +203,14 @@ export class LineChartDirective implements ChartPlotHost {
   /** The IANA time zone a time axis is laid out and labelled in. @default the viewer's time zone */
   public timeZone = input<string | null>(null);
 
-  /** The table view's x column header. @default 'Date' on a time axis, else 'Category' */
+  /** The table view's x column header. Wins over `categoryHeader` and `dateHeader`. @default null */
   public xHeader = input<string | null>(null);
+
+  /** The table view's x column header on a category axis, while `xHeader` is `null`. @default 'Category' */
+  public categoryHeader = input('Category');
+
+  /** The table view's x column header on a time axis, while `xHeader` is `null`. @default 'Date' */
+  public dateHeader = input('Date');
 
   /** The table view's value column header in a single-series chart. @default 'Value' */
   public valueHeader = input('Value');
@@ -245,7 +253,11 @@ export class LineChartDirective implements ChartPlotHost {
 
   private resolvedTimeZone = computed(() => this.timeZone() ?? viewerTimeZone());
 
+  private hasMixedX = computed(() => !this.isTime() && this.data().some((datum) => datum.x instanceof Date));
+
   private rows = computed<NormalizedRow[]>(() => {
+    if (this.hasMixedX()) return [];
+
     const series = this.series();
     const isTime = this.isTime();
 
@@ -468,7 +480,7 @@ export class LineChartDirective implements ChartPlotHost {
     const series = this.series();
     const format = this.formatValue();
     const formatX = this.formatX();
-    const xHeader = this.xHeader() ?? (this.isTime() ? 'Date' : 'Category');
+    const xHeader = this.xHeader() ?? (this.isTime() ? this.dateHeader() : this.categoryHeader());
 
     return {
       columns: [xHeader, ...(series.length ? series.map((entry) => entry.label) : [this.valueHeader()])],
@@ -492,15 +504,15 @@ export class LineChartDirective implements ChartPlotHost {
 
     if (ngDevMode) {
       effect(() => {
-        const data = this.data();
+        if (!this.hasMixedX()) return;
 
-        if (!this.isTime() && data.some((datum) => datum.x instanceof Date)) {
-          throw new RuntimeError(
+        this.reportError(
+          new RuntimeError(
             LINE_CHART_ERROR_CODES.MIXED_X_TYPES,
             '[LineChartDirective] The data mixes Date and string x values. ' +
               'Give every datum a Date for a time axis, or a string for categories.',
-          );
-        }
+          ),
+        );
       });
 
       effect(() => {
