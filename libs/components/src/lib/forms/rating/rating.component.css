@@ -187,5 +187,11 @@
         transition: clip-path 160ms ease;
       }
     }
+
+    @media (prefers-reduced-motion: reduce) {
+      &[data-can-animate] .et-rating-row--fill {
+        transition: none;
+      }
+    }
   }
 }

@@ -414,8 +414,6 @@ test.describe('rating / fill animation', () => {
   });
 
   test('under reduced motion the fill jumps to the new value without a transition', async ({ page }) => {
-    test.fail(true, 'rating.component.css has no prefers-reduced-motion rule for the fill transition');
-
     await page.emulateMedia({ reducedMotion: 'reduce' });
     const root = await openStory(page, DEFAULT_ID, { args: { value: 2 } });
     const slider = root.getByRole('slider');
