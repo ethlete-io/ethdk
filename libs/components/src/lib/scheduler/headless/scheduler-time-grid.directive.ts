@@ -1,6 +1,7 @@
 import { Directive, afterNextRender, computed, inject } from '@angular/core';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { eachDayOfInterval, isSameDay, startOfDay } from 'date-fns';
+import { injectReportError } from '../../internals/report-error';
 import { SCHEDULER_ERROR_CODES } from '../scheduler-errors';
 import { buildSchedulerNonBusinessTime } from './internals/scheduler-business-hours';
 import { injectSchedulerClock } from './internals/scheduler-clock';
@@ -31,6 +32,7 @@ export class SchedulerTimeGridDirective {
   private hostElement = injectHostElement();
 
   private scheduler = inject(SchedulerDirective, { optional: true });
+  private reportError = injectReportError();
 
   private clock = injectSchedulerClock(() => this.scheduler?.nowIndicator() ?? false);
 
@@ -67,10 +69,11 @@ export class SchedulerTimeGridDirective {
 
     if (!businessHours) return days.map(() => []);
 
-    return buildSchedulerNonBusinessTime(
-      days.map((day) => day.date),
+    return buildSchedulerNonBusinessTime({
+      days: days.map((day) => day.date),
       businessHours,
-    );
+      reportError: this.reportError,
+    });
   });
 
   /**

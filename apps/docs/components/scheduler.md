@@ -166,7 +166,7 @@ protected businessHours: SchedulerBusinessHours[] = [
 <et-scheduler [businessHours]="businessHours" [appointments]="appointments" />
 ```
 
-`daysOfWeek` counts from `0` = Sunday. `start` and `end` are `HH:mm`, and `end` may be `24:00` to stay open until midnight. An entry that does not parse, or ends before it starts, throws `ET4506` in development. The shading is only a cue: appointments still render and can still be dragged, and a drag-to-create still starts, on a shaded stretch. The fill comes from the surface's interaction color at 6%; set `--et-scheduler-time-grid-non-business-background` to change it.
+`daysOfWeek` counts from `0` = Sunday. `start` and `end` are `HH:mm`, and `end` may be `24:00` to stay open until midnight. An entry that does not parse, or ends before it starts, reports `ET4506` to the `ErrorHandler` in development, and the grid shades nothing until it is fixed. The shading is only a cue: appointments still render and can still be dragged, and a drag-to-create still starts, on a shaded stretch. The fill comes from the surface's interaction color at 6%; set `--et-scheduler-time-grid-non-business-background` to change it.
 
 <StoryEmbed id="components-date-time-scheduler--business-hours" height="640px" />
 
@@ -294,7 +294,7 @@ The state behind it lives on the headless directive, so a custom view can drive 
 
 ## Edit surface {#edit-surface}
 
-Clicking any appointment badge or block opens `<et-scheduler-edit-surface>`, built on the [overlay](/components/overlays) system, which `<et-scheduler>` opens automatically whenever `selectedAppointmentId` becomes non-`null` and closes back to `null` when it does. Register `provideSchedulerEditSurface()` in a parent injector to enable that behavior. Without it, the scheduler remains read-only and, in development, an edit interaction reports `ET4505`.
+Clicking any appointment badge or block opens `<et-scheduler-edit-surface>`, built on the [overlay](/components/overlays) system, which `<et-scheduler>` opens automatically whenever `selectedAppointmentId` becomes non-`null` and closes back to `null` when it does. Register `provideSchedulerEditSurface()` in a parent injector to enable that behavior. Without it, the scheduler remains read-only and, in development, an edit interaction reports `ET4505` to the `ErrorHandler` and opens nothing.
 
 `SCHEDULER_IMPORTS` no longer includes the editor. Add `SCHEDULER_EDIT_IMPORTS` when rendering `<et-scheduler-edit-surface>` directly in a custom composition.
 

@@ -1,3 +1,4 @@
+import { ErrorHandler } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import '../../test-helpers';
 import { injectOverlayManager } from '../overlay';
@@ -92,10 +93,13 @@ describe('SchedulerComponent', () => {
     expect(driver.editSurface()).toHaveLength(0);
   });
 
-  it('requires the default edit surface to be registered before opening an appointment', () => {
+  it('reports an open request while no default edit surface is registered', () => {
     const readOnlyDriver = schedulerTestDriver({ appointments: [testAppointment('a')], editSurface: false });
+    const handleError = vi.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => undefined);
 
-    expect(() => readOnlyDriver.openEditSurface('a')).toThrow('ET4505');
+    expect(() => readOnlyDriver.openEditSurface('a')).not.toThrow();
+    expect(String(handleError.mock.calls[0]?.[0])).toContain('ET4505');
+    expect(readOnlyDriver.editSurface()).toHaveLength(0);
 
     readOnlyDriver.fixture.destroy();
   });

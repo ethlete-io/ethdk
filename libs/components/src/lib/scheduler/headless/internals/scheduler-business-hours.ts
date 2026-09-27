@@ -25,16 +25,21 @@ const toMinutes = (time: string) => {
   return minutes <= MINUTES_PER_DAY ? minutes : null;
 };
 
-const toBusinessRange = (entry: SchedulerBusinessHours): BusinessRange | null => {
+const toBusinessRange = (
+  entry: SchedulerBusinessHours,
+  reportError: (error: RuntimeError<number>) => void,
+): BusinessRange | null => {
   const start = toMinutes(entry.start);
   const end = toMinutes(entry.end);
 
   if (start !== null && end !== null && end > start) return { daysOfWeek: entry.daysOfWeek, start, end };
 
   if (ngDevMode) {
-    throw new RuntimeError(
-      SCHEDULER_ERROR_CODES.INVALID_BUSINESS_HOURS,
-      `businessHours entry "${entry.start}"-"${entry.end}" is invalid: both ends must be HH:mm between 00:00 and 24:00, and end must be later than start.`,
+    reportError(
+      new RuntimeError(
+        SCHEDULER_ERROR_CODES.INVALID_BUSINESS_HOURS,
+        `businessHours entry "${entry.start}"-"${entry.end}" is invalid: both ends must be HH:mm between 00:00 and 24:00, and end must be later than start.`,
+      ),
     );
   }
 
@@ -46,12 +51,19 @@ const toSegment = (start: number, end: number): SchedulerTimeGridSegment => ({
   span: ((end - start) / MINUTES_PER_DAY) * 100,
 });
 
-/** The time outside `businessHours` on each of `days`, one list of segments per day. */
-export const buildSchedulerNonBusinessTime = (
-  days: readonly Date[],
-  businessHours: readonly SchedulerBusinessHours[],
-): SchedulerTimeGridSegment[][] => {
-  const ranges = businessHours.flatMap((entry) => toBusinessRange(entry) ?? []);
+/** The time outside `businessHours` on each of `days`, one list of segments per day. An invalid entry is reported and leaves every day unshaded. */
+export const buildSchedulerNonBusinessTime = ({
+  days,
+  businessHours,
+  reportError,
+}: {
+  days: readonly Date[];
+  businessHours: readonly SchedulerBusinessHours[];
+  reportError: (error: RuntimeError<number>) => void;
+}): SchedulerTimeGridSegment[][] => {
+  const ranges = businessHours.map((entry) => toBusinessRange(entry, reportError));
+
+  if (!ranges.every((range) => range !== null)) return days.map(() => []);
 
   return days.map((day) => {
     const weekday = day.getDay() as SchedulerDayOfWeek;

@@ -737,15 +737,22 @@ describe('scheduler misuse scenarios', () => {
 
     s.tick();
 
-    expect(() => {
-      query('.et-scheduler-appointment[title="Kickoff"]', host).click();
-      s.tick();
-    }).toThrow(code(SCHEDULER_ERROR_CODES.EDIT_SURFACE_NOT_REGISTERED));
+    query('.et-scheduler-appointment[title="Kickoff"]', host).click();
+    expect(() => fixture.detectChanges()).not.toThrow();
+    s.tick();
+    s.expectError(code(SCHEDULER_ERROR_CODES.EDIT_SURFACE_NOT_REGISTERED));
+    expect(document.querySelector('et-scheduler-edit-surface')).toBeNull();
 
     fixture.componentInstance.nowIndicator.set(false);
     fixture.componentInstance.view.set('week');
-    fixture.componentInstance.businessHours.set([{ daysOfWeek: [1], start: '17:00', end: '09:00' }]);
-    expect(() => s.tick()).toThrow(code(SCHEDULER_ERROR_CODES.INVALID_BUSINESS_HOURS));
+    fixture.componentInstance.businessHours.set([
+      { daysOfWeek: [1, 2, 3, 4, 5], start: '09:00', end: '17:00' },
+      { daysOfWeek: [1], start: '17:00', end: '09:00' },
+    ]);
+    expect(() => fixture.detectChanges()).not.toThrow();
+    s.tick();
+    s.expectError(code(SCHEDULER_ERROR_CODES.INVALID_BUSINESS_HOURS));
+    expect(host.querySelector('.et-scheduler-time-grid-non-business')).toBeNull();
 
     fixture.componentInstance.businessHours.set(null);
     finish(s);
