@@ -6,6 +6,7 @@ import {
   effect,
   inject,
   input,
+  signal,
   untracked,
 } from '@angular/core';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
@@ -26,7 +27,7 @@ import { compilePatternMask } from './internals/pattern-mask';
   exportAs: 'etInputMask',
   host: {
     '(input)': 'handleInput($event)',
-    '(compositionstart)': 'composing = true',
+    '(compositionstart)': 'composing.set(true)',
     '(compositionend)': 'handleCompositionEnd($event)',
   },
 })
@@ -54,10 +55,10 @@ export class InputMaskDirective {
 
   /**
    * `true` between `compositionstart` and `compositionend`. Rewriting `value` +
-   * `setSelectionRange` on the intermediate `input` events cancels the IME candidate window
-   * mid-composition (CJK, dead keys), so reconciliation is deferred until composition ends.
+   * `setSelectionRange` mid-composition - on an intermediate `input` event or in the render-time
+   * repaint - cancels the IME candidate window (CJK, dead keys), so both wait until composition ends.
    */
-  protected composing = false;
+  protected composing = signal(false);
 
   private spec = computed(() => {
     const mask = this.mask();
@@ -150,7 +151,7 @@ export class InputMaskDirective {
       const element = host?.nativeControl();
       const spec = this.spec();
 
-      if (!host || !element || !spec) {
+      if (!host || !element || !spec || this.composing()) {
         return;
       }
 
@@ -192,7 +193,7 @@ export class InputMaskDirective {
 
     // an IME is mid-composition - reconcile once it settles (`compositionend`), not on every
     // intermediate `input`, or the candidate window is torn down on the first keystroke
-    if (this.composing || (event as InputEvent).isComposing) {
+    if (this.composing() || (event as InputEvent).isComposing) {
       return;
     }
 
@@ -204,7 +205,7 @@ export class InputMaskDirective {
       return;
     }
 
-    this.composing = false;
+    this.composing.set(false);
 
     // `compositionend` carries the committed text; reconcile it now that the IME is done
     this.reconcile((event as unknown as InputEvent).inputType);

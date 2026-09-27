@@ -336,7 +336,8 @@ pastes are filtered through the mask (`31.12.2024` fills `00-00-0000`). With
 `placeholderChar` set (pattern masks only), unfilled slots render as a guide
 (`31-1_-____`) while the field is focused. IME composition (CJK, dead keys) is
 left alone mid-composition and reconciled on `compositionend`, so the candidate
-window is never torn down. Custom masks implement `MaskSpec` (`toRaw`/`toDisplay`
+window is never torn down. `et-input` itself holds any model write back from the
+native field until the composition ends, too. Custom masks implement `MaskSpec` (`toRaw`/`toDisplay`
 plus optional caret metadata) - see the type's docs.
 
 The directive exposes two signals (via `exportAs: 'etInputMask'`): `rawValue()` -

@@ -2,15 +2,8 @@
 
 ## Goal
 
-The open items left after the components consumer-coverage work (tasks 1-8) finished on 2026-09-27: one approved
-fix, the bugs and user calls the scenarios and E2E suites found but did not fix, and the E2E gaps no suite covers.
-
-## Approved, not started
-
-- Fix 6: a masked input's IME composition breaks when `et-input` writes `[value]` mid-composition. Approved
-  solution: a `composing` signal in `InputDirective`. The `test.fail` "a composition that starts right after a
-  keystroke is not cleared by its pending render" in `apps/storybook-e2e/src/masked-input/masked-input.e2e.ts` waits
-  for it. A separate task after the push.
+The open items left after the components consumer-coverage work (tasks 1-8) finished on 2026-09-27: the bugs
+and user calls the scenarios and E2E suites found but did not fix, and the E2E gaps no suite covers.
 
 ## Open bugs and user calls
 

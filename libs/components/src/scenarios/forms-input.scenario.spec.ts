@@ -244,6 +244,34 @@ describe('forms input scenarios', () => {
     s.flush();
   });
 
+  it('holds a model write back from the native input until an IME composition ends', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(PlayerSignupComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const app = fixture.componentInstance;
+
+    s.tick();
+
+    const email = query<HTMLInputElement>('.et-input-native', host);
+
+    typeInto(s, email, 'coach');
+    email.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true, data: '' }));
+    email.value = 'coachか';
+    email.dispatchEvent(
+      new InputEvent('input', { bubbles: true, inputType: 'insertCompositionText', isComposing: true }),
+    );
+    app.model.update((model) => ({ ...model, email: 'reset@team-a.test' }));
+    s.tick();
+
+    expect(email.value).toBe('coachか');
+
+    email.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: 'か' }));
+    s.tick();
+
+    expect(email.value).toBe('reset@team-a.test');
+    s.flush();
+  });
+
   it('drives native inputs with the headless directives', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(NativeInputsComponent);

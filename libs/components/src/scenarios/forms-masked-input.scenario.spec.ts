@@ -283,6 +283,43 @@ describe('forms masked-input scenarios', () => {
     expect(fixture.componentInstance.model().card).toBe('12345');
   });
 
+  it('keeps a composition that starts before the previous keystroke rendered', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(PaymentFormComponent);
+
+    settle(s);
+
+    const card = field('.card');
+
+    focus(s, card);
+    type(s, card, '123');
+
+    const insertAtCaret = (text: string) => {
+      const caret = card.selectionStart ?? card.value.length;
+
+      card.value = card.value.slice(0, caret) + text + card.value.slice(caret);
+      card.setSelectionRange(caret + text.length, caret + text.length);
+    };
+
+    insertAtCaret('4');
+    card.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: '4' }));
+    card.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true, data: '' }));
+    insertAtCaret('5');
+    card.dispatchEvent(
+      new InputEvent('input', { bubbles: true, inputType: 'insertCompositionText', data: '5', isComposing: true }),
+    );
+    settle(s);
+
+    expect(card.value).toBe('12345');
+    expect(fixture.componentInstance.model().card).toBe('1234');
+
+    card.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: '5' }));
+    settle(s);
+
+    expect(card.value).toBe('1234 5');
+    expect(fixture.componentInstance.model().card).toBe('12345');
+  });
+
   it('switches a mask off at runtime and hands the value back to the input', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(PaymentFormComponent);

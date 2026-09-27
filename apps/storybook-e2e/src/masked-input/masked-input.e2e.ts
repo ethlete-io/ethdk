@@ -205,10 +205,6 @@ test.describe('masked-input / clipboard and composition', () => {
   });
 
   test('a composition that starts right after a keystroke is not cleared by its pending render', async ({ page }) => {
-    test.fail(
-      true,
-      "et-input's [value] binding writes the previous keystroke's model mid-composition, tearing the IME down",
-    );
     const root = await openStory(page, IBAN_ID);
     const field = root.locator('.et-input-native');
 

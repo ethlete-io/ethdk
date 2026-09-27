@@ -1,4 +1,4 @@
-import { computed, Directive, ElementRef, inject, input, model, signal } from '@angular/core';
+import { computed, Directive, ElementRef, inject, input, linkedSignal, model, signal } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { FORM_FIELD_CONTROL_TYPES, TextFieldControlDirective } from '../../form-field/headless';
 import { INPUT_MASK_HOST } from '../../masked-input/headless/input-mask-host';
@@ -23,6 +23,8 @@ type InputType = (typeof INPUT_TYPES)[keyof typeof INPUT_TYPES];
     '(input)': 'handleNativeInput($event)',
     '(focus)': 'handleNativeFocus($event)',
     '(blur)': 'handleNativeBlur($event)',
+    '(compositionstart)': 'handleCompositionChange($event, true)',
+    '(compositionend)': 'handleCompositionChange($event, false)',
   },
 })
 export class InputDirective extends TextFieldControlDirective implements FormValueControl<string> {
@@ -44,8 +46,18 @@ export class InputDirective extends TextFieldControlDirective implements FormVal
   public hasValue = computed(() => this.mixed() || !!this.value());
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.TEXT_INPUT);
 
-  /** The text the native input renders - empty while mixed so the raw value never reaches the DOM. */
-  public displayValue = computed(() => (this.mixed() ? '' : (this.value() ?? '')));
+  /** @internal `true` between `compositionstart` and `compositionend` on the native input. */
+  public composing = signal(false);
+
+  /**
+   * The text the native input renders - empty while mixed so the raw value never reaches the DOM.
+   * Held at its last rendered value while an IME composes: writing the native `value` mid-composition
+   * tears the composition down, so a model change made meanwhile lands on `compositionend`.
+   */
+  public displayValue = linkedSignal<{ text: string; composing: boolean }, string>({
+    source: () => ({ text: this.mixed() ? '' : (this.value() ?? ''), composing: this.composing() }),
+    computation: (source, previous) => (source.composing && previous ? previous.value : source.text),
+  }).asReadonly();
 
   /** The placeholder the native input renders - `mixedLabel` overrides the consumer placeholder while mixed. */
   public effectivePlaceholder = computed(() => (this.mixed() ? this.resolvedMixedLabel() : this.placeholder()));
@@ -77,6 +89,14 @@ export class InputDirective extends TextFieldControlDirective implements FormVal
   /** @internal Restores the built-in native `(input)` sync - the mask calls this when set to `null`. */
   public resumeNativeSync() {
     this.nativeSyncSuppressed = false;
+  }
+
+  protected handleCompositionChange(event: Event, composing: boolean) {
+    if (event.target !== this.nativeControl()) {
+      return;
+    }
+
+    this.composing.set(composing);
   }
 
   protected handleNativeInput(event: Event) {
