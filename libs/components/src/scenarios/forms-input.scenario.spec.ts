@@ -72,6 +72,36 @@ class NativeInputsComponent {
 }
 
 @Component({
+  selector: 'et-scenario-native-required-inputs',
+  imports: [FORM_FIELD_IMPORTS, InputDirective, NumberInputDirective, PasswordInputDirective, FormField],
+  template: `
+    <et-form-field>
+      <et-label>Team</et-label>
+      <input [formField]="entry.team" etInput />
+    </et-form-field>
+    <et-form-field>
+      <et-label>Squad size</et-label>
+      <input [formField]="entry.squad" etNumberInput type="number" />
+    </et-form-field>
+    <et-form-field>
+      <et-label>Code</et-label>
+      <input [formField]="entry.code" etPasswordInput type="password" />
+    </et-form-field>
+  `,
+})
+class NativeRequiredInputsComponent {
+  model = signal({ team: '', squad: null as number | null, code: '' });
+  entry = form(this.model, (path) => {
+    required(path.team, { message: 'Team is required' });
+    required(path.squad, { message: 'Squad size is required' });
+    required(path.code, { message: 'Code is required' });
+  });
+  text = viewChild.required(InputDirective);
+  number = viewChild.required(NumberInputDirective);
+  password = viewChild.required(PasswordInputDirective);
+}
+
+@Component({
   selector: 'et-scenario-german-inputs',
   imports: [FORM_FIELD_IMPORTS, NumberInputComponent, PasswordInputComponent],
   providers: [provideInputLabels({ increment: 'Erhöhen', showPassword: 'Passwort anzeigen' })],
@@ -259,6 +289,44 @@ describe('forms input scenarios', () => {
     app.password().toggleRevealed();
     s.tick();
     expect(secret.type).toBe('text');
+  });
+
+  it('marks a bare native input touched on blur and shows its signal-form error', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(NativeRequiredInputsComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const app = fixture.componentInstance;
+
+    s.tick();
+    s.flush();
+
+    const fields = Array.from(host.querySelectorAll('et-form-field'));
+    const cases = [
+      { dir: app.text(), field: app.entry.team, message: 'Team is required' },
+      { dir: app.number(), field: app.entry.squad, message: 'Squad size is required' },
+      { dir: app.password(), field: app.entry.code, message: 'Code is required' },
+    ];
+
+    expect(host.querySelector('et-form-error')).toBeNull();
+
+    cases.forEach(({ dir, field, message }, index) => {
+      const formField = fields[index]!;
+      const input = query<HTMLInputElement>('input', formField);
+
+      input.focus();
+      s.tick();
+      expect(dir.focused()).toBe(true);
+      expect(field().touched()).toBe(false);
+
+      input.blur();
+      s.tick();
+      expect(dir.focused()).toBe(false);
+      expect(dir.touched()).toBe(true);
+      expect(field().touched()).toBe(true);
+      expect(query('et-form-error', formField).textContent).toContain(message);
+    });
+
+    s.flush();
   });
 
   it('localizes stepper and reveal labels app-wide, per instance and through the token', () => {

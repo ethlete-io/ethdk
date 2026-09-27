@@ -21,6 +21,8 @@ type InputType = (typeof INPUT_TYPES)[keyof typeof INPUT_TYPES];
   providers: [{ provide: INPUT_MASK_HOST, useExisting: InputDirective }],
   host: {
     '(input)': 'handleNativeInput($event)',
+    '(focus)': 'handleNativeFocus($event)',
+    '(blur)': 'handleNativeBlur($event)',
   },
 })
 export class InputDirective extends TextFieldControlDirective implements FormValueControl<string> {

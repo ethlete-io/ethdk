@@ -1,6 +1,6 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { form, FormField, maxLength } from '@angular/forms/signals';
+import { form, FormField, maxLength, required } from '@angular/forms/signals';
 import { provideColorThemes } from '@ethlete/core';
 import { FORM_FIELD_IMPORTS, TextareaComponent, TextareaDirective } from '../index';
 import { TEST_COLOR_THEMES } from '../lib/testing/color-themes';
@@ -32,6 +32,24 @@ class MatchReportComponent {
 })
 class NativeNotesComponent {
   notes = signal('Half time');
+  textarea = viewChild.required(TextareaDirective);
+}
+
+@Component({
+  selector: 'et-scenario-native-required-notes',
+  imports: [FORM_FIELD_IMPORTS, TextareaDirective, FormField],
+  template: `
+    <et-form-field>
+      <et-label>Notes</et-label>
+      <textarea [formField]="report.notes" autosize="false" etTextarea></textarea>
+    </et-form-field>
+  `,
+})
+class NativeRequiredNotesComponent {
+  model = signal({ notes: '' });
+  report = form(this.model, (path) => {
+    required(path.notes, { message: 'Notes are required' });
+  });
   textarea = viewChild.required(TextareaDirective);
 }
 
@@ -95,6 +113,28 @@ describe('textarea scenarios', () => {
 
     expect(app.notes()).toBe('Full time');
     expect(app.textarea().hasValue()).toBe(true);
+  });
+
+  it('marks a native textarea touched on blur and shows its signal-form error', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(NativeRequiredNotesComponent);
+    const app = fixture.componentInstance;
+    const host = fixture.nativeElement as HTMLElement;
+    const textarea = host.querySelector('textarea')!;
+
+    s.tick();
+
+    textarea.focus();
+    s.tick();
+    expect(app.textarea().focused()).toBe(true);
+    expect(host.querySelector('et-form-error')).toBeNull();
+
+    textarea.blur();
+    s.tick();
+    expect(app.textarea().focused()).toBe(false);
+    expect(app.report.notes().touched()).toBe(true);
+    expect(host.querySelector('et-form-error')?.textContent).toContain('Notes are required');
+    s.flush();
   });
 
   it.fails('renders the bound value into a native textarea', () => {

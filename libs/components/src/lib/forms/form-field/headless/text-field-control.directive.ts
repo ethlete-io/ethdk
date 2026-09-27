@@ -65,4 +65,17 @@ export abstract class TextFieldControlDirective extends TextShellControlDirectiv
   protected focusControl(options?: FocusOptions) {
     this.focusTarget()?.focus(options);
   }
+
+  protected handleNativeFocus(event: FocusEvent) {
+    if (event.target !== this.focusTarget()) return;
+
+    this.focused.set(true);
+  }
+
+  protected handleNativeBlur(event: FocusEvent) {
+    if (event.target !== this.focusTarget()) return;
+
+    this.focused.set(false);
+    this.touched.set(true);
+  }
 }

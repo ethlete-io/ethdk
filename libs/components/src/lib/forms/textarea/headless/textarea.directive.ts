@@ -34,6 +34,8 @@ export type TextareaResizeMode = (typeof TEXTAREA_RESIZE_MODES)[keyof typeof TEX
   selector: '[etTextarea]',
   host: {
     '(input)': 'handleNativeInput($event)',
+    '(focus)': 'handleNativeFocus($event)',
+    '(blur)': 'handleNativeBlur($event)',
   },
 })
 export class TextareaDirective extends TextFieldControlDirective implements FormValueControl<string> {

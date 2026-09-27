@@ -8,6 +8,8 @@ import { scorePasswordStrength } from './internals/password-strength';
   exportAs: 'etPasswordInput',
   host: {
     '(input)': 'handleNativeInput($event)',
+    '(focus)': 'handleNativeFocus($event)',
+    '(blur)': 'handleNativeBlur($event)',
   },
 })
 export class PasswordInputDirective extends TextFieldControlDirective implements FormValueControl<string> {

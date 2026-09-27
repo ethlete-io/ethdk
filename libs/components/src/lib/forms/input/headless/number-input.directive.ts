@@ -34,6 +34,8 @@ const PAGE_STEP_MULTIPLIER = 100;
   host: {
     '(keydown)': 'handleStepKeydown($event)',
     '(input)': 'handleNativeInput($event)',
+    '(focus)': 'handleNativeFocus($event)',
+    '(blur)': 'handleNativeBlur($event)',
   },
 })
 export class NumberInputDirective extends TextFieldControlDirective implements FormValueControl<number | null> {
