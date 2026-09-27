@@ -1,7 +1,7 @@
-import { Component, ViewEncapsulation, computed, input, signal } from '@angular/core';
-import { BUTTON_IMPORTS, EMPTY_STATE_IMPORTS } from '@ethlete/components';
+import { Component, ViewEncapsulation, computed, input } from '@angular/core';
+import { BUTTON_IMPORTS, EMPTY_STATE_IMPORTS, FORM_FIELD_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective } from '@ethlete/core';
-import { StandIn, StandInAge, formatDurationMs, standInWhere } from '@ethlete/timetrack';
+import { StandIn, formatDurationMs, standInWhere } from '@ethlete/timetrack';
 import { CreateTicketComponent } from '../day-review/create-ticket.component';
 import { injectTicketDraft } from '../day-review/ticket-draft';
 import { IssueSelectComponent } from '../jira';
@@ -30,23 +30,18 @@ import { injectStandIns } from './stand-ins';
           <div
             [attr.data-stand-in]="entry.id"
             [attr.data-state]="entry.standIn.state"
-            class="flex flex-col gap-3 rounded-md border border-et-surface-border p-3"
+            [class.rounded-md]="!only()"
+            [class.border]="!only()"
+            [class.p-3]="!only()"
+            class="flex flex-col gap-4 border-et-surface-border"
           >
-            <div class="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span class="min-w-0 grow text-base">{{ entry.standIn.name }}</span>
-              @if (entry.projectKey) {
-                <span class="shrink-0 text-mono text-small text-et-surface-muted">{{ entry.projectKey }}</span>
+            <div class="flex min-w-0 flex-col gap-1">
+              @if (!only()) {
+                <span class="text-h4">{{ entry.standIn.name }}</span>
               }
-              <span class="shrink-0 text-small text-et-surface-muted">{{ entry.days }}</span>
-            </div>
 
-            @if (entry.where) {
-              <div class="text-mono text-small text-et-surface-muted">{{ entry.where }}</div>
-            }
-
-            @if (entry.age; as age) {
-              <div class="flex flex-wrap items-center gap-2 text-small">
-                <span class="text-et-surface-muted">{{ age }}</span>
+              <div class="flex flex-wrap items-center gap-2 text-small text-et-surface-muted">
+                <span>{{ entry.meta }}</span>
 
                 @if (entry.isOverdue) {
                   <span class="rounded-sm bg-et-warning/15 px-2 text-et-warning-ink" data-overdue>
@@ -54,30 +49,43 @@ import { injectStandIns } from './stand-ins';
                   </span>
                 }
               </div>
-            }
+
+              @if (entry.where) {
+                <div [title]="entry.where" class="truncate text-mono text-small text-et-surface-subtle">
+                  {{ entry.where }}
+                </div>
+              }
+            </div>
 
             @if (entry.standIn.state === 'open') {
               <div class="flex flex-wrap items-center gap-2">
-                <ethlete-issue-select
-                  [value]="draftFor(entry.id)"
-                  [projectKey]="entry.projectKey"
-                  [ariaLabel]="'Issue for ' + entry.standIn.name"
-                  (valueChange)="setDraft(entry.id, $event)"
-                  class="w-42 shrink-0"
-                  placeholder="Issue"
-                />
+                <et-form-field class="min-w-60 grow">
+                  <ethlete-issue-select
+                    [projectKey]="entry.projectKey"
+                    [ariaLabel]="'Issue for ' + entry.standIn.name"
+                    (valueChange)="resolve(entry.id, $event)"
+                    value=""
+                    placeholder="Jira has it already? Pick the issue"
+                  />
+                </et-form-field>
 
-                <button [disabled]="!draftFor(entry.id)" (click)="resolve(entry.id)" et-button size="sm">
-                  Resolve
-                </button>
+                @if (tickets.standIn()?.id !== entry.id) {
+                  <button (click)="tickets.openForStandIn(entry.standIn)" et-button variant="outline">
+                    File a ticket
+                  </button>
+                }
 
-                <button (click)="tickets.openForStandIn(entry.standIn)" et-button variant="outline" size="sm">
-                  File a ticket
-                </button>
-
-                <button (click)="store.remove(entry.id)" et-button variant="outline" size="sm" etProvideColor="danger">
-                  Delete
-                </button>
+                @if (!only()) {
+                  <button
+                    (click)="store.remove(entry.id)"
+                    et-button
+                    variant="transparent"
+                    size="sm"
+                    etProvideColor="danger"
+                  >
+                    Delete
+                  </button>
+                }
               </div>
             } @else {
               <div class="flex flex-wrap items-center gap-2">
@@ -86,14 +94,14 @@ import { injectStandIns } from './stand-ins';
                 </span>
 
                 @if (entry.canReopen) {
-                  <button (click)="store.reopen(entry.id)" et-button variant="outline" size="sm">Undo</button>
+                  <button (click)="store.reopen(entry.id)" et-button variant="outline">Undo</button>
                 } @else {
                   <span class="text-small text-et-surface-muted">
                     A day it held is in Tempo, so the key is a correction from there on.
                   </span>
                 }
 
-                <button (click)="store.remove(entry.id)" et-button variant="outline" size="sm" etProvideColor="danger">
+                <button (click)="store.remove(entry.id)" et-button variant="outline" etProvideColor="danger">
                   Delete
                 </button>
               </div>
@@ -101,6 +109,9 @@ import { injectStandIns } from './stand-ins';
 
             @if (tickets.standIn()?.id === entry.id) {
               <ethlete-create-ticket
+                [class.border-t]="!!only()"
+                [class.pt-4]="!!only()"
+                [embedded]="!!only()"
                 [standIn]="tickets.standIn()"
                 [createdParent]="tickets.createdParent()"
                 [form]="tickets.form()"
@@ -150,6 +161,7 @@ import { injectStandIns } from './stand-ins';
                 (useExisting)="tickets.useExisting($event)"
                 (create)="tickets.create()"
                 (dismiss)="tickets.close()"
+                class="block border-et-surface-border"
               />
             }
           </div>
@@ -163,7 +175,14 @@ import { injectStandIns } from './stand-ins';
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, CreateTicketComponent, EMPTY_STATE_IMPORTS, IssueSelectComponent, ProvideColorDirective],
+  imports: [
+    BUTTON_IMPORTS,
+    CreateTicketComponent,
+    EMPTY_STATE_IMPORTS,
+    FORM_FIELD_IMPORTS,
+    IssueSelectComponent,
+    ProvideColorDirective,
+  ],
   host: { class: 'contents' },
 })
 export class StandInsListComponent {
@@ -172,8 +191,6 @@ export class StandInsListComponent {
 
   /** The one placeholder to show, by id. Null lists every one of them. */
   public only = input<string | null>(null);
-
-  private drafts = signal<Record<string, string>>({});
 
   protected listed = computed(() => {
     const ages = this.store.ages();
@@ -189,35 +206,20 @@ export class StandInsListComponent {
           id: standIn.id,
           standIn,
           projectKey: standIn.projectKey ?? '',
-          days: daysLabel(standIn),
+          meta: [standIn.projectKey, age?.heldMs ? `${formatDurationMs(age.heldMs)} held` : '', daysLabel(standIn)]
+            .filter(Boolean)
+            .join(' · '),
           where: standInWhere(standIn),
-          age: standIn.state === 'open' && age ? ageLabel(age) : '',
           isOverdue: !!age?.isOverdue,
           canReopen: this.store.canReopen(standIn),
         };
       });
   });
 
-  protected draftFor(id: string) {
-    return this.drafts()[id] ?? '';
-  }
-
-  protected setDraft(id: string, issueKey: string) {
-    this.drafts.update((all) => ({ ...all, [id]: issueKey }));
-  }
-
-  protected resolve(id: string) {
-    this.store.resolve({ id, issueKey: this.draftFor(id) });
-    this.setDraft(id, '');
+  protected resolve(id: string, issueKey: string) {
+    if (issueKey) this.store.resolve({ id, issueKey });
   }
 }
-
-/** How long it has waited: the workdays since it was opened, and the time its bands already hold. */
-const ageLabel = (age: StandInAge) => {
-  const workdays = age.workdays === 1 ? '1 workday' : `${age.workdays} workdays`;
-
-  return age.heldMs ? `${workdays} · ${formatDurationMs(age.heldMs)} held` : workdays;
-};
 
 /** The days a stand-in holds bands on, which are the days a resolve makes bookable. */
 const daysLabel = (standIn: StandIn) => {
@@ -225,5 +227,5 @@ const daysLabel = (standIn: StandIn) => {
 
   if (!count) return 'no day yet';
 
-  return count === 1 ? `1 day · ${standIn.days[0]}` : `${count} days · ${standIn.days[0]} – ${standIn.days[count - 1]}`;
+  return count === 1 ? `on ${standIn.days[0]}` : `${count} days, ${standIn.days[0]} – ${standIn.days[count - 1]}`;
 };

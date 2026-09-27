@@ -8,7 +8,14 @@ import {
   inject,
   input,
 } from '@angular/core';
-import { Appointment, BUTTON_IMPORTS, createOverlayOpener, injectSchedulerEditSurfaceHost } from '@ethlete/components';
+import {
+  Appointment,
+  BUTTON_IMPORTS,
+  OVERLAY_REF,
+  OverlayRef,
+  createOverlayOpener,
+  injectSchedulerEditSurfaceHost,
+} from '@ethlete/components';
 import { StandIn } from '@ethlete/timetrack';
 import { STAND_INS_OVERLAY } from '../../stand-ins';
 import { injectStandIns } from '../../stand-ins/stand-ins';
@@ -26,13 +33,12 @@ import { rowEntryOf } from './row-appointment';
   selector: 'ethlete-edit-stand-in-waiting',
   template: `
     @if (standIn(); as waiting) {
-      <div class="flex flex-col gap-2 rounded-md border border-et-surface-border p-3" data-stand-in-waiting>
-        <span class="text-small"> {{ waiting.name }} — waiting on a ticket, so this band books nothing yet. </span>
-        <span class="text-small text-et-surface-muted">{{ days() }}</span>
+      <div class="flex items-center gap-3 rounded-md border border-et-surface-border px-3 py-2" data-stand-in-waiting>
+        <span class="min-w-0 grow text-small">
+          Waiting on a ticket <span class="text-et-surface-muted">· {{ days() }}</span>
+        </span>
 
-        <div>
-          <button (click)="file(waiting)" et-button variant="outline" size="sm">File its ticket</button>
-        </div>
+        <button (click)="file(waiting)" class="shrink-0" et-button variant="outline" size="sm">File its ticket</button>
       </div>
     }
   `,
@@ -42,6 +48,7 @@ import { rowEntryOf } from './row-appointment';
 export class EditStandInWaitingComponent {
   private store = injectStandIns();
   private tickets = injectTicketDraft();
+  private surfaceRef = inject<OverlayRef>(OVERLAY_REF, { optional: true });
 
   public draft = input.required<WritableSignal<Appointment>>();
   private panel = createOverlayOpener(STAND_INS_OVERLAY);
@@ -55,11 +62,12 @@ export class EditStandInWaitingComponent {
   protected days = computed(() => {
     const count = this.standIn()?.days.length ?? 0;
 
-    return count === 1 ? 'It holds 1 day of work.' : `It holds ${count} days of work.`;
+    return count === 1 ? '1 day' : `${count} days`;
   });
 
   protected file(waiting: StandIn) {
     this.tickets.openForStandIn(waiting);
+    this.surfaceRef?.close();
     this.panel.open();
   }
 }

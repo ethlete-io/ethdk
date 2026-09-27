@@ -1,10 +1,11 @@
-import { inputBinding } from '@angular/core';
+import { Injector, inject, inputBinding } from '@angular/core';
 import {
   Appointment,
   SCHEDULER_ADD_SURFACE_OVERLAY,
   SCHEDULER_EDIT_SURFACE_OVERLAY,
   createOverlayOpener,
   createOverlaySingleSlot,
+  SCHEDULER_LABELS,
 } from '@ethlete/components';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import { ReviewedRow, syncsInState } from '@ethlete/timetrack';
@@ -19,7 +20,7 @@ import { EditUnattendedDirective } from './edit-unattended.component';
 import { EditWhenDirective } from './edit-when.component';
 import { EditStateDirective } from './edit-state.component';
 import { RowActionsDirective } from './row-actions.directive';
-import { appointmentOf, rowEntryOf } from './row-appointment';
+import { appointmentOf, rowEntryOf, unnamedLabelOf } from './row-appointment';
 
 const DISABLED = { enabled: false } as const;
 
@@ -67,6 +68,21 @@ const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     });
   };
 
+  const headerOf = (row: ReviewedRow) => {
+    const standInName = row.standInId
+      ? store.allStandIns().find((standIn) => standIn.id === row.standInId)?.name
+      : undefined;
+
+    return unnamedLabelOf({ row, standInName });
+  };
+
+  const injector = inject(Injector);
+  const labelled = (untitledAppointment: string) =>
+    Injector.create({
+      parent: injector,
+      providers: [{ provide: SCHEDULER_LABELS, useValue: { untitledAppointment } }],
+    });
+
   const surfaceSlot = createOverlaySingleSlot();
   const rowOpener = createOverlayOpener(SCHEDULER_EDIT_SURFACE_OVERLAY, { single: surfaceSlot });
   const draftOpener = createOverlayOpener(SCHEDULER_ADD_SURFACE_OVERLAY, { single: surfaceSlot });
@@ -91,6 +107,7 @@ const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
           if (result?.kind === 'save') editRow(options.row, result.appointment);
         },
         origin: options.origin,
+        injector: labelled(headerOf(options.row)),
         bindings: surfaceBindings(appointmentOf({ row: options.row }), options.appointments),
         directives: [
           EditStandInWaitingDirective,
@@ -118,6 +135,7 @@ const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         afterClosed: (result) => {
           if (result?.kind === 'save') addRow(result.appointment, range.laneKey);
         },
+        injector: labelled('New entry'),
         bindings: surfaceBindings({ id: 'draft', parentId: null, title: '', start: range.from, end: range.to }, []),
         directives: [EditIssueDirective, EditMeetingDirective, EditWhenDirective],
       });

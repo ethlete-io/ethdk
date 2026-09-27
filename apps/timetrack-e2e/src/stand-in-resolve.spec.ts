@@ -50,7 +50,6 @@ test.describe('the work waiting on a ticket', () => {
 
     await openStandIns(page);
     await pickIssue(page, card(page), /ABC-2000/);
-    await card(page).getByRole('button', { name: 'Resolve' }).click();
 
     await expect(card(page)).toContainText('Resolved to ABC-2000');
     await expect(namedBand(page)).toHaveCount(1);
@@ -60,7 +59,6 @@ test.describe('the work waiting on a ticket', () => {
   test('takes the key back off the band when the resolve is undone', async ({ page }) => {
     await openStandIns(page);
     await pickIssue(page, card(page), /ABC-2000/);
-    await card(page).getByRole('button', { name: 'Resolve' }).click();
     await expect(namedBand(page)).toHaveCount(1);
 
     await card(page).getByRole('button', { name: 'Undo' }).click();
@@ -74,7 +72,7 @@ test.describe('the work waiting on a ticket', () => {
     await card(page).getByRole('button', { name: 'File a ticket' }).click();
 
     const form = page.locator('ethlete-create-ticket');
-    const details = form.locator('details').filter({ hasText: 'What gets sent' });
+    const details = form.locator('details').filter({ hasText: 'What AI sees' });
 
     await expect(form.getByRole('button', { name: 'Ask AI', exact: true })).toBeVisible();
 

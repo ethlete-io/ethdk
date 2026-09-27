@@ -30,7 +30,7 @@ import { rowEntryOf } from './row-appointment';
   selector: 'ethlete-edit-stand-in',
   template: `
     <et-form-field>
-      <et-label>Or a name you gave</et-label>
+      <et-label>Or a name without a ticket</et-label>
       <et-select
         [value]="standInId() || null"
         (valueChange)="pick($event)"

@@ -116,7 +116,7 @@ test.describe('a checkout that shares a branch name with a checkout that is alre
     await rows(page).filter({ hasText: FREE_CHILD }).click();
 
     await expect(page.getByRole('heading', { name: 'Evidence' })).toBeVisible();
-    await expect(page.getByText(`\`fut-frontend\` books ${E2E_ISSUE_KEY} on the same branch name`)).toBeVisible();
+    await expect(page.getByText(`fut-frontend books ${E2E_ISSUE_KEY} on the same branch name`)).toBeVisible();
     await expect(page.getByText(`only other open child of ${E2E_PARENT_KEY} (Epic)`)).toBeVisible();
   });
 

@@ -71,7 +71,7 @@ test.describe('a stand-in that has waited', () => {
       overdueAfterMs: 0,
     });
 
-    await expect(card).toContainText('1 workday');
+    await expect(card).toContainText(`on ${E2E_DAY_KEY}`);
     await expect(card.locator('[data-overdue]')).toHaveCount(0);
   });
 
@@ -82,7 +82,7 @@ test.describe('a stand-in that has waited', () => {
       overdueAfterMs: 0,
     });
 
-    await expect(card).toContainText('7 workdays');
+    await expect(card).toContainText(`on ${E2E_DAY_KEY}`);
     await expect(card.locator('[data-overdue]')).toBeVisible();
   });
 

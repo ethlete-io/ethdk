@@ -121,7 +121,7 @@ export class IssueSelectComponent {
   public scope = computed(() => this.projectKey().trim().toUpperCase());
 
   protected placeholderText = computed(
-    () => this.placeholder() || (this.scope() ? `Pick a ${this.scope()} issue` : 'Pick an issue'),
+    () => this.placeholder() || (this.scope() ? `Pick an issue in ${this.scope()}` : 'Pick an issue'),
   );
 
   protected open = signal(false);

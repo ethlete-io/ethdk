@@ -55,7 +55,7 @@ test.describe('the band of a checkout that waits on a ticket', () => {
   test('says in its own modal what it waits for', async ({ page }) => {
     await openBand(page, (await band(page).getAttribute('title')) as string);
 
-    await expect(editSurface(page).locator('[data-stand-in-waiting]')).toContainText('waiting on a ticket');
+    await expect(editSurface(page).locator('[data-stand-in-waiting]')).toContainText('Waiting on a ticket');
     await expect(editSurface(page).locator('[data-stand-in-waiting]')).toContainText('1 day');
   });
 
@@ -66,8 +66,8 @@ test.describe('the band of a checkout that waits on a ticket', () => {
     const form = page.locator('ethlete-stand-ins-list ethlete-create-ticket');
 
     await expect(form).toBeVisible();
-    await expect(form).toContainText('A ticket for Pdf export');
-    await expect(form).toContainText('Filing it resolves the placeholder');
+    await expect(form).toContainText('A new ticket');
+    await expect(editSurface(page)).toHaveCount(0);
   });
 
   test('titles that dialog with the placeholder it was opened on, not with the list', async ({ page }) => {

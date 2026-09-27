@@ -30,11 +30,40 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
 @Component({
   selector: 'ethlete-create-ticket',
   template: `
-    <div class="flex flex-col gap-3 rounded-md border border-et-brand-ink p-3">
-      <div class="flex flex-wrap items-baseline gap-3">
-        <h4 class="grow text-h4">{{ heading() }}</h4>
-        <span class="text-small text-et-surface-muted">{{ duration() }}</span>
-        <button (click)="dismiss.emit()" et-button variant="transparent" size="sm">Close</button>
+    <div
+      [class.rounded-md]="!embedded()"
+      [class.border]="!embedded()"
+      [class.p-3]="!embedded()"
+      class="flex flex-col gap-4 border-et-brand-ink"
+    >
+      <div class="flex flex-wrap items-center gap-2">
+        @if (embedded()) {
+          <h3 class="grow text-h4">A new ticket</h3>
+        } @else {
+          <h4 class="grow text-h4">{{ heading() }}</h4>
+          <span class="text-small text-et-surface-muted">{{ duration() }}</span>
+        }
+
+        @if (canWrite() && form()) {
+          <button [disabled]="isWriting()" (click)="write.emit()" et-button variant="transparent" size="sm">
+            @if (isWriting()) {
+              <et-spinner size="sm" />
+            }
+            Ask AI
+          </button>
+          @if (canMatch()) {
+            <button [disabled]="isMatching()" (click)="match.emit()" et-button variant="transparent" size="sm">
+              @if (isMatching()) {
+                <et-spinner size="sm" />
+              }
+              Ask AI to find a match
+            </button>
+          }
+        }
+
+        @if (!embedded()) {
+          <button (click)="dismiss.emit()" et-button variant="transparent" size="sm">Close</button>
+        }
       </div>
 
       @if (createdKey(); as key) {
@@ -54,7 +83,7 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
           }
 
           <div>
-            <button (click)="dismiss.emit()" et-button variant="filled" size="sm">Back to the day</button>
+            <button (click)="dismiss.emit()" et-button variant="filled">Back to the day</button>
           </div>
         </div>
       } @else if (duplicateKey(); as key) {
@@ -73,117 +102,78 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
 
         @if (matches().length) {
           <div class="flex flex-col gap-2 rounded-md border border-et-surface-border p-3">
-            <span class="text-small">This work may already have a ticket.</span>
+            <span class="text-et-surface-muted">This work may already have a ticket.</span>
 
-            @for (match of matches(); track match.key) {
-              <div class="flex flex-wrap items-center gap-3">
-                <span class="flex min-w-50 grow flex-col">
-                  <span class="text-small">{{ match.key }} — {{ match.summary }}</span>
+            <div class="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2">
+              @for (match of matches(); track match.key) {
+                <span class="flex min-w-0 flex-col">
+                  <span>
+                    <span class="text-mono">{{ match.key }}</span> {{ match.summary }}
+                  </span>
                   @if (match.reason) {
                     <span class="text-small text-et-surface-muted">{{ match.reason }}</span>
                   }
                 </span>
-                <button (click)="useExisting.emit(match.key)" et-button variant="outline" size="sm">
+                <button (click)="useExisting.emit(match.key)" et-button variant="outline">
                   Log on {{ match.key }}
                 </button>
-              </div>
-            }
+              }
+            </div>
           </div>
         }
 
-        <div class="flex flex-wrap items-end gap-3">
-          <div class="flex w-60 flex-col gap-1">
-            <span class="text-small text-et-surface-muted">Project</span>
-            <ethlete-project-select
-              [value]="draft.projectKey"
-              (valueChange)="projectKeyChange.emit($event)"
-              ariaLabel="The project the ticket is filed in"
-            />
-          </div>
+        <et-form-field>
+          <et-label>Summary</et-label>
+          <et-input [value]="draft.summary" (valueChange)="summaryChange.emit($event)" />
+        </et-form-field>
 
-          <et-form-field class="min-w-60 grow" appearance="underline" size="sm">
-            <et-label>Summary</et-label>
-            <et-input [value]="draft.summary" (valueChange)="summaryChange.emit($event)" />
-          </et-form-field>
-        </div>
-
-        <et-form-field appearance="underline" size="sm">
+        <et-form-field>
           <et-label>Description</et-label>
           <et-textarea
             [value]="draft.description"
-            [minRows]="3"
+            [minRows]="2"
             [maxRows]="10"
             (valueChange)="descriptionChange.emit($event)"
             autosize
           />
         </et-form-field>
 
-        @if (canWrite()) {
-          <div class="flex flex-col gap-2">
-            <div class="flex flex-wrap items-center gap-3">
-              <button [disabled]="isWriting()" (click)="write.emit()" et-button variant="outline" size="sm">
-                @if (isWriting()) {
-                  <et-spinner size="sm" />
-                }
-                Ask AI
-              </button>
-              @if (canMatch()) {
-                <button [disabled]="isMatching()" (click)="match.emit()" et-button variant="outline" size="sm">
-                  @if (isMatching()) {
-                    <et-spinner size="sm" />
-                  }
-                  Ask AI to find a match
-                </button>
-              }
-              <span class="text-small text-et-surface-muted">{{ askNote() }}</span>
-            </div>
-
-            @if (writeFailure(); as failure) {
-              <et-banner [description]="failure" type="warning" heading="The agent wrote nothing" />
-            }
-
-            @if (matchFailure(); as failure) {
-              <et-banner [description]="failure" type="warning" heading="The agent found nothing" />
-            }
-
-            @if (payload()) {
-              <ethlete-unmasked-words [text]="printedPayload()" />
-
-              <details class="rounded-md border border-et-surface-border p-3">
-                <summary class="cursor-pointer text-small text-et-surface-muted">
-                  What gets sent — {{ sentSummary() }}, no path and no window title
-                </summary>
-                <pre class="mt-2 overflow-x-auto text-mono text-small">{{ printedPayload() }}</pre>
-              </details>
-            }
-          </div>
-        }
-
         <div class="flex flex-col gap-2">
-          <et-form-field class="grow" appearance="underline" size="sm">
-            <et-label>Parent</et-label>
-            <et-select
-              [value]="draft.parentKey"
-              [loading]="isSearching()"
-              (valueChange)="pickParent($event)"
-              placeholder="No parent"
-            >
-              <input etSelectSearch placeholder="Search parents" />
+          <div class="flex flex-wrap items-end gap-3">
+            <et-form-field class="w-60">
+              <et-label>Project</et-label>
+              <ethlete-project-select
+                [value]="draft.projectKey"
+                (valueChange)="projectKeyChange.emit($event)"
+                ariaLabel="The project the ticket is filed in"
+              />
+            </et-form-field>
 
-              @for (candidate of candidates(); track candidate.issue.key) {
-                <et-select-option
-                  [value]="candidate.issue.key"
-                  [label]="candidate.issue.key + ' ' + candidate.issue.summary"
-                >
-                  <span class="flex min-w-0 items-baseline gap-2">
-                    <span class="shrink-0 text-mono text-small">{{ candidate.issue.key }}</span>
-                    <span class="min-w-0 grow truncate text-small">{{ candidate.issue.summary }}</span>
-                    <span class="shrink-0 text-small text-et-surface-subtle">{{ candidate.issue.issueType }}</span>
-                  </span>
-                </et-select-option>
-              }
-            </et-select>
-          </et-form-field>
+            <et-form-field class="min-w-60 grow">
+              <et-label>Parent</et-label>
+              <et-select
+                [value]="draft.parentKey"
+                [loading]="isSearching()"
+                (valueChange)="pickParent($event)"
+                placeholder="No parent"
+              >
+                <input etSelectSearch placeholder="No parent" />
+
+                @for (candidate of candidates(); track candidate.issue.key) {
+                  <et-select-option
+                    [value]="candidate.issue.key"
+                    [label]="candidate.issue.key + ' ' + candidate.issue.summary"
+                  >
+                    <span class="flex min-w-0 items-baseline gap-2">
+                      <span class="shrink-0 text-mono text-small">{{ candidate.issue.key }}</span>
+                      <span class="min-w-0 grow truncate text-small">{{ candidate.issue.summary }}</span>
+                      <span class="shrink-0 text-small text-et-surface-subtle">{{ candidate.issue.issueType }}</span>
+                    </span>
+                  </et-select-option>
+                }
+              </et-select>
+            </et-form-field>
+          </div>
 
           @if (parentRule(); as rule) {
             <span class="text-small text-et-surface-muted">{{ rule }}</span>
@@ -202,13 +192,13 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
 
           @if (searchFailure(); as failure) {
             <et-banner [description]="failure" type="warning" heading="The parents could not be read" />
-            <button (click)="findParents.emit()" et-button variant="outline" size="sm">Read them again</button>
+            <button (click)="findParents.emit()" et-button variant="outline">Read them again</button>
           }
 
           @if (parentForm(); as parent) {
             <div class="flex flex-col gap-3 rounded-md border border-et-surface-border p-3">
               <div class="flex flex-wrap items-end gap-3">
-                <et-form-field class="min-w-40" appearance="underline" size="sm">
+                <et-form-field class="min-w-40">
                   <et-label>Level</et-label>
                   <et-select
                     [value]="parent.issueTypeName"
@@ -221,13 +211,13 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
                   </et-select>
                 </et-form-field>
 
-                <et-form-field class="min-w-60 grow" appearance="underline" size="sm">
+                <et-form-field class="min-w-60 grow">
                   <et-label>Summary</et-label>
                   <et-input [value]="parent.summary" (valueChange)="parentSummaryChange.emit($event)" />
                 </et-form-field>
               </div>
 
-              <et-form-field appearance="underline" size="sm">
+              <et-form-field>
                 <et-label>Description</et-label>
                 <et-textarea
                   [value]="parent.description"
@@ -240,13 +230,7 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
 
               @if (canWrite()) {
                 <div class="flex flex-wrap items-center gap-3">
-                  <button
-                    [disabled]="isWritingParent()"
-                    (click)="writeParent.emit()"
-                    et-button
-                    variant="outline"
-                    size="sm"
-                  >
+                  <button [disabled]="isWritingParent()" (click)="writeParent.emit()" et-button variant="outline">
                     @if (isWritingParent()) {
                       <et-spinner size="sm" />
                     }
@@ -284,7 +268,6 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
                   (click)="createParent.emit()"
                   et-button
                   variant="filled"
-                  size="sm"
                 >
                   @if (isCreatingParent()) {
                     <et-spinner size="sm" />
@@ -303,7 +286,7 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
                 [disabled]="!draft.projectKey"
                 (click)="openParentForm.emit()"
                 et-button
-                variant="outline"
+                variant="transparent"
                 size="sm"
               >
                 New parent
@@ -312,18 +295,33 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
           }
         </div>
 
+        @if (canWrite()) {
+          <div class="flex flex-col gap-2">
+            @if (writeFailure(); as failure) {
+              <et-banner [description]="failure" type="warning" heading="The agent wrote nothing" />
+            }
+
+            @if (matchFailure(); as failure) {
+              <et-banner [description]="failure" type="warning" heading="The agent found nothing" />
+            }
+
+            @if (payload()) {
+              <ethlete-unmasked-words [text]="printedPayload()" />
+
+              <details>
+                <summary class="cursor-pointer text-small text-et-surface-muted">What AI sees</summary>
+                <pre class="mt-2 overflow-x-auto text-mono text-small">{{ printedPayload() }}</pre>
+              </details>
+            }
+          </div>
+        }
+
         @if (createGate(); as reason) {
           <et-banner [description]="reason" type="warning" heading="Jira does not permit this create" />
         }
 
         <div class="flex flex-wrap items-center gap-3">
-          <button
-            [disabled]="!canCreate() || isCreating()"
-            (click)="pressCreate()"
-            et-button
-            variant="filled"
-            size="sm"
-          >
+          <button [disabled]="!canCreate() || isCreating()" (click)="pressCreate()" et-button variant="filled">
             @if (isCreating()) {
               <et-spinner size="sm" />
             }
@@ -334,7 +332,9 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
             <button (click)="disarm()" et-button variant="transparent" size="sm">Cancel</button>
           }
 
-          <span class="text-small text-et-surface-muted">{{ isArmed() ? ARMED_NOTE : createNote() }}</span>
+          @if (isArmed()) {
+            <span class="text-small text-et-surface-muted">{{ ARMED_NOTE }}</span>
+          }
         </div>
       }
     </div>
@@ -357,6 +357,8 @@ export class CreateTicketComponent {
   public context = input<UnnamedContext | null>(null);
   /** The placeholder being filed, whose days the created key resolves. Exclusive with `context`. */
   public standIn = input<StandIn | null>(null);
+  /** Leaves out the frame and the close press, for a host that already names the work and closes itself. */
+  public embedded = input(false);
   /** The parent this form filed on the way, so the result says what it created and not only the key. */
   public createdParent = input<JiraIssue | null>(null);
   public form = input<TicketForm | null>(null);
@@ -432,12 +434,6 @@ export class CreateTicketComponent {
     return days ? `${days} day${days === 1 ? '' : 's'} waiting` : '';
   });
 
-  protected askNote = computed(() =>
-    this.canMatch()
-      ? 'The first press rewrites the summary and the description. The second only looks for the parent and for a ticket that may already be this work, and leaves your words alone.'
-      : 'It writes the summary and the description, picks the parent, and says if a ticket for this already exists. Everything stays yours to edit.',
-  );
-
   /** What the placeholder is called, for a heading that reads as the work rather than as a checkout. */
   public name = computed(() => this.standIn()?.name ?? 'work with no ticket');
 
@@ -446,12 +442,6 @@ export class CreateTicketComponent {
 
     return context ? `New ticket for ${describeAttributionRule(context.suggestion)}` : `A ticket for ${this.name()}`;
   });
-
-  protected createNote = computed(() =>
-    this.standIn()
-      ? 'Filing it resolves the placeholder, so every day it holds books against the new key.'
-      : 'Filing it also logs this work against the new key from now on.',
-  );
 
   protected filedNote = computed(() => {
     const waiting = this.standIn();
@@ -462,16 +452,9 @@ export class CreateTicketComponent {
 
     return `${this.name()} is no longer waiting. Every band of it books against the key, on ${days} day${days === 1 ? '' : 's'} and on every later one.`;
   });
+
   protected printedPayload = computed(() => JSON.stringify(this.payload(), null, 2));
   protected printedParentPayload = computed(() => JSON.stringify(this.parentPayload(), null, 2));
-
-  protected sentSummary = computed(() => {
-    const request = this.payload();
-    const notes = request?.notes.length ?? 0;
-    const work = request?.standIn ? 'your own name for the work' : `${notes} note(s)`;
-
-    return request?.spec ? `${work} and the spec it sits under` : work;
-  });
 
   /** The agent's answer first, then what the wording matched, with the same issue never listed twice. */
   protected matches = computed(() => {

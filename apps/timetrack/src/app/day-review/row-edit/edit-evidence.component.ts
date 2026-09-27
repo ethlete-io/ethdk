@@ -23,12 +23,22 @@ const COLLAPSED_EVIDENCE_COUNT = 3;
       <h3 class="text-small text-et-surface-muted">Evidence</h3>
 
       @if (evidence().length) {
-        <ul class="flex flex-col gap-1">
+        <ul class="flex flex-col gap-2">
           @for (entry of shown(); track $index) {
-            <li class="flex gap-3 text-small">
-              <span class="w-20 shrink-0 whitespace-nowrap text-mono text-et-surface-subtle">{{ entry.time }}</span>
-              <span class="w-24 shrink-0 text-et-surface-muted">{{ entry.kind }}</span>
-              <span class="min-w-0 grow break-words">{{ entry.detail }}</span>
+            <li class="flex flex-col text-small">
+              <span class="flex gap-2 text-et-surface-muted">
+                <span class="text-mono text-et-surface-subtle">{{ entry.time }}</span>
+                <span>{{ entry.kindLabel }}</span>
+              </span>
+              <span class="min-w-0 break-words">
+                @for (part of entry.parts; track $index) {
+                  @if (part.code) {
+                    <code class="text-mono">{{ part.text }}</code>
+                  } @else {
+                    {{ part.text }}
+                  }
+                }
+              </span>
             </li>
           }
         </ul>
@@ -58,7 +68,12 @@ export class EditEvidenceComponent {
 
   protected evidence = computed(
     () =>
-      rowEntryOf(this.draft()())?.row.evidence.map((entry) => ({ ...entry, time: formatClockTime(entry.at) })) ?? [],
+      rowEntryOf(this.draft()())?.row.evidence.map((entry) => ({
+        ...entry,
+        time: formatClockTime(entry.at),
+        kindLabel: entry.kind.replaceAll('-', ' '),
+        parts: entry.detail.split('`').map((text, index) => ({ text, code: index % 2 === 1 })),
+      })) ?? [],
   );
 
   protected expanded = signal(false);

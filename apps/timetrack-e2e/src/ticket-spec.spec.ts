@@ -45,9 +45,8 @@ test.describe('the spec a ticket is written under', () => {
     await page.goto('/day');
     await openTheForm(page);
 
-    const sent = page.getByText(/What gets sent .* and the spec it sits under/);
+    const sent = page.getByText('What AI sees', { exact: true });
 
-    await expect(sent).toBeVisible();
     await sent.click();
 
     const payload = page.locator('details', { has: sent }).locator('pre');
@@ -61,6 +60,10 @@ test.describe('the spec a ticket is written under', () => {
     await page.goto('/day');
     await openTheForm(page);
 
-    await expect(page.getByText(/What gets sent .* and the spec it sits under/)).toBeHidden();
+    const sent = page.getByText('What AI sees', { exact: true });
+
+    await sent.click();
+
+    await expect(page.locator('details', { has: sent }).locator('pre')).not.toContainText('"spec"');
   });
 });

@@ -67,6 +67,7 @@ test.describe('the prompt preview', () => {
 
     await details.locator('> summary').click();
     await expect(details.locator('pre')).toContainText('ABC-3010');
+    await warning.locator('summary').click();
     await expect(warning.locator('[data-unmasked-word="ABC"]')).toBeVisible();
 
     await warning.locator('[data-unmasked-word="ABC"]').click();
@@ -92,11 +93,12 @@ test.describe('the ticket form', () => {
   test('marks what its own payload sends as written, and the press masks it', async ({ page }) => {
     const form = page.locator('ethlete-create-ticket');
     const warning = form.locator('ethlete-unmasked-words');
-    const details = form.locator('details').filter({ hasText: 'What gets sent' });
+    const details = form.locator('details').filter({ hasText: 'What AI sees' });
 
     await details.locator('> summary').click();
     await expect(details.locator('pre')).toContainText('ABC-3010');
 
+    await warning.locator('summary').click();
     await warning.locator('[data-unmasked-word="ABC"]').click();
 
     await expect(details.locator('pre')).not.toContainText('ABC-3010');
