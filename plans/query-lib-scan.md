@@ -140,3 +140,11 @@ failed reports `canLoadMore: false`, so a trigger gated on it cannot reach the n
 
 Open, needs a decision: a query cannot carry consumer `HttpContext` tokens (every request builds a fresh context); `queryParams`
 key order is not canonicalised, so `{a,b}` and `{b,a}` are separate cache entries.
+
+Decided 2026-09-27: the cache key sorts `queryParams` keys (nested too) in v3 and legacy v2, the URL keeps the written order,
+`76d826b63`. `retryFailed()` never resends an item an unsubscribe aborted in flight (it stays `cancelled`; queued items
+still resend), `7cad1d52f` - this closes the batch item under "Open" above. A legacy `[etInfinityQuery]` keeps
+`canLoadMore: true` while the current page has failed or is retrying (a gated trigger that remounted would retry in a
+loop), and a failed first page no longer reports `loading: true`, `15e02e006`. Consumer HttpContext tokens on queries:
+not added. ea-frontend has 0 uses of HttpContext / HttpContextToken (checked 2026-09-27). Add them only when a consumer
+needs one.
