@@ -26,9 +26,9 @@ agent that works alone, batch by batch.
   8559a833f). Open: a bare password input does not update Caps Lock on blur; state saved before 53497453e loses
   numeric table keys once.
 - Done 2026-09-27: task 8 for button + focus ring (c7a047ba3, window-control focus ring fix), form field (02b29b09e),
-  table (f8b697d5d), icon (17fedf28e). Open, user call: table column reorder does not work on touch (`test.fail`);
-  `touch-action: pan-y` on reorderable header cells fixes it but a horizontal header swipe then reorders instead of
-  scrolling.
+  table (f8b697d5d), icon (17fedf28e). User decision 2026-09-27: table column reorder on touch starts after a ~400 ms still
+  long press (non-passive `touchmove` `preventDefault()` once active); keep `touch-action: auto`, no `pan-y`, no grip.
+  In progress.
 - User 2026-09-27: finish ALL of task 8 before "b7 done".
 - In progress 2026-09-27: task 8 for stream + notification, scheduler + grid.
 
