@@ -86,6 +86,7 @@ export class MyTagList {}
 - The remove control is a real `<button type="button">` with an `aria-label` (`removeLabel`) and a **tab stop**, so a standalone chip is removable with <kbd>Tab</kbd> then <kbd>Enter</kbd> - no ancestor widget and no `tabindex` of your own required. It drops to `tabindex="-1"` while the chip is disabled or not `removable`, and inside a widget that provides `CHIP_REMOVE_TAB_STOP` as `false` (the select trigger and the tag input do, since they move focus across their chips themselves - there, removal stays pointer-only or goes through the widget's own keyboard path).
 - <kbd>Backspace</kbd>/<kbd>Delete</kbd> also remove, while the chip element itself has focus - which needs a `tabindex` on the chip or programmatic focus; the chip host never becomes a tab stop on its own.
 - Clicking remove calls `stopPropagation()`, so a chip that is itself clickable doesn't also activate.
+- When a chip that held focus is removed, focus moves to the next chip, else the previous one, else to whatever the host widget provides as `CHIP_REMOVE_FOCUS_FALLBACK` (the tag input's text field, the select trigger).
 - Dev mode throws when `etChipRemove` is placed outside an `[etChip]` element.
 
 ## Theming

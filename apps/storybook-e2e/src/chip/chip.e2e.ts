@@ -71,7 +71,6 @@ test.describe('chip / keyboard', () => {
   });
 
   test('removing a chip from the keyboard hands focus to the neighbouring remove button', async ({ page }) => {
-    test.fail(true, 'et-chip leaves focus on <body> once the consumer drops the removed chip');
     const root = await openStory(page, DEFAULT_STORY_ID);
     const removeButtons = root.locator('.et-chip-remove-button');
     const countBefore = await removeButtons.count();

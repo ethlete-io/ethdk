@@ -54,6 +54,27 @@ class TeamFiltersComponent {
 }
 
 @Component({
+  selector: 'et-scenario-department-chips',
+  imports: [CHIP_IMPORTS],
+  template: `
+    @for (department of departments(); track department) {
+      <et-chip (remove)="removeDepartment(department)" removable>{{ department }}</et-chip>
+    }
+    <button class="after" type="button">After</button>
+  `,
+})
+class DepartmentChipsComponent {
+  departments = signal(['design', 'engineering', 'marketing']);
+  keep = false;
+
+  removeDepartment(department: string) {
+    if (this.keep) return;
+
+    this.departments.update((departments) => departments.filter((entry) => entry !== department));
+  }
+}
+
+@Component({
   selector: 'et-scenario-tag-chip',
   imports: [ChipDirective, ChipRemoveDirective],
   template: `
@@ -150,6 +171,60 @@ describe('chip scenarios', () => {
     expect(s.keydown('Delete', teamC).defaultPrevented).toBe(false);
     s.tick();
     expect(page.removed).toEqual(['team-a', 'team-b']);
+  });
+
+  it('hands focus to the next chip, then the previous one, once a chip is removed from the keyboard', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(DepartmentChipsComponent);
+
+    s.tick();
+
+    const removeButton = (department: string) =>
+      queryAll('et-chip')
+        .find((chip) => text(chip) === department)!
+        .querySelector<HTMLButtonElement>('.et-chip-remove-button')!;
+
+    removeButton('engineering').focus();
+    s.keydown('Backspace', removeButton('engineering'));
+    s.tick();
+
+    expect(queryAll('et-chip').map((chip) => text(chip))).toEqual(['design', 'marketing']);
+    expect(document.activeElement).toBe(removeButton('marketing'));
+
+    s.keydown('Delete', removeButton('marketing'));
+    s.tick();
+
+    expect(document.activeElement).toBe(removeButton('design'));
+
+    fixture.componentInstance.keep = true;
+    s.keydown('Backspace', removeButton('design'));
+    s.tick();
+
+    expect(document.activeElement).toBe(removeButton('design'));
+
+    fixture.componentInstance.keep = false;
+    query('.after').focus();
+    removeButton('design').click();
+    s.tick();
+
+    expect(queryAll('et-chip')).toHaveLength(0);
+    expect(document.activeElement).toBe(query('.after'));
+  });
+
+  it('moves focus between focusable chip hosts when one is removed', () => {
+    const s = scenario();
+
+    TestBed.createComponent(TeamFiltersComponent);
+    s.tick();
+
+    const teamA = query('et-chip');
+
+    teamA.focus();
+    s.keydown('Backspace', teamA);
+    s.tick();
+
+    expect(document.activeElement).toBe(query('et-chip'));
+    expect(text(document.activeElement)).toBe('team-b');
   });
 
   it('drops the remove button while the chips are locked', () => {

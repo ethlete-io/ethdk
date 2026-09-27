@@ -163,6 +163,19 @@ describe('tag input scenarios', () => {
     expect(chips()).toEqual(['left wing', 'right wing']);
   });
 
+  it('focuses the text field once the last chip is removed through its remove button', () => {
+    const s = scenario();
+    const fixture = render(s);
+    const removeButton = document.querySelector<HTMLButtonElement>('et-tag-input et-chip .et-chip-remove-button')!;
+
+    removeButton.focus();
+    removeButton.click();
+    s.tick();
+
+    expect(fixture.componentInstance.model().tags).toEqual([]);
+    expect(document.activeElement).toBe(field());
+  });
+
   it('locks the field once maxTags is reached', () => {
     const s = scenario();
     const fixture = render(s);

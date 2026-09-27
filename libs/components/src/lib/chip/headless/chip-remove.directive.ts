@@ -1,4 +1,4 @@
-import { afterNextRender, computed, Directive, ElementRef, inject, input } from '@angular/core';
+import { afterNextRender, computed, DestroyRef, Directive, ElementRef, inject, input } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { CHIP_ERROR_CODES } from './chip-errors';
 import { CHIP_REMOVE_TAB_STOP } from './chip.tokens';
@@ -41,6 +41,9 @@ export class ChipRemoveDirective {
   });
 
   constructor() {
+    this.chip?.registerRemoveControl(this.elementRef.nativeElement);
+    inject(DestroyRef).onDestroy(() => this.chip?.registerRemoveControl(null));
+
     if (ngDevMode) {
       afterNextRender(() => {
         if (!this.chip) {
