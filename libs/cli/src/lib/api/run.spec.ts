@@ -171,6 +171,17 @@ describe('runApiCommand', () => {
     logs.restore();
   });
 
+  it('keeps a setup command that writes more than a megabyte running', async () => {
+    const root = makeCheckout();
+    const logs = captureLogs();
+    const loud = `"${process.execPath}" -e "process.stdout.write('x'.repeat(2 * 1024 * 1024))"`;
+
+    expect(await runWith({ setupCommand: `${loud} && touch .env` }, ['setup', 'hub'], root)).toBe(0);
+    expect(existsSync(join(root, 'api/development/.env'))).toBe(true);
+
+    logs.restore();
+  });
+
   it('says the env file already existed', async () => {
     const root = makeCheckout();
     const logs = captureLogs();

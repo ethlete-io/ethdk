@@ -80,13 +80,16 @@ export const planApiClear = (options: ApiClearPlanOptions): ApiClearTarget[] => 
         composePath,
         hasContainers: hasContainers(composePath),
         blockers: [
-          ...(!force && changes.length > 0
+          ...(!force && (changes === undefined || unpushed === undefined)
+            ? [`git could not read ${repoPath}, so its changes are unknown. Pass --force to remove it anyway.`]
+            : []),
+          ...(!force && changes !== undefined && changes.length > 0
             ? [
                 `${repoPath} has uncommitted changes:\n\n${listed(changes)}\n\n` +
                   'Commit them, or pass --force to lose them.',
               ]
             : []),
-          ...(!force && unpushed.length > 0
+          ...(!force && unpushed !== undefined && unpushed.length > 0
             ? [
                 `${repoPath} has commits no remote holds:\n\n${listed(unpushed)}\n\n` +
                   'Push them, or pass --force to lose them.',

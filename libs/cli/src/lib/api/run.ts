@@ -269,7 +269,12 @@ const runOneApiCommand = async (options: SingleApiOptions): Promise<number> => {
 
     console.log(`Starting ${name}: ${api.services.join(', ')}.`);
 
-    const started = spawnSync(binary, [...composePrefix, 'up', '-d', ...api.services], { cwd, env, encoding: 'utf8' });
+    const started = spawnSync(binary, [...composePrefix, 'up', '-d', ...api.services], {
+      cwd,
+      env,
+      encoding: 'utf8',
+      maxBuffer: Infinity,
+    });
     const startedOutput = `${started.stdout ?? ''}\n${started.stderr ?? ''}`.trim();
 
     if (started.error) {

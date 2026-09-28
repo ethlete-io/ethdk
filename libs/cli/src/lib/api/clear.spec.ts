@@ -109,6 +109,16 @@ describe('planApiClear', () => {
     expect(blocker).toContain('init');
   });
 
+  it('refuses a checkout git cannot read', () => {
+    const root = mkdtempSync(join(tmpdir(), 'cli-api-clear-'));
+
+    mkdirSync(join(root, '.ethlete/hub/development'), { recursive: true });
+
+    const [blocker] = plan(root)[0]?.blockers ?? [];
+
+    expect(blocker).toContain('git could not read');
+  });
+
   it('keeps the containers marked under --force', () => {
     const { root } = makeManagedCheckout();
     const [target] = plan(root, { force: true, hasContainers: () => true });

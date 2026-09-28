@@ -20,9 +20,11 @@ export const currentBranch = (cwd: string) => {
   return result.status === 0 ? result.stdout : undefined;
 };
 
-/** Modified tracked files and untracked files, as git's own porcelain lines. */
+/** Modified tracked files and untracked files, as git's own porcelain lines, or `undefined` when git fails. */
 export const uncommittedChanges = (cwd: string) => {
-  const { stdout } = git(cwd, ['status', '--porcelain']);
+  const { status, stdout } = git(cwd, ['status', '--porcelain']);
+
+  if (status !== 0) return undefined;
 
   return stdout.length > 0 ? stdout.split('\n') : [];
 };
@@ -36,13 +38,18 @@ export const ignoredByGit = (cwd: string, path: string) => {
   return status === 1 ? false : undefined;
 };
 
-export const hasUncommittedChanges = (cwd: string) => uncommittedChanges(cwd).length > 0;
+export const hasUncommittedChanges = (cwd: string) => (uncommittedChanges(cwd)?.length ?? 0) > 0;
 
-/** Commits on any local branch that no remote holds, so work is never removed with a checkout. */
+/**
+ * Commits on any local branch that no remote holds, so work is never removed with a checkout, or
+ * `undefined` when git fails.
+ */
 export const unpushedCommits = (cwd: string) => {
   const { status, stdout } = git(cwd, ['log', '--branches', '--not', '--remotes', '--oneline']);
 
-  return status === 0 && stdout.length > 0 ? stdout.split('\n') : [];
+  if (status !== 0) return undefined;
+
+  return stdout.length > 0 ? stdout.split('\n') : [];
 };
 
 /** Switches the API checkout to the branch configured for it. Git's own refusal is passed through. */

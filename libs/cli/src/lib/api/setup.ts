@@ -23,7 +23,7 @@ export const runApiSetup = ({ setupCommand, composePath, envFile }: SetupRequest
 
   console.log(`Running "${setupCommand}" in ${composePath}.`);
 
-  const result = spawnSync(setupCommand, { cwd: composePath, shell: true, encoding: 'utf8' });
+  const result = spawnSync(setupCommand, { cwd: composePath, shell: true, encoding: 'utf8', maxBuffer: Infinity });
   const output = `${result.stdout ?? ''}\n${result.stderr ?? ''}`.trim();
   const status = result.status ?? 1;
 

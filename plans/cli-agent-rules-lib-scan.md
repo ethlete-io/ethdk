@@ -4,9 +4,6 @@ Scan of `libs/cli/src/` and `libs/agent-rules/src/` from 2026-09-28. 1 High, 14 
 
 ## cli: api (`et api`)
 
-- Medium: `up` captures the output of `compose up -d` with the default 1 MB `maxBuffer` (`api/run.ts:272`). An image build or pull that writes more than 1 MB gets the child killed with `ENOBUFS`, and the user sees nothing while it runs. Stream with `stdio: 'inherit'`, or raise `maxBuffer` and tee the output. S Verified.
-- Medium: `runApiSetup` has the same 1 MB cap on `make setup`-style output (`api/setup.ts:26`). A `composer install` inside the setup gets killed partway. S Verified.
-- Medium: `clear` fails open when git cannot answer (`api/git.ts:5-13`, `api/clear.ts:73-74`). A failed `git status` or `git log` (a broken `.git`, a directory that is not a checkout, no git on PATH) gives an empty list, so the checkout counts as clean and `rmSync` deletes it. Treat a non-zero status as a blocker. S Verified.
 - Low: `clear` counts only branch commits as unpushed (`api/git.ts:43`). Stashes and detached-HEAD commits are deleted with no warning. Add `git stash list` to the blockers. S
 - Low: `checkoutApiBranch` passes the configured branch to `git checkout` with no separator (`api/git.ts:58`). A value that starts with `-` becomes a flag, and a value that also names a path checks out a file instead. Use `git switch <branch>`. S
 - Low: an API name such as `constructor` or `toString` passes the `apis[candidate] === undefined` check (`api/run.ts:411`, `api/clear.ts:47`). `et api up constructor` then throws a TypeError from `join(repoPath, undefined)`. Use `Object.hasOwn`. S
