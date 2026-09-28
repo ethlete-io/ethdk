@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
+import { OverlayMode } from '../overlay-config';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import '../../../test-helpers';
@@ -8,7 +9,7 @@ import { OverlayDirective } from './overlay.directive';
 
 @Component({
   template: `
-    <div etOverlay>
+    <div [mode]="mode()" [disabled]="disabled()" etOverlay>
       @if (showTrigger) {
         <button etOverlayTrigger type="button">Open</button>
       }
@@ -20,6 +21,8 @@ import { OverlayDirective } from './overlay.directive';
 })
 class OverlayTriggerDirectiveTestHost {
   showTrigger = true;
+  mode = signal<OverlayMode>('non-modal');
+  disabled = signal(false);
 }
 
 describe('OverlayTriggerDirective', () => {
@@ -66,5 +69,26 @@ describe('OverlayTriggerDirective', () => {
     fixture.destroy();
 
     expect(overlayDirective.registeredTrigger()).toBeNull();
+  });
+
+  it('announces a dialog popup only for a modal overlay', () => {
+    expect(button.hasAttribute('aria-haspopup')).toBe(false);
+
+    fixture.componentInstance.mode.set('modal');
+    fixture.detectChanges();
+
+    expect(button.getAttribute('aria-haspopup')).toBe('dialog');
+  });
+
+  it('marks the trigger disabled while the overlay is disabled', () => {
+    expect(button.hasAttribute('aria-disabled')).toBe(false);
+
+    fixture.componentInstance.disabled.set(true);
+    fixture.detectChanges();
+    button.click();
+    fixture.detectChanges();
+
+    expect(button.getAttribute('aria-disabled')).toBe('true');
+    expect(overlayDirective.open()).toBe(false);
   });
 });

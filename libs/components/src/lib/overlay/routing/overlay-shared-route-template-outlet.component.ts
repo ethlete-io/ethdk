@@ -9,6 +9,7 @@ import { OVERLAY_ROUTER_OUTLET_TOKEN } from './overlay-router-outlet.component';
       <ng-container *ngTemplateOutlet="tpl" />
     }
   `,
+  styleUrl: './overlay-shared-route-template-outlet.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [NgTemplateOutlet],
   host: {
@@ -16,11 +17,6 @@ import { OVERLAY_ROUTER_OUTLET_TOKEN } from './overlay-router-outlet.component';
     // Forces a component ID distinct from the identical @ethlete/cdk twin (NG0912).
     'data-et-components': '',
   },
-  styles: `
-    .et-overlay-shared-route-template-outlet-host {
-      display: contents;
-    }
-  `,
 })
 export class OverlaySharedRouteTemplateOutletComponent {
   protected routerOutlet = inject(OVERLAY_ROUTER_OUTLET_TOKEN);

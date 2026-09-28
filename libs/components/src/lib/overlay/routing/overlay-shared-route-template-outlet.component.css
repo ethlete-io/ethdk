@@ -1,0 +1,5 @@
+@layer components {
+  .et-overlay-shared-route-template-outlet-host {
+    display: contents;
+  }
+}

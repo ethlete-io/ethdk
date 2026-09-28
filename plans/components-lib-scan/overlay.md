@@ -1,23 +1,19 @@
 # overlay scan - open findings
 
-Scan of `libs/components/src/lib/overlay/` from 2026-09-28. 0 High, 1 Medium, 15 Low, 5 Spec (after verification). Skipped: stories, the CSS beyond layer and colour checks. `anchored.strategy.ts`, `full-screen.strategy.ts` and `fullscreen-animation.ts` were read in a second pass (see the last section). Focus trap, focus restore and outside-pointer logic live in `@ethlete/core`'s overlay runtime and are out of scope.
+Scan of `libs/components/src/lib/overlay/` from 2026-09-28. 0 High, 1 Medium, 11 Low, 5 Spec (after verification). Skipped: stories, the CSS beyond layer and colour checks. `anchored.strategy.ts`, `full-screen.strategy.ts` and `fullscreen-animation.ts` were read in a second pass (see the last section). Focus trap, focus restore and outside-pointer logic live in `@ethlete/core`'s overlay runtime and are out of scope.
 
 ## headless
 
 - Low: all positioning inputs (`placement`, `offset`, `mode`, …) are read once in `mountOverlay` (`headless/overlay.directive.ts:194-227`). A change while the overlay is open has no effect until the next open. Document it or re-apply the strategy. M
-- Low: `OverlayTriggerDirective` sets `aria-expanded` but no `aria-haspopup` or `aria-controls` (`headless/overlay-trigger.directive.ts:9-13`), and it stays clickable and announces `aria-expanded="false"` while the overlay is `disabled`. S
 
 ## routing
 
 - Medium: `syncUrl` does not deep-link, although the JSDoc (`routing/overlay-router.ts:74-76`) and `apps/docs/components/overlays.md:422` say it does. The param key comes from a counter (`createComponentId('ovr')`, `:164`), and the constructor overwrites the param with the initial route (`:437`) instead of reading it. Either restore the route from a stable key or drop the deep-link claim. M Verified: `createComponentId` is a module counter, and the effect skips the first param event.
 - Low: a vetoed browser navigation restores the param with a push, not a replace (`routing/overlay-router.ts:478`), so the forward history is lost and `nativeBrowserBackStack` is not updated. S
-- Low: `OverlayTitleDirective` sets `aria-labelledby` on the host and never removes it (`overlay-title.directive.ts:32-41`). In a routed overlay the first page's title id stays after navigation, so the dialog loses its accessible name once that page leaves the DOM. Update or remove on destroy. S
-- Low: inline `styles` not in `@layer components`, with hardcoded `300ms` transitions (`routing/overlay-route-header-template-outlet.component.ts:26-61`, `routing/overlay-shared-route-template-outlet.component.ts:19`). Move to `.css` files inside the layer. S
 
 ## openers
 
 - Low: the model-sync effect pushes one history entry per model change (`overlay-opener.ts:265-266,293-299`), so each tab switch inside a query-param overlay costs one Back press. Consider `replaceUrl` for model writes. S
-- Low: on opener destroy `openRef.close()` can be vetoed (`overlay-opener.ts:357`), which leaves an overlay nobody manages while the param is already cleared. Use `forceClose` or document it. S
 
 ## strategies
 

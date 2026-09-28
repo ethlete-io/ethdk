@@ -372,7 +372,7 @@ For template-driven popovers there's a headless directive set (`OVERLAY_IMPORTS`
 ```
 
 - `[etOverlay]` - orchestrator; `open` is a two-way model, plus `show()` / `hide(result?)` / `toggle()`. Defaults to **non-modal** (the manager defaults to modal).
-- `[etOverlayTrigger]` - click toggles, manages `aria-expanded`.
+- `[etOverlayTrigger]` - click toggles, manages `aria-expanded`, adds `aria-haspopup="dialog"` when the overlay is modal or has a `role`, and `aria-disabled` while the overlay is `disabled`.
 - `[etOverlayAnchor]` - optional separate positioning reference.
 - `ng-template[etOverlaySurface]` - the content (required); context provides `close(result?)`.
 

@@ -89,6 +89,22 @@ describe('query param overlay opener', () => {
     expect(openOverlayCount()).toBe(0);
   });
 
+  it('closes an overlay whose close guard vetoes when the opener is destroyed', async () => {
+    const fixture = await createHost();
+
+    await setParam('42');
+    TestBed.runInInjectionContext(() =>
+      injectOverlayManager()
+        .openOverlays()[0]
+        ?.registerCloseGuard(() => false),
+    );
+    fixture.destroy();
+    TestBed.tick();
+    await flushFrames();
+
+    expect(openOverlayCount()).toBe(0);
+  });
+
   it('closes an overlay opened with disableClose when the opener is destroyed', async () => {
     const fixture = await createHost(UndismissableOpenerHostComponent);
 

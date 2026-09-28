@@ -9,11 +9,13 @@ import { OverlayDirective } from './overlay.directive';
   host: {
     '(click)': 'toggle()',
     '[attr.aria-expanded]': 'expanded()',
+    '[attr.aria-haspopup]': 'hasPopup()',
+    '[attr.aria-disabled]': 'overlay?.disabled() || null',
     '[attr.data-overlay-open]': 'isOpen() || null',
   },
 })
 export class OverlayTriggerDirective {
-  private overlay = inject(OverlayDirective, { optional: true });
+  protected overlay = inject(OverlayDirective, { optional: true });
   private destroyRef = inject(DestroyRef);
   public elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
@@ -47,5 +49,11 @@ export class OverlayTriggerDirective {
 
   public expanded() {
     return this.overlay?.open() ?? null;
+  }
+
+  protected hasPopup() {
+    if (!this.overlay) return null;
+
+    return this.overlay.role() || this.overlay.mode() === 'modal' ? 'dialog' : null;
   }
 }
