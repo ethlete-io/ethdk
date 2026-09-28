@@ -1786,3 +1786,36 @@ describe('SelectDirective (in form field)', () => {
     };
   });
 });
+
+describe('SelectDirective (touched on dismiss)', () => {
+  let driver: SelectDriver<SelectInFormFieldTestHost>;
+
+  beforeEach(() => {
+    driver = mountSelect(SelectInFormFieldTestHost, [], { directiveSelector: 'et-select' });
+  });
+
+  afterEach(async () => {
+    await driver.close();
+  });
+
+  it('marks touched when an outside pointerdown closes the panel', async () => {
+    await driver.open();
+    expect(driver.host.touched()).toBe(false);
+
+    driver.pointerDownOutside();
+    await driver.settle();
+
+    expect(driver.select.open()).toBe(false);
+    expect(driver.host.touched()).toBe(true);
+  });
+
+  it('does not mark touched when Escape closes the panel', async () => {
+    await driver.open();
+
+    driver.escape();
+    await driver.settle();
+
+    expect(driver.select.open()).toBe(false);
+    expect(driver.host.touched()).toBe(false);
+  });
+});
