@@ -6,12 +6,18 @@ import {
   SWISS_BRACKET_ROUND_TYPE,
   TOURNAMENT_MODE,
   TournamentMode,
-} from '../core';
+  BracketMatch,
+} from '@ethlete/bracket';
 import { BracketDataSource, BracketMatchSource, BracketRoundSource } from './base';
 import { RuntimeError } from '@ethlete/core';
-import { EthleteMatchInput, EthleteMatchStatusInput, NormalizedMatch, normalizeEthleteMatch } from '../../match';
+import {
+  EthleteMatchInput,
+  EthleteMatchStatusInput,
+  NormalizedMatch,
+  normalizeEthleteMatch,
+  normalizeEthleteMatchStatus,
+} from '../../match';
 import { BRACKET_ERROR_CODES } from '../bracket-errors';
-import { BracketMatch } from '../linked';
 
 /** The round kinds of the Ethlete API. */
 export type EthleteRoundTypeInput =
@@ -57,7 +63,6 @@ export const generateRoundTypeFromEthleteRoundType = (
     case 'normal':
       switch (tournamentMode) {
         case 'single-elimination':
-          // This might break if the single elimination contains a 3rd place match + round
           if (roundMatchCount === 1) {
             return COMMON_BRACKET_ROUND_TYPE.FINAL;
           } else {
@@ -134,8 +139,11 @@ export const generateBracketDataForEthlete = <
     mode: tournamentMode,
   };
 
+  const roundIds = new Set<string>();
+  const matchIds = new Set<string>();
+
   for (const currentItem of source) {
-    if (bracketData.rounds.some((r) => r.id === currentItem.round.id)) {
+    if (roundIds.has(currentItem.round.id)) {
       throw new RuntimeError(
         BRACKET_ERROR_CODES.DUPLICATE_ROUND,
         `Round with id ${currentItem.round.id} already exists in the bracket data.`,
@@ -155,10 +163,11 @@ export const generateBracketDataForEthlete = <
       name: currentItem.round.name || currentItem.round.type,
     };
 
+    roundIds.add(currentItem.round.id);
     bracketData.rounds.push(bracketRound);
 
     for (const match of currentItem.matches) {
-      if (bracketData.matches.some((m) => m.id === match.id)) {
+      if (matchIds.has(match.id)) {
         throw new RuntimeError(
           BRACKET_ERROR_CODES.DUPLICATE_MATCH,
           `Match with id ${match.id} already exists in the bracket data.`,
@@ -172,9 +181,10 @@ export const generateBracketDataForEthlete = <
         home: match.home?.id || null,
         away: match.away?.id || null,
         winner: match.winningSide,
-        status: match.status === 'published' ? 'completed' : 'pending',
+        status: normalizeEthleteMatchStatus(match.status) === 'finished' ? 'completed' : 'pending',
       };
 
+      matchIds.add(match.id);
       bracketData.matches.push(bracketMatch);
     }
   }

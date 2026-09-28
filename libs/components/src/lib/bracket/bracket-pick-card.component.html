@@ -3,6 +3,7 @@
     @for (item of sides(); track item.side) {
       @if (item.selectable) {
         <button
+          [attr.aria-label]="item.accessibleName"
           [attr.aria-pressed]="item.selected"
           [attr.aria-describedby]="note() ? NOTE_ID : null"
           [attr.data-participant-id]="item.participant?.id ?? null"

@@ -1,11 +1,10 @@
 import { Component, signal } from '@angular/core';
-import { BracketSlotSource } from '@ethlete/bracket';
+import { BracketSlotSource, BracketMatch } from '@ethlete/bracket';
 import '../../test-helpers';
 import { NormalizedMatch } from '../match';
 import { mountControl } from '../testing/control-driver';
 import { DEFAULT_BRACKET_LABELS, describeBracketSlot, provideBracketLabels } from './bracket-labels';
 import { BracketPickCardComponent, BracketPickCardNoteTone } from './bracket-pick-card.component';
-import { BracketMatch } from './linked';
 
 const HOME = { id: 'home', name: 'Home', code: 'HOM', subtitle: null, emblem: null, seed: null };
 const AWAY = { id: 'away', name: 'Away', code: 'AWY', subtitle: null, emblem: null, seed: null };
@@ -90,6 +89,16 @@ describe('BracketPickCardComponent', () => {
 
     expect(driver.host.picks).toEqual(['away']);
     expect(driver.root.textContent).toContain('4 points');
+  });
+
+  it('names each pick button once, without the emblem alt text', () => {
+    const driver = create();
+    driver.host.match.set(normalized({ home: { ...HOME, emblem: { defaultSrc: '/home.png' } } }));
+    driver.fixture.detectChanges();
+
+    const buttons = Array.from(driver.root.querySelectorAll<HTMLButtonElement>('button'));
+
+    expect(buttons.map((button) => button.getAttribute('aria-label'))).toEqual(['HOM', 'AWY']);
   });
 
   it('names the participant on each side, so the journey highlight can hit-test one of them', () => {

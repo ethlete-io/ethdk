@@ -1,11 +1,16 @@
 import { booleanAttribute, Component, computed, input, output, ViewEncapsulation } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { ColorThemeInput, injectColorThemes, ProvideColorDirective } from '@ethlete/core';
+import { ColorThemeInput, createComponentId, injectColorThemes, ProvideColorDirective } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
-import { MatchParticipantComponent, NormalizedMatch, resolveNormalizedMatchSideState } from '../match';
+import {
+  injectMatchLabels,
+  MatchParticipantComponent,
+  matchParticipantDisplayName,
+  NormalizedMatch,
+  resolveNormalizedMatchSideState,
+} from '../match';
 import { describeBracketSlot, injectBracketLabels } from './bracket-labels';
-import { MatchParticipantSide } from './core';
-import { BracketMatch } from './linked';
+import { MatchParticipantSide, BracketMatch } from '@ethlete/bracket';
 
 /** How the card's note line reads. */
 export const BRACKET_PICK_CARD_NOTE_TONE = {
@@ -16,8 +21,6 @@ export const BRACKET_PICK_CARD_NOTE_TONE = {
 } as const;
 
 export type BracketPickCardNoteTone = (typeof BRACKET_PICK_CARD_NOTE_TONE)[keyof typeof BRACKET_PICK_CARD_NOTE_TONE];
-
-let uniqueId = 0;
 
 /**
  * One bracket match as a cell the viewer picks a winner in. Bind the linked `bracketMatch`, your
@@ -54,6 +57,7 @@ let uniqueId = 0;
 })
 export class BracketPickCardComponent<TRoundData = unknown, TMatchData = unknown> {
   private labels = injectBracketLabels();
+  private matchLabels = injectMatchLabels();
 
   public bracketMatch = input.required<BracketMatch<TRoundData, TMatchData>>();
   public normalized = input.required<NormalizedMatch>();
@@ -96,7 +100,7 @@ export class BracketPickCardComponent<TRoundData = unknown, TMatchData = unknown
   private readonly ERROR_COLOR_THEME =
     injectColorThemes({ optional: true })?.find((theme) => theme.type === 'error') ?? null;
 
-  protected readonly NOTE_ID = `et-bracket-pick-card-note-${uniqueId++}`;
+  protected readonly NOTE_ID = createComponentId('et-bracket-pick-card-note');
 
   protected pickedLabel = computed(() => this.labels().pickCardPicked);
 
@@ -108,6 +112,8 @@ export class BracketPickCardComponent<TRoundData = unknown, TMatchData = unknown
     const bracketMatch = this.bracketMatch();
     const normalized = this.normalized();
     const labels = this.labels();
+    const matchLabels = this.matchLabels();
+    const predictedLabel = this.predictedLabel();
     const isReadonly = this.readonly();
     const decidedSide = normalized.winnerSide;
     const sideItems = (['home', 'away'] as const).map((side) => {
@@ -125,10 +131,13 @@ export class BracketPickCardComponent<TRoundData = unknown, TMatchData = unknown
       const selected = this.pickedSide() === side;
       const selectable = matchIsSelectable && !this.locked() && !this.disabled() && !isReadonly;
 
+      const name = matchParticipantDisplayName({ participant, labels: matchLabels, compact: true });
+
       return {
         side,
         state,
         participant,
+        accessibleName: state === 'predicted' ? `${name}, ${predictedLabel}` : name,
         selected,
         selectable,
         showMark: !isReadonly && (selectable || selected),

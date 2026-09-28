@@ -4,7 +4,7 @@ import { EthleteMatchInput } from '../../match';
 import { BracketMatchNormalizer } from '../bracket-card-context';
 import { queryAll } from '../../testing/driver-core';
 import { BRACKET_ERROR_CODES } from '../bracket-errors';
-import { TOURNAMENT_MODE } from '../core';
+import { TOURNAMENT_MODE } from '@ethlete/bracket';
 import { singleEliminationBracketLayout } from '../layouts';
 import { bracketTestDriver } from '../testing/bracket-driver';
 import { BracketDataSource } from './base';
@@ -136,5 +136,18 @@ describe('generateBracketDataForEthlete', () => {
     const driver = bracketTestDriver({ source, layouts: [singleEliminationBracketLayout()] });
 
     expect(queryAll(driver.fixture, '.et-bracket-element--match').length).toBe(3);
+  });
+
+  it('reads a finished but unpublished match as completed, as the match normalizer does', () => {
+    const statuses = ['finished', 'published', 'started'] as const;
+    const stage = stubStage([{ name: 'r1', type: 'final', matchType: 'single_elimination', matchCount: 3 }]).map(
+      ({ round, matches }) => ({
+        round,
+        matches: matches.map((match, index) => ({ ...match, status: statuses[index] ?? null })),
+      }),
+    );
+    const source = generateBracketDataForEthlete(stage);
+
+    expect(source.matches.map((match) => match.status)).toEqual(['completed', 'completed', 'pending']);
   });
 });
