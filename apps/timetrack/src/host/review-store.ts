@@ -17,6 +17,7 @@ type StoredEdits = Omit<DayReviewEdits, 'pinned' | 'statements'> & {
 
 const toStored = (edits: DayReviewEdits): StoredEdits => ({
   overrides: edits.overrides,
+  ...(edits.auto ? { auto: edits.auto } : {}),
   pinned: edits.pinned.map(({ from, to, evidence, ...rest }) => ({
     ...rest,
     fromMs: from.getTime(),
@@ -32,6 +33,7 @@ const toStored = (edits: DayReviewEdits): StoredEdits => ({
 
 const revive = (stored: StoredEdits): DayReviewEdits => ({
   overrides: stored.overrides ?? {},
+  ...(Array.isArray(stored.auto) ? { auto: stored.auto } : {}),
   pinned: (stored.pinned ?? []).map(({ fromMs, toMs, evidence, ...rest }) => ({
     ...rest,
     from: new Date(fromMs),

@@ -4,6 +4,7 @@ import { Confidence, Evidence } from '../model/evidence';
 import { PresenceStatement } from '../model/statement';
 import { WorklogProposal } from '../model/proposal';
 import { RowFieldSources } from '../model/field-source';
+import { TicketWritingRequest } from '../ticket/write';
 
 /** The fields a reviewer can change on a machine-proposed row, keyed by the proposal's id. */
 export type ProposalOverride = {
@@ -89,6 +90,36 @@ export type DayReviewEdits = {
   pinned: PinnedRow[];
   /** What the reviewer said the day's stretches were. See {@link PresenceStatement}. */
   statements: PresenceStatement[];
+  /** What auto mode asked about this day and what it answered, one entry per band or stand-in. */
+  auto?: AutoModeAnswer[];
+};
+
+/** What auto mode asks about: an unnamed context of the day, or an open stand-in the day holds. */
+export type AutoModeSubject = { kind: 'context'; contextId: string } | { kind: 'stand-in'; standInId: string };
+
+/**
+ * What the model answered. A `draft` is the ticket auto mode queued for the user's approval;
+ * `approvalId` names the queue item and `createdKey` the issue its approval filed.
+ */
+export type AutoModeOutcome =
+  | { kind: 'match'; issueKey: string; reason?: string }
+  | {
+      kind: 'draft';
+      summary: string;
+      description: string;
+      projectKey?: string;
+      parentKey?: string;
+      approvalId?: string;
+      createdKey?: string;
+    }
+  | { kind: 'failed' };
+
+export type AutoModeAnswer = {
+  subject: AutoModeSubject;
+  askedAtMs: number;
+  /** The masked payload that left the machine: what the "Ask AI" press would have shown. */
+  request: TicketWritingRequest;
+  outcome: AutoModeOutcome;
 };
 
 export const EMPTY_DAY_REVIEW_EDITS: DayReviewEdits = { overrides: {}, pinned: [], statements: [] };

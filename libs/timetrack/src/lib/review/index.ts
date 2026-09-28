@@ -1,3 +1,4 @@
+export * from './auto-mode';
 export * from './day';
 export * from './edits';
 export * from './lane-issues';
