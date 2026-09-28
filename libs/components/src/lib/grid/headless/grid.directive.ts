@@ -17,7 +17,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { equal, injectPrefersReducedMotion, RuntimeError, signalHostElementDimensions, randomId } from '@ethlete/core';
-import { filter, switchMap, tap, timer } from 'rxjs';
+import { filter, Subscription, switchMap, tap, timer } from 'rxjs';
 import { injectReportError } from '../../internals/report-error';
 import { GRID_ERROR_CODES } from '../grid-errors';
 import { injectGridConfig } from './grid-config';
@@ -206,6 +206,7 @@ export class GridDirective<TData = unknown> {
   private lastResizeTarget: GridItemPosition | null = null;
 
   public leavingIds = signal<ReadonlySet<string>>(new Set<string>());
+  private leaveTimers = new Map<string, Subscription>();
 
   public isResizeActive = signal(false);
   private animationsReady = signal(false);
@@ -376,6 +377,10 @@ export class GridDirective<TData = unknown> {
 
         const currentById = new Map(current.map((c) => [c.id, c]));
         const initialIds = new Set(initial.map((i) => i.id));
+
+        for (const id of initialIds) {
+          this.cancelLeave(id);
+        }
 
         const newItems = initial.filter((item) => !currentById.has(item.id));
         const removedIds = current.filter((c) => !initialIds.has(c.id)).map((c) => c.id);
@@ -738,19 +743,17 @@ export class GridDirective<TData = unknown> {
     // remove it once the animation has finished.
     this.leavingIds.update((ids) => new Set(ids).add(id));
 
-    timer(LEAVE_ANIMATION_MS)
+    const leave = timer(LEAVE_ANIMATION_MS)
       .pipe(
         tap(() => {
-          this.leavingIds.update((ids) => {
-            const next = new Set(ids);
-            next.delete(id);
-            return next;
-          });
+          this.cancelLeave(id);
           this.finalizeRemove(id, options);
         }),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
+
+    this.leaveTimers.set(id, leave);
   }
 
   public moveItem(id: string, newPosition: GridItemPosition) {
@@ -898,6 +901,18 @@ export class GridDirective<TData = unknown> {
         item,
       );
     }
+  }
+
+  private cancelLeave(id: string) {
+    if (!this.leavingIds().has(id)) return;
+
+    this.leaveTimers.get(id)?.unsubscribe();
+    this.leaveTimers.delete(id);
+    this.leavingIds.update((ids) => {
+      const next = new Set(ids);
+      next.delete(id);
+      return next;
+    });
   }
 
   private finalizeRemove(id: string, options?: GridMutationOptions) {
