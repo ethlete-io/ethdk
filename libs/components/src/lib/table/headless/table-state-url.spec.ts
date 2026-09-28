@@ -45,6 +45,17 @@ describe('table state URL adapter', () => {
     expect(deserializeTableState(JSON.stringify({ v: 3, columns: [{ hidden: true }] }))).toBeNull();
   });
 
+  it('returns null when a column carries a malformed sort, filter or width', () => {
+    const withColumn = (column: object) =>
+      deserializeTableState(JSON.stringify({ v: 3, columns: [{ key: 'name', hidden: false, ...column }] }));
+
+    expect(withColumn({ filterValues: 'abc' })).toBeNull();
+    expect(withColumn({ sort: 'up' })).toBeNull();
+    expect(withColumn({ width: '120px' })).toBeNull();
+    expect(withColumn({ sortPriority: 'first' })).toBeNull();
+    expect(withColumn({ sort: 'desc', filterValues: ['a'], width: 120, sortPriority: 0 })).not.toBeNull();
+  });
+
   it('returns null for an unknown version or missing columns', () => {
     expect(deserializeTableState(JSON.stringify({ v: 4, columns: [] }))).toBeNull();
     expect(deserializeTableState(JSON.stringify({ v: 1 }))).toBeNull();

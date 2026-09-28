@@ -665,6 +665,16 @@ describe('TableComponent', () => {
       expect(state.columns.find((c) => c.key === 'name')?.sortPriority).toBeUndefined();
     });
 
+    it('ignores a restored state whose filter values are not a list', () => {
+      const fixture = create(stateColumns(), UNSORTED);
+      const table = fixture.componentInstance;
+
+      table.restoreState({ v: 3, columns: [{ key: 'role', hidden: false, filterValues: 'abc' as unknown as [] }] });
+      fixture.detectChanges();
+
+      expect(table.rows()).toHaveLength(UNSORTED.length);
+    });
+
     it('keeps a restore that landed before the columns input was populated', () => {
       // A consumer whose columns and stored state arrive from the same request restores first and
       // binds the columns after. Both directions have to survive that: a column the state hides and

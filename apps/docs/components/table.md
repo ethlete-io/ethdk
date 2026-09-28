@@ -1944,7 +1944,7 @@ alone.
 you can put in a URL query param (and back), so a filtered, sorted, reordered
 table is shareable as a link. Deserialize returns `null` for an absent, malformed
 or unknown-version value - including one whose `columns` carry entries that are not
-columns - so a stale or hand-edited link just falls back to the default view.
+columns, or a malformed `sort`, `filterValues` or `width` - so a stale or hand-edited link just falls back to the default view.
 `restoreState()` applies the same check (`isRestorableTableState()`, exported for a
 state that reaches you from somewhere else) and ignores a state it cannot read rather
 than applying half of it.

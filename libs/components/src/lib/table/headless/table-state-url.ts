@@ -12,12 +12,27 @@ import { TableColumnState, TableState } from '../table.types';
  */
 export const serializeTableState = (state: TableState) => JSON.stringify(state);
 
-const isColumnState = (value: unknown): value is TableColumnState =>
-  typeof value === 'object' && value !== null && typeof (value as TableColumnState).key === 'string';
+const isOptionalFiniteNumber = (value: unknown) =>
+  value === undefined || (typeof value === 'number' && Number.isFinite(value));
+
+const isColumnState = (value: unknown): value is TableColumnState => {
+  if (typeof value !== 'object' || value === null) return false;
+
+  const column = value as Partial<Record<keyof TableColumnState, unknown>>;
+
+  return (
+    typeof column.key === 'string' &&
+    (column.sort === undefined || column.sort === 'asc' || column.sort === 'desc') &&
+    (column.filterValues === undefined || Array.isArray(column.filterValues)) &&
+    isOptionalFiniteNumber(column.width) &&
+    isOptionalFiniteNumber(column.sortPriority)
+  );
+};
 
 /**
  * Whether a value is a {@link TableState} this build can restore - a known version, and a `columns`
- * array whose every entry carries a `key`. `deserializeTableState` and `restoreState()` both apply it,
+ * array whose every entry carries a `key` and, where present, a valid `sort`, `filterValues`, `width`
+ * and `sortPriority`. `deserializeTableState` and `restoreState()` both apply it,
  * so a state that reaches a table from anywhere else (a server payload, a hand-built object) can be
  * checked the same way.
  */
