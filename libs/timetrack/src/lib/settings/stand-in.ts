@@ -94,7 +94,10 @@ export const withoutStandIn = (options: { settings: TimetrackSettings; id: strin
   const standIn = settings.standIns.find((entry) => entry.id === options.id);
   const branch = standIn?.author === 'app' && standIn.state === 'open' ? standIn.openedForBranch : undefined;
   const checkout = standIn && branch ? checkoutOf({ settings, standIn }) : undefined;
-  const refused: StandInRefusal | undefined = checkout ? { repoPath: checkout, branch } : undefined;
+  const workPath = standIn?.openedForWorkPath;
+  const refused: StandInRefusal | undefined = checkout
+    ? { repoPath: checkout, branch, ...(workPath ? { workPath } : {}) }
+    : undefined;
 
   return {
     ...settings,
@@ -108,17 +111,21 @@ export const withoutStandIn = (options: { settings: TimetrackSettings; id: strin
 };
 
 const sameRefusal = (refused: readonly StandInRefusal[], entry: StandInRefusal) =>
-  refused.some((held) => held.repoPath === entry.repoPath && held.branch === entry.branch);
+  refused.some(
+    (held) => held.repoPath === entry.repoPath && held.branch === entry.branch && held.workPath === entry.workPath,
+  );
 
 /** Lets the app open a placeholder for the work again, which is how a delete is taken back. */
 export const withStandInCheckoutAllowed = (options: {
   settings: TimetrackSettings;
   repoPath: string;
   branch?: string;
+  workPath?: string;
 }): TimetrackSettings => ({
   ...options.settings,
   noStandInCheckouts: options.settings.noStandInCheckouts.filter(
-    (entry) => entry.repoPath !== options.repoPath || entry.branch !== options.branch,
+    (entry) =>
+      entry.repoPath !== options.repoPath || entry.branch !== options.branch || entry.workPath !== options.workPath,
   ),
 });
 

@@ -147,9 +147,10 @@ export const openStandIn = (options: {
  * Work the user refused a placeholder for, by deleting one the app opened.
  *
  * Without `branch` it refuses the whole checkout, which is what an entry written while the grain was
- * the checkout means and what a delete of such a record still writes.
+ * the checkout means and what a delete of such a record still writes. Without `workPath` it refuses
+ * every directory of the branch.
  */
-export type StandInRefusal = { repoPath: string; branch?: string };
+export type StandInRefusal = { repoPath: string; branch?: string; workPath?: string };
 
 /**
  * Whether the user refused a placeholder for this branch of this checkout.
@@ -157,9 +158,17 @@ export type StandInRefusal = { repoPath: string; branch?: string };
  * A refusal of the whole checkout covers every branch of it, so a user who wants no placeholder at
  * all from a repository is not asked to refuse each branch in turn.
  */
-export const isStandInRefused = (options: { repoPath: string; branch?: string; refused: readonly StandInRefusal[] }) =>
+export const isStandInRefused = (options: {
+  repoPath: string;
+  branch?: string;
+  workPath?: string;
+  refused: readonly StandInRefusal[];
+}) =>
   options.refused.some(
-    (entry) => entry.repoPath === options.repoPath && (!entry.branch || entry.branch === options.branch),
+    (entry) =>
+      entry.repoPath === options.repoPath &&
+      (!entry.branch || entry.branch === options.branch) &&
+      (!entry.workPath || entry.workPath === options.workPath),
   );
 
 /** The stand-ins still waiting on a ticket, newest first, which is what a picker offers. */

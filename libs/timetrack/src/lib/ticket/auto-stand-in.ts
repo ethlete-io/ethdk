@@ -196,7 +196,7 @@ export const autoStandIns = (options: {
     if (base.has(branch) && !workPath) continue;
     if (!isCheckout({ repoPath, roots })) continue;
     if (options.offeredCheckouts.includes(repoPath)) continue;
-    if (isStandInRefused({ repoPath, branch, refused: options.refused })) continue;
+    if (isStandInRefused({ repoPath, branch, workPath, refused: options.refused })) continue;
     if (alreadyWaiting({ repoPath, branch, workPath, standIns: options.standIns })) continue;
     if (alreadyAnswered({ repoPath, branch, workPath, rules: options.rules })) continue;
 

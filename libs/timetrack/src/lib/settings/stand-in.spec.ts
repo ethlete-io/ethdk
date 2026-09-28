@@ -112,6 +112,26 @@ describe('withoutStandIn', () => {
     expect(settings.noStandInCheckouts).toEqual([{ repoPath: '/home/tom/dev/ea-frontend', branch: 'feat/x' }]);
   });
 
+  it('refuses only the directory of one opened for a directory of a base branch', () => {
+    const settings = withoutStandIn({
+      settings: settingsWith({
+        standIns: [
+          standIn({
+            author: 'app',
+            openedFor: '/home/tom/dev/ea-frontend',
+            openedForBranch: 'develop',
+            openedForWorkPath: 'specs/journey',
+          }),
+        ],
+      }),
+      id: 'stand-in-1',
+    });
+
+    expect(settings.noStandInCheckouts).toEqual([
+      { repoPath: '/home/tom/dev/ea-frontend', branch: 'develop', workPath: 'specs/journey' },
+    ]);
+  });
+
   it('refuses nothing for one opened while the grain was the checkout, so the pass can redo it', () => {
     const settings = withoutStandIn({
       settings: settingsWith({ standIns: [standIn({ author: 'app', openedFor: '/home/tom/dev/ea-frontend' })] }),
@@ -150,6 +170,26 @@ describe('withStandInCheckoutAllowed', () => {
       withStandInCheckoutAllowed({ settings: both, repoPath: '/home/tom/dev/ea-frontend', branch: 'feat/x' })
         .noStandInCheckouts,
     ).toEqual([{ repoPath: '/home/tom/dev/ea-frontend', branch: 'feat/y' }]);
+  });
+
+  it('takes one directory off and leaves a sibling directory of the branch refused', () => {
+    const sibling = { repoPath: '/home/tom/dev/ea-frontend', branch: 'develop', workPath: 'specs/other' };
+    const refused = {
+      ...settingsWith(),
+      noStandInCheckouts: [
+        { repoPath: '/home/tom/dev/ea-frontend', branch: 'develop', workPath: 'specs/journey' },
+        sibling,
+      ],
+    };
+
+    expect(
+      withStandInCheckoutAllowed({
+        settings: refused,
+        repoPath: '/home/tom/dev/ea-frontend',
+        branch: 'develop',
+        workPath: 'specs/journey',
+      }).noStandInCheckouts,
+    ).toEqual([sibling]);
   });
 
   it('takes a whole-checkout entry off, which is what an older delete wrote', () => {

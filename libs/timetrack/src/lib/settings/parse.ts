@@ -194,10 +194,12 @@ const asStandInRefusal = (value: unknown): StandInRefusal | null => {
   const raw = asRecord(value);
   const repoPath = asText(raw['repoPath']);
   const branch = asText(raw['branch']);
+  const workPath = asText(raw['workPath']);
 
   if (!repoPath) return null;
+  if (!branch) return { repoPath };
 
-  return branch ? { repoPath, branch } : { repoPath };
+  return workPath ? { repoPath, branch, workPath } : { repoPath, branch };
 };
 
 const asStandInRefusals = (value: unknown) =>

@@ -341,6 +341,14 @@ describe('autoStandIns', () => {
     expect(open({ contexts, refused: [{ repoPath: OTHER }] })).toHaveLength(2);
   });
 
+  it('opens none for a refused directory of a base branch, and still opens for its sibling directory', () => {
+    const rework = { repoPath: FIFAGG, branch: 'main', workPath: 'context/tracks/20260921_rework' };
+    const journey = { repoPath: FIFAGG, branch: 'main', workPath: 'context/tracks/20260808_journey' };
+    const contexts = [unnamed(rework, 45 * 60_000), unnamed(journey, 45 * 60_000)];
+
+    expect(open({ contexts, refused: [rework] }).map((entry) => entry.rule.workPath)).toEqual([journey.workPath]);
+  });
+
   it('records the checkout and the branch it opened for, so a delete knows what to refuse', () => {
     const opened = open({ contexts: [unnamed({ repoPath: FIFAGG, branch: 'refs/heads/feat/x' }, 45 * 60_000)] });
 

