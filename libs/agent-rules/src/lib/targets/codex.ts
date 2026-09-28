@@ -25,5 +25,5 @@ export const emitCodex = (options: { context: EmitContext; existing: string }): 
 
   const block = document([BANNER, ...sections]).trimEnd();
 
-  return [{ path: CODEX_FILE, contents: replaceMarkedBlock({ existing, block }) }];
+  return [{ path: CODEX_FILE, contents: replaceMarkedBlock({ existing, block, file: CODEX_FILE }) }];
 };

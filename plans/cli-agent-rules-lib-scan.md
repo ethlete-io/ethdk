@@ -28,7 +28,6 @@ Scan of `libs/cli/src/` and `libs/agent-rules/src/` from 2026-09-28. 1 High, 14 
 
 ## agent-rules: sync, migrate, output-style
 
-- Medium: `replaceMarkedBlock` appends a new block when the end marker is missing or comes before the start marker (`render.ts:112-118`), and leaves the old start marker in place. On the next sync, the old start and the new end pair up, and all hand-written text between them is deleted. Refuse to sync (or report) when the markers are unbalanced. S Verified for a missing end marker. A reversed pair only appends again on each sync and deletes nothing.
 - Low: `migrateClaudeMd` concatenates `CLAUDE.md` and `AGENTS.md` (`migrate.ts:48-58`). When both hold a generated marker block, the result holds two. Sync then updates only the first, and the second stays stale. Strip the marker block from the `CLAUDE.md` part first. S Re-rated from Medium: no target ever writes a marker block into `CLAUDE.md`, so only a hand-copied block triggers it.
 - Low: `output-style --remove` reads the shipped style before it removes (`output-style.ts:126-128`). A style that a newer package version dropped cannot be removed ("Unknown output style"). The name is also joined into paths unchecked, so `--name ../../README --force` resolves to a file above the config dir. Validate the name and skip the shipped read for `remove`. S
 - Low: `collectOwnedPaths` uses `statSync` (`owned-paths.ts:42,67`), which throws on a dangling symlink. One broken link under `.claude/skills/ethlete-*` makes `sync` and `check` crash. Use `lstatSync` and skip links. S

@@ -74,6 +74,7 @@ export const emitGitHooks = (options: {
         contents: replaceMarkedBlock({
           existing: current.trim().length > 0 ? current : SHEBANG,
           block: block({ file: definition.file }),
+          file: path,
           startMarker: START_MARKER,
           endMarker: END_MARKER,
         }),

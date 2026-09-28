@@ -95,24 +95,35 @@ export const renderDescription = (options: { item: ContentItem; vars: Record<str
 /**
  * Rewrites the block between the markers, leaving everything a repo wrote around it untouched.
  * A file without markers gets the block appended. Shell files pass their own `#` markers.
+ * Throws when only one marker is there, or the end marker comes first, rather than guess where the
+ * block ends and delete what the repo wrote.
  */
 export const replaceMarkedBlock = (options: {
   existing: string;
   block: string;
+  /** Named in the error for unbalanced markers. */
+  file?: string;
   startMarker?: string;
   endMarker?: string;
 }) => {
-  const { existing, block } = options;
+  const { existing, block, file = 'The file' } = options;
   const startMarker = options.startMarker ?? START_MARKER;
   const endMarker = options.endMarker ?? END_MARKER;
   const wrapped = `${startMarker}\n${block}\n${endMarker}`;
   const start = existing.indexOf(startMarker);
   const end = existing.indexOf(endMarker);
 
-  if (start === -1 || end === -1 || end < start) {
+  if (start === -1 && end === -1) {
     const separator = existing.trim().length > 0 ? `${existing.trimEnd()}\n\n` : '';
 
     return `${separator}${wrapped}\n`;
+  }
+
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error(
+      `${file} has an ethlete marker block with no matching end marker. Put "${startMarker}" and ` +
+        `"${endMarker}" back around the generated block, or remove both, then sync again.`,
+    );
   }
 
   return `${existing.slice(0, start)}${wrapped}${existing.slice(end + endMarker.length)}`;
