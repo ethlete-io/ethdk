@@ -203,7 +203,7 @@ At `480px` and below the stack spans both edges and every toast fills it, which 
 ## Behavior & accessibility
 
 - The stack animates reordering/stacking (FLIP, skipped under `prefers-reduced-motion`), keeps at most `maxVisible` toasts, and removes its container when the last toast leaves.
-- Error toasts get `role="alert"`, all others `role="status"`; the stack itself is a polite `role="log"` live region.
+- Error toasts get `role="alert"`, all others `role="status"`; the stack itself is not a live region, so each toast is announced once.
 - <kbd>Escape</kbd> dismisses a focused toast; hover/focus pause its auto-dismiss timer, as does holding it under a finger.
 - Status icons are decorative (`aria-hidden`) - the status is already carried by the role and the wording.
 - A toast paints one surface elevation above the page - the level a dialog resolves to - whatever is open underneath it. Opening or closing an overlay never re-shades a visible toast.

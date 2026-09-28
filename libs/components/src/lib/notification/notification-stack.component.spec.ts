@@ -56,19 +56,11 @@ describe('NotificationStackComponent', () => {
     );
   };
 
-  it('has role="log"', () => {
+  it('is not a live region itself, so each item is announced once', () => {
     fixture.detectChanges();
-    expect(host.getAttribute('role')).toBe('log');
-  });
-
-  it('has aria-live="polite"', () => {
-    fixture.detectChanges();
-    expect(host.getAttribute('aria-live')).toBe('polite');
-  });
-
-  it('has aria-relevant="additions"', () => {
-    fixture.detectChanges();
-    expect(host.getAttribute('aria-relevant')).toBe('additions');
+    expect(host.hasAttribute('role')).toBe(false);
+    expect(host.hasAttribute('aria-live')).toBe(false);
+    expect(host.hasAttribute('aria-relevant')).toBe(false);
   });
 
   it('paints one level above the overlay layer, and declares it', () => {
