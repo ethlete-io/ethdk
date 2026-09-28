@@ -15,6 +15,7 @@ import {
 } from '@angular/core';
 import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
+import { injectRenderer } from '@ethlete/core';
 import {
   AccessibleNameControlDirective,
   FORM_FIELD_CONTROL_TYPES,
@@ -82,6 +83,9 @@ export class OtpInputDirective
   public nativeControl = signal<HTMLInputElement | null>(null);
 
   public inputMode = computed(() => (this.charset() === 'numeric' ? 'numeric' : 'text'));
+
+  /** The native `type` the input carries - `password` while `masked`, so the value is not read aloud. */
+  public nativeType = computed(() => (this.masked() ? 'password' : 'text'));
 
   /** The character each segment displays (`null` for empty slots). */
   public segmentChars = computed(() => {
@@ -155,6 +159,7 @@ export class OtpInputDirective
 
     if (hostElement?.tagName === 'INPUT') {
       this.nativeControl.set(hostElement as HTMLInputElement);
+      this.mirrorOntoNativeHost(hostElement as HTMLInputElement);
     }
   }
 
@@ -233,5 +238,42 @@ export class OtpInputDirective
     if (element.selectionStart !== end || element.selectionEnd !== end) {
       element.setSelectionRange(end, end);
     }
+  }
+
+  private mirrorOntoNativeHost(element: HTMLInputElement) {
+    const renderer = injectRenderer();
+    const staticDescribedBy = element.getAttribute('aria-describedby');
+
+    renderer.setAttributes(element, {
+      autocomplete: element.getAttribute('autocomplete') ?? 'one-time-code',
+      autocapitalize: element.getAttribute('autocapitalize') ?? 'off',
+      spellcheck: element.getAttribute('spellcheck') ?? 'false',
+    });
+
+    effect(() => {
+      const value = this.value();
+
+      if (element.value !== value) renderer.setProperty(element, 'value', value);
+    });
+
+    effect(() =>
+      renderer.setProperties(element, {
+        type: this.nativeType(),
+        disabled: this.disabled(),
+        readOnly: this.readonly(),
+        required: this.required(),
+      }),
+    );
+
+    effect(() =>
+      renderer.setAttributes(element, {
+        inputmode: this.inputMode(),
+        name: this.name() || null,
+        'aria-label': this.ariaLabel() || null,
+        'aria-labelledby': this.labelId() || null,
+        'aria-invalid': this.shouldDisplayError() ? 'true' : null,
+        'aria-describedby': [staticDescribedBy, this.describedBy()].filter(Boolean).join(' ') || null,
+      }),
+    );
   }
 }

@@ -31,13 +31,13 @@
     [readOnly]="otp.readonly()"
     [required]="otp.required()"
     [value]="otp.value()"
+    [type]="otp.nativeType()"
     (blur)="otp.handleNativeBlur()"
     (focus)="otp.handleNativeFocus()"
     class="et-otp-input-native"
     autocapitalize="off"
     autocomplete="one-time-code"
     spellcheck="false"
-    type="text"
   />
 </div>
 

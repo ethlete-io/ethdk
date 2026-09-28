@@ -30,8 +30,6 @@ Paths are relative to `libs/components/src/lib/forms/`.
 
 ## otp-input
 
-- Medium: `masked` hides only the visual segments. The invisible native input keeps `type="text"` and holds the PIN in plaintext (`otp-input/otp-input.component.html:21-40`), so a screen reader reads the PIN aloud. Use `type="password"` (or `-webkit-text-security`) while `masked`. S Verified.
-- Medium: headless `<input etOtpInput>` never writes the model back to the element (`otp-input/headless/otp-input.directive.ts:153-158`). A programmatic reset, or the re-sanitize after a `length`/`charset` change (`:135-137`), leaves the old text in the input. `inputmode` and `autocomplete="one-time-code"` are also missing. Mirror `value`, `inputMode` and the ARIA state onto the host, the same way `TextFieldControlDirective.mirrorOntoNativeHost` does. M Verified.
 
 ## tag-input
 

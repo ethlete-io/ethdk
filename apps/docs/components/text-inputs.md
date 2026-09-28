@@ -392,12 +392,12 @@ raw string.
 
 <StoryEmbed id="components-forms-otp-input--default" height="220px" />
 
-| Input     | Type                                    | Default     | Description                                                                                       |
-| --------- | --------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------- |
-| `length`  | `number`                                | `6`         | Number of characters/segments.                                                                    |
-| `charset` | `'numeric' \| 'alphanumeric' \| RegExp` | `'numeric'` | Accepted characters - everything else is stripped (pastes included).                              |
-| `masked`  | `boolean`                               | `false`     | Renders dots instead of characters (PIN entry); the value stays real.                             |
-| `color`   | registered color theme name             | -           | Scopes a [color theme](/core/theming) to the input - tints the active segment's border and caret. |
+| Input     | Type                                    | Default     | Description                                                                                                                                                       |
+| --------- | --------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `length`  | `number`                                | `6`         | Number of characters/segments.                                                                                                                                    |
+| `charset` | `'numeric' \| 'alphanumeric' \| RegExp` | `'numeric'` | Accepted characters - everything else is stripped (pastes included).                                                                                              |
+| `masked`  | `boolean`                               | `false`     | Renders dots instead of characters (PIN entry) and turns the native input into `type="password"`, so a screen reader does not read the PIN; the value stays real. |
+| `color`   | registered color theme name             | -           | Scopes a [color theme](/core/theming) to the input - tints the active segment's border and caret.                                                                 |
 
 | Output     | Type     | Emits                                             |
 | ---------- | -------- | ------------------------------------------------- |
@@ -414,6 +414,11 @@ Editing is append/delete-at-end (the caret is pinned to the end), with the activ
 segment marked visually. A `charset` RegExp is tested per character, so its `g`
 and `y` flags are ignored. Narrowing `charset` or shrinking `length` at runtime
 re-sanitizes the value that is already in the field, without emitting `complete`.
+
+The headless `<input etOtpInput>` renders no segments - that is up to you, from
+`segmentChars()` and `caretIndex()` - but keeps the input itself in sync: the value,
+`type`, `inputmode`, `autocomplete="one-time-code"`, the disabled/readonly/required state
+and the ARIA attributes.
 
 | Token                              | Default |
 | ---------------------------------- | ------- |

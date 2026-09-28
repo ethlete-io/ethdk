@@ -6,7 +6,7 @@ import { mountControl } from '../../../testing/control-driver';
 import { LabelDirective } from '../../form-field/headless';
 import { mountOtpInput, OtpInputDriver } from '../../testing/otp-input-driver';
 import { OTP_INPUT_IMPORTS } from '../otp-input.imports';
-import { OtpInputCharset } from './otp-input.directive';
+import { OtpInputCharset, OtpInputDirective } from './otp-input.directive';
 
 @Component({
   template: `
@@ -152,6 +152,15 @@ describe('OtpInputDirective', () => {
     expect(driver.host.value()).toBe('12');
   });
 
+  it('hides the native value from assistive technology while masked', () => {
+    expect(driver.field().type).toBe('text');
+
+    driver.host.masked.set(true);
+    driver.tick();
+
+    expect(driver.field().type).toBe('password');
+  });
+
   it('supports alphanumeric and custom charsets', () => {
     driver.host.charset.set('alphanumeric');
     driver.tick();
@@ -210,5 +219,71 @@ describe('otp input support region', () => {
     const host = mountControl(OtpInputWithErrorTestHost).nativeElement as HTMLElement;
 
     expectDescribedByPointsAtErrors(host);
+  });
+});
+
+@Component({
+  template: `
+    <input
+      [value]="value()"
+      [length]="length()"
+      [masked]="masked()"
+      [disabled]="disabled()"
+      (valueChange)="value.set($event)"
+      aria-label="Code"
+      etOtpInput
+    />
+  `,
+  imports: [OtpInputDirective],
+})
+class HeadlessOtpTestHost {
+  value = signal('');
+  length = signal(4);
+  masked = signal(false);
+  disabled = signal(false);
+}
+
+describe('headless etOtpInput', () => {
+  let driver: OtpInputDriver<HeadlessOtpTestHost>;
+
+  beforeEach(() => {
+    driver = mountOtpInput(HeadlessOtpTestHost, { fieldSelector: 'input' });
+  });
+
+  it('carries the autofill and keyboard hints on the host input', () => {
+    expect(driver.attr('autocomplete')).toBe('one-time-code');
+    expect(driver.attr('inputmode')).toBe('numeric');
+    expect(driver.attr('aria-label')).toBe('Code');
+  });
+
+  it('writes a programmatic value into the host input', () => {
+    driver.type('12');
+    driver.host.value.set('');
+    driver.tick();
+
+    expect(driver.fieldValue()).toBe('');
+
+    driver.host.value.set('34');
+    driver.tick();
+
+    expect(driver.fieldValue()).toBe('34');
+  });
+
+  it('writes the re-sanitized value back after the length shrinks', () => {
+    driver.type('1234');
+    driver.host.length.set(2);
+    driver.tick();
+
+    expect(driver.host.value()).toBe('12');
+    expect(driver.fieldValue()).toBe('12');
+  });
+
+  it('mirrors masked and disabled onto the host input', () => {
+    driver.host.masked.set(true);
+    driver.host.disabled.set(true);
+    driver.tick();
+
+    expect(driver.field().type).toBe('password');
+    expect(driver.field().disabled).toBe(true);
   });
 });
