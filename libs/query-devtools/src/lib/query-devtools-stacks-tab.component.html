@@ -86,7 +86,6 @@
   />
 </div>
 
-<!-- Reusable dt/dd pair for a card's `et-query-devtools-meta` list: what its queries ran and moved. -->
 <ng-template #activityRow let-activity="activity">
   <dt>Traffic</dt>
   <dd>
@@ -108,7 +107,6 @@
   </dd>
 </ng-template>
 
-<!-- Reusable inner-query list — clicking opens the split-view drawer, not a tab switch. -->
 <ng-template #innerQueries let-links="links">
   <div class="et-query-devtools-inner-queries">
     @for (link of links; track $index) {

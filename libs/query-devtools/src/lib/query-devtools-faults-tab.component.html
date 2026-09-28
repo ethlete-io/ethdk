@@ -73,8 +73,7 @@
             class="et-query-devtools-select"
           >
             @for (option of FAULT_STATUSES; track option.status) {
-              <!-- `selected` on the option, not `value` on the select: the select's value is
-                   applied before its options exist, so it would fall back to the first one. -->
+              <!-- `selected` on the option: a `value` on the select applies before its options exist. -->
               <option [value]="option.status" [selected]="option.status === fault.status">
                 {{ option.status }} · {{ option.label }}
               </option>

@@ -9,14 +9,11 @@ import {
 
 const MAX_DEPTH = 10;
 
-/** An ISO date-time, strictly enough that nothing else is mistaken for one. */
 const DATE_TIME = /^\d{4}-\d{2}-\d{2}[Tt]\d{2}:\d{2}:\d{2}(\.\d+)?([Zz]|[+-]\d{2}:\d{2})$/;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-/** One designed mock, as the export reads it. */
 export type QueryDevtoolsOpenApiMock = {
-  /** Which query client serves it - the operation's tag, since a document has no other place for it. */
   clientName: string;
 
   method: string;
@@ -24,39 +21,27 @@ export type QueryDevtoolsOpenApiMock = {
   /** The route with its path params as `:name`; the document writes them as `{name}`. */
   pattern: string;
 
-  /** Query parameters the mock declares, as a query string (`page=2&limit=10`). */
   query: string;
 
   status: number;
 
   body: unknown;
 
-  /**
-   * The named schema the body was seeded from. When the export carries that schema, the response
-   * references it instead of an anonymous shape inferred from the body.
-   */
   schemaName?: string | null;
 
-  /** Set when the body came from a real response rather than being written by hand. */
   capturedAt?: number | null;
 };
 
 export type BuildQueryDevtoolsOpenApiOptions = {
   mocks: readonly QueryDevtoolsOpenApiMock[];
 
-  /**
-   * Named schemas lifted out of the application's own API description, keyed as `components.schemas`
-   * wants them - `collectQueryDevtoolsSchemaComponents` in `@ethlete/query` produces them.
-   */
   schemas?: Record<string, unknown>;
 
-  /** Wall-clock time of the export - passed in so the builder stays pure. */
   now: number;
 
   title?: string;
 };
 
-/** An OpenAPI 3.1 document, as far as this export writes one. */
 export type QueryDevtoolsOpenApiDocument = {
   openapi: '3.1.0';
   info: { title: string; version: string; description: string };
@@ -67,22 +52,15 @@ export type QueryDevtoolsOpenApiDocument = {
 export type QueryDevtoolsOpenApiExport<TDocument> = {
   document: TDocument;
 
-  /** What had to be guessed or dropped, so the document is never taken for the contract. */
   notes: readonly string[];
 };
 
-/** `/matches/:id` is how a mock writes a route; a document writes it `/matches/{id}`. */
 const toBracePattern = (pattern: string) =>
   pattern
     .split('/')
     .map((segment) => (segment.startsWith(':') ? `{${segment.slice(1)}}` : segment))
     .join('/');
 
-/**
- * The schema of one sample value. **Inferred from a single example**, so every property the example held
- * is listed as required, nothing is nullable, and a `null` carries no type at all - what the example
- * proves and not one claim more. The document's own description says so.
- */
 export const inferQueryDevtoolsOpenApiSchema = (value: unknown, depth = 0): Record<string, unknown> => {
   if (depth >= MAX_DEPTH) return {};
 
@@ -123,10 +101,6 @@ export const inferQueryDevtoolsOpenApiSchema = (value: unknown, depth = 0): Reco
   return {};
 };
 
-/**
- * The element schema of an array: the one its members agree on, or an `anyOf` of the shapes they do not.
- * An empty array says nothing about its elements, so it constrains nothing.
- */
 const itemsOf = (value: readonly unknown[], depth: number): Record<string, unknown> => {
   const members = new Map<string, Record<string, unknown>>();
 
@@ -179,7 +153,6 @@ const parametersOf = (mocks: readonly QueryDevtoolsOpenApiMock[]) => {
   return parameters;
 };
 
-/** A `?page=2` mock and a plain one are two examples of one response; the query string names them apart. */
 const exampleNameOf = (mock: QueryDevtoolsOpenApiMock, taken: Set<string>) => {
   const base = mock.query || mock.clientName || 'designed';
   let name = base;
@@ -200,7 +173,6 @@ const responseDescription = (mocks: readonly QueryDevtoolsOpenApiMock[], status:
 };
 
 type ResponseContext = {
-  /** Named schemas the export carries, so a seeded response can reference one rather than infer it. */
   schemas: Record<string, unknown>;
   notes: Set<string>;
 };
@@ -260,7 +232,6 @@ const responsesOf = (mocks: readonly QueryDevtoolsOpenApiMock[], ctx: ResponseCo
   return responses;
 };
 
-/** The methods a designed request body would belong to, so the export says it does not have one. */
 const SENDS_BODY: ReadonlySet<string> = /* @__PURE__ */ new Set(['POST', 'PUT', 'PATCH']);
 
 const operationDescription = (mocks: readonly QueryDevtoolsOpenApiMock[], ctx: ResponseContext) => {
@@ -295,10 +266,6 @@ const operationOf = (mocks: readonly QueryDevtoolsOpenApiMock[], ctx: ResponseCo
   };
 };
 
-/**
- * Groups mocks into `paths` entries - one path item per route, one operation per method, one response
- * per status. Operation ids are made unique inside the document, since two clients can serve one route.
- */
 const pathsOf = (mocks: readonly QueryDevtoolsOpenApiMock[], ctx: ResponseContext) => {
   const groups = new Map<string, QueryDevtoolsOpenApiMock[]>();
 
@@ -338,10 +305,6 @@ const INFO_DESCRIPTION = /* @__PURE__ */ [
   'instead, and the schema is copied in unchanged.',
 ].join('\n');
 
-/**
- * Builds an OpenAPI 3.1 document from a set of designed mocks - the response side of what the Insomnia
- * and cURL exports do for the request side, and the artefact an API team can merge.
- */
 export const buildQueryDevtoolsOpenApiDocument = (
   options: BuildQueryDevtoolsOpenApiOptions,
 ): QueryDevtoolsOpenApiExport<QueryDevtoolsOpenApiDocument> => {
@@ -364,11 +327,6 @@ export const buildQueryDevtoolsOpenApiDocument = (
   };
 };
 
-/**
- * Builds the `paths` entry for one mock, so a single route can be pasted under an existing document's
- * `paths`. A response seeded from a named schema keeps its `$ref`: the fragment is merged into the
- * description that declares it, so carrying a copy of the schema along would only conflict with it.
- */
 export const buildQueryDevtoolsOpenApiPathItem = (
   options: Pick<BuildQueryDevtoolsOpenApiOptions, 'mocks' | 'schemas'>,
 ): QueryDevtoolsOpenApiExport<Record<string, Record<string, unknown>>> => {
@@ -385,7 +343,6 @@ export const buildQueryDevtoolsOpenApiPathItem = (
   return { document: paths, notes: [...ctx.notes] };
 };
 
-/** Only the named schemas the exported paths actually reference, plus what those reference in turn. */
 const referencedSchemas = (paths: unknown, schemas: Record<string, unknown>) => {
   const used: Record<string, unknown> = {};
   const pending = [...collectRefNames(paths)];

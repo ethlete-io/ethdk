@@ -1,8 +1,6 @@
 <div #panes class="et-query-devtools-master-detail">
   <div class="et-query-devtools-list">
     <div [class.et-query-devtools-toolbar--filtered]="!!host.inspectFilterIds()" class="et-query-devtools-toolbar">
-      <!-- Search leads: it is what the list is narrowed with most of the time. The scope controls sit
-           after it, and the count reads as the search's result rather than as one more control. -->
       <div class="et-query-devtools-toolbar-row">
         <input
           #queryFilterInput
@@ -91,8 +89,6 @@
             <span aria-hidden="true">⑂</span> tree
           </button>
         </div>
-        <!-- Only the statuses something is actually in. Five chips, four of them reading `0`, were four
-             controls that could not be pressed taking up the row that says what is wrong. -->
         @for (facet of visibleFacets(); track facet.id) {
           <button
             [class.et-query-devtools-facet--active]="facet.active"
@@ -165,8 +161,6 @@
       }
     }
 
-    <!-- An empty scope is a different problem from a filter that matches nothing, and only the
-         latter is the user's own doing - so it names the way out. -->
     <ng-template #emptyList>
       @if (scopedQueryCount()) {
         <p class="et-query-devtools-empty">No query matches the filter · {{ scopedQueryCount() }} in scope.</p>
@@ -200,8 +194,6 @@
           [class.et-query-devtools-row--active]="holdsSelection(group)"
           class="et-query-devtools-row et-query-devtools-row--group"
         >
-          <!-- The caret is its own control: every row in the fold is the same request, so opening the
-               fold and inspecting what it holds are two different intentions. -->
           <button
             [attr.aria-expanded]="expanded"
             [attr.aria-label]="
@@ -275,9 +267,6 @@
       }
     </ng-template>
 
-    <!-- A bulk run's items, folded under the run rather than under what a row shows. They only exist
-         while in flight - the batch destroys each item's query as it settles - so this row stands for
-         the whole run, and the Batches tab is where its settled items are. -->
     <ng-template #batchGroupBlock let-group="group" let-batchEntry="batchEntry" let-depth="depth" let-trim="trim">
       @let batch = host.asBatch(batchEntry);
       @let expanded = isGroupExpanded(group);
@@ -367,9 +356,6 @@
             class="et-query-devtools-status"
           ></span>
           <span class="et-query-devtools-method">{{ item.entry.meta.method }}</span>
-          <!-- Inside a fold the route is the fold's own head, repeated once per consumer. Where the query
-               was created is the only thing that differs, so that is what the row says instead. A batch
-               fold is the exception: its items differ in the route, which is why `showRoute` is set. -->
           @if (nested && !showRoute) {
             <span class="et-query-devtools-consumer">
               @if (consumerLabel(item); as consumer) {
@@ -392,8 +378,6 @@
               gone
             </span>
           }
-          <!-- A retry is the one thing a loading dot actively misrepresents: it reads as a request
-               on its way when nothing is in flight at all. -->
           @if (!isGone && host.requestProgress(item.query)?.retry; as retry) {
             <span
               class="et-query-devtools-chip et-query-devtools-chip--loading"

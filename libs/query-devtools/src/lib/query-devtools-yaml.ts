@@ -55,7 +55,6 @@ const blockScalar = (value: string, indent: string) =>
     .map((line) => (line ? `${indent}${line}` : ''))
     .join('\n')}`;
 
-/** What `JSON.stringify` would serialise in this value's place - a `Date` writes as its ISO string. */
 const jsonValueOf = (value: unknown): unknown => {
   if (!value || typeof value !== 'object') return value;
 
@@ -64,7 +63,6 @@ const jsonValueOf = (value: unknown): unknown => {
   return typeof toJson === 'function' ? (toJson as () => unknown).call(value) : value;
 };
 
-/** A scalar, or `null` when the value is one of the containers {@link write} handles itself. */
 const scalarOf = (value: unknown, indent: string): string | null => {
   if (value === null || value === undefined) return 'null';
 
@@ -72,8 +70,6 @@ const scalarOf = (value: unknown, indent: string): string | null => {
     case 'boolean':
       return value ? 'true' : 'false';
     case 'number':
-      // `JSON.stringify` writes a non-finite number as `null`; both exports agree on that rather than
-      // one of them emitting YAML's `.nan`, which no JSON reader takes back.
       return Number.isFinite(value) ? String(value) : 'null';
     case 'string':
       if (isBlockSafe(value)) return blockScalar(value, indent);
@@ -138,10 +134,6 @@ const write = (input: unknown, state: WriteState): string => {
   return written;
 };
 
-/**
- * Writes a JSON-shaped tree as YAML. `undefined` members are dropped and a `toJSON()` carrier is written
- * through it, both the way `JSON.stringify` does; anything else that is not a plain object, array or
- * primitive is written as `null`, and a node that re-enters one of its own ancestors as `null` too.
- */
+/** Writes a JSON-shaped tree as YAML the way `JSON.stringify` would serialize it; a cycle writes as `null`. */
 export const toQueryDevtoolsYaml = (value: unknown) =>
   `${write(value, { depth: 0, ancestors: new Set() }).replace(/^\n/, '')}\n`;

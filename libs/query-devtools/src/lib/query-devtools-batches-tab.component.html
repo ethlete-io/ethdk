@@ -15,8 +15,6 @@
           </div>
 
           <div class="et-query-devtools-batch-bar" role="presentation">
-            <!-- Coloured by the run, not by whether an item failed: a bar filled red end to end reads as
-                 "nothing landed", which is the opposite of what a partial run means. -->
             <span
               [style.inline-size.%]="batch.progress()"
               [attr.data-status]="batch.status()"
@@ -68,8 +66,6 @@
             </dd>
           </dl>
 
-          <!-- Only what is in flight: the batch destroys an item's query the moment it settles, so a
-               settled item is in the list below instead of here. -->
           @let inFlight = host.queriesForBatch(entry);
           @if (inFlight.length) {
             <h5 class="et-query-devtools-section">In flight</h5>
@@ -113,9 +109,6 @@
                 @let itemQueryId = host.batchItemQueryId(entry, result.index);
                 <li [attr.data-status]="itemStatus(result)" class="et-query-devtools-step-item">
                   <div class="et-query-devtools-step-head">
-                    <!-- The row opens the item's own query in the drawer, the way a sequence step does.
-                         Disabled once that query has fallen out of the batch's capped tombstone tail -
-                         the caret below still has this item's args and outcome either way. -->
                     <button
                       [class.et-query-devtools-inner-row--active]="
                         !!itemQueryId && host.batchSelectedQueryId() === itemQueryId
@@ -139,8 +132,6 @@
                       <span class="et-query-devtools-route">
                         <et-query-devtools-route [segments]="row.segments" fallback="not sent" />
                       </span>
-                      <!-- The dot already says success or error; only an item that never went out needs
-                           a word, since a neutral dot alone cannot tell the two reasons apart. -->
                       @if (!wasSent(result)) {
                         <span class="et-query-devtools-chip et-query-devtools-chip--muted">{{ result.status }}</span>
                       }

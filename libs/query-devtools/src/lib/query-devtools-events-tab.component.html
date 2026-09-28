@@ -98,8 +98,6 @@
                             title="Open {{ refreshed.method }} {{ refreshed.path }}"
                           >
                             {{ refreshed.method }} {{ refreshed.path }}
-                            <!-- One request, several queries on the same cache key. Spelling the count
-                             out beats repeating an identical row per consumer. -->
                             @if (refreshed.queryIds.length > 1) {
                               <small>×{{ refreshed.queryIds.length }}</small>
                             }

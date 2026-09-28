@@ -89,8 +89,6 @@
                   <td class="et-query-devtools-mono">{{ field.key }}</td>
                   <td class="et-query-devtools-mono">
                     {{ host.inlineValue(field.value) }}
-                    <!-- The live value only differs while a debounce is pending, which is exactly
-                       when "the input says X but the query asked for Y" needs explaining. -->
                     @if (field.liveValue !== field.value) {
                       <span class="et-query-devtools-stat-sub">typing {{ host.inlineValue(field.liveValue) }}</span>
                     }

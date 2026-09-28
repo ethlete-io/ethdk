@@ -17,11 +17,6 @@ const singleQuoted = (value: string) => `'${value.replace(/(['\\])/g, '\\$1')}'`
 
 const typeKey = (key: string) => (isSafeKey(key) ? key : singleQuoted(key));
 
-/**
- * The TypeScript type of one sample value. **Inferred from a single example**, so it says what that
- * example held and nothing about what is optional or nullable - the snippet says so in a comment rather
- * than guessing.
- */
 export const inferTypeScriptType = (value: unknown, depth = 0): string => {
   if (value === null) return 'null';
   if (depth >= MAX_DEPTH) return 'unknown';
@@ -118,7 +113,6 @@ const templateLiteralText = (value: string) => value.replace(/\\|`|\$\{/g, (matc
 
 const pascal = (name: string) => name[0]?.toUpperCase() + name.slice(1);
 
-/** The route as a creator takes it: a template literal function when the path has params, else the path. */
 const routeOf = (pattern: string, params: string[]) => {
   if (!params.length) return singleQuoted(pattern);
 
@@ -142,20 +136,11 @@ export type QueryDefinitionSnippetOptions = {
   /** The route with its path params as `:name`. */
   pattern: string;
 
-  /** Query parameters as a query string (`page=2&limit=10`), or empty for none. */
   query: string;
 
-  /** A sample response the types are inferred from. */
   body: unknown;
 };
 
-/**
- * A pasteable `@ethlete/query` definition for one route: the response type inferred from a sample body,
- * the `TArgs` contract (path params, query params) and the creator call.
- *
- * The types come from one example, so everything in it reads as required and non-nullable. The snippet
- * says that in a comment rather than pretending otherwise.
- */
 export const buildQueryDefinitionSnippet = (options: QueryDefinitionSnippetOptions) => {
   const { method, pattern, query, body } = options;
 

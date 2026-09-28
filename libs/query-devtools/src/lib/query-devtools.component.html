@@ -15,12 +15,7 @@
     [style.--_et-qdt-drawer-height.px]="drawerHeight()"
     class="et-query-devtools-panel"
   >
-    <!-- A pop-out is sized by its window, so there is no edge to drag. A float is a window in the page:
-         a title bar to move it and every edge to resize it, on the same `@ethlete/core` primitives the
-         stream pip window uses. A dock has one edge, and it does both. -->
     @if (floating()) {
-      <!-- Parked, the panel is a grab strip: the edge handles would eat most of the peek that is left
-           to click, and resizing something you cannot see is not a thing to offer. -->
       <et-resize-handles
         [edges]="FLOAT_RESIZE_EDGES"
         [disabled]="floatParked()"
@@ -133,8 +128,6 @@
           <span aria-hidden="true">⤓</span>
           Session
         </button>
-        <!-- A gear, not a tab: Settings holds nothing to count, so the badge/overflow logic would push it
-             behind More - and the one control that explains a panel behaving oddly may not be hidden. -->
         <button
           [class.et-query-devtools-btn--active]="activeTab() === 'settings'"
           [attr.aria-pressed]="activeTab() === 'settings'"
@@ -297,77 +290,62 @@
 
     <div class="et-query-devtools-body">
       @switch (activeTab()) {
-        <!-- QUERIES -->
         @case ('queries') {
           <et-query-devtools-queries-tab />
         }
 
-        <!-- STACKS -->
         @case ('stacks') {
           <et-query-devtools-stacks-tab />
         }
 
-        <!-- SEQUENCES -->
         @case ('sequences') {
           <et-query-devtools-sequences-tab />
         }
 
-        <!-- BATCHES -->
         @case ('batches') {
           <et-query-devtools-batches-tab />
         }
 
-        <!-- FORMS -->
         @case ('forms') {
           <et-query-devtools-forms-tab />
         }
 
-        <!-- AUTH -->
         @case ('auth') {
           <et-query-devtools-auth-tab />
         }
 
-        <!-- SOCKETS -->
         @case ('ws') {
           <et-query-devtools-sockets-tab />
         }
 
-        <!-- CACHE -->
         @case ('cache') {
           <et-query-devtools-cache-tab />
         }
 
-        <!-- LOCKS -->
         @case ('locks') {
           <et-query-devtools-locks-tab />
         }
 
-        <!-- TIMELINE -->
         @case ('timeline') {
           <et-query-devtools-timeline-tab />
         }
 
-        <!-- EVENTS -->
         @case ('events') {
           <et-query-devtools-events-tab />
         }
 
-        <!-- FAULTS -->
         @case ('faults') {
           <et-query-devtools-faults-tab />
         }
 
-        <!-- MOCKS -->
         @case ('mocks') {
           <et-query-devtools-mocks-tab />
         }
 
-        <!-- ABOUT -->
         @case ('about') {
           <et-query-devtools-about />
         }
 
-        <!-- SETTINGS -->
         @case ('settings') {
           <et-query-devtools-settings />
         }

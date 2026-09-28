@@ -83,9 +83,6 @@
   </div>
 }
 
-<!-- One row, one primary action. Everything a query can be *made* to do lives behind Override, and
-     everything that leaves the panel behind Copy - a flat row of all twelve read as a wall of equal
-     buttons in which Execute was no easier to find than Clear. -->
 <div class="et-query-devtools-actions">
   @if (!isGone()) {
     <div class="et-query-devtools-btn-group">
@@ -143,8 +140,6 @@
     }
   </button>
 
-  <!-- The tick has to live on the trigger: the menu closes on the pick, so a confirmation inside it
-       would be gone before it could be read. -->
   <div class="et-query-devtools-menu" etMenu>
     <button class="et-query-devtools-btn" title="Take this request somewhere else" type="button" etMenuTrigger>
       <span class="et-query-devtools-menu-glyph" aria-hidden="true">{{ copied() ? '✓' : '⧉' }}</span>
@@ -258,8 +253,6 @@
       @if (tab.id === 'history' && detailRuns.length) {
         <span class="et-query-devtools-tab-badge">{{ detailRuns.length }}</span>
       }
-      <!-- The error body lives under Data, so the tab has to say so - a failure must not hide
-           behind a tab that is not open. -->
       @if (tab.id === 'data' && s.query.error()) {
         <span class="et-query-devtools-tab-badge et-query-devtools-tab-badge--error">!</span>
       }
