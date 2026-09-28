@@ -82,6 +82,30 @@ describe('SchedulerTimeGridDirective', () => {
     expect(Math.abs(offsetMinutes - minutes)).toBeLessThan(1);
   });
 
+  it('places the clock and a drafted range by wall-clock time on a daylight-saving day', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 2, 29, 12));
+
+    try {
+      const dstFixture = TestBed.createComponent(SchedulerTimeGridTestHostComponent);
+
+      dstFixture.componentInstance.focusedDate.set(new Date(2026, 2, 29));
+      dstFixture.componentInstance.view.set('day');
+      dstFixture.detectChanges();
+
+      const schedulerElement = dstFixture.debugElement.children[0]!;
+      const grid = schedulerElement.children[0]!.injector.get(SchedulerTimeGridDirective);
+
+      schedulerElement.injector.get(SchedulerDirective).beginDraftRange(new Date(2026, 2, 29, 12), 60 * 60 * 1000);
+
+      expect(grid.currentTime()?.offset).toBeCloseTo(50, 5);
+      expect(grid.draftBlock()?.offset).toBeCloseTo(50, 5);
+      expect(grid.draftBlock()?.span).toBeCloseTo(100 / 24, 5);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('places no clock while the now indicator is off', () => {
     host.focusedDate.set(new Date());
     host.nowIndicator.set(false);

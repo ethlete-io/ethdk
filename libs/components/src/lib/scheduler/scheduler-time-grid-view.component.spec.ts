@@ -231,3 +231,34 @@ describe('SchedulerTimeGridViewComponent resize handles', () => {
     expect(edgesOf('.et-scheduler-time-grid-all-day-entry[title="trip"]')).toEqual([['end']]);
   });
 });
+
+describe('SchedulerTimeGridViewComponent on a daylight-saving day', () => {
+  let driver: ReturnType<typeof schedulerTestDriver>;
+
+  const COLUMN_HEIGHT = 2400;
+
+  beforeEach(() => {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 100, COLUMN_HEIGHT));
+
+    driver = schedulerTestDriver({ view: 'day', appointments: [], focusedDate: new Date(2026, 2, 29) });
+  });
+
+  afterEach(() => {
+    for (const overlay of TestBed.runInInjectionContext(() => injectOverlayManager()).openOverlays()) {
+      overlay.close();
+    }
+
+    driver.fixture.destroy();
+    vi.restoreAllMocks();
+  });
+
+  it('turns a press on the 12:00 line into 12:00', () => {
+    const at = { bubbles: true, pointerId: 1, button: 0, clientX: 50, clientY: COLUMN_HEIGHT / 2 };
+
+    driver.query('.et-scheduler-time-grid-day')?.dispatchEvent(new PointerEvent('pointerdown', at));
+    document.dispatchEvent(new PointerEvent('pointerup', at));
+    driver.detectChanges();
+
+    expect(driver.scheduler().headless.draftRange()?.start).toEqual(new Date(2026, 2, 29, 12));
+  });
+});

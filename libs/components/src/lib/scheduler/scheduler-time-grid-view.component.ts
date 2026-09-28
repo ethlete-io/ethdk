@@ -15,16 +15,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ProvideColorDirective, injectRenderer, injectStyleManager } from '@ethlete/core';
-import {
-  addDays,
-  addMinutes,
-  differenceInCalendarDays,
-  differenceInMinutes,
-  format,
-  isSameDay,
-  setHours,
-  startOfDay,
-} from 'date-fns';
+import { addDays, differenceInCalendarDays, format, isSameDay, setHours, startOfDay } from 'date-fns';
 import { tap, timer } from 'rxjs';
 import {
   SCHEDULER_FEATURE_HOST,
@@ -33,6 +24,7 @@ import {
   SchedulerTimeGridDirective,
 } from './headless';
 import { startSchedulerDragGesture } from './headless/internals/scheduler-drag-gesture';
+import { atMinutesIntoDay, MINUTES_PER_DAY, minutesIntoDay } from './headless/internals/scheduler-time-grid';
 import {
   SCHEDULER_TIME_GRID_ALL_DAY_ROW,
   SchedulerTimeGridKeyboardCell,
@@ -47,7 +39,6 @@ import { Appointment, SchedulerAppointmentDragMode } from './scheduler.types';
 
 const HOURS = /* @__PURE__ */ Array.from({ length: 24 }, (_, hour) => hour);
 
-const MINUTES_PER_DAY = 24 * 60;
 const SLOT_MINUTES = 15;
 const MINIMUM_DURATION = SLOT_MINUTES * 60 * 1000;
 const DEFAULT_DRAFT_MINUTES = 60;
@@ -82,6 +73,8 @@ type SchedulerTimeGridCellGroup = {
 };
 
 type SchedulerTimeGridRovingCell = { dayIndex: number; row: number };
+
+const snapToSlot = (minutes: number) => Math.round(minutes / SLOT_MINUTES) * SLOT_MINUTES;
 
 const blockStartHour = (block: SchedulerTimeGridBlock) =>
   Math.min(Math.floor((block.offset / 100) * HOURS.length + 1e-6), HOURS.length - 1);
@@ -415,14 +408,15 @@ export class SchedulerTimeGridViewComponent {
     const target = this.columnAt(at.clientX) ?? column;
     const days = differenceInCalendarDays(target.day, column.day);
     const minutes = this.minutesAt(target.element, at.clientY) - grabMinutes;
-    const start = this.snapToSlot(addMinutes(addDays(appointment.start, days), minutes));
+    const day = addDays(appointment.start, days);
+    const start = atMinutesIntoDay(day, snapToSlot(minutesIntoDay(day) + minutes));
 
     return { start, end: new Date(start.getTime() + (appointment.end.getTime() - appointment.start.getTime())) };
   }
 
   private resizedRange(drag: SchedulerTimeGridDrag, clientY: number) {
     const { appointment, column } = drag;
-    const at = this.snapToSlot(addMinutes(startOfDay(column.day), this.minutesAt(column.element, clientY)));
+    const at = atMinutesIntoDay(column.day, snapToSlot(this.minutesAt(column.element, clientY)));
 
     if (drag.mode === 'resize-start') {
       const latest = new Date(appointment.end.getTime() - MINIMUM_DURATION);
@@ -578,20 +572,13 @@ export class SchedulerTimeGridViewComponent {
   }
 
   private draftTimeAt(column: SchedulerTimeGridColumn, clientY: number) {
-    return this.snapToSlot(addMinutes(startOfDay(column.day), this.minutesAt(column.element, clientY)));
+    return atMinutesIntoDay(column.day, snapToSlot(this.minutesAt(column.element, clientY)));
   }
 
   private minutesAt(element: HTMLElement, clientY: number) {
     const { top, height } = element.getBoundingClientRect();
 
     return Math.min(Math.max((clientY - top) / height, 0), 1) * MINUTES_PER_DAY;
-  }
-
-  private snapToSlot(at: Date) {
-    const dayStart = startOfDay(at);
-    const minutes = differenceInMinutes(at, dayStart);
-
-    return addMinutes(dayStart, Math.round(minutes / SLOT_MINUTES) * SLOT_MINUTES);
   }
 
   // the click a drag ends on is dispatched after `pointerup` within the same task, so it still sees the flag

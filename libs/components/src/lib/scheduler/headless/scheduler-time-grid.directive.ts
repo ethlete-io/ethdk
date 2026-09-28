@@ -1,14 +1,18 @@
 import { Directive, afterNextRender, computed, inject } from '@angular/core';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
-import { eachDayOfInterval, isSameDay, startOfDay } from 'date-fns';
+import { eachDayOfInterval, isSameDay } from 'date-fns';
 import { injectReportError } from '../../internals/report-error';
 import { SCHEDULER_ERROR_CODES } from '../scheduler-errors';
 import { buildSchedulerNonBusinessTime } from './internals/scheduler-business-hours';
 import { injectSchedulerClock } from './internals/scheduler-clock';
-import { buildSchedulerTimeGrid, computeInitialScrollHour } from './internals/scheduler-time-grid';
+import {
+  buildSchedulerTimeGrid,
+  computeInitialScrollHour,
+  dayColumnPlacement,
+  MINUTES_PER_DAY,
+  minutesIntoDay,
+} from './internals/scheduler-time-grid';
 import { SchedulerDirective } from './scheduler.directive';
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 export type { SchedulerTimeGridSegment } from './internals/scheduler-business-hours';
 export type {
@@ -98,9 +102,7 @@ export class SchedulerTimeGridDirective {
 
     if (dayIndex === -1) return null;
 
-    const dayStart = startOfDay(now).getTime();
-
-    return { dayIndex, at: now, offset: ((now.getTime() - dayStart) / DAY_MS) * 100 };
+    return { dayIndex, at: now, offset: (minutesIntoDay(now) / MINUTES_PER_DAY) * 100 };
   });
 
   /**
@@ -117,15 +119,7 @@ export class SchedulerTimeGridDirective {
 
     if (dayIndex === -1) return null;
 
-    const dayStart = startOfDay(draft.start).getTime();
-    const end = Math.min(draft.end.getTime(), dayStart + DAY_MS);
-
-    return {
-      dayIndex,
-      offset: ((draft.start.getTime() - dayStart) / DAY_MS) * 100,
-      span: ((end - draft.start.getTime()) / DAY_MS) * 100,
-      phase: draft.phase,
-    };
+    return { dayIndex, ...dayColumnPlacement(draft.start, draft), phase: draft.phase };
   });
 
   constructor() {

@@ -57,6 +57,15 @@ describe('buildSchedulerTimeGrid', () => {
     expect(block?.span).toBeCloseTo(25, 5);
   });
 
+  it.each([new Date(2026, 2, 29), new Date(2026, 9, 25)])('positions a block by wall-clock time on %s', (date) => {
+    const noon = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12);
+    const grid = buildGrid([appointment('a', noon, new Date(noon.getTime() + 60 * 60 * 1000))], [date]);
+    const block = blocksOf('a')(grid);
+
+    expect(block?.offset).toBeCloseTo(50, 5);
+    expect(block?.span).toBeCloseTo(100 / 24, 5);
+  });
+
   it('clips a midnight-spanning appointment to each day it touches', () => {
     const grid = buildGrid(
       [appointment('a', new Date(2026, 6, 15, 18), new Date(2026, 6, 16, 6))],

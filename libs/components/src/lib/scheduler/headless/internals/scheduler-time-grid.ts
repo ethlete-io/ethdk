@@ -1,4 +1,4 @@
-import { endOfDay, isSameDay, startOfDay } from 'date-fns';
+import { addDays, endOfDay, isSameDay, startOfDay } from 'date-fns';
 import { AppointmentId } from '../../scheduler.types';
 import { appointmentTouchesRange } from './scheduler-range';
 import { AppointmentTreeNode, flattenAppointmentTree } from './scheduler-tree';
@@ -50,12 +50,33 @@ export type SchedulerTimeGridOptions<TExtra> = {
   today: Date;
 };
 
-type ClippedEntry<TExtra> = { node: AppointmentTreeNode<TExtra>; start: number; end: number };
+export const MINUTES_PER_DAY = 24 * 60;
 
-const packColumns = <TExtra>(
-  entries: readonly ClippedEntry<TExtra>[],
-  day: { startMs: number; ms: number },
-): SchedulerTimeGridBlock<TExtra>[] => {
+export const minutesIntoDay = (date: Date) =>
+  date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60 + date.getMilliseconds() / 60_000;
+
+export const atMinutesIntoDay = (day: Date, minutes: number) =>
+  new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, Math.round(minutes));
+
+export const dayColumnPlacement = (day: Date, { start, end }: { start: Date; end: Date }) => {
+  const startMinutes = start <= startOfDay(day) ? 0 : minutesIntoDay(start);
+  const endMinutes = end >= startOfDay(addDays(day, 1)) ? MINUTES_PER_DAY : minutesIntoDay(end);
+
+  return {
+    offset: (startMinutes / MINUTES_PER_DAY) * 100,
+    span: (Math.max(endMinutes - startMinutes, 0) / MINUTES_PER_DAY) * 100,
+  };
+};
+
+type ClippedEntry<TExtra> = {
+  node: AppointmentTreeNode<TExtra>;
+  start: number;
+  end: number;
+  offset: number;
+  span: number;
+};
+
+const packColumns = <TExtra>(entries: readonly ClippedEntry<TExtra>[]): SchedulerTimeGridBlock<TExtra>[] => {
   const sorted = [...entries].sort((a, b) => a.start - b.start || a.end - b.end);
   const blocks: SchedulerTimeGridBlock<TExtra>[] = [];
 
@@ -94,8 +115,8 @@ const packColumns = <TExtra>(
 
       blocks.push({
         node: entry.node,
-        offset: ((entry.start - day.startMs) / day.ms) * 100,
-        span: ((entry.end - entry.start) / day.ms) * 100,
+        offset: entry.offset,
+        span: entry.span,
         column,
         columnCount,
         inlineOffset: column * columnSize,
@@ -152,8 +173,6 @@ export const buildSchedulerTimeGrid = <TExtra>(
   const dayColumns = days.map((date, index) => {
     const dayStart = startOfDay(date);
     const dayEnd = endOfDay(date);
-    const dayStartMs = dayStart.getTime();
-    const dayMs = dayEnd.getTime() - dayStartMs;
 
     const timed: ClippedEntry<TExtra>[] = [];
 
@@ -178,15 +197,16 @@ export const buildSchedulerTimeGrid = <TExtra>(
 
       timed.push({
         node,
-        start: Math.max(appointment.start.getTime(), dayStartMs),
+        start: Math.max(appointment.start.getTime(), dayStart.getTime()),
         end: Math.min(appointment.end.getTime(), dayEnd.getTime()),
+        ...dayColumnPlacement(date, appointment),
       });
     }
 
     return {
       date,
       today: isSameDay(date, today),
-      blocks: packColumns(timed, { startMs: dayStartMs, ms: dayMs }),
+      blocks: packColumns(timed),
     };
   });
 
