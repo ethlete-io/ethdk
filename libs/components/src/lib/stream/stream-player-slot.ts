@@ -3,8 +3,10 @@ import {
   ComponentRef,
   DestroyRef,
   EnvironmentInjector,
+  ErrorHandler,
   Injector,
   Signal,
+  Type,
   WritableSignal,
   afterNextRender,
   computed,
@@ -12,11 +14,14 @@ import {
   effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { RuntimeError, injectHostElement, injectRenderer } from '@ethlete/core';
-import { distinctUntilChanged, filter, map, take, tap } from 'rxjs';
-import { STREAM_CONSENT_TOKEN, STREAM_USER_CONSENT_PROVIDER_TOKEN } from './consent/headless/stream-consent.directive';
+import {
+  STREAM_CONSENT_TOKEN,
+  STREAM_USER_CONSENT_PROVIDER_TOKEN,
+  StreamConsentDirective,
+} from './consent/headless/stream-consent.directive';
 import {
   STREAM_PLAYER_ERROR_CONTEXT_TOKEN,
   StreamPlayerErrorContext,
@@ -25,7 +30,7 @@ import { STREAM_PIP_TOKEN } from './stream-pip.token';
 import { injectStreamConfig } from './stream-config';
 import { STREAM_ERROR_CODES } from './stream-errors';
 import { injectStreamManager } from './stream-manager';
-import { StreamPlayerId } from './stream-manager.types';
+import { StreamPlayerId, StreamSlotEntry } from './stream-manager.types';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from './stream-player';
 import {
   DEFAULT_STREAM_PLAYER_STATE,
@@ -71,6 +76,8 @@ export type StreamPlayerSlotHandle = {
   pipDeactivate(): void;
 };
 
+type StreamOverlay = { player: StreamPlayer; display: 'loading' | 'ready' | 'error' };
+
 export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): StreamPlayerSlotHandle => {
   const streamManager = injectStreamManager();
   const streamPip = inject(STREAM_PIP_TOKEN, { optional: true });
@@ -82,62 +89,175 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
   const streamConfig = injectStreamConfig();
   const renderer = injectRenderer();
   const consentHandler = inject(STREAM_USER_CONSENT_PROVIDER_TOKEN, { optional: true });
+  const errorHandler = inject(ErrorHandler);
 
+  const isInitialized = signal(false);
   const currentPlayerIdSignal = signal<StreamPlayerId | null>(null);
   const currentPlayer = signal<StreamPlayer | null>(null);
   const currentState = computed(() => currentPlayer()?.state() ?? DEFAULT_STREAM_PLAYER_STATE);
   const capabilities = computed(() => currentPlayer()?.CAPABILITIES ?? NO_STREAM_PLAYER_CAPABILITIES);
+  const consentGate = signal<StreamConsentDirective | null>(null);
+  const hasLocalConsent = signal(false);
+
+  let hostedPlayerElement: HTMLElement | null = null;
+  let createdPlayerElement: HTMLElement | null = null;
   let consentComponentRef: ComponentRef<unknown> | null = null;
   let pipPlaceholderComponentRef: ComponentRef<unknown> | null = null;
   let loadingComponentRef: ComponentRef<unknown> | null = null;
   let errorComponentRef: ComponentRef<unknown> | null = null;
+  let overlayPlayer: StreamPlayer | null = null;
 
-  const destroyLoadingComponent = () => {
-    if (loadingComponentRef) {
-      appRef.detachView(loadingComponentRef.hostView);
-      loadingComponentRef.destroy();
-      loadingComponentRef = null;
-    }
-  };
+  const isConsentGranted = computed(() => {
+    if (consentHandler) return consentHandler.isGranted();
+    if (!streamConfig.consentComponent) return true;
 
-  const destroyErrorComponent = () => {
-    if (errorComponentRef) {
-      appRef.detachView(errorComponentRef.hostView);
-      errorComponentRef.destroy();
-      errorComponentRef = null;
-    }
-  };
-
-  effect(() => {
-    const newPlayerId = options.playerId();
-    const oldPlayerId = currentPlayerIdSignal();
-
-    if (!oldPlayerId || oldPlayerId === newPlayerId) return;
-
-    streamManager.transferPlayer(oldPlayerId, newPlayerId);
-    streamManager.unregisterSlot(el);
-    streamManager.registerSlot({
-      playerId: newPlayerId,
-      priority: options.streamSlotPriority(),
-      element: el,
-      onPipBack: options.streamSlotOnPipBack(),
-    });
-    currentPlayerIdSignal.set(newPlayerId);
+    return hasLocalConsent() || (consentGate()?.isGranted() ?? false);
   });
 
-  const createAndRegisterPlayer = () => {
-    const currentPlayerId = options.playerId();
+  const isHostingSlot = computed(() => {
+    streamManager.revision();
+    const playerId = currentPlayerIdSignal();
+
+    return !!playerId && !!currentPlayer() && streamManager.resolveBestSlot(playerId)?.element === el;
+  });
+
+  const overlay = computed<StreamOverlay | null>(
+    () => {
+      const player = currentPlayer();
+      if (!player || !isHostingSlot()) return null;
+
+      const { error, isReady } = player.state();
+
+      return { player, display: error !== null ? 'error' : isReady ? 'ready' : 'loading' };
+    },
+    { equal: (a, b) => a?.player === b?.player && a?.display === b?.display },
+  );
+
+  const mountComponent = (component: Type<unknown>, injector: Injector = elementInjector) => {
+    const ref = createComponent(component, { environmentInjector: envInjector, elementInjector: injector });
+    appRef.attachView(ref.hostView);
+    renderer.appendChild(el, ref.location.nativeElement);
+
+    return ref;
+  };
+
+  const unmountComponent = (ref: ComponentRef<unknown> | null) => {
+    if (ref) {
+      appRef.detachView(ref.hostView);
+      ref.destroy();
+    }
+
+    return null;
+  };
+
+  const renderOverlay = (next: StreamOverlay | null) => {
+    if (next?.player !== overlayPlayer) {
+      loadingComponentRef = unmountComponent(loadingComponentRef);
+      errorComponentRef = unmountComponent(errorComponentRef);
+      overlayPlayer = next?.player ?? null;
+    }
+
+    const display = next?.display ?? 'ready';
+    const { loadingComponent, errorComponent } = streamConfig;
+
+    if (display !== 'loading') loadingComponentRef = unmountComponent(loadingComponentRef);
+    if (display !== 'error') errorComponentRef = unmountComponent(errorComponentRef);
+
+    if (display === 'loading' && loadingComponent && !loadingComponentRef) {
+      loadingComponentRef = mountComponent(loadingComponent);
+    }
+
+    if (next && display === 'error' && errorComponent && !errorComponentRef) {
+      const { player } = next;
+      const errorInjector = Injector.create({
+        parent: elementInjector,
+        providers: [
+          {
+            provide: STREAM_PLAYER_ERROR_CONTEXT_TOKEN,
+            useValue: {
+              error: computed(() => player.state().error),
+              retry: () => player.retry(),
+            } satisfies StreamPlayerErrorContext,
+          },
+        ],
+      });
+
+      errorComponentRef = mountComponent(errorComponent, errorInjector);
+    }
+  };
+
+  const showConsentGate = () => {
+    const { consentComponent } = streamConfig;
+    if (!consentComponent || consentComponentRef) return;
+
+    consentComponentRef = mountComponent(consentComponent);
+
+    const consentDirective = consentComponentRef.injector.get(STREAM_CONSENT_TOKEN, null);
+
+    if (!consentDirective) {
+      if (ngDevMode) {
+        errorHandler.handleError(
+          new RuntimeError(
+            STREAM_ERROR_CODES.MISSING_CONSENT_TOKEN,
+            `[${options.directiveName ?? 'StreamPlayerSlot'}] consentComponent does not provide STREAM_CONSENT_TOKEN. Ensure the component has hostDirectives: [StreamConsentDirective].`,
+            { element: el },
+          ),
+        );
+      }
+
+      return;
+    }
+
+    consentGate.set(consentDirective);
+  };
+
+  const hideConsentGate = () => {
+    if (!consentHandler && consentGate()?.isGranted()) hasLocalConsent.set(true);
+
+    consentComponentRef = unmountComponent(consentComponentRef);
+    consentGate.set(null);
+  };
+
+  const syncSlotEntry = (entry: StreamSlotEntry) => {
+    const registered = streamManager.getSlot(el);
+
+    if (
+      registered?.playerId === entry.playerId &&
+      registered.priority === entry.priority &&
+      registered.onPipBack === entry.onPipBack
+    ) {
+      return;
+    }
+
+    streamManager.registerSlot(entry);
+  };
+
+  const hostPlayer = (entry: StreamSlotEntry) => {
+    const playerEntry = streamManager.getPlayerEntry(entry.playerId);
+    if (!playerEntry) return;
+
+    hideConsentGate();
+    syncSlotEntry(entry);
+    hostedPlayerElement = playerEntry.element;
+    currentPlayer.set(playerEntry.player ?? null);
+
+    const { pipSlotPlaceholderComponent } = streamConfig;
+
+    if (pipSlotPlaceholderComponent && !pipPlaceholderComponentRef) {
+      pipPlaceholderComponentRef = mountComponent(pipSlotPlaceholderComponent);
+    }
+  };
+
+  const createPlayer = (playerId: StreamPlayerId) => {
     const componentRef = options.createPlayer(envInjector, elementInjector);
     appRef.attachView(componentRef.hostView);
 
-    const playerElement = componentRef.location.nativeElement as HTMLElement;
+    const element = componentRef.location.nativeElement as HTMLElement;
     const player = componentRef.injector.get<StreamPlayer>(STREAM_PLAYER_TOKEN);
 
-    currentPlayer.set(player);
-
     streamManager.registerPlayer({
-      id: currentPlayerId,
-      element: playerElement,
+      id: playerId,
+      element,
       thumbnail: player.thumbnail,
       player,
       onDestroy: () => {
@@ -145,217 +265,109 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
         componentRef.destroy();
       },
     });
-    streamManager.registerSlot({
-      playerId: currentPlayerId,
+    createdPlayerElement = element;
+  };
+
+  const leavePip = (playerId: StreamPlayerId) => {
+    if (streamPip && streamManager.isPlayerInPip(playerId)) {
+      streamPip.manager.pipDeactivate(playerId, { skipAnimation: true });
+    }
+  };
+
+  const releasePlayer = () => {
+    hostedPlayerElement = null;
+    createdPlayerElement = null;
+    currentPlayer.set(null);
+
+    if (streamManager.getSlot(el)) streamManager.unregisterSlot(el);
+  };
+
+  const rebindPlayer = (fromId: StreamPlayerId, entry: StreamSlotEntry) => {
+    const ownsPlayer = createdPlayerElement === hostedPlayerElement;
+
+    if (ownsPlayer && streamManager.transferPlayer(fromId, entry.playerId)) {
+      currentPlayerIdSignal.set(entry.playerId);
+      syncSlotEntry(entry);
+
+      return true;
+    }
+
+    releasePlayer();
+
+    // The player's inputs are bound to this slot's params, so it would follow the new id.
+    if (ownsPlayer) {
+      leavePip(fromId);
+      streamManager.unregisterPlayer(fromId);
+    }
+
+    return false;
+  };
+
+  const sync = (entry: StreamSlotEntry, isGranted: boolean) => {
+    const boundId = currentPlayerIdSignal();
+    const isRevoked = !!consentHandler && !isGranted;
+
+    if (hostedPlayerElement && boundId) {
+      if (isRevoked) {
+        leavePip(boundId);
+        releasePlayer();
+      } else if (streamManager.getPlayerElement(boundId) !== hostedPlayerElement) {
+        releasePlayer();
+      } else if (boundId !== entry.playerId) {
+        if (rebindPlayer(boundId, entry)) return;
+      } else {
+        syncSlotEntry(entry);
+
+        return;
+      }
+    }
+
+    currentPlayerIdSignal.set(entry.playerId);
+
+    if (!isRevoked && streamManager.getPlayerEntry(entry.playerId)) {
+      hostPlayer(entry);
+
+      return;
+    }
+
+    if (isGranted) {
+      createPlayer(entry.playerId);
+      hostPlayer(entry);
+
+      return;
+    }
+
+    showConsentGate();
+  };
+
+  effect(() => {
+    if (!isInitialized()) return;
+
+    const entry: StreamSlotEntry = {
+      playerId: options.playerId(),
       priority: options.streamSlotPriority(),
       element: el,
       onPipBack: options.streamSlotOnPipBack(),
-    });
+    };
+    const isGranted = isConsentGranted();
+    streamManager.revision();
 
-    const { loadingComponent, errorComponent, pipSlotPlaceholderComponent } = streamConfig;
+    untracked(() => sync(entry, isGranted));
+  });
 
-    if (loadingComponent) {
-      const loadingRef = createComponent(loadingComponent, {
-        environmentInjector: envInjector,
-        elementInjector,
-      });
-      appRef.attachView(loadingRef.hostView);
-      renderer.appendChild(el, loadingRef.location.nativeElement);
-      loadingComponentRef = loadingRef;
-    }
+  effect(() => {
+    const next = overlay();
 
-    if (loadingComponent || errorComponent) {
-      afterNextRender(
-        () => {
-          toObservable(player.state, { injector: componentRef.injector })
-            .pipe(
-              map((state) => {
-                if (state.error !== null) return 'error' as const;
-                if (state.isReady) return 'ready' as const;
-                return 'loading' as const;
-              }),
-              distinctUntilChanged(),
-              tap((displayState) => {
-                if (displayState === 'loading') {
-                  destroyErrorComponent();
-                  if (loadingComponent && !loadingComponentRef) {
-                    const loadingRef = createComponent(loadingComponent, {
-                      environmentInjector: envInjector,
-                      elementInjector,
-                    });
-                    appRef.attachView(loadingRef.hostView);
-                    renderer.appendChild(el, loadingRef.location.nativeElement);
-                    loadingComponentRef = loadingRef;
-                  }
-                } else if (displayState === 'ready') {
-                  destroyLoadingComponent();
-                  destroyErrorComponent();
-                } else {
-                  destroyLoadingComponent();
-                  if (errorComponent && !errorComponentRef) {
-                    const errorInjector = Injector.create({
-                      parent: elementInjector,
-                      providers: [
-                        {
-                          provide: STREAM_PLAYER_ERROR_CONTEXT_TOKEN,
-                          useValue: {
-                            error: computed(() => player.state().error),
-                            retry: () => player.retry(),
-                          } satisfies StreamPlayerErrorContext,
-                        },
-                      ],
-                    });
-                    const errorRef = createComponent(errorComponent, {
-                      environmentInjector: envInjector,
-                      elementInjector: errorInjector,
-                    });
-                    appRef.attachView(errorRef.hostView);
-                    renderer.appendChild(el, errorRef.location.nativeElement);
-                    errorComponentRef = errorRef;
-                  }
-                }
-              }),
-              takeUntilDestroyed(destroyRef),
-            )
-            .subscribe();
-        },
-        { injector: elementInjector },
-      );
-    }
-
-    if (pipSlotPlaceholderComponent) {
-      const placeholderRef = createComponent(pipSlotPlaceholderComponent, {
-        environmentInjector: envInjector,
-        elementInjector,
-      });
-      appRef.attachView(placeholderRef.hostView);
-      renderer.appendChild(el, placeholderRef.location.nativeElement);
-      pipPlaceholderComponentRef = placeholderRef;
-    }
-  };
-
-  const showConsentComponent = () => {
-    const { consentComponent } = streamConfig;
-
-    if (!consentComponent) {
-      return;
-    }
-
-    const consentRef = createComponent(consentComponent, {
-      environmentInjector: envInjector,
-      elementInjector,
-    });
-    appRef.attachView(consentRef.hostView);
-    renderer.appendChild(el, consentRef.location.nativeElement);
-    consentComponentRef = consentRef;
-
-    const consentDirective = consentRef.injector.get(STREAM_CONSENT_TOKEN, null);
-
-    if (!consentDirective) {
-      if (ngDevMode) {
-        throw new RuntimeError(
-          STREAM_ERROR_CODES.MISSING_CONSENT_TOKEN,
-          `[${options.directiveName ?? 'StreamPlayerSlot'}] consentComponent does not provide STREAM_CONSENT_TOKEN. Ensure the component has hostDirectives: [StreamConsentDirective].`,
-          { element: el },
-        );
-      }
-
-      return;
-    }
-
-    toObservable(consentDirective.isGranted, { injector: envInjector })
-      .pipe(
-        filter(Boolean),
-        take(1),
-        tap(() => {
-          appRef.detachView(consentRef.hostView);
-          consentRef.destroy();
-          consentComponentRef = null;
-          createAndRegisterPlayer();
-        }),
-        takeUntilDestroyed(destroyRef),
-      )
-      .subscribe();
-  };
-
-  const init = () => {
-    const currentPlayerId = options.playerId();
-    currentPlayerIdSignal.set(currentPlayerId);
-
-    const existingPlayer = streamManager.getPlayerEntry(currentPlayerId);
-
-    if (existingPlayer) {
-      currentPlayer.set(existingPlayer.player ?? null);
-      streamManager.registerSlot({
-        playerId: currentPlayerId,
-        priority: options.streamSlotPriority(),
-        element: el,
-        onPipBack: options.streamSlotOnPipBack(),
-      });
-
-      const { pipSlotPlaceholderComponent } = streamConfig;
-      if (pipSlotPlaceholderComponent && !pipPlaceholderComponentRef) {
-        const placeholderRef = createComponent(pipSlotPlaceholderComponent, {
-          environmentInjector: envInjector,
-          elementInjector,
-        });
-        appRef.attachView(placeholderRef.hostView);
-        renderer.appendChild(el, placeholderRef.location.nativeElement);
-        pipPlaceholderComponentRef = placeholderRef;
-      }
-
-      return;
-    }
-
-    const { consentComponent } = streamConfig;
-
-    if (consentHandler?.isGranted()) {
-      createAndRegisterPlayer();
-
-      return;
-    }
-
-    if (!consentHandler && !consentComponent) {
-      createAndRegisterPlayer();
-
-      return;
-    }
-
-    if (consentHandler && !consentComponent) {
-      toObservable(consentHandler.isGranted, { injector: envInjector })
-        .pipe(
-          filter(Boolean),
-          take(1),
-          tap(() => createAndRegisterPlayer()),
-          takeUntilDestroyed(destroyRef),
-        )
-        .subscribe();
-
-      return;
-    }
-
-    showConsentComponent();
-  };
+    untracked(() => renderOverlay(next));
+  });
 
   const destroy = () => {
-    if (currentPlayerIdSignal()) {
-      streamManager.unregisterSlot(el);
-    }
+    if (streamManager.getSlot(el)) streamManager.unregisterSlot(el);
 
-    if (consentComponentRef) {
-      appRef.detachView(consentComponentRef.hostView);
-      consentComponentRef.destroy();
-      consentComponentRef = null;
-    }
-
-    if (pipPlaceholderComponentRef) {
-      appRef.detachView(pipPlaceholderComponentRef.hostView);
-      pipPlaceholderComponentRef.destroy();
-      pipPlaceholderComponentRef = null;
-    }
-
-    destroyLoadingComponent();
-    destroyErrorComponent();
+    consentComponentRef = unmountComponent(consentComponentRef);
+    pipPlaceholderComponentRef = unmountComponent(pipPlaceholderComponentRef);
+    loadingComponentRef = unmountComponent(loadingComponentRef);
+    errorComponentRef = unmountComponent(errorComponentRef);
   };
 
   const pipActivate = (onBack?: () => void) =>
@@ -390,7 +402,7 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
   const unmute = () => control('canMute', (player) => player.unmute());
   const seek = (seconds: number) => control('canSeek', (player) => player.seek(seconds));
 
-  afterNextRender(() => init());
+  afterNextRender(() => isInitialized.set(true));
   destroyRef.onDestroy(() => destroy());
 
   return {

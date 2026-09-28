@@ -80,13 +80,21 @@ export class FakeStreamPlayerComponent {
   public readonly player = inject(STREAM_PLAYER_TOKEN) as FakeStreamPlayer;
 }
 
-/** Stands in for the configured `loadingComponent` / `errorComponent`. */
+/** Stands in for the configured `loadingComponent`. */
 @Component({
   selector: 'et-fake-stream-chrome',
   template: '',
   encapsulation: ViewEncapsulation.None,
 })
 export class FakeStreamChromeComponent {}
+
+/** Stands in for the configured `errorComponent`. */
+@Component({
+  selector: 'et-fake-stream-error',
+  template: '',
+  encapsulation: ViewEncapsulation.None,
+})
+export class FakeStreamErrorComponent {}
 
 /** A consent gate that satisfies `STREAM_CONSENT_TOKEN`, as a real consent component must. */
 @Component({
@@ -190,6 +198,8 @@ export type StreamSlotDriverOptions = {
   consentComponent?: Type<unknown> | null;
   /** Whether consent is already granted when the slot initialises. @default false */
   consentGranted?: boolean;
+  /** How many slots the host renders, all bound to `playerId`. Address them by index. @default 1 */
+  slotCount?: number;
   providers?: Provider[];
 };
 
@@ -215,11 +225,19 @@ class StreamSlotTestDirective {
 
 @Component({
   selector: 'et-test-stream-slot-host',
-  template: '<div etTestStreamSlot></div>',
+  template: `
+    @for (key of slotKeys(); track key) {
+      <div [attr.data-slot]="key" etTestStreamSlot></div>
+    }
+  `,
   encapsulation: ViewEncapsulation.None,
   imports: [StreamSlotTestDirective],
 })
-class StreamSlotTestHostComponent {}
+class StreamSlotTestHostComponent {
+  private readonly options = inject(STREAM_SLOT_TEST_OPTIONS);
+
+  public readonly slotKeys = signal(Array.from({ length: this.options.slotCount ?? 1 }, (_, index) => index));
+}
 
 /**
  * Mounts a host directive built on `createStreamPlayerSlot` with a fake platform player behind it,
@@ -241,29 +259,45 @@ export const createStreamSlotDriver = (options: StreamSlotDriverOptions = {}) =>
     ...provideStreamConfig({
       consentComponent: options.consentComponent ?? null,
       loadingComponent: FakeStreamChromeComponent,
-      errorComponent: FakeStreamChromeComponent,
+      errorComponent: FakeStreamErrorComponent,
     }),
     ...(options.providers ?? []),
   ]);
 
-  const directive = () => directiveAt(fixture, StreamSlotTestDirective, '[etTestStreamSlot]');
+  const directive = (index: number) => directiveAt(fixture, StreamSlotTestDirective, `[data-slot="${index}"]`);
+  const streamManager = TestBed.runInInjectionContext(() => injectStreamManager());
 
   return {
     fixture,
     consentHandler,
+    streamManager,
 
     /** The slot handle under test. */
-    slot: () => directive().slot,
+    slot: (index = 0) => directive(index).slot,
 
-    setPlayerId: (playerId: StreamPlayerId) => directive().playerId.set(playerId),
+    /** The host element of the slot at `index`. */
+    slotElement: (index = 0) => query(fixture, `[data-slot="${index}"]`),
+
+    setPlayerId: (playerId: StreamPlayerId, index = 0) => directive(index).playerId.set(playerId),
+
+    setPriority: (priority: boolean, index = 0) => directive(index).priority.set(priority),
+
+    /** Destroys the slot at `index`; the other slots keep their indices. */
+    removeSlot: (index: number) =>
+      fixture.componentInstance.slotKeys.update((keys) => keys.filter((key) => key !== index)),
+
+    /** The fake platform player registered under `playerId`, or `null`. */
+    playerFor: (playerId: StreamPlayerId) =>
+      (streamManager.getPlayerEntry(playerId)?.player as FakeStreamPlayer | undefined) ?? null,
 
     grant: () => consentHandler.grant(),
+
+    revoke: () => consentHandler.revoke?.(),
 
     /** The rendered consent gate, or `null` when none is configured or it has been destroyed. */
     consentHost: () => query(fixture, 'et-fake-stream-consent'),
 
-    playerElementFor: (playerId: StreamPlayerId) =>
-      TestBed.runInInjectionContext(() => injectStreamManager()).getPlayerElement(playerId),
+    playerElementFor: (playerId: StreamPlayerId) => streamManager.getPlayerElement(playerId),
 
     settle: async () => {
       fixture.detectChanges();

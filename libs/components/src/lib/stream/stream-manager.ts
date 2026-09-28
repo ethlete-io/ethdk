@@ -1,4 +1,4 @@
-import { DestroyRef, DOCUMENT, inject } from '@angular/core';
+import { DestroyRef, DOCUMENT, inject, signal } from '@angular/core';
 import {
   createFlipAnimation,
   defineRootProvider,
@@ -37,6 +37,8 @@ const STREAM_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
 
     const players = new Map<StreamPlayerId, InternalPlayerEntry>();
     const slots = new Map<HTMLElement, StreamSlotEntry>();
+    const revision = signal(0);
+    const bumpRevision = () => revision.update((value) => value + 1);
 
     const resolveBestSlot = (playerId: StreamPlayerId): StreamSlotEntry | null => {
       let best: StreamSlotEntry | null = null;
@@ -108,6 +110,7 @@ const STREAM_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
       players.set(entry.id, internal);
       renderer.appendChild(container, entry.element);
       reassignPlayer(entry.id);
+      bumpRevision();
     };
 
     const unregisterPlayer = (playerId: StreamPlayerId) => {
@@ -116,17 +119,20 @@ const STREAM_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
       entry.element.remove();
       players.delete(playerId);
       entry.onDestroy?.();
+      bumpRevision();
     };
 
     const registerSlot = (entry: StreamSlotEntry) => {
       slots.set(entry.element, entry);
       reassignPlayer(entry.playerId);
+      bumpRevision();
     };
 
     const unregisterSlot = (element: HTMLElement) => {
       const slot = slots.get(element);
       if (!slot) return;
       slots.delete(element);
+      bumpRevision();
 
       const player = players.get(slot.playerId);
       if (!player) return;
@@ -144,9 +150,12 @@ const STREAM_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
 
     const transferPlayer = (oldId: StreamPlayerId, newId: StreamPlayerId) => {
       const entry = players.get(oldId);
-      if (!entry || oldId === newId) return;
+      if (!entry || oldId === newId || players.has(newId)) return false;
       players.delete(oldId);
       players.set(newId, { ...entry, id: newId });
+      bumpRevision();
+
+      return true;
     };
 
     const getPlayerElement = (playerId: StreamPlayerId): HTMLElement | null => players.get(playerId)?.element ?? null;
@@ -185,6 +194,7 @@ const STREAM_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
     };
 
     return {
+      revision: revision.asReadonly(),
       hasSlotFor,
       registerPlayer,
       unregisterPlayer,

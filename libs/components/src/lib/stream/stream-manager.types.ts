@@ -93,6 +93,12 @@ export type StreamPipEntry = {
 };
 
 export type StreamManager = {
+  /**
+   * Increments whenever a player or slot registers, unregisters or is re-keyed. Read it in a
+   * `computed` or `effect` to re-evaluate `getPlayerEntry` or `resolveBestSlot` on those changes.
+   */
+  readonly revision: Signal<number>;
+
   /** Returns true if at least one registered slot exists for the given player id. */
   hasSlotFor(playerId: StreamPlayerId): boolean;
 
@@ -125,11 +131,10 @@ export type StreamManager = {
   unregisterSlot(element: HTMLElement): void;
 
   /**
-   * Re-keys a player entry from `oldId` to `newId` without touching the DOM.
-   * Use this when the video id changes on an existing slot (e.g. playlist navigation)
-   * so the manager's internal tracking stays consistent.
+   * Re-keys a player entry from `oldId` to `newId` without touching the DOM, and returns whether it
+   * did. Refuses, returning `false`, when no player exists for `oldId` or one already exists for `newId`.
    */
-  transferPlayer(oldId: StreamPlayerId, newId: StreamPlayerId): void;
+  transferPlayer(oldId: StreamPlayerId, newId: StreamPlayerId): boolean;
 
   /**
    * Returns the live DOM element for `playerId`, or `null` if the player is not

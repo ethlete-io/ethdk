@@ -115,6 +115,10 @@ The built-in `et-stream-consent` shows a lock icon, heading/description and an a
 
 Rebinding the slot to another video while the gate is still up is safe: accepting creates the player for the id the slot holds at that moment, not the one it held when the gate appeared.
 
+Revoking consent through the `ConsentHandler` destroys every mounted player, ends its PiP, and puts the gate back up.
+
+When several slots share a player, rebinding one of them to another id gives that slot its own player and leaves the others playing. The loading and error overlays show in whichever slot currently holds the player.
+
 ## Picture-in-picture
 
 A slot's player can detach into a floating, draggable PiP window and hand back later - even across different slots (the player instance is transferred, playback uninterrupted):
