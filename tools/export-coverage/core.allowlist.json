@@ -19,7 +19,6 @@
   "DEFAULT_OVERLAY_LAYER": "spec: libs/core/src/lib/overlay/overlay-layer.spec.ts",
   "DEFAULT_VIEWPORT_CONFIG": "constant: value",
   "DISABLE_LOGGER_PARAM": "constant: value",
-  "DragHandleDirective": "internal: building block of @ethlete/components, @ethlete/query-devtools, no app imports it",
   "ET_DISABLE_SCROLL_TOP": "constant: route data key",
   "ET_DISABLE_SCROLL_TOP_AS_RETURN_ROUTE": "constant: route data key",
   "ET_DISABLE_SCROLL_TOP_ON_PATH_PARAM_CHANGE": "constant: route data key",

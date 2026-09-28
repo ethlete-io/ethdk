@@ -267,6 +267,8 @@
   "transformToBoolean": "spec: libs/query/src/lib/query-form/query-form.utils.spec.ts",
   "transformToDateArray": "spec: libs/query/src/lib/query-form/query-form.utils.spec.ts",
   "transformToStringArray": "spec: libs/query/src/lib/query-form/query-form.utils.spec.ts",
+  "transformToTableSort": "spec: libs/query/src/lib/query-form/query-form.utils.spec.ts",
+  "transformToTableSortQueryParam": "spec: libs/query/src/lib/query-form/query-form.utils.spec.ts",
   "uncacheableRequestHasAllowCacheParam": "constant: error factory",
   "uncacheableRequestHasCacheKeyParam": "constant: error factory",
   "unwrapQuerySyncMessage": "internal: multi-tab sync plumbing, covered by multi-tab.scenario",
