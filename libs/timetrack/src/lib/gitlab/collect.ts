@@ -38,20 +38,9 @@ const keyOf = (event: GitLabEvent) => `${event.projectId}!${event.mergeRequestIi
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
-/**
- * The merge requests the window's events name, each read once.
- *
- * A push already says which branch it moved, so only the events that do not — a note, an approval —
- * are worth a lookup, and the lookup is per merge request rather than per event.
- */
+/** The merge requests the window's events name, each read once. */
 const resolveMergeRequests$ = (options: GitLabCollectOptions, events: GitLabEvent[]): Observable<Resolved> => {
-  const wanted = new Map<string, GitLabEvent>();
-
-  for (const event of events) {
-    if (event.branch) continue;
-
-    wanted.set(keyOf(event), event);
-  }
+  const wanted = new Map(events.map((event) => [keyOf(event), event]));
 
   const limit = options.maxMergeRequestLookups ?? DEFAULT_MAX_MERGE_REQUEST_LOOKUPS;
   const lookups = [...wanted.values()].slice(0, limit);

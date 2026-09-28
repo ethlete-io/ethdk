@@ -10,7 +10,7 @@ import {
   fetchGitLabMergeRequestsForBranch$,
   gitFlowConfigFor,
   isRepairableBranch,
-  normalizeGitLabHost,
+  isSameGitLabInstance,
   parseGitLabRemoteUrl,
   planBranchRepair,
   readGitBranchState$,
@@ -66,7 +66,7 @@ const BRANCH_REPAIR_DEF = /* @__PURE__ */ defineRootProvider(() => {
     const project = options.remoteUrl ? parseGitLabRemoteUrl(options.remoteUrl) : null;
     const configured = settings.settings().gitlab.host;
 
-    if (!project || !configured || normalizeGitLabHost(configured) !== normalizeGitLabHost(project.host)) {
+    if (!project || !configured || !isSameGitLabInstance(configured, project.host)) {
       return of({ mergeRequests: [], project: null });
     }
 

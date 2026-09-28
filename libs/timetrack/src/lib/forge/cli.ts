@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention -- Both forges take snake_case query parameters. */
-import { EMPTY, Observable, defer, expand, map, reduce } from 'rxjs';
+import { EMPTY, Observable, defer, expand, map, toArray } from 'rxjs';
 import { ProcessResult, TimetrackProcessRunner } from '../transport/ports';
+import { withQuery } from '../transport/query';
 import { retryWhenRateLimited } from '../transport/rate-limit';
 
 /**
@@ -45,14 +46,6 @@ export const forgeHostname = (host: string) =>
 
 export type ForgeQuery = Record<string, string | number | boolean | undefined>;
 
-const withQuery = (path: string, query: ForgeQuery | undefined) => {
-  const params = Object.entries(query ?? {}).filter(([, value]) => value !== undefined);
-
-  return params.length === 0
-    ? path
-    : `${path}?${params.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`).join('&')}`;
-};
-
 const HTTP_STATUS = /\(HTTP (\d{3})\)\s*$/m;
 
 /**
@@ -70,10 +63,10 @@ const transportMessageOf = (stderr: string) =>
 const messageFor = (options: { cli: ForgeCli; status: number; describe: string; stderr: string }) => {
   const { cli, status, describe } = options;
 
+  if (/rate limit/i.test(options.stderr)) return `The forge rate-limited the request for ${describe}.`;
   if (status === 401) return `\`${cli}\` is not logged in, so it could not read ${describe}.`;
   if (status === 403) return `The \`${cli}\` login may not read ${describe}.`;
   if (status === 404) return `There is no ${describe}, or the \`${cli}\` login cannot see it.`;
-  if (status === 429) return `The forge rate-limited the request for ${describe}.`;
   if (status > 0) return `The forge answered ${status} for ${describe}.`;
 
   return `\`${cli}\` could not reach the forge for ${describe}: ${transportMessageOf(options.stderr)}`;
@@ -155,7 +148,8 @@ export const forgeApiPaged$ = <T>(call: ForgeApiCall & { paging?: Partial<ForgeP
 
   return page$(1).pipe(
     expand((items, index) => (items.length >= pageSize && index < maxPages - 1 ? page$(index + 2) : EMPTY)),
-    reduce((all: T[], items) => [...all, ...(Array.isArray(items) ? items : [])], []),
+    toArray(),
+    map((pages) => pages.flatMap((items) => (Array.isArray(items) ? items : []))),
   );
 };
 

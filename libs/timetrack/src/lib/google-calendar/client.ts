@@ -1,11 +1,11 @@
-import { EMPTY, Observable, defer, expand, map, reduce } from 'rxjs';
+import { EMPTY, Observable, defer, expand, map, throwError, toArray } from 'rxjs';
 import { TimetrackRequestMethod, TimetrackTransport } from '../transport/ports';
+import { withQuery } from '../transport/query';
 import { responseHeaderOf, retryAfterMsOf, retryWhenRateLimited } from '../transport/rate-limit';
 
 /**
- * A Google access token for the user's own OAuth client. The host owns the whole OAuth dance — PKCE,
- * the loopback redirect, the keychain and the refresh — and hands the core a token that is currently
- * valid; the core neither stores nor renews one.
+ * A Google access token for the user's own OAuth client that is valid right now. The calendar calls
+ * neither store nor renew it; `createGoogleTokenSource` does the renewing.
  */
 export type GoogleCalendarCredentials = {
   accessToken: string;
@@ -44,14 +44,6 @@ type GoogleErrorBody = {
     message?: string;
     errors?: { reason?: string }[];
   };
-};
-
-const withQuery = (url: string, query: GoogleCalendarQuery | undefined) => {
-  const params = Object.entries(query ?? {}).filter(([, value]) => value !== undefined);
-
-  return params.length === 0
-    ? url
-    : `${url}?${params.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`).join('&')}`;
 };
 
 const reasonOf = (body: unknown) =>
@@ -131,7 +123,10 @@ export const DEFAULT_GOOGLE_CALENDAR_PAGING_OPTIONS: GoogleCalendarPagingOptions
   maxPages: 20,
 };
 
-/** Follows `nextPageToken` until Google stops offering one, and concatenates every page's items. */
+/**
+ * Follows `nextPageToken` until Google stops offering one, and concatenates every page's items. Fails
+ * when Google still offers a page after `maxPages`, rather than answering with part of the list.
+ */
 export const googleCalendarPaged$ = <T>(options: {
   transport: TimetrackTransport;
   credentials: GoogleCalendarCredentials;
@@ -151,8 +146,15 @@ export const googleCalendarPaged$ = <T>(options: {
     });
 
   return page$().pipe(
-    expand((page, index) => (page.nextPageToken && index < maxPages - 1 ? page$(page.nextPageToken) : EMPTY)),
-    map((page) => page.items ?? []),
-    reduce((all: T[], items) => [...all, ...items], []),
+    expand((page, index) => {
+      if (!page.nextPageToken) return EMPTY;
+      if (index >= maxPages - 1) {
+        return throwError(() => new Error(`Google offered more than ${maxPages} pages for ${options.describe}.`));
+      }
+
+      return page$(page.nextPageToken);
+    }),
+    toArray(),
+    map((pages) => pages.flatMap((page) => page.items ?? [])),
   );
 };

@@ -91,26 +91,6 @@ describe('collectGitLabEvents$', () => {
     expect(lookupsIn(specs)).toHaveLength(1);
   });
 
-  it('never looks up a push, which already said which branch it moved', () => {
-    const { runner, specs } = stubRunner({
-      events: [
-        {
-          id: 9004,
-          created_at: '2026-08-11T10:00:00.000+02:00',
-          action_name: 'pushed to',
-          project_id: 42,
-          target_type: 'MergeRequest',
-          target_iid: 412,
-          push_data: { ref: 'feat/FIP-2177-user-management', ref_type: 'branch' },
-        },
-      ],
-    });
-    const collection = collect(runner);
-
-    expect(lookupsIn(specs)).toEqual([]);
-    expect((collection.events[0] as MergeRequestActivityEvent).branch).toBe('feat/FIP-2177-user-management');
-  });
-
   it('keeps an event whose merge request the login cannot read, and reports why', () => {
     const { runner } = stubRunner({ events: [NOTE], mergeRequestRefused: true });
     const collection = collect(runner);

@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/naming-convention -- GitLab's REST v4 wire format is snake_case. */
-import { EMPTY, Observable, defer, expand, map, reduce, throwError } from 'rxjs';
+import { EMPTY, Observable, defer, expand, map, throwError, toArray } from 'rxjs';
 import { TimetrackRequestMethod, TimetrackResponse, TimetrackTransport } from '../transport/ports';
+import { forgeHostname } from '../forge/cli';
+import { withQuery } from '../transport/query';
 import { retryAfterMsOf, retryWhenRateLimited } from '../transport/rate-limit';
 import { carriesCredentialsSafely, insecureHostMessage } from '../transport/secure-host';
 
@@ -37,15 +39,34 @@ export type GitLabQuery = Record<string, string | number | boolean | undefined>;
 export const normalizeGitLabHost = (host: string) =>
   (/^https?:\/\//.test(host) ? host : `https://${host}`).replace(/\/+$/, '');
 
-const withQuery = (url: string, query: GitLabQuery | undefined) => {
-  const params = Object.entries(query ?? {}).filter(([, value]) => value !== undefined);
+/**
+ * Whether a remote's host names the configured instance. Only the hostnames are compared: a remote
+ * reached over ssh carries the ssh port, not the port of the web instance.
+ */
+export const isSameGitLabInstance = (configured: string, remoteHost: string) => {
+  const hostnameOf = (host: string) => forgeHostname(host).replace(/:\d+$/, '').toLowerCase();
 
-  return params.length === 0
-    ? url
-    : `${url}?${params.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`).join('&')}`;
+  return hostnameOf(configured) === hostnameOf(remoteHost);
 };
 
-const messageFor = (options: { status: number; describe: string }) => {
+const reasonOf = (body: unknown): string | undefined => {
+  if (typeof body !== 'object' || body === null) return undefined;
+
+  const { message, error } = body as { message?: unknown; error?: unknown };
+  const reason = message ?? error;
+
+  if (typeof reason === 'string') return reason;
+  if (Array.isArray(reason)) return reason.join('; ');
+  if (typeof reason === 'object' && reason !== null) {
+    return Object.entries(reason)
+      .map(([field, value]) => `${field} ${Array.isArray(value) ? value.join(', ') : String(value)}`)
+      .join('; ');
+  }
+
+  return undefined;
+};
+
+const statusMessageFor = (options: { status: number; describe: string }) => {
   const { status, describe } = options;
 
   if (status === 401) return `GitLab rejected the access token for ${describe}.`;
@@ -54,6 +75,12 @@ const messageFor = (options: { status: number; describe: string }) => {
   if (status === 429) return `GitLab rate-limited the request for ${describe}.`;
 
   return `GitLab responded ${status} for ${describe}.`;
+};
+
+const messageFor = (options: { status: number; describe: string; body: unknown }) => {
+  const reason = reasonOf(options.body);
+
+  return reason ? `${statusMessageFor(options)} GitLab said: ${reason}` : statusMessageFor(options);
 };
 
 /** Header names arrive as the host spelled them, and GitLab's paging headers are read by name. */
@@ -105,7 +132,7 @@ export const gitlabRequest$ = <T>(options: {
         throw new GitLabRequestError({
           status: response.status,
           describe,
-          message: messageFor({ status: response.status, describe }),
+          message: messageFor({ status: response.status, describe, body: response.body }),
           retryAfterMs: retryAfterMsOf(headerOf(response, 'retry-after')),
         });
       }
@@ -160,7 +187,7 @@ export const gitlabPaged$ = <T>(options: {
 
       return next > 0 && index < maxPages - 1 ? page$(next) : EMPTY;
     }),
-    map((response) => (Array.isArray(response.body) ? response.body : [])),
-    reduce((all: T[], items) => [...all, ...items], []),
+    toArray(),
+    map((responses) => responses.flatMap((response) => (Array.isArray(response.body) ? response.body : []))),
   );
 };

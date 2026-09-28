@@ -1,7 +1,13 @@
 import { of } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
-import { GitLabCredentials, GitLabRequestError, gitlabRequest$, normalizeGitLabHost } from './client';
+import {
+  GitLabCredentials,
+  GitLabRequestError,
+  gitlabRequest$,
+  isSameGitLabInstance,
+  normalizeGitLabHost,
+} from './client';
 
 const CREDENTIALS: GitLabCredentials = {
   host: 'https://git.example.com',
@@ -58,6 +64,34 @@ describe('gitlabRequest$', () => {
     expect(requests).toHaveLength(0);
     expect(errors[0]).toBeInstanceOf(GitLabRequestError);
     expect(errors[0]?.message).toContain('is not https');
+  });
+
+  it.each([
+    [{ message: ['Another open merge request already exists for this source branch'] }, 'Another open merge request'],
+    [{ message: { source_branch: ['is invalid'] } }, 'source_branch is invalid'],
+    [{ message: '400 Bad request - title is missing' }, 'title is missing'],
+    [{ error: 'invalid_token' }, 'invalid_token'],
+  ])('appends the reason GitLab gave to a refusal: %j', (body, reason) => {
+    const { transport } = transportOf(422, body);
+    const errors: Error[] = [];
+
+    gitlabRequest$({
+      transport,
+      credentials: CREDENTIALS,
+      path: '/projects/1/merge_requests',
+      describe: 'the merge request',
+      method: 'POST',
+    }).subscribe({ error: (error: Error) => errors.push(error) });
+
+    expect(errors[0]?.message).toContain(reason);
+  });
+});
+
+describe('isSameGitLabInstance', () => {
+  it('compares hostnames, whatever scheme, port or path either side carries', () => {
+    expect(isSameGitLabInstance('https://git.example.com:8443/', 'git.example.com')).toBe(true);
+    expect(isSameGitLabInstance('http://Git.Example.com', 'git.example.com')).toBe(true);
+    expect(isSameGitLabInstance('git.example.com', 'gitlab.example.com')).toBe(false);
   });
 });
 

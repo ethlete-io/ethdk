@@ -216,6 +216,27 @@ describe('fetchGoogleCalendarEvents$', () => {
     expect(collect(transport).map((event) => event.title)).toEqual(['Sprint Planning', 'Retro']);
     expect(requests[1]?.url).toContain('pageToken=page-2');
   });
+
+  it('fails a read that reaches the page cap with pages still offered, so no partial window is stored', () => {
+    const { transport, requests } = eventTransport([
+      { items: [MEETING], nextPageToken: 'page-2' },
+      { items: [], nextPageToken: 'page-3' },
+    ]);
+    const seen = vi.fn();
+    const failed = vi.fn();
+
+    fetchGoogleCalendarEvents$({
+      transport,
+      credentials: CREDENTIALS,
+      from: new Date(2026, 7, 11, 0, 0),
+      to: new Date(2026, 7, 12, 0, 0),
+      options: { maxPages: 2 },
+    }).subscribe({ next: seen, error: failed });
+
+    expect(requests).toHaveLength(2);
+    expect(seen).not.toHaveBeenCalled();
+    expect(String(failed.mock.calls[0]?.[0])).toContain('2 pages');
+  });
 });
 
 describe('listGoogleCalendarEvents$', () => {

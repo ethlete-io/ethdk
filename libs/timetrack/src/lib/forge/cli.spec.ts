@@ -81,6 +81,14 @@ describe('forgeApi$', () => {
     expect(read(runner).error?.message).toContain('not logged in');
   });
 
+  it("reads GitHub's rate limit, which it answers with a 403, as a rate limit rather than a login problem", () => {
+    const { runner } = runnerOf([
+      { code: 1, stdout: '', stderr: 'gh: API rate limit exceeded for user ID 1. (HTTP 403)' },
+    ]);
+
+    expect(read(runner).error?.message).toContain('rate-limited');
+  });
+
   it('reports a failure with no status line as unreachable, and strips the boxed error furniture', () => {
     const { runner } = runnerOf([
       { code: 1, stdout: '', stderr: '   \n   ERROR   \n\n  dial tcp: lookup git.example.com: no such host.   \n' },

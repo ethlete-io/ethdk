@@ -10,7 +10,7 @@ import {
   executeWorkStart$,
   fetchJiraParentCandidates$,
   gitFlowConfigFor,
-  normalizeGitLabHost,
+  isSameGitLabInstance,
   parseGitLabRemoteUrl,
   planWorkStart,
   projectKeyFor,
@@ -107,7 +107,7 @@ const WORK_START_DEF = /* @__PURE__ */ defineRootProvider(() => {
     const project = remoteUrl ? parseGitLabRemoteUrl(remoteUrl) : null;
     const configured = settings.settings().gitlab.host;
 
-    if (!project || !configured || normalizeGitLabHost(configured) !== normalizeGitLabHost(project.host)) return null;
+    if (!project || !configured || !isSameGitLabInstance(configured, project.host)) return null;
 
     return project.path;
   };
