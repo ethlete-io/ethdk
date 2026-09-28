@@ -5,6 +5,7 @@ import { NumberInputComponent } from '../../input/number-input.component';
 import { PasswordInputComponent } from '../../input/password-input.component';
 import { expectWrapperExposesBaseInputs, expectWrapperExposesBaseOutputs } from '../../testing/wrapper-inputs';
 import { TextareaComponent } from '../../textarea/textarea.component';
+import { ACCESSIBLE_NAME_INPUTS } from './accessible-name-control.directive';
 import { TEXT_FIELD_CONTROL_INPUTS } from './text-field-control.directive';
 
 const WRAPPERS = [
@@ -16,6 +17,16 @@ const WRAPPERS = [
 ];
 
 const TEXT_FIELD_CONTROL_OUTPUTS = ['valueChange', 'mixedChange', 'touchedChange'];
+
+const bindingName = (entry: string) => entry.replace(/:.*$/, '').trim();
+
+describe('hand-copied accessible name inputs', () => {
+  it('TEXT_FIELD_CONTROL_INPUTS lists exactly the ACCESSIBLE_NAME_INPUTS naming inputs', () => {
+    const copied = TEXT_FIELD_CONTROL_INPUTS.map(bindingName).filter((name) => name.startsWith('aria-'));
+
+    expect(new Set(copied)).toEqual(new Set(ACCESSIBLE_NAME_INPUTS.map(bindingName)));
+  });
+});
 
 describe('text field shell wrappers', () => {
   for (const wrapper of WRAPPERS) {
