@@ -159,11 +159,19 @@ test.describe('icon / structure', () => {
   test('the host carries no width, height or color of its own', async ({ page }) => {
     const root = await openStory(page, DEFAULT_STORY_ID);
 
-    const inline = await root
-      .locator(ICON)
-      .evaluateAll((els) => els.map((el) => (el as HTMLElement).style.cssText.replace(/\s+/g, ' ').trim()));
+    const hosts = await root.locator(ICON).evaluateAll((els) =>
+      els.map((el) => {
+        const style = getComputedStyle(el);
+        return {
+          inline: (el as HTMLElement).style.cssText,
+          centring: `${style.display} ${style.alignItems} ${style.justifyContent}`,
+        };
+      }),
+    );
 
-    expect(inline.every((it) => it === 'display: flex; align-items: center; justify-content: center;')).toBe(true);
+    expect(hosts.length).toBeGreaterThan(0);
+    expect(hosts.every((it) => it.inline === '')).toBe(true);
+    expect(hosts.every((it) => it.centring === 'flex center center')).toBe(true);
   });
 });
 
