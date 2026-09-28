@@ -13,6 +13,7 @@ export default {
     readonly: { control: 'boolean' },
     required: { control: 'boolean' },
     indeterminate: { control: 'boolean' },
+    interactiveContent: { control: 'boolean' },
   },
   args: {
     variant: 'plain',
@@ -22,6 +23,7 @@ export default {
     readonly: false,
     required: false,
     indeterminate: false,
+    interactiveContent: false,
   },
 } as Meta<FormFieldCheckboxStorybookComponent>;
 
@@ -46,6 +48,19 @@ export const Card: Story = {
           'The card preset lives on `et-choice-field`, not on the control, so a switch gets it too. The whole ' +
           'panel is clickable and the checked state shows on its border - `:has()` is how the wrapper learns the ' +
           "control's state.",
+      },
+    },
+  },
+};
+
+export const CardWithInteractiveContent: Story = {
+  args: { variant: 'card', interactiveContent: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'A link in the label and a button in the trailing slot stay clickable on a card - a click on either does ' +
+          'not toggle the checkbox.',
       },
     },
   },

@@ -80,8 +80,34 @@ class ChoiceFieldSupportTestHost {
   );
 }
 
+@Component({
+  template: `
+    <et-choice-field variant="card">
+      <et-checkbox [checked]="checked()" (checkedChange)="checked.set($event)" />
+      <et-label>
+        I accept the
+        <a href="#terms"><span class="terms-text">terms</span></a>
+      </et-label>
+    </et-choice-field>
+  `,
+  imports: [...CHOICE_FIELD_IMPORTS, ...CHECKBOX_IMPORTS],
+})
+class ChoiceFieldLinkedLabelTestHost {
+  checked = signal(false);
+}
+
 describe('ChoiceFieldComponent', () => {
   const mount = () => mountChoiceField(ChoiceFieldTestHost);
+
+  it('follows a link in the label without toggling the control', () => {
+    const driver = mountChoiceField(ChoiceFieldLinkedLabelTestHost);
+
+    driver.click(driver.query<HTMLElement>('.terms-text')!);
+    expect(driver.host.checked()).toBe(false);
+
+    driver.click(driver.query<HTMLElement>('et-label')!);
+    expect(driver.host.checked()).toBe(true);
+  });
 
   it('reflects size and variant as host data attributes', () => {
     const driver = mount();

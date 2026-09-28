@@ -5,6 +5,7 @@ const RADIO_CARD_STORY_ID = 'components-forms-selection-list-radio-group--card';
 const RADIO_CARD_SLOTS_STORY_ID = 'components-forms-selection-list-radio-group--card-slots';
 const CHECKBOX_GROUP_CARD_STORY_ID = 'components-forms-selection-list-checkbox-group--card';
 const CHOICE_FIELD_CARD_STORY_ID = 'components-forms-checkbox--card';
+const CHOICE_FIELD_CARD_INTERACTIVE_STORY_ID = 'components-forms-checkbox--card-with-interactive-content';
 const SWITCH_CARD_STORY_ID = 'components-forms-switch--card';
 
 const CARD = '.et-selection-card';
@@ -131,6 +132,26 @@ test.describe('selection card / pointer', () => {
     await card.click({ position: { x: 6, y: box.height / 2 } });
 
     await expect(terms).toHaveAttribute('aria-checked', 'true');
+  });
+
+  test('a link in a choice field card label opens without toggling the checkbox', async ({ page }) => {
+    const root = await openStory(page, CHOICE_FIELD_CARD_INTERACTIVE_STORY_ID);
+    const terms = root.getByRole('checkbox', { name: 'I accept the terms and conditions' });
+
+    await root.getByRole('link', { name: 'terms and conditions' }).click({ timeout: 2000 });
+
+    await expect(root.getByText('Terms opened: true')).toBeVisible();
+    await expect(terms).toHaveAttribute('aria-checked', 'false');
+  });
+
+  test('a button in a choice field card trailing slot clicks without toggling the checkbox', async ({ page }) => {
+    const root = await openStory(page, CHOICE_FIELD_CARD_INTERACTIVE_STORY_ID);
+    const terms = root.getByRole('checkbox', { name: 'I accept the terms and conditions' });
+
+    await root.getByRole('button', { name: 'Details' }).click({ timeout: 2000 });
+
+    await expect(root.getByText('details opened: true')).toBeVisible();
+    await expect(terms).toHaveAttribute('aria-checked', 'false');
   });
 
   test('a selected card differs from its neighbours by border and label colour', async ({ page }) => {

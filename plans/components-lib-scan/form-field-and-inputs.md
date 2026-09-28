@@ -25,7 +25,6 @@ Paths are relative to `libs/components/src/lib/forms/`.
 
 ## choice-field, selection card
 
-- Medium: in `variant="card"`, the control's stretched `::after` covers the whole panel. Nothing in the label area or the trailing slot is positioned above it (`choice-field/choice-field-card-styles.component.css:33-39`). A link in `et-label`/`et-description` (for example "accept the <a>terms</a>") or a button in `[etSelectionCardTrailing]` cannot be clicked, because the click toggles the control. Give interactive descendants of `.et-selection-card-content` and the trailing slot `position: relative; z-index: 1`. S Verified.
 - Low: CSS comments far outside the allowlist, including migration narration ("cdk shipped this with a hardcoded #2e2e2e", `selection-card-styles.component.css:39-40`) and multi-paragraph rationale in `choice-field/choice-field-card-styles.component.css:2-4,6-7,23-32,41-45,48-51`. Cut them to the ordering and workaround facts. S
 
 ## otp-input

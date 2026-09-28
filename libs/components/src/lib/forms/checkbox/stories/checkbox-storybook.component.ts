@@ -1,4 +1,4 @@
-import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
+import { Component, input, linkedSignal, signal, ViewEncapsulation } from '@angular/core';
 import { disabled, form, FormField, readonly, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import { CHOICE_FIELD_IMPORTS, ChoiceFieldVariant } from '../../choice-field';
@@ -10,7 +10,14 @@ import { CHECKBOX_IMPORTS } from '../checkbox.imports';
     <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
       <et-choice-field [variant]="variant()">
         <et-checkbox [(indeterminate)]="indeterminateState" [formField]="demoForm.acceptTerms" />
-        <et-label>I accept the terms and conditions</et-label>
+        @if (interactiveContent()) {
+          <et-label>I accept the <a (click)="termsOpened.set(true)" href="#terms">terms and conditions</a></et-label>
+        } @else {
+          <et-label>I accept the terms and conditions</et-label>
+        }
+        @if (interactiveContent()) {
+          <button (click)="detailsOpened.set(true)" type="button" etSelectionCardTrailing>Details</button>
+        }
         @if (hint()) {
           <et-hint>{{ hint() }}</et-hint>
         }
@@ -23,6 +30,10 @@ import { CHECKBOX_IMPORTS } from '../checkbox.imports';
           <et-hint>{{ hint() }}</et-hint>
         }
       </et-choice-field>
+
+      @if (interactiveContent()) {
+        <p>Terms opened: {{ termsOpened() }}, details opened: {{ detailsOpened() }}</p>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -36,6 +47,10 @@ export class FormFieldCheckboxStorybookComponent {
   public required = input(false);
   public indeterminate = input(false);
   public variant = input<ChoiceFieldVariant>('plain');
+  public interactiveContent = input(false);
+
+  public termsOpened = signal(false);
+  public detailsOpened = signal(false);
 
   public indeterminateState = linkedSignal(() => this.indeterminate());
 

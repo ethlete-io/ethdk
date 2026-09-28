@@ -274,8 +274,13 @@ needed. In `et-choice-field` the panel is a wrapper `div`, so the preset stretch
 the projected control's own hit area over it instead of forwarding clicks - which
 keeps one activation path, and with it one cursor, one `:hover` treatment, and the
 control's own `readonly` (clicks land, nothing toggles) and `disabled` (the panel
-dims as a unit and shows `not-allowed`) behavior.
+dims as a unit and shows `not-allowed`) behavior. Links, buttons and other
+interactive elements in the label, the description or the trailing slot sit above
+that hit area, so a click on one does not toggle the control - and a click on a
+link in any `et-label` follows the link without activating the control.
 :::
+
+<StoryEmbed id="components-forms-checkbox--card-with-interactive-content" height="260px" />
 
 All three components share **one** token set, so a card radius is set once and
 every card follows: `--et-selection-card-padding` (`16px`), `-border-radius`

@@ -38,6 +38,13 @@
       border-radius: var(--et-selection-card-border-radius);
     }
 
+    /* Lifts interactive content above the stretched hit area, or a click on it toggles the control. */
+    :is(.et-selection-card-content, [etSelectionCardTrailing]) :is(a, button, input, select, textarea, [tabindex]),
+    [etSelectionCardTrailing]:is(a, button, input, select, textarea, [tabindex]) {
+      position: relative;
+      z-index: 1;
+    }
+
     /* The focus ring belongs to the whole panel here, not to the 20px control inside it — two rings, one
        nested in the other, read as a rendering glitch. `outline-color`, not `outline: none`: the control
        keeps a transparent ring either way, and `et-checkbox` transitions `outline-color`, so resetting the
