@@ -1613,8 +1613,24 @@ export class TableComponent<T> {
     if (!isRestorableTableState(next)) return;
 
     this.restoredColumns = next.columns.map((column) => ({ key: column.key, hidden: column.hidden }));
-    this.columnOrder.set(next.columns.map((column) => column.key));
-    this.hiddenColumns.set(new Set(next.columns.filter((column) => column.hidden).map((column) => column.key)));
+    const restoredOrder = next.columns.map((column) => column.key);
+    const restoredHidden = new Set(next.columns.filter((column) => column.hidden).map((column) => column.key));
+    const declared = this.columnDefs();
+
+    if (declared.length) {
+      this.columnOrder.set(
+        reconcileColumnOrder(
+          declared.map((column) => column.key),
+          restoredOrder,
+        ),
+      );
+      this.hiddenColumns.set(
+        reconcileHiddenColumns(declared, { columns: this.restoredColumns, hidden: restoredHidden }),
+      );
+    } else {
+      this.columnOrder.set(restoredOrder);
+      this.hiddenColumns.set(restoredHidden);
+    }
 
     const widths: Record<string, number> = {};
 

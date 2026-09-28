@@ -710,6 +710,26 @@ describe('TableComponent', () => {
       expect(fixture.componentInstance.visibleColumns().map((c) => c.key)).toEqual(['id']);
     });
 
+    it('keeps a column declared after the restored state was stored', () => {
+      const { componentInstance: table } = create({
+        name: { header: 'Name', value: (p: Person) => p.name },
+        id: { header: 'ID', value: (p: Person) => p.id },
+        role: { header: 'Role', value: (p: Person) => p.role },
+        secret: { header: 'Secret', value: (p: Person) => p.name, hidden: true },
+      });
+
+      table.restoreState({
+        v: 3,
+        columns: [
+          { key: 'role', hidden: false },
+          { key: 'name', hidden: false },
+        ],
+      });
+
+      expect(table.allColumns().map((c) => c.key)).toEqual(['role', 'secret', 'name', 'id']);
+      expect(table.visibleColumns().map((c) => c.key)).toEqual(['role', 'name', 'id']);
+    });
+
     it('ignores a hand-edited state instead of throwing part-way through the restore', () => {
       const { componentInstance: table } = create(columns());
 

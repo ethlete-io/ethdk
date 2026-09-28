@@ -1892,6 +1892,10 @@ const snapshot = table.state();
 table.restoreState(snapshot);
 ```
 
+A column the state does not name - one declared after the state was stored - keeps its declared
+`hidden` and slots in next to the column it is declared after, so a stored setup or an old link
+never hides a newly added column.
+
 A bound [`rowsSource`](#server-side-rows-query) owns the sort and the filters it publishes, so
 `restoreState` keeps those and applies only the layout and the feature slices. Restore that half
 wherever the source reads it from - a query form, the URL - and leave it out of the stored state:
