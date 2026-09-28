@@ -8,18 +8,11 @@ import {
   inject,
   input,
   output,
-  runInInjectionContext,
 } from '@angular/core';
-import {
-  ColorTheme,
-  ProvideColorDirective,
-  RegisteredColorThemeName,
-  injectErrorTheme,
-  injectSuccessTheme,
-  injectWarningTheme,
-} from '@ethlete/core';
+import { ColorTheme, ProvideColorDirective, RegisteredColorThemeName } from '@ethlete/core';
 import { IconButtonComponent } from '../button/icon-button.component';
 import { ICON_IMPORTS, TIMES_ICON, provideIcons } from '../icon';
+import { injectSemanticTheme } from '../internals/semantic-theme';
 import { injectBannerLabels } from './banner-labels';
 
 export const BANNER_TYPES = {
@@ -97,8 +90,6 @@ export class BannerComponent {
   });
 
   constructor() {
-    // Only the type actually in use is injected, and only once it's rendered: an app that only ever
-    // shows `info`/`error` banners shouldn't have to register `warning`/`success` themes it never renders.
     effect(() => {
       const explicitColor = this.color();
 
@@ -116,13 +107,7 @@ export class BannerComponent {
         return;
       }
 
-      const theme = runInInjectionContext(this.injector, () => {
-        if (type === BANNER_TYPES.SUCCESS) return injectSuccessTheme();
-        if (type === BANNER_TYPES.WARNING) return injectWarningTheme();
-        return injectErrorTheme();
-      });
-
-      this.provideColor.forceColor(theme);
+      this.provideColor.forceColor(injectSemanticTheme(this.injector, type));
     });
   }
 }

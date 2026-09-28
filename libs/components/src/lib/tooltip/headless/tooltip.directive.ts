@@ -31,11 +31,14 @@ import { mountFloatingPanelStyles } from '../../overlay/floating-panel-styles.co
 import { injectOverlayManager } from '../../overlay/overlay-manager';
 import { TOOLTIP_ERROR_CODES } from '../tooltip-errors';
 import { TooltipComponent } from '../tooltip.component';
-import { createTooltipId } from '../tooltip.utils';
+import { createIdFactory } from '../../internals/id-factory';
 
 export type TooltipContent = string | TemplateRef<unknown>;
 
 const DEFAULT_TOOLTIP_DELAY = 300;
+
+const createTooltipId = /* @__PURE__ */ createIdFactory('et-tooltip');
+const createTooltipDescriptionId = /* @__PURE__ */ createIdFactory('et-tooltip-description');
 
 @Directive({
   selector: '[etTooltip]',
@@ -77,7 +80,7 @@ export class TooltipDirective {
 
   private hasHover = signal(false);
   private hasFocus = signal(false);
-  private descriptionId = createTooltipId('et-tooltip-description');
+  private descriptionId = createTooltipDescriptionId();
   private descriptionElement: HTMLElement | null = null;
   private appliedDescriptionId: string | null = null;
 

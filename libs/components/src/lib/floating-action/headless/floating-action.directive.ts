@@ -33,14 +33,6 @@ import { FLOATING_ACTION_TOKEN } from './floating-action.tokens';
  * written, and pins itself to a corner of the viewport once its place in the page has scrolled away. A filter
  * button above a long list, a "save changes" bar, a back-to-top.
  *
- * Ported from cdk's `rich-filter`, which was never about filtering - it renders no filter UI and imports nothing
- * from `@ethlete/query`. This is that scroll-coordination pattern under a name that says what it does.
- *
- * **Why not CSS?** `position: sticky` can keep an element at an edge, but it cannot move it to a corner of the
- * viewport, and it has no way to express "and the region this acts on is still on screen" - which is the part
- * that stops a pinned button following the reader onto unrelated content. So the state comes from two
- * intersection observers and CSS reacts to it.
- *
  * @example
  * <div etFloatingAction>
  *   <div etFloatingActionAnchor>

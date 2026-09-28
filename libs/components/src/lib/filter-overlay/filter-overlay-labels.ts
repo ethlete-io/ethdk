@@ -75,10 +75,7 @@ export const FILTER_OVERLAY_LABELS = /* @__PURE__ */ toToken(FILTER_OVERLAY_LABE
  * The button is deliberately the place the count appears: it is what the reader is about to press, so putting
  * the consequence on it ("Show 42 results") lets them decide without applying first. It disables itself while a
  * count is pending, when the count failed, and when the answer is zero - applying a filter that returns nothing
- * is never what someone meant to do.
- *
- * An overlay with no preview has nothing to wait for and simply reads "Show results". cdk's version returned the
- * *loading* state in that case, which left the button permanently disabled.
+ * is never what someone meant to do. Without a preview it simply reads "Show results".
  */
 export const resolveFilterOverlaySubmitButton = (
   state: FilterOverlaySubmitState,

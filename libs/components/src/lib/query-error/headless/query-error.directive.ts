@@ -12,12 +12,6 @@ const comparable = (text: string) => text.toLowerCase().replace(/\s/g, '').repla
  * Turns a failed query into something renderable: a title, the messages, and whether retrying is worth
  * offering. All state, no markup - `<et-query-error>` is this with the chrome on top.
  *
- * The classification work is not here, deliberately. `@ethlete/query` already normalizes every error shape it
- * knows (class-validator arrays, Symfony violation lists, a bare `{ message }`, a plain string) into
- * `QueryErrorResponse` before it reaches `query.error()`, and it attaches the retry policy's verdict as
- * `retryState`. cdk re-did all of that by hand against the legacy client; this reads what the client already
- * worked out, which is why it is client-agnostic.
- *
  * @example
  * @if (usersQuery.error(); as error) {
  *   <div etQueryError [error]="error" [query]="usersQuery">…</div>

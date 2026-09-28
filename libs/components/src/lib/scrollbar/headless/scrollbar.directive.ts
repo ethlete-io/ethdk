@@ -100,15 +100,11 @@ export class ScrollbarDirective {
   });
 
   private targetScroll$ = toObservable(this.targetElement).pipe(
-    // The repo's scroll-state helpers answer "does it overflow?" and re-measure on a resize. This needs
-    // the offset itself, on every frame the target moves, which only the event carries.
-    // eslint-disable-next-line ethlete/prefer-scroll-state
+    // eslint-disable-next-line ethlete/prefer-scroll-state -- needs the live scroll offset, which the scroll-state helpers do not expose
     switchMap((element) => (element ? fromEvent(element, 'scroll', { passive: true }) : EMPTY)),
     share(),
   );
 
-  // A scroll event does not change the target's size, so the scroll state stays cached through it. The
-  // geometry has to re-read the offset anyway, and this is what tells it to.
   private scrollTick = toSignal(this.targetScroll$.pipe(scan((tick) => tick + 1, 0)), { initialValue: 0 });
 
   private targetScrollState = signalElementScrollState(this.targetElement, {

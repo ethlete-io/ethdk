@@ -27,12 +27,6 @@ import {
 /**
  * A responsive image: `<figure><picture><source…><img></picture><figcaption></figure>` from a list of sources.
  *
- * Two different jobs share the one element, and it is worth knowing which one you are doing. Several
- * candidates in a **single** source's `srcset` is *resolution switching* - the same picture at several sizes,
- * and the browser picks. Several **sources** with `media` queries is *art direction* - a different crop for a
- * phone than for a desktop, which no `srcset` can express. `type` on a source is a third axis: offer AVIF
- * before JPEG and a browser that can't decode it skips to the next without downloading anything.
- *
  * Reserve the space the image will occupy - `width`/`height`, or `aspectRatio` when only the ratio is known -
  * or the page will shift when it loads.
  *

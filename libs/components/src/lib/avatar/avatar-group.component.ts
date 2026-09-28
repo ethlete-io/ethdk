@@ -64,7 +64,6 @@ export class AvatarGroupComponent {
     return Math.max(this.projectedAvatars().length - Math.max(max, 0), 0);
   });
 
-  // The overflow avatar is the group's own, so it has to be told what the projected ones look like.
   protected overflowSize = computed(() => this.projectedAvatars()[0]?.size() ?? AVATAR_SIZES.MD);
   protected overflowShape = computed(() => this.projectedAvatars()[0]?.shape() ?? AVATAR_SHAPES.CIRCLE);
 
@@ -73,8 +72,6 @@ export class AvatarGroupComponent {
       const max = this.maxVisible();
       const elements = this.projectedElements();
 
-      // Hiding is a DOM write rather than a class the avatar carries: which avatars are over the limit
-      // is the group's business, and an avatar projected from a `@for` cannot be bound from here.
       elements.forEach((element, index) => {
         element.nativeElement.hidden = max !== undefined && index >= Math.max(max, 0);
       });

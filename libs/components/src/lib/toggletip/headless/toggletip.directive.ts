@@ -23,9 +23,11 @@ import { mountFloatingPanelStyles } from '../../overlay/floating-panel-styles.co
 import { injectOverlayManager } from '../../overlay/overlay-manager';
 import { TOGGLETIP_ERROR_CODES } from '../toggletip-errors';
 import { ToggletipComponent } from '../toggletip.component';
-import { createToggletipId } from '../toggletip.utils';
+import { createIdFactory } from '../../internals/id-factory';
 
 export type ToggletipContent = string | TemplateRef<unknown>;
+
+const createToggletipId = /* @__PURE__ */ createIdFactory('et-toggletip');
 
 @Directive({
   selector: '[etToggletip]',

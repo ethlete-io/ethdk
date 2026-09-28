@@ -38,16 +38,7 @@ export type FilterOverlayConfig<TFields extends QueryFormFields> = {
   submitButton?: (state: FilterOverlaySubmitState, labels: FilterOverlayLabels) => FilterOverlaySubmitButton;
 };
 
-/**
- * The draft's editing surface - a query form branch, described by its **value** shape rather than by its field
- * map.
- *
- * That is deliberate and worth explaining: `QueryFieldDef<T>` is contravariant in `T` (it can hold a
- * `valueToQueryParam: (value: T) => unknown`), so a concrete field map does *not* satisfy
- * `Record<string, QueryFieldDef<unknown>>`. Inference copes, but an explicit type argument -
- * `injectFilterOverlay<typeof MY_FIELDS>()` - cannot be written at all. Naming the value shape sidesteps it, and
- * is what a consumer actually cares about. Structurally identical to `QueryFormBranch`.
- */
+/** The draft's editing surface: a query form branch, typed by its value shape. */
 export type FilterOverlayDraft<TValue> = {
   /** The bindable signal-forms field tree: `draft.fields.search`. */
   readonly fields: FieldTree<TValue>;
@@ -161,9 +152,7 @@ const createFilterOverlay = <TFields extends QueryFormFields>(
  * live count of what those filters would return, and an explicit apply.
  *
  * The model is **edit a copy, then commit** - dismissing the overlay discards, which is what lets a filter panel
- * be closed with Escape without consequence. It is cdk's `FilterOverlayService` rebuilt on the signals query
- * form: no reactive-forms `FormGroup` to clone, no legacy query types, and `reset()` needs no configured defaults
- * because the query form already knows them.
+ * be closed with Escape without consequence.
  *
  * @example
  * export const FILTERS_OVERLAY = defineOverlay({ component: TeamFiltersComponent, … });

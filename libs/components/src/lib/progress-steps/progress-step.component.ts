@@ -1,14 +1,5 @@
-import {
-  Component,
-  Injector,
-  ViewEncapsulation,
-  computed,
-  effect,
-  inject,
-  input,
-  runInInjectionContext,
-} from '@angular/core';
-import { ProvideColorDirective, injectErrorTheme, injectSuccessTheme, injectWarningTheme } from '@ethlete/core';
+import { Component, Injector, ViewEncapsulation, computed, effect, inject, input } from '@angular/core';
+import { ProvideColorDirective } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import {
   CHECK_ICON,
@@ -18,6 +9,7 @@ import {
   TRIANGLE_EXCLAMATION_ICON,
   provideIcons,
 } from '../icon';
+import { injectSemanticTheme } from '../internals/semantic-theme';
 import { injectProgressStepLabels } from './progress-step-labels';
 
 export const PROGRESS_STEP_STATES = {
@@ -95,17 +87,14 @@ export class ProgressStepComponent {
   protected ariaCurrent = computed(() => (this.state() === PROGRESS_STEP_STATES.CURRENT ? 'step' : null));
 
   constructor() {
-    // Only the theme actually in use is injected, and only once a step renders in that state: a row
-    // that never fails shouldn't force the app to register a `type: 'error'` theme.
     effect(() => {
       const state = this.state();
-
-      const theme = runInInjectionContext(this.injector, () => {
-        if (state === PROGRESS_STEP_STATES.SUCCESS) return injectSuccessTheme();
-        if (state === PROGRESS_STEP_STATES.WARNING) return injectWarningTheme();
-        if (state === PROGRESS_STEP_STATES.ERROR) return injectErrorTheme();
-        return null;
-      });
+      const theme =
+        state === PROGRESS_STEP_STATES.SUCCESS ||
+        state === PROGRESS_STEP_STATES.WARNING ||
+        state === PROGRESS_STEP_STATES.ERROR
+          ? injectSemanticTheme(this.injector, state)
+          : null;
 
       if (!theme) {
         this.provideColor.clearForcedColor();
