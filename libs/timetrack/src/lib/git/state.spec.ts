@@ -86,13 +86,20 @@ describe('readGitBranchState$', () => {
     expect(state.remote?.branches).not.toContain('HEAD');
   });
 
-  it('reads a failed command as nothing found rather than throwing', async () => {
+  it('reads a failed command as nothing found rather than throwing, and a failed status as dirty', async () => {
     const { processes } = runnerOf({});
 
     await expect(firstValueFrom(readGitBranchState$({ processes, repoPath: '/repo' }))).resolves.toEqual({
-      dirty: false,
+      dirty: true,
       localBranches: [],
     });
+  });
+
+  it('reads a tree whose status alone fails as dirty, so no plan renames over it', async () => {
+    const { processes } = runnerOf({ ...CLEAN, 'status --porcelain': failed });
+    const state = await firstValueFrom(readGitBranchState$({ processes, repoPath: '/repo' }));
+
+    expect(state.dirty).toBe(true);
   });
 
   it('runs every command in the repository it was given', async () => {

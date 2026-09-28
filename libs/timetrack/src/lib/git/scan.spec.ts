@@ -93,6 +93,7 @@ describe('collectGitEvents$', () => {
     const log = specs.find((spec) => spec.args[0] === 'log');
 
     expect(log?.args).toContain('--author=trb@braune-digital.com');
+    expect(log?.args).toContain('--fixed-strings');
   });
 
   it('merges several repositories into one timeline, oldest first', () => {

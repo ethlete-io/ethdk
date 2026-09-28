@@ -29,8 +29,8 @@ const preferredRemote = (names: string[]) => (names.includes('origin') ? 'origin
  *
  * `--porcelain` is the stable spelling of `git status` and the only one worth parsing; untracked
  * files count as dirty, because a rename that strands them is the same surprise as one that strands
- * an edit. A failed command reads as "nothing found" rather than throwing, so one unreadable
- * repository refuses its own repair instead of failing the view around it.
+ * an edit. A failed command never throws, so one unreadable repository refuses its own repair instead
+ * of failing the view around it: a failed status reads as dirty, any other failed read as nothing found.
  */
 export const readGitBranchState$ = (options: {
   processes: TimetrackProcessRunner;
@@ -46,7 +46,7 @@ export const readGitBranchState$ = (options: {
   }).pipe(
     switchMap(({ status, locals, remotes }) => {
       const base = {
-        dirty: status.code === 0 && lines(status.stdout).length > 0,
+        dirty: status.code !== 0 || lines(status.stdout).length > 0,
         localBranches: locals.code === 0 ? lines(locals.stdout) : [],
       };
       const name = remotes.code === 0 ? preferredRemote(lines(remotes.stdout)) : undefined;

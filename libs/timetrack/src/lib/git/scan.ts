@@ -49,7 +49,7 @@ const gitLogArgs = (repo: GitRepoScan) => [
   '--name-only',
   `--since=${repo.window.from.toISOString()}`,
   `--format=${GIT_LOG_FORMAT}`,
-  ...(repo.author ? [`--author=${repo.author}`] : []),
+  ...(repo.author ? ['--fixed-strings', `--author=${repo.author}`] : []),
 ];
 
 const gitSpec = (options: { repoPath: string; args: string[] }): ProcessSpec => ({
