@@ -863,6 +863,10 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       );
     });
 
+  /** What `reviewDay` drew a day from: its rows before any edit, its stored edits and its cut. */
+  const reviewInputsOfDay$ = (key: string) =>
+    reviewOfDay$(key).pipe(map(() => ({ day: key, rows: reasonedRows(), edits: edits(), cut: rowOptions().cut })));
+
   /** One stated change, against the row of the day it names. Nothing happens where no row holds it. */
   const applyRowEdit = (edit: AgentApiRowEdit) => {
     const row = [...rows(), ...hiddenRows()].find((candidate) => candidate.id === edit.rowId);
@@ -1136,6 +1140,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     /** The day as the screen draws it, for any day. It is where a row's id comes from. */
     reviewOfDay$,
+    reviewInputsOfDay$,
 
     /** Where a dragged row now sits. A move keeps its duration; dragging one end re-reads it. */
     rescheduleRow: (move: { row: ReviewedRow; from: Date; to: Date }) =>

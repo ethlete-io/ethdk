@@ -100,13 +100,20 @@ const endedCallPins = (edits: DayReviewEdits) =>
  * Drops the ends a reviewer gave the rest of a call a named row was ended off, so that rest is one
  * band that grows with the call. Edits written before the rest had no end of its own still hold such
  * pins, each drawn as a second band with no name.
+ *
+ * `ended` names the rows those pins were cut from: each still claims its call's band, so the band's
+ * minutes past the row come back as the rest.
  */
-export const withoutEndedRestPins = (edits: DayReviewEdits): DayReviewEdits => {
-  const stale = new Set(
-    endedCallPins(edits).flatMap((pin) => restPinsOf(edits, pin).filter((rest) => rest.tracksTo === false)),
-  );
+export const foldEndedRests = (edits: DayReviewEdits): { edits: DayReviewEdits; ended: ReadonlySet<string> } => {
+  const folded = endedCallPins(edits)
+    .map((pin) => ({ pin, rest: restPinsOf(edits, pin).filter((rest) => !rest.tracksTo) }))
+    .filter(({ rest }) => rest.length > 0);
+  const stale = new Set(folded.flatMap(({ rest }) => rest));
 
-  return stale.size ? { ...edits, pinned: edits.pinned.filter((pin) => !stale.has(pin)) } : edits;
+  return {
+    edits: stale.size ? { ...edits, pinned: edits.pinned.filter((pin) => !stale.has(pin)) } : edits,
+    ended: new Set(folded.map(({ pin }) => pin.id)),
+  };
 };
 
 const isRestOfEndedCall = (edits: DayReviewEdits, row: ReviewedRow) =>
@@ -175,7 +182,7 @@ export const isEndedCallRow = (options: {
   if (!row.issueKey || storedLaneKey(row.laneKey) !== CALL_LANE_KEY || !pin || pin.tracksTo) return false;
   if (meetingBehindRow(options)) return false;
 
-  const snipped = pin.snippedFromMs !== undefined || restPinsOf(edits, row).some((rest) => rest.tracksTo === false);
+  const snipped = pin.snippedFromMs !== undefined || restPinsOf(edits, row).some((rest) => !rest.tracksTo);
   const callEnd = callEndOf(options);
 
   return snipped && callEnd !== null && callEnd > row.to.getTime();

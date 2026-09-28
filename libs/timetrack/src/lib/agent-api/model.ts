@@ -482,6 +482,7 @@ export type AgentApiRequest =
   | { op: 'worklog.add'; issueKey: string; description: string; fromMs: number; durationMs: number }
   | { op: 'day.events'; day: string }
   | { op: 'day.rows'; day: string }
+  | { op: 'day.inputs'; day: string }
   | { op: 'day.edits'; day: string; edits: AgentApiRowEdit[] }
   | { op: 'settings.rules' }
   | { op: 'standIn.list' }
@@ -569,6 +570,7 @@ export const AGENT_API_OP_CLASSES: Record<AgentApiOp, OpClass> = {
   'worklog.add': 'local',
   'day.events': 'read',
   'day.rows': 'read',
+  'day.inputs': 'read',
   'day.edits': 'local',
   'settings.rules': 'read',
   'standIn.list': 'read',

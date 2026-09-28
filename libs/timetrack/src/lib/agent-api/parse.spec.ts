@@ -297,6 +297,13 @@ describe('parseAgentRequest, over a day edit', () => {
     });
   });
 
+  it('holds the review inputs read to the same day key', () => {
+    expect(parseAgentRequest({ op: 'day.inputs', day: '2026-09-14' })).toEqual({
+      ok: true,
+      request: { op: 'day.inputs', day: '2026-09-14' },
+    });
+  });
+
   it('reads a Tempo worklog range with both ends included', () => {
     expect(parseAgentRequest({ op: 'tempo.worklogs', from: ' 2026-06-25 ', to: '2026-09-24' })).toEqual({
       ok: true,

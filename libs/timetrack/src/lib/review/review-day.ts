@@ -27,7 +27,7 @@ import {
   isNamedRow,
 } from './model';
 import { isManualRow } from './edits';
-import { withoutEndedRestPins } from './end-call';
+import { foldEndedRests } from './end-call';
 import { mayAutoWrite, rowFieldSourceOf, storedSourceOf } from '../model/field-source';
 
 /** What the engine offered for one band: a proposal, or a band nothing could name. */
@@ -254,7 +254,12 @@ const leftoverRows = (options: {
  * An engine row is claimed by one pinned row only, so the two halves of a split can never both grow
  * onto the same band.
  */
-const trackPinnedRows = (options: { pinned: readonly PinnedRow[]; sources: readonly RowSource[] }) => {
+const trackPinnedRows = (options: {
+  pinned: readonly PinnedRow[];
+  sources: readonly RowSource[];
+  /** Pins that claim their lane's band although they track neither end. */
+  claiming?: ReadonlySet<string>;
+}) => {
   const claimed = new Set<string>();
   const matched = new Map<string, string>();
   const known = new Set(options.sources.map((row) => row.id));
@@ -265,8 +270,9 @@ const trackPinnedRows = (options: { pinned: readonly PinnedRow[]; sources: reado
     // draws the stretch twice. The `replaces` test is what keeps a row added by hand out: it replaces
     // nothing, so it must stand beside the day's own rows rather than swallow one.
     const lostItsSources = pin.replaces.length > 0 && pin.replaces.every((id) => !known.has(id));
+    const claims = lostItsSources || !!options.claiming?.has(pin.id);
 
-    if ((!pin.tracksFrom && !pin.tracksTo && !lostItsSources) || !lane) return pin;
+    if ((!pin.tracksFrom && !pin.tracksTo && !claims) || !lane) return pin;
 
     const [source] = options.sources
       .filter((row) => !claimed.has(row.id) && storedLaneKey(row.laneKey) === lane && overlapMs(row, pin) > 0)
@@ -383,7 +389,7 @@ export const reviewDay = (options: {
   /** The standing rules, so a row the reviewer built still follows the one that covers its checkout. */
   rules?: readonly AttributionRule[];
 }): DayReview => {
-  const edits = withoutEndedRestPins(options.edits ?? EMPTY_DAY_REVIEW_EDITS);
+  const { edits, ended } = foldEndedRests(options.edits ?? EMPTY_DAY_REVIEW_EDITS);
   const standIns = options.standIns ?? [];
   const rules = options.rules ?? [];
   const pinnedIds = new Set(edits.pinned.flatMap((row) => [row.id, ...row.replaces]));
@@ -400,7 +406,7 @@ export const reviewDay = (options: {
     collides: (grower, other) => isBackground(grower) !== isBackground(other),
     startsAtEarliest: (row) => storedLaneKey(row.laneKey) === CALL_LANE_KEY,
   });
-  const tracked = trackPinnedRows({ pinned: edits.pinned, sources });
+  const tracked = trackPinnedRows({ pinned: edits.pinned, sources, claiming: ended });
   const calls = options.rows.calls;
   const answered = new Set([...pinnedIds, ...tracked.matched.values()]);
   const covered = coveredByPins({

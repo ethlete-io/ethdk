@@ -342,6 +342,47 @@ describe('a rest of the call whose pin does not name the row it was cut from', (
   });
 });
 
+describe('a row ended with pins that track neither end', () => {
+  const pinned = (options: { id: string; issueKey?: string; from: string; to: string; replaces: string[] }) => ({
+    id: options.id,
+    issueKey: options.issueKey,
+    replaces: options.replaces,
+    from: at(options.from),
+    to: at(options.to),
+    durationMs: at(options.to).getTime() - at(options.from).getTime(),
+    observedMs: at(options.to).getTime() - at(options.from).getTime(),
+    laneKey: 'lane:call',
+    description: 'Meeting #1 | Braune Digital - Discord',
+    confidence: 'likely' as const,
+    evidence: [],
+  });
+  const source = `FIP-3095@${at('14:00').toISOString()}`;
+  const stored: DayReviewEdits = {
+    ...EMPTY_DAY_REVIEW_EDITS,
+    pinned: [
+      pinned({ id: `pin:${source}`, issueKey: 'FIP-3095', from: '14:00', to: '15:00', replaces: [source] }),
+      pinned({ id: `pin:unnamed@${at('15:00').toISOString()}`, from: '15:00', to: '15:30', replaces: [`${source}#2`] }),
+    ],
+  };
+
+  it('draws the rest of its call as one band', () => {
+    expect(spans(stored, '17:00')).toEqual([
+      { from: at('14:00').toISOString(), to: at('15:00').toISOString(), issueKey: 'FIP-3095' },
+      { from: at('15:00').toISOString(), to: at('17:00').toISOString(), issueKey: undefined },
+    ]);
+  });
+
+  it('counts as ended, and follows the call again', () => {
+    const [row] = reviewDay({ rows: day('17:00'), edits: stored }).rows;
+    const calls = day('17:00').calls;
+
+    expect(isEndedCallRow({ row: row!, calls, edits: stored })).toBe(true);
+    expect(spans(followCallAgain({ edits: stored, row: row!, calls }), '17:00')).toEqual([
+      { from: at('14:00').toISOString(), to: at('17:00').toISOString(), issueKey: 'FIP-3095' },
+    ]);
+  });
+});
+
 describe('isEndedCallRow, on a call picked up again', () => {
   it('follows the call past a reconnect of the same process', () => {
     const ended = endedAt('16:07');

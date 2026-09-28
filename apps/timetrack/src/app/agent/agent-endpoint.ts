@@ -758,6 +758,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return dayEvents$(request);
       case 'day.rows':
         return dayRows$(request.day);
+      case 'day.inputs':
+        return review.reviewInputsOfDay$(request.day);
       case 'day.edits':
         return editDay$(request);
       case 'settings.rules':
