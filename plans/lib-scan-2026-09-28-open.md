@@ -23,23 +23,14 @@ own open lines; this file lists what needs a user decision and what is still que
   design call.
 - cli: git-flow `parse.ts` reads a lowercase `<word>-<number>` as a key when `keyPrefixes` is
   empty. Existing specs test this on purpose (`chore/angular-22` → `ANGULAR-22`).
-- date-time: `libs/components/vite.config.mts` now sets `TZ=Europe/Berlin` for every components
-  spec, so DST tests can fail in CI. Keep it, or scope it to the date-time specs.
 - date-time: `minTime`/`maxTime` compare against the zone's wall clock, not as instants.
 - date-time: an empty time picker starts from the current time, so on the runtime's own DST day a
   pick in the skipped hour still lands an hour late.
 
-- table: `[error]="false"` now means no error (fc8221e51). The docs and a spec treated `false`
-  as an error on purpose before; `0` and `''` still count. Revert `isError` there for the old
-  behaviour.
 
-- overlay: `syncUrl` does not deep-link. Add a stable param key (new API), or drop the
-  deep-link claim from the JSDoc and the docs.
 - overlay: 6592a0627 changed the exported `DragToDismissContext`: `overlayRef` now needs
   `beforeClosed`, which breaks custom mocks. Check that its changeset bump is right.
 
-- contentful: `ContentfulRestAsset.fields.file` is now optional (a9b3f3947). A consumer that
-  reads `fields.file.url` no longer compiles under strict mode; the changeset says patch.
 - contentful: `provideContentfulConfig` bundles all five default components. Lazy defaults or an
   opt-in `withContentfulDefaultComponents()` change the public API; the size is not measured.
 

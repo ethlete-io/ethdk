@@ -1,5 +1,5 @@
 ---
-'@ethlete/contentful': patch
+'@ethlete/contentful': minor
 ---
 
-Rich text keeps moved content in its new parent, assets without a file no longer throw (`fields.file` is optional), and only the exact current host and port count as an internal link.
+`ContentfulRestAsset.fields.file` is now optional, so an asset without a file no longer throws. Rich text also keeps moved content in its new parent, and only the current host counts as internal.

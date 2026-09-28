@@ -71,8 +71,9 @@ export type OverlayRouterConfig = {
   initialRoute?: string;
 
   /**
-   * Mirror the active overlay route into the browser URL as a query param, enabling deep-linking and
-   * browser back/forward integration. Requires the Angular `Router` to be available.
+   * Mirror the active overlay route into the browser URL as a query param, for browser back/forward
+   * integration. The param key is per instance, so a URL cannot restore a route (no deep links).
+   * Requires the Angular `Router` to be available.
    *
    * @default false
    */

@@ -421,7 +421,7 @@ this.overlayManager.open(SettingsOverlayComponent, {
         { path: '/', component: GeneralPageComponent },
         { path: '/members', component: MembersPageComponent },
       ],
-      syncUrl: true, // deep links + browser back/forward via a query param
+      syncUrl: true, // browser back/forward via a query param
     }),
   ],
 });
