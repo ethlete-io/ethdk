@@ -11,7 +11,7 @@ import {
   untracked,
 } from '@angular/core';
 import { registerSingleton } from '../../form-field/headless';
-import { RuntimeError } from '@ethlete/core';
+import { RuntimeError, createComponentId } from '@ethlete/core';
 import { SELECT_ERROR_CODES } from '../select-errors';
 import { SelectDirective } from './select.directive';
 
@@ -87,6 +87,12 @@ export class SelectSearchDirective {
   });
 
   constructor() {
+    const element = this.elementRef.nativeElement;
+
+    if (!element.id) {
+      element.id = createComponentId('et-select-search');
+    }
+
     registerSingleton(this.select?.registeredSearch, this);
 
     effect(() => {

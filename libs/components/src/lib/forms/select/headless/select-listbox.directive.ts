@@ -20,9 +20,18 @@ export class SelectListboxDirective {
 
   public readonly id: string;
 
-  protected labelledBy = computed(
-    () => this.select?.labelId() ?? this.select?.registeredTrigger()?.elementRef.nativeElement.id ?? null,
-  );
+  protected labelledBy = computed(() => {
+    const select = this.select;
+
+    if (!select) {
+      return null;
+    }
+
+    const trigger = select.registeredTrigger();
+    const namedBy = trigger?.isGeneric() ? select.registeredSearch() : trigger;
+
+    return select.labelId() ?? namedBy?.elementRef.nativeElement.id ?? null;
+  });
 
   protected multiselectable = computed(() => (this.select?.multiple() ? true : null));
 

@@ -88,6 +88,32 @@ describe('SelectDirective (data-driven options)', () => {
     expect(driver.virtualPadding().end).toBeGreaterThan(0);
   });
 
+  it('announces the position of each windowed row within the whole data set', async () => {
+    await driver.open();
+
+    driver.select.handleTriggerKeydown(new KeyboardEvent('keydown', { key: 'End' }));
+    driver.tick();
+
+    const last = driver.options().at(-1)!;
+
+    expect(last.getAttribute('aria-setsize')).toBe('200');
+    expect(last.getAttribute('aria-posinset')).toBe('200');
+  });
+
+  it('names the search input instead of the generic trigger that contains it', async () => {
+    const trigger = driver.trigger();
+    const search = driver.searchInput();
+
+    expect(trigger.hasAttribute('role')).toBe(false);
+    expect(trigger.hasAttribute('aria-labelledby')).toBe(false);
+    expect(trigger.hasAttribute('aria-label')).toBe(false);
+    expect(trigger.hasAttribute('aria-disabled')).toBe(false);
+
+    await driver.open();
+
+    expect(driver.listbox()?.getAttribute('aria-labelledby')).toBe(search.id);
+  });
+
   it('leaves a short list unwindowed: every row rendered, no paddings', async () => {
     driver.host.options.set(makeOptions(8));
     driver.tick();

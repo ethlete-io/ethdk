@@ -19,6 +19,8 @@ import { SelectItem } from './select.tokens';
     '[attr.id]': 'item().id()',
     '[attr.aria-selected]': 'selected()',
     '[attr.aria-disabled]': 'item().disabled() || null',
+    '[attr.aria-setsize]': 'setSize()',
+    '[attr.aria-posinset]': 'posInSet()',
     '[attr.data-selected]': 'selected() || null',
     '[attr.data-active]': 'active() || null',
     '[attr.data-active-source]': 'activeSource()',
@@ -37,6 +39,18 @@ export class SelectVirtualOptionDirective {
   // effect writes after the fact) - a freshly windowed-in row must paint its selected state
   // on its very first frame
   public selected = computed(() => this.select?.isValueSelected(this.item().value()) ?? false);
+
+  protected setSize = computed(() => (this.select?.windowsOptions() ? this.select.visibleDataItems().length : null));
+
+  protected posInSet = computed(() => {
+    const select = this.select;
+
+    if (!select?.windowsOptions()) {
+      return null;
+    }
+
+    return select.virtualWindow.range().start + select.virtualizedItems().indexOf(this.item()) + 1;
+  });
 
   public active = computed(() => this.select?.activeItem() === this.item());
   protected activeSource = computed(() => (this.active() ? (this.select?.activeItemSource() ?? null) : null));

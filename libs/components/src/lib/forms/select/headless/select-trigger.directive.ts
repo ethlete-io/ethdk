@@ -16,9 +16,9 @@ import { SelectDirective } from './select.directive';
     '[attr.aria-required]': 'hasSearch() ? null : select?.required() || null',
     '[attr.aria-invalid]': 'hasSearch() ? null : select?.shouldDisplayError() || null',
     '[attr.aria-describedby]': 'hasSearch() ? null : select?.describedBy() || null',
-    '[attr.aria-label]': 'select?.ariaLabel() || staticAriaLabel',
-    '[attr.aria-labelledby]': 'labelledBy()',
-    '[attr.aria-disabled]': 'select?.disabled() || null',
+    '[attr.aria-label]': 'isGeneric() ? null : select?.ariaLabel() || staticAriaLabel',
+    '[attr.aria-labelledby]': 'isGeneric() ? null : labelledBy()',
+    '[attr.aria-disabled]': 'isGeneric() ? null : select?.disabled() || null',
     '[attr.data-disabled]': 'select?.disabled() || null',
     '[attr.data-readonly]': 'select?.readonly() || null',
     '[attr.tabindex]': 'tabIndex()',
@@ -47,6 +47,9 @@ export class SelectTriggerDirective {
   private readonly IS_NATIVELY_FOCUSABLE = ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA', 'A'].includes(
     this.elementRef.nativeElement.tagName,
   );
+
+  /** @internal Whether the trigger has no role of its own, so ARIA prohibits naming it. */
+  public isGeneric = computed(() => this.hasSearch() && !this.IS_NATIVELY_FOCUSABLE);
 
   protected tabIndex = computed(() => {
     if (this.IS_NATIVELY_FOCUSABLE || this.hasSearch()) {
