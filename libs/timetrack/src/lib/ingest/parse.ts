@@ -32,10 +32,13 @@ export type IngestParseResult = {
   rejected: Record<IngestRejection, number>;
 };
 
+/** The longest posted string that is kept. Longer than any path an operating system allows. */
+export const MAX_INGESTED_FIELD_LENGTH = 4096;
+
 const text = (payload: Record<string, unknown>, field: string) => {
   const value = payload[field];
 
-  return typeof value === 'string' && value.trim() ? value : undefined;
+  return typeof value === 'string' && value.trim() && value.length <= MAX_INGESTED_FIELD_LENGTH ? value : undefined;
 };
 
 const heartbeatOf = (record: IngestedRecord, at: Date): EditorHeartbeatEvent | null => {

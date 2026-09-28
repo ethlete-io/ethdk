@@ -118,10 +118,7 @@ export type AgentApiStandIn = {
   createdAtMs: number;
   /** The checkout the app opened it for. Absent on one the user opened by hand. */
   openedFor?: string;
-  /**
-   * The branch of that checkout it covers. Absent on a record opened before the grain was the branch,
-   * which is why such a record covers the whole checkout and blocks every branch of it.
-   */
+  /** The branch of that checkout it covers. Absent, the record covers every branch of the checkout. */
   openedForBranch?: string;
   /** The directory of that branch it covers, where the branch names no piece of work of its own. */
   openedForWorkPath?: string;
@@ -165,11 +162,8 @@ export type AgentApiRules = {
 };
 
 /**
- * One answer the user gave a meeting, as `settings.rules` reports it.
- *
- * `title` is the meeting's own name and it is here on purpose: without it a list of series keys says
- * nothing a reader can act on. A caller that forwards this to a hosted model forwards a meeting title
- * with it — see ADR 0013.
+ * One answer the user gave a meeting, as `settings.rules` reports it. `title` is the meeting's own name,
+ * so a caller that forwards this to a hosted model forwards a meeting title with it.
  */
 export type AgentApiMeetingNaming = {
   seriesKey: string;
@@ -522,9 +516,7 @@ export type AgentApiRequest =
 
 /**
  * One commit a split reads a directory out of: the local day it counts toward, and its changed files.
- *
- * The caller reads these out of `git log --name-only`. A commit collected before Timetrack recorded
- * file paths carries none in the store, which is every commit a wrongly grained placeholder covers.
+ * The caller reads these out of `git log --name-only`.
  */
 export type AgentApiWorkCommit = { day: string; paths: string[] };
 

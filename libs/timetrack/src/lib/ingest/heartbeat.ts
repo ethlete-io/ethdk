@@ -40,7 +40,8 @@ const directoryOf = (path: string) => {
  * directory that genuinely differs by case look like the same one.
  */
 const relativeTo = (options: { path: string; root?: string }) => {
-  const { path, root } = options;
+  const path = options.path.replace(/\\/g, '/');
+  const root = options.root?.replace(/\\/g, '/').replace(/\/+$/, '');
 
   return root && path.startsWith(`${root}/`) ? path.slice(root.length + 1) : path;
 };

@@ -62,6 +62,14 @@ describe('heartbeatRecordOf', () => {
     expect(record?.['directory']).toBe('C:/Users/tom/dev/sdk/libs/core');
   });
 
+  it('reports the directory inside a Windows checkout relative to it', () => {
+    const record = heartbeatRecordOf(
+      snapshot({ repoPath: 'C:\\Users\\tom\\dev\\sdk', filePath: 'C:\\Users\\tom\\dev\\sdk\\libs\\core\\index.ts' }),
+    );
+
+    expect(record?.['directory']).toBe('libs/core');
+  });
+
   it('omits a branch the editor could not read rather than sending an empty one', () => {
     expect(heartbeatRecordOf(snapshot({ branch: undefined }))).not.toHaveProperty('branch');
   });

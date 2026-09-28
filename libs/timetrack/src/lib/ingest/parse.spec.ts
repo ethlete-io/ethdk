@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { EditorHeartbeatEvent } from '../model/event';
 import { IngestedRecord } from './model';
-import { DEFAULT_MAX_AHEAD_MS, DEFAULT_MAX_BEHIND_MS, parseIngestedRecords, rejectedCount } from './parse';
+import {
+  DEFAULT_MAX_AHEAD_MS,
+  DEFAULT_MAX_BEHIND_MS,
+  MAX_INGESTED_FIELD_LENGTH,
+  parseIngestedRecords,
+  rejectedCount,
+} from './parse';
 
 const NOW = new Date(2026, 7, 16, 14, 0, 0);
 
@@ -51,6 +57,19 @@ describe('parseIngestedRecords', () => {
 
     expect(event.branch).toBeUndefined();
     expect(event.language).toBeUndefined();
+  });
+
+  it('drops a field longer than any path or branch could be', () => {
+    const long = 'x'.repeat(MAX_INGESTED_FIELD_LENGTH + 1);
+    const { events, rejected } = parse([
+      record({ payload: { repoPath: '/home/tom/dev/x', branch: long, language: long } }),
+      record({ payload: { repoPath: `/${long}`, directory: long } }),
+    ]);
+
+    expect((events[0] as EditorHeartbeatEvent).branch).toBeUndefined();
+    expect((events[0] as EditorHeartbeatEvent).language).toBeUndefined();
+    expect(events).toHaveLength(1);
+    expect(rejected.malformed).toBe(1);
   });
 
   it('refuses a heartbeat that names neither a checkout nor a directory', () => {
