@@ -24,35 +24,42 @@ export const promptOriginAt = (options: {
   events: readonly CollectedEvent[];
   at: Date;
   windowMs?: number;
-}): PromptOrigin => {
-  const from = options.at.getTime() - (options.windowMs ?? DESK_INPUT_WINDOW_MS);
-  const until = options.at.getTime();
+}): PromptOrigin => promptOriginReader(options)(options.at);
+
+/** {@link promptOriginAt} for many prompts over the same events, which it sorts once. */
+export const promptOriginReader = (options: { events: readonly CollectedEvent[]; windowMs?: number }) => {
+  const windowMs = options.windowMs ?? DESK_INPUT_WINDOW_MS;
   const inputs = options.events.filter(isInput).sort((left, right) => left.at.getTime() - right.at.getTime());
 
-  let active: boolean | undefined;
-  let activeAtFrom: boolean | undefined;
+  return (at: Date): PromptOrigin => {
+    const from = at.getTime() - windowMs;
+    const until = at.getTime();
 
-  let next: InputEvent | undefined;
+    let active: boolean | undefined;
+    let activeAtFrom: boolean | undefined;
 
-  for (const event of inputs) {
-    const instant = event.at.getTime();
+    let next: InputEvent | undefined;
 
-    if (instant > until) {
-      next = event;
-      break;
+    for (const event of inputs) {
+      const instant = event.at.getTime();
+
+      if (instant > until) {
+        next = event;
+        break;
+      }
+
+      if (instant >= from) {
+        if (event.kind === 'input-active' || active) return 'desk';
+      } else {
+        activeAtFrom = event.kind === 'input-active';
+      }
+
+      active = event.kind === 'input-active';
     }
 
-    if (instant >= from) {
-      if (event.kind === 'input-active' || active) return 'desk';
-    } else {
-      activeAtFrom = event.kind === 'input-active';
-    }
+    if (activeAtFrom === undefined) return 'unknown';
+    if (activeAtFrom) return 'desk';
 
-    active = event.kind === 'input-active';
-  }
-
-  if (activeAtFrom === undefined) return 'unknown';
-  if (activeAtFrom) return 'desk';
-
-  return next?.kind === 'input-active' ? 'remote' : 'unknown';
+    return next?.kind === 'input-active' ? 'remote' : 'unknown';
+  };
 };

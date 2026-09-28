@@ -97,18 +97,21 @@ const belongsTo = (appId: string, application: string) => {
 /** What a rule is matched against: the process that held the microphone, and the title it was named from. */
 type Named = { appId: string; title: string };
 
-const matches = (patterns: readonly string[], named: Named) =>
-  patterns.some((pattern) => {
+const compiled = (patterns: readonly string[]) =>
+  patterns.flatMap((pattern) => {
     // A pattern is a line the user typed, so an unfinished one must not take the day's reading down
     // with it. An unreadable pattern matches nothing, which under default-deny is the safe direction.
     try {
-      const expression = new RegExp(pattern, 'i');
-
-      return expression.test(named.appId) || expression.test(named.title);
+      return [new RegExp(pattern, 'i')];
     } catch {
-      return false;
+      return [];
     }
   });
+
+type CompiledCallRules = { countsAsWork: readonly RegExp[]; neverCountsAsWork: readonly RegExp[] };
+
+const matches = (expressions: readonly RegExp[], named: Named) =>
+  expressions.some((expression) => expression.test(named.appId) || expression.test(named.title));
 
 /**
  * Whether this call counts as work. Deny beats everything, and nothing saying so is no — except a
@@ -119,7 +122,7 @@ const matches = (patterns: readonly string[], named: Named) =>
  * one signal that tells them apart without a rule, so a huddle over the daily counts even when no rule
  * names the application it was held in.
  */
-const countsAsWork = (options: { rules: TimetrackCallRules; named: Named; expected: boolean }) =>
+const countsAsWork = (options: { rules: CompiledCallRules; named: Named; expected: boolean }) =>
   !matches(options.rules.neverCountsAsWork, options.named) &&
   (options.expected || matches(options.rules.countsAsWork, options.named));
 
@@ -201,7 +204,7 @@ const pairCallEdges = (calls: readonly CallEvent[]) => {
   const open = new Map<string, Date>();
   const closed: PairedCall[] = [];
 
-  for (const call of calls) {
+  for (const call of [...calls].sort((left, right) => left.at.getTime() - right.at.getTime())) {
     if (call.kind === 'call-start') {
       if (!open.has(call.appId)) open.set(call.appId, call.at);
 
@@ -268,6 +271,10 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
   );
 
   const titleSettleMs = options.titleSettleMs ?? DEFAULT_CALL_TITLE_SETTLE_MS;
+  const rules: CompiledCallRules = {
+    countsAsWork: compiled(options.rules.countsAsWork),
+    neverCountsAsWork: compiled(options.rules.neverCountsAsWork),
+  };
 
   const toWindow = (call: PairedCall): CallWindow => {
     const focusTitle = titleAt(focus, { appId: call.appId, at: call.from, settleMs: titleSettleMs });
@@ -295,8 +302,8 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
       to: call.to,
       title,
       attendedMs: attended,
-      countsAsWork: attendedCall && countsAsWork({ rules: options.rules, named, expected }),
-      isPresence: attendedCall && !matches(options.rules.neverCountsAsWork, named),
+      countsAsWork: attendedCall && countsAsWork({ rules, named, expected }),
+      isPresence: attendedCall && !matches(rules.neverCountsAsWork, named),
     };
   };
 

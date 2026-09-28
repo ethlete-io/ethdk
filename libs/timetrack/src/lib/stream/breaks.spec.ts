@@ -23,6 +23,17 @@ describe('breakWindows', () => {
     ]);
   });
 
+  it('reads a day with more work spans and remote prompts than a call can take as arguments', () => {
+    const many = 300_000;
+    const work = Array.from({ length: many }, () => window([9, 0], [17, 0]));
+    const remotePrompts = Array.from({ length: many }, () => at(12, 0));
+
+    expect(breakWindows({ presence: [MORNING, AFTERNOON], work, remotePrompts })).toEqual([
+      { from: at(11, 0), to: at(11, 45), locked: false },
+      { from: at(12, 0), to: at(12, 30), locked: false },
+    ]);
+  });
+
   it('leaves a gap shorter than the limit to the work around it', () => {
     expect(breakWindows({ presence: [MORNING, window([11, 10], [17, 0])] })).toEqual([]);
   });

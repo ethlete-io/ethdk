@@ -46,6 +46,13 @@ describe('classifyCalls', () => {
     expect(windows[0]!.appId).toBe('com.hnc.Discord.helper.Renderer');
   });
 
+  it('pairs the edges by time, whatever order the events arrive in', () => {
+    const windows = classify([call(45, 'call-end', 'com.hnc.Discord'), call(0, 'call-start', 'com.hnc.Discord')]);
+
+    expect(windows).toHaveLength(1);
+    expect(windows[0]!.to).toEqual(at(45));
+  });
+
   it('runs a call nobody has ended yet to the cut-off', () => {
     const windows = classify([call(0, 'call-start', 'com.hnc.Discord')], {}, 90);
 
@@ -264,6 +271,15 @@ describe('closeAbandonedCalls', () => {
     expect(ends).toHaveLength(1);
     expect(ends[0]!.kind).toBe('call-end');
     expect(ends[0]!.appId).toBe('pw-record');
+  });
+
+  it('owes no end for a call whose end arrived before its start', () => {
+    const ends = closeAbandonedCalls({
+      events: [call(10, 'call-end', 'pw-record'), call(0, 'call-start', 'pw-record'), focus(12, 'chrome', 'a tab')],
+      watchingSince: at(30),
+    });
+
+    expect(ends).toEqual([]);
   });
 
   it('marks the end as the app stopping watching, so the reading can join the room back up', () => {

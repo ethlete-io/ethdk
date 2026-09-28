@@ -29,7 +29,7 @@ import {
   remoteWorkWindows,
 } from './breaks';
 import { classifyCalls, lastHostSampleAt } from './calls';
-import { promptOriginAt } from './prompt-origin';
+import { promptOriginReader } from './prompt-origin';
 import { PresenceSample, presenceWindows } from './presence';
 import { UnnamedFocus, UnnamedFocusReason, mergeUnnamedTitles } from './unnamed-focus';
 import { fileAgentEventsByWork } from './worked-in';
@@ -612,9 +612,6 @@ const sessionRuns = (samples: readonly ActivityEvent[], roots: readonly string[]
  * sample instead makes the stretch flap between two sessions, and a lane holding a quarter of an hour
  * is then drawn as twenty slivers none of which a reader can name.
  *
- * Which of the two the user was really looking at is what slice 3 of
- * `plans/timetrack/one-session-one-piece.md` decides.
- *
  * Before the first run and after the last one the nearest run stands, the way `workPathAt` carries the
  * last directory on. A checkout that ran one session therefore reads as that session all day, and cuts
  * exactly where it cut before a session was carried at all.
@@ -1185,12 +1182,10 @@ export const streamDay = (options: {
     // which checkout is in front of you, not what is checked out in it.
     if (observed) branches.set(observed.repoPath, observed.branch ?? branches.get(observed.repoPath));
 
-    // A window title and an editor heartbeat may set the sticky. A commit and an agent session may not:
-    // they label a stream, and neither is a reason to hand the following minutes to the checkout they
-    // name — which is what put a Figma tab and a merge-request page on the checkout somebody had just
-    // committed in. A heartbeat is the opposite case. It only fires while its own window has focus, so
-    // it says which checkout that window holds, which is what a title reading `Visual Studio Code`
-    // cannot say when two editor windows are open on different repositories.
+    // A window title and an editor heartbeat may set the sticky; a commit and an agent session may not,
+    // or the minutes after a commit go to its checkout whatever window is in front. A heartbeat only
+    // fires while its own window has focus, so it names the checkout even when two editor windows are
+    // open on different repositories.
     if (focused && sample.kind === 'window-focus') sticky = { repoPath: focused, at: sample.at, appId };
     if (sample.kind === 'editor-heartbeat' && observed) sticky = { repoPath: observed.repoPath, at: sample.at, appId };
     if (sticky && sample.at.getTime() - sticky.at.getTime() > config.repoStickinessMs) sticky = undefined;
@@ -1435,19 +1430,21 @@ export const streamDay = (options: {
   // A prompt the agent gave itself buys nothing back: nobody read anything and nobody typed. See
   // ADR 0018.
   const typed = prompts.filter((prompt) => prompt.askedBy !== 'machine');
-  const remote = typed.filter((prompt) => promptOriginAt({ events: inputs, at: prompt.at }) === 'remote');
+  const originAt = promptOriginReader({ events: inputs });
+  const remote = typed.filter((prompt) => originAt(prompt.at) === 'remote');
+  const remoteSet = new Set(remote);
   const away = {
     presence,
     events,
     pauses: config.rows?.pauses,
     work: attendedSpans,
     minBreakMs: config.minBreakMs,
-    prompts: typed.filter((prompt) => !remote.includes(prompt)).map((prompt) => prompt.at),
+    prompts: typed.filter((prompt) => !remoteSet.has(prompt)).map((prompt) => prompt.at),
     remotePrompts: remote.map((prompt) => prompt.at),
     promptAttentionMs: config.promptAttentionMs,
   };
   const gaps = breakGaps(away);
-  const breaks = breakWindows(away);
+  const breaks = breakWindows({ ...away, gaps });
   const remoteOptions = {
     breaks: gaps,
     remotePrompts: away.remotePrompts,

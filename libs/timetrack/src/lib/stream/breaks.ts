@@ -106,8 +106,12 @@ export const breakGaps = (options: {
   const minBreakMs = options.minBreakMs ?? DEFAULT_MIN_BREAK_MS;
   const maxBreakMs = options.maxBreakMs ?? DEFAULT_MAX_BREAK_MS;
   const work = options.work ?? [];
-  const workFrom = work.length ? Math.min(...work.map((window) => window.from.getTime())) : undefined;
-  const workTo = work.length ? Math.max(...work.map((window) => window.to.getTime())) : undefined;
+  const workFrom = work.length
+    ? work.reduce((earliest, window) => Math.min(earliest, window.from.getTime()), Infinity)
+    : undefined;
+  const workTo = work.length
+    ? work.reduce((latest, window) => Math.max(latest, window.to.getTime()), -Infinity)
+    : undefined;
   const breaks: BreakWindow[] = [];
 
   ordered.forEach((earlier, index) => {
@@ -156,7 +160,10 @@ export const remoteWorkWindows = (options: {
 
     if (!inside.length) return [];
 
-    return [{ from: new Date(Math.max(from, Math.min(...inside) - attentionMs)), to: new Date(Math.max(...inside)) }];
+    const first = inside.reduce((earliest, at) => Math.min(earliest, at), Infinity);
+    const last = inside.reduce((latest, at) => Math.max(latest, at), -Infinity);
+
+    return [{ from: new Date(Math.max(from, first - attentionMs)), to: new Date(last) }];
   });
 };
 
@@ -208,9 +215,14 @@ export const bookedRemoteWindows = (options: {
  * than `minBreakMs` is dropped. Each desk prompt then shortens the part it ends by
  * `promptAttentionMs`, down to `minBreakMs` and never past it.
  */
-export const breakWindows = (options: Parameters<typeof breakGaps>[0]): BreakWindow[] => {
+export const breakWindows = (
+  options: Parameters<typeof breakGaps>[0] & {
+    /** What `breakGaps` answered for these same options, to skip reading it again. */
+    gaps?: readonly BreakWindow[];
+  },
+): BreakWindow[] => {
   const minBreakMs = options.minBreakMs ?? DEFAULT_MIN_BREAK_MS;
-  const gaps = breakGaps(options);
+  const gaps = options.gaps ?? breakGaps(options);
   const remote = remoteWorkWindows({
     breaks: gaps,
     remotePrompts: options.remotePrompts ?? [],
