@@ -217,6 +217,8 @@ const isFlexibleTrack = (track: string) => /\bauto\b|[\d.]fr\b/.test(track);
  */
 const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
+const isError = (value: unknown) => value !== null && value !== undefined && value !== false;
+
 /** Sub-pixel slack (px) before a scroll offset counts as "there is content over there". */
 const SCROLL_FADE_EPSILON = 1;
 
@@ -331,8 +333,8 @@ export class TableComponent<T> {
   public loading = input(false, { transform: booleanAttribute });
 
   /**
-   * The load's failure, if any - anything non-nullish counts (an `HttpErrorResponse`, a message, a
-   * flag), so it takes a query's `error` signal as-is. Set, it replaces the body with the error
+   * The load's failure, if any - anything but `null`, `undefined` or `false` counts (an
+   * `HttpErrorResponse`, a message, `true`), so it takes a query's `error` signal as-is. Set, it replaces the body with the error
    * state: stale rows under an unreported failure are worse than an honest empty table. Say more than
    * the `error` label with {@link errorTemplate} (which gets the error) or a projected `[etTableError]`.
    */
@@ -347,7 +349,8 @@ export class TableComponent<T> {
 
   /**
    * Body content for the error state, in place of the `error` label. Context: `{ $implicit: error }` -
-   * whatever was bound to {@link error} - so the template can render the message and a retry.
+   * the {@link error} input's value, else the {@link rowsSource} error - so the template can render the
+   * message and a retry.
    * Takes precedence over projected `[etTableError]` content.
    */
   public errorTemplate = input<TemplateRef<TableErrorContext>>();
@@ -956,10 +959,18 @@ export class TableComponent<T> {
   public rowIndexOffset = computed(() => this.rowWindow()?.offset() ?? 0);
 
   /** The failure in effect: the `error` input, else whatever a bound {@link rowsSource} reports. */
-  public resolvedError = computed(() => this.error() ?? this.rowsSource()?.error?.() ?? null);
+  public resolvedError = computed(() => {
+    const error = this.error();
+
+    if (isError(error)) return error;
+
+    const sourceError = this.rowsSource()?.error?.();
+
+    return isError(sourceError) ? sourceError : null;
+  });
 
   /** Whether there is a failure to show - the error state then stands in for the body. */
-  public hasError = computed(() => this.resolvedError() !== null && this.resolvedError() !== undefined);
+  public hasError = computed(() => this.resolvedError() !== null);
 
   /** Whether rows are loading: the `loading` input, or a bound {@link rowsSource} with a request out. */
   public resolvedLoading = computed(() => this.loading() || (this.rowsSource()?.loading?.() ?? false));
@@ -1088,7 +1099,7 @@ export class TableComponent<T> {
   protected spacers = computed(() => {
     const window = this.rowWindow();
 
-    if (!window || !this.rows().length) return null;
+    if (!window || !this.rows().length || this.hasError()) return null;
 
     return { start: window.paddingStart(), end: window.paddingEnd() };
   });

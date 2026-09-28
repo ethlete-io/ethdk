@@ -115,7 +115,7 @@ than resetting them.
 | `labels`              | injected set | Partial wording override for this table - see [Localization](#localization).                                         |
 | `emptyTemplate`       | -            | Template for the empty state. Context: `{ $implicit: rows }`.                                                        |
 | `loading`             | `false`      | Placeholder rows when there are no rows yet, a busy bar over existing ones. See [below](#loading-error-states).      |
-| `error`               | `null`       | Anything non-nullish replaces the body with the error state.                                                         |
+| `error`               | `null`       | Anything but `null`, `undefined` or `false` replaces the body with the error state.                                  |
 | `errorTemplate`       | -            | Template for the error state. Context: `{ $implicit: error }`.                                                       |
 | `cellState`           | -            | `(row: T, key: string) => 'loading' \| 'error' \| null` for [per-cell states](#per-cell-states).                     |
 | `sort`                | `[]`         | Two-way bindable sort state - an ordered `{ key, direction }[]`. See [Sorting](#sorting).                            |
@@ -1307,8 +1307,8 @@ used, so a custom shape can stay in the same rhythm. Columns without one keep th
 line-of-text bone (`<et-skeleton-item shape="text">` from the
 [Skeleton](/components/skeleton) component), whose widths cycle so a block of them reads as text.
 
-**`error` replaces the body.** Anything non-nullish counts (an `HttpErrorResponse`, a
-message, `false`), and it outranks `loading` - stale rows sitting under an unreported
+**`error` replaces the body.** Anything but `null`, `undefined` or `false` counts (an
+`HttpErrorResponse`, a message, `true`), and it outranks `loading` - stale rows sitting under an unreported
 failure are worse than an honest empty table. The `error` [label](#localization) is the
 default text; for anything more use `errorTemplate` (it gets the error value) or project
 `[etTableError]`:

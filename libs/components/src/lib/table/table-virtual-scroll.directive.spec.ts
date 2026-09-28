@@ -28,6 +28,7 @@ const columns = () =>
     <et-table
       [columns]="cols"
       [data]="data"
+      [error]="error()"
       [etTableVirtualScroll]="{ estimateRowHeight: 40, overscan: 2, enabled: virtual() }"
     />
   `,
@@ -35,6 +36,7 @@ const columns = () =>
 })
 class HostComponent {
   public virtual = signal(false);
+  public error = signal<unknown>(null);
   public table = viewChild.required<TableComponent<Person>>(TableComponent);
 
   public readonly cols = columns();
@@ -101,6 +103,16 @@ describe('TableVirtualScrollDirective', () => {
     expect(spacers).toHaveLength(2);
     expect(spacers[0]!.style.blockSize).toBe('0px');
     expect(spacers[1]!.style.blockSize).toBe(`${(100 - 8) * 40}px`);
+  });
+
+  it('drops the spacers while the error state stands in for the rows', () => {
+    const fixture = create();
+
+    fixture.componentInstance.error.set('boom');
+    fixture.detectChanges();
+
+    expect(queryAll(fixture, '.et-table-error-cell')).toHaveLength(1);
+    expect(queryAll(fixture, '.et-table-spacer')).toHaveLength(0);
   });
 
   it('shifts the window and the index offset as the container scrolls', () => {

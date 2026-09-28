@@ -154,7 +154,7 @@
     <div class="et-table-message-row" role="row">
       <div class="et-table-error-cell" role="gridcell" aria-live="polite">
         @if (errorTemplate(); as template) {
-          <ng-container *ngTemplateOutlet="template; context: { $implicit: error() }" />
+          <ng-container *ngTemplateOutlet="template; context: { $implicit: resolvedError() }" />
         } @else {
           <ng-content select="[etTableError]">
             <i [etProvideColor]="errorColorTheme" class="et-table-error-icon" etIcon="et-triangle-exclamation"></i>

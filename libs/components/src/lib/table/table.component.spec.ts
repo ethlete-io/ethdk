@@ -976,7 +976,7 @@ describe('TableComponent', () => {
       expect(host.querySelectorAll('.et-table-row:not(.et-table-row--placeholder)').length).toBe(PEOPLE.length);
     });
 
-    it('replaces the body with the error state for any non-nullish error, ahead of loading', () => {
+    it('replaces the body with the error state for any error but null, undefined or false, ahead of loading', () => {
       const fixture = create(columns());
       const host = hostOf(fixture);
 
@@ -991,9 +991,11 @@ describe('TableComponent', () => {
       setStates(fixture, { labels: { error: 'Nope' } });
       expect(host.querySelector('.et-table-error-cell')?.textContent?.trim()).toBe('Nope');
 
-      // `false` and `0` are legitimate error payloads; only null/undefined clear the state.
-      setStates(fixture, { error: false });
+      setStates(fixture, { error: 0 });
       expect(host.querySelector('.et-table-error-cell')).not.toBeNull();
+
+      setStates(fixture, { error: false });
+      expect(host.querySelector('.et-table-error-cell')).toBeNull();
 
       setStates(fixture, { error: null });
       expect(host.querySelector('.et-table-error-cell')).toBeNull();
@@ -1131,6 +1133,40 @@ describe('TableComponent', () => {
       fixture.componentInstance.error.set({ message: 'nope' });
       fixture.detectChanges();
       expect(host.querySelector('.et-table-error-cell')?.textContent?.trim()).toBe('failed: nope');
+    });
+
+    it('hands a rows source error to the template', () => {
+      @Component({
+        template: `
+          <et-table [columns]="cols" [rowsSource]="source" [errorTemplate]="failure">
+            <ng-template #failure let-error>failed: {{ error }}</ng-template>
+          </et-table>
+        `,
+        imports: [TABLE_IMPORTS],
+      })
+      class HostComponent {
+        cols = columns();
+        source = { rows: signal<Person[]>([]), loading: signal(false), error: signal<string | null>('nope') };
+      }
+
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      expect(hostOf(fixture).querySelector('.et-table-error-cell')?.textContent?.trim()).toBe('failed: nope');
+    });
+
+    it('lets a rows source error through an error input of false', () => {
+      const fixture = create(columns());
+
+      fixture.componentRef.setInput('rowsSource', {
+        rows: signal<Person[]>([]),
+        loading: signal(false),
+        error: signal('boom'),
+      });
+      fixture.componentRef.setInput('error', false);
+      fixture.detectChanges();
+
+      expect(hostOf(fixture).querySelector('.et-table-error-cell')).not.toBeNull();
     });
   });
 
