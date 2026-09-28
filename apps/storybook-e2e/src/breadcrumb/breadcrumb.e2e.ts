@@ -173,7 +173,7 @@ test.describe('breadcrumb / keyboard', () => {
 
     await expect(nav.getByRole('listitem')).toHaveCount(5);
     await expect(skeleton).toHaveCount(1);
-    await expect(skeleton).toHaveAttribute('aria-busy', 'true');
+    await expect(skeleton).not.toHaveAttribute('aria-busy');
     await expect(nav.locator('li:last-child et-skeleton')).toHaveCount(1);
 
     const width = await skeleton.evaluate((el) => el.getBoundingClientRect().width);

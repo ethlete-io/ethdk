@@ -22,11 +22,23 @@ class SkeletonTestHost {
 }
 
 describe('SkeletonComponent', () => {
-  it('marks itself busy for assistive tech', () => {
+  it('is a status region that is not marked busy, so the loading text gets announced', () => {
     const driver = mountSkeleton(SkeletonTestHost);
 
     expect(driver.query('et-skeleton')?.getAttribute('role')).toBe('status');
-    expect(driver.query('et-skeleton')?.getAttribute('aria-busy')).toBe('true');
+    expect(driver.query('et-skeleton')?.hasAttribute('aria-busy')).toBe(false);
+  });
+
+  it('re-renders lines of equal width without duplicate-key warnings', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const driver = mountSkeleton(SkeletonTestHost);
+
+    driver.host.lastLineWidth.set(40);
+    driver.detectChanges();
+
+    expect(warn.mock.calls.flat().join(' ')).not.toContain('NG0955');
+
+    warn.mockRestore();
   });
 
   it('announces the default loader label when none is given', () => {

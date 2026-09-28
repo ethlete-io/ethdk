@@ -56,7 +56,7 @@ class ArticlePlaceholderComponent {
 describe('skeleton scenarios', () => {
   const scenario = useScenario();
 
-  it('announces one busy status while the shapes stay hidden, then swaps in the content', () => {
+  it('announces one status, not marked busy, while the shapes stay hidden, then swaps in the content', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(ProfileCardComponent);
     const page = fixture.componentInstance;
@@ -67,7 +67,7 @@ describe('skeleton scenarios', () => {
     const skeleton = host.querySelector('et-skeleton')!;
 
     expect(skeleton.getAttribute('role')).toBe('status');
-    expect(skeleton.getAttribute('aria-busy')).toBe('true');
+    expect(skeleton.hasAttribute('aria-busy')).toBe(false);
     expect(skeleton.querySelector('.et-skeleton-ally-text')?.textContent).toBe('Loading…');
     expect(
       Array.from(skeleton.querySelectorAll('et-skeleton-item')).every((item) => item.getAttribute('aria-hidden')),

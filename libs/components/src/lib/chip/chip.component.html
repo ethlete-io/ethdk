@@ -1,9 +1,9 @@
-<span class="et-chip-label">
+<span [id]="labelId" class="et-chip-label">
   <ng-content />
 </span>
 
 @if (chip.removable()) {
-  <button class="et-chip-remove-button" etChipRemove>
+  <button [attr.aria-describedby]="labelId" class="et-chip-remove-button" etChipRemove>
     <i etIcon="et-times"></i>
   </button>
 }

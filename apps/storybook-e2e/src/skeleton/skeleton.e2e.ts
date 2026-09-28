@@ -48,7 +48,7 @@ test.describe('skeleton / structure', () => {
 
     await expect(skeleton).toHaveCount(1);
     await expect(skeleton).toHaveAttribute('role', 'status');
-    await expect(skeleton).toHaveAttribute('aria-busy', 'true');
+    await expect(skeleton).not.toHaveAttribute('aria-busy');
     await expect(root.getByRole('status')).toHaveText('Loading…');
   });
 
@@ -260,7 +260,7 @@ test.describe('skeleton / structure', () => {
     const skeleton = root.locator(SKELETON);
 
     await expect(skeleton).not.toHaveClass(/et-skeleton--animated/);
-    await expect(skeleton).toHaveAttribute('aria-busy', 'true');
+    await expect(skeleton).not.toHaveAttribute('aria-busy');
     await expect(root.getByRole('status')).toHaveText('Loading…');
     await expect(root.locator(ITEM)).toHaveCount(animatedBones);
 
@@ -277,7 +277,7 @@ test.describe('skeleton / structure', () => {
     const skeleton = root.locator(SKELETON);
 
     await expect(skeleton).toHaveClass(/et-skeleton--animated/);
-    await expect(skeleton).toHaveAttribute('aria-busy', 'true');
+    await expect(skeleton).not.toHaveAttribute('aria-busy');
 
     const shimmer = await readShimmer(root.locator(ITEM).first());
 

@@ -64,6 +64,19 @@ class NestedToolbarHostComponent {}
 })
 class ToolbarInputHostComponent {}
 
+@Component({
+  selector: 'et-test-toolbar-hidden-host',
+  template: `
+    <et-toolbar aria-label="Formatting">
+      <button type="button">Bold</button>
+      <button hidden type="button">Italic</button>
+      <span aria-label="Note" contenteditable="true" role="textbox"></span>
+    </et-toolbar>
+  `,
+  imports: [TOOLBAR_IMPORTS],
+})
+class ToolbarHiddenHostComponent {}
+
 const buttonsOf = (fixture: { nativeElement: HTMLElement }) =>
   Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[];
 
@@ -160,6 +173,22 @@ describe('ToolbarComponent', () => {
     press(toolbar, 'Home');
 
     expect(document.activeElement).toBe(buttons[0]);
+  });
+
+  it('skips hidden controls and counts a contenteditable as a control', () => {
+    const fixture = TestBed.createComponent(ToolbarHiddenHostComponent);
+    fixture.detectChanges();
+
+    const [bold] = buttonsOf(fixture);
+    const note = fixture.nativeElement.querySelector('[contenteditable]') as HTMLElement;
+    const toolbar = fixture.nativeElement.querySelector('et-toolbar') as HTMLElement;
+
+    expect(note.tabIndex).toBe(-1);
+
+    bold!.focus();
+    press(toolbar, 'ArrowRight');
+
+    expect(document.activeElement).toBe(note);
   });
 
   it('uses the vertical arrow keys when vertical', () => {

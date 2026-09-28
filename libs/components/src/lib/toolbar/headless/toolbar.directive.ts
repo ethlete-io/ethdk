@@ -3,9 +3,18 @@ import { afterEveryRender, Directive, ElementRef, inject, input } from '@angular
 import { isFormInputTarget } from '../../internals/form-input-target';
 import { TOOLBAR_ORIENTATIONS, ToolbarOrientation } from './toolbar.types';
 
-const CONTROL_SELECTOR = 'button, [href], input, select, textarea';
+const CONTROL_SELECTOR = 'button, [href], input, select, textarea, [contenteditable]:not([contenteditable="false"])';
 const TOOLBAR_SELECTOR = '[role="toolbar"]';
 const KEYLESS_INPUT_TYPES = /* @__PURE__ */ new Set(['button', 'checkbox', 'image', 'reset', 'submit']);
+
+const isEnabled = (control: HTMLElement) => !(control as HTMLElement & { disabled?: boolean }).disabled;
+
+const isRendered = (control: HTMLElement) => {
+  if (typeof control.checkVisibility === 'function') return control.checkVisibility();
+
+  // eslint-disable-next-line ethlete/no-dom-query -- fallback where checkVisibility is missing (older Safari, jsdom); the controls are arbitrary projected content
+  return !control.closest('[hidden]');
+};
 
 const ownsNavigationKeys = (target: EventTarget | null) =>
   isFormInputTarget(target) && !(target instanceof HTMLInputElement && KEYLESS_INPUT_TYPES.has(target.type));
@@ -18,7 +27,7 @@ const ownsNavigationKeys = (target: EventTarget | null) =>
  *
  * Every focusable control rendered inside the host is a toolbar control - projected content,
  * `@for` output and components that own their own button templates included - so nothing has to be
- * marked up per item. Natively disabled controls are skipped; controls belonging to a nested
+ * marked up per item. Natively disabled and hidden controls are skipped; controls belonging to a nested
  * toolbar stay with that toolbar.
  *
  * Pair it with an accessible name (`aria-label`, or `aria-labelledby` pointing at a visible
@@ -53,7 +62,7 @@ export class ToolbarDirective {
 
   /** Moves focus to the toolbar's first control, the tab stop a fresh Tab would land on. */
   public focusFirst() {
-    this.focusableControls()[0]?.focus();
+    this.navigableControls()[0]?.focus();
   }
 
   protected handleKeydown(event: KeyboardEvent) {
@@ -65,7 +74,7 @@ export class ToolbarDirective {
     const previousKey = horizontal ? (rtl ? 'ArrowRight' : 'ArrowLeft') : 'ArrowUp';
 
     let target: HTMLElement | undefined;
-    const controls = this.focusableControls();
+    const controls = this.navigableControls();
 
     if (!controls.length) return;
 
@@ -117,22 +126,25 @@ export class ToolbarDirective {
     return found.filter((control) => !nested.includes(control) && !nested.some((toolbar) => toolbar.contains(control)));
   }
 
-  private focusableControls() {
-    return this.controls().filter((control) => !(control as HTMLElement & { disabled?: boolean }).disabled);
+  private focusableControls(controls = this.controls()) {
+    return controls.filter(isEnabled);
+  }
+
+  private navigableControls() {
+    return this.focusableControls().filter(isRendered);
   }
 
   private syncTabStops() {
-    const focusable = this.focusableControls();
+    const controls = this.controls();
+    const focusable = this.focusableControls(controls);
 
     if (!this.tabStop || !focusable.includes(this.tabStop)) {
       this.tabStop = focusable[0] ?? null;
     }
 
-    for (const control of this.controls()) {
+    for (const control of controls) {
       const tabIndex = control === this.tabStop ? 0 : -1;
 
-      // written imperatively rather than as a binding: the controls are arbitrary projected content,
-      // so only touch the DOM when the value changed to keep the per-render pass free
       if (control.tabIndex !== tabIndex) control.tabIndex = tabIndex;
     }
   }

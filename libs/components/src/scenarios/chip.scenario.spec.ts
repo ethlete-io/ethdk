@@ -194,6 +194,21 @@ describe('chip scenarios', () => {
     expect(page.removed).toEqual(['team-a', 'team-b']);
   });
 
+  it("describes each remove button by its chip's label, so a row of them is told apart", () => {
+    const s = scenario();
+
+    TestBed.createComponent(TeamFiltersComponent);
+    s.tick();
+
+    const descriptions = queryAll('et-chip .et-chip-remove-button').map((button) => {
+      const id = button.getAttribute('aria-describedby');
+
+      return id ? text(document.getElementById(id)) : null;
+    });
+
+    expect(descriptions).toEqual(['team-a', 'team-b', 'team-c']);
+  });
+
   it('hands focus to the next chip, then the previous one, once a chip is removed from the keyboard', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(DepartmentChipsComponent);

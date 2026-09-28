@@ -23,11 +23,11 @@ import { SKELETON_IMPORTS } from '@ethlete/components';
 </et-skeleton>
 ```
 
-| Component          | What it is                                                                                   |
-| ------------------ | -------------------------------------------------------------------------------------------- |
-| `et-skeleton`      | The container: `role="status"`, `aria-busy`, the shimmer switch, and the gap between shapes. |
-| `et-skeleton-item` | One shape. `aria-hidden` - the container's text is the announcement.                         |
-| `et-skeleton-text` | A paragraph of lines, the last one short.                                                    |
+| Component          | What it is                                                                      |
+| ------------------ | ------------------------------------------------------------------------------- |
+| `et-skeleton`      | The container: `role="status"`, the shimmer switch, and the gap between shapes. |
+| `et-skeleton-item` | One shape. `aria-hidden` - the container's text is the announcement.            |
+| `et-skeleton-text` | A paragraph of lines, the last one short.                                       |
 
 ### Container inputs
 

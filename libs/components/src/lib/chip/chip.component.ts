@@ -1,6 +1,9 @@
 import { Component, ViewEncapsulation, inject } from '@angular/core';
 import { IconDirective, TIMES_ICON, provideIcons } from '../icon';
+import { createIdFactory } from '../internals/id-factory';
 import { ChipDirective, ChipRemoveDirective } from './headless';
+
+const createChipLabelId = /* @__PURE__ */ createIdFactory('et-chip-label');
 
 @Component({
   selector: 'et-chip',
@@ -22,4 +25,5 @@ import { ChipDirective, ChipRemoveDirective } from './headless';
 })
 export class ChipComponent {
   protected chip = inject(ChipDirective);
+  protected labelId = createChipLabelId();
 }

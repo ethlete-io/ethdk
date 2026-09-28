@@ -24,7 +24,6 @@ import { injectLoaderLabels } from '../loader';
   host: {
     class: 'et-skeleton',
     role: 'status',
-    'aria-busy': 'true',
     '[class.et-skeleton--animated]': 'animated()',
   },
 })
