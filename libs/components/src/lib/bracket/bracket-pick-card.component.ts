@@ -98,6 +98,8 @@ export class BracketPickCardComponent<TRoundData = unknown, TMatchData = unknown
 
   protected readonly NOTE_ID = `et-bracket-pick-card-note-${uniqueId++}`;
 
+  protected pickedLabel = computed(() => this.labels().pickCardPicked);
+
   protected noteColorTheme = computed<ColorThemeInput>(() =>
     this.noteTone() === BRACKET_PICK_CARD_NOTE_TONE.INVALID ? this.ERROR_COLOR_THEME : null,
   );

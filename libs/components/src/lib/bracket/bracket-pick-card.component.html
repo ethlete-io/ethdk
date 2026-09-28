@@ -23,6 +23,10 @@
           class="et-bracket-pick-card-side"
         >
           <ng-container [ngTemplateOutlet]="sideBody" [ngTemplateOutletContext]="{ item: item }" />
+
+          @if (item.selected) {
+            <span class="et-bracket-pick-card-picked">{{ pickedLabel() }}</span>
+          }
         </div>
       }
     }

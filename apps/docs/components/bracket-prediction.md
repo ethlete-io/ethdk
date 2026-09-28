@@ -124,7 +124,8 @@ state.
 
 Both sides must be resolved before either becomes a control, so a partial matchup, a bye and a side no
 pick reaches are non-focusable text rather than a dead button. The chosen side carries `aria-pressed`
-and a filled mark; a selectable side that is not chosen shows the pick it would make on hover. A
+and a filled mark - or, once it is no longer a button (locked, disabled, readonly), a visually hidden
+note worded by the `pickCardPicked` label ("Your pick"); a selectable side that is not chosen shows the pick it would make on hover. A
 `predicted` side reads in the accent ink colour and carries a visually hidden “Prediction” note,
 worded by `predictedLabel`.
 

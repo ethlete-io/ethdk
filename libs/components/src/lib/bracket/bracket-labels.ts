@@ -50,6 +50,8 @@ export type BracketLabels = {
   slotNotPredicted: string;
   /** Names the `et-bracket-participants` legend for assistive tech. */
   participantsLegend: string;
+  /** Announced on the picked side of a locked, disabled or readonly pick card, which has no pressed button. */
+  pickCardPicked: string;
 };
 
 /** The built-in English labels. */
@@ -77,6 +79,7 @@ export const DEFAULT_BRACKET_LABELS: BracketLabels = {
   slotPredictEarlierRound: 'Predict the earlier round first',
   slotNotPredicted: 'Not predicted',
   participantsLegend: 'Participants',
+  pickCardPicked: 'Your pick',
 };
 
 const BRACKET_LABELS_DEF = /* @__PURE__ */ defineLabels<BracketLabels>('BRACKET_LABELS', DEFAULT_BRACKET_LABELS);

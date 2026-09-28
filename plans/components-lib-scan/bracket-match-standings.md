@@ -14,7 +14,6 @@ Scan of `libs/components/src/lib/bracket/`, `libs/components/src/lib/match/`, `l
 
 ## bracket: rounds list and cards
 
-- Medium: a locked or readonly pick card shows the picked side only through `data-selected` (`bracket/bracket-pick-card.component.html:18-26`). A screen reader user cannot hear which side they picked after the deadline. Add visually hidden text, or keep `aria-pressed` semantics on a disabled button. S Verified.
 - Low: a pick button's accessible name is the emblem `alt` followed by the name (`bracket/bracket-pick-card.component.html:5-16,50`). It reads "FC Berlin emblem FC Berlin". Give the button an `aria-label`, or give the emblem an empty `alt` inside the button. S
 - Low: `uniqueId` is a module counter (`bracket/bracket-pick-card.component.ts:20,99`). Use `createComponentId` from core, as `bracket.component.ts:212` does. S
 - Low: the error-theme lookup duplicates core's `injectErrorTheme` (`bracket/bracket-pick-card.component.ts:96-97`, `match/match-card.component.ts:80-82`). S

@@ -200,6 +200,23 @@ describe('BracketPickCardComponent', () => {
     expect(driver.root.querySelector('[data-selected]')).toBeTruthy();
   });
 
+  it('names the picked side in text once the pick is no longer a pressed button', () => {
+    const driver = create();
+
+    driver.host.locked.set(true);
+    driver.fixture.detectChanges();
+
+    const sides = Array.from(driver.root.querySelectorAll('.et-bracket-pick-card-side'));
+
+    expect(
+      sides.map((side) => side.querySelector('.et-bracket-pick-card-picked')?.textContent?.trim() ?? null),
+    ).toEqual(['Your pick', null]);
+  });
+
+  it('names no picked side while the pick is still a pressed button', () => {
+    expect(create().root.querySelector('.et-bracket-pick-card-picked')).toBeNull();
+  });
+
   describe('the note', () => {
     const withNote = (tone: BracketPickCardNoteTone) => {
       const driver = create();
