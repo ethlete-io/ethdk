@@ -266,6 +266,25 @@ describe('CalendarDirective', () => {
     expect(host.activeMonth()).toEqual(new Date(2025, 7, 1));
   });
 
+  it('keeps keyboard paging and arrows inside min/max', () => {
+    host.min.set(new Date(2026, 6, 10));
+    host.max.set(new Date(2026, 7, 20));
+    calendar.focusedDate.set(new Date(2026, 6, 16));
+    fixture.detectChanges();
+
+    press(fixture, 'PageDown', true);
+    expect(calendar.focusedDate()).toEqual(new Date(2026, 7, 20));
+    expect(host.activeMonth()).toEqual(new Date(2026, 7, 1));
+
+    press(fixture, 'ArrowRight');
+    expect(calendar.focusedDate()).toEqual(new Date(2026, 7, 20));
+
+    press(fixture, 'PageUp');
+    press(fixture, 'PageUp');
+    expect(calendar.focusedDate()).toEqual(new Date(2026, 6, 10));
+    expect(host.activeMonth()).toEqual(new Date(2026, 6, 1));
+  });
+
   it('disables dates outside min/max and via the date filter', () => {
     host.min.set(new Date(2026, 6, 10));
     host.max.set(new Date(2026, 6, 20));
@@ -1072,6 +1091,32 @@ describe('CalendarDirective', () => {
     const today = cells(fixture).find((cell) => cell.getAttribute('aria-current') === 'date');
 
     expect(today?.textContent?.trim()).toBe(`${new Date().getDate()}`);
+  });
+});
+
+describe('CalendarDirective today', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('moves aria-current to the new day after midnight', () => {
+    vi.useFakeTimers({ now: new Date(2026, 6, 14, 23, 59, 0) });
+
+    TestBed.configureTestingModule({ imports: [HostComponent] });
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+
+    const currentLabel = () =>
+      cells(fixture)
+        .find((cell) => cell.getAttribute('aria-current') === 'date')
+        ?.textContent?.trim();
+
+    expect(currentLabel()).toBe('14');
+
+    vi.advanceTimersByTime(2 * 60 * 1000);
+    fixture.detectChanges();
+
+    expect(currentLabel()).toBe('15');
   });
 });
 

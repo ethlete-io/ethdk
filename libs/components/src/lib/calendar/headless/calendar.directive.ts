@@ -27,6 +27,7 @@ import { isFormInputTarget } from '../../internals/form-input-target';
 import { positiveIntegerAttribute } from '../../internals/number-attributes';
 import { CalendarWeekStartsOn, generateMonthGrid } from './internals/calendar-month';
 import { resolveCalendarKeyboardDate } from './internals/calendar-keyboard';
+import { injectCalendarToday } from './internals/calendar-today';
 import {
   CALENDAR_MULTI_YEAR_PAGE_SIZE,
   CALENDAR_UNIT_IS_SAME,
@@ -136,6 +137,8 @@ export type CalendarWeekday = {
 export class CalendarDirective {
   private defaultLocale = injectDateLocale();
 
+  private today = injectCalendarToday();
+
   public mode = input<CalendarMode>('single');
   public min = input<Date | null>(null);
   public max = input<Date | null>(null);
@@ -220,8 +223,6 @@ export class CalendarDirective {
   /** The finest grid this calendar shows - the one whose cells hold {@link precision}'s unit. */
   public selectionView = computed(() => CALENDAR_PRECISION_VIEW[this.precision()]);
 
-  private today = startOfDay(new Date());
-
   public effectiveLocale = computed(() => this.locale() ?? this.defaultLocale);
 
   public effectiveFirstDayOfWeek = computed<CalendarWeekStartsOn>(
@@ -234,14 +235,14 @@ export class CalendarDirective {
     if (mode === 'range') {
       const range = this.rangeValue();
 
-      return range.start ?? range.end ?? this.startAt() ?? this.today;
+      return range.start ?? range.end ?? this.startAt() ?? this.today();
     }
 
     if (mode === 'multiple') {
-      return this.multipleValue()[0] ?? this.startAt() ?? this.today;
+      return this.multipleValue()[0] ?? this.startAt() ?? this.today();
     }
 
-    return this.value() ?? this.startAt() ?? this.today;
+    return this.value() ?? this.startAt() ?? this.today();
   });
 
   public visibleMonth = computed(() => startOfMonth(this.activeMonth() ?? this.anchorDate()));
@@ -347,7 +348,7 @@ export class CalendarDirective {
   public weekdays = computed<CalendarWeekday[]>(() => {
     const locale = this.effectiveLocale();
     const options = locale ? { locale } : undefined;
-    const weekStart = startOfWeek(this.today, { weekStartsOn: this.effectiveFirstDayOfWeek() });
+    const weekStart = startOfWeek(this.today(), { weekStartsOn: this.effectiveFirstDayOfWeek() });
 
     return Array.from({ length: 7 }, (_, dayIndex) => {
       const day = addDays(weekStart, dayIndex);
@@ -400,7 +401,7 @@ export class CalendarDirective {
             ariaLabel: format(date, 'PPPP', labelOptions),
             classes: this.resolveCellClasses(date, 'month'),
             disabled: this.isDateDisabled(date),
-            today: isSameDay(date, this.today),
+            today: isSameDay(date, this.today()),
             ...readSelection(date),
             outsideMonth: !isSameMonth(date, month),
             // one roving target across the whole span: an outside-month cell never claims it, or two
@@ -467,7 +468,7 @@ export class CalendarDirective {
         ariaLabel: format(month, 'LLLL yyyy', labelOptions),
         classes: this.resolveCellClasses(month, 'year'),
         disabled: this.isMonthDisabled(month),
-        today: isSameMonth(month, this.today),
+        today: isSameMonth(month, this.today()),
         ...readSelection(month),
         focused: isSameMonth(month, focused),
       })),
@@ -491,7 +492,7 @@ export class CalendarDirective {
           ariaLabel: label,
           classes: this.resolveCellClasses(year, 'multiYear'),
           disabled: this.isYearDisabled(year),
-          today: isSameYear(year, this.today),
+          today: isSameYear(year, this.today()),
           ...readSelection(year),
           focused: isSameYear(year, focused),
         };
@@ -705,7 +706,7 @@ export class CalendarDirective {
     }
 
     event.preventDefault();
-    this.moveFocus(target);
+    this.moveFocus(this.clampToAvailability(target));
   }
 
   private selectionReader(view: CalendarView) {
@@ -811,6 +812,16 @@ export class CalendarDirective {
         return { start: startOfMonth(stepped), end: endOfMonth(stepped) };
       }
     }
+  }
+
+  private clampToAvailability(date: Date) {
+    const min = this.min();
+    const max = this.max();
+
+    if (min !== null && isBefore(date, startOfDay(min))) return startOfDay(min);
+    if (max !== null && isAfter(date, startOfDay(max))) return startOfDay(max);
+
+    return date;
   }
 
   private moveFocus(date: Date) {
