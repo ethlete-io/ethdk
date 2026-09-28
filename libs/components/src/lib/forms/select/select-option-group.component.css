@@ -8,6 +8,10 @@
   et-select-option-group {
     display: block;
 
+    &[data-hidden] {
+      display: none;
+    }
+
     /* separate groups with a hairline above all but the first *visible* one — search
        filtering hides groups via [data-hidden], and a hidden group must neither draw a
        divider nor count as the preceding sibling (hence ~ instead of +) */

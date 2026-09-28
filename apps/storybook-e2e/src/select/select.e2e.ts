@@ -9,6 +9,7 @@ const ASYNC_OPTIONS_STORY_ID = 'components-forms-select--async-options';
 const OBJECT_VALUES_STORY_ID = 'components-forms-select--object-values';
 const SELECT_ALL_STORY_ID = 'components-forms-select--select-all';
 const MANY_OPTIONS_STORY_ID = 'components-forms-select--many-options';
+const OPTION_GROUP_SEARCH_STORY_ID = 'components-forms-select-option-group--with-search';
 
 /** The option's `id`, which `aria-activedescendant` must carry. No id is a failure, not a pass. */
 const idOf = async (option: Locator) => {
@@ -44,6 +45,24 @@ const startResizeWidthSampling = (page: Page) =>
 
 const readResizeWidthSamples = (page: Page) =>
   page.evaluate(() => (window as unknown as { resizeWidthSamples: ResizeWidthSample[] }).resizeWidthSamples);
+
+/** Deletes Tailwind preflight's `[hidden]` rule, so the page cascades like an app without Tailwind. */
+const dropPreflightHiddenRule = (page: Page) =>
+  page.evaluate(() => {
+    const prune = (owner: CSSStyleSheet | CSSGroupingRule) => {
+      for (let index = owner.cssRules.length - 1; index >= 0; index--) {
+        const rule = owner.cssRules[index];
+
+        if (rule instanceof CSSStyleRule && rule.selectorText.startsWith('[hidden]')) {
+          owner.deleteRule(index);
+        } else if (rule instanceof CSSGroupingRule) {
+          prune(rule);
+        }
+      }
+    };
+
+    for (const sheet of Array.from(document.styleSheets)) prune(sheet);
+  });
 
 const TRANSPARENT = 'rgba(0, 0, 0, 0)';
 
@@ -393,6 +412,25 @@ test.describe('select / virtualization', () => {
 
     await expect(page.getByRole('option')).toHaveCount(1);
     await expect(page.getByRole('option')).toContainText('Item 1999 -');
+  });
+});
+
+test.describe('select / option groups', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: group filtering is covered once');
+
+  test('a search hides a group whose options it all filters out, without Tailwind preflight', async ({ page }) => {
+    const root = await openStory(page, OPTION_GROUP_SEARCH_STORY_ID);
+    const search = page.getByPlaceholder('Search players');
+
+    await dropPreflightHiddenRule(page);
+    await root.getByRole('combobox').click();
+    await expect(search).toBeFocused();
+
+    await search.pressSequentially('Kane');
+
+    await expect(page.getByRole('option')).toHaveCount(1);
+    await expect(page.locator('et-select-option-group', { hasText: 'Midfielders' })).toBeHidden();
+    await expect(page.locator('et-select-option-group', { hasText: 'Forwards' })).toBeVisible();
   });
 });
 

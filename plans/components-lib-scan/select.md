@@ -7,10 +7,6 @@ Scan of `libs/components/src/lib/forms/select/` from 2026-09-28. 0 High, 7 Mediu
 - Low: an option's text label is read once in `afterNextRender` (`forms/select/headless/select-option.directive.ts:156-158`). When projected text changes later (`{{ user.name }}` after a reload, a locale switch) the trigger display, filtering and typeahead keep the old text until the option instance is recreated. Observe the text (MutationObserver or re-read on panel mount) or document `label` as required for dynamic text. M Re-rated from Medium: the `label` JSDoc documents the first-paint read, and panel options are recreated on each open, so only the closed trigger display stays stale.
 - Medium: with a custom `compareWith`, the `options` sync is O(n^2) on every `options` change (`forms/select/headless/select.directive.ts:626-647`). A fresh array of new object instances (the normal API case) misses the exact-key lookup, so each entry scans the whole registry and `nextItems`; 5 000 options cost about 25M `compareWith` calls. This is the data-driven, virtualized path meant for large lists. Accept a key function, or index the registry by a key derived once per value. M Verified.
 
-## groups
-
-- Medium: a group whose options are all filtered out still renders its header (`forms/select/select-option-group.component.css:8-9`, `forms/select/headless/select-option-group.directive.ts:23`). The directive hides the group with the `hidden` attribute, but the author rule `et-select-option-group { display: block }` beats the UA `[hidden] { display: none }`, so a search shows empty group headers. The spec asserts only the attribute (`select-option-group.directive.spec.ts:58-63`). Add `&[data-hidden] { display: none; }` to the group rule. S Re-rated from High: cosmetic, and Tailwind v4 preflight (`[hidden] { display: none !important }`) masks it in Tailwind apps such as Storybook and ea-frontend.
-
 ## a11y
 
 - Low: windowed data-driven rows have no `aria-setsize`/`aria-posinset` (`forms/select/headless/select-virtual-option.directive.ts:16-27`). Past 40 options a screen reader announces the count of rendered rows, not of all options. S
@@ -28,11 +24,6 @@ Scan of `libs/components/src/lib/forms/select/` from 2026-09-28. 0 High, 7 Mediu
 - Low: `SelectLabels` JSDoc names `customValues` (the input is `allowCustomValues`) and calls `create` "the confirm action" (it is the leading text of the "Create ..." row) (`forms/select/select-labels.ts:5`, `:16`). S
 - Low: hardcoded colour as primary value in the panel shadow (`forms/select/select-panel.component.css:59`). Use a shadow token. S
 - Low: comments outside the AGENTS.md allowlist: rationale and narration at `forms/select/headless/select.directive.ts:363`, `:901-902`, `:967`, `:1298-1299`, `:1374`, `:1467-1468`; `forms/select/headless/select-search.directive.ts:76-77`, `:170-172`, `:183-184`, `:200-201`; `forms/select/headless/select-options.directive.ts:69-70`; `forms/select/select-panel.component.ts:8-13`; `forms/select/select-option.component.ts:11-12`; `forms/select/select-virtual-option.component.ts:27-29`. S
-
-## spec gaps
-
-- Spec: no spec for an option with its own `id` and `aria-activedescendant`, nor for a swapped `[etSelectOptions]` bundle. S
-- Spec: group hiding needs a Storybook/Playwright check on computed `display`, since jsdom does not apply the stylesheet. S
 
 ## panel controller and selection state (second pass)
 
