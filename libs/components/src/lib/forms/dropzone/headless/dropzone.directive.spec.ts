@@ -5,7 +5,7 @@ import { QueryTestSetup, setupQueryTest } from '@ethlete/query/testing';
 import '../../../../test-helpers';
 import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
 import { MountedDropzoneDriver, mountDropzone } from '../../testing/dropzone-driver';
-import { DropzoneEntry } from './dropzone-entry';
+import { DropzoneEntry, createExistingDropzoneEntry, isFileAccepted } from './dropzone-entry';
 import { AnyDropzoneUploadConfig, createDropzoneUpload } from './dropzone-upload';
 import { DropzoneFileConstraints, DropzoneFileRejection, dropzoneFiles } from './dropzone-validation';
 import { DropzoneDirective } from './dropzone.directive';
@@ -445,6 +445,43 @@ describe('DropzoneDirective', () => {
 
       expect(driver.dropzone.isDragOver()).toBe(false);
       expect(driver.attr('data-disabled')).toBe('true');
+    });
+
+    it('should drop the drag over state when a drag leaves after the control turned disabled', () => {
+      driver.drag('dragenter');
+      driver.host.disabled.set(true);
+      driver.tick();
+
+      driver.drag('dragleave');
+
+      expect(driver.dropzone.isDragOver()).toBe(false);
+    });
+
+    it('should cancel a file drop on a readonly dropzone without adding the file', () => {
+      driver.host.readonly.set(true);
+      driver.tick();
+
+      const dragOver = driver.drag('dragover');
+      const drop = driver.drag('drop', [createFile()]);
+
+      expect(dragOver.defaultPrevented).toBe(true);
+      expect(dragOver.dataTransfer?.dropEffect).toBe('none');
+      expect(drop.defaultPrevented).toBe(true);
+      expect(driver.dropzone.entries().length).toBe(0);
+      driver.query.httpTesting.expectNone(UPLOAD_URL);
+    });
+
+    it('should accept any file type with accept="*/*"', () => {
+      expect(isFileAccepted(createFile('notes.txt', 'text/plain'), '*/*')).toBe(true);
+    });
+
+    it('should not name an unresolved object value "[object Object]"', () => {
+      const entry = createExistingDropzoneEntry<{ id: string }>({
+        value: { id: 'e1' },
+        upload: signal({ resolveExisting: () => ({}) } as unknown as AnyDropzoneUploadConfig<{ id: string }>),
+      });
+
+      expect(entry.name()).toBe('');
     });
 
     it('should dispose all entries on destroy', () => {

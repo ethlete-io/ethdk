@@ -187,7 +187,8 @@ rest is forwarded to the headless directive, which also carries the outputs:
 `disabled(s, …)`) and both stop every mutation - selecting, dropping, replacing,
 retrying, removing, `removeAll()` and `clear()`. They differ in what the user sees: a **read-only** dropzone
 keeps its entries at full contrast, because there is nothing to operate; a
-**disabled** one dims and shows `not-allowed`. See
+**disabled** one dims and shows `not-allowed`. A file dropped on either is swallowed, so the
+browser does not navigate away to it. See
 [Forms](/components/forms#the-field-shell) for the shared convention.
 
 A read-only dropzone also stops looking like a drop target, so it does not offer a
@@ -210,7 +211,7 @@ The built-in texts all come from [`DROPZONE_LABELS`](/components/localization) -
 All constraints live in the form schema, next to the rest of your validation:
 
 - **Emptiness and count** are plain value validation - `required()` for "must upload something", `minLength()` / `maxLength()` for the number of files in multiple mode (type the model as `string[]` for that).
-- **File constraints** use the `dropzoneFiles()` schema rule: `accept` (native semantics - `.png`, `image/png`, `image/*`; also filters the native picker), `maxFileSize` and `minFileSize` (bytes).
+- **File constraints** use the `dropzoneFiles()` schema rule: `accept` (native semantics - `.png`, `image/png`, `image/*`, `*/*`; also filters the native picker), `maxFileSize` and `minFileSize` (bytes).
 
 ```ts
 form(model, (s) => {

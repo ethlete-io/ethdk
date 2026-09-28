@@ -31,14 +31,18 @@ import {
 } from '../../icon/headless';
 import { ProgressBarComponent } from '../../loader/progress-bar/progress-bar.component';
 import { FormSupportComponent } from '../form-field/partials/form-support.component';
-import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../form-field/headless';
+import {
+  ACCESSIBLE_NAME_INPUTS,
+  FormFieldDirective,
+  injectFormSupport,
+  provideFormSupport,
+} from '../form-field/headless';
 import { DropzoneItemComponent } from './dropzone-item.component';
 import { DropzonePreviewStylesComponent } from './dropzone-preview-styles.component';
 import { DropzoneReadonlyStylesComponent } from './dropzone-readonly-styles.component';
 import { DropzoneEntry, DROPZONE_ENTRY_STATUSES, formatFileSize } from './headless/dropzone-entry';
 import { DropzoneDirective } from './headless/dropzone.directive';
-import { injectDropzoneLabels } from '../../forms/dropzone/dropzone-labels';
-import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
+import { injectDropzoneLabels } from './dropzone-labels';
 
 @Component({
   selector: 'et-dropzone',
@@ -250,6 +254,13 @@ export class DropzoneComponent {
       .catch(() => undefined)
       .finally(() => {
         this.removingEntryIds.delete(entry.id);
+
+        if (!this.dropzoneDir.interactive()) {
+          animation.cancel();
+          this.renderer.removeStyle(entryElement, 'pointerEvents');
+
+          return;
+        }
 
         const siblings = this.entryElements()
           .map((ref) => ref.nativeElement)

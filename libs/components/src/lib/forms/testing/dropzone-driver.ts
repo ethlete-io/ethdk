@@ -14,7 +14,7 @@ const DROPZONE_TYPE = DropzoneDirective as Type<DropzoneDirective<string>>;
 const dragEvent = (type: string, files: File[]) => {
   const event = new Event(type, { bubbles: true, cancelable: true });
 
-  Object.defineProperty(event, 'dataTransfer', { value: { types: ['Files'], files } });
+  Object.defineProperty(event, 'dataTransfer', { value: { types: ['Files'], files, dropEffect: 'none' } });
 
   return event;
 };
@@ -38,8 +38,12 @@ export const createDropzoneDriver = <T>(fixture: ComponentFixture<T>, options: C
 
     attr: (name: string) => dropzoneEl().getAttribute(name),
     drag: (type: string, files: File[] = []) => {
-      dropzoneEl().dispatchEvent(dragEvent(type, files));
+      const event = dragEvent(type, files);
+
+      dropzoneEl().dispatchEvent(event);
       tick();
+
+      return event as DragEvent;
     },
 
     nativeInput,

@@ -377,28 +377,32 @@ export class DropzoneDirective<TValue = unknown>
   }
 
   protected handleDragOver(event: DragEvent) {
-    if (!this.interactive() || !event.dataTransfer?.types.includes('Files')) {
+    if (!event.dataTransfer?.types.includes('Files')) {
       return;
     }
 
+    // a file dropped on a page that did not cancel the drag makes the browser navigate to it
     event.preventDefault();
+
+    if (!this.interactive()) {
+      event.dataTransfer.dropEffect = 'none';
+    }
   }
 
   protected handleDragLeave() {
-    if (!this.interactive()) {
-      return;
-    }
-
     this.dragDepth.update((depth) => Math.max(0, depth - 1));
   }
 
   protected handleDrop(event: DragEvent) {
+    if (event.dataTransfer?.types.includes('Files')) {
+      event.preventDefault();
+    }
+
+    this.dragDepth.set(0);
+
     if (!this.interactive()) {
       return;
     }
-
-    event.preventDefault();
-    this.dragDepth.set(0);
 
     const files = event.dataTransfer?.files;
 

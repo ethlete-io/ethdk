@@ -133,7 +133,7 @@ export const createExistingDropzoneEntry = <TValue>(
   return {
     id: randomId(),
     source: { type: 'existing', value },
-    name: computed(() => info().name ?? String(value)),
+    name: computed(() => info().name ?? (typeof value === 'object' && value !== null ? '' : String(value))),
     size: computed(() => info().size ?? null),
     previewUrl: computed(() => info().previewUrl ?? null),
     status: computed(() => DROPZONE_ENTRY_STATUSES.EXISTING),
@@ -169,6 +169,10 @@ export const isFileAccepted = (file: File, accept: string) => {
   return rules.some((rule) => {
     if (rule.startsWith('.')) {
       return name.endsWith(rule);
+    }
+
+    if (rule === '*/*') {
+      return true;
     }
 
     if (rule.endsWith('/*')) {

@@ -4,6 +4,7 @@ import '../../../test-helpers';
 import { expectDescribedByPointsAtErrors } from '../testing/described-by';
 import { HintComponent } from '../form-field/hint.component';
 import { mountControl } from '../../testing/control-driver';
+import { flushFrames } from '../../testing/driver-core';
 import { LabelDirective } from '../form-field/headless';
 import { MountedDropzoneDriver, mountDropzone } from '../testing/dropzone-driver';
 import { provideDropzoneLabels } from './dropzone-labels';
@@ -232,6 +233,41 @@ describe('DropzoneComponent', () => {
 
     expect(driver.itemEls().length).toBe(0);
     expect(driver.host.value()).toEqual([]);
+  });
+
+  it('should restore an entry whose animated removal the control refused', async () => {
+    driver.host.multiple.set(true);
+    driver.tick();
+
+    driver.pickFiles([createFile('a.png')]);
+    driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-a' });
+    driver.tick();
+    await flushFrames();
+
+    let finish = () => undefined as void;
+    const animation = { finished: new Promise<void>((resolve) => (finish = resolve)), cancel: vi.fn() };
+    const animate = vi.fn(() => animation as unknown as Animation);
+    const originalAnimate = HTMLElement.prototype.animate;
+
+    HTMLElement.prototype.animate = animate;
+
+    try {
+      driver.click(driver.removeButton(0)!);
+      expect(animate).toHaveBeenCalled();
+
+      driver.host.disabled.set(true);
+      driver.tick();
+      finish();
+      await flushFrames();
+      driver.tick();
+
+      expect(animation.cancel).toHaveBeenCalled();
+      expect(driver.itemEls().length).toBe(1);
+      expect(driver.itemEls()[0]!.style.pointerEvents).toBe('');
+      expect(driver.host.value()).toEqual(['uuid-a']);
+    } finally {
+      HTMLElement.prototype.animate = originalAnimate;
+    }
   });
 
   it('should show a validation-style error with a retry button for failed uploads', () => {
