@@ -209,17 +209,18 @@ Checked in dev mode only. Every check throws while the directive is constructed,
 
 ## Stream (ET16xx)
 
-| Code     | Cause                                                                       | Fix                                                                                  |
-| -------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `ET1600` | The configured consent component doesn't provide the stream consent token.  | Add `hostDirectives: [StreamConsentDirective]` to the consent component.             |
-| `ET1601` | A platform SDK script failed to load.                                       | Check the URL and network - ad blockers commonly block player SDKs.                  |
-| `ET1602` | The Twitch Embed SDK loaded but its global isn't available.                 | Ensure the Twitch Embed SDK URL is accessible and not rewritten.                     |
-| `ET1603` | The YouTube IFrame API loaded but `YT.Player` isn't available.              | Ensure the YouTube IFrame API URL is accessible and not rewritten.                   |
-| `ET1604` | The configured PiP chrome component doesn't provide the PiP chrome token.   | Implement `PipChromeRef` and provide `PIP_CHROME_REF_TOKEN` with `useExisting`.      |
-| `ET1605` | The Facebook SDK loaded but its global isn't available.                     | Ensure the Facebook SDK URL is accessible and not rewritten.                         |
-| `ET1606` | The Vimeo Player SDK isn't available, or the player failed to become ready. | Ensure the Vimeo SDK URL is accessible; the message contains the underlying failure. |
-| `ET1607` | The TikTok player reported an error.                                        | The message contains the platform's error value; the video may be unavailable.       |
-| `ET1608` | A Facebook video didn't become ready in time.                               | The video may be unavailable or restricted.                                          |
+| Code     | Cause                                                                       | Fix                                                                                               |
+| -------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `ET1600` | The configured consent component doesn't provide the stream consent token.  | Add `hostDirectives: [StreamConsentDirective]` to the consent component.                          |
+| `ET1601` | A platform SDK script failed to load.                                       | Check the URL and network - ad blockers commonly block player SDKs.                               |
+| `ET1602` | The Twitch Embed SDK loaded but its global isn't available.                 | Ensure the Twitch Embed SDK URL is accessible and not rewritten.                                  |
+| `ET1603` | The YouTube IFrame API loaded but `YT.Player` isn't available.              | Ensure the YouTube IFrame API URL is accessible and not rewritten.                                |
+| `ET1604` | The configured PiP chrome component doesn't provide the PiP chrome token.   | Implement `PipChromeRef` and provide `PIP_CHROME_REF_TOKEN` with `useExisting`.                   |
+| `ET1605` | The Facebook SDK loaded but its global isn't available.                     | Ensure the Facebook SDK URL is accessible and not rewritten.                                      |
+| `ET1606` | The Vimeo Player SDK isn't available, or the player failed to become ready. | Ensure the Vimeo SDK URL is accessible; the message contains the underlying failure.              |
+| `ET1607` | The TikTok player reported an error.                                        | The message contains the platform's error value; the video may be unavailable.                    |
+| `ET1608` | A Facebook video didn't become ready in time.                               | The video may be unavailable or restricted.                                                       |
+| `ET1609` | The YouTube player reported an error.                                       | The message contains the YouTube error code; the video may be removed, private or not embeddable. |
 
 ## Notification (ET17xx)
 

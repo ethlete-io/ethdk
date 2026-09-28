@@ -23,9 +23,8 @@ import {
 } from '@ethlete/components';
 ```
 
-`STREAM_IMPORTS` holds only what every stream shares - the consent gate, the loading and error overlays
-and the `etStreamPlayerSlot` directive. Each platform ships its own barrel, so the seven you don't use
-stay out of your bundle:
+`STREAM_IMPORTS` holds only what every stream shares - the consent gate and the loading and error
+overlays. Each platform ships its own barrel, so the seven you don't use stay out of your bundle:
 
 | Platform    | Barrel                       |
 | ----------- | ---------------------------- |
@@ -55,6 +54,8 @@ Source inputs per platform:
 | SOOP        | `userId` or `videoId`                                        | -                               |
 
 Every slot additionally accepts `width` / `height` (iframe sizing - usually leave them alone and size via CSS), `streamSlotPriority` (when several slots want the same player id, a priority slot wins the player) and `streamSlotOnPipBack` (declarative PiP-return callback, the template-friendly alternative to `pipActivate(onBack)`).
+
+Only a change of the source input creates a new embed. The extras, `width` and `height` are read when the embed is created, so changing them later has no effect until the source changes or the player is retried.
 
 ## Live demo
 

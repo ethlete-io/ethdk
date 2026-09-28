@@ -1,18 +1,18 @@
 import { Directive, booleanAttribute, computed, input, inputBinding, numberAttribute } from '@angular/core';
 import { STREAM_PLAYER_PARAMS_TOKEN, StreamPlayerParams } from '../../../stream-player-slot.directive';
+import { streamSizeAttribute } from '../../../stream-size';
 
-// Matches Twitch VOD URLs: twitch.tv/videos/123 or twitch.tv/video/123
 const MATCH_VIDEO = /(?:www\.|go\.)?twitch\.tv\/(?:videos?\/)([\d]+)/;
-// Matches Twitch channel URLs: twitch.tv/channelname
-const MATCH_CHANNEL = /(?:www\.|go\.)?twitch\.tv\/([a-zA-Z0-9_]+)/;
+const MATCH_CHANNEL = /(?:www\.|go\.)?twitch\.tv\/(?!videos?(?:[/?#]|$))([a-zA-Z0-9_]+)/;
+const BARE_CHANNEL = /^[a-zA-Z0-9_]+$/;
 
 @Directive({
   providers: [{ provide: STREAM_PLAYER_PARAMS_TOKEN, useExisting: TwitchPlayerParamsDirective }],
 })
 export class TwitchPlayerParamsDirective implements StreamPlayerParams {
   public src = input.required<string>();
-  public width = input<string | number>('100%');
-  public height = input<string | number>('100%');
+  public width = input<string | number, string | number>('100%', { transform: streamSizeAttribute });
+  public height = input<string | number, string | number>('100%', { transform: streamSizeAttribute });
   public autoplay = input(false, { transform: booleanAttribute });
   public chat = input(false, { transform: booleanAttribute });
   public startTime = input(0, { transform: numberAttribute });
@@ -22,7 +22,7 @@ export class TwitchPlayerParamsDirective implements StreamPlayerParams {
     if (MATCH_VIDEO.test(s)) return null;
     const m = s.match(MATCH_CHANNEL);
     if (m) return m[1] ?? null;
-    return /^\d+$/.test(s) ? null : s;
+    return BARE_CHANNEL.test(s) && !/^\d+$/.test(s) ? s : null;
   });
 
   public video = computed(() => {

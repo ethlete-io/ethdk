@@ -11,6 +11,8 @@ import { injectStreamLabels } from '../../../stream-labels';
 
 export const TIKTOK_PLAYER_TOKEN = new InjectionToken<TikTokPlayerDirective>('TIKTOK_PLAYER_TOKEN');
 
+const TIKTOK_ORIGIN = 'https://www.tiktok.com';
+
 const TIKTOK_PLAYER_STATE = { INIT: -1, ENDED: 0, PLAYING: 1, PAUSED: 2, BUFFERING: 3 } as const;
 
 @Directive({
@@ -52,7 +54,7 @@ export class TikTokPlayerDirective implements StreamPlayer {
         const w = this.params.width();
         const h = this.params.height();
 
-        iframe.src = `https://www.tiktok.com/player/v1/${videoId}?rel=0`;
+        iframe.src = `${TIKTOK_ORIGIN}/player/v1/${encodeURIComponent(videoId)}?rel=0`;
         iframe.title = this.streamLabels().playerFrame('TikTok');
         iframe.width = typeof w === 'number' ? String(w) : w;
         iframe.height = typeof h === 'number' ? String(h) : h;
@@ -165,6 +167,6 @@ export class TikTokPlayerDirective implements StreamPlayer {
     if (!this.iframe?.contentWindow) return;
     const message: Record<string, unknown> = { 'x-tiktok-player': true, type };
     if (value !== undefined) message['value'] = value;
-    this.iframe.contentWindow.postMessage(message, '*');
+    this.iframe.contentWindow.postMessage(message, TIKTOK_ORIGIN);
   }
 }

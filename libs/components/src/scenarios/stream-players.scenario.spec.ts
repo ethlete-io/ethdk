@@ -347,6 +347,7 @@ class CustomSlotHostComponent {
 })
 class HeadlessTwitchComponent {
   twitch = inject(TWITCH_PLAYER_TOKEN);
+  params = inject(TwitchPlayerParamsDirective);
   stream: StreamPlayer = inject(STREAM_PLAYER_TOKEN);
 }
 
@@ -509,6 +510,19 @@ class EmbedsComponent {
 }
 
 @Component({
+  selector: 'et-scenario-hostile-ids',
+  imports: [STREAM_KICK_IMPORTS, STREAM_SOOP_IMPORTS, STREAM_DAILYMOTION_IMPORTS, STREAM_TIKTOK_IMPORTS],
+  template: `
+    <et-kick-player class="kick" channel="x?parent=other.host&" />
+    <et-soop-player class="soop-live" userId="a/b" />
+    <et-soop-player class="soop-vod" videoId="1#2" />
+    <et-dailymotion-player class="dailymotion" videoId="../x" />
+    <et-tiktok-player class="tiktok" videoId="v?rel=1" />
+  `,
+})
+class HostileIdsComponent {}
+
+@Component({
   selector: 'et-scenario-watch-party',
   imports: [STREAM_ALL_IMPORTS],
   template: `
@@ -633,7 +647,7 @@ describe('stream player scenarios', () => {
     const [player] = players;
 
     expect(player?.config.videoId).toBe('match-recap');
-    expect(player?.config.width).toBe('640');
+    expect(player?.config.width).toBe(640);
     expect(player?.config.playerVars?.start).toBe(30);
     expect(query('et-youtube-player', slotHost).contains(slotHost.querySelector('et-stream-player-loading'))).toBe(
       false,
@@ -736,6 +750,46 @@ describe('stream player scenarios', () => {
     expect(yt.destroyed).toBe(true);
   });
 
+  it('surfaces a YouTube player error as the player error state', async () => {
+    const s = scenario();
+    const players = installYoutube();
+    const fixture = TestBed.createComponent(HighlightsComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.flush();
+    fireScript(s, YT_API_URL);
+
+    const [yt] = players;
+
+    if (!yt) throw new Error('no YT.Player');
+
+    yt.config.events?.onReady?.({ target: yt as never });
+    await s.settle();
+    yt.config.events?.onError?.({ target: yt as never, data: 150 });
+    await s.settle();
+
+    const slot = fixture.componentInstance.slot().slotDirective.slot;
+
+    expect(String(slot.currentState().error)).toContain('YouTube player error: 150');
+    expect(query('et-youtube-player-slot', host).querySelector('et-stream-player-error')).not.toBeNull();
+  });
+
+  it('keeps provider ids inside one path segment of the embed URL', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(HostileIdsComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.flush();
+
+    const src = (selector: string) => query<HTMLIFrameElement>(`${selector} iframe`, host).src;
+
+    expect(src('.kick')).toBe('https://player.kick.com/x%3Fparent%3Dother.host%26?parent=localhost');
+    expect(src('.soop-live')).toBe('https://play.afreecatv.com/a%2Fb/embed');
+    expect(src('.soop-vod')).toBe('https://vod.afreecatv.com/player/1%232');
+    expect(src('.dailymotion')).toBe('https://www.dailymotion.com/embed/video/..%2Fx?autoplay=0');
+    expect(src('.tiktok')).toBe('https://www.tiktok.com/player/v1/v%3Frel%3D1?rel=0');
+  });
+
   it('builds a slot of its own from the YouTube params and slot directives', () => {
     const s = scenario();
     const players = installYoutube();
@@ -800,6 +854,21 @@ describe('stream player scenarios', () => {
 
     expect(embeds.at(-1)?.options).toMatchObject({ video: '987', time: '1h2m5s' });
     expect(fixture.componentInstance.slot().slotDirective.slot.currentPlayerIdSignal()).toBe('twitch-video-555');
+
+    const { params } = fixture.componentInstance.headless();
+    const embedCount = embeds.length;
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    for (const src of ['https://twitch.tv/videos', 'https://example.com/live', 'not a channel']) {
+      fixture.componentInstance.src.set(src);
+      s.flush();
+
+      expect(params.channel()).toBeNull();
+      expect(params.video()).toBeNull();
+    }
+
+    expect(embeds).toHaveLength(embedCount);
+    warn.mockRestore();
   });
 
   it('waits for the Vimeo player to become ready and relays its events', async () => {
@@ -959,6 +1028,7 @@ describe('stream player scenarios', () => {
 
     tiktok.seek(7);
     tiktok.unmute();
+    expect(post.mock.calls.map(([, origin]) => origin)).toEqual(['https://www.tiktok.com', 'https://www.tiktok.com']);
     expect(post.mock.calls.map(([message]) => message)).toEqual([
       { 'x-tiktok-player': true, type: 'seekTo', value: 7 },
       { 'x-tiktok-player': true, type: 'unMute' },

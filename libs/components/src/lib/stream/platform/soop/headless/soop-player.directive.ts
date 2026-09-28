@@ -54,9 +54,9 @@ export class SoopPlayerDirective implements StreamPlayer {
         const h = this.params.height();
 
         if (params.userId) {
-          iframe.src = `https://play.afreecatv.com/${params.userId}/embed`;
+          iframe.src = `https://play.afreecatv.com/${encodeURIComponent(params.userId)}/embed`;
         } else {
-          iframe.src = `https://vod.afreecatv.com/player/${params.videoId}`;
+          iframe.src = `https://vod.afreecatv.com/player/${encodeURIComponent(params.videoId ?? '')}`;
         }
 
         iframe.title = this.streamLabels().playerFrame('SOOP');
@@ -96,20 +96,22 @@ export class SoopPlayerDirective implements StreamPlayer {
     });
   }
 
-  // SOOP embeds have no programmatic control API - these are intentional no-ops.
-
   public play() {
     // no-op
   }
+
   public pause() {
     // no-op
   }
+
   public mute() {
     // no-op
   }
+
   public unmute() {
     // no-op
   }
+
   public seek() {
     // no-op
   }

@@ -47,7 +47,7 @@ export class FacebookPlayerDirective implements StreamPlayer {
     stream: ({ params: videoId }) => {
       if (!videoId) return EMPTY;
 
-      const videoUrl = `https://www.facebook.com/video/${videoId}`;
+      const videoUrl = `https://www.facebook.com/video/${encodeURIComponent(videoId)}`;
 
       return new Observable<FacebookVideoPlayer>((subscriber) => {
         const win = this.document.defaultView as unknown as FacebookWindow;

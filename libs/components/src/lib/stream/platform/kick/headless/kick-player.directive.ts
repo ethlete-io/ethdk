@@ -48,7 +48,7 @@ export class KickPlayerDirective implements StreamPlayer {
         const qs = new URLSearchParams({ parent: this.document.defaultView?.location.hostname ?? '' });
         if (this.params.muted()) qs.set('muted', 'true');
 
-        iframe.src = `https://player.kick.com/${channel}?${qs}`;
+        iframe.src = `https://player.kick.com/${encodeURIComponent(channel)}?${qs}`;
         iframe.title = this.streamLabels().playerFrame('Kick');
         iframe.width = String(this.params.width());
         iframe.height = String(this.params.height());
@@ -86,20 +86,22 @@ export class KickPlayerDirective implements StreamPlayer {
     });
   }
 
-  // Kick embeds have no programmatic control API - these are intentional no-ops.
-
   public play() {
     // no-op
   }
+
   public pause() {
     // no-op
   }
+
   public mute() {
     // no-op
   }
+
   public unmute() {
     // no-op
   }
+
   public seek() {
     // no-op
   }

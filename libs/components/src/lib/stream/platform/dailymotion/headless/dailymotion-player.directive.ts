@@ -50,7 +50,7 @@ export class DailymotionPlayerDirective implements StreamPlayer {
 
         const w = this.params.width();
         const h = this.params.height();
-        iframe.src = `https://www.dailymotion.com/embed/video/${videoId}?${qs}`;
+        iframe.src = `https://www.dailymotion.com/embed/video/${encodeURIComponent(videoId)}?${qs}`;
         iframe.title = this.streamLabels().playerFrame('Dailymotion');
         iframe.width = typeof w === 'number' ? String(w) : w;
         iframe.height = typeof h === 'number' ? String(h) : h;
@@ -85,8 +85,6 @@ export class DailymotionPlayerDirective implements StreamPlayer {
       }));
     });
   }
-
-  // Dailymotion embeds have no programmatic control API without a dashboard-created player ID
 
   public play() {
     // no-op

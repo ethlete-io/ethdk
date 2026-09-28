@@ -1,5 +1,6 @@
 import { Directive, computed, input, inputBinding, numberAttribute } from '@angular/core';
 import { STREAM_PLAYER_PARAMS_TOKEN, StreamPlayerParams } from '../../../stream-player-slot.directive';
+import { streamSizeAttribute } from '../../../stream-size';
 
 @Directive({
   providers: [{ provide: STREAM_PLAYER_PARAMS_TOKEN, useExisting: YoutubePlayerParamsDirective }],
@@ -7,8 +8,8 @@ import { STREAM_PLAYER_PARAMS_TOKEN, StreamPlayerParams } from '../../../stream-
 export class YoutubePlayerParamsDirective implements StreamPlayerParams {
   public videoId = input.required<string>();
   public startTime = input(0, { transform: numberAttribute });
-  public width = input<string | number>('100%');
-  public height = input<string | number>('100%');
+  public width = input<string | number, string | number>('100%', { transform: streamSizeAttribute });
+  public height = input<string | number, string | number>('100%', { transform: streamSizeAttribute });
 
   public playerId = computed(() => `youtube-${this.videoId()}`);
 

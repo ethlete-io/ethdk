@@ -89,8 +89,8 @@ export class YoutubePlayerDirective implements StreamPlayer {
 
               const player = new win.YT.Player(placeholder, {
                 videoId,
-                width: this.params.width() as string,
-                height: this.params.height() as string,
+                width: this.params.width(),
+                height: this.params.height(),
                 playerVars: {
                   enablejsapi: 1,
                   origin: this.document.defaultView?.location.origin ?? '',
@@ -130,6 +130,14 @@ export class YoutubePlayerDirective implements StreamPlayer {
                       currentTime: player.getCurrentTime() ?? null,
                       isMuted: player.isMuted(),
                     }));
+                  },
+                  onError: (event) => {
+                    const youtubeError = new RuntimeError(
+                      STREAM_ERROR_CODES.YOUTUBE_PLAYER_ERROR,
+                      `[EtYoutubePlayer] YouTube player error: ${event.data}`,
+                    );
+                    this.state.update((s) => ({ ...s, error: youtubeError, isLoading: false }));
+                    subscriber.error(youtubeError);
                   },
                 },
               });

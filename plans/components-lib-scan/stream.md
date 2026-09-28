@@ -1,6 +1,6 @@
 # Stream scan - open findings
 
-Scan of `libs/components/src/lib/stream/` from 2026-09-28. 0 High, 2 Medium, 22 Low, 1 Spec. Skipped: stories, `testing/stream-driver.ts`, `pip-window` / `pip-chrome` templates and CSS beyond the layer and colour check.
+Scan of `libs/components/src/lib/stream/` from 2026-09-28. 0 High, 2 Medium, 16 Low, 1 Spec. Skipped: stories, `testing/stream-driver.ts`, `pip-window` / `pip-chrome` templates and CSS beyond the layer and colour check.
 
 ## Slot and manager lifecycle
 
@@ -14,12 +14,6 @@ Scan of `libs/components/src/lib/stream/` from 2026-09-28. 0 High, 2 Medium, 22 
 ## Platform embeds
 
 - Medium: the Facebook SDK URL hard-codes the `de_DE` locale and SDK `version=v3.2` (`stream/platform/facebook/headless/facebook-player.directive.ts:13`). Every consumer gets German Facebook UI and a very old API version. Make the locale and version configurable, or use the app's `LOCALE_ID`. S Verified.
-- Low: resource ids go into iframe URLs without `encodeURIComponent` (`stream/platform/tiktok/headless/tiktok-player.directive.ts:55`, `stream/platform/kick/headless/kick-player.directive.ts:51`, `stream/platform/soop/headless/soop-player.directive.ts:57,59`, `stream/platform/dailymotion/headless/dailymotion-player.directive.ts:53`, `stream/platform/facebook/headless/facebook-player.directive.ts:50`). The host stays fixed, but an id with `?`, `#` or `/` changes the path and query on the provider (for example, a Kick channel `x?parent=other.host&`). Encode each path segment. S
-- Low: TikTok commands use `postMessage(message, '*')` (`stream/platform/tiktok/headless/tiktok-player.directive.ts:168`). If the frame navigates away from TikTok, the new origin receives the commands. Use `'https://www.tiktok.com'` as the target origin. The inbound handler checks `event.source` (`:68`) and that is sufficient. S
-- Low: YouTube has no `onError` handler (`stream/platform/youtube/headless/youtube-player.directive.ts:100-134`). A removed, private or embed-disabled video reports `isReady` with `error: null`, so the error card never shows. Map `onError` codes to `state.error`. S
-- Low: the Twitch `channel` fallback uses the raw `src` when no URL pattern matches (`stream/platform/twitch/headless/twitch-player-params.directive.ts:25`). A URL such as `https://twitch.tv/videos` or a non-Twitch URL becomes a channel name. Accept only `[a-zA-Z0-9_]+` as a bare channel. S
-- Low: `width`, `height`, `startTime`, `muted`, `autoplay` and `chat` are read once when the embed is created (for example `stream/platform/twitch/headless/twitch-player.directive.ts:85-92`, `stream/platform/kick/headless/kick-player.directive.ts:49-54`). Later input changes have no effect. Document this or add the values to the resource params. S
-- Low: size inputs are not consistent. Vimeo and Facebook use `streamSizeAttribute`, but YouTube, TikTok, Kick, SOOP and Dailymotion do not, and YouTube casts with `as string` (`stream/platform/youtube/headless/youtube-player.directive.ts:92-93`). Apply the same transform to all params directives. S
 
 ## Script loader
 
