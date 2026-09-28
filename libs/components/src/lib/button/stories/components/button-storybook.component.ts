@@ -12,7 +12,7 @@ import {
   provideIcons,
   TIMES_ICON,
 } from '../../../icon';
-import { BUTTON_SIZES, BUTTON_VARIANTS } from '../../button.component';
+import { BUTTON_SIZES, BUTTON_VARIANTS } from '../../button.types';
 import { BUTTON_IMPORTS } from '../../button.imports';
 import { ButtonColor } from '../../headless';
 import { WINDOW_CONTROL_BUTTON_KINDS, WINDOW_CONTROL_BUTTON_SIZES } from '../../window-control-button.component';

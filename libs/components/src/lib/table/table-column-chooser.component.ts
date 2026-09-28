@@ -1,5 +1,6 @@
 import { Component, computed, input, ViewEncapsulation } from '@angular/core';
-import { BUTTON_SIZES, BUTTON_VARIANTS, ButtonComponent, ButtonSize, ButtonVariant } from '../button/button.component';
+import { ButtonComponent } from '../button/button.component';
+import { BUTTON_SIZES, BUTTON_VARIANTS, ButtonSize, ButtonVariant } from '../button/button.types';
 import { EYE_ICON } from '../icon/headless/eye-icons';
 import { GRID_2X2_ICON } from '../icon/headless/grid-2x2-icon';
 import { provideIcons } from '../icon/headless/icon-provider';

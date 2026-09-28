@@ -11,7 +11,7 @@ import {
   BUTTON_VARIANTS,
   ButtonIconAlignment,
   ButtonSize,
-} from './button.component';
+} from './button.types';
 import { ButtonDirective } from './headless';
 
 type FabVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS];

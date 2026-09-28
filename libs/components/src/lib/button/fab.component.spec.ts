@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
-import { BUTTON_ICON_ALIGNMENTS, BUTTON_SIZES, BUTTON_VARIANTS } from './button.component';
+import { BUTTON_ICON_ALIGNMENTS, BUTTON_SIZES, BUTTON_VARIANTS } from './button.types';
 import { FabComponent } from './fab.component';
 
 describe('FabComponent', () => {

@@ -1,7 +1,7 @@
 import { booleanAttribute, Component, input, signal, ViewEncapsulation } from '@angular/core';
 import { CHEVRON_ICON, FLOPPY_DISK_ICON, ICON_IMPORTS, provideIcons } from '../../../icon';
 import { MENU_IMPORTS } from '../../../menu';
-import { BUTTON_SIZES, BUTTON_VARIANTS } from '../../button.component';
+import { BUTTON_SIZES, BUTTON_VARIANTS } from '../../button.types';
 import { BUTTON_IMPORTS } from '../../button.imports';
 
 const SPLIT_BUTTON_EXAMPLES = [

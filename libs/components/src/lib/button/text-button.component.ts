@@ -10,7 +10,7 @@ import {
   BUTTON_SPINNER_CONFIG,
   ButtonIconAlignment,
   ButtonSize,
-} from './button.component';
+} from './button.types';
 import { ButtonDirective } from './headless';
 
 @Component({

@@ -1,6 +1,7 @@
 export * from './button-styles.directive';
 export * from './button.component';
 export * from './button.imports';
+export * from './button.types';
 export * from './fab.component';
 export * from './headless';
 export * from './icon-button.component';

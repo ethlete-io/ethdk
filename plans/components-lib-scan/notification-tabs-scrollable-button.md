@@ -1,6 +1,6 @@
 # notification, tabs, scrollable, button scan - open findings
 
-Scan of `libs/components/src/lib/{notification,tabs,scrollable,button}` from 2026-09-28. 0 High, 1 Medium, 5 Low, 1 Spec (verified 2026-09-28). Skipped: stories, most specs, testing drivers, and a line-by-line read of the large CSS files (grep only for `@layer`, colours and transitions).
+Scan of `libs/components/src/lib/{notification,tabs,scrollable,button}` from 2026-09-28. 0 High, 1 Medium, 2 Low, 1 Spec (verified 2026-09-28). Skipped: stories, most specs, testing drivers, and a line-by-line read of the large CSS files (grep only for `@layer`, colours and transitions).
 
 ## notification
 
@@ -12,10 +12,7 @@ Scan of `libs/components/src/lib/{notification,tabs,scrollable,button}` from 202
 
 ## button
 
-- Low: `kind="close"` hardcodes `rgba(232, 17, 35, …)` and `#ffffff` as primary values (`window-control-button.component.css:107-118`). Route through a token with these as fallbacks. S
 - Low: `et-button` does not forward `emitAriaPressed`, but `et-icon-button` does (`button.component.ts:92`, `icon-button.component.ts:44`). S
-- Low: a disabled `a[etButton]` keeps its `href`, so a middle click (`auxclick`) still opens it (`headless/button.directive.ts:34,89-96`). S
-- Low: `icon-button`, `text-button` and `fab` import `BUTTON_SIZES`/`BUTTON_SPINNER_CONFIG` from `button.component.ts`; move the shared constants to their own file so the modules do not depend on `ButtonComponent` (`icon-button.component.ts:6`, `text-button.component.ts:7-13`, `fab.component.ts:7-14`). S
 
 ## Spec gaps
 

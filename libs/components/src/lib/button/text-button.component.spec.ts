@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
-import { BUTTON_ICON_ALIGNMENTS, BUTTON_SIZES } from './button.component';
+import { BUTTON_ICON_ALIGNMENTS, BUTTON_SIZES } from './button.types';
 import { TextButtonComponent } from './text-button.component';
 
 describe('TextButtonComponent', () => {

@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
-import { BUTTON_SIZES, BUTTON_VARIANTS, ButtonComponent } from './button.component';
+import { ButtonComponent } from './button.component';
+import { BUTTON_SIZES, BUTTON_VARIANTS } from './button.types';
 
 describe('ButtonComponent', () => {
   let fixture: ComponentFixture<ButtonComponent>;
