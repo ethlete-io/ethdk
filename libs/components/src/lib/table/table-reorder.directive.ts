@@ -32,10 +32,15 @@ import { TableReorderOverlayComponent } from './table-reorder-overlay.component'
 
 const INTERACTIVE = 'button, a[href], input, select, textarea, [role="button"], [contenteditable="true"]';
 
+const isOwnSortHeader = (target: Element, cell: HTMLElement) =>
+  target.parentElement === cell && target.classList.contains('et-table-header-label--sortable');
+
 const startsOnControl = (path: EventTarget[], cell: HTMLElement) => {
   for (const target of path) {
     if (target === cell) return false;
-    if (target instanceof Element && target.matches(INTERACTIVE)) return true;
+    if (!(target instanceof Element)) continue;
+    if (isOwnSortHeader(target, cell)) return false;
+    if (target.matches(INTERACTIVE)) return true;
   }
 
   return false;

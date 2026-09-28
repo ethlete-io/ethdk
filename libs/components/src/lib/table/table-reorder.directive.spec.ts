@@ -181,6 +181,31 @@ describe('TableReorderDirective', () => {
     pointerEvent(document, 'pointerup', { clientX: 50, clientY: 10, pointerId: 1, pointerType: 'mouse' });
   });
 
+  it('still starts a drag from a sortable header, whose label is itself a button', () => {
+    const { driver, fixture } = create();
+
+    fixture.componentInstance.cols.set({
+      name: { ...columns().name, sortable: true },
+      role: { ...columns().role, sortable: true },
+    });
+    fixture.detectChanges();
+
+    const sortButton = driver.headerCell('role')!.querySelector<HTMLElement>('.et-table-header-label--sortable')!;
+
+    pointerEvent(sortButton, 'pointerdown', {
+      button: 0,
+      clientX: 300,
+      clientY: 10,
+      pointerId: 1,
+      pointerType: 'mouse',
+    });
+    pointerEvent(document, 'pointermove', { clientX: 50, clientY: 10, pointerId: 1, pointerType: 'mouse' });
+
+    expect(driver.headerCell('role')?.classList.contains('et-table-header-cell--dragging')).toBe(true);
+
+    pointerEvent(document, 'pointerup', { clientX: 50, clientY: 10, pointerId: 1, pointerType: 'mouse' });
+  });
+
   describe('in a right-to-left table', () => {
     const createRtl = () => {
       const created = create();
