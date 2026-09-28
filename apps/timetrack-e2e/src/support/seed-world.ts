@@ -1,10 +1,11 @@
 import { Page } from '@playwright/test';
-import { AgentSessionCursor } from '@ethlete/timetrack';
+import { AgentSessionCursor, TimetrackSettings } from '@ethlete/timetrack';
 import {
   FakeBackend,
   TIMETRACK_E2E_BACKEND_KEY,
   TIMETRACK_E2E_CURSORS_KEY,
   TIMETRACK_E2E_SEED_KEY,
+  TIMETRACK_E2E_SETTINGS_KEY,
   TIMETRACK_E2E_TRAY_KEY,
   TimetrackWorldSeed,
 } from '@ethlete/timetrack/testing';
@@ -61,6 +62,13 @@ export const readStoredCursors = (page: Page): Promise<Record<string, AgentSessi
   page.evaluate(
     (key) => ((globalThis as Record<string, unknown>)[key] as Record<string, AgentSessionCursor[]>) ?? {},
     TIMETRACK_E2E_CURSORS_KEY,
+  );
+
+/** The settings the app last saved, or `undefined` before its first save. */
+export const readStoredSettings = (page: Page): Promise<TimetrackSettings | undefined> =>
+  page.evaluate(
+    (key) => (globalThis as Record<string, unknown>)[key] as TimetrackSettings | undefined,
+    TIMETRACK_E2E_SETTINGS_KEY,
   );
 
 /** The tray menu's four lines, as the app words them. Declared here: the type lives in the app. */

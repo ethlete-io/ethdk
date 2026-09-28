@@ -27,6 +27,7 @@ import {
   TIMETRACK_E2E_AGENT_KEY,
   TIMETRACK_E2E_BACKEND_KEY,
   TIMETRACK_E2E_SEED_KEY,
+  TIMETRACK_E2E_SETTINGS_KEY,
   TIMETRACK_E2E_CURSORS_KEY,
   TIMETRACK_E2E_TRAY_KEY,
   cliNotInstalledMessage,
@@ -337,6 +338,7 @@ export const createFakePorts = (): HostPorts => {
       read$: () => (world.settingsReadDelayMs ? ok(settings).pipe(delay(world.settingsReadDelayMs)) : ok(settings)),
       save$: (next) => {
         settings = next;
+        (globalThis as Record<string, unknown>)[TIMETRACK_E2E_SETTINGS_KEY] = next;
 
         return done();
       },

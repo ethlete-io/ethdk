@@ -168,6 +168,9 @@ export const TIMETRACK_E2E_TRAY_KEY = '__timetrackE2eTray';
  */
 export const TIMETRACK_E2E_CURSORS_KEY = '__timetrackE2eCursors';
 
+/** Where the settings the app last saved are published, for what no screen or agent op reads. */
+export const TIMETRACK_E2E_SETTINGS_KEY = '__timetrackE2eSettings';
+
 /**
  * Where the fake host publishes its loopback endpoint: a function that takes a request body and
  * resolves with the answer the window replied, as the `timetrack` CLI would read it.
