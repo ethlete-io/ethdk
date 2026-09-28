@@ -67,6 +67,20 @@ export const fetchJiraStatuses$ = (options: {
     }),
   );
 
+/** The name of the status one issue stands in right now. */
+export const fetchJiraIssueStatus$ = (options: {
+  transport: TimetrackTransport;
+  credentials: JiraCredentials;
+  issueKey: string;
+}): Observable<string> =>
+  jiraRequest$<{ fields?: { status?: JiraStatusResource } }>({
+    transport: options.transport,
+    credentials: options.credentials,
+    path: `/rest/api/3/issue/${encodeURIComponent(options.issueKey)}`,
+    query: { fields: 'status' },
+    describe: `the status of ${options.issueKey}`,
+  }).pipe(map((body) => body.fields?.status?.name ?? ''));
+
 /** The moves this issue offers this account right now. An issue at the end of its workflow offers none. */
 export const fetchJiraTransitions$ = (options: {
   transport: TimetrackTransport;

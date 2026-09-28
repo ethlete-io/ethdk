@@ -130,6 +130,22 @@ describe('respondJira', () => {
     expect(Object.keys(issuesOf(found.body)[0]?.fields ?? {})).toEqual(['summary', 'issuetype', 'updated']);
   });
 
+  it('reads the status one issue stands in, and the one a move put it in', () => {
+    const backend = backendOf();
+    const statusOf = () =>
+      (get(backend, `/issue/${E2E_ISSUE_KEY}`, { fields: 'status' }).body as IssueResource).fields['status'];
+
+    expect(statusOf()).toEqual({ name: 'Backlog' });
+
+    post(backend, `/issue/${E2E_ISSUE_KEY}/transitions`, { transition: { id: 't3' } });
+
+    expect(statusOf()).toEqual({ name: 'In Progress' });
+  });
+
+  it('answers 404 for an issue it does not hold', () => {
+    expect(get(backendOf(), '/issue/ABC-1', { fields: 'status' }).status).toBe(404);
+  });
+
   it('offers every status but the one the issue already stands in', () => {
     const backend = backendOf();
 

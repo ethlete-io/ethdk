@@ -10,12 +10,15 @@ import {
   JiraStatus,
   favoriteProjectKeys,
   fetchJiraFields$,
+  fetchJiraIssueStatus$,
   fetchJiraIssuePicks$,
   fetchJiraIssues$,
   fetchJiraIssueTypes$,
   fetchJiraProjects$,
   fetchJiraStatuses$,
+  fetchJiraTransitions$,
   jiraSubjectFieldCandidates,
+  moveJiraIssueTo$,
   readJiraCredentials$,
 } from '@ethlete/timetrack';
 import {
@@ -278,6 +281,16 @@ const JIRA_CATALOG_DEF = /* @__PURE__ */ defineRootProvider(() => {
       if (statusStatus().kind !== 'ready') statusLoads$.next();
     },
     reloadStatuses: () => statusLoads$.next(),
+
+    /** The status one issue stands in. A call per issue, so read it only once something shows it. */
+    readIssueStatus$: (issueKey: string) =>
+      withCredentials$((credentials) => fetchJiraIssueStatus$({ transport: ports.transport, credentials, issueKey })),
+    /** The moves one issue's workflow offers right now. */
+    readIssueMoves$: (issueKey: string) =>
+      withCredentials$((credentials) => fetchJiraTransitions$({ transport: ports.transport, credentials, issueKey })),
+    /** Moves one issue to the status of that name. The user's own press, so it writes without a queue. */
+    moveIssue$: (move: { issueKey: string; statusName: string }) =>
+      withCredentials$((credentials) => moveJiraIssueTo$({ transport: ports.transport, credentials, ...move })),
 
     /** The issues one scope offers, most recently touched first. Empty until something asks for them. */
     issuesFor: (scope: string) => listFor(scope).issues,

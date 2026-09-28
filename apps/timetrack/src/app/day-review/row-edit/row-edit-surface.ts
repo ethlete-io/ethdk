@@ -12,6 +12,7 @@ import { ReviewedRow, syncsInState } from '@ethlete/timetrack';
 import { injectDayReview } from '../day-review';
 import { EditApprovalDirective } from './edit-approval.component';
 import { EditEvidenceDirective } from './edit-evidence.component';
+import { EditIssueStatusDirective } from './edit-issue-status.component';
 import { EditIssueDirective } from './edit-issue.component';
 import { EditMeetingDirective } from './edit-meeting.component';
 import { EditStandInWaitingDirective } from './edit-stand-in-waiting.component';
@@ -116,6 +117,7 @@ const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
           EditUnattendedDirective,
           EditDisputedDirective,
           EditIssueDirective,
+          EditIssueStatusDirective,
           EditStandInDirective,
           EditStateDirective,
           EditWhenDirective,

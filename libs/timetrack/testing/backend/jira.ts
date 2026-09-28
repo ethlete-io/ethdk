@@ -70,6 +70,22 @@ const transitionsFor = (backend: FakeBackend, issue: FakeJiraIssue) =>
     .filter((status) => status.name !== statusOf(backend, issue))
     .map((status) => ({ id: `t${status.id}`, name: `Move to ${status.name}`, to: { name: status.name } }));
 
+const readIssue = (backend: FakeBackend, read: { issueKey: string; request: FakeRoutedRequest }): FakeAnswer => {
+  const { issueKey, request } = read;
+  const issue = backend.jira.issues.find((held) => held.key === issueKey);
+
+  if (!issue) return { status: 404, body: { errorMessages: ['Issue does not exist.'] } };
+
+  const fields = (request.query.get('fields') ?? '').split(',').filter(Boolean);
+  const resource = issueResource(issue, fields);
+
+  return ok(
+    fields.includes('status')
+      ? { ...resource, fields: { ...resource.fields, status: { name: statusOf(backend, issue) } } }
+      : resource,
+  );
+};
+
 const readTransitions = (backend: FakeBackend, issueKey: string): FakeAnswer => {
   const issue = backend.jira.issues.find((held) => held.key === issueKey);
 
@@ -160,6 +176,11 @@ export const respondJira = (backend: FakeBackend, request: FakeRoutedRequest): F
       ? writeTransition(backend, { issueKey, request })
       : readTransitions(backend, issueKey);
   }
+
+  const issue = /^\/issue\/([^/]+)$/.exec(path);
+
+  if (issue && request.method === 'GET')
+    return readIssue(backend, { issueKey: decodeURIComponent(issue[1] ?? ''), request });
 
   return notFound(request);
 };

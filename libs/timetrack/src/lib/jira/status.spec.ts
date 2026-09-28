@@ -2,7 +2,7 @@ import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
 import { JiraCredentials } from './client';
-import { fetchJiraStatuses$, fetchJiraTransitions$, moveJiraIssueTo$ } from './status';
+import { fetchJiraIssueStatus$, fetchJiraStatuses$, fetchJiraTransitions$, moveJiraIssueTo$ } from './status';
 
 const CREDENTIALS: JiraCredentials = { host: 'https://team.atlassian.net', email: 'you@x.com', token: 't' };
 
@@ -52,6 +52,29 @@ describe('fetchJiraStatuses$', () => {
     fetchJiraStatuses$({ transport, credentials: CREDENTIALS }).subscribe(seen);
 
     expect(seen).toHaveBeenCalledWith([]);
+  });
+});
+
+describe('fetchJiraIssueStatus$', () => {
+  it('reads only the status field of the issue', () => {
+    const { transport, requests } = fakeTransport([
+      { key: 'FIP-9', fields: { status: { id: '3', name: 'In Progress' } } },
+    ]);
+    const seen = vi.fn();
+
+    fetchJiraIssueStatus$({ transport, credentials: CREDENTIALS, issueKey: 'FIP-9' }).subscribe(seen);
+
+    expect(requests[0]?.url).toBe('https://team.atlassian.net/rest/api/3/issue/FIP-9?fields=status');
+    expect(seen).toHaveBeenCalledWith('In Progress');
+  });
+
+  it('answers an empty name for an issue Jira returned no status for', () => {
+    const { transport } = fakeTransport([{ key: 'FIP-9', fields: {} }]);
+    const seen = vi.fn();
+
+    fetchJiraIssueStatus$({ transport, credentials: CREDENTIALS, issueKey: 'FIP-9' }).subscribe(seen);
+
+    expect(seen).toHaveBeenCalledWith('');
   });
 });
 
