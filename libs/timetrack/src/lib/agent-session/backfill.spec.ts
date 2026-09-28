@@ -2,8 +2,10 @@ import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { AgentLogBackfill, backfillAgentLogs$ } from './backfill';
 import { parseClaudeCodeSessionLog } from './claude-code';
+import { parseCodexSessionLog } from './codex';
 import { AgentSessionCursor } from './collect';
 import { AgentSessionLogReader, AgentSessionLogRef } from './ports';
+import { AgentSessionLogParser } from './source';
 
 type Log = { ref: AgentSessionLogRef; lines: string[] };
 
@@ -46,12 +48,18 @@ const readerFor = (logs: Log[], maxLines = 100) => {
   return { reader, reads };
 };
 
-const backfill = (options: { logs: Log[]; cursors?: AgentSessionCursor[]; logsPerRun?: number; maxLines?: number }) => {
+const backfill = (options: {
+  logs: Log[];
+  cursors?: AgentSessionCursor[];
+  logsPerRun?: number;
+  maxLines?: number;
+  parser?: AgentSessionLogParser;
+}) => {
   const { reader, reads } = readerFor(options.logs, options.maxLines);
   const seen = vi.fn();
 
   backfillAgentLogs$({
-    parser: parseClaudeCodeSessionLog,
+    parser: options.parser ?? parseClaudeCodeSessionLog,
     reader,
     cursors: options.cursors ?? [],
     logsPerRun: options.logsPerRun,
@@ -165,5 +173,52 @@ describe('backfillAgentLogs$', () => {
     });
 
     expect(result.cursors[0]?.cwd).toBe('/Users/tom/dev/fut-frontend');
+  });
+
+  it('carries a Codex session, checkout and model into every later read of the log', () => {
+    let ordinal = 0;
+    const codexLine = (timestamp: string, type: string, payload: Record<string, unknown>) =>
+      JSON.stringify({ timestamp, type, payload, ordinal: ordinal++ });
+    const tokenCount = (timestamp: string) =>
+      codexLine(timestamp, 'event_msg', {
+        type: 'token_count',
+        info: {
+          last_token_usage: { input_tokens: 10, cached_input_tokens: 0, output_tokens: 5, reasoning_output_tokens: 0 },
+        },
+      });
+    const userMessage = (timestamp: string, id: string) =>
+      codexLine(timestamp, 'response_item', {
+        type: 'message',
+        role: 'user',
+        id,
+        content: [{ type: 'input_text', text: 'mache das' }],
+      });
+
+    const { result } = backfill({
+      parser: parseCodexSessionLog,
+      maxLines: 2,
+      logs: [
+        {
+          ref: ref('a'),
+          lines: [
+            codexLine('2026-08-11T09:00:00Z', 'session_meta', { session_id: 's1', cwd: '/Users/tom/dev/ethlete-sdk' }),
+            codexLine('2026-08-11T09:00:01Z', 'turn_context', {
+              turn_id: 't1',
+              cwd: '/Users/tom/dev/ethlete-sdk',
+              model: 'gpt-5.6-sol',
+            }),
+            tokenCount('2026-08-11T09:01:00Z'),
+            userMessage('2026-08-11T09:02:00Z', 'msg_2'),
+            tokenCount('2026-08-11T09:03:00Z'),
+          ],
+        },
+      ],
+    });
+
+    expect(result.usage.map((event) => [event.sessionId, event.cwd, event.model])).toEqual([
+      ['s1', '/Users/tom/dev/ethlete-sdk', 'gpt-5.6-sol'],
+      ['s1', '/Users/tom/dev/ethlete-sdk', 'gpt-5.6-sol'],
+    ]);
+    expect(result.prompts.map((event) => event.promptId)).toEqual(['msg_2']);
   });
 });

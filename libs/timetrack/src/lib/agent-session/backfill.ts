@@ -1,7 +1,7 @@
 import { EMPTY, Observable, concatMap, expand, from, last, map, of, toArray } from 'rxjs';
 import { AgentPromptEvent, AgentUsageEvent } from '../model/event';
 import { AgentSessionCursor } from './collect';
-import { AgentSessionLogParseOptions, AgentSessionLogParser } from './source';
+import { AgentLogSessionState, AgentSessionLogParseOptions, AgentSessionLogParser } from './source';
 import { AgentSessionLogReader, AgentSessionLogRef } from './ports';
 
 /** How many logs one run reads to their end. Small, because a run parses every line of each of them. */
@@ -32,6 +32,7 @@ type LogBackfill = {
   nextLine: number;
   reachedEnd: boolean;
   reads: number;
+  resume: { title?: string; cwd?: string; session?: AgentLogSessionState };
 };
 
 /**
@@ -54,13 +55,14 @@ const readToEnd$ = (options: {
     nextLine: options.fromLine,
     reachedEnd: false,
     reads: 0,
+    resume: {},
   }).pipe(
     expand((seen) =>
       seen.reachedEnd || seen.reads >= MAX_READS_PER_LOG
         ? EMPTY
         : options.reader.readLines$({ ref: options.ref, fromLine: seen.nextLine }).pipe(
             map((chunk): LogBackfill => {
-              const parsed = options.parser({ ...options.parsing, lines: chunk.lines });
+              const parsed = options.parser({ ...options.parsing, lines: chunk.lines, resume: seen.resume });
 
               return {
                 usage: [...seen.usage, ...parsed.usage],
@@ -69,6 +71,11 @@ const readToEnd$ = (options: {
                 nextLine: chunk.nextLine,
                 reachedEnd: !chunk.lines.length,
                 reads: seen.reads + 1,
+                resume: {
+                  title: parsed.title,
+                  cwd: parsed.events[parsed.events.length - 1]?.cwd ?? seen.resume.cwd,
+                  session: parsed.session,
+                },
               };
             }),
           ),
