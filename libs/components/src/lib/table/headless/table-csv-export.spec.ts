@@ -189,7 +189,7 @@ describe('tableToCsv', () => {
 
     it.each([
       [['=HYPERLINK("x")'], `"'=HYPERLINK(""x"")"`],
-      [{ toString: () => '=1+1' }, "'=1+1"],
+      [{ toString: (): string => '=1+1' }, "'=1+1"],
     ])('escapes a non-string value that serializes to a formula', (value, expected) => {
       const csv = tableToCsv(
         {
