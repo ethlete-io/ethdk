@@ -514,13 +514,17 @@ Typing national digits builds the `+dial` value; a national trunk `0` is strippe
 (`0171…` with Germany active → `+49171…` - except for countries like Italy where
 the `0` is part of the number), and the `00` international call prefix works like
 `+` (`0049…` → `+49…`). Typing or pasting a full `+…` number re-derives the
-country by longest dial-code match - but a manually picked country survives shared
-dial codes (`+1` stays Canada if you chose Canada), and a number the control built
-for the active country keeps that country even when typed digits happen to match
-a longer dial code mid-entry. The North American Numbering Plan's other members
-(Jamaica, the Cayman Islands, Puerto Rico, and 20 more) carry their area code as
-part of the dial code (`+1876…` → Jamaica), so they match without touching the
-shared `+1` for the US and Canada. Switching countries keeps the national number. A focused field always shows exactly what you typed, `+` prefix
+country by longest prefix match - but a manually picked country survives shared
+dial codes (`+1` stays Canada if you chose Canada) unless the number carries a
+longer prefix of another country (`+1416…` moves the US to Canada), and a number
+the control built for the active country keeps that country even when typed digits
+happen to match a longer dial code mid-entry. The North American Numbering Plan's
+other members (Jamaica, the Cayman Islands, Puerto Rico, and 20 more) carry their
+area code as part of the dial code (`+1876…` → Jamaica); a `PhoneCountry`'s optional
+`additionalDialCodes` lists further prefixes - more area codes (`+1829…` →
+Dominican Republic, shown as `+1829`), Canada's area codes, and the ranges of
+shared dial codes (`+441481…` → Guernsey, `+77…` → Kazakhstan, shown as `+44` and
+`+7`). Switching countries keeps the national number. A focused field always shows exactly what you typed, `+` prefix
 included; it collapses to the national number when you leave it. The display groups
 digits in threes while unfocused (**cosmetic only** - not per-country metadata
 formatting; validate on the backend/schema, with `isPlausible` as a cheap

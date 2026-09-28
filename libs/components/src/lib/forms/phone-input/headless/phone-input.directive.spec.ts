@@ -47,6 +47,25 @@ describe('phone-countries', () => {
     expect(matchCountryByDialCode('12465550123')?.iso2).toBe('bb');
   });
 
+  it('matches the further area codes of NANP countries that share +1', () => {
+    expect(matchCountryByDialCode('18295550123')?.iso2).toBe('do');
+    expect(matchCountryByDialCode('19395550123')?.iso2).toBe('pr');
+    expect(matchCountryByDialCode('16585550123')?.iso2).toBe('jm');
+    expect(matchCountryByDialCode('14165550123')?.iso2).toBe('ca');
+    expect(matchCountryByDialCode('12125550123')?.iso2).toBe('us');
+  });
+
+  it('matches the ranges of countries that share a dial code', () => {
+    expect(matchCountryByDialCode('77012345678')?.iso2).toBe('kz');
+    expect(matchCountryByDialCode('74951234567')?.iso2).toBe('ru');
+    expect(matchCountryByDialCode('441481123456')?.iso2).toBe('gg');
+    expect(matchCountryByDialCode('447797123456')?.iso2).toBe('je');
+    expect(matchCountryByDialCode('441624123456')?.iso2).toBe('im');
+    expect(matchCountryByDialCode('442071234567')?.iso2).toBe('gb');
+    expect(matchCountryByDialCode('35818123456')?.iso2).toBe('ax');
+    expect(matchCountryByDialCode('390669812345')?.iso2).toBe('va');
+  });
+
   it('lists the Crown Dependencies, Åland and Vatican City', () => {
     const codes = PHONE_COUNTRIES.map((country) => country.iso2);
 
@@ -204,6 +223,39 @@ describe('PhoneInputDirective', () => {
 
     expect(driver.phone.country()).toBe('jm');
     expect(driver.phone.nationalNumber()).toBe('5550123');
+  });
+
+  it('shows and keeps a further NANP area code as the dial code', () => {
+    driver.host.value.set('+18295550123');
+    driver.tick();
+
+    expect(driver.phone.country()).toBe('do');
+    expect(driver.phone.dialCode()).toBe('1829');
+    expect(driver.phone.nationalNumber()).toBe('5550123');
+
+    driver.focus();
+    driver.typeChars('4');
+
+    expect(driver.host.value()).toBe('+182955501234');
+    expect(driver.phone.country()).toBe('do');
+  });
+
+  it('shows a range inside a shared dial code under the shared dial code', () => {
+    driver.host.value.set('+441481123456');
+    driver.tick();
+
+    expect(driver.phone.country()).toBe('gg');
+    expect(driver.phone.dialCode()).toBe('44');
+    expect(driver.phone.nationalNumber()).toBe('1481123456');
+  });
+
+  it('moves off a picked country when a typed number carries a longer prefix of another', () => {
+    driver.selectCountry('us');
+    driver.focus();
+    driver.typeChars('+14165550123');
+
+    expect(driver.phone.country()).toBe('ca');
+    expect(driver.host.value()).toBe('+14165550123');
   });
 
   it('keeps the US while national digits that start with another NANP area code are typed', () => {

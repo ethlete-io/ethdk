@@ -3,17 +3,84 @@ export type PhoneCountry = {
   iso2: string;
   /** International dialing code without the `+`. */
   dialCode: string;
+  /**
+   * More prefixes (dial code plus leading digits, without the `+`) that identify this country:
+   * another NANP area code (`1829` → DO) or a range inside a shared dial code (`441481` → GG).
+   * Detection picks the longest matching prefix across `dialCode` and these.
+   */
+  additionalDialCodes?: readonly string[];
 };
 
 /**
  * ISO alpha-2 → dial code, nothing more. Display names come from
  * `Intl.DisplayNames(locale, { type: 'region' })` and flags from regional-indicator emoji -
  * no bundled name/flag data. Shared dial codes list their primary country first (`+1` → US);
- * the other NANP members carry their area code as part of the dial code (`1876` → JM).
+ * the other NANP members carry their area code as part of the dial code (`1876` → JM), and
+ * `additionalDialCodes` holds their further area codes and the ranges of shared dial codes.
  */
 export const PHONE_COUNTRIES: readonly PhoneCountry[] = [
   { iso2: 'us', dialCode: '1' },
-  { iso2: 'ca', dialCode: '1' },
+  {
+    iso2: 'ca',
+    dialCode: '1',
+    additionalDialCodes: [
+      '1204',
+      '1226',
+      '1236',
+      '1249',
+      '1250',
+      '1257',
+      '1263',
+      '1289',
+      '1306',
+      '1343',
+      '1354',
+      '1365',
+      '1367',
+      '1368',
+      '1382',
+      '1403',
+      '1416',
+      '1418',
+      '1428',
+      '1431',
+      '1437',
+      '1438',
+      '1450',
+      '1468',
+      '1474',
+      '1506',
+      '1514',
+      '1519',
+      '1548',
+      '1579',
+      '1581',
+      '1584',
+      '1587',
+      '1604',
+      '1613',
+      '1639',
+      '1647',
+      '1672',
+      '1683',
+      '1705',
+      '1709',
+      '1742',
+      '1753',
+      '1778',
+      '1780',
+      '1782',
+      '1807',
+      '1819',
+      '1825',
+      '1867',
+      '1873',
+      '1879',
+      '1902',
+      '1905',
+      '1942',
+    ],
+  },
   { iso2: 'ag', dialCode: '1268' },
   { iso2: 'ai', dialCode: '1264' },
   { iso2: 'as', dialCode: '1684' },
@@ -21,16 +88,16 @@ export const PHONE_COUNTRIES: readonly PhoneCountry[] = [
   { iso2: 'bm', dialCode: '1441' },
   { iso2: 'bs', dialCode: '1242' },
   { iso2: 'dm', dialCode: '1767' },
-  { iso2: 'do', dialCode: '1809' },
+  { iso2: 'do', dialCode: '1809', additionalDialCodes: ['1829', '1849'] },
   { iso2: 'gd', dialCode: '1473' },
   { iso2: 'gu', dialCode: '1671' },
-  { iso2: 'jm', dialCode: '1876' },
+  { iso2: 'jm', dialCode: '1876', additionalDialCodes: ['1658'] },
   { iso2: 'kn', dialCode: '1869' },
   { iso2: 'ky', dialCode: '1345' },
   { iso2: 'lc', dialCode: '1758' },
   { iso2: 'mp', dialCode: '1670' },
   { iso2: 'ms', dialCode: '1664' },
-  { iso2: 'pr', dialCode: '1787' },
+  { iso2: 'pr', dialCode: '1787', additionalDialCodes: ['1939'] },
   { iso2: 'sx', dialCode: '1721' },
   { iso2: 'tc', dialCode: '1649' },
   { iso2: 'tt', dialCode: '1868' },
@@ -38,7 +105,7 @@ export const PHONE_COUNTRIES: readonly PhoneCountry[] = [
   { iso2: 'vg', dialCode: '1284' },
   { iso2: 'vi', dialCode: '1340' },
   { iso2: 'ru', dialCode: '7' },
-  { iso2: 'kz', dialCode: '7' },
+  { iso2: 'kz', dialCode: '7', additionalDialCodes: ['77'] },
   { iso2: 'eg', dialCode: '20' },
   { iso2: 'za', dialCode: '27' },
   { iso2: 'gr', dialCode: '30' },
@@ -48,14 +115,18 @@ export const PHONE_COUNTRIES: readonly PhoneCountry[] = [
   { iso2: 'es', dialCode: '34' },
   { iso2: 'hu', dialCode: '36' },
   { iso2: 'it', dialCode: '39' },
-  { iso2: 'va', dialCode: '39' },
+  { iso2: 'va', dialCode: '39', additionalDialCodes: ['3906698'] },
   { iso2: 'ro', dialCode: '40' },
   { iso2: 'ch', dialCode: '41' },
   { iso2: 'at', dialCode: '43' },
   { iso2: 'gb', dialCode: '44' },
-  { iso2: 'gg', dialCode: '44' },
-  { iso2: 'im', dialCode: '44' },
-  { iso2: 'je', dialCode: '44' },
+  { iso2: 'gg', dialCode: '44', additionalDialCodes: ['441481', '447781', '447839', '447911'] },
+  { iso2: 'im', dialCode: '44', additionalDialCodes: ['441624', '4474576', '447524', '447624', '447924'] },
+  {
+    iso2: 'je',
+    dialCode: '44',
+    additionalDialCodes: ['441534', '447509', '447700', '447797', '447829', '447937'],
+  },
   { iso2: 'dk', dialCode: '45' },
   { iso2: 'se', dialCode: '46' },
   { iso2: 'no', dialCode: '47' },
@@ -154,7 +225,7 @@ export const PHONE_COUNTRIES: readonly PhoneCountry[] = [
   { iso2: 'mt', dialCode: '356' },
   { iso2: 'cy', dialCode: '357' },
   { iso2: 'fi', dialCode: '358' },
-  { iso2: 'ax', dialCode: '358' },
+  { iso2: 'ax', dialCode: '358', additionalDialCodes: ['35818'] },
   { iso2: 'bg', dialCode: '359' },
   { iso2: 'lt', dialCode: '370' },
   { iso2: 'lv', dialCode: '371' },
@@ -249,13 +320,30 @@ export const PHONE_COUNTRIES: readonly PhoneCountry[] = [
   { iso2: 'uz', dialCode: '998' },
 ];
 
-/** The country whose dial code is the longest prefix of `+<digits>` (primary country wins shared codes). */
+/** The longest of the country's `dialCode` and `additionalDialCodes` that `digits` starts with. */
+export const matchedDialPrefix = (country: PhoneCountry, digits: string): string | null => {
+  let prefix: string | null = null;
+
+  for (const code of [country.dialCode, ...(country.additionalDialCodes ?? [])]) {
+    if (digits.startsWith(code) && (!prefix || code.length > prefix.length)) {
+      prefix = code;
+    }
+  }
+
+  return prefix;
+};
+
+/** The country with the longest prefix of `+<digits>` (primary country wins shared codes). */
 export const matchCountryByDialCode = (digits: string): PhoneCountry | null => {
   let match: PhoneCountry | null = null;
+  let matchLength = 0;
 
   for (const country of PHONE_COUNTRIES) {
-    if (digits.startsWith(country.dialCode) && (!match || country.dialCode.length > match.dialCode.length)) {
+    const length = matchedDialPrefix(country, digits)?.length ?? 0;
+
+    if (length > matchLength) {
       match = country;
+      matchLength = length;
     }
   }
 

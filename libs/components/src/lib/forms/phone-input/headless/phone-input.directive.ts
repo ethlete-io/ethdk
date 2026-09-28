@@ -1,7 +1,13 @@
 import { Directive, computed, input, linkedSignal, model, signal } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { FORM_FIELD_CONTROL_TYPES } from '../../form-field/headless';
-import { PHONE_COUNTRIES, matchCountryByDialCode, stripTrunkZero } from './phone-countries';
+import {
+  PHONE_COUNTRIES,
+  PhoneCountry,
+  matchCountryByDialCode,
+  matchedDialPrefix,
+  stripTrunkZero,
+} from './phone-countries';
 import { PhoneInputFieldDirective } from './phone-input-field.directive';
 import { PhoneInputFlagDirective } from './phone-input-flag.directive';
 import { mountControlSuffixStyles } from '../../form-field/form-field-control-suffix-styles.component';
@@ -82,13 +88,27 @@ export class PhoneInputDirective extends TextShellControlDirective implements Fo
         return fallback;
       }
 
-      const matchedDial = this.dialCodeOf(source.matched);
+      const digits = onlyDigits(source.value);
+      const prefixLength = (iso2: string) => this.prefixOf(iso2, digits)?.length ?? 0;
 
-      return this.dialCodeOf(fallback) === matchedDial && previous !== undefined ? fallback : source.matched;
+      return prefixLength(fallback) >= prefixLength(source.matched) && previous !== undefined
+        ? fallback
+        : source.matched;
     },
   });
 
-  public dialCode = computed(() => this.dialCodeOf(this.country()));
+  /**
+   * The active country's dial code, or the other area code the value starts with
+   * (`+1829…` → `1829` for the Dominican Republic). A longer range inside the same dial code
+   * (`+441481…` for Guernsey) still shows as `44`.
+   */
+  public dialCode = computed(() => {
+    const iso2 = this.country();
+    const dialCode = this.dialCodeOf(iso2);
+    const prefix = this.mixed() ? null : this.prefixOf(iso2, onlyDigits(this.value()));
+
+    return prefix && !prefix.startsWith(dialCode) ? prefix : dialCode;
+  });
 
   /** The digits after the dial code. Mixed masks the hidden raw number - it is never displayed. */
   public nationalNumber = computed(() => {
@@ -165,7 +185,7 @@ export class PhoneInputDirective extends TextShellControlDirective implements Fo
     const national = this.nationalNumber();
 
     this.country.set(iso2);
-    this.value.set(this.ownNumber(national, iso2));
+    this.value.set(this.ownNumber(national, this.dialCodeOf(iso2)));
   }
 
   /**
@@ -188,7 +208,7 @@ export class PhoneInputDirective extends TextShellControlDirective implements Fo
 
     const national = stripTrunkZero(digits, this.country());
 
-    this.commitTypedValue(this.ownNumber(national, this.country()));
+    this.commitTypedValue(this.ownNumber(national, this.dialCode()));
   }
 
   public focusControl(options?: FocusOptions) {
@@ -212,15 +232,25 @@ export class PhoneInputDirective extends TextShellControlDirective implements Fo
     this.value.set(next);
   }
 
-  private ownNumber(national: string, iso2: string) {
-    const value = national ? `+${this.dialCodeOf(iso2)}${national}` : '';
+  private ownNumber(national: string, dialCode: string) {
+    const value = national ? `+${dialCode}${national}` : '';
 
-    this.ownValue = value ? { value, iso2 } : null;
+    this.ownValue = value ? { value, iso2: this.country() } : null;
 
     return value;
   }
 
+  private countryOf(iso2: string): PhoneCountry | undefined {
+    return PHONE_COUNTRIES.find((country) => country.iso2 === iso2);
+  }
+
   private dialCodeOf(iso2: string) {
-    return PHONE_COUNTRIES.find((country) => country.iso2 === iso2)?.dialCode ?? '';
+    return this.countryOf(iso2)?.dialCode ?? '';
+  }
+
+  private prefixOf(iso2: string, digits: string) {
+    const country = this.countryOf(iso2);
+
+    return country ? matchedDialPrefix(country, digits) : null;
   }
 }
