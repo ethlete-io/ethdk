@@ -7,6 +7,7 @@ export const GQL_FRAGMENT_CONTENTFUL_ASSET = `
     }
     url
     title
+    fileName
     width
     height
     description
@@ -20,6 +21,7 @@ export type ContentfulGqlAsset = {
     id: string;
   };
   title: string | null;
+  fileName?: string | null;
   contentType: string | null;
   url: string | null;
   description: string | null;

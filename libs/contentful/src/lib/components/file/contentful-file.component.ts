@@ -40,7 +40,7 @@ export class ContentfulFileComponent {
       return {
         url: asset.url,
         size: asset.size,
-        title: asset.title,
+        title: asset.title || asset.fileName || null,
       };
     }
 
@@ -48,7 +48,7 @@ export class ContentfulFileComponent {
       return {
         url: asset.fields.file.url,
         size: asset.fields.file.details.size,
-        title: asset.fields.title,
+        title: asset.fields.title || asset.fields.file.fileName || null,
       };
     }
 

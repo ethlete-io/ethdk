@@ -1,13 +1,20 @@
-import { By } from '@angular/platform-browser';
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter, RouterLink } from '@angular/router';
+import { By } from '@angular/platform-browser';
+import { provideRouter, Router, RouterLink } from '@angular/router';
 import { provideContentfulConfig } from '../../utils/contentful.util';
 import { ContentfulLinkComponent } from './contentful-link.component';
+
+@Component({ template: '' })
+class EmptyRouteComponent {}
 
 const setup = (href: string, internalHosts: string[] = [], inputs: Record<string, string> = {}) => {
   TestBed.configureTestingModule({
     imports: [ContentfulLinkComponent],
-    providers: [provideRouter([]), provideContentfulConfig({ internalHosts })],
+    providers: [
+      provideRouter([{ path: '**', component: EmptyRouteComponent }]),
+      provideContentfulConfig({ internalHosts }),
+    ],
   });
 
   const fixture = TestBed.createComponent(ContentfulLinkComponent);
@@ -84,5 +91,33 @@ describe('ContentfulLinkComponent', () => {
     const anchor = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
 
     expect([...anchor.classList].sort()).toEqual(['mark', 'rich']);
+  });
+
+  it.each([
+    ['a query-only href', '?page=2', '/articles/first?page=2'],
+    ['a dot-relative href', './second', '/articles/second'],
+    ['a parent-relative href', '../teams', '/teams'],
+  ])('resolves %s against the current route', async (_, href, expected) => {
+    const fixture = setup(href);
+
+    await TestBed.inject(Router).navigateByUrl('/articles/first?page=1');
+    fixture.detectChanges();
+
+    const anchor = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
+
+    expect(fixture.debugElement.query(By.directive(RouterLink))).not.toBeNull();
+    expect(anchor.getAttribute('href')).toBe(expected);
+  });
+
+  it('re-resolves a relative href after a navigation', async () => {
+    const fixture = setup('./second');
+    const router = TestBed.inject(Router);
+
+    await router.navigateByUrl('/articles/first');
+    fixture.detectChanges();
+    await router.navigateByUrl('/teams/first');
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement.querySelector('a') as HTMLAnchorElement).getAttribute('href')).toBe('/teams/second');
   });
 });

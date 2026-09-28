@@ -87,4 +87,18 @@ describe('Contentful asset components', () => {
     expect(anchor.target).toBe('_blank');
     expect(anchor.rel).toBe('noopener noreferrer');
   });
+
+  it.each([
+    ['file', ContentfulFileComponent, 'a'],
+    ['audio', ContentfulAudioComponent, 'figcaption'],
+  ] as const)('names the %s by its file name when the gql asset has no title', (_, component, selector) => {
+    TestBed.configureTestingModule({ imports: [component] });
+
+    const fixture = createAssetFixture<ContentfulFileComponent | ContentfulAudioComponent>(
+      component,
+      gqlAsset({ title: null, fileName: 'report.pdf', contentType: 'application/pdf', size: null }),
+    );
+
+    expect((fixture.nativeElement.querySelector(selector) as HTMLElement).textContent?.trim()).toBe('report.pdf');
+  });
 });

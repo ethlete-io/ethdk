@@ -36,14 +36,14 @@ export class ContentfulAudioComponent {
     if (isContentfulGqlAsset(asset) && asset.url) {
       return {
         url: asset.url,
-        title: asset.title,
+        title: asset.title || asset.fileName || null,
       };
     }
 
     if (!isContentfulGqlAsset(asset) && asset.fields.file?.url) {
       return {
         url: asset.fields.file.url,
-        title: asset.fields.title,
+        title: asset.fields.title || asset.fields.file.fileName || null,
       };
     }
 

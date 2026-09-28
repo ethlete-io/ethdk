@@ -82,6 +82,8 @@ The component has an empty template and renders imperatively. Each node type map
 | `hyperlink`, `asset-hyperlink`                          | `a` (see [Links](#links))       |
 | `entry-hyperlink`                                       | Text (no generic route exists)  |
 | `text`                                                  | `span` (newlines become `<br>`) |
+| any other inline (e.g. `resource-hyperlink`)            | `span`, with a dev-mode warning |
+| any other block (e.g. `embedded-resource-block`)        | `div`, with a dev-mode warning  |
 
 Every element gets the classes `et-contentful-rich-text-default-element` and `et-contentful-rich-text-default-<tag>` for styling. Elements that end up empty are pruned, except `td`, `th` and `hr`. Whitespace-only text nodes and every authored newline are preserved.
 
@@ -97,7 +99,7 @@ When `content` changes, the renderer **diffs** the new document against the prev
 
 Marks on text nodes are rendered as nested semantic elements inside the text span, in mark order: `bold` → `<strong>`, `italic` → `<em>`, `underline` → `<u>`, `code` → `<code>`, `strikethrough` → `<s>`, `subscript` → `<sub>`, `superscript` → `<sup>`. Text with `bold` + `italic` therefore renders as `<span class="…"><strong><em>text</em></strong></span>`. Unknown mark types are ignored (with a dev-mode warning).
 
-Marks inside a hyperlink are the exception: the link component receives its text as a plain string, so they are passed as classes on its `textClass` input - `et-contentful-rich-text-mark-<mark type>` (e.g. `et-contentful-rich-text-mark-bold`). Style those yourself.
+Marks inside a hyperlink rendered by the link component are the exception: it receives its text as a plain string, so the marks every text of the link shares are passed as classes on its `textClass` input - `et-contentful-rich-text-mark-<mark type>` (e.g. `et-contentful-rich-text-mark-bold`). Style those yourself. A mark on only part of the link text is dropped there; the fallback anchor keeps each text's own marks.
 
 ## Embedded entries (custom components)
 
@@ -146,8 +148,8 @@ The source-generation helpers (`generateContentfulImageSources`, `generateDefaul
 ### Video, audio, file
 
 - `<et-contentful-video>` - native `<video controls>` with one `<source>`; `videoClass` input.
-- `<et-contentful-audio>` - `<figure>` with the asset title as `<figcaption>` and a native `<audio controls>`; `audioClass`, `figureClass`, `figcaptionClass` inputs.
-- `<et-contentful-file>` - a download link (`target="_blank"`, `rel="noopener noreferrer"`) showing the file's title and size, scaled with `formatFileSize` from `@ethlete/components` (e.g. `(1.5 MB)`); `fileClass` input. Reword the size with `provideContentfulFileLabels`, the same label system every `@ethlete/components` domain uses:
+- `<et-contentful-audio>` - `<figure>` with the asset title (or its file name) as `<figcaption>` and a native `<audio controls>`; `audioClass`, `figureClass`, `figcaptionClass` inputs.
+- `<et-contentful-file>` - a download link (`target="_blank"`, `rel="noopener noreferrer"`) showing the file's title (or its file name when the title is empty) and size, scaled with `formatFileSize` from `@ethlete/components` (e.g. `(1.5 MB)`); `fileClass` input. Reword the size with `provideContentfulFileLabels`, the same label system every `@ethlete/components` domain uses:
 
 ```ts
 provideContentfulFileLabels({ fileSize: (bytes) => `(${formatFileSize(bytes).replace('.', ',')})` });
@@ -157,9 +159,10 @@ provideContentfulFileLabels({ fileSize: (bytes) => `(${formatFileSize(bytes).rep
 
 `<et-contentful-link>` (inputs: `href`, `text` required; `textClass` and `anchorClass` default `''`, both placed on the anchor) renders hyperlink nodes and decides between router navigation and a plain anchor. The renderer passes the rich-text classes (`et-contentful-rich-text-default-element et-contentful-rich-text-default-a`) through `anchorClass`, so a standalone link carries none of them; a custom `components.link` receives them too if it declares an `anchorClass` input:
 
-- Relative application paths and absolute HTTP(S) URLs whose host matches the current page exactly (hostname and port) or a configured `internalHosts` entry use `[routerLink]`. Only a configured hostname covers its subdomains, but never unrelated hosts that merely share a public suffix.
+- Application paths and absolute HTTP(S) URLs whose host matches the current page exactly (hostname and port) or a configured `internalHosts` entry use `[routerLink]`. Only a configured hostname covers its subdomains, but never unrelated hosts that merely share a public suffix.
 - Native destinations such as `mailto:`, `tel:`, `ftp:` and fragment-only links use a plain `<a href>`. External HTTP(S) links open in a new tab with `rel="noopener noreferrer"`.
-- Without a `components.link` in the config, the renderer falls back to a plain anchor. Unsafe URL schemes are rendered as text without an `href`.
+- Paths that do not start with `/` (`?page=2`, `./next`, `../list`) resolve against the current router URL, like a browser resolves them against the page, and follow later navigations.
+- Without a `components.link` in the config, the renderer falls back to a plain anchor, which opens external HTTP(S) links in a new tab the same way. Unsafe URL schemes are rendered as text without an `href`.
 - Internal absolute URLs are reduced to path + query + hash and passed as an Angular `UrlTree`, so content authored against the production domain works on localhost or a preview host without encoding the query or fragment.
 - Asset hyperlinks resolve to the included asset URL. Entry hyperlinks render their label as text because Contentful entries have no generic URL; render entry links through a custom embedded-entry component when the content model defines routing.
 
