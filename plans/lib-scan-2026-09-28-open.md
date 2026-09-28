@@ -27,7 +27,6 @@ own open lines; this file lists what needs a user decision and what is still que
 - date-time: an empty time picker starts from the current time, so on the runtime's own DST day a
   pick in the skipped hour still lands an hour late.
 
-
 - overlay: 6592a0627 changed the exported `DragToDismissContext`: `overlayRef` now needs
   `beforeClosed`, which breaks custom mocks. Check that its changeset bump is right.
 
@@ -61,8 +60,6 @@ own open lines; this file lists what needs a user decision and what is still que
 - loader: no default `aria-progressbar-name`. 6d1d90fe8 made "no default name" deliberate, and a
   default name is read twice next to visible "Loading" text.
 
-- rich-text-editor: brackets in image alt text are now removed (744371337). Escaping or rejecting
-  were the other options.
 - rich-text-editor: an upload of a route-provided image tool keeps going after its editor is
   destroyed. A cancel needs `RichTextEditorDirective` to expose its `DestroyRef`/`Injector`, or a
   per-editor hook on the tool definition.

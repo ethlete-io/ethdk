@@ -318,6 +318,13 @@ describe('htmlToMarkdown', () => {
     );
   });
 
+  it('escapes brackets and backslashes in image alt text so they round-trip', () => {
+    const html = '<p><img src="https://example.com/img.png" alt="a [b] \\c"></p>';
+
+    expect(htmlToMarkdown(html)).toBe('![a \\[b\\] \\\\c](https://example.com/img.png)');
+    expect(markdownToHtml(htmlToMarkdown(html))).toBe(html);
+  });
+
   it('converts horizontal rules', () => {
     expect(htmlToMarkdown('<hr>')).toBe('---');
     expect(htmlToMarkdown('<hr />')).toBe('---');

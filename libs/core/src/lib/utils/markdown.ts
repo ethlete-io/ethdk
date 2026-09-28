@@ -410,6 +410,8 @@ const escapeMarkdownText = (text: string) =>
     .replace(/&lt;(?=\/?(?:u|a|p|h[1-6]|div)\b)/gi, '\\&lt;')
     .replace(/(^|\n)([ \t]*)(?=[-+*#|:]|&gt;|\d+\.)/g, '$1$2\u{E002}');
 
+const escapeMarkdownAlt = (alt: string) => alt.replace(/[\\[\]]/g, '\\$&');
+
 const escapeTextNodes = (html: string) => {
   let codeDepth = 0;
 
@@ -641,8 +643,14 @@ export const htmlToMarkdown = (html: string) => {
 
     return href ? `[${inner}](${href})` : inner;
   });
-  md = md.replace(/<img[^>]+src="([^"]*)"[^>]*alt="([^"]*)"[^>]*\/?>/gi, '![$2]($1)');
-  md = md.replace(/<img[^>]+alt="([^"]*)"[^>]*src="([^"]*)"[^>]*\/?>/gi, '![$1]($2)');
+  md = md.replace(
+    /<img[^>]+src="([^"]*)"[^>]*alt="([^"]*)"[^>]*\/?>/gi,
+    (_, src: string, alt: string) => `![${escapeMarkdownAlt(alt)}](${src})`,
+  );
+  md = md.replace(
+    /<img[^>]+alt="([^"]*)"[^>]*src="([^"]*)"[^>]*\/?>/gi,
+    (_, alt: string, src: string) => `![${escapeMarkdownAlt(alt)}](${src})`,
+  );
   md = md.replace(/<img[^>]+src="([^"]*)"[^>]*\/?>/gi, '![]($1)');
 
   // Underline has no Markdown form - preserve it as raw <u> so it round-trips. Extract it now (its

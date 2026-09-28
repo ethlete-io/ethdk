@@ -204,7 +204,7 @@ describe('rich text editor image ops', () => {
 
     const html = markdownToHtml(htmlToMarkdown(root.innerHTML));
 
-    expect(html).toContain('<img src="https://cdn.example.com/photo%20%281%29.png" alt="A draft">');
+    expect(html).toContain('<img src="https://cdn.example.com/photo%20%281%29.png" alt="A [draft]">');
     expect(html).not.toContain('.png)');
   });
 
@@ -214,9 +214,23 @@ describe('rich text editor image ops', () => {
     ops.applyAlt(root.querySelector('img')!, 'Chart [2024]');
 
     expect(markdownToHtml(htmlToMarkdown(root.innerHTML))).toContain(
-      '<img src="https://example.com/a.png" alt="Chart 2024">',
+      '<img src="https://example.com/a.png" alt="Chart [2024]">',
     );
   });
+
+  it.each(['a [b] c', 'a \\[b\\] c', 'ends with \\'])(
+    'keeps the alt text %s exact through the Markdown round trip',
+    (alt) => {
+      const { root } = setup('<p><img src="https://example.com/a.png" alt=""></p>');
+
+      ops.applyAlt(root.querySelector('img')!, alt);
+
+      const parsed = doc.createElement('div');
+      parsed.innerHTML = markdownToHtml(htmlToMarkdown(root.innerHTML));
+
+      expect(parsed.querySelector('img')?.getAttribute('alt')).toBe(alt);
+    },
+  );
 
   it('reports no active image when the caret is in plain text', () => {
     const { root, dom } = setup('<p>Hello</p>');
