@@ -142,6 +142,9 @@ about which routes have breadcrumbs. When a view is destroyed only _its_ crumbs 
 navigating from `/teams/chemie/squad` back to `/teams/chemie` drops one crumb instead of rebuilding the
 trail.
 
+Render **one** outlet per manager. A second one (say, a mobile shell next to a desktop one) stamps
+every segment again, so both trails would show each crumb twice; dev mode warns with `ET3704`.
+
 Crumbs are deliberately **not** derived from the route config: half of them are named after data the
 view just loaded, which a static config can't know.
 

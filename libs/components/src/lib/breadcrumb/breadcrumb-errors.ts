@@ -8,4 +8,6 @@ export const BREADCRUMB_ERROR_CODES = {
   SEO_OUTSIDE_BREADCRUMB: 3702,
   /** Something other than an `etBreadcrumbSeparator` was projected into `et-breadcrumb-outlet`, which renders nothing else. */
   OUTLET_UNSUPPORTED_CONTENT: 3703,
+  /** A second `et-breadcrumb-outlet` rendered under one breadcrumb manager, so every crumb shows twice in both trails. */
+  MULTIPLE_OUTLETS: 3704,
 } as const;

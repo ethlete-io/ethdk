@@ -1,4 +1,4 @@
-import { DestroyRef, Directive, inject, input, signal } from '@angular/core';
+import { DestroyRef, Directive, inject, input, numberAttribute, signal } from '@angular/core';
 import { injectTemplateRef } from '@ethlete/core';
 import { injectBreadcrumbManager } from '../breadcrumb-manager';
 import { BreadcrumbCrumb } from '../breadcrumb.types';
@@ -39,7 +39,9 @@ export class BreadcrumbSegmentDirective {
    * hierarchy. Segments without one keep their registration index, and the two are compared on the same
    * scale - so `order="0"` pins a segment to the front. @default null
    */
-  public order = input<number | null>(null);
+  public order = input<number | null, unknown>(null, {
+    transform: (value: unknown) => (value === null || value === undefined ? null : numberAttribute(value)),
+  });
 
   /** The crumbs declared inside this segment, in declaration order. */
   public crumbs = signal<BreadcrumbCrumb[]>([]);

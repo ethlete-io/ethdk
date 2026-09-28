@@ -5,6 +5,7 @@ import { BreadcrumbSegment } from './breadcrumb.types';
 const BREADCRUMB_MANAGER_DEF = /* @__PURE__ */ defineProvider(
   () => {
     const registeredSegments = signal<BreadcrumbSegment[]>([]);
+    let outletCount = 0;
 
     /**
      * The registered segments in trail order. That order is **registration order** - which under the
@@ -34,6 +35,14 @@ const BREADCRUMB_MANAGER_DEF = /* @__PURE__ */ defineProvider(
       /** @internal */
       unregisterSegment: (segment: BreadcrumbSegment) =>
         registeredSegments.update((segments) => segments.filter((registered) => registered !== segment)),
+
+      /** @internal Returns how many outlets render this manager's trail, including the new one. */
+      registerOutlet: () => ++outletCount,
+
+      /** @internal */
+      unregisterOutlet: () => {
+        outletCount--;
+      },
     };
   },
   { name: 'Breadcrumb Manager' },

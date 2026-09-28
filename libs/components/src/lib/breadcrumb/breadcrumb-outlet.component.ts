@@ -1,11 +1,13 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
   Component,
+  DestroyRef,
   ElementRef,
   ViewEncapsulation,
   afterNextRender,
   booleanAttribute,
   contentChild,
+  inject,
   input,
   viewChild,
 } from '@angular/core';
@@ -82,6 +84,20 @@ export class BreadcrumbOutletComponent {
 
   constructor() {
     if (ngDevMode) {
+      const outletCount = this.manager.registerOutlet();
+
+      inject(DestroyRef).onDestroy(() => this.manager.unregisterOutlet());
+
+      if (outletCount > 1) {
+        console.warn(
+          new RuntimeError(
+            BREADCRUMB_ERROR_CODES.MULTIPLE_OUTLETS,
+            '[et-breadcrumb-outlet] another outlet already renders this breadcrumb manager, so every crumb ' +
+              'registers once per outlet and both trails show it twice. Render one outlet per manager.',
+          ).message,
+        );
+      }
+
       afterNextRender(() => {
         const nodes = Array.from(this.unsupportedContent()?.nativeElement.childNodes ?? []);
         const hasContent = nodes.some(

@@ -151,6 +151,23 @@ class BreadcrumbShellComponent {
   public showsLeaf = signal(true);
 }
 
+@Component({
+  selector: 'et-test-breadcrumb-two-outlets',
+  template: `
+    <et-breadcrumb-outlet />
+    <et-breadcrumb-outlet />
+
+    <ng-template etBreadcrumbSegment>
+      <ng-template etBreadcrumbItemTemplate>
+        <a etBreadcrumbItem href="#">Home</a>
+      </ng-template>
+    </ng-template>
+  `,
+  imports: [BREADCRUMB_IMPORTS],
+  providers: [provideBreadcrumbManager()],
+})
+class BreadcrumbTwoOutletsComponent {}
+
 describe('BreadcrumbOutletComponent', () => {
   const createShell = () => {
     const fixture = TestBed.createComponent(BreadcrumbShellComponent);
@@ -163,6 +180,30 @@ describe('BreadcrumbOutletComponent', () => {
     [...(fixture.nativeElement as HTMLElement).querySelectorAll('.et-breadcrumb-slot')].map((li) =>
       li.textContent?.trim(),
     );
+
+  it('warns in dev mode when a second outlet renders the same manager', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    onTestFinished(() => {
+      warn.mockRestore();
+    });
+
+    const fixture = TestBed.createComponent(BreadcrumbTwoOutletsComponent);
+    fixture.detectChanges();
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0]?.[0])).toContain('ET3704');
+  });
+
+  it('does not warn for a single outlet', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    onTestFinished(() => {
+      warn.mockRestore();
+    });
+
+    createShell();
+
+    expect(warn).not.toHaveBeenCalled();
+  });
 
   it('composes the trail from every registered segment, in registration order', () => {
     const fixture = createShell();
