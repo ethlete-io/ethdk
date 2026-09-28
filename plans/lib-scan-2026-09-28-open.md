@@ -24,7 +24,6 @@ own open lines; this file lists what needs a user decision and what is still que
 - bundle goldens: rich-text-editor (3 entries) and dropzone are each about 1.6 kB over. The rich
   text growth comes from new features (862468765, b645e827e, 267f7bdb1); the dropzone growth is
   not checked. Accept with `nx run treeshake:bundle-goldens:update` on a fresh build?
-- dropzone: the readonly file list focus (766bb1f52) is not checked in Storybook (focus ring, axe).
 
 ## Low pass (in progress)
 
@@ -34,7 +33,6 @@ Each domain plan file keeps its open Low lines; the decisions are listed there. 
   registry lookups read `~/.npmrc`. The `isPortFree` fix is not proven (the bug is macOS-only).
 - timetrack: `googleCalendarPaged$` now fails at the page cap, because a capped read deleted real
   meetings. `isNudgeDue`/`dayNudge` now need a `DayBoundary`.
-- skeleton: the `aria-busy` e2e checks were changed but not run.
 - A stream agent ran prettier over other agents' uncommitted files (whitespace only).
 
 ## Queue
