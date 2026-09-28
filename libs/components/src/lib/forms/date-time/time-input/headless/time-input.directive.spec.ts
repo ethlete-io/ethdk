@@ -254,6 +254,48 @@ describe('TimeInputDirective', () => {
   });
 });
 
+describe('TimeInputDirective on the runtime daylight-saving day', () => {
+  let driver: DatePickerDriver<TimeInputTestHost, TimeInputDirective>;
+
+  const pickOption = (unit: string, value: number) =>
+    driver.clickInPane(`[data-unit='${unit}'] [data-value='${value}']`);
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-03-29T10:00:00+02:00'));
+    driver = mountDatePicker(TimeInputTestHost, TimeInputDirective);
+  });
+
+  afterEach(async () => {
+    await driver.close();
+    vi.useRealTimers();
+  });
+
+  it('shows a value in the skipped hour as written', async () => {
+    driver.host.value.set('02:30');
+    tick();
+    await driver.fixture.whenStable();
+
+    expect(driver.field().value).toBe('02:30');
+  });
+
+  it('commits typed text in the skipped hour as typed', () => {
+    driver.typeAndBlur('02:30');
+
+    expect(driver.host.value()).toBe('02:30');
+  });
+
+  it('commits a picked time in the skipped hour as picked', async () => {
+    driver.host.value.set('01:30');
+    tick();
+    await driver.open();
+
+    pickOption('hour', 2);
+
+    expect(driver.host.value()).toBe('02:30');
+  });
+});
+
 describe('TimeInputDirective mixed state', () => {
   describeMixedStateContract(() => {
     const driver = mountDatePicker(TimeInputTestHost, TimeInputDirective);

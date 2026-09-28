@@ -227,6 +227,35 @@ describe('TimeRangeInputDirective', () => {
   });
 });
 
+describe('TimeRangeInputDirective on the runtime daylight-saving day', () => {
+  let driver: DatePickerDriver<TimeRangeInputTestHost, TimeRangeInputDirective>;
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-03-29T10:00:00+02:00'));
+    driver = mountDatePicker(TimeRangeInputTestHost, TimeRangeInputDirective);
+  });
+
+  afterEach(async () => {
+    await driver.close();
+    vi.useRealTimers();
+  });
+
+  it('shows a value in the skipped hour as written', () => {
+    driver.host.value.set({ start: '02:30', end: '02:45' });
+    tick();
+
+    expect(driver.control.displayValue('start')).toBe('02:30');
+    expect(driver.control.displayValue('end')).toBe('02:45');
+  });
+
+  it('commits typed text in the skipped hour as typed', () => {
+    driver.typeAndBlur('02:30', '.start');
+
+    expect(driver.host.value().start).toBe('02:30');
+  });
+});
+
 describe('TimeRangeInputDirective mixed state', () => {
   describeMixedStateContract(() => {
     const driver = mountDatePicker(TimeRangeInputTestHost, TimeRangeInputDirective);

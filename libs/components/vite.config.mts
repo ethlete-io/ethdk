@@ -2,6 +2,9 @@
 import angular from '@analogjs/vite-plugin-angular';
 import { defineConfig } from 'vite';
 
+// the date and time specs cover the runtime's own daylight-saving gap, which a zone without one (CI runs in UTC) never has
+process.env['TZ'] = 'Europe/Berlin';
+
 export default defineConfig(() => ({
   root: __dirname,
   cacheDir: '../../node_modules/.vite/libs/components',

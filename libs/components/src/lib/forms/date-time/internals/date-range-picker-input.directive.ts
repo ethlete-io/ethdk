@@ -340,12 +340,21 @@ export abstract class DateRangePickerInputDirective
     return this.sides.start.field();
   }
 
+  /** The date a wire value's missing parts are taken from. Defaults to now. */
+  protected valueReferenceDate(): Date | undefined {
+    return undefined;
+  }
+
   private parseSide(value: string | null) {
     if (value === null) {
       return null;
     }
 
-    return parseDateValue(value, { format: this.effectiveValueFormat(), locale: this.effectiveLocale() });
+    return parseDateValue(value, {
+      format: this.effectiveValueFormat(),
+      locale: this.effectiveLocale(),
+      referenceDate: this.valueReferenceDate(),
+    });
   }
 
   private writeSide(side: DateRangeSide, sideValue: string | null) {

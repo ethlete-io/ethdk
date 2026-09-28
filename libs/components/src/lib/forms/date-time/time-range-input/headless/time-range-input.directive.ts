@@ -1,6 +1,5 @@
 import { Directive, computed, input, signal } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
-import { startOfDay } from 'date-fns';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
 import { FORM_FIELD_CONTROL_TYPES } from '../../../form-field/headless';
 import { injectTimeFormat } from '../../date-time-formats';
@@ -9,7 +8,7 @@ import {
   DateRangeSide,
   DateRangeValue,
 } from '../../internals/date-range-picker-input.directive';
-import { parseTimeText } from '../../internals/time-parse';
+import { parseTimeText, timeReferenceDay } from '../../internals/time-parse';
 import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
 
 export type { DateRangeSide as TimeRangeInputSide } from '../../internals/date-range-picker-input.directive';
@@ -60,9 +59,7 @@ export class TimeRangeInputDirective extends DateRangePickerInputDirective imple
 
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.TIME_RANGE_INPUT);
 
-  // parses fill the missing date (and unentered seconds) from here instead of "now", so both ends
-  // land on the same day and a consumer `timeFilter` can compare them
-  private referenceDate = startOfDay(new Date());
+  private referenceDate = timeReferenceDay();
 
   /** Commits a picker-selected time onto one end. The picker stays open. */
   public selectTime(side: DateRangeSide, time: Date | null) {
@@ -72,6 +69,10 @@ export class TimeRangeInputDirective extends DateRangePickerInputDirective imple
 
     this.commitSideDate(side, time);
     this.touched.set(true);
+  }
+
+  public override valueReferenceDate() {
+    return this.referenceDate;
   }
 
   public parseSideCommit(raw: string) {

@@ -1,12 +1,11 @@
 import { Directive, computed, input, signal } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
-import { startOfDay } from 'date-fns';
 import { FORM_FIELD_CONTROL_TYPES } from '../../../form-field/headless';
 import { injectTimeFormat } from '../../date-time-formats';
 import { DatePickerInputDirective } from '../../internals/date-picker-input.directive';
 import { formatDateValue, parseDateValue } from '../../internals/date-value';
 import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
-import { parseTimeText } from '../../internals/time-parse';
+import { parseTimeText, timeReferenceDay } from '../../internals/time-parse';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
 
 /**
@@ -46,8 +45,7 @@ export class TimeInputDirective extends DatePickerInputDirective implements Form
 
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.TIME_INPUT);
 
-  // parses fill missing units (the date, unentered seconds) from here instead of "now"
-  private referenceDate = startOfDay(new Date());
+  private referenceDate = timeReferenceDay();
 
   /** The current value as a `Date` (what the picker binds to). */
   public time = computed(() => {
