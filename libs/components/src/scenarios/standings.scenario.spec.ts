@@ -307,11 +307,7 @@ describe('standings scenarios', () => {
     ]);
     expect(rows.map((row) => row.hasAttribute('data-zone'))).toEqual([true, true, false, true]);
     expect(rows[1]!.getAttribute('aria-current')).toBe('true');
-    expect(queryAll('.et-standings-form-result', rows[0]).map((result) => result.getAttribute('aria-label'))).toEqual([
-      'Win',
-      'Draw',
-      'Loss',
-    ]);
+    expect(queryAll('.et-standings-form-note', rows[0]).map(text)).toEqual(['Win', 'Draw', 'Loss']);
     expect(queryAll('.et-standings-form-result', rows[1])).toHaveLength(0);
 
     const legend = query('.et-standings-legend', host);

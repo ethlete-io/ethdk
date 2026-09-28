@@ -241,7 +241,7 @@ describe('table core scenarios', () => {
 
     s.flush();
 
-    expect(query(host, '.et-table').getAttribute('role')).toBe('grid');
+    expect(query(host, '.et-table').getAttribute('role')).toBe('table');
     expect(
       [...host.querySelectorAll('.et-table-header-cell[data-col-key]')].map((cell) =>
         cell.getAttribute('data-col-key'),

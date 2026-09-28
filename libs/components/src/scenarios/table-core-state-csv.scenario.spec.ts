@@ -201,6 +201,9 @@ describe('table state persistence scenarios', () => {
     ).toBe(true);
 
     persisted.config.set({ key: 'orders', kind: 'session' });
+    s.tick();
+    expect(sessionStorage.getItem('orders')).toBeNull();
+
     sortById();
     expect(deserializeTableState(sessionStorage.getItem('orders'))?.columns[0]?.sort).toBe('desc');
 
