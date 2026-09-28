@@ -44,6 +44,20 @@ describe('responsive', () => {
       expect(result).toEqual(entries);
     });
 
+    it('reflows into a single column when the target column count is not positive', () => {
+      const entries: GridLayoutEntry[] = [
+        { id: '1', position: { col: 0, row: 0, colSpan: 6, rowSpan: 1 } },
+        { id: '2', position: { col: 6, row: 0, colSpan: Number.NaN, rowSpan: 1 } },
+      ];
+
+      const result = mapLayoutToBreakpoint({ entries, fromColumns: 12, toColumns: 0 });
+
+      expect(result.map((entry) => entry.position)).toEqual([
+        { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+        { col: 0, row: 1, colSpan: 1, rowSpan: 1 },
+      ]);
+    });
+
     it('should reflow items into fewer columns', () => {
       const entries: GridLayoutEntry[] = [
         { id: '1', position: { col: 0, row: 0, colSpan: 6, rowSpan: 1 } },

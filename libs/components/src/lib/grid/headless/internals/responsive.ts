@@ -1,4 +1,5 @@
-import { GridBreakpointConfig, GridBreakpointName, GridItemPosition, GridLayoutEntry } from '../grid.types';
+import { autoPlace } from './layout-engine';
+import { GridBreakpointConfig, GridBreakpointName, GridLayoutEntry } from '../grid.types';
 
 export type MapLayoutOptions = {
   entries: GridLayoutEntry[];
@@ -37,10 +38,9 @@ export const mapLayoutToBreakpoint = (options: MapLayoutOptions) => {
   const result: GridLayoutEntry[] = [];
 
   for (const entry of sorted) {
-    const colSpan = Math.min(entry.position.colSpan, toColumns);
-    const placed = autoPlaceForMapping({
-      placed: result,
-      colSpan,
+    const placed = autoPlace({
+      entries: result,
+      colSpan: entry.position.colSpan,
       rowSpan: entry.position.rowSpan,
       columns: toColumns,
     });
@@ -52,36 +52,6 @@ export const mapLayoutToBreakpoint = (options: MapLayoutOptions) => {
   }
 
   return result;
-};
-
-type AutoPlaceForMappingOptions = {
-  placed: GridLayoutEntry[];
-  colSpan: number;
-  rowSpan: number;
-  columns: number;
-};
-
-const autoPlaceForMapping = (options: AutoPlaceForMappingOptions): GridItemPosition => {
-  const { placed, colSpan, rowSpan, columns } = options;
-
-  for (let row = 0; ; row++) {
-    for (let col = 0; col <= columns - colSpan; col++) {
-      const candidate: GridItemPosition = { col, row, colSpan, rowSpan };
-      const hasCollision = placed.some(
-        (existing) =>
-          !(
-            candidate.col + candidate.colSpan <= existing.position.col ||
-            existing.position.col + existing.position.colSpan <= candidate.col ||
-            candidate.row + candidate.rowSpan <= existing.position.row ||
-            existing.position.row + existing.position.rowSpan <= candidate.row
-          ),
-      );
-
-      if (!hasCollision) {
-        return candidate;
-      }
-    }
-  }
 };
 
 export const DEFAULT_BREAKPOINTS: GridBreakpointConfig[] = [

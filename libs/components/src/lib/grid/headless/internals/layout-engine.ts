@@ -95,22 +95,33 @@ export const compactLayout = (options: CompactLayoutOptions) => {
   return compacted;
 };
 
+const toSpan = (value: number) => (Number.isFinite(value) ? Math.max(1, Math.floor(value)) : 1);
+
 /**
  * Finds the first available position for an item with the given span in a grid.
  * Uses top-left gravity: scans row by row, column by column.
  */
-export const autoPlace = (options: AutoPlaceOptions) => {
-  const clampedColSpan = Math.min(options.colSpan, options.columns);
+export const autoPlace = (options: AutoPlaceOptions): GridItemPosition => {
+  const columns = toSpan(options.columns);
+  const colSpan = Math.min(toSpan(options.colSpan), columns);
+  const rowSpan = toSpan(options.rowSpan);
+  const lastRow = options.entries.reduce((max, entry) => {
+    const bottom = entry.position.row + entry.position.rowSpan;
 
-  for (let row = 0; ; row++) {
-    for (let col = 0; col <= options.columns - clampedColSpan; col++) {
-      const candidate: GridItemPosition = { col, row, colSpan: clampedColSpan, rowSpan: options.rowSpan };
+    return Number.isFinite(bottom) ? Math.max(max, bottom) : max;
+  }, 0);
+
+  for (let row = 0; row < lastRow; row++) {
+    for (let col = 0; col <= columns - colSpan; col++) {
+      const candidate: GridItemPosition = { col, row, colSpan, rowSpan };
 
       if (!findCollision({ entries: options.entries, position: candidate })) {
         return candidate;
       }
     }
   }
+
+  return { col: 0, row: lastRow, colSpan, rowSpan };
 };
 
 /**

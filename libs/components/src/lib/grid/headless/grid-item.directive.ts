@@ -21,8 +21,13 @@ import { PixelRect, pixelRectsEqual, positionsEqual, positionToPixelRect } from 
 
 const SETTLE_FALLBACK_MS = 350;
 
-const optionalNumberAttribute = (value: unknown) =>
-  value === undefined || value === null || value === '' ? undefined : numberAttribute(value);
+const optionalNumberAttribute = (value: unknown) => {
+  if (value === undefined || value === null || value === '') return undefined;
+
+  const number = numberAttribute(value);
+
+  return Number.isFinite(number) ? number : undefined;
+};
 
 @Directive({
   selector: '[etGridItem]',

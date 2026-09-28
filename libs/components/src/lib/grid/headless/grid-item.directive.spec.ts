@@ -52,6 +52,19 @@ describe('GridItemDirective', () => {
     expect(getItemDirective().itemId()).toBe('item-1');
   });
 
+  it('falls back to the default span for a non-numeric span attribute', () => {
+    fixture.componentInstance.minColSpan = 'wide' as unknown as number;
+    fixture.componentInstance.minRowSpan = 'tall' as unknown as number;
+    fixture.detectChanges();
+    measureGrid();
+
+    const constraints = getGridDirective().getConstraints('item-1');
+
+    expect(constraints.minColSpan).toBe(1);
+    expect(constraints.minRowSpan).toBe(1);
+    expect(getGridDirective().layout()[0]?.position).toEqual({ col: 0, row: 0, colSpan: 1, rowSpan: 1 });
+  });
+
   it('registers constraints with the parent grid on init', () => {
     fixture.detectChanges();
     measureGrid();

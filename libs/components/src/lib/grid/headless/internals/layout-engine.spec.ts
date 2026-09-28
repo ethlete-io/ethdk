@@ -186,6 +186,25 @@ describe('layout-engine', () => {
 
       expect(result.colSpan).toBe(6);
     });
+
+    it('places a NaN span as a single cell', () => {
+      const entries: GridLayoutEntry[] = [{ id: '1', position: { col: 0, row: 0, colSpan: 2, rowSpan: 1 } }];
+
+      const result = autoPlace({ entries, colSpan: Number.NaN, rowSpan: Number.NaN, columns: 2 });
+
+      expect(result).toEqual({ col: 0, row: 1, colSpan: 1, rowSpan: 1 });
+    });
+
+    it('treats a non-positive column count as one column', () => {
+      const entries: GridLayoutEntry[] = [{ id: '1', position: { col: 0, row: 0, colSpan: 1, rowSpan: 1 } }];
+
+      expect(autoPlace({ entries, colSpan: 2, rowSpan: 1, columns: 0 })).toEqual({
+        col: 0,
+        row: 1,
+        colSpan: 1,
+        rowSpan: 1,
+      });
+    });
   });
 
   describe('clampPosition', () => {
