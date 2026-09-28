@@ -212,7 +212,7 @@ test.describe('counter / keyboard', () => {
 
     await tagline.fill('x'.repeat(20));
     await expect(announcement(root, /^Tagline$/)).toHaveText('');
-    await expect(announcement(root, /^Tagline$/)).not.toHaveAttribute('aria-live');
+    await expect(announcement(root, /^Tagline$/)).toHaveAttribute('aria-live', 'polite');
 
     await tagline.fill('x'.repeat(36));
     await expect(announcement(root, /^Tagline$/)).toHaveText('4 characters remaining');

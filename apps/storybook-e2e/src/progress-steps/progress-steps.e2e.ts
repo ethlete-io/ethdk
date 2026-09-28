@@ -234,7 +234,7 @@ test.describe('progress-steps / focus', () => {
 
     const descriptors = await tabSequence(page, 4);
 
-    expect(descriptors.map((d) => d.text)).toEqual(['Account', 'Shipping', 'Payment', 'Review']);
+    expect(descriptors.map((d) => d.text)).toEqual(['Account Completed', 'Shipping Completed', 'Payment', 'Review']);
   });
 });
 

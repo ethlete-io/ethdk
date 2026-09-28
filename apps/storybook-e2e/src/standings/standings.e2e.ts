@@ -175,14 +175,20 @@ test.describe('standings / structure', () => {
       .locator(ROW)
       .first()
       .locator(FORM_RESULT)
-      .evaluateAll((els) => els.map((el) => [el.getAttribute('data-result'), el.getAttribute('aria-label')]));
+      .evaluateAll((els) =>
+        els.map((el) => [
+          el.getAttribute('data-result'),
+          el.getAttribute('aria-hidden'),
+          el.nextElementSibling?.matches('.et-standings-form-note') ? el.nextElementSibling.textContent?.trim() : null,
+        ]),
+      );
 
     expect(labels).toEqual([
-      ['win', 'Win'],
-      ['win', 'Win'],
-      ['loss', 'Loss'],
-      ['win', 'Win'],
-      ['win', 'Win'],
+      ['win', 'true', 'Win'],
+      ['win', 'true', 'Win'],
+      ['loss', 'true', 'Loss'],
+      ['win', 'true', 'Win'],
+      ['win', 'true', 'Win'],
     ]);
   });
 
