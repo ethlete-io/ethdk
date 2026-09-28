@@ -1,6 +1,4 @@
 @layer components {
-  /* How far each level is pushed in. Rows are rendered flat, so the indent is padding on the row
-     rather than nested boxes — which is also what keeps the hover tint full width at every depth. */
   @property --et-tree-indent {
     syntax: '<length>';
     inherits: true;
@@ -49,7 +47,6 @@
     initial-value: 150ms;
   }
 
-  /* The row's depth, set per row by the template — a count, turned into the indent by the row's padding. */
   @property --_et-tree-node-depth {
     syntax: '<number>';
     inherits: false;
@@ -73,7 +70,6 @@
     box-sizing: border-box;
   }
 
-  /* Present on leaves too, and on the status lines, so every label starts at the same offset. */
   .et-tree-node-marker {
     display: flex;
     flex: none;
@@ -86,7 +82,6 @@
     .et-tree-node-chevron {
       inline-size: 100%;
       block-size: 100%;
-      /* the icon points up natively — a quarter turn points it at the branch it opens */
       rotate: 90deg;
       transition: rotate var(--et-tree-duration) cubic-bezier(0.25, 0, 0.1, 1);
     }
@@ -96,7 +91,6 @@
     cursor: pointer;
     -webkit-user-select: none;
     user-select: none;
-    /* The tint is the only animated property — a row never moves on hover. */
     transition: background-color var(--et-tree-duration) ease;
 
     .et-tree-node-label {
@@ -117,8 +111,6 @@
       rotate: 180deg;
     }
 
-    /* The chevron is directional, so it turns the other way when the tree reads right-to-left. The
-       indent needs no such rule — it is logical padding. */
     &:dir(rtl) {
       .et-tree-node-chevron {
         rotate: -90deg;
@@ -133,11 +125,6 @@
       color: var(--et-tree-error-color, var(--et-surface-color-muted-solid, GrayText));
     }
 
-    /* Interaction states stay bare (no `:where()`) so they outrank the base rule and the config
-       modifiers, per the styling notes in CLAUDE.md. A row tint is lighter than a button's: it spans
-       the full width, where the same percentage reads much heavier.
-       Every one of them excludes disabled rows through `:not(:where(…))` - zero added weight, so the
-       order above still decides, and no later rule has to win a specificity race to undo them. */
     &:not(:where([aria-disabled])):hover {
       background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 7%, transparent);
     }
@@ -151,19 +138,14 @@
       outline-offset: -2px;
     }
 
-    /* Muted as a whole, the way `select-option` and `cascader-panel` state disabled - one rule that
-       reaches the fill, the label and the selection mark alike. */
     &:where([aria-disabled]) {
       opacity: 0.4;
       cursor: default;
     }
   }
 
-  /* Only single select fills the row. Multi select would paint consecutive selected rows as one
-     continuous slab, so it states the selection through the leading check box alone - the same
-     choice `select-option` and `cascader-panel` make - and leaves the fill to hover and active.
-     Must stay after `.et-tree-node`: this weighs the same as the bare interaction states above, so
-     source order is what lets a selected row keep its accent while hovered. */
+  /* Must stay after `.et-tree-node`: it weighs the same as the bare interaction states, so source
+     order is what keeps a selected row's accent while hovered. */
   .et-tree:not(:where([aria-multiselectable])) .et-tree-node:where([data-selected]) {
     background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 16%, transparent);
     color: var(--et-theme-color-ink-solid, inherit);
@@ -177,7 +159,6 @@
     }
   }
 
-  /* Rendered on every row in multi select, selected or not, so ticking one never shifts its label. */
   .et-tree-node-check {
     position: relative;
     flex: none;
@@ -199,7 +180,6 @@
       block-size: 8px;
       border: solid var(--et-theme-color-on-primary, rgb(0 0 0));
       border-width: 0 2px 2px 0;
-      /* the rotated L's ink sits below its box centre - lift it back to the optical centre */
       translate: 0 -1px;
       rotate: 45deg;
       opacity: 0;

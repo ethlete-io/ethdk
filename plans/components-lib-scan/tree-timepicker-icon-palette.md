@@ -1,6 +1,6 @@
 # tree, time-picker, icon, command-palette scan - open findings
 
-Scan of `libs/components/src/lib/{tree,time-picker,icon,command-palette}` from 2026-09-28. 0 High, 0 Medium, 16 Low, 3 Spec. Skipped: stories, the 50 icon data files (read one as a sample), CSS beyond the layer, colour and comment checks.
+Scan of `libs/components/src/lib/{tree,time-picker,icon,command-palette}` from 2026-09-28. 0 High, 0 Medium, 11 Low, 3 Spec. Skipped: stories, the 50 icon data files (read one as a sample), CSS beyond the layer, colour and comment checks.
 
 ## icon
 
@@ -13,11 +13,6 @@ No icon set lands in every bundle: each component registers only its own icon co
 
 ## tree
 
-- Low: a collapsed branch whose load failed cannot be reopened in one action (`tree/headless/tree.directive.ts:428-432`, `:701-705`). `activate` calls `retry` and skips `toggleExpansion`, and `isIdle` loads only expanded branches, so the click resets the level and loads nothing. ArrowRight (`:521-522`) expands the branch but keeps the old `ERROR` level and shows the old failure with no new request. Expand in `activate` when it retries, and reset an errored level to `IDLE` on `expand`. S Verified. Re-rated from Medium: a second click, or Enter after ArrowRight, loads the branch.
-- Low: `visibleRows` is O(nodes × loaded levels) (`tree/headless/tree.directive.ts:148-149,166`), because each node does a linear `levels.find` with `compareWith`. It recomputes on every expand, select and focus change, and `rowOf`/`elementOf` (`:592-605`) add a linear scan per call. A tree with a few hundred loaded branches does 10^5+ comparisons per keystroke. Key levels in a `Map` when `compareWith` is the default, or index them once per recompute. M Verified. Re-rated from Medium: `visibleRows` reads only `levels`, `expandedValues` and `compareWith`, so it does not recompute on select or focus, only on expand and load.
-- Low: `retry` on a branch with a load in flight starts a second request, and the two responses write in arrival order (`tree/headless/tree.directive.ts:370-372,683-693`). A slow first response overwrites the retried result. Ignore a response whose level is no longer in the `LOADING` state it set. S
-- Low: the root error row reacts to Enter only (`tree/tree.component.html:34`). Space does nothing on a focused `treeitem` there. S
-- Low: narration comments in `tree/headless/tree.directive.ts:232,236-238,257,263-264,273` and many rationale comments in `tree/tree.component.css` (for example `:2-3,52,76,99,154,162,180`) break the AGENTS.md allowlist. S
 
 ## time-picker
 

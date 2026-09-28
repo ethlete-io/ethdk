@@ -102,7 +102,7 @@ The two modes look different on purpose. `single` fills the one selected row wit
 
 While a branch loads, its chevron becomes a spinner and the row is `aria-busy`. The root level shows `loadingLabel` instead of rows.
 
-If a load fails, the branch keeps its place and shows the message from `toErrorMessage` alongside `retryLabel`. **Activating that row again reloads it** rather than collapsing it, which is why there is no separate retry button to reach for - the row is the control, and it works with the pointer and with <kbd>Enter</kbd> alike. A failed root load becomes a single row that behaves the same way. `retry(node)` (or `retry(null)` for the root) does it programmatically, and doubles as "refresh this branch" for a level that loaded fine.
+If a load fails, the branch keeps its place and shows the message from `toErrorMessage` alongside `retryLabel`. **Activating that row again reloads it** rather than collapsing it, which is why there is no separate retry button to reach for - the row is the control, and it works with the pointer and with <kbd>Enter</kbd> alike. A collapsed failed branch reloads as soon as it is expanded again, by click or <kbd>ArrowRight</kbd>. A failed root load becomes a single row that behaves the same way, and also retries on <kbd>Space</kbd>. `retry(node)` (or `retry(null)` for the root) does it programmatically, and doubles as "refresh this branch" for a level that loaded fine.
 
 <StoryEmbed id="components-data-display-tree--lazy-loading" height="520px" />
 

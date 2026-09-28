@@ -1,5 +1,6 @@
 import { ApplicationRef, Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Subject } from 'rxjs';
 import '../../test-helpers';
 import { ICON_IMPORTS, IconDefinition, provideIcons } from '../icon';
 import { TreeDataSource, TreeDirective, TreeNode, TreeSelectionMode } from './headless';
@@ -445,6 +446,111 @@ describe('TreeComponent', () => {
 
     expect(rowByLabel('src')?.querySelector('.et-tree-node-error')).toBeNull();
     expect(labels()).toContain('app');
+  });
+
+  it('reopens a collapsed failed branch and loads it in one click', async () => {
+    let shouldFail = true;
+
+    fixture.componentInstance.dataSource.set({
+      loadChildren: (parent) => {
+        if (parent?.value === 'src' && shouldFail) {
+          throw new Error('Network unreachable');
+        }
+
+        return TREE[keyOf(parent)] ?? [];
+      },
+    });
+    await settle();
+
+    rowByLabel('src')?.click();
+    await settle();
+    tree.collapse(tree.visibleRows()[0]!.node);
+    await settle();
+
+    shouldFail = false;
+    rowByLabel('src')?.click();
+    await settle();
+
+    expect(labels()).toContain('app');
+  });
+
+  it('loads a collapsed failed branch again when ArrowRight expands it', async () => {
+    let shouldFail = true;
+
+    fixture.componentInstance.dataSource.set({
+      loadChildren: (parent) => {
+        if (parent?.value === 'src' && shouldFail) {
+          throw new Error('Network unreachable');
+        }
+
+        return TREE[keyOf(parent)] ?? [];
+      },
+    });
+    await settle();
+
+    rowByLabel('src')?.click();
+    await settle();
+    tree.collapse(tree.visibleRows()[0]!.node);
+    await settle();
+
+    shouldFail = false;
+    press(rowByLabel('src')!, 'ArrowRight');
+    await settle();
+
+    expect(rowByLabel('src')?.querySelector('.et-tree-node-error')).toBeNull();
+    expect(labels()).toContain('app');
+  });
+
+  it('keeps the retried result when the response of the abandoned load arrives last', async () => {
+    const pending: Subject<TreeNode<string>[]>[] = [];
+
+    fixture.componentInstance.dataSource.set({
+      loadChildren: (parent) => {
+        if (parent?.value !== 'src') return TREE[keyOf(parent)] ?? [];
+
+        const response = new Subject<TreeNode<string>[]>();
+        pending.push(response);
+
+        return response;
+      },
+    });
+    await settle();
+
+    rowByLabel('src')?.click();
+    await settle();
+    tree.retry(tree.visibleRows()[0]!.node);
+    await settle();
+
+    expect(pending.length).toBe(2);
+
+    pending[1]!.next([{ value: 'src/fresh', label: 'fresh', isLeaf: true }]);
+    await settle();
+    pending[0]!.next([{ value: 'src/stale', label: 'stale', isLeaf: true }]);
+    await settle();
+
+    expect(labels()).toContain('fresh');
+    expect(labels()).not.toContain('stale');
+  });
+
+  it('retries a failed root load with Space', async () => {
+    let shouldFail = true;
+
+    fixture.componentInstance.dataSource.set({
+      loadChildren: (parent) => {
+        if (shouldFail) {
+          throw new Error('Nope');
+        }
+
+        return TREE[keyOf(parent)] ?? [];
+      },
+    });
+    await settle();
+
+    shouldFail = false;
+    press(status()!, ' ');
+    await settle();
+
+    expect(labels()).toEqual(['src', 'docs', 'README.md', 'empty']);
   });
 
   it('offers a failed root load as a retryable row', async () => {

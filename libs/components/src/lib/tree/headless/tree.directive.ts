@@ -33,6 +33,10 @@ import {
   TreeSelectionMode,
 } from './tree.types';
 
+const ROOT_KEY = /* @__PURE__ */ Symbol('root');
+
+const keyOfParent = <T>(parent: TreeNode<T> | null) => (parent === null ? ROOT_KEY : parent.value);
+
 type TreeLevel<T> = {
   parent: TreeNode<T> | null;
   status: TreeLevelStatus;
@@ -145,8 +149,18 @@ export class TreeDirective<T = unknown> {
     const expanded = this.expandedValues();
     const rows: TreeRow<T>[] = [];
 
+    const byIdentity = compareWith === defaultCompareWith;
+    const levelIndex = byIdentity
+      ? new Map<unknown, TreeLevel<T>>(levels.map((level) => [keyOfParent(level.parent), level]))
+      : null;
+    const expandedIndex = byIdentity ? new Set<unknown>(expanded) : null;
+
     const levelOf = (parent: TreeNode<T> | null) =>
-      levels.find((level) => nodesEqual({ a: level.parent, b: parent, compareWith })) ?? null;
+      levelIndex
+        ? (levelIndex.get(keyOfParent(parent)) ?? null)
+        : (levels.find((level) => nodesEqual({ a: level.parent, b: parent, compareWith })) ?? null);
+    const isExpandedValue = (value: T) =>
+      expandedIndex ? expandedIndex.has(value) : expanded.some((candidate) => compareWith(candidate, value));
 
     // `seen` guards against a malformed source whose branch contains its own value, which would
     // otherwise recurse until the stack gives out
@@ -164,7 +178,7 @@ export class TreeDirective<T = unknown> {
       entry.nodes.forEach((node, index) => {
         const isExpandable = canExpand(node);
         const children = isExpandable ? levelOf(node) : null;
-        const isExpanded = isExpandable && expanded.some((value) => compareWith(value, node.value));
+        const isExpanded = isExpandable && isExpandedValue(node.value);
         const nodePath = [...path, node];
 
         rows.push({
@@ -229,13 +243,9 @@ export class TreeDirective<T = unknown> {
     return survivor ?? rows[0]?.node ?? null;
   });
 
-  // type-to-focus by label across the visible rows - a deep tree cannot be navigated by name otherwise
   private typeahead = createTypeahead();
 
   constructor() {
-    // Every branch that needs loading right now: the root, plus each expanded branch whose children
-    // have not been requested yet. Expansion is therefore the only trigger a load ever needs - an
-    // `expandedValues` set that was restored from storage loads its branches exactly like a click does.
     const idleParents = computed(() => {
       if (!this.dataSource()) return [];
 
@@ -315,6 +325,10 @@ export class TreeDirective<T = unknown> {
   /** Expand a branch, loading its children if this is the first time. No-op on leaves and disabled nodes. */
   public expand(node: TreeNode<T>) {
     if (this.disabled() || node.disabled || !canExpand(node) || this.isExpanded(node)) return;
+
+    if (this.levelOf(node)?.status === TREE_LEVEL_STATUSES.ERROR) {
+      this.retry(node);
+    }
 
     this.expandedValues.update((values) => [...values, node.value]);
   }
@@ -423,9 +437,7 @@ export class TreeDirective<T = unknown> {
 
     this.focusNode(node);
 
-    const row = this.rowOf(node);
-
-    if (row?.childrenError) {
+    if (this.isExpanded(node) && this.levelOf(node)?.status === TREE_LEVEL_STATUSES.ERROR) {
       this.retry(node);
     } else if (canExpand(node)) {
       this.toggleExpansion(node);
@@ -676,20 +688,22 @@ export class TreeDirective<T = unknown> {
     // set is what keeps a re-emission from loading the same branch twice.
     if (!this.isIdle(parent)) return EMPTY;
 
-    this.setLevel(parent, { status: TREE_LEVEL_STATUSES.LOADING, nodes: [], error: null });
+    const loading = this.setLevel(parent, { status: TREE_LEVEL_STATUSES.LOADING, nodes: [], error: null });
+    const isCurrent = () => this.levelOf(parent) === loading;
 
     // defer, so a `loadChildren` that throws on the spot fails the branch like a rejected load
     // rather than tearing down the whole pipeline
     return defer(() => toChildrenObservable(source.loadChildren(parent))).pipe(
       take(1),
       tap({
-        next: (nodes) => this.setLevel(parent, { status: TREE_LEVEL_STATUSES.LOADED, nodes, error: null }),
-        error: (error) =>
-          this.setLevel(parent, {
-            status: TREE_LEVEL_STATUSES.ERROR,
-            nodes: [],
-            error: this.toErrorMessage()(error),
-          }),
+        next: (nodes) => {
+          if (isCurrent()) this.setLevel(parent, { status: TREE_LEVEL_STATUSES.LOADED, nodes, error: null });
+        },
+        error: (error) => {
+          if (!isCurrent()) return;
+
+          this.setLevel(parent, { status: TREE_LEVEL_STATUSES.ERROR, nodes: [], error: this.toErrorMessage()(error) });
+        },
       }),
       catchError(() => EMPTY),
     );
@@ -707,10 +721,13 @@ export class TreeDirective<T = unknown> {
 
   private setLevel(parent: TreeNode<T> | null, state: Omit<TreeLevel<T>, 'parent'>) {
     const compareWith = this.compareWith();
+    const entry: TreeLevel<T> = { parent, ...state };
 
     this.levels.update((levels) => [
       ...levels.filter((level) => !nodesEqual({ a: level.parent, b: parent, compareWith })),
-      { parent, ...state },
+      entry,
     ]);
+
+    return entry;
   }
 }

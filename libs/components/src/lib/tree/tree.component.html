@@ -32,6 +32,7 @@
   <div
     (click)="tree.retry(null)"
     (keydown.enter)="tree.retry(null)"
+    (keydown.space)="$event.preventDefault(); tree.retry(null)"
     class="et-tree-status et-tree-status--error"
     aria-level="1"
     aria-selected="false"
