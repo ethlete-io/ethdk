@@ -37,7 +37,6 @@ Scan of `libs/cli/src/` and `libs/agent-rules/src/` from 2026-09-28. 1 High, 14 
 
 ## agent-rules: git-flow, gitlab, timetrack
 
-- Medium: `remoteBranchExists` passes a bare name to `git ls-remote --heads` (`git.ts:72-73`), and git matches it as a tail. `feat/x` also matches `refs/heads/team/feat/x`. `repair` then pushes and runs `push --delete` for a branch that does not exist, and `start` fetches a base that is not there (`git-flow-repair.ts:64,149`, `git-flow-start.ts:142`). Pass `refs/heads/${branch}`. S Verified (repro): `git ls-remote --heads <bare> feat/x` returned `refs/heads/team/feat/x`.
 - Low: `CI_JOB_TOKEN` is sent as `private-token` (`gitlab.ts:29`). GitLab takes a job token only as `JOB-TOKEN`, and a job token cannot list or edit merge requests anyway. Drop the fallback. S
 - Low: `git()` uses the 1 MB default `maxBuffer` of `execFileSync` (`git.ts:5`). `commitPathsOnDays` runs `git log --name-only` over a span of days (`git.ts:111`), and a wide span in a large monorepo throws `ENOBUFS`. Raise `maxBuffer`. S
 - Low: when the push after the local rename fails (`git-flow-repair.ts:183-191`), the raw `execFileSync` error is thrown and the local branch keeps its new name. No undo hint is printed, although the retarget failure path prints one. S

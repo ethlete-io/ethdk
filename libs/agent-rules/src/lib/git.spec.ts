@@ -4,7 +4,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { commitPathsOnDays } from './git';
+import { commitPathsOnDays, remoteBranchExists } from './git';
 
 const MINE = 'me@example.com';
 const THEIRS = 'them@example.com';
@@ -68,5 +68,26 @@ describe('commitPathsOnDays', () => {
     const days = ['2026-09-08'];
 
     expect(pathsOf(commitPathsOnDays({ root, days, author: MINE }))).toEqual(['on-main/a.ts']);
+  });
+});
+
+describe('remoteBranchExists', () => {
+  it('matches the whole branch name, not a branch that ends with it', () => {
+    const base = mkdtempSync(join(tmpdir(), 'agent-rules-remote-'));
+    const bare = join(base, 'origin.git');
+    const clone = join(base, 'clone');
+    const inClone = (args: string[]) => execFileSync('git', args, { cwd: clone, encoding: 'utf8', stdio: 'pipe' });
+
+    execFileSync('git', ['init', '-q', '--bare', '-b', 'main', bare], { stdio: 'pipe' });
+    execFileSync('git', ['clone', '-q', bare, clone], { stdio: 'pipe' });
+    inClone(['config', 'user.email', MINE]);
+    inClone(['config', 'user.name', 'A']);
+    inClone(['commit', '-q', '--allow-empty', '-m', 'init']);
+    inClone(['push', '-q', 'origin', 'HEAD:refs/heads/team/feat/x']);
+
+    expect(remoteBranchExists({ root: clone, remote: 'origin', branch: 'feat/x' })).toBe(false);
+    expect(remoteBranchExists({ root: clone, remote: 'origin', branch: 'team/feat/x' })).toBe(true);
+
+    rmSync(base, { recursive: true, force: true });
   });
 });

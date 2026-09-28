@@ -70,7 +70,8 @@ export const localBranchExists = (options: { root: string; branch: string }) =>
   refExists({ root: options.root, ref: `refs/heads/${options.branch}` });
 
 export const remoteBranchExists = (options: { root: string; remote: string; branch: string }) =>
-  git({ root: options.root, args: ['ls-remote', '--heads', options.remote, options.branch] }).length > 0;
+  git({ root: options.root, args: ['ls-remote', '--heads', options.remote, `refs/heads/${options.branch}`] }).length >
+  0;
 
 /** `origin` when it exists, otherwise the only remote — a repo with several and no `origin` is ambiguous. */
 export const defaultRemote = (root: string) => {
