@@ -319,7 +319,9 @@ To register your own tool, provide a `RichTextEditorToolDefinition` (a toggle bu
 control component) through the `RICH_TEXT_EDITOR_TOOL` multi-provider token. Besides the button, a
 definition can hook the content itself - `keydown`, `paste`, `drop` and `click` all run for every
 provided tool, whether or not its token is in the visible toolbar, because they act on content rather
-than on a button (that is how table caret navigation and image paste/drop work).
+than on a button (that is how table caret navigation and image paste/drop work). A definition is
+created once per injector, so a tool provided on a route serves every editor below it;
+`editorDestroyed(editor)` is called when one of them goes away, to cancel what the tool started for it.
 
 ## Images
 
@@ -339,12 +341,12 @@ providers: [
 ];
 ```
 
-| Option      | Type                                              | Notes                                                                                                     |
-| ----------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `upload`    | `(file) => Observable<string> \| Promise<string>` | Resolve to the image's URL. Also takes a [dropzone upload config](#upload-progress)                       |
-| `accept`    | `string`                                          | File-picker `accept`, and the filter for pasted/dropped files. Default `'image/*'`                        |
-| `maxSize`   | `number`                                          | Largest file accepted, in bytes                                                                           |
-| `onFailure` | `(failure) => void`                               | `{ file, reason, error?, message? }` - `reason` is `'unsupported-type' \| 'too-large' \| 'upload-failed'` |
+| Option      | Type                                                          | Notes                                                                                                     |
+| ----------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `upload`    | `(file, { signal }) => Observable<string> \| Promise<string>` | Resolve to the image's URL. Also takes a [dropzone upload config](#upload-progress)                       |
+| `accept`    | `string`                                                      | File-picker `accept`, and the filter for pasted/dropped files. Default `'image/*'`                        |
+| `maxSize`   | `number`                                                      | Largest file accepted, in bytes                                                                           |
+| `onFailure` | `(failure) => void`                                           | `{ file, reason, error?, message? }` - `reason` is `'unsupported-type' \| 'too-large' \| 'upload-failed'` |
 
 Three ways in, all of them going through your handler: the toolbar button (which opens the file
 dialog), **pasting** an image file, and **dropping** one. Images are stored as GFM `![alt](url)`, are
@@ -359,6 +361,10 @@ placeholder where it stands, without disturbing the caret; on failure the placeh
 briefly, removes itself and calls `onFailure`. **The value never sees the placeholder** - it carries no
 text, so an upload in flight leaves the Markdown (and the undo history) untouched, and a single undo
 takes the finished image back out.
+
+Destroying the editor cancels its uploads in flight, even when the tool is provided on a route or the
+app: an observable upload is unsubscribed, the `signal` aborts (pass it to `fetch` to abort a promise
+upload), and nothing is inserted.
 
 An embedded image is an **atom**: its block is not editable, so the caret cannot sit beside it in what
 looks like a line of text, and a document never ends on one (there is always a line after it to type

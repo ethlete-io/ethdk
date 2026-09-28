@@ -233,6 +233,12 @@ export type RichTextEditorToolDefinition = {
    * write a value it never got.
    */
   normalize?: (root: HTMLElement) => void;
+
+  /**
+   * Called once when an editor using this tool is destroyed - the hook to cancel what the tool
+   * started for that editor (the image tool aborts its uploads and closes its popover).
+   */
+  editorDestroyed?: (editor: RichTextEditorDirective) => void;
 };
 
 /** Multi-provider token opt-in tools register their {@link RichTextEditorToolDefinition} into. */

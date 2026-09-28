@@ -7,7 +7,7 @@ import {
   runInInjectionContext,
 } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { NEVER, of, Subject } from 'rxjs';
+import { NEVER, Observable, of, Subject } from 'rxjs';
 import '../../../../test-helpers';
 import { injectOverlayManager } from '../../../overlay/overlay-manager';
 import { RichTextEditorDirective } from '../headless/rich-text-editor.directive';
@@ -114,6 +114,71 @@ describe('provideRichTextEditorImageTool in a shared scope', () => {
     pasteImage(tool, editor);
 
     expect(liveDestroyCallbacks).toBe(baseline);
+  });
+
+  it('cancels an upload when its editor is destroyed, and inserts nothing', () => {
+    const unsubscribed = vi.fn();
+    const uploads = new Subject<string>();
+    let signal: AbortSignal | undefined;
+    const tool = setupScope((_file, context) => {
+      signal = context.signal;
+
+      return new Observable<string>((subscriber) => {
+        const subscription = uploads.subscribe(subscriber);
+
+        return () => {
+          unsubscribed();
+          subscription.unsubscribe();
+        };
+      });
+    });
+    const { editor, root } = createEditor();
+    const baseline = liveDestroyCallbacks;
+
+    pasteImage(tool, editor);
+    tool.editorDestroyed?.(editor);
+
+    expect(unsubscribed).toHaveBeenCalledOnce();
+    expect(signal?.aborted).toBe(true);
+    expect(liveDestroyCallbacks).toBe(baseline);
+
+    uploads.next('https://cdn/b.png');
+
+    expect(root.querySelector('img[src="https://cdn/b.png"]')).toBeNull();
+  });
+
+  it('aborts the signal of a promise upload when its editor is destroyed', async () => {
+    let signal: AbortSignal | undefined;
+    let resolve: (url: string) => void = () => undefined;
+    const tool = setupScope((_file, context) => {
+      signal = context.signal;
+
+      return new Promise<string>((done) => (resolve = done));
+    });
+    const { editor, root } = createEditor();
+
+    pasteImage(tool, editor);
+    tool.editorDestroyed?.(editor);
+    resolve('https://cdn/b.png');
+    await Promise.resolve();
+
+    expect(signal?.aborted).toBe(true);
+    expect(root.querySelector('img[src="https://cdn/b.png"]')).toBeNull();
+  });
+
+  it('leaves the uploads of other editors running', () => {
+    const uploads = new Subject<string>();
+    const tool = setupScope(() => uploads);
+    const first = createEditor();
+    const second = createEditor();
+
+    pasteImage(tool, first.editor);
+    pasteImage(tool, second.editor);
+    tool.editorDestroyed?.(first.editor);
+    uploads.next('https://cdn/b.png');
+
+    expect(first.root.querySelector('img[src="https://cdn/b.png"]')).toBeNull();
+    expect(second.root.querySelector('img[src="https://cdn/b.png"]')).not.toBeNull();
   });
 
   it('keeps one image popover per editor', () => {

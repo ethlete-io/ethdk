@@ -299,6 +299,9 @@ export class RichTextEditorDirective
 
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
+    this.destroyRef.onDestroy(() => {
+      for (const tool of this.registeredTools ?? []) tool.editorDestroyed?.(this);
+    });
 
     fromEvent(this.document, 'selectionchange')
       .pipe(

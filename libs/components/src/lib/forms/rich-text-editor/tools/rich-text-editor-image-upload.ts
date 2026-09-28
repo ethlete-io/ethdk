@@ -2,11 +2,22 @@ import { effect, Injector, untracked } from '@angular/core';
 import { catchError, defaultIfEmpty, EMPTY, isObservable, Observable, Subscription, take, tap } from 'rxjs';
 import { AnyDropzoneUploadConfig } from '../../dropzone/headless';
 
+export type RichTextEditorImageUploadContext = {
+  /**
+   * Aborts when the upload is cancelled - its editor was destroyed, or the tool's scope went away.
+   * An observable upload is unsubscribed then anyway; pass this to `fetch` for a promise upload.
+   */
+  signal: AbortSignal;
+};
+
 /**
  * Uploads one file and resolves to the URL the editor should point at. The simple shape: anything
  * that produces a URL - an `HttpClient` call, a query's response stream, a plain promise.
  */
-export type RichTextEditorImageUploadFn = (file: File) => Observable<string> | PromiseLike<string>;
+export type RichTextEditorImageUploadFn = (
+  file: File,
+  context: RichTextEditorImageUploadContext,
+) => Observable<string> | PromiseLike<string>;
 
 /**
  * How the image tool uploads. Either an upload function, or a dropzone upload config built with
@@ -57,7 +68,8 @@ export const startImageUpload = (options: StartImageUploadOptions): RichTextEdit
     return runQueryUpload({ file, upload, injector, onProgress, onSuccess, onError });
   }
 
-  const result = upload(file);
+  const abortController = new AbortController();
+  const result = upload(file, { signal: abortController.signal });
 
   if (isObservable(result)) {
     const subscription: Subscription = result
@@ -75,7 +87,12 @@ export const startImageUpload = (options: StartImageUploadOptions): RichTextEdit
       )
       .subscribe();
 
-    return { cancel: () => subscription.unsubscribe() };
+    return {
+      cancel: () => {
+        subscription.unsubscribe();
+        abortController.abort();
+      },
+    };
   }
 
   let cancelled = false;
@@ -89,7 +106,12 @@ export const startImageUpload = (options: StartImageUploadOptions): RichTextEdit
     },
   );
 
-  return { cancel: () => (cancelled = true) };
+  return {
+    cancel: () => {
+      cancelled = true;
+      abortController.abort();
+    },
+  };
 };
 
 /**

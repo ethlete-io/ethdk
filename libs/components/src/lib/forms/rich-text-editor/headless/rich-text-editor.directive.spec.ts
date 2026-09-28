@@ -8,6 +8,7 @@ import {
 } from '../../testing/rich-text-editor-driver';
 import { FORM_FIELD_CONTROL_TYPES, FormFieldDirective, LabelDirective } from '../../form-field/headless';
 import { RICH_TEXT_EDITOR_ERROR_CODES } from '../rich-text-editor-errors';
+import { RICH_TEXT_EDITOR_TOOL } from '../rich-text-editor-tools';
 import { RichTextEditorTrigger, RichTextEditorTriggerItem } from '../rich-text-editor-trigger';
 import { provideRichTextEditorDefaultTools } from '../tools/rich-text-editor-default-tools.provider';
 import { createRichTextEditorTokenCodec } from './internals/rich-text-editor-token';
@@ -37,7 +38,32 @@ class StandaloneEditorTestHost {}
 })
 class MinimalEditorTestHost {}
 
+const editorDestroyed = vi.fn();
+
+@Component({
+  template: `<div etRichTextEditor></div>`,
+  imports: [RichTextEditorDirective],
+  providers: [
+    { provide: RICH_TEXT_EDITOR_TOOL, useValue: { token: 'custom', label: 'Custom', editorDestroyed }, multi: true },
+  ],
+})
+class EditorWithCustomToolTestHost {}
+
 describe('RichTextEditorDirective', () => {
+  describe('tool lifecycle', () => {
+    it('tells each registered tool when the editor is destroyed', () => {
+      editorDestroyed.mockClear();
+
+      const driver = mountRichTextEditor(EditorWithCustomToolTestHost);
+
+      expect(editorDestroyed).not.toHaveBeenCalled();
+
+      driver.fixture.destroy();
+
+      expect(editorDestroyed).toHaveBeenCalledExactlyOnceWith(driver.editor);
+    });
+  });
+
   describe('inside form field', () => {
     let formFieldDir: FormFieldDirective;
 

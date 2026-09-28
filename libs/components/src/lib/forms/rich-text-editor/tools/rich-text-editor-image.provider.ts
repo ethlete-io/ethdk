@@ -2,7 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { DestroyRef, inject, Injector, inputBinding, outputBinding, Provider } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { anchoredOverlayPosition, enableAnchoredOverlayPositionExtras, injectRenderer } from '@ethlete/core';
-import { fromEvent, take, tap, timer } from 'rxjs';
+import { fromEvent, Subscription, take, tap, timer } from 'rxjs';
 import { OverlayConfig } from '../../../overlay/overlay-config';
 import { injectOverlayManager } from '../../../overlay/overlay-manager';
 import { OverlayRef } from '../../../overlay/overlay-ref';
@@ -100,6 +100,7 @@ export const provideRichTextEditorImageTool = (config: RichTextEditorImageToolCo
       paste: (editor, event) => controller.handlePaste(editor, event),
       drop: (editor, event) => controller.handleDrop(editor, event),
       click: (editor, event) => controller.handleClick(editor, event),
+      editorDestroyed: (editor) => controller.release(editor),
     };
   },
   multi: true,
@@ -121,7 +122,32 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
     { ref: OverlayRef<RichTextEditorImageEditorComponent, unknown>; image: HTMLImageElement }
   >();
 
+  const editorCleanups = new Map<RichTextEditorDirective, Set<() => void>>();
+
   const fail = (failure: RichTextEditorImageFailure) => config.onFailure?.(failure);
+
+  const trackForEditor = (editor: RichTextEditorDirective, cleanup: () => void) => {
+    const cleanups = editorCleanups.get(editor) ?? new Set();
+
+    cleanups.add(cleanup);
+    editorCleanups.set(editor, cleanups);
+
+    return () => {
+      cleanups.delete(cleanup);
+
+      if (!cleanups.size) editorCleanups.delete(editor);
+    };
+  };
+
+  const release = (editor: RichTextEditorDirective) => {
+    const cleanups = editorCleanups.get(editor);
+
+    editorCleanups.delete(editor);
+
+    for (const cleanup of cleanups ?? []) cleanup();
+
+    close(editor);
+  };
 
   /** Opens the OS file dialog. Created per pick so nothing lingers in the DOM between uploads. */
   const pickFiles = (editor: RichTextEditorDirective) => {
@@ -133,27 +159,35 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
     renderer.setStyle(input, { display: 'none' });
     renderer.appendChild(document.body, input);
 
+    const subscriptions = new Subscription();
     const unregisterRemoval = destroyRef.onDestroy(() => input.remove());
+    const untrack = trackForEditor(editor, () => removeInput());
 
     const removeInput = () => {
       input.remove();
+      subscriptions.unsubscribe();
       unregisterRemoval();
+      untrack();
     };
 
-    fromEvent(input, 'change')
-      .pipe(
-        take(1),
-        tap(() => {
-          upload(editor, Array.from(input.files ?? []));
-          removeInput();
-        }),
-        takeUntilDestroyed(destroyRef),
-      )
-      .subscribe();
+    subscriptions.add(
+      fromEvent(input, 'change')
+        .pipe(
+          take(1),
+          tap(() => {
+            upload(editor, Array.from(input.files ?? []));
+            removeInput();
+          }),
+          takeUntilDestroyed(destroyRef),
+        )
+        .subscribe(),
+    );
 
     // A cancelled dialog fires `cancel` in every browser that ships the event; where it doesn't, the
     // input is cleaned up on the next pick or when the editor goes away.
-    fromEvent(input, 'cancel').pipe(take(1), tap(removeInput), takeUntilDestroyed(destroyRef)).subscribe();
+    subscriptions.add(
+      fromEvent(input, 'cancel').pipe(take(1), tap(removeInput), takeUntilDestroyed(destroyRef)).subscribe(),
+    );
 
     input.click();
   };
@@ -187,10 +221,12 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
 
     let settled = false;
     let unregisterCancel: (() => void) | null = null;
+    let untrack: (() => void) | null = null;
 
     const settle = () => {
       settled = true;
       unregisterCancel?.();
+      untrack?.();
     };
 
     const run = startImageUpload({
@@ -214,7 +250,13 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
       },
     });
 
-    if (!settled) unregisterCancel = destroyRef.onDestroy(() => run.cancel());
+    if (settled) return;
+
+    unregisterCancel = destroyRef.onDestroy(() => run.cancel());
+    untrack = trackForEditor(editor, () => {
+      unregisterCancel?.();
+      run.cancel();
+    });
   };
 
   /** Leaves the placeholder in its failed state briefly, so the user sees which image didn't make it. */
@@ -408,5 +450,5 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
     for (const editor of [...overlayRefs.keys()]) close(editor);
   });
 
-  return { run, normalize: ops.normalizeImages, handlePaste, handleDrop, handleClick };
+  return { run, normalize: ops.normalizeImages, handlePaste, handleDrop, handleClick, release };
 };
