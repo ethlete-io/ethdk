@@ -321,7 +321,9 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
       let mark: HTMLElement | null =
         start.nodeType === Node.ELEMENT_NODE ? (start as HTMLElement) : start.parentElement;
 
-      while (mark && mark !== el && !inlineMarkTags.has(mark.tagName)) mark = mark.parentElement;
+      while (mark && mark !== el && mark.tagName !== 'A' && !inlineMarkTags.has(mark.tagName)) {
+        mark = mark.parentElement;
+      }
 
       if (!mark || mark === el || !inlineMarkTags.has(mark.tagName)) return;
 
@@ -364,8 +366,6 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
     let deepest: Node = content;
     while (deepest.firstChild) deepest = deepest.firstChild;
 
-    // Chrome removes a CSS-collapsed trailing space from the text node on the next keystroke, which
-    // snaps the caret back inside the mark it just escaped; a no-break space survives that.
     const next = content.nextSibling;
     const endsLine = !next || (next instanceof Text && next.data.length === 0);
 
@@ -385,5 +385,3 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
 
   return { toggleInline, activeInlineTags, insertInlineText };
 };
-
-export type RichTextEditorDomInlineMarks = ReturnType<typeof createRichTextEditorInlineMarks>;

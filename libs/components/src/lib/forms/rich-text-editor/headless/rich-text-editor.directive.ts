@@ -109,6 +109,16 @@ const collectTextNodes = (root: HTMLElement) => {
 };
 
 /** Every call must sit inside an `ngDevMode` branch - that is what keeps these strings out of a production bundle. */
+type InlineMarkStates = Pick<RichTextMarkStates, 'bold' | 'italic' | 'strike' | 'underline' | 'code'>;
+
+const inlineMarkStates = (tags: InlineTag[]): InlineMarkStates => ({
+  bold: tags.includes('strong'),
+  italic: tags.includes('em'),
+  strike: tags.includes('del'),
+  underline: tags.includes('u'),
+  code: tags.includes('code'),
+});
+
 const missingDomFeature = (method: string, provider: string) =>
   new RuntimeError(
     RICH_TEXT_EDITOR_ERROR_CODES.DOM_FEATURE_NOT_PROVIDED,
@@ -405,7 +415,7 @@ export class RichTextEditorDirective
     if (pending !== null) {
       const states = this.editorDom.markStates();
 
-      this.reflectMarks(pending);
+      this.reflectMarks(inlineMarkStates(pending));
       this.reflectBlockStates(states);
 
       return;
@@ -413,11 +423,7 @@ export class RichTextEditorDirective
 
     const states = this.editorDom.markStates();
 
-    this.boldActive.set(states?.bold ?? false);
-    this.italicActive.set(states?.italic ?? false);
-    this.strikeActive.set(states?.strike ?? false);
-    this.underlineActive.set(states?.underline ?? false);
-    this.codeActive.set(states?.code ?? false);
+    this.reflectMarks(states);
     this.unorderedListActive.set(states?.unorderedList ?? false);
     this.orderedListActive.set(states?.orderedList ?? false);
     this.linkActive.set(states?.link ?? false);
@@ -797,8 +803,6 @@ export class RichTextEditorDirective
     if (!root || !this.editorDom.ensureCaret()) return;
 
     this.editorDom.insertToken(buildChipElement(this.renderer, chip));
-    // A plain trailing space is CSS-collapsed and dropped by Chrome, so park a no-break space after
-    // the chip instead; serialization normalizes it back to a plain space.
     this.editorDom.insertToken(this.renderer.createText(' '));
 
     if (hydrate) this.tokenCodec()?.hydrate(root);
@@ -855,13 +859,16 @@ export class RichTextEditorDirective
       });
     }
 
-    return (
-      clone.innerHTML
-        .replace(/<div>/gi, '<p>')
-        .replace(/<\/div>/gi, '</p>')
-        // drop zero-width spaces used transiently to park the caret outside an inline mark (code exit)
-        .replace(/\u200b/g, '')
-    );
+    // eslint-disable-next-line ethlete/no-dom-query
+    clone.querySelectorAll('div').forEach((div) => {
+      const paragraph = this.renderer.createElement('p') as HTMLElement;
+
+      while (div.firstChild) this.renderer.appendChild(paragraph, div.firstChild);
+      div.replaceWith(paragraph);
+    });
+
+    // drop zero-width spaces used transiently to park the caret outside an inline mark (code exit)
+    return clone.innerHTML.replace(/\u200b/g, '');
   }
 
   private toggleMark(tag: InlineTag) {
@@ -886,7 +893,7 @@ export class RichTextEditorDirective
     const next = base.includes(tag) ? base.filter((mark) => mark !== tag) : [...base, tag];
 
     this.pendingMarks.set(next);
-    this.reflectMarks(next);
+    this.reflectMarks(inlineMarkStates(next));
   }
 
   private reflectBlockStates(states: RichTextMarkStates | null) {
@@ -896,12 +903,12 @@ export class RichTextEditorDirective
     this.inTableCell.set(states?.tableCell ?? false);
   }
 
-  private reflectMarks(tags: InlineTag[]) {
-    this.boldActive.set(tags.includes('strong'));
-    this.italicActive.set(tags.includes('em'));
-    this.strikeActive.set(tags.includes('del'));
-    this.underlineActive.set(tags.includes('u'));
-    this.codeActive.set(tags.includes('code'));
+  private reflectMarks(states: InlineMarkStates | null) {
+    this.boldActive.set(states?.bold ?? false);
+    this.italicActive.set(states?.italic ?? false);
+    this.strikeActive.set(states?.strike ?? false);
+    this.underlineActive.set(states?.underline ?? false);
+    this.codeActive.set(states?.code ?? false);
   }
 
   private runCommand(command: () => void) {

@@ -100,6 +100,17 @@ describe('RichTextEditorDom', () => {
       expect(root.querySelector('pre > code')).toBeTruthy();
     });
 
+    it('keeps a link whole when the caret sits in a link inside a mark', () => {
+      const { root, dom } = setup('<strong><a href="https://x.test">abcd</a></strong>');
+      const text = (root.querySelector('a') as HTMLElement).firstChild as Node;
+      selectRange(text, 2, text, 2);
+
+      dom.insertInlineText('X', ['em']);
+
+      expect(root.querySelectorAll('a')).toHaveLength(1);
+      expect(root.querySelector('a')?.textContent).toBe('abXcd');
+    });
+
     it('reports the inline marks wrapping the caret', () => {
       const { root, dom } = setup('<strong><em>x</em></strong>');
       const text = (root.querySelector('em') as HTMLElement).firstChild as Node;

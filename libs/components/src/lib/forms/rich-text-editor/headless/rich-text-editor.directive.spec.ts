@@ -355,6 +355,14 @@ describe('RichTextEditorDirective', () => {
       expect(driver.value()).toBe('abcde');
     });
 
+    it('serializes a native div with attributes as its own paragraph', () => {
+      driver.setHtml('<div class="x">alpha</div><div>beta</div>');
+
+      driver.editor.syncFromDom();
+
+      expect(driver.value()).toBe('alpha\n\nbeta');
+    });
+
     it('serializes only the marked span when a selection is taken by text offsets', () => {
       driver.setHtml('<p>alpha beta</p>');
       driver.selectText(6, 10);

@@ -22,7 +22,7 @@ import {
   RuntimeError,
 } from '@ethlete/core';
 import { VirtualElement } from '@floating-ui/dom';
-import { fromEvent, map, take, tap } from 'rxjs';
+import { fromEvent, map, merge, take, tap } from 'rxjs';
 import { OverlayConfig } from '../../../overlay/overlay-config';
 import { injectOverlayManager } from '../../../overlay/overlay-manager';
 import { OverlayRef } from '../../../overlay/overlay-ref';
@@ -100,8 +100,6 @@ export class RichTextEditorTriggersDirective {
   });
 
   private isComposing = false;
-  private listenersAttached = false;
-  /** Position of a trigger char the user dismissed (Escape) - suppresses reopening for that run. */
   private dismissed: { node: Text; offset: number } | null = null;
 
   constructor() {
@@ -138,13 +136,14 @@ export class RichTextEditorTriggersDirective {
       effect(() => this.assertUniqueTriggers(this.triggers()));
     }
 
-    effect(() => {
+    effect((onCleanup) => {
       const root = editor.editorDom.root();
 
-      if (!root || this.listenersAttached) return;
+      if (!root) return;
 
-      this.listenersAttached = true;
-      this.attachListeners(root);
+      const subscription = untracked(() => this.attachListeners(root));
+
+      onCleanup(() => subscription.unsubscribe());
     });
 
     effect(() => {
@@ -157,13 +156,13 @@ export class RichTextEditorTriggersDirective {
 
     effect(() => {
       const root = editor.editorDom.root();
-      const open = !!this.overlayRef();
+      const listsOption = !!this.overlayRef() && this.itemsState().items.length > 0;
       const index = this.activeIndex();
 
       if (!root) return;
 
       untracked(() => {
-        if (open) {
+        if (listsOption) {
           this.renderer.setAttribute(root, 'aria-activedescendant', `${this.listboxId}-option-${index}`);
         } else {
           this.renderer.removeAttribute(root, 'aria-activedescendant');
@@ -175,44 +174,19 @@ export class RichTextEditorTriggersDirective {
   }
 
   private attachListeners(root: HTMLElement) {
-    fromEvent(root, 'input')
-      .pipe(
-        tap(() => this.syncDetection()),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
-
-    // capture phase so navigation keys win over the editor's own (bubble-phase) key handling
-    fromEvent<KeyboardEvent>(root, 'keydown', { capture: true })
-      .pipe(
-        tap((event) => this.interceptPopupKeys(event)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
-
-    fromEvent(root, 'compositionstart')
-      .pipe(
-        tap(() => (this.isComposing = true)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
-
-    fromEvent(root, 'compositionend')
-      .pipe(
+    return merge(
+      fromEvent(root, 'input').pipe(tap(() => this.syncDetection())),
+      // capture phase so navigation keys win over the editor's own (bubble-phase) key handling
+      fromEvent<KeyboardEvent>(root, 'keydown', { capture: true }).pipe(tap((event) => this.interceptPopupKeys(event))),
+      fromEvent(root, 'compositionstart').pipe(tap(() => (this.isComposing = true))),
+      fromEvent(root, 'compositionend').pipe(
         tap(() => {
           this.isComposing = false;
           this.syncDetection();
         }),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
-
-    fromEvent(this.document, 'selectionchange')
-      .pipe(
-        tap(() => this.syncDetection()),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
+      ),
+      fromEvent(this.document, 'selectionchange').pipe(tap(() => this.syncDetection())),
+    ).subscribe();
   }
 
   private syncDetection() {
@@ -320,9 +294,6 @@ export class RichTextEditorTriggersDirective {
     selection?.addRange(range);
 
     this.editor.editorDom.insertToken(this.buildChip(match.trigger, item));
-    // Trailing space so the caret escapes the chip and the next word doesn't hug it. Must be a
-    // no-break space: a plain space at the end of a line is CSS-collapsed and Chrome drops it from
-    // the text node on the next keystroke. Serialization normalizes it back to a plain space.
     this.editor.editorDom.insertToken(this.renderer.createText('\u00a0'));
     this.editor.syncFromDom({ boundary: true });
 
