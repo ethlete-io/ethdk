@@ -114,6 +114,43 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
     return !!edge && event.target === edge;
   };
 
+  const findTabStopBesideTheAnchor = (event: KeyboardEvent, pane: HTMLElement) => {
+    const anchor = options.anchor();
+
+    if (!anchor) {
+      return undefined;
+    }
+
+    const relation = event.shiftKey ? Node.DOCUMENT_POSITION_PRECEDING : Node.DOCUMENT_POSITION_FOLLOWING;
+    const tabStops = getFocusableElements(documentRef.body, documentRef).filter(
+      (element) =>
+        !anchor.contains(element) &&
+        !element.contains(anchor) &&
+        !pane.contains(element) &&
+        !!(anchor.compareDocumentPosition(element) & relation),
+    );
+
+    return event.shiftKey ? tabStops.at(-1) : tabStops[0];
+  };
+
+  const moveFocusBesideTheAnchor = (event: KeyboardEvent, pane: HTMLElement) => {
+    const tabStop = findTabStopBesideTheAnchor(event, pane);
+
+    if (!tabStop) {
+      return false;
+    }
+
+    event.preventDefault();
+    closedByFocusLeave = true;
+    tabStop.focus();
+
+    if (options.open()) {
+      requestClose();
+    }
+
+    return true;
+  };
+
   const attachInteractionListeners = () => {
     detachInteractionListeners();
 
@@ -154,7 +191,7 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
       subscriptions.push(
         fromEvent<KeyboardEvent>(pane, 'keydown')
           .pipe(
-            filter((event) => isTabPastThePaneEdge(event, pane)),
+            filter((event) => isTabPastThePaneEdge(event, pane) && !moveFocusBesideTheAnchor(event, pane)),
             // one task later: closing inside the keydown would tear the pane down before the browser
             // performs the Tab, and focus would fall to the document instead of the next tab stop
             delay(0),

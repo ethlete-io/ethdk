@@ -39,6 +39,27 @@ async function expectPresetsPlaced(page: Page, placement: 'inline-start' | 'bloc
   expect(presetsEnd).toBeLessThanOrEqual(calendarStart);
 }
 
+/** Puts a button before and after the story, so a Tab past the picker has a page tab stop to reach. */
+async function addTabStopsAroundStory(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const root = document.getElementById('storybook-root');
+    const stop = (id: string) => Object.assign(document.createElement('button'), { id, textContent: id });
+
+    root?.before(stop('tab-stop-before'));
+    root?.after(stop('tab-stop-after'));
+  });
+}
+
+/** Focuses the first control in the open picker without a Tab. */
+async function focusFirstPickerControl(page: Page): Promise<void> {
+  await page.locator(DIALOG).evaluate((dialog) => {
+    const candidates = dialog.querySelectorAll<HTMLElement>('button:not([disabled]), [tabindex]:not([tabindex="-1"])');
+    const first = Array.from(candidates).find((element) => element.tabIndex >= 0 && element.getClientRects().length);
+
+    first?.focus();
+  });
+}
+
 test.describe('date-inputs / date input focus', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus order');
 
@@ -270,6 +291,34 @@ test.describe('date-inputs / date range input keyboard', () => {
     await expect(page.locator(DIALOG)).toHaveCount(0);
     await expect(fields.first()).not.toBeFocused();
     await expect(fields.last()).not.toBeFocused();
+  });
+
+  test('a Tab past the calendar moves focus to the tab stop after the field', async ({ page }) => {
+    const root = await openStory(page, DATE_RANGE_INPUT_ID);
+    await addTabStopsAroundStory(page);
+
+    await root.locator('.et-input-picker-trigger').click();
+    await waitForPickerEntered(page);
+    await tabUntilFocused(page, page.locator(FOCUSED_CELL));
+
+    await pressKey(page, 'Tab');
+
+    await expect(page.locator(DIALOG)).toHaveCount(0);
+    await expect(page.locator('#tab-stop-after')).toBeFocused();
+  });
+
+  test('a Shift+Tab off the picker first control moves focus to the tab stop before the field', async ({ page }) => {
+    const root = await openStory(page, DATE_RANGE_INPUT_ID);
+    await addTabStopsAroundStory(page);
+
+    await root.locator('.et-input-picker-trigger').click();
+    await waitForPickerEntered(page);
+    await focusFirstPickerControl(page);
+
+    await pressKey(page, 'Shift+Tab');
+
+    await expect(page.locator(DIALOG)).toHaveCount(0);
+    await expect(page.locator('#tab-stop-before')).toBeFocused();
   });
 });
 
