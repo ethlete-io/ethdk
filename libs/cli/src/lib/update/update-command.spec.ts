@@ -171,6 +171,20 @@ describe('et update --check', () => {
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('--continue'));
   });
 
+  it('points a plain run to --continue while an update is unfinished', async () => {
+    const root = makeRepo();
+    const upToDate = { 'dist-tags': { latest: '5.1.0' }, versions: { '5.1.0': {} } };
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(JSON.stringify(upToDate))),
+    );
+
+    expect(await updateCommand({ argv: [], root })).toBe(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('--continue'));
+    expect(generatorsRun()).toEqual([]);
+  });
+
   it('does not call the packages up to date when every lookup failed', async () => {
     const root = makeRepo();
 
@@ -355,6 +369,8 @@ describe('the task list', () => {
 describe('the printed plan', () => {
   it('says so when the installed versions know no migration', async () => {
     const root = makeRepo();
+
+    rmSync(join(root, PENDING_FILE));
 
     stubRegistry('5.2.0');
 

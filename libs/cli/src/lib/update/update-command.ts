@@ -476,7 +476,7 @@ export const updateCommand = async ({
 
   const manager = detectPackageManager({ root, manifest });
 
-  const unfinished = args.check ? readPendingUpdate(root) : undefined;
+  const unfinished = args.resume ? undefined : readPendingUpdate(root);
 
   if (unfinished) {
     console.error(

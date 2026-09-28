@@ -1,8 +1,7 @@
-import { spawnSync } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { Migration } from './migration-manifest';
-import { PackageManager, installEnv, nxCommand } from './package-manager';
+import { PackageManager, installEnv, nxCommand, spawnPackageManager } from './package-manager';
 import { PendingMigration } from './plan';
 
 export type MigrationState = 'applied' | 'failed' | 'unsupported' | 'task' | 'planned';
@@ -45,7 +44,7 @@ export const runAutoMigration = (options: {
 
   if (binary === undefined) return { pending, state: 'failed', reason: 'no command to run the generator with' };
 
-  const result = spawnSync(binary, args, { cwd: root, stdio: 'inherit' });
+  const result = spawnPackageManager({ binary, args, spawn: { cwd: root, stdio: 'inherit' } });
 
   if (result.error) return { pending, state: 'failed', reason: result.error.message };
 
@@ -60,7 +59,7 @@ export const runInstall = (options: { root: string; manager: PackageManager; env
 
   if (binary === undefined) return { ok: false, reason: 'no install command' };
 
-  const result = spawnSync(binary, args, { cwd: root, stdio: 'inherit', env: installEnv(env) });
+  const result = spawnPackageManager({ binary, args, spawn: { cwd: root, stdio: 'inherit', env: installEnv(env) } });
 
   if (result.error) return { ok: false, reason: result.error.message };
 

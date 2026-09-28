@@ -1,7 +1,6 @@
-import { spawnSync } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
-import { PackageManager } from './package-manager';
+import { PackageManager, spawnPackageManager } from './package-manager';
 import { UpdatedPackage } from './plan';
 
 export const AGENT_RULES_PACKAGE = '@ethlete/agent-rules';
@@ -45,7 +44,7 @@ export const runAgentRulesSync = (plan: AgentRulesSyncPlan, root: string): Agent
 
   if (binary === undefined) return { state: 'failed', command: plan.command, reason: 'no command to run sync with' };
 
-  const result = spawnSync(binary, args, { cwd: root, stdio: 'inherit' });
+  const result = spawnPackageManager({ binary, args, spawn: { cwd: root, stdio: 'inherit' } });
 
   if (result.error) return { state: 'failed', command: plan.command, reason: result.error.message };
 

@@ -73,7 +73,7 @@ An install, a codemod or the agent rules sync that fails stops the run and leave
 yarn et update --continue
 ```
 
-`pending.json` records every codemod that already applied and the `--from` versions you passed, so `--continue` runs only the rest, from the same versions. The report still lists the codemods the earlier run applied. `--check` exits 1 while the file is there.
+`pending.json` records every codemod that already applied and the `--from` versions you passed, so `--continue` runs only the rest, from the same versions. The report still lists the codemods the earlier run applied. While the file is there, every run other than `--continue` exits 1 and points to it.
 
 Do not start over. `package.json` already holds the new versions, so a fresh run finds nothing pending and skips every migration the interrupted run had not reached yet.
 

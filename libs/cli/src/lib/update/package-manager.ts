@@ -1,3 +1,4 @@
+import { SpawnSyncOptions, spawnSync } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { Manifest } from './packages';
@@ -27,17 +28,13 @@ const LOCKFILES: [string, PackageManagerName][] = [
   ['package-lock.json', 'npm'],
 ];
 
-const declaredName = (manifest: Manifest | undefined, userAgent: string | undefined) => {
-  const declared = manifest?.packageManager ?? userAgent;
-
-  return declared
-    ? (Object.keys(MANAGERS) as PackageManagerName[]).find((name) => declared.startsWith(name))
-    : undefined;
-};
+const managerNamed = (declared: string | undefined) =>
+  declared ? (Object.keys(MANAGERS) as PackageManagerName[]).find((name) => declared.startsWith(name)) : undefined;
 
 /**
  * The package manager this repo uses: what `packageManager` declares, else the lockfile that is there,
- * else npm. `et update` runs the install itself, so it has to be the same one the repo already uses.
+ * else the one running this command, else npm. `et update` runs the install itself, so it has to be
+ * the same one the repo already uses.
  */
 export const detectPackageManager = (options: {
   root: string;
@@ -45,13 +42,11 @@ export const detectPackageManager = (options: {
   env?: NodeJS.ProcessEnv;
 }): PackageManager => {
   const { root, manifest, env = process.env } = options;
-  const declared = declaredName(manifest, env['npm_config_user_agent']);
+  const found = LOCKFILES.find(([fileName]) => existsSync(join(root, fileName)))?.[1];
 
-  if (declared) return MANAGERS[declared];
-
-  const found = LOCKFILES.find(([fileName]) => existsSync(join(root, fileName)));
-
-  return MANAGERS[found?.[1] ?? 'npm'];
+  return MANAGERS[
+    managerNamed(manifest?.packageManager) ?? found ?? managerNamed(env['npm_config_user_agent']) ?? 'npm'
+  ];
 };
 
 const INJECTED_REGISTRY = /^npm_config_(@[^:]+:)?registry$/i;
@@ -74,3 +69,25 @@ export const nxCommand = (options: { manager: PackageManager; args: readonly str
   'nx',
   ...options.args,
 ];
+
+const CMD_SAFE_ARGUMENT = /^[\w@:/\\.=,+-]+$/;
+
+const cmdQuoted = (argument: string) =>
+  CMD_SAFE_ARGUMENT.test(argument) ? argument : `"${argument.replace(/"/g, '""')}"`;
+
+/**
+ * Runs a package manager command such as `yarn install`. On Windows the managers are `.cmd` shims,
+ * which Node spawns only through a shell (CVE-2024-27980), so the command runs as one quoted line there.
+ */
+export const spawnPackageManager = (options: {
+  binary: string;
+  args: readonly string[];
+  spawn: SpawnSyncOptions;
+  platform?: NodeJS.Platform;
+}) => {
+  const { binary, args, spawn, platform = process.platform } = options;
+
+  if (platform !== 'win32') return spawnSync(binary, args, spawn);
+
+  return spawnSync([binary, ...args].map(cmdQuoted).join(' '), { ...spawn, shell: true });
+};

@@ -1,8 +1,14 @@
 import { mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { describe, expect, it } from 'vitest';
-import { detectPackageManager, nxCommand } from './package-manager';
+import { spawnSync } from 'child_process';
+import { describe, expect, it, vi } from 'vitest';
+import { detectPackageManager, nxCommand, spawnPackageManager } from './package-manager';
+
+vi.mock('child_process', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('child_process')>()),
+  spawnSync: vi.fn(() => ({ status: 0 })),
+}));
 
 const makeRoot = () => mkdtempSync(join(tmpdir(), 'cli-manager-'));
 
@@ -30,6 +36,16 @@ describe('detectPackageManager', () => {
     ).toBe('bun');
   });
 
+  it('follows the lockfile over the user agent of npx', () => {
+    const root = makeRoot();
+
+    touch(root, 'yarn.lock');
+
+    expect(detectPackageManager({ root, env: { npm_config_user_agent: 'npm/10.8.2 node/v22 linux x64' } }).name).toBe(
+      'yarn',
+    );
+  });
+
   it('falls back to npm', () => {
     expect(detectPackageManager({ root: makeRoot(), env: {} }).name).toBe('npm');
   });
@@ -45,5 +61,27 @@ describe('nxCommand', () => {
       'generate',
       '@ethlete/core:migrate-x',
     ]);
+  });
+});
+
+describe('spawnPackageManager', () => {
+  it('spawns the binary directly outside Windows', () => {
+    spawnPackageManager({ binary: 'yarn', args: ['install'], spawn: { cwd: '/repo' }, platform: 'linux' });
+
+    expect(vi.mocked(spawnSync)).toHaveBeenLastCalledWith('yarn', ['install'], { cwd: '/repo' });
+  });
+
+  it('runs the .cmd shim through a shell on Windows, with quoted arguments', () => {
+    spawnPackageManager({
+      binary: 'yarn',
+      args: ['nx', 'generate', '@ethlete/core:migrate', 'a "b" c'],
+      spawn: { cwd: 'C:\\repo' },
+      platform: 'win32',
+    });
+
+    expect(vi.mocked(spawnSync)).toHaveBeenLastCalledWith('yarn nx generate @ethlete/core:migrate "a ""b"" c"', {
+      cwd: 'C:\\repo',
+      shell: true,
+    });
   });
 });
