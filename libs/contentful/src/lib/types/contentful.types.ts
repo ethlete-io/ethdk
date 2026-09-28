@@ -166,7 +166,7 @@ export type ContentfulRestAsset = {
   fields: {
     title: string;
     description: string;
-    file: ContentfulAssetFileData;
+    file?: ContentfulAssetFileData;
   };
   metadata: ContentfulMetadata;
 };

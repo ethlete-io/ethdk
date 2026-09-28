@@ -174,3 +174,12 @@ describe('generateDefaultContentfulImageSource', () => {
     expect(generateDefaultContentfulImageSource(createGqlAsset({ url: null }))).toEqual({ type: '', srcset: '' });
   });
 });
+
+describe('an asset without a file for the locale', () => {
+  const asset: ContentfulRestAsset = { ...createRestAsset(), fields: { title: 'Title', description: '' } };
+
+  it('yields no sources', () => {
+    expect(generateContentfulImageSources(asset, { srcsetSizes: ['400w'] })).toEqual([]);
+    expect(generateDefaultContentfulImageSource(asset)).toEqual({ type: '', srcset: '' });
+  });
+});

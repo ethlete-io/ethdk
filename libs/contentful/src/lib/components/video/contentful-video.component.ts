@@ -37,7 +37,7 @@ export class ContentfulVideoComponent {
       };
     }
 
-    if (!isContentfulGqlAsset(asset) && asset.fields.file.url) {
+    if (!isContentfulGqlAsset(asset) && asset.fields.file?.url) {
       return {
         url: asset.fields.file.url,
         contentType: asset.fields.file.contentType,

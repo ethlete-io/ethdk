@@ -68,9 +68,10 @@ export class ContentfulLinkComponent {
     const absoluteUrl = parseWebUrl(href);
 
     if (absoluteUrl) {
-      const internalHosts = [this.document.location.hostname, ...this.config.internalHosts];
+      const { hostname, port } = this.document.location;
+      const isCurrentHost = absoluteUrl.hostname === hostname && absoluteUrl.port === port;
 
-      return internalHosts.some((host) => matchesHostname(absoluteUrl.hostname, host));
+      return isCurrentHost || this.config.internalHosts.some((host) => matchesHostname(absoluteUrl.hostname, host));
     }
 
     return !href.startsWith('#') && !/^[a-z][a-z\d+.-]*:/i.test(href);

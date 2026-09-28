@@ -17,7 +17,9 @@ export const generateDefaultContentfulImageSource = (data: ContentfulRestAsset |
     };
   }
 
-  if (!data.fields.file.contentType || !data.fields.file.url) {
+  const file = data.fields.file;
+
+  if (!file?.contentType || !file.url) {
     return {
       type: '',
       srcset: '',
@@ -25,8 +27,8 @@ export const generateDefaultContentfulImageSource = (data: ContentfulRestAsset |
   }
 
   return {
-    type: data.fields.file.contentType,
-    srcset: data.fields.file.url,
+    type: file.contentType,
+    srcset: file.url,
   };
 };
 
@@ -82,13 +84,13 @@ export const generateContentfulImageSources = (
   const { srcsetSizes = [], backgroundColor = null, quality = null, focusArea = null, resizeBehavior = null } = options;
 
   const isGqlAsset = isContentfulGqlAsset(data);
-  const baseUrl = isGqlAsset ? data.url : data.fields.file.url;
+  const baseUrl = isGqlAsset ? data.url : data.fields.file?.url;
 
   if (!baseUrl) {
     return [];
   }
 
-  const imageDimensions = isGqlAsset ? data : data.fields.file.details.image;
+  const imageDimensions = isGqlAsset ? data : data.fields.file?.details.image;
   const sources: PictureSource[] = [];
 
   for (const type of SOURCE_TYPES) {

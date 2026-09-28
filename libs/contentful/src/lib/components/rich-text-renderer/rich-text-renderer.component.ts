@@ -36,6 +36,7 @@ type HtmlOpenRenderCommand = {
   nestingLevel: number;
   domPosition: number;
   index: number;
+  parentId: string | null;
   attributes: Record<string, string>;
   tagName: keyof HTMLElementTagNameMap;
   id: string;
@@ -46,6 +47,7 @@ type HtmlCloseRenderCommand = {
   nestingLevel: number;
   domPosition: number;
   index: number;
+  parentId: string | null;
   tagName: keyof HTMLElementTagNameMap;
   id: string;
 };
@@ -55,6 +57,7 @@ type TextRenderCommand = {
   nestingLevel: number;
   domPosition: number;
   index: number;
+  parentId: string | null;
   attributes: Record<string, string>;
   markTags: MarkTagName[];
   text: string;
@@ -66,6 +69,7 @@ type ComponentRenderCommand = {
   nestingLevel: number;
   domPosition: number;
   index: number;
+  parentId: string | null;
   component: Type<unknown>;
   inputs: Record<string, unknown>;
   id: string;
@@ -364,22 +368,6 @@ export class ContentfulRichTextRendererComponent {
     const preserved = new Set<string>();
     const needsReattach = new Set<string>();
 
-    const parentIdOf = (command: RenderCommand): string | null => {
-      if (command.nestingLevel === 0) {
-        return null;
-      }
-
-      for (let i = command.index - 1; i >= 0; i--) {
-        const cmd = commands[i];
-
-        if (cmd && cmd.nestingLevel === command.nestingLevel - 1 && cmd.kind === 'htmlOpen') {
-          return cmd.id;
-        }
-      }
-
-      return null;
-    };
-
     const markTagsEqual = (a: MarkTagName[], b: MarkTagName[]) =>
       a.length === b.length && a.every((tag, index) => tag === b[index]);
 
@@ -404,8 +392,8 @@ export class ContentfulRichTextRendererComponent {
         continue;
       }
 
-      const parentId = parentIdOf(command);
-      const parentPreserved = parentId === null || preserved.has(parentId);
+      const parentPreserved =
+        previous.parentId === command.parentId && (command.parentId === null || preserved.has(command.parentId));
 
       if (command.kind === 'component') {
         preserved.add(command.id);
@@ -482,6 +470,7 @@ export class ContentfulRichTextRendererComponent {
     let textId = 0;
 
     let commandIndex = 0;
+    const openElementIds: string[] = [];
 
     const traverse = (node: Block | Inline | Text) => {
       switch (node.nodeType) {
@@ -499,6 +488,7 @@ export class ContentfulRichTextRendererComponent {
             nestingLevel,
             domPosition,
             index: commandIndex++,
+            parentId: openElementIds.at(-1) ?? null,
             attributes,
             markTags: node.marks.length ? marksToTags(node.marks) : [],
             text,
@@ -530,10 +520,10 @@ export class ContentfulRichTextRendererComponent {
             break;
           }
 
-          const contentType = asset.fields.file.contentType;
+          const contentType = asset.fields.file?.contentType;
           const assetComponents = this.config.components;
 
-          const isMissing = !contentType && !asset.fields.file.url;
+          const isMissing = !contentType && !asset.fields.file?.url;
 
           if (isMissing) {
             if (isDevMode()) {
@@ -579,6 +569,7 @@ export class ContentfulRichTextRendererComponent {
             nestingLevel,
             domPosition,
             index: commandIndex++,
+            parentId: openElementIds.at(-1) ?? null,
             component,
             inputs: { asset },
             id,
@@ -599,7 +590,8 @@ export class ContentfulRichTextRendererComponent {
           } else if (node.nodeType === CF_INLINES.ASSET_HYPERLINK) {
             const assetId = node.data['target']?.sys?.id;
             const asset = assetId ? this.contentIncludesMap().getAsset(assetId) : null;
-            href = asset?.fields.file.url ? normalizeHref(asset.fields.file.url) : null;
+            const url = asset?.fields.file?.url;
+            href = url ? normalizeHref(url) : null;
           }
 
           let linkText = '';
@@ -620,6 +612,7 @@ export class ContentfulRichTextRendererComponent {
               nestingLevel,
               domPosition,
               index: commandIndex++,
+              parentId: openElementIds.at(-1) ?? null,
               attributes: {
                 class: DEFAULT_ANCHOR_CLASS,
                 href,
@@ -630,6 +623,7 @@ export class ContentfulRichTextRendererComponent {
 
             const anchorDomPosition = domPosition;
 
+            openElementIds.push('e-o' + (elementOpenId - 1));
             nestingLevel++;
             domPosition = 0;
 
@@ -638,6 +632,7 @@ export class ContentfulRichTextRendererComponent {
               nestingLevel,
               domPosition,
               index: commandIndex++,
+              parentId: openElementIds.at(-1) ?? null,
               attributes: {
                 class: 'et-contentful-rich-text-default-element et-contentful-rich-text-default-span',
               },
@@ -646,6 +641,7 @@ export class ContentfulRichTextRendererComponent {
               id: 't' + textId++,
             });
 
+            openElementIds.pop();
             nestingLevel--;
             domPosition = anchorDomPosition;
 
@@ -654,6 +650,7 @@ export class ContentfulRichTextRendererComponent {
               nestingLevel,
               domPosition,
               index: commandIndex++,
+              parentId: openElementIds.at(-1) ?? null,
               tagName: 'a',
               id: 'e-c' + elementCloseId++,
             });
@@ -669,6 +666,7 @@ export class ContentfulRichTextRendererComponent {
               nestingLevel,
               domPosition,
               index: commandIndex++,
+              parentId: openElementIds.at(-1) ?? null,
               attributes: {
                 class: 'et-contentful-rich-text-default-element et-contentful-rich-text-default-span',
               },
@@ -696,6 +694,7 @@ export class ContentfulRichTextRendererComponent {
             nestingLevel,
             domPosition,
             index: commandIndex++,
+            parentId: openElementIds.at(-1) ?? null,
             component: linkComponent,
             inputs: { href, text: linkText, textClass, anchorClass: DEFAULT_ANCHOR_CLASS },
             id: linkId,
@@ -752,6 +751,7 @@ export class ContentfulRichTextRendererComponent {
             nestingLevel,
             domPosition,
             index: commandIndex++,
+            parentId: openElementIds.at(-1) ?? null,
             component,
             inputs: {
               fields: entry.fields,
@@ -778,12 +778,14 @@ export class ContentfulRichTextRendererComponent {
             nestingLevel,
             domPosition,
             index: commandIndex++,
+            parentId: openElementIds.at(-1) ?? null,
             attributes,
             tagName: tag,
             id: 'e-o' + elementOpenId++,
           });
 
           const domPositionAtThisLevel = domPosition;
+          openElementIds.push('e-o' + (elementOpenId - 1));
           nestingLevel++;
           domPosition = 0;
 
@@ -791,6 +793,7 @@ export class ContentfulRichTextRendererComponent {
             traverse(child);
           }
 
+          openElementIds.pop();
           nestingLevel--;
           domPosition = domPositionAtThisLevel;
 
@@ -811,6 +814,7 @@ export class ContentfulRichTextRendererComponent {
               nestingLevel,
               domPosition,
               index: commandIndex++,
+              parentId: openElementIds.at(-1) ?? null,
               tagName: tag,
               id: 'e-c' + elementCloseId++,
             });

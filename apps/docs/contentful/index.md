@@ -157,7 +157,7 @@ provideContentfulFileLabels({ fileSize: (bytes) => `(${formatFileSize(bytes).rep
 
 `<et-contentful-link>` (inputs: `href`, `text` required; `textClass` and `anchorClass` default `''`, both placed on the anchor) renders hyperlink nodes and decides between router navigation and a plain anchor. The renderer passes the rich-text classes (`et-contentful-rich-text-default-element et-contentful-rich-text-default-a`) through `anchorClass`, so a standalone link carries none of them; a custom `components.link` receives them too if it declares an `anchorClass` input:
 
-- Relative application paths and absolute HTTP(S) URLs whose hostname matches the current page or a configured `internalHosts` entry use `[routerLink]`. A configured hostname covers its subdomains, but never unrelated hosts that merely share a public suffix.
+- Relative application paths and absolute HTTP(S) URLs whose host matches the current page exactly (hostname and port) or a configured `internalHosts` entry use `[routerLink]`. Only a configured hostname covers its subdomains, but never unrelated hosts that merely share a public suffix.
 - Native destinations such as `mailto:`, `tel:`, `ftp:` and fragment-only links use a plain `<a href>`. External HTTP(S) links open in a new tab with `rel="noopener noreferrer"`.
 - Without a `components.link` in the config, the renderer falls back to a plain anchor. Unsafe URL schemes are rendered as text without an `href`.
 - Internal absolute URLs are reduced to path + query + hash and passed as an Angular `UrlTree`, so content authored against the production domain works on localhost or a preview host without encoding the query or fragment.

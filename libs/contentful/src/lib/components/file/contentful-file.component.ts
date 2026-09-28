@@ -44,7 +44,7 @@ export class ContentfulFileComponent {
       };
     }
 
-    if (!isContentfulGqlAsset(asset) && asset.fields.file.url) {
+    if (!isContentfulGqlAsset(asset) && asset.fields.file?.url) {
       return {
         url: asset.fields.file.url,
         size: asset.fields.file.details.size,

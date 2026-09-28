@@ -49,6 +49,21 @@ describe('ContentfulLinkComponent', () => {
     expect(anchor.getAttribute('href')).toContain('/news?id=1#intro');
   });
 
+  it('uses router navigation for the current host', () => {
+    const fixture = setup(`${document.location.origin}/news`);
+
+    expect(fixture.debugElement.query(By.directive(RouterLink))).not.toBeNull();
+  });
+
+  it.each([
+    ['a subdomain of the current host', `${document.location.protocol}//shop.${document.location.host}/cart`],
+    ['another port on the current host', `${document.location.protocol}//${document.location.hostname}:1/cart`],
+  ])('does not treat %s as internal', (_, href) => {
+    const fixture = setup(href);
+
+    expect(fixture.debugElement.query(By.directive(RouterLink))).toBeNull();
+  });
+
   it('does not treat a public-suffix sibling as internal', () => {
     const fixture = setup('https://attacker.co.uk/file', ['example.co.uk']);
     const anchor = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;

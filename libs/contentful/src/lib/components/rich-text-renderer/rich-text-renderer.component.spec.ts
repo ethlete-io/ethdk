@@ -481,6 +481,22 @@ describe('ContentfulRichTextRendererComponent', () => {
 
       warn.mockRestore();
     });
+
+    it('skips an asset whose file field is omitted', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => void 0);
+      const asset = { ...createAsset('a1', 'image/png'), fields: { title: 'a1', description: '' } };
+
+      const { fixture } = setup({
+        useStubAssetComponents: true,
+        richText: doc(embeddedAsset('a1'), block('paragraph', [targetHyperlink('asset-hyperlink', 'a1', 'download')])),
+        includes: { Asset: [asset] },
+      });
+
+      expect(renderRoot(fixture).textContent).toBe('download');
+      expect(warn).toHaveBeenCalled();
+
+      warn.mockRestore();
+    });
   });
 
   describe('embedded entries', () => {
@@ -746,6 +762,24 @@ describe('ContentfulRichTextRendererComponent', () => {
       expect(StubTeaserComponent.destroyed).toBe(0);
       expect(renderRoot(fixture).querySelector('p .teaser')).not.toBeNull();
       expect(renderRoot(fixture).querySelector('p')?.textContent).toBe('rewritten Teaser');
+    });
+
+    it('moves text and components that swap parents', () => {
+      const entry = createEntry('e1', 'teaser', { title: 'Teaser' });
+
+      const { fixture } = setup({
+        customComponents: { teaser: StubTeaserComponent },
+        richText: doc(paragraph('Hello'), block('paragraph', [inlineEmbeddedEntry('e1')])),
+        includes: { Entry: [entry] },
+      });
+
+      setContent(fixture, doc(block('paragraph', [inlineEmbeddedEntry('e1')]), paragraph('Hello')), {
+        Entry: [entry],
+      });
+
+      const paragraphs = Array.from(renderRoot(fixture).querySelectorAll('p'));
+
+      expect(paragraphs.map((p) => p.textContent)).toEqual(['Teaser', 'Hello']);
     });
 
     it('keeps recreated nested text in sibling order', () => {
