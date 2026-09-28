@@ -276,6 +276,50 @@ describe('CascaderDirective', () => {
     expect(driver.cascader.focusedColumn()).toBe(1);
   });
 
+  it('skips disabled nodes in roving focus and when seeding a column', async () => {
+    const disabledSource: CascaderDataSource<string> = {
+      loadChildren: (parent) =>
+        parent
+          ? [
+              { value: 'a', label: 'Alpha', disabled: true, isLeaf: true },
+              { value: 'b', label: 'Beta', isLeaf: true },
+              { value: 'c', label: 'Gamma', isLeaf: true },
+              { value: 'd', label: 'Delta', disabled: true, isLeaf: true },
+            ]
+          : [
+              { value: 'x', label: 'Disabled root', disabled: true },
+              { value: 'y', label: 'First enabled' },
+              { value: 'z', label: 'Disabled middle', disabled: true },
+              { value: 'w', label: 'Last enabled' },
+            ],
+    };
+
+    driver.host.dataSource.set(disabledSource);
+    driver.detectChanges();
+    await driver.open();
+
+    expect(driver.cascader.focusedNode()?.value).toBe('y');
+
+    driver.pressOnNode('First enabled', 'ArrowDown');
+    expect(driver.cascader.focusedNode()?.value).toBe('w');
+
+    driver.pressOnNode('Last enabled', 'ArrowUp');
+    expect(driver.cascader.focusedNode()?.value).toBe('y');
+
+    driver.pressOnNode('First enabled', 'ArrowUp');
+    expect(driver.cascader.focusedNode()?.value).toBe('y');
+
+    driver.pressOnNode('Last enabled', 'Home');
+    expect(driver.cascader.focusedNode()?.value).toBe('y');
+
+    driver.pressOnNode('First enabled', 'ArrowRight');
+    await flushFrames();
+    expect(driver.cascader.focusedNode()?.value).toBe('b');
+
+    driver.pressOnNode('Beta', 'End');
+    expect(driver.cascader.focusedNode()?.value).toBe('c');
+  });
+
   it('does not commit or open while disabled', async () => {
     driver.host.disabled.set(true);
     driver.detectChanges();

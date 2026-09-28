@@ -58,6 +58,8 @@ export const CASCADER_SELECTABLE_LEVELS = {
 
 export type CascaderSelectableLevels = (typeof CASCADER_SELECTABLE_LEVELS)[keyof typeof CASCADER_SELECTABLE_LEVELS];
 
+const firstEnabledNode = <T>(nodes: CascaderNode<T>[]) => nodes.find((node) => !node.disabled);
+
 type CascaderSurfaceLike = { templateRef: unknown };
 type CascaderTriggerLike = { elementRef: { nativeElement: HTMLElement } };
 type CascaderSearchLike = {
@@ -790,7 +792,7 @@ export class CascaderDirective<T = unknown>
   public showColumn(columnIndex: number) {
     this.columnWindowStart.set(columnIndex);
 
-    const node = this.openPath()[columnIndex] ?? this.columns()[columnIndex]?.nodes[0];
+    const node = this.openPath()[columnIndex] ?? firstEnabledNode(this.columns()[columnIndex]?.nodes ?? []);
 
     if (node) {
       this.focusNode(node, columnIndex);
@@ -819,25 +821,25 @@ export class CascaderDirective<T = unknown>
     switch (event.key) {
       case 'ArrowDown': {
         event.preventDefault();
-        this.focusColumnNode(columnIndex, index + 1);
+        this.focusColumnNode(columnIndex, { from: index + 1, step: 1 });
 
         return;
       }
       case 'ArrowUp': {
         event.preventDefault();
-        this.focusColumnNode(columnIndex, index - 1);
+        this.focusColumnNode(columnIndex, { from: index - 1, step: -1 });
 
         return;
       }
       case 'Home': {
         event.preventDefault();
-        this.focusColumnNode(columnIndex, 0);
+        this.focusColumnNode(columnIndex, { from: 0, step: 1 });
 
         return;
       }
       case 'End': {
         event.preventDefault();
-        this.focusColumnNode(columnIndex, nodes.length - 1);
+        this.focusColumnNode(columnIndex, { from: nodes.length - 1, step: -1 });
 
         return;
       }
@@ -1091,13 +1093,18 @@ export class CascaderDirective<T = unknown>
     return selectable.length > 0 && selectable.every((child) => this.isFullySelected(child, [...visited, node]));
   }
 
-  private focusColumnNode(columnIndex: number, targetIndex: number) {
+  private focusColumnNode(columnIndex: number, target: { from: number; step: 1 | -1 }) {
+    const { from, step } = target;
     const nodes = this.columns()[columnIndex]?.nodes ?? [];
-    const clamped = Math.max(0, Math.min(nodes.length - 1, targetIndex));
-    const node = nodes[clamped];
 
-    if (node) {
-      this.focusNode(node, columnIndex);
+    for (let index = Math.max(0, Math.min(nodes.length - 1, from)); index >= 0 && index < nodes.length; index += step) {
+      const node = nodes[index];
+
+      if (node && !node.disabled) {
+        this.focusNode(node, columnIndex);
+
+        return;
+      }
     }
   }
 
@@ -1110,15 +1117,16 @@ export class CascaderDirective<T = unknown>
       }
 
       const nodes = this.columns()[columnIndex]?.nodes ?? [];
+      const first = firstEnabledNode(nodes);
 
-      if (nodes[0]) {
-        this.focusNode(nodes[0], columnIndex);
+      if (first) {
+        this.focusNode(first, columnIndex);
         this.pullFocusAfterSettle();
 
         return;
       }
 
-      if (remaining > 0) {
+      if (remaining > 0 && !nodes.length) {
         requestAnimationFrame(() => attempt(remaining - 1));
       }
     };
@@ -1232,8 +1240,10 @@ export class CascaderDirective<T = unknown>
             this.setColumn(columnIndex, { parent, status: 'loaded', nodes, error: null });
             this.rememberChildren(parent, nodes);
 
-            if (columnIndex === 0 && !this.focusedNode() && nodes[0]) {
-              this.focusNode(nodes[0], 0);
+            const first = firstEnabledNode(nodes);
+
+            if (columnIndex === 0 && !this.focusedNode() && first) {
+              this.focusNode(first, 0);
             }
           },
           error: (error) =>

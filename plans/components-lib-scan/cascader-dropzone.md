@@ -1,10 +1,9 @@
 # forms/cascader + forms/dropzone scan - open findings
 
-Scan of `libs/components/src/lib/forms/cascader/` and `libs/components/src/lib/forms/dropzone/` from 2026-09-28. 1 High, 5 Medium, 25 Low, 2 Spec (1 refuted in verification). Skipped: stories and specs (read only to check coverage), the CSS files beyond a layer and colour check, the query internals behind `executeUntilSettled$`.
+Scan of `libs/components/src/lib/forms/cascader/` and `libs/components/src/lib/forms/dropzone/` from 2026-09-28. 0 High, 5 Medium, 25 Low, 2 Spec (1 refuted in verification). Skipped: stories and specs (read only to check coverage), the CSS files beyond a layer and colour check, the query internals behind `executeUntilSettled$`.
 
 ## cascader - keyboard and a11y
 
-- High: Arrow/Home/End roving focus lands on disabled nodes, and a disabled node is a native `<button disabled>` that cannot take focus (`forms/cascader/headless/cascader.directive.ts:1094`, `forms/cascader/cascader.component.html:255`). DOM focus stays on the old node, the next ArrowDown computes the same disabled target again, so a keyboard user cannot pass a disabled node; the root seed (`:1235`) and `focusFirstOfColumn` (`:1114`) also pick `nodes[0]` even when it is disabled. Skip disabled nodes in `focusColumnNode` and the seeds, or render disabled nodes with `aria-disabled` instead of `disabled`. S Verified.
 - Medium: The same trap exists in the flat search list: `moveFocusFromSearch` and `focusSearchOption` target disabled results, which are `<button disabled>` (`forms/cascader/headless/cascader.directive.ts:997`, `:1011`). With a disabled first result, ArrowDown from the input never leaves the input and Enter does nothing. S Verified.
 - Medium: `touched` is set only on a trigger blur while the panel is closed, so a panel closed by an outside pointer or a focus leave never marks the field touched (`forms/cascader/headless/cascader-trigger.directive.ts:79`, `forms/cascader/headless/cascader.directive.ts:377`). A user opens a required cascader, clicks away, and never sees the error. Set `touched` in `onAfterClosed` when `byOutsidePointer || byFocusLeave`; `select.directive.ts:348` has the same gap. S Verified.
 - Low: In single mode `isSelected` is true for every ancestor on the committed chain, so branch nodes get `aria-selected="true"` and a screen reader announces several selected items in a single-select tree (`forms/cascader/headless/cascader.directive.ts:669`). Report `aria-selected` for the last node only and keep the ancestor state as a data attribute. S
@@ -56,7 +55,7 @@ Scan of `libs/components/src/lib/forms/cascader/` and `libs/components/src/lib/f
 
 ## Spec gaps
 
-- Spec: No cascader spec covers disabled nodes or disabled search results with keyboard navigation, nor a `dataSource` swap with a committed value (`forms/cascader/headless/cascader.directive.spec.ts`). S
+- Spec: No cascader spec covers disabled search results with keyboard navigation, nor a `dataSource` swap with a committed value (`forms/cascader/headless/cascader.directive.spec.ts`). S
 - Spec: No dropzone spec covers a single-mode replace whose new upload fails, or a delete executor that rejects (`forms/dropzone/headless/dropzone.directive.spec.ts`). S
 
 ## Refuted in verification
