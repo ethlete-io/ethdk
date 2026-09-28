@@ -1,4 +1,4 @@
-type SuppressionState = { count: number; previousInlineValue: string };
+type SuppressionState = { count: number; previousUserSelect: string; previousWebkitUserSelect: string };
 
 const suppressions = /* @__PURE__ */ new WeakMap<Document, SuppressionState>();
 
@@ -18,8 +18,16 @@ export const suppressTextSelection = (doc: Document): (() => void) => {
   if (existing) {
     existing.count++;
   } else {
-    suppressions.set(doc, { count: 1, previousInlineValue: doc.documentElement.style.userSelect });
-    doc.documentElement.style.userSelect = 'none';
+    const style = doc.documentElement.style;
+
+    suppressions.set(doc, {
+      count: 1,
+      previousUserSelect: style.userSelect,
+      previousWebkitUserSelect: style.webkitUserSelect,
+    });
+    style.userSelect = 'none';
+    // Safari and WebKitGTK ignore the unprefixed `user-select`.
+    style.webkitUserSelect = 'none';
   }
 
   let released = false;
@@ -35,6 +43,7 @@ export const suppressTextSelection = (doc: Document): (() => void) => {
     if (state.count > 0) return;
 
     suppressions.delete(doc);
-    doc.documentElement.style.userSelect = state.previousInlineValue;
+    doc.documentElement.style.userSelect = state.previousUserSelect;
+    doc.documentElement.style.webkitUserSelect = state.previousWebkitUserSelect;
   };
 };
