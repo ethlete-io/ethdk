@@ -64,15 +64,33 @@ const runBrowser = async (options: { base: string; slug: string; wanted?: string
   }
 
   const browser = await playwright.chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
+
+  try {
+    return await checkPage({
+      page: await browser.newPage({ viewport: { width: 1600, height: 1000 } }),
+      base,
+      slug,
+      wanted,
+    });
+  } finally {
+    await browser.close();
+  }
+};
+
+const checkPage = async (options: {
+  page: import('playwright').Page;
+  base: string;
+  slug: string;
+  wanted?: string;
+}): Promise<number> => {
+  const { page, base, slug, wanted } = options;
 
   /** Angular throws at render time, and the overlay never shows those, so read the console too. */
   const consoleErrors: string[] = [];
   page.on('console', (message) => message.type() === 'error' && consoleErrors.push(message.text()));
   page.on('pageerror', (error) => consoleErrors.push(error.message));
 
-  const fail = async (message: string) => {
-    await browser.close();
+  const fail = (message: string) => {
     console.error(message);
 
     return 1;
@@ -153,8 +171,6 @@ const runBrowser = async (options: { base: string; slug: string; wanted?: string
     const text = await frame.locator('#root').innerText();
     if (text.startsWith('design-explore:')) return fail(`FRAME REFUSED on ${slug} variant ${key}\n${text}`);
   }
-
-  await browser.close();
 
   if (consoleErrors.length > 0) {
     console.error(`RENDERED WITH ERRORS on ${slug}\n${trim(consoleErrors.join('\n'))}`);

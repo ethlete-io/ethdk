@@ -21,8 +21,6 @@ Scan of `libs/cli/src/` and `libs/agent-rules/src/` from 2026-09-28. 1 High, 14 
 
 ## cli: design, auth, release
 
-- Medium: `runBrowser` does not close Chromium when `page.goto` or `innerText` throws (`design/check.ts:67,83,153`). With the dev server down, the command prints a stack trace and can hang on the open browser. Wrap the body in `try/finally { await browser.close() }`. S Verified. The CLI only sets `process.exitCode`, so the open browser keeps the process alive. It prints the error message, not a stack trace.
-- Medium: `fsUrl` builds `/@fs/` URLs from native paths (`design/serve.ts:13`). On Windows the path keeps its backslashes, so no call or stylesheet resolves. The same file compares watcher paths with `'/call.ts'` (`design/serve.ts:98`), and `globSync` slugs hold `\` (`design/serve.ts:18-20`). Normalise with `split(sep).join('/')`. S Verified for the slugs and the watcher check. Vite normalizes backslashes in `/@fs/` ids, so the imports may still resolve.
 - Low: the GitLab token checks use `fetch` with its default redirect mode (`auth/gitlab-token.ts:9`). `PRIVATE-TOKEN` is a custom header, so fetch keeps it across a cross-origin redirect. Pass `redirect: 'error'`, as `timetrack.ts` does. S
 - Low: `writeGitlabToken` writes the token, then runs `chmod` (`auth/composer-auth.ts:58-63`). An existing `0644` file is readable with the new token until the `chmod`. Run `chmod` first. The CLI also takes the token as a positional argument, so it lands in shell history and `ps`. S
 - Low: `release` matches flags by substring (`release.ts:27-28`). Any argument that contains `-f` forces the release. With `--force`, `git add .` puts every unrelated uncommitted change into the "Release versions" commit (`release.ts:56`). S

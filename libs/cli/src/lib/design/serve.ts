@@ -1,6 +1,7 @@
 import { existsSync, globSync, readFileSync } from 'fs';
-import { dirname, resolve } from 'path';
+import { resolve } from 'path';
 import { writeCallsTsconfig } from './calls-tsconfig';
+import { callSlugOf, fsUrl, isCallFile } from './vite-paths';
 import { assetRoot, callsRootOf, configPathOf, DesignConfig, portOf, readConfig, workRootOf } from './paths';
 
 type ViteDevServer = import('vite', { with: { 'resolution-mode': 'import' } }).ViteDevServer;
@@ -10,13 +11,11 @@ const VIRTUAL = 'virtual:design-explore';
 /** What a slug says about which project drew it: its first segment. */
 const projectOf = (slug: string) => slug.split('/')[0] ?? '';
 
-const fsUrl = (target: string, path: string) => `/@fs/${resolve(target, path).replace(/^\//, '')}`;
-
 const registry = (target: string, config: DesignConfig) => {
   const root = callsRootOf(target);
   const entries = globSync('**/call.ts', { cwd: root })
     .sort()
-    .map((file) => [dirname(file), fsUrl(target, resolve(root, file))]);
+    .map((file) => [callSlugOf(file), fsUrl(resolve(root, file))]);
 
   return `export const calls = {\n${entries
     .map(([slug, url]) => `  ${JSON.stringify(slug)}: () => import(${JSON.stringify(url)}),`)
@@ -56,7 +55,7 @@ const env = (target: string, config: DesignConfig) => {
   const loaders = Object.entries(config.projects ?? {}).map(
     ([name, project]) =>
       `  ${JSON.stringify(name)}: () => Promise.all([${(project.styles ?? [])
-        .map((style) => `import(${JSON.stringify(fsUrl(target, style))})`)
+        .map((style) => `import(${JSON.stringify(fsUrl(resolve(target, style)))})`)
         .join(', ')}]),`,
   );
 
@@ -94,7 +93,7 @@ const designExplore = (target: string, config: DesignConfig) => ({
     const callsRoot = callsRootOf(target);
 
     const refresh = (file: string) => {
-      if (!file.startsWith(callsRoot) || !file.endsWith('/call.ts')) return;
+      if (!isCallFile({ callsRoot, file })) return;
 
       const module = vite.moduleGraph.getModuleById(`\0${VIRTUAL}`);
       if (module) vite.moduleGraph.invalidateModule(module);
