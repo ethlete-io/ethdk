@@ -443,7 +443,7 @@ describe('carousel scenarios', () => {
     step(s, 5000);
     expect(activeDot()).toBe(2);
 
-    region.dispatchEvent(new MouseEvent('mouseenter'));
+    region.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
     step(s);
     expect(toggle.getAttribute('aria-pressed')).toBe('false');
     expect(toggle.getAttribute('aria-label')).toBe(DEFAULT_CAROUSEL_LABELS.play);
@@ -453,14 +453,14 @@ describe('carousel scenarios', () => {
     step(s, 10000);
     expect(scroll.calls()).toHaveLength(paused);
 
-    toggle.dispatchEvent(new MouseEvent('mouseenter'));
+    toggle.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
     step(s);
     expect(toggle.getAttribute('aria-pressed')).toBe('true');
 
     toggle.click();
     step(s);
-    toggle.dispatchEvent(new MouseEvent('mouseleave'));
-    region.dispatchEvent(new MouseEvent('mouseleave'));
+    toggle.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }));
+    region.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }));
     step(s);
 
     expect(toggle.getAttribute('aria-pressed')).toBe('false');

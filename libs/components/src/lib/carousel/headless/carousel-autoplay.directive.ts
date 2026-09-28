@@ -60,8 +60,8 @@ export type CarouselAutoplayPauseReason =
   providers: [{ provide: CAROUSEL_AUTOPLAY_TOKEN, useExisting: CarouselAutoplayDirective }],
   host: {
     '[attr.data-autoplaying]': 'isPlaying() ? "" : null',
-    '(mouseenter)': 'isHovered.set(true)',
-    '(mouseleave)': 'isHovered.set(false)',
+    '(pointerenter)': 'setHovered($event, true)',
+    '(pointerleave)': 'setHovered($event, false)',
     '(focusin)': 'isFocusWithin.set(true)',
     '(focusout)': 'isFocusWithin.set(false)',
   },
@@ -256,6 +256,12 @@ export class CarouselAutoplayDirective {
     } else {
       this.start();
     }
+  }
+
+  protected setHovered(event: PointerEvent, isHovered: boolean) {
+    if (event.pointerType === 'touch') return;
+
+    this.isHovered.set(isHovered);
   }
 
   private advance() {

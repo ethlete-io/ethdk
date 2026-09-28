@@ -93,8 +93,8 @@ export class CarouselNextDirective {
     '[attr.aria-label]': 'label()',
     '[attr.aria-pressed]': 'isPlaying()',
     '(click)': 'toggle()',
-    '(mouseenter)': 'setPointerOn(true)',
-    '(mouseleave)': 'setPointerOn(false)',
+    '(pointerenter)': 'setPointerOn($event, true)',
+    '(pointerleave)': 'setPointerOn($event, false)',
     '(focus)': 'setFocusOn(true)',
     '(blur)': 'setFocusOn(false)',
   },
@@ -134,7 +134,9 @@ export class CarouselPlayToggleDirective {
     this.autoplay?.toggle();
   }
 
-  protected setPointerOn(isOn: boolean) {
+  protected setPointerOn(event: PointerEvent, isOn: boolean) {
+    if (event.pointerType === 'touch') return;
+
     this.autoplay?.isPointerOnPauseControl.set(isOn);
   }
 

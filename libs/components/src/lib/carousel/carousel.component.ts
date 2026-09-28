@@ -186,6 +186,9 @@ export class CarouselComponent {
     // eslint-disable-next-line ethlete/prefer-linked-signal
     effect(() => this.carousel.attachedScrollable.set(this.track()));
 
+    // Before the directive's first effect run, or every carousel mounts the autoplay styles.
+    this.autoplayDirective.enabledOverride.set(false);
+
     // eslint-disable-next-line ethlete/prefer-linked-signal
     effect(() => this.autoplayDirective.enabledOverride.set(this.autoplay()));
 

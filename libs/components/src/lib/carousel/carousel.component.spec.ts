@@ -172,6 +172,18 @@ describe('CarouselComponent', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('[etCarouselPlayToggle]')).toBeNull();
   });
 
+  it('mounts the autoplay styles only once autoplay is turned on', () => {
+    const fixture = createHost();
+    const autoplayStyles = () => document.querySelector('.et-style-manager et-carousel-autoplay-styles');
+
+    expect(autoplayStyles()).toBeNull();
+
+    fixture.componentInstance.autoplay.set(true);
+    fixture.detectChanges();
+
+    expect(autoplayStyles()).not.toBeNull();
+  });
+
   it('renders no play control while autoplay is off, and one that reports the state while it is on', () => {
     const fixture = createHost();
 
@@ -276,6 +288,31 @@ describe('CarouselComponent', () => {
 
     autoplay.isPointerOnPauseControl.set(false);
     expect(autoplay.pauseReason()).toBe('hover');
+  });
+
+  it('pauses for a hovering mouse but not for a touch tap', () => {
+    const fixture = createHost();
+    fixture.componentInstance.autoplay.set(true);
+    fixture.detectChanges();
+
+    const autoplay = fixture.componentInstance.autoplayDirective();
+    const carousel = host(fixture).querySelector('et-carousel') as HTMLElement;
+
+    carousel.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'touch' }));
+    carousel.dispatchEvent(new MouseEvent('mouseenter'));
+    fixture.detectChanges();
+
+    expect(autoplay.pauseReason()).toBeNull();
+
+    carousel.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
+    fixture.detectChanges();
+
+    expect(autoplay.pauseReason()).toBe('hover');
+
+    carousel.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }));
+    fixture.detectChanges();
+
+    expect(autoplay.pauseReason()).toBeNull();
   });
 
   it('reports why autoplay is not running', () => {

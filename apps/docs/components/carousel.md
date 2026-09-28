@@ -269,7 +269,7 @@ happening via `pauseReason()`:
 
 | Reason           | When                                                             |
 | ---------------- | ---------------------------------------------------------------- |
-| `hover`          | the pointer is over the carousel                                 |
+| `hover`          | a mouse or pen is over the carousel (a touch tap does not count) |
 | `focus`          | focus is inside it                                               |
 | `off-screen`     | the carousel is scrolled out of view                             |
 | `page-hidden`    | this tab isn't the one in front                                  |
