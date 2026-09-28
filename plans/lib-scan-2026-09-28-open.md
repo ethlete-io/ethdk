@@ -21,9 +21,6 @@ own open lines; this file lists what needs a user decision and what is still que
 
 
 
-- bundle goldens: rich-text-editor (3 entries) and dropzone are each about 1.6 kB over. The rich
-  text growth comes from new features (862468765, b645e827e, 267f7bdb1); the dropzone growth is
-  not checked. Accept with `nx run treeshake:bundle-goldens:update` on a fresh build?
 
 ## Low pass (in progress)
 
