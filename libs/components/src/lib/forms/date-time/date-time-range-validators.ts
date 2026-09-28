@@ -2,7 +2,8 @@ import { inject } from '@angular/core';
 import { FieldContext, LogicFn, validate, ValidationError } from '@angular/forms/signals';
 import { format, startOfDay } from 'date-fns';
 import { CalendarPrecision, startOfCalendarUnit } from '../../calendar/headless';
-import { DATE_FORMAT, TIME_FORMAT } from './date-time-formats';
+import { DATE_FORMAT, DATE_LOCALE, TIME_FORMAT } from './date-time-formats';
+import { injectDateTimeLabels } from './date-time-labels';
 import { DateRangeValue } from './internals/date-range-picker-input.directive';
 import { parseDateValue } from './internals/date-value';
 import { displayFormatForPrecision } from './internals/precision-format';
@@ -54,7 +55,9 @@ const parseSide = (value: string | null, valueFormat: string) =>
 
 type RangeOrderConfig = { path: RangeFieldPath; valueFormat: string; options: RangeOrderOptions };
 
-const rangeOrder = ({ path, valueFormat, options: { strict, message } }: RangeOrderConfig) =>
+const rangeOrder = ({ path, valueFormat, options: { strict, message } }: RangeOrderConfig) => {
+  const labels = injectDateTimeLabels();
+
   validate(path, ({ value }): RangeOrderError | undefined => {
     const start = parseSide(value().start, valueFormat);
     const end = parseSide(value().end, valueFormat);
@@ -63,8 +66,9 @@ const rangeOrder = ({ path, valueFormat, options: { strict, message } }: RangeOr
 
     const outOfOrder = strict ? start.getTime() >= end.getTime() : start.getTime() > end.getTime();
 
-    return outOfOrder ? { kind: 'rangeOrder', message: message ?? 'The start must be before the end' } : undefined;
+    return outOfOrder ? { kind: 'rangeOrder', message: message ?? labels().rangeOrder } : undefined;
   });
+};
 
 /**
  * Signal-forms validator for `et-date-range-input` and `et-date-time-range-input`: fails the range
@@ -105,7 +109,10 @@ type RangeBoundsConfig = {
 const resolveBound = (bound: RangeBound | undefined, ctx: FieldContext<DateRangeValue>) =>
   typeof bound === 'function' ? bound(ctx) : (bound ?? null);
 
-const rangeBounds = ({ path, valueFormat, options, unit, label }: RangeBoundsConfig) =>
+const rangeBounds = ({ path, valueFormat, options, unit, label }: RangeBoundsConfig) => {
+  const labels = injectDateTimeLabels();
+  const locale = inject(DATE_LOCALE) ?? undefined;
+
   validate(path, (ctx): RangeMinError | RangeMaxError | undefined => {
     const sides = [ctx.value().start, ctx.value().end]
       .map((side) => parseSide(side, valueFormat))
@@ -116,15 +123,16 @@ const rangeBounds = ({ path, valueFormat, options, unit, label }: RangeBoundsCon
     const max = resolveBound(options.max, ctx);
 
     if (min !== null && sides.some((side) => side < unit(min).getTime())) {
-      return { kind: 'rangeMin', min, message: options.message ?? `Choose dates on or after ${format(min, label)}` };
+      return { kind: 'rangeMin', min, message: options.message ?? labels().rangeMin(format(min, label, { locale })) };
     }
 
     if (max !== null && sides.some((side) => side > unit(max).getTime())) {
-      return { kind: 'rangeMax', max, message: options.message ?? `Choose dates on or before ${format(max, label)}` };
+      return { kind: 'rangeMax', max, message: options.message ?? labels().rangeMax(format(max, label, { locale })) };
     }
 
     return undefined;
   });
+};
 
 /**
  * Signal-forms validator for `et-date-range-input`: fails the range while either end lies before
@@ -148,7 +156,7 @@ export const dateRangeBounds = (path: RangeFieldPath, options: DateOnlyRangeBoun
     valueFormat: options.valueFormat ?? inject(DATE_FORMAT),
     options,
     unit: (date) => startOfCalendarUnit(date, precision),
-    label: displayFormatForPrecision(precision, null),
+    label: displayFormatForPrecision(precision, inject(DATE_LOCALE)),
   });
 };
 

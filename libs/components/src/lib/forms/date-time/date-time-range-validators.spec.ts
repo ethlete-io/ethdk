@@ -2,7 +2,9 @@ import { Injector, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form } from '@angular/forms/signals';
 import '../../../test-helpers';
-import { provideDateFormat, provideTimeFormat } from './date-time-formats';
+import { de } from 'date-fns/locale';
+import { provideDateFormat, provideDateLocale, provideTimeFormat } from './date-time-formats';
+import { provideDateTimeLabels } from './date-time-labels';
 import {
   dateRangeBounds,
   dateRangeOrder,
@@ -69,6 +71,12 @@ describe('dateRangeOrder', () => {
     expect(errorsFor(range('10.01.2025', '02.01.2026'), (path) => dateRangeOrder(path))).toEqual([]);
   });
 
+  it('reads its message from DATE_TIME_LABELS', () => {
+    TestBed.configureTestingModule({ providers: [provideDateTimeLabels({ rangeOrder: 'Start vor Ende' })] });
+
+    expect(orderErrors(range('2026-03-10', '2026-03-01'))).toEqual([{ kind: 'rangeOrder', message: 'Start vor Ende' }]);
+  });
+
   it('uses a custom message when given one', () => {
     expect(orderErrors(range('2026-03-10', '2026-03-01'), { message: 'Check out after check-in' })).toEqual([
       { kind: 'rangeOrder', message: 'Check out after check-in' },
@@ -114,6 +122,24 @@ describe('dateRangeBounds', () => {
     expect(errorsFor(range('2026-03-01', '2026-03-06'), (path) => dateRangeBounds(path, { max, valueFormat }))).toEqual(
       [{ kind: 'rangeMax', message: 'Choose dates on or before 03/05/2026' }],
     );
+  });
+
+  it('reads its messages from DATE_TIME_LABELS and formats the bound in DATE_LOCALE', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideDateLocale(de),
+        provideDateTimeLabels({ rangeMin: (min) => `Frühestens ${min}`, rangeMax: (max) => `Spätestens ${max}` }),
+      ],
+    });
+
+    const bound = new Date(2026, 2, 5);
+
+    expect(errorsFor(range('2026-03-04', null), (path) => dateRangeBounds(path, { min: bound, valueFormat }))).toEqual([
+      { kind: 'rangeMin', message: 'Frühestens 05.03.2026' },
+    ]);
+    expect(errorsFor(range(null, '2026-03-06'), (path) => dateRangeBounds(path, { max: bound, valueFormat }))).toEqual([
+      { kind: 'rangeMax', message: 'Spätestens 05.03.2026' },
+    ]);
   });
 
   it('compares whole days, so a min carrying a time of day still admits that day', () => {

@@ -569,8 +569,10 @@ form(model, (s) => {
 They parse both ends and compare the dates, not the strings, so two ISO values with different
 offsets order correctly. An empty or unparseable end passes - `required()` on the child path and
 the control's own parse error cover those. The kinds are `'rangeOrder'`, `'rangeMin'` and
-`'rangeMax'`; the last two carry the bound as `min`/`max`, so a
-[custom error resolver](#custom-error-messages) can format it in the user's locale.
+`'rangeMax'`; the last two carry the bound as `min`/`max`. The generated text comes from the
+`rangeOrder`, `rangeMin` and `rangeMax` keys of [`DATE_TIME_LABELS`](/components/localization),
+with the bound formatted in the `DATE_LOCALE`; a [custom error resolver](#custom-error-messages)
+can still format the error its own way.
 
 ### Server-side violations
 

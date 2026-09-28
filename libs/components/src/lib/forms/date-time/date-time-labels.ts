@@ -88,6 +88,13 @@ export type DateTimeLabels = {
   invalidDateTimeRange: string;
   /** Validation message for text that isn't a duration. */
   invalidDuration: string;
+
+  /** `dateRangeOrder`/`timeRangeOrder`'s message for a start after the end. */
+  rangeOrder: string;
+  /** `dateRangeBounds`/`dateTimeRangeBounds`' message for an end before `min`, given the formatted bound. */
+  rangeMin: (min: string) => string;
+  /** `dateRangeBounds`/`dateTimeRangeBounds`' message for an end after `max`, given the formatted bound. */
+  rangeMax: (max: string) => string;
 };
 
 /** The built-in English labels. */
@@ -135,6 +142,10 @@ export const DEFAULT_DATE_TIME_LABELS: DateTimeLabels = {
   invalidTimeRange: 'Please enter a valid time range',
   invalidDateTimeRange: 'Please enter a valid date and time range',
   invalidDuration: 'Please enter a valid duration',
+
+  rangeOrder: 'The start must be before the end',
+  rangeMin: (min) => `Choose dates on or after ${min}`,
+  rangeMax: (max) => `Choose dates on or before ${max}`,
 };
 
 const DATE_TIME_LABELS_DEF = /* @__PURE__ */ defineLabels<DateTimeLabels>('DATE_TIME_LABELS', DEFAULT_DATE_TIME_LABELS);
