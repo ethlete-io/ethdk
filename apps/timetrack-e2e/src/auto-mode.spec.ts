@@ -172,3 +172,24 @@ test.describe('the parent the ticket form of a stand-in fills in by itself', () 
     await expect.poll(storedParent).toEqual({ parentKey: E2E_PARENT_KEY, parentSource: 'human' });
   });
 });
+
+test.describe('the sidebar line of auto mode', () => {
+  const statusLine = (page: Page) => page.locator('ethlete-sidebar [data-auto-mode-status]');
+
+  test('shows auto mode on with its waiting count and opens the queue', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, settings: withAutoMode(defaultSettings()) });
+    await page.goto('/day');
+
+    await expect(statusLine(page)).toHaveText('Auto mode · on · 1 waiting');
+    await statusLine(page).click();
+    await expect(page.locator('ethlete-approval-queue [data-approval]')).toHaveCount(1);
+  });
+
+  test('stays out of the sidebar while auto mode is off', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, settings: defaultSettings() });
+    await page.goto('/day');
+
+    await expect(page.getByRole('link', { name: /Settings/ })).toBeVisible();
+    await expect(statusLine(page)).toHaveCount(0);
+  });
+});
