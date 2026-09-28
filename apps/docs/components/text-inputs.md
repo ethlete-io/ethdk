@@ -141,7 +141,7 @@ value is a plain `string`; `autocomplete` defaults to `'current-password'` (set
 - **Caps Lock warning** (opt-in, `capsLockWarning`): a `role="status"` warning
   icon while the field is focused and Caps Lock is on. `capsLockLabel`
   (default `'Caps Lock might be on'`) is both the screen-reader text and the
-  icon's tooltip, so the triangle explains itself to sighted users too. The
+  icon's `title`, so the triangle explains itself to sighted users too. The
   hedged wording is deliberate: the state can lag one keystroke behind Caps Lock
   being switched on, so the warning promises less than it knows. The state is
   read off keystrokes and pointer presses, which is the only reliable source

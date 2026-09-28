@@ -11,7 +11,6 @@ All numbers are gz bytes in `--external` mode, measured on a fresh build of `nex
 
 ## Eager dependencies
 
-- Medium: `et-password-input` imports `TooltipDirective` only for the Caps Lock warning icon (`forms/input/password-input.component.ts:25`, `.html:26`). This pulls the tooltip and the whole overlay runtime into every password field. `FORM_FIELD_IMPORTS + PASSWORD_INPUT_IMPORTS` measures 43,152 B, against 23,064 B for `FORM_FIELD_IMPORTS + INPUT_IMPORTS`. About 17 kB of the 20 kB difference is tooltip and overlay code, which a login-page-only app does not otherwise load. The live region already announces the warning. Show the visible text inline or with `title`, or load the tooltip through `@defer`. Add a `password-input` golden with the fix. S Verified (repro): 23,064 B vs 43,152 B reproduced; `FORM_FIELD_IMPORTS + INPUT_IMPORTS + TooltipDirective` measures 39,934 B, so the tooltip accounts for about 16.9 kB.
 - Low: `NAV_TAB_IMPORTS` includes `OverlayNavTabLinkComponent` and `NavTabsOutletComponent`, so plain router nav tabs also pay for the overlay-router link (`tabs/tabs.imports.ts`). `NAV_TAB_IMPORTS` measures 30,563 B and `NavTabsComponent + NavTabLinkComponent` measures 28,435 B, a difference of 2.1 kB. To fix, split an `OVERLAY_NAV_TAB_IMPORTS` barrel. This is a breaking change, of the same kind as the barrel splits the README rejects, so decide first. S
 
 ## Guard coverage
