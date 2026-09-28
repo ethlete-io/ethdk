@@ -453,7 +453,7 @@ type RowDrag = {
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS, MENU_IMPORTS, ProvideColorDirective, SCHEDULER_IMPORTS],
-  host: { class: 'flex min-h-0 flex-col', '(keydown.escape)': 'clearMarks()' },
+  host: { class: 'flex min-h-0 flex-col select-none', '(keydown.escape)': 'clearMarks()' },
 })
 export class DayTimelineComponent {
   private destroyRef = inject(DestroyRef);

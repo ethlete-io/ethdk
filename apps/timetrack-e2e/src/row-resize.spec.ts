@@ -93,6 +93,45 @@ test.describe('one part of a split band dragged at an end', () => {
   });
 });
 
+/**
+ * The desktop app runs in WebKitGTK, which ignores the unprefixed `user-select` a drag sets on the
+ * document to stop a selection. The spec takes that property away from Chromium to match.
+ */
+test.describe('a band resized where the unprefixed user-select is ignored', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() =>
+      Object.defineProperty(CSSStyleDeclaration.prototype, 'userSelect', {
+        configurable: true,
+        get: () => '',
+        set: () => undefined,
+      }),
+    );
+    await seedWorld(page, { now: E2E_NOW, events: anHour() });
+    await page.goto('/day');
+  });
+
+  test('resizes, and selects no text along the way', async ({ page }) => {
+    const row = band(page);
+
+    await expect(row).toHaveAttribute('title', 'ABC-3010 · 1h 0m');
+
+    const hour = await pxPerHour(page);
+    const box = await boxOf(row);
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height - 3;
+
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x, y - hour / 2, { steps: 10 });
+
+    expect(await page.evaluate(() => document.getSelection()?.toString())).toBe('');
+
+    await page.mouse.up();
+
+    await expect(row).toHaveAttribute('title', 'ABC-3010 · 30m');
+  });
+});
+
 const bands = (page: Page) => page.locator('[data-lane] [data-kind="row"]');
 
 const band = (page: Page) => bands(page).first();
