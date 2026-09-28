@@ -207,6 +207,38 @@ describe('IconDirective', () => {
     });
   });
 
+  describe('nested registrations', () => {
+    const OWN_ICON = {
+      name: 'et-test',
+      data: `<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 11 11"><path d="M0 0" stroke="currentColor"/></svg>`,
+    };
+
+    @Component({
+      selector: 'et-test-icon-wrapper',
+      template: `<span class="own" etIcon="et-test"></span><ng-content />`,
+      imports: [IconDirective],
+      providers: [provideIcons(OWN_ICON)],
+    })
+    class SelfRegisteringWrapper {}
+
+    @Component({
+      template: `<et-test-icon-wrapper><span class="projected" etIcon="et-test-2"></span></et-test-icon-wrapper>`,
+      imports: [IconDirective, SelfRegisteringWrapper],
+      providers: [provideIcons(VALID_ICON, VALID_ICON_2)],
+    })
+    class ConsumerHost {}
+
+    it('resolves a consumer icon projected into a component that registers its own icons', () => {
+      const fixture = TestBed.createComponent(ConsumerHost);
+      fixture.detectChanges();
+
+      const host = fixture.nativeElement as HTMLElement;
+
+      expect(host.querySelector('.projected svg')?.getAttribute('viewBox')).toBe('0 0 24 24');
+      expect(host.querySelector('.own svg')?.getAttribute('viewBox')).toBe('0 0 11 11');
+    });
+  });
+
   describe('ET_BUILT_IN_ICON_NAMES', () => {
     it('matches the names of every shipped built-in icon constant (drift guard)', () => {
       const isIconDefinition = (value: unknown): value is IconDefinition =>

@@ -1,4 +1,4 @@
-import { InjectionToken } from '@angular/core';
+import { inject, InjectionToken } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { ICON_ERROR_CODES } from './icon-errors';
 
@@ -74,10 +74,23 @@ const buildIconMap = (source: string, icons: IconDefinition[]) => {
   return map;
 };
 
-export const provideIcons = (...icons: IconDefinition[]) => ({
-  provide: ICONS_TOKEN,
-  useValue: buildIconMap('provideIcons', icons),
-});
+/**
+ * Registers icons for an injector. The registry inherits every icon provided further up the
+ * injector tree, so content projected into a component that registers its own icons still
+ * resolves the consumer's icons. A name registered here wins over an inherited one.
+ */
+export const provideIcons = (...icons: IconDefinition[]) => {
+  const own = buildIconMap('provideIcons', icons);
+
+  return {
+    provide: ICONS_TOKEN,
+    useFactory: (): Record<string, IconDefinition> => {
+      const inherited = inject(ICONS_TOKEN, { skipSelf: true, optional: true });
+
+      return inherited ? { ...inherited, ...own } : own;
+    },
+  };
+};
 
 /**
  * Canonical list of the icon names the SDK ships built-in and renders from its own

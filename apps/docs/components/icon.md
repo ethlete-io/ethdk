@@ -111,7 +111,7 @@ Register it where it is used and render it with `[etIcon]` - color and size come
 })
 ```
 
-`provideIcons()` is not merged across injectors: the nearest registration wins, so a component that provides its own icons hides the ones provided above it - including inside SDK components, which self-register theirs. For icons the whole app uses (a navigation set), register them once with [`provideIconOverrides()`](#overriding-the-built-in-icons) in `appConfig` instead; it is merged on top of every component's registry. Pick a prefix of your own (`app-`), since `et-` names are the SDK's.
+`provideIcons()` inherits every icon registered above it in the injector tree, so an icon you register on your component still resolves inside SDK components that self-register their own - projected into a select option or an accordion body, for example. A name registered lower wins over the same name registered higher. For icons the whole app uses (a navigation set), register them once at the app root. Pick a prefix of your own (`app-`), since `et-` names are the SDK's.
 
 ## Typed icon names
 
@@ -166,7 +166,7 @@ bootstrapApplication(AppComponent, {
 
 - `name` autocompletes to the built-in set (`ET_BUILT_IN_ICON_NAMES` / the `EtBuiltInIconName` type) - you don't have to guess which names the SDK renders. Any other string still type-checks, for registering brand-new icons.
 - Overrides are matched by `name` (and `variant`) and merged **on top of** each component's own `provideIcons()` - so you only list the icons you want to change; everything else keeps its built-in default.
-- Because it's a separate provider, an app-root override reaches into components that self-register the same name - a plain root `provideIcons()` can't, since the component's own registration shadows it.
+- Because it's a separate provider, an app-root override reaches into components that self-register the same name - a plain root `provideIcons()` can't, since the component's own registration of that name wins over the inherited one.
 - Registering a name that no built-in uses simply makes that icon available to every `[etIcon]` under the same injector. Provide it lower in the tree (e.g. on a feature component) to scope the override to a subtree instead of the whole app.
 - The same dev-mode SVG validation applies to override data.
 

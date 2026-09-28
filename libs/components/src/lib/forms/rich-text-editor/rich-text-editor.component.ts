@@ -72,7 +72,10 @@ const RICH_TEXT_EDITOR_ICONS = [
 ];
 
 const provideRichTextEditorIcons = () =>
-  provideIcons(...RICH_TEXT_EDITOR_ICONS, ...(inject(RICH_TEXT_EDITOR_TOOL_ICON, { optional: true }) ?? [])).useValue;
+  provideIcons(
+    ...RICH_TEXT_EDITOR_ICONS,
+    ...(inject(RICH_TEXT_EDITOR_TOOL_ICON, { optional: true }) ?? []),
+  ).useFactory();
 
 @Component({
   selector: 'et-rich-text-editor',
