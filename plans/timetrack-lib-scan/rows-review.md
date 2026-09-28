@@ -1,16 +1,14 @@
 # timetrack rows + review scan - open findings
 
-Scan of `libs/timetrack/src/lib/rows` and `libs/timetrack/src/lib/review` from 2026-09-28. 0 High, 8 Medium, 21 Low, 5 Spec (verified 2026-09-28: 8 confirmed, 2 re-rated, 0 refuted, 0 unverified). Skipped (not read): `review/statements.ts`, `lane-issues.ts`, `call-pieces.ts`, `model.ts` (partly read); all specs.
+Scan of `libs/timetrack/src/lib/rows` and `libs/timetrack/src/lib/review` from 2026-09-28. 0 High, 4 Medium, 21 Low, 4 Spec (verified 2026-09-28: 8 confirmed, 2 re-rated, 0 refuted, 0 unverified). Skipped (not read): `review/statements.ts`, `lane-issues.ts`, `call-pieces.ts`, `model.ts` (partly read); all specs.
 
 ## rows/merge
 
-- Medium: an unnamed block continues a band that a later block named, because `lastOfTrack` keeps the old `context:` key of the band after the join makes it named (`rows/merge.ts:265-285`). Blocks unnamed `/a` branch x, then named FIP-1, then unnamed `/a` branch x again become one FIP-1 row; with branch y instead the third block stays separate (see the "keeps two branches apart" spec). Delete the context track entry in `open()` when the joined band has an `issueKey`. S Verified.
 - Low: a named sliver is always dropped, because `absorbSlivers` only looks for hosts by `streamOf`, which is `undefined` for a named band (`rows/merge.ts:343-345, 364`). A 90-second FIP-1 touch that the span rule kept away from its FIP-1 band disappears from proposals and from `unattributed`. Also try hosts with the same `issue:` track. S Re-rated from Medium: the mechanism holds, but a sliver is under `minBandMs` (2 minutes), and the merge JSDoc accepts dropping a sliver no band takes, so the loss is under 2 minutes each.
 - Low: the long `mergeBlocks` JSDoc sits above the JSDoc of `reconsider`, so it documents nothing (`rows/merge.ts:367-404`). Move it down to `mergeBlocks`. S
 
 ## rows/fill
 
-- Medium: `fillGaps` measures the gap from each block to the block that starts next, not from the latest end so far (`rows/fill.ts:106-110`). With A 09:00-10:00 in one lane and B 09:10-09:20, C 09:25 in another, the 09:20-09:25 gap is filled for B although A holds it, so `filledMs` grows and B's issue claims minutes twice. Track the running maximum end, or skip a gap that any block covers. S Verified. The overlap needs two foreground lanes at once, which `cutBackground` allows as concurrency.
 - Low: `fillGaps` does not get the day's `breaks` as `claimed` (`rows/build-rows.ts:231-236`). A break and a fillable gap are both 15 minutes by default, so a break of exactly 15 minutes can be filled, and then the merge barrier sees no gap to bar. Add `options.breaks` to `claimed`. S
 
 ## rows/build-rows, snap, round
@@ -22,11 +20,9 @@ Scan of `libs/timetrack/src/lib/rows` and `libs/timetrack/src/lib/review` from 2
 
 ## review/now
 
-- Medium: `currentAttribution` looks for the row whose snapped bounds hold `block.to` (`review/now.ts:67-68`). `snapRowBounds` puts the end on the nearest boundary, so a band of 09:38-10:07 is drawn 09:30-10:00, and the tray widget (`apps/timetrack/src/app/tray-readout.ts:106`) shows no issue while the user works on a named row. Match on the row's `stretches` or its lane, or allow one increment past `to`. S Verified.
 
 ## review/review-day
 
-- Medium: a leftover stretch of a shortened pin never counts as unattributed (`review/review-day.ts:355, 389-396`). The leftover source id is in `consumed`, so `settled` removes the band's group, and the `unattributed-time` warning misses minutes the screen draws as unnamed. Count the leftovers' observed time instead of the whole group. M Verified.
 - Low: `pinnedMs` sums the observed time of every tracked pin, also hidden pins and pins that matched an unnamed band, while `replacedMs` sums only consumed proposals (`review/review-day.ts:378-382`). This hides drift. Sum only pins whose sources are proposals. S
 - Low: `ProposalOverride.durationMs` is read (`review/review-day.ts:54,67`), but no edit writes it (`setRowDuration` pins a range) and `bookTheSpan` overwrites `durationMs` with the span. Remove the field. S
 
@@ -45,8 +41,7 @@ Scan of `libs/timetrack/src/lib/rows` and `libs/timetrack/src/lib/review` from 2
 
 ## Spec gaps
 
-- Spec: no merge spec for unnamed, named, unnamed blocks of one context in that order, or for a named sliver (`rows/merge.spec.ts`). S
-- Spec: no `currentAttribution` spec with rows from `snapRowBounds` (`review/now.spec.ts`). S
+- Spec: no merge spec for a named sliver (`rows/merge.spec.ts`). S
 
 ## rows (second pass)
 

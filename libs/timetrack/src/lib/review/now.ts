@@ -2,6 +2,7 @@ import { ActivityBlock } from '../model/block';
 import { CollectedEvent, PresenceEvent } from '../model/event';
 import { Confidence } from '../model/evidence';
 import { WorklogProposal } from '../model/proposal';
+import { DEFAULT_ROUND_OPTIONS } from '../rows/round';
 
 /** What the machine is doing at this moment, as a tray readout has to state it in one line. */
 export type CurrentActivity =
@@ -61,11 +62,20 @@ export type CurrentAttribution = { issueKey: string; confidence: Confidence };
 export const currentAttribution = (options: {
   activity: CurrentActivity;
   rows: readonly WorklogProposal[];
+  /** The increment the rows were snapped to, whose end can sit up to one increment before the work. */
+  incrementMs?: number;
 }): CurrentAttribution | null => {
   if (options.activity.state !== 'working') return null;
 
   const at = options.activity.block.to.getTime();
-  const row = options.rows.find((candidate) => candidate.from.getTime() <= at && at <= candidate.to.getTime());
+  const incrementMs = options.incrementMs ?? DEFAULT_ROUND_OPTIONS.incrementMs;
+  const reaching = options.rows.filter(
+    (candidate) => candidate.from.getTime() <= at && at <= candidate.to.getTime() + incrementMs,
+  );
+  const row =
+    reaching.find((candidate) => at <= candidate.to.getTime()) ??
+    newestBy(reaching, (candidate) => candidate.to) ??
+    undefined;
 
   return row ? { issueKey: row.issueKey, confidence: row.confidence } : null;
 };

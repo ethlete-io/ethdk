@@ -393,7 +393,17 @@ export const reviewDay = (options: {
 
   const check = checkDay({
     proposals: rows.filter(isNamedRow).filter((row) => syncsInState(row.state)),
-    unattributed: options.rows.unattributed.filter((group) => !settled.has(unnamedRowId(group))),
+    unattributed: options.rows.unattributed.flatMap((group) => {
+      const id = unnamedRowId(group);
+
+      if (!settled.has(id)) return [group];
+
+      const left = reviewed.filter(
+        (row) => row.id.startsWith(`${id}#`) && !row.issueKey && !row.standInId && !row.hidden,
+      );
+
+      return left.length ? [{ ...group, observedMs: left.reduce((sum, row) => sum + row.observedMs, 0) }] : [];
+    }),
     options: { ...dayCheckOptions(options.rows), ...options.check },
   });
 

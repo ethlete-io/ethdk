@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { snapRowBounds } from '../rows/snap';
 import { ActivityBlock } from '../model/block';
 import { CollectedEvent } from '../model/event';
 import { WorklogProposal } from '../model/proposal';
@@ -135,6 +136,26 @@ describe('currentAttribution', () => {
     });
 
     expect(attribution).toEqual({ issueKey: 'FIP-2', confidence: 'weak' });
+  });
+
+  it('names the row whose snapped end the current work ran past', () => {
+    const [snapped] = snapRowBounds({
+      rows: [{ ...row({ from: at(9, 38), to: at(10, 7), issueKey: 'FIP-1' }), durationMs: 29 * 60_000 }],
+    });
+
+    const attribution = currentAttribution({ activity: working(at(9, 38), at(10, 7)), rows: [snapped!] });
+
+    expect(snapped?.to).toEqual(at(10));
+    expect(attribution).toEqual({ issueKey: 'FIP-1', confidence: 'certain' });
+  });
+
+  it('names no row the current work ended more than an increment after', () => {
+    expect(
+      currentAttribution({
+        activity: working(at(10), at(10, 20)),
+        rows: [row({ from: at(9), to: at(10), issueKey: 'FIP-1' })],
+      }),
+    ).toBeNull();
   });
 
   it('answers nothing for work no row claims', () => {

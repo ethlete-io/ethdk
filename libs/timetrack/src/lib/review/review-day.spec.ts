@@ -1143,6 +1143,26 @@ describe('reviewDay, a band the reviewer has answered', () => {
 
     expect(reviewDay({ rows, edits }).check.unattributedMs).toBe(0);
   });
+
+  it('still counts the part the reviewer cut off a band they named', () => {
+    const rows = day();
+    const shortened = setRowRange({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: reviewDay({ rows }).rows[0]!,
+      from: at('08:00'),
+      to: at('08:30'),
+    });
+    const kept = reviewDay({ rows, edits: shortened }).rows.find((row) => row.to.getTime() === at('08:30').getTime());
+    const edits = setRowIssue({ edits: shortened, row: kept!, issueKey: 'ABC-9' });
+    const review = reviewDay({ rows, edits });
+
+    expect(review.rows.map((row) => [row.issueKey ?? '', row.to.toISOString()])).toEqual([
+      ['ABC-9', at('08:30').toISOString()],
+      ['', at('09:00').toISOString()],
+    ]);
+    expect(review.check.unattributedMs).toBe(30 * MINUTE);
+    expect(review.check.warnings.map((warning) => warning.kind)).toContain('unattributed-time');
+  });
 });
 
 describe('reviewDay over a background project', () => {

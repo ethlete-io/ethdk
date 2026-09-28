@@ -102,9 +102,12 @@ export const fillGaps = (options: {
   const claimed = options.claimed ?? [];
   const blocks: AttributedBlock[] = [];
   let filledMs = 0;
+  let earlier: AttributedBlock | undefined;
 
-  ordered.forEach((earlier, index) => {
-    blocks.push(earlier);
+  ordered.forEach((block, index) => {
+    blocks.push(block);
+
+    if (!earlier || block.block.to.getTime() > earlier.block.to.getTime()) earlier = block;
 
     const later = ordered[index + 1];
     const gap = later ? fillableGap({ earlier, later, events, claimed, maxFillGapMs }) : undefined;

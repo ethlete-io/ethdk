@@ -501,6 +501,18 @@ describe('mergeBlocks and an unobserved branch', () => {
     expect(rows.map((row) => row.issueKey)).toEqual(['FIP-1', undefined]);
   });
 
+  it('does not let an unnamed band continue a band that a later block named', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        attributed({ fromMinute: 0, toMinute: 20, confidence: 'weak', repoPath: '/a', branch: 'feat/x' }),
+        attributed({ fromMinute: 20, toMinute: 40, repoPath: '/a', branch: 'feat/x', issueKey: 'FIP-1' }),
+        attributed({ fromMinute: 40, toMinute: 60, confidence: 'weak', repoPath: '/a', branch: 'feat/x' }),
+      ],
+    });
+
+    expect(rows.map((row) => row.issueKey)).toEqual(['FIP-1', undefined]);
+  });
+
   it('leaves two checkouts alone, whatever branch each is on', () => {
     const rows = mergeBlocks({
       blocks: [

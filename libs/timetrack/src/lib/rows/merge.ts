@@ -281,6 +281,12 @@ const mergePass = (options: { ordered: readonly AttributedBlock[] } & PassOption
     const track = trackOf(group);
     const stream = streamOf(group);
 
+    if (group.issueKey) {
+      for (const [key, index] of lastOfTrack) {
+        if (index === at && key.startsWith('context:')) lastOfTrack.delete(key);
+      }
+    }
+
     if (track !== undefined) lastOfTrack.set(track, at);
     if (stream !== undefined) lastOfStream.set(stream, at);
   };

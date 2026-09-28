@@ -54,6 +54,19 @@ describe('fillGaps', () => {
     ]);
   });
 
+  it('fills no gap that a block from another lane still covers', () => {
+    const { filledMs } = fillGaps({
+      blocks: [
+        attributed('2026-08-13T09:00:00Z', '2026-08-13T10:00:00Z', 'FIP-2904'),
+        attributed('2026-08-13T09:10:00Z', '2026-08-13T09:20:00Z', 'FIP-3000'),
+        attributed('2026-08-13T09:25:00Z', '2026-08-13T09:40:00Z', 'FIP-3000'),
+      ],
+      events: [presence('idle-start', '2026-08-13T09:21:00Z'), presence('idle-end', '2026-08-13T09:24:00Z')],
+    });
+
+    expect(filledMs).toBe(0);
+  });
+
   it('gives a gap between two issues to the earlier one', () => {
     const { blocks } = fillGaps({
       blocks: [DAY[0]!, attributed('2026-08-13T10:12:00Z', '2026-08-13T11:00:00Z', 'FIP-3000')],
