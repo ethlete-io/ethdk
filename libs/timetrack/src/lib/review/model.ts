@@ -96,6 +96,8 @@ export type DayReviewEdits = {
   statements: PresenceStatement[];
   /** What auto mode asked about this day and what it answered, one entry per band or stand-in. */
   auto?: AutoModeAnswer[];
+  /** The descriptions auto mode wrote for this day's settled code rows, one entry per row it asked about. */
+  autoDescriptions?: AutoModeDescription[];
 };
 
 /** What auto mode asks about: an unnamed context of the day, or an open stand-in the day holds. */
@@ -124,6 +126,15 @@ export type AutoModeAnswer = {
   /** The masked payload that left the machine: what the "Ask AI" press would have shown. */
   request: TicketWritingRequest;
   outcome: AutoModeOutcome;
+};
+
+/** What auto mode asked for one settled row. A run that failed holds no `description`, and is not asked again. */
+export type AutoModeDescription = {
+  rowId: string;
+  askedAtMs: number;
+  /** The masked payload that left the machine. */
+  request: TicketWritingRequest;
+  description?: string;
 };
 
 export const EMPTY_DAY_REVIEW_EDITS: DayReviewEdits = { overrides: {}, pinned: [], statements: [] };

@@ -93,6 +93,15 @@ auto-mode.ts` runs `writeTicketWithAgent$` once per band and stand-in, names unn
    `StandIn.parentKey`/`parentSource` with `withStandInParent`; `withStandInResolutionReset` behind
    "Hand back to auto mode"; `day.rows` rows carry `sources`. Project read shared with the create
    form in `day-review/project-issues.ts`. e2e: `apps/timetrack-e2e/src/auto-mode.spec.ts`.
+   Row descriptions: done (2026-09-28). A settled code row of today (a `repo:` lane, ended 30
+   minutes before now) that names an issue gets its description from the same "Ask AI" ticket call,
+   written as `auto`, once per row: `autoDescriptionAsks`, `autoDescriptionRequest` and
+   `withAutoModeDescription` in `review/auto-description.ts`, answers on `DayReviewEdits.autoDescriptions`
+   (a failed run is stored too, so it is not retried). It is a `local` write, not a Jira write, so
+   it writes directly and never queues; it runs only while `autoMode.apply` is `local`. A `human`
+   description is never touched, also one the user typed while the call ran. Calls, rows without a
+   ticket, hidden, rejected, unattended and excluded rows are skipped. The check runs when the day's
+   rows change, not on a timer, and the readout does not list descriptions yet.
    Open follow-ups:
    - It runs only while today is the day on screen: the review computes nothing for another day.
    - The spec header (`specForCommits$`) is not in the auto payload, and an auto-named row carries

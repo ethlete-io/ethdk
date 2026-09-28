@@ -1,3 +1,4 @@
+export * from './auto-description';
 export * from './auto-mode';
 export * from './day';
 export * from './edits';

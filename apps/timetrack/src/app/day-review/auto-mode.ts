@@ -7,6 +7,7 @@ import {
   AutoModeOutcome,
   AutoModeSubject,
   TicketWording,
+  ReviewedRow,
   TicketWritingRequest,
   actionClassOf,
   autoModeActs,
@@ -21,6 +22,9 @@ import {
   autoModeQueuedAnswer,
   autoModeReadout,
   autoModeSubjectKey,
+  autoDescriptionAsks,
+  autoDescriptionRequest,
+  autoDescriptionRowId,
   dayBoundaryOf,
   draftTicket,
   favoriteProjectKeys,
@@ -33,6 +37,7 @@ import {
   ticketWritingRequest,
   withAutoModeAnswer,
   withAutoModeCreated,
+  withAutoModeDescription,
   writeTicketWithAgent$,
 } from '@ethlete/timetrack';
 import {
@@ -60,6 +65,8 @@ import { injectDayReview } from './day-review';
 import { ProjectIssues, readProjectIssues$ } from './project-issues';
 
 type Ask = { day: string; subject: AutoModeSubject };
+
+type Job = { key: string; run: () => Observable<void> };
 
 /** What one ask sends: the payload, and the project a new ticket would be filed in. */
 type Prepared = { request: TicketWritingRequest; projectKey?: string };
@@ -92,7 +99,8 @@ const outcomeOf = (options: { wording: TicketWording | null; projectKey?: string
  * A match is applied as `auto`, or waits in the approval queue as an `autoMode.apply` where the user
  * made applying stricter; a draft waits as a `jira.create`, and the key its approval files is applied
  * the same way. Every answer is stored against the day with the payload it sent, so a band is asked
- * once.
+ * once. A settled code row with a ticket gets its description written as `auto` by the same call,
+ * once per row, where applying is `local`.
  */
 const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
@@ -101,7 +109,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const approvals = injectApprovalQueue();
   const projectLinks = injectProjectLinks();
   const windowLock = injectWindowLock();
-  const asks$ = new Subject<Ask>();
+  const jobs$ = new Subject<Job>();
   const pending = new Set<string>();
 
   const enabled = computed(() => {
@@ -140,6 +148,22 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       standIns: settings.settings().standIns,
       rows: dayReview.rows(),
       answers,
+    });
+  };
+
+  const describedNow = (day: string) => {
+    const edits = dayReview.storedEdits();
+
+    if (!edits || dayReview.isLoading() || dayReview.dayKey() !== day) return [];
+
+    return autoDescriptionAsks({
+      enabled: enabled(),
+      day,
+      today: today(),
+      nowMs: Date.now(),
+      classes: settings.settings().actionClasses,
+      rows: dayReview.rows(),
+      answers: edits.autoDescriptions ?? [],
     });
   };
 
@@ -294,26 +318,53 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       ),
     );
 
+  const describe$ = (day: string, row: ReviewedRow): Observable<void> => {
+    const current = settings.settings();
+    const maskedNames = current.reasoning.maskedNames;
+    const request = autoDescriptionRequest({ row, maskedNames });
+
+    return writeTicketWithAgent$({
+      runner: ports.processes,
+      request,
+      options: reasoningOptionsOf(current),
+      maskedNames,
+    }).pipe(
+      switchMap((wording) =>
+        dayReview.changeDay$(day, (edits) =>
+          withAutoModeDescription({
+            edits,
+            row,
+            answer: {
+              rowId: autoDescriptionRowId(row),
+              askedAtMs: Date.now(),
+              request,
+              ...(wording?.description ? { description: wording.description } : {}),
+            },
+          }),
+        ),
+      ),
+    );
+  };
+
+  const queue = (job: Job) => {
+    if (pending.has(job.key)) return;
+
+    pending.add(job.key);
+    jobs$.next(job);
+  };
+
   // `concatMap`: one CLI at a time, the same guard the press has against spawning a second one.
   // `observeOn`: the ask is checked again once the naming passes of the same flush have written, so a
   // context the app is naming with a stand-in right now is never asked about as well.
-  asks$
+  jobs$
     .pipe(
       observeOn(asyncScheduler),
-      concatMap((ask) => {
-        const key = `${ask.day}|${autoModeSubjectKey(ask.subject)}`;
-
-        return defer(() => {
-          const still = askedNow(ask.day).some(
-            (subject) => autoModeSubjectKey(subject) === autoModeSubjectKey(ask.subject),
-          );
-
-          return still ? answer$(ask) : EMPTY;
-        }).pipe(
+      concatMap((job) =>
+        defer(job.run).pipe(
           catchError(() => EMPTY),
-          finalize(() => pending.delete(key)),
-        );
-      }),
+          finalize(() => pending.delete(job.key)),
+        ),
+      ),
       takeUntilDestroyed(),
     )
     .subscribe();
@@ -324,12 +375,35 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     untracked(() => {
       for (const subject of subjects) {
-        const key = `${day}|${autoModeSubjectKey(subject)}`;
+        const ask = { day, subject };
 
-        if (pending.has(key)) continue;
+        queue({
+          key: `${day}|${autoModeSubjectKey(subject)}`,
+          run: () =>
+            askedNow(day).some((held) => autoModeSubjectKey(held) === autoModeSubjectKey(subject))
+              ? answer$(ask)
+              : EMPTY,
+        });
+      }
+    });
+  });
 
-        pending.add(key);
-        asks$.next({ day, subject });
+  effect(() => {
+    const day = dayReview.dayKey();
+    const rows = describedNow(day);
+
+    untracked(() => {
+      for (const row of rows) {
+        const rowId = autoDescriptionRowId(row);
+
+        queue({
+          key: `${day}|description:${rowId}`,
+          run: () => {
+            const still = describedNow(day).find((held) => autoDescriptionRowId(held) === rowId);
+
+            return still ? describe$(day, still) : EMPTY;
+          },
+        });
       }
     });
   });
