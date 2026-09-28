@@ -19,7 +19,6 @@ Scan of `libs/components/src/lib/{testing,pagination,breadcrumb,accordion,masonr
 
 ## accordion
 
-- Medium: `AccordionGroupDirective.accordions` sorts by DOM position only when a registration changes (`headless/accordion-group.directive.ts:65-71`), but a keyed `@for` re-order moves nodes without re-registering. After a re-order, arrow/Home/End keys follow the old order, and `autoCloseOthers` "first in DOM order" is wrong. The JSDoc claims it handles this. Masonry solves it with `signalElementMutations` + `sortByDomOrder` (`internals/dom-order.ts`); reuse that, or sort at keydown time. S Verified: the computed depends only on `registeredAccordions`, and keydown, `closeAll` and single-open all read it.
 - Low: arrow-key navigation also fires on `Ctrl`/`Alt`/`Meta` combinations (`headless/accordion-group.directive.ts:186-200`), and that takes `Ctrl+Home`/`Ctrl+End` away from the page. Return `null` when a modifier is held. S
 - Low: comments outside the allowlist: `headless/accordion.directive.ts:101-102,115-117`, `accordion.component.html:22-23`, and most of the rationale blocks in `accordion.component.css` (lines 8, 28, 43, 59, 72, 94, 97, 119, 148, 160, 182, 197, 204). S
 
@@ -47,6 +46,5 @@ Scan of `libs/components/src/lib/{testing,pagination,breadcrumb,accordion,masonr
 
 ## Spec gaps
 
-- Spec: no accordion spec re-orders a keyed `@for` and then checks arrow-key order. S
 - Spec: no breadcrumb SEO spec with a crumb name that contains `</script>` or `<`. S
 - Spec: no pagination spec checks focus after the last page disables "next". S

@@ -1,5 +1,16 @@
-import { Directive, booleanAttribute, computed, effect, input, signal, untracked } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import {
+  Directive,
+  ElementRef,
+  booleanAttribute,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
+import { RuntimeError, signalElementMutations } from '@ethlete/core';
+import { isSameOrder, sortByDomOrder } from '../../internals/dom-order';
 import { ACCORDION_ERROR_CODES } from '../accordion-errors';
 import { ACCORDION_GROUP_TOKEN } from './accordion.tokens';
 import { AccordionDirective } from './accordion.directive';
@@ -57,17 +68,19 @@ export class AccordionGroupDirective {
 
   private registeredAccordions = signal<AccordionDirective[]>([]);
 
-  /**
-   * The group's accordions in DOM order. Registration order follows creation order, which is not the
-   * same thing once a `@for` re-orders its items, so this sorts by document position instead - the
-   * order the arrow keys have to follow.
-   */
-  public accordions = computed(() =>
-    [...this.registeredAccordions()].sort((a, b) =>
-      a.elementRef.nativeElement.compareDocumentPosition(b.elementRef.nativeElement) & Node.DOCUMENT_POSITION_FOLLOWING
-        ? -1
-        : 1,
-    ),
+  private childMutations = signalElementMutations(inject<ElementRef<HTMLElement>>(ElementRef), {
+    childList: true,
+    subtree: true,
+  });
+
+  /** The group's accordions in DOM order, which a keyed `@for` can change without re-registering any. */
+  public accordions = computed(
+    () => {
+      this.childMutations();
+
+      return sortByDomOrder(this.registeredAccordions(), (accordion) => accordion.elementRef.nativeElement);
+    },
+    { equal: isSameOrder },
   );
 
   /**

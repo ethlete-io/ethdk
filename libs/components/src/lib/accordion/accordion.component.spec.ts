@@ -319,4 +319,25 @@ describe('AccordionGroupComponent', () => {
     triggers[0]?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
     expect(document.activeElement).toBe(triggers[2]);
   });
+
+  it('follows DOM order with the arrow keys after a keyed @for re-order', async () => {
+    const fixture = createHost();
+    fixture.componentInstance.sections.set(['third', 'first', 'second']);
+    fixture.detectChanges();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    const triggers = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
+      '.et-accordion-trigger',
+    );
+
+    expect(triggers[0]?.textContent).toContain('third');
+
+    triggers[0]?.focus();
+    triggers[0]?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    expect(document.activeElement).toBe(triggers[1]);
+
+    triggers[1]?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+    expect(document.activeElement).toBe(triggers[0]);
+  });
 });
