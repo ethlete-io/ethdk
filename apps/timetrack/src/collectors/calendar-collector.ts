@@ -8,20 +8,7 @@ import {
   fetchGoogleCalendarEvents$,
   redactEventTitles,
 } from '@ethlete/timetrack';
-import {
-  EMPTY,
-  Observable,
-  catchError,
-  concatMap,
-  defer,
-  exhaustMap,
-  from,
-  of,
-  switchMap,
-  tap,
-  timer,
-  toArray,
-} from 'rxjs';
+import { EMPTY, Observable, catchError, concatMap, defer, exhaustMap, from, of, tap, timer, toArray } from 'rxjs';
 import { injectCollectionPause } from '../app/collection-pause';
 import { injectGoogleAccount } from '../app/google';
 import { injectTimetrackSettings } from '../app/settings/settings';
@@ -70,8 +57,8 @@ const CALENDAR_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       to: new Date(at.getTime() + CALENDAR_WINDOW_AFTER_MS),
     };
 
-    return account.credentials$().pipe(
-      switchMap((credentials) => {
+    return account
+      .withCredentials$((credentials) => {
         if (!credentials) return EMPTY;
 
         return from(calendarIds).pipe(
@@ -86,31 +73,32 @@ const CALENDAR_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
           ),
           toArray(),
         );
-      }),
-      concatMap((perCalendar: CalendarOccurrenceEvent[][]) => {
-        const events = perCalendar.flat();
-        // A meeting title is written by whoever sent the invitation, so it carries a customer name as
-        // readily as a window title does. Both passes run here for the same reason they run on a
-        // window: the rule is written against the title the user saw, and the store keeps neither a
-        // denied occurrence nor the query string of a URL somebody pasted into the invitation.
-        const { kept, excluded } = applyExclusionRules({
-          events,
-          rules: effectiveExclusionRules(settings.settings()),
-        });
+      })
+      .pipe(
+        concatMap((perCalendar: CalendarOccurrenceEvent[][]) => {
+          const events = perCalendar.flat();
+          // A meeting title is written by whoever sent the invitation, so it carries a customer name as
+          // readily as a window title does. Both passes run here for the same reason they run on a
+          // window: the rule is written against the title the user saw, and the store keeps neither a
+          // denied occurrence nor the query string of a URL somebody pasted into the invitation.
+          const { kept, excluded } = applyExclusionRules({
+            events,
+            rules: effectiveExclusionRules(settings.settings()),
+          });
 
-        return ports.events.appendCalendarRead$({ events: redactEventTitles(kept), span }).pipe(
-          tap((stored) => {
-            lastRun.set({
-              at,
-              calendars: calendarIds.length,
-              seen: events.length,
-              stored,
-              excluded: excluded.length,
-            });
-          }),
-        );
-      }),
-    );
+          return ports.events.appendCalendarRead$({ events: redactEventTitles(kept), span }).pipe(
+            tap((stored) => {
+              lastRun.set({
+                at,
+                calendars: calendarIds.length,
+                seen: events.length,
+                stored,
+                excluded: excluded.length,
+              });
+            }),
+          );
+        }),
+      );
   };
 
   const collect$ = (): Observable<unknown> =>

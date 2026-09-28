@@ -1,8 +1,9 @@
-import { Observable, Subject, of } from 'rxjs';
+import { Observable, Subject, of, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { TIMETRACK_SECRET_KEYS } from '../settings/credentials';
 import { TimetrackSecretStore, TimetrackTransport } from '../transport/ports';
-import { createGoogleTokenSource } from './token-source';
+import { GoogleCalendarRequestError } from '../google-calendar/client';
+import { createGoogleTokenSource, withGoogleCredentials$ } from './token-source';
 
 const HELD: Record<string, string | null> = {
   [TIMETRACK_SECRET_KEYS.googleClientSecret]: 'shh',
@@ -131,6 +132,49 @@ describe('createGoogleTokenSource', () => {
     source.invalidate();
     tokenOf(source.credentials$());
 
+    expect(transport.request$).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('withGoogleCredentials$', () => {
+  const grantingInTurn = (...tokens: string[]) => {
+    let next = 0;
+
+    return {
+      request$: vi.fn(() => {
+        const accessToken = tokens[Math.min(next++, tokens.length - 1)];
+
+        return of({ status: 200, headers: {}, body: { access_token: accessToken, expires_in: 3600 } }) as never;
+      }),
+    } satisfies TimetrackTransport;
+  };
+
+  const rejected = (status: number) =>
+    throwError(() => new GoogleCalendarRequestError({ status, describe: 'the calendar', message: 'rejected' }));
+
+  it('renews a token Google rejected before it expired and asks again once', () => {
+    const transport = grantingInTurn('ya29.revoked', 'ya29.fresh');
+    const source = sourceWith({ transport });
+    const seen = vi.fn();
+
+    withGoogleCredentials$(source, (credentials) =>
+      credentials?.accessToken === 'ya29.revoked' ? rejected(401) : of(credentials?.accessToken),
+    ).subscribe(seen);
+
+    expect(seen).toHaveBeenCalledWith('ya29.fresh');
+    expect(transport.request$).toHaveBeenCalledTimes(2);
+  });
+
+  it('gives up after one renewal, and leaves every other failure alone', () => {
+    const transport = grantingInTurn('ya29.first', 'ya29.second', 'ya29.third');
+    const failed = vi.fn();
+
+    withGoogleCredentials$(sourceWith({ transport }), () => rejected(401)).subscribe({ error: failed });
+    withGoogleCredentials$(sourceWith({ transport: granting('ya29.x') }), () => rejected(403)).subscribe({
+      error: failed,
+    });
+
+    expect(failed).toHaveBeenCalledTimes(2);
     expect(transport.request$).toHaveBeenCalledTimes(2);
   });
 });

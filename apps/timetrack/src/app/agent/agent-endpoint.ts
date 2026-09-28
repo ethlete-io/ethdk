@@ -515,8 +515,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     if (!calendarIds.length) return throwError(() => new Error(NO_CALENDAR));
 
-    return googleAccount.credentials$().pipe(
-      switchMap((credentials) => {
+    return googleAccount
+      .withCredentials$((credentials) => {
         if (!credentials) return throwError(() => new Error(NO_GOOGLE));
 
         return from(calendarIds).pipe(
@@ -525,26 +525,27 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
           ),
           toArray(),
         );
-      }),
-      map((perCalendar) => ({
-        from: request.from,
-        to: request.to,
-        calendarIds,
-        events: perCalendar
-          .flat()
-          .sort((left, right) => left.start.getTime() - right.start.getTime())
-          .map((event) => ({
-            calendarId: event.calendarId,
-            day: localDayKey(event.start, MIDNIGHT),
-            startMs: event.start.getTime(),
-            endMs: event.end.getTime(),
-            allDay: event.allDay,
-            title: redactTitleUrls(event.title),
-            attendeeCount: event.attendeeCount,
-            response: event.response,
-          })),
-      })),
-    );
+      })
+      .pipe(
+        map((perCalendar) => ({
+          from: request.from,
+          to: request.to,
+          calendarIds,
+          events: perCalendar
+            .flat()
+            .sort((left, right) => left.start.getTime() - right.start.getTime())
+            .map((event) => ({
+              calendarId: event.calendarId,
+              day: localDayKey(event.start, MIDNIGHT),
+              startMs: event.start.getTime(),
+              endMs: event.end.getTime(),
+              allDay: event.allDay,
+              title: redactTitleUrls(event.title),
+              attendeeCount: event.attendeeCount,
+              response: event.response,
+            })),
+        })),
+      );
   };
 
   /**

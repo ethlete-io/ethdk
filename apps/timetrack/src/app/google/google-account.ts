@@ -9,6 +9,7 @@ import {
   GoogleOAuthClient,
   TIMETRACK_SECRET_KEYS,
   createGoogleTokenSource,
+  withGoogleCredentials$,
   exchangeGoogleAuthCode$,
   fetchGoogleCalendarList$,
   googleAuthorizationQuery,
@@ -95,10 +96,9 @@ const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     });
 
   const calendars$ = () =>
-    tokens.credentials$().pipe(
-      switchMap((credentials) =>
-        credentials ? fetchGoogleCalendarList$({ transport: ports.transport, credentials }) : of([]),
-      ),
+    withGoogleCredentials$(tokens, (credentials) =>
+      credentials ? fetchGoogleCalendarList$({ transport: ports.transport, credentials }) : of([]),
+    ).pipe(
       tap({
         next: (found) => {
           calendars.set(found);
@@ -214,8 +214,12 @@ const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
      */
     revokeFailed: revokeFailed.asReadonly(),
 
-    /** An access token that is valid now, or `null` while no account is connected. */
-    credentials$: (): Observable<GoogleCalendarCredentials | null> => tokens.credentials$(),
+    /**
+     * Runs `work` with an access token that is valid now, or `null` while no account is connected, and
+     * renews it once when Google rejects the held token.
+     */
+    withCredentials$: <T>(work: (credentials: GoogleCalendarCredentials | null) => Observable<T>): Observable<T> =>
+      withGoogleCredentials$(tokens, work),
 
     connect: () => actions$.next(connect$()),
     disconnect: () => actions$.next(disconnect$()),

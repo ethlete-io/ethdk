@@ -1,5 +1,5 @@
-import { Observable, combineLatest, finalize, map, of, shareReplay, switchMap } from 'rxjs';
-import { GoogleCalendarCredentials } from '../google-calendar/client';
+import { Observable, catchError, combineLatest, finalize, map, of, shareReplay, switchMap, throwError } from 'rxjs';
+import { GoogleCalendarCredentials, GoogleCalendarRequestError } from '../google-calendar/client';
 import { TIMETRACK_SECRET_KEYS } from '../settings/credentials';
 import { TimetrackSecretStore, TimetrackTransport } from '../transport/ports';
 import { GoogleOAuthClient, GoogleTokenGrant, refreshGoogleAccessToken$ } from './tokens';
@@ -105,4 +105,25 @@ export const createGoogleTokenSource = (options: {
       generation += 1;
     },
   };
+};
+
+/**
+ * Runs `work` with the source's current credentials. When Google rejects the token with a 401 before
+ * its held expiry, the token is dropped and `work` runs once more with a renewed one.
+ */
+export const withGoogleCredentials$ = <T>(
+  source: GoogleTokenSource,
+  work: (credentials: GoogleCalendarCredentials | null) => Observable<T>,
+): Observable<T> => {
+  const attempt$ = () => source.credentials$().pipe(switchMap(work));
+
+  return attempt$().pipe(
+    catchError((error: unknown) => {
+      if (!(error instanceof GoogleCalendarRequestError) || error.status !== 401) return throwError(() => error);
+
+      source.invalidate();
+
+      return attempt$();
+    }),
+  );
 };
