@@ -1,7 +1,7 @@
 import { existsSync, globSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { writeCallsTsconfig } from './calls-tsconfig';
-import { callSlugOf, fsUrl, isCallFile } from './vite-paths';
+import { aliasPattern, callSlugOf, fsUrl, isCallFile } from './vite-paths';
 import { assetRoot, callsRootOf, configPathOf, DesignConfig, portOf, readConfig, workRootOf } from './paths';
 
 type ViteDevServer = import('vite', { with: { 'resolution-mode': 'import' } }).ViteDevServer;
@@ -39,7 +39,7 @@ const workspaceAliases = (target: string) => {
 
     return [
       {
-        find: key.endsWith('/*') ? new RegExp(`^${key.slice(0, -2)}/`) : new RegExp(`^${key}$`),
+        find: aliasPattern(key),
         replacement: key.endsWith('/*') ? `${resolve(target, mapped.slice(0, -2))}/` : resolve(target, mapped),
       },
     ];

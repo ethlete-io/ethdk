@@ -23,9 +23,13 @@ const runChangesetVersion = () => {
   }
 };
 
+export const releaseFlags = (args: string[]) => ({
+  shouldForce: args.includes('--force') || args.includes('-f'),
+  skipPush: args.includes('--skip-push') || args.includes('-sp'),
+});
+
 export const release = async (args: string[]) => {
-  const shouldForce = args.findIndex((arg) => arg.includes('--force') || arg.includes('-f')) !== -1;
-  const skipPush = args.findIndex((arg) => arg.includes('--skip-push') || arg.includes('-sp')) !== -1;
+  const { shouldForce, skipPush } = releaseFlags(args);
 
   const status = execSync('git status --porcelain').toString();
 

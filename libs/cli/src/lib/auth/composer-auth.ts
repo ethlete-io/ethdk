@@ -55,12 +55,14 @@ export const writeGitlabToken = (options: { home: string; host: string; token: s
   tokens[host] = token;
 
   mkdirSync(home, { recursive: true });
+
+  // writeFileSync only applies mode when it creates the file, so an existing one is narrowed before the token lands.
+  if (existsSync(path)) chmodSync(path, 0o600);
+
   writeFileSync(path, `${JSON.stringify({ ...read.auth, [GITLAB_TOKENS]: tokens }, null, 4)}\n`, {
     encoding: 'utf8',
     mode: 0o600,
   });
-  // writeFileSync only applies mode when it creates the file, and this one usually already exists.
-  chmodSync(path, 0o600);
 
   return { ok: true, path, replaced };
 };

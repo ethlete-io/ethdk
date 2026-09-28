@@ -111,10 +111,17 @@ const describeValues = (options: { root: string; config: LocalConfig; fileName: 
  */
 export const diagnoseLocalConfig = ({ root }: { root: string }) => {
   const primary = readLocalConfigFile(join(root, LOCAL_CONFIG_FILE_NAME));
+  const legacy = readLocalConfigFile(join(root, LEGACY_LOCAL_CONFIG_FILE_NAME));
+  const held = legacy.status === 'ok' ? LOCAL_CONFIG_KEYS.filter((key) => legacy.config[key] !== undefined) : [];
 
-  if (primary.status === 'unreadable') return [`${LOCAL_CONFIG_FILE_NAME} is not valid JSON.`];
-
-  if (primary.status === 'not-an-object') return [`${LOCAL_CONFIG_FILE_NAME} is not a JSON object.`];
+  if (primary.status === 'unreadable' || primary.status === 'not-an-object') {
+    return [
+      `${LOCAL_CONFIG_FILE_NAME} is not ${primary.status === 'unreadable' ? 'valid JSON' : 'a JSON object'}.` +
+        (held.length > 0
+          ? ` Until it is fixed, ${quoted(held)} from ${LEGACY_LOCAL_CONFIG_FILE_NAME} are in force.`
+          : ''),
+    ];
+  }
 
   if (primary.status === 'ok') {
     const unknownKeys = Object.keys(primary.config).filter(
@@ -133,13 +140,11 @@ export const diagnoseLocalConfig = ({ root }: { root: string }) => {
     ];
   }
 
-  const legacy = readLocalConfigFile(join(root, LEGACY_LOCAL_CONFIG_FILE_NAME));
+  if (legacy.status === 'unreadable') return [`${LEGACY_LOCAL_CONFIG_FILE_NAME} is not valid JSON.`];
 
-  if (legacy.status !== 'ok') return [];
+  if (legacy.status === 'not-an-object') return [`${LEGACY_LOCAL_CONFIG_FILE_NAME} is not a JSON object.`];
 
-  const held = LOCAL_CONFIG_KEYS.filter((key) => legacy.config[key] !== undefined);
-
-  if (held.length === 0) return [];
+  if (legacy.status !== 'ok' || held.length === 0) return [];
 
   return [
     `${LEGACY_LOCAL_CONFIG_FILE_NAME} still holds ${quoted(held)} — move ${

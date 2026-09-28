@@ -6,7 +6,7 @@ const request = async (options: { url: string; headers: Record<string, string> }
   const { url, headers } = options;
 
   try {
-    const response = await fetch(url, { headers, signal: AbortSignal.timeout(TIMEOUT_MS) });
+    const response = await fetch(url, { headers, redirect: 'error', signal: AbortSignal.timeout(TIMEOUT_MS) });
 
     return { response };
   } catch (error) {

@@ -150,6 +150,25 @@ describe('diagnoseLocalConfig', () => {
       expect(problems[1]).toContain('does not exist');
     });
 
+    it('reports a legacy file that does not parse', () => {
+      const root = makeRoot();
+
+      write(root, LEGACY_LOCAL_CONFIG_FILE_NAME, '{ not json');
+
+      expect(diagnoseLocalConfig({ root })).toEqual([`${LEGACY_LOCAL_CONFIG_FILE_NAME} is not valid JSON.`]);
+    });
+
+    it('says its values are in force while the new file does not parse', () => {
+      const root = makeRoot();
+
+      write(root, LOCAL_CONFIG_FILE_NAME, '{ not json');
+      write(root, LEGACY_LOCAL_CONFIG_FILE_NAME, { apiRepoPaths: { hub: './api' } });
+
+      expect(diagnoseLocalConfig({ root })).toEqual([
+        `${LOCAL_CONFIG_FILE_NAME} is not valid JSON. Until it is fixed, "apiRepoPaths" from ${LEGACY_LOCAL_CONFIG_FILE_NAME} are in force.`,
+      ]);
+    });
+
     it('ignores keys that legitimately live there', () => {
       const root = makeRoot();
 

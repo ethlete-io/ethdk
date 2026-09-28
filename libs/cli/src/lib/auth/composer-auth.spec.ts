@@ -1,7 +1,26 @@
 import { chmodSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+const modesAtWrite = vi.hoisted(() => [] as number[]);
+
+vi.mock('fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('fs')>();
+
+  return {
+    ...actual,
+    writeFileSync: (...args: Parameters<typeof actual.writeFileSync>) => {
+      const [path] = args;
+
+      if (typeof path === 'string' && path.endsWith('auth.json') && actual.existsSync(path)) {
+        modesAtWrite.push(actual.statSync(path).mode & 0o777);
+      }
+
+      return actual.writeFileSync(...args);
+    },
+  };
+});
 import { composerAuthPath, gitlabTokenHosts, writeGitlabToken } from './composer-auth';
 
 const makeHome = (authJson?: string) => {
@@ -61,6 +80,7 @@ describe('writeGitlabToken', () => {
     writeGitlabToken({ home, host: 'git.example.com', token: 'glpat-new' });
 
     expect(statSync(composerAuthPath(home)).mode & 0o777).toBe(0o600);
+    expect(modesAtWrite[modesAtWrite.length - 1]).toBe(0o600);
   });
 
   it('creates a composer home that does not exist yet', () => {
