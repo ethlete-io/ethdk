@@ -474,7 +474,7 @@ export class CarouselDirective {
     if (!scrollable || domIndex < 0 || domIndex >= this.domCount()) return;
 
     const from = this.activeDomIndex();
-    const origin = this.slideAlign();
+    const origin = this.scrollOriginOf(scrollable);
     const distance = from < 0 ? 0 : domIndex - from;
 
     // Recorded before either scroll: a second click during this one steps from here rather than from the
@@ -495,6 +495,16 @@ export class CarouselDirective {
     // adjacent to the viewport edge, which is exactly where the next slide sits in a one-slide-per-view
     // carousel - so `next()` would never move.
     scrollable.scrollToElementByIndex({ index: domIndex, origin });
+  }
+
+  private scrollOriginOf(scrollable: ScrollableDirective) {
+    const align = this.slideAlign();
+    const container = scrollable.scrollContainerRef()?.nativeElement;
+
+    if (align !== 'start' || scrollable.direction() === 'vertical' || !container) return align;
+
+    // The scrollable's origins are physical edges, while the slides snap to their logical start.
+    return getComputedStyle(container).direction === 'rtl' ? 'end' : 'start';
   }
 
   private nearestDomIndexOf(index: number) {
