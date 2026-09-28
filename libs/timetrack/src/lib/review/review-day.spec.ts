@@ -1898,3 +1898,75 @@ describe('reviewDay, a row the reviewer drew over a band a rule excluded', () =>
     ]);
   });
 });
+
+describe('reviewDay over rows the reviewer pinned before the merge cut the band differently', () => {
+  const laneKey = 'repo:/home/tom/dev/app-a';
+  const band = (options: { from: string; to: string; standInId: string }): UnnamedProposal => {
+    const observedMs = at(options.to).getTime() - at(options.from).getTime();
+
+    return {
+      id: `unnamed:${laneKey}@${at(options.from).toISOString()}`,
+      standInId: options.standInId,
+      from: at(options.from),
+      to: at(options.to),
+      durationMs: observedMs,
+      observedMs,
+      laneKey,
+      description: 'unattributed activity',
+      confidence: 'likely',
+      evidence: [],
+      state: 'suggested',
+    };
+  };
+  const inLane = (row: WorklogProposal): WorklogProposal => ({ ...row, laneKey });
+
+  const before = dayRows({ proposals: [], unnamed: [band({ from: '07:15', to: '10:15', standInId: 'journey' })] });
+  const split = splitRow({ edits: EMPTY_DAY_REVIEW_EDITS, row: reviewDay({ rows: before }).rows[0]!, at: at('08:00') });
+  const [left, right] = reviewDay({ rows: before, edits: split }).rows;
+  const named = setRowIssue({ edits: split, row: left!, issueKey: 'APP-1' });
+  const edits = setRowIssue({ edits: named, row: right!, issueKey: 'APP-2' });
+
+  const warningKinds = (review: DayReview) => review.check.warnings.map((warning) => warning.kind);
+
+  it('shows only the pinned rows where a branch switch now cuts a second stand-in band under them', () => {
+    const after = dayRows({
+      proposals: [],
+      unnamed: [
+        band({ from: '07:15', to: '07:45', standInId: 'journey' }),
+        band({ from: '07:45', to: '09:30', standInId: 'navigation' }),
+        band({ from: '09:30', to: '10:15', standInId: 'journey' }),
+      ],
+    });
+    const review = reviewDay({ rows: after, edits });
+
+    expect(review.rows.map((row) => row.issueKey)).toEqual(['APP-1', 'APP-2']);
+    expect(warningKinds(review)).not.toContain('edited-row-drift');
+    expect(warningKinds(review)).not.toContain('stale-edit');
+  });
+
+  it('raises no overlap for a band a rule now names inside the pinned rows', () => {
+    const after = dayRows({
+      proposals: [inLane(proposal({ issueKey: 'ABC-3', from: '07:45', to: '09:30', minutes: 105 }))],
+      unnamed: [
+        band({ from: '07:15', to: '07:45', standInId: 'journey' }),
+        band({ from: '09:30', to: '10:15', standInId: 'journey' }),
+      ],
+    });
+    const review = reviewDay({ rows: after, edits });
+
+    expect(review.rows.map((row) => row.issueKey)).toEqual(['APP-1', 'APP-2']);
+    expect(warningKinds(review)).not.toContain('rows-overlap');
+    expect(review.unreconciledMs).toBe(0);
+  });
+
+  it('still shows and warns about a band whose evidence runs on past the pinned rows', () => {
+    const after = dayRows({
+      proposals: [inLane(proposal({ issueKey: 'ABC-3', from: '07:45', to: '11:00', minutes: 195 }))],
+      unnamed: [band({ from: '07:15', to: '07:45', standInId: 'journey' })],
+    });
+    const review = reviewDay({ rows: after, edits });
+
+    expect(review.rows.map((row) => row.issueKey)).toEqual(['APP-1', 'ABC-3', 'APP-2']);
+    expect(warningKinds(review)).toContain('rows-overlap');
+  });
+});

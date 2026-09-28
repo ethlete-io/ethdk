@@ -307,6 +307,35 @@ const trackPinnedRows = (options: { pinned: readonly PinnedRow[]; sources: reado
 };
 
 /**
+ * The bands lying inside the rows the reviewer built from the day's own bands, lane by lane. A pin
+ * names its bands by an id holding the start the merge gave them, so a lane the merge now cuts
+ * differently comes back under ids no pin names; the pin still wins. A band reaching past the pinned
+ * span holds time observed after the pin, and is drawn.
+ */
+const coveredByPins = (options: {
+  pinned: readonly PinnedRow[];
+  sources: readonly RowSource[];
+  incrementMs: number;
+}): Set<string> => {
+  const built = options.pinned.filter((pin) => pin.replaces.length > 0 && !!storedLaneKey(pin.laneKey));
+
+  return new Set(
+    options.sources
+      .filter((source) => {
+        const lane = storedLaneKey(source.laneKey);
+        const pins = built.filter((pin) => storedLaneKey(pin.laneKey) === lane);
+
+        if (!lane || !pins.length) return false;
+
+        const outside = subtractWindows({ windows: [{ from: source.from, to: source.to }], without: pins });
+
+        return windowsMs(outside) < options.incrementMs;
+      })
+      .map((source) => source.id),
+  );
+};
+
+/**
  * A row books the time its band covers. One number reaches the reviewer, so a band drawn 13:15 to
  * 13:45 logs 30 minutes and never a shorter time the label would then have to explain. See ADR 0019.
  * The one exception is remote time past the day's allowance, which ADR 0033 draws and never books; a
@@ -357,9 +386,10 @@ export const reviewDay = (options: {
   const rules = options.rules ?? [];
   const pinnedIds = new Set(edits.pinned.flatMap((row) => [row.id, ...row.replaces]));
   const isBackground = backgroundTest(options.cut?.backgroundProjects);
+  const incrementMs = { ...DEFAULT_ROUND_OPTIONS, ...options.round }.incrementMs;
   const sources = foldShortRows<RowSource>({
     rows: [...options.rows.proposals, ...options.rows.unnamed],
-    incrementMs: { ...DEFAULT_ROUND_OPTIONS, ...options.round }.incrementMs,
+    incrementMs,
     fixed: (row) => pinnedIds.has(row.id),
     canFold: (row) => !edits.overrides[row.id],
     blockers: edits.pinned.filter((row) => !row.hidden),
@@ -370,7 +400,13 @@ export const reviewDay = (options: {
   });
   const tracked = trackPinnedRows({ pinned: edits.pinned, sources });
   const calls = options.rows.calls;
-  const consumed = new Set([...pinnedIds, ...tracked.matched.values()]);
+  const answered = new Set([...pinnedIds, ...tracked.matched.values()]);
+  const covered = coveredByPins({
+    pinned: tracked.rows,
+    sources: sources.filter((row) => !answered.has(row.id)),
+    incrementMs,
+  });
+  const consumed = new Set([...answered, ...covered]);
   const reviewed = [
     ...sources.filter((row) => !consumed.has(row.id)).map((row) => withOverride(row, edits.overrides[row.id])),
     ...tracked.rows
@@ -399,7 +435,7 @@ export const reviewDay = (options: {
   const rows = bookTheSpan(recut.rows, options.rows.remote);
 
   const replacedMs = options.rows.proposals
-    .filter((proposal) => consumed.has(proposal.id))
+    .filter((proposal) => answered.has(proposal.id))
     .reduce((sum, proposal) => sum + proposal.observedMs, 0);
   const proposalIds = new Set(options.rows.proposals.map((proposal) => proposal.id));
   const pinnedMs = tracked.rows
