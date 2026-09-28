@@ -206,6 +206,19 @@ describe('CalendarDirective', () => {
     expect(focusedCell(fixture)?.textContent?.trim()).toBe('20');
   });
 
+  it('swaps ArrowLeft and ArrowRight in a right-to-left grid', () => {
+    grid(fixture).style.direction = 'rtl';
+    calendar.focusedDate.set(new Date(2026, 6, 16));
+    fixture.detectChanges();
+
+    press(fixture, 'ArrowRight');
+    expect(calendar.focusedDate()).toEqual(new Date(2026, 6, 15));
+
+    press(fixture, 'ArrowLeft');
+    press(fixture, 'ArrowLeft');
+    expect(calendar.focusedDate()).toEqual(new Date(2026, 6, 17));
+  });
+
   it('moves DOM focus along with the roving tabindex', () => {
     cell(fixture, 16)?.focus();
     calendar.focusedDate.set(new Date(2026, 6, 16));

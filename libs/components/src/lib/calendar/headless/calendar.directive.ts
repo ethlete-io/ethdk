@@ -697,6 +697,7 @@ export class CalendarDirective {
       weekStartsOn: this.effectiveFirstDayOfWeek(),
       view: this.view(),
       multiYearPageStart: this.multiYearPageStart(),
+      rtl: event.currentTarget instanceof Element && getComputedStyle(event.currentTarget).direction === 'rtl',
     });
 
     if (target === null) {

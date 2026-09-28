@@ -10,7 +10,10 @@ export type ResolveCalendarKeyboardDateOptions = {
   weekStartsOn: CalendarWeekStartsOn;
   view?: CalendarView;
   multiYearPageStart?: Date;
+  rtl?: boolean;
 };
+
+const MIRRORED_KEYS: Record<string, string> = { ArrowLeft: 'ArrowRight', ArrowRight: 'ArrowLeft' };
 
 const resolveMonthViewDate = (key: string, options: ResolveCalendarKeyboardDateOptions): Date | null => {
   const { shiftKey, focusedDate, weekStartsOn } = options;
@@ -90,7 +93,12 @@ const resolveMultiYearViewDate = (key: string, options: ResolveCalendarKeyboardD
   }
 };
 
-export const resolveCalendarKeyboardDate = (key: string, options: ResolveCalendarKeyboardDateOptions): Date | null => {
+export const resolveCalendarKeyboardDate = (
+  pressedKey: string,
+  options: ResolveCalendarKeyboardDateOptions,
+): Date | null => {
+  const key = options.rtl ? (MIRRORED_KEYS[pressedKey] ?? pressedKey) : pressedKey;
+
   switch (options.view ?? 'month') {
     case 'year':
       return resolveYearViewDate(key, options);

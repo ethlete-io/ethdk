@@ -199,7 +199,7 @@ Every view uses the same model in its own unit - arrows move by cell, PageUp/Pag
 | Home / End            | Start / end of the focused week | January / December   | First / last year shown |
 | Enter / Space         | Select the focused day          | Drill into the month | Drill into the year     |
 
-Moving focus past the edge of the visible unit navigates the calendar along with it. The focused date stays a full date in every view - only the step size changes - so drilling in and back out keeps the day the reader was on.
+In a right-to-left grid the left and right arrows swap, so each still moves toward the cell it points at. Moving focus past the edge of the visible unit navigates the calendar along with it. The focused date stays a full date in every view - only the step size changes - so drilling in and back out keeps the day the reader was on.
 
 Stepping (buttons or keyboard) slides the new grid in from the travel direction; drilling fades it. Either way the grid on its way out crossfades under the one arriving - both share a single grid area for the length of the transition - and the header label travels with them. All of it stands down under `prefers-reduced-motion`. For custom transitions the headless directive exposes `navigationDirection` (`'forward' | 'backward' | 'zoomIn' | 'zoomOut' | null`), `visibleUnitKey` (the visible unit's identity, whichever view is showing) and `transitionKey` (that plus the view - what the default component tracks its `@for` by). `visibleMonthKey` still names the month specifically.
 
