@@ -51,6 +51,14 @@ describe('RangeSliderDirective', () => {
     driver = mountRangeSlider(RangeSliderTestHost);
   });
 
+  it('treats a step of zero as a step of one', () => {
+    driver.host.step.set(0);
+    driver.host.value.set([21, 79]);
+    driver.tick();
+
+    expect(driver.thumbAttrs('aria-valuenow')).toEqual(['21', '79']);
+  });
+
   it('renders two labelled thumbs whose ARIA bounds reflect the other thumb', () => {
     expect(driver.thumbEls()).toHaveLength(2);
     expect(driver.thumbAttrs('aria-label')).toEqual(['Minimum', 'Maximum']);

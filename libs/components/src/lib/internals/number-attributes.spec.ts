@@ -1,4 +1,4 @@
-import { positiveIntegerAttribute } from './number-attributes';
+import { positiveIntegerAttribute, positiveNumberAttribute } from './number-attributes';
 
 describe('positiveIntegerAttribute', () => {
   it('keeps a whole positive number', () => {
@@ -18,5 +18,19 @@ describe('positiveIntegerAttribute', () => {
     expect(positiveIntegerAttribute('abc')).toBe(1);
     expect(positiveIntegerAttribute(Number.NaN)).toBe(1);
     expect(positiveIntegerAttribute(null)).toBe(1);
+  });
+});
+
+describe('positiveNumberAttribute', () => {
+  it('keeps a positive number, fractions included', () => {
+    expect(positiveNumberAttribute(0.5)).toBe(0.5);
+    expect(positiveNumberAttribute('10')).toBe(10);
+  });
+
+  it('falls back to one for zero, negatives and anything unparseable', () => {
+    expect(positiveNumberAttribute(0)).toBe(1);
+    expect(positiveNumberAttribute('-2')).toBe(1);
+    expect(positiveNumberAttribute('abc')).toBe(1);
+    expect(positiveNumberAttribute(Number.POSITIVE_INFINITY)).toBe(1);
   });
 });

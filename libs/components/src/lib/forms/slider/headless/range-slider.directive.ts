@@ -33,6 +33,7 @@ import {
   SliderThumbLabelBase,
 } from './slider.tokens';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
+import { positiveNumberAttribute } from '../../../internals/number-attributes';
 import { controlTouches } from '../../../internals/touch-output';
 
 export type RangeSliderValue = [number, number];
@@ -70,7 +71,7 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
   // value shape (here the tuple), so the numeric track bounds need their own names.
   public minValue = input(0, { transform: numberAttribute });
   public maxValue = input(100, { transform: numberAttribute });
-  public step = input(1, { transform: numberAttribute });
+  public step = input(1, { transform: positiveNumberAttribute });
 
   /** Minimum gap kept between the two thumbs - should be a multiple of `step`. */
   public minDistance = input(0, { transform: numberAttribute });

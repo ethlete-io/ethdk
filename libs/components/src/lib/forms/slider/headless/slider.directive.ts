@@ -32,6 +32,7 @@ import {
   SliderThumbLabelBase,
 } from './slider.tokens';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
+import { positiveNumberAttribute } from '../../../internals/number-attributes';
 import { controlTouches } from '../../../internals/touch-output';
 
 const optionalNumberAttribute = (value: unknown) =>
@@ -70,7 +71,7 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
   // so schema `min(...)` / `max(...)` validators bind straight into these inputs.
   public min = input(undefined, { transform: optionalNumberAttribute });
   public max = input(undefined, { transform: optionalNumberAttribute });
-  public step = input(1, { transform: numberAttribute });
+  public step = input(1, { transform: positiveNumberAttribute });
 
   /** Axis the slider runs along. A vertical slider runs bottom→up and is not mirrored in RTL. */
   public orientation = input<SliderOrientation>('horizontal');

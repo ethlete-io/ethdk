@@ -85,6 +85,22 @@ describe('SliderDirective', () => {
     expect(driver.thumbAttr('aria-valuenow')).toBe('100');
   });
 
+  it('treats a step of zero or below as a step of one', () => {
+    driver.host.step.set(0);
+    driver.host.value.set(37);
+    driver.tick();
+
+    expect(driver.thumbAttr('aria-valuenow')).toBe('37');
+
+    driver.press('ArrowRight');
+    expect(driver.host.value()).toBe(38);
+
+    driver.host.step.set(-5);
+    driver.tick();
+    driver.press('ArrowRight');
+    expect(driver.host.value()).toBe(39);
+  });
+
   it('steps with the keyboard and clamps at the bounds', () => {
     driver.press('ArrowRight');
     expect(driver.host.value()).toBe(1);

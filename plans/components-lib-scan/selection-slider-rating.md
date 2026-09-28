@@ -13,7 +13,6 @@ Scan of `libs/components/src/lib/forms/selection-list/`, `forms/slider/`, `forms
 
 ## slider
 
-- Medium: `step="0"` makes `snapValueToStep` return `NaN` (`forms/slider/headless/internals/slider-engine.ts:37`, `Math.round(x / 0) * 0`). The thumb position, `aria-valuenow` and the committed form value then become `NaN`. `resolveMarks` already guards `step <= 0`. Add the same guard, or fall back to `1`. S Verified.
 - Low: when `minDistance` is not a multiple of `step`, the second snap in `constrainAndSnap` rounds to the nearest grid value and can land inside the gap (`forms/slider/headless/range-slider.directive.ts:279-281`). Example: step 10, minDistance 5, end at 50 gives start 50. Snap with the direction away from the sibling, as the mark branch already does. S
 - Low: `thumbAriaBounds` can emit `aria-valuemin` > `aria-valuemax` when the value breaks `minDistance` near a track end (`range-slider.directive.ts:187-189`). Example: `[0, 5]` with minDistance 10 gives the start thumb max -5. Clamp the sibling bound into `[effectiveMin, effectiveMax]`. S
 - Low: `void index` stubs exist only to use a parameter that the contract does not require (`forms/slider/headless/slider.directive.ts:171,189-190`). Drop the parameter. TS accepts the shorter signature. S
