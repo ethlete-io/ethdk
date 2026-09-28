@@ -6,9 +6,8 @@ own open lines; this file lists what needs a user decision and what is still que
 ## Decisions for the user
 
 - timetrack: the picker Lucene escaping finding is unverified; it needs a live Jira Cloud call.
-- timetrack: the codex reasoning command. A per-command spec, or drop `codex`.
-- timetrack: Codex `INJECTED_PREFIXES` needs a real Codex log, and `askedBy: 'machine'` is a
-  design call.
+- timetrack: Codex `INJECTED_PREFIXES` and `askedBy: 'machine'` are parked until a real Codex log
+  exists.
 
 
 
@@ -16,7 +15,7 @@ own open lines; this file lists what needs a user decision and what is still que
 
 
 
-- bracket: swiss `MODE_UNSUPPORTED` is unverified. Does the API leave out undrawn rounds?
+- bracket: swiss `MODE_UNSUPPORTED` is parked until a swiss event gives real API data.
 
 
 
@@ -25,8 +24,6 @@ own open lines; this file lists what needs a user decision and what is still que
 - bundle goldens: rich-text-editor (3 entries) and dropzone are each about 1.6 kB over. The rich
   text growth comes from new features (862468765, b645e827e, 267f7bdb1); the dropzone growth is
   not checked. Accept with `nx run treeshake:bundle-goldens:update` on a fresh build?
-- table persistence: a change in the same tick as a switch to a new store is not saved there
-  (from 2b62c6e3e). Left alone.
 - dropzone: the readonly file list focus (766bb1f52) is not checked in Storybook (focus ring, axe).
 
 ## Low pass (in progress)
