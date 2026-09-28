@@ -1,5 +1,13 @@
 import { Component, ViewEncapsulation, booleanAttribute, computed, input, numberAttribute } from '@angular/core';
+import { clampProgress } from '../clamp-progress';
 
+/**
+ * A linear loading indicator, determinate by default. Inherits `currentColor`. It has no accessible name of its
+ * own, so give a standalone bar an `aria-label`.
+ *
+ * @example
+ * <et-progress-bar [value]="42" aria-label="Upload progress" />
+ */
 @Component({
   selector: 'et-progress-bar',
   template: `
@@ -27,8 +35,11 @@ import { Component, ViewEncapsulation, booleanAttribute, computed, input, number
   },
 })
 export class ProgressBarComponent {
+  /** The progress, 0-100 and clamped. @default 0 */
   public value = input(0, { transform: numberAttribute });
+
+  /** Show the sweeping animation instead of `value`, and drop the aria value attributes. @default false */
   public indeterminate = input(false, { transform: booleanAttribute });
 
-  public clampedValue = computed(() => Math.max(0, Math.min(100, this.value())));
+  protected clampedValue = computed(() => clampProgress(this.value()));
 }

@@ -1,4 +1,5 @@
 import { Component, ViewEncapsulation } from '@angular/core';
+import { createComponentId } from '@ethlete/core';
 import { injectLoaderLabels } from '../loader-labels';
 
 const BRAND_E_PATH =
@@ -7,8 +8,13 @@ const BRAND_E_PATH =
 const BRAND_E_OUTLINE_PATH =
   'M1.07 0.14 L26.44 0.14 L25.41 5.33 L16.95 5.33 C16.44 5.33 16.0 5.70 15.91 6.21 C15.78 6.89 16.28 7.52 16.95 7.52 L23.86 7.52 L22.92 12.34 L15.68 12.34 C15.10 12.34 14.61 12.76 14.50 13.34 C14.49 13.42 14.48 13.50 14.48 13.58 C14.48 14.24 15.01 14.81 15.68 14.81 L23.94 14.81 L22.92 20.0 L6.79 20.0 L7.22 17.81 L7.64 17.81 C7.94 17.81 8.21 17.69 8.40 17.50 C8.59 17.30 8.71 17.02 8.71 16.72 C8.71 16.12 8.24 15.63 7.65 15.63 L2.74 15.63 C2.15 15.63 1.67 15.14 1.67 14.54 C1.67 14.24 1.79 13.96 1.98 13.77 C2.18 13.57 2.44 13.45 2.74 13.45 L8.07 13.45 L8.96 8.88 L9.39 8.88 C9.69 8.88 9.95 8.76 10.15 8.56 C10.34 8.36 10.46 8.09 10.46 7.79 C10.46 7.19 9.98 6.70 9.39 6.70 L4.48 6.70 C3.89 6.70 3.41 6.20 3.41 5.60 C3.41 5.30 3.54 5.03 3.73 4.83 C3.92 4.63 4.19 4.51 4.48 4.51 L10.24 4.51 C10.54 4.51 10.81 4.39 10.997 4.19 C11.188 3.99 11.31 3.72 11.31 3.42 C11.31 2.81 10.83 2.33 10.24 2.33 L1.07 2.33 C0.48 2.33 0 1.84 0 1.23 C0 0.93 0.12 0.66 0.31 0.46 C0.51 0.27 0.78 0.14 1.07 0.14 Z';
 
-let nextId = 0;
-
+/**
+ * The animated Ethlete "E" for full-page or initial loading states. Announces the `loading` label from
+ * `provideLoaderLabels`. Size it via CSS; its colours come from its own `--et-brand-loader-*` properties.
+ *
+ * @example
+ * <et-brand-loader class="size-16" />
+ */
 @Component({
   selector: 'et-brand-loader',
   template: `
@@ -44,13 +50,9 @@ export class BrandLoaderComponent {
   public readonly PATH = BRAND_E_PATH;
   public readonly OUTLINE_PATH = BRAND_E_OUTLINE_PATH;
 
-  public readonly SHAPE_CLIP_ID = `et-brand-loader-shape-${nextId}`;
+  public readonly SHAPE_CLIP_ID = createComponentId('et-brand-loader-shape');
   public shapeClip = `url(#${this.SHAPE_CLIP_ID})`;
 
-  public readonly FILL_CLIP_ID = `et-brand-loader-fill-${nextId}`;
+  public readonly FILL_CLIP_ID = createComponentId('et-brand-loader-fill');
   public fillClip = `url(#${this.FILL_CLIP_ID})`;
-
-  constructor() {
-    nextId++;
-  }
 }

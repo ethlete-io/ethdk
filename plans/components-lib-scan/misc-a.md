@@ -1,6 +1,6 @@
 # testing, pagination, breadcrumb, accordion, masonry, loader scan - open findings
 
-Scan of `libs/components/src/lib/{testing,pagination,breadcrumb,accordion,masonry,loader}` from 2026-09-28. 0 High, 1 Medium, 12 Low, 1 Spec. Skipped: `testing/control-driver.ts`, `field-control-driver.ts`, `overlay-control-driver.ts`, `masonry/testing/masonry-driver.ts`, and most CSS (read only for colours, layers, motion).
+Scan of `libs/components/src/lib/{testing,pagination,breadcrumb,accordion,masonry,loader}` from 2026-09-28. 0 High, 1 Medium, 8 Low, 1 Spec. Skipped: `testing/control-driver.ts`, `field-control-driver.ts`, `overlay-control-driver.ts`, `masonry/testing/masonry-driver.ts`, and most CSS (read only for colours, layers, motion).
 
 ## breadcrumb
 
@@ -16,11 +16,7 @@ Scan of `libs/components/src/lib/{testing,pagination,breadcrumb,accordion,masonr
 ## loader
 
 - Medium: `et-spinner` and `et-progress-bar` have `role="progressbar"` and no accessible name by default (`spinner/spinner.component.ts:105`, `progress-bar/progress-bar.component.ts:23`). Axe `aria-progressbar-name` fails for every consumer that does not add an `aria-label`. Default the name to `LOADER_LABELS.loading` as the brand loader does, with an input to override it. S Verified.
-- Low: `circleStrokeWidth` is a copy of `normalizedStrokeWidth`, and all geometry computeds are `public` (`spinner/spinner.component.ts:128-148`). Make them `protected` and delete the duplicate. S
-- Low: a `NaN` `value` from `numberAttribute` goes through `Math.min`/`Math.max` as `NaN` and renders `aria-valuenow="NaN"` (`spinner/spinner.component.ts:142`, `progress-bar/progress-bar.component.ts:33`). Fall back to 0. S
-- Low: `BrandLoaderComponent` uses a module-level `nextId` counter (`brand-loader/brand-loader.component.ts:10,47-54`) instead of `createComponentId`. The counter is shared by all SSR requests of a process. S
 - Low: the brand accent is a literal `#00ffa1` behind a component-only custom property, not a theme token (`brand-loader/brand-loader.component.css:81`). Resolve it from `--et-theme-color-*` with the literal as the last fallback. S
-- Low: `SpinnerComponent`, `ProgressBarComponent` and `BrandLoaderComponent` and their inputs have no JSDoc, though they are public exports (`spinner/spinner.component.ts:15-118`, `progress-bar/progress-bar.component.ts:3-31`). S
 
 ## testing
 

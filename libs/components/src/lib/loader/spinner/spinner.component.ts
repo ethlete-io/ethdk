@@ -9,9 +9,17 @@ import {
   numberAttribute,
 } from '@angular/core';
 import { ProvideColorDirective } from '@ethlete/core';
+import { clampProgress } from '../clamp-progress';
 
 const BASE_STROKE_WIDTH = 10;
 
+/**
+ * A circular loading indicator, indeterminate by default. Inherits `currentColor` unless `color` is set.
+ * It has no accessible name of its own, so give a standalone spinner an `aria-label`.
+ *
+ * @example
+ * <et-spinner [determinate]="true" [value]="65" [track]="true" aria-label="Uploading" />
+ */
 @Component({
   selector: 'et-spinner',
   template: `
@@ -26,7 +34,7 @@ const BASE_STROKE_WIDTH = 10;
           [attr.r]="circleRadius()"
           [style.stroke-dasharray.px]="strokeCircumference()"
           [style.stroke-dashoffset.px]="strokeCircumference() / 2"
-          [style.stroke-width.%]="circleStrokeWidth()"
+          [style.stroke-width.%]="normalizedStrokeWidth()"
           cx="50%"
           cy="50%"
         />
@@ -44,7 +52,7 @@ const BASE_STROKE_WIDTH = 10;
           <circle
             [attr.r]="circleRadius()"
             [style.stroke-dasharray.px]="strokeCircumference()"
-            [style.stroke-width.%]="circleStrokeWidth()"
+            [style.stroke-width.%]="normalizedStrokeWidth()"
             class="et-spinner-track-circle"
             cx="50%"
             cy="50%"
@@ -65,7 +73,7 @@ const BASE_STROKE_WIDTH = 10;
           [attr.r]="circleRadius()"
           [style.stroke-dasharray.px]="strokeCircumference()"
           [style.stroke-dashoffset.px]="determinateDashOffset()"
-          [style.stroke-width.%]="circleStrokeWidth()"
+          [style.stroke-width.%]="normalizedStrokeWidth()"
           class="et-spinner-determinate-circle"
           cx="50%"
           cy="50%"
@@ -111,10 +119,19 @@ const BASE_STROKE_WIDTH = 10;
 export class SpinnerComponent {
   private provideColor = inject(ProvideColorDirective);
 
+  /** The size in px. @default 18 */
   public diameter = input(18, { transform: numberAttribute });
+
+  /** The stroke width in px. @default 2.25 */
   public strokeWidth = input(2.25, { transform: numberAttribute });
+
+  /** Render a background ring behind the stroke. @default false */
   public track = input(false, { transform: booleanAttribute });
+
+  /** The progress in determinate mode, 0-100 and clamped. @default 0 */
   public value = input(0, { transform: numberAttribute });
+
+  /** Show `value` instead of the indeterminate sweep, and expose it as `aria-valuenow`. @default false */
   public determinate = input(false, { transform: booleanAttribute });
 
   /**
@@ -125,23 +142,21 @@ export class SpinnerComponent {
    */
   protected hasExplicitColor = computed(() => (this.provideColor.color() ?? null) !== null);
 
-  public circleRadius = computed(() => Math.max(1, (this.diameter() - BASE_STROKE_WIDTH) / 2));
+  protected circleRadius = computed(() => Math.max(1, (this.diameter() - BASE_STROKE_WIDTH) / 2));
 
-  public normalizedStrokeWidth = computed(() => (this.strokeWidth() / this.diameter()) * 100);
+  protected normalizedStrokeWidth = computed(() => (this.strokeWidth() / this.diameter()) * 100);
 
-  public viewBox = computed(() => {
+  protected viewBox = computed(() => {
     const diameter = this.circleRadius() * 2 + this.strokeWidth();
 
     return `0 0 ${diameter} ${diameter}`;
   });
 
-  public strokeCircumference = computed(() => 2 * Math.PI * this.circleRadius());
+  protected strokeCircumference = computed(() => 2 * Math.PI * this.circleRadius());
 
-  public circleStrokeWidth = computed(() => this.normalizedStrokeWidth());
+  protected clampedValue = computed(() => clampProgress(this.value()));
 
-  public clampedValue = computed(() => Math.max(0, Math.min(100, this.value())));
-
-  public determinateDashOffset = computed(() => {
+  protected determinateDashOffset = computed(() => {
     const circumference = this.strokeCircumference();
 
     return circumference - (this.clampedValue() / 100) * circumference;

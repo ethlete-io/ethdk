@@ -81,6 +81,12 @@ describe('SpinnerComponent', () => {
       expect(host.getAttribute('aria-valuenow')).toBe('0');
     });
 
+    it('falls back to 0 for a non-numeric value', () => {
+      fixture.componentRef.setInput('value', 'abc');
+      fixture.detectChanges();
+      expect(host.getAttribute('aria-valuenow')).toBe('0');
+    });
+
     it('clamps values above 100 to 100', () => {
       fixture.componentRef.setInput('value', 200);
       fixture.detectChanges();
