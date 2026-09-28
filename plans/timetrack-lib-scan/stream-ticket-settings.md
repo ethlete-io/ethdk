@@ -1,10 +1,9 @@
 # timetrack stream, ticket, settings scan - open findings
 
-Scan of `libs/timetrack/src/lib/{stream,ticket,settings}` and `libs/timetrack/src/index.ts` from 2026-09-28. 1 High, 3 Medium, 18 Low, 2 Spec. Skipped: spec and story files. `jira/`, `gitlab/`, `reason/` and `model/` were read only where a finding depends on them. The scope holds no RxJS subscriptions, timers or DOM listeners, so it has no leak findings. The observables are cold one-shot pipes.
+Scan of `libs/timetrack/src/lib/{stream,ticket,settings}` and `libs/timetrack/src/index.ts` from 2026-09-28. 0 High, 3 Medium, 18 Low, 1 Spec. Skipped: spec and story files. `jira/`, `gitlab/`, `reason/` and `model/` were read only where a finding depends on them. The scope holds no RxJS subscriptions, timers or DOM listeners, so it has no leak findings. The observables are cold one-shot pipes.
 
 ## settings
 
-- High: `targetOf` keys a rule by `repoPath@branch` and ignores `workPath` (`settings/attribution.ts:23-24`). `day-review.ts:634-647` writes each `autoStandIns` result through `withNamedStandIn`, so two directory pieces on one base branch overwrite each other's rule. The first stand-in keeps no rule, `withoutOrphanedStandIns` removes it at the next parse, and the next pass opens it again and removes its sibling's rule. `splitStandIn` rules (`stand-in.ts:286-300`) have the same problem: a later `withAttributionRule` on one piece deletes all the other pieces' rules. Add `workPath` to the key. S Verified (repro).
 - Medium: `withoutStandIn` records the refusal as `{ repoPath, branch }` and drops `openedForWorkPath` (`settings/stand-in.ts:95-97`). `isStandInRefused` also does not compare directories (`model/stand-in.ts:160`). If a user deletes the placeholder for one directory on a base branch, the app refuses every directory of that base branch. Add `workPath` to `StandInRefusal`, its parse and its match. M Verified.
 - Low: the settings read accepts any string as the Jira and GitLab host (`settings/parse.ts:440,442`), and `normalizeJiraHost` / `normalizeGitLabHost` keep an `http://` scheme. A host typed as `http://…`, or as `company.atlassian.net@other.host`, sends the Basic-auth token in plain text or to another host. Check for an `https:` URL with a bare hostname when you read the setting and when the user types it. S Re-rated from Medium: the Rust `http_request` (`src-tauri/src/http.rs` `is_private_enough`) refuses every non-https URL except loopback, so no token goes out in plain text; only the `user@host` typo case remains, and the user types that value.
 - Low: two JSDoc blocks are stacked on `parseTimetrackSettings` (`settings/parse.ts:414-424`). The first one describes `readTimetrackSettings` and is attached to nothing. S
@@ -35,5 +34,4 @@ Scan of `libs/timetrack/src/lib/{stream,ticket,settings}` and `libs/timetrack/sr
 
 ## Spec
 
-- Spec: no spec runs two `autoStandIns` results that share a repo and branch but have different `workPath` values through `withNamedStandIn`, and then `parseTimetrackSettings`. That spec would have caught the High above. S
 - Spec: no spec covers `withoutStandIn` on a stand-in with a work path, or `isStandInRefused` for a sibling directory. S

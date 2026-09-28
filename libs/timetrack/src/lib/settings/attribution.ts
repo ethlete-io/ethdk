@@ -20,8 +20,8 @@ export const gitFlowConfigFor = (settings: TimetrackSettings): GitFlowConfig =>
  * rather than sitting beside it: two rules naming one context with two issues would leave which one
  * wins to their creation order, and the user would have no way to see which had.
  */
-const targetOf = (rule: Pick<AttributionRule, 'repoPath' | 'branch' | 'appId'>) =>
-  rule.repoPath ? `repo:${rule.repoPath}@${rule.branch ?? ''}` : `app:${rule.appId ?? ''}`;
+const targetOf = (rule: Pick<AttributionRule, 'repoPath' | 'branch' | 'workPath' | 'appId'>) =>
+  rule.repoPath ? `repo:${rule.repoPath}@${rule.branch ?? ''}#${rule.workPath ?? ''}` : `app:${rule.appId ?? ''}`;
 
 /** Puts a rule into the settings, replacing whatever named the same context before. */
 export const withAttributionRule = (options: {

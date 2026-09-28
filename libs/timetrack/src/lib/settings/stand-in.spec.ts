@@ -453,6 +453,28 @@ describe('withNamedStandIn', () => {
 
     expect(settings.attributionRules.map((entry) => entry.id)).toEqual([NAMES_IT.id]);
   });
+
+  it('keeps the rule of each directory piece on one branch, so no placeholder is swept', () => {
+    const piece = (workPath: string) => ({
+      standIn: standIn({ id: `stand-in:${workPath}`, author: 'app', openedFor: '/home/tom/dev/ea-frontend' }),
+      rule: rule({
+        id: `rule:${workPath}`,
+        branch: 'next',
+        workPath,
+        author: 'app',
+        target: { kind: 'stand-in', standInId: `stand-in:${workPath}` },
+      }),
+    });
+    const settings = [piece('apps/web'), piece('libs/ui')].reduce(
+      (held, next) => withNamedStandIn({ settings: held, ...next }),
+      settingsWith({ standIns: [], rules: [] }),
+    );
+
+    expect(withoutOrphanedStandIns(settings).standIns.map((entry) => entry.id)).toEqual([
+      'stand-in:apps/web',
+      'stand-in:libs/ui',
+    ]);
+  });
 });
 
 describe('splitStandIn', () => {
