@@ -14,6 +14,7 @@ import {
   untracked,
 } from '@angular/core';
 import { defineRootProvider, injectRenderer, toInjectFn, toProvideFn } from '@ethlete/core';
+import { tap } from 'rxjs';
 import {
   NotificationConfig,
   NotificationManagerConfig,
@@ -124,7 +125,6 @@ const NOTIFICATION_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
         // That id is already leaving. Drop it now rather than let it animate out beside its
         // replacement - the stack tracks items by id, so two of them may not coexist.
         sameId.markDismissed();
-        notifications.update((n) => n.filter((r) => r !== sameId));
       }
 
       const currentActive = notifications().filter((r) => !r.entry().isDismissing && !r.entry().isDismissed);
@@ -135,6 +135,11 @@ const NOTIFICATION_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
       beforeChange();
       const ref = createNotificationRef(config, { managerConfig, beforeChange });
       notifications.update((n) => [...n, ref]);
+
+      ref
+        .afterDismissed()
+        .pipe(tap(() => notifications.update((n) => n.filter((r) => r !== ref))))
+        .subscribe();
 
       return ref;
     };

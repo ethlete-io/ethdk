@@ -61,6 +61,17 @@ describe('NotificationManager', () => {
     expect(leaving.entry().isDismissed).toBe(true);
   });
 
+  it('drops a dismissed notification from the list while others stay open', () => {
+    const manager = createManager();
+
+    const sticky = manager.open({ status: 'error', title: 'Sticky' });
+    const done = manager.open({ status: 'info', title: 'Done' });
+    done.dismiss();
+    done.markDismissed();
+
+    expect(manager.notifications()).toEqual([sticky]);
+  });
+
   it('dismisses the oldest notification once the visible cap is reached', () => {
     const manager = createManager();
 
