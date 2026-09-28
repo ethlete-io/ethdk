@@ -32,7 +32,6 @@ Entry-point boundaries hold: `toggle/` imports only `@ethlete/query` and `@ethle
 
 ## Exports and security
 
-- Medium: the session report redacts by key name only. `location` (`query-devtools-session.ts:288`), the request URLs in `events` (`:300`) and each entry's `url` go out verbatim, so a token in a query string (`?token=`, `?code=`, `?api_key=`, a magic-link path) lands in the file the panel says is safe to attach to a ticket. Run URL query parameters through `isSecretKey` before export. S Verified. `location`, `events` and entry URLs pass through unchanged in `buildQueryDevtoolsSessionExport`.
 - Low: the Insomnia export writes `url`, headers and bodies verbatim (`query-devtools-insomnia.ts:274-275`). Insomnia renders `{{ }}` and `{% %}` in those fields as Nunjucks, so an arg or body string that contains them breaks the request or runs a template tag on send. Wrap such values in `{% raw %}`. S
 - Low: the custom API URL is stored and the page reloads without validation (`query-devtools-settings.component.ts:210`). A typo such as a missing scheme makes every request relative to the page origin. Validate with `new URL()` before `pickApiEnv`. S
 
@@ -48,7 +47,6 @@ Entry-point boundaries hold: `toggle/` imports only `@ethlete/query` and `@ethle
 
 - Spec: no test for the shortcut matcher (`code` vs `key`, the lazy shell stopping after the handover). S
 - Spec: the pop-out has one smoke call (`query-devtools.component.spec.ts:152`) but nothing for dock-back, closing the pop-up before load, or subscriptions left after dock-back. M
-- Spec: no test that the session report redacts credentials in URLs (`query-devtools-session.spec.ts`). S
 
 ## second pass
 

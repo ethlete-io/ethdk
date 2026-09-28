@@ -46,6 +46,47 @@ export const isSecretKey = (key: string) => {
   return SECRET_KEY_FRAGMENTS.some((fragment) => normalized.includes(fragment));
 };
 
+const SECRET_URL_PARAMS = /* @__PURE__ */ new Set(['code', 'sig']);
+
+const decodeParamKey = (encodedKey: string) => {
+  try {
+    return decodeURIComponent(encodedKey);
+  } catch {
+    return encodedKey;
+  }
+};
+
+const isSecretUrlParam = (encodedKey: string) => {
+  const key = decodeParamKey(encodedKey);
+  const normalized = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  return isSecretKey(key) || normalized.endsWith('signature') || SECRET_URL_PARAMS.has(normalized);
+};
+
+const redactParams = (params: string) =>
+  params
+    .split('&')
+    .map((pair) => {
+      const eq = pair.indexOf('=');
+
+      return eq > 0 && isSecretUrlParam(pair.slice(0, eq)) ? `${pair.slice(0, eq)}=${REDACTED_SECRET}` : pair;
+    })
+    .join('&');
+
+const redactUrlForReport = (url: string) => {
+  const hashAt = url.indexOf('#');
+  const beforeHash = hashAt < 0 ? url : url.slice(0, hashAt);
+  const queryAt = beforeHash.indexOf('?');
+  const base = queryAt < 0 ? beforeHash : beforeHash.slice(0, queryAt);
+  const query = queryAt < 0 ? '' : `?${redactParams(beforeHash.slice(queryAt + 1))}`;
+  const hash = hashAt < 0 ? '' : `#${redactParams(url.slice(hashAt + 1))}`;
+
+  return `${base}${query}${hash}`;
+};
+
+const redactOptionalUrl = <T extends string | null | undefined>(url: T) =>
+  (typeof url === 'string' ? redactUrlForReport(url) : url) as T;
+
 /**
  * Booleans and numbers under a credential-named key are kept: `hasAccessToken: true` and
  * `expiresIn: 900` are what a report is for, and neither can carry the credential itself.
@@ -240,11 +281,16 @@ export type QueryDevtoolsSessionExport = {
   mocks: SessionExportMock[];
 };
 
+const redactRunUrl = (run: Record<string, unknown>) =>
+  typeof run['url'] === 'string' ? { ...run, url: redactUrlForReport(run['url']) } : run;
+
 /** Slims the free-form value fields of an entry, leaving the rest as it was collected. */
 const slimEntry = (entry: SessionExportEntry, authQueryKeys: ReadonlySet<string>): SessionExportEntry => {
   if (entry.kind === 'query' && authQueryKeys.has(sessionAuthQueryKey(entry))) {
     return {
       ...entry,
+      ...('url' in entry ? { url: redactOptionalUrl(entry.url) } : {}),
+      ...(entry.runs ? { runs: entry.runs.map(redactRunUrl) } : {}),
       ...('args' in entry ? { args: REDACTED_AUTH_QUERY } : {}),
       ...('response' in entry ? { response: REDACTED_AUTH_QUERY } : {}),
       ...('error' in entry ? { error: REDACTED_AUTH_QUERY } : {}),
@@ -254,6 +300,8 @@ const slimEntry = (entry: SessionExportEntry, authQueryKeys: ReadonlySet<string>
 
   return {
     ...entry,
+    ...('url' in entry ? { url: redactOptionalUrl(entry.url) } : {}),
+    ...(entry.runs ? { runs: entry.runs.map(redactRunUrl) } : {}),
     ...('args' in entry ? { args: slimForReport(entry.args) } : {}),
     ...('response' in entry ? { response: slimForReport(entry.response) } : {}),
     ...('error' in entry ? { error: slimForReport(entry.error) } : {}),
@@ -276,8 +324,8 @@ const slimEntry = (entry: SessionExportEntry, authQueryKeys: ReadonlySet<string>
  * later import to restore a session.
  *
  * Credentials are the exception to "slimmed, not redacted": an auth provider's own queries are reported
- * without what they sent or received, and any credential-named key anywhere else in the file is replaced
- * by {@link REDACTED_SECRET}.
+ * without what they sent or received, and any credential-named key anywhere else in the file - including a
+ * URL's query parameters - is replaced by {@link REDACTED_SECRET}.
  */
 export const buildQueryDevtoolsSessionExport = (options: BuildSessionExportOptions): QueryDevtoolsSessionExport => {
   const authQueryKeys = new Set(options.authQueryKeys ?? []);
@@ -285,7 +333,7 @@ export const buildQueryDevtoolsSessionExport = (options: BuildSessionExportOptio
   return {
     _type: 'ethlete.query:devtools-session',
     exportedAt: new Date(options.now).toISOString(),
-    location: options.location,
+    location: redactUrlForReport(options.location),
     about: options.about,
     counts: {
       clients: options.clients.length,
@@ -297,7 +345,7 @@ export const buildQueryDevtoolsSessionExport = (options: BuildSessionExportOptio
     },
     clients: options.clients,
     entries: options.entries.map((entry) => slimEntry(entry, authQueryKeys)),
-    events: options.events,
+    events: options.events.map((event) => ('url' in event ? { ...event, url: redactOptionalUrl(event.url) } : event)),
     faults: options.faults,
     mocks: options.mocks,
   };

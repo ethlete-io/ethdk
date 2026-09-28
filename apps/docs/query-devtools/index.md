@@ -1783,9 +1783,10 @@ it holds each token and how long the access token has left, its own login and to
 queries are listed without what they sent or received, and any string or object under a
 credential-named key - `password`, `accessToken`, `Authorization`, `set-cookie`,
 `apiKey` and the like - is replaced by `[redacted: credential]` wherever it sits in an
-entry's args, response, error or detail. A boolean or a number under such a key survives:
-`hasAccessToken: true` and `expiresIn: 900` are what the report is for, and neither can
-carry the credential itself. The Insomnia export drops a header by that same key-name
+entry's args, response, error or detail. The same rule, plus `code`, `sig` and `*signature`,
+blanks query and fragment parameters in the page location and in every request URL. A
+boolean or a number under such a key survives: `hasAccessToken: true` and `expiresIn: 900`
+are what the report is for, and neither can carry the credential itself. The Insomnia export drops a header by that same key-name
 rule, with one deliberate exception - it carries a refresh token in the token-refresh
 request's body, because that is what makes its chain work, and
 [it says so](#secure-queries-get-a-self-refreshing-token). **[Copy as cURL](#copy-as-curl)
@@ -1794,8 +1795,8 @@ the command, which is what makes the command runnable - so a command pasted into
 carries the live token with it, and its menu item says so.
 
 That rule is a key-name rule, so it is a floor and not a guarantee: a credential the API
-returns under a name that does not read like one, or one carried in a URL's query string,
-still travels in the file. The rest is your app's data - args and responses go in as they
+returns under a name that does not read like one, or one carried in a URL's path, still
+travels in the file. The rest is your app's data - args and responses go in as they
 are, slimmed but not redacted. Read it before you attach it.
 :::
 

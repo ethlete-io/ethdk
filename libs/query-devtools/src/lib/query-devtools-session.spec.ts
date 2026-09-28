@@ -202,6 +202,39 @@ describe('session export redaction', () => {
     });
   });
 
+  it('should redact credentials in the query and fragment of every URL', () => {
+    const result = build({
+      location: 'https://app.example.com/callback?code=OAUTH.CODE&tab=posts#access_token=LIVE.ACCESS.TOKEN',
+      entries: [
+        {
+          id: 'q',
+          kind: 'query',
+          url: 'https://api.example.com/posts?api_key=KEY&page=2',
+          runs: [{ index: 0, url: 'https://api.example.com/posts?token=RUN.TOKEN' }],
+        },
+      ],
+      events: [
+        {
+          timestamp: '',
+          client: 'main',
+          type: 'request-start',
+          url: 'https://api.example.com/files?X-Amz-Signature=SIG&v=1',
+        },
+      ],
+    });
+
+    const json = JSON.stringify(result);
+
+    for (const secret of ['OAUTH.CODE', 'LIVE.ACCESS.TOKEN', 'KEY&', 'RUN.TOKEN', 'SIG']) {
+      expect(json).not.toContain(secret);
+    }
+    expect(result.location).toBe(
+      'https://app.example.com/callback?code=[redacted: credential]&tab=posts#access_token=[redacted: credential]',
+    );
+    expect(result.entries[0]?.url).toBe('https://api.example.com/posts?api_key=[redacted: credential]&page=2');
+    expect(result.events[0]?.url).toBe('https://api.example.com/files?X-Amz-Signature=[redacted: credential]&v=1');
+  });
+
   it('should keep a boolean or a number under a credential-named key', () => {
     const [entry] = build({
       entries: [
