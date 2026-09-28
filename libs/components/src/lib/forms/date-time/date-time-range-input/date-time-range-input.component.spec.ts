@@ -80,3 +80,43 @@ describe('DateTimeRangeInputComponent - picker panes', () => {
     expect(activePane()).toBe('dates');
   });
 });
+
+@Component({
+  template: `
+    <et-date-time-range-input
+      [(value)]="value"
+      [startAt]="startAt"
+      [maxDate]="maxDate"
+      aria-label="Stay"
+      displayFormat="MM/dd/yyyy, HH:mm"
+      timeZone="Asia/Tokyo"
+    />
+  `,
+  imports: [DateTimeRangeInputComponent],
+})
+class ZonedBoundsDateTimeRangeInputHost {
+  value = signal<DateTimeRangeValue>({ start: null, end: null });
+  startAt = new Date(2026, 7, 1);
+  /** 22:00 on 18 Aug in Berlin, already 19 Aug in Tokyo. */
+  maxDate = new Date('2026-08-18T20:00:00Z');
+}
+
+describe('DateTimeRangeInputComponent - zoned bounds', () => {
+  let driver: DatePickerDriver<ZonedBoundsDateTimeRangeInputHost, DateTimeRangeInputDirective>;
+
+  beforeEach(() => {
+    driver = mountDatePicker(ZonedBoundsDateTimeRangeInputHost, DateTimeRangeInputDirective);
+  });
+
+  afterEach(async () => {
+    driver.closeAndRemovePanes();
+    await driver.settle();
+  });
+
+  it('reads maxDate on the calendar of the zone', async () => {
+    await driver.open();
+
+    expect(driver.dayCell('19')?.getAttribute('aria-disabled')).toBeNull();
+    expect(driver.dayCell('20')?.getAttribute('aria-disabled')).toBe('true');
+  });
+});

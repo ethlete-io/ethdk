@@ -1,6 +1,5 @@
 import { Directive, booleanAttribute, computed, effect, input, signal } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
-import { startOfDay } from 'date-fns';
 import { CalendarDateClassFn, CalendarView } from '../../../../calendar/headless';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
 import { FORM_FIELD_CONTROL_TYPES } from '../../../form-field/headless';
@@ -12,9 +11,10 @@ import {
 } from '../../internals/date-range-picker-input.directive';
 import { withTimeOfDay } from '../../internals/date-time-merge';
 import {
+  combineInZone,
+  toZoneCalendar,
   isValidTimeZone,
   localReading,
-  reinterpretInZone,
   timeZoneDisplayName,
   withZonedDay,
 } from '../../internals/time-zone';
@@ -30,7 +30,8 @@ let localReadingIdCounter = 0;
 
 /**
  * Rejects individual times in the picker. The candidate is the picked time of day on the side's
- * committed day, and `side` says which end is being filled.
+ * committed day - read through getters in the input's `timeZone` when one is set - and `side` says
+ * which end is being filled.
  */
 export type DateTimeRangeTimeFilterFn = (date: Date, side: DateRangeSide) => boolean;
 
@@ -73,7 +74,11 @@ export class DateTimeRangeInputDirective
   /** A name for {@link timeZone} in the second reading. Defaults to the IANA name's last segment. */
   public timeZoneLabel = input<string | null>(null);
 
-  /** Forwarded to the picker calendar. (`min`/`max` are reserved by signal forms.) */
+  /**
+   * Forwarded to the picker calendar. (`min`/`max` are reserved by signal forms.) With a
+   * {@link timeZone}, the bounds are read on the zone's calendar and `dateFilter` receives each
+   * day as a local midnight carrying the zone's date.
+   */
   public minDate = input<Date | null>(null);
   public maxDate = input<Date | null>(null);
   public dateFilter = input<((date: Date) => boolean) | null>(null);
@@ -136,7 +141,10 @@ export class DateTimeRangeInputDirective
 
   public override ownDescribedBy = this.localReadingId;
 
-  private halfPicks = { start: createPendingDateTime(), end: createPendingDateTime() };
+  private halfPicks = {
+    start: createPendingDateTime((day, time) => combineInZone({ day, time }, this.effectiveTimeZone())),
+    end: createPendingDateTime((day, time) => combineInZone({ day, time }, this.effectiveTimeZone())),
+  };
 
   /** @internal */
   public presetList = createDateRangePresets({
@@ -154,9 +162,15 @@ export class DateTimeRangeInputDirective
 
   /** The two times the picker's columns mark as selected - committed, else picked with no day yet. */
   public pickerTimeRange = computed(() => ({
-    start: this.pickerSideDate('start') ?? this.halfPicks.start.time(),
-    end: this.pickerSideDate('end') ?? this.halfPicks.end.time(),
+    start: this.pickerSideTime('start') ?? this.halfPicks.start.time(),
+    end: this.pickerSideTime('end') ?? this.halfPicks.end.time(),
   }));
+
+  /** {@link minDate} on the calendar the picker shows. */
+  public pickerMinDate = computed(() => toZoneCalendar(this.minDate(), this.effectiveTimeZone()));
+
+  /** {@link maxDate} on the calendar the picker shows. */
+  public pickerMaxDate = computed(() => toZoneCalendar(this.maxDate(), this.effectiveTimeZone()));
 
   constructor() {
     super();
@@ -211,7 +225,7 @@ export class DateTimeRangeInputDirective
       this.resolvePendingMixed();
     } else {
       this.halfPicks[side].clear();
-      this.commitSideDate(side, reinterpretInZone(withTimeOfDay(day, time), this.effectiveTimeZone()));
+      this.commitSideDate(side, combineInZone({ day, time }, this.effectiveTimeZone()));
     }
 
     this.touched.set(true);
@@ -259,7 +273,7 @@ export class DateTimeRangeInputDirective
     return parseDateTimeText(raw, {
       format: this.effectiveDisplayFormat(),
       locale: this.effectiveLocale(),
-      referenceDate: startOfDay(new Date()),
+      timeZone: this.effectiveTimeZone(),
     });
   }
 
@@ -285,9 +299,7 @@ export class DateTimeRangeInputDirective
       return timeZone === null ? withTimeOfDay(day, committed) : withZonedDay(committed, { day, timeZone });
     }
 
-    const merged = held.holdDay(day);
-
-    return merged === null ? null : reinterpretInZone(merged, timeZone);
+    return held.holdDay(day);
   }
 
   private resolvePendingMixed() {

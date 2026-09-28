@@ -16,7 +16,7 @@ import { FormFieldControl } from '../../form-field/headless';
 import { parseDateValue } from './date-value';
 import { DatePickerInputFieldBase, PickerInputBaseDirective } from './picker-input-base.directive';
 import { resolvePickerCommit } from './picker-input-commit';
-import { formatInZone, reinterpretInZone, zonedProxy } from './time-zone';
+import { formatInZone, zonedProxy, zonedWallClock } from './time-zone';
 
 /** The two wire strings a range control holds; a side is `null` while empty/unparseable. */
 export type DateRangeValue = {
@@ -186,14 +186,22 @@ export abstract class DateRangePickerInputDirective
   }
 
   /**
-   * One side as the calendar and the time picker see it: a plain `Date` whose local wall clock is
-   * the zone's. Highlighting only - see `zonedProxy`.
+   * One side as the calendar sees it: a plain `Date` whose local wall clock is the zone's.
+   * Highlighting only - see `zonedProxy`.
    */
   public pickerSideDate(side: DateRangeSide) {
     const date = this.sideDate(side);
     const timeZone = this.effectiveTimeZone();
 
     return date === null || timeZone === null ? date : zonedProxy(date, timeZone);
+  }
+
+  /** One side as the time picker sees it: getters that read the zone's wall clock. */
+  public pickerSideTime(side: DateRangeSide) {
+    const date = this.sideDate(side);
+    const timeZone = this.effectiveTimeZone();
+
+    return date === null || timeZone === null ? date : zonedWallClock(date, timeZone);
   }
 
   public focus(options?: FocusOptions) {
@@ -235,7 +243,7 @@ export abstract class DateRangePickerInputDirective
     state.parseError.set(outcome.text.length > 0);
 
     if (outcome.parsed !== null) {
-      this.commitSideValue(side, this.formatSide(reinterpretInZone(outcome.parsed, this.effectiveTimeZone())));
+      this.commitSideValue(side, this.formatSide(outcome.parsed));
 
       return;
     }
@@ -354,6 +362,7 @@ export abstract class DateRangePickerInputDirective
       format: this.effectiveValueFormat(),
       locale: this.effectiveLocale(),
       referenceDate: this.valueReferenceDate(),
+      timeZone: this.effectiveTimeZone(),
     });
   }
 

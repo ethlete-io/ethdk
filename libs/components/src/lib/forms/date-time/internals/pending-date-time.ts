@@ -61,7 +61,8 @@ export type PendingDateTime = {
   clear: () => void;
 };
 
-export const createPendingDateTime = (): PendingDateTime => {
+/** `merge` builds the completed instant out of the held day and the held time. */
+export const createPendingDateTime = (merge: (day: Date, time: Date) => Date = withTimeOfDay): PendingDateTime => {
   const day = signal<Date | null>(null);
   const time = signal<Date | null>(null);
 
@@ -85,7 +86,7 @@ export const createPendingDateTime = (): PendingDateTime => {
 
       clear();
 
-      return withTimeOfDay(picked, held);
+      return merge(picked, held);
     },
     holdTime: (picked) => {
       const held = day();
@@ -98,7 +99,7 @@ export const createPendingDateTime = (): PendingDateTime => {
 
       clear();
 
-      return withTimeOfDay(held, picked);
+      return merge(held, picked);
     },
     clearDay: () => day.set(null),
     clear,

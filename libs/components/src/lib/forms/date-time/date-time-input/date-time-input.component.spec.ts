@@ -94,3 +94,43 @@ describe('DateTimeInputComponent - picker panes', () => {
     expect(activePane()).toBe('time');
   });
 });
+
+@Component({
+  template: `
+    <et-date-time-input
+      [(value)]="value"
+      [startAt]="startAt"
+      [minDate]="minDate"
+      aria-label="Appointment"
+      displayFormat="MM/dd/yyyy, HH:mm"
+      timeZone="Asia/Tokyo"
+    />
+  `,
+  imports: [DateTimeInputComponent],
+})
+class ZonedBoundsDateTimeInputHost {
+  value = signal<string | null>(null);
+  startAt = new Date(2026, 7, 1);
+  /** 22:00 on 18 Aug in Berlin, already 19 Aug in Tokyo. */
+  minDate = new Date('2026-08-18T20:00:00Z');
+}
+
+describe('DateTimeInputComponent - zoned bounds', () => {
+  let driver: DatePickerDriver<ZonedBoundsDateTimeInputHost, DateTimeInputDirective>;
+
+  beforeEach(() => {
+    driver = mountDatePicker(ZonedBoundsDateTimeInputHost, DateTimeInputDirective);
+  });
+
+  afterEach(async () => {
+    driver.closeAndRemovePanes();
+    await driver.settle();
+  });
+
+  it('reads minDate on the calendar of the zone', async () => {
+    await driver.open();
+
+    expect(driver.dayCell('18')?.getAttribute('aria-disabled')).toBe('true');
+    expect(driver.dayCell('19')?.getAttribute('aria-disabled')).toBeNull();
+  });
+});

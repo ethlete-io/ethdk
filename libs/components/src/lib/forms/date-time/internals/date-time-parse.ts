@@ -1,3 +1,4 @@
+import { tz } from '@date-fns/tz';
 import { startOfDay } from 'date-fns';
 import { ParseDateValueOptions, parseDateValue } from './date-value';
 import { parseTimeText } from './time-parse';
@@ -22,12 +23,15 @@ export const parseDateTimeText = (value: string, options: ParseDateValueOptions)
   }
 
   const locale = options.locale;
+  const timeZone = options.timeZone ?? null;
   // date-only parses must fill their missing time from midnight, not `new Date()` (parseDateValue's
   // default), or a bare date leaks the current wall-clock time into the wire value
-  const referenceDate = startOfDay(options.referenceDate ?? new Date());
+  const referenceDate = startOfDay(options.referenceDate ?? new Date(), {
+    in: timeZone === null ? undefined : tz(timeZone),
+  });
 
   for (const separator of trimmed.matchAll(SEPARATOR_PATTERN)) {
-    const date = parseDateValue(trimmed.slice(0, separator.index), { format: 'P', locale, referenceDate });
+    const date = parseDateValue(trimmed.slice(0, separator.index), { format: 'P', locale, referenceDate, timeZone });
 
     if (date === null) {
       continue;
@@ -37,6 +41,7 @@ export const parseDateTimeText = (value: string, options: ParseDateValueOptions)
       format: 'p',
       locale,
       referenceDate: date,
+      timeZone,
     });
 
     if (merged !== null) {
@@ -44,5 +49,5 @@ export const parseDateTimeText = (value: string, options: ParseDateValueOptions)
     }
   }
 
-  return parseDateValue(trimmed, { format: 'P', locale, referenceDate });
+  return parseDateValue(trimmed, { format: 'P', locale, referenceDate, timeZone });
 };

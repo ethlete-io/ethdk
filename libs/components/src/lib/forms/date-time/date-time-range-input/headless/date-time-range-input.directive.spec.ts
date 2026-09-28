@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { setHours, setMinutes } from 'date-fns';
 import '../../../../../test-helpers';
 import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
 import { describePickerCommitContract } from '../../../testing/picker-commit-contract';
@@ -501,6 +502,77 @@ describe('DateTimeRangeInputDirective time zone', () => {
 
     expect(rangeInput.effectiveTimeZone()).toBeNull();
     expect(rangeInput.localReadingId()).toBeNull();
+  });
+});
+
+@Component({
+  template: `
+    <div
+      [(value)]="value"
+      [valueFormat]="valueFormat()"
+      displayFormat="MM/dd/yyyy, HH:mm"
+      etDateTimeRangeInput
+      timeZone="Asia/Tokyo"
+    >
+      <input class="start" etDateTimeRangeInputField side="start" />
+      <input class="end" etDateTimeRangeInputField side="end" />
+    </div>
+  `,
+  imports: [DateTimeRangeInputDirective, DateTimeRangeInputFieldDirective],
+})
+class TokyoDateTimeRangeInputTestHost {
+  value = signal<DateTimeRangeValue>({ start: null, end: null });
+  valueFormat = signal("yyyy-MM-dd'T'HH:mm:ssxxx");
+}
+
+describe('DateTimeRangeInputDirective zone wall clock in a Berlin runtime', () => {
+  let fixture: ComponentFixture<TokyoDateTimeRangeInputTestHost>;
+  let host: TokyoDateTimeRangeInputTestHost;
+  let rangeInput: DateTimeRangeInputDirective;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [TokyoDateTimeRangeInputTestHost] });
+    fixture = TestBed.createComponent(TokyoDateTimeRangeInputTestHost);
+    host = fixture.componentInstance;
+    fixture.detectChanges();
+    rangeInput = fixture.debugElement
+      .query(By.directive(DateTimeRangeInputDirective))
+      .injector.get(DateTimeRangeInputDirective);
+  });
+
+  const setValue = (value: DateTimeRangeValue) => {
+    host.value.set(value);
+    fixture.detectChanges();
+  };
+
+  it('reads an offsetless value as the zone wall clock it was written in', () => {
+    host.valueFormat.set("yyyy-MM-dd'T'HH:mm:ss");
+    setValue({ start: '2026-08-18T10:00:00', end: null });
+
+    expect(rangeInput.displayValue('start')).toBe('08/18/2026, 10:00');
+  });
+
+  it('commits typed text in the runtime gap as the zone wall clock typed', () => {
+    rangeInput.commitSide('start', '03/29/2026, 02:30');
+
+    expect(host.value().start).toBe('2026-03-29T02:30:00+09:00');
+  });
+
+  it('commits a picked time in the runtime gap as the zone wall clock picked', () => {
+    setValue({ start: '2026-03-29T01:00:00+09:00', end: null });
+
+    const shown = rangeInput.pickerTimeRange().start!;
+
+    rangeInput.selectTime('start', setMinutes(setHours(shown, 2), 30));
+
+    expect(host.value().start).toBe('2026-03-29T02:30:00+09:00');
+  });
+
+  it('commits a picked time onto a held day in the runtime gap as picked', () => {
+    rangeInput.selectCalendarRange({ start: new Date(2026, 2, 29), end: null });
+    rangeInput.selectTime('start', new Date(2026, 0, 1, 2, 30));
+
+    expect(host.value().start).toBe('2026-03-29T02:30:00+09:00');
   });
 });
 

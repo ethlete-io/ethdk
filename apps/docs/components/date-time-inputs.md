@@ -223,6 +223,12 @@ The value stays an instant throughout. Nothing about the wire contract changes: 
 names one moment, and any reader in any zone resolves it to the same one. Only which wall clock the
 control shows, and which offset it writes, follow `timeZone`.
 
+A `valueFormat` without an offset token (`yyyy-MM-dd'T'HH:mm:ss`) is written and read back as the
+zone's wall clock. The picker bounds follow the zone too: `minDate`/`maxDate` are read on the zone's
+calendar, `dateFilter` receives each day as a local midnight carrying the zone's date, the time of
+day of `minTime`/`maxTime` is compared with the zone's wall clock, and `timeFilter` receives the
+candidate instant with getters (`getHours()`, `getDay()`, …) that read the zone.
+
 Give the reader a friendlier name than the IANA one with `timeZoneLabel`:
 
 ```html
@@ -245,10 +251,6 @@ The same input is on the range control, where one second reading covers both end
   draws in is the runtime's. Showing a foreign zone's grid means every day boundary and hour row
   being evaluated in it, which daylight saving makes 23 and 25 hours long - a separate project, not
   this input. Convert at your boundary if you need it today.
-- **One hour a year, the picker highlight can be an hour out.** The calendar and the time picker are
-  handed a plain `Date` carrying the zone's wall clock, and the reader's own spring-forward hour has
-  no such local wall clock. The committed value is always exact - it is rebuilt from the zone, never
-  from that stand-in - so only the highlight is affected, and only in that hour.
 
 ## Date range input - `et-date-range-input` {#date-range-input}
 

@@ -1,3 +1,4 @@
+import { tz } from '@date-fns/tz';
 import { format as formatDate, isValid, parse } from 'date-fns';
 import { Locale } from 'date-fns';
 
@@ -7,6 +8,8 @@ export type ParseDateValueOptions = {
   locale?: Locale | null;
   /** The date missing parts are taken from. Defaults to now. */
   referenceDate?: Date;
+  /** IANA zone whose wall clock the text is read in, unless the text carries its own offset. */
+  timeZone?: string | null;
 };
 
 export type FormatDateValueOptions = {
@@ -26,10 +29,18 @@ export const parseDateValue = (value: string, options: ParseDateValueOptions): D
     return null;
   }
 
-  const locale = options.locale;
-  const parsed = parse(trimmed, options.format, options.referenceDate ?? new Date(), locale ? { locale } : undefined);
+  const locale = options.locale ?? undefined;
+  const timeZone = options.timeZone ?? null;
+  const parsed = parse(trimmed, options.format, options.referenceDate ?? new Date(), {
+    locale,
+    in: timeZone === null ? undefined : tz(timeZone),
+  });
 
-  return isValid(parsed) ? parsed : null;
+  if (!isValid(parsed)) {
+    return null;
+  }
+
+  return timeZone === null ? parsed : new Date(parsed.getTime());
 };
 
 /** Formats a `Date` with a date-fns format string. Invalid dates yield `null`. */

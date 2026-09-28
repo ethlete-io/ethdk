@@ -5,14 +5,16 @@ import { injectDateFormat } from '../../date-time-formats';
 import { DatePickerInputDirective } from '../../internals/date-picker-input.directive';
 import { parseDateValue } from '../../internals/date-value';
 import {
+  combineInZone,
+  toZoneCalendar,
   formatInZone,
   isValidTimeZone,
   localReading,
-  reinterpretInZone,
   timeZoneDisplayName,
   withZonedDay,
   withZonedTimeOfDay,
   zonedProxy,
+  zonedWallClock,
 } from '../../internals/time-zone';
 import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
 import { withTimeOfDay } from '../../internals/date-time-merge';
@@ -60,7 +62,11 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
   /** A name for {@link timeZone} in the second reading. Defaults to the IANA name's last segment. */
   public timeZoneLabel = input<string | null>(null);
 
-  /** Forwarded to the picker calendar. (`min`/`max` are reserved by signal forms.) */
+  /**
+   * Forwarded to the picker calendar. (`min`/`max` are reserved by signal forms.) With a
+   * {@link timeZone}, the bounds are read on the zone's calendar and `dateFilter` receives each
+   * day as a local midnight carrying the zone's date.
+   */
   public minDate = input<Date | null>(null);
   public maxDate = input<Date | null>(null);
   public dateFilter = input<((date: Date) => boolean) | null>(null);
@@ -79,7 +85,8 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
   /**
    * Forwarded to the picker's time picker. Only the time of day of `minTime`/`maxTime`
    * is read, so the bound applies on every day; `timeFilter` receives the full candidate
-   * timestamp. Bounds shape the picker - validate typed entry with a schema validator.
+   * timestamp, whose getters read the {@link timeZone}'s wall clock when one is set. Bounds shape
+   * the picker - validate typed entry with a schema validator.
    */
   public minTime = input<Date | null>(null);
   public maxTime = input<Date | null>(null);
@@ -117,24 +124,44 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
       return null;
     }
 
-    return parseDateValue(value, { format: this.effectiveValueFormat(), locale: this.effectiveLocale() });
+    return parseDateValue(value, {
+      format: this.effectiveValueFormat(),
+      locale: this.effectiveLocale(),
+      timeZone: this.effectiveTimeZone(),
+    });
   });
 
-  private halfPick = createPendingDateTime();
+  private halfPick = createPendingDateTime((day, time) => combineInZone({ day, time }, this.effectiveTimeZone()));
 
-  /** Highlighting only - a committed value is always derived from the instant, never from this. */
-  private pickerDateTime = computed(() => {
+  /** The day the picker calendar highlights - the committed one, else a day picked with no time yet. */
+  public pickerDate = computed(() => {
     const dateTime = this.dateTime();
     const timeZone = this.effectiveTimeZone();
 
-    return dateTime === null || timeZone === null ? dateTime : zonedProxy(dateTime, timeZone);
+    if (dateTime === null) {
+      return this.halfPick.day();
+    }
+
+    return timeZone === null ? dateTime : zonedProxy(dateTime, timeZone);
   });
 
-  /** The day the picker calendar highlights - the committed one, else a day picked with no time yet. */
-  public pickerDate = computed(() => this.pickerDateTime() ?? this.halfPick.day());
-
   /** The time the picker's columns mark as selected - the committed one, else a time picked with no day yet. */
-  public pickerTime = computed(() => this.pickerDateTime() ?? this.halfPick.time());
+  public pickerTime = computed(() => {
+    const dateTime = this.dateTime();
+    const timeZone = this.effectiveTimeZone();
+
+    if (dateTime === null) {
+      return this.halfPick.time();
+    }
+
+    return timeZone === null ? dateTime : zonedWallClock(dateTime, timeZone);
+  });
+
+  /** {@link minDate} on the calendar the picker shows. */
+  public pickerMinDate = computed(() => toZoneCalendar(this.minDate(), this.effectiveTimeZone()));
+
+  /** {@link maxDate} on the calendar the picker shows. */
+  public pickerMaxDate = computed(() => toZoneCalendar(this.maxDate(), this.effectiveTimeZone()));
 
   /**
    * The same moment read in the runtime's own zone, or `null` when no zone is set, the field is
@@ -204,12 +231,16 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
 
   /** @internal A strict parse against `displayFormat`, then a lenient one. */
   public parseCommitText(raw: string) {
-    return parseDateTimeText(raw, { format: this.displayFormat(), locale: this.effectiveLocale() });
+    return parseDateTimeText(raw, {
+      format: this.displayFormat(),
+      locale: this.effectiveLocale(),
+      timeZone: this.effectiveTimeZone(),
+    });
   }
 
   /** @internal */
   public writeCommitted(parsed: Date) {
-    this.commitInstant(reinterpretInZone(parsed, this.effectiveTimeZone()));
+    this.commitInstant(parsed);
   }
 
   /**
@@ -232,7 +263,7 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
       return;
     }
 
-    this.resolvePick(this.holdHalfPick(this.halfPick.holdDay(date)));
+    this.resolvePick(this.halfPick.holdDay(date));
   }
 
   /**
@@ -255,17 +286,13 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
       return;
     }
 
-    this.resolvePick(this.holdHalfPick(this.halfPick.holdTime(time)));
+    this.resolvePick(this.halfPick.holdTime(time));
   }
 
   /** Drops a held half along with the value. */
   public override clearValue() {
     super.clearValue();
     this.halfPick.clear();
-  }
-
-  private holdHalfPick(merged: Date | null) {
-    return merged === null ? null : reinterpretInZone(merged, this.effectiveTimeZone());
   }
 
   private resolvePick(instant: Date | null) {

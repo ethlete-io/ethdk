@@ -2,6 +2,7 @@ import { TZDate } from '@date-fns/tz';
 import { Locale } from 'date-fns';
 import { formatDateValue, parseDateValue, FormatDateValueOptions, ParseDateValueOptions } from './date-value';
 import { splitDateTimeFormat } from './date-time-format-split';
+import { withTimeOfDay } from './date-time-merge';
 
 export type ZonedFields = {
   year: number;
@@ -99,19 +100,40 @@ export const formatInZone = (instant: Date, options: ZonedFormatOptions): string
   return formatDateValue(new TZDate(instant, timeZone) as Date, options);
 };
 
-export const parseInZone = (value: string, options: ZonedParseOptions): Date | null => {
-  const parsed = parseDateValue(value, options);
-  const timeZone = options.timeZone;
-
-  if (parsed === null || timeZone === null) {
-    return parsed;
-  }
-
-  return instantFromZonedFields(localFields(parsed), timeZone);
-};
+export const parseInZone = (value: string, options: ZonedParseOptions): Date | null => parseDateValue(value, options);
 
 export const reinterpretInZone = (local: Date, timeZone: string | null): Date =>
   timeZone === null ? local : instantFromZonedFields(localFields(local), timeZone);
+
+/**
+ * The instant `timeZone` shows as the date of `day` and the time of day of `time`, each read
+ * through its own getters.
+ */
+export const combineInZone = ({ day, time }: { day: Date; time: Date }, timeZone: string | null): Date =>
+  timeZone === null
+    ? withTimeOfDay(day, time)
+    : instantFromZonedFields(
+        {
+          year: day.getFullYear(),
+          month: day.getMonth(),
+          day: day.getDate(),
+          hours: time.getHours(),
+          minutes: time.getMinutes(),
+          seconds: time.getSeconds(),
+          milliseconds: 0,
+        },
+        timeZone,
+      );
+
+/**
+ * `instant` as the time picker takes it: getters that read the zone's wall clock, so a pick built
+ * with `setHours` lands on the zone's hour even where the runtime's own clock skips it.
+ */
+export const zonedWallClock = (instant: Date, timeZone: string): Date => new TZDate(instant, timeZone);
+
+/** `date` as the picker calendar reads it: its {@link zonedProxy} while a zone is set. */
+export const toZoneCalendar = (date: Date | null, timeZone: string | null) =>
+  date === null || timeZone === null ? date : zonedProxy(date, timeZone);
 
 export const withZonedDay = (instant: Date, options: { day: Date; timeZone: string }): Date =>
   instantFromZonedFields(

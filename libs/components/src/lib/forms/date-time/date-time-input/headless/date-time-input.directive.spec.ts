@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { setHours, setMinutes } from 'date-fns';
 import '../../../../../test-helpers';
 import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
 import { describePickerCommitContract } from '../../../testing/picker-commit-contract';
@@ -481,6 +482,105 @@ describe('DateTimeInputDirective time zone', () => {
     setValue(FIELD.wire);
 
     expect(input.describedByIds()).toBe(input.localReadingId());
+  });
+});
+
+@Component({
+  template: `
+    <div
+      [(value)]="value"
+      [valueFormat]="valueFormat()"
+      displayFormat="MM/dd/yyyy, HH:mm"
+      etDateTimeInput
+      timeZone="Asia/Tokyo"
+    >
+      <input etDateTimeInputField />
+    </div>
+  `,
+  imports: [DateTimeInputDirective, DateTimeInputFieldDirective],
+})
+class TokyoDateTimeInputTestHost {
+  value = signal<string | null>(null);
+  valueFormat = signal("yyyy-MM-dd'T'HH:mm:ssxxx");
+}
+
+describe('DateTimeInputDirective zone wall clock in a Berlin runtime', () => {
+  let fixture: ComponentFixture<TokyoDateTimeInputTestHost>;
+  let host: TokyoDateTimeInputTestHost;
+  let input: DateTimeInputDirective;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [TokyoDateTimeInputTestHost] });
+    fixture = TestBed.createComponent(TokyoDateTimeInputTestHost);
+    host = fixture.componentInstance;
+    fixture.detectChanges();
+    input = fixture.debugElement.query(By.directive(DateTimeInputDirective)).injector.get(DateTimeInputDirective);
+  });
+
+  const setValue = (value: string) => {
+    host.value.set(value);
+    fixture.detectChanges();
+  };
+
+  /** What the time picker does with a pick: the picked parts set onto the value it was given. */
+  const pickTimeLikeThePicker = (hours: number, minutes: number) => {
+    const shown = input.pickerTime();
+
+    input.selectTime(setMinutes(setHours(shown ?? new Date(2026, 0, 1), hours), minutes));
+  };
+
+  it('reads an offsetless value as the zone wall clock it was written in', () => {
+    host.valueFormat.set("yyyy-MM-dd'T'HH:mm:ss");
+    setValue('2026-08-18T10:00:00');
+
+    expect(input.displayValue()).toBe('08/18/2026, 10:00');
+  });
+
+  it('keeps an offsetless value on its instant across a later time pick', () => {
+    host.valueFormat.set("yyyy-MM-dd'T'HH:mm:ss");
+    setValue('2026-08-18T10:00:00');
+    pickTimeLikeThePicker(11, 0);
+
+    expect(host.value()).toBe('2026-08-18T11:00:00');
+  });
+
+  it('commits typed text in the runtime gap as the zone wall clock typed', () => {
+    input.commitInput('03/29/2026, 02:30');
+
+    expect(host.value()).toBe('2026-03-29T02:30:00+09:00');
+  });
+
+  it('commits leniently typed text in the runtime gap as the zone wall clock typed', () => {
+    input.commitInput('03/29/2026 230');
+
+    expect(host.value()).toBe('2026-03-29T02:30:00+09:00');
+  });
+
+  it('commits a picked time in the runtime gap as the zone wall clock picked', () => {
+    setValue('2026-03-29T01:00:00+09:00');
+    pickTimeLikeThePicker(2, 30);
+
+    expect(host.value()).toBe('2026-03-29T02:30:00+09:00');
+  });
+
+  it('shows a committed time in the runtime gap to the time picker as the zone wall clock', () => {
+    setValue('2026-03-29T02:30:00+09:00');
+
+    expect(input.pickerTime()?.getHours()).toBe(2);
+  });
+
+  it('commits a held day and a later time in the runtime gap as picked', () => {
+    input.selectDate(new Date(2026, 2, 29));
+    pickTimeLikeThePicker(2, 30);
+
+    expect(host.value()).toBe('2026-03-29T02:30:00+09:00');
+  });
+
+  it('commits a held time and a later day in the runtime gap as picked', () => {
+    input.selectTime(new Date(2026, 0, 1, 2, 30));
+    input.selectDate(new Date(2026, 2, 29));
+
+    expect(host.value()).toBe('2026-03-29T02:30:00+09:00');
   });
 });
 

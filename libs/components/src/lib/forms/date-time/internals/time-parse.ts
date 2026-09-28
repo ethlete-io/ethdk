@@ -1,3 +1,4 @@
+import { TZDate } from '@date-fns/tz';
 import { endOfDay, setHours, setMinutes, setSeconds, startOfDay, subWeeks } from 'date-fns';
 import { ParseDateValueOptions, parseDateValue } from './date-value';
 
@@ -42,7 +43,7 @@ const extractLenientParts = (text: string): LenientTimeParts | null => {
   };
 };
 
-const parseLenient = (raw: string, referenceDate: Date): Date | null => {
+const parseLenient = (raw: string, { referenceDate, timeZone }: { referenceDate: Date; timeZone: string | null }) => {
   let text = raw.trim().toLowerCase();
 
   if (!text) {
@@ -79,7 +80,9 @@ const parseLenient = (raw: string, referenceDate: Date): Date | null => {
     return null;
   }
 
-  return setSeconds(setMinutes(setHours(startOfDay(referenceDate), hour), parts.minute), parts.second);
+  const day = startOfDay(timeZone === null ? referenceDate : new TZDate(referenceDate, timeZone));
+
+  return new Date(setSeconds(setMinutes(setHours(day, hour), parts.minute), parts.second).getTime());
 };
 
 /**
@@ -93,5 +96,8 @@ export const parseTimeText = (value: string, options: ParseDateValueOptions): Da
     return strict;
   }
 
-  return parseLenient(value, options.referenceDate ?? new Date());
+  return parseLenient(value, {
+    referenceDate: options.referenceDate ?? new Date(),
+    timeZone: options.timeZone ?? null,
+  });
 };
