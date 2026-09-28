@@ -319,3 +319,45 @@ describe('buildQueryDevtoolsOpenApiPathItem', () => {
     expect(notes).toContain('This fragment references MatchView - paste it into the description that declares it.');
   });
 });
+
+describe('buildQueryDevtoolsOpenApiDocument edge cases', () => {
+  it('should read a v7 uuid as a uuid', () => {
+    expect(inferQueryDevtoolsOpenApiSchema('01890a5d-ac96-774b-bcce-b302099a8057')).toEqual({
+      type: 'string',
+      format: 'uuid',
+    });
+  });
+
+  it('should carry a named schema called like an Object.prototype member', () => {
+    const schema = { type: 'object' };
+    const { document } = buildQueryDevtoolsOpenApiDocument({
+      mocks: [mock({ schemaName: 'constructor' })],
+      schemas: { constructor: schema },
+      now: NOW,
+    });
+
+    expect(document.components?.schemas).toEqual({ constructor: schema });
+  });
+
+  it('should not reference a schema only Object.prototype holds', () => {
+    const { document } = buildQueryDevtoolsOpenApiDocument({ mocks: [mock({ schemaName: 'toString' })], now: NOW });
+
+    expect(jsonOf(operationOf(document, '/matches/{matchId}', 'get'))['schema']).not.toHaveProperty('$ref');
+  });
+
+  it('should declare a repeated query key as an array and a blank value as a string', () => {
+    const { document } = buildQueryDevtoolsOpenApiDocument({ mocks: [mock({ query: 'tag=1&tag=2&q=%20' })], now: NOW });
+    const parameters = operationOf(document, '/matches/{matchId}', 'get')['parameters'] as Record<string, unknown>[];
+
+    expect(parameters.slice(1)).toEqual([
+      {
+        name: 'tag',
+        in: 'query',
+        required: false,
+        schema: { type: 'array', items: { type: 'integer' } },
+        example: ['1', '2'],
+      },
+      { name: 'q', in: 'query', required: false, schema: { type: 'string' }, example: ' ' },
+    ]);
+  });
+});

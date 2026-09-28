@@ -81,7 +81,7 @@ describe('buildQueryDefinitionSnippet', () => {
       body: {},
     });
 
-    expect(snippet).toContain("  queryParams: { tag: string; 'filter[status]': string; 'order-by': string };");
+    expect(snippet).toContain("  queryParams: { tag: string[]; 'filter[status]': string; 'order-by': string };");
   });
 
   it('should quote a path param a type literal cannot spell bare', () => {
@@ -106,5 +106,28 @@ describe('buildQueryDefinitionSnippet', () => {
     const snippet = buildQueryDefinitionSnippet({ method: 'GET', pattern: '/posts', query: '', body: {} });
 
     expect(snippet).toContain('required and non-nullable');
+  });
+});
+
+describe('buildQueryDefinitionSnippet escaping', () => {
+  const snippet = (patch: { method?: string; pattern?: string; query?: string }) =>
+    buildQueryDefinitionSnippet({ method: 'GET', pattern: '/posts', query: '', body: {}, ...patch });
+
+  it('should escape a quote in a route without params', () => {
+    expect(snippet({ pattern: "/it's" })).toContain("getQuery<GetItSQueryArgs>('/it\\'s')");
+  });
+
+  it('should escape a backtick and an interpolation in a route with params', () => {
+    expect(snippet({ pattern: '/a`b/${x}/:id' })).toContain('(p) => `/a\\`b/\\${x}/${p.id}`');
+  });
+
+  it('should not name a query after a reserved word', () => {
+    expect(snippet({ method: 'DELETE', pattern: '/' })).toContain('export const deleteQuery = ');
+  });
+
+  it('should read a blank or hex query value as a string and a repeated key as an array', () => {
+    const output = snippet({ query: 'blank=%20&hex=0x10&tag=1&tag=2' });
+
+    expect(output).toContain('queryParams: { blank: string; hex: string; tag: number[] };');
   });
 });

@@ -1,19 +1,21 @@
-/**
- * How deep a sample is walked before a nested value is given up on as `unknown`. A body nested deeper
- * than this is not a type anyone pastes into their code.
- */
+import {
+  groupQueryParams,
+  IDENTIFIER,
+  isPlainObject,
+  pathParamsOf,
+  queryParamKindOf,
+  routeNameOf,
+} from './query-devtools-export-utils';
+
 const MAX_DEPTH = 8;
 
 const INDENT = '  ';
 
-/** A key that can be written bare in a type literal; anything else is quoted. */
-const isSafeKey = (key: string) => /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key);
+const isSafeKey = (key: string) => IDENTIFIER.test(key);
 
-/** The key as a type literal spells it: bare where it can be, single-quoted where it cannot. */
-const typeKey = (key: string) => (isSafeKey(key) ? key : `'${key.replace(/(['\\])/g, '\\$1')}'`);
+const singleQuoted = (value: string) => `'${value.replace(/(['\\])/g, '\\$1')}'`;
 
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-  !!value && typeof value === 'object' && !Array.isArray(value);
+const typeKey = (key: string) => (isSafeKey(key) ? key : singleQuoted(key));
 
 /**
  * The TypeScript type of one sample value. **Inferred from a single example**, so it says what that
@@ -60,38 +62,70 @@ export const inferTypeScriptType = (value: unknown, depth = 0): string => {
   return 'unknown';
 };
 
-/** The type a declared query-parameter value is written as - `page=2` is a number, `draft=true` a boolean. */
-const queryParamType = (value: string) => {
-  if (value === 'true' || value === 'false') return 'boolean';
-  if (value !== '' && Number.isFinite(Number(value))) return 'number';
+const queryParamType = (values: readonly string[]) => {
+  const kind = queryParamKindOf(values);
+  const type = kind === 'integer' ? 'number' : kind;
 
-  return 'string';
+  return values.length > 1 ? `${type}[]` : type;
 };
 
-/** `GET /posts/:id/comments` becomes `getPostsComments`: the verb, then every literal segment. */
+const RESERVED_WORDS: ReadonlySet<string> = /* @__PURE__ */ new Set([
+  'break',
+  'case',
+  'catch',
+  'class',
+  'const',
+  'continue',
+  'debugger',
+  'default',
+  'delete',
+  'do',
+  'else',
+  'enum',
+  'export',
+  'extends',
+  'false',
+  'finally',
+  'for',
+  'function',
+  'if',
+  'import',
+  'in',
+  'instanceof',
+  'new',
+  'null',
+  'return',
+  'super',
+  'switch',
+  'this',
+  'throw',
+  'true',
+  'try',
+  'typeof',
+  'var',
+  'void',
+  'while',
+  'with',
+]);
+
 const nameOf = (method: string, pattern: string) => {
-  const words = pattern
-    .split('/')
-    .filter((segment) => segment && !segment.startsWith(':'))
-    .flatMap((segment) => segment.split(/[^A-Za-z0-9]+/))
-    .filter(Boolean);
+  const name = routeNameOf({ method, pattern }, 'query');
 
-  const parts = [method.toLowerCase(), ...words.map((word) => word[0]?.toUpperCase() + word.slice(1))];
-  const name = parts.join('');
-
-  return /^[A-Za-z_$]/.test(name) ? name : `query${name}`;
+  return RESERVED_WORDS.has(name) ? `${name}Query` : name;
 };
+
+const templateLiteralText = (value: string) => value.replace(/\\|`|\$\{/g, (match) => `\\${match}`);
 
 const pascal = (name: string) => name[0]?.toUpperCase() + name.slice(1);
 
 /** The route as a creator takes it: a template literal function when the path has params, else the path. */
 const routeOf = (pattern: string, params: string[]) => {
-  if (!params.length) return `'${pattern}'`;
+  if (!params.length) return singleQuoted(pattern);
 
   const interpolated = pattern
     .split('/')
     .map((segment) => {
-      if (!segment.startsWith(':')) return segment;
+      if (!segment.startsWith(':')) return templateLiteralText(segment);
 
       const param = segment.slice(1);
 
@@ -127,12 +161,8 @@ export const buildQueryDefinitionSnippet = (options: QueryDefinitionSnippetOptio
 
   const name = nameOf(method, pattern);
   const typeName = pascal(name);
-  const params = pattern
-    .split('/')
-    .filter((segment) => segment.startsWith(':'))
-    .map((segment) => segment.slice(1));
-
-  const queryParams = [...new URLSearchParams(query)];
+  const params = pathParamsOf(pattern);
+  const queryParams = groupQueryParams(query);
 
   const argFields = [`${INDENT}response: ${typeName}Response;`];
 
@@ -140,10 +170,8 @@ export const buildQueryDefinitionSnippet = (options: QueryDefinitionSnippetOptio
     argFields.push(`${INDENT}pathParams: { ${params.map((param) => `${typeKey(param)}: string`).join('; ')} };`);
   }
 
-  if (queryParams.length) {
-    // A repeated key is one field, not two: `?tag=a&tag=b` is a duplicate identifier in a type literal.
-    const byKey = new Map(queryParams.map(([key, value]) => [key, value]));
-    const fields = Array.from(byKey, ([key, value]) => `${typeKey(key)}: ${queryParamType(value)}`).join('; ');
+  if (queryParams.size) {
+    const fields = Array.from(queryParams, ([key, values]) => `${typeKey(key)}: ${queryParamType(values)}`).join('; ');
 
     argFields.push(`${INDENT}queryParams: { ${fields} };`);
   }

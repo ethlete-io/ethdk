@@ -102,4 +102,9 @@ describe('toQueryDevtoolsYaml', () => {
   it('should write a Date the way the JSON export does', () => {
     expect(toQueryDevtoolsYaml({ at: new Date('2020-01-02T03:04:05.000Z') })).toBe('at: "2020-01-02T03:04:05.000Z"\n');
   });
+
+  it('should escape control and line-separator characters a YAML reader rejects', () => {
+    expect(toQueryDevtoolsYaml({ a: 'bell\u0007\nnext' })).toBe('a: "bell\\u0007\\nnext"\n');
+    expect(toQueryDevtoolsYaml({ a: 'x\u0085y\u2028z\ufeff' })).toBe('a: "x\\u0085y\\u2028z\\ufeff"\n');
+  });
 });

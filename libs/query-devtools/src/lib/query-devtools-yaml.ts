@@ -1,12 +1,7 @@
-/**
- * The slice of YAML a generated OpenAPI document needs: block mappings, block sequences, and scalars
- * that are either plain or double-quoted. JSON is a subset of YAML, so this writes the same tree the
- * JSON export writes - it is a second spelling of one document, not a second document.
- */
+import { isPlainObject } from './query-devtools-export-utils';
 
 const INDENT = '  ';
 
-/** How deep the tree is written before a branch is given up on, so no document can overflow the stack. */
 const MAX_DEPTH = 64;
 
 /**
@@ -30,15 +25,28 @@ const RESERVED: ReadonlySet<string> = /* @__PURE__ */ new Set([
 
 const isPlainSafe = (value: string) => PLAIN.test(value) && !value.endsWith(' ') && !RESERVED.has(value.toLowerCase());
 
-/**
- * Whether a multi-line string can be written as a `|-` block. A line starting with a space would need an
- * explicit indentation indicator, and a trailing newline or a `\r` would not survive the round trip, so
- * those fall back to one quoted line.
- */
+/** YAML forbids these unescaped, and YAML 1.1 readers break a line at U+0085, U+2028 and U+2029. */
+const isForbiddenRaw = (code: number) =>
+  (code < 0x20 && code !== 0x09 && code !== 0x0a && code !== 0x0d) ||
+  (code >= 0x7f && code <= 0x9f) ||
+  code === 0x2028 ||
+  code === 0x2029 ||
+  code === 0xfeff;
+
+const hasForbiddenRaw = (value: string) => [...value].some((char) => isForbiddenRaw(char.charCodeAt(0)));
+
+const quoted = (value: string) =>
+  JSON.stringify(value).replace(
+    /[\u007f-\u009f\u2028\u2029\ufeff]/g,
+    (char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`,
+  );
+
+/** Whether a multi-line string survives a `|-` block; anything else falls back to one quoted line. */
 const isBlockSafe = (value: string) =>
   value.includes('\n') &&
   !value.endsWith('\n') &&
   !/[\r\t]/.test(value) &&
+  !hasForbiddenRaw(value) &&
   value.split('\n').every((line) => !line.startsWith(' ') && !line.endsWith(' '));
 
 const blockScalar = (value: string, indent: string) =>
@@ -56,9 +64,6 @@ const jsonValueOf = (value: unknown): unknown => {
   return typeof toJson === 'function' ? (toJson as () => unknown).call(value) : value;
 };
 
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-  !!value && typeof value === 'object' && !Array.isArray(value);
-
 /** A scalar, or `null` when the value is one of the containers {@link write} handles itself. */
 const scalarOf = (value: unknown, indent: string): string | null => {
   if (value === null || value === undefined) return 'null';
@@ -73,7 +78,7 @@ const scalarOf = (value: unknown, indent: string): string | null => {
     case 'string':
       if (isBlockSafe(value)) return blockScalar(value, indent);
 
-      return isPlainSafe(value) ? value : JSON.stringify(value);
+      return isPlainSafe(value) ? value : quoted(value);
     default:
       break;
   }
@@ -95,8 +100,6 @@ const write = (input: unknown, state: WriteState): string => {
 
   if (depth >= MAX_DEPTH) return 'null';
 
-  // Depth alone does not bound a cycle reachable through two keys: that branches, so 64 levels are 2^64
-  // nodes rather than 64. Only refusing to re-enter an ancestor stops it.
   if (ancestors.has(value as object)) return 'null';
 
   ancestors.add(value as object);
@@ -111,8 +114,6 @@ const write = (input: unknown, state: WriteState): string => {
           .map((entry) => {
             const item = write(entry, child);
 
-            // A container under a `-` continues on the dash line: the `- ` occupies the first two columns
-            // of its child's own indentation, so the child's first line has to shed exactly that much.
             return `${indent}- ${item.startsWith('\n') ? item.slice(depth * 2 + INDENT.length + 1) : item}`;
           })
           .join('\n')}`
@@ -124,10 +125,9 @@ const write = (input: unknown, state: WriteState): string => {
       ? `\n${entries
           .map(([key, entry]) => {
             const item = write(entry, child);
-            // A block already leads with its own newline; only a scalar needs the space after the colon.
             const rendered = item.startsWith('\n') ? item : ` ${item}`;
 
-            return `${indent}${isPlainSafe(key) ? key : JSON.stringify(key)}:${rendered}`;
+            return `${indent}${isPlainSafe(key) ? key : quoted(key)}:${rendered}`;
           })
           .join('\n')}`
       : '{}';

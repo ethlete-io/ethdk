@@ -1,6 +1,6 @@
 # query-devtools scan - open findings
 
-Scan of `libs/query-devtools/src/`, `lazy/` and `toggle/` from 2026-09-28, two passes. 0 High, 1 Medium, 29 Low, 3 Spec. Verified 2026-09-28: 6 confirmed, 3 re-rated, 0 refuted, 1 unverified. Skipped: all stories and specs were not read; the second pass read the tab component `.ts` files and grepped their templates, and read `query-devtools-detail.component.html` only around the sub-tabs and the progress bar.
+Scan of `libs/query-devtools/src/`, `lazy/` and `toggle/` from 2026-09-28, two passes. 0 High, 1 Medium, 18 Low, 3 Spec. Verified 2026-09-28: 6 confirmed, 3 re-rated, 0 refuted, 1 unverified. Skipped: all stories and specs were not read; the second pass read the tab component `.ts` files and grepped their templates, and read `query-devtools-detail.component.html` only around the sub-tabs and the progress bar.
 
 Entry-point boundaries hold: `toggle/` imports only `@ethlete/query` and `@ethlete/components`; `lazy/` references the panel only inside its `@defer`. No `innerHTML`, `bypassSecurityTrust*` or `eval` anywhere; query data renders through interpolation only.
 
@@ -19,18 +19,8 @@ Entry-point boundaries hold: `toggle/` imports only `@ethlete/query` and `@ethle
 - Medium: every repository event goes through `pushEvent` even with the panel closed, and each `request-success` measures the response body again (`query-devtools.component.ts:4049`) - the query stats recorder already serializes the same body. `resolveEventQueryId` (`:4072`) then scans all live entries, and on a miss filters and sorts all tombstones, per event. Reuse the recorder's measurement and resolve the owner lazily when a row is rendered. M Verified. The stats recorder calls `measureQueryDevtoolsPayload` on the same body (`query/src/lib/devtools/query-devtools-stats.ts:413`), so a response without `content-length` is stringified twice.
 - Low: the view-state effect serializes the whole `PersistedState` (including the JSON expand sets) and writes it to storage on every signal change (`query-devtools.component.ts:1517`). During a dock resize or a float drag, `panelHeight`/`floatRect` change on every `pointermove`, so the panel does a synchronous `JSON.stringify` + `setItem` per move. Write on drag end, or debounce the write. S Re-rated from Medium: the effect runs once per change-detection pass, and the state is a few KB, so a write per `pointermove` is unlikely to cause visible jank.
 
-## Value explorer
-
-- Low: expansion paths join keys with `.` (`query-devtools-json.component.ts:380`, `:228`), so the key `"a.b"` and the nested path `a` -> `b` share one expand state and one annotation lookup. `appendJsonPathStep` has the same problem for "Copy path" and the diff Path column (`query-devtools-diff.ts:130`): `$.content-type` and `$.a.b` are not valid JSONPath for those keys. Bracket-quote non-identifier keys the way `query-devtools-insomnia.ts:151` does. S
-
-## Diff
-
-- Low: `exoticSignature` calls `JSON.stringify` on a `Map`/`Set`/`FormData` outside any `try` (`query-devtools-diff.ts:57-59`). A `bigint` or a cycle inside throws out of the diff computed and breaks the detail drawer. Nested `Map`s stringify as `{}`, so two different ones read as unchanged. S
-- Low: `valueAt` uses `key in record` (`query-devtools-diff.ts:70`), which finds inherited members. A key such as `constructor` or `toString` present on one side only reads as "changed to a function" instead of "removed". Use `Object.hasOwn`. S
-
 ## Exports and security
 
-- Low: the Insomnia export writes `url`, headers and bodies verbatim (`query-devtools-insomnia.ts:274-275`). Insomnia renders `{{ }}` and `{% %}` in those fields as Nunjucks, so an arg or body string that contains them breaks the request or runs a template tag on send. Wrap such values in `{% raw %}`. S
 - Low: the custom API URL is stored and the page reloads without validation (`query-devtools-settings.component.ts:210`). A typo such as a missing scheme makes every request relative to the page origin. Validate with `new URL()` before `pickApiEnv`. S
 
 ## Cleanup
@@ -50,21 +40,6 @@ Entry-point boundaries hold: `toggle/` imports only `@ethlete/query` and `@ethle
 
 Reads `yaml.ts`, `openapi.ts`, `typescript.ts`, `query-tree.ts` in full, and the tab components the first pass only grepped. `query-tree.ts` has no open findings.
 
-### OpenAPI export
-
-- Low: `name in ctx.schemas`, `name in used` and `name in schemas` find inherited members (`query-devtools-openapi.ts:229`, `:286`, `:415`). A schema named `constructor` or `toString` gets a `$ref` but no entry in `components.schemas`. Use `Object.hasOwn`. S
-- Low: the UUID pattern accepts only versions 1-5 (`query-devtools-openapi.ts:10`), so v6/v7 ids (v7 is a common primary key now) get no `format: uuid`. S
-
-### YAML writer
-
-- Low: `isBlockSafe` rejects only `\r` and `\t` (`query-devtools-yaml.ts:41`), so other C0 controls (BEL, form feed) go raw into a `|-` block. The quoted path uses `JSON.stringify`, which leaves C1 controls and U+FEFF raw. YAML forbids all of these unescaped, so a parser rejects the file. YAML 1.1 readers also split a block at U+0085/U+2028/U+2029. Send strings with any such character to a quoted scalar with `\u` escapes. S
-
-### TypeScript snippet
-
-- Low: `routeOf` puts the pattern into `'...'` and into a template literal without escapes (`query-devtools-typescript.ts:89`, `:100`). A segment with `'`, a backtick or `${` gives a snippet that does not compile or that interpolates. S
-- Low: `nameOf` can return a reserved word: `DELETE /` gives `export const delete = ...` (`query-devtools-typescript.ts:72-82`). Suffix the name when it is reserved. S
-- Low: `queryParamType` and `queryParamSchema` read a whitespace-only or hex value as a number, since `Number(' ')` is `0` (`query-devtools-typescript.ts:66`, `query-devtools-openapi.ts:155`). A repeated key (`?tag=a&tag=b`) is typed as one scalar, not an array (`query-devtools-typescript.ts:145`). S
-
 ### Tabs
 
 - Low: the dropped-entries list tracks by `entry.at` (`query-devtools-cache-tab.component.html:127`), and `at` is the event timestamp (`query-devtools.component.ts:3997`). "Evict all" or a logout drops many entries in the same millisecond, so the keys repeat: Angular logs NG0955 and can reuse the wrong rows. Give each dropped entry an id, or track by `$index`. S Re-rated from Medium: the keys do collide (`unbindAllSecure` emits synchronously and `at` is `Date.now()`), but `@for` handles duplicate keys and only logs the NG0955 dev warning.
@@ -76,7 +51,6 @@ Reads `yaml.ts`, `openapi.ts`, `typescript.ts`, `query-tree.ts` in full, and the
 
 ### Cleanup
 
-- Low: `nameOf` and `operationIdOf`, `queryParamType` and `queryParamSchema`, and three `isPlainObject` copies repeat the same logic across `query-devtools-typescript.ts`, `query-devtools-openapi.ts` and `query-devtools-yaml.ts`. The fixes above then land twice. Extract one helper module. S
 - Low: none of these four modules is exported from `index.ts`, so their JSDoc is not public API, and most inline comments are rationale (`query-devtools-yaml.ts:98`, `:114`, `:127`, `query-devtools-openapi.ts:93`, `:191`, `:395`, `:435`, `query-devtools-typescript.ts:144`). The tab templates also hold rationale in 13 HTML comments. Cut to the AGENTS.md allowlist. S
 
 ### Spec gaps

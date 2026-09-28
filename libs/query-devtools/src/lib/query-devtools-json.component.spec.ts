@@ -80,7 +80,37 @@ const renderSearch = async (value: unknown) => {
   return keys.map((key) => key.textContent?.trim());
 };
 
+@Component({
+  template: `<et-query-devtools-json
+    [value]="value"
+    [expandedPaths]="expandedPaths"
+    [collapsedPaths]="collapsedPaths"
+    [toggleFn]="toggleFn"
+  />`,
+  imports: [QueryDevtoolsJsonComponent],
+})
+class DottedKeyHostComponent {
+  protected value = { 'a.b': { x: 1 }, a: { b: { y: 2 } } };
+  protected expandedPaths = new Set(['a', 'a.b']);
+  protected collapsedPaths = new Set<string>();
+  protected toggleFn = () => undefined;
+}
+
 describe('QueryDevtoolsJsonComponent', () => {
+  it('should keep the expand state of a dotted key apart from the nested path it spells', async () => {
+    TestBed.configureTestingModule({
+      imports: [DottedKeyHostComponent],
+      providers: [provideZonelessChangeDetection(), provideColorThemesWithTailwind4(THEMES)],
+    });
+
+    const fixture = TestBed.createComponent(DottedKeyHostComponent);
+    await fixture.whenStable();
+
+    const keys = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.et-query-devtools-json-key')];
+
+    expect(keys.map((key) => key.textContent?.trim())).toEqual(['a.b', 'a', 'b', 'y']);
+  });
+
   it('should unfold only the containers that hold a search hit', async () => {
     const keys = await renderSearch({ hit: { deep: 'needle' }, miss: { other: { leaf: 1 } } });
 

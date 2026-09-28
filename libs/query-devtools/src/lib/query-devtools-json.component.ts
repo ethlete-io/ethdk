@@ -240,9 +240,8 @@ export class QueryDevtoolsJsonComponent {
 
   /** One annotation covers every element of an array, so the lookup path forgets which index this is. */
   private shapePath = computed(() =>
-    this.path()
-      .split('.')
-      .map((step) => (/^\d+$/.test(step) ? '*' : step))
+    this.jsonPath()
+      .map((step) => (typeof step === 'number' ? '*' : step))
       .join('.'),
   );
 
@@ -395,8 +394,9 @@ export class QueryDevtoolsJsonComponent {
   }
 
   protected childPath(key: string) {
+    const step = key.replace(/[\\.#]/g, '\\$&');
     const path = this.path();
-    return path ? `${path}.${key}` : key;
+    return path ? `${path}.${step}` : step;
   }
 
   protected childJsonPath(key: string): JsonPath {

@@ -57,6 +57,20 @@ describe('buildInsomniaExport', () => {
     ]);
   });
 
+  it('should keep a template tag in the url, a header and the body from rendering', () => {
+    const [exported] = resourcesOfType('request', [
+      request({
+        url: 'https://api.example.com/posts?q={{x}}',
+        headers: [{ name: 'X-Note', value: '{% now %}' }],
+        body: 'a {# b #}',
+      }),
+    ]);
+
+    expect(exported?.['url']).toBe('{% raw %}https://api.example.com/posts?q={{x}}{% endraw %}');
+    expect(exported?.['headers']).toContainEqual({ name: 'X-Note', value: '{% raw %}{% now %}{% endraw %}' });
+    expect((exported?.['body'] as { text: string }).text).toBe('{% raw %}a {# b #}{% endraw %}');
+  });
+
   it('should export a JSON body with a content type header', () => {
     const [exported] = resourcesOfType('request', [request({ method: 'POST', body: { item: 'demo' } })]);
 

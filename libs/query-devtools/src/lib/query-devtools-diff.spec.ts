@@ -151,6 +151,30 @@ describe('diffQueryDevtoolsResponses', () => {
     expect(diff.entries.map((entry) => entry.path)).toEqual(['$.at']);
   });
 
+  it('should report a changed Map nested in a Map', () => {
+    const diff = diffQueryDevtoolsResponses(
+      { by: new Map([['a', new Map([['x', 1]])]]) },
+      { by: new Map([['a', new Map([['x', 2]])]]) },
+    );
+
+    expect(diff.entries.map((entry) => entry.path)).toEqual(['$.by']);
+  });
+
+  it('should compare a Set holding a bigint or a cycle without throwing', () => {
+    const cyclic: Record<string, unknown> = {};
+
+    cyclic['self'] = cyclic;
+
+    expect(diffQueryDevtoolsResponses({ s: new Set([1n]) }, { s: new Set([2n]) }).entries).toHaveLength(1);
+    expect(() => diffQueryDevtoolsResponses({ s: new Set([cyclic]) }, { s: new Set([cyclic]) })).not.toThrow();
+  });
+
+  it('should report a key named like an Object.prototype member as removed', () => {
+    const diff = diffQueryDevtoolsResponses({ constructor: 1 }, {});
+
+    expect(diff.entries).toEqual([{ path: '$.constructor', kind: 'removed', before: 1, after: null }]);
+  });
+
   it('should compare two non-object responses directly', () => {
     expect(diffQueryDevtoolsResponses(null, 5).entries).toEqual([
       { path: '$', kind: 'changed', before: null, after: 5 },
@@ -162,6 +186,12 @@ describe('diffQueryDevtoolsResponses', () => {
 describe('formatJsonPath', () => {
   it('should format an empty path as the root the diff column uses', () => {
     expect(formatJsonPath([])).toBe('$');
+  });
+
+  it('should bracket-quote a key that is not an identifier', () => {
+    expect(formatJsonPath(['headers', 'content-type', 'a.b', "it's"])).toBe(
+      "$.headers['content-type']['a.b']['it\\'s']",
+    );
   });
 
   it('should join keys with dots and indices with brackets', () => {

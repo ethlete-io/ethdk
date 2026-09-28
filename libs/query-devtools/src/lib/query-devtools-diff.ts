@@ -46,6 +46,22 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
  * A `Blob` and an `ArrayBuffer` are compared by size and type, not by their bytes: reading a `Blob` is
  * asynchronous, so two payloads of the same size and type read as identical here.
  */
+let unserializableCount = 0;
+
+const serializeEntries = (kind: string, entries: unknown[]) => {
+  try {
+    return `${kind}:${JSON.stringify(entries, (_key, entry: unknown) => {
+      if (typeof entry === 'bigint') return `${entry}n`;
+      if (entry instanceof Map) return { Map: [...entry] };
+      if (entry instanceof Set) return { Set: [...entry] };
+
+      return entry;
+    })}`;
+  } catch {
+    return `${kind}:unserializable:${unserializableCount++}`;
+  }
+};
+
 const exoticSignature = (value: object): string | null => {
   if (value instanceof Date) return `Date:${value.getTime()}`;
   if (typeof File !== 'undefined' && value instanceof File) {
@@ -54,9 +70,9 @@ const exoticSignature = (value: object): string | null => {
   if (typeof Blob !== 'undefined' && value instanceof Blob) return `Blob:${value.size}:${value.type}`;
   if (value instanceof ArrayBuffer) return `ArrayBuffer:${value.byteLength}`;
   if (ArrayBuffer.isView(value)) return `${value.constructor.name}:${value.byteLength}`;
-  if (value instanceof Map) return `Map:${JSON.stringify([...value])}`;
-  if (value instanceof Set) return `Set:${JSON.stringify([...value])}`;
-  if (typeof FormData !== 'undefined' && value instanceof FormData) return `FormData:${JSON.stringify([...value])}`;
+  if (value instanceof Map) return serializeEntries('Map', [...value]);
+  if (value instanceof Set) return serializeEntries('Set', [...value]);
+  if (typeof FormData !== 'undefined' && value instanceof FormData) return serializeEntries('FormData', [...value]);
 
   return null;
 };
@@ -67,7 +83,8 @@ const signatureOf = (value: unknown) => (isRecord(value) ? exoticSignature(value
 const isPlainRecord = (value: unknown): value is Record<string, unknown> =>
   isRecord(value) && exoticSignature(value) === null;
 
-const valueAt = (record: Record<string, unknown>, key: string): unknown => (key in record ? record[key] : ABSENT);
+const valueAt = (record: Record<string, unknown>, key: string): unknown =>
+  Object.hasOwn(record, key) ? record[key] : ABSENT;
 
 /**
  * The `id` of every element, when an array holds records keyed by a unique primitive `id` - the shape an
@@ -121,13 +138,19 @@ const push = (acc: DiffAccumulator, entry: QueryDevtoolsDiffEntry) => {
   acc.entries.push(entry);
 };
 
+const JSON_PATH_IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+
 /**
  * Appends one step to a path in the panel's canonical JSONPath format - `$.data.items[0]`, rooted at
  * `$` for the value an explorer or a diff was handed. The one place that format is written, so the
  * diff's Path column and the value explorer's "Copy path" cannot drift apart.
  */
-export const appendJsonPathStep = (path: string, step: string | number) =>
-  typeof step === 'number' ? `${path}[${step}]` : `${path}.${step}`;
+export const appendJsonPathStep = (path: string, step: string | number) => {
+  if (typeof step === 'number') return `${path}[${step}]`;
+  if (JSON_PATH_IDENTIFIER.test(step)) return `${path}.${step}`;
+
+  return `${path}['${step.replace(/[\\']/g, '\\$&')}']`;
+};
 
 /** The same format, built from the array of steps an override op targets. */
 export const formatJsonPath = (steps: readonly (string | number)[]) => steps.reduce(appendJsonPathStep, '$');

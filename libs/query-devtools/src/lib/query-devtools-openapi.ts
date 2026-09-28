@@ -1,13 +1,18 @@
-/**
- * How deep a designed body is walked before a nested value is inferred as an unconstrained schema. A
- * body nested deeper than this is not a shape anyone merges into a specification.
- */
+import {
+  groupQueryParams,
+  isPlainObject,
+  pathParamsOf,
+  QueryParamKind,
+  queryParamKindOf,
+  routeNameOf,
+} from './query-devtools-export-utils';
+
 const MAX_DEPTH = 10;
 
 /** An ISO date-time, strictly enough that nothing else is mistaken for one. */
 const DATE_TIME = /^\d{4}-\d{2}-\d{2}[Tt]\d{2}:\d{2}:\d{2}(\.\d+)?([Zz]|[+-]\d{2}:\d{2})$/;
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /** One designed mock, as the export reads it. */
 export type QueryDevtoolsOpenApiMock = {
@@ -66,21 +71,12 @@ export type QueryDevtoolsOpenApiExport<TDocument> = {
   notes: readonly string[];
 };
 
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-  !!value && typeof value === 'object' && !Array.isArray(value);
-
 /** `/matches/:id` is how a mock writes a route; a document writes it `/matches/{id}`. */
 const toBracePattern = (pattern: string) =>
   pattern
     .split('/')
     .map((segment) => (segment.startsWith(':') ? `{${segment.slice(1)}}` : segment))
     .join('/');
-
-const pathParamsOf = (pattern: string) =>
-  pattern
-    .split('/')
-    .filter((segment) => segment.startsWith(':'))
-    .map((segment) => segment.slice(1));
 
 /**
  * The schema of one sample value. **Inferred from a single example**, so every property the example held
@@ -90,7 +86,6 @@ const pathParamsOf = (pattern: string) =>
 export const inferQueryDevtoolsOpenApiSchema = (value: unknown, depth = 0): Record<string, unknown> => {
   if (depth >= MAX_DEPTH) return {};
 
-  // One example cannot say what a null-valued property is when it holds something, so it says nothing.
   if (value === null || value === undefined) return {};
 
   switch (typeof value) {
@@ -149,27 +144,10 @@ const itemsOf = (value: readonly unknown[], depth: number): Record<string, unkno
   return { anyOf: distinct };
 };
 
-/** `page=2` is an integer and `draft=true` a boolean, the same reading the TypeScript snippet takes. */
-const queryParamSchema = (value: string): Record<string, unknown> => {
-  if (value === 'true' || value === 'false') return { type: 'boolean' };
-  if (value !== '' && Number.isFinite(Number(value))) {
-    return { type: Number.isInteger(Number(value)) ? 'integer' : 'number' };
-  }
+const queryParamSchema = (values: readonly string[]): Record<string, unknown> => {
+  const type: QueryParamKind = queryParamKindOf(values);
 
-  return { type: 'string' };
-};
-
-/** `GET /posts/:id/comments` becomes `getPostsComments` - the verb, then every literal segment. */
-const operationIdOf = (mock: Pick<QueryDevtoolsOpenApiMock, 'method' | 'pattern'>) => {
-  const words = mock.pattern
-    .split('/')
-    .filter((segment) => segment && !segment.startsWith(':'))
-    .flatMap((segment) => segment.split(/[^A-Za-z0-9]+/))
-    .filter(Boolean);
-
-  const name = [mock.method.toLowerCase(), ...words.map((word) => word[0]?.toUpperCase() + word.slice(1))].join('');
-
-  return /^[A-Za-z_$]/.test(name) ? name : `operation${name}`;
+  return values.length > 1 ? { type: 'array', items: { type } } : { type };
 };
 
 const parametersOf = (mocks: readonly QueryDevtoolsOpenApiMock[]) => {
@@ -184,13 +162,17 @@ const parametersOf = (mocks: readonly QueryDevtoolsOpenApiMock[]) => {
   const seen = new Set<string>();
 
   for (const mock of mocks) {
-    for (const [name, value] of new URLSearchParams(mock.query)) {
+    for (const [name, values] of groupQueryParams(mock.query)) {
       if (seen.has(name)) continue;
 
       seen.add(name);
-      // A mock declares what a request must carry for *it* to answer, which says nothing about whether
-      // the endpoint requires it - so an exported query parameter is never marked required.
-      parameters.push({ name, in: 'query', required: false, schema: queryParamSchema(value), example: value });
+      parameters.push({
+        name,
+        in: 'query',
+        required: false,
+        schema: queryParamSchema(values),
+        example: values.length > 1 ? values : values[0],
+      });
     }
   }
 
@@ -226,7 +208,7 @@ type ResponseContext = {
 const responseSchema = (mock: QueryDevtoolsOpenApiMock, ctx: ResponseContext): Record<string, unknown> => {
   const name = mock.schemaName;
 
-  if (name && name in ctx.schemas) return { $ref: `#/components/schemas/${name}` };
+  if (name && Object.hasOwn(ctx.schemas, name)) return { $ref: `#/components/schemas/${name}` };
 
   if (name) {
     ctx.notes.add(
@@ -283,7 +265,7 @@ const SENDS_BODY: ReadonlySet<string> = /* @__PURE__ */ new Set(['POST', 'PUT', 
 
 const operationDescription = (mocks: readonly QueryDevtoolsOpenApiMock[], ctx: ResponseContext) => {
   const first = mocks[0] as QueryDevtoolsOpenApiMock;
-  const named = mocks.map((mock) => mock.schemaName).find((name) => !!name && name in ctx.schemas);
+  const named = mocks.map((mock) => mock.schemaName).find((name) => !!name && Object.hasOwn(ctx.schemas, name));
   const lines = [
     named
       ? `The response is this description's own ${named}, which the mock was seeded from.`
@@ -307,7 +289,7 @@ const operationOf = (mocks: readonly QueryDevtoolsOpenApiMock[], ctx: ResponseCo
     ...(tags.length ? { tags } : {}),
     summary: `Designed response for ${first.method.toUpperCase()} ${path}`,
     description: operationDescription(mocks, ctx),
-    operationId: operationIdOf(first),
+    operationId: routeNameOf(first, 'operation'),
     ...(parameters.length ? { parameters } : {}),
     responses: responsesOf(mocks, ctx),
   };
@@ -392,8 +374,7 @@ export const buildQueryDevtoolsOpenApiPathItem = (
 ): QueryDevtoolsOpenApiExport<Record<string, Record<string, unknown>>> => {
   const ctx: ResponseContext = { schemas: options.schemas ?? {}, notes: new Set() };
   const paths = pathsOf(options.mocks, ctx);
-  // Only what the fragment itself points at: whatever declares those already resolves the rest.
-  const referenced = [...collectRefNames(paths)].filter((name) => name in ctx.schemas);
+  const referenced = [...collectRefNames(paths)].filter((name) => Object.hasOwn(ctx.schemas, name));
 
   if (referenced.length) {
     ctx.notes.add(
@@ -412,7 +393,7 @@ const referencedSchemas = (paths: unknown, schemas: Record<string, unknown>) => 
   while (pending.length) {
     const name = pending.shift() as string;
 
-    if (name in used || !(name in schemas)) continue;
+    if (Object.hasOwn(used, name) || !Object.hasOwn(schemas, name)) continue;
 
     used[name] = schemas[name];
     pending.push(...collectRefNames(schemas[name]));
@@ -432,8 +413,6 @@ const collectRefNames = (value: unknown, scan: RefScan = newRefScan()) => {
 
   if (!value || typeof value !== 'object') return into;
 
-  // A dereferenced description is a graph, not a tree: without this, a schema that holds itself recurses
-  // until the stack goes.
   if (seen.has(value)) return into;
 
   seen.add(value);

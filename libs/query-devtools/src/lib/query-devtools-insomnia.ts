@@ -78,13 +78,19 @@ export type InsomniaExport = {
 
 const WORKSPACE_ID = 'wrk_ethlete_query_devtools';
 
+/** Insomnia renders `{{ }}`, `{% %}` and `{# #}` as Nunjucks when it sends a request. */
+const templateLiteral = (value: string) => (/\{[{%#]/.test(value) ? `{% raw %}${value}{% endraw %}` : value);
+
 const bodyOf = (request: QueryDevtoolsBodyInput, body: QueryDevtoolsRequestBody) => {
   if (body.data === null) return {};
+
+  const text = templateLiteral(body.data);
+
   // Insomnia's GraphQL body editor stores `{ query, variables }` as its text, so a GraphQL request
   // carries the document and its variables rather than the serialized POST body.
-  if (request.gqlQuery) return { mimeType: 'graphql', text: body.data };
+  if (request.gqlQuery) return { mimeType: 'graphql', text };
 
-  return body.json ? { mimeType: 'application/json', text: body.data } : { text: body.data };
+  return body.json ? { mimeType: 'application/json', text } : { text };
 };
 
 /**
@@ -94,7 +100,9 @@ const bodyOf = (request: QueryDevtoolsBodyInput, body: QueryDevtoolsRequestBody)
  * rest.
  */
 const headersOf = (input: { headers: { name: string; value: string }[] }, isJson: boolean) => {
-  const headers = input.headers.filter((header) => header.value !== '');
+  const headers = input.headers
+    .filter((header) => header.value !== '')
+    .map((header) => ({ name: templateLiteral(header.name), value: templateLiteral(header.value) }));
   const hasContentType = headers.some((header) => header.name.toLowerCase() === 'content-type');
 
   if (!isJson || hasContentType) return headers;
@@ -248,7 +256,7 @@ export const buildInsomniaExport = (options: BuildInsomniaExportOptions): Insomn
         `its own once the stored response is older than ${refresh.maxAgeSeconds}s. The refresh token in ` +
         'the body is the one the app held at export time - re-export once it is spent.',
       method: refresh.method,
-      url: refresh.url,
+      url: templateLiteral(refresh.url),
       body: bodyOf(refresh, resolved),
       headers: headersOf(refresh, resolved.json),
       // Insomnia sorts ascending and the exported requests start at 0, so the refresh stays on top.
@@ -271,7 +279,7 @@ export const buildInsomniaExport = (options: BuildInsomniaExportOptions): Insomn
       name: request.name,
       description: notesOf(resolved, dropCredentials),
       method: request.method,
-      url: request.url,
+      url: templateLiteral(request.url),
       body: bodyOf(request, resolved),
       headers: auth ? withChainedAuth(headers, auth) : headers,
       metaSortKey: index,
