@@ -545,6 +545,7 @@ const overlapDetail = (pairs: readonly { left: NamedRow; right: NamedRow; overla
  * Only a pair the reviewer had a hand in is reported. The machine's own overlaps are the day running
  * two things at once, which `concurrency` and `meeting-overlap` already say; a pair left over after
  * the re-cut is instead the one thing no rule resolved, and nothing else on the screen names it.
+ * A pair with a call row is expected: a sync books call rows apart from code rows.
  */
 const withOverlaps = (options: {
   check: DayCheck;
@@ -552,7 +553,9 @@ const withOverlaps = (options: {
   options?: CheckDayOptions;
 }): DayCheck => {
   const tolerance = options.options?.toleranceMs ?? DEFAULT_ROUND_OPTIONS.incrementMs;
-  const writes = options.rows.filter(isNamedRow).filter((row) => syncsInState(row.state));
+  const writes = options.rows
+    .filter(isNamedRow)
+    .filter((row) => syncsInState(row.state) && storedLaneKey(row.laneKey) !== CALL_LANE_KEY);
   const pairs = writes
     .flatMap((left, at) =>
       writes.slice(at + 1).map((right) => ({

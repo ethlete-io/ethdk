@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DayRows } from '../rows/build-rows';
+import { CALL_LANE_KEY } from '../rows/lane';
 import { WorkGroup } from '../rows/merge';
 import { Confidence, Evidence } from '../model/evidence';
 import { WorklogProposal } from '../model/proposal';
@@ -1442,6 +1443,24 @@ describe('reviewDay over two rows claiming the same minutes', () => {
     });
 
     expect(warnings(rejected)).toEqual([]);
+  });
+
+  it('stays quiet where one of the two rows is a call, which the sync books apart from code rows', () => {
+    const withCall = dayRows({
+      proposals: [
+        { ...proposal({ issueKey: 'ABC-1', from: '08:00', to: '10:00', minutes: 120 }), laneKey: CALL_LANE_KEY },
+        { ...proposal({ issueKey: 'DEF-2', from: '10:00', to: '12:00', minutes: 120 }), laneKey: 'repo:/dev/sdk' },
+      ],
+    });
+    const grown = setRowRange({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: rowFor(reviewDay({ rows: withCall }), 'ABC-1'),
+      from: at('08:00'),
+      to: at('11:00'),
+    });
+    const review = reviewDay({ rows: withCall, edits: grown });
+
+    expect(review.check.warnings.map((warning) => warning.kind)).not.toContain('rows-overlap');
   });
 });
 
