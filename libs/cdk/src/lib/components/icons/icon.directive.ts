@@ -43,11 +43,11 @@ export class IconDirective {
       return null;
     }
 
-    const icon = this.icons[this.iconNameToUse()];
+    const icon = Object.hasOwn(this.icons, this.iconNameToUse()) ? this.icons[this.iconNameToUse()] : undefined;
 
     if (!icon) {
       throw new Error(
-        `Icon with name ${this.iconNameToUse} not found. Please provide a valid icon name. Available icons are: ${Object.keys(this.icons).join(', ')}`,
+        `Icon with name ${this.iconNameToUse()} not found. Please provide a valid icon name. Available icons are: ${Object.keys(this.icons).join(', ')}`,
       );
     }
 
