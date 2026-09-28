@@ -41,11 +41,20 @@ export const ignoredByGit = (cwd: string, path: string) => {
 export const hasUncommittedChanges = (cwd: string) => (uncommittedChanges(cwd)?.length ?? 0) > 0;
 
 /**
- * Commits on any local branch that no remote holds, so work is never removed with a checkout, or
- * `undefined` when git fails.
+ * Commits on any local branch or a detached `HEAD` that no remote holds, so work is never removed
+ * with a checkout, or `undefined` when git fails.
  */
 export const unpushedCommits = (cwd: string) => {
-  const { status, stdout } = git(cwd, ['log', '--branches', '--not', '--remotes', '--oneline']);
+  const { status, stdout } = git(cwd, ['log', 'HEAD', '--branches', '--not', '--remotes', '--oneline']);
+
+  if (status !== 0) return undefined;
+
+  return stdout.length > 0 ? stdout.split('\n') : [];
+};
+
+/** The checkout's stash entries, or `undefined` when git fails. */
+export const stashEntries = (cwd: string) => {
+  const { status, stdout } = git(cwd, ['stash', 'list']);
 
   if (status !== 0) return undefined;
 
@@ -62,7 +71,13 @@ export const checkoutApiBranch = (options: { repoPath: string; branch: string })
     return 0;
   }
 
-  return gitInherit(repoPath, ['checkout', branch]);
+  if (branch.startsWith('-')) {
+    console.error(`"${branch}" is not a branch name.`);
+
+    return 1;
+  }
+
+  return gitInherit(repoPath, ['switch', branch]);
 };
 
 /**

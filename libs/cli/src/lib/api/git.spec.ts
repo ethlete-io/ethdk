@@ -90,6 +90,25 @@ describe('checkoutApiBranch', () => {
     expect(currentBranch(repoPath)).toBe('other');
   });
 
+  it('refuses a branch name that git would read as a flag', () => {
+    const { repoPath } = makeFixture();
+
+    expect(checkoutApiBranch({ repoPath, branch: '--orphan=x' })).not.toBe(0);
+    expect(currentBranch(repoPath)).toBe('main');
+  });
+
+  it('switches to a branch, not to a file of the same name', () => {
+    const { repoPath } = makeFixture();
+
+    writeFileSync(join(repoPath, 'docs'), 'kept', 'utf8');
+    git(repoPath, 'add', 'docs');
+    git(repoPath, 'commit', '-qm', 'docs file');
+    writeFileSync(join(repoPath, 'docs'), 'local edit', 'utf8');
+
+    expect(checkoutApiBranch({ repoPath, branch: 'docs' })).not.toBe(0);
+    expect(readFileSync(join(repoPath, 'docs'), 'utf8')).toBe('local edit');
+  });
+
   it('fails on a branch that does not exist', () => {
     expect(checkoutApiBranch({ repoPath: makeFixture().repoPath, branch: 'nope' })).not.toBe(0);
   });

@@ -1,7 +1,7 @@
 import { rmSync } from 'fs';
 import { confirm } from '../utils';
 import { ApiDefinitions } from './definition';
-import { uncommittedChanges, unpushedCommits } from './git';
+import { stashEntries, uncommittedChanges, unpushedCommits } from './git';
 import { managedCheckoutPath, resolveApiCheckout } from './resolve-checkout';
 
 export type ApiClearTarget = {
@@ -44,7 +44,7 @@ export const planApiClear = (options: ApiClearPlanOptions): ApiClearTarget[] => 
   const { apis, names, root, invocation, force, hasContainers } = options;
 
   return names.flatMap((name) => {
-    const api = apis[name];
+    const api = Object.prototype.hasOwnProperty.call(apis, name) ? apis[name] : undefined;
 
     if (!api) return [];
 
@@ -72,6 +72,7 @@ export const planApiClear = (options: ApiClearPlanOptions): ApiClearTarget[] => 
 
     const changes = uncommittedChanges(repoPath);
     const unpushed = unpushedCommits(repoPath);
+    const stashes = stashEntries(repoPath);
 
     return [
       {
@@ -80,7 +81,7 @@ export const planApiClear = (options: ApiClearPlanOptions): ApiClearTarget[] => 
         composePath,
         hasContainers: hasContainers(composePath),
         blockers: [
-          ...(!force && (changes === undefined || unpushed === undefined)
+          ...(!force && (changes === undefined || unpushed === undefined || stashes === undefined)
             ? [`git could not read ${repoPath}, so its changes are unknown. Pass --force to remove it anyway.`]
             : []),
           ...(!force && changes !== undefined && changes.length > 0
@@ -93,6 +94,12 @@ export const planApiClear = (options: ApiClearPlanOptions): ApiClearTarget[] => 
             ? [
                 `${repoPath} has commits no remote holds:\n\n${listed(unpushed)}\n\n` +
                   'Push them, or pass --force to lose them.',
+              ]
+            : []),
+          ...(!force && stashes !== undefined && stashes.length > 0
+            ? [
+                `${repoPath} has stashed changes:\n\n${listed(stashes)}\n\n` +
+                  'Apply or drop them, or pass --force to lose them.',
               ]
             : []),
         ],

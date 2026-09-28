@@ -137,6 +137,19 @@ describe('portsInUse', () => {
     expect(await portsInUse([port])).toEqual([]);
   });
 
+  it('reports a port a loopback-only listener holds', async () => {
+    const server = createServer();
+
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+
+    const address = server.address();
+    const port = typeof address === 'object' && address !== null ? address.port : 0;
+
+    expect(await portsInUse([port])).toEqual([port]);
+
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  });
+
   it('reports nothing for an empty list', async () => {
     expect(await portsInUse([])).toEqual([]);
   });

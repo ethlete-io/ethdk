@@ -28,6 +28,21 @@ describe('serviceStates', () => {
     expect(state?.running).toBe(false);
   });
 
+  it('reads a scaled service with one exited replica as not running, in any order', () => {
+    const up = container({ id: 'a' });
+    const exited = container({ id: 'b', status: 'Exited (1) 3 seconds ago' });
+
+    for (const containers of [
+      [up, exited],
+      [exited, up],
+    ]) {
+      const [state] = serviceStates({ services: ['app'], containers });
+
+      expect(state?.running).toBe(false);
+      expect(state?.status).toBe('Exited (1) 3 seconds ago');
+    }
+  });
+
   it('reads a stopped container as not running', () => {
     const [state] = serviceStates({
       services: ['app'],

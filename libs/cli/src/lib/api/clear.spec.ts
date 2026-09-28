@@ -109,6 +109,31 @@ describe('planApiClear', () => {
     expect(blocker).toContain('init');
   });
 
+  it('refuses a checkout with a stash', () => {
+    const { root, repoPath } = makeManagedCheckout();
+
+    writeFileSync(join(repoPath, 'README.md'), 'changed', 'utf8');
+    git(repoPath, ['stash', 'push', '-m', 'parked work']);
+
+    const [blocker] = plan(root)[0]?.blockers ?? [];
+
+    expect(blocker).toContain('has stashed changes:');
+    expect(blocker).toContain('parked work');
+  });
+
+  it('refuses a checkout with commits only a detached HEAD holds', () => {
+    const { root, repoPath } = makeManagedCheckout();
+
+    git(repoPath, ['checkout', '--detach']);
+    writeFileSync(join(repoPath, 'README.md'), 'changed', 'utf8');
+    git(repoPath, ['commit', '-am', 'detached work']);
+
+    const [blocker] = plan(root)[0]?.blockers ?? [];
+
+    expect(blocker).toContain('has commits no remote holds:');
+    expect(blocker).toContain('detached work');
+  });
+
   it('refuses a checkout git cannot read', () => {
     const root = mkdtempSync(join(tmpdir(), 'cli-api-clear-'));
 

@@ -68,6 +68,21 @@ describe('runApiCommand', () => {
     expect(errors[0]).toContain('APIs: hub');
   });
 
+  it('reads a prototype key as an unknown API', async () => {
+    expect(await run(['up', 'constructor'], makeRoot())).toBe(1);
+    expect(errors[0]).toContain('Unknown API "constructor".');
+  });
+
+  it('answers -h after a command with the help', async () => {
+    const logs = captureLogs();
+
+    expect(await run(['up', '-h'], makeRoot())).toBe(0);
+    expect(logs.lines[0]).toContain('Usage: et api <command> <api>');
+    expect(errors).toEqual([]);
+
+    logs.restore();
+  });
+
   it('suggests the API name behind a typo', async () => {
     expect(await run(['up', 'hup'], makeRoot())).toBe(1);
     expect(errors[0]).toContain('Did you mean "hub"?');

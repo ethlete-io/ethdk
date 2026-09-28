@@ -37,4 +37,10 @@ describe('loadApiDefinitions', () => {
 
     expect(loadApiDefinitions(root).apis?.['hub']?.env?.()).toEqual({ A: 'b' });
   });
+
+  it('rejects an exec entry named after a built-in command', () => {
+    const root = rootWithModule('ethlete.apis.js', "module.exports = { hub: { exec: { up: ['x'], help: ['y'] } } };");
+
+    expect(() => loadApiDefinitions(root)).toThrow('hub.exec declares "up", "help", which are built-in commands');
+  });
 });

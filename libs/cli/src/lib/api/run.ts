@@ -382,7 +382,7 @@ export const runApiCommand = async ({
   root = process.cwd(),
   invocation = 'et api',
 }: RunApiCommandOptions): Promise<number> => {
-  const [command, nameArgument, service] = argv.filter((arg) => !arg.startsWith('--'));
+  const [command, nameArgument, service] = argv.filter((arg) => !arg.startsWith('-'));
   const wantsHelp = argv.includes('--help') || argv.includes('-h') || command === 'help';
 
   if (wantsHelp && nameArgument === undefined) {
@@ -413,7 +413,7 @@ export const runApiCommand = async ({
   }
 
   const known = Object.keys(apis);
-  const unknown = names.find((candidate) => apis[candidate] === undefined);
+  const unknown = names.find((candidate) => !Object.prototype.hasOwnProperty.call(apis, candidate));
 
   if (unknown !== undefined) {
     console.error(

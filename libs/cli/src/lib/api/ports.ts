@@ -101,14 +101,25 @@ export const publishedPorts = (options: { config: string; services: readonly str
   return [...ports].sort((a, b) => a - b);
 };
 
-const isPortFree = (port: number) =>
+const MISSING_ADDRESS_CODES = ['EADDRNOTAVAIL', 'EAFNOSUPPORT'];
+
+const isPortFreeOn = (port: number, host: string) =>
   new Promise<boolean>((resolve) => {
     const server = createServer();
 
-    server.once('error', () => resolve(false));
+    server.once('error', (error: NodeJS.ErrnoException) => resolve(MISSING_ADDRESS_CODES.includes(error.code ?? '')));
     server.once('listening', () => server.close(() => resolve(true)));
-    server.listen(port, '0.0.0.0');
+    server.listen(port, host);
   });
+
+/** macOS lets a wildcard bind succeed while a loopback or IPv6 holder has the port, so each is tried. */
+const isPortFree = async (port: number) => {
+  for (const host of ['0.0.0.0', '127.0.0.1', '::']) {
+    if (!(await isPortFreeOn(port, host))) return false;
+  }
+
+  return true;
+};
 
 /** The ports nothing else may bind right now, so `up` cannot publish them. */
 export const portsInUse = async (ports: readonly number[]) => {

@@ -23,13 +23,15 @@ export const serviceStates = (options: {
   const { services, containers } = options;
 
   return services.map((service) => {
-    const container = containers.find((candidate) => candidate.service === service);
+    const replicas = containers.filter((candidate) => candidate.service === service);
+    const stopped = replicas.find((replica) => !isRunningStatus(replica.status));
+    const shown = stopped ?? replicas[0];
 
     return {
       service,
-      status: container?.status ?? 'no container',
-      running: container !== undefined && isRunningStatus(container.status),
-      ports: (container?.ports ?? []).map(({ host, container: target }) => `${host} -> ${target}`),
+      status: shown?.status ?? 'no container',
+      running: replicas.length > 0 && stopped === undefined,
+      ports: replicas.flatMap((replica) => replica.ports.map(({ host, container: target }) => `${host} -> ${target}`)),
     };
   });
 };
