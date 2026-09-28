@@ -41,8 +41,6 @@ import { controlTouches } from '../../../internals/touch-output';
     '[attr.aria-labelledby]': 'labelId() || null',
     '[attr.data-disabled]': 'disabled() || null',
     '[attr.data-mixed]': 'mixed() || null',
-    // aria-readonly is only valid on radiogroup, not on group - the multi case reflects it
-    // per option instead (role=checkbox supports it)
     '[attr.aria-readonly]': '!multiple() && readonly() || null',
     '[attr.data-readonly]': 'readonly() || null',
   },

@@ -1,13 +1,17 @@
 import { Component, signal } from '@angular/core';
+import { By } from '@angular/platform-browser';
 import '../../../../test-helpers';
 import { mountSelectionList, SelectionListDriver } from '../../testing/selection-list-driver';
 import { SEGMENTED_BUTTON_IMPORTS } from '../selection-list.imports';
+import { SegmentedButtonGroupComponent } from './segmented-button-group.component';
 
 @Component({
   template: `
     <et-segmented-button-group [value]="value()" [variant]="variant()" (valueChange)="value.set($event)">
       <et-segmented-button value="day">Day</et-segmented-button>
-      <et-segmented-button value="week">Week</et-segmented-button>
+      @if (showWeek()) {
+        <et-segmented-button value="week">Week</et-segmented-button>
+      }
     </et-segmented-button-group>
   `,
   imports: [SEGMENTED_BUTTON_IMPORTS],
@@ -15,6 +19,7 @@ import { SEGMENTED_BUTTON_IMPORTS } from '../selection-list.imports';
 class SegmentedButtonGroupTestHost {
   public value = signal<string | null>(null);
   public variant = signal<'pill' | 'tabs'>('pill');
+  public showWeek = signal(true);
 }
 
 describe('SegmentedButtonGroupComponent', () => {
@@ -45,5 +50,21 @@ describe('SegmentedButtonGroupComponent', () => {
 
     expect(driver.attr('data-variant')).toBe('tabs');
     expect(driver.listEl().classList).toContain('et-tab-scale');
+  });
+
+  it('drops the active background reference when the checked button is destroyed', () => {
+    driver.selectOption(1);
+    driver.fixture.detectChanges();
+
+    const group = driver.fixture.debugElement
+      .query(By.directive(SegmentedButtonGroupComponent))
+      .injector.get(SegmentedButtonGroupComponent);
+
+    expect(group.lastActiveBackgroundElement()).not.toBeNull();
+
+    driver.host.showWeek.set(false);
+    driver.fixture.detectChanges();
+
+    expect(group.lastActiveBackgroundElement()).toBeNull();
   });
 });

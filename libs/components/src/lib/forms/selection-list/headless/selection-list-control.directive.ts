@@ -4,8 +4,6 @@ import { SELECTION_LIST_TOKEN } from './selection-list.tokens';
 @Directive({
   selector: '[etSelectionListControl]',
   host: {
-    // a checkbox, not an option: `option` is listbox-only and has no mixed state (it uses
-    // `aria-selected`), whereas the select-all genuinely needs `aria-checked="mixed"`
     '[attr.role]': '"checkbox"',
     '[attr.aria-checked]': 'ariaChecked()',
     '[attr.aria-disabled]': 'list.disabled() || null',

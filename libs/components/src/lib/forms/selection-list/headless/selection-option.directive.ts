@@ -54,8 +54,6 @@ export class SelectionOptionDirective {
 
   public effectiveDisabled = computed(() => this.disabled() || (this.list?.disabled() ?? false));
   public effectiveReadonly = computed(() => this.list?.readonly() ?? false);
-  // multi-select lives in a `role="group"`, where `option` is invalid ARIA (it's listbox-only) -
-  // a checkbox pairs correctly with `group` + `aria-checked`; single-select stays a radio.
   public role = computed(() => (this.list?.multiple() ? 'checkbox' : 'radio'));
 
   public labelId = signal(`et-selection-option-label-${uniqueOptionLabelId++}`);

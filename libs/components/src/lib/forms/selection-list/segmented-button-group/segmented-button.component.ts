@@ -1,5 +1,19 @@
-import { Component, effect, ElementRef, inject, untracked, viewChild, ViewEncapsulation } from '@angular/core';
-import { ColorInteractiveDirective, createCanAnimateSignal, createFlipAnimation } from '@ethlete/core';
+import {
+  Component,
+  DestroyRef,
+  effect,
+  ElementRef,
+  inject,
+  untracked,
+  viewChild,
+  ViewEncapsulation,
+} from '@angular/core';
+import {
+  ColorInteractiveDirective,
+  createCanAnimateSignal,
+  createFlipAnimation,
+  injectHostElement,
+} from '@ethlete/core';
 import { SelectionOptionDirective } from '../headless';
 import { SegmentedButtonGroupComponent } from './segmented-button-group.component';
 
@@ -34,6 +48,16 @@ export class SegmentedButtonComponent {
   public canAnimate = createCanAnimateSignal();
 
   constructor() {
+    const hostEl = injectHostElement();
+
+    inject(DestroyRef).onDestroy(() => {
+      const group = this.group;
+
+      if (group && group.lastActiveBackgroundElement()?.parentElement === hostEl) {
+        group.lastActiveBackgroundElement.set(null);
+      }
+    });
+
     effect(() => {
       const group = this.group;
 
