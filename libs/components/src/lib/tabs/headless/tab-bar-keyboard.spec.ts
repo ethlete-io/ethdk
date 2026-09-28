@@ -145,6 +145,23 @@ describe('TabBarDirective keyboard model', () => {
     expect(driver.tabbableTrigger()).toBe(driver.trigger(0));
   });
 
+  it('swaps ArrowRight and ArrowLeft in a right-to-left bar', () => {
+    const driver = mount();
+    const bar = document.querySelector<HTMLElement>('[ettabbar]');
+
+    if (!bar) throw new Error('No tab bar host');
+
+    bar.style.direction = 'rtl';
+    driver.focusTabbable();
+    driver.press('ArrowLeft');
+
+    expect(driver.tabbableTrigger()).toBe(driver.trigger(1));
+
+    driver.press('ArrowRight');
+
+    expect(driver.tabbableTrigger()).toBe(driver.trigger(0));
+  });
+
   it('Enter activates the focused trigger', () => {
     const driver = mount();
 

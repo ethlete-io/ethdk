@@ -5,6 +5,7 @@ import {
   computed,
   DestroyRef,
   Directive,
+  ElementRef,
   inject,
   input,
   signal,
@@ -38,6 +39,7 @@ let nextTabBarId = 0;
 export class TabBarDirective {
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   public orientation = input<TabBarOrientation>(TAB_BAR_ORIENTATIONS.HORIZONTAL);
   public fit = input<TabBarFit>(TAB_BAR_FITS.CONTENT);
@@ -128,8 +130,9 @@ export class TabBarDirective {
     }
 
     const isHorizontal = this.orientation() === TAB_BAR_ORIENTATIONS.HORIZONTAL;
-    const nextKey = isHorizontal ? 'ArrowRight' : 'ArrowDown';
-    const prevKey = isHorizontal ? 'ArrowLeft' : 'ArrowUp';
+    const isRtl = isHorizontal && getComputedStyle(this.elementRef.nativeElement).direction === 'rtl';
+    const nextKey = isHorizontal ? (isRtl ? 'ArrowLeft' : 'ArrowRight') : 'ArrowDown';
+    const prevKey = isHorizontal ? (isRtl ? 'ArrowRight' : 'ArrowLeft') : 'ArrowUp';
 
     if (event.key === nextKey) {
       event.preventDefault();
