@@ -125,17 +125,22 @@ export const collectGitLabEvents$ = (options: GitLabCollectOptions): Observable<
     to: options.to,
     paging: options.paging,
   }).pipe(
-    concatMap((all) => {
-      const events = all.filter((event) => !!event.mergeRequestIid);
+    concatMap((page) => {
+      const events = page.events.filter((event) => !!event.mergeRequestIid);
+      const capped = page.reachedBackTo
+        ? [
+            `GitLab's activity feed was read up to its page cap, so this run reached back only to ${page.reachedBackTo.toISOString()}.`,
+          ]
+        : [];
 
-      if (events.length === 0) return of<GitLabCollection>({ events: [], failures: [] });
+      if (events.length === 0) return of<GitLabCollection>({ events: [], failures: capped });
 
       return resolveMergeRequests$(options, events).pipe(
         map((resolved): GitLabCollection => ({
           events: events
             .map((event) => toCollectedEvent({ event, mergeRequest: resolved.merged.get(keyOf(event)) }))
             .sort((a, b) => a.at.getTime() - b.at.getTime()),
-          failures: resolved.failures,
+          failures: [...capped, ...resolved.failures],
         })),
       );
     }),

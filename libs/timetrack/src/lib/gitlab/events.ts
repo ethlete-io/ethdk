@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention -- GitLab's REST v4 wire format is snake_case. */
 import { Observable, map } from 'rxjs';
-import { ForgePagingOptions, forgeApiPaged$ } from '../forge/cli';
+import { DEFAULT_FORGE_PAGING_OPTIONS, ForgePagingOptions, forgeApiPaged$ } from '../forge/cli';
 import { TimetrackProcessRunner } from '../transport/ports';
 
 /**
@@ -75,6 +75,15 @@ const toEvent = (resource: GitLabEventResource): GitLabEvent | undefined => {
   };
 };
 
+export type GitLabEventPage = {
+  events: GitLabEvent[];
+  /**
+   * How far back the read actually got, set only when the page cap stopped it inside the window.
+   * `null` means the whole window was covered.
+   */
+  reachedBackTo: Date | null;
+};
+
 /**
  * Everything the user did in GitLab inside the window, newest first as GitLab returns it.
  *
@@ -87,19 +96,27 @@ export const fetchGitLabEvents$ = (options: {
   from: Date;
   to: Date;
   paging?: Partial<ForgePagingOptions>;
-}): Observable<GitLabEvent[]> =>
-  forgeApiPaged$<GitLabEventResource>({
+}): Observable<GitLabEventPage> => {
+  const paging = { ...DEFAULT_FORGE_PAGING_OPTIONS, ...options.paging };
+
+  return forgeApiPaged$<GitLabEventResource>({
     runner: options.runner,
     cli: 'glab',
     hostname: options.hostname,
     path: '/events',
     describe: `your GitLab activity from ${dayOf(options.from)} to ${dayOf(options.to)}`,
     query: { after: boundary(options.from, -1), before: boundary(options.to, 1) },
-    paging: options.paging,
+    paging,
   }).pipe(
-    map((resources) =>
-      resources
-        .flatMap((resource) => toEvent(resource) ?? [])
-        .filter((event) => event.at >= options.from && event.at <= options.to),
-    ),
+    map((resources) => {
+      const read = resources.flatMap((resource) => toEvent(resource) ?? []);
+      const capped = resources.length >= paging.pageSize * paging.maxPages;
+      const oldest = read.reduce<Date | null>((held, event) => (!held || event.at < held ? event.at : held), null);
+
+      return {
+        events: read.filter((event) => event.at >= options.from && event.at <= options.to),
+        reachedBackTo: capped && oldest && oldest > options.from ? oldest : null,
+      };
+    }),
   );
+};

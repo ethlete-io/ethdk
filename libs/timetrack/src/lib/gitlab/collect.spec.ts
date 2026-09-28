@@ -47,7 +47,10 @@ const stubRunner = (options: { events: unknown[]; mergeRequest?: unknown; mergeR
   return { runner, specs };
 };
 
-const collect = (runner: TimetrackProcessRunner, options: { maxMergeRequestLookups?: number } = {}) => {
+const collect = (
+  runner: TimetrackProcessRunner,
+  options: { maxMergeRequestLookups?: number; maxPages?: number } = {},
+) => {
   const seen = vi.fn();
 
   collectGitLabEvents$({
@@ -56,7 +59,7 @@ const collect = (runner: TimetrackProcessRunner, options: { maxMergeRequestLooku
     from: new Date(2026, 7, 11, 0, 0),
     to: new Date(2026, 7, 11, 23, 59, 59),
     maxMergeRequestLookups: options.maxMergeRequestLookups,
-    paging: { pageSize: 1 },
+    paging: { pageSize: 1, ...(options.maxPages ? { maxPages: options.maxPages } : {}) },
   }).subscribe(seen);
 
   return (seen.mock.calls[0]?.[0] ?? { events: [], failures: [] }) as GitLabCollection;
@@ -136,6 +139,19 @@ describe('collectGitLabEvents$', () => {
 
     expect(collection.events).toHaveLength(2);
     expect(collection.failures[0]).toContain('1 more merge request');
+  });
+
+  it('reports how far back a run reached when the page cap cut the window short', () => {
+    const collection = collect(stubRunner({ events: [NOTE] }).runner, { maxPages: 1 });
+
+    expect(collection.events).toHaveLength(1);
+    expect(collection.failures).toContain(
+      `GitLab's activity feed was read up to its page cap, so this run reached back only to ${new Date(NOTE.created_at).toISOString()}.`,
+    );
+  });
+
+  it('reports no cap when the feed ended before it', () => {
+    expect(collect(stubRunner({ events: [NOTE] }).runner).failures).toEqual([]);
   });
 
   it('keys an event by GitLab’s own id, so an overlapping run appends nothing twice', () => {

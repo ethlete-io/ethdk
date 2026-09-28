@@ -32,7 +32,7 @@ const events = (runner: TimetrackProcessRunner) => {
     paging: { pageSize: 1 },
   }).subscribe(seen);
 
-  return seen.mock.calls[0]?.[0] ?? [];
+  return seen.mock.calls[0]?.[0]?.events ?? [];
 };
 
 const APPROVAL = {
