@@ -59,7 +59,7 @@
   .et-query-devtools-btn--danger.et-query-devtools-btn--active {
     background: color-mix(in srgb, var(--_et-qdt-error) 28%, transparent);
     border-color: var(--_et-qdt-error);
-    color: #fff;
+    color: var(--_et-qdt-fg);
   }
 
   @media (prefers-reduced-motion: no-preference) {

@@ -12,7 +12,7 @@ Entry-point boundaries hold: `toggle/` imports only `@ethlete/query` and `@ethle
 
 - Low: two clipboard paths exist side by side - `writeQueryDevtoolsClipboard` (json, main panel) and `@ethlete/core`'s `copyToClipboard` (`query-devtools-about.component.ts:3`, `query-devtools-mocks-tab.component.ts:4`). The core one lacks the `http://` fallback. Use one. The copy-tick `Subject` + `switchMap(timer)` block is also repeated in four components. S
 - Low: comment volume breaks the AGENTS.md allowlist - about 740 comment lines in `query-devtools.component.ts` alone, mostly rationale and narration, plus section headers at `query-devtools.component.ts:2412,2490,2521,2588,2622,2717`. M
-- Low: hardcoded primary colours in component CSS (`query-devtools.component.css:594,676,742`, `query-devtools-settings.component.css:62`, status colours at `query-devtools.component.css:23-25`). Resolve from theme tokens with the literal as fallback. S
+- Low: the status colours at `query-devtools.component.css:23-25` (`--_et-qdt-success`/`-error`/`-loading`) are hardcoded. There is no global CSS token for them - semantic colours come from DI (`injectErrorTheme()`), which throws in an app with no error theme, while the panel must stay legible in theme-less apps. Decide whether to bind optional semantic themes or keep the literals. S
 
 ## Spec gaps
 
