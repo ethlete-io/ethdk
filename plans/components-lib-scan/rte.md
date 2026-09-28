@@ -27,5 +27,3 @@ Scan of `libs/components/src/lib/forms/rich-text-editor/` (without `headless/`) 
 ## Bundle size
 
 - Low: `et-rich-text-viewer` imports the table and image style components statically (`rich-text-editor/rich-text-viewer.component.ts:5-6`). Every viewer consumer therefore bundles about 130 lines of CSS that only table or image content uses. This is acceptable per the AGENTS.md "base capability" rule. Record the decision, or move the two mounts behind a tool-rendering provider like `provideRichTextEditorTokenRendering`. S
-
-
