@@ -500,11 +500,11 @@ regional-indicator emoji.
 
 <StoryEmbed id="components-forms-phone-input--default" height="220px" />
 
-| Input                | Type             | Default  | Description                                                                                                                                                                                                                   |
-| -------------------- | ---------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `defaultCountry`     | `string`         | `'us'`   | ISO alpha-2 country used while the value carries none. A late change (a locale or geo lookup that resolves after the first render) still applies, as long as the country has not been picked or derived from the value since. |
-| `preferredCountries` | `string[]`       | `[]`     | Listed on top of the country dropdown.                                                                                                                                                                                        |
-| `countryLabel`       | `string \| null` | `null` ¹ | Leads the country trigger's accessible name, followed by the active country and its dial code (`Select country Germany +49`).                                                                                                 |
+| Input                | Type             | Default  | Description                                                                                                                                                                                                                                     |
+| -------------------- | ---------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `defaultCountry`     | `string`         | `'us'`   | ISO alpha-2 country used while the value carries none, case-insensitive. A late change (a locale or geo lookup that resolves after the first render) still applies, as long as the country has not been picked or derived from the value since. |
+| `preferredCountries` | `string[]`       | `[]`     | Listed on top of the country dropdown, case-insensitive.                                                                                                                                                                                        |
+| `countryLabel`       | `string \| null` | `null` ¹ | Leads the country trigger's accessible name, followed by the active country and its dial code (`Select country Germany +49`).                                                                                                                   |
 
 ¹ `null` falls through to [`PHONE_INPUT_LABELS.selectCountry`](/components/localization) (`'Select country'`).
 
@@ -513,8 +513,12 @@ Typing national digits builds the `+dial` value; a national trunk `0` is strippe
 the `0` is part of the number), and the `00` international call prefix works like
 `+` (`0049…` → `+49…`). Typing or pasting a full `+…` number re-derives the
 country by longest dial-code match - but a manually picked country survives shared
-dial codes (`+1` stays Canada if you chose Canada). Switching countries keeps the
-national number. A focused field always shows exactly what you typed, `+` prefix
+dial codes (`+1` stays Canada if you chose Canada), and a number the control built
+for the active country keeps that country even when typed digits happen to match
+a longer dial code mid-entry. The North American Numbering Plan's other members
+(Jamaica, the Cayman Islands, Puerto Rico, and 20 more) carry their area code as
+part of the dial code (`+1876…` → Jamaica), so they match without touching the
+shared `+1` for the US and Canada. Switching countries keeps the national number. A focused field always shows exactly what you typed, `+` prefix
 included; it collapses to the national number when you leave it. The display groups
 digits in threes while unfocused (**cosmetic only** - not per-country metadata
 formatting; validate on the backend/schema, with `isPlausible` as a cheap
