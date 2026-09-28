@@ -9,14 +9,8 @@ own open lines; this file lists what needs a user decision and what is still que
 - timetrack: the codex reasoning command. A per-command spec, or drop `codex`.
 - timetrack: Codex `INJECTED_PREFIXES` needs a real Codex log, and `askedBy: 'machine'` is a
   design call.
-- cli: git-flow `parse.ts` reads a lowercase `<word>-<number>` as a key when `keyPrefixes` is
-  empty. Existing specs test this on purpose (`chore/angular-22` → `ANGULAR-22`).
 
-- overlay: 6592a0627 changed the exported `DragToDismissContext`: `overlayRef` now needs
-  `beforeClosed`, which breaks custom mocks. Check that its changeset bump is right.
 
-- contentful: `provideContentfulConfig` bundles all five default components. Lazy defaults or an
-  opt-in `withContentfulDefaultComponents()` change the public API; the size is not measured.
 
 
 
@@ -31,8 +25,6 @@ own open lines; this file lists what needs a user decision and what is still que
 
 
 
-- timetrack: the tray uses `DEFAULT_ROUND_OPTIONS.incrementMs` (15 min), the same as the rows. A
-  configured increment needs a new setting.
 
 
 - bundle goldens: rich-text-editor (3 entries) and dropzone are each about 1.6 kB over. The rich
@@ -48,9 +40,8 @@ own open lines; this file lists what needs a user decision and what is still que
 
 Each domain plan file keeps its open Low lines; the decisions are listed there. Flags to check:
 
-- toggletip: b4b194925 removed the public `pressedVariant()`. Check the changeset bump.
-- stream: 5ff13041e removed the directives without a selector from the platform barrels. Check
-  the bump. The PiP `minHeight`/`maxHeight` options are now read nowhere.
+- stream: 5ff13041e removed the directives without a selector from the platform barrels (minor).
+  The PiP `minHeight`/`maxHeight` options are now read nowhere.
 - cli: `CI_JOB_TOKEN` is no longer a GitLab token; `et update --ai` passes the prompt in env vars;
   registry lookups read `~/.npmrc`. The `isPortFree` fix is not proven (the bug is macOS-only).
 - timetrack: `googleCalendarPaged$` now fails at the page cap, because a capped read deleted real
