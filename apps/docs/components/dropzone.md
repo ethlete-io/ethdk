@@ -175,13 +175,13 @@ Plus the shared control members: the `value` (`TValue \| TValue[] \| null`) and
 `color`, the label inputs and `uploadErrorMessage` are the component's own; the
 rest is forwarded to the headless directive, which also carries the outputs:
 
-| Output          | Type                                            | Emits                                               |
-| --------------- | ----------------------------------------------- | --------------------------------------------------- |
-| `filesReject`   | `DropzoneFileRejection[]`                       | Every rejected file of one selection, in one batch. |
-| `uploadSucceed` | `DropzoneEntry<TValue>`                         | Per entry, after its value landed in the control.   |
-| `uploadFail`    | `DropzoneEntry<TValue>`                         | Per entry whose upload failed.                      |
-| `deleteSucceed` | `TValue`                                        | Per removed entry whose `delete` request succeeded. |
-| `deleteFail`    | `{ value: TValue; error: DropzoneUploadError }` | Per removed entry whose `delete` request failed.    |
+| Output          | Type                                            | Emits                                                     |
+| --------------- | ----------------------------------------------- | --------------------------------------------------------- |
+| `filesReject`   | `DropzoneFileRejection[]`                       | Every rejected file of one selection, in one batch.       |
+| `uploadSucceed` | `DropzoneEntry<TValue>`                         | Per entry, after its value landed in the control.         |
+| `uploadFail`    | `DropzoneEntry<TValue>`                         | Per entry whose upload failed.                            |
+| `deleteSucceed` | `TValue`                                        | Per removed entry whose `delete` request succeeded.       |
+| `deleteFail`    | `{ value: TValue; error: DropzoneUploadError }` | Per removed entry whose `delete` request failed or threw. |
 
 `readonly` and `disabled` both come from the form schema (`readonly(s.media, …)` /
 `disabled(s, …)`) and both stop every mutation - selecting, dropping, replacing,

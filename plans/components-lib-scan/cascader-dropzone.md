@@ -27,7 +27,6 @@ Scan of `libs/components/src/lib/forms/cascader/` and `libs/components/src/lib/f
 
 ## dropzone - validation and upload
 
-- Medium: `executeDelete` has no rejection handler (`forms/dropzone/headless/dropzone.directive.ts:473`). `firstValueFrom` rejects with `EmptyError` when the delete stream completes without a settled state (`forms/dropzone/headless/dropzone-upload.ts:425`, `:458`), and a throwing `createArgs` rejects too; the result is an unhandled rejection and neither `deleteSucceed` nor `deleteFail` fires. Add `.catch` that emits `deleteFail`. S Verified.
 - Low: `isFileAccepted` treats `*/*` as a literal type prefix, so `accept: '*/*'` rejects every file (`forms/dropzone/headless/dropzone-entry.ts:174`). S
 - Low: The rejection messages and the upload-failure sentence are hardcoded English outside `DropzoneLabels` (`forms/dropzone/headless/dropzone-validation.ts:74`, `forms/dropzone/dropzone.component.ts:264`). S
 - Low: An existing entry without a resolved `name` falls back to `String(value)`, which shows `[object Object]` for object values (`forms/dropzone/headless/dropzone-entry.ts:136`). S

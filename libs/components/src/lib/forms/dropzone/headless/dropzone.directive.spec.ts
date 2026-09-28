@@ -572,6 +572,50 @@ describe('DropzoneDirective', () => {
       expect(driver.dropzone.entries().length).toBe(0);
     });
 
+    it('should emit deleteFail when the delete executor rejects', async () => {
+      driver.host.upload.set({
+        ...createUploadConfig(driver.query, { withDelete: true, includeExisting: true }),
+        executeDelete: () => Promise.reject(new Error('boom')),
+      });
+      driver.host.value.set('e1');
+      driver.tick();
+
+      driver.dropzone.removeEntry(driver.dropzone.entries()[0]!.id);
+      driver.tick();
+      await flushMicrotasks();
+      driver.tick();
+
+      expect(driver.host.deleteSucceeded).toEqual([]);
+      expect(driver.host.deleteFailed.map((event) => event.value)).toEqual(['e1']);
+    });
+
+    it('should emit deleteFail when the delete args builder throws', async () => {
+      driver.host.upload.set(
+        createDropzoneUpload<UploadArgs, string, DeleteArgs>({
+          queryCreator: driver.query.createPost<UploadArgs>('/upload'),
+          selectValue: (response) => response.uuid,
+          resolveExisting: (value) => ({ name: value }),
+          delete: {
+            queryCreator: driver.query.createDelete<DeleteArgs>((pathParams) => `/media/${pathParams.id}`),
+            createArgs: () => {
+              throw new Error('no args');
+            },
+            includeExisting: true,
+          },
+        }),
+      );
+      driver.host.value.set('e1');
+      driver.tick();
+
+      driver.dropzone.removeEntry(driver.dropzone.entries()[0]!.id);
+      driver.tick();
+      await flushMicrotasks();
+      driver.tick();
+
+      expect(driver.host.deleteFailed.map((event) => event.value)).toEqual(['e1']);
+      expect(driver.dropzone.entries().length).toBe(0);
+    });
+
     it('should fire the delete request for the value replaced in single mode', async () => {
       driver.dropzone.selectFiles([createFile('a.png')]);
       driver.tick();

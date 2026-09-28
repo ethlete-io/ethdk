@@ -1,3 +1,5 @@
+import { createQueryErrorResponse } from '@ethlete/query';
+import { catchError, defer, of, tap } from 'rxjs';
 import {
   afterNextRender,
   booleanAttribute,
@@ -470,17 +472,22 @@ export class DropzoneDirective<TValue = unknown>
       return;
     }
 
-    execute({ value, injector: this.environmentInjector }).then((error) => {
-      if (this.destroyRef.destroyed) {
-        return;
-      }
+    defer(() => execute({ value, injector: this.environmentInjector }))
+      .pipe(
+        catchError((error: unknown) => of(createQueryErrorResponse(error))),
+        tap((error) => {
+          if (this.destroyRef.destroyed) {
+            return;
+          }
 
-      if (error) {
-        this.deleteFail.emit({ value, error });
-      } else {
-        this.deleteSucceed.emit(value);
-      }
-    });
+          if (error) {
+            this.deleteFail.emit({ value, error });
+          } else {
+            this.deleteSucceed.emit(value);
+          }
+        }),
+      )
+      .subscribe();
   }
 
   private syncValue() {
