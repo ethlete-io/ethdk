@@ -122,6 +122,30 @@ describe('backfillAgentLogs$', () => {
     ]);
   });
 
+  it('resumes a log too long for one run where the last run stopped', () => {
+    const lines = Array.from({ length: 250 }, (_, index) =>
+      turn({ timestamp: new Date(Date.UTC(2026, 7, 11, 9, 0, index)).toISOString(), id: `t${index}` }),
+    );
+    const logs = [{ ref: ref('a'), lines }];
+
+    const first = backfill({ logs, maxLines: 1 });
+
+    expect(first.result.remaining).toBe(1);
+    expect(first.result.cursors).toEqual([expect.objectContaining({ id: 'a', nextLine: 200 })]);
+    expect(first.result.cursors[0]?.readThrough).toBeUndefined();
+
+    const second = backfill({ logs, maxLines: 1, cursors: first.result.cursors });
+
+    expect(second.reads[0]).toEqual({ id: 'a', fromLine: 200 });
+    expect(second.result.usage.map((event) => event.turnId)).toEqual(
+      lines.slice(200).map((_, index) => `t${200 + index}`),
+    );
+    expect(second.result.cursors).toEqual([
+      expect.objectContaining({ id: 'a', nextLine: 250, readThrough: MODIFIED_AT }),
+    ]);
+    expect(second.result.remaining).toBe(0);
+  });
+
   it('marks an empty log read through, so the pass converges', () => {
     const { result } = backfill({ logs: [{ ref: ref('a'), lines: [] }] });
 

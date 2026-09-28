@@ -11,10 +11,7 @@ import { Observable } from 'rxjs';
  * both write back every cursor they read, and a shared set would let one undo the other's offset.
  *
  * A pass name is a store key, so renaming one is how a converged pass reads every log again: its new
- * name has no cursor, which is a cursor at line 0. `prompt` was added that way, and `spend-all`
- * replaced `spend` when a turn stopped needing a project link — the days already stored held the
- * turns of the linked checkouts only. The old names may still have rows in the store; nothing reads
- * them.
+ * name has no cursor, which is a cursor at line 0.
  */
 export type AgentLogPass =
   'agent-session' | 'spend-all' | 'prompt' | 'codex-session' | 'codex-spend-all' | 'codex-prompt';

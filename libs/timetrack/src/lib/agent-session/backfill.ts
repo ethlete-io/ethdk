@@ -18,9 +18,12 @@ export type AgentLogBackfill = {
   usage: AgentUsageEvent[];
   /** Every prompt the run found. Keyed the same way, on the record's own id. */
   prompts: AgentPromptEvent[];
-  /** The cursors to persist, for the logs this run read to their end. Logs it did not reach get none. */
+  /**
+   * The cursors to persist, for the logs this run read. A log it did not read to its end gets one
+   * without `readThrough`, which the next run resumes from. Logs it did not reach get none.
+   */
   cursors: AgentSessionCursor[];
-  /** Logs still without a cursor after this run. Zero means the pass has converged and can stop. */
+  /** Logs not read through after this run. Zero means the pass has converged and can stop. */
   remaining: number;
   unparsedLines: number;
 };
@@ -46,16 +49,18 @@ const readToEnd$ = (options: {
   parsing?: Omit<AgentSessionLogParseOptions, 'lines' | 'resume'>;
   reader: AgentSessionLogReader;
   ref: AgentSessionLogRef;
-  fromLine: number;
+  cursor?: AgentSessionCursor;
 }): Observable<LogBackfill> =>
   of<LogBackfill>({
     usage: [],
     prompts: [],
     unparsedLines: 0,
-    nextLine: options.fromLine,
+    nextLine: options.cursor?.nextLine ?? 0,
     reachedEnd: false,
     reads: 0,
-    resume: {},
+    resume: options.cursor?.nextLine
+      ? { title: options.cursor.title, cwd: options.cursor.cwd, session: options.cursor.session }
+      : {},
   }).pipe(
     expand((seen) =>
       seen.reachedEnd || seen.reads >= MAX_READS_PER_LOG
@@ -132,7 +137,7 @@ export const backfillAgentLogs$ = (options: {
             parsing: options.parsing,
             reader: options.reader,
             ref,
-            fromLine: 0,
+            cursor: done.get(ref.id),
           }).pipe(map((read) => ({ ref, read }))),
         ),
         toArray(),
@@ -142,12 +147,11 @@ export const backfillAgentLogs$ = (options: {
           return {
             usage: reads.flatMap((entry) => entry.read.usage).sort((a, b) => a.at.getTime() - b.at.getTime()),
             prompts: reads.flatMap((entry) => entry.read.prompts).sort((a, b) => a.at.getTime() - b.at.getTime()),
-            cursors: finished.map((entry) => ({
-              id: entry.ref.id,
-              nextLine: entry.read.nextLine,
-              readThrough: entry.ref.modifiedAt,
-              ...cwdOf(entry.read),
-            })),
+            cursors: reads.map(({ ref, read }) =>
+              read.reachedEnd
+                ? { id: ref.id, nextLine: read.nextLine, readThrough: ref.modifiedAt, ...cwdOf(read) }
+                : { id: ref.id, nextLine: read.nextLine, ...read.resume },
+            ),
             remaining: pending.length - finished.length,
             unparsedLines: reads.reduce((total, entry) => total + entry.read.unparsedLines, 0),
           };

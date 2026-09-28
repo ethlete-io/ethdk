@@ -51,7 +51,7 @@ const activityOf = (record: Record<string, unknown>): ActivityRecord | null => {
 
 type ShellStep = { words: string[]; redirects: string[] };
 
-const HEREDOC = /^<<-?\s*(?:'([^']*)'|"([^"]*)"|([^\s;&|<>]+))/;
+const HEREDOC = /^<<(-?)\s*(?:'([^']*)'|"([^"]*)"|([^\s;&|<>]+))/;
 
 const CLOSERS: Record<string, string> = { "'": "'", '"': '"', '`': '`', '(': ')', '{': '}' };
 
@@ -74,7 +74,7 @@ const closingOf = (command: string, openAt: number) => {
 
 const shellStepsOf = (command: string): ShellStep[] => {
   const steps: ShellStep[] = [];
-  const heredocs: string[] = [];
+  const heredocs: { delimiter: string; stripsTabs: boolean }[] = [];
   let step: ShellStep = { words: [], redirects: [] };
   let word = '';
   let inWord = false;
@@ -90,6 +90,7 @@ const shellStepsOf = (command: string): ShellStep[] => {
   };
   const endStep = () => {
     endWord();
+    target = 'word';
     if (step.words.length || step.redirects.length) steps.push(step);
     step = { words: [], redirects: [] };
   };
@@ -113,7 +114,18 @@ const shellStepsOf = (command: string): ShellStep[] => {
     } else if (char === '"') {
       const end = closingOf(command, index);
 
-      append(command.slice(index + 1, end).replace(/\\(.)/g, '$1'));
+      append(
+        command
+          .slice(index + 1, end)
+          .replace(/\\([$`"\\\n])/g, (_, escaped: string) => (escaped === '\n' ? '' : escaped)),
+      );
+      index = end;
+    } else if (char === '$' && next === "'") {
+      let end = index + 2;
+
+      while (end < command.length && command[end] !== "'") end += command[end] === '\\' ? 2 : 1;
+
+      append(command.slice(index + 2, end).replace(/\\(.)/gs, '$1'));
       index = end;
     } else if (char === '$' && next === '(') {
       append('$()');
@@ -131,7 +143,7 @@ const shellStepsOf = (command: string): ShellStep[] => {
     } else if (char === '<' && next === '<' && command[index + 2] !== '<') {
       const match = HEREDOC.exec(command.slice(index));
 
-      if (match) heredocs.push(match[1] ?? match[2] ?? match[3] ?? '');
+      if (match) heredocs.push({ delimiter: match[2] ?? match[3] ?? match[4] ?? '', stripsTabs: !!match[1] });
       endWord();
       index += (match?.[0].length ?? 2) - 1;
     } else if (char === '<') {
@@ -154,8 +166,9 @@ const shellStepsOf = (command: string): ShellStep[] => {
     } else if (char === '\n') {
       endStep();
 
-      for (const delimiter of heredocs.splice(0)) {
-        const end = command.slice(index + 1).search(new RegExp(`^\\s*${delimiter.replace(/\W/g, '\\$&')}\\s*$`, 'm'));
+      for (const { delimiter, stripsTabs } of heredocs.splice(0)) {
+        const indent = stripsTabs ? '\\t*' : '';
+        const end = command.slice(index + 1).search(new RegExp(`^${indent}${delimiter.replace(/\W/g, '\\$&')}$`, 'm'));
 
         if (end < 0) return steps;
 
@@ -185,36 +198,55 @@ const PREFIX_WORDS = new Set([
   'do',
   'elif',
   'else',
-  'env',
-  'exec',
   'if',
-  'nice',
   'nohup',
-  'sudo',
   'then',
   'time',
   'until',
   'while',
 ]);
 
-const XARGS_OPTIONS_WITH_VALUE = new Set(['-a', '-d', '-E', '-I', '-L', '-n', '-P', '-s']);
+const PREFIX_OPTIONS_WITH_VALUE: Record<string, ReadonlySet<string>> = {
+  env: new Set(['-C', '-S', '-u', '--chdir', '--split-string', '--unset']),
+  exec: new Set(['-a']),
+  nice: new Set(['-n', '--adjustment']),
+  sudo: new Set(['-C', '-D', '-g', '-h', '-p', '-R', '-r', '-T', '-t', '-U', '-u', '--chdir', '--group', '--user']),
+  timeout: new Set(['-k', '-s', '--kill-after', '--signal']),
+  xargs: new Set(['-a', '-d', '-E', '-I', '-L', '-n', '-P', '-s']),
+};
+
+const withoutOptions = (args: string[], withValue: ReadonlySet<string>) => {
+  let index = 0;
+
+  while (index < args.length && args[index]?.startsWith('-')) {
+    const option = args[index] ?? '';
+
+    index += option === '--' ? 1 : withValue.has(option) ? 2 : 1;
+    if (option === '--') break;
+  }
+
+  return args.slice(index);
+};
 
 const programOf = (words: string[]) => {
   let rest = words;
 
   for (;;) {
     const [first = '', ...tail] = rest;
+    const withValue = PREFIX_OPTIONS_WITH_VALUE[first];
 
-    if (PREFIX_WORDS.has(first) || /^\w+=/.test(first)) rest = tail;
-    else if (first === 'timeout') rest = tail.slice(tail.findIndex((arg) => !arg.startsWith('-')) + 1);
-    else if (first === 'xargs') {
-      const at = tail.findIndex(
-        (arg, index) => !arg.startsWith('-') && !XARGS_OPTIONS_WITH_VALUE.has(tail[index - 1] ?? ''),
-      );
-
-      rest = at < 0 ? [] : tail.slice(at);
-    } else return rest;
+    if (withValue) rest = withoutOptions(tail, withValue).slice(first === 'timeout' ? 1 : 0);
+    else if (PREFIX_WORDS.has(first) || /^\w+=/.test(first)) rest = tail;
+    else return rest;
   }
+};
+
+const shellCommandOf = (program: string, args: string[]) => {
+  if (program !== 'bash' && program !== 'sh' && program !== 'zsh') return undefined;
+
+  const flag = args.findIndex((arg) => /^-[a-zA-Z]*c[a-zA-Z]*$/.test(arg));
+
+  return flag < 0 ? undefined : (args[flag + 1] ?? '');
 };
 
 const isScratchPath = (path: string) =>
@@ -288,7 +320,7 @@ const isWritingStep = ({ words, redirects }: ShellStep): boolean => {
     case 'sed':
       return args.some((arg) => /^-[a-zA-Z]*i/.test(arg) || arg.startsWith('--in-place'));
     case 'perl':
-      return args.some((arg) => /^-[a-zA-Z]*i/.test(arg));
+      return args.some((arg) => /^-(?:(?![IMm])[a-zA-Z])*i/.test(arg));
     case 'tee':
       return touchesRealFile(operands);
     case 'git':
@@ -301,9 +333,8 @@ const isWritingStep = ({ words, redirects }: ShellStep): boolean => {
     case 'bash':
     case 'sh':
     case 'zsh':
-      return args.includes('-c') && isWritingCommand(args[args.indexOf('-c') + 1] ?? '');
+      return isWritingCommand(shellCommandOf(program, args) ?? '');
     case 'cp':
-    case 'mv':
     case 'ln':
       return touchesRealFile(operands.slice(-1));
   }
@@ -316,6 +347,34 @@ const isWritingStep = ({ words, redirects }: ShellStep): boolean => {
 
 const isWritingCommand = (command: string) => shellStepsOf(command).some(isWritingStep);
 
+const gitDirectoryOf = (args: string[]) => args.flatMap((arg, index) => (args[index - 1] === '-C' ? [arg] : [])).at(-1);
+
+const writingDirectoryOf = (command: string, start: string | null): string | null | undefined => {
+  let directory = start;
+
+  for (const step of shellStepsOf(command)) {
+    const [program = '', ...args] = programOf(step.words);
+    const inner = shellCommandOf(program, args);
+
+    if (program === 'cd') {
+      const path = operandsOf(args)[0];
+
+      directory = path?.startsWith('/') ? path : null;
+    } else if (inner !== undefined) {
+      const found = writingDirectoryOf(inner, directory);
+
+      if (found !== undefined) return found;
+      if (touchesRealFile(step.redirects)) return directory;
+    } else if (isWritingStep(step)) {
+      const gitDirectory = program === 'git' ? gitDirectoryOf(args) : undefined;
+
+      return gitDirectory?.startsWith('/') ? gitDirectory : directory;
+    }
+  }
+
+  return undefined;
+};
+
 const WRITE_TOOLS = new Set(['Edit', 'MultiEdit', 'NotebookEdit', 'Write']);
 
 /**
@@ -324,8 +383,8 @@ const WRITE_TOOLS = new Set(['Edit', 'MultiEdit', 'NotebookEdit', 'Write']);
  * merely might write, like a script or a program this list does not know, counts as a read.
  *
  * Claude Code puts the shell back into the session's directory after a command that left it, so a
- * command reaches another checkout only by changing into it first, and every record still names the
- * directory the session started in.
+ * command reaches another checkout only through a `cd` or a git `-C` inside it, and every record still
+ * names the directory the session started in.
  */
 const workedInOfTool = (block: Record<string, unknown>): string | null | undefined => {
   const input = stringAt(block, 'type') === 'tool_use' ? objectAt(block, 'input') : null;
@@ -334,14 +393,7 @@ const workedInOfTool = (block: Record<string, unknown>): string | null | undefin
   if (!input) return undefined;
 
   if (name === 'Bash') {
-    const command = stringAt(input, 'command') ?? '';
-
-    if (!isWritingCommand(command)) return undefined;
-
-    const [first] = shellStepsOf(command);
-    const path = first?.words[0] === 'cd' ? first.words[1] : undefined;
-
-    return path?.startsWith('/') ? path : null;
+    return writingDirectoryOf(stringAt(input, 'command') ?? '', null);
   }
 
   if (!WRITE_TOOLS.has(name ?? '')) return undefined;

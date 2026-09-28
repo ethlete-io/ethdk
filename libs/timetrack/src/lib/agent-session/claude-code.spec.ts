@@ -663,6 +663,9 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
     `cat > /tmp/notes.txt <<'EOF'\nrm -rf libs\ngit commit -am x\nEOF`,
     `npm ls @angular/core 2>/dev/null; yarn why rxjs`,
     `echo hi # > out.txt`,
+    `ls 2> >(grep x >&2)`,
+    `perl -Ilib -MList::Util -e 'print 1' x.pl`,
+    `cat > /tmp/notes.txt <<EOF\n  EOF\nrm -rf libs\nEOF`,
   ])('keeps a read-only command in another checkout where the work was: %s', (command) => {
     const result = parse([toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && ${command}` } })]);
 
@@ -679,8 +682,26 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
     `npx nx lint app --fix`,
     `x=$(echo "it's"); rm build.log`,
     `# don't touch\nrm build.log`,
+    `mv notes.txt /tmp/`,
+    `sudo -u me rm build.log`,
+    `nice -n 5 rm build.log`,
+    `env -u X rm build.log`,
+    `timeout -s KILL 10 rm build.log`,
+    `sh -ec 'rm build.log'`,
+    `echo $'a\\'b'; rm out.txt`,
+    `echo x > "\\/tmp/x"`,
   ])('follows a command that clearly writes into another checkout: %s', (command) => {
     const result = parse([toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && ${command}` } })]);
+
+    expect(workedIn(result.events)).toEqual([ALTCHA]);
+  });
+
+  it.each([
+    `git -C ${ALTCHA} commit -m x`,
+    `bash -c "cd ${ALTCHA} && rm build.log"`,
+    `ls; cd ${ALTCHA} && rm build.log`,
+  ])('follows the directory in force at the step that writes: %s', (command) => {
+    const result = parse([toolCall({ minute: 0, name: 'Bash', input: { command } })]);
 
     expect(workedIn(result.events)).toEqual([ALTCHA]);
   });
