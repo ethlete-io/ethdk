@@ -5,11 +5,13 @@ import {
   afterNextRender,
   booleanAttribute,
   computed,
+  effect,
   inject,
   input,
   signal,
+  untracked,
 } from '@angular/core';
-import { RuntimeError, createComponentId } from '@ethlete/core';
+import { RuntimeError, createComponentId, signalHostElementMutations } from '@ethlete/core';
 import { SELECT_ERROR_CODES } from '../select-errors';
 import { SelectOptionGroupDirective } from './select-option-group.directive';
 import { SelectDirective } from './select.directive';
@@ -39,7 +41,7 @@ export class SelectOptionDirective {
   private destroyRef = inject(DestroyRef);
 
   public value = input.required<unknown>();
-  /** Display label. Falls back to the element's text content rendered on first paint. */
+  /** Display label. Falls back to the element's rendered text content. */
   public labelInput = input('', { alias: 'label' });
   public disabled = input(false, { transform: booleanAttribute });
   /**
@@ -151,8 +153,17 @@ export class SelectOptionDirective {
       this.destroyRef.onDestroy(() => group.unregisterOption(groupItem));
     }
 
+    const readTextLabel = () => this.textLabel.set(element.textContent?.trim() ?? '');
+    const textMutations = signalHostElementMutations({ characterData: true, childList: true, subtree: true });
+
+    effect(() => {
+      if (textMutations().length) {
+        untracked(readTextLabel);
+      }
+    });
+
     afterNextRender(() => {
-      this.textLabel.set(element.textContent?.trim() ?? '');
+      readTextLabel();
       this.syncId();
     });
 

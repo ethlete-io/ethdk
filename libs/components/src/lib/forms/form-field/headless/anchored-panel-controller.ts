@@ -211,6 +211,8 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
     const surface = options.surface();
 
     if (!surface) {
+      // before the hook: a dev-mode hook throws
+      options.open.set(false);
       options.onMissingSurface?.();
 
       return;
