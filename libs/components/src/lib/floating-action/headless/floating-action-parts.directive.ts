@@ -1,4 +1,4 @@
-import { Directive, ElementRef, afterNextRender, computed, inject } from '@angular/core';
+import { DestroyRef, Directive, ElementRef, WritableSignal, afterNextRender, computed, inject } from '@angular/core';
 import { injectHostElement, RuntimeError, signalHostElementIntersection } from '@ethlete/core';
 import { FLOATING_ACTION_ERROR_CODES } from '../floating-action-errors';
 import { FLOATING_ACTION_STATES } from '../floating-action.types';
@@ -19,6 +19,15 @@ const assertInsideFloatingAction = (floatingAction: unknown, directiveName: stri
         { element },
       );
     }
+  });
+};
+
+const registerPart = <T>(slot: WritableSignal<T | null> | undefined, part: T) => {
+  if (!slot) return;
+
+  slot.set(part);
+  inject(DestroyRef).onDestroy(() => {
+    if (slot() === part) slot.set(null);
   });
 };
 
@@ -60,7 +69,7 @@ export class FloatingActionAnchorDirective {
   });
 
   constructor() {
-    this.floatingAction?.anchor.set(this);
+    registerPart(this.floatingAction?.anchor, this);
     assertInsideFloatingAction(this.floatingAction, 'FloatingActionAnchorDirective');
   }
 }
@@ -84,7 +93,7 @@ export class FloatingActionTriggerDirective {
   constructor() {
     const floatingAction = inject(FLOATING_ACTION_TOKEN, { optional: true });
 
-    floatingAction?.trigger.set(this);
+    registerPart(floatingAction?.trigger, this);
     assertInsideFloatingAction(floatingAction, 'FloatingActionTriggerDirective');
   }
 }
@@ -111,7 +120,7 @@ export class FloatingActionScopeDirective {
   constructor() {
     const floatingAction = inject(FLOATING_ACTION_TOKEN, { optional: true });
 
-    floatingAction?.scope.set(this);
+    registerPart(floatingAction?.scope, this);
     assertInsideFloatingAction(floatingAction, 'FloatingActionScopeDirective');
   }
 }
@@ -136,7 +145,7 @@ export class FloatingActionTopDirective {
   constructor() {
     const floatingAction = inject(FLOATING_ACTION_TOKEN, { optional: true });
 
-    floatingAction?.top.set(this);
+    registerPart(floatingAction?.top, this);
     assertInsideFloatingAction(floatingAction, 'FloatingActionTopDirective');
   }
 }

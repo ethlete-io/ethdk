@@ -90,6 +90,20 @@ describe('FloatingActionDirective', () => {
     expect(driver.floatingAction.state()).toBe(FLOATING_ACTION_STATES.FLOATING);
   });
 
+  it('floats again once a scope that had scrolled away is destroyed', async () => {
+    const driver = await mountFloatingAction(FloatingActionTestHost);
+
+    driver.scrollAnchorAbove();
+    driver.scrollScopeAbove();
+    expect(driver.floatingAction.state()).toBe(FLOATING_ACTION_STATES.HIDDEN);
+
+    driver.host.withScope.set(false);
+    driver.detectChanges();
+
+    expect(driver.floatingAction.scope()).toBeNull();
+    expect(driver.floatingAction.state()).toBe(FLOATING_ACTION_STATES.FLOATING);
+  });
+
   it('stays inline while disabled, whatever the scroll position', async () => {
     const driver = await mountFloatingAction(FloatingActionTestHost);
 
