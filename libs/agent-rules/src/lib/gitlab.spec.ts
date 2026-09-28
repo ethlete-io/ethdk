@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { blockingMergeRequests, GitLabMergeRequest, openMergeRequestsFor, parseRemoteUrl } from './gitlab';
+import { blockingMergeRequests, gitLabToken, GitLabMergeRequest, openMergeRequestsFor, parseRemoteUrl } from './gitlab';
 
 const mergeRequest = (overrides: Partial<GitLabMergeRequest>): GitLabMergeRequest => ({
   iid: 1,
@@ -8,6 +8,19 @@ const mergeRequest = (overrides: Partial<GitLabMergeRequest>): GitLabMergeReques
   targetBranch: 'next',
   url: '',
   ...overrides,
+});
+
+describe('gitLabToken', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('does not fall back to a CI job token, which GitLab refuses as a private token', () => {
+    vi.stubEnv('GITLAB_TOKEN', '');
+    vi.stubEnv('CI_JOB_TOKEN', 'job-token');
+
+    expect(gitLabToken()).toBeUndefined();
+  });
 });
 
 describe('parseRemoteUrl', () => {

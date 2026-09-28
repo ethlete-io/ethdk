@@ -29,8 +29,7 @@ const gitLabHosts = () =>
     .map((host) => host.trim().toLowerCase())
     .filter(Boolean);
 
-export const gitLabToken = () =>
-  process.env['GITLAB_TOKEN']?.trim() || process.env['CI_JOB_TOKEN']?.trim() || undefined;
+export const gitLabToken = () => process.env['GITLAB_TOKEN']?.trim() || undefined;
 
 /* eslint-disable @typescript-eslint/naming-convention -- the GitLab REST wire format is snake_case. */
 type MergeRequestResponse = {

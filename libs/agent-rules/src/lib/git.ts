@@ -2,7 +2,12 @@ import { execFileSync } from 'child_process';
 import { stripRefPrefix } from './git-flow';
 
 export const git = (options: { root: string; args: string[] }) =>
-  execFileSync('git', options.args, { cwd: options.root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  execFileSync('git', options.args, {
+    cwd: options.root,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    maxBuffer: 256 * 1024 * 1024,
+  }).trim();
 
 /** Runs a command whose output belongs on the terminal — a push, a fetch, a branch creation. */
 export const gitLoud = (options: { root: string; args: string[] }) =>

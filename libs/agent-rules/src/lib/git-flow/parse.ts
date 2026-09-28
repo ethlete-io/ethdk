@@ -38,6 +38,13 @@ export const stripRefPrefix = (ref: string) =>
     .replace(/^refs\/heads\//, '')
     .replace(/^refs\/remotes\/[^/]+\//, '');
 
+const hasKeyPrefix = (options: { key: string | undefined; prefix: string }) => {
+  const key = options.key?.toUpperCase();
+  const prefix = options.prefix.toUpperCase();
+
+  return !!key?.startsWith(prefix) && !/[A-Z0-9]/.test(key.charAt(prefix.length));
+};
+
 type SegmentParts = { key?: string; subject?: string; findings: GitFlowFinding[] };
 
 /**
@@ -47,11 +54,10 @@ type SegmentParts = { key?: string; subject?: string; findings: GitFlowFinding[]
  */
 const parseSegment = (options: { segment: string; config: GitFlowConfig; role: string }): SegmentParts => {
   const { segment, config, role } = options;
-  const match = new RegExp(`^(${config.keyPattern})(?:-(.*))?$`, 'i').exec(segment);
-  const rawKey = match?.[1];
+  const match = new RegExp(`^(?<etKey>${config.keyPattern})(?:-(?<etSubject>.*))?$`, 'i').exec(segment);
+  const rawKey = match?.groups?.['etKey'];
   const known =
-    config.keyPrefixes.length === 0 ||
-    config.keyPrefixes.some((prefix) => rawKey?.toUpperCase().startsWith(prefix.toUpperCase()));
+    config.keyPrefixes.length === 0 || config.keyPrefixes.some((prefix) => hasKeyPrefix({ key: rawKey, prefix }));
 
   if (!rawKey || !known) {
     return {
@@ -61,7 +67,7 @@ const parseSegment = (options: { segment: string; config: GitFlowConfig; role: s
   }
 
   const key = rawKey.toUpperCase();
-  const subject = match?.[2] || undefined;
+  const subject = match?.groups?.['etSubject'] || undefined;
   const findings: GitFlowFinding[] = [];
 
   if (rawKey !== key) {
@@ -92,8 +98,8 @@ const renameSuggestion = (options: { shape: GitFlowDeprecatedShape; groups: Reco
   const key = groups['key'];
 
   return shape.renameTo
-    .replace(/<subject>/g, groups['subject'] ?? '')
-    .replace(/<KEY>/g, key ? key.toUpperCase() : '<KEY>');
+    .replace(/<subject>/g, () => groups['subject'] ?? '')
+    .replace(/<KEY>/g, () => (key ? key.toUpperCase() : '<KEY>'));
 };
 
 const targetsForKind = (options: {
@@ -370,7 +376,9 @@ const parseFeature = (options: {
   config: GitFlowConfig;
 }): BranchParseResult => {
   const { branch, prefix, segments, config } = options;
-  const alias = config.typeAliases[prefix];
+  const alias = Object.prototype.hasOwnProperty.call(config.typeAliases, prefix)
+    ? config.typeAliases[prefix]
+    : undefined;
   const type = config.types.includes(prefix) ? prefix : alias;
   const [story, task, ...extra] = segments;
 

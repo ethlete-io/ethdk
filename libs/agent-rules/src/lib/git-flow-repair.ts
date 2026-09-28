@@ -188,7 +188,20 @@ export const gitFlowRepair = async (request: RepairRequest) => {
     return 0;
   }
 
-  gitLoud({ root, args: ['push', '-u', remote.remote, newName] });
+  try {
+    gitLoud({ root, args: ['push', '-u', remote.remote, newName] });
+  } catch (error) {
+    console.error(`\nFailed to push ${newName}: ${error instanceof Error ? error.message : error}`);
+    console.error(
+      [
+        `The local branch is already renamed to ${newName}; ${remote.remote} still has ${branch}.`,
+        `Retry: git push -u ${remote.remote} ${newName}`,
+        `Or undo: git branch -m ${newName} ${branch}`,
+      ].join('\n'),
+    );
+
+    return 1;
+  }
 
   const { api } = remote;
 

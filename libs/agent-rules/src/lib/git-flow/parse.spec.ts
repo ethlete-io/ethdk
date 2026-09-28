@@ -186,6 +186,31 @@ describe('parseBranch', () => {
     expect(parse('chore/angular-22').storyKey).toBe('ANGULAR-22');
   });
 
+  it('matches a project prefix as a whole word, not as the start of a longer one', () => {
+    const scoped = resolveGitFlowConfig({ keyPrefixes: ['FI', 'EA'] });
+
+    expect(parseBranch({ branch: 'feat/FIX-1-thing', config: scoped }).storyKey).toBeUndefined();
+    expect(parseBranch({ branch: 'feat/EAX-1-thing', config: scoped }).storyKey).toBeUndefined();
+    expect(parseBranch({ branch: 'feat/FI-1-thing', config: scoped }).storyKey).toBe('FI-1');
+  });
+
+  it('keeps the subject when the configured key pattern has its own capture group', () => {
+    const grouped = resolveGitFlowConfig({ keyPattern: '(FIP|EA)-\\d+' });
+
+    expect(parseBranch({ branch: 'feat/FIP-12-thing', config: grouped })).toMatchObject({
+      storyKey: 'FIP-12',
+      subject: 'thing',
+    });
+  });
+
+  it('reads a type alias only from the configured aliases, not the prototype', () => {
+    expect(parse('constructor/FIP-1-x')).toMatchObject({ ok: false, kind: 'unknown' });
+  });
+
+  it('inserts a subject with $ patterns literally into the rename suggestion', () => {
+    expect(parse("dev-a$&b$'c").suggestedName).toBe("feat/<KEY>-a$&b$'c");
+  });
+
   it('reports an unrecognised shape without throwing', () => {
     expect(parse('wip')).toMatchObject({ ok: false, kind: 'unknown', expectedMrTargets: [] });
     expect(rules('wip')).toEqual<GitFlowRule[]>(['unknown-type']);
