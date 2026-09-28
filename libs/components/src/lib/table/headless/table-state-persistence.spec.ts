@@ -144,4 +144,69 @@ describe('TableStatePersistenceDirective', () => {
     fixture.componentInstance.persistence().clear();
     expect(storage.getItem('users')).toBeNull();
   });
+
+  describe('with a config that changes after the first render', () => {
+    @Component({
+      template: `
+        <et-table
+          [columns]="columns"
+          [data]="data"
+          [etTableStatePersistence]="{ key: key(), storage, enabled: enabled() }"
+        />
+      `,
+      imports: [TABLE_IMPORTS, TABLE_STATE_PERSISTENCE_IMPORTS],
+    })
+    class SwitchingHostComponent {
+      public columns = COLUMNS;
+      public data = PEOPLE;
+      public storage = createMemoryStorage();
+      public key = signal('users');
+      public enabled = signal(true);
+
+      public table = viewChild.required<TableComponent<Person>>(TableComponent);
+    }
+
+    const stored = (sort: 'asc' | 'desc'): string =>
+      JSON.stringify({
+        v: 3,
+        columns: [
+          { key: 'name', hidden: false, sort },
+          { key: 'role', hidden: false },
+        ],
+      });
+
+    it('restores the stored setup when enabled turns on, instead of overwriting it', () => {
+      const fixture = TestBed.createComponent(SwitchingHostComponent);
+      const host = fixture.componentInstance;
+      host.storage.setItem('users', stored('desc'));
+      host.enabled.set(false);
+      fixture.detectChanges();
+
+      host.enabled.set(true);
+      fixture.detectChanges();
+      fixture.detectChanges();
+
+      expect(host.table().sort()).toEqual([{ key: 'name', direction: 'desc' }]);
+      expect(JSON.parse(host.storage.getItem('users') ?? 'null').columns[0].sort).toBe('desc');
+    });
+
+    it('restores from a new key, and saves there from then on', () => {
+      const fixture = TestBed.createComponent(SwitchingHostComponent);
+      const host = fixture.componentInstance;
+      host.storage.setItem('other', stored('asc'));
+      fixture.detectChanges();
+      fixture.detectChanges();
+
+      host.key.set('other');
+      fixture.detectChanges();
+      fixture.detectChanges();
+
+      expect(host.table().sort()).toEqual([{ key: 'name', direction: 'asc' }]);
+
+      host.table().setSort('name', 'desc');
+      fixture.detectChanges();
+
+      expect(JSON.parse(host.storage.getItem('other') ?? 'null').columns[0].sort).toBe('desc');
+    });
+  });
 });

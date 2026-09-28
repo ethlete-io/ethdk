@@ -1,6 +1,6 @@
 # Table core scan - open findings
 
-Scan of `table/headless/`, `table/testing/`, `table/table.component.{ts,html,css}`, `table/table.types.ts`, `table/table.imports.ts`, `table/table-errors.ts`, `table/index.ts` from 2026-09-28. 0 High, 2 Medium, 15 Low, 3 Spec (after verification: 7 verified, 1 re-rated). Skipped: the `table-*.directive.ts` feature files (another scan), all specs and stories except spot checks, and a line-by-line read of the 911-line `table.component.css` (the scan checked the layer wrap, hardcoded colours and feature CSS only).
+Scan of `table/headless/`, `table/testing/`, `table/table.component.{ts,html,css}`, `table/table.types.ts`, `table/table.imports.ts`, `table/table-errors.ts`, `table/index.ts` from 2026-09-28. 0 High, 1 Medium, 15 Low, 3 Spec (after verification: 7 verified, 1 re-rated). Skipped: the `table-*.directive.ts` feature files (another scan), all specs and stories except spot checks, and a line-by-line read of the 911-line `table.component.css` (the scan checked the layer wrap, hardcoded colours and feature CSS only).
 
 ## table.component
 
@@ -16,7 +16,6 @@ Scan of `table/headless/`, `table/testing/`, `table/table.component.{ts,html,css
 
 ## headless: state (persistence, URL, storage)
 
-- Medium: `TableStatePersistenceDirective` restores only once, at the first render and only if enabled then (`table/headless/table-state-persistence.directive.ts:58-67`), but saves on every later change. `enabled` switched on later (a setting loaded async) or a new `key` never loads the stored setup and overwrites it with the current state. Fix: restore when `enabled` turns true or `storage` changes, and skip the save for that pass. M Verified. The `storage` JSDoc says one table "can move stores", but a moved key never loads.
 - Low: the directive injects `TableComponent` in a field initializer (`table/headless/table-state-persistence.directive.ts:34`), which runs before `injectTableFeatureHost` (`:54`); outside a table it throws a `NullInjectorError`, not the labelled `ET3501` the comment promises. It also makes the headless layer import the component. Fix: read `state`/`restoreState` through the feature host. S
 
 ## headless: CSV export

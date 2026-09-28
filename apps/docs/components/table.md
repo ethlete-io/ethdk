@@ -1911,7 +1911,8 @@ their `rowKey`, so set a [`rowKey`](#inputs) for them to be captured at all. Run
 ### Persist it to local or session storage
 
 `etTableStatePersistence` (from `TABLE_STATE_PERSISTENCE_IMPORTS`) restores the stored setup when
-the table first renders, then saves on every change:
+the table first renders - and again when `enabled` turns on or `key`, `kind` or `storage` changes -
+then saves on every change:
 
 ```html
 <et-table [data]="rows()" [columns]="COLUMNS" [etTableStatePersistence]="{ key: 'users-table' }" />
