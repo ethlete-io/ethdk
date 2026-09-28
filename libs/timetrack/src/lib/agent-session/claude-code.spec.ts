@@ -292,6 +292,15 @@ describe('parseClaudeCodeSessionLog', () => {
       expect(result.title).toBe('Agent collector, second half');
     });
 
+    it('keeps a custom title from an earlier batch over a later generated one', () => {
+      const first = parse([record({ minute: 0 }), customTitle('My rename')]);
+      const next = parse([record({ minute: 10 }), aiTitle('Generated later')], {
+        resume: { after: at(5), title: first.title, session: first.session },
+      });
+
+      expect(next.title).toBe('My rename');
+    });
+
     it('prefers the carried title over the prompt fallback', () => {
       const result = parse([record({ minute: 10 }), lastPrompt('go on')], {
         resume: { after: at(5), title: 'Agent collector' },
@@ -653,6 +662,7 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
     `git diff > /tmp/fut.patch && git stash list`,
     `cat > /tmp/notes.txt <<'EOF'\nrm -rf libs\ngit commit -am x\nEOF`,
     `npm ls @angular/core 2>/dev/null; yarn why rxjs`,
+    `echo hi # > out.txt`,
   ])('keeps a read-only command in another checkout where the work was: %s', (command) => {
     const result = parse([toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && ${command}` } })]);
 
@@ -667,6 +677,8 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
     `rm -rf dist && mkdir dist`,
     `grep -l x libs/*.ts | xargs sed -i 's/x/y/'`,
     `npx nx lint app --fix`,
+    `x=$(echo "it's"); rm build.log`,
+    `# don't touch\nrm build.log`,
   ])('follows a command that clearly writes into another checkout: %s', (command) => {
     const result = parse([toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && ${command}` } })]);
 

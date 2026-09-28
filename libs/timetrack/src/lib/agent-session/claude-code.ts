@@ -1,7 +1,12 @@
 import { AgentPromptEvent, AgentSessionEvent, AgentUsageEvent, PromptAskedBy, TokenUsage } from '../model/event';
 import { pathIsUnder } from '../model/project-link';
 import { asJsonObject, countAt, objectAt, stringAt } from './record';
-import { AgentSessionLogParseOptions, AgentSessionLogParser, DEFAULT_AGENT_SESSION_SAMPLE_INTERVAL_MS } from './source';
+import {
+  AgentLogSessionState,
+  AgentSessionLogParseOptions,
+  AgentSessionLogParser,
+  DEFAULT_AGENT_SESSION_SAMPLE_INTERVAL_MS,
+} from './source';
 
 /** The name this parser's events carry, and the first half of the key the store deduplicates them on. */
 export const CLAUDE_CODE_PROVIDER = 'claude-code';
@@ -61,7 +66,7 @@ const closingOf = (command: string, openAt: number) => {
     if (char === '\\' && open !== "'") index++;
     else if (char === close && --depth === 0) return index;
     else if (char === open) depth++;
-    else if (char === "'" && open === '(') index = closingOf(command, index);
+    else if ((char === "'" || char === '"') && open === '(') index = closingOf(command, index);
   }
 
   return command.length;
@@ -119,6 +124,10 @@ const shellStepsOf = (command: string): ShellStep[] => {
     } else if (char === '`') {
       append('$()');
       index = closingOf(command, index);
+    } else if (char === '#' && !inWord) {
+      const end = command.indexOf('\n', index);
+
+      index = (end < 0 ? command.length : end) - 1;
     } else if (char === '<' && next === '<' && command[index + 2] !== '<') {
       const match = HEREDOC.exec(command.slice(index));
 
@@ -579,11 +588,14 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
 
   records.sort((a, b) => a.at.getTime() - b.at.getTime());
 
+  const carriedCustom = options.resume?.session?.titleIsCustom ? options.resume.title : undefined;
+  const custom = titles.custom ?? carriedCustom;
   const title =
-    titles.custom ??
-    titles.generated ??
-    options.resume?.title ??
-    fromPrompt(titles.firstPrompt, options.promptFallback);
+    custom ?? titles.generated ?? options.resume?.title ?? fromPrompt(titles.firstPrompt, options.promptFallback);
+  const session: AgentLogSessionState = {
+    ...(workedIn ? { workedIn } : {}),
+    ...(custom !== undefined ? { titleIsCustom: true } : {}),
+  };
   const finalIndexOf = new Map<string, number>();
 
   records.forEach((record, index) => finalIndexOf.set(record.sessionId, index));
@@ -623,5 +635,5 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
   const usage = [...usageByTurnId.values()].sort((a, b) => a.at.getTime() - b.at.getTime());
   const prompts = [...promptById.values()].sort((a, b) => a.at.getTime() - b.at.getTime());
 
-  return { events, usage, prompts, title, session: workedIn ? { workedIn } : undefined, unparsedLines };
+  return { events, usage, prompts, title, session: Object.keys(session).length ? session : undefined, unparsedLines };
 };

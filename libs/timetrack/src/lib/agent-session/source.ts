@@ -19,6 +19,8 @@ export type AgentLogSessionState = {
   model?: string;
   /** Where the last tool call worked, which a record without a tool call carries on. */
   workedIn?: string;
+  /** Set when the carried title is one the user gave the session, which a generated title must not replace. */
+  titleIsCustom?: boolean;
 };
 
 export type AgentSessionLogParseOptions = {

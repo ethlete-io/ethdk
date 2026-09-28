@@ -64,7 +64,11 @@ const reviveSessionState = (json: string): AgentLogSessionState | undefined => {
 
     const record = parsed as Record<string, unknown>;
 
-    return { sessionId: stringField(record, 'sessionId'), model: stringField(record, 'model') };
+    return {
+      sessionId: stringField(record, 'sessionId'),
+      model: stringField(record, 'model'),
+      ...(record['titleIsCustom'] === true ? { titleIsCustom: true } : {}),
+    };
   } catch {
     return undefined;
   }
