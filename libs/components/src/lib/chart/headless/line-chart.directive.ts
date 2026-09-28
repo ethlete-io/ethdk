@@ -273,7 +273,9 @@ export class LineChartDirective implements ChartPlotHost {
 
     const normalized = rows.map((row) => ({ ...row, time: isTime ? (row.x as Date).getTime() : null }));
 
-    return isTime ? normalized.sort((a, b) => (a.time ?? 0) - (b.time ?? 0)) : normalized;
+    return isTime
+      ? normalized.filter((row) => Number.isFinite(row.time)).sort((a, b) => (a.time ?? 0) - (b.time ?? 0))
+      : normalized;
   });
 
   /** The index of the slice that takes the chart's one tab stop. */

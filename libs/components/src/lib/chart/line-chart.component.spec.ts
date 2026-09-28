@@ -225,6 +225,21 @@ describe('LineChartComponent', () => {
     ]);
   });
 
+  it('drops an invalid date instead of failing the render', () => {
+    const { host, fixture, chart } = setup();
+
+    host.data.set([
+      { x: new Date('2025-03-28T23:00:00Z'), value: 1 },
+      { x: new Date('bad'), value: 5 },
+      { x: new Date('2025-03-29T23:00:00Z'), value: 2 },
+    ]);
+    fixture.detectChanges();
+
+    expect(chart.isTime()).toBe(true);
+    expect(chart.slices().map((slice) => slice.label)).toEqual(['Mar 29, 2025', 'Mar 30, 2025']);
+    expect(chart.positions()).toEqual([0, PLOT_WIDTH]);
+  });
+
   it('puts the time-axis labels on midnights of the chart time zone, not the viewer one', () => {
     const { host, fixture, chart } = setup();
 

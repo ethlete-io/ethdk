@@ -8,7 +8,6 @@ Scan of `libs/components/src/lib/chart` and `libs/components/src/lib/grid` from 
 
 ## chart - line
 
-- Medium: an Invalid Date x (`new Date('bad')`) passes the `instanceof Date` check (`chart/headless/line-chart.directive.ts:233`), then `zonedFields` calls `formatToParts(NaN)`, which throws a RangeError (`chart/headless/internals/chart-time-scale.ts:95`, reached from `createTimeValueFormatter` at `:281` and `createTimeTicks` at `:265`). One bad date from an API crashes the whole chart render. Treat a non-finite `getTime()` as a missing row, or filter it in `rows`. S Verified (repro).
 - Low: two rows with the same Date give the same slice key `String(row.time)` (`chart/headless/line-chart.directive.ts:465`). `@for (slice ...; track slice.key)` then has duplicate keys (NG0955 in dev, wrong DOM reuse). Add the index to the key, as the category branch does. S
 - Low: `timeDomain` uses `Math.min(...times)` / `Math.max(...times)` (`chart/headless/line-chart.directive.ts:316`), and `createValueTicks` spreads all values (`chart/headless/internals/chart-scale.ts:51-52`). With about 100k+ points the spread throws a RangeError (too many arguments). Use a reduce loop. S
 - Low: each touch `pointermove` calls `getBoundingClientRect()` on every slice and `hide()` on every other slice's tooltip (`chart/headless/line-chart.directive.ts:560-566`). For long series this is N layout reads per move. Read the plot element's rect once. S
