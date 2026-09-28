@@ -34,7 +34,9 @@ const requestOf = (
 
 type Recorded = { git: string[][]; requests: TimetrackRequest[] };
 
-const contextOf = (options: { failOn?: string; issueKey?: string; jira?: boolean; gitlab?: boolean } = {}) => {
+const contextOf = (
+  options: { failOn?: string; issueKey?: string; jira?: boolean; gitlab?: boolean; open?: unknown[] } = {},
+) => {
   const recorded: Recorded = { git: [], requests: [] };
   const context: WorkStartContext = {
     repoPath: '/repo',
@@ -55,9 +57,11 @@ const contextOf = (options: { failOn?: string; issueKey?: string; jira?: boolean
       request$: <T>(request: TimetrackRequest): Observable<TimetrackResponse<T>> => {
         recorded.requests.push(request);
 
-        const body = request.url.includes('/rest/api/3/issue')
-          ? { id: '1', key: options.issueKey ?? 'FIP-2412' }
-          : { iid: 12, web_url: 'https://gitlab.test/mr/12' };
+        const body = request.url.includes('/rest/api/3/search')
+          ? { issues: options.open ?? [] }
+          : request.url.includes('/rest/api/3/issue')
+            ? { id: '1', key: options.issueKey ?? 'FIP-2412' }
+            : { iid: 12, web_url: 'https://gitlab.test/mr/12' };
 
         return of({ status: 200, headers: {}, body: body as T });
       },
@@ -80,6 +84,18 @@ describe('executeWorkStart$', () => {
       ['switch', '-c', 'feat/FIP-2412-logout-confirmation', '--no-track', 'origin/next'],
       ['push', '-u', 'origin', 'feat/FIP-2412-logout-confirmation'],
     ]);
+  });
+
+  it('answers with the issue a lost create already filed, rather than filing it again', async () => {
+    const { context, recorded } = contextOf({
+      open: [{ id: '9', key: 'FIP-2400', fields: { summary: 'Logout confirmation', issuetype: { name: 'Task' } } }],
+    });
+    const outcome = await firstValueFrom(executeWorkStart$({ request: requestOf(), context }));
+
+    expect(outcome.issueKey).toBe('FIP-2400');
+    expect(recorded.requests.some((request) => request.method === 'POST' && request.url.endsWith('/issue'))).toBe(
+      false,
+    );
   });
 
   it('opens the merge request as a draft, linking the issue', async () => {

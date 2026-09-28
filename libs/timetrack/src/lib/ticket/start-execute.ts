@@ -3,10 +3,10 @@ import { Observable, catchError, map, of, switchMap, throwError } from 'rxjs';
 import { GitLabCredentials } from '../gitlab/client';
 import { createGitLabMergeRequest$ } from '../gitlab/merge-requests';
 import { JiraCredentials, normalizeJiraHost } from '../jira/client';
-import { createJiraIssue$ } from '../jira/create';
 import { JiraParenting } from '../jira/hierarchy';
 import { ProcessSpec, TimetrackProcessRunner, TimetrackTransport } from '../transport/ports';
 import { ticketSubjectOf } from './draft';
+import { fileTicketOnce$ } from './file';
 import {
   WorkStartAction,
   WorkStartPlan,
@@ -88,7 +88,7 @@ const fileIssue$ = (options: { request: WorkStartRequest; context: WorkStartCont
 
   if (!context.jira) return throwError(() => new Error(NO_JIRA));
 
-  return createJiraIssue$({
+  return fileTicketOnce$({
     transport: context.transport,
     credentials: context.jira,
     input: {
@@ -102,7 +102,7 @@ const fileIssue$ = (options: { request: WorkStartRequest; context: WorkStartCont
       ...(context.parentLinkType ? { parentLinkType: context.parentLinkType } : {}),
       ...(context.subjectField ? { subjectField: context.subjectField } : {}),
     },
-  }).pipe(map((created) => created.key));
+  }).pipe(map((filed) => filed.issueKey));
 };
 
 const openMergeRequest$ = (options: {
