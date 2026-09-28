@@ -283,7 +283,7 @@
             title="Copy this route as a @ethlete/query definition - the response type inferred from the body, the args contract and the creator call"
           >
             <span aria-hidden="true">⧉</span>
-            {{ copiedId() === row.mock.id ? 'Copied' : 'TS' }}
+            {{ copiedDefinition.value() === row.mock.id ? 'Copied' : 'TS' }}
           </button>
           <button
             (click)="copyPathItem(row)"
@@ -292,7 +292,7 @@
             title="Copy this route as an OpenAPI paths entry, ready to paste under an existing description"
           >
             <span aria-hidden="true">⧉</span>
-            {{ copiedSpecId() === row.mock.id ? 'Copied' : 'OAS' }}
+            {{ copiedPathItem.value() === row.mock.id ? 'Copied' : 'OAS' }}
           </button>
           <button (click)="remove(row)" class="et-query-devtools-btn et-query-devtools-btn--danger" type="button">
             Delete

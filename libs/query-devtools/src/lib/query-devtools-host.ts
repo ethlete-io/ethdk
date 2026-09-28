@@ -20,6 +20,7 @@ import {
   WebSocketDevtoolsHandle,
   WebSocketDevtoolsMessage,
 } from '@ethlete/query';
+import { QueryDevtoolsCopiedTick } from './query-devtools-copied-tick';
 import { QueryDevtoolsDiff } from './query-devtools-diff';
 import { DevtoolsLockRow } from './query-devtools-locks';
 import {
@@ -288,11 +289,11 @@ export type QueryDevtoolsHost = {
   toggleRunError(run: QueryDevtoolsRun): void;
   pickedRunError(entry: QueryDevtoolsEntry): { run: QueryDevtoolsRun; error: QueryDevtoolsRunError } | null;
 
-  copiedReport: Signal<boolean>;
-  copiedInsomnia: Signal<boolean>;
-  copiedCurl: Signal<boolean>;
-  copiedGql: Signal<boolean>;
-  copiedRoute: Signal<boolean>;
+  copiedReport: QueryDevtoolsCopiedTick<boolean>;
+  copiedInsomnia: QueryDevtoolsCopiedTick<boolean>;
+  copiedCurl: QueryDevtoolsCopiedTick<boolean>;
+  copiedGql: QueryDevtoolsCopiedTick<boolean>;
+  copiedRoute: QueryDevtoolsCopiedTick<boolean>;
   copyReport(entry: QueryDevtoolsEntry, query: AnyQuery): void;
   copyInsomniaRequest(entry: QueryDevtoolsEntry, query: AnyQuery): void;
   copyCurlRequest(entry: QueryDevtoolsEntry, query: AnyQuery): void;

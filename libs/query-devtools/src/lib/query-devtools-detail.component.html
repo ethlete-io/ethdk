@@ -8,12 +8,12 @@
   <button
     [attr.aria-label]="host.copyableRouteTitle(s.entry, s.query)"
     [title]="host.copyableRouteTitle(s.entry, s.query)"
-    [class.et-query-devtools-route-copy--copied]="host.copiedRoute()"
+    [class.et-query-devtools-route-copy--copied]="host.copiedRoute.value()"
     (click)="host.copyRoute(s.entry, s.query)"
     class="et-query-devtools-route-copy"
     type="button"
   >
-    {{ host.copiedRoute() ? '✓' : '⧉' }}
+    {{ host.copiedRoute.value() ? '✓' : '⧉' }}
   </button>
   @if (host.isTampered(s.entry)) {
     <span
@@ -645,7 +645,7 @@
           type="button"
           title="Copy the GraphQL document"
         >
-          {{ host.copiedGql() ? '✓ Copied' : '⧉ Copy' }}
+          {{ host.copiedGql.value() ? '✓ Copied' : '⧉ Copy' }}
         </button>
       </div>
       <pre class="et-query-devtools-code">{{ host.gqlDocument(gqlQuery) }}</pre>

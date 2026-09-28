@@ -1,9 +1,7 @@
-import { Component, ViewEncapsulation, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { copyToClipboard } from '@ethlete/core';
+import { Component, ElementRef, inject, ViewEncapsulation } from '@angular/core';
 import { queryDevtoolsAbout } from '@ethlete/query';
-import { Subject, switchMap, tap, timer } from 'rxjs';
-import { QUERY_DEVTOOLS_COPIED_RESET_MS } from './query-devtools-types';
+import { writeQueryDevtoolsClipboard } from './query-devtools-clipboard';
+import { createQueryDevtoolsCopiedTick } from './query-devtools-copied-tick';
 
 type AboutRow = { label: string; value: string };
 type AboutGroup = { title: string; rows: AboutRow[] };
@@ -40,34 +38,17 @@ const groupsOf = (): AboutGroup[] => {
   encapsulation: ViewEncapsulation.None,
 })
 export class QueryDevtoolsAboutComponent {
+  private hostEl = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly groups = groupsOf();
-
-  protected copied = signal(false);
-  private copiedReset$ = new Subject<void>();
-
-  constructor() {
-    // Each copy restarts the tick countdown; switchMap drops the pending reset of the previous one.
-    this.copiedReset$
-      .pipe(
-        switchMap(() => timer(QUERY_DEVTOOLS_COPIED_RESET_MS)),
-        tap(() => this.copied.set(false)),
-        takeUntilDestroyed(),
-      )
-      .subscribe();
-  }
+  protected copied = createQueryDevtoolsCopiedTick(false);
 
   protected copy() {
     const text = this.groups
       .map((group) => [group.title, ...group.rows.map((row) => `  ${row.label}: ${row.value}`)].join('\n'))
       .join('\n\n');
 
-    copyToClipboard(text)
-      .pipe(
-        tap((ok) => {
-          this.copied.set(ok);
-          this.copiedReset$.next();
-        }),
-      )
-      .subscribe();
+    writeQueryDevtoolsClipboard({ text }, this.hostEl.nativeElement.ownerDocument).then((result) =>
+      this.copied.mark(result.ok),
+    );
   }
 }

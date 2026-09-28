@@ -1,4 +1,3 @@
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   Component,
   computed,
@@ -7,19 +6,17 @@ import {
   input,
   linkedSignal,
   numberAttribute,
-  signal,
   ViewEncapsulation,
 } from '@angular/core';
 import { injectStyleManager } from '@ethlete/core';
 import { JsonPath, QueryDevtoolsOverridesRecorder } from '@ethlete/query';
-import { Subject, switchMap, tap, timer } from 'rxjs';
 import { writeQueryDevtoolsClipboard } from './query-devtools-clipboard';
+import { createQueryDevtoolsCopiedTick } from './query-devtools-copied-tick';
 import { QueryDevtoolsCopyMenuComponent, QueryDevtoolsCopyPayload } from './query-devtools-copy-menu.component';
 import { formatJsonPath } from './query-devtools-diff';
 import { exoticOf } from './query-devtools-exotic';
 import { QueryDevtoolsJsonStylesComponent } from './query-devtools-json-styles.component';
 import { QueryDevtoolsOverrideMenuComponent } from './query-devtools-override-menu.component';
-import { QUERY_DEVTOOLS_COPIED_RESET_MS } from './query-devtools-types';
 
 /** A JSON value's kind as the value explorer (and its per-node override menu) categorizes it. */
 export type JsonKind = 'string' | 'number' | 'boolean' | 'null' | 'undefined' | 'array' | 'object';
@@ -96,12 +93,12 @@ const chunkSizeFor = (count: number) => {
           <button
             [attr.aria-label]="copyLabel()"
             [title]="copyLabel()"
-            [class.et-query-devtools-json-copy--copied]="copied()"
+            [class.et-query-devtools-json-copy--copied]="copied.value()"
             (click)="copy('value')"
             class="et-query-devtools-json-copy"
             type="button"
           >
-            {{ copied() ? '✓' : '⧉' }}
+            {{ copied.value() ? '✓' : '⧉' }}
           </button>
           @if (addressable()) {
             <et-query-devtools-copy-menu [parentKind]="parentKind()" (pick)="copy($event)" />
@@ -172,12 +169,12 @@ const chunkSizeFor = (count: number) => {
         <button
           [attr.aria-label]="copyLabel()"
           [title]="copyLabel()"
-          [class.et-query-devtools-json-copy--copied]="copied()"
+          [class.et-query-devtools-json-copy--copied]="copied.value()"
           (click)="copy('value')"
           class="et-query-devtools-json-copy"
           type="button"
         >
-          {{ copied() ? '✓' : '⧉' }}
+          {{ copied.value() ? '✓' : '⧉' }}
         </button>
         @if (addressable()) {
           <et-query-devtools-copy-menu [parentKind]="parentKind()" (pick)="copy($event)" />
@@ -323,8 +320,7 @@ export class QueryDevtoolsJsonComponent {
   });
 
   /** What the last copy put on the clipboard, or `null` once the tick has expired. */
-  protected copied = signal<QueryDevtoolsCopyPayload | null>(null);
-  private copiedReset$ = new Subject<void>();
+  protected copied = createQueryDevtoolsCopiedTick<QueryDevtoolsCopyPayload | null>(null);
 
   /**
    * Whether this node has an address of its own to copy. An explorer root has no key, and a folded
@@ -349,7 +345,7 @@ export class QueryDevtoolsJsonComponent {
    * a bare `✓` stopped being unambiguous once the menu put four payloads behind one control.
    */
   protected copyLabel = computed(() => {
-    const copied = this.copied();
+    const copied = this.copied.value();
 
     if (copied) return `Copied the ${copied === 'entry' ? '"key": value pair' : copied}`;
 
@@ -382,15 +378,6 @@ export class QueryDevtoolsJsonComponent {
 
   constructor() {
     injectStyleManager().mount(QueryDevtoolsJsonStylesComponent);
-
-    // Each copy restarts the tick countdown; switchMap drops the pending reset of the previous one.
-    this.copiedReset$
-      .pipe(
-        switchMap(() => timer(QUERY_DEVTOOLS_COPIED_RESET_MS)),
-        tap(() => this.copied.set(null)),
-        takeUntilDestroyed(),
-      )
-      .subscribe();
   }
 
   protected childPath(key: string) {
@@ -426,7 +413,7 @@ export class QueryDevtoolsJsonComponent {
     if (text === null) return;
 
     writeQueryDevtoolsClipboard({ text }, this.hostEl.nativeElement.ownerDocument).then((result) => {
-      if (result.ok) this.flagCopied(payload);
+      if (result.ok) this.copied.mark(payload);
     });
   }
 
@@ -470,11 +457,6 @@ export class QueryDevtoolsJsonComponent {
     if (this.kind() === 'array') return entries.map((entry) => entry.v);
 
     return Object.fromEntries(entries.map((entry) => [entry.k, entry.v]));
-  }
-
-  private flagCopied(payload: QueryDevtoolsCopyPayload) {
-    this.copied.set(payload);
-    this.copiedReset$.next();
   }
 }
 

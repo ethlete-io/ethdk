@@ -16,7 +16,6 @@ import {
   untracked,
   viewChild,
   ViewEncapsulation,
-  WritableSignal,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import {
@@ -141,6 +140,7 @@ import { QueryDevtoolsSettingsComponent } from './query-devtools-settings.compon
 import { QueryDevtoolsFaultsTabComponent } from './query-devtools-faults-tab.component';
 import { QueryDevtoolsFormsTabComponent } from './query-devtools-forms-tab.component';
 import { writeQueryDevtoolsClipboard } from './query-devtools-clipboard';
+import { createQueryDevtoolsCopiedTick, QueryDevtoolsCopiedTick } from './query-devtools-copied-tick';
 import { QUERY_DEVTOOLS_HOST } from './query-devtools-host';
 import { QueryDevtoolsLocksTabComponent } from './query-devtools-locks-tab.component';
 import {
@@ -267,9 +267,6 @@ type PersistedState = {
   jsonExpanded?: string[];
   jsonCollapsed?: string[];
 };
-
-/** How long a copy button stays ticked after a successful write. */
-const COPIED_RESET_MS = 1200;
 
 /**
  * How many of a batch's items its card lists. A bulk run settles thousands, and a row per item is a
@@ -1070,12 +1067,11 @@ export class QueryDevtoolsComponent implements OnInit {
   private editedArgsSource: Record<string, unknown> | null = null;
 
   /** Transient "Copied!" feedback for the copy-report, copy-as-Insomnia / cURL and copy-document actions. */
-  public copiedReport = signal(false);
-  public copiedInsomnia = signal(false);
-  public copiedCurl = signal(false);
-  public copiedGql = signal(false);
-  public copiedRoute = signal(false);
-  private copiedReset$ = new Subject<void>();
+  public copiedReport = createQueryDevtoolsCopiedTick(false);
+  public copiedInsomnia = createQueryDevtoolsCopiedTick(false);
+  public copiedCurl = createQueryDevtoolsCopiedTick(false);
+  public copiedGql = createQueryDevtoolsCopiedTick(false);
+  public copiedRoute = createQueryDevtoolsCopiedTick(false);
 
   /**
    * 1-second tick driving the cache freshness countdowns. Gated the way the locks poll is: an ungated
@@ -1446,21 +1442,6 @@ export class QueryDevtoolsComponent implements OnInit {
       this.jsonCollapsedPaths.set(collapsed);
     };
 
-    // Each copy restarts the countdown; switchMap drops the pending reset of the previous one.
-    this.copiedReset$
-      .pipe(
-        switchMap(() => timer(COPIED_RESET_MS)),
-        tap(() => {
-          this.copiedReport.set(false);
-          this.copiedInsomnia.set(false);
-          this.copiedCurl.set(false);
-          this.copiedGql.set(false);
-          this.copiedRoute.set(false);
-        }),
-        takeUntilDestroyed(),
-      )
-      .subscribe();
-
     // The box has to follow the element for as long as the smooth scroll is moving it, so it tracks per
     // frame rather than measuring once. Each locate cancels the previous run's frames and its timeout.
     this.locate$
@@ -1646,10 +1627,10 @@ export class QueryDevtoolsComponent implements OnInit {
 
       this.editorMode.set('none');
       this.editError.set(null);
-      this.copiedReport.set(false);
-      this.copiedInsomnia.set(false);
-      this.copiedCurl.set(false);
-      this.copiedRoute.set(false);
+      this.copiedReport.clear();
+      this.copiedInsomnia.clear();
+      this.copiedCurl.clear();
+      this.copiedRoute.clear();
       this.diffRunIndex.set(null);
       this.diffBaseRunIndex.set(null);
       this.errorRunIndex.set(null);
@@ -4010,14 +3991,11 @@ export class QueryDevtoolsComponent implements OnInit {
   }
 
   /** Writes to the clipboard and ticks `copied` on success. `html` is omitted for plain-text payloads. */
-  private writeToClipboard(payload: { text: string; html?: string }, copied: WritableSignal<boolean>) {
+  private writeToClipboard(payload: { text: string; html?: string }, copied: QueryDevtoolsCopiedTick<boolean>) {
     const doc = this.panelEl()?.nativeElement.ownerDocument ?? this.document;
 
     writeQueryDevtoolsClipboard(payload, doc).then((result) => {
-      if (!result.ok) return;
-
-      copied.set(true);
-      this.copiedReset$.next();
+      if (result.ok) copied.mark(true);
     });
   }
 

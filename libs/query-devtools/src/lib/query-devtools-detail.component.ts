@@ -39,7 +39,9 @@ export class QueryDevtoolsDetailComponent {
   public sel = input.required<QueryDevtoolsSelection>();
 
   /** Whether any of the three exports behind the Copy menu has just landed on the clipboard. */
-  protected copied = computed(() => this.host.copiedReport() || this.host.copiedCurl() || this.host.copiedInsomnia());
+  protected copied = computed(
+    () => this.host.copiedReport.value() || this.host.copiedCurl.value() || this.host.copiedInsomnia.value(),
+  );
 
   /**
    * Memoized rather than read straight from the host in the template: the record is built per read, and

@@ -1,7 +1,5 @@
-import { Component, computed, effect, signal, ViewEncapsulation, WritableSignal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, computed, effect, ElementRef, inject, signal, ViewEncapsulation } from '@angular/core';
 import { SelectComponent, SelectOptionData, SelectSearchDirective } from '@ethlete/components';
-import { copyToClipboard } from '@ethlete/core';
 import {
   armAllQueryDevtoolsMocks,
   armQueryDevtoolsMock,
@@ -24,12 +22,13 @@ import {
   seedQueryDevtoolsSchemaBody,
   seedQueryDevtoolsSchemaRoute,
 } from '@ethlete/query';
-import { Subject, switchMap, tap, timer } from 'rxjs';
+import { writeQueryDevtoolsClipboard } from './query-devtools-clipboard';
+import { createQueryDevtoolsCopiedTick } from './query-devtools-copied-tick';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 import { QueryDevtoolsMockDesignerComponent } from './query-devtools-mock-designer.component';
 import { buildQueryDevtoolsOpenApiDocument, buildQueryDevtoolsOpenApiPathItem } from './query-devtools-openapi';
 import { buildQueryDefinitionSnippet } from './query-devtools-typescript';
-import { AnyQuery, QUERY_DEVTOOLS_COPIED_RESET_MS } from './query-devtools-types';
+import { AnyQuery } from './query-devtools-types';
 import { toQueryDevtoolsYaml } from './query-devtools-yaml';
 
 /** A designed mock as the list renders it: the stored mock plus what only the live registry knows. */
@@ -142,6 +141,8 @@ const isMockableMethod = (method: string) => !method.includes(' ');
 export class QueryDevtoolsMocksTabComponent {
   protected host = injectQueryDevtoolsHost();
 
+  private hostEl = inject<ElementRef<HTMLElement>>(ElementRef);
+
   protected readonly ARM_ALL = armAllQueryDevtoolsMocks;
   protected readonly DISARM_ALL = clearQueryDevtoolsArmedMocks;
   protected readonly METHODS = METHODS;
@@ -203,13 +204,8 @@ export class QueryDevtoolsMocksTabComponent {
   /** The mock whose body is open in the designer. */
   protected editingId = signal<string | null>(null);
 
-  /** The mock whose definition was last copied, so the button can confirm it. */
-  protected copiedId = signal<string | null>(null);
-
-  /** The mock whose path item was last copied - a second button needs its own confirmation. */
-  protected copiedSpecId = signal<string | null>(null);
-
-  private copiedReset$ = new Subject<void>();
+  protected copiedDefinition = createQueryDevtoolsCopiedTick<string | null>(null);
+  protected copiedPathItem = createQueryDevtoolsCopiedTick<string | null>(null);
 
   /** Which spelling the OpenAPI export is written in. YAML is what a specification repository takes. */
   protected specFormat = signal<SpecFormat>('yaml');
@@ -298,18 +294,6 @@ export class QueryDevtoolsMocksTabComponent {
   });
 
   constructor() {
-    // Each copy restarts the tick countdown; switchMap drops the pending reset of the previous one.
-    this.copiedReset$
-      .pipe(
-        switchMap(() => timer(QUERY_DEVTOOLS_COPIED_RESET_MS)),
-        tap(() => {
-          this.copiedId.set(null);
-          this.copiedSpecId.set(null);
-        }),
-        takeUntilDestroyed(),
-      )
-      .subscribe();
-
     // A description is only worth fetching once someone is designing a mock against that client, so an
     // application that hands several in still ships each as its own lazy chunk, loaded one at a time.
     effect(() => {
@@ -493,9 +477,7 @@ export class QueryDevtoolsMocksTabComponent {
       body: row.mock.body,
     });
 
-    copyToClipboard(snippet)
-      .pipe(tap((ok) => this.confirmCopy(this.copiedId, ok ? row.mock.id : null)))
-      .subscribe();
+    this.copyText(snippet, () => this.copiedDefinition.mark(row.mock.id));
   }
 
   /**
@@ -509,9 +491,7 @@ export class QueryDevtoolsMocksTabComponent {
 
     this.specNotes.set([...schemas.notes, ...built.notes]);
 
-    copyToClipboard(this.write(built.document))
-      .pipe(tap((ok) => this.confirmCopy(this.copiedSpecId, ok ? row.mock.id : null)))
-      .subscribe();
+    this.copyText(this.write(built.document), () => this.copiedPathItem.mark(row.mock.id));
   }
 
   /**
@@ -642,15 +622,16 @@ export class QueryDevtoolsMocksTabComponent {
     return Number.isFinite(count) ? count : fallback;
   }
 
+  private copyText(text: string, onCopied: () => void) {
+    writeQueryDevtoolsClipboard({ text }, this.hostEl.nativeElement.ownerDocument).then((result) => {
+      if (result.ok) onCopied();
+    });
+  }
+
   /**
    * The mock id a live query would carry. `query` has to be the declared query of the mock being matched
    * against: it is part of the id, and a registered query carries no declaration of its own.
    */
-  private confirmCopy(target: WritableSignal<string | null>, id: string | null) {
-    target.set(id);
-    this.copiedReset$.next();
-  }
-
   private idOf(entry: QueryDevtoolsEntry, query = '') {
     return queryDevtoolsMockId({
       clientName: entry.meta.clientName ?? '',
