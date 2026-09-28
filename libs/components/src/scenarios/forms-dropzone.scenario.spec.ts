@@ -442,7 +442,8 @@ describe('forms dropzone scenarios', () => {
 
     const trigger = query<HTMLButtonElement>('.et-dropzone-trigger', host);
 
-    expect(trigger.disabled).toBe(true);
+    expect(trigger.disabled).toBe(false);
+    expect(trigger.getAttribute('aria-disabled')).toBe('true');
     expect(trigger.getAttribute('aria-label')).toBe('Archive');
     expect(text(query('.et-dropzone-empty', host))).toBe(DEFAULT_DROPZONE_LABELS.empty);
 

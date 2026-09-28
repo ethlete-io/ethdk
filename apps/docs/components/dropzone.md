@@ -197,8 +197,9 @@ gesture it will refuse:
 - The drop area stays focusable and reachable with Tab (it is `aria-disabled`, not `disabled`),
   so `focus()` and a screen reader still land on the field; activating it does nothing.
 - The dashed border turns solid.
-- With files in multiple mode the drop area is gone, leaving the file list alone. A
-  single file keeps its preview, which fills that area anyway.
+- With files in multiple mode the drop area is gone, leaving the file list alone. The list
+  takes over as the Tab stop and `focus()` target, named by the field's label. A single file
+  keeps its preview, which fills that area anyway.
 - With no file at all the box shrinks to `--et-dropzone-readonly-min-height` and reads
   the `empty` label ("No files") in place of the prompt.
 

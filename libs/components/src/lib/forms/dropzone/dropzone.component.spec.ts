@@ -139,6 +139,29 @@ describe('DropzoneComponent', () => {
     expect(driver.triggerEl().getAttribute('tabindex')).toBe(null);
   });
 
+  it('should make the file list the focus target of a readonly multi-mode dropzone with files', () => {
+    driver.host.multiple.set(true);
+    driver.host.value.set(['e1', 'e2']);
+    driver.host.readonly.set(true);
+    driver.tick();
+
+    const list = driver.listEl()!;
+    const labelledBy = list.getAttribute('aria-labelledby');
+
+    expect(list.getAttribute('tabindex')).toBe('0');
+    expect(labelledBy && document.getElementById(labelledBy)?.textContent).toContain('Attachments');
+
+    driver.dropzone.focus();
+    expect(document.activeElement).toBe(list);
+
+    driver.host.readonly.set(false);
+    driver.tick();
+
+    expect(list.getAttribute('tabindex')).toBe(null);
+    driver.dropzone.focus();
+    expect(document.activeElement).toBe(driver.triggerEl());
+  });
+
   it('should still disable the trigger when disabled', () => {
     driver.host.disabled.set(true);
     driver.tick();

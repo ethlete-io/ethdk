@@ -87,7 +87,6 @@ own open lines; this file lists what needs a user decision and what is still que
 
 ## Queue
 
-- dropzone: a readonly multi-mode dropzone with files has nothing focusable.
 - timetrack `stillFocused` tail order: real, but no failing test was found.
 - When all agents finish: run `tsc -p libs/components/tsconfig.spec.json`, and the
   `forms-cascader` and `menu-selection` scenario specs, on the committed state. Then update the

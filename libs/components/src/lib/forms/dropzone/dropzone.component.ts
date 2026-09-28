@@ -119,6 +119,7 @@ export class DropzoneComponent {
 
   private fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
   private browseButton = viewChild<ElementRef<HTMLButtonElement>>('browseButton');
+  private fileList = viewChild<ElementRef<HTMLUListElement>>('fileList');
   private entryElements = viewChildren<unknown, ElementRef<HTMLElement>>('entryEl', { read: ElementRef });
 
   protected resolvedRetryLabel = computed(() => this.retryLabel() ?? this.dropzoneLabels().retry);
@@ -134,6 +135,10 @@ export class DropzoneComponent {
 
   protected singleEntry = computed(() =>
     this.dropzoneDir.multiple() ? null : (this.dropzoneDir.entries()[0] ?? null),
+  );
+
+  protected readonlyList = computed(
+    () => this.dropzoneDir.readonly() && this.dropzoneDir.multiple() && this.dropzoneDir.entries().length > 0,
   );
 
   protected liveStatusMessage = computed(() => {
@@ -168,8 +173,10 @@ export class DropzoneComponent {
       if (this.singleEntry()) styleManager.mount(DropzonePreviewStylesComponent);
     });
 
-    afterNextRender(() => {
-      this.dropzoneDir.focusTarget.set(this.browseButton()?.nativeElement ?? null);
+    effect(() => {
+      const target = this.readonlyList() ? this.fileList() : this.browseButton();
+
+      this.dropzoneDir.focusTarget.set(target?.nativeElement ?? null);
     });
   }
 

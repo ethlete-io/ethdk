@@ -117,7 +117,17 @@
 </div>
 
 @if (dropzoneDir.multiple() && dropzoneDir.entries().length) {
-  <ul class="et-dropzone-list" role="list">
+  <ul
+    #fileList
+    [attr.tabindex]="readonlyList() ? '0' : null"
+    [attr.aria-describedby]="readonlyList() ? dropzoneDir.describedBy() || null : null"
+    [attr.aria-label]="readonlyList() ? dropzoneDir.ariaLabel() || null : null"
+    [attr.aria-labelledby]="readonlyList() ? dropzoneDir.labelId() || null : null"
+    [focusRingDisabled]="!readonlyList()"
+    class="et-dropzone-list"
+    role="list"
+    etFocusRing
+  >
     @for (entry of dropzoneDir.entries(); track entry.id) {
       <et-dropzone-item
         #entryEl
