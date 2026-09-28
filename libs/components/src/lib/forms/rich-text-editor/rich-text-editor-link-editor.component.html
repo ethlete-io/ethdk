@@ -27,8 +27,11 @@
 <et-form-field size="sm">
   <et-label>{{ labels().linkUrlLabel }}</et-label>
   <et-input
+    [(touched)]="urlTouched"
     [value]="urlValue()"
     [placeholder]="labels().linkUrlPlaceholder"
+    [invalid]="hrefRefused()"
+    [errors]="urlErrors()"
     (valueChange)="urlValue.set($event)"
     (keydown.enter)="saveOnEnter($event)"
     type="url"
@@ -44,7 +47,7 @@
   @if (exists()) {
     <button (click)="removeLink.emit()" et-text-button size="sm" type="button">{{ labels().linkRemove }}</button>
   }
-  <button [disabled]="!urlValue().trim()" (click)="save()" et-button size="sm" type="button">
+  <button [disabled]="!resolvedHref() || hrefRefused()" (click)="save()" et-button size="sm" type="button">
     {{ exists() ? labels().linkUpdate : labels().linkAdd }}
   </button>
 </div>

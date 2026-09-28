@@ -41,6 +41,8 @@ export type RichTextEditorLabels = {
   linkUrlLabel: string;
   /** Placeholder for the link editor's URL field. */
   linkUrlPlaceholder: string;
+  /** The link editor's URL field error for a scheme the editor refuses (`javascript:`, `ftp:`, …). */
+  linkUrlUnsupported: string;
   /** The link editor's "open in a new tab" checkbox. */
   linkNewTab: string;
   /** The link editor's action that strips the link, shown only for an existing one. */
@@ -164,6 +166,7 @@ export const DEFAULT_RICH_TEXT_EDITOR_LABELS: RichTextEditorLabels = {
   linkTextPlaceholder: 'Link text',
   linkUrlLabel: 'URL',
   linkUrlPlaceholder: 'https://…',
+  linkUrlUnsupported: 'Use an http(s), mailto or tel link',
   linkNewTab: 'Open in new tab',
   linkRemove: 'Remove',
   linkAdd: 'Add',

@@ -226,7 +226,9 @@ New-tab links are stored in the Markdown value as raw HTML
 (`<a href="…" target="_blank" rel="noopener noreferrer">…</a>`) since Markdown has no `target`
 syntax; ordinary links stay `[text](url)`. Only `http:`, `https:`, `mailto:`, `tel:`, relative and
 fragment URLs become links: a pasted link with any other scheme (`javascript:`, `data:`, ...) keeps
-just its text, and the link editor and the `prompt()` fallback refuse such a URL.
+just its text, and the link editor and the `prompt()` fallback refuse such a URL. The link editor
+shows the `linkUrlUnsupported` label as the URL field's error and disables its confirm button, and
+it links a bare domain such as `www.example.com` over `https://`.
 
 Links are opt-in in two independent steps: `provideRichTextEditorLinkTool()` gives the editor links at
 all, and `provideRichTextEditorLinkEditor()` decides what the tool opens.

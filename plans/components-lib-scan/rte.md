@@ -16,7 +16,6 @@ Scan of `libs/components/src/lib/forms/rich-text-editor/` (without `headless/`) 
 
 ## Link tool and link editor
 
-- Medium: the link editor ignores an unsafe or unsupported URL and gives no feedback (`rich-text-editor/rich-text-editor-link-editor.component.ts:95`). The Add button stays enabled (`rich-text-editor-link-editor.component.html:47`), so `ftp://…` or `javascript:` does nothing when you click it. A bare `www.example.com` passes `isSafeLinkUrl` as a relative path and gives a broken link. Show a field error, disable the button for a refused URL, and prefix `https://` when the input looks like a domain. S Verified.
 - Low: the `window.prompt` fallback text `'Link URL'` is not localized (`headless/rich-text-editor.directive.ts:616`), although every other string comes from `RICH_TEXT_EDITOR_LABELS`. S
 - Low: the viewer allows link schemes that the editor refuses (`file:`, `intent:`, `ftp:` and others), because `markdownToHtml` uses the deny-list `isSafeUrl` and not the allow-list `isSafeLinkUrl` (`core/src/lib/utils/markdown.ts:123,154,181` vs `rich-text-editor/rich-text-editor-link-editor.component.ts:95`). A stored value that was not written by the editor can therefore render links the editor could never create. S
 

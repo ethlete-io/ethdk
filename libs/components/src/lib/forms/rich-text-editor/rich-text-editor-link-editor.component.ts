@@ -7,6 +7,7 @@ import {
   input,
   linkedSignal,
   output,
+  signal,
   untracked,
   ViewEncapsulation,
 } from '@angular/core';
@@ -18,6 +19,10 @@ import { CHOICE_FIELD_IMPORTS } from '../choice-field';
 import { FORM_FIELD_IMPORTS } from '../form-field';
 import { INPUT_IMPORTS } from '../input';
 import { RichTextEditorLabels } from './rich-text-editor-labels';
+
+const BARE_DOMAIN = /^(?:[a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?(?:[/?#]|$)/i;
+
+const withImpliedScheme = (href: string) => (BARE_DOMAIN.test(href) ? `https://${href}` : href);
 
 /** The payload the link editor emits on apply. */
 export type RichTextEditorLinkEditorValue = {
@@ -69,6 +74,13 @@ export class RichTextEditorLinkEditorComponent {
   protected textValue = linkedSignal(() => this.text());
   protected newTabValue = linkedSignal(() => this.newTab());
 
+  protected urlTouched = signal(false);
+  protected resolvedHref = computed(() => withImpliedScheme(this.urlValue().trim()));
+  protected hrefRefused = computed(() => !!this.resolvedHref() && !isSafeLinkUrl(this.resolvedHref()));
+  protected urlErrors = computed(() =>
+    this.hrefRefused() ? [{ kind: 'unsupportedLinkUrl', message: this.labels().linkUrlUnsupported }] : [],
+  );
+
   protected title = computed(() => (this.exists() ? this.labels().linkEditorEdit : this.labels().linkEditorAdd));
 
   constructor() {
@@ -90,9 +102,13 @@ export class RichTextEditorLinkEditorComponent {
   }
 
   protected save() {
-    const href = this.urlValue().trim();
+    const href = this.resolvedHref();
 
-    if (!href || !isSafeLinkUrl(href)) return;
+    if (!href || this.hrefRefused()) {
+      this.urlTouched.set(true);
+
+      return;
+    }
 
     this.saveLink.emit({ href, text: this.textValue().trim(), newTab: this.newTabValue() });
   }
