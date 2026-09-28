@@ -2,6 +2,9 @@ import { Component, getDebugNode, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ColorTheme, provideColorThemesWithTailwind4, ThemeSwatch } from '@ethlete/core';
 import {
+  DEFAULT_PROGRESS_STEP_LABELS,
+  injectProgressStepLabels,
+  PROGRESS_STEP_LABELS,
   PROGRESS_STEP_STATES,
   PROGRESS_STEPS_IMPORTS,
   PROGRESS_STEPS_ORIENTATIONS,
@@ -9,6 +12,7 @@ import {
   ProgressStepsComponent,
   ProgressStepsOrientation,
   ProgressStepState,
+  provideProgressStepLabels,
 } from '../index';
 import '../test-helpers';
 import { useScenario } from './harness';
@@ -58,6 +62,49 @@ class CheckoutStepsComponent {
   payment = signal<ProgressStepState>(PROGRESS_STEP_STATES.UPCOMING);
   visited: string[] = [];
 }
+
+const OUTCOME_STEPS_TEMPLATE = `
+  <et-progress-steps>
+    <et-progress-step state="complete">Account</et-progress-step>
+    <et-progress-step state="success">Shipping</et-progress-step>
+    <et-progress-step state="warning">Payment</et-progress-step>
+    <et-progress-step state="error">Review</et-progress-step>
+    <et-progress-step state="current">Confirm</et-progress-step>
+    <et-progress-step state="upcoming">Done</et-progress-step>
+  </et-progress-steps>
+`;
+
+@Component({
+  selector: 'et-scenario-outcome-steps',
+  imports: [PROGRESS_STEPS_IMPORTS],
+  template: OUTCOME_STEPS_TEMPLATE,
+})
+class OutcomeStepsComponent {
+  labels = injectProgressStepLabels();
+}
+
+@Component({
+  selector: 'et-scenario-german-outcome-steps',
+  imports: [PROGRESS_STEPS_IMPORTS],
+  template: OUTCOME_STEPS_TEMPLATE,
+  providers: [provideProgressStepLabels({ complete: 'Abgeschlossen', error: 'Fehlgeschlagen' })],
+})
+class GermanOutcomeStepsComponent {
+  labels = injectProgressStepLabels();
+}
+
+@Component({
+  selector: 'et-scenario-locale-outcome-steps',
+  imports: [PROGRESS_STEPS_IMPORTS],
+  template: OUTCOME_STEPS_TEMPLATE,
+  providers: [{ provide: PROGRESS_STEP_LABELS, useValue: () => ({ success: 'Erfolgreich' }) }],
+})
+class LocaleOutcomeStepsComponent {}
+
+const stateTexts = (host: HTMLElement) =>
+  Array.from(host.querySelectorAll<HTMLElement>('.et-progress-step')).map(
+    (step) => text(step.querySelector('.et-progress-step-state')) || null,
+  );
 
 describe('progress steps scenarios', () => {
   const scenario = useScenario({ providers: [provideColorThemesWithTailwind4(COLOR_THEMES)] });
@@ -168,6 +215,55 @@ describe('progress steps scenarios', () => {
 
     shipping?.focus();
     expect(document.activeElement).toBe(shipping);
+    expect(s.errors).toEqual([]);
+  });
+
+  it('announces each resolved state with the default labels and no text for current or upcoming', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(OutcomeStepsComponent);
+
+    s.tick();
+
+    expect(fixture.componentInstance.labels()).toEqual(DEFAULT_PROGRESS_STEP_LABELS);
+    expect(stateTexts(fixture.nativeElement)).toEqual([
+      DEFAULT_PROGRESS_STEP_LABELS.complete,
+      DEFAULT_PROGRESS_STEP_LABELS.success,
+      DEFAULT_PROGRESS_STEP_LABELS.warning,
+      DEFAULT_PROGRESS_STEP_LABELS.error,
+      null,
+      null,
+    ]);
+    expect(s.errors).toEqual([]);
+  });
+
+  it('localizes the state text below provideProgressStepLabels and keeps the defaults it leaves out', () => {
+    const s = scenario();
+    const german = TestBed.createComponent(GermanOutcomeStepsComponent);
+    const locale = TestBed.createComponent(LocaleOutcomeStepsComponent);
+
+    s.tick();
+
+    expect(german.componentInstance.labels()).toEqual({
+      ...DEFAULT_PROGRESS_STEP_LABELS,
+      complete: 'Abgeschlossen',
+      error: 'Fehlgeschlagen',
+    });
+    expect(stateTexts(german.nativeElement)).toEqual([
+      'Abgeschlossen',
+      DEFAULT_PROGRESS_STEP_LABELS.success,
+      DEFAULT_PROGRESS_STEP_LABELS.warning,
+      'Fehlgeschlagen',
+      null,
+      null,
+    ]);
+    expect(stateTexts(locale.nativeElement)).toEqual([
+      DEFAULT_PROGRESS_STEP_LABELS.complete,
+      'Erfolgreich',
+      DEFAULT_PROGRESS_STEP_LABELS.warning,
+      DEFAULT_PROGRESS_STEP_LABELS.error,
+      null,
+      null,
+    ]);
     expect(s.errors).toEqual([]);
   });
 });
