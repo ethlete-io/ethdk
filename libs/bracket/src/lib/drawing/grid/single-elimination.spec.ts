@@ -177,6 +177,43 @@ describe('createSingleEliminationGrid, a folded third place', () => {
     expect(grid.raw.grid.dimensions.height).toBeGreaterThanOrEqual(thirdPlace.top + thirdPlace.height);
   });
 
+  it('keeps the grid height when a continue column follows the fold', () => {
+    const winnerOf = (matchId: string) => ({
+      kind: 'match-outcome' as const,
+      role: 'winner' as const,
+      matchId,
+      standingId: null,
+      rank: null,
+      label: null,
+    });
+    const declared = source();
+    declared.matches = declared.matches.map((match) =>
+      match.id === 'r1m0' || match.id === 'r1m1'
+        ? {
+            ...match,
+            homeSource: winnerOf(`r0m${Number(match.id.at(-1)) * 2}`),
+            awaySource: winnerOf(`r0m${Number(match.id.at(-1)) * 2 + 1}`),
+          }
+        : match.id === 'r2m0'
+          ? { ...match, homeSource: winnerOf('r1m0'), awaySource: winnerOf('r1m1') }
+          : match,
+    );
+    const folded = leftToRightGrid(declared, { thirdPlaceTopOffset: 100 });
+    const continued = createSingleEliminationGrid(
+      createBracket(declared, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT }),
+      {
+        ...CONFIG,
+        layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT,
+        thirdPlaceTopOffset: 100,
+        continueElement: { columnWidth: 100, elementHeight: 50 },
+      },
+      { ...COMPONENTS, continue: class {} } as unknown as BracketComponents<null, null>,
+    );
+
+    expect(continued.raw.grid.masterColumns.length).toBe(folded.raw.grid.masterColumns.length + 2);
+    expect(continued.raw.grid.dimensions.height).toBe(folded.raw.grid.dimensions.height);
+  });
+
   it('leaves the fold alone when the source has no final to fold it into', () => {
     const noFinal: BracketDataSource<null, null> = {
       ...withThirdPlace(singleElimination([4, 2])),

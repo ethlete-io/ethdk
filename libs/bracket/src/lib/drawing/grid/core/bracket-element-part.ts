@@ -4,9 +4,6 @@ export type CreateBracketElementPartConfig = {
   elementPartHeight: number;
 };
 
-/**
- * A row is a part of an element.
- */
 export type BracketElementPart = {
   dimensions: Dimensions;
 };

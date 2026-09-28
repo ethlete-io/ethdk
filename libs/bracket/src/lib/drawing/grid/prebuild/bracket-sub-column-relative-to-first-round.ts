@@ -53,7 +53,6 @@ export const createRoundBracketSubColumnRelativeToFirstRound = <TRoundData, TMat
 
   const elementsToCreate: Array<BracketElementToCreate<TRoundData, TMatchData>> = [];
 
-  // Only include a header row if headers exist
   if (options.roundHeaderHeight > 0) {
     elementsToCreate.push(
       {
@@ -74,7 +73,6 @@ export const createRoundBracketSubColumnRelativeToFirstRound = <TRoundData, TMat
     );
   }
 
-  // Add match elements to create
   for (const [matchIndex, match] of matches.entries()) {
     const isLastMatch = matchIndex === matches.length - 1;
 
@@ -126,7 +124,6 @@ export const createRoundBracketSubColumnRelativeToFirstRound = <TRoundData, TMat
     });
   }
 
-  // Create all elements at once
   for (const elementData of elementsToCreate) {
     const { element } = createBracketElement(elementData);
 

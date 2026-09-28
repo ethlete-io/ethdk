@@ -1,6 +1,6 @@
 # Bracket lib scan - open findings
 
-Scan of `libs/bracket/src` from 2026-09-28. 20 Low, 4 Spec (verified 2026-09-28: 5 confirmed, 1 re-rated; the High and the four Mediums are fixed). A second pass covered what the
+Scan of `libs/bracket/src` from 2026-09-28. 2 Low, 3 Spec (verified 2026-09-28: 5 confirmed, 1 re-rated; the High and the four Mediums are fixed; the other Lows fixed or dropped 2026-09-28). A second pass covered what the
 first pass skipped: `drawing/grid/double-elimination-stacked.ts`, `drawing/curve.ts`, `drawing/shapes.ts`,
 `grid/prebuild/bracket-gap-master-column.ts`, `grid/prebuild/bracket-folded-third-place-section.ts` and the
 `grid/core` element/part/column/section/sub-column factories and finalizer. Skipped: nothing. Specs read only to
@@ -8,30 +8,7 @@ check coverage.
 
 ## linked (relations, resolver, swiss)
 
-- Low: a round or match that no relation reaches keeps `{ type: 'dummy' }` cast to the public relation union (`linked/bracket.ts:74,110`). Examples: a one-round bracket, a round with zero matches, an isolated match in the declared graph (`linked/match-relations.ts:474-540` has no else branch). A consumer that switches exhaustively over `relation.type`, or reads `relation.currentRound`, gets `undefined`. Add a `'none'` member to both unions, or make `relation` nullable. M Re-rated from Medium: the cast is real, but no code in `libs/bracket` or `libs/components` reads a dummy relation in a way that breaks; only a hypothetical exhaustive consumer is hit.
-- Low: `resolveBracketSlot` creates a new walk and memo for each call (`linked/resolve-bracket-slot.ts:180-184`), and `migrateBracketPicks` calls it twice per match (`linked/migrate-bracket-picks.ts:101-113`). Each call re-walks the whole feeder tree, so a large double elimination costs O(matches x ancestors). One walk per settled round gives the same results, because the picks do not change inside a round. S
-- Low: results that touch a cycle are never memoized (`linked/resolve-bracket-slot.ts:159`). A malformed graph with a cycle under many shared feeders re-walks each diamond, which is exponential in depth. Cache a cycle result per walk root, or reject cycles once up front. M
-- Low: when any source match carries provenance, the whole bracket switches to the declared graph (`linked/match-relations.ts:334-343`). Matches without provenance then get no relation. Document this, or fall back per match. S
-- Low: `linked/logging.ts` is not exported from `linked/index.ts` and nothing imports it. It is dead code. S
-- Low: narration comments in `linked/swiss.ts:76,87,93,107` ("Cache factorial calculations", "Single loop ..."). Delete them. S
-
-## core (data model)
-
-- Low: `createNewMatchParticipantBase` runs `source.matches.find` for every earlier match of every participant slot (`core/match-participant.ts:213,263`), and `createParticipantsMapBase` filters all matches once per appearance, not once per participant (`core/participant.ts:420-432`). Both are quadratic in match count. Build one `Map` by match id and deduplicate participant ids first. S
-- Low: `createBracket` does not check for duplicate round or match ids, although `DUPLICATE_ROUND`/`DUPLICATE_MATCH` exist (`bracket-errors.ts:9-11`). Only the components integration checks them. A direct caller with a duplicate id gets silently merged rounds and double-counted participant records. Move the check into `createBracketBase`. S
-- Low: the terminal-round sort table is defined twice, at `core/bracket.ts:67-71` and `core/round.ts:580-584`. Export one constant. S
-- Low: migration narration in `bracket-errors.ts:1-2` ("3400 was ... retired"), and restating comments at `core/match-participant.ts:232,234`. S
-
-## drawing
-
-- Low: `createBracketGrid.calculateDimensions` adds padding to `masterColumn.dimensions.width` in place (`drawing/grid/core/bracket-grid.ts:44`), and the span caches (`:22-23`) are never cleared. A second call widens every column and reuses stale span widths. Every builder calls it once today. Compute into fresh values, or clear the caches at the start. S
-- Low: span width and span left divide the full section width, padding included, by the sub-column count (`drawing/grid/core/bracket-grid.ts:194,214,220,250`). The real sub-columns divide the content width (`:68-71`). With non-zero section padding, spanned elements drift. All spanning layouts use zero padding today. S
-- Low: `createDoubleEliminationGrid` calls `roundsByType.getOrThrow` for the upper and lower rounds (`drawing/grid/double-elimination.ts:39-44`) before its own descriptive check (`:72-77`). A double elimination without lower rounds therefore fails with a generic "value not found in bracket map" error (ET3411). Use `get` so the ET3405 message is what the user sees. S
-- Low: `calculateColumnSplitFactor` has a dead `=== 2` branch, and the file has restating comments (`drawing/grid/double-elimination-utils.ts:2-5,15-24,35-48`). There are more restating comments in `double-elimination.ts:204,209,216`, `prebuild/bracket-sub-column-relative-to-first-round.ts:56,77,129`, `curve.ts:39`, `math.ts:2-3`, and narration at `draw-man.ts:96,107-111,141-142,188`. S
-
-## standings
-
-- Low: `standingPickStartOrder` accepts a non-integer position such as `1.5` (`standings/standing-pick-order.ts:30-35`). The integer loop never reads that position, so the participant is marked placed but never emitted, and the result is no longer the promised permutation. Require `Number.isInteger(pick.position)`. S
+- Low: a round or match that no relation reaches keeps `{ type: 'dummy' }` cast to the public relation union (`linked/bracket.ts:74,110`). Examples: a one-round bracket, a round with zero matches, an isolated match in the declared graph (`linked/match-relations.ts:474-540` has no else branch). A consumer that switches exhaustively over `relation.type`, or reads `relation.currentRound`, gets `undefined`. Decision (public union change): add a `'none'` member to both unions, or make `relation` nullable. M Re-rated from Medium: the cast is real, but no code in `libs/bracket` or `libs/components` reads a dummy relation in a way that breaks; only a hypothetical exhaustive consumer is hit.
 
 ## Spec gaps
 
@@ -41,9 +18,4 @@ check coverage.
 
 ## stacked double elimination and drawing helpers (second pass)
 
-- Low: a stacked block sizes every column from `firstRound`, the slot with the lowest `logicalIndex` (`drawing/grid/double-elimination-stacked.ts:126-133`). A later left slot with more matches, such as an unsplit odd round of 3 after a half of 2, gets factor `1` and a column taller than `content` (`prebuild/bracket-sub-column-relative-to-first-round.ts:43,94`). That column pushes its band and losers section down, and the other columns do not. Take `content` from the largest slot in the block. S
-- Low: `createBracketGapMasterColumn` copies the sections of the column to its left without their `padding` (`drawing/grid/prebuild/bracket-gap-master-column.ts:41-44`). A folded third place section has a negative top padding (`prebuild/bracket-folded-third-place-section.ts:60-65`). With `continueElement` set, the gap column after the final copies that section at full height, and the grid grows by the fold offset with empty space at the bottom. `createBracketContinueMasterColumn` sums section heights without padding in the same way (`prebuild/bracket-continue-master-column.ts:50-60`). Copy `section.padding` into the gap section, and add it to the continue total. S
-- Low: `curvePath` scales the two bends to the block distance only (`drawing/curve.ts:30-37`). When the inline distance is less than `lineStartingCurveAmount + lineEndingCurveAmount` (a `columnGap` below 10 px with the defaults), `straightLength` is negative and the line runs backwards before it bends. Scale by the smaller of the block and inline distances. S
-- Low: `BracketElementBase.isHidden` is written (`drawing/grid/core/bracket-grid.ts:172`) but nothing reads it, and the exported `BracketElementType` has no user (`core/bracket-element.ts:24,101-105`). `createBracketElementPart` and `createBracketElement` wrap their result in `{ elementPart }`/`{ element }`, and every caller unwraps it at once. Delete the dead members and return the value itself. S
-- Low: comments outside the AGENTS.md allowlist. JSDoc on non-exported internals and restating comments: `double-elimination-stacked.ts:24-27,34-58,69,78-82,94-97,211-212,216,329,353,399`. `"The band the print reference leaves empty"` (`:353`) names a design reference that the code does not have. More: `prebuild/bracket-folded-third-place-section.ts:25`, `curve.ts:20,43,47,53`, `core/bracket-element.ts:7-10,14,17`, `core/bracket-element-part.ts:7-9`. S
-- Spec: `curvePath` has no spec, and no grid spec combines a folded third place with `continueElement`. A spec for the same-row case would also guard the rule that every connector keeps the same six commands, which the CSS `d` transition needs (`drawing/curve.ts:26-29`). S
+- Low: `BracketElementBase.isHidden` is written (`drawing/grid/core/bracket-grid.ts:172`) but nothing reads it, and the exported `BracketElementType` has no user (`core/bracket-element.ts:24,101-105`). `createBracketElementPart` and `createBracketElement` wrap their result in `{ elementPart }`/`{ element }`, and every caller unwraps it at once. Delete the dead members and return the value itself. S Decision: all three are exported from `@ethlete/bracket`, so removing them is a breaking API change.

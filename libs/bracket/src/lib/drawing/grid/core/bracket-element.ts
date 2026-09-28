@@ -4,17 +4,9 @@ import { BracketContinueComponent, BracketMatchComponent, BracketRoundHeaderComp
 import { BracketRuntimeError } from '../../../bracket-runtime-error';
 import { BRACKET_ERROR_CODES } from '../../../bracket-errors';
 
-/**
- * An element is a slice of a section.
- * It can be a match, a header, a gap, etc.
- */
 export type BracketElementBase = {
   area: string;
-
-  /** The dimensions of the actual element */
   dimensions: Dimensions;
-
-  /** The dimensions of the container that holds the element */
   containerDimensions: Dimensions;
 
   parts: ReadonlyArray<BracketElementPart>;

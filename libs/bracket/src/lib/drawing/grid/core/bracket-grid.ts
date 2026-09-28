@@ -19,8 +19,7 @@ export const createBracketGrid = <TRoundData, TMatchData>(config: {
   spanElementWidth: number;
 }): MutableBracketGrid<TRoundData, TMatchData> => {
   const masterColumns: BracketMasterColumn<TRoundData, TMatchData>[] = [];
-  const spannedWidthCache = new Map<string, number>();
-  const spanStartLeftCache = new Map<string, number>();
+  const contentWidths = new WeakMap<BracketMasterColumn<TRoundData, TMatchData>, number>();
 
   const newGrid: BracketGrid<TRoundData, TMatchData> = {
     dimensions: { width: 0, height: 0, top: 0, left: 0 },
@@ -41,7 +40,10 @@ export const createBracketGrid = <TRoundData, TMatchData>(config: {
 
       masterColumn.dimensions.left = currentMasterColumnLeft;
       masterColumn.dimensions.top = 0;
-      masterColumn.dimensions.width += padding.left + padding.right;
+      const contentWidth = contentWidths.get(masterColumn) ?? masterColumn.dimensions.width;
+
+      contentWidths.set(masterColumn, contentWidth);
+      masterColumn.dimensions.width = contentWidth + padding.left + padding.right;
 
       const sections = masterColumn.sections;
       let runningTop = 0;
@@ -65,10 +67,10 @@ export const createBracketGrid = <TRoundData, TMatchData>(config: {
 
         runningTop += sectionPaddingTop;
 
-        const contentWidth = masterColumn.dimensions.width - sectionPadding.left - sectionPadding.right;
+        const sectionContentWidth = masterColumn.dimensions.width - sectionPadding.left - sectionPadding.right;
         const subColumns = section.subColumns;
         const totalSubColumns = subColumns.length;
-        const subColumnWidth = contentWidth / totalSubColumns;
+        const subColumnWidth = sectionContentWidth / totalSubColumns;
         let currentSubColumnLeft = masterColumn.dimensions.left + sectionPadding.left;
         let maxSectionHeight = 0;
 
@@ -150,8 +152,7 @@ export const createBracketGrid = <TRoundData, TMatchData>(config: {
             const spanKey = `${span.masterColumnStart}-${span.masterColumnEnd}-${span.sectionStart}-${span.sectionEnd}-${span.subColumnStart}-${span.subColumnEnd}`;
 
             if (isStartPosition && !spanDimensions.has(spanKey)) {
-              const totalSpannedWidth = calculateSpannedWidth(span, masterCols);
-              const spanStartLeft = calculateSpanStartLeft(span, masterCols);
+              const { left: spanStartLeft, width: totalSpannedWidth } = calculateSpanExtent(span, masterCols);
               const width = config.spanElementWidth;
 
               // Winner bracket rounds span two lower bracket columns. Left-align them within that
@@ -177,81 +178,16 @@ export const createBracketGrid = <TRoundData, TMatchData>(config: {
     }
   };
 
-  const calculateSpannedWidth = (
+  const calculateSpanExtent = (
     span: BracketElementSpanCoordinates,
     masterColumns: ReadonlyArray<BracketMasterColumn<TRoundData, TMatchData>>,
   ) => {
-    const key = `${span.masterColumnStart}-${span.masterColumnEnd}-${span.sectionStart}-${span.sectionEnd}-${span.subColumnStart}-${span.subColumnEnd}`;
-    const cachedWidth = spannedWidthCache.get(key);
+    const start = masterColumns[span.masterColumnStart]?.sections[span.sectionStart]?.subColumns[span.subColumnStart];
+    const end = masterColumns[span.masterColumnEnd]?.sections[span.sectionEnd]?.subColumns[span.subColumnEnd];
 
-    if (cachedWidth !== undefined) return cachedWidth;
+    if (!start || !end) return { left: start?.dimensions.left ?? 0, width: 0 };
 
-    if (span.masterColumnStart === span.masterColumnEnd) {
-      const masterColumn = masterColumns[span.masterColumnStart];
-      if (masterColumn) {
-        const section = masterColumn.sections[span.sectionStart];
-        if (section) {
-          const subColumnWidth = section.dimensions.width / section.subColumns.length;
-          const totalWidth = subColumnWidth * (span.subColumnEnd - span.subColumnStart + 1);
-          spannedWidthCache.set(key, totalWidth);
-
-          return totalWidth;
-        }
-      }
-      spannedWidthCache.set(key, 0);
-
-      return 0;
-    }
-
-    let totalWidth = 0;
-    for (let mcIdx = span.masterColumnStart; mcIdx <= span.masterColumnEnd; mcIdx++) {
-      const masterColumn = masterColumns[mcIdx];
-      if (!masterColumn) continue;
-
-      if (mcIdx === span.masterColumnStart) {
-        const section = masterColumn.sections[span.sectionStart];
-        if (section) {
-          const subColumnWidth = section.dimensions.width / section.subColumns.length;
-          totalWidth += subColumnWidth * (section.subColumns.length - span.subColumnStart);
-        }
-      } else if (mcIdx === span.masterColumnEnd) {
-        const section = masterColumn.sections[span.sectionEnd];
-        if (section) {
-          const subColumnWidth = section.dimensions.width / section.subColumns.length;
-          totalWidth += subColumnWidth * (span.subColumnEnd + 1);
-        }
-      } else {
-        totalWidth += masterColumn.dimensions.width;
-      }
-    }
-    spannedWidthCache.set(key, totalWidth);
-    return totalWidth;
-  };
-
-  const calculateSpanStartLeft = (
-    span: BracketElementSpanCoordinates,
-    masterColumns: ReadonlyArray<BracketMasterColumn<TRoundData, TMatchData>>,
-  ) => {
-    const key = `${span.masterColumnStart}-${span.sectionStart}-${span.subColumnStart}`;
-    const cachedLeft = spanStartLeftCache.get(key);
-
-    if (cachedLeft !== undefined) return cachedLeft;
-
-    const startMasterColumn = masterColumns[span.masterColumnStart];
-    if (!startMasterColumn) {
-      spanStartLeftCache.set(key, 0);
-
-      return 0;
-    }
-
-    let startLeft = startMasterColumn.dimensions.left;
-    const section = startMasterColumn.sections[span.sectionStart];
-    if (section) {
-      startLeft += (section.dimensions.width / section.subColumns.length) * span.subColumnStart;
-    }
-
-    spanStartLeftCache.set(key, startLeft);
-    return startLeft;
+    return { left: start.dimensions.left, width: end.dimensions.left + end.dimensions.width - start.dimensions.left };
   };
 
   const setupElementSpans = () => {

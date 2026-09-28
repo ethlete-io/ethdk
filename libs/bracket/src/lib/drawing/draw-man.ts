@@ -93,7 +93,6 @@ export const drawMan = <TRoundData, TMatchData>(
 
       const currentPos = makePos(el.dimensions);
 
-      // No lines for the third place match
       if (el.round.type === COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE) continue;
 
       if (continuePos && isBracketContinueMatch(el.match)) {
@@ -107,8 +106,7 @@ export const drawMan = <TRoundData, TMatchData>(
       // Crossing the middle of a fold. Every other line here is drawn by the match it flows *into*, but a
       // round in the middle of a mirrored bracket is fed from both sides and its relation names only one
       // of them - so the round on the way back draws its own line. Deliberately outside the switch below:
-      // which relation a match has says nothing about which side of a fold it sits on, and keying this to
-      // `two-to-one` is why a folded lower bracket used to lose the line into its centre round.
+      // which relation a match has says nothing about which side of a fold it sits on.
       if (el.round.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT && 'nextMatch' in el.match.relation) {
         const { nextMatch, nextRound } = el.match.relation;
 
@@ -138,8 +136,8 @@ export const drawMan = <TRoundData, TMatchData>(
           const prev = dimensions.bracketGrid.matchElementMap.getOrThrow(el.match.relation.previousMatch.id);
           const prevPos = makePos(prev.dimensions);
 
-          // The winner of the match it comes from, like every other connector - this used to carry both of
-          // the *current* match's participants, which lit the line for whoever arrived from somewhere else.
+          // The winner of the match it comes from, like every other connector, or the journey highlight
+          // lights the line for whoever arrived from somewhere else.
           pushEdge(
             straightPath(prevPos, currentPos, {
               path: {
@@ -185,7 +183,6 @@ export const drawMan = <TRoundData, TMatchData>(
               }),
             );
           } else {
-            // draw two lines that merge into one in the middle
             pushEdge(
               mergePath(prevUpperPos, currentPos, 'down', {
                 ...curveOptions,

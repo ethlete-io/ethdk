@@ -46,8 +46,14 @@ export const createBracketContinueMasterColumn = <TRoundData, TMatchData>(
   }
 
   // Dimensions are not calculated yet at this point, but all part heights are static, so the
-  // total column height is the sum of the tallest sub column of every section.
-  const totalHeight = lastMasterColumn.sections.reduce((height, section) => {
+  // total column height is the sum of the tallest sub column of every section plus its padding - the
+  // same sum `calculateDimensions` makes, which skips the top padding of a leading header section.
+  const firstSectionIsHeader = lastMasterColumn.sections[0]?.subColumns[0]?.elements[0]?.type === 'header';
+  let totalHeight = 0;
+
+  for (const [sectionIndex, section] of lastMasterColumn.sections.entries()) {
+    const padding = section.padding ?? lastMasterColumn.padding;
+    const paddingTop = sectionIndex === 0 && firstSectionIsHeader ? 0 : padding.top;
     const sectionHeight = Math.max(
       0,
       ...section.subColumns.map((subColumn) =>
@@ -59,8 +65,8 @@ export const createBracketContinueMasterColumn = <TRoundData, TMatchData>(
       ),
     );
 
-    return height + sectionHeight;
-  }, 0);
+    totalHeight += paddingTop + sectionHeight + padding.bottom;
+  }
 
   const { masterColumn, pushSection } = createBracketMasterColumn<TRoundData, TMatchData>({
     columnWidth,

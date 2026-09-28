@@ -21,42 +21,24 @@ import { resolveBracketGridRowSpan } from './row-span';
 import { BracketRuntimeError } from '../../bracket-runtime-error';
 import { BRACKET_ERROR_CODES } from '../../bracket-errors';
 
-/**
- * Where a round that never folded sits in its block's centre chain. A bracket's own rounds go first, by
- * depth; the rounds that decide the tournament follow in the order they are played.
- */
 const CENTRE_CHAIN_ORDER: Partial<Record<string, number>> = {
   [COMMON_BRACKET_ROUND_TYPE.FINAL]: 1,
   [DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.REVERSE_FINAL]: 2,
   [COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE]: 3,
 };
 
-/** One of the two blocks this layout stacks: a bracket folded around its own centre. */
 type StackedBlock<TRoundData, TMatchData> = {
-  /** Every other column's height is derived from this one - the outermost slot on the way out. */
   firstRound: BracketRound<TRoundData, TMatchData>;
-
-  /** The slots left of the centre, outermost first. */
+  /** Outermost first. */
   left: BracketRound<TRoundData, TMatchData>[];
-
-  /** The slots right of the centre, innermost first. */
+  /** Innermost first. */
   right: BracketRound<TRoundData, TMatchData>[];
-
-  /**
-   * The centre column, top to bottom: the round both halves converge on, then every round deeper than
-   * it. Empty for a block truncated before its two halves meet.
-   */
+  /** Top to bottom from the round both halves converge on; empty when they never meet. */
   chain: BracketRound<TRoundData, TMatchData>[];
-
   options: CreateBracketGridConfig;
   body: number;
-
-  /** What one ordinary column's matches occupy, headers excluded. */
   columnContent: (round: BracketRound<TRoundData, TMatchData>) => number;
-
-  /** Where the chain starts, so its first round lands on the block's vertical centre. */
   spacerTop: number;
-
   spacerBottom: number;
 };
 
@@ -66,7 +48,6 @@ type StackedBlockConfig<TRoundData, TMatchData> = {
   hasReverseFinal: boolean;
 };
 
-/** The card drawn for a round's matches - the deciding one is the taller `finalMatch`. */
 const isFinalMatchRound = <TRoundData, TMatchData>(
   round: BracketRound<TRoundData, TMatchData>,
   hasReverseFinal: boolean,
@@ -75,11 +56,6 @@ const isFinalMatchRound = <TRoundData, TMatchData>(
     ? round.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.REVERSE_FINAL
     : round.type === COMMON_BRACKET_ROUND_TYPE.FINAL;
 
-/**
- * A chain round takes exactly the room its cards need. Every other column reserves the same height for
- * every round (`createRoundBracketSubColumnRelativeToFirstRound`), which the chain cannot do - it stacks
- * several rounds in one column.
- */
 const chainRoundHeight = <TRoundData, TMatchData>(config: {
   round: BracketRound<TRoundData, TMatchData>;
   options: CreateBracketGridConfig;
@@ -91,10 +67,6 @@ const chainRoundHeight = <TRoundData, TMatchData>(config: {
   return round.matchCount * cardHeight + Math.max(0, round.matchCount - 1) * options.rowGap;
 };
 
-/**
- * Splits one bracket's rounds into the fold's three parts and works out the heights that keep the two
- * blocks aligned. `null` when the bracket has no rounds at all.
- */
 const createStackedBlock = <TRoundData, TMatchData>(
   config: StackedBlockConfig<TRoundData, TMatchData>,
 ): StackedBlock<TRoundData, TMatchData> | null => {
@@ -212,12 +184,9 @@ export const createStackedDoubleEliminationGrid = <TRoundData, TMatchData>(
   const headerBlock = options.roundHeaderHeight > 0 ? options.roundHeaderHeight + options.roundHeaderGap : 0;
   const blockHeight = (block: StackedBlock<TRoundData, TMatchData>) => headerBlock + block.body;
 
-  // Both blocks put their centre in the same master column, so the chains - and the grand final's line
-  // down to the losers champion - run up one strip rather than two.
   const centreIndex = Math.max(...blocks.map((block) => block.left.length));
   const columnCount = centreIndex + 1 + Math.max(...blocks.map((block) => block.right.length));
 
-  /** A column this block does not reach into, holding the height its rounds would have taken. */
   const createPlaceholderSubColumn = (block: StackedBlock<TRoundData, TMatchData>) => {
     const { subColumn, pushElement } = createBracketSubColumn<TRoundData, TMatchData>({
       span: { isStart: true, isEnd: true },
@@ -330,7 +299,6 @@ export const createStackedDoubleEliminationGrid = <TRoundData, TMatchData>(
     return subColumn;
   };
 
-  /** What this block draws in the column at `columnIndex`, centred on the shared middle column. */
   const createBlockSubColumn = (block: StackedBlock<TRoundData, TMatchData>, columnIndex: number) => {
     const slotIndex = columnIndex - (centreIndex - block.left.length);
 
@@ -354,7 +322,6 @@ export const createStackedDoubleEliminationGrid = <TRoundData, TMatchData>(
     });
   };
 
-  /** The band the print reference leaves empty: the two blocks are independent, so nothing crosses it. */
   const createBandSubColumn = () => {
     const { subColumn, pushElement } = createBracketSubColumn<TRoundData, TMatchData>({
       span: { isStart: true, isEnd: true },
@@ -400,7 +367,6 @@ export const createStackedDoubleEliminationGrid = <TRoundData, TMatchData>(
     }
   }
 
-  // No spans: a stacked block draws one round per column, so nothing reaches across its neighbours.
   grid.calculateDimensions();
 
   const finalizedGrid = finalizeBracketGrid(grid);

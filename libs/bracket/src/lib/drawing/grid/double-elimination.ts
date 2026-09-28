@@ -37,10 +37,10 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
   const grid = createBracketGrid<TRoundData, TMatchData>({ spanElementWidth: resolvedOptions.columnWidth });
 
   const presentUpperBracketRounds = Array.from(
-    bracketData.roundsByType.getOrThrow(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET).values(),
+    bracketData.roundsByType.get(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET)?.values() ?? [],
   );
   const lowerBracketRounds = Array.from(
-    bracketData.roundsByType.getOrThrow(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET).values(),
+    bracketData.roundsByType.get(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET)?.values() ?? [],
   );
 
   // A complete winner bracket has (lowerRounds / 2) + 1 rounds. If fewer are present, the winner
@@ -201,19 +201,16 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
       // May be null for a leading winner slot that does not exist (front-truncated winner bracket).
       const upperRound = upperBracketRounds[currentUpperRoundIndex];
 
-      // For upper bracket spans - check if this round is different from the previous occurrence
       const isUpperSpanStart = isFirstSubColumnInMasterColumn
         ? lowerRoundIndex === 0 || lastRoundLastSubColumnUpperIndex !== currentUpperRoundIndex
         : previousUpperRoundIndex !== currentUpperRoundIndex;
 
-      // For upper bracket spans - check if this round will be different in the next occurrence
       const isUpperSpanEnd = isLastSubColumnInMasterColumn
         ? isLastLowerRound ||
           calculateUpperRoundIndex((lowerRoundIndex + 1) * columnSplitFactor, upperToLowerRatio, columnSplitFactor) !==
             currentUpperRoundIndex
         : nextUpperRoundIndex !== currentUpperRoundIndex;
 
-      // For lower bracket spans - similar logic
       const isLowerSpanStart = isFirstSubColumnInMasterColumn
         ? lowerRoundIndex === 0 || lastRoundLastSubColumnLowerIndex !== currentLowerRoundIndex
         : previousLowerRoundIndex !== currentLowerRoundIndex;

@@ -22,7 +22,6 @@ export type CreateFoldedThirdPlaceSectionConfig<TRoundData, TMatchData> = {
 const heightOfElement = <TRoundData, TMatchData>(element: BracketElement<TRoundData, TMatchData>) =>
   element.parts.reduce((total, part) => total + part.dimensions.height, 0);
 
-/** Read off the built rows rather than re-derived, so the two stay in step. */
 const cardGeometry = <TRoundData, TMatchData>(subColumn: BracketSubColumn<TRoundData, TMatchData>) => {
   let height = 0;
   let cardTop: number | null = null;
