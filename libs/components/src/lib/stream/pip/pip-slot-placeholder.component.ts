@@ -34,71 +34,73 @@ import { injectPipSlotPlaceholderConfig } from './pip-slot-placeholder-config';
   imports: [PipBringBackDirective, ButtonComponent, IconDirective, ProvideSurfaceDirective],
   providers: [provideIcons(ARROW_OUT_UP_RIGHT_ICON)],
   styles: `
-    @property --et-pip-slot-placeholder-gap {
-      syntax: '<length>';
-      inherits: false;
-      initial-value: 12px;
-    }
+    @layer components {
+      @property --et-pip-slot-placeholder-gap {
+        syntax: '<length>';
+        inherits: false;
+        initial-value: 12px;
+      }
 
-    @property --et-pip-slot-placeholder-padding {
-      syntax: '<length>';
-      inherits: false;
-      initial-value: 32px;
-    }
+      @property --et-pip-slot-placeholder-padding {
+        syntax: '<length>';
+        inherits: false;
+        initial-value: 32px;
+      }
 
-    @property --et-pip-slot-placeholder-icon-size {
-      syntax: '<length>';
-      inherits: false;
-      initial-value: 36px;
-    }
+      @property --et-pip-slot-placeholder-icon-size {
+        syntax: '<length>';
+        inherits: false;
+        initial-value: 36px;
+      }
 
-    @property --et-pip-slot-placeholder-border-radius {
-      syntax: '<length>';
-      inherits: false;
-      initial-value: 16px;
-    }
+      @property --et-pip-slot-placeholder-border-radius {
+        syntax: '<length>';
+        inherits: false;
+        initial-value: 16px;
+      }
 
-    @property --et-pip-slot-placeholder-message-size {
-      syntax: '<length>';
-      inherits: false;
-      initial-value: 14px;
-    }
+      @property --et-pip-slot-placeholder-message-size {
+        syntax: '<length>';
+        inherits: false;
+        initial-value: 14px;
+      }
 
-    @property --et-pip-slot-placeholder-message-weight {
-      syntax: '<number>';
-      inherits: false;
-      initial-value: 400;
-    }
+      @property --et-pip-slot-placeholder-message-weight {
+        syntax: '<number>';
+        inherits: false;
+        initial-value: 400;
+      }
 
-    @property --et-pip-slot-placeholder-message-line-height {
-      syntax: '<percentage>';
-      inherits: false;
-      initial-value: 150%;
-    }
+      @property --et-pip-slot-placeholder-message-line-height {
+        syntax: '<percentage>';
+        inherits: false;
+        initial-value: 150%;
+      }
 
-    et-pip-slot-placeholder {
-      display: contents;
-    }
+      et-pip-slot-placeholder {
+        display: contents;
+      }
 
-    .et-pip-slot-placeholder-overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--et-surface-background-solid, inherit);
-      color: var(--et-surface-color-solid, inherit);
-      z-index: 20;
-    }
+      .et-pip-slot-placeholder-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--et-surface-background-solid, inherit);
+        color: var(--et-surface-color-solid, inherit);
+        z-index: 20;
+      }
 
-    .et-pip-slot-placeholder-card {
-      --et-stream-overlay-card-gap: var(--et-pip-slot-placeholder-gap);
-      --et-stream-overlay-card-padding: var(--et-pip-slot-placeholder-padding);
-      --et-stream-overlay-card-icon-size: var(--et-pip-slot-placeholder-icon-size);
-      --et-stream-overlay-card-border-radius: var(--et-pip-slot-placeholder-border-radius);
-      --et-stream-overlay-card-description-size: var(--et-pip-slot-placeholder-message-size);
-      --et-stream-overlay-card-description-weight: var(--et-pip-slot-placeholder-message-weight);
-      --et-stream-overlay-card-description-line-height: var(--et-pip-slot-placeholder-message-line-height);
+      .et-pip-slot-placeholder-card {
+        --et-stream-overlay-card-gap: var(--et-pip-slot-placeholder-gap);
+        --et-stream-overlay-card-padding: var(--et-pip-slot-placeholder-padding);
+        --et-stream-overlay-card-icon-size: var(--et-pip-slot-placeholder-icon-size);
+        --et-stream-overlay-card-border-radius: var(--et-pip-slot-placeholder-border-radius);
+        --et-stream-overlay-card-description-size: var(--et-pip-slot-placeholder-message-size);
+        --et-stream-overlay-card-description-weight: var(--et-pip-slot-placeholder-message-weight);
+        --et-stream-overlay-card-description-line-height: var(--et-pip-slot-placeholder-message-line-height);
+      }
     }
   `,
 })

@@ -34,103 +34,105 @@ import { injectStreamPlayerErrorConfig } from './stream-player-error-config';
     role: 'alert',
   },
   styles: `
-    @property --et-stream-player-error-gap {
-      syntax: '<length>';
-      inherits: false;
-      initial-value: 12px;
-    }
+    @layer components {
+      @property --et-stream-player-error-gap {
+        syntax: '<length>';
+        inherits: false;
+        initial-value: 12px;
+      }
 
-    @property --et-stream-player-error-padding {
-      syntax: '<length>';
-      inherits: false;
-      initial-value: 32px;
-    }
+      @property --et-stream-player-error-padding {
+        syntax: '<length>';
+        inherits: false;
+        initial-value: 32px;
+      }
 
-    @property --et-stream-player-error-icon-size {
-      syntax: '<length>';
-      inherits: false;
-      initial-value: 36px;
-    }
+      @property --et-stream-player-error-icon-size {
+        syntax: '<length>';
+        inherits: false;
+        initial-value: 36px;
+      }
 
-    @property --et-stream-player-error-border-radius {
-      syntax: '<length>';
-      inherits: false;
-      initial-value: 16px;
-    }
+      @property --et-stream-player-error-border-radius {
+        syntax: '<length>';
+        inherits: false;
+        initial-value: 16px;
+      }
 
-    @property --et-stream-player-error-heading-size {
-      syntax: '<length>';
-      inherits: false;
-      initial-value: 16px;
-    }
+      @property --et-stream-player-error-heading-size {
+        syntax: '<length>';
+        inherits: false;
+        initial-value: 16px;
+      }
 
-    @property --et-stream-player-error-heading-weight {
-      syntax: '<number>';
-      inherits: false;
-      initial-value: 600;
-    }
+      @property --et-stream-player-error-heading-weight {
+        syntax: '<number>';
+        inherits: false;
+        initial-value: 600;
+      }
 
-    @property --et-stream-player-error-heading-line-height {
-      syntax: '<percentage>';
-      inherits: false;
-      initial-value: 122%;
-    }
+      @property --et-stream-player-error-heading-line-height {
+        syntax: '<percentage>';
+        inherits: false;
+        initial-value: 122%;
+      }
 
-    @property --et-stream-player-error-heading-letter-spacing {
-      syntax: '<length>';
-      inherits: false;
-      initial-value: 0.2px;
-    }
+      @property --et-stream-player-error-heading-letter-spacing {
+        syntax: '<length>';
+        inherits: false;
+        initial-value: 0.2px;
+      }
 
-    @property --et-stream-player-error-description-size {
-      syntax: '<length>';
-      inherits: false;
-      initial-value: 14px;
-    }
+      @property --et-stream-player-error-description-size {
+        syntax: '<length>';
+        inherits: false;
+        initial-value: 14px;
+      }
 
-    @property --et-stream-player-error-description-weight {
-      syntax: '<number>';
-      inherits: false;
-      initial-value: 400;
-    }
+      @property --et-stream-player-error-description-weight {
+        syntax: '<number>';
+        inherits: false;
+        initial-value: 400;
+      }
 
-    @property --et-stream-player-error-description-line-height {
-      syntax: '<percentage>';
-      inherits: false;
-      initial-value: 150%;
-    }
+      @property --et-stream-player-error-description-line-height {
+        syntax: '<percentage>';
+        inherits: false;
+        initial-value: 150%;
+      }
 
-    .et-stream-player-error {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--et-surface-background-solid, inherit);
-      color: var(--et-surface-color-solid, inherit);
-      z-index: 1;
-    }
+      .et-stream-player-error {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--et-surface-background-solid, inherit);
+        color: var(--et-surface-color-solid, inherit);
+        z-index: 1;
+      }
 
-    .et-stream-player-error-card {
-      --et-stream-overlay-card-padding: var(--et-stream-player-error-padding);
-      --et-stream-overlay-card-gap: var(--et-stream-player-error-gap);
-      --et-stream-overlay-card-icon-size: var(--et-stream-player-error-icon-size);
-      --et-stream-overlay-card-border-radius: var(--et-stream-player-error-border-radius);
-      --et-stream-overlay-card-heading-size: var(--et-stream-player-error-heading-size);
-      --et-stream-overlay-card-heading-weight: var(--et-stream-player-error-heading-weight);
-      --et-stream-overlay-card-heading-line-height: var(--et-stream-player-error-heading-line-height);
-      --et-stream-overlay-card-heading-letter-spacing: var(--et-stream-player-error-heading-letter-spacing);
-      --et-stream-overlay-card-description-size: var(--et-stream-player-error-description-size);
-      --et-stream-overlay-card-description-weight: var(--et-stream-player-error-description-weight);
-      --et-stream-overlay-card-description-line-height: var(--et-stream-player-error-description-line-height);
-    }
+      .et-stream-player-error-card {
+        --et-stream-overlay-card-padding: var(--et-stream-player-error-padding);
+        --et-stream-overlay-card-gap: var(--et-stream-player-error-gap);
+        --et-stream-overlay-card-icon-size: var(--et-stream-player-error-icon-size);
+        --et-stream-overlay-card-border-radius: var(--et-stream-player-error-border-radius);
+        --et-stream-overlay-card-heading-size: var(--et-stream-player-error-heading-size);
+        --et-stream-overlay-card-heading-weight: var(--et-stream-player-error-heading-weight);
+        --et-stream-overlay-card-heading-line-height: var(--et-stream-player-error-heading-line-height);
+        --et-stream-overlay-card-heading-letter-spacing: var(--et-stream-player-error-heading-letter-spacing);
+        --et-stream-overlay-card-description-size: var(--et-stream-player-error-description-size);
+        --et-stream-overlay-card-description-weight: var(--et-stream-player-error-description-weight);
+        --et-stream-overlay-card-description-line-height: var(--et-stream-player-error-description-line-height);
+      }
 
-    .et-stream-player-error-icon {
-      margin-block-end: 0.4rem;
-    }
+      .et-stream-player-error-icon {
+        margin-block-end: 0.4rem;
+      }
 
-    .et-stream-player-error-description {
-      margin-block-end: 0.8rem;
+      .et-stream-player-error-description {
+        margin-block-end: 0.8rem;
+      }
     }
   `,
 })

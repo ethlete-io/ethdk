@@ -1,6 +1,6 @@
 # Stream scan - open findings
 
-Scan of `libs/components/src/lib/stream/` from 2026-09-28. 0 High, 2 Medium, 16 Low, 1 Spec. Skipped: stories, `testing/stream-driver.ts`, `pip-window` / `pip-chrome` templates and CSS beyond the layer and colour check.
+Scan of `libs/components/src/lib/stream/` from 2026-09-28. 0 High, 2 Medium, 11 Low, 1 Spec. Skipped: stories, `testing/stream-driver.ts`, `pip-window` / `pip-chrome` templates and CSS beyond the layer and colour check.
 
 ## Slot and manager lifecycle
 
@@ -17,7 +17,6 @@ Scan of `libs/components/src/lib/stream/` from 2026-09-28. 0 High, 2 Medium, 16 
 
 ## Script loader
 
-- Low: `mountedScripts` is dead state (`stream/stream-script-loader.ts:10`, `:20-27`, `:38`, `:44`). A successful load stays in `cache`, so the `isMounted` branch cannot run. Remove it. S
 
 ## Tree-shaking / bundle size
 
@@ -25,11 +24,7 @@ Scan of `libs/components/src/lib/stream/` from 2026-09-28. 0 High, 2 Medium, 16 
 
 ## Cleanup
 
-- Low: the four inline `styles` blocks are not in `@layer components` (`stream/consent/stream-consent.component.ts:40`, `stream/error/stream-player-error.component.ts:36`, `stream/loading/stream-player-loading.component.ts:16`, `stream/pip/pip-slot-placeholder.component.ts:36`). Tailwind utilities cannot override them. Wrap each block. S
 - Low: `YoutubePlayerSlotDirective` duplicates `StreamPlayerSlotDirective` plus the YouTube params (`stream/platform/youtube/headless/youtube-player-slot.directive.ts:30-54`). Only a scenario spec uses it, and the other platforms have no equivalent. Remove it or make it a thin host-directive wrapper. M
-- Low: the `STREAM_IMPORTS` JSDoc names an `etStreamPlayerSlot` directive that does not exist (`stream/stream.imports.ts:39-51`). `StreamPlayerSlotDirective` has no selector (`stream/stream-player-slot.directive.ts:39`), and `YoutubePlayerParamsDirective` (also selector-less) is in `STREAM_YOUTUBE_IMPORTS` at `:57`, but the other params directives are not in their barrels. Fix the doc and keep only template-usable entries in the barrels. S
-- Low: `// no-op` bodies and the header comments restate the code (`stream/platform/kick/headless/kick-player.directive.ts:89-105`, `stream/platform/soop/headless/soop-player.directive.ts:99-115`, `stream/platform/dailymotion/headless/dailymotion-player.directive.ts:89-109`). `CAPABILITIES` already says this. Delete them. S
-- Low: `setInputSignal(this.provideSurface.surface as any, ...)` with an eslint-disable (`stream/stream-player-slot.directive.ts:102-103`). Type the call. S
 - Low: `snapToPosition` and `snapTo` duplicate each other (`stream/pip/headless/internals/pip-window-position.ts:77-100`). Two quick snaps start two timers, and the first timer removes the transition in the middle of the second snap. Merge them and cancel the pending timer. S
 
 ## pip internals (second pass)

@@ -7,7 +7,6 @@ const STREAM_SCRIPT_LOADER_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const document = inject(DOCUMENT);
     const cache = new Map<string, Observable<void>>();
-    const mountedScripts = new Set<string>();
     const renderer = injectRenderer();
     const nonce = inject(CSP_NONCE, { optional: true });
 
@@ -17,15 +16,6 @@ const STREAM_SCRIPT_LOADER_DEF = /* @__PURE__ */ defineRootProvider(
       if (cached) return cached;
 
       const obs$ = new Observable<void>((subscriber) => {
-        const isMounted = mountedScripts.has(src);
-
-        if (isMounted) {
-          subscriber.next();
-          subscriber.complete();
-
-          return;
-        }
-
         const script = renderer.createElement('script');
         script.src = src;
         script.async = true;
@@ -35,13 +25,11 @@ const STREAM_SCRIPT_LOADER_DEF = /* @__PURE__ */ defineRootProvider(
         renderer.listen(script, 'load', () => {
           subscriber.next();
           subscriber.complete();
-          mountedScripts.add(src);
         });
 
         renderer.listen(script, 'error', () => {
           cache.delete(src);
           script.remove();
-          mountedScripts.delete(src);
           subscriber.error(
             new RuntimeError(
               STREAM_ERROR_CODES.SCRIPT_LOAD_FAILED,

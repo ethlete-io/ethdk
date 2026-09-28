@@ -14,19 +14,21 @@ import { injectStreamPlayerLoadingConfig } from './stream-player-loading-config'
     '[attr.aria-label]': 'labels().loading',
   },
   styles: `
-    .et-stream-player-loading {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--et-surface-background-solid, inherit);
-      color: var(--et-surface-color-solid, inherit);
-      z-index: 1;
+    @layer components {
+      .et-stream-player-loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--et-surface-background-solid, inherit);
+        color: var(--et-surface-color-solid, inherit);
+        z-index: 1;
 
-      .et-spinner {
-        --et-spinner-color: var(--et-surface-color-muted-solid, currentColor);
-        --et-spinner-track-color: var(--et-surface-color-subtle-solid, currentColor);
+        .et-spinner {
+          --et-spinner-color: var(--et-surface-color-muted-solid, currentColor);
+          --et-spinner-track-color: var(--et-surface-color-subtle-solid, currentColor);
+        }
       }
     }
   `,

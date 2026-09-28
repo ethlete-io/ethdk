@@ -20,9 +20,13 @@ describe('StreamPlayerLoadingComponent', () => {
     expect(spinner).not.toBeNull();
   });
 
-  it('applies position absolute styles', () => {
+  it('ships its styles inside the components cascade layer', () => {
     fixture.detectChanges();
-    const style = window.getComputedStyle(host);
-    expect(style.position).toBe('absolute');
+    const css = Array.from(document.head.querySelectorAll('style'))
+      .map((style) => style.textContent ?? '')
+      .find((text) => text.includes('.et-stream-player-loading'));
+
+    expect(css?.trim().startsWith('@layer components')).toBe(true);
+    expect(css).toContain('position: absolute');
   });
 });
