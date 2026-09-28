@@ -145,12 +145,21 @@ const groupBorderRect = (
 const lineGradientDef = (id: string, fromX: number, toX: number, from: string, neutral: string, to: string) =>
   `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${fromX}" y1="0" x2="${toX}" y2="0"><stop offset="0%" stop-color="${from}" /><stop offset="50%" stop-color="${neutral}" /><stop offset="100%" stop-color="${to}" /></linearGradient>`;
 
+const escapeSvgAttribute = (value: string) =>
+  value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+const escapeSwissColors = (colors: BracketSwissColors | undefined): BracketSwissColors | undefined =>
+  colors &&
+  Object.fromEntries(
+    Object.entries(colors).map(([type, color]) => [type, color === undefined ? color : escapeSvgAttribute(color)]),
+  );
+
 export const drawSwissMan = (dimensions: DrawSwissManDimensions) => {
   const svgParts: string[] = [];
   const gradientDefs: string[] = [];
 
   const roundGeometries = collectSwissRoundGeometries(dimensions.bracketGrid);
-  const colors = dimensions.colors;
+  const colors = escapeSwissColors(dimensions.colors);
 
   for (const roundGeometry of roundGeometries) {
     for (const group of roundGeometry.groups.values()) {
