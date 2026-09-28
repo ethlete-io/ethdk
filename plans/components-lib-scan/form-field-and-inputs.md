@@ -29,7 +29,6 @@ Paths are relative to `libs/components/src/lib/forms/`.
 
 ## otp-input
 
-
 ## tag-input
 
 - Low: a paste-split regex puts the separators into a character class and escapes everything except `-` (`tag-input/headless/tag-input-field.directive.ts:146-148`). With separators `[',', '-', ';']` the class becomes `[\n,-;]`, a range that includes the digits 0-9, so "a1b" pastes as two tags. Escape `-` too, or build an alternation. S

@@ -9,7 +9,6 @@ Scan of `libs/components/src/lib/scheduler/` from 2026-09-28. 0 High, 0 Medium o
 
 ## Drag, resize and selection
 
-
 ## Edit surface lifecycle
 
 - Low: The add surface offers "Add sub-appointment" and "Delete" for an appointment that the consumer never saved (`scheduler/headless/scheduler-edit-surface.directive.ts:97-123`, `scheduler/scheduler-action-add-sub-appointment.directive.ts:36-42`, `scheduler/scheduler-action-delete.directive.ts:36-43`). Delete emits `appointmentsDelete` with an unknown id, and add-sub drops the unsaved parent and saves a child whose `parentId` points at nothing. Disable both while the current appointment is not in `appointments()`. S

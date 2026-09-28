@@ -40,7 +40,6 @@ Scan of `libs/components/src/lib/forms/cascader/` and `libs/components/src/lib/f
 
 ## dropzone - a11y
 
-
 ## dropzone - cleanup
 
 - Low: `ResolvedDropzoneUploadConfig.selectValue` is typed `any` behind an eslint-disable and only the dev-mode shape check reads it (`forms/dropzone/headless/dropzone-upload.ts:92`). Type it `unknown` or drop it from the resolved config and check `createUploadHandle` only. S

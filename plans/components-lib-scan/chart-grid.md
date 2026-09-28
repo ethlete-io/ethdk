@@ -4,7 +4,6 @@ Scan of `libs/components/src/lib/chart` and `libs/components/src/lib/grid` from 
 
 ## chart - bundle size
 
-
 ## chart - line
 
 - Low: two rows with the same Date give the same slice key `String(row.time)` (`chart/headless/line-chart.directive.ts:465`). `@for (slice ...; track slice.key)` then has duplicate keys (NG0955 in dev, wrong DOM reuse). Add the index to the key, as the category branch does. S
