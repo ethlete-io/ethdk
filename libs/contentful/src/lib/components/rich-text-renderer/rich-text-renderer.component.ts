@@ -520,7 +520,14 @@ export class ContentfulRichTextRendererComponent {
           const asset = this.contentIncludesMap().getAsset(assetId);
 
           if (!asset) {
-            throw richTextRendererError('asset_not_found', { assetId, node });
+            if (isDevMode()) {
+              console.warn(
+                'Embedded asset is missing from the includes! The asset will be skipped. Is it unpublished or deleted?',
+                { assetId, node },
+              );
+            }
+
+            break;
           }
 
           const contentType = asset.fields.file.contentType;
@@ -710,7 +717,14 @@ export class ContentfulRichTextRendererComponent {
           const entry = this.contentIncludesMap().getEntry(entryId, ET_CONTENTFUL_ANY_ENTRY_CONTENT_TYPE_SYS_ID);
 
           if (!entry) {
-            throw richTextRendererError('entry_not_found', { entryId, node });
+            if (isDevMode()) {
+              console.warn(
+                'Embedded entry is missing from the includes! The entry will be skipped. Is it unpublished or deleted?',
+                { entryId, node },
+              );
+            }
+
+            break;
           }
 
           const componentType = entry.sys.contentType.sys.id;
@@ -718,11 +732,14 @@ export class ContentfulRichTextRendererComponent {
           const component = this.config.customComponents[componentType];
 
           if (!component) {
-            throw richTextRendererError('custom_component_not_found', {
-              componentType,
-              customComponents: this.config.customComponents,
-              entry,
-            });
+            if (isDevMode()) {
+              console.warn(
+                'No custom component registered for this embedded entry type! The entry will be skipped. Provide one via provideContentfulConfig({ customComponents: … }).',
+                { componentType, customComponents: this.config.customComponents, entry },
+              );
+            }
+
+            break;
           }
 
           const occurrenceKey = 'entry:' + entryId;

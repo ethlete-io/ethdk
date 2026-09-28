@@ -2,7 +2,6 @@ import { Component, OnDestroy, input, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { Block, Inline, Mark, Text } from '@contentful/rich-text-types';
-import { RuntimeError } from '@ethlete/core';
 import {
   ContentfulCollection,
   ContentfulEntry,
@@ -851,35 +850,25 @@ describe('ContentfulRichTextRendererComponent', () => {
       );
     });
 
-    it('throws a RuntimeError when no custom component is registered for the entry content type', () => {
-      let error: unknown;
-
-      try {
-        readRenderCommands({
-          richText: doc(embeddedEntry('e1')),
-          includes: { Entry: [createEntry('e1', 'unknown-type')] },
-        });
-      } catch (e) {
-        error = e;
-      }
-
-      expect(error).toBeInstanceOf(RuntimeError);
-      expect((error as RuntimeError<number>).message).toContain('No custom component found for entry type');
-    });
-
-    it('throws when the referenced asset is not in the includes', () => {
-      expect(() => readRenderCommands({ richText: doc(embeddedAsset('missing')) })).toThrow(/The asset was not found/);
-    });
-
-    it('throws when the referenced entry is not in the includes', () => {
+    it.each([
+      ['an embedded asset missing from the includes', {}, embeddedAsset('missing')],
+      [
+        'an embedded entry missing from the includes',
+        { customComponents: { teaser: StubTeaserComponent } },
+        embeddedEntry('missing'),
+      ],
+      [
+        'an embedded entry with no custom component for its content type',
+        { includes: { Entry: [createEntry('e1', 'unknown-type')] } },
+        embeddedEntry('e1'),
+      ],
+    ])('skips %s with a warning and renders the rest of the document', (_, options, embed) => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => void 0);
 
-      expect(() =>
-        readRenderCommands({
-          customComponents: { teaser: StubTeaserComponent },
-          richText: doc(embeddedEntry('nope')),
-        }),
-      ).toThrow(/The entry was not found/);
+      const { fixture } = setup({ ...options, richText: doc(paragraph('before'), embed, paragraph('after')) });
+
+      expect(renderRoot(fixture).textContent).toBe('beforeafter');
+      expect(warn).toHaveBeenCalled();
 
       warn.mockRestore();
     });

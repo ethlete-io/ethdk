@@ -101,7 +101,7 @@ Marks inside a hyperlink are the exception: the link component receives its text
 
 ## Embedded entries (custom components)
 
-`embedded-entry-block` / `embedded-entry-inline` nodes are rendered by looking up the entry's content-type id in `config.customComponents`. No registered component throws [ET006](#error-codes). A custom component declares **any subset** of these inputs - only the ones it declares are set:
+`embedded-entry-block` / `embedded-entry-inline` nodes are rendered by looking up the entry's content-type id in `config.customComponents`. An entry with no registered component, or one missing from `includes` (unpublished or deleted), is skipped with a dev-mode warning; the rest of the document still renders. A custom component declares **any subset** of these inputs - only the ones it declares are set:
 
 ```ts
 @Component({/* … */})
@@ -122,7 +122,7 @@ The `isContentfulEntryType<T>(entry, type)` guard narrows an entry by its conten
 
 ## Embedded assets
 
-`embedded-asset-block` nodes pick a component by the asset's MIME type: `image/*` → `components.image`, `video/*` → `components.video`, `audio/*` → `components.audio`, anything else → `components.file`. A node whose component is not registered (no `provideContentfulConfig()` in scope, or a `components` override that omits it) is skipped with a dev-mode warning. Each receives the resolved asset as its `asset` input; all four accept both REST (`ContentfulRestAsset`) and GraphQL (`ContentfulGqlAsset`) asset shapes. You can use them standalone, too.
+`embedded-asset-block` nodes pick a component by the asset's MIME type: `image/*` → `components.image`, `video/*` → `components.video`, `audio/*` → `components.audio`, anything else → `components.file`. A node whose component is not registered (no `provideContentfulConfig()` in scope, or a `components` override that omits it) is skipped with a dev-mode warning, as is an asset missing from `includes`. Each receives the resolved asset as its `asset` input; all four accept both REST (`ContentfulRestAsset`) and GraphQL (`ContentfulGqlAsset`) asset shapes. You can use them standalone, too.
 
 ### Images
 
@@ -183,9 +183,6 @@ The rich-text renderer throws `RuntimeError`s with renderer-local codes (`ET` + 
 | ET001 | The value is not a rich-text root (`nodeType: 'document'`).                               |
 | ET002 | An embedded asset node has no asset id.                                                   |
 | ET003 | An embedded entry node has no entry id.                                                   |
-| ET004 | An embedded asset id isn't in `content.includes.Asset`.                                   |
-| ET005 | An embedded entry id isn't in `content.includes.Entry`.                                   |
-| ET006 | No `customComponents` entry is registered for an embedded entry's content type.           |
 | ET007 | A text node's parent node was not found.                                                  |
 | ET008 | A text node's parent is neither an HTML element nor a custom component.                   |
 | ET009 | An internal render update found no rendered node for its command.                         |

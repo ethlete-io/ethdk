@@ -9,11 +9,6 @@ export const RICH_TEXT_RENDERER_ERRORS = {
   asset_id_not_found: 'The asset ID was not found. This node is not supported.',
   entry_id_not_found: 'The entry ID was not found. This node is not supported.',
 
-  asset_not_found: 'The asset was not found. This node is not supported.',
-  entry_not_found: 'The entry was not found. This node is not supported.',
-
-  custom_component_not_found: 'No custom component found for entry type. Please provide one for this type.',
-
   text_parent_not_found: 'The parent node is not found. This structure is not supported.',
   text_parent_wrong_type:
     'The parent node neither a html element nor a custom component. This structure is not supported.',
@@ -29,9 +24,6 @@ const RICH_TEXT_RENDERER_ERROR_CODES: Record<keyof typeof RICH_TEXT_RENDERER_ERR
   rich_text_wrong_type: 1,
   asset_id_not_found: 2,
   entry_id_not_found: 3,
-  asset_not_found: 4,
-  entry_not_found: 5,
-  custom_component_not_found: 6,
   text_parent_not_found: 7,
   text_parent_wrong_type: 8,
   cached_command_not_found: 9,
