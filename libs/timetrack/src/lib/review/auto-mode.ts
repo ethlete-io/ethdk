@@ -28,7 +28,8 @@ const answeredKeys = (answers: readonly AutoModeAnswer[]) =>
 /**
  * What auto mode still has to ask about on a day: each unnamed context and each open stand-in the day
  * holds that holds no answer yet. Nothing on any day but today, and nothing while auto mode is off.
- * A stand-in the user reopened is theirs, so it is left alone until a reset hands it back.
+ * A stand-in the user reopened is theirs, so it is left alone until a reset hands it back, and so is
+ * one whose row the user gave a ticket by hand today.
  */
 export const autoModeAsks = (options: {
   enabled: boolean;
@@ -38,11 +39,17 @@ export const autoModeAsks = (options: {
   /** The contexts a standing rule already answers, which the day still lists but never asks about. */
   ruledContextIds?: ReadonlySet<string>;
   standIns: readonly Pick<StandIn, 'id' | 'state' | 'days' | 'resolutionSource'>[];
+  rows: readonly Pick<ReviewedRow, 'standInId' | 'issueKey' | 'sources'>[];
   answers: readonly AutoModeAnswer[];
 }): AutoModeSubject[] => {
   if (!options.enabled || options.day !== options.today) return [];
 
   const answered = answeredKeys(options.answers);
+  const keyedByHand = new Set(
+    options.rows
+      .filter((row) => row.standInId && row.issueKey && rowFieldSourceOf(row, 'issue') === 'human')
+      .map((row) => row.standInId),
+  );
   const contexts = options.contexts
     .filter((context) => !options.ruledContextIds?.has(context.id))
     .map((context): AutoModeSubject => ({ kind: 'context', contextId: context.id }));
@@ -51,6 +58,7 @@ export const autoModeAsks = (options: {
       (standIn) =>
         standIn.state === 'open' &&
         standIn.days.includes(options.day) &&
+        !keyedByHand.has(standIn.id) &&
         mayAutoWrite(standInResolutionSourceOf(standIn)),
     )
     .map((standIn): AutoModeSubject => ({ kind: 'stand-in', standInId: standIn.id }));

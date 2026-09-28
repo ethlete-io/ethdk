@@ -26,7 +26,7 @@ import {
   withAutoModeRowNames,
 } from './auto-mode';
 import { setRowIssue } from './edits';
-import { AutoModeAnswer, DayReviewEdits, EMPTY_DAY_REVIEW_EDITS } from './model';
+import { AutoModeAnswer, DayReviewEdits, EMPTY_DAY_REVIEW_EDITS, ReviewedRow } from './model';
 import { reviewDay } from './review-day';
 
 const TODAY = '2026-08-11';
@@ -110,13 +110,19 @@ const rowsOf = (edits: DayReviewEdits) => reviewDay({ rows: DAY, edits }).rows;
 const autoPass = (edits: DayReviewEdits) =>
   withAutoModeRowNames({ edits, rows: rowsOf(edits), unattributed: DAY.unattributed });
 
-const asks = (options: { day?: string; answers?: AutoModeAnswer[]; standIns?: ReturnType<typeof openStandIn>[] }) =>
+const asks = (options: {
+  day?: string;
+  answers?: AutoModeAnswer[];
+  standIns?: ReturnType<typeof openStandIn>[];
+  rows?: Pick<ReviewedRow, 'standInId' | 'issueKey' | 'sources'>[];
+}) =>
   autoModeAsks({
     enabled: true,
     day: options.day ?? TODAY,
     today: TODAY,
     contexts: [CONTEXT],
     standIns: options.standIns ?? [],
+    rows: options.rows ?? [],
     answers: options.answers ?? [],
   });
 
@@ -136,7 +142,15 @@ describe('autoModeAsks', () => {
 
   it('asks nothing while auto mode is off', () => {
     expect(
-      autoModeAsks({ enabled: false, day: TODAY, today: TODAY, contexts: [CONTEXT], standIns: [], answers: [] }),
+      autoModeAsks({
+        enabled: false,
+        day: TODAY,
+        today: TODAY,
+        contexts: [CONTEXT],
+        standIns: [],
+        rows: [],
+        answers: [],
+      }),
     ).toEqual([]);
   });
 
@@ -151,6 +165,26 @@ describe('autoModeAsks', () => {
     const reopened = reopenStandIn({ settings: resolved, id: standIn.id });
 
     expect(asks({ standIns: reopened.standIns })).toEqual([{ kind: 'context', contextId: CONTEXT.id }]);
+  });
+
+  it('leaves a stand-in alone once the user keyed its row by hand today', () => {
+    const standIn = openStandIn({ name: 'Journey', day: TODAY, now: at('07:00') });
+    const rows = [{ standInId: standIn.id, issueKey: 'ABC-6', sources: { issue: 'human' as const } }];
+
+    expect(asks({ standIns: [standIn], rows })).toEqual([{ kind: 'context', contextId: CONTEXT.id }]);
+  });
+
+  it('still asks about a stand-in whose row holds an observed or auto issue', () => {
+    const standIn = openStandIn({ name: 'Journey', day: TODAY, now: at('07:00') });
+    const rows = [
+      { standInId: standIn.id, issueKey: 'ABC-6' },
+      { standInId: standIn.id, issueKey: 'ABC-7', sources: { issue: 'auto' as const } },
+    ];
+
+    expect(asks({ standIns: [standIn], rows })).toEqual([
+      { kind: 'context', contextId: CONTEXT.id },
+      { kind: 'stand-in', standInId: standIn.id },
+    ]);
   });
 
   it('skips a stand-in the day does not hold', () => {

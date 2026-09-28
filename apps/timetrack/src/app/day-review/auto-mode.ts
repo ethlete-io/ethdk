@@ -138,6 +138,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       contexts: dayReview.unnamed(),
       ruledContextIds: new Set(dayReview.rulesByContext().keys()),
       standIns: settings.settings().standIns,
+      rows: dayReview.rows(),
       answers,
     });
   };
