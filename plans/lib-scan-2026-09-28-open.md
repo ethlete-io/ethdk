@@ -43,10 +43,13 @@ own open lines; this file lists what needs a user decision and what is still que
 - contentful: `provideContentfulConfig` bundles all five default components. Lazy defaults or an
   opt-in `withContentfulDefaultComponents()` change the public API; the size is not measured.
 
+- select: `compareWith` makes the options sync O(n²). The fix needs a new public value-key input.
+
+- calendar: range strategies can return a range past `max`. Clamp or reject; both break a case
+  (a filtered week pick ends on a disabled day; a clamped 7-day range gets shorter).
+
 ## Queue
 
-- select: mark touched when an outside click or focus leave closes the panel (the cascader got
-  this in b0205c425). Start after the `select.md` agent commits.
 - dropzone: a readonly multi-mode dropzone with files has nothing focusable.
 - timetrack `stillFocused` tail order: real, but no failing test was found.
 - When all agents finish: run `tsc -p libs/components/tsconfig.spec.json`, and the
