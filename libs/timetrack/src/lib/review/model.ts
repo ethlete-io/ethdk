@@ -21,7 +21,6 @@ export type ProposalOverride = {
    */
   standInId?: string;
   description?: string;
-  durationMs?: number;
   /** An explicit review decision. Without one, the row's confidence decides whether it syncs. */
   state?: 'accepted' | 'rejected';
   /** Whether the reviewer took this row off the timeline. See {@link DayReview.hidden}. */

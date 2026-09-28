@@ -1,3 +1,4 @@
+import { formatTimeOfDay } from '../model/duration';
 import { DEFAULT_GIT_FLOW_CONFIG, GitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { NamedTarget } from '../model/attribution';
 import { ActivityBlock } from '../model/block';
@@ -41,10 +42,6 @@ export type MeetingOptions = {
   callNamings?: readonly CallNaming[];
   config?: GitFlowConfig;
 };
-
-const pad = (value: number) => String(value).padStart(2, '0');
-
-const timeOfDay = (date: Date) => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 
 /** The day's calendar occurrences, in start order. */
 export const calendarOccurrences = (events: readonly CollectedEvent[]): CalendarOccurrenceEvent[] =>
@@ -169,7 +166,7 @@ const meetingSummary = (event: CalendarOccurrenceEvent) => {
 export const calendarEvidence = (event: CalendarOccurrenceEvent): Evidence => ({
   kind: 'calendar',
   at: event.at,
-  detail: `calendar event _${event.title}_ ${timeOfDay(event.at)}-${timeOfDay(event.until)}, you ${
+  detail: `calendar event _${event.title}_ ${formatTimeOfDay(event.at)}-${formatTimeOfDay(event.until)}, you ${
     event.accepted ? 'accepted' : 'never answered'
   }`,
   summary: meetingSummary(event),
@@ -223,7 +220,7 @@ export const pickCandidate = (options: {
       {
         kind: 'call',
         at: window.from,
-        detail: `the only meeting you accepted over this call, ${timeOfDay(only.event.at)}-${timeOfDay(
+        detail: `the only meeting you accepted over this call, ${formatTimeOfDay(only.event.at)}-${formatTimeOfDay(
           only.event.until,
         )}`,
         summary: only.event.title,

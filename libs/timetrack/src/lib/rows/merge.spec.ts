@@ -448,6 +448,20 @@ describe('mergeBlocks and a sliver', () => {
     expect(rows[0]?.from).toEqual(AT(120));
   });
 
+  it('folds a named sliver into the band of its own issue', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        attributed({ fromMinute: 0, toMinute: 1, issueKey: 'FIP-1', repoPath: '/a' }),
+        attributed({ fromMinute: 8, toMinute: 9, issueKey: 'FIP-1', repoPath: '/a' }),
+        attributed({ fromMinute: 9, toMinute: 23, issueKey: 'FIP-1', repoPath: '/a' }),
+      ],
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.from).toEqual(AT(0));
+    expect(rows[0]?.observedMs).toBe(16 * 60_000);
+  });
+
   it('drops a named sliver no band of its lane can take', () => {
     const rows = mergeBlocks({
       blocks: [attributed({ fromMinute: 0, toMinute: 1, issueKey: 'FIP-1', repoPath: '/a' })],

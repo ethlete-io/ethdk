@@ -1,3 +1,4 @@
+import { formatTimeOfDay } from '../model/duration';
 import { ActivityBlock } from '../model/block';
 import { Evidence } from '../model/evidence';
 import { ClosedTimerRun, timerRunDurationMs } from '../model/timer';
@@ -28,14 +29,10 @@ export const MIN_PROPOSED_TIMER_MS = 60_000;
 /** Whether a run is long enough to propose a row — see {@link MIN_PROPOSED_TIMER_MS}. */
 export const timerProposesRow = (run: ClosedTimerRun) => timerRunDurationMs(run) >= MIN_PROPOSED_TIMER_MS;
 
-const pad = (value: number) => String(value).padStart(2, '0');
-
-const timeOfDay = (date: Date) => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
-
 const timerEvidence = (run: ClosedTimerRun): Evidence => ({
   kind: 'timer',
   at: run.from,
-  detail: `timer you ran ${timeOfDay(run.from)}-${timeOfDay(run.to)}`,
+  detail: `timer you ran ${formatTimeOfDay(run.from)}-${formatTimeOfDay(run.to)}`,
   ...(run.note ? { summary: run.note } : {}),
 });
 

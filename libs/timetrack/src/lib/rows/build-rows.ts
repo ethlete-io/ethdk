@@ -49,7 +49,7 @@ export type BuildRowsOptions = {
   /** How far a donating repository's time looks for the work it was done for. */
   donate?: Partial<DonateOptions>;
   /** Which projects run behind the day, and the focus that ranks two of them — see `cutBackground`. */
-  cut?: CutOptions;
+  cut?: Omit<CutOptions, 'claimed' | 'round'>;
   /**
    * Each linked worktree mapped to its main checkout, from `linkedWorktreesOf`. A checkout and its
    * worktrees are one attention — see `cutUnwatched`.
@@ -207,9 +207,9 @@ export const buildRows = (
   // foreground of the minutes it runs in, and the cut has to happen before a gap is filled.
   const cut = cutBackground({
     blocks: donated,
+    ...options.cut,
     claimed: (options.calls ?? []).filter((call) => call.countsAsWork),
     round: options.round,
-    ...options.cut,
   });
   const naming = { ...options.meetings, config: options.config, patterns: options.patterns };
   const occurrences = calendarOccurrences(options.events);
@@ -231,7 +231,7 @@ export const buildRows = (
   const filled = fillGaps({
     blocks: cut.blocks,
     events: options.events,
-    claimed: [...unwatched, ...booked.map((call) => call.group)],
+    claimed: [...unwatched, ...booked.map((call) => call.group), ...(options.breaks ?? [])],
     options: options.fill,
   });
   // Attendance is marked after the merge and before the proposal: a band is the unit the user books,

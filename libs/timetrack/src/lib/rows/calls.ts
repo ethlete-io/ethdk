@@ -1,3 +1,4 @@
+import { formatTimeOfDay } from '../model/duration';
 import { ActivityBlock } from '../model/block';
 import { CallWindow, callLabel } from '../model/call';
 import { CallFeatures, DEFAULT_CALL_AFTER_GAP_MS, callFeaturesOf, matchCallNaming } from '../model/call-naming';
@@ -114,14 +115,10 @@ const cutAtMeetings = (options: {
   }, []);
 };
 
-const pad = (value: number) => String(value).padStart(2, '0');
-
-const timeOfDay = (date: Date) => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
-
 const callEvidence = (options: { call: CallWindow; window: TimeWindow }): Evidence => ({
   kind: 'call',
   at: options.window.from,
-  detail: `call in _${callLabel(options.call)}_ ${timeOfDay(options.window.from)}-${timeOfDay(options.window.to)}, ${
+  detail: `call in _${callLabel(options.call)}_ ${formatTimeOfDay(options.window.from)}-${formatTimeOfDay(options.window.to)}, ${
     options.call.countsAsWork ? 'which a rule counts as work' : 'which no rule counts as work'
   }`,
   summary: callLabel(options.call),

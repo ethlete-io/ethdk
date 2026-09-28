@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { AttributionRule } from '../model/attribution';
 import { ActivityBlock, ActivityContext } from '../model/block';
 import { CallWindow } from '../model/call';
-import { CalendarOccurrenceEvent } from '../model/event';
+import { CalendarOccurrenceEvent, CollectedEvent } from '../model/event';
 import { TimetrackProjectLink } from '../model/project-link';
 import { StandIn } from '../model/stand-in';
 import { buildRows } from './build-rows';
@@ -428,5 +428,34 @@ describe('buildRows with a rule naming an issue for work nobody watched', () => 
 
     expect(rows.unnamed[0]?.unattended).toBe(true);
     expect(rows.unnamed[0]?.withheldIssueKey).toBeUndefined();
+  });
+});
+
+describe('buildRows with a break as long as the fillable gap', () => {
+  const WORK = [
+    block({ from: at(9), to: at(9, 30), context: { repoPath: '/dev/a', branch: 'main' } }),
+    block({ from: at(9, 45), to: at(10, 15), context: { repoPath: '/dev/a', branch: 'main' } }),
+  ];
+  const RULE: AttributionRule = {
+    id: 'rule-1',
+    repoPath: '/dev/a',
+    target: { kind: 'issue', issueKey: 'FIP-1' },
+    author: 'user',
+    createdAt: at(8),
+  };
+  const IDLE: CollectedEvent[] = [
+    { at: at(9, 30), source: 'idle', kind: 'idle-start' },
+    { at: at(9, 45), source: 'idle', kind: 'idle-end' },
+  ];
+
+  it('fills no minute of the break', () => {
+    const rows = buildRows({
+      blocks: WORK,
+      events: IDLE,
+      rules: [RULE],
+      breaks: [{ from: at(9, 30), to: at(9, 45) }],
+    });
+
+    expect(rows.filledMs).toBe(0);
   });
 });

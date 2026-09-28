@@ -48,10 +48,7 @@ const withOverride = (row: RowSource, override: ProposalOverride | undefined): R
   if (!override) return { ...row, state: defaultState(row), edited: false, hidden: false };
 
   const changed =
-    override.issueKey !== undefined ||
-    override.standInId !== undefined ||
-    override.description !== undefined ||
-    override.durationMs !== undefined;
+    override.issueKey !== undefined || override.standInId !== undefined || override.description !== undefined;
 
   // An override that names a placeholder names no issue. The form blanks its issue field to say so,
   // and an empty key is not `undefined`, so without this it wins the `??` below and the row reads
@@ -69,7 +66,6 @@ const withOverride = (row: RowSource, override: ProposalOverride | undefined): R
     ...(issueSource === 'human' ? undisputed : row),
     ...named,
     description: override.description ?? row.description,
-    durationMs: override.durationMs ?? row.durationMs,
     state: override.state ?? (changed ? 'edited' : defaultState(row)),
     edited: changed || override.state !== undefined,
     hidden: override.hidden === true,
@@ -381,7 +377,10 @@ export const reviewDay = (options: {
   const replacedMs = options.rows.proposals
     .filter((proposal) => consumed.has(proposal.id))
     .reduce((sum, proposal) => sum + proposal.observedMs, 0);
-  const pinnedMs = tracked.rows.reduce((sum, row) => sum + row.observedMs, 0);
+  const proposalIds = new Set(options.rows.proposals.map((proposal) => proposal.id));
+  const pinnedMs = tracked.rows
+    .filter((pin) => [pin.id, ...pin.replaces, tracked.matched.get(pin.id)].some((id) => !!id && proposalIds.has(id)))
+    .reduce((sum, row) => sum + row.observedMs, 0);
   const unreconciledMs = Math.max(0, replacedMs - pinnedMs);
 
   /**

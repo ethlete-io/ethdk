@@ -195,6 +195,9 @@ const trackOf = (group: WorkGroup) => {
  */
 const streamOf = (group: WorkGroup) => (group.issueKey ? undefined : checkoutOf(group));
 
+/** The band a sliver may fold into: its own issue once one names it, its checkout otherwise. */
+const laneOf = (group: WorkGroup) => (group.issueKey ? trackOf(group) : streamOf(group));
+
 /** The checkout behind a band, whether or not anything has named the band's work. */
 const checkoutOf = (group: WorkGroup) => {
   const context = group.blocks[0]?.context;
@@ -346,13 +349,13 @@ const absorbSlivers = (options: { rows: readonly WorkGroup[]; minBandMs: number;
   rows.forEach((sliver, index) => {
     if (!isSliver(sliver, minBandMs) || taken.has(index)) return;
 
-    const lane = streamOf(sliver);
+    const lane = laneOf(sliver);
 
     if (lane === undefined) return;
 
     const hosts = rows
       .map((row, at) => ({ row, at }))
-      .filter((entry) => entry.at !== index && !taken.has(entry.at) && streamOf(entry.row) === lane)
+      .filter((entry) => entry.at !== index && !taken.has(entry.at) && laneOf(entry.row) === lane)
       .filter((entry) => !isSliver(entry.row, minBandMs))
       .sort((left, right) => distance(sliver, left.row) - distance(sliver, right.row));
 
@@ -368,6 +371,22 @@ const absorbSlivers = (options: { rows: readonly WorkGroup[]; minBandMs: number;
   });
 
   return rows.filter((row, index) => !taken.has(index) && !isSliver(row, minBandMs));
+};
+
+/**
+ * Re-reads a row once it is assembled. A repository rule names no branch, so a row holding two of them
+ * was named before the swap that says the work changed. The key stays as a proposal and stops syncing
+ * on its own — see `syncsWithoutReview`. A branch rule is left alone: it named a branch the row holds,
+ * and the stretch before the swap into it is the start of that very work.
+ */
+const reconsider = (row: WorkGroup): WorkGroup => {
+  if (!row.issueKey || row.confidence === 'weak' || row.ruleScope !== 'repo') return row;
+
+  const branches = new Set(
+    row.blocks.map((block) => block.context.branch).filter((branch): branch is string => !!branch),
+  );
+
+  return branches.size > 1 ? { ...row, confidence: 'weak' } : row;
 };
 
 /**
@@ -393,22 +412,6 @@ const absorbSlivers = (options: { rows: readonly WorkGroup[]; minBandMs: number;
  * A band left under `minBandMs` is then folded into the nearest band of its own lane, or dropped when
  * none can take it - see `absorbSlivers`, which keeps a call's worth of focus flashes out of the day.
  */
-/**
- * Re-reads a row once it is assembled. A repository rule names no branch, so a row holding two of them
- * was named before the swap that says the work changed. The key stays as a proposal and stops syncing
- * on its own — see `syncsWithoutReview`. A branch rule is left alone: it named a branch the row holds,
- * and the stretch before the swap into it is the start of that very work.
- */
-const reconsider = (row: WorkGroup): WorkGroup => {
-  if (!row.issueKey || row.confidence === 'weak' || row.ruleScope !== 'repo') return row;
-
-  const branches = new Set(
-    row.blocks.map((block) => block.context.branch).filter((branch): branch is string => !!branch),
-  );
-
-  return branches.size > 1 ? { ...row, confidence: 'weak' } : row;
-};
-
 export const mergeBlocks = (options: {
   blocks: AttributedBlock[];
   /** Instants no band may be drawn across, whatever the gap rule allows — the day's breaks. */

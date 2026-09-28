@@ -15,11 +15,8 @@ export const DEFAULT_ROUND_OPTIONS: RoundOptions = {
 };
 
 /**
- * The whole increments a duration books. Any part of an increment books the whole of it, because
- * Tempo accepts nothing smaller and a part-increment row cannot be written at all.
- *
- * This is what a row books, never what it observed: `WorklogProposal.observedMs` keeps the raw time.
- * Booking a day therefore claims more than the day observed, by design.
+ * Rounds a duration up to whole increments; any part of an increment counts as the whole of it. A
+ * proposal books its snapped span, which is at least this long.
  */
 export const roundDurationUp = (durationMs: number, options?: Partial<RoundOptions>) => {
   const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options };

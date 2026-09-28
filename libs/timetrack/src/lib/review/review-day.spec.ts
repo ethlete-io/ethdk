@@ -290,6 +290,57 @@ describe('reviewDay', () => {
     expect(review.check.warnings.map((warning) => warning.kind)).not.toContain('stale-edit');
   });
 
+  it('reports drift under an edited row while an edited band beside it holds time of its own', () => {
+    const laneKey = 'repo:/home/tom/dev/example';
+    const band: UnnamedProposal = {
+      id: `unnamed:${laneKey}@${at('11:00').toISOString()}`,
+      from: at('11:00'),
+      to: at('13:00'),
+      durationMs: 120 * MINUTE,
+      observedMs: 120 * MINUTE,
+      laneKey,
+      description: 'unattributed activity',
+      confidence: 'weak',
+      evidence: [],
+      state: 'suggested',
+    };
+    const before = dayRows({
+      proposals: [proposal({ issueKey: 'ABC-1', from: '08:00', to: '10:00', minutes: 120 })],
+      unnamed: [band],
+    });
+    const first = reviewDay({ rows: before });
+    const split = splitRow({ edits: EMPTY_DAY_REVIEW_EDITS, row: rowFor(first, 'ABC-1'), at: at('09:00') });
+    const edits = setRowRange({
+      edits: split,
+      row: first.rows.find((row) => row.id === band.id)!,
+      from: at('11:15'),
+      to: at('12:45'),
+    });
+    const after = dayRows({
+      proposals: [proposal({ issueKey: 'ABC-1', from: '08:00', to: '11:00', minutes: 180 })],
+      unnamed: [band],
+    });
+
+    expect(reviewDay({ rows: after, edits }).unreconciledMs).toBe(60 * MINUTE);
+  });
+
+  it('keeps a later proposal that starts where a split put the cut', () => {
+    const before = dayRows({
+      proposals: [proposal({ issueKey: 'ABC-1', from: '08:00', to: '10:00', minutes: 120 })],
+    });
+    const edits = splitRow({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: reviewDay({ rows: before }).rows[0]!,
+      at: at('09:00'),
+    });
+    const later = proposal({ issueKey: 'ABC-1', from: '09:00', to: '11:00', minutes: 120 });
+    const after = dayRows({
+      proposals: [proposal({ issueKey: 'ABC-1', from: '08:00', to: '10:00', minutes: 120 }), later],
+    });
+
+    expect(reviewDay({ rows: after, edits }).rows.some((row) => row.to >= at('11:00'))).toBe(true);
+  });
+
   it('leaves drift below the tolerance unreported', () => {
     const before = dayRows({
       proposals: [proposal({ issueKey: 'ABC-1', from: '08:00', to: '10:00', minutes: 120 })],

@@ -40,7 +40,7 @@ const withoutOverrides = (overrides: Record<string, ProposalOverride>, ids: read
 };
 
 const pinnedIdFor = (options: { issueKey?: string; from: Date; taken: ReadonlySet<string>; prefix?: string }) => {
-  const base = `${options.prefix ?? ''}${options.issueKey ?? 'unnamed'}@${options.from.toISOString()}`;
+  const base = `${options.prefix ?? 'pin:'}${options.issueKey ?? 'unnamed'}@${options.from.toISOString()}`;
   let id = base;
   let suffix = 2;
 
@@ -54,6 +54,7 @@ const sourcesOf = (row: ReviewedRow) => ({
   description: rowFieldSourceOf(row, 'description'),
 });
 
+/** Keeps a rejection, so splitting or merging a rejected row never puts its time back into the sync. */
 const asPinned = (row: ReviewedRow, replaces: readonly string[]): PinnedRow => ({
   id: row.id,
   replaces: [...replaces],
@@ -72,10 +73,6 @@ const asPinned = (row: ReviewedRow, replaces: readonly string[]): PinnedRow => (
   unattended: row.unattended,
   withheldIssueKey: row.withheldIssueKey,
   sources: sourcesOf(row),
-  /**
-   * A rejection has to survive being split or merged, or restructuring a row somebody had already
-   * thrown out would quietly put its time back into the sync. Anything else re-reviews as `edited`.
-   */
   state: row.state === 'rejected' ? 'rejected' : undefined,
 });
 
@@ -166,7 +163,6 @@ export const setRowDescription = (options: {
     source: options.source,
   });
 
-/** Sets a row's logged duration. `observedMs` stays put: what was observed did not change. */
 /**
  * Sets what a row logs by moving its end, because a row logs the time its band covers — see ADR 0019.
  * A duration that is not a whole increment books the increment it reaches into, the same way a
@@ -437,7 +433,6 @@ export const addManualRow = (options: {
     pinned: [
       ...edits.pinned,
       {
-        // A proposal's id is its issue and start too; sharing one would drop the proposal from the day.
         id: pinnedIdFor({
           prefix: 'manual:',
           issueKey,
@@ -573,7 +568,8 @@ export const removeManualRow = (options: { edits: DayReviewEdits; row: ReviewedR
 /**
  * Combines rows into one. The first row given supplies the issue, the description and the lane, so
  * the caller decides which of them the merged row is about; the clock spans all of them, and the one
- * band logs the whole of what it now covers — a gap between two merged rows included.
+ * band logs the whole of what it now covers — a gap between two merged rows included. A stand-in the
+ * rows disagree about is dropped, and the merge is rejected only when every row was.
  *
  * Fewer than two rows returns the edits unchanged.
  */
@@ -594,10 +590,6 @@ export const mergeRows = (options: { edits: DayReviewEdits; rows: readonly Revie
     id: pinnedIdFor({ issueKey: first.issueKey, from, taken: new Set(kept.map((entry) => entry.id)) }),
     replaces,
     issueKey: first.issueKey,
-    /**
-     * Unlike the issue, a stand-in the rows disagree about is dropped rather than taken from the
-     * first: it names which work the band is, and a merge of two stand-ins is neither of them.
-     */
     standInId: rows.every((row) => row.standInId === first.standInId) ? first.standInId : undefined,
     storyKey: first.storyKey,
     from,
@@ -609,7 +601,6 @@ export const mergeRows = (options: { edits: DayReviewEdits; rows: readonly Revie
     confidence: dominantConfidence(rows),
     evidence: mergeEvidence(rows.map((row) => row.evidence)),
     sources: sourcesOf(first),
-    /** Only a merge of nothing but rejected rows is still a rejection — the rest is time being kept. */
     state: rows.every((row) => row.state === 'rejected') ? 'rejected' : undefined,
   };
 
