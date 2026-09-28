@@ -427,7 +427,7 @@ describe('table feature scenarios: rows', () => {
     expect(icon.getAttribute('aria-label')).toBe('Title already taken');
     expect(icon.getAttribute('role')).toBe('img');
     expect(icon.hasAttribute('aria-hidden')).toBe(false);
-    expect(icon.getAttribute('tabindex')).toBe('0');
+    expect(icon.getAttribute('tabindex')).toBe('-1');
     expect(icon.hasAttribute('title')).toBe(false);
 
     icon.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));

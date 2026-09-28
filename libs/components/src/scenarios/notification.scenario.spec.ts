@@ -247,8 +247,8 @@ describe('notification scenarios', () => {
     const host = stack();
 
     expect(host?.parentElement).toBe(document.body);
-    expect(host?.getAttribute('role')).toBe('log');
-    expect(host?.getAttribute('aria-live')).toBe('polite');
+    expect(host?.hasAttribute('role')).toBe(false);
+    expect(host?.hasAttribute('aria-live')).toBe(false);
     expect(host?.getAttribute('data-position')).toBe('top-end');
     expect(host?.getAttribute('data-et-overlay-layer')).toBe(`${NOTIFICATION_STACK_OVERLAY_LAYER}`);
 
