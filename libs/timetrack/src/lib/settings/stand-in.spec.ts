@@ -11,6 +11,8 @@ import {
   withStandIn,
   withStandInDay,
   withStandInCheckoutAllowed,
+  withStandInParent,
+  withStandInResolutionReset,
   withoutOrphanedStandIns,
   withoutStandIn,
 } from './stand-in';
@@ -397,6 +399,58 @@ describe('stand-in resolution source', () => {
     });
 
     expect(reopenStandIn({ settings, id: 'stand-in-1', source: 'auto' })).toBe(settings);
+  });
+});
+
+describe('withStandInResolutionReset', () => {
+  it('hands a stand-in the user reopened back to auto mode', () => {
+    const resolved = resolveStandIn({
+      settings: settingsWith(),
+      id: 'stand-in-1',
+      issueKey: 'FIP-100',
+      source: 'auto',
+    });
+    const reopened = reopenStandIn({ settings: resolved, id: 'stand-in-1' });
+    const reset = withStandInResolutionReset({ settings: reopened, id: 'stand-in-1' });
+
+    expect(reset.standIns[0]?.resolutionSource).toBeUndefined();
+    expect(
+      resolveStandIn({ settings: reset, id: 'stand-in-1', issueKey: 'FIP-200', source: 'auto' }).standIns[0],
+    ).toEqual(expect.objectContaining({ state: 'resolved', issueKey: 'FIP-200', resolutionSource: 'auto' }));
+  });
+
+  it('leaves a resolved stand-in alone', () => {
+    const resolved = resolveStandIn({ settings: settingsWith(), id: 'stand-in-1', issueKey: 'FIP-100' });
+
+    expect(withStandInResolutionReset({ settings: resolved, id: 'stand-in-1' }).standIns).toEqual(resolved.standIns);
+  });
+});
+
+describe('withStandInParent', () => {
+  it('stores a parent auto mode picked, stamped auto', () => {
+    const settings = withStandInParent({
+      settings: settingsWith(),
+      id: 'stand-in-1',
+      parentKey: 'fip-9',
+      source: 'auto',
+    });
+
+    expect(settings.standIns[0]).toEqual(expect.objectContaining({ parentKey: 'FIP-9', parentSource: 'auto' }));
+  });
+
+  it('keeps a parent the user picked from auto mode', () => {
+    const picked = withStandInParent({ settings: settingsWith(), id: 'stand-in-1', parentKey: 'FIP-9' });
+
+    expect(withStandInParent({ settings: picked, id: 'stand-in-1', parentKey: 'FIP-10', source: 'auto' })).toBe(picked);
+  });
+
+  it('keeps a parent stored without a source from auto mode, and clears it on an empty key', () => {
+    const stored = settingsWith({ standIns: [standIn({ parentKey: 'FIP-9' })] });
+
+    expect(withStandInParent({ settings: stored, id: 'stand-in-1', parentKey: 'FIP-10', source: 'auto' })).toBe(stored);
+    expect(
+      withStandInParent({ settings: stored, id: 'stand-in-1', parentKey: '' }).standIns[0]?.parentKey,
+    ).toBeUndefined();
   });
 });
 

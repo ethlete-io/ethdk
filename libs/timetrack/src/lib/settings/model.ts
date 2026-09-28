@@ -136,6 +136,11 @@ export type TimetrackReasoningSettings = {
    * written in pseudonyms back into real names. See ADR 0013.
    */
   maskedNames: string[];
+  /**
+   * Whether the model runs without a press on each new unnamed band and open stand-in of today. Off
+   * until the user turns it on, and only while `enabled` is on too. See ADR 0035.
+   */
+  autoMode: boolean;
 };
 
 /**
@@ -407,6 +412,7 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
     model: DEFAULT_REASONING_OPTIONS.model,
     language: DEFAULT_REASONING_OPTIONS.language,
     maskedNames: [],
+    autoMode: false,
   },
   nudge: { enabled: true, atMinute: DEFAULT_NUDGE_AT_MINUTE },
   standIn: {

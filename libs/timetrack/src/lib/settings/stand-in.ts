@@ -7,6 +7,7 @@ import {
   openStandIn,
   standInBranches,
   standInDays,
+  standInParentSourceOf,
   standInResolutionSourceOf,
 } from '../model/stand-in';
 import { humanized } from '../ticket/draft';
@@ -416,6 +417,49 @@ export const reopenStandIn = (options: {
     attributionRules: settings.attributionRules.map((rule) =>
       rewritten.includes(rule.id) ? { ...rule, target: { kind: 'stand-in', standInId: id } } : rule,
     ),
+  };
+};
+
+/**
+ * Hands a stand-in the user reopened back to auto mode: its resolution reads as untouched again. Only
+ * an open one; a resolved one goes back through `reopenStandIn`.
+ */
+export const withStandInResolutionReset = (options: {
+  settings: TimetrackSettings;
+  id: string;
+}): TimetrackSettings => ({
+  ...options.settings,
+  standIns: options.settings.standIns.map((entry) => {
+    if (entry.id !== options.id || entry.state !== 'open' || entry.resolutionSource === undefined) return entry;
+
+    const { resolutionSource: _resolutionSource, ...kept } = entry;
+
+    return kept;
+  }),
+});
+
+/**
+ * Stores the parent the stand-in's ticket is filed under, stamped with who picked it. An `auto` write
+ * to a parent the user picked changes nothing. An empty key clears it.
+ */
+export const withStandInParent = (options: {
+  settings: TimetrackSettings;
+  id: string;
+  parentKey: string;
+  source?: WriteSource;
+}): TimetrackSettings => {
+  const source = options.source ?? 'human';
+  const parentKey = options.parentKey.trim().toUpperCase();
+  const standIn = options.settings.standIns.find((entry) => entry.id === options.id);
+
+  if (!standIn || !mayWrite({ source, current: standInParentSourceOf(standIn) })) return options.settings;
+
+  const { parentKey: _parentKey, parentSource: _parentSource, ...kept } = standIn;
+  const next: StandIn = parentKey ? { ...kept, parentKey, parentSource: source } : kept;
+
+  return {
+    ...options.settings,
+    standIns: options.settings.standIns.map((entry) => (entry.id === options.id ? next : entry)),
   };
 };
 

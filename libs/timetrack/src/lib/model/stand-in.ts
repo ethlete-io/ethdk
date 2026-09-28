@@ -78,6 +78,10 @@ export type StandIn = {
    * without it was never touched. See `FieldSource`.
    */
   resolutionSource?: FieldSource;
+  /** The issue the ticket for it is filed under, once auto mode or the user picked one. */
+  parentKey?: string;
+  /** Who picked `parentKey`. A parent stored without it was picked by the user. */
+  parentSource?: FieldSource;
   /**
    * The local day keys that hold bands of it, oldest first.
    *
@@ -92,6 +96,10 @@ export type StandIn = {
 /** Who decided whether the stand-in is resolved. See {@link StandIn.resolutionSource}. */
 export const standInResolutionSourceOf = (standIn: Pick<StandIn, 'state' | 'resolutionSource'>): FieldSource =>
   storedSourceOf({ set: standIn.state === 'resolved', source: standIn.resolutionSource });
+
+/** Who picked the stand-in's parent. See {@link StandIn.parentSource}. */
+export const standInParentSourceOf = (standIn: Pick<StandIn, 'parentKey' | 'parentSource'>): FieldSource =>
+  storedSourceOf({ set: !!standIn.parentKey, source: standIn.parentSource });
 
 const standInId = (options: { now: Date; key?: string }) => {
   const key = (options.key ?? '')

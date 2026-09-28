@@ -62,7 +62,14 @@ describe('parseTimetrackSettings', () => {
         subjectField: 'customfield_10057',
         initialStatus: 'In Progress',
       },
-      reasoning: { enabled: true, command: 'codex', model: 'gpt-5', language: 'Deutsch', maskedNames: ['Fifagg'] },
+      reasoning: {
+        enabled: true,
+        command: 'codex',
+        model: 'gpt-5',
+        language: 'Deutsch',
+        maskedNames: ['Fifagg'],
+        autoMode: false,
+      },
       nudge: { enabled: false, atMinute: 18 * 60 },
       standIn: { overdueAfterWorkdays: 3, overdueAfterMs: 2 * 3_600_000 },
       exclusionRules: [{ kind: 'title-pattern', pattern: 'therapy' }],
@@ -171,6 +178,7 @@ describe('parseTimetrackSettings', () => {
       model: '',
       language: '',
       maskedNames: [],
+      autoMode: false,
     });
     expect(parseTimetrackSettings({ reasoning: { command: 'claude' } }).reasoning.enabled).toBe(false);
   });
@@ -318,6 +326,19 @@ describe('parseTimetrackSettings', () => {
     });
 
     expect(settings.standIns.map((standIn) => standIn.resolutionSource)).toEqual(['auto', undefined]);
+  });
+
+  it('reads back a stand-in parent and who picked it', () => {
+    const settings = parseTimetrackSettings({
+      standIns: [{ id: 'stand-in-1', name: 'Journey', state: 'open', parentKey: 'abc-9', parentSource: 'auto' }],
+    });
+
+    expect(settings.standIns[0]).toEqual(expect.objectContaining({ parentKey: 'ABC-9', parentSource: 'auto' }));
+  });
+
+  it('reads auto mode as off unless it was turned on', () => {
+    expect(parseTimetrackSettings({}).reasoning.autoMode).toBe(false);
+    expect(parseTimetrackSettings({ reasoning: { autoMode: true } }).reasoning.autoMode).toBe(true);
   });
 
   it('reads back the branches a placeholder held, so a resolve after a restart still cuts the rule back', () => {

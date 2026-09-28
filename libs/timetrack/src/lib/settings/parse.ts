@@ -162,6 +162,7 @@ const asStandIn = (value: unknown, index: number): StandIn | null => {
 
   const issueKey = asText(raw['issueKey']).toUpperCase();
   const projectKey = asText(raw['projectKey']).toUpperCase();
+  const parentKey = asText(raw['parentKey']).toUpperCase();
 
   const resolvedRuleIds = asTextList(raw['resolvedRuleIds']);
   const heldOn = asTextList(raw['heldOn']);
@@ -181,6 +182,7 @@ const asStandIn = (value: unknown, index: number): StandIn | null => {
     /** Without it a resolve read back from disk has nothing to point back, so the undo puts back nothing. */
     resolvedRuleIds: resolvedRuleIds.length ? resolvedRuleIds : undefined,
     resolutionSource: asFieldSource(raw['resolutionSource']),
+    ...(parentKey ? { parentKey, parentSource: asFieldSource(raw['parentSource']) } : {}),
     days: asTextList(raw['days']).sort(),
     author: asAuthor(raw['author']),
     createdAt: asDate(raw['createdAt']),
@@ -343,6 +345,7 @@ const asReasoning = (value: unknown): TimetrackReasoningSettings => {
     model: asText(raw['model']),
     language: asText(raw['language']),
     maskedNames: asTextList(raw['maskedNames']),
+    autoMode: raw['autoMode'] === true,
   };
 };
 
