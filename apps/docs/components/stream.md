@@ -160,7 +160,7 @@ The `Mixed` story demonstrates a PiP grid mixing 16∶9 and 9∶16 players.
 
 Every string the built-in chrome renders comes from `STREAM_LABELS` - the consent gate's
 heading/description/accept, the failure overlay's heading/description/retry, the PiP placeholder and
-its back button, the PiP window's close and focus controls and its title bar, the loading overlay's announcement, and
+its back button, the PiP window's close, focus and grid-toggle controls and its title bar, the loading overlay's announcement, and
 the `title` on iframes the library creates:
 
 ```ts

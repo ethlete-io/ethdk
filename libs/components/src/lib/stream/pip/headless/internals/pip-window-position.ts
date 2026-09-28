@@ -49,7 +49,7 @@ export type PipWindowPosition = {
   expand(): void;
   checkAndCollapse(): void;
   snapToViewport(): void;
-  animateExit(callback: () => void): void;
+  animateExit(callback: (resetWindow: () => void) => void): void;
   startModeTransition(duration?: number): void;
 };
 

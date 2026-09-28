@@ -122,7 +122,7 @@ export const animateScaleFadeIn = (el: HTMLElement) => {
   );
 };
 
-export const animateScaleFadeOut = (el: HTMLElement, config: { onFinish: () => void }) => {
+export const animateScaleFadeOut = (el: HTMLElement, config: { onFinish: (reset: () => void) => void }) => {
   const anim = el.animate(
     [
       { transform: 'scale(1)', opacity: '1' },
@@ -130,7 +130,7 @@ export const animateScaleFadeOut = (el: HTMLElement, config: { onFinish: () => v
     ],
     { duration: motionDuration(160, el), easing: 'ease-in', fill: 'forwards' },
   );
-  anim.onfinish = () => config.onFinish();
+  anim.onfinish = () => config.onFinish(() => anim.cancel());
 };
 
 export type NewPipAnimationConfig = {

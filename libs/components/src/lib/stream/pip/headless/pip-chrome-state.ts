@@ -1,5 +1,6 @@
 import { Signal, WritableSignal, computed, effect, linkedSignal, signal, untracked } from '@angular/core';
 import { injectPipManager } from '../../pip-manager';
+import { injectStreamLabels } from '../../stream-labels';
 import { StreamPipEntry, StreamPlayerId } from '../../stream-manager.types';
 import { PipWindowComponent } from '../pip-window.component';
 
@@ -69,6 +70,7 @@ export type PipChromeState = {
 
 export const createPipChromeState = (): PipChromeState => {
   const pipManager = injectPipManager();
+  const labels = injectStreamLabels();
 
   const featuredId = signal<StreamPlayerId | null>(null);
   const multiView = signal(false);
@@ -129,7 +131,7 @@ export const createPipChromeState = (): PipChromeState => {
 
   const hasMultiplePips = computed(() => allPips().length > 1);
   const showBackButton = computed(() => !!featuredPip()?.onBack && !multiView());
-  const gridToggleLabel = computed(() => (multiView() ? 'Single view' : 'Grid view'));
+  const gridToggleLabel = computed(() => (multiView() ? labels().pipSingleView : labels().pipGridView));
 
   const featuredAspectRatio = computed(() => featuredPip()?.aspectRatio ?? 16 / 9);
 
@@ -172,6 +174,8 @@ export const createPipChromeState = (): PipChromeState => {
 
   const close = (event: Event, pipWindow: PipWindowComponent | undefined) => {
     event.stopPropagation();
+    if (untracked(isExiting)) return;
+
     const pips = untracked(() => allPips());
 
     if (!pipWindow) {
@@ -181,9 +185,10 @@ export const createPipChromeState = (): PipChromeState => {
     }
 
     isExiting.set(true);
-    pipWindow.posState.animateExit(() => {
+    pipWindow.posState.animateExit((resetWindow) => {
       for (const pip of pips) pipManager.pipDeactivate(pip.playerId, { animation: 'scaleFadeIn' });
       isExiting.set(false);
+      if (untracked(allPips).length) resetWindow();
     });
   };
 

@@ -42,6 +42,10 @@ export type StreamLabels = {
   pipFocus: string;
   /** Accessible label for the PiP window's title bar, which the arrow keys move and Shift+arrow keys resize. */
   pipMove: string;
+  /** Accessible label and tooltip for the PiP window's toggle that switches to the grid of all streams. */
+  pipGridView: string;
+  /** Accessible label and tooltip for the PiP window's toggle that switches back to one stream. */
+  pipSingleView: string;
 };
 
 /** The built-in English labels. */
@@ -62,6 +66,8 @@ export const DEFAULT_STREAM_LABELS: StreamLabels = {
   pipClose: 'Close',
   pipFocus: 'Focus',
   pipMove: 'Picture-in-picture window, move it with the arrow keys and resize it with Shift and the arrow keys',
+  pipGridView: 'Grid view',
+  pipSingleView: 'Single view',
 };
 
 const STREAM_LABELS_DEF = /* @__PURE__ */ defineLabels<StreamLabels>('STREAM_LABELS', DEFAULT_STREAM_LABELS);
