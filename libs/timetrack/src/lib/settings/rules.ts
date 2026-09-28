@@ -64,11 +64,17 @@ export const DEFAULT_TRANSIENT_APPS = [
  * user took back. Taking one back beats both lists, so the panel's control always has an effect.
  */
 export const effectiveNoWorkContextApps = (settings: TimetrackSettings) => {
-  const held = new Set(settings.holdsWorkApps.map((id) => id.toLowerCase()));
+  const seen = new Set(settings.holdsWorkApps.map((id) => id.toLowerCase()));
 
-  return [...new Set([...DEFAULT_NO_WORK_CONTEXT_APPS, ...settings.noWorkContextApps])].filter(
-    (id) => !held.has(id.toLowerCase()),
-  );
+  return [...DEFAULT_NO_WORK_CONTEXT_APPS, ...settings.noWorkContextApps].filter((id) => {
+    const key = id.toLowerCase();
+
+    if (seen.has(key)) return false;
+
+    seen.add(key);
+
+    return true;
+  });
 };
 
 /**

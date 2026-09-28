@@ -63,6 +63,12 @@ describe('effectiveNoWorkContextApps', () => {
     expect(apps).toContain('com.microsoft.teams');
   });
 
+  it('repeats no application the user wrote in another case than the shipped list', () => {
+    const apps = effectiveNoWorkContextApps(settingsWith({ noWorkContextApps: ['Spotify'] }));
+
+    expect(apps.filter((app) => app.toLowerCase() === 'spotify')).toEqual(['spotify']);
+  });
+
   it('reads the taking back whatever case the user wrote it in', () => {
     expect(effectiveNoWorkContextApps(settingsWith({ holdsWorkApps: ['SPOTIFY'] }))).not.toContain('spotify');
   });

@@ -491,6 +491,27 @@ describe('parseTimetrackSettings', () => {
     expect(settings.callNamings[0]?.target).toEqual({ kind: 'stand-in', standInId: 'si-1' });
   });
 
+  it('holds a hand-edited call naming weekday and start minute inside a week and a day', () => {
+    const settings = parseTimetrackSettings({
+      callNamings: [
+        { appId: 'com.hnc.Discord', weekday: 9, startMinute: 5000, target: { kind: 'issue', issueKey: 'ABC-1' } },
+        { appId: 'com.hnc.Discord', weekday: -2, startMinute: -30, target: { kind: 'issue', issueKey: 'ABC-2' } },
+      ],
+    });
+
+    expect(settings.callNamings.map(({ weekday, startMinute }) => ({ weekday, startMinute }))).toEqual([
+      { weekday: 6, startMinute: 24 * 60 - 1 },
+      { weekday: 0, startMinute: 0 },
+    ]);
+  });
+
+  it('keeps one background project for keys that differ only in case', () => {
+    expect(parseTimetrackSettings({ backgroundProjects: ['abc', 'ABC', 'def'] }).backgroundProjects).toEqual([
+      'ABC',
+      'DEF',
+    ]);
+  });
+
   it('keeps the shipped rules unless the document says otherwise', () => {
     expect(parseTimetrackSettings({}).keepDefaultExclusionRules).toBe(true);
     expect(parseTimetrackSettings({ keepDefaultExclusionRules: false }).keepDefaultExclusionRules).toBe(false);

@@ -19,6 +19,11 @@ describe('carriesCredentialsSafely', () => {
     expect(carriesCredentialsSafely('http://[::1]:47713/')).toBe(true);
   });
 
+  it('refuses a host typed with userinfo, which sends the request to the host after the @', () => {
+    expect(carriesCredentialsSafely('https://team.atlassian.net@other.host')).toBe(false);
+    expect(carriesCredentialsSafely('https://user:pass@team.atlassian.net')).toBe(false);
+  });
+
   it('refuses anything that is not a URL, and any other scheme', () => {
     expect(carriesCredentialsSafely('team.atlassian.net')).toBe(false);
     expect(carriesCredentialsSafely('')).toBe(false);

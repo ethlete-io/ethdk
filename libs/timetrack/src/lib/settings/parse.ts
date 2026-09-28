@@ -44,6 +44,8 @@ const asDate = (value: unknown) => {
   return Number.isNaN(at.getTime()) ? new Date(0) : at;
 };
 
+const MAX_WEEKDAY = 6;
+
 const asWholeNumber = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value) ? Math.trunc(value) : undefined;
 
@@ -235,13 +237,11 @@ const asProjectLink = (value: unknown, index: number): TimetrackProjectLink | nu
 
   if (!path || !target) return null;
 
-  const createdAt = new Date(typeof raw['createdAt'] === 'number' ? raw['createdAt'] : asText(raw['createdAt']));
-
   return {
     id: asText(raw['id']) || `link-${index}`,
     path,
     target,
-    createdAt: Number.isNaN(createdAt.getTime()) ? new Date(0) : createdAt,
+    createdAt: asDate(raw['createdAt']),
   };
 };
 
@@ -259,13 +259,11 @@ const asMeetingNaming = (value: unknown): MeetingNaming | null => {
 
   if (!seriesKey || !issueKey) return null;
 
-  const createdAt = new Date(typeof raw['createdAt'] === 'number' ? raw['createdAt'] : asText(raw['createdAt']));
-
   return {
     seriesKey,
     issueKey,
     title: asText(raw['title']),
-    createdAt: Number.isNaN(createdAt.getTime()) ? new Date(0) : createdAt,
+    createdAt: asDate(raw['createdAt']),
   };
 };
 
@@ -286,18 +284,19 @@ const asCallNaming = (value: unknown): CallNaming | null => {
 
   if (!appId || !target) return null;
 
-  const createdAt = new Date(typeof raw['createdAt'] === 'number' ? raw['createdAt'] : asText(raw['createdAt']));
   const after = asText(raw['after']);
+  const weekday = asWholeNumber(raw['weekday']);
+  const startMinute = asWholeNumber(raw['startMinute']);
 
   return {
     appId,
-    weekday: asWholeNumber(raw['weekday']) ?? 0,
+    weekday: weekday === undefined ? 0 : Math.min(MAX_WEEKDAY, Math.max(0, weekday)),
     durationBand: asText(raw['durationBand']),
     ...(after ? { after } : {}),
-    startMinute: asWholeNumber(raw['startMinute']) ?? 0,
+    startMinute: startMinute === undefined ? 0 : clampMinuteOfDay(startMinute),
     target,
     label: asText(raw['label']),
-    createdAt: Number.isNaN(createdAt.getTime()) ? new Date(0) : createdAt,
+    createdAt: asDate(raw['createdAt']),
   };
 };
 
@@ -418,11 +417,6 @@ const asTicket = (value: unknown): TimetrackTicketSettings => {
 };
 
 /**
- * Reads a stored settings document, falling back to the default for every field it cannot make sense
- * of. Nothing here throws: a document written by an older version, or one a hand-edit broke, must leave
- * the app usable rather than refusing to start — and the fields it does understand still apply.
- */
-/**
  * Reads the stored document back, and sweeps the placeholders it holds that nothing names any more.
  *
  * The sweep is here rather than at a call site because a dead placeholder is a property of the
@@ -431,6 +425,11 @@ const asTicket = (value: unknown): TimetrackTicketSettings => {
 export const parseTimetrackSettings = (raw: unknown): TimetrackSettings =>
   withoutOrphanedStandIns(readTimetrackSettings(raw));
 
+/**
+ * Falls back to the default for every field it cannot make sense of. Nothing here throws: a document
+ * written by an older version, or one a hand-edit broke, must leave the app usable rather than refusing
+ * to start — and the fields it does understand still apply.
+ */
 const readTimetrackSettings = (raw: unknown): TimetrackSettings => {
   const document = asRecord(raw);
   const jira = asRecord(document['jira']);
@@ -459,7 +458,7 @@ const readTimetrackSettings = (raw: unknown): TimetrackSettings => {
     keepDefaultExclusionRules: document['keepDefaultExclusionRules'] !== false,
     gitScanRoots: asTextList(document['gitScanRoots']),
     favoriteProjects: asFavoriteProjects(document),
-    backgroundProjects: asTextList(document['backgroundProjects']).map((key) => key.toUpperCase()),
+    backgroundProjects: [...new Set(asTextList(document['backgroundProjects']).map((key) => key.toUpperCase()))],
     meetingNamings: asMeetingNamings(document['meetingNamings']),
     callNamings: asCallNamings(document['callNamings']),
     attributionRules: asAttributionRules(document['attributionRules']),

@@ -5,7 +5,8 @@
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', '::1', '[::1]', 'localhost']);
 
 /**
- * Whether a URL may carry a credential: `https` anywhere, plain `http` on loopback alone.
+ * Whether a URL may carry a credential: `https` anywhere, plain `http` on loopback alone, and never a
+ * URL with userinfo, since `team.atlassian.net@other.host` is a request to `other.host`.
  *
  * The rule is the host transport's rule (`is_private_enough` in `http.rs`). A provider client has to
  * apply it before it builds the authorization header, so that a host typed with `http://` is refused
@@ -20,6 +21,7 @@ export const carriesCredentialsSafely = (url: string) => {
     return false;
   }
 
+  if (parsed.username || parsed.password) return false;
   if (parsed.protocol === 'https:') return true;
 
   return parsed.protocol === 'http:' && LOOPBACK_HOSTS.has(parsed.hostname);
