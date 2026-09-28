@@ -1,5 +1,5 @@
 import { Bracket, BracketMatch } from './bracket';
-import { BracketPickSet, BracketSlotResolutionPolicy, resolveBracketSlot } from './resolve-bracket-slot';
+import { BracketPickSet, BracketSlotResolutionPolicy, createBracketSlotResolver } from './resolve-bracket-slot';
 
 export type BracketPickMigrationOptions = BracketSlotResolutionPolicy & {
   bracket: Bracket<unknown, unknown>;
@@ -98,18 +98,15 @@ export const migrateBracketPicks = (options: BracketPickMigrationOptions): Brack
     const strandedHere = new Set<string>();
     const sidesOf = (matchId: string) => sidesByMatchId.get(matchId) ?? [null, null];
 
-    for (const match of round) {
-      const resolve = (side: 'home' | 'away') =>
-        resolveBracketSlot({
-          bracket,
-          picks: settled,
-          matchId: match.id,
-          side,
-          realParticipantOutranksPick: options.realParticipantOutranksPick,
-          keepPickWhileFeederSideIsOpen: options.keepPickWhileFeederSideIsOpen,
-        });
+    const resolve = createBracketSlotResolver({
+      bracket,
+      picks: settled,
+      realParticipantOutranksPick: options.realParticipantOutranksPick,
+      keepPickWhileFeederSideIsOpen: options.keepPickWhileFeederSideIsOpen,
+    });
 
-      sidesByMatchId.set(match.id, [resolve('home'), resolve('away')]);
+    for (const match of round) {
+      sidesByMatchId.set(match.id, [resolve(match.id, 'home'), resolve(match.id, 'away')]);
     }
 
     for (const match of round) {

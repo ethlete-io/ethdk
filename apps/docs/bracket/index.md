@@ -29,7 +29,9 @@ const bracket = createBracket(source, {
 });
 ```
 
-Sources without either form keep the legacy positional relation behavior.
+Sources without either form keep the legacy positional relation behavior. The choice is made for the
+whole bracket: once any match carries a `match-outcome` slot, every match is linked from the declared
+graph, and a match without provenance gets no relation.
 
 A round whose matches are not drawn yet is linked over: its neighbours relate to each other, and the
 round still renders as an empty column. A `'mirrored'` layout folds up to the first round it cannot

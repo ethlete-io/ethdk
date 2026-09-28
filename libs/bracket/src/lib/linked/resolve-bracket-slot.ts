@@ -51,9 +51,9 @@ type ResolveWalk = {
   picks: BracketPickSet;
   realParticipantOutranksPick: (match: BracketMatch<unknown, unknown>) => boolean;
   keepPickWhileFeederSideIsOpen: boolean;
-  visited: Set<string>;
+  visitDepths: Map<string, number>;
   resolved: Map<string, string | null>;
-  cycleHits: number;
+  shallowestCycleHit: number;
 };
 
 const resolveMatchOutcome = (options: { walk: ResolveWalk; source: BracketSlotSource }): string | null => {
@@ -135,9 +135,10 @@ const resolveSlot = (options: {
 }): string | null => {
   const { walk, match, side } = options;
   const visitKey = `${match.id}:${side}`;
+  const openDepth = walk.visitDepths.get(visitKey);
 
-  if (walk.visited.has(visitKey)) {
-    walk.cycleHits++;
+  if (openDepth !== undefined) {
+    walk.shallowestCycleHit = Math.min(walk.shallowestCycleHit, openDepth);
 
     return null;
   }
@@ -146,21 +147,24 @@ const resolveSlot = (options: {
 
   if (resolved !== undefined) return resolved;
 
-  walk.visited.add(visitKey);
+  const depth = walk.visitDepths.size;
+  const shallowestCycleHitBefore = walk.shallowestCycleHit;
 
-  const cycleHitsBefore = walk.cycleHits;
+  walk.visitDepths.set(visitKey, depth);
+  walk.shallowestCycleHit = Infinity;
 
   try {
     const result = resolveSlotOccupant({ walk, match, side });
 
-    // Only a result the visit guard never interfered with is a function of the slot alone. One that
-    // did hit the guard depends on the path that reached it, so caching it would answer a later path
-    // with a cycle's `null`.
-    if (walk.cycleHits === cycleHitsBefore) walk.resolved.set(visitKey, result);
+    // A result whose cycle guard only fired on this slot or below it is a function of the slot alone.
+    // One that hit a slot above it depends on the path that reached it, so caching it would answer a
+    // later path with a cycle's `null`.
+    if (walk.shallowestCycleHit >= depth) walk.resolved.set(visitKey, result);
 
     return result;
   } finally {
-    walk.visited.delete(visitKey);
+    walk.visitDepths.delete(visitKey);
+    walk.shallowestCycleHit = Math.min(walk.shallowestCycleHit, shallowestCycleHitBefore);
   }
 };
 
@@ -171,14 +175,27 @@ const createResolveWalk = (
   picks: options.picks,
   realParticipantOutranksPick: options.realParticipantOutranksPick ?? (() => false),
   keepPickWhileFeederSideIsOpen: options.keepPickWhileFeederSideIsOpen ?? false,
-  visited: new Set(),
+  visitDepths: new Map(),
   resolved: new Map(),
-  cycleHits: 0,
+  shallowestCycleHit: Infinity,
 });
 
-/** Who the viewer's own picks put in a slot, or `null` while their picks do not reach it. */
-export const resolveBracketSlot = (options: ResolveBracketSlotOptions): string | null => {
-  const match = options.bracket.matches.get(options.matchId as BracketMatchId);
+/**
+ * @internal A {@link resolveBracketSlot} that shares one memo across its calls. Valid only while the
+ * picks it was created with do not change.
+ */
+export const createBracketSlotResolver = (
+  options: BracketSlotResolutionPolicy & { bracket: Bracket<unknown, unknown>; picks: BracketPickSet },
+) => {
+  const walk = createResolveWalk(options);
 
-  return match ? resolveSlot({ walk: createResolveWalk(options), match, side: options.side }) : null;
+  return (matchId: string, side: MatchParticipantSide): string | null => {
+    const match = options.bracket.matches.get(matchId as BracketMatchId);
+
+    return match ? resolveSlot({ walk, match, side }) : null;
+  };
 };
+
+/** Who the viewer's own picks put in a slot, or `null` while their picks do not reach it. */
+export const resolveBracketSlot = (options: ResolveBracketSlotOptions): string | null =>
+  createBracketSlotResolver(options)(options.matchId, options.side);

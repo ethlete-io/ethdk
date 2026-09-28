@@ -237,4 +237,33 @@ describe('migrateBracketPicks', () => {
       m4: 'a',
     });
   });
+
+  it('resolves each slot of a round once, however many sides of the round share it', () => {
+    const length = 10;
+    const source = sourceOf(
+      Array.from({ length }, (_, index) => `r${index}`),
+      Array.from({ length }, (_, index) =>
+        index === 0
+          ? match({ id: 'm0', roundId: 'r0', home: 'a', away: 'b' })
+          : match({
+              id: `m${index}`,
+              roundId: `r${index}`,
+              homeSource: winnerOf(`m${index - 1}`),
+              awaySource: loserOf(`m${index - 1}`),
+            }),
+      ),
+    );
+
+    let seedVisits = 0;
+
+    const migration = migrate(source, Object.fromEntries(Array.from({ length }, (_, index) => [`m${index}`, 'a'])), {
+      realParticipantOutranksPick: () => {
+        seedVisits++;
+        return false;
+      },
+    });
+
+    expect(migration.pickByMatchId[`m${length - 1}`]).toBe('a');
+    expect(seedVisits).toBe(length * 2);
+  });
 });

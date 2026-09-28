@@ -73,7 +73,6 @@ export const getAvailableSwissGroupsForRound = (roundNumber: number, totalMatche
   const advanceWins = SWISS_ADVANCE_WINS;
   const eliminateLosses = SWISS_ELIMINATE_LOSSES;
 
-  // Cache factorial calculations
   const getFactorial = (n: number): number => {
     if (n <= 1) return 1;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -84,13 +83,11 @@ export const getAvailableSwissGroupsForRound = (roundNumber: number, totalMatche
     return result;
   };
 
-  // Pre-calculate roundFactorial
   const roundFactorial = getFactorial(roundNumber);
 
   let totalCombinations = 0;
   const validGroups: { wins: number; losses: number; combinations: number }[] = [];
 
-  // Single loop to gather valid groups and total combinations
   for (let wins = roundNumber; wins >= 0; wins--) {
     const losses = roundNumber - wins;
     const remainingGames = advanceWins + eliminateLosses - (wins + losses) - 1;
@@ -104,7 +101,6 @@ export const getAvailableSwissGroupsForRound = (roundNumber: number, totalMatche
     validGroups.push({ wins, losses, combinations });
   }
 
-  // Create final groups with calculated proportions
   return validGroups.map(({ wins, losses, combinations }) => ({
     id: `${wins}-${losses}` as BracketRoundSwissGroupId,
     name: `${wins}-${losses}`,

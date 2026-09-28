@@ -151,6 +151,32 @@ describe('resolveBracketSlot, shared feeders', () => {
 
     expect(matchWinnerCalls).toBeLessThan(length * 4);
   });
+
+  it('still walks once per slot when a cycle closes below the shared feeders', () => {
+    const length = 20;
+    const cyclicSource = rematchChain(length);
+    cyclicSource.matches[0] = { ...cyclicSource.matches[0]!, home: null, homeSource: matchOutcome('m0', 'winner') };
+    const bracket = createBracket(cyclicSource, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT });
+
+    let matchWinnerCalls = 0;
+    const countingPicks: BracketPickSet = {
+      matchWinner: () => {
+        matchWinnerCalls++;
+        return 'b';
+      },
+      standingRank: () => null,
+    };
+
+    resolveBracketSlot({
+      bracket,
+      picks: countingPicks,
+      matchId: `m${length - 1}`,
+      side: 'home',
+      keepPickWhileFeederSideIsOpen: true,
+    });
+
+    expect(matchWinnerCalls).toBeLessThan(length * 4);
+  });
 });
 
 /** Two seeded pairs into a semi-final each, both semis already carrying a real pairing, into a final. */
