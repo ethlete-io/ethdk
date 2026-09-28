@@ -51,7 +51,7 @@ export class MultiLanguageRichTextEditorDirective implements FormValueControl<Mu
   public totalCount = computed(() => this.languages().length);
 
   /** Any language holds content (used e.g. for form-field label float). */
-  public hasValue = computed(() => Object.values(this.value()).some((markdown) => markdown.trim().length > 0));
+  public hasValue = computed(() => Object.values(this.value()).some((markdown) => (markdown ?? '').trim().length > 0));
 
   constructor() {
     effect(() => {

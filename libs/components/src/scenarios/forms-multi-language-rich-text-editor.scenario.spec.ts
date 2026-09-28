@@ -55,7 +55,7 @@ const toolbarLabels = (root: ParentNode) =>
 const languageItems = () =>
   Array.from(document.querySelectorAll<HTMLElement>('et-menu-radio-item')).map((item) => ({
     label: item.querySelector('.et-ml-rte-lang-item-label')?.textContent?.trim(),
-    content: item.querySelector('.et-ml-rte-lang-dot')?.getAttribute('aria-label'),
+    content: item.querySelector('.et-ml-rte-lang-status')?.textContent?.trim(),
     checked: item.getAttribute('aria-checked'),
   }));
 

@@ -131,6 +131,14 @@ describe('MultiLanguageRichTextEditorComponent', () => {
     expect(wrapper.hasValue()).toBe(false);
   });
 
+  it('reads a null translation from API data as missing content', () => {
+    driver.host.value.set({ en: null, de: '' } as unknown as Record<string, string>);
+    tick();
+
+    expect(wrapper.isFilled('en')).toBe(false);
+    expect(wrapper.hasValue()).toBe(false);
+  });
+
   it('takes the embedded editor being blurred as touched', () => {
     expect(wrapper.touched()).toBe(false);
 
