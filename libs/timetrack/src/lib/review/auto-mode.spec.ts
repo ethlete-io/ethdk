@@ -10,9 +10,11 @@ import { DEFAULT_TIMETRACK_SETTINGS } from '../settings/model';
 import { TicketWritingRequest } from '../ticket/write';
 import {
   AUTO_MODE_CLIENT,
+  autoModeApprovalTarget,
   autoModeAsks,
   autoModeCreateRequest,
   autoModeCreatedKeys,
+  autoModeQueuedAnswer,
   withAutoModeAnswer,
   withAutoModeCreated,
   withAutoModeRowNames,
@@ -220,6 +222,37 @@ describe('autoModeCreateRequest', () => {
 
     expect(autoModeCreateRequest(queued)).toBeNull();
     expect(autoModeCreateRequest(matched('ABC-1'))).toBeNull();
+  });
+});
+
+describe('autoModeQueuedAnswer', () => {
+  it('takes over the create an earlier ask queued for the same band, with the wording it holds', () => {
+    const earlier = {
+      id: 'a-1',
+      request: {
+        op: 'jira.create' as const,
+        summary: 'Month export',
+        description: 'Earlier.',
+        projectKey: 'ABC',
+      },
+    };
+
+    expect(autoModeQueuedAnswer(drafted, earlier).outcome).toEqual({
+      kind: 'draft',
+      summary: 'Month export',
+      description: 'Earlier.',
+      projectKey: 'ABC',
+      approvalId: 'a-1',
+    });
+  });
+
+  it('keys the queue item by day and subject', () => {
+    expect(autoModeApprovalTarget(TODAY, drafted.subject)).not.toBe(
+      autoModeApprovalTarget('2026-08-12', drafted.subject),
+    );
+    expect(autoModeApprovalTarget(TODAY, drafted.subject)).not.toBe(
+      autoModeApprovalTarget(TODAY, { kind: 'stand-in', standInId: CONTEXT.id }),
+    );
   });
 });
 

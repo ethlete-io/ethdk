@@ -8,9 +8,11 @@ import {
   AutoModeSubject,
   TicketWording,
   TicketWritingRequest,
+  autoModeApprovalTarget,
   autoModeAsks,
   autoModeCreateRequest,
   autoModeCreatedKeys,
+  autoModeQueuedAnswer,
   autoModeSubjectKey,
   dayBoundaryOf,
   draftTicket,
@@ -178,18 +180,25 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
   };
 
-  /** Queues the create first, so a restart between the two writes asks again rather than losing it. */
-  const queued$ = (answer: AutoModeAnswer): Observable<AutoModeAnswer> => {
+  /**
+   * Queues the create before the answer is stored, so a restart between the two writes asks again
+   * rather than losing it. The target makes that second ask take over the create the first one queued.
+   */
+  const queued$ = (day: string, answer: AutoModeAnswer): Observable<AutoModeAnswer> => {
     const create = autoModeCreateRequest(answer);
 
-    if (!create?.projectKey || answer.outcome.kind !== 'draft') return of(answer);
+    if (!create?.projectKey) return of(answer);
 
-    const draft = answer.outcome;
+    return approvals
+      .enqueue$({ request: create, client: AUTO_MODE_CLIENT, target: autoModeApprovalTarget(day, answer.subject) })
+      .pipe(
+        map(({ approvalId }) => {
+          const item = approvals.items().find((entry) => entry.id === approvalId);
 
-    return approvals.enqueue$({ request: create, client: AUTO_MODE_CLIENT }).pipe(
-      map((queued) => ({ ...answer, outcome: { ...draft, approvalId: queued.approvalId } })),
-      catchError(() => of(answer)),
-    );
+          return autoModeQueuedAnswer(answer, item ?? { id: approvalId, request: create });
+        }),
+        catchError(() => of(answer)),
+      );
   };
 
   const applyAnswer = (answer: AutoModeAnswer) => {
@@ -229,7 +238,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
           })),
         );
       }),
-      switchMap((answer) => queued$(answer)),
+      switchMap((answer) => queued$(ask.day, answer)),
       switchMap((answer) =>
         dayReview
           .changeDay$(ask.day, (edits) => withAutoModeAnswer(edits, answer))

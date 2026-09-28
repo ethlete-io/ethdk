@@ -14,6 +14,10 @@ export const AUTO_MODE_CLIENT = 'auto mode';
 export const autoModeSubjectKey = (subject: AutoModeSubject) =>
   subject.kind === 'context' ? `context:${subject.contextId}` : `stand-in:${subject.standInId}`;
 
+/** What the approval queue keys an auto-mode create by, so a second ask for the same subject reuses it. */
+export const autoModeApprovalTarget = (day: string, subject: AutoModeSubject) =>
+  `${day}|${autoModeSubjectKey(subject)}`;
+
 const answeredKeys = (answers: readonly AutoModeAnswer[]) =>
   new Set(answers.map((answer) => autoModeSubjectKey(answer.subject)));
 
@@ -108,6 +112,33 @@ export const autoModeCreateRequest = (
     description: outcome.description,
     ...(outcome.projectKey ? { projectKey: outcome.projectKey } : {}),
     ...(outcome.parentKey ? { parentKey: outcome.parentKey } : {}),
+  };
+};
+
+/**
+ * A draft answer pointed at the queued create that files it. The draft takes that create's wording,
+ * which differs from its own where an earlier ask for the same subject queued it.
+ */
+export const autoModeQueuedAnswer = (
+  answer: AutoModeAnswer,
+  approval: { id: string; request: AgentApiRequest },
+): AutoModeAnswer => {
+  const { outcome } = answer;
+  const { request } = approval;
+
+  if (outcome.kind !== 'draft') return answer;
+  if (request.op !== 'jira.create') return { ...answer, outcome: { ...outcome, approvalId: approval.id } };
+
+  return {
+    ...answer,
+    outcome: {
+      kind: 'draft',
+      summary: request.summary,
+      description: request.description,
+      ...(request.projectKey ? { projectKey: request.projectKey } : {}),
+      ...(request.parentKey ? { parentKey: request.parentKey } : {}),
+      approvalId: approval.id,
+    },
   };
 };
 

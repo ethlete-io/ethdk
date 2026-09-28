@@ -12,6 +12,8 @@ export type AgentApproval = {
   opClass: OpClass;
   /** The name the calling CLI gave itself, when it gave one. */
   client?: string;
+  /** What the item is for, as its asker names it. A waiting item holds its target against a second ask. */
+  target?: string;
   askedAtMs: number;
   /** The local day key it was asked on. It expires once that day is over. */
   day: string;
@@ -65,21 +67,38 @@ export const agentApiClientOf = (body: unknown) => {
   return name ? name.slice(0, CLIENT_MAX_LENGTH) : undefined;
 };
 
+/** The item still waiting that the same caller queued for the same target. */
+export const openApprovalFor = (queue: readonly AgentApproval[], options: { client?: string; target: string }) =>
+  queue.find(
+    (item) =>
+      (item.state === 'queued' || item.state === 'running') &&
+      item.target === options.target &&
+      item.client === options.client,
+  );
+
+/** Adds a waiting item. A target an item from the same caller still waits for queues nothing. */
 export const enqueueApproval = (
   queue: readonly AgentApproval[],
-  options: { id: string; request: AgentApiRequest; client?: string; at: Date; day: string },
-): AgentApproval[] => [
-  ...queue,
-  {
-    id: options.id,
-    request: options.request,
-    opClass: AGENT_API_OP_CLASSES[options.request.op],
-    ...(options.client ? { client: options.client } : {}),
-    askedAtMs: options.at.getTime(),
-    day: options.day,
-    state: 'queued',
-  },
-];
+  options: { id: string; request: AgentApiRequest; client?: string; target?: string; at: Date; day: string },
+): AgentApproval[] => {
+  const { target } = options;
+
+  if (target && openApprovalFor(queue, { client: options.client, target })) return [...queue];
+
+  return [
+    ...queue,
+    {
+      id: options.id,
+      request: options.request,
+      opClass: AGENT_API_OP_CLASSES[options.request.op],
+      ...(options.client ? { client: options.client } : {}),
+      ...(target ? { target } : {}),
+      askedAtMs: options.at.getTime(),
+      day: options.day,
+      state: 'queued',
+    },
+  ];
+};
 
 /** Expires every item still waiting from a day before `today`, and drops decided ones past the keep. */
 export const settleApprovalQueue = (queue: readonly AgentApproval[], today: string): AgentApproval[] => {
@@ -136,6 +155,7 @@ export const parseApprovalQueue = (stored: unknown): AgentApproval[] => {
     const client = agentApiClientOf(raw);
     const decidedAtMs = typeof raw['decidedAtMs'] === 'number' ? raw['decidedAtMs'] : undefined;
     const error = typeof raw['error'] === 'string' ? raw['error'] : undefined;
+    const target = typeof raw['target'] === 'string' && raw['target'] ? raw['target'] : undefined;
 
     return [
       {
@@ -143,6 +163,7 @@ export const parseApprovalQueue = (stored: unknown): AgentApproval[] => {
         request: parsed.request,
         opClass: AGENT_API_OP_CLASSES[parsed.request.op],
         ...(client ? { client } : {}),
+        ...(target ? { target } : {}),
         askedAtMs,
         day,
         ...(state === 'running'

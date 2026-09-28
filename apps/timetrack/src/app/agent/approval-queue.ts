@@ -13,6 +13,7 @@ import {
   enqueueApproval,
   localDayKey,
   markApproval,
+  openApprovalFor,
   settleApprovalQueue,
 } from '@ethlete/timetrack';
 import {
@@ -145,12 +146,19 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     failure: failure.asReadonly(),
     approved$: approved$.asObservable(),
 
-    enqueue$: (options: { request: AgentApiRequest; client?: string }): Observable<AgentApiQueued> =>
+    /** A `target` an item from the same client still waits for answers that item and queues nothing. */
+    enqueue$: (options: { request: AgentApiRequest; client?: string; target?: string }): Observable<AgentApiQueued> =>
       whenLoaded$.pipe(
         map(() => {
+          settle();
+
+          const { target } = options;
+          const open = target ? openApprovalFor(queue(), { client: options.client, target }) : undefined;
+
+          if (open) return { status: 'queued', approvalId: open.id };
+
           const id = crypto.randomUUID();
 
-          settle();
           change(enqueueApproval(queue(), { id, ...options, at: new Date(), day: today() }));
 
           return { status: 'queued', approvalId: id };

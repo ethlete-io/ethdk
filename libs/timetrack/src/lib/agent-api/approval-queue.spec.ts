@@ -7,6 +7,7 @@ import {
   approvalStatusOf,
   enqueueApproval,
   markApproval,
+  openApprovalFor,
   parseApprovalQueue,
   routesThroughApproval,
   settleApprovalQueue,
@@ -95,11 +96,36 @@ describe('approvalStatusOf', () => {
   });
 });
 
+describe('enqueueApproval', () => {
+  const ask = (queue: readonly AgentApproval[], id: string) =>
+    enqueueApproval(queue, { id, request: CREATE, client: 'auto mode', target: 'band-1', at: AT, day: '2026-09-28' });
+
+  it('queues nothing a second time for a target a waiting item already holds', () => {
+    const once = ask([], 'a0');
+    const twice = ask(once, 'a1');
+
+    expect(twice.map((item) => item.id)).toEqual(['a0']);
+    expect(openApprovalFor(twice, { client: 'auto mode', target: 'band-1' })?.id).toBe('a0');
+  });
+
+  it('queues again once the item for the target is decided', () => {
+    const rejected = markApproval(ask([], 'a0'), { id: 'a0', state: 'rejected' });
+
+    expect(ask(rejected, 'a1').map((item) => item.id)).toEqual(['a0', 'a1']);
+  });
+});
+
 describe('parseApprovalQueue', () => {
   it('reads back what it stored', () => {
     const queue = markApproval(queueOf(CREATE, SYNC), { id: 'a1', state: 'rejected', decidedAtMs: 5 });
 
     expect(parseApprovalQueue(JSON.parse(JSON.stringify(queue)))).toEqual(queue);
+  });
+
+  it('reads back the target an item was queued for', () => {
+    const queue = enqueueApproval([], { id: 'a0', request: CREATE, target: 'band-1', at: AT, day: '2026-09-28' });
+
+    expect(parseApprovalQueue(JSON.parse(JSON.stringify(queue)))[0]?.target).toBe('band-1');
   });
 
   it('takes the class from the table, not from the store', () => {
