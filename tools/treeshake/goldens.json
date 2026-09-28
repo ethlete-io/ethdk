@@ -196,12 +196,12 @@
     },
     "components-deps": {
       "entry": "import { paginate } from '@ethlete/components';\nconsole.log(paginate);",
-      "gzip": 4059
+      "gzip": 4059,
       "thirdParty": true
     },
     "menu-anchored-deps": {
       "entry": "import { MENU_IMPORTS } from '@ethlete/components';\nconsole.log(MENU_IMPORTS);",
-      "gzip": 42779
+      "gzip": 42779,
       "thirdParty": true
     },
     "contentful-deps": {
