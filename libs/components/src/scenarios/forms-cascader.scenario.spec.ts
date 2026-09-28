@@ -255,8 +255,8 @@ describe('forms cascader scenarios', () => {
 
     s.keydown('End', node('Europe'));
     s.tick();
-    expect(focusedLabel()).toBe('Antarctica');
-    s.keydown('Home', node('Antarctica'));
+    expect(focusedLabel()).toBe('Oceania');
+    s.keydown('Home', node('Oceania'));
     s.keydown('o', node('Europe'));
     s.tick();
     expect(focusedLabel()).toBe('Oceania');

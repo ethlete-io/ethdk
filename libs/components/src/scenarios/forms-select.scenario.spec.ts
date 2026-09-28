@@ -505,6 +505,7 @@ describe('forms select scenarios', () => {
     s.keydown('b', trigger);
     expect(activeLabel()).toBe('Basketball · 5');
 
+    s.tick(500);
     s.keydown(' ', trigger);
     s.flush();
     expect(app.sport()).toBe('basketball');
