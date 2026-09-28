@@ -1,6 +1,6 @@
 # notification, tabs, scrollable, button scan - open findings
 
-Scan of `libs/components/src/lib/{notification,tabs,scrollable,button}` from 2026-09-28. 0 High, 1 Medium, 11 Low, 1 Spec (verified 2026-09-28). Skipped: stories, most specs, testing drivers, and a line-by-line read of the large CSS files (grep only for `@layer`, colours and transitions).
+Scan of `libs/components/src/lib/{notification,tabs,scrollable,button}` from 2026-09-28. 0 High, 1 Medium, 5 Low, 1 Spec (verified 2026-09-28). Skipped: stories, most specs, testing drivers, and a line-by-line read of the large CSS files (grep only for `@layer`, colours and transitions).
 
 ## notification
 
@@ -9,12 +9,6 @@ Scan of `libs/components/src/lib/{notification,tabs,scrollable,button}` from 202
 ## scrollable
 
 - Low: `et-scrollable-masks` renders by default and always calls `activateChildIntersections()`, so every plain track runs an IntersectionObserver with 27 thresholds per child (`headless/scrollable-masks.component.ts:21`, `scrollable.component.html:24`). Activate only for a mask variant that needs partial-item state. S
-- Low: `masksDirective` is never reset when `renderMasks` turns off, so `--has-partial-items` keeps computing (`headless/scrollable-masks.component.ts:20`). S
-- Low: `scrollable-footer.css` is listed in two components' `styleUrls`, so it ships twice and injects twice when both buttons and dots are on (`headless/scrollable-navigation.component.ts:34`, `headless/scrollable-buttons.component.ts:37`). Move it to one styles-only component. S
-- Low: a dot click on the child that is already in place sets a manual index that no scroll event clears, so the dots stay stuck until the next scroll (`headless/scrollable-navigation.component.ts:154`). S
-- Low: the dots' `translateX` offset is not flipped in RTL (`headless/scrollable-navigation.component.ts:118-120`). S
-- Low: `gapValue` calls the global `getComputedStyle` without a platform guard (`headless/scrollable.directive.ts:204`); verify it does not run under SSR. S
-- Low: rationale comments at `headless/scrollable.directive.ts:85-87,111-114`, `headless/scrollable-snap.directive.ts:38-39`, `headless/scrollable-drag.directive.ts:26`, `headless/scrollable-navigation.component.ts:136`. S
 
 ## button
 

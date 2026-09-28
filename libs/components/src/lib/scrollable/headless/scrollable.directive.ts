@@ -82,9 +82,6 @@ export class ScrollableDirective {
 
   private childIntersectionsActivated = signal(false);
 
-  // Left broad, every inline style written anywhere inside the track re-runs it - and a carousel's JS
-  // transition driver writes one per slide per animation frame, so a scroll cost a change detection tick a
-  // frame for nothing.
   private allScrollableChildren = signalElementChildren(this.scrollContainerRef, {
     mutations: { childList: true, subtree: true, attributeFilter: [SCROLLABLE_IGNORE_CHILD_ATTRIBUTE] },
   });
@@ -108,10 +105,6 @@ export class ScrollableDirective {
   /** @internal */
   public scrollObserverRef = signal<ScrollObserverDirective | null>(null);
 
-  // `class` and `hidden` are the attributes that plausibly resize something; `style` is left out deliberately:
-  // it is the one written per animation frame (a carousel's JS transition driver, any inline-style animation)
-  // and every such write re-measured `scrollWidth`, which is a forced layout, and ran a change detection tick
-  // with it.
   public containerScrollState = signalElementScrollState(this.scrollContainerRef, {
     mutations: { childList: true, subtree: true, attributeFilter: ['class', 'hidden'] },
     initialScrollPosition: this.initialActiveChildScrollPosition,
@@ -201,7 +194,9 @@ export class ScrollableDirective {
     const scrollable = this.scrollContainerRef()?.nativeElement;
     if (!scrollable) return null;
 
-    const computedStyle = getComputedStyle(scrollable);
+    const computedStyle = scrollable.ownerDocument.defaultView?.getComputedStyle?.(scrollable);
+    if (!computedStyle) return null;
+
     const gap = computedStyle.gap;
 
     if (gap === 'normal') return '0px';

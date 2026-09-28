@@ -1,7 +1,8 @@
 import { Component, ElementRef, ViewEncapsulation, computed, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { signalElementDimensions, signalStyles } from '@ethlete/core';
-import { EMPTY, debounceTime, filter, fromEvent, switchMap, tap } from 'rxjs';
+import { EMPTY, debounceTime, filter, fromEvent, startWith, switchMap, tap } from 'rxjs';
+import { mountScrollableFooterStyles } from './scrollable-footer-styles.component';
 import { ScrollableDirective } from './scrollable.directive';
 import { ScrollableNavigation } from './scrollable.types';
 
@@ -31,7 +32,7 @@ import { ScrollableNavigation } from './scrollable.types';
       </div>
     </div>
   `,
-  styleUrls: ['./scrollable-navigation.component.css', './scrollable-footer.css'],
+  styleUrl: './scrollable-navigation.component.css',
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-scrollable-navigation',
@@ -100,6 +101,7 @@ export class ScrollableNavigationComponent {
     transform: computed(() => {
       const activeIdx = this.navigation().activeIndex;
       const childCount = this.navigation().items.length;
+      const isHorizontal = this.scrollable.direction() === 'horizontal';
       let offset = '0px';
 
       if (childCount > 5) {
@@ -112,16 +114,21 @@ export class ScrollableNavigationComponent {
           offsetValue = 5 - childCount;
         }
 
-        offset = `${offsetValue * dotContainerWidth}px`;
+        const dotsContainer = this.navigationDotsContainer()?.nativeElement;
+        const isRtl =
+          isHorizontal &&
+          !!dotsContainer &&
+          dotsContainer.ownerDocument.defaultView?.getComputedStyle?.(dotsContainer).direction === 'rtl';
+
+        offset = `${(isRtl ? -offsetValue : offsetValue) * dotContainerWidth}px`;
       }
 
-      const dir = this.scrollable.direction() === 'horizontal' ? 'X' : 'Y';
-
-      return `translate${dir}(${offset})`;
+      return `translate${isHorizontal ? 'X' : 'Y'}(${offset})`;
     }),
   });
 
   constructor() {
+    mountScrollableFooterStyles();
     this.scrollable.activateChildIntersections();
 
     const scrollContainerRef$ = toObservable(this.scrollable.getScrollContainerRef());
@@ -133,9 +140,9 @@ export class ScrollableNavigationComponent {
           scrollContainerRef$.pipe(
             switchMap((ref) => {
               if (!ref) return EMPTY;
-              // eslint prefers signalElementScrollState but this pattern is intentional for debouncing
+              // A dot whose child is already in place scrolls nothing, so no scroll event would clear the index.
               // eslint-disable-next-line ethlete/prefer-scroll-state
-              return fromEvent(ref.nativeElement, 'scroll');
+              return fromEvent(ref.nativeElement, 'scroll').pipe(startWith(null));
             }),
           ),
         ),

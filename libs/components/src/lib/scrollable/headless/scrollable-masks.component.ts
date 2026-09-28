@@ -1,4 +1,4 @@
-import { Component, inject, ViewEncapsulation } from '@angular/core';
+import { Component, DestroyRef, inject, ViewEncapsulation } from '@angular/core';
 import { ScrollableDirective } from './scrollable.directive';
 
 @Component({
@@ -18,6 +18,7 @@ export class ScrollableMasksComponent {
 
   constructor() {
     this.scrollable.masksDirective.set(this);
+    inject(DestroyRef).onDestroy(() => this.scrollable.masksDirective.set(null));
     this.scrollable.activateChildIntersections();
   }
 }

@@ -23,7 +23,6 @@ export class ScrollableDragDirective {
   });
 
   constructor() {
-    // Not a linkedSignal: it is pushed into the *scrollable's* signal, which is where anything else can see it.
     // eslint-disable-next-line ethlete/prefer-linked-signal
     effect(() => this.scrollable.isCursorDragging.set(this.cursorDragScrollState.isDragging()));
   }

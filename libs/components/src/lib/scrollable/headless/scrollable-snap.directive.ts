@@ -35,8 +35,6 @@ export class ScrollableSnapDirective {
     this.scrollable.activateChildIntersections();
     this.scrollable.snapDirective.set(this);
 
-    // Not a linkedSignal: the value is derived from this directive's inputs, but it has to be pushed into the
-    // *scrollable's* signal, which is the only place that can put it on the host for the CSS to read.
     // eslint-disable-next-line ethlete/prefer-linked-signal
     effect(() => this.scrollable.activeSnapOrigin.set(this.enabled() ? this.snapOrigin() : null));
 
