@@ -1095,28 +1095,65 @@ describe('CalendarDirective', () => {
 });
 
 describe('CalendarDirective today', () => {
-  afterEach(() => {
-    vi.useRealTimers();
-  });
+  const currentLabel = (fixture: ComponentFixture<HostComponent>) =>
+    cells(fixture)
+      .find((cell) => cell.getAttribute('aria-current') === 'date')
+      ?.textContent?.trim();
 
-  it('moves aria-current to the new day after midnight', () => {
-    vi.useFakeTimers({ now: new Date(2026, 6, 14, 23, 59, 0) });
+  const mountBeforeMidnight = () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 6, 14, 23, 59));
 
     TestBed.configureTestingModule({ imports: [HostComponent] });
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
 
-    const currentLabel = () =>
-      cells(fixture)
-        .find((cell) => cell.getAttribute('aria-current') === 'date')
-        ?.textContent?.trim();
+    return fixture;
+  };
 
-    expect(currentLabel()).toBe('14');
+  const setVisibility = (state: DocumentVisibilityState) => {
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => state });
+    document.dispatchEvent(new Event('visibilitychange'));
+  };
 
-    vi.advanceTimersByTime(2 * 60 * 1000);
+  afterEach(() => {
+    vi.useRealTimers();
+    delete (document as { visibilityState?: DocumentVisibilityState }).visibilityState;
+  });
+
+  it('re-reads today when focus enters the calendar from outside', () => {
+    const fixture = mountBeforeMidnight();
+    const outside = document.body.appendChild(document.createElement('button'));
+
+    cells(fixture)[0]!.focus();
+    fixture.detectChanges();
+    vi.setSystemTime(new Date(2026, 6, 15, 0, 3));
+    cells(fixture)[1]!.focus();
     fixture.detectChanges();
 
-    expect(currentLabel()).toBe('15');
+    expect(currentLabel(fixture)).toBe('14');
+
+    outside.focus();
+    cells(fixture)[1]!.focus();
+    fixture.detectChanges();
+    outside.remove();
+
+    expect(currentLabel(fixture)).toBe('15');
+  });
+
+  it('re-reads today when the document becomes visible again', () => {
+    const fixture = mountBeforeMidnight();
+
+    setVisibility('hidden');
+    fixture.detectChanges();
+    vi.setSystemTime(new Date(2026, 6, 15, 0, 3));
+
+    expect(currentLabel(fixture)).toBe('14');
+
+    setVisibility('visible');
+    fixture.detectChanges();
+
+    expect(currentLabel(fixture)).toBe('15');
   });
 });
 

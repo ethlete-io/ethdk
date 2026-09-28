@@ -1,4 +1,4 @@
-import { Component, inject, signal, viewChild } from '@angular/core';
+import { Component, inject, signal, viewChild, ViewEncapsulation } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField, required } from '@angular/forms/signals';
 import { ColorTheme, provideColorThemesWithTailwind4, ThemeSwatch } from '@ethlete/core';
@@ -50,6 +50,8 @@ import {
 } from '../index';
 import '../test-helpers';
 import { Scenario, useScenario } from './harness';
+
+const UNSTYLED_BLOCKS = 'et-scrollbar { display: block; }';
 
 const swatch = (value: `${number} ${number} ${number}`): ThemeSwatch => ({
   color: { default: value, hover: value, active: value, disabled: value },
@@ -145,6 +147,8 @@ class BillingMonthComponent {
 
 @Component({
   selector: 'et-scenario-alarm',
+  styles: [UNSTYLED_BLOCKS],
+  encapsulation: ViewEncapsulation.None,
   imports: [TIME_INPUT_IMPORTS],
   template: `
     <et-time-input
@@ -180,6 +184,8 @@ class HeadlessAlarmComponent {
 
 @Component({
   selector: 'et-scenario-meeting',
+  styles: [UNSTYLED_BLOCKS],
+  encapsulation: ViewEncapsulation.None,
   imports: [DATE_TIME_INPUT_IMPORTS],
   template: `
     <et-date-time-input
@@ -327,18 +333,6 @@ const timeOption = (column: number, label: string) => {
   if (!option) throw new Error(`no time option ${label} in column ${column}`);
 
   return option;
-};
-
-const dropUnstyledScrollbarErrors = (s: Scenario) => {
-  const before = s.errors.length;
-
-  s.errors.splice(
-    0,
-    s.errors.length,
-    ...s.errors.filter((entry) => !String(entry.error).includes('<et-scrollbar> is an Angular component')),
-  );
-
-  expect(s.errors.length).toBeLessThan(before);
 };
 
 const takeErrorPayload = (s: Scenario) => {
@@ -584,7 +578,6 @@ describe('forms date-time scenarios', () => {
 
     alarm.control().closePicker();
     s.flush();
-    dropUnstyledScrollbarErrors(s);
     expect(field.value).toBe('09:30');
 
     alarm.readonly.set(true);
@@ -645,7 +638,6 @@ describe('forms date-time scenarios', () => {
 
     meeting.control().closePicker();
     s.flush();
-    dropUnstyledScrollbarErrors(s);
     expect(field.value).toBe('20.07.2026 08:45');
   });
 
@@ -656,7 +648,6 @@ describe('forms date-time scenarios', () => {
     s.flush();
     fixture.componentInstance.control().openPicker();
     s.flush();
-    dropUnstyledScrollbarErrors(s);
 
     expect(document.querySelector('et-date-picker-panel')).not.toBeNull();
     fixture.destroy();

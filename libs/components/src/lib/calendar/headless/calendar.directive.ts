@@ -27,7 +27,7 @@ import { isFormInputTarget } from '../../internals/form-input-target';
 import { positiveIntegerAttribute } from '../../internals/number-attributes';
 import { CalendarWeekStartsOn, generateMonthGrid } from './internals/calendar-month';
 import { resolveCalendarKeyboardDate } from './internals/calendar-keyboard';
-import { injectCalendarToday } from './internals/calendar-today';
+import { injectToday } from '../../internals/today';
 import {
   CALENDAR_MULTI_YEAR_PAGE_SIZE,
   CALENDAR_UNIT_IS_SAME,
@@ -137,7 +137,7 @@ export type CalendarWeekday = {
 export class CalendarDirective {
   private defaultLocale = injectDateLocale();
 
-  private today = injectCalendarToday();
+  private today = injectToday();
 
   public mode = input<CalendarMode>('single');
   public min = input<Date | null>(null);

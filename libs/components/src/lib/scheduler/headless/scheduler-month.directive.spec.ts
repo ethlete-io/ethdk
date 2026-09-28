@@ -73,10 +73,24 @@ describe('SchedulerMonthDirective', () => {
     expect(cell?.overflow).toHaveLength(1);
   });
 
-  describe('at midnight', () => {
+  describe('today', () => {
+    const todayCell = () =>
+      directive
+        .weeks()
+        .flat()
+        .find((cell) => cell.today)
+        ?.date.getDate();
+
+    const schedulerElement = () => fixture.nativeElement.querySelector('[etScheduler]') as HTMLElement;
+
+    const setVisibility = (state: DocumentVisibilityState) => {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => state });
+      document.dispatchEvent(new Event('visibilitychange'));
+    };
+
     beforeEach(() => {
       fixture.destroy();
-      vi.useFakeTimers();
+      vi.useFakeTimers({ toFake: ['Date'] });
       vi.setSystemTime(new Date(2026, 6, 15, 23, 59));
       fixture = TestBed.createComponent(SchedulerMonthTestHostComponent);
       fixture.detectChanges();
@@ -85,19 +99,40 @@ describe('SchedulerMonthDirective', () => {
 
     afterEach(() => {
       vi.useRealTimers();
+      delete (document as { visibilityState?: DocumentVisibilityState }).visibilityState;
     });
 
-    it('moves the today flag to the new day', () => {
-      const todayCell = () =>
-        directive
-          .weeks()
-          .flat()
-          .find((cell) => cell.today)
-          ?.date.getDate();
+    it('moves the today flag once focus enters the scheduler from outside', () => {
+      const inner = schedulerElement().appendChild(document.createElement('button'));
+      const outside = document.body.appendChild(document.createElement('button'));
+
+      schedulerElement().tabIndex = -1;
+      schedulerElement().focus();
 
       expect(todayCell()).toBe(15);
 
-      vi.advanceTimersByTime(60_000);
+      vi.setSystemTime(new Date(2026, 6, 16, 0, 3));
+      inner.focus();
+
+      expect(todayCell()).toBe(15);
+
+      outside.focus();
+      inner.focus();
+      outside.remove();
+
+      expect(todayCell()).toBe(16);
+    });
+
+    it('moves the today flag once the document becomes visible again', () => {
+      setVisibility('hidden');
+
+      expect(todayCell()).toBe(15);
+
+      vi.setSystemTime(new Date(2026, 6, 16, 0, 3));
+
+      expect(todayCell()).toBe(15);
+
+      setVisibility('visible');
       fixture.detectChanges();
 
       expect(todayCell()).toBe(16);

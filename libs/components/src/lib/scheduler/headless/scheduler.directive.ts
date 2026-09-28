@@ -25,7 +25,7 @@ import {
   SchedulerView,
   SchedulerVisibleRange,
 } from '../scheduler.types';
-import { injectSchedulerToday } from './internals/scheduler-clock';
+import { injectToday } from '../../internals/today';
 import { appointmentTouchesRange } from './internals/scheduler-range';
 import { buildAppointmentTree, countDescendants } from './internals/scheduler-tree';
 
@@ -54,8 +54,8 @@ export type SchedulerWeekday = {
 export class SchedulerDirective<TExtra = unknown> {
   private defaultLocale = injectDateLocale();
 
-  /** The current time, re-read at every local midnight - what each view's `today` flag compares against. */
-  public today = injectSchedulerToday();
+  /** Today, re-read when focus enters the scheduler and when the page becomes visible again - what each view's `today` flag compares against. */
+  public today = injectToday();
 
   /** Every appointment the scheduler knows about - not pre-filtered to the visible range. */
   public appointments = input<readonly Appointment<TExtra>[]>([]);
