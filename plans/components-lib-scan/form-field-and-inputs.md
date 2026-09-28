@@ -21,7 +21,6 @@ Paths are relative to `libs/components/src/lib/forms/`.
 
 ## checkbox, switch
 
-- Medium: checkbox and switch toggle on every `keydown.space`, auto-repeat included (`checkbox/headless/checkbox.directive.ts:39`, `switch/headless/switch.directive.ts:40`). If the user holds Space, the control flips on and off many times, and the final state is random. Ignore `$event.repeat`. S Verified.
 - Low: `CheckboxDirective.activate` passes `{ focusVisible: false } as unknown as FocusOptions` (`checkbox/headless/checkbox.directive.ts:100`), and `SwitchDirective.activate` omits it (`switch/headless/switch.directive.ts:98`). A label click shows a focus ring on the switch but not on the checkbox. Pick one behaviour for both and drop the double cast. S
 
 ## choice-field, selection card

@@ -69,6 +69,15 @@ describe('CheckboxDirective', () => {
       expect(driver.checkboxEl()).toBeTruthy();
     });
 
+    it('toggles once for a held Space, ignoring the auto-repeat', () => {
+      const el = driver.fixture.nativeElement.querySelector('[etCheckbox]') as HTMLElement;
+
+      el.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+      el.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, repeat: true }));
+
+      expect(driver.checkbox.checked()).toBe(true);
+    });
+
     it('should have aria-checked false by default', () => {
       expect(driver.attr('aria-checked')).toBe('false');
     });

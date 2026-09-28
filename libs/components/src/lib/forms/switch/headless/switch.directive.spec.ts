@@ -59,6 +59,15 @@ describe('SwitchDirective', () => {
       expect(driver.switch.checked()).toBe(true);
       expect(driver.attr('aria-checked')).toBe('true');
     });
+
+    it('toggles once for a held Space, ignoring the auto-repeat', () => {
+      const el = driver.fixture.nativeElement.querySelector('[etSwitch]') as HTMLElement;
+
+      el.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+      el.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, repeat: true }));
+
+      expect(driver.switch.checked()).toBe(true);
+    });
   });
 
   describe('indeterminate', () => {

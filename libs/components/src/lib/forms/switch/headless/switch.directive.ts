@@ -37,7 +37,7 @@ import { controlTouches } from '../../../internals/touch-output';
     '[attr.aria-labelledby]': 'labelId() || null',
     '[attr.tabindex]': 'disabled() ? -1 : 0',
     '(click)': 'toggle()',
-    '(keydown.space)': 'toggle(); $event.preventDefault()',
+    '(keydown.space)': 'handleSpaceKeydown($event)',
     '(blur)': 'touched.set(true)',
   },
 })
@@ -73,6 +73,13 @@ export class SwitchDirective extends AccessibleNameControlDirective implements F
 
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
+  }
+
+  /** @internal */
+  public handleSpaceKeydown(event: Event) {
+    event.preventDefault();
+
+    if (!(event as KeyboardEvent).repeat) this.toggle();
   }
 
   public toggle() {

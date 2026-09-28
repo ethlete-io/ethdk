@@ -36,7 +36,7 @@ import { controlTouches } from '../../../internals/touch-output';
     '(click)': 'toggle()',
     // toggle on keydown.space to match switch and the selection options (one activation phase
     // across the family), preventing the default page scroll
-    '(keydown.space)': 'toggle(); $event.preventDefault()',
+    '(keydown.space)': 'handleSpaceKeydown($event)',
     '(blur)': 'touched.set(true)',
   },
 })
@@ -75,6 +75,13 @@ export class CheckboxDirective extends AccessibleNameControlDirective implements
 
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
+  }
+
+  /** @internal */
+  public handleSpaceKeydown(event: Event) {
+    event.preventDefault();
+
+    if (!(event as KeyboardEvent).repeat) this.toggle();
   }
 
   public toggle() {
