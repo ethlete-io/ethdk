@@ -272,9 +272,10 @@ None of these is recorded as done:
 - No hosted backend, cloud or relay. No view over other people's time. No Jira Data Center, no
   worklog target but Tempo. Only one person's own paired machines may sync (ADR 0013).
 - A model runs only on an explicit press, with the prompt shown first and names pseudonymised
-  (ADR 0013, 0023). Its answer is never above `weak`, never becomes a rule without a click, and never
-  writes the naming store. The only write gate is the sync, and the agent endpoint lists stand-ins
-  and writes none.
+  (ADR 0013, 0023). With auto mode on, it runs without a press on the current day and its match is
+  not capped at `weak` (ADR 0035). Its answer never becomes a rule without a click and never writes
+  the naming store. The Tempo sync is always a human press, and every agent endpoint write waits in
+  the approval queue.
 - No vendor call APIs (Slack huddle state, a Discord bot). The microphone holder is the signal.
 - No Gmail source. The forge sources shell out to `glab` and `gh` and hold no token. A forge event is
   evidence, never time. Commit subjects never carry the issue key.

@@ -1,6 +1,6 @@
 # Auto mode and the approval queue
 
-Status: slices 1, 2 and 3 done (2026-09-28); slice 4 next.
+Status: slices 1, 2 and 3 done (2026-09-28); slice 4 in progress, ADR 0035 approved.
 
 ## Goal
 
@@ -74,11 +74,9 @@ settings: the user can move an action to a stricter class, never to a looser one
    reopened, and `day.rows` does not report sources.
 4. **Auto mode.** New ADR first. A setting to turn it on. On each new unnamed band or open stand-in:
    run the match; if one matches, apply it as `local`; if none matches, draft the ticket and pick
-   its epic, then queue the create as `external`. Start here: draft ADR 0035 (supersedes the
-   press-only and `weak` cap parts of 0013 and 0023, and fixes the stale endpoint sentence) and get
-   the user's approval before any code. Decide with the user: past days or only today; whether auto
-   mode may write the remembered meeting and call names (`nameMeeting`, `nameCall`, no source yet).
-   Then add a stored parent slot with a source, a way back to `auto` for a reopened stand-in, and
+   its epic, then queue the create as `external`. ADR 0035 (approved 2026-09-28) decides: only the
+   current day, never a past one; never `nameMeeting` or `nameCall`; the prompt is kept with the
+   answer. Add a stored parent slot with a source, a way back to `auto` for a reopened stand-in, and
    the sources in `day.rows`. Guards to call: `mayAutoWrite`, `mayWrite` in `model/field-source.ts`.
 5. **Class settings.** A settings page to make an action stricter, and a readout of what auto mode
    did today.
@@ -87,4 +85,4 @@ settings: the user can move an action to a stricter class, never to a looser one
 
 - Settled in slice 2: a CLI write returns `queued` at once and never blocks; a queued item expires
   at the end of the day it was asked on, and a decided one is kept for 7 days.
-- Does auto mode run on past days, or only on today and new evidence?
+- Settled in ADR 0035: auto mode runs on the current day only.
