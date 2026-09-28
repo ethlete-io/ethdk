@@ -13,9 +13,15 @@ import { ChartMarkDirective } from './headless/internals/chart-mark.directive';
  * A bar chart with a value axis, category labels, a recessive grid and a visually hidden table view.
  * One series by default; pass `series` for grouped or stacked bars with a legend, and
  * `orientation="horizontal"` for bars that grow to the right. Driven by the headless {@link BarChartDirective}.
+ * Project `etBarChartTitle` above the chart, `etBarChartNote` below it, and `etBarChartEmpty` over the plot
+ * while `data` is empty.
  *
  * @example
- * <et-bar-chart [data]="signUps" label="Sign-ups per month" />
+ * <et-bar-chart [data]="signUps" label="Sign-ups per month">
+ *   <h3 etBarChartTitle>Sign-ups</h3>
+ *   <p etBarChartEmpty>No sign-ups yet</p>
+ *   <p etBarChartNote>Source: CRM export</p>
+ * </et-bar-chart>
  */
 @Component({
   selector: 'et-bar-chart',
@@ -44,6 +50,7 @@ import { ChartMarkDirective } from './headless/internals/chart-mark.directive';
         'height',
         'tickCount',
         'maxBarWidth',
+        'categoryLabelSpacing',
         'valueFormatter',
         'categoryHeader',
         'valueHeader',

@@ -24,20 +24,21 @@ signUps: BarChartDatum[] = [
 
 ## Options
 
-| Input            | Type                                                         | Default      | Description                                                                                               |
-| ---------------- | ------------------------------------------------------------ | ------------ | --------------------------------------------------------------------------------------------------------- |
-| `data`           | `readonly BarChartDatum[] \| readonly BarChartSeriesDatum[]` | -            | Required. The categories, in order: `{ label, value }` for one series, `{ label, values }` with `series`. |
-| `label`          | `string`                                                     | -            | Required. Names the chart for assistive tech and captions the table view.                                 |
-| `series`         | `readonly BarChartSeries[]`                                  | `[]`         | The series to draw from each datum's `values`. Empty draws one series from each datum's `value`.          |
-| `layout`         | `'grouped' \| 'stacked'`                                     | `'grouped'`  | How several series share a category: side by side, or stacked on one bar.                                 |
-| `orientation`    | `'vertical' \| 'horizontal'`                                 | `'vertical'` | Which way the bars grow: up from a horizontal baseline, or right from a vertical one.                     |
-| `height`         | `number`                                                     | `240`        | Height of the plot area in px. The axis labels sit outside it.                                            |
-| `tickCount`      | `number`                                                     | `5`          | Roughly how many value-axis intervals to draw.                                                            |
-| `maxBarWidth`    | `number`                                                     | `24`         | The thickest a bar gets in px. A wider band keeps the rest as space between bars.                         |
-| `valueFormatter` | `((value: number) => string) \| null`                        | `null`       | Formats values on the axis, in the tooltips and in the table.                                             |
-| `categoryHeader` | `string`                                                     | `'Category'` | The table view's category column header.                                                                  |
-| `valueHeader`    | `string`                                                     | `'Value'`    | The table view's value column header in a single-series chart.                                            |
-| `colorToken`     | registered color theme name \| `null`                        | `null`       | The color theme a single-series chart is drawn in, and the fallback for a series without a color.         |
+| Input                  | Type                                                         | Default      | Description                                                                                               |
+| ---------------------- | ------------------------------------------------------------ | ------------ | --------------------------------------------------------------------------------------------------------- |
+| `data`                 | `readonly BarChartDatum[] \| readonly BarChartSeriesDatum[]` | -            | Required. The categories, in order: `{ label, value }` for one series, `{ label, values }` with `series`. |
+| `label`                | `string`                                                     | -            | Required. Names the chart for assistive tech and captions the table view.                                 |
+| `series`               | `readonly BarChartSeries[]`                                  | `[]`         | The series to draw from each datum's `values`. Empty draws one series from each datum's `value`.          |
+| `layout`               | `'grouped' \| 'stacked'`                                     | `'grouped'`  | How several series share a category: side by side, or stacked on one bar.                                 |
+| `orientation`          | `'vertical' \| 'horizontal'`                                 | `'vertical'` | Which way the bars grow: up from a horizontal baseline, or right from a vertical one.                     |
+| `height`               | `number`                                                     | `240`        | Height of the plot area in px. The axis labels sit outside it.                                            |
+| `tickCount`            | `number`                                                     | `5`          | Roughly how many value-axis intervals to draw.                                                            |
+| `maxBarWidth`          | `number`                                                     | `24`         | The thickest a bar gets in px. A wider band keeps the rest as space between bars.                         |
+| `categoryLabelSpacing` | `number \| 'auto'`                                           | `'auto'`     | The least room in px a category label gets. Denser labels are thinned to every nth; `0` shows them all.   |
+| `valueFormatter`       | `((value: number) => string) \| null`                        | `null`       | Formats values on the axis, in the tooltips and in the table.                                             |
+| `categoryHeader`       | `string`                                                     | `'Category'` | The table view's category column header.                                                                  |
+| `valueHeader`          | `string`                                                     | `'Value'`    | The table view's value column header in a single-series chart.                                            |
+| `colorToken`           | registered color theme name \| `null`                        | `null`       | The color theme a single-series chart is drawn in, and the fallback for a series without a color.         |
 
 Without a `valueFormatter`, values are formatted with `Intl.NumberFormat` in the locale from `injectLocale()` (`@ethlete/core`), so `3320` reads `3,320` in English.
 
@@ -46,6 +47,12 @@ Without a `valueFormatter`, values are formatted with `Intl.NumberFormat` in the
 The value axis always includes zero and rounds out to a 1, 2 or 5 step, so `[12, 87, 40]` gets the ticks `0, 20, … 100`. Negative values grow down from the zero baseline (left, when horizontal) and are rounded at that end.
 
 Every category gets an equal band of the plot, and the bar is centered in it, capped at `maxBarWidth`, with at least 2px between neighbouring bars. Bars are square at the baseline and rounded 4px at the data end. The width comes from the element the chart sits in; the height is `height`, for either orientation.
+
+### Dense category labels
+
+When the bands get narrower than `categoryLabelSpacing`, only every nth category label is shown - the first, then every nth after it - so each shown label gets at least that many px and never collides with its neighbour. Every bar is still drawn. `'auto'` estimates the room from the longest label (about 7px per character plus padding, between 24px and 96px), or one line height when the chart is horizontal. Pass a number to set it for one chart, or `0` to show every label.
+
+<StoryEmbed id="components-data-display-bar-chart--dense-labels" height="440px" />
 
 When a bar is first drawn it grows from the baseline and fades in. Under `prefers-reduced-motion: reduce` it appears without the animation.
 
@@ -147,9 +154,29 @@ Re-run the color theme generator after adding the themes so the names type-check
 
 <StoryEmbed id="components-data-display-bar-chart--horizontal" height="360px" />
 
+## Title, note and empty state
+
+Mark projected content with an attribute to place it:
+
+- `etBarChartTitle` - above the legend and the plot, e.g. an `<h3>`.
+- `etBarChartNote` - below the category axis, e.g. a source line or a footnote.
+- `etBarChartEmpty` - centered over the plot while `data` is empty. The value-axis labels are hidden then; the grid stays.
+
+```html
+<et-bar-chart [data]="visits" label="Visits per day">
+  <h3 etBarChartTitle>Visits per day</h3>
+  <p etBarChartEmpty>No visits recorded yet</p>
+  <p etBarChartNote>Source: web analytics</p>
+</et-bar-chart>
+```
+
+The title and note are plain projected elements; `label` still names the chart for assistive tech.
+
+<StoryEmbed id="components-data-display-bar-chart--empty" height="440px" />
+
 ## Custom template
 
-`BarChartDirective` (`[etBarChart]`) holds the geometry without markup: `bars()` (per bar its rect, `path`, hit `target`, tooltip `anchor` and `placement`, `series`, `colorToken`, `valueText` and a `name` such as `Mar, Online`), `ticks()`, `baseline()`, `categoryLabels()`, `valueLabels()`, `legendItems()`, `table()`, `plotWidth()` and `formatValue()`. Put `etChartPlot` on the element the bars are laid out in - its width is what the bands divide. Without one the directive throws `ET5100` in dev mode. `etBarChartPlot` still works as another name for it. Import `BarChartDirective` and `ChartPlotDirective`.
+`BarChartDirective` (`[etBarChart]`) holds the geometry without markup: `bars()` (per bar its rect, `path`, hit `target`, tooltip `anchor` and `placement`, `series`, `colorToken`, `valueText` and a `name` such as `Mar, Online`), `ticks()`, `baseline()`, `categoryLabels()` (already thinned), `categoryLabelStride()`, `isEmpty()`, `valueLabels()`, `legendItems()`, `table()`, `plotWidth()` and `formatValue()`. Put `etChartPlot` on the element the bars are laid out in - its width is what the bands divide. Without one the directive throws `ET5100` in dev mode. `etBarChartPlot` still works as another name for it. Import `BarChartDirective` and `ChartPlotDirective`.
 
 ```html
 <div #chart="etBarChart" [data]="data" etBarChart label="Sign-ups per month">

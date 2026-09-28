@@ -12,6 +12,7 @@ import { CHART_PLOT_HOST, ChartPlotDirective, ChartPlotHost } from './chart-plot
 import { assertChartPlot } from './internals/chart-plot-check';
 import { ChartValueFormatter, resolveChartValueFormatter } from './internals/chart-format';
 import { createBandScale, createBarPath, createLinearScale, createValueTicks } from './internals/chart-scale';
+import { createCategoryLabelStride, estimateCategoryLabelSpacing } from './internals/chart-label-thinning';
 import { hasSharedSeriesColor, resolveChartSeriesColors } from './internals/chart-series';
 import { ChartStackSegment, stackExtent, stackValues } from './internals/chart-stack';
 
@@ -41,6 +42,12 @@ export type BarChartLayout = 'grouped' | 'stacked';
 
 /** Which way the bars grow: up from a horizontal baseline, or right from a vertical one. */
 export type BarChartOrientation = 'vertical' | 'horizontal';
+
+/**
+ * The least room in px a category label gets along its axis; denser labels are thinned to every nth.
+ * `'auto'` estimates it from the longest label, `0` shows every label.
+ */
+export type BarChartCategoryLabelSpacing = number | 'auto';
 
 /** Formats a value for the axis, the tooltip and the table. */
 export type BarChartValueFormatter = ChartValueFormatter;
@@ -101,6 +108,9 @@ type NormalizedCategory = {
 const BAR_GAP = 2;
 const BAR_RADIUS = 4;
 
+const toCategoryLabelSpacing = (value: BarChartCategoryLabelSpacing | string): BarChartCategoryLabelSpacing =>
+  value === 'auto' ? 'auto' : numberAttribute(value, 0);
+
 const finiteOrNull = (value: number | null | undefined) =>
   typeof value === 'number' && Number.isFinite(value) ? value : null;
 
@@ -150,6 +160,14 @@ export class BarChartDirective implements ChartPlotHost {
   /** The thickest a bar may get in px. Wider bands keep the rest as air. @default 24 */
   public maxBarWidth = input(24, { transform: numberAttribute });
 
+  /**
+   * The least room in px a category label gets; when the bands are narrower, only every nth label is shown.
+   * `'auto'` estimates it from the longest label, `0` shows every label. @default 'auto'
+   */
+  public categoryLabelSpacing = input<BarChartCategoryLabelSpacing, BarChartCategoryLabelSpacing | string>('auto', {
+    transform: toCategoryLabelSpacing,
+  });
+
   /** Formats values for the axis, the tooltip and the table. @default the app locale's number format */
   public valueFormatter = input<BarChartValueFormatter | null>(null);
 
@@ -171,6 +189,9 @@ export class BarChartDirective implements ChartPlotHost {
   public plotWidth = computed(() => this.plot()?.width() ?? 0);
 
   public isHorizontal = computed(() => this.orientation() === 'horizontal');
+
+  /** Whether there are no categories to draw. */
+  public isEmpty = computed(() => this.data().length === 0);
 
   public isStacked = computed(() => this.layout() === 'stacked' && this.series().length > 1);
 
@@ -248,16 +269,37 @@ export class BarChartDirective implements ChartPlotHost {
     }),
   );
 
-  /** The category labels, centered on their bands along the category axis. */
+  /** Every how many categories a label is shown, from `categoryLabelSpacing` and the band width. */
+  public categoryLabelStride = computed(() => {
+    const spacing = this.categoryLabelSpacing();
+    const resolved =
+      spacing === 'auto'
+        ? estimateCategoryLabelSpacing(
+            this.categories().map((category) => category.label),
+            this.isHorizontal() ? 'vertical' : 'horizontal',
+          )
+        : spacing;
+
+    return createCategoryLabelStride(this.bandScale().step, resolved);
+  });
+
+  /** The category labels, centered on their bands along the category axis and thinned to every `categoryLabelStride`th. */
   public categoryLabels = computed<ChartAxisLabel[]>(() => {
     const band = this.bandScale();
+    const stride = this.categoryLabelStride();
 
-    return this.categories().map((category, index) => ({
-      key: index,
-      text: category.label,
-      position: index * band.step + band.step / 2,
-      extent: band.step,
-    }));
+    return this.categories().flatMap((category, index) =>
+      index % stride
+        ? []
+        : [
+            {
+              key: index,
+              text: category.label,
+              position: index * band.step + band.step / 2,
+              extent: band.step * stride,
+            },
+          ],
+    );
   });
 
   /** The value-axis labels, at their ticks. */

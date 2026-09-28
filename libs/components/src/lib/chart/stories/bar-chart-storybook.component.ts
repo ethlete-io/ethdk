@@ -1,6 +1,7 @@
 import { Component, computed, input, ViewEncapsulation } from '@angular/core';
 import { CHART_IMPORTS } from '../chart.imports';
 import {
+  BarChartCategoryLabelSpacing,
   BarChartDatum,
   BarChartLayout,
   BarChartOrientation,
@@ -8,7 +9,8 @@ import {
   BarChartSeriesDatum,
 } from '../headless/bar-chart.directive';
 
-export type BarChartStoryDataset = 'sign-ups' | 'goal-difference' | 'tickets' | 'budget' | 'goals';
+export type BarChartStoryDataset =
+  'sign-ups' | 'goal-difference' | 'tickets' | 'budget' | 'goals' | 'daily-visits' | 'empty';
 
 type StoryDataset = {
   label: string;
@@ -16,7 +18,20 @@ type StoryDataset = {
   series?: readonly BarChartSeries[];
 };
 
+const DAILY_VISITS = [
+  412, 388, 455, 501, 476, 298, 264, 430, 467, 489, 512, 530, 310, 287, 445, 472, 498, 521, 544, 330, 301, 468, 490,
+  515, 538, 560, 345, 318, 480, 505, 527,
+];
+
 const DATASETS: Record<BarChartStoryDataset, StoryDataset> = {
+  'daily-visits': {
+    label: 'Visits per day in March',
+    data: DAILY_VISITS.map((value, index) => ({ label: 'Mar ' + (index + 1), value })),
+  },
+  empty: {
+    label: 'Visits per day in April',
+    data: [],
+  },
   'sign-ups': {
     label: 'Sign-ups per month',
     data: [
@@ -99,7 +114,16 @@ const DATASETS: Record<BarChartStoryDataset, StoryDataset> = {
           [height]="height()"
           [colorToken]="colorToken() || null"
           [maxBarWidth]="maxBarWidth()"
-        />
+          [categoryLabelSpacing]="categoryLabelSpacing()"
+        >
+          @if (chartTitle()) {
+            <h3 etBarChartTitle>{{ chartTitle() }}</h3>
+          }
+          <p etBarChartEmpty>No visits recorded yet</p>
+          @if (chartNote()) {
+            <p etBarChartNote>{{ chartNote() }}</p>
+          }
+        </et-bar-chart>
       </div>
     </div>
   `,
@@ -115,6 +139,9 @@ export class BarChartStorybookComponent {
   public maxBarWidth = input(24);
   public colorToken = input('');
   public lastSeriesColorToken = input('');
+  public categoryLabelSpacing = input<BarChartCategoryLabelSpacing>('auto');
+  public chartTitle = input('');
+  public chartNote = input('');
 
   protected story = computed(() => DATASETS[this.dataset()]);
   protected series = computed(() => {

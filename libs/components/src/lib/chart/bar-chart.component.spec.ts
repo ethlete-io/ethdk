@@ -58,6 +58,29 @@ class SeriesBarChartHostComponent {
   orientation = signal<BarChartOrientation>('vertical');
 }
 
+@Component({
+  selector: 'et-test-dense-bar-chart-host',
+  template: `
+    <et-bar-chart
+      [data]="data()"
+      [categoryLabelSpacing]="spacing()"
+      [orientation]="orientation()"
+      [height]="200"
+      label="Daily sign-ups"
+    >
+      <h3 etBarChartTitle>Daily sign-ups</h3>
+      <p class="custom-empty" etBarChartEmpty>No sign-ups yet</p>
+      <p etBarChartNote>Source: CRM export</p>
+    </et-bar-chart>
+  `,
+  imports: [BarChartComponent],
+})
+class DenseBarChartHostComponent {
+  data = signal<BarChartDatum[]>(Array.from({ length: 30 }, (_, index) => ({ label: `${index + 1}`, value: index })));
+  spacing = signal<number | 'auto'>('auto');
+  orientation = signal<BarChartOrientation>('vertical');
+}
+
 const PLOT_WIDTH = 300;
 
 const measure = <T>(component: new () => T, providers: unknown[] = []) => {
@@ -183,6 +206,80 @@ describe('BarChartComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.et-bar-chart-bar')).toBeNull();
+  });
+});
+
+describe('BarChartComponent category labels', () => {
+  const setupDense = () => measure(DenseBarChartHostComponent);
+  const axisTexts = (element: HTMLElement) =>
+    [...element.querySelectorAll('.et-bar-chart-category-axis .et-chart-axis-label')].map((label) =>
+      label.textContent?.trim(),
+    );
+
+  it('shows every label while each has the room', () => {
+    const { chart } = setup();
+
+    expect(chart.categoryLabelStride()).toBe(1);
+    expect(chart.categoryLabels().map((label) => label.text)).toEqual(['Jan', 'Feb', 'Mar']);
+  });
+
+  it('thins dense labels to every nth, each spanning the bands up to the next shown label', () => {
+    const { chart, element } = setupDense();
+
+    expect(chart.categoryLabelStride()).toBe(3);
+    expect(axisTexts(element)).toEqual(['1', '4', '7', '10', '13', '16', '19', '22', '25', '28']);
+    expect(chart.categoryLabels()[1]).toEqual({ key: 3, text: '4', position: 35, extent: 30 });
+  });
+
+  it('takes an explicit spacing, and shows every label for 0', () => {
+    const { fixture, chart } = setupDense();
+
+    fixture.componentInstance.spacing.set(50);
+    fixture.detectChanges();
+
+    expect(chart.categoryLabelStride()).toBe(5);
+
+    fixture.componentInstance.spacing.set(0);
+    fixture.detectChanges();
+
+    expect(chart.categoryLabels().length).toBe(30);
+  });
+
+  it('thins a horizontal chart by line height along its plot height', () => {
+    const { fixture, chart } = setupDense();
+
+    fixture.componentInstance.orientation.set('horizontal');
+    fixture.detectChanges();
+
+    expect(chart.categoryLabelStride()).toBe(3);
+  });
+});
+
+describe('BarChartComponent slots', () => {
+  const setupDense = () => measure(DenseBarChartHostComponent);
+
+  it('projects the title before the figure and the note after it', () => {
+    const { element } = setupDense();
+    const chart = element.querySelector('et-bar-chart');
+    const children = [...(chart?.children ?? [])];
+    const indexOf = (selector: string) => children.findIndex((child) => child.matches(selector));
+
+    expect(indexOf('[etBarChartTitle]')).toBeLessThan(indexOf('.et-bar-chart-figure'));
+    expect(indexOf('[etBarChartNote]')).toBeGreaterThan(indexOf('.et-bar-chart-figure'));
+  });
+
+  it('shows the empty slot and no value labels only while there is no data', () => {
+    const { fixture, chart, element } = setupDense();
+
+    expect(chart.isEmpty()).toBe(false);
+    expect(element.querySelector('.custom-empty')).toBeNull();
+
+    fixture.componentInstance.data.set([]);
+    fixture.detectChanges();
+
+    expect(chart.isEmpty()).toBe(true);
+    expect(element.querySelector('.et-bar-chart-empty .custom-empty')?.textContent?.trim()).toBe('No sign-ups yet');
+    expect(element.querySelectorAll('.et-bar-chart-value-axis .et-chart-axis-label').length).toBe(0);
   });
 });
 

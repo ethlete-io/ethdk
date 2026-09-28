@@ -1,10 +1,12 @@
+<ng-content select="[etBarChartTitle]" />
+
 @if (chart.legendItems().length) {
   <et-chart-legend [items]="chart.legendItems()" [etProvideColor]="colorToken()" class="et-bar-chart-legend" />
 }
 
 <div [attr.data-orientation]="chart.orientation()" class="et-bar-chart-figure">
   <et-chart-axis
-    [labels]="chart.valueLabels()"
+    [labels]="chart.isEmpty() ? [] : chart.valueLabels()"
     [orientation]="chart.isHorizontal() ? 'horizontal' : 'vertical'"
     [style.block-size.px]="chart.isHorizontal() ? null : chart.height()"
     class="et-bar-chart-value-axis"
@@ -63,6 +65,12 @@
     }
   </div>
 
+  @if (chart.isEmpty()) {
+    <div [style.block-size.px]="chart.height()" class="et-bar-chart-empty">
+      <ng-content select="[etBarChartEmpty]" />
+    </div>
+  }
+
   <et-chart-axis
     [labels]="chart.categoryLabels()"
     [orientation]="chart.isHorizontal() ? 'vertical' : 'horizontal'"
@@ -76,5 +84,7 @@
     <et-chart-tooltip [value]="bar.valueText" [label]="bar.datum.label" [series]="bar.series?.label ?? null" />
   </ng-template>
 }
+
+<ng-content select="[etBarChartNote]" />
 
 <et-chart-data-table [caption]="chart.label()" [model]="chart.table()" />

@@ -25,9 +25,15 @@ export default {
     maxBarWidth: 24,
     colorToken: '',
     lastSeriesColorToken: '',
+    categoryLabelSpacing: 'auto',
+    chartTitle: '',
+    chartNote: '',
   },
   argTypes: {
-    dataset: { control: 'inline-radio', options: ['sign-ups', 'goal-difference', 'goals', 'tickets', 'budget'] },
+    dataset: {
+      control: 'inline-radio',
+      options: ['sign-ups', 'goal-difference', 'goals', 'tickets', 'budget', 'daily-visits', 'empty'],
+    },
     layout: { control: 'inline-radio', options: ['grouped', 'stacked'] },
     orientation: { control: 'inline-radio', options: ['vertical', 'horizontal'] },
     width: { control: { type: 'range', min: 200, max: 1000, step: 20 } },
@@ -35,6 +41,9 @@ export default {
     maxBarWidth: { control: { type: 'range', min: 4, max: 64, step: 2 } },
     colorToken: { control: 'text' },
     lastSeriesColorToken: { control: 'text' },
+    categoryLabelSpacing: { control: 'text' },
+    chartTitle: { control: 'text' },
+    chartNote: { control: 'text' },
   },
 } as Meta<BarChartStorybookComponent>;
 
@@ -102,6 +111,39 @@ export const SeriesColorToken: Story = {
     docs: {
       description: {
         story: "A series' own `colorToken` wins over its palette entry - here the last series is drawn in `neutral`.",
+      },
+    },
+  },
+};
+
+export const DenseLabels: Story = {
+  args: {
+    dataset: 'daily-visits',
+    chartTitle: 'Visits per day',
+    chartNote: 'Source: web analytics, March',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Thirty-one categories on a narrow plot. Category labels are thinned to every nth, so each shown label ' +
+          'gets at least `categoryLabelSpacing` px - `auto` estimates that from the longest label. ' +
+          '`etBarChartTitle` and `etBarChartNote` are projected above and below the chart.',
+      },
+    },
+  },
+};
+
+export const Empty: Story = {
+  args: {
+    dataset: 'empty',
+    chartTitle: 'Visits per day',
+    chartNote: 'Source: web analytics, April',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'While `data` is empty, projected `etBarChartEmpty` content is shown over the plot.',
       },
     },
   },
