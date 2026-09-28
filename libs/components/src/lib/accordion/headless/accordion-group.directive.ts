@@ -163,7 +163,7 @@ export class AccordionGroupDirective {
     const target = event.target;
     const currentIndex = accordions.findIndex((accordion) => accordion.trigger()?.elementRef.nativeElement === target);
 
-    if (currentIndex === -1) return;
+    if (currentIndex === -1 || event.ctrlKey || event.altKey || event.metaKey) return;
 
     const nextIndex = this.resolveNextIndex(event.key, currentIndex);
 

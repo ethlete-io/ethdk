@@ -5,8 +5,6 @@
     initial-value: 14px;
   }
 
-  /* Flush with the surrounding copy by default — a header that lines up with the text below it reads as
-     part of the page rather than as a card. Give it inline padding when the group is boxed. */
   @property --et-accordion-padding-inline {
     syntax: '<length>';
     inherits: true;
@@ -25,9 +23,6 @@
     initial-value: 14px;
   }
 
-  /* The hover tint's shape. Square by default: a header separated by hairlines is a list row, and a
-     rounded tint inside those lines reads as a card that popped out of the stack. Raise it when the
-     group *is* a card (its own border and inline padding). */
   @property --et-accordion-radius {
     syntax: '<length>';
     inherits: true;
@@ -40,8 +35,6 @@
     initial-value: 240ms;
   }
 
-  /* Separate from `--et-accordion-duration`: that one paces the collapse, this one the header's
-     response to the pointer, which has to feel immediate rather than choreographed. */
   @property --et-accordion-color-duration {
     syntax: '<time>';
     inherits: true;
@@ -69,8 +62,6 @@
     }
   }
 
-  /* A `role="heading"` div, so the level is an input rather than six template branches. It is not an
-     `<h*>`, so it starts with no margin — nothing to reset. */
   .et-accordion-heading {
     display: block;
   }
@@ -91,12 +82,8 @@
     font-weight: 500;
     text-align: start;
     cursor: pointer;
-    /* Colors only — the row's own geometry never moves on hover. */
     transition: background-color var(--et-accordion-color-duration) ease;
 
-    /* Interaction states are left bare (no `:where()`) so they outrank the base rule and the
-       config modifiers below, per the styling notes in CLAUDE.md. A row highlight wants to be
-       lighter than a button's: it covers the full width, so the same 12% reads much heavier. */
     @media (hover: hover) {
       &:hover {
         background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 7%, transparent);
@@ -116,8 +103,6 @@
       outline-offset: -2px;
     }
 
-    /* Disabled headers stay focusable (they are `aria-disabled`, not natively disabled) so a screen
-       reader can reach them and hear that they don't open — they just stop reacting to the pointer. */
     &:where([aria-disabled='true']) {
       color: var(--et-surface-color-muted-solid, GrayText);
       cursor: default;
@@ -145,7 +130,6 @@
       inline-size: var(--et-accordion-chevron-size);
       block-size: var(--et-accordion-chevron-size);
       color: var(--_et-accordion-secondary-color);
-      /* The icon points up, so closed is the rotated state. */
       rotate: 180deg;
       transition:
         rotate var(--et-accordion-duration) cubic-bezier(0.25, 0, 0.1, 1),
@@ -157,11 +141,6 @@
     }
   }
 
-  /* The collapse: a one-track grid whose row animates between `0fr` and `1fr`, so the content grows to
-     whatever height it happens to have without anyone measuring it. `visibility` is what takes the
-     collapsed panel out of the accessibility tree and out of find-in-page (`inert`, set by the panel
-     directive, only handles focus and pointer events); its flip is delayed by the full duration when
-     closing so the content stays on screen while the track shrinks, and undelayed when opening. */
   .et-accordion-panel {
     display: grid;
     grid-template-rows: 0fr;
@@ -194,15 +173,11 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    /* Both the base and the open rule, since each declares its own transition. Collapsing becomes
-       instant, which also means `visibility` no longer needs its delay. */
     .et-accordion-panel,
     .et-accordion-panel:where([data-open]) {
       transition: none;
     }
 
-    /* Only the rotation goes: a color cross-fade is not motion, and dropping it would make the
-       header's hover response snap while the rest of the library still eases. */
     .et-accordion-trigger .et-accordion-chevron {
       transition: color var(--et-accordion-color-duration) ease;
     }

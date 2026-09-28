@@ -98,8 +98,6 @@ export class AccordionDirective {
   });
 
   constructor() {
-    // Seeding, not syncing: read `isOpenByDefault` once (after the first binding has been applied)
-    // and then stop listening, so a re-render can't yank a closed panel back open.
     const seed = effect(() => {
       const isOpenByDefault = this.isOpenByDefault();
 
@@ -112,9 +110,6 @@ export class AccordionDirective {
       });
     });
 
-    // Registered from the constructor rather than an effect, so the group sees its accordions in
-    // creation order and, crucially, is told when one is destroyed - a `@for` that drops an item must
-    // not leave a dead accordion in the group's list.
     this.group?.registerAccordion(this);
 
     inject(DestroyRef).onDestroy(() => this.group?.unregisterAccordion(this));

@@ -1,6 +1,6 @@
 # testing, pagination, breadcrumb, accordion, masonry, loader scan - open findings
 
-Scan of `libs/components/src/lib/{testing,pagination,breadcrumb,accordion,masonry,loader}` from 2026-09-28. 0 High, 1 Medium, 18 Low, 1 Spec. Skipped: `testing/control-driver.ts`, `field-control-driver.ts`, `overlay-control-driver.ts`, `masonry/testing/masonry-driver.ts`, and most CSS (read only for colours, layers, motion).
+Scan of `libs/components/src/lib/{testing,pagination,breadcrumb,accordion,masonry,loader}` from 2026-09-28. 0 High, 1 Medium, 16 Low, 1 Spec. Skipped: `testing/control-driver.ts`, `field-control-driver.ts`, `overlay-control-driver.ts`, `masonry/testing/masonry-driver.ts`, and most CSS (read only for colours, layers, motion).
 
 ## breadcrumb
 
@@ -8,14 +8,6 @@ Scan of `libs/components/src/lib/{testing,pagination,breadcrumb,accordion,masonr
 - Low: two `<et-breadcrumb-outlet>`s under one manager (a desktop and a mobile shell) each stamp every segment template, so each crumb template registers twice on its segment and both trails show every crumb twice (`breadcrumb-outlet.component.ts:38-40`, `headless/breadcrumb-segment.directive.ts:54-56`). Key crumbs per outlet, or dev-warn on a second outlet. M Re-rated from Medium: `provideBreadcrumbManager` JSDoc and the guide document a single outlet per manager, so the gap is the missing dev warning.
 - Low: `BreadcrumbSegmentDirective.order` has no `numberAttribute` transform, but its JSDoc shows `order="0"` (`headless/breadcrumb-segment.directive.ts:42`). That static attribute fails strict template type-checks, and without them the sort does string subtraction. S
 - Low: `BreadcrumbComponent` always imports `SKELETON_IMPORTS` for the opt-in `loading` state (`breadcrumb.component.ts:31`). Every breadcrumb bundles the skeleton. Move the placeholder behind a styles-only/opt-in piece if the skeleton is not trivial. S
-
-## pagination
-
-
-## accordion
-
-- Low: arrow-key navigation also fires on `Ctrl`/`Alt`/`Meta` combinations (`headless/accordion-group.directive.ts:186-200`), and that takes `Ctrl+Home`/`Ctrl+End` away from the page. Return `null` when a modifier is held. S
-- Low: comments outside the allowlist: `headless/accordion.directive.ts:101-102,115-117`, `accordion.component.html:22-23`, and most of the rationale blocks in `accordion.component.css` (lines 8, 28, 43, 59, 72, 94, 97, 119, 148, 160, 182, 197, 204). S
 
 ## masonry
 

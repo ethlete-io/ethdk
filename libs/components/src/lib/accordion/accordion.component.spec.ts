@@ -320,6 +320,23 @@ describe('AccordionGroupComponent', () => {
     expect(document.activeElement).toBe(triggers[2]);
   });
 
+  it('leaves Ctrl/Alt/Meta arrow and Home/End combinations to the page', () => {
+    const fixture = createHost();
+    const triggers = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
+      '.et-accordion-trigger',
+    );
+
+    triggers[0]?.focus();
+
+    for (const modifier of ['ctrlKey', 'altKey', 'metaKey'] as const) {
+      const event = new KeyboardEvent('keydown', { key: 'End', bubbles: true, cancelable: true, [modifier]: true });
+      triggers[0]?.dispatchEvent(event);
+
+      expect(event.defaultPrevented).toBe(false);
+      expect(document.activeElement).toBe(triggers[0]);
+    }
+  });
+
   it('follows DOM order with the arrow keys after a keyed @for re-order', async () => {
     const fixture = createHost();
     fixture.componentInstance.sections.set(['third', 'first', 'second']);
