@@ -1,4 +1,4 @@
-import { DestroyRef, Directive, ElementRef, afterNextRender, computed, effect, inject, input } from '@angular/core';
+import { Directive, ElementRef, afterNextRender, computed, effect, inject, input } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { CASCADER_ERROR_CODES } from '../cascader-errors';
 import { CascaderColumnDirective } from './cascader-column.directive';
@@ -16,7 +16,7 @@ import { canHaveChildren, nodesEqual } from './internals/cascader-tree';
   host: {
     role: 'treeitem',
     '[attr.aria-level]': 'column.columnIndex() + 1',
-    '[attr.aria-selected]': 'selected()',
+    '[attr.aria-selected]': 'ariaSelected()',
     '[attr.aria-expanded]': 'expandable() ? expanded() : null',
     '[attr.aria-disabled]': 'node().disabled || null',
     '[attr.tabindex]': 'focused() ? 0 : -1',
@@ -34,7 +34,6 @@ export class CascaderNodeDirective<T = unknown> {
   protected column = inject(CascaderColumnDirective);
   private cascader = inject<CascaderDirective<T>>(CascaderDirective, { optional: true });
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private destroyRef = inject(DestroyRef);
 
   /** The node this element represents. */
   public node = input.required<{
@@ -49,6 +48,7 @@ export class CascaderNodeDirective<T = unknown> {
 
   protected expandable = computed(() => canHaveChildren(this.node()));
   protected selected = computed(() => this.cascader?.isSelected(this.node()) ?? false);
+  protected ariaSelected = computed(() => this.cascader?.isAriaSelected(this.node()) ?? false);
   protected indeterminate = computed(() => this.cascader?.isIndeterminate(this.node()) ?? false);
   protected expanded = computed(() => this.cascader?.isExpanded(this.node(), this.column.columnIndex()) ?? false);
 
@@ -101,8 +101,6 @@ export class CascaderNodeDirective<T = unknown> {
         }
       });
     }
-
-    void this.destroyRef;
   }
 
   protected handleClick() {

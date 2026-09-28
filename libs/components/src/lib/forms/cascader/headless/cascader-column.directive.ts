@@ -1,4 +1,4 @@
-import { DestroyRef, Directive, afterNextRender, computed, inject, input } from '@angular/core';
+import { Directive, afterNextRender, computed, inject, input } from '@angular/core';
 import { RuntimeError, createComponentId, injectHostElement } from '@ethlete/core';
 import { CASCADER_ERROR_CODES } from '../cascader-errors';
 import { CascaderDirective } from './cascader.directive';
@@ -18,7 +18,6 @@ export class CascaderColumnDirective {
   private cascaderLabels = injectCascaderLabels();
 
   public cascader = inject(CascaderDirective, { optional: true });
-  private destroyRef = inject(DestroyRef);
   private hostElement = injectHostElement();
 
   /** The column's zero-based level - column 0 shows the root. */
@@ -34,8 +33,6 @@ export class CascaderColumnDirective {
   });
 
   constructor() {
-    void this.destroyRef;
-
     if (ngDevMode) {
       afterNextRender(() => {
         if (!this.cascader) {

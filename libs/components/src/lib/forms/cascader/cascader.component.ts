@@ -24,8 +24,8 @@ import {
   CascaderSurfaceDirective,
   CascaderTriggerDirective,
 } from './headless';
-import { injectFormFieldLabels } from '../../forms/form-field/form-field-labels';
-import { injectCascaderLabels } from '../../forms/cascader/cascader-labels';
+import { injectFormFieldLabels } from '../form-field/form-field-labels';
+import { injectCascaderLabels } from './cascader-labels';
 import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
 
 @Component({

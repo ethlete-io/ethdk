@@ -1,28 +1,14 @@
 # forms/cascader + forms/dropzone scan - open findings
 
-Scan of `libs/components/src/lib/forms/cascader/` and `libs/components/src/lib/forms/dropzone/` from 2026-09-28. 0 High, 0 Medium, 25 Low, 1 Spec (1 refuted in verification). Skipped: stories and specs (read only to check coverage), the CSS files beyond a layer and colour check, the query internals behind `executeUntilSettled$`.
+Scan of `libs/components/src/lib/forms/cascader/` and `libs/components/src/lib/forms/dropzone/` from 2026-09-28. 0 High, 0 Medium, 14 Low, 1 Spec (1 refuted in verification). Skipped: stories and specs (read only to check coverage), the CSS files beyond a layer and colour check, the query internals behind `executeUntilSettled$`.
 
 ## cascader - keyboard and a11y
 
-- Low: In single mode `isSelected` is true for every ancestor on the committed chain, so branch nodes get `aria-selected="true"` and a screen reader announces several selected items in a single-select tree (`forms/cascader/headless/cascader.directive.ts:669`). Report `aria-selected` for the last node only and keep the ancestor state as a data attribute. S
-- Low: ArrowRight drills and ArrowLeft goes back without a check for `dir="rtl"`, so the keys point the wrong way in RTL (`forms/cascader/headless/cascader.directive.ts:844`). S
-- Low: `canOpen` checks only `disabled`, so a consumer that writes `[(open)]="true"` on a readonly cascader opens the panel that `show()` refuses (`forms/cascader/headless/cascader.directive.ts:300`, `:619`). S
-- Low: `appendCharacter` appends to `element.value` and ignores the caret and a selection, so typed text lands at the end instead of replacing selected text (`forms/cascader/headless/cascader-search.directive.ts:74`). S
-
 ## cascader - state and streams
-
-- Low: A synchronous throw from `resolvePath` or `search` happens inside the `switchMap` project function, outside the inner `catchError`, so it errors the outer stream and path resolution or search stops for the life of the control (`forms/cascader/headless/cascader.directive.ts:486`, `:525`, `:568`). Wrap the call in `defer`. A sync throw from `loadChildren` escapes `activateNode` the same way (`:1227`). S
-- Low: The focus retry loops call `requestAnimationFrame` directly, are not cancelled on destroy, and bypass the `nextFrame` helper the rest of the file uses (so core's fake frames do not drive them) (`forms/cascader/headless/cascader.directive.ts:368`, `:1122`). S
-- Low: `isFullySelected` recurses over `knownChildren` for every rendered node on every change in multi mode (`forms/cascader/headless/cascader.directive.ts:1075`). Large trees with many selected values pay O(nodes x descendants x values) per render; memoise per value set. M
-- Low: `cascaderFromQuery` destroys its query in `finalize` without a `destroyRef.destroyed` guard (`forms/cascader/cascader-from-query.ts:130`). The dropzone delete executor guards the same call because a scope teardown that runs first makes a second destroy throw NG0205 (`forms/dropzone/headless/dropzone-upload.ts:430`). S
-- Low: The fallback error text `'Something went wrong'` is hardcoded English in two places and is not in `CascaderLabels` (`forms/cascader/headless/cascader.directive.ts:125`, `forms/cascader/cascader-from-query.ts:60`). S
 
 ## cascader - cleanup
 
 - Low: `internals/cascader-tree` is re-exported from the public headless barrel, which publishes `toChildrenObservable`, `toSearchObservable`, `toPathObservable`, `nodesEqual` and `indexOfNode` (`forms/cascader/headless/index.ts:9`). Export only the types and `canHaveChildren`/`defaultCompareWith`. S
-- Low: The three `to*Observable` normalisers are the same function with different types (`forms/cascader/headless/internals/cascader-tree.ts:80`). Merge into one generic helper. S
-- Low: `DestroyRef` is injected only to be voided (`forms/cascader/headless/cascader-node.directive.ts:37`, `:105`; `forms/cascader/headless/cascader-column.directive.ts:21`, `:37`). Delete both. S
-- Low: Imports take a detour through `../../forms/...` for sibling files (`forms/cascader/cascader.component.ts:27`, `:28`; `forms/cascader/headless/cascader.directive.ts:48`). S
 - Low: The panel shadow uses a hardcoded colour as the primary value (`forms/cascader/cascader-panel.component.css:43`). S
 
 ## dropzone - validation and upload

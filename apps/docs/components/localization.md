@@ -111,7 +111,7 @@ that provides labels needs no per-instance wiring at all.
 | `TIME_PICKER_LABELS`      | `provideTimePickerLabels`     | Hours / minutes / seconds / AM-PM columns, a range's start/end side switch                                               |
 | `SELECT_LABELS`           | `provideSelectLabels`         | Panel loading/empty state, load more, create-a-value                                                                     |
 | `COLOR_INPUT_LABELS`      | `provideColorInputLabels`     | The color picker panel: its dialog name, each surface, the entry field and its notation names, the eyedropper            |
-| `CASCADER_LABELS`         | `provideCascaderLabels`       | Column states, retry, back, search, root column heading                                                                  |
+| `CASCADER_LABELS`         | `provideCascaderLabels`       | Column states, load error fallback, retry, back, search, root column heading                                             |
 | `PHONE_INPUT_LABELS`      | `providePhoneInputLabels`     | Country selector and its search (country names come from `Intl`)                                                         |
 | `SLIDER_LABELS`           | `provideSliderLabels`         | A range slider's two thumbs                                                                                              |
 | `DROPZONE_LABELS`         | `provideDropzoneLabels`       | Drop prompt, entry actions, upload-failed wording, uploading status                                                      |

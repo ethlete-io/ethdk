@@ -1196,3 +1196,174 @@ describe('CascaderDirective (touched on dismiss)', () => {
     expect(driver.host.touched()).toBe(false);
   });
 });
+
+@Component({
+  template: `
+    <et-cascader
+      [(open)]="open"
+      [value]="value()"
+      [dataSource]="dataSource()"
+      [readonly]="readonly()"
+      (valueChange)="value.set($event)"
+      placeholder="Pick a match"
+    />
+  `,
+  imports: [CASCADER_IMPORTS],
+})
+class CascaderOpenBindingTestHost {
+  open = signal(false);
+  value = signal<string | string[] | null>(null);
+  readonly = signal(false);
+  dataSource = signal<CascaderDataSource<string>>(syncSource);
+}
+
+describe('CascaderDirective (edge cases)', () => {
+  let driver: CascaderDriver<CascaderOpenBindingTestHost>;
+
+  const settle = async () => {
+    driver.detectChanges();
+    tick();
+    await driver.settle();
+  };
+
+  beforeEach(() => {
+    driver = mountCascader(CascaderOpenBindingTestHost);
+  });
+
+  afterEach(async () => {
+    await driver.close();
+  });
+
+  it('does not open a readonly cascader through the open binding', async () => {
+    driver.host.readonly.set(true);
+    driver.host.open.set(true);
+    await settle();
+
+    expect(driver.cascader.isMounted()).toBe(false);
+    expect(driver.host.open()).toBe(false);
+  });
+
+  it('announces only the committed node as selected in single mode', async () => {
+    await driver.open();
+    driver.drillTo(['Euro', 'Group stage', 'Group A']);
+    await flushFrames();
+    await driver.open();
+
+    expect(driver.nodeByLabel('Euro')!.getAttribute('data-selected')).toBe('true');
+    expect(driver.nodeByLabel('Euro')!.getAttribute('aria-selected')).toBe('false');
+    expect(driver.nodeByLabel('Group stage')!.getAttribute('aria-selected')).toBe('false');
+    expect(driver.nodeByLabel('Group A')!.getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('swaps ArrowLeft and ArrowRight in a right-to-left layout', async () => {
+    await driver.open();
+    driver.nodeByLabel('Euro')!.style.direction = 'rtl';
+    driver.pressOnNode('Euro', 'ArrowLeft');
+    tick();
+
+    expect(driver.columns().length).toBe(2);
+
+    const groupStage = driver.nodeByLabel('Group stage')!;
+
+    groupStage.style.direction = 'rtl';
+    driver.pressOnNode('Group stage', 'ArrowRight');
+    tick();
+
+    expect(driver.cascader.focusedNode()?.value).toBe('euro');
+  });
+
+  it('replaces the selected search text with a character typed on a result', async () => {
+    driver.host.dataSource.set(searchableSource);
+    driver.detectChanges();
+    await driver.open();
+    await driver.type('group');
+
+    driver.searchInput()!.setSelectionRange(0, 5);
+    driver.pressOnResult(0, 'k');
+    await driver.settle();
+
+    expect(driver.cascader.searchQuery()).toBe('k');
+  });
+
+  it('keeps resolving paths after resolvePath threw synchronously', async () => {
+    driver.host.dataSource.set({
+      loadChildren: syncSource.loadChildren,
+      resolvePath: (value) => {
+        if (value === 'broken') {
+          throw new Error('sync failure');
+        }
+
+        return searchTree('').find((path) => path.at(-1)?.value === value) ?? null;
+      },
+    });
+    driver.host.value.set('broken');
+    await settle();
+
+    driver.host.value.set('world-final');
+    await settle();
+
+    expect(driver.cascader.displayValue()).toBe('World Cup / Final');
+  });
+
+  it('shows a synchronous search throw as a search error and keeps searching', async () => {
+    let attempts = 0;
+
+    driver.host.dataSource.set({
+      loadChildren: syncSource.loadChildren,
+      search: (query) => {
+        attempts += 1;
+
+        if (attempts === 1) {
+          throw new Error('sync search failure');
+        }
+
+        return searchTree(query);
+      },
+    });
+    driver.detectChanges();
+    await driver.open();
+    await driver.type('group');
+
+    expect(driver.cascader.searchState()).toEqual({ status: 'error', results: [], error: 'sync search failure' });
+
+    await driver.type('final');
+
+    expect(driver.resultLabels().length).toBe(1);
+  });
+
+  it('shows a synchronous loadChildren throw as a column error', async () => {
+    driver.host.dataSource.set({
+      loadChildren: () => {
+        throw new Error('sync load failure');
+      },
+    });
+    driver.detectChanges();
+    await driver.open();
+
+    expect(driver.cascader.columns()[0]).toMatchObject({ status: 'error', error: 'sync load failure' });
+  });
+
+  it('stops the column focus retries when destroyed', async () => {
+    const FRAMES_PER_FLUSH = 2;
+
+    driver.host.dataSource.set({
+      loadChildren: (parent) => (parent ? new Promise<CascaderNode<string>[]>(() => undefined) : TREE['__root__']!),
+    });
+    driver.detectChanges();
+    await driver.open();
+    driver.clickNode('Euro');
+
+    driver.fixture.destroy();
+    await flushFrames();
+    await flushFrames();
+
+    const frames = vi.spyOn(window, 'requestAnimationFrame');
+
+    await flushFrames();
+    await flushFrames();
+
+    expect(frames).toHaveBeenCalledTimes(2 * FRAMES_PER_FLUSH);
+
+    frames.mockRestore();
+  });
+});

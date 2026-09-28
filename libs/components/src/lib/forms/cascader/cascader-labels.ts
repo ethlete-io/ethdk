@@ -16,6 +16,8 @@ export type CascaderLabels = {
   back: string;
   /** Placeholder for the panel's search field. */
   search: string;
+  /** Shown when a level or a search failed without a message of its own. */
+  error: string;
 };
 
 /** The built-in English labels. */
@@ -27,6 +29,7 @@ export const DEFAULT_CASCADER_LABELS: CascaderLabels = {
   options: 'Options',
   back: 'Back',
   search: 'Search',
+  error: 'Something went wrong',
 };
 
 const CASCADER_LABELS_DEF = /* @__PURE__ */ defineLabels<CascaderLabels>('CASCADER_LABELS', DEFAULT_CASCADER_LABELS);

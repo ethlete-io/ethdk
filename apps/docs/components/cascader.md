@@ -141,7 +141,7 @@ On `et-cascader` (forwarded from the headless `[etCascader]` directive), plus th
 | `multiple`          | `boolean`                       | `false`  | [Multi-select](#multi-select): activations toggle values, the form value is a `T[]`.                                                                                                   |
 | `selectableLevels`  | `'leaf' \| 'any'`               | `'leaf'` | `'leaf'` commits only terminal nodes; `'any'` also commits intermediate branches (see below).                                                                                          |
 | `compareWith`       | `(a: T, b: T) => boolean`       | `===`    | Value equality - override when values are objects.                                                                                                                                     |
-| `toErrorMessage`    | `(error: unknown) => string`    | see note | Maps a `loadChildren` / `search` failure to the panel's error text. Default: an `Error`'s `message` verbatim, a generic fallback otherwise.                                            |
+| `toErrorMessage`    | `(error: unknown) => string`    | see note | Maps a `loadChildren` / `search` failure to the panel's error text. Default: an `Error`'s `message` verbatim, `CASCADER_LABELS.error` otherwise.                                       |
 | `mirrorPanelWidth`  | `boolean`                       | `false`  | Whether the panel matches the field width (off - columns size themselves).                                                                                                             |
 | `maxVisibleColumns` | `number`                        | `3`      | Columns shown side by side before older levels collapse into the [breadcrumb row](#deep-hierarchies) (min 1).                                                                          |
 | `mixed`             | `boolean`                       | `false`  | Presents an [unresolved bulk-edit selection](#mixed-values-in-bulk-editors) independently of `value`. Two-way bindable (`mixedChange`); a user commit or clear resolves it to `false`. |
@@ -154,7 +154,7 @@ On `et-cascader` (forwarded from the headless `[etCascader]` directive), plus th
 | `aria-label`        | `string \| null`                | `null`   | Names the trigger when no `et-label` is projected.                                                                                                                                     |
 | `aria-labelledby`   | `string \| null`                | `null`   | Ids naming the trigger. Takes precedence over a projected `et-label`.                                                                                                                  |
 
-¹ `null` falls through to the domain's label set - [`FORM_FIELD_LABELS.mixed`](/components/localization) for `mixedLabel`, [`CASCADER_LABELS`](/components/localization) for `searchPlaceholder`, `backLabel` and the panel's loading/empty/retry states, all overridable for a subtree with `provideCascaderLabels({ … })`.
+¹ `null` falls through to the domain's label set - [`FORM_FIELD_LABELS.mixed`](/components/localization) for `mixedLabel`, [`CASCADER_LABELS`](/components/localization) for `searchPlaceholder`, `backLabel` and the panel's loading/empty/error/retry states, all overridable for a subtree with `provideCascaderLabels({ … })`.
 
 | Output       | Payload   | Emitted when                                                  |
 | ------------ | --------- | ------------------------------------------------------------- |
@@ -239,7 +239,7 @@ For [flat search](#flat-search), place an `input[etCascaderSearch]` in the surfa
 
 ## Accessibility
 
-- The trigger is a `role="combobox"` with `aria-haspopup="tree"`, `aria-expanded`, and `aria-controls` pointing at the open tree panel; the panel is a `role="tree"` of `role="group"` columns and `role="treeitem"` nodes carrying `aria-level`, `aria-selected`, and `aria-expanded` on branches.
+- The trigger is a `role="combobox"` with `aria-haspopup="tree"`, `aria-expanded`, and `aria-controls` pointing at the open tree panel; the panel is a `role="tree"` of `role="group"` columns and `role="treeitem"` nodes carrying `aria-level`, `aria-selected`, and `aria-expanded` on branches. In single mode only the committed node is `aria-selected`; its ancestors mark the chain with `data-selected` alone.
 - The panel takes focus on open. Roving tabindex keeps exactly one node tabbable and skips disabled nodes, and drilling in the mobile sheet moves focus into the new level; its hidden root-level Back control is disabled and skipped by keyboard navigation.
 - A cascader named by something other than a projected `et-label` - a shared caption over a filter row - takes `aria-label` / `aria-labelledby` on the control itself; both reach the trigger, and either satisfies the field's [`ET2201`](/components/error-codes) labelling guard.
 
@@ -251,6 +251,8 @@ For [flat search](#flat-search), place an `input[etCascaderSearch]` in the surfa
 | Home / End      | First / last node of the column                                                             |
 | Type a name     | Jump to the first matching node in column                                                   |
 | Enter / Space   | Select the focused node (commit or drill)                                                   |
+
+In a right-to-left layout Arrow Left drills and Arrow Right returns.
 
 With a [flat search](#flat-search) active, the panel reports itself as a `role="listbox"` of `role="option"` results instead, typing routes into the search input (replacing the in-column jump - except Space, which keeps activating the focused node), and Escape clears the query before it closes the panel.
 

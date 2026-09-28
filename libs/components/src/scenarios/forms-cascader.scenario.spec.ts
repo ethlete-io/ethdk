@@ -301,7 +301,8 @@ describe('forms cascader scenarios', () => {
     trigger.click();
     settle(s);
     expect(node('Tokyo').getAttribute('aria-selected')).toBe('true');
-    expect(node('Asia').getAttribute('aria-selected')).toBe('true');
+    expect(node('Asia').getAttribute('aria-selected')).toBe('false');
+    expect(node('Asia').hasAttribute('data-selected')).toBe(true);
     expect(columnLabels(2)).toEqual(['Tokyo']);
 
     s.keydown('Escape', document);

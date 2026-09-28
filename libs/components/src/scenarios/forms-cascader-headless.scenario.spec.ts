@@ -277,7 +277,8 @@ describe('forms cascader headless scenarios', () => {
 
     trigger.click();
     settle(s);
-    expect(queryAll('.team-node[aria-selected="true"]').map(text)).toEqual(['South League 2/3 >', 'Sharks 1/1']);
+    expect(queryAll('.team-node[data-selected]').map(text)).toEqual(['South League 2/3 >', 'Sharks 1/1']);
+    expect(queryAll('.team-node[aria-selected="true"]').map(text)).toEqual(['Sharks 1/1']);
 
     query('.team-done').click();
     settle(s);

@@ -76,51 +76,29 @@ export const indexOfNode = <T>(options: {
   return node === null ? -1 : nodes.findIndex((candidate) => compareWith(candidate.value, node.value));
 };
 
-/** Normalizes a `loadChildren` result (array | Promise | Observable) into an Observable. */
-export const toChildrenObservable = <T>(
-  result: CascaderNode<T>[] | Promise<CascaderNode<T>[]> | Observable<CascaderNode<T>[]>,
-): Observable<CascaderNode<T>[]> => {
-  if (Array.isArray(result)) {
-    return of(result);
-  }
-
+const toObservableResult = <TResult>(result: TResult | Promise<TResult> | Observable<TResult>): Observable<TResult> => {
   if (isObservable(result)) {
     return result;
   }
 
-  return from(result);
+  if (result instanceof Promise) {
+    return from(result);
+  }
+
+  return of(result);
 };
+
+/** Normalizes a `loadChildren` result (array | Promise | Observable) into an Observable. */
+export const toChildrenObservable = <T>(
+  result: CascaderNode<T>[] | Promise<CascaderNode<T>[]> | Observable<CascaderNode<T>[]>,
+) => toObservableResult(result);
 
 /** Normalizes a `search` result (array | Promise | Observable) into an Observable. */
 export const toSearchObservable = <T>(
   result: CascaderNode<T>[][] | Promise<CascaderNode<T>[][]> | Observable<CascaderNode<T>[][]>,
-): Observable<CascaderNode<T>[][]> => {
-  if (Array.isArray(result)) {
-    return of(result);
-  }
-
-  if (isObservable(result)) {
-    return result;
-  }
-
-  return from(result);
-};
+) => toObservableResult(result);
 
 /** Normalizes a `resolvePath` result (array | null | Promise | Observable) into an Observable. */
 export const toPathObservable = <T>(
   result: CascaderNode<T>[] | null | Promise<CascaderNode<T>[] | null> | Observable<CascaderNode<T>[] | null>,
-): Observable<CascaderNode<T>[] | null> => {
-  if (result === null) {
-    return of(null);
-  }
-
-  if (Array.isArray(result)) {
-    return of(result);
-  }
-
-  if (isObservable(result)) {
-    return result;
-  }
-
-  return from(result);
-};
+) => toObservableResult(result);

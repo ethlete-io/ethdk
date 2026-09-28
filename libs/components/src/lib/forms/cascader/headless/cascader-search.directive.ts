@@ -66,12 +66,13 @@ export class CascaderSearchDirective {
     }
   }
 
-  /** @internal Focuses the input and appends a character typed while a node or result had focus. */
+  /** @internal Focuses the input and types a character that was pressed while a node or result had focus. */
   public appendCharacter(character: string) {
     const element = this.elementRef.nativeElement;
+    const end = element.value.length;
 
     this.focus();
-    element.value += character;
+    element.setRangeText(character, element.selectionStart ?? end, element.selectionEnd ?? end, 'end');
     this.cascader?.setSearchQuery(element.value);
   }
 

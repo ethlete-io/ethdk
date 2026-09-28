@@ -1,5 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { EnvironmentInjector, createEnvironmentInjector } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { createGetQuery, createQueryClient } from '@ethlete/query';
 import { Observable, firstValueFrom, isObservable } from 'rxjs';
@@ -131,6 +132,33 @@ describe('cascaderFromQuery', () => {
     subscription.unsubscribe();
     await settle();
 
+    expect(request.cancelled).toBe(true);
+  });
+
+  it('unsubscribes cleanly after the injector that ran the load was destroyed', async () => {
+    const injector = createEnvironmentInjector([], TestBed.inject(EnvironmentInjector));
+    const source = injector.runInContext(() => {
+      const getChildren = createGetQuery(client)<ChildrenArgs>('/children');
+
+      return cascaderFromQuery({
+        queryCreator: getChildren,
+        toNodes: (response) => response.items.map((item) => ({ value: item.id, label: item.name })),
+        args: (parent: CascaderNode<string> | null) => ({ queryParams: { parent: parent?.value ?? 'root' } }),
+      });
+    });
+
+    const subscription = (source.loadChildren(null) as Observable<CascaderNode<string>[]>).subscribe({
+      error: () => undefined,
+    });
+
+    TestBed.tick();
+    await settle();
+
+    const request = http.expectOne((req) => req.url.includes('/children'));
+
+    injector.destroy();
+
+    expect(() => subscription.unsubscribe()).not.toThrow();
     expect(request.cancelled).toBe(true);
   });
 

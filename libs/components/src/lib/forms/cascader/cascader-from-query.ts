@@ -9,6 +9,7 @@ import {
   withArgs,
 } from '@ethlete/query';
 import { Observable, defer, filter, finalize, map, switchMap, take, timer } from 'rxjs';
+import { injectCascaderLabels } from './cascader-labels';
 import { CascaderDataSource, CascaderNode } from './headless';
 
 /** The optional flat-search half of {@link cascaderFromQuery} - providing it enables the panel's search input. */
@@ -57,7 +58,7 @@ export type CascaderFromQueryConfig<
 const firstErrorMessage = (error: QueryErrorResponse) => {
   const message = 'errors' in error ? error.errors[0]?.message : error.error?.message;
 
-  return message ?? error.raw?.statusText ?? 'Something went wrong';
+  return message ?? error.raw?.statusText;
 };
 
 /**
@@ -93,7 +94,9 @@ export const cascaderFromQuery = <
   config: CascaderFromQueryConfig<TCreator, TValue, TSearchCreator>,
 ): CascaderDataSource<TValue> => {
   const injector = inject(Injector);
-  const toErrorMessage = config.toErrorMessage ?? firstErrorMessage;
+  const labels = injectCascaderLabels();
+  const toErrorMessage =
+    config.toErrorMessage ?? ((error: QueryErrorResponse) => firstErrorMessage(error) ?? labels().error);
 
   const runQuery = <TRunCreator extends AnyQueryCreator, TResult>(options: {
     creator: TRunCreator;
@@ -127,7 +130,10 @@ export const cascaderFromQuery = <
 
           return toResult(state.response);
         }),
-        finalize(() => query.subtle.destroy()),
+        // the injector's teardown may have destroyed the query first - destroying it again throws NG0205
+        finalize(() => {
+          if (!query.subtle.destroyRef.destroyed) query.subtle.destroy();
+        }),
       );
     });
 

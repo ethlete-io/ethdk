@@ -18,7 +18,7 @@ import {
 import { takeUntilDestroyed, toObservable, outputFromObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { RuntimeError, injectHostElement, nextFrame } from '@ethlete/core';
-import { EMPTY, Subscription, catchError, fromEvent, merge, switchMap, take, tap } from 'rxjs';
+import { EMPTY, Subscription, catchError, defer, fromEvent, merge, switchMap, take, tap } from 'rxjs';
 import { createTypeahead } from '../../../internals/typeahead';
 import { mountFloatingPanelStyles } from '../../../overlay/floating-panel-styles.component';
 import { anchoredOverlayStrategy, injectBottomSheetStrategy } from '../../../overlay/strategies';
@@ -31,6 +31,7 @@ import {
   FormFieldControl,
   hitsInteractiveElement,
 } from '../../form-field/headless';
+import { injectCascaderLabels } from '../cascader-labels';
 import { CASCADER_ERROR_CODES } from '../cascader-errors';
 import { CascaderColumnState, CascaderSearchState } from './cascader.tokens';
 import {
@@ -45,7 +46,7 @@ import {
   toPathObservable,
   toSearchObservable,
 } from './internals/cascader-tree';
-import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
+import { injectFormFieldLabels } from '../../form-field/form-field-labels';
 import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
 import { controlTouches } from '../../../internals/touch-output';
 
@@ -58,7 +59,37 @@ export const CASCADER_SELECTABLE_LEVELS = {
 
 export type CascaderSelectableLevels = (typeof CASCADER_SELECTABLE_LEVELS)[keyof typeof CASCADER_SELECTABLE_LEVELS];
 
+/** Swaps ArrowLeft and ArrowRight when the key's target is laid out right to left. */
+const inlineArrowKey = (event: KeyboardEvent) => {
+  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
+    return event.key;
+  }
+
+  const rtl = event.target instanceof HTMLElement && getComputedStyle(event.target).direction === 'rtl';
+
+  if (!rtl) {
+    return event.key;
+  }
+
+  return event.key === 'ArrowLeft' ? 'ArrowRight' : 'ArrowLeft';
+};
+
 const firstEnabledNode = <T>(nodes: CascaderNode<T>[]) => nodes.find((node) => !node.disabled);
+
+/** Runs `attempt` now and once per frame after that until it returns `true` or the tries run out. Returns a cancel. */
+const retryEachFrame = (attempt: () => boolean, tries = 20) => {
+  let cancel: () => void = () => undefined;
+
+  const run = (remaining: number) => {
+    if (!attempt() && remaining > 0) {
+      cancel = nextFrame(() => run(remaining - 1));
+    }
+  };
+
+  run(tries);
+
+  return () => cancel();
+};
 
 type CascaderSurfaceLike = { templateRef: unknown };
 type CascaderTriggerLike = { elementRef: { nativeElement: HTMLElement } };
@@ -84,6 +115,7 @@ export class CascaderDirective<T = unknown>
   implements FormValueControl<T | T[] | null>, FormFieldControl
 {
   private formFieldLabels = injectFormFieldLabels();
+  private cascaderLabels = injectCascaderLabels();
 
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
@@ -124,7 +156,7 @@ export class CascaderDirective<T = unknown>
    * messages) and a generic fallback for anything else.
    */
   public toErrorMessage = input<(error: unknown) => string>(
-    (error) => (error instanceof Error && error.message) || 'Something went wrong',
+    (error) => (error instanceof Error && error.message) || this.cascaderLabels().error,
   );
 
   /** Whether the overlay panel mirrors the anchor's width (off - columns size themselves). */
@@ -298,8 +330,28 @@ export class CascaderDirective<T = unknown>
     return { source, search, query: this.searchQuery().trim(), retry: this.searchRetry() };
   });
 
+  private loadSubscriptions = new Map<number, Subscription>();
+
+  /** The deepest column index currently shown - the visible column in sheet (drill) mode. */
+  public deepestColumnIndex = computed(() => Math.max(0, this.columns().length - 1));
+
+  /** Direction of the last column navigation - drives the panel's slide animation. `null` on open. */
+  public navigationDirection = signal<'forward' | 'backward' | null>(null);
+
+  /**
+   * How the sheet header title animates on the last navigation. `'slide'` (a directional
+   * cross-slide) for level changes that keep the Back bar; `'fade'` when the nav crosses the
+   * root boundary (Back appears/disappears) - there the title also shifts horizontally as the
+   * Back bar's width animates, so a competing transform slide would look jumpy.
+   */
+  public titleAnimation = signal<'slide' | 'fade'>('slide');
+
+  private typeahead = createTypeahead();
+  private typeaheadColumn = -1;
+  private cancelSearchFocusRetry: (() => void) | null = null;
+
   private panel = createAnchoredPanelController({
-    canOpen: computed(() => !this.disabled()),
+    canOpen: computed(() => !this.disabled() && !this.readonly()),
     open: this.open,
     overlayRef: this.overlayRef,
     surface: this.registeredSurface,
@@ -359,19 +411,16 @@ export class CascaderDirective<T = unknown>
 
         // the pane may not be focusable while its enter transition settles - retry until the
         // focus sticks
-        const attempt = (remaining: number) => {
+        this.cancelSearchFocusRetry?.();
+        this.cancelSearchFocusRetry = retryEachFrame(() => {
           if (!this.overlayRef()) {
-            return;
+            return true;
           }
 
           search.focus();
 
-          if (!search.isFocused() && remaining > 0) {
-            requestAnimationFrame(() => attempt(remaining - 1));
-          }
-        };
-
-        attempt(20);
+          return search.isFocused();
+        });
       });
     },
     onMounted: () => this.afterOpen.emit(),
@@ -389,25 +438,45 @@ export class CascaderDirective<T = unknown>
       }
     },
   });
+  private cancelColumnFocusRetry: (() => void) | null = null;
 
-  private loadSubscriptions = new Map<number, Subscription>();
+  // Disabled children are skipped - they can't be toggled, so requiring them would lock the branch
+  // out of the full state. `visited` breaks recursion on a (malformed) cyclic source. The results
+  // are cached per node object until the values, the loaded children or the comparator change.
+  private fullySelected = computed(() => {
+    const compareWith = this.compareWith();
+    const values = this.values();
+    const knownChildren = this.knownChildren();
+    const cache = new Map<CascaderNode<T>, boolean>();
 
-  /** The deepest column index currently shown - the visible column in sheet (drill) mode. */
-  public deepestColumnIndex = computed(() => Math.max(0, this.columns().length - 1));
+    const isFullySelected = (node: CascaderNode<T>, visited: CascaderNode<T>[]): boolean => {
+      const cached = cache.get(node);
 
-  /** Direction of the last column navigation - drives the panel's slide animation. `null` on open. */
-  public navigationDirection = signal<'forward' | 'backward' | null>(null);
+      if (cached !== undefined) {
+        return cached;
+      }
 
-  /**
-   * How the sheet header title animates on the last navigation. `'slide'` (a directional
-   * cross-slide) for level changes that keep the Back bar; `'fade'` when the nav crosses the
-   * root boundary (Back appears/disappears) - there the title also shifts horizontally as the
-   * Back bar's width animates, so a competing transform slide would look jumpy.
-   */
-  public titleAnimation = signal<'slide' | 'fade'>('slide');
+      if (values.some((value) => compareWith(value, node.value))) {
+        cache.set(node, true);
 
-  private typeahead = createTypeahead();
-  private typeaheadColumn = -1;
+        return true;
+      }
+
+      if (!canHaveChildren(node) || visited.some((seen) => compareWith(seen.value, node.value))) {
+        return false;
+      }
+
+      const children = knownChildren.find((entry) => nodesEqual({ a: entry.parent, b: node, compareWith }))?.children;
+      const selectable = children?.filter((child) => !child.disabled) ?? [];
+      const result = selectable.length > 0 && selectable.every((child) => isFullySelected(child, [...visited, node]));
+
+      cache.set(node, result);
+
+      return result;
+    };
+
+    return (node: CascaderNode<T>) => isFullySelected(node, []);
+  });
 
   constructor() {
     super();
@@ -495,7 +564,7 @@ export class CascaderDirective<T = unknown>
 
             return merge(
               ...missing.map((candidate) =>
-                toPathObservable(resolvePath(candidate)).pipe(
+                defer(() => toPathObservable(resolvePath(candidate))).pipe(
                   tap((resolved) => {
                     const stillSelected = this.values().some((current) => compareWith(current, candidate));
                     const resolvedLast = resolved?.[resolved.length - 1];
@@ -535,7 +604,7 @@ export class CascaderDirective<T = unknown>
             return EMPTY;
           }
 
-          return toPathObservable(resolvePath(value)).pipe(
+          return defer(() => toPathObservable(resolvePath(value))).pipe(
             tap((resolved) => {
               const currentValue = this.value();
 
@@ -578,7 +647,7 @@ export class CascaderDirective<T = unknown>
           });
 
           // .call keeps the data source as `this` - sources may implement `search` as a method
-          return toSearchObservable(request.search.call(request.source, request.query)).pipe(
+          return defer(() => toSearchObservable(request.search.call(request.source, request.query))).pipe(
             tap({
               next: (results) => {
                 this.searchState.set({ status: 'loaded', results, error: null });
@@ -604,6 +673,8 @@ export class CascaderDirective<T = unknown>
 
     this.destroyRef.onDestroy(() => {
       this.cancelLoads();
+      this.cancelSearchFocusRetry?.();
+      this.cancelColumnFocusRetry?.();
       this.typeahead.destroy();
     });
 
@@ -676,10 +747,24 @@ export class CascaderDirective<T = unknown>
     }
 
     if (this.multiple()) {
-      return this.isFullySelected(node, []);
+      return this.fullySelected()(node);
     }
 
     return this.path().some((selected) => this.compareWith()(selected.value, node.value));
+  }
+
+  /**
+   * @internal Whether a node is announced as selected: the committed node itself in single mode
+   * (not its ancestors), the same as {@link isSelected} in multi mode.
+   */
+  public isAriaSelected(node: CascaderNode<T>) {
+    if (this.multiple() || this.mixed()) {
+      return this.isSelected(node);
+    }
+
+    const committed = this.path().at(-1);
+
+    return !!committed && this.compareWith()(committed.value, node.value);
   }
 
   /** Multi mode: whether a node that isn't (fully) selected has a selected descendant (the dash state). */
@@ -829,7 +914,7 @@ export class CascaderDirective<T = unknown>
     const nodes = column.nodes;
     const index = indexOfNode({ nodes, node, compareWith: this.compareWith() });
 
-    switch (event.key) {
+    switch (inlineArrowKey(event)) {
       case 'ArrowDown': {
         event.preventDefault();
         this.focusColumnNode(columnIndex, { from: index + 1, step: 1 });
@@ -1098,27 +1183,6 @@ export class CascaderDirective<T = unknown>
     return -1;
   }
 
-  // Disabled children are skipped - they can't be toggled, so requiring them would lock the branch
-  // out of the full state. `visited` breaks recursion on a (malformed) cyclic source.
-  private isFullySelected(node: CascaderNode<T>, visited: CascaderNode<T>[]): boolean {
-    const compareWith = this.compareWith();
-
-    if (this.values().some((value) => compareWith(value, node.value))) {
-      return true;
-    }
-
-    if (!canHaveChildren(node) || visited.some((seen) => compareWith(seen.value, node.value))) {
-      return false;
-    }
-
-    const children = this.knownChildren().find((entry) =>
-      nodesEqual({ a: entry.parent, b: node, compareWith }),
-    )?.children;
-    const selectable = children?.filter((child) => !child.disabled) ?? [];
-
-    return selectable.length > 0 && selectable.every((child) => this.isFullySelected(child, [...visited, node]));
-  }
-
   private focusColumnNode(columnIndex: number, target: { from: number; step: 1 | -1 }) {
     const { from, step } = target;
     const nodes = this.columns()[columnIndex]?.nodes ?? [];
@@ -1135,11 +1199,12 @@ export class CascaderDirective<T = unknown>
   }
 
   private focusFirstOfColumn(columnIndex: number) {
-    const attempt = (remaining: number) => {
+    this.cancelColumnFocusRetry?.();
+    this.cancelColumnFocusRetry = retryEachFrame(() => {
       // the panel was closed/unmounted while the column was loading - stop, or we'd pull focus
       // into a node that is animating away
       if (!this.isMounted()) {
-        return;
+        return true;
       }
 
       const nodes = this.columns()[columnIndex]?.nodes ?? [];
@@ -1148,16 +1213,10 @@ export class CascaderDirective<T = unknown>
       if (first) {
         this.focusNode(first, columnIndex);
         this.pullFocusAfterSettle();
-
-        return;
       }
 
-      if (remaining > 0 && !nodes.length) {
-        requestAnimationFrame(() => attempt(remaining - 1));
-      }
-    };
-
-    attempt(20);
+      return nodes.length > 0;
+    });
   }
 
   /**
@@ -1258,7 +1317,7 @@ export class CascaderDirective<T = unknown>
 
     this.setColumn(columnIndex, { parent, status: 'loading', nodes: [], error: null });
 
-    const subscription = toChildrenObservable(source.loadChildren(parent))
+    const subscription = defer(() => toChildrenObservable(source.loadChildren(parent)))
       .pipe(
         take(1),
         tap({
