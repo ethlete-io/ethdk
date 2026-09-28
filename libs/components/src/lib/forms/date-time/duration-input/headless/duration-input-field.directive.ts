@@ -88,7 +88,7 @@ export class DurationInputFieldDirective {
   protected handleKeydown(event: KeyboardEvent) {
     const durationInput = this.durationInput;
 
-    if (!durationInput || event.key !== 'Enter') {
+    if (!durationInput || event.key !== 'Enter' || event.isComposing) {
       return;
     }
 

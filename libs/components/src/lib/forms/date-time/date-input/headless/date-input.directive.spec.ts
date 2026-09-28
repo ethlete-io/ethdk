@@ -535,6 +535,15 @@ describe('DateInputDirective with the opt-in typing mask', () => {
     expect(field.value).toBe('18.07.2026');
   });
 
+  it('does not commit the Enter that ends an IME composition', async () => {
+    await focus();
+    await type('18072026');
+    field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true }));
+    await fixture.whenStable();
+
+    expect(host.value()).toBeNull();
+  });
+
   it('falls back to native, unmasked typing while the pattern is refused', async () => {
     silenceExpectedConsole('warn');
 

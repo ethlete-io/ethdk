@@ -98,6 +98,14 @@ describe('DurationInputDirective', () => {
     expect(driver.fieldValue()).toBe('01:30');
   });
 
+  it('does not commit the Enter that ends an IME composition', () => {
+    driver.focus();
+    driver.type('90');
+    driver.press('Enter', { isComposing: true });
+
+    expect(driver.host.value()).toBeNull();
+  });
+
   it('respects a custom format layout', () => {
     driver.host.durationFormat.set('hh:mm:ss');
     driver.tick();

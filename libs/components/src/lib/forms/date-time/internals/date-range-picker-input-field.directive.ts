@@ -204,7 +204,7 @@ export abstract class DateRangePickerInputFieldDirective implements InputMaskHos
       return;
     }
 
-    if (event.key === 'Enter') {
+    if (event.key === 'Enter' && !event.isComposing) {
       rangeInput.commitSide(this.side(), this.commitText());
 
       // the display effect only runs unfocused, so a successful commit reformats in place here

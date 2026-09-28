@@ -26,6 +26,9 @@ export const createDateRangePresets = ({ host, presets, labels, normalize }: Cre
   };
 
   const options = computed<DateRangePresetOption[]>(() => {
+    // re-resolves "today" on every opening, so the pressed preset follows the date
+    host.pickerOpen();
+
     const value = host.value();
     const mixed = host.mixed();
     const currentLabels = labels();

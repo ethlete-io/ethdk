@@ -148,7 +148,7 @@ export abstract class DatePickerInputFieldDirective implements InputMaskHost {
       return;
     }
 
-    if (event.key === 'Enter') {
+    if (event.key === 'Enter' && !event.isComposing) {
       input.commitInput(this.commitText());
 
       // the display effect only runs unfocused, so a successful commit reformats in place here

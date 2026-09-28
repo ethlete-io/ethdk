@@ -134,6 +134,20 @@ describe('et-date-range-input presets', () => {
     expect(pressedStates()).toEqual(['false', 'false']);
   });
 
+  it('re-resolves the pressed preset against the date of each opening', async () => {
+    driver.host.value.set({ start: '2026-07-09', end: '2026-07-15' });
+    await driver.open();
+
+    expect(pressedStates()).toEqual(['true', 'false']);
+
+    driver.closeAndRemovePanes();
+    await driver.settle();
+    vi.setSystemTime(new Date(2026, 6, 16, 0, 5));
+    await driver.open();
+
+    expect(pressedStates()).toEqual(['false', 'false']);
+  });
+
   it('renders no preset list without presets', async () => {
     driver.host.presets.set([]);
     await driver.open();
