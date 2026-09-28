@@ -12,6 +12,7 @@ import {
   queryComputed,
   queryStateSignal,
 } from '@ethlete/query';
+import { injectTableLabels } from './table-labels';
 import { createTableRowsSource, TableRowsFromQuery, TableRowsQueryState } from './table-rows-source';
 import { TableFilter, TableSort } from '../table.types';
 
@@ -41,7 +42,7 @@ export type TableRowsFromV2QueryConfig<TCreator extends AnyV2QueryCreator | AnyL
   initialPage?: number;
 };
 
-const firstErrorMessage = (error: RequestError) => {
+const firstErrorMessage = (error: RequestError, fallback: string) => {
   const detail = error.detail;
 
   if (typeof detail === 'object' && detail !== null) {
@@ -51,13 +52,12 @@ const firstErrorMessage = (error: RequestError) => {
 
   if (typeof detail === 'string') return detail;
 
-  return error.statusText || 'Something went wrong';
+  return error.statusText || fallback;
 };
 
 /**
  * The `V2QueryClient` counterpart of {@link tableRowsFromQuery}, for apps still on the legacy
- * client. Returns the same signal bundle - bind it to the table the same way, with
- * `sortMode="server"`. Uses the legacy `queryComputed` container idiom: it re-prepares as sort/page
+ * client. Returns the same signal bundle - bind it as the table's `rowsSource` the same way. Uses the legacy `queryComputed` container idiom: it re-prepares as sort/page
  * change and releases the previous query.
  *
  * Call it from a field initializer / constructor (injection context).
@@ -84,7 +84,8 @@ export const tableRowsFromV2Query = <TCreator extends AnyV2QueryCreator | AnyLeg
   const state = queryStateSignal(query);
   // Keeps the previous response available while the next request loads (see the select twin).
   const settled = queryStateSignal(query, { cacheResponse: true });
-  const toErrorMessage = config.toErrorMessage ?? firstErrorMessage;
+  const labels = injectTableLabels();
+  const toErrorMessage = config.toErrorMessage ?? ((error) => firstErrorMessage(error, labels().error));
 
   return createTableRowsSource<TResponse, TRow>({
     driver: {

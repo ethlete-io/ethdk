@@ -52,7 +52,7 @@ export type TableRowsSource<TRow> = {
 };
 
 export type TableRowsFromQuery<TRow> = {
-  /** Bind to `<et-table [data]>`. Keeps the previous page visible while the next one loads. */
+  /** The current page's rows. Keeps the previous page visible while the next one loads. */
   rows: Signal<TRow[]>;
   /** True while a request is in flight. */
   loading: Signal<boolean>;
@@ -62,17 +62,17 @@ export type TableRowsFromQuery<TRow> = {
   total: Signal<number | null>;
   /** Whether more pages exist (via `toHasMore`). */
   hasMore: Signal<boolean>;
-  /** The current sort - bind to `<et-table [sort]>`. */
+  /** The current sort. */
   sort: Signal<TableSort[]>;
-  /** The current filters - bind to `<et-table [filters]>`. */
+  /** The current filters. */
   filters: Signal<TableFilter[]>;
   /** The current page. */
   page: Signal<number>;
   /** The current free-text search. */
   quickFilter: Signal<string>;
-  /** Set the sort (wire the table's `(sortChange)`); resets the page to `initialPage`. */
+  /** Set the sort; resets the page to `initialPage`. A table bound through `[rowsSource]` calls it. */
   setSort: (sort: TableSort[]) => void;
-  /** Set the filters (wire the table's `(filtersChange)`); resets the page to `initialPage`. */
+  /** Set the filters; resets the page to `initialPage`. A table bound through `[rowsSource]` calls it. */
   setFilters: (filters: TableFilter[]) => void;
   /** Set the page (wire a paginator). */
   setPage: (page: number) => void;
@@ -140,7 +140,7 @@ export const createTableRowsSource = <TResponse, TRow>(
       // A page that came back with no rows has nothing after it, whatever `toHasMore` derives from the
       // response - this is what stops a load-more control from surviving one page past the end when the
       // end can only be inferred (e.g. "a full page means there is more").
-      if (toRows(response).length === 0) {
+      if (rows().length === 0) {
         return false;
       }
 

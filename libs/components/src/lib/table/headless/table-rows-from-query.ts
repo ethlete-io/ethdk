@@ -1,11 +1,8 @@
 import { computed, signal } from '@angular/core';
 import { AnyQueryCreator, QueryArgsOf, QueryErrorResponse, RequestArgs, ResponseType, withArgs } from '@ethlete/query';
+import { injectTableLabels } from './table-labels';
 import { createTableRowsSource, TableRowsFromQuery, TableRowsQueryState } from './table-rows-source';
 import { TableFilter, TableSort } from '../table.types';
-
-// Note: `@ethlete/components` intentionally depends on `@ethlete/query`, so this query-aware
-// convenience factory lives here. It's a standalone function in its own module - tables that don't
-// use it (and apps not using `@ethlete/query`) tree-shake it away.
 
 export type TableRowsFromQueryConfig<TCreator extends AnyQueryCreator, TRow> = {
   /** The query creator to run. Created **once** and re-executes reactively as sort/page change. */
@@ -34,17 +31,17 @@ export type TableRowsFromQueryConfig<TCreator extends AnyQueryCreator, TRow> = {
   initialPage?: number;
 };
 
-const firstErrorMessage = (error: QueryErrorResponse) => {
+const firstErrorMessage = (error: QueryErrorResponse, fallback: string) => {
   const message = 'errors' in error ? error.errors[0]?.message : error.error?.message;
 
-  return message ?? error.raw?.statusText ?? 'Something went wrong';
+  return message ?? error.raw?.statusText ?? fallback;
 };
 
 /**
  * Feeds a table's rows from an `@ethlete/query` query, server-side. Mirroring `createQueryStack`
  * (and `selectOptionsFromQuery`), it takes the `queryCreator` plus a reactive `args` builder: the
- * query is created once and re-executes as sort/page change. Use it with the table's
- * `sortMode="server"` so the backend does the sorting:
+ * query is created once and re-executes as sort/page change. Bound as a table's `rowsSource`, the
+ * backend does the sorting and filtering:
  *
  * ```ts
  * users = tableRowsFromQuery({
@@ -58,13 +55,7 @@ const firstErrorMessage = (error: QueryErrorResponse) => {
  * ```
  *
  * ```html
- * <et-table
- *   [data]="users.rows()"
- *   [columns]="columns"
- *   [sort]="users.sort()"
- *   (sortChange)="users.setSort($event)"
- *   sortMode="server"
- * />
+ * <et-table [rowsSource]="users" [columns]="columns" />
  * ```
  *
  * Call it from a field initializer / constructor (injection context), the same place you'd create a
@@ -84,7 +75,8 @@ export const tableRowsFromQuery = <TCreator extends AnyQueryCreator, TRow>(
 
   // Created once - `withArgs` re-runs as sort/filters/page change.
   const query = config.queryCreator(withArgs<TArgs>(() => config.args({ sort, filters, page, quickFilter }) ?? null));
-  const toErrorMessage = config.toErrorMessage ?? firstErrorMessage;
+  const labels = injectTableLabels();
+  const toErrorMessage = config.toErrorMessage ?? ((error) => firstErrorMessage(error, labels().error));
 
   return createTableRowsSource<TResponse, TRow>({
     driver: {

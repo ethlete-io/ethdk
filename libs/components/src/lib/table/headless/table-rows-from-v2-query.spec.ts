@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { def, RequestError, V2QueryClient } from '@ethlete/query';
 import '../../../test-helpers';
+import { provideTableLabels } from './table-labels';
 import { tableRowsFromV2Query } from './table-rows-from-v2-query';
 import { TableRowsQueryState } from './table-rows-source';
 
@@ -106,5 +107,13 @@ describe('tableRowsFromV2Query', () => {
     await flush();
 
     expect(source.error()).toBe('Boom');
+  });
+
+  it('falls back to the table label set for an error that carries no text', async () => {
+    TestBed.configureTestingModule({ providers: [provideTableLabels({ error: 'Laden fehlgeschlagen' })] });
+    const source = createSource(() => ({ error: { ...mockError, statusText: '', detail: null } }));
+    await flush();
+
+    expect(source.error()).toBe('Laden fehlgeschlagen');
   });
 });
