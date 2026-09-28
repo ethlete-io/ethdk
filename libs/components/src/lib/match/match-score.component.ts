@@ -55,11 +55,11 @@ export class MatchScoreComponent {
   /** The revision whose animation has finished - up to date means nothing is moving. */
   private settledKey = signal(0);
 
-  private isRolling = computed(() => {
-    const { key, previous } = this.revision();
+  private settledFlashKey = signal(0);
 
-    return this.animate() && previous !== null && this.settledKey() !== key;
-  });
+  private hasChange = computed(() => this.animate() && this.revision().previous !== null);
+
+  private isRolling = computed(() => this.hasChange() && this.settledKey() !== this.revision().key);
 
   protected digits = computed(() => {
     const { key, previous } = this.revision();
@@ -72,7 +72,11 @@ export class MatchScoreComponent {
     return [{ key: -key, value: previous, state: 'out' }, current];
   });
 
-  protected flashes = computed(() => (this.isRolling() ? [this.revision().key] : []));
+  protected flashes = computed(() => {
+    const { key } = this.revision();
+
+    return this.hasChange() && this.settledFlashKey() !== key ? [key] : [];
+  });
 
   /** The roll is over: drop the outgoing value. Fires once per element, hence the idempotent set. */
   protected settle() {
@@ -80,6 +84,6 @@ export class MatchScoreComponent {
   }
 
   protected settleFlash() {
-    this.settle();
+    this.settledFlashKey.set(this.revision().key);
   }
 }

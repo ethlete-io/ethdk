@@ -98,7 +98,7 @@
   @if (standings.legendZones(); as zones) {
     @if (zones.length) {
       <ul [attr.aria-label]="labels().legend" class="et-standings-legend">
-        @for (zone of zones; track zone.label) {
+        @for (zone of zones; track zone.from) {
           <li class="et-standings-legend-item">
             <span [etProvideColor]="zone.color" class="et-standings-legend-swatch" aria-hidden="true"></span>
             {{ zone.label }}

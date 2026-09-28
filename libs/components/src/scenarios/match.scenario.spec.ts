@@ -278,6 +278,11 @@ describe('match scenarios', () => {
     expect(
       Array.from(homeScore?.querySelectorAll('.et-match-score-digit') ?? []).map((d) => d.getAttribute('data-state')),
     ).toEqual(['static']);
+    expect(homeScore?.querySelector('.et-match-score-flash')).not.toBeNull();
+
+    homeScore?.querySelector('.et-match-score-flash')?.dispatchEvent(new Event('animationend'));
+    s.tick();
+
     expect(homeScore?.querySelector('.et-match-score-flash')).toBeNull();
 
     page.source.update((match) => ({ ...match, status: 'finished', awayScore: { score: 1 }, winningSide: 'home' }));
@@ -391,7 +396,7 @@ describe('match scenarios', () => {
     expect(player?.getAttribute('aria-label')).toBe('ace');
     expect(player?.hasAttribute('data-interactive')).toBe(true);
     expect(text(player?.querySelector('.et-match-participant-subtitle'))).toBe('Club A');
-    expect(player?.querySelector('.et-match-participant-seed')?.getAttribute('aria-label')).toBe('Seed 3');
+    expect(player?.querySelector('.et-match-participant-seed-label')?.textContent?.trim()).toBe('Seed 3');
     expect(player?.querySelector('et-picture')).not.toBeNull();
     expect(player?.querySelector('img')?.getAttribute('alt')).toBe('ace emblem');
 

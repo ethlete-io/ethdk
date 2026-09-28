@@ -301,7 +301,7 @@ the club behind a squad. It is dropped in a dense row (and by `compact`), where 
 every row's height.
 
 `matchParticipantDisplayName({ participant, labels, compact })` is exported as well: it is the fallback chain
-(name → code → `tbd`, reversed for compact) that both the primitive and the card's accessible name use, and it
+(name → code → `tbd`, reversed for compact, skipping a blank string) that both the primitive and the card's accessible name use, and it
 is the right thing to call when you compose a name of your own.
 
 ## Localization

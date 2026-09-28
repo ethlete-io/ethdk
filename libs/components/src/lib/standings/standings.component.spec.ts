@@ -193,6 +193,25 @@ describe('StandingsComponent', () => {
       expect(driver.queryAll('.et-standings-legend')).toHaveLength(0);
     });
 
+    it('draw one legend entry per zone, even when two share a label', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const driver = zoned();
+
+      driver.host.zones.set([
+        { from: 1, to: 1, color: 'brand', label: 'Advances' },
+        { from: 2, to: 2, color: 'brand', label: 'Playoffs' },
+        { from: 3, to: 3, color: 'brand', label: 'Advances' },
+      ]);
+      driver.detectChanges();
+      driver.host.zones.update((zones) => [...zones].reverse());
+      driver.detectChanges();
+
+      expect(driver.queryAll('.et-standings-legend-item')).toHaveLength(3);
+      expect(warn.mock.calls.flat().join(' ')).not.toContain('NG0955');
+
+      warn.mockRestore();
+    });
+
     it('are rejected when they overlap, whenever the overlap appears', () => {
       const driver = create();
 

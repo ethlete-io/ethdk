@@ -467,9 +467,8 @@ describe('MatchCardComponent', () => {
     driver.host.showSeeds.set(true);
     driver.detectChanges();
 
-    expect(driver.queryAll('.et-match-participant-seed').map((element) => element.textContent?.trim())).toEqual([
-      '1',
-      '4',
-    ]);
+    expect(
+      driver.queryAll('.et-match-participant-seed [aria-hidden]').map((element) => element.textContent?.trim()),
+    ).toEqual(['1', '4']);
   });
 });

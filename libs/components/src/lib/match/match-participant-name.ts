@@ -22,7 +22,10 @@ export type MatchParticipantDisplayNameOptions = {
 export const matchParticipantDisplayName = ({ participant, labels, compact }: MatchParticipantDisplayNameOptions) => {
   if (!participant) return labels.tbd;
 
-  const name = compact ? (participant.code ?? participant.name) : (participant.name ?? participant.code);
+  const name = nonBlank(participant.name);
+  const code = nonBlank(participant.code);
 
-  return name ?? labels.tbd;
+  return (compact ? (code ?? name) : (name ?? code)) ?? labels.tbd;
 };
+
+const nonBlank = (value: string | null | undefined) => (value?.trim() ? value : null);

@@ -2,6 +2,7 @@ import { booleanAttribute, Component, computed, ElementRef, inject, input, ViewE
 import { FocusRingDirective } from '../focus-ring';
 import { PICTURE_IMPORTS } from '../picture';
 import { SKELETON_IMPORTS } from '../skeleton';
+import { isNativelyInteractiveElement } from './match-interactive';
 import { injectMatchLabels, MatchLabels } from './match-labels';
 import { matchParticipantDisplayName } from './match-participant-name';
 import { NormalizedMatchParticipant } from './match.types';
@@ -71,7 +72,10 @@ import { NormalizedMatchParticipant } from './match.types';
     }
 
     @if (showSeed() && participant()?.seed !== null && participant()?.seed !== undefined) {
-      <span [attr.aria-label]="seedLabel()" class="et-match-participant-seed">{{ participant()?.seed }}</span>
+      <span class="et-match-participant-seed">
+        <span aria-hidden="true">{{ participant()?.seed }}</span>
+        <span class="et-match-participant-seed-label">{{ seedLabel() }}</span>
+      </span>
     }
   `,
   styleUrl: './match-participant.component.css',
@@ -119,7 +123,7 @@ export class MatchParticipantComponent {
   /** The strings in effect here: the injected label set with this instance's `labels` applied. */
   public resolvedLabels = computed<MatchLabels>(() => ({ ...this.injectedLabels(), ...this.labels() }));
 
-  private readonly IS_NATIVELY_INTERACTIVE = ['A', 'BUTTON'].includes(this.elementRef.nativeElement.tagName);
+  private readonly IS_NATIVELY_INTERACTIVE = isNativelyInteractiveElement(this.elementRef.nativeElement);
 
   /** Whether this acts as a click target, and should therefore look and feel like one. */
   public isInteractive = computed(() => this.interactive() ?? this.IS_NATIVELY_INTERACTIVE);
@@ -148,7 +152,7 @@ export class MatchParticipantComponent {
   protected emblemAlt = computed(() => this.resolvedLabels().emblemAlt(this.displayName()));
 
   /** Only ever drawn for a participant: a TBD slot has no name to take a letter from. */
-  protected emblemMark = computed(() => this.displayName().trim().charAt(0).toUpperCase());
+  protected emblemMark = computed(() => (Array.from(this.displayName().trim())[0] ?? '').toUpperCase());
 
   protected seedLabel = computed(() => {
     const seed = this.participant()?.seed;

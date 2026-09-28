@@ -88,6 +88,20 @@ describe('MatchParticipantComponent', () => {
     expect(name(fixture)).toBe('FCB');
   });
 
+  it('names a blank name by its code, and a participant with neither as TBD', () => {
+    const fixture = create();
+
+    fixture.componentInstance.participant.set({ ...TEAM, name: '' });
+    fixture.detectChanges();
+
+    expect(name(fixture)).toBe('FCB');
+
+    fixture.componentInstance.participant.set({ ...TEAM, name: ' ', code: '' });
+    fixture.detectChanges();
+
+    expect(name(fixture)).toBe('TBD');
+  });
+
   describe('a TBD slot', () => {
     const tbd = () => {
       const fixture = create();
@@ -135,6 +149,15 @@ describe('MatchParticipantComponent', () => {
       expect(mark(fixture)).toBe('F');
     });
 
+    it('takes a whole emoji, not half of its surrogate pair', () => {
+      const fixture = create();
+
+      fixture.componentInstance.participant.set({ ...TEAM, name: '🦊 Foxes', emblem: null });
+      fixture.detectChanges();
+
+      expect(mark(fixture)).toBe('🦊');
+    });
+
     it('leaves a TBD slot unmarked - it is nobody yet', () => {
       const fixture = create();
 
@@ -169,8 +192,9 @@ describe('MatchParticipantComponent', () => {
 
       const seed = host(fixture).querySelector('.et-match-participant-seed');
 
-      expect(seed?.textContent?.trim()).toBe('3');
-      expect(seed?.getAttribute('aria-label')).toBe('Seed 3');
+      expect(seed?.querySelector('[aria-hidden="true"]')?.textContent?.trim()).toBe('3');
+      expect(seed?.querySelector('.et-match-participant-seed-label')?.textContent?.trim()).toBe('Seed 3');
+      expect(seed?.hasAttribute('aria-label')).toBe(false);
     });
 
     it('stays hidden for a participant that has none', () => {

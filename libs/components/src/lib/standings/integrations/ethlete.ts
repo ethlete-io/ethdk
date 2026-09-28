@@ -49,7 +49,8 @@ export const normalizeEthletePlacement = (placement: EthletePlacementInput): Nor
 /**
  * `EthleteGroupRankingInput` → its rows plus the zone its `qualifiedPlayers` implies, which is the one piece of
  * banding the API knows about: the top N advance. The label is yours to pass, since "advance to the
- * playoffs" and "qualify for the finals" are the same field and different words.
+ * playoffs" and "qualify for the finals" are the same field and different words. The example's
+ * `'success'` is a theme name its app registered; pass one of yours.
  *
  * @example
  * protected standings = computed(() =>

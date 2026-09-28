@@ -70,9 +70,5 @@
     .et-match-score-flash {
       animation-duration: 1ms;
     }
-
-    .et-match-score-flash {
-      animation-name: none;
-    }
   }
 }

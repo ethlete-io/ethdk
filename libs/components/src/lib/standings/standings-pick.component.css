@@ -82,7 +82,7 @@
     position: relative;
     z-index: 1;
     background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 20%, transparent);
-    box-shadow: 0 8px 20px rgb(0 0 0 / 0.25);
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--et-surface-interaction-solid, black) 25%, transparent);
     transition: none;
   }
 

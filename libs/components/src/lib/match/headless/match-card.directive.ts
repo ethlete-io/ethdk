@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { format, isValid } from 'date-fns';
 import { injectDateLocale } from '../../forms/date-time/date-time-formats';
+import { isNativelyInteractiveElement } from '../match-interactive';
 import { injectMatchLabels, MatchLabels } from '../match-labels';
 import { matchParticipantDisplayName } from '../match-participant-name';
 import { NormalizedGameScore, NormalizedMatch } from '../match.types';
@@ -35,9 +36,6 @@ export type MatchCardSize = (typeof MATCH_CARD_SIZES)[keyof typeof MATCH_CARD_SI
  * unambiguous rather than pretty - a match list spanning a season can't rely on "Sat 15:30".
  */
 export const DEFAULT_MATCH_CARD_START_TIME_FORMAT = 'P p';
-
-/** Elements that are focusable and clickable on their own, so the card doesn't have to fake it. */
-const NATIVELY_INTERACTIVE_TAGS = ['A', 'BUTTON'];
 
 /** One side's headline value changing - a goal, a map win, a correction. */
 export type MatchScoreChange = {
@@ -168,7 +166,7 @@ export class MatchCardDirective {
   /** The strings in effect here: the injected label set with this instance's `labels` applied. */
   public resolvedLabels = computed<MatchLabels>(() => ({ ...this.injectedLabels(), ...this.labels() }));
 
-  private readonly IS_NATIVELY_INTERACTIVE = NATIVELY_INTERACTIVE_TAGS.includes(this.elementRef.nativeElement.tagName);
+  private readonly IS_NATIVELY_INTERACTIVE = isNativelyInteractiveElement(this.elementRef.nativeElement);
 
   /** Whether the card acts as a click target, and should therefore look and feel like one. */
   public isInteractive = computed(() => this.interactive() ?? this.IS_NATIVELY_INTERACTIVE);

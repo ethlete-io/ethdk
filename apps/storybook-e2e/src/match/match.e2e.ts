@@ -145,8 +145,8 @@ test.describe('match / aria', () => {
 
     await expect(side(root, 'home').locator('img')).toHaveAttribute('alt', 'FC Berlin emblem');
     await expect(side(root, 'away').locator('img')).toHaveAttribute('alt', 'Neon Esports emblem');
-    await expect(side(root, 'home').locator('.et-match-participant-seed')).toHaveAttribute('aria-label', 'Seed 1');
-    await expect(side(root, 'away').locator('.et-match-participant-seed')).toHaveAttribute('aria-label', 'Seed 8');
+    await expect(side(root, 'home').locator('.et-match-participant-seed-label')).toHaveText('Seed 1');
+    await expect(side(root, 'away').locator('.et-match-participant-seed-label')).toHaveText('Seed 8');
   });
 
   test('hideNames drops the names from the drawing only', async ({ page }) => {
