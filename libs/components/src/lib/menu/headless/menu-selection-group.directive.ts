@@ -84,11 +84,15 @@ export class MenuSelectionGroupDirective implements MenuSelectionGroupDirectiveB
     }
 
     if (this.multiple()) {
+      const itemValue = item.value();
+      const current = this.value();
+      const valueArray = Array.isArray(current) ? current : [];
+
       item.checked.update((checked) => !checked);
       this.value.set(
-        this.items()
-          .filter((registered) => registered.checked())
-          .map((registered) => registered.value()),
+        item.checked()
+          ? [...valueArray.filter((value) => value !== itemValue), itemValue]
+          : valueArray.filter((value) => value !== itemValue),
       );
     } else {
       for (const registered of this.items()) {

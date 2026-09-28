@@ -46,6 +46,14 @@ import { MenuDirective } from './menu.directive';
               </button>
             }
           </div>
+
+          <div [(value)]="tags" class="filtered-group" multiple etMenuSelectionGroup>
+            @for (tag of visibleTags(); track tag) {
+              <button [value]="tag" [class]="'tag-' + tag" etMenuItem etMenuSelectionItem type="button">
+                {{ tag }}
+              </button>
+            }
+          </div>
         </div>
       </ng-template>
     </div>
@@ -66,6 +74,8 @@ class MenuSelectionTestHost {
   standaloneChecked = signal(false);
   assigned = signal<unknown>('Bravo');
   loopLabels = ['Alpha', 'Bravo'];
+  tags = signal<unknown>(['alpha', 'bravo']);
+  visibleTags = signal(['alpha', 'bravo', 'charlie']);
 }
 
 const keydown = (element: Element, key: string) =>
@@ -152,6 +162,23 @@ describe('MenuSelectionGroupDirective', () => {
     expect(menu.open()).toBe(true);
   });
 
+  it('keeps checked values whose items are filtered out of a multiple group', async () => {
+    await openMenu();
+
+    fixture.componentInstance.visibleTags.set(['bravo', 'charlie']);
+    tick();
+
+    query('.tag-charlie').click();
+    tick();
+
+    expect(fixture.componentInstance.tags()).toEqual(['alpha', 'bravo', 'charlie']);
+
+    query('.tag-bravo').click();
+    tick();
+
+    expect(fixture.componentInstance.tags()).toEqual(['alpha', 'charlie']);
+  });
+
   it('closes the menu tree when a selection is made via Enter', async () => {
     await openMenu();
 
@@ -211,7 +238,19 @@ describe('MenuSelectionGroupDirective', () => {
 
     const labels = menu.enabledItems().map((item) => item.textContent());
 
-    expect(labels).toEqual(['Refresh', 'Name', 'Date', 'Size', 'Kind', 'Show hidden files', 'Alpha', 'Bravo']);
+    expect(labels).toEqual([
+      'Refresh',
+      'Name',
+      'Date',
+      'Size',
+      'Kind',
+      'Show hidden files',
+      'Alpha',
+      'Bravo',
+      'alpha',
+      'bravo',
+      'charlie',
+    ]);
 
     keydown(query('.action'), 'ArrowDown');
     tick();
