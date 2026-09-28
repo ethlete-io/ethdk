@@ -66,12 +66,8 @@ export const createSelectionState = <
     destroyed = true;
   });
 
-  // `toggleAll` can only ever mutate enabled items, so the select-all tri-state must be
-  // computed over that same set. Evaluating `every`/`length` over all items (incl. disabled)
-  // meant a single disabled-and-unchecked item pinned `allSelected` to false forever, leaving
-  // the select-all control stuck showing "mixed" that no click could clear.
-  // With the whole list disabled nothing is togglable, and that same filter emptied the set and
-  // reported "none selected" over a group that has some - so there it falls back to every item.
+  // must match the set `toggleAll` mutates (enabled items), or select-all can stick on "mixed";
+  // with every item disabled it falls back to all items
   const togglableItems = computed(() => {
     const all = items();
     const enabled = all.filter((item) => !item.disabled());

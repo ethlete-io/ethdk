@@ -73,8 +73,7 @@ export class SelectSearchDirective {
     return ids.filter((id): id is string => !!id).join(' ') || null;
   });
 
-  // the last placeholder this directive wrote - anything else on the element came from the
-  // consumer (a static attribute or their own binding) and owns it from then on
+  // any other placeholder on the element belongs to the consumer and is never overwritten
   private writtenPlaceholder: string | null = null;
 
   private fallbackPlaceholder = computed(() => {
@@ -167,9 +166,7 @@ export class SelectSearchDirective {
 
     const element = this.elementRef.nativeElement;
 
-    // a custom value template kept the resting input empty (the rich display showed instead) -
-    // now in edit mode the input becomes the editable label, so write it before the display
-    // effect catches up so it can be selected for replace-on-type
+    // written before the display effect runs, so the label can be selected for replace-on-type
     if (select.registeredValueTemplate() && !select.mixed() && !element.value) {
       element.value = select.displayValue() ?? '';
     }
@@ -180,8 +177,7 @@ export class SelectSearchDirective {
   }
 
   public clear() {
-    // no direct element.value write - the display effect owns the element (it may need to
-    // show the selected value's label instead of the empty query)
+    // the display effect owns `element.value`
     this.query.set('');
     this.select?.queryChange.emit('');
   }
@@ -197,8 +193,7 @@ export class SelectSearchDirective {
       return;
     }
 
-    // Signal effects update the value after this event. Write it eagerly so the selection
-    // range belongs to the restored label and the next keystroke replaces it.
+    // written before the display effect runs, so the next keystroke replaces the restored label
     const element = this.elementRef.nativeElement;
     element.value = select.displayValue() ?? '';
 

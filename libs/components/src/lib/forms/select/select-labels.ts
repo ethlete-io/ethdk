@@ -2,7 +2,7 @@ import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
  * The strings the select's panel renders itself. The options are yours; these are the panel's own
- * affordances - paging through an async option list, and the create-a-value flow (`customValues`).
+ * affordances - paging through an async option list, and the create-a-value flow (`allowCustomValues`).
  */
 export type SelectLabels = {
   /** Shown while the option list is being fetched. */
@@ -13,7 +13,7 @@ export type SelectLabels = {
   loadMore: string;
   /** The panel's entry that starts creating a value that isn't in the list. */
   addNew: string;
-  /** The confirm action of the create-a-value flow. */
+  /** The leading text of the "Create …" row that commits the search query as a custom value. */
   create: string;
 };
 

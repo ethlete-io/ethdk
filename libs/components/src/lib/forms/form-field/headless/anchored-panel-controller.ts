@@ -56,8 +56,8 @@ export type CreateAnchoredPanelControllerOptions = {
 
 /**
  * The anchored/bottom-sheet panel machinery shared by the field controls that open a templated
- * overlay from a trigger (`select`, `cascader`; the date pickers use the sibling
- * `createDatePickerOverlay`). Everything control-specific - the overlay config and the mount/close
+ * overlay from a trigger (`select`, `cascader`, and the date and colour pickers through their
+ * overlay helpers). Everything control-specific - the overlay config and the mount/close
  * side effects - is supplied via the hooks. Call in an injection context.
  */
 export const createAnchoredPanelController = (options: CreateAnchoredPanelControllerOptions) => {

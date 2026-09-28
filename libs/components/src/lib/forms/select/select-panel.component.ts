@@ -5,12 +5,8 @@ import { SelectListboxDirective, SelectViewportDirective } from './headless';
 
 @Component({
   selector: 'et-select-panel',
-  // the listbox is an inner element, not the panel host: a listbox may only contain options/groups,
-  // but the loading/empty/error rows and the load-more/add-new buttons must live in the panel too -
-  // they render in the extras slot, as siblings of the listbox, keeping the listbox ARIA-clean.
-  // the scroller is an inner element, not the panel host: the host paints the chrome
-  // (background/border/radius) and must not scroll itself - macOS rubber-band overscroll drags
-  // a scroller's own background along with the content, revealing the page behind the panel
+  // a listbox may only own options and groups, so the state and action rows render beside it.
+  // The host must not scroll: macOS rubber-band overscroll drags a scroller's own background along.
   template: `
     <div class="et-select-panel-scroller" etSelectViewport>
       <div #panelBody class="et-select-panel-body">

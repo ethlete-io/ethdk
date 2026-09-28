@@ -971,7 +971,6 @@ export class SelectDirective
     }
 
     this.addNew.emit(this.query().trim());
-    // the query was handed off - it must not double as a custom value when the close commits
     this.registeredSearch()?.clear();
     this.hide();
   }
@@ -1324,8 +1323,7 @@ export class SelectDirective
     this.hide();
   }
 
-  // the value write shared by `commitCustomValue` and the close-time commit - the latter
-  // must not call `hide()` while the panel is already closing
+  // must not call `hide()`: the close-time commit runs while the panel is already closing
   private applyCustomValue(raw: string) {
     if (this.disabled() || this.readonly() || this.isFull()) {
       return false;
@@ -1413,7 +1411,6 @@ export class SelectDirective
       return;
     }
 
-    // deliberately no wrap - matches the ARIA select-only combobox pattern
     const next = items[index + delta];
 
     if (next) {
@@ -1506,8 +1503,7 @@ export class SelectDirective
       this.applyCustomValue(this.query());
     }
 
-    // a stale query would silently keep filtering the next open - cleared at close-start so the
-    // trigger's value display is correct during the leave animation
+    // cleared at close-start, not after, so the trigger shows the value during the leave animation
     const search = this.registeredSearch();
 
     if (search && this.query()) {
