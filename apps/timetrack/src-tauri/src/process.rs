@@ -37,7 +37,7 @@ const ALLOWED: [Allowed; 10] = [
     },
     Allowed {
         command: "codex",
-        operations: AGENT_OPERATIONS,
+        operations: CODEX_OPERATIONS,
     },
     Allowed {
         command: "glab",
@@ -69,9 +69,12 @@ const ALLOWED: [Allowed; 10] = [
     },
 ];
 
-/// The agent CLIs take no subcommand. `--print` is what makes the run one question rather than a
-/// session, and `agentProcessSpec` in the core puts it first for exactly this check.
+/// Claude takes no subcommand. `--print` is what makes the run one question rather than a session,
+/// and `agentProcessSpec` in the core puts it first for exactly this check. Codex does the same
+/// with its `exec` subcommand.
 const AGENT_OPERATIONS: &[&str] = &["--print"];
+
+const CODEX_OPERATIONS: &[&str] = &["exec"];
 
 const FORGE_OPERATIONS: &[&str] = &["api", "auth"];
 
@@ -251,6 +254,7 @@ mod tests {
         assert!(check("git", &args(&["reflog", "show", "-n30"])).is_ok());
         assert!(check("git", &args(&["config", "--get", "user.email"])).is_ok());
         assert!(check("claude", &args(&["--print", "--safe-mode"])).is_ok());
+        assert!(check("codex", &args(&["exec", "--json", "-"])).is_ok());
         assert!(check("gh", &args(&["api", "--hostname", "github.com", "user"])).is_ok());
         assert!(check("code", &args(&["--list-extensions"])).is_ok());
         assert!(check("git", &args(&["switch", "-c", "feat/x", "--no-track", "origin/main"])).is_ok());
@@ -276,6 +280,7 @@ mod tests {
         assert!(check("git", &args(&["daemon"])).is_err());
         assert!(check("git", &args(&[])).is_err());
         assert!(check("claude", &args(&["--dangerously-skip-permissions"])).is_err());
+        assert!(check("codex", &args(&["--dangerously-bypass-approvals-and-sandbox"])).is_err());
         assert!(check("sh", &args(&["-c", "id"])).is_err());
     }
 }
