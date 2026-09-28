@@ -15,6 +15,7 @@ type LoopGeometry = {
   scrollable: ScrollableDirective;
   container: HTMLElement;
   horizontal: boolean;
+  rtl: boolean;
   children: HTMLElement[];
   trackLength: number;
   restingOffsetOf: (child: HTMLElement) => number;
@@ -100,11 +101,18 @@ export const useCarouselLoop = (config: CarouselLoopConfig) => {
     if (children.length !== count + cloneCount * 2) return null;
 
     const horizontal = scrollable.direction() !== 'vertical';
+    const rtl = horizontal && getComputedStyle(scrollContainer).direction === 'rtl';
 
     const viewport = horizontal ? scrollContainer.clientWidth : scrollContainer.clientHeight;
     const centred = config.slideAlign() === 'center';
-    const restingOffsetOf = (child: HTMLElement) =>
-      centred ? offsetOf(child, horizontal) - (viewport - sizeOf(child, horizontal)) / 2 : offsetOf(child, horizontal);
+    const restingOffsetOf = (child: HTMLElement) => {
+      const offset = offsetOf(child, horizontal);
+      const slack = viewport - sizeOf(child, horizontal);
+
+      if (centred) return offset - slack / 2;
+
+      return rtl ? offset - slack : offset;
+    };
 
     const firstReal = children[cloneCount];
     const firstTrailing = children[cloneCount + count];
@@ -118,7 +126,8 @@ export const useCarouselLoop = (config: CarouselLoopConfig) => {
       container: scrollContainer,
       horizontal,
       children,
-      trackLength: trackLength > 0 ? trackLength : 0,
+      rtl,
+      trackLength,
       restingOffsetOf,
     };
   };
@@ -129,10 +138,12 @@ export const useCarouselLoop = (config: CarouselLoopConfig) => {
     if (!geometry) return null;
 
     const { nearest: resting, nearestDistance, scroll } = restingChildIndex(geometry);
-    const { container, children, horizontal, restingOffsetOf } = geometry;
-    const maxScroll = horizontal
-      ? container.scrollWidth - container.clientWidth
-      : container.scrollHeight - container.clientHeight;
+    const { container, children, horizontal, rtl, restingOffsetOf } = geometry;
+    const scrollRange = Math.max(
+      horizontal ? container.scrollWidth - container.clientWidth : container.scrollHeight - container.clientHeight,
+      0,
+    );
+    const [minScroll, maxScroll] = rtl ? [-scrollRange, 0] : [0, scrollRange];
 
     return {
       resting,
@@ -143,7 +154,7 @@ export const useCarouselLoop = (config: CarouselLoopConfig) => {
         if (domIndex === resting) return true;
         if (!child) return false;
 
-        const reachable = Math.min(Math.max(restingOffsetOf(child), 0), Math.max(maxScroll, 0));
+        const reachable = Math.min(Math.max(restingOffsetOf(child), minScroll), maxScroll);
 
         return Math.abs(reachable - scroll) <= nearestDistance + 1;
       },

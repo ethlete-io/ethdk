@@ -15,6 +15,7 @@ interface SlideState {
   isActive: boolean;
   opacity: number;
   offset: number;
+  endOffset: number;
   contentTranslate: string;
   veilOpacity: number;
 }
@@ -23,6 +24,7 @@ function slideStates(root: Locator): Promise<SlideState[]> {
   return root.locator('.et-carousel').evaluate((carousel) => {
     const viewport = carousel.querySelector('.et-scrollable-container');
     const viewportLeft = viewport?.getBoundingClientRect().left ?? 0;
+    const viewportRight = viewport?.getBoundingClientRect().right ?? 0;
 
     return [...carousel.querySelectorAll<HTMLElement>('.et-carousel-item')].map((item) => {
       const content = item.querySelector('.et-carousel-slide-content');
@@ -32,6 +34,7 @@ function slideStates(root: Locator): Promise<SlideState[]> {
         isActive: item.hasAttribute('data-active'),
         opacity: Number(getComputedStyle(item).opacity),
         offset: Math.round(item.getBoundingClientRect().left - viewportLeft),
+        endOffset: Math.round(viewportRight - item.getBoundingClientRect().right),
         contentTranslate: content ? getComputedStyle(content).translate : '',
         veilOpacity: Number(getComputedStyle(item, '::after').opacity),
       };
@@ -56,6 +59,16 @@ async function expectActiveSlideAtRest(root: Locator): Promise<void> {
       return { isClone: active.isClone, offset: Math.abs(active.offset) <= 1 };
     })
     .toEqual({ isClone: false, offset: true });
+}
+
+async function expectActiveSlideAtRtlRest(root: Locator): Promise<void> {
+  await expect
+    .poll(async () => {
+      const active = await activeSlide(root);
+
+      return { isClone: active.isClone, endOffset: Math.abs(active.endOffset) <= 1 };
+    })
+    .toEqual({ isClone: false, endOffset: true });
 }
 
 async function scrollTrackBy(root: Locator, fraction: number): Promise<void> {
@@ -206,6 +219,40 @@ test.describe('carousel / loop', () => {
 
     await expect(dots.first()).toHaveAttribute('aria-current', 'true');
     await expectActiveSlideAtRest(root);
+  });
+});
+
+test.describe('carousel / loop in RTL', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: control clicks');
+
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      document.addEventListener('DOMContentLoaded', () => {
+        document.documentElement.dir = 'rtl';
+      });
+    });
+  });
+
+  test('starts on the first real slide rather than a leading clone', async ({ page }) => {
+    const root = await openStory(page, LOOP_STORY_ID);
+
+    await expect(root.locator(DOT).first()).toHaveAttribute('aria-current', 'true');
+    await expectActiveSlideAtRtlRest(root);
+  });
+
+  test('wraps both ways across the seam and settles on real slides', async ({ page }) => {
+    const root = await openStory(page, LOOP_STORY_ID);
+    const dots = root.locator(DOT);
+
+    await root.getByRole('button', { name: 'Previous slide' }).click();
+
+    await expect(dots.last()).toHaveAttribute('aria-current', 'true');
+    await expectActiveSlideAtRtlRest(root);
+
+    await root.getByRole('button', { name: 'Next slide' }).click();
+
+    await expect(dots.first()).toHaveAttribute('aria-current', 'true');
+    await expectActiveSlideAtRtlRest(root);
   });
 });
 
