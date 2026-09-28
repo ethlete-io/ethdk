@@ -8,7 +8,6 @@ Scan of `libs/components/src/lib/menu/`, `libs/components/src/lib/carousel/`, `l
 
 ## carousel
 
-
 ## calendar
 
 - Medium: range strategies can return an end that is disabled or after `max`, and `commitSelection` stores it without a check (`calendar/headless/calendar-range-strategy.ts:90-94`, `calendar/headless/calendar.directive.ts:744-751`). `createFixedLengthRangeStrategy({ days: 7 })` picked 3 days before `max` gives a range that ends past `max`. Clamp or reject a resolved range outside the availability. S Verified.
