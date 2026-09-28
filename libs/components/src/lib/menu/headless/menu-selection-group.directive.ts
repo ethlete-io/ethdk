@@ -88,12 +88,10 @@ export class MenuSelectionGroupDirective implements MenuSelectionGroupDirectiveB
       const current = this.value();
       const valueArray = Array.isArray(current) ? current : [];
 
+      const others = valueArray.filter((value) => value !== itemValue);
+
       item.checked.update((checked) => !checked);
-      this.value.set(
-        item.checked()
-          ? [...valueArray.filter((value) => value !== itemValue), itemValue]
-          : valueArray.filter((value) => value !== itemValue),
-      );
+      this.value.set(item.checked() ? this.insertInOptionOrder(others, itemValue) : others);
     } else {
       for (const registered of this.items()) {
         registered.checked.set(registered === item);
@@ -103,5 +101,14 @@ export class MenuSelectionGroupDirective implements MenuSelectionGroupDirectiveB
     }
 
     this.markTouched();
+  }
+
+  private insertInOptionOrder(values: unknown[], value: unknown) {
+    const items = this.items();
+    const optionIndex = (candidate: unknown) => items.findIndex((registered) => registered.value() === candidate);
+    const index = optionIndex(value);
+    const insertAt = values.findIndex((candidate) => optionIndex(candidate) > index);
+
+    return insertAt === -1 ? [...values, value] : [...values.slice(0, insertAt), value, ...values.slice(insertAt)];
   }
 }
