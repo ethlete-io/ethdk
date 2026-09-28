@@ -1,6 +1,7 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DragMoveEvent } from '@ethlete/core';
+import { vi } from 'vitest';
 import '../../test-helpers';
 import { expectNothingRunsAfterDestroy } from '../testing/destroyed-mid-gesture';
 import { queryAll } from '../testing/driver-core';
@@ -92,6 +93,23 @@ describe('TableResizeDirective', () => {
     resize.end();
 
     expect(fixture.componentInstance.table().hasColumnWidthOverride('name')).toBe(true);
+  });
+
+  it('widens the column on a drag toward the inline end in a right-to-left table', () => {
+    const fixture = create();
+    const resize = fixture.componentInstance.feature();
+    const table = fixture.componentInstance.table();
+    const widthOf = () => table.state().columns.find((column) => column.key === 'name')?.width;
+
+    queryAll(fixture, 'et-table')[0]!.style.direction = 'rtl';
+    table.setColumnWidth('name', 300);
+    vi.spyOn(table, 'renderedColumnWidth').mockReturnValue(300);
+
+    resize.start(columnMeta(fixture, 'name'));
+    resize.update(move(-40));
+    resize.end();
+
+    expect(widthOf()).toBe(340);
   });
 
   describe('a cancelled drag', () => {

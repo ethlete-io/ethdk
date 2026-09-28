@@ -22,7 +22,6 @@ Scan of `libs/components/src/lib/table/table-*.{ts,html,css}` (top level, specs 
 
 ## Resize / reorder in RTL
 
-- Medium: `update()` computes `startWidth + totalDx` (`table-resize.directive.ts:67`). The grip sits at `inset-inline-end`, which is the left edge in RTL, so a drag that should widen the column makes it narrower. Negate `totalDx` in RTL. S Verified.
 - Medium: The reorder preview and the drop target use physical x. `translateX(delta)` comes from inline-order offsets (`table-reorder.directive.ts:493`), `before` is `clientX < middle` (`:408`), and the auto-scroll zones use `bounds.left + frozen.start` (`:331`). In RTL the columns slide the wrong way, the drop lands on the wrong side, and the auto-scroll zone is at the wrong edge. M Verified.
 - Low: The reorder code leaves an inline `transition` (either `none` or `transform 160ms`) on every header and body cell that moved (`table-reorder.directive.ts:505`). That inline value overrides any transition the cell CSS declares. Remove the `transition` style in `clearPreview`. S
 - Low: `headerCellAt` accepts a press anywhere in the header cell (`table-reorder.directive.ts:244`), so a drag or a touch long-press on the filter or column-menu button starts a column reorder. Ignore presses that start on an interactive descendant. S

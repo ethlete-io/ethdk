@@ -1,4 +1,4 @@
-import { computed, Directive, inject, Injector, input, signal } from '@angular/core';
+import { computed, Directive, ElementRef, inject, Injector, input, signal } from '@angular/core';
 import { DragMoveEvent } from '@ethlete/core';
 import {
   injectTableFeatureHost,
@@ -27,6 +27,7 @@ export type TableResizeConfig = TableFeatureConfig;
 })
 export class TableResizeDirective {
   public table = injectTableFeatureHost('etTableResize');
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   /** See {@link TableResizeConfig}. */
   public config = input({} as TableResizeConfig, {
@@ -36,7 +37,7 @@ export class TableResizeDirective {
 
   // The column being dragged, with the width it had when the drag began - every move applies the
   // pointer's cumulative delta to that baseline, so the column can't drift over a long drag.
-  private resizing = signal<{ key: string; startWidth: number; hadOverride: boolean } | null>(null);
+  private resizing = signal<{ key: string; startWidth: number; hadOverride: boolean; inlineSign: number } | null>(null);
 
   constructor() {
     // Renders after the filter trigger: the grip is absolutely positioned at the cell's edge.
@@ -55,6 +56,7 @@ export class TableResizeDirective {
       key: column.key,
       startWidth: this.table.renderedColumnWidth(column.key),
       hadOverride: this.table.hasColumnWidthOverride(column.key),
+      inlineSign: getComputedStyle(this.elementRef.nativeElement).direction === 'rtl' ? -1 : 1,
     });
   }
 
@@ -64,7 +66,7 @@ export class TableResizeDirective {
     if (!resizing) return;
 
     // The table clamps to a usable minimum and its own width.
-    this.table.setColumnWidth(resizing.key, Math.round(resizing.startWidth + event.totalDx));
+    this.table.setColumnWidth(resizing.key, Math.round(resizing.startWidth + resizing.inlineSign * event.totalDx));
   }
 
   public end() {
