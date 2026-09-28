@@ -113,6 +113,14 @@ const getViewportSize = (document: Document) => {
   };
 };
 
+const hasLayoutBox = (element: HTMLElement) => {
+  if (!element.isConnected) return false;
+
+  const rect = element.getBoundingClientRect();
+
+  return rect.width > 0 && rect.height > 0;
+};
+
 const calculateViewportTransforms = (originElement: HTMLElement, document: Document): ViewportTransformData => {
   const { width: viewportWidth, height: viewportHeight } = getViewportSize(document);
   const rect = originElement.getBoundingClientRect();
@@ -163,7 +171,7 @@ const shouldUseReducedAnimation = (options: {
 
   if (matchesReducedMotion(options.document.documentElement)) return true;
   if (viewportWidth >= REDUCED_ANIMATION_THRESHOLD_WIDTH) return true;
-  if (!options.originElement) return true;
+  if (!options.originElement || !hasLayoutBox(options.originElement)) return true;
   if (!options.applyTransformOrigin) return true;
 
   return false;
@@ -239,7 +247,7 @@ const applyReducedAnimationStyles = (options: {
   });
 
   // Apply transform origin if we have an origin element
-  if (originElement && applyTransformOrigin) {
+  if (originElement && applyTransformOrigin && hasLayoutBox(originElement)) {
     const rect = originElement.getBoundingClientRect();
     const { width: viewportWidth, height: viewportHeight } = getViewportSize(document);
 
