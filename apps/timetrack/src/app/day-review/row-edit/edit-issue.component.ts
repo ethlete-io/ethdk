@@ -28,6 +28,12 @@ import { injectProjectLinks } from '../../project-links';
         ariaLabel="Issue for this band"
       />
     </et-form-field>
+
+    @if (namedByAutoMode()) {
+      <span class="text-small text-et-surface-muted" data-auto-named>
+        Named by auto mode. Reset to the proposal takes it back.
+      </span>
+    }
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [FORM_FIELD_IMPORTS, IssueSelectComponent],
@@ -38,6 +44,8 @@ export class EditIssueComponent {
   public draft = input.required<WritableSignal<Appointment>>();
 
   protected issueKey = computed(() => this.draft()().title);
+
+  protected namedByAutoMode = computed(() => rowEntryOf(this.draft()())?.row.sources?.issue === 'auto');
 
   /** The lane the row is drawn in, so the picker can offer what that lane was named with before. */
   protected laneKey = computed(() => rowEntryOf(this.draft()())?.row.laneKey ?? '');

@@ -4,6 +4,7 @@ import {
   E2E_DAY_KEY,
   E2E_NOW,
   askAgent,
+  editSurface,
   expect,
   openApprovals,
   openStandIns,
@@ -55,6 +56,13 @@ test.describe('auto mode on a band no issue matches', () => {
         return answer.ok ? answer.value.rows.filter((row) => row.sources.issue === 'auto').length : 0;
       })
       .toBeGreaterThan(0);
+
+    const band = page.locator(`[data-kind="row"][title^="${created?.key ?? ''} "]`).first();
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await band.click();
+    await expect(editSurface(page).locator('[data-auto-named]')).toBeVisible();
   });
 });
 
