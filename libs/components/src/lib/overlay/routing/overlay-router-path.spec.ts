@@ -65,6 +65,12 @@ describe('OverlayRouter resolvePath', () => {
     expect(router.resolvePath('c')).toEqual({ route: '/a/b/c', type: 'forward' });
   });
 
+  it('resolves the forward form from the root route without a double slash', async () => {
+    const router = await open('/');
+
+    expect(router.resolvePath('a')).toEqual({ route: '/a', type: 'forward' });
+  });
+
   it('resolves the replace-current form by swapping the last segment of the current route', async () => {
     const router = await open('/a/b');
 

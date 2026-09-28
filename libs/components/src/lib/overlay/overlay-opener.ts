@@ -261,6 +261,7 @@ const createQueryParamOverlayOpener = <TComponent extends object, TResult>(
 
   let overlayRef: OverlayRef<TComponent, TResult> | null = null;
   let modelSyncEffect: EffectRef | null = null;
+  let openValue: string | null = null;
 
   const updateQueryParam = (value: string | null) =>
     router.navigate([], { queryParams: { [definition.queryParamKey]: value }, queryParamsHandling: 'merge' });
@@ -293,6 +294,7 @@ const createQueryParamOverlayOpener = <TComponent extends object, TResult>(
       modelSyncEffect = effect(
         () => {
           const modelValue = model();
+          openValue = modelValue;
           untracked(() => updateQueryParam(modelValue));
         },
         { injector },
@@ -327,10 +329,18 @@ const createQueryParamOverlayOpener = <TComponent extends object, TResult>(
 
     untracked(() => {
       if (!value) {
-        overlayRef?.close();
+        const closingRef = overlayRef;
+
+        closingRef?.close();
+
+        if (closingRef && overlayRef === closingRef) {
+          updateQueryParam(openValue);
+        }
 
         return;
       }
+
+      openValue = value;
 
       if (overlayRef) {
         // The overlay is already open and the param changed externally - push it into the model.

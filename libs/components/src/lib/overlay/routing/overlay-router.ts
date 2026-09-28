@@ -25,7 +25,7 @@ import {
   toProvideFn,
   toToken,
 } from '@ethlete/core';
-import { map, switchMap } from 'rxjs';
+import { map, switchMap, take, tap } from 'rxjs';
 import { OVERLAY_REF } from '../overlay-ref';
 
 export const OVERLAY_ROUTER_CONFIG_TOKEN = new InjectionToken<OverlayRouterConfig>('OVERLAY_ROUTER_CONFIG_TOKEN');
@@ -163,6 +163,7 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
     const location = inject(Location, { optional: true });
     const id = createComponentId('ovr');
     let syncUrl = config.syncUrl ?? false;
+    let ownHistoryEntries = 0;
 
     let router: Router | null = null;
     let route: Signal<string> | null = null;
@@ -214,12 +215,25 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
       return routes().find((r) => r.path === curr) ?? null;
     });
 
-    const updateBrowserUrl = (r: string | undefined) => {
+    const readUrlParam = () => {
+      if (!router) return undefined;
+
+      const value: unknown = router.parseUrl(router.url).queryParams[id];
+
+      return typeof value === 'string' ? value : undefined;
+    };
+
+    const updateBrowserUrl = (r: string | undefined, replaceUrl = false) => {
       if (!router || !route) return;
+
+      if (!replaceUrl && r !== readUrlParam()) {
+        ownHistoryEntries++;
+      }
 
       router.navigate([route()], {
         queryParams: { [id]: r },
         queryParamsHandling: 'merge',
+        replaceUrl,
       });
     };
 
@@ -257,7 +271,7 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
       const curr = syncCurrentRoute();
 
       if (isForward) {
-        r = `${curr}/${r}`;
+        r = `${curr.replace(/\/+$/, '')}/${r}`;
       } else if (isReplaceCurrent) {
         const currSegments = curr.split('/').filter((s) => s !== '');
         currSegments.pop();
@@ -437,6 +451,15 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
       updateBrowserUrl(syncCurrentRoute());
 
       let isFirstRouteEvent = true;
+      let isClosing = false;
+
+      overlayRef
+        .beforeClosed()
+        .pipe(
+          take(1),
+          tap(() => (isClosing = true)),
+        )
+        .subscribe();
 
       effect(() => {
         const r = currentRouteQueryParam();
@@ -450,8 +473,14 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
 
           // The user navigated back or forward using the browser history
           if (!r) {
+            ownHistoryEntries = 0;
+
             // The route query param no longer exists - close the overlay
             overlayRef.close();
+
+            if (!isClosing) {
+              updateBrowserUrl(syncCurrentRoute());
+            }
           } else if (r !== syncCurrentRoute()) {
             const navStack = nativeBrowserBackStack();
             const curr = syncCurrentRoute();
@@ -459,6 +488,8 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
             // An empty nav stack means the only way to have got here is back.
             const isForward = navStack.length > 0 && r === navStack[navStack.length - 1];
             const nextStack = !navStack.length ? [curr] : isForward ? navStack.slice(0, -1) : [...navStack, curr];
+
+            ownHistoryEntries = Math.max(0, ownHistoryEntries + (isForward ? 1 : -1));
 
             const resolvedRoute = resolvePath(r);
 
@@ -490,9 +521,12 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
     }
 
     inject(DestroyRef).onDestroy(() => {
-      if (syncUrl) {
-        // Remove the dialog route from the browser url
-        updateBrowserUrl(undefined);
+      if (!syncUrl || readUrlParam() === undefined) return;
+
+      if (location && ownHistoryEntries > 0) {
+        location.historyGo(-ownHistoryEntries);
+      } else {
+        updateBrowserUrl(undefined, true);
       }
     });
 

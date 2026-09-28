@@ -1,5 +1,6 @@
 import { Component, HostAttributeToken, inject, model, signal, Type } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { Location } from '@angular/common';
 import { provideLocationMocks } from '@angular/common/testing';
 import { provideRouter, Router } from '@angular/router';
 import {
@@ -427,6 +428,96 @@ describe('overlay routing scenarios', () => {
 
       expect(router.url).toBe('/');
       expect(document.querySelector('.et-overlay-runtime-root')).toBeNull();
+    });
+
+    it('puts the param back when a close guard vetoes a browser Back', async () => {
+      const s = scenario();
+      const fixture = TestBed.createComponent(ShopPageComponent);
+      const router = TestBed.inject(Router);
+      const location = TestBed.inject(Location);
+
+      router.setUpLocationChangeListener();
+      await s.settle();
+
+      fixture.componentInstance.product.open('42');
+      await s.settle();
+
+      const ref = s.run(() => injectOverlayManager()).openOverlays()[0];
+      let vetoing = true;
+
+      ref?.registerCloseGuard(() => !vetoing);
+
+      location.back();
+      await s.settle();
+
+      expect(router.url).toBe('/?product=42');
+      expect(query('.product').textContent).toBe('42');
+
+      vetoing = false;
+      fixture.componentInstance.product.close();
+      await s.settle();
+
+      expect(router.url).toBe('/');
+      expect(document.querySelector('.et-overlay-runtime-root')).toBeNull();
+    });
+  });
+
+  describe('with syncUrl', () => {
+    const scenario = useScenario({
+      providers: [provideOverlay(), provideRouter([{ path: '**', children: [] }]), provideLocationMocks()],
+    });
+
+    const openSynced = async (s: Scenario) => {
+      const router = TestBed.inject(Router);
+
+      router.setUpLocationChangeListener();
+      await router.navigateByUrl('/page');
+      const opened = openSettings(s, provideOverlayRouter({ routes: [...ROUTES], syncUrl: true }));
+      await s.settle();
+
+      return { ...opened, router, location: TestBed.inject(Location) };
+    };
+
+    it('pops its own history entries on close so one Back leaves the page', async () => {
+      const s = scenario();
+      const { ref, settings, router, location } = await openSynced(s);
+
+      expect(router.url).toMatch(/^\/page\?ovr/);
+
+      settings.router.navigate('/members');
+      await s.settle();
+      expect(router.url).toMatch(/members/);
+
+      ref.close();
+      await s.settle();
+
+      expect(router.url).toBe('/page');
+
+      location.back();
+      await s.settle();
+
+      expect(router.url).toBe('/');
+    });
+
+    it('puts the route param back when a close guard vetoes a browser Back', async () => {
+      const s = scenario();
+      const { ref, router, location } = await openSynced(s);
+      const syncedUrl = router.url;
+      let vetoing = true;
+
+      ref.registerCloseGuard(() => !vetoing);
+
+      location.back();
+      await s.settle();
+
+      expect(router.url).toBe(syncedUrl);
+      expect(pageTitle()).toBe('General');
+
+      vetoing = false;
+      ref.close();
+      await s.settle();
+
+      expect(router.url).toBe('/page');
     });
   });
 });
