@@ -133,7 +133,8 @@ Both the floating button and the panel's **Close** button print the shortcut for
 the current platform (`⌘⌥Q` on Apple, `Ctrl+Alt+Q` elsewhere), so it's
 discoverable without reading this page. The shortcut is matched on the physical
 key, which keeps it working on layouts where holding <kbd>Alt</kbd> rewrites the
-character the keyboard reports.
+character the keyboard reports. <kbd>AltGr</kbd> + <kbd>Q</kbd> is left to the page,
+because it types `@` on a German layout.
 
 ## Where the panel sits
 

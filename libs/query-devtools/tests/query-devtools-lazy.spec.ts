@@ -52,4 +52,37 @@ describe('QueryDevtoolsLazyComponent with provideQueryDevtools()', () => {
 
     expect((fixture.nativeElement as HTMLElement).querySelector('et-query-devtools-toggle')).not.toBeNull();
   });
+
+  it('should leave an AltGr+Q keypress to the page', async () => {
+    const fixture = TestBed.createComponent(QueryDevtoolsLazyComponent);
+    await fixture.whenStable();
+
+    const altGrQ = new KeyboardEvent('keydown', {
+      key: '@',
+      code: 'KeyQ',
+      ctrlKey: true,
+      altKey: true,
+      modifierAltGraph: true,
+      cancelable: true,
+    });
+    document.dispatchEvent(altGrQ);
+
+    expect(altGrQ.defaultPrevented).toBe(false);
+  });
+
+  it('should claim the Ctrl+Alt+Q keypress', async () => {
+    const fixture = TestBed.createComponent(QueryDevtoolsLazyComponent);
+    await fixture.whenStable();
+
+    const ctrlAltQ = new KeyboardEvent('keydown', {
+      key: 'q',
+      code: 'KeyQ',
+      ctrlKey: true,
+      altKey: true,
+      cancelable: true,
+    });
+    document.dispatchEvent(ctrlAltQ);
+
+    expect(ctrlAltQ.defaultPrevented).toBe(true);
+  });
 });

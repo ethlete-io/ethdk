@@ -203,6 +203,7 @@ import {
 import {
   QUERY_DEVTOOLS_VIEW_STATE_KEY,
   QueryDevtoolsToggleComponent,
+  isQueryDevtoolsShortcut,
   queryDevtoolsShortcutLabel,
 } from '@ethlete/query-devtools/toggle';
 
@@ -1680,7 +1681,7 @@ export class QueryDevtoolsComponent implements OnInit {
     // alternate glyph (Option+Q is "œ" on a US layout), so a `key === 'q'` test never fires there.
     fromEvent<KeyboardEvent>(doc, 'keydown')
       .pipe(
-        filter((e) => (e.ctrlKey || e.metaKey) && e.altKey && (e.code === 'KeyQ' || e.key.toLowerCase() === 'q')),
+        filter(isQueryDevtoolsShortcut),
         tap((e) => {
           e.preventDefault();
           this.toggleOpen();

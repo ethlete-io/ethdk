@@ -11,7 +11,11 @@ import {
 } from '@ethlete/query';
 import { filter, fromEvent, tap } from 'rxjs';
 import { QueryDevtoolsComponent } from '@ethlete/query-devtools';
-import { QueryDevtoolsToggleComponent, wasQueryDevtoolsOpen } from '@ethlete/query-devtools/toggle';
+import {
+  isQueryDevtoolsShortcut,
+  QueryDevtoolsToggleComponent,
+  wasQueryDevtoolsOpen,
+} from '@ethlete/query-devtools/toggle';
 
 /**
  * The query devtools behind a deferred load: renders only the floating toggle button until the panel is
@@ -89,7 +93,7 @@ export class QueryDevtoolsLazyComponent {
     fromEvent<KeyboardEvent>(this.document, 'keydown')
       .pipe(
         filter(() => !this.load()),
-        filter((e) => (e.ctrlKey || e.metaKey) && e.altKey && (e.code === 'KeyQ' || e.key.toLowerCase() === 'q')),
+        filter(isQueryDevtoolsShortcut),
         tap((e) => {
           e.preventDefault();
           this.open();

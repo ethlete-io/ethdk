@@ -6,8 +6,6 @@ Entry-point boundaries hold: `toggle/` imports only `@ethlete/query` and `@ethle
 
 ## Shortcut and listeners
 
-- High: the `Ctrl/Cmd + Alt + Q` matcher treats AltGr as Ctrl+Alt (`query-devtools.component.ts:1681`, `lazy/query-devtools-lazy.component.ts:87`). On Windows with a German layout, `@` is AltGr+Q, so while the devtools are mounted every `@` keypress calls `preventDefault()` and toggles the panel - nobody can type an e-mail address. Reject the event when `e.getModifierState('AltGraph')` is true. S Verified. Both matchers accept `ctrlKey && altKey && code === 'KeyQ'`, which is what Windows reports for AltGr+Q.
-- Low: the lazy shell and the panel each carry their own copy of the shortcut matcher (`lazy/query-devtools-lazy.component.ts:87`, `query-devtools.component.ts:1683`). Export one `isQueryDevtoolsShortcut(e)` from the toggle entry, next to `queryDevtoolsShortcutLabel`, so the AltGr fix lands once. S
 - Low: the shortcut listens only on the host document (`query-devtools.component.ts:1681`). With the panel popped out and focus in the pop-up, the shortcut does nothing. Also listen on the pop-up document for the life of the pop-out. S
 - Low: inspect mode ends on `Escape` but does not stop the event (`query-devtools.component.ts:1728`), so the same press also closes an app dialog. Clicks on elements without a query pass through to the app (`query-devtools.component.ts:3921`). Call `preventDefault`/`stopPropagation` for both while inspect mode is active. S
 
@@ -48,7 +46,7 @@ Entry-point boundaries hold: `toggle/` imports only `@ethlete/query` and `@ethle
 
 ## Spec gaps
 
-- Spec: no test for the shortcut matcher (AltGr, `code` vs `key`, the lazy shell stopping after the handover). S
+- Spec: no test for the shortcut matcher (`code` vs `key`, the lazy shell stopping after the handover). S
 - Spec: the pop-out has one smoke call (`query-devtools.component.spec.ts:152`) but nothing for dock-back, closing the pop-up before load, or subscriptions left after dock-back. M
 - Spec: no test that the session report redacts credentials in URLs (`query-devtools-session.spec.ts`). S
 
