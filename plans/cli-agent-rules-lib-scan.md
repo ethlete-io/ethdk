@@ -1,6 +1,6 @@
 # cli + agent-rules scan - open findings
 
-Scan of `libs/cli/src/` and `libs/agent-rules/src/` from 2026-09-28. 0 High, 1 Medium, 43 Low, 6 Spec (second pass included; verified 2026-09-28: 15 confirmed, 3 re-rated, 0 refuted). Skipped: nothing from the first-pass skip list; the second pass read `timetrack-command.ts`, `git-flow/parse.ts`, `frontmatter.ts`, `load-content.ts`, `plan.ts` warnings, `doctor/`, `config/diagnose.ts`, `api/help.ts`, `api/suggest.ts` and `api/state.ts`. Tree-shaking does not apply. Paths are relative to `libs/cli/src/lib/` or `libs/agent-rules/src/lib/`.
+Scan of `libs/cli/src/` and `libs/agent-rules/src/` from 2026-09-28. 0 High, 1 Medium, 19 Low, 5 Spec (second pass included; verified 2026-09-28: 15 confirmed, 3 re-rated, 0 refuted). Skipped: nothing from the first-pass skip list; the second pass read `timetrack-command.ts`, `git-flow/parse.ts`, `frontmatter.ts`, `load-content.ts`, `plan.ts` warnings, `doctor/`, `config/diagnose.ts`, `api/help.ts`, `api/suggest.ts` and `api/state.ts`. Tree-shaking does not apply. Paths are relative to `libs/cli/src/lib/` or `libs/agent-rules/src/lib/`.
 
 ## cli: api (`et api`)
 
@@ -26,22 +26,6 @@ Scan of `libs/cli/src/` and `libs/agent-rules/src/` from 2026-09-28. 0 High, 1 M
 - Low: `release` matches flags by substring (`release.ts:27-28`). Any argument that contains `-f` forces the release. With `--force`, `git add .` puts every unrelated uncommitted change into the "Release versions" commit (`release.ts:56`). S
 - Low: `workspaceAliases` builds a RegExp from each tsconfig path key without escaping (`design/serve.ts:41`). A key with `.` or `+` matches more than it should. S
 
-## agent-rules: sync, migrate, output-style
-
-- Low: `migrateClaudeMd` concatenates `CLAUDE.md` and `AGENTS.md` (`migrate.ts:48-58`). When both hold a generated marker block, the result holds two. Sync then updates only the first, and the second stays stale. Strip the marker block from the `CLAUDE.md` part first. S Re-rated from Medium: no target ever writes a marker block into `CLAUDE.md`, so only a hand-copied block triggers it.
-- Low: `output-style --remove` reads the shipped style before it removes (`output-style.ts:126-128`). A style that a newer package version dropped cannot be removed ("Unknown output style"). The name is also joined into paths unchecked, so `--name ../../README --force` resolves to a file above the config dir. Validate the name and skip the shipped read for `remove`. S
-- Low: `collectOwnedPaths` uses `statSync` (`owned-paths.ts:42,67`), which throws on a dangling symlink. One broken link under `.claude/skills/ethlete-*` makes `sync` and `check` crash. Use `lstatSync` and skip links. S
-- Low: `sync` rewrites every planned file, not only the changed ones (`sync.ts:98-102`). This touches mtimes and writes through any symlink in place of a generated file. Write `changes` only. S
-- Low: `assertKnownHooks` and `assertKnownGitHooks` test with `in` (`targets/hooks-shared.ts`, `targets/git-hooks.ts:23`). `"hooks": ["constructor"]` passes, then `emitHookScripts` throws from `join(..., undefined)`. Use `Object.hasOwn`. S
-- Low: `emitHookSettings` swallows a parse error in `.claude/settings.json` (`targets/hooks-shared.ts`, the `catch` at the end). An opted-in hook then is not registered, with no warning. Add a plan warning. S
-
-## agent-rules: git-flow, gitlab, timetrack
-
-- Low: `CI_JOB_TOKEN` is sent as `private-token` (`gitlab.ts:29`). GitLab takes a job token only as `JOB-TOKEN`, and a job token cannot list or edit merge requests anyway. Drop the fallback. S
-- Low: `git()` uses the 1 MB default `maxBuffer` of `execFileSync` (`git.ts:5`). `commitPathsOnDays` runs `git log --name-only` over a span of days (`git.ts:111`), and a wide span in a large monorepo throws `ENOBUFS`. Raise `maxBuffer`. S
-- Low: when the push after the local rename fails (`git-flow-repair.ts:183-191`), the raw `execFileSync` error is thrown and the local branch keeps its new name. No undo hint is printed, although the retarget failure path prints one. S
-- Low: `writeExport` writes with a single `writeSync` call and ignores the returned byte count (`timetrack-command.ts:453-456`). A short write truncates the export with no error. Use `writeFileSync(handle, data)`. S
-
 ## Spec gaps
 
 - Spec: `replaceMarkedBlock` has no test for a missing end marker, a reversed pair, or two blocks. S
@@ -51,29 +35,9 @@ Scan of `libs/cli/src/` and `libs/agent-rules/src/` from 2026-09-28. 0 High, 1 M
 
 ## second pass
 
-### agent-rules: timetrack command
-
-- Low: `naming` uses today when the day argument is malformed (`timetrack-command.ts:979`). `timetrack naming 2026-9-1` answers for today with no error. Throw, as `rows` and `day` do. S
-- Low: `FLAGS_WITH_VALUE` does not list `--repo`, `--name` or `--rename` (`timetrack-command.ts:44-69`). Their values count as positionals, so `timetrack --name x standins` reads `x` as the subcommand. S
-- Low: `flagValue` takes the next argument also when it is another flag (`timetrack-command.ts:77-81`). `create --summary --project FIP` queues an issue with the title `--project`. Reject a value that starts with `--`. S
-- Low: `numberFlag` accepts `''` (as 0), negative numbers and fractions (`timetrack-command.ts:83-93`). `search --limit -1` goes to the app unchecked. Require a positive integer where the flag is a count. S
-- Low: `day --out` ignores `--json` and prints text lines (`timetrack-command.ts:810-816`). It also resolves `--out` against the process cwd, not `--root`. S
-
 ### agent-rules: git-flow parse
 
 - Medium: with the default empty `keyPrefixes`, a subject that starts with `<word>-<number>` reads as an issue key (`git-flow/parse.ts:50-54`, default pattern at `git-flow/config.ts:71`). `feat/step-2-rework` gives `issueKey: STEP-2`, and timetrack attributes time to an issue that does not exist. Only a `key-case` finding marks it. Do not set `issueKey` for a lowercase match when `keyPrefixes` is empty. S Verified. Timetrack passes the favourite project keys as `keyPrefixes`, so this hits only while that list is empty, where `attribute.ts` trusts `parseBranch` on purpose.
-- Low: the prefix check uses `startsWith(prefix)` (`git-flow/parse.ts:54`). Prefix `FI` accepts `FIX-1`, and `EA` accepts `EAX-1`. Compare against `${prefix}-`. S
-- Low: a capture group in a configured `keyPattern` shifts `match[2]` (`git-flow/parse.ts:50,64`). With `(FIP|EA)-\d+`, the subject becomes `FIP`. Use a named group for the subject. S
-- Low: `renameSuggestion` passes branch text as a replacement string (`git-flow/parse.ts:95`). A subject with `$&` or `$'` expands (git allows `$` in branch names), so the suggestion is wrong. Use a replacer function. S
-- Low: `config.typeAliases[prefix]` reads through the prototype (`git-flow/parse.ts:373`). `constructor/FIP-1-x` resolves `type` to a function and parses as a known type. Use `Object.hasOwn`. S
-
-### agent-rules: frontmatter, plan warnings
-
-- Low: a duplicate frontmatter key overwrites the first one with no error (`frontmatter.ts:113`). The parser JSDoc says that anything outside the subset throws. S
-- Low: `parseInlineList` splits on every comma, also inside quotes (`frontmatter.ts:43`), so `["a, b"]` gives two entries. `modelInvocation` accepts only the exact text `false` (`frontmatter.ts:156`), so `False` or `no` keep model invocation on. S
-- Low: the `disableHooks` warning tests with `in` (`plan.ts:146`), so `"constructor"` or `"toString"` is not reported as unknown. Use `Object.hasOwn`. S
-- Low: `collectPathVarWarnings` joins an absolute `themeStylesheet` under the root (`plan.ts:193`), so an absolute path that exists always warns. Use `resolve`. S
-- Low: `claudeMdImportsAgentsMd` accepts any symlink target that ends with `AGENTS.md` (`plan.ts:102`), for example `../other/AGENTS.md` or `OLD-AGENTS.md`. The text check also matches `@AGENTS.md` inside a code fence (`plan.ts:104`). S
 
 ### cli: doctor, config
 
@@ -87,5 +51,4 @@ Scan of `libs/cli/src/` and `libs/agent-rules/src/` from 2026-09-28. 0 High, 1 M
 
 ### Spec gaps
 
-- Spec: `frontmatter.ts` has no spec. Duplicate keys, quoted commas and a list item with no key are untested. S
 - Spec: `timetrack-command.ts` has no test for `--at` or `--from`/`--to` date parsing, or for `project` with a relative path. S

@@ -165,6 +165,18 @@ describe('timetrack day --out', () => {
     if (platform() !== 'win32') expect(statSync(out).mode & 0o777).toBe(0o600);
   });
 
+  it('resolves a relative --out against the root and answers --json with data', async () => {
+    await withEndpoint(answered(dayEvents));
+
+    const lines = printedLines();
+    const root = mkdtempSync(join(tmpdir(), 'agent-rules-root-'));
+
+    await timetrackCommand({ root, argv: ['day', '2026-09-16', '--out', 'day.json', '--json'] });
+
+    expect(JSON.parse(readFileSync(join(root, 'day.json'), 'utf8'))).toEqual(dayEvents);
+    expect(JSON.parse(lines.join('\n'))).toEqual({ day: '2026-09-16', events: 1, out: join(root, 'day.json') });
+  });
+
   it.runIf(platform() !== 'win32')('never writes through a symlink somebody else planted', async () => {
     await withEndpoint(answered(dayEvents));
     printedLines();
@@ -226,6 +238,52 @@ describe('timetrack resync', () => {
     await expect(run(['resync', '../a', '../b', '--replace'])).resolves.toBe(0);
     expect(bodies).toEqual([{ op: 'agentSessions.resync', paths: ['/a', '/b'], replace: true }]);
     expect(lines.join('\n')).toContain('replacing what it stored for them');
+  });
+});
+
+describe('timetrack argument checks', () => {
+  it('refuses a malformed naming day instead of answering for today', async () => {
+    const { handler, asked } = answeredByOp({});
+
+    await withEndpoint(handler);
+    printedLines();
+
+    await expect(run(['naming', '2026-9-1'])).rejects.toThrow('Pass a day as YYYY-MM-DD, not 2026-9-1.');
+    expect(asked).toEqual([]);
+  });
+
+  it('refuses a flag whose value is another flag', async () => {
+    const { handler, asked } = answeredByOp({});
+
+    await withEndpoint(handler);
+    printedLines();
+
+    await expect(run(['create', '--summary', '--project', 'FIP'])).rejects.toThrow('--summary needs a value.');
+    expect(asked).toEqual([]);
+  });
+
+  it('refuses a search limit that is not a whole number above zero', async () => {
+    const { handler, asked } = answeredByOp({});
+
+    await withEndpoint(handler);
+    printedLines();
+
+    for (const limit of ['-1', '', '2.5', '0']) {
+      await expect(run(['search', 'x', '--limit', limit])).rejects.toThrow('--limit');
+    }
+
+    expect(asked).toEqual([]);
+  });
+
+  it('reads the value of --name as a flag value, not as the subcommand', async () => {
+    const { handler, asked } = answeredByOp({ 'standIn.list': { standIns: [] }, 'settings.rules': {} });
+
+    await withEndpoint(handler);
+    printedLines();
+
+    await run(['--name', 'x', 'standins']);
+
+    expect(asked).toContain('standIn.list');
   });
 });
 

@@ -1,4 +1,4 @@
-import { closeSync, lstatSync, openSync, unlinkSync, writeSync } from 'fs';
+import { closeSync, lstatSync, openSync, unlinkSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
 import {
   TimetrackApprovalStatus,
@@ -66,6 +66,9 @@ const FLAGS_WITH_VALUE = [
   '--author',
   '--plan',
   '--delete',
+  '--repo',
+  '--name',
+  '--rename',
 ];
 
 /** Every human-readable line, with anything a terminal would act on printed rather than obeyed. */
@@ -77,7 +80,13 @@ const positionalArgs = (args: string[]) =>
 const flagValue = (args: string[], flag: string) => {
   const index = args.indexOf(flag);
 
-  return index === -1 ? undefined : args[index + 1];
+  if (index === -1) return undefined;
+
+  const value = args[index + 1];
+
+  if (value === undefined || value.startsWith('--')) throw new Error(`${flag} needs a value.`);
+
+  return value;
 };
 
 const numberFlag = (args: string[], flag: string) => {
@@ -85,9 +94,19 @@ const numberFlag = (args: string[], flag: string) => {
 
   if (raw === undefined) return undefined;
 
-  const value = Number(raw);
+  const value = raw.trim() ? Number(raw) : Number.NaN;
 
   if (!Number.isFinite(value)) throw new Error(`${flag} takes a number, not ${raw}.`);
+
+  return value;
+};
+
+const countFlag = (args: string[], flag: string) => {
+  const value = numberFlag(args, flag);
+
+  if (value !== undefined && (!Number.isInteger(value) || value <= 0)) {
+    throw new Error(`${flag} takes a whole number above zero, not ${value}.`);
+  }
 
   return value;
 };
@@ -459,7 +478,7 @@ const writeExport = (options: { path: string; data: string; overwrite: boolean }
   const handle = openSync(path, 'wx', 0o600);
 
   try {
-    writeSync(handle, data);
+    writeFileSync(handle, data);
   } finally {
     closeSync(handle);
   }
@@ -742,7 +761,7 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
       text: value,
       projectKey: flagValue(argv, '--project'),
       assignedToMe: argv.includes('--mine'),
-      limit: numberFlag(argv, '--limit'),
+      limit: countFlag(argv, '--limit'),
     });
 
     if (!json) {
@@ -811,10 +830,15 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     if (!DAY.test(day)) throw new Error(`Pass a day as YYYY-MM-DD, not ${day}.`);
 
     const found = await timetrackDayEvents(day);
-    const out = flagValue(argv, '--out');
+    const outFlag = flagValue(argv, '--out');
 
-    if (out) {
+    if (outFlag) {
+      const out = resolve(root, outFlag);
+
       writeExport({ path: out, data: JSON.stringify(found), overwrite: argv.includes('--overwrite') });
+
+      if (json) return printed({ day: found.day, events: found.events.length, out }, json);
+
       say(`${found.day}  ${found.events.length} events written to ${out}, readable by you alone`);
       say('It holds the day as it was observed: window titles, paths and messages. Delete it when you are done.');
 
@@ -982,7 +1006,10 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
   }
 
   if (subcommand === 'naming') {
-    const day = value && DAY.test(value) ? value : today();
+    const day = value ?? today();
+
+    if (!DAY.test(day)) throw new Error(`Pass a day as YYYY-MM-DD, not ${day}.`);
+
     const naming = await timetrackNaming(day);
 
     if (!json) {
