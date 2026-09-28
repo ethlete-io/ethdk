@@ -55,7 +55,47 @@ test.describe('a band dragged at both ends in turn', () => {
   });
 });
 
-const band = (page: Page) => page.locator('[data-lane] [data-kind="row"]').first();
+test.describe('one part of a split band dragged at an end', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, events: anHour() });
+    await page.goto('/day');
+    await band(page).click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Split in half' }).click();
+    await expect(page.locator('et-menu')).toBeHidden();
+    await expect(bands(page)).toHaveCount(2);
+  });
+
+  test('keeps its own start while its end grows', async ({ page }) => {
+    const hour = await pxPerHour(page);
+
+    await dragEdge({ page, row: bands(page).last(), edge: 'end', by: hour / 2 });
+
+    await expect(bands(page).last()).toHaveAttribute('title', 'ABC-3010 · 1h 0m');
+    await expect(bands(page).first()).toHaveAttribute('title', 'ABC-3010 · 30m');
+  });
+
+  test('leaves the stretch it gave up empty when its end shrinks', async ({ page }) => {
+    const hour = await pxPerHour(page);
+
+    await dragEdge({ page, row: bands(page).last(), edge: 'end', by: -hour / 4 });
+
+    await expect(bands(page).last()).toHaveAttribute('title', 'ABC-3010 · 15m');
+    await expect(bands(page)).toHaveCount(2);
+  });
+
+  test('leaves the stretch it gave up empty when its start shrinks', async ({ page }) => {
+    const hour = await pxPerHour(page);
+
+    await dragEdge({ page, row: bands(page).last(), edge: 'start', by: hour / 4, inset: 8 });
+
+    await expect(bands(page).last()).toHaveAttribute('title', 'ABC-3010 · 15m');
+    await expect(bands(page)).toHaveCount(2);
+  });
+});
+
+const bands = (page: Page) => page.locator('[data-lane] [data-kind="row"]');
+
+const band = (page: Page) => bands(page).first();
 
 const boxOf = async (locator: Locator) => {
   const box = await locator.boundingBox();
@@ -73,11 +113,11 @@ const pxPerHour = async (page: Page) => {
 };
 
 /** Grabs the named end of a band and moves it `by` pixels down the column. */
-const dragEdge = async (options: { page: Page; row: Locator; edge: 'start' | 'end'; by: number }) => {
-  const { page, row, edge, by } = options;
+const dragEdge = async (options: { page: Page; row: Locator; edge: 'start' | 'end'; by: number; inset?: number }) => {
+  const { page, row, edge, by, inset = 3 } = options;
   const box = await boxOf(row);
   const x = box.x + box.width / 2;
-  const y = edge === 'start' ? box.y + 3 : box.y + box.height - 3;
+  const y = edge === 'start' ? box.y + inset : box.y + box.height - inset;
 
   await page.mouse.move(x, y);
   await page.mouse.down();

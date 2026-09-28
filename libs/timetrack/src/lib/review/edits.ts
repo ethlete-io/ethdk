@@ -465,7 +465,8 @@ export const addManualRow = (options: {
  *
  * A drag pins the end it moved and leaves the other one following the day's own row, so dragging a
  * row's start never stops its end growing while the work goes on. A pin holds: an end placed by an
- * earlier drag stays where the reviewer put it, so dragging the other end never hands it back.
+ * earlier drag stays where the reviewer put it, so dragging the other end never hands it back. A row
+ * pinned by anything but a drag — a split, a merge, a row written by hand — tracks neither end.
  *
  * An empty or inverted range returns the edits unchanged.
  */
@@ -504,8 +505,8 @@ export const setRowRange = (options: {
         from,
         to,
         durationMs: moved ? row.durationMs : roundedSpan({ from, to, round: options.round }),
-        tracksFrom: !options.pinsBothEnds && !heldFrom && (pinned?.tracksFrom ?? true),
-        tracksTo: !options.pinsBothEnds && !heldTo && (pinned?.tracksTo ?? true),
+        tracksFrom: !options.pinsBothEnds && !heldFrom && (pinned ? !!pinned.tracksFrom : true),
+        tracksTo: !options.pinsBothEnds && !heldTo && (pinned ? !!pinned.tracksTo : true),
       },
     ],
   };
