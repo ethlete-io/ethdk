@@ -55,7 +55,7 @@ const STRUCTURED_DATA_STORE_DEF = /* @__PURE__ */ defineRootProvider(
 
         renderer.setAttributes(script, { type: 'application/ld+json' });
         if (nonce) renderer.setAttribute(script, 'nonce', nonce);
-        renderer.setTextContent(script, JSON.stringify(data));
+        renderer.setTextContent(script, JSON.stringify(data).replace(/</g, '\\u003C'));
 
         const target = getTargetElement();
         renderer.appendChild(target, script);

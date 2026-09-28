@@ -1,7 +1,7 @@
 # Core lib scan — open findings
 
 Scan of `libs/core` from 2026-08-19. Fixed findings were removed on 2026-09-26 (git history has
-them). Still open: 5 Medium, 23 Low, 18 spec-coverage items.
+them). Still open: 5 Medium, 22 Low, 18 spec-coverage items.
 
 ## signals
 
@@ -36,7 +36,6 @@ them). Still open: 5 Medium, 23 Low, 18 spec-coverage items.
 
 ## seo, app-update, notifications, unsaved-changes
 
-- Low (added 2026-09-28 from the components scan): `applyStructuredDataBinding` writes the JSON-LD `<script>` with a bare `JSON.stringify` (`seo/structured-data-binding.ts:58`). A value that holds `</script>` (for example a breadcrumb name from `etBreadcrumbSeo`) breaks out of the script in SSR output. Escape `<` as `\u003c`, as `structured-data.component.ts:26` does. S Re-rated from High: no break-out. Angular SSR's bundled domino (checked in `@angular/platform-server` 20.3 and 22.1.6) rewrites `</script` inside script text to `&lt;/script` when it serialises (repro), and the browser path uses `textContent`. What is left: the SSR value arrives corrupted (`&lt;/script>`), and a value that holds `<!--<script` still puts the parser into the double-escaped state and swallows the markup after it. Escaping `<` as `\u003c` fixes both.
 - Low: section-divider comments at `meta-binding.ts:59-133`. S
 - Low: stores disagree on pre-existing tags — `meta-binding.ts:199-200` wipes them, `link-binding.ts:131` removes only its own; undocumented. M
 - Low: stale `no-async-await` disable (`eslint.config.mjs:70-74`); `check`/`runCheck` still return Promises. S

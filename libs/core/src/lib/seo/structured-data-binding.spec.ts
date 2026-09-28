@@ -48,6 +48,17 @@ describe('applyStructuredDataBinding', () => {
     expect(scripts()[0]?.textContent).toContain('Teams');
   });
 
+  it('escapes `<` so a value cannot close the script or open a comment in serialised HTML', () => {
+    const fixture = TestBed.createComponent(HostComponent);
+
+    fixture.componentInstance.data.set(graph('</script><!--<script>'));
+    fixture.detectChanges();
+
+    const text = scripts()[0]?.textContent ?? '';
+    expect(text).not.toContain('<');
+    expect(JSON.parse(text)).toEqual(graph('</script><!--<script>'));
+  });
+
   it('removes the script when the data goes away', () => {
     const fixture = TestBed.createComponent(HostComponent);
 
