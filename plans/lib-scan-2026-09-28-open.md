@@ -48,6 +48,10 @@ own open lines; this file lists what needs a user decision and what is still que
 - calendar: range strategies can return a range past `max`. Clamp or reject; both break a case
   (a filtered week pick ends on a disabled day; a clamped 7-day range gets shorter).
 
+- tooltip: each tooltip adds one body node. A lazy node loses the description for a screen
+  reader that reads without moving focus, and `aria-description` is ignored when the consumer
+  sets `aria-describedby`.
+
 ## Queue
 
 - dropzone: a readonly multi-mode dropzone with files has nothing focusable.
