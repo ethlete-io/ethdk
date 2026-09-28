@@ -137,6 +137,18 @@ describe('TableKeyboardNavDirective', () => {
       expect(focused(fixture)).toMatchObject({ row: 0, column: 0 });
     });
 
+    it('swaps ArrowLeft and ArrowRight in a right-to-left table', () => {
+      const fixture = start();
+
+      queryAll(fixture, 'et-table')[0]!.style.direction = 'rtl';
+
+      press(fixture, 'ArrowLeft');
+      expect(focused(fixture)).toMatchObject({ row: 0, column: 1 });
+
+      press(fixture, 'ArrowRight');
+      expect(focused(fixture)).toMatchObject({ row: 0, column: 0 });
+    });
+
     it('moves down and up with the arrows', () => {
       const fixture = start();
 

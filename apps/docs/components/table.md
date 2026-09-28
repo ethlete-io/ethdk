@@ -1736,8 +1736,9 @@ again leaves the table entirely, rather than walking every cell - and inside it:
 
 <StoryEmbed id="components-data-display-table--keyboard-navigation" height="520px" />
 
-Clicking a cell moves the tab stop there too, so the arrows always carry on from where the
-user actually is.
+In a right-to-left document `←` and `→` swap, so each still moves to the visually
+neighbouring cell. Clicking a cell moves the tab stop there too, so the arrows always
+carry on from where the user actually is.
 
 ### Cells that hold controls
 

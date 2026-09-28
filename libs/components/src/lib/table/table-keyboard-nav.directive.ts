@@ -193,11 +193,14 @@ export class TableKeyboardNavDirective {
     const lastRow = Math.max(0, this.table.rows().length - 1);
     const lastColumn = Math.max(0, this.table.visibleColumnsMeta().length - 1);
 
+    const inlineStep =
+      event.currentTarget instanceof Element && getComputedStyle(event.currentTarget).direction === 'rtl' ? -1 : 1;
+
     switch (event.key) {
       case 'ArrowRight':
-        return { ...from, column: from.column + 1 };
+        return { ...from, column: from.column + inlineStep };
       case 'ArrowLeft':
-        return { ...from, column: from.column - 1 };
+        return { ...from, column: from.column - inlineStep };
       case 'ArrowDown':
         return { ...from, row: from.row + 1 };
       case 'ArrowUp':
