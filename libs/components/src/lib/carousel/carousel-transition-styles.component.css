@@ -1,67 +1,32 @@
 @layer components {
-  /* The one input a *custom* slide transition reads: -1 just before the slide enters the track's viewport,
-     0 centred, 1 just after it has left.
-
-     Registered because an *unregistered* custom property does not interpolate — a keyframe animating it
-     would step from one value to the next instead of sweeping through them (the autoplay ring relies on
-     the same fact). Inheriting because a slide's *content* has to be able to read it too: that is what
-     lets a consumer move an image slower than its slide without the carousel shipping a `parallax`
-     effect for it.
-
-     That inheritance is also what makes it expensive, and why the built-in effects below no longer go
-     through it — see "Why the effects are written twice". */
+  /* Registered so keyframes interpolate it; inherits so slide content can read it. */
   @property --et-carousel-slide-progress {
     syntax: '<number>';
     inherits: true;
     initial-value: 0;
   }
 
-  /* How far `wipe` pushes the two slides against each other, on top of the wipe itself — cdk's
-     `--et-carousel-slide-translate`, same 125px. Set it to 0 for a pure wipe with no parallax. */
   @property --et-carousel-wipe-shift {
     syntax: '<length>';
     inherits: true;
     initial-value: 125px;
   }
 
-  /* How dark `wipe` takes a slide as it leaves — cdk's `brightness(0.5)` on a non-current slide. */
   @property --et-carousel-wipe-dim {
     syntax: '<number>';
     inherits: true;
     initial-value: 0.5;
   }
 
-  /* What `wipe` darkens *with*. Black, because the effect is a dimming rather than a tint — override it if a
-     slide should recede towards the page's own background instead. */
   @property --et-carousel-wipe-dim-color {
     syntax: '<color>';
     inherits: true;
     initial-value: #000;
   }
 
-  /* ─── Why the effects are written twice ───────────────────────────────────────────────────────────────
-
-     Because only one of the two ways of driving them can reach the compositor, and the difference is the
-     whole of how a carousel feels on a phone.
-
-     The obvious design — and what this file used to be — is one number and one set of rules: the scroll
-     drives `--et-carousole-slide-progress`, and every effect is `calc()` over it. It is a lovely shape and it
-     is roughly eight times too slow. `--et-carousel-slide-progress` *inherits*, so changing it on a slide
-     invalidates the style of everything inside that slide, and a scroll changes it every frame. Measured over
-     six swipes on a six-times-throttled CPU: animating the property alone cost 263ms of style recalculation,
-     and the `calc()` rules that read it cost 3ms. The number was never the cheap part.
-
-     Animating `opacity`, `scale` and `translate` *directly* along the slide's view timeline costs 52ms for
-     the same six swipes, because those are properties a browser can hand to the compositor: no custom
-     property changes, so no subtree to restyle, and the interpolation happens off the main thread.
-
-     So where the browser has scroll-driven animations, each effect is keyframes over composited properties
-     and the progress property is not animated at all. Where it does not (Firefox, as of this writing), the JS
-     driver writes the property and the `calc()` rules below read it — which is the slow path, but it is a
-     fallback, and it is the only shape available when the timing has to come from a scroll listener.
-
-     `transition="custom"` is how a consumer gets the property under either driver, to write their own effect
-     against. Asking for it is what makes it worth paying for. */
+  /* Each effect exists twice: composited keyframes on the scroll-driven view timeline, and a `calc()` fallback
+     over the inherited progress property for the JS driver (no scroll timeline, e.g. Firefox). Animating the
+     inherited property restyles each slide's subtree every frame, so the composited path must not read it. */
 
   @keyframes et-carousel-slide-progress {
     from {
@@ -99,13 +64,7 @@
     }
   }
 
-  /* `wipe`, part two: cdk's `brightness(0.5)` on a non-current slide, as a veil rather than a filter.
-
-     A `filter` has to re-rasterize everything under it whenever its value changes, which on a slide-sized
-     layer is a full repaint per frame: ~1800 paints and a quarter-second of paint time over eight swipes,
-     three and a half times what the same carousel costs without it, and the reason the wipe showed torn
-     half-drawn tiles on a phone. An overlay's opacity is composited — the slide beneath is rasterized once
-     and reused. */
+  /* A veil's opacity instead of `filter: brightness()`, which repaints the whole slide every frame. */
   @keyframes et-carousel-wipe-veil {
     from,
     to {

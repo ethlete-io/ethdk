@@ -194,14 +194,68 @@ describe('CarouselComponent', () => {
 
     const toggle = host(fixture).querySelector('[etCarouselPlayToggle]');
 
-    expect(toggle?.getAttribute('aria-pressed')).toBe('true');
+    expect(toggle?.getAttribute('aria-pressed')).toBeNull();
     expect(toggle?.getAttribute('aria-label')).toBe('Pause automatic slide show');
 
     (toggle as HTMLButtonElement).click();
     fixture.detectChanges();
 
-    expect(toggle?.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle?.getAttribute('aria-pressed')).toBeNull();
     expect(toggle?.getAttribute('aria-label')).toBe('Start automatic slide show');
+  });
+
+  it('disables the play control under reduced motion, where starting changes nothing', () => {
+    const matchMedia = vi.spyOn(window, 'matchMedia').mockImplementation(
+      (query: string) =>
+        ({
+          matches: query.includes('reduce'),
+          media: query,
+          addEventListener: () => undefined,
+          removeEventListener: () => undefined,
+        }) as unknown as MediaQueryList,
+    );
+
+    try {
+      const fixture = createHost();
+      fixture.componentInstance.autoplay.set(true);
+      fixture.detectChanges();
+
+      const autoplay = fixture.componentInstance.autoplayDirective();
+      const toggle = host(fixture).querySelector('[etCarouselPlayToggle]') as HTMLButtonElement;
+
+      expect(autoplay.pauseReason()).toBe('reduced-motion');
+      expect(toggle.getAttribute('aria-disabled')).toBe('true');
+
+      toggle.click();
+      fixture.detectChanges();
+
+      expect(autoplay.isStopped()).toBe(false);
+      expect(autoplay.pauseReason()).toBe('reduced-motion');
+    } finally {
+      matchMedia.mockRestore();
+    }
+  });
+
+  it('observes its own visibility only while autoplay is on', async () => {
+    const observe = vi.spyOn(IntersectionObserver.prototype, 'observe');
+
+    try {
+      const fixture = createHost();
+      const carouselElement = host(fixture).querySelector('et-carousel');
+      await flushFrames();
+      fixture.detectChanges();
+
+      expect(observe.mock.calls.some(([target]) => target === carouselElement)).toBe(false);
+
+      fixture.componentInstance.autoplay.set(true);
+      fixture.detectChanges();
+      await flushFrames();
+      fixture.detectChanges();
+
+      expect(observe.mock.calls.some(([target]) => target === carouselElement)).toBe(true);
+    } finally {
+      observe.mockRestore();
+    }
   });
 
   it('stays stopped when playOnInit is off, which is only bound after the directive is constructed', () => {
@@ -233,7 +287,7 @@ describe('CarouselComponent', () => {
     expect(autoplay.isStopped()).toBe(true);
     expect(autoplay.pauseReason()).toBe('stopped');
     expect(autoplay.isPlaying()).toBe(false);
-    expect(toggle?.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle?.getAttribute('aria-label')).toBe('Start automatic slide show');
   });
 
   it('reports the play control as not playing for any pause, not only an explicit stop', () => {
@@ -245,7 +299,6 @@ describe('CarouselComponent', () => {
     const toggle = host(fixture).querySelector('[etCarouselPlayToggle]');
 
     expect(toggle?.getAttribute('data-playing')).toBe('');
-    expect(toggle?.getAttribute('aria-pressed')).toBe('true');
 
     autoplay.isHovered.set(true);
     fixture.detectChanges();
@@ -253,7 +306,6 @@ describe('CarouselComponent', () => {
     expect(autoplay.isStopped()).toBe(false);
     expect(autoplay.pauseReason()).toBe('hover');
     expect(toggle?.getAttribute('data-playing')).toBeNull();
-    expect(toggle?.getAttribute('aria-pressed')).toBe('false');
     expect(toggle?.getAttribute('aria-label')).toBe('Start automatic slide show');
 
     (toggle as HTMLButtonElement).click();

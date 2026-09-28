@@ -26,14 +26,8 @@ const offsetOf = (element: HTMLElement, horizontal: boolean) => (horizontal ? el
 const sizeOf = (element: HTMLElement, horizontal: boolean) => (horizontal ? element.offsetWidth : element.offsetHeight);
 
 /**
- * Which child the track is resting on: the one whose resting offset is nearest the current scroll offset.
- *
- * Deliberately "nearest" rather than a comparison against the first real slide's position. The offset the
- * track actually comes to rest at is not exactly the computed one - CSS scroll snap resolves against the
- * slides' *painted* boxes, which a transition scaling them shifts by a few pixels, and a fling can be left
- * fractions of a pixel out. A threshold tight enough to catch the seam would fire on that jitter and teleport
- * a whole track for nothing, and one loose enough to survive it would miss the seam. Nearest has no threshold
- * to get wrong: the children are a slide apart, so a few pixels either way cannot change the answer.
+ * The child nearest the current scroll offset. Nearest, not a threshold: snapping against scaled painted boxes
+ * leaves the track a few pixels off its computed offset, and any threshold either fires on that or misses the seam.
  */
 const restingChildIndex = ({ container, children, horizontal, restingOffsetOf }: LoopGeometry) => {
   const scroll = horizontal ? container.scrollLeft : container.scrollTop;
@@ -53,30 +47,14 @@ const restingChildIndex = ({ container, children, horizontal, restingOffsetOf }:
   return { nearest, nearestDistance, scroll };
 };
 
-/**
- * Move the scroll offset to exactly this number.
- *
- * Through the scrollable rather than the element, because the track snaps: `scroll-snap-type: mandatory` does
- * not merely bias where a scroll settles, it overrules a programmatic offset outright and silently. The
- * teleport's offset happens to *be* a snap position - the track repeats with a period of `count` slides, so a
- * slide and its clone are the same distance from their snap point - but "happens to be" is not a thing to
- * stake a seamless loop on. See `ScrollableDirective.suspendSnap`.
- */
+/** Through the scrollable, because `scroll-snap-type: mandatory` silently overrules a programmatic offset. */
 const scrollTo = ({ scrollable, horizontal }: Pick<LoopGeometry, 'scrollable' | 'horizontal'>, offset: number) =>
   scrollable.scrollToOffsetUnsnapped(horizontal ? { left: offset } : { top: offset });
 
 /**
- * Keeps a looping carousel's scroll offset inside the real slides by shifting it a whole track's length
- * whenever it drifts into the clones - the one way to cross the seam on a native scroller without showing
- * it. `readSettled().crossSeam()` is called once the scrolling has settled (see `useCarouselScrollSettled`)
- * - never during it, or the jump would be visible.
- *
- * The measurements are layout offsets (`offsetLeft`/`offsetTop`) rather than bounding rects on purpose: a
- * transition may be scaling the slides, and a rect would then report the scaled box while the scroll
- * offsets stay in layout space. They are also *measured* rather than computed from `itemSize`, because
- * `itemSize="auto"` lets every slide be a different width - and the measurement is exact regardless,
- * because the track repeats with a period of `count` slides, so the distance from a slide to its clone is
- * the same wherever it is taken.
+ * Keeps a looping carousel's scroll offset inside the real slides by shifting it a whole track's length once
+ * scrolling has settled in the clones. Offsets are layout offsets, not rects, because a transition may scale
+ * the slides.
  *
  * @internal
  */

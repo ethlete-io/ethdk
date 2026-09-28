@@ -306,9 +306,9 @@ pause control for you, and the headless `etCarouselAutoplay` throws in dev mode 
 `etCarouselPlayToggle` is registered. Hovering or focusing **that control** is not counted as the hover or
 focus pause: it lives inside the carousel, so pressing play would otherwise be cancelled by the pointer
 still resting on the button that was just pressed, and autoplay could never be restarted. Hovering a
-_slide_ pauses as it should. The control's icon, its label and its `aria-pressed` all follow
-`pauseReason()` rather than only an explicit `stop()`, so a carousel paused for any reason offers "play"
-and pressing it starts. The
+_slide_ pauses as it should. The control's icon and its label follow `pauseReason()` rather than only
+an explicit `stop()`, so a carousel paused for any reason offers "play" and pressing it starts. Under
+`reduced-motion` the control is `aria-disabled` instead, since pressing it could not start anything. The
 [Autoplay](https://ethlete-sdk.web.app/?path=/story/components-media-carousel--autoplay) story shows it live.
 
 On the headless `etCarouselAutoplay`, `enabled` defaults to `true` - putting the directive on an element

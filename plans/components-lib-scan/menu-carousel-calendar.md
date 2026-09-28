@@ -1,6 +1,6 @@
 # menu, carousel, calendar scan - open findings
 
-Scan of `libs/components/src/lib/menu/`, `libs/components/src/lib/carousel/`, `libs/components/src/lib/calendar/` from 2026-09-28. 0 High, 1 Medium open (7 fixed 2026-09-28), 8 Low, 1 Spec (verified 2026-09-28). No security findings. Skipped: stories, specs (read only for coverage), `testing/` drivers, `scrollable/` internals the carousel calls into.
+Scan of `libs/components/src/lib/menu/`, `libs/components/src/lib/carousel/`, `libs/components/src/lib/calendar/` from 2026-09-28. 0 High, 1 Medium open (7 fixed 2026-09-28), 4 Low, 1 Spec (verified 2026-09-28). No security findings. Skipped: stories, specs (read only for coverage), `testing/` drivers, `scrollable/` internals the carousel calls into.
 
 ## menu
 
@@ -8,10 +8,6 @@ Scan of `libs/components/src/lib/menu/`, `libs/components/src/lib/carousel/`, `l
 
 ## carousel
 
-- Low: the play toggle changes its `aria-label` (play/pause) and also sets `aria-pressed` (`carousel/headless/carousel-controls.directive.ts:94,109-115`). A screen reader announces "Pause automatic slide show, pressed", which reads as the opposite state. Keep one of the two. S
-- Low: under reduced motion (or off-screen) the toggle offers "Start" but `start()` changes nothing, because `isStopped` is already false (`carousel/headless/carousel-autoplay.directive.ts:253-259`). The control looks broken. Hide the toggle or disable it when the pause reason is `'reduced-motion'`. S
-- Low: `<et-carousel>` always attaches `CarouselAutoplayDirective`, so each instance runs a host IntersectionObserver and a document-visibility listener with autoplay off (`carousel/carousel.component.ts:91-94`, `carousel/headless/carousel-autoplay.directive.ts:103`). Create the intersection signal only when enabled. M
-- Low: public and `@internal` JSDoc well past the 1-2 sentence rule, with measurements and history (`carousel/headless/carousel.directive.ts:138-151`, `carousel/headless/carousel-autoplay.directive.ts:105-114,135-144`, `carousel/headless/internals/carousel-loop.ts:27-36,55-81`). The CSS carries essay comments with narration ("what this file used to be") at `carousel/carousel-transition-styles.component.css:1-60`, and template comments at `carousel/carousel.component.html:43-49,74-77`. Cut to the allowlist. M
 
 ## calendar
 

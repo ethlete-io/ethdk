@@ -136,18 +136,9 @@ export class CarouselDirective {
   public slideAlign = input<CarouselSlideAlign>('start');
 
   /**
-   * The look of the movement. `'none'` is the plain scroll; `'dim'` fades and shrinks the slides either
-   * side of the current one; `'wipe'` uncovers each slide from the edge it is travelling towards.
-   *
-   * Every effect follows the slide's *position* rather than an "active" flag, which is what makes it track a
-   * drag and reverse when you drag back rather than stepping when a flag flips.
-   *
-   * `'custom'` applies no effect and instead fills `--et-carousel-slide-progress` - `-1` before a slide
-   * enters, `0` at centred, `1` once it has left - for CSS of your own to read. It is a separate value rather
-   * than something the built-in effects also do, because that property *inherits*, so filling it restyles
-   * everything inside every slide on every frame: it measured eight times the style cost of the built-in
-   * effects, which are keyframes over composited properties instead. Worth paying for when you are using it,
-   * not otherwise. `transitionDriver` decides what fills it. @default 'none'
+   * The look of the movement: `'none'` is the plain scroll, `'dim'` fades the neighbouring slides, `'wipe'`
+   * uncovers each slide from the edge it travels towards, and `'custom'` only fills `--et-carousel-slide-progress`
+   * (`-1` entering, `0` centred, `1` left) for your own CSS. @default 'none'
    */
   public transition = input<CarouselTransition>('none');
 

@@ -82,8 +82,8 @@ export class CarouselNextDirective {
  * Stops and restarts autoplay - the control WCAG 2.2.2 requires whenever a carousel moves on its own.
  * Registering it is what satisfies the dev-mode check in `etCarouselAutoplay`.
  *
- * Its label and `aria-pressed` follow whether autoplay is actually running - any `pauseReason()`, not just
- * an explicit `stop()` - so one button covers both directions and says the same thing as the icon it renders.
+ * Its label follows whether autoplay is actually running, for any `pauseReason()`. Under reduced motion it is
+ * `aria-disabled`, since starting would change nothing.
  */
 @Directive({
   selector: '[etCarouselPlayToggle]',
@@ -91,7 +91,7 @@ export class CarouselNextDirective {
   host: {
     type: 'button',
     '[attr.aria-label]': 'label()',
-    '[attr.aria-pressed]': 'isPlaying()',
+    '[attr.aria-disabled]': 'isDisabled() ? "true" : null',
     '(click)': 'toggle()',
     '(pointerenter)': 'setPointerOn($event, true)',
     '(pointerleave)': 'setPointerOn($event, false)',
@@ -103,8 +103,10 @@ export class CarouselPlayToggleDirective {
   private carousel = inject(CAROUSEL_TOKEN, { optional: true });
   private autoplay = inject(CAROUSEL_AUTOPLAY_TOKEN, { optional: true });
 
-  /** Whether autoplay is currently running - the pressed state of the control. */
+  /** Whether autoplay is currently running. */
   public isPlaying = computed(() => this.autoplay?.isPlaying() ?? false);
+
+  protected isDisabled = computed(() => this.autoplay?.pauseReason() === 'reduced-motion');
 
   protected label = computed(() => {
     const labels = this.carousel?.resolvedLabels();
@@ -131,6 +133,8 @@ export class CarouselPlayToggleDirective {
   }
 
   protected toggle() {
+    if (this.isDisabled()) return;
+
     this.autoplay?.toggle();
   }
 

@@ -100,22 +100,15 @@ export class CarouselAutoplayDirective {
 
   /** Start playing as soon as the carousel is ready. Off waits for `start()` (or the play control). @default true */
   public playOnInit = input(true, { transform: booleanAttribute });
-  private hostIntersection = signalHostElementIntersection();
 
-  /**
-   * @internal Set by `<et-carousel>` from its own `autoplay` input, which is opt-in and so defaults to
-   * `false`.
-   *
-   * The component attaches this directive unconditionally - its host listeners have to cover the controls as
-   * well as the track, so it cannot be conditional - which meant every `<et-carousel>` that did not say
-   * `[autoplay]="false"` was playing, against what both this directive and the component document. A
-   * `hostDirectives` alias forwards an input but cannot change its default, so the component takes the value
-   * over entirely and pushes it here. `null` leaves {@link enabled} in charge, which is the headless case.
-   */
+  /** @internal Set by `<et-carousel>` from its `autoplay` input; `null` leaves {@link enabled} in charge. */
   public enabledOverride = signal<boolean | null>(null);
 
   /** Whether autoplay is switched on at all - this instance's `enabled`, or what `<et-carousel>` set. */
   public isEnabled = computed(() => this.enabledOverride() ?? this.enabled());
+  private hostIntersection = signalHostElementIntersection({
+    enabled: computed(() => this.isEnabled() && this.pauseOnOffScreen()),
+  });
 
   /** @internal Set by `etCarouselPlayToggle`, and checked in dev mode: autoplay without a pause control fails WCAG 2.2.2. */
   public pauseControl = signal<unknown | null>(null);
@@ -133,14 +126,8 @@ export class CarouselAutoplayDirective {
   public isFocusWithin = signal(false);
 
   /**
-   * @internal Whether the pointer is on the play/pause control, and whether focus is.
-   *
-   * Both are subtracted from the hover and focus pauses, because the control lives *inside* the carousel -
-   * it has to, it is part of the region it controls. Without this, pressing play would clear `isStopped`
-   * and then immediately report `'hover'` or `'focus'` instead, because the pointer and focus are still on
-   * the button that was just pressed: autoplay could never be restarted by the one control WCAG requires
-   * for it. And the subtraction is the honest rule rather than a workaround - those pauses exist so a
-   * slide doesn't move while someone is reading or tabbing through it, and the pause control is neither.
+   * @internal Whether the pointer is on the play/pause control. It and {@link isFocusOnPauseControl} are
+   * excluded from the hover and focus pauses, or pressing play from inside the carousel could never resume it.
    */
   public isPointerOnPauseControl = signal(false);
 

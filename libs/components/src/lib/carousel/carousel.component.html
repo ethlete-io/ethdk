@@ -9,9 +9,6 @@
 >
   @for (view of slideViews(); track view.key) {
     <div [isClone]="view.isClone" [autoplayTime]="view.autoplayTime" etCarouselItem>
-      <!-- The inner element is what lets an effect move a slide's *content* independently of the slide's
-           own box — which is the whole of `wipe`: the content holds still while the box travels over it,
-           so the edge between two slides sweeps instead of the picture being cropped and dragged along. -->
       <div class="et-carousel-slide-content">
         <ng-container *ngTemplateOutlet="slideTemplate(); context: view.context" />
       </div>
@@ -40,13 +37,6 @@
             etFocusRing
             type="button"
           >
-            <!-- Rendered for every dot while autoplay is on, rather than only for the one counting down, so
-                 it has somewhere to fade in from and out to. The countdown keyframes are applied by
-                 `data-counting` instead, which starts them fresh every time the attribute lands — the same
-                 restart the timer does, so the ring and the timer still cannot drift apart.
-
-                 The two inner spans are the countdown itself: a half-disc sweeping each half of the circle,
-                 which is what lets the ring close by `rotate` alone. See the CSS. -->
             @if (isAutoplayEnabled()) {
               <span
                 [style.--_et-carousel-autoplay-duration.ms]="autoplayDuration()"
@@ -71,10 +61,6 @@
         size="sm"
         variant="transparent"
       >
-        <!-- Both icons, always: swapping the `etIcon` name would replace one element with another, and there
-             is nothing to animate between two different elements. Stacked and cross-faded instead.
-             Direct children on purpose — the icon button projects `[etIcon]`, so a wrapper of our own would
-             not be projected at all and both icons would simply vanish. -->
         <i class="et-carousel-control-icon et-carousel-play-toggle-icon" etIcon="et-play" aria-hidden="true"></i>
         <i class="et-carousel-control-icon et-carousel-play-toggle-icon" etIcon="et-pause" aria-hidden="true"></i>
       </button>
