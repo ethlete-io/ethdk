@@ -28,13 +28,7 @@ type JiraProjectPage = {
 const toProject = (resource: JiraProjectResource): JiraProject[] =>
   resource.key ? [{ key: resource.key, name: resource.name ?? resource.key }] : [];
 
-/**
- * The projects the token can file into, the most recently worked in first.
- *
- * `lastIssueUpdatedTime` puts the project the user has actually been in at the top, which is nearly
- * always the one a new ticket belongs to. A guessed key in a text field cannot do that, and a key
- * typed one character wrong is a ticket in a project nobody watches.
- */
+/** The projects the token can file into, the most recently updated first. */
 export const fetchJiraProjects$ = (options: {
   transport: TimetrackTransport;
   credentials: JiraCredentials;
@@ -51,14 +45,16 @@ export const fetchJiraProjects$ = (options: {
     });
 
   return page$(0).pipe(
-    // An empty page ends the paging too: `isLast` is absent on some instances, and trusting it alone
-    // would ask for the same offset forever.
-    expand((page, index) => {
+    map((page) => ({ page, startAt: 0 })),
+    expand(({ page, startAt }, index) => {
       const read = page.values?.length ?? 0;
+      const more = page.isLast === false || (page.isLast === undefined && read >= JIRA_PROJECT_PAGE_SIZE);
 
-      return page.isLast === false && read > 0 && index < maxPages - 1 ? page$((page.startAt ?? 0) + read) : EMPTY;
+      return more && read > 0 && index < maxPages - 1
+        ? page$(startAt + read).pipe(map((next) => ({ page: next, startAt: startAt + read })))
+        : EMPTY;
     }),
-    map((page) => page.values ?? []),
+    map(({ page }) => page.values ?? []),
     reduce((all: JiraProject[], values) => [...all, ...values.flatMap(toProject)], []),
   );
 };

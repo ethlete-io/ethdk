@@ -13,6 +13,14 @@ describe('adfDocument', () => {
     expect(adfDocument('first\n\nsecond').content[1]).toEqual({ type: 'paragraph' });
   });
 
+  it('splits CRLF lines without leaving a carriage return in the text', () => {
+    expect(adfDocument('first\r\n\r\nsecond').content).toEqual([
+      { type: 'paragraph', content: [{ type: 'text', text: 'first' }] },
+      { type: 'paragraph' },
+      { type: 'paragraph', content: [{ type: 'text', text: 'second' }] },
+    ]);
+  });
+
   it('is a versioned document, as the v3 API requires', () => {
     expect(adfDocument('x')).toMatchObject({ type: 'doc', version: 1 });
   });

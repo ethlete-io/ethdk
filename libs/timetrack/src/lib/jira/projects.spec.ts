@@ -69,6 +69,29 @@ describe('fetchJiraProjects$', () => {
     expect(seen.mock.calls[0]?.[0].map((project: { key: string }) => project.key)).toEqual(['A', 'B']);
   });
 
+  it('asks for the next page after a full page that does not say whether it is the last', () => {
+    const full = Array.from({ length: 50 }, (_, index) => ({ key: `P${index}` }));
+    const { transport, requests } = pagingTransport([{ values: full }, { values: [{ key: 'LAST' }] }]);
+    const seen = vi.fn();
+
+    fetchJiraProjects$({ transport, credentials: CREDENTIALS }).subscribe(seen);
+
+    expect(requests).toHaveLength(2);
+    expect(seen.mock.calls[0]?.[0]).toHaveLength(51);
+  });
+
+  it('counts the offset itself when a later page carries no startAt', () => {
+    const { transport, requests } = pagingTransport([
+      { values: [{ key: 'A' }], isLast: false, startAt: 0 },
+      { values: [{ key: 'B' }], isLast: false },
+      { values: [{ key: 'C' }], isLast: true },
+    ]);
+
+    fetchJiraProjects$({ transport, credentials: CREDENTIALS }).subscribe();
+
+    expect(requests[2]?.url).toContain('startAt=2');
+  });
+
   it('stops on an empty page, so an instance that never reports the last one cannot loop', () => {
     const { transport, requests } = pagingTransport([
       { values: [{ key: 'A' }], isLast: false, startAt: 0 },

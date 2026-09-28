@@ -39,13 +39,7 @@ const toField = (resource: JiraFieldResource): JiraField[] =>
       ]
     : [];
 
-/**
- * Every field the instance defines.
- *
- * It is the only way to turn a field id into something a person can pick. A custom field's id says
- * nothing at all — `customfield_10057` is a different field on every instance — so a settings screen
- * that asks for one by id is asking the user to read it out of a Jira admin page.
- */
+/** Every field the instance defines, with the name a person picks it by. */
 export const fetchJiraFields$ = (options: {
   transport: TimetrackTransport;
   credentials: JiraCredentials;

@@ -16,11 +16,8 @@ export type JiraTransition = {
 };
 
 /**
- * What a move did.
- *
- * `unavailable` is not `failed`: the issue is filed either way, but a workflow that offers no way to the
- * named status is a thing the user configured, while a `failed` move is something that went wrong on the
- * wire. Only the first one is corrected by changing the setting, so only it names what was offered.
+ * What a move did. `unavailable` means the workflow offers no transition to the named status, and
+ * names the ones it does offer; `failed` means Jira refused the read or the move.
  */
 export type JiraStatusMove =
   | { kind: 'moved'; statusName: string }

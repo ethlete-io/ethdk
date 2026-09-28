@@ -15,6 +15,6 @@ export const adfDocument = (text: string): AdfDocument => ({
   type: 'doc',
   version: 1,
   content: text
-    .split('\n')
+    .split(/\r?\n/)
     .map((line) => (line ? { type: 'paragraph', content: [{ type: 'text', text: line }] } : { type: 'paragraph' })),
 });
