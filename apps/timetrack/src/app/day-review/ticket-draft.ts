@@ -3,10 +3,8 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   Evidence,
-  JiraCreatableType,
   JiraCredentials,
   JiraIssue,
-  JiraIssueType,
   ParentCandidate,
   SpecHeader,
   StandIn,
@@ -18,17 +16,13 @@ import {
   createJiraIssue$,
   creatableTypeNames,
   childTypeNameFor,
-  describeJiraHierarchy$,
   draftParentDescription,
   mayCreateType,
   draftTicket,
   favoriteProjectKeys,
-  fetchJiraCreatableTypes$,
   fetchJiraIssues$,
-  fetchJiraOpenIssues$,
   JiraStatusMove,
   fetchJiraMyself$,
-  fetchJiraParentCandidates$,
   fileTicketOnce$,
   moveJiraIssueTo$,
   gitFlowConfigFor,
@@ -50,23 +44,12 @@ import {
   writeParentWithAgent$,
   writeTicketWithAgent$,
 } from '@ethlete/timetrack';
-import {
-  Observable,
-  Subject,
-  catchError,
-  exhaustMap,
-  forkJoin,
-  map,
-  of,
-  startWith,
-  switchMap,
-  tap,
-  throwError,
-} from 'rxjs';
+import { Observable, Subject, catchError, exhaustMap, map, of, startWith, switchMap, tap, throwError } from 'rxjs';
 import { injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectDayReview } from './day-review';
 import { injectProjectLinks } from '../project-links';
+import { NO_JIRA, ProjectIssues, readProjectIssues$ } from './project-issues';
 
 const IDLE = { kind: 'idle' } as const;
 
@@ -84,18 +67,6 @@ export type ParentForm = {
   summary: string;
   description: string;
   issueTypeName: string;
-};
-
-/** The project's open issues: the ones a ticket may roll up to, and every one it could already be. */
-type ProjectIssues = {
-  parents: JiraIssue[];
-  open: JiraIssue[];
-  /** What this account may create here. Empty until the read lands, which offers no type at all. */
-  creatable: JiraCreatableType[];
-  /** The types a parent may be: the ones settings name that something can be filed under. */
-  parentTypes: string[];
-  /** The instance's own levels, which decide what type the ticket under a picked parent must be. */
-  issueTypes: JiraIssueType[];
 };
 
 type CandidateStatus =
@@ -124,8 +95,6 @@ export type AgentMatch = {
 };
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
-
-const NO_JIRA = 'Jira needs a host, an account email and a token in Settings.';
 
 const AGENT_FAILED = 'The agent wrote nothing back. The draft below is still what the day observed.';
 
@@ -204,30 +173,6 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       ),
     );
 
-  /**
-   * The types an issue may be offered as a parent under: the ones settings name, minus any the
-   * account can file nothing beneath. Jira's parent field points one level down, so a parent with no
-   * creatable type below it is a choice that fails after the user wrote a summary.
-   *
-   * Nothing is dropped where `parenting` is `issue-link`. That link expresses a same-level relation,
-   * which is the whole purpose of the setting.
-   */
-  const parentTypesFor = (options: { types: readonly JiraIssueType[]; creatable: readonly JiraCreatableType[] }) => {
-    const ticket = settings.settings().ticket;
-
-    if (ticket.parenting === 'issue-link') return [...ticket.parentIssueTypeNames];
-
-    return ticket.parentIssueTypeNames.filter(
-      (parentTypeName) =>
-        childTypeNameFor({
-          parentTypeName,
-          preferredTypeNames: [ticket.issueTypeName],
-          types: options.types,
-          creatable: options.creatable,
-        }) !== null,
-    );
-  };
-
   /** The levels a parent may be filed at: what settings name, narrowed to what Jira permits here. */
   const parentTypeNames = () => {
     const status = candidateStatus();
@@ -237,47 +182,11 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     return creatableTypeNames({ typeNames: settings.settings().ticket.parentIssueTypeNames, types: status.creatable });
   };
 
-  // The hierarchy has to land before the parent read: it decides which types that read asks for.
-  // Two reads rather than one filtered afterwards: the parent list is the most recent 30 of the
-  // parent types, and narrowing a window of open issues to those types would offer fewer parents the
-  // busier the project is.
-  const candidates$ = (projectKey: string): Observable<CandidateStatus> => {
-    const ticket = settings.settings().ticket;
-    const subjectField = ticket.subjectField || undefined;
-
-    return readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }).pipe(
-      switchMap((credentials) =>
-        credentials
-          ? describeJiraHierarchy$({ transport: ports.transport, credentials }).pipe(
-              switchMap((hierarchy) => {
-                return fetchJiraCreatableTypes$({ transport: ports.transport, credentials, projectKey }).pipe(
-                  switchMap((creatable) => {
-                    const parentTypes = parentTypesFor({ types: hierarchy.issueTypes, creatable });
-
-                    return forkJoin({
-                      // An empty `issueTypeNames` reads as "any type", so a project with no usable
-                      // parent level must skip the read rather than make it.
-                      parents: parentTypes.length
-                        ? fetchJiraParentCandidates$({
-                            transport: ports.transport,
-                            credentials,
-                            projectKey,
-                            issueTypeNames: parentTypes,
-                            subjectField,
-                          })
-                        : of<JiraIssue[]>([]),
-                      open: fetchJiraOpenIssues$({ transport: ports.transport, credentials, projectKey, subjectField }),
-                    }).pipe(map((issues) => ({ ...issues, creatable, parentTypes, issueTypes: hierarchy.issueTypes })));
-                  }),
-                );
-              }),
-            )
-          : throwError(() => new Error(NO_JIRA)),
-      ),
+  const candidates$ = (projectKey: string): Observable<CandidateStatus> =>
+    readProjectIssues$({ ports, settings: settings.settings(), projectKey }).pipe(
       map((issues): CandidateStatus => ({ kind: 'ready', ...issues })),
       catchError((error: unknown) => of<CandidateStatus>({ kind: 'failed', message: messageOf(error) })),
     );
-  };
 
   // The parent is filled in as soon as the list arrives, so the field is answered rather than asked.
   // Only when nothing is chosen yet: a user who picked one while the read was in flight keeps it.
@@ -849,7 +758,12 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
       context.set(null);
       standIn.set(waiting);
-      form.set({ projectKey, summary: waiting.name, description: waiting.description ?? '', parentKey: null });
+      form.set({
+        projectKey,
+        summary: waiting.name,
+        description: waiting.description ?? '',
+        parentKey: waiting.parentKey ?? null,
+      });
       notes.set([]);
       createStatus.set(IDLE);
       writeStatus.set(IDLE);
@@ -925,7 +839,14 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     },
     setSummary: (summary: string) => update({ summary }),
     setDescription: (description: string) => update({ description }),
-    setParentKey: (parentKey: string | null) => update({ parentKey }),
+    /** On a stand-in the pick is stored with it as the user's, so auto mode never replaces it. */
+    setParentKey: (parentKey: string | null) => {
+      const waiting = standIn();
+
+      update({ parentKey });
+
+      if (waiting) settings.setStandInParent({ id: waiting.id, parentKey: parentKey ?? '' });
+    },
 
     /**
      * Opens the form that files the parent itself, for work whose epic does not exist yet. It starts

@@ -76,6 +76,10 @@ import { injectStandIns } from './stand-ins';
                   </button>
                 }
 
+                @if (entry.standIn.resolutionSource === 'human') {
+                  <button (click)="store.handBack(entry.id)" et-text-button>Hand back to auto mode</button>
+                }
+
                 @if (!only()) {
                   <button (click)="store.remove(entry.id)" et-text-button etProvideColor="danger">Delete</button>
                 }
@@ -84,6 +88,9 @@ import { injectStandIns } from './stand-ins';
               <div class="flex flex-wrap items-center gap-2">
                 <span class="min-w-0 grow text-small">
                   Resolved to <span class="text-mono">{{ entry.standIn.issueKey }}</span>
+                  @if (entry.standIn.resolutionSource === 'auto') {
+                    by auto mode
+                  }
                 </span>
 
                 @if (entry.canReopen) {

@@ -157,6 +157,9 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     reopen: (id: string) => settings.reopenStandIn(id),
 
+    /** Lets auto mode resolve a stand-in the user reopened. */
+    handBack: (id: string) => settings.resetStandInResolution(id),
+
     /** Puts the bands back to unnamed on every day the stand-in held, and takes its rules with it. */
     remove: (id: string) => settings.removeStandIn(id),
   };
