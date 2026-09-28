@@ -2,6 +2,7 @@ import { Observable, of, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { JiraCredentials } from '../jira/client';
 import { SyncedWorklog } from '../model/proposal';
+import { DayBoundary, MIDNIGHT } from '../review/day';
 import { TimetrackLedgerStore } from '../store/ports';
 import { TempoCredentials } from '../tempo/client';
 import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
@@ -72,7 +73,12 @@ const ledgerStore = (entries: SyncedWorklog[], options: { failRemove?: boolean }
   return { store, removed };
 };
 
-const run = (options: { transport: TimetrackTransport; ledger: TimetrackLedgerStore; worklogId: string }) => {
+const run = (options: {
+  transport: TimetrackTransport;
+  ledger: TimetrackLedgerStore;
+  worklogId: string;
+  boundary?: DayBoundary;
+}) => {
   const results: unknown[] = [];
   const errors: string[] = [];
 
@@ -82,6 +88,7 @@ const run = (options: { transport: TimetrackTransport; ledger: TimetrackLedgerSt
     tempo: TEMPO,
     ledger: options.ledger,
     day: DAY,
+    boundary: options.boundary ?? MIDNIGHT,
     worklogId: options.worklogId,
   }).subscribe({
     next: (value) => results.push(value),
@@ -158,5 +165,23 @@ describe('deleteOwnTempoWorklog$', () => {
 
     expect(errors).toEqual([]);
     expect(results).toEqual([expect.objectContaining({ unrecorded: 'store is locked' })]);
+  });
+
+  it('finds a late worklog of the day by its boundary, and refuses one from the early hours', () => {
+    const { transport, requests } = deleteTransport([
+      { ...WORKLOG_RESOURCE, tempoWorklogId: 1, startDate: DAY, startTime: '02:00:00' },
+      { ...WORKLOG_RESOURCE, tempoWorklogId: 2, startDate: '2026-08-12', startTime: '01:00:00' },
+    ]);
+    const { store } = ledgerStore([]);
+
+    const late = run({ transport, ledger: store, worklogId: '2', boundary: { startHour: 4 } });
+    const early = run({ transport, ledger: store, worklogId: '1', boundary: { startHour: 4 } });
+
+    expect(requests.find((request) => request.url.includes('/worklogs/user/'))?.url).toContain(
+      'from=2026-08-11&to=2026-08-12',
+    );
+    expect(late.errors).toEqual([]);
+    expect(early.errors).toEqual(['Your Tempo worklogs on 2026-08-11 hold no worklog 1. Nothing was deleted.']);
+    expect(deletes(requests).map((request) => request.url)).toEqual(['https://api.tempo.io/4/worklogs/2']);
   });
 });

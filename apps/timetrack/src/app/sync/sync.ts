@@ -100,6 +100,7 @@ const SYNC_DEF = /* @__PURE__ */ defineRootProvider(() => {
           ledger: ports.ledger,
           proposals,
           day,
+          boundary: dayBoundaryOf(settings.settings()),
         });
       }),
       // Recording what Tempo holds is the whole reason the week view and the reminder can answer

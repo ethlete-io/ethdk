@@ -1,5 +1,6 @@
 import { Observable, map } from 'rxjs';
 import { HistoricalWorklog, LoggedIssue } from '../model/recurrence';
+import { DayBoundary, localDayKey, localDayRange } from '../review/day';
 import { TimetrackTransport } from '../transport/ports';
 import { TempoCredentials, TempoPagingOptions, tempoPaged$ } from './client';
 import { parseTempoWallClock, tempoDay } from './wall-clock';
@@ -80,6 +81,28 @@ export const fetchTempoWorklogs$ = (options: {
     query: { from: tempoDay(options.from), to: tempoDay(options.to) },
     options: options.options,
   }).pipe(map((resources) => resources.flatMap((resource) => toWorklog(resource) ?? [])));
+
+/**
+ * Reads one user's worklogs on one day of work. With a boundary after midnight the day spans two
+ * calendar dates, so both are read and each worklog is kept only where its start falls in the day.
+ */
+export const fetchTempoDayWorklogs$ = (options: {
+  transport: TimetrackTransport;
+  credentials: TempoCredentials;
+  accountId: string;
+  day: string;
+  boundary: DayBoundary;
+}): Observable<TempoWorklog[]> => {
+  const range = localDayRange(options.day, options.boundary);
+
+  return fetchTempoWorklogs$({
+    transport: options.transport,
+    credentials: options.credentials,
+    accountId: options.accountId,
+    from: range.from,
+    to: new Date(range.to.getTime() - 1),
+  }).pipe(map((worklogs) => worklogs.filter((worklog) => localDayKey(worklog.from, options.boundary) === options.day)));
+};
 
 /**
  * The history feed `detectRecurringPatterns` reads. A worklog whose issue id is not in the map is

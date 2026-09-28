@@ -2,6 +2,7 @@ import { Observable, of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { JiraCredentials } from '../jira/client';
 import { SyncedWorklog } from '../model/proposal';
+import { DayBoundary, MIDNIGHT } from '../review/day';
 import { TimetrackLedgerStore } from '../store/ports';
 import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
 import { TempoCredentials } from './client';
@@ -60,13 +61,14 @@ const ledgerStore = (entries: SyncedWorklog[] = []): TimetrackLedgerStore => ({
   remove$: () => of(undefined),
 });
 
-const read = (options: { transport: TimetrackTransport; ledger?: TimetrackLedgerStore }) =>
+const read = (options: { transport: TimetrackTransport; ledger?: TimetrackLedgerStore; boundary?: DayBoundary }) =>
   fetchTempoDayCoverage$({
     transport: options.transport,
     jira: JIRA,
     tempo: TEMPO,
     ledger: options.ledger ?? ledgerStore(),
     day: DAY,
+    boundary: options.boundary ?? MIDNIGHT,
     observedAt: OBSERVED_AT,
   });
 
@@ -130,5 +132,22 @@ describe('fetchTempoDayCoverage$', () => {
     read({ transport }).subscribe();
 
     expect(requests.some((request) => request.url.includes('/search/jql'))).toBe(false);
+  });
+
+  it('reads the day by its boundary, so a late row counts and the early hours stay the day before', () => {
+    const { transport, requests } = coverageTransport({
+      worklogs: [
+        { ...worklogResource({ id: 1, issueId: 10100, hours: 1 }), startTime: '02:00:00' },
+        { ...worklogResource({ id: 2, issueId: 10100, hours: 2 }), startDate: '2026-08-11', startTime: '01:00:00' },
+      ],
+      issuesById: [{ id: '10100', key: 'FIP-2964', fields: {} }],
+    });
+
+    const coverage = readInto(read({ transport, boundary: { startHour: 4 } }));
+
+    expect(requests.find((request) => request.url.includes('/worklogs/user/'))?.url).toContain(
+      'from=2026-08-10&to=2026-08-11',
+    );
+    expect(coverage?.issues).toEqual([{ issueKey: 'FIP-2964', coveredMs: 2 * HOUR }]);
   });
 });

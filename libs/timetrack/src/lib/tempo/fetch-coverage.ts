@@ -2,12 +2,12 @@ import { Observable, combineLatest, map, switchMap } from 'rxjs';
 import { JiraCredentials } from '../jira/client';
 import { fetchJiraIssueKeysByIds$ } from '../jira/issue';
 import { fetchJiraMyself$ } from '../jira/myself';
-import { MIDNIGHT, localDayRange } from '../review/day';
+import { DayBoundary } from '../review/day';
 import { TimetrackLedgerStore } from '../store/ports';
 import { TimetrackTransport } from '../transport/ports';
 import { TempoCredentials } from './client';
 import { TempoDayCoverage, tempoDayCoverageOf } from './coverage';
-import { fetchTempoWorklogs$ } from './worklogs';
+import { fetchTempoDayWorklogs$ } from './worklogs';
 
 /**
  * Reads what Tempo already holds for one day, for a surface that is not planning a sync.
@@ -25,24 +25,21 @@ export const fetchTempoDayCoverage$ = (options: {
   jira: JiraCredentials;
   tempo: TempoCredentials;
   ledger: TimetrackLedgerStore;
-  /** The local calendar day to read. */
   day: string;
+  /** The boundary the ledger keys the day by. */
+  boundary: DayBoundary;
   /** Stamped on the record. Defaults to the moment it is built. */
   observedAt?: Date;
 }): Observable<TempoDayCoverage> => {
-  // Tempo's range is by inclusive date, so both ends are the day itself, at midnight whatever the day
-  // boundary is — see the same read in `previewTempoSync$`.
-  const at = localDayRange(options.day, MIDNIGHT).from;
-
   return fetchJiraMyself$({ transport: options.transport, credentials: options.jira }).pipe(
     switchMap((account) =>
       combineLatest({
-        remote: fetchTempoWorklogs$({
+        remote: fetchTempoDayWorklogs$({
           transport: options.transport,
           credentials: options.tempo,
           accountId: account.accountId,
-          from: at,
-          to: at,
+          day: options.day,
+          boundary: options.boundary,
         }),
         ledger: options.ledger.entriesForDay$(options.day),
       }),

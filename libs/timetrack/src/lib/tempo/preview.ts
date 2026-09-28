@@ -3,14 +3,14 @@ import { JiraCredentials } from '../jira/client';
 import { fetchJiraIssueIds$, fetchJiraIssueKeysByIds$ } from '../jira/issue';
 import { JiraMyself, fetchJiraMyself$ } from '../jira/myself';
 import { WorklogProposal } from '../model/proposal';
-import { MIDNIGHT, localDayRange } from '../review/day';
+import { DayBoundary } from '../review/day';
 import { TimetrackLedgerStore } from '../store/ports';
 import { TimetrackTransport } from '../transport/ports';
 import { TempoCredentials } from './client';
 import { TempoDayCoverage, tempoDayCoverageOf } from './coverage';
 import { TempoSyncPlan, planTempoSync } from './diff';
 import { TempoMarkerScheme } from './marker';
-import { TempoWorklog, fetchTempoWorklogs$ } from './worklogs';
+import { TempoWorklog, fetchTempoDayWorklogs$ } from './worklogs';
 
 export type TempoSyncPreview = {
   plan: TempoSyncPlan;
@@ -45,19 +45,15 @@ export const previewTempoSync$ = (options: {
   tempo: TempoCredentials;
   ledger: TimetrackLedgerStore;
   proposals: WorklogProposal[];
-  /** The local calendar day under review. Both the remote range and the ledger read come from it. */
+  /** The day under review. Both the remote read and the ledger read come from it. */
   day: string;
+  /** The boundary the proposals and the ledger key the day by. */
+  boundary: DayBoundary;
   marker?: TempoMarkerScheme;
   attributesByProposalId?: Record<string, Record<string, string | number | boolean>>;
   /** Stamped on the coverage. Defaults to the moment the preview is built. */
   observedAt?: Date;
 }): Observable<TempoSyncPreview> => {
-  // Tempo's range is by date and inclusive, so both ends are the day itself: passing the range's `to`
-  // — midnight of the day after — would read the next day's worklogs into this day's foreign list.
-  // Read at midnight whatever the day boundary is: the range Tempo takes is a calendar date, and
-  // whether a worklog may cross one is the question ADR 0015 leaves to the booking milestone.
-  const at = localDayRange(options.day, MIDNIGHT).from;
-
   return fetchJiraMyself$({ transport: options.transport, credentials: options.jira }).pipe(
     switchMap((account) =>
       combineLatest({
@@ -66,12 +62,12 @@ export const previewTempoSync$ = (options: {
           credentials: options.jira,
           keys: options.proposals.map((proposal) => proposal.issueKey),
         }),
-        remote: fetchTempoWorklogs$({
+        remote: fetchTempoDayWorklogs$({
           transport: options.transport,
           credentials: options.tempo,
           accountId: account.accountId,
-          from: at,
-          to: at,
+          day: options.day,
+          boundary: options.boundary,
         }),
         ledger: options.ledger.entriesForDay$(options.day),
       }).pipe(

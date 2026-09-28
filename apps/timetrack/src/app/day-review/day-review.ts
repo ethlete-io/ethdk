@@ -258,6 +258,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
               tempo,
               ledger: ports.ledger,
               day: key,
+              boundary: boundary(),
             }).pipe(
               concatMap((read) =>
                 ports.coverage.save$(read).pipe(

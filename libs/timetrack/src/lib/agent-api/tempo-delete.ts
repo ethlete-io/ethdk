@@ -2,12 +2,12 @@ import { Observable, catchError, map, of, switchMap, throwError } from 'rxjs';
 import { JiraCredentials } from '../jira/client';
 import { fetchJiraIssueKeysByIds$ } from '../jira/issue';
 import { fetchJiraMyself$ } from '../jira/myself';
-import { MIDNIGHT, localDayRange } from '../review/day';
+import { DayBoundary } from '../review/day';
 import { TimetrackLedgerStore } from '../store/ports';
 import { TimetrackTransport } from '../transport/ports';
 import { TempoCredentials } from '../tempo/client';
-import { tempoDay, tempoTimeOfDay } from '../tempo/wall-clock';
-import { fetchTempoWorklogs$ } from '../tempo/worklogs';
+import { tempoTimeOfDay } from '../tempo/wall-clock';
+import { fetchTempoDayWorklogs$ } from '../tempo/worklogs';
 import { deleteTempoWorklog$ } from '../tempo/write';
 import { AgentApiTempoDelete } from './model';
 
@@ -25,17 +25,18 @@ export const deleteOwnTempoWorklog$ = (options: {
   tempo: TempoCredentials;
   ledger: TimetrackLedgerStore;
   day: string;
+  /** The boundary the ledger keys the day by. */
+  boundary: DayBoundary;
   worklogId: string;
 }): Observable<AgentApiTempoDelete> => {
-  const { transport, jira, tempo, ledger, day, worklogId } = options;
-  const at = localDayRange(day, MIDNIGHT).from;
+  const { transport, jira, tempo, ledger, day, boundary, worklogId } = options;
 
   return fetchJiraMyself$({ transport, credentials: jira }).pipe(
     switchMap((account) =>
-      fetchTempoWorklogs$({ transport, credentials: tempo, accountId: account.accountId, from: at, to: at }),
+      fetchTempoDayWorklogs$({ transport, credentials: tempo, accountId: account.accountId, day, boundary }),
     ),
     switchMap((worklogs) => {
-      const target = worklogs.find((worklog) => worklog.id === worklogId && tempoDay(worklog.from) === day);
+      const target = worklogs.find((worklog) => worklog.id === worklogId);
 
       if (!target) {
         return throwError(

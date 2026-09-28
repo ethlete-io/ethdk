@@ -501,6 +501,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
           tempo,
           ledger: ports.ledger,
           day: request.day,
+          boundary: dayBoundaryOf(settings.settings()),
           worklogId: request.worklogId,
         });
       }),

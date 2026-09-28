@@ -2,6 +2,7 @@ import { Observable, of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { JiraCredentials } from '../jira/client';
 import { SyncedWorklog, WorklogProposal } from '../model/proposal';
+import { DayBoundary, MIDNIGHT } from '../review/day';
 import { TimetrackLedgerStore } from '../store/ports';
 import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
 import { TempoCredentials } from './client';
@@ -84,6 +85,7 @@ const preview = (options: {
   transport: TimetrackTransport;
   ledger: TimetrackLedgerStore;
   proposals?: WorklogProposal[];
+  boundary?: DayBoundary;
 }) =>
   previewTempoSync$({
     transport: options.transport,
@@ -92,6 +94,7 @@ const preview = (options: {
     ledger: options.ledger,
     proposals: options.proposals ?? [proposal()],
     day: '2026-08-11',
+    boundary: options.boundary ?? MIDNIGHT,
     observedAt: OBSERVED_AT,
   });
 
@@ -250,5 +253,25 @@ describe('previewTempoSync$', () => {
 
     expect(failed.mock.calls[0]?.[0]).toMatchObject({ name: 'JiraRequestError', status: 401 });
     expect(requests).toHaveLength(1);
+  });
+
+  it('reads the day by its boundary, so a late row is seen and the early hours stay the day before', () => {
+    const { transport, requests } = previewTransport({
+      worklogs: [
+        { ...WORKLOG_RESOURCE, tempoWorklogId: 1, startDate: '2026-08-11', startTime: '02:00:00' },
+        { ...WORKLOG_RESOURCE, tempoWorklogId: 2, startDate: '2026-08-12', startTime: '01:00:00' },
+      ],
+    });
+    const { store } = ledgerStore();
+    const seen = vi.fn();
+
+    preview({ transport, ledger: store, boundary: { startHour: 4 } }).subscribe(seen);
+
+    const result = seen.mock.calls[0]?.[0];
+
+    expect(requests.find((request) => request.url.includes('/worklogs/user/'))?.url).toContain(
+      'from=2026-08-11&to=2026-08-12',
+    );
+    expect(result.plan.foreign.map((worklog: { id: string }) => worklog.id)).toEqual(['2']);
   });
 });
