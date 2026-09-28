@@ -266,7 +266,12 @@ export class SchedulerTimeGridViewComponent {
     if (this.hasDragged) return;
 
     this.scheduler?.surfaceAnchor.set(element);
-    this.scheduler?.selectedAppointmentId.set(appointment.id);
+
+    if (this.scheduler?.selectedAppointmentId() === appointment.id) {
+      this.featureHost?.openEditSurface?.(appointment.id);
+    } else {
+      this.scheduler?.selectedAppointmentId.set(appointment.id);
+    }
   }
 
   protected startAppointmentDrag(event: PointerEvent, target: SchedulerTimeGridDragTarget) {

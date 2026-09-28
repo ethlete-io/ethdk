@@ -303,11 +303,11 @@ The auto-open is keyed on the **selected id**, not on the selected `Appointment`
 
 Three methods on `<et-scheduler>` drive the same surface directly (`<et-scheduler #s>` then `s.openEditSurface(id)`):
 
-| Method                          | Does                                                                                                                        |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `openEditSurface(id)`           | Selects the appointment and opens the surface for it - what the auto-open runs. No-op for an id not in `appointments`.      |
-| `closeEditSurface()`            | Closes the surface without saving, clearing `selectedAppointmentId` back to `null`.                                         |
-| `selectAppointment(id \| null)` | Selects (or clears) **without** opening the surface - for highlighting an appointment from a sidebar or a list of your own. |
+| Method                          | Does                                                                                                                                                                               |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `openEditSurface(id)`           | Selects the appointment and opens the surface for it - what the auto-open runs. No-op for an id not in `appointments`.                                                             |
+| `closeEditSurface()`            | Closes the surface without saving, clearing `selectedAppointmentId` back to `null`.                                                                                                |
+| `selectAppointment(id \| null)` | Selects (or clears) **without** opening the surface - for highlighting an appointment from a sidebar or a list of your own. A click on the highlighted appointment still opens it. |
 
 Where it opens depends on whether there is something on the calendar to open it over:
 

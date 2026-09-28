@@ -16,8 +16,6 @@ Scan of `libs/components/src/lib/scheduler/` from 2026-09-28. 0 High, 6 Medium, 
 
 ## Edit surface lifecycle
 
-- Medium: A click on an appointment that `selectAppointment()` already highlighted does not open the edit surface (`scheduler/scheduler.component.ts:196,309-312`). The view writes the same id, the signal does not change, and `handledSelectionId` already equals it. Let the views call `openEditSurface` when the id is already selected, or clear `handledSelectionId` on a user click. S Verified.
-- Medium: The edit opener's `afterClosed` always sets `editSurfaceRef = null` and clears the selection, also when another surface opened during the close animation (`scheduler/scheduler.component.ts:157-164,291-297,377-386`). A click on appointment B while A's surface animates closed opens B, then A's close clears the selection and the ref, so B loses its highlight and `closeEditSurface()` no longer closes B. Only reset when the closed ref is the current one, the same guard `draftSurfaceOpener` uses. S Verified.
 - Low: The add surface offers "Add sub-appointment" and "Delete" for an appointment that the consumer never saved (`scheduler/headless/scheduler-edit-surface.directive.ts:97-123`, `scheduler/scheduler-action-add-sub-appointment.directive.ts:36-42`, `scheduler/scheduler-action-delete.directive.ts:36-43`). Delete emits `appointmentsDelete` with an unknown id, and add-sub drops the unsaved parent and saves a child whose `parentId` points at nothing. Disable both while the current appointment is not in `appointments()`. S
 
 ## Accessibility and i18n

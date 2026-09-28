@@ -86,6 +86,31 @@ describe('SchedulerComponent', () => {
     expect(driver.query('et-scheduler-time-grid-view')?.getAttribute('aria-label')).toBe(headerLabel());
   });
 
+  it('opens the edit surface on a click on an appointment selectAppointment() highlighted', () => {
+    driver.selectAppointment('a');
+    driver.clickAppointment('a');
+
+    expect(driver.editSurface()).toHaveLength(1);
+  });
+
+  it('keeps the selection and the close handle of a surface that opened while another one closes', () => {
+    driver.clickAppointment('a');
+    driver.clickAppointment('b');
+    driver.detectChanges();
+
+    const [first] = TestBed.runInInjectionContext(() => injectOverlayManager()).openOverlays();
+
+    first?.close();
+    driver.detectChanges();
+
+    expect(driver.host.selectedAppointmentId()).toBe('b');
+
+    driver.scheduler().closeEditSurface();
+    driver.detectChanges();
+
+    expect(driver.host.selectedAppointmentId()).toBeNull();
+  });
+
   it('ignores an open request for an appointment it does not know', () => {
     driver.openEditSurface('nope');
 

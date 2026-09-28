@@ -60,7 +60,12 @@ export class SchedulerAgendaViewComponent {
 
   protected select(appointment: Appointment, element: HTMLElement) {
     this.scheduler?.surfaceAnchor.set(element);
-    this.scheduler?.selectedAppointmentId.set(appointment.id);
+
+    if (this.scheduler?.selectedAppointmentId() === appointment.id) {
+      this.featureHost?.openEditSurface?.(appointment.id);
+    } else {
+      this.scheduler?.selectedAppointmentId.set(appointment.id);
+    }
   }
 
   private monthLabel(date: Date) {

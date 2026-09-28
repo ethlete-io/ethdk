@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { SCHEDULER_ERROR_CODES } from '../scheduler-errors';
-import { Appointment } from '../scheduler.types';
+import { Appointment, AppointmentId } from '../scheduler.types';
 import { AppointmentTreeNode } from './internals/scheduler-tree';
 
 /** What every registration point on a scheduler host shares: an optional render order and on/off switch. */
@@ -125,6 +125,11 @@ export type SchedulerFeatureHost = {
    * import cycle back to the component that bundles it.
    */
   addAppointment(): void;
+  /**
+   * Opens the edit surface for an appointment that is already selected, where writing the same id
+   * again changes nothing. The views call it when an already-selected appointment is activated.
+   */
+  openEditSurface?(id: AppointmentId): void;
 };
 
 export const SCHEDULER_FEATURE_HOST = new InjectionToken<SchedulerFeatureHost>('SCHEDULER_FEATURE_HOST');

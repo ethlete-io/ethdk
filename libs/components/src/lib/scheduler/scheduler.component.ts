@@ -1,5 +1,6 @@
 import {
   Component,
+  DestroyRef,
   ElementRef,
   ViewEncapsulation,
   computed,
@@ -9,7 +10,9 @@ import {
   output,
   untracked,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RuntimeError, randomId, signalHostElementDimensions } from '@ethlete/core';
+import { tap } from 'rxjs';
 import { addHours, format, isSameDay, isSameMonth, isSameYear, setHours, setMinutes, startOfDay } from 'date-fns';
 import { BUTTON_IMPORTS } from '../button';
 import { FLOATING_ACTION_IMPORTS } from '../floating-action';
@@ -103,6 +106,7 @@ export class SchedulerComponent implements SchedulerFeatureHost {
   public headless = inject(SchedulerDirective);
 
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private destroyRef = inject(DestroyRef);
 
   /** Emits the edited or newly-added appointment once the default edit surface saves. */
   public appointmentSave = output<Appointment>();
@@ -154,14 +158,7 @@ export class SchedulerComponent implements SchedulerFeatureHost {
 
   private editSurfaceRef: OverlayRef<object, SchedulerEditSurfaceResult> | null = null;
 
-  private editSurfaceOpener = this.editSurface
-    ? createOverlayOpener(this.editSurface.editOverlay, {
-        afterClosed: (result) => {
-          this.editSurfaceRef = null;
-          this.handleEditSurfaceResult(result);
-        },
-      })
-    : null;
+  private editSurfaceOpener = this.editSurface ? createOverlayOpener(this.editSurface.editOverlay) : null;
 
   // Which selection the edit surface has already acted on. Compared by id, not by appointment
   // identity: an immutable `appointments` replacement gives the selected appointment a new object
@@ -291,10 +288,20 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     this.handledSelectionId = id;
     this.headless.selectedAppointmentId.set(id);
 
-    this.editSurfaceRef = this.editSurfaceOpener.open({
+    const ref = this.editSurfaceOpener.open({
       origin: this.takeSurfaceAnchor(),
       bindings: this.editSurfaceBindings(appointment),
     });
+
+    this.editSurfaceRef = ref;
+
+    ref
+      .afterClosed()
+      .pipe(
+        tap((result) => this.handleEditSurfaceClosed(ref, result)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
   /** Closes the default edit surface without saving, clearing `selectedAppointmentId` back to `null`. */
@@ -374,14 +381,32 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     ];
   }
 
+  private handleEditSurfaceClosed(
+    ref: OverlayRef<object, SchedulerEditSurfaceResult>,
+    result: SchedulerEditSurfaceResult | null | undefined,
+  ) {
+    if (ref !== this.editSurfaceRef) {
+      this.emitEditSurfaceResult(result);
+
+      return;
+    }
+
+    this.editSurfaceRef = null;
+    this.handleEditSurfaceResult(result);
+  }
+
   private handleEditSurfaceResult(result: SchedulerEditSurfaceResult | null | undefined) {
+    this.emitEditSurfaceResult(result);
+
+    this.handledSelectionId = null;
+    this.headless.selectedAppointmentId.set(null);
+  }
+
+  private emitEditSurfaceResult(result: SchedulerEditSurfaceResult | null | undefined) {
     if (result?.kind === 'save') {
       this.appointmentSave.emit(result.appointment);
     } else if (result?.kind === 'delete') {
       this.appointmentsDelete.emit(result.ids);
     }
-
-    this.handledSelectionId = null;
-    this.headless.selectedAppointmentId.set(null);
   }
 }
