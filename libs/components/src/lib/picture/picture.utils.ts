@@ -53,11 +53,11 @@ export const normalizePictureSizes = (sizes: string | string[] | null | undefine
 };
 
 /**
- * A single URL prefixed with the base, unless it is already absolute or a data URI. Exactly one slash joins
+ * A single URL prefixed with the base, unless it carries a scheme or is protocol-relative. Exactly one slash joins
  * them however each side is written - cdk produced `host//path` when both carried one.
  */
 const withBaseUrl = (url: string, baseUrl: string) => {
-  if (url.startsWith('http') || url.startsWith('data:')) return url;
+  if (/^[a-z][a-z\d+.-]*:/i.test(url) || url.startsWith('//')) return url;
 
   return `${baseUrl.replace(/\/+$/, '')}/${url.replace(/^\/+/, '')}`;
 };

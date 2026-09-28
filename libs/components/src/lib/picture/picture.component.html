@@ -11,6 +11,7 @@
 
     @if (resolvedDefaultSource(); as source) {
       <img
+        #img
         [attr.srcset]="source.srcset"
         [attr.src]="defaultSrcUrl()"
         [attr.sizes]="source.sizes ?? sizes()"
@@ -20,7 +21,7 @@
         [attr.loading]="priority() ? 'eager' : 'lazy'"
         [attr.fetchpriority]="priority() ? 'high' : 'auto'"
         [style.aspect-ratio]="aspectRatio()"
-        (load)="markLoaded($event)"
+        (load)="markLoaded(img)"
         (error)="markFailed()"
         class="et-picture-img"
       />

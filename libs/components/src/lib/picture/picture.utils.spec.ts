@@ -112,6 +112,21 @@ describe('withPictureBaseUrl', () => {
     );
   });
 
+  it('leaves blob, protocol-relative and other scheme URLs alone', () => {
+    const config = { baseUrl: 'https://cdn.example.com' };
+
+    expect(withPictureBaseUrl(source('blob:https://app.example.com/1234'), config).srcset).toBe(
+      'blob:https://app.example.com/1234',
+    );
+    expect(withPictureBaseUrl(source('//img.example.com/a.jpg'), config).srcset).toBe('//img.example.com/a.jpg');
+  });
+
+  it('prefixes a relative path that merely starts with http', () => {
+    expect(withPictureBaseUrl(source('https-logo.png'), { baseUrl: 'https://cdn.example.com' }).srcset).toBe(
+      'https://cdn.example.com/https-logo.png',
+    );
+  });
+
   it('leaves the source untouched without a configured base URL', () => {
     expect(withPictureBaseUrl(source('media/a.jpg'), null).srcset).toBe('media/a.jpg');
     expect(withPictureBaseUrl(source('media/a.jpg'), {}).srcset).toBe('media/a.jpg');

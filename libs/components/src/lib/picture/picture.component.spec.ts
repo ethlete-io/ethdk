@@ -135,6 +135,40 @@ describe('PictureComponent', () => {
     });
   });
 
+  it('stays loaded when sources are replaced by an equal array', () => {
+    fixture.componentRef.setInput('sources', [{ srcset: 'wide.avif', media: '(min-width: 700px)' }]);
+    fixture.detectChanges();
+    fireLoad(800, 400);
+
+    fixture.componentRef.setInput('sources', [{ srcset: 'wide.avif', media: '(min-width: 700px)' }]);
+    fixture.detectChanges();
+
+    expect(picture.state()).toBe('loaded');
+    expect(picture.naturalSize()).toEqual({ width: 800, height: 400 });
+  });
+
+  it('picks up an image that finished loading before its listeners attached', () => {
+    const completeFixture = TestBed.createComponent(PictureComponent);
+
+    completeFixture.componentRef.setInput('alt', 'A test');
+    completeFixture.componentRef.setInput('defaultSrc', 'hydrated.jpg');
+
+    const proto = HTMLImageElement.prototype;
+    const completeSpy = vi.spyOn(proto, 'complete', 'get').mockReturnValue(true);
+    const widthSpy = vi.spyOn(proto, 'naturalWidth', 'get').mockReturnValue(640);
+    const heightSpy = vi.spyOn(proto, 'naturalHeight', 'get').mockReturnValue(320);
+
+    completeFixture.detectChanges();
+    TestBed.tick();
+
+    expect(completeFixture.componentInstance.state()).toBe('loaded');
+    expect(completeFixture.componentInstance.naturalSize()).toEqual({ width: 640, height: 320 });
+
+    completeSpy.mockRestore();
+    widthSpy.mockRestore();
+    heightSpy.mockRestore();
+  });
+
   it('reports an error instead of loading forever when sources are set without defaultSrc', () => {
     fixture.componentRef.setInput('defaultSrc', null);
     fixture.componentRef.setInput('sources', ['wide.avif']);

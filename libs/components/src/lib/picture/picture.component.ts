@@ -2,6 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import {
   Component,
   ViewEncapsulation,
+  afterNextRender,
   booleanAttribute,
   computed,
   contentChild,
@@ -10,6 +11,8 @@ import {
   linkedSignal,
   numberAttribute,
   output,
+  viewChild,
+  ElementRef,
 } from '@angular/core';
 import { injectPictureConfig } from './picture-config';
 import { PictureErrorDirective, PicturePlaceholderDirective } from './picture-slots.directive';
@@ -130,6 +133,8 @@ export class PictureComponent {
   /** The image failed to load - a dead URL, a network error, an undecodable file. */
   public imgError = output<void>();
 
+  public img = viewChild<ElementRef<HTMLImageElement>>('img');
+
   protected placeholder = contentChild(PicturePlaceholderDirective);
   protected errorSlot = contentChild(PictureErrorDirective);
 
@@ -153,14 +158,16 @@ export class PictureComponent {
    * which decide the image just as much - is loading again, and a state that stayed `'loaded'` would leave the
    * placeholder hidden for the second image.
    */
-  private loadResetKey = computed<unknown[]>(() => [this.defaultSrcUrl(), this.sources()]);
+  private loadResetKey = computed(() =>
+    [this.defaultSrcUrl(), ...this.resolvedSources().map((source) => source.srcset)].join('\n'),
+  );
 
-  private loadState = linkedSignal<unknown[], PictureState>({
+  private loadState = linkedSignal<string, PictureState>({
     source: () => this.loadResetKey(),
     computation: () => PICTURE_STATES.LOADING,
   });
 
-  private loadedSize = linkedSignal<unknown[], { width: number; height: number } | null>({
+  private loadedSize = linkedSignal<string, { width: number; height: number } | null>({
     source: () => this.loadResetKey(),
     computation: () => null,
   });
@@ -191,6 +198,16 @@ export class PictureComponent {
   });
 
   constructor() {
+    afterNextRender({
+      read: () => {
+        const img = this.img()?.nativeElement;
+
+        if (img?.complete && img.naturalWidth && this.loadState() === PICTURE_STATES.LOADING) {
+          this.markLoaded(img);
+        }
+      },
+    });
+
     if (ngDevMode) {
       let warned = false;
 
@@ -205,9 +222,7 @@ export class PictureComponent {
     }
   }
 
-  protected markLoaded(event: Event) {
-    const img = event.target as HTMLImageElement;
-
+  protected markLoaded(img: HTMLImageElement) {
     this.loadedSize.set({ width: img.naturalWidth, height: img.naturalHeight });
     this.loadState.set(PICTURE_STATES.LOADED);
     this.imgLoad.emit({ naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight });
