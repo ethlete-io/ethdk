@@ -380,6 +380,10 @@ export class CascaderDirective<T = unknown>
       this.focusInside.set(false);
       this.afterClose.emit();
 
+      if (byOutsidePointer || byFocusLeave) {
+        this.touched.set(true);
+      }
+
       if (!byOutsidePointer && !byFocusLeave && this.document.activeElement === this.document.body) {
         this.activate();
       }

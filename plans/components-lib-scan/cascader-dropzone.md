@@ -4,7 +4,6 @@ Scan of `libs/components/src/lib/forms/cascader/` and `libs/components/src/lib/f
 
 ## cascader - keyboard and a11y
 
-- Medium: `touched` is set only on a trigger blur while the panel is closed, so a panel closed by an outside pointer or a focus leave never marks the field touched (`forms/cascader/headless/cascader-trigger.directive.ts:79`, `forms/cascader/headless/cascader.directive.ts:377`). A user opens a required cascader, clicks away, and never sees the error. Set `touched` in `onAfterClosed` when `byOutsidePointer || byFocusLeave`; `select.directive.ts:348` has the same gap. S Verified.
 - Low: In single mode `isSelected` is true for every ancestor on the committed chain, so branch nodes get `aria-selected="true"` and a screen reader announces several selected items in a single-select tree (`forms/cascader/headless/cascader.directive.ts:669`). Report `aria-selected` for the last node only and keep the ancestor state as a data attribute. S
 - Low: ArrowRight drills and ArrowLeft goes back without a check for `dir="rtl"`, so the keys point the wrong way in RTL (`forms/cascader/headless/cascader.directive.ts:844`). S
 - Low: `canOpen` checks only `disabled`, so a consumer that writes `[(open)]="true"` on a readonly cascader opens the panel that `show()` refuses (`forms/cascader/headless/cascader.directive.ts:300`, `:619`). S

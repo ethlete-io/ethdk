@@ -1096,3 +1096,36 @@ describe('CascaderDirective (in form field)', () => {
     };
   });
 });
+
+describe('CascaderDirective (touched on dismiss)', () => {
+  let driver: CascaderDriver<CascaderInFormFieldTestHost>;
+
+  beforeEach(() => {
+    driver = mountCascader(CascaderInFormFieldTestHost, [], { directiveSelector: 'et-cascader' });
+  });
+
+  afterEach(async () => {
+    await driver.close();
+  });
+
+  it('marks touched when an outside pointerdown closes the panel', async () => {
+    await driver.open();
+    expect(driver.host.touched()).toBe(false);
+
+    driver.pointerDownOutside();
+    await driver.settle();
+
+    expect(driver.control.open()).toBe(false);
+    expect(driver.host.touched()).toBe(true);
+  });
+
+  it('does not mark touched when Escape closes the panel', async () => {
+    await driver.open();
+
+    driver.escape();
+    await driver.settle();
+
+    expect(driver.control.open()).toBe(false);
+    expect(driver.host.touched()).toBe(false);
+  });
+});
