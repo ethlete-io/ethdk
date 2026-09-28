@@ -1,12 +1,24 @@
-import { booleanAttribute, computed, DestroyRef, Directive, inject, input, model, signal } from '@angular/core';
+import {
+  booleanAttribute,
+  computed,
+  DestroyRef,
+  Directive,
+  ElementRef,
+  inject,
+  input,
+  model,
+  signal,
+} from '@angular/core';
 import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { ValidationError } from '@angular/forms/signals';
+import { signalElementMutations } from '@ethlete/core';
 import {
   AccessibleNameControlDirective,
   FORM_FIELD_CONTROL_TYPES,
   FORM_FIELD_TOKEN,
   FormFieldControl,
 } from '../../form-field/headless';
+import { isSameOrder, sortByDomOrder } from '../../../internals/dom-order';
 import { createTypeahead } from '../../../internals/typeahead';
 import { createSelectionState } from './internals/selection-state';
 import {
@@ -71,6 +83,26 @@ export class SelectionListDirective
     mixed: this.mixed,
   });
 
+  private childMutations = signalElementMutations(inject<ElementRef<HTMLElement>>(ElementRef), {
+    childList: true,
+    subtree: true,
+  });
+
+  /** The registered options in DOM order, which a keyed `@for` can change without re-registering any. */
+  public items = computed(
+    () => {
+      this.childMutations();
+      const items = this.selection.items();
+
+      if (items.some((item) => !item.elementRef.nativeElement.isConnected)) {
+        return items;
+      }
+
+      return sortByDomOrder(items, (item) => item.elementRef.nativeElement);
+    },
+    { equal: isSameOrder },
+  );
+
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
   public role = computed(() => (this.multiple() ? 'group' : 'radiogroup'));
 
@@ -100,7 +132,7 @@ export class SelectionListDirective
   /** @internal */
   public findTypeaheadMatch(character: string, from: SelectionListItem) {
     const query = this.typeahead.append(character);
-    const items = this.selection.items();
+    const items = this.items();
     const offset = query.length === 1 ? 1 : 0;
     const start = items.indexOf(from) + offset;
 
@@ -121,7 +153,7 @@ export class SelectionListDirective
       return;
     }
 
-    const items = this.selection.items();
+    const items = this.items();
     const target = items.find((item) => item.checked() && !item.disabled()) ?? items.find((item) => !item.disabled());
 
     if (target) {

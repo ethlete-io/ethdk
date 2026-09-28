@@ -106,6 +106,21 @@ class LabelledSelectTestHost {
   ariaLabelledby = signal<string | null>(null);
 }
 
+@Component({
+  template: `
+    <div [value]="value()" (valueChange)="value.set($event)" etSelectionList>
+      @for (option of options(); track option.value) {
+        <div [value]="option.value" [disabled]="option.disabled ?? false" etSelectionOption></div>
+      }
+    </div>
+  `,
+  imports: [SelectionListDirective, SelectionOptionDirective],
+})
+class DynamicSelectTestHost {
+  value = signal<string | null>(null);
+  options = signal<{ value: string; disabled?: boolean }[]>([{ value: 'a' }, { value: 'b' }, { value: 'c' }]);
+}
+
 describe('SelectionListDirective', () => {
   describe('single select', () => {
     let driver: SelectionListDriver<SingleSelectTestHost>;
@@ -406,5 +421,60 @@ describe('SelectionListDirective (mixed specifics)', () => {
       expect(driver.host.value()).toEqual(['a', 'b', 'c']);
       expect(driver.controlAttr('aria-checked')).toBe('true');
     });
+  });
+});
+
+describe('SelectionListDirective (roving tab stop and DOM order)', () => {
+  let driver: SelectionListDriver<DynamicSelectTestHost>;
+
+  const flushMutations = async () => {
+    await Promise.resolve();
+    driver.tick();
+  };
+
+  beforeEach(() => {
+    driver = mountSelectionList(DynamicSelectTestHost);
+  });
+
+  it('puts the tab stop on the first enabled option when the first one is disabled', () => {
+    driver.host.options.set([{ value: 'a', disabled: true }, { value: 'b' }, { value: 'c' }]);
+    driver.tick();
+
+    expect(driver.optionAttrs('tabindex')).toEqual(['-1', '0', '-1']);
+  });
+
+  it('puts the tab stop on the first enabled option when the checked one is disabled', () => {
+    driver.host.options.set([{ value: 'a' }, { value: 'b', disabled: true }, { value: 'c' }]);
+    driver.host.value.set('b');
+    driver.tick();
+
+    expect(driver.optionAttrs('tabindex')).toEqual(['0', '-1', '-1']);
+  });
+
+  it('follows DOM order after an option is inserted in front', async () => {
+    driver.host.options.set([{ value: 'z' }, { value: 'a' }, { value: 'b' }, { value: 'c' }]);
+    driver.tick();
+    await flushMutations();
+
+    expect(driver.optionAttrs('tabindex')).toEqual(['0', '-1', '-1', '-1']);
+
+    driver.focusOption(0);
+    driver.pressOption(0, 'ArrowDown');
+
+    expect(document.activeElement).toBe(driver.optionEl(1));
+  });
+
+  it('follows DOM order after a keyed re-order', async () => {
+    driver.host.options.set([{ value: 'c' }, { value: 'b' }, { value: 'a' }]);
+    driver.tick();
+    await flushMutations();
+
+    expect(driver.optionAttrs('tabindex')).toEqual(['0', '-1', '-1']);
+
+    driver.focusOption(0);
+    driver.pressOption(0, 'End');
+
+    expect(document.activeElement).toBe(driver.optionEl(2));
+    expect(driver.host.value()).toBe('a');
   });
 });

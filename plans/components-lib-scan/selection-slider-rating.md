@@ -4,8 +4,6 @@ Scan of `libs/components/src/lib/forms/selection-list/`, `forms/slider/`, `forms
 
 ## selection-list
 
-- Medium: the roving tabindex gives no option `tabindex="0"` when the checked option is disabled, or when nothing is checked and the first option is disabled (`forms/selection-list/headless/selection-option.directive.ts:87-104`). Then Tab skips the whole group. Pick the first enabled option as the fallback, the same as `SelectionListDirective.focus` (`selection-list.directive.ts:125`) does. S Verified.
-- Medium: `items` is in registration order, not DOM order (`forms/selection-list/headless/internals/selection-state.ts:150-152`). When an `@for` inserts or reorders options, Arrow/Home/End, typeahead and the "first option is tabbable" rule follow the wrong order. `select.directive.ts:370` already applies `sortByDomOrder` to projected items. Do the same here. S Verified.
 - Low: `(keydown.enter)` selects and calls `preventDefault` (`selection-option.directive.ts:33`, `selection-list-control.directive.ts:16`). This blocks implicit form submission from a radio group. APG radio and checkbox use Space only. S
 - Low: `SegmentedButtonGroupComponent.lastActiveBackgroundElement` keeps a reference to the background of a destroyed button until the next selection (`forms/selection-list/segmented-button-group/segmented-button.component.ts:47`). Clear the reference on destroy when it points to this button. S
 - Low: comments outside the allowlist: history narration at `selection-state.ts:69-74` ("meant a single disabled ... pinned"), rationale at `selection-list-control.directive.ts:7-8`, `selection-option.directive.ts:57-58`, `selection-list.directive.ts:32-33`. S
@@ -28,6 +26,5 @@ Scan of `libs/components/src/lib/forms/selection-list/`, `forms/slider/`, `forms
 
 ## Spec gaps
 
-- Spec: no spec for the roving tabindex when the first or the checked option is disabled, and none for option order after an `@for` insert (`selection-list.directive.spec.ts:334` covers only the default case). S
 - Spec: no slider-engine spec for `step <= 0` or for a `minDistance` that is off the step grid. S
 - Spec: `RatingComponent` pointer logic (drag preview, the click-fallback flag, RTL offsets, half-steps from rects) has no component spec. The directive spec drives only the headless host. M

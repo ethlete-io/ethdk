@@ -93,14 +93,10 @@ export class SelectionOptionDirective {
       return 0;
     }
 
-    const items = this.list.selection.items();
-    const checkedItem = items.find((i) => i.checked());
+    const items = this.list.items();
+    const tabStop = items.find((i) => i.checked() && !i.disabled()) ?? items.find((i) => !i.disabled());
 
-    if (checkedItem) {
-      return checkedItem === this.listItem ? 0 : -1;
-    }
-
-    return items[0] === this.listItem ? 0 : -1;
+    return tabStop === this.listItem ? 0 : -1;
   });
 
   constructor() {
@@ -145,7 +141,7 @@ export class SelectionOptionDirective {
       return;
     }
 
-    const enabled = this.list.selection.items().filter((item) => !item.disabled());
+    const enabled = this.list.items().filter((item) => !item.disabled());
 
     this.moveFocusTo(edge === 'first' ? enabled[0] : enabled.at(-1));
   }
@@ -179,7 +175,7 @@ export class SelectionOptionDirective {
       return;
     }
 
-    const items = this.list.selection.items();
+    const items = this.list.items();
     const currentIndex = items.indexOf(this.listItem);
     let index = (currentIndex + step + items.length) % items.length;
 

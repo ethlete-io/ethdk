@@ -2,3 +2,6 @@ export const sortByDomOrder = <T>(items: readonly T[], getElement: (item: T) => 
   [...items].sort((a, b) =>
     getElement(a).compareDocumentPosition(getElement(b)) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1,
   );
+
+export const isSameOrder = <T>(a: readonly T[], b: readonly T[]) =>
+  a.length === b.length && a.every((item, index) => b[index] === item);

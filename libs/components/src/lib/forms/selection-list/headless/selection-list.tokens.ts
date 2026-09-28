@@ -22,6 +22,8 @@ export type SelectionListDirectiveBase<TValue = unknown> = {
   required: Signal<boolean>;
   name: Signal<string>;
   selection: SelectionState<TValue, SelectionListItem<TValue>>;
+  /** The registered options in DOM order. */
+  items: Signal<SelectionListItem<TValue>[]>;
   focusItem(item: SelectionListItem<TValue>, options?: FocusOptions): void;
   /** Buffers a typed character and returns the enabled item its prefix names next after `from`. */
   findTypeaheadMatch(character: string, from: SelectionListItem<TValue>): SelectionListItem<TValue> | null;
