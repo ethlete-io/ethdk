@@ -76,13 +76,25 @@ export const createTableDriver = (fixture: ComponentFixture<unknown>) => {
     if (layoutIsFaked) return;
 
     layoutIsFaked = true;
+
+    const stacked = stackedChildren(HEADER_CELL, COLUMN_WIDTH);
+    const siblingCount = (element: Element) =>
+      Array.from(element.parentElement?.children ?? []).filter((child) => child.matches(HEADER_CELL)).length;
+    const offsetLeft = (element: Element) => {
+      const ltr = (stacked.offsetLeft as (element: Element) => number)(element);
+
+      return isRtl() ? (siblingCount(element) - 1) * COLUMN_WIDTH - ltr : ltr;
+    };
+
     fakeLayout([
-      stackedChildren(HEADER_CELL, COLUMN_WIDTH),
+      { ...stacked, offsetLeft },
       // Read back off the offsets above rather than recomputed: the reorder preview measures widths by
       // client rect and resolves drop targets by offset, and the two disagreeing is not a real layout.
       { match: HEADER_CELL, rect: (element) => ({ left: (element as HTMLElement).offsetLeft, width: COLUMN_WIDTH }) },
     ]);
   };
+
+  const isRtl = () => getComputedStyle(host).direction === 'rtl';
 
   const restingBoundsOf = (key: string) => {
     fakeColumnLayout();
@@ -191,7 +203,9 @@ export const createTableDriver = (fixture: ComponentFixture<unknown>) => {
 
           // Past the midpoint by a quarter column - the reorder biases the flip away from the side it is
           // already showing, and a quarter column is the widest that bias ever gets.
-          lastX = side === 'before' ? middle - width / 4 : middle + width / 4;
+          const towardInlineStart = isRtl() ? width / 4 : -width / 4;
+
+          lastX = side === 'before' ? middle + towardInlineStart : middle - towardInlineStart;
           moveTo(lastX);
         },
         drop: () =>

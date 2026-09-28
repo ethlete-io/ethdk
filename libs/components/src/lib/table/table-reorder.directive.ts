@@ -124,6 +124,7 @@ export class TableReorderDirective {
   // The pointer's last x, which the edge auto-scroll re-resolves the drop target against: it moves the
   // columns while the pointer stands still, so no pointer event says the target changed.
   private pointerX = 0;
+  private rtl = false;
   private autoScrollFrame: number | null = null;
   private autoScrollStep = 0;
   private touchReorderActive = false;
@@ -261,6 +262,7 @@ export class TableReorderDirective {
     this.dragging.set({ key, header });
     this.pointer.set({ x: at.clientX, y: at.clientY });
     this.pointerX = at.clientX;
+    this.rtl = getComputedStyle(this.table.element).direction === 'rtl';
     this.target.set(null);
     this.previewSignature = null;
     this.markDragging(key, true);
@@ -328,9 +330,11 @@ export class TableReorderDirective {
   private syncAutoScroll(clientX: number) {
     const bounds = this.table.scrollElement().getBoundingClientRect();
     const frozen = this.table.frozenInsets();
-    const intoStart = AUTO_SCROLL_ZONE_PX - (clientX - (bounds.left + frozen.start));
-    const intoEnd = AUTO_SCROLL_ZONE_PX - (bounds.right - frozen.end - clientX);
-    const depth = intoStart > 0 ? -intoStart : intoEnd > 0 ? intoEnd : 0;
+    const leftInset = this.rtl ? frozen.end : frozen.start;
+    const rightInset = this.rtl ? frozen.start : frozen.end;
+    const intoLeft = AUTO_SCROLL_ZONE_PX - (clientX - (bounds.left + leftInset));
+    const intoRight = AUTO_SCROLL_ZONE_PX - (bounds.right - rightInset - clientX);
+    const depth = intoLeft > 0 ? -intoLeft : intoRight > 0 ? intoRight : 0;
     const ratio = Math.min(Math.abs(depth), AUTO_SCROLL_ZONE_PX) / AUTO_SCROLL_ZONE_PX;
 
     this.autoScrollStep = Math.sign(depth) * ratio * AUTO_SCROLL_MAX_STEP_PX;
@@ -405,7 +409,10 @@ export class TableReorderDirective {
         return;
       }
 
-      this.target.set({ key: overKey, before: clientX < this.flipThresholdOf(bounds, overKey) });
+      const inlineBounds = this.rtl ? { start: -bounds.end, end: -bounds.start } : bounds;
+      const inlineX = this.rtl ? -clientX : clientX;
+
+      this.target.set({ key: overKey, before: inlineX < this.flipThresholdOf(inlineBounds, overKey) });
 
       return;
     }
@@ -432,7 +439,7 @@ export class TableReorderDirective {
   }
 
   /**
-   * The x at which the drop flips from this column's leading to its trailing side.
+   * The inline position at which the drop flips from this column's leading to its trailing side.
    *
    * That is its midpoint, biased *away* from whichever side is already showing. Without the bias a
    * hand resting on the midpoint flaps the preview - every pixel of tremor re-crosses it, and each
@@ -484,7 +491,7 @@ export class TableReorderDirective {
     const transition = this.prefersReducedMotion() ? 'none' : `transform ${PREVIEW_DURATION_MS}ms ease`;
 
     for (const key of order) {
-      const delta = (landingX.get(key) ?? 0) - (restingX.get(key) ?? 0);
+      const delta = ((landingX.get(key) ?? 0) - (restingX.get(key) ?? 0)) * (this.rtl ? -1 : 1);
       const shifted = Math.abs(delta) >= 0.5;
 
       if (!shifted && !this.previewOffsets.has(key)) continue;

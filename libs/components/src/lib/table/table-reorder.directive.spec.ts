@@ -1,8 +1,11 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { tick } from '../testing/driver-core';
 import '../../test-helpers';
 import { expectNothingRunsAfterDestroy } from '../testing/destroyed-mid-gesture';
+import { fakeLayout } from '../testing/fake-layout';
+import { TableComponent } from './table.component';
 import { createTableDriver } from './testing/table-driver';
 import { TABLE_IMPORTS, TABLE_REORDER_IMPORTS } from './table.imports';
 import { TableColumns } from './table.types';
@@ -139,6 +142,57 @@ describe('TableReorderDirective', () => {
 
     expect(driver.query('.et-table-drag-ghost')).toBeNull();
     expect(driver.columnKeys()).toEqual(['name', 'role']);
+  });
+
+  describe('in a right-to-left table', () => {
+    const createRtl = () => {
+      const created = create();
+
+      created.driver.host().style.direction = 'rtl';
+
+      return created;
+    };
+
+    it('drops a column on the inline-start side of the one it is held over', () => {
+      const { driver } = createRtl();
+      const drag = driver.grabColumn('role');
+
+      drag.moveOver('name', 'before');
+      drag.drop();
+
+      expect(driver.columnKeys()).toEqual(['role', 'name']);
+    });
+
+    it('slides the previewed columns toward their landing slots', () => {
+      const { driver } = createRtl();
+      const drag = driver.grabColumn('role');
+
+      drag.moveOver('name', 'before');
+
+      expect(driver.headerCell('role')?.style.transform).toBe('translateX(200px)');
+      expect(driver.headerCell('name')?.style.transform).toBe('translateX(-200px)');
+    });
+
+    it('lays the edge auto-scroll zones inside the pinned block at the inline start, on the right', () => {
+      const { driver, fixture } = createRtl();
+      const table = fixture.debugElement.query(By.directive(TableComponent))
+        .componentInstance as TableComponent<Person>;
+
+      driver.makeScrollable();
+      driver.scroller().scrollLeft = -300;
+      fakeLayout([{ match: (element) => element === driver.scroller(), rect: { left: 0, width: 800 } }]);
+      vi.spyOn(table, 'frozenInsets').mockReturnValue({ start: 100, end: 0 });
+
+      const drag = driver.grabColumn('name');
+
+      drag.moveTo(130);
+      expect(driver.scroller().scrollLeft).toBe(-300);
+
+      drag.moveTo(680);
+      expect(driver.scroller().scrollLeft).toBeGreaterThan(-300);
+
+      drag.drop();
+    });
   });
 
   describe('on touch', () => {
