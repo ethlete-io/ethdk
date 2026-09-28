@@ -1,3 +1,4 @@
+export * from './action-classes';
 export * from './approval-queue';
 export * from './lock-gate';
 export * from './model';

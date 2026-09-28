@@ -1,15 +1,15 @@
+import { ActionClasses, actionClassOf } from '../agent-api/action-classes';
+import { AgentApproval, AgentApprovalRequest, AutoModeApplyRequest } from '../agent-api/approval-queue';
 import { AgentApiRequest } from '../agent-api/model';
 import { UnnamedContext } from '../model/attribution';
 import { contextKey, dominantContext } from '../model/block';
-import { mayAutoWrite, rowFieldSourceOf } from '../model/field-source';
+import { RowFieldSources, mayAutoWrite, rowFieldSourceOf } from '../model/field-source';
 import { StandIn, standInResolutionSourceOf } from '../model/stand-in';
 import { WorkGroup } from '../rows/merge';
 import { unnamedRowId } from '../rows/propose';
 import { setRowIssue } from './edits';
+import { TicketWritingRequest } from '../ticket/write';
 import { AutoModeAnswer, AutoModeSubject, DayReviewEdits, ReviewedRow } from './model';
-
-/** The name the approval queue shows for everything auto mode asks for. */
-export const AUTO_MODE_CLIENT = 'auto mode';
 
 export const autoModeSubjectKey = (subject: AutoModeSubject) =>
   subject.kind === 'context' ? `context:${subject.contextId}` : `stand-in:${subject.standInId}`;
@@ -17,6 +17,10 @@ export const autoModeSubjectKey = (subject: AutoModeSubject) =>
 /** What the approval queue keys an auto-mode create by, so a second ask for the same subject reuses it. */
 export const autoModeApprovalTarget = (day: string, subject: AutoModeSubject) =>
   `${day}|${autoModeSubjectKey(subject)}`;
+
+/** What the queue keys a queued apply by. It differs from the create's, which a subject may also hold. */
+export const autoModeApplyTarget = (day: string, subject: AutoModeSubject) =>
+  `${autoModeApprovalTarget(day, subject)}|apply`;
 
 const answeredKeys = (answers: readonly AutoModeAnswer[]) =>
   new Set(answers.map((answer) => autoModeSubjectKey(answer.subject)));
@@ -121,7 +125,7 @@ export const autoModeCreateRequest = (
  */
 export const autoModeQueuedAnswer = (
   answer: AutoModeAnswer,
-  approval: { id: string; request: AgentApiRequest },
+  approval: { id: string; request: AgentApprovalRequest },
 ): AutoModeAnswer => {
   const { outcome } = answer;
   const { request } = approval;
@@ -152,10 +156,14 @@ export const withAutoModeRowNames = (options: {
   rows: readonly ReviewedRow[];
   /** The day's unattributed groups, which say which context each unnamed row came from. */
   unattributed: readonly WorkGroup[];
+  /** Which answers may be written now. See {@link autoModeApplies}. Absent, every one may. */
+  applies?: (answer: AutoModeAnswer) => boolean;
 }): DayReviewEdits => {
   const keys = new Map<string, string>();
 
   for (const answer of options.edits.auto ?? []) {
+    if (options.applies && !options.applies(answer)) continue;
+
     const issueKey = autoModeIssueKeyOf(answer);
 
     if (answer.subject.kind === 'context' && issueKey) keys.set(answer.subject.contextId, issueKey);
@@ -204,3 +212,188 @@ const createdIssueKeyOf = (result: unknown) => {
 
   return typeof key === 'string' && key ? key : undefined;
 };
+
+type ApprovalView = Pick<AgentApproval, 'id' | 'request' | 'target' | 'state' | 'result' | 'error'>;
+
+const applyApprovalOf = (options: { approvals: readonly ApprovalView[]; day: string; subject: AutoModeSubject }) => {
+  const target = autoModeApplyTarget(options.day, options.subject);
+
+  return [...options.approvals]
+    .reverse()
+    .find((item) => item.target === target && item.request.op === 'autoMode.apply');
+};
+
+/**
+ * The apply a match queues where the user made `autoMode.apply` stricter than `local`, and `null`
+ * for any other answer or class.
+ */
+export const autoModeApplyRequest = (options: {
+  day: string;
+  answer: AutoModeAnswer;
+  label: string;
+  classes: ActionClasses;
+}): AutoModeApplyRequest | null => {
+  const { outcome, subject } = options.answer;
+
+  if (outcome.kind !== 'match' || actionClassOf('autoMode.apply', options.classes) !== 'external') return null;
+
+  return { op: 'autoMode.apply', day: options.day, subject, label: options.label, issueKey: outcome.issueKey };
+};
+
+/**
+ * Whether auto mode may write what an answer found now. A match writes at `local`, at `external` once
+ * its queued apply is approved, and never at `human-only` or after a rejected apply. The key an
+ * approved create filed is written whatever the class.
+ */
+export const autoModeApplies = (options: {
+  day: string;
+  answer: AutoModeAnswer;
+  classes: ActionClasses;
+  approvals: readonly ApprovalView[];
+}) => {
+  const { outcome, subject } = options.answer;
+
+  if (outcome.kind === 'draft') return !!outcome.createdKey;
+  if (outcome.kind !== 'match') return false;
+
+  const approval = applyApprovalOf({ approvals: options.approvals, day: options.day, subject });
+
+  if (approval?.state === 'rejected') return false;
+
+  const opClass = actionClassOf('autoMode.apply', options.classes);
+
+  if (opClass === 'local') return true;
+  if (opClass === 'human-only') return false;
+
+  return approval?.state === 'approved' && approval.error === undefined;
+};
+
+/** A band's context id as a short name: the checkout's folder and branch, or the application. */
+export const autoModeContextLabel = (contextId: string) => {
+  if (contextId.startsWith('app:')) return contextId.slice('app:'.length) || 'an application';
+
+  const match = /^repo:(.*?)(?:@([^#]*)(?:#(.*))?|~.*)$/.exec(contextId);
+
+  if (!match) return contextId;
+
+  const [, path = '', branch, workPath] = match;
+  const folder = path.split('/').filter(Boolean).at(-1) ?? path;
+
+  return [folder, branch, workPath].filter(Boolean).join(' · ');
+};
+
+export type AutoModeReadoutStatus =
+  | 'applied'
+  | 'approved'
+  | 'waiting'
+  | 'rejected'
+  | 'expired'
+  | 'filed'
+  | 'held'
+  | 'overruled'
+  | 'unused'
+  | 'not-queued'
+  | 'failed';
+
+/** One thing auto mode asked about today, and what came of it, read from what the app stored. */
+export type AutoModeReadoutEntry = {
+  key: string;
+  kind: AutoModeSubject['kind'];
+  label: string;
+  askedAtMs: number;
+  status: AutoModeReadoutStatus;
+  issueKey?: string;
+  /** The title of the ticket it drafted. */
+  summary?: string;
+  /** The rows of the day that carry `issueKey` as auto mode's naming. */
+  namedRows: number;
+  error?: string;
+  /** The masked payload that left the machine. */
+  request: TicketWritingRequest;
+};
+
+const autoNamedRows = (edits: DayReviewEdits, issueKey: string | undefined) => {
+  if (!issueKey) return 0;
+
+  const named = (row: { issueKey?: string; sources?: RowFieldSources }) =>
+    row.issueKey === issueKey && row.sources?.issue === 'auto';
+
+  return Object.values(edits.overrides).filter(named).length + edits.pinned.filter(named).length;
+};
+
+const approvalStatusFor = (approval: ApprovalView): AutoModeReadoutStatus | undefined => {
+  if (approval.state === 'queued' || approval.state === 'running') return 'waiting';
+  if (approval.state === 'rejected' || approval.state === 'expired') return approval.state;
+
+  return approval.error === undefined ? undefined : 'failed';
+};
+
+/**
+ * What auto mode did on a day, one entry per band or stand-in it asked about, oldest first. Every
+ * status is read from the stored answers, rows, stand-ins and queue, never from what it meant to do.
+ */
+export const autoModeReadout = (options: {
+  day: string;
+  edits: DayReviewEdits;
+  approvals: readonly ApprovalView[];
+  classes: ActionClasses;
+  standIns: readonly Pick<StandIn, 'id' | 'name' | 'state' | 'issueKey' | 'resolutionSource'>[];
+}): AutoModeReadoutEntry[] =>
+  [...(options.edits.auto ?? [])]
+    .sort((left, right) => left.askedAtMs - right.askedAtMs)
+    .map((answer): AutoModeReadoutEntry => {
+      const { subject, outcome } = answer;
+      const standIn =
+        subject.kind === 'stand-in' ? options.standIns.find((entry) => entry.id === subject.standInId) : undefined;
+      const base = {
+        key: autoModeSubjectKey(subject),
+        kind: subject.kind,
+        label:
+          subject.kind === 'context'
+            ? autoModeContextLabel(subject.contextId)
+            : (standIn?.name ?? 'a deleted stand-in'),
+        askedAtMs: answer.askedAtMs,
+        request: answer.request,
+      };
+
+      if (outcome.kind === 'failed') return { ...base, status: 'failed', namedRows: 0 };
+
+      if (outcome.kind === 'draft') {
+        const approval = outcome.approvalId
+          ? options.approvals.find((item) => item.id === outcome.approvalId)
+          : undefined;
+        const issueKey =
+          outcome.createdKey ?? (approval?.state === 'approved' ? createdIssueKeyOf(approval.result) : undefined);
+        const draft = { ...base, summary: outcome.summary, namedRows: autoNamedRows(options.edits, issueKey) };
+        const waiting = approval ? approvalStatusFor(approval) : undefined;
+
+        if (waiting) return { ...draft, status: waiting, ...(approval?.error ? { error: approval.error } : {}) };
+        if (issueKey) return { ...draft, status: 'filed', issueKey };
+        if (actionClassOf('autoMode.create', options.classes) === 'human-only') return { ...draft, status: 'held' };
+
+        return { ...draft, status: 'not-queued' };
+      }
+
+      const { issueKey } = outcome;
+      const found = { ...base, issueKey, namedRows: autoNamedRows(options.edits, issueKey) };
+      const approval = applyApprovalOf({ approvals: options.approvals, day: options.day, subject });
+      const applied =
+        subject.kind === 'context'
+          ? found.namedRows > 0
+          : standIn?.state === 'resolved' && standIn.issueKey === issueKey && standIn.resolutionSource === 'auto';
+
+      if (applied) return { ...found, status: 'applied' };
+      if (standIn && standInResolutionSourceOf(standIn) === 'human') return { ...found, status: 'overruled' };
+
+      if (approval) {
+        const waiting = approvalStatusFor(approval);
+
+        if (waiting) return { ...found, status: waiting, ...(approval.error ? { error: approval.error } : {}) };
+
+        return { ...found, status: 'approved' };
+      }
+
+      if (actionClassOf('autoMode.apply', options.classes) === 'human-only') return { ...found, status: 'held' };
+
+      return { ...found, status: 'unused' };
+    });

@@ -1,3 +1,4 @@
+import { ActionClasses } from '../agent-api/action-classes';
 import { DEFAULT_EPIC_CHILD_LIMIT, MIN_EPIC_CHILD_LIMIT } from '../jira/children';
 import { TimetrackProjectLink } from '../model/project-link';
 import { AttributionRule } from '../model/attribution';
@@ -283,6 +284,8 @@ export type TimetrackSettings = {
   github: TimetrackGitHubSettings;
   ticket: TimetrackTicketSettings;
   reasoning: TimetrackReasoningSettings;
+  /** The actions the user made stricter than the class table. See `actionClassOf`. */
+  actionClasses: ActionClasses;
   nudge: TimetrackNudgeSettings;
   standIn: TimetrackStandInSettings;
   /** The user's own deny rules. `effectiveExclusionRules` is what composes them with the defaults. */
@@ -414,6 +417,7 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
     maskedNames: [],
     autoMode: false,
   },
+  actionClasses: {},
   nudge: { enabled: true, atMinute: DEFAULT_NUDGE_AT_MINUTE },
   standIn: {
     overdueAfterWorkdays: DEFAULT_STAND_IN_OVERDUE_AFTER_WORKDAYS,

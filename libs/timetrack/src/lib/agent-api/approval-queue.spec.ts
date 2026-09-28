@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   AGENT_APPROVAL_INTERRUPTED,
   AgentApproval,
+  AutoModeApplyRequest,
+  agentApiCallerOf,
   agentApiClientOf,
   approvableByAll,
+  approvalClassOf,
+  describeApproval,
   approvalStatusOf,
   enqueueApproval,
   markApproval,
@@ -13,6 +17,7 @@ import {
   settleApprovalQueue,
 } from './approval-queue';
 import { AgentApiRequest } from './model';
+import { parseAgentRequest } from './parse';
 
 const CREATE: AgentApiRequest = { op: 'jira.create', summary: 'Pdf export', description: '', projectKey: 'ABC' };
 const SYNC: AgentApiRequest = { op: 'tempo.sync', day: '2026-09-28', planHash: 'abc' };
@@ -69,6 +74,17 @@ describe('approvableByAll', () => {
     const queue = queueOf(CREATE, SYNC, { op: 'standIn.rename', id: 's1', name: 'x' });
 
     expect(approvableByAll(queue).map((item) => item.request.op)).toEqual(['jira.create', 'standIn.rename']);
+  });
+
+  it('skips an item the user made human-only, and an auto mode create by its own class', () => {
+    const queue = [
+      ...queueOf(CREATE, { op: 'standIn.rename', id: 's1', name: 'x' }),
+      ...enqueueApproval([], { id: 'a9', request: CREATE, client: 'auto mode', at: AT, day: '2026-09-28' }),
+    ];
+
+    expect(approvableByAll(queue, { 'standIn.rename': 'human-only' }).map((item) => item.id)).toEqual(['a0', 'a9']);
+    expect(approvableByAll(queue, { 'jira.create': 'human-only' }).map((item) => item.id)).toEqual(['a1', 'a9']);
+    expect(approvableByAll(queue, { 'autoMode.create': 'human-only' }).map((item) => item.id)).toEqual(['a0', 'a1']);
   });
 
   it('skips an item that is no longer waiting', () => {
@@ -155,5 +171,42 @@ describe('agentApiClientOf', () => {
   it('reads nothing where the caller gave no name', () => {
     expect(agentApiClientOf({ op: 'status' })).toBeUndefined();
     expect(agentApiClientOf({ op: 'status', client: 3 })).toBeUndefined();
+  });
+});
+
+const APPLY: AutoModeApplyRequest = {
+  op: 'autoMode.apply',
+  day: '2026-09-28',
+  subject: { kind: 'stand-in', standInId: 's1' },
+  label: 'Pdf export',
+  issueKey: 'ABC-7',
+};
+
+describe('an auto mode apply in the queue', () => {
+  it('waits as external, follows autoMode.apply, and reads back what it stored', () => {
+    const queue = enqueueApproval([], { id: 'a0', request: APPLY, client: 'auto mode', at: AT, day: '2026-09-28' });
+    const [item] = queue;
+
+    expect(item?.opClass).toBe('external');
+    expect(item && approvalClassOf(item, { 'autoMode.apply': 'human-only' })).toBe('human-only');
+    expect(parseApprovalQueue(JSON.parse(JSON.stringify(queue)))).toEqual(queue);
+    expect(describeApproval(APPLY)).toBe('Resolves stand-in Pdf export with ABC-7');
+  });
+
+  it('drops a stored apply that names no subject', () => {
+    const [stored] = enqueueApproval([], { id: 'a0', request: APPLY, at: AT, day: '2026-09-28' });
+
+    expect(parseApprovalQueue([{ ...stored, request: { ...APPLY, subject: { kind: 'stand-in' } } }])).toEqual([]);
+  });
+
+  it('is never read from a CLI request', () => {
+    expect(parseAgentRequest(APPLY).ok).toBe(false);
+  });
+});
+
+describe('agentApiCallerOf', () => {
+  it('refuses a CLI the name auto mode queues under', () => {
+    expect(agentApiCallerOf({ op: 'status', client: 'Auto Mode' })).toBeUndefined();
+    expect(agentApiCallerOf({ op: 'status', client: 'Claude Code' })).toBe('Claude Code');
   });
 });

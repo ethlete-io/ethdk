@@ -1,3 +1,4 @@
+import { parseActionClasses } from '../agent-api/action-classes';
 import { ProjectLinkTarget, TimetrackProjectLink } from '../model/project-link';
 import { AttributionRule, AttributionTarget, NamedTarget, NamingAuthor } from '../model/attribution';
 import { FieldSource } from '../model/field-source';
@@ -448,6 +449,7 @@ const readTimetrackSettings = (raw: unknown): TimetrackSettings => {
     github: { enabled: github['enabled'] === true },
     ticket: asTicket(document['ticket']),
     reasoning: asReasoning(document['reasoning']),
+    actionClasses: parseActionClasses(document['actionClasses']),
     nudge: asNudge(document['nudge']),
     standIn: asStandInSettings(document['standIn']),
     exclusionRules: asRules(document['exclusionRules']),

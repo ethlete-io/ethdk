@@ -8,9 +8,15 @@ import { unnamedRowId } from '../rows/propose';
 import { reopenStandIn, resolveStandIn } from '../settings/stand-in';
 import { DEFAULT_TIMETRACK_SETTINGS } from '../settings/model';
 import { TicketWritingRequest } from '../ticket/write';
+import { AUTO_MODE_CLIENT, ActionClasses } from '../agent-api/action-classes';
+import { AgentApproval, enqueueApproval, markApproval } from '../agent-api/approval-queue';
 import {
-  AUTO_MODE_CLIENT,
+  autoModeApplies,
+  autoModeApplyRequest,
+  autoModeApplyTarget,
   autoModeApprovalTarget,
+  autoModeContextLabel,
+  autoModeReadout,
   autoModeAsks,
   autoModeCreateRequest,
   autoModeCreatedKeys,
@@ -279,5 +285,181 @@ describe('autoModeCreatedKeys', () => {
       }),
     ).toEqual([]);
     expect(autoModeCreatedKeys({ answers: [queued], approvals: [{ id: 'a-1', state: 'approved' }] })).toEqual([]);
+  });
+});
+
+const queuedApply = (answer: AutoModeAnswer, label = 'shop · feature/export'): AgentApproval[] => {
+  const request = autoModeApplyRequest({
+    day: TODAY,
+    answer,
+    label,
+    classes: { 'autoMode.apply': 'external' },
+  });
+
+  if (!request) throw new Error('nothing to queue');
+
+  return enqueueApproval([], {
+    id: 'apply-1',
+    request,
+    client: AUTO_MODE_CLIENT,
+    target: autoModeApplyTarget(TODAY, answer.subject),
+    at: at('10:00'),
+    day: TODAY,
+  });
+};
+
+describe('autoModeApplyRequest', () => {
+  it('queues a match only where the user made applying stricter than local', () => {
+    const answer = matched('ABC-1');
+
+    expect(autoModeApplyRequest({ day: TODAY, answer, label: 'shop', classes: {} })).toBeNull();
+    expect(
+      autoModeApplyRequest({ day: TODAY, answer, label: 'shop', classes: { 'autoMode.apply': 'human-only' } }),
+    ).toBeNull();
+    expect(
+      autoModeApplyRequest({ day: TODAY, answer, label: 'shop', classes: { 'autoMode.apply': 'external' } }),
+    ).toEqual({ op: 'autoMode.apply', day: TODAY, subject: answer.subject, label: 'shop', issueKey: 'ABC-1' });
+    expect(
+      autoModeApplyRequest({ day: TODAY, answer: drafted, label: 'shop', classes: { 'autoMode.apply': 'external' } }),
+    ).toBeNull();
+  });
+});
+
+describe('autoModeApplies', () => {
+  const applies = (options: { answer?: AutoModeAnswer; classes?: ActionClasses; approvals?: AgentApproval[] }) =>
+    autoModeApplies({
+      day: TODAY,
+      answer: options.answer ?? matched('ABC-1'),
+      classes: options.classes ?? {},
+      approvals: options.approvals ?? [],
+    });
+
+  it('writes a match at local, and never at human-only', () => {
+    expect(applies({})).toBe(true);
+    expect(applies({ classes: { 'autoMode.apply': 'human-only' } })).toBe(false);
+  });
+
+  it('writes a match at external only once its queued apply is approved', () => {
+    const classes: ActionClasses = { 'autoMode.apply': 'external' };
+    const queue = queuedApply(matched('ABC-1'));
+
+    expect(applies({ classes, approvals: queue })).toBe(false);
+    expect(applies({ classes, approvals: markApproval(queue, { id: 'apply-1', state: 'approved' }) })).toBe(true);
+  });
+
+  it('keeps a rejected apply rejected, whatever the class is now', () => {
+    const rejected = markApproval(queuedApply(matched('ABC-1')), { id: 'apply-1', state: 'rejected' });
+
+    expect(applies({ approvals: rejected })).toBe(false);
+  });
+
+  it('writes the key an approved create filed, and nothing for a draft still waiting', () => {
+    const filed = { ...drafted, outcome: { ...drafted.outcome, createdKey: 'ABC-12' } } as AutoModeAnswer;
+
+    expect(applies({ answer: drafted })).toBe(false);
+    expect(applies({ answer: filed, classes: { 'autoMode.apply': 'human-only' } })).toBe(true);
+  });
+
+  it('gates the row pass', () => {
+    const edits = withAutoModeAnswer(EMPTY_DAY_REVIEW_EDITS, matched('ABC-1'));
+
+    expect(
+      withAutoModeRowNames({ edits, rows: rowsOf(edits), unattributed: DAY.unattributed, applies: () => false }),
+    ).toBe(edits);
+  });
+});
+
+describe('autoModeContextLabel', () => {
+  it('names a checkout by its folder and branch, and an application by its id', () => {
+    expect(autoModeContextLabel(CONTEXT.id)).toBe('shop · feature/export');
+    expect(autoModeContextLabel('repo:/work/shop@main#apps/web')).toBe('shop · main · apps/web');
+    expect(autoModeContextLabel('repo:/work/shop~session-1')).toBe('shop');
+    expect(autoModeContextLabel('app:figma')).toBe('figma');
+  });
+});
+
+describe('autoModeReadout', () => {
+  const readout = (options: {
+    edits: DayReviewEdits;
+    approvals?: AgentApproval[];
+    classes?: ActionClasses;
+    standIns?: ReturnType<typeof openStandIn>[];
+  }) =>
+    autoModeReadout({
+      day: TODAY,
+      edits: options.edits,
+      approvals: options.approvals ?? [],
+      classes: options.classes ?? {},
+      standIns: options.standIns ?? [],
+    });
+
+  it('counts the rows a match named as auto', () => {
+    const edits = autoPass(withAutoModeAnswer(EMPTY_DAY_REVIEW_EDITS, matched('ABC-1')));
+
+    expect(readout({ edits })).toEqual([
+      expect.objectContaining({ status: 'applied', issueKey: 'ABC-1', namedRows: 1, label: 'shop · feature/export' }),
+    ]);
+  });
+
+  it('reads a match nothing named as unused, or held where applying is set to never', () => {
+    const edits = withAutoModeAnswer(EMPTY_DAY_REVIEW_EDITS, matched('ABC-1'));
+
+    expect(readout({ edits })[0]?.status).toBe('unused');
+    expect(readout({ edits, classes: { 'autoMode.apply': 'human-only' } })[0]?.status).toBe('held');
+  });
+
+  it('reads the queued apply of a match from the queue', () => {
+    const edits = withAutoModeAnswer(EMPTY_DAY_REVIEW_EDITS, matched('ABC-1'));
+    const queue = queuedApply(matched('ABC-1'));
+
+    expect(readout({ edits, approvals: queue })[0]?.status).toBe('waiting');
+    expect(readout({ edits, approvals: markApproval(queue, { id: 'apply-1', state: 'rejected' }) })[0]?.status).toBe(
+      'rejected',
+    );
+  });
+
+  it('reads a stand-in auto mode resolved, and one the user resolved themselves', () => {
+    const standIn = openStandIn({ name: 'Journey', day: TODAY, now: at('07:00') });
+    const settings = { ...DEFAULT_TIMETRACK_SETTINGS, standIns: [standIn] };
+    const answer: AutoModeAnswer = { ...matched('ABC-1'), subject: { kind: 'stand-in', standInId: standIn.id } };
+    const edits = withAutoModeAnswer(EMPTY_DAY_REVIEW_EDITS, answer);
+    const byAuto = resolveStandIn({ settings, id: standIn.id, issueKey: 'ABC-1', source: 'auto' }).standIns;
+    const byHand = resolveStandIn({ settings, id: standIn.id, issueKey: 'ABC-2' }).standIns;
+
+    expect(readout({ edits, standIns: byAuto })[0]).toMatchObject({ status: 'applied', label: 'Journey' });
+    expect(readout({ edits, standIns: byHand })[0]?.status).toBe('overruled');
+  });
+
+  it('follows a queued create from waiting to filed', () => {
+    const answer = { ...drafted, outcome: { ...drafted.outcome, approvalId: 'a-1' } } as AutoModeAnswer;
+    const edits = withAutoModeAnswer(EMPTY_DAY_REVIEW_EDITS, answer);
+    const create = autoModeCreateRequest(drafted);
+
+    if (!create) throw new Error('no create');
+
+    const queue = enqueueApproval([], {
+      id: 'a-1',
+      request: create,
+      client: AUTO_MODE_CLIENT,
+      at: at('10:00'),
+      day: TODAY,
+    });
+    const approved = markApproval(queue, { id: 'a-1', state: 'approved', result: { issue: { key: 'ABC-12' } } });
+
+    expect(readout({ edits, approvals: queue })[0]).toMatchObject({ status: 'waiting', summary: 'Export the month' });
+    expect(readout({ edits, approvals: approved })[0]).toMatchObject({ status: 'filed', issueKey: 'ABC-12' });
+  });
+
+  it('says why a draft was never queued', () => {
+    const edits = withAutoModeAnswer(EMPTY_DAY_REVIEW_EDITS, drafted);
+
+    expect(readout({ edits })[0]?.status).toBe('not-queued');
+    expect(readout({ edits, classes: { 'autoMode.create': 'human-only' } })[0]?.status).toBe('held');
+  });
+
+  it('reads a failed run as failed', () => {
+    const edits = withAutoModeAnswer(EMPTY_DAY_REVIEW_EDITS, { ...drafted, outcome: { kind: 'failed' } });
+
+    expect(readout({ edits })[0]?.status).toBe('failed');
   });
 });

@@ -1,6 +1,26 @@
 import { shiftDayKey } from '../review/day';
+import { AutoModeSubject } from '../review/model';
+import { AUTO_MODE_CLIENT, ActionClasses, actionClassOf, stricterClass } from './action-classes';
 import { AGENT_API_OP_CLASSES, AgentApiRequest, OpClass } from './model';
 import { parseAgentRequest } from './parse';
+
+/**
+ * A `local` auto mode action the user made stricter, waiting in the queue: name the subject's band or
+ * resolve its stand-in with the issue the match found. Only auto mode queues one; no CLI can send it.
+ */
+export type AutoModeApplyRequest = {
+  op: 'autoMode.apply';
+  day: string;
+  subject: AutoModeSubject;
+  /** The band's or the stand-in's name, as the queue panel shows it. */
+  label: string;
+  issueKey: string;
+};
+
+export type AgentApprovalRequest = AgentApiRequest | AutoModeApplyRequest;
+
+export const isAgentApiRequest = (request: AgentApprovalRequest): request is AgentApiRequest =>
+  request.op !== 'autoMode.apply';
 
 /** `running` is internal: the wire reads it as `queued` until the op has an outcome. */
 export type AgentApprovalState = 'queued' | 'running' | 'approved' | 'rejected' | 'expired';
@@ -8,7 +28,8 @@ export type AgentApprovalState = 'queued' | 'running' | 'approved' | 'rejected' 
 /** One write a caller asked for, waiting for the user's press or already decided. */
 export type AgentApproval = {
   id: string;
-  request: AgentApiRequest;
+  request: AgentApprovalRequest;
+  /** The class it was queued at. What the queue acts on is {@link approvalClassOf}, which a setting can raise. */
   opClass: OpClass;
   /** The name the calling CLI gave itself, when it gave one. */
   client?: string;
@@ -67,6 +88,34 @@ export const agentApiClientOf = (body: unknown) => {
   return name ? name.slice(0, CLIENT_MAX_LENGTH) : undefined;
 };
 
+/** The name a CLI gave itself, where it is not the one auto mode's own items carry. */
+export const agentApiCallerOf = (body: unknown) => {
+  const client = agentApiClientOf(body);
+
+  return client?.toLowerCase() === AUTO_MODE_CLIENT ? undefined : client;
+};
+
+const tableClassOfRequest = (request: AgentApprovalRequest): OpClass =>
+  isAgentApiRequest(request) ? AGENT_API_OP_CLASSES[request.op] : 'external';
+
+/**
+ * The class an item has now. A create auto mode queued follows `autoMode.create`, a queued apply
+ * `autoMode.apply`, and a CLI write its own op; a setting can only raise the table's class.
+ */
+export const approvalClassOf = (
+  item: Pick<AgentApproval, 'request' | 'client' | 'opClass'>,
+  classes: ActionClasses,
+) => {
+  const { request } = item;
+
+  if (!isAgentApiRequest(request)) return stricterClass(item.opClass, actionClassOf('autoMode.apply', classes));
+  if (request.op === 'jira.create' && item.client === AUTO_MODE_CLIENT) {
+    return stricterClass(item.opClass, actionClassOf('autoMode.create', classes));
+  }
+
+  return stricterClass(item.opClass, actionClassOf(request.op, classes));
+};
+
 /** The item still waiting that the same caller queued for the same target. */
 export const openApprovalFor = (queue: readonly AgentApproval[], options: { client?: string; target: string }) =>
   queue.find(
@@ -79,7 +128,7 @@ export const openApprovalFor = (queue: readonly AgentApproval[], options: { clie
 /** Adds a waiting item. A target an item from the same caller still waits for queues nothing. */
 export const enqueueApproval = (
   queue: readonly AgentApproval[],
-  options: { id: string; request: AgentApiRequest; client?: string; target?: string; at: Date; day: string },
+  options: { id: string; request: AgentApprovalRequest; client?: string; target?: string; at: Date; day: string },
 ): AgentApproval[] => {
   const { target } = options;
 
@@ -90,7 +139,7 @@ export const enqueueApproval = (
     {
       id: options.id,
       request: options.request,
-      opClass: AGENT_API_OP_CLASSES[options.request.op],
+      opClass: tableClassOfRequest(options.request),
       ...(options.client ? { client: options.client } : {}),
       ...(target ? { target } : {}),
       askedAtMs: options.at.getTime(),
@@ -109,9 +158,9 @@ export const settleApprovalQueue = (queue: readonly AgentApproval[], today: stri
     .map((item) => (item.state === 'queued' && item.day < today ? { ...item, state: 'expired' } : item));
 };
 
-/** The items "Approve all" carries out: every waiting one that is not `human-only`. */
-export const approvableByAll = (queue: readonly AgentApproval[]) =>
-  queue.filter((item) => item.state === 'queued' && item.opClass !== 'human-only');
+/** The items "Approve all" carries out: every waiting one that is not `human-only` now. */
+export const approvableByAll = (queue: readonly AgentApproval[], classes: ActionClasses = {}) =>
+  queue.filter((item) => item.state === 'queued' && approvalClassOf(item, classes) !== 'human-only');
 
 export const markApproval = (
   queue: readonly AgentApproval[],
@@ -133,9 +182,44 @@ const STATES: readonly AgentApprovalState[] = ['queued', 'running', 'approved', 
 
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
+const textOf = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
+
+const asAutoModeSubject = (value: unknown): AutoModeSubject | undefined => {
+  const raw = typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
+  const contextId = textOf(raw['contextId']);
+  const standInId = textOf(raw['standInId']);
+
+  if (raw['kind'] === 'context' && contextId) return { kind: 'context', contextId };
+  if (raw['kind'] === 'stand-in' && standInId) return { kind: 'stand-in', standInId };
+
+  return undefined;
+};
+
+const parseAutoModeApply = (value: unknown): AutoModeApplyRequest | undefined => {
+  const raw = typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
+  const day = textOf(raw['day']);
+  const subject = asAutoModeSubject(raw['subject']);
+  const issueKey = textOf(raw['issueKey']).toUpperCase();
+
+  if (raw['op'] !== 'autoMode.apply' || !DAY_KEY.test(day) || !subject || !issueKey) return undefined;
+
+  return { op: 'autoMode.apply', day, subject, label: textOf(raw['label']), issueKey };
+};
+
+const parseApprovalRequest = (value: unknown): AgentApprovalRequest | undefined => {
+  const applied = parseAutoModeApply(value);
+
+  if (applied) return applied;
+
+  const parsed = parseAgentRequest(value);
+
+  return parsed.ok ? parsed.request : undefined;
+};
+
 /**
- * Reads the queue the store holds. Each request goes through `parseAgentRequest` again and its class
- * comes from the table, so a stored document cannot carry a field or a class the endpoint would not.
+ * Reads the queue the store holds. Each request goes through `parseAgentRequest` or the auto mode
+ * apply reader again and its class comes from the table, so a stored document cannot carry a field or
+ * a class the endpoint would not.
  * An item that was running when the app stopped reads as approved with an error: whether it landed
  * is unknown, and running it a second time could file twice.
  */
@@ -144,13 +228,13 @@ export const parseApprovalQueue = (stored: unknown): AgentApproval[] => {
 
   return stored.flatMap((entry): AgentApproval[] => {
     const raw = typeof entry === 'object' && entry !== null ? (entry as Record<string, unknown>) : {};
-    const parsed = parseAgentRequest(raw['request']);
+    const request = parseApprovalRequest(raw['request']);
     const state = STATES.find((known) => known === raw['state']);
     const id = typeof raw['id'] === 'string' ? raw['id'] : '';
     const day = typeof raw['day'] === 'string' ? raw['day'] : '';
     const askedAtMs = typeof raw['askedAtMs'] === 'number' ? raw['askedAtMs'] : undefined;
 
-    if (!parsed.ok || !state || !id || !DAY_KEY.test(day) || askedAtMs === undefined) return [];
+    if (!request || !state || !id || !DAY_KEY.test(day) || askedAtMs === undefined) return [];
 
     const client = agentApiClientOf(raw);
     const decidedAtMs = typeof raw['decidedAtMs'] === 'number' ? raw['decidedAtMs'] : undefined;
@@ -160,8 +244,8 @@ export const parseApprovalQueue = (stored: unknown): AgentApproval[] => {
     return [
       {
         id,
-        request: parsed.request,
-        opClass: AGENT_API_OP_CLASSES[parsed.request.op],
+        request,
+        opClass: tableClassOfRequest(request),
         ...(client ? { client } : {}),
         ...(target ? { target } : {}),
         askedAtMs,
@@ -182,8 +266,12 @@ export const parseApprovalQueue = (stored: unknown): AgentApproval[] => {
 const minutesOf = (ms: number) => `${Math.round(ms / 60_000)}m`;
 
 /** One line saying what an approved request writes, for the queue panel. */
-export const describeApproval = (request: AgentApiRequest) => {
+export const describeApproval = (request: AgentApprovalRequest) => {
   switch (request.op) {
+    case 'autoMode.apply':
+      return request.subject.kind === 'context'
+        ? `Names today's ${request.label} band with ${request.issueKey}`
+        : `Resolves stand-in ${request.label} with ${request.issueKey}`;
     case 'jira.create':
       return `Files a Jira issue in ${request.projectKey ?? 'the picked project'}: ${request.summary}`;
     case 'worklog.add':

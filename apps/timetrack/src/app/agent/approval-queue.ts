@@ -5,8 +5,8 @@ import {
   AgentApiAnswer,
   AgentApiApprovalStatus,
   AgentApiQueued,
-  AgentApiRequest,
   AgentApproval,
+  AgentApprovalRequest,
   approvableByAll,
   approvalStatusOf,
   dayBoundaryOf,
@@ -142,12 +142,16 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   return {
     items: queue.asReadonly(),
     waiting: computed(() => queue().filter((item) => item.state === 'queued' || item.state === 'running')),
-    approvableByAll: computed(() => approvableByAll(queue())),
+    approvableByAll: computed(() => approvableByAll(queue(), settings.settings().actionClasses)),
     failure: failure.asReadonly(),
     approved$: approved$.asObservable(),
 
     /** A `target` an item from the same client still waits for answers that item and queues nothing. */
-    enqueue$: (options: { request: AgentApiRequest; client?: string; target?: string }): Observable<AgentApiQueued> =>
+    enqueue$: (options: {
+      request: AgentApprovalRequest;
+      client?: string;
+      target?: string;
+    }): Observable<AgentApiQueued> =>
       whenLoaded$.pipe(
         map(() => {
           settle();
@@ -188,7 +192,7 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     approveAll: () => {
       settle();
-      approvableByAll(queue()).forEach(approveOne);
+      approvableByAll(queue(), settings.settings().actionClasses).forEach(approveOne);
     },
 
     reject: (id: string) => {

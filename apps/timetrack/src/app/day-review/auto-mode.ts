@@ -8,9 +8,15 @@ import {
   AutoModeSubject,
   TicketWording,
   TicketWritingRequest,
+  actionClassOf,
+  autoModeActs,
+  autoModeApplies,
+  autoModeApplyRequest,
+  autoModeApplyTarget,
   autoModeApprovalTarget,
   autoModeAsks,
   autoModeCreateRequest,
+  autoModeContextLabel,
   autoModeCreatedKeys,
   autoModeQueuedAnswer,
   autoModeSubjectKey,
@@ -18,6 +24,7 @@ import {
   draftTicket,
   favoriteProjectKeys,
   gitFlowConfigFor,
+  isAgentApiRequest,
   inferTicketProjectKey,
   localDayKey,
   reasoningOptionsOf,
@@ -81,9 +88,10 @@ const outcomeOf = (options: { wording: TicketWording | null; projectKey?: string
  * Runs the "Ask AI" ticket call without a press on each new unnamed band and open stand-in of today,
  * while auto mode is on. See ADR 0035.
  *
- * A match is applied as `auto`; a draft waits in the approval queue as a `jira.create`, and the key
- * its approval files is applied the same way. Every answer is stored against the day with the
- * payload it sent, so a band is asked once.
+ * A match is applied as `auto`, or waits in the approval queue as an `autoMode.apply` where the user
+ * made applying stricter; a draft waits as a `jira.create`, and the key its approval files is applied
+ * the same way. Every answer is stored against the day with the payload it sent, so a band is asked
+ * once.
  */
 const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
@@ -98,8 +106,21 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const enabled = computed(() => {
     const { reasoning } = settings.settings();
 
-    return reasoning.enabled && reasoning.autoMode && !windowLock.isLocked();
+    return (
+      reasoning.enabled &&
+      reasoning.autoMode &&
+      autoModeActs(settings.settings().actionClasses) &&
+      !windowLock.isLocked()
+    );
   });
+
+  const appliesOn = (day: string) => (answer: AutoModeAnswer) =>
+    autoModeApplies({ day, answer, classes: settings.settings().actionClasses, approvals: approvals.items() });
+
+  const labelOf = (subject: AutoModeSubject) =>
+    subject.kind === 'context'
+      ? autoModeContextLabel(subject.contextId)
+      : (settings.settings().standIns.find((entry) => entry.id === subject.standInId)?.name ?? '');
 
   const today = () => localDayKey(new Date(), dayBoundaryOf(settings.settings()));
 
@@ -201,18 +222,42 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       );
   };
 
-  const applyAnswer = (answer: AutoModeAnswer) => {
+  const queuedApply$ = (day: string, answer: AutoModeAnswer): Observable<AutoModeAnswer> => {
+    const request = autoModeApplyRequest({
+      day,
+      answer,
+      label: labelOf(answer.subject),
+      classes: settings.settings().actionClasses,
+    });
+
+    if (!request) return of(answer);
+
+    return approvals
+      .enqueue$({ request, client: AUTO_MODE_CLIENT, target: autoModeApplyTarget(day, answer.subject) })
+      .pipe(
+        map(() => answer),
+        catchError(() => of(answer)),
+      );
+  };
+
+  const applyAnswer = (day: string, answer: AutoModeAnswer) => {
     const { subject, outcome } = answer;
 
     if (subject.kind === 'context') {
-      dayReview.applyAutoModeNames();
+      dayReview.applyAutoModeNames(appliesOn(dayReview.dayKey()));
 
       return;
     }
 
     if (outcome.kind === 'match') {
-      settings.resolveStandIn({ id: subject.standInId, issueKey: outcome.issueKey, source: 'auto' });
-    } else if (outcome.kind === 'draft' && outcome.parentKey) {
+      if (appliesOn(day)(answer)) {
+        settings.resolveStandIn({ id: subject.standInId, issueKey: outcome.issueKey, source: 'auto' });
+      }
+    } else if (
+      outcome.kind === 'draft' &&
+      outcome.parentKey &&
+      actionClassOf('autoMode.apply', settings.settings().actionClasses) === 'local'
+    ) {
       settings.setStandInParent({ id: subject.standInId, parentKey: outcome.parentKey, source: 'auto' });
     }
   };
@@ -239,10 +284,11 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         );
       }),
       switchMap((answer) => queued$(ask.day, answer)),
+      switchMap((answer) => queuedApply$(ask.day, answer)),
       switchMap((answer) =>
         dayReview
           .changeDay$(ask.day, (edits) => withAutoModeAnswer(edits, answer))
-          .pipe(map(() => applyAnswer(answer))),
+          .pipe(map(() => applyAnswer(ask.day, answer))),
       ),
     );
 
@@ -291,9 +337,26 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     dayReview.autoAnswers();
     dayReview.rows();
+    approvals.items();
+    settings.settings();
 
-    untracked(() => dayReview.applyAutoModeNames());
+    untracked(() => dayReview.applyAutoModeNames(appliesOn(dayReview.dayKey())));
   });
+
+  approvals.approved$
+    .pipe(
+      tap(({ id, request }) => {
+        if (isAgentApiRequest(request)) return;
+
+        approvals.finish(id, { ok: true, value: { issueKey: request.issueKey } });
+
+        if (request.subject.kind === 'stand-in') {
+          settings.resolveStandIn({ id: request.subject.standInId, issueKey: request.issueKey, source: 'auto' });
+        }
+      }),
+      takeUntilDestroyed(),
+    )
+    .subscribe();
 
   const created = computed(() => {
     const answers = dayReview.autoAnswers();
@@ -318,7 +381,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
               if (subject.kind === 'stand-in') {
                 settings.resolveStandIn({ id: subject.standInId, issueKey: entry.issueKey, source: 'auto' });
               } else if (enabled() && dayReview.isToday()) {
-                dayReview.applyAutoModeNames();
+                dayReview.applyAutoModeNames(appliesOn(dayReview.dayKey()));
               }
             }),
             catchError(() => EMPTY),

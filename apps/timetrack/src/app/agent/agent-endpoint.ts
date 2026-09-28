@@ -20,7 +20,7 @@ import {
   AgentApiTempoSync,
   AgentApiTempoWorklogs,
   AgentApiCalendarEvents,
-  agentApiClientOf,
+  agentApiCallerOf,
   agentApiLockRefusal,
   JiraCredentials,
   JiraIssue,
@@ -39,6 +39,7 @@ import {
   fetchJiraIssuePicks$,
   fetchJiraIssues$,
   issueKeyOf,
+  isAgentApiRequest,
   isNamedRow,
   tempoSyncWriteRefusal,
   toAgentApiTempoSyncPlan,
@@ -63,6 +64,7 @@ import {
   workPathPieces,
 } from '@ethlete/timetrack';
 import {
+  EMPTY,
   Observable,
   catchError,
   concatMap,
@@ -805,7 +807,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     const { request } = parsed;
 
     if (routesThroughApproval(request)) {
-      return answered(approvals.enqueue$({ request, client: agentApiClientOf(body) }));
+      return answered(approvals.enqueue$({ request, client: agentApiCallerOf(body) }));
     }
 
     return answered(carryOut$(request));
@@ -828,7 +830,11 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   approvals.approved$
     .pipe(
-      mergeMap((item) => answered(carryOut$(item.request)).pipe(tap((answer) => approvals.finish(item.id, answer)))),
+      mergeMap(({ id, request }) =>
+        isAgentApiRequest(request)
+          ? answered(carryOut$(request)).pipe(tap((answer) => approvals.finish(id, answer)))
+          : EMPTY,
+      ),
       takeUntilDestroyed(destroyRef),
     )
     .subscribe();

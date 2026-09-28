@@ -100,6 +100,24 @@ auto-mode.ts` runs `writeTicketWithAgent$` once per band and stand-in, names unn
    - `standIn.list` does not report the resolution or parent source yet.
 5. **Class settings.** A settings page to make an action stricter, and a readout of what auto mode
    did today. In progress (2026-09-28).
+   - Design. `OP_CLASS_ORDER` is `read < local < external < human-only`. The setting
+     `actionClasses` stores only actions the user moved to a stricter class; `actionClassOf` takes
+     the stricter of the table and the pick, so a stored looser class never loosens anything, and
+     `parseActionClasses` drops it. Auto mode has two actions of its own: `autoMode.apply` (`local`:
+     name a band, resolve a stand-in, set its parent) and `autoMode.create` (`external`: file its
+     draft). At `external` a match waits in the queue as an `autoMode.apply` item that only auto
+     mode can queue (a CLI calling itself "auto mode" loses the name); at `human-only` auto mode
+     writes nothing, and with both at `human-only` it asks nothing. A CLI write already waits in the
+     queue, so it offers only `human-only` on top, which keeps it out of "Approve all". A queued
+     item follows the class of the action that queued it (`approvalClassOf`); a rejected apply stays
+     rejected.
+   - Logic: done (2026-09-28). `agent-api/action-classes.ts`, `approvalClassOf` and the apply item
+     in `agent-api/approval-queue.ts`, `autoModeApplies`, `autoModeApplyRequest` and
+     `autoModeReadout` in `review/auto-mode.ts`. The app service queues the apply, carries out an
+     approved one and gates every auto write; "Approve all" reads the setting.
+   - Not started: the settings page (a class pick per action in `CLASSED_ACTIONS`, offering
+     `actionClassChoices`), the readout UI over `autoModeReadout`, the queue panel showing
+     `approvalClassOf` instead of the stored `opClass`, and the e2e.
 
 ## Open questions
 

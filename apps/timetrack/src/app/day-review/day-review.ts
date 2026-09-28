@@ -3,6 +3,7 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   AgentApiRowEdit,
+  AutoModeAnswer,
   AttributionRule,
   withAutoModeRowNames,
   AttributionTarget,
@@ -909,13 +910,18 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     ),
 
     /** Names the unnamed rows of the day on screen with what auto mode found for their context. */
-    applyAutoModeNames: () => {
+    applyAutoModeNames: (applies: (answer: AutoModeAnswer) => boolean) => {
       const deterministic = deterministicRows();
 
       if (!editsReady() || !deterministic || !review()) return;
 
       const current = edits();
-      const next = withAutoModeRowNames({ edits: current, rows: rows(), unattributed: deterministic.unattributed });
+      const next = withAutoModeRowNames({
+        edits: current,
+        rows: rows(),
+        unattributed: deterministic.unattributed,
+        applies,
+      });
 
       if (next !== current) apply(next);
     },
