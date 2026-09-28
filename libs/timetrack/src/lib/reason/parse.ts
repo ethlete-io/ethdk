@@ -39,12 +39,20 @@ const knownKey = (request: ReasoningRequest, issueKey: string) =>
  *
  * Throws when the output is not readable at all, which is what the single retry is for.
  */
-export const parseReasoningOutput = (options: { stdout: string; plan: ReasoningPlan }): InferredAttribution[] => {
+export const parseReasoningOutput = (options: {
+  stdout: string;
+  plan: ReasoningPlan;
+  command?: string;
+}): InferredAttribution[] => {
   const { plan } = options;
   const inferred: InferredAttribution[] = [];
   const answered = new Set<string>();
 
-  const { answers } = agentOutputDocument({ stdout: options.stdout, isValid: isAnswerDocument });
+  const { answers } = agentOutputDocument({
+    stdout: options.stdout,
+    isValid: isAnswerDocument,
+    command: options.command,
+  });
 
   for (const answer of answers) {
     const contextId = plan.contextIds[answer.id];

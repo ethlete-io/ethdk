@@ -27,6 +27,68 @@ export const languageInstruction = (language: string) => {
     : '';
 };
 
+/**
+ * Codex has no flag that removes every tool, so each feature that reaches the filesystem, the network
+ * or another agent is switched off one by one, and the read-only sandbox catches whatever a newer
+ * release adds. `code_mode_host` off makes code mode fail closed rather than run.
+ */
+const CODEX_ISOLATION_ARGS = [
+  'exec',
+  '--json',
+  '--ephemeral',
+  '--skip-git-repo-check',
+  '--ignore-rules',
+  '--sandbox',
+  'read-only',
+  '-c',
+  'approval_policy="never"',
+  '-c',
+  'web_search="disabled"',
+  '-c',
+  'mcp_servers={}',
+  ...[
+    'shell_tool',
+    'unified_exec',
+    'code_mode_host',
+    'multi_agent',
+    'goals',
+    'view_image',
+    'plugins',
+    'apps',
+    'browser_use',
+    'computer_use',
+    'image_generation',
+    'hooks',
+  ].flatMap((feature) => ['--disable', feature]),
+];
+
+/**
+ * `codex exec` takes a schema only as a file, and the host spawns processes without writing one, so the
+ * schema travels in the instructions and the reader validates the answer instead.
+ */
+const codexInstructions = (systemPrompt: string, schema: unknown) =>
+  `${systemPrompt}\n\nAnswer with exactly one JSON document and nothing else, with no code fence, matching this JSON Schema:\n${JSON.stringify(schema)}`;
+
+const claudeArgs = (options: { systemPrompt: string; schema: unknown; model: string }) => [
+  ...ISOLATION_ARGS,
+  '--system-prompt',
+  options.systemPrompt,
+  '--output-format',
+  'json',
+  '--json-schema',
+  JSON.stringify(options.schema),
+  ...(options.model ? ['--model', options.model] : []),
+];
+
+/** A JSON string is a valid TOML basic string, which is what `-c` parses its value as. */
+const codexArgs = (options: { systemPrompt: string; schema: unknown; model: string }) => [
+  ...CODEX_ISOLATION_ARGS,
+  '-c',
+  `developer_instructions=${JSON.stringify(codexInstructions(options.systemPrompt, options.schema))}`,
+  ...(options.model ? ['--model', options.model] : []),
+  '-',
+];
+
 /** One isolated agent-CLI run: a system prompt, a JSON schema to answer in, and a payload on stdin. */
 export const agentProcessSpec = (options: {
   systemPrompt: string;
@@ -36,19 +98,15 @@ export const agentProcessSpec = (options: {
   options?: Partial<ReasoningOptions>;
 }): ProcessSpec => {
   const settings = { ...DEFAULT_REASONING_OPTIONS, ...options.options };
+  const args = {
+    systemPrompt: options.systemPrompt + languageInstruction(settings.language),
+    schema: options.schema,
+    model: settings.model,
+  };
 
   return {
     command: settings.command,
-    args: [
-      ...ISOLATION_ARGS,
-      '--system-prompt',
-      options.systemPrompt + languageInstruction(settings.language),
-      '--output-format',
-      'json',
-      '--json-schema',
-      JSON.stringify(options.schema),
-      ...(settings.model ? ['--model', settings.model] : []),
-    ],
+    args: settings.command === 'codex' ? codexArgs(args) : claudeArgs(args),
     stdin: options.stdin,
     timeoutMs: settings.timeoutMs,
     ask: options.ask,

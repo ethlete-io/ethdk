@@ -83,3 +83,61 @@ describe('what a call takes from the settings document', () => {
     expect(spec.args).toContain('sonnet');
   });
 });
+
+describe('a run through codex', () => {
+  const codexSpec = (options?: { model?: string; language?: string }) =>
+    agentProcessSpec({
+      systemPrompt: 'Map the day.',
+      schema: { type: 'object', required: ['answers'] },
+      stdin: '{"contexts":[]}',
+      ask: 'the day',
+      options: { command: 'codex', ...options },
+    });
+
+  const configValue = (args: string[], key: string) =>
+    args.find((arg, index) => args[index - 1] === '-c' && arg.startsWith(`${key}=`))?.slice(key.length + 1);
+
+  it('runs one read-only, non-interactive exec that reads its prompt from stdin', () => {
+    const spec = codexSpec();
+
+    expect(spec.command).toBe('codex');
+    expect(spec.args.slice(0, 2)).toEqual(['exec', '--json']);
+    expect(spec.args).toContain('--ephemeral');
+    expect(spec.args.slice(spec.args.indexOf('--sandbox'), spec.args.indexOf('--sandbox') + 2)).toEqual([
+      '--sandbox',
+      'read-only',
+    ]);
+    expect(configValue(spec.args, 'approval_policy')).toBe('"never"');
+    expect(spec.args.at(-1)).toBe('-');
+    expect(spec.stdin).toBe('{"contexts":[]}');
+  });
+
+  it('switches off the tools that reach the machine', () => {
+    const disabled = codexSpec().args.filter((_, index, args) => args[index - 1] === '--disable');
+
+    expect(disabled).toEqual(expect.arrayContaining(['shell_tool', 'unified_exec', 'code_mode_host', 'multi_agent']));
+  });
+
+  it('sends none of the flags only claude knows', () => {
+    const { args } = codexSpec({ model: 'gpt-5.6-luna' });
+
+    for (const flag of ['--print', '--safe-mode', '--system-prompt', '--output-format', '--json-schema', '--tools']) {
+      expect(args).not.toContain(flag);
+    }
+  });
+
+  it('carries the prompt, the language and the schema as developer instructions', () => {
+    const instructions = JSON.parse(
+      configValue(codexSpec({ language: 'Deutsch' }).args, 'developer_instructions') ?? '""',
+    );
+
+    expect(instructions.startsWith('Map the day.')).toBe(true);
+    expect(instructions).toContain('in Deutsch');
+    expect(instructions).toContain('{"type":"object","required":["answers"]}');
+  });
+
+  it('leaves the model to the CLI when none is configured', () => {
+    expect(codexSpec().args).not.toContain('--model');
+    expect(codexSpec({ model: 'gpt-5.6-luna' }).args).toContain('gpt-5.6-luna');
+  });
+});

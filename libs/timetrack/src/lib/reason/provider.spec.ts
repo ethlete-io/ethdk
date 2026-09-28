@@ -70,6 +70,29 @@ describe('runReasoning$', () => {
     });
   });
 
+  it('reads the answer of a codex run from its event stream', async () => {
+    const stream = [
+      '{"type":"turn.started"}',
+      JSON.stringify({
+        type: 'item.completed',
+        item: {
+          type: 'agent_message',
+          text: '{"answers":[{"id":"c1","issueKey":"FIP-2201","reason":"the branch names the rewrite"}]}',
+        },
+      }),
+      '{"type":"turn.completed","usage":{"input_tokens":1,"output_tokens":1}}',
+    ].join('\n');
+    const { runner, specs } = stubRunner([ok(stream)]);
+
+    await expect(firstValueFrom(runReasoning$({ runner, plan: PLAN, options: { command: 'codex' } }))).resolves.toEqual(
+      {
+        answers: [{ contextId: PLAN.contextIds['c1'], issueKey: 'FIP-2201', reason: 'the branch names the rewrite' }],
+        failure: null,
+      },
+    );
+    expect(specs[0]?.args[0]).toBe('exec');
+  });
+
   it('spawns nothing when there is no question or no candidate to answer with', async () => {
     const { runner, specs } = stubRunner([ok(ANSWER)]);
 

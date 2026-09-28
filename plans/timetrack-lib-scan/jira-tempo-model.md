@@ -1,6 +1,6 @@
 # timetrack jira, tempo, model, reason, store scan - open findings
 
-Scan of `libs/timetrack/src/lib/{jira,tempo,model,reason,store}` from 2026-09-28. 0 High, 2 Medium, 4 Low, 2 Spec (second pass included; verified 2026-09-28: 6 confirmed, 4 re-rated, 0 refuted, 1 unverified). Skipped: all specs. The second pass read `jira/{adf,fields,hierarchy,projects,myself,status}.ts`, `tempo/attributes.ts`, `model/{event,evidence,context,field-source,statement,tokens,meeting-naming}.ts` and `reason/prompt.ts`; `model/event.ts` was read for its functions only.
+Scan of `libs/timetrack/src/lib/{jira,tempo,model,reason,store}` from 2026-09-28. 0 High, 1 Medium, 4 Low, 2 Spec (second pass included; verified 2026-09-28: 6 confirmed, 4 re-rated, 0 refuted, 1 unverified). Skipped: all specs. The second pass read `jira/{adf,fields,hierarchy,projects,myself,status}.ts`, `tempo/attributes.ts`, `model/{event,evidence,context,field-source,statement,tokens,meeting-naming}.ts` and `reason/prompt.ts`; `model/event.ts` was read for its functions only.
 
 ## tempo
 
@@ -11,10 +11,6 @@ Scan of `libs/timetrack/src/lib/{jira,tempo,model,reason,store}` from 2026-09-28
 
 - Medium: the picker sends typed text to `text ~` with only `"` and `\` escaped (`jira/picker.ts:46`). Lucene reserved characters such as `( ) [ ] : ! ^ ~ ?` make Jira answer 400, so the picker fails on text like `fix (login)`. Escape the reserved set with `\\`, or strip it. S Unverified: needs a live Jira Cloud call; Cloud text search may ignore reserved characters inside a quoted phrase rather than answer 400.
 - Low: `fetchJiraCreatableTypes$` uses `GET /rest/api/3/issue/createmeta?expand=projects.issuetypes.fields` (`jira/createmeta.ts:63`), which Atlassian deprecated. Move to `/rest/api/3/issue/createmeta/{projectIdOrKey}/issuetypes`. M
-
-## reason
-
-- Medium: `agentProcessSpec` always sends Claude-only flags (`--print`, `--system-prompt`, `--output-format json`, `--json-schema`, ...) (`reason/spec.ts:13`), and `agentOutputDocument` reads only Claude's envelope (`reason/envelope.ts:14`). Settings offer `codex` as a command (`reason/model.ts:50`), so every reasoning run with `codex` fails. Build a per-command spec and envelope reader, or remove `codex` from `REASONING_COMMANDS`. M Re-rated from High: no settings screen offers a command choice; only a hand-edited settings document reaches `codex`, which `settings/parse.ts:340` accepts.
 
 ## Spec gaps
 

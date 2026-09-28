@@ -55,7 +55,10 @@ export const runReasoning$ = (options: {
     map((result): ReasoningOutcome => {
       if (result.code !== 0) throw new Error(result.stderr.trim() || `the reasoning provider exited ${result.code}`);
 
-      return { answers: parseReasoningOutput({ stdout: result.stdout, plan: options.plan }), failure: null };
+      return {
+        answers: parseReasoningOutput({ stdout: result.stdout, plan: options.plan, command: spec.command }),
+        failure: null,
+      };
     }),
     retry(1),
     catchError((error: unknown) => of<ReasoningOutcome>({ answers: [], failure: messageOf(error) })),

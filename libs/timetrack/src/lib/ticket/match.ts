@@ -122,7 +122,7 @@ export const matchTicketWithAgent$ = (options: {
     map((result): TicketMatch => {
       if (result.code !== 0) throw new Error(result.stderr.trim() || `the agent exited ${result.code}`);
 
-      const answer = agentOutputDocument({ stdout: result.stdout, isValid: isMatch });
+      const answer = agentOutputDocument({ stdout: result.stdout, isValid: isMatch, command: spec.command });
       const existingKey = offeredIssueKey({ answered: answer.existingKey, issues: options.request.issues });
       const parentKey = offeredIssueKey({ answered: answer.parentKey, issues: options.request.parents });
 
