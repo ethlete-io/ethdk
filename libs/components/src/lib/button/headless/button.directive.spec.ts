@@ -254,5 +254,24 @@ describe('ButtonDirective', () => {
       fixture.detectChanges();
       expect(anchor.getAttribute('aria-disabled')).toBe('true');
     });
+
+    it('blocks a middle click while disabled', () => {
+      fixture.componentInstance.disabled = true;
+      fixture.detectChanges();
+
+      const event = new MouseEvent('auxclick', { button: 1, bubbles: true, cancelable: true });
+      anchor.dispatchEvent(event);
+
+      expect(event.defaultPrevented).toBe(true);
+    });
+
+    it('lets a middle click through while active', () => {
+      fixture.detectChanges();
+
+      const event = new MouseEvent('auxclick', { button: 1, bubbles: true, cancelable: true });
+      anchor.dispatchEvent(event);
+
+      expect(event.defaultPrevented).toBe(false);
+    });
   });
 });

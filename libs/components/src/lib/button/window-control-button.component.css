@@ -104,20 +104,20 @@
     }
 
     &:where([data-kind='close']):focus-visible {
-      background: rgba(232, 17, 35, 0.92);
-      color: #ffffff;
+      background: var(--et-window-control-button-close-background, rgba(232, 17, 35, 0.92));
+      color: var(--et-window-control-button-close-color, #ffffff);
     }
 
     @media (hover: hover) {
       &:where([data-kind='close']):hover {
-        background: rgba(232, 17, 35, 0.92);
-        color: #ffffff;
+        background: var(--et-window-control-button-close-background, rgba(232, 17, 35, 0.92));
+        color: var(--et-window-control-button-close-color, #ffffff);
       }
     }
 
     &:where([data-kind='close']):active {
-      background: rgba(196, 14, 29, 0.96);
-      color: #ffffff;
+      background: var(--et-window-control-button-close-background-active, rgba(196, 14, 29, 0.96));
+      color: var(--et-window-control-button-close-color, #ffffff);
     }
 
     &:where([disabled]),

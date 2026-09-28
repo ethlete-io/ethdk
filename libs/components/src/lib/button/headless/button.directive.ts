@@ -76,14 +76,14 @@ export class ButtonDirective {
     // Must stay a capture listener: at the target, capture listeners run before every bubble
     // listener, so this beats a consumer's template `(click)` on the same element. As a bubble
     // listener it runs after them, and a loading button or disabled link fires the consumer's handler.
-    const unlisten = inject(Renderer2).listen(
-      this.elementRef.nativeElement,
-      'click',
-      (event: MouseEvent) => this.blockInactiveClick(event),
-      { capture: true },
+    const renderer = inject(Renderer2);
+    const unlisteners = (['click', 'auxclick'] as const).map((type) =>
+      renderer.listen(this.elementRef.nativeElement, type, (event: MouseEvent) => this.blockInactiveClick(event), {
+        capture: true,
+      }),
     );
 
-    inject(DestroyRef).onDestroy(unlisten);
+    inject(DestroyRef).onDestroy(() => unlisteners.forEach((unlisten) => unlisten()));
   }
 
   private blockInactiveClick(event: MouseEvent) {
