@@ -13,6 +13,14 @@ export const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6';
  *  bare `<strong>` under the root has to be wrapped by the heading rather than turned into one. */
 export const BLOCK_SELECTOR = 'p, div, blockquote, pre, li, figure, section, article';
 
+const ROOT_BLOCK_SELECTOR = `${BLOCK_SELECTOR}, ${HEADING_SELECTOR}, ul, ol, table, hr, br`;
+const INLINE_SLICE_BLOCK_SELECTOR = `li, p, td, th, div, blockquote, ${HEADING_SELECTOR}`;
+
+const isInlineRunNode = (node: Node) =>
+  node.nodeType === Node.TEXT_NODE || (node instanceof HTMLElement && !node.matches(ROOT_BLOCK_SELECTOR));
+
+type RangePoint = { container: Node; offset: number } | { before: Node | null };
+
 /** Alignment persists as a class, not an inline `text-align`, so rendered content passes a strict `style-src`. */
 export const ALIGN_CLASS_PREFIX = 'et-rte-align-';
 
@@ -258,9 +266,50 @@ export const createRichTextEditorDomCore = (doc: Document, renderer: EditorRende
     return out;
   };
 
+  const pointBoundary = (el: HTMLElement, point: RangePoint): [Node, number] => {
+    if (!('before' in point)) return [point.container, point.offset];
+    if (!point.before?.parentNode) return [el, el.childNodes.length];
+
+    const parent = point.before.parentNode;
+
+    return [parent, Array.prototype.indexOf.call(parent.childNodes, point.before)];
+  };
+
+  // Chrome keeps the first typed line as loose nodes under the root; a block command must see that
+  // line as one block, not one per text node or mark.
+  const wrapLooseRuns = (el: HTMLElement, range: Range) => {
+    const runs: ChildNode[][] = [[]];
+
+    el.childNodes.forEach((child) => {
+      if (isInlineRunNode(child)) runs[runs.length - 1]?.push(child);
+      else runs.push([]);
+    });
+
+    const loose = runs.filter((run) => run.length > 1 && run.some((node) => range.intersectsNode(node)));
+
+    if (loose.length === 0) return;
+
+    const pointOf = (container: Node, offset: number): RangePoint =>
+      container === el ? { before: el.childNodes[offset] ?? null } : { container, offset };
+    const start = pointOf(range.startContainer, range.startOffset);
+    const end = pointOf(range.endContainer, range.endOffset);
+
+    for (const run of loose) {
+      const paragraph = renderer.createElement('p');
+
+      renderer.insertBefore(el, paragraph, run[0] ?? null);
+      run.forEach((node) => renderer.appendChild(paragraph, node));
+    }
+
+    range.setStart(...pointBoundary(el, start));
+    range.setEnd(...pointBoundary(el, end));
+  };
+
   const blocksInRange = (range: Range): ChildNode[] => {
     const el = root();
     const blocks: ChildNode[] = [];
+
+    if (el) wrapLooseRuns(el, range);
 
     el?.childNodes.forEach((child) => {
       if (range.intersectsNode(child)) {
@@ -309,6 +358,69 @@ export const createRichTextEditorDomCore = (doc: Document, renderer: EditorRende
 
       range.setEnd(endContainer, offset);
     }
+  };
+
+  // An inline wrapper must stay inside its block: a range crossing <li>/<p> boundaries would clone
+  // the partially covered blocks into the wrapper, which serializes to broken markdown.
+  const blockSlices = (range: Range): Range[] => {
+    const el = root();
+    const startBlock = closestWithin(range.startContainer, INLINE_SLICE_BLOCK_SELECTOR);
+    const endBlock = closestWithin(range.endContainer, INLINE_SLICE_BLOCK_SELECTOR);
+
+    if (!el || startBlock === endBlock) {
+      return [range];
+    }
+
+    const leaves: Node[] = [];
+
+    el.childNodes.forEach((child) => {
+      if (!range.intersectsNode(child)) {
+        return;
+      }
+
+      if (child instanceof HTMLElement && (child.tagName === 'UL' || child.tagName === 'OL')) {
+        child.childNodes.forEach((item) => {
+          if (range.intersectsNode(item)) {
+            leaves.push(item);
+          }
+        });
+      } else if (child instanceof HTMLTableElement) {
+        for (const section of child.children) {
+          if (!(section instanceof HTMLTableSectionElement)) continue;
+
+          for (const tr of section.children) {
+            if (!(tr instanceof HTMLTableRowElement)) continue;
+
+            for (const cell of tr.cells) if (range.intersectsNode(cell)) leaves.push(cell);
+          }
+        }
+      } else {
+        leaves.push(child);
+      }
+    });
+
+    const slices: Range[] = [];
+
+    leaves.forEach((leaf) => {
+      const slice = doc.createRange();
+      slice.selectNodeContents(leaf);
+
+      if (leaf.contains(range.startContainer)) {
+        slice.setStart(range.startContainer, range.startOffset);
+      }
+
+      if (leaf.contains(range.endContainer)) {
+        slice.setEnd(range.endContainer, range.endOffset);
+      }
+
+      trimRangeWhitespace(slice);
+
+      if (!slice.collapsed && slice.toString().trim().length > 0) {
+        slices.push(slice);
+      }
+    });
+
+    return slices;
   };
 
   // A selection can be anchored on an element boundary rather than in a text node, and marks below
@@ -424,6 +536,7 @@ export const createRichTextEditorDomCore = (doc: Document, renderer: EditorRende
     blocksInRange,
     isBlockEmpty,
     trimRangeWhitespace,
+    blockSlices,
     resolveBoundaryNode,
     resolveStartNode,
     markStates,

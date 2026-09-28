@@ -15,18 +15,31 @@ export const createRichTextEditorLists = (core: RichTextEditorDomCore) => {
     blocksInRange,
   } = core;
 
-  const unwrapList = (list: HTMLElement) => {
-    const paragraphs: Node[] = [];
-
-    childrenByTag(list, 'li').forEach((li) => {
-      const paragraph = renderer.createElement('p');
-
-      while (li.firstChild) {
-        renderer.appendChild(paragraph, li.firstChild);
-      }
+  const listToParagraphs = (list: HTMLElement): Node[] =>
+    childrenByTag(list, 'li').flatMap((li) => {
+      const paragraphs: Node[] = [];
+      let paragraph = renderer.createElement('p') as HTMLElement;
 
       paragraphs.push(paragraph);
+
+      while (li.firstChild) {
+        const child = li.firstChild;
+
+        if (child instanceof HTMLElement && (child.tagName === 'UL' || child.tagName === 'OL')) {
+          renderer.removeChild(li, child);
+          paragraphs.push(...listToParagraphs(child));
+          paragraph = renderer.createElement('p') as HTMLElement;
+          paragraphs.push(paragraph);
+        } else {
+          renderer.appendChild(paragraph, child);
+        }
+      }
+
+      return paragraphs.filter((node, index) => index === 0 || node.firstChild);
     });
+
+  const unwrapList = (list: HTMLElement) => {
+    const paragraphs = listToParagraphs(list);
 
     replaceWith(list, paragraphs);
 

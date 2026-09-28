@@ -10,6 +10,7 @@ export const createRichTextEditorLinks = (core: RichTextEditorDomCore) => {
     collapseAfterInline,
     unwrapElement,
     collectDescendants,
+    blockSlices,
   } = core;
 
   /**
@@ -94,9 +95,14 @@ export const createRichTextEditorLinks = (core: RichTextEditorDomCore) => {
       return;
     }
 
-    const anchor = renderer.createElement('a') as HTMLElement;
-    renderer.setAttribute(anchor, 'href', href);
-    applyTargetRel(anchor, newTab);
+    const createAnchor = () => {
+      const anchor = renderer.createElement('a') as HTMLElement;
+
+      renderer.setAttribute(anchor, 'href', href);
+      applyTargetRel(anchor, newTab);
+
+      return anchor;
+    };
 
     if (!editable.range.collapsed) {
       trimSelectionEdges(editable.range);
@@ -104,24 +110,34 @@ export const createRichTextEditorLinks = (core: RichTextEditorDomCore) => {
 
     const selectionText = editable.range.collapsed ? '' : editable.range.toString();
     const label = (text ?? selectionText).trim() || href;
+    const anchors: HTMLElement[] = [];
 
     if (!editable.range.collapsed && text === selectionText) {
-      try {
-        editable.range.surroundContents(anchor);
-      } catch {
-        // surroundContents throws when the range crosses an existing <a> boundary. The extract
-        // fallback can nest an <a> inside an <a> and, per Range.extractContents()'s spec, strand the
-        // drained original as an empty shell - both broken markdown, hence the sweeps below.
-        renderer.appendChild(anchor, editable.range.extractContents());
-        editable.range.insertNode(anchor);
+      for (const slice of blockSlices(editable.range)) {
+        const anchor = createAnchor();
+
+        try {
+          slice.surroundContents(anchor);
+        } catch {
+          // surroundContents throws when the range crosses an existing <a> boundary. The extract
+          // fallback can nest an <a> inside an <a> and, per Range.extractContents()'s spec, strand the
+          // drained original as an empty shell - both broken markdown, hence the sweeps below.
+          renderer.appendChild(anchor, slice.extractContents());
+          slice.insertNode(anchor);
+        }
+
+        anchors.push(anchor);
       }
     } else {
+      const anchor = createAnchor();
+
       renderer.appendChild(anchor, renderer.createText(label));
       editable.range.deleteContents();
       editable.range.insertNode(anchor);
+      anchors.push(anchor);
     }
 
-    collectDescendants(anchor, 'a').forEach((nested) => unwrapElement(nested));
+    anchors.forEach((anchor) => collectDescendants(anchor, 'a').forEach((nested) => unwrapElement(nested)));
 
     if (el) {
       collectDescendants(el, 'a')
@@ -131,7 +147,9 @@ export const createRichTextEditorLinks = (core: RichTextEditorDomCore) => {
       el.normalize();
     }
 
-    collapseAfterInline(anchor);
+    const last = anchors[anchors.length - 1];
+
+    if (last) collapseAfterInline(last);
   };
 
   const removeLink = () => {

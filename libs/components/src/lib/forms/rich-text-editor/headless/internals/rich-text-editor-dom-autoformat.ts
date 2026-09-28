@@ -32,7 +32,7 @@ export const createRichTextEditorAutoformat = (
 
     const { range } = editable;
 
-    if (closestWithin(range.startContainer, `li, td, th, pre, code, ${HEADING_SELECTOR}`)) return false;
+    if (closestWithin(range.startContainer, `li, td, th, pre, code, blockquote, ${HEADING_SELECTOR}`)) return false;
 
     // A browser-created <div> line counts as the caret's block too (Chrome inserts <div>s on Enter),
     // and the root stands in for the loose first line a contenteditable holds before any block exists.
@@ -56,7 +56,7 @@ export const createRichTextEditorAutoformat = (
       action = () => headings.toggleHeading(`h${prefix.length}` as HeadingTag);
     } else if (codeBlock && prefix === '```') {
       action = codeBlock.toggleCodeBlock;
-    } else if (blockquote && prefix === '>' && !isReserved('>') && !closestWithin(range.startContainer, 'blockquote')) {
+    } else if (blockquote && prefix === '>' && !isReserved('>')) {
       action = blockquote.toggleBlockquote;
     }
 

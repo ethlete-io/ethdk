@@ -1269,6 +1269,88 @@ describe('RichTextEditorDom', () => {
       expect(range?.startOffset).toBe(3);
     });
   });
+
+  describe('block commands on content that is not one block per root child', () => {
+    const noneReserved = () => false;
+    const LOOSE = 'foo <strong>bar</strong> baz<p>next</p>';
+    const caretInLooseRun = (root: HTMLElement) => selectRange(root.firstChild as Node, 1, root.firstChild as Node, 1);
+
+    it('toggles a list off with its nested items as paragraphs of their own', () => {
+      const { root, dom } = setup('<ul><li>a<ul><li>b</li></ul></li><li>c</li></ul>');
+      const text = root.querySelector('li')?.firstChild as Node;
+      selectRange(text, 0, text, 1);
+
+      dom.toggleList('ul');
+
+      expect(root.innerHTML).toBe('<p>a</p><p>b</p><p>c</p>');
+    });
+
+    it('turns a loose first line with marks into one list item', () => {
+      const { root, dom } = setup(LOOSE);
+      caretInLooseRun(root);
+
+      dom.toggleList('ul');
+
+      expect(root.innerHTML).toBe('<ul><li>foo <strong>bar</strong> baz</li></ul><p>next</p>');
+    });
+
+    it('turns a loose first line with marks into one heading', () => {
+      const { root, dom } = setup(LOOSE);
+      caretInLooseRun(root);
+
+      dom.headings!.toggleHeading('h1');
+
+      expect(root.innerHTML).toBe('<h1>foo <strong>bar</strong> baz</h1><p>next</p>');
+    });
+
+    it('turns a loose first line with marks into one quote line', () => {
+      const { root, dom } = setup(LOOSE);
+      caretInLooseRun(root);
+
+      dom.blockquote!.toggleBlockquote();
+
+      expect(root.innerHTML).toBe('<blockquote>foo <strong>bar</strong> baz</blockquote><p>next</p>');
+    });
+
+    it('turns a loose first line with marks into one code line', () => {
+      const { root, dom } = setup(LOOSE);
+      caretInLooseRun(root);
+
+      dom.codeBlock!.toggleCodeBlock();
+
+      expect(root.innerHTML).toBe('<pre><code>foo bar baz</code></pre><p>next</p>');
+    });
+
+    it('leaves a list or heading prefix inside a quote alone', () => {
+      for (const html of ['<blockquote>-</blockquote><p>x</p>', '<blockquote><p>#</p></blockquote><p>x</p>']) {
+        const { root, dom } = setup(html);
+        caretAtEndOf(root.querySelector('blockquote')?.lastChild?.lastChild ?? (root.firstChild?.firstChild as Node));
+
+        expect(dom.autoformat!.applyBlockAutoformat(noneReserved)).toBe(false);
+        expect(root.innerHTML).toBe(html);
+      }
+    });
+
+    it('marks each heading of a selection across headings on its own', () => {
+      const { root, dom } = setup('<h1>one</h1><h2>two</h2>');
+      selectRange(root.firstChild?.firstChild as Node, 0, root.lastChild?.firstChild as Node, 3);
+
+      dom.toggleInline('strong');
+
+      expect(root.innerHTML).toBe('<h1><strong>one</strong></h1><h2><strong>two</strong></h2>');
+    });
+
+    it('links each paragraph of a selection across paragraphs on its own', () => {
+      const { root, dom } = setup('<p>xone</p><p>twoy</p>');
+      selectRange(root.firstChild?.firstChild as Node, 1, root.lastChild?.firstChild as Node, 3);
+
+      dom.links!.applyLink('https://example.com', { text: 'onetwo' });
+
+      expect(root.innerHTML).toBe(
+        '<p>x<a href="https://example.com">one</a></p><p><a href="https://example.com">two</a>y</p>',
+      );
+    });
+  });
 });
 
 describe('RichTextEditorDom without the block domains', () => {

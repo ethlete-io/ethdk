@@ -14,70 +14,8 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
     collectDescendants,
     trimRangeWhitespace,
     resolveBoundaryNode,
+    blockSlices,
   } = core;
-
-  // An inline wrapper must stay inside its block: a range crossing <li>/<p> boundaries would clone
-  // the partially covered blocks into the wrapper, which serializes to broken markdown.
-  const blockSlices = (range: Range): Range[] => {
-    const el = root();
-    const startBlock = closestWithin(range.startContainer, 'li, p, td, th');
-    const endBlock = closestWithin(range.endContainer, 'li, p, td, th');
-
-    if (!el || startBlock === endBlock) {
-      return [range];
-    }
-
-    const leaves: Node[] = [];
-
-    el.childNodes.forEach((child) => {
-      if (!range.intersectsNode(child)) {
-        return;
-      }
-
-      if (child instanceof HTMLElement && (child.tagName === 'UL' || child.tagName === 'OL')) {
-        child.childNodes.forEach((item) => {
-          if (range.intersectsNode(item)) {
-            leaves.push(item);
-          }
-        });
-      } else if (child instanceof HTMLTableElement) {
-        for (const section of child.children) {
-          if (!(section instanceof HTMLTableSectionElement)) continue;
-
-          for (const tr of section.children) {
-            if (!(tr instanceof HTMLTableRowElement)) continue;
-
-            for (const cell of tr.cells) if (range.intersectsNode(cell)) leaves.push(cell);
-          }
-        }
-      } else {
-        leaves.push(child);
-      }
-    });
-
-    const slices: Range[] = [];
-
-    leaves.forEach((leaf) => {
-      const slice = doc.createRange();
-      slice.selectNodeContents(leaf);
-
-      if (leaf.contains(range.startContainer)) {
-        slice.setStart(range.startContainer, range.startOffset);
-      }
-
-      if (leaf.contains(range.endContainer)) {
-        slice.setEnd(range.endContainer, range.endOffset);
-      }
-
-      trimRangeWhitespace(slice);
-
-      if (!slice.collapsed && slice.toString().trim().length > 0) {
-        slices.push(slice);
-      }
-    });
-
-    return slices;
-  };
 
   const wrapInline = (range: Range, tag: InlineTag) => {
     const wrappers: HTMLElement[] = [];
