@@ -117,7 +117,7 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
   public stepBy(direction: 1 | -1, options?: NumberInputStepOptions) {
     if (this.disabled() || this.readonly()) return;
 
-    const multiplier = options?.multiplier ?? 1;
+    const multiplier = withoutFloatNoise(options?.multiplier ?? 1);
     const markTouched = options?.markTouched ?? true;
     const step = this.step() ?? 1;
     const current = this.steppingBase();
@@ -203,6 +203,8 @@ const STEP_KEY_DIRECTIONS: Record<string, 1 | -1 | undefined> = {
   PageUp: 1,
   PageDown: -1,
 };
+
+const withoutFloatNoise = (value: number) => Number(value.toPrecision(12));
 
 /** Decimal places needed to represent `value` exactly - strips float noise from step math. */
 const decimalPrecisionOf = (value: number) => {

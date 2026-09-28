@@ -331,6 +331,12 @@ describe('NumberInputDirective', () => {
       expect(driver.host.value()).toBe(60);
     });
 
+    it('keeps a fine scrub across several steps free of float noise', () => {
+      driver.scrub(1, [10, 24], { altKey: true });
+
+      expect(driver.host.value()).toBe(0.7);
+    });
+
     it('marks touched once at the end of the gesture, not per step', () => {
       driver.pointer(driver.stepperButton(1), 'pointerdown', {
         pointerId: 1,

@@ -8,6 +8,7 @@ import { NumberInputDirective } from '../input/headless/number-input.directive';
 export type ScrubOptions = {
   pointerType?: string;
   shiftKey?: boolean;
+  altKey?: boolean;
   release?: 'pointerup' | 'pointercancel';
 };
 
@@ -40,7 +41,7 @@ export const createNumberInputDriver = <T>(fixture: ComponentFixture<T>, options
 
     /** Presses a stepper button, drags the pointer through `steps` px of travel, then releases. */
     scrub: (index: number, steps: number[], options: ScrubOptions = {}) => {
-      const { pointerType = 'mouse', shiftKey = false, release = 'pointerup' } = options;
+      const { pointerType = 'mouse', shiftKey = false, altKey = false, release = 'pointerup' } = options;
 
       pointerEvent(stepperButton(index), 'pointerdown', {
         pointerId: 1,
@@ -48,6 +49,7 @@ export const createNumberInputDriver = <T>(fixture: ComponentFixture<T>, options
         clientY: 0,
         pointerType,
         shiftKey,
+        altKey,
       });
 
       let x = 0;
