@@ -83,20 +83,16 @@ export class TagInputFieldDirective {
 
     this.pendingText.set(element.value);
 
-    // typing a single-character separator commits the text before it
-    const separators = tagInput.characterSeparators();
-    const value = element.value;
-    const lastChar = value.at(-1);
+    const parts = element.value.split(separatorPattern(tagInput.characterSeparators()));
+    const remainder = parts.pop() ?? '';
 
-    if (lastChar !== undefined && separators.includes(lastChar)) {
-      const pending = value.slice(0, -1);
-
-      this.writeField(pending);
-
-      if (pending && tagInput.add(pending)) {
-        this.writeField('');
-      }
+    if (!parts.length) {
+      return;
     }
+
+    const rejected = parts.filter((part) => part && !tagInput.add(part));
+
+    this.writeField([...rejected, remainder].filter(Boolean).join(' '));
   }
 
   protected handleKeydown(event: KeyboardEvent) {
@@ -143,10 +139,7 @@ export class TagInputFieldDirective {
     const selectionEnd = element.selectionEnd ?? selectionStart;
     const merged = element.value.slice(0, selectionStart) + text + element.value.slice(selectionEnd);
 
-    const pattern = new RegExp(
-      `[\\n${separators.map((separator) => separator.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('')}]`,
-    );
-    const parts = merged.split(pattern);
+    const parts = merged.split(separatorPattern(separators));
 
     if (parts.length < 2) {
       return;
@@ -173,3 +166,6 @@ export class TagInputFieldDirective {
     this.pendingText.set(value);
   }
 }
+
+const separatorPattern = (separators: readonly string[]) =>
+  new RegExp(['\\n', ...separators.map((separator) => separator.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&'))].join('|'));

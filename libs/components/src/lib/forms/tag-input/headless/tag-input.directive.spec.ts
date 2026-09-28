@@ -73,6 +73,13 @@ describe('TagInputDirective', () => {
     expect(driver.fieldValue()).toBe('');
   });
 
+  it('commits the text before a separator typed mid-text and keeps the rest', () => {
+    driver.type('beta,gamma');
+
+    expect(driver.host.value()).toEqual(['beta']);
+    expect(driver.fieldValue()).toBe('gamma');
+  });
+
   it('commits pending text on blur and trims it', () => {
     driver.typeAndBlur('  gamma  ');
 
@@ -287,6 +294,24 @@ describe('TagInputDirective', () => {
       expect(driver.host.mixed()).toBe(true);
       expect(driver.chipLabels()).toEqual([]);
     });
+  });
+});
+
+@Component({
+  template: `<et-tag-input [(value)]="value" [separators]="['Enter', ',', '-', ';']" placeholder="Add tags" />`,
+  imports: [TAG_INPUT_IMPORTS],
+})
+class DashSeparatorTagInputTestHost {
+  value = signal<string[]>([]);
+}
+
+describe('TagInputDirective with a dash separator', () => {
+  it('splits a paste on the separators only, not on the characters between them', () => {
+    const driver = mountTagInput(DashSeparatorTagInputTestHost);
+
+    driver.paste('a1b-c;d');
+
+    expect(driver.host.value()).toEqual(['a1b', 'c', 'd']);
   });
 });
 

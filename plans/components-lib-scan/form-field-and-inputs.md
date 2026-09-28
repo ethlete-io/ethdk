@@ -1,38 +1,12 @@
 # Form field and inputs scan - open findings
 
-Scan of `libs/components/src/lib/forms/{form-field,input,textarea,checkbox,switch,choice-field,otp-input,tag-input,description,form}`, the `selection-card*` files and `forms/index.ts` from 2026-09-28. 0 High, 0 Medium, 13 Low, 4 Spec. Skipped: stories, most specs, and a line-by-line read of the large CSS files (`form-field.component.css`, `form-field-text-shell-styles.component.css`, `checkbox`/`switch`/`otp-input` CSS). Those files were checked only by grep for layer wrap, colours and positioning.
+Scan of `libs/components/src/lib/forms/{form-field,input,textarea,checkbox,switch,choice-field,otp-input,tag-input,description,form}`, the `selection-card*` files and `forms/index.ts` from 2026-09-28. 0 High, 0 Medium, 1 Low, 4 Spec. Skipped: stories, most specs, and a line-by-line read of the large CSS files (`form-field.component.css`, `form-field-text-shell-styles.component.css`, `checkbox`/`switch`/`otp-input` CSS). Those files were checked only by grep for layer wrap, colours and positioning.
 
 Paths are relative to `libs/components/src/lib/forms/`.
 
-## input, textarea
-
-- Low: `et-number-input` and `et-password-input` sync every keystroke twice. The directive's host `(input)` listener catches the bubbled event from the inner `<input>` (target equals `nativeControl()`), and the template also binds `(input)="syncNativeValue($event)"` (`input/number-input.component.html:18`, `input/password-input.component.html:14`). `et-input` relies on the host listener only. Remove the template binding. S
-- Low: `TextareaDirective` mounts `FormFieldTextareaStylesComponent` for every textarea, also one outside a form field (`textarea/headless/textarea.directive.ts:92`). Mount it from the form field when `controlType()` is `textarea`. S
-- Low: comments outside the allowlist: `input/headless/password-input.directive.ts:21-23` (explains an input that does not exist), `:121-124` ("used to leave the warning on" is migration narration), `input/headless/number-input.directive.ts:146-147`. S
-- Low: roundabout import paths that resolve back into the same folder: `input/number-input.component.ts:19`, `input/password-input.component.ts:16`, `form-field/headless/text-shell-control.directive.ts:6`. S
-
 ## form-field
 
-- Low: the error/hint/warning ids use the control `name` when it has one (`form-field/headless/form-field.directive.ts:61-80`). A hand-set `name` with a space produces an id that `aria-describedby` splits into two broken references. The same `name` in two field instances (two open dialogs, or a signal form created with the same `name` option) produces duplicate ids. Signal-forms names are unique per form, so only hand-set names are affected. Always use `FALLBACK_ID`. S
-- Low: the dev check throws `MISSING_CONTROL` after the first render (`form-field/headless/form-field.directive.ts:212-226`). A field whose control sits in an `@if` that is false at first render (data still loading) throws in dev mode, although the markup is valid. Re-check when the control registers, or check only when a label or hint exists without a control. S
-- Low: `usesTextFieldShell` is a 17-term `===` chain that each new control type must extend by hand (`form-field/headless/form-field.directive.ts:143-162`). Replace it with a `Set` next to `FORM_FIELD_CONTROL_TYPES`, or a `usesTextShell` flag on `FormFieldControl`. S
-- Low: `et-label` and `et-description` ship inline `styles` without `@layer components` (`form-field/headless/label.directive.ts:23-43`, `description/description.component.ts:12-18`). Tailwind utilities cannot override them without `!`. Wrap both. S
-- Low: `form-field/headless/index.ts` re-exports internals into the public API: `createAnchoredPanelController`, `injectOverlaySurfaceContext`, `registerSingleton`, `reduceSupportPresentation`, `provideFormSupport`/`wireFormSupport`, `hitsInteractiveElement`. Most of them have no `@internal` tag. Tag them `@internal`, or import them by file path and drop them from the barrel. S
-
-## checkbox, switch
-
-- Low: `CheckboxDirective.activate` passes `{ focusVisible: false } as unknown as FocusOptions` (`checkbox/headless/checkbox.directive.ts:100`), and `SwitchDirective.activate` omits it (`switch/headless/switch.directive.ts:98`). A label click shows a focus ring on the switch but not on the checkbox. Pick one behaviour for both and drop the double cast. S
-
-## choice-field, selection card
-
-- Low: CSS comments far outside the allowlist, including migration narration ("cdk shipped this with a hardcoded #2e2e2e", `selection-card-styles.component.css:39-40`) and multi-paragraph rationale in `choice-field/choice-field-card-styles.component.css:2-4,6-7,23-32,41-45,48-51`. Cut them to the ordering and workaround facts. S
-
-## otp-input
-
-## tag-input
-
-- Low: a paste-split regex puts the separators into a character class and escapes everything except `-` (`tag-input/headless/tag-input-field.directive.ts:146-148`). With separators `[',', '-', ';']` the class becomes `[\n,-;]`, a range that includes the digits 0-9, so "a1b" pastes as two tags. Escape `-` too, or build an alternation. S
-- Low: a single-character separator commits only when it is the last character (`tag-input/headless/tag-input-field.directive.ts:89-99`). A comma typed in the middle of pending text stays in the text, and the text later commits as one tag that contains the separator. Split on every separator in `handleInput`, the same way the paste handler does. S
+- Low: the dev check throws `MISSING_CONTROL` after the first render (`form-field/headless/form-field.directive.ts:199-213`). A field whose control sits in an `@if` that is false at first render (data still loading) throws in dev mode, although the markup is valid. Re-check when the control registers, or check only when a label or hint exists without a control. S
 
 ## Spec
 
