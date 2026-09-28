@@ -1,49 +1,35 @@
 # bracket, match, standings (components) scan - open findings
 
-Scan of `libs/components/src/lib/bracket/`, `libs/components/src/lib/match/`, `libs/components/src/lib/standings/` from 2026-09-28. 0 High, 3 Medium, 19 Low, 3 Spec (verified: 9 confirmed, 3 re-rated, 0 refuted, 1 unverified). Skipped: specs, stories, `testing/` drivers, most CSS (checked for `@layer`, colours and Tailwind only). The framework-free model in `libs/bracket` is out of scope.
+Scan of `libs/components/src/lib/bracket/`, `libs/components/src/lib/match/`, `libs/components/src/lib/standings/` from 2026-09-28. 0 High, 3 Medium, 6 Low, 3 Spec (verified: 9 confirmed, 3 re-rated, 0 refuted, 1 unverified). Skipped: specs, stories, `testing/` drivers, most CSS (checked for `@layer`, colours and Tailwind only). The framework-free model in `libs/bracket` is out of scope.
 
 ## bracket: grid and journey highlight
-
-- Low: comments outside the AGENTS.md allowlist at `bracket/bracket.component.ts:53-54,65-67,365-366,373-374`, `bracket/bracket.component.html:81,84-85`, `bracket/bracket-grid.ts:28-29`, `bracket/bracket-default-final-match.component.ts:36-38` (a repeat of the `BracketCardContext` JSDoc). S
 
 ## bracket: bundle size
 
 - Medium: `resolveBracketComponents` imports all four default cards statically (`bracket/bracket-components.ts:9-12`). Every `et-bracket` consumer, and even the pure `bracketNaturalWidth` helper (`bracket/bracket-fits-width.ts:37`), bundles the final card with its icons, the match card and date-fns `format`, including an app that supplies its own cards. Let the width helper skip component resolution, and move the defaults behind the layout factories or the config. M Verified.
 - Low: `BRACKET_IMPORTS` puts `BracketComponent`, `BracketParticipantsComponent` (and with it `ButtonComponent`), `BracketPickCardComponent` and `BracketRoundsListComponent` in one tuple (`bracket/bracket.imports.ts:6-11`). An app that renders only `et-bracket` bundles all four. Split into per-component import tuples. S Re-rated from Medium: each component is also exported on its own, and the `*_IMPORTS` tuple is the repo-wide convention.
-- Low: `core/` and `linked/` are re-export shims over `@ethlete/bracket` (`bracket/core/index.ts:1` is `export * from '@ethlete/bracket'`). Import from `@ethlete/bracket` directly and delete the shims. S
 
 ## bracket: rounds list and cards
 
-- Low: a pick button's accessible name is the emblem `alt` followed by the name (`bracket/bracket-pick-card.component.html:5-16,50`). It reads "FC Berlin emblem FC Berlin". Give the button an `aria-label`, or give the emblem an empty `alt` inside the button. S
-- Low: `uniqueId` is a module counter (`bracket/bracket-pick-card.component.ts:20,99`). Use `createComponentId` from core, as `bracket.component.ts:212` does. S
-- Low: the error-theme lookup duplicates core's `injectErrorTheme` (`bracket/bracket-pick-card.component.ts:96-97`, `match/match-card.component.ts:80-82`). S
-- Low: `sectionHeadingLevel` equals the round header level when `roundHeaderLevel` is 1 (`bracket/bracket-rounds-list.component.ts:147`). The `listSection` JSDoc says only consecutive rounds share a heading (`bracket/bracket-layout.ts:32-33`), but the list merges every round with the same id through a `Map` (`bracket/bracket-rounds-list.component.ts:167-175`). S
-- Low: `BracketComponent` and `BracketRoundsListComponent` duplicate `resolvedLayout`, `resolvedMatchNormalizer` and a pass-through `resolvedRoundHeaderLevel` computed (`bracket/bracket.component.ts:199-204,262-267`, `bracket/bracket-rounds-list.component.ts:113-137`). Extract one helper. S
+- Low: `sectionHeadingLevel` equals the round header level when `roundHeaderLevel` is 1 (`bracket/bracket-rounds-list.component.ts`). Decision: clamp `roundHeaderLevel` to 2+ in a sectioned list, or accept the flat outline. S
 
 ## bracket: Ethlete integration
 
-- Low: the source maps only `published` to `completed` (`bracket/integrations/ethlete.ts:175`), but the match normalizer treats `finished` as finished too (`match/integrations/ethlete.ts:106-108`). A finished but unpublished match draws as finished on its card and as pending in the bracket model. Map both statuses in the same way. S Re-rated from Medium: the bracket model reads `status` only for tie detection, and `winner` comes from `winningSide` either way, so only an unpublished tie is affected.
 - Medium: swiss detection throws `MODE_UNSUPPORTED` when the last round has as many matches as the first (`bracket/integrations/ethlete.ts:97-109`). If the API returns only the rounds drawn so far, a 16-team swiss stage fails for its first three rounds (8, 8, 8 matches). Detect elimination from the stage type, not from the match count. S Unverified: whether the API omits undrawn rounds; `firstDrawnRound` suggests it lists them with empty `matches`, and then the last round has 0 matches and no throw happens.
-- Low: every single-elimination `normal` round with one match becomes `FINAL` (`bracket/integrations/ethlete.ts:60-63`). A one-match play-in round then gets the final card and the final's place in the layout. The comment above it is a TODO without an issue link. Type a round as final only by its position or by the API's `final` type. M Re-rated from Medium: byes are modelled as matches inside a round, so a one-match normal round before the final is rare in Ethlete data.
-- Low: the exported name `generateTournamentModeFormEthleteRounds` has a typo, "Form" for "From" (`bracket/integrations/ethlete.ts:87`). The duplicate checks at `:138,161` scan arrays in a loop; use a `Set`. S
+- Low: every single-elimination `normal` round with one match becomes `FINAL` (`bracket/integrations/ethlete.ts:60-63`). A one-match play-in round then gets the final card and the final's place in the layout. Type a round as final only by its position or by the API's `final` type; this changes the exported `generateRoundTypeFromEthleteRoundType` contract. M Re-rated from Medium: byes are modelled as matches inside a round, so a one-match normal round before the final is rare in Ethlete data.
+- Low: the exported name `generateTournamentModeFormEthleteRounds` has a typo, "Form" for "From" (`bracket/integrations/ethlete.ts:87`). Decision: rename with a deprecated alias, or leave. S
 
 ## match
 
-- Low: the first `animationend` (the 220ms digit) clears the 520ms flash (`match/match-score.component.ts:18,72-77`). The flash disappears near its peak. `settleFlash` only calls `settle`. S
-- Low: the default `matchName` and `resultName` labels hardcode "Live", "Finished", "vs.", "won", "Draw" and "points" (`match/match-labels.ts:92-112`). An app that localizes `live`, `finished` and `versus` still hears English in the accessible name. The normalizer's `Match ${n}` label is also hardcoded (`match/integrations/ethlete.ts:151`). S
-- Low: the seed badge puts `aria-label` on a generic `<span>` (`match/match-participant.component.ts:74`). Many screen readers ignore it. Use visually hidden text. S
-- Low: the list of natively interactive tags is duplicated (`match/match-participant.component.ts:122`, `match/headless/match-card.directive.ts:40`). S
-- Low: an empty-string `name` draws a blank row instead of the `tbd` label (`match/match-participant-name.ts:25-27`). `charAt(0)` splits an emoji's surrogate pair in the emblem mark (`match/match-participant.component.ts:151`). S
+- Low: the default `matchName` and `resultName` labels hardcode "Live", "Finished", "vs.", "won", "Draw" and "points" (`match/match-labels.ts:92-112`). An app that localizes `live`, `finished` and `versus` still hears English in the accessible name. The normalizer's `Match ${n}` label is also hardcoded (`match/integrations/ethlete.ts:151`). Decision: pass the resolved labels into the name contexts (public type change), or document that `matchName`/`resultName` must be localized too. S
 
 ## standings
 
 - Medium: the form column tells win, tie and loss apart by opacity alone (`standings/standings.component.css:185-195`), which fails WCAG 1.4.1. Add a non-colour mark (needs a design call). The screen-reader half (hidden text per result) is fixed. S Verified.
-- Low: the legend tracks by `zone.label` (`standings/standings.component.html:104`). Two zones with the same label cause a duplicate-key error. Track by `$index` or by `from`. S
-- Low: a hardcoded shadow colour `rgb(0 0 0 / 0.25)` (`standings/standings-pick.component.css:85`). S
-- Low: the default `'Advances'` label is English-only, and the JSDoc example hardcodes the theme name `'success'` without saying it belongs to the app (`standings/integrations/ethlete.ts:56,70`). S
+- Low: the default `'Advances'` label is English-only (`standings/integrations/ethlete.ts:70`). Decision: make `advancingLabel` required, or keep the English default. S
 
 ## Spec gaps
 
-- Spec: no spec for `match/match-score.component.ts` (roll, settle, reduced motion), and no card test that swaps `match` for a different id. S
+- Spec: no reduced-motion test for `match/match-score.component.ts`, and no card test that swaps `match` for a different id. S
 - Spec: no `standings-pick` test that changes `participants` after a move. S
 - Spec: no journey-highlight test for Escape with `defaultPrevented`, or for elimination marks in a swiss source. S
