@@ -1,6 +1,6 @@
 # overlay scan - open findings
 
-Scan of `libs/components/src/lib/overlay/` from 2026-09-28. 0 High, 1 Medium, 20 Low, 5 Spec (after verification). Skipped: stories, the CSS beyond layer and colour checks. `anchored.strategy.ts`, `full-screen.strategy.ts` and `fullscreen-animation.ts` were read in a second pass (see the last section). Focus trap, focus restore and outside-pointer logic live in `@ethlete/core`'s overlay runtime and are out of scope.
+Scan of `libs/components/src/lib/overlay/` from 2026-09-28. 0 High, 1 Medium, 15 Low, 5 Spec (after verification). Skipped: stories, the CSS beyond layer and colour checks. `anchored.strategy.ts`, `full-screen.strategy.ts` and `fullscreen-animation.ts` were read in a second pass (see the last section). Focus trap, focus restore and outside-pointer logic live in `@ethlete/core`'s overlay runtime and are out of scope.
 
 ## headless
 
@@ -40,11 +40,6 @@ Scan of `libs/components/src/lib/overlay/` from 2026-09-28. 0 High, 1 Medium, 20
 
 ## strategies and fullscreen animation (second pass)
 
-- Low: a close before the first enter frame hides the origin for the whole reduced leave (`strategies/fullscreen-animation.ts:602-611`). In the `init` branch `isOriginHidden` is always `false`, so the `else` hides the origin although no clone replaces it; the trigger blinks out until `onAfterLeave`. Restore only, never hide, in that branch. S
-- Low: `cleanupFullscreenAnimation` decides from the shared `data-et-origin-hidden-count` attribute, not from `state.isOriginHidden` (`strategies/fullscreen-animation.ts:683`). When two overlays use the same origin, the first cleanup decrements the other overlay's hide and shows the origin under its open clone. Use `state.isOriginHidden`. S
-- Low: `restoreOriginElement` resets the transition in an uncancelled `nextFrame` after it clears the capture attributes (`strategies/fullscreen-animation.ts:382-395`). A hide in that frame captures the temporary `transition: none` as the original (`:62-67`), and the origin keeps an inline `transition: none` after the next close. Clear the attributes inside the frame callback, or cancel the frame on hide. S
-- Low: the viewport size comes from `visualViewport` (`strategies/fullscreen-animation.ts:103-114`), but the rect is layout-viewport relative, the container fills the layout viewport and the reduced check reads `documentElement.clientWidth` (`:162`). With pinch zoom or an open soft keyboard the clone and pane grow to a wrong centre and scale. Use the layout viewport for all three. S
 - Low: `buildAnchoredRuntimePositionStrategy` always calls `enableAnchoredOverlayPositionExtras()` (`strategies/anchored.strategy.ts:68-69`). Every consumer of tooltip, select, menu or `[etOverlay]` bundles floating-ui `size`, `arrow` and `hide`, so the opt-in split in `@ethlete/core` has no effect through `components`. Call it only from the consumers that use those options, or drop the split. M
 - Low: `strategies/index.ts:6` re-exports all of `fullscreen-animation.ts` as public API, which includes `ViewportTransformData`, `cleanupFullscreenAnimationStyles` and the start, leave and abort functions that only `full-screen.strategy.ts` calls. Export the module by name from `full-screen.strategy.ts` only. S
-- Low: comments outside the AGENTS.md allowlist in `strategies/fullscreen-animation.ts:241,246` and `strategies/anchored.strategy.ts:68`. The comment at `:246` is also wrong: the percentage is measured from the top-left corner, not from the viewport centre. S
 - Spec: no spec for `fullscreen-animation.ts` or `full-screen.strategy.ts` (close during the enter frame, breakpoint switch away and back, a detached origin at close, the shared hidden count). M

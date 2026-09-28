@@ -100,18 +100,10 @@ const clearOriginAttributes = (renderer: AngularRenderer, element: HTMLElement) 
   renderer.removeAttribute(element, ORIGIN_ATTR_OPACITY, ORIGIN_ATTR_TRANSITION, ORIGIN_ATTR_HIDDEN_COUNT);
 };
 
-const getViewportSize = (document: Document) => {
-  const visualViewport = (document.defaultView as Window | null)?.visualViewport;
-
-  if (visualViewport) {
-    return { width: visualViewport.width, height: visualViewport.height };
-  }
-
-  return {
-    width: document.documentElement.clientWidth,
-    height: document.documentElement.clientHeight,
-  };
-};
+const getViewportSize = (document: Document) => ({
+  width: document.documentElement.clientWidth,
+  height: document.documentElement.clientHeight,
+});
 
 const hasLayoutBox = (element: HTMLElement) => {
   if (!element.isConnected) return false;
@@ -246,12 +238,10 @@ const applyReducedAnimationStyles = (options: {
     '--origin-translate-y': '0px',
   });
 
-  // Apply transform origin if we have an origin element
   if (originElement && applyTransformOrigin && hasLayoutBox(originElement)) {
     const rect = originElement.getBoundingClientRect();
     const { width: viewportWidth, height: viewportHeight } = getViewportSize(document);
 
-    // Calculate transform origin as percentage from viewport center
     const originX = ((rect.left + rect.width / 2) / viewportWidth) * 100;
     const originY = ((rect.top + rect.height / 2) / viewportHeight) * 100;
 
@@ -371,7 +361,15 @@ const createOriginClone = (options: {
   return cloneComponentRef;
 };
 
+const pendingTransitionRestores = /* @__PURE__ */ new WeakMap<HTMLElement, () => void>();
+
+const cancelPendingTransitionRestore = (element: HTMLElement) => {
+  pendingTransitionRestores.get(element)?.();
+  pendingTransitionRestores.delete(element);
+};
+
 const hideOriginElement = (renderer: AngularRenderer, element: HTMLElement) => {
+  cancelPendingTransitionRestore(element);
   captureOriginStyles(renderer, element);
   incrementHiddenCount(renderer, element);
 
@@ -393,14 +391,18 @@ const restoreOriginElement = (renderer: AngularRenderer, element: HTMLElement) =
     });
 
     forceReflow(element);
+    cancelPendingTransitionRestore(element);
 
-    nextFrame(() => {
-      renderer.setStyle(element, {
-        transition: transition || null,
-      });
-    });
-
-    clearOriginAttributes(renderer, element);
+    pendingTransitionRestores.set(
+      element,
+      nextFrame(() => {
+        pendingTransitionRestores.delete(element);
+        renderer.setStyle(element, {
+          transition: transition || null,
+        });
+        clearOriginAttributes(renderer, element);
+      }),
+    );
   }
 };
 
@@ -613,9 +615,6 @@ export const startFullscreenLeaveAnimation = (options: {
       if (isOriginHidden) {
         restoreOriginElement(renderer, state.originElement);
         isOriginHidden = false;
-      } else {
-        hideOriginElement(renderer, state.originElement);
-        isOriginHidden = true;
       }
 
       applyReducedAnimationStyles({
@@ -688,16 +687,14 @@ export const cleanupFullscreenAnimation = (state: FullscreenAnimationState, deps
 
   unsubscribeAll(state);
 
-  const isActuallyHidden = state.originElement ? getHiddenCount(state.originElement) > 0 : false;
-
-  if (state.cloneComponentRef && !isActuallyHidden) {
+  if (state.cloneComponentRef && !state.isOriginHidden) {
     destroyClone(state.cloneComponentRef, appRef);
 
     return;
   }
 
   const restoreOrigin = () => {
-    if (state.originElement && isActuallyHidden) {
+    if (state.originElement && state.isOriginHidden) {
       restoreOriginElement(renderer, state.originElement);
     }
   };
