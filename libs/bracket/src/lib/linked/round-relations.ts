@@ -291,52 +291,37 @@ const handleFinalRound = <TRoundData, TMatchData>(params: {
     );
   }
 
-  if (isAsyncBracket) {
-    const preFinalLowerRound = lowerRounds[lowerRounds.length - 2];
-    const prePreFinalLowerRound = lowerRounds[lowerRounds.length - 3] || null;
+  const preFinalLowerRound = lowerRounds[lowerRounds.length - 2] || null;
 
-    if (!preFinalLowerRound)
-      throw new BracketRuntimeError(BRACKET_ERROR_CODES.ROUND_RELATION_INVALID, 'preFinalLowerRound is null');
+  if (!preFinalLowerRound) {
+    relations.push(createNothingToOneRelation({ currentRound: finalLowerRound, nextRound: currentUpperRound }));
 
-    relations.push(
-      createOneToOneRelation({
-        currentRound: finalLowerRound,
-        previousRound: preFinalLowerRound,
-        nextRound: currentUpperRound,
-        rootRound: firstLowerRound,
-      }),
-    );
+    return;
+  }
 
-    if (prePreFinalLowerRound) {
-      relations.push(
-        createOneToOneRelation({
+  relations.push(
+    createOneToOneRelation({
+      currentRound: finalLowerRound,
+      previousRound: preFinalLowerRound,
+      nextRound: currentUpperRound,
+      rootRound: firstLowerRound,
+    }),
+  );
+
+  if (!isAsyncBracket) return;
+
+  const prePreFinalLowerRound = lowerRounds[lowerRounds.length - 3] || null;
+
+  relations.push(
+    prePreFinalLowerRound
+      ? createOneToOneRelation({
           currentRound: preFinalLowerRound,
           previousRound: prePreFinalLowerRound,
           nextRound: finalLowerRound,
           rootRound: firstLowerRound,
-        }),
-      );
-    } else {
-      relations.push(
-        createNothingToOneRelation({
-          currentRound: preFinalLowerRound,
-          nextRound: finalLowerRound,
-        }),
-      );
-    }
-  } else {
-    const previousLowerRound = lowerRounds[lowerRounds.length - 2] || null;
-    if (!previousLowerRound)
-      throw new BracketRuntimeError(BRACKET_ERROR_CODES.ROUND_RELATION_INVALID, 'previousLowerRound is null');
-    relations.push(
-      createOneToOneRelation({
-        currentRound: finalLowerRound,
-        previousRound: previousLowerRound,
-        nextRound: currentUpperRound,
-        rootRound: firstLowerRound,
-      }),
-    );
-  }
+        })
+      : createNothingToOneRelation({ currentRound: preFinalLowerRound, nextRound: finalLowerRound }),
+  );
 };
 
 const handleFirstRound = <TRoundData, TMatchData>(params: {

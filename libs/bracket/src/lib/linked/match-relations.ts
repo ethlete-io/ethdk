@@ -1,5 +1,5 @@
 import { BracketMatchId, BracketMatchPosition, BracketRoundId } from '../core';
-import { BracketMatchSource } from '../integrations';
+import { BracketMatchSource, BracketSlotSource } from '../integrations';
 import { Bracket, BracketMatch, BracketRound } from './bracket';
 import { BracketRoundRelation } from './round-relations';
 import { BracketRuntimeError } from '../bracket-runtime-error';
@@ -80,6 +80,33 @@ export const generateMatchPosition = (
   factor: BracketMatchFactor,
 ): BracketMatchPosition => Math.ceil(match.position * factor) as BracketMatchPosition;
 
+const generatePreviousRoundMatchPositions = <TRoundData, TMatchData>(
+  relation: Extract<BracketRoundRelation<TRoundData, TMatchData>, { type: 'one-to-one' | 'one-to-nothing' }>,
+  match: BracketMatch<TRoundData, TMatchData>,
+) => {
+  const feederFactor = relation.currentRound.matchCount / relation.previousRound.matchCount;
+  const feederPositions: BracketMatchPosition[] = [];
+
+  for (const feeder of relation.previousRound.matches.values()) {
+    if (generateMatchPosition(feeder, feederFactor) === match.position) feederPositions.push(feeder.position);
+  }
+
+  const first = feederPositions[0];
+  const last = feederPositions[feederPositions.length - 1];
+
+  if (first !== undefined && last !== undefined) {
+    return { previousUpperRoundMatchPosition: first, previousLowerRoundMatchPosition: last };
+  }
+
+  const double = relation.previousRoundMatchFactor === 2 ? 1 : 0;
+
+  return {
+    previousUpperRoundMatchPosition: (generateMatchPosition(match, relation.previousRoundMatchFactor) -
+      double) as BracketMatchPosition,
+    previousLowerRoundMatchPosition: generateMatchPosition(match, relation.previousRoundMatchFactor),
+  };
+};
+
 export const generateMatchRelationPositions = <TRoundData, TMatchData>(
   relation: BracketRoundRelation<TRoundData, TMatchData>,
   match: BracketMatch<TRoundData, TMatchData>,
@@ -92,25 +119,17 @@ export const generateMatchRelationPositions = <TRoundData, TMatchData>(
         previousLowerRoundMatchPosition: FALLBACK_MATCH_RELATION_POSITION,
       };
 
-    case 'one-to-nothing': {
-      const double = relation.previousRoundMatchFactor === 2 ? 1 : 0;
+    case 'one-to-nothing':
       return {
         nextRoundMatchPosition: FALLBACK_MATCH_RELATION_POSITION,
-        previousUpperRoundMatchPosition: (generateMatchPosition(match, relation.previousRoundMatchFactor) -
-          double) as BracketMatchPosition,
-        previousLowerRoundMatchPosition: generateMatchPosition(match, relation.previousRoundMatchFactor),
+        ...generatePreviousRoundMatchPositions(relation, match),
       };
-    }
 
-    case 'one-to-one': {
-      const double = relation.previousRoundMatchFactor === 2 ? 1 : 0;
+    case 'one-to-one':
       return {
         nextRoundMatchPosition: generateMatchPosition(match, relation.nextRoundMatchFactor),
-        previousUpperRoundMatchPosition: (generateMatchPosition(match, relation.previousRoundMatchFactor) -
-          double) as BracketMatchPosition,
-        previousLowerRoundMatchPosition: generateMatchPosition(match, relation.previousRoundMatchFactor),
+        ...generatePreviousRoundMatchPositions(relation, match),
       };
-    }
 
     case 'two-to-one':
       return {
@@ -332,7 +351,7 @@ export const generateMatchRelationsNew = <TRoundData, TMatchData>(
 ): BracketMatchRelation<TRoundData, TMatchData>[] => {
   const sourceMatches = options.source?.matches ?? [];
   const hasDeclaredGraph =
-    options.previousMatchIds !== undefined || sourceMatches.some((match) => defaultPreviousMatchIds(match).length > 0);
+    options.previousMatchIds !== undefined || sourceMatches.some((match) => matchOutcomeSlots(match).length > 0);
 
   if (hasDeclaredGraph) {
     return generateDeclaredMatchRelations({
@@ -429,10 +448,15 @@ export const generateMatchRelationsNew = <TRoundData, TMatchData>(
   return matchRelations;
 };
 
+const matchOutcomeSlots = <TMatchData>(match: BracketMatchSource<TMatchData>) =>
+  [match.homeSource, match.awaySource].filter(
+    (slot): slot is BracketSlotSource & { matchId: string } => slot?.kind === 'match-outcome' && !!slot.matchId,
+  );
+
 const defaultPreviousMatchIds = <TMatchData>(match: BracketMatchSource<TMatchData>): string[] =>
-  [match.homeSource, match.awaySource]
-    .filter((slot) => slot?.kind === 'match-outcome' && slot.matchId !== null)
-    .map((slot) => slot?.matchId as string);
+  matchOutcomeSlots(match)
+    .filter((slot) => slot.role !== 'loser')
+    .map((slot) => slot.matchId);
 
 const generateDeclaredMatchRelations = <TRoundData, TMatchData>(options: {
   bracket: Bracket<TRoundData, TMatchData>;

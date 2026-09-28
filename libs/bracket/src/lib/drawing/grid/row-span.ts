@@ -1,8 +1,8 @@
-import { Bracket } from '../../linked';
+import { BracketRound } from '../../linked';
 import { CreateBracketGridConfig } from './types';
 
 export const resolveBracketGridRowSpan = <TRoundData, TMatchData>(
-  bracket: Bracket<TRoundData, TMatchData>,
+  bracket: { rounds: { values(): Iterable<BracketRound<TRoundData, TMatchData>> } },
   options: CreateBracketGridConfig,
 ) => {
   if (!options.rowSpanRoundId) return options;

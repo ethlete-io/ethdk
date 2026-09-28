@@ -1,4 +1,10 @@
-import { BRACKET_DATA_LAYOUT, BracketRoundId, SINGLE_ELIMINATION_BRACKET_ROUND_TYPE } from '../core';
+import {
+  BRACKET_DATA_LAYOUT,
+  BracketRoundId,
+  BracketRoundType,
+  DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
+  SINGLE_ELIMINATION_BRACKET_ROUND_TYPE,
+} from '../core';
 import { BracketDataSource } from '../integrations';
 import { createBracket } from './bracket';
 import { BracketRoundRelation } from './round-relations';
@@ -26,6 +32,26 @@ const singleElimination = (matchCounts: number[]): BracketDataSource<null, null>
     })),
   ),
 });
+
+const doubleElimination = (
+  rounds: { id: string; type: BracketRoundType; matchCount: number }[],
+): BracketDataSource<null, null> => ({
+  mode: 'double-elimination',
+  rounds: rounds.map(({ id, type }) => ({ id, name: id, type, data: null })),
+  matches: rounds.flatMap(({ id, matchCount }) =>
+    Array.from({ length: matchCount }, (_, matchIndex) => ({
+      id: `${id}m${matchIndex}`,
+      roundId: id,
+      home: null,
+      away: null,
+      winner: null,
+      status: 'pending' as const,
+      data: null,
+    })),
+  ),
+});
+
+const { UPPER_BRACKET, LOWER_BRACKET, REVERSE_FINAL } = DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE;
 
 const describeRelation = (relation: BracketRoundRelation<null, null>) => {
   const parts: string[] = [relation.type];
@@ -62,5 +88,32 @@ describe('generateRoundRelations', () => {
 
     expect(relationOf(source, 'r0')).toBe('nothing-to-one next=r2');
     expect(relationOf(source, 'r2')).toBe('one-to-nothing prev=r0');
+  });
+
+  it('links a double elimination whose later lower rounds are not drawn yet', () => {
+    const source = doubleElimination([
+      { id: 'u1', type: UPPER_BRACKET, matchCount: 2 },
+      { id: 'u2', type: UPPER_BRACKET, matchCount: 1 },
+      { id: 'l1', type: LOWER_BRACKET, matchCount: 1 },
+      { id: 'l2', type: LOWER_BRACKET, matchCount: 0 },
+      { id: 'gf', type: 'final', matchCount: 1 },
+    ]);
+
+    expect(relationOf(source, 'l1')).toBe('nothing-to-one next=gf');
+    expect(relationOf(source, 'gf')).toBe('two-to-nothing');
+  });
+
+  it('links a double elimination with a reverse final whose later lower rounds are not drawn yet', () => {
+    const source = doubleElimination([
+      { id: 'u1', type: UPPER_BRACKET, matchCount: 2 },
+      { id: 'u2', type: UPPER_BRACKET, matchCount: 1 },
+      { id: 'l1', type: LOWER_BRACKET, matchCount: 1 },
+      { id: 'l2', type: LOWER_BRACKET, matchCount: 0 },
+      { id: 'gf', type: 'final', matchCount: 1 },
+      { id: 'rf', type: REVERSE_FINAL, matchCount: 1 },
+    ]);
+
+    expect(relationOf(source, 'l1')).toBe('nothing-to-one next=gf');
+    expect(relationOf(source, 'gf')).toBe('two-to-one next=rf');
   });
 });

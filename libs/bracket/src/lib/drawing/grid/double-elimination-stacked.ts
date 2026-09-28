@@ -48,11 +48,11 @@ type StackedBlock<TRoundData, TMatchData> = {
    */
   chain: BracketRound<TRoundData, TMatchData>[];
 
-  /** What one ordinary column's matches occupy, headers excluded. */
-  content: number;
+  options: CreateBracketGridConfig;
+  body: number;
 
-  /** What every ordinary column reserves below its matches so a chain taller than `content` fits. */
-  bottomPadding: number;
+  /** What one ordinary column's matches occupy, headers excluded. */
+  columnContent: (round: BracketRound<TRoundData, TMatchData>) => number;
 
   /** Where the chain starts, so its first round lands on the block's vertical centre. */
   spacerTop: number;
@@ -98,7 +98,8 @@ const chainRoundHeight = <TRoundData, TMatchData>(config: {
 const createStackedBlock = <TRoundData, TMatchData>(
   config: StackedBlockConfig<TRoundData, TMatchData>,
 ): StackedBlock<TRoundData, TMatchData> | null => {
-  const { rounds, options, hasReverseFinal } = config;
+  const { rounds, hasReverseFinal } = config;
+  const options = resolveBracketGridRowSpan({ rounds }, config.options);
 
   const halves = rounds.filter((round) => !!round.mirrorRoundType);
   const left = halves
@@ -130,7 +131,10 @@ const createStackedBlock = <TRoundData, TMatchData>(
 
   if (!firstRound) return null;
 
-  const content = firstRound.matchCount * options.matchHeight + Math.max(0, firstRound.matchCount - 1) * options.rowGap;
+  const rows = options.rowSpanMatchCount ?? firstRound.matchCount;
+  const rowsHeight = (count: number) => count * options.matchHeight + Math.max(0, count - 1) * options.rowGap;
+  const content = rowsHeight(rows);
+  const columnContent = (round: BracketRound<TRoundData, TMatchData>) => rowsHeight(Math.max(rows, round.matchCount));
 
   let chainHeight = 0;
 
@@ -144,16 +148,18 @@ const createStackedBlock = <TRoundData, TMatchData>(
   // there grows the block rather than sliding up: an anchor a few px off centre turns every one of those
   // connectors into a diagonal, in a drawing where nothing else is.
   const spacerTop = Math.max(0, (content - anchorHeight) / 2);
+  const body = Math.max(spacerTop + chainHeight, ...[...leftSlots, ...right].map(columnContent));
 
   return {
     firstRound,
     left: leftSlots,
     right,
     chain,
-    content,
-    bottomPadding: Math.max(0, spacerTop + chainHeight - content),
+    options,
+    body,
+    columnContent,
     spacerTop,
-    spacerBottom: Math.max(0, content - spacerTop - chainHeight),
+    spacerBottom: Math.max(0, body - spacerTop - chainHeight),
   };
 };
 
@@ -170,8 +176,7 @@ export const createStackedDoubleEliminationGrid = <TRoundData, TMatchData>(
   components: BracketComponents<TRoundData, TMatchData>,
   // eslint-disable-next-line max-params -- grid builder signature (data, options, components)
 ): ComputedBracketGrid<TRoundData, TMatchData> => {
-  const resolvedOptions = resolveBracketGridRowSpan(bracketData, options);
-  const grid = createBracketGrid<TRoundData, TMatchData>({ spanElementWidth: resolvedOptions.columnWidth });
+  const grid = createBracketGrid<TRoundData, TMatchData>({ spanElementWidth: options.columnWidth });
 
   const roundsOfType = (type: BracketRoundType) => Array.from(bracketData.roundsByType.get(type)?.values() ?? []);
 
@@ -183,7 +188,7 @@ export const createStackedDoubleEliminationGrid = <TRoundData, TMatchData>(
       ...roundsOfType(COMMON_BRACKET_ROUND_TYPE.FINAL),
       ...roundsOfType(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.REVERSE_FINAL),
     ],
-    options: resolvedOptions,
+    options,
     hasReverseFinal,
   });
 
@@ -192,7 +197,7 @@ export const createStackedDoubleEliminationGrid = <TRoundData, TMatchData>(
       ...roundsOfType(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET),
       ...roundsOfType(COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE),
     ],
-    options: resolvedOptions,
+    options,
     hasReverseFinal,
   });
 
@@ -205,8 +210,7 @@ export const createStackedDoubleEliminationGrid = <TRoundData, TMatchData>(
 
   const blocks = [winners, losers];
   const headerBlock = options.roundHeaderHeight > 0 ? options.roundHeaderHeight + options.roundHeaderGap : 0;
-  const blockHeight = (block: StackedBlock<TRoundData, TMatchData>) =>
-    headerBlock + block.content + block.bottomPadding;
+  const blockHeight = (block: StackedBlock<TRoundData, TMatchData>) => headerBlock + block.body;
 
   // Both blocks put their centre in the same master column, so the chains - and the grand final's line
   // down to the losers champion - run up one strip rather than two.
@@ -342,9 +346,9 @@ export const createStackedDoubleEliminationGrid = <TRoundData, TMatchData>(
     return createRoundBracketSubColumnRelativeToFirstRound({
       firstRound: block.firstRound,
       round,
-      options: resolvedOptions,
+      options: block.options,
       hasReverseFinal,
-      bottomPadding: block.bottomPadding,
+      bottomPadding: block.body - block.columnContent(round),
       span: { isStart: true, isEnd: true },
       components,
     });

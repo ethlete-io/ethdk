@@ -11,11 +11,11 @@ const LOSERS_SECTION = 2;
 
 const settings = resolveBracketLayoutSettings({});
 
-const build = (source: BracketDataSource<null, null>) => {
+const build = (source: BracketDataSource<null, null>, rowSpanRoundId: string | null = null) => {
   const bracketData = createBracket(source, { layout: BRACKET_DATA_LAYOUT.MIRRORED });
   const grid = createStackedDoubleEliminationGrid(
     bracketData,
-    createBracketGridConfig(settings, BRACKET_DATA_LAYOUT.MIRRORED),
+    createBracketGridConfig({ ...settings, rowSpanRoundId }, BRACKET_DATA_LAYOUT.MIRRORED),
     resolveBracketComponents({}, {}, undefined),
   );
 
@@ -25,7 +25,8 @@ const build = (source: BracketDataSource<null, null>) => {
   return { grid, masterColumns, bracketData };
 };
 
-const stacked = (options: DoubleEliminationOptions) => build(generateDoubleEliminationBracket(options));
+const stacked = (options: DoubleEliminationOptions, rowSpanRoundId: string | null = null) =>
+  build(generateDoubleEliminationBracket(options), rowSpanRoundId);
 
 /** Every shape a double-elimination source comes in, from the generator's options. */
 const SOURCE_SHAPES = [
@@ -173,5 +174,36 @@ describe('createStackedDoubleEliminationGrid', () => {
 
       expect(bottom).toBeLessThanOrEqual(grid.raw.grid.dimensions.height);
     }
+  });
+
+  it('keeps the anchor level and both blocks flat when a winners round sets the row span', () => {
+    const { grid, masterColumns } = stacked({ participantCount: 32, includeFinal: true }, 'ub-r2');
+
+    const winnersAnchor = rectOf(grid, 'ub-r4-m0').blockCentre;
+    const losersAnchor = rectOf(grid, 'lb-r6-m0').blockCentre;
+
+    expect(rectOf(grid, 'ub-r3-m0').blockCentre).toBeCloseTo(winnersAnchor, 5);
+    expect(rectOf(grid, 'ub-r3-m1').blockCentre).toBeCloseTo(winnersAnchor, 5);
+    expect(rectOf(grid, 'lb-r5-m0').blockCentre).toBeCloseTo(losersAnchor, 5);
+    expect(rectOf(grid, 'lb-r5-m1').blockCentre).toBeCloseTo(losersAnchor, 5);
+
+    const winnersHeights = masterColumns.map((column) => column.sections[WINNERS_SECTION]?.dimensions.height);
+    const losersTops = masterColumns.map((column) => column.sections[LOSERS_SECTION]?.dimensions.top);
+
+    expect(new Set(winnersHeights).size).toBe(1);
+    expect(new Set(losersTops).size).toBe(1);
+  });
+
+  it('leaves the losers block unsqueezed when a winners round sets the row span', () => {
+    const plain = stacked({ participantCount: 32, includeFinal: true }).grid;
+    const squeezed = stacked({ participantCount: 32, includeFinal: true }, 'ub-r2').grid;
+
+    const losersOffsets = (grid: ReturnType<typeof build>['grid']) => {
+      const top = rectOf(grid, 'lb-r0-m0').top;
+
+      return ['lb-r1-m0', 'lb-r3-m0', 'lb-r6-m0'].map((id) => rectOf(grid, id).top - top);
+    };
+
+    expect(losersOffsets(squeezed)).toEqual(losersOffsets(plain));
   });
 });
