@@ -134,6 +134,10 @@ export class DurationInputDirective
       return;
     }
 
+    if (rawValue === this.displayValue() && !this.parseError()) {
+      return;
+    }
+
     const trimmed = rawValue.trim();
 
     this.inputText.set(rawValue);

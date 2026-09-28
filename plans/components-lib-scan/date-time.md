@@ -13,8 +13,6 @@ Paths are relative to `forms/date-time/`.
 
 ## Duration input
 
-- Medium: every blur re-parses the field, so a value finer than the smallest segment changes on a plain focus and blur (`duration-input/headless/duration-input-field.directive.ts:83`, `duration-input/headless/duration-input.directive.ts:132`). `1500` under `mm:ss` shows `00:01` and blur commits `1000`. Negative values become `0` in the same way (`duration-format.ts:65`). Fix: skip the commit when the text equals `displayValue()` and there is no parse error, as `resolvePickerCommit` does. S Verified.
-- Medium: `parseDuration` accepts `h`/`m`/`s` letters but ignores them and fills the digit groups from the right (`duration-input/headless/internals/duration-format.ts:107-122`). Under `hh:mm:ss` the input `1h30m` becomes 1 min 30 s, not 1 h 30 min. Fix: map a suffixed group to its unit, or reject letters. S Verified.
 - Low: `internals/duration-format` (`UNIT_MS`, `deriveDurationFormatSpec`, …) is public API through `duration-input/headless/index.ts:3`. S
 
 ## Validators

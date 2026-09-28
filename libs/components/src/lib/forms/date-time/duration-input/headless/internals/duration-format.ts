@@ -92,10 +92,38 @@ export const formatDuration = (ms: number | null, spec: DurationFormatSpec) => {
     .join('');
 };
 
+const SUFFIXED_PATTERN = /^(?:\s*\d+\s*[hms])+\s*$/i;
+const SUFFIXED_GROUP_PATTERN = /(\d+)\s*([hms])/gi;
+
+const parseSuffixedDuration = (text: string, spec: DurationFormatSpec): number | null => {
+  if (!SUFFIXED_PATTERN.test(text)) {
+    return null;
+  }
+
+  const smallestScale = Math.min(...spec.segments.map((segment) => UNIT_MS[segment.unit]));
+  const seen = new Set<string>();
+  let total = 0;
+
+  for (const [, digits, letter] of text.matchAll(SUFFIXED_GROUP_PATTERN)) {
+    const unit = (letter ?? '').toLowerCase() as DurationUnit;
+    const scale = UNIT_MS[unit];
+
+    if (seen.has(unit) || scale < smallestScale) {
+      return null;
+    }
+
+    seen.add(unit);
+    total += Number(digits) * scale;
+  }
+
+  return total;
+};
+
 /**
- * Parses typed duration text against the spec. Accepts the segment separators (`1:30`) and,
- * for separator-less digit runs, consumes digits from the right so a short entry fills the
- * smallest units first (`130` → `1:30` under `mm:ss`). Returns total milliseconds, or `null`.
+ * Parses typed duration text against the spec. Accepts the segment separators (`1:30`),
+ * unit-suffixed groups (`1h30m`) and, for separator-less digit runs, consumes digits from the
+ * right so a short entry fills the smallest units first (`130` → `1:30` under `mm:ss`). Returns
+ * total milliseconds, or `null`.
  */
 export const parseDuration = (value: string, spec: DurationFormatSpec): number | null => {
   const text = value.trim();
@@ -104,9 +132,13 @@ export const parseDuration = (value: string, spec: DurationFormatSpec): number |
     return null;
   }
 
+  if (/[hms]/i.test(text)) {
+    return parseSuffixedDuration(text, spec);
+  }
+
   const groups = text.split(/\D+/).filter((group) => group.length > 0);
 
-  if (!groups.length || !/^[\d\s:.,hHmMsS]+$/.test(text)) {
+  if (!groups.length || !/^[\d\s:.,]+$/.test(text)) {
     return null;
   }
 

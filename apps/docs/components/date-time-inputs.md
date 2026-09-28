@@ -694,9 +694,12 @@ The format is any arrangement of unit-token runs and separators: `mm:ss`,
 `hh:mm:ss`, `hh:mm:ss.SSS`, `h m`. Typed text commits on blur/Enter with a
 **lenient parse**: a bare digit run fills from the smallest unit up (`130` →
 `01:30`, `90` → `01:30` under `mm:ss`), and separator entry maps left-to-right
-(`1:30`, `1:02:03`). Milliseconds are literal and need the decimal separator
-(`1:30.500`). Unparseable text is kept visible with a `parseError` (value stays
-`null`), exactly like the date/time inputs. The largest unit is unbounded
+(`1:30`, `1:02:03`). Unit-suffixed groups set their own unit (`1h30m`, `90s`),
+each unit at most once and none finer than the format's smallest segment.
+Milliseconds are literal and need the decimal separator (`1:30.500`). Unparseable
+text is kept visible with a `parseError` (value stays `null`), exactly like the
+date/time inputs. A blur that leaves the rendered text unchanged commits nothing,
+so a value finer than the smallest segment (`1500` under `mm:ss`) survives a focus. The largest unit is unbounded
 (`100:00` is a valid `mm:ss` value); validation of any upper bound belongs to the
 schema.
 

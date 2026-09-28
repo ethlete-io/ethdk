@@ -96,6 +96,20 @@ describe('duration-format', () => {
       expect(parseDuration('abc', mmss)).toBeNull();
     });
 
+    it('maps a unit-suffixed group to its unit', () => {
+      expect(parseDuration('1h30m', hhmmss)).toBe(5_400_000);
+      expect(parseDuration('1h 5s', hhmmss)).toBe(3_605_000);
+      expect(parseDuration('2m', mmss)).toBe(120_000);
+      expect(parseDuration('1H30M', hhmmss)).toBe(5_400_000);
+    });
+
+    it('rejects a unit-suffixed entry it cannot read unambiguously', () => {
+      expect(parseDuration('1h30', hhmmss)).toBeNull();
+      expect(parseDuration('1h2h', hhmmss)).toBeNull();
+      expect(parseDuration('1:30m', hhmmss)).toBeNull();
+      expect(parseDuration('30s', deriveDurationFormatSpec('hh:mm'))).toBeNull();
+    });
+
     it('round-trips through formatDuration', () => {
       for (const ms of [0, 90_000, 3_723_000, 6_000_000]) {
         expect(parseDuration(formatDuration(ms, hhmmss), hhmmss)).toBe(ms);

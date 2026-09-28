@@ -133,6 +133,26 @@ describe('DurationInputDirective', () => {
     expect(driver.durationInput.parseError()).toBe(false);
   });
 
+  it('keeps a value finer than the smallest segment through a focus and blur', () => {
+    driver.host.value.set(1500);
+    driver.tick();
+
+    driver.focus();
+    driver.blur();
+
+    expect(driver.host.value()).toBe(1500);
+  });
+
+  it('keeps a negative value through a focus and blur', () => {
+    driver.host.value.set(-90_000);
+    driver.tick();
+
+    driver.focus();
+    driver.blur();
+
+    expect(driver.host.value()).toBe(-90_000);
+  });
+
   it('marks the control touched on blur', () => {
     driver.focus();
     expect(document.activeElement).toBe(driver.field());
