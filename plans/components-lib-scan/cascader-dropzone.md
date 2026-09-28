@@ -1,6 +1,6 @@
 # forms/cascader + forms/dropzone scan - open findings
 
-Scan of `libs/components/src/lib/forms/cascader/` and `libs/components/src/lib/forms/dropzone/` from 2026-09-28. 0 High, 5 Medium, 25 Low, 2 Spec (1 refuted in verification). Skipped: stories and specs (read only to check coverage), the CSS files beyond a layer and colour check, the query internals behind `executeUntilSettled$`.
+Scan of `libs/components/src/lib/forms/cascader/` and `libs/components/src/lib/forms/dropzone/` from 2026-09-28. 0 High, 0 Medium, 25 Low, 1 Spec (1 refuted in verification). Skipped: stories and specs (read only to check coverage), the CSS files beyond a layer and colour check, the query internals behind `executeUntilSettled$`.
 
 ## cascader - keyboard and a11y
 
@@ -50,8 +50,7 @@ Scan of `libs/components/src/lib/forms/cascader/` and `libs/components/src/lib/f
 
 ## Spec gaps
 
-- Spec: No cascader spec covers disabled search results with keyboard navigation, nor a `dataSource` swap with a committed value (`forms/cascader/headless/cascader.directive.spec.ts`). S
-- Spec: No dropzone spec covers a single-mode replace whose new upload fails, or a delete executor that rejects (`forms/dropzone/headless/dropzone.directive.spec.ts`). S
+- Spec: No dropzone spec covers a single-mode replace whose new upload fails (`forms/dropzone/headless/dropzone.directive.spec.ts`). S
 
 ## Refuted in verification
 
