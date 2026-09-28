@@ -10,8 +10,6 @@ const DEFAULT_STREAM_PIP_OPTIONS: StreamPipOptions = {
   pipWindow: {
     minWidth: 160,
     maxWidth: 640,
-    minHeight: 90,
-    maxHeight: 360,
     desiredSize: 400,
     collapsePeek: 40,
     viewportPadding: 8,

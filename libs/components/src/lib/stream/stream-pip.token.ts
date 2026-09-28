@@ -9,8 +9,6 @@ export type StreamPipOptions = {
   pipWindow: {
     minWidth: number;
     maxWidth: number;
-    minHeight: number;
-    maxHeight: number;
     desiredSize: number;
     collapsePeek: number;
     viewportPadding: number;

@@ -9,8 +9,6 @@ export class PipWindowParamsDirective {
 
   public minWidth = signal(this.streamPip.options.pipWindow.minWidth);
   public maxWidth = signal(this.streamPip.options.pipWindow.maxWidth);
-  public minHeight = signal(this.streamPip.options.pipWindow.minHeight);
-  public maxHeight = signal(this.streamPip.options.pipWindow.maxHeight);
   public desiredSize = signal(this.streamPip.options.pipWindow.desiredSize);
   public collapsePeek = signal(this.streamPip.options.pipWindow.collapsePeek);
   public viewportPadding = signal(this.streamPip.options.pipWindow.viewportPadding);
