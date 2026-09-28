@@ -661,7 +661,8 @@ A participant's path stops at the match they went out in, and that match says so
 `et-bracket-journey-endpoint` outline, and the losing row inside it is struck through
 (`et-bracket-journey-eliminated`). "Out" means every match of theirs is decided and the last one is
 a loss - so a pending lower-bracket match keeps them in, and a champion who dropped a set in the
-winners bracket is never marked.
+winners bracket is never marked. In a swiss stage that loss must also be the one that reaches the
+elimination threshold, so a first-round loser stays in while the next round is not drawn yet.
 
 ### Per-participant hit-testing needs a marked row
 
@@ -697,8 +698,9 @@ The legend ships as `et-bracket-participants` (in `BRACKET_IMPORTS`): a `role="g
 from `BRACKET_LABELS.participantsLegend`, with one [pressed](/components/button) `et-button` per
 participant. It holds no pin of its own - bind its `focusedParticipantId` two-way to the same
 signal as the bracket's. A toggle pins that participant (<kbd>Enter</kbd>/<kbd>Space</kbd> or a
-tap), pressing the pinned one again drops the pin, and a pin dropped by the bracket (Escape, a click
-past the cells) un-presses the toggle. You pass the participants - the bracket's source carries ids,
+tap), pressing the pinned one again drops the pin, and a pin dropped by the bracket (an Escape
+that no open dialog or menu handled, a click past the cells) un-presses the toggle. One Escape drops
+one pin. You pass the participants - the bracket's source carries ids,
 the names are your data:
 
 ```html

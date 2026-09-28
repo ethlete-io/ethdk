@@ -4,8 +4,6 @@ Scan of `libs/components/src/lib/bracket/`, `libs/components/src/lib/match/`, `l
 
 ## bracket: grid and journey highlight
 
-- Medium: the pin drops on any Escape anywhere in the document (`bracket/journey-highlight.ts:209-214,224`). Escape that closes an unrelated dialog or menu also clears the pin, and one Escape clears every pinned bracket on the page. Ignore `event.defaultPrevented`, or listen only while focus or the pointer is in the host. S Verified.
-- Medium: a participant reads as eliminated as soon as all of their matches are decided and the last one is a loss (`bracket/journey-highlight.ts:66-75`). In a swiss stage, every 0-1 participant is crossed out at their round-1 match until round 2 is drawn. Skip the elimination mark for swiss sources, or count losses against the stage's elimination threshold. M Verified.
 - Low: comments outside the AGENTS.md allowlist at `bracket/bracket.component.ts:53-54,65-67,365-366,373-374`, `bracket/bracket.component.html:81,84-85`, `bracket/bracket-grid.ts:28-29`, `bracket/bracket-default-final-match.component.ts:36-38` (a repeat of the `BracketCardContext` JSDoc). S
 
 ## bracket: bundle size

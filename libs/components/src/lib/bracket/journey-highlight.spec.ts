@@ -1,4 +1,4 @@
-import { BRACKET_DATA_LAYOUT } from './core';
+import { BRACKET_DATA_LAYOUT, MatchParticipantSide, SWISS_BRACKET_ROUND_TYPE, TOURNAMENT_MODE } from './core';
 import { createBracketJourneyParticipants } from './journey-highlight';
 import { createBracket } from './linked';
 import { BracketDataSource } from './integrations';
@@ -10,6 +10,29 @@ const journeys = (source: BracketDataSource<null, null>) => {
 
   return new Map(participants.map((participant) => [participant.id, participant.eliminatedAtMatchId]));
 };
+
+const swissSource = (
+  rounds: [id: string, home: string, away: string, winner: MatchParticipantSide][][],
+): BracketDataSource<null, null> => ({
+  mode: TOURNAMENT_MODE.SWISS_WITH_ELIMINATION,
+  rounds: rounds.map((_, index) => ({
+    id: `r${index}`,
+    type: SWISS_BRACKET_ROUND_TYPE.SWISS,
+    name: `Round ${index + 1}`,
+    data: null,
+  })),
+  matches: rounds.flatMap((matches, index) =>
+    matches.map(([id, home, away, winner]) => ({
+      id,
+      roundId: `r${index}`,
+      home,
+      away,
+      winner,
+      status: 'completed' as const,
+      data: null,
+    })),
+  ),
+});
 
 describe('createBracketJourneyParticipants', () => {
   it('ends a single-elimination run at the match that was lost', () => {
@@ -36,5 +59,32 @@ describe('createBracketJourneyParticipants', () => {
     // `l0-0a` loses their only match; `l0-0h` wins it and goes out in the next lower round.
     expect(eliminated.get('l0-0a')).toBe('lb-r0-m0');
     expect(eliminated.get('u2')).toBe('ub-r0-m0');
+  });
+
+  it('keeps a swiss participant in after a first loss while the next round is not drawn yet', () => {
+    const source = swissSource([
+      [
+        ['r0-m0', 'a', 'b', 'home'],
+        ['r0-m1', 'c', 'd', 'home'],
+      ],
+    ]);
+
+    expect(journeys(source).get('b')).toBeNull();
+  });
+
+  it('ends a swiss run at the loss that reaches the elimination threshold', () => {
+    const source = swissSource([
+      [
+        ['r0-m0', 'a', 'b', 'home'],
+        ['r0-m1', 'c', 'd', 'home'],
+      ],
+      [
+        ['r1-m0', 'a', 'c', 'home'],
+        ['r1-m1', 'b', 'd', 'home'],
+      ],
+      [['r2-m0', 'c', 'd', 'home']],
+    ]);
+
+    expect(journeys(source).get('d')).toBe('r2-m0');
   });
 });

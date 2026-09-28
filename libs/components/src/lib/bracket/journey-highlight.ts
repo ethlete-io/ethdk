@@ -1,5 +1,6 @@
 import { Signal } from '@angular/core';
 import { AngularRenderer } from '@ethlete/core';
+import { TOURNAMENT_MODE } from './core';
 import { Bracket } from './linked';
 
 const PARTICIPANT_SHORT_ID_PATTERN = /^p\d+$/;
@@ -37,7 +38,7 @@ export type SetupJourneyHighlightConfig = {
   renderer: AngularRenderer;
   /** Read on each pointer event rather than at setup, so new bracket data needs no new listeners. */
   participants: Signal<BracketJourneyParticipant[]>;
-  /** Called when the bracket itself drops the pin - Escape, or a click on empty bracket space. */
+  /** Called when the bracket itself drops the pin - an Escape nothing else handled, or a click on empty bracket space. */
   onFocusChange: (participantId: string | null) => void;
 };
 
@@ -56,7 +57,9 @@ export type JourneyHighlightController = {
  *
  * A participant is out when every match of theirs is decided and the last of them is one they lost -
  * both halves matter: a pending lower-bracket match means the loss above it wasn't the end, and a
- * champion who dropped a set in the winners bracket lost a match without ever going out.
+ * champion who dropped a set in the winners bracket lost a match without ever going out. In a swiss
+ * stage the last loss must also be the one that reaches the elimination threshold, since the next
+ * round may not be drawn yet.
  *
  * @internal
  */
@@ -66,7 +69,11 @@ export const createBracketJourneyParticipants = <TRoundData, TMatchData>(
   Array.from(bracket.participants.values()).map((participant) => {
     const matches = Array.from(participant.matches.values());
     const lastMatch = matches[matches.length - 1];
-    const isOut = !!lastMatch && matches.every((match) => !!match.winner) && lastMatch.winner?.id !== participant.id;
+    const isOut =
+      !!lastMatch &&
+      matches.every((match) => !!match.winner) &&
+      lastMatch.winner?.id !== participant.id &&
+      (bracket.mode !== TOURNAMENT_MODE.SWISS_WITH_ELIMINATION || lastMatch.me.isEliminated);
 
     return {
       id: participant.id,
@@ -207,8 +214,9 @@ export const setupJourneyHighlight = (config: SetupJourneyHighlightConfig): Jour
   };
 
   const onKeyDown = (event: Event) => {
-    if ((event as KeyboardEvent).key !== 'Escape' || !focusedId) return;
+    if ((event as KeyboardEvent).key !== 'Escape' || event.defaultPrevented || !focusedId) return;
 
+    event.preventDefault();
     setFocused(null);
     onFocusChange(null);
   };
@@ -217,11 +225,15 @@ export const setupJourneyHighlight = (config: SetupJourneyHighlightConfig): Jour
     if (participantId !== focusedId) {
       focusedId = participantId;
 
-      // On the document, and only while something is pinned. The pin is usually set from a control
+      // On the window, and only while something is pinned. The pin is usually set from a control
       // *outside* the bracket (a participants list), so focus is rarely inside it - a listener on the host
       // would mean Escape worked only in the one case where the user had already tabbed into the bracket.
+      // The window sees the event after every document listener, so an overlay that closed on this
+      // Escape has already called preventDefault.
+      const view = host.ownerDocument.defaultView;
+
       stopListeningForEscape?.();
-      stopListeningForEscape = focusedId ? renderer.listen(host.ownerDocument, 'keydown', onKeyDown) : null;
+      stopListeningForEscape = focusedId && view ? renderer.listen(view, 'keydown', onKeyDown) : null;
     }
 
     // Never through the render guard: the caller is a render pass, and the cells the marks sat on may

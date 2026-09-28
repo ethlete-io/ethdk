@@ -288,17 +288,30 @@ describe('BracketComponent participant focus', () => {
   it('drops the pin on Escape and writes the null back through the model', () => {
     driver.pin('p1');
 
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     driver.detectChanges();
 
     expect(driver.host.focusedParticipantId()).toBeNull();
     expect(driver.element().classList).not.toContain('et-bracket-host--journey-focused');
   });
 
+  it('keeps the pin when something else on the page already handled the Escape', () => {
+    driver.pin('p1');
+
+    const closeOverlay = (event: KeyboardEvent) => event.preventDefault();
+
+    document.addEventListener('keydown', closeOverlay);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    document.removeEventListener('keydown', closeOverlay);
+    driver.detectChanges();
+
+    expect(driver.host.focusedParticipantId()).toBe('p1');
+  });
+
   it('leaves the pin alone for any other key', () => {
     driver.pin('p1');
 
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     driver.detectChanges();
 
     expect(driver.host.focusedParticipantId()).toBe('p1');
