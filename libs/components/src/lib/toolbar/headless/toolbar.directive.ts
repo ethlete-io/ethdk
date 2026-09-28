@@ -1,9 +1,14 @@
 import { DOCUMENT } from '@angular/common';
 import { afterEveryRender, Directive, ElementRef, inject, input } from '@angular/core';
+import { isFormInputTarget } from '../../internals/form-input-target';
 import { TOOLBAR_ORIENTATIONS, ToolbarOrientation } from './toolbar.types';
 
 const CONTROL_SELECTOR = 'button, [href], input, select, textarea';
 const TOOLBAR_SELECTOR = '[role="toolbar"]';
+const KEYLESS_INPUT_TYPES = /* @__PURE__ */ new Set(['button', 'checkbox', 'image', 'reset', 'submit']);
+
+const ownsNavigationKeys = (target: EventTarget | null) =>
+  isFormInputTarget(target) && !(target instanceof HTMLInputElement && KEYLESS_INPUT_TYPES.has(target.type));
 
 /**
  * Turns its host into an ARIA toolbar: a single tab stop that Tab enters and leaves, with the arrow
@@ -52,6 +57,8 @@ export class ToolbarDirective {
   }
 
   protected handleKeydown(event: KeyboardEvent) {
+    if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey || ownsNavigationKeys(event.target)) return;
+
     const horizontal = this.orientation() === TOOLBAR_ORIENTATIONS.HORIZONTAL;
     const rtl = horizontal && getComputedStyle(this.elementRef.nativeElement).direction === 'rtl';
     const nextKey = horizontal ? (rtl ? 'ArrowLeft' : 'ArrowRight') : 'ArrowDown';

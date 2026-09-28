@@ -63,7 +63,7 @@ The host is `role="toolbar"` with `aria-orientation` matching `orientation`. **G
 | <kbd>↑</kbd> / <kbd>↓</kbd>      | Previous / next control in a vertical toolbar, wrapping   |
 | <kbd>Home</kbd> / <kbd>End</kbd> | First / last control                                      |
 
-In a horizontal toolbar the left/right keys follow the writing direction, so they swap under `direction: rtl`. The tab stop stays on the control the user last focused, so <kbd>Shift</kbd>+<kbd>Tab</kbd> back into the toolbar re-enters where they left off.
+In a horizontal toolbar the left/right keys follow the writing direction, so they swap under `direction: rtl`. Keys pressed with a modifier, and keys pressed inside a text input, `select`, `textarea` or editable region, are left to that control, so its caret and options keep working. The tab stop stays on the control the user last focused, so <kbd>Shift</kbd>+<kbd>Tab</kbd> back into the toolbar re-enters where they left off.
 
 <StoryEmbed id="components-layout-toolbar--disabled-control" height="240px" />
 

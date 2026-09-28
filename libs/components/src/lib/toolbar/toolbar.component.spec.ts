@@ -47,11 +47,28 @@ class ToolbarConfiguredHostComponent {
 })
 class NestedToolbarHostComponent {}
 
+@Component({
+  selector: 'et-test-toolbar-input-host',
+  template: `
+    <et-toolbar aria-label="Search">
+      <button type="button">Filter</button>
+      <input aria-label="Query" type="search" />
+      <select aria-label="Scope">
+        <option>All</option>
+        <option>Mine</option>
+      </select>
+      <input aria-label="Exact" type="checkbox" />
+    </et-toolbar>
+  `,
+  imports: [TOOLBAR_IMPORTS],
+})
+class ToolbarInputHostComponent {}
+
 const buttonsOf = (fixture: { nativeElement: HTMLElement }) =>
   Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[];
 
-const press = (element: HTMLElement, key: string) =>
-  element.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+const press = (element: HTMLElement, key: string, init: KeyboardEventInit = {}) =>
+  element.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init }));
 
 describe('ToolbarComponent', () => {
   it('is a horizontal toolbar by default', () => {
@@ -192,5 +209,50 @@ describe('ToolbarComponent', () => {
     press(inner, 'ArrowRight');
 
     expect(document.activeElement).toBe(inner);
+  });
+
+  it('leaves the arrow keys and Home/End to a text input or select inside the toolbar', () => {
+    const fixture = TestBed.createComponent(ToolbarInputHostComponent);
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const search = host.querySelector('input[type="search"]') as HTMLInputElement;
+    const select = host.querySelector('select') as HTMLSelectElement;
+
+    for (const control of [search, select]) {
+      for (const key of ['ArrowLeft', 'ArrowRight', 'Home', 'End']) {
+        control.focus();
+
+        expect(press(control, key)).toBe(true);
+        expect(document.activeElement).toBe(control);
+      }
+    }
+  });
+
+  it('still moves focus from a checkbox inside the toolbar', () => {
+    const fixture = TestBed.createComponent(ToolbarInputHostComponent);
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const checkbox = host.querySelector('input[type="checkbox"]') as HTMLInputElement;
+
+    checkbox.focus();
+    press(checkbox, 'ArrowRight');
+
+    expect(document.activeElement).toBe(buttonsOf(fixture)[0]);
+  });
+
+  it('ignores an arrow key pressed with a modifier', () => {
+    const fixture = TestBed.createComponent(ToolbarDefaultHostComponent);
+    fixture.detectChanges();
+
+    const buttons = buttonsOf(fixture);
+
+    for (const modifier of ['ctrlKey', 'altKey', 'metaKey', 'shiftKey'] as const) {
+      buttons[0]!.focus();
+
+      expect(press(buttons[0]!, 'ArrowRight', { [modifier]: true })).toBe(true);
+      expect(document.activeElement).toBe(buttons[0]);
+    }
   });
 });
