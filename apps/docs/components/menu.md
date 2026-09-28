@@ -47,7 +47,7 @@ import { MENU_IMPORTS, MENU_SEARCH_IMPORTS } from '@ethlete/components';
 
 ## Submenus
 
-Nest an `[etMenu]` inside the surface; a row that is both `et-menu-item` and `etMenuTrigger` opens it. The row shows the chevron itself - do not add one. Arbitrary depth is supported - submenus open on hover (with intent delays) or <kbd>ArrowRight</kbd>, close on <kbd>ArrowLeft</kbd>:
+Nest an `[etMenu]` inside the surface; a row that is both `et-menu-item` and `etMenuTrigger` opens it. The row shows the chevron itself - do not add one. Arbitrary depth is supported - submenus open on hover (with intent delays) or <kbd>ArrowRight</kbd>, close on <kbd>ArrowLeft</kbd> (swapped, and opening to the left, when the menu resolves to `direction: rtl`):
 
 ```html
 <div etMenu>
@@ -133,7 +133,7 @@ Inputs on `[etMenu]`:
 
 | Input                | Default        | Notes                                                                                                                                  |
 | -------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `placement`          | `'auto'`       | Resolves to `bottom-start` for root menus, `right-start` for submenus/context menus                                                    |
+| `placement`          | `'auto'`       | Resolves to `bottom-start` for root menus, `right-start` (`left-start` in RTL) for submenus/context menus                              |
 | `fallbackPlacements` | -              | floating-ui fallbacks. Setting it opts the menu out of the placement behavior below                                                    |
 | `offset`             | `'auto'`       | Resolves to `10` with the arrow, smaller without                                                                                       |
 | `viewportPadding`    | `8`            | Clearance against the viewport edge                                                                                                    |

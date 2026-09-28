@@ -383,18 +383,18 @@ export class MenuDirective {
 
         return;
       }
-      case 'ArrowRight': {
-        const submenu = this.activeItem()?.submenu ?? null;
-
-        if (submenu) {
-          event.preventDefault();
-          submenu.show({ source: 'keyboard' });
-        }
-
-        return;
-      }
+      case 'ArrowRight':
       case 'ArrowLeft': {
-        if (!this.isRoot) {
+        const opensSubmenu = (event.key === 'ArrowRight') !== this.isRtl();
+
+        if (opensSubmenu) {
+          const submenu = this.activeItem()?.submenu ?? null;
+
+          if (submenu) {
+            event.preventDefault();
+            submenu.show({ source: 'keyboard' });
+          }
+        } else if (!this.isRoot) {
           event.preventDefault();
           this.closeLevel('escape');
         }
@@ -859,11 +859,11 @@ export class MenuDirective {
       return placement;
     }
 
-    if (this.anchorPoint()) {
-      return 'right-start';
+    if (this.isRoot && !this.anchorPoint()) {
+      return 'bottom-start';
     }
 
-    return this.isRoot ? 'bottom-start' : 'right-start';
+    return `${this.inlineEndSide()}-start`;
   }
 
   private resolvedFallbackPlacements(): Placement[] {
@@ -877,7 +877,18 @@ export class MenuDirective {
       return ['bottom-end', 'top-start', 'top-end'];
     }
 
-    return ['left-start', 'right-end', 'left-end'];
+    const end = this.inlineEndSide();
+    const start = end === 'right' ? 'left' : 'right';
+
+    return [`${start}-start`, `${end}-end`, `${start}-end`];
+  }
+
+  private inlineEndSide(): 'left' | 'right' {
+    return this.isRtl() ? 'left' : 'right';
+  }
+
+  private isRtl() {
+    return getComputedStyle(this.root.hostElement).direction === 'rtl';
   }
 
   /**

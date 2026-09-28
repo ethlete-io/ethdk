@@ -247,6 +247,41 @@ describe('MenuDirective', () => {
     expect(document.activeElement).toBe(submenuTrigger);
   });
 
+  it('swaps the submenu keys and opens the submenu to the left in RTL', async () => {
+    fixture.nativeElement.querySelector('[etMenu]').style.direction = 'rtl';
+    await openMenu();
+
+    const submenuTrigger = query('.submenu-trigger');
+
+    keydown(query('.item-alpha'), 'End');
+    tick();
+    keydown(submenuTrigger, 'ArrowRight');
+    tick();
+
+    expect(menu.openSubmenu()).toBeNull();
+
+    keydown(submenuTrigger, 'ArrowLeft');
+    tick();
+    await flushFrames();
+    tick();
+
+    expect(menu.openSubmenu()).not.toBeNull();
+    expect(query('.sub-panel').closest('[data-overlay-placement]')?.getAttribute('data-overlay-placement')).toBe(
+      'left-start',
+    );
+
+    keydown(query('.sub-item-delta'), 'ArrowLeft');
+    tick();
+
+    expect(menu.openSubmenu()).not.toBeNull();
+
+    keydown(query('.sub-item-delta'), 'ArrowRight');
+    tick();
+
+    expect(menu.openSubmenu()).toBeNull();
+    expect(document.activeElement).toBe(submenuTrigger);
+  });
+
   it('activates items via Enter by synthesizing a click and closes the tree', async () => {
     await openMenu();
 
