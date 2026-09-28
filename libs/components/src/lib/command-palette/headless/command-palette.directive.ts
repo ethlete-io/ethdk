@@ -122,6 +122,9 @@ export class CommandPaletteDirective {
 
   /** @internal Central keyboard handling for the host, the search field, and the rows. */
   public handleKeydown(event: KeyboardEvent) {
+    // Safari sends the Enter that commits an IME composition with isComposing false, but keyCode 229.
+    if (event.isComposing || event.keyCode === 229) return;
+
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();

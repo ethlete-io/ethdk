@@ -204,6 +204,21 @@ describe('CommandPaletteComponent', () => {
     expect(fixture.componentInstance.ran).toEqual([]);
   });
 
+  it('ignores Enter and arrow keys that belong to an IME composition', () => {
+    const { fixture, input, activeLabel } = create();
+    const compose = (init: KeyboardEventInit) => {
+      input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, ...init }));
+      fixture.detectChanges();
+    };
+
+    compose({ key: 'ArrowDown', isComposing: true });
+    compose({ key: 'Enter', isComposing: true });
+    compose({ key: 'Enter', keyCode: 229 });
+
+    expect(activeLabel()).toBe('Ungrouped command');
+    expect(fixture.componentInstance.ran).toEqual([]);
+  });
+
   it('points aria-activedescendant at the active row', () => {
     const { input, host, press } = create();
 
@@ -288,5 +303,33 @@ describe('CommandPaletteComponent opened as an overlay', () => {
     await pressEscape();
 
     expect(closedVia()).toBe('escape');
+  });
+});
+
+describe('CommandPaletteComponent group labels', () => {
+  @Component({
+    template: `<et-command-palette />`,
+    imports: [COMMAND_PALETTE_IMPORTS],
+    providers: [provideCommandPaletteRegistry()],
+  })
+  class NonLatinGroupsHostComponent {
+    constructor() {
+      registerCommands([
+        { id: 'date', label: 'Heute', group: 'Дата', run: () => undefined },
+        { id: 'settings', label: 'Konto', group: '設定', run: () => undefined },
+      ]);
+    }
+  }
+
+  it('labels each group by its own heading, whatever script the label uses', () => {
+    const fixture = TestBed.createComponent(NonLatinGroupsHostComponent);
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const groups = [...host.querySelectorAll<HTMLElement>('[role="group"]')];
+
+    expect(
+      groups.map((group) => host.querySelector(`[id="${group.getAttribute('aria-labelledby')}"]`)?.textContent?.trim()),
+    ).toEqual(['Дата', '設定']);
   });
 });

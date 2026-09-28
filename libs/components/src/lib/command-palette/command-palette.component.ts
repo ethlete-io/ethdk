@@ -54,7 +54,7 @@ export class CommandPaletteComponent {
     afterNextRender(() => this.search()?.focus());
   }
 
-  protected groupId(label: string) {
-    return `${this.groupIdPrefix}-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+  protected groupId(index: number) {
+    return `${this.groupIdPrefix}-${index}`;
   }
 }

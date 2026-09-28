@@ -27,8 +27,6 @@ No icon set lands in every bundle: each component registers only its own icon co
 
 ## command-palette
 
-- Medium: the palette runs the active command on an Enter that confirms an IME composition, and moves the highlight on arrow keys during composition (`command-palette/headless/command-palette.directive.ts:124-156`). A Japanese or Chinese user runs a command while typing the query. Return early on `event.isComposing` (the masked input already does this, `forms/masked-input/headless/input-mask.directive.ts:219`). S Verified. Safari also sends the commit Enter with `isComposing` false, so check `keyCode === 229` too.
-- Medium: group ids come from the label with only `[a-z0-9]` kept (`command-palette/command-palette.component.ts:57-59`), so non-Latin labels ("Дата", "設定") and labels that differ only in punctuation or umlauts get the same id. Every such group then has `aria-labelledby` on the first heading. Build the id from the group index. S Verified.
 - Low: the global chord listener ignores `event.repeat` and `event.defaultPrevented` (`command-palette/command-palette-shortcut.directive.ts:72-81`). A held `mod+k` opens and closes the palette again and again, and a focused widget that handles the same chord cannot stop it. S
 - Low: `fuzzyMatch` indexes `haystack` and `haystack.toLowerCase()` with the same index (`command-palette/headless/internals/fuzzy-match.ts:79-80,122,126`). For characters whose lower case has a different length ("İ"), the match positions and highlighted segments move. Lower case per character, or fall back to no highlight when the lengths differ. S
 - Low: `closeOnRun` has no `booleanAttribute` transform (`command-palette/headless/command-palette.directive.ts:32`), unlike the other boolean inputs in the lib. S
