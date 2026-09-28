@@ -288,7 +288,7 @@ export class SelectSearchDirective {
     }
 
     const pattern = new RegExp(
-      `[\\n${separators.map((separator) => separator.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('')}]`,
+      `[\\n${separators.map((separator) => separator.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&')).join('')}]`,
     );
     const parts = text.split(pattern);
 

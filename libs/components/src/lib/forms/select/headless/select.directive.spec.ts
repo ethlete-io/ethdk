@@ -940,6 +940,19 @@ describe('SelectDirective (search)', () => {
     expect(driver.host.value()).toEqual(['kiwi', 'mango']);
   });
 
+  it('splits a paste on a dash separator only, not on the characters between separators', async () => {
+    driver.host.allowCustom.set(true);
+    driver.host.multiple.set(true);
+    driver.host.separators.set([',', '-', ';']);
+    driver.detectChanges();
+
+    await driver.open();
+
+    driver.paste('a1b-c;d');
+
+    expect(driver.host.value()).toEqual(['a1b', 'c', 'd']);
+  });
+
   it('commits the pending query when the panel closes with commitCustomValueOnClose', async () => {
     driver.host.allowCustom.set(true);
     driver.host.commitOnClose.set(true);
