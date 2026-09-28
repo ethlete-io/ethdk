@@ -54,7 +54,7 @@ const subjectRowIds = (options: {
 };
 
 /**
- * The rows of a day a waiting approval previews on: the band an auto mode create or apply is for, or
+ * The rows of a day a waiting approval previews on: the band an auto mode create, apply or hide is for, or
  * the row a `worklog.add` falls on. Empty when the item has no band on that day.
  */
 export const approvalRowIdsOf = (options: {
@@ -71,6 +71,10 @@ export const approvalRowIdsOf = (options: {
     return request.day === day
       ? subjectRowIds({ subject: request.subject, rows, unattributed: options.unattributed })
       : [];
+  }
+
+  if (request.op === 'autoMode.hide') {
+    return request.day === day && rows.some((row) => row.id === request.rowId) ? [request.rowId] : [];
   }
 
   if (request.op === 'jira.create') {

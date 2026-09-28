@@ -17,10 +17,25 @@ export type AutoModeApplyRequest = {
   issueKey: string;
 };
 
-export type AgentApprovalRequest = AgentApiRequest | AutoModeApplyRequest;
+/**
+ * Auto mode's suggestion to hide the rest band of a call that went off topic. It always waits for the
+ * user's press, and hiding is undone by showing the row again. Only auto mode queues one.
+ */
+export type AutoModeHideRequest = {
+  op: 'autoMode.hide';
+  day: string;
+  rowId: string;
+  /** The call's name, as the queue panel shows it. */
+  label: string;
+  fromMs: number;
+};
+
+export type AutoModeRequest = AutoModeApplyRequest | AutoModeHideRequest;
+
+export type AgentApprovalRequest = AgentApiRequest | AutoModeRequest;
 
 export const isAgentApiRequest = (request: AgentApprovalRequest): request is AgentApiRequest =>
-  request.op !== 'autoMode.apply';
+  request.op !== 'autoMode.apply' && request.op !== 'autoMode.hide';
 
 /** `running` is internal: the wire reads it as `queued` until the op has an outcome. */
 export type AgentApprovalState = 'queued' | 'running' | 'approved' | 'rejected' | 'expired';
@@ -206,8 +221,19 @@ const parseAutoModeApply = (value: unknown): AutoModeApplyRequest | undefined =>
   return { op: 'autoMode.apply', day, subject, label: textOf(raw['label']), issueKey };
 };
 
+const parseAutoModeHide = (value: unknown): AutoModeHideRequest | undefined => {
+  const raw = typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
+  const day = textOf(raw['day']);
+  const rowId = textOf(raw['rowId']);
+  const fromMs = raw['fromMs'];
+
+  if (raw['op'] !== 'autoMode.hide' || !DAY_KEY.test(day) || !rowId || typeof fromMs !== 'number') return undefined;
+
+  return { op: 'autoMode.hide', day, rowId, label: textOf(raw['label']), fromMs };
+};
+
 const parseApprovalRequest = (value: unknown): AgentApprovalRequest | undefined => {
-  const applied = parseAutoModeApply(value);
+  const applied = parseAutoModeApply(value) ?? parseAutoModeHide(value);
 
   if (applied) return applied;
 
@@ -272,6 +298,8 @@ export const describeApproval = (request: AgentApprovalRequest) => {
       return request.subject.kind === 'context'
         ? `Names today's ${request.label} band with ${request.issueKey}`
         : `Resolves stand-in ${request.label} with ${request.issueKey}`;
+    case 'autoMode.hide':
+      return `Hides the rest of the ${request.label || 'call'} call, which went off topic`;
     case 'jira.create':
       return `Files a Jira issue in ${request.projectKey ?? 'the picked project'}: ${request.summary}`;
     case 'worklog.add':

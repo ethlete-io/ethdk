@@ -3,6 +3,7 @@ import {
   AGENT_APPROVAL_INTERRUPTED,
   AgentApproval,
   AutoModeApplyRequest,
+  AutoModeHideRequest,
   agentApiCallerOf,
   agentApiClientOf,
   approvableByAll,
@@ -208,5 +209,35 @@ describe('agentApiCallerOf', () => {
   it('refuses a CLI the name auto mode queues under', () => {
     expect(agentApiCallerOf({ op: 'status', client: 'Auto Mode' })).toBeUndefined();
     expect(agentApiCallerOf({ op: 'status', client: 'Claude Code' })).toBe('Claude Code');
+  });
+});
+
+const HIDE: AutoModeHideRequest = {
+  op: 'autoMode.hide',
+  day: '2026-09-28',
+  rowId: 'FIP-3095@2026-09-28T12:15:00.000Z#2',
+  label: 'Meeting #1',
+  fromMs: AT.getTime(),
+};
+
+describe('an auto mode hide in the queue', () => {
+  it('waits as external, follows autoMode.apply, and reads back what it stored', () => {
+    const queue = enqueueApproval([], { id: 'a0', request: HIDE, client: 'auto mode', at: AT, day: '2026-09-28' });
+    const [item] = queue;
+
+    expect(item?.opClass).toBe('external');
+    expect(item && approvalClassOf(item, { 'autoMode.apply': 'human-only' })).toBe('human-only');
+    expect(parseApprovalQueue(JSON.parse(JSON.stringify(queue)))).toEqual(queue);
+    expect(describeApproval(HIDE)).toBe('Hides the rest of the Meeting #1 call, which went off topic');
+  });
+
+  it('drops a stored hide that names no row', () => {
+    const [stored] = enqueueApproval([], { id: 'a0', request: HIDE, at: AT, day: '2026-09-28' });
+
+    expect(parseApprovalQueue([{ ...stored, request: { ...HIDE, rowId: '' } }])).toEqual([]);
+  });
+
+  it('is never read from a CLI request', () => {
+    expect(parseAgentRequest(HIDE).ok).toBe(false);
   });
 });

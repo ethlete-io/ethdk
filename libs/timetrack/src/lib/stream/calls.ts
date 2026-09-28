@@ -87,7 +87,7 @@ export const DEFAULT_CALL_TITLE_SETTLE_MS = 30_000;
  * `Discord` and the window source `discord` for the same application, which left every Discord call
  * with no title, so no call rule could read one and every row was labelled with the bare app id.
  */
-const belongsTo = (appId: string, application: string) => {
+export const callHolderBelongsTo = (appId: string, application: string) => {
   const holder = appId.toLowerCase();
   const owner = application.toLowerCase();
 
@@ -144,7 +144,9 @@ const focusHeld = (focus: readonly WindowFocusEvent[], until: Date): HeldFocus[]
  * history does not carry.
  */
 const attendedMs = (held: readonly HeldFocus[], call: PairedCall) =>
-  windowsMs(clipWindows({ windows: held.filter((window) => belongsTo(call.appId, window.appId)), within: [call] }));
+  windowsMs(
+    clipWindows({ windows: held.filter((window) => callHolderBelongsTo(call.appId, window.appId)), within: [call] }),
+  );
 
 /**
  * The title the call settled on: the last one inside `settleMs`, or the one before the call when
@@ -165,7 +167,7 @@ const attendedMs = (held: readonly HeldFocus[], call: PairedCall) =>
  * window source carries no process id to match a call against on every platform.
  */
 const titleAt = (focus: readonly WindowFocusEvent[], call: { appId: string; at: Date; settleMs: number }) => {
-  const own = focus.filter((event) => belongsTo(call.appId, event.appId));
+  const own = focus.filter((event) => callHolderBelongsTo(call.appId, event.appId));
   const settled = own
     .filter((event) => event.at > call.at && event.at.getTime() - call.at.getTime() <= call.settleMs)
     .at(-1);

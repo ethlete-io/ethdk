@@ -116,7 +116,8 @@ export const foldEndedRests = (edits: DayReviewEdits): { edits: DayReviewEdits; 
   };
 };
 
-const isRestOfEndedCall = (edits: DayReviewEdits, row: ReviewedRow) =>
+/** Whether a row is the band with no name a call ran on into after {@link endRowAt} ended its named row. */
+export const isRestOfEndedCall = (edits: DayReviewEdits, row: ReviewedRow) =>
   !row.issueKey &&
   storedLaneKey(row.laneKey) === CALL_LANE_KEY &&
   endedCallPins(edits).some(

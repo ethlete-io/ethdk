@@ -7,6 +7,7 @@ export * from './lane-issues';
 export * from './model';
 export * from './now';
 export * from './nudge';
+export * from './off-topic-rest';
 export * from './recut';
 export * from './review-day';
 export * from './statements';
