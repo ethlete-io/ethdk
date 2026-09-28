@@ -1,6 +1,7 @@
 import { provideZonelessChangeDetection, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { QueryDevtoolsEntry } from '@ethlete/query';
+import { QUERY_DEVTOOLS_VIEW_STATE_KEY } from '@ethlete/query-devtools/toggle';
 import { QueryDevtoolsComponent } from './query-devtools.component';
 import { AnyQuery } from './query-devtools-types';
 
@@ -181,5 +182,149 @@ describe('QueryDevtoolsComponent', () => {
     URL.createObjectURL = createObjectURL;
     URL.revokeObjectURL = revokeObjectURL;
     vi.restoreAllMocks();
+  });
+
+  it('should keep the inspect-mode Escape and clicks away from the app', () => {
+    const fixture = mount(true);
+    const panel = fixture.componentInstance as unknown as { inspectActive: WritableSignal<boolean> };
+    const target = document.body.appendChild(document.createElement('div'));
+    const appKeydown = vi.fn();
+    const appClick = vi.fn();
+
+    target.addEventListener('keydown', appKeydown);
+    target.addEventListener('click', appClick);
+
+    panel.inspectActive.set(true);
+    fixture.detectChanges();
+
+    target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    target.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+
+    expect(appClick).not.toHaveBeenCalled();
+    expect(appKeydown).not.toHaveBeenCalled();
+    expect(panel.inspectActive()).toBe(false);
+
+    target.remove();
+    fixture.destroy();
+  });
+
+  it('should write the view state once a resize ends, not on every move', () => {
+    const fixture = mount(true);
+    const panel = fixture.componentInstance as unknown as {
+      drag: WritableSignal<unknown>;
+      panelHeight: WritableSignal<number>;
+    };
+    const setItem = vi.spyOn(Storage.prototype, 'setItem');
+    const viewStateWrites = () => setItem.mock.calls.filter(([key]) => key === QUERY_DEVTOOLS_VIEW_STATE_KEY).length;
+
+    panel.drag.set({ kind: 'panel', doc: document });
+    fixture.detectChanges();
+
+    for (const height of [310, 320, 330]) {
+      panel.panelHeight.set(height);
+      fixture.detectChanges();
+    }
+
+    expect(viewStateWrites()).toBe(0);
+
+    panel.drag.set(null);
+    fixture.detectChanges();
+
+    expect(viewStateWrites()).toBe(1);
+
+    fixture.destroy();
+  });
+
+  describe('pop-out', () => {
+    const shortcut = () => new KeyboardEvent('keydown', { code: 'KeyQ', key: 'q', ctrlKey: true, altKey: true });
+
+    const setup = () => {
+      const { createObjectURL, revokeObjectURL } = URL;
+      const revoke = vi.fn();
+      let blobs = 0;
+
+      URL.createObjectURL = () => `blob:popout-${++blobs}`;
+      URL.revokeObjectURL = revoke;
+
+      const frame = document.createElement('iframe');
+      document.body.append(frame);
+
+      const popup = frame.contentWindow as Window;
+
+      vi.spyOn(window, 'open').mockReturnValue(popup);
+
+      const fixture = mount(true);
+      const panel = fixture.componentInstance as unknown as { poppedOut: () => boolean };
+
+      const teardown = () => {
+        fixture.destroy();
+        frame.remove();
+        URL.createObjectURL = createObjectURL;
+        URL.revokeObjectURL = revokeObjectURL;
+        vi.restoreAllMocks();
+      };
+
+      return { fixture, panel, popup, revoke, teardown };
+    };
+
+    it('should dock back on the shortcut pressed inside the pop-up', () => {
+      const { fixture, panel, popup, teardown } = setup();
+
+      fixture.componentInstance.popOut();
+      popup.dispatchEvent(new Event('load'));
+
+      expect(panel.poppedOut()).toBe(true);
+
+      popup.document.dispatchEvent(shortcut());
+
+      expect(panel.poppedOut()).toBe(false);
+
+      teardown();
+    });
+
+    it('should drop the pop-up listeners on dock-back', () => {
+      const { fixture, popup, teardown } = setup();
+      const removed = vi.spyOn(popup, 'removeEventListener');
+
+      fixture.componentInstance.popOut();
+      popup.dispatchEvent(new Event('load'));
+      popup.document.dispatchEvent(shortcut());
+
+      expect(removed.mock.calls.map(([type]) => type)).toContain('pagehide');
+
+      teardown();
+    });
+
+    it('should revoke the blob of a pop-out that never loaded', () => {
+      const { fixture, revoke, teardown } = setup();
+
+      fixture.componentInstance.popOut();
+
+      expect(revoke).not.toHaveBeenCalled();
+
+      fixture.componentInstance.popOut();
+
+      expect(revoke).toHaveBeenCalledWith('blob:popout-1');
+
+      teardown();
+    });
+
+    it('should stop the clock while the pop-up is hidden', () => {
+      const { fixture, popup, teardown } = setup();
+
+      fixture.componentInstance.popOut();
+      popup.dispatchEvent(new Event('load'));
+      fixture.detectChanges();
+
+      const whileVisible = vi.getTimerCount();
+
+      Object.defineProperty(popup.document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+      popup.document.dispatchEvent(new Event('visibilitychange'));
+      fixture.detectChanges();
+
+      expect(vi.getTimerCount()).toBeLessThan(whileVisible);
+
+      teardown();
+    });
   });
 });

@@ -807,6 +807,7 @@ export class QueryDevtoolsComponent implements OnInit {
   protected drawerHeight = signal<number | null>(this.persisted.drawerHeight ?? null);
 
   private drag = signal<ResizeDrag | null>(null);
+  private floatGesture = signal(false);
   protected resizing = computed(() => !!this.drag());
 
   /** Which edge the panel is docked to, or `float` for a window of its own inside the page. */
@@ -865,6 +866,13 @@ export class QueryDevtoolsComponent implements OnInit {
   });
 
   private popup: Window | null = null;
+
+  /** Ends everything tied to one pop-out window: a pending `load`, its `pagehide`, shortcut and visibility. */
+  private popOutEnded$ = new Subject<void>();
+
+  private popupVisible = signal(true);
+
+  private isPanelVisible = computed(() => (this.poppedOut() ? this.popupVisible() : this.isDocumentVisible()));
 
   /** Stops mirroring the host document's stylesheets into the pop-up. @see syncStylesInto */
   private popOutStyleSync: (() => void) | null = null;
@@ -1076,7 +1084,7 @@ export class QueryDevtoolsComponent implements OnInit {
    * sits inside `@if (open())`, so there is nothing to drive while the panel is shut or the tab hidden.
    */
   private clock = toSignal(
-    toObservable(computed(() => this.open() && this.isDocumentVisible())).pipe(
+    toObservable(computed(() => this.open() && this.isPanelVisible())).pipe(
       switchMap((ticking) => (ticking ? interval(1000) : EMPTY)),
       scan((tick) => tick + 1, 0),
     ),
@@ -1481,7 +1489,7 @@ export class QueryDevtoolsComponent implements OnInit {
     // The probe lock is taken for the same window: it is what tells this tab's rows from another tab's.
     toObservable(
       computed(
-        () => this.probeLocks.isSupported && this.open() && this.activeTab() === 'locks' && this.isDocumentVisible(),
+        () => this.probeLocks.isSupported && this.open() && this.activeTab() === 'locks' && this.isPanelVisible(),
       ),
     )
       .pipe(
@@ -1515,6 +1523,8 @@ export class QueryDevtoolsComponent implements OnInit {
     let viewStateScope: QueryDevtoolsStorageScope | null = null;
 
     effect(() => {
+      if (this.drag() || this.floatGesture()) return;
+
       const scope = queryDevtoolsSettings().viewState;
 
       const state: PersistedState = {
@@ -1725,8 +1735,11 @@ export class QueryDevtoolsComponent implements OnInit {
                 fromEvent<MouseEvent>(doc, 'mousemove', capture).pipe(tap((e) => this.updateInspectHover(e))),
                 fromEvent<MouseEvent>(doc, 'click', capture).pipe(tap((e) => this.selectInspectedQuery(e))),
                 fromEvent<KeyboardEvent>(doc, 'keydown', capture).pipe(
+                  filter((e) => e.key === 'Escape'),
                   tap((e) => {
-                    if (e.key === 'Escape') this.inspectActive.set(false);
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.inspectActive.set(false);
                   }),
                 ),
               )
@@ -1881,6 +1894,8 @@ export class QueryDevtoolsComponent implements OnInit {
     // title whatever `document.title` says, and a document written into one is quirks-mode - where a
     // table ignores the font size it inherits, so the Cache and Events tables come out half again as
     // large as the panel around them. The blob carries the doctype and the title with it instead.
+    this.popOutEnded$.next();
+
     const source = createObjectUrlHandle(new Blob([POPOUT_DOCUMENT], { type: 'text/html' }));
     const popup = source.url ? this.document.defaultView?.open(source.url, 'et-query-devtools', POPOUT_FEATURES) : null;
 
@@ -1898,10 +1913,9 @@ export class QueryDevtoolsComponent implements OnInit {
     fromEvent(popup, 'load')
       .pipe(
         take(1),
-        tap(() => {
-          source.revoke();
-          this.zone.run(() => this.mountPopOut(popup, panel));
-        }),
+        tap(() => this.zone.run(() => this.mountPopOut(popup, panel))),
+        takeUntil(this.popOutEnded$),
+        finalize(() => source.revoke()),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
@@ -1960,6 +1974,7 @@ export class QueryDevtoolsComponent implements OnInit {
   }
 
   protected moveFloat(move: DragMoveEvent) {
+    this.floatGesture.set(true);
     this.floatRect.update((rect) =>
       clampFloatToPeek({ ...rect, x: rect.x + move.stepX, y: rect.y + move.stepY }, this.viewport()),
     );
@@ -1971,6 +1986,7 @@ export class QueryDevtoolsComponent implements OnInit {
 
     this.floatRect.set(settled.rect);
     this.floatParked.set(settled.collapsed);
+    this.floatGesture.set(false);
   }
 
   /** A click on the title bar of a parked panel brings it back - the gesture that parked it, reversed. */
@@ -1984,6 +2000,7 @@ export class QueryDevtoolsComponent implements OnInit {
   /** A resize reports a delta from where the pointer went down, so the rect it started from is kept. */
   protected startFloatResize() {
     this.floatResizeBase = this.floatRect();
+    this.floatGesture.set(true);
   }
 
   protected resizeFloat(move: ResizeMoveEvent) {
@@ -1992,6 +2009,7 @@ export class QueryDevtoolsComponent implements OnInit {
 
   protected endFloatResize() {
     this.floatResizeBase = null;
+    this.floatGesture.set(false);
   }
 
   public startPaneResize(event: PointerEvent, target: { pane: PaneTarget; container: HTMLElement }) {
@@ -3340,6 +3358,28 @@ export class QueryDevtoolsComponent implements OnInit {
     fromEvent(popup, 'pagehide')
       .pipe(
         tap(() => this.zone.run(() => this.dockBack())),
+        takeUntil(this.popOutEnded$),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+
+    fromEvent<KeyboardEvent>(doc, 'keydown')
+      .pipe(
+        filter(isQueryDevtoolsShortcut),
+        tap((event) => {
+          event.preventDefault();
+          this.zone.run(() => this.toggleOpen());
+        }),
+        takeUntil(this.popOutEnded$),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+
+    fromEvent(doc, 'visibilitychange')
+      .pipe(
+        startWith(null),
+        tap(() => this.zone.run(() => this.popupVisible.set(doc.visibilityState !== 'hidden'))),
+        takeUntil(this.popOutEnded$),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
@@ -3899,6 +3939,7 @@ export class QueryDevtoolsComponent implements OnInit {
   private closePopup() {
     const popup = this.popup;
 
+    this.popOutEnded$.next();
     this.popup = null;
     this.popOutStyleSync?.();
     this.popOutStyleSync = null;
@@ -3933,13 +3974,17 @@ export class QueryDevtoolsComponent implements OnInit {
   }
 
   private selectInspectedQuery(event: MouseEvent) {
+    const target = event.target as Node | null;
+
+    if (target && this.hostEl.nativeElement.contains(target)) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
     const hover = this.inspectHover();
     const first = hover?.entries[0];
 
     if (!hover || !first) return;
-
-    event.preventDefault();
-    event.stopPropagation();
 
     const ids = hover.entries.map((e) => e.id);
 
