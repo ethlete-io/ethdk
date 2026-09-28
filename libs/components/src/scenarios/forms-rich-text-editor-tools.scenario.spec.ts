@@ -5,7 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ColorTheme, markdownToHtml, provideColorThemesWithTailwind4, ThemeSwatch } from '@ethlete/core';
 import { createGetQuery, createQueryClient } from '@ethlete/query';
-import { Subject } from 'rxjs';
+import { Subject, throwError } from 'rxjs';
 import {
   createRichTextEditorTrigger,
   createRichTextEditorTriggerWithQuery,
@@ -17,6 +17,7 @@ import {
   provideRichTextEditorFloatingToolbar,
   provideRichTextEditorImageTool,
   provideRichTextEditorLinkEditor,
+  provideRichTextEditorLabels,
   provideRichTextEditorLinkTool,
   provideRichTextEditorTableTool,
   provideRichTextEditorTokenRendering,
@@ -219,6 +220,18 @@ class TemplatePageComponent {
   });
   triggers: RichTextEditorTrigger[] = [this.fieldTrigger, this.peopleTrigger];
   paletteTriggers: RichTextEditorTrigger[] = [this.fieldTrigger];
+}
+
+@Component({
+  selector: 'et-scenario-failing-trigger-page',
+  imports: [RICH_TEXT_EDITOR_IMPORTS, RICH_TEXT_EDITOR_TRIGGERS_IMPORTS],
+  providers: [provideRichTextEditorLabels({ loadFailed: 'Laden fehlgeschlagen' })],
+  template: `<et-rich-text-editor [triggers]="triggers" etRichTextEditorTriggers />`,
+})
+class FailingTriggerPageComponent {
+  triggers: RichTextEditorTrigger[] = [
+    createRichTextEditorTrigger({ char: '#', type: 'field', items: () => throwError(() => new Error('')) }),
+  ];
 }
 
 @Component({
@@ -930,6 +943,25 @@ describe('forms rich-text-editor tool scenarios', () => {
     s.tick();
     expect(text()).toBe('{{mention:ada}}');
     http.verify();
+    s.flush();
+  });
+
+  it('shows the loadFailed label for a trigger that fails without a message', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(FailingTriggerPageComponent);
+
+    s.tick();
+
+    const editable = textbox(fixture.nativeElement as HTMLElement);
+
+    editable.focus();
+    caretInEmpty(editable);
+    typeText(s, editable, '#a');
+    s.tick(200);
+
+    expect(query('[role="alert"]', query('et-rich-text-editor-token-popup')).textContent?.trim()).toBe(
+      'Laden fehlgeschlagen',
+    );
     s.flush();
   });
 

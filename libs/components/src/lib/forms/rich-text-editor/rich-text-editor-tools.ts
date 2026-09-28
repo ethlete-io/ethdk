@@ -186,8 +186,10 @@ export const RICH_TEXT_EDITOR_TOOL_BUTTONS = /* @__PURE__ */ richTextEditorToolB
 export type RichTextEditorToolDefinition = {
   /** The `tools` token this definition renders for (e.g. `'table'`). */
   token: string;
+  /** Fallback text only: the toolbar renders the entry for `token` from `RICH_TEXT_EDITOR_LABELS`. */
   label: string;
   icon?: string;
+  /** Opts the icon out of the neutral icon recolor, e.g. to keep a brand color. */
   allowHardcodedColor?: boolean;
   isActive?: (editor: RichTextEditorDirective) => boolean;
   run?: (editor: RichTextEditorDirective) => void;

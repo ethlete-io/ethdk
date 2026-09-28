@@ -71,6 +71,58 @@ describe('RichTextEditorComponent', () => {
     expect(toolbarButton('Undo')?.hasAttribute('aria-pressed')).toBe(false);
   });
 
+  describe('soft keyboard inset', () => {
+    const keyboardInset = (fixture: { nativeElement: HTMLElement }) =>
+      fixture.nativeElement
+        .querySelector<HTMLElement>('et-rich-text-editor')
+        ?.style.getPropertyValue('--_et-rte-keyboard-inset');
+
+    const mountWithPointer = async (coarse: boolean) => {
+      const viewport = Object.assign(new EventTarget(), { offsetTop: 0, height: 800, width: 400 });
+
+      Object.defineProperty(window, 'visualViewport', { configurable: true, value: viewport });
+      vi.spyOn(window, 'matchMedia').mockImplementation(
+        (query: string) =>
+          ({
+            matches: coarse && query === '(pointer: coarse)',
+            media: query,
+            onchange: null,
+            addListener: () => undefined,
+            removeListener: () => undefined,
+            addEventListener: () => undefined,
+            removeEventListener: () => undefined,
+            dispatchEvent: () => false,
+          }) as MediaQueryList,
+      );
+
+      TestBed.configureTestingModule({ imports: [TypingEditorTestHost] });
+
+      const fixture = TestBed.createComponent(TypingEditorTestHost);
+
+      await fixture.whenStable();
+      window.dispatchEvent(new Event('scroll'));
+
+      return fixture;
+    };
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+      Reflect.deleteProperty(window, 'visualViewport');
+    });
+
+    it('is not tracked without touch input', async () => {
+      const fixture = await mountWithPointer(false);
+
+      expect(keyboardInset(fixture)).toBe('');
+    });
+
+    it('is tracked with touch input', async () => {
+      const fixture = await mountWithPointer(true);
+
+      expect(keyboardInset(fixture)).toBe('0px');
+    });
+  });
+
   describe('typing', () => {
     let driver: RichTextEditorDriver<TypingEditorTestHost>;
 

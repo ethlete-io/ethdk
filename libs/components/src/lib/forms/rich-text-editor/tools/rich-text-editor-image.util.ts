@@ -41,11 +41,6 @@ const isImageBlock = (block: Element): block is HTMLElement =>
   block.children.length === 1 &&
   block.children[0]?.tagName === 'IMG';
 
-/**
- * Every image inside the editor. Walked by hand rather than queried: the editable's content is not
- * Angular's to know about, and the DOM-query lint rule (rightly) points at view queries for anything
- * that is.
- */
 const imagesIn = (node: Element, found: HTMLImageElement[] = []): HTMLImageElement[] => {
   for (const child of Array.from(node.children)) {
     if (child instanceof HTMLImageElement) found.push(child);

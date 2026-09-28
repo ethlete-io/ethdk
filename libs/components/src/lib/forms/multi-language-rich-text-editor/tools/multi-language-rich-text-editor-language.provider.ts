@@ -20,7 +20,6 @@ export const provideRichTextEditorLanguageTool = (): Provider => ({
   provide: RICH_TEXT_EDITOR_TOOL,
   useValue: {
     token: RICH_TEXT_EDITOR_LANGUAGE_TOOL,
-    // Only a fallback: the toolbar reads `language` from the label set, which is what a consumer localizes.
     label: DEFAULT_RICH_TEXT_EDITOR_LABELS.language,
     control: MultiLanguageRichTextEditorLanguageToolComponent,
   } satisfies RichTextEditorToolDefinition,

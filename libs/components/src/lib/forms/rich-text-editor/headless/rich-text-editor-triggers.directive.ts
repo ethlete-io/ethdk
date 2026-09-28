@@ -94,7 +94,9 @@ export class RichTextEditorTriggersDirective {
 
     if (!error) return null;
 
-    return error instanceof Error ? error.message : String(error);
+    const message = error instanceof Error ? error.message : String(error);
+
+    return message || (this.editor?.resolvedLabels().loadFailed ?? DEFAULT_RICH_TEXT_EDITOR_LABELS.loadFailed);
   });
 
   private isComposing = false;

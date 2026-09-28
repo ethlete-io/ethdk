@@ -40,13 +40,11 @@ export const provideRichTextEditorLinkTool = (): Provider[] => [
     useValue: {
       token: 'link',
       icon: 'et-link',
-      // Only a fallback: the toolbar reads `link` from the label set, which is what a consumer localizes.
       label: DEFAULT_RICH_TEXT_EDITOR_LABELS.link,
       // Also pressed while the link editor popover is open, matching the menu-trigger tools.
       isActive: (editor) => editor.linkActive() || editor.linkEditorOpen(),
       run: (editor) => editor.promptForLink(),
       isDisabled: (editor) => editor.codeBlockActive(),
-      // Link keeps its brand color, so its icon opts out of the neutral icon recolor.
       allowHardcodedColor: true,
     } satisfies RichTextEditorToolDefinition,
     multi: true,

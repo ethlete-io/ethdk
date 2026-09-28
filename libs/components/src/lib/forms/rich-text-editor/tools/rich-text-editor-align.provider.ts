@@ -12,7 +12,6 @@ export const provideRichTextEditorAlignmentTool = (): Provider => ({
   provide: RICH_TEXT_EDITOR_TOOL,
   useValue: {
     token: 'align',
-    // Only a fallback: the toolbar reads `align` from the label set, which is what a consumer localizes.
     label: DEFAULT_RICH_TEXT_EDITOR_LABELS.align,
     control: RichTextEditorAlignToolComponent,
   } satisfies RichTextEditorToolDefinition,

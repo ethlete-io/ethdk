@@ -7,13 +7,14 @@ import {
   effect,
   ElementRef,
   inject,
+  Injector,
   signal,
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { injectHasTouchInput, injectRenderer } from '@ethlete/core';
-import { EMPTY, fromEvent, interval, merge, switchMap, tap } from 'rxjs';
+import { EMPTY, finalize, fromEvent, ignoreElements, interval, merge, Observable, switchMap, tap } from 'rxjs';
 import { BUTTON_IMPORTS } from '../../button';
 import { DividerComponent } from '../../divider';
 import { ScrollbarComponent } from '../../scrollbar';
@@ -115,9 +116,6 @@ const provideRichTextEditorIcons = () =>
   ],
   host: {
     class: 'et-rich-text-editor',
-    // on touch the toolbar is hidden until the editor is active, then docks above the keyboard (the
-    // OS selection menu owns the top, so a top toolbar there is unreachable) - it never sits at the
-    // top or shuffles around
     '[class.et-rich-text-editor--touch]': 'hasTouchInput()',
     '[class.et-rich-text-editor--docked-toolbar]': 'dockedToolbar()',
     '(click)': 'dir.activate()',
@@ -128,33 +126,24 @@ export class RichTextEditorComponent {
 
   private document = inject(DOCUMENT);
   private destroyRef = inject(DestroyRef);
+  private injector = inject(Injector);
   private renderer = injectRenderer();
   private host = inject<ElementRef<HTMLElement>>(ElementRef);
-  /** Touch devices: menus open without stealing focus (keeps the keyboard up so the docked toolbar
-   *  stays put) and the toolbar docks above the keyboard. */
   protected hasTouchInput = injectHasTouchInput();
 
-  /** Present only when `provideRichTextEditorLinkEditor()` is in scope; otherwise the link tool
-   *  falls back to `window.prompt` and the popover never ships. */
   private linkEditorSetup = inject(RICH_TEXT_EDITOR_LINK_EDITOR, { optional: true });
-  /** Present only when `provideRichTextEditorFloatingToolbar()` is in scope; otherwise the editor
-   *  shows its static toolbar only and the overlay runtime never ships. */
   private floatingToolbarSetup = inject(RICH_TEXT_EDITOR_FLOATING_TOOLBAR, { optional: true });
   public editable = viewChild.required<ElementRef<HTMLElement>>('editable');
 
   protected readonly TOOLS = RICH_TEXT_EDITOR_TOOLS;
 
-  /** The strings in effect, owned by the directive so the opt-in tools read the same set. */
   protected labels = computed(() => this.dir.resolvedLabels());
 
   private registeredTools = inject(RICH_TEXT_EDITOR_TOOL, { optional: true }) ?? [];
 
-  /** Keeps the docked toolbar up briefly after a blur so opening a menu/link editor from it (which
-   *  moves focus into an overlay) doesn't collapse the bar mid-interaction. */
   private editingActive = signal(false);
   private blurGraceTimer: ReturnType<Window['setTimeout']> | null = null;
 
-  /** Dock the toolbar above the keyboard only on touch while editing. */
   protected dockedToolbar = computed(() => this.hasTouchInput() && this.editingActive());
 
   constructor() {
@@ -383,21 +372,32 @@ export class RichTextEditorComponent {
     this.dir.focus(options);
   }
 
-  /** Track the visual viewport so the docked (fixed) toolbar sits right above the on-screen
-   *  keyboard: the inset is the gap from where `position: fixed; bottom: 0` actually renders (a
-   *  measured probe - see below) down past the keyboard's top edge
-   *  (`visualViewport.offsetTop + height`). Reacting to BOTH `resize` and `scroll` keeps it glued
-   *  while the page scrolls (the visual viewport pans, the URL bar shows/hides).
-   *
-   *  Performance: the CSS var is written straight to the host element, outside Angular - no signal,
-   *  so no change detection fires per scroll frame (that was what made scrolling feel sluggish). The
-   *  position has no CSS transition, so it tracks the viewport instantly instead of lagging behind. */
   private trackKeyboardInset() {
-    const view = this.document.defaultView;
-    const viewport = view?.visualViewport;
+    toObservable(this.hasTouchInput)
+      .pipe(
+        switchMap((touch) => (touch ? this.keyboardInset$() : EMPTY)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
 
-    if (!view || !viewport) return;
+  /**
+   * Keeps `--_et-rte-keyboard-inset` at the gap between where `position: fixed; bottom: 0` renders
+   * and the top of the soft keyboard, so the docked toolbar sits on the keyboard. Written straight to
+   * the host, not through a signal, so scrolling never schedules change detection.
+   */
+  private keyboardInset$() {
+    return new Observable<never>((subscriber) => {
+      const view = this.document.defaultView;
+      const viewport = view?.visualViewport;
 
+      if (!view || !viewport) return;
+
+      return this.observeKeyboardInset(view, viewport).subscribe(subscriber);
+    });
+  }
+
+  private observeKeyboardInset(view: Window, viewport: VisualViewport) {
     const host = this.host.nativeElement;
 
     // In a same-origin iframe (Storybook, docs story embeds) the frame's own visualViewport never
@@ -433,7 +433,6 @@ export class RichTextEditorComponent {
       visibility: 'hidden',
     });
     this.renderer.appendChild(this.document.body, probe);
-    this.destroyRef.onDestroy(() => probe.remove());
 
     let lastApplied = -1;
 
@@ -454,8 +453,6 @@ export class RichTextEditorComponent {
       if (inset === lastApplied) return false;
 
       lastApplied = inset;
-      // set the CSS var directly via the renderer (not a signal) so scroll/resize don't schedule
-      // change detection each frame - that per-frame CD was what made scrolling feel sluggish
       this.renderer.setCssProperty(host, '--_et-rte-keyboard-inset', `${inset}px`);
 
       return true;
@@ -485,9 +482,6 @@ export class RichTextEditorComponent {
     };
 
     kick();
-    this.destroyRef.onDestroy(() => {
-      if (rafId !== null) view.cancelAnimationFrame(rafId);
-    });
 
     // The event stream is not guaranteed to be complete: a soft keyboard can change height without a
     // viewport event (Gboard switching layout, a suggestion row appearing), and inside an embedded
@@ -495,13 +489,10 @@ export class RichTextEditorComponent {
     // for a keyboard that is no longer there - floating over the content instead of sitting on it. So
     // re-measure on a slow timer for as long as the bar is actually docked: one rect read every
     // POLL_MS, no rAF loop and no change detection, and a stale position heals within half a second.
-    toObservable(this.dockedToolbar)
-      .pipe(
-        switchMap((docked) => (docked ? interval(DOCKED_TOOLBAR_POLL_MS) : EMPTY)),
-        tap(() => apply()),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
+    const poll$ = toObservable(this.dockedToolbar, { injector: this.injector }).pipe(
+      switchMap((docked) => (docked ? interval(DOCKED_TOOLBAR_POLL_MS) : EMPTY)),
+      tap(() => apply()),
+    );
 
     const viewports = topViewport ? [viewport, topViewport] : [viewport];
     // window scroll too: a root scroll pans the keyboard-tracking fixed rect without necessarily
@@ -514,18 +505,21 @@ export class RichTextEditorComponent {
       // cross-origin top - its scrolls are invisible to us; the frame keeps local tracking
     }
 
-    merge(
+    const viewportChange$ = merge(
       ...viewports.map((v) => fromEvent(v, 'resize')),
       // These are ancestor viewports/windows (visualViewport, iframe top), not a component-owned
       // scroll container - signalElementScrollState targets a known elementRef and doesn't apply.
       // eslint-disable-next-line ethlete/prefer-scroll-state
       ...scrollTargets.map((t) => fromEvent(t, 'scroll', { passive: true })),
-    )
-      .pipe(
-        tap(() => kick()),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
+    ).pipe(tap(() => kick()));
+
+    return merge(poll$, viewportChange$).pipe(
+      ignoreElements(),
+      finalize(() => {
+        if (rafId !== null) view.cancelAnimationFrame(rafId);
+        probe.remove();
+      }),
+    );
   }
 
   /** `editingActive` follows the editor's focus, but lingers ~400ms after a blur so a menu/link

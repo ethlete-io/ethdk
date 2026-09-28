@@ -23,7 +23,6 @@ export const provideRichTextEditorTableTool = (): Provider => ({
 
     return {
       token: 'table',
-      // Only a fallback: the toolbar reads `table` from the label set, which is what a consumer localizes.
       label: DEFAULT_RICH_TEXT_EDITOR_LABELS.table,
       control: RichTextEditorTableToolComponent,
       keydown: (editor, event) =>

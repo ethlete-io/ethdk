@@ -91,7 +91,6 @@ export const provideRichTextEditorImageTool = (config: RichTextEditorImageToolCo
 
     return {
       token: 'image',
-      // Only a fallback: the toolbar reads `image` from the label set, which is what a consumer localizes.
       label: DEFAULT_RICH_TEXT_EDITOR_LABELS.image,
       // The button is a control component so the image icon ships with the tool, not with every editor.
       control: RichTextEditorImageToolComponent,

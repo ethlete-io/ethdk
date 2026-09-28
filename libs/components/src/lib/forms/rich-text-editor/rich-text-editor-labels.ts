@@ -51,6 +51,8 @@ export type RichTextEditorLabels = {
   linkAdd: string;
   /** The link editor's confirm action while editing an existing link. */
   linkUpdate: string;
+  /** The browser `prompt()` the link tool asks for a URL with when no link editor is provided. */
+  linkPrompt: string;
 
   /** Accessible label for the image popover. */
   imageEditor: string;
@@ -75,6 +77,8 @@ export type RichTextEditorLabels = {
   insertToken: string;
   /** Shown by a token popup or palette that has nothing to offer. */
   noResults: string;
+  /** Shown by a token popup whose items failed to load without a message of their own. */
+  loadFailed: string;
 
   /** Accessible label for a cell in the table tool's size picker, e.g. `'3 by 4'`. */
   tableSize: (rows: number, columns: number) => string;
@@ -171,6 +175,7 @@ export const DEFAULT_RICH_TEXT_EDITOR_LABELS: RichTextEditorLabels = {
   linkRemove: 'Remove',
   linkAdd: 'Add',
   linkUpdate: 'Update',
+  linkPrompt: 'Link URL',
 
   imageEditor: 'Image',
   imageEditorClose: 'Close',
@@ -184,6 +189,7 @@ export const DEFAULT_RICH_TEXT_EDITOR_LABELS: RichTextEditorLabels = {
 
   insertToken: 'Insert token',
   noResults: 'No results',
+  loadFailed: 'Something went wrong',
 
   tableSize: (rows, columns) => `${rows} by ${columns}`,
   tableSizePreview: (rows, columns) => `${rows} × ${columns}`,

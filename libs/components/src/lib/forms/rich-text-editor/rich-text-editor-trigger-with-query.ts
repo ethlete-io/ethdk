@@ -18,10 +18,6 @@ import {
   RichTextEditorTriggerItemResolver,
 } from './rich-text-editor-trigger';
 
-// Note: `@ethlete/components` intentionally depends on `@ethlete/query` (the legacy `cdk` does too),
-// so this query-aware convenience factory can live here. It is a standalone function in its own
-// module - editors that don't use it (and apps not using `@ethlete/query`) tree-shake it away.
-
 /** Config for {@link createRichTextEditorTriggerWithQuery}. */
 export type RichTextEditorQueryTriggerConfig<TCreator extends AnyQueryCreator> = {
   /** The character that opens the popup at a word boundary (e.g. `'@'`). */
@@ -62,7 +58,7 @@ const sameRequestArgs = (actual: RequestArgs<QueryArgs> | null | undefined, want
 const firstErrorMessage = (error: QueryErrorResponse) => {
   const message = 'errors' in error ? error.errors[0]?.message : error.error?.message;
 
-  return message ?? error.raw?.statusText ?? 'Something went wrong';
+  return message ?? error.raw?.statusText ?? '';
 };
 
 /**

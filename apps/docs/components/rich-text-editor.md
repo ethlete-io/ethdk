@@ -685,7 +685,9 @@ keys unless you bind them to the directive's commands yourself.
 ## Localization
 
 Every string the editor renders - both toolbars' names, each tool, the block-style menu, the link
-editor's fields and actions, and the table/alignment menus - comes from `RICH_TEXT_EDITOR_LABELS`.
+editor's fields and actions, the `prompt()` fallback (`linkPrompt`), the token popup's empty and
+error states (`noResults`, `loadFailed`), and the table/alignment menus - comes from
+`RICH_TEXT_EDITOR_LABELS`.
 Override it app-wide, or per editor with the `labels` input:
 
 ```ts

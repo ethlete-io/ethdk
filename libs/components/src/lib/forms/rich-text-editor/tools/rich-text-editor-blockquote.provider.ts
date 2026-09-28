@@ -38,7 +38,6 @@ export const provideRichTextEditorBlockquoteTool = (): Provider[] => [
     useValue: {
       token: 'blockquote',
       icon: 'et-quote',
-      // Only a fallback: the toolbar reads `blockquote` from the label set, which is what a consumer localizes.
       label: DEFAULT_RICH_TEXT_EDITOR_LABELS.blockquote,
       isActive: (editor) => editor.blockquoteActive(),
       run: (editor) => editor.toggleBlockquote(),

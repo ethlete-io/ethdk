@@ -27,7 +27,6 @@ export const provideRichTextEditorHeadingTool = (): Provider[] => [
     provide: RICH_TEXT_EDITOR_TOOL,
     useValue: {
       token: 'heading',
-      // Only a fallback: the toolbar reads `heading` from the label set, which is what a consumer localizes.
       label: DEFAULT_RICH_TEXT_EDITOR_LABELS.textStyle(DEFAULT_RICH_TEXT_EDITOR_LABELS.paragraph),
       control: RichTextEditorHeadingToolComponent,
     } satisfies RichTextEditorToolDefinition,

@@ -1,10 +1,9 @@
 # Rich text editor scan - open findings
 
-Scan of `libs/components/src/lib/forms/rich-text-editor/` (without `headless/`) and `libs/components/src/lib/forms/multi-language-rich-text-editor/` from 2026-09-28. 0 High, 1 Medium, 21 Low, 1 Spec. Skipped: stories, most specs. The table caret-navigation code (`tools/rich-text-editor-table.util.ts:198-394`) got a second pass. Core's `markdown.ts` is out of scope; it is named where an RTE finding depends on it. Paths are relative to `forms/`.
+Scan of `libs/components/src/lib/forms/rich-text-editor/` (without `headless/`) and `libs/components/src/lib/forms/multi-language-rich-text-editor/` from 2026-09-28. 0 High, 1 Medium, 16 Low, 1 Spec. Skipped: stories, most specs. The table caret-navigation code (`tools/rich-text-editor-table.util.ts:198-394`) got a second pass. Core's `markdown.ts` is out of scope; it is named where an RTE finding depends on it. Paths are relative to `forms/`.
 
 ## Triggers and tokens
 
-- Low: the fallback error text `'Something went wrong'` is hard-coded English and does not come from the label set (`rich-text-editor/rich-text-editor-trigger-with-query.ts:57`). S
 - Low: the viewer calls each token resolver twice per chip. `render` calls `resolveItem` for a sync label and drops a Promise result, then `hydrate` calls it again (`headless/internals/rich-text-editor-token.ts:113,152`, reached from `rich-text-editor/rich-text-viewer.component.ts:39,53`). A Promise resolver sends two requests per chip per value change, and `hydrate` has no teardown for a pending Observable when the viewer is destroyed. S
 
 ## Image tool
@@ -16,14 +15,7 @@ Scan of `libs/components/src/lib/forms/rich-text-editor/` (without `headless/`) 
 
 ## Link tool and link editor
 
-- Low: the `window.prompt` fallback text `'Link URL'` is not localized (`headless/rich-text-editor.directive.ts:616`), although every other string comes from `RICH_TEXT_EDITOR_LABELS`. S
 - Low: the viewer allows link schemes that the editor refuses (`file:`, `intent:`, `ftp:` and others), because `markdownToHtml` uses the deny-list `isSafeUrl` and not the allow-list `isSafeLinkUrl` (`core/src/lib/utils/markdown.ts:123,154,181` vs `rich-text-editor/rich-text-editor-link-editor.component.ts:95`). A stored value that was not written by the editor can therefore render links the editor could never create. S
-
-## Editor component
-
-- Low: every editor tracks the soft keyboard inset, also on desktop where the docked toolbar never shows (`rich-text-editor/rich-text-editor.component.ts:392-526`). Each window or viewport scroll starts a rAF loop of about 30 frames per editor. Each frame reads `getBoundingClientRect` on a fixed probe (a forced layout) and writes a CSS property. A page with several editors does this work many times on every scroll. Start the listeners only while `hasTouchInput()` is true, or only while the toolbar is docked. M Re-rated from Medium: `apply` writes the property only when the inset changes (never on desktop), and a rect read with clean layout is cheap.
-- Low: comments outside the AGENTS.md allowlist - history narration "that was what made scrolling feel sluggish" (`rich-text-editor/rich-text-editor.component.ts:389-391`, repeated at `:454-455`), JSDoc on private fields (`:130-155`), a host comment (`:115-117`), the "Note:" header (`rich-text-editor/rich-text-editor-trigger-with-query.ts:19-21`), import rationale (`rich-text-editor/rich-text-editor-token-codec.token.ts:2-3`), lint rationale (`rich-text-editor/tools/rich-text-editor-image.util.ts:31-35`). S
-- Low: the same comment "Only a fallback: the toolbar reads … from the label set" is in every tool provider (`tools/rich-text-editor-{link,blockquote,heading,align,table,image}.provider.ts`, `multi-language-rich-text-editor/tools/multi-language-rich-text-editor-language.provider.ts:23`), and "Link keeps its brand color" is in two files (`rich-text-editor/rich-text-editor-tools.ts:107`, `tools/rich-text-editor-link.provider.ts:49`). Keep it once, on `RichTextEditorToolDefinition.label`. S
 
 ## Floating toolbar and tools
 

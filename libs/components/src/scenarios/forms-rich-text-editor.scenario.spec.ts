@@ -92,7 +92,11 @@ class NoteBoxComponent {
 @Component({
   selector: 'et-scenario-comment-box',
   imports: [RICH_TEXT_EDITOR_IMPORTS],
-  providers: [provideRichTextEditorLinkTool(), provideRichTextEditorTools(['bold', 'italic', 'link'])],
+  providers: [
+    provideRichTextEditorLinkTool(),
+    provideRichTextEditorTools(['bold', 'italic', 'link']),
+    provideRichTextEditorLabels({ linkPrompt: 'Link-Adresse' }),
+  ],
   template: `<et-rich-text-editor [(value)]="comment" [tools]="tools()" aria-label="Comment" />`,
 })
 class CommentBoxComponent {
@@ -559,7 +563,7 @@ describe('forms rich-text-editor scenarios', () => {
     selectText(editable, 5, 9);
     toolButton(host, 'Link').click();
     s.tick();
-    expect(promptSpy).toHaveBeenCalledOnce();
+    expect(promptSpy).toHaveBeenCalledExactlyOnceWith('Link-Adresse');
     expect(box.comment()).toBe('read [docs](https://example.com/docs)');
 
     selectText(editable, 6);

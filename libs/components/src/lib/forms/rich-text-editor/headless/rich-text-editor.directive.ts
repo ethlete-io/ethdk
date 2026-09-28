@@ -614,7 +614,7 @@ export class RichTextEditorDirective
       return;
     }
 
-    const url = this.document.defaultView?.prompt('Link URL');
+    const url = this.document.defaultView?.prompt(this.resolvedLabels().linkPrompt);
 
     if (url === null || url === undefined) return;
 

@@ -41,7 +41,6 @@ export const provideRichTextEditorCodeBlockTool = (): Provider[] => [
     useValue: {
       token: 'codeBlock',
       icon: 'et-code-block',
-      // Only a fallback: the toolbar reads `codeBlock` from the label set, which is what a consumer localizes.
       label: DEFAULT_RICH_TEXT_EDITOR_LABELS.codeBlock,
       isActive: (editor) => editor.codeBlockActive(),
       run: (editor) => editor.toggleCodeBlock(),
