@@ -1,5 +1,5 @@
 import { endOfDay, isSameDay, startOfDay } from 'date-fns';
-import { Appointment } from '../../scheduler.types';
+import { appointmentTouchesRange } from './scheduler-range';
 import { AppointmentTreeNode, flattenAppointmentTree } from './scheduler-tree';
 
 /** One day of an agenda list: the appointments (in chain order, depth-first) that touch it. */
@@ -14,9 +14,6 @@ export type SchedulerAgendaOptions<TExtra> = {
   tree: readonly AppointmentTreeNode<TExtra>[];
   today: Date;
 };
-
-const appointmentCoversDay = (appointment: Appointment, day: { start: Date; end: Date }) =>
-  appointment.start <= day.end && appointment.end >= day.start;
 
 export type SchedulerAgendaGuide = 'trunk' | 'gap' | 'branch' | 'last-branch';
 
@@ -52,7 +49,7 @@ export const buildSchedulerAgenda = <TExtra>(options: SchedulerAgendaOptions<TEx
     return {
       date,
       today: isSameDay(date, today),
-      nodes: flattened.filter((node) => appointmentCoversDay(node.appointment, day)),
+      nodes: flattened.filter((node) => appointmentTouchesRange(node.appointment, day)),
     };
   });
 };

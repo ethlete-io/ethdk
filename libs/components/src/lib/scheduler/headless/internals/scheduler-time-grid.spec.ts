@@ -72,6 +72,22 @@ describe('buildSchedulerTimeGrid', () => {
     expect(second?.span).toBeCloseTo(25, 5);
   });
 
+  it('keeps an appointment that ends at midnight off the next day', () => {
+    const next = new Date(2026, 6, 16);
+    const grid = buildGrid([appointment('a', new Date(2026, 6, 15, 22), next)], [day, next]);
+
+    expect(grid.days[0]?.blocks).toHaveLength(1);
+    expect(grid.days[1]?.blocks).toHaveLength(0);
+  });
+
+  it('keeps a zero-length appointment at midnight on the day it starts', () => {
+    const next = new Date(2026, 6, 16);
+    const grid = buildGrid([appointment('a', next, next)], [day, next]);
+
+    expect(grid.days[0]?.blocks).toHaveLength(0);
+    expect(grid.days[1]?.blocks).toHaveLength(1);
+  });
+
   it('gives non-overlapping appointments their own full-width column', () => {
     const grid = buildGrid([
       appointment('a', new Date(2026, 6, 15, 9), new Date(2026, 6, 15, 10)),

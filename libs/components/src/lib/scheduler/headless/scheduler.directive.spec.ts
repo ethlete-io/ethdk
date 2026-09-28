@@ -111,6 +111,17 @@ describe('SchedulerDirective', () => {
     });
   });
 
+  it('leaves an appointment that ends where the visible range starts out of visibleAppointments', () => {
+    host.view.set('day');
+    host.appointments.set([
+      { ...appointment('before'), start: new Date(2026, 6, 14, 22), end: new Date(2026, 6, 15) },
+      { ...appointment('zero'), start: new Date(2026, 6, 15), end: new Date(2026, 6, 15) },
+    ]);
+    fixture.detectChanges();
+
+    expect(directive.visibleAppointments().map((entry) => entry.id)).toEqual(['zero']);
+  });
+
   it('steps focusedDate by the active view unit', () => {
     host.view.set('day');
     fixture.detectChanges();

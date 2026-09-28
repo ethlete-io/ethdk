@@ -40,6 +40,14 @@ describe('buildSchedulerMonthGrid', () => {
     expect(flat.find((cell) => cell.today)?.date).toEqual(new Date(2026, 6, 15));
   });
 
+  it('keeps an appointment that ends at midnight off the next day', () => {
+    const tree = buildAppointmentTree([appointment('a', new Date(2026, 6, 15, 22), new Date(2026, 6, 16))]);
+    const flat = buildGrid(tree).flat();
+
+    expect(flat.find((cell) => cell.date.getTime() === new Date(2026, 6, 15).getTime())?.visible).toHaveLength(1);
+    expect(flat.find((cell) => cell.date.getTime() === new Date(2026, 6, 16).getTime())?.visible).toHaveLength(0);
+  });
+
   it('places an appointment on the day it falls on', () => {
     const tree = buildAppointmentTree([appointment('a', new Date(2026, 6, 15, 9), new Date(2026, 6, 15, 10))]);
     const weeks = buildGrid(tree);
@@ -50,7 +58,7 @@ describe('buildSchedulerMonthGrid', () => {
   });
 
   it('repeats a multi-day appointment on every day it spans', () => {
-    const tree = buildAppointmentTree([appointment('a', new Date(2026, 6, 14), new Date(2026, 6, 16))]);
+    const tree = buildAppointmentTree([appointment('a', new Date(2026, 6, 14, 9), new Date(2026, 6, 16, 10))]);
     const weeks = buildGrid(tree);
     const days = [14, 15, 16].map(
       (day) => weeks.flat().find((c) => c.date.getTime() === new Date(2026, 6, day).getTime())?.visible.length,

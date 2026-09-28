@@ -48,6 +48,7 @@ type Appointment<TExtra = unknown> = {
 - `description` is edited by the built-in `etSchedulerEditDescription` field - see [edit surface](#edit-surface).
 - `extra` is the open extension point for a custom edit field to read and write, so adding one never widens `Appointment` itself.
 - An appointment renders on **every day it spans**, not just the day it starts - a 3-day `allDay` appointment shows a badge on all three month-view day cells, and one bar spanning all three columns in the time grid's all-day strip.
+- `end` is exclusive: an appointment that ends at 00:00 does not reach into the next day. A zero-length appointment shows on the day it starts.
 
 ## Options
 

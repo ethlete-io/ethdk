@@ -23,6 +23,7 @@ import {
   SchedulerView,
   SchedulerVisibleRange,
 } from '../scheduler.types';
+import { appointmentTouchesRange } from './internals/scheduler-range';
 import { buildAppointmentTree, countDescendants } from './internals/scheduler-tree';
 
 export type { AppointmentTreeNode } from './internals/scheduler-tree';
@@ -178,7 +179,7 @@ export class SchedulerDirective<TExtra = unknown> {
   public visibleAppointments = computed(() => {
     const { start, end } = this.visibleRange();
 
-    return this.effectiveAppointments().filter((appointment) => appointment.start <= end && appointment.end >= start);
+    return this.effectiveAppointments().filter((appointment) => appointmentTouchesRange(appointment, { start, end }));
   });
 
   /** The selected appointment itself, or `null` - resolved from {@link selectedAppointmentId}. */

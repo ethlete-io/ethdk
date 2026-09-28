@@ -1,5 +1,6 @@
 import { endOfDay, isSameDay, startOfDay } from 'date-fns';
-import { Appointment, AppointmentId } from '../../scheduler.types';
+import { AppointmentId } from '../../scheduler.types';
+import { appointmentTouchesRange } from './scheduler-range';
 import { AppointmentTreeNode, flattenAppointmentTree } from './scheduler-tree';
 
 /** One timed appointment positioned on a time-grid day column. */
@@ -48,9 +49,6 @@ export type SchedulerTimeGridOptions<TExtra> = {
   tree: readonly AppointmentTreeNode<TExtra>[];
   today: Date;
 };
-
-const coversDay = (appointment: Appointment, day: { start: Date; end: Date }) =>
-  appointment.start <= day.end && appointment.end >= day.start;
 
 type ClippedEntry<TExtra> = { node: AppointmentTreeNode<TExtra>; start: number; end: number };
 
@@ -162,7 +160,7 @@ export const buildSchedulerTimeGrid = <TExtra>(
     for (const node of flattened) {
       const { appointment } = node;
 
-      if (!coversDay(appointment, { start: dayStart, end: dayEnd })) {
+      if (!appointmentTouchesRange(appointment, { start: dayStart, end: dayEnd })) {
         continue;
       }
 

@@ -1,6 +1,6 @@
 import { addDays, endOfDay, endOfMonth, endOfWeek, isSameDay, startOfMonth, startOfWeek } from 'date-fns';
-import { Appointment } from '../../scheduler.types';
 import { SchedulerWeekStartsOn } from '../scheduler.directive';
+import { appointmentTouchesRange } from './scheduler-range';
 import { AppointmentTreeNode, flattenAppointmentTree } from './scheduler-tree';
 
 /** One day cell of a month grid: the appointments it shows, capped, and the rest it hides. */
@@ -20,9 +20,6 @@ export type SchedulerMonthGridOptions<TExtra> = {
   today: Date;
 };
 
-const appointmentCoversDay = (appointment: Appointment, day: { start: Date; end: Date }) =>
-  appointment.start <= day.end && appointment.end >= day.start;
-
 export const buildSchedulerMonthGrid = <TExtra>(
   options: SchedulerMonthGridOptions<TExtra>,
 ): SchedulerMonthDayCell<TExtra>[][] => {
@@ -40,7 +37,7 @@ export const buildSchedulerMonthGrid = <TExtra>(
 
     for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
       const day = { start: cursor, end: endOfDay(cursor) };
-      const matching = flattened.filter((node) => appointmentCoversDay(node.appointment, day));
+      const matching = flattened.filter((node) => appointmentTouchesRange(node.appointment, day));
 
       week.push({
         date: cursor,

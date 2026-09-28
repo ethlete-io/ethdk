@@ -46,6 +46,22 @@ describe('buildSchedulerAgenda', () => {
     expect(agenda[1]?.nodes.map((node) => node.appointment.id)).toEqual(['a']);
   });
 
+  it('keeps an appointment that ends at midnight off the next day', () => {
+    const next = new Date(2026, 6, 16);
+    const agenda = buildAgenda([appointment('a', new Date(2026, 6, 15, 22), next)], [day, next]);
+
+    expect(agenda[0]?.nodes).toHaveLength(1);
+    expect(agenda[1]?.nodes).toHaveLength(0);
+  });
+
+  it('keeps a zero-length appointment at midnight on the day it starts', () => {
+    const next = new Date(2026, 6, 16);
+    const agenda = buildAgenda([appointment('a', next, next)], [day, next]);
+
+    expect(agenda[0]?.nodes).toHaveLength(0);
+    expect(agenda[1]?.nodes).toHaveLength(1);
+  });
+
   it('excludes an appointment that does not touch the day', () => {
     const agenda = buildAgenda([appointment('a', new Date(2026, 6, 16, 9), new Date(2026, 6, 16, 10))]);
 
