@@ -15,6 +15,12 @@ export type FormFieldLabels = {
   ratingEmpty: string;
   /** A rating's `aria-valuetext` for a value out of its `max`, e.g. `'3 of 5'`. */
   ratingValue: (value: number, max: number) => string;
+  /** The `et-counter` announcement once the value nears its limit. */
+  counterRemaining: (remaining: number, max: number) => string;
+  /** The `et-counter` announcement when the value is exactly at its limit. */
+  counterLimitReached: (max: number) => string;
+  /** The `et-counter` announcement past the limit. */
+  counterOverLimit: (over: number, max: number) => string;
 };
 
 /** The built-in English labels. */
@@ -24,6 +30,9 @@ export const DEFAULT_FORM_FIELD_LABELS: FormFieldLabels = {
   selectAll: 'Select all',
   ratingEmpty: 'No rating',
   ratingValue: (value, max) => `${value} of ${max}`,
+  counterRemaining: (remaining) => `${remaining} characters remaining`,
+  counterLimitReached: (max) => `Character limit of ${max} reached`,
+  counterOverLimit: (over, max) => `${over} characters over the limit of ${max}`,
 };
 
 const FORM_FIELD_LABELS_DEF = /* @__PURE__ */ defineLabels<FormFieldLabels>(

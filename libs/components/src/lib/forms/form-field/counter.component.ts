@@ -1,4 +1,5 @@
 import { Component, computed, DestroyRef, inject, input, ViewEncapsulation } from '@angular/core';
+import { injectFormFieldLabels } from './form-field-labels';
 import { CounterComponentBase, FORM_FIELD_TOKEN } from './headless';
 
 const defaultLengthOf = (value: unknown) => {
@@ -30,7 +31,7 @@ const ANNOUNCE_FROM_FRACTION = 0.9;
   selector: 'et-counter',
   template: `
     <span aria-hidden="true">{{ current() }}{{ limitSuffix() }}</span>
-    <span [attr.aria-live]="announcement() ? 'polite' : null" class="et-counter-announcement">
+    <span class="et-counter-announcement" aria-live="polite">
       {{ announcement() }}
     </span>
   `,
@@ -43,6 +44,7 @@ const ANNOUNCE_FROM_FRACTION = 0.9;
 })
 export class CounterComponent implements CounterComponentBase {
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
+  private labels = injectFormFieldLabels();
 
   /**
    * The limit to count towards. Wins over the schema's `maxLength()` - use it for a control whose
@@ -87,16 +89,17 @@ export class CounterComponent implements CounterComponentBase {
     }
 
     const current = this.current();
+    const labels = this.labels();
 
     if (this.isOverLimit()) {
-      return `${current - max} characters over the limit of ${max}`;
+      return labels.counterOverLimit(current - max, max);
     }
 
     if (current === max) {
-      return `Character limit of ${max} reached`;
+      return labels.counterLimitReached(max);
     }
 
-    return current / max >= ANNOUNCE_FROM_FRACTION ? `${max - current} characters remaining` : null;
+    return current / max >= ANNOUNCE_FROM_FRACTION ? labels.counterRemaining(max - current, max) : null;
   });
 
   constructor() {

@@ -419,6 +419,19 @@ describe('forms form-field scenarios', () => {
     render(s);
   });
 
+  it('keeps the counter live region in place before the first announcement', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(ProfileComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    render(s);
+
+    const announcement = query('.et-counter-announcement', query('et-counter', host));
+
+    expect(announcement.textContent?.trim()).toBe('');
+    expect(announcement.getAttribute('aria-live')).toBe('polite');
+  });
+
   it('shows a warn() advisory under a valid field and yields the slot to an error', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(ProfileComponent);
@@ -558,6 +571,40 @@ describe('forms form-field scenarios', () => {
     render(s);
     expect(field.value).toBe('');
     expect(describedBy(field)?.textContent).toContain('City is required');
+  });
+});
+
+describe('forms form-field localized counter scenarios', () => {
+  const scenario = useScenario({
+    providers: [
+      provideColorThemes(TEST_COLOR_THEMES),
+      provideFormFieldLabels({
+        counterRemaining: (remaining) => `Noch ${remaining} Zeichen`,
+        counterLimitReached: (max) => `Limit von ${max} erreicht`,
+        counterOverLimit: (over) => `${over} Zeichen zu viel`,
+      }),
+    ],
+  });
+
+  it('announces the counter with the app-wide labels', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(ProfileComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    render(s);
+
+    const field = query<HTMLInputElement>('input', host);
+    const announcement = () => query('.et-counter-announcement', query('et-counter', host)).textContent?.trim();
+
+    type(s, field, 'nine char');
+    expect(announcement()).toBe('Noch 1 Zeichen');
+
+    type(s, field, 'ten chars!');
+    expect(announcement()).toBe('Limit von 10 erreicht');
+
+    type(s, field, 'eleven char');
+    leave(s, field);
+    expect(announcement()).toBe('1 Zeichen zu viel');
   });
 });
 
