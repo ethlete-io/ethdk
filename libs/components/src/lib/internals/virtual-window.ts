@@ -54,7 +54,7 @@ export const createVirtualWindow = (config: VirtualWindowConfig): VirtualWindow 
   const overscan = asSignal(config.overscan);
   // Height of a real, rendered row once one was measured; falls back to the estimate until then.
   const measuredItemHeight = signal<number | null>(null);
-  const itemHeight = computed(() => measuredItemHeight() ?? estimateItemHeight());
+  const itemHeight = computed(() => Math.max(1, measuredItemHeight() ?? estimateItemHeight()));
   const scrollOffset = signal(0);
   const containerDimensions = signalElementDimensions(config.container);
   const viewportSize = computed(() => containerDimensions().client?.height ?? 0);

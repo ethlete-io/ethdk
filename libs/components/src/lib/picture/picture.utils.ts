@@ -19,7 +19,7 @@ export const extractFirstImageUrl = (source: string | PictureSource | null): str
 
   const firstCandidate = srcset.split(',')[0]?.trim();
 
-  return firstCandidate?.split(' ')[0] || null;
+  return firstCandidate?.split(/\s+/)[0] || null;
 };
 
 /**
@@ -52,10 +52,6 @@ export const normalizePictureSizes = (sizes: string | string[] | null | undefine
   return Array.isArray(sizes) ? sizes.join(', ') || null : sizes;
 };
 
-/**
- * A single URL prefixed with the base, unless it carries a scheme or is protocol-relative. Exactly one slash joins
- * them however each side is written - cdk produced `host//path` when both carried one.
- */
 const withBaseUrl = (url: string, baseUrl: string) => {
   if (/^[a-z][a-z\d+.-]*:/i.test(url) || url.startsWith('//')) return url;
 
@@ -63,11 +59,8 @@ const withBaseUrl = (url: string, baseUrl: string) => {
 };
 
 /**
- * A source with the configured `baseUrl` applied, so sources can be authored as the paths an API returns.
- *
- * Applied **per candidate**, which is what makes a relative multi-candidate srcset work: cdk prefixed the
- * srcset as one string, so `'a.jpg 1x, b.jpg 2x'` left the second candidate unresolved. A `data:` URI is
- * passed through whole - its base64 payload contains commas, so it is not a candidate list.
+ * A source with the configured `baseUrl` applied to each srcset candidate, so sources can be authored as the
+ * paths an API returns. Absolute, protocol-relative and `data:` URLs pass through unchanged.
  */
 export const withPictureBaseUrl = (source: PictureSource, config: PictureConfig | null): PictureSource => {
   const baseUrl = config?.baseUrl;

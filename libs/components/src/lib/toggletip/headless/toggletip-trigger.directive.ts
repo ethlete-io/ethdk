@@ -4,19 +4,9 @@ import { ButtonDirective } from '../../button/headless';
 import { TOGGLETIP_ERROR_CODES } from '../toggletip-errors';
 import { ToggletipDirective } from './toggletip.directive';
 
-const PRESSED_VARIANT_MAP: Record<string, string> = {
-  filled: 'outline',
-  outline: 'filled',
-  tonal: 'filled',
-  transparent: 'tonal',
-};
-
 @Directive({
   selector: '[etToggletipTrigger]',
   exportAs: 'etToggletipTrigger',
-  host: {
-    '[attr.data-pressed-variant]': 'pressedVariant()',
-  },
 })
 export class ToggletipTriggerDirective {
   private button = inject(ButtonDirective, { optional: true });
@@ -80,14 +70,5 @@ export class ToggletipTriggerDirective {
 
   public isOpen() {
     return this.toggletip?.open() ?? false;
-  }
-
-  public pressedVariant() {
-    if (!this.isOpen()) {
-      return null;
-    }
-
-    const variant = this.elementRef.nativeElement.getAttribute('data-variant');
-    return variant ? (PRESSED_VARIANT_MAP[variant] ?? null) : null;
   }
 }

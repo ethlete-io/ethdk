@@ -139,4 +139,19 @@ describe('createVirtualWindow', () => {
     expect(element.scrollTop).toBe(50 * 10 + 10 - 200);
     expect(window.range().start).toBeGreaterThan(0);
   });
+
+  it('keeps a finite range when the height estimate is zero', () => {
+    const zeroEstimateWindow = runInInjectionContext(TestBed.inject(Injector), () =>
+      createVirtualWindow({ container, itemCount, estimateItemHeight: 0, overscan: 2 }),
+    );
+
+    container.set(createScrollContainer());
+    tick();
+
+    const { start, end } = zeroEstimateWindow.range();
+
+    expect(Number.isFinite(start)).toBe(true);
+    expect(Number.isFinite(end)).toBe(true);
+    expect(zeroEstimateWindow.paddingBottom()).not.toBeNaN();
+  });
 });

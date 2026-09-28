@@ -11,7 +11,7 @@ import { SkeletonItemComponent } from './skeleton-item.component';
 @Component({
   selector: 'et-skeleton-text',
   template: `
-    @for (line of lineList(); track line) {
+    @for (line of lineList(); track $index) {
       <et-skeleton-item [style.inline-size.%]="line" shape="text" />
     }
   `,

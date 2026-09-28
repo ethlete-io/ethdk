@@ -122,6 +122,22 @@ describe('QueryErrorComponent', () => {
     expect(host(fixture).querySelector('.et-query-error')?.hasAttribute('data-list')).toBe(true);
   });
 
+  it('renders a repeated violation message once per violation, without duplicate-key warnings', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const fixture = createHost();
+    const blank = { message: 'This value should not be blank.' };
+
+    fixture.componentInstance.error.set(errorResponse(422, { violations: [blank, blank] }));
+    fixture.detectChanges();
+    fixture.componentInstance.error.set(errorResponse(422, { violations: [blank, blank, blank] }));
+    fixture.detectChanges();
+
+    expect(host(fixture).querySelectorAll('.et-query-error-list-item')).toHaveLength(3);
+    expect(warn.mock.calls.flat().join(' ')).not.toContain('NG0955');
+
+    warn.mockRestore();
+  });
+
   it('replaces a message that merely repeats its own title', () => {
     const fixture = createHost();
 

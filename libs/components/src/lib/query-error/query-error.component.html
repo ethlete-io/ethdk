@@ -13,7 +13,7 @@
 
     @if (error.isList) {
       <ul class="et-query-error-list" etBannerBody>
-        @for (message of error.messages; track message) {
+        @for (message of error.messages; track $index) {
           <li class="et-query-error-list-item">{{ message }}</li>
         }
       </ul>

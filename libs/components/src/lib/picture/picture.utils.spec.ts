@@ -24,6 +24,10 @@ describe('extractFirstImageUrl', () => {
     expect(extractFirstImageUrl({ srcset: `   ${expectedUrl}   ` })).toEqual(expectedUrl);
   });
 
+  it('splits a candidate on any whitespace', () => {
+    expect(extractFirstImageUrl(`${expectedUrl}\n1x,\n${unexpectedUrl}\t2x`)).toEqual(expectedUrl);
+  });
+
   it('returns null for input with no URL in it', () => {
     expect(extractFirstImageUrl(null)).toBeNull();
     expect(extractFirstImageUrl('')).toBeNull();

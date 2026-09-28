@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { setInputSignal } from '@ethlete/core';
 import '../../../test-helpers';
 import { ButtonComponent } from '../../button/button.component';
+import { IconButtonComponent } from '../../button/icon-button.component';
 import { ToggletipTriggerDirective } from './toggletip-trigger.directive';
 import { ToggletipDirective } from './toggletip.directive';
 
@@ -17,6 +18,27 @@ import { ToggletipDirective } from './toggletip.directive';
 })
 class ToggletipTriggerDirectiveTestHost {
   open = false;
+}
+
+@Component({
+  template: `
+    <button
+      [etToggletipOpen]="open()"
+      [variant]="variant()"
+      aria-label="Info"
+      etToggletip="Info"
+      et-icon-button
+      etToggletipTrigger
+      type="button"
+    >
+      i
+    </button>
+  `,
+  imports: [IconButtonComponent, ToggletipDirective, ToggletipTriggerDirective],
+})
+class ToggletipIconTriggerTestHost {
+  open = signal(false);
+  variant = signal<'filled' | 'tonal'>('filled');
 }
 
 describe('ToggletipTriggerDirective', () => {
@@ -62,5 +84,26 @@ describe('ToggletipTriggerDirective', () => {
 
     expect(toggletipDirective.open()).toBe(false);
     expect(toggletipDirective.overlayRef()).toBeNull();
+  });
+
+  it("follows the icon button's own pressed variant, also when the variant changes while open", () => {
+    const iconFixture = TestBed.createComponent(ToggletipIconTriggerTestHost);
+    const iconButton = iconFixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    const iconToggletip = iconFixture.debugElement
+      .query(By.directive(ToggletipDirective))
+      .injector.get(ToggletipDirective);
+
+    iconFixture.componentInstance.open.set(true);
+    iconFixture.detectChanges();
+
+    expect(iconButton.getAttribute('data-pressed-variant')).toBe('transparent');
+
+    iconFixture.componentInstance.variant.set('tonal');
+    iconFixture.detectChanges();
+
+    expect(iconButton.getAttribute('data-pressed-variant')).toBe('filled');
+
+    iconToggletip.hide();
+    iconFixture.detectChanges();
   });
 });
