@@ -1,3 +1,4 @@
+import { execFileSync } from 'child_process';
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
@@ -62,6 +63,18 @@ describe('findManifests', () => {
     writeManifest(root, { name: 'cached' }, join('.nx', 'cache', 'package.json'));
 
     expect(findManifests(root)).toEqual(['package.json']);
+  });
+
+  it('leaves out a manifest git ignores in a checkout', () => {
+    const root = makeRoot();
+
+    execFileSync('git', ['init', '-q'], { cwd: root });
+    writeManifest(root, { name: 'root' });
+    writeManifest(root, { name: 'lib' }, join('libs', 'a', 'package.json'));
+    writeManifest(root, { name: 'vendored' }, join('vendor', 'x', 'package.json'));
+    writeFileSync(join(root, '.gitignore'), 'vendor/\n', 'utf8');
+
+    expect(findManifests(root)).toEqual(['package.json', 'libs/a/package.json']);
   });
 });
 
@@ -190,6 +203,19 @@ describe('installedVersion', () => {
 });
 
 describe('writeRanges', () => {
+  it('keeps CRLF line endings', () => {
+    const root = makeRoot();
+    const source = JSON.stringify({ dependencies: { '@ethlete/core': '^5.0.0' } }, null, 2).replace(/\n/g, '\r\n');
+
+    writeFileSync(join(root, 'package.json'), `${source}\r\n`, 'utf8');
+    writeRanges({
+      root,
+      writes: [{ name: '@ethlete/core', manifestPath: 'package.json', field: 'dependencies', range: '^5.1.0' }],
+    });
+
+    expect(readFileSync(join(root, 'package.json'), 'utf8')).toBe(`${source.replace('^5.0.0', '^5.1.0')}\r\n`);
+  });
+
   it('writes a new range into the field it came from', () => {
     const root = makeRoot();
 

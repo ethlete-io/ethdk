@@ -175,6 +175,41 @@ describe('readPackageMigrations', () => {
   });
 });
 
+describe('readPackageMigrations path checks', () => {
+  it('rejects a name that would leave the task directory', () => {
+    const root = makeRoot();
+
+    installPackage({ root, manifest: { migrations: [entry({ name: 'x/../../../src/main' })] } });
+
+    const read = readPackageMigrations({ root, packageName: '@ethlete/core' });
+
+    expect(read.migrations).toEqual([]);
+    expect(read.problems[0]).toContain('has a name outside letters');
+  });
+
+  it('rejects instructions outside the package', () => {
+    const root = makeRoot();
+
+    installPackage({
+      root,
+      manifest: {
+        migrations: [
+          entry({ name: 'a', kind: 'assisted', instructions: '/etc/passwd' }),
+          entry({ name: 'b', kind: 'assisted', instructions: '../../../secret.md' }),
+        ],
+      },
+    });
+
+    const read = readPackageMigrations({ root, packageName: '@ethlete/core' });
+
+    expect(read.migrations).toEqual([]);
+    expect(read.problems).toEqual([
+      expect.stringContaining('"a" names "instructions" outside its package'),
+      expect.stringContaining('"b" names "instructions" outside its package'),
+    ]);
+  });
+});
+
 describe('instructionsPath', () => {
   it('resolves a path next to the manifest', () => {
     expect(

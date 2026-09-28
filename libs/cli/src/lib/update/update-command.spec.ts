@@ -10,10 +10,17 @@ const spawnSync = vi.hoisted(() =>
   vi.fn<(binary: string, args: string[], options?: { env?: NodeJS.ProcessEnv }) => { status: number }>(),
 );
 
-vi.mock('child_process', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('child_process')>()),
-  spawnSync,
-}));
+vi.mock('child_process', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('child_process')>();
+
+  return {
+    ...actual,
+    spawnSync: (binary: string, args: string[], options?: { env?: NodeJS.ProcessEnv }) =>
+      binary === 'git' && args[0] === 'ls-files'
+        ? actual.spawnSync(binary, args, options)
+        : spawnSync(binary, args, options),
+  };
+});
 
 const writeJson = (path: string, value: unknown) => {
   mkdirSync(join(path, '..'), { recursive: true });
@@ -276,6 +283,11 @@ const withOpenTasks = (root: string) => {
 const agentCommands = () =>
   spawnSync.mock.calls.map(([command]) => command).filter((command) => command.startsWith('agent -p'));
 
+const agentTaskFiles = () =>
+  spawnSync.mock.calls
+    .filter(([command]) => command.startsWith('agent -p'))
+    .map(([, options]) => (options as unknown as { env?: NodeJS.ProcessEnv }).env?.['ETHLETE_UPDATE_TASK_FILE']);
+
 describe('et update --ai', () => {
   it('fails before it changes anything when no agent command is configured', async () => {
     const root = makeRepo();
@@ -298,7 +310,7 @@ describe('et update --ai', () => {
     spawnSync.mockReturnValue({ status: 0 });
 
     expect(await updateCommand({ argv: ['--ai'], root })).toBe(0);
-    expect(agentCommands()).toEqual([expect.stringContaining(join(root, UPDATE_DIR, 'core-open.md'))]);
+    expect(agentTaskFiles()).toEqual([join(root, UPDATE_DIR, 'core-open.md')]);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('the agent left'));
   });
 

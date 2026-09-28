@@ -111,7 +111,7 @@ An `assisted` task file states one change and how to apply it. Hand it to an age
 
 The agent runs headless, so it has to be allowed to edit files without asking: a plain `claude -p` can read the task but not apply it.
 
-`et update --ai` runs the command once per assisted task, in order, so each run has one change to make. Each run gets a prompt that names the task file and asks the agent to delete it once the change is complete. The prompt is appended to the command, or replaces `<prompt>` in it; `<file>` is replaced by the path of the task file alone, for a command that brings its own prompt.
+`et update --ai` runs the command once per assisted task, in order, so each run has one change to make. Each run gets a prompt that names the task file and asks the agent to delete it once the change is complete. The prompt is appended to the command, or replaces `<prompt>` in it; `<file>` is replaced by the path of the task file alone, for a command that brings its own prompt. Both reach the shell as the quoted variables `ETHLETE_UPDATE_PROMPT` and `ETHLETE_UPDATE_TASK_FILE`, so a repo path with shell characters is passed as it is.
 
 Each task is reported as its run ends: **done** when the agent deleted the task file, **still open** when it exited `0` but left the file, and **failed** when it exited with another code. Nothing runs between two tasks - no build, no lint - so review the diff before you commit it. A failed run makes `et update` exit `1`.
 
@@ -125,8 +125,8 @@ Repos that use `@ethlete/agent-rules` also get the `sdk-update` skill, which tea
 
 ## Requirements
 
-- A `package.json` at the repo root. Library manifests deeper in the repo are found from there.
-- Network access to the registry the repo installs from: the `@ethlete` scope or the registry of `.yarnrc.yml` (yarn 2+), `.yarnrc` and `.npmrc` (yarn 1), or `.npmrc` (npm, pnpm, bun), then `npm_config_registry`, then the public registry.
+- A `package.json` at the repo root. Library manifests deeper in the repo are found from there, leaving out what git ignores.
+- Network access to the registry the repo installs from: the `@ethlete` scope or the registry of `.yarnrc.yml` (yarn 2+), `.yarnrc` and `.npmrc` (yarn 1), or `.npmrc` (npm, pnpm, bun), then the user's `~/.npmrc`, then `npm_config_registry`, then the public registry. A `//host/path/:_authToken` or `:_auth` entry for that registry in either `.npmrc`, with `${VAR}` expanded, is sent with the lookup.
   The install reads the same files: yarn 1 exports its default registry to `yarn et update` as `npm_config_registry`, and `et update` drops that variable before it installs.
 - Nx, for the codemods. The migrations ship as Nx generators, so a repo without Nx gets each one reported as a command instead. Everything else works.
 

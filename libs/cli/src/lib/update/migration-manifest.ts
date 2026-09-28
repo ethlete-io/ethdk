@@ -75,6 +75,9 @@ const parseEntry = (options: { value: unknown; origin: string; index: number }) 
   const description = readString(value, 'description');
 
   if (!name) return { problem: `${at} has no "name".` };
+  if (!/^[\w.-]+$/.test(name) || /^\.+$/.test(name)) {
+    return { problem: `${origin} "${name}" has a name outside letters, digits, ".", "_" and "-".` };
+  }
   if (!version) return { problem: `${origin} "${name}" has no "version".` };
   if (!isValidVersion(version)) return { problem: `${origin} "${name}" has an invalid version "${version}".` };
   if (!kind) return { problem: `${origin} "${name}" has no "kind".` };
@@ -89,6 +92,10 @@ const parseEntry = (options: { value: unknown; origin: string; index: number }) 
   const instructions = readString(value, 'instructions');
 
   if (kind === 'auto' && !generator) return { problem: `${origin} "${name}" is auto but names no "generator".` };
+
+  if (instructions && (isAbsolute(instructions) || instructions.split(/[\\/]/).includes('..'))) {
+    return { problem: `${origin} "${name}" names "instructions" outside its package: ${instructions}.` };
+  }
 
   if (kind === 'assisted' && !instructions) {
     return { problem: `${origin} "${name}" is assisted but names no "instructions" file.` };
@@ -185,8 +192,6 @@ export const instructionsPath = (options: { manifestPath?: string; migration: Mi
   const { manifestPath, migration } = options;
 
   if (!migration.instructions) return undefined;
-
-  if (isAbsolute(migration.instructions)) return migration.instructions;
 
   return manifestPath ? resolve(dirname(manifestPath), migration.instructions) : undefined;
 };

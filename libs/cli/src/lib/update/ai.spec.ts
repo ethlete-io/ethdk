@@ -2,10 +2,12 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
-import { agentCommand, agentPrompt, assistedTasks, runAgentTasks } from './ai';
+import { agentCommand, agentEnv, agentPrompt, assistedTasks, runAgentTasks } from './ai';
 import { UpdateTask } from './tasks';
 
-const spawnSync = vi.hoisted(() => vi.fn<(command: string) => { status: number }>());
+const spawnSync = vi.hoisted(() =>
+  vi.fn<(command: string, options?: { env?: Record<string, string> }) => { status: number }>(),
+);
 
 vi.mock('child_process', async (importOriginal) => ({
   ...(await importOriginal<typeof import('child_process')>()),
@@ -23,28 +25,40 @@ const task = (overrides: Partial<UpdateTask> = {}): UpdateTask => ({
 });
 
 describe('agentCommand', () => {
-  it('hands the agent a prompt that names the task file, not only its path', () => {
-    expect(agentCommand({ template: 'claude --permission-mode acceptEdits -p', taskPath: '/repo/task.md' })).toBe(
-      `claude --permission-mode acceptEdits -p "${agentPrompt('/repo/task.md')}"`,
+  it('appends the prompt as a quoted variable when the template has no placeholder', () => {
+    expect(agentCommand({ template: 'claude --permission-mode acceptEdits -p', platform: 'linux' })).toBe(
+      'claude --permission-mode acceptEdits -p "$ETHLETE_UPDATE_PROMPT"',
     );
     expect(agentPrompt('/repo/task.md')).toMatch(/^Apply the migration task described in \/repo\/task\.md /);
   });
 
   it('puts the prompt where the template asks for it', () => {
-    expect(agentCommand({ template: 'agent --prompt <prompt> --yes', taskPath: '/repo/task.md' })).toBe(
-      `agent --prompt "${agentPrompt('/repo/task.md')}" --yes`,
+    expect(agentCommand({ template: 'agent --prompt <prompt> --yes', platform: 'linux' })).toBe(
+      'agent --prompt "$ETHLETE_UPDATE_PROMPT" --yes',
     );
   });
 
-  it('puts only the path where the template asks for <file>', () => {
-    expect(agentCommand({ template: 'claude -p "work <file> now"', taskPath: '/repo/task.md' })).toBe(
-      'claude -p "work /repo/task.md now"',
-    );
+  it('uses cmd variable syntax on Windows', () => {
+    expect(agentCommand({ template: 'agent <file>', platform: 'win32' })).toBe('agent "%ETHLETE_UPDATE_TASK_FILE%"');
   });
 
-  it('quotes a path that holds a space', () => {
-    expect(agentCommand({ template: 'agent <file>', taskPath: '/my repo/task.md' })).toBe('agent "/my repo/task.md"');
-  });
+  it.runIf(process.platform !== 'win32')(
+    'passes a task path with shell characters to the command unchanged',
+    async () => {
+      const actual = await vi.importActual<typeof import('child_process')>('child_process');
+      const taskPath = `/my repo/$HOME/\`id\`/"it's" (a)&b/task.md`;
+
+      for (const template of ['printf %s <file>', 'printf %s "in <file> now"']) {
+        const result = actual.spawnSync(agentCommand({ template }), {
+          shell: true,
+          encoding: 'utf8',
+          env: { ...process.env, ...agentEnv(taskPath) },
+        });
+
+        expect(result.stdout).toBe(template.includes('in ') ? `in ${taskPath} now` : taskPath);
+      }
+    },
+  );
 });
 
 describe('runAgentTasks', () => {
@@ -69,10 +83,12 @@ describe('runAgentTasks', () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    spawnSync.mockImplementation((command: string) => {
-      if (command.includes('core-first.md')) rmSync(join(root, '.ethlete', 'update', 'core-first.md'));
+    spawnSync.mockImplementation((_command: string, options?: { env?: Record<string, string> }) => {
+      const taskFile = options?.env?.['ETHLETE_UPDATE_TASK_FILE'] ?? '';
 
-      return { status: command.includes('core-third.md') ? 2 : 0 };
+      if (taskFile.endsWith('core-first.md')) rmSync(taskFile);
+
+      return { status: taskFile.endsWith('core-third.md') ? 2 : 0 };
     });
 
     const runs = runAgentTasks({ root, template: 'agent', tasks });

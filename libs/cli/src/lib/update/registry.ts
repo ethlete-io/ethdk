@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'fs';
+import { homedir } from 'os';
 import { join } from 'path';
 import { PackageManagerName } from './package-manager';
 import { prereleaseTag } from './semver';
@@ -25,17 +26,22 @@ const readText = (path: string) => (existsSync(path) ? readFileSync(path, 'utf8'
 const configLines = (text: string) =>
   text.split(/\r?\n/).filter((line) => line.trim() !== '' && !/^\s*[#;]/.test(line));
 
-const readNpmrc = (text: string): RegistryConfig => {
-  const config: RegistryConfig = {};
+const expandEnv = (value: string, env: NodeJS.ProcessEnv) =>
+  value.replace(/\$\{([^}]+)\}/g, (_, name: string) => env[name] ?? '');
 
-  for (const line of configLines(text)) {
+const npmrcEntries = (text: string, env: NodeJS.ProcessEnv) =>
+  configLines(text).flatMap((line) => {
     const separator = line.indexOf('=');
 
-    if (separator < 0) continue;
+    if (separator < 0) return [];
 
-    const key = line.slice(0, separator).trim();
-    const value = unquote(line.slice(separator + 1));
+    return [{ key: line.slice(0, separator).trim(), value: expandEnv(unquote(line.slice(separator + 1)), env) }];
+  });
 
+const readNpmrc = (text: string, env: NodeJS.ProcessEnv): RegistryConfig => {
+  const config: RegistryConfig = {};
+
+  for (const { key, value } of npmrcEntries(text, env)) {
     if (key === `${SCOPE}:registry`) config.scoped = value;
     if (key === 'registry') config.registry = value;
   }
@@ -86,9 +92,18 @@ const readYarnrcYml = (text: string): RegistryConfig => {
   return config;
 };
 
-/** The registry settings of a repo's own config files, in the order its package manager reads them. */
-const projectRegistryConfig = (root: string, manager: PackageManagerName): RegistryConfig => {
+const userNpmrcPath = (home: string) => join(home, '.npmrc');
+
+/** The registry settings of a repo's config files, then the user's `.npmrc`, in the order its package manager reads them. */
+const projectRegistryConfig = (options: {
+  root: string;
+  manager: PackageManagerName;
+  env: NodeJS.ProcessEnv;
+  home: string;
+}): RegistryConfig => {
+  const { root, manager, env, home } = options;
   const npmrc = readText(join(root, '.npmrc'));
+  const userNpmrc = readText(userNpmrcPath(home));
   const sources: (RegistryConfig | undefined)[] = [];
 
   if (manager === 'yarn') {
@@ -101,7 +116,8 @@ const projectRegistryConfig = (root: string, manager: PackageManagerName): Regis
     sources.push(classic === undefined ? undefined : readYarnrc(classic));
   }
 
-  sources.push(npmrc === undefined ? undefined : readNpmrc(npmrc));
+  sources.push(npmrc === undefined ? undefined : readNpmrc(npmrc, env));
+  sources.push(userNpmrc === undefined ? undefined : readNpmrc(userNpmrc, env));
 
   return {
     scoped: sources.find((source) => source?.scoped)?.scoped,
@@ -114,9 +130,11 @@ const projectRegistryConfig = (root: string, manager: PackageManagerName): Regis
  * `.yarnrc.yml` first, since yarn 1 exports its default registry to scripts even when an `.npmrc` sets
  * another one, then the environment, then the public registry.
  */
-export const registryUrl = (options: { root?: string; manager?: PackageManagerName; env?: NodeJS.ProcessEnv } = {}) => {
-  const { root = process.cwd(), manager = 'npm', env = process.env } = options;
-  const project = projectRegistryConfig(root, manager);
+export const registryUrl = (
+  options: { root?: string; manager?: PackageManagerName; env?: NodeJS.ProcessEnv; home?: string } = {},
+) => {
+  const { root = process.cwd(), manager = 'npm', env = process.env, home = homedir() } = options;
+  const project = projectRegistryConfig({ root, manager, env, home });
 
   return (
     project.scoped ??
@@ -127,6 +145,38 @@ export const registryUrl = (options: { root?: string; manager?: PackageManagerNa
   ).replace(/\/+$/, '');
 };
 
+/**
+ * The `Authorization` header npm would send to `registry`, from the `//host/path/:_authToken` or
+ * `:_auth` entries of the repo's and the user's `.npmrc`, with `${VAR}` expanded. The longest matching
+ * path wins.
+ */
+export const registryAuthorization = (options: {
+  registry: string;
+  root?: string;
+  env?: NodeJS.ProcessEnv;
+  home?: string;
+}) => {
+  const { registry, root = process.cwd(), env = process.env, home = homedir() } = options;
+  const target = `${registry.replace(/^[a-z]+:/i, '').replace(/\/+$/, '')}/`;
+  const entries = [readText(join(root, '.npmrc')), readText(userNpmrcPath(home))].flatMap((text) =>
+    text === undefined ? [] : npmrcEntries(text, env),
+  );
+
+  let best: { length: number; header: string } | undefined;
+
+  for (const { key, value } of entries) {
+    const match = /^(\/\/.+?)\/?:(_authToken|_auth)$/.exec(key);
+    const prefix = match?.[1] === undefined ? undefined : `${match[1]}/`;
+
+    if (!match || !prefix || !value || !target.startsWith(prefix)) continue;
+    if (best && best.length >= prefix.length) continue;
+
+    best = { length: prefix.length, header: match[2] === '_authToken' ? `Bearer ${value}` : `Basic ${value}` };
+  }
+
+  return best?.header;
+};
+
 export const packageUrl = (options: { registry: string; packageName: string }) =>
   `${options.registry}/${options.packageName.replace('/', '%2f')}`;
 
@@ -134,15 +184,19 @@ export const packageUrl = (options: { registry: string; packageName: string }) =
 export const fetchRegistryPackage = async (options: {
   packageName: string;
   registry?: string;
+  authorization?: string;
 }): Promise<RegistryLookup> => {
-  const { packageName, registry = registryUrl() } = options;
+  const { packageName, registry = registryUrl(), authorization } = options;
 
   let response: Response;
 
   try {
     response = await fetch(packageUrl({ registry, packageName }), {
       // The abbreviated document holds the dist tags and the version list without every manifest.
-      headers: { Accept: 'application/vnd.npm.install-v1+json' },
+      headers: {
+        Accept: 'application/vnd.npm.install-v1+json',
+        ...(authorization ? { Authorization: authorization } : {}),
+      },
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
   } catch (error) {

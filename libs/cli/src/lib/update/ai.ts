@@ -20,22 +20,57 @@ export const agentPrompt = (taskPath: string) =>
   `Apply the migration task described in ${taskPath} to this repository. ` +
   'Follow its instructions, then delete that file once the change is complete.';
 
-const quoted = (value: string) => (/\s/.test(value) ? `"${value}"` : value);
+export const PROMPT_ENV = 'ETHLETE_UPDATE_PROMPT';
+export const FILE_ENV = 'ETHLETE_UPDATE_TASK_FILE';
+
+const reference = (options: { name: string; platform: NodeJS.Platform; insideQuotes: boolean }) => {
+  const { name, platform, insideQuotes } = options;
+  const bare = platform === 'win32' ? `%${name}%` : `$${name}`;
+
+  return insideQuotes ? bare : `"${bare}"`;
+};
+
+const PLACEHOLDERS = [
+  { text: PROMPT_PLACEHOLDER, name: PROMPT_ENV },
+  { text: FILE_PLACEHOLDER, name: FILE_ENV },
+];
 
 /**
  * The command that hands one task to an agent. `<prompt>` becomes the prompt, `<file>` the path of the
- * task file; a template with neither gets the prompt appended, which is what `claude -p` needs.
+ * task file; a template with neither gets the prompt appended, which is what `claude -p` needs. Both
+ * values reach the shell as variable references; run it with `agentEnv`.
  */
-export const agentCommand = (options: { template: string; taskPath: string }) => {
-  const { template, taskPath } = options;
-  const prompt = quoted(agentPrompt(taskPath));
+export const agentCommand = (options: { template: string; platform?: NodeJS.Platform }) => {
+  const { template, platform = process.platform } = options;
 
-  if (template.includes(PROMPT_PLACEHOLDER) || template.includes(FILE_PLACEHOLDER)) {
-    return template.split(PROMPT_PLACEHOLDER).join(prompt).split(FILE_PLACEHOLDER).join(quoted(taskPath));
+  if (!PLACEHOLDERS.some(({ text }) => template.includes(text))) {
+    return `${template} ${reference({ name: PROMPT_ENV, platform, insideQuotes: false })}`;
   }
 
-  return `${template} ${prompt}`;
+  let command = '';
+  let insideQuotes = false;
+
+  for (let index = 0; index < template.length;) {
+    const placeholder = PLACEHOLDERS.find(({ text }) => template.startsWith(text, index));
+
+    if (placeholder) {
+      command += reference({ name: placeholder.name, platform, insideQuotes });
+      index += placeholder.text.length;
+      continue;
+    }
+
+    const char = template.charAt(index);
+
+    if (char === '"') insideQuotes = !insideQuotes;
+
+    command += char;
+    index += 1;
+  }
+
+  return command;
 };
+
+export const agentEnv = (taskPath: string) => ({ [PROMPT_ENV]: agentPrompt(taskPath), [FILE_ENV]: taskPath });
 
 export type AgentRunState = 'done' | 'open' | 'failed';
 
@@ -53,11 +88,16 @@ export const assistedTasks = (tasks: readonly UpdateTask[]) =>
 const runOne = (options: { root: string; template: string; task: UpdateTask }): AgentRun => {
   const { root, template, task } = options;
   const taskPath = join(root, task.instructionsFile ?? '');
-  const command = agentCommand({ template, taskPath });
+  const command = agentCommand({ template });
 
-  console.log(`  ${command}\n`);
+  console.log(`  ${command}\n  ${FILE_ENV}=${taskPath}\n`);
 
-  const result = spawnSync(command, { cwd: root, stdio: 'inherit', shell: true });
+  const result = spawnSync(command, {
+    cwd: root,
+    stdio: 'inherit',
+    shell: true,
+    env: { ...process.env, ...agentEnv(taskPath) },
+  });
 
   if (result.error) return { task, command, state: 'failed', reason: result.error.message };
 

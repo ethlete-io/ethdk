@@ -1,3 +1,4 @@
+import { spawnSync } from 'child_process';
 import { Dirent, existsSync, readFileSync, readdirSync, writeFileSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { compareVersions, rangePrefix, versionOfRange } from './semver';
@@ -53,11 +54,47 @@ export const readManifest = (root: string, relativePath = ROOT_MANIFEST): Manife
   return isRecord(parsed) ? (parsed as Manifest) : undefined;
 };
 
+const sortRootFirst = (paths: string[]) =>
+  paths.sort((left, right) => {
+    if (left === ROOT_MANIFEST) return -1;
+    if (right === ROOT_MANIFEST) return 1;
+
+    return left.localeCompare(right);
+  });
+
+/** The manifests git tracks or would track, or `undefined` when the root is not a git checkout. */
+const trackedManifests = (root: string) => {
+  const result = spawnSync(
+    'git',
+    ['ls-files', '--cached', '--others', '--exclude-standard', '--', `*${ROOT_MANIFEST}`],
+    { cwd: root, encoding: 'utf8' },
+  );
+
+  if (result.error || result.status !== 0) return undefined;
+
+  const paths = [...new Set((result.stdout ?? '').split('\n').filter((line) => line.length > 0))];
+
+  return paths.filter((path) => {
+    const parts = path.split('/');
+    const directories = parts.slice(0, -1);
+
+    return (
+      parts[parts.length - 1] === ROOT_MANIFEST &&
+      !directories.some((part) => part.startsWith('.') || SKIPPED_DIRECTORIES.has(part)) &&
+      existsSync(join(root, path))
+    );
+  });
+};
+
 /**
  * Every `package.json` in the repo, root first. An Nx repo keeps a manifest per buildable library, and
  * those pin `@ethlete/*` too, so an update that only rewrites the root leaves the rest behind.
  */
 export const findManifests = (root: string): string[] => {
+  const tracked = trackedManifests(root);
+
+  if (tracked && tracked.length > 0) return sortRootFirst(tracked);
+
   const found: string[] = [];
 
   const walk = (directory: string) => {
@@ -85,12 +122,7 @@ export const findManifests = (root: string): string[] => {
 
   walk(root);
 
-  return found.sort((left, right) => {
-    if (left === ROOT_MANIFEST) return -1;
-    if (right === ROOT_MANIFEST) return 1;
-
-    return left.localeCompare(right);
-  });
+  return sortRootFirst(found);
 };
 
 /** The version of `packageName` in `node_modules`, which is the one the running code came from. */
@@ -181,9 +213,11 @@ export const writeRanges = (options: { root: string; writes: readonly RangeWrite
     }
 
     const indent = detectIndent(source);
-    const trailingNewline = source.endsWith('\n') ? '\n' : '';
+    const newline = source.includes('\r\n') ? '\r\n' : '\n';
+    const trailingNewline = source.endsWith('\n') ? newline : '';
+    const serialized = JSON.stringify(parsed, null, indent).replace(/\n/g, newline);
 
-    writeFileSync(path, `${JSON.stringify(parsed, null, indent)}${trailingNewline}`, 'utf8');
+    writeFileSync(path, `${serialized}${trailingNewline}`, 'utf8');
     written.push(relativePath);
   }
 

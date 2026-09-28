@@ -1,8 +1,15 @@
 import { mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { describe, expect, it } from 'vitest';
-import { DEFAULT_REGISTRY, packageUrl, registryUrl, tagForInstalled } from './registry';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  DEFAULT_REGISTRY,
+  fetchRegistryPackage,
+  packageUrl,
+  registryAuthorization,
+  registryUrl,
+  tagForInstalled,
+} from './registry';
 
 const makeRoot = (files: Record<string, string> = {}) => {
   const root = mkdtempSync(join(tmpdir(), 'cli-registry-'));
@@ -11,6 +18,15 @@ const makeRoot = (files: Record<string, string> = {}) => {
 
   return root;
 };
+
+beforeEach(() => {
+  vi.stubEnv('HOME', mkdtempSync(join(tmpdir(), 'cli-registry-home-')));
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+});
 
 const yarnDefault = { npm_config_registry: 'https://registry.yarnpkg.com' };
 
@@ -79,6 +95,45 @@ describe('registryUrl', () => {
         },
       }),
     ).toBe('https://scoped.example.com');
+  });
+});
+
+describe('registry auth', () => {
+  it('reads the registry from the user .npmrc when the repo sets none', () => {
+    const home = makeRoot({ '.npmrc': '@ethlete:registry=https://mirror.example.com/npm/\n' });
+
+    expect(registryUrl({ root: makeRoot(), env: {}, home })).toBe('https://mirror.example.com/npm');
+  });
+
+  it('builds the header from the longest matching token entry, with the environment expanded', () => {
+    const root = makeRoot({ '.npmrc': '//mirror.example.com/npm/:_authToken=${MIRROR_TOKEN}\n' });
+    const home = makeRoot({
+      '.npmrc': '//mirror.example.com/:_authToken=wide\n//other.example.com/:_authToken=other\n',
+    });
+
+    expect(
+      registryAuthorization({
+        registry: 'https://mirror.example.com/npm',
+        root,
+        home,
+        env: { MIRROR_TOKEN: 'secret' },
+      }),
+    ).toBe('Bearer secret');
+    expect(registryAuthorization({ registry: 'https://mirror.example.com', root, home, env: {} })).toBe('Bearer wide');
+    expect(registryAuthorization({ registry: DEFAULT_REGISTRY, root, home, env: {} })).toBeUndefined();
+  });
+
+  it('sends the header with the lookup', async () => {
+    const fetch = vi.fn(async () => new Response(JSON.stringify({ 'dist-tags': {}, versions: {} })));
+
+    vi.stubGlobal('fetch', fetch);
+
+    await fetchRegistryPackage({ packageName: '@ethlete/core', registry: DEFAULT_REGISTRY, authorization: 'Bearer x' });
+
+    expect(fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer x' }) }),
+    );
   });
 });
 
