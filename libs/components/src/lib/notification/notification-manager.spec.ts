@@ -4,6 +4,7 @@ import { NotificationManagerConfig, provideNotificationManagerConfig } from './n
 import {
   NotificationManager,
   injectNotificationManager,
+  provideNotificationManager,
   provideNotificationManagerInstance,
 } from './notification-manager';
 
@@ -91,5 +92,28 @@ describe('NotificationManager', () => {
 
     expect(first.entry().isDismissing).toBe(true);
     expect(manager.visibleNotifications().length).toBe(3);
+  });
+
+  it('keeps the default duration of every status a partial defaultDuration leaves out', () => {
+    vi.useFakeTimers();
+
+    try {
+      TestBed.configureTestingModule({ providers: [provideNotificationManager({ defaultDuration: { error: 8000 } })] });
+
+      const manager = TestBed.runInInjectionContext(() => injectNotificationManager());
+      const success = manager.open({ status: 'success', title: 'Saved' });
+      const error = manager.open({ status: 'error', title: 'Failed' });
+
+      vi.advanceTimersByTime(4000);
+
+      expect(success.entry().isDismissing).toBe(true);
+      expect(error.entry().isDismissing).toBe(false);
+
+      vi.advanceTimersByTime(4000);
+
+      expect(error.entry().isDismissing).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

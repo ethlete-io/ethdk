@@ -1,10 +1,9 @@
 # notification, tabs, scrollable, button scan - open findings
 
-Scan of `libs/components/src/lib/{notification,tabs,scrollable,button}` from 2026-09-28. 2 High, 4 Medium, 20 Low, 3 Spec (verified 2026-09-28). Skipped: stories, most specs, testing drivers, and a line-by-line read of the large CSS files (grep only for `@layer`, colours and transitions).
+Scan of `libs/components/src/lib/{notification,tabs,scrollable,button}` from 2026-09-28. 0 High, 4 Medium, 20 Low, 2 Spec (verified 2026-09-28). Skipped: stories, most specs, testing drivers, and a line-by-line read of the large CSS files (grep only for `@layer`, colours and transitions).
 
 ## tabs
 
-- High: the tab bar handles every `keydown` that bubbles to its host, so arrow keys, Home and End typed into an input inside an `et-tab-group` panel are cancelled and move focus to a tab (`headless/tab-bar.directive.ts:34,125-146`; the host is `et-tab-group` itself, `tabs/tab-group.component.ts:95`). A nested tab group moves the outer bar too. Fix: return early unless `event.target` is one of `triggers()`' elements. S Verified.
 - Medium: horizontal arrow keys do not flip under `dir="rtl"`, so ArrowRight moves focus to the visually left tab (`headless/tab-bar.directive.ts:126-128`). Read the computed direction of the host and swap next/prev keys. S Verified.
 - Low: a selected tab that turns disabled falls back to the first enabled tab, not the nearest one (`tabs/headless/tab-group.directive.ts:168-174`). S
 - Low: with two or more `et-nav-tabs` on a page, `single()` returns `null` and a sibling `et-nav-tabs-outlet` loses its `aria-labelledby` without a warning (`nav-tabs/headless/nav-tabs-registry.ts:18-22`, `nav-tabs/headless/nav-tabs-outlet.directive.ts:24`). Add a dev-mode warning or an explicit `for` input. S
@@ -13,7 +12,6 @@ Scan of `libs/components/src/lib/{notification,tabs,scrollable,button}` from 202
 
 ## notification
 
-- High: `provideNotificationManager({ defaultDuration: { error: 8000 } })` replaces the whole `defaultDuration` map, because the config merge is shallow, so `success` and `info` stop auto-dismissing (`notification-ref.ts:43` reads `?? 0`; merge in `core/.../di.ts` `maybeMergeValues`). Fall back to `DEFAULT_NOTIFICATION_MANAGER_CONFIG.defaultDuration[status]`, or merge the map in `provideNotificationManager`. S Verified.
 - Medium: dismissed refs stay in `notifications()` until the stack is fully empty (`notification-manager.ts:105,137`). One sticky error toast keeps the stack alive, so every later ref (with its config and handler closures) is kept, and `open()` filters an array that only grows. Remove a ref from the list in `markDismissed`. S Verified.
 - Medium: the stack is a `role="log"` region with `aria-relevant="additions"`, and every item is also a `role="status"`/`"alert"` region (`notification-stack.component.ts:15-17`, `headless/notification.directive.ts:37`). A `promise()` that settles changes text and swaps `status` to `alert` in place, which the outer region ignores and screen readers announce unreliably. Pick one live region and test the loading-to-error path with a screen reader. M Verified in code. Unverified: no screen-reader run.
 - Low: the FLIP reflow sets inline `transform`/`height` transitions and ignores `prefers-reduced-motion` (`headless/notification-stack.directive.ts:122-149`). S
@@ -42,6 +40,5 @@ Scan of `libs/components/src/lib/{notification,tabs,scrollable,button}` from 202
 
 ## Spec gaps
 
-- Spec: no test that a keydown from inside a tab panel is ignored, and no RTL keyboard test (`tabs/headless/tab-bar-keyboard.spec.ts`). S
-- Spec: no test for a partial `defaultDuration` override (`notification-manager.spec.ts:15` only passes all statuses). S
+- Spec: no RTL keyboard test (`tabs/headless/tab-bar-keyboard.spec.ts`). S
 - Spec: `scrollable-snap`, `scrollable-navigation`, `scrollable-buttons` and the container paging path have no spec. M

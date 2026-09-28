@@ -145,5 +145,14 @@ const NOTIFICATION_MANAGER_CONFIG_DEF = /* @__PURE__ */ defineStaticRootProvider
   name: 'NotificationManagerConfig',
 });
 
-export const provideNotificationManagerConfig = /* @__PURE__ */ toProvideFn(NOTIFICATION_MANAGER_CONFIG_DEF);
+const provideNotificationManagerConfigValue = /* @__PURE__ */ toProvideFn(NOTIFICATION_MANAGER_CONFIG_DEF);
+
+/** Provides the manager config. A partial `defaultDuration` keeps the default of every status it leaves out. */
+export const provideNotificationManagerConfig = (config?: Partial<NotificationManagerConfig>) =>
+  provideNotificationManagerConfigValue(
+    config && {
+      ...config,
+      defaultDuration: { ...DEFAULT_NOTIFICATION_MANAGER_CONFIG.defaultDuration, ...config.defaultDuration },
+    },
+  );
 export const injectNotificationManagerConfig = /* @__PURE__ */ toInjectFn(NOTIFICATION_MANAGER_CONFIG_DEF);
