@@ -133,6 +133,7 @@ import { injectStandIns } from './stand-ins';
                 [createdKey]="tickets.createdKey()"
                 [duplicateKey]="tickets.duplicateKey()"
                 [startStatusNote]="tickets.startStatusNote()"
+                [parentLinkNote]="tickets.parentLinkNote()"
                 [searchFailure]="tickets.searchFailure()"
                 [writeFailure]="tickets.writeFailure()"
                 [matchFailure]="tickets.matchFailure()"

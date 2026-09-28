@@ -12,6 +12,8 @@ export type FiledTicket = {
   issueId?: string;
   /** True where the project already held an issue with this summary, so nothing new was filed. */
   duplicate: boolean;
+  /** Why the link to the parent failed. The ticket is filed regardless, so a retry must not file it again. */
+  linkError?: string;
 };
 
 /**
@@ -44,7 +46,12 @@ export const fileTicketOnce$ = (options: {
       if (held) return of<FiledTicket>({ issueKey: held.key, issueId: held.id, duplicate: true });
 
       return createJiraIssue$({ transport, credentials, input }).pipe(
-        map((created): FiledTicket => ({ issueKey: created.key, issueId: created.id, duplicate: false })),
+        map((created): FiledTicket => ({
+          issueKey: created.key,
+          issueId: created.id,
+          duplicate: false,
+          ...(created.linkError ? { linkError: created.linkError } : {}),
+        })),
       );
     }),
   );

@@ -265,7 +265,12 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
           subject: request.subject,
         },
       }),
-    ).pipe(map((created) => ({ issue: { key: created.key, id: created.id } })));
+    ).pipe(
+      map((created) => ({
+        issue: { key: created.key, id: created.id },
+        ...(created.linkError ? { linkError: created.linkError } : {}),
+      })),
+    );
   };
 
   /**

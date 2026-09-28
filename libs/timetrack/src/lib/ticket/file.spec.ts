@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
 import { JiraCredentials } from '../jira/client';
 import { JiraIssueInput } from '../jira/create';
-import { fileTicketOnce$ } from './file';
+import { FiledTicket, fileTicketOnce$ } from './file';
 
 const CREDENTIALS: JiraCredentials = { host: 'https://team.atlassian.net', email: 'you@x.com', token: 't' };
 
@@ -26,7 +26,7 @@ const resource = (key: string, summary: string) => ({
  * That is the case a duplicate costs: the issue exists and the caller cannot know it. A test that
  * lets the answer through would pass with no guard at all.
  */
-const fakeJira = (options: { dropCreateAnswer?: boolean } = {}) => {
+const fakeJira = (options: { dropCreateAnswer?: boolean; refuseLink?: boolean } = {}) => {
   const held: { key: string; summary: string }[] = [];
   const requests: TimetrackRequest[] = [];
   let next = 9;
@@ -34,6 +34,14 @@ const fakeJira = (options: { dropCreateAnswer?: boolean } = {}) => {
   const transport: TimetrackTransport = {
     request$: vi.fn((request: TimetrackRequest) => {
       requests.push(request);
+
+      if (request.url.endsWith('/issueLink')) {
+        return of({
+          status: options.refuseLink ? 400 : 201,
+          headers: {},
+          body: options.refuseLink ? { errorMessages: ['No link type named Relates.'] } : {},
+        }) as never;
+      }
 
       if (request.method === 'POST' && request.url.endsWith('/issue')) {
         const fields = (request.body as { fields: { summary: string } }).fields;
@@ -59,11 +67,11 @@ const fakeJira = (options: { dropCreateAnswer?: boolean } = {}) => {
   return { transport, held, requests };
 };
 
-const press = (jira: { transport: TimetrackTransport }) => {
-  let answered: { issueKey: string; duplicate: boolean } | undefined;
+const press = (jira: { transport: TimetrackTransport }, input: JiraIssueInput = INPUT) => {
+  let answered: FiledTicket | undefined;
   let failed: unknown;
 
-  fileTicketOnce$({ transport: jira.transport, credentials: CREDENTIALS, input: INPUT }).subscribe({
+  fileTicketOnce$({ transport: jira.transport, credentials: CREDENTIALS, input }).subscribe({
     next: (filed) => (answered = filed),
     error: (error: unknown) => (failed = error),
   });
@@ -72,6 +80,14 @@ const press = (jira: { transport: TimetrackTransport }) => {
 };
 
 describe('fileTicketOnce$', () => {
+  it('answers the filed ticket with why its parent link failed', () => {
+    const jira = fakeJira({ refuseLink: true });
+    const { answered } = press(jira, { ...INPUT, parentKey: 'FIP-1', parenting: 'issue-link' });
+
+    expect(answered?.issueKey).toBe('FIP-9');
+    expect(answered?.linkError).toContain('No link type named Relates.');
+  });
+
   it('files the ticket when the project holds nothing like it', () => {
     const jira = fakeJira();
 

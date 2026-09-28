@@ -1,4 +1,15 @@
-import { E2E_DAY_KEY, askAgent, expect, openApprovals, queuedId, readBackend, test } from './support';
+import { E2E_EPIC_KEY, defaultSettings } from '@ethlete/timetrack/testing';
+import {
+  E2E_DAY_KEY,
+  E2E_NOW,
+  askAgent,
+  expect,
+  openApprovals,
+  queuedId,
+  readBackend,
+  seedWorld,
+  test,
+} from './support';
 
 const CREATE = { op: 'jira.create', summary: 'Pdf export', projectKey: 'ABC', client: 'Claude Code' };
 
@@ -74,5 +85,37 @@ test.describe('a write an agent asks for', () => {
       value: expect.objectContaining({ day: E2E_DAY_KEY, planHash: expect.any(String) }),
     });
     await expect(page.getByRole('button', { name: 'Review requests' })).toBeHidden();
+  });
+});
+
+test.describe('a jira issue an agent files under a parent Jira refuses the link to', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: { ...defaultSettings(), ticket: { ...defaultSettings().ticket, parenting: 'issue-link' } },
+      faults: [{ url: '/issueLink', status: 400, body: { errorMessages: ['No link type named Relates.'] } }],
+    });
+    await page.goto('/day');
+  });
+
+  test('answers the filed issue with why the link failed', async ({ page }) => {
+    const id = queuedId(await askAgent(page, { ...CREATE, parentKey: E2E_EPIC_KEY }));
+    const dialog = await openApprovals(page);
+
+    await dialog.locator(`[data-approval="${id}"]`).getByRole('button', { name: 'Approve' }).click();
+
+    await expect(dialog.locator(`[data-approval="${id}"]`)).toBeHidden();
+    expect((await readBackend(page)).jira.created).toHaveLength(1);
+    expect(await askAgent(page, { op: 'approval.status', id })).toEqual({
+      ok: true,
+      value: {
+        status: 'approved',
+        approvalId: id,
+        result: {
+          issue: { key: expect.any(String), id: expect.any(String) },
+          linkError: expect.stringContaining('No link type named Relates.'),
+        },
+      },
+    });
   });
 });

@@ -103,6 +103,7 @@ import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
                 [createdKey]="tickets.createdKey()"
                 [duplicateKey]="tickets.duplicateKey()"
                 [startStatusNote]="tickets.startStatusNote()"
+                [parentLinkNote]="tickets.parentLinkNote()"
                 [searchFailure]="tickets.searchFailure()"
                 [writeFailure]="tickets.writeFailure()"
                 [matchFailure]="tickets.matchFailure()"

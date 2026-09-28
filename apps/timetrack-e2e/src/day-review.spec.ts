@@ -225,3 +225,29 @@ test.describe('the day view, with the checkout linked to one project', () => {
     await expect(page.getByRole('option', { name: /XYZ-4200/ })).toBeVisible();
   });
 });
+
+test.describe('the day view, with parents filed as issue links Jira refuses', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: { ...defaultSettings(), ticket: { ...defaultSettings().ticket, parenting: 'issue-link' } },
+      faults: [{ url: '/issueLink', status: 400, body: { errorMessages: ['No link type named Relates.'] } }],
+    });
+    await page.goto('/day');
+  });
+
+  test('files the ticket and says the link to its parent failed', async ({ page }) => {
+    await openWaitingForAName(page);
+    await page.getByRole('button', { name: 'Create a ticket' }).click();
+    await page.locator('et-form-field').filter({ hasText: 'Parent' }).locator('et-select').click();
+    await page.getByRole('option', { name: new RegExp(E2E_EPIC_KEY) }).click();
+    await page.getByRole('button', { name: 'Create in Jira' }).click();
+    await page.getByRole('button', { name: 'File it now' }).click();
+
+    await expect(page.getByText(/^Filed ABC-/)).toBeVisible();
+    await expect(
+      page.getByText(/Filed, but Jira refused the link to its parent\. .*No link type named Relates\./),
+    ).toBeVisible();
+    expect((await readBackend(page)).jira.created).toHaveLength(1);
+  });
+});

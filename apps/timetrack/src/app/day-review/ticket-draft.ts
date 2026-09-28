@@ -108,6 +108,7 @@ type CreateStatus =
       kind: 'created';
       issueKey: string;
       /** What the settings' start status did, when they name one. */ move?: JiraStatusMove;
+      /** Why the link to the parent failed, when the settings file one as a link. */ linkError?: string;
     }
   /** The project already held an issue with this summary, so nothing new was filed. */
   | { kind: 'duplicate'; issueKey: string }
@@ -619,7 +620,12 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
             return created.duplicate
               ? { kind: 'duplicate', issueKey: created.issueKey }
-              : { kind: 'created', issueKey: created.issueKey, ...(move ? { move } : {}) };
+              : {
+                  kind: 'created',
+                  issueKey: created.issueKey,
+                  ...(move ? { move } : {}),
+                  ...(created.linkError ? { linkError: created.linkError } : {}),
+                };
           }),
           catchError((error: unknown) => of<CreateStatus>({ kind: 'failed', message: messageOf(error) })),
           startWith<CreateStatus>({ kind: 'creating' }),
@@ -763,6 +769,15 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       const offered = move.offered.length ? ` It offers ${move.offered.join(', ')}.` : '';
 
       return `Filed, but the workflow has no move to ${move.statusName} from where it starts.${offered}`;
+    }),
+
+    /** Why the filed ticket is not linked to its parent, or nothing when it is. */
+    parentLinkNote: computed(() => {
+      const status = createStatus();
+
+      return status.kind === 'created' && status.linkError
+        ? `Filed, but Jira refused the link to its parent. ${status.linkError}`
+        : null;
     }),
 
     /**

@@ -83,6 +83,10 @@ import { UnmaskedWordsComponent } from './unmasked-words.component';
             <span class="text-small text-et-warn">{{ note }}</span>
           }
 
+          @if (parentLinkNote(); as note) {
+            <span class="text-small text-et-warn">{{ note }}</span>
+          }
+
           <div>
             <button (click)="dismiss.emit()" et-button variant="filled">Back to the day</button>
           </div>
@@ -386,6 +390,7 @@ export class CreateTicketComponent {
 
   /** Why the filed ticket does not stand in the status the settings name, or nothing when it does. */
   public startStatusNote = input<string | null>(null);
+  public parentLinkNote = input<string | null>(null);
   public searchFailure = input<string | null>(null);
   public writeFailure = input<string | null>(null);
   public matchFailure = input<string | null>(null);
