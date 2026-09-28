@@ -9,18 +9,7 @@ own open lines; this file lists what needs a user decision and what is still que
 - timetrack: Codex `INJECTED_PREFIXES` and `askedBy: 'machine'` are parked until a real Codex log
   exists.
 
-
-
-
-
-
-
 - bracket: swiss `MODE_UNSUPPORTED` is parked until a swiss event gives real API data.
-
-
-
-
-
 
 ## Low pass (in progress)
 
@@ -35,3 +24,6 @@ Each domain plan file keeps its open Low lines; the decisions are listed there. 
 ## Queue
 
 - timetrack `stillFocused` tail order: real, but no failing test was found.
+- timetrack: codex reasoning runs record no usage; `agentRunSpend` reads only Claude's envelope.
+- cdk: `overlay-host.storybook.component.ts:40` imports `./overlay.storybook.component`, which
+  6cfb462c0 deleted (cdk lib tsc error).
