@@ -40,6 +40,7 @@
 <ng-template #control let-item>
   @if (hrefFor(item); as href) {
     <a
+      #controlButton
       [attr.href]="href"
       [attr.aria-label]="item.label"
       [attr.aria-current]="item.current ? 'page' : null"
@@ -56,6 +57,7 @@
     </a>
   } @else {
     <button
+      #controlButton
       [attr.aria-label]="item.label"
       [attr.aria-current]="item.current ? 'page' : null"
       [attr.data-type]="item.type"

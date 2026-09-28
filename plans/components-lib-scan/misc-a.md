@@ -11,7 +11,6 @@ Scan of `libs/components/src/lib/{testing,pagination,breadcrumb,accordion,masonr
 
 ## pagination
 
-- Medium: when "next"/"last" takes the user to the last page, the button that has focus becomes `[disabled]` and focus drops to `<body>` (`pagination.component.html:64`, same for "previous"/"first" on page 1). Keyboard users lose their place. Use `aria-disabled` with a no-op click, or move focus to the current page item. S Verified: `et-button` sets native `disabled` on a `<button>`, and in links mode the disabled item swaps from `<a>` to `<button>`, which also drops focus.
 - Low: with `responsive` on, the window re-trims after each click and `@for … track $index` keeps focus on the same slot, which now shows a different page number (`pagination.component.html:28`). Track by `item.type + item.page` so focus follows the page. S
 - Low: `PaginationSeoDirective` reads the raw `page` model, which is not clamped when `totalPages` shrinks (`seo/pagination-seo.directive.ts:45,54`). The canonical and `rel="prev"` then point at a page that does not exist. Clamp to `[1, totalPages]` as `range()` does. S
 - Low: the jump-input border fallback is white at 15% (`pagination.component.css:148`), so it is invisible on a light surface without tokens. `page-size-select.component.css:53` uses the neutral `rgb(128 128 128 / 0.3)`; use the same. S
@@ -47,4 +46,3 @@ Scan of `libs/components/src/lib/{testing,pagination,breadcrumb,accordion,masonr
 ## Spec gaps
 
 - Spec: no breadcrumb SEO spec with a crumb name that contains `</script>` or `<`. S
-- Spec: no pagination spec checks focus after the last page disables "next". S

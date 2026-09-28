@@ -266,4 +266,38 @@ describe('PaginationComponent', () => {
 
     expect((fixture.nativeElement as HTMLElement).getAttribute('aria-label')).toBe('Search results pages');
   });
+
+  it('moves focus to the current page when "next" disables itself on the last page', () => {
+    const fixture = create();
+    directiveOf(fixture).goTo(4);
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const next = host.querySelector<HTMLButtonElement>('button[data-type="next"]');
+
+    next?.focus();
+    next?.click();
+    fixture.detectChanges();
+
+    expect(directiveOf(fixture).page()).toBe(5);
+    expect(document.activeElement).toBe(host.querySelector('[aria-current="page"]'));
+  });
+
+  it('moves focus to the current page when a "first" link is swapped for a disabled button', () => {
+    const fixture = create();
+    fixture.componentRef.setInput('renderAs', 'links');
+    fixture.componentRef.setInput('urlForPage', (page: number) => `/list?page=${page}`);
+    directiveOf(fixture).goTo(3);
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const first = host.querySelector<HTMLAnchorElement>('a[data-type="first"]');
+
+    first?.focus();
+    first?.dispatchEvent(new MouseEvent('click', { cancelable: true, button: 0 }));
+    fixture.detectChanges();
+
+    expect(directiveOf(fixture).page()).toBe(1);
+    expect(document.activeElement).toBe(host.querySelector('[aria-current="page"]'));
+  });
 });

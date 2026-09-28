@@ -1,10 +1,12 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
+  afterNextRender,
   booleanAttribute,
   Component,
   computed,
   ElementRef,
   inject,
+  Injector,
   input,
   untracked,
   viewChild,
@@ -75,6 +77,8 @@ const COMPACT_MAX_WIDTH = 480;
 })
 export class PaginationComponent {
   protected pagination = inject(PaginationDirective);
+  private hostEl = inject<ElementRef<HTMLElement>>(ElementRef);
+  private injector = inject(Injector);
 
   /** Render page items as `<button>`s (client state) or crawlable `<a href>` links. @default 'buttons' */
   public renderAs = input<PaginationRenderAs>('buttons');
@@ -116,6 +120,7 @@ export class PaginationComponent {
   // The rendered list + its items, measured (untracked) to decide how many fit - see `slotsThatFit`.
   private listEl = viewChild<ElementRef<HTMLUListElement>>('paginationList');
   private itemEls = viewChildren<ElementRef<HTMLElement>>('paginationItem');
+  private controlEls = viewChildren('controlButton', { read: ElementRef<HTMLElement> });
 
   protected jumpInputId = createComponentId('et-pagination-jump-input');
 
@@ -248,7 +253,14 @@ export class PaginationComponent {
   }
 
   protected select(item: PaginationItem) {
-    if (item.page !== null && !item.disabled) this.pagination.goTo(item.page);
+    if (item.page === null || item.disabled) return;
+
+    const host = this.hostEl.nativeElement;
+    const hadFocus = host.contains(host.ownerDocument.activeElement);
+
+    this.pagination.goTo(item.page);
+
+    if (hadFocus) afterNextRender({ read: () => this.restoreLostFocus() }, { injector: this.injector });
   }
 
   /** Intercept a plain left-click on a link item; let modified clicks fall through to the browser. */
@@ -263,6 +275,20 @@ export class PaginationComponent {
     const page = Number.parseInt(value, 10);
 
     if (!Number.isNaN(page)) this.pagination.goTo(page);
+  }
+
+  private restoreLostFocus() {
+    const host = this.hostEl.nativeElement;
+    const active = host.ownerDocument.activeElement;
+
+    if (active && active !== host.ownerDocument.body && host.contains(active) && !active.matches(':disabled')) return;
+
+    const controls = this.controlEls().map((ref) => ref.nativeElement);
+    const target =
+      controls.find((control) => control.getAttribute('aria-current') === 'page') ??
+      controls.find((control) => !control.matches(':disabled'));
+
+    target?.focus();
   }
 
   /** The `[start, end]` tuple as the context the readout labels take. */
