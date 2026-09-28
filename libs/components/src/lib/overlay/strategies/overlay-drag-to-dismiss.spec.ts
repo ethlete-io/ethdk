@@ -3,6 +3,8 @@ import { Subject } from 'rxjs';
 import '../../../test-helpers';
 import { OverlayRef } from '../overlay-ref';
 import { enableDragToDismiss } from './overlay-drag-to-dismiss';
+import { OverlayStrategyContext } from './overlay-strategy.types';
+import { createSheetStrategy } from './sheet-strategy-hooks';
 
 const renderer: AngularRenderer = {
   setStyle: (element: HTMLElement, styles: Record<string, string | null>) => {
@@ -19,7 +21,10 @@ const renderer: AngularRenderer = {
   },
 } as unknown as AngularRenderer;
 
-const pointerEvent = (type: string, init: { clientX: number; clientY: number; target?: HTMLElement }) => {
+const pointerEvent = (
+  type: string,
+  init: { clientX: number; clientY: number; target?: HTMLElement; movementY?: number },
+) => {
   const event = new MouseEvent(type, {
     bubbles: true,
     cancelable: true,
@@ -39,7 +44,7 @@ const pointerEvent = (type: string, init: { clientX: number; clientY: number; ta
     isPrimary: { value: true },
     pointerType: { value: 'touch' },
     movementX: { value: 0 },
-    movementY: { value: 0 },
+    movementY: { value: init.movementY ?? 0 },
   });
 
   return event;
@@ -48,6 +53,7 @@ const pointerEvent = (type: string, init: { clientX: number; clientY: number; ta
 describe('overlay drag to dismiss', () => {
   let pane: HTMLElement;
   let afterClosed$: Subject<never>;
+  let beforeClosed$: Subject<unknown>;
   let overlayRef: OverlayRef<object, unknown>;
   let closeVia: ReturnType<typeof vi.fn>;
 
@@ -59,8 +65,13 @@ describe('overlay drag to dismiss', () => {
     document.body.appendChild(pane);
 
     afterClosed$ = new Subject<never>();
+    beforeClosed$ = new Subject<unknown>();
     closeVia = vi.fn();
-    overlayRef = { closeVia, afterClosed: () => afterClosed$.asObservable() } as unknown as OverlayRef<object, unknown>;
+    overlayRef = {
+      closeVia,
+      beforeClosed: () => beforeClosed$.asObservable(),
+      afterClosed: () => afterClosed$.asObservable(),
+    } as unknown as OverlayRef<object, unknown>;
   });
 
   afterEach(() => {
@@ -83,6 +94,84 @@ describe('overlay drag to dismiss', () => {
       document.dispatchEvent(pointerEvent('pointermove', { clientX: 100, clientY: 100 + travelled }));
     }
   };
+
+  const release = (distance: number) =>
+    document.dispatchEvent(pointerEvent('pointerup', { clientX: 100, clientY: 100 + distance }));
+
+  it('settles back and reports the veto when a close guard vetoes the dismiss', () => {
+    vi.useFakeTimers();
+    const onDismissVetoed = vi.fn();
+    const ref = enableDragToDismiss({
+      element: pane,
+      overlayRef,
+      renderer,
+      config: { direction: 'to-bottom' },
+      onDismissVetoed,
+    });
+
+    dragDown(pane, 200);
+    release(200);
+
+    expect(closeVia).toHaveBeenCalledWith('drag');
+    expect(onDismissVetoed).toHaveBeenCalledTimes(1);
+    expect(pane.style.transform).toBe('translateY(0px)');
+
+    vi.runAllTimers();
+
+    expect(pane.style.transform).toBe('');
+
+    ref.unsubscribe();
+    vi.useRealTimers();
+  });
+
+  it('drops the swipe momentum of a vetoed dismiss so a later close keeps its own duration', () => {
+    vi.useFakeTimers();
+    const strategy = createSheetStrategy({ dragToDismiss: { direction: 'to-bottom' } }, renderer);
+    const context = {
+      containerEl: pane,
+      overlayRef,
+      lifecycle: { enter: vi.fn(), leave: vi.fn() },
+    } as unknown as OverlayStrategyContext;
+
+    strategy.onAfterEnter?.(context);
+
+    pane.dispatchEvent(pointerEvent('pointerdown', { clientX: 100, clientY: 100 }));
+
+    for (let travelled = 20; travelled <= 200; travelled += 20) {
+      vi.advanceTimersByTime(10);
+      document.dispatchEvent(pointerEvent('pointermove', { clientX: 100, clientY: 100 + travelled, movementY: 20 }));
+    }
+
+    release(200);
+    vi.runAllTimers();
+    strategy.onBeforeLeave?.(context);
+
+    expect(pane.style.transitionDuration).toBe('');
+
+    vi.useRealTimers();
+  });
+
+  it('leaves the sheet at the drag offset when the dismiss starts the close', () => {
+    const onDismissVetoed = vi.fn();
+
+    closeVia.mockImplementation(() => beforeClosed$.next(undefined));
+
+    const ref = enableDragToDismiss({
+      element: pane,
+      overlayRef,
+      renderer,
+      config: { direction: 'to-bottom' },
+      onDismissVetoed,
+    });
+
+    dragDown(pane, 200);
+    release(200);
+
+    expect(onDismissVetoed).not.toHaveBeenCalled();
+    expect(pane.style.transform).toBe('translateY(200px)');
+
+    ref.unsubscribe();
+  });
 
   it('follows a drag started on the sheet itself', () => {
     const ref = attach();

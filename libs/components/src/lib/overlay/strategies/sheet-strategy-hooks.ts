@@ -40,6 +40,7 @@ export const createSheetStrategy = (config: OverlayBreakpointConfig, renderer: A
       overlayRef: context.overlayRef,
       renderer,
       onDismiss: (momentum) => (dismissMomentum = momentum),
+      onDismissVetoed: () => (dismissMomentum = null),
     });
   };
 

@@ -5,7 +5,7 @@ import {
   elementCanScroll,
   matchesReducedMotion,
 } from '@ethlete/core';
-import { Subject, Subscription, filter, fromEvent, takeUntil, tap, timer } from 'rxjs';
+import { Subject, Subscription, filter, fromEvent, take, takeUntil, tap, timer } from 'rxjs';
 import { claimsPointerAxis, isInteractivePointerTarget } from '../../internals/pointer-gesture-target';
 import { OverlayRef } from '../overlay-ref';
 import {
@@ -25,7 +25,7 @@ export type DragDismissMomentum = {
 
 export type DragToDismissContext = {
   element: HTMLElement;
-  overlayRef: Pick<OverlayRef, 'closeVia' | 'afterClosed'>;
+  overlayRef: Pick<OverlayRef, 'closeVia' | 'beforeClosed' | 'afterClosed'>;
   config: OverlayDragToDismissConfig;
   renderer: AngularRenderer;
 
@@ -35,6 +35,9 @@ export type DragToDismissContext = {
    * duration - see `createSheetStrategy`.
    */
   onDismiss?: (momentum: DragDismissMomentum) => void;
+
+  /** Called when a close guard vetoes the close a dismissing gesture requested. The overlay settles back. */
+  onDismissVetoed?: () => void;
 };
 
 export type DragToDismissRef = {
@@ -231,7 +234,7 @@ const shouldCancelDragForScrollableElement = (
  * Returns a cleanup function to disable the feature.
  */
 export const enableDragToDismiss = (context: DragToDismissContext): DragToDismissRef => {
-  const { element: el, overlayRef, renderer, onDismiss } = context;
+  const { element: el, overlayRef, renderer, onDismiss, onDismissVetoed } = context;
   const config: ResolvedDragToDismissConfig = {
     ...context.config,
     direction: resolvePhysicalDirection(context.config.direction, el),
@@ -323,7 +326,23 @@ export const enableDragToDismiss = (context: DragToDismissContext): DragToDismis
 
     if (resolution.kind === 'dismiss') {
       onDismiss?.({ speed: resolution.speed, remainingDistance: resolution.remainingDistance });
+
+      let isLeaving = false;
+      const leaveSub = overlayRef
+        .beforeClosed()
+        .pipe(
+          take(1),
+          tap(() => (isLeaving = true)),
+        )
+        .subscribe();
+
       overlayRef.closeVia('drag');
+      leaveSub.unsubscribe();
+
+      if (isLeaving) return;
+
+      onDismissVetoed?.();
+      settleAt(gestureStartOffset, 0);
 
       return;
     }
