@@ -56,8 +56,6 @@ Reads `yaml.ts`, `openapi.ts`, `typescript.ts`, `query-tree.ts` in full, and the
 
 ### OpenAPI export
 
-- Medium: `itemsOf` writes `oneOf` for array members that differ (`query-devtools-openapi.ts:149`), but inferred shapes overlap. In `[1, 1.5]` the `1` matches both `integer` and `number`, a `null` member infers `{}` and matches all, and objects without `additionalProperties: false` match each other's shape. A validator then rejects the document's own `example`. Write `anyOf`. S Verified. `[1, 1.5]` infers `integer` and `number`, and `1` matches both.
-- Medium: `collectRefNames` stops at depth 10 and shares one `seen` set for the whole walk (`query-devtools-openapi.ts:433`, `:437`). A `$ref` about five property levels down in a named schema is never found, so `referencedSchemas` drops a schema that `collectQueryDevtoolsSchemaComponents` already supplied, and the document holds a dangling `$ref`. `seen` alone stops cycles; remove the depth cap. S Verified. Each property level costs two depth steps (`properties`, then the key), so the walk stops five levels down.
 - Low: `name in ctx.schemas`, `name in used` and `name in schemas` find inherited members (`query-devtools-openapi.ts:229`, `:286`, `:415`). A schema named `constructor` or `toString` gets a `$ref` but no entry in `components.schemas`. Use `Object.hasOwn`. S
 - Low: the UUID pattern accepts only versions 1-5 (`query-devtools-openapi.ts:10`), so v6/v7 ids (v7 is a common primary key now) get no `format: uuid`. S
 

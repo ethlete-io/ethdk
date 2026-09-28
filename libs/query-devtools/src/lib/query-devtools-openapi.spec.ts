@@ -64,10 +64,17 @@ describe('inferQueryDevtoolsOpenApiSchema', () => {
     expect(inferQueryDevtoolsOpenApiSchema([1, 2, 3])).toEqual({ type: 'array', items: { type: 'integer' } });
   });
 
-  it('should offer a oneOf for array members that do not agree', () => {
+  it('should offer an anyOf for array members that do not agree', () => {
     expect(inferQueryDevtoolsOpenApiSchema(['a', 1])).toEqual({
       type: 'array',
-      items: { oneOf: [{ type: 'string' }, { type: 'integer' }] },
+      items: { anyOf: [{ type: 'string' }, { type: 'integer' }] },
+    });
+  });
+
+  it('should not demand exactly one match from overlapping member shapes', () => {
+    expect(inferQueryDevtoolsOpenApiSchema([1, 1.5])).toEqual({
+      type: 'array',
+      items: { anyOf: [{ type: 'integer' }, { type: 'number' }] },
     });
   });
 
@@ -254,6 +261,20 @@ describe('buildQueryDevtoolsOpenApiDocument', () => {
       const { document } = buildQueryDevtoolsOpenApiDocument({
         mocks: [mock({ schemaName: 'MatchView' })],
         schemas: { ...SCHEMAS, MatchId: { type: 'string' }, Unused: { type: 'number' } },
+        now: NOW,
+      });
+
+      expect(Object.keys(document.components?.schemas ?? {}).sort()).toEqual(['MatchId', 'MatchView']);
+    });
+
+    it('should carry a schema referenced deep inside a named schema', () => {
+      const nested = (levels: number): Record<string, unknown> =>
+        levels
+          ? { type: 'object', properties: { child: nested(levels - 1) } }
+          : { $ref: '#/components/schemas/MatchId' };
+      const { document } = buildQueryDevtoolsOpenApiDocument({
+        mocks: [mock({ schemaName: 'MatchView' })],
+        schemas: { MatchView: nested(8), MatchId: { type: 'string' } },
         now: NOW,
       });
 

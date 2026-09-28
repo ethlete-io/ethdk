@@ -129,7 +129,7 @@ export const inferQueryDevtoolsOpenApiSchema = (value: unknown, depth = 0): Reco
 };
 
 /**
- * The element schema of an array: the one its members agree on, or a `oneOf` of the shapes they do not.
+ * The element schema of an array: the one its members agree on, or an `anyOf` of the shapes they do not.
  * An empty array says nothing about its elements, so it constrains nothing.
  */
 const itemsOf = (value: readonly unknown[], depth: number): Record<string, unknown> => {
@@ -146,7 +146,7 @@ const itemsOf = (value: readonly unknown[], depth: number): Record<string, unkno
   if (!distinct.length) return {};
   if (distinct.length === 1) return distinct[0] as Record<string, unknown>;
 
-  return { oneOf: distinct };
+  return { anyOf: distinct };
 };
 
 /** `page=2` is an integer and `draft=true` a boolean, the same reading the TypeScript snippet takes. */
@@ -423,14 +423,14 @@ const referencedSchemas = (paths: unknown, schemas: Record<string, unknown>) => 
 
 const REF_PREFIX = '#/components/schemas/';
 
-type RefScan = { into: Set<string>; seen: WeakSet<object>; depth: number };
+type RefScan = { into: Set<string>; seen: WeakSet<object> };
 
-const newRefScan = (): RefScan => ({ into: new Set(), seen: new WeakSet(), depth: 0 });
+const newRefScan = (): RefScan => ({ into: new Set(), seen: new WeakSet() });
 
 const collectRefNames = (value: unknown, scan: RefScan = newRefScan()) => {
-  const { into, seen, depth } = scan;
+  const { into, seen } = scan;
 
-  if (depth >= MAX_DEPTH || !value || typeof value !== 'object') return into;
+  if (!value || typeof value !== 'object') return into;
 
   // A dereferenced description is a graph, not a tree: without this, a schema that holds itself recurses
   // until the stack goes.
@@ -438,10 +438,8 @@ const collectRefNames = (value: unknown, scan: RefScan = newRefScan()) => {
 
   seen.add(value);
 
-  const next = { ...scan, depth: depth + 1 };
-
   if (Array.isArray(value)) {
-    for (const entry of value) collectRefNames(entry, next);
+    for (const entry of value) collectRefNames(entry, scan);
 
     return into;
   }
@@ -455,7 +453,7 @@ const collectRefNames = (value: unknown, scan: RefScan = newRefScan()) => {
       continue;
     }
 
-    collectRefNames(entry, next);
+    collectRefNames(entry, scan);
   }
 
   return into;
