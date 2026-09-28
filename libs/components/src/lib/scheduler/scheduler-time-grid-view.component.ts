@@ -13,6 +13,7 @@ import {
   viewChild,
   viewChildren,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ProvideColorDirective, injectRenderer, injectStyleManager } from '@ethlete/core';
 import {
   addDays,
@@ -24,6 +25,7 @@ import {
   setHours,
   startOfDay,
 } from 'date-fns';
+import { tap, timer } from 'rxjs';
 import {
   SCHEDULER_FEATURE_HOST,
   SchedulerDirective,
@@ -261,8 +263,6 @@ export class SchedulerTimeGridViewComponent {
   }
 
   protected select(appointment: Appointment, element: HTMLElement) {
-    // only a `pointerdown` sets this, and one always precedes the click it belongs to - which is why
-    // the flag can live here and cannot go stale
     if (this.hasDragged) return;
 
     this.scheduler?.surfaceAnchor.set(element);
@@ -302,8 +302,14 @@ export class SchedulerTimeGridViewComponent {
 
         scheduler.updateAppointmentDrag(start, end);
       },
-      settle: () => scheduler.commitAppointmentDrag(),
-      cancel: () => scheduler.clearAppointmentDrag(),
+      settle: () => {
+        scheduler.commitAppointmentDrag();
+        this.endDragClickSuppression();
+      },
+      cancel: () => {
+        scheduler.clearAppointmentDrag();
+        this.endDragClickSuppression();
+      },
     });
   }
 
@@ -342,8 +348,14 @@ export class SchedulerTimeGridViewComponent {
 
         scheduler.updateAppointmentDrag(start, end);
       },
-      settle: () => scheduler.commitAppointmentDrag(),
-      cancel: () => scheduler.clearAppointmentDrag(),
+      settle: () => {
+        scheduler.commitAppointmentDrag();
+        this.endDragClickSuppression();
+      },
+      cancel: () => {
+        scheduler.clearAppointmentDrag();
+        this.endDragClickSuppression();
+      },
     });
   }
 
@@ -560,5 +572,15 @@ export class SchedulerTimeGridViewComponent {
     const minutes = differenceInMinutes(at, dayStart);
 
     return addMinutes(dayStart, Math.round(minutes / SLOT_MINUTES) * SLOT_MINUTES);
+  }
+
+  // the click a drag ends on is dispatched after `pointerup` within the same task, so it still sees the flag
+  private endDragClickSuppression() {
+    timer(0)
+      .pipe(
+        tap(() => (this.hasDragged = false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 }

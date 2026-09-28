@@ -144,3 +144,48 @@ describe('SchedulerMonthViewComponent keyboard', () => {
     expect(isSameDay(driver.scheduler().headless.draftRange()?.start ?? new Date(0), new Date(2026, 6, 15))).toBe(true);
   });
 });
+
+describe('SchedulerMonthViewComponent after a drag', () => {
+  let driver: ReturnType<typeof schedulerTestDriver>;
+
+  const badge = (id: string) => driver.query(`.et-scheduler-appointment[title="${id}"]`);
+
+  const drag = (element: HTMLElement | null) => {
+    element?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, button: 0 }));
+    document.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 1, clientX: 40, clientY: 40 }));
+    document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1, clientX: 40, clientY: 40 }));
+    driver.detectChanges();
+  };
+
+  const nextTask = () => new Promise<void>((resolve) => setTimeout(resolve));
+
+  beforeEach(() => {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 700, 600));
+
+    driver = schedulerTestDriver({
+      appointments: [testAppointment('a'), testAppointment('b')],
+      focusedDate: new Date(2026, 6, 15),
+    });
+  });
+
+  afterEach(() => {
+    for (const overlay of TestBed.runInInjectionContext(() => injectOverlayManager()).openOverlays()) {
+      overlay.close();
+    }
+
+    driver.fixture.destroy();
+    vi.restoreAllMocks();
+  });
+
+  it('swallows only the click that ends the drag', async () => {
+    drag(badge('a'));
+    driver.clickAppointment('a');
+
+    expect(driver.editSurface()).toHaveLength(0);
+
+    await nextTask();
+    driver.clickAppointment('b');
+
+    expect(driver.editSurface()).toHaveLength(1);
+  });
+});

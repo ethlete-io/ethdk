@@ -12,8 +12,10 @@ import {
   viewChild,
   viewChildren,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ProvideColorDirective, injectRenderer, injectStyleManager } from '@ethlete/core';
 import { addDays, differenceInCalendarDays, endOfDay, format, isSameDay, startOfDay } from 'date-fns';
+import { tap, timer } from 'rxjs';
 import { MENU_IMPORTS } from '../menu';
 import { SCHEDULER_FEATURE_HOST, SchedulerDirective, SchedulerMonthDayCell, SchedulerMonthDirective } from './headless';
 import { startSchedulerDragGesture } from './headless/internals/scheduler-drag-gesture';
@@ -105,8 +107,6 @@ export class SchedulerMonthViewComponent {
   }
 
   protected select(appointment: Appointment, element: HTMLElement | null = null) {
-    // only a `pointerdown` sets this, and one always precedes the click it belongs to - which is why
-    // the flag can live here and cannot go stale
     if (this.hasDragged) return;
 
     this.scheduler?.surfaceAnchor.set(element);
@@ -167,8 +167,14 @@ export class SchedulerMonthViewComponent {
 
         scheduler.updateAppointmentDrag(addDays(appointment.start, days), addDays(appointment.end, days));
       },
-      settle: () => scheduler.commitAppointmentDrag(),
-      cancel: () => scheduler.clearAppointmentDrag(),
+      settle: () => {
+        scheduler.commitAppointmentDrag();
+        this.endDragClickSuppression();
+      },
+      cancel: () => {
+        scheduler.clearAppointmentDrag();
+        this.endDragClickSuppression();
+      },
     });
   }
 
@@ -332,5 +338,15 @@ export class SchedulerMonthViewComponent {
     const column = Math.min(Math.max(Math.floor(((at.clientX - left) / width) * 7), 0), 6);
 
     return week[column]?.date ?? null;
+  }
+
+  // the click a drag ends on is dispatched after `pointerup` within the same task, so it still sees the flag
+  private endDragClickSuppression() {
+    timer(0)
+      .pipe(
+        tap(() => (this.hasDragged = false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 }
