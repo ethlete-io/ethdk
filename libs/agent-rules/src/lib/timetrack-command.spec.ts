@@ -707,3 +707,60 @@ describe('timetrack create', () => {
     expect(lines).toEqual(["a1  still waits for the user's approval in Timetrack."]);
   });
 });
+
+/** Records the body of every request the command sent, and answers each with `value`. */
+const recordedBodies = (value: unknown) => {
+  const bodies: Record<string, unknown>[] = [];
+  const handler: Handler = (request, response) => {
+    let body = '';
+
+    request.on('data', (chunk) => (body += chunk));
+    request.on('end', () => {
+      bodies.push(JSON.parse(body || '{}') as Record<string, unknown>);
+      answered(value)(request, response);
+    });
+  };
+
+  return { handler, bodies };
+};
+
+describe('timetrack log --at', () => {
+  const queued = { queued: true, id: 'q-1' };
+
+  it('reads a date alone as local midnight', async () => {
+    vi.stubEnv('TZ', 'Europe/Berlin');
+
+    const { handler, bodies } = recordedBodies(queued);
+
+    await withEndpoint(handler);
+    printedLines();
+    await run(['log', '--issue', 'FIP-1', '--minutes', '15', '--at', '2026-09-28']);
+
+    expect(bodies.find((body) => body['op'] === 'worklog.add')?.['fromMs']).toBe(new Date(2026, 8, 28).getTime());
+  });
+
+  it('reads a clock as that time today', async () => {
+    const { handler, bodies } = recordedBodies(queued);
+    const expected = new Date();
+
+    expected.setHours(10, 30, 0, 0);
+
+    await withEndpoint(handler);
+    printedLines();
+    await run(['log', '--issue', 'FIP-1', '--minutes', '15', '--at', '10:30']);
+
+    expect(bodies.find((body) => body['op'] === 'worklog.add')?.['fromMs']).toBe(expected.getTime());
+  });
+});
+
+describe('timetrack project', () => {
+  it('resolves a relative path against the root', async () => {
+    const { handler, bodies } = recordedBodies({ repoPath: '/api', inherited: false, private: false });
+
+    await withEndpoint(handler);
+    printedLines();
+    await run(['project', '../api']);
+
+    expect(bodies.find((body) => body['op'] === 'repo.project')?.['repoPath']).toBe('/api');
+  });
+});

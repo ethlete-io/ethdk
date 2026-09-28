@@ -53,8 +53,6 @@ Scan of `libs/cli/src/` and `libs/agent-rules/src/` from 2026-09-28. 1 High, 14 
 
 ### agent-rules: timetrack command
 
-- Medium: `project [path]` sends the path to the app unresolved (`timetrack-command.ts:751`). The app matches it against absolute project links (`apps/timetrack/src/app/agent/agent-endpoint.ts:218`), so `timetrack project .` or `timetrack project ../api` reports "linked to no project". Resolve it against `root`, as `resync` does at `:873`. S Verified. `timetrackRepoProject` forwards the path as it is.
-- Medium: `--at`, `--from` and `--to` go to `new Date(raw)` as they are (`timetrack-command.ts:101,376`). A date-only value such as `2026-09-28` parses as UTC midnight, so `log --at 2026-09-28` starts at 02:00 in CEST and on the previous day west of UTC. The JSDoc at `:374` promises "a clock", but `new Date('10:30')` is `NaN`, so a clock throws. Parse date-only and `HH:MM` values as local time. S Verified (repro): `new Date('2026-09-28')` gave 02:00 CEST and `new Date('10:30')` gave `NaN`.
 - Low: `naming` uses today when the day argument is malformed (`timetrack-command.ts:979`). `timetrack naming 2026-9-1` answers for today with no error. Throw, as `rows` and `day` do. S
 - Low: `FLAGS_WITH_VALUE` does not list `--repo`, `--name` or `--rename` (`timetrack-command.ts:44-69`). Their values count as positionals, so `timetrack --name x standins` reads `x` as the subcommand. S
 - Low: `flagValue` takes the next argument also when it is another flag (`timetrack-command.ts:77-81`). `create --summary --project FIP` queues an issue with the title `--project`. Reject a value that starts with `--`. S

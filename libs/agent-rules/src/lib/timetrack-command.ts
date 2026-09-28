@@ -92,17 +92,32 @@ const numberFlag = (args: string[], flag: string) => {
   return value;
 };
 
-/** `--at` takes anything `Date` reads, so an agent may pass an ISO instant or leave it out for now. */
+const LOCAL_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const LOCAL_CLOCK = /^(\d{1,2}):(\d{2})$/;
+
+/**
+ * Reads an instant flag. A date alone is local midnight and a clock alone is that time today, where
+ * `Date` would read the first as UTC and refuse the second; anything else goes to `Date` as it is.
+ */
+const instantOf = (flag: string, raw: string) => {
+  const date = LOCAL_DATE.exec(raw);
+  const clock = LOCAL_CLOCK.exec(raw);
+  const today = new Date();
+  const at = date
+    ? new Date(Number(date[1]), Number(date[2]) - 1, Number(date[3]))
+    : clock
+      ? new Date(today.getFullYear(), today.getMonth(), today.getDate(), Number(clock[1]), Number(clock[2]))
+      : new Date(raw);
+
+  if (Number.isNaN(at.getTime())) throw new Error(`${flag} takes a date, not ${raw}.`);
+
+  return at.getTime();
+};
+
 const instantFlag = (args: string[]) => {
   const raw = flagValue(args, '--at');
 
-  if (!raw) return Date.now();
-
-  const at = new Date(raw);
-
-  if (Number.isNaN(at.getTime())) throw new Error(`--at takes a date, not ${raw}.`);
-
-  return at.getTime();
+  return raw ? instantOf('--at', raw) : Date.now();
 };
 
 const issueLine = (issue: TimetrackIssue) =>
@@ -369,15 +384,6 @@ const calendarDayLines = (events: readonly TimetrackCalendarEvent[]) => {
       `${day}  ${dayEvents.length} event(s), ${hours(meetingMs(dayEvents))}`,
       ...dayEvents.map((event) => `  ${calendarEventLine(event)}`),
     ]);
-};
-
-/** `--from` and `--to` take anything `Date` reads, so a caller may pass an ISO instant or a clock. */
-const instantOf = (flag: string, raw: string) => {
-  const at = new Date(raw);
-
-  if (Number.isNaN(at.getTime())) throw new Error(`${flag} takes a date, not ${raw}.`);
-
-  return at.getTime();
 };
 
 /** Which edits the flags name. `--from` with `--to` is the one pair that names a single change. */
@@ -748,7 +754,7 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
   }
 
   if (subcommand === 'project') {
-    const found = await timetrackRepoProject(value ?? root);
+    const found = await timetrackRepoProject(resolve(root, value ?? '.'));
 
     if (!json) {
       const where = found.inherited ? ' (from a directory above it)' : '';

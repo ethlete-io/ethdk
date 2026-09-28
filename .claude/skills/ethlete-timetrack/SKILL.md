@@ -338,7 +338,7 @@ npx ethlete-agents timetrack log --issue FIP-2177 --minutes 45 --description "pa
   `--project` is needed unless the app holds exactly one picked project.
 - **`log`** adds a row to the day in Timetrack. It is **not** a Tempo entry: the user reviews
   the day and syncs it, which is what keeps an agent's row from double-booking against the
-  hours the day already observed. `--at <date>` places it; without one it starts now.
+  hours the day already observed. `--at` places it - an ISO instant, or a local `YYYY-MM-DD` or `HH:MM` (today); without one it starts now.
 
 ## What the app decides, not you
 
