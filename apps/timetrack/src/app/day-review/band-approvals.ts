@@ -1,6 +1,6 @@
 import { computed } from '@angular/core';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
-import { AUTO_MODE_CLIENT, AgentApproval, approvalRowIdsOf, formatDurationMs } from '@ethlete/timetrack';
+import { AUTO_MODE_CLIENT, AgentApproval, approvalRowIdsOf, formatDurationMs, localDayKey } from '@ethlete/timetrack';
 import { injectApprovalQueue } from '../agent/approval-queue';
 import { injectDayReview } from './day-review';
 import { formatClockTime } from './format';
@@ -56,10 +56,16 @@ export const approvalLinesOf = (item: AgentApproval): ApprovalLine[] => {
   }
 };
 
+/** A `worklog.add` no row of the day holds yet, drawn where the row it adds would land. */
+export type ApprovalPreview = { item: AgentApproval; from: Date; to: Date };
+
 export const approvalDescriptionOf = (item: AgentApproval) =>
   item.request.op === 'jira.create' || item.request.op === 'worklog.add' ? item.request.description : '';
 
-/** The waiting approvals placed on the bands of the day in view, and those no band there previews. */
+/**
+ * The waiting approvals placed on the bands of the day in view, the `worklog.add`s that land on it on
+ * no band yet, and those the day in view shows nowhere.
+ */
 const BAND_APPROVALS_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const queue = injectApprovalQueue();
   const store = injectDayReview();
@@ -69,21 +75,30 @@ const BAND_APPROVALS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     const rows = store.rows();
     const unattributed = store.deterministic()?.unattributed ?? [];
     const byRow = new Map<string, AgentApproval[]>();
+    const previews: ApprovalPreview[] = [];
     const unplaced: AgentApproval[] = [];
 
     for (const item of queue.waiting()) {
+      const { request } = item;
       const ids = approvalRowIdsOf({ item, day, rows, unattributed });
 
-      if (!ids.length) unplaced.push(item);
-
       for (const id of ids) byRow.set(id, [...(byRow.get(id) ?? []), item]);
+
+      if (ids.length) continue;
+
+      if (request.op === 'worklog.add' && localDayKey(new Date(request.fromMs), store.boundary()) === day) {
+        previews.push({ item, from: new Date(request.fromMs), to: new Date(request.fromMs + request.durationMs) });
+      } else {
+        unplaced.push(item);
+      }
     }
 
-    return { byRow, unplaced };
+    return { byRow, previews, unplaced };
   });
 
   return {
     forRow: (rowId: string) => placed().byRow.get(rowId) ?? [],
+    previews: computed(() => placed().previews),
     unplaced: computed(() => placed().unplaced),
   };
 });

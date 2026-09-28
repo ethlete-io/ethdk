@@ -236,6 +236,8 @@ export const lanesOf = (options: {
   /** Midnight of the day on screen, which the break and behind geometry is measured from. */
   dayStart: Date;
   columnOf?: (laneKey: string) => string;
+  /** Lanes to draw even while no block is in them, for a band that previews a row not written yet. */
+  openLanes?: readonly string[];
 }): DayLane[] => {
   const columnOf = options.columnOf ?? ((laneKey: string) => laneKey);
   const byLane = new Map<string, SchedulerTimeGridBlock<TimelineEntry>[]>();
@@ -261,6 +263,8 @@ export const lanesOf = (options: {
     // that is the hole this band exists to explain.
     if (!byLane.has(key)) byLane.set(key, []);
   }
+
+  for (const key of options.openLanes ?? []) if (!byLane.has(key)) byLane.set(key, []);
 
   const startOf = (key: string, lane: SchedulerTimeGridBlock<TimelineEntry>[]) =>
     Math.min(...lane.map((block) => block.offset), ...(behindByLane.get(key) ?? []).map((band) => band.offset));

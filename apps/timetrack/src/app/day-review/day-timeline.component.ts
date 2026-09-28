@@ -498,41 +498,59 @@ type RowDrag = {
                     }
                   }
 
+                  @for (preview of previewsIn(lane); track preview.item.id) {
+                    <div
+                      [style.top.%]="percentOf(preview.from)"
+                      [style.height.%]="percentOf(preview.to) - percentOf(preview.from)"
+                      [attr.data-approval-preview]="preview.item.id"
+                      class="pointer-events-none absolute inset-x-0 rounded-sm border border-dashed border-et-brand-ink bg-et-brand-ink/10"
+                    ></div>
+                  }
+
                   @for (pending of approvalsIn(lane); track pending.key) {
                     <div
-                      [style.top.%]="percentOf(pending.row.from)"
+                      [style.top.%]="percentOf(pending.from)"
                       [style.left.%]="pending.inlineOffset"
                       [style.width.%]="pending.inlineSize"
                       [style.--tt-approval-index]="pending.index"
                       [attr.data-band-approval]="pending.item.id"
                       [attr.data-op]="pending.item.request.op"
+                      [attr.data-dot]="pending.dot || null"
+                      [attr.data-preview]="pending.preview || null"
                       class="tt-approval"
                     >
-                      <span [title]="DESCRIBE_APPROVAL(pending.item.request)" class="tt-approval-chip">
-                        <span class="truncate">{{ CHIP_OF(pending.item) }}</span>
-                        @if (pending.item.state === 'running') {
-                          <span>…</span>
-                        } @else {
-                          <button
-                            [attr.aria-label]="'Approve: ' + CHIP_OF(pending.item)"
-                            (pointerdown)="$event.stopPropagation()"
-                            (click)="approvals.approve(pending.item.id)"
-                            class="tt-approval-press"
-                            type="button"
-                          >
-                            ✓
-                          </button>
-                          <button
-                            [attr.aria-label]="'Reject: ' + CHIP_OF(pending.item)"
-                            (pointerdown)="$event.stopPropagation()"
-                            (click)="approvals.reject(pending.item.id)"
-                            class="tt-approval-press"
-                            type="button"
-                          >
-                            ✕
-                          </button>
-                        }
-                      </span>
+                      @if (pending.dot) {
+                        <span
+                          [title]="CHIP_OF(pending.item) + ': ' + DESCRIBE_APPROVAL(pending.item.request)"
+                          class="tt-approval-dot"
+                        ></span>
+                      } @else {
+                        <span [title]="DESCRIBE_APPROVAL(pending.item.request)" class="tt-approval-chip">
+                          <span class="truncate">{{ CHIP_OF(pending.item) }}</span>
+                          @if (pending.item.state === 'running') {
+                            <span>…</span>
+                          } @else {
+                            <button
+                              [attr.aria-label]="'Approve: ' + CHIP_OF(pending.item)"
+                              (pointerdown)="$event.stopPropagation()"
+                              (click)="approvals.approve(pending.item.id)"
+                              class="tt-approval-press"
+                              type="button"
+                            >
+                              ✓
+                            </button>
+                            <button
+                              [attr.aria-label]="'Reject: ' + CHIP_OF(pending.item)"
+                              (pointerdown)="$event.stopPropagation()"
+                              (click)="approvals.reject(pending.item.id)"
+                              class="tt-approval-press"
+                              type="button"
+                            >
+                              ✕
+                            </button>
+                          }
+                        </span>
+                      }
                     </div>
                   }
                 </div>
@@ -657,9 +675,24 @@ type RowDrag = {
       z-index: 6;
       display: flex;
       justify-content: flex-end;
-      margin-top: calc(0.2rem + var(--tt-approval-index) * 2rem);
+      margin-top: calc(2.2rem + var(--tt-approval-index) * 2rem);
       padding-inline-end: 0.2rem;
       pointer-events: none;
+    }
+
+    .tt-approval[data-preview] {
+      margin-top: 0.2rem;
+    }
+
+    .tt-approval[data-dot] {
+      margin-top: 0.7rem;
+    }
+
+    .tt-approval-dot {
+      width: 0.6rem;
+      height: 0.6rem;
+      border-radius: 50%;
+      background: var(--color-et-brand-ink);
     }
 
     .tt-approval-chip {
@@ -808,6 +841,7 @@ export class DayTimelineComponent {
       behind: this.behind(),
       dayStart: this.focusedDate(),
       columnOf: this.columnOf(),
+      openLanes: this.bandApprovals.previews().length ? [NO_LANE_KEY] : [],
     }),
   );
 
@@ -1046,7 +1080,7 @@ export class DayTimelineComponent {
   }
 
   protected approvalsIn(lane: DayLane) {
-    return lane.blocks.flatMap((laid) => {
+    const onBands = lane.blocks.flatMap((laid) => {
       const row = this.rowOf(laid.block.node.appointment);
 
       if (!row) return [];
@@ -1054,12 +1088,32 @@ export class DayTimelineComponent {
       return this.bandApprovals.forRow(row.id).map((item, index) => ({
         key: `${row.id}|${item.id}`,
         item,
-        row,
+        from: row.from,
         index,
+        dot: !this.detailed(laid.block.span),
+        preview: false,
         inlineOffset: laid.inlineOffset,
         inlineSize: laid.inlineSize,
       }));
     });
+
+    return [
+      ...onBands,
+      ...this.previewsIn(lane).map((preview) => ({
+        key: `preview|${preview.item.id}`,
+        item: preview.item,
+        from: preview.from,
+        index: 0,
+        dot: false,
+        preview: true,
+        inlineOffset: 0,
+        inlineSize: 100,
+      })),
+    ];
+  }
+
+  protected previewsIn(lane: DayLane) {
+    return lane.key === NO_LANE_KEY ? this.bandApprovals.previews() : [];
   }
 
   protected cutsIn(lane: DayLane): LaneCut[] {

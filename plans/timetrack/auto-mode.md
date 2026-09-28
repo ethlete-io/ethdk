@@ -57,7 +57,10 @@ settings: the user can move an action to a stricter class, never to a looser one
   the ✂ cut line; the row's edit popover gets an "Auto mode suggests" section with the readable
   diff; actions without a band wait behind a small header pill that opens a short list. The JSON
   modal goes. B (a lane on the right) rejected; C (header queue list) rejected because the list
-  can grow huge.
+  can grow huge. Built (2026-09-28): a band shorter than two lines shows a dot instead of the chip
+  (approve from its edit surface); a `worklog.add` on no row draws a dashed preview band at its span
+  in the "No checkout" lane, with the chip. e2e in `inline-approvals.spec.ts`, including a create on
+  a stand-in band.
 - The sidebar shows "Auto mode · on" with the waiting count while auto mode is on.
 
 ## Slices
