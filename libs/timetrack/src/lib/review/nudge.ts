@@ -4,6 +4,7 @@ import { SyncedWorklog, syncsInState } from '../model/proposal';
 import { TempoDayCoverage, coverageAsForeignTime } from '../tempo/coverage';
 import { contentHashOf } from '../tempo/diff';
 import { subtractForeignTime } from '../tempo/subtract';
+import { DayBoundary } from './day';
 import { DayReview, isNamedRow, isStandInRow } from './model';
 
 /** What a day still owes the person who worked it. */
@@ -138,6 +139,8 @@ export type DayNudgeRecord = {
 /** The local minute of day an instant falls on, which is the unit the reminder is configured in. */
 export const minuteOfDay = (at: Date) => at.getHours() * 60 + at.getMinutes();
 
+const MINUTES_PER_DAY = 24 * 60;
+
 /**
  * Whether the day may be reported at this moment. It is only the clock half — what the day still owes
  * is `dayReviewGap`, and both have to say yes.
@@ -146,9 +149,15 @@ export const isNudgeDue = (options: {
   now: Date;
   /** The local minute of day the day's review is due. */
   atMinute: number;
+  /** Where the work day ends, which is also where its reminder stops. */
+  boundary: DayBoundary;
   record?: DayNudgeRecord | null;
 }) => {
-  if (minuteOfDay(options.now) < options.atMinute) return false;
+  const startMinute = options.boundary.startHour * 60;
+  const sinceStart = (minute: number) =>
+    (((minute - startMinute) % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
+
+  if (sinceStart(minuteOfDay(options.now)) < sinceStart(options.atMinute)) return false;
 
   const silencedUntil = options.record?.silencedUntil;
 
@@ -207,6 +216,7 @@ export const dayNudge = (options: {
   coverage?: TempoDayCoverage | null;
   now: Date;
   atMinute: number;
+  boundary: DayBoundary;
   record?: DayNudgeRecord | null;
   repeatMs?: number;
   attributesByProposalId?: Record<string, Record<string, string | number | boolean>>;

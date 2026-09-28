@@ -3,7 +3,7 @@ import { ActivityBlock, streamKey } from '../model/block';
 import { Evidence } from '../model/evidence';
 import { AttributedBlock } from './attribute';
 import { CollectedEvent } from '../model/event';
-import { cutBackground, cutUnwatched, meetLaneRows } from './cut';
+import { cutBackground, cutUnwatched, joinTouching, meetLaneRows } from './cut';
 
 const SDK = '/home/you/dev/shared-sdk';
 const APP = '/home/you/dev/abc-frontend';
@@ -503,5 +503,26 @@ describe('cutUnwatched', () => {
       expect(result.blocks).toEqual(blocks);
       expect(result.behind).toEqual([]);
     });
+  });
+});
+
+describe('joinTouching', () => {
+  it('adds what the next stretch lost to a stretch that says how much it lost', () => {
+    const [joined] = joinTouching([
+      { from: at('09:00'), to: at('10:00'), issueKey: 'ET-1', laneKey: 'repo:/a', durationMs: 20 * 60_000 },
+      { from: at('10:00'), to: at('10:30'), issueKey: 'ET-1', laneKey: 'repo:/a' },
+    ]);
+
+    expect(joined?.to).toEqual(at('10:30'));
+    expect(joined?.durationMs).toBe(50 * 60_000);
+  });
+
+  it('leaves the lost time unsaid where every stretch lost its whole span', () => {
+    const [joined] = joinTouching([
+      { from: at('09:00'), to: at('10:00'), issueKey: 'ET-1', laneKey: 'repo:/a' },
+      { from: at('09:30'), to: at('10:30'), issueKey: 'ET-1', laneKey: 'repo:/a' },
+    ]);
+
+    expect(joined).toEqual({ from: at('09:00'), to: at('10:30'), issueKey: 'ET-1', laneKey: 'repo:/a' });
   });
 });

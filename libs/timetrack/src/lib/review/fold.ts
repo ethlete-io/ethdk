@@ -1,7 +1,7 @@
 import { mergeEvidence } from '../rows/merge';
 import { storedLaneKey } from '../rows/lane';
 import { Evidence } from '../model/evidence';
-import { TimeWindow } from '../model/time-window';
+import { TimeWindow, clipWindows } from '../model/time-window';
 
 type FoldRow = TimeWindow & {
   id: string;
@@ -119,9 +119,10 @@ export const foldShortRows = <T extends FoldRow>(options: {
       folded: [...(neighbour.folded ?? []), short.id, ...(short.folded ?? [])],
       ...(neighbour.stretches || short.stretches
         ? {
-            stretches: [...(neighbour.stretches ?? []), ...(short.stretches ?? [])].sort(
-              (a, b) => a.from.getTime() - b.from.getTime(),
-            ),
+            stretches: clipWindows({
+              windows: [...(neighbour.stretches ?? []), ...(short.stretches ?? [])],
+              within: [window],
+            }).sort((a, b) => a.from.getTime() - b.from.getTime()),
           }
         : {}),
     };

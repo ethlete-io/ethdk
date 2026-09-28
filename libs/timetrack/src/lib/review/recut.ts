@@ -174,6 +174,8 @@ export const recutReviewedRows = (options: {
   backgroundProjects?: readonly string[];
   /** Rows the reviewer wrote by hand. Their range is a statement, so they claim minutes and never give any. */
   stated?: ReadonlySet<string>;
+  /** Ranks two background rows over the same minutes, as `cutBackground` does; the earlier start wins a tie. */
+  focusMsByStream?: Readonly<Record<string, number>>;
   round?: Partial<RoundOptions>;
 }): { rows: ReviewedRow[]; behind: BehindStretch[] } => {
   const isStated = (row: ReviewedRow) => !!options.stated?.has(row.id);
@@ -191,7 +193,19 @@ export const recutReviewedRows = (options: {
     return { rows: [...options.rows], behind: joinOneTicket({ stretches: options.behind, rows: options.rows }) };
   }
 
-  const covered = options.rows.filter((row) => !isBackground(row) && !takesNothing(row));
+  const covered: LaneRow[] = options.rows.filter((row) => !isBackground(row) && !takesNothing(row));
+  const focusOf = (row: ReviewedRow) => options.focusMsByStream?.[row.laneKey ?? ''] ?? 0;
+  const keptOf = new Map<ReviewedRow, Span[]>();
+
+  for (const row of options.rows
+    .filter((entry) => isBackground(entry) && !!entry.issueKey)
+    .sort((a, b) => focusOf(b) - focusOf(a) || a.from.getTime() - b.from.getTime())) {
+    const kept = keptSpansOf({ row, covered });
+
+    keptOf.set(row, kept);
+    covered.push(...kept.map((span) => ({ laneKey: row.laneKey, from: new Date(span.from), to: new Date(span.to) })));
+  }
+
   const rows: ReviewedRow[] = [];
   const lost: BehindStretch[] = [];
 
@@ -213,7 +227,7 @@ export const recutReviewedRows = (options: {
       continue;
     }
 
-    const kept = keptSpansOf({ row, covered });
+    const kept = keptOf.get(row) ?? [];
     const laneKey = row.laneKey;
 
     if (laneKey) {

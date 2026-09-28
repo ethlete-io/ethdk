@@ -313,4 +313,35 @@ describe('recutReviewedRows', () => {
 
     expect(spans(result.behind)).toEqual(['09:00-16:00', '11:00-12:00', '13:00-14:00']);
   });
+
+  it('gives two overlapping background rows each minute once, to the one that started first', () => {
+    const result = recut({
+      rows: [
+        row({ issueKey: 'ET-1', from: '09:00', to: '11:00' }),
+        row({ issueKey: 'ET-2', from: '10:00', to: '12:00', laneKey: 'repo:/dev/app' }),
+      ],
+    });
+
+    expect(result.rows.map((entry) => [entry.issueKey, ...spans([entry])])).toEqual([
+      ['ET-1', '09:00-11:00'],
+      ['ET-2', '11:00-12:00'],
+    ]);
+  });
+
+  it('gives the shared minutes to the background row the user focused longer', () => {
+    const result = recutReviewedRows({
+      rows: [
+        row({ issueKey: 'ET-1', from: '09:00', to: '11:00' }),
+        row({ issueKey: 'ET-2', from: '10:00', to: '12:00', laneKey: 'repo:/dev/app' }),
+      ],
+      behind: [],
+      backgroundProjects: ['ET'],
+      focusMsByStream: { 'repo:/dev/app': 60_000 },
+    });
+
+    expect(result.rows.map((entry) => [entry.issueKey, ...spans([entry])])).toEqual([
+      ['ET-1', '09:00-10:00'],
+      ['ET-2', '10:00-12:00'],
+    ]);
+  });
 });

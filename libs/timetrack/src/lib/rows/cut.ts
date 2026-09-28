@@ -210,7 +210,16 @@ export const joinTouching = (stretches: readonly BehindStretch[]): BehindStretch
       continue;
     }
 
-    if (stretch.to > last.to) joined[joined.length - 1] = { ...last, to: stretch.to };
+    if (stretch.to <= last.to) continue;
+
+    const carried = last.durationMs !== undefined || stretch.durationMs !== undefined;
+    const addedMs = stretch.durationMs ?? stretch.to.getTime() - Math.max(stretch.from.getTime(), last.to.getTime());
+
+    joined[joined.length - 1] = {
+      ...last,
+      to: stretch.to,
+      ...(carried ? { durationMs: (last.durationMs ?? last.to.getTime() - last.from.getTime()) + addedMs } : {}),
+    };
   }
 
   return joined.sort((a, b) => a.from.getTime() - b.from.getTime());

@@ -76,6 +76,7 @@ const DAY_NUDGE_DEF = /* @__PURE__ */ defineRootProvider(() => {
               record,
               now: new Date(),
               atMinute: current.nudge.atMinute,
+              boundary: dayBoundaryOf(current),
             }),
           ),
         ),

@@ -230,21 +230,35 @@ describe('isNudgeDue', () => {
   });
 
   it('says nothing before the minute the day is due', () => {
-    expect(isNudgeDue({ now: at('17:29'), atMinute: 17 * 60 + 30 })).toBe(false);
-    expect(isNudgeDue({ now: at('17:30'), atMinute: 17 * 60 + 30 })).toBe(true);
+    expect(isNudgeDue({ now: at('17:29'), atMinute: 17 * 60 + 30, boundary: MIDNIGHT })).toBe(false);
+    expect(isNudgeDue({ now: at('17:30'), atMinute: 17 * 60 + 30, boundary: MIDNIGHT })).toBe(true);
+  });
+
+  it('keeps a work day due past midnight until its own boundary', () => {
+    const boundary = { startHour: 4 };
+    const due = { atMinute: 17 * 60 + 30, boundary };
+
+    expect(isNudgeDue({ ...due, now: new Date(2026, 7, 12, 0, 30) })).toBe(true);
+    expect(isNudgeDue({ ...due, now: new Date(2026, 7, 12, 3, 59) })).toBe(true);
+    expect(isNudgeDue({ ...due, now: new Date(2026, 7, 12, 4, 0) })).toBe(false);
   });
 
   it('keeps reporting a day it already reported, so the banner stays up until the day is done', () => {
     expect(
-      isNudgeDue({ now: at('18:00'), atMinute: 17 * 60 + 30, record: record({ lastNudgedAt: at('17:30') }) }),
+      isNudgeDue({
+        now: at('18:00'),
+        atMinute: 17 * 60 + 30,
+        boundary: MIDNIGHT,
+        record: record({ lastNudgedAt: at('17:30') }),
+      }),
     ).toBe(true);
   });
 
   it('stays quiet while the day is silenced', () => {
     const silenced = record({ lastNudgedAt: at('09:00'), silencedUntil: at('23:59') });
 
-    expect(isNudgeDue({ now: at('19:00'), atMinute: 17 * 60 + 30, record: silenced })).toBe(false);
-    expect(isNudgeDue({ now: at('23:59'), atMinute: 17 * 60 + 30, record: silenced })).toBe(true);
+    expect(isNudgeDue({ now: at('19:00'), atMinute: 17 * 60 + 30, boundary: MIDNIGHT, record: silenced })).toBe(false);
+    expect(isNudgeDue({ now: at('23:59'), atMinute: 17 * 60 + 30, boundary: MIDNIGHT, record: silenced })).toBe(true);
   });
 });
 
@@ -273,6 +287,7 @@ describe('dayNudge', () => {
       ledger: [],
       now: at('17:30'),
       atMinute: 17 * 60 + 30,
+      boundary: MIDNIGHT,
     });
 
     expect(nudge?.title).toBe('Your day is not logged yet');
@@ -286,6 +301,7 @@ describe('dayNudge', () => {
       ledger: [],
       now: at('17:30'),
       atMinute: 17 * 60 + 30,
+      boundary: MIDNIGHT,
     });
 
     expect(nudge?.title).toBe('Your day still needs a review');
@@ -299,6 +315,7 @@ describe('dayNudge', () => {
       ledger: [],
       now: at('18:00'),
       atMinute: 17 * 60 + 30,
+      boundary: MIDNIGHT,
       record: { day: '2026-08-11', lastNudgedAt: at('17:30'), silencedUntil: null },
     });
 
@@ -307,7 +324,7 @@ describe('dayNudge', () => {
   });
 
   it('says nothing for a finished day, and nothing before its minute', () => {
-    const finished = { day: '2026-08-11', ledger: [ledgerFor(unlogged)], atMinute: 17 * 60 + 30 };
+    const finished = { day: '2026-08-11', ledger: [ledgerFor(unlogged)], atMinute: 17 * 60 + 30, boundary: MIDNIGHT };
 
     expect(dayNudge({ ...finished, review: review({ rows: [unlogged] }), now: at('17:30') })).toBeNull();
     expect(dayNudge({ ...finished, review: review({ rows: [unlogged] }), ledger: [], now: at('09:00') })).toBeNull();
