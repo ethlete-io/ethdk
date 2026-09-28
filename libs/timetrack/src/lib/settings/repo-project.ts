@@ -1,10 +1,11 @@
+import { normalizeLinkPath } from '../model/link-path';
 import { TimetrackProjectLink, matchProjectLink } from '../model/project-link';
 import { TimetrackFavoriteProject } from './model';
 
 /** A word short enough to appear in any directory name says nothing about which project it is. */
 const MIN_NAME_WORD_LENGTH = 4;
 
-const segmentsOf = (path: string) => path.trim().replace(/\/+$/, '').split('/').filter(Boolean);
+const segmentsOf = (path: string) => normalizeLinkPath(path).split('/').filter(Boolean);
 
 const tokensOf = (value: string) =>
   value
@@ -51,7 +52,7 @@ export const suggestProjectForRepo = (options: {
 };
 
 /** One watched repository as the settings screen lists it: what it is linked to, and what it could be. */
-export type RepoProjectRow = {
+type RepoProjectRow = {
   repoPath: string;
   /** The last segment of the path, which is what the user recognises the repository by. */
   label: string;
@@ -74,7 +75,7 @@ export type RepoProjectRow = {
  * for `~/dev` is already there, and offering to write it again per repository would fill the document
  * with links that say what one link already said.
  */
-export const repoProjectRows = (options: {
+const repoProjectRows = (options: {
   repoPaths: readonly string[];
   links: readonly TimetrackProjectLink[];
   projects: readonly TimetrackFavoriteProject[];
@@ -84,7 +85,7 @@ export const repoProjectRows = (options: {
     .map((repoPath) => {
       const link = matchProjectLink({ context: { repoPath }, links: options.links });
       const target = link?.target;
-      const inherited = !!link && link.path.trim().replace(/\/+$/, '') !== repoPath.trim().replace(/\/+$/, '');
+      const inherited = !!link && normalizeLinkPath(link.path) !== normalizeLinkPath(repoPath);
 
       return {
         repoPath,
@@ -117,8 +118,6 @@ export type ProjectPathRow = {
   suggestion?: TimetrackFavoriteProject;
 };
 
-const normalized = (path: string) => path.trim().replace(/\/+$/, '');
-
 /**
  * Every path the user can answer for, in one list: the repositories the discovery found, and the links
  * that name a directory no repository sits at.
@@ -137,10 +136,10 @@ export const projectPathRows = (options: {
     path: repoPath,
     kind: 'repo',
   }));
-  const found = new Set(repos.map((row) => normalized(row.path)));
+  const found = new Set(repos.map((row) => normalizeLinkPath(row.path)));
 
   const folders = options.links
-    .filter((link) => !found.has(normalized(link.path)))
+    .filter((link) => !found.has(normalizeLinkPath(link.path)))
     .map((link): ProjectPathRow => ({
       path: link.path,
       label: segmentsOf(link.path).pop() ?? link.path,

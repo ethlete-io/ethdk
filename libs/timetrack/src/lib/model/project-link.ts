@@ -1,4 +1,5 @@
 import { ActivityContext } from './block';
+import { normalizeLinkPath } from './link-path';
 
 /**
  * What work under a path belongs to.
@@ -26,8 +27,6 @@ export type TimetrackProjectLink = {
   createdAt: Date;
 };
 
-const normalize = (path: string) => path.trim().replace(/\/+$/, '');
-
 /** `path` is the link itself or sits under it. The separator is what keeps `dev-old` out of `dev`. */
 const covers = (link: string, path: string) => path === link || path.startsWith(`${link}/`);
 
@@ -36,9 +35,9 @@ const covers = (link: string, path: string) => path === link || path.startsWith(
  * trailing slash and a directory boundary both read the way they do in the settings list.
  */
 export const pathIsUnder = (root: string, path: string) => {
-  const from = normalize(root);
+  const from = normalizeLinkPath(root);
 
-  return !!from && covers(from, normalize(path));
+  return !!from && covers(from, normalizeLinkPath(path));
 };
 
 /**
@@ -53,18 +52,20 @@ export const matchProjectLink = (options: {
   context: ActivityContext;
   links: readonly TimetrackProjectLink[];
 }): TimetrackProjectLink | undefined => {
-  const path = normalize(options.context.repoPath ?? '');
+  const path = normalizeLinkPath(options.context.repoPath ?? '');
 
   if (!path) return undefined;
 
   return options.links
     .filter((link) => {
-      const linkPath = normalize(link.path);
+      const linkPath = normalizeLinkPath(link.path);
 
       return !!linkPath && covers(linkPath, path);
     })
     .sort(
-      (a, b) => normalize(b.path).length - normalize(a.path).length || b.createdAt.getTime() - a.createdAt.getTime(),
+      (a, b) =>
+        normalizeLinkPath(b.path).length - normalizeLinkPath(a.path).length ||
+        b.createdAt.getTime() - a.createdAt.getTime(),
     )[0];
 };
 
@@ -79,9 +80,9 @@ export const withWorktreeLinks = (options: {
   worktrees: Readonly<Record<string, string>>;
 }): readonly TimetrackProjectLink[] => {
   const derived = Object.entries(options.worktrees).flatMap(([worktree, main]) => {
-    const path = normalize(worktree);
+    const path = normalizeLinkPath(worktree);
 
-    if (!path || options.links.some((link) => normalize(link.path) === path)) return [];
+    if (!path || options.links.some((link) => normalizeLinkPath(link.path) === path)) return [];
 
     const link = matchProjectLink({ context: { repoPath: main }, links: options.links });
 
@@ -100,4 +101,4 @@ export const projectKeyFor = (options: { context: ActivityContext; links: readon
 
 /** Reads as something the user can recognise in a list or an evidence chain: `side-project`. */
 export const describeProjectLink = (link: Pick<TimetrackProjectLink, 'path'>) =>
-  normalize(link.path).split('/').filter(Boolean).pop() ?? link.path;
+  normalizeLinkPath(link.path).split('/').filter(Boolean).pop() ?? link.path;

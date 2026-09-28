@@ -1,7 +1,8 @@
+import { normalizeLinkPath } from '../model/link-path';
 import { TimetrackProjectLink } from '../model/project-link';
 import { TimetrackSettings } from './model';
 
-const pathOf = (link: Pick<TimetrackProjectLink, 'path'>) => link.path.trim().replace(/\/+$/, '');
+const pathOf = (link: Pick<TimetrackProjectLink, 'path'>) => normalizeLinkPath(link.path);
 
 /**
  * Puts a link into the settings, replacing whatever named the same path before. One path holds one

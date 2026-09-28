@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TimetrackProjectLink } from '../model/project-link';
 import { TimetrackFavoriteProject } from './model';
-import { projectPathRows, repoProjectRows, suggestProjectForRepo } from './repo-project';
+import { projectPathRows, suggestProjectForRepo } from './repo-project';
 
 const PROJECTS: TimetrackFavoriteProject[] = [
   { key: 'ABC', name: 'Alpha Platform' },
@@ -36,9 +36,9 @@ describe('suggestProjectForRepo', () => {
   });
 });
 
-describe('repoProjectRows', () => {
+describe('projectPathRows for a found repository', () => {
   it('reports the project a link on the repository itself names', () => {
-    const [row] = repoProjectRows({
+    const [row] = projectPathRows({
       repoPaths: ['/home/you/dev/abc-frontend'],
       links: [link({})],
       projects: PROJECTS,
@@ -49,17 +49,17 @@ describe('repoProjectRows', () => {
   });
 
   it('reports a link on a directory above it as inherited rather than as a missing answer', () => {
-    const [row] = repoProjectRows({
+    const row = projectPathRows({
       repoPaths: ['/home/you/dev/abc-frontend'],
       links: [link({ path: '/home/you/dev' })],
       projects: PROJECTS,
-    });
+    }).find((entry) => entry.kind === 'repo');
 
     expect(row).toMatchObject({ projectKey: 'ABC', inherited: true });
   });
 
   it('reports a private path as private and names no project for it', () => {
-    const [row] = repoProjectRows({
+    const [row] = projectPathRows({
       repoPaths: ['/home/you/dev/abc-frontend'],
       links: [link({ target: { kind: 'private' } })],
       projects: PROJECTS,
@@ -69,7 +69,7 @@ describe('repoProjectRows', () => {
   });
 
   it('offers the suggestion only for a repository nothing covers yet, sorted by path', () => {
-    const rows = repoProjectRows({
+    const rows = projectPathRows({
       repoPaths: ['/home/you/dev/delta-shop', '/home/you/dev/abc-frontend'],
       links: [link({ path: '/home/you/dev/abc-frontend' })],
       projects: PROJECTS,
