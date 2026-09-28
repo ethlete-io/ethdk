@@ -117,6 +117,8 @@ export class OverlayDirective {
       }
     });
 
+    this.destroyRef.onDestroy(() => this.overlayRef()?.forceClose());
+
     if (ngDevMode) {
       afterNextRender(() => {
         if (!this.registeredSurface()) {

@@ -88,4 +88,20 @@ describe('OverlayDirective', () => {
     expect(overlayDirective.open()).toBe(false);
     expect(host.getAttribute('data-overlay-open')).toBeNull();
   });
+
+  it('closes its overlay when the host is destroyed', () => {
+    overlayDirective.show();
+    fixture.detectChanges();
+
+    let closing = false;
+
+    overlayDirective
+      .overlayRef()
+      ?.beforeClosed()
+      .subscribe(() => (closing = true));
+
+    fixture.destroy();
+
+    expect(closing).toBe(true);
+  });
 });

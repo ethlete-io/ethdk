@@ -1,10 +1,9 @@
 # overlay scan - open findings
 
-Scan of `libs/components/src/lib/overlay/` from 2026-09-28. 1 High, 8 Medium, 20 Low, 5 Spec (after verification). Skipped: stories, the CSS beyond layer and colour checks. `anchored.strategy.ts`, `full-screen.strategy.ts` and `fullscreen-animation.ts` were read in a second pass (see the last section). Focus trap, focus restore and outside-pointer logic live in `@ethlete/core`'s overlay runtime and are out of scope.
+Scan of `libs/components/src/lib/overlay/` from 2026-09-28. 0 High, 8 Medium, 20 Low, 5 Spec (after verification). Skipped: stories, the CSS beyond layer and colour checks. `anchored.strategy.ts`, `full-screen.strategy.ts` and `fullscreen-animation.ts` were read in a second pass (see the last section). Focus trap, focus restore and outside-pointer logic live in `@ethlete/core`'s overlay runtime and are out of scope.
 
 ## headless
 
-- High: `OverlayDirective` does not close its overlay on destroy (`headless/overlay.directive.ts:85-131`, no `onDestroy`). The overlay mounts without a `viewContainerRef`, so an `[etOverlay]` host removed by `@if` or a route change leaves the pane open and rendering a template from a destroyed view. `takeUntilDestroyed` at `:243` also drops the `afterClosed` cleanup. Close the ref in a `destroyRef.onDestroy`. S Verified: `mountOverlay` passes neither `viewContainerRef` nor `injector`, and the runtime only tears overlays down on its own root destroy.
 - Medium: `hide()` sets `open` to `false` even when a close guard vetoes the close (`headless/overlay.directive.ts:143-149`). With `createOverlayUnsavedChangesGuard` and a cancelled confirm, the overlay stays open while `open()`, `[attr.data-overlay-open]` and the trigger's `aria-expanded` say closed. Drive `open` only from `afterClosed` (or from `beforeClosed`). S Verified: `close()` returns silently on a guard veto; the effect then calls `close()` again, so the guard runs twice.
 - Low: all positioning inputs (`placement`, `offset`, `mode`, …) are read once in `mountOverlay` (`headless/overlay.directive.ts:194-227`). A change while the overlay is open has no effect until the next open. Document it or re-apply the strategy. M
 - Low: `OverlayTriggerDirective` sets `aria-expanded` but no `aria-haspopup` or `aria-controls` (`headless/overlay-trigger.directive.ts:9-13`), and it stays clickable and announces `aria-expanded="false"` while the overlay is `disabled`. S
@@ -40,7 +39,7 @@ Scan of `libs/components/src/lib/overlay/` from 2026-09-28. 1 High, 8 Medium, 20
 
 ## Spec gaps
 
-- Spec: no test that destroying the `[etOverlay]` host closes the overlay, and none for `hide()` under a vetoing guard (`headless/overlay.directive.spec.ts`). S
+- Spec: no test for `hide()` under a vetoing guard (`headless/overlay.directive.spec.ts`). S
 - Spec: no test for drag-to-dismiss with a vetoing close guard (`strategies/overlay-drag-to-dismiss.spec.ts`, `utils/overlay-unsaved-changes-guard.spec.ts`). S
 - Spec: no spec for `syncUrl` in the overlay router (browser Back/forward, vetoed Back, close cleanup). M
 - Spec: no spec for the query-param opener's URL/guard interplay (`overlay-opener.spec.ts`). M
