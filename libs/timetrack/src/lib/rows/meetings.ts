@@ -73,13 +73,15 @@ export const conferenceIdOf = (event: CalendarOccurrenceEvent) => {
  *
  * It names products, never the user's own applications or meetings: an identifier this does not know
  * rules nothing out, which leaves every candidate standing.
+ *
+ * `meet` has to stay last: other products carry it too, as in `webexmeetingsapp`.
  */
-const CONFERENCE_SERVICES = ['meet', 'zoom', 'teams', 'discord', 'slack', 'webex', 'whereby', 'jitsi', 'gather'];
+const CONFERENCE_SERVICES = ['zoom', 'teams', 'discord', 'slack', 'webex', 'whereby', 'jitsi', 'gather', 'meet'];
 
 const serviceIn = (value: string | undefined) => {
   if (!value) return undefined;
 
-  const text = value.toLowerCase();
+  const text = (/^https?:\/\/([^/?#]+)/i.exec(value)?.[1] ?? value).toLowerCase();
 
   return CONFERENCE_SERVICES.find((service) => text.includes(service));
 };

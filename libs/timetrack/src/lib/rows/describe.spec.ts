@@ -25,6 +25,21 @@ const commit = (subject: string, sha = 'abc1234'): Evidence => ({
 });
 
 describe('describeWork', () => {
+  it('uses the note the user typed on a timer run', () => {
+    const timer: Evidence = {
+      kind: 'timer',
+      at: AT,
+      detail: 'timer you ran 09:00-10:00',
+      summary: 'Whiteboard session',
+    };
+    const text = describeWork({
+      group: { ...group({ issueKey: 'FIP-1', evidence: [timer] }), blocks: [] },
+      config: FIP,
+    });
+
+    expect(text).toBe('Whiteboard session');
+  });
+
   it('prefers commit subjects, which the user already wrote', () => {
     const text = describeWork({
       group: group({

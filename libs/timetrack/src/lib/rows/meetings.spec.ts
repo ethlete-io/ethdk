@@ -147,6 +147,14 @@ describe('pickCandidate', () => {
     expect(pick({ event: inDiscord, call: call({ appId: 'com.hnc.Discord' }) })?.match).toBe('likely');
   });
 
+  it('reads a Teams or Webex link as its own service, though its path says meet', () => {
+    const inTeams = meeting({ conferenceUrl: 'https://teams.microsoft.com/l/meetup-join/19%3ameeting_abc' });
+    const inWebex = meeting({ conferenceUrl: 'https://acme.webex.com/meet/jane.doe' });
+
+    expect(pick({ event: inTeams, call: call({ appId: 'com.microsoft.teams2' }) })?.match).toBe('likely');
+    expect(pick({ event: inWebex, call: call({ appId: 'com.cisco.webexmeetingsapp' }) })?.match).toBe('likely');
+  });
+
   it('rules nothing out for a call whose application names no service at all', () => {
     expect(pick({ call: call({ appId: 'org.mozilla.firefox' }) })?.match).toBe('likely');
   });

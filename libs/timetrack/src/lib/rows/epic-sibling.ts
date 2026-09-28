@@ -201,7 +201,13 @@ export const epicQuestionOf = (options: {
 
     if (!repoPath || !proposal.issueKey) return [];
 
-    return [...(branches.get(repoPath) ?? [])].flatMap((branch) => {
+    const seen = [...(branches.get(repoPath) ?? [])];
+    const naming = seen.filter(
+      (branch) => parseBranch({ branch: stripRefPrefix(branch), config }).issueKey === proposal.issueKey,
+    );
+    const booked = naming.length ? naming : seen.length === 1 ? seen : [];
+
+    return booked.flatMap((branch) => {
       const slug = branchSlugOf({ branch, config });
 
       return slug && slugs.has(slug) ? [{ repoPath, branch, issueKey: proposal.issueKey }] : [];

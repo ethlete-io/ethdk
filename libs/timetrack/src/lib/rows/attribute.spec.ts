@@ -1,7 +1,7 @@
 import { resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { describe, expect, it } from 'vitest';
 import { ActivityBlock } from '../model/block';
-import { IssueActivity, attribute } from './attribute';
+import { IssueActivity, attribute, issueKeyInText } from './attribute';
 import { TimetrackProjectLink } from '../model/project-link';
 import { RecurringPattern } from '../model/recurrence';
 import { AttributionRule } from '../model/attribution';
@@ -848,5 +848,14 @@ describe('attribute — a project link guards the coincidence rungs', () => {
     const result = attribute({ block: block(FRONTEND), config: FIFAGG_CONFIG, activity: [view('FIP-2867')] });
 
     expect(result.issueKey).toBe('FIP-2867');
+  });
+});
+
+describe('issueKeyInText', () => {
+  const config = resolveGitFlowConfig({ keyPrefixes: ['FIP'] });
+
+  it('reads a known key that follows a key-shaped word of another project', () => {
+    expect(issueKeyInText({ text: 'UTF-8 fix for FIP-12', config })).toBe('FIP-12');
+    expect(issueKeyInText({ text: 'SCRUM-2 / FIP-12', config })).toBe('FIP-12');
   });
 });

@@ -208,6 +208,17 @@ describe('epicQuestionOf', () => {
     ]);
   });
 
+  it("never pairs a row's issue with another branch its checkout showed that day", () => {
+    const keyed = block('/dev/specs', 'feature/ABC-1-invoice-export');
+    const question = ask({
+      blocks: [FRONTEND_BLOCK, keyed, SPECS_BLOCK],
+      unattributed: [group([FRONTEND_BLOCK]), group([SPECS_BLOCK])],
+      proposals: [proposal('/dev/specs', 'ABC-1')],
+    });
+
+    expect(question.candidates).toEqual([]);
+  });
+
   it('claims every key a row books and every key a rule names', () => {
     const question = ask({
       proposals: [proposal('/dev/specs', 'ABC-12623'), proposal('/dev/other', 'ABC-77')],

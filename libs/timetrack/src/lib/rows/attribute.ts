@@ -124,13 +124,11 @@ export const issueKeyInText = (options: { text: string; config: GitFlowConfig })
 
   if (config.keyPrefixes.length === 0) return undefined;
 
-  const match = new RegExp(config.keyPattern).exec(text);
+  for (const [key] of text.matchAll(new RegExp(config.keyPattern, 'g'))) {
+    if (config.keyPrefixes.includes(key.slice(0, key.indexOf('-')))) return key;
+  }
 
-  if (!match) return undefined;
-
-  const key = match[0];
-
-  return config.keyPrefixes.includes(key.slice(0, key.indexOf('-'))) ? key : undefined;
+  return undefined;
 };
 
 const resolveBranch = (options: {
