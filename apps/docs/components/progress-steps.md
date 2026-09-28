@@ -152,10 +152,14 @@ The step in the `current` state carries `aria-current="step"`, and every other s
 `aria-current`, so a screen reader announces where the user is in the sequence. Keep exactly one step
 `current` at a time.
 
+A resolved step also names its state in visually hidden text after the label - "Payment, Failed" -
+because its icon is decorative and the outcome must not rest on color. The text comes from
+`provideProgressStepLabels({ complete, success, warning, error })`; `current` and `upcoming` add none.
+
 A step written as an `<a>` or `<button>` is keyboard-reachable and focus-ringed by virtue of being a
 real link or button; nothing is layered on top of it, so its accessible name is the content you
 projected, and a `disabled` button or `aria-disabled` link is inert exactly as it would be anywhere
-else. A description projected into such a step is part of that name - "Payment, Card ending 4242" -
+else. The state text and a projected description are part of that name - "Payment, Completed, Card ending 4242" -
 which usually reads well, but keep it short, and give the step an explicit `aria-label` if it does
 not.
 

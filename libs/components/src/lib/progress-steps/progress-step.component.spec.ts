@@ -5,6 +5,7 @@ import '../../test-helpers';
 import { PROGRESS_STEPS_IMPORTS } from './progress-steps.imports';
 import { ProgressStepComponent, ProgressStepState } from './progress-step.component';
 import { TEST_SEMANTIC_COLOR_THEMES } from '../testing/color-themes';
+import { provideProgressStepLabels } from './progress-step-labels';
 
 @Component({
   selector: 'et-test-progress-step-host',
@@ -88,6 +89,50 @@ describe('ProgressStepComponent', () => {
     expect(host.querySelector('.et-progress-step-marker-number')).toBeNull();
     expect(host.querySelector(`.et-icon--${iconName}`)).not.toBeNull();
     expect((fixture.componentInstance.step()?.effectiveColor() as ColorTheme)?.name).toBe(themeName);
+  });
+
+  it.each([
+    ['complete', 'Completed'],
+    ['success', 'Succeeded'],
+    ['warning', 'Warning'],
+    ['error', 'Failed'],
+  ] as const)('names the %s state in text, not only through its icon', (state, label) => {
+    TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4(TEST_SEMANTIC_COLOR_THEMES)] });
+
+    const fixture = TestBed.createComponent(ProgressStepHostComponent);
+    fixture.componentInstance.state.set(state);
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement.querySelector('et-progress-step') as HTMLElement;
+
+    expect(host.querySelector('.et-progress-step-state')?.textContent?.trim()).toBe(label);
+    expect(host.querySelector('.et-progress-step-state')?.closest('[aria-hidden="true"]')).toBeNull();
+  });
+
+  it('adds no state text for the current and upcoming states', () => {
+    const fixture = TestBed.createComponent(ProgressStepHostComponent);
+
+    for (const state of ['upcoming', 'current'] as const) {
+      fixture.componentInstance.state.set(state);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.et-progress-step-state')).toBeNull();
+    }
+  });
+
+  it('takes the state text from the provided labels', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideColorThemesWithTailwind4(TEST_SEMANTIC_COLOR_THEMES),
+        provideProgressStepLabels({ error: 'Fehlgeschlagen' }),
+      ],
+    });
+
+    const fixture = TestBed.createComponent(ProgressStepHostComponent);
+    fixture.componentInstance.state.set('error');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.et-progress-step-state')?.textContent?.trim()).toBe('Fehlgeschlagen');
   });
 
   it('drops back to the surrounding theme when an outcome is cleared', () => {

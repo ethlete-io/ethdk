@@ -9,5 +9,9 @@
 <span class="et-progress-step-text">
   <span class="et-progress-step-label"><ng-content /></span>
 
+  @if (stateLabel(); as label) {
+    <span class="et-progress-step-state">{{ label }}</span>
+  }
+
   <ng-content select="[etProgressStepDescription]" />
 </span>

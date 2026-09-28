@@ -18,6 +18,7 @@ import {
   TRIANGLE_EXCLAMATION_ICON,
   provideIcons,
 } from '../icon';
+import { injectProgressStepLabels } from './progress-step-labels';
 
 export const PROGRESS_STEP_STATES = {
   COMPLETE: 'complete',
@@ -79,10 +80,18 @@ const STATE_ICONS: Partial<Record<ProgressStepState, RegisteredIconName>> = {
 export class ProgressStepComponent {
   private provideColor = inject(ProvideColorDirective);
   private injector = inject(Injector);
+  private labels = injectProgressStepLabels();
 
   public state = input<ProgressStepState>(PROGRESS_STEP_STATES.UPCOMING);
 
   protected markerIcon = computed(() => STATE_ICONS[this.state()] ?? null);
+  protected stateLabel = computed(() => {
+    const state = this.state();
+
+    return state === PROGRESS_STEP_STATES.CURRENT || state === PROGRESS_STEP_STATES.UPCOMING
+      ? null
+      : this.labels()[state];
+  });
   protected ariaCurrent = computed(() => (this.state() === PROGRESS_STEP_STATES.CURRENT ? 'step' : null));
 
   constructor() {
