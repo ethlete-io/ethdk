@@ -27,6 +27,7 @@ import {
   isNamedRow,
 } from './model';
 import { isManualRow } from './edits';
+import { withoutEndedRestPins } from './end-call';
 import { mayAutoWrite, rowFieldSourceOf, storedSourceOf } from '../model/field-source';
 
 /** What the engine offered for one band: a proposal, or a band nothing could name. */
@@ -235,6 +236,7 @@ const leftoverRows = (options: {
           durationMs: spanMs(window),
           observedMs: sharedObservedMs({ source, window }),
           stretches: clipStretches(source.stretches, window),
+          confidence: 'weak',
           state: 'suggested',
         }),
       );
@@ -381,7 +383,7 @@ export const reviewDay = (options: {
   /** The standing rules, so a row the reviewer built still follows the one that covers its checkout. */
   rules?: readonly AttributionRule[];
 }): DayReview => {
-  const edits = options.edits ?? EMPTY_DAY_REVIEW_EDITS;
+  const edits = withoutEndedRestPins(options.edits ?? EMPTY_DAY_REVIEW_EDITS);
   const standIns = options.standIns ?? [];
   const rules = options.rules ?? [];
   const pinnedIds = new Set(edits.pinned.flatMap((row) => [row.id, ...row.replaces]));

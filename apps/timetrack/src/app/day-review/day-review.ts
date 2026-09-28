@@ -42,7 +42,10 @@ import {
   matchAttributionRule,
   callBehindRow,
   callLabel,
+  callRowSnipAt,
   endRowAt,
+  followCallAgain,
+  isEndedCallRow,
   isLiveCallRow,
   meetingBehindRow,
   mergeRows,
@@ -1148,6 +1151,18 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       }),
 
     endRowNow: (row: ReviewedRow) => apply(endRowAt({ edits: edits(), row, at: new Date() })),
+
+    snipAtOf: (row: ReviewedRow) => callRowSnipAt({ row, calls: deterministicRows()?.calls ?? [] }),
+
+    endRowAtSnip: (row: ReviewedRow) =>
+      apply(endRowAt({ edits: edits(), row, at: callRowSnipAt({ row, calls: deterministicRows()?.calls ?? [] }) })),
+
+    isEndedCall: (row: ReviewedRow) => isEndedCallRow({ row, calls: deterministicRows()?.calls ?? [], edits: edits() }),
+
+    followCallAgain: (row: ReviewedRow) =>
+      apply(followCallAgain({ edits: edits(), row, calls: deterministicRows()?.calls ?? [] })),
+
+    endRowAtCut: (move: { row: ReviewedRow; at: Date }) => apply(endRowAt({ edits: edits(), ...move })),
 
     /** Takes a hand-written row off the day. An engine proposal is rejected rather than removed. */
     removeRow: (row: ReviewedRow) => apply(removeManualRow({ edits: edits(), row })),

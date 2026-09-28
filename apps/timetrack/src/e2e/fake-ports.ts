@@ -191,7 +191,9 @@ export const createFakePorts = (): HostPorts => {
     },
 
     events: {
-      eventsBetween$: (from, to) => ok(events.filter((event) => event.at >= from && event.at < to)),
+      // A seeded event dated past the page's clock is one that has not happened yet, as in the real store.
+      eventsBetween$: (from, to) =>
+        ok(events.filter((event) => event.at >= from && event.at < to && event.at.getTime() <= Date.now())),
       append$: (appended: CollectedEvent[]) => {
         appendEvents(appended);
 

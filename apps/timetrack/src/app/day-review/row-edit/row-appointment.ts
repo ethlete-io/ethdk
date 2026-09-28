@@ -102,11 +102,12 @@ export const rowEntryOf = (appointment: Appointment): RowEntry | null => {
 
 // A band a rule excluded is not a weak guess the reviewer has to settle, so it does not take the
 // warning theme. Naming it is the user overruling the rule, and from then on it reads as any row.
+// A pin stores the confidence of the row it was cut from, so a band nothing names reads it as weak.
 const colorTokenOf = (row: ReviewedRow) => {
   if (row.excluded && !row.issueKey) return EXCLUDED_THEME;
   if (isStandInRow(row)) return STAND_IN_THEME;
 
-  return CONFIDENCE_THEME[row.confidence];
+  return CONFIDENCE_THEME[row.issueKey ? row.confidence : 'weak'];
 };
 
 /**

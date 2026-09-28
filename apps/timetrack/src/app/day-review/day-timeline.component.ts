@@ -75,6 +75,10 @@ export type TimelineBoundary = { id: string; before: ReviewedRow; after: Reviewe
 
 export type BoundaryMove = { before: ReviewedRow; after: ReviewedRow; at: Date };
 
+type TimelineCut = { kind: 'cut' | 'seam'; row: ReviewedRow; at: Date };
+
+type LaneCut = TimelineCut & { appointment: Appointment<TimelineEntry>; inlineOffset: number; inlineSize: number };
+
 /** Where a row was dragged to, whether it moved whole or by one end. */
 export type RowReschedule = { row: ReviewedRow; from: Date; to: Date };
 
@@ -310,6 +314,8 @@ type RowDrag = {
                       [attr.data-excluded]="excluded(laid.block.node.appointment) || null"
                       [attr.data-marked]="marks(laid.block.node.appointment) || null"
                       [attr.data-stand-in]="STANDS_IN(laid.block.node.appointment) || null"
+                      [attr.data-growing]="cutPercentOf(laid.block.node.appointment) !== null || null"
+                      [style.--tt-cut-at]="cutPercentOf(laid.block.node.appointment)"
                       [etProvideColor]="laid.block.node.appointment.colorToken ?? 'neutral'"
                       [style.top.%]="laid.block.offset"
                       [style.height.%]="laid.block.span"
@@ -443,6 +449,50 @@ type RowDrag = {
                       >
                     </div>
                   }
+
+                  @for (cut of cutsIn(lane); track cut.row.id) {
+                    @if (cut.kind === 'cut') {
+                      <button
+                        [etProvideColor]="cut.appointment.colorToken ?? 'neutral'"
+                        [style.top.%]="percentOf(cut.at)"
+                        [style.left.%]="cut.inlineOffset"
+                        [style.width.%]="cut.inlineSize"
+                        [attr.data-dragging]="dragging(cut.appointment) || null"
+                        [attr.data-chip-only]="cut.at.getTime() === cut.row.to.getTime() || null"
+                        (pointerdown)="startCut({ event: $event, cut, column })"
+                        (click)="snip(cut.row)"
+                        class="tt-cut"
+                        aria-label="End here"
+                        data-cut
+                        title="Press to end here, drag to move"
+                        type="button"
+                      >
+                        <span class="tt-cut-line"></span>
+                        <span class="tt-cut-nub">✂ {{ CLOCK_OF(cut.at) }}</span>
+                      </button>
+                    } @else {
+                      <div
+                        [etProvideColor]="cut.appointment.colorToken ?? 'neutral'"
+                        [style.top.%]="percentOf(cut.at)"
+                        [style.left.%]="cut.inlineOffset"
+                        [style.width.%]="cut.inlineSize"
+                        class="tt-cut tt-cut--seam"
+                        data-seam
+                      >
+                        <span class="tt-cut-line"></span>
+                        <button
+                          [title]="followTitleOf(cut.row)"
+                          (pointerdown)="$event.stopPropagation()"
+                          (click)="store.followCallAgain(cut.row)"
+                          class="tt-cut-nub"
+                          aria-label="Follow the call again"
+                          type="button"
+                        >
+                          ↺
+                        </button>
+                      </div>
+                    }
+                  }
                 </div>
               }
             </div>
@@ -454,11 +504,126 @@ type RowDrag = {
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS, MENU_IMPORTS, ProvideColorDirective, SCHEDULER_IMPORTS],
   host: { class: 'flex min-h-0 flex-col select-none', '(keydown.escape)': 'clearMarks()' },
+  styles: `
+    [data-lane] [data-kind='row'][data-growing] {
+      border-image: linear-gradient(
+          to bottom,
+          var(--et-theme-color-primary-solid) 0 var(--tt-cut-at),
+          rgb(var(--et-theme-color-primary-rgb) / 0) 100%
+        )
+        1;
+      background: linear-gradient(
+        to bottom,
+        rgb(var(--et-theme-color-primary-rgb) / 0.15) 0 var(--tt-cut-at),
+        rgb(var(--et-theme-color-primary-rgb) / 0) 100%
+      );
+    }
+
+    [data-lane] [data-kind='row'][data-growing]:hover {
+      background: linear-gradient(
+        to bottom,
+        rgb(var(--et-theme-color-primary-rgb) / 0.3) 0 var(--tt-cut-at),
+        rgb(var(--et-theme-color-primary-rgb) / 0) 100%
+      );
+    }
+
+    .tt-cut {
+      position: absolute;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      height: 0.8rem;
+      margin: -0.4rem 0 0;
+      padding: 0;
+      border: 0;
+      background: none;
+      color: inherit;
+      font: inherit;
+      cursor: ns-resize;
+      touch-action: none;
+      outline: none;
+      -webkit-user-select: none;
+      user-select: none;
+      transition: opacity 120ms ease-out;
+    }
+
+    .tt-cut[data-dragging] {
+      opacity: 0;
+    }
+
+    .tt-cut-line {
+      flex-grow: 1;
+      border-top: 1px dashed var(--et-theme-color-ink-solid);
+    }
+
+    .tt-cut[data-chip-only] {
+      pointer-events: none;
+    }
+
+    .tt-cut[data-chip-only] .tt-cut-line {
+      visibility: hidden;
+    }
+
+    .tt-cut[data-chip-only] .tt-cut-nub {
+      pointer-events: auto;
+    }
+
+    .tt-cut:focus-visible .tt-cut-line {
+      border-top-style: solid;
+      border-top-width: 2px;
+    }
+
+    .tt-cut-nub {
+      flex-shrink: 0;
+      margin: 0 0.4rem 0 0;
+      padding: 0 0.4rem;
+      border: 1px solid var(--et-surface-border-solid);
+      border-radius: 0.25rem;
+      background: var(--et-surface-background-solid);
+      color: var(--et-surface-color-muted-solid);
+      font: inherit;
+      font-size: var(--text-small);
+      line-height: 1.6rem;
+      white-space: nowrap;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .tt-cut[data-chip-only] .tt-cut-nub {
+      transform: translateY(calc(-50% - 0.2rem));
+    }
+
+    .tt-cut:hover .tt-cut-nub,
+    .tt-cut-nub:hover {
+      border-color: var(--et-theme-color-ink-solid);
+      color: var(--et-surface-color-solid);
+    }
+
+    .tt-cut:focus-visible .tt-cut-nub,
+    .tt-cut-nub:focus-visible {
+      outline: 2px solid var(--et-theme-color-ink-solid);
+      outline-offset: 2px;
+    }
+
+    .tt-cut--seam {
+      pointer-events: none;
+      cursor: default;
+    }
+
+    .tt-cut--seam .tt-cut-line {
+      opacity: 0.5;
+    }
+
+    .tt-cut--seam .tt-cut-nub {
+      pointer-events: auto;
+      transform: translateY(calc(-50% - 0.2rem));
+    }
+  `,
 })
 export class DayTimelineComponent {
   private destroyRef = inject(DestroyRef);
   private surface = injectRowEditSurface();
-  private store = injectDayReview();
+  protected store = injectDayReview();
   private settings = injectTimetrackSettings();
   private git = injectGitCollector();
 
@@ -503,6 +668,8 @@ export class DayTimelineComponent {
   /** The instant a boundary is being dragged to, until the pointer settles on it. */
   private boundaryDrag = signal<{ boundary: TimelineBoundary; at: Date } | null>(null);
 
+  private cutDragRowId: string | null = null;
+
   /** Whether the press now ending moved a block rather than being a click on it. */
   private hasDragged = false;
 
@@ -519,6 +686,19 @@ export class DayTimelineComponent {
   protected readonly BEHIND_LABEL_OF = behindLabel;
   protected readonly UNBOOKED_OF = unbookedLabel;
   protected readonly STANDS_IN = isStandInAppointment;
+  protected readonly CLOCK_OF = formatClockTime;
+
+  private cuts = computed(() => {
+    const found = new Map<string, TimelineCut>();
+
+    for (const row of this.rows()) {
+      if (this.store.isEndedCall(row)) found.set(row.id, { kind: 'seam', row, at: row.to });
+      else if (row.issueKey && this.store.isLiveCall(row))
+        found.set(row.id, { kind: 'cut', row, at: this.store.snipAtOf(row) });
+    }
+
+    return found;
+  });
 
   /** The day as one lane per checkout. The grid supplies the vertical geometry; the lane the inline. */
   private columnOf = computed(() => worktreeColumnOf(this.git.worktrees()));
@@ -761,6 +941,56 @@ export class DayTimelineComponent {
     return !!lane;
   }
 
+  protected cutsIn(lane: DayLane): LaneCut[] {
+    const cuts = this.cuts();
+
+    return lane.blocks.flatMap((laid) => {
+      const appointment = laid.block.node.appointment;
+      const row = this.rowOf(appointment);
+      const cut = row && cuts.get(row.id);
+      const span = laid.segments.at(-1) ?? laid;
+
+      return cut ? [{ ...cut, appointment, inlineOffset: span.inlineOffset, inlineSize: span.inlineSize }] : [];
+    });
+  }
+
+  protected cutPercentOf(appointment: Appointment<TimelineEntry>) {
+    const row = this.rowOf(appointment);
+    const cut = row && this.cuts().get(row.id);
+    const span = row ? row.to.getTime() - row.from.getTime() : 0;
+
+    if (!row || cut?.kind !== 'cut' || span <= 0 || this.dragging(appointment)) return null;
+
+    return `${((cut.at.getTime() - row.from.getTime()) / span) * 100}%`;
+  }
+
+  protected followTitleOf(row: ReviewedRow) {
+    return `Let ${row.issueKey ?? 'this row'} follow the call again`;
+  }
+
+  protected snip(row: ReviewedRow) {
+    if (this.hasDragged) return;
+
+    this.store.endRowAtSnip(row);
+  }
+
+  protected startCut(options: { event: PointerEvent; cut: LaneCut; column: HTMLElement }) {
+    const { event, cut, column } = options;
+
+    event.stopPropagation();
+    this.hasDragged = false;
+
+    if (event.button !== 0) return;
+
+    this.cutDragRowId = cut.row.id;
+    this.trackRowDrag({
+      event,
+      appointment: cut.appointment,
+      column,
+      drag: { row: cut.row, mode: 'resize-end', grabMs: cut.at.getTime() },
+    });
+  }
+
   protected boundariesIn(lane: DayLane) {
     return this.boundariesByLane().get(lane.key) ?? [];
   }
@@ -934,42 +1164,21 @@ export class DayTimelineComponent {
     // a press on a block must not also draw a fresh range down the column underneath it
     event.stopPropagation();
     this.hasDragged = false;
+    this.cutDragRowId = null;
 
     if (entry?.kind !== 'row' || event.button !== 0) return;
     if (entry.row.excluded) return this.startDraw({ event, column, lane });
 
-    const scheduler = this.scheduler();
-    const drag: RowDrag = {
-      row: entry.row,
-      mode: this.modeAt({ event, appointment }),
-      grabMs: this.instantAt({ column, clientY: event.clientY }).getTime(),
-    };
-
-    const track = (gesture: DragGestureEvent) => {
-      switch (gesture.type) {
-        case 'start':
-        case 'move': {
-          this.hasDragged = true;
-
-          if (!scheduler.appointmentDrag()) scheduler.beginAppointmentDrag(appointment, drag.mode);
-
-          const at = this.instantAt({ column, clientY: gesture.data.clientY });
-          const { from, to } = this.draggedRange(drag, at);
-
-          return scheduler.updateAppointmentDrag(from, to);
-        }
-        case 'end':
-          return scheduler.commitAppointmentDrag();
-        // A tap moved nothing, and a cancelled gesture is a position nobody chose.
-        case 'tapped':
-        case 'cancelled':
-          return scheduler.clearAppointmentDrag();
-      }
-    };
-
-    dragGestureFrom(event, event.currentTarget as HTMLElement)
-      .pipe(tap(track), takeUntilDestroyed(this.destroyRef))
-      .subscribe();
+    this.trackRowDrag({
+      event,
+      appointment,
+      column,
+      drag: {
+        row: entry.row,
+        mode: this.modeAt({ event, appointment }),
+        grabMs: this.instantAt({ column, clientY: event.clientY }).getTime(),
+      },
+    });
   }
 
   /**
@@ -1098,9 +1307,50 @@ export class DayTimelineComponent {
   protected reschedule(move: SchedulerAppointmentReschedule<TimelineEntry>) {
     const entry = move.previous.extra;
 
-    if (entry?.kind === 'row') {
-      this.rowReschedule.emit({ row: entry.row, from: move.appointment.start, to: move.appointment.end });
-    }
+    const cutDrag = this.cutDragRowId;
+
+    this.cutDragRowId = null;
+
+    if (entry?.kind !== 'row') return;
+    if (entry.row.id === cutDrag) return this.store.endRowAtCut({ row: entry.row, at: move.appointment.end });
+
+    this.rowReschedule.emit({ row: entry.row, from: move.appointment.start, to: move.appointment.end });
+  }
+
+  private trackRowDrag(options: {
+    event: PointerEvent;
+    appointment: Appointment<TimelineEntry>;
+    column: HTMLElement;
+    drag: RowDrag;
+  }) {
+    const { event, appointment, column, drag } = options;
+    const scheduler = this.scheduler();
+
+    const track = (gesture: DragGestureEvent) => {
+      switch (gesture.type) {
+        case 'start':
+        case 'move': {
+          this.hasDragged = true;
+
+          if (!scheduler.appointmentDrag()) scheduler.beginAppointmentDrag(appointment, drag.mode);
+
+          const at = this.instantAt({ column, clientY: gesture.data.clientY });
+          const { from, to } = this.draggedRange(drag, at);
+
+          return scheduler.updateAppointmentDrag(from, to);
+        }
+        case 'end':
+          return scheduler.commitAppointmentDrag();
+        // A tap moved nothing, and a cancelled gesture is a position nobody chose.
+        case 'tapped':
+        case 'cancelled':
+          return scheduler.clearAppointmentDrag();
+      }
+    };
+
+    dragGestureFrom(event, event.currentTarget as HTMLElement)
+      .pipe(tap(track), takeUntilDestroyed(this.destroyRef))
+      .subscribe();
   }
 
   private standInNameOf(row: ReviewedRow) {

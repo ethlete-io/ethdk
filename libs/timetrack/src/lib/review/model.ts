@@ -63,6 +63,11 @@ export type PinnedRow = {
    * once an end is false, a later drag at the other end never sets it back to true.
    */
   tracksTo?: boolean;
+  /**
+   * Where the row ended before `endRowAt` cut it off its call, in epoch milliseconds: only such an end
+   * is handed back by `followCallAgain`, and never shorter than this. A later edit of the row drops it.
+   */
+  snippedFromMs?: number;
   description: string;
   confidence: Confidence;
   evidence: Evidence[];
