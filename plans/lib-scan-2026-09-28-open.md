@@ -29,9 +29,12 @@ own open lines; this file lists what needs a user decision and what is still que
 - date-time: an empty time picker starts from the current time, so on the runtime's own DST day a
   pick in the skipped hour still lands an hour late.
 
+- table: `[error]="false"` now means no error (fc8221e51). The docs and a spec treated `false`
+  as an error on purpose before; `0` and `''` still count. Revert `isError` there for the old
+  behaviour.
+
 ## Queue
 
-- `table-features.md` Mediums: start after the `table-core.md` agent commits.
 - select: mark touched when an outside click or focus leave closes the panel (the cascader got
   this in b0205c425). Start after the `select.md` agent commits.
 - `apps/docs/components/text-inputs.md`: phone `defaultCountry`/`preferredCountries` are
