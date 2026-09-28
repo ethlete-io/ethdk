@@ -1,4 +1,5 @@
 import { Observable, concatMap, from, map, of, reduce } from 'rxjs';
+import { projectKeyOf } from '../ticket/project';
 import { TimetrackTransport } from '../transport/ports';
 import { JiraCredentials } from './client';
 import { JiraIssueFields, JiraIssueResource, searchJiraIssues$ } from './search';
@@ -19,6 +20,10 @@ export type JiraIssue = {
 
 /** Jira rejects an over-long JQL string, and a day's keys can be many. */
 const KEYS_PER_REQUEST = 50;
+
+const issueKeysOf = (keys: readonly string[]) => [
+  ...new Set(keys.map((key) => key.trim().toUpperCase()).filter((key) => projectKeyOf(key))),
+];
 
 const chunk = <T>(items: T[], size: number) =>
   Array.from({ length: Math.ceil(items.length / size) }, (_, index) => items.slice(index * size, (index + 1) * size));
@@ -63,7 +68,7 @@ export const fetchJiraIssues$ = (options: {
   keys: string[];
   subjectField?: string;
 }): Observable<JiraIssue[]> => {
-  const keys = [...new Set(options.keys.map((key) => key.trim().toUpperCase()).filter(Boolean))];
+  const keys = issueKeysOf(options.keys);
 
   if (keys.length === 0) return of([]);
 
@@ -140,7 +145,7 @@ export const fetchJiraIssueTouchedAt$ = (options: {
   credentials: JiraCredentials;
   keys: string[];
 }): Observable<Map<string, Date>> => {
-  const keys = [...new Set(options.keys.map((key) => key.trim().toUpperCase()).filter(Boolean))];
+  const keys = issueKeysOf(options.keys);
 
   if (keys.length === 0) return of(new Map<string, Date>());
 

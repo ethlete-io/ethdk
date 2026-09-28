@@ -10,16 +10,20 @@ export type JiraField = {
   custom: boolean;
   /** The schema type, such as `string`. Absent for a field the instance reports without one. */
   type?: string;
+  /** The custom field type, such as `com.atlassian.jira.plugin.system.customfieldtypes:textarea`. */
+  customType?: string;
 };
 
 /** The schema types a branch subject can be written to. Anything else yields an object, not a string. */
 export const JIRA_TEXT_FIELD_TYPES: readonly string[] = ['string', 'any'];
 
+const isRichText = (field: JiraField) => field.customType?.endsWith(':textarea') ?? false;
+
 type JiraFieldResource = {
   id?: string;
   name?: string;
   custom?: boolean;
-  schema?: { type?: string };
+  schema?: { type?: string; custom?: string };
 };
 
 const toField = (resource: JiraFieldResource): JiraField[] =>
@@ -30,6 +34,7 @@ const toField = (resource: JiraFieldResource): JiraField[] =>
           name: resource.name ?? resource.id,
           custom: resource.custom ?? false,
           type: resource.schema?.type,
+          customType: resource.schema?.custom,
         },
       ]
     : [];
@@ -60,5 +65,7 @@ export const fetchJiraFields$ = (options: {
  */
 export const jiraSubjectFieldCandidates = (fields: readonly JiraField[]) =>
   fields
-    .filter((field) => field.custom && (!field.type || JIRA_TEXT_FIELD_TYPES.includes(field.type)))
+    .filter(
+      (field) => field.custom && !isRichText(field) && (!field.type || JIRA_TEXT_FIELD_TYPES.includes(field.type)),
+    )
     .sort((a, b) => a.name.localeCompare(b.name));

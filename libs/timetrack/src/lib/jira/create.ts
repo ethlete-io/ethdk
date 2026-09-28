@@ -1,4 +1,4 @@
-import { Observable, map, of, switchMap } from 'rxjs';
+import { Observable, catchError, map, of, switchMap } from 'rxjs';
 import { TimetrackTransport } from '../transport/ports';
 import { adfDocument } from './adf';
 import { JiraCredentials, jiraRequest$ } from './client';
@@ -30,6 +30,8 @@ export type JiraIssueInput = {
 export type JiraCreatedIssue = {
   id: string;
   key: string;
+  /** Why the link to `parentKey` failed. The issue exists regardless, so a retry must not file it again. */
+  linkError?: string;
 };
 
 type JiraCreatedIssueResource = {
@@ -108,7 +110,12 @@ export const createJiraIssue$ = (options: {
             inwardKey: created.key,
             outwardKey: input.parentKey,
             linkType: input.parentLinkType ?? 'Relates',
-          }).pipe(map(() => created))
+          }).pipe(
+            map(() => created),
+            catchError((error: unknown) =>
+              of({ ...created, linkError: error instanceof Error ? error.message : String(error) }),
+            ),
+          )
         : of(created),
     ),
   );

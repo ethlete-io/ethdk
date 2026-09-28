@@ -130,4 +130,30 @@ describe('createJiraIssue$', () => {
     });
     expect(seen).toHaveBeenCalledWith({ id: '1', key: 'FIP-9' });
   });
+
+  it('reads back the created issue with the link error when only the link fails', () => {
+    const requests: TimetrackRequest[] = [];
+    const transport: TimetrackTransport = {
+      request$: vi.fn((request: TimetrackRequest) => {
+        requests.push(request);
+
+        return of(
+          requests.length === 1
+            ? { status: 201, headers: {}, body: { id: '1', key: 'FIP-9' } }
+            : { status: 404, headers: {}, body: { errorMessages: ['No link type named Relates.'] } },
+        ) as never;
+      }),
+    };
+    const seen = vi.fn();
+    const failed = vi.fn();
+
+    createJiraIssue$({
+      transport,
+      credentials: CREDENTIALS,
+      input: { ...INPUT, parentKey: 'FIP-1', parenting: 'issue-link', parentLinkType: 'Relates' },
+    }).subscribe({ next: seen, error: failed });
+
+    expect(failed).not.toHaveBeenCalled();
+    expect(seen).toHaveBeenCalledWith({ id: '1', key: 'FIP-9', linkError: expect.any(String) });
+  });
 });

@@ -23,7 +23,12 @@ describe('fetchJiraFields$', () => {
   it('reads every field the instance defines, and drops one answered without an id', () => {
     const { transport, requests } = transportFor([
       { id: 'summary', name: 'Summary', schema: { type: 'string' } },
-      { id: 'customfield_1', name: 'Branch subject', custom: true, schema: { type: 'string' } },
+      {
+        id: 'customfield_1',
+        name: 'Branch subject',
+        custom: true,
+        schema: { type: 'string', custom: 'com.atlassian.jira.plugin.system.customfieldtypes:textfield' },
+      },
       { name: 'no id' },
     ]);
     const found: JiraField[][] = [];
@@ -33,7 +38,13 @@ describe('fetchJiraFields$', () => {
     expect(requests[0]?.url).toBe('https://team.atlassian.net/rest/api/3/field');
     expect(found[0]).toEqual([
       { id: 'summary', name: 'Summary', custom: false, type: 'string' },
-      { id: 'customfield_1', name: 'Branch subject', custom: true, type: 'string' },
+      {
+        id: 'customfield_1',
+        name: 'Branch subject',
+        custom: true,
+        type: 'string',
+        customType: 'com.atlassian.jira.plugin.system.customfieldtypes:textfield',
+      },
     ]);
   });
 });
@@ -45,6 +56,13 @@ describe('jiraSubjectFieldCandidates', () => {
       { id: 'customfield_2', name: 'Zebra', custom: true, type: 'string' },
       { id: 'customfield_1', name: 'Branch subject', custom: true },
       { id: 'customfield_3', name: 'Sprint', custom: true, type: 'array' },
+      {
+        id: 'customfield_4',
+        name: 'Notes',
+        custom: true,
+        type: 'string',
+        customType: 'com.atlassian.jira.plugin.system.customfieldtypes:textarea',
+      },
     ];
 
     expect(jiraSubjectFieldCandidates(fields).map((field) => field.id)).toEqual(['customfield_1', 'customfield_2']);

@@ -73,6 +73,15 @@ describe('fetchJiraIssues$', () => {
     expect(decodeURIComponent(requests[0]?.url ?? '')).toContain('key in (FIP-2177)');
   });
 
+  it('never puts a key that holds jql syntax into the query', () => {
+    const { transport, requests } = issuesTransport([STORY]);
+
+    fetchJiraIssues$({ transport, credentials: CREDENTIALS, keys: ['X-1) OR project = Y', 'FIP-2177'] }).subscribe();
+
+    expect(requests).toHaveLength(1);
+    expect(decodeURIComponent(requests[0]?.url ?? '')).toContain('key in (FIP-2177)');
+  });
+
   it('asks for nothing when there are no keys', () => {
     const { transport, requests } = issuesTransport([]);
     const seen = vi.fn();
@@ -224,6 +233,14 @@ describe('fetchJiraIssueTouchedAt$', () => {
     fetchJiraIssueTouchedAt$({ transport, credentials: CREDENTIALS, keys: ['FIP-2177'] }).subscribe(seen);
 
     expect(seen.mock.calls[0]?.[0]).toEqual(new Map());
+  });
+
+  it('asks nothing for a key that holds jql syntax', () => {
+    const { transport, requests } = issuesTransport([STORY]);
+
+    fetchJiraIssueTouchedAt$({ transport, credentials: CREDENTIALS, keys: ['X-1) OR project = Y'] }).subscribe();
+
+    expect(requests).toHaveLength(0);
   });
 
   it('asks nothing when there are no keys', () => {
