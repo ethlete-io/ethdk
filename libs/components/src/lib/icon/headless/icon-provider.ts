@@ -63,7 +63,7 @@ const buildIconMap = (source: string, icons: IconDefinition[]) => {
   for (const def of icons) {
     const key = iconRegistryKey(def.name, def.variant);
 
-    if (map[key]) {
+    if (Object.hasOwn(map, key)) {
       throw new RuntimeError(
         ICON_ERROR_CODES.DUPLICATE_ICON_NAME,
         `[${source}] Icon with name "${def.name}"${

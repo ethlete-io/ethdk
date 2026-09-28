@@ -127,9 +127,29 @@ describe('IconDirective', () => {
       expect(String(handleError.mock.calls[0]?.[0])).toContain(`ET${ICON_ERROR_CODES.ICON_NOT_FOUND}`);
       expect(fixture.nativeElement.querySelector('svg')).toBeNull();
     });
+
+    it.each(['constructor', 'toString', '__proto__'])('reports %s as not found and names it', (name) => {
+      const handleError = vi.fn();
+      TestBed.configureTestingModule({
+        imports: [IconTestHost],
+        providers: [provideIcons(VALID_ICON), { provide: ErrorHandler, useValue: { handleError } }],
+      });
+      const fixture = TestBed.createComponent(IconTestHost);
+      fixture.componentInstance.name = name;
+      expect(() => fixture.detectChanges()).not.toThrow();
+      expect(handleError).toHaveBeenCalledTimes(1);
+      const message = String(handleError.mock.calls[0]?.[0]);
+      expect(message).toContain(`ET${ICON_ERROR_CODES.ICON_NOT_FOUND}`);
+      expect(message).toContain(`Icon "${name}"`);
+      expect(fixture.nativeElement.querySelector('svg')).toBeNull();
+    });
   });
 
   describe('provideIcons', () => {
+    it('accepts an icon named after an Object.prototype member', () => {
+      expect(() => provideIcons({ ...VALID_ICON, name: 'constructor' })).not.toThrow();
+    });
+
     it('throws when two icons share the same name', () => {
       const duplicate = { ...VALID_ICON };
       expect(() => provideIcons(VALID_ICON, duplicate)).toThrow(`ET${ICON_ERROR_CODES.DUPLICATE_ICON_NAME}`);

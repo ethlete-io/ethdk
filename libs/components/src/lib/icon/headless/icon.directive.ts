@@ -73,10 +73,8 @@ export class IconDirective {
       : [iconRegistryKey(name), iconRegistryKey(name, DEFAULT_ICON_VARIANT)];
 
     for (const key of candidateKeys) {
-      const icon = this.registry[key];
-
-      if (icon) {
-        return icon;
+      if (Object.hasOwn(this.registry, key)) {
+        return this.registry[key];
       }
     }
 
