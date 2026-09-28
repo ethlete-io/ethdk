@@ -1480,6 +1480,19 @@ a header reorder, and because widths are keyed by column they travel with a colu
 when it's moved. On touch pointers the grip's hit area widens so it's grabbable with
 a finger.
 
+The grip is also a keyboard control: a focusable `role="separator"` (the
+[window splitter](https://www.w3.org/WAI/ARIA/apg/patterns/windowsplitter/) pattern) with its
+own Tab stop after the header's other controls, named by the `resizeColumn` label
+(`Resize Name`). `aria-valuenow`, `aria-valuemin` and `aria-valuemax` carry the column's width
+and its range in px. A key press takes the same path as a drag, so the width lands in
+`state()` the same way.
+
+| Key                   | Does                                               |
+| --------------------- | -------------------------------------------------- |
+| `→` / `←`             | widen / narrow the column by 10px (swapped in RTL) |
+| `Shift+→` / `Shift+←` | the same by 50px                                   |
+| `Home` / `End`        | the column's `minWidth` / the table's own width    |
+
 ## Virtualization
 
 For long lists, import `TABLE_VIRTUAL_SCROLL_IMPORTS` and drop
@@ -1774,6 +1787,11 @@ Two things, both deliberate:
   [`etTableCellErrorTooltip`](#per-cell-states) leaves the Tab order too; `Enter` on its cell drills
   into it when the cell holds no other control, which opens the tooltip.
 
+### The header
+
+The header row stays outside the arrow order: its sort buttons, filter and column-menu
+triggers and [resize grips](#resizable-columns) keep a Tab stop each, before the body's one.
+
 ### Column indexes
 
 `activeCell()` and `focusCell()` address a cell by absolute row index and a column index that
@@ -2002,7 +2020,7 @@ export class UsersComponent {
 Every string the table and its features render or announce lives in one **label set**
 (`TableLabels`) - the empty and error text, the expander and selection `aria-label`s, the
 sort announcement, the filter menu's search placeholder / "no options" / "Load more", the
-column menu's entries, and the column chooser's trigger. No feature carries wording of its
+column menu's entries, the resize grip's name, and the column chooser's trigger. No feature carries wording of its
 own, so localizing the table localizes all of it.
 
 ```ts

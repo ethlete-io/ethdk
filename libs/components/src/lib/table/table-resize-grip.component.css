@@ -39,6 +39,17 @@
     }
   }
 
+  .et-table-resize-grip:focus-visible {
+    outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+    outline-offset: -2px;
+  }
+
+  .et-table-resize-grip:focus-visible::after {
+    inset-block: 0;
+    inline-size: 2px;
+    background: var(--et-theme-color-primary-solid, currentColor);
+  }
+
   /* Fingers can't hit a 9px strip: widen the hit area inward on coarse pointers (the header cell clips
      overflow, so it can't extend past the trailing edge) and thicken the hairline so it reads as a grip. */
   @media (pointer: coarse) {

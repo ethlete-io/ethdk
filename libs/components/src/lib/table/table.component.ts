@@ -2008,8 +2008,8 @@ export class TableComponent<T> implements TableFeatureHost {
    * strange state. Stored in `state()` so it round-trips. Part of the feature contract.
    */
   public setColumnWidth(key: string, width: number) {
-    const max = this.scrollElement().clientWidth || Number.MAX_SAFE_INTEGER;
-    const clamped = Math.min(max, Math.max(this.minWidthOf(key), Math.round(width)));
+    const { min, max } = this.columnWidthBounds(key);
+    const clamped = Math.min(max, Math.max(min, Math.round(width)));
 
     this.columnWidths.update((widths) => ({ ...widths, [key]: clamped }));
   }
@@ -2021,6 +2021,11 @@ export class TableComponent<T> implements TableFeatureHost {
    */
   public minWidthOf(key: string) {
     return this.columnsByKey().get(key)?.minWidth ?? MIN_COLUMN_WIDTH;
+  }
+
+  /** The range {@link setColumnWidth} clamps a column's width to, in px. Part of the feature contract. */
+  public columnWidthBounds(key: string) {
+    return { min: this.minWidthOf(key), max: this.scrollElement().clientWidth || Number.POSITIVE_INFINITY };
   }
 
   /**

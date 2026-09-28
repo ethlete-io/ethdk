@@ -276,6 +276,42 @@ test.describe('table / keyboard', () => {
     await expect(joinedCell).toBeFocused();
   });
 
+  test('a cell control is named from the row value, not from the template context', async ({ page }) => {
+    const root = await openStory(page, KEYBOARD_NAV_STORY_ID, { args: { columnMenu: false } });
+
+    await expect(cell(root, 0, 'joined').locator('button')).toHaveAccessibleName(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  test('a resize grip is a named separator that the arrow keys, Home and End resize', async ({ page }) => {
+    const root = await openStory(page, RESIZABLE_STORY_ID);
+    const grip = resizeGrip(root, 'name');
+    const width = async () => (await boxOf(headerCell(root, 'name'))).width;
+
+    await tabUntilFocused(page, grip);
+    await expectFocusVisible(grip);
+    await expect(grip).toHaveRole('separator');
+    await expect(grip).toHaveAccessibleName('Resize Name');
+    await expect(grip).toHaveAttribute('aria-orientation', 'vertical');
+
+    const before = await width();
+    await expect(grip).toHaveAttribute('aria-valuenow', String(Math.round(before)));
+
+    await pressKey(page, 'ArrowRight');
+    await pressKey(page, 'ArrowRight');
+    await expect.poll(width).toBeCloseTo(before + 20, 0);
+
+    await pressKey(page, 'Shift+ArrowRight');
+    await expect.poll(width).toBeCloseTo(before + 70, 0);
+    await expect(grip).toHaveAttribute('aria-valuenow', String(Math.round(before) + 70));
+
+    await pressKey(page, 'Home');
+    await expect.poll(width).toBeCloseTo(Number(await grip.getAttribute('aria-valuemin')), 0);
+
+    await pressKey(page, 'End');
+    await expect.poll(width).toBeCloseTo(Number(await grip.getAttribute('aria-valuemax')), 0);
+    await expect(grip).toBeFocused();
+  });
+
   test('Enter on a cell holding a control drills in without firing rowClick', async ({ page }) => {
     const root = await openStory(page, KEYBOARD_NAV_STORY_ID, {
       args: { columnMenu: false, rowInteractive: true },

@@ -215,7 +215,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
           <!-- A cell with a control in it, so Enter has somewhere to drill into and Escape somewhere to
                come back from. The button is the cell's, not the row's: the arrows move between cells and
                only Enter hands the keyboard over to what a cell holds. -->
-          <ng-template [etTableCell]="columns().joined" let-value>
+          <ng-template [etTableCell]="columns().joined" let-value="value">
             <button (click)="lastClicked.set(null)" type="button" et-text-button>{{ value }}</button>
           </ng-template>
         }

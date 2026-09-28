@@ -595,6 +595,8 @@ export type TableFeatureHost = {
   renderedColumnWidth(key: string): number;
   /** Override a column's width in px. The table clamps it to a usable range and stores it in `state()`. */
   setColumnWidth(key: string, width: number): void;
+  /** The range {@link setColumnWidth} clamps a column's width to, in px: its floor and the table's own width (`Infinity` before the table has laid out). */
+  columnWidthBounds(key: string): { min: number; max: number };
   /** Drop a column's width override, returning it to the width its definition asks for. */
   resetColumnWidth(key: string): void;
   /** Whether the column carries a width override - i.e. whether there is one to reset. */

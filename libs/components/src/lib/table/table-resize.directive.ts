@@ -8,12 +8,34 @@ import {
 } from './headless/table-features';
 import { TableResizeGripComponent } from './table-resize-grip.component';
 
+const KEYBOARD_STEP = 10;
+const KEYBOARD_LARGE_STEP = 50;
+
+const keyboardTarget = (
+  key: string,
+  { now, step, min, max }: { now: number; step: number; min: number; max: number },
+) => {
+  switch (key) {
+    case 'ArrowRight':
+      return now + step;
+    case 'ArrowLeft':
+      return now - step;
+    case 'Home':
+      return min;
+    case 'End':
+      return Number.isFinite(max) ? max : null;
+    default:
+      return null;
+  }
+};
+
 /** Options for {@link TableResizeDirective}. */
 export type TableResizeConfig = TableFeatureConfig;
 
 /**
  * Opt-in column resizing for `et-table`: adds a grip to every header cell's trailing edge that drags
- * the column's width, with a double-click to reset it.
+ * the column's width, with a double-click to reset it. The grip is a focusable `role="separator"`
+ * that the arrow keys, `Home` and `End` resize too.
  *
  * Widths live on the table (`state()`'s `TableColumnState.width`), so they survive reordering and
  * round-trip through `restoreState()` - even in a table that never imported this feature.
@@ -56,8 +78,34 @@ export class TableResizeDirective {
       key: column.key,
       startWidth: this.table.renderedColumnWidth(column.key),
       hadOverride: this.table.hasColumnWidthOverride(column.key),
-      inlineSign: getComputedStyle(this.elementRef.nativeElement).direction === 'rtl' ? -1 : 1,
+      inlineSign: this.inlineSign(),
     });
+  }
+
+  /** The column's width in px - its override, else its rendered width - with the range a resize clamps to. */
+  public widthOf(column: TableColumnMeta) {
+    const { min, max } = this.table.columnWidthBounds(column.key);
+    const now = this.table.columnWidths()[column.key] ?? Math.round(this.table.renderedColumnWidth(column.key));
+
+    return { now, min, max };
+  }
+
+  /**
+   * Resize from the keyboard, as a window splitter: `←` / `→` step the width by
+   * {@link KEYBOARD_STEP}px (`Shift` for {@link KEYBOARD_LARGE_STEP}px), `Home` / `End` go to the
+   * column's minimum and maximum. Returns whether the key was one of those.
+   */
+  public resizeByKey(column: TableColumnMeta, event: KeyboardEvent) {
+    const { now, min, max } = this.widthOf(column);
+    const step = (event.shiftKey ? KEYBOARD_LARGE_STEP : KEYBOARD_STEP) * this.inlineSign();
+
+    const target = keyboardTarget(event.key, { now, step, min, max });
+
+    if (target === null) return false;
+
+    this.table.setColumnWidth(column.key, target);
+
+    return true;
   }
 
   public update(event: DragMoveEvent) {
@@ -93,5 +141,9 @@ export class TableResizeDirective {
 
   public reset(column: TableColumnMeta) {
     this.table.resetColumnWidth(column.key);
+  }
+
+  private inlineSign() {
+    return getComputedStyle(this.elementRef.nativeElement).direction === 'rtl' ? -1 : 1;
   }
 }

@@ -54,6 +54,8 @@ export type TableLabels = {
   autosizeAllColumns: string;
   /** Column-menu entry: drop a resized column's width override. */
   resetWidth: string;
+  /** Accessible name for a column's resize grip. */
+  resizeColumn: (header: string) => string;
   /** Column-menu entry: hide this column. */
   hideColumn: string;
   /** Column-menu entry: pin this column to the inline-start edge. */
@@ -102,6 +104,7 @@ export const DEFAULT_TABLE_LABELS: TableLabels = {
   autosizeColumn: 'Autosize this column',
   autosizeAllColumns: 'Autosize all columns',
   resetWidth: 'Reset width',
+  resizeColumn: (header) => `Resize ${header}`,
   hideColumn: 'Hide column',
   pinColumnStart: 'Pin to start',
   pinColumnEnd: 'Pin to end',

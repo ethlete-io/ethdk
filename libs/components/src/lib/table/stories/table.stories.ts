@@ -440,7 +440,8 @@ export const ResizableColumns: Story = {
         story:
           'With `<et-table-resize />` (from `TABLE_RESIZE_IMPORTS`) each header grows a grip on its ' +
           'trailing edge - drag it to resize the ' +
-          'column, double-click to reset to the default width. Widths persist in `state()` and round-trip ' +
+          'column, double-click to reset to the default width. The grip is also a tab stop: Left / Right ' +
+          'step the width by 10px (Shift: 50px), Home / End go to its minimum and maximum. Widths persist in `state()` and round-trip ' +
           'through `restoreState()`. Composes with reordering: the grip swallows its own pointerdown so it ' +
           'never starts a header drag.',
       },

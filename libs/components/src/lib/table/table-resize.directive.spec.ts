@@ -141,4 +141,94 @@ describe('TableResizeDirective', () => {
       expect(table.hasColumnWidthOverride('name')).toBe(true);
     });
   });
+
+  describe('from the keyboard', () => {
+    const setUp = (options: { minWidth?: number } = {}) => {
+      const fixture = TestBed.createComponent(HostComponent);
+      const cols = columns();
+
+      fixture.componentInstance.cols.set({ ...cols, name: { ...cols.name, minWidth: options.minWidth } });
+      fixture.detectChanges();
+
+      const table = fixture.componentInstance.table();
+
+      Object.defineProperty(table.scrollElement(), 'clientWidth', { configurable: true, value: 800 });
+      vi.spyOn(table, 'renderedColumnWidth').mockReturnValue(200);
+
+      const grip = queryAll(fixture, '.et-table-resize-grip')[0]!;
+      const press = (key: string, init: KeyboardEventInit = {}) => {
+        const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init });
+
+        grip.dispatchEvent(event);
+        fixture.detectChanges();
+
+        return event;
+      };
+      const width = () => table.state().columns.find((column) => column.key === 'name')?.width;
+
+      grip.dispatchEvent(new FocusEvent('focus'));
+      fixture.detectChanges();
+
+      return { fixture, table, grip, press, width };
+    };
+
+    it('is a focusable vertical separator named from the table labels', () => {
+      const { grip } = setUp();
+
+      expect(grip.getAttribute('role')).toBe('separator');
+      expect(grip.getAttribute('aria-orientation')).toBe('vertical');
+      expect(grip.getAttribute('tabindex')).toBe('0');
+      expect(grip.getAttribute('aria-hidden')).toBeNull();
+      expect(grip.getAttribute('aria-label')).toBe('Resize Name');
+    });
+
+    it('reports the column width and its range in px', () => {
+      const { grip } = setUp({ minWidth: 120 });
+
+      expect(grip.getAttribute('aria-valuenow')).toBe('200');
+      expect(grip.getAttribute('aria-valuemin')).toBe('120');
+      expect(grip.getAttribute('aria-valuemax')).toBe('800');
+    });
+
+    it('steps the width with the arrow keys, further with Shift', () => {
+      const { grip, press, width } = setUp();
+
+      expect(press('ArrowRight').defaultPrevented).toBe(true);
+      expect(width()).toBe(210);
+
+      press('ArrowRight', { shiftKey: true });
+      expect(width()).toBe(260);
+
+      press('ArrowLeft');
+      expect(width()).toBe(250);
+      expect(grip.getAttribute('aria-valuenow')).toBe('250');
+    });
+
+    it('goes to the minimum with Home and the maximum with End', () => {
+      const { press, width } = setUp({ minWidth: 120 });
+
+      press('Home');
+      expect(width()).toBe(120);
+
+      press('End');
+      expect(width()).toBe(800);
+    });
+
+    it('widens the column with ArrowLeft in a right-to-left table', () => {
+      const { fixture, press, width } = setUp();
+
+      queryAll(fixture, 'et-table')[0]!.style.direction = 'rtl';
+      press('ArrowLeft');
+
+      expect(width()).toBe(210);
+    });
+
+    it('leaves every other key alone', () => {
+      const { press, table } = setUp();
+
+      expect(press('ArrowDown').defaultPrevented).toBe(false);
+      expect(press('Enter').defaultPrevented).toBe(false);
+      expect(table.hasColumnWidthOverride('name')).toBe(false);
+    });
+  });
 });
