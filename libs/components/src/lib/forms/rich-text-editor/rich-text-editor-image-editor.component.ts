@@ -16,6 +16,14 @@ import { FORM_FIELD_IMPORTS } from '../form-field';
 import { INPUT_IMPORTS } from '../input';
 import { RichTextEditorLabels } from './rich-text-editor-labels';
 
+const safeDecodeUriComponent = (value: string) => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+};
+
 /**
  * The image popover of the opt-in image tool: the alt text of the image at the caret, plus the action
  * that takes the image back out. Opened by `provideRichTextEditorImageTool`, in the same kind of
@@ -57,8 +65,9 @@ export class RichTextEditorImageEditorComponent {
 
   protected fileName = computed(() => {
     const path = this.src().split(/[?#]/)[0] ?? '';
+    const segment = path.split('/').pop() ?? '';
 
-    return decodeURIComponent(path.split('/').pop() ?? '') || this.src();
+    return safeDecodeUriComponent(segment) || this.src();
   });
 
   constructor() {

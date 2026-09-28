@@ -116,7 +116,10 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
   const ops = createImageOps(renderer);
   const accept = config.accept ?? 'image/*';
 
-  const overlayRefs = new Map<RichTextEditorDirective, OverlayRef<RichTextEditorImageEditorComponent, unknown>>();
+  const overlayRefs = new Map<
+    RichTextEditorDirective,
+    { ref: OverlayRef<RichTextEditorImageEditorComponent, unknown>; image: HTMLImageElement }
+  >();
 
   const fail = (failure: RichTextEditorImageFailure) => config.onFailure?.(failure);
 
@@ -287,10 +290,12 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
   };
 
   const openEditor = (editor: RichTextEditorDirective, image: HTMLImageElement) => {
-    if (overlayRefs.has(editor)) {
+    const openFor = overlayRefs.get(editor)?.image;
+
+    if (openFor) {
       close(editor);
 
-      return;
+      if (openFor === image) return;
     }
 
     const overlayConfig: OverlayConfig = {
@@ -346,14 +351,14 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
       overlayConfig,
     );
 
-    overlayRefs.set(editor, ref);
+    overlayRefs.set(editor, { ref, image });
 
     ref
       .afterClosedEvent()
       .pipe(
         take(1),
         tap((closeEvent) => {
-          if (overlayRefs.get(editor) === ref) overlayRefs.delete(editor);
+          if (overlayRefs.get(editor)?.ref === ref) overlayRefs.delete(editor);
 
           // Escape means "back to the text"; an outside pointer was aimed somewhere else.
           if (closeEvent.source === 'escape') queueMicrotask(() => editor.activate());
@@ -391,12 +396,12 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
   };
 
   const close = (editor: RichTextEditorDirective) => {
-    const ref = overlayRefs.get(editor);
+    const open = overlayRefs.get(editor);
 
-    if (!ref) return;
+    if (!open) return;
 
     overlayRefs.delete(editor);
-    ref.close();
+    open.ref.close();
   };
 
   destroyRef.onDestroy(() => {

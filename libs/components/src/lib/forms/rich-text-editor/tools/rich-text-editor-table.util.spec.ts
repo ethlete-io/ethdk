@@ -239,4 +239,36 @@ describe('table tool arrow keys', () => {
     expect(keydown(arrow('ArrowDown'))).toBe(true);
     expect(doc.getSelection()?.getRangeAt(0).startContainer).toBe(root.querySelector('li'));
   });
+
+  it('enters the last cell at its end from the paragraph after the table on a plain ArrowLeft', () => {
+    const { root, keydown } = setup(`${TABLE}<p>after</p>`);
+    caretAt(root.querySelector('p')?.firstChild as Node, 0);
+
+    expect(keydown(arrow('ArrowLeft'))).toBe(true);
+
+    const range = doc.getSelection()?.getRangeAt(0);
+    const lastCell = root.querySelectorAll('td')[1];
+
+    expect(range?.startContainer).toBe(lastCell);
+    expect(range?.startOffset).toBe(lastCell?.childNodes.length);
+  });
+
+  it('follows the text direction for ArrowLeft and ArrowRight in RTL content', () => {
+    const { root, keydown } = setup(
+      `<p style="direction: rtl">before</p>${TABLE.replace('<table>', '<table style="direction: rtl">').replaceAll('<td>', '<td style="direction: rtl">')}<p>after</p>`,
+    );
+    const lastCell = root.querySelectorAll('td')[1] as HTMLElement;
+
+    caretAt(lastCell.firstChild as Node, 1);
+
+    expect(keydown(arrow('ArrowRight'))).toBe(false);
+    expect(keydown(arrow('ArrowLeft'))).toBe(true);
+    expect(caretBlock(root)?.textContent).toBe('after');
+
+    caretAt(root.querySelector('p')?.firstChild as Node, 6);
+
+    expect(keydown(arrow('ArrowRight'))).toBe(false);
+    expect(keydown(arrow('ArrowLeft'))).toBe(true);
+    expect(doc.getSelection()?.getRangeAt(0).startContainer).toBe(root.querySelector('th'));
+  });
 });

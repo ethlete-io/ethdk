@@ -16,6 +16,7 @@ import { injectOverlayManager } from '../../../overlay/overlay-manager';
 import { OverlayRef } from '../../../overlay/overlay-ref';
 import { OverlayStrategy, OverlayStrategyBreakpoint } from '../../../overlay/strategies';
 import { RichTextEditorFloatingToolbarComponent } from '../rich-text-editor-floating-toolbar.component';
+import { RICH_TEXT_EDITOR_TOOL_ICON } from '../tools/rich-text-editor-tool-icons';
 import { rangeTextBoundingRect } from './internals/rich-text-editor-dom';
 import { RichTextEditorDirective } from './rich-text-editor.directive';
 
@@ -30,6 +31,7 @@ export const setupRichTextEditorFloatingToolbar = (editor: RichTextEditorDirecti
   const overlayManager = injectOverlayManager();
   const destroyRef = inject(DestroyRef);
   const hasTouchInput = injectHasTouchInput();
+  const toolIcons = inject(RICH_TEXT_EDITOR_TOOL_ICON, { optional: true }) ?? [];
 
   const overlayId = createComponentId('et-rte-floating-toolbar');
   const overlayRef = signal<OverlayRef<RichTextEditorFloatingToolbarComponent, unknown> | null>(null);
@@ -102,6 +104,7 @@ export const setupRichTextEditorFloatingToolbar = (editor: RichTextEditorDirecti
       closeOnOutsidePointer: false,
       origin: editor.editorDom.root() ?? undefined,
       bindings: [inputBinding('editor', () => editor)],
+      providers: [{ provide: RICH_TEXT_EDITOR_TOOL_ICON, useValue: toolIcons }],
       strategies,
     };
 

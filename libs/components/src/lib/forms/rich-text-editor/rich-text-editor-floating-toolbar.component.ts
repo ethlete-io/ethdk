@@ -7,7 +7,7 @@ import {
   CODE_ICON,
   IconDirective,
   ITALIC_ICON,
-  LINK_ICON,
+  ICONS_TOKEN,
   provideIcons,
   STRIKETHROUGH_ICON,
   UNDERLINE_ICON,
@@ -19,6 +19,17 @@ import {
   RICH_TEXT_EDITOR_TOOLS,
   RichTextEditorToolDefinition,
 } from './rich-text-editor-tools';
+import { RICH_TEXT_EDITOR_TOOL_ICON } from './tools/rich-text-editor-tool-icons';
+
+const provideFloatingToolbarIcons = () =>
+  provideIcons(
+    BOLD_ICON,
+    ITALIC_ICON,
+    UNDERLINE_ICON,
+    STRIKETHROUGH_ICON,
+    CODE_ICON,
+    ...(inject(RICH_TEXT_EDITOR_TOOL_ICON, { optional: true }) ?? []),
+  ).useFactory();
 
 @Component({
   selector: 'et-rich-text-editor-floating-toolbar',
@@ -26,7 +37,7 @@ import {
   styleUrl: './rich-text-editor-floating-toolbar.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [DividerComponent, IconButtonComponent, IconDirective],
-  providers: [provideIcons(BOLD_ICON, ITALIC_ICON, UNDERLINE_ICON, STRIKETHROUGH_ICON, CODE_ICON, LINK_ICON)],
+  providers: [{ provide: ICONS_TOKEN, useFactory: provideFloatingToolbarIcons }],
   hostDirectives: [ProvideColorDirective, AutoSurfaceDirective],
   host: {
     class: 'et-rte-floating-toolbar',

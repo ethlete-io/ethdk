@@ -197,13 +197,7 @@ export class RichTextEditorTableToolComponent {
     if (!root || this.disabled()) return;
 
     const table = this.ops.create(row + 1, col + 1);
-    const block = this.caretBlock(root);
-
-    if (block) {
-      this.renderer.insertBefore(root, table, block.nextSibling);
-    } else {
-      this.renderer.appendChild(root, table);
-    }
+    this.renderer.insertBefore(root, table, this.insertionPoint(root));
 
     // A table with nothing after it traps the caret at the bottom edge, so add a trailing empty
     // paragraph to step down into. Nothing is added above (an existing block, or the editor top).
@@ -270,16 +264,19 @@ export class RichTextEditorTableToolComponent {
     return paragraph;
   }
 
-  /** The editor-root-level block the caret sits in, so a new table lands after it (not inside it). */
-  private caretBlock(root: HTMLElement): HTMLElement | null {
-    const selection = this.editor().editorDom.getSelection();
+  /** The node a new table goes before: after the root-level block the caret sits in, `null` for the end. */
+  private insertionPoint(root: HTMLElement): Node | null {
+    const range = this.editor().editorDom.getSelection()?.range;
 
-    if (!selection) return null;
+    if (!range) return null;
+    if (range.startContainer === root) return root.childNodes[range.startOffset] ?? null;
 
+    return this.caretBlock(root, range)?.nextSibling ?? null;
+  }
+
+  private caretBlock(root: HTMLElement, range: Range): HTMLElement | null {
     let node: HTMLElement | null =
-      selection.range.startContainer instanceof HTMLElement
-        ? selection.range.startContainer
-        : selection.range.startContainer.parentElement;
+      range.startContainer instanceof HTMLElement ? range.startContainer : range.startContainer.parentElement;
 
     while (node && node.parentElement !== root) node = node.parentElement;
 

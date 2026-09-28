@@ -594,6 +594,7 @@ describe('forms rich-text-editor tool scenarios', () => {
       'Bold',
       'Link',
     ]);
+    expect(button('Link', toolbar).querySelector('svg')).not.toBeNull();
 
     button('Link', toolbar).click();
     s.flush();
@@ -666,6 +667,32 @@ describe('forms rich-text-editor tool scenarios', () => {
     buttonByText('Insert row below').click();
     s.flush();
     expect(query<HTMLTableElement>('table', editable).rows.length).toBe(3);
+  });
+
+  it('inserts a table at a caret that sits between two blocks', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(LayoutPageComponent);
+
+    fixture.componentInstance.text.set('Intro\n\nOutro');
+    s.flush();
+
+    const editable = textbox(fixture.nativeElement as HTMLElement);
+    const tool = fixture.debugElement.query(By.directive(RichTextEditorTableToolComponent))
+      .componentInstance as RichTextEditorTableToolComponent;
+
+    editable.focus();
+    document.getSelection()?.setBaseAndExtent(editable, 1, editable, 1);
+    tool.insert(0, 0);
+    s.flush();
+
+    expect(Array.from(editable.children).map((child) => child.tagName)).toEqual(['P', 'TABLE', 'P']);
+    expect(editable.lastElementChild?.textContent).toBe('Outro');
+
+    document.getSelection()?.setBaseAndExtent(editable, 0, editable, 0);
+    tool.insert(0, 0);
+    s.flush();
+
+    expect(Array.from(editable.children).map((child) => child.tagName)).toEqual(['TABLE', 'P', 'TABLE', 'P']);
   });
 
   it('uploads a pasted image into a placeholder, then embeds it and edits its alt text', () => {
@@ -1012,6 +1039,11 @@ describe('forms rich-text-editor tool scenarios', () => {
     imageEditor.componentInstance.saveAlt.subscribe((alt) => alts.push(alt));
     s.tick();
     expect(query('.et-rte-image-editor-file', imageEditor.nativeElement).textContent).toBe('a b.png');
+    imageEditor.componentRef.setInput('src', 'https://cdn.example.com/100%.png');
+    s.tick();
+    expect(query('.et-rte-image-editor-file', imageEditor.nativeElement).textContent).toBe('100%.png');
+    imageEditor.componentRef.setInput('src', 'https://cdn.example.com/a%20b.png?v=2');
+    s.tick();
     fill(s, query<HTMLInputElement>('input', imageEditor.nativeElement), ' Diagram ');
     press(s, query<HTMLInputElement>('input', imageEditor.nativeElement), 'Enter');
     expect(alts).toEqual(['Diagram']);

@@ -134,4 +134,34 @@ describe('provideRichTextEditorImageTool in a shared scope', () => {
 
     expect(open).toHaveBeenCalledTimes(2);
   });
+
+  it('moves the open popover to a second clicked image and closes it on the same one', () => {
+    const tool = setupScope(() => NEVER);
+    const overlayManager = runInInjectionContext(scope, () => injectOverlayManager());
+    const refs: { close: ReturnType<typeof vi.fn> }[] = [];
+    const open = vi.spyOn(overlayManager, 'open').mockImplementation(() => {
+      const ref = { afterClosedEvent: () => NEVER, close: vi.fn() };
+
+      refs.push(ref);
+
+      return ref as unknown as ReturnType<typeof overlayManager.open>;
+    });
+    const { editor, root } = createEditor();
+
+    root.insertAdjacentHTML('beforeend', '<p><img src="https://cdn/b.png" alt=""></p>');
+
+    const [firstImage, secondImage] = Array.from(root.querySelectorAll('img'));
+    const click = (target: HTMLImageElement | undefined) => ({ target }) as unknown as MouseEvent;
+
+    tool.click?.(editor, click(firstImage));
+    tool.click?.(editor, click(secondImage));
+
+    expect(open).toHaveBeenCalledTimes(2);
+    expect(refs[0]?.close).toHaveBeenCalledOnce();
+
+    tool.click?.(editor, click(secondImage));
+
+    expect(open).toHaveBeenCalledTimes(2);
+    expect(refs[1]?.close).toHaveBeenCalledOnce();
+  });
 });

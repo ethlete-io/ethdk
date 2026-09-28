@@ -271,6 +271,15 @@ const caretBlockAt = (block: Element | null, edge: 'first' | 'last'): HTMLElemen
   return target.getAttribute('contenteditable') === 'false' ? null : target;
 };
 
+/** ArrowLeft/ArrowRight as a step through the text order, which runs right to left in RTL content. */
+const logicalInlineKey = (key: string, element: HTMLElement): 'forward' | 'backward' | null => {
+  if (key !== 'ArrowLeft' && key !== 'ArrowRight') return null;
+
+  const rtl = element.ownerDocument.defaultView?.getComputedStyle(element).direction === 'rtl';
+
+  return (key === 'ArrowRight') !== rtl ? 'forward' : 'backward';
+};
+
 export const createTableNav = (renderer: EditorRenderer) => {
   const collapseInto = (node: Node, offset: number) => {
     const doc = node.ownerDocument;
@@ -299,21 +308,11 @@ export const createTableNav = (renderer: EditorRenderer) => {
 
     const doc = el.ownerDocument;
     const { range } = editable;
-    let cell: HTMLElement | null =
-      range.startContainer instanceof HTMLElement ? range.startContainer : range.startContainer.parentElement;
+    const ctx = findTableContext(el, range.startContainer);
 
-    while (cell && cell !== el && !(cell instanceof HTMLTableCellElement)) cell = cell.parentElement;
+    if (!ctx || ctx.table.parentElement !== el) return false;
 
-    if (!(cell instanceof HTMLTableCellElement)) return false;
-
-    const cellEl = cell;
-    const row = cell.parentElement;
-    const table = row?.parentElement?.parentElement;
-
-    if (!(row instanceof HTMLTableRowElement) || !(table instanceof HTMLTableElement) || table.parentElement !== el) {
-      return false;
-    }
-
+    const { table, row, cell } = ctx;
     const rows = allRows(table);
     const firstRow = rows[0] === row;
     const lastRow = rows[rows.length - 1] === row;
@@ -322,25 +321,26 @@ export const createTableNav = (renderer: EditorRenderer) => {
 
     const atCellStart = () => {
       const r = doc.createRange();
-      r.selectNodeContents(cellEl);
+      r.selectNodeContents(cell);
       r.setEnd(range.startContainer, range.startOffset);
 
       return r.toString().length === 0;
     };
     const atCellEnd = () => {
       const r = doc.createRange();
-      r.selectNodeContents(cellEl);
+      r.selectNodeContents(cell);
       r.setStart(range.startContainer, range.startOffset);
 
       return r.toString().length === 0;
     };
 
     let edge: 'before' | 'after' | null = null;
+    const inlineKey = logicalInlineKey(key, cell);
 
-    if (key === 'ArrowUp' && firstRow && caretOnEdgeLine(range, { cell: cellEl, edge: 'first' })) edge = 'before';
-    else if (key === 'ArrowDown' && lastRow && caretOnEdgeLine(range, { cell: cellEl, edge: 'last' })) edge = 'after';
-    else if (key === 'ArrowLeft' && firstRow && firstCell && atCellStart()) edge = 'before';
-    else if (key === 'ArrowRight' && lastRow && lastCell && atCellEnd()) edge = 'after';
+    if (key === 'ArrowUp' && firstRow && caretOnEdgeLine(range, { cell: cell, edge: 'first' })) edge = 'before';
+    else if (key === 'ArrowDown' && lastRow && caretOnEdgeLine(range, { cell: cell, edge: 'last' })) edge = 'after';
+    else if (inlineKey === 'backward' && firstRow && firstCell && atCellStart()) edge = 'before';
+    else if (inlineKey === 'forward' && lastRow && lastCell && atCellEnd()) edge = 'after';
 
     if (!edge) return false;
 
@@ -353,7 +353,6 @@ export const createTableNav = (renderer: EditorRenderer) => {
    *  adjacent text block, creating an empty paragraph when there is none to land in. */
   const stepOut = (table: HTMLTableElement, edge: 'before' | 'after') => {
     const el = table.parentElement as HTMLElement;
-    const doc = el.ownerDocument;
     const sibling = edge === 'before' ? table.previousElementSibling : table.nextElementSibling;
     let target = caretBlockAt(sibling, edge === 'before' ? 'last' : 'first');
 
@@ -363,15 +362,7 @@ export const createTableNav = (renderer: EditorRenderer) => {
       renderer.insertBefore(el, target, edge === 'before' ? table : table.nextSibling);
     }
 
-    const caret = doc.createRange();
-
-    caret.selectNodeContents(target);
-    caret.collapse(edge === 'before' ? false : true);
-
-    const selection = doc.getSelection();
-
-    selection?.removeAllRanges();
-    selection?.addRange(caret);
+    collapseInto(target, edge === 'before' ? target.childNodes.length : 0);
   };
 
   /** Tab / Shift+Tab cell navigation: next/previous cell in row-major order; from the table's
@@ -430,21 +421,15 @@ export const createTableNav = (renderer: EditorRenderer) => {
       return r.toString().length === 0;
     };
 
-    const elementSibling = (from: Node, dir: 'next' | 'prev'): Element | null => {
-      let sib = dir === 'next' ? from.nextSibling : from.previousSibling;
-      while (sib && sib.nodeType !== Node.ELEMENT_NODE) sib = dir === 'next' ? sib.nextSibling : sib.previousSibling;
-
-      return sib instanceof Element ? sib : null;
-    };
-
+    const inlineKey = blockNode instanceof HTMLElement ? logicalInlineKey(key, blockNode) : null;
     let table: Element | null = null;
     let edge: 'first' | 'last' = 'first';
 
-    if ((key === 'ArrowDown' || key === 'ArrowRight') && atEdge('end')) {
-      table = elementSibling(block, 'next');
+    if ((key === 'ArrowDown' || inlineKey === 'forward') && atEdge('end')) {
+      table = blockNode instanceof Element ? blockNode.nextElementSibling : null;
       edge = 'first';
-    } else if ((key === 'ArrowUp' || key === 'ArrowLeft') && atEdge('start')) {
-      table = elementSibling(block, 'prev');
+    } else if ((key === 'ArrowUp' || inlineKey === 'backward') && atEdge('start')) {
+      table = blockNode instanceof Element ? blockNode.previousElementSibling : null;
       edge = 'last';
     }
 
@@ -456,7 +441,7 @@ export const createTableNav = (renderer: EditorRenderer) => {
 
     if (!cell) return false;
 
-    collapseInto(cell, 0);
+    collapseInto(cell, edge === 'first' ? 0 : cell.childNodes.length);
 
     return true;
   };
