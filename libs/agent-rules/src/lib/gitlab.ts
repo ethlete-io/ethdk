@@ -24,6 +24,11 @@ export const parseRemoteUrl = (url: string): GitLabProject | undefined => {
   return undefined;
 };
 
+const gitLabHosts = () =>
+  [...(process.env['GITLAB_HOST'] ?? '').split(','), process.env['CI_SERVER_HOST'] ?? '']
+    .map((host) => host.trim().toLowerCase())
+    .filter(Boolean);
+
 export const gitLabToken = () =>
   process.env['GITLAB_TOKEN']?.trim() || process.env['CI_JOB_TOKEN']?.trim() || undefined;
 
@@ -55,6 +60,13 @@ const request = async (options: {
   body?: Record<string, string>;
 }) => {
   const { project, token, path, method, body } = options;
+
+  if (!gitLabHosts().includes(project.host.toLowerCase())) {
+    throw new Error(
+      `Not sending GITLAB_TOKEN to ${project.host}: it is not a configured GitLab host. Set GITLAB_HOST=${project.host} if it is one, or pass --no-mr-check.`,
+    );
+  }
+
   const base = `https://${project.host}/api/v4/projects/${encodeURIComponent(project.project)}`;
   const response = await fetch(`${base}${path}`, {
     method: method ?? 'GET',
@@ -64,6 +76,7 @@ const request = async (options: {
       ...(body ? { 'content-type': 'application/json' } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
+    redirect: 'error',
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
 

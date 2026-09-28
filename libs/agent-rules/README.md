@@ -224,7 +224,8 @@ sets no subject falls back to its summary, and the printed plan says which of th
 `git-flow repair [ref]` derives the conforming name (`--key FIP-2900` when the old name
 carries no issue key, `--to <branch>` to override), renames the branch locally and on the
 remote, and retargets the open merge requests aimed at it through the GitLab API.
-`GITLAB_TOKEN` needs the `api` scope.
+`GITLAB_TOKEN` needs the `api` scope, and is sent only to the hosts named in `GITLAB_HOST`
+(comma-separated) or, in a GitLab CI job, `CI_SERVER_HOST`.
 
 Everything is checked before the first mutation, and it refuses rather than half-finishing:
 
@@ -232,7 +233,7 @@ Everything is checked before the first mutation, and it refuses rather than half
   move a merge request to another source branch, and closing it would lose its discussion -
   merge or close it first.
 - A branch that is pushed but whose merge requests cannot be listed (no token, or a remote
-  that is not GitLab) blocks too. `--no-mr-check` asserts that none point at it.
+  that is not a configured GitLab host) blocks too. `--no-mr-check` asserts that none point at it.
 - If a retarget fails halfway, the old branch is still there and the recovery commands are
   printed.
 
