@@ -994,9 +994,10 @@ export class CascaderDirective<T = unknown>
   public moveFocusFromSearch(direction: 1 | -1) {
     if (this.isSearching()) {
       const results = this.searchState().results;
+      const index = this.enabledSearchIndex(direction === 1 ? 0 : results.length - 1, direction);
 
-      if (results.length) {
-        this.focusedSearchIndex.set(direction === 1 ? 0 : results.length - 1);
+      if (index !== -1) {
+        this.focusedSearchIndex.set(index);
       }
 
       return;
@@ -1005,12 +1006,12 @@ export class CascaderDirective<T = unknown>
     this.focusPulse.update((pulse) => pulse + 1);
   }
 
-  /** @internal Moves roving focus to a search result without activating it. */
-  public focusSearchOption(index: number) {
-    const results = this.searchState().results;
+  /** @internal Moves roving focus to the nearest enabled search result from `index` in `direction`. */
+  public focusSearchOption(index: number, direction: 1 | -1 = 1) {
+    const target = this.enabledSearchIndex(index, direction);
 
-    if (results.length) {
-      this.focusedSearchIndex.set(Math.max(0, Math.min(results.length - 1, index)));
+    if (target !== -1) {
+      this.focusedSearchIndex.set(target);
     }
   }
 
@@ -1026,28 +1027,28 @@ export class CascaderDirective<T = unknown>
       case 'ArrowDown': {
         event.preventDefault();
 
-        if (index === this.searchState().results.length - 1 && search) {
+        if (this.enabledSearchIndex(index + 1, 1) === -1 && search) {
           this.focusedSearchIndex.set(-1);
           search.focus();
 
           return;
         }
 
-        this.focusSearchOption(index + 1);
+        this.focusSearchOption(index + 1, 1);
 
         return;
       }
       case 'ArrowUp': {
         event.preventDefault();
 
-        if (index === 0 && search) {
+        if (this.enabledSearchIndex(index - 1, -1) === -1 && search) {
           this.focusedSearchIndex.set(-1);
           search.focus();
 
           return;
         }
 
-        this.focusSearchOption(index - 1);
+        this.focusSearchOption(index - 1, -1);
 
         return;
       }
@@ -1059,7 +1060,7 @@ export class CascaderDirective<T = unknown>
       }
       case 'End': {
         event.preventDefault();
-        this.focusSearchOption(this.searchState().results.length - 1);
+        this.focusSearchOption(this.searchState().results.length - 1, -1);
 
         return;
       }
@@ -1070,6 +1071,20 @@ export class CascaderDirective<T = unknown>
       this.focusedSearchIndex.set(-1);
       search.appendCharacter(event.key);
     }
+  }
+
+  private enabledSearchIndex(from: number, step: 1 | -1) {
+    const results = this.searchState().results;
+
+    for (let index = from; index >= 0 && index < results.length; index += step) {
+      const path = results[index];
+
+      if (path && !path[path.length - 1]?.disabled) {
+        return index;
+      }
+    }
+
+    return -1;
   }
 
   // Disabled children are skipped - they can't be toggled, so requiring them would lock the branch

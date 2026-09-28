@@ -71,7 +71,7 @@ Like `resolvePath`, the hook lives on the data source because the tree is lazy -
 
 Activating a result **commits the match and closes** - the trigger shows its full breadcrumb. If a match is a branch that can't be committed (leaf mode), activating it instead **jumps the columns to that branch** and clears the query, so browsing continues from there.
 
-The input takes focus when the panel opens, and typing anywhere in the tree routes into it (replacing the per-column typeahead). <kbd>ArrowDown</kbd> moves from the input into the results (or the tree while browsing), typing from a result returns to the input, and the first <kbd>Escape</kbd> clears the query - only a second one closes the panel. The default component labels the input via `searchPlaceholder` (unset → [`CASCADER_LABELS.search`](/components/localization), `Search`).
+The input takes focus when the panel opens, and typing anywhere in the tree routes into it (replacing the per-column typeahead). <kbd>ArrowDown</kbd> moves from the input into the results (or the tree while browsing), skipping disabled results, typing from a result returns to the input, and the first <kbd>Escape</kbd> clears the query - only a second one closes the panel. The default component labels the input via `searchPlaceholder` (unset → [`CASCADER_LABELS.search`](/components/localization), `Search`).
 
 ## Query-backed levels - `cascaderFromQuery`
 

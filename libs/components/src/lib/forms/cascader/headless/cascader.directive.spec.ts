@@ -615,6 +615,62 @@ describe('CascaderDirective', () => {
       expect(document.activeElement).toBe(input);
     });
 
+    it('skips disabled results when moving roving focus from and between results', async () => {
+      const withDisabled: CascaderDataSource<string> = {
+        loadChildren: syncSource.loadChildren,
+        search: (query) =>
+          searchTree(query).map((path, index) =>
+            index === 0 || index === 2
+              ? path.map((node, depth) => (depth === path.length - 1 ? { ...node, disabled: true } : node))
+              : path,
+          ),
+      };
+
+      driver.host.dataSource.set(withDisabled);
+      driver.detectChanges();
+
+      await driver.type('group');
+
+      expect(driver.results().length).toBe(3);
+
+      driver.pressInSearch('ArrowDown');
+      expect(driver.cascader.focusedSearchIndex()).toBe(1);
+
+      driver.pressOnResult(1, 'End');
+      expect(driver.cascader.focusedSearchIndex()).toBe(1);
+
+      driver.pressOnResult(1, 'ArrowDown');
+      expect(driver.cascader.focusedSearchIndex()).toBe(-1);
+
+      driver.pressInSearch('ArrowUp');
+      expect(driver.cascader.focusedSearchIndex()).toBe(1);
+
+      driver.pressOnResult(1, 'ArrowUp');
+      expect(driver.cascader.focusedSearchIndex()).toBe(-1);
+    });
+
+    it('Enter commits the enabled result ArrowDown moved to past a disabled one', async () => {
+      const withDisabled: CascaderDataSource<string> = {
+        loadChildren: syncSource.loadChildren,
+        search: (query) =>
+          searchTree(query).map((path, index) =>
+            index === 0
+              ? path.map((node, depth) => (depth === path.length - 1 ? { ...node, disabled: true } : node))
+              : path,
+          ),
+      };
+
+      driver.host.dataSource.set(withDisabled);
+      driver.detectChanges();
+
+      await driver.type('group');
+      driver.pressInSearch('ArrowDown');
+      driver.pressInSearch('Enter');
+      await flushFrames();
+
+      expect(driver.host.value()).toBe('euro-group-a');
+    });
+
     it('Enter in the input activates the first result', async () => {
       await driver.type('final');
 
