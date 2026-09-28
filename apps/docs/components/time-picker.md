@@ -58,7 +58,7 @@ Once a whole time exists the columns edit it directly: every later pick rewrites
 
 ## Bounds and filtering
 
-`min` / `max` bound the time of day (their date part is ignored, so one bound covers every day), and `timeFilter` rejects individual times. Options that fall out stay in place, dimmed and `aria-disabled` - they keep their position in the column so the list never reflows, and the keyboard model steps over them.
+`min` / `max` bound the time of day (their date part is ignored, so one bound covers every day; a `min` later than `max`, such as 22:00-06:00, is a window that wraps past midnight), and `timeFilter` rejects individual times. Options that fall out stay in place, dimmed and `aria-disabled` - they keep their position in the column so the list never reflows, and the keyboard model steps over them.
 
 ```html
 <et-time-picker [(value)]="slot" [min]="openingTime" [max]="closingTime" [timeFilter]="notDuringLunch" />

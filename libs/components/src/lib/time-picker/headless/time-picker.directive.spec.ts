@@ -339,6 +339,47 @@ describe('TimePickerDirective', () => {
       expect(disabledIn('minute')).toEqual(['0', '5', '10', '15', '20', '25']);
     });
 
+    it('treats a min later than max as a window that wraps past midnight', () => {
+      host.min.set(new Date(2026, 6, 17, 22, 0));
+      host.max.set(new Date(2026, 6, 17, 6, 0));
+      tick();
+
+      expect(disabledIn('hour')).toEqual([
+        '7',
+        '8',
+        '9',
+        '10',
+        '11',
+        '12',
+        '13',
+        '14',
+        '15',
+        '16',
+        '17',
+        '18',
+        '19',
+        '20',
+        '21',
+      ]);
+    });
+
+    it('ignores the seconds and milliseconds of the value when the format hides seconds', () => {
+      host.value.set(new Date(2026, 6, 17, 12, 0, 30, 250));
+      host.max.set(new Date(2026, 6, 17, 17, 0));
+      tick();
+
+      expect(disabledIn('hour')).not.toContain('17');
+
+      option(fixture, 'hour', 17)?.click();
+      tick();
+
+      const value = host.value();
+
+      expect([value?.getHours(), value?.getMinutes(), value?.getSeconds(), value?.getMilliseconds()]).toEqual([
+        17, 0, 0, 0,
+      ]);
+    });
+
     it('disables an hour only when no minute inside it is selectable', () => {
       host.max.set(new Date(2026, 6, 17, 14, 20));
       tick();

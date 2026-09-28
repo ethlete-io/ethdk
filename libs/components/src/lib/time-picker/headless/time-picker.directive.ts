@@ -323,7 +323,7 @@ export class TimePickerDirective {
       filter: this.boundTimeFilter(),
       day: startOfDay(anchor),
       minuteValues: this.minuteValues(),
-      secondValues: this.formatSpec().showSeconds ? this.secondValues() : [anchor.getSeconds()],
+      secondValues: this.formatSpec().showSeconds ? this.secondValues() : [0],
     };
   });
 
@@ -441,7 +441,7 @@ export class TimePickerDirective {
     }
 
     // the anchor folds in the held parts, so the value has to be built before they are dropped
-    const next = setTimeOfDay(this.anchorTime(), resolved);
+    const next = setMilliseconds(setTimeOfDay(this.anchorTime(), resolved), 0);
 
     this.clearPending();
 
@@ -656,7 +656,8 @@ export class TimePickerDirective {
   }
 
   private candidateFor(unit: TimePickerUnit, optionValue: number): TimeCandidate {
-    const parts = getTimeParts(this.anchorTime(), 24);
+    const anchorParts = getTimeParts(this.anchorTime(), 24);
+    const parts = this.formatSpec().showSeconds ? anchorParts : { ...anchorParts, second: 0 };
 
     switch (unit) {
       case 'hour':

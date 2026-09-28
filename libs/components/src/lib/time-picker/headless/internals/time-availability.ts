@@ -34,11 +34,12 @@ export const isTimeSelectable = (candidate: TimeCandidate, options: TimeBoundsOp
   const { min, max, filter, day } = options;
   const candidateSeconds = candidate.hour * 3600 + candidate.minute * 60 + candidate.second;
 
-  if (min !== null && candidateSeconds < secondsOfDay(min)) {
-    return false;
-  }
+  const afterMin = min === null || candidateSeconds >= secondsOfDay(min);
+  const beforeMax = max === null || candidateSeconds <= secondsOfDay(max);
+  const wrapsMidnight = min !== null && max !== null && secondsOfDay(min) > secondsOfDay(max);
+  const inBounds = wrapsMidnight ? afterMin || beforeMax : afterMin && beforeMax;
 
-  if (max !== null && candidateSeconds > secondsOfDay(max)) {
+  if (!inBounds) {
     return false;
   }
 
