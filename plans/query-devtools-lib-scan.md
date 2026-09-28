@@ -1,6 +1,6 @@
 # query-devtools scan - open findings
 
-Scan of `libs/query-devtools/src/`, `lazy/` and `toggle/` from 2026-09-28, two passes. 0 High, 1 Medium, 5 Low, 2 Spec. Verified 2026-09-28: 6 confirmed, 3 re-rated, 0 refuted, 1 unverified. Skipped: all stories and specs were not read; the second pass read the tab component `.ts` files and grepped their templates, and read `query-devtools-detail.component.html` only around the sub-tabs and the progress bar.
+Scan of `libs/query-devtools/src/`, `lazy/` and `toggle/` from 2026-09-28, two passes. 0 High, 1 Medium, 4 Low, 2 Spec. Verified 2026-09-28: 6 confirmed, 3 re-rated, 0 refuted, 1 unverified. Skipped: all stories and specs were not read; the second pass read the tab component `.ts` files and grepped their templates, and read `query-devtools-detail.component.html` only around the sub-tabs and the progress bar.
 
 Entry-point boundaries hold: `toggle/` imports only `@ethlete/query` and `@ethlete/components`; `lazy/` references the panel only inside its `@defer`. No `innerHTML`, `bypassSecurityTrust*` or `eval` anywhere; query data renders through interpolation only.
 
@@ -13,7 +13,6 @@ Entry-point boundaries hold: `toggle/` imports only `@ethlete/query` and `@ethle
 - Low: two clipboard paths exist side by side - `writeQueryDevtoolsClipboard` (json, main panel) and `@ethlete/core`'s `copyToClipboard` (`query-devtools-about.component.ts:3`, `query-devtools-mocks-tab.component.ts:4`). The core one lacks the `http://` fallback. Use one. The copy-tick `Subject` + `switchMap(timer)` block is also repeated in four components. S
 - Low: comment volume breaks the AGENTS.md allowlist - about 740 comment lines in `query-devtools.component.ts` alone, mostly rationale and narration, plus section headers at `query-devtools.component.ts:2412,2490,2521,2588,2622,2717`. M
 - Low: hardcoded primary colours in component CSS (`query-devtools.component.css:594,676,742`, `query-devtools-settings.component.css:62`, status colours at `query-devtools.component.css:23-25`). Resolve from theme tokens with the literal as fallback. S
-- Low: `package.json` lists `@analogjs/vitest-angular` and `@angular/compiler` as peer dependencies; neither is needed by a consumer of the published package. Check whether `@nx/dependency-checks` forces them and drop them. S
 
 ## Spec gaps
 
