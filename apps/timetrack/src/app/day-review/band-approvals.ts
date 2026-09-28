@@ -21,6 +21,8 @@ export const approvalChipOf = (item: AgentApproval) => {
       return `${who} · +${formatDurationMs(request.durationMs)} on ${request.issueKey}`;
     case 'autoMode.apply':
       return `${who} · Name ${request.issueKey}`;
+    case 'autoMode.hide':
+      return `${who} · Hide, off topic`;
     default:
       return `${who} · ${request.op}`;
   }
@@ -51,6 +53,14 @@ export const approvalLinesOf = (item: AgentApproval): ApprovalLine[] => {
     }
     case 'autoMode.apply':
       return [{ label: 'Ticket', value: `${request.label} → ${request.issueKey}` }, asked];
+    case 'autoMode.hide':
+      return [
+        {
+          label: 'Hide',
+          value: `The rest of ${request.label || 'the call'} from ${formatClockTime(new Date(request.fromMs))}`,
+        },
+        asked,
+      ];
     default:
       return [asked];
   }

@@ -51,6 +51,7 @@ import {
   mergeRows,
   moveRowBoundary,
   namedIssueKeys,
+  offTopicRests,
   openStandIn,
   openStandIns,
   pauseWindows,
@@ -1154,6 +1155,18 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
         events: evidence()?.events ?? [],
         edits: edits(),
       }),
+
+    /** Today's rest bands of ended calls that read as the call gone off topic. */
+    offTopicRests: computed(() =>
+      isToday() && editsReady()
+        ? offTopicRests({
+            rows: rows(),
+            edits: edits(),
+            calls: deterministicRows()?.calls ?? [],
+            events: evidence()?.events ?? [],
+          })
+        : [],
+    ),
 
     endRowNow: (row: ReviewedRow) => apply(endRowAt({ edits: edits(), row, at: new Date() })),
 

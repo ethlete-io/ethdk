@@ -141,6 +141,8 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   return {
     items: queue.asReadonly(),
+    /** Whether `items` holds the stored queue yet. Before that it is empty whatever the store holds. */
+    isLoaded: loaded.asReadonly(),
     waiting: computed(() => queue().filter((item) => item.state === 'queued' || item.state === 'running')),
     approvableByAll: computed(() => approvableByAll(queue(), settings.settings().actionClasses)),
     failure: failure.asReadonly(),

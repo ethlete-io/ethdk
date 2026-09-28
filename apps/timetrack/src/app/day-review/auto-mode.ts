@@ -3,7 +3,9 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   AUTO_MODE_CLIENT,
+  AgentApproval,
   AutoModeAnswer,
+  AutoModeHideRequest,
   AutoModeOutcome,
   AutoModeSubject,
   TicketWording,
@@ -19,6 +21,9 @@ import {
   autoModeCreateRequest,
   autoModeContextLabel,
   autoModeCreatedKeys,
+  autoModeHideAsks,
+  autoModeHideRequest,
+  autoModeHideTarget,
   autoModeQueuedAnswer,
   autoModeReadout,
   autoModeSubjectKey,
@@ -103,7 +108,8 @@ const outcomeOf = (options: { wording: TicketWording | null; projectKey?: string
  * made applying stricter; a draft waits as a `jira.create`, and the key its approval files is applied
  * the same way. Every answer is stored against the day with the payload it sent, so a band is asked
  * once. A settled code row with a ticket gets a one-line worklog description written as `auto`, once
- * per row, where applying is `local`.
+ * per row, where applying is `local`. The rest band of a call gone off topic waits as an
+ * `autoMode.hide` suggestion, once per band.
  */
 const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
@@ -169,6 +175,47 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       answers: edits.autoDescriptions ?? [],
     });
   };
+
+  const hidesNow = (day: string) => {
+    if (!approvals.isLoaded() || dayReview.dayKey() !== day) return [];
+
+    return autoModeHideAsks({
+      enabled: enabled(),
+      day,
+      today: today(),
+      classes: settings.settings().actionClasses,
+      rests: dayReview.offTopicRests(),
+      approvals: approvals.items(),
+    });
+  };
+
+  const suggestHide$ = (day: string, row: ReviewedRow): Observable<void> =>
+    approvals
+      .enqueue$({
+        request: autoModeHideRequest({ day, row }),
+        client: AUTO_MODE_CLIENT,
+        target: autoModeHideTarget(day, row.id),
+      })
+      .pipe(map(() => undefined));
+
+  const hideApproved$ = (item: Pick<AgentApproval, 'id'> & { request: AutoModeHideRequest }): Observable<void> =>
+    dayReview
+      .editRowsOnDay$({ day: item.request.day, edits: [{ kind: 'hidden', rowId: item.request.rowId, hidden: true }] })
+      .pipe(
+        map((applied) =>
+          approvals.finish(
+            item.id,
+            applied
+              ? { ok: true, value: { hidden: item.request.rowId } }
+              : { ok: false, message: 'The day no longer holds that rest band.' },
+          ),
+        ),
+        catchError((error: unknown) => {
+          approvals.finish(item.id, { ok: false, message: error instanceof Error ? error.message : String(error) });
+
+          return EMPTY;
+        }),
+      );
 
   const issues$ = (projectKey: string | undefined): Observable<ProjectIssues | null> =>
     projectKey
@@ -424,6 +471,20 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   });
 
   effect(() => {
+    const day = dayReview.dayKey();
+    const rests = hidesNow(day);
+
+    untracked(() => {
+      for (const row of rests) {
+        queue({
+          key: `${day}|hide:${row.id}`,
+          run: () => (hidesNow(day).some((held) => held.id === row.id) ? suggestHide$(day, row) : EMPTY),
+        });
+      }
+    });
+  });
+
+  effect(() => {
     if (!enabled() || !dayReview.isToday()) return;
 
     dayReview.autoAnswers();
@@ -436,14 +497,17 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   approvals.approved$
     .pipe(
-      tap(({ id, request }) => {
-        if (isAgentApiRequest(request)) return;
+      concatMap(({ id, request }) => {
+        if (isAgentApiRequest(request)) return EMPTY;
+        if (request.op === 'autoMode.hide') return hideApproved$({ id, request });
 
         approvals.finish(id, { ok: true, value: { issueKey: request.issueKey } });
 
         if (request.subject.kind === 'stand-in') {
           settings.resolveStandIn({ id: request.subject.standInId, issueKey: request.issueKey, source: 'auto' });
         }
+
+        return EMPTY;
       }),
       takeUntilDestroyed(),
     )
