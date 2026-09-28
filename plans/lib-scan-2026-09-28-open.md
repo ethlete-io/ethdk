@@ -38,6 +38,11 @@ own open lines; this file lists what needs a user decision and what is still que
 - overlay: 6592a0627 changed the exported `DragToDismissContext`: `overlayRef` now needs
   `beforeClosed`, which breaks custom mocks. Check that its changeset bump is right.
 
+- contentful: `ContentfulRestAsset.fields.file` is now optional (a9b3f3947). A consumer that
+  reads `fields.file.url` no longer compiles under strict mode; the changeset says patch.
+- contentful: `provideContentfulConfig` bundles all five default components. Lazy defaults or an
+  opt-in `withContentfulDefaultComponents()` change the public API; the size is not measured.
+
 ## Queue
 
 - select: mark touched when an outside click or focus leave closes the panel (the cascader got
