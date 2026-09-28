@@ -80,6 +80,58 @@ describe('PipManager', () => {
     expect(wrapper?.isConnected).toBe(false);
   });
 
+  it('destroys the player when its slot is destroyed during the flip exit animation', async () => {
+    const { driver, slotEl, playerEl } = setup();
+
+    driver.pipManager.pipActivate(slotEl);
+    driver.measure(playerEl, 320, 180);
+    driver.measure(slotEl, 640, 360);
+
+    driver.pipManager.pipDeactivate(PLAYER_ID);
+    driver.streamManager.unregisterSlot(slotEl);
+
+    await driver.advance();
+
+    expect(driver.destroyedPlayers).toEqual([PLAYER_ID]);
+    expect(driver.parentOf(PLAYER_ID)).toBeNull();
+  });
+
+  it('hands the player to the next slot when its slot is destroyed during the flip exit animation', async () => {
+    const { driver, slotEl, playerEl } = setup();
+    const otherSlotEl = driver.addSlot(PLAYER_ID);
+    const prioritySlotEl = driver.addSlot(PLAYER_ID, { priority: true });
+
+    driver.pipManager.pipActivate(prioritySlotEl);
+    driver.measure(playerEl, 320, 180);
+    driver.measure(prioritySlotEl, 640, 360);
+
+    driver.pipManager.pipDeactivate(PLAYER_ID);
+    driver.streamManager.unregisterSlot(prioritySlotEl);
+
+    await driver.advance();
+
+    expect(driver.destroyedPlayers).toEqual([]);
+    expect(driver.parentOf(PLAYER_ID)).toBe(otherSlotEl);
+    expect(slotEl.contains(playerEl)).toBe(false);
+  });
+
+  it('hands the player to the next slot when its slot is destroyed during the scale-fade exit animation', async () => {
+    const { driver, playerEl } = setup();
+    const prioritySlotEl = driver.addSlot(PLAYER_ID, { priority: true });
+    const otherSlotEl = driver.addSlot(PLAYER_ID);
+
+    driver.pipManager.pipActivate(prioritySlotEl);
+    driver.pipManager.setFeaturedPip('youtube-featured');
+    driver.pipManager.pipDeactivate(PLAYER_ID);
+    driver.streamManager.unregisterSlot(prioritySlotEl);
+
+    await driver.advance();
+
+    expect(driver.destroyedPlayers).toEqual([]);
+    expect(driver.parentOf(PLAYER_ID)).toBe(otherSlotEl);
+    expect(prioritySlotEl.contains(playerEl)).toBe(false);
+  });
+
   it('reassigns the player only once the scale-fade exit animation clears the animating-out latch', async () => {
     const { driver, slotEl } = setup();
 

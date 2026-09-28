@@ -104,7 +104,20 @@ const PIP_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
     const beginExitAnimation = (playerId: StreamPlayerId) => {
       streamManager.setPlayerAnimatingOut(playerId, true);
 
-      return () => streamManager.setPlayerAnimatingOut(playerId, false);
+      return () => {
+        streamManager.setPlayerAnimatingOut(playerId, false);
+
+        const playerEl = streamManager.getPlayerElement(playerId);
+        if (!playerEl || streamManager.isPlayerInPip(playerId)) return;
+
+        const bestSlot = streamManager.resolveBestSlot(playerId);
+
+        if (!bestSlot) {
+          streamManager.unregisterPlayer(playerId);
+        } else if (playerEl.parentElement !== bestSlot.element) {
+          renderer.moveBefore({ newParent: bestSlot.element, child: playerEl });
+        }
+      };
     };
 
     const pipDeactivate = (
@@ -169,10 +182,7 @@ const PIP_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
             toRect,
             document,
             renderer,
-            onFinish: () => {
-              endExitAnimation();
-              renderer.moveBefore({ newParent: targetParent, child: playerEl });
-            },
+            onFinish: endExitAnimation,
           });
           endPip(playerId);
 
