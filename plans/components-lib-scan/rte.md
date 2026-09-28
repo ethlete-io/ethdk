@@ -10,7 +10,6 @@ Scan of `libs/components/src/lib/forms/rich-text-editor/` (without `headless/`) 
 ## Image tool
 
 - Medium: with the image tool provided on a route or app injector, an upload in flight keeps running after its editor is destroyed and only stops when that scope goes away (`rich-text-editor/tools/rich-text-editor-image.provider.ts`). Each upload and file pick now releases its scope callback once it settles, and each editor has its own popover; cancelling on editor destroy needs an editor-scoped `DestroyRef`/`Injector` exposed by `headless/rich-text-editor.directive.ts` (or a per-editor tool hook). M
-- Medium: an alt text with `]`, or an upload URL with `)` or a space, breaks the Markdown round trip and the image becomes literal text (`rich-text-editor/tools/rich-text-editor-image.util.ts:216-217,251-253`; serializer at `core/src/lib/utils/markdown.ts:644-646`, parser at `:177`). S3-style keys such as `photo (1).png` are common. Escape `]` in alt text and percent-encode `)`/space in the URL when you serialize, or reject such values in `applyAlt` and `onSuccess`. S Verified (repro). A `]` in alt text leaves the whole image as literal text. A `)` cuts `src` at `photo (1` and leaves `.png)` as text. A space alone round-trips.
 - Low: `fileName` throws a `URIError` for a URL with a stray `%` (for example `100%.png`), and this breaks the image popover (`rich-text-editor/rich-text-editor-image-editor.component.ts:61`). Wrap `decodeURIComponent` in a try/catch and fall back to the raw segment. S Re-rated from Medium: a well-formed URL encodes `%` as `%25`, so only a malformed stored URL reaches this.
 - Low: the upload URL is not checked before it becomes `src` (`rich-text-editor/tools/rich-text-editor-image.provider.ts:193`). An `<img>` does not run `javascript:`, but the editor stores a value that the viewer then drops. Check it with the same `isSafeUrl` rule the viewer uses and report `upload-failed`. S
 - Low: when the image popover is open, a click on a second image closes the popover and does not open it for the clicked image (`rich-text-editor/tools/rich-text-editor-image.provider.ts:281-285`). S
@@ -47,7 +46,6 @@ Scan of `libs/components/src/lib/forms/rich-text-editor/` (without `headless/`) 
 ## Spec gaps
 
 - Spec: `rich-text-editor-trigger-with-query.spec.ts` fakes `executionState` with a plain `Subject`, which does not replay, so it cannot catch the stale-result bug. Use the real query client or a `ReplaySubject(1)`, and add a two-keystroke case and a `null`-args case. S
-- Spec: no round-trip test for alt text with `]` or for a URL with `)`/a space through `syncFromDom` → `markdownToHtml`. S
 
 ## table caret navigation (second pass)
 

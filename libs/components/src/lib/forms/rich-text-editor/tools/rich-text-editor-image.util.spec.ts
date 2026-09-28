@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
-import { htmlToMarkdown, injectRenderer } from '@ethlete/core';
+import { htmlToMarkdown, injectRenderer, markdownToHtml } from '@ethlete/core';
 import '../../../../test-helpers';
 import {
   injectRichTextEditorDom,
@@ -189,6 +189,33 @@ describe('rich text editor image ops', () => {
     ops.applyAlt(active!.element, 'After');
 
     expect(htmlToMarkdown(root.innerHTML)).toBe('![After](https://example.com/a.png)');
+  });
+
+  it('keeps an image whose URL holds parentheses and spaces an image through the Markdown round trip', () => {
+    const { root, dom } = setup('<p>Hello</p>');
+    caretIn(root.firstChild!.firstChild!, 5);
+    const placeholder = ops.insertPlaceholder(dom, 'Uploading…')!;
+
+    ops.replacePlaceholderWithImage({
+      dom,
+      placeholder,
+      image: { src: 'https://cdn.example.com/photo (1).png', alt: 'A [draft]' },
+    });
+
+    const html = markdownToHtml(htmlToMarkdown(root.innerHTML));
+
+    expect(html).toContain('<img src="https://cdn.example.com/photo%20%281%29.png" alt="A draft">');
+    expect(html).not.toContain('.png)');
+  });
+
+  it('keeps an image with brackets in its alt text an image through the Markdown round trip', () => {
+    const { root } = setup('<p><img src="https://example.com/a.png" alt=""></p>');
+
+    ops.applyAlt(root.querySelector('img')!, 'Chart [2024]');
+
+    expect(markdownToHtml(htmlToMarkdown(root.innerHTML))).toContain(
+      '<img src="https://example.com/a.png" alt="Chart 2024">',
+    );
   });
 
   it('reports no active image when the caret is in plain text', () => {

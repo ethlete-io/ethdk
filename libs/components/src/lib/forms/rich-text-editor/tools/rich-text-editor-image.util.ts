@@ -14,6 +14,19 @@ export type RichTextEditorActiveImage = {
   alt: string;
 };
 
+const MARKDOWN_UNSAFE_URL_CHARACTERS = /[()\s]/g;
+
+/** `![alt](src)` ends the alt text at the first `]` and the URL at the first `)` or whitespace. */
+const markdownSafeImage = ({ src, alt }: { src: string; alt: string }) => ({
+  src: src.replace(
+    MARKDOWN_UNSAFE_URL_CHARACTERS,
+    (character) => `%${character.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0')}`,
+  ),
+  alt: markdownSafeAlt(alt),
+});
+
+const markdownSafeAlt = (alt: string) => alt.replace(/[[\]]/g, '');
+
 /** Whether a block holds nothing but (at most) the line break that gives an empty line its box. */
 const isBlockEmpty = (block: HTMLElement) =>
   !block.textContent?.trim() && Array.from(block.children).every((child) => child.tagName === 'BR');
@@ -213,8 +226,10 @@ export const createImageOps = (renderer: EditorRenderer) => {
     const paragraph = renderer.createElement('p') as HTMLElement;
     const img = renderer.createElement('img') as HTMLImageElement;
 
-    renderer.setAttribute(img, 'src', image.src);
-    renderer.setAttribute(img, 'alt', image.alt);
+    const safe = markdownSafeImage(image);
+
+    renderer.setAttribute(img, 'src', safe.src);
+    renderer.setAttribute(img, 'alt', safe.alt);
     renderer.appendChild(paragraph, img);
 
     const anchor = placeholder.nextSibling;
@@ -249,7 +264,7 @@ export const createImageOps = (renderer: EditorRenderer) => {
   };
 
   const applyAlt = (image: HTMLImageElement, alt: string) => {
-    renderer.setAttribute(image, 'alt', alt);
+    renderer.setAttribute(image, 'alt', markdownSafeAlt(alt));
   };
 
   /** Removes the image, and the block it was alone in - an empty paragraph is not what was meant. */
