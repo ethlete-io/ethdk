@@ -295,4 +295,14 @@ export const createTimeValueFormatter = (options: {
   return (instant) => format.format(instant);
 };
 
+export const isValidTimeZone = (timeZone: string) => {
+  try {
+    fieldFormat(timeZone);
+
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export const viewerTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;

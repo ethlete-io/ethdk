@@ -58,6 +58,8 @@ export type SankeyLayout = {
   /** Only the links with a positive value. */
   links: SankeyLayoutLink[];
   columnCount: number;
+  /** The distance between the left edges of two neighbouring columns. */
+  columnStep: number;
   pixelsPerValue: number;
   gap: number;
 };
@@ -67,7 +69,14 @@ type Edge = { index: number; source: number; target: number; value: number };
 const DEFAULT_ITERATIONS = 6;
 const MAX_GAP_SHARE = 0.5;
 
-export const EMPTY_SANKEY_LAYOUT: SankeyLayout = { nodes: [], links: [], columnCount: 0, pixelsPerValue: 0, gap: 0 };
+export const EMPTY_SANKEY_LAYOUT: SankeyLayout = {
+  nodes: [],
+  links: [],
+  columnCount: 0,
+  columnStep: 0,
+  pixelsPerValue: 0,
+  gap: 0,
+};
 
 /** `null` when the links form a cycle. */
 export const assignSankeyColumns = (nodeCount: number, edges: readonly Omit<Edge, 'index'>[]): number[] | null => {
@@ -276,12 +285,29 @@ export const findSankeyDataError = (
   return null;
 };
 
-/** A cycle lays out empty and an invalid link is skipped. Check the data with `findSankeyDataError` first. */
+const firstNodeIndexes = (nodes: readonly SankeyLayoutNodeInput[]) => {
+  const seen = new Set<string>();
+
+  return nodes.flatMap((node, index) => {
+    if (seen.has(node.id)) return [];
+
+    seen.add(node.id);
+
+    return [index];
+  });
+};
+
+/**
+ * A cycle lays out empty, an invalid link is skipped and a node repeating an earlier id is left out.
+ * Check the data with `findSankeyDataError` first.
+ */
 export const computeSankeyLayout = ({
-  nodes: nodeInputs,
+  nodes: allNodeInputs,
   links: linkInputs,
   ...options
 }: SankeyLayoutInput): SankeyLayout => {
+  const inputIndexes = firstNodeIndexes(allNodeInputs);
+  const nodeInputs = inputIndexes.map((index) => allNodeInputs[index] as SankeyLayoutNodeInput);
   const { edges } = readEdges(nodeInputs, linkInputs);
   const nodeCount = nodeInputs.length;
 
@@ -429,5 +455,12 @@ export const computeSankeyLayout = ({
     };
   });
 
-  return { nodes, links, columnCount, pixelsPerValue, gap };
+  return {
+    nodes: nodes.map((node) => ({ ...node, index: inputIndexes[node.index] ?? node.index })),
+    links,
+    columnCount,
+    columnStep: step,
+    pixelsPerValue,
+    gap,
+  };
 };

@@ -1,5 +1,5 @@
 import { computed, Directive, inject, InjectionToken, WritableSignal } from '@angular/core';
-import { signalHostElementDimensions } from '@ethlete/core';
+import { injectHostElement, signalHostElementDimensions } from '@ethlete/core';
 
 /** A chart directive that lays its marks out in the width an `etChartPlot` element measures. */
 export type ChartPlotHost = {
@@ -20,6 +20,9 @@ export const CHART_PLOT_HOST = new InjectionToken<ChartPlotHost>('CHART_PLOT_HOS
   selector: '[etChartPlot]',
 })
 export class ChartPlotDirective {
+  /** @internal */
+  public element = injectHostElement();
+
   private dimensions = signalHostElementDimensions();
 
   public width = computed(() => this.dimensions().client?.width ?? 0);

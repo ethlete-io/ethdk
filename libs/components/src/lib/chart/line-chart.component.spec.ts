@@ -240,6 +240,54 @@ describe('LineChartComponent', () => {
     expect(chart.positions()).toEqual([0, PLOT_WIDTH]);
   });
 
+  it('keys two instants at the same time apart', () => {
+    const { host, fixture, chart } = setup();
+
+    host.data.set([
+      { x: new Date('2025-03-28T23:00:00Z'), value: 1 },
+      { x: new Date('2025-03-28T23:00:00Z'), value: 2 },
+    ]);
+    fixture.detectChanges();
+
+    const keys = chart.slices().map((slice) => slice.key);
+
+    expect(new Set(keys).size).toBe(2);
+  });
+
+  it('reports an invalid time zone and lays the axis out in the viewer one', () => {
+    const handleError = vi.fn();
+    const { host, fixture, chart } = setup([{ provide: ErrorHandler, useValue: { handleError } }]);
+
+    host.data.set([{ x: new Date('2025-06-01T00:00:00Z'), value: 1 }]);
+    host.timeZone.set('Not/AZone');
+
+    expect(() => fixture.detectChanges()).not.toThrow();
+    expect(String(handleError.mock.calls[0]?.[0])).toMatch(/ET5121/);
+    expect(chart.slices()).toHaveLength(1);
+  });
+
+  it('reads the plot position once per touch move', () => {
+    const { fixture, chart, element } = setup();
+    const plotElement = document.createElement('div');
+    const rectReads = vi.spyOn(Element.prototype, 'getBoundingClientRect');
+
+    chart.plot.set({ width: signal(PLOT_WIDTH), element: plotElement } as unknown as ChartPlotDirective);
+    fixture.detectChanges();
+    rectReads.mockClear();
+
+    element
+      .querySelector('et-line-chart')
+      ?.dispatchEvent(new PointerEvent('pointermove', { pointerType: 'touch', clientX: 10, bubbles: true }));
+
+    const layoutReads = rectReads.mock.contexts.filter(
+      (context) => !(context as Element).classList.contains('et-line-chart-slice-anchor'),
+    );
+
+    expect(layoutReads).toEqual([plotElement]);
+
+    rectReads.mockRestore();
+  });
+
   it('puts the time-axis labels on midnights of the chart time zone, not the viewer one', () => {
     const { host, fixture, chart } = setup();
 

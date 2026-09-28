@@ -33,9 +33,14 @@ import {
   splitLineSegments,
 } from './internals/chart-line';
 import { assertChartPlot } from './internals/chart-plot-check';
-import { createLinearScale, createValueTicks } from './internals/chart-scale';
+import { createLinearScale, createValueTicks, numberExtent } from './internals/chart-scale';
 import { hasSharedSeriesColor, resolveChartSeriesColors } from './internals/chart-series';
-import { createTimeTicks, createTimeValueFormatter, viewerTimeZone } from './internals/chart-time-scale';
+import {
+  createTimeTicks,
+  createTimeValueFormatter,
+  isValidTimeZone,
+  viewerTimeZone,
+} from './internals/chart-time-scale';
 
 /** Where a point sits along the x axis: a category name, or an instant on a time axis. */
 export type LineChartX = string | Date;
@@ -251,7 +256,17 @@ export class LineChartDirective implements ChartPlotHost {
   private requestedTabStop = signal(0);
   private sliceHandles = new Set<LineChartSliceHandle>();
 
-  private resolvedTimeZone = computed(() => this.timeZone() ?? viewerTimeZone());
+  private isValidTimeZone = computed(() => {
+    const timeZone = this.timeZone();
+
+    return timeZone === null || isValidTimeZone(timeZone);
+  });
+
+  private resolvedTimeZone = computed(() => {
+    const timeZone = this.timeZone();
+
+    return timeZone !== null && this.isValidTimeZone() ? timeZone : viewerTimeZone();
+  });
 
   private hasMixedX = computed(() => !this.isTime() && this.data().some((datum) => datum.x instanceof Date));
 
@@ -312,11 +327,7 @@ export class LineChartDirective implements ChartPlotHost {
     this.ticks().map((tick) => ({ key: tick.value, text: tick.text, position: tick.position })),
   );
 
-  private timeDomain = computed<readonly [number, number]>(() => {
-    const times = this.rows().map((row) => row.time ?? 0);
-
-    return times.length ? [Math.min(...times), Math.max(...times)] : [0, 0];
-  });
+  private timeDomain = computed(() => numberExtent(this.rows().map((row) => row.time ?? 0)));
 
   /** Each x's offset from the left of the plot, in `data` order (time order on a time axis). */
   public positions = computed<number[]>(() => {
@@ -464,7 +475,7 @@ export class LineChartDirective implements ChartPlotHost {
         : EMPTY_DESCRIPTION;
 
       return {
-        key: row.time === null ? `${index}:${String(row.x)}` : String(row.time),
+        key: `${index}:${row.time === null ? String(row.x) : row.time}`,
         index,
         x: row.x,
         position,
@@ -518,6 +529,18 @@ export class LineChartDirective implements ChartPlotHost {
       });
 
       effect(() => {
+        if (this.isValidTimeZone()) return;
+
+        this.reportError(
+          new RuntimeError(
+            LINE_CHART_ERROR_CODES.INVALID_TIME_ZONE,
+            `[LineChartDirective] The timeZone input "${this.timeZone()}" is not an IANA time zone. ` +
+              'The chart falls back to the viewer time zone.',
+          ),
+        );
+      });
+
+      effect(() => {
         const colors = this.seriesColors();
 
         if (colors.length > 1 && hasSharedSeriesColor(colors)) {
@@ -555,14 +578,13 @@ export class LineChartDirective implements ChartPlotHost {
   }
 
   private showSliceAt(clientX: number) {
-    const handles = [...this.sliceHandles];
+    const plot = this.plot();
 
-    if (!handles.length) return;
+    if (!plot || !this.sliceHandles.size) return;
 
-    const plotLeft = Math.min(...handles.map((slice) => slice.element.getBoundingClientRect().left));
-    const index = findNearestIndex(this.positions(), clientX - plotLeft);
+    const index = findNearestIndex(this.positions(), clientX - plot.element.getBoundingClientRect().left);
 
-    for (const slice of handles) {
+    for (const slice of this.sliceHandles) {
       if (slice.index() === index) slice.showTooltip();
       else slice.hideTooltip();
     }

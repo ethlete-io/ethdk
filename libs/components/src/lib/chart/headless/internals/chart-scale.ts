@@ -46,10 +46,30 @@ const niceStep = (span: number, count: number) => {
   return magnitude;
 };
 
+/** Loops instead of spreading into `Math.min`, which throws a RangeError past about 100k arguments. */
+export const numberExtent = (values: readonly number[]): readonly [number, number] => {
+  let min = Infinity;
+  let max = -Infinity;
+
+  for (const value of values) {
+    if (value < min) min = value;
+    if (value > max) max = value;
+  }
+
+  return values.length ? [min, max] : [0, 0];
+};
+
 export const createValueTicks = (values: readonly number[], count: number): ChartValueTicks => {
-  const finite = values.filter((value) => Number.isFinite(value));
-  const min = Math.min(0, ...finite);
-  const max = Math.max(0, ...finite);
+  let min = 0;
+  let max = 0;
+
+  for (const value of values) {
+    if (!Number.isFinite(value)) continue;
+
+    min = Math.min(min, value);
+    max = Math.max(max, value);
+  }
+
   const span = max - min || 1;
   const step = niceStep(span, count);
   const domainMin = roundToStep(Math.floor(min / step) * step);

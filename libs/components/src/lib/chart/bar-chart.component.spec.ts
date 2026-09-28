@@ -162,6 +162,16 @@ describe('BarChartComponent', () => {
     ]);
   });
 
+  it('shows a NaN value as the 0 bar it draws', () => {
+    const { fixture, chart } = setup();
+
+    fixture.componentInstance.data.set([{ label: 'Jan', value: NaN }]);
+    fixture.detectChanges();
+
+    expect(chart.bars()[0]?.valueText).toBe('0');
+    expect(chart.table().rows).toEqual([{ header: 'Jan', cells: ['0'] }]);
+  });
+
   it('shows no legend for a single series', () => {
     const { element } = setup();
 

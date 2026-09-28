@@ -173,6 +173,22 @@ describe('PieChartComponent', () => {
     warn.mockRestore();
   });
 
+  it('shows a NaN value as the 0 it counts as', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { fixture, host, chart } = setup();
+
+    host.data.set([
+      { label: 'Search', value: 3 },
+      { label: 'Broken', value: NaN },
+    ]);
+    fixture.detectChanges();
+
+    expect(chart.entries()[1]?.valueText).toBe('0');
+    expect(chart.table().rows[1]?.cells[0]).toBe('0');
+
+    warn.mockRestore();
+  });
+
   it('draws an empty track and no slices when nothing is positive', () => {
     const { fixture, host, element } = setup();
 

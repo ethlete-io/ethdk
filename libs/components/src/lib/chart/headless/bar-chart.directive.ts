@@ -335,7 +335,7 @@ export class BarChartDirective implements ChartPlotHost {
               ? 'bottom'
               : 'top';
 
-        const valueText = format(category.datum?.value ?? value);
+        const valueText = format(value);
         const name = entry && series.length > 1 ? `${category.label}, ${entry.label}` : category.label;
 
         bars.push({
@@ -369,18 +369,8 @@ export class BarChartDirective implements ChartPlotHost {
     const series = this.series();
     const format = this.formatValue();
 
-    if (!series.length) {
-      return {
-        columns: [this.categoryHeader(), this.valueHeader()],
-        rows: (this.data() as readonly BarChartDatum[]).map((datum) => ({
-          header: datum.label,
-          cells: [format(datum.value)],
-        })),
-      };
-    }
-
     return {
-      columns: [this.categoryHeader(), ...series.map((entry) => entry.label)],
+      columns: [this.categoryHeader(), ...(series.length ? series.map((entry) => entry.label) : [this.valueHeader()])],
       rows: this.categories().map((category) => ({
         header: category.label,
         cells: category.values.map((value) => (value === null ? '' : format(value))),

@@ -169,7 +169,7 @@ export class PieChartDirective implements ChartPlotHost {
         colorToken,
         accentMix: colorToken === null ? (mixes[uncoveredIndex++] ?? null) : null,
         percent,
-        valueText: format(datum.value),
+        valueText: format(Number.isFinite(datum.value) ? datum.value : 0),
         percentText: formatPercent(percent),
       };
     });

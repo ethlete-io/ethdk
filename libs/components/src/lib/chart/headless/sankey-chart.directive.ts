@@ -190,10 +190,6 @@ export class SankeyChartDirective implements ChartPlotHost {
     const outgoingLabel = this.outgoingLabel();
     const labelWidth = this.labelWidth();
     const lastColumn = layout.columnCount - 1;
-    const step =
-      layout.columnCount > 1
-        ? (this.plotWidth() - 2 * labelWidth - this.nodeWidth()) / (layout.columnCount - 1)
-        : labelWidth;
 
     return [...layout.nodes]
       .sort((a, b) => a.column - b.column || a.order - b.order)
@@ -205,7 +201,8 @@ export class SankeyChartDirective implements ChartPlotHost {
         const outgoingText = entry.outgoing > 0 ? format(entry.outgoing) : null;
         const labelSide: SankeyChartLabelSide = entry.column === 0 && lastColumn > 0 ? 'start' : 'end';
         const labelX = labelSide === 'start' ? entry.x - LABEL_PADDING : entry.x + entry.width + LABEL_PADDING;
-        const room = labelSide === 'start' || entry.column === lastColumn ? labelWidth : step - entry.width;
+        const room =
+          labelSide === 'start' || entry.column === lastColumn ? labelWidth : layout.columnStep - entry.width;
 
         return {
           key: node.id,

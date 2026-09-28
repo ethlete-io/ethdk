@@ -1,4 +1,4 @@
-import { createBandScale, createBarPath, createLinearScale, createValueTicks } from './chart-scale';
+import { createBandScale, createBarPath, createLinearScale, createValueTicks, numberExtent } from './chart-scale';
 
 describe('createValueTicks', () => {
   it('rounds the domain out to a nice step that starts at zero', () => {
@@ -136,5 +136,21 @@ describe('createBarPath', () => {
 
   it('draws nothing for a zero-height bar', () => {
     expect(createBarPath({ x: 0, y: 0, width: 10, height: 0, radius: 4, roundedEnd: 'top' })).toBe('');
+  });
+});
+
+describe('numberExtent', () => {
+  const many = Array.from({ length: 200_000 }, (_, index) => index);
+
+  it('finds the extent of more values than Math.min takes as arguments', () => {
+    expect(numberExtent(many)).toEqual([0, 199_999]);
+  });
+
+  it('is [0, 0] for no values', () => {
+    expect(numberExtent([])).toEqual([0, 0]);
+  });
+
+  it('lets createValueTicks cover the same values', () => {
+    expect(createValueTicks(many, 5).domain[1]).toBeGreaterThanOrEqual(199_999);
   });
 });

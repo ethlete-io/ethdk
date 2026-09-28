@@ -132,7 +132,7 @@ The sankey chart owns `ET5160`-`ET5179` of the chart range. They are checked in 
 | -------- | --------------------------------------------------------------- |
 | `ET5160` | The links form a cycle, so the nodes cannot flow left to right. |
 | `ET5161` | A link names a `source` or `target` that is no node's `id`.     |
-| `ET5162` | Two nodes share one `id`.                                       |
+| `ET5162` | Two nodes share one `id`. The layout leaves the later one out.  |
 | `ET5163` | A link has a negative or non-finite `value`.                    |
 
 In production a cycle renders an empty chart, and an invalid link is skipped. See [error codes](/components/error-codes#chart-et51xx).

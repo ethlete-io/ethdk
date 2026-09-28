@@ -220,6 +220,30 @@ describe('computeSankeyLayout', () => {
     expect(findSankeyDataError(nodesOf('a', 'b'), [{ source: 'a', target: 'b', value: 1 }])).toBeNull();
   });
 
+  it('leaves out a node repeating an earlier id and keeps its links on the first', () => {
+    const layout = computeSankeyLayout({
+      nodes: nodesOf('a', 'b', 'a'),
+      links: [{ source: 'a', target: 'b', value: 5 }],
+      ...OPTIONS,
+    });
+
+    expect(layout.nodes.map((node) => [node.index, node.id])).toEqual([
+      [0, 'a'],
+      [1, 'b'],
+    ]);
+    expect(layout.links).toHaveLength(1);
+    expect(layout.columnStep).toBe(400 - 10);
+  });
+
+  it('keeps the input index of a node after a left-out duplicate', () => {
+    const layout = computeSankeyLayout({ nodes: nodesOf('a', 'a', 'b'), links: [], ...OPTIONS });
+
+    expect(layout.nodes.map((node) => [node.index, node.id])).toEqual([
+      [0, 'a'],
+      [2, 'b'],
+    ]);
+  });
+
   it('finds ET5162 for a duplicate node id', () => {
     expect(reportedBy({ nodes: nodesOf('a', 'a'), links: [] })).toMatch(/ET5162/);
   });
