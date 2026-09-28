@@ -52,6 +52,13 @@ settings: the user can move an action to a stricter class, never to a looser one
 - A CLI write returns `{ status: 'queued', approvalId }` at once. The op `approval.status` returns
   `queued`, `approved` with the result, `rejected` or `expired`. An item expires after a set time.
 - The queue lives in the encrypted store, so a restart keeps it and a lock hides it.
+- Where it shows (design call `timetrack/auto-mode/01-pending-actions`, 2026-09-28): A chosen. An
+  action with a band previews on that band (dashed accent) with an inline chip and ✓ / ✕, like
+  the ✂ cut line; the row's edit popover gets an "Auto mode suggests" section with the readable
+  diff; actions without a band wait behind a small header pill that opens a short list. The JSON
+  modal goes. B (a lane on the right) rejected; C (header queue list) rejected because the list
+  can grow huge.
+- The sidebar shows "Auto mode · on" with the waiting count while auto mode is on.
 
 ## Slices
 
