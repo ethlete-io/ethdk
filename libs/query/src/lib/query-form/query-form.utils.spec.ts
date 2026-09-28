@@ -9,6 +9,8 @@ import {
   transformToSortQueryParam,
   transformToString,
   transformToStringArray,
+  transformToTableSort,
+  transformToTableSortQueryParam,
 } from './query-form.utils';
 
 describe('query form transforms', () => {
@@ -86,5 +88,28 @@ describe('query form transforms', () => {
     expect(transformToSortQueryParam({ active: 'name', direction: '' })).toBeNull();
     expect(transformToSortQueryParam({ active: 'name' })).toBeNull();
     expect(transformToSortQueryParam(null)).toBeNull();
+  });
+
+  it('reads table sort entries and drops an empty key, an unknown direction and a repeated key', () => {
+    expect(transformToTableSort('name:asc')).toEqual([{ key: 'name', direction: 'asc' }]);
+    expect(transformToTableSort(['name:asc', 'meta:created:desc'])).toEqual([
+      { key: 'name', direction: 'asc' },
+      { key: 'meta:created', direction: 'desc' },
+    ]);
+    expect(transformToTableSort([':asc', 'name', 'name:up', 'date:desc', 'date:asc', 5])).toEqual([
+      { key: 'date', direction: 'desc' },
+    ]);
+    expect(transformToTableSort(['name:up', ''])).toBeNull();
+    expect(transformToTableSort(null)).toBeNull();
+  });
+
+  it('writes a table sort as one key:direction entry per column', () => {
+    expect(
+      transformToTableSortQueryParam([
+        { key: 'name', direction: 'asc' },
+        { key: 'date', direction: 'desc' },
+      ]),
+    ).toEqual(['name:asc', 'date:desc']);
+    expect(transformToTableSortQueryParam('name:asc')).toBeNull();
   });
 });

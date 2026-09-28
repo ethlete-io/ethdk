@@ -1,4 +1,4 @@
-import { WritableSignal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, model, viewChild, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { FormControl } from '@angular/forms';
@@ -13,10 +13,29 @@ import {
   queryField,
   searchQueryField,
   sortQueryField,
+  tableSortQueryField,
   transformToNumber,
+  withArgs,
 } from '../index';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import { useScenario } from './harness';
+
+type TableSort = { key: string; direction: 'asc' | 'desc' };
+
+@Component({ selector: 'et-table', template: '', changeDetection: ChangeDetectionStrategy.OnPush })
+class TableStandIn {
+  readonly sort = model<TableSort[]>([]);
+}
+
+@Component({
+  imports: [TableStandIn],
+  template: `<et-table [(sort)]="qf.fields.sort().value" />`,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+class SortedListHost {
+  readonly table = viewChild.required(TableStandIn);
+  readonly qf = defineQueryForm({ fields: { sort: tableSortQueryField() } }).observe();
+}
 
 describe('query form fields scenario', () => {
   const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
@@ -81,6 +100,55 @@ describe('query form fields scenario', () => {
     s.tick();
 
     expect(restored.value().sort).toEqual({ active: 'name', direction: 'asc' });
+  });
+
+  it('binds a table sort two-way to the URL and the query args with no mapping', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+    s.api.on('GET', '/players', () => ({ body: [] }));
+    const getPlayers = s.get<{ response: unknown[]; queryParams: { order: string } }>('/players');
+
+    await s.reloadAt('/?sort=name:asc&sort=rank:sideways&sort=:desc');
+
+    const c = s.consumer();
+    const ref = s.mount(SortedListHost, c.injector);
+    const { qf, table } = ref.instance;
+    c.run(() =>
+      getPlayers(
+        withArgs(() => ({
+          queryParams: {
+            order: qf
+              .value()
+              .sort.map(({ key, direction }) => `${key}:${direction}`)
+              .join(','),
+          },
+        })),
+      ),
+    );
+    s.tick();
+
+    expect(table().sort()).toMatchObject([{ key: 'name', direction: 'asc' }]);
+    expect(s.api.requests.map((request) => request.query['order'])).toEqual(['name:asc']);
+
+    table().sort.set([
+      { key: 'rank', direction: 'desc' },
+      { key: 'name', direction: 'asc' },
+    ]);
+    await s.settle();
+
+    expect(router.parseUrl(router.url).queryParams).toEqual({ sort: ['rank:desc', 'name:asc'] });
+    expect(s.api.requests.at(-1)?.query['order']).toBe('rank:desc,name:asc');
+    expect(qf.activeFilterCount()).toBe(0);
+
+    table().sort.set([]);
+    await s.settle();
+
+    expect(router.parseUrl(router.url).queryParams).toEqual({});
+    expect(s.api.requestCount('GET', '/players')).toBe(3);
+
+    await s.reloadAt('/?sort=date:desc');
+
+    expect(table().sort()).toMatchObject([{ key: 'date', direction: 'desc' }]);
   });
 
   it('a boolean array survives the URL round trip, including one item', async () => {

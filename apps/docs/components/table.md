@@ -424,11 +424,15 @@ programmatically, without `toggleSort`'s cycle.
 - **Client mode** (default) sorts rows in the browser. Nullish values always sink
   to the bottom.
 - **Server mode** (`sortMode="server"`) leaves rows untouched - read `sort()` and
-  feed it into your query args (it maps directly onto the query form's sort field):
+  feed it into your query args:
 
 ```html
 <et-table [(sort)]="sort" [data]="users()" [columns]="COLUMNS" sortMode="server" />
 ```
+
+To keep the sort in the URL, bind it to a query form's
+[`tableSortQueryField()`](/query/query-forms#binding-pagination-page-size-and-a-table-sort) -
+`[(sort)]="qf.fields.sort().value"` - which holds the same `{ key, direction }` list.
 
 ### Multi-column sorting
 

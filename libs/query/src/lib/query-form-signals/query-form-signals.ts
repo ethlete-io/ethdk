@@ -27,12 +27,7 @@ import {
   QueryFormStorage,
   QueryFormSignalsWriteOptions,
 } from './query-form-signals.types';
-
-/** URL sentinel for an explicit `null` value (a bare empty param would be ambiguous). */
-const ET_NULL_VALUE = 'ET_NULL__';
-
-/** URL sentinel for an empty list, which the router would otherwise drop from the URL. */
-const ET_EMPTY_ARRAY_VALUE = 'ET_EMPTY_ARRAY__';
+import { ET_EMPTY_ARRAY_VALUE, ET_NULL_VALUE } from './query-form-signals.sentinels';
 
 /**
  * Fields excluded from `activeFilterCount` by default - pagination, sorting and

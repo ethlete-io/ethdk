@@ -263,6 +263,51 @@ describe('defineQueryForm', () => {
     expect(currentParams(router)['sort']).toBe('name:asc');
   });
 
+  it('writes a table sort as one key:direction param per column and reads it back', async () => {
+    const { harness, injector, router, mod } = await setup();
+
+    const qf = runInInjectionContext(injector, () =>
+      mod.defineQueryForm({ fields: { sort: mod.tableSortQueryField() } }).observe(),
+    );
+
+    expect(qf.value().sort).toEqual([]);
+
+    qf.setValue({
+      sort: [
+        { key: 'name', direction: 'asc' },
+        { key: 'date', direction: 'desc' },
+      ],
+    });
+    TestBed.tick();
+    await settle();
+
+    expect(currentParams(router)['sort']).toEqual(['name:asc', 'date:desc']);
+    expect(qf.activeFilterCount()).toBe(0);
+
+    await harness.navigateByUrl('/?sort=date:desc&sort=bogus:up&sort=:asc');
+    TestBed.tick();
+
+    expect(qf.value().sort).toEqual([{ key: 'date', direction: 'desc' }]);
+  });
+
+  it('keeps a table sort cleared below a non-empty default across the URL', async () => {
+    const { harness, injector, router, mod } = await setup();
+    const fields = { sort: mod.tableSortQueryField({ defaultValue: [{ key: 'date', direction: 'desc' }] }) };
+
+    const qf = runInInjectionContext(injector, () => mod.defineQueryForm({ fields }).observe());
+
+    qf.setValue({ sort: [] });
+    TestBed.tick();
+    await settle();
+
+    expect(currentParams(router)['sort']).toBe('ET_EMPTY_ARRAY__');
+
+    await harness.navigateByUrl('/?sort=nope');
+    TestBed.tick();
+
+    expect(qf.value().sort).toEqual([{ key: 'date', direction: 'desc' }]);
+  });
+
   it('restores form state from the URL on observe()', async () => {
     const { harness, injector, mod } = await setup();
 

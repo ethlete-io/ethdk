@@ -139,3 +139,48 @@ export const transformToSortQueryParam = (value: unknown) => {
 
   return null;
 };
+
+/** One sorted column, by `key`; the same shape as the `@ethlete/components` table's `TableSort`. */
+export type TableSortEntry = {
+  key: string;
+  direction: 'asc' | 'desc';
+};
+
+const parseTableSortEntry = (value: unknown): TableSortEntry | null => {
+  if (typeof value !== 'string') return null;
+
+  const separator = value.lastIndexOf(':');
+  const key = value.slice(0, separator);
+  const direction = value.slice(separator + 1);
+
+  if (separator < 1 || (direction !== 'asc' && direction !== 'desc')) return null;
+
+  return { key, direction };
+};
+
+/**
+ * Reads `key:direction` entries (`name:asc`) into a table sort, dropping an entry with an empty key or an
+ * unknown direction and every repeat of a key after its first. `null` when nothing is readable.
+ */
+export const transformToTableSort = (value: unknown): TableSortEntry[] | null => {
+  const raw = Array.isArray(value) ? value : [value];
+  const sort: TableSortEntry[] = [];
+
+  for (const entry of raw.map(parseTableSortEntry)) {
+    if (entry && !sort.some((s) => s.key === entry.key)) sort.push(entry);
+  }
+
+  return sort.length ? sort : null;
+};
+
+/** Writes a table sort as one `key:direction` entry per sorted column. */
+export const transformToTableSortQueryParam = (value: unknown): string[] | null => {
+  if (!Array.isArray(value)) return null;
+
+  return value
+    .filter(
+      (entry): entry is TableSortEntry =>
+        !!entry && typeof entry === 'object' && 'key' in entry && 'direction' in entry,
+    )
+    .map(({ key, direction }) => `${key}:${direction}`);
+};

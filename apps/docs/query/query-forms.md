@@ -55,32 +55,33 @@ export class UsersComponent {
 
 ## Field creators
 
-| Creator                            | Value type          | Notes                                                                                                                                                  |
-| ---------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `queryField<T>()`                  | `T` / `T \| null`   | Generic field - see [Generic fields](#generic-fields).                                                                                                 |
-| `searchQueryField()`               | `string`            | Empty is `''`, which writes no param. Debounced 300ms; clearing applies immediately. Reads the URL back as a string, so `?search=2024` stays `'2024'`. |
-| `sortQueryField()`                 | `Sort \| null`      | Serialized as `active:direction` (e.g. `name:asc`).                                                                                                    |
-| `stringArrayQueryField()`          | `string[] \| null`  |                                                                                                                                                        |
-| `numberArrayQueryField()`          | `number[] \| null`  |                                                                                                                                                        |
-| `booleanArrayQueryField()`         | `boolean[] \| null` |                                                                                                                                                        |
-| `dateQueryField()`                 | `Date \| null`      | Expects a `Date`-parseable string in the URL; `2026-09-01` reads as local midnight.                                                                    |
-| `dateQueryField({ as: 'string' })` | `string \| null`    | For the date and time controls: the URL carries the control's `valueFormat` string verbatim - see [Binding a date control](#binding-a-date-control).   |
-| `dateArrayQueryField()`            | `Date[] \| null`    |                                                                                                                                                        |
+| Creator                            | Value type          | Notes                                                                                                                                                                 |
+| ---------------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `queryField<T>()`                  | `T` / `T \| null`   | Generic field - see [Generic fields](#generic-fields).                                                                                                                |
+| `searchQueryField()`               | `string`            | Empty is `''`, which writes no param. Debounced 300ms; clearing applies immediately. Reads the URL back as a string, so `?search=2024` stays `'2024'`.                |
+| `sortQueryField()`                 | `Sort \| null`      | Serialized as `active:direction` (e.g. `name:asc`).                                                                                                                   |
+| `tableSortQueryField()`            | `TableSortEntry[]`  | The table's multi-column sort; `[]` when unsorted. One `key:direction` param per column - see [Binding a table sort](#binding-pagination-page-size-and-a-table-sort). |
+| `stringArrayQueryField()`          | `string[] \| null`  |                                                                                                                                                                       |
+| `numberArrayQueryField()`          | `number[] \| null`  |                                                                                                                                                                       |
+| `booleanArrayQueryField()`         | `boolean[] \| null` |                                                                                                                                                                       |
+| `dateQueryField()`                 | `Date \| null`      | Expects a `Date`-parseable string in the URL; `2026-09-01` reads as local midnight.                                                                                   |
+| `dateQueryField({ as: 'string' })` | `string \| null`    | For the date and time controls: the URL carries the control's `valueFormat` string verbatim - see [Binding a date control](#binding-a-date-control).                  |
+| `dateArrayQueryField()`            | `Date[] \| null`    |                                                                                                                                                                       |
 
 Every creator accepts the same options:
 
-| Option                    | Default                          | Description                                                                                                             |
-| ------------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `defaultValue`            | `null` (`''` for search)         | Value the field starts at. Elided from the URL and ignored by the filter count. A function is evaluated lazily.         |
-| `debounce`                | - (`300` for `searchQueryField`) | Milliseconds to wait before committing a change.                                                                        |
-| `disableDebounceIfFalsy`  | `false` (`true` for search)      | Commit immediately when the new value is falsy (e.g. clearing a search).                                                |
-| `appendToUrl`             | `true`                           | Write the field to the URL. `false` makes the field a read-only mirror: it still tracks the param another owner writes. |
-| `appendDefaultValueToUrl` | `false`                          | Write the field even when it holds its default.                                                                         |
-| `isResetBy`               | -                                | Sibling field(s) whose change resets this field to its default (single key or list). Transitive - see below.            |
-| `skipInFilterCount`       | `false` (`true` for search/sort) | Exclude from `activeFilterCount`.                                                                                       |
-| `skipAutoTransform`       | `false`                          | Keep the raw URL value: no number/boolean coercion and no `ET_NULL__`/`ET_EMPTY_ARRAY__` sentinels.                     |
-| `queryParamToValue`       | -                                | Custom URL → value transform.                                                                                           |
-| `valueToQueryParam`       | -                                | Custom value → URL transform.                                                                                           |
+| Option                    | Default                                       | Description                                                                                                             |
+| ------------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `defaultValue`            | `null` (`''` for search, `[]` for table sort) | Value the field starts at. Elided from the URL and ignored by the filter count. A function is evaluated lazily.         |
+| `debounce`                | - (`300` for `searchQueryField`)              | Milliseconds to wait before committing a change.                                                                        |
+| `disableDebounceIfFalsy`  | `false` (`true` for search)                   | Commit immediately when the new value is falsy (e.g. clearing a search).                                                |
+| `appendToUrl`             | `true`                                        | Write the field to the URL. `false` makes the field a read-only mirror: it still tracks the param another owner writes. |
+| `appendDefaultValueToUrl` | `false`                                       | Write the field even when it holds its default.                                                                         |
+| `isResetBy`               | -                                             | Sibling field(s) whose change resets this field to its default (single key or list). Transitive - see below.            |
+| `skipInFilterCount`       | `false` (`true` for search/sort)              | Exclude from `activeFilterCount`.                                                                                       |
+| `skipAutoTransform`       | `false`                                       | Keep the raw URL value: no number/boolean coercion and no `ET_NULL__`/`ET_EMPTY_ARRAY__` sentinels.                     |
+| `queryParamToValue`       | -                                             | Custom URL → value transform.                                                                                           |
+| `valueToQueryParam`       | -                                             | Custom value → URL transform.                                                                                           |
 
 ### Generic fields
 
@@ -125,24 +126,29 @@ qf = defineQueryForm({
 <et-pagination [(page)]="qf.fields.page().value" [totalPages]="totalPages()" />
 ```
 
-The table's `sort` is a `TableSort[]` (`{ key, direction }`), not the field's `Sort`
-(`{ active, direction }`), so map it both ways:
+The table's `sort` is a two-way `model` too; bind it to a `tableSortQueryField()`. Its `TableSortEntry`
+(`{ key, direction }`) has the shape of the table's `TableSort`, so nothing maps between them:
 
 ```ts
-tableSort = computed<TableSort[]>(() => {
-  const sort = this.qf.value().sort;
-
-  return sort?.direction ? [{ key: sort.active, direction: sort.direction }] : [];
-});
-
-onSortChange([first]: TableSort[]) {
-  this.qf.patchValue({ sort: first ? { active: first.key, direction: first.direction } : null });
-}
+qf = defineQueryForm({
+  fields: {
+    sort: tableSortQueryField(),
+    page: queryField<number>({ defaultValue: 1, isResetBy: 'sort' }),
+  },
+}).observe();
 ```
 
 ```html
-<et-table [sort]="tableSort()" (sortChange)="onSortChange($event)" sortMode="server" … />
+<et-table [(sort)]="qf.fields.sort().value" sortMode="server" … />
 ```
+
+The URL carries one `key:direction` param per sorted column, in priority order
+(`?sort=rank:desc&sort=name:asc`). An entry with an empty key or a direction other than `asc`/`desc` is
+dropped, and so is a repeat of a key, so a hand-edited URL keeps the readable columns; with none left the
+field falls back to its default. A default sort (`defaultValue: [{ key: 'date', direction: 'desc' }]`)
+stays out of the URL, and clearing it below that default writes `ET_EMPTY_ARRAY__`.
+
+`sortQueryField()` stays the single-column field for a sort select.
 
 ### Binding a date control
 
@@ -165,14 +171,15 @@ unchanged, so a year-precision `2026` stays a string. Empty is `null`, which wri
 
 ### The transforms the typed creators use
 
-Every creator above is `queryField()` with a `queryParamToValue` (and, for sort, a
+Every creator above is `queryField()` with a `queryParamToValue` (and, for the sorts, a
 `valueToQueryParam`) already set. Those functions are exported, so a custom field can reuse one
 instead of re-deriving it - a `queryField<Date | null>()` inside a wrapper, or a transform that runs
 one of them and then narrows further:
 
 `transformToString`, `transformToStringArray`, `transformToNumber`, `transformToNumberArray`,
 `transformToBoolean`, `transformToBooleanArray`, `transformToDate`, `transformToDateArray`,
-`transformToSort` and `transformToSortQueryParam`.
+`transformToSort`, `transformToSortQueryParam`, `transformToTableSort` and
+`transformToTableSortQueryParam`.
 
 Each takes an `unknown` and returns `null` when the raw value is not something it can read - a
 non-numeric string, an unparseable date - rather than throwing, so a hand-edited URL degrades to the
@@ -242,7 +249,7 @@ The whole cascade settles before the value is committed, so it drives **one** qu
 Counts fields that differ from their default, excluding navigation state:
 `page`, `skip`, `take`, `limit`, `sort`, `sortBy`, `sortOrder`, `query`, `search`
 are always ignored, plus any field created with `skipInFilterCount` - which
-`searchQueryField()` and `sortQueryField()` set, so a search named `q` does not
+`searchQueryField()`, `sortQueryField()` and `tableSortQueryField()` set, so a search named `q` does not
 count either. That list is
 exported as `IGNORED_FILTER_COUNT_FIELDS`, so a UI that explains the count can read
 it rather than repeat it.
@@ -270,7 +277,8 @@ Serialization rules:
   emptied list (`[]`) on a field whose default is `null` commits as `null`.
 - **`null`** is written as the `ET_NULL__` sentinel and an empty list as `ET_EMPTY_ARRAY__` (only when
   it isn't the default), so both survive a reload.
-- **Sort** is `active:direction` (`name:asc`).
+- **Sort** is `active:direction` (`name:asc`); a **table sort** is one `key:direction` param per column
+  (`?sort=rank:desc&sort=name:asc`).
 - **`queryParamPrefix`** namespaces every key (`prefix-page`), so two forms can
   share a route:
 
@@ -383,6 +391,7 @@ By default it shares the source form's injector lifetime. Code that creates a br
 | `QueryFormPersistence`           | The [`persistence`](#persistence) option; `QueryFormStorage` is the `getItem`/`setItem` storage it accepts.                                            |
 | `QueryFormBranchWriteOptions`    | The `{ debounce }` bag a branch's write methods take.                                                                                                  |
 | `Sort`, `SortDirection`          | The sort field's value (`{ active, direction }`) and its `'asc' \| 'desc' \| ''` direction.                                                            |
+| `TableSortEntry`                 | One column of the table sort field's value (`{ key, direction }`), the shape of the table's `TableSort`.                                               |
 
 ## Legacy `QueryForm`
 

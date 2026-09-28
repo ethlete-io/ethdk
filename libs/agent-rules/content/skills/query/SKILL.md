@@ -154,7 +154,8 @@ users = getUsers(
 
 Bind form controls with `[formField]="qf.fields.search"`. `et-pagination` and
 `et-page-size-select` are not form controls: bind their `model` to the field's value signal,
-`[(page)]="qf.fields.page().value"`. `qf.value()` is the committed, debounced value. Each
+`[(page)]="qf.fields.page().value"`; an `et-table` sort binds the same way to a
+`tableSortQueryField()`, `[(sort)]="qf.fields.sort().value"`, with no mapping. `qf.value()` is the committed, debounced value. Each
 change pushes a history entry; pass `observe({ replaceUrl: true })` to replace it instead. See {%docsBaseUrl%}/query/query-forms for the other field creators,
 filter overlays and `activeFilterCount`.
 

@@ -1,5 +1,6 @@
 import {
   Sort,
+  TableSortEntry,
   transformToBooleanArray,
   transformToDate,
   transformToDateArray,
@@ -7,7 +8,10 @@ import {
   transformToSort,
   transformToSortQueryParam,
   transformToStringArray,
+  transformToTableSort,
+  transformToTableSortQueryParam,
 } from '../query-form/query-form.utils';
+import { ET_EMPTY_ARRAY_VALUE } from './query-form-signals.sentinels';
 import { QueryFieldConfig, QueryFieldDef } from './query-form-signals.types';
 
 const normalizeConfig = <T>(config: QueryFieldConfig<T> | undefined): Partial<QueryFieldDef<T>> => {
@@ -82,6 +86,22 @@ export const sortQueryField = (config?: QueryFieldConfig<Sort | null>): QueryFie
   skipInFilterCount: true,
   queryParamToValue: transformToSort,
   valueToQueryParam: transformToSortQueryParam,
+  ...normalizeConfig(config),
+});
+
+/**
+ * A multi-column sort typed like the `@ethlete/components` table's `sort`, so `[(sort)]` binds it with no
+ * mapping. Written as one `key:direction` param per column (`?sort=name:asc&sort=date:desc`); an unreadable
+ * entry is dropped. Starts at `[]`. Not counted by `activeFilterCount`, whatever its key.
+ *
+ * @example
+ * tableSortQueryField() // <et-table [(sort)]="qf.fields.sort().value" sortMode="server" />
+ */
+export const tableSortQueryField = (config?: QueryFieldConfig<TableSortEntry[]>): QueryFieldDef<TableSortEntry[]> => ({
+  defaultValue: [],
+  skipInFilterCount: true,
+  queryParamToValue: transformToTableSort,
+  valueToQueryParam: (value) => (value.length ? transformToTableSortQueryParam(value) : ET_EMPTY_ARRAY_VALUE),
   ...normalizeConfig(config),
 });
 
