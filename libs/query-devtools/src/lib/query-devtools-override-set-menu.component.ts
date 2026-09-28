@@ -1,4 +1,14 @@
-import { Component, computed, effect, ElementRef, input, signal, viewChild, ViewEncapsulation } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  signal,
+  viewChild,
+  ViewEncapsulation,
+} from '@angular/core';
 import { injectErrorTheme, injectStyleManager, ProvideColorDirective } from '@ethlete/core';
 import {
   armQueryDevtoolsOverrideTransfer,
@@ -40,6 +50,7 @@ import { QueryDevtoolsOverrideMenuStylesComponent } from './query-devtools-overr
 })
 export class QueryDevtoolsOverrideSetMenuComponent {
   protected errorColorTheme = injectErrorTheme();
+  private hostEl = inject<ElementRef<HTMLElement>>(ElementRef);
 
   public overrides = input.required<QueryDevtoolsOverridesRecorder>();
 
@@ -67,7 +78,7 @@ export class QueryDevtoolsOverrideSetMenuComponent {
   protected copySet() {
     const text = serializeQueryDevtoolsOverrideTransfer(this.overrides().list(), this.source());
 
-    writeQueryDevtoolsClipboard({ text }).then((result) => {
+    writeQueryDevtoolsClipboard({ text }, this.hostEl.nativeElement.ownerDocument).then((result) => {
       if (result.ok) {
         this.copied.set(true);
 
@@ -85,7 +96,7 @@ export class QueryDevtoolsOverrideSetMenuComponent {
   protected pasteSet() {
     this.reset();
 
-    readQueryDevtoolsClipboard().then((read) => {
+    readQueryDevtoolsClipboard(this.hostEl.nativeElement.ownerDocument).then((read) => {
       if (read.ok) {
         this.armText(read.text);
 

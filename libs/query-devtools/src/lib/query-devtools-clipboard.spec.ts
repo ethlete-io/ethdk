@@ -1,4 +1,4 @@
-import { writeQueryDevtoolsClipboard } from './query-devtools-clipboard';
+import { readQueryDevtoolsClipboard, writeQueryDevtoolsClipboard } from './query-devtools-clipboard';
 
 const withoutClipboard = () => Reflect.deleteProperty(navigator, 'clipboard');
 
@@ -57,5 +57,32 @@ describe('writeQueryDevtoolsClipboard', () => {
     withExecCommand(false);
 
     await expect(writeQueryDevtoolsClipboard({ text: 'hi' })).resolves.toEqual({ ok: false, reason: 'blocked' });
+  });
+
+  it('should write through the clipboard of the document the panel lives in', async () => {
+    const hostWrite = vi.fn(() => Promise.reject(new Error('Document is not focused.')));
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: hostWrite } });
+    const popupWrite = vi.fn(() => Promise.resolve());
+    const popup = { defaultView: { navigator: { clipboard: { writeText: popupWrite } } } } as unknown as Document;
+
+    await expect(writeQueryDevtoolsClipboard({ text: 'hi' }, popup)).resolves.toEqual({ ok: true });
+    expect(popupWrite).toHaveBeenCalledWith('hi');
+    expect(hostWrite).not.toHaveBeenCalled();
+  });
+});
+
+describe('readQueryDevtoolsClipboard', () => {
+  afterEach(() => withoutClipboard());
+
+  it('should read through the clipboard of the document the panel lives in', async () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { readText: () => Promise.reject(new Error('Document is not focused.')) },
+    });
+    const popup = {
+      defaultView: { navigator: { clipboard: { readText: () => Promise.resolve('pasted') } } },
+    } as unknown as Document;
+
+    await expect(readQueryDevtoolsClipboard(popup)).resolves.toEqual({ ok: true, text: 'pasted' });
   });
 });

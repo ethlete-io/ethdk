@@ -1,4 +1,14 @@
-import { Component, computed, effect, ElementRef, input, signal, viewChild, ViewEncapsulation } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  signal,
+  viewChild,
+  ViewEncapsulation,
+} from '@angular/core';
 import { injectErrorTheme, injectStyleManager, ProvideColorDirective } from '@ethlete/core';
 import {
   collectLeafPaths,
@@ -47,6 +57,7 @@ import { QueryDevtoolsOverrideMenuStylesComponent } from './query-devtools-overr
 })
 export class QueryDevtoolsOverrideMenuComponent {
   protected errorColorTheme = injectErrorTheme();
+  private hostEl = inject<ElementRef<HTMLElement>>(ElementRef);
   public value = input<unknown>();
   public path = input<JsonPath>([]);
   public parentKind = input<JsonKind | null>(null);
@@ -272,7 +283,7 @@ export class QueryDevtoolsOverrideMenuComponent {
     this.pendingPaste.set(null);
     this.pasteTarget.set(target);
 
-    readQueryDevtoolsClipboard().then((read) => {
+    readQueryDevtoolsClipboard(this.hostEl.nativeElement.ownerDocument).then((read) => {
       if (read.ok) {
         this.armPastedText(read.text);
 

@@ -3954,7 +3954,9 @@ export class QueryDevtoolsComponent implements OnInit {
 
   /** Writes to the clipboard and ticks `copied` on success. `html` is omitted for plain-text payloads. */
   private writeToClipboard(payload: { text: string; html?: string }, copied: WritableSignal<boolean>) {
-    writeQueryDevtoolsClipboard(payload).then((result) => {
+    const doc = this.panelEl()?.nativeElement.ownerDocument ?? this.document;
+
+    writeQueryDevtoolsClipboard(payload, doc).then((result) => {
       if (!result.ok) return;
 
       copied.set(true);

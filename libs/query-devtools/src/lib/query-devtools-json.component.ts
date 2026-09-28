@@ -1,5 +1,15 @@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Component, computed, input, linkedSignal, numberAttribute, signal, ViewEncapsulation } from '@angular/core';
+import {
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  input,
+  linkedSignal,
+  numberAttribute,
+  signal,
+  ViewEncapsulation,
+} from '@angular/core';
 import { injectStyleManager } from '@ethlete/core';
 import { JsonPath, QueryDevtoolsOverridesRecorder } from '@ethlete/query';
 import { Subject, switchMap, tap, timer } from 'rxjs';
@@ -187,6 +197,7 @@ const chunkSizeFor = (count: number) => {
   imports: [QueryDevtoolsJsonComponent, QueryDevtoolsCopyMenuComponent, QueryDevtoolsOverrideMenuComponent],
 })
 export class QueryDevtoolsJsonComponent {
+  private hostEl = inject<ElementRef<HTMLElement>>(ElementRef);
   public value = input<unknown>();
   public nodeKey = input<string | null>(null);
   public depth = input(0, { transform: numberAttribute });
@@ -414,7 +425,7 @@ export class QueryDevtoolsJsonComponent {
 
     if (text === null) return;
 
-    writeQueryDevtoolsClipboard({ text }).then((result) => {
+    writeQueryDevtoolsClipboard({ text }, this.hostEl.nativeElement.ownerDocument).then((result) => {
       if (result.ok) this.flagCopied(payload);
     });
   }
