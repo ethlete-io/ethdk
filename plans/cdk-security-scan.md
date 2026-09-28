@@ -1,10 +1,6 @@
 # cdk security scan - open findings
 
-Scan of `libs/cdk/src` from 2026-09-28. 1 Medium, 4 Low (verified 2026-09-28: 2 confirmed; the High is fixed). Skipped: everything outside the grep hits (maintenance-mode lib, 155k lines). Grep set: `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `bypassSecurityTrust*`, `DomSanitizer`, `eval`, `new Function`, `postMessage`, `message` listeners, `javascript:`, `window.open`, `_blank`/`noopener`, `__proto__`/`constructor` path setters, deep merge, `Object.assign`, `localStorage`/`sessionStorage`/`document.cookie`, `document.write`, `createElement`, `.src =`, `setAttribute('href'|'src')`, `[href]`/`[src]` bindings, `JSON.parse`, `new RegExp`, unguarded `window.`. No hits for `eval`, `new Function`, `postMessage`, `javascript:`, `window.open`, `_blank`, `__proto__`, deep merge, web storage, cookies, `document.write` or script injection.
-
-## button
-
-- Medium: the query button's 1 s `window.setTimeout` is never cleared on destroy (`components/button/directives/query-button/query-button.directive.ts:127`). The callback then touches the class list and subjects of a destroyed directive. It also calls `window` directly, which throws under SSR if a query settles on the server. Fix: clear the timeout in the destroy hook and use `globalThis`/a platform guard. `libs/components` has no query-button port. S Verified: `clearTimeout` runs only when a new query is set (line 85), not on destroy.
+Scan of `libs/cdk/src` from 2026-09-28. 4 Low (verified 2026-09-28: 2 confirmed; the High and the Medium are fixed). Skipped: everything outside the grep hits (maintenance-mode lib, 155k lines). Grep set: `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `bypassSecurityTrust*`, `DomSanitizer`, `eval`, `new Function`, `postMessage`, `message` listeners, `javascript:`, `window.open`, `_blank`/`noopener`, `__proto__`/`constructor` path setters, deep merge, `Object.assign`, `localStorage`/`sessionStorage`/`document.cookie`, `document.write`, `createElement`, `.src =`, `setAttribute('href'|'src')`, `[href]`/`[src]` bindings, `JSON.parse`, `new RegExp`, unguarded `window.`. No hits for `eval`, `new Function`, `postMessage`, `javascript:`, `window.open`, `_blank`, `__proto__`, deep merge, web storage, cookies, `document.write` or script injection.
 
 ## icons
 

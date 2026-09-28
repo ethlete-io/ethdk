@@ -1,4 +1,4 @@
-import { booleanAttribute, Directive, ElementRef, inject, Input } from '@angular/core';
+import { booleanAttribute, DestroyRef, Directive, ElementRef, inject, Input } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { createDestroy, signalHostAttributes } from '@ethlete/core';
 import {
@@ -30,7 +30,7 @@ export class QueryButtonDirective {
   private readonly _destroy$ = createDestroy();
   private readonly _button = inject(ButtonDirective);
 
-  private _cleanupTimeout: number | null = null;
+  private _cleanupTimeout: ReturnType<typeof setTimeout> | null = null;
 
   readonly showSuccess$ = new BehaviorSubject(false);
   readonly showFailure$ = new BehaviorSubject(false);
@@ -81,9 +81,7 @@ export class QueryButtonDirective {
 
     const classList = this._elementRef.nativeElement.classList;
 
-    if (this._cleanupTimeout !== null) {
-      window.clearTimeout(this._cleanupTimeout);
-    }
+    this._clearCleanupTimeout();
 
     classList.remove(CLASSES.success);
     classList.remove(CLASSES.failure);
@@ -124,7 +122,9 @@ export class QueryButtonDirective {
             this.didLoadOnce$.next(true);
           }
 
-          this._cleanupTimeout = window.setTimeout(() => {
+          this._clearCleanupTimeout();
+          this._cleanupTimeout = setTimeout(() => {
+            this._cleanupTimeout = null;
             this.showFailure$.next(false);
             this.showSuccess$.next(false);
             classList.remove(CLASSES.success);
@@ -167,5 +167,13 @@ export class QueryButtonDirective {
 
   constructor() {
     this._button._removeDisabledBindings();
+    inject(DestroyRef).onDestroy(() => this._clearCleanupTimeout());
+  }
+
+  private _clearCleanupTimeout() {
+    if (this._cleanupTimeout === null) return;
+
+    clearTimeout(this._cleanupTimeout);
+    this._cleanupTimeout = null;
   }
 }
