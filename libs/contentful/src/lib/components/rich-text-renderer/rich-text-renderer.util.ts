@@ -1,3 +1,4 @@
+import { isDevMode } from '@angular/core';
 import { BLOCKS, INLINES } from '@contentful/rich-text-types';
 import { isObject } from '@ethlete/core';
 import { RichTextResponse } from '../../types';
@@ -7,61 +8,46 @@ export const isRichTextRootNode = (node: unknown): node is RichTextResponse => {
   return isObject(node) && 'nodeType' in node && node['nodeType'] === 'document';
 };
 
-export const translateContentfulNodeTypeToHtmlTag = (nodeType: 'text' | BLOCKS | INLINES) => {
-  switch (nodeType) {
-    case CF_BLOCKS.HEADING_1:
-      return 'h1';
-    case CF_BLOCKS.HEADING_2:
-      return 'h2';
-    case CF_BLOCKS.HEADING_3:
-      return 'h3';
-    case CF_BLOCKS.HEADING_4:
-      return 'h4';
-    case CF_BLOCKS.HEADING_5:
-      return 'h5';
-    case CF_BLOCKS.HEADING_6:
-      return 'h6';
-    case CF_BLOCKS.PARAGRAPH:
-      return 'p';
-    case CF_BLOCKS.UL_LIST:
-      return 'ul';
-    case CF_BLOCKS.OL_LIST:
-      return 'ol';
-    case CF_BLOCKS.LIST_ITEM:
-      return 'li';
-    case CF_BLOCKS.HR:
-      return 'hr';
-    case CF_BLOCKS.QUOTE:
-      return 'blockquote';
-    case CF_BLOCKS.TABLE:
-      return 'table';
-    case CF_BLOCKS.TABLE_ROW:
-      return 'tr';
-    case CF_BLOCKS.TABLE_CELL:
-      return 'td';
-    case CF_BLOCKS.TABLE_HEADER_CELL:
-      return 'th';
-    case CF_BLOCKS.EMBEDDED_ASSET:
-      return 'div';
+const NODE_TYPE_TAGS: Record<string, keyof HTMLElementTagNameMap> = {
+  [CF_BLOCKS.HEADING_1]: 'h1',
+  [CF_BLOCKS.HEADING_2]: 'h2',
+  [CF_BLOCKS.HEADING_3]: 'h3',
+  [CF_BLOCKS.HEADING_4]: 'h4',
+  [CF_BLOCKS.HEADING_5]: 'h5',
+  [CF_BLOCKS.HEADING_6]: 'h6',
+  [CF_BLOCKS.PARAGRAPH]: 'p',
+  [CF_BLOCKS.UL_LIST]: 'ul',
+  [CF_BLOCKS.OL_LIST]: 'ol',
+  [CF_BLOCKS.LIST_ITEM]: 'li',
+  [CF_BLOCKS.HR]: 'hr',
+  [CF_BLOCKS.QUOTE]: 'blockquote',
+  [CF_BLOCKS.TABLE]: 'table',
+  [CF_BLOCKS.TABLE_ROW]: 'tr',
+  [CF_BLOCKS.TABLE_CELL]: 'td',
+  [CF_BLOCKS.TABLE_HEADER_CELL]: 'th',
+};
 
-    case CF_INLINES.ENTRY_HYPERLINK:
-      return 'a';
-    case CF_INLINES.ASSET_HYPERLINK:
-      return 'a';
+const INLINE_NODE_TYPES = new Set<string>(Object.values(CF_INLINES));
 
-    case 'text':
-      return 'span';
+/**
+ * The html element a structural rich text node renders as. A node type without an element
+ * (an unsupported inline or block) falls back to `span` for inlines and `div` otherwise,
+ * with a dev-mode warning.
+ */
+export const translateContentfulNodeTypeToHtmlTag = (
+  nodeType: 'text' | BLOCKS | INLINES,
+): keyof HTMLElementTagNameMap => {
+  const tag = NODE_TYPE_TAGS[nodeType];
 
-    // Will be ignored by the renderer
-    case 'document':
-      return 'div';
-
-    case CF_BLOCKS.EMBEDDED_ENTRY:
-      return 'div';
-    case CF_INLINES.EMBEDDED_ENTRY:
-      return 'div';
-
-    default:
-      return 'div';
+  if (tag) {
+    return tag;
   }
+
+  const fallback = INLINE_NODE_TYPES.has(nodeType) ? 'span' : 'div';
+
+  if (isDevMode()) {
+    console.warn(`Unsupported rich text node type "${nodeType}"! Its content is rendered inside a <${fallback}>.`);
+  }
+
+  return fallback;
 };

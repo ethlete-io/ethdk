@@ -159,19 +159,23 @@ describe('translateContentfulNodeTypeToHtmlTag', () => {
     [BLOCKS.TABLE_ROW, 'tr'],
     [BLOCKS.TABLE_CELL, 'td'],
     [BLOCKS.TABLE_HEADER_CELL, 'th'],
-    [BLOCKS.EMBEDDED_ASSET, 'div'],
-    [BLOCKS.EMBEDDED_ENTRY, 'div'],
-    [INLINES.EMBEDDED_ENTRY, 'div'],
-    [INLINES.ENTRY_HYPERLINK, 'a'],
-    [INLINES.ASSET_HYPERLINK, 'a'],
-    ['text', 'span'],
-    [BLOCKS.DOCUMENT, 'div'],
   ] as const)('translates %s to <%s>', (nodeType, tag) => {
     expect(translateContentfulNodeTypeToHtmlTag(nodeType)).toBe(tag);
   });
 
-  it('falls back to div for unknown node types', () => {
-    expect(translateContentfulNodeTypeToHtmlTag('something-else' as BLOCKS)).toBe('div');
+  it.each([
+    [BLOCKS.EMBEDDED_RESOURCE, 'div'],
+    ['something-else' as BLOCKS, 'div'],
+    [INLINES.RESOURCE_HYPERLINK, 'span'],
+    [INLINES.EMBEDDED_RESOURCE, 'span'],
+  ] as const)('warns and falls back for the unsupported node type %s', (nodeType, tag) => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => void 0);
+
+    expect(translateContentfulNodeTypeToHtmlTag(nodeType)).toBe(tag);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[0]).toContain(`Unsupported rich text node type "${nodeType}"`);
+
+    warn.mockRestore();
   });
 });
 

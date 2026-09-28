@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import {
   Component,
   ComponentRef,
@@ -27,6 +28,7 @@ import {
   RichTextResponse,
 } from '../../types';
 import { injectContentfulConfig } from '../../utils/contentful-config';
+import { isExternalWebHref } from '../link/contentful-link.util';
 import { CF_BLOCKS, CF_INLINES } from './rich-text-node-types';
 import { richTextRendererError } from './rich-text-renderer.errors';
 import { isRichTextRootNode, translateContentfulNodeTypeToHtmlTag } from './rich-text-renderer.util';
@@ -35,7 +37,6 @@ type HtmlOpenRenderCommand = {
   kind: 'htmlOpen';
   nestingLevel: number;
   domPosition: number;
-  index: number;
   parentId: string | null;
   attributes: Record<string, string>;
   tagName: keyof HTMLElementTagNameMap;
@@ -46,7 +47,6 @@ type HtmlCloseRenderCommand = {
   kind: 'htmlClose';
   nestingLevel: number;
   domPosition: number;
-  index: number;
   parentId: string | null;
   tagName: keyof HTMLElementTagNameMap;
   id: string;
@@ -56,7 +56,6 @@ type TextRenderCommand = {
   kind: 'text';
   nestingLevel: number;
   domPosition: number;
-  index: number;
   parentId: string | null;
   attributes: Record<string, string>;
   markTags: MarkTagName[];
@@ -68,7 +67,6 @@ type ComponentRenderCommand = {
   kind: 'component';
   nestingLevel: number;
   domPosition: number;
-  index: number;
   parentId: string | null;
   component: Type<unknown>;
   inputs: Record<string, unknown>;
@@ -233,7 +231,7 @@ export const createContentfulIncludeMap = (config: CreateContentfulIncludeMapCon
 
     if (!entry) {
       if (isDevMode()) {
-        console.warn('Entry not found! Will return null. Is the include query param to low?', { id, entryMap });
+        console.warn('Entry not found! Will return null. Is the include query param too low?', { id, entryMap });
       }
 
       return null;
@@ -299,6 +297,7 @@ export class ContentfulRichTextRendererComponent {
   private renderer = injectRenderer();
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private config = injectContentfulConfig();
+  private document = inject(DOCUMENT);
 
   /**
    * The contentful response gotten via their REST api.
@@ -469,7 +468,6 @@ export class ContentfulRichTextRendererComponent {
 
     let textId = 0;
 
-    let commandIndex = 0;
     const openElementIds: string[] = [];
 
     const traverse = (node: Block | Inline | Text) => {
@@ -487,7 +485,6 @@ export class ContentfulRichTextRendererComponent {
             kind: 'text',
             nestingLevel,
             domPosition,
-            index: commandIndex++,
             parentId: openElementIds.at(-1) ?? null,
             attributes,
             markTags: node.marks.length ? marksToTags(node.marks) : [],
@@ -568,7 +565,6 @@ export class ContentfulRichTextRendererComponent {
             kind: 'component',
             nestingLevel,
             domPosition,
-            index: commandIndex++,
             parentId: openElementIds.at(-1) ?? null,
             component,
             inputs: { asset },
@@ -594,29 +590,28 @@ export class ContentfulRichTextRendererComponent {
             href = url ? normalizeHref(url) : null;
           }
 
-          let linkText = '';
-          const linkMarks: Mark[] = [];
-
-          for (const child of node.content) {
-            if (child.nodeType === 'text') {
-              linkText += child.value;
-              linkMarks.push(...child.marks);
-            }
-          }
-
+          const linkTexts = node.content.filter(
+            (child): child is Text => child.nodeType === 'text' && Boolean(child.value),
+          );
+          const linkText = linkTexts.map((child) => child.value).join('');
           const linkComponent = href ? this.config.components.link : null;
 
           if (href && !linkComponent) {
+            const attributes: Record<string, string> = { class: DEFAULT_ANCHOR_CLASS, href };
+
+            if (
+              isExternalWebHref(href, { location: this.document.location, internalHosts: this.config.internalHosts })
+            ) {
+              attributes['target'] = '_blank';
+              attributes['rel'] = 'noopener noreferrer';
+            }
+
             rootCommands.push({
               kind: 'htmlOpen',
               nestingLevel,
               domPosition,
-              index: commandIndex++,
               parentId: openElementIds.at(-1) ?? null,
-              attributes: {
-                class: DEFAULT_ANCHOR_CLASS,
-                href,
-              },
+              attributes,
               tagName: 'a',
               id: 'e-o' + elementOpenId++,
             });
@@ -627,19 +622,9 @@ export class ContentfulRichTextRendererComponent {
             nestingLevel++;
             domPosition = 0;
 
-            rootCommands.push({
-              kind: 'text',
-              nestingLevel,
-              domPosition,
-              index: commandIndex++,
-              parentId: openElementIds.at(-1) ?? null,
-              attributes: {
-                class: 'et-contentful-rich-text-default-element et-contentful-rich-text-default-span',
-              },
-              markTags: marksToTags(linkMarks),
-              text: linkText,
-              id: 't' + textId++,
-            });
+            for (const child of linkTexts) {
+              traverse(child);
+            }
 
             openElementIds.pop();
             nestingLevel--;
@@ -649,7 +634,6 @@ export class ContentfulRichTextRendererComponent {
               kind: 'htmlClose',
               nestingLevel,
               domPosition,
-              index: commandIndex++,
               parentId: openElementIds.at(-1) ?? null,
               tagName: 'a',
               id: 'e-c' + elementCloseId++,
@@ -661,20 +645,9 @@ export class ContentfulRichTextRendererComponent {
           }
 
           if (!href) {
-            rootCommands.push({
-              kind: 'text',
-              nestingLevel,
-              domPosition,
-              index: commandIndex++,
-              parentId: openElementIds.at(-1) ?? null,
-              attributes: {
-                class: 'et-contentful-rich-text-default-element et-contentful-rich-text-default-span',
-              },
-              markTags: marksToTags(linkMarks),
-              text: linkText,
-              id: 't' + textId++,
-            });
-            domPosition++;
+            for (const child of linkTexts) {
+              traverse(child);
+            }
 
             break;
           }
@@ -683,7 +656,11 @@ export class ContentfulRichTextRendererComponent {
             break;
           }
 
-          const textClass = linkMarks.length ? marksToClass(linkMarks) : '';
+          const sharedMarks =
+            linkTexts[0]?.marks.filter((mark) =>
+              linkTexts.every((child) => child.marks.some((other) => other.type === mark.type)),
+            ) ?? [];
+          const textClass = marksToClass(sharedMarks);
 
           let linkComponentId = componentIdMap.get(LINK_COMPONENT_TYPE) ?? -1;
           const linkId = LINK_COMPONENT_TYPE + ++linkComponentId;
@@ -693,7 +670,6 @@ export class ContentfulRichTextRendererComponent {
             kind: 'component',
             nestingLevel,
             domPosition,
-            index: commandIndex++,
             parentId: openElementIds.at(-1) ?? null,
             component: linkComponent,
             inputs: { href, text: linkText, textClass, anchorClass: DEFAULT_ANCHOR_CLASS },
@@ -750,7 +726,6 @@ export class ContentfulRichTextRendererComponent {
             kind: 'component',
             nestingLevel,
             domPosition,
-            index: commandIndex++,
             parentId: openElementIds.at(-1) ?? null,
             component,
             inputs: {
@@ -777,7 +752,6 @@ export class ContentfulRichTextRendererComponent {
             kind: 'htmlOpen',
             nestingLevel,
             domPosition,
-            index: commandIndex++,
             parentId: openElementIds.at(-1) ?? null,
             attributes,
             tagName: tag,
@@ -807,13 +781,11 @@ export class ContentfulRichTextRendererComponent {
           ) {
             rootCommands.pop();
             elementOpenId--;
-            commandIndex--;
           } else {
             rootCommands.push({
               kind: 'htmlClose',
               nestingLevel,
               domPosition,
-              index: commandIndex++,
               parentId: openElementIds.at(-1) ?? null,
               tagName: tag,
               id: 'e-c' + elementCloseId++,
@@ -835,27 +807,39 @@ export class ContentfulRichTextRendererComponent {
   }
 
   private execInstructions(instructions: RenderInstruction[]) {
-    for (const instruction of instructions) {
-      switch (instruction.type) {
+    const lastPlacedChild = new Map<string | null, HTMLElement>();
+
+    for (const { type, command } of instructions) {
+      if (type === 'delete') {
+        this.runDeleteInstruction(command);
+
+        continue;
+      }
+
+      const previousSibling = lastPlacedChild.get(command.parentId) ?? null;
+
+      switch (type) {
         case 'create':
-          this.runCreateInstruction(instruction.command);
+          this.runCreateInstruction(command, previousSibling);
           break;
         case 'update':
-          this.runUpdateInstruction(instruction.command);
+          this.runUpdateInstruction(command);
           break;
         case 'move':
-          this.runMoveInstruction(instruction.command);
+          this.runMoveInstruction(command, previousSibling);
           break;
-        case 'delete':
-          this.runDeleteInstruction(instruction.command);
-          break;
+      }
+
+      const element = this.executedCommandsCache.get(command.id)?.element;
+
+      if (element) {
+        lastPlacedChild.set(command.parentId, element);
       }
     }
   }
 
-  private runCreateInstruction(command: RenderCommand) {
+  private runCreateInstruction(command: RenderCommand, previousSibling: HTMLElement | null) {
     const parentElement = this.findParent(command);
-    const nextElement = this.findFollowingElement(command);
 
     if (command.kind === 'component') {
       const inputs = signal(command.inputs);
@@ -869,7 +853,7 @@ export class ContentfulRichTextRendererComponent {
 
       const rootNode = this.getComponentRootNode(componentRef);
 
-      this.renderInsertOrAppend(rootNode, { parentElement, nextElement });
+      this.renderInsertAfter(rootNode, { parentElement, previousSibling });
 
       this.executedCommandsCache.set(command.id, {
         command,
@@ -907,7 +891,7 @@ export class ContentfulRichTextRendererComponent {
         }
       }
 
-      this.renderInsertOrAppend(span, { parentElement, nextElement });
+      this.renderInsertAfter(span, { parentElement, previousSibling });
 
       this.executedCommandsCache.set(command.id, {
         command,
@@ -920,7 +904,7 @@ export class ContentfulRichTextRendererComponent {
         this.renderer.setAttribute(element, key, value);
       }
 
-      this.renderInsertOrAppend(element, { parentElement, nextElement });
+      this.renderInsertAfter(element, { parentElement, previousSibling });
 
       this.executedCommandsCache.set(command.id, {
         command,
@@ -950,7 +934,7 @@ export class ContentfulRichTextRendererComponent {
     } as ExecutedCommandCacheItem);
   }
 
-  private runMoveInstruction(command: RenderCommand) {
+  private runMoveInstruction(command: RenderCommand, previousSibling: HTMLElement | null) {
     const cached = this.executedCommandsCache.get(command.id);
 
     if (!cached) {
@@ -969,10 +953,7 @@ export class ContentfulRichTextRendererComponent {
         this.renderer.removeChild(oldParentElement, rootNode);
       }
 
-      const newParentElement = this.findParent(command);
-      const nextElement = this.findFollowingElement(command);
-
-      this.renderInsertOrAppend(rootNode, { parentElement: newParentElement, nextElement });
+      this.renderInsertAfter(rootNode, { parentElement: this.findParent(command), previousSibling });
 
       cached.inputs.set(command.inputs);
 
@@ -1014,72 +995,27 @@ export class ContentfulRichTextRendererComponent {
   }
 
   private findParent(command: RenderCommand) {
-    const hostElement = this.elementRef.nativeElement;
-    let parentElement: HTMLElement | undefined;
-
-    if (command.nestingLevel === 0) {
-      parentElement = hostElement;
-    } else {
-      const allCommands = this.renderCommands();
-
-      let parentCommand: HtmlOpenRenderCommand | null = null;
-
-      for (let i = command.index - 1; i >= 0; i--) {
-        const cmd = allCommands[i];
-
-        if (!cmd) {
-          throw richTextRendererError('command_not_found', { command });
-        }
-
-        if (cmd.nestingLevel === command.nestingLevel - 1 && cmd.kind === 'htmlOpen') {
-          parentCommand = cmd;
-          break;
-        }
-      }
-
-      if (!parentCommand) {
-        throw richTextRendererError('text_parent_not_found', { command });
-      }
-
-      parentElement = this.executedCommandsCache.get(parentCommand.id)?.element;
+    if (command.parentId === null) {
+      return this.elementRef.nativeElement;
     }
 
+    const parentElement = this.executedCommandsCache.get(command.parentId)?.element;
+
     if (!parentElement) {
-      throw richTextRendererError('text_parent_wrong_type', { command });
+      throw richTextRendererError('text_parent_not_found', { command });
     }
 
     return parentElement;
   }
 
-  private findFollowingElement(command: RenderCommand) {
-    const parentElement = this.findParent(command);
-    let nextElement: HTMLElement | undefined;
-    let nextDomPosition = Infinity;
-
-    for (const cached of this.executedCommandsCache.values()) {
-      if (
-        cached.command.domPosition > command.domPosition &&
-        cached.command.domPosition < nextDomPosition &&
-        cached.command.nestingLevel === command.nestingLevel &&
-        cached.element.parentElement === parentElement &&
-        cached.command.id !== command.id
-      ) {
-        nextElement = cached.element;
-        nextDomPosition = cached.command.domPosition;
-      }
-    }
-
-    return nextElement;
-  }
-
-  private renderInsertOrAppend(
-    nodeToRender: HTMLElement,
-    { parentElement, nextElement }: { parentElement: HTMLElement; nextElement: HTMLElement | undefined },
+  private renderInsertAfter(
+    node: HTMLElement,
+    { parentElement, previousSibling }: { parentElement: HTMLElement; previousSibling: HTMLElement | null },
   ) {
-    if (nextElement) {
-      this.renderer.insertBefore(parentElement, nodeToRender, nextElement);
-    } else {
-      this.renderer.appendChild(parentElement, nodeToRender);
-    }
+    this.renderer.insertBefore(
+      parentElement,
+      node,
+      previousSibling ? previousSibling.nextSibling : parentElement.firstChild,
+    );
   }
 }

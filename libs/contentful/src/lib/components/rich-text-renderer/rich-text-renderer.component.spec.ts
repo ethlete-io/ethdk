@@ -609,6 +609,70 @@ describe('ContentfulRichTextRendererComponent', () => {
       ]);
     });
 
+    it('keeps the marks of each text inside a fallback anchor', () => {
+      const { fixture } = setup({
+        withoutConfig: true,
+        richText: doc(
+          block('paragraph', [
+            block('hyperlink', [text('see '), text('here', ['bold'])], { uri: 'https://example.com' }),
+          ]),
+        ),
+      });
+
+      const anchor = renderRoot(fixture).querySelector('p > a');
+
+      expect(anchor?.textContent).toBe('see here');
+      expect(anchor?.querySelectorAll('strong')).toHaveLength(1);
+      expect(anchor?.querySelector('strong')?.textContent).toBe('here');
+    });
+
+    it('passes only the marks every link text shares as the textClass', () => {
+      const { fixture } = setup({
+        useStubAssetComponents: true,
+        richText: doc(
+          block('paragraph', [
+            block('hyperlink', [text('see ', ['italic']), text('here', ['bold', 'italic'])], {
+              uri: 'https://example.com',
+            }),
+          ]),
+        ),
+      });
+
+      expect(renderRoot(fixture).querySelector('et-stub-link')?.textContent).toBe('see here');
+      expect(StubLinkComponent.instances[0]?.textClass()).toBe('et-contentful-rich-text-mark-italic');
+    });
+
+    it('opens an external fallback anchor in a new tab', () => {
+      const { fixture } = setup({
+        withoutConfig: true,
+        richText: doc(
+          block('paragraph', [hyperlink('https://example.com', 'External'), hyperlink('/internal', 'Internal')]),
+        ),
+      });
+
+      const [external, internal] = [...renderRoot(fixture).querySelectorAll('p > a')] as HTMLAnchorElement[];
+
+      expect(external?.target).toBe('_blank');
+      expect(external?.rel).toBe('noopener noreferrer');
+      expect(internal?.hasAttribute('target')).toBe(false);
+      expect(internal?.hasAttribute('rel')).toBe(false);
+    });
+
+    it('renders an unsupported inline as a span inside its paragraph', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => void 0);
+      const { fixture } = setup({
+        richText: doc(block('paragraph', [text('see '), block('resource-hyperlink', [text('resource')])])),
+      });
+
+      expect(
+        renderRoot(fixture).querySelector('p > span.et-contentful-rich-text-default-span > span')?.textContent,
+      ).toBe('resource');
+      expect(renderRoot(fixture).querySelector('p div')).toBeNull();
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('"resource-hyperlink"'));
+
+      warn.mockRestore();
+    });
+
     it('passes the collected marks as the textClass', () => {
       const { fixture } = setup({
         richText: doc(block('paragraph', [hyperlink('/internal', 'Example', ['bold', 'italic'])])),
