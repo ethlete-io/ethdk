@@ -1,20 +1,14 @@
 # Stream scan - open findings
 
-Scan of `libs/components/src/lib/stream/` from 2026-09-28. 0 High, 10 Medium, 22 Low, 4 Spec. Skipped: stories, `testing/stream-driver.ts`, `pip-window` / `pip-chrome` templates and CSS beyond the layer and colour check.
+Scan of `libs/components/src/lib/stream/` from 2026-09-28. 0 High, 2 Medium, 22 Low, 1 Spec. Skipped: stories, `testing/stream-driver.ts`, `pip-window` / `pip-chrome` templates and CSS beyond the layer and colour check.
 
 ## Slot and manager lifecycle
 
-- Medium: a change to `streamSlotPriority` or `streamSlotOnPipBack` after mount never reaches the manager (`stream/stream-player-slot.ts:111-126`). The effect returns before it reads the inputs when the id stays the same, so a slot that becomes priority later keeps the old ranking. Re-register the slot on every input change. S Verified.
-- Medium: `toObservable(..., { injector: envInjector })` puts the consent watcher effect on the environment injector (`stream/stream-player-slot.ts:266`, `:325`). `takeUntilDestroyed` ends the subscription only, so each slot that mounts while consent is pending leaves one effect and one `onDestroy` callback on the root injector. Pass the slot's element injector. S Verified. The watcher effect also outlives a grant, because `take(1)` ends only the subscription.
-- Medium: an id change on one of two slots that share a player moves the shared player to the new id (`stream/stream-manager.ts:145-150`, called from `stream/stream-player-slot.ts:117`). The other slot loses its player. If a player already exists for the new id, `players.set` overwrites it, so that component is never destroyed. Create a new player when other slots still claim the old id, and never overwrite an existing entry. M Verified.
-- Medium: the flip exit animation moves the player into the slot that was best at its start (`stream/pip-manager.ts:166-176`). If that slot is destroyed during the 250 ms animation, `unregisterSlot` skips the player because its parent is the fixed wrapper. The player then goes into a detached element and its component is never destroyed. In `onFinish`, clear the latch and call `reassignPlayer` (or `unregisterPlayer` when no slot is left). S Verified. `endPip` runs at the start of the animation, so `unregisterSlot` sees `isInPip` false and a parent that is the wrapper, and skips the player.
-- Medium: the loading, error and pip placeholder overlays exist only in the slot that created the player, and the state subscription ends with that slot (`stream/stream-player-slot.ts:157-224`, `:287-307`). When the player moves to a second slot for the same id, the spinner stays in the first slot. After the creating slot is destroyed, a later error shows no error card. M Verified.
 - Low: `pip-player` casts a missing entry to `StreamPipEntry` (`stream/pip/pip-player.component.ts:62`). Without an `entry` input or a `PipCellDirective`, `thumbnailUrl` and the `onDestroy` at `:72` throw a `TypeError`. Throw a clear dev-mode error instead. S
 - Low: the stream manager appends its `.et-stream-manager` container to `document.body` on the server too (`stream/stream-manager.ts:31-33`). SSR output gets an empty container, and the client adds a second one. Guard it with `isPlatformBrowser`. S
 
 ## Consent
 
-- Medium: a consent revoke never removes an embed that is already mounted (`stream/stream-player-slot.ts:268-269`, `:327-328`). Both watchers `take(1)` on grant. After `revoke()`, the third-party iframe keeps playing and sending data until the slot is destroyed. Watch for revoke too: destroy the player and show the consent gate again. M Verified. `StreamConsentDirective.revoke()` exists, and nothing reacts to it after the player mounts.
 - Low: the consent and error cards hard-code an `<h3>` (`stream/consent/stream-consent.component.ts:24`, `stream/error/stream-player-error.component.ts:21`). The heading level is wrong in most page outlines. Use a `role="heading"` element with a configurable `aria-level`, or a non-heading element. S
 
 ## Platform embeds
@@ -37,7 +31,6 @@ Scan of `libs/components/src/lib/stream/` from 2026-09-28. 0 High, 10 Medium, 22
 
 ## Cleanup
 
-- Medium: the pip grid toggle label is hard-coded English (`stream/pip/headless/pip-chrome-state.ts:132`) and bypasses `injectStreamLabels`. Screen readers announce "Grid view" / "Single view" in every locale. Add `pipGridView` / `pipSingleView` to `stream-labels.ts`. S Verified. The label is both `aria-label` and `title`, so sighted users see it too.
 - Low: the four inline `styles` blocks are not in `@layer components` (`stream/consent/stream-consent.component.ts:40`, `stream/error/stream-player-error.component.ts:36`, `stream/loading/stream-player-loading.component.ts:16`, `stream/pip/pip-slot-placeholder.component.ts:36`). Tailwind utilities cannot override them. Wrap each block. S
 - Low: `YoutubePlayerSlotDirective` duplicates `StreamPlayerSlotDirective` plus the YouTube params (`stream/platform/youtube/headless/youtube-player-slot.directive.ts:30-54`). Only a scenario spec uses it, and the other platforms have no equivalent. Remove it or make it a thin host-directive wrapper. M
 - Low: the `STREAM_IMPORTS` JSDoc names an `etStreamPlayerSlot` directive that does not exist (`stream/stream.imports.ts:39-51`). `StreamPlayerSlotDirective` has no selector (`stream/stream-player-slot.directive.ts:39`), and `YoutubePlayerParamsDirective` (also selector-less) is in `STREAM_YOUTUBE_IMPORTS` at `:57`, but the other params directives are not in their barrels. Fix the doc and keep only template-usable entries in the barrels. S
@@ -45,15 +38,8 @@ Scan of `libs/components/src/lib/stream/` from 2026-09-28. 0 High, 10 Medium, 22
 - Low: `setInputSignal(this.provideSurface.surface as any, ...)` with an eslint-disable (`stream/stream-player-slot.directive.ts:102-103`). Type the call. S
 - Low: `snapToPosition` and `snapTo` duplicate each other (`stream/pip/headless/internals/pip-window-position.ts:77-100`). Two quick snaps start two timers, and the first timer removes the transition in the middle of the second snap. Merge them and cancel the pending timer. S
 
-## Spec gaps
-
-- Spec: no test for a consent revoke after the player is mounted, or for a pending consent slot that is destroyed (effect leak). S
-- Spec: no test for a slot destroyed during the pip exit animation, or for an id change on one of two slots that share a player. M
-- Spec: no test for a change of `streamSlotPriority` after mount. S
-
 ## pip internals (second pass)
 
-- Medium: the close animation keeps `opacity: 0` with `fill: 'forwards'` and nothing cancels it (`stream/pip/headless/internals/pip-animation.ts:125-133`, caller `stream/pip/headless/pip-chrome-state.ts:173-187`). `close` deactivates only the pips it captured at the start, so when another player enters pip during the 160 ms exit, the window stays mounted but invisible. `close` also has no `isExiting` guard, so a double click starts a second exit. Cancel the animation in `onFinish`, and return early from `close` while `isExiting()` is true. S Verified. `PipChromeManager` keeps the chrome while any pip is active, and nothing disables the close button during the exit.
 - Low: the new-pip animation and the resize gesture share one `forcedTitleBar` boolean, and each new-pip animation resets the stage `overflow` on its own (`stream/pip/headless/internals/pip-animation.ts:188-189,262-270`, `stream/pip/headless/internals/pip-window-position.ts:431,443`). A second pip that arrives within 900 ms of the first has its thumbnail clipped and the title bar hides in the middle of it, and a resize that starts during the animation loses the title bar 100 ms after the animation ends. Count the holders (for example, a counter or a set of reasons) instead of a boolean. S Re-rated from Medium: the glitch is visual and lasts until the animation or the resize ends.
 - Low: two `startModeTransition` calls inside 260 ms overlap (`stream/pip/headless/internals/pip-window-position.ts:583-599`). The first timer clears `positionUpdateBlocked`, removes the transition class and snaps while the second transition still runs. Two quick `selectCell` calls in grid mode reach this. Cancel the pending timer on each call. S
 - Low: the `ratio === null` branches are dead code (`stream/pip/headless/internals/pip-window-position.ts:269,284,368,462,470-475,485-490`). `PIP_WINDOW_ASPECT_RATIO_TOKEN` is a `Signal<number>` (`stream/pip/headless/pip-window-aspect-ratio.token.ts:3`). The dead path is also wrong: a drag resize never changes the height and ignores `minHeight`/`maxHeight`. Remove the branches, or fix them if a free-aspect window is planned. S
