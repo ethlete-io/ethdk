@@ -24,8 +24,8 @@ const clamp = (value: number, max: number) => Math.min(Math.max(value, 0), max);
 /**
  * Opt-in arrow-key navigation over an `et-table`'s cells, following the
  * [ARIA grid pattern](https://www.w3.org/WAI/ARIA/apg/patterns/grid/): the body becomes a **single tab
- * stop**, and the arrows move focus from cell to cell inside it. Without it a table's `role="grid"` is
- * a promise it doesn't keep - only its sortable headers are operable from the keyboard.
+ * stop**, and the arrows move focus from cell to cell inside it. While it is enabled the table carries
+ * `role="grid"` / `role="gridcell"`; without it, `role="table"` / `role="cell"`.
  *
  * It is opt-in because it changes what Tab does: a read-only display table is usually better off
  * letting Tab skip straight past it.

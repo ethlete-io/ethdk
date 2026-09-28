@@ -57,7 +57,7 @@ describe('TablePageStickyHeaderDirective', () => {
     const host = driver.host();
 
     expect(host.classList.contains('et-table-host--page-sticky-header')).toBe(true);
-    expect(host.getAttribute('role')).toBe('grid');
+    expect(host.getAttribute('role')).toBe('table');
     expect(host.querySelector('.et-table-header-strip')).not.toBeNull();
     expect(host.querySelector('.et-table-scroller')).not.toBeNull();
     expect(host.querySelector(':scope > .et-table-header-strip > .et-table-header')?.getAttribute('role')).toBe(
@@ -71,7 +71,7 @@ describe('TablePageStickyHeaderDirective', () => {
     expect(host.getAttribute('role')).toBeNull();
     expect(host.querySelector('.et-table-header-strip')).toBeNull();
     expect(host.querySelector('.et-table-scroller')).toBeNull();
-    expect(host.querySelector(':scope > .et-table')?.getAttribute('role')).toBe('grid');
+    expect(host.querySelector(':scope > .et-table')?.getAttribute('role')).toBe('table');
   });
 
   it('keeps the grid owning its row groups in both layouts', () => {

@@ -1,10 +1,9 @@
 # Table core scan - open findings
 
-Scan of `table/headless/`, `table/testing/`, `table/table.component.{ts,html,css}`, `table/table.types.ts`, `table/table.imports.ts`, `table/table-errors.ts`, `table/index.ts` from 2026-09-28. 0 High, 1 Medium, 15 Low, 3 Spec (after verification: 7 verified, 1 re-rated). Skipped: the `table-*.directive.ts` feature files (another scan), all specs and stories except spot checks, and a line-by-line read of the 911-line `table.component.css` (the scan checked the layer wrap, hardcoded colours and feature CSS only).
+Scan of `table/headless/`, `table/testing/`, `table/table.component.{ts,html,css}`, `table/table.types.ts`, `table/table.imports.ts`, `table/table-errors.ts`, `table/index.ts` from 2026-09-28. 0 High, 0 Medium, 15 Low, 3 Spec (after verification: 7 verified, 1 re-rated). Skipped: the `table-*.directive.ts` feature files (another scan), all specs and stories except spot checks, and a line-by-line read of the 911-line `table.component.css` (the scan checked the layer wrap, hardcoded colours and feature CSS only).
 
 ## table.component
 
-- Medium: the grid carries `role="grid"` and every cell `role="gridcell"` without keyboard navigation (`table/table.component.html:400`, `:198,221`). ARIA `grid` promises arrow-key navigation, and without `etTableKeyboardNav` a screen-reader user gets a widget that does not answer. Fix: render `role="table"` / `role="cell"` unless a cell-navigation feature is live. M Verified. The keyboard-nav JSDoc itself calls the bare grid role "a promise it doesn't keep".
 - Low: `originatesFromInteractive` misses `<label>`, `[contenteditable]` and `role="checkbox|switch|link|menuitem|tab"`, and `hasAttribute('etMenuTrigger')` never matches a `[etMenuTrigger]="menu"` property binding (`table/table.component.ts:2138-2139`). A click on such content emits `rowClick`. Fix: extend the list and check `aria-haspopup` instead of the selector attribute. S
 - Low: a lead or trail header cell without a header component is `aria-hidden` (`table/table.component.html:19,120`) while its body cells are not, so the header row announces fewer columns than the rows. S
 - Low: the error cell sets `aria-live="polite"` on an element that is created with its content (`table/table.component.html:155`); most screen readers do not announce a live region inserted already filled. S

@@ -152,7 +152,7 @@
   @if (hasError()) {
     <!-- The error state stands in for the whole body: rows are either trustworthy or absent. -->
     <div class="et-table-message-row" role="row">
-      <div class="et-table-error-cell" role="gridcell" aria-live="polite">
+      <div [attr.role]="cellRole()" class="et-table-error-cell" aria-live="polite">
         @if (errorTemplate(); as template) {
           <ng-container *ngTemplateOutlet="template; context: { $implicit: resolvedError() }" />
         } @else {
@@ -194,8 +194,8 @@
             [class]="lead.cellClass"
             [class.et-table-sticky-start]="lead.sticky"
             [style.inset-inline-start.px]="lead.offset"
+            [attr.role]="cellRole()"
             class="et-table-cell"
-            role="gridcell"
           >
             <ng-container
               *ngComponentOutlet="lead.lead.bodyComponent; inputs: { row: rowVm.row }; injector: lead.lead.injector"
@@ -217,8 +217,8 @@
             [class.et-table-sticky-end]="cell.stickyEnd"
             [style.inset-inline-start.px]="cell.offsetStart"
             [style.inset-inline-end.px]="cell.offsetEnd"
+            [attr.role]="cellRole()"
             class="et-table-cell"
-            role="gridcell"
           >
             @if (cell.edit; as edit) {
               <!-- The one cell in edit mode: the column's etTableCellEdit template, rendered with the
@@ -266,8 +266,8 @@
             [class]="trail.cellClass"
             [class.et-table-sticky-end]="trail.sticky"
             [style.inset-inline-end.px]="trail.offset"
+            [attr.role]="cellRole()"
             class="et-table-cell"
-            role="gridcell"
           >
             <ng-container
               *ngComponentOutlet="trail.lead.bodyComponent; inputs: { row: rowVm.row }; injector: trail.lead.injector"
@@ -304,7 +304,7 @@
       }
     } @empty {
       <div class="et-table-message-row" role="row">
-        <div class="et-table-empty-cell" role="gridcell">
+        <div [attr.role]="cellRole()" class="et-table-empty-cell">
           @if (emptyTemplate(); as template) {
             <ng-container *ngTemplateOutlet="template; context: { $implicit: rows() }" />
           } @else {
@@ -343,8 +343,8 @@
           [class]="lead.cellClass"
           [class.et-table-sticky-start]="lead.sticky"
           [style.inset-inline-start.px]="lead.offset"
+          [attr.role]="cellRole()"
           class="et-table-footer-cell"
-          role="gridcell"
           aria-hidden="true"
         ></div>
       }
@@ -355,8 +355,8 @@
           [class.et-table-sticky-end]="cell.stickyEnd"
           [style.inset-inline-start.px]="cell.offsetStart"
           [style.inset-inline-end.px]="cell.offsetEnd"
+          [attr.role]="cellRole()"
           class="et-table-footer-cell"
-          role="gridcell"
         >
           @if (cell.template; as footerTemplate) {
             <ng-container *ngTemplateOutlet="footerTemplate; context: { $implicit: rows() }" />
@@ -371,8 +371,8 @@
           [class]="trail.cellClass"
           [class.et-table-sticky-end]="trail.sticky"
           [style.inset-inline-end.px]="trail.offset"
+          [attr.role]="cellRole()"
           class="et-table-footer-cell"
-          role="gridcell"
           aria-hidden="true"
         ></div>
       }
@@ -397,7 +397,7 @@
     </div>
   </div>
 } @else {
-  <div #grid [style.grid-template-columns]="templateColumns()" class="et-table" role="grid">
+  <div #grid [style.grid-template-columns]="templateColumns()" [attr.role]="tableRole()" class="et-table">
     <ng-container *ngTemplateOutlet="headerContent" />
     <ng-container *ngTemplateOutlet="bodyContent" />
   </div>

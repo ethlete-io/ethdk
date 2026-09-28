@@ -20,7 +20,7 @@ import { TableRowExpansionDirective } from './table-row-expansion.directive';
   template: `
     <!-- The clip window the animating track squeezes to nothing, and the body that carries the padding.
          Two elements on purpose - see table-detail-styles.component.css. -->
-    <div class="et-table-detail-cell" role="gridcell">
+    <div [attr.role]="table.cellRole()" class="et-table-detail-cell">
       <div class="et-table-detail-body">
         <ng-container *ngTemplateOutlet="table.detailTemplate(); context: { $implicit: row() }" />
       </div>

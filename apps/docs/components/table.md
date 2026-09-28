@@ -951,7 +951,8 @@ would otherwise be the anchor's containing block - cannot shrink the hit area to
 
 The row is **one** stop in the tab order and **one** link in the accessibility tree: the anchor
 is it, and a linked row is never itself focusable (even with `rowInteractive` set). `role="row"`
-stays on the row and `role="gridcell"` on its cells, so the grid semantics are unchanged.
+stays on the row and `role="cell"` (`gridcell` under keyboard navigation) on its cells, so the
+table semantics are unchanged.
 
 With [`etTableKeyboardNav`](#keyboard-navigation) the link behaves like any other control in a
 cell: `Enter` drills into it from the focused cell, `Escape` comes back out. Clicking a row
@@ -1713,8 +1714,9 @@ since the whole point of `file` is that this side never builds the string.
 
 ## Keyboard navigation
 
-`role="grid"` promises that the arrows move between cells. Import
-`TABLE_KEYBOARD_NAV_IMPORTS`, add `etTableKeyboardNav`, and the table keeps that promise:
+Import `TABLE_KEYBOARD_NAV_IMPORTS` and add `etTableKeyboardNav`, and the arrows move between
+cells. The table then switches from `role="table"` / `role="cell"` to `role="grid"` /
+`role="gridcell"`, which promise exactly that:
 
 ```html
 <et-table [data]="rows()" [columns]="COLUMNS" etTableKeyboardNav />
@@ -2035,14 +2037,15 @@ features and the column chooser get their strings.
 
 ## Accessibility
 
-The table uses the ARIA grid pattern: `role="grid"` on the container, `role="row"`
-on each row, `role="columnheader"` on header cells and `role="gridcell"` on body
-cells. Sortable headers are real `<button>`s (keyboard-operable) and set
+The table uses the ARIA table pattern: `role="table"` on the container, `role="row"`
+on each row, `role="columnheader"` on header cells and `role="cell"` on body
+cells. With [keyboard navigation](#keyboard-navigation) live it becomes an ARIA grid
+(`role="grid"`, `role="gridcell"`). Sortable headers are real `<button>`s (keyboard-operable) and set
 `aria-sort` on their column header.
 
-With a [page-sticky header](#on-a-page-that-scrolls-instead) the grid is the host and the
-separate header and body grids are `rowgroup`s owned by it; the strip and the scroller
-between them are `role="presentation"`, so the rows are owned by the grid in either layout.
+With a [page-sticky header](#on-a-page-that-scrolls-instead) the table role sits on the host
+and the separate header and body grids are `rowgroup`s owned by it; the strip and the scroller
+between them are `role="presentation"`, so the rows are owned by the table in either layout.
 
 Cell-by-cell keyboard navigation is [opt-in](#keyboard-navigation): without it Tab
 skips past the body, which is what a read-only display table usually wants.

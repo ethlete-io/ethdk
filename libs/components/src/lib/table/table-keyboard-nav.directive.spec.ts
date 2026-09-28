@@ -97,6 +97,20 @@ describe('TableKeyboardNavDirective', () => {
     expect(cells(fixture).some((cell) => cell.hasAttribute('tabindex'))).toBe(false);
   });
 
+  it('carries the grid roles only while it answers the arrow keys', () => {
+    const fixture = create();
+    const grid = () => queryAll(fixture, '.et-table')[0];
+
+    expect(grid()?.getAttribute('role')).toBe('grid');
+    expect(cells(fixture).every((cell) => cell.getAttribute('role') === 'gridcell')).toBe(true);
+
+    fixture.componentInstance.enabled.set(false);
+    fixture.detectChanges();
+
+    expect(grid()?.getAttribute('role')).toBe('table');
+    expect(cells(fixture).every((cell) => cell.getAttribute('role') === 'cell')).toBe(true);
+  });
+
   it('starts its tab stop on the first cell', () => {
     const fixture = create();
 

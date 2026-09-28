@@ -396,6 +396,9 @@ export type TableFeatureHost = {
    */
   detailTemplate(): TemplateRef<unknown> | null;
 
+  /** The ARIA role a feature's own cells carry - `gridcell` while cell navigation is live, else `cell`. */
+  cellRole(): 'cell' | 'gridcell';
+
   /** The rows the table would render, after client filtering/sorting. */
   rows(): readonly unknown[];
   /** Emit `rowClick` for a `rowInteractive` table's row - Enter on a cell with nothing of its own to open. */

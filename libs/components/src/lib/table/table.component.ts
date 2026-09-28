@@ -276,7 +276,7 @@ let uniqueTableId = 0;
     '[attr.data-appearance]': 'appearance()',
     '[attr.data-density]': 'density()',
     '[attr.aria-busy]': 'resolvedLoading() ? "true" : null',
-    '[attr.role]': 'pageStickyHeader() ? "grid" : null',
+    '[attr.role]': 'pageStickyHeader() ? tableRole() : null',
     '[class.et-table-host--scrolled-block-start]': 'blockScrollShadows().blockStart',
     '[class.et-table-host--scrolled-block-end]': 'blockScrollShadows().blockEnd',
     '[class.et-table-host--scrolled-inline-start]': 'scrollFades().start',
@@ -607,6 +607,15 @@ export class TableComponent<T> {
   public cellNavigation = computed(() =>
     this.cellNavigationList().some((navigation) => navigation.enabled?.() ?? true),
   );
+
+  /**
+   * The ARIA role of the table's container: `grid` only while a cell-navigation feature answers the
+   * arrow keys the role promises, `table` otherwise.
+   */
+  public tableRole = computed(() => (this.cellNavigation() ? 'grid' : 'table'));
+
+  /** The ARIA role of a body or footer cell, paired with {@link tableRole}. */
+  public cellRole = computed(() => (this.cellNavigation() ? 'gridcell' : 'cell'));
 
   // A feature that edits cells in place (etTableInlineEdit). The base knows only which cell is open and
   // what to render in it - the session, the draft and the commit are all the feature's.

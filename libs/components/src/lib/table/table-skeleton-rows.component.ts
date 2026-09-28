@@ -46,10 +46,10 @@ type SkeletonRowVm = {
         aria-hidden="true"
       >
         @for (lead of table.leadColumnsMeta(); track lead.key) {
-          <div [class]="lead.cellClass" class="et-table-cell" role="gridcell"></div>
+          <div [class]="lead.cellClass" [attr.role]="table.cellRole()" class="et-table-cell"></div>
         }
         @for (cell of row.cells; track cell.key) {
-          <div [attr.data-align]="cell.align" class="et-table-cell" role="gridcell">
+          <div [attr.data-align]="cell.align" [attr.role]="table.cellRole()" class="et-table-cell">
             @if (cell.template; as skeleton) {
               <!-- The column said what its cells look like while loading — a chip-shaped bone for a chip
                    column, an avatar for an avatar. See etTableCellSkeleton. -->
@@ -65,7 +65,7 @@ type SkeletonRowVm = {
           <div class="et-table-cell et-table-filler-cell" role="presentation"></div>
         }
         @for (trail of table.trailColumnsMeta(); track trail.key) {
-          <div [class]="trail.cellClass" class="et-table-cell" role="gridcell"></div>
+          <div [class]="trail.cellClass" [attr.role]="table.cellRole()" class="et-table-cell"></div>
         }
         @if (table.hasRowBox()) {
           <div class="et-table-card-corners" role="presentation" aria-hidden="true"></div>
