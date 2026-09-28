@@ -1,4 +1,4 @@
-import { computed, Directive, effect, input, signal } from '@angular/core';
+import { afterRenderEffect, computed, Directive, input, signal } from '@angular/core';
 import { signalHostElementDimensions } from '@ethlete/core';
 import {
   injectTableFeatureHost,
@@ -37,9 +37,9 @@ export type TableStickyColumnsConfig = TableFeatureConfig;
  * `pinning` slice.
  *
  * The offsets are measured, not declared - each pinned column stacks after the ones before it from its
- * own edge - so this runs a measurement whenever the host resizes or a column is resized. That is the
- * reason it is a feature: a table that pins nothing runs none of it, and never has the pinned cells'
- * chrome in the document either.
+ * own edge - so this runs a measurement after every render in which the host or a column resized, or
+ * the rows changed. That is the reason it is a feature: a table that pins nothing runs none of it, and
+ * never has the pinned cells' chrome in the document either.
  *
  * @example
  * const COLUMNS = {
@@ -114,103 +114,19 @@ export class TableStickyColumnsDirective {
     // Measure the pinned columns' inline offsets from the header cells' widths. Start pins stack from the
     // inline-start edge (clearing the lead columns), end pins from the trailing edge - pin from the edges,
     // so widths sum cleanly.
-    effect(() => {
-      if (!enabled()) return;
+    afterRenderEffect({
+      earlyRead: () => (enabled() ? this.measure() : null),
+      write: (measured) => {
+        const next = measured();
 
-      this.hostDimensions();
-      // Re-measure when a column is resized: the tracks change but the host's size does not.
-      this.table.columnWidths();
+        if (!next) return;
 
-      const columns = this.table.visibleColumnsMeta();
-      const cells = this.table.headerCellElements();
-
-      // `signalElementDimensions` observes one element; these offsets need the widths of *every* header
-      // cell summed in order, re-read whenever the host resizes or a column width changes - both of which
-      // this effect already tracks above.
-      // eslint-disable-next-line ethlete/prefer-element-dimensions
-      const width = (index: number) => cells[index]?.getBoundingClientRect().width ?? 0;
-
-      const leadCells = this.table.leadHeaderCellElements();
-      const leadOffsets: Record<string, number> = {};
-      let leadWidth = 0;
-
-      this.table.leadColumnsMeta().forEach((lead, index) => {
-        leadOffsets[lead.key] = leadWidth;
-        // Same as above: a running sum over all lead cells, not one observable element.
-        // eslint-disable-next-line ethlete/prefer-element-dimensions
-        leadWidth += leadCells[index]?.getBoundingClientRect().width ?? 0;
-      });
-
-      // The trailing utility columns stack from the trailing edge, so they are summed in reverse: the
-      // last one sits at the edge and each one before it clears the ones after it.
-      const trailCells = this.table.trailHeaderCellElements();
-      const trailMeta = this.table.trailColumnsMeta();
-      const trailOffsets: Record<string, number> = {};
-      let trailWidth = 0;
-
-      for (let index = trailMeta.length - 1; index >= 0; index--) {
-        const trail = trailMeta[index];
-
-        if (!trail) continue;
-
-        trailOffsets[trail.key] = trailWidth;
-        // Same as above: a running sum over all trailing cells, not one observable element.
-        // eslint-disable-next-line ethlete/prefer-element-dimensions
-        trailWidth += trailCells[index]?.getBoundingClientRect().width ?? 0;
-      }
-
-      const start: Record<string, number> = {};
-      let left = leadWidth;
-      let pinnedStartWidth = 0;
-      let pinnedEndWidth = 0;
-      let hasStartPin = false;
-
-      for (let index = 0; index < columns.length; index++) {
-        const column = columns[index];
-
-        if (column?.sticky === 'start') {
-          start[column.key] = left;
-          pinnedStartWidth += width(index);
-          hasStartPin = true;
-        }
-
-        left += width(index);
-      }
-
-      const end: Record<string, number> = {};
-      // The trailing utility columns own that edge, so an end-pinned data column stacks after them -
-      // the mirror of `left` starting at the leading utility columns' width.
-      let right = trailWidth;
-
-      for (let index = columns.length - 1; index >= 0; index--) {
-        const column = columns[index];
-
-        if (column?.sticky === 'end') {
-          end[column.key] = right;
-          pinnedEndWidth += width(index);
-        }
-
-        right += width(index);
-      }
-
-      // Suppress pinning when the columns that would stay put (the pins, plus the lead columns when a
-      // start pin makes them sticky too) leave the scrollable ones too little room to ever surface. Track
-      // widths don't change when we unpin, so this can't oscillate.
-      const containerWidth = this.hostDimensions()?.client?.width ?? 0;
-      // A trailing utility column is pinned whenever pinning is live, so its width always counts here.
-      const pinnedWidth = pinnedStartWidth + pinnedEndWidth + (hasStartPin ? leadWidth : 0) + trailWidth;
-      const hasUnpinned = columns.some((column) => !column?.sticky);
-      const suppressed = hasUnpinned && containerWidth > 0 && containerWidth - pinnedWidth < MIN_UNPINNED_SPACE;
-
-      this.leadOffsets.set(leadOffsets);
-      this.trailOffsets.set(trailOffsets);
-      this.offsets.set({ start, end });
-      this.suppressed.set(suppressed);
-      this.insets.set(
-        suppressed
-          ? { start: 0, end: 0 }
-          : { start: hasStartPin ? leadWidth + pinnedStartWidth : 0, end: pinnedEndWidth + trailWidth },
-      );
+        this.leadOffsets.set(next.leadOffsets);
+        this.trailOffsets.set(next.trailOffsets);
+        this.offsets.set(next.offsets);
+        this.suppressed.set(next.suppressed);
+        this.insets.set(next.insets);
+      },
     });
   }
 
@@ -245,6 +161,99 @@ export class TableStickyColumnsDirective {
     const pinned = this.enabled() && !this.suppressed();
 
     return { sticky: pinned, offset: pinned ? (this.trailOffsets()[key] ?? 0) : null };
+  }
+
+  private measure() {
+    this.hostDimensions();
+    // Re-measure when a column is resized: the tracks change but the host's size does not. New rows
+    // re-measure too, because a content-sized track changes width with its data.
+    this.table.columnWidths();
+    this.table.rows();
+
+    const columns = this.table.visibleColumnsMeta();
+    const cells = this.table.headerCellElements();
+
+    const width = (index: number) => cells[index]?.getBoundingClientRect().width ?? 0;
+
+    const leadCells = this.table.leadHeaderCellElements();
+    const leadOffsets: Record<string, number> = {};
+    let leadWidth = 0;
+
+    this.table.leadColumnsMeta().forEach((lead, index) => {
+      leadOffsets[lead.key] = leadWidth;
+
+      leadWidth += leadCells[index]?.getBoundingClientRect().width ?? 0;
+    });
+
+    // The trailing utility columns stack from the trailing edge, so they are summed in reverse: the
+    // last one sits at the edge and each one before it clears the ones after it.
+    const trailCells = this.table.trailHeaderCellElements();
+    const trailMeta = this.table.trailColumnsMeta();
+    const trailOffsets: Record<string, number> = {};
+    let trailWidth = 0;
+
+    for (let index = trailMeta.length - 1; index >= 0; index--) {
+      const trail = trailMeta[index];
+
+      if (!trail) continue;
+
+      trailOffsets[trail.key] = trailWidth;
+
+      trailWidth += trailCells[index]?.getBoundingClientRect().width ?? 0;
+    }
+
+    const start: Record<string, number> = {};
+    let left = leadWidth;
+    let pinnedStartWidth = 0;
+    let pinnedEndWidth = 0;
+    let hasStartPin = false;
+
+    for (let index = 0; index < columns.length; index++) {
+      const column = columns[index];
+
+      if (column?.sticky === 'start') {
+        start[column.key] = left;
+        pinnedStartWidth += width(index);
+        hasStartPin = true;
+      }
+
+      left += width(index);
+    }
+
+    const end: Record<string, number> = {};
+    // The trailing utility columns own that edge, so an end-pinned data column stacks after them -
+    // the mirror of `left` starting at the leading utility columns' width.
+    let right = trailWidth;
+
+    for (let index = columns.length - 1; index >= 0; index--) {
+      const column = columns[index];
+
+      if (column?.sticky === 'end') {
+        end[column.key] = right;
+        pinnedEndWidth += width(index);
+      }
+
+      right += width(index);
+    }
+
+    // Suppress pinning when the columns that would stay put (the pins, plus the lead columns when a
+    // start pin makes them sticky too) leave the scrollable ones too little room to ever surface. Track
+    // widths don't change when we unpin, so this can't oscillate.
+    const containerWidth = this.hostDimensions()?.client?.width ?? 0;
+    // A trailing utility column is pinned whenever pinning is live, so its width always counts here.
+    const pinnedWidth = pinnedStartWidth + pinnedEndWidth + (hasStartPin ? leadWidth : 0) + trailWidth;
+    const hasUnpinned = columns.some((column) => !column?.sticky);
+    const suppressed = hasUnpinned && containerWidth > 0 && containerWidth - pinnedWidth < MIN_UNPINNED_SPACE;
+
+    return {
+      leadOffsets,
+      trailOffsets,
+      offsets: { start, end },
+      suppressed,
+      insets: suppressed
+        ? { start: 0, end: 0 }
+        : { start: hasStartPin ? leadWidth + pinnedStartWidth : 0, end: pinnedEndWidth + trailWidth },
+    };
   }
 
   private pin(key: string, side: TableColumnPin | null) {

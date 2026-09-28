@@ -1056,7 +1056,9 @@ first, the end pins last, each block in column order - whatever its place in the
 give pinned columns explicit widths so the table has something to scroll.
 
 The offsets are **measured**, not declared - each pinned column stacks after the ones before
-it - so the feature re-measures the header cells whenever the table or a column is resized.
+it - so the feature re-measures the header cells after a render in which the table or a
+column was resized or the rows changed, which keeps a content-sized (`'auto'`) pinned column's
+neighbours in place when new data widens it.
 That is why it is a feature rather than part of the base: a table that pins nothing runs none
 of that on resize. Without it a `sticky` column simply renders unpinned, and `enabled: false`
 turns pinning off at runtime.

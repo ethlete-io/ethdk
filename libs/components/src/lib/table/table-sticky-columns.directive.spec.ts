@@ -1,6 +1,7 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
+import { fakeLayout } from '../testing/fake-layout';
 import { createTableDriver } from './testing/table-driver';
 import { TableStickyColumnsDirective } from './table-sticky-columns.directive';
 import { TableComponent } from './table.component';
@@ -257,5 +258,41 @@ describe('TableStickyColumnsDirective', () => {
     expect(selectCells).toHaveLength(1 + PEOPLE.length);
     expect(selectCells.every((cell) => cell.classList.contains('et-table-sticky-end'))).toBe(true);
     expect(selectCells.some((cell) => cell.classList.contains('et-table-sticky-start'))).toBe(false);
+  });
+
+  it('re-measures the pinned offsets when new rows resize a content-sized column', () => {
+    @Component({
+      template: ` <et-table [columns]="cols" [data]="data()" etTableStickyColumns /> `,
+      imports: [TABLE_IMPORTS, TABLE_STICKY_COLUMNS_IMPORTS],
+    })
+    class ContentSizedHost {
+      public cols = {
+        name: { header: 'Name', value: (person: Person) => person.name, width: 'auto', sticky: 'start' },
+        role: { header: 'Role', value: (person: Person) => person.role, width: '200px', sticky: 'start' },
+      } satisfies TableColumns<Person>;
+      public data = signal<Person[]>(PEOPLE);
+    }
+
+    let nameWidth = 100;
+
+    fakeLayout([
+      {
+        match: '.et-table-header-cell[data-col-key]',
+        rect: (element) => ({ width: (element as HTMLElement).dataset['colKey'] === 'name' ? nameWidth : 200 }),
+      },
+    ]);
+
+    const fixture = TestBed.createComponent(ContentSizedHost);
+    fixture.detectChanges();
+
+    const driver = createTableDriver(fixture);
+    expect(driver.headerCell('role')?.style.insetInlineStart).toBe('100px');
+
+    nameWidth = 180;
+    fixture.componentInstance.data.set([...PEOPLE, { id: 3, name: 'Bartholomew', role: 'Editor' }]);
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    expect(driver.headerCell('role')?.style.insetInlineStart).toBe('180px');
   });
 });

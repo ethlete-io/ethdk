@@ -29,10 +29,6 @@ Scan of `libs/components/src/lib/table/table-*.{ts,html,css}` (top level, specs 
 
 - Low: The `scrollable` flag updates only when the host resizes or the column tracks change (`table-drag-scroll.directive.ts:113-118`). The host `(scroll)` listener (`:84`) never fires, because the scroll happens on the inner `.et-table-scroller` and `scroll` does not bubble. A fixed-height table that gets its rows after mount (the usual async load) therefore never becomes drag-scrollable. Listen on `scrollElement()` and track `rows()` as well. S Verified. Re-rated from Medium: in the default layout the host is the scroller (`scrollElement()` falls back to the host, which has `overflow: auto`), so the host `(scroll)` fires and the first wheel or scrollbar scroll fixes the flag. Only the page-sticky-header layout never recovers.
 
-## Sticky columns
-
-- Medium: The offset effect reads `getBoundingClientRect()` inside a plain `effect` (`table-sticky-columns.directive.ts:117-214`). It re-runs only on a host resize or a `columnWidths()` change. A column with an `auto` or content-sized track changes width when the data changes, and the pinned offsets then stay stale. The effect also forces a synchronous layout during change detection. Move the measurement to `afterRenderEffect` (read phase) and track `rows()`. M Verified. The default track `minmax(<min>px, 1fr)` does not depend on content, so only a consumer `width` such as `'1fr'` or `'auto'` hits it.
-
 ## Other
 
 - Low: `TableCellErrorTooltipDirective` calls `inject(TableComponent)` without `optional` in a field initializer (`table-cell-error-tooltip.directive.ts:26`). This runs before `injectTableFeatureHost`, so outside a table the user gets a `NullInjectorError`, not the labelled error 3501 that the comment promises. S
