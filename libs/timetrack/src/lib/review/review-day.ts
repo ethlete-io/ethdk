@@ -59,9 +59,14 @@ const withOverride = (row: RowSource, override: ProposalOverride | undefined): R
   const named = override.standInId
     ? { issueKey: undefined, standInId: override.standInId }
     : { issueKey: override.issueKey ?? row.issueKey, standInId: row.standInId };
+  const issueSource = storedSourceOf({
+    set: override.issueKey !== undefined || override.standInId !== undefined,
+    source: override.sources?.issue,
+  });
+  const { disputedIssueKey: _disputedIssueKey, disputedStandInId: _disputedStandInId, ...undisputed } = row;
 
   return {
-    ...row,
+    ...(issueSource === 'human' ? undisputed : row),
     ...named,
     description: override.description ?? row.description,
     durationMs: override.durationMs ?? row.durationMs,
@@ -70,10 +75,7 @@ const withOverride = (row: RowSource, override: ProposalOverride | undefined): R
     hidden: override.hidden === true,
     proposed,
     sources: {
-      issue: storedSourceOf({
-        set: override.issueKey !== undefined || override.standInId !== undefined,
-        source: override.sources?.issue,
-      }),
+      issue: issueSource,
       description: storedSourceOf({ set: override.description !== undefined, source: override.sources?.description }),
     },
   };

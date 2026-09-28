@@ -13,12 +13,14 @@ import { injectDayReview } from '../day-review';
 import { rowEntryOf } from './row-appointment';
 
 /**
- * The other work a rung named for this band, and the one press that takes it instead.
+ * The other work a rung named for this band, one press that keeps the booked answer and one that takes
+ * the other instead.
  *
  * The row already books the answer ADR 0012 ranks higher, so this never withholds time. What it stops
  * is the higher rung winning silently: a remembered answer is keyed on a weekday and a duration band,
  * so it matches more calls than the one it was given for, and the band has to say which two answers
- * it had. Pressing writes the other one the way naming any row does, which also teaches the store.
+ * it had. Taking the other one writes it the way naming any row does, which also teaches the store;
+ * keeping pins the booked key on this row alone, so the rival's remembered answer stays as it was.
  */
 @Component({
   selector: 'ethlete-edit-disputed',
@@ -28,7 +30,8 @@ import { rowEntryOf } from './row-appointment';
         <span class="text-small">Two answers disagree about this band.</span>
         <span class="text-small text-et-surface-muted">It books {{ booked() }}, and could be {{ rival.label }}.</span>
 
-        <div>
+        <div class="flex flex-wrap gap-2">
+          <button (click)="keep()" et-button variant="filled" size="sm">Keep {{ booked() }}</button>
           <button (click)="take(rival)" et-button variant="outline" size="sm">Use {{ rival.label }}</button>
         </div>
       </div>
@@ -54,6 +57,12 @@ export class EditDisputedComponent {
 
     return null;
   });
+
+  protected keep() {
+    const row = rowEntryOf(this.draft()())?.row;
+
+    if (row) this.store.keepIssue(row);
+  }
 
   protected take(rival: { kind: 'issue' | 'stand-in'; id: string }) {
     const row = rowEntryOf(this.draft()())?.row;

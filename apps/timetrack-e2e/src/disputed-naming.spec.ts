@@ -82,6 +82,34 @@ test.describe('a band two answers disagree about', () => {
     await expect(band(page)).not.toContainText('or ');
   });
 
+  test('keeps the booked answer in one press, and leaves both remembered answers as they were', async ({ page }) => {
+    await page.goto('/day');
+
+    await expect(page.locator('[data-warning="naming-disagreement"]')).toHaveCount(1);
+
+    await band(page).click();
+
+    const buttons = dispute(page).getByRole('button');
+
+    await expect(buttons).toHaveText([`Keep ${E2E_ISSUE_KEY}`, `Use ${E2E_PARENT_KEY}`]);
+
+    await buttons.first().click();
+    await saveSurface(page);
+
+    await expect(band(page)).toContainText(E2E_ISSUE_KEY);
+    await expect(band(page)).not.toContainText('or ');
+    await expect(page.locator('[data-warning="naming-disagreement"]')).toHaveCount(0);
+
+    await page.evaluate(() => {
+      window.location.hash = '#/settings';
+    });
+    await page.getByRole('tab', { name: 'Jira' }).click();
+
+    await expect(page.locator('[data-meeting-naming]')).toHaveCount(1);
+    await expect(page.locator('[data-meeting-naming]')).toContainText(E2E_PARENT_KEY);
+    await expect(page.locator('[data-call-naming]')).toHaveText([/^Open Room #1/]);
+  });
+
   test('says nothing when both answers name the same work', async ({ page }) => {
     await seedWorld(page, {
       now: E2E_NOW,

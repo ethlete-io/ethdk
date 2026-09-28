@@ -338,6 +338,41 @@ describe('reviewDay', () => {
     expect(review.check.deltaMs).toBe(-90 * MINUTE);
     expect(review.check.warnings.map((warning) => warning.kind)).toContain('under-target');
   });
+
+  it.each([
+    { rival: 'an issue', dispute: { disputedIssueKey: 'ABC-2' } },
+    { rival: 'a stand-in', dispute: { disputedStandInId: 'stand-in-1' } },
+  ])('settles a band disputed by $rival once the user pins the key it books', ({ dispute }) => {
+    const base = dayRows({
+      proposals: [{ ...proposal({ issueKey: 'ABC-1', from: '08:00', to: '09:00' }), ...dispute }],
+    });
+    const disputed = reviewDay({ rows: base });
+
+    expect(disputed.check.warnings.map((warning) => warning.kind)).toContain('naming-disagreement');
+
+    const edits = setRowIssue({ edits: EMPTY_DAY_REVIEW_EDITS, row: disputed.rows[0]!, issueKey: 'ABC-1' });
+    const review = reviewDay({ rows: base, edits });
+    const row = review.rows[0]!;
+
+    expect(row).toMatchObject({ issueKey: 'ABC-1', state: 'edited', sources: { issue: 'human' } });
+    expect(row.disputedIssueKey).toBeUndefined();
+    expect(row.disputedStandInId).toBeUndefined();
+    expect(review.check.warnings.map((warning) => warning.kind)).not.toContain('naming-disagreement');
+  });
+
+  it('keeps the dispute on a band auto mode named', () => {
+    const base = dayRows({
+      proposals: [{ ...proposal({ issueKey: 'ABC-1', from: '08:00', to: '09:00' }), disputedIssueKey: 'ABC-2' }],
+    });
+    const edits = setRowIssue({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: reviewDay({ rows: base }).rows[0]!,
+      issueKey: 'ABC-1',
+      source: 'auto',
+    });
+
+    expect(reviewDay({ rows: base, edits }).rows[0]!.disputedIssueKey).toBe('ABC-2');
+  });
 });
 
 describe('splitRow', () => {

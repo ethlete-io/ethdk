@@ -1057,6 +1057,13 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
           target: { kind: 'issue', issueKey },
         });
     },
+    /**
+     * Pins the issue a row already books as the user's own answer, which settles a band two answers
+     * disagreed about. Nothing is remembered: the rival answer is the user's too, for its own series.
+     */
+    keepIssue: (row: ReviewedRow) => {
+      if (row.issueKey) nameRow(row, row.issueKey);
+    },
     /** The names the user gave work Jira does not hold yet and has not answered, newest first. */
     openStandIns: computed(() => openStandIns(settings.settings().standIns)),
 
