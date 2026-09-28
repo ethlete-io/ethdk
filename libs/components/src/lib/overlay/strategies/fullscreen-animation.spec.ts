@@ -8,6 +8,7 @@ import {
   startFullscreenEnterAnimation,
   startFullscreenLeaveAnimation,
 } from './fullscreen-animation';
+import { injectFullscreenDialogStrategy } from './full-screen.strategy';
 import { OverlayStrategyContext } from './overlay-strategy.types';
 
 const flushFrames = () =>
@@ -140,5 +141,28 @@ describe('fullscreen leave animation', () => {
         Reflect.deleteProperty(window, 'visualViewport');
       }
     });
+  });
+});
+
+describe('fullscreen dialog strategy', () => {
+  it("animates the origin clone in the overlay's own document", () => {
+    const foreignDocument = document.implementation.createHTMLDocument('pop-up');
+    const containerEl = foreignDocument.body.appendChild(foreignDocument.createElement('div'));
+    const origin = foreignDocument.body.appendChild(foreignDocument.createElement('button'));
+    vi.spyOn(origin, 'getBoundingClientRect').mockReturnValue(new DOMRect(10, 20, 100, 40));
+
+    const context = {
+      containerEl,
+      origin,
+      lifecycle: { enter: vi.fn(), forceEnteredState: vi.fn(), leave: vi.fn(), state$: { value: 'init' } },
+    } as unknown as OverlayStrategyContext;
+    const strategy = TestBed.runInInjectionContext(() => injectFullscreenDialogStrategy().build());
+
+    strategy.onBeforeEnter?.(context);
+
+    expect(foreignDocument.querySelector('et-overlay-origin-clone')).not.toBeNull();
+    expect(document.querySelector('et-overlay-origin-clone')).toBeNull();
+
+    strategy.onSwitchedAwayFrom?.(context);
   });
 });

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, DestroyRef, ENVIRONMENT_INITIALIZER, inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
 import { FakeMatchMedia, fakeMatchMedia } from '../../testing/fake-match-media';
@@ -319,5 +319,34 @@ describe('overlay strategy controller', () => {
         ),
       ).toThrow(/strategies` resolved to an empty array/);
     });
+  });
+
+  it('releases its injector when the overlay fails to mount', () => {
+    const released = vi.fn();
+
+    expect(() =>
+      TestBed.runInInjectionContext(() =>
+        injectOverlayManager().open(StrategyTestContentComponent, {
+          providers: [
+            {
+              provide: ENVIRONMENT_INITIALIZER,
+              multi: true,
+              useValue: () => {
+                throw new Error('mount failed');
+              },
+            },
+          ],
+          strategies: () => {
+            inject(DestroyRef).onDestroy(released);
+
+            return [{ strategy: smallStrategy }];
+          },
+        }),
+      ),
+    ).toThrow();
+
+    expect(released).toHaveBeenCalledTimes(1);
+
+    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
   });
 });

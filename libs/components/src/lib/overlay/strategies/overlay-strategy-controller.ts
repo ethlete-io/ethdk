@@ -60,6 +60,9 @@ export type OverlayStrategyController = {
 
   /** Wires strategy lifecycle hooks and breakpoint switching. Must be called right after mounting. */
   attach: (runtimeRef: OverlayRuntimeRef<object, unknown>, overlayRef: OverlayRef<object, unknown>) => void;
+
+  /** Releases the controller when the overlay never mounted. A mounted overlay releases it on close. */
+  destroy: () => void;
 };
 
 /** Set by the overlay container while the overlay is open - see `overlay-container.component.css`. */
@@ -98,7 +101,6 @@ export const createOverlayStrategyController = (
   };
 
   const origin = config.origin;
-  // event origins climb to the nearest clickable element (e.g. the button instead of its icon)
   const originElement = isElement(origin)
     ? origin
     : origin && isHTMLElement(origin.target)
@@ -148,7 +150,6 @@ export const createOverlayStrategyController = (
     );
   }
 
-  // seeded with the smallest entry so an all-breakpoints array still resolves below its smallest one
   const getHighestMatchedStrategy = () =>
     breakpointMatchResults
       .filter((entry) => entry.isActive())
@@ -163,7 +164,6 @@ export const createOverlayStrategyController = (
 
   let cachedLifecycle: AnimatedLifecycleDirective | null = null;
 
-  // the runtime clears the component instance on close, so the lifecycle is cached for onAfterLeave
   const getLifecycle = (): AnimatedLifecycleDirective | null => {
     const instance = attachedRuntimeRef?.componentInstance() as {
       animatedLifecycle?: () => AnimatedLifecycleDirective;
@@ -396,6 +396,10 @@ export const createOverlayStrategyController = (
     },
   };
 
+  const destroy = () => {
+    if (!childInjector.destroyed) childInjector.destroy();
+  };
+
   const attach = (runtimeRef: OverlayRuntimeRef<object, unknown>, overlayRef: OverlayRef<object, unknown>) => {
     attachedRuntimeRef = runtimeRef;
     attachedOverlayRef = overlayRef;
@@ -436,7 +440,7 @@ export const createOverlayStrategyController = (
           }
 
           releaseClassesFromDocumentAndBody(strategy.config);
-          childInjector.destroy();
+          destroy();
         }),
       )
       .subscribe();
@@ -490,5 +494,6 @@ export const createOverlayStrategyController = (
     renderDragHandle: computed(() => !!activeStrategyConfig().dragToDismiss),
     hasBackdrop: computed(() => resolveOverlayHasBackdrop(config, activeStrategyConfig())),
     attach,
+    destroy,
   };
 };

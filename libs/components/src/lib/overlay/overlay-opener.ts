@@ -279,8 +279,6 @@ const createQueryParamOverlayOpener = <TComponent extends object, TResult>(
     modelSyncEffect = null;
   };
 
-  // The consumer's callbacks and the URL-sync wiring are composed into a single lifecycle
-  // config so each open attaches exactly one set of subscriptions.
   const composedLifecycle: OverlayLifecycleConfig<TResult> = {
     afterClosed: lifecycle.afterClosed,
     afterOpened: () => {
@@ -290,7 +288,6 @@ const createQueryParamOverlayOpener = <TComponent extends object, TResult>(
 
       if (!model) return;
 
-      // Keep the URL in sync when the overlay writes to its model.
       modelSyncEffect = effect(
         () => {
           const modelValue = model();
@@ -310,8 +307,6 @@ const createQueryParamOverlayOpener = <TComponent extends object, TResult>(
   };
 
   const openOverlay = (value: string) => {
-    // The seeded query-param binding is the last merge layer so it wins over any conflicting
-    // binding from the definition or opener config; two-way sync is wired up in afterOpened.
     const ref = overlayManager.open<TComponent, TResult>(
       definition.component,
       mergeOverlayConfigs({ viewContainerRef: fallbackViewContainerRef }, definition.config, overlayConfig, {
@@ -343,7 +338,6 @@ const createQueryParamOverlayOpener = <TComponent extends object, TResult>(
       openValue = value;
 
       if (overlayRef) {
-        // The overlay is already open and the param changed externally - push it into the model.
         queryParamModel()?.set(value);
 
         return;

@@ -43,6 +43,8 @@ import { OverlayConfig } from './overlay-config';
 import { OVERLAY_HAS_BACKDROP, resolveOverlayHasBackdrop } from './overlay-has-backdrop';
 import { OVERLAY_REF } from './overlay-ref';
 
+const PAINTED_PANE_MAX_DEPTH = 4;
+
 @Component({
   selector: 'et-overlay-container',
   templateUrl: './overlay-container.component.html',
@@ -85,10 +87,6 @@ export class OverlayContainerComponent {
   public contentComponentRef = signal<ComponentRef<object> | null>(null);
 
   constructor() {
-    // The pane is detached DOM: element DI only reaches a color provider when the opener passed a
-    // viewContainerRef/injector. Without one, fall back to the provider on the bootstrapped root
-    // component (e.g. added via hostDirectives on the app component) so an app-wide forced color
-    // still propagates into overlays.
     const contextColorProvider = this.parentColorProvider ?? resolveAppRootColorProvider(this.appRef);
 
     if (contextColorProvider) {
@@ -96,14 +94,6 @@ export class OverlayContainerComponent {
     }
 
     if (this.surfaceThemes) {
-      // Resolve the surface the overlay's trigger visually sits on, so the overlay elevates one
-      // level above it. The trigger keeps its *declaration* injector even when projected/portaled
-      // into another overlay, so DI (`parentSurfaceProvider`) reports the wrong surface for a
-      // trigger rendered inside a dialog/menu pane, and reports nothing for the anchored panel
-      // overlays (select/menu/date) which mount with no DI link to the trigger at all. The
-      // trigger's nearest painted surface ancestor *in the DOM* is authoritative in every case -
-      // an overlay pane and a plain elevated card both carry the surface class - so read that,
-      // and fall back to DI (openers that pass a viewContainerRef but no origin).
       const parentSurface = this.resolveOriginSurface() ?? this.parentDiSurface();
       const parentType = parentSurface?.type ?? 'dark';
       const surfaceThemes = this.surfaceThemes;
@@ -145,11 +135,6 @@ export class OverlayContainerComponent {
     afterNextRender(() => {
       const host = this.elementRef.nativeElement;
 
-      // A sheet's enter spring briefly overshoots past its docked edge; a box-shadow fills the gap
-      // (see the CSS). Its color must match the sheet's *actually painted* surface, which can live
-      // on nested content one elevation above the host's own forced surface - so measure the
-      // painted pane rather than trusting the host's --et-surface-background-solid token, which
-      // would be a shade off. Falls back to the token (CSS default) when nothing paints.
       if (host.classList.contains('et-with-default-animation') && this.isSheetHost(host)) {
         const sheetPane = this.resolvePaintedPaneElement(host);
         const sheetBackground = getComputedStyle(sheetPane).backgroundColor;
@@ -172,14 +157,10 @@ export class OverlayContainerComponent {
       const panePaints = !!background && background !== 'transparent' && background !== 'rgba(0, 0, 0, 0)';
 
       if (panePaints) {
-        // continue the pane's background and match its border exactly - including no border at
-        // all when the pane has none, so a 0px width is forwarded rather than left to the fallback
         props['--_et-overlay-arrow-pane-background'] = background;
         props['--_et-overlay-arrow-pane-border-width'] = `${borderWidth}px`;
         props['--_et-overlay-arrow-pane-border-color'] = borderWidth ? style.borderTopColor : 'transparent';
       } else if (borderWidth) {
-        // no painted pane found: only forward a real border and let the surface-token fallback
-        // fill the background
         props['--_et-overlay-arrow-pane-border-width'] = `${borderWidth}px`;
         props['--_et-overlay-arrow-pane-border-color'] = style.borderTopColor;
       }
@@ -224,12 +205,6 @@ export class OverlayContainerComponent {
     this.destroyRef.onDestroy(() => this.contentComponentRef()?.destroy());
   }
 
-  /**
-   * The element whose surface the container should visually continue (for the arrow's background
-   * and the sheet overshoot filler): the host itself when it paints the pane (custom panelClass,
-   * dialog), otherwise the first painted element in the rendered content (menu/tooltip/date-picker
-   * paint a nested element, potentially at a higher elevation than the host's forced surface).
-   */
   private parentDiSurface(): { elevation: number; type: SurfaceType } | null {
     const provider = this.parentSurfaceProvider;
 
@@ -238,12 +213,6 @@ export class OverlayContainerComponent {
     return { elevation: provider.elevation(), type: provider.surfaceType() ?? 'dark' };
   }
 
-  /**
-   * The surface of the nearest ancestor of the overlay's origin (trigger) that paints a resolved
-   * surface - walking the real DOM so it sees *through* the portal/projection boundary that hides
-   * the true parent surface from DI. Returns null when there is no origin element or no surfaced
-   * ancestor (the overlay then falls back to DI, and ultimately to elevation 1).
-   */
   private resolveOriginSurface(): { elevation: number; type: SurfaceType } | null {
     const themes = this.surfaceThemes;
 
@@ -306,13 +275,20 @@ export class OverlayContainerComponent {
     if (!content) return host;
     if (isPainted(content)) return content;
 
-    // the painted pane varies per overlay kind (.et-menu, .et-tooltip__surface, …) with no
-    // shared hook, so scan the rendered content for the first element that actually paints
-    // eslint-disable-next-line ethlete/no-dom-query -- one-off measurement in afterNextRender; no stable directive hook across overlay kinds
-    for (const el of Array.from(content.querySelectorAll<HTMLElement>('*'))) {
-      if (isPainted(el)) return el;
-    }
+    const findPainted = (parent: Element, depth: number): HTMLElement | null => {
+      if (depth > PAINTED_PANE_MAX_DEPTH) return null;
 
-    return host;
+      for (const child of Array.from(parent.children)) {
+        if (child instanceof HTMLElement && isPainted(child)) return child;
+
+        const painted = findPainted(child, depth + 1);
+
+        if (painted) return painted;
+      }
+
+      return null;
+    };
+
+    return findPainted(content, 1) ?? host;
   }
 }

@@ -1,4 +1,4 @@
-import { ApplicationRef, DOCUMENT, EnvironmentInjector, inject } from '@angular/core';
+import { ApplicationRef, EnvironmentInjector, inject } from '@angular/core';
 import {
   defineRootProvider,
   defineStaticRootProvider,
@@ -16,7 +16,12 @@ import {
   startFullscreenLeaveAnimation,
 } from './fullscreen-animation';
 import { mergeOverlayBreakpointConfigs } from './overlay-strategy-config-merger';
-import { OverlayBreakpointConfig, OverlayStrategy, OverlayStrategyBreakpoint } from './overlay-strategy.types';
+import {
+  OverlayBreakpointConfig,
+  OverlayStrategy,
+  OverlayStrategyBreakpoint,
+  OverlayStrategyContext,
+} from './overlay-strategy.types';
 import { FullScreenDialogStylesComponent } from './full-screen-dialog-styles.component';
 
 const FULLSCREEN_DIALOG_STRATEGY_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootProvider<OverlayBreakpointConfig>(
@@ -46,11 +51,15 @@ const FULLSCREEN_DIALOG_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const defaults = injectFullscreenDialogStrategyDefaults();
     const injector = inject(EnvironmentInjector);
-    const document = inject(DOCUMENT);
     const appRef = inject(ApplicationRef);
     const renderer = injectRenderer();
 
-    const deps: FullscreenAnimationDeps = { injector, document, appRef, renderer };
+    const depsFor = (context: OverlayStrategyContext): FullscreenAnimationDeps => ({
+      injector,
+      document: context.containerEl.ownerDocument,
+      appRef,
+      renderer,
+    });
 
     const build = (config: Partial<OverlayBreakpointConfig> = {}): OverlayStrategy => {
       const cfg = mergeOverlayBreakpointConfigs(defaults, config);
@@ -64,7 +73,7 @@ const FULLSCREEN_DIALOG_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
         onBeforeEnter: (context) => {
           animationState = startFullscreenEnterAnimation({
             context,
-            deps,
+            deps: depsFor(context),
             applyTransformOrigin: cfg.applyTransformOrigin ?? true,
             skipAnimation: false,
           });
@@ -72,7 +81,7 @@ const FULLSCREEN_DIALOG_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
 
         onSwitchedAwayFrom: (context) => {
           if (animationState) {
-            abortFullscreenAnimation({ context, state: animationState, deps });
+            abortFullscreenAnimation({ context, state: animationState, deps: depsFor(context) });
             animationState = null;
           }
         },
@@ -81,7 +90,7 @@ const FULLSCREEN_DIALOG_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
           if (!animationState) {
             animationState = startFullscreenEnterAnimation({
               context,
-              deps,
+              deps: depsFor(context),
               applyTransformOrigin: cfg.applyTransformOrigin ?? true,
               skipAnimation: true,
             });
@@ -93,7 +102,7 @@ const FULLSCREEN_DIALOG_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
             animationState = startFullscreenLeaveAnimation({
               context,
               state: animationState,
-              deps,
+              deps: depsFor(context),
               applyTransformOrigin: cfg.applyTransformOrigin ?? true,
             });
           } else {
@@ -101,9 +110,9 @@ const FULLSCREEN_DIALOG_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
           }
         },
 
-        onAfterLeave: () => {
+        onAfterLeave: (context) => {
           if (animationState) {
-            cleanupFullscreenAnimation(animationState, deps);
+            cleanupFullscreenAnimation(animationState, depsFor(context));
             animationState = null;
           }
         },

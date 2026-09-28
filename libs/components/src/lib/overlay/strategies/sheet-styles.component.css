@@ -3,7 +3,7 @@
     --_et-overlay-drag-handle-inline-size: 32px;
     --_et-overlay-drag-handle-block-size: 4px;
     --_et-overlay-drag-handle-block-margin: 22px;
-    --_et-overlay-drag-handle-color: #565656;
+    --_et-overlay-drag-handle-color: var(--et-surface-border-solid, #565656);
     --_et-overlay-drag-handle-radius: 5px;
   }
 

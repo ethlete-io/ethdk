@@ -25,9 +25,6 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
   const beforeClosedEvent$ = new Subject<OverlayRuntimeCloseEvent<TResult | undefined>>();
   const afterClosed$ = new Subject<TResult | undefined>();
   const afterClosedEvent$ = new Subject<OverlayRuntimeCloseEvent<TResult | undefined>>();
-  // Guards live here (not on the runtime ref directly) because the mounted component - where a guard
-  // is registered - is constructed before `attachRuntime` runs. A single aggregate guard is wired to
-  // the runtime ref on attach and reads this set live, so guards registered either side of attach work.
   const closeGuards = new Set<OverlayCloseGuard<TResult>>();
 
   const componentInstance = () => {
@@ -109,7 +106,6 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
     _runtimeRef = runtimeRef;
     id = runtimeRef.id;
 
-    // One aggregate guard, reading the live set - any single guard vetoing vetoes the close.
     runtimeRef.registerCloseGuard((event) => {
       for (const guard of closeGuards) {
         if (!guard(event)) {

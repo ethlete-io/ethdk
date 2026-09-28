@@ -7,7 +7,7 @@
     --et-overlay-body-padding-block: 0;
     --et-overlay-footer-padding-block-start: 16px;
 
-    --et-overlay-body-divider-color: #565656;
+    --et-overlay-body-divider-color: var(--et-surface-border-solid, #565656);
 
     --et-overlay-body-min-block-size: 100px;
 

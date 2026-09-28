@@ -40,10 +40,6 @@ const resolveOrigin = (origin: Element | Event | null | undefined, document: Doc
   return isValidOriginElement(activeElement) ? activeElement : undefined;
 };
 
-/**
- * The document an overlay mounts into: its origin's, so an overlay opened from an element living in
- * another same-origin window (e.g. a panel adopted by a pop-up) opens in that window.
- */
 const resolveOriginDocument = (origin: Element | Event | null | undefined, fallback: Document) => {
   if (isElement(origin)) return origin.ownerDocument;
   if (origin && origin.target instanceof Node) return origin.target.ownerDocument ?? fallback;
@@ -51,11 +47,6 @@ const resolveOriginDocument = (origin: Element | Event | null | undefined, fallb
   return fallback;
 };
 
-/**
- * The stacking level an overlay opened from `origin` mounts at: whatever the nearest ancestor
- * declaring `data-et-overlay-layer` says, so an overlay opened from inside an always-on-top surface
- * (the query devtools panel, say) is not painted behind it.
- */
 const resolveZIndex = (origin: Element | Event | null | undefined, document: Document) => {
   const resolved = resolveOrigin(origin, document);
 
@@ -150,44 +141,52 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
       const role = resolvedConfig.role ?? (modal ? 'dialog' : undefined);
       const disableClose = resolvedConfig.disableClose ?? false;
 
-      const runtimeRef = overlayRuntime.mount<OverlayContainerComponent, TResult>({
-        id,
-        component: OverlayContainerComponent,
-        document: resolveOriginDocument(resolvedConfig.origin, document),
-        zIndex: resolvedConfig.zIndex ?? resolveZIndex(resolvedConfig.origin, document),
-        viewContainerRef: resolvedConfig.viewContainerRef,
-        injector: resolvedConfig.injector,
-        providers: [
-          { provide: OVERLAY_REF, useValue: overlayRef },
-          { provide: OVERLAY_HAS_BACKDROP, useValue: controller.hasBackdrop },
-          ...(resolvedConfig.providers ?? []),
-        ],
-        bindings: [
-          inputBinding('component', () => component),
-          inputBinding('componentBindings', () => resolvedConfig.bindings),
-          inputBinding('componentDirectives', () => resolvedConfig.directives),
-          inputBinding('renderArrow', () => controller.renderArrow()),
-          inputBinding('renderDragHandle', () => controller.renderDragHandle()),
-        ],
-        role,
-        positionStrategy: controller.initialMountConfig.positionStrategy,
-        animationDelegate: controller.initialMountConfig.animationDelegate,
-        hasBackdrop: controller.initialMountConfig.hasBackdrop,
-        modal,
-        autoFocus: resolvedConfig.autoFocus,
-        restoreFocus: resolvedConfig.restoreFocus,
-        closeOnEscape: disableClose ? false : (resolvedConfig.closeOnEscape ?? true),
-        closeOnOutsidePointer: disableClose ? false : (resolvedConfig.closeOnOutsidePointer ?? true),
-        passive: resolvedConfig.passive,
-        ariaDescribedBy: resolvedConfig.ariaDescribedBy,
-        ariaLabelledBy: resolvedConfig.ariaLabelledBy,
-        ariaLabel: resolvedConfig.ariaLabel,
-        hostClass: [...normalizeClassList(resolvedConfig.hostClass), ...controller.initialMountConfig.hostClass],
-        // the strategy's own backdrop classes are applied by the controller - the backdrop element is
-        // re-created when a switch turns it back on, and only the config's classes survive that
-        backdropClass: normalizeClassList(resolvedConfig.backdropClass),
-        paneClass: [...normalizeClassList(resolvedConfig.panelClass), ...controller.initialMountConfig.paneClass],
-      });
+      let runtimeRef: OverlayRuntimeRef<OverlayContainerComponent, TResult>;
+
+      try {
+        runtimeRef = overlayRuntime.mount<OverlayContainerComponent, TResult>({
+          id,
+          component: OverlayContainerComponent,
+          document: resolveOriginDocument(resolvedConfig.origin, document),
+          zIndex: resolvedConfig.zIndex ?? resolveZIndex(resolvedConfig.origin, document),
+          viewContainerRef: resolvedConfig.viewContainerRef,
+          injector: resolvedConfig.injector,
+          providers: [
+            { provide: OVERLAY_REF, useValue: overlayRef },
+            { provide: OVERLAY_HAS_BACKDROP, useValue: controller.hasBackdrop },
+            ...(resolvedConfig.providers ?? []),
+          ],
+          bindings: [
+            inputBinding('component', () => component),
+            inputBinding('componentBindings', () => resolvedConfig.bindings),
+            inputBinding('componentDirectives', () => resolvedConfig.directives),
+            inputBinding('renderArrow', () => controller.renderArrow()),
+            inputBinding('renderDragHandle', () => controller.renderDragHandle()),
+          ],
+          role,
+          positionStrategy: controller.initialMountConfig.positionStrategy,
+          animationDelegate: controller.initialMountConfig.animationDelegate,
+          hasBackdrop: controller.initialMountConfig.hasBackdrop,
+          modal,
+          autoFocus: resolvedConfig.autoFocus,
+          restoreFocus: resolvedConfig.restoreFocus,
+          closeOnEscape: disableClose ? false : (resolvedConfig.closeOnEscape ?? true),
+          closeOnOutsidePointer: disableClose ? false : (resolvedConfig.closeOnOutsidePointer ?? true),
+          passive: resolvedConfig.passive,
+          ariaDescribedBy: resolvedConfig.ariaDescribedBy,
+          ariaLabelledBy: resolvedConfig.ariaLabelledBy,
+          ariaLabel: resolvedConfig.ariaLabel,
+          hostClass: [...normalizeClassList(resolvedConfig.hostClass), ...controller.initialMountConfig.hostClass],
+          // the strategy's own backdrop classes are applied by the controller - the backdrop element is
+          // re-created when a switch turns it back on, and only the config's classes survive that
+          backdropClass: normalizeClassList(resolvedConfig.backdropClass),
+          paneClass: [...normalizeClassList(resolvedConfig.panelClass), ...controller.initialMountConfig.paneClass],
+        });
+      } catch (error) {
+        controller.destroy();
+
+        throw error;
+      }
 
       const typedRuntimeRef = runtimeRef as unknown as OverlayRuntimeRef<TComponent, TResult>;
 

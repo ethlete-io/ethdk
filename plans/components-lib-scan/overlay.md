@@ -1,6 +1,6 @@
 # overlay scan - open findings
 
-Scan of `libs/components/src/lib/overlay/` from 2026-09-28. 0 High, 1 Medium, 11 Low, 5 Spec (after verification). Skipped: stories, the CSS beyond layer and colour checks. `anchored.strategy.ts`, `full-screen.strategy.ts` and `fullscreen-animation.ts` were read in a second pass (see the last section). Focus trap, focus restore and outside-pointer logic live in `@ethlete/core`'s overlay runtime and are out of scope.
+Scan of `libs/components/src/lib/overlay/` from 2026-09-28. 0 High, 1 Medium, 8 Low, 5 Spec (after verification). Skipped: stories, the CSS beyond layer and colour checks. `anchored.strategy.ts`, `full-screen.strategy.ts` and `fullscreen-animation.ts` were read in a second pass (see the last section). Focus trap, focus restore and outside-pointer logic live in `@ethlete/core`'s overlay runtime and are out of scope.
 
 ## headless
 
@@ -17,14 +17,11 @@ Scan of `libs/components/src/lib/overlay/` from 2026-09-28. 0 High, 1 Medium, 11
 
 ## strategies
 
-- Low: `createOverlayStrategyController` only releases `documentClass`/`bodyClass` and destroys its child injector in `afterClosed` (`strategies/overlay-strategy-controller.ts:427-442`). If `overlayRuntime.mount` throws or the runtime is torn down without a close (app destroy, HMR), the classes (e.g. the full-screen document class) and the breakpoint observers leak. Also tie the cleanup to the runtime's destroy. S Re-rated from Medium: app destroy runs the runtime's `forceTeardown`, which calls `finishClose` and so fires `afterClosed`; the classes are retained in `attach`, after `mount`, so a throwing mount leaks only the child injector and its breakpoint observers.
-- Low: the full-screen strategy injects the root `DOCUMENT` (`strategies/full-screen.strategy.ts:49`) and appends the origin clone to its body, while the controller uses the origin's `ownerDocument` (`strategies/overlay-strategy-controller.ts:111`). An overlay opened in a pop-up window animates its clone in the main window. The same applies to the scroll blocker, which only locks the main document (`overlay-scroll-blocker.ts:29`). S
-- Low: `resolvePaintedPaneElement` runs `getComputedStyle` on every element of the content (`overlay-container.component.ts:312-314`) on each open that has an arrow or is a sheet. A sheet with a large table forces a full style pass. Stop at a depth or mark the painted pane. S
+- Low: the scroll blocker only locks the main document (`overlay-scroll-blocker.ts`), so a modal opened in a pop-up window does not lock that window. S
 
 ## cleanup
 
-- Low: hardcoded colours as primary values: `--et-overlay-body-divider-color: #565656` (`overlay-container.component.css:10`), `--_et-overlay-drag-handle-color: #565656` (`strategies/sheet-styles.component.css:6`), `--et-overlay-backdrop-color: rgb(0 0 0 / 0.32)` (`overlay-container.component.css:146`). Resolve from surface tokens with the literal as fallback. S
-- Low: comments outside the AGENTS.md allowlist: narration in `overlay-container.component.ts:88-106,148-152,175-184,309-310`, `overlay-ref.ts:28-30,112`, `overlay-opener.ts:281-282,292,311-312,336`, `strategies/overlay-strategy-controller.ts:101,151,166`, `overlay-scroll-blocker.ts:21-22`; JSDoc on non-exported helpers in `overlay-manager.ts:43-58` and on private members in `overlay-container.component.ts:227-246`. S
+- Low: hardcoded backdrop colour `--et-overlay-backdrop-color: rgb(0 0 0 / 0.32)` (`overlay-container.component.css`). No surface or scrim token fits a black scrim; mapping it is a design call. S
 - Low: the plain `open` path (no `strategies`) ignores an `Event` origin for positioning (`overlay-manager.ts:96-100`) and does not resolve the focused element as origin, unlike `openWithStrategies` (`:144`). The two paths anchor differently for the same config. S
 
 ## Spec gaps

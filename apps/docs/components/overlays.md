@@ -226,15 +226,15 @@ The header, body, and footer must have an `etOverlayMain` ancestor - either an `
 
 Spacing is tokenized, so an overlay can retune it per instance via `panelClass` without restyling the pieces:
 
-| Token                                     | Default   | Applies to                                                                |
-| ----------------------------------------- | --------- | ------------------------------------------------------------------------- |
-| `--et-overlay-padding-inline`             | `16px`    | Inline padding of header, body and footer                                 |
-| `--et-overlay-padding-block`              | `16px`    | Block padding at the pane's outer edges (header start, footer end)        |
-| `--et-overlay-header-padding-block-end`   | `16px`    | Gap between the header and the body                                       |
-| `--et-overlay-body-padding-block`         | `0`       | Block padding inside the scrolling body                                   |
-| `--et-overlay-footer-padding-block-start` | `16px`    | Gap between the body and the footer                                       |
-| `--et-overlay-body-min-block-size`        | `100px`   | Floor for the body's row before the pane starts scrolling                 |
-| `--et-overlay-body-divider-color`         | `#565656` | The body's edge dividers (`dividers`) and the sidebar's inline-end border |
+| Token                                     | Default                                          | Applies to                                                                |
+| ----------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------- |
+| `--et-overlay-padding-inline`             | `16px`                                           | Inline padding of header, body and footer                                 |
+| `--et-overlay-padding-block`              | `16px`                                           | Block padding at the pane's outer edges (header start, footer end)        |
+| `--et-overlay-header-padding-block-end`   | `16px`                                           | Gap between the header and the body                                       |
+| `--et-overlay-body-padding-block`         | `0`                                              | Block padding inside the scrolling body                                   |
+| `--et-overlay-footer-padding-block-start` | `16px`                                           | Gap between the body and the footer                                       |
+| `--et-overlay-body-min-block-size`        | `100px`                                          | Floor for the body's row before the pane starts scrolling                 |
+| `--et-overlay-body-divider-color`         | `--et-surface-border-solid` (fallback `#565656`) | The body's edge dividers (`dividers`) and the sidebar's inline-end border |
 
 `--et-overlay-body-padding-block` is applied to the body's inner wrapper rather than to the scroll container itself, so its end value is part of the scrollable area: content scrolled to the bottom stops that far short of the edge instead of ending flush against the divider, which would clip the last child's border and focus ring.
 
