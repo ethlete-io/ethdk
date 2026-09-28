@@ -7,6 +7,9 @@ import {
   provideRichTextEditorDom,
   RichTextEditorDom,
 } from '../headless/internals/rich-text-editor-dom';
+import { RichTextEditorDirective } from '../headless/rich-text-editor.directive';
+import { RICH_TEXT_EDITOR_TOOL, RichTextEditorToolDefinition } from '../rich-text-editor-tools';
+import { provideRichTextEditorTableTool } from './rich-text-editor-table.provider';
 import { createTableNav } from './rich-text-editor-table.util';
 
 const TABLE = '<table><thead><tr><th>A</th><th>B</th></tr></thead><tbody><tr><td>C</td><td>D</td></tr></tbody></table>';
@@ -102,5 +105,138 @@ describe('createTableNav tab', () => {
     caretIn(root.querySelector('p') as Node);
 
     expect(nav.tab(dom, tabEvent())).toBe(false);
+  });
+});
+
+describe('table tool arrow keys', () => {
+  let renderer: NonNullable<ReturnType<typeof injectRenderer>>;
+  let doc: Document;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [provideRichTextEditorDom(), provideRichTextEditorTableTool()] });
+    renderer = TestBed.runInInjectionContext(() => injectRenderer());
+    doc = TestBed.inject(DOCUMENT);
+  });
+
+  afterEach(() => {
+    doc.body.innerHTML = '';
+    doc.getSelection()?.removeAllRanges();
+  });
+
+  const setup = (html: string) => {
+    const root = renderer.createElement('div') as HTMLElement;
+    root.contentEditable = 'true';
+    root.innerHTML = html;
+    renderer.appendChild(doc.body, root);
+
+    const dom = TestBed.runInInjectionContext(() => injectRichTextEditorDom());
+    dom.root.set(root);
+
+    const tool = (TestBed.inject(RICH_TEXT_EDITOR_TOOL) as unknown as RichTextEditorToolDefinition[]).find(
+      (definition) => definition.token === 'table',
+    );
+    const editor = { editorDom: dom } as unknown as RichTextEditorDirective;
+    const keydown = (event: KeyboardEvent) => tool?.keydown?.(editor, event) ?? false;
+
+    return { root, keydown };
+  };
+
+  const caretAt = (node: Node, offset: number) => {
+    const range = doc.createRange();
+    range.setStart(node, offset);
+    range.collapse(true);
+    doc.getSelection()?.removeAllRanges();
+    doc.getSelection()?.addRange(range);
+  };
+
+  const caretBlock = (root: HTMLElement) => {
+    let node: Node | null = doc.getSelection()?.getRangeAt(0).startContainer ?? null;
+
+    while (node && node.parentNode !== root) node = node.parentNode;
+
+    return node as HTMLElement | null;
+  };
+
+  const arrow = (key: string, init: KeyboardEventInit = {}) => new KeyboardEvent('keydown', { key, ...init });
+
+  it.each([
+    ['shiftKey', { shiftKey: true }],
+    ['altKey', { altKey: true }],
+    ['ctrlKey', { ctrlKey: true }],
+    ['metaKey', { metaKey: true }],
+    ['isComposing', { isComposing: true }],
+  ])('leaves an arrow key with %s to the browser', (_, init) => {
+    const { root, keydown } = setup(`<p>before</p>${TABLE}<p>after</p>`);
+    const lastCell = root.querySelectorAll('td')[1] as HTMLElement;
+    caretAt(lastCell.firstChild as Node, 1);
+
+    expect(keydown(arrow('ArrowDown', init))).toBe(false);
+    expect(keydown(arrow('ArrowRight', init))).toBe(false);
+
+    caretAt(root.querySelector('p')?.firstChild as Node, 6);
+
+    expect(keydown(arrow('ArrowRight', init))).toBe(false);
+    expect(caretBlock(root)?.tagName).toBe('P');
+  });
+
+  it('steps out of the last row into the next paragraph on a plain ArrowDown', () => {
+    const { root, keydown } = setup(`${TABLE}<p>after</p>`);
+    caretAt(root.querySelectorAll('td')[0]?.firstChild as Node, 0);
+
+    expect(keydown(arrow('ArrowDown'))).toBe(true);
+    expect(caretBlock(root)?.textContent).toBe('after');
+  });
+
+  it('enters the first cell from the paragraph before the table on a plain ArrowRight', () => {
+    const { root, keydown } = setup(`<p>before</p>${TABLE}`);
+    caretAt(root.querySelector('p')?.firstChild as Node, 6);
+
+    expect(keydown(arrow('ArrowRight'))).toBe(true);
+    expect(doc.getSelection()?.getRangeAt(0).startContainer).toBe(root.querySelector('th'));
+  });
+
+  it('puts a paragraph between the table and an image block instead of landing in the image', () => {
+    const { root, keydown } = setup(
+      `${TABLE}<p contenteditable="false"><img src="https://example.com/a.png" alt=""></p>`,
+    );
+    caretAt(root.querySelectorAll('td')[1]?.firstChild as Node, 1);
+
+    expect(keydown(arrow('ArrowDown'))).toBe(true);
+
+    const block = caretBlock(root);
+
+    expect(block?.tagName).toBe('P');
+    expect(block?.getAttribute('contenteditable')).toBeNull();
+    expect(block?.nextElementSibling?.getAttribute('contenteditable')).toBe('false');
+  });
+
+  it('puts a paragraph between two adjacent tables instead of landing between their cells', () => {
+    const { root, keydown } = setup(`${TABLE}${TABLE}`);
+    caretAt(root.querySelectorAll('td')[1]?.firstChild as Node, 1);
+
+    expect(keydown(arrow('ArrowDown'))).toBe(true);
+    expect(caretBlock(root)?.tagName).toBe('P');
+    expect(root.children[1]?.tagName).toBe('P');
+  });
+
+  it('lands in the last list item when stepping up into a list', () => {
+    const { root, keydown } = setup(`<ul><li>one</li><li>two</li></ul>${TABLE}`);
+    caretAt(root.querySelector('th')?.firstChild as Node, 0);
+
+    expect(keydown(arrow('ArrowUp'))).toBe(true);
+
+    const container = doc.getSelection()?.getRangeAt(0).startContainer;
+
+    expect(
+      container === root.querySelectorAll('li')[1] || container?.parentNode === root.querySelectorAll('li')[1],
+    ).toBe(true);
+  });
+
+  it('lands in the first list item when stepping down into a list', () => {
+    const { root, keydown } = setup(`${TABLE}<ol><li>one</li><li>two</li></ol>`);
+    caretAt(root.querySelectorAll('td')[1]?.firstChild as Node, 1);
+
+    expect(keydown(arrow('ArrowDown'))).toBe(true);
+    expect(doc.getSelection()?.getRangeAt(0).startContainer).toBe(root.querySelector('li'));
   });
 });

@@ -824,3 +824,67 @@ test.describe('multi-language rich-text-editor / touch', () => {
     await expect(editor).toHaveClass(/et-rich-text-editor--docked-toolbar/);
   });
 });
+
+const caretBlockText = (page: Page) =>
+  page.evaluate(() => {
+    const node = document.getSelection()?.anchorNode ?? null;
+    const element = node instanceof Element ? node : (node?.parentElement ?? null);
+
+    return element?.closest('th, td, h2, p')?.textContent ?? null;
+  });
+
+const clickEndOf = async (page: Page, content: Locator, text: string) => {
+  await content.locator('th, td', { hasText: text }).click();
+  await page.keyboard.press('End');
+};
+
+test.describe('rich-text-editor / table caret navigation', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: arrow keys');
+
+  test('ArrowUp on the second line of a header cell stays in the cell, the next one leaves the table', async ({
+    page,
+  }) => {
+    const root = await openStory(page, EDITOR_TABLE_ID);
+    const content = root.locator('.et-rte-content');
+
+    await clickEndOf(page, content, 'Team');
+    await page.keyboard.press('Shift+Enter');
+    await page.keyboard.type('Club');
+    await expect(content.locator('th').first().locator('br')).toHaveCount(1);
+
+    await pressKey(page, 'ArrowUp');
+    await expect.poll(() => caretBlockText(page)).toBe('TeamClub');
+
+    await pressKey(page, 'ArrowUp');
+    await expect.poll(() => caretBlockText(page)).toBe('Standings');
+  });
+
+  test('ArrowDown on the first line of a last-row cell stays in the cell, the next one leaves the table', async ({
+    page,
+  }) => {
+    const root = await openStory(page, EDITOR_TABLE_ID);
+    const content = root.locator('.et-rte-content');
+
+    await clickEndOf(page, content, 'Hamburg');
+    await page.keyboard.press('Shift+Enter');
+    await page.keyboard.type('North');
+    await pressKey(page, 'ArrowUp');
+    await expect.poll(() => caretBlockText(page)).toBe('HamburgNorth');
+
+    await pressKey(page, 'ArrowDown');
+    await expect.poll(() => caretBlockText(page)).toBe('HamburgNorth');
+
+    await pressKey(page, 'ArrowDown');
+    await expect.poll(() => caretBlockText(page)).toBe('A right-aligned paragraph after the table.');
+  });
+
+  test('Shift+ArrowDown in the last row extends the selection instead of leaving the table', async ({ page }) => {
+    const root = await openStory(page, EDITOR_TABLE_ID);
+    const content = root.locator('.et-rte-content');
+
+    await clickEndOf(page, content, 'Hamburg');
+    await pressKey(page, 'Shift+ArrowDown');
+
+    expect(await page.evaluate(() => document.getSelection()?.isCollapsed)).toBe(false);
+  });
+});

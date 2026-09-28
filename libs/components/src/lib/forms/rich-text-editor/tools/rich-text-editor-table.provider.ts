@@ -27,9 +27,7 @@ export const provideRichTextEditorTableTool = (): Provider => ({
       label: DEFAULT_RICH_TEXT_EDITOR_LABELS.table,
       control: RichTextEditorTableToolComponent,
       keydown: (editor, event) =>
-        nav.tab(editor.editorDom, event) ||
-        nav.exit(editor.editorDom, event.key) ||
-        nav.enter(editor.editorDom, event.key),
+        nav.tab(editor.editorDom, event) || nav.exit(editor.editorDom, event) || nav.enter(editor.editorDom, event),
     };
   },
   multi: true,

@@ -202,6 +202,75 @@ export const createTableOps = (renderer: EditorRenderer) => {
  * paragraph when the table ends the document); `enter` steps it INTO the first/last cell of an
  * adjacent root-level table instead of stranding it at the table's edge.
  */
+const isPlainArrowKey = (event: KeyboardEvent) =>
+  event.key.startsWith('Arrow') &&
+  !event.shiftKey &&
+  !event.altKey &&
+  !event.ctrlKey &&
+  !event.metaKey &&
+  !event.isComposing;
+
+const visibleRects = (rects: DOMRectList) => Array.from(rects).filter((rect) => rect.height > 0);
+
+const caretRect = (caret: Range): DOMRect | null => {
+  const own = visibleRects(caret.getClientRects())[0];
+
+  if (own) return own;
+
+  const { startContainer, startOffset } = caret;
+  const neighbour =
+    startContainer instanceof Element
+      ? (startContainer.childNodes[startOffset] ?? startContainer.childNodes[startOffset - 1])
+      : null;
+
+  if (!(neighbour instanceof Element)) return null;
+
+  return visibleRects(neighbour.getClientRects())[0] ?? null;
+};
+
+/** Whether the caret sits on the first or last line box of `cell`; `true` where there is no layout to measure. */
+const caretOnEdgeLine = (caret: Range, { cell, edge }: { cell: HTMLElement; edge: 'first' | 'last' }) => {
+  const contents = cell.ownerDocument.createRange();
+
+  contents.selectNodeContents(cell);
+
+  if (typeof contents.getClientRects !== 'function') return true;
+
+  const lines = visibleRects(contents.getClientRects());
+  const rect = caretRect(caret);
+
+  if (!lines.length || !rect) return true;
+
+  const middle = rect.top + rect.height / 2;
+
+  return edge === 'first'
+    ? middle < Math.min(...lines.map((line) => line.bottom))
+    : middle > Math.max(...lines.map((line) => line.top));
+};
+
+const CONTAINER_BLOCK_TAGS = /* @__PURE__ */ new Set(['UL', 'OL', 'BLOCKQUOTE']);
+const TEXT_BLOCK_TAGS = /* @__PURE__ */ new Set(['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'PRE', 'LI']);
+
+/** The text block at the `edge` of `block` that a caret can sit in, or `null` for an atom, a table or a divider. */
+const caretBlockAt = (block: Element | null, edge: 'first' | 'last'): HTMLElement | null => {
+  let target = block;
+
+  while (target) {
+    const inner = edge === 'first' ? target.firstElementChild : target.lastElementChild;
+    const descend =
+      CONTAINER_BLOCK_TAGS.has(target.tagName) ||
+      (target.tagName === 'LI' && !!inner && CONTAINER_BLOCK_TAGS.has(inner.tagName));
+
+    if (!descend) break;
+
+    target = inner;
+  }
+
+  if (!(target instanceof HTMLElement) || !TEXT_BLOCK_TAGS.has(target.tagName)) return null;
+
+  return target.getAttribute('contenteditable') === 'false' ? null : target;
+};
+
 export const createTableNav = (renderer: EditorRenderer) => {
   const collapseInto = (node: Node, offset: number) => {
     const doc = node.ownerDocument;
@@ -219,9 +288,10 @@ export const createTableNav = (renderer: EditorRenderer) => {
     selection.addRange(range);
   };
 
-  const exit = (dom: RichTextEditorDom, key: string) => {
-    if (!key.startsWith('Arrow')) return false;
+  const exit = (dom: RichTextEditorDom, event: KeyboardEvent) => {
+    if (!isPlainArrowKey(event)) return false;
 
+    const { key } = event;
     const el = dom.root();
     const editable = dom.getSelection();
 
@@ -267,8 +337,8 @@ export const createTableNav = (renderer: EditorRenderer) => {
 
     let edge: 'before' | 'after' | null = null;
 
-    if (key === 'ArrowUp' && firstRow) edge = 'before';
-    else if (key === 'ArrowDown' && lastRow) edge = 'after';
+    if (key === 'ArrowUp' && firstRow && caretOnEdgeLine(range, { cell: cellEl, edge: 'first' })) edge = 'before';
+    else if (key === 'ArrowDown' && lastRow && caretOnEdgeLine(range, { cell: cellEl, edge: 'last' })) edge = 'after';
     else if (key === 'ArrowLeft' && firstRow && firstCell && atCellStart()) edge = 'before';
     else if (key === 'ArrowRight' && lastRow && lastCell && atCellEnd()) edge = 'after';
 
@@ -280,12 +350,12 @@ export const createTableNav = (renderer: EditorRenderer) => {
   };
 
   /** Moves the caret out of `table` (a root-level block - both callers verify that) into the
-   *  adjacent block, creating an empty paragraph when the table starts/ends the document. */
+   *  adjacent text block, creating an empty paragraph when there is none to land in. */
   const stepOut = (table: HTMLTableElement, edge: 'before' | 'after') => {
     const el = table.parentElement as HTMLElement;
     const doc = el.ownerDocument;
     const sibling = edge === 'before' ? table.previousElementSibling : table.nextElementSibling;
-    let target = sibling instanceof HTMLElement ? sibling : null;
+    let target = caretBlockAt(sibling, edge === 'before' ? 'last' : 'first');
 
     if (!target) {
       target = renderer.createElement('p') as HTMLElement;
@@ -332,9 +402,10 @@ export const createTableNav = (renderer: EditorRenderer) => {
     return true;
   };
 
-  const enter = (dom: RichTextEditorDom, key: string) => {
-    if (!key.startsWith('Arrow')) return false;
+  const enter = (dom: RichTextEditorDom, event: KeyboardEvent) => {
+    if (!isPlainArrowKey(event)) return false;
 
+    const { key } = event;
     const el = dom.root();
     const editable = dom.getSelection();
 
