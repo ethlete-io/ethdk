@@ -533,13 +533,13 @@ export class CalendarDirective {
 
     const strategy = this.effectiveRangeStrategy();
     const current = this.rangeValue();
+    const preview = strategy.preview ? strategy.preview(at, current) : strategy.select(at, current);
 
-    return (
-      (strategy.preview ? strategy.preview(at, current) : strategy.select(at, current)) ?? {
-        start: null,
-        end: null,
-      }
-    );
+    if (preview === null || !this.isRangeSelectable(preview)) {
+      return { start: null, end: null };
+    }
+
+    return preview;
   });
 
   public isDateDisabled(date: Date) {
@@ -750,10 +750,32 @@ export class CalendarDirective {
       end: next.end === null ? null : startOfCalendarUnit(next.end, precision),
     };
 
+    if (!this.isRangeSelectable(resolved)) {
+      return;
+    }
+
     this.rangeValue.set(resolved);
 
     if (resolved.end !== null) {
       this.hoveredDate.set(null);
+    }
+  }
+
+  private isRangeSelectable(range: CalendarRange) {
+    return (
+      (range.start === null || !this.isUnitDisabled(range.start)) &&
+      (range.end === null || !this.isUnitDisabled(range.end))
+    );
+  }
+
+  private isUnitDisabled(date: Date) {
+    switch (this.precision()) {
+      case 'month':
+        return this.isMonthDisabled(date);
+      case 'year':
+        return this.isYearDisabled(date);
+      default:
+        return this.isDateDisabled(startOfDay(date));
     }
   }
 

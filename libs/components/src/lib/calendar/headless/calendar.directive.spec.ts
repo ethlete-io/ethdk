@@ -643,6 +643,60 @@ describe('CalendarDirective', () => {
       expect(host.rangeValue()).toEqual({ start: new Date(2026, 2, 1), end: new Date(2026, 3, 1) });
     });
 
+    it('rejects a fixed span that would end past max, and previews nothing there', () => {
+      host.max.set(new Date(2026, 6, 20));
+      host.rangeStrategy.set(createFixedLengthRangeStrategy({ days: 7 }));
+      fixture.detectChanges();
+
+      cell(fixture, 17)?.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true }));
+      fixture.detectChanges();
+
+      expect(bandedCells(fixture)).toEqual([]);
+
+      cell(fixture, 17)?.click();
+      fixture.detectChanges();
+
+      expect(host.rangeValue()).toEqual({ start: null, end: null });
+
+      cell(fixture, 14)?.click();
+      fixture.detectChanges();
+
+      expect(host.rangeValue()).toEqual({ start: new Date(2026, 6, 14), end: new Date(2026, 6, 20) });
+    });
+
+    it('rejects a week that would start before min, and previews nothing there', () => {
+      host.min.set(new Date(2026, 6, 8));
+      host.rangeStrategy.set(createWeekRangeStrategy({ weekStartsOn: 1 }));
+      fixture.detectChanges();
+
+      cell(fixture, 9)?.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true }));
+      fixture.detectChanges();
+
+      expect(bandedCells(fixture)).toEqual([]);
+
+      cell(fixture, 9)?.click();
+      fixture.detectChanges();
+
+      expect(host.rangeValue()).toEqual({ start: null, end: null });
+
+      cell(fixture, 16)?.click();
+      fixture.detectChanges();
+
+      expect(host.rangeValue()).toEqual({ start: new Date(2026, 6, 13), end: null });
+    });
+
+    it('rejects a week pick whose end the date filter disables', () => {
+      host.dateFilter.set((date) => date.getDay() !== 0);
+      host.rangeStrategy.set(createWeekRangeStrategy({ weekStartsOn: 1 }));
+      fixture.detectChanges();
+
+      cell(fixture, 16)?.click();
+      cell(fixture, 22)?.click();
+      fixture.detectChanges();
+
+      expect(host.rangeValue()).toEqual({ start: new Date(2026, 6, 13), end: null });
+    });
+
     it('keeps the built-in rule when no strategy is named', () => {
       cell(fixture, 10)?.click();
       cell(fixture, 14)?.click();
