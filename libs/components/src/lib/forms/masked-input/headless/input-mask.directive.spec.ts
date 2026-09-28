@@ -28,6 +28,31 @@ class CustomMaskHostDirective implements InputMaskHost {
   }
 }
 
+@Directive({
+  selector: '[etSbWrappingMaskHost]',
+  providers: [{ provide: INPUT_MASK_HOST, useExisting: WrappingMaskHostDirective }],
+})
+class WrappingMaskHostDirective implements InputMaskHost {
+  public value = signal('');
+  public focused = signal(false);
+  public nativeControl = signal<HTMLInputElement | null>(null);
+
+  public suppressNativeSync() {
+    return;
+  }
+}
+
+@Component({
+  template: `
+    <div etInputMask="00-00" etSbWrappingMaskHost>
+      <input class="masked" />
+      <input class="other" />
+    </div>
+  `,
+  imports: [WrappingMaskHostDirective, InputMaskDirective],
+})
+class WrappingHostTestHost {}
+
 @Component({
   template: `<input etInputMask="00-00" etSbCustomMaskHost />`,
   imports: [CustomMaskHostDirective, InputMaskDirective],
@@ -299,5 +324,28 @@ describe('InputMaskDirective', () => {
     expect(input.value).toBe('12-04');
     expect(host.value()).toBe('1204');
     expect(host.suppressed).toBe(true);
+  });
+});
+
+describe('InputMaskDirective inside a host with several inputs', () => {
+  it('ignores a composition in an input that is not the masked control', async () => {
+    const fixture = TestBed.createComponent(WrappingHostTestHost);
+    const host = fixture.debugElement.children[0]!.injector.get(WrappingMaskHostDirective);
+    const masked = fixture.nativeElement.querySelector('.masked') as HTMLInputElement;
+    const other = fixture.nativeElement.querySelector('.other') as HTMLInputElement;
+
+    host.nativeControl.set(masked);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    other.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+
+    masked.value = '1204';
+    masked.setSelectionRange(4, 4);
+    masked.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
+    await fixture.whenStable();
+
+    expect(masked.value).toBe('12-04');
+    expect(host.value()).toBe('1204');
   });
 });

@@ -27,7 +27,7 @@ import { compilePatternMask, isDigitOnlyPattern } from './internals/pattern-mask
   exportAs: 'etInputMask',
   host: {
     '(input)': 'handleInput($event)',
-    '(compositionstart)': 'composing.set(true)',
+    '(compositionstart)': 'handleCompositionStart($event)',
     '(compositionend)': 'handleCompositionEnd($event)',
   },
 })
@@ -59,7 +59,7 @@ export class InputMaskDirective {
    * `setSelectionRange` mid-composition - on an intermediate `input` event or in the render-time
    * repaint - cancels the IME candidate window (CJK, dead keys), so both wait until composition ends.
    */
-  protected composing = signal(false);
+  public composing = signal(false);
 
   private spec = computed(() => {
     const mask = this.mask();
@@ -221,6 +221,14 @@ export class InputMaskDirective {
     }
 
     this.reconcile((event as InputEvent).inputType);
+  }
+
+  protected handleCompositionStart(event: CompositionEvent) {
+    if (event.target !== this.host?.nativeControl()) {
+      return;
+    }
+
+    this.composing.set(true);
   }
 
   protected handleCompositionEnd(event: CompositionEvent) {
