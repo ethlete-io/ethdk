@@ -143,7 +143,7 @@
               <input
                 #labelInput
                 [value]="session.label"
-                (change)="rename(session, labelInput.value)"
+                (change)="rename(session, labelInput)"
                 class="et-query-devtools-input et-query-devtools-auth-session-label"
                 type="text"
                 aria-label="Session name"
@@ -304,7 +304,7 @@
                   #ttlInput
                   [value]="lifetime.ttlSeconds ?? ''"
                   [max]="TTL_LIMIT"
-                  (change)="armTokenTtl({ entry: entry, value: ttlInput.value })"
+                  (change)="armTokenTtl({ entry: entry, input: ttlInput })"
                   class="et-query-devtools-input et-query-devtools-input--number"
                   type="number"
                   min="0"

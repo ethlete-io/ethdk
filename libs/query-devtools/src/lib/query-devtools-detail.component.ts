@@ -1,4 +1,4 @@
-import { Component, computed, input, signal, ViewEncapsulation } from '@angular/core';
+import { Component, computed, input, linkedSignal, ViewEncapsulation } from '@angular/core';
 import { MenuComponent, MenuItemComponent, MenuSeparatorComponent } from '@ethlete/components';
 import { MenuDirective, MenuSurfaceDirective, MenuTriggerDirective } from '@ethlete/components';
 import { QueryDevtoolsFeaturesComponent } from './query-devtools-features.component';
@@ -67,7 +67,7 @@ export class QueryDevtoolsDetailComponent {
   ] satisfies { id: DetailTab; label: string }[];
 
   /** Whether the tail of runs that can no longer be diffed is unfolded. */
-  protected foldedRunsOpen = signal(false);
+  protected foldedRunsOpen = linkedSignal({ source: () => this.sel().query, computation: () => false });
 
   /**
    * The runs split at the last one that still holds a body. Only the newest few can ever be an end of a

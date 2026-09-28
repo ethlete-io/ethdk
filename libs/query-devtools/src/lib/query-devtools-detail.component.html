@@ -245,15 +245,14 @@
 }
 
 @let detailRuns = host.queryRuns(s.entry);
-<nav class="et-query-devtools-subtabs" role="tablist">
+<nav class="et-query-devtools-subtabs" aria-label="Query detail sections">
   @for (tab of detailTabs; track tab.id) {
     <button
       [class.et-query-devtools-subtab--active]="host.detailTab() === tab.id"
-      [attr.aria-selected]="host.detailTab() === tab.id"
+      [attr.aria-pressed]="host.detailTab() === tab.id"
       (click)="host.detailTab.set(tab.id)"
       class="et-query-devtools-subtab"
       type="button"
-      role="tab"
     >
       {{ tab.label }}
       @if (tab.id === 'history' && detailRuns.length) {

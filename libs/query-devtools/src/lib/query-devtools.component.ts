@@ -2778,12 +2778,24 @@ export class QueryDevtoolsComponent implements OnInit {
     }
 
     const payload = data.trim();
+    let parsed: unknown;
 
     try {
-      this.asWs(entry).emit({ event: name, data: payload ? JSON.parse(payload) : undefined });
-      this.socketEmitError.set(null);
+      parsed = payload ? JSON.parse(payload) : undefined;
     } catch {
       this.socketEmitError.set({ entryId: entry.id, message: 'Invalid JSON' });
+
+      return;
+    }
+
+    try {
+      this.asWs(entry).emit({ event: name, data: parsed });
+      this.socketEmitError.set(null);
+    } catch (error) {
+      this.socketEmitError.set({
+        entryId: entry.id,
+        message: error instanceof Error ? error.message : 'The socket did not take the message.',
+      });
     }
   }
 

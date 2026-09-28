@@ -59,12 +59,15 @@ const copyBySelection = (text: string, doc: Document) => {
 
   const selection = doc.getSelection();
   const previous = selection?.rangeCount ? selection.getRangeAt(0) : null;
+  const focused = doc.activeElement as HTMLElement | null;
 
   area.select();
 
   const copied = execCopy(doc);
 
   area.remove();
+
+  if (focused && focused !== doc.body) focused.focus({ preventScroll: true });
 
   if (previous && selection) {
     selection.removeAllRanges();

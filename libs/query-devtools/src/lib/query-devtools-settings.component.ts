@@ -44,6 +44,14 @@ type LimitKey = 'maxEvents' | 'maxDroppedCacheEntries';
 
 type LimitRow = { key: LimitKey; label: string; min: number; max: number; step: number; hint: string };
 
+const isAbsoluteHttpUrl = (value: string) => {
+  try {
+    return ['http:', 'https:'].includes(new URL(value).protocol);
+  } catch {
+    return false;
+  }
+};
+
 const SCOPE_ROWS: ScopeRow[] = [
   {
     key: 'viewState',
@@ -214,6 +222,7 @@ export class QueryDevtoolsSettingsComponent {
     const url = value.trim();
 
     if (url === this.apiEnvCustomUrl(apiSwitch)) return;
+    if (url && !isAbsoluteHttpUrl(url)) return;
 
     this.pickApiEnv(apiSwitch, url || null);
   }

@@ -32,6 +32,22 @@ describe('writeQueryDevtoolsClipboard', () => {
     expect(document.querySelector('textarea')).toBe(null);
   });
 
+  it('should put focus back where it was after a copy command', async () => {
+    withoutClipboard();
+    withExecCommand(() => {
+      document.querySelector('textarea')?.focus();
+
+      return true;
+    });
+    const button = document.body.appendChild(document.createElement('button'));
+    button.focus();
+
+    await writeQueryDevtoolsClipboard({ text: 'hi' });
+
+    expect(document.activeElement).toBe(button);
+    button.remove();
+  });
+
   it('should report an unavailable clipboard instead of doing nothing', async () => {
     withoutClipboard();
     withExecCommand(false);

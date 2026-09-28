@@ -28,6 +28,7 @@ import {
   setQueryDevtoolsSettings,
   setQueryDevtoolsTokenTtl,
   switchQueryDevtoolsAuthSession,
+  queryDevtoolsTokenTtls,
 } from '@ethlete/query';
 import { QueryDevtoolsFeaturesComponent } from './query-devtools-features.component';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
@@ -93,7 +94,7 @@ export class QueryDevtoolsAuthTabComponent {
   protected sessionAge(session: QueryDevtoolsAuthSession) {
     if (!session.savedAt) return 'unknown';
 
-    const seconds = Math.round((Date.now() - session.savedAt) / 1000);
+    const seconds = Math.round((this.host.clock() - session.savedAt) / 1000);
 
     if (seconds < 60) return `${seconds}s ago`;
     if (seconds < 3600) return `${Math.round(seconds / 60)}m ago`;
@@ -103,17 +104,24 @@ export class QueryDevtoolsAuthTabComponent {
 
   /** Whether the stored access token is spent, which the refresh token is expected to fix on a switch. */
   protected isExpired(session: QueryDevtoolsAuthSession) {
-    return session.expiresAt !== null && session.expiresAt * 1000 < Date.now();
+    return session.expiresAt !== null && session.expiresAt * 1000 < this.host.clock();
   }
 
   protected switchTo(session: QueryDevtoolsAuthSession) {
     switchQueryDevtoolsAuthSession({ sessionId: session.id });
   }
 
-  protected rename(session: QueryDevtoolsAuthSession, label: string) {
-    if (label.trim() === '' || label === session.label) return;
+  protected rename(session: QueryDevtoolsAuthSession, input: HTMLInputElement) {
+    const label = input.value.trim();
 
-    renameQueryDevtoolsAuthSession({ sessionId: session.id, label: label.trim() });
+    if (label === '' || label === session.label) {
+      input.value = session.label;
+
+      return;
+    }
+
+    renameQueryDevtoolsAuthSession({ sessionId: session.id, label });
+    input.value = label;
   }
 
   protected forget(session: QueryDevtoolsAuthSession) {
@@ -217,16 +225,14 @@ export class QueryDevtoolsAuthTabComponent {
    * clamped by {@link setQueryDevtoolsTokenTtl}, not by the input's `min`/`max` - a typed-in (or pasted)
    * value ignores those.
    */
-  protected armTokenTtl(options: { entry: QueryDevtoolsEntry; value: string }) {
-    const { entry, value } = options;
+  protected armTokenTtl(options: { entry: QueryDevtoolsEntry; input: HTMLInputElement }) {
+    const { entry, input } = options;
+    const providerName = this.providerName(entry);
 
-    if (value.trim() === '') {
-      this.clearTokenTtl(entry);
+    if (input.value.trim() === '') this.clearTokenTtl(entry);
+    else setQueryDevtoolsTokenTtl({ providerName, seconds: Number(input.value) });
 
-      return;
-    }
-
-    setQueryDevtoolsTokenTtl({ providerName: this.providerName(entry), seconds: Number(value) });
+    input.value = String(queryDevtoolsTokenTtls()[providerName] ?? '');
   }
 
   /** Presents the current token as long expired, which is what makes a refresh happen at once. */

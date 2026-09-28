@@ -62,6 +62,23 @@ describe('QueryDevtoolsComponent', () => {
     vi.useRealTimers();
   });
 
+  it('should report a socket that refuses a message apart from invalid JSON', () => {
+    const fixture = mount(false);
+    const panel = fixture.componentInstance;
+    const emit = () => {
+      throw new Error('Socket is closed.');
+    };
+    const entry = { id: 'ws-1', handle: { emit } } as unknown as QueryDevtoolsEntry;
+
+    panel.emitSocketMessage({ entry, event: 'ping', data: '{}' });
+    expect(panel.socketEmitErrorFor('ws-1')).toBe('Socket is closed.');
+
+    panel.emitSocketMessage({ entry, event: 'ping', data: '{' });
+    expect(panel.socketEmitErrorFor('ws-1')).toBe('Invalid JSON');
+
+    fixture.destroy();
+  });
+
   it('should not schedule a recurring timer while the panel is closed', () => {
     const before = vi.getTimerCount();
     const fixture = mount(false);

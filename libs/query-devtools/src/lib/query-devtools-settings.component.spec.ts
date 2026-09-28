@@ -73,4 +73,15 @@ describe('QueryDevtoolsSettingsComponent', () => {
 
     expect(select?.value).toBe('https://cms.example.com');
   });
+
+  it('should not store a custom API URL that is not an absolute http URL', async () => {
+    const fixture = TestBed.createComponent(QueryDevtoolsSettingsComponent);
+    await fixture.whenStable();
+
+    const apiSwitch = { name: 'Hub', storageKey: 'test-hub-api', envs: [], custom: true };
+
+    fixture.componentInstance['setCustomApiUrl'](apiSwitch, 'localhost:8040');
+
+    expect(window.localStorage.getItem('test-hub-api')).toBe(null);
+  });
 });
