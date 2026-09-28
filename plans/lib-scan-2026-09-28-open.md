@@ -15,11 +15,6 @@ own open lines; this file lists what needs a user decision and what is still que
 
 
 
-- form-field: `TEXT_FIELD_CONTROL_INPUTS` lists `'aria-label'` and `'aria-labelledby'` directly
-  (1a0c0805f), because Angular cannot build a spread of `ACCESSIBLE_NAME_INPUTS` in an IIFE. A
-  change to `ACCESSIBLE_NAME_INPUTS` must be copied by hand.
-- bundle: `STATE_ICONS` (progress-step) and the scheduler time-grid minute constants are still in
-  the floor bundle; see `components-lib-scan/bundle.md`.
 
 - bracket: swiss `MODE_UNSUPPORTED` is unverified. Does the API leave out undrawn rounds?
 
@@ -30,8 +25,6 @@ own open lines; this file lists what needs a user decision and what is still que
 - bundle goldens: rich-text-editor (3 entries) and dropzone are each about 1.6 kB over. The rich
   text growth comes from new features (862468765, b645e827e, 267f7bdb1); the dropzone growth is
   not checked. Accept with `nx run treeshake:bundle-goldens:update` on a fresh build?
-- menu: in a multiple group, a new value among values with filtered-out items now goes before the
-  first later value in option order, else at the end (330e1bbf4).
 - table persistence: a change in the same tick as a switch to a new store is not saved there
   (from 2b62c6e3e). Left alone.
 - dropzone: the readonly file list focus (766bb1f52) is not checked in Storybook (focus ring, axe).
@@ -40,8 +33,6 @@ own open lines; this file lists what needs a user decision and what is still que
 
 Each domain plan file keeps its open Low lines; the decisions are listed there. Flags to check:
 
-- stream: 5ff13041e removed the directives without a selector from the platform barrels (minor).
-  The PiP `minHeight`/`maxHeight` options are now read nowhere.
 - cli: `CI_JOB_TOKEN` is no longer a GitLab token; `et update --ai` passes the prompt in env vars;
   registry lookups read `~/.npmrc`. The `isPortFree` fix is not proven (the bug is macOS-only).
 - timetrack: `googleCalendarPaged$` now fails at the page cap, because a capped read deleted real
