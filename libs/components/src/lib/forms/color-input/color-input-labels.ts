@@ -1,6 +1,6 @@
 import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
-/** The strings the color picker panel renders itself. */
+/** The strings the color picker panel renders, and the messages of the color validators. */
 export type ColorInputLabels = {
   /** Accessible name of the picker overlay. */
   dialog: string;
@@ -30,8 +30,14 @@ export type ColorInputLabels = {
   notationConverted: (targetNotation: string) => string;
   /** Accessible name of the preset swatch group. */
   swatches: string;
+  /** Accessible name of one preset swatch, with its 1-based position in the group. */
+  swatch: (color: string, position: number) => string;
   /** Accessible name of the button that samples a color from the screen. */
   eyedropper: string;
+  /** Message of the `hexColor` and `rgbColor` validators, with the notations the field accepts. */
+  invalidColor: (notations: readonly string[]) => string;
+  /** Message of the `colorContrast` rule, with the measured and the required ratio. */
+  contrastTooLow: (measured: number, required: number) => string;
 };
 
 /** The built-in English labels. */
@@ -50,7 +56,10 @@ export const DEFAULT_COLOR_INPUT_LABELS: ColorInputLabels = {
   notation: (currentNotation) => `Change notation, currently ${currentNotation}`,
   notationConverted: (targetNotation) => `Converted to ${targetNotation}.`,
   swatches: 'Preset colors',
+  swatch: (color, position) => `Swatch ${position}, ${color}`,
   eyedropper: 'Pick a color from the screen',
+  invalidColor: (notations) => `Enter a color as ${notations.join(' or ')}`,
+  contrastTooLow: (measured, required) => `Contrast is ${measured}:1, needs at least ${required}:1`,
 };
 
 const COLOR_INPUT_LABELS_DEF = /* @__PURE__ */ defineLabels<ColorInputLabels>(

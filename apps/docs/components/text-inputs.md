@@ -311,8 +311,10 @@ the built-in panel, and returns `false` without touching the value when the colo
 | `--et-color-picker-track-size`   | `12px`                                                  |
 | `--et-color-picker-thumb-size`   | `12px`                                                  |
 
-The panel's own strings are localized through `provideColorInputLabels` - see
-[localization](/components/localization).
+The panel's own strings, each swatch's accessible name ("Swatch 1, #1d4ed8"), and the default
+messages of `hexColor`, `rgbColor` and `colorContrast` are localized through
+`provideColorInputLabels` - see [localization](/components/localization). A validator's own
+`message` option still wins.
 
 Two colors that have to be readable together belong to
 [`colorContrast`](/components/forms#color-contrast-across-two-fields), which measures a field

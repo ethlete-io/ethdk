@@ -39,10 +39,10 @@
 
   @if (colorInput.resolvedSwatches().length) {
     <div [attr.aria-label]="labels().swatches" class="et-color-picker-swatches" role="group">
-      @for (swatch of colorInput.resolvedSwatches(); track swatch) {
+      @for (swatch of colorInput.resolvedSwatches(); track swatch; let index = $index) {
         <button
           [style.background-color]="swatch"
-          [attr.aria-label]="swatch"
+          [attr.aria-label]="labels().swatch(swatch, index + 1)"
           [attr.aria-pressed]="swatch === canonicalHex()"
           [disabled]="!colorInput.interactive()"
           (click)="colorInput.picker.commitColor(swatch)"

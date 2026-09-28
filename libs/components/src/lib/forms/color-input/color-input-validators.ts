@@ -1,5 +1,6 @@
 import { FieldContext, LogicFn, validate } from '@angular/forms/signals';
 import { FieldWarning, warn } from '../form-field/headless';
+import { injectColorInputLabels } from './color-input-labels';
 import { ColorNotation } from './color-input.types';
 import { parseColorToRgb } from './headless/internals/color-convert';
 
@@ -116,7 +117,9 @@ export const getColorContrastRatio = (color: string | null, other: string | null
  * });
  * ```
  */
-export const hexColor = (path: ColorFieldPath, { allowShorthand, allowAlpha, message }: HexColorOptions = {}) =>
+export const hexColor = (path: ColorFieldPath, { allowShorthand, allowAlpha, message }: HexColorOptions = {}) => {
+  const labels = injectColorInputLabels();
+
   validate(path, ({ value }) => {
     const raw = value();
 
@@ -137,8 +140,9 @@ export const hexColor = (path: ColorFieldPath, { allowShorthand, allowAlpha, mes
       allowShorthand && allowAlpha ? '#rgba' : null,
     ].filter((notation) => notation !== null);
 
-    return { kind: 'hexColor', message: message ?? `Enter a color as ${expected.join(' or ')}` };
+    return { kind: 'hexColor', message: message ?? labels().invalidColor(expected) };
   });
+};
 
 /**
  * Signal-forms validator: fails the field unless the value is a functional `rgb()` color, in either
@@ -152,7 +156,9 @@ export const hexColor = (path: ColorFieldPath, { allowShorthand, allowAlpha, mes
  * });
  * ```
  */
-export const rgbColor = (path: ColorFieldPath, { allowAlpha, message }: RgbColorOptions = {}) =>
+export const rgbColor = (path: ColorFieldPath, { allowAlpha, message }: RgbColorOptions = {}) => {
+  const labels = injectColorInputLabels();
+
   validate(path, ({ value }) => {
     const raw = value();
 
@@ -160,13 +166,14 @@ export const rgbColor = (path: ColorFieldPath, { allowAlpha, message }: RgbColor
 
     const fail = {
       kind: 'rgbColor',
-      message: message ?? `Enter a color as ${allowAlpha ? 'rgb(r g b) or rgba(r g b / a)' : 'rgb(r g b)'}`,
+      message: message ?? labels().invalidColor(allowAlpha ? ['rgb(r g b)', 'rgba(r g b / a)'] : ['rgb(r g b)']),
     };
 
     const parsed = parseColorToRgb(raw, { notations: RGB_NOTATIONS, alpha: !!allowAlpha });
 
     return parsed ? undefined : fail;
   });
+};
 
 /**
  * Signal-forms rule: reports the field while its color does not reach `min` contrast against
@@ -195,6 +202,8 @@ export const colorContrast = (
   path: ColorFieldPath,
   { against, min = WCAG_CONTRAST_RATIOS.aaNormal, severity = 'error', message }: ColorContrastOptions,
 ) => {
+  const labels = injectColorInputLabels();
+
   const check = (ctx: FieldContext<string | null>): FieldWarning | null => {
     const other = typeof against === 'string' ? against : ctx.valueOf(against);
     const ratio = getColorContrastRatio(ctx.value(), other);
@@ -204,7 +213,7 @@ export const colorContrast = (
 
     const measured = Math.floor(ratio * 100) / 100;
 
-    return { kind: 'colorContrast', message: message ?? `Contrast is ${measured}:1, needs at least ${required}:1` };
+    return { kind: 'colorContrast', message: message ?? labels().contrastTooLow(measured, required) };
   };
 
   if (severity === 'warning') {

@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { form } from '@angular/forms/signals';
 import '../../../test-helpers';
 import { FIELD_WARNINGS } from '../form-field/headless';
+import { provideColorInputLabels } from './color-input-labels';
 import {
   ColorContrastOptions,
   HexColorOptions,
@@ -286,5 +287,29 @@ describe('colorContrast', () => {
 
   it('warns about nothing while the pair is fine', () => {
     expect(contrastWarnings('#000000', '#ffffff')).toEqual([]);
+  });
+});
+
+describe('color validator messages', () => {
+  beforeEach(() =>
+    TestBed.configureTestingModule({
+      providers: [
+        provideColorInputLabels({
+          invalidColor: (notations) => `Farbe als ${notations.join(' oder ')} eingeben`,
+          contrastTooLow: (measured, required) => `Kontrast ${measured}:1, mindestens ${required}:1`,
+        }),
+      ],
+    }),
+  );
+
+  it('reads the hex and rgb messages from the color input labels', () => {
+    expect(hexErrors('red', { allowShorthand: true })[0]?.message).toBe('Farbe als #rrggbb oder #rgb eingeben');
+    expect(rgbErrors('red')[0]?.message).toBe('Farbe als rgb(r g b) eingeben');
+  });
+
+  it('reads the contrast message from the color input labels', () => {
+    expect(errorsFor('#777777', (path) => colorContrast(path, { against: '#ffffff' }))[0]?.message).toBe(
+      'Kontrast 4.47:1, mindestens 4.5:1',
+    );
   });
 });

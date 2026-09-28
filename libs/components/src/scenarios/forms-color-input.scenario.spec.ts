@@ -183,8 +183,8 @@ describe('forms color input scenarios', () => {
       `${DEFAULT_COLOR_INPUT_LABELS.value}, ${DEFAULT_COLOR_INPUT_LABELS.hex}`,
     );
     expect(queryAll('.et-color-picker-swatch').map((swatch) => swatch.getAttribute('aria-label'))).toEqual([
-      '#1d4ed8',
-      '#dc2626',
+      'Swatch 1, #1d4ed8',
+      'Swatch 2, #dc2626',
     ]);
     expect(channel('hue').getAttribute('aria-valuetext')).toBe('0°');
     expect(channel('brightness').getAttribute('aria-valuetext')).toBe('47%');

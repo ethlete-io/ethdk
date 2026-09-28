@@ -39,10 +39,18 @@ const hexPatternFor = (shorthand: boolean, alpha: boolean) => {
   return alpha ? HEX_PATTERNS.alpha : HEX_PATTERNS.strict;
 };
 
-const RGB_PATTERN = /^rgba?\(\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*(?:[,/]\s*([\d.]+%?)\s*)?\)$/i;
+const RGB_PATTERNS = [
+  /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(?:,\s*([\d.]+%?)\s*)?\)$/i,
+  /^rgba?\(\s*(\d{1,3})\s+(\d{1,3})\s+(\d{1,3})\s*(?:\/\s*([\d.]+%?)\s*)?\)$/i,
+];
 
-const HSL_PATTERN =
-  /^hsla?\(\s*(-?[\d.]+)(?:deg)?\s*[,\s]\s*([\d.]+)%\s*[,\s]\s*([\d.]+)%\s*(?:[,/]\s*([\d.]+%?)\s*)?\)$/i;
+const HSL_PATTERNS = [
+  /^hsla?\(\s*(-?[\d.]+)(?:deg)?\s*,\s*([\d.]+)%\s*,\s*([\d.]+)%\s*(?:,\s*([\d.]+%?)\s*)?\)$/i,
+  /^hsla?\(\s*(-?[\d.]+)(?:deg)?\s+([\d.]+)%\s+([\d.]+)%\s*(?:\/\s*([\d.]+%?)\s*)?\)$/i,
+];
+
+const matchAny = (patterns: readonly RegExp[], raw: string) =>
+  patterns.reduce<RegExpExecArray | null>((match, pattern) => match ?? pattern.exec(raw), null);
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
@@ -75,7 +83,7 @@ const parseHex = (raw: string): RgbColor => {
 };
 
 const parseFunctionalRgb = (raw: string, allowAlpha: boolean): RgbColor | null => {
-  const match = RGB_PATTERN.exec(raw);
+  const match = matchAny(RGB_PATTERNS, raw);
 
   if (!match) {
     return null;
@@ -105,7 +113,7 @@ const parseFunctionalRgb = (raw: string, allowAlpha: boolean): RgbColor | null =
 };
 
 const parseFunctionalHsl = (raw: string, allowAlpha: boolean): RgbColor | null => {
-  const match = HSL_PATTERN.exec(raw);
+  const match = matchAny(HSL_PATTERNS, raw);
 
   if (!match) {
     return null;
