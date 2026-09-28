@@ -375,6 +375,22 @@ jobs:
             echo "result=Published @ethlete/types@$VERSION under the dist-tag \`$TAG\`." >> "$GITHUB_OUTPUT"
           fi
 
+  notify:
+    name: Post to Slack
+    needs: [resolve, publish]
+    if: needs.resolve.outputs.dry_run != 'true' && needs.publish.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            channel: ${{ secrets.SLACK_CHANNEL_ID }}
+            text: "API models from `${{ needs.resolve.outputs.api_branch }}` (${{ needs.resolve.outputs.source_sha }}): ${{ needs.publish.outputs.result }} Install with `@ethlete/types@${{ needs.resolve.outputs.tag }}`."
+
   close:
     name: Close
     needs: [resolve, verify, push, package, publish]
