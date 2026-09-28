@@ -20,8 +20,8 @@ const branchOf = (ref: string) => {
  * Only local branches are kept: a remote-tracking ref is somebody else's push, and it carries the same
  * commits as the local branch anyway.
  *
- * `window` is what decides which commits belong to the day, and it is not the same filter `--since` and
- * `--until` apply: those read the commit date, while a commit is timed by its author date here. Rebasing
+ * `window` is what decides which commits belong to the day, and it is not the same filter `--since`
+ * applies: that reads the commit date, while a commit is timed by its author date here. Rebasing
  * last week's work today gives it a commit date of today, and without this it would be logged today.
  *
  * `owners` names the checkout that holds each branch. Every worktree of a repository shares

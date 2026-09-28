@@ -38,6 +38,9 @@ const gitReflogArgs = () => ['reflog', 'show', '--date=iso-strict', `--format=${
 /**
  * Merges are left out: the subject is generated text rather than a statement of what was worked on, and
  * the commits it brings in are already reported under their own branch.
+ *
+ * No `--until`: it reads the commit date, so a commit authored inside the window and rebased after it
+ * would never be listed. `parseGitLog` applies the upper bound to the author date.
  */
 const gitLogArgs = (repo: GitRepoScan) => [
   'log',
@@ -45,7 +48,6 @@ const gitLogArgs = (repo: GitRepoScan) => [
   '--no-merges',
   '--name-only',
   `--since=${repo.window.from.toISOString()}`,
-  `--until=${repo.window.to.toISOString()}`,
   `--format=${GIT_LOG_FORMAT}`,
   ...(repo.author ? [`--author=${repo.author}`] : []),
 ];

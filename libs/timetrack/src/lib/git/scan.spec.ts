@@ -77,14 +77,14 @@ describe('collectGitEvents$', () => {
     expect(specs.some((spec) => spec.args.includes('-C'))).toBe(false);
   });
 
-  it('bounds the commit query to the window and to local branches', () => {
+  it('bounds the commit query by the window start alone and to local branches', () => {
     const { specs } = scan({ repos: REPOS });
     const log = specs.find((spec) => spec.args[0] === 'log');
 
     expect(log?.args).toContain('--branches');
     expect(log?.args).toContain('--no-merges');
     expect(log?.args).toContain(`--since=${WINDOW.from.toISOString()}`);
-    expect(log?.args).toContain(`--until=${WINDOW.to.toISOString()}`);
+    expect(log?.args.some((arg) => arg.startsWith('--until='))).toBe(false);
     expect(log?.args.some((arg) => arg.startsWith('--author='))).toBe(false);
   });
 
