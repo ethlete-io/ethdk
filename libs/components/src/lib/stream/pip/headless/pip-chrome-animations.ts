@@ -115,8 +115,7 @@ export const createPipChromeAnimations = (state: PipChromeState, refs: PipChrome
               aspectRatio: pip?.aspectRatio ?? 16 / 9,
               gridBtnEl: refs.gridBtnRef()?.nativeElement,
               renderer,
-              showForcedTitleBar: () => refs.pipWindowRef()?.forcedTitleBar.set(true),
-              hideForcedTitleBar: () => refs.pipWindowRef()?.forcedTitleBar.set(false),
+              holdTitleBar: () => refs.pipWindowRef()?.holdTitleBar() ?? (() => undefined),
             });
           }
         }

@@ -1,4 +1,7 @@
+import { PLATFORM_ID } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import '../../test-helpers';
+import { injectStreamManager } from './stream-manager';
 import { createStreamDriver } from './testing/stream-driver';
 
 const PLAYER_ID = 'youtube-abc';
@@ -12,6 +15,13 @@ describe('StreamManager', () => {
 
     expect(driver.isParked(PLAYER_ID)).toBe(true);
     expect(document.querySelector('.et-style-manager et-stream-manager-styles')).not.toBeNull();
+  });
+
+  it('keeps its player container out of the server-rendered body', () => {
+    TestBed.configureTestingModule({ providers: [{ provide: PLATFORM_ID, useValue: 'server' }] });
+    TestBed.runInInjectionContext(() => injectStreamManager());
+
+    expect(document.body.querySelector('.et-stream-manager')).toBeNull();
   });
 
   describe('resolveBestSlot', () => {

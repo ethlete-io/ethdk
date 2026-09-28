@@ -10,8 +10,9 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { injectRenderer } from '@ethlete/core';
+import { RuntimeError, injectRenderer } from '@ethlete/core';
 import { injectPipManager } from '../pip-manager';
+import { STREAM_ERROR_CODES } from '../stream-errors';
 import { injectStreamManager } from '../stream-manager';
 import { StreamPipEntry } from '../stream-manager.types';
 import { animateWithFixedWrapper } from './headless/internals/pip-animation';
@@ -43,7 +44,7 @@ import { PIP_ENTRY_TOKEN } from './headless/pip-entry.token';
     '[class.et-pip-player--ready]': 'isReady()',
     '[attr.data-pip-player-id]': 'resolvedEntry().playerId',
     '[attr.inert]': 'pipCell ? pipCell.cell().playerInertAttr : null',
-    '[style.--et-pip-player-ratio]': 'resolvedEntry()?.aspectRatio ?? (16 / 9)',
+    '[style.--et-pip-player-ratio]': 'resolvedEntry().aspectRatio ?? (16 / 9)',
   },
 })
 export class PipPlayerComponent {
@@ -58,9 +59,20 @@ export class PipPlayerComponent {
   public showThumbnail = input<boolean>();
   public isReady = signal(false);
 
-  public resolvedEntry = computed(
-    () => this.entry() ?? this.pipCell?.cell().pip ?? (null as unknown as StreamPipEntry),
-  );
+  private boundEntry = computed(() => this.entry() ?? this.pipCell?.cell().pip ?? null);
+
+  public resolvedEntry = computed(() => {
+    const entry = this.boundEntry();
+
+    if (!entry) {
+      throw new RuntimeError(
+        STREAM_ERROR_CODES.MISSING_PIP_ENTRY,
+        '[EtPipPlayer] et-pip-player needs an `entry` input or a parent `etPipCell`.',
+      );
+    }
+
+    return entry;
+  });
 
   public thumbnailUrl = computed(() => this.resolvedEntry().thumbnail?.() ?? null);
 
@@ -69,7 +81,11 @@ export class PipPlayerComponent {
   );
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => this.pipManager.parkPlayerElement(this.resolvedEntry().playerId));
+    inject(DestroyRef).onDestroy(() => {
+      const entry = this.boundEntry();
+
+      if (entry) this.pipManager.parkPlayerElement(entry.playerId);
+    });
 
     afterRenderEffect(() => {
       const pip = this.resolvedEntry();

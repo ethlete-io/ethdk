@@ -1,4 +1,5 @@
-import { DestroyRef, DOCUMENT, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { DestroyRef, DOCUMENT, inject, PLATFORM_ID, signal } from '@angular/core';
 import {
   createFlipAnimation,
   defineRootProvider,
@@ -30,7 +31,7 @@ const STREAM_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
 
     const container = renderer.createElement('div');
     renderer.addClass(container, 'et-stream-manager');
-    renderer.appendChild(document.body, container);
+    if (isPlatformBrowser(inject(PLATFORM_ID))) renderer.appendChild(document.body, container);
     inject(DestroyRef).onDestroy(() => container.remove());
 
     const viewportSize = injectViewportSize();

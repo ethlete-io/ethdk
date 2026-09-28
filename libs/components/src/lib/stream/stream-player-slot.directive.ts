@@ -24,6 +24,7 @@ import {
 import { STREAM_SLOT_PLAYER_ID_TOKEN, StreamPlayerId } from './stream-manager.types';
 import { createStreamPlayerSlot } from './stream-player-slot';
 import { StreamPlayerSlotStylesComponent } from './stream-player-slot-styles.component';
+import { resolveStreamAspectRatio } from './stream-size';
 
 export type StreamPlayerParams = {
   readonly playerId: Signal<StreamPlayerId>;
@@ -80,7 +81,7 @@ export class StreamPlayerSlotDirective {
 
   public slot = createStreamPlayerSlot({
     playerId: this.params.playerId,
-    aspectRatio: this.params.ASPECT_RATIO ?? 16 / 9,
+    aspectRatio: resolveStreamAspectRatio(this.params.ASPECT_RATIO),
     streamSlotPriority: this.streamSlotPriority,
     streamSlotOnPipBack: this.streamSlotOnPipBack,
     createPlayer: (envInjector, elementInjector) =>

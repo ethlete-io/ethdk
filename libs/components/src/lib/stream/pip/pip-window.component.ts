@@ -55,7 +55,9 @@ export class PipWindowComponent {
     titleBarH: this.titleBarH,
   });
 
-  public forcedTitleBar = signal(false);
+  private titleBarHolds = signal(0);
+
+  public forcedTitleBar = computed(() => this.titleBarHolds() > 0);
 
   public posState = createPipWindowPosition({
     params: this.params,
@@ -63,10 +65,23 @@ export class PipWindowComponent {
     size: this.sizeState,
     resizeHandles: this.resizeHandles,
     dragHandle: this.dragHandle,
-    forcedTitleBar: this.forcedTitleBar,
+    holdTitleBar: () => this.holdTitleBar(),
   });
 
   public readonly RESIZE_EDGES: ResizeEdge[] = ['s', 'e', 'w', 'se', 'sw'];
+
+  /** Keeps the title bar visible until every returned release function has run. */
+  public holdTitleBar() {
+    let released = false;
+
+    this.titleBarHolds.update((holds) => holds + 1);
+
+    return () => {
+      if (released) return;
+      released = true;
+      this.titleBarHolds.update((holds) => holds - 1);
+    };
+  }
 
   protected handleTitleBarKeydown(event: KeyboardEvent) {
     if (event.target !== event.currentTarget || event.altKey || event.ctrlKey || event.metaKey) {

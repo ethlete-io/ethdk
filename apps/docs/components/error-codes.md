@@ -221,6 +221,7 @@ Checked in dev mode only. Every check throws while the directive is constructed,
 | `ET1607` | The TikTok player reported an error.                                        | The message contains the platform's error value; the video may be unavailable.                    |
 | `ET1608` | A Facebook video didn't become ready in time.                               | The video may be unavailable or restricted.                                                       |
 | `ET1609` | The YouTube player reported an error.                                       | The message contains the YouTube error code; the video may be removed, private or not embeddable. |
+| `ET1610` | `et-pip-player` has neither an `entry` input nor a parent `etPipCell`.      | Bind `[entry]`, or render it inside an `etPipCell`.                                               |
 
 ## Notification (ET17xx)
 

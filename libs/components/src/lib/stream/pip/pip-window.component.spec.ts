@@ -1,5 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import '../../../test-helpers';
 import { expectNothingRunsAfterDestroy } from '../../testing/destroyed-mid-gesture';
 import { provideStreamPip } from '../stream-pip.provider';
@@ -27,7 +28,10 @@ const create = () => {
   const host = fixture.nativeElement as HTMLElement;
   const pipWindow = host.querySelector<HTMLElement>('et-pip-window')!;
 
-  return { fixture, pipWindow };
+  const component = fixture.debugElement.query(By.directive(PipWindowComponent))
+    .componentInstance as PipWindowComponent;
+
+  return { fixture, pipWindow, component };
 };
 
 const press = (target: Element, clientX: number, clientY: number) =>
@@ -60,6 +64,74 @@ describe('PipWindowComponent', () => {
 
     expect(document.body.classList).not.toContain('et-pip-interacting');
     expect(pipWindow.classList).not.toContain('et-pip-window--dragging');
+  });
+});
+
+describe('PipWindowComponent overlapping transitions', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('keeps the title bar forced while another holder still needs it', () => {
+    const { fixture, pipWindow, component } = create();
+    const releaseAnimation = component.holdTitleBar();
+
+    press(pipWindow.querySelector('.et-resize-handle--se')!, 100, 100);
+    moveTo(160, 140);
+    document.dispatchEvent(new PointerEvent('pointerup', { clientX: 160, clientY: 140, pointerId: 1 }));
+    fixture.detectChanges();
+
+    expect(component.forcedTitleBar()).toBe(true);
+    expect(pipWindow.classList).toContain('et-pip-window--title-bar-forced');
+
+    releaseAnimation();
+    releaseAnimation();
+    fixture.detectChanges();
+
+    expect(component.forcedTitleBar()).toBe(false);
+  });
+
+  it('ends a mode transition only after the latest one has run its course', () => {
+    vi.useFakeTimers();
+    const { fixture, pipWindow, component } = create();
+
+    component.posState.startModeTransition(260);
+    vi.advanceTimersByTime(200);
+    component.posState.startModeTransition(260);
+    vi.advanceTimersByTime(100);
+    fixture.detectChanges();
+
+    expect(pipWindow.classList).toContain('et-pip-window--mode-transitioning');
+
+    vi.advanceTimersByTime(200);
+
+    expect(pipWindow.classList).not.toContain('et-pip-window--mode-transitioning');
+  });
+
+  it('keeps the snap transition until the latest snap has finished', () => {
+    vi.useFakeTimers();
+    const { component, pipWindow } = create();
+
+    component.posState.snapToViewport();
+    vi.advanceTimersByTime(100);
+    component.posState.snapToViewport();
+    vi.advanceTimersByTime(100);
+
+    expect(pipWindow.style.transition).toContain('translate');
+
+    vi.advanceTimersByTime(100);
+
+    expect(pipWindow.style.transition).toBe('');
+  });
+
+  it('leaves an app-set user-select on the body when it never ran a gesture', () => {
+    document.body.style.setProperty('user-select', 'text');
+    expect(document.body.style.getPropertyValue('user-select')).toBe('text');
+
+    const { fixture } = create();
+
+    fixture.destroy();
+
+    expect(document.body.style.getPropertyValue('user-select')).toBe('text');
+    document.body.style.removeProperty('user-select');
   });
 });
 

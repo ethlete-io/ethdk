@@ -130,7 +130,29 @@ export const animateScaleFadeOut = (el: HTMLElement, config: { onFinish: (reset:
     ],
     { duration: motionDuration(160, el), easing: 'ease-in', fill: 'forwards' },
   );
-  anim.onfinish = () => config.onFinish(() => anim.cancel());
+  let done = false;
+  const settle = () => {
+    if (done) return;
+    done = true;
+    config.onFinish(() => anim.cancel());
+  };
+
+  anim.onfinish = settle;
+  anim.oncancel = settle;
+};
+
+const stageOverflowHolds = /* @__PURE__ */ new WeakMap<HTMLElement, number>();
+
+const holdStageOverflow = (stageEl: HTMLElement, renderer: AngularRenderer) => {
+  stageOverflowHolds.set(stageEl, (stageOverflowHolds.get(stageEl) ?? 0) + 1);
+  renderer.setStyle(stageEl, { overflow: 'visible' });
+
+  return () => {
+    const holds = (stageOverflowHolds.get(stageEl) ?? 1) - 1;
+
+    stageOverflowHolds.set(stageEl, holds);
+    if (holds === 0) renderer.removeStyle(stageEl, 'overflow');
+  };
 };
 
 export type NewPipAnimationConfig = {
@@ -141,21 +163,12 @@ export type NewPipAnimationConfig = {
   aspectRatio: number;
   gridBtnEl: HTMLElement | undefined;
   renderer: AngularRenderer;
-  showForcedTitleBar: () => void;
-  hideForcedTitleBar: () => void;
+  /** Forces the title bar visible until the returned release function runs. */
+  holdTitleBar: () => () => void;
 };
 
 export const animateNewPipInSingleMode = (config: NewPipAnimationConfig) => {
-  const {
-    cell,
-    stageEl,
-    stageRect,
-    aspectRatio,
-    gridBtnEl: gridBtn,
-    renderer,
-    showForcedTitleBar,
-    hideForcedTitleBar,
-  } = config;
+  const { cell, stageEl, stageRect, aspectRatio, gridBtnEl: gridBtn, renderer, holdTitleBar } = config;
 
   if (!stageRect.width || !stageRect.height) return;
 
@@ -185,8 +198,8 @@ export const animateNewPipInSingleMode = (config: NewPipAnimationConfig) => {
   }
   const showDy = 4 - videoY;
 
-  showForcedTitleBar();
-  renderer.setStyle(stageEl, { overflow: 'visible' });
+  const releaseTitleBar = holdTitleBar();
+  const releaseStageOverflow = holdStageOverflow(stageEl, renderer);
   const phase1 = cell.animate(
     [
       {
@@ -261,11 +274,11 @@ export const animateNewPipInSingleMode = (config: NewPipAnimationConfig) => {
     phase2.onfinish = () => {
       renderer.setStyle(cell, { width: null, height: null, left: null, top: null });
       phase1.cancel();
-      renderer.removeStyle(stageEl, 'overflow');
+      releaseStageOverflow();
       timer(100)
         .pipe(
           take(1),
-          tap(() => hideForcedTitleBar()),
+          tap(() => releaseTitleBar()),
         )
         .subscribe();
     };

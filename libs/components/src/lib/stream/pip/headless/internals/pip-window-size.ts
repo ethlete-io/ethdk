@@ -24,12 +24,11 @@ export const createPipWindowSize = (options: PipWindowSizeOptions): PipWindowSiz
 
   const size = linkedSignal<
     {
-      ratio: number | null;
+      ratio: number;
       vw: number;
       vh: number;
       pad: number;
       minW: number;
-      minH: number;
       resize: { w: number; h: number } | null;
     },
     { w: number | null; h: number | null }
@@ -40,26 +39,21 @@ export const createPipWindowSize = (options: PipWindowSizeOptions): PipWindowSiz
       vh: viewportSize().height,
       pad: params.viewportPadding(),
       minW: params.minWidth(),
-      minH: params.minHeight(),
       resize: resizeState(),
     }),
-    computation: ({ ratio, vw, vh, pad, minW, minH, resize }, previous) => {
+    computation: ({ ratio, vw, vh, pad, minW, resize }, previous) => {
       if (resize !== null) return { w: resize.w, h: resize.h };
       const prev = previous?.value ?? { w: null, h: null };
       if (prev.w === null) return prev;
-      let { w, h } = prev;
+      let { w } = prev;
       const availW = vw > 0 ? vw - pad * 2 : Infinity;
       const availH = vh > 0 ? vh - pad * 2 : Infinity;
       if (w > availW) w = Math.max(minW, availW);
-      if (ratio !== null) {
+      let h = titleBarH() + w / ratio;
+      if (h > availH) {
+        const maxContentH = Math.max(0, availH - titleBarH());
+        w = Math.max(minW, maxContentH * ratio);
         h = titleBarH() + w / ratio;
-        if (h > availH) {
-          const maxContentH = Math.max(0, availH - titleBarH());
-          w = Math.max(minW, maxContentH * ratio);
-          h = titleBarH() + w / ratio;
-        }
-      } else if (h !== null && h > availH) {
-        h = Math.max(minH, availH);
       }
 
       return { w, h };

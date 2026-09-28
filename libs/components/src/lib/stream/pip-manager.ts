@@ -11,6 +11,7 @@ import { animateWithFixedWrapper } from './pip/headless/internals/pip-animation'
 import { DEFAULT_PIP_CHROME_CONFIG } from './pip/pip-chrome.config';
 import { injectStreamManager } from './stream-manager';
 import { PipManager, StreamPipEntry, StreamPlayerId } from './stream-manager.types';
+import { resolveStreamAspectRatio } from './stream-size';
 
 const PIP_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
   (): PipManager => {
@@ -91,7 +92,7 @@ const PIP_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
           thumbnail: playerEntry.thumbnail,
           pipChromeComponent: options?.pipChromeComponent,
           pipChromeConfig: options?.pipChromeConfig ?? DEFAULT_PIP_CHROME_CONFIG,
-          aspectRatio: options?.aspectRatio ?? 16 / 9,
+          aspectRatio: resolveStreamAspectRatio(options?.aspectRatio),
         },
       ]);
     };

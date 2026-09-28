@@ -13,6 +13,22 @@ describe('PipManager', () => {
     return { driver, slotEl, playerEl };
   };
 
+  it('falls back to 16:9 for a pip opened with a non-positive or non-finite aspect ratio', () => {
+    const { driver, slotEl } = setup();
+
+    for (const aspectRatio of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
+      driver.pipManager.pipActivate(slotEl, { aspectRatio });
+
+      expect(driver.pipManager.pips().at(-1)?.aspectRatio).toBe(16 / 9);
+
+      driver.pipManager.pipDeactivate(PLAYER_ID, { skipAnimation: true });
+    }
+
+    driver.pipManager.pipActivate(slotEl, { aspectRatio: 9 / 16 });
+
+    expect(driver.pipManager.pips().at(-1)?.aspectRatio).toBe(9 / 16);
+  });
+
   it('keeps the player in its slot after a skipped exit animation tears the pip player down', () => {
     const { driver, slotEl } = setup();
 
