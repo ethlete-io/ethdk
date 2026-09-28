@@ -5,6 +5,9 @@ name: API models
 # validate.mjs make sure nothing from the PR head can run here. No job may restore or save a cache,
 # and no job that handles the models may hold a secret or a write token while PR-derived processes
 # run.
+#
+# npm trusted publishing fails its OIDC exchange under pull_request_target, so a PR run only
+# verifies and then starts this workflow again as workflow_dispatch, which publishes.
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]
@@ -240,10 +243,24 @@ jobs:
           fi
           echo "result=Pushed $sha to \`next\`." >> "$GITHUB_OUTPUT"
 
+  dispatch:
+    name: Hand over the publish
+    needs: [resolve, verify]
+    if: needs.verify.outputs.action == 'publish' && github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      NUMBER: ${{ needs.resolve.outputs.number }}
+    steps:
+      - run: gh workflow run api-models.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_BASE_REF" -f pr="$NUMBER"
+
   package:
     name: Package variant
     needs: [resolve, verify]
-    if: needs.verify.outputs.action == 'publish'
+    if: needs.verify.outputs.action == 'publish' && github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -363,7 +380,8 @@ jobs:
     needs: [resolve, verify, push, package, publish]
     if: >-
       always() && needs.resolve.outputs.dry_run != 'true' && needs.verify.result == 'success' &&
-      !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
+      !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') &&
+      !(needs.verify.outputs.action == 'publish' && github.event_name == 'pull_request_target')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
