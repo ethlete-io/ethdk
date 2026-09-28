@@ -1,6 +1,7 @@
 import {
   catchError,
   concat,
+  defer,
   distinctUntilChanged,
   EMPTY,
   from,
@@ -79,7 +80,7 @@ export const trackTriggerItems = (
       if (!request) return EMPTY;
 
       const trigger = request.trigger;
-      const fetch$ = resolveTriggerItems(trigger, request.query).pipe(
+      const fetch$ = defer(() => resolveTriggerItems(trigger, request.query)).pipe(
         map((items): InternalState => ({ items, loading: false, error: null, trigger })),
         catchError((error): Observable<InternalState> => of({ items: [], loading: false, error, trigger })),
       );

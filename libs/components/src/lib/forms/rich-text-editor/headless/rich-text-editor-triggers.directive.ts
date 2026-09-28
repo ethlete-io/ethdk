@@ -338,7 +338,7 @@ export class RichTextEditorTriggersDirective {
   }
 
   private deletePrecedingChip() {
-    if (!this.editor) return false;
+    if (!this.editor || this.editor.disabled() || this.editor.readonly()) return false;
 
     const selection = this.editor.editorDom.getSelection();
 
