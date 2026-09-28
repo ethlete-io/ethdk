@@ -1,8 +1,10 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import '../../test-helpers';
 import { query, queryAll } from '../testing/driver-core';
 import { TableInlineEditDirective } from './table-inline-edit.directive';
+import { TableComponent } from './table.component';
 import { TABLE_IMPORTS, TABLE_INLINE_EDIT_IMPORTS, TABLE_KEYBOARD_NAV_IMPORTS } from './table.imports';
 import { TableColumns } from './table.types';
 
@@ -230,6 +232,35 @@ describe('TableInlineEditDirective', () => {
 
       expect(editor(fixture)).toBeNull();
       expect(fixture.componentInstance.cancels).toMatchObject([{ column: 'name' }]);
+    });
+  });
+
+  describe('while the table re-orders under an open editor', () => {
+    it('keeps committing the edited cell after its row is re-sorted to another position', () => {
+      const fixture = startEditing(create());
+
+      fixture.componentInstance.data.set([...PEOPLE].reverse());
+      fixture.detectChanges();
+      type(fixture, 'Grace');
+      press(fixture, 'Enter');
+
+      expect(fixture.componentInstance.commits).toMatchObject([{ row: PEOPLE[0], previous: 'Ada', next: 'Grace' }]);
+      expect(editor(fixture)).toBeNull();
+      expect(document.activeElement).toBe(cells(fixture)[4]);
+    });
+
+    it('keeps cancelling the edited cell after its column is moved', () => {
+      const fixture = startEditing(create());
+      const table = fixture.debugElement.query(By.directive(TableComponent))
+        .componentInstance as TableComponent<Person>;
+
+      table.moveColumn('role', 0);
+      fixture.detectChanges();
+      press(fixture, 'Escape');
+
+      expect(fixture.componentInstance.cancels).toEqual([{ row: PEOPLE[0], column: 'name' }]);
+      expect(editor(fixture)).toBeNull();
+      expect(document.activeElement).toBe(cells(fixture)[1]);
     });
   });
 

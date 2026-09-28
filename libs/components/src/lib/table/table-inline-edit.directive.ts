@@ -48,12 +48,9 @@ export type TableInlineEditConfig<T> = TableFeatureConfig & {
   editableCell?: (row: T, column: string) => boolean;
 };
 
-// The one open edit. `position` is where the cell is (absolute row index, visible-column index), which
-// is what focus goes back to and what the Tab step counts from.
 type TableEditSession<T> = {
   row: T;
   column: TableColumnDef<T>;
-  position: { row: number; column: number };
   previous: unknown;
   context: TableCellEditContext<T, unknown>;
 };
@@ -190,7 +187,7 @@ export class TableInlineEditDirective<T> {
 
     if (!row || !column || !this.canEdit(row, column)) return false;
 
-    this.begin({ row, column, position: { row: rowIndex, column: columnIndex } });
+    this.begin({ row, column });
 
     return true;
   }
@@ -281,10 +278,14 @@ export class TableInlineEditDirective<T> {
   // scrolls the grid is not what someone typing down a form expects; at the row's edge the cell simply
   // keeps focus, so the next Tab leaves the grid exactly as it would from any other cell.
   private commitAndMove(session: TableEditSession<T>, step: number) {
-    const { row: rowIndex, column: columnIndex } = session.position;
-    const nextIndex = columnIndex + step;
+    const position = this.positionOf(session);
 
     this.commit();
+
+    if (!position) return;
+
+    const { row: rowIndex, column: columnIndex } = position;
+    const nextIndex = columnIndex + step;
 
     const cell = this.table.bodyCellElementAt(rowIndex, nextIndex);
 
@@ -297,11 +298,10 @@ export class TableInlineEditDirective<T> {
     const row = untracked(() => this.table.rows())[rowIndex];
     const column = untracked(() => this.table.visibleColumns())[nextIndex];
 
-    if (row && column && this.canEdit(row, column))
-      this.begin({ row, column, position: { row: rowIndex, column: nextIndex } });
+    if (row && column && this.canEdit(row, column)) this.begin({ row, column });
   }
 
-  private begin({ row, column, position }: Omit<TableEditSession<T>, 'previous' | 'context'>) {
+  private begin({ row, column }: Omit<TableEditSession<T>, 'previous' | 'context'>) {
     // Opening a second cell commits the first - one cell is in edit mode at a time, and abandoning the
     // typing someone just did is not what moving on means.
     this.commit();
@@ -312,7 +312,6 @@ export class TableInlineEditDirective<T> {
     this.session.set({
       row,
       column,
-      position,
       previous,
       context: { $implicit: row, value: previous, field: this.draftField },
     });
@@ -358,8 +357,24 @@ export class TableInlineEditDirective<T> {
     return this.config().editableCell?.(row, column.key) ?? true;
   }
 
+  // Looked up again on every call: a sort or a column move while the editor is open changes where the
+  // edited cell sits, and the render follows row identity rather than index.
+  private positionOf(session: TableEditSession<T>) {
+    const identity = this.table.rowIdentity(session.row);
+    const row = untracked(() => this.table.rows()).findIndex(
+      (candidate) => this.table.rowIdentity(candidate) === identity,
+    );
+    const column = untracked(() => this.table.visibleColumns()).findIndex(
+      (candidate) => candidate.key === session.column.key,
+    );
+
+    return row === -1 || column === -1 ? null : { row, column };
+  }
+
   private cellOf(session: TableEditSession<T>) {
-    return this.table.bodyCellElementAt(session.position.row, session.position.column);
+    const position = this.positionOf(session);
+
+    return position && this.table.bodyCellElementAt(position.row, position.column);
   }
 
   /**

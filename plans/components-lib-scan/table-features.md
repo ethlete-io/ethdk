@@ -9,7 +9,6 @@ Scan of `libs/components/src/lib/table/table-*.{ts,html,css}` (top level, specs 
 
 ## Inline edit
 
-- Medium: The edit session stores an absolute `position` and does not update it when the rows are re-sorted or the columns are reordered while the editor is open (`table-inline-edit.directive.ts:56`, `:361`). The editor still renders on the correct row, because the render uses row identity. But `cellOf()` then returns a different cell, so `handleKeydown` ignores Enter, Tab and Escape (`:247`), and `restoreFocus` moves focus to the wrong cell. Find the position again from `rowIdentity(session.row)` and the column key each time. M Verified. The rows effect cancels only when the row leaves the list, and nothing commits on blur, so a header sort click re-sorts under an open editor.
 - Low: `injectHostTable` is copied between `table-inline-edit.directive.ts:391` and `table-csv-export.directive.ts:109`, and `cellFrom` repeats the arithmetic in `table-keyboard-nav.directive.ts:234`. Move both helpers onto the feature host. S
 - Low: The file imports from `@ethlete/core` twice (`table-inline-edit.directive.ts:15`, `:19`). S
 
