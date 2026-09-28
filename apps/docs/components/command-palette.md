@@ -119,7 +119,8 @@ otherwise in the order it was registered.
 
 `etCommandPaletteShortcut` opens the palette on a key chord, and closes it again on the same chord -
 including a palette that `injectCommandPalette().open()` opened. It listens on the document, so put it
-on the application's root component - not on the element a reader must focus first.
+on the application's root component - not on the element a reader must focus first. A held chord
+toggles once, and a focused widget that handles the same chord and calls `preventDefault()` keeps it.
 
 ```html
 <div etCommandPaletteShortcut>…</div>

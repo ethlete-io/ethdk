@@ -34,6 +34,11 @@ describe('fuzzyMatch', () => {
     expect(fuzzyMatch('table', 'Create table')?.ranges).toEqual([[7, 12]]);
   });
 
+  it('keeps the ranges on the matched characters after one whose lower case is longer', () => {
+    expect(matchedText('İstanbul', 'bul')).toEqual(['bul']);
+    expect(matchedText('İstanbul', 'ist')).toEqual(['İst']);
+  });
+
   it('prefers word starts over an earlier mid-word character', () => {
     // Greedy first-fit would take the "t" of "Create"; the word start is what a reader means.
     expect(matchedText('Create table', 'ct')).toEqual(['C', 't']);

@@ -71,7 +71,12 @@ export class CommandPaletteShortcutDirective {
 
     fromEvent<KeyboardEvent>(this.document, 'keydown')
       .pipe(
-        filter((event) => matchesKbdChord(event, { keys: this.shortcut(), platform: this.platform })),
+        filter(
+          (event) =>
+            !event.repeat &&
+            !event.defaultPrevented &&
+            matchesKbdChord(event, { keys: this.shortcut(), platform: this.platform }),
+        ),
         tap((event) => {
           event.preventDefault();
           this.toggle();

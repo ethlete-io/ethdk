@@ -40,13 +40,9 @@ export class CommandPaletteComponent {
   private groupIdPrefix = createComponentId('et-command-palette-group');
 
   constructor() {
-    // This panel IS the overlay's own surface, so it paints the registered elevation rather than stacking
-    // a level above it - same reasoning as the menu's panel.
     inject(AutoSurfaceDirective).matchOverlaySurface();
 
-    // The palette renders in a detached overlay pane, so colour context from wherever it was opened has
-    // to be re-applied here instead of cascading through the DOM. In the constructor, so the theme is in
-    // place before the enter animation's first painted frame.
+    // In the constructor, so the theme is in place before the enter animation's first painted frame.
     if (this.contextColorProvider) {
       this.ownColorProvider.syncWithProvider(this.contextColorProvider);
     }

@@ -57,6 +57,10 @@ const positionBonus = (haystack: string, index: number) => {
   return 0;
 };
 
+// A whole-string toLowerCase changes the length for characters like "İ", which would shift every match
+// index after them.
+const lowerPerCodeUnit = (text: string) => text.replace(/[\s\S]/g, (unit) => unit.toLowerCase().charAt(0));
+
 /**
  * Scores `query` against `haystack` as a subsequence, and reports which characters matched.
  *
@@ -76,8 +80,8 @@ export const fuzzyMatch = (query: string, haystack: string): FuzzyMatch | null =
     return null;
   }
 
-  const lowerQuery = query.toLowerCase();
-  const lowerHaystack = haystack.toLowerCase();
+  const lowerQuery = lowerPerCodeUnit(query);
+  const lowerHaystack = lowerPerCodeUnit(haystack);
   const queryLength = lowerQuery.length;
   const haystackLength = lowerHaystack.length;
 

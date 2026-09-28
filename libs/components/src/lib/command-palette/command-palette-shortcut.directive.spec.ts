@@ -45,6 +45,27 @@ describe('CommandPaletteShortcutDirective', () => {
     expect(openPalettes()).toBe(0);
   });
 
+  it('ignores the auto-repeat of a held chord', async () => {
+    await driver.openVia(() => pressChord());
+
+    pressKey(document, 'k', { code: 'KeyK', ctrlKey: true, repeat: true });
+    await driver.settle();
+    await driver.settle();
+
+    expect(openPalettes()).toBe(1);
+  });
+
+  it('leaves a chord alone that a focused widget already handled', async () => {
+    const widget = document.body.appendChild(document.createElement('div'));
+
+    widget.addEventListener('keydown', (event) => event.preventDefault());
+    pressKey(widget, 'k', { code: 'KeyK', ctrlKey: true });
+    await driver.settle();
+    widget.remove();
+
+    expect(openPalettes()).toBe(0);
+  });
+
   it('closes a palette that was opened programmatically', async () => {
     await driver.openVia(() => TestBed.runInInjectionContext(() => injectCommandPalette().open()));
 

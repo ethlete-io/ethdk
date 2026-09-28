@@ -1,4 +1,4 @@
-import { Directive, InjectionToken, computed, inject, input, model, signal } from '@angular/core';
+import { Directive, booleanAttribute, InjectionToken, computed, inject, input, model, signal } from '@angular/core';
 import { createComponentId } from '@ethlete/core';
 import { OVERLAY_REF } from '../../overlay';
 import { injectCommandPaletteRegistry } from '../command-palette-registry';
@@ -29,7 +29,7 @@ export class CommandPaletteDirective {
   public query = model('');
 
   /** Whether choosing a command closes the palette. */
-  public closeOnRun = input(true);
+  public closeOnRun = input(true, { transform: booleanAttribute });
 
   private activeId = signal<string | null>(null);
 
