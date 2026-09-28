@@ -19,7 +19,8 @@ const bracket = createBracket(source, { layout: 'left-to-right' });
 ```
 
 When slots carry `homeSource` / `awaySource`, `createBracket` uses their `match-outcome` references
-as the relation graph. For a source that keeps graph metadata elsewhere, supply it directly:
+as the relation graph. A `role: 'loser'` slot is left out of it, so no connector is drawn along a loser's
+drop into the losers bracket. For a source that keeps graph metadata elsewhere, supply it directly:
 
 ```ts
 const bracket = createBracket(source, {
