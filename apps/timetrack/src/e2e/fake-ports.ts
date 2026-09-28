@@ -409,9 +409,11 @@ export const createFakePorts = (): HostPorts => {
             ? fakeReasoningAnswer(spec, reasoningRuns)
             : spec.ask === 'a match'
               ? fakeMatchAnswer(spec)
-              : spec.command === 'git'
-                ? runFakeGit(backend, spec)
-                : EMPTY_AGENT_ANSWER;
+              : spec.ask === 'a ticket'
+                ? fakeTicketAnswer(spec)
+                : spec.command === 'git'
+                  ? runFakeGit(backend, spec)
+                  : EMPTY_AGENT_ANSWER;
 
           return ok({ code: 0, stdout: withFakeUsage({ stdout: answer, spec, runs: agentRuns++ }), stderr: '' });
         },
@@ -543,6 +545,29 @@ const fakeMatchAnswer = (spec: ProcessSpec) => {
   };
 
   return `{"structured_output":${JSON.stringify(match)}}`;
+};
+
+/**
+ * What a ticket run answers. A stand-in's work is already tracked by the first open issue offered; a
+ * band's work is new, so it gets a drafted ticket under the first parent offered.
+ */
+const fakeTicketAnswer = (spec: ProcessSpec) => {
+  const request = JSON.parse(spec.stdin ?? '{}') as {
+    branch?: string;
+    standIn?: { name: string };
+    parents?: { key: string }[];
+    issues?: { key: string }[];
+  };
+  const existingKey = request.standIn ? (request.issues?.[0]?.key ?? null) : null;
+  const wording = {
+    summary: `Drafted ${request.standIn?.name ?? request.branch ?? 'work'}`,
+    description: 'Drafted by the fake agent.',
+    parentKey: request.parents?.[0]?.key ?? null,
+    existingKey,
+    existingReason: existingKey ? 'it names the same work' : '',
+  };
+
+  return `{"structured_output":${JSON.stringify(wording)}}`;
 };
 
 /**

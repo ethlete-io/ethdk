@@ -29,6 +29,8 @@ import {
   EMPTY,
   Observable,
   Subject,
+  asyncScheduler,
+  observeOn,
   catchError,
   concatMap,
   defer,
@@ -102,7 +104,8 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const askedNow = (day: string) => {
     const answers = dayReview.autoAnswers();
 
-    if (!answers || dayReview.isLoading() || !dayReview.deterministic() || dayReview.dayKey() !== day) return [];
+    if (!answers || dayReview.isLoading() || !dayReview.deterministic() || !dayReview.namingSettled()) return [];
+    if (dayReview.dayKey() !== day) return [];
 
     return autoModeAsks({
       enabled: enabled(),
@@ -235,8 +238,11 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
 
   // `concatMap`: one CLI at a time, the same guard the press has against spawning a second one.
+  // `observeOn`: the ask is checked again once the naming passes of the same flush have written, so a
+  // context the app is naming with a stand-in right now is never asked about as well.
   asks$
     .pipe(
+      observeOn(asyncScheduler),
       concatMap((ask) => {
         const key = `${ask.day}|${autoModeSubjectKey(ask.subject)}`;
 

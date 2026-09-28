@@ -903,6 +903,10 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     /** What auto mode asked and answered on the day on screen, or `null` until its edits are read. */
     autoAnswers: computed(() => (editsReady() ? (edits().auto ?? []) : null)),
     changeDay$,
+    /** Whether the reads the stand-in pass waits for all answered, so it has had its turn. */
+    namingSettled: computed(
+      () => recurring.state().state !== 'loading' && epics.settledFor(day()) && !!git.discovery(),
+    ),
 
     /** Names the unnamed rows of the day on screen with what auto mode found for their context. */
     applyAutoModeNames: () => {
