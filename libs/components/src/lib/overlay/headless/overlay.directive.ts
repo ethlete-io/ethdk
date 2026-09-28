@@ -76,6 +76,8 @@ export class OverlayDirective {
 
   public isMounted = computed(() => this.overlayRef() !== null);
 
+  private isClosing = false;
+
   private originElement = computed(() => {
     return (
       this.registeredAnchor()?.elementRef?.nativeElement ?? this.registeredTrigger()?.elementRef?.nativeElement ?? null
@@ -113,6 +115,10 @@ export class OverlayDirective {
       if (!shouldBeOpen && currentRef) {
         untracked(() => {
           currentRef.close();
+
+          if (!this.isClosing) {
+            this.open.set(true);
+          }
         });
       }
     });
@@ -143,7 +149,13 @@ export class OverlayDirective {
   }
 
   public hide(result?: unknown) {
-    this.overlayRef()?.close(result);
+    const overlayRef = this.overlayRef();
+
+    if (overlayRef) {
+      overlayRef.close(result);
+
+      return;
+    }
 
     if (this.open()) {
       this.open.set(false);
@@ -232,10 +244,26 @@ export class OverlayDirective {
     this.overlayRef.set(overlayRef);
 
     overlayRef
+      .beforeClosed()
+      .pipe(
+        take(1),
+        tap(() => {
+          this.isClosing = true;
+
+          if (this.open()) {
+            this.open.set(false);
+          }
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+
+    overlayRef
       .afterClosed()
       .pipe(
         take(1),
         tap(() => {
+          this.isClosing = false;
           this.overlayRef.set(null);
 
           if (this.open()) {

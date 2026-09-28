@@ -89,6 +89,44 @@ describe('OverlayDirective', () => {
     expect(host.getAttribute('data-overlay-open')).toBeNull();
   });
 
+  it('stays open when a close guard vetoes hide()', () => {
+    overlayDirective.show();
+    fixture.detectChanges();
+
+    const overlayRef = overlayDirective.overlayRef();
+    let guardCalls = 0;
+    const unregister = overlayRef?.registerCloseGuard(() => {
+      guardCalls++;
+
+      return false;
+    });
+
+    overlayDirective.hide();
+    fixture.detectChanges();
+
+    expect(overlayDirective.open()).toBe(true);
+    expect(host.getAttribute('data-overlay-open')).toBe('true');
+    expect(overlayDirective.overlayRef()).toBe(overlayRef);
+    expect(guardCalls).toBe(1);
+
+    unregister?.();
+  });
+
+  it('reopens the model when a close guard vetoes an open=false write', () => {
+    overlayDirective.show();
+    fixture.detectChanges();
+
+    const unregister = overlayDirective.overlayRef()?.registerCloseGuard(() => false);
+
+    overlayDirective.open.set(false);
+    fixture.detectChanges();
+
+    expect(overlayDirective.open()).toBe(true);
+    expect(host.getAttribute('data-overlay-open')).toBe('true');
+
+    unregister?.();
+  });
+
   it('closes its overlay when the host is destroyed', () => {
     overlayDirective.show();
     fixture.detectChanges();
