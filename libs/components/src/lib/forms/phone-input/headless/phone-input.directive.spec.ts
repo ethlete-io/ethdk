@@ -71,6 +71,28 @@ describe('phone-countries', () => {
     expect(stripTrunkZero('01701234567', 'de')).toBe('1701234567');
   });
 
+  it('builds one Intl.DisplayNames per locale for the whole table', () => {
+    const DisplayNames = Intl.DisplayNames;
+    const construct = vi.spyOn(Intl, 'DisplayNames').mockImplementation(function (
+      ...args: ConstructorParameters<typeof Intl.DisplayNames>
+    ) {
+      return new DisplayNames(...args);
+    });
+
+    const names = PHONE_COUNTRIES.map((country) => phoneCountryName(country.iso2, 'fr'));
+
+    const constructions = construct.mock.calls.length;
+
+    construct.mockRestore();
+
+    expect(constructions).toBe(1);
+    expect(names).toContain('Allemagne');
+  });
+
+  it('falls back to the upper-cased code for a locale Intl cannot read', () => {
+    expect(phoneCountryName('de', '!!')).toBe('DE');
+  });
+
   it('computes regional-indicator flags', () => {
     expect(phoneCountryFlag('de')).toBe('🇩🇪');
     expect(phoneCountryFlag('us')).toBe('🇺🇸');

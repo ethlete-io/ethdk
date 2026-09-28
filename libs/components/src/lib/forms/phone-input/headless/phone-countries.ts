@@ -278,14 +278,29 @@ export const stripTrunkZero = (nationalDigits: string, iso2: string) =>
 export const phoneCountryFlag = (iso2: string) =>
   String.fromCodePoint(...Array.from(iso2.toUpperCase()).map((char) => 0x1f1a5 + char.charCodeAt(0)));
 
+const REGION_NAMES = /* @__PURE__ */ new Map<string, Intl.DisplayNames | null>();
+
+const regionNamesFor = (locale: string | undefined) => {
+  const key = locale ?? '';
+
+  if (!REGION_NAMES.has(key)) {
+    try {
+      REGION_NAMES.set(key, new Intl.DisplayNames(locale ? [locale] : undefined, { type: 'region' }));
+    } catch {
+      REGION_NAMES.set(key, null);
+    }
+  }
+
+  return REGION_NAMES.get(key) ?? null;
+};
+
 /** Localized display name via `Intl.DisplayNames` - falls back to the upper-cased code. */
 export const phoneCountryName = (iso2: string, locale?: string) => {
+  const code = iso2.toUpperCase();
+
   try {
-    return (
-      new Intl.DisplayNames(locale ? [locale] : undefined, { type: 'region' }).of(iso2.toUpperCase()) ??
-      iso2.toUpperCase()
-    );
+    return regionNamesFor(locale)?.of(code) ?? code;
   } catch {
-    return iso2.toUpperCase();
+    return code;
   }
 };

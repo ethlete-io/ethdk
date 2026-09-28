@@ -109,9 +109,10 @@ export class PhoneInputComponent {
     const preferredEntries = preferred
       .map((iso2) => entries.find((entry) => entry.iso2 === iso2))
       .filter((entry) => entry !== undefined);
+    const collator = new Intl.Collator(locale);
     const rest = entries
       .filter((entry) => !preferred.includes(entry.iso2))
-      .sort((a, b) => a.name.localeCompare(b.name, locale));
+      .sort((a, b) => collator.compare(a.name, b.name));
 
     return [...preferredEntries, ...rest];
   });

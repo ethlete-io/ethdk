@@ -106,7 +106,6 @@
     background: var(--et-surface-background-solid, rgb(32 32 32));
     z-index: 1;
 
-    /* mirrors the menu's search field (input[etmenusearch] in menu.component.css) */
     input[etselectsearch] {
       inline-size: 100%;
       block-size: 36px;
