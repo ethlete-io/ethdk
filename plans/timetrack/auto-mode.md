@@ -80,7 +80,7 @@ settings: the user can move an action to a stricter class, never to a looser one
    the sources in `day.rows`. Guards to call: `mayAutoWrite`, `mayWrite` in `model/field-source.ts`.
    Done. Pure pass in `libs/timetrack/src/lib/review/auto-mode.ts` (answers stored on
    `DayReviewEdits.auto` with the masked payload); app service `apps/timetrack/src/app/day-review/
-   auto-mode.ts` runs `writeTicketWithAgent$` once per band and stand-in, names unnamed rows or
+auto-mode.ts` runs `writeTicketWithAgent$` once per band and stand-in, names unnamed rows or
    resolves the stand-in as `auto`, and queues a draft as `jira.create` from "auto mode"; the key
    its approval files is applied as `auto`. Setting `reasoning.autoMode` (switch under Suggestions).
    `StandIn.parentKey`/`parentSource` with `withStandInParent`; `withStandInResolutionReset` behind
