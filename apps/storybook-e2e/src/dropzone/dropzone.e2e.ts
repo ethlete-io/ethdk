@@ -52,6 +52,15 @@ test.describe('dropzone / focus', () => {
 
     await expectFocusVisible(remove);
   });
+
+  test('in a readonly multiple dropzone, Tab reaches the file list and the focus ring is visible', async ({ page }) => {
+    const root = await openStory(page, READONLY_ID);
+    const list = root.locator('.et-dropzone-list');
+
+    await pressKey(page, 'Tab');
+
+    await expectFocusVisible(list);
+  });
 });
 
 test.describe('dropzone / keyboard', () => {
