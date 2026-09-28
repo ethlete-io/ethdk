@@ -1,5 +1,6 @@
-import { DestroyRef, Directive, TemplateRef, inject } from '@angular/core';
+import { Directive, TemplateRef, inject } from '@angular/core';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
+import { registerSingleton } from '../../form-field/headless';
 import { RATING_ERROR_CODES } from '../rating-errors';
 import { RatingDirective, RatingIconState } from './rating.directive';
 
@@ -16,7 +17,6 @@ export type RatingIconContext = {
 export class RatingIconDirective {
   private rating = inject(RatingDirective, { optional: true });
   public templateRef = inject<TemplateRef<RatingIconContext>>(TemplateRef);
-  private destroyRef = inject(DestroyRef);
   private hostElement = injectHostElement<Comment>();
 
   constructor() {
@@ -28,12 +28,6 @@ export class RatingIconDirective {
       );
     }
 
-    this.rating?.registeredIconTemplate.set(this);
-
-    this.destroyRef.onDestroy(() => {
-      if (this.rating?.registeredIconTemplate() === this) {
-        this.rating.registeredIconTemplate.set(null);
-      }
-    });
+    registerSingleton(this.rating?.registeredIconTemplate, this);
   }
 }

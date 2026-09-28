@@ -71,9 +71,7 @@ export class RatingComponent {
   }
 
   protected handlePointerDown(event: PointerEvent) {
-    // a fresh press must never inherit a stale commit flag from a prior sequence that ended
-    // without its trailing click (drag off-target, cancelled synthetic click) - otherwise the
-    // next legitimate click is swallowed once
+    // reset first, or a sequence that ended without its click swallows the next real click
     this.pointerCommitted = false;
 
     if (!this.rating.interactive() || event.button !== 0 || this.dragging) {
@@ -121,8 +119,9 @@ export class RatingComponent {
     }
 
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const offset = offsetFromInlineStart(rect, { clientX: event.clientX, rtl: this.isRtl() });
 
-    this.rating.commitPointer(this.offsetFromInlineStart(rect, event.clientX) < rect.width / 2 ? index - 0.5 : index);
+    this.rating.commitPointer(offset < rect.width / 2 ? index - 0.5 : index);
   }
 
   public focus(options?: FocusOptions) {
@@ -161,12 +160,13 @@ export class RatingComponent {
   // gap-immune: resolve the value from the actual icon rects under the pointer
   private valueFromPosition(clientX: number) {
     const icons = this.baseIcons().map((ref) => ref.nativeElement);
+    const rtl = this.isRtl();
     let value = this.rating.step();
 
     icons.forEach((icon, position) => {
       const rect = icon.getBoundingClientRect();
       const index = position + 1;
-      const offset = this.offsetFromInlineStart(rect, clientX);
+      const offset = offsetFromInlineStart(rect, { clientX, rtl });
 
       if (offset >= rect.width) {
         value = index;
@@ -178,9 +178,10 @@ export class RatingComponent {
     return value;
   }
 
-  private offsetFromInlineStart(rect: DOMRect, clientX: number) {
-    return getComputedStyle(this.elementRef.nativeElement).direction === 'rtl'
-      ? rect.right - clientX
-      : clientX - rect.left;
+  private isRtl() {
+    return getComputedStyle(this.elementRef.nativeElement).direction === 'rtl';
   }
 }
+
+const offsetFromInlineStart = (rect: DOMRect, { clientX, rtl }: { clientX: number; rtl: boolean }) =>
+  rtl ? rect.right - clientX : clientX - rect.left;

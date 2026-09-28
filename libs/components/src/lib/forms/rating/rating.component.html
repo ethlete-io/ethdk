@@ -1,7 +1,5 @@
 <ng-content />
 
-<!-- pointer-only by design: keyboard interaction lives on the slider host (APG slider
-     pattern) and the icons are presentational for assistive tech -->
 <div
   [style.--_et-rating-fill-icons]="fillIcons()"
   [style.--_et-rating-fill-gaps]="fillGaps()"
@@ -10,8 +8,6 @@
   class="et-rating-icons"
 >
   @if (rating.registeredIconTemplate(); as iconTemplate) {
-    <!-- custom icons render per-step with their state — the continuous sweep only applies
-         to the default two-layer star rendering -->
     <div class="et-rating-row" aria-hidden="true">
       @for (index of iconIndexes(); track index) {
         <span
@@ -33,7 +29,6 @@
       }
     </div>
 
-    <!-- overlay clipped to one continuous width — the fill animates as a single motion -->
     <div class="et-rating-row et-rating-row--fill" aria-hidden="true">
       @for (index of iconIndexes(); track index) {
         <span class="et-rating-icon">
