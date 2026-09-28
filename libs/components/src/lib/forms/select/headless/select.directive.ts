@@ -1263,7 +1263,7 @@ export class SelectDirective
         return;
       }
       default: {
-        if (event.key.length !== 1 || searchFocused) {
+        if (event.key.length !== 1 || searchFocused || this.multiple()) {
           return;
         }
 

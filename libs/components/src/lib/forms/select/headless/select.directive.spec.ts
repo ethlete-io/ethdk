@@ -523,6 +523,16 @@ describe('SelectDirective (multiple)', () => {
     await driver.close();
   });
 
+  it('ignores closed typeahead instead of toggling an option', () => {
+    driver.host.value.set(['cherry', 'unregistered']);
+    driver.detectChanges();
+
+    driver.press('b');
+
+    expect(driver.host.value()).toEqual(['cherry', 'unregistered']);
+    expect(driver.select.open()).toBe(false);
+  });
+
   it('marks the listbox multiselectable', async () => {
     await driver.open();
 
@@ -1634,8 +1644,10 @@ describe('SelectDirective (multiple, contract)', () => {
       },
       mixedLabel: () => 'Mixed',
       mixedDisplayText: () => driver.select.displayValue() ?? '',
-      commit: () => {
-        driver.press('a');
+      commit: async () => {
+        await driver.open();
+        driver.clickOption(0);
+        await driver.settle();
       },
       committedValue: () => ['apple'],
       assertMasked: () => {
@@ -1697,6 +1709,13 @@ describe('SelectDirective (pickOnly, multiple)', () => {
 
   afterEach(async () => {
     await driver.close();
+  });
+
+  it('does not emit pickOption on closed typeahead', () => {
+    driver.press('a');
+
+    expect(driver.host.picked).toEqual([]);
+    expect(driver.select.open()).toBe(false);
   });
 
   it('keeps the panel open across repeated picks', async () => {

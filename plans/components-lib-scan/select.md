@@ -1,10 +1,9 @@
 # forms/select scan - open findings
 
-Scan of `libs/components/src/lib/forms/select/` from 2026-09-28. 1 High, 7 Medium, 14 Low, 4 Spec. Skipped: stories, most specs (read only to judge coverage). A second pass covered `forms/form-field/headless/anchored-panel-controller.ts` and `forms/selection-list/headless/internals/selection-state.ts` in full.
+Scan of `libs/components/src/lib/forms/select/` from 2026-09-28. 0 High, 7 Medium, 14 Low, 3 Spec. Skipped: stories, most specs (read only to judge coverage). A second pass covered `forms/form-field/headless/anchored-panel-controller.ts` and `forms/selection-list/headless/internals/selection-state.ts` in full.
 
 ## keyboard, typeahead
 
-- High: closed typeahead on a multi select toggles an option through `selection.select` (`forms/select/headless/select.directive.ts:1270-1274`, `:1332-1344`, `:1178-1184`). A letter typed on a focused, closed multi trigger adds or removes a value, emits `pickOption` (documented as single-only), and rebuilds `value` from registered options only, so custom values and values an async filter hid are lost. Skip closed typeahead for `multiple()` (or route it through the value-arithmetic path in `commitOption`); the same path makes a closed `pickOnly` multi select emit `pickOption` on each keystroke. S Verified.
 - Medium: typeahead does not cycle and always searches from the list start (`forms/select/headless/select.directive.ts:1346-1350`). Pressing `b` twice builds the buffer `bb` and matches nothing instead of moving to the second "b" option. Match repeated single characters from the item after the active one, as the APG listbox pattern does. S Verified.
 - Medium: Space during a typeahead run commits the active option (`forms/select/headless/select.directive.ts:1115-1123`). Typing "new york" on an open select without search commits "New..." at the space. Append the space to the buffer while a typeahead run is in progress. S Verified.
 
@@ -42,7 +41,6 @@ Scan of `libs/components/src/lib/forms/select/` from 2026-09-28. 1 High, 7 Mediu
 
 ## spec gaps
 
-- Spec: no spec for closed typeahead on a multi or `pickOnly` select (`headless/select.directive.spec.ts:455-472` covers single only). S
 - Spec: no spec for an option with its own `id` and `aria-activedescendant`, nor for a swapped `[etSelectOptions]` bundle. S
 - Spec: group hiding needs a Storybook/Playwright check on computed `display`, since jsdom does not apply the stylesheet. S
 
