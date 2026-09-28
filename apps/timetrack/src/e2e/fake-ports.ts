@@ -415,9 +415,11 @@ export const createFakePorts = (): HostPorts => {
               ? fakeMatchAnswer(spec)
               : spec.ask === 'a ticket'
                 ? fakeTicketAnswer(spec)
-                : spec.command === 'git'
-                  ? runFakeGit(backend, spec)
-                  : EMPTY_AGENT_ANSWER;
+                : spec.ask === 'a worklog'
+                  ? FAKE_WORKLOG_ANSWER
+                  : spec.command === 'git'
+                    ? runFakeGit(backend, spec)
+                    : EMPTY_AGENT_ANSWER;
 
           return ok({ code: 0, stdout: withFakeUsage({ stdout: answer, spec, runs: agentRuns++ }), stderr: '' });
         },
@@ -555,6 +557,8 @@ const fakeMatchAnswer = (spec: ProcessSpec) => {
  * What a ticket run answers. A stand-in's work is already tracked by the first open issue offered; a
  * band's work is new, so it gets a drafted ticket under the first parent offered.
  */
+const FAKE_WORKLOG_ANSWER = `{"structured_output":${JSON.stringify({ description: 'Worked by the fake agent.' })}}`;
+
 const fakeTicketAnswer = (spec: ProcessSpec) => {
   const request = JSON.parse(spec.stdin ?? '{}') as {
     branch?: string;

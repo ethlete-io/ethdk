@@ -42,7 +42,7 @@ describe('the language every answer is written in', () => {
   });
 
   it('reaches every call, because every spec is built here', () => {
-    const asked = ['the day', 'a ticket', 'a match'] as const;
+    const asked = ['the day', 'a ticket', 'a match', 'a worklog'] as const;
 
     for (const ask of asked) {
       const spec = agentProcessSpec({

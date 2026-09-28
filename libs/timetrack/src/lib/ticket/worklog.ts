@@ -63,7 +63,7 @@ export const worklogWritingSpec = (options: {
     systemPrompt: WORKLOG_WRITING_SYSTEM_PROMPT,
     schema: WORKLOG_WRITING_JSON_SCHEMA,
     stdin: JSON.stringify(options.request),
-    ask: 'a ticket',
+    ask: 'a worklog',
     options: options.options,
   });
 

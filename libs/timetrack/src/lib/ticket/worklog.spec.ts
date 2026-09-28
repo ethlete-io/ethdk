@@ -43,6 +43,7 @@ describe('worklogWritingSpec', () => {
     const spec = worklogWritingSpec({ request: REQUEST });
 
     expect(spec.stdin).toBe(JSON.stringify(REQUEST));
+    expect(spec.ask).toBe('a worklog');
     expect(spec.args.join(' ')).toContain('one line saying what the work in this stretch did');
     expect(WORKLOG_WRITING_SYSTEM_PROMPT).toContain('Never repeat `issue.summary`');
     expect(WORKLOG_WRITING_SYSTEM_PROMPT).toContain('Aim under 100 characters');
