@@ -1,4 +1,5 @@
 import { Directive, computed, input, model, output, signal } from '@angular/core';
+import { injectHostElement } from '@ethlete/core';
 import { Locale, setHours, setMilliseconds, setMinutes, setSeconds, startOfDay } from 'date-fns';
 import { injectDateLocale, injectTimeFormat } from '../../forms/date-time/date-time-formats';
 import { formatDateValue } from '../../forms/date-time/internals/date-value';
@@ -114,12 +115,17 @@ const nextEnabledIndex = (options: readonly TimePickerOption[], walk: { from: nu
 @Directive({
   selector: '[etTimePicker]',
   exportAs: 'etTimePicker',
+  host: {
+    '(focusin)': 'refreshNow($event)',
+  },
 })
 export class TimePickerDirective {
   private timePickerLabels = injectTimePickerLabels();
 
   private defaultFormat = injectTimeFormat();
   private defaultLocale = injectDateLocale();
+
+  private hostElement = injectHostElement();
 
   /** Whether the columns hold one time (`value`) or a range (`rangeValue`). */
   public mode = input<TimePickerMode>('single');
@@ -178,7 +184,7 @@ export class TimePickerDirective {
 
   public resolvedEndLabel = computed(() => this.endLabel() ?? this.timePickerLabels().endTime);
 
-  private now = new Date();
+  private now = signal(new Date());
 
   private autoAdvanceSpent = signal(false);
 
@@ -239,7 +245,8 @@ export class TimePickerDirective {
     }
 
     const pending = this.activePending();
-    const nowHour = this.now.getHours();
+    const now = this.now();
+    const nowHour = now.getHours();
     const period = pending.period === undefined ? null : pending.period === 1 ? 1 : 0;
 
     let hour = nowHour;
@@ -250,17 +257,17 @@ export class TimePickerDirective {
       hour = (nowHour % 12) + period * 12;
     }
 
-    const minute = pending.minute ?? this.now.getMinutes() - (this.now.getMinutes() % this.minuteStep());
+    const minute = pending.minute ?? now.getMinutes() - (now.getMinutes() % this.minuteStep());
     const second = this.formatSpec().showSeconds
-      ? (pending.second ?? this.now.getSeconds() - (this.now.getSeconds() % this.secondStep()))
+      ? (pending.second ?? now.getSeconds() - (now.getSeconds() % this.secondStep()))
       : 0;
 
-    return setMilliseconds(setSeconds(setMinutes(setHours(startOfDay(this.now), hour), minute), second), 0);
+    return setMilliseconds(setSeconds(setMinutes(setHours(startOfDay(now), hour), minute), second), 0);
   });
 
   private periodLabels = computed(() => {
     const locale = this.effectiveLocale();
-    const anchor = startOfDay(this.now);
+    const anchor = startOfDay(this.now());
 
     return [
       formatDateValue(setHours(anchor, 0), { format: 'a', locale }) ?? 'AM',
@@ -477,6 +484,12 @@ export class TimePickerDirective {
   public setActiveSide(side: TimeRangeSide) {
     this.autoAdvanceSpent.set(true);
     this.activeSide.set(side);
+  }
+
+  protected refreshNow(event: FocusEvent) {
+    if (event.relatedTarget instanceof Node && this.hostElement.contains(event.relatedTarget)) return;
+
+    this.now.set(new Date());
   }
 
   /** @internal */

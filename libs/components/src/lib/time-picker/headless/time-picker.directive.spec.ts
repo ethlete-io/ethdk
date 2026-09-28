@@ -120,6 +120,33 @@ describe('TimePickerDirective', () => {
     expect(values.indexOf('32')).toBe(values.indexOf('30') + 1);
   });
 
+  it('filters against the current day once focus enters a picker that stayed mounted past midnight', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 6, 17, 23, 58));
+
+    const days = new Set<number>();
+    const mounted = TestBed.createComponent(TimePickerTestHost);
+
+    mounted.componentInstance.timeFilter.set((date) => {
+      days.add(date.getDate());
+
+      return true;
+    });
+    mounted.detectChanges();
+
+    vi.setSystemTime(new Date(2026, 6, 18, 0, 3));
+    days.clear();
+
+    mounted.nativeElement
+      .querySelector('[etTimePickerOption]')
+      .dispatchEvent(new FocusEvent('focusin', { bubbles: true, relatedTarget: null }));
+    mounted.detectChanges();
+
+    vi.useRealTimers();
+
+    expect([...days]).toEqual([18]);
+  });
+
   it('clamps a zero, negative or fractional minuteStep to one minute instead of hanging', () => {
     host.minuteStep.set(0);
     tick();

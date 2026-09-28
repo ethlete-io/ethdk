@@ -38,7 +38,7 @@ The four columns' `aria-label`s are inputs of their own - `hoursLabel`, `minutes
 
 The format decides the columns, not just their labels: `HH:mm` renders hour + minute columns, `HH:mm:ss` adds seconds, `h:mm a` switches to a 12-hour cycle with an AM/PM column. Localized tokens work too - `p` resolves per locale (12-hour in en-US, 24-hour in de).
 
-While no value is set, the columns anchor their focus and scroll position to "now" (snapped to the steps).
+While no value is set, the columns anchor their focus and scroll position to "now" (snapped to the steps). "Now" is re-read whenever focus enters the picker, so one that stays mounted follows the clock and filters against the current day.
 
 Each column carries its own auto-hiding [`et-scrollbar`](/components/scrollbar), which appears while
 that column scrolls or the pointer is over it. The half-faded rows at the column edges stay as the
