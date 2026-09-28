@@ -37,9 +37,6 @@ own open lines; this file lists what needs a user decision and what is still que
 
 - select: mark touched when an outside click or focus leave closes the panel (the cascader got
   this in b0205c425). Start after the `select.md` agent commits.
-- `apps/docs/components/text-inputs.md`: phone `defaultCountry`/`preferredCountries` are
-  case-insensitive, and NANP area-code dial codes exist (9347af0db). Start after the form-field
-  agent commits.
 - dropzone: a readonly multi-mode dropzone with files has nothing focusable.
 - timetrack `stillFocused` tail order: real, but no failing test was found.
 - When all agents finish: run `tsc -p libs/components/tsconfig.spec.json`, and the
