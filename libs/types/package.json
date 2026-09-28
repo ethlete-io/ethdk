@@ -1,6 +1,11 @@
 {
   "name": "@ethlete/types",
   "version": "1.11.3",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ethlete-io/ethdk",
+    "directory": "libs/types"
+  },
   "license": "MIT",
   "sideEffects": false
 }
