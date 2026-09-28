@@ -42,6 +42,9 @@ const overlaps = (a: TimeWindow, b: TimeWindow) =>
  * lane or one it `collides` with on both sides, stays as it is.
  * `fixed` rows neither fold nor absorb, and `blockers` only stop a growth. The grown row keeps its id
  * and lists what it took in on `folded`.
+ *
+ * Two short rows `startsAtEarliest` holds for become one row from the earlier start forward, and only
+ * their own lane stops that growth.
  */
 export const foldShortRows = <T extends FoldRow>(options: {
   rows: readonly T[];
@@ -51,6 +54,7 @@ export const foldShortRows = <T extends FoldRow>(options: {
   blockers: readonly FoldBlocker[];
   /** Whether a row in another lane still claims the same minutes as the row growing over them. */
   collides?: (grower: T, other: FoldBlocker) => boolean;
+  startsAtEarliest?: (row: T) => boolean;
 }): T[] => {
   const rows = [...options.rows].sort((a, b) => a.from.getTime() - b.from.getTime());
   const gone = new Set<T>();
@@ -83,21 +87,32 @@ export const foldShortRows = <T extends FoldRow>(options: {
     const earlier: TimeWindow = { from: new Date(neighbour.from.getTime() - spanOf(short)), to: neighbour.from };
     const others = [...rows.filter((row) => row !== short && row !== neighbour && !gone.has(row)), ...options.blockers];
 
+    const anchored = options.startsAtEarliest?.(short) ?? false;
     const blocks = (other: FoldBlocker) =>
-      storedLaneKey(other.laneKey) === lane || (options.collides?.(neighbour, other) ?? false);
+      storedLaneKey(other.laneKey) === lane || (!anchored && (options.collides?.(neighbour, other) ?? false));
     const isFree = (growth: TimeWindow) => !others.some((other) => overlaps(other, growth) && blocks(other));
 
+    const start = Math.min(short.from.getTime(), neighbour.from.getTime());
+    const packed: TimeWindow = {
+      from: new Date(start),
+      to: new Date(start + spanOf(neighbour) + spanOf(short)),
+    };
     const sides = short.from.getTime() >= neighbour.to.getTime() ? [later, earlier] : [earlier, later];
     const growth = sides.find(isFree);
+    const window: TimeWindow | undefined =
+      anchored && isShort(neighbour) && isFree(packed)
+        ? packed
+        : growth && {
+            from: growth === later ? neighbour.from : growth.from,
+            to: growth === later ? growth.to : neighbour.to,
+          };
 
-    if (!growth) continue;
-
-    const after = growth === later;
+    if (!window) continue;
 
     const grown: T = {
       ...neighbour,
-      from: after ? neighbour.from : growth.from,
-      to: after ? growth.to : neighbour.to,
+      from: window.from,
+      to: window.to,
       durationMs: spanOf(neighbour) + spanOf(short),
       observedMs: neighbour.observedMs + short.observedMs,
       evidence: mergeEvidence([neighbour.evidence, short.evidence]),

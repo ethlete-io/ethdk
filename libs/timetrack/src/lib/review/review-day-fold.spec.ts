@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DayRows } from '../rows/build-rows';
+import { CALL_LANE_KEY } from '../rows/lane';
 import { UnnamedProposal } from '../rows/propose';
 import { Evidence } from '../model/evidence';
 import { WorklogProposal } from '../model/proposal';
@@ -160,6 +161,30 @@ describe('reviewDay folding single-increment rows', () => {
     expect(spans(result)).toEqual(['11:45-13:45 120m', '13:45-14:30 45m']);
     expect(result.rows[0]?.id).toBe(`unnamed:${LANE}@${at('12:15').toISOString()}`);
     expect(result.check.proposedMs).toBe(before.check.proposedMs);
+  });
+
+  it('joins two short calls from the earlier start forward, over rows in other lanes', () => {
+    const call = (from: string, to: string, observed: number) => ({
+      ...proposal({ issueKey: 'ABC-1', from, to, laneKey: CALL_LANE_KEY }),
+      observedMs: observed * MINUTE,
+    });
+    const result = reviewDay({
+      rows: dayRows({
+        proposals: [
+          call('09:15', '09:30', 15),
+          call('09:45', '10:00', 6),
+          proposal({ issueKey: 'XYZ-1', from: '09:15', to: '09:45' }),
+          proposal({ issueKey: 'ET-772', from: '09:00', to: '09:45', laneKey: 'repo:/home/tom/dev/ethlete-sdk' }),
+        ],
+      }),
+      cut: { backgroundProjects: ['ET'] },
+    });
+    const calls = result.rows.filter((row) => row.issueKey === 'ABC-1');
+
+    expect(calls.map((row) => `${hhmm(row.from)}-${hhmm(row.to)} ${row.durationMs / MINUTE}m`)).toEqual([
+      '09:15-09:45 30m',
+    ]);
+    expect(calls[0]?.observedMs).toBe(21 * MINUTE);
   });
 
   it('keeps a short row when both sides of the neighbour would cover other work in the lane', () => {

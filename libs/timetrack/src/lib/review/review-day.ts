@@ -2,7 +2,7 @@ import { DayRows, dayCheckOptions } from '../rows/build-rows';
 import { RemoteBooking, bookedSpanMs, unbookedRemoteByRow } from '../rows/remote-booking';
 import { CutOptions } from '../rows/cut';
 import { CheckDayOptions, DEFAULT_ROUND_OPTIONS, DayCheck, RoundOptions, checkDay } from '../rows/round';
-import { storedLaneKey } from '../rows/lane';
+import { CALL_LANE_KEY, storedLaneKey } from '../rows/lane';
 import { unnamedRowId } from '../rows/propose';
 import { snapRowBounds } from '../rows/snap';
 import { AttributionRule } from '../model/attribution';
@@ -349,6 +349,7 @@ export const reviewDay = (options: {
     // The re-cut below hands a background row's minutes to any foreground row over them, so a growth
     // across that divide would take minutes a background row books, or be cut away again.
     collides: (grower, other) => isBackground(grower) !== isBackground(other),
+    startsAtEarliest: (row) => storedLaneKey(row.laneKey) === CALL_LANE_KEY,
   });
   const tracked = trackPinnedRows({ pinned: edits.pinned, sources });
   const calls = options.rows.calls;
