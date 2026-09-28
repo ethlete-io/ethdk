@@ -262,6 +262,26 @@ export class SchedulerTimeGridViewComponent {
     return this.scheduler?.appointmentDrag()?.appointment.id === appointment.id;
   }
 
+  public startsOn(appointment: Appointment, day: Date) {
+    return appointment.start >= startOfDay(day);
+  }
+
+  public endsOn(appointment: Appointment, day: Date) {
+    return appointment.end <= startOfDay(addDays(day, 1));
+  }
+
+  public startsInView(appointment: Appointment) {
+    const first = this.grid.days()[0];
+
+    return !!first && this.startsOn(appointment, first.date);
+  }
+
+  public endsInView(appointment: Appointment) {
+    const last = this.grid.days().at(-1);
+
+    return !!last && this.endsOn(appointment, last.date);
+  }
+
   protected select(appointment: Appointment, element: HTMLElement) {
     if (this.hasDragged) return;
 

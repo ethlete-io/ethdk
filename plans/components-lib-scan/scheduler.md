@@ -10,7 +10,6 @@ Scan of `libs/components/src/lib/scheduler/` from 2026-09-28. 0 High, 6 Medium, 
 
 ## Drag, resize and selection
 
-- Medium: The resize handles render on every block, also on the clipped edge of a multi-day block, and the resize math uses the pressed column's own day (`scheduler/scheduler-time-grid-view.component.html:59-85,189-215`, `scheduler/scheduler-time-grid-view.component.ts:386-415`). A press on the end handle of the day-1 part of a Mon 20:00-Tue 10:00 appointment, followed by a small move, cuts the end to Mon 24:00. The all-day start handle of an entry that starts before the visible week works the same way. Render a handle only where the block shows the appointment's real start or end. S Verified.
 
 ## Edit surface lifecycle
 

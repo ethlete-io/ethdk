@@ -190,3 +190,44 @@ describe('SchedulerTimeGridViewComponent keyboard', () => {
     expect(headless().draftRange()?.start).toEqual(new Date(2026, 6, 15, 9));
   });
 });
+
+describe('SchedulerTimeGridViewComponent resize handles', () => {
+  let driver: ReturnType<typeof schedulerTestDriver>;
+
+  const edgesOf = (selector: string) =>
+    driver
+      .queryAll(selector)
+      .map((element) =>
+        Array.from(element.querySelectorAll('[data-edge]')).map((handle) => handle.getAttribute('data-edge')),
+      );
+
+  afterEach(() => {
+    for (const overlay of TestBed.runInInjectionContext(() => injectOverlayManager()).openOverlays()) {
+      overlay.close();
+    }
+
+    driver.fixture.destroy();
+  });
+
+  it('puts a handle only on the edges where a multi-day block shows its own start or end', () => {
+    driver = schedulerTestDriver({
+      view: 'week',
+      focusedDate: WEDNESDAY,
+      appointments: [testAppointment('night', { start: new Date(2026, 6, 13, 20), end: new Date(2026, 6, 14, 10) })],
+    });
+
+    expect(edgesOf('.et-scheduler-time-grid-block[title="night"]')).toEqual([['start'], ['end']]);
+  });
+
+  it('drops the start handle of an all-day entry that starts before the visible week', () => {
+    driver = schedulerTestDriver({
+      view: 'week',
+      focusedDate: WEDNESDAY,
+      appointments: [
+        testAppointment('trip', { allDay: true, start: new Date(2026, 6, 10), end: new Date(2026, 6, 14, 23, 59) }),
+      ],
+    });
+
+    expect(edgesOf('.et-scheduler-time-grid-all-day-entry[title="trip"]')).toEqual([['end']]);
+  });
+});

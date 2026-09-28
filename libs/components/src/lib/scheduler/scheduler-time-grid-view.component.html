@@ -56,7 +56,7 @@
                 />
               }
 
-              @if (canDragAppointments()) {
+              @if (canDragAppointments() && startsInView(entry.node.appointment)) {
                 <span
                   (pointerdown)="
                     startAllDayDrag($event, {
@@ -69,7 +69,9 @@
                   data-edge="start"
                   aria-hidden="true"
                 ></span>
+              }
 
+              @if (canDragAppointments() && endsInView(entry.node.appointment)) {
                 <span
                   (pointerdown)="
                     startAllDayDrag($event, {
@@ -186,7 +188,7 @@
                   />
                 }
 
-                @if (canDragAppointments()) {
+                @if (canDragAppointments() && startsOn(block.node.appointment, day.date)) {
                   <span
                     (pointerdown)="
                       startAppointmentDrag($event, {
@@ -199,7 +201,9 @@
                     data-edge="start"
                     aria-hidden="true"
                   ></span>
+                }
 
+                @if (canDragAppointments() && endsOn(block.node.appointment, day.date)) {
                   <span
                     (pointerdown)="
                       startAppointmentDrag($event, {
