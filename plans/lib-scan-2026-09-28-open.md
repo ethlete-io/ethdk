@@ -94,6 +94,20 @@ own open lines; this file lists what needs a user decision and what is still que
   (from 2b62c6e3e). Left alone.
 - dropzone: the readonly file list focus (766bb1f52) is not checked in Storybook (focus ring, axe).
 
+## Low pass (in progress)
+
+Each domain plan file keeps its open Low lines; the decisions are listed there. Flags to check:
+
+- toggletip: b4b194925 removed the public `pressedVariant()`. Check the changeset bump.
+- stream: 5ff13041e removed the directives without a selector from the platform barrels. Check
+  the bump. The PiP `minHeight`/`maxHeight` options are now read nowhere.
+- cli: `CI_JOB_TOKEN` is no longer a GitLab token; `et update --ai` passes the prompt in env vars;
+  registry lookups read `~/.npmrc`. The `isPortFree` fix is not proven (the bug is macOS-only).
+- timetrack: `googleCalendarPaged$` now fails at the page cap, because a capped read deleted real
+  meetings. `isNudgeDue`/`dayNudge` now need a `DayBoundary`.
+- skeleton: the `aria-busy` e2e checks were changed but not run.
+- A stream agent ran prettier over other agents' uncommitted files (whitespace only).
+
 ## Queue
 
 - timetrack `stillFocused` tail order: real, but no failing test was found.
