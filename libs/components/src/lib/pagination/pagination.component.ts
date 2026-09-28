@@ -117,14 +117,12 @@ export class PaginationComponent {
   /** Show a jump-to-page number field (useful for very large page counts). @default false */
   public showJumpTo = input(false, { transform: booleanAttribute });
 
-  // The rendered list + its items, measured (untracked) to decide how many fit - see `slotsThatFit`.
   private listEl = viewChild<ElementRef<HTMLUListElement>>('paginationList');
   private itemEls = viewChildren<ElementRef<HTMLElement>>('paginationItem');
   private controlEls = viewChildren('controlButton', { read: ElementRef<HTMLElement> });
 
   protected jumpInputId = createComponentId('et-pagination-jump-input');
 
-  // Re-fit the page window whenever the paginator's own width changes (viewport resize, footer layout).
   private hostDimensions = signalHostElementDimensions();
 
   protected fitsWidth = computed(() => this.responsive() && this.compact() !== true);
@@ -230,8 +228,6 @@ export class PaginationComponent {
 
     const maxSlots = this.slotsThatFit(width);
 
-    // Walk configs from richest to sparsest and take the first that fits on one row; if none fit,
-    // fall through to the sparsest (the loop's last assignment).
     let items = paginate(base);
 
     for (const attempt of this.fitAttempts(base)) {
@@ -250,6 +246,13 @@ export class PaginationComponent {
     if (this.renderAs() !== 'links' || url === null || item.page === null || item.disabled) return null;
 
     return url(item.page);
+  }
+
+  public trackItem(index: number, item: PaginationItem) {
+    if (item.type === 'page') return `page-${item.page}`;
+    if (item.type === 'ellipsis') return `ellipsis-${index}`;
+
+    return item.type;
   }
 
   protected select(item: PaginationItem) {
@@ -291,7 +294,6 @@ export class PaginationComponent {
     target?.focus();
   }
 
-  /** The `[start, end]` tuple as the context the readout labels take. */
   private rangeContext([start, end]: [number, number]): PaginationRangeContext {
     return { start, end, totalItems: this.totalItems() ?? 0 };
   }

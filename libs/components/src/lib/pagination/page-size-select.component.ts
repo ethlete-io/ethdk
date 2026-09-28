@@ -8,15 +8,6 @@ const DEFAULT_PAGE_SIZES = [10, 25, 50, 100] as const;
  * The "Items per page" control that sits beside a paginator, completing the Material-style controls
  * row (`<et-pagination compact>` + a range readout + this).
  *
- * A **native `<select>`**, deliberately: it is a handful of numbers, and pulling
- * [`et-select`](/components/select) in would drag the overlay runtime and its panel into every footer
- * that shows one. Native also gets the platform picker on mobile for free, which is the better control
- * for this at that size.
- *
- * Standalone rather than part of the paginator, because the paginator is `page`, not `pageSize` - a
- * table's footer, an infinite list and a gallery all pair them differently, and plenty of paginators
- * want no size control at all.
- *
  * **Changing the size does not reset the page.** Which page 1-based position 47 belongs to depends on
  * what you are paging, so that decision stays yours - the usual answer is to go back to page 1, which
  * `linkedSignal` expresses in a line (see the example).
@@ -34,8 +25,6 @@ const DEFAULT_PAGE_SIZES = [10, 25, 50, 100] as const;
 @Component({
   selector: 'et-page-size-select',
   template: `
-    <!-- The visible label wraps the control, so it is the accessible name with no id to generate and
-         nothing to keep in sync. -->
     <label class="et-page-size-select-label">
       <span class="et-page-size-select-text">{{ resolvedLabels().pageSize }}</span>
       <span class="et-page-size-select-field">
@@ -44,9 +33,6 @@ const DEFAULT_PAGE_SIZES = [10, 25, 50, 100] as const;
             <option [value]="option.value" [selected]="option.value === pageSize()">{{ option.label }}</option>
           }
         </select>
-        <!-- The native arrow goes with \`appearance: none\`, so the control draws its own - inline, like
-             the paginator's chevrons, rather than through the icon system the paginator also avoids.
-             Pointer-events off so the whole field still opens the picker. -->
         <svg class="et-page-size-select-chevron" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
           <path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
         </svg>

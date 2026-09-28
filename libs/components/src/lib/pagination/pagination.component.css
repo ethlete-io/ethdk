@@ -145,7 +145,7 @@
     font-variant-numeric: tabular-nums;
     color: var(--et-surface-color-solid, CanvasText);
     background: transparent;
-    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.15));
+    border: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.3));
     border-radius: var(--et-pagination-radius);
   }
 

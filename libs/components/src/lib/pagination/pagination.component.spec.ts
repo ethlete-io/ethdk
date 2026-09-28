@@ -300,4 +300,20 @@ describe('PaginationComponent', () => {
     expect(directiveOf(fixture).page()).toBe(1);
     expect(document.activeElement).toBe(host.querySelector('[aria-current="page"]'));
   });
+  it('keeps focus on the clicked page when the page window shifts', () => {
+    const fixture = TestBed.createComponent(PaginationComponent);
+    fixture.componentRef.setInput('totalPages', 20);
+    fixture.componentRef.setInput('page', 1);
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const pageButton = () => host.querySelector<HTMLButtonElement>('button[aria-label="Page 5"]');
+
+    pageButton()?.focus();
+    pageButton()?.click();
+    fixture.detectChanges();
+
+    expect(directiveOf(fixture).page()).toBe(5);
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('Page 5');
+  });
 });

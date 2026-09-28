@@ -5,11 +5,12 @@ import { PaginationDirective } from '../headless/pagination.directive';
 import { PaginationSeoDirective } from './pagination-seo.directive';
 
 @Component({
-  template: `<nav [etPagination] [page]="page()" [totalPages]="4" [etPaginationSeo]="urlForPage"></nav>`,
+  template: `<nav [etPagination] [page]="page()" [totalPages]="totalPages()" [etPaginationSeo]="urlForPage"></nav>`,
   imports: [PaginationDirective, PaginationSeoDirective],
 })
 class HostComponent {
   public page = signal(2);
+  public totalPages = signal(4);
   public urlForPage = (page: number) => `https://example.com/list?page=${page}`;
 }
 
@@ -49,6 +50,19 @@ describe('PaginationSeoDirective', () => {
     fixture.detectChanges();
 
     expect(relHref('prev')).toBe('https://example.com/list?page=3');
+    expect(relHref('next')).toBeNull();
+  });
+  it('clamps the canonical and prev links when totalPages shrinks below the page', () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.componentInstance.page.set(4);
+    fixture.detectChanges();
+
+    fixture.componentInstance.totalPages.set(2);
+    fixture.detectChanges();
+
+    expect(canonicalHref()).toBe('https://example.com/list?page=2');
+    expect(relHref('prev')).toBe('https://example.com/list?page=1');
     expect(relHref('next')).toBeNull();
   });
 });

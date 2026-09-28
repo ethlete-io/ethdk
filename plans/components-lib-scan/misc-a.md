@@ -1,6 +1,6 @@
 # testing, pagination, breadcrumb, accordion, masonry, loader scan - open findings
 
-Scan of `libs/components/src/lib/{testing,pagination,breadcrumb,accordion,masonry,loader}` from 2026-09-28. 0 High, 1 Medium, 22 Low, 1 Spec. Skipped: `testing/control-driver.ts`, `field-control-driver.ts`, `overlay-control-driver.ts`, `masonry/testing/masonry-driver.ts`, and most CSS (read only for colours, layers, motion).
+Scan of `libs/components/src/lib/{testing,pagination,breadcrumb,accordion,masonry,loader}` from 2026-09-28. 0 High, 1 Medium, 18 Low, 1 Spec. Skipped: `testing/control-driver.ts`, `field-control-driver.ts`, `overlay-control-driver.ts`, `masonry/testing/masonry-driver.ts`, and most CSS (read only for colours, layers, motion).
 
 ## breadcrumb
 
@@ -11,10 +11,6 @@ Scan of `libs/components/src/lib/{testing,pagination,breadcrumb,accordion,masonr
 
 ## pagination
 
-- Low: with `responsive` on, the window re-trims after each click and `@for … track $index` keeps focus on the same slot, which now shows a different page number (`pagination.component.html:28`). Track by `item.type + item.page` so focus follows the page. S
-- Low: `PaginationSeoDirective` reads the raw `page` model, which is not clamped when `totalPages` shrinks (`seo/pagination-seo.directive.ts:45,54`). The canonical and `rel="prev"` then point at a page that does not exist. Clamp to `[1, totalPages]` as `range()` does. S
-- Low: the jump-input border fallback is white at 15% (`pagination.component.css:148`), so it is invisible on a light surface without tokens. `page-size-select.component.css:53` uses the neutral `rgb(128 128 128 / 0.3)`; use the same. S
-- Low: comments outside the allowlist: `pagination.component.ts:116,122,228-229,295-296`, the template comments at `pagination.component.html:3,11-12` and `page-size-select.component.ts:37-38,47-49`, the design rationale in JSDoc at `page-size-select.component.ts:11-18`, `seo/pagination-seo.directive.ts:11-16` and `pagination.imports.ts:8-11`. S
 
 ## accordion
 

@@ -1,6 +1,5 @@
 @if (!isCompact() && rangeStatus(); as status) {
   <p class="et-pagination-range" aria-live="polite">
-    <!-- Invisible width floor; see widestRangeStatus. Stacked with the live text in one grid cell. -->
     <span class="et-pagination-readout-sizer" aria-hidden="true">{{ widestRangeStatus() }}</span>
     <span class="et-pagination-readout-text">{{ status }}</span>
   </p>
@@ -8,8 +7,6 @@
 
 <ul #paginationList class="et-pagination-list">
   @if (isCompact()) {
-    <!-- Compact pager: the readout, then previous/next — readout first so a changing digit count grows
-         leftward and the chevrons hold their place across page changes. -->
     <li class="et-pagination-status" aria-live="polite">
       <span class="et-pagination-readout-sizer" aria-hidden="true">{{ widestCompactStatus() }}</span>
       <span class="et-pagination-readout-text">{{ compactStatus() }}</span>
@@ -25,7 +22,7 @@
       </li>
     }
   } @else {
-    @for (item of items(); track $index) {
+    @for (item of items(); track trackItem($index, item)) {
       <li #paginationItem [attr.data-type]="item.type" class="et-pagination-item">
         @if (item.type === 'ellipsis') {
           <span class="et-pagination-ellipsis" aria-hidden="true">…</span>
