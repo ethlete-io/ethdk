@@ -187,6 +187,22 @@ describe('tableToCsv', () => {
       expect(lines(tableToCsv(source(), { columns: ['age'], header: false }))).toEqual(['36', '45']);
     });
 
+    it.each([
+      [['=HYPERLINK("x")'], `"'=HYPERLINK(""x"")"`],
+      [{ toString: () => '=1+1' }, "'=1+1"],
+    ])('escapes a non-string value that serializes to a formula', (value, expected) => {
+      const csv = tableToCsv(
+        {
+          rows: () => [{ value }],
+          visibleColumns: () => [{ key: 'v', value: (row) => row.value }],
+          allColumns: () => [],
+        },
+        { header: false },
+      );
+
+      expect(csv).toBe(expected);
+    });
+
     it('can be turned off', () => {
       expect(exported('=1+1', false)).toBe('=1+1');
     });

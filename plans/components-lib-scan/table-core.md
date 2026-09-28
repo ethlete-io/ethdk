@@ -1,6 +1,6 @@
 # Table core scan - open findings
 
-Scan of `table/headless/`, `table/testing/`, `table/table.component.{ts,html,css}`, `table/table.types.ts`, `table/table.imports.ts`, `table/table-errors.ts`, `table/index.ts` from 2026-09-28. 0 High, 4 Medium, 15 Low, 3 Spec (after verification: 7 verified, 1 re-rated). Skipped: the `table-*.directive.ts` feature files (another scan), all specs and stories except spot checks, and a line-by-line read of the 911-line `table.component.css` (the scan checked the layer wrap, hardcoded colours and feature CSS only).
+Scan of `table/headless/`, `table/testing/`, `table/table.component.{ts,html,css}`, `table/table.types.ts`, `table/table.imports.ts`, `table/table-errors.ts`, `table/index.ts` from 2026-09-28. 0 High, 3 Medium, 15 Low, 3 Spec (after verification: 7 verified, 1 re-rated). Skipped: the `table-*.directive.ts` feature files (another scan), all specs and stories except spot checks, and a line-by-line read of the 911-line `table.component.css` (the scan checked the layer wrap, hardcoded colours and feature CSS only).
 
 ## table.component
 
@@ -22,7 +22,6 @@ Scan of `table/headless/`, `table/testing/`, `table/table.component.{ts,html,css
 
 ## headless: CSV export
 
-- Medium (security): the formula guard applies only when the raw value is a `string` (`table/headless/table-csv-export.ts:174`). A column whose `value` returns an array or object (tags, a user-authored list) serializes through `String(value)` unguarded, so `['=HYPERLINK(…)']` reaches the spreadsheet as a formula. Fix: guard every field except numbers, booleans and dates. S Verified.
 - Low: a query `file` that ends in the query client's `cancel` state errors the export with `undefined` (`table/headless/table-csv-export.ts:250`). Fix: map cancel to a named error or to completion. S
 
 ## headless: rows sources

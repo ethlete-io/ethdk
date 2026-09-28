@@ -62,12 +62,12 @@ export type TableCsvSerializeOptions<T> = {
   delimiter?: string;
 
   /**
-   * Prefix a text field that starts with `=`, `+`, `-`, `@`, a tab or a carriage return with a `'`,
+   * Prefix a field whose text starts with `=`, `+`, `-`, `@`, a tab or a carriage return with a `'`,
    * so a spreadsheet treats it as text instead of a formula. This is CSV injection: without it, a
    * row someone else authored can execute in the reader's spreadsheet when they open the file.
    *
-   * Only text is guarded - numbers, booleans and dates are written as-is, as is a string that is
-   * simply a negative number. Turn it off only when the file is not headed for a spreadsheet.
+   * Numbers, booleans and dates are written as-is, as is a string that is simply a negative number;
+   * anything else (an array, an object) is guarded by the text it serializes to. Turn it off only when the file is not headed for a spreadsheet.
    * @default true
    */
   formulaGuard?: boolean;
@@ -167,11 +167,14 @@ const guardFormula = (field: string) => {
   return `'${field}`;
 };
 
+const isInertValue = (value: unknown) =>
+  typeof value === 'number' || typeof value === 'bigint' || typeof value === 'boolean' || value instanceof Date;
+
 type FieldConfig = { delimiter: string; formulaGuard: boolean };
 
 const toField = (value: unknown, { delimiter, formulaGuard }: FieldConfig) => {
   const text = serialize(value);
-  const guarded = formulaGuard && typeof value === 'string' ? guardFormula(text) : text;
+  const guarded = formulaGuard && !isInertValue(value) ? guardFormula(text) : text;
 
   return quote(guarded, delimiter);
 };

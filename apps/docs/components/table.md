@@ -1597,7 +1597,7 @@ set `bom: false` on the directive and be done with it.
 `tableToCsv()` never adds a BOM: it hands back a string, and how that gets encoded is the
 caller's business.
 
-`formulaGuard` prefixes a **text** field that starts with `=`, `+`, `-`, `@`, a tab or a
+`formulaGuard` prefixes a field whose text starts with `=`, `+`, `-`, `@`, a tab or a
 carriage return with a `'`, so the spreadsheet shows it instead of running it. This is CSV
 injection: without it, a row someone else authored can execute when a colleague opens the
 file. Numbers, booleans and dates are never touched, and neither is a string that is simply
