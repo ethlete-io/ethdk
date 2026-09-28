@@ -16,13 +16,21 @@ class AvatarDefaultHostComponent {}
 @Component({
   selector: 'et-test-avatar-configured-host',
   template: `
-    <et-avatar [src]="src()" [name]="name()" [size]="size()" [shape]="shape()" [color]="color()"></et-avatar>
+    <et-avatar
+      [src]="src()"
+      [name]="name()"
+      [initials]="initials()"
+      [size]="size()"
+      [shape]="shape()"
+      [color]="color()"
+    ></et-avatar>
   `,
   imports: [AVATAR_IMPORTS],
 })
 class AvatarConfiguredHostComponent {
   public src = signal<string | null>(null);
   public name = signal<string | null>(null);
+  public initials = signal<string | null>(null);
   public size = signal<AvatarSize>('md');
   public shape = signal<AvatarShape>('circle');
   public color = signal<string | null>(null);
@@ -55,6 +63,42 @@ describe('AvatarComponent', () => {
 
     expect(avatar.textContent?.trim()).toBe('JD');
     expect(avatar.querySelector('img')).toBeNull();
+  });
+
+  it('renders explicit initials verbatim over the ones derived from name', () => {
+    const fixture = TestBed.createComponent(AvatarConfiguredHostComponent);
+    fixture.componentInstance.name.set('Dr. Anna Maria Schmidt');
+    fixture.componentInstance.initials.set('AS');
+    fixture.detectChanges();
+
+    const avatar = fixture.nativeElement.querySelector('et-avatar') as HTMLElement;
+
+    expect(avatar.textContent?.trim()).toBe('AS');
+  });
+
+  it('renders explicit initials without a name', () => {
+    const fixture = TestBed.createComponent(AvatarConfiguredHostComponent);
+    fixture.componentInstance.initials.set('FCb');
+    fixture.detectChanges();
+
+    const avatar = fixture.nativeElement.querySelector('et-avatar') as HTMLElement;
+
+    expect(avatar.querySelector('.et-avatar-initials')?.textContent).toBe('FCb');
+  });
+
+  it('falls back to explicit initials when the image fails to load', () => {
+    const fixture = TestBed.createComponent(AvatarConfiguredHostComponent);
+    fixture.componentInstance.src.set('/broken.jpg');
+    fixture.componentInstance.name.set('Dr. Anna Maria Schmidt');
+    fixture.componentInstance.initials.set('AS');
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('et-avatar img').dispatchEvent(new Event('error'));
+    fixture.detectChanges();
+
+    const avatar = fixture.nativeElement.querySelector('et-avatar') as HTMLElement;
+
+    expect(avatar.textContent?.trim()).toBe('AS');
   });
 
   it('renders an img when src is set', () => {

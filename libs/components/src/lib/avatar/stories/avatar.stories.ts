@@ -1,4 +1,5 @@
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { AvatarCustomStorybookComponent } from './avatar-custom-storybook.component';
 import { AvatarStorybookComponent } from './avatar-storybook.component';
 
 export default {
@@ -28,4 +29,17 @@ export const Large: Story = {
 /** Without `maxVisible` every projected avatar is shown and no `+N` is appended. */
 export const AllAvatarsShown: Story = {
   args: { maxVisible: undefined },
+};
+
+/**
+ * `initials` wins over the ones derived from `name`. The fill and text colour come from `color`, or from
+ * `--et-avatar-background` / `--et-avatar-color` set on the avatar.
+ */
+export const CustomInitialsAndColors: StoryObj<AvatarCustomStorybookComponent> = {
+  decorators: [moduleMetadata({ imports: [AvatarCustomStorybookComponent] })],
+  args: { size: 'md', shape: 'circle' },
+  render: (args) => ({
+    props: args,
+    template: `<et-sb-avatar-custom [size]="size" [shape]="shape" />`,
+  }),
 };

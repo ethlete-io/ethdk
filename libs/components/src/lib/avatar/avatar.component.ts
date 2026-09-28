@@ -27,8 +27,9 @@ const initialsFromName = (name: string) => {
 };
 
 /**
- * A user/entity representation: an image, falling back to initials derived from `name`, falling back
- * to projected content (e.g. an icon) when neither is set. A failed image load falls back the same way.
+ * A user/entity representation: an image, falling back to initials (`initials`, else derived from
+ * `name`), falling back to projected content (e.g. an icon) when neither is set. A failed image load
+ * falls back the same way.
  *
  * Also an attribute selector, so an avatar that has to be a link or a button is written as one -
  * `routerLink`, `href` and click handlers stay on the consumer's own element.
@@ -36,6 +37,7 @@ const initialsFromName = (name: string) => {
  * @example
  * <et-avatar src="/jane.jpg" name="Jane Doe" />
  * <et-avatar name="Jane Doe" color="brand" />
+ * <et-avatar name="Dr. Anna Maria Schmidt" initials="AS" />
  * <et-avatar><et-icon [definition]="USER_ICON" /></et-avatar>
  * <a [routerLink]="['/users', user.id]" [name]="user.name" et-avatar></a>
  */
@@ -44,8 +46,8 @@ const initialsFromName = (name: string) => {
   template: `
     @if (imageVisible()) {
       <img [src]="src()" [alt]="name() ?? ''" (error)="markImageFailed()" class="et-avatar-image" />
-    } @else if (initials()) {
-      <span class="et-avatar-initials">{{ initials() }}</span>
+    } @else if (displayedInitials()) {
+      <span class="et-avatar-initials">{{ displayedInitials() }}</span>
     } @else {
       <ng-content />
     }
@@ -67,10 +69,17 @@ const initialsFromName = (name: string) => {
 export class AvatarComponent {
   public src = input<string | null>(null);
   public name = input<string | null>(null);
+
+  /** Rendered verbatim in place of the initials derived from `name`, e.g. `"AS"` or a team short code. */
+  public initials = input<string | null>(null);
   public size = input<AvatarSize>(AVATAR_SIZES.MD);
   public shape = input<AvatarShape>(AVATAR_SHAPES.CIRCLE);
 
-  protected initials = computed(() => {
+  protected displayedInitials = computed(() => {
+    const explicit = this.initials();
+
+    if (explicit) return explicit;
+
     const name = this.name();
 
     return name ? initialsFromName(name) : null;
