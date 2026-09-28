@@ -81,7 +81,6 @@ Scan of `libs/cli/src/` and `libs/agent-rules/src/` from 2026-09-28. 1 High, 14 
 
 ### cli: doctor, config
 
-- Medium: `doctor` loads `ethlete.apis.js` through `require` with no `try` (`doctor/doctor-command.ts:54`, `api/load-definitions.ts:20`). A syntax error or a throw in that file crashes `et doctor` with a stack trace, although the command promises to report every problem. Catch the error and report it as a problem. S Verified.
 - Low: when the primary config is not valid JSON, the runtime falls back to the legacy file (`config/local-config.ts:70-76`), but `diagnoseLocalConfig` reports only the parse error (`config/diagnose.ts:115`). The user does not learn that the legacy values are in force. S
 - Low: a legacy file that does not parse gives no problem (`config/diagnose.ts:138`), but `doctor` counts it as present (`doctor/doctor-command.ts:51-53`). The result is "No problems found." for a broken file. S
 

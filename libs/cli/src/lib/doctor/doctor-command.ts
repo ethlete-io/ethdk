@@ -1,4 +1,5 @@
 import { ComposeTool, composeToolNames, composeBinary, resolveComposeTool } from '../api/compose';
+import { existsSync } from 'fs';
 import { join } from 'path';
 import { API_DEFINITIONS_FILE_NAMES, loadApiDefinitions } from '../api/load-definitions';
 import { checkoutProblem, resolveApiCheckout } from '../api/resolve-checkout';
@@ -15,8 +16,22 @@ const describeComposeTool = (composeTools?: ComposeTool[]) => {
     : { line: undefined, problems: [`No compose tool found. Tried: ${composeToolNames(composeTools).join(', ')}.`] };
 };
 
-const describeApis = (root: string, apiInvocation: string) => {
-  const { found, apis, fileName } = loadApiDefinitions(root);
+const loadApis = (root: string) => {
+  try {
+    return loadApiDefinitions(root);
+  } catch (error) {
+    const fileName = API_DEFINITIONS_FILE_NAMES.find((candidate) => existsSync(join(root, candidate)));
+
+    return { found: false as const, problem: `${fileName} cannot be loaded: ${(error as Error).message}` };
+  }
+};
+
+const describeApis = (options: { root: string; apiInvocation: string; loaded: ReturnType<typeof loadApis> }) => {
+  const { root, apiInvocation, loaded } = options;
+
+  if ('problem' in loaded) return { lines: [], problems: [loaded.problem] };
+
+  const { found, apis, fileName } = loaded;
 
   if (!found) return { lines: [], problems: [] };
 
@@ -51,7 +66,8 @@ export const doctorCommand = ({
   const hasConfig = [LOCAL_CONFIG_FILE_NAME, LEGACY_LOCAL_CONFIG_FILE_NAME].some(
     (fileName) => readLocalConfigFile(join(root, fileName)).status !== 'absent',
   );
-  const hasApis = loadApiDefinitions(root).found;
+  const loadedApis = loadApis(root);
+  const hasApis = loadedApis.found || 'problem' in loadedApis;
 
   if (!hasConfig && !hasApis) {
     console.log(`Nothing to check: ${root} has no ${LOCAL_CONFIG_FILE_NAME} and no ${API_DEFINITIONS_FILE_NAMES[0]}.`);
@@ -61,7 +77,7 @@ export const doctorCommand = ({
 
   const configProblems = diagnoseLocalConfig({ root });
   const compose = describeComposeTool(composeTools);
-  const apis = describeApis(root, apiInvocation);
+  const apis = describeApis({ root, apiInvocation, loaded: loadedApis });
 
   const problems = [...configProblems, ...compose.problems, ...apis.problems];
 

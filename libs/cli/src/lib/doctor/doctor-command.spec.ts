@@ -46,6 +46,16 @@ describe('doctorCommand', () => {
     expect(errors.join('\n')).toContain('apiRepoPaths.hub');
   });
 
+  it('reports an API definitions file that throws while it loads', () => {
+    const root = makeRoot();
+
+    write(root, 'package.json', JSON.stringify({ name: 'host' }));
+    write(root, 'ethlete.apis.js', 'module.exports = {');
+
+    expect(doctorCommand({ root, composeTools: PRESENT_COMPOSE_TOOLS })).toBe(1);
+    expect(errors.join('\n')).toContain('ethlete.apis.js cannot be loaded:');
+  });
+
   it('names the fix with the invocation it was given', () => {
     const root = makeRoot();
 
