@@ -1,3 +1,4 @@
+import { Page } from '@playwright/test';
 import { E2E_PARENT_ID, E2E_PARENT_KEY, E2E_REPO, defaultSettings } from '@ethlete/timetrack/testing';
 import { TimetrackSettings } from '@ethlete/timetrack';
 import {
@@ -7,7 +8,9 @@ import {
   editSurface,
   expect,
   openApprovals,
+  openAutoModeReadout,
   openStandIns,
+  queuedId,
   readBackend,
   readStoredSettings,
   seedWorld,
@@ -25,6 +28,11 @@ const withAutoMode = (settings: TimetrackSettings): TimetrackSettings => ({
   ...settings,
   reasoning: { ...settings.reasoning, autoMode: true },
 });
+
+const openSuggestions = async (page: Page) => {
+  await page.getByRole('link', { name: 'Settings' }).click();
+  await page.getByRole('tab', { name: 'Suggestions' }).click();
+};
 
 type DayRows = { rows: { issueKey?: string; sources: { issue: string } }[] };
 
@@ -82,6 +90,38 @@ test.describe('auto mode on a stand-in of today', () => {
     await expect(page.locator('ethlete-stand-ins-list [data-stand-in]').first()).toContainText('by auto mode');
     await expect(page.getByRole('button', { name: 'Review requests' })).toBeHidden();
     expect((await readBackend(page)).jira.created).toEqual([]);
+  });
+
+  test('reads out the stand-in it resolved', async ({ page }) => {
+    const readout = await openAutoModeReadout(page);
+
+    await expect(readout.locator('[data-auto-entry][data-status="applied"]')).toHaveCount(1);
+    await expect(readout.locator('[data-auto-entry]').first()).toContainText('applied');
+  });
+});
+
+test.describe('a class the settings make stricter', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/day');
+  });
+
+  test('keeps a CLI create out of approve all once it is set to one by one', async ({ page }) => {
+    const id = queuedId(
+      await askAgent(page, { op: 'jira.create', summary: 'Pdf export', projectKey: 'ABC', client: 'Claude Code' }),
+    );
+
+    await openSuggestions(page);
+    await page.locator('[data-action="jira.create"] et-select').click();
+    await page.getByRole('option', { name: 'Approved one by one' }).click();
+
+    await expect
+      .poll(async () => (await readStoredSettings(page))?.actionClasses)
+      .toEqual({ 'jira.create': 'human-only' });
+
+    const dialog = await openApprovals(page);
+
+    await expect(dialog.locator(`[data-approval="${id}"]`)).toContainText('Only approved one by one');
+    await expect(dialog.getByRole('button', { name: /^Approve all/ })).toBeHidden();
   });
 });
 

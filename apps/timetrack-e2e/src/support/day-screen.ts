@@ -92,6 +92,9 @@ export const openStreams = (page: Page) => openDebugPanel(page, /^Streams —/);
 /** The panel holding the time this app will never write. */
 export const openLoggedElsewhere = (page: Page) => openDebugPanel(page, /^Logged elsewhere —/);
 
+/** The panel reading out what auto mode asked about on the day, and what came of each ask. */
+export const openAutoModeReadout = (page: Page) => openDebugPanel(page, /^Auto mode —/);
+
 /** The panel holding the rows taken off the timeline, and the way back for each. */
 export const openHiddenRows = (page: Page) => openDebugPanel(page, /^Hidden —/);
 

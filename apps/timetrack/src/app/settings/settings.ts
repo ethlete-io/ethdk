@@ -55,6 +55,9 @@ import {
   withStandInParent,
   withStandInResolutionReset,
   WriteSource,
+  ClassedAction,
+  OpClass,
+  withActionClass,
 } from '@ethlete/timetrack';
 import {
   Subject,
@@ -224,6 +227,8 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     setGitLab: (gitlab: TimetrackGitLabSettings) => patch({ gitlab }),
     setGitHubEnabled: (enabled: boolean) => patch({ github: { enabled } }),
     setReasoning: (reasoning: TimetrackReasoningSettings) => patch({ reasoning }),
+    setActionClass: (change: { action: ClassedAction; opClass: OpClass }) =>
+      patch({ actionClasses: withActionClass(settings().actionClasses, change) }),
 
     addMaskedName: (name: string) => apply(withMaskedName({ settings: settings(), name })),
     removeMaskedName: (name: string) => apply(withoutMaskedName({ settings: settings(), name })),

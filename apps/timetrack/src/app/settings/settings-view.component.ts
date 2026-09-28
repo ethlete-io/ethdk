@@ -31,6 +31,7 @@ import {
 } from '../../collectors';
 import { injectDayNudge } from '../day-nudge';
 import { injectWindowLock } from '../window-lock';
+import { ActionClassesComponent } from './action-classes.component';
 import { AgentSessionResyncComponent } from './agent-session-resync.component';
 import { AttributionRulesComponent } from './attribution-rules.component';
 import { CallRulesComponent } from './call-rules.component';
@@ -156,6 +157,10 @@ keeps it with the answer.
 An existing issue it finds names the band as auto, and resetting the row takes it back. A new ticket it
 drafts waits in the approval queue. It never overwrites a field you set, never remembers a meeting or a
 call name, and never writes to Tempo.`;
+
+const ACTION_CLASSES_WHY = `Each pick can only make an action stricter than it starts. Auto mode can be made
+to ask before it names a band or files a ticket, or to never do it. A write a CLI asks for always
+waits for your approval; set it to one by one and "Approve all" leaves it out.`;
 
 /**
  * Everything the app cannot work out for itself, in five tabs.
@@ -652,6 +657,16 @@ call name, and never writes to Tempo.`;
                 <ethlete-explain [text]="AUTO_MODE_WHY" label="auto mode" />
               </div>
 
+              <div class="flex items-center gap-2">
+                <h4 class="text-base">What waits for you</h4>
+                <ethlete-explain [text]="ACTION_CLASSES_WHY" label="what waits for you" />
+              </div>
+
+              <ethlete-action-classes
+                [classes]="store.settings().actionClasses"
+                (classChange)="store.setActionClass($event)"
+              />
+
               <div class="flex flex-wrap items-start gap-3">
                 <et-form-field class="w-40" appearance="underline" size="sm">
                   <et-label>Model</et-label>
@@ -691,6 +706,7 @@ call name, and never writes to Tempo.`;
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
+    ActionClassesComponent,
     AgentSessionResyncComponent,
     AttributionRulesComponent,
     BADGE_IMPORTS,
@@ -761,6 +777,7 @@ export class SettingsViewComponent {
   });
   protected readonly SUGGESTIONS_WHY = SUGGESTIONS_WHY;
   protected readonly AUTO_MODE_WHY = AUTO_MODE_WHY;
+  protected readonly ACTION_CLASSES_WHY = ACTION_CLASSES_WHY;
   protected readonly LOCK_WHY = LOCK_WHY;
   protected readonly LOCK_WAIT_WHY = LOCK_WAIT_WHY;
 

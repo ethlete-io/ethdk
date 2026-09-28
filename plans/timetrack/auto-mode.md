@@ -1,6 +1,6 @@
 # Auto mode and the approval queue
 
-Status: slices 1 to 4 done (2026-09-28), ADR 0035 approved. Slice 5 in progress.
+Status: slices 1 to 5 done (2026-09-28), ADR 0035 approved.
 
 ## Goal
 
@@ -99,7 +99,7 @@ auto-mode.ts` runs `writeTicketWithAgent$` once per band and stand-in, names unn
    - Context asks wait for git discovery, as the stand-in pass does.
    - `standIn.list` does not report the resolution or parent source yet.
 5. **Class settings.** A settings page to make an action stricter, and a readout of what auto mode
-   did today. In progress (2026-09-28).
+   did today. Done (2026-09-28).
    - Design. `OP_CLASS_ORDER` is `read < local < external < human-only`. The setting
      `actionClasses` stores only actions the user moved to a stricter class; `actionClassOf` takes
      the stricter of the table and the pick, so a stored looser class never loosens anything, and
@@ -115,9 +115,18 @@ auto-mode.ts` runs `writeTicketWithAgent$` once per band and stand-in, names unn
      in `agent-api/approval-queue.ts`, `autoModeApplies`, `autoModeApplyRequest` and
      `autoModeReadout` in `review/auto-mode.ts`. The app service queues the apply, carries out an
      approved one and gates every auto write; "Approve all" reads the setting.
-   - Not started: the settings page (a class pick per action in `CLASSED_ACTIONS`, offering
-     `actionClassChoices`), the readout UI over `autoModeReadout`, the queue panel showing
-     `approvalClassOf` instead of the stored `opClass`, and the e2e.
+   - UI: done (2026-09-28). "What waits for you" under Suggestions (`settings/action-classes.component.ts`,
+     one select per action in `CLASSED_ACTIONS` over `actionClassChoices`, `setActionClass`). The
+     readout is the "Auto mode" panel of the day's Debug dialog (`auto-mode-readout.component.ts`,
+     `injectAutoMode().readout`). The queue panel's badge and `data-class` read `approvalClassOf`.
+     e2e in `auto-mode.spec.ts`: a CLI `jira.create` set to one by one stays out of "Approve all";
+     the readout shows the resolved stand-in.
+   - Open follow-ups:
+     - The readout covers the day on screen, not only today, and lists no undo of its own; the row
+       reset and "Hand back to auto mode" stay the way back.
+     - The action and choice labels live in the app component, not next to `CLASSED_ACTIONS`: a new
+       classed op shows its op name until it gets a label.
+     - No e2e drives `autoMode.apply` at `external` through the queue (the unit specs cover it).
 
 ## Open questions
 

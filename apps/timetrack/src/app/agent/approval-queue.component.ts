@@ -7,8 +7,9 @@ import {
   dialogOverlayStrategy,
 } from '@ethlete/components';
 import { ProvideColorDirective } from '@ethlete/core';
-import { AgentApproval, describeApproval } from '@ethlete/timetrack';
+import { AgentApproval, approvalClassOf, describeApproval } from '@ethlete/timetrack';
 import { formatClockTime } from '../day-review/format';
+import { injectTimetrackSettings } from '../settings/settings';
 import { injectApprovalQueue } from './approval-queue';
 
 @Component({
@@ -29,7 +30,7 @@ import { injectApprovalQueue } from './approval-queue';
             <div
               [attr.data-approval]="item.id"
               [attr.data-op]="item.request.op"
-              [attr.data-class]="item.opClass"
+              [attr.data-class]="classOf(item)"
               class="flex flex-col gap-2 rounded-md border border-et-surface-border p-3"
             >
               <span class="text-base">{{ describe(item) }}</span>
@@ -37,7 +38,7 @@ import { injectApprovalQueue } from './approval-queue';
               <div class="flex flex-wrap items-center gap-2 text-small text-et-surface-muted">
                 <span>{{ item.client ?? 'CLI' }} · asked at {{ askedAt(item) }}</span>
 
-                @if (item.opClass === 'human-only') {
+                @if (classOf(item) === 'human-only') {
                   <span class="rounded-sm bg-et-warning/15 px-2 text-et-warning-ink">Only approved one by one</span>
                 }
               </div>
@@ -74,6 +75,11 @@ import { injectApprovalQueue } from './approval-queue';
 })
 export class ApprovalQueueComponent {
   protected queue = injectApprovalQueue();
+  private settings = injectTimetrackSettings();
+
+  protected classOf(item: AgentApproval) {
+    return approvalClassOf(item, this.settings.settings().actionClasses);
+  }
 
   protected describe(item: AgentApproval) {
     return describeApproval(item.request);

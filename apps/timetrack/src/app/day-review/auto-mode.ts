@@ -19,6 +19,7 @@ import {
   autoModeContextLabel,
   autoModeCreatedKeys,
   autoModeQueuedAnswer,
+  autoModeReadout,
   autoModeSubjectKey,
   dayBoundaryOf,
   draftTicket,
@@ -394,6 +395,20 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   return {
     /** Whether auto mode runs: it needs the suggestions switch as well as its own. */
     enabled,
+    /** What auto mode did on the day on screen, read from the stored answers, rows, stand-ins and queue. */
+    readout: computed(() => {
+      const edits = dayReview.storedEdits();
+
+      if (!edits) return [];
+
+      return autoModeReadout({
+        day: dayReview.dayKey(),
+        edits,
+        approvals: approvals.items(),
+        classes: settings.settings().actionClasses,
+        standIns: settings.settings().standIns,
+      });
+    }),
   };
 });
 

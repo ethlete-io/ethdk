@@ -11,6 +11,8 @@ import {
   dialogOverlayStrategy,
 } from '@ethlete/components';
 import { formatDurationMs } from '@ethlete/timetrack';
+import { injectAutoMode } from './auto-mode';
+import { AutoModeReadoutComponent } from './auto-mode-readout.component';
 import { BranchRepairComponent } from './branch-repair.component';
 import { injectBranchRepair } from './branch-repair';
 import { CreateTicketComponent } from './create-ticket.component';
@@ -191,6 +193,10 @@ import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
           <ethlete-stand-ins-list />
         </et-accordion>
 
+        <et-accordion [label]="autoModeLabel()">
+          <ethlete-auto-mode-readout [entries]="autoMode.readout()" />
+        </et-accordion>
+
         <et-accordion label="Day notes">
           <ethlete-day-notes [day]="store.day()" />
         </et-accordion>
@@ -204,6 +210,7 @@ import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
   encapsulation: ViewEncapsulation.None,
   imports: [
     ACCORDION_IMPORTS,
+    AutoModeReadoutComponent,
     BANNER_IMPORTS,
     BUTTON_IMPORTS,
     BranchRepairComponent,
@@ -227,6 +234,7 @@ export class DayDebugComponent {
   protected store = injectDayReview();
   protected tickets = injectTicketDraft();
   protected repair = injectBranchRepair();
+  protected autoMode = injectAutoMode();
 
   protected waitingLabel = computed(() => {
     const contexts = this.store.unnamed().length;
@@ -251,6 +259,8 @@ export class DayDebugComponent {
 
     return `Logged elsewhere — ${elsewhere} in Tempo, ${secluded} private, ${runs} timed run(s)`;
   });
+
+  protected autoModeLabel = computed(() => `Auto mode — ${this.autoMode.readout().length} ask(s)`);
 
   protected hiddenLabel = computed(() => {
     const hidden = this.store.hiddenRows();
