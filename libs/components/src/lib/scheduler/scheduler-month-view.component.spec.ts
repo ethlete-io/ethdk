@@ -189,3 +189,59 @@ describe('SchedulerMonthViewComponent after a drag', () => {
     expect(driver.editSurface()).toHaveLength(1);
   });
 });
+
+describe('SchedulerMonthViewComponent in a right-to-left layout', () => {
+  let driver: ReturnType<typeof schedulerTestDriver>;
+
+  const CELL_WIDTH = 100;
+  const ROW_HEIGHT = 80;
+
+  const mirroredRect = (element: Element) => {
+    const row = element.closest('.et-scheduler-month-view-week');
+    const rows = Array.from(element.closest('.et-scheduler-month-view-weeks')?.children ?? []).filter((child) =>
+      child.classList.contains('et-scheduler-month-view-week'),
+    );
+    const rowIndex = row ? rows.indexOf(row) : 0;
+
+    if (element.classList.contains('et-scheduler-month-view-cell')) {
+      const column = Array.from(row?.children ?? []).indexOf(element);
+
+      return new DOMRect((6 - column) * CELL_WIDTH, rowIndex * ROW_HEIGHT, CELL_WIDTH, ROW_HEIGHT);
+    }
+
+    if (element === row) return new DOMRect(0, rowIndex * ROW_HEIGHT, 7 * CELL_WIDTH, ROW_HEIGHT);
+
+    return new DOMRect(0, 0, 7 * CELL_WIDTH, rows.length * ROW_HEIGHT);
+  };
+
+  beforeEach(() => {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+      return mirroredRect(this);
+    });
+
+    driver = schedulerTestDriver({ appointments: [], focusedDate: new Date(2026, 6, 15) });
+  });
+
+  afterEach(() => {
+    for (const overlay of TestBed.runInInjectionContext(() => injectOverlayManager()).openOverlays()) {
+      overlay.close();
+    }
+
+    driver.fixture.destroy();
+    vi.restoreAllMocks();
+  });
+
+  it('creates on the day under the pointer, not on its mirror', () => {
+    const weeks = driver.query('.et-scheduler-month-view-weeks');
+    const at = { bubbles: true, pointerId: 1, button: 0, clientX: 7 * CELL_WIDTH - 10, clientY: ROW_HEIGHT + 10 };
+
+    weeks?.dispatchEvent(new PointerEvent('pointerdown', at));
+    document.dispatchEvent(new PointerEvent('pointerup', at));
+    driver.detectChanges();
+
+    const secondWeekStart = driver.scheduler().headless.visibleRange().start;
+    const draft = driver.scheduler().headless.draftRange();
+
+    expect(isSameDay(draft?.start ?? new Date(0), addDays(secondWeekStart, 7))).toBe(true);
+  });
+});

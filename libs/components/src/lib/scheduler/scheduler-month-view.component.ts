@@ -143,7 +143,7 @@ export class SchedulerMonthViewComponent {
     if (!scheduler || !this.canDragAppointments() || event.button !== 0) return;
 
     const { appointment, weeks } = target;
-    const grab = this.dateAt(weeks, event);
+    const grab = this.dateAt(event);
 
     if (!grab) return;
 
@@ -159,7 +159,7 @@ export class SchedulerMonthViewComponent {
 
         if (!scheduler.appointmentDrag()) scheduler.beginAppointmentDrag(appointment, 'move');
 
-        const to = this.dateAt(weeks, { clientX, clientY });
+        const to = this.dateAt({ clientX, clientY });
 
         if (!to) return;
 
@@ -183,7 +183,7 @@ export class SchedulerMonthViewComponent {
 
     if (!scheduler || event.button !== 0) return;
 
-    const anchor = this.dateAt(weeks, event);
+    const anchor = this.dateAt(event);
 
     if (!anchor) return;
 
@@ -193,7 +193,7 @@ export class SchedulerMonthViewComponent {
       renderer: this.renderer,
       destroyRef: this.destroyRef,
       track: (clientX, clientY) => {
-        const to = this.dateAt(weeks, { clientX, clientY }) ?? anchor;
+        const to = this.dateAt({ clientX, clientY }) ?? anchor;
         const [from, until] = to < anchor ? [to, anchor] : [anchor, to];
 
         scheduler.setDraftRange({ start: startOfDay(from), end: endOfDay(until), allDay: true });
@@ -322,7 +322,7 @@ export class SchedulerMonthViewComponent {
     return anchor;
   }
 
-  private dateAt(weeks: HTMLElement, at: { clientX: number; clientY: number }): Date | null {
+  private dateAt(at: { clientX: number; clientY: number }): Date | null {
     const rows = this.weekRows();
     const weekIndex = rows.findIndex((row) => {
       const { top, bottom } = row.nativeElement.getBoundingClientRect();
@@ -330,12 +330,21 @@ export class SchedulerMonthViewComponent {
       return at.clientY >= top && at.clientY <= bottom;
     });
 
+    const weeksBefore = this.month.weeks().slice(0, weekIndex);
     const week = this.month.weeks()[weekIndex];
 
     if (!week) return null;
 
-    const { left, width } = weeks.getBoundingClientRect();
-    const column = Math.min(Math.max(Math.floor(((at.clientX - left) / width) * 7), 0), 6);
+    const offset = weeksBefore.reduce((count, days) => count + days.length, 0);
+    const distances = this.cells()
+      .slice(offset, offset + week.length)
+      .map((cell) => {
+        const { left, right } = cell.nativeElement.getBoundingClientRect();
+
+        return Math.max(left - at.clientX, at.clientX - right, 0);
+      });
+
+    const column = distances.indexOf(Math.min(...distances));
 
     return week[column]?.date ?? null;
   }
