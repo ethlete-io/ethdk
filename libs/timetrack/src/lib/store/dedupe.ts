@@ -6,45 +6,14 @@ const PART_SEPARATOR = '\u001f';
 const keyOf = (parts: string[]) => parts.join(PART_SEPARATOR);
 
 /**
- * The identity a re-collected event is recognised by. Every kind has one, so a new kind has to declare
- * what makes two of its observations the same one.
+ * The identity a re-collected event is recognised by, so the store drops a repeat. Every kind has
+ * one, so a new kind has to declare what makes two of its observations the same one.
  *
- * A git scan reads a window of history rather than a stream, so overlapping runs — the periodic
- * reconcile, a run the watcher triggered, the wide scan after the app was closed — see the same
- * commits and switches again. The store drops a repeat by this key, which is what lets a scan window
- * be as wide as it needs to be.
+ * No key holds a title: `repairStoredTitles$` rewrites a stored title to apply a later redaction
+ * rule, and a key built from a title would keep the raw one in the database.
  *
- * A commit keys by its sha alone, so the branch the first scan reported for it is the one that stays.
- * `%S` names whichever ref reached the commit first, and a commit that later also lives on another
- * branch must not turn into a second observation of the same work.
- *
- * A calendar occurrence keys by its times as well as its id, so a meeting somebody moved is stored
- * again at the hour it moved to rather than keeping the one it was first read at.
- *
- * A GitLab event keys by GitLab's own id, which is unique inside one instance — a second instance
- * would have to put its host in the key. A GitHub event keys by its source and its id.
- *
- * A sample the host buffered — a focus change, a presence transition, a microphone edge — keys by the
- * instant it was taken at and the process it names. The host holds such a sample until the collector
- * acknowledges it, so a webview that reloads between reading and storing drains it a second time, and
- * the key is what makes that repeat free. Two samples of the same window a minute apart are two real
- * observations and both still store, because their instants differ.
- *
- * No key holds a title. `repairStoredTitles$` rewrites a stored title to apply a redaction rule that
- * did not exist when the row was written, and it reaches the payload only — a key built from a title
- * would keep the raw one, which is the very thing the redaction takes out of the database.
- *
- * An editor heartbeat keys by its reporter and its instant, which is what makes a reporter's retry
- * free: a POST whose response was lost is sent again, and one editor cannot have been in two states
- * at the same millisecond.
- *
- * An agent's token spend keys by the provider and the provider's own id for the turn. That is what lets
- * a session log be read again from the top — which `resyncAgentSessionCursors` does whenever the user
- * links a checkout — without the day's spend doubling. A typed prompt keys the same way, on the id of
- * the record that holds it, so the pass that rebuilds a day from the top is free to re-read too.
- *
- * A session sample keys by its session and its instant. One session cannot have been in two states at
- * one millisecond, so a log read from the top again lands on the samples it already produced.
+ * A GitLab event keys by GitLab's own id, which is unique inside one instance only; a second
+ * instance would have to put its host in the key.
  */
 export const dedupeKeyOf = (event: CollectedEvent) => {
   switch (event.kind) {

@@ -6,6 +6,7 @@ import { Evidence } from '../model/evidence';
 import { WorklogProposal } from '../model/proposal';
 import { LoggedIssue } from '../model/recurrence';
 import { reasoningCandidates, reasoningPlan } from './payload';
+import { pseudonymMap } from './pseudonym';
 
 const REPO = '/Users/tom/dev/ea-frontend';
 
@@ -192,6 +193,24 @@ describe('reasoningPlan over a user who listed names to mask', () => {
     });
 
     expect(plan().hash).not.toBe(unmasked.hash);
+  });
+
+  it('never masks a listed project onto the prefix of an unlisted candidate key', () => {
+    const taken = pseudonymMap(MASKED).byName.get('fifagg')?.toUpperCase() ?? '';
+    const reserved = reasoningPlan({
+      contexts: [],
+      unattributed: [],
+      candidates: [
+        { issueKey: 'FIFAGG-5', summary: '' },
+        { issueKey: `${taken}-5`, summary: '' },
+      ],
+      maskedNames: MASKED,
+    });
+    const [listed, unlisted] = reserved.request.candidates.map((candidate) => candidate.issueKey);
+
+    expect(unlisted).toBe(`${taken}-5`);
+    expect(listed).not.toBe(unlisted);
+    expect(reserved.map.byPseudonym.has(taken.toLowerCase())).toBe(false);
   });
 
   it('leaves every field as written when the user listed no name', () => {

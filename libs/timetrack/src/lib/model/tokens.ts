@@ -1,11 +1,11 @@
 import { TokenUsage } from './event';
 
-const scaled = (value: number) => (value >= 100 ? `${Math.round(value)}` : value.toFixed(1));
+const scaled = (value: number) => (value >= 99.95 ? `${Math.round(value)}` : value.toFixed(1));
 
 /** A token count the way a day reads it — `604 M`, `12.3 k`, `840`. */
 export const formatTokenCount = (tokens: number) => {
-  if (tokens >= 1_000_000) return `${scaled(tokens / 1_000_000)} M`;
-  if (tokens >= 1_000) return `${scaled(tokens / 1_000)} k`;
+  if (Math.round(tokens / 1_000) >= 1_000) return `${scaled(tokens / 1_000_000)} M`;
+  if (Math.round(tokens) >= 1_000) return `${scaled(tokens / 1_000)} k`;
 
   return `${Math.round(tokens)}`;
 };

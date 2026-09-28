@@ -1,3 +1,5 @@
+import { fnv1aHash } from '../model/fnv';
+
 /**
  * The words a pseudonym is drawn from.
  *
@@ -72,18 +74,6 @@ const PSEUDONYM_WORDS = [
   'Zinnia',
 ];
 
-/** FNV-1a. It picks a word; nothing here needs it to resist anything. */
-const fnv1a = (text: string) => {
-  let hash = 0x811c9dc5;
-
-  for (let index = 0; index < text.length; index++) {
-    hash ^= text.charCodeAt(index);
-    hash = Math.imul(hash, 0x01000193);
-  }
-
-  return hash >>> 0;
-};
-
 const normal = (name: string) => name.trim().toLowerCase();
 
 const escaped = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -134,9 +124,11 @@ export const EMPTY_PSEUDONYM_MAP: PseudonymMap = { names: new Map(), byName: new
  *
  * A word that is itself a name on the list is never assigned. Without that, a client called `Mesa`
  * takes `Mesa` as its own pseudonym and leaves the prompt unmasked, and no warning catches it — the
- * word is on the list, so nothing reports it as unaccounted for.
+ * word is on the list, so nothing reports it as unaccounted for. The same holds for a `reserved`
+ * word, such as the project prefix of an unlisted issue key that goes out as written.
  */
-export const pseudonymMap = (names: readonly string[]): PseudonymMap => {
+export const pseudonymMap = (names: readonly string[], options?: { reserved?: readonly string[] }): PseudonymMap => {
+  const reserved = new Set((options?.reserved ?? []).map(normal));
   const written = new Map<string, string>();
 
   for (const name of names) {
@@ -149,7 +141,7 @@ export const pseudonymMap = (names: readonly string[]): PseudonymMap => {
   const byPseudonym = new Map<string, string>();
 
   for (const key of [...written.keys()].sort()) {
-    const start = fnv1a(key) % PSEUDONYM_WORDS.length;
+    const start = fnv1aHash(key) % PSEUDONYM_WORDS.length;
     let word = '';
 
     for (let step = 0; !word; step++) {
@@ -158,7 +150,13 @@ export const pseudonymMap = (names: readonly string[]): PseudonymMap => {
           ? PSEUDONYM_WORDS[(start + step) % PSEUDONYM_WORDS.length]
           : `${PSEUDONYM_WORDS[start]}${Math.floor(step / PSEUDONYM_WORDS.length) + 1}`;
 
-      if (candidate && !byPseudonym.has(normal(candidate)) && !written.has(normal(candidate))) word = candidate;
+      if (
+        candidate &&
+        !byPseudonym.has(normal(candidate)) &&
+        !written.has(normal(candidate)) &&
+        !reserved.has(normal(candidate))
+      )
+        word = candidate;
     }
 
     byName.set(key, word);

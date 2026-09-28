@@ -2,6 +2,7 @@ import { WorkGroup } from '../rows/merge';
 import { UnnamedContext } from '../model/attribution';
 import { contextKey } from '../model/block';
 import { QUOTABLE_EVIDENCE_KINDS } from '../model/evidence';
+import { fnv1aHash } from '../model/fnv';
 import { WorklogProposal } from '../model/proposal';
 import { LoggedIssue } from '../model/recurrence';
 import { PseudonymMap, maskIssueKey, maskNames, pseudonymMap } from './pseudonym';
@@ -48,18 +49,6 @@ const notesFor = (options: { groups: readonly WorkGroup[]; contextId: string; ma
   return notes;
 };
 
-/** FNV-1a. Identifies a payload; nothing here needs it to resist anything. */
-const hashOf = (text: string) => {
-  let hash = 0x811c9dc5;
-
-  for (let index = 0; index < text.length; index++) {
-    hash ^= text.charCodeAt(index);
-    hash = Math.imul(hash, 0x01000193);
-  }
-
-  return (hash >>> 0).toString(36);
-};
-
 /** How many issues the provider chooses from. Past this the prompt costs more than the answer gains. */
 export const DEFAULT_REASONING_CANDIDATE_LIMIT = 20;
 
@@ -97,6 +86,8 @@ export const reasoningCandidates = (options: {
   return [...found.values()];
 };
 
+const keyPrefixOf = (issueKey: string) => /^([A-Za-z][A-Za-z0-9]*)-\d+$/.exec(issueKey.trim())?.[1];
+
 const masked = (options: { text: string | undefined; map: PseudonymMap }) =>
   options.text ? maskNames({ text: options.text, map: options.map }) : options.text;
 
@@ -125,7 +116,9 @@ export const reasoningPlan = (options: {
 }): ReasoningPlan => {
   const minObservedMs = options.minObservedMs ?? DEFAULT_MIN_REASONING_MS;
   const max = options.maxNotesPerContext ?? DEFAULT_MAX_NOTES_PER_CONTEXT;
-  const map = pseudonymMap(options.maskedNames ?? []);
+  const map = pseudonymMap(options.maskedNames ?? [], {
+    reserved: (options.candidates ?? []).flatMap((candidate) => keyPrefixOf(candidate.issueKey) ?? []),
+  });
   const contextIds: Record<string, string> = {};
   const contexts: ReasoningContext[] = [];
 
@@ -152,5 +145,5 @@ export const reasoningPlan = (options: {
     contexts,
   };
 
-  return { request, contextIds, map, hash: hashOf(JSON.stringify(request)) };
+  return { request, contextIds, map, hash: fnv1aHash(JSON.stringify(request)).toString(36) };
 };

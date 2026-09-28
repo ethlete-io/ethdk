@@ -16,6 +16,12 @@ describe('formatTokenCount', () => {
     expect(formatTokenCount(604_000_000)).toBe('604 M');
     expect(formatTokenCount(120_000)).toBe('120 k');
   });
+
+  it('picks the unit after rounding, so a count never reads 1000 k or 100.0 k', () => {
+    expect(formatTokenCount(999_950)).toBe('1.0 M');
+    expect(formatTokenCount(99_960)).toBe('100 k');
+    expect(formatTokenCount(999.6)).toBe('1.0 k');
+  });
 });
 
 describe('totalTokens', () => {
