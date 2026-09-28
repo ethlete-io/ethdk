@@ -272,5 +272,11 @@ Measured and rejected during the 2026-07-31 / 2026-08-01 / 2026-08-04 rounds:
 - **`decompose.mjs` attributes a component's compiled CSS to its `.html`/`.ts` row**, because that is
   where the sourcemap points. So `overlay-container.component.html` at "16.9 kB" and
   `table.component.html` at "19.1 kB" are really their stylesheets, not their templates.
+- **A `.html` row can belong to another component.** The chained sourcemap maps some compiled
+  template functions to an unrelated template: `BUTTON_IMPORTS` lists
+  `bracket/bracket.component.html` at 2.7 kB, but those bytes are the button's own spinner and
+  content templates, and `GRID_IMPORTS` lists `forms/tag-input/tag-input.component.html` at 1.6 kB.
+  Neither component is in its bundle. Before blaming a row, check that its component is in the
+  `dump-bundle.mjs` output.
 - **A number from `--external` says nothing about third-party retention.** Re-measure with
   `--third-party` before concluding a dependency shakes out.
