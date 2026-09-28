@@ -1,6 +1,6 @@
 import { Component, CSP_NONCE, inject, signal, viewChild, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ColorTheme, provideColorThemesWithTailwind4, ThemeSwatch } from '@ethlete/core';
+import { ColorTheme, injectLocale, provideColorThemesWithTailwind4, ThemeSwatch } from '@ethlete/core';
 import { firstValueFrom } from 'rxjs';
 import {
   createStreamConfig,
@@ -84,7 +84,9 @@ import { Scenario, useScenario } from './harness';
 const YT_API_URL = 'https://www.youtube.com/iframe_api';
 const TWITCH_EMBED_URL = 'https://embed.twitch.tv/embed/v1.js';
 const VIMEO_SDK_URL = 'https://player.vimeo.com/api/player.js';
-const FB_SDK_URL = 'https://connect.facebook.net/de_DE/sdk.js#xfbml=1&version=v3.2';
+const FB_SDK_URL = 'https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v26.0';
+
+const setLocale = (locale: string) => TestBed.runInInjectionContext(() => injectLocale().currentLocale.set(locale));
 
 const swatch = (value: `${number} ${number} ${number}`): ThemeSwatch => ({
   color: { default: value, hover: value, active: value, disabled: value },
@@ -596,17 +598,46 @@ class SecondScreenComponent {
   controls = viewChild.required(SlotControlsComponent);
 }
 
-describe('stream player scenarios', () => {
+const SCENARIO_PROVIDERS = [
+  provideStreamManager(),
+  provideStreamLabels({ playerFrame: (platform) => `${platform} stream` }),
+  ...provideStreamPlayerLoadingConfig({ spinnerDiameter: 48 }),
+  ...provideStreamPlayerErrorConfig({ retryButtonColor: 'danger' }),
+  { provide: CSP_NONCE, useValue: 'nonce-123' },
+  provideColorThemesWithTailwind4(COLOR_THEMES),
+];
+
+describe('facebook SDK url', () => {
   const scenario = useScenario({
-    providers: [
-      provideStreamManager(),
-      provideStreamLabels({ playerFrame: (platform) => `${platform} stream` }),
-      ...provideStreamPlayerLoadingConfig({ spinnerDiameter: 48 }),
-      ...provideStreamPlayerErrorConfig({ retryButtonColor: 'danger' }),
-      { provide: CSP_NONCE, useValue: 'nonce-123' },
-      provideColorThemesWithTailwind4(COLOR_THEMES),
-    ],
+    providers: [...SCENARIO_PROVIDERS, provideStreamConfig({ facebookSdkVersion: 'v25.0' })],
   });
+
+  afterEach(() => {
+    for (const script of Array.from(document.head.querySelectorAll('script'))) {
+      if (script.src.startsWith('https://connect.facebook.net/')) script.remove();
+    }
+
+    for (const name of ['FB', 'fbAsyncInit']) delete globals()[name];
+  });
+
+  it.each([
+    ['en-US', 'en_US'],
+    ['de', 'de_DE'],
+    ['pt-BR', 'pt_BR'],
+    ['not a locale', 'en_US'],
+  ])('loads the SDK for the app locale %s in the configured version', (locale, facebookLocale) => {
+    const s = scenario();
+
+    setLocale(locale);
+    TestBed.createComponent(SocialComponent);
+    s.flush();
+
+    expect(scriptTag(`https://connect.facebook.net/${facebookLocale}/sdk.js#xfbml=1&version=v25.0`)).not.toBeNull();
+  });
+});
+
+describe('stream player scenarios', () => {
+  const scenario = useScenario({ providers: SCENARIO_PROVIDERS });
 
   afterEach(() => {
     for (const src of [YT_API_URL, TWITCH_EMBED_URL, VIMEO_SDK_URL, FB_SDK_URL, 'https://cdn.example.com/sdk.js']) {

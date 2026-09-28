@@ -1,16 +1,30 @@
 import { isPlatformBrowser } from '@angular/common';
 import { DOCUMENT, Directive, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { RuntimeError, injectHostElement, injectRenderer } from '@ethlete/core';
+import { RuntimeError, injectHostElement, injectLocale, injectRenderer } from '@ethlete/core';
 import { EMPTY, Observable, catchError, tap, timer } from 'rxjs';
 import { STREAM_ERROR_CODES } from '../../../stream-errors';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
+import { injectStreamConfig } from '../../../stream-config';
 import { injectStreamScriptLoader } from '../../../stream-script-loader';
 import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../../stream.types';
 import { FacebookPlayerParamsDirective } from './facebook-player-params.directive';
 import { FacebookVideoPlayer, FacebookWindow } from './facebook-player.types';
 
-const FB_SDK_URL = 'https://connect.facebook.net/de_DE/sdk.js#xfbml=1&version=v3.2';
+const FB_FALLBACK_LOCALE = 'en_US';
+
+const toFacebookLocale = (tag: string) => {
+  try {
+    const { language, region } = new Intl.Locale(tag.replace('_', '-')).maximize();
+
+    return region ? `${language}_${region}` : FB_FALLBACK_LOCALE;
+  } catch {
+    return FB_FALLBACK_LOCALE;
+  }
+};
+
+const facebookSdkUrl = (locale: string, version: string) =>
+  `https://connect.facebook.net/${toFacebookLocale(locale)}/sdk.js#xfbml=1&version=${encodeURIComponent(version)}`;
 const FB_READY_TIMEOUT = 15_000;
 
 export const FACEBOOK_PLAYER_TOKEN = new InjectionToken<FacebookPlayerDirective>('FACEBOOK_PLAYER_TOKEN');
@@ -28,6 +42,8 @@ export class FacebookPlayerDirective implements StreamPlayer {
   private el = injectHostElement();
   private scriptLoader = injectStreamScriptLoader();
   private renderer = injectRenderer();
+  private locale = injectLocale();
+  private streamConfig = injectStreamConfig();
 
   public readonly CAPABILITIES: StreamPlayerCapabilities = {
     canPlay: true,
@@ -147,7 +163,7 @@ export class FacebookPlayerDirective implements StreamPlayer {
             createEmbed();
           };
           loaderSub = this.scriptLoader
-            .load(FB_SDK_URL)
+            .load(facebookSdkUrl(this.locale.currentLocale(), this.streamConfig.facebookSdkVersion))
             .pipe(
               catchError((e: unknown) => {
                 subscriber.error(e);

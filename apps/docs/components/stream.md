@@ -213,6 +213,14 @@ The YouTube, Vimeo, Twitch and Facebook players load their platform SDK as a `<s
 
 The YouTube poster image comes from `https://img.youtube.com`.
 
+## Facebook SDK locale and version
+
+The Facebook player loads `https://connect.facebook.net/<locale>/sdk.js`. The locale follows the app [locale](/core/providers#locale) (`de` and `de-DE` become `de_DE`, an unparsable tag falls back to `en_US`) and is read when the SDK loads, once per page. The SDK version defaults to `v26.0`; pin another one via `provideStreamConfig`:
+
+```ts
+provideStreamConfig({ facebookSdkVersion: 'v25.0' });
+```
+
 ## Error codes
 
 Consent/PiP wiring problems and platform SDK failures throw [`ET16xx` errors](/components/error-codes#stream-et16xx) - the SDK/loading failures also in production.

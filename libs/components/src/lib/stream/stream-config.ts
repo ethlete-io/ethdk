@@ -33,6 +33,14 @@ export type StreamConfig = {
    * @default `StreamPlayerErrorComponent`
    */
   errorComponent: Type<unknown>;
+
+  /**
+   * The Facebook JS SDK version the Facebook player loads, e.g. `v26.0`.
+   * The SDK locale follows the app locale from `injectLocale()`.
+   *
+   * @default 'v26.0'
+   */
+  facebookSdkVersion: string;
 };
 
 const DEFAULT_STREAM_CONFIG: StreamConfig = {
@@ -40,6 +48,7 @@ const DEFAULT_STREAM_CONFIG: StreamConfig = {
   pipSlotPlaceholderComponent: null,
   loadingComponent: StreamPlayerLoadingComponent,
   errorComponent: StreamPlayerErrorComponent,
+  facebookSdkVersion: 'v26.0',
 };
 
 const STREAM_CONFIG_BASE_DEF = /* @__PURE__ */ defineStaticRootProvider<StreamConfig>(DEFAULT_STREAM_CONFIG, {
