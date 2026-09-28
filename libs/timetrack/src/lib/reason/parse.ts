@@ -1,6 +1,6 @@
 import { InferredAttribution } from '../model/attribution';
 import { agentOutputDocument } from './envelope';
-import { ReasoningPlan, ReasoningRequest } from './model';
+import { MAX_REASONING_REASON_LENGTH, ReasoningPlan, ReasoningRequest, clippedReasoningText } from './model';
 import { unmaskNames } from './pseudonym';
 
 type Answer = { id: string; issueKey: string | null; reason: string };
@@ -58,7 +58,7 @@ export const parseReasoningOutput = (options: { stdout: string; plan: ReasoningP
     inferred.push({
       contextId,
       issueKey: unmaskNames({ text: issueKey, map: plan.map }),
-      reason: unmaskNames({ text: reason, map: plan.map }),
+      reason: clippedReasoningText(unmaskNames({ text: reason, map: plan.map }), MAX_REASONING_REASON_LENGTH),
     });
   }
 

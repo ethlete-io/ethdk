@@ -238,6 +238,11 @@ export const maskIssueKey = (options: { issueKey: string; map: PseudonymMap }) =
 
 const CAPITALISED = /(?<![\p{L}\p{N}])(\p{Lu}[\p{L}\p{N}]*)/gu;
 
+const WORD = /[\p{L}\p{N}]+/gu;
+
+/** A shorter listed name sits inside too many ordinary words for a match inside a word to mean it. */
+const MIN_EMBEDDED_NAME_LENGTH = 3;
+
 const ISSUE_KEY_PREFIX = /(?<![\p{L}\p{N}])([A-Za-z][A-Za-z0-9]*)-\d+/gu;
 
 /** A shape an ordinary word of prose does not take, whatever language the prose is in. */
@@ -279,18 +284,37 @@ export const unmaskedWords = (options: { text: string; map: PseudonymMap }): Unm
     [...options.text.matchAll(ISSUE_KEY_PREFIX)].map((match) => normal(match[1] ?? '')).filter(Boolean),
   );
 
+  const isAccountedFor = (key: string) => options.map.byName.has(key) || options.map.byPseudonym.has(key);
+  const embeddedNames = [...options.map.byName.keys()]
+    .map((name) => name.replace(/\s+/gu, ''))
+    .filter((name) => name.length >= MIN_EMBEDDED_NAME_LENGTH);
+  const holdingName = new Set<string>();
+
+  for (const match of options.text.matchAll(WORD)) {
+    const word = match[0];
+    const key = normal(word);
+
+    if (holdingName.has(key) || isAccountedFor(key) || !embeddedNames.some((name) => key.includes(name))) continue;
+
+    holdingName.add(key);
+    found.set(key, word);
+  }
+
   for (const match of options.text.matchAll(CAPITALISED)) {
     const word = match[1] ?? '';
     const key = normal(word);
 
     if (word.length < 2 || found.has(key)) continue;
-    if (COMMON_WORDS.has(key) || options.map.byName.has(key) || options.map.byPseudonym.has(key)) continue;
+    if (COMMON_WORDS.has(key) || isAccountedFor(key)) continue;
 
     found.set(key, word);
   }
 
-  return [...found.values()]
-    .map((word): UnmaskedWord => ({ word, likelyName: isNameShaped({ word, keyPrefixes }) }))
+  return [...found.entries()]
+    .map(([key, word]): UnmaskedWord => ({
+      word,
+      likelyName: holdingName.has(key) || isNameShaped({ word, keyPrefixes }),
+    }))
     .sort((left, right) =>
       left.likelyName === right.likelyName
         ? left.word.localeCompare(right.word)

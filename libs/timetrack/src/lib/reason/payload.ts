@@ -8,9 +8,11 @@ import { PseudonymMap, maskIssueKey, maskNames, pseudonymMap } from './pseudonym
 import {
   DEFAULT_MAX_NOTES_PER_CONTEXT,
   DEFAULT_MIN_REASONING_MS,
+  MAX_REASONING_NOTE_LENGTH,
   ReasoningCandidate,
   ReasoningContext,
   ReasoningPlan,
+  clippedReasoningText,
 } from './model';
 
 /** The repository's name. The absolute path the collectors report never leaves the machine. */
@@ -27,9 +29,13 @@ const notesFor = (options: { groups: readonly WorkGroup[]; contextId: string; ma
       for (const entry of block.evidence) {
         if (!QUOTABLE_EVIDENCE_KINDS.includes(entry.kind)) continue;
 
-        const note = entry.summary ?? entry.detail;
+        const quoted = entry.summary ?? entry.detail;
 
-        if (!note || seen.has(note)) continue;
+        if (!quoted) continue;
+
+        const note = clippedReasoningText(quoted, MAX_REASONING_NOTE_LENGTH);
+
+        if (seen.has(note)) continue;
 
         seen.add(note);
         notes.push(note);

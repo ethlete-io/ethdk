@@ -74,6 +74,15 @@ describe('reasoningPlan', () => {
     expect(JSON.stringify(request)).not.toContain('Contoso');
   });
 
+  it('cuts a long note, so no single title can carry a whole instruction', () => {
+    const context = { repoPath: REPO, branch: 'refactor/hub-query-v3' };
+    const blocks = [block(context, [evidence('commit', 'x', 'a'.repeat(1000))])];
+
+    const { request } = reasoningPlan({ contexts: [unnamed(context)], unattributed: [group(blocks)] });
+
+    expect(request.contexts[0]?.notes[0]?.length).toBeLessThanOrEqual(200);
+  });
+
   it('leaves out a context too short to be worth asking about', () => {
     const context = { appId: 'com.tinyspeck.slackmacgap' };
     const { request } = reasoningPlan({ contexts: [unnamed(context, 60_000)], unattributed: [] });

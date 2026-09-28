@@ -126,6 +126,10 @@ describe('unmaskedWords', () => {
     expect(words('ACME and Konami')).toEqual(['ACME', 'Konami']);
   });
 
+  it('reports a word that holds a listed name inside it, whatever its case', () => {
+    expect(named('checkout fifaggfrontend, note on myFifaggClient')).toEqual(['fifaggfrontend', 'myFifaggClient']);
+  });
+
   it('reports a name that starts with an umlaut', () => {
     expect(words('ein Termin im Ärztehaus')).toEqual(['Ärztehaus', 'Termin']);
   });

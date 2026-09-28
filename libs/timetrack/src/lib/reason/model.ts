@@ -81,6 +81,14 @@ export const DEFAULT_MIN_REASONING_MS = 5 * 60_000;
 /** How many notes one context contributes. Enough to recognise the work, short enough to stay cheap. */
 export const DEFAULT_MAX_NOTES_PER_CONTEXT = 6;
 
+export const MAX_REASONING_NOTE_LENGTH = 200;
+
+export const MAX_REASONING_REASON_LENGTH = 240;
+
+/** Cuts free text that goes to or comes from the model to `max` characters, marking the cut. */
+export const clippedReasoningText = (text: string, max: number) =>
+  text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`;
+
 /**
  * What every model call takes from the settings document, so a new option reaches all four calls by
  * being added here rather than at each of them.

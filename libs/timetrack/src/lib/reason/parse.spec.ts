@@ -63,6 +63,12 @@ describe('parseReasoningOutput', () => {
     expect(parseReasoningOutput({ stdout, plan: PLAN })).toEqual([]);
   });
 
+  it('cuts a long reason, so an answer steered by a title cannot fill the review with it', () => {
+    const stdout = envelope([{ id: 'c1', issueKey: 'FIP-2201', reason: 'b'.repeat(2000) }]);
+
+    expect(parseReasoningOutput({ stdout, plan: PLAN })[0]?.reason.length).toBeLessThanOrEqual(240);
+  });
+
   it('keeps the first answer when a context is answered twice', () => {
     const stdout = envelope([
       { id: 'c1', issueKey: 'FIP-2201', reason: 'first' },
