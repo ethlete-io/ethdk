@@ -3,8 +3,15 @@ import { BracketMap } from './bracket-map';
 import { BracketDataLayout } from './layout';
 import { BracketMatchId, BracketMatchWithRelationsBase, createMatchesMapBase } from './match';
 import { BracketParticipantWithRelationsBase, createParticipantsMapBase, MatchParticipantId } from './participant';
-import { BracketRoundId, BracketRoundWithRelationsBase, createRoundsMapBase } from './round';
+import {
+  BracketRoundId,
+  BracketRoundWithRelationsBase,
+  createRoundsMapBase,
+  TERMINAL_ROUND_SORT_PRIORITY,
+} from './round';
 import { TournamentMode } from './tournament';
+import { BracketRuntimeError } from '../bracket-runtime-error';
+import { BRACKET_ERROR_CODES } from '../bracket-errors';
 
 export type BracketBase<TRoundData, TMatchData> = {
   rounds: BracketMap<BracketRoundId, BracketRoundWithRelationsBase<TRoundData>>;
@@ -20,12 +27,6 @@ export type GenerateBracketDataOptions = {
 export type CreateBracketOptions<TMatchData> = GenerateBracketDataOptions & {
   /** The matches feeding this one, upper arm first. Slot provenance is used when omitted. */
   previousMatchIds?: (match: BracketMatchSource<TMatchData>) => string[];
-};
-
-const TERMINAL_ROUND_SORT_PRIORITY: Partial<Record<string, number>> = {
-  final: 1,
-  'reverse-final': 2,
-  'third-place': 3,
 };
 
 const sortSourceMatchesByRoundOrder = <TRoundData, TMatchData>(
@@ -44,10 +45,33 @@ const sortSourceMatchesByRoundOrder = <TRoundData, TMatchData>(
   return { ...source, matches: sortedMatches };
 };
 
+const assertUniqueIds = (options: { ids: string[]; code: number; kind: string }) => {
+  const seen = new Set<string>();
+
+  for (const id of options.ids) {
+    if (seen.has(id)) {
+      throw new BracketRuntimeError(options.code, `${options.kind} with id ${id} exists more than once in the source.`);
+    }
+
+    seen.add(id);
+  }
+};
+
 export const createBracketBase = <TRoundData, TMatchData>(
   source: BracketDataSource<TRoundData, TMatchData>,
   options: GenerateBracketDataOptions,
 ) => {
+  assertUniqueIds({
+    ids: source.rounds.map((round) => round.id),
+    code: BRACKET_ERROR_CODES.DUPLICATE_ROUND,
+    kind: 'Round',
+  });
+  assertUniqueIds({
+    ids: source.matches.map((match) => match.id),
+    code: BRACKET_ERROR_CODES.DUPLICATE_MATCH,
+    kind: 'Match',
+  });
+
   const normalizedSource = sortSourceMatchesByRoundOrder(source);
 
   const participants = createParticipantsMapBase(normalizedSource);

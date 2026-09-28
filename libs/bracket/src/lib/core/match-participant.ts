@@ -35,9 +35,17 @@ export const createNewMatchParticipantBase = <TRoundData, TMatchData>(
   rounds: BracketMap<BracketRoundId, BracketRoundWithRelationsBase<TRoundData>>,
   matchRoundId: BracketRoundId,
   participants: BracketMap<MatchParticipantId, BracketParticipantWithRelationsBase>,
+  sourceMatchesById?: ReadonlyMap<string, BracketMatchSource<TMatchData>>,
   // eslint-disable-next-line max-params -- builder maps one source participant to a bracket node; its lookups are distinct positional inputs
 ) => {
   if (!participantId) return null;
+
+  const findSourceMatch = (matchId: string | undefined) =>
+    matchId === undefined
+      ? undefined
+      : sourceMatchesById
+        ? sourceMatchesById.get(matchId)
+        : source.matches.find((m) => m.id === matchId);
 
   const participantBase = participants.getOrThrow(participantId);
   const roundBase = rounds.getOrThrow(matchRoundId as BracketRoundId);
@@ -60,7 +68,7 @@ export const createNewMatchParticipantBase = <TRoundData, TMatchData>(
 
   for (let i = 0; i < matchIndex; i++) {
     const previousMatchId = participantBase.matchIds[i];
-    const previousMatch = source.matches.find((m) => m.id === previousMatchId);
+    const previousMatch = findSourceMatch(previousMatchId);
     const myPreviousMatchSide =
       previousMatch?.home === participantId ? 'home' : previousMatch?.away === participantId ? 'away' : null;
 
@@ -84,10 +92,7 @@ export const createNewMatchParticipantBase = <TRoundData, TMatchData>(
     source.mode === TOURNAMENT_MODE.DOUBLE_ELIMINATION ||
     source.mode === TOURNAMENT_MODE.SWISS_WITH_ELIMINATION;
 
-  // Means the current match is loss and it's the last match of the participant
   let isEliminated = false;
-
-  // Always true for single elimination, never for e.g. groups, depends on the round for double elimination, depends on the loss count for swiss with elimination
   let isEliminationMatch = false;
 
   if (hasElimination) {
@@ -123,7 +128,7 @@ export const createNewMatchParticipantBase = <TRoundData, TMatchData>(
 
           const previousMatchIndex = currentMatchIndex - 1;
           const previousMatchId = participantBase.matchIds[previousMatchIndex];
-          const previousMatch = source.matches.find((m) => m.id === previousMatchId);
+          const previousMatch = findSourceMatch(previousMatchId);
 
           if (!previousMatch)
             throw new BracketRuntimeError(

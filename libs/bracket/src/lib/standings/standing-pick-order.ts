@@ -10,7 +10,7 @@ export type StandingPick = {
  * The order to show a group table in before anyone moves a row: every stored pick takes the position it was
  * stored on, and the participants without one follow in the order the backend listed them, filling the gaps.
  *
- * A pick the field cannot hold is dropped rather than drawn - a position outside
+ * A pick the field cannot hold is dropped rather than drawn - a position that is not an integer in
  * `1..participantIds.length`, an id that is not in the field, a second pick for a position or for a
  * participant already placed (the lowest position keeps it). The result is therefore always a permutation
  * of `participantIds`.
@@ -28,6 +28,7 @@ export const standingPickStartOrder = (options: {
 
   for (const pick of [...picks].sort((left, right) => left.position - right.position)) {
     const holds =
+      Number.isInteger(pick.position) &&
       pick.position >= 1 &&
       pick.position <= participantIds.length &&
       field.has(pick.participantId) &&

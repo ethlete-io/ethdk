@@ -44,6 +44,24 @@ describe('createBracket', () => {
     ).toThrowError(/^ET3401:/);
   });
 
+  it('reports ET3403 for two rounds that share an id', () => {
+    expect(() =>
+      createBracket(
+        { ...source, rounds: [...source.rounds, source.rounds[0]!] },
+        { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT },
+      ),
+    ).toThrowError(/^ET3403:/);
+  });
+
+  it('reports ET3404 for two matches that share an id', () => {
+    expect(() =>
+      createBracket(
+        { ...source, matches: [...source.matches, { ...source.matches[0]!, home: 'e', away: 'f' }] },
+        { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT },
+      ),
+    ).toThrowError(/^ET3404:/);
+  });
+
   it('links a stage whose rounds are all still waiting for their draw', () => {
     const bracket = createBracket({ ...source, matches: [] }, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT });
 

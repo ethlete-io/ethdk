@@ -42,6 +42,7 @@ export const createMatchesMapBase = <TRoundData, TMatchData>(
   // eslint-disable-next-line max-params -- builder threads the source plus its round and participant lookup maps
 ) => {
   const map: BracketMap<BracketMatchId, BracketMatchWithRelationsBase<TMatchData>> = new BracketMap();
+  const sourceMatchesById = new Map(source.matches.map((match) => [match.id, match]));
 
   for (const match of source.matches) {
     const genericRound = rounds.get(match.roundId as BracketRoundId);
@@ -89,6 +90,7 @@ export const createMatchesMapBase = <TRoundData, TMatchData>(
       rounds,
       roundToUse.id,
       participants,
+      sourceMatchesById,
     );
     const away = createNewMatchParticipantBase(
       source,
@@ -97,6 +99,7 @@ export const createMatchesMapBase = <TRoundData, TMatchData>(
       rounds,
       roundToUse.id,
       participants,
+      sourceMatchesById,
     );
     const winner = match.winner === 'home' ? home : match.winner === 'away' ? away : null;
 

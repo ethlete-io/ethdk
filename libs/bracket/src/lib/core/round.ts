@@ -53,6 +53,12 @@ export type GroupBracketRoundType = (typeof GROUP_BRACKET_ROUND_TYPE)[keyof type
 export type BracketRoundType =
   SingleEliminationBracketRoundType | DoubleEliminationBracketRoundType | SwissBracketRoundType | GroupBracketRoundType;
 
+export const TERMINAL_ROUND_SORT_PRIORITY: Partial<Record<string, number>> = {
+  [COMMON_BRACKET_ROUND_TYPE.FINAL]: 1,
+  [DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.REVERSE_FINAL]: 2,
+  [COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE]: 3,
+};
+
 export type BracketRoundBase<TRoundData> = {
   /**
    * How deep this round sits in its own bracket - 0 for the opening round, counted separately for the
@@ -100,14 +106,8 @@ export const createRoundsMapBase = <TRoundData, TMatchData>(
 
   const splitRoundsRest: BracketRoundWithRelationsBase<TRoundData>[] = [];
 
-  const terminalRoundSortPriority: Partial<Record<string, number>> = {
-    [COMMON_BRACKET_ROUND_TYPE.FINAL]: 1,
-    [DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.REVERSE_FINAL]: 2,
-    [COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE]: 3,
-  };
-
   const orderedRounds = [...source.rounds].sort(
-    (a, b) => (terminalRoundSortPriority[a.type] ?? 0) - (terminalRoundSortPriority[b.type] ?? 0),
+    (a, b) => (TERMINAL_ROUND_SORT_PRIORITY[a.type] ?? 0) - (TERMINAL_ROUND_SORT_PRIORITY[b.type] ?? 0),
   );
 
   for (const [roundIndex, round] of orderedRounds.entries()) {

@@ -35,6 +35,10 @@ describe('standingPickStartOrder', () => {
     expect(startOrder([{ position: 0, participantId: 'd' }])).toEqual(['a', 'b', 'c', 'd']);
   });
 
+  it('drops a pick for a position that is not a whole number', () => {
+    expect(startOrder([{ position: 1.5, participantId: 'c' }])).toEqual(['a', 'b', 'c', 'd']);
+  });
+
   it('drops a pick naming a participant that is not in the field', () => {
     expect(startOrder([{ position: 1, participantId: 'z' }])).toEqual(['a', 'b', 'c', 'd']);
   });
