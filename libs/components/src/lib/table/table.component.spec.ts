@@ -1452,7 +1452,13 @@ describe('TableComponent', () => {
     @Component({
       template: `
         <et-table [columns]="cols" [data]="data" (rowClick)="clicked = $event" etTableSelection rowInteractive>
-          <ng-template [etTableCell]="cols.act"><button class="act" type="button">Act</button></ng-template>
+          <ng-template [etTableCell]="cols.act">
+            <button class="act" type="button">Act</button>
+            <label class="label">Label <input type="checkbox" /></label>
+            <span class="editable" contenteditable="true">Edit</span>
+            <span class="switch" role="switch" aria-checked="false">Switch</span>
+            <span class="popup" aria-haspopup="menu">Menu</span>
+          </ng-template>
         </et-table>
       `,
       imports: [TABLE_IMPORTS, TABLE_SELECTION_IMPORTS],
@@ -1513,6 +1519,16 @@ describe('TableComponent', () => {
       const button = host.querySelector('.et-table-row button.act') as HTMLElement;
 
       button.click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.clicked).toBeNull();
+    });
+
+    it.each(['label', 'editable', 'switch', 'popup'])('ignores clicks on in-cell %s content', (kind) => {
+      const fixture = build();
+      const target = hostOf(fixture).querySelector(`.et-table-row .${kind}`) as HTMLElement;
+
+      target.click();
       fixture.detectChanges();
 
       expect(fixture.componentInstance.clicked).toBeNull();

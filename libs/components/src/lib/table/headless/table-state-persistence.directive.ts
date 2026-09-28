@@ -25,6 +25,14 @@ export type TableStatePersistenceConfig = TableFeatureConfig &
     kind?: TableStateStorageKind;
   };
 
+// The feature host first: outside a table it throws the labelled ET3501, where injecting
+// `TableComponent` directly would throw a NullInjectorError.
+const injectHostTable = () => {
+  injectTableFeatureHost('etTableStatePersistence');
+
+  return inject<TableComponent<unknown>>(TableComponent);
+};
+
 /**
  * Opt-in persistence for a table's setup - column order, visibility, widths, sort, filters, expanded
  * rows and whatever the imported features contribute (a selection). Restores when the table first
@@ -47,7 +55,7 @@ export type TableStatePersistenceConfig = TableFeatureConfig &
 })
 export class TableStatePersistenceDirective {
   /** The host table whose state is persisted. */
-  public table = inject<TableComponent<unknown>>(TableComponent);
+  public table = injectHostTable();
 
   /** See {@link TableStatePersistenceConfig}. */
   public config = input({} as TableStatePersistenceConfig, {
@@ -72,10 +80,6 @@ export class TableStatePersistenceDirective {
   private rendered = signal(false);
 
   constructor() {
-    // Registered through the feature host so `[etTableStatePersistence]` outside a table throws the
-    // same labelled error as every other feature.
-    injectTableFeatureHost('etTableStatePersistence');
-
     // Restore after the first render, not in the constructor: the columns the state refers to are
     // reconciled against the table's own definitions, which need the inputs to have arrived.
     afterNextRender(() => this.rendered.set(true), { injector: inject(Injector) });

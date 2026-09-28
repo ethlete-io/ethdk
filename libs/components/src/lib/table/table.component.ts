@@ -60,6 +60,7 @@ import {
   TableCellPinning,
   TableCellPlaceholder,
   TableColumnPinning,
+  TableFeatureHost,
   TableHeaderRow,
   TablePageStickyHeader,
   TableRowDetail,
@@ -87,6 +88,7 @@ import {
   TableErrorContext,
   TableExpandedRowContext,
   TableFilter,
+  TableRowKey,
   TableRowLink,
   TableMultiSort,
   TableSort,
@@ -96,15 +98,6 @@ import {
   TableTemplateSlot,
 } from './table.types';
 
-/**
- * The rendered shape of the table, resolved from the signals **before** the template runs.
- *
- * The template binds fields, never calls methods: a method in a binding re-runs on every change
- * detection with nothing to memoize it, and in a table that means row-count × column-count calls per
- * pass. Each `…Vm` below is one `computed`, so the same work happens once per actual change and the
- * template is a plain projection of it. (Event bindings still call methods - that's the one place a
- * call belongs.)
- */
 /** One leading utility cell (selection, expander) - identical chrome in every row kind. */
 type TableLeadCellVm = {
   key: string;
@@ -200,10 +193,14 @@ const defaultTrack = (minWidth: number) => `minmax(${minWidth}px, 1fr)`;
 
 /**
  * Trailing track that soaks up the room left over by all-rigid columns - see
- * {@link TableComponent.hasFiller}. Slack, not a column, so unlike {@link DEFAULT_TRACK} it has no
+ * {@link TableComponent.hasFiller}. Slack, not a column, so unlike {@link defaultTrack} it has no
  * floor: it must be free to collapse to nothing.
  */
 const FILLER_TRACK = 'minmax(0, 1fr)';
+
+const INTERACTIVE_TAGS = /* @__PURE__ */ new Set(['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA', 'LABEL']);
+
+const INTERACTIVE_ROLES = /* @__PURE__ */ new Set(['button', 'link', 'checkbox', 'switch', 'menuitem', 'tab']);
 
 /**
  * Whether a `grid-template-columns` track grows into leftover space: `auto` tracks are stretched by
@@ -286,7 +283,7 @@ let uniqueTableId = 0;
     '(scroll)': 'syncScrollState()',
   },
 })
-export class TableComponent<T> {
+export class TableComponent<T> implements TableFeatureHost {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   protected injector = inject(Injector);
   private destroyRef = inject(DestroyRef);
@@ -311,10 +308,10 @@ export class TableComponent<T> {
   public columns = input<TableColumns<T>>({});
 
   /**
-   * Stable per-row identity for change tracking (and, later, row-keyed state such
-   * as selection/expansion). Defaults to row reference identity.
+   * Stable per-row identity for change tracking and row-keyed state (selection, expansion). Defaults
+   * to row reference identity.
    */
-  public rowKey = input<(row: T) => string | number>();
+  public rowKey = input<TableRowKey<T>>();
 
   /**
    * Wording for this table only, on top of the injected {@link TABLE_LABELS} set. Prefer
@@ -629,7 +626,6 @@ export class TableComponent<T> {
     return window && (window.enabled?.() ?? true) ? window : null;
   });
 
-  // Inline-start offset for the auto-pinned expander column (it sits after the select column).
   // Recompute sticky-column offsets when the host resizes (column widths change).
   private hostDimensions = signalHostElementDimensions();
 
@@ -1932,7 +1928,7 @@ export class TableComponent<T> {
     const pinning = this.columnPinning();
 
     if (!pinning?.pin) {
-      if (ngDevMode) {
+      if (isDevMode()) {
         throw new RuntimeError(
           TABLE_ERROR_CODES.MISSING_STICKY_COLUMNS,
           '[et-table] pinColumn() needs the sticky-columns feature to pin anything. Add `etTableStickyColumns` to the table and import TABLE_STICKY_COLUMNS_IMPORTS.',
@@ -2157,10 +2153,6 @@ export class TableComponent<T> {
     if (!source?.sort) this.sort.set(sort);
   }
 
-  // ── Render models ───────────────────────────────────────────────────────
-  // See the `…Vm` types above: everything the template binds is resolved here, so a binding is a field
-  // read rather than a call the framework has to repeat on every change-detection pass.
-
   // Walk the event's composed path up to the row element; bail if it passed through anything the
   // user meant to click instead of the row (a control, a menu trigger, or a utility cell). Uses
   // composedPath (not `.closest()`, which the styleguide forbids) so it also works across shadow roots.
@@ -2169,10 +2161,9 @@ export class TableComponent<T> {
       if (target === event.currentTarget) break;
       if (!(target instanceof HTMLElement)) continue;
 
-      const tag = target.tagName;
-
-      if (tag === 'BUTTON' || tag === 'A' || tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return true;
-      if (target.hasAttribute('etMenuTrigger') || target.getAttribute('role') === 'button') return true;
+      if (INTERACTIVE_TAGS.has(target.tagName)) return true;
+      if (INTERACTIVE_ROLES.has(target.getAttribute('role') ?? '') || target.hasAttribute('aria-haspopup')) return true;
+      if (target.hasAttribute('contenteditable') && target.getAttribute('contenteditable') !== 'false') return true;
       if (target.classList.contains('et-table-select-cell') || target.classList.contains('et-table-expander-cell')) {
         return true;
       }

@@ -377,8 +377,8 @@ export type TableHeaderGroup = {
   span: number;
 };
 
-/** A reference to a row, derived from a consumer-provided `rowKey`, or the row itself. */
-export type TableRowKey = (row: unknown) => string | number;
+/** A table's `rowKey`: the stable identity of a row. */
+export type TableRowKey<T = unknown> = (row: T) => string | number;
 
 /**
  * Where a row links to - what a `rowLink` callback answers with.

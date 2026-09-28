@@ -1,10 +1,12 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { RuntimeError } from '@ethlete/core';
 import '../../../test-helpers';
 import { TableSelectionDirective } from '../table-selection.directive';
 import { TableStatePersistenceDirective } from './table-state-persistence.directive';
 import { createTableStateStorage } from './table-state-storage';
 import { TableComponent } from '../table.component';
+import { TABLE_ERROR_CODES } from '../table-errors';
 import { TABLE_IMPORTS, TABLE_SELECTION_IMPORTS, TABLE_STATE_PERSISTENCE_IMPORTS } from '../table.imports';
 import { TableColumns, TableState } from '../table.types';
 
@@ -208,5 +210,17 @@ describe('TableStatePersistenceDirective', () => {
 
       expect(JSON.parse(host.storage.getItem('other') ?? 'null').columns[0].sort).toBe('desc');
     });
+  });
+
+  it('throws a labelled error when used outside a table', () => {
+    @Component({
+      template: `<div etTableStatePersistence></div>`,
+      imports: [TABLE_STATE_PERSISTENCE_IMPORTS],
+    })
+    class OrphanComponent {}
+
+    expect(() => TestBed.createComponent(OrphanComponent)).toThrow(
+      expect.objectContaining({ code: TABLE_ERROR_CODES.FEATURE_OUTSIDE_TABLE }) as unknown as RuntimeError<number>,
+    );
   });
 });
