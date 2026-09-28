@@ -8,7 +8,7 @@ export const isRichTextRootNode = (node: unknown): node is RichTextResponse => {
   return isObject(node) && 'nodeType' in node && node['nodeType'] === 'document';
 };
 
-const NODE_TYPE_TAGS: Record<string, keyof HTMLElementTagNameMap> = {
+const NODE_TYPE_TAGS: Record<string, keyof HTMLElementTagNameMap> = /* @__PURE__ */ (() => ({
   [CF_BLOCKS.HEADING_1]: 'h1',
   [CF_BLOCKS.HEADING_2]: 'h2',
   [CF_BLOCKS.HEADING_3]: 'h3',
@@ -25,9 +25,9 @@ const NODE_TYPE_TAGS: Record<string, keyof HTMLElementTagNameMap> = {
   [CF_BLOCKS.TABLE_ROW]: 'tr',
   [CF_BLOCKS.TABLE_CELL]: 'td',
   [CF_BLOCKS.TABLE_HEADER_CELL]: 'th',
-};
+}))();
 
-const INLINE_NODE_TYPES = new Set<string>(Object.values(CF_INLINES));
+const INLINE_NODE_TYPES = /* @__PURE__ */ (() => new Set<string>(Object.values(CF_INLINES)))();
 
 /**
  * The html element a structural rich text node renders as. A node type without an element
