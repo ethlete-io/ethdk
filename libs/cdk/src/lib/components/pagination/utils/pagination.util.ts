@@ -18,7 +18,7 @@ export const paginate = (value?: PaginateOptions | null) => {
     return null;
   }
 
-  const currentUrl = new URL(window.location.href);
+  const currentUrl = new URL(value.currentUrl ?? window.location.href);
 
   const createUrl = (page: number) => {
     const url = new URL(currentUrl.href);

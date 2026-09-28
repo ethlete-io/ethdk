@@ -24,6 +24,13 @@ export type PaginateOptions = {
    * @default 1
    */
   firstPage?: number;
+
+  /**
+   * The absolute url the page urls are built from. Pass it when calling `paginate` outside a browser.
+   *
+   * @default window.location.href
+   */
+  currentUrl?: string;
 };
 
 /**

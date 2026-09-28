@@ -1,5 +1,5 @@
 import { coerceElement } from '@angular/cdk/coercion';
-import { AsyncPipe } from '@angular/common';
+import { AsyncPipe, DOCUMENT } from '@angular/common';
 import {
   Component,
   ElementRef,
@@ -37,6 +37,7 @@ import { paginate } from '../../utils';
 export class PaginationComponent implements OnInit, OnDestroy {
   private _pageControlSubscription = Subscription.EMPTY;
   private _paginationHeadService = inject(PaginationHeadService);
+  private _document = inject(DOCUMENT);
 
   // TODO: Skipped for migration because:
   //  Accessor inputs cannot be migrated as they are too complex.
@@ -138,7 +139,13 @@ export class PaginationComponent implements OnInit, OnDestroy {
 
     const pageValue = this.pageControl.value ?? 1;
 
-    this.pages$.next(paginate({ currentPage: pageValue, totalPageCount: this.totalPages }));
+    this.pages$.next(
+      paginate({
+        currentPage: pageValue,
+        totalPageCount: this.totalPages,
+        currentUrl: this._document.location.href,
+      }),
+    );
   }
 
   private _updateHead() {

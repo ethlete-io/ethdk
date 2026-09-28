@@ -64,7 +64,7 @@ export class PaginationHeadService implements OnDestroy {
       });
 
       const relativeUrl = this._router.serializeUrl(urlTree);
-      const canonicalUrl = `${window.location.origin}${relativeUrl}`;
+      const canonicalUrl = `${this._document.location.origin}${relativeUrl}`;
 
       const element = this._getCanonicalElement(true);
       element.setAttribute('rel', 'canonical');
