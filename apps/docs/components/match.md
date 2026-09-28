@@ -36,7 +36,7 @@ view-model owned by this library - and an **adapter** maps whatever your backend
 type NormalizedMatch = {
   id: string;
   status: 'scheduled' | 'live' | 'finished';
-  startTime: Date | null; // null = unscheduled
+  startTime: Date | null; // null = unscheduled; an invalid Date draws no kick-off
   home: NormalizedMatchParticipant | null; // null = a TBD slot
   away: NormalizedMatchParticipant | null;
   homeState?: 'occupied' | 'predicted' | 'unresolvable' | 'unavailable';
@@ -177,6 +177,7 @@ The card is **dumb about transport**: it compares the values it is given against
 | Behaviour                     | Rule                                                                           |
 | ----------------------------- | ------------------------------------------------------------------------------ |
 | First render                  | Never animates - a list arriving with scores on it hasn't seen anything happen |
+| A different `match.id`        | Treated as a first render: no roll, no `scoreChange`                           |
 | `status` other than `'live'`  | Never animates; a finished result arriving with the page is not a moment       |
 | `animateScoreChanges` `false` | No movement, everything else unchanged                                         |
 | `prefers-reduced-motion`      | Instant swap, no flash                                                         |
@@ -194,8 +195,8 @@ protected onGoal(change: MatchScoreChange) {
 }
 ```
 
-It fires on **any** change after the first render, live or not - a corrected result is still a change your
-app may want to know about. Only the animation is gated to live.
+It fires on **any** change after the first render, live or not, while `match.id` stays the same - a
+corrected result is still a change your app may want to know about. Only the animation is gated to live.
 
 ## The card is the link
 
@@ -370,7 +371,7 @@ the card and read the state off it.
 | `separatorText()`                             | `string`                        | What goes between the sides in the wide row               |
 | `gameScores()`                                | `NormalizedGameScore[] \| null` | The series breakdown                                      |
 | `gameScoreText(gameScore)`                    | `string`                        | One game in the same `'13 : 11'` shape                    |
-| `formattedStartTime()`                        | `string \| null`                | Kick-off in the active locale                             |
+| `formattedStartTime()`                        | `string \| null`                | Kick-off in the active locale, `null` for an invalid date |
 | `accessibleName()`                            | `string`                        | The composed name (also bound to the host's `aria-label`) |
 | `isLive()` / `isFinished()` / `isScheduled()` | `boolean`                       | The status, as three predicates                           |
 | `showsShortNames()`                           | `boolean`                       | Whether participants render as codes                      |

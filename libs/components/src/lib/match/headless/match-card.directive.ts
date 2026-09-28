@@ -10,7 +10,7 @@ import {
   output,
   untracked,
 } from '@angular/core';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { injectDateLocale } from '../../forms/date-time/date-time-formats';
 import { injectMatchLabels, MatchLabels } from '../match-labels';
 import { matchParticipantDisplayName } from '../match-participant-name';
@@ -272,15 +272,15 @@ export class MatchCardDirective {
    * cannot see on its own.
    *
    * The first render has no previous pair and therefore no changes - a list arriving with scores already
-   * on it must not animate.
+   * on it must not animate. Neither does a different match taking the card's place.
    */
   private scoreTransition = linkedSignal<
-    { home: number | string | null; away: number | string | null },
+    { id: string; home: number | string | null; away: number | string | null },
     MatchScoreTransition
   >({
-    source: () => ({ home: this.match().homeScore, away: this.match().awayScore }),
+    source: () => ({ id: this.match().id, home: this.match().homeScore, away: this.match().awayScore }),
     computation: (source, previous) => {
-      if (!previous) return NO_TRANSITION;
+      if (!previous || previous.source.id !== source.id) return NO_TRANSITION;
 
       return {
         home:
@@ -295,11 +295,11 @@ export class MatchCardDirective {
     },
   });
 
-  /** The kick-off in the active locale, or `null` when the match is unscheduled. */
+  /** The kick-off in the active locale, or `null` when the match is unscheduled or its start time is invalid. */
   public formattedStartTime = computed(() => {
     const startTime = this.match().startTime;
 
-    if (!startTime) return null;
+    if (!startTime || !isValid(startTime)) return null;
 
     return format(startTime, this.startTimeFormat() ?? DEFAULT_MATCH_CARD_START_TIME_FORMAT, {
       locale: this.dateLocale ?? undefined,

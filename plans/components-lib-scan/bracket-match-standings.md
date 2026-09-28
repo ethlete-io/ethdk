@@ -30,8 +30,6 @@ Scan of `libs/components/src/lib/bracket/`, `libs/components/src/lib/match/`, `l
 
 ## match
 
-- Medium: the score transition ignores the match id (`match/headless/match-card.directive.ts:277-296`), and so does `MatchScoreComponent`'s revision (`match/match-score.component.ts:44-50`). The bracket grid tracks cells by `$index` (`bracket/bracket.component.html:60,67`), so a re-layout (swiss groups reshuffle) gives a live card a different match. The card then emits `scoreChange` and rolls the digits from the old match's score. Reset the transition when `match().id` changes. S Verified. `scoreChange` emits on the swap even for a non-live card; the roll runs only for a live one.
-- Medium: `format()` throws a `RangeError` for an Invalid Date (`match/headless/match-card.directive.ts:299-307`). The Ethlete normalizer builds `new Date(match.startTime)` without a check (`match/integrations/ethlete.ts:139`), so one malformed timestamp breaks the card. Check `isValid` and return `null`. S Verified (repro).
 - Low: the first `animationend` (the 220ms digit) clears the 520ms flash (`match/match-score.component.ts:18,72-77`). The flash disappears near its peak. `settleFlash` only calls `settle`. S
 - Low: the default `matchName` and `resultName` labels hardcode "Live", "Finished", "vs.", "won", "Draw" and "points" (`match/match-labels.ts:92-112`). An app that localizes `live`, `finished` and `versus` still hears English in the accessible name. The normalizer's `Match ${n}` label is also hardcoded (`match/integrations/ethlete.ts:151`). S
 - Low: the seed badge puts `aria-label` on a generic `<span>` (`match/match-participant.component.ts:74`). Many screen readers ignore it. Use visually hidden text. S

@@ -37,15 +37,18 @@ export class MatchScoreComponent {
   /** Roll the value when it changes. @default false */
   public animate = input(false, { transform: booleanAttribute });
 
+  /** What the value belongs to, e.g. a match id. When it changes, the new value is drawn without a roll. */
+  public subject = input<unknown>(null);
+
   /**
    * The value's history as one number: it goes up on every change, which is what makes `@for` replace the
    * element and the CSS animation run again. `previous` is what the outgoing element draws.
    */
-  private revision = linkedSignal<string, { key: number; previous: string | null }>({
-    source: () => this.value(),
-    computation: (_value, previous) => ({
+  private revision = linkedSignal<{ value: string; subject: unknown }, { key: number; previous: string | null }>({
+    source: () => ({ value: this.value(), subject: this.subject() }),
+    computation: (source, previous) => ({
       key: (previous?.value.key ?? 0) + 1,
-      previous: previous ? previous.source : null,
+      previous: previous && previous.source.subject === source.subject ? previous.source.value : null,
     }),
   });
 

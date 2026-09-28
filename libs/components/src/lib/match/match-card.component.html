@@ -37,6 +37,7 @@
         <et-match-score
           [value]="card.match().homeScore + ''"
           [animate]="card.animatesScoreChanges()"
+          [subject]="card.match().id"
           class="et-match-card-score"
           aria-hidden="true"
         />
@@ -62,6 +63,7 @@
         <et-match-score
           [value]="card.match().awayScore + ''"
           [animate]="card.animatesScoreChanges()"
+          [subject]="card.match().id"
           class="et-match-card-score"
           aria-hidden="true"
         />

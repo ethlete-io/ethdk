@@ -286,6 +286,16 @@ describe('MatchCardComponent', () => {
       expect(driver.query('.et-match-card-time')).toBeNull();
     });
 
+    it('leaves the kick-off out when the start time is not a valid date', () => {
+      const driver = create();
+
+      driver.host.match.set({ ...FINISHED, startTime: new Date('not a date') });
+      driver.detectChanges();
+
+      expect(driver.query('.et-match-card-time')).toBeNull();
+      expect(driver.text('.et-match-card-label')).toBe('Match 3');
+    });
+
     it('is left out entirely when there is nothing to put in it', () => {
       const driver = create();
 
@@ -408,6 +418,19 @@ describe('MatchCardComponent', () => {
       driver.detectChanges();
 
       expect(digits(driver)).toEqual(['2/out', '3/in', '1/static']);
+    });
+
+    it('treats a different match as a new card, not a score change', () => {
+      const driver = create();
+
+      driver.host.match.set(live);
+      driver.detectChanges();
+
+      driver.host.match.set({ ...live, id: 'm2', homeScore: 0, awayScore: 0 });
+      driver.detectChanges();
+
+      expect(driver.host.changes).toEqual([]);
+      expect(digits(driver)).toEqual(['0/static', '0/static']);
     });
 
     it('does not roll a finished match - a result arriving late is not a moment', () => {
