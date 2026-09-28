@@ -36,10 +36,6 @@ Scan of `libs/components/src/lib/table/table-*.{ts,html,css}` (top level, specs 
 
 - Medium: The offset effect reads `getBoundingClientRect()` inside a plain `effect` (`table-sticky-columns.directive.ts:117-214`). It re-runs only on a host resize or a `columnWidths()` change. A column with an `auto` or content-sized track changes width when the data changes, and the pinned offsets then stay stale. The effect also forces a synchronous layout during change detection. Move the measurement to `afterRenderEffect` (read phase) and track `rows()`. M Verified. The default track `minmax(<min>px, 1fr)` does not depend on content, so only a consumer `width` such as `'1fr'` or `'auto'` hits it.
 
-## Group headers
-
-- Medium: `rowHeight` gets the header-row component's `blockSize` signal in that component's constructor (`table-group-header-row.component.ts`), and nothing clears it. After `[etTableGroupHeaders]="{ enabled: false }"` destroys the row, `--_et-table-group-h` keeps the last height (`table-group-headers.directive.ts:28`). The column-header row then sticks with a gap above it. Reset `rowHeight` on destroy, or gate `groupRowHeight` on `enabled`. S Verified. `signalElementDimensions` only disconnects its observer on destroy and keeps the last value.
-
 ## Other
 
 - Low: `TableCellErrorTooltipDirective` calls `inject(TableComponent)` without `optional` in a field initializer (`table-cell-error-tooltip.directive.ts:26`). This runs before `injectTableFeatureHost`, so outside a table the user gets a `NullInjectorError`, not the labelled error 3501 that the comment promises. S

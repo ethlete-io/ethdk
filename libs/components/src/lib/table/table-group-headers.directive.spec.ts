@@ -123,4 +123,31 @@ describe('TableGroupHeadersDirective', () => {
 
     expect(queryAll(fixture, '.et-table-group-cell')).toHaveLength(0);
   });
+
+  it('drops the sticky offset of the group row once the feature is disabled', () => {
+    @Component({
+      template: ` <et-table [columns]="cols" [data]="data" [etTableGroupHeaders]="{ enabled: enabled() }" /> `,
+      imports: [TABLE_IMPORTS, TABLE_GROUP_HEADERS_IMPORTS],
+    })
+    class ToggleHost {
+      public cols = grouped();
+      public data = PEOPLE;
+      public enabled = signal(true);
+      public feature = viewChild.required(TableGroupHeadersDirective);
+    }
+
+    const fixture = TestBed.createComponent(ToggleHost);
+    fixture.detectChanges();
+    fixture.componentInstance.feature().rowHeight.set(signal(24));
+    fixture.detectChanges();
+
+    const host = query(fixture, 'et-table')!;
+    expect(host.style.getPropertyValue('--_et-table-group-h')).toBe('24px');
+
+    fixture.componentInstance.enabled.set(false);
+    fixture.detectChanges();
+
+    expect(queryAll(fixture, '.et-table-group-cell')).toHaveLength(0);
+    expect(host.style.getPropertyValue('--_et-table-group-h')).toBe('0px');
+  });
 });

@@ -44,7 +44,9 @@ export class TableGroupHeadersDirective {
    */
   public rowHeight = signal<Signal<number> | null>(null);
 
-  protected groupRowHeight = computed(() => this.rowHeight()?.() ?? 0);
+  private enabled = computed(() => this.config().enabled ?? true);
+
+  protected groupRowHeight = computed(() => (this.enabled() ? (this.rowHeight()?.() ?? 0) : 0));
 
   /**
    * The spanning row as maximal runs of adjacent visible columns sharing a `group`. Ungrouped columns
@@ -75,7 +77,7 @@ export class TableGroupHeadersDirective {
     this.table.registerHeaderRow({
       component: TableGroupHeaderRowComponent,
       injector: inject(Injector),
-      enabled: computed(() => this.config().enabled ?? true),
+      enabled: this.enabled,
     });
   }
 }
