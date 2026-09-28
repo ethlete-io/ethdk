@@ -156,11 +156,22 @@ auto-mode.ts` runs `writeTicketWithAgent$` once per band and stand-in, names unn
 - Settled in slice 2: a CLI write returns `queued` at once and never blocks; a queued item expires
   at the end of the day it was asked on, and a decided one is kept for 7 days.
 - Settled in ADR 0035: auto mode runs on the current day only.
-- Goal, not started: auto mode notices that a call went off topic and suggests hiding its unnamed
-  rest bands. Recommendation: no transcript or audio content; use the calendar meeting's end, the
-  rest band's length and the lack of other work evidence, and queue it as a `local` suggestion the
-  user confirms. Signals, cheapest first: window focus and desk input in other apps while the call
-  runs (already collected); then a voice-activity flag per quarter from the microphone and the
-  call's playback level (a level only, never audio content). Discord's mute state is not visible:
-  a mute does not change the PipeWire capture node (measured 2026-09-15), and Discord RPC needs an
-  approved OAuth app.
+- Off-topic call rests. Auto mode notices that a call went off topic and suggests hiding its
+  unnamed rest bands. No transcript or audio content. Discord's mute state is not visible: a mute
+  does not change the PipeWire capture node (measured 2026-09-15), and Discord RPC needs an approved
+  OAuth app.
+  - First slice: done (2026-09-28). `offTopicRests` in `review/off-topic-rest.ts`: a rest band
+    (`isRestOfEndedCall`, the band a call ran on into after the user ended its named row) of today,
+    at least 30 minutes long, with no calendar occurrence over it, the call's own app focused for at
+    most 5% of it and other apps for at least 60% (time away counts toward neither). It waits as an
+    `autoMode.hide` item (target `day|hide:rowId`, class follows `autoMode.apply`, none at
+    `human-only`) on the band's chip and edit surface; approve hides the row (`show` undoes it). An
+    item of any state holds the band, so a rejected one is never asked again. e2e:
+    `off-topic-rest.spec.ts`.
+  - Real data (`day.inputs` and `day.events`, 2026-09-22 to 09-28): one real rest band so far (09-28,
+    90 min, call focus 3.4%, other 96.6%); the named parts of the same day's calls ran 11% to 21%.
+    Thin, so the 5% threshold is conservative. Focus alone does not tell a rest from call work: on
+    09-24 the user booked 45 minutes past a meeting's end as call work at 1.4% call focus. The user's
+    own end cut is what guards it, so this stays a suggestion.
+  - Next: a voice-activity flag per quarter from the microphone and the call's playback level (a
+    level only, never audio content), to tell a quiet room from a call the user listens to.
