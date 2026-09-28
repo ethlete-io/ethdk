@@ -52,6 +52,39 @@ own open lines; this file lists what needs a user decision and what is still que
   reader that reads without moving focus, and `aria-description` is ignored when the consumer
   sets `aria-describedby`.
 
+- time-picker: `min` > `max` now wraps past midnight (3b5a77fe9). The other option was a
+  dev-mode error.
+- icons: `provideIcons()` now merges the parent icons, and `rich-text-editor.component.ts` uses
+  `.useFactory()` (3b5a77fe9). Check that both changes are wanted.
+- form-field: `TEXT_FIELD_CONTROL_INPUTS` lists `'aria-label'` and `'aria-labelledby'` directly
+  (1a0c0805f), because Angular cannot build a spread of `ACCESSIBLE_NAME_INPUTS` in an IIFE. A
+  change to `ACCESSIBLE_NAME_INPUTS` must be copied by hand.
+- bundle: `STATE_ICONS` (progress-step) and the scheduler time-grid minute constants are still in
+  the floor bundle; see `components-lib-scan/bundle.md`.
+
+- standings: form results differ only by opacity (WCAG 1.4.1). A non-colour mark is a design call.
+- bracket: `resolveBracketComponents` bundles the default cards. Where they live (layout
+  factories, config, or an opt-in provider) is an API decision.
+- bracket: swiss `MODE_UNSUPPORTED` is unverified. Does the API leave out undrawn rounds?
+
+- loader: no default `aria-progressbar-name`. 6d1d90fe8 made "no default name" deliberate, and a
+  default name is read twice next to visible "Loading" text.
+
+- rich-text-editor: brackets in image alt text are now removed (744371337). Escaping or rejecting
+  were the other options.
+- rich-text-editor: an upload of a route-provided image tool keeps going after its editor is
+  destroyed. A cancel needs `RichTextEditorDirective` to expose its `DestroyRef`/`Injector`, or a
+  per-editor hook on the tool definition.
+
+- timetrack: the tray uses `DEFAULT_ROUND_OPTIONS.incrementMs` (15 min), the same as the rows. A
+  configured increment needs a new setting.
+
+- table: the selection checkbox, expander button and error icon are separate Tab stops. Add the
+  utility columns to the roving grid (this changes the `activeCell()`/`focusCell()` indexes), or
+  take their controls out of the Tab order.
+- table: keyboard column resize. A focusable `role="separator"` grip with arrow steps, or a
+  width step in the column menu.
+
 ## Queue
 
 - dropzone: a readonly multi-mode dropzone with files has nothing focusable.
