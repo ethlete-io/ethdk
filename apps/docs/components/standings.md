@@ -123,6 +123,7 @@ provideStandingsLabels({
   ties: 'U',
   tiesFull: 'Unentschieden',
   highlightedRow: 'Dein Verein',
+  formResultShort: (result) => (result === 'win' ? 'S' : result === 'loss' ? 'N' : 'U'),
 });
 ```
 
@@ -137,7 +138,9 @@ provideStandingsLabels({
   screen reader hears "Advances to the playoffs" on the row itself - the legend is a separate element a
   row-by-row reader never reaches.
 - **The highlighted row** is `aria-current="true"` and carries the `highlightedRow` label the same way.
-- **Form is labelled per result** ("Win", "Draw", "Loss"), since the column is a row of coloured squares.
+- **Form is never opacity-only.** Each square carries a letter (`formResultShort`: "W", "D", "L") and a
+  visually hidden word (`formResult`: "Win", "Draw", "Loss"); the letter is `aria-hidden`, so it is not read
+  twice.
 - Dropped columns are dropped from the DOM or set to `display: none`, so assistive tech never announces a
   column the reader can't see.
 
@@ -145,8 +148,8 @@ provideStandingsLabels({
 
 Colors come from the app-registered [surface and color theme](/core/theming) systems: surface tokens for the
 table's text, borders and row banding, and the zone's own color theme for its accent bar and tint. Recent
-form is drawn from surface tokens rather than a green/amber/red this library invents - the shape of the
-streak is what the column is for, and every dot is labelled.
+form is drawn from surface tokens rather than a green/amber/red this library invents - the letter inside
+each square, not its fill, tells the results apart.
 
 | Token                                | Default | What it sets                              |
 | ------------------------------------ | ------- | ----------------------------------------- |

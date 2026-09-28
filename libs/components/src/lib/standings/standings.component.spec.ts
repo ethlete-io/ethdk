@@ -146,12 +146,30 @@ describe('StandingsComponent', () => {
     driver.host.rows.set([row({ form: ['win', 'loss'] })]);
     driver.detectChanges();
 
-    const form = driver.query('.et-standings-form');
-
-    expect(form?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Win Loss');
+    expect(driver.queryAll('.et-standings-form-note').map((note) => note.textContent?.trim())).toEqual(['Win', 'Loss']);
     expect(
       driver.queryAll('.et-standings-form-result').every((dot) => dot.getAttribute('aria-hidden') === 'true'),
     ).toBe(true);
+  });
+
+  it('marks each form result with a letter, not only a fill', () => {
+    const driver = create();
+
+    driver.host.rows.set([row({ form: ['win', 'tie', 'loss'] })]);
+    driver.detectChanges();
+
+    expect(driver.queryAll('.et-standings-form-result').map((pip) => pip.textContent?.trim())).toEqual(['W', 'D', 'L']);
+  });
+
+  it('localizes the form result letters', () => {
+    const driver = mountStandings(HostComponent, [
+      provideStandingsLabels({ formResultShort: (result) => (result === 'win' ? 'S' : result === 'loss' ? 'N' : 'U') }),
+    ]);
+
+    driver.host.rows.set([row({ form: ['win', 'tie', 'loss'] })]);
+    driver.detectChanges();
+
+    expect(driver.queryAll('.et-standings-form-result').map((pip) => pip.textContent?.trim())).toEqual(['S', 'U', 'N']);
   });
 
   describe('zones', () => {

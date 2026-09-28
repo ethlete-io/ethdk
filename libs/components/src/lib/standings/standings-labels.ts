@@ -30,6 +30,8 @@ export type StandingsLabels = {
   formFull: string;
   /** One entry of the form column, e.g. `'Win'`. */
   formResult: (result: StandingsFormResult) => string;
+  /** The letter drawn inside one entry of the form column, e.g. `'W'`. */
+  formResultShort: (result: StandingsFormResult) => string;
   /** Names the zone legend for assistive tech. */
   legend: string;
   /** Announced on the highlighted row, so it is findable without seeing the highlight. */
@@ -69,6 +71,7 @@ export const DEFAULT_STANDINGS_LABELS: StandingsLabels = {
   form: 'Form',
   formFull: 'Recent form, oldest first',
   formResult: (result) => (result === 'win' ? 'Win' : result === 'loss' ? 'Loss' : 'Draw'),
+  formResultShort: (result) => (result === 'win' ? 'W' : result === 'loss' ? 'L' : 'D'),
   legend: 'What the highlighted positions mean',
   highlightedRow: 'Your team',
   pickCaption: 'Your predicted order',

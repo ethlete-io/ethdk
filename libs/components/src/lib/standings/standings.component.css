@@ -176,14 +176,20 @@
   }
 
   .et-standings-form-result {
-    inline-size: 8px;
-    block-size: 8px;
-    border-radius: 2px;
+    display: inline-grid;
+    place-items: center;
+    inline-size: 16px;
+    block-size: 16px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
   }
 
-  /* Won / drew / lost, from the surface tokens rather than a green-amber-red this file invents: the shape
-     of the streak is what the column is for, and each dot has a hidden text note for assistive tech. */
+  /* Won / drew / lost, from the surface tokens rather than a green-amber-red this file invents. The letter,
+     not the fill, is what tells them apart (WCAG 1.4.1), so it must stay legible on every fill. */
   .et-standings-form-result:where([data-result='win']) {
+    color: var(--et-surface-background-solid, white);
     background: var(--et-surface-color-solid, currentColor);
   }
 
