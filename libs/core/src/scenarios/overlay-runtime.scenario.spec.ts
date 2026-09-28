@@ -15,6 +15,13 @@ import { Scenario, useScenario } from './harness';
 })
 class ScenarioDialogComponent {}
 
+@Component({ selector: 'et-scenario-broken-dialog', template: '' })
+class ScenarioBrokenDialogComponent {
+  constructor() {
+    throw new Error('broken dialog');
+  }
+}
+
 const rootsInDocument = () => Array.from(document.querySelectorAll('.et-overlay-runtime-root'));
 
 const track = (ref: OverlayRuntimeRef) => {
@@ -159,6 +166,24 @@ describe('overlay runtime scenarios', () => {
     s.flush();
 
     expect(first.state()).toBe('closed');
+    expect(rootsInDocument()).toEqual([]);
+  });
+
+  it('leaves no host element or root behind when the component throws during mount', () => {
+    const s = scenario();
+
+    expect(() =>
+      s.run(() => injectOverlayRuntime().mount({ id: 'broken', component: ScenarioBrokenDialogComponent })),
+    ).toThrow('broken dialog');
+
+    expect(document.querySelector('[data-overlay-id="broken"]')).toBeNull();
+    expect(rootsInDocument()).toEqual([]);
+
+    const ref = open(s, 'after-broken');
+
+    ref.close();
+    s.flush();
+
     expect(rootsInDocument()).toEqual([]);
   });
 });

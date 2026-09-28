@@ -1,5 +1,6 @@
 import {
   ApplicationRef,
+  ComponentRef,
   DOCUMENT,
   DestroyRef,
   EnvironmentInjector,
@@ -221,12 +222,23 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
         providers: [{ provide: EnvironmentInjector, useValue: overlayEnvironmentInjector }],
       }) as EnvironmentInjector;
 
-      const componentRef = createComponent(config.component, {
-        environmentInjector: overlayEnvironmentInjector,
-        elementInjector,
-        hostElement: paneElement,
-        bindings: config.bindings ?? [],
-      });
+      let componentRef: ComponentRef<TComponent>;
+
+      try {
+        componentRef = createComponent(config.component, {
+          environmentInjector: overlayEnvironmentInjector,
+          elementInjector,
+          hostElement: paneElement,
+          bindings: config.bindings ?? [],
+        });
+      } catch (error) {
+        elementInjector.destroy();
+        overlayEnvironmentInjector.destroy();
+        renderer.removeChild(root, hostElement);
+        maybeDestroyRootElements(targetDocument);
+
+        throw error;
+      }
 
       // pane classes are applied after component creation - Angular replaces the host
       // element's class attribute with the component's static host class on creation
