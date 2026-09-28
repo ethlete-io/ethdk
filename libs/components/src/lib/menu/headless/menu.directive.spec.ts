@@ -389,6 +389,27 @@ describe('MenuDirective', () => {
     expect(document.activeElement).toBe(query('.item-charlie'));
   });
 
+  it('cycles through items sharing a first letter when the letter repeats', async () => {
+    fixture.componentInstance.extraLabels.set(['Echo']);
+    fixture.detectChanges();
+    await openMenu();
+
+    keydown(query('.item-alpha'), 'e');
+    tick();
+
+    expect(document.activeElement).toBe(query('.item-extra'));
+
+    keydown(query('.item-extra'), 'e');
+    tick();
+
+    expect(document.activeElement).toBe(query('.submenu-trigger'));
+
+    keydown(query('.submenu-trigger'), 'e');
+    tick();
+
+    expect(document.activeElement).toBe(query('.item-extra'));
+  });
+
   it('opens via keyboard on the trigger and focuses the last item with ArrowUp', async () => {
     keydown(trigger, 'ArrowUp');
     tick();
@@ -450,6 +471,27 @@ describe('MenuDirective', () => {
 
       expect(menu.open()).toBe(true);
       expect(document.activeElement).toBe(trigger);
+    });
+
+    it('moves focus from the trigger into the open panel on the arrow keys while autoFocus is off', async () => {
+      fixture.componentInstance.menuAutoFocus.set(false);
+      fixture.detectChanges();
+
+      trigger.focus();
+      menu.show();
+      await settle();
+
+      keydown(trigger, 'ArrowDown');
+      tick();
+
+      expect(document.activeElement).toBe(query('.item-alpha'));
+
+      trigger.focus();
+      keydown(trigger, 'ArrowUp');
+      tick();
+
+      expect(document.activeElement).toBe(query('.submenu-trigger'));
+      expect(menu.open()).toBe(true);
     });
   });
 

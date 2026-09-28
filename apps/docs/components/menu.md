@@ -164,16 +164,17 @@ This applies to root menus opening on the vertical axis. Submenus and context me
 
 ### Keyboard
 
-| Key                              | Action                                                                         |
-| -------------------------------- | ------------------------------------------------------------------------------ |
-| <kbd>↓</kbd> / <kbd>↑</kbd>      | Move the active item (wraps unless `loop` is off; integrates the search input) |
-| <kbd>→</kbd> / <kbd>←</kbd>      | Open / close a submenu level                                                   |
-| <kbd>Home</kbd> / <kbd>End</kbd> | First / last item                                                              |
-| <kbd>Enter</kbd>                 | Activate (selects and dismisses)                                               |
-| <kbd>Space</kbd>                 | Activate (selection items toggle and keep the menu open)                       |
-| <kbd>Esc</kbd>                   | Close the current level                                                        |
-| <kbd>Tab</kbd>                   | Close the whole menu tree                                                      |
-| Printable keys                   | Typeahead - or forwarded into the search input when present                    |
+| Key                                        | Action                                                                                                              |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| <kbd>↓</kbd> / <kbd>↑</kbd>                | Move the active item (wraps unless `loop` is off; integrates the search input)                                      |
+| <kbd>↓</kbd> / <kbd>↑</kbd> on the trigger | Open the menu, or move focus into the open panel (first / last item)                                                |
+| <kbd>→</kbd> / <kbd>←</kbd>                | Open / close a submenu level                                                                                        |
+| <kbd>Home</kbd> / <kbd>End</kbd>           | First / last item                                                                                                   |
+| <kbd>Enter</kbd>                           | Activate (selects and dismisses)                                                                                    |
+| <kbd>Space</kbd>                           | Activate (selection items toggle and keep the menu open)                                                            |
+| <kbd>Esc</kbd>                             | Close the current level                                                                                             |
+| <kbd>Tab</kbd>                             | Close the whole menu tree                                                                                           |
+| Printable keys                             | Typeahead (repeating a letter cycles through the items it starts) - or forwarded into the search input when present |
 
 ## Accessibility
 

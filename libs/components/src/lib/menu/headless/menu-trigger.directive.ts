@@ -85,9 +85,20 @@ export class MenuTriggerDirective {
     }
 
     if (menu.open()) {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        menu.closeAll('escape');
+      switch (event.key) {
+        case 'Escape': {
+          event.preventDefault();
+          menu.closeAll('escape');
+
+          return;
+        }
+        case 'ArrowDown':
+        case 'ArrowUp': {
+          event.preventDefault();
+          menu.focusEntry(event.key === 'ArrowDown' ? 'first' : 'last');
+
+          return;
+        }
       }
 
       return;

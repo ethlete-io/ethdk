@@ -1,13 +1,10 @@
 # menu, carousel, calendar scan - open findings
 
-Scan of `libs/components/src/lib/menu/`, `libs/components/src/lib/carousel/`, `libs/components/src/lib/calendar/` from 2026-09-28. 0 High, 1 Medium open (7 fixed 2026-09-28), 11 Low, 1 Spec (verified 2026-09-28). No security findings. Skipped: stories, specs (read only for coverage), `testing/` drivers, `scrollable/` internals the carousel calls into.
+Scan of `libs/components/src/lib/menu/`, `libs/components/src/lib/carousel/`, `libs/components/src/lib/calendar/` from 2026-09-28. 0 High, 1 Medium open (7 fixed 2026-09-28), 8 Low, 1 Spec (verified 2026-09-28). No security findings. Skipped: stories, specs (read only for coverage), `testing/` drivers, `scrollable/` internals the carousel calls into.
 
 ## menu
 
-- Low: when `autoFocus` is off and the menu is open, `ArrowDown`/`ArrowUp` on the trigger do nothing (`menu/headless/menu-trigger.directive.ts:87-94`), and the document listener handles only Escape. A keyboard user cannot get into the panel. Move focus into the panel on arrow keys while open. S
-- Low: typeahead always matches from the first enabled item (`menu/headless/menu.directive.ts:466-467`). Pressing the same letter again does not cycle to the next item with that letter. S
 - Low: hardcoded shadow colour `rgb(0 0 0 / 0.16)` as the primary value (`menu/menu.component.css:124`). Take it from a token. S
-- Low: comments outside the allowlist: restating the code at `menu/headless/menu.directive.ts:609-610,706-707`; JSDoc with rationale on `@internal` `MenuSearchStylesComponent` (`menu/menu-search-styles.component.ts:3-10`). S
 
 ## carousel
 

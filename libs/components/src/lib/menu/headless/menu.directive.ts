@@ -463,8 +463,7 @@ export class MenuDirective {
           return;
         }
 
-        const query = this.typeahead.append(event.key);
-        const match = this.enabledItems().find((item) => item.textContent().toLowerCase().startsWith(query));
+        const match = this.findTypeaheadMatch(this.typeahead.append(event.key));
 
         if (match) {
           event.preventDefault();
@@ -525,6 +524,27 @@ export class MenuDirective {
     }
 
     return false;
+  }
+
+  /** @internal Moves focus into the open panel: the search field if there is one, else the first or last item. */
+  public focusEntry(edge: 'first' | 'last') {
+    const search = this.registeredSearch();
+
+    if (search) {
+      // a query kept from the last time the menu was open gets replaced by simply typing
+      search.focus({ select: true });
+
+      return;
+    }
+
+    const items = this.enabledItems();
+    const target = edge === 'last' ? items.at(-1) : items[0];
+
+    if (target) {
+      this.setActiveItem(target);
+    } else {
+      this.registeredPanel()?.focus();
+    }
   }
 
   private isFocusInsideTree() {
@@ -606,8 +626,6 @@ export class MenuDirective {
       return;
     }
 
-    // Past an end with `loop` off, there is nowhere to go - the active item stays where it is rather
-    // than jumping to the other end of the menu.
     if (!this.loop() && (nextIndex < 0 || nextIndex >= items.length)) {
       return;
     }
@@ -618,6 +636,24 @@ export class MenuDirective {
     if (next) {
       this.setActiveItem(next);
     }
+  }
+
+  private findTypeaheadMatch(query: string) {
+    const items = this.enabledItems();
+    const repeated = [...query].every((character) => character === query[0]);
+    const needle = repeated ? query.charAt(0) : query;
+    const current = this.activeItem();
+    const start = current ? items.indexOf(current) + (repeated ? 1 : 0) : 0;
+
+    for (let step = 0; step < items.length; step++) {
+      const item = items[(start + step + items.length) % items.length];
+
+      if (item?.textContent().toLowerCase().startsWith(needle)) {
+        return item;
+      }
+    }
+
+    return null;
   }
 
   private setActiveToEdge(edge: 'first' | 'last') {
@@ -703,30 +739,10 @@ export class MenuDirective {
   }
 
   private applyInitialFocus() {
-    // A hover-opened submenu is the one case the pointer stays in charge of; everything else - a
-    // click, a key, `show()`, a write to `open` - follows `autoFocus`, or whatever `show()` asked for.
     const focus = this.requestedFocus ?? (this.openSource === 'hover' ? false : this.autoFocus());
 
-    if (!focus) {
-      return;
-    }
-
-    const search = this.registeredSearch();
-
-    if (search) {
-      // a query kept from the last time the menu was open gets replaced by simply typing
-      search.focus({ select: true });
-
-      return;
-    }
-
-    const items = this.enabledItems();
-    const target = focus === 'last' ? items.at(-1) : items[0];
-
-    if (target) {
-      this.setActiveItem(target);
-    } else {
-      this.registeredPanel()?.focus();
+    if (focus) {
+      this.focusEntry(focus === 'last' ? 'last' : 'first');
     }
   }
 
