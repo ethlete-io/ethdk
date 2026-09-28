@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { RequestError, V2QueryClient, def } from '@ethlete/query';
 import '../../../test-helpers';
 import { selectOptionsFromV2Query } from './select-options-from-v2-query';
+import { provideSelectLabels } from './select-labels';
 
 type Item = { id: string; name: string };
 type ItemsResponse = { items: Item[]; hasMore: boolean };
@@ -151,6 +152,19 @@ describe('selectOptionsFromV2Query', () => {
 
     expect(source.error()).toBeNull();
     expect(source.options()).toEqual([euro]);
+  });
+
+  it('falls back to the localized error label when the failure carries no message', async () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideSelectLabels({ error: 'Suche fehlgeschlagen' })] });
+
+    const { source } = createSource({
+      respond: () => ({ error: { ...mockError, statusText: '', detail: null } }),
+    });
+
+    await search(source, 'boom');
+
+    expect(source.error()).toBe('Suche fehlgeschlagen');
   });
 
   it('derives hasMore from the response', async () => {

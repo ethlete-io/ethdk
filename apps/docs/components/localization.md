@@ -109,7 +109,7 @@ that provides labels needs no per-instance wiring at all.
 | `DATE_TIME_LABELS`        | `provideDateTimeLabels`       | Picker triggers, range start/end, the pickers' date/time tabs, the range presets, the zoned second reading, parse errors |
 | `CALENDAR_LABELS`         | `provideCalendarLabels`       | Step/zoom controls of each view, week column (names come from `DATE_LOCALE`)                                             |
 | `TIME_PICKER_LABELS`      | `provideTimePickerLabels`     | Hours / minutes / seconds / AM-PM columns, a range's start/end side switch                                               |
-| `SELECT_LABELS`           | `provideSelectLabels`         | Panel loading/empty state, load more, create-a-value                                                                     |
+| `SELECT_LABELS`           | `provideSelectLabels`         | Panel loading/empty state, load more, create-a-value, query adapter error fallback                                       |
 | `COLOR_INPUT_LABELS`      | `provideColorInputLabels`     | The color picker panel: its dialog name, each surface, the entry field and its notation names, the eyedropper            |
 | `CASCADER_LABELS`         | `provideCascaderLabels`       | Column states, load error fallback, retry, back, search, root column heading                                             |
 | `PHONE_INPUT_LABELS`      | `providePhoneInputLabels`     | Country selector and its search (country names come from `Intl`)                                                         |

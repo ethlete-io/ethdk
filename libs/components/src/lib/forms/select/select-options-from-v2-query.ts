@@ -1,5 +1,4 @@
-import { Signal, computed, effect, linkedSignal, signal, untracked } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { Signal, computed } from '@angular/core';
 import {
   AnyLegacyQuery,
   AnyLegacyQueryCreator,
@@ -13,9 +12,8 @@ import {
   queryComputed,
   queryStateSignal,
 } from '@ethlete/query';
-import { debounceTime as rxDebounceTime } from 'rxjs';
-import { PageState, endsPagination } from './select-options-paging';
 import { SelectOptionsFromQuery } from './select-options-from-query';
+import { createSelectOptionsPaging } from './select-options-paging';
 
 /** The args accepted by the creator's `prepare()` - includes `mock`/`config` extras. */
 export type V2PrepareArgsOf<TCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator> = Parameters<
@@ -42,7 +40,7 @@ export type SelectOptionsFromV2QueryConfig<TCreator extends AnyV2QueryCreator | 
   toOptions: (response: QueryDataOf<TCreator>) => TOption[];
   /** Derives whether more pages exist from the latest page's response - drives `hasMoreItems` and gates `loadMore()`. */
   toHasMore?: (response: QueryDataOf<TCreator>) => boolean;
-  /** Turns a query failure into the select's error text. Defaults to the first error message. */
+  /** Turns a query failure into the select's error text. Defaults to the first error message, else `SELECT_LABELS.error`. */
   toErrorMessage?: (error: RequestError) => string;
   /** Minimum query length before requests run. @default 0 */
   minQueryLength?: number;
@@ -69,7 +67,7 @@ const firstErrorMessage = (error: RequestError) => {
     return detail;
   }
 
-  return error.statusText || 'Something went wrong';
+  return error.statusText || undefined;
 };
 
 /**
@@ -110,34 +108,12 @@ const firstErrorMessage = (error: RequestError) => {
 export const selectOptionsFromV2Query = <TCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator, TOption>(
   config: SelectOptionsFromV2QueryConfig<TCreator, TOption>,
 ): SelectOptionsFromQuery<TOption> => {
-  const rawQuery = signal('');
-  const debouncedQuery = toSignal(toObservable(rawQuery).pipe(rxDebounceTime(config.debounceTime ?? 300)), {
-    initialValue: '',
-  });
-
-  const minQueryLength = config.minQueryLength ?? 0;
-  const skipped = computed(() => debouncedQuery().trim().length < minQueryLength);
-
-  const initialPage = config.initialPage ?? 1;
-  // Keyed off the debounced query - not the raw one - so the reset lands in the same tick the
-  // query re-prepares, never firing a spurious page.
-  const page = linkedSignal<string, number>({
-    source: debouncedQuery,
-    computation: () => initialPage,
-  });
+  const paging = createSelectOptionsPaging(config);
 
   const query = queryComputed<AnyV2Query | AnyLegacyQuery | null>(() => {
-    if (skipped()) {
-      return null;
-    }
+    const args = paging.skipped() ? null : config.args(paging.query, paging.page);
 
-    const args = config.args(debouncedQuery, page);
-
-    if (args === null) {
-      return null;
-    }
-
-    return config.queryCreator.prepare(args).execute() as AnyV2Query | AnyLegacyQuery;
+    return args === null ? null : (config.queryCreator.prepare(args).execute() as AnyV2Query | AnyLegacyQuery);
   });
 
   const state = queryStateSignal(query);
@@ -145,65 +121,17 @@ export const selectOptionsFromV2Query = <TCreator extends AnyV2QueryCreator | An
 
   const toErrorMessage = config.toErrorMessage ?? firstErrorMessage;
 
-  // `settledState` only holds the latest settled response, so this folds each new success into the
-  // slice for the page it was requested for (`page` read untracked: only a new settled state, never
-  // an in-flight page bump, appends).
-  const pageState = linkedSignal<ReturnType<typeof settledState>, PageState<TOption>>({
-    source: settledState,
-    computation: (settled, previous) => {
-      const index = untracked(page) - initialPage;
-      const slices = (previous?.value?.slices ?? []).slice(0, index);
-
-      if (!isQueryStateSuccess(settled)) {
-        return { slices, ended: index === 0 ? false : (previous?.value?.ended ?? false) };
-      }
-
-      const nextSlice = config.toOptions(settled.response as QueryDataOf<TCreator>);
-      const ended = endsPagination(nextSlice, slices[index - 1]);
-
-      if (!ended) {
-        slices[index] = nextSlice;
-      }
-
-      return { slices, ended };
-    },
-  });
-
-  // A `linkedSignal` only folds while something observes it - so a page that settles while nothing
-  // renders `options` (e.g. the panel is closed) would be skipped, and a later page would fold over
-  // a stale `previous`. This keepalive makes the fold eager: it captures every settled page.
-  effect(() => void pageState());
-
-  const options = computed(() => (skipped() ? [] : pageState().slices.flat()));
-
-  const hasMore = computed(() => {
-    const toHasMore = config.toHasMore;
-    const settled = settledState();
-
-    if (!toHasMore || skipped() || pageState().ended || !isQueryStateSuccess(settled)) {
-      return false;
-    }
-
-    return toHasMore(settled.response as QueryDataOf<TCreator>);
-  });
-
-  return {
-    options,
+  return paging.connect({
+    settled: settledState,
+    toSlice: (settled) =>
+      isQueryStateSuccess(settled) ? config.toOptions(settled.response as QueryDataOf<TCreator>) : null,
+    hasMore: (settled) =>
+      isQueryStateSuccess(settled) && !!config.toHasMore?.(settled.response as QueryDataOf<TCreator>),
     loading: computed(() => isQueryStateLoading(state())),
     error: computed(() => {
       const current = state();
 
-      return isQueryStateFailure(current) && !skipped() ? toErrorMessage(current.error) : null;
+      return isQueryStateFailure(current) ? toErrorMessage(current.error) : null;
     }),
-    hasMore,
-    query: debouncedQuery,
-    setQuery: (value: string) => rawQuery.set(value),
-    loadMore: () => {
-      if (skipped() || isQueryStateLoading(state()) || !hasMore()) {
-        return;
-      }
-
-      page.update((current) => current + 1);
-    },
-  };
+  });
 };

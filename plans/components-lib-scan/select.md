@@ -1,6 +1,6 @@
 # forms/select scan - open findings
 
-Scan of `libs/components/src/lib/forms/select/` from 2026-09-28. 0 High, 1 Medium, 9 Low, 0 Spec. Skipped: stories, most specs (read only to judge coverage). A second pass covered `forms/form-field/headless/anchored-panel-controller.ts` and `forms/selection-list/headless/internals/selection-state.ts` in full.
+Scan of `libs/components/src/lib/forms/select/` from 2026-09-28. 0 High, 1 Medium, 7 Low, 0 Spec. Skipped: stories, most specs (read only to judge coverage). A second pass covered `forms/form-field/headless/anchored-panel-controller.ts` and `forms/selection-list/headless/internals/selection-state.ts` in full.
 
 ## options, value comparison
 
@@ -18,8 +18,6 @@ Scan of `libs/components/src/lib/forms/select/` from 2026-09-28. 0 High, 1 Mediu
 
 ## cleanup
 
-- Low: the two query adapters duplicate the debounce, page reset, page fold, keepalive effect and `hasMore` logic (`forms/select/select-options-from-query.ts:104-181`, `forms/select/select-options-from-v2-query.ts`). Extract the shared paging core into `select-options-paging.ts`. M
-- Low: both adapters fall back to the hardcoded English `'Something went wrong'` (`forms/select/select-options-from-query.ts:61`, `forms/select/select-options-from-v2-query.ts`), outside `SELECT_LABELS`. Add an `error` label. S
 - Low: hardcoded colour as primary value in the panel shadow (`forms/select/select-panel.component.css:59`). Use a shadow token. S
 
 ## panel controller and selection state (second pass)

@@ -1,8 +1,6 @@
-import { Signal, computed, effect, linkedSignal, signal, untracked } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { Signal, computed } from '@angular/core';
 import { AnyQueryCreator, QueryArgsOf, QueryErrorResponse, RequestArgs, ResponseType, withArgs } from '@ethlete/query';
-import { debounceTime as rxDebounceTime } from 'rxjs';
-import { PageState, endsPagination } from './select-options-paging';
+import { createSelectOptionsPaging } from './select-options-paging';
 
 /** Config for {@link selectOptionsFromQuery}. */
 export type SelectOptionsFromQueryConfig<TCreator extends AnyQueryCreator, TOption> = {
@@ -23,7 +21,7 @@ export type SelectOptionsFromQueryConfig<TCreator extends AnyQueryCreator, TOpti
   toOptions: (response: ResponseType<QueryArgsOf<TCreator>>) => TOption[];
   /** Derives whether more pages exist from the latest page's response - drives `hasMoreItems` and gates `loadMore()`. */
   toHasMore?: (response: ResponseType<QueryArgsOf<TCreator>>) => boolean;
-  /** Turns a query failure into the select's error text. Defaults to the first error message. */
+  /** Turns a query failure into the select's error text. Defaults to the first error message, else `SELECT_LABELS.error`. */
   toErrorMessage?: (error: QueryErrorResponse) => string;
   /** Minimum query length before requests run. @default 0 */
   minQueryLength?: number;
@@ -56,7 +54,7 @@ export type SelectOptionsFromQuery<TOption> = {
 const firstErrorMessage = (error: QueryErrorResponse) => {
   const message = 'errors' in error ? error.errors[0]?.message : error.error?.message;
 
-  return message ?? error.raw?.statusText ?? 'Something went wrong';
+  return message ?? error.raw?.statusText;
 };
 
 /**
@@ -99,94 +97,23 @@ export const selectOptionsFromQuery = <TCreator extends AnyQueryCreator, TOption
 ): SelectOptionsFromQuery<TOption> => {
   type TArgs = QueryArgsOf<TCreator>;
 
-  const rawQuery = signal('');
-  const debouncedQuery = toSignal(toObservable(rawQuery).pipe(rxDebounceTime(config.debounceTime ?? 300)), {
-    initialValue: '',
-  });
-
-  const minQueryLength = config.minQueryLength ?? 0;
-  const skipped = computed(() => debouncedQuery().trim().length < minQueryLength);
-
-  const initialPage = config.initialPage ?? 1;
-  // Keyed off the debounced query - not the raw one - so the reset lands in the same tick the
-  // request re-runs, never firing a spurious page.
-  const page = linkedSignal<string, number>({
-    source: debouncedQuery,
-    computation: () => initialPage,
-  });
+  const paging = createSelectOptionsPaging(config);
 
   const query = config.queryCreator.clone({ reportErrors: false })(
-    withArgs<TArgs>(() => {
-      if (skipped()) {
-        return null;
-      }
-
-      return config.args(debouncedQuery, page);
-    }),
+    withArgs<TArgs>(() => (paging.skipped() ? null : config.args(paging.query, paging.page))),
   );
 
   const toErrorMessage = config.toErrorMessage ?? firstErrorMessage;
 
-  // `query.response()` only holds the latest page, so this folds each new response into the slice
-  // for the page it was requested for (`page` read untracked: only a new response, never an
-  // in-flight page bump, appends).
-  const pageState = linkedSignal<ResponseType<TArgs> | null, PageState<TOption>>({
-    source: () => query.response(),
-    computation: (response, previous) => {
-      const index = untracked(page) - initialPage;
-      const slices = (previous?.value?.slices ?? []).slice(0, index);
-
-      if (response === null) {
-        return { slices, ended: index === 0 ? false : (previous?.value?.ended ?? false) };
-      }
-
-      const nextSlice = config.toOptions(response);
-      const ended = endsPagination(nextSlice, slices[index - 1]);
-
-      if (!ended) {
-        slices[index] = nextSlice;
-      }
-
-      return { slices, ended };
-    },
-  });
-
-  // A `linkedSignal` only folds while something observes it - so a page that settles while nothing
-  // renders `options` (e.g. the panel is closed) would be skipped, and a later page would fold over
-  // a stale `previous`. This keepalive makes the fold eager: it captures every settled page.
-  effect(() => void pageState());
-
-  const options = computed(() => (skipped() ? [] : pageState().slices.flat()));
-
-  const hasMore = computed(() => {
-    const toHasMore = config.toHasMore;
-
-    if (!toHasMore || skipped() || pageState().ended) {
-      return false;
-    }
-
-    const response = query.response();
-
-    return response === null ? false : toHasMore(response);
-  });
-
-  return {
-    options,
+  return paging.connect({
+    settled: query.response,
+    toSlice: (response: ResponseType<TArgs> | null) => (response === null ? null : config.toOptions(response)),
+    hasMore: (response) => response !== null && !!config.toHasMore?.(response),
     loading: computed(() => query.loading() !== null),
     error: computed(() => {
       const error = query.error();
 
-      return error === null || skipped() ? null : toErrorMessage(error);
+      return error === null ? null : toErrorMessage(error);
     }),
-    hasMore,
-    query: debouncedQuery,
-    setQuery: (value: string) => rawQuery.set(value),
-    loadMore: () => {
-      if (skipped() || query.loading() !== null || !hasMore()) {
-        return;
-      }
-
-      page.update((current) => current + 1);
-    },
-  };
+  });
 };

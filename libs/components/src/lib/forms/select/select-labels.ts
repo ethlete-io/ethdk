@@ -13,6 +13,8 @@ export type SelectLabels = {
   loadMore: string;
   /** The panel's entry that starts creating a value that isn't in the list. */
   addNew: string;
+  /** Shown when a query adapter's request failed and the error carries no message. */
+  error: string;
   /** The leading text of the "Create …" row that commits the search query as a custom value. */
   create: string;
 };
@@ -24,6 +26,7 @@ export const DEFAULT_SELECT_LABELS: SelectLabels = {
   loadMore: 'Load more',
   addNew: 'Add new',
   create: 'Create',
+  error: 'Something went wrong',
 };
 
 const SELECT_LABELS_DEF = /* @__PURE__ */ defineLabels<SelectLabels>('SELECT_LABELS', DEFAULT_SELECT_LABELS);
