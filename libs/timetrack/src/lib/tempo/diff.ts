@@ -1,3 +1,4 @@
+import { fnv1aHash } from '../model/fnv';
 import { SyncedWorklog, WorklogProposal, syncsInState } from '../model/proposal';
 import { TempoMarkerScheme, unmarkedDescription } from './marker';
 import { pieceSourceId, separateOverlappingProposals } from './separate';
@@ -5,16 +6,9 @@ import { ForeignSubtraction, subtractForeignTime } from './subtract';
 import { TempoWorklog } from './worklogs';
 
 /** FNV-1a. Not a security hash — it only has to change when the synced content changes. */
-export const fnv1a = (value: string) => {
-  let hash = 0x811c9dc5;
+export const fnv1a = (value: string) => fnv1aHash(value).toString(16).padStart(8, '0');
 
-  for (let index = 0; index < value.length; index++) {
-    hash ^= value.charCodeAt(index);
-    hash = Math.imul(hash, 0x01000193);
-  }
-
-  return (hash >>> 0).toString(16).padStart(8, '0');
-};
+const wholeSeconds = (ms: number) => Math.round(ms / 1000);
 
 /**
  * Hashes everything a sync writes to Tempo, so an unchanged row can be skipped on the next sync.
@@ -224,7 +218,7 @@ export const planTempoSync = (options: {
     }
 
     const driftedInTempo =
-      remote.durationMs !== proposal.durationMs ||
+      wholeSeconds(remote.durationMs) !== wholeSeconds(proposal.durationMs) ||
       unmarkedDescription({ worklog: remote, scheme: options.marker }) !== proposal.description;
 
     if (driftedInTempo) {

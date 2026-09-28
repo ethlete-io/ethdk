@@ -129,6 +129,17 @@ describe('planTempoSync', () => {
     expect(result.updates.map((entry) => entry.reason)).toEqual(['changed-in-tempo']);
   });
 
+  it('sees no drift in a duration Tempo stored rounded to the second', () => {
+    const target = proposal({ durationMs: HOUR + 400 });
+    const result = plan({
+      proposals: [target],
+      ledger: [ledgerFor(target)],
+      remote: [remoteFor(target, { durationMs: HOUR })],
+    });
+
+    expect(result.unchanged).toEqual(['p1']);
+  });
+
   it('recreates a worklog that was deleted in tempo', () => {
     const target = proposal();
     const result = plan({ proposals: [target], ledger: [ledgerFor(target)], remote: [] });

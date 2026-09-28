@@ -8,7 +8,7 @@ import { TempoWorklog } from './worklogs';
  *
  * - `attribute` stores the proposal id in a free-text work attribute. The better scheme: nothing
  *   about the worklog a person reads changes. It needs the instance to offer a non-required
- *   `INPUT_TEXT` attribute — `findMarkerAttribute` reports whether one exists.
+ *   `INPUT_TEXT` attribute.
  * - `description-suffix` appends a tag to the worklog description. Works on any instance, at the
  *   cost of a visible tag.
  * - `none` writes no marker: the local ledger is then the only record of ownership, and losing it

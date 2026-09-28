@@ -84,18 +84,3 @@ export const missingRequiredAttributes = (options: {
 
     return value === undefined || value === '';
   });
-
-/**
- * Whether a given attribute can hold this app's worklog id: a free-text attribute the instance does
- * not require anyone else to fill in. When no such attribute exists the id has to go into the
- * worklog description instead, which is why the caller decides rather than this module.
- */
-export const canHoldWorklogMarker = (attribute: TempoWorkAttribute) =>
-  attribute.type === 'INPUT_TEXT' && !attribute.required;
-
-/** The attribute the app should store its worklog id in, if the instance offers a usable one. */
-export const findMarkerAttribute = (options: { attributes: TempoWorkAttribute[]; preferredKey?: string }) => {
-  const usable = options.attributes.filter(canHoldWorklogMarker);
-
-  return usable.find((attribute) => attribute.key === options.preferredKey) ?? usable[0];
-};

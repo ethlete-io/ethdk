@@ -217,10 +217,12 @@ describe('tempoPaged$', () => {
     expect(seen.mock.calls[0]?.[0]).toEqual([{ n: 1 }, { n: 2 }, { n: 3 }, { n: 4 }, { n: 5 }]);
   });
 
-  it('stops at maxPages rather than paging a runaway range forever', () => {
+  it('fails at maxPages rather than paging forever or answering with a truncated range', () => {
     const { transport, requests } = stubTransport(
       Array.from({ length: 10 }, () => ({ body: page([1], 'https://api.tempo.io/4/things?offset=1') })),
     );
+    const seen = vi.fn();
+    const failed = vi.fn();
 
     tempoPaged$({
       transport,
@@ -228,9 +230,11 @@ describe('tempoPaged$', () => {
       path: '/things',
       describe: 'things',
       options: { pageSize: 1, maxPages: 3 },
-    }).subscribe();
+    }).subscribe({ next: seen, error: failed });
 
     expect(requests).toHaveLength(3);
+    expect(seen).not.toHaveBeenCalled();
+    expect(failed).toHaveBeenCalledOnce();
   });
 
   it('treats a page with no results as empty rather than failing', () => {

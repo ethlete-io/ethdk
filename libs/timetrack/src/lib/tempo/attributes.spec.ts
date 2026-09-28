@@ -1,13 +1,7 @@
 import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
-import {
-  TempoWorkAttribute,
-  canHoldWorklogMarker,
-  fetchTempoWorkAttributes$,
-  findMarkerAttribute,
-  missingRequiredAttributes,
-} from './attributes';
+import { TempoWorkAttribute, fetchTempoWorkAttributes$, missingRequiredAttributes } from './attributes';
 import { TempoCredentials } from './client';
 
 const CREDENTIALS: TempoCredentials = { token: 't' };
@@ -102,35 +96,5 @@ describe('missingRequiredAttributes', () => {
 
   it('never reports an optional attribute', () => {
     expect(missingRequiredAttributes({ attributes: [attribute({ key: '_Note_' })], values: {} })).toEqual([]);
-  });
-});
-
-describe('findMarkerAttribute', () => {
-  it('only accepts a free-text attribute nobody else is required to fill in', () => {
-    expect(canHoldWorklogMarker(attribute({ type: 'INPUT_TEXT' }))).toBe(true);
-    expect(canHoldWorklogMarker(attribute({ type: 'INPUT_TEXT', required: true }))).toBe(false);
-    expect(canHoldWorklogMarker(attribute({ type: 'STATIC_LIST' }))).toBe(false);
-  });
-
-  it('prefers the configured key when the instance offers several', () => {
-    const found = findMarkerAttribute({
-      attributes: [attribute({ key: '_First_', type: 'INPUT_TEXT' }), attribute({ key: '_Mine_', type: 'INPUT_TEXT' })],
-      preferredKey: '_Mine_',
-    });
-
-    expect(found?.key).toBe('_Mine_');
-  });
-
-  it('falls back to the first usable attribute', () => {
-    const found = findMarkerAttribute({
-      attributes: [attribute({ key: '_Billable_' }), attribute({ key: '_Note_', type: 'INPUT_TEXT' })],
-      preferredKey: '_Absent_',
-    });
-
-    expect(found?.key).toBe('_Note_');
-  });
-
-  it('finds nothing when the instance has no free-text attribute, so the marker must go in the description', () => {
-    expect(findMarkerAttribute({ attributes: [attribute({ key: '_Billable_' })] })).toBeUndefined();
   });
 });

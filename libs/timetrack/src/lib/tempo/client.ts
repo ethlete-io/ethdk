@@ -1,4 +1,4 @@
-import { EMPTY, Observable, defer, expand, map, reduce } from 'rxjs';
+import { EMPTY, Observable, defer, expand, map, reduce, throwError } from 'rxjs';
 import { TimetrackRequestMethod, TimetrackTransport } from '../transport/ports';
 
 /**
@@ -174,7 +174,11 @@ export const tempoRequest$ = <T>(options: {
   );
 };
 
-/** Follows `metadata.next` until Tempo stops offering one, and concatenates every page's results. */
+/**
+ * Follows `metadata.next` until Tempo stops offering one, and concatenates every page's results.
+ * Errors when Tempo still offers a page after `maxPages`, so a caller never reads a truncated range
+ * as complete.
+ */
 export const tempoPaged$ = <T>(options: {
   transport: TimetrackTransport;
   credentials: TempoCredentials;
@@ -194,9 +198,16 @@ export const tempoPaged$ = <T>(options: {
     });
 
   return page$(options.path, { ...options.query, limit: pageSize }).pipe(
-    expand((page, index) =>
-      page.metadata?.next && index < maxPages - 1 ? page$(page.metadata.next, undefined) : EMPTY,
-    ),
+    expand((page, index) => {
+      const next = page.metadata?.next;
+
+      if (!next) return EMPTY;
+      if (index >= maxPages - 1) {
+        return throwError(() => new Error(`Tempo offered more than ${maxPages} pages of ${options.describe}.`));
+      }
+
+      return page$(next, undefined);
+    }),
     map((page) => page.results ?? []),
     reduce((all: T[], results) => [...all, ...results], []),
   );
