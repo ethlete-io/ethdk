@@ -166,7 +166,8 @@
 
   /* For assistive tech only: the cut is a drawn line and the locked note is a state, neither of which a
      row-by-row reader would otherwise meet. */
-  .et-standings-pick-note {
+  .et-standings-pick-note,
+  .et-standings-pick-announcement {
     position: absolute;
     inline-size: 1px;
     block-size: 1px;

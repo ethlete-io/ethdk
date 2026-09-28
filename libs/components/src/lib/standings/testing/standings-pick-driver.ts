@@ -16,6 +16,7 @@ export const createStandingsPickDriver = <T>(fixture: ComponentFixture<T>) => {
     order: () => base.queryAll('.et-match-participant-name').map((element) => element.textContent?.trim()),
     positions: () => base.queryAll('.et-standings-pick-position').map((element) => element.textContent?.trim()),
     handles: () => base.queryAll<HTMLButtonElement>('.et-standings-pick-handle'),
+    announcement: () => base.query('.et-standings-pick-announcement')?.textContent?.trim() ?? null,
     marks: () => base.queryAll('.et-standings-pick-mark').map((element) => element.textContent?.trim()),
 
     /** The 0-based row the cut line is drawn under, or `-1` when there is none. */

@@ -141,6 +141,54 @@ describe('StandingsPickComponent', () => {
     expect(driver.host.order()).toEqual(['a', 'b', 'd', 'c']);
   });
 
+  it('announces where a keyboard move put the row', () => {
+    const driver = create();
+
+    expect(driver.announcement()).toBe('');
+
+    pressKey(driver.handles()[0]!, 'ArrowDown');
+
+    expect(driver.announcement()).toBe('Alpha moved to position 2');
+  });
+
+  it('announces nothing for a key that could not move the row', () => {
+    const driver = create();
+
+    pressKey(driver.handles()[0]!, 'ArrowUp');
+
+    expect(driver.announcement()).toBe('');
+  });
+
+  it('draws the new participants when they change after a move', () => {
+    const driver = create();
+
+    pressKey(driver.handles()[0]!, 'ArrowDown');
+    driver.host.participants.set([participant('e', 'Echo'), participant('f', 'Foxtrot')]);
+    driver.detectChanges();
+
+    expect(driver.order()).toEqual(['Echo', 'Foxtrot']);
+  });
+
+  it('keeps the arranged order and appends a participant that joins after a move', () => {
+    const driver = create();
+
+    pressKey(driver.handles()[0]!, 'ArrowDown');
+    driver.host.participants.set([...PARTICIPANTS, participant('e', 'Echo')]);
+    driver.detectChanges();
+
+    expect(driver.order()).toEqual(['Bravo', 'Alpha', 'Charlie', 'Delta', 'Echo']);
+  });
+
+  it('moves the row that is drawn at an index, even with a stale id in the order', () => {
+    const driver = create();
+
+    driver.host.order.set(['gone', 'a', 'b', 'c', 'd']);
+    driver.detectChanges();
+    pressKey(driver.handles()[0]!, 'ArrowDown');
+
+    expect(driver.order()).toEqual(['Bravo', 'Alpha', 'Charlie', 'Delta']);
+  });
+
   it('follows an order pushed in from outside', () => {
     const driver = create();
 
@@ -236,11 +284,11 @@ describe('StandingsPickDirective', () => {
     ]);
   });
 
-  it('drops an order entry no participant answers to', () => {
+  it('drops an order entry no participant answers to, and appends the participants it misses', () => {
     const pick = state();
 
-    pick.order.set(['a', 'ghost', 'b']);
+    pick.order.set(['b', 'ghost', 'a']);
 
-    expect(pick.rows().map((row) => row.participant.id)).toEqual(['a', 'b']);
+    expect(pick.rows().map((row) => row.participant.id)).toEqual(['b', 'a', 'c', 'd']);
   });
 });

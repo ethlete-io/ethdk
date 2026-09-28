@@ -59,6 +59,8 @@
   }
 </ol>
 
+<p class="et-standings-pick-announcement" aria-live="polite">{{ announcement() }}</p>
+
 @if (pick.locked()) {
   <p class="et-standings-pick-note">{{ labels().pickLocked }}</p>
 }

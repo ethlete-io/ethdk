@@ -65,7 +65,9 @@ keeps it). The result is always a permutation of `participantIds`, so the drawn 
 lose a row.
 
 Bind `[(order)]` when the order is yours to keep: a draft to submit, a reset button, an order restored
-from somewhere else. The component writes back on every move.
+from somewhere else. The component writes back on every move. When `participants` changes under a set
+`order` (a tab switch to another group), the drawn order drops the ids nobody answers to and appends the
+participants it misses, so the list always shows the current group.
 
 ## Moving a row
 
@@ -74,7 +76,7 @@ both go through it, so a keyboard reaches every order a pointer does.
 
 An index outside the list **does nothing rather than clamping.** ArrowUp on the first row and
 ArrowDown on the last leave the order exactly as it was; clamping would move the row somewhere the
-viewer did not ask for. A `locked` list refuses every move.
+viewer did not ask for. A `locked` list refuses every move. `move()` returns whether the row moved.
 
 ## Locked
 
@@ -158,7 +160,9 @@ so a screen-reader user is told both ways to sort from the control itself.
 | <kbd>ArrowDown</kbd> | Moves the row down one position. No-op on the last row. |
 
 Focus stays on the control of the row it moved, so repeated presses carry one row through the list.
-Both keys call `preventDefault()`, so the page does not scroll under the reorder.
+Both keys call `preventDefault()`, so the page does not scroll under the reorder. A polite live region
+then announces the new position with the `pickMoved(participant, position)` label - `Alpha moved to
+position 2` by default.
 
 The cut line is `aria-hidden` - it is a drawn line with the `pickCut` label on it, and a reader going
 row by row would never reach it. Every row above it instead carries a visually hidden

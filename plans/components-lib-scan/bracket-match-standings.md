@@ -38,9 +38,7 @@ Scan of `libs/components/src/lib/bracket/`, `libs/components/src/lib/match/`, `l
 
 ## standings
 
-- Medium: after the first move, `order` holds the ids of the old participants (`standings/headless/standings-pick.directive.ts:86-131`). The directive writes `order` even when the consumer does not bind it. If `participants` then changes (a tab switch to another group), `rows` drops every unknown id and never adds the new participants, so the list can go empty. `move` also indexes `resolvedOrder` while the template passes the index into `rows`, so a stale id moves the wrong row. Reconcile `order` with `participants` (drop unknown ids, append missing ones) and index moves against the reconciled list. M Verified.
 - Medium: the form column puts `aria-label` on empty generic spans (`standings/standings.component.html:86-90`), and it tells win, tie and loss apart by opacity alone (`standings/standings.component.css:185-195`). Assistive tech often reads nothing, and the dots fail WCAG 1.4.1. Add `role="img"` or hidden text, and a non-colour mark. S Verified.
-- Medium: a keyboard reorder announces nothing (`standings/standings-pick.component.html:32-46`). Focus stays on the handle, but a screen reader user does not hear the new position. Add a polite live region with a `pickMoved(participant, position)` label. S Verified. `pickMoveRow` names the participant but not the position.
 - Low: the legend tracks by `zone.label` (`standings/standings.component.html:104`). Two zones with the same label cause a duplicate-key error. Track by `$index` or by `from`. S
 - Low: a hardcoded shadow colour `rgb(0 0 0 / 0.25)` (`standings/standings-pick.component.css:85`). S
 - Low: the default `'Advances'` label is English-only, and the JSDoc example hardcodes the theme name `'success'` without saying it belongs to the app (`standings/integrations/ethlete.ts:56,70`). S

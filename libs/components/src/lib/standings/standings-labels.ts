@@ -42,6 +42,8 @@ export type StandingsLabels = {
   pickAdvancingRow: string;
   /** Names a row's reorder control. Both ways to sort belong in it, so both are named. */
   pickMoveRow: (participant: string) => string;
+  /** Announced after a keyboard move, with the participant's new 1-based position. */
+  pickMoved: (participant: string, position: number) => string;
   /** Announced on a list whose order can no longer be changed. */
   pickLocked: string;
 };
@@ -73,6 +75,7 @@ export const DEFAULT_STANDINGS_LABELS: StandingsLabels = {
   pickCut: 'Advancing',
   pickAdvancingRow: 'Advancing',
   pickMoveRow: (participant) => `Move ${participant}. Drag it, or use the arrow keys.`,
+  pickMoved: (participant, position) => `${participant} moved to position ${position}`,
   pickLocked: 'This order can no longer be changed',
 };
 

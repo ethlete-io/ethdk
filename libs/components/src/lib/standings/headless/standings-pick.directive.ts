@@ -76,8 +76,21 @@ export class StandingsPickDirective {
     }),
   );
 
-  /** The order actually drawn - `order` when one is bound, {@link startOrder} otherwise. */
-  public resolvedOrder = computed<readonly string[]>(() => this.order() ?? this.startOrder());
+  /**
+   * The order actually drawn - `order` when one is set, {@link startOrder} otherwise. An `order` entry no
+   * participant answers to is dropped, and a participant it misses is appended in start order.
+   */
+  public resolvedOrder = computed<readonly string[]>(() => {
+    const startOrder = this.startOrder();
+    const order = this.order();
+
+    if (!order) return startOrder;
+
+    const known = new Set(startOrder);
+    const kept = new Set(order.filter((id) => known.has(id)));
+
+    return [...kept, ...startOrder.filter((id) => !kept.has(id))];
+  });
 
   /** The template a row's mark slot is filled with, registered by `ng-template[etStandingsPickMark]`. */
   public registeredMarkTemplate = signal<StandingsPickMarkDirective | null>(null);
@@ -111,22 +124,24 @@ export class StandingsPickDirective {
    *
    * Does nothing while the list is locked, and nothing when either index is outside it - an index is never
    * clamped, so an arrow key on the first or the last row leaves the order as it is instead of moving the
-   * row somewhere the user did not ask for.
+   * row somewhere the user did not ask for. Returns whether the row moved.
    */
   public move(move: StandingsPickMove) {
     const { from, to } = move;
 
-    if (this.locked() || from === to) return;
+    if (this.locked() || from === to) return false;
 
     const order = [...this.resolvedOrder()];
 
-    if (from < 0 || from >= order.length || to < 0 || to >= order.length) return;
+    if (from < 0 || from >= order.length || to < 0 || to >= order.length) return false;
 
     const [moved] = order.splice(from, 1);
 
-    if (moved === undefined) return;
+    if (moved === undefined) return false;
 
     order.splice(to, 0, moved);
     this.order.set(order);
+
+    return true;
   }
 }

@@ -84,6 +84,8 @@ export class StandingsPickComponent {
 
   protected labels = computed(() => this.pick.resolvedLabels());
 
+  protected announcement = signal('');
+
   protected isDragging = computed(() => !!this.dragState());
 
   protected draggingIndex = computed(() => this.dragState()?.from ?? -1);
@@ -154,7 +156,19 @@ export class StandingsPickComponent {
 
   protected moveByKey(event: Event, move: StandingsPickMove) {
     event.preventDefault();
-    this.pick.move(move);
+
+    if (!this.pick.move(move)) return;
+
+    const row = this.pick.rows()[move.to];
+
+    if (!row) return;
+
+    this.announcement.set(
+      this.labels().pickMoved(
+        matchParticipantDisplayName({ participant: row.participant, labels: this.matchLabels() }),
+        row.position,
+      ),
+    );
   }
 
   /**
