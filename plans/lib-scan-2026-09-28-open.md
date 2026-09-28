@@ -5,19 +5,12 @@ own open lines; this file lists what needs a user decision and what is still que
 
 ## Decisions for the user
 
-- query-devtools: `pushEvent` measures the body twice and resolves the owner eagerly. The fix
-  needs a type change in `libs/query` and can change which query a row points at.
-- phone-input: DO +1829/+1849, PR +1939 and JM +1658 show as US, because each country holds one
-  dial code. More needs a new field on the public `PhoneCountry` type.
 - timetrack: the picker Lucene escaping finding is unverified; it needs a live Jira Cloud call.
 - timetrack: the codex reasoning command. A per-command spec, or drop `codex`.
 - timetrack: Codex `INJECTED_PREFIXES` needs a real Codex log, and `askedBy: 'machine'` is a
   design call.
 - cli: git-flow `parse.ts` reads a lowercase `<word>-<number>` as a key when `keyPrefixes` is
   empty. Existing specs test this on purpose (`chore/angular-22` → `ANGULAR-22`).
-- date-time: `minTime`/`maxTime` compare against the zone's wall clock, not as instants.
-- date-time: an empty time picker starts from the current time, so on the runtime's own DST day a
-  pick in the skipped hour still lands an hour late.
 
 - overlay: 6592a0627 changed the exported `DragToDismissContext`: `overlayRef` now needs
   `beforeClosed`, which breaks custom mocks. Check that its changeset bump is right.
@@ -27,9 +20,6 @@ own open lines; this file lists what needs a user decision and what is still que
 
 
 
-- tooltip: each tooltip adds one body node. A lazy node loses the description for a screen
-  reader that reads without moving focus, and `aria-description` is ignored when the consumer
-  sets `aria-describedby`.
 
 - form-field: `TEXT_FIELD_CONTROL_INPUTS` lists `'aria-label'` and `'aria-labelledby'` directly
   (1a0c0805f), because Angular cannot build a spread of `ACCESSIBLE_NAME_INPUTS` in an IIFE. A
@@ -37,15 +27,9 @@ own open lines; this file lists what needs a user decision and what is still que
 - bundle: `STATE_ICONS` (progress-step) and the scheduler time-grid minute constants are still in
   the floor bundle; see `components-lib-scan/bundle.md`.
 
-- standings: form results differ only by opacity (WCAG 1.4.1). A non-colour mark is a design call.
-- bracket: `resolveBracketComponents` bundles the default cards. Where they live (layout
-  factories, config, or an opt-in provider) is an API decision.
 - bracket: swiss `MODE_UNSUPPORTED` is unverified. Does the API leave out undrawn rounds?
 
 
-- rich-text-editor: an upload of a route-provided image tool keeps going after its editor is
-  destroyed. A cancel needs `RichTextEditorDirective` to expose its `DestroyRef`/`Injector`, or a
-  per-editor hook on the tool definition.
 
 - timetrack: the tray uses `DEFAULT_ROUND_OPTIONS.incrementMs` (15 min), the same as the rows. A
   configured increment needs a new setting.
