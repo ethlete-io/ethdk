@@ -2,6 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, computed, inject } from '@angular/core';
 import { CHECK_ICON, IconDirective, provideIcons } from '../../icon';
 import { SelectDirective, SelectOptionTemplateContext, SelectVirtualOptionDirective } from './headless';
+import { mountSelectOptionStyles } from './select-option-styles.component';
 
 /**
  * One windowed row of a data-driven (`options` input) select. Looks and behaves exactly
@@ -23,10 +24,6 @@ import { SelectDirective, SelectOptionTemplateContext, SelectVirtualOptionDirect
       <i etIcon="et-check"></i>
     </span>
   `,
-  // shares the option stylesheet on purpose: in pure data-driven mode no et-select-option
-  // instance may exist, and Angular only keeps a component's styles loaded while an
-  // instance of that component lives - the class alone would not bring the CSS with it
-  styleUrl: './select-option.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [IconDirective, NgTemplateOutlet],
   providers: [provideIcons(CHECK_ICON)],
@@ -52,4 +49,8 @@ export class SelectVirtualOptionComponent {
       item,
     };
   });
+
+  constructor() {
+    mountSelectOptionStyles();
+  }
 }

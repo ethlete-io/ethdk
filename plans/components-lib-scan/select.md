@@ -1,6 +1,6 @@
 # forms/select scan - open findings
 
-Scan of `libs/components/src/lib/forms/select/` from 2026-09-28. 0 High, 1 Medium, 14 Low, 0 Spec. Skipped: stories, most specs (read only to judge coverage). A second pass covered `forms/form-field/headless/anchored-panel-controller.ts` and `forms/selection-list/headless/internals/selection-state.ts` in full.
+Scan of `libs/components/src/lib/forms/select/` from 2026-09-28. 0 High, 1 Medium, 9 Low, 0 Spec. Skipped: stories, most specs (read only to judge coverage). A second pass covered `forms/form-field/headless/anchored-panel-controller.ts` and `forms/selection-list/headless/internals/selection-state.ts` in full.
 
 ## options, value comparison
 
@@ -15,19 +15,14 @@ Scan of `libs/components/src/lib/forms/select/` from 2026-09-28. 0 High, 1 Mediu
 ## bundle size
 
 - Low: `SelectComponent` statically imports `SelectVirtualOptionComponent`, `SelectAllOptionComponent` and `ChipComponent` (`forms/select/select.component.ts:23-35`), and every `SelectDirective` creates a virtual window (`forms/select/headless/select.directive.ts:469-476`). A single select with projected options bundles the data-driven, select-all and multi-chip code. Measure first; a split needs an API decision. M
-- Low: `select-option.component.css` is the stylesheet of three components (`forms/select/select-option.component.ts:7`, `forms/select/select-virtual-option.component.ts:30`, `forms/select/select-all-option.component.ts:22`). A panel with select-all and a projected option injects the same sheet twice, and the JS bundle carries it three times (gzip hides most of that). Mount it once through the style manager. S
 
 ## cleanup
 
 - Low: the two query adapters duplicate the debounce, page reset, page fold, keepalive effect and `hasMore` logic (`forms/select/select-options-from-query.ts:104-181`, `forms/select/select-options-from-v2-query.ts`). Extract the shared paging core into `select-options-paging.ts`. M
 - Low: both adapters fall back to the hardcoded English `'Something went wrong'` (`forms/select/select-options-from-query.ts:61`, `forms/select/select-options-from-v2-query.ts`), outside `SELECT_LABELS`. Add an `error` label. S
-- Low: `SelectLabels` JSDoc names `customValues` (the input is `allowCustomValues`) and calls `create` "the confirm action" (it is the leading text of the "Create ..." row) (`forms/select/select-labels.ts:5`, `:16`). S
 - Low: hardcoded colour as primary value in the panel shadow (`forms/select/select-panel.component.css:59`). Use a shadow token. S
-- Low: comments outside the AGENTS.md allowlist: rationale and narration at `forms/select/headless/select.directive.ts:363`, `:901-902`, `:967`, `:1298-1299`, `:1374`, `:1467-1468`; `forms/select/headless/select-search.directive.ts:76-77`, `:170-172`, `:183-184`, `:200-201`; `forms/select/headless/select-options.directive.ts:69-70`; `forms/select/select-panel.component.ts:8-13`; `forms/select/select-option.component.ts:11-12`; `forms/select/select-virtual-option.component.ts:27-29`. S
 
 ## panel controller and selection state (second pass)
 
 - Low: when no surface is registered, `mountOverlay` returns but `open` stays `true` (`forms/form-field/headless/anchored-panel-controller.ts:176-180`). The trigger reports `aria-expanded="true"` with no panel, the next click only resets the model, and a surface that registers later never mounts, because the effect does not track `surface`. Set `open` to `false` after `onMissingSurface`. S
-- Low: the controller JSDoc says the date pickers use the sibling `createDatePickerOverlay` (`forms/form-field/headless/anchored-panel-controller.ts:57-62`). `createDatePickerOverlay` calls this controller (`forms/date-time/internals/date-picker-overlay.ts:39`). Fix the sentence. S
 - Low: `select`, `toggleAll` and the unregister prune build the multi value in registration order (`forms/selection-list/headless/internals/selection-state.ts:150-152`, `:200-204`, `:242-246`). An option that `@for` inserts in the middle of a list registers last, so its value lands at the end of the array, not at its display position. Sort by DOM position, or document the order. S
-- Low: the comment at `forms/selection-list/headless/internals/selection-state.ts:69-74` narrates the old bug ("meant a single disabled-and-unchecked item pinned..."). Keep the one-line invariant and delete the history. S

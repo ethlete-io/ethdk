@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation, inject } from '@angular/core';
 import { CHECK_ICON, IconDirective, provideIcons } from '../../icon';
 import { SelectAllOptionDirective } from './headless';
+import { mountSelectOptionStyles } from './select-option-styles.component';
 
 /** The styled "Select all" row `et-select` renders for `selectAll`. Project the row's text. */
 @Component({
@@ -18,7 +19,7 @@ import { SelectAllOptionDirective } from './headless';
       }
     </span>
   `,
-  styleUrls: ['./select-option.component.css', './select-all-option.component.css'],
+  styleUrl: './select-all-option.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [IconDirective],
   providers: [provideIcons(CHECK_ICON)],
@@ -29,4 +30,8 @@ import { SelectAllOptionDirective } from './headless';
 })
 export class SelectAllOptionComponent {
   protected option = inject(SelectAllOptionDirective);
+
+  constructor() {
+    mountSelectOptionStyles();
+  }
 }
