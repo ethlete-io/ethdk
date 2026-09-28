@@ -52,11 +52,11 @@ export class TextareaDirective extends TextFieldControlDirective implements Form
   /** Only applied when `autosize` is off; an autosizing textarea is never manually resizable. */
   public resize = input<TextareaResizeMode>(TEXTAREA_RESIZE_MODES.VERTICAL);
 
-  public hasValue = computed(() => this.mixed() || this.value().length > 0);
+  public hasValue = computed(() => this.mixed() || !!this.value());
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.TEXTAREA);
 
   /** The text the native textarea renders - empty while mixed so the raw value never reaches the DOM. */
-  public displayValue = computed(() => (this.mixed() ? '' : this.value()));
+  public displayValue = computed(() => (this.mixed() ? '' : (this.value() ?? '')));
 
   /** The placeholder the native textarea renders - `mixedLabel` overrides the consumer placeholder while mixed. */
   public effectivePlaceholder = computed(() => (this.mixed() ? this.resolvedMixedLabel() : this.placeholder()));

@@ -1,8 +1,10 @@
 import { Component, signal } from '@angular/core';
+import { form, FormField } from '@angular/forms/signals';
 import '../../../../test-helpers';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { mountPasswordInput, PasswordInputDriver } from '../../testing/password-input-driver';
 import { PASSWORD_INPUT_IMPORTS } from '../input.imports';
+import { PasswordInputDirective } from './password-input.directive';
 
 @Component({
   template: `
@@ -40,6 +42,25 @@ class MixedPasswordInputTestHost {
   value = signal('');
   mixed = signal(false);
 }
+
+@Component({
+  template: `<input [formField]="passwordForm.password" etPasswordInput />`,
+  imports: [PasswordInputDirective, FormField],
+})
+class NullablePasswordFieldTestHost {
+  public model = signal<{ password: string | null }>({ password: null });
+  public passwordForm = form(this.model);
+}
+
+describe('PasswordInputDirective nullable bound field', () => {
+  it('reads a null value as empty', () => {
+    const driver = mountPasswordInput(NullablePasswordFieldTestHost);
+
+    expect(driver.passwordInput.hasValue()).toBe(false);
+    expect(driver.passwordInput.strength()).toBe(0);
+    expect(driver.passwordInput.displayValue()).toBe('');
+  });
+});
 
 describe('PasswordInputDirective', () => {
   let driver: PasswordInputDriver<PasswordInputTestHost>;

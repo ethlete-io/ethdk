@@ -37,16 +37,16 @@ export class PasswordInputDirective extends TextFieldControlDirective implements
    * render it however you like (deliberately not a zxcvbn-style security estimate).
    * `0` while mixed - scoring the hidden raw value would leak information about it.
    */
-  public strength = computed(() => (this.mixed() ? 0 : scorePasswordStrength(this.value())));
+  public strength = computed(() => (this.mixed() ? 0 : scorePasswordStrength(this.value() ?? '')));
 
   /** The native `type` the input element should carry. */
   public inputType = computed(() => (this.revealed() ? 'text' : 'password'));
 
-  public hasValue = computed(() => this.mixed() || this.value().length > 0);
+  public hasValue = computed(() => this.mixed() || !!this.value());
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.PASSWORD_INPUT);
 
   /** The text the native input renders - empty while mixed so the raw value never reaches the DOM. */
-  public displayValue = computed(() => (this.mixed() ? '' : this.value()));
+  public displayValue = computed(() => (this.mixed() ? '' : (this.value() ?? '')));
 
   /** The placeholder the native input renders - `mixedLabel` overrides the consumer placeholder while mixed. */
   public effectivePlaceholder = computed(() => (this.mixed() ? this.resolvedMixedLabel() : this.placeholder()));

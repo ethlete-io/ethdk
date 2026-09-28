@@ -1,4 +1,5 @@
 import { Component, signal } from '@angular/core';
+import { form, FormField } from '@angular/forms/signals';
 import '../../../../test-helpers';
 import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
@@ -47,6 +48,24 @@ class MixedTextareaTestHost {
   value = signal('');
   mixed = signal(false);
 }
+
+@Component({
+  template: `<textarea [formField]="messageForm.message" etTextarea></textarea>`,
+  imports: [TextareaDirective, FormField],
+})
+class NullableTextareaFieldTestHost {
+  public model = signal<{ message: string | null }>({ message: null });
+  public messageForm = form(this.model);
+}
+
+describe('TextareaDirective nullable bound field', () => {
+  it('reads a null value as empty', () => {
+    const driver = mountTextarea(NullableTextareaFieldTestHost);
+
+    expect(driver.control.hasValue()).toBe(false);
+    expect(driver.control.displayValue()).toBe('');
+  });
+});
 
 describe('TextareaDirective', () => {
   describe('inside form field', () => {
