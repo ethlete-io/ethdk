@@ -358,7 +358,7 @@ export class CarouselDirective {
         // scroll settles too - acting on it would teleport out from under the animation still to come. So a
         // settle that has not arrived at the requested child is not this navigation's; the scroll that is
         // still running will settle again.
-        if (requested !== null && settled && settled.resting !== requested) return;
+        if (requested !== null && settled && !settled.restsOn(requested)) return;
 
         // Trust the intersections again before crossing the seam: the teleport moves the track under the
         // very index that was pending, so holding on to it would name the wrong child.

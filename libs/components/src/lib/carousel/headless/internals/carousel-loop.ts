@@ -49,7 +49,7 @@ const restingChildIndex = ({ container, children, horizontal, restingOffsetOf }:
     nearest = index;
   }
 
-  return nearest;
+  return { nearest, nearestDistance, scroll };
 };
 
 /**
@@ -128,10 +128,25 @@ export const useCarouselLoop = (config: CarouselLoopConfig) => {
 
     if (!geometry) return null;
 
-    const resting = restingChildIndex(geometry);
+    const { nearest: resting, nearestDistance, scroll } = restingChildIndex(geometry);
+    const { container, children, horizontal, restingOffsetOf } = geometry;
+    const maxScroll = horizontal
+      ? container.scrollWidth - container.clientWidth
+      : container.scrollHeight - container.clientHeight;
 
     return {
       resting,
+
+      restsOn: (domIndex: number) => {
+        const child = children[domIndex];
+
+        if (domIndex === resting) return true;
+        if (!child) return false;
+
+        const reachable = Math.min(Math.max(restingOffsetOf(child), 0), Math.max(maxScroll, 0));
+
+        return Math.abs(reachable - scroll) <= nearestDistance + 1;
+      },
 
       /**
        * Shift the scroll offset a whole track's length if it has come to rest in the clones - the one way to

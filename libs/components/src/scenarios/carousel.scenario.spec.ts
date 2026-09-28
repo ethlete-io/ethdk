@@ -58,16 +58,20 @@ const realSlides = () => all('.et-carousel-item:not([data-clone])');
 
 const activeDot = () => all('.et-carousel-dot').findIndex((dot) => dot.getAttribute('aria-current') === 'true');
 
-const layOut = (s: Scenario) => {
+const layOut = (s: Scenario, { slide = SLIDE, viewport = SLIDE } = {}) => {
   const observer = fakeResizeObserver();
   const scroll = fakeElementScroll();
 
   fakeLayout([
-    stackedChildren('.et-carousel-item', SLIDE),
-    { match: '.et-scrollable-container', clientWidth: SLIDE, rect: { left: 0, top: 0, width: SLIDE, height: 200 } },
+    stackedChildren('.et-carousel-item', slide),
+    {
+      match: '.et-scrollable-container',
+      clientWidth: viewport,
+      rect: { left: 0, top: 0, width: viewport, height: 200 },
+    },
     {
       match: '.et-carousel-item',
-      rect: (element) => ({ left: (element as HTMLElement).offsetLeft, top: 0, width: SLIDE, height: 200 }),
+      rect: (element) => ({ left: (element as HTMLElement).offsetLeft, top: 0, width: slide, height: 200 }),
     },
   ]);
 
@@ -76,7 +80,7 @@ const layOut = (s: Scenario) => {
   Object.defineProperty(Element.prototype, 'scrollWidth', {
     configurable: true,
     get(this: Element) {
-      if (this.matches('.et-scrollable-container')) return this.querySelectorAll('.et-carousel-item').length * SLIDE;
+      if (this.matches('.et-scrollable-container')) return this.querySelectorAll('.et-carousel-item').length * slide;
 
       return (scrollWidth?.get?.call(this) as number | undefined) ?? 0;
     },
@@ -342,6 +346,44 @@ describe('carousel scenarios', () => {
     expect(region.getAttribute('aria-label')).toBe('Featured teams');
     expect(all('.et-carousel-dot')).toHaveLength(4);
     expect(realSlides().at(-1)?.getAttribute('aria-label')).toBe('4 of 4');
+  });
+
+  it('lets go of a dot the centred track cannot scroll to, so scrolling moves the dots again', async () => {
+    const s = scenario();
+    const { measure } = layOut(s, { slide: SLIDE / 3, viewport: SLIDE });
+    const fixture = TestBed.createComponent(TeamCarouselComponent);
+    const page = fixture.componentInstance;
+
+    page.teams.set([
+      { name: 'team-a' },
+      { name: 'team-b' },
+      { name: 'team-c' },
+      { name: 'team-d' },
+      { name: 'team-e' },
+    ]);
+    page.align.set(CAROUSEL_SLIDE_ALIGNMENTS.CENTER);
+    await measure();
+
+    const container = query('.et-scrollable-container');
+
+    container.scrollLeft = SLIDE / 3;
+    showOnly(s, realSlides()[2] as HTMLElement);
+    expect(activeDot()).toBe(2);
+
+    all('.et-carousel-dot')[0]?.click();
+    step(s);
+    expect(activeDot()).toBe(0);
+
+    container.scrollLeft = 0;
+    container.dispatchEvent(new Event('scrollend'));
+    step(s);
+
+    container.scrollLeft = (SLIDE / 3) * 2;
+    showOnly(s, realSlides()[3] as HTMLElement);
+    container.dispatchEvent(new Event('scrollend'));
+    step(s);
+
+    expect(activeDot()).toBe(3);
   });
 
   it('loops seamlessly with clones that stay hidden, and wraps the controls round the seam', async () => {
