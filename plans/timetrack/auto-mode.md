@@ -143,4 +143,8 @@ auto-mode.ts` runs `writeTicketWithAgent$` once per band and stand-in, names unn
 - Goal, not started: auto mode notices that a call went off topic and suggests hiding its unnamed
   rest bands. Recommendation: no transcript or audio content; use the calendar meeting's end, the
   rest band's length and the lack of other work evidence, and queue it as a `local` suggestion the
-  user confirms.
+  user confirms. Signals, cheapest first: window focus and desk input in other apps while the call
+  runs (already collected); then a voice-activity flag per quarter from the microphone and the
+  call's playback level (a level only, never audio content). Discord's mute state is not visible:
+  a mute does not change the PipeWire capture node (measured 2026-09-15), and Discord RPC needs an
+  approved OAuth app.
