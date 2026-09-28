@@ -6,8 +6,6 @@ import { ComputedBracketGrid } from './grid/types';
 import { BracketPosition } from './math';
 import { PathOptions } from './path';
 import { BracketDrawing, BracketEdge, BracketGradient, BracketRect } from './shapes';
-import { BracketRuntimeError } from '../bracket-runtime-error';
-import { BRACKET_ERROR_CODES } from '../bracket-errors';
 
 export type DrawSwissManDimensions<TRoundData, TMatchData> = {
   bracketGrid: ComputedBracketGrid<TRoundData, TMatchData>;
@@ -64,12 +62,7 @@ const collectSwissRoundGeometries = <TRoundData, TMatchData>(
 
     const [wins, losses] = group.id.split('-').map(Number);
 
-    if (wins === undefined || losses === undefined || isNaN(wins) || isNaN(losses)) {
-      throw new BracketRuntimeError(
-        BRACKET_ERROR_CODES.SWISS_GROUPING_FAILED,
-        `Unable to parse wins and losses from Swiss group id: ${group.id}`,
-      );
-    }
+    if (wins === undefined || losses === undefined || isNaN(wins) || isNaN(losses)) continue;
 
     const matchesTop = Math.min(...matchElements.map((element) => element.dimensions.top));
     const matchesBottom = Math.max(
