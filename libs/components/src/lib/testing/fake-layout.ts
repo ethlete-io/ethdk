@@ -1,3 +1,5 @@
+import { installProperty, once } from './patch-property';
+
 const ELEMENT_METRICS = ['clientHeight', 'clientWidth'] as const;
 const HTML_ELEMENT_METRICS = ['offsetHeight', 'offsetLeft', 'offsetTop', 'offsetWidth'] as const;
 
@@ -42,17 +44,6 @@ export type FakeIntersectionObserver = {
   targets: () => Element[];
 };
 
-const once = (restore: () => void) => {
-  let restored = false;
-
-  return () => {
-    if (restored) return;
-
-    restored = true;
-    restore();
-  };
-};
-
 const matchesRule = (rule: LayoutRule, element: Element) =>
   typeof rule.match === 'string' ? element.matches(rule.match) : rule.match(element);
 
@@ -64,17 +55,6 @@ const toRect = (partial: Partial<DOMRect>): DOMRect => {
   const rect = { x, y, width, height, top: y, left: x, right: x + width, bottom: y + height, ...partial };
 
   return { ...rect, toJSON: () => rect } as DOMRect;
-};
-
-const installProperty = (prototype: object, property: string, value: unknown) => {
-  const original = Object.getOwnPropertyDescriptor(prototype, property);
-
-  Object.defineProperty(prototype, property, { configurable: true, value, writable: true });
-
-  return () => {
-    if (original) Object.defineProperty(prototype, property, original);
-    else Reflect.deleteProperty(prototype, property);
-  };
 };
 
 /**

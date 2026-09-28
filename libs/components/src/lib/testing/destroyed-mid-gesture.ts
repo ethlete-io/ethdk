@@ -1,4 +1,5 @@
 import { ComponentFixture } from '@angular/core/testing';
+import { installProperty, once } from './patch-property';
 
 export type DestroyedMidGestureOptions = {
   /** The fixture the gesture belongs to. {@link expectNothingRunsAfterDestroy} destroys it. */
@@ -23,28 +24,6 @@ export type MidGestureActivity = {
 };
 
 type Registration = { target: EventTarget; type: string };
-
-const once = (restore: () => void) => {
-  let restored = false;
-
-  return () => {
-    if (restored) return;
-
-    restored = true;
-    restore();
-  };
-};
-
-const installProperty = (holder: object, property: string, value: unknown) => {
-  const original = Object.getOwnPropertyDescriptor(holder, property);
-
-  Object.defineProperty(holder, property, { configurable: true, value, writable: true });
-
-  return () => {
-    if (original) Object.defineProperty(holder, property, original);
-    else Reflect.deleteProperty(holder, property);
-  };
-};
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
@@ -209,10 +188,16 @@ export const expectNothingRunsAfterDestroy = async ({
     await frames.flush();
 
     expect({
+      errorsDuringGesture: frames.errors.slice(0, errorsBefore),
       errorsAfterDestroy: frames.errors.slice(errorsBefore),
       framesAfterDestroy: frames.run() - activity.framesRun,
       listenerCallsAfterDestroy: listeners.calls() - activity.listenerCalls,
-    }).toEqual({ errorsAfterDestroy: [], framesAfterDestroy: 0, listenerCallsAfterDestroy: 0 });
+    }).toEqual({
+      errorsDuringGesture: [],
+      errorsAfterDestroy: [],
+      framesAfterDestroy: 0,
+      listenerCallsAfterDestroy: 0,
+    });
 
     return activity;
   } finally {

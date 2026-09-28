@@ -1,6 +1,6 @@
 # testing, pagination, breadcrumb, accordion, masonry, loader scan - open findings
 
-Scan of `libs/components/src/lib/{testing,pagination,breadcrumb,accordion,masonry,loader}` from 2026-09-28. 0 High, 1 Medium, 8 Low, 1 Spec. Skipped: `testing/control-driver.ts`, `field-control-driver.ts`, `overlay-control-driver.ts`, `masonry/testing/masonry-driver.ts`, and most CSS (read only for colours, layers, motion).
+Scan of `libs/components/src/lib/{testing,pagination,breadcrumb,accordion,masonry,loader}` from 2026-09-28. 0 High, 1 Medium, 6 Low, 1 Spec. Skipped: `testing/control-driver.ts`, `field-control-driver.ts`, `overlay-control-driver.ts`, `masonry/testing/masonry-driver.ts`, and most CSS (read only for colours, layers, motion).
 
 ## breadcrumb
 
@@ -17,11 +17,6 @@ Scan of `libs/components/src/lib/{testing,pagination,breadcrumb,accordion,masonr
 
 - Medium: `et-spinner` and `et-progress-bar` have `role="progressbar"` and no accessible name by default (`spinner/spinner.component.ts:105`, `progress-bar/progress-bar.component.ts:23`). Axe `aria-progressbar-name` fails for every consumer that does not add an `aria-label`. Default the name to `LOADER_LABELS.loading` as the brand loader does, with an input to override it. S Verified.
 - Low: the brand accent is a literal `#00ffa1` behind a component-only custom property, not a theme token (`brand-loader/brand-loader.component.css:81`). Resolve it from `--et-theme-color-*` with the literal as the last fallback. S
-
-## testing
-
-- Low: `once` and `installProperty` are copied between `fake-layout.ts:45-78` and `destroyed-mid-gesture.ts:27-47`. Move them to one internal file. S
-- Low: `recordFrames` catches every error thrown in a frame, but only checks errors after the destroy (`destroyed-mid-gesture.ts:63-67,212`). An error thrown during the gesture itself is swallowed, and the assertion passes. Rethrow or assert on `errorsBefore === 0`. S
 
 ## Spec gaps
 
