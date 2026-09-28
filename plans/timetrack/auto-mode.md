@@ -1,7 +1,6 @@
 # Auto mode and the approval queue
 
-Status: slices 1, 2 and 3 done (2026-09-28); slice 4 in progress (pure auto pass in
-`libs/timetrack/src/lib/review/auto-mode.ts` first, then the app wiring), ADR 0035 approved.
+Status: slices 1 to 4 done (2026-09-28), ADR 0035 approved. Slice 5 is next.
 
 ## Goal
 
@@ -79,6 +78,23 @@ settings: the user can move an action to a stricter class, never to a looser one
    current day, never a past one; never `nameMeeting` or `nameCall`; the prompt is kept with the
    answer. Add a stored parent slot with a source, a way back to `auto` for a reopened stand-in, and
    the sources in `day.rows`. Guards to call: `mayAutoWrite`, `mayWrite` in `model/field-source.ts`.
+   Done. Pure pass in `libs/timetrack/src/lib/review/auto-mode.ts` (answers stored on
+   `DayReviewEdits.auto` with the masked payload); app service `apps/timetrack/src/app/day-review/
+   auto-mode.ts` runs `writeTicketWithAgent$` once per band and stand-in, names unnamed rows or
+   resolves the stand-in as `auto`, and queues a draft as `jira.create` from "auto mode"; the key
+   its approval files is applied as `auto`. Setting `reasoning.autoMode` (switch under Suggestions).
+   `StandIn.parentKey`/`parentSource` with `withStandInParent`; `withStandInResolutionReset` behind
+   "Hand back to auto mode"; `day.rows` rows carry `sources`. Project read shared with the create
+   form in `day-review/project-issues.ts`. e2e: `apps/timetrack-e2e/src/auto-mode.spec.ts`.
+   Open follow-ups:
+   - It runs only while today is the day on screen: the review computes nothing for another day.
+   - The spec header (`specForCommits$`) is not in the auto payload, and an auto-named row carries
+     no confidence of its own (the ticket call answers none).
+   - A failed run is stored and never retried; a draft with no project key is stored, not queued.
+   - A restart between the queue write and the answer write asks again and queues a second create.
+   - Rows the user split or merged are not auto-named (no unnamed group maps to them).
+   - Context asks wait for git discovery, as the stand-in pass does.
+   - `standIn.list` does not report the resolution or parent source yet.
 5. **Class settings.** A settings page to make an action stricter, and a readout of what auto mode
    did today.
 
