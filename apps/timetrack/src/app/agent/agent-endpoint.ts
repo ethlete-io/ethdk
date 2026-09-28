@@ -57,6 +57,7 @@ import {
   readTempoCredentials$,
   ReviewedRow,
   routesThroughApproval,
+  rowFieldSourceOf,
   suggestProjectForRepo,
   workPathDays,
   workPathPieces,
@@ -333,6 +334,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     disputedStandInId: row.disputedStandInId,
     unattended: row.unattended,
     edited: row.edited,
+    sources: { issue: rowFieldSourceOf(row, 'issue'), description: rowFieldSourceOf(row, 'description') },
     hidden: row.hidden,
   });
 

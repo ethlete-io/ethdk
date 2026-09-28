@@ -1,6 +1,7 @@
 import { JiraParenting } from '../jira/hierarchy';
 import { NamingAuthor } from '../model/attribution';
 import { Confidence } from '../model/evidence';
+import { FieldSource } from '../model/field-source';
 import { WorklogProposalState } from '../model/proposal';
 import { StandInState } from '../model/stand-in';
 import { DayWarning } from '../rows/round';
@@ -354,6 +355,8 @@ export type AgentApiReviewedRow = {
   unattended?: boolean;
   /** Whether a reviewer's own edit produced this row. */
   edited: boolean;
+  /** Who set the row's issue (or stand-in) and its description: the user, auto mode, or nobody. */
+  sources: { issue: FieldSource; description: FieldSource };
   /** Whether the row is off the timeline. A hidden row is neither written nor waiting for a name. */
   hidden: boolean;
 };
