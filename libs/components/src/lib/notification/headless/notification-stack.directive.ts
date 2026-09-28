@@ -10,7 +10,7 @@ import { NOTIFICATION_STACK_CONTEXT_TOKEN } from '../notification-stack-context.
  * `data-et-overlay-layer` too, so a press on a toast does not read as a press outside an overlay
  * below it, and an overlay opened from a toast action mounts above the stack.
  */
-export const NOTIFICATION_STACK_OVERLAY_LAYER = DEFAULT_OVERLAY_LAYER + 1;
+export const NOTIFICATION_STACK_OVERLAY_LAYER = /* @__PURE__ */ (() => DEFAULT_OVERLAY_LAYER + 1)();
 
 type PendingAnimation = {
   el: HTMLElement;

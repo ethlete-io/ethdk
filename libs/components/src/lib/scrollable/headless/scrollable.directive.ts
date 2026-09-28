@@ -45,15 +45,15 @@ const isScrollableChildIgnored = (el: HTMLElement) => {
   return attr === 'true' || attr === '';
 };
 
-const ELEMENT_INTERSECTION_THRESHOLD = [
-  .../* @__PURE__ */ Array.from({ length: 21 }, (_, i) => i * 0.05),
+const ELEMENT_INTERSECTION_THRESHOLD = /* @__PURE__ */ (() => [
+  ...Array.from({ length: 21 }, (_, i) => i * 0.05),
   0.01,
   0.005,
   0.001,
   0.99,
   0.995,
   0.999,
-];
+])();
 
 @Directive({
   selector: '[etScrollable]',

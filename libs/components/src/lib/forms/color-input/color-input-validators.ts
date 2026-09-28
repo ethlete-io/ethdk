@@ -1,10 +1,10 @@
 import { FieldContext, LogicFn, validate } from '@angular/forms/signals';
 import { FieldWarning, warn } from '../form-field/headless';
-import { COLOR_NOTATIONS } from './color-input.types';
+import { ColorNotation } from './color-input.types';
 import { parseColorToRgb } from './headless/internals/color-convert';
 
-const HEX_NOTATIONS = [COLOR_NOTATIONS.HEX] as const;
-const RGB_NOTATIONS = [COLOR_NOTATIONS.RGB] as const;
+const HEX_NOTATIONS = ['hex'] as const satisfies readonly ColorNotation[];
+const RGB_NOTATIONS = ['rgb'] as const satisfies readonly ColorNotation[];
 
 type ColorFieldPath = Parameters<typeof validate<string | null>>[0];
 
@@ -47,7 +47,7 @@ const isBlank = (value: string | null): value is null => value === null || value
 
 type RgbChannels = readonly [red: number, green: number, blue: number];
 
-const CONTRAST_NOTATIONS = [COLOR_NOTATIONS.HEX, COLOR_NOTATIONS.RGB] as const;
+const CONTRAST_NOTATIONS = ['hex', 'rgb'] as const satisfies readonly ColorNotation[];
 
 const parseColor = (value: string | null): RgbChannels | null => {
   const rgb = parseColorToRgb(value, { notations: CONTRAST_NOTATIONS });

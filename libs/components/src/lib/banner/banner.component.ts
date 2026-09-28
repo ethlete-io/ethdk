@@ -33,7 +33,7 @@ export type BannerType = (typeof BANNER_TYPES)[keyof typeof BANNER_TYPES];
 
 export type BannerLiveRegion = 'alert' | 'status';
 
-const ALERT_BANNER_TYPES: ReadonlySet<BannerType> = /* @__PURE__ */ new Set([BANNER_TYPES.WARNING, BANNER_TYPES.ERROR]);
+const ALERT_BANNER_TYPES: ReadonlySet<BannerType> = /* @__PURE__ */ new Set<BannerType>(['warning', 'error']);
 
 /**
  * A static, dismissible page or section message - icon/description/actions are yours to project,

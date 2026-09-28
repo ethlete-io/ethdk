@@ -1,6 +1,5 @@
 import { booleanAttribute, Directive, effect, input, signal } from '@angular/core';
 import { injectRenderer } from '@ethlete/core';
-import { ACCESSIBLE_NAME_INPUTS } from './accessible-name-control.directive';
 import { FieldWarningResult } from './field-warnings';
 import { TextShellControlDirective } from './text-shell-control.directive';
 
@@ -22,7 +21,8 @@ export const TEXT_FIELD_CONTROL_INPUTS = [
   'name',
   'maxLength',
   'pending',
-  ...ACCESSIBLE_NAME_INPUTS,
+  'aria-label',
+  'aria-labelledby',
 ] as const;
 
 /**

@@ -142,7 +142,7 @@ export const BRACKET_DEFAULTS: Required<BracketLayoutConfig> = {
   rowSpanRoundId: null,
   thirdPlaceTopOffset: null,
   finalRoundHeaderGap: null,
-  alignRoundHeaders: BRACKET_ROUND_HEADER_ALIGN.START,
+  alignRoundHeaders: 'start',
   focusInset: 0,
   lineStartingCurveAmount: 10,
   lineEndingCurveAmount: 0,

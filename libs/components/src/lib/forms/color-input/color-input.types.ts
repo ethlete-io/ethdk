@@ -11,4 +11,4 @@ export const COLOR_NOTATIONS = {
 export type ColorNotation = (typeof COLOR_NOTATIONS)[keyof typeof COLOR_NOTATIONS];
 
 /** The order the picker offers notations in, and the default set. */
-export const COLOR_NOTATION_ORDER = [COLOR_NOTATIONS.HEX, COLOR_NOTATIONS.RGB, COLOR_NOTATIONS.HSL] as const;
+export const COLOR_NOTATION_ORDER = ['hex', 'rgb', 'hsl'] as const satisfies readonly ColorNotation[];

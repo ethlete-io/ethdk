@@ -42,38 +42,38 @@ export type ReduceSupportPresentationInput = {
 };
 
 export const INITIAL_SUPPORT_PRESENTATION_STATE: SupportPresentationState = {
-  renderedState: SUPPORT_CONTENT_STATE.NONE,
-  leavingState: SUPPORT_CONTENT_STATE.NONE,
+  renderedState: 'none',
+  leavingState: 'none',
   renderedErrors: [],
   renderedWarnings: [],
   directions: {
-    [SUPPORT_CONTENT_STATE.HINT]: SUPPORT_TRANSITION_DIRECTION.FROM_ABOVE,
-    [SUPPORT_CONTENT_STATE.WARNING]: SUPPORT_TRANSITION_DIRECTION.FROM_BELOW,
-    [SUPPORT_CONTENT_STATE.ERROR]: SUPPORT_TRANSITION_DIRECTION.FROM_BELOW,
+    hint: 'from-above',
+    warning: 'from-below',
+    error: 'from-below',
   },
 };
 
 const SUPPORT_STATE_SEVERITY: Record<SupportSwappingState, number> = {
-  [SUPPORT_CONTENT_STATE.HINT]: 0,
-  [SUPPORT_CONTENT_STATE.WARNING]: 1,
-  [SUPPORT_CONTENT_STATE.ERROR]: 2,
+  hint: 0,
+  warning: 1,
+  error: 2,
 };
 
 const SUPPORT_STATE_HOME_DIRECTIONS: Record<
   SupportSwappingState,
   { entering: SupportTransitionDirection; leaving: SupportTransitionDirection }
 > = {
-  [SUPPORT_CONTENT_STATE.HINT]: {
-    entering: SUPPORT_TRANSITION_DIRECTION.FROM_ABOVE,
-    leaving: SUPPORT_TRANSITION_DIRECTION.TO_ABOVE,
+  hint: {
+    entering: 'from-above',
+    leaving: 'to-above',
   },
-  [SUPPORT_CONTENT_STATE.WARNING]: {
-    entering: SUPPORT_TRANSITION_DIRECTION.FROM_BELOW,
-    leaving: SUPPORT_TRANSITION_DIRECTION.TO_BELOW,
+  warning: {
+    entering: 'from-below',
+    leaving: 'to-below',
   },
-  [SUPPORT_CONTENT_STATE.ERROR]: {
-    entering: SUPPORT_TRANSITION_DIRECTION.FROM_BELOW,
-    leaving: SUPPORT_TRANSITION_DIRECTION.TO_BELOW,
+  error: {
+    entering: 'from-below',
+    leaving: 'to-below',
   },
 };
 
