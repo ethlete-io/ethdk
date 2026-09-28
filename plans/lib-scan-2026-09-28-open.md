@@ -85,6 +85,15 @@ own open lines; this file lists what needs a user decision and what is still que
 - table: keyboard column resize. A focusable `role="separator"` grip with arrow steps, or a
   width step in the column menu.
 
+- bundle goldens: rich-text-editor (3 entries) and dropzone are each about 1.6 kB over. The rich
+  text growth comes from new features (862468765, b645e827e, 267f7bdb1); the dropzone growth is
+  not checked. Accept with `nx run treeshake:bundle-goldens:update` on a fresh build?
+- menu: in a multiple group, a new value among values with filtered-out items now goes before the
+  first later value in option order, else at the end (330e1bbf4).
+- table persistence: a change in the same tick as a switch to a new store is not saved there
+  (from 2b62c6e3e). Left alone.
+- dropzone: the readonly file list focus (766bb1f52) is not checked in Storybook (focus ring, axe).
+
 ## Queue
 
 - timetrack `stillFocused` tail order: real, but no failing test was found.
