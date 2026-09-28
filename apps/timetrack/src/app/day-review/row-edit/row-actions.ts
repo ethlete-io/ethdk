@@ -35,6 +35,12 @@ export const ROW_ACTIONS: readonly RowActionDefinition[] = [
     run: ({ store, row }) => store.split(row, new Date((row.from.getTime() + row.to.getTime()) / 2)),
   },
   {
+    label: 'End here',
+    order: 5,
+    enabled: ({ store, row }) => store.isLiveCall(row),
+    run: ({ store, row }) => store.endRowNow(row),
+  },
+  {
     label: 'Merge with the next band',
     order: 20,
     enabled: (context) => !!nextOf(context),

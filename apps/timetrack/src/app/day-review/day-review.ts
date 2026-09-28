@@ -42,6 +42,8 @@ import {
   matchAttributionRule,
   callBehindRow,
   callLabel,
+  endRowAt,
+  isLiveCallRow,
   meetingBehindRow,
   mergeRows,
   moveRowBoundary,
@@ -1135,6 +1137,17 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     /** Where a dragged row now sits. A move keeps its duration; dragging one end re-reads it. */
     rescheduleRow: (move: { row: ReviewedRow; from: Date; to: Date }) =>
       apply(setRowRange({ edits: edits(), ...move })),
+
+    isLiveCall: (row: ReviewedRow) =>
+      isToday() &&
+      isLiveCallRow({
+        row,
+        calls: deterministicRows()?.calls ?? [],
+        events: evidence()?.events ?? [],
+        edits: edits(),
+      }),
+
+    endRowNow: (row: ReviewedRow) => apply(endRowAt({ edits: edits(), row, at: new Date() })),
 
     /** Takes a hand-written row off the day. An engine proposal is rejected rather than removed. */
     removeRow: (row: ReviewedRow) => apply(removeManualRow({ edits: edits(), row })),
