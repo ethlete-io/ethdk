@@ -1,4 +1,4 @@
-import { DestroyRef, Directive, OnInit, afterNextRender, inject, input } from '@angular/core';
+import { DestroyRef, Directive, afterNextRender, inject, input } from '@angular/core';
 import { outputToObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { tap } from 'rxjs';
@@ -26,7 +26,7 @@ import { SelectDirective } from './select.directive';
   selector: '[etSelectOptions]',
   exportAs: 'etSelectOptions',
 })
-export class SelectOptionsDirective implements OnInit {
+export class SelectOptionsDirective {
   private hostElement = injectHostElement();
 
   private select = inject(SelectDirective, { optional: true });
@@ -39,7 +39,8 @@ export class SelectOptionsDirective implements OnInit {
     const select = this.select;
 
     if (select) {
-      this.destroyRef.onDestroy(() => select.asyncOptions.set(null));
+      select.asyncOptionsSource.set(this.bundle);
+      this.destroyRef.onDestroy(() => select.asyncOptionsSource.set(null));
 
       outputToObservable(select.queryChange)
         .pipe(
@@ -66,11 +67,5 @@ export class SelectOptionsDirective implements OnInit {
         }
       });
     }
-  }
-
-  public ngOnInit() {
-    // The factory bundle is created once (a field initializer), so a one-time push is enough -
-    // it overrides loading/error/hasMoreItems and forces filterMode to external while set.
-    this.select?.asyncOptions.set(this.bundle());
   }
 }

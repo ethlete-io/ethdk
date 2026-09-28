@@ -102,3 +102,49 @@ describe('SelectOptionsDirective', () => {
     expect(select.loading()).toBe(false);
   });
 });
+
+const createBundle = (label: string, loading = signal(false)): SelectOptionsFromQuery<SelectOptionData> => ({
+  options: signal([{ value: label, label }]),
+  loading,
+  error: signal<string | null>(null),
+  hasMore: signal(false),
+  query: signal(''),
+  setQuery: () => undefined,
+  loadMore: () => undefined,
+});
+
+@Component({
+  template: `
+    <et-select [etSelectOptions]="mode() === 'a' ? bundleA : bundleB" placeholder="Pick">
+      <input etSelectSearch placeholder="Search" />
+    </et-select>
+  `,
+  imports: [SELECT_IMPORTS],
+})
+class SwappedBundleHost {
+  mode = signal<'a' | 'b'>('a');
+  loadingB = signal(false);
+  bundleA = createBundle('a');
+  bundleB = createBundle('b', this.loadingB);
+}
+
+describe('SelectOptionsDirective with a swapped bundle', () => {
+  it('forwards the async state of the bundle bound now', () => {
+    TestBed.configureTestingModule({
+      imports: [SwappedBundleHost],
+      providers: [provideColorThemes(TEST_COLOR_THEMES)],
+    });
+    const fixture = TestBed.createComponent(SwappedBundleHost);
+    fixture.detectChanges();
+    const host = fixture.componentInstance;
+    const select = fixture.debugElement.children[0]!.injector.get(SelectDirective);
+
+    host.mode.set('b');
+    fixture.detectChanges();
+    host.loadingB.set(true);
+    fixture.detectChanges();
+
+    expect(select.asyncOptions()).toBe(host.bundleB);
+    expect(select.loading()).toBe(true);
+  });
+});

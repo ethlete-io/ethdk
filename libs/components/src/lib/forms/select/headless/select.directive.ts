@@ -214,7 +214,10 @@ export class SelectDirective
    * `selectOptionsFromV2Query`). `null` when the select is wired manually.
    * @internal
    */
-  public asyncOptions = signal<SelectAsyncOptions | null>(null);
+  public asyncOptionsSource = signal<Signal<SelectAsyncOptions> | null>(null);
+
+  /** @internal */
+  public asyncOptions = computed(() => this.asyncOptionsSource()?.() ?? null);
 
   /** How a search query filters. Forced to `external` while an `[etSelectOptions]` source is set. */
   public filterMode = computed<SelectFilterMode>(() =>
