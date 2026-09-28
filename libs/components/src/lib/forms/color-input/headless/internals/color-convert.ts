@@ -117,10 +117,11 @@ const parseFunctionalHsl = (raw: string, allowAlpha: boolean): RgbColor | null =
     return null;
   }
 
+  const hue = Number(rawHue);
   const saturation = Number(rawSaturation) / 100;
   const lightness = Number(rawLightness) / 100;
 
-  if (saturation > 1 || lightness > 1) {
+  if (![hue, saturation, lightness].every(Number.isFinite) || saturation > 1 || lightness > 1) {
     return null;
   }
 
@@ -130,7 +131,7 @@ const parseFunctionalHsl = (raw: string, allowAlpha: boolean): RgbColor | null =
     return null;
   }
 
-  return hslToRgb({ hue: Number(rawHue), saturation, lightness, alpha });
+  return hslToRgb({ hue, saturation, lightness, alpha });
 };
 
 export type ColorParseOptions = {

@@ -57,6 +57,13 @@ describe('parseColorToRgb', () => {
       expect(parseColorToRgb(value)).toBeNull();
     },
   );
+
+  it.each(['hsl(. 50% 50%)', 'hsl(0 1.2.3% 50%)', 'hsl(0 50% .%)', 'hsl(1..2deg 50% 50%)', 'rgba(0, 0, 0, 1.2.3)'])(
+    'returns null for the malformed number in %p',
+    (value) => {
+      expect(parseColorToRgb(value)).toBeNull();
+    },
+  );
 });
 
 describe('rgbToHsv', () => {
