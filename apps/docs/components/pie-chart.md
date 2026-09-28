@@ -1,9 +1,9 @@
 # Pie chart
 
-`et-pie-chart` draws a part-to-whole: a pie, or a donut with `innerRadius`, a legend listing every value with its share, and a visually hidden table. Use it for a handful of parts that add up to one whole - up to about six; for close values or more parts, a [bar chart](/components/chart) reads better. Import `CHART_IMPORTS`.
+`et-pie-chart` draws a part-to-whole: a pie, or a donut with `innerRadius`, a legend listing every value with its share, and a visually hidden table. Use it for a handful of parts that add up to one whole - up to about six; for close values or more parts, a [bar chart](/components/chart) reads better. Import `PieChartComponent`.
 
 ```ts
-import { CHART_IMPORTS } from '@ethlete/components';
+import { PieChartComponent } from '@ethlete/components';
 ```
 
 ```html
@@ -84,7 +84,7 @@ The legend sits beside the circle and wraps below it when the container is too n
 
 ## Custom template
 
-`PieChartDirective` (`[etPieChart]`) holds the geometry without markup: `slices()` (per slice its `path`, `startAngle`, `endAngle`, tooltip `anchor` and `placement`, `colorToken`, `accentMix`, `valueText`, `percentText` and `description`), `entries()` (every datum, including the ones that draw no slice), `diameter()`, `radius()`, `holeRadius()`, `total()`, `totalText()`, `table()` and `formatValue()`. Put `etChartPlot` on the element the circle is fitted in - its width caps the diameter. Without one the directive throws `ET5100` in dev mode.
+`PieChartDirective` (`[etPieChart]`) holds the geometry without markup: `slices()` (per slice its `path`, `startAngle`, `endAngle`, tooltip `anchor` and `placement`, `colorToken`, `accentMix`, `valueText`, `percentText` and `description`), `entries()` (every datum, including the ones that draw no slice), `diameter()`, `radius()`, `holeRadius()`, `total()`, `totalText()`, `table()` and `formatValue()`. Put `etChartPlot` on the element the circle is fitted in - its width caps the diameter. Without one the directive throws `ET5100` in dev mode. Import `PieChartDirective` and `ChartPlotDirective`.
 
 ```html
 <div #chart="etPieChart" [data]="data" etPieChart label="Sessions by device">

@@ -1,9 +1,9 @@
 # Chart
 
-`et-bar-chart` draws bars: a value axis with clean ticks, the category beside each bar, a hairline grid and a visually hidden table with every value. It draws one series by default; give it `series` for grouped or stacked bars with a legend, and `orientation="horizontal"` for bars that grow to the right. Import `CHART_IMPORTS`.
+`et-bar-chart` draws bars: a value axis with clean ticks, the category beside each bar, a hairline grid and a visually hidden table with every value. It draws one series by default; give it `series` for grouped or stacked bars with a legend, and `orientation="horizontal"` for bars that grow to the right. Import `BarChartComponent`. `CHART_IMPORTS` holds all four charts and their directives, so importing it bundles every chart.
 
 ```ts
-import { CHART_IMPORTS } from '@ethlete/components';
+import { BarChartComponent } from '@ethlete/components';
 ```
 
 ```html
@@ -149,7 +149,7 @@ Re-run the color theme generator after adding the themes so the names type-check
 
 ## Custom template
 
-`BarChartDirective` (`[etBarChart]`) holds the geometry without markup: `bars()` (per bar its rect, `path`, hit `target`, tooltip `anchor` and `placement`, `series`, `colorToken`, `valueText` and a `name` such as `Mar, Online`), `ticks()`, `baseline()`, `categoryLabels()`, `valueLabels()`, `legendItems()`, `table()`, `plotWidth()` and `formatValue()`. Put `etChartPlot` on the element the bars are laid out in - its width is what the bands divide. Without one the directive throws `ET5100` in dev mode. `etBarChartPlot` still works as another name for it.
+`BarChartDirective` (`[etBarChart]`) holds the geometry without markup: `bars()` (per bar its rect, `path`, hit `target`, tooltip `anchor` and `placement`, `series`, `colorToken`, `valueText` and a `name` such as `Mar, Online`), `ticks()`, `baseline()`, `categoryLabels()`, `valueLabels()`, `legendItems()`, `table()`, `plotWidth()` and `formatValue()`. Put `etChartPlot` on the element the bars are laid out in - its width is what the bands divide. Without one the directive throws `ET5100` in dev mode. `etBarChartPlot` still works as another name for it. Import `BarChartDirective` and `ChartPlotDirective`.
 
 ```html
 <div #chart="etBarChart" [data]="data" etBarChart label="Sign-ups per month">

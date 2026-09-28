@@ -1,9 +1,9 @@
 # Line chart
 
-`et-line-chart` draws values along an x axis: a value axis with clean ticks, a category or time axis, a hairline grid, a crosshair tooltip that lists every series at an x, and a visually hidden table with every value. Pass `series` for several lines, `area` to fill under them, and `stacked` to stack them. Import `CHART_IMPORTS`. For categories compared side by side, use the [bar chart](/components/chart).
+`et-line-chart` draws values along an x axis: a value axis with clean ticks, a category or time axis, a hairline grid, a crosshair tooltip that lists every series at an x, and a visually hidden table with every value. Pass `series` for several lines, `area` to fill under them, and `stacked` to stack them. Import `LineChartComponent`. For categories compared side by side, use the [bar chart](/components/chart).
 
 ```ts
-import { CHART_IMPORTS } from '@ethlete/components';
+import { LineChartComponent } from '@ethlete/components';
 ```
 
 ```html
@@ -99,7 +99,7 @@ Series colors come from the app's color palette exactly as for the [bar chart](/
 
 ## Custom template
 
-`LineChartDirective` (`[etLineChart]`) holds the geometry without markup: `lines()` (per series its `linePath`, `areaPath`, `points` and `colorToken`), `slices()` (per x its `position`, `label`, `entries`, hit `target`, tooltip `anchor` and `description`), `ticks()`, `baseline()`, `valueLabels()`, `xLabels()`, `legendItems()`, `table()`, `plotWidth()` and `formatValue()`. Put `etChartPlot` on the element the chart is laid out in - without one the directive throws `ET5100` in dev mode.
+`LineChartDirective` (`[etLineChart]`) holds the geometry without markup: `lines()` (per series its `linePath`, `areaPath`, `points` and `colorToken`), `slices()` (per x its `position`, `label`, `entries`, hit `target`, tooltip `anchor` and `description`), `ticks()`, `baseline()`, `valueLabels()`, `xLabels()`, `legendItems()`, `table()`, `plotWidth()` and `formatValue()`. Put `etChartPlot` on the element the chart is laid out in - without one the directive throws `ET5100` in dev mode. Import `LineChartDirective`, `LineChartSliceDirective` and `ChartPlotDirective`.
 
 `LineChartSliceDirective` (`[etLineChartSlice]="slice.index"`) makes an element one x of the chart: it takes part in the chart's single tab stop and its arrow-key navigation, opens its tooltip on hover, focus, tap and touch drag, and sets `data-active` while that tooltip is open. Its tooltip inputs are `etLineChartSliceTooltip`, `etLineChartSliceDescription` (required with a template tooltip), `etLineChartSliceAnchor`, `etLineChartSlicePlacement` and `etLineChartSliceShowDelay`.
 

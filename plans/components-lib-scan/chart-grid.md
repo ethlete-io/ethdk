@@ -4,7 +4,6 @@ Scan of `libs/components/src/lib/chart` and `libs/components/src/lib/grid` from 
 
 ## chart - bundle size
 
-- Medium: `CHART_IMPORTS` holds all four chart components and their headless directives (`chart/chart.imports.ts:13`), and every chart guide tells consumers to import it (`apps/docs/components/chart.md:6`, `line-chart.md:6`, `pie-chart.md:6`, `sankey-chart.md:6`). An app that shows only a bar chart bundles the line (time scale, slices), pie and sankey (layout engine) code and CSS too. Each chart alone is 31-35 kB gz in `tools/treeshake/goldens.json:47-61`. Add per-chart tuples (`BAR_CHART_IMPORTS` etc.) or tell the guides to import the one component, and add a golden for `CHART_IMPORTS`. S Verified.
 
 ## chart - line
 

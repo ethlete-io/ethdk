@@ -1,9 +1,9 @@
 # Sankey chart
 
-`et-sankey-chart` draws a flow: nodes in columns from left to right, each as tall as what flows through it, joined by ribbons as wide as their value. It suits budgets, energy balances and funnels - anything where an amount splits and merges between stages. Import `CHART_IMPORTS`.
+`et-sankey-chart` draws a flow: nodes in columns from left to right, each as tall as what flows through it, joined by ribbons as wide as their value. It suits budgets, energy balances and funnels - anything where an amount splits and merges between stages. Import `SankeyChartComponent`.
 
 ```ts
-import { CHART_IMPORTS } from '@ethlete/components';
+import { SankeyChartComponent } from '@ethlete/components';
 ```
 
 ```html
@@ -87,7 +87,7 @@ When the chart first renders, the nodes and labels fade in, then the ribbons. Un
 
 ## Custom template
 
-`SankeyChartDirective` (`[etSankeyChart]`) holds the geometry without markup: `renderedNodes()` (per node its rect, hit `target`, `colorToken`, in/out totals and texts, `description` and label position), `renderedLinks()` (per link its ribbon `path`, `width`, midpoint `anchor`, `source`, `target`, `colorToken`, `valueText` and `name`), `highlightedLinks()`, `activeNodeKey()`, `hasHighlight()`, `table()`, `plotWidth()` and `formatValue()`. Report hover and focus with `hoverMark()`/`unhoverMark()` and `focusMark()`/`blurMark()`. Put `etChartPlot` on the element the flow is laid out in - its width is what the columns divide. Without one the directive throws `ET5100` in dev mode.
+`SankeyChartDirective` (`[etSankeyChart]`) holds the geometry without markup: `renderedNodes()` (per node its rect, hit `target`, `colorToken`, in/out totals and texts, `description` and label position), `renderedLinks()` (per link its ribbon `path`, `width`, midpoint `anchor`, `source`, `target`, `colorToken`, `valueText` and `name`), `highlightedLinks()`, `activeNodeKey()`, `hasHighlight()`, `table()`, `plotWidth()` and `formatValue()`. Report hover and focus with `hoverMark()`/`unhoverMark()` and `focusMark()`/`blurMark()`. Put `etChartPlot` on the element the flow is laid out in - its width is what the columns divide. Without one the directive throws `ET5100` in dev mode. Import `SankeyChartDirective` and `ChartPlotDirective`.
 
 ```html
 <div #chart="etSankeyChart" [nodes]="nodes" [links]="links" etSankeyChart label="Budget">
