@@ -2,9 +2,9 @@ import { ActionClasses, actionClassOf } from '../agent-api/action-classes';
 import { streamKeyLabel, streamKeyRepoPath } from '../model/block';
 import { QUOTABLE_EVIDENCE_KINDS } from '../model/evidence';
 import { mayAutoWrite, rowFieldSourceOf, storedSourceOf } from '../model/field-source';
-import { maskNames, pseudonymMap } from '../reason/pseudonym';
+import { maskIssueKey, maskNames, pseudonymMap } from '../reason/pseudonym';
 import { DEFAULT_MAX_TICKET_NOTES } from '../ticket/draft';
-import { TicketWritingRequest } from '../ticket/write';
+import { WorklogWritingRequest } from '../ticket/worklog';
 import { setRowDescription } from './edits';
 import { AutoModeDescription, DayReviewEdits, ReviewedRow } from './model';
 
@@ -53,14 +53,16 @@ export const autoDescriptionAsks = (options: {
 };
 
 /**
- * The masked payload the "Ask AI" ticket call is sent for a row: its checkout's name, its length, and
- * the wording its own quotable evidence carries.
+ * The masked payload the worklog call is sent for a row: its checkout's name, its length, its ticket
+ * and the wording its own quotable evidence carries. `issueSummary` is the ticket's title, where Jira
+ * could be read.
  */
 export const autoDescriptionRequest = (options: {
-  row: Pick<ReviewedRow, 'laneKey' | 'observedMs' | 'evidence'>;
+  row: Pick<ReviewedRow, 'laneKey' | 'observedMs' | 'evidence' | 'issueKey'>;
+  issueSummary?: string;
   maskedNames?: readonly string[];
   maxNotes?: number;
-}): TicketWritingRequest => {
+}): WorklogWritingRequest => {
   const { row } = options;
   const map = pseudonymMap(options.maskedNames ?? []);
   const notes: string[] = [];
@@ -71,12 +73,16 @@ export const autoDescriptionRequest = (options: {
     if (note && !notes.includes(note)) notes.push(note);
   }
 
+  const summary = options.issueSummary?.trim();
+
   return {
     ...(row.laneKey ? { repo: maskNames({ text: streamKeyLabel(row.laneKey), map }) } : {}),
     minutes: Math.round(row.observedMs / 60_000),
+    issue: {
+      key: maskIssueKey({ issueKey: row.issueKey ?? '', map }),
+      ...(summary ? { summary: maskNames({ text: summary, map }) } : {}),
+    },
     notes: notes.slice(0, options.maxNotes ?? DEFAULT_MAX_TICKET_NOTES).map((note) => maskNames({ text: note, map })),
-    parents: [],
-    issues: [],
   };
 };
 

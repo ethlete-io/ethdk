@@ -28,17 +28,20 @@ import {
   dayBoundaryOf,
   draftTicket,
   favoriteProjectKeys,
+  fetchJiraIssues$,
   gitFlowConfigFor,
   isAgentApiRequest,
   inferTicketProjectKey,
   localDayKey,
   reasoningOptionsOf,
+  readJiraCredentials$,
   standInWritingRequest,
   ticketWritingRequest,
   withAutoModeAnswer,
   withAutoModeCreated,
   withAutoModeDescription,
   writeTicketWithAgent$,
+  writeWorklogWithAgent$,
 } from '@ethlete/timetrack';
 import {
   EMPTY,
@@ -99,8 +102,8 @@ const outcomeOf = (options: { wording: TicketWording | null; projectKey?: string
  * A match is applied as `auto`, or waits in the approval queue as an `autoMode.apply` where the user
  * made applying stricter; a draft waits as a `jira.create`, and the key its approval files is applied
  * the same way. Every answer is stored against the day with the payload it sent, so a band is asked
- * once. A settled code row with a ticket gets its description written as `auto` by the same call,
- * once per row, where applying is `local`.
+ * once. A settled code row with a ticket gets a one-line worklog description written as `auto`, once
+ * per row, where applying is `local`.
  */
 const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
@@ -318,33 +321,45 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       ),
     );
 
-  const describe$ = (day: string, row: ReviewedRow): Observable<void> => {
-    const current = settings.settings();
-    const maskedNames = current.reasoning.maskedNames;
-    const request = autoDescriptionRequest({ row, maskedNames });
-
-    return writeTicketWithAgent$({
-      runner: ports.processes,
-      request,
-      options: reasoningOptionsOf(current),
-      maskedNames,
-    }).pipe(
-      switchMap((wording) =>
-        dayReview.changeDay$(day, (edits) =>
-          withAutoModeDescription({
-            edits,
-            row,
-            answer: {
-              rowId: autoDescriptionRowId(row),
-              askedAtMs: Date.now(),
-              request,
-              ...(wording?.description ? { description: wording.description } : {}),
-            },
-          }),
-        ),
+  const issueSummary$ = (issueKey: string): Observable<string | undefined> =>
+    readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }).pipe(
+      switchMap((credentials) =>
+        credentials ? fetchJiraIssues$({ transport: ports.transport, credentials, keys: [issueKey] }) : of([]),
       ),
+      map((issues) => issues.find((issue) => issue.key === issueKey)?.summary),
+      catchError(() => of(undefined)),
     );
-  };
+
+  const describe$ = (day: string, row: ReviewedRow): Observable<void> =>
+    (row.issueKey ? issueSummary$(row.issueKey) : of(undefined)).pipe(
+      switchMap((issueSummary) => {
+        const current = settings.settings();
+        const maskedNames = current.reasoning.maskedNames;
+        const request = autoDescriptionRequest({ row, issueSummary, maskedNames });
+
+        return writeWorklogWithAgent$({
+          runner: ports.processes,
+          request,
+          options: reasoningOptionsOf(current),
+          maskedNames,
+        }).pipe(
+          switchMap((description) =>
+            dayReview.changeDay$(day, (edits) =>
+              withAutoModeDescription({
+                edits,
+                row,
+                answer: {
+                  rowId: autoDescriptionRowId(row),
+                  askedAtMs: Date.now(),
+                  request,
+                  ...(description ? { description } : {}),
+                },
+              }),
+            ),
+          ),
+        );
+      }),
+    );
 
   const queue = (job: Job) => {
     if (pending.has(job.key)) return;

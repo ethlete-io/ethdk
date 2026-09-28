@@ -5,6 +5,7 @@ import { PresenceStatement } from '../model/statement';
 import { WorklogProposal } from '../model/proposal';
 import { RowFieldSources } from '../model/field-source';
 import { TicketWritingRequest } from '../ticket/write';
+import { WorklogWritingRequest } from '../ticket/worklog';
 
 /** The fields a reviewer can change on a machine-proposed row, keyed by the proposal's id. */
 export type ProposalOverride = {
@@ -133,7 +134,7 @@ export type AutoModeDescription = {
   rowId: string;
   askedAtMs: number;
   /** The masked payload that left the machine. */
-  request: TicketWritingRequest;
+  request: WorklogWritingRequest;
   description?: string;
 };
 

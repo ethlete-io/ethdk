@@ -11,3 +11,4 @@ export * from './spec-source';
 export * from './start';
 export * from './start-execute';
 export * from './write';
+export * from './worklog';

@@ -163,15 +163,18 @@ describe('autoDescriptionAsks', () => {
 });
 
 describe('autoDescriptionRequest', () => {
-  it('sends the checkout name, the length and the quotable wording, masked', () => {
+  it('sends the checkout name, the length, the ticket and the quotable wording, masked', () => {
     const row = codeRow();
 
-    expect(autoDescriptionRequest({ row, maskedNames: ['shop'] })).toEqual({
+    expect(autoDescriptionRequest({ row, issueSummary: 'Shop month export', maskedNames: ['shop', 'ABC'] })).toEqual({
       repo: expect.not.stringContaining('shop'),
       minutes: 60,
+      issue: { key: expect.stringMatching(/^(?!ABC-)[A-Z]+-1$/), summary: expect.not.stringContaining('Shop') },
       notes: ['Export the month as CSV'],
-      parents: [],
-      issues: [],
     });
+  });
+
+  it('sends the key alone where the ticket summary is not known', () => {
+    expect(autoDescriptionRequest({ row: codeRow() }).issue).toEqual({ key: 'ABC-1' });
   });
 });

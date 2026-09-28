@@ -94,10 +94,14 @@ auto-mode.ts` runs `writeTicketWithAgent$` once per band and stand-in, names unn
    "Hand back to auto mode"; `day.rows` rows carry `sources`. Project read shared with the create
    form in `day-review/project-issues.ts`. e2e: `apps/timetrack-e2e/src/auto-mode.spec.ts`.
    Row descriptions: done (2026-09-28). A settled code row of today (a `repo:` lane, ended 30
-   minutes before now) that names an issue gets its description from the same "Ask AI" ticket call,
-   written as `auto`, once per row: `autoDescriptionAsks`, `autoDescriptionRequest` and
-   `withAutoModeDescription` in `review/auto-description.ts`, answers on `DayReviewEdits.autoDescriptions`
-   (a failed run is stored too, so it is not retried). It is a `local` write, not a Jira write, so
+   minutes before now) that names an issue gets its description written as `auto`, once per row:
+   `autoDescriptionAsks`, `autoDescriptionRequest` and `withAutoModeDescription` in
+   `review/auto-description.ts`, answers on `DayReviewEdits.autoDescriptions` (a failed run is stored
+   too, so it is not retried). It has its own worklog prompt (`ticket/worklog.ts`,
+   `writeWorklogWithAgent$`), not the ticket prompt: one line under about 100 characters saying what
+   the stretch did, sent the row's ticket key and summary (read from Jira by key; the key alone
+   where that read fails) and told not to repeat the summary. An answer of the wrong shape or an
+   empty line counts as a failed run. It is a `local` write, not a Jira write, so
    it writes directly and never queues; it runs only while `autoMode.apply` is `local`. A `human`
    description is never touched, also one the user typed while the call ran. Calls, rows without a
    ticket, hidden, rejected, unattended and excluded rows are skipped. The check runs when the day's
