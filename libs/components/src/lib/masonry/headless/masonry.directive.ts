@@ -15,6 +15,8 @@ import { MasonryStylesComponent } from '../masonry-styles.component';
 import { MasonryPlacement } from '../masonry.types';
 import { packMasonryItems, resolveMasonryColumns } from './internals/masonry-layout';
 import { useMasonryResizeSettled } from './internals/masonry-resize-settled';
+import { MasonryItemDirective } from './masonry-item.directive';
+import { MASONRY_TOKEN } from './masonry.tokens';
 
 const isSameAssignment = (a: ReadonlyMap<MasonryItemDirective, number>, b: ReadonlyMap<MasonryItemDirective, number>) =>
   a.size === b.size && [...a].every(([item, column]) => b.get(item) === column);
@@ -35,8 +37,6 @@ const isFrozenReadingOrder = (
     frozen.order.filter((item) => current.has(item)),
   );
 };
-import { MasonryItemDirective } from './masonry-item.directive';
-import { MASONRY_TOKEN } from './masonry.tokens';
 
 /**
  * Packs variable-height items into columns, each item going to whichever column is currently shortest - the
@@ -49,8 +49,7 @@ import { MASONRY_TOKEN } from './masonry.tokens';
  * around it.
  *
  * The measuring is per item and continuous (a `ResizeObserver` each), so a card whose image loads late, or
- * whose text reflows, moves the ones below it - the one thing cdk's one-shot `getBoundingClientRect()`
- * snapshots could not do.
+ * whose text reflows, moves the ones below it.
  *
  * @example
  * <ul etMasonry [columnWidth]="240" [gap]="16">
@@ -97,13 +96,7 @@ export class MasonryDirective {
 
   private registeredItems = signal<MasonryItemDirective[]>([]);
 
-  /**
-   * A `@for` with a `track` re-orders DOM nodes without creating or destroying a single directive, so nothing
-   * about the registrations changes and only the DOM itself can say that the reading order did. Read by
-   * `items` purely to invalidate its sort - which is also why that sort needs an order equality: this fires
-   * for every insertion anywhere in a card, and only one that changes the order may re-lay-out.
-   */
-  private childMutations = signalElementMutations(this.elementRef, { childList: true, subtree: true });
+  private childMutations = signalElementMutations(this.elementRef, { childList: true });
 
   /**
    * @internal The items in DOM order, which for masonry *is* the placement order: registration order follows
@@ -119,11 +112,7 @@ export class MasonryDirective {
     { equal: isSameOrder },
   );
 
-  /**
-   * How wide the container is. Only the inline size is taken from the observed dimensions, deliberately: this
-   * directive *sets* the container's height, so a signal carrying both would see its own write and lay out
-   * again. Reading one number out of it means the recompute stops at an unchanged value instead.
-   */
+  /** How wide the container is. */
   public containerInlineSize = computed(() => this.dimensions().client?.width ?? 0);
 
   /** The column grid in effect: how many, and how wide. `count: 0` until the container has been measured. */
@@ -145,21 +134,11 @@ export class MasonryDirective {
     byItem: ReadonlyMap<MasonryItemDirective, number>;
   } | null>(null);
 
-  /**
-   * Every item's position, derived rather than assigned. The whole layout is one `computed` over the item
-   * sizes, the column grid and the gap - so there is no invalidation to get right, no imperative pass over
-   * the DOM, and appending to a feed re-derives the existing placements *identically* because the packing is
-   * prefix-stable. What cdk did with a partial-invalidation mode, Angular's binding dedupe does here: an
-   * item whose placement is unchanged is not written to again.
-   */
   private layout = computed(() => {
     const items = this.items();
     const { count, inlineSize } = this.columns();
     const assignments = this.columnAssignments();
 
-    // Assignments made for a different number of columns say nothing about this one, so a resize that changes
-    // the count rebalances from scratch - and so does a re-sorted feed, because keeping every card in the
-    // column it happens to be in would put the item that is now read first wherever that column is.
     const pinned =
       assignments && assignments.columnCount === count && isFrozenReadingOrder(items, assignments)
         ? assignments.byItem
@@ -186,11 +165,8 @@ export class MasonryDirective {
    * Whether the layout matches what is on screen: the container has been measured, and every item has
    * reported its size at the current column width.
    *
-   * This is the signal to gate an infinite scroll on - fetching the next page while the current one is still
-   * settling appends items against sizes that are about to change, which is what cdk needed its
-   * `injectInfinityQueryResponseDelay` handshake for. That provider only ever existed for the legacy query
-   * client, so this is the generic replacement: `disabled: !masonry.isSettled()` on the trigger, whatever the
-   * client.
+   * Gate an infinite scroll on it (`disabled: !masonry.isSettled()` on the trigger), so the next page is not
+   * appended against sizes that are about to change.
    */
   public isSettled = computed(() => {
     if (this.columns().count === 0) return false;
@@ -208,9 +184,6 @@ export class MasonryDirective {
 
   constructor() {
     mountEasingTokens();
-    // Structural CSS is mounted rather than shipped on a component, so the directive works standalone -
-    // absolute positioning is this layout's mechanism, not its decoration, and a headless composition has to
-    // get it too. The style manager de-duplicates, so many masonries inject one <style>.
     this.styleManager.mount(MasonryStylesComponent);
 
     // Freezing the assignments is what makes a card growing a local event. It happens on settling, never
@@ -228,10 +201,7 @@ export class MasonryDirective {
       }
 
       untracked(() => {
-        // Only when something actually changed: the write feeds back into the layout this was derived from,
-        // and re-freezing an identical mapping every time would never come to rest. The order counts as part
-        // of it - a re-sort that happens to land on the same columns must still be recorded, or the layout
-        // would keep reading the stale order as a reason to drop the pins.
+        // The write feeds back into the layout, so an unchanged mapping (order included) must not be re-set.
         const current = this.columnAssignments();
 
         if (
@@ -251,9 +221,6 @@ export class MasonryDirective {
       const children = signalElementChildren(this.elementRef);
       let hasCheckedItems = false;
 
-      // An empty masonry is a legitimate state (an unfetched feed), so this checks the first time there *are*
-      // children - children without the item directive are positioned by nothing and stay invisible, which
-      // is a silent failure worth a loud error.
       effect(() => {
         const childCount = children().length;
         const itemCount = this.registeredItems().length;

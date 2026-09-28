@@ -2,6 +2,7 @@ import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
 import { query, queryAll } from '../testing/driver-core';
+import { fakeLayout } from '../testing/fake-layout';
 import { MasonryDirective } from './headless';
 import { MASONRY_IMPORTS } from './masonry.imports';
 import { createMasonryHarness, MasonryHarness } from './testing/masonry-driver';
@@ -113,6 +114,30 @@ describe('MasonryDirective', () => {
     expect(items(fixture).every((item) => item.hasAttribute('data-positioned'))).toBe(true);
     expect(fixture.componentInstance.masonry().isSettled()).toBe(true);
     expect(container(fixture).hasAttribute('data-settled')).toBe(true);
+  });
+
+  it('does not count the first measured container width as a resize', () => {
+    const fixture = createHost();
+
+    expect(fixture.componentInstance.masonry().isResizing()).toBe(false);
+    expect(container(fixture).hasAttribute('data-resizing')).toBe(false);
+  });
+
+  it('reports a container width change as a resize until the width holds still', () => {
+    const fixture = createHost();
+
+    vi.useFakeTimers();
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    fakeLayout([{ match: '.et-masonry', clientWidth: 800 }]);
+    settle(fixture);
+
+    expect(fixture.componentInstance.masonry().isResizing()).toBe(true);
+
+    vi.advanceTimersByTime(150);
+
+    expect(fixture.componentInstance.masonry().isResizing()).toBe(false);
   });
 
   it('settles from the post-render measurement without waiting for a resize observer delivery', () => {

@@ -18,8 +18,7 @@ import { MASONRY_TOKEN } from './masonry.tokens';
  * width and position the masonry works out from those measurements.
  *
  * Continuous measurement is what makes late content behave: an image that arrives after layout, a card that
- * reflows when a translation swaps in, a description that expands on click. cdk measured each item once and
- * kept the number, so any of those left the item overlapping its neighbour until the next resize.
+ * reflows when a translation swaps in, a description that expands on click.
  *
  * The element is yours, which is what lets a masonry be a real list - `<ul etMasonry>` with `<li
  * etMasonryItem>` children needs no ARIA roles at all.

@@ -1,6 +1,6 @@
 # testing, pagination, breadcrumb, accordion, masonry, loader scan - open findings
 
-Scan of `libs/components/src/lib/{testing,pagination,breadcrumb,accordion,masonry,loader}` from 2026-09-28. 0 High, 1 Medium, 16 Low, 1 Spec. Skipped: `testing/control-driver.ts`, `field-control-driver.ts`, `overlay-control-driver.ts`, `masonry/testing/masonry-driver.ts`, and most CSS (read only for colours, layers, motion).
+Scan of `libs/components/src/lib/{testing,pagination,breadcrumb,accordion,masonry,loader}` from 2026-09-28. 0 High, 1 Medium, 12 Low, 1 Spec. Skipped: `testing/control-driver.ts`, `field-control-driver.ts`, `overlay-control-driver.ts`, `masonry/testing/masonry-driver.ts`, and most CSS (read only for colours, layers, motion).
 
 ## breadcrumb
 
@@ -11,11 +11,7 @@ Scan of `libs/components/src/lib/{testing,pagination,breadcrumb,accordion,masonr
 
 ## masonry
 
-- Low: an `import` comes after three helper declarations (`headless/masonry.directive.ts:38`). Move the helpers below the imports. S
 - Low: the item always sets `role="listitem"` and the host always sets `role="list"` (`headless/masonry-item.directive.ts:35`, `headless/masonry.directive.ts:68`), but the JSDoc says `<ul>`/`<li>` needs no ARIA roles (`headless/masonry-item.directive.ts:24-25`). A masonry of `<article>` cards gets a list role that it cannot turn off. Pick one: drop the forced roles or fix the doc. S
-- Low: `useMasonryResizeSettled` sets a signal from `tap` + `.subscribe()` (`headless/internals/masonry-resize-settled.ts:26-35`), and the first non-zero width still counts as a resize, although the comment at `:28` says it does not. Use `toSignal` with a `switchMap` to `timer`, and fix the comment or the filter. S
-- Low: `childMutations` observes `subtree: true` (`headless/masonry.directive.ts:106`), so every node insertion inside any card re-runs `sortByDomOrder` over all items. For a long live feed, observe `childList` on the host only; item re-orders happen at that level. S
-- Low: migration narration about cdk in public JSDoc (`headless/masonry.directive.ts:51-53,152,190-193`, `headless/masonry-item.directive.ts:21-22`, `headless/internals/masonry-layout.ts:14-15,58-60`), plus long rationale comments (`headless/masonry.directive.ts:100-104,122-126,160-162,211-218,231-234,254-256`). S
 
 ## loader
 
