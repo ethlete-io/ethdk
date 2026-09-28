@@ -10,8 +10,10 @@ import { NavTabsOutletDirective } from './headless/nav-tabs-outlet.directive';
     class: 'et-nav-tabs-outlet',
   },
   styles: `
-    .et-nav-tabs-outlet {
-      display: block;
+    @layer components {
+      .et-nav-tabs-outlet {
+        display: block;
+      }
     }
   `,
 })

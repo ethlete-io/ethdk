@@ -165,11 +165,13 @@ export class TabGroupDirective {
       return clampedIndex;
     }
 
-    for (let currentIndex = 0; currentIndex < triggers.length; currentIndex++) {
-      const trigger = triggers[currentIndex];
+    for (let distance = 1; distance < triggers.length; distance++) {
+      for (const candidateIndex of [clampedIndex - distance, clampedIndex + distance]) {
+        const trigger = triggers[candidateIndex];
 
-      if (trigger && !trigger.disabled()) {
-        return currentIndex;
+        if (trigger && !trigger.disabled()) {
+          return candidateIndex;
+        }
       }
     }
 

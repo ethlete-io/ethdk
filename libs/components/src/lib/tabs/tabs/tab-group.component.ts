@@ -233,7 +233,6 @@ export class TabGroupComponent {
     mountTabScaleStyles();
     mountTabBarStyles();
 
-    // the component renders its panels inline instead of registering [etTabPanel] directives
     this.tabGroup.managesPanelsInternally.set(true);
     this.tabGroup.tabBar.hostRole.set('none');
   }

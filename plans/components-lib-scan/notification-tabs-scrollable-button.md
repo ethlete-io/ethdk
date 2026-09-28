@@ -1,13 +1,6 @@
 # notification, tabs, scrollable, button scan - open findings
 
-Scan of `libs/components/src/lib/{notification,tabs,scrollable,button}` from 2026-09-28. 0 High, 1 Medium, 20 Low, 1 Spec (verified 2026-09-28). Skipped: stories, most specs, testing drivers, and a line-by-line read of the large CSS files (grep only for `@layer`, colours and transitions).
-
-## tabs
-
-- Low: a selected tab that turns disabled falls back to the first enabled tab, not the nearest one (`tabs/headless/tab-group.directive.ts:168-174`). S
-- Low: with two or more `et-nav-tabs` on a page, `single()` returns `null` and a sibling `et-nav-tabs-outlet` loses its `aria-labelledby` without a warning (`nav-tabs/headless/nav-tabs-registry.ts:18-22`, `nav-tabs/headless/nav-tabs-outlet.directive.ts:24`). Add a dev-mode warning or an explicit `for` input. S
-- Low: the inline `.et-nav-tabs-outlet` style is not in `@layer components` (`nav-tabs/nav-tabs-outlet.component.ts:12-16`). S
-- Low: comment restates the next line (`tabs/tab-group.component.ts:236`). S
+Scan of `libs/components/src/lib/{notification,tabs,scrollable,button}` from 2026-09-28. 0 High, 1 Medium, 16 Low, 1 Spec (verified 2026-09-28). Skipped: stories, most specs, testing drivers, and a line-by-line read of the large CSS files (grep only for `@layer`, colours and transitions).
 
 ## notification
 

@@ -94,3 +94,37 @@ describe('TabGroupDirective selection mirroring', () => {
     expect(counts.group).toBe(0);
   });
 });
+
+@Component({
+  imports: [TabBarDirective, TabBarTriggerDirective, TabGroupDirective, TabPanelDirective],
+  template: `
+    <div [(selectedIndex)]="selectedIndex" [sessionMemoryKey]="null" etTabBar etTabGroup>
+      @for (label of labels; track label; let index = $index) {
+        <button [disabled]="disabledIndex() === index" etTabBarTrigger type="button">{{ label }}</button>
+      }
+      @for (label of labels; track label) {
+        <div etTabPanel>{{ label }}</div>
+      }
+    </div>
+  `,
+})
+class TabGroupDisableHost {
+  labels = ['One', 'Two', 'Three', 'Four'];
+  selectedIndex = signal(2);
+  disabledIndex = signal<number | null>(null);
+}
+
+describe('TabGroupDirective disabled fallback', () => {
+  it('moves the selection to the nearest enabled tab when the selected one turns disabled', () => {
+    sessionStorage.clear();
+
+    const fixture = mountControl(TabGroupDisableHost);
+
+    fixture.detectChanges();
+
+    fixture.componentInstance.disabledIndex.set(2);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.selectedIndex()).toBe(1);
+  });
+});

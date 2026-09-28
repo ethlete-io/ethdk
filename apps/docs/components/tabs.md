@@ -23,7 +23,7 @@ Two flavors sharing one accessible tab-bar engine: **content tabs** (`et-tab-gro
 import { TAB_IMPORTS } from '@ethlete/components';
 ```
 
-- `selectedIndex` is a two-way model (default `0`); disabled tabs are skipped.
+- `selectedIndex` is a two-way model (default `0`); disabled tabs are skipped, and a selected tab that turns disabled hands the selection to its nearest enabled neighbour (the preceding one on a tie).
 - `label` + optional `icon` render the trigger, or supply a custom `ng-template etTabLabel`.
 - `preserveContent` (default `true`) keeps inactive panels rendered but `hidden` + `inert`; set it to `false` for lazy rendering of only the active panel.
 - `sessionMemoryKey` persists the selected tab across navigation in session storage.
@@ -50,7 +50,7 @@ Anchors + router instead of an index - active state comes from `RouterLinkActive
 import { NAV_TAB_IMPORTS } from '@ethlete/components';
 ```
 
-`a[et-nav-tab-link]` forwards the usual `RouterLink` inputs (`queryParams`, `fragment`, `relativeTo`, …) and supports `disabled` just like content tabs - a disabled link keeps `aria-disabled` but drops its `href`, so it cannot be followed. The optional `et-nav-tabs-outlet` wrapper gives the routed region proper `role="tabpanel"` semantics - place it as a sibling of `et-nav-tabs` (as above); it finds the bar that labels it automatically.
+`a[et-nav-tab-link]` forwards the usual `RouterLink` inputs (`queryParams`, `fragment`, `relativeTo`, …) and supports `disabled` just like content tabs - a disabled link keeps `aria-disabled` but drops its `href`, so it cannot be followed. The optional `et-nav-tabs-outlet` wrapper gives the routed region proper `role="tabpanel"` semantics - place it as a sibling of `et-nav-tabs` (as above); it finds the bar that labels it automatically. With more than one `et-nav-tabs` on the page it cannot tell which bar that is, so place it inside its own `et-nav-tabs`; dev mode warns with `ET2004`.
 
 A nav tab link is active on its route whatever the URL's query params - it defaults `routerLinkActiveOptions` to `{ paths: 'subset', queryParams: 'ignored', fragment: 'ignored', matrixParams: 'ignored' }`, so a link carrying `[queryParams]` (a default sort, say) stays selected after the user changes them. Bind `[routerLinkActiveOptions]` yourself (e.g. `{ exact: true }`) to match query params again.
 

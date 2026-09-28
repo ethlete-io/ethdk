@@ -35,6 +35,17 @@ export class NavTabsOutletDirective {
             { element: this.hostElement },
           );
         }
+
+        if (!this.nearestTabBar && this.registry.hasAny() && !this.registry.single()) {
+          console.warn(
+            new RuntimeError(
+              TAB_ERROR_CODES.AMBIGUOUS_NAV_TABS,
+              '[NavTabsOutletDirective] et-nav-tabs-outlet is a sibling of more than one et-nav-tabs element, so it ' +
+                'cannot tell which bar labels it and renders without aria-labelledby. Place it inside its et-nav-tabs.',
+              { element: this.hostElement },
+            ).message,
+          );
+        }
       });
     }
   }

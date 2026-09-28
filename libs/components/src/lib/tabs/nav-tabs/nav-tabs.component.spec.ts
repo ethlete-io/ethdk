@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Router, RouterOutlet, provideRouter } from '@angular/router';
+import { vi } from 'vitest';
 import '../../../test-helpers';
 import { expectAriaTablist } from '../../testing/aria-structure';
 import { fakeElementScroll, fakeIntersectionObserver, fakeResizeObserver } from '../../testing/fake-layout';
@@ -53,6 +54,22 @@ class NavTabsTestHost {
   imports: [NavTabsComponent, NavTabLinkComponent, NavTabsOutletComponent, RouterOutlet],
 })
 class SiblingOutletTestHost {}
+
+@Component({
+  template: `
+    <et-nav-tabs>
+      <a et-nav-tab-link="/one">One</a>
+    </et-nav-tabs>
+    <et-nav-tabs>
+      <a et-nav-tab-link="/two">Two</a>
+    </et-nav-tabs>
+    <et-nav-tabs-outlet>
+      <router-outlet />
+    </et-nav-tabs-outlet>
+  `,
+  imports: [NavTabsComponent, NavTabLinkComponent, NavTabsOutletComponent, RouterOutlet],
+})
+class AmbiguousSiblingOutletTestHost {}
 
 @Component({
   template: `
@@ -239,6 +256,37 @@ describe('NavTabsComponent', () => {
     expect(outlet?.getAttribute('aria-labelledby')).toBe(firstLink?.id ?? null);
     expect(hostElement.textContent).toContain('Route one');
 
+    siblingFixture.destroy();
+  });
+
+  it('warns in dev mode when a sibling outlet cannot tell which of two nav tabs labels it', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const ambiguousFixture = TestBed.createComponent(AmbiguousSiblingOutletTestHost);
+
+    await router.navigateByUrl('/one');
+    ambiguousFixture.detectChanges();
+    await ambiguousFixture.whenStable();
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0]?.[0])).toContain('ET2004');
+
+    warn.mockRestore();
+    ambiguousFixture.destroy();
+  });
+
+  it('does not warn for a single sibling nav tabs', async () => {
+    fixture.destroy();
+
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const siblingFixture = TestBed.createComponent(SiblingOutletTestHost);
+
+    await router.navigateByUrl('/one');
+    siblingFixture.detectChanges();
+    await siblingFixture.whenStable();
+
+    expect(warn).not.toHaveBeenCalled();
+
+    warn.mockRestore();
     siblingFixture.destroy();
   });
 

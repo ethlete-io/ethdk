@@ -262,12 +262,13 @@ All grid checks run in dev mode only.
 
 All tabs checks run in dev mode only.
 
-| Code     | Cause                                                                                     | Fix                                                                          |
-| -------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `ET2000` | A tab trigger has no enclosing tab bar.                                                   | Place it inside `et-tab-group`, `et-nav-tabs`, or an `[etTabBar]` element.   |
-| `ET2001` | `<et-tab>` or `etTabPanel` is outside a tab group (an orphan `<et-tab>` renders nothing). | Move it inside `et-tab-group` / an `[etTabGroup]` element.                   |
-| `ET2002` | A headless tab group has triggers but no registered `etTabPanel`.                         | Add a panel per tab.                                                         |
-| `ET2003` | `a[et-nav-tab-link]` or `et-nav-tabs-outlet` is used without an `et-nav-tabs` element.    | Add the `et-nav-tabs` bar (links go inside it; the outlet can be a sibling). |
+| Code     | Cause                                                                                                                   | Fix                                                                          |
+| -------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `ET2000` | A tab trigger has no enclosing tab bar.                                                                                 | Place it inside `et-tab-group`, `et-nav-tabs`, or an `[etTabBar]` element.   |
+| `ET2001` | `<et-tab>` or `etTabPanel` is outside a tab group (an orphan `<et-tab>` renders nothing).                               | Move it inside `et-tab-group` / an `[etTabGroup]` element.                   |
+| `ET2002` | A headless tab group has triggers but no registered `etTabPanel`.                                                       | Add a panel per tab.                                                         |
+| `ET2003` | `a[et-nav-tab-link]` or `et-nav-tabs-outlet` is used without an `et-nav-tabs` element.                                  | Add the `et-nav-tabs` bar (links go inside it; the outlet can be a sibling). |
+| `ET2004` | Warning: a sibling `et-nav-tabs-outlet` sits next to more than one `et-nav-tabs` element and gets no `aria-labelledby`. | Place the outlet inside its `et-nav-tabs`.                                   |
 
 ## Scrollable (ET21xx)
 
