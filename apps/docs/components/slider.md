@@ -194,19 +194,20 @@ With `snapToMarks`, a "`step`" above means "one mark".
 
 The rail is a neutral `--et-surface-interaction-solid` tint; the fill and thumbs use `--et-theme-color-primary-solid` from the nearest [color theme](/core/theming). Public design tokens (shared by both components):
 
-| Token                               | Default | Purpose                        |
-| ----------------------------------- | ------- | ------------------------------ |
-| `--et-slider-track-size`            | `4px`   | Rail / fill thickness          |
-| `--et-slider-thumb-size`            | `18px`  | Thumb diameter                 |
-| `--et-slider-vertical-size`         | `160px` | Track length when vertical     |
-| `--et-slider-mark-size`             | `4px`   | Tick diameter                  |
-| `--et-slider-mark-label-font-size`  | `11px`  | Tick labels                    |
-| `--et-slider-label-font-size`       | `13px`  | Projected `et-label`           |
-| `--et-slider-thumb-value-font-size` | `12px`  | Value-label bubble             |
-| `--et-slider-error-font-size`       | `12px`  | Error messages                 |
-| `--et-slider-warning-font-size`     | `12px`  | Warning messages               |
-| `--et-slider-hint-font-size`        | `12px`  | Hint text                      |
-| `--et-slider-support-duration`      | `180ms` | Error/hint transition duration |
+| Token                               | Default                       | Purpose                        |
+| ----------------------------------- | ----------------------------- | ------------------------------ |
+| `--et-slider-track-size`            | `4px`                         | Rail / fill thickness          |
+| `--et-slider-thumb-size`            | `18px`                        | Thumb diameter                 |
+| `--et-slider-thumb-shadow`          | `0 1px 4px rgb(0 0 0 / 0.25)` | Thumb shadow                   |
+| `--et-slider-vertical-size`         | `160px`                       | Track length when vertical     |
+| `--et-slider-mark-size`             | `4px`                         | Tick diameter                  |
+| `--et-slider-mark-label-font-size`  | `11px`                        | Tick labels                    |
+| `--et-slider-label-font-size`       | `13px`                        | Projected `et-label`           |
+| `--et-slider-thumb-value-font-size` | `12px`                        | Value-label bubble             |
+| `--et-slider-error-font-size`       | `12px`                        | Error messages                 |
+| `--et-slider-warning-font-size`     | `12px`                        | Warning messages               |
+| `--et-slider-hint-font-size`        | `12px`                        | Hint text                      |
+| `--et-slider-support-duration`      | `180ms`                       | Error/hint transition duration |
 
 ## Error codes
 

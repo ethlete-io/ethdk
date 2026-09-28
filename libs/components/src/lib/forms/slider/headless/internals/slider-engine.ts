@@ -26,15 +26,29 @@ const decimalPrecisionOf = (value: number) => {
 
 export const clampValue = (value: number, bounds: SliderBounds) => Math.min(bounds.max, Math.max(bounds.min, value));
 
+const STEP_EPSILON = 1e-9;
+
+const roundStepCount = (count: number, direction: MarkSnapDirection) => {
+  if (direction === 'down') {
+    return Math.floor(count + STEP_EPSILON);
+  }
+
+  if (direction === 'up') {
+    return Math.ceil(count - STEP_EPSILON);
+  }
+
+  return Math.round(count);
+};
+
 /** Clamps into the bounds and snaps onto the step grid anchored at `min`, without float noise. */
-export const snapValueToStep = (value: number, bounds: SliderSteppedBounds) => {
-  const { min, max, step } = bounds;
+export const snapValueToStep = (value: number, bounds: SliderSteppedBounds & { direction?: MarkSnapDirection }) => {
+  const { min, max, step, direction = 'nearest' } = bounds;
 
   if (max <= min) {
     return min;
   }
 
-  const stepped = min + Math.round((clampValue(value, bounds) - min) / step) * step;
+  const stepped = min + roundStepCount((clampValue(value, bounds) - min) / step, direction) * step;
   const precision = Math.max(decimalPrecisionOf(step), decimalPrecisionOf(min));
   const rounded = Number(stepped.toFixed(precision));
 

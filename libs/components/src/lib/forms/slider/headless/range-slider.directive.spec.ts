@@ -95,6 +95,38 @@ describe('RangeSliderDirective', () => {
     expect(driver.thumbAttr('aria-valuemax', 0)).toBe('70');
   });
 
+  it('snaps a sibling-limited thumb away from the sibling when minDistance is off the step grid', () => {
+    driver.host.step.set(10);
+    driver.host.minDistance.set(5);
+    driver.host.value.set([20, 50]);
+    driver.tick();
+
+    driver.press('End', 0);
+    expect(driver.host.value()).toEqual([40, 50]);
+
+    driver.host.minDistance.set(3);
+    driver.host.value.set([50, 90]);
+    driver.tick();
+
+    driver.press('Home', 1);
+    expect(driver.host.value()).toEqual([50, 60]);
+  });
+
+  it('keeps the ARIA bounds inside the track when the value breaks minDistance', () => {
+    driver.host.minDistance.set(10);
+    driver.host.value.set([0, 5]);
+    driver.tick();
+
+    expect(driver.thumbAttrs('aria-valuemin')).toEqual(['0', '10']);
+    expect(driver.thumbAttrs('aria-valuemax')).toEqual(['0', '100']);
+
+    driver.host.value.set([95, 100]);
+    driver.tick();
+
+    expect(driver.thumbAttrs('aria-valuemin')).toEqual(['0', '100']);
+    expect(driver.thumbAttrs('aria-valuemax')).toEqual(['90', '100']);
+  });
+
   it('moves the nearest thumb on a track pointerdown', () => {
     driver.pointer('pointerdown', 30);
     expect(driver.host.value()).toEqual([30, 80]);

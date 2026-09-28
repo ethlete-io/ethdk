@@ -168,9 +168,7 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
     return { min: this.effectiveMin(), max: this.effectiveMax() };
   }
 
-  public thumbValueText(index: number) {
-    void index;
-
+  public thumbValueText() {
     if (this.mixed()) {
       return this.resolvedMixedLabel();
     }
@@ -186,10 +184,7 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
     return markValues.length ? adjacentMarkValue(value, { markValues, steps }) : value + steps * this.step();
   }
 
-  public commitThumbValue(index: number, value: number) {
-    // the single slider has one thumb - `index` only exists to satisfy the shared host contract
-    void index;
-
+  public commitThumbValue(_index: number, value: number) {
     if (!this.interactive()) {
       return;
     }

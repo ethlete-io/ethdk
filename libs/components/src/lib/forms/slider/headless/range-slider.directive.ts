@@ -17,6 +17,7 @@ import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '..
 import { SLIDER_ERROR_CODES } from '../slider-errors';
 import {
   adjacentMarkValue,
+  clampValue,
   constrainRangeThumb,
   resolveMarks,
   snapValueToMarks,
@@ -184,10 +185,11 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
     }
 
     const [start, end] = this.thumbValues() as RangeSliderValue;
+    const bounds = this.bounds();
 
     return index === 0
-      ? { min: this.effectiveMin(), max: end - this.minDistance() }
-      : { min: start + this.minDistance(), max: this.effectiveMax() };
+      ? { min: bounds.min, max: clampValue(end - this.minDistance(), bounds) }
+      : { min: clampValue(start + this.minDistance(), bounds), max: bounds.max };
   }
 
   public thumbValueText(index: number) {
@@ -276,9 +278,10 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
     }
 
     const markValues = this.snapMarkValues();
+    const direction = end === 'start' ? 'down' : 'up';
 
     return markValues.length
-      ? snapValueToMarks(constrained, { markValues, direction: end === 'start' ? 'down' : 'up' })
-      : snapValueToStep(constrained, this.bounds());
+      ? snapValueToMarks(constrained, { markValues, direction })
+      : snapValueToStep(constrained, { ...this.bounds(), direction });
   }
 }
