@@ -1,5 +1,5 @@
 import { effect, Injector, untracked } from '@angular/core';
-import { catchError, EMPTY, isObservable, Observable, Subscription, take, tap } from 'rxjs';
+import { catchError, defaultIfEmpty, EMPTY, isObservable, Observable, Subscription, take, tap } from 'rxjs';
 import { AnyDropzoneUploadConfig } from '../../dropzone/headless';
 
 /**
@@ -63,7 +63,8 @@ export const startImageUpload = (options: StartImageUploadOptions): RichTextEdit
     const subscription: Subscription = result
       .pipe(
         take(1),
-        tap((url) => onSuccess(url)),
+        defaultIfEmpty(''),
+        tap((url) => settleWithUrl(url, { onSuccess, onError })),
         // The failure is the tool's to report (it removes the placeholder); rethrowing it would
         // surface as an unhandled RxJS error on top of that.
         catchError((error: unknown) => {
@@ -81,7 +82,7 @@ export const startImageUpload = (options: StartImageUploadOptions): RichTextEdit
 
   Promise.resolve(result).then(
     (url) => {
-      if (!cancelled) onSuccess(url);
+      if (!cancelled) settleWithUrl(url, { onSuccess, onError });
     },
     (error: unknown) => {
       if (!cancelled) onError(error, errorMessageOf(error));
@@ -94,14 +95,14 @@ export const startImageUpload = (options: StartImageUploadOptions): RichTextEdit
 /**
  * The dropzone's per-file upload handle already models progress, errors and the two query flavors;
  * this only mirrors its signals onto the callbacks. Reading them needs a reactive context, hence the
- * effect (destroyed with the run, so a cancelled upload stops reporting).
+ * effect, released as soon as the upload settles or is cancelled.
  */
 const runQueryUpload = (
   options: Omit<StartImageUploadOptions, 'upload'> & { upload: AnyDropzoneUploadConfig<string> },
 ): RichTextEditorImageUploadRun => {
   const { file, upload, injector, onProgress, onSuccess, onError } = options;
   const handle = upload.createUploadHandle({ file, injector });
-  let settled = false;
+  let released = false;
 
   const effectRef = effect(
     () => {
@@ -109,7 +110,7 @@ const runQueryUpload = (
       const progress = handle.progress();
 
       untracked(() => {
-        if (settled) return;
+        if (released) return;
 
         if (state === 'uploading') {
           onProgress(progress);
@@ -117,31 +118,38 @@ const runQueryUpload = (
           return;
         }
 
-        settled = true;
+        const url = handle.value();
+        const error = handle.error();
+        const errorMessage = handle.errorMessage();
 
-        if (state === 'success') {
-          const url = handle.value();
+        release();
 
-          if (url) onSuccess(url);
-          else onError(null, null);
-
-          return;
-        }
-
-        onError(handle.error(), handle.errorMessage());
+        if (state === 'success') settleWithUrl(url, { onSuccess, onError });
+        else onError(error, errorMessage);
       });
     },
     { injector },
   );
 
+  const release = () => {
+    if (released) return;
+
+    released = true;
+    effectRef.destroy();
+    handle.dispose();
+  };
+
   handle.execute();
 
-  return {
-    cancel: () => {
-      effectRef.destroy();
-      handle.dispose();
-    },
-  };
+  return { cancel: release };
+};
+
+const settleWithUrl = (
+  url: string | null | undefined,
+  { onSuccess, onError }: Pick<StartImageUploadOptions, 'onSuccess' | 'onError'>,
+) => {
+  if (url) onSuccess(url);
+  else onError(null, null);
 };
 
 /** Best-effort message for the failure callback - an `Error`, or a query error's own message. */

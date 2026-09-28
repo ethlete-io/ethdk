@@ -117,7 +117,7 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
   const ops = createImageOps(renderer);
   const accept = config.accept ?? 'image/*';
 
-  let overlayRef: OverlayRef<RichTextEditorImageEditorComponent, unknown> | null = null;
+  const overlayRefs = new Map<RichTextEditorDirective, OverlayRef<RichTextEditorImageEditorComponent, unknown>>();
 
   const fail = (failure: RichTextEditorImageFailure) => config.onFailure?.(failure);
 
@@ -131,12 +131,19 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
     renderer.setStyle(input, { display: 'none' });
     renderer.appendChild(document.body, input);
 
+    const unregisterRemoval = destroyRef.onDestroy(() => input.remove());
+
+    const removeInput = () => {
+      input.remove();
+      unregisterRemoval();
+    };
+
     fromEvent(input, 'change')
       .pipe(
         take(1),
         tap(() => {
           upload(editor, Array.from(input.files ?? []));
-          input.remove();
+          removeInput();
         }),
         takeUntilDestroyed(destroyRef),
       )
@@ -144,15 +151,7 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
 
     // A cancelled dialog fires `cancel` in every browser that ships the event; where it doesn't, the
     // input is cleaned up on the next pick or when the editor goes away.
-    fromEvent(input, 'cancel')
-      .pipe(
-        take(1),
-        tap(() => input.remove()),
-        takeUntilDestroyed(destroyRef),
-      )
-      .subscribe();
-
-    destroyRef.onDestroy(() => input.remove());
+    fromEvent(input, 'cancel').pipe(take(1), tap(removeInput), takeUntilDestroyed(destroyRef)).subscribe();
 
     input.click();
   };
@@ -184,12 +183,22 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
     // that edit so the value stays in step with the DOM even if the upload never finishes.
     editor.syncFromDom({ boundary: true });
 
+    let settled = false;
+    let unregisterCancel: (() => void) | null = null;
+
+    const settle = () => {
+      settled = true;
+      unregisterCancel?.();
+    };
+
     const run = startImageUpload({
       file,
       upload: config.upload,
       injector,
       onProgress: (percentage) => ops.setPlaceholderProgress(placeholder, percentage),
       onSuccess: (url) => {
+        settle();
+
         const image = ops.replacePlaceholderWithImage({ dom, placeholder, image: { src: url, alt: '' } });
 
         // Gone means the content was replaced while the upload ran (an undo, an external write) -
@@ -197,12 +206,13 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
         if (image) editor.syncFromDom({ boundary: true });
       },
       onError: (error, message) => {
+        settle();
         showFailure(placeholder, labels.imageUploadFailed);
         fail({ file, reason: 'upload-failed', error, message });
       },
     });
 
-    destroyRef.onDestroy(() => run.cancel());
+    if (!settled) unregisterCancel = destroyRef.onDestroy(() => run.cancel());
   };
 
   /** Leaves the placeholder in its failed state briefly, so the user sees which image didn't make it. */
@@ -278,8 +288,8 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
   };
 
   const openEditor = (editor: RichTextEditorDirective, image: HTMLImageElement) => {
-    if (overlayRef) {
-      close();
+    if (overlayRefs.has(editor)) {
+      close(editor);
 
       return;
     }
@@ -337,14 +347,14 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
       overlayConfig,
     );
 
-    overlayRef = ref;
+    overlayRefs.set(editor, ref);
 
     ref
       .afterClosedEvent()
       .pipe(
         take(1),
         tap((closeEvent) => {
-          if (overlayRef === ref) overlayRef = null;
+          if (overlayRefs.get(editor) === ref) overlayRefs.delete(editor);
 
           // Escape means "back to the text"; an outside pointer was aimed somewhere else.
           if (closeEvent.source === 'escape') queueMicrotask(() => editor.activate());
@@ -365,32 +375,34 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
   }) => {
     ops.applyAlt(image, alt);
     editor.syncFromDom({ boundary: true });
-    close();
+    close(editor);
     queueMicrotask(() => editor.activate());
   };
 
   const removeImage = (editor: RichTextEditorDirective, image: HTMLImageElement) => {
     ops.removeImage(editor.editorDom, image);
     editor.syncFromDom({ boundary: true });
-    close();
+    close(editor);
     queueMicrotask(() => editor.activate());
   };
 
   const dismiss = (editor: RichTextEditorDirective) => {
-    close();
+    close(editor);
     queueMicrotask(() => editor.activate());
   };
 
-  const close = () => {
-    const ref = overlayRef;
+  const close = (editor: RichTextEditorDirective) => {
+    const ref = overlayRefs.get(editor);
 
     if (!ref) return;
 
-    overlayRef = null;
+    overlayRefs.delete(editor);
     ref.close();
   };
 
-  destroyRef.onDestroy(close);
+  destroyRef.onDestroy(() => {
+    for (const editor of [...overlayRefs.keys()]) close(editor);
+  });
 
   return { run, normalize: ops.normalizeImages, handlePaste, handleDrop, handleClick };
 };

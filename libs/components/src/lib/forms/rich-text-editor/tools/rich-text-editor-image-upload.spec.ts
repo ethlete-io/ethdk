@@ -1,6 +1,6 @@
 import { ApplicationRef, Injector, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Subject, of, throwError } from 'rxjs';
+import { EMPTY, Subject, of, throwError } from 'rxjs';
 import '../../../../test-helpers';
 import { AnyDropzoneUploadConfig, DropzoneUploadState } from '../../dropzone/headless';
 import { startImageUpload } from './rich-text-editor-image-upload';
@@ -66,6 +66,22 @@ describe('startImageUpload', () => {
     });
 
     expect(errors).toEqual([{ error: new Error('boom'), message: 'boom' }]);
+  });
+
+  it('reports an upload observable that completes without a value as a failure', () => {
+    startImageUpload({ file: FILE, upload: () => EMPTY, injector, ...callbacks() });
+
+    expect(successes).toEqual([]);
+    expect(errors).toEqual([{ error: null, message: null }]);
+  });
+
+  it('reports an empty URL as a failure', async () => {
+    startImageUpload({ file: FILE, upload: () => Promise.resolve(''), injector, ...callbacks() });
+
+    await Promise.resolve();
+
+    expect(successes).toEqual([]);
+    expect(errors).toEqual([{ error: null, message: null }]);
   });
 
   it('stops reporting once cancelled', () => {
@@ -156,6 +172,35 @@ describe('startImageUpload', () => {
 
       expect(successes).toEqual(['https://cdn/e.png']);
       expect(errors).toEqual([]);
+    });
+
+    it('disposes the handle once the upload succeeds', () => {
+      const fake = createFakeConfig();
+
+      startImageUpload({ file: FILE, upload: fake.config, injector, ...callbacks() });
+
+      fake.value.set('https://cdn/f.png');
+      fake.state.set('success');
+      flushEffects();
+
+      expect(successes).toEqual(['https://cdn/f.png']);
+      expect(fake.disposals()).toBe(1);
+    });
+
+    it('disposes the handle once the upload fails, and only once when cancelled later', () => {
+      const fake = createFakeConfig();
+
+      const run = startImageUpload({ file: FILE, upload: fake.config, injector, ...callbacks() });
+
+      fake.state.set('error');
+      flushEffects();
+
+      expect(errors).toHaveLength(1);
+      expect(fake.disposals()).toBe(1);
+
+      run.cancel();
+
+      expect(fake.disposals()).toBe(1);
     });
 
     it('disposes the handle when cancelled', () => {
