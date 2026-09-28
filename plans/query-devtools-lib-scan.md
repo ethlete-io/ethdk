@@ -22,7 +22,6 @@ Entry-point boundaries hold: `toggle/` imports only `@ethlete/query` and `@ethle
 
 ## Value explorer
 
-- Medium: any non-empty search sets `effectiveExpanded` to `true` for every non-chunk container (`query-devtools-json.component.ts:304`), so the tree renders every nested object, not only the ones with a hit. A self-referential value - which `matchesDeep` guards against - renders without end and hangs the tab. Expand a container only when `matchesDeep` finds a hit in it, and stop at a node already on the ancestor path. M Verified. `effectiveExpanded` returns `true` for every non-chunk node while searching; only `matchesDeep` guards cycles.
 - Low: expansion paths join keys with `.` (`query-devtools-json.component.ts:380`, `:228`), so the key `"a.b"` and the nested path `a` -> `b` share one expand state and one annotation lookup. `appendJsonPathStep` has the same problem for "Copy path" and the diff Path column (`query-devtools-diff.ts:130`): `$.content-type` and `$.a.b` are not valid JSONPath for those keys. Bracket-quote non-identifier keys the way `query-devtools-insomnia.ts:151` does. S
 
 ## Diff

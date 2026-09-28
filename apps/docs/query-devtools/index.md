@@ -1926,8 +1926,8 @@ components are bound to, which the browser Network tab can't do:
   [Copying a key or a path](#copying-a-key-or-a-path). A container with more than 100 entries is folded into
   collapsed slices of 100 (`0 … 99`, `100 … 199`, …) instead of being rendered in
   full, so a 5000-item list opens instantly; each slice expands on click and
-  copies just the entries it covers. While the filter is active, only slices that
-  actually contain a match unfold.
+  copies just the entries it covers. While the filter is active, only the objects, arrays
+  and slices that contain a match unfold.
 - **JIT editing** - a quick one-off, also in the **✎ Override** menu: paste raw JSON over a query's response and
   apply it via `setResponse()` (the UI re-renders instantly), or replay the query
   with edited args. It does not survive the next fetch - for an edit that should

@@ -46,7 +46,53 @@ class CycleHostComponent {
   protected overrides = overrides;
 }
 
+const selfHolding = () => {
+  const value: Record<string, unknown> = { name: 'needle' };
+
+  value['self'] = value;
+
+  return value;
+};
+
+@Component({
+  template: `<et-query-devtools-json [value]="value" [overrides]="overrides" [search]="search" />`,
+  imports: [QueryDevtoolsJsonComponent],
+})
+class SearchHostComponent {
+  public value: unknown = { hit: { deep: 'needle' }, miss: { other: { leaf: 1 } } };
+  public search = 'needle';
+  protected overrides = overrides;
+}
+
+const renderSearch = async (value: unknown) => {
+  TestBed.configureTestingModule({
+    imports: [SearchHostComponent],
+    providers: [provideZonelessChangeDetection(), provideColorThemesWithTailwind4(THEMES)],
+  });
+
+  const fixture = TestBed.createComponent(SearchHostComponent);
+
+  fixture.componentInstance.value = value;
+  await fixture.whenStable();
+
+  const keys = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.et-query-devtools-json-key')];
+
+  return keys.map((key) => key.textContent?.trim());
+};
+
 describe('QueryDevtoolsJsonComponent', () => {
+  it('should unfold only the containers that hold a search hit', async () => {
+    const keys = await renderSearch({ hit: { deep: 'needle' }, miss: { other: { leaf: 1 } } });
+
+    expect(keys).toEqual(['hit', 'deep', 'miss']);
+  });
+
+  it('should search a self-referential value that holds a hit without rendering forever', async () => {
+    const keys = await renderSearch(selfHolding());
+
+    expect(keys).toEqual(['name', 'self']);
+  });
+
   it('should not offer an override menu on a folded slice', async () => {
     TestBed.configureTestingModule({
       imports: [HostComponent],

@@ -124,6 +124,7 @@ const chunkSizeFor = (count: number) => {
                 [expandedPaths]="expandedPaths()"
                 [collapsedPaths]="collapsedPaths()"
                 [toggleFn]="toggleFn()"
+                [ancestors]="ancestors()"
               />
             }
             @for (entry of visibleEntries(); track entry.k) {
@@ -140,6 +141,7 @@ const chunkSizeFor = (count: number) => {
                 [expandedPaths]="expandedPaths()"
                 [collapsedPaths]="collapsedPaths()"
                 [toggleFn]="toggleFn()"
+                [ancestors]="childAncestors()"
               />
             }
           </div>
@@ -188,7 +190,7 @@ export class QueryDevtoolsJsonComponent {
   public value = input<unknown>();
   public nodeKey = input<string | null>(null);
   public depth = input(0, { transform: numberAttribute });
-  /** Lowercased search term; when set, the tree auto-expands and matches are highlighted. */
+  /** Lowercased search term; when set, the containers holding a match auto-expand and matches are highlighted. */
   public search = input('');
 
   /**
@@ -218,6 +220,9 @@ export class QueryDevtoolsJsonComponent {
    * {@link QueryDevtoolsSchemaSeed} produces it. A node with an entry labels itself with it.
    */
   public annotations = input<ReadonlyMap<string, string> | null>(null);
+
+  /** The containers above this node, so a search does not unfold a value that holds itself again. */
+  public ancestors = input<readonly unknown[]>([]);
 
   protected kind = computed(() => kindOf(this.value()));
   private exotic = computed(() => exoticOf(this.value(), this.nodeKey()));
@@ -289,8 +294,9 @@ export class QueryDevtoolsJsonComponent {
     return this.localExpanded();
   });
 
-  /** Only slices that actually contain a match unfold while searching, so a filter stays cheap. */
-  private chunkHasHit = computed(() => {
+  protected childAncestors = computed(() => [...this.ancestors(), this.value()]);
+
+  private hasHit = computed(() => {
     const term = this.search();
 
     return (
@@ -301,7 +307,9 @@ export class QueryDevtoolsJsonComponent {
   protected effectiveExpanded = computed(() => {
     if (!this.search()) return this.expanded();
 
-    return this.chunk() ? this.chunkHasHit() : true;
+    if (this.nodeKey() === null && !this.chunk()) return true;
+
+    return !this.ancestors().includes(this.value()) && this.hasHit();
   });
 
   /** What the last copy put on the clipboard, or `null` once the tick has expired. */
