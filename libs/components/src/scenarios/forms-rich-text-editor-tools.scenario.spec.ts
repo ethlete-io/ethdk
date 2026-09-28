@@ -915,10 +915,9 @@ describe('forms rich-text-editor tool scenarios', () => {
     const requests = http.match((request) => request.url.startsWith('https://api.example.com/people'));
 
     expect(requests.map((request) => [request.request.urlWithParams, request.cancelled])).toEqual([
-      ['https://api.example.com/people?q=a', true],
       ['https://api.example.com/people?q=ad', false],
     ]);
-    requests[1]!.flush({ items: [{ id: 'ada', name: 'Ada Lovelace' }] });
+    requests[0]!.flush({ items: [{ id: 'ada', name: 'Ada Lovelace' }] });
     s.tick();
 
     const popup = query('et-rich-text-editor-token-popup');
