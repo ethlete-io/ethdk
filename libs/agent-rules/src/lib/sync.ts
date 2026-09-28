@@ -95,7 +95,11 @@ export const sync = (options: RunOptions) => {
     return 0;
   }
 
+  const written = new Set(changes.filter((change) => change.action !== 'delete').map((change) => change.path));
+
   for (const file of files) {
+    if (!written.has(file.path)) continue;
+
     const absolute = join(options.root, file.path);
 
     mkdirSync(dirname(absolute), { recursive: true });

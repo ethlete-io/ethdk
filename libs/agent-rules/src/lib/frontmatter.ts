@@ -39,10 +39,36 @@ const parseInlineList = (value: string) => {
 
   if (!inner) return [];
 
-  return inner
-    .split(',')
-    .map(unquote)
-    .filter((entry) => entry.length > 0);
+  const entries: string[] = [];
+  let quote: string | null = null;
+  let current = '';
+
+  for (const char of inner) {
+    if (quote) {
+      if (char === quote) quote = null;
+    } else if (char === "'" || char === '"') {
+      quote = char;
+    } else if (char === ',') {
+      entries.push(current);
+      current = '';
+      continue;
+    }
+
+    current += char;
+  }
+
+  entries.push(current);
+
+  return entries.map(unquote).filter((entry) => entry.length > 0);
+};
+
+const parseBoolean = (options: { value: string | undefined; key: string; origin: string }) => {
+  const { value, key, origin } = options;
+
+  if (value === undefined || value === 'true') return true;
+  if (value === 'false') return false;
+
+  throw new Error(`${origin}: "${key}" must be true or false, got "${value}".`);
 };
 
 const splitBlock = (source: string, origin: string) => {
@@ -103,6 +129,10 @@ export const parseFrontmatter = (source: string, origin: string): ParsedDocument
       throw new Error(`${origin}: unknown frontmatter key "${key}". Known keys: ${KNOWN_KEYS.join(', ')}.`);
     }
 
+    if (Object.prototype.hasOwnProperty.call(raw, key)) {
+      throw new Error(`${origin}: frontmatter key "${key}" appears more than once.`);
+    }
+
     if (LIST_KEYS.includes(key) && !value) {
       raw[key] = [];
       listKey = key;
@@ -153,7 +183,7 @@ export const parseFrontmatter = (source: string, origin: string): ParsedDocument
       requires: readList('requires'),
       paths: readList('paths'),
       vars: readList('vars'),
-      modelInvocation: readText('modelInvocation') !== 'false',
+      modelInvocation: parseBoolean({ value: readText('modelInvocation'), key: 'modelInvocation', origin }),
     },
     body: body.trimEnd(),
   };

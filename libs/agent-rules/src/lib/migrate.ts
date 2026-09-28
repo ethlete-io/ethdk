@@ -45,7 +45,7 @@ const migrateClaudeMd = (options: { root: string; dryRun: boolean }) => {
     return;
   }
 
-  const claudeContent = readFileSync(claudePath, 'utf8').trim();
+  const claudeContent = withoutMarkedBlock(readFileSync(claudePath, 'utf8')).trim();
   const agentsContent = existsSync(agentsPath) ? readFileSync(agentsPath, 'utf8').trim() : '';
   const merged = [claudeContent, agentsContent].filter((part) => part.length > 0).join('\n\n');
 

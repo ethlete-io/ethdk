@@ -122,14 +122,26 @@ export type OutputStyleOptions = {
  */
 export const planOutputStyle = (options: OutputStyleOptions = {}): OutputStylePlan => {
   const name = options.name?.trim() || DEFAULT_OUTPUT_STYLE;
+
+  if (!/^[A-Za-z0-9][\w.-]*$/.test(name)) {
+    throw new Error(`Invalid output style name "${name}". Use letters, digits, ".", "_" and "-".`);
+  }
+
   const configDir = resolveClaudeConfigDir(options.configDir);
   const stylePath = join(configDir, CONTENT_DIR, `${name}.md`);
   const settingsPath = join(configDir, 'settings.json');
   const settings = readSettings(settingsPath);
   const activeStyle = typeof settings.outputStyle === 'string' ? settings.outputStyle : null;
   const installed = existsSync(stylePath) ? readFileSync(stylePath, 'utf8') : null;
-  const shipped = withMarker(readShippedStyle(name, options.contentRoot ?? resolveContentRoot()), name);
-  const ours = installed === null || installed.includes(MARKER_PREFIX) || normalize(installed) === normalize(shipped);
+  const contentRoot = options.contentRoot ?? resolveContentRoot();
+  const shipped =
+    options.remove && !availableOutputStyles(contentRoot).includes(name)
+      ? null
+      : withMarker(readShippedStyle(name, contentRoot), name);
+  const ours =
+    installed === null ||
+    installed.includes(MARKER_PREFIX) ||
+    (shipped !== null && normalize(installed) === normalize(shipped));
   const plan = { name, configDir, stylePath, settingsPath, activeStyle };
 
   if (!ours && !options.force) {
@@ -155,7 +167,7 @@ export const planOutputStyle = (options: OutputStyleOptions = {}): OutputStylePl
     return { ...plan, files, conflict: null };
   }
 
-  if (installed !== shipped) {
+  if (shipped !== null && installed !== shipped) {
     files.push({ path: stylePath, action: installed === null ? 'create' : 'update', contents: shipped });
   }
 

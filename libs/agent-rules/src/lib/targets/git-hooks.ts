@@ -20,7 +20,7 @@ export const KNOWN_GIT_HOOKS: Record<string, { file: string }> = {
 };
 
 export const assertKnownGitHooks = (hooks: string[]) => {
-  const unknown = hooks.filter((name) => !(name in KNOWN_GIT_HOOKS));
+  const unknown = hooks.filter((name) => !Object.prototype.hasOwnProperty.call(KNOWN_GIT_HOOKS, name));
 
   if (unknown.length > 0) {
     throw new Error(

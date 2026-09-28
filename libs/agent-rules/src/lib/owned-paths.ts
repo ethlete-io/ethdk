@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
+import { existsSync, lstatSync, readdirSync, readFileSync } from 'fs';
 import { join, relative, sep } from 'path';
 
 // `.agents/ethlete` and `.github/instructions/ethlete-*` are no longer emitted, but stay owned so
@@ -38,8 +38,10 @@ const walk = (root: string, absoluteDir: string): string[] => {
 
   return readdirSync(absoluteDir).flatMap((entry) => {
     const absolute = join(absoluteDir, entry);
+    const stats = lstatSync(absolute);
 
-    if (statSync(absolute).isDirectory()) return walk(root, absolute);
+    if (stats.isSymbolicLink()) return [];
+    if (stats.isDirectory()) return walk(root, absolute);
 
     return [relative(root, absolute).split(sep).join('/')];
   });
@@ -63,8 +65,11 @@ export const collectOwnedPaths = (root: string) => {
       if (!parent.match(entry)) continue;
 
       const absolute = join(absoluteParent, entry);
+      const stats = lstatSync(absolute);
 
-      owned.push(...(statSync(absolute).isDirectory() ? walk(root, absolute) : [`${parent.dir}/${entry}`]));
+      if (stats.isSymbolicLink()) continue;
+
+      owned.push(...(stats.isDirectory() ? walk(root, absolute) : [`${parent.dir}/${entry}`]));
     }
   }
 

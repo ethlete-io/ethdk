@@ -1,4 +1,13 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import {
+  appendFileSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  statSync,
+  symlinkSync,
+  utimesSync,
+  writeFileSync,
+} from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -101,5 +110,38 @@ describe('resolveRepoRoot', () => {
     sync({ root });
 
     expect(check({ root: resolveRepoRoot(nested) })).toBe(0);
+  });
+});
+
+describe('sync writes', () => {
+  it('rewrites only the files that changed', () => {
+    const root = consumerRepo({ targets: ['claude'] });
+
+    captureOutput();
+    sync({ root });
+
+    const [first, second] = readdirSync(join(root, '.claude', 'skills')).map((entry) =>
+      join(root, '.claude', 'skills', entry, 'SKILL.md'),
+    );
+
+    if (!first || !second) throw new Error('expected at least two generated skills');
+
+    utimesSync(first, new Date(0), new Date(0));
+    appendFileSync(second, 'drift', 'utf8');
+    sync({ root });
+
+    expect(statSync(first).mtimeMs).toBe(0);
+    expect(check({ root })).toBe(0);
+  });
+
+  it('survives a dangling symlink among the generated skills', () => {
+    const root = consumerRepo({ targets: ['claude'] });
+
+    mkdirSync(join(root, '.claude', 'skills'), { recursive: true });
+    symlinkSync('missing-target', join(root, '.claude', 'skills', 'ethlete-broken'));
+    captureOutput();
+
+    expect(() => sync({ root })).not.toThrow();
+    expect(() => check({ root })).not.toThrow();
   });
 });

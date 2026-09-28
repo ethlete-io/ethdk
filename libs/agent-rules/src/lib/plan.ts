@@ -1,5 +1,5 @@
 import { existsSync, lstatSync, readFileSync, readlinkSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import {
   CONFIG_FILE_NAME,
   LOCAL_CONFIG_FILE_NAME,
@@ -99,9 +99,11 @@ export const claudeMdImportsAgentsMd = (root: string) => {
 
   if (!existsSync(path)) return false;
 
-  if (lstatSync(path).isSymbolicLink()) return readlinkSync(path).endsWith('AGENTS.md');
+  if (lstatSync(path).isSymbolicLink()) return resolve(root, readlinkSync(path)) === resolve(root, 'AGENTS.md');
 
-  return /^@AGENTS\.md\s*$/m.test(readFileSync(path, 'utf8'));
+  const outsideFences = readFileSync(path, 'utf8').replace(/^(`{3,}|~{3,})[^\n]*\n[\s\S]*?^\1[^\n]*$/gm, '');
+
+  return /^@AGENTS\.md\s*$/m.test(outsideFences);
 };
 
 /**
@@ -143,7 +145,7 @@ const collectLocalConfigWarnings = (root: string) => {
   }
 
   if (Array.isArray(disable)) {
-    const unknown = disable.filter((name) => !(name in KNOWN_HOOKS));
+    const unknown = disable.filter((name) => !Object.prototype.hasOwnProperty.call(KNOWN_HOOKS, name));
 
     if (unknown.length > 0) {
       warnings.push(
@@ -190,16 +192,34 @@ const collectPathVarWarnings = (config: SyncConfig) =>
   PATH_VARS.flatMap((name) => {
     const value = config.vars[name];
 
-    if (typeof value !== 'string' || existsSync(join(config.root, value))) return [];
+    if (typeof value !== 'string' || existsSync(resolve(config.root, value))) return [];
 
     return [
       `vars.${name} points at ${value}, which does not exist — the guides that read it will send agents to a missing file.`,
     ];
   });
 
+const isUnparseableJson = (contents: string) => {
+  if (!contents.trim()) return false;
+
+  try {
+    JSON.parse(contents);
+
+    return false;
+  } catch {
+    return true;
+  }
+};
+
+const collectHookSettingsWarnings = (root: string) =>
+  [CLAUDE_SETTINGS_FILE, CODEX_HOOKS_FILE]
+    .filter((path) => isUnparseableJson(readExisting(root, path)))
+    .map((path) => `${path} is not valid JSON — sync leaves it alone, so no hook is registered or removed there.`);
+
 const collectWarnings = (config: SyncConfig, items: ContentItem[]) => {
   const warnings: string[] = [
     ...collectLocalConfigWarnings(config.root),
+    ...collectHookSettingsWarnings(config.root),
     ...collectPathVarWarnings(config),
     ...collectGitHookWarnings(config),
     ...collectExcludeWarnings(items, config.exclude),

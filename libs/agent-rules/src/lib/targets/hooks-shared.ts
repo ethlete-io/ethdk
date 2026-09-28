@@ -61,7 +61,7 @@ export const eventsForAgent = (options: { hook: string; agent: string }) =>
   );
 
 export const assertKnownHooks = (hooks: string[]) => {
-  const unknown = hooks.filter((name) => !(name in KNOWN_HOOKS));
+  const unknown = hooks.filter((name) => !Object.prototype.hasOwnProperty.call(KNOWN_HOOKS, name));
 
   if (unknown.length > 0) {
     throw new Error(`Unknown hook(s): ${unknown.join(', ')}. Known hooks: ${Object.keys(KNOWN_HOOKS).join(', ')}.`);

@@ -23,7 +23,7 @@ const writeStyle = (dir: string, name: string, contents: string) => {
   writeFileSync(join(dir, 'output-styles', `${name}.md`), contents, 'utf8');
 };
 
-const install = (dir: string, options: { force?: boolean; remove?: boolean } = {}) => {
+const install = (dir: string, options: { force?: boolean; remove?: boolean; name?: string } = {}) => {
   const plan = planOutputStyle({ configDir: dir, ...options });
 
   applyOutputStylePlan(plan);
@@ -180,5 +180,23 @@ describe('planOutputStyle --remove', () => {
     writeStyle(dir, DEFAULT_OUTPUT_STYLE, '---\nname: ste-clarity\n---\n\nMy own rules.\n');
 
     expect(planOutputStyle({ configDir: dir, remove: true }).conflict).toContain('delete');
+  });
+
+  it('removes a style this package no longer ships', () => {
+    const dir = configDir({ outputStyle: 'retired' });
+
+    writeStyle(dir, 'retired', '<!-- @ethlete/agent-rules output style "retired" -->\n\nOld rules.\n');
+
+    const plan = install(dir, { remove: true, name: 'retired' });
+
+    expect(plan.conflict).toBeNull();
+    expect(existsSync(join(dir, 'output-styles', 'retired.md'))).toBe(false);
+    expect(readSettings(dir).outputStyle).toBeUndefined();
+  });
+
+  it('rejects a name that would leave the output-styles directory', () => {
+    expect(() => planOutputStyle({ configDir: configDir(), name: '../../README', force: true })).toThrow(
+      'Invalid output style name',
+    );
   });
 });

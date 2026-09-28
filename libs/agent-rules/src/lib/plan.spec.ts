@@ -1,10 +1,10 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { CONFIG_FILE_NAME, loadConfig, LOCAL_CONFIG_FILE_NAME, TOPOLOGY_CONFIG_FILE_NAME } from './config';
 import { ContentItem } from './load-content';
-import { assertResolvedContentReferences, buildPlan } from './plan';
+import { assertResolvedContentReferences, buildPlan, claudeMdImportsAgentsMd } from './plan';
 
 const planWithLocalConfig = (contents: unknown) => {
   const root = mkdtempSync(join(tmpdir(), 'agent-rules-plan-'));
@@ -106,5 +106,78 @@ describe('moved local config keys', () => {
 
     expect(plan.warnings[0]).toContain('unsupported key(s): apiRepoPath');
     expect(plan.warnings[0]).toContain('"disableHooks"');
+  });
+});
+
+describe('plan warnings', () => {
+  it('reports a prototype key as an unknown disabled hook', () => {
+    const plan = planWithLocalConfig({ disableHooks: ['constructor'] });
+
+    expect(plan.warnings).toEqual([expect.stringContaining('disables unknown hook(s): constructor')]);
+  });
+
+  it('accepts an absolute themeStylesheet that exists', () => {
+    const stylesheet = join(mkdtempSync(join(tmpdir(), 'agent-rules-theme-')), 'theme.css');
+
+    writeFileSync(stylesheet, '', 'utf8');
+
+    expect(planWithConfig({ vars: { themeStylesheet: stylesheet } }).warnings).toEqual([]);
+  });
+});
+
+describe('hook config checks', () => {
+  it('rejects a prototype key as a hook or git hook name', () => {
+    expect(() => planWithConfig({ hooks: ['constructor'] })).toThrow('Unknown hook(s): constructor');
+    expect(() => planWithConfig({ gitHooks: ['toString'] })).toThrow('Unknown git hook(s): toString');
+  });
+
+  it('warns when the hook settings file does not parse', () => {
+    const root = mkdtempSync(join(tmpdir(), 'agent-rules-plan-'));
+
+    mkdirSync(join(root, '.claude'));
+    writeFileSync(join(root, '.claude', 'settings.json'), '{ broken', 'utf8');
+    writeFileSync(join(root, CONFIG_FILE_NAME), JSON.stringify({ targets: ['claude'] }), 'utf8');
+
+    expect(buildPlan({ config: loadConfig({ root }) }).warnings).toEqual([
+      expect.stringContaining('.claude/settings.json is not valid JSON'),
+    ]);
+  });
+});
+
+describe('claudeMdImportsAgentsMd', () => {
+  const rootWith = (claudeMd: string) => {
+    const root = mkdtempSync(join(tmpdir(), 'agent-rules-claude-md-'));
+
+    writeFileSync(join(root, 'CLAUDE.md'), claudeMd, 'utf8');
+
+    return root;
+  };
+
+  const rootWithLink = (target: string) => {
+    const root = mkdtempSync(join(tmpdir(), 'agent-rules-claude-md-'));
+
+    mkdirSync(join(root, 'other'));
+    writeFileSync(join(root, 'other', 'AGENTS.md'), '', 'utf8');
+    writeFileSync(join(root, 'AGENTS.md'), '', 'utf8');
+    writeFileSync(join(root, 'OLD-AGENTS.md'), '', 'utf8');
+    symlinkSync(target, join(root, 'CLAUDE.md'));
+
+    return root;
+  };
+
+  it('accepts the import line and a link to the root AGENTS.md', () => {
+    expect(claudeMdImportsAgentsMd(rootWith('@AGENTS.md\n'))).toBe(true);
+    expect(claudeMdImportsAgentsMd(rootWithLink('AGENTS.md'))).toBe(true);
+    expect(claudeMdImportsAgentsMd(rootWithLink('./AGENTS.md'))).toBe(true);
+  });
+
+  it('rejects a link to another AGENTS.md', () => {
+    expect(claudeMdImportsAgentsMd(rootWithLink('other/AGENTS.md'))).toBe(false);
+    expect(claudeMdImportsAgentsMd(rootWithLink('OLD-AGENTS.md'))).toBe(false);
+  });
+
+  it('ignores an import line inside a code fence', () => {
+    expect(claudeMdImportsAgentsMd(rootWith('# Notes\n\n```md\n@AGENTS.md\n```\n'))).toBe(false);
+    expect(claudeMdImportsAgentsMd(rootWith('```md\nx\n```\n\n@AGENTS.md\n'))).toBe(true);
   });
 });
