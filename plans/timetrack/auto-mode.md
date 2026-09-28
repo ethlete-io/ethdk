@@ -1,6 +1,7 @@
 # Auto mode and the approval queue
 
-Status: slices 1, 2 and 3 done (2026-09-28); slice 4 in progress, ADR 0035 approved.
+Status: slices 1, 2 and 3 done (2026-09-28); slice 4 in progress (pure auto pass in
+`libs/timetrack/src/lib/review/auto-mode.ts` first, then the app wiring), ADR 0035 approved.
 
 ## Goal
 
