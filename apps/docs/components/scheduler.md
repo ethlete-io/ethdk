@@ -404,6 +404,8 @@ The header's "⋮" menu lists registered appointment actions - also self-registe
 | `etSchedulerActionAddSubAppointment` | Navigates the surface (in place, no new dialog) to a blank child of the current appointment, `parentId` pre-filled. | `0`           |
 | `etSchedulerActionDelete`            | Emits `appointmentsDelete` for the current appointment and every descendant, then closes.                           | `100`         |
 
+Both stay out of the menu while the current appointment is not in `appointments` yet - a fresh "add" nobody saved has nothing to delete or nest under.
+
 Add your own with `registerAppointmentAction({ label, icon?, run, order, enabled, destructive? })` - `destructive: true` renders it with the [error theme](/core/theming) (`et-menu-item`'s destructive variant).
 
 ### Navigation: breadcrumb and children
@@ -520,13 +522,14 @@ The time grid's all-day cells have nothing to create - an all-day appointment th
 
 Badge and selection colors come from the nearest [color theme](/core/theming) via each appointment's `colorToken`; chrome (header, weekday labels, cell/hour borders) uses surface tokens. Public design tokens:
 
-| Token                                       | Default | Purpose                                              |
-| ------------------------------------------- | ------- | ---------------------------------------------------- |
-| `--et-scheduler-month-view-cell-min-size`   | `96px`  | Minimum block size of one month-view day cell.       |
-| `--et-scheduler-time-grid-hour-size`        | `48px`  | Block size of one hour row in the time grid.         |
-| `--et-scheduler-time-grid-gutter-size`      | `56px`  | Inline size of the time grid's hour-label gutter.    |
-| `--et-scheduler-time-grid-all-day-row-size` | `24px`  | Block size of one stacking row in the all-day strip. |
-| `--et-scheduler-time-grid-body-max-height`  | `600px` | Max block size of the time grid's scrollable body.   |
+| Token                                       | Default                       | Purpose                                              |
+| ------------------------------------------- | ----------------------------- | ---------------------------------------------------- |
+| `--et-scheduler-month-view-cell-min-size`   | `96px`                        | Minimum block size of one month-view day cell.       |
+| `--et-scheduler-time-grid-hour-size`        | `48px`                        | Block size of one hour row in the time grid.         |
+| `--et-scheduler-time-grid-gutter-size`      | `56px`                        | Inline size of the time grid's hour-label gutter.    |
+| `--et-scheduler-time-grid-all-day-row-size` | `24px`                        | Block size of one stacking row in the all-day strip. |
+| `--et-scheduler-time-grid-body-max-height`  | `600px`                       | Max block size of the time grid's scrollable body.   |
+| `--et-scheduler-appointment-drag-shadow`    | `0 2px 8px rgb(0 0 0 / 0.25)` | Shadow of an appointment while it is dragged.        |
 
 ## Error codes
 

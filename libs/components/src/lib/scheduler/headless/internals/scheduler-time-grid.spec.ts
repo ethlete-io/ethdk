@@ -107,6 +107,16 @@ describe('buildSchedulerTimeGrid', () => {
     expect(blocksOf('b')(grid)).toMatchObject({ column: 0, columnCount: 1, inlineOffset: 0, inlineSize: 100 });
   });
 
+  it('packs a zero-length appointment beside one that starts at the same time', () => {
+    const grid = buildGrid([
+      appointment('zero', new Date(2026, 6, 15, 10), new Date(2026, 6, 15, 10)),
+      appointment('b', new Date(2026, 6, 15, 10), new Date(2026, 6, 15, 11)),
+    ]);
+
+    expect(blocksOf('zero')(grid)).toMatchObject({ columnCount: 2, inlineSize: 50 });
+    expect(blocksOf('b')(grid)).toMatchObject({ columnCount: 2, inlineSize: 50 });
+  });
+
   it('splits two overlapping appointments into two evenly-sized columns', () => {
     const grid = buildGrid([
       appointment('a', new Date(2026, 6, 15, 9), new Date(2026, 6, 15, 11)),

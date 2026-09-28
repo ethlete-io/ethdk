@@ -38,7 +38,7 @@ export class SchedulerActionDeleteDirective {
       icon: 'et-trash',
       order: 100,
       destructive: true,
-      enabled: computed(() => this.config().enabled ?? true),
+      enabled: computed(() => (this.config().enabled ?? true) && this.surface.isSaved()),
       run: () => this.surface.requestDelete(),
     });
   }

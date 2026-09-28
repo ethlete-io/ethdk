@@ -31,7 +31,7 @@
 
   .et-scheduler-time-grid-block[data-dragging] {
     z-index: 1;
-    box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
+    box-shadow: var(--et-scheduler-appointment-drag-shadow, 0 2px 8px rgb(0 0 0 / 0.25));
     cursor: grabbing;
   }
 

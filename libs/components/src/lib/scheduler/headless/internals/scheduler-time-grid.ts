@@ -76,8 +76,13 @@ type ClippedEntry<TExtra> = {
   span: number;
 };
 
+// the rendered min-block-size (16px) covers 20 minutes of the default 48px hour row
+const MIN_PACKED_DURATION_MS = 20 * 60 * 1000;
+
 const packColumns = <TExtra>(entries: readonly ClippedEntry<TExtra>[]): SchedulerTimeGridBlock<TExtra>[] => {
-  const sorted = [...entries].sort((a, b) => a.start - b.start || a.end - b.end);
+  const sorted = entries
+    .map((entry) => ({ ...entry, end: Math.max(entry.end, entry.start + MIN_PACKED_DURATION_MS) }))
+    .sort((a, b) => a.start - b.start || a.end - b.end);
   const blocks: SchedulerTimeGridBlock<TExtra>[] = [];
 
   let cluster: ClippedEntry<TExtra>[] = [];

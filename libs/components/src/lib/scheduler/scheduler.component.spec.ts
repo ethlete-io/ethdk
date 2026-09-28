@@ -1,8 +1,9 @@
-import { ErrorHandler } from '@angular/core';
+import { ErrorHandler, getDebugNode } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import '../../test-helpers';
 import { injectOverlayManager } from '../overlay';
 import { expectAriaGrid, expectUniformCellsPerRow } from '../testing/aria-structure';
+import { SchedulerEditSurfaceComponent } from './scheduler-edit-surface.component';
 import { schedulerTestDriver, testAppointment } from './testing/scheduler-driver';
 
 describe('SchedulerComponent', () => {
@@ -49,6 +50,46 @@ describe('SchedulerComponent', () => {
     driver.openEditSurface('a');
 
     expect(driver.editSurface()).toHaveLength(1);
+  });
+
+  it('keeps the same time grid when switching between week and day', () => {
+    driver.host.view.set('week');
+    driver.detectChanges();
+    const weekGrid = driver.query('et-scheduler-time-grid-view');
+
+    driver.host.view.set('day');
+    driver.detectChanges();
+
+    expect(driver.query('et-scheduler-time-grid-view')).toBe(weekGrid);
+  });
+
+  describe('edit surface actions', () => {
+    const surface = () => getDebugNode(driver.editSurface()[0])?.componentInstance as SchedulerEditSurfaceComponent;
+    const actionIcons = () =>
+      surface()
+        .appointmentActions()
+        .map((action) => action.icon);
+
+    it('offers adding a sub-appointment and deleting for a saved appointment', () => {
+      driver.openEditSurface('a');
+
+      expect(actionIcons()).toEqual(['et-plus', 'et-trash']);
+    });
+
+    it('offers neither for an added appointment nobody saved', () => {
+      driver.scheduler().addAppointment();
+      driver.detectChanges();
+
+      expect(actionIcons()).toEqual([]);
+    });
+
+    it('offers neither for a sub-appointment nobody saved', () => {
+      driver.openEditSurface('a');
+      surface().surface.startAddSubAppointment();
+      driver.detectChanges();
+
+      expect(actionIcons()).toEqual([]);
+    });
   });
 
   it('exposes the month view as a grid that owns its rows', () => {

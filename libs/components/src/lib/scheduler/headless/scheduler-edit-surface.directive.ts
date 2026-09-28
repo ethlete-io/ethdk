@@ -56,6 +56,11 @@ export class SchedulerEditSurfaceDirective<TExtra = unknown> {
     computation: () => untracked(() => this.currentAppointment()),
   });
 
+  /** Whether the shown appointment is in `appointments()` - `false` for one "add" synthesized and nobody saved yet. */
+  public isSaved = computed(() =>
+    this.appointments().some((candidate) => candidate.id === this.currentAppointmentId()),
+  );
+
   /** `currentAppointment()`'s ancestor chain, root first - what the breadcrumb renders. */
   public ancestors = computed(() => {
     const byId = new Map(this.appointments().map((candidate) => [candidate.id, candidate]));

@@ -37,7 +37,7 @@ export class SchedulerActionAddSubAppointmentDirective {
       label: computed(() => this.labels().addSubAppointment),
       icon: 'et-plus',
       order: 0,
-      enabled: computed(() => this.config().enabled ?? true),
+      enabled: computed(() => (this.config().enabled ?? true) && this.surface.isSaved()),
       run: () => this.surface.startAddSubAppointment(),
     });
   }
