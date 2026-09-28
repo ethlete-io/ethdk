@@ -91,7 +91,10 @@ auto-mode.ts` runs `writeTicketWithAgent$` once per band and stand-in, names unn
    - The spec header (`specForCommits$`) is not in the auto payload, and an auto-named row carries
      no confidence of its own (the ticket call answers none).
    - A failed run is stored and never retried; a draft with no project key is stored, not queued.
-   - A restart between the queue write and the answer write asks again and queues a second create.
+   - A restart between the queue write and the answer write asks the model again (one more CLI run);
+     the queue item's target (day and subject) makes that ask reuse the waiting create.
+   - The create form's own parent fill (ranking, spec epic, agent wording) is never stored as `human`:
+     the select emits `valueChange` only on a pick. Guarded by `auto-mode.spec.ts` in timetrack-e2e.
    - Rows the user split or merged are not auto-named (no unnamed group maps to them).
    - Context asks wait for git discovery, as the stand-in pass does.
    - `standIn.list` does not report the resolution or parent source yet.
