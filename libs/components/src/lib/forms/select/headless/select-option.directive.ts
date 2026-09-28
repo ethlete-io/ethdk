@@ -126,9 +126,7 @@ export class SelectOptionDirective {
   constructor() {
     const element = this.elementRef.nativeElement;
 
-    if (!element.id) {
-      element.id = this.optionId();
-    }
+    this.syncId();
 
     const select = this.select;
 
@@ -155,6 +153,7 @@ export class SelectOptionDirective {
 
     afterNextRender(() => {
       this.textLabel.set(element.textContent?.trim() ?? '');
+      this.syncId();
     });
 
     if (ngDevMode) {
@@ -192,5 +191,15 @@ export class SelectOptionDirective {
     }
 
     this.select?.setActiveItem(this.listItem, { scroll: false, source: 'pointer' });
+  }
+
+  private syncId() {
+    const element = this.elementRef.nativeElement;
+
+    if (element.id) {
+      this.optionId.set(element.id);
+    } else {
+      element.id = this.optionId();
+    }
   }
 }
