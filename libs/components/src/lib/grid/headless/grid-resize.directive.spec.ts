@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { GridItemComponent } from '../grid-item.component';
@@ -11,11 +11,14 @@ import { GridItemConfig } from './grid.types';
   imports: [GridDirective, GridItemComponent],
   template: `
     <div [items]="items" [rowHeight]="100" [gap]="16" etGrid>
-      <et-grid-item itemId="resize-item" />
+      @if (showItem) {
+        <et-grid-item itemId="resize-item" />
+      }
     </div>
   `,
 })
 class TestHostComponent {
+  showItem = true;
   items: GridItemConfig[] = [{ id: 'resize-item', type: 'test', data: undefined, layout: {} }];
 }
 
@@ -122,5 +125,20 @@ describe('GridResizeDirective', () => {
 
     expect(getGridDirective().baseLayout()).toEqual(before);
     expect(getResizeDirective().isResizing()).toBe(false);
+  });
+
+  it('ends the resize when the item is destroyed mid-gesture', () => {
+    fixture.detectChanges();
+    measureGrid();
+    const gridDirective = getGridDirective();
+
+    getResizeDirective().beginResize();
+    expect(gridDirective.isResizeActive()).toBe(true);
+
+    fixture.componentInstance.showItem = false;
+    fixture.debugElement.injector.get(ChangeDetectorRef).markForCheck();
+    fixture.detectChanges();
+
+    expect(gridDirective.isResizeActive()).toBe(false);
   });
 });

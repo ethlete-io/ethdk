@@ -1,0 +1,55 @@
+@layer components {
+  @property --et-grid-padding {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+  }
+
+  .et-grid {
+    display: block;
+    box-sizing: border-box;
+    padding: var(--et-grid-padding);
+    position: relative;
+    min-height: 0;
+
+    &:has(.et-grid-item--dragging, .et-grid-item--resizing) {
+      user-select: none;
+      cursor: grabbing;
+    }
+
+    &:has(.et-grid-item--resizing) {
+      cursor: nwse-resize;
+    }
+  }
+
+  .et-grid-ghost {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--et-surface-color-solid, rgb(23 23 23)) 8%, transparent);
+    border: 2px dashed color-mix(in srgb, var(--et-surface-color-solid, rgb(23 23 23)) 20%, transparent);
+    box-sizing: border-box;
+    pointer-events: none;
+  }
+
+  .et-grid--readonly {
+    .et-grid-item__actions {
+      display: none;
+    }
+
+    .et-grid-item:hover {
+      .et-resize-handle--e::after,
+      .et-resize-handle--s::after,
+      .et-resize-handle--w::after,
+      .et-resize-handle--n::after,
+      .et-resize-handle--se::after,
+      .et-resize-handle--sw::after,
+      .et-resize-handle--ne::after,
+      .et-resize-handle--nw::after {
+        content: unset;
+      }
+    }
+  }
+}

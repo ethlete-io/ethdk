@@ -107,6 +107,7 @@ export class GridResizeDirective {
     });
 
     this.destroyRef.onDestroy(() => {
+      this.cancelResize();
       this.autoScroller.stop();
       this.detachGestureListeners();
     });

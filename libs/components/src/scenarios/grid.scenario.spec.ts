@@ -138,7 +138,7 @@ class LabelReaderComponent {
   imports: [GRID_IMPORTS, LabelReaderComponent],
   styles: [UNSTYLED_BLOCKS],
   encapsulation: ViewEncapsulation.None,
-  providers: [provideGridLabels({ interactiveGrid: 'Raster', removeItem: 'Entfernen' })],
+  providers: [provideGridLabels({ interactiveGrid: 'Raster', item: 'Kachel', removeItem: 'Entfernen' })],
   template: `
     <et-grid [items]="items" />
     <et-scenario-label-reader />
@@ -546,9 +546,11 @@ describe('grid scenarios', () => {
 
     expect(query('et-grid', host).getAttribute('aria-label')).toBe('Raster');
     expect(query('.et-grid-item-default-actions__remove', host).getAttribute('aria-label')).toBe('Entfernen');
+    expect(query('.et-grid-item', host).getAttribute('aria-label')).toBe('Kachel');
     expect(query('.scenario-labels', host).textContent).toBe(`Entfernen|${DEFAULT_GRID_LABELS.readonlyGrid}`);
     expect(fixture.debugElement.query(By.directive(LabelReaderComponent)).componentInstance.source).toEqual({
       interactiveGrid: 'Raster',
+      item: 'Kachel',
       removeItem: 'Entfernen',
     });
 

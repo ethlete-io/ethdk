@@ -1,0 +1,11 @@
+@layer components {
+  et-grid-item-default-actions .et-grid-item-default-actions__remove {
+    color: var(--et-surface-color-muted-solid);
+
+    @media (hover: hover) {
+      &:hover {
+        color: var(--et-surface-color-solid);
+      }
+    }
+  }
+}

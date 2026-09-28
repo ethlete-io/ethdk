@@ -229,7 +229,7 @@ describe('grid headless scenarios', () => {
     expect(a.classList.contains('et-grid-drag')).toBe(true);
     expect(a.classList.contains('et-grid-resize')).toBe(true);
     expect(a.style.touchAction).toBe('none');
-    expect(a.getAttribute('aria-grabbed')).toBe('false');
+    expect(a.hasAttribute('aria-grabbed')).toBe(false);
     expect(a.querySelector('.scenario-meta')?.textContent).toBe('wide:8');
 
     fixture.componentInstance.readOnly.set(true);

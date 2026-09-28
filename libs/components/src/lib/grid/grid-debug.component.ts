@@ -54,8 +54,7 @@ const posEq = (a: GridItemPosition | undefined, b: GridItemPosition | undefined)
         <div class="et-grid-debug-legend">
           @for (bp of breakpoints(); track bp.name) {
             <span
-              [style.fontWeight]="bp.name === activeBreakpoint() ? '700' : '400'"
-              [style.color]="bp.name === activeBreakpoint() ? '#1d4ed8' : '#9ca3af'"
+              [class.et-grid-debug-breakpoint--active]="bp.name === activeBreakpoint()"
               class="et-grid-debug-breakpoint"
               >{{ bp.name }}&nbsp;{{ bp.columns }}col&nbsp;≥{{ bp.minWidth }}px</span
             >
@@ -69,15 +68,12 @@ const posEq = (a: GridItemPosition | undefined, b: GridItemPosition | undefined)
               <th class="et-grid-debug-cell et-grid-debug-cell-start">id</th>
               <th class="et-grid-debug-cell et-grid-debug-cell-start">type</th>
               @for (bp of breakpoints(); track bp.name) {
-                <th
-                  [style.background]="bp.name === activeBreakpoint() ? '#dbeafe' : '#f3f4f6'"
-                  class="et-grid-debug-cell"
-                >
+                <th [class.et-grid-debug-cell--active]="bp.name === activeBreakpoint()" class="et-grid-debug-cell">
                   {{ bp.name }}{{ hasExternal() ? ' int' : '' }}
                 </th>
                 @if (hasExternal()) {
                   <th
-                    [style.background]="bp.name === activeBreakpoint() ? '#dbeafe' : '#f3f4f6'"
+                    [class.et-grid-debug-cell--active]="bp.name === activeBreakpoint()"
                     class="et-grid-debug-cell et-grid-debug-cell-ext"
                   >
                     {{ bp.name }} ext
@@ -93,7 +89,7 @@ const posEq = (a: GridItemPosition | undefined, b: GridItemPosition | undefined)
                 <td class="et-grid-debug-cell et-grid-debug-cell-start et-grid-debug-type">{{ row.type }}</td>
                 @for (cell of row.cells; track cell.bp) {
                   <td
-                    [style.color]="cell.intMissing ? '#dc2626' : '#111'"
+                    [class.et-grid-debug-error]="cell.intMissing"
                     [title]="cell.intMissing ? 'MISSING - layout.' + cell.bp + ' undefined in internal state' : ''"
                     class="et-grid-debug-cell"
                   >
@@ -101,7 +97,9 @@ const posEq = (a: GridItemPosition | undefined, b: GridItemPosition | undefined)
                   </td>
                   @if (hasExternal()) {
                     <td
-                      [style.color]="cell.extMissing ? '#dc2626' : cell.mismatch ? '#d97706' : '#9ca3af'"
+                      [class.et-grid-debug-error]="cell.extMissing"
+                      [class.et-grid-debug-warning]="!cell.extMissing && cell.mismatch"
+                      [class.et-grid-debug-type]="!cell.extMissing && !cell.mismatch"
                       [title]="cell.mismatch ? 'MISMATCH - ext=' + fmtPos(cell.ext) + ' int=' + fmtPos(cell.int) : ''"
                       class="et-grid-debug-cell"
                     >

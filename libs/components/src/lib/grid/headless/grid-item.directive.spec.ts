@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { GridItemComponent } from '../grid-item.component';
@@ -82,6 +82,24 @@ describe('GridItemDirective', () => {
     getGridDirective().registerConstraints('item-1', { minColSpan: 4, maxColSpan: 6, minRowSpan: 1, maxRowSpan: 3 });
 
     expect(getGridDirective().getConstraints('item-1').minColSpan).toBe(4);
+  });
+
+  it('keeps its registration across a constraint input change and drops it on destroy', () => {
+    fixture.detectChanges();
+    measureGrid();
+
+    const unregister = vi.spyOn(getGridDirective(), 'unregisterConstraints');
+
+    fixture.componentInstance.minColSpan = 3;
+    fixture.debugElement.injector.get(ChangeDetectorRef).markForCheck();
+    fixture.detectChanges();
+
+    expect(getGridDirective().getConstraints('item-1').minColSpan).toBe(3);
+    expect(unregister).not.toHaveBeenCalled();
+
+    fixture.destroy();
+
+    expect(unregister).toHaveBeenCalledExactlyOnceWith('item-1');
   });
 
   it('returns a valid currentPosition after the grid places the item', () => {

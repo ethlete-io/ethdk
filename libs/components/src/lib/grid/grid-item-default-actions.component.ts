@@ -22,20 +22,10 @@ import { GRID_TOKEN } from './headless/grid.tokens';
       </button>
     </et-grid-item-toolbar>
   `,
+  styleUrl: './grid-item-default-actions.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [GridItemToolbarComponent, IconButtonComponent, ...ICON_IMPORTS],
   providers: [provideIcons(TIMES_ICON)],
-  styles: `
-    et-grid-item-default-actions .et-grid-item-default-actions__remove {
-      color: rgb(var(--et-surface-color-muted));
-
-      @media (hover: hover) {
-        &:hover {
-          color: rgb(var(--et-surface-color));
-        }
-      }
-    }
-  `,
 })
 export class GridItemDefaultActionsComponent {
   private grid = inject(GRID_TOKEN);

@@ -129,8 +129,14 @@ export class GridItemDirective {
       });
     }
 
-    effect((onCleanup) => {
+    let registeredId: string | null = null;
+
+    effect(() => {
       const id = this.itemId();
+
+      if (registeredId !== null && registeredId !== id) this.grid?.unregisterConstraints(registeredId);
+
+      registeredId = id;
       this.grid?.registerConstraints(id, {
         ...(this.minColSpan() === undefined ? {} : { minColSpan: this.minColSpan() }),
         ...(this.maxColSpan() === undefined ? {} : { maxColSpan: this.maxColSpan() }),
@@ -138,7 +144,10 @@ export class GridItemDirective {
         ...(this.maxRowSpan() === undefined ? {} : { maxRowSpan: this.maxRowSpan() }),
         perBreakpoint: this.perBreakpointConstraints(),
       });
-      onCleanup(() => this.grid?.unregisterConstraints(id));
+    });
+
+    this.destroyRef.onDestroy(() => {
+      if (registeredId !== null) this.grid?.unregisterConstraints(registeredId);
     });
 
     // Items mounted mid-session (addItem) mount with the entering styles already applied - CSS

@@ -55,6 +55,14 @@ describe('grid adapter', () => {
       });
     });
 
+    it('should map a __proto__ key from parsed JSON as a breakpoint, not as the prototype', () => {
+      const layout = JSON.parse('{"__proto__": {"x": 1, "y": 2, "cols": 3, "rows": 4}}');
+      const mapped = mapGridLayout(layout, toGridPosition);
+
+      expect(Object.getPrototypeOf(mapped)).toBe(Object.prototype);
+      expect(Object.keys(mapped)).toEqual(['__proto__']);
+    });
+
     it('should pass the breakpoint name to the mapper', () => {
       const seen = mapGridLayout(WIDGET.layout, (_, breakpoint) => breakpoint);
 

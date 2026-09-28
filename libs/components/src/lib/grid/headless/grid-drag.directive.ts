@@ -27,7 +27,6 @@ import {
   host: {
     class: 'et-grid-drag',
     '[class.et-grid-drag--active]': '!grid?.readOnly() && dragHandle.isDragging()',
-    '[attr.aria-grabbed]': '!grid?.readOnly() && dragHandle.isDragging()',
     // Must bind a concrete value in both states - this binding outranks the host directive's, and a
     // null here clears the property instead of delegating.
     '[style.touch-action]': "grid?.readOnly() ? 'auto' : 'none'",
@@ -124,6 +123,7 @@ export class GridDragDirective {
     });
 
     this.destroyRef.onDestroy(() => {
+      this.cancelDrag();
       this.autoScroller.stop();
       this.detachGestureListeners();
     });
@@ -140,8 +140,6 @@ export class GridDragDirective {
 
     if (!origin) return;
 
-    // Measure the VISUAL rect (translate included) - correct even when the item is grabbed
-    // mid-settle.
     const itemRect = this.elementRef.nativeElement.getBoundingClientRect();
 
     this.grabOffset = {
@@ -184,9 +182,6 @@ export class GridDragDirective {
       y: pointer.clientY - containerOrigin.top,
     };
 
-    // Horizontally the item can never leave the container; vertically its top can reach the current
-    // content bottom (so it can still be dropped onto a new last row). Without this the floating item
-    // creates page overflow, which feeds the auto-scroller ever more room to scroll into.
     const contentHeight = rowsToPixelHeight(computeGridHeight(grid.layout()), geometry);
     const maxX = geometry.originX + Math.max(0, geometry.contentWidth - size.width);
     const maxY = geometry.originY + contentHeight;
@@ -196,10 +191,6 @@ export class GridDragDirective {
       y: Math.min(Math.max(pointerInContainer.y - grabOffset.y, geometry.originY), maxY),
     };
 
-    // Re-anchor the grab offset whenever the clamp engaged: the anchor slides along the
-    // item so pointer overshoot beyond the grid never accumulates - the moment the
-    // pointer reverses, the item moves with it instead of waiting for the overshoot
-    // distance to be travelled back.
     this.grabOffset = {
       x: Math.min(Math.max(pointerInContainer.x - float.x, 0), size.width),
       y: Math.min(Math.max(pointerInContainer.y - float.y, 0), size.height),

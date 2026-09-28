@@ -62,29 +62,6 @@ export type GridDragState = {
   targetPosition: GridItemPosition;
 };
 
-export const GRID_DEBUG_STORAGE_KEY = 'et-grid-debug';
-
-let cachedGridDebug: boolean | null = null;
-
-export const isGridDebugEnabled = () => {
-  if (cachedGridDebug === null) {
-    try {
-      cachedGridDebug = globalThis.localStorage?.getItem(GRID_DEBUG_STORAGE_KEY) === 'true';
-    } catch {
-      cachedGridDebug = false;
-    }
-  }
-
-  return cachedGridDebug;
-};
-
-export const gridDebug = (...args: unknown[]) => {
-  if (!isGridDebugEnabled()) return;
-
-  const timestamp = (globalThis.performance?.now() ?? 0).toFixed(1);
-  console.log(`\x1B[36m[et-grid ${timestamp}ms]\x1B[m`, ...args);
-};
-
 const layoutsEqual = (a: Record<string, GridItemPosition>, b: Record<string, GridItemPosition>) => {
   const aKeys = Object.keys(a);
   if (aKeys.length !== Object.keys(b).length) return false;

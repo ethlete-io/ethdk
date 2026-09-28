@@ -9,6 +9,8 @@ export type GridLabels = {
   interactiveGrid: string;
   /** Accessible label for a read-only grid. */
   readonlyGrid: string;
+  /** Accessible label for an item that sets no `ariaLabel` of its own. */
+  item: string;
   /** Accessible label for an item's remove action. */
   removeItem: string;
 };
@@ -17,6 +19,7 @@ export type GridLabels = {
 export const DEFAULT_GRID_LABELS: GridLabels = {
   interactiveGrid: 'Interactive grid layout',
   readonlyGrid: 'Grid layout',
+  item: 'Grid item',
   removeItem: 'Remove item',
 };
 

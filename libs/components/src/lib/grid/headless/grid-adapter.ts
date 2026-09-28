@@ -53,13 +53,9 @@ export const mapGridLayout = <TBp extends GridBreakpointName, TIn, TOut>(
   layout: Record<TBp, TIn>,
   map: (value: TIn, breakpoint: TBp) => TOut,
 ): Record<TBp, TOut> => {
-  const mapped = {} as Record<TBp, TOut>;
-
-  for (const breakpoint of Object.keys(layout) as TBp[]) {
-    mapped[breakpoint] = map(layout[breakpoint], breakpoint);
-  }
-
-  return mapped;
+  return Object.fromEntries(
+    (Object.keys(layout) as TBp[]).map((breakpoint) => [breakpoint, map(layout[breakpoint], breakpoint)]),
+  ) as Record<TBp, TOut>;
 };
 
 /** Map a backend position shaped as `{x, y, cols, rows}` to a `GridItemPosition`. */

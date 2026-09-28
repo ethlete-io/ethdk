@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { query } from '../testing/driver-core';
@@ -91,6 +91,26 @@ describe('GridItemComponent', () => {
   it('reflects ariaLabel in aria-label', () => {
     fixture.detectChanges();
     expect(getItemEl().getAttribute('aria-label')).toBe('My widget');
+  });
+
+  it('announces its move, resize and remove shortcuts only while editable', () => {
+    fixture.detectChanges();
+    expect(getItemEl().getAttribute('aria-keyshortcuts')?.split(' ')).toEqual([
+      'Control+ArrowLeft',
+      'Control+ArrowRight',
+      'Control+ArrowUp',
+      'Control+ArrowDown',
+      'Shift+ArrowLeft',
+      'Shift+ArrowRight',
+      'Shift+ArrowUp',
+      'Shift+ArrowDown',
+      'Control+Delete',
+    ]);
+
+    fixture.componentInstance.readOnly = true;
+    fixture.debugElement.injector.get(ChangeDetectorRef).markForCheck();
+    fixture.detectChanges();
+    expect(getItemEl().hasAttribute('aria-keyshortcuts')).toBe(false);
   });
 
   it('registers with the parent grid directive', () => {

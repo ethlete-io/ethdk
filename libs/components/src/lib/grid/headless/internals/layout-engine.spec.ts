@@ -280,6 +280,34 @@ describe('layout-engine', () => {
       expect(item2?.position.row).toBe(0);
     });
 
+    describe('same-row swap', () => {
+      const origin: GridItemPosition = { col: 0, row: 0, colSpan: 2, rowSpan: 1 };
+
+      it('swaps the neighbour next to the origin into it', () => {
+        const entries: GridLayoutEntry[] = [
+          { id: 'moved', position: { col: 2, row: 0, colSpan: 2, rowSpan: 1 } },
+          { id: 'next', position: { col: 2, row: 0, colSpan: 2, rowSpan: 1 } },
+        ];
+
+        const result = resolveCollisions({ entries, movedId: 'moved', columns: 12, originPosition: origin });
+
+        expect(result.find((e) => e.id === 'next')?.position).toEqual(origin);
+      });
+
+      it('does not swap a far item over the items between it and the origin', () => {
+        const entries: GridLayoutEntry[] = [
+          { id: 'moved', position: { col: 9, row: 0, colSpan: 2, rowSpan: 1 } },
+          { id: 'between', position: { col: 4, row: 0, colSpan: 2, rowSpan: 1 } },
+          { id: 'far', position: { col: 8, row: 0, colSpan: 2, rowSpan: 1 } },
+        ];
+
+        const result = resolveCollisions({ entries, movedId: 'moved', columns: 12, originPosition: origin });
+
+        expect(result.find((e) => e.id === 'far')?.position.col).toBe(8);
+        expect(result.find((e) => e.id === 'between')?.position).toEqual({ col: 4, row: 0, colSpan: 2, rowSpan: 1 });
+      });
+    });
+
     describe('moving down over other items (escape upward)', () => {
       it('lets a smaller collider escape into the vacated origin instead of undoing the move', () => {
         const entries: GridLayoutEntry[] = [

@@ -146,13 +146,10 @@ export const clampPosition = (options: ClampPositionOptions) => {
  */
 export const resolveCollisions = (options: ResolveCollisionsOptions) => {
   const { entries, movedId, columns, originPosition, rowFloors } = options;
-  const moved = entries.find((e) => e.id === movedId);
-
-  if (!moved) return entries;
-
   const result = entries.map((e) => ({ ...e, position: { ...e.position } }));
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const movedEntry = result.find((e) => e.id === movedId)!;
+  const movedEntry = result.find((e) => e.id === movedId);
+
+  if (!movedEntry) return entries;
 
   const colliding = result.filter((e) => e.id !== movedId && itemsCollide(movedEntry.position, e.position));
   const swapTarget = colliding.length === 1 ? colliding[0] : undefined;
@@ -203,10 +200,26 @@ export const resolveCollisions = (options: ResolveCollisionsOptions) => {
         (movedEntry.position.col >= proposedCol + swapTarget.position.colSpan ||
           proposedCol >= movedEntry.position.col + movedEntry.position.colSpan);
 
+      const betweenStart =
+        movedDir > 0
+          ? originPosition.col + originPosition.colSpan
+          : swapTarget.position.col + swapTarget.position.colSpan;
+      const betweenEnd = movedDir > 0 ? swapTarget.position.col : originPosition.col;
+      const between = {
+        col: betweenStart,
+        row: originPosition.row,
+        colSpan: betweenEnd - betweenStart,
+        rowSpan: originPosition.rowSpan,
+      };
+
       const noSideEffects =
         fits &&
         !result.some(
-          (other) => other.id !== swapTarget.id && other.id !== movedId && itemsCollide(proposedPos, other.position),
+          (other) =>
+            other.id !== swapTarget.id &&
+            other.id !== movedId &&
+            (itemsCollide(proposedPos, other.position) ||
+              (between.colSpan > 0 && itemsCollide(between, other.position))),
         );
 
       if (noSideEffects) {

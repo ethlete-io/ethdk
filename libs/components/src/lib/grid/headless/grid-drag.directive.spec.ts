@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { pointerEvent, query } from '../../testing/driver-core';
@@ -12,11 +12,14 @@ import { GridItemConfig } from './grid.types';
   imports: [GridDirective, GridItemComponent],
   template: `
     <div [items]="items" etGrid>
-      <et-grid-item itemId="drag-item" />
+      @if (showItem) {
+        <et-grid-item itemId="drag-item" />
+      }
     </div>
   `,
 })
 class TestHostComponent {
+  showItem = true;
   items: GridItemConfig[] = [
     {
       id: 'drag-item',
@@ -89,5 +92,20 @@ describe('GridDragDirective', () => {
 
     expect(getGridDirective().dragState()).toBeNull();
     expect(getGridDirective().baseLayout()).toEqual(before);
+  });
+
+  it('cancels the drag when the item is destroyed mid-gesture', () => {
+    fixture.detectChanges();
+    grid.measure(fixture);
+    const gridDirective = getGridDirective();
+
+    dragRight();
+    expect(gridDirective.dragState()).not.toBeNull();
+
+    fixture.componentInstance.showItem = false;
+    fixture.debugElement.injector.get(ChangeDetectorRef).markForCheck();
+    fixture.detectChanges();
+
+    expect(gridDirective.dragState()).toBeNull();
   });
 });

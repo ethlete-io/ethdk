@@ -11,6 +11,11 @@ import { GridDragDirective } from './headless/grid-drag.directive';
 import { GridItemDirective } from './headless/grid-item.directive';
 import { GridResizeDirective } from './headless/grid-resize.directive';
 import { GRID_TOKEN } from './headless/grid.tokens';
+import { injectGridLabels } from './grid-labels';
+
+const KEY_SHORTCUTS =
+  'Control+ArrowLeft Control+ArrowRight Control+ArrowUp Control+ArrowDown ' +
+  'Shift+ArrowLeft Shift+ArrowRight Shift+ArrowUp Shift+ArrowDown Control+Delete';
 
 @Component({
   selector: 'et-grid-item, [et-grid-item]',
@@ -50,7 +55,8 @@ import { GRID_TOKEN } from './headless/grid.tokens';
     '[class.et-grid-item--dragging]': '!isReadOnly() && gridDrag.dragHandle.isDragging()',
     '[class.et-grid-item--resizing]': 'gridResize.isResizing()',
     '[attr.role]': '"group"',
-    '[attr.aria-label]': 'ariaLabel()',
+    '[attr.aria-label]': 'accessibleLabel()',
+    '[attr.aria-keyshortcuts]': 'isReadOnly() ? null : KEY_SHORTCUTS',
     '[attr.tabindex]': '"0"',
     '(keydown)': 'applyKeyboardShortcut($event)',
   },
@@ -64,10 +70,15 @@ export class GridItemComponent {
   public gridResize = inject(GridResizeDirective);
 
   private surfaceThemes = injectSurfaceThemes({ optional: true });
+  private labels = injectGridLabels();
 
-  public ariaLabel = input<string>('Grid item');
+  public ariaLabel = input<string>();
 
   public remove = output<void>();
+
+  protected accessibleLabel = computed(() => this.ariaLabel() ?? this.labels().item);
+
+  protected readonly KEY_SHORTCUTS = KEY_SHORTCUTS;
 
   protected isReadOnly = computed(() => this.grid?.readOnly() ?? false);
   private resolvedSurface = computed(() => {
