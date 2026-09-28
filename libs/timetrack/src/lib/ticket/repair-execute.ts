@@ -1,8 +1,9 @@
 import { Observable, catchError, map, of, switchMap, throwError } from 'rxjs';
 import { GitLabCredentials } from '../gitlab/client';
 import { updateGitLabMergeRequest$ } from '../gitlab/merge-requests';
-import { ProcessSpec, TimetrackProcessRunner, TimetrackTransport } from '../transport/ports';
+import { TimetrackProcessRunner, TimetrackTransport } from '../transport/ports';
 import { BranchRepairAction, BranchRepairPlan, BranchRepairStep } from './repair';
+import { git$, messageOf } from './git-step';
 
 export type BranchRepairOutcome = {
   /** The steps that ran, in order. */
@@ -24,22 +25,6 @@ export type BranchRepairContext = {
   /** The GitLab project the branch's merge requests live in. Absent when the repo has no project. */
   projectId?: string;
 };
-
-const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
-
-const gitSpec = (options: { repoPath: string; args: string[] }): ProcessSpec => ({
-  command: 'git',
-  args: options.args,
-  cwd: options.repoPath,
-});
-
-const git$ = (options: { context: BranchRepairContext; args: string[] }): Observable<void> =>
-  options.context.processes.run$(gitSpec({ repoPath: options.context.repoPath, args: options.args })).pipe(
-    map((result) => {
-      if (result.code !== 0)
-        throw new Error(result.stderr.trim() || `git ${options.args[0]} exited with ${result.code}`);
-    }),
-  );
 
 const mergeRequest$ = (options: {
   context: BranchRepairContext;

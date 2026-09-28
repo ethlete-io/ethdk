@@ -1,6 +1,6 @@
 # timetrack stream, ticket, settings scan - open findings
 
-Scan of `libs/timetrack/src/lib/{stream,ticket,settings}` and `libs/timetrack/src/index.ts` from 2026-09-28. 0 High, 1 Medium, 18 Low, 0 Spec. Skipped: spec and story files. `jira/`, `gitlab/`, `reason/` and `model/` were read only where a finding depends on them. The scope holds no RxJS subscriptions, timers or DOM listeners, so it has no leak findings. The observables are cold one-shot pipes.
+Scan of `libs/timetrack/src/lib/{stream,ticket,settings}` and `libs/timetrack/src/index.ts` from 2026-09-28. 0 High, 1 Medium, 12 Low, 0 Spec. Skipped: spec and story files. `jira/`, `gitlab/`, `reason/` and `model/` were read only where a finding depends on them. The scope holds no RxJS subscriptions, timers or DOM listeners, so it has no leak findings. The observables are cold one-shot pipes.
 
 ## settings
 
@@ -11,15 +11,6 @@ Scan of `libs/timetrack/src/lib/{stream,ticket,settings}` and `libs/timetrack/sr
 - Low: `asCallNaming` does not range-check `weekday` or `startMinute` (`settings/parse.ts:289,292`). A hand-edited value is kept, and it never matches. Clamp both values, as the other numeric fields are clamped. S
 - Low: `effectiveNoWorkContextApps` removes duplicates case-sensitively but filters case-insensitively (`settings/rules.ts:69-71`). A user entry `Spotify` next to the shipped `spotify` appears twice. S
 - Low: `repoProjectRows` and `RepoProjectRow` are public exports, but only `projectPathRows` uses them (`settings/repo-project.ts:54,77`). The path normalisation is repeated in `repo-project.ts:7,87,120` and in `project-link.ts:4`. S
-
-## ticket
-
-- Low: `writeTicketWithAgent$` and `writeParentWithAgent$` cut the summary to 255 characters before they unmask it (`ticket/write.ts:382,476`). A real name is often longer than its pseudonym, so the unmasked summary can be longer than 255 and Jira then rejects the create. Cut the summary after `unmaskNames`. S Re-rated from Medium: the prompt asks for under 80 characters, so this needs an agent summary near 255 characters.
-- Low: the duplicate guard in `fileTicketOnce$` reads only the first page of issues with `statusCategory != Done` (`jira/candidates.ts:35,45`). If `ticket.initialStatus` is a Done-category status, or if the project has more open issues than one page holds, the guard misses the earlier issue. M
-- Low: `notesFor` repeats `notesForAll` (`ticket/draft.ts:49-100`). Replace it with `notesForAll({ contextIds: [contextId] })`. S
-- Low: `messageOf`, `gitSpec` and `git$` are copied between `ticket/start-execute.ts:63-80` and `ticket/repair-execute.ts:28-42`. S
-- Low: `repairedMergeRequestTitle` puts the issue key into a `RegExp` without escaping it (`ticket/repair.ts:89`). S
-- Low: `planBranchRepair` adds the `dirty-tree` refusal before the retitle-only branch (`ticket/repair.ts:217-235`). A retitle does not touch the working tree, but uncommitted changes still block it. S
 
 ## stream
 

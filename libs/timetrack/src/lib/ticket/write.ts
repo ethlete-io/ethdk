@@ -379,7 +379,7 @@ export const writeTicketWithAgent$ = (options: {
       if (result.code !== 0) throw new Error(result.stderr.trim() || `the agent exited ${result.code}`);
 
       const wording = agentOutputDocument({ stdout: result.stdout, isValid: isWording });
-      const summary = wording.summary.trim().slice(0, MAX_TICKET_SUMMARY_LENGTH);
+      const summary = unmaskNames({ text: wording.summary.trim(), map: names }).slice(0, MAX_TICKET_SUMMARY_LENGTH);
 
       if (!summary) throw new Error('the agent wrote no summary');
 
@@ -388,7 +388,7 @@ export const writeTicketWithAgent$ = (options: {
       const parentKey = offeredIssueKey({ answered: wording.parentKey, issues: options.request.parents });
 
       return {
-        summary: unmaskNames({ text: summary, map: names }),
+        summary,
         description: unmaskNames({ text: wording.description.trim(), map: names }),
         parentKey: real(parentKey),
         existingKey: real(existingKey),
@@ -473,12 +473,12 @@ export const writeParentWithAgent$ = (options: {
       if (result.code !== 0) throw new Error(result.stderr.trim() || `the agent exited ${result.code}`);
 
       const wording = agentOutputDocument({ stdout: result.stdout, isValid: isParentWording });
-      const summary = wording.summary.trim().slice(0, MAX_TICKET_SUMMARY_LENGTH);
+      const summary = unmaskNames({ text: wording.summary.trim(), map: names }).slice(0, MAX_TICKET_SUMMARY_LENGTH);
 
       if (!summary) throw new Error('the agent wrote no summary');
 
       return {
-        summary: unmaskNames({ text: summary, map: names }),
+        summary,
         description: unmaskNames({ text: wording.description.trim(), map: names }),
       };
     }),

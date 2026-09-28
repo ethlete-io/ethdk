@@ -85,8 +85,9 @@ export type BranchRepairPlan = {
 export const repairedMergeRequestTitle = (options: { title: string; issueKey: string }) => {
   const title = options.title.trim();
   const key = options.issueKey.toUpperCase();
+  const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-  return new RegExp(`\\b${key}\\b`, 'i').test(title) ? title : `${key} ${title}`.trim();
+  return new RegExp(`\\b${escaped}\\b`, 'i').test(title) ? title : `${key} ${title}`.trim();
 };
 
 const refusalsForName = (options: {
@@ -214,13 +215,6 @@ export const planBranchRepair = (options: {
 
   const plan: BranchRepairPlan = { branch, issueKey: key, retitle, retarget: [], steps: [], refusals: [] };
 
-  if (state.dirty) {
-    plan.refusals.push({
-      rule: 'dirty-tree',
-      message: 'The working tree has uncommitted changes. Commit or stash them, then repair.',
-    });
-  }
-
   if (branch === development || branch === production) {
     plan.refusals.push({ rule: 'protected-target', message: `${branch} is a protected branch and is never repaired.` });
 
@@ -232,6 +226,13 @@ export const planBranchRepair = (options: {
     plan.steps = retitleSteps(retitle);
 
     return plan;
+  }
+
+  if (state.dirty) {
+    plan.refusals.push({
+      rule: 'dirty-tree',
+      message: 'The working tree has uncommitted changes. Commit or stash them, then repair.',
+    });
   }
 
   const { name, refusals } = refusalsForName({ branch, issueKey: key, config });

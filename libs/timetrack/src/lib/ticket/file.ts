@@ -1,7 +1,7 @@
 import { Observable, map, of, switchMap } from 'rxjs';
 import { JiraCredentials } from '../jira/client';
 import { JiraIssueInput, createJiraIssue$ } from '../jira/create';
-import { fetchJiraOpenIssues$ } from '../jira/candidates';
+import { fetchJiraDuplicateCandidates$ } from '../jira/candidates';
 import { TimetrackTransport } from '../transport/ports';
 import { alreadyFiled } from './parents';
 
@@ -17,7 +17,7 @@ export type FiledTicket = {
 };
 
 /**
- * Files a ticket, unless the project already holds an open issue with this very summary.
+ * Files a ticket, unless the project already holds an open or a new issue with this very summary.
  *
  * The read in front of the write is what makes a second press safe. Jira has no idempotency key, so a
  * create whose answer was lost on the wire looks exactly like a create that never happened, and
@@ -34,7 +34,7 @@ export const fileTicketOnce$ = (options: {
 }): Observable<FiledTicket> => {
   const { transport, credentials, input } = options;
 
-  return fetchJiraOpenIssues$({
+  return fetchJiraDuplicateCandidates$({
     transport,
     credentials,
     projectKey: input.projectKey,

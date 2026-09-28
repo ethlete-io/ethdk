@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { UnnamedContext } from '../model/attribution';
 import { JiraIssue } from '../jira/issue';
 import { contextKey } from '../model/block';
+import { maskNames, pseudonymMap } from '../reason/pseudonym';
 import { ProcessResult, ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
 import {
   parentWritingRequest,
@@ -208,6 +209,23 @@ describe('the name list on the ticket call', () => {
     expect(wording?.parentKey).toBe('FIP-100');
     expect(wording?.existingKey).toBe('FIP-2810');
     expect(wording?.existingReason).toBe('FIP-2810 already tracks it');
+  });
+
+  it('trims the summary after it reads back a real name longer than its pseudonym', async () => {
+    const names = ['Nordkiosk Holding International Group'];
+    const pseudonym = maskNames({ text: names[0] ?? '', map: pseudonymMap(names) });
+    const { runner } = stubRunner([ok(answer({ summary: `${'x'.repeat(240)} ${pseudonym}`, description: 'd' }))]);
+    const request = parentWritingRequest({
+      level: 'Epic',
+      child: { summary: 'A panel', description: '' },
+      request: REQUEST,
+    });
+
+    const ticket = await firstValueFrom(writeTicketWithAgent$({ runner, request: REQUEST, maskedNames: names }));
+    const parent = await firstValueFrom(writeParentWithAgent$({ runner, request, maskedNames: names }));
+
+    expect(ticket?.summary).toHaveLength(255);
+    expect(parent?.summary).toHaveLength(255);
   });
 
   it('masks nothing when the name list is empty', () => {

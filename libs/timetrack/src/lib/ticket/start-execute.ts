@@ -4,7 +4,7 @@ import { GitLabCredentials } from '../gitlab/client';
 import { createGitLabMergeRequest$ } from '../gitlab/merge-requests';
 import { JiraCredentials, normalizeJiraHost } from '../jira/client';
 import { JiraParenting } from '../jira/hierarchy';
-import { ProcessSpec, TimetrackProcessRunner, TimetrackTransport } from '../transport/ports';
+import { TimetrackProcessRunner, TimetrackTransport } from '../transport/ports';
 import { ticketSubjectOf } from './draft';
 import { fileTicketOnce$ } from './file';
 import {
@@ -16,6 +16,7 @@ import {
   draftMergeRequestBody,
   planWorkStart,
 } from './start';
+import { git$, messageOf } from './git-step';
 
 /**
  * Everything the plan is a function of. The form shows `planWorkStart(request)` and the run derives
@@ -60,24 +61,8 @@ export type WorkStartOutcome = {
   undo: string[];
 };
 
-const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
-
 const NO_JIRA = 'Jira needs a host, an account email and a token in Settings before an issue can be filed.';
 const NO_GITLAB = 'GitLab needs a host and a token in Settings before a merge request can be opened.';
-
-const gitSpec = (options: { repoPath: string; args: string[] }): ProcessSpec => ({
-  command: 'git',
-  args: options.args,
-  cwd: options.repoPath,
-});
-
-const git$ = (options: { context: WorkStartContext; args: string[] }): Observable<void> =>
-  options.context.processes.run$(gitSpec({ repoPath: options.context.repoPath, args: options.args })).pipe(
-    map((result) => {
-      if (result.code !== 0)
-        throw new Error(result.stderr.trim() || `git ${options.args[0]} exited with ${result.code}`);
-    }),
-  );
 
 const issueUrlFor = (options: { credentials: JiraCredentials; issueKey: string }) =>
   `${normalizeJiraHost(options.credentials.host)}/browse/${options.issueKey}`;

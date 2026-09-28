@@ -47,6 +47,27 @@ export const fetchJiraOpenIssues$ = (options: {
 };
 
 /**
+ * The issues a new ticket could duplicate: every open issue, and every issue created in the last day
+ * whatever its status, newest first. A create whose answer was lost is the newest issue even when the
+ * project starts new issues in a done status or holds more open issues than one page.
+ */
+export const fetchJiraDuplicateCandidates$ = (options: {
+  transport: TimetrackTransport;
+  credentials: JiraCredentials;
+  projectKey: string;
+  subjectField?: string;
+  limit?: number;
+}): Observable<JiraIssue[]> =>
+  searchJiraIssues$({
+    transport: options.transport,
+    credentials: options.credentials,
+    jql: `project = ${quoted(options.projectKey)} AND (statusCategory != Done OR created >= -1d) ORDER BY created DESC`,
+    fields: ['summary', 'issuetype', 'parent', ...(options.subjectField ? [options.subjectField] : [])],
+    describe: `open and new issues in ${options.projectKey}`,
+    options: { pageSize: options.limit ?? DEFAULT_OPEN_ISSUE_LIMIT, maxPages: 1 },
+  }).pipe(map((resources) => resources.flatMap((resource) => toJiraIssue(resource, options.subjectField) ?? [])));
+
+/**
  * The open issues a new ticket could roll up to: the same read, narrowed to the parent types.
  *
  * Sub-tasks are dropped whatever the types say, because Jira accepts none of them as a parent.

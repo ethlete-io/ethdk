@@ -52,6 +52,12 @@ describe('repairedMergeRequestTitle', () => {
     );
   });
 
+  it('reads the key as literal text, not as a pattern', () => {
+    expect(repairedMergeRequestTitle({ title: 'FIPX2177 something else', issueKey: 'FIP.2177' })).toBe(
+      'FIP.2177 FIPX2177 something else',
+    );
+  });
+
   it('does not mistake a longer key for this one', () => {
     expect(repairedMergeRequestTitle({ title: 'FIP-21770 something else', issueKey: 'FIP-2177' })).toBe(
       'FIP-2177 FIP-21770 something else',
@@ -147,6 +153,13 @@ describe('planBranchRepair', () => {
     const result = plan({ state: stateOf({ dirty: true }) });
 
     expect(result.refusals.map((refusal) => refusal.rule)).toEqual(['dirty-tree']);
+  });
+
+  it('retitles an open merge request over a dirty working tree, which a retitle never touches', () => {
+    const result = plan({ state: stateOf({ dirty: true, mergeRequests: [mergeRequest()] }) });
+
+    expect(result.refusals).toEqual([]);
+    expect(result.keepsName).toBe('open-merge-request');
   });
 
   it('refuses a protected branch outright', () => {

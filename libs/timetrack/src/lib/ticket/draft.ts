@@ -73,32 +73,6 @@ const notesForAll = (options: { groups: readonly WorkGroup[]; contextIds: readon
   return notes;
 };
 
-const notesFor = (options: { groups: readonly WorkGroup[]; contextId: string; max: number }) => {
-  const notes: string[] = [];
-  const seen = new Set<string>();
-
-  for (const group of options.groups) {
-    for (const block of group.blocks) {
-      if (contextKey(block.context) !== options.contextId) continue;
-
-      for (const entry of block.evidence) {
-        if (!QUOTABLE_EVIDENCE_KINDS.includes(entry.kind)) continue;
-
-        const note = entry.summary ?? entry.detail;
-
-        if (!note || seen.has(note)) continue;
-
-        seen.add(note);
-        notes.push(note);
-
-        if (notes.length >= options.max) return notes;
-      }
-    }
-  }
-
-  return notes;
-};
-
 /**
  * The subject a branch already carries, even when the branch names no issue key — which is the only
  * case that reaches here. `parseBranch` reports the subject of a non-conforming name too, so
@@ -175,9 +149,9 @@ export const draftTicket = (options: {
   maxNotes?: number;
 }): TicketDraft => {
   const { context, config } = options;
-  const notes = notesFor({
+  const notes = notesForAll({
     groups: options.unattributed,
-    contextId: context.id,
+    contextIds: [context.id],
     max: options.maxNotes ?? DEFAULT_MAX_TICKET_NOTES,
   });
   const summary = summaryFor({ context, notes, config });
