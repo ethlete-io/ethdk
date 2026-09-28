@@ -33,6 +33,11 @@ own open lines; this file lists what needs a user decision and what is still que
   as an error on purpose before; `0` and `''` still count. Revert `isError` there for the old
   behaviour.
 
+- overlay: `syncUrl` does not deep-link. Add a stable param key (new API), or drop the
+  deep-link claim from the JSDoc and the docs.
+- overlay: 6592a0627 changed the exported `DragToDismissContext`: `overlayRef` now needs
+  `beforeClosed`, which breaks custom mocks. Check that its changeset bump is right.
+
 ## Queue
 
 - select: mark touched when an outside click or focus leave closes the panel (the cascader got
