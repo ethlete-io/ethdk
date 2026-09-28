@@ -1,6 +1,6 @@
 # scheduler scan - open findings
 
-Scan of `libs/components/src/lib/scheduler/` from 2026-09-28. 0 High, 6 Medium, 8 Low, 2 Spec. Skipped: `stories/`, `testing/`, spec bodies (grepped for coverage only), the small badge/edit-field wrappers beyond a skim.
+Scan of `libs/components/src/lib/scheduler/` from 2026-09-28. 0 High, 0 Medium open (6 fixed 2026-09-28), 8 Low, 1 Spec. Skipped: `stories/`, `testing/`, spec bodies (grepped for coverage only), the small badge/edit-field wrappers beyond a skim.
 
 ## Day coverage and time zones
 
@@ -27,5 +27,4 @@ Scan of `libs/components/src/lib/scheduler/` from 2026-09-28. 0 High, 6 Medium, 
 
 ## Spec gaps
 
-- Spec: No spec runs the time grid on a DST day (for example `TZ=Europe/Berlin` on 2026-03-29 and 2026-10-25) for block offsets, the now line and pointer-to-time math.
 - Spec: No spec covers a click, the overflow menu or keyboard activation after a completed drag, or a click on an appointment that `selectAppointment()` highlighted.
