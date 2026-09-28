@@ -51,7 +51,7 @@ protected competitions: CascaderDataSource<string> = {
 };
 ```
 
-It returns the ancestor chain (root → committed node) so the trigger can render the breadcrumb. Return `null` (or an empty array) when the value has no resolvable path. For a static tree it's a trivial depth-first search; for an async source, resolve it however your backend allows.
+It returns the ancestor chain (root → committed node) so the trigger can render the breadcrumb. Return `null` (or an empty array) when the value has no resolvable path. For a static tree it's a trivial depth-first search; for an async source, resolve it however your backend allows. The cascader calls it again when `dataSource` changes, so a source that arrives after the value still labels it, and a swapped source replaces the old tree's path (a `null` result then clears it).
 
 ## Flat search
 

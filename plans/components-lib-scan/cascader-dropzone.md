@@ -11,7 +11,6 @@ Scan of `libs/components/src/lib/forms/cascader/` and `libs/components/src/lib/f
 
 ## cascader - state and streams
 
-- Medium: The value-to-path stream reacts only to `value`; it reads `dataSource()`, `multiple()` and `compareWith()` untracked (`forms/cascader/headless/cascader.directive.ts:464`). A data source that arrives after the value (async setup, or a swapped source) never resolves the label of the current value, and after a swap the trigger keeps the old tree's path. Include `dataSource` in the observed source. S Verified.
 - Low: A synchronous throw from `resolvePath` or `search` happens inside the `switchMap` project function, outside the inner `catchError`, so it errors the outer stream and path resolution or search stops for the life of the control (`forms/cascader/headless/cascader.directive.ts:486`, `:525`, `:568`). Wrap the call in `defer`. A sync throw from `loadChildren` escapes `activateNode` the same way (`:1227`). S
 - Low: The focus retry loops call `requestAnimationFrame` directly, are not cancelled on destroy, and bypass the `nextFrame` helper the rest of the file uses (so core's fake frames do not drive them) (`forms/cascader/headless/cascader.directive.ts:368`, `:1122`). S
 - Low: `isFullySelected` recurses over `knownChildren` for every rendered node on every change in multi mode (`forms/cascader/headless/cascader.directive.ts:1075`). Large trees with many selected values pay O(nodes x descendants x values) per render; memoise per value set. M

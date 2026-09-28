@@ -1097,6 +1097,73 @@ describe('CascaderDirective (in form field)', () => {
   });
 });
 
+describe('CascaderDirective (data source arriving after the value)', () => {
+  let driver: CascaderDriver<CascaderTestHost>;
+
+  const resolvingSource = (suffix: string): CascaderDataSource<string> => ({
+    loadChildren: syncSource.loadChildren,
+    resolvePath: (value) =>
+      searchTree('')
+        .find((path) => path[path.length - 1]?.value === value)
+        ?.map((node) => ({ ...node, label: node.label + suffix })) ?? null,
+  });
+
+  const settle = async () => {
+    driver.detectChanges();
+    tick();
+    await driver.settle();
+  };
+
+  beforeEach(() => {
+    driver = mountCascader(CascaderTestHost);
+  });
+
+  afterEach(async () => {
+    await driver.close();
+  });
+
+  it('resolves the current value once a resolving source arrives', async () => {
+    driver.host.value.set('euro-group-a');
+    await settle();
+
+    expect(driver.cascader.displayValue()).not.toBe('Group A');
+
+    driver.host.dataSource.set(resolvingSource(''));
+    await settle();
+
+    expect(driver.cascader.displayValue()).toBe('Euro / Group stage / Group A');
+  });
+
+  it('re-resolves the committed path when the source is swapped', async () => {
+    driver.host.dataSource.set(resolvingSource(''));
+    driver.host.value.set('euro-group-a');
+    await settle();
+
+    expect(driver.cascader.displayValue()).toBe('Euro / Group stage / Group A');
+
+    driver.host.dataSource.set(resolvingSource(' (new)'));
+    await settle();
+
+    expect(driver.cascader.displayValue()).toBe('Euro (new) / Group stage (new) / Group A (new)');
+  });
+
+  it('re-resolves every selected path when the source is swapped in multiple mode', async () => {
+    driver.host.multiple.set(true);
+    driver.host.value.set(['euro-group-a', 'euro-group-b']);
+    await settle();
+
+    driver.host.dataSource.set(resolvingSource(''));
+    await settle();
+
+    expect(driver.cascader.displayValue()).toBe('Group A, Group B');
+
+    driver.host.dataSource.set(resolvingSource(' (new)'));
+    await settle();
+
+    expect(driver.cascader.displayValue()).toBe('Group A (new), Group B (new)');
+  });
+});
+
 describe('CascaderDirective (touched on dismiss)', () => {
   let driver: CascaderDriver<CascaderInFormFieldTestHost>;
 

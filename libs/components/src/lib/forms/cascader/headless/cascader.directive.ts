@@ -467,15 +467,21 @@ export class CascaderDirective<T = unknown>
       });
     });
 
-    toObservable(this.value)
+    let resolvedWithSource: CascaderDataSource<T> | null | undefined;
+
+    toObservable(computed(() => ({ value: this.value(), source: this.dataSource() })))
       .pipe(
-        switchMap((value) => {
+        switchMap(({ value, source }) => {
           const compareWith = this.compareWith();
-          const resolvePath = this.dataSource()?.resolvePath;
+          const resolvePath = source?.resolvePath;
+          const sourceChanged = source !== resolvedWithSource;
+
+          resolvedWithSource = source;
 
           if (this.multiple()) {
             const missing = this.values().filter(
               (candidate) =>
+                sourceChanged ||
                 !this.selectedPaths().some((path) => {
                   const pathLast = path[path.length - 1];
 
@@ -493,8 +499,9 @@ export class CascaderDirective<T = unknown>
                   tap((resolved) => {
                     const stillSelected = this.values().some((current) => compareWith(current, candidate));
                     const resolvedLast = resolved?.[resolved.length - 1];
+                    const matches = !!resolved && !!resolvedLast && compareWith(resolvedLast.value, candidate);
 
-                    if (!stillSelected || !resolved || !resolvedLast || !compareWith(resolvedLast.value, candidate)) {
+                    if (!stillSelected || (!matches && !sourceChanged)) {
                       return;
                     }
 
@@ -504,7 +511,7 @@ export class CascaderDirective<T = unknown>
 
                         return pathLast === undefined || !compareWith(pathLast.value, candidate);
                       }),
-                      resolved,
+                      ...(matches && resolved ? [resolved] : []),
                     ]);
                   }),
                   catchError(() => EMPTY),
@@ -520,7 +527,7 @@ export class CascaderDirective<T = unknown>
           const currentPath = this.path();
           const last = currentPath[currentPath.length - 1];
 
-          if (last && compareWith(last.value, value)) {
+          if (!sourceChanged && last && compareWith(last.value, value)) {
             return EMPTY;
           }
 
@@ -541,12 +548,12 @@ export class CascaderDirective<T = unknown>
                 return;
               }
 
-              if (resolved && resolved.length) {
-                const last = resolved[resolved.length - 1];
+              const resolvedLast = resolved?.[resolved.length - 1];
 
-                if (last && compareWith(last.value, value)) {
-                  this.path.set(resolved);
-                }
+              if (resolved && resolvedLast && compareWith(resolvedLast.value, value)) {
+                this.path.set(resolved);
+              } else if (sourceChanged) {
+                this.path.set([]);
               }
             }),
             catchError(() => EMPTY),
