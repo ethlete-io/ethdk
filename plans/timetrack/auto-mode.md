@@ -1,6 +1,6 @@
 # Auto mode and the approval queue
 
-Status: slices 1 to 4 done (2026-09-28), ADR 0035 approved. Slice 5 is next.
+Status: slices 1 to 4 done (2026-09-28), ADR 0035 approved. Slice 5 in progress.
 
 ## Goal
 
@@ -99,7 +99,7 @@ auto-mode.ts` runs `writeTicketWithAgent$` once per band and stand-in, names unn
    - Context asks wait for git discovery, as the stand-in pass does.
    - `standIn.list` does not report the resolution or parent source yet.
 5. **Class settings.** A settings page to make an action stricter, and a readout of what auto mode
-   did today.
+   did today. In progress (2026-09-28).
 
 ## Open questions
 
