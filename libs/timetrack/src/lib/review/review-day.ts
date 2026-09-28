@@ -4,6 +4,7 @@ import { CutOptions } from '../rows/cut';
 import { CheckDayOptions, DEFAULT_ROUND_OPTIONS, DayCheck, RoundOptions, checkDay } from '../rows/round';
 import { CALL_LANE_KEY, storedLaneKey } from '../rows/lane';
 import { unnamedRowId } from '../rows/propose';
+import { describeWork } from '../rows/describe';
 import { snapRowBounds } from '../rows/snap';
 import { AttributionRule } from '../model/attribution';
 import { streamKeyRepoPath } from '../model/block';
@@ -11,7 +12,7 @@ import { foldShortRows } from './fold';
 import { describeCallPiece } from './call-pieces';
 import { backgroundTest, recutReviewedRows } from './recut';
 import { formatDurationMs, formatTimeOfDay } from '../model/duration';
-import { syncsWithoutReview } from '../model/evidence';
+import { Evidence, syncsWithoutReview } from '../model/evidence';
 import { WorklogProposal, WorklogProposalState, syncsInState } from '../model/proposal';
 import { StandIn, matchStandIn } from '../model/stand-in';
 import { TimeWindow, subtractWindows, windowsMs } from '../model/time-window';
@@ -101,6 +102,24 @@ const fromPinned = (row: PinnedRow): ReviewedRow => ({
     description: storedSourceOf({ set: !!row.description, source: row.sources?.description }),
   },
 });
+
+// A call row is left to `describeCallPiece`, which only recognises a description it wrote itself.
+const describeOwnSpan = (row: ReviewedRow): ReviewedRow => {
+  if (storedLaneKey(row.laneKey) === CALL_LANE_KEY || !mayAutoWrite(rowFieldSourceOf(row, 'description'))) return row;
+
+  const group = { ...row, evidence: [], blocks: [] };
+  const evidence = row.evidence.filter((entry) => entry.at >= row.from && entry.at <= row.to);
+  const description = describeWork({ group: { ...group, evidence } });
+
+  if (description === describeWork({ group }) || description === row.description) return row;
+
+  return { ...row, description };
+};
+
+const evidenceWithinPin = (options: { evidence: readonly Evidence[]; pin: PinnedRow; from: Date; to: Date }) =>
+  options.evidence.filter(
+    (entry) => (options.pin.tracksFrom || entry.at >= options.from) && (options.pin.tracksTo || entry.at < options.to),
+  );
 
 /**
  * Reads a row's stand-in against the records that exist now.
@@ -274,7 +293,7 @@ const trackPinnedRows = (options: { pinned: readonly PinnedRow[]; sources: reado
       to,
       durationMs: to.getTime() - from.getTime(),
       observedMs: sharedObservedMs({ source, window: { from, to } }),
-      evidence: source.evidence,
+      evidence: evidenceWithinPin({ evidence: source.evidence, pin, from, to }),
       // The band still says what it is, so the marks come off it rather than off the stored edit: a
       // rule the user has since changed reaches the row, and a row pinned before the day carried them
       // is not left reading as work nobody named.
@@ -355,7 +374,11 @@ export const reviewDay = (options: {
   const reviewed = [
     ...sources.filter((row) => !consumed.has(row.id)).map((row) => withOverride(row, edits.overrides[row.id])),
     ...tracked.rows
-      .map((pin) => (pin.replaces.length ? describeCallPiece({ row: fromPinned(pin), calls }) : fromPinned(pin)))
+      .map((pin) => {
+        const row = describeOwnSpan(fromPinned(pin));
+
+        return pin.replaces.length ? describeCallPiece({ row, calls }) : row;
+      })
       .map((row) => nameFromStandInRule({ row, rules, standIns })),
     ...tracked.leftovers.map((row) => withOverride(describeCallPiece({ row, calls }), edits.overrides[row.id])),
   ]

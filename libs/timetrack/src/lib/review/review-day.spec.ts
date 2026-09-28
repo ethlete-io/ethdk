@@ -26,6 +26,7 @@ import { AttributionRule } from '../model/attribution';
 import { StandIn, openStandIn } from '../model/stand-in';
 import { DayReview, DayReviewEdits, EMPTY_DAY_REVIEW_EDITS, isNamedRow } from './model';
 import { reviewDay } from './review-day';
+import { planTempoSync } from '../tempo/diff';
 
 const MINUTE = 60_000;
 const at = (time: string) => new Date(`2026-08-11T${time}:00Z`);
@@ -502,6 +503,97 @@ describe('splitRow', () => {
     expect(review.rows[0]!.edited).toBe(false);
     expect(review.rows[0]!.durationMs).toBe(120 * MINUTE);
     expect(review.unreconciledMs).toBe(0);
+  });
+});
+
+describe('describing a row the reviewer built', () => {
+  const commit = (time: string, summary: string): Evidence => ({
+    kind: 'commit',
+    at: at(time),
+    detail: summary,
+    summary,
+  });
+  const base = dayRows({
+    proposals: [
+      {
+        ...proposal({
+          issueKey: 'ABC-1',
+          from: '07:15',
+          to: '10:15',
+          minutes: 180,
+          evidence: [
+            commit('07:40', 'feat(match-overlay): Journey'),
+            commit('08:30', 'fix(competition): Standings'),
+            commit('09:50', 'fix(competition): Groups'),
+          ],
+        }),
+        description: 'feat(match-overlay): Journey; fix(competition): Standings; fix(competition): Groups',
+        laneKey: 'repo:/home/tom/dev/sdk',
+      },
+    ],
+  });
+  const row = reviewDay({ rows: base }).rows[0]!;
+  const split = splitRow({ edits: EMPTY_DAY_REVIEW_EDITS, row, at: at('08:00') });
+
+  it('describes each half of a split by the commits inside it', () => {
+    const [left, right] = reviewDay({ rows: base, edits: split }).rows;
+
+    expect(left!.description).toBe('feat(match-overlay): Journey');
+    expect(right!.description).toBe('fix(competition): Standings; fix(competition): Groups');
+  });
+
+  it('keeps a description the reviewer typed on both halves', () => {
+    const typed = setRowDescription({ edits: EMPTY_DAY_REVIEW_EDITS, row, description: 'Competition work' });
+    const edits = splitRow({ edits: typed, row: reviewDay({ rows: base, edits: typed }).rows[0]!, at: at('08:00') });
+
+    expect(reviewDay({ rows: base, edits }).rows.map((entry) => entry.description)).toEqual([
+      'Competition work',
+      'Competition work',
+    ]);
+  });
+
+  it('still describes a row whose ticket and times the reviewer changed by hand', () => {
+    const [left] = reviewDay({ rows: base, edits: split }).rows;
+    const renamed = setRowIssue({ edits: split, row: left!, issueKey: 'ABC-2' });
+    const edits = moveRowBoundary({
+      edits: renamed,
+      before: rowFor(reviewDay({ rows: base, edits: renamed }), 'ABC-2'),
+      after: rowFor(reviewDay({ rows: base, edits: renamed }), 'ABC-1'),
+      at: at('08:45'),
+    });
+    const review = reviewDay({ rows: base, edits });
+
+    expect(rowFor(review, 'ABC-2').sources?.description).toBe('observed');
+    expect(rowFor(review, 'ABC-2').description).toBe('feat(match-overlay): Journey; fix(competition): Standings');
+    expect(rowFor(review, 'ABC-1').description).toBe('fix(competition): Groups');
+  });
+
+  it('keeps only the evidence inside the end a tracking row holds itself', () => {
+    const edits = setRowRange({ edits: EMPTY_DAY_REVIEW_EDITS, row, from: at('08:45'), to: row.to });
+    const [tracked] = reviewDay({ rows: base, edits }).rows.filter((entry) => entry.issueKey);
+
+    expect(tracked!.evidence.map((entry) => entry.summary)).toEqual(['fix(competition): Groups']);
+    expect(tracked!.description).toBe('fix(competition): Groups');
+  });
+
+  it('keeps the stored text where the span holds nothing that describes work', () => {
+    const edits = setRowRange({ edits: EMPTY_DAY_REVIEW_EDITS, row, from: at('08:45'), to: at('09:30') });
+
+    expect(reviewDay({ rows: base, edits }).rows[0]!.description).toBe(row.description);
+  });
+
+  it('plans each half into Tempo with its own text', () => {
+    const plan = planTempoSync({
+      proposals: reviewDay({ rows: base, edits: split }).rows.filter(isNamedRow),
+      ledger: [],
+      remote: [],
+      issueIdsByKey: new Map([['ABC-1', '10001']]),
+    });
+
+    expect(plan.creates.map((create) => create.proposal.description)).toEqual([
+      'feat(match-overlay): Journey',
+      'fix(competition): Standings; fix(competition): Groups',
+    ]);
   });
 });
 
