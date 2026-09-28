@@ -150,12 +150,12 @@ const swapEvidence = (unnamed: WorkGroup, named: WorkGroup): Evidence => {
   return {
     kind: 'branch-swap',
     at: named.from,
-    detail: `${formatDurationMs(unnamed.observedMs)} ${left ? `on \`${left}\`` : 'in this checkout'} before it swapped to ${entered ? `\`${entered}\`` : named.issueKey}`,
+    detail: `${formatDurationMs(unnamed.observedMs)} ${left ? `on \`${left}\`` : 'in this checkout'} before it swapped to ${entered ? `\`${entered}\`` : (named.issueKey ?? named.standInId)}`,
   };
 };
 
 const join = (into: WorkGroup, next: WorkGroup): WorkGroup => {
-  const swapped = !into.issueKey && !!next.issueKey;
+  const swapped = !nameOf(into) && !!nameOf(next);
 
   return {
     ...into,
@@ -173,8 +173,15 @@ const join = (into: WorkGroup, next: WorkGroup): WorkGroup => {
   };
 };
 
+/** The issue or stand-in naming a band, which is its track whatever checkout or branch it is on. */
+const nameOf = (group: WorkGroup) => {
+  if (group.issueKey) return `issue:${group.issueKey}`;
+
+  return group.standInId ? `stand-in:${group.standInId}` : undefined;
+};
+
 /**
- * Which row a block continues: the issue a rule named, or the context behind a block nothing could
+ * Which row a block continues: the issue or stand-in a rule named, or the context behind a block nothing could
  * name. A group with neither - a meeting, a timer run - continues nothing and stays its own row.
  *
  * A context is the right identity for an unnamed band, because the reasoning provider is asked per
@@ -182,7 +189,9 @@ const join = (into: WorkGroup, next: WorkGroup): WorkGroup => {
  * per context and stretch therefore asks exactly what hundreds of one-block bands asked.
  */
 const trackOf = (group: WorkGroup) => {
-  if (group.issueKey) return `issue:${group.issueKey}`;
+  const name = nameOf(group);
+
+  if (name) return name;
 
   const context = group.blocks[0]?.context;
 
@@ -191,12 +200,12 @@ const trackOf = (group: WorkGroup) => {
 
 /**
  * The checkout an unnamed band belongs to, which is the lane it is drawn in. A named band has none:
- * its issue is its track, and reaching across a checkout would join two lanes into one row.
+ * its issue or stand-in is its track, and reaching across a checkout would join two lanes into one row.
  */
-const streamOf = (group: WorkGroup) => (group.issueKey ? undefined : checkoutOf(group));
+const streamOf = (group: WorkGroup) => (nameOf(group) ? undefined : checkoutOf(group));
 
-/** The band a sliver may fold into: its own issue once one names it, its checkout otherwise. */
-const laneOf = (group: WorkGroup) => (group.issueKey ? trackOf(group) : streamOf(group));
+/** The band a sliver may fold into: its own issue or stand-in once one names it, its checkout otherwise. */
+const laneOf = (group: WorkGroup) => nameOf(group) ?? streamOf(group);
 
 /** The checkout behind a band, whether or not anything has named the band's work. */
 const checkoutOf = (group: WorkGroup) => {
@@ -255,9 +264,13 @@ const joinable = (options: { joined: WorkGroup; gap: TimeWindow; pass: PassOptio
  * branch at a time, so a second branch there is a swap rather than a second effort, and nothing has
  * yet said the two deserve tickets of their own. Splitting such a row back apart is one press.
  *
- * An issue the day can name also continues the unnamed band of its own checkout, which is the branch
- * somebody worked on before they created the one that names the issue. Only in that direction: a
- * named band is continued by its own issue alone, so no key ever takes another key's minutes.
+ * A stand-in is a name like an issue key: a branch-scoped rule gives each branch its own, so a switch
+ * to another branch of the checkout cuts the band there.
+ *
+ * An issue or stand-in the day can name also continues the unnamed band of its own checkout, which is
+ * the branch somebody worked on before they created the one that names the work. Only in that
+ * direction: a named band is continued by its own name alone, so no key or stand-in ever takes the
+ * minutes of another.
  */
 const mergePass = (options: { ordered: readonly AttributedBlock[] } & PassOptions) => {
   const { ordered, ...pass } = options;
@@ -275,7 +288,7 @@ const mergePass = (options: { ordered: readonly AttributedBlock[] } & PassOption
     const streamAt = stream === undefined ? undefined : lastOfStream.get(stream);
     const candidate = streamAt === undefined ? undefined : rows[streamAt];
 
-    if (!candidate || candidate.issueKey) return undefined;
+    if (!candidate || nameOf(candidate)) return undefined;
 
     return streamAt;
   };
@@ -284,7 +297,7 @@ const mergePass = (options: { ordered: readonly AttributedBlock[] } & PassOption
     const track = trackOf(group);
     const stream = streamOf(group);
 
-    if (group.issueKey) {
+    if (nameOf(group)) {
       for (const [key, index] of lastOfTrack) {
         if (index === at && key.startsWith('context:')) lastOfTrack.delete(key);
       }

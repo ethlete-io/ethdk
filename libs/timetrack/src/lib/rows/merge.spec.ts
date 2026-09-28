@@ -10,6 +10,7 @@ const attributed = (options: {
   fromMinute: number;
   toMinute: number;
   issueKey?: string;
+  standInId?: string;
   storyKey?: string;
   confidence?: Confidence;
   branch?: string;
@@ -25,6 +26,7 @@ const attributed = (options: {
   return {
     block,
     issueKey: options.issueKey,
+    standInId: options.standInId,
     storyKey: options.storyKey,
     confidence: options.confidence ?? 'certain',
     evidence: block.evidence,
@@ -536,5 +538,66 @@ describe('mergeBlocks and an unobserved branch', () => {
     });
 
     expect(rows).toHaveLength(2);
+  });
+});
+
+describe('mergeBlocks and a stand-in', () => {
+  const standIn = (options: { fromMinute: number; toMinute: number; standInId: string; branch: string }) =>
+    attributed({ ...options, confidence: 'likely', repoPath: '/fifagg' });
+
+  it('cuts the band where the checkout switches to a branch with a stand-in of its own', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        standIn({ fromMinute: 0, toMinute: 30, standInId: 'journey', branch: 'feature/journey-overlay' }),
+        standIn({ fromMinute: 30, toMinute: 40, standInId: 'navigation', branch: 'dev-competition-navigation' }),
+        standIn({ fromMinute: 40, toMinute: 45, standInId: 'journey', branch: 'feature/journey-overlay' }),
+        standIn({ fromMinute: 45, toMinute: 90, standInId: 'navigation', branch: 'dev-competition-navigation' }),
+      ],
+    });
+
+    expect(rows.map((row) => [row.standInId, row.observedMs / 60_000])).toEqual([
+      ['journey', 35],
+      ['navigation', 55],
+    ]);
+    expect(rows.every((row) => row.evidence.every((entry) => entry.kind !== 'branch-swap'))).toBe(true);
+  });
+
+  it('does not let the issue band after a stand-in band swallow it', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        standIn({ fromMinute: 0, toMinute: 30, standInId: 'journey', branch: 'feature/journey-overlay' }),
+        attributed({ fromMinute: 30, toMinute: 60, repoPath: '/fifagg', branch: 'feat/FIP-1', issueKey: 'FIP-1' }),
+      ],
+    });
+
+    expect(rows.map((row) => [row.issueKey, row.standInId])).toEqual([
+      [undefined, 'journey'],
+      ['FIP-1', undefined],
+    ]);
+  });
+
+  it('does not fold the sliver of one stand-in into the band of another', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        standIn({ fromMinute: 0, toMinute: 30, standInId: 'journey', branch: 'feature/journey-overlay' }),
+        standIn({ fromMinute: 30, toMinute: 31, standInId: 'navigation', branch: 'dev-competition-navigation' }),
+      ],
+    });
+
+    expect(rows.map((row) => [row.standInId, row.observedMs / 60_000])).toEqual([['journey', 30]]);
+  });
+
+  it('still takes the unnamed band of its checkout before it', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        attributed({ fromMinute: 0, toMinute: 20, confidence: 'weak', repoPath: '/fifagg', branch: 'dev' }),
+        standIn({ fromMinute: 20, toMinute: 40, standInId: 'journey', branch: 'feature/journey-overlay' }),
+      ],
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.standInId).toBe('journey');
+    expect(rows[0]?.observedMs).toBe(40 * 60_000);
+    expect(rows[0]?.evidence.some((entry) => entry.kind === 'branch-swap')).toBe(true);
   });
 });
