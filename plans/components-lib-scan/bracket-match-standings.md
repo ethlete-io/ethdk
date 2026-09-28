@@ -38,7 +38,7 @@ Scan of `libs/components/src/lib/bracket/`, `libs/components/src/lib/match/`, `l
 
 ## standings
 
-- Medium: the form column puts `aria-label` on empty generic spans (`standings/standings.component.html:86-90`), and it tells win, tie and loss apart by opacity alone (`standings/standings.component.css:185-195`). Assistive tech often reads nothing, and the dots fail WCAG 1.4.1. Add `role="img"` or hidden text, and a non-colour mark. S Verified.
+- Medium: the form column tells win, tie and loss apart by opacity alone (`standings/standings.component.css:185-195`), which fails WCAG 1.4.1. Add a non-colour mark (needs a design call). The screen-reader half (hidden text per result) is fixed. S Verified.
 - Low: the legend tracks by `zone.label` (`standings/standings.component.html:104`). Two zones with the same label cause a duplicate-key error. Track by `$index` or by `from`. S
 - Low: a hardcoded shadow colour `rgb(0 0 0 / 0.25)` (`standings/standings-pick.component.css:85`). S
 - Low: the default `'Advances'` label is English-only, and the JSDoc example hardcodes the theme name `'success'` without saying it belongs to the app (`standings/integrations/ethlete.ts:56,70`). S

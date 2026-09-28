@@ -133,11 +133,25 @@ describe('StandingsComponent', () => {
     driver.host.rows.set([row({ form: ['win', 'tie', 'loss'] })]);
     driver.detectChanges();
 
-    expect(driver.queryAll('.et-standings-form-result').map((element) => element.getAttribute('aria-label'))).toEqual([
+    expect(driver.queryAll('.et-standings-form-note').map((element) => element.textContent?.trim())).toEqual([
       'Win',
       'Draw',
       'Loss',
     ]);
+  });
+
+  it('names each form result in text rather than on an empty element', () => {
+    const driver = create();
+
+    driver.host.rows.set([row({ form: ['win', 'loss'] })]);
+    driver.detectChanges();
+
+    const form = driver.query('.et-standings-form');
+
+    expect(form?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Win Loss');
+    expect(
+      driver.queryAll('.et-standings-form-result').every((dot) => dot.getAttribute('aria-hidden') === 'true'),
+    ).toBe(true);
   });
 
   describe('zones', () => {

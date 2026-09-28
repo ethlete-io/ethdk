@@ -83,11 +83,8 @@
               @if (renderRow.row.form; as form) {
                 <span class="et-standings-form">
                   @for (result of form; track $index) {
-                    <span
-                      [attr.aria-label]="labels().formResult(result)"
-                      [attr.data-result]="result"
-                      class="et-standings-form-result"
-                    ></span>
+                    <span [attr.data-result]="result" class="et-standings-form-result" aria-hidden="true"></span>
+                    <span class="et-standings-form-note"> {{ labels().formResult(result) }}</span>
                   }
                 </span>
               }

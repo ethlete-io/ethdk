@@ -152,7 +152,8 @@
 
   /* The band's meaning in words, for assistive tech only: colour alone can't carry it, and the legend
      below is a separate element a row-by-row reader never reaches. */
-  .et-standings-zone-note {
+  .et-standings-zone-note,
+  .et-standings-form-note {
     position: absolute;
     inline-size: 1px;
     block-size: 1px;
@@ -181,7 +182,7 @@
   }
 
   /* Won / drew / lost, from the surface tokens rather than a green-amber-red this file invents: the shape
-     of the streak is what the column is for, and each dot is labelled for assistive tech anyway. */
+     of the streak is what the column is for, and each dot has a hidden text note for assistive tech. */
   .et-standings-form-result:where([data-result='win']) {
     background: var(--et-surface-color-solid, currentColor);
   }
