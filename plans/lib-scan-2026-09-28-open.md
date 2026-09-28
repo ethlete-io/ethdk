@@ -5,14 +5,6 @@ own open lines; this file lists what needs a user decision and what is still que
 
 ## Decisions for the user
 
-- chart: `CHART_IMPORTS` imports every chart. The guides now import one component per chart
-  (3717a3956). Exported per-chart tuples (`BAR_CHART_IMPORTS`) would be new public API.
-- notification: the stack has `role="log"` around items that are also `status`/`alert` regions.
-  Pick one region on the stack or a hidden announcer; only a screen-reader run can check it.
-- stream: the Facebook SDK URL hard-codes `de_DE` and `v3.2`. Pick a version, and a config API or
-  `injectLocale` for locale and version.
-- stream: `DEFAULT_STREAM_CONFIG` always bundles the default overlays. The fix is an opt-in
-  provider or a lazy loader type, both breaking.
 - query-devtools: `pushEvent` measures the body twice and resolves the owner eagerly. The fix
   needs a type change in `libs/query` and can change which query a row points at.
 - phone-input: DO +1829/+1849, PR +1939 and JM +1658 show as US, because each country holds one
@@ -33,19 +25,12 @@ own open lines; this file lists what needs a user decision and what is still que
 - contentful: `provideContentfulConfig` bundles all five default components. Lazy defaults or an
   opt-in `withContentfulDefaultComponents()` change the public API; the size is not measured.
 
-- select: `compareWith` makes the options sync O(n²). The fix needs a new public value-key input.
 
-- calendar: range strategies can return a range past `max`. Clamp or reject; both break a case
-  (a filtered week pick ends on a disabled day; a clamped 7-day range gets shorter).
 
 - tooltip: each tooltip adds one body node. A lazy node loses the description for a screen
   reader that reads without moving focus, and `aria-description` is ignored when the consumer
   sets `aria-describedby`.
 
-- time-picker: `min` > `max` now wraps past midnight (3b5a77fe9). The other option was a
-  dev-mode error.
-- icons: `provideIcons()` now merges the parent icons, and `rich-text-editor.component.ts` uses
-  `.useFactory()` (3b5a77fe9). Check that both changes are wanted.
 - form-field: `TEXT_FIELD_CONTROL_INPUTS` lists `'aria-label'` and `'aria-labelledby'` directly
   (1a0c0805f), because Angular cannot build a spread of `ACCESSIBLE_NAME_INPUTS` in an IIFE. A
   change to `ACCESSIBLE_NAME_INPUTS` must be copied by hand.
@@ -57,8 +42,6 @@ own open lines; this file lists what needs a user decision and what is still que
   factories, config, or an opt-in provider) is an API decision.
 - bracket: swiss `MODE_UNSUPPORTED` is unverified. Does the API leave out undrawn rounds?
 
-- loader: no default `aria-progressbar-name`. 6d1d90fe8 made "no default name" deliberate, and a
-  default name is read twice next to visible "Loading" text.
 
 - rich-text-editor: an upload of a route-provided image tool keeps going after its editor is
   destroyed. A cancel needs `RichTextEditorDirective` to expose its `DestroyRef`/`Injector`, or a
@@ -67,11 +50,6 @@ own open lines; this file lists what needs a user decision and what is still que
 - timetrack: the tray uses `DEFAULT_ROUND_OPTIONS.incrementMs` (15 min), the same as the rows. A
   configured increment needs a new setting.
 
-- table: the selection checkbox, expander button and error icon are separate Tab stops. Add the
-  utility columns to the roving grid (this changes the `activeCell()`/`focusCell()` indexes), or
-  take their controls out of the Tab order.
-- table: keyboard column resize. A focusable `role="separator"` grip with arrow steps, or a
-  width step in the column menu.
 
 - bundle goldens: rich-text-editor (3 entries) and dropzone are each about 1.6 kB over. The rich
   text growth comes from new features (862468765, b645e827e, 267f7bdb1); the dropzone growth is
