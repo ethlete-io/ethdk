@@ -32,11 +32,14 @@ import {
   DEFAULT_ROUND_OPTIONS,
   ReviewedRow,
   TimeWindow,
+  describeApproval,
   formatDurationMs,
 } from '@ethlete/timetrack';
 import { debounceTime, filter, fromEvent, map, merge, tap } from 'rxjs';
 import { TimelineScroll, dayKeyOfDate, readViewState, rememberTimelineScroll } from '../view-state';
 import { formatClockTime } from './format';
+import { approvalChipOf, injectBandApprovals } from './band-approvals';
+import { injectApprovalQueue } from '../agent/approval-queue';
 import {
   BREAK_LANE_KEY,
   BreakBand,
@@ -314,6 +317,7 @@ type RowDrag = {
                       [attr.data-excluded]="excluded(laid.block.node.appointment) || null"
                       [attr.data-marked]="marks(laid.block.node.appointment) || null"
                       [attr.data-stand-in]="STANDS_IN(laid.block.node.appointment) || null"
+                      [attr.data-pending]="pendingOn(laid.block.node.appointment) || null"
                       [attr.data-growing]="cutPercentOf(laid.block.node.appointment) !== null || null"
                       [style.--tt-cut-at]="cutPercentOf(laid.block.node.appointment)"
                       [etProvideColor]="laid.block.node.appointment.colorToken ?? 'neutral'"
@@ -493,6 +497,44 @@ type RowDrag = {
                       </div>
                     }
                   }
+
+                  @for (pending of approvalsIn(lane); track pending.key) {
+                    <div
+                      [style.top.%]="percentOf(pending.row.from)"
+                      [style.left.%]="pending.inlineOffset"
+                      [style.width.%]="pending.inlineSize"
+                      [style.--tt-approval-index]="pending.index"
+                      [attr.data-band-approval]="pending.item.id"
+                      [attr.data-op]="pending.item.request.op"
+                      class="tt-approval"
+                    >
+                      <span [title]="DESCRIBE_APPROVAL(pending.item.request)" class="tt-approval-chip">
+                        <span class="truncate">{{ CHIP_OF(pending.item) }}</span>
+                        @if (pending.item.state === 'running') {
+                          <span>…</span>
+                        } @else {
+                          <button
+                            [attr.aria-label]="'Approve: ' + CHIP_OF(pending.item)"
+                            (pointerdown)="$event.stopPropagation()"
+                            (click)="approvals.approve(pending.item.id)"
+                            class="tt-approval-press"
+                            type="button"
+                          >
+                            ✓
+                          </button>
+                          <button
+                            [attr.aria-label]="'Reject: ' + CHIP_OF(pending.item)"
+                            (pointerdown)="$event.stopPropagation()"
+                            (click)="approvals.reject(pending.item.id)"
+                            class="tt-approval-press"
+                            type="button"
+                          >
+                            ✕
+                          </button>
+                        }
+                      </span>
+                    </div>
+                  }
                 </div>
               }
             </div>
@@ -605,6 +647,58 @@ type RowDrag = {
       outline-offset: 2px;
     }
 
+    [data-lane] [data-kind='row'][data-pending] {
+      outline: 1px dashed var(--color-et-brand-ink);
+      outline-offset: -1px;
+    }
+
+    .tt-approval {
+      position: absolute;
+      z-index: 6;
+      display: flex;
+      justify-content: flex-end;
+      margin-top: calc(0.2rem + var(--tt-approval-index) * 2rem);
+      padding-inline-end: 0.2rem;
+      pointer-events: none;
+    }
+
+    .tt-approval-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      max-width: 100%;
+      padding: 0 0.2rem 0 0.4rem;
+      border: 1px dashed var(--color-et-brand-ink);
+      border-radius: 0.25rem;
+      background: var(--et-surface-background-solid);
+      color: var(--color-et-brand-ink);
+      font-size: var(--text-small);
+      line-height: 1.6rem;
+      white-space: nowrap;
+      pointer-events: auto;
+    }
+
+    .tt-approval-press {
+      padding: 0 0.3rem;
+      border: 0;
+      border-radius: 0.2rem;
+      background: none;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 120ms ease-out;
+    }
+
+    .tt-approval-press:hover,
+    .tt-approval-press:focus-visible {
+      opacity: 1;
+    }
+
+    .tt-approval-press:focus-visible {
+      outline: 2px solid var(--color-et-brand-ink);
+    }
+
     .tt-cut--seam {
       pointer-events: none;
       cursor: default;
@@ -626,6 +720,8 @@ export class DayTimelineComponent {
   protected store = injectDayReview();
   private settings = injectTimetrackSettings();
   private git = injectGitCollector();
+  protected approvals = injectApprovalQueue();
+  private bandApprovals = injectBandApprovals();
 
   public focusedDate = input.required<Date>();
   public rows = input.required<readonly ReviewedRow[]>();
@@ -687,6 +783,8 @@ export class DayTimelineComponent {
   protected readonly UNBOOKED_OF = unbookedLabel;
   protected readonly STANDS_IN = isStandInAppointment;
   protected readonly CLOCK_OF = formatClockTime;
+  protected readonly CHIP_OF = approvalChipOf;
+  protected readonly DESCRIBE_APPROVAL = describeApproval;
 
   private cuts = computed(() => {
     const found = new Map<string, TimelineCut>();
@@ -939,6 +1037,29 @@ export class DayTimelineComponent {
   /** Whether a press on the lane draws a range. Every lane does: the break lane draws a break. */
   protected drawable(lane: DayLane) {
     return !!lane;
+  }
+
+  protected pendingOn(appointment: Appointment<TimelineEntry>) {
+    const row = this.rowOf(appointment);
+
+    return !!row && this.bandApprovals.forRow(row.id).length > 0;
+  }
+
+  protected approvalsIn(lane: DayLane) {
+    return lane.blocks.flatMap((laid) => {
+      const row = this.rowOf(laid.block.node.appointment);
+
+      if (!row) return [];
+
+      return this.bandApprovals.forRow(row.id).map((item, index) => ({
+        key: `${row.id}|${item.id}`,
+        item,
+        row,
+        index,
+        inlineOffset: laid.inlineOffset,
+        inlineSize: laid.inlineSize,
+      }));
+    });
   }
 
   protected cutsIn(lane: DayLane): LaneCut[] {

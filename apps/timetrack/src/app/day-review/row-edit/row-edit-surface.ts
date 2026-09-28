@@ -10,6 +10,7 @@ import {
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import { ReviewedRow, syncsInState } from '@ethlete/timetrack';
 import { injectDayReview } from '../day-review';
+import { EditApprovalDirective } from './edit-approval.component';
 import { EditEvidenceDirective } from './edit-evidence.component';
 import { EditIssueDirective } from './edit-issue.component';
 import { EditMeetingDirective } from './edit-meeting.component';
@@ -110,6 +111,7 @@ const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         injector: labelled(headerOf(options.row)),
         bindings: surfaceBindings(appointmentOf({ row: options.row }), options.appointments),
         directives: [
+          EditApprovalDirective,
           EditStandInWaitingDirective,
           EditUnattendedDirective,
           EditDisputedDirective,

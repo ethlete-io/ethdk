@@ -25,7 +25,7 @@ export const queuedId = (answer: AgentApiAnswer) => {
   return (answer as { value: { approvalId: string } }).value.approvalId;
 };
 
-/** Opens the dialog the approval banner leads to. */
+/** Opens the short list of waiting requests the approval banner leads to. */
 export const openApprovals = async (page: Page) => {
   await page.getByRole('button', { name: 'Review requests' }).click();
 

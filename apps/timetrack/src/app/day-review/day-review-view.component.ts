@@ -1,6 +1,8 @@
 import { Component, ViewEncapsulation, computed } from '@angular/core';
 import { BANNER_IMPORTS, BUTTON_IMPORTS, SpinnerComponent, createOverlayOpener } from '@ethlete/components';
-import { DEFAULT_ROUND_OPTIONS, formatDurationMs, localDayRange } from '@ethlete/timetrack';
+import { DEFAULT_ROUND_OPTIONS, describeApproval, formatDurationMs, localDayRange } from '@ethlete/timetrack';
+import { APPROVAL_QUEUE_OVERLAY } from '../agent/approval-queue.component';
+import { injectBandApprovals } from './band-approvals';
 import { injectDayReview } from './day-review';
 import { DayConcurrencyComponent } from './day-concurrency.component';
 import { DAY_DEBUG_OVERLAY } from './day-debug.component';
@@ -39,6 +41,17 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
         </div>
 
         <div class="flex items-center gap-2">
+          @if (placed.unplaced().length; as count) {
+            <button
+              [title]="unplacedTitle()"
+              (click)="approvals.open()"
+              class="rounded-full border border-dashed border-et-brand-ink px-3 text-small leading-7 text-et-brand-ink hover:bg-et-brand/10"
+              data-waiting-pill
+              type="button"
+            >
+              {{ count }} more waiting
+            </button>
+          }
           <button (click)="addEntry()" et-button variant="outline" size="sm">Add an entry</button>
           <button (click)="debug.open()" et-button variant="transparent" size="sm">Debug</button>
         </div>
@@ -120,7 +133,16 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
 export class DayReviewViewComponent {
   protected store = injectDayReview();
   private surface = injectRowEditSurface();
+  protected placed = injectBandApprovals();
   protected debug = createOverlayOpener(DAY_DEBUG_OVERLAY);
+  protected approvals = createOverlayOpener(APPROVAL_QUEUE_OVERLAY);
+
+  protected unplacedTitle = computed(() =>
+    this.placed
+      .unplaced()
+      .map((item) => describeApproval(item.request))
+      .join('\n'),
+  );
 
   protected dayLabel = computed(() => formatDayLabel(this.store.dayKey()));
   protected focusedDate = computed(() => localDayRange(this.store.dayKey(), this.store.boundary()).from);

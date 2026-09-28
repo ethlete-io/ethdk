@@ -11,6 +11,7 @@ import { TicketWritingRequest } from '../ticket/write';
 import { AUTO_MODE_CLIENT, ActionClasses } from '../agent-api/action-classes';
 import { AgentApproval, enqueueApproval, markApproval } from '../agent-api/approval-queue';
 import {
+  approvalRowIdsOf,
   autoModeApplies,
   autoModeApplyRequest,
   autoModeApplyTarget,
@@ -495,5 +496,42 @@ describe('autoModeReadout', () => {
     const edits = withAutoModeAnswer(EMPTY_DAY_REVIEW_EDITS, { ...drafted, outcome: { kind: 'failed' } });
 
     expect(readout({ edits })[0]?.status).toBe('failed');
+  });
+});
+
+describe('approvalRowIdsOf', () => {
+  const rows = rowsOf(EMPTY_DAY_REVIEW_EDITS);
+  const create = { op: 'jira.create' as const, summary: 'Export the month', description: '', projectKey: 'ABC' };
+  const idsOf = (item: Parameters<typeof approvalRowIdsOf>[0]['item'], day = TODAY) =>
+    approvalRowIdsOf({ item, day, rows, unattributed: DAY.unattributed });
+
+  it('previews an auto mode create on the unnamed band of its context', () => {
+    const target = autoModeApprovalTarget(TODAY, { kind: 'context', contextId: CONTEXT.id });
+
+    expect(idsOf({ request: create, target })).toEqual([unnamedRowId(GROUP)]);
+  });
+
+  it('previews nothing for a create of another day or one with no target', () => {
+    const target = autoModeApprovalTarget('2026-08-10', { kind: 'context', contextId: CONTEXT.id });
+
+    expect(idsOf({ request: create, target })).toEqual([]);
+    expect(idsOf({ request: create })).toEqual([]);
+  });
+
+  it('previews a worklog add on the row it falls on', () => {
+    const request = {
+      op: 'worklog.add' as const,
+      issueKey: 'ABC-1',
+      description: '',
+      fromMs: at('08:15').getTime(),
+      durationMs: 900_000,
+    };
+
+    expect(idsOf({ request })).toEqual([unnamedRowId(GROUP)]);
+    expect(idsOf({ request: { ...request, fromMs: at('10:00').getTime() } })).toEqual([]);
+  });
+
+  it('previews nothing for a tempo sync', () => {
+    expect(idsOf({ request: { op: 'tempo.sync', day: TODAY, planHash: 'x' } })).toEqual([]);
   });
 });

@@ -16,7 +16,7 @@ import { injectApprovalQueue } from './approval-queue';
   selector: 'ethlete-approval-queue',
   template: `
     <div etOverlayHeader>
-      <h2 class="text-h4" etOverlayTitle>Waiting for your approval</h2>
+      <h2 class="text-h4" etOverlayTitle>Waiting requests</h2>
     </div>
 
     <et-overlay-body>
@@ -42,8 +42,6 @@ import { injectApprovalQueue } from './approval-queue';
                   <span class="rounded-sm bg-et-warning/15 px-2 text-et-warning-ink">Only approved one by one</span>
                 }
               </div>
-
-              <pre class="m-0 overflow-x-auto text-mono text-small text-et-surface-subtle">{{ payload(item) }}</pre>
 
               <div class="flex items-center justify-end gap-3">
                 @if (item.state === 'running') {
@@ -88,13 +86,9 @@ export class ApprovalQueueComponent {
   protected askedAt(item: AgentApproval) {
     return formatClockTime(new Date(item.askedAtMs));
   }
-
-  protected payload(item: AgentApproval) {
-    return JSON.stringify(item.request, null, 2);
-  }
 }
 
 export const APPROVAL_QUEUE_OVERLAY = /* @__PURE__ */ defineOverlay({
   component: ApprovalQueueComponent,
-  strategies: dialogOverlayStrategy({ width: 'min(720px, 90%)', maxWidth: '90%' }),
+  strategies: dialogOverlayStrategy({ width: 'min(560px, 90%)', maxWidth: '90%' }),
 });

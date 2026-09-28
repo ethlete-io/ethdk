@@ -22,6 +22,75 @@ export const autoModeApprovalTarget = (day: string, subject: AutoModeSubject) =>
 export const autoModeApplyTarget = (day: string, subject: AutoModeSubject) =>
   `${autoModeApprovalTarget(day, subject)}|apply`;
 
+const subjectOfTarget = (target: string | undefined, day: string): AutoModeSubject | null => {
+  const key = target?.startsWith(`${day}|`) ? target.slice(day.length + 1) : null;
+
+  if (key?.startsWith('stand-in:')) return { kind: 'stand-in', standInId: key.slice('stand-in:'.length) };
+  if (key?.startsWith('context:')) return { kind: 'context', contextId: key.slice('context:'.length) };
+
+  return null;
+};
+
+const subjectRowIds = (options: {
+  subject: AutoModeSubject;
+  rows: readonly ReviewedRow[];
+  unattributed: readonly WorkGroup[];
+}) => {
+  const { subject, rows } = options;
+
+  if (subject.kind === 'stand-in') {
+    return rows.filter((row) => row.standInId === subject.standInId).map((row) => row.id);
+  }
+
+  const ids = new Set(
+    options.unattributed.flatMap((group) => {
+      const context = dominantContext(group.blocks);
+
+      return context && contextKey(context) === subject.contextId ? [unnamedRowId(group)] : [];
+    }),
+  );
+
+  return rows.filter((row) => ids.has(row.id) || ids.has(row.recutOf ?? '')).map((row) => row.id);
+};
+
+/**
+ * The rows of a day a waiting approval previews on: the band an auto mode create or apply is for, or
+ * the row a `worklog.add` falls on. Empty when the item has no band on that day.
+ */
+export const approvalRowIdsOf = (options: {
+  item: Pick<AgentApproval, 'request' | 'target'>;
+  day: string;
+  rows: readonly ReviewedRow[];
+  /** The day's unattributed groups, which say which context each unnamed row came from. */
+  unattributed: readonly WorkGroup[];
+}): string[] => {
+  const { item, day, rows } = options;
+  const { request } = item;
+
+  if (request.op === 'autoMode.apply') {
+    return request.day === day
+      ? subjectRowIds({ subject: request.subject, rows, unattributed: options.unattributed })
+      : [];
+  }
+
+  if (request.op === 'jira.create') {
+    const subject = subjectOfTarget(item.target, day);
+
+    return subject ? subjectRowIds({ subject, rows, unattributed: options.unattributed }) : [];
+  }
+
+  if (request.op === 'worklog.add') {
+    const from = request.fromMs;
+    const to = from + request.durationMs;
+    const overlapping = rows.filter((row) => row.from.getTime() < to && row.to.getTime() > from);
+    const row = overlapping.find((entry) => entry.issueKey === request.issueKey) ?? overlapping[0];
+
+    return row ? [row.id] : [];
+  }
+
+  return [];
+};
+
 const answeredKeys = (answers: readonly AutoModeAnswer[]) =>
   new Set(answers.map((answer) => autoModeSubjectKey(answer.subject)));
 
