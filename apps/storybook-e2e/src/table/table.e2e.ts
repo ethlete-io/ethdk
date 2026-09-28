@@ -234,6 +234,33 @@ test.describe('table / keyboard', () => {
     await expect(cell(root, 0, 'name')).toBeFocused();
   });
 
+  test('the selection checkbox is a grid cell: one tab stop, reached with the arrows', async ({ page }) => {
+    const root = await openStory(page, KEYBOARD_NAV_STORY_ID, { args: { columnMenu: false, selectable: true } });
+    const checkbox = rowCheckbox(root, 0);
+
+    await tabUntilFocused(page, checkbox);
+    await expectFocusVisible(checkbox);
+
+    await pressKey(page, 'ArrowRight');
+    await expect(cell(root, 0, 'name')).toBeFocused();
+
+    await pressKey(page, 'ArrowDown');
+    await pressKey(page, 'Home');
+    await expect(rowCheckbox(root, 1)).toBeFocused();
+
+    await pressKey(page, 'Space');
+    await expect(rowCheckbox(root, 1)).toHaveAttribute('aria-checked', 'true');
+
+    await pressKey(page, 'Tab');
+
+    const onUtilityOrCell = await page.evaluate(() => {
+      const active = document.activeElement;
+
+      return active?.getAttribute('role') === 'gridcell' || active?.closest('.et-table-select-cell') !== null;
+    });
+    expect(onUtilityOrCell).toBe(false);
+  });
+
   test('Enter drills into a cell holding a control, and Escape moves back to the cell', async ({ page }) => {
     const root = await openStory(page, KEYBOARD_NAV_STORY_ID, { args: { columnMenu: false } });
     const joinedCell = cell(root, 0, 'joined');

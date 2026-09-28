@@ -2,9 +2,15 @@ import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 import '../../test-helpers';
-import { queryAll } from '../testing/driver-core';
+import { query, queryAll } from '../testing/driver-core';
 import { TableKeyboardNavDirective } from './table-keyboard-nav.directive';
-import { TABLE_IMPORTS, TABLE_KEYBOARD_NAV_IMPORTS } from './table.imports';
+import {
+  TABLE_CELL_ERROR_TOOLTIP_IMPORTS,
+  TABLE_IMPORTS,
+  TABLE_KEYBOARD_NAV_IMPORTS,
+  TABLE_ROW_EXPANSION_IMPORTS,
+  TABLE_SELECTION_IMPORTS,
+} from './table.imports';
 import { TableColumns } from './table.types';
 
 type Person = { id: number; name: string; role: string };
@@ -46,6 +52,43 @@ class HostComponent {
   public clicks: Person[] = [];
 
   public rowKey = (row: Person) => row.id;
+}
+
+@Component({
+  template: `
+    <et-table
+      [columns]="cols"
+      [data]="people"
+      [rowKey]="rowKey"
+      [cellState]="cellState"
+      [expandedRowTemplate]="detail"
+      [etTableKeyboardNav]="{ enabled: enabled() }"
+      [etTableSelection]="{ selection: selection }"
+      [etTableRowExpansion]="{ expanded: expanded }"
+      etTableCellErrorTooltip
+    >
+      <ng-template #detail let-person>{{ person.role }}</ng-template>
+    </et-table>
+  `,
+  imports: [
+    TABLE_IMPORTS,
+    TABLE_KEYBOARD_NAV_IMPORTS,
+    TABLE_SELECTION_IMPORTS,
+    TABLE_ROW_EXPANSION_IMPORTS,
+    TABLE_CELL_ERROR_TOOLTIP_IMPORTS,
+  ],
+})
+class UtilityHostComponent {
+  public readonly cols = COLUMNS;
+  public readonly people = PEOPLE;
+  public enabled = signal(true);
+  public selection = signal<Set<unknown>>(new Set());
+  public expanded = signal<Set<unknown>>(new Set());
+  public feature = viewChild.required(TableKeyboardNavDirective);
+
+  public rowKey = (row: Person) => row.id;
+  public cellState = (row: Person, key: string) =>
+    row.id === 2 && key === 'role' ? { state: 'error' as const, message: 'Could not save' } : null;
 }
 
 const create = () => {
@@ -303,5 +346,124 @@ describe('TableKeyboardNavDirective', () => {
 
     expect(queryAll(fixture, '.et-table-row').length).toBeGreaterThan(0);
     expect(queryAll(fixture, '.et-table-row[tabindex]')).toHaveLength(0);
+  });
+
+  describe('with utility columns', () => {
+    // Selection leads, then the expander, then the two data columns.
+    const COLUMN_COUNT = 4;
+
+    const createUtility = () => {
+      const fixture = TestBed.createComponent(UtilityHostComponent);
+
+      fixture.detectChanges();
+
+      return fixture;
+    };
+
+    const bodyCells = (fixture: ComponentFixture<UtilityHostComponent>) =>
+      queryAll(fixture, '.et-table-row > .et-table-cell');
+
+    const checkboxes = (fixture: ComponentFixture<UtilityHostComponent>) =>
+      queryAll(fixture, '.et-table-row et-checkbox');
+
+    const expanders = (fixture: ComponentFixture<UtilityHostComponent>) => queryAll(fixture, '.et-table-expander');
+
+    const tabbable = (fixture: ComponentFixture<UtilityHostComponent>) =>
+      queryAll(fixture, '.et-table-row [tabindex]').filter((element) => element.getAttribute('tabindex') !== '-1');
+
+    const pressOn = (fixture: ComponentFixture<UtilityHostComponent>, key: string) => {
+      document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+      fixture.detectChanges();
+    };
+
+    it('leaves the body a single tab stop, on the first row checkbox', () => {
+      const fixture = createUtility();
+
+      expect(checkboxes(fixture)).toHaveLength(PEOPLE.length);
+      expect(tabbable(fixture)).toEqual([checkboxes(fixture)[0]]);
+    });
+
+    it('takes the error mark out of the tab order', () => {
+      const fixture = createUtility();
+      const mark = query(fixture, '.et-table-cell-error-icon');
+
+      expect(mark?.getAttribute('tabindex')).toBe('-1');
+    });
+
+    it('reaches the checkbox and the expander with the arrow keys', () => {
+      const fixture = createUtility();
+
+      bodyCells(fixture)[2]?.focus();
+      fixture.detectChanges();
+
+      pressOn(fixture, 'ArrowLeft');
+      expect(document.activeElement).toBe(expanders(fixture)[0]);
+
+      pressOn(fixture, 'ArrowLeft');
+      expect(document.activeElement).toBe(checkboxes(fixture)[0]);
+
+      pressOn(fixture, 'ArrowDown');
+      expect(document.activeElement).toBe(checkboxes(fixture)[1]);
+      expect(tabbable(fixture)).toEqual([checkboxes(fixture)[1]]);
+
+      pressOn(fixture, 'ArrowRight');
+      pressOn(fixture, 'ArrowRight');
+      expect(document.activeElement).toBe(bodyCells(fixture)[COLUMN_COUNT + 2]);
+    });
+
+    it('counts the utility columns in activeCell and focusCell', () => {
+      const fixture = createUtility();
+      const feature = fixture.componentInstance.feature();
+
+      feature.focusCell({ row: 1, column: 3 });
+      fixture.detectChanges();
+
+      expect(document.activeElement).toBe(bodyCells(fixture)[COLUMN_COUNT + 3]);
+      expect(feature.activeCell()).toEqual({ row: 1, column: 3 });
+
+      feature.focusCell({ row: 0, column: 1 });
+      fixture.detectChanges();
+
+      expect(document.activeElement).toBe(expanders(fixture)[0]);
+      expect(feature.activeCell()).toEqual({ row: 0, column: 1 });
+    });
+
+    it('leaves Enter to the expander button', () => {
+      const fixture = createUtility();
+
+      fixture.componentInstance.feature().focusCell({ row: 0, column: 1 });
+      fixture.detectChanges();
+
+      const enter = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+
+      document.activeElement?.dispatchEvent(enter);
+
+      expect(enter.defaultPrevented).toBe(false);
+    });
+
+    it('drills into the error mark with Enter', () => {
+      vi.spyOn(Element.prototype, 'getClientRects').mockReturnValue([{}] as unknown as DOMRectList);
+
+      const fixture = createUtility();
+
+      fixture.componentInstance.feature().focusCell({ row: 1, column: 3 });
+      fixture.detectChanges();
+      pressOn(fixture, 'Enter');
+
+      expect(document.activeElement).toBe(query(fixture, '.et-table-cell-error-icon'));
+
+      vi.restoreAllMocks();
+    });
+
+    it('gives the controls their tab stops back when disabled', () => {
+      const fixture = createUtility();
+
+      fixture.componentInstance.enabled.set(false);
+      fixture.detectChanges();
+
+      expect(checkboxes(fixture).every((checkbox) => checkbox.getAttribute('tabindex') === '0')).toBe(true);
+      expect(expanders(fixture).every((button) => button.getAttribute('tabindex') !== '-1')).toBe(true);
+      expect(query(fixture, '.et-table-cell-error-icon')?.getAttribute('tabindex')).toBe('0');
+    });
   });
 });

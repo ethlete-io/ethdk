@@ -191,7 +191,9 @@
       >
         @for (lead of rowVm.leads; track lead.key) {
           <div
+            #gridCell
             [class]="lead.cellClass"
+            [attr.tabindex]="cellNavigation() ? -1 : null"
             [class.et-table-sticky-start]="lead.sticky"
             [style.inset-inline-start.px]="lead.offset"
             [attr.role]="cellRole()"
@@ -205,6 +207,7 @@
         @for (cell of rowVm.cells; track cell.key) {
           <div
             #bodyCell
+            #gridCell
             [attr.data-align]="cell.align"
             [attr.data-col-key]="cell.key"
             [attr.tabindex]="cellNavigation() ? -1 : null"
@@ -263,7 +266,9 @@
         }
         @for (trail of rowVm.trails; track trail.key) {
           <div
+            #gridCell
             [class]="trail.cellClass"
+            [attr.tabindex]="cellNavigation() ? -1 : null"
             [class.et-table-sticky-end]="trail.sticky"
             [style.inset-inline-end.px]="trail.offset"
             [attr.role]="cellRole()"

@@ -483,6 +483,8 @@ export class TableComponent<T> implements TableFeatureHost {
   // measurement, and they're grouped by column to animate a column shift on reorder drop.
   private bodyCells = viewChildren<ElementRef<HTMLElement>>('bodyCell');
 
+  private gridCells = viewChildren<ElementRef<HTMLElement>>('gridCell');
+
   // The rendered lead-column header cells, in lead-column order - measured so each lead column and
   // the pinned data columns know how far in they start.
   private leadHeaderCells = viewChildren<ElementRef<HTMLElement>>('leadHeaderCell');
@@ -1586,6 +1588,30 @@ export class TableComponent<T> implements TableFeatureHost {
     // `bodyCells` is every rendered data cell in DOM order, rows major - lead cells carry no `#bodyCell`
     // ref, so the arithmetic doesn't have to know how many of them there are.
     return this.bodyCells()[rendered * columns + columnIndex]?.nativeElement ?? null;
+  }
+
+  /** Utility cells included: leading, then data, then trailing. Part of the feature contract. */
+  public gridColumnCount() {
+    return this.leadColumns().length + this.visibleColumns().length + this.trailColumns().length;
+  }
+
+  /** Every rendered body cell, utility cells included, rows major. Part of the feature contract. */
+  public gridCellElements() {
+    return this.gridCells().map((cell) => cell.nativeElement);
+  }
+
+  /**
+   * The rendered body cell at an absolute row index and a {@link gridColumnCount} column index. Part of
+   * the feature contract. `null` when the row is outside a window's rendered range.
+   */
+  public gridCellElementAt(rowIndex: number, columnIndex: number) {
+    const columns = this.gridColumnCount();
+    const rendered = rowIndex - this.rowIndexOffset();
+
+    if (rendered < 0 || rendered >= this.renderedRows().length) return null;
+    if (columnIndex < 0 || columnIndex >= columns) return null;
+
+    return this.gridCells()[rendered * columns + columnIndex]?.nativeElement ?? null;
   }
 
   /**

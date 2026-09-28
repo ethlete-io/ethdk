@@ -265,7 +265,7 @@ export type TableRowWindow = {
  * body's cells into focus targets: the table renders `tabindex="-1"` on every one and stops making the
  * row itself a tab stop, so the grid body becomes the single tab stop the ARIA grid pattern asks for.
  * Which cell currently carries `tabindex="0"` is the feature's to place - see
- * {@link TableFeatureHost.bodyCellElementAt}.
+ * {@link TableFeatureHost.gridCellElementAt}.
  */
 export type TableCellNavigation = {
   /** Whether the claim is live - see {@link TableHeaderAdornment.enabled}. */
@@ -423,6 +423,18 @@ export type TableFeatureHost = {
    * walking the DOM.
    */
   bodyCellElements(): HTMLElement[];
+
+  /** How many columns a body row has, the leading and trailing utility columns included. */
+  gridColumnCount(): number;
+
+  /**
+   * The rendered body cell at an absolute row index and a column index that counts the utility columns
+   * (leading ones first, trailing ones last), or `null` when that row is outside a window's range.
+   */
+  gridCellElementAt(rowIndex: number, columnIndex: number): HTMLElement | null;
+
+  /** Every rendered body cell, utility cells included, rows major - the list {@link gridCellElementAt} indexes into. */
+  gridCellElements(): HTMLElement[];
 
   /**
    * Absolute index of the first rendered row - nonzero only while a window is in play. What turns a

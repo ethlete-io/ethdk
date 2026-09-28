@@ -1767,9 +1767,23 @@ Two things, both deliberate:
   was also one would make it two. The rows stay clickable, and their `rowClick` still fires -
   from a click, or from `Enter` on a cell that has nothing of its own to open. `Enter` on a
   cell holding a control drills into the control instead of activating the row.
-- **Leading utility cells are not in the arrow order.** The [selection](#selection) checkbox
-  and the [expander](#row-expansion) are their own tab stops, reachable with Tab as before -
-  the arrows walk the data columns.
+- **Utility cells are in the arrow order.** The [selection](#selection) checkbox and the
+  [expander](#row-expansion) are grid cells like the rest: the arrows reach them, and their
+  control takes the focus itself, so `Space` toggles the checkbox and `Enter` the expander.
+  Neither is a tab stop of its own any more. The error mark of
+  [`etTableCellErrorTooltip`](#per-cell-states) leaves the Tab order too; `Enter` on its cell drills
+  into it when the cell holds no other control, which opens the tooltip.
+
+### Column indexes
+
+`activeCell()` and `focusCell()` address a cell by absolute row index and a column index that
+counts **every** body column in rendered order: the leading utility columns first, then the
+visible data columns, then the trailing ones. With only selection on, column `0` is the
+checkbox and `1` the first data column:
+
+```ts
+nav.focusCell({ row: 0, column: 0 }); // the first row's checkbox
+```
 
 ## Inline cell editing
 

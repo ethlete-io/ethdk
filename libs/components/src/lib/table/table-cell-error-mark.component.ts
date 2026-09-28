@@ -24,7 +24,7 @@ import { TableCellErrorTooltipDirective } from './table-cell-error-tooltip.direc
       [etTooltip]="message()"
       [etTooltipDisabled]="!message()"
       [label]="message()"
-      [attr.tabindex]="message() ? 0 : null"
+      [attr.tabindex]="message() ? (feature.table.cellNavigation() ? -1 : 0) : null"
       class="et-table-cell-error-icon"
       etIcon="et-triangle-exclamation"
     ></i>
