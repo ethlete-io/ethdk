@@ -5,6 +5,7 @@ import '../../../test-helpers';
 import { CheckboxComponent } from '../checkbox';
 import { InputDirective } from '../input/headless';
 import { PASSWORD_INPUT_IMPORTS } from '../input/input.imports';
+import { TextareaDirective } from '../textarea/headless';
 import { FormFieldComponent } from './form-field.component';
 import { LabelDirective } from './headless';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
@@ -116,5 +117,43 @@ describe('FormFieldComponent control frame pointerdown', () => {
     icon.dispatchEvent(event);
 
     expect(event.defaultPrevented).toBe(false);
+  });
+});
+
+@Component({
+  template: `
+    <textarea aria-label="Standalone" etTextarea></textarea>
+    @if (inField()) {
+      <et-form-field>
+        <et-label>Message</et-label>
+        <textarea etTextarea></textarea>
+      </et-form-field>
+    }
+  `,
+  imports: [FormFieldComponent, LabelDirective, TextareaDirective],
+})
+class TextareaStylesTestHost {
+  public inField = signal(false);
+}
+
+describe('FormFieldComponent textarea styles', () => {
+  const textareaStyles = () => document.querySelector('et-form-field-textarea-styles');
+
+  it('injects the textarea frame styles only once a textarea sits in a form field', () => {
+    TestBed.configureTestingModule({
+      imports: [TextareaStylesTestHost],
+      providers: [provideColorThemes([...TEST_COLOR_THEMES])],
+    });
+
+    const fixture = TestBed.createComponent(TextareaStylesTestHost);
+
+    fixture.detectChanges();
+
+    expect(textareaStyles()).toBeNull();
+
+    fixture.componentInstance.inField.set(true);
+    fixture.detectChanges();
+
+    expect(textareaStyles()).not.toBeNull();
   });
 });

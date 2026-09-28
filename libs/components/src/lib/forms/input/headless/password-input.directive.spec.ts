@@ -78,6 +78,14 @@ describe('PasswordInputDirective', () => {
     expect(driver.passwordInput.hasValue()).toBe(true);
   });
 
+  it('syncs a keystroke into the model once', () => {
+    const sync = vi.spyOn(driver.passwordInput, 'syncFromNativeInput');
+
+    driver.type('a');
+
+    expect(sync).toHaveBeenCalledTimes(1);
+  });
+
   it('reveals and re-hides the value via the toggle button', () => {
     expect(driver.revealButton()!.getAttribute('aria-pressed')).toBe('false');
 

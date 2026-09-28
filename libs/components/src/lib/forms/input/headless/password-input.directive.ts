@@ -18,10 +18,6 @@ export class PasswordInputDirective extends TextFieldControlDirective implements
   public placeholder = input('');
   public autocomplete = input('current-password');
 
-  // No `textAlign` (unlike `InputDirective`/`NumberInputDirective`) on purpose: the reveal toggle
-  // and Caps-Lock warning occupy the trailing edge, so `text-align: end` would run the value under
-  // them. Passwords are conventionally start-aligned regardless - the omission is deliberate.
-
   /** Whether the value is currently shown as plain text. */
   public revealed = model(false);
 
@@ -118,10 +114,8 @@ export class PasswordInputDirective extends TextFieldControlDirective implements
    * report the state - `FocusEvent`, and the Caps Lock key itself - clear it.
    */
   public syncCapsLock(event: KeyboardEvent | MouseEvent | FocusEvent) {
-    // Two readings can't be trusted: a `FocusEvent` carries no modifier state at all, and on macOS
-    // the Caps Lock key's own keydown/keyup reports the state from before the toggle - which is why
-    // switching Caps Lock off used to leave the warning on. Drop the state for both and let the next
-    // real keystroke or pointer event re-establish it.
+    // Workaround: on macOS the Caps Lock key's own keydown/keyup reports the state from before the
+    // toggle, and a `FocusEvent` carries no modifier state at all.
     if (!('getModifierState' in event) || ('key' in event && event.key === 'CapsLock')) {
       this.capsLockOn.set(false);
 

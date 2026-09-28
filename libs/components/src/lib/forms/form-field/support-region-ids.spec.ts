@@ -118,10 +118,10 @@ describe('support region ids', () => {
 
     const group = fixture.nativeElement.querySelector('et-radio-group[aria-describedby]') as Element;
 
-    expect(group.getAttribute('aria-describedby')).toBe('et-form-field-error-radios');
+    const describedBy = group.getAttribute('aria-describedby');
+
+    expect(describedBy).toMatch(/^et-form-field-error-ff-\d+$/);
     expectDescribedByResolves(group);
-    expect(fixture.nativeElement.querySelector('#et-form-field-error-radios')?.textContent).toContain(
-      'Pick a delivery option',
-    );
+    expect(fixture.nativeElement.querySelector(`#${describedBy}`)?.textContent).toContain('Pick a delivery option');
   });
 });

@@ -1,8 +1,8 @@
 import { Component, ViewEncapsulation } from '@angular/core';
 
 /**
- * The form field's textarea frame overrides, as a styles-only component mounted by the textarea
- * (see `FormFieldTextShellStylesComponent` for the pattern).
+ * The form field's textarea frame overrides, as a styles-only component the form field mounts once
+ * a textarea registers.
  *
  * @internal
  */

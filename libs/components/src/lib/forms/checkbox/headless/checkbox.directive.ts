@@ -104,7 +104,7 @@ export class CheckboxDirective extends AccessibleNameControlDirective implements
 
     // readonly stays focusable (view-only), it just cannot toggle
     this.toggle();
-    this.focus({ focusVisible: false } as unknown as FocusOptions);
+    this.focus({ focusVisible: false });
   }
 
   public focus(options?: FocusOptions) {

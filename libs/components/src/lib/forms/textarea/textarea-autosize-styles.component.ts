@@ -2,7 +2,7 @@ import { Component, ViewEncapsulation } from '@angular/core';
 
 /**
  * Native autosizing for the textarea, as a styles-only component mounted by
- * `TextareaDirective` (see `FormFieldTextareaStylesComponent` for the pattern).
+ * `TextareaDirective`.
  *
  * @internal
  */

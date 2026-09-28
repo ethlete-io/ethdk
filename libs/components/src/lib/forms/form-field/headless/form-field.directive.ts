@@ -9,12 +9,33 @@ import {
   FORM_FIELD_CONTROL_TYPES,
   FORM_FIELD_TOKEN,
   FormFieldControl,
+  FormFieldControlType,
   FormFieldDirectiveBase,
   HintComponentBase,
   LabelDirectiveBase,
 } from './form-field.tokens';
 
 let uniqueIdCounter = 0;
+
+const TEXT_FIELD_SHELL_CONTROL_TYPES: ReadonlySet<FormFieldControlType> = /* @__PURE__ */ new Set([
+  FORM_FIELD_CONTROL_TYPES.TEXT_INPUT,
+  FORM_FIELD_CONTROL_TYPES.NUMBER_INPUT,
+  FORM_FIELD_CONTROL_TYPES.PASSWORD_INPUT,
+  FORM_FIELD_CONTROL_TYPES.COLOR_INPUT,
+  FORM_FIELD_CONTROL_TYPES.TEXTAREA,
+  FORM_FIELD_CONTROL_TYPES.RICH_TEXT,
+  FORM_FIELD_CONTROL_TYPES.SELECT,
+  FORM_FIELD_CONTROL_TYPES.CASCADER,
+  FORM_FIELD_CONTROL_TYPES.TAG_INPUT,
+  FORM_FIELD_CONTROL_TYPES.PHONE_INPUT,
+  FORM_FIELD_CONTROL_TYPES.DATE_INPUT,
+  FORM_FIELD_CONTROL_TYPES.DATE_RANGE_INPUT,
+  FORM_FIELD_CONTROL_TYPES.TIME_INPUT,
+  FORM_FIELD_CONTROL_TYPES.TIME_RANGE_INPUT,
+  FORM_FIELD_CONTROL_TYPES.DATE_TIME_INPUT,
+  FORM_FIELD_CONTROL_TYPES.DATE_TIME_RANGE_INPUT,
+  FORM_FIELD_CONTROL_TYPES.DURATION_INPUT,
+]);
 
 const tagOf = (element: HTMLElement) => `<${element.tagName.toLowerCase()}>`;
 
@@ -56,28 +77,13 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
   /** Set by the form-field component; read by overlay-based controls (e.g. the select) as their anchor. */
   public controlFrameElement = signal<HTMLElement | null>(null);
 
-  private readonly FALLBACK_ID = `ff-${uniqueIdCounter++}`;
+  private readonly ID_SUFFIX = `ff-${uniqueIdCounter++}`;
 
-  public errorId = computed(() => {
-    const ctrl = this.registeredControl();
-    const name = ctrl?.name();
+  public errorId = computed(() => `et-form-field-error-${this.ID_SUFFIX}`);
 
-    return name ? `et-form-field-error-${name}` : `et-form-field-error-${this.FALLBACK_ID}`;
-  });
+  public hintId = computed(() => `et-form-field-hint-${this.ID_SUFFIX}`);
 
-  public hintId = computed(() => {
-    const ctrl = this.registeredControl();
-    const name = ctrl?.name();
-
-    return name ? `et-form-field-hint-${name}` : `et-form-field-hint-${this.FALLBACK_ID}`;
-  });
-
-  public warningId = computed(() => {
-    const ctrl = this.registeredControl();
-    const name = ctrl?.name();
-
-    return name ? `et-form-field-warning-${name}` : `et-form-field-warning-${this.FALLBACK_ID}`;
-  });
+  public warningId = computed(() => `et-form-field-warning-${this.ID_SUFFIX}`);
 
   /**
    * The non-blocking advisories to show under the field: what the bound field's `warn()` rules
@@ -140,26 +146,7 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
   /** Whether the control reports itself hidden (signal-forms schema) - hides the whole field. */
   public isHidden = computed(() => this.registeredControl()?.hidden?.() ?? false);
 
-  public usesTextFieldShell = computed(
-    () =>
-      this.controlType() === FORM_FIELD_CONTROL_TYPES.TEXT_INPUT ||
-      this.controlType() === FORM_FIELD_CONTROL_TYPES.NUMBER_INPUT ||
-      this.controlType() === FORM_FIELD_CONTROL_TYPES.PASSWORD_INPUT ||
-      this.controlType() === FORM_FIELD_CONTROL_TYPES.COLOR_INPUT ||
-      this.controlType() === FORM_FIELD_CONTROL_TYPES.TEXTAREA ||
-      this.controlType() === FORM_FIELD_CONTROL_TYPES.RICH_TEXT ||
-      this.controlType() === FORM_FIELD_CONTROL_TYPES.SELECT ||
-      this.controlType() === FORM_FIELD_CONTROL_TYPES.CASCADER ||
-      this.controlType() === FORM_FIELD_CONTROL_TYPES.TAG_INPUT ||
-      this.controlType() === FORM_FIELD_CONTROL_TYPES.PHONE_INPUT ||
-      this.controlType() === FORM_FIELD_CONTROL_TYPES.DATE_INPUT ||
-      this.controlType() === FORM_FIELD_CONTROL_TYPES.DATE_RANGE_INPUT ||
-      this.controlType() === FORM_FIELD_CONTROL_TYPES.TIME_INPUT ||
-      this.controlType() === FORM_FIELD_CONTROL_TYPES.TIME_RANGE_INPUT ||
-      this.controlType() === FORM_FIELD_CONTROL_TYPES.DATE_TIME_INPUT ||
-      this.controlType() === FORM_FIELD_CONTROL_TYPES.DATE_TIME_RANGE_INPUT ||
-      this.controlType() === FORM_FIELD_CONTROL_TYPES.DURATION_INPUT,
-  );
+  public usesTextFieldShell = computed(() => TEXT_FIELD_SHELL_CONTROL_TYPES.has(this.controlType()));
 
   public shouldFloatLabel = computed(() => this.focused() || this.expanded() || this.hasValue());
 

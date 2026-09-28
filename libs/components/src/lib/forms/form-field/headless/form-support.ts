@@ -238,6 +238,7 @@ const FORM_SUPPORT_DEF = /* @__PURE__ */ defineProvider(formSupportFactory, {
   name: 'FormSupport',
 });
 
+/** @internal */
 export const provideFormSupport = /* @__PURE__ */ toProvideFn(FORM_SUPPORT_DEF);
 export const injectFormSupport = /* @__PURE__ */ toInjectFn(FORM_SUPPORT_DEF);
 
@@ -248,6 +249,8 @@ export type FormSupport = ReturnType<typeof formSupportFactory>;
  * region is torn down. The `viewChild` queries themselves must stay as class fields (`NG8110` - the
  * compiler only accepts them in direct field initializers). Call from the constructor (needs an
  * injection context for the effect).
+ *
+ * @internal
  */
 export const wireFormSupport = (
   support: FormSupport,

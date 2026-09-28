@@ -60,6 +60,16 @@ describe('SwitchDirective', () => {
       expect(driver.attr('aria-checked')).toBe('true');
     });
 
+    it('focuses without a focus ring when activated through its label, like the checkbox', () => {
+      const el = driver.fixture.nativeElement.querySelector('[etSwitch]') as HTMLElement;
+      const focus = vi.spyOn(el, 'focus');
+
+      driver.switch.activate();
+
+      expect(driver.switch.checked()).toBe(true);
+      expect(focus).toHaveBeenCalledWith({ focusVisible: false });
+    });
+
     it('toggles once for a held Space, ignoring the auto-repeat', () => {
       const el = driver.fixture.nativeElement.querySelector('[etSwitch]') as HTMLElement;
 

@@ -22,24 +22,26 @@ let uniqueIdCounter = 0;
     '(click)': 'handleClick($event)',
   },
   styles: `
-    et-label {
-      display: inline;
-      min-inline-size: 0;
-    }
+    @layer components {
+      et-label {
+        display: inline;
+        min-inline-size: 0;
+      }
 
-    .et-label-content {
-      min-inline-size: 0;
-    }
+      .et-label-content {
+        min-inline-size: 0;
+      }
 
-    .et-label-required-marker {
-      display: inline-block;
-      color: var(--et-theme-color-primary-solid);
-      margin-inline-start: 0.45ch;
-      transition: color 150ms ease;
-    }
+      .et-label-required-marker {
+        display: inline-block;
+        color: var(--et-theme-color-primary-solid);
+        margin-inline-start: 0.45ch;
+        transition: color 150ms ease;
+      }
 
-    et-label[data-disabled] .et-label-required-marker {
-      color: var(--et-surface-interaction-disabled-solid, currentColor);
+      et-label[data-disabled] .et-label-required-marker {
+        color: var(--et-surface-interaction-disabled-solid, currentColor);
+      }
     }
   `,
 })

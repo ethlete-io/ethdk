@@ -5,6 +5,8 @@ import { DestroyRef, WritableSignal, inject, untracked } from '@angular/core';
  * destroy. The clear is guarded: if a replacement registered before this one tore down, it must not
  * null the signal out from under the newcomer. Pass `undefined` (an optional parent that wasn't
  * found) and it's a no-op. Call in an injection context.
+ *
+ * @internal
  */
 export const registerSingleton = <T>(target: WritableSignal<T | null> | null | undefined, instance: T) => {
   if (!target) {

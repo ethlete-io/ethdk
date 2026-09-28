@@ -143,6 +143,8 @@ const occupyingState = ({
  * Advances the presentation state for the newly-resolved `semanticSupportState`, deciding what (if
  * anything) is now leaving and in which direction, and holding on to the messages of a state that
  * is animating out so it doesn't empty mid-exit.
+ *
+ * @internal
  */
 export const reduceSupportPresentation = ({
   presentation,

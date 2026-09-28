@@ -123,7 +123,7 @@ describe('FormFieldDirective', () => {
       touched: signal(false),
       invalid: signal(false),
       errors: signal([]),
-      name: signal('myfield'),
+      name: signal('my field'),
       describedBy,
       controlType: signal(FORM_FIELD_CONTROL_TYPES.TEXT_INPUT),
       activate: () => undefined,
@@ -178,14 +178,14 @@ describe('FormFieldDirective', () => {
     directive.registerControl(mockControl);
     formFieldFixture.detectChanges();
 
-    expect(describedBy()).toBe('et-form-field-hint-myfield');
+    expect(describedBy()).toMatch(/^et-form-field-hint-ff-\d+$/);
 
     touched.set(true);
     invalid.set(true);
     errors.set([{ kind: 'required', message: 'Required' }]);
     formFieldFixture.detectChanges();
 
-    expect(describedBy()).toBe('et-form-field-error-myfield');
+    expect(describedBy()).toMatch(/^et-form-field-error-ff-\d+$/);
   });
 
   describe('accessible-name guard', () => {

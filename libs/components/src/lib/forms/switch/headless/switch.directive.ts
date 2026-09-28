@@ -102,7 +102,7 @@ export class SwitchDirective extends AccessibleNameControlDirective implements F
 
     // readonly stays focusable (view-only), it just cannot toggle
     this.toggle();
-    this.focus();
+    this.focus({ focusVisible: false });
   }
 
   public focus(options?: FocusOptions) {

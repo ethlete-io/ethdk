@@ -3,7 +3,7 @@ import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { ValidationError } from '@angular/forms/signals';
 import { AccessibleNameControlDirective } from './accessible-name-control.directive';
 import { FORM_FIELD_TOKEN, FormFieldControl, FormFieldControlType } from './form-field.tokens';
-import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
+import { injectFormFieldLabels } from '../form-field-labels';
 import { mountTextFieldShellStyles } from '../form-field-text-shell-styles.component';
 import { controlTouches } from '../../../internals/touch-output';
 

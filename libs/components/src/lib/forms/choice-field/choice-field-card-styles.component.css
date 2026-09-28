@@ -1,10 +1,5 @@
 @layer components {
-  /* The panel chrome itself is `.et-selection-card`, shared with `et-radio` and `et-checkbox-option` — see
-     `selection-card-styles.component.css`. What is left here is what only a wrapper around a projected control
-     needs: the control's hit area has to be stretched over the panel, and the panel dims as one unit. */
   et-choice-field:where([data-variant='card']) {
-    /* A card fills its container rather than hugging its label, so a stack of them reads as one list of equal
-       panels — `fit-content` (the plain variant's width) made every card a different width. */
     width: auto;
 
     /* The panel dims as one unit while disabled, so the control must not dim a second time on top of it. */
@@ -20,16 +15,9 @@
       }
     }
 
-    /* "The whole panel is the target" is implemented by stretching the CONTROL's own hit area over the panel,
-       rather than by forwarding panel clicks to it. That keeps a single activation path, so cursor, `:hover`,
-       readonly (clicks land but cannot toggle) and disabled (`pointer-events: none`, which hands the panel's
-       `not-allowed` back) all remain the control's business — a second click handler on this `div` would have
-       had to re-derive every one of them, and would double-toggle over the control and the label.
-
-       The insets are negative by the border width because an absolutely positioned box resolves `inset`
-       against its containing block's PADDING box: at `inset: 0` the panel's own border ring was the one strip
-       of the card that neither clicked nor took the control's hover — the pointer was on the visible edge of
-       the card and nothing happened. */
+    /* The control's own hit area is stretched over the card instead of forwarding clicks, which would
+       double-toggle through the label. The inset is negative by the border width because `inset` resolves
+       against the padding box, which leaves the border ring dead. */
     .et-choice-field-control-slot > *::after {
       content: '';
       position: absolute;
@@ -45,18 +33,13 @@
       z-index: 1;
     }
 
-    /* The focus ring belongs to the whole panel here, not to the 20px control inside it — two rings, one
-       nested in the other, read as a rendering glitch. `outline-color`, not `outline: none`: the control
-       keeps a transparent ring either way, and `et-checkbox` transitions `outline-color`, so resetting the
-       shorthand would hand it `currentColor` to fade out of on blur — a white ring flashing around the box. */
+    /* `outline-color`, not `outline: none`: `et-checkbox` transitions `outline-color`, so resetting the
+       shorthand flashes a `currentColor` ring on blur. */
     .et-choice-field-control-slot > :focus-visible {
       outline-color: transparent;
     }
 
-    /* The panel's border already answers hover and focus, which frees the label to carry selection — and
-       requires it to: the shared hover/focus rules above brighten the label on every variant, so without
-       this an unselected card under the cursor read exactly like a selected one. Muted until chosen, full
-       strength once chosen. Both rules stay inside `:where()` so the disabled label colour still wins. */
+    /* Inside `:where()` so the disabled label colour still wins. */
     .et-choice-field-label-area {
       color: var(--et-surface-color-muted-solid, currentColor);
     }

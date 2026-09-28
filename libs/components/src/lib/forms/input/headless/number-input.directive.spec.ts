@@ -126,6 +126,15 @@ describe('NumberInputDirective', () => {
       driver = mountNumberInput(StepperTestHost);
     });
 
+    it('syncs a keystroke into the model once', () => {
+      const sync = vi.spyOn(driver.numberInput, 'syncFromNativeInput');
+
+      driver.type('4');
+
+      expect(sync).toHaveBeenCalledTimes(1);
+      expect(driver.host.value()).toBe(4);
+    });
+
     it('renders two out-of-tab-order stepper buttons', () => {
       expect(driver.stepperButtons().length).toBe(2);
       expect(driver.stepperButtons().every((button) => button.tabIndex === -1)).toBe(true);

@@ -12,7 +12,7 @@ import {
 import { ColorInteractiveDirective } from '@ethlete/core';
 import { EYE_ICON, EYE_SLASH_ICON, IconDirective, provideIcons, TRIANGLE_EXCLAMATION_ICON } from '../../icon';
 import { PasswordInputDirective } from './headless';
-import { injectInputLabels } from '../../forms/input/input-labels';
+import { injectInputLabels } from './input-labels';
 import { ControlSuffixDirective } from '../form-field/partials';
 import { TEXT_FIELD_CONTROL_INPUTS } from '../form-field/headless/text-field-control.directive';
 
@@ -78,10 +78,6 @@ export class PasswordInputComponent {
       this.passwordDir.focusTarget.set(nativeInput);
       this.passwordDir.nativeControl.set(nativeInput);
     });
-  }
-
-  public syncNativeValue(event: Event) {
-    this.passwordDir.syncFromNativeInput(event.target as HTMLInputElement);
   }
 
   protected handleBlur(event: FocusEvent) {

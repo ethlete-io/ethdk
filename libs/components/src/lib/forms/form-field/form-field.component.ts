@@ -17,6 +17,7 @@ import {
   ColorInteractiveHasFocusDirective,
   createCanAnimateSignal,
   injectParentSurface,
+  injectStyleManager,
   injectSurfaceThemes,
   ProvideColorDirective,
   ProvideSurfaceDirective,
@@ -27,6 +28,7 @@ import {
 import { SpinnerComponent } from '../../loader';
 import { FormErrorComponent } from './form-error.component';
 import { FormWarningComponent } from './form-warning.component';
+import { FormFieldTextareaStylesComponent } from './form-field-textarea-styles.component';
 import {
   FORM_FIELD_APPEARANCES,
   FORM_FIELD_FILLS,
@@ -38,6 +40,7 @@ import {
   FormFieldSize,
 } from './form-field.variants';
 import {
+  FORM_FIELD_CONTROL_TYPES,
   FormFieldDirective,
   injectFormSupport,
   hitsInteractiveElement,
@@ -99,6 +102,7 @@ export class FormFieldComponent {
 
   public support = injectFormSupport();
   private surfaceThemes = injectSurfaceThemes({ optional: true });
+  private styleManager = injectStyleManager();
 
   public appearance = input<FormFieldAppearance>(FORM_FIELD_APPEARANCES.BOX);
   public fill = input<FormFieldFill>(FORM_FIELD_FILLS.TRANSPARENT);
@@ -177,6 +181,14 @@ export class FormFieldComponent {
       errorAnimatable: this.errorAnimatable,
       warningAnimatable: this.warningAnimatable,
       hintAnimatable: this.hintAnimatable,
+    });
+
+    effect(() => {
+      if (this.formFieldDir.controlType() !== FORM_FIELD_CONTROL_TYPES.TEXTAREA) {
+        return;
+      }
+
+      untracked(() => this.styleManager.mount(FormFieldTextareaStylesComponent));
     });
 
     effect(() => {

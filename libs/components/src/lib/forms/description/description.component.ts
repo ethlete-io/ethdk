@@ -10,10 +10,12 @@ import { createComponentId } from '@ethlete/core';
     '[attr.id]': 'id',
   },
   styles: `
-    et-description {
-      display: block;
-      font-size: var(--et-description-font-size, 12px);
-      color: var(--et-surface-color-muted-solid, currentColor);
+    @layer components {
+      et-description {
+        display: block;
+        font-size: var(--et-description-font-size, 12px);
+        color: var(--et-surface-color-muted-solid, currentColor);
+      }
     }
   `,
 })

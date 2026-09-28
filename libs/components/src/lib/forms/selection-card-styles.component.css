@@ -35,14 +35,9 @@
     initial-value: 0.5;
   }
 
-  /* The card preset: the whole panel is the target, which is what makes it worth having — a 20px control is a small
-     thing to hit, and a card with a description in it is a large one. cdk shipped this with a hardcoded #2e2e2e
-     background; here it follows the surface and the checked state follows the colour theme.
-
-     Two shapes wear this class. On `et-radio` / `et-checkbox-option` the panel is the host, so it owns
-     `aria-checked` and `aria-disabled` itself. On `et-choice-field` the panel is a div wrapping a projected
-     control, so it can only read those off a descendant. Every state guard below therefore tests both, and the
-     branch that does not apply to a given host is inert rather than wrong. */
+  /* Two shapes wear this class: on `et-radio` / `et-checkbox-option` the panel is the host and owns
+     `aria-checked` / `aria-disabled`; on `et-choice-field` it wraps the control and reads them off a descendant.
+     Every state guard tests both. */
   .et-selection-card {
     justify-content: space-between;
     align-items: center;
@@ -51,10 +46,7 @@
     background-color: var(--et-surface-background-solid, transparent);
     border: var(--et-selection-card-border-width) solid var(--et-surface-border-solid, currentColor);
 
-    /* The panel's chrome answers interaction the way a form field's frame does: a neutral border on hover/press,
-       the accent on focus. Every state guard sits in `:where()`, so all of these rules carry the same
-       (single-class) specificity and source order decides between them — which is what lets the checked rule
-       below keep a chosen card's accent border while it is hovered. */
+    /* Every state guard sits in `:where()` so source order decides; the checked rule below relies on it. */
     @media (hover: hover) {
       &:where(:hover:not([aria-disabled='true'], [data-readonly]):not(:has([aria-disabled='true'], [data-readonly]))) {
         border-color: var(--et-surface-interaction-hover-solid, currentColor);
@@ -65,16 +57,12 @@
       border-color: var(--et-surface-interaction-active-solid, currentColor);
     }
 
-    /* The border carries the selection, so the panel reads as chosen at a glance rather than only by its control.
-       Declared after hover/active so a chosen card stays accented under the cursor — and because the panel carries
-       `etColorInteractive`, that accent is itself the theme's hover/active shade while the pointer is on it,
-       instead of a mix that would read as less chosen than the resting state. */
+    /* After hover/active so a chosen card keeps its accent under the cursor. */
     &:where([aria-checked='true'], :has(:is([aria-checked='true'], [aria-checked='mixed']))) {
       border-color: var(--et-theme-color-primary-solid, currentColor);
     }
 
-    /* The focus ring belongs to the whole card, not to the control inside it — two rings, one nested in the other,
-       read as a rendering glitch. Each host resets its own control's ring; see those stylesheets. */
+    /* Each host resets its own control's focus ring, so the card shows one ring. */
     &:where(:focus-visible, :has(:focus-visible)) {
       border-color: var(--et-theme-color-primary-solid, currentColor);
       outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
@@ -86,9 +74,6 @@
       min-inline-size: 0;
     }
 
-    /* Source order is control, leading, content, trailing — so the plain variant needs no ordering of its own and
-       the card moves only the control. This is `order` rather than the `row-reverse` it replaced because reversing
-       the line would also swap the two slots onto the ends they are not named for. */
     .et-selection-card-control {
       order: 1;
     }
@@ -105,9 +90,6 @@
       block-size: var(--et-selection-card-icon-size);
     }
 
-    /* Same trade as the border: the panel is large enough that the label can carry selection, so a list of cards is
-       scannable without reading every control. 500 keeps the label above its `<et-description>` now that an
-       unchosen card's label shares the description's muted colour. */
     .et-selection-card-label {
       font-weight: 500;
       color: var(--et-surface-color-muted-solid, currentColor);
@@ -117,11 +99,8 @@
       color: var(--et-surface-color-solid, currentColor);
     }
 
-    /* These two reset the plain variant's own rules for the control, so both are deliberately left out of
-       `:where()` and keep the chained `:not()`s — the plain rules they have to outweigh are written against the
-       host element, and dropping either would hand the win back to them. */
+    /* Outside `:where()` on purpose: these must outweigh the plain variant's host-level control rules. */
 
-    /* Scaling a whole panel on press is too much movement; the plain variant's 0.92 is for a 20px control. */
     &:active:not([aria-disabled='true']):not([data-readonly]) .et-selection-card-control {
       transform: none;
     }

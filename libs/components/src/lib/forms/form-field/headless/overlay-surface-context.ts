@@ -8,6 +8,8 @@ import { AnimatedSizeAxis, COLOR_PROVIDER, ProvideColorDirective, injectAnimated
  * theme lands before the enter animation's first painted frame), and the panel's block size is
  * animated as its content changes. Call in the panel component's constructor with its `#panelBody`
  * view child and resizing class. Requires `ProvideColorDirective` as a host directive.
+ *
+ * @internal
  */
 export const injectOverlaySurfaceContext = (options: {
   panelBody: Signal<ElementRef<HTMLElement> | undefined>;

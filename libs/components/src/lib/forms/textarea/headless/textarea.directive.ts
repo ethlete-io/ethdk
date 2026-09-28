@@ -20,7 +20,6 @@ import {
   readTextareaStyleMetrics,
   supportsNativeAutosize,
 } from './internals/textarea-autosize';
-import { FormFieldTextareaStylesComponent } from '../../form-field/form-field-textarea-styles.component';
 import { TextareaAutosizeStylesComponent } from '../textarea-autosize-styles.component';
 
 export const TEXTAREA_RESIZE_MODES = {
@@ -88,9 +87,7 @@ export class TextareaDirective extends TextFieldControlDirective implements Form
 
   constructor() {
     super();
-    const styleManager = injectStyleManager();
-    styleManager.mount(FormFieldTextareaStylesComponent);
-    styleManager.mount(TextareaAutosizeStylesComponent);
+    injectStyleManager().mount(TextareaAutosizeStylesComponent);
 
     const hostRef = inject<ElementRef<HTMLElement | null>>(ElementRef);
     const hostElement = hostRef.nativeElement;

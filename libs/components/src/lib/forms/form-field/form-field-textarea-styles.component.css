@@ -1,7 +1,4 @@
 @layer components {
-  /* The host hook is a bare attribute selector, not `:where([data-control-type='textarea'])`: this
-     sheet is injected by the textarea, so a textarea instantiated before any form-field would inject
-     it *before* the base sheet and lose every source-order tie against the base frame rules. */
   et-form-field[data-control-type='textarea'] {
     .et-form-field-control-frame {
       align-items: stretch;

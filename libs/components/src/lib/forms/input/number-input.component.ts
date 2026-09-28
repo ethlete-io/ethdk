@@ -16,7 +16,7 @@ import { ColorInteractiveDirective, dragGestureFrom, injectRenderer } from '@eth
 import { finalize, fromEvent, merge, Subscription, takeUntil, tap, timer } from 'rxjs';
 import { IconDirective, MINUS_ICON, PLUS_ICON, provideIcons } from '../../icon';
 import { NumberInputDirective, numberInputStepMultiplierFrom } from './headless';
-import { injectInputLabels } from '../../forms/input/input-labels';
+import { injectInputLabels } from './input-labels';
 import { TEXT_FIELD_CONTROL_INPUTS } from '../form-field/headless/text-field-control.directive';
 
 const STEPPER_REPEAT_DELAY = 400;
@@ -86,10 +86,6 @@ export class NumberInputComponent {
       this.numberInputDir.focusTarget.set(nativeInput);
       this.numberInputDir.nativeControl.set(nativeInput);
     });
-  }
-
-  public syncNativeValue(event: Event) {
-    this.numberInputDir.syncFromNativeInput(event.target as HTMLInputElement);
   }
 
   protected startStepRepeat(event: PointerEvent, direction: 1 | -1) {
