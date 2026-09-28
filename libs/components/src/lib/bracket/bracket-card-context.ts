@@ -2,7 +2,7 @@ import { afterNextRender, computed, inject, InjectionToken, Signal } from '@angu
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { MatchCardSize, NormalizedMatch } from '../match';
 import { BRACKET_ERROR_CODES } from './bracket-errors';
-import { BracketMatch } from './linked';
+import { BracketMatch } from '@ethlete/bracket';
 
 /**
  * Turns one of *your* bracket matches into the shape the default cards draw

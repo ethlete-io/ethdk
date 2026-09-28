@@ -1,0 +1,35 @@
+import { computed, Signal } from '@angular/core';
+import { BracketMatchNormalizer } from './bracket-card-context';
+import { BracketLayout, resolveBracketLayout } from './bracket-layout';
+import { BracketConfig } from './bracket.config';
+import { BracketDataSource } from './integrations';
+
+/**
+ * The layout a bracket host draws with: its `layouts` input first, `provideBracketConfig` second.
+ * Throws `ET3413` when none matches the source's mode.
+ *
+ * @internal
+ */
+export const createBracketHostLayout = <TRoundData, TMatchData>(
+  layouts: Signal<readonly BracketLayout<TRoundData, TMatchData>[] | undefined>,
+  source: Signal<BracketDataSource<TRoundData, TMatchData>>,
+  config: BracketConfig,
+  // eslint-disable-next-line max-params -- the host's two inputs plus the config they fall back to
+) =>
+  computed(() =>
+    resolveBracketLayout<TRoundData, TMatchData>(
+      layouts() ?? (config.layouts as readonly BracketLayout<TRoundData, TMatchData>[] | undefined),
+      source().mode,
+    ),
+  );
+
+/**
+ * The normalizer a bracket host hands its default cards: its `matchNormalizer` input first,
+ * `provideBracketConfig` second.
+ *
+ * @internal
+ */
+export const createBracketHostMatchNormalizer = <TRoundData, TMatchData>(
+  matchNormalizer: Signal<BracketMatchNormalizer<TRoundData, TMatchData> | undefined>,
+  config: BracketConfig,
+) => computed<BracketMatchNormalizer | null>(() => matchNormalizer() ?? config.matchNormalizer ?? null);

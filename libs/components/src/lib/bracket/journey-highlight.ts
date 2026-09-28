@@ -1,7 +1,6 @@
 import { Signal } from '@angular/core';
 import { AngularRenderer } from '@ethlete/core';
-import { TOURNAMENT_MODE } from './core';
-import { Bracket } from './linked';
+import { TOURNAMENT_MODE, Bracket } from '@ethlete/bracket';
 
 const PARTICIPANT_SHORT_ID_PATTERN = /^p\d+$/;
 

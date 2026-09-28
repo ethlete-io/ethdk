@@ -1,15 +1,31 @@
 import { NgComponentOutlet } from '@angular/common';
-import { booleanAttribute, Component, computed, input, numberAttribute, Type, ViewEncapsulation } from '@angular/core';
-import { BRACKET_DATA_LAYOUT } from './core';
-import { BracketContinueComponent, BracketMatchComponent, BracketRoundHeaderComponent } from '@ethlete/bracket';
+import {
+  booleanAttribute,
+  Component,
+  computed,
+  input,
+  numberAttribute,
+  Signal,
+  Type,
+  ViewEncapsulation,
+} from '@angular/core';
+import {
+  BRACKET_DATA_LAYOUT,
+  BracketContinueComponent,
+  BracketMatchComponent,
+  BracketRoundHeaderComponent,
+  BracketMatch,
+  BracketRound,
+  createBracket,
+  BracketRoundSwissGroup,
+} from '@ethlete/bracket';
 import { MATCH_CARD_SIZES, MatchCardSize } from '../match';
 import { BracketDataSource } from './integrations';
-import { BracketMatch, BracketRound, createBracket } from './linked/bracket';
-import { BracketRoundSwissGroup } from './linked/swiss';
 import { BRACKET_CARD_CONTEXT, BracketMatchNormalizer } from './bracket-card-context';
 import { resolveBracketComponents, usesBracketFinalCard } from './bracket-components';
 import { injectBracketLabels } from './bracket-labels';
-import { BracketLayout, resolveBracketLayout } from './bracket-layout';
+import { BracketLayout } from './bracket-layout';
+import { createBracketHostLayout, createBracketHostMatchNormalizer } from './bracket-host';
 import { BRACKET_DEFAULTS, injectBracketConfig } from './bracket.config';
 
 /**
@@ -110,12 +126,10 @@ export class BracketRoundsListComponent<TRoundData = unknown, TMatchData = unkno
   });
 
   /** @internal The normalizer in effect, read by the default cards through `BRACKET_CARD_CONTEXT`. */
-  public resolvedMatchNormalizer = computed<BracketMatchNormalizer | null>(
-    () => this.matchNormalizer() ?? this.config.matchNormalizer ?? null,
-  );
+  public resolvedMatchNormalizer = createBracketHostMatchNormalizer(this.matchNormalizer, this.config);
 
   /** @internal The heading level in effect, read by the default round headers. */
-  public resolvedRoundHeaderLevel = computed(() => this.roundHeaderLevel());
+  public resolvedRoundHeaderLevel: Signal<number> = this.roundHeaderLevel;
 
   /**
    * @internal The featured card, pinned. A list row is as wide as the page it sits in, and an unpinned
@@ -124,17 +138,7 @@ export class BracketRoundsListComponent<TRoundData = unknown, TMatchData = unkno
    */
   public resolvedFinalMatchCardSize = computed<MatchCardSize>(() => MATCH_CARD_SIZES.EXPANDED);
 
-  /**
-   * The layout answering for this source - see the `layouts` input. Resolved even though the list draws
-   * no grid: the grouping/sectioning hooks and the per-layout cards live on it, and a mode the app never
-   * registered should fail the same loud way in both representations.
-   */
-  private resolvedLayout = computed(() =>
-    resolveBracketLayout<TRoundData, TMatchData>(
-      this.layouts() ?? (this.config.layouts as readonly BracketLayout<TRoundData, TMatchData>[] | undefined),
-      this.source().mode,
-    ),
-  );
+  private resolvedLayout = createBracketHostLayout(this.layouts, this.source, this.config);
 
   /**
    * Always built left-to-right, whatever the layout's own fold is: a mirrored layout splits a round in

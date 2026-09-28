@@ -78,11 +78,8 @@
 
           @let highlightClass = element.type === 'match' ? element.classes : '';
 
-          <!-- The cell names its match so a journey can say where it ended — see journey-highlight.ts. -->
           @let matchId = element.type === 'match' ? element.match.id : null;
 
-          <!-- Moved with `translate`, not with `top`/`left`: a squeeze moves every cell of every round at
-               once, as one transition, without the page laying out again per frame. -->
           @let inlineOffset = element.dimensions.left - round.dimensions.left;
           @let blockOffset = element.dimensions.top - round.dimensions.top;
 

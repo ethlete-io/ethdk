@@ -1,10 +1,15 @@
 import { resolveBracketComponents } from './bracket-components';
 import { createBracketGridConfig, resolveBracketLayoutSettings } from './bracket-grid';
 import { BracketLayoutConfig } from './bracket.config';
-import { MatchParticipantSide, SWISS_BRACKET_ROUND_TYPE, TOURNAMENT_MODE } from './core';
+import {
+  MatchParticipantSide,
+  SWISS_BRACKET_ROUND_TYPE,
+  TOURNAMENT_MODE,
+  createBracket,
+  generateBracketRoundSwissGroupMaps,
+} from '@ethlete/bracket';
 import { BracketDataSource } from './integrations';
 import { swissBracketLayout } from './layouts';
-import { createBracket, generateBracketRoundSwissGroupMaps } from './linked';
 
 type SwissMatchInput = [id: string, home: string, away: string, winner: MatchParticipantSide | null];
 

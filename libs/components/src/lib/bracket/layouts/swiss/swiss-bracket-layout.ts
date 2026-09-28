@@ -1,8 +1,14 @@
 import { BracketLayout } from '../../bracket-layout';
-import { BRACKET_DATA_LAYOUT } from '../../core/layout';
-import { TOURNAMENT_MODE } from '../../core/tournament';
-import { BracketMatchComponent, BracketRoundHeaderComponent, createSwissGrid, drawSwissMan } from '@ethlete/bracket';
-import { BracketSwissColors, generateBracketRoundSwissGroupMaps } from '../../linked/swiss';
+import {
+  BRACKET_DATA_LAYOUT,
+  TOURNAMENT_MODE,
+  BracketMatchComponent,
+  BracketRoundHeaderComponent,
+  createSwissGrid,
+  drawSwissMan,
+  BracketSwissColors,
+  generateBracketRoundSwissGroupMaps,
+} from '@ethlete/bracket';
 import { BracketSwissStylesComponent } from './bracket-swiss-styles.component';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

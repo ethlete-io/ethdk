@@ -1,7 +1,7 @@
 import { Component, input, ViewEncapsulation } from '@angular/core';
 import { MATCH_CARD_IMPORTS } from '../match';
 import { createNormalizedBracketMatch } from './bracket-card-context';
-import { BracketMatch, BracketRound, BracketRoundSwissGroup } from './linked';
+import { BracketMatch, BracketRound, BracketRoundSwissGroup } from '@ethlete/bracket';
 
 /**
  * The bracket's default match cell: an [`et-match-card`](/components/match) at `compact`, which is the

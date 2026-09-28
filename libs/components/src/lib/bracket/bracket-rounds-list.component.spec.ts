@@ -3,7 +3,7 @@ import '../../test-helpers';
 import { query, queryAll, textOf } from '../testing/driver-core';
 import { provideBracketLabels } from './bracket-labels';
 import { bracketFitsWidth, bracketNaturalWidth } from './bracket-fits-width';
-import { BracketMatch, BracketRound, BracketRoundSwissGroup } from './linked';
+import { BracketMatch, BracketRound, BracketRoundSwissGroup } from '@ethlete/bracket';
 import { bracketTestDriver, testBracketLayouts } from './testing/bracket-driver';
 import { generateDoubleEliminationBracket, generateSingleEliminationBracket } from './stories/generate-bracket';
 

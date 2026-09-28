@@ -10,6 +10,7 @@ import {
   model,
   NgZone,
   numberAttribute,
+  Signal,
   signal,
   Type,
   ViewEncapsulation,
@@ -20,6 +21,8 @@ import {
   FinalizedBracketElement,
   BracketMatchComponent,
   BracketRoundHeaderComponent,
+  createBracket,
+  BracketSwissColors,
 } from '@ethlete/bracket';
 import { BracketDataSource } from './integrations';
 import { MATCH_CARD_SIZES, MatchCardSize } from '../match';
@@ -28,8 +31,6 @@ import {
   JourneyHighlightController,
   setupJourneyHighlight as setupJourneyHighlightListeners,
 } from './journey-highlight';
-import { createBracket } from './linked/bracket';
-import { BracketSwissColors } from './linked/swiss';
 import { BRACKET_CARD_CONTEXT, BracketMatchNormalizer } from './bracket-card-context';
 import { resolveBracketComponents } from './bracket-components';
 import { BracketDensity } from './bracket-density';
@@ -41,7 +42,8 @@ import {
   OptionalNumberInput,
   optionalNumberAttribute,
 } from './bracket-input-transforms';
-import { BracketLayout, resolveBracketLayout } from './bracket-layout';
+import { BracketLayout } from './bracket-layout';
+import { createBracketHostLayout, createBracketHostMatchNormalizer } from './bracket-host';
 import { BRACKET_DEFAULTS, BracketRoundHeaderAlign, injectBracketConfig } from './bracket.config';
 
 @Component({
@@ -50,8 +52,6 @@ import { BRACKET_DEFAULTS, BracketRoundHeaderAlign, injectBracketConfig } from '
   styleUrl: './bracket.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [NgComponentOutlet],
-  // What the default cards read: this component resolves each value from its own input first and the
-  // app-wide config second, so a card never has to know where a setting came from.
   providers: [{ provide: BRACKET_CARD_CONTEXT, useExisting: BracketComponent }],
   host: {
     class: 'et-bracket-host',
@@ -62,9 +62,6 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
 
   public source = input.required<BracketDataSource<TRoundData, TMatchData>>();
 
-  // Every layout input is an *override*, left `undefined` when unbound: what draws is resolved in
-  // `settings`, where an unset input falls through to the density preset and then to the shipped
-  // default. Binding `undefined` deliberately is therefore the same as not binding at all.
   public columnWidth = input<number | undefined, OptionalNumberInput>(undefined, {
     transform: optionalNumberAttribute,
   });
@@ -196,12 +193,10 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   public focusedParticipantId = model<string | null>(null);
 
   /** @internal The normalizer in effect, read by the default cards through `BRACKET_CARD_CONTEXT`. */
-  public resolvedMatchNormalizer = computed<BracketMatchNormalizer | null>(
-    () => this.matchNormalizer() ?? this.config.matchNormalizer ?? null,
-  );
+  public resolvedMatchNormalizer = createBracketHostMatchNormalizer(this.matchNormalizer, this.config);
 
   /** @internal The heading level in effect, read by the default round headers. */
-  public resolvedRoundHeaderLevel = computed(() => this.roundHeaderLevel());
+  public resolvedRoundHeaderLevel: Signal<number> = this.roundHeaderLevel;
 
   /**
    * @internal Left to the card: a grid cell's width is this component's decision, and `finalColumnWidth`
@@ -255,16 +250,7 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
     }),
   );
 
-  /**
-   * The layout drawing this source: the first entry of the `layouts` input - or, when that is unbound,
-   * of `provideBracketConfig` - whose `mode` matches. Throws `ET3413` when nothing matches.
-   */
-  private resolvedLayout = computed(() =>
-    resolveBracketLayout<TRoundData, TMatchData>(
-      this.layouts() ?? (this.config.layouts as readonly BracketLayout<TRoundData, TMatchData>[] | undefined),
-      this.source().mode,
-    ),
-  );
+  private resolvedLayout = createBracketHostLayout(this.layouts, this.source, this.config);
 
   public bracketData = computed(() => createBracket(this.source(), { layout: this.resolvedLayout().dataLayout }));
 
@@ -362,16 +348,12 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
           host,
           renderer,
           participants: this.journeyParticipants,
-          // The bracket only ever *drops* the pin (Escape, a click past the cards), and does it from
-          // outside Angular - so the write back into the model has to re-enter.
           onFocusChange: (participantId) => ngZone.run(() => this.focusedParticipantId.set(participantId)),
         }),
       );
 
       this.journeyController.set(controller);
 
-      // via onCleanup, not a returned function: effect() ignores what the callback returns, so the
-      // listeners would stack up on every re-run and outlive the component.
       onCleanup(() => controller.destroy());
     });
 

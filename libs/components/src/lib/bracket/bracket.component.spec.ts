@@ -1,6 +1,6 @@
 import '../../test-helpers';
 import { queryAll } from '../testing/driver-core';
-import { COMMON_BRACKET_ROUND_TYPE } from './core';
+import { COMMON_BRACKET_ROUND_TYPE } from '@ethlete/bracket';
 import { BracketDataSource } from './integrations';
 import { bracketTestDriver, testBracketLayouts } from './testing/bracket-driver';
 import { generateSingleEliminationBracket } from './stories/generate-bracket';

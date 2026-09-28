@@ -1,6 +1,11 @@
-import { BRACKET_DATA_LAYOUT, MatchParticipantSide, SWISS_BRACKET_ROUND_TYPE, TOURNAMENT_MODE } from './core';
+import {
+  BRACKET_DATA_LAYOUT,
+  MatchParticipantSide,
+  SWISS_BRACKET_ROUND_TYPE,
+  TOURNAMENT_MODE,
+  createBracket,
+} from '@ethlete/bracket';
 import { createBracketJourneyParticipants } from './journey-highlight';
-import { createBracket } from './linked';
 import { BracketDataSource } from './integrations';
 import { generateDoubleEliminationBracket, generateSingleEliminationBracket } from './stories/generate-bracket';
 

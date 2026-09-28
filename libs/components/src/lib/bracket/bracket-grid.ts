@@ -1,7 +1,6 @@
 import { BRACKET_DENSITY_PRESETS } from './bracket-density';
 import { BRACKET_DEFAULTS, BracketLayoutConfig } from './bracket.config';
-import { BRACKET_DATA_LAYOUT, BracketDataLayout } from './core/layout';
-import { CreateBracketGridConfig } from '@ethlete/bracket';
+import { BRACKET_DATA_LAYOUT, BracketDataLayout, CreateBracketGridConfig } from '@ethlete/bracket';
 
 /**
  * Every layout setting, resolved to a concrete value - no `undefined`, no "fall back to the config".
@@ -25,8 +24,6 @@ export const resolveBracketLayoutSettings = (config: BracketLayoutConfig): Brack
     ...BRACKET_DENSITY_PRESETS[config.density ?? BRACKET_DEFAULTS.density],
   };
 
-  // Key by key rather than one spread: a config carrying an explicit `undefined` (which is what an
-  // unbound component input hands over) must leave the preset's value standing, not clobber it.
   for (const key of LAYOUT_KEYS) {
     const value = config[key];
 

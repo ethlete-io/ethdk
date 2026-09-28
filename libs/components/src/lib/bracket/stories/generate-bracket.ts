@@ -2,8 +2,8 @@ import {
   COMMON_BRACKET_ROUND_TYPE,
   DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
   SINGLE_ELIMINATION_BRACKET_ROUND_TYPE,
-} from '../core/round';
-import { TOURNAMENT_MODE } from '../core/tournament';
+  TOURNAMENT_MODE,
+} from '@ethlete/bracket';
 import { BracketDataSource, BracketMatchSource, BracketRoundSource } from '../integrations/base';
 
 /**

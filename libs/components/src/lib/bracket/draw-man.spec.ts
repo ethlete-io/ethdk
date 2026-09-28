@@ -1,8 +1,7 @@
-import { drawMan } from '@ethlete/bracket';
+import { drawMan, BRACKET_DATA_LAYOUT, BracketDataLayout, createBracket } from '@ethlete/bracket';
 import { resolveBracketComponents } from './bracket-components';
 import { createBracketGridConfig, resolveBracketLayoutSettings } from './bracket-grid';
 import { resolveBracketLayout } from './bracket-layout';
-import { BRACKET_DATA_LAYOUT, BracketDataLayout } from './core';
 import { BracketLayoutConfig } from './bracket.config';
 import { BracketDataSource } from './integrations';
 import {
@@ -11,7 +10,6 @@ import {
   mirroredSingleEliminationBracketLayout,
   singleEliminationBracketLayout,
 } from './layouts';
-import { createBracket } from './linked';
 import { generateDoubleEliminationBracket, generateSingleEliminationBracket } from './stories/generate-bracket';
 
 /** One registry per fold, so a source resolves to the layout drawing it that way. */

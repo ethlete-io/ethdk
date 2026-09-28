@@ -1,10 +1,14 @@
 import { BracketLayout, BracketListSection } from '../bracket-layout';
 import { BracketLabels } from '../bracket-labels';
-import { BRACKET_DATA_LAYOUT } from '../core/layout';
-import { COMMON_BRACKET_ROUND_TYPE, DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE } from '../core/round';
-import { TOURNAMENT_MODE } from '../core/tournament';
-import { createDoubleEliminationGrid, createStackedDoubleEliminationGrid } from '@ethlete/bracket';
-import { BracketRound } from '../linked/bracket';
+import {
+  BRACKET_DATA_LAYOUT,
+  COMMON_BRACKET_ROUND_TYPE,
+  DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
+  TOURNAMENT_MODE,
+  createDoubleEliminationGrid,
+  createStackedDoubleEliminationGrid,
+  BracketRound,
+} from '@ethlete/bracket';
 import { drawEliminationEdges } from './draw-elimination-edges';
 
 /**

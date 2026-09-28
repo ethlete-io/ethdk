@@ -1,6 +1,6 @@
 import { RoundStageStructureWithMatchesView } from '@ethlete/types';
 import { Meta, StoryFn } from '@storybook/angular';
-import { BRACKET_DATA_LAYOUT } from '../core/layout';
+import { BRACKET_DATA_LAYOUT } from '@ethlete/bracket';
 import { generateBracketDataForEthlete } from '../integrations/ethlete';
 import { StorybookBracketComponent } from './bracket-storybook.component';
 import { ET_DUMMY_DATA_SWISS } from './dummy-data';

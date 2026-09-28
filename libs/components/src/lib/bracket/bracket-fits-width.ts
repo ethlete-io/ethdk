@@ -1,5 +1,5 @@
 import { BracketDataSource } from './integrations';
-import { createBracket } from './linked/bracket';
+import { createBracket } from '@ethlete/bracket';
 import { resolveBracketComponents } from './bracket-components';
 import { createBracketGridConfig, resolveBracketLayoutSettings } from './bracket-grid';
 import { resolveBracketLayout } from './bracket-layout';

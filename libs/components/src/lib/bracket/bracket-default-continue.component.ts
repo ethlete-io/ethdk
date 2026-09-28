@@ -1,7 +1,7 @@
 import { Component, computed, input, ViewEncapsulation } from '@angular/core';
 import { ARROW_RIGHT_ICON, ICON_IMPORTS, provideIcons } from '../icon';
 import { injectBracketLabels } from './bracket-labels';
-import { BracketMatch } from './linked';
+import { BracketMatch } from '@ethlete/bracket';
 
 /**
  * The bracket's default continue cell: the "and then?" at the end of a stage that feeds a later one

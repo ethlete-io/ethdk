@@ -9,7 +9,7 @@ import { BracketDefaultFinalMatchComponent } from './bracket-default-final-match
 import { BracketDefaultMatchComponent } from './bracket-default-match.component';
 import { BracketDefaultRoundHeaderComponent } from './bracket-default-round-header.component';
 import { provideBracketLabels } from './bracket-labels';
-import { BracketMatch, BracketRound, BracketRoundSwissGroup } from './linked';
+import { BracketMatch, BracketRound, BracketRoundSwissGroup } from '@ethlete/bracket';
 
 /** Only the fields the cards read - the engine's own graph never reaches a card's template. */
 const bracketMatch = (winnerSide: 'home' | 'away' | null = 'home') =>

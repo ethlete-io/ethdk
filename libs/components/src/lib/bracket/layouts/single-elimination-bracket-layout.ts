@@ -1,7 +1,5 @@
 import { BracketLayout } from '../bracket-layout';
-import { BRACKET_DATA_LAYOUT } from '../core/layout';
-import { TOURNAMENT_MODE } from '../core/tournament';
-import { createSingleEliminationGrid } from '@ethlete/bracket';
+import { BRACKET_DATA_LAYOUT, TOURNAMENT_MODE, createSingleEliminationGrid } from '@ethlete/bracket';
 import { drawEliminationEdges } from './draw-elimination-edges';
 
 /**

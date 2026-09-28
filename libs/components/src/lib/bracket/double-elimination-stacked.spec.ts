@@ -1,8 +1,7 @@
-import { BRACKET_DATA_LAYOUT, createStackedDoubleEliminationGrid } from '@ethlete/bracket';
+import { BRACKET_DATA_LAYOUT, createStackedDoubleEliminationGrid, createBracket } from '@ethlete/bracket';
 import { resolveBracketComponents } from './bracket-components';
 import { createBracketGridConfig, resolveBracketLayoutSettings } from './bracket-grid';
 import { BracketDataSource } from './integrations';
-import { createBracket } from './linked';
 import { DoubleEliminationOptions, generateDoubleEliminationBracket } from './stories/generate-bracket';
 
 const WINNERS_SECTION = 0;

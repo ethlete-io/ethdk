@@ -1,11 +1,13 @@
-import { COMMON_BRACKET_ROUND_TYPE, DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE } from './core';
 import {
+  COMMON_BRACKET_ROUND_TYPE,
+  DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
   BracketComponents,
   BracketContinueComponent,
   BracketMatchComponent,
   BracketRoundHeaderComponent,
+  Bracket,
+  BracketRound,
 } from '@ethlete/bracket';
-import { Bracket, BracketRound } from './linked/bracket';
 import { BracketDefaultContinueComponent } from './bracket-default-continue.component';
 import { BracketDefaultFinalMatchComponent } from './bracket-default-final-match.component';
 import { BracketDefaultMatchComponent } from './bracket-default-match.component';

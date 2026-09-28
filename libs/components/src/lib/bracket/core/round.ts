@@ -1,9 +1,0 @@
-export {
-  BRACKET_ROUND_MIRROR_TYPE,
-  COMMON_BRACKET_ROUND_TYPE,
-  DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
-  GROUP_BRACKET_ROUND_TYPE,
-  SINGLE_ELIMINATION_BRACKET_ROUND_TYPE,
-  SWISS_BRACKET_ROUND_TYPE,
-} from '@ethlete/bracket';
-export type { BracketRoundId, BracketRoundType } from '@ethlete/bracket';

@@ -1,7 +1,7 @@
 import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
 import { BRACKET_CARD_CONTEXT } from './bracket-card-context';
 import { injectBracketLabels } from './bracket-labels';
-import { BracketRound, BracketRoundSwissGroup } from './linked';
+import { BracketRound, BracketRoundSwissGroup } from '@ethlete/bracket';
 
 /**
  * The bracket's default column header: the round's name, its swiss group's name where there is one, and

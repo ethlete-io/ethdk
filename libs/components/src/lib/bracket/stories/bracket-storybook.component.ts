@@ -13,7 +13,14 @@ import { BRACKET_DENSITY, BracketDensity } from '../bracket-density';
 import { BracketComponent } from '../bracket.component';
 import { BracketParticipantsComponent } from '../bracket-participants.component';
 import { BRACKET_ROUND_HEADER_ALIGN, BracketRoundHeaderAlign } from '../bracket.config';
-import { BRACKET_DATA_LAYOUT, BracketDataLayout } from '../core/layout';
+import {
+  BRACKET_DATA_LAYOUT,
+  BracketDataLayout,
+  BracketMatch,
+  BracketRound,
+  BracketRoundSwissGroup,
+  BracketSwissColors,
+} from '@ethlete/bracket';
 import { BracketDataSource } from '../integrations/base';
 import {
   doubleEliminationBracketLayout,
@@ -22,8 +29,6 @@ import {
   singleEliminationBracketLayout,
   swissBracketLayout,
 } from '../layouts';
-import { BracketMatch, BracketRound } from '../linked/bracket';
-import { BracketRoundSwissGroup, BracketSwissColors } from '../linked/swiss';
 import { demoMatchNormalizer, demoParticipant } from './demo-match-normalizer';
 
 /**

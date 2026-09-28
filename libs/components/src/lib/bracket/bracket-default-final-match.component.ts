@@ -9,7 +9,7 @@ import {
 } from '../match';
 import { BRACKET_CARD_CONTEXT, createNormalizedBracketMatch } from './bracket-card-context';
 import { injectBracketLabels } from './bracket-labels';
-import { BracketMatch, BracketRound, BracketRoundSwissGroup } from './linked';
+import { BracketMatch, BracketRound, BracketRoundSwissGroup } from '@ethlete/bracket';
 
 /**
  * The bracket's default **final** cell - deliberately not the same card as every other round. The match
@@ -33,9 +33,6 @@ import { BracketMatch, BracketRound, BracketRoundSwissGroup } from './linked';
         <span class="et-bracket-final-round">{{ bracketRound().name }}</span>
       </div>
 
-      <!-- The size comes from the host: auto in the grid, where the final column is wide enough for the
-           featured card and a narrower one should land on the dense row rather than crop; pinned in a
-           rounds list, where the row is as wide as the page. -->
       <et-match-card [match]="match" [size]="cardSize()" class="et-bracket-final-card" />
 
       <p class="et-bracket-final-champion">{{ championText() }}</p>

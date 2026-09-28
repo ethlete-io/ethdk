@@ -2,17 +2,19 @@ import { Type } from '@angular/core';
 import { BracketComponentOverrides } from './bracket-components';
 import { BracketLayoutSettings } from './bracket-grid';
 import { BracketLabels } from './bracket-labels';
-import { BracketDataLayout } from './core/layout';
-import { TournamentMode } from './core/tournament';
 import {
+  BracketDataLayout,
+  TournamentMode,
   BracketComponents,
   BracketDrawing,
   ComputedBracketGrid,
   CreateBracketGridConfig,
   resolveBracketLayout as resolveBracketLayoutCore,
+  Bracket,
+  BracketRound,
+  BracketRoundMapWithSwissData,
+  BracketSwissColors,
 } from '@ethlete/bracket';
-import { Bracket, BracketRound } from './linked/bracket';
-import { BracketRoundMapWithSwissData, BracketSwissColors } from './linked/swiss';
 
 /**
  * What {@link BracketLayout.drawEdges} gets to work with: the grid it is connecting and the resolved
@@ -29,8 +31,8 @@ export type BracketDrawEdgesContext<TRoundData = unknown, TMatchData = unknown> 
 };
 
 /**
- * A section a round renders under in `<et-bracket-rounds-list>` - the heading is `name`, and rounds
- * whose consecutive sections share an `id` render under one heading.
+ * A section a round renders under in `<et-bracket-rounds-list>` - the heading is `name`. Every round
+ * whose section shares an `id` renders under one heading, placed where the first of them appears.
  */
 export type BracketListSection = {
   id: string;

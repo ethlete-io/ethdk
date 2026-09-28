@@ -4,7 +4,7 @@ import { queryAll } from '../testing/driver-core';
 import { BRACKET_ERROR_CODES } from './bracket-errors';
 import { resolveBracketLayout } from './bracket-layout';
 import { provideBracketConfig } from './bracket.config';
-import { TOURNAMENT_MODE } from './core/tournament';
+import { TOURNAMENT_MODE } from '@ethlete/bracket';
 import { generateBracketDataForEthlete } from './integrations/ethlete';
 import {
   doubleEliminationBracketLayout,
