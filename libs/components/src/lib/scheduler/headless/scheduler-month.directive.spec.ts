@@ -72,4 +72,35 @@ describe('SchedulerMonthDirective', () => {
     expect(cell?.visible).toHaveLength(1);
     expect(cell?.overflow).toHaveLength(1);
   });
+
+  describe('at midnight', () => {
+    beforeEach(() => {
+      fixture.destroy();
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 6, 15, 23, 59));
+      fixture = TestBed.createComponent(SchedulerMonthTestHostComponent);
+      fixture.detectChanges();
+      directive = fixture.debugElement.children[0]!.children[0]!.injector.get(SchedulerMonthDirective);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('moves the today flag to the new day', () => {
+      const todayCell = () =>
+        directive
+          .weeks()
+          .flat()
+          .find((cell) => cell.today)
+          ?.date.getDate();
+
+      expect(todayCell()).toBe(15);
+
+      vi.advanceTimersByTime(60_000);
+      fixture.detectChanges();
+
+      expect(todayCell()).toBe(16);
+    });
+  });
 });

@@ -37,7 +37,7 @@ export class SchedulerMonthDirective {
       weekStartsOn: scheduler.effectiveFirstDayOfWeek(),
       tree: scheduler.appointmentTree(),
       maxVisiblePerCell: this.maxVisiblePerCell(),
-      today: new Date(),
+      today: scheduler.today(),
     });
   });
 

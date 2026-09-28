@@ -7,6 +7,8 @@ import {
   endOfMonth,
   endOfWeek,
   format,
+  getDaysInMonth,
+  setDate,
   startOfDay,
   startOfMonth,
   startOfWeek,
@@ -23,6 +25,7 @@ import {
   SchedulerView,
   SchedulerVisibleRange,
 } from '../scheduler.types';
+import { injectSchedulerToday } from './internals/scheduler-clock';
 import { appointmentTouchesRange } from './internals/scheduler-range';
 import { buildAppointmentTree, countDescendants } from './internals/scheduler-tree';
 
@@ -50,6 +53,9 @@ export type SchedulerWeekday = {
 })
 export class SchedulerDirective<TExtra = unknown> {
   private defaultLocale = injectDateLocale();
+
+  /** The current time, re-read at every local midnight - what each view's `today` flag compares against. */
+  public today = injectSchedulerToday();
 
   /** Every appointment the scheduler knows about - not pre-filtered to the visible range. */
   public appointments = input<readonly Appointment<TExtra>[]>([]);
@@ -203,6 +209,8 @@ export class SchedulerDirective<TExtra = unknown> {
 
   private draftAnchor: Date | null = null;
 
+  private monthStep: { dayOfMonth: number; landedOn: Date } | null = null;
+
   /**
    * Steps {@link focusedDate} forward by the active view's unit - a day, a week, a month, or the
    * agenda's own {@link agendaDays} span when it has one.
@@ -315,7 +323,19 @@ export class SchedulerDirective<TExtra = unknown> {
         return this.focusedDate.set(addDays(this.focusedDate(), step * 7));
       case 'month':
       default:
-        return this.focusedDate.set(addMonths(this.focusedDate(), step));
+        return this.stepMonth(step);
     }
+  }
+
+  private stepMonth(step: 1 | -1) {
+    const current = this.focusedDate();
+    const dayOfMonth = this.monthStep?.landedOn === current ? this.monthStep.dayOfMonth : current.getDate();
+    const month = addMonths(startOfMonth(current), step);
+    const target = setDate(month, Math.min(dayOfMonth, getDaysInMonth(month)));
+
+    target.setHours(current.getHours(), current.getMinutes(), current.getSeconds(), current.getMilliseconds());
+
+    this.monthStep = { dayOfMonth, landedOn: target };
+    this.focusedDate.set(target);
   }
 }

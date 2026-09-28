@@ -32,7 +32,7 @@ export class SchedulerAgendaDirective {
     return buildSchedulerAgenda({
       days: eachDayOfInterval(scheduler.visibleRange()),
       tree: scheduler.appointmentTree(),
-      today: new Date(),
+      today: scheduler.today(),
     });
   });
 

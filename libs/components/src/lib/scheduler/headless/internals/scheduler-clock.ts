@@ -1,11 +1,15 @@
 import { isPlatformBrowser } from '@angular/common';
 import { PLATFORM_ID, Signal, computed, inject } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { EMPTY, defer, map, startWith, switchMap, timer } from 'rxjs';
+import { addDays, startOfDay } from 'date-fns';
+import { EMPTY, defer, map, repeat, startWith, switchMap, timer } from 'rxjs';
 
 const MINUTE_MS = 60 * 1000;
 
 const minuteBoundaries = () => defer(() => timer(MINUTE_MS - (Date.now() % MINUTE_MS), MINUTE_MS).pipe(startWith(0)));
+
+const dayBoundaries = () =>
+  defer(() => timer(startOfDay(addDays(new Date(), 1)).getTime() - Date.now())).pipe(repeat());
 
 /**
  * The current time, re-read on every minute boundary while `enabled` is true. The first tick waits
@@ -25,4 +29,16 @@ export const injectSchedulerClock = (enabled: () => boolean): Signal<Date> => {
     ),
     { initialValue: new Date() },
   );
+};
+
+/**
+ * The current time, re-read on every local midnight so a day's `today` flag follows the calendar.
+ * Runs no timer on the server.
+ *
+ * @internal
+ */
+export const injectSchedulerToday = (): Signal<Date> => {
+  const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  return toSignal(isBrowser ? dayBoundaries().pipe(map(() => new Date())) : EMPTY, { initialValue: new Date() });
 };

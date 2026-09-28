@@ -139,6 +139,33 @@ describe('SchedulerDirective', () => {
     expect(host.focusedDate()).toEqual(new Date(2026, 5, 23));
   });
 
+  it('keeps the day of month across a short month when stepping months', () => {
+    host.focusedDate.set(new Date(2026, 0, 31));
+    fixture.detectChanges();
+
+    directive.next();
+    expect(host.focusedDate()).toEqual(new Date(2026, 1, 28));
+
+    directive.next();
+    expect(host.focusedDate()).toEqual(new Date(2026, 2, 31));
+
+    directive.previous();
+    directive.previous();
+    expect(host.focusedDate()).toEqual(new Date(2026, 0, 31));
+  });
+
+  it('steps months from a newly focused date, not an earlier one', () => {
+    host.focusedDate.set(new Date(2026, 0, 31));
+    fixture.detectChanges();
+    directive.next();
+
+    host.focusedDate.set(new Date(2026, 1, 10));
+    fixture.detectChanges();
+    directive.next();
+
+    expect(host.focusedDate()).toEqual(new Date(2026, 2, 10));
+  });
+
   it('steps the agenda by its own span once agendaDays is set', () => {
     host.view.set('agenda');
     host.agendaDays.set(30);

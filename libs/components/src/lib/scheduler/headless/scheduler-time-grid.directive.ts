@@ -50,7 +50,7 @@ export class SchedulerTimeGridDirective {
     return buildSchedulerTimeGrid({
       days: eachDayOfInterval(scheduler.visibleRange()),
       tree: scheduler.appointmentTree(),
-      today: new Date(),
+      today: scheduler.today(),
     });
   });
 
