@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import '../../test-helpers';
 import { expectNothingRunsAfterDestroy } from '../testing/destroyed-mid-gesture';
-import { fakeElementScroll } from '../testing/fake-layout';
+import { fakeElementScroll, fakeLayout } from '../testing/fake-layout';
 import { ScrollableDirective } from './headless/scrollable.directive';
 import { ScrollableNavigationComponent } from './headless/scrollable-navigation.component';
 import { createScrollableDriver } from './testing/scrollable-driver';
@@ -168,5 +168,25 @@ describe('ScrollableComponent destroyed mid-gesture', () => {
         fixture.detectChanges();
       },
     });
+  });
+});
+
+describe('ScrollableComponent container paging', () => {
+  it('pages toward the inline end of a right-to-left track', () => {
+    fakeLayout([{ match: '.et-scrollable-container', clientWidth: 300 }]);
+    const scroll = fakeElementScroll();
+    const fixture = TestBed.createComponent(ScrollableComponent);
+    const driver = createScrollableDriver(fixture);
+    fixture.detectChanges();
+
+    const container = driver.container();
+
+    if (!container) throw new Error('No scroll container');
+
+    container.style.direction = 'rtl';
+    Object.defineProperty(container, 'scrollLeft', { configurable: true, value: -100 });
+    fixture.debugElement.injector.get(ScrollableDirective).scrollOneContainerSize('end');
+
+    expect(scroll.lastCall()?.options.left).toBe(-400);
   });
 });

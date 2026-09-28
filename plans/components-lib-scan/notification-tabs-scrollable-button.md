@@ -1,10 +1,9 @@
 # notification, tabs, scrollable, button scan - open findings
 
-Scan of `libs/components/src/lib/{notification,tabs,scrollable,button}` from 2026-09-28. 0 High, 4 Medium, 20 Low, 2 Spec (verified 2026-09-28). Skipped: stories, most specs, testing drivers, and a line-by-line read of the large CSS files (grep only for `@layer`, colours and transitions).
+Scan of `libs/components/src/lib/{notification,tabs,scrollable,button}` from 2026-09-28. 0 High, 1 Medium, 20 Low, 1 Spec (verified 2026-09-28). Skipped: stories, most specs, testing drivers, and a line-by-line read of the large CSS files (grep only for `@layer`, colours and transitions).
 
 ## tabs
 
-- Medium: horizontal arrow keys do not flip under `dir="rtl"`, so ArrowRight moves focus to the visually left tab (`headless/tab-bar.directive.ts:126-128`). Read the computed direction of the host and swap next/prev keys. S Verified.
 - Low: a selected tab that turns disabled falls back to the first enabled tab, not the nearest one (`tabs/headless/tab-group.directive.ts:168-174`). S
 - Low: with two or more `et-nav-tabs` on a page, `single()` returns `null` and a sibling `et-nav-tabs-outlet` loses its `aria-labelledby` without a warning (`nav-tabs/headless/nav-tabs-registry.ts:18-22`, `nav-tabs/headless/nav-tabs-outlet.directive.ts:24`). Add a dev-mode warning or an explicit `for` input. S
 - Low: the inline `.et-nav-tabs-outlet` style is not in `@layer components` (`nav-tabs/nav-tabs-outlet.component.ts:12-16`). S
@@ -12,7 +11,6 @@ Scan of `libs/components/src/lib/{notification,tabs,scrollable,button}` from 202
 
 ## notification
 
-- Medium: dismissed refs stay in `notifications()` until the stack is fully empty (`notification-manager.ts:105,137`). One sticky error toast keeps the stack alive, so every later ref (with its config and handler closures) is kept, and `open()` filters an array that only grows. Remove a ref from the list in `markDismissed`. S Verified.
 - Medium: the stack is a `role="log"` region with `aria-relevant="additions"`, and every item is also a `role="status"`/`"alert"` region (`notification-stack.component.ts:15-17`, `headless/notification.directive.ts:37`). A `promise()` that settles changes text and swaps `status` to `alert` in place, which the outer region ignores and screen readers announce unreliably. Pick one live region and test the loading-to-error path with a screen reader. M Verified in code. Unverified: no screen-reader run.
 - Low: the FLIP reflow sets inline `transform`/`height` transitions and ignores `prefers-reduced-motion` (`headless/notification-stack.directive.ts:122-149`). S
 - Low: the 210 ms reset timer of one FLIP clears the inline height, width and transition of a newer FLIP that started inside that window, which makes the toast jump (`headless/notification-stack.directive.ts:151-166`). Cancel the previous reset on each capture. S
@@ -22,7 +20,6 @@ Scan of `libs/components/src/lib/{notification,tabs,scrollable,button}` from 202
 
 ## scrollable
 
-- Medium: `scrollOneContainerSize` adds the viewport size to `scrollLeft`, which is `0` or negative in RTL, so the "next" button does nothing in a horizontal RTL track without snap (`headless/scrollable.directive.ts:318-322`). Flip the sign when the container is RTL. S Verified. It only hits `scrollMode="container"`.
 - Low: `et-scrollable-masks` renders by default and always calls `activateChildIntersections()`, so every plain track runs an IntersectionObserver with 27 thresholds per child (`headless/scrollable-masks.component.ts:21`, `scrollable.component.html:24`). Activate only for a mask variant that needs partial-item state. S
 - Low: `masksDirective` is never reset when `renderMasks` turns off, so `--has-partial-items` keeps computing (`headless/scrollable-masks.component.ts:20`). S
 - Low: `scrollable-footer.css` is listed in two components' `styleUrls`, so it ships twice and injects twice when both buttons and dots are on (`headless/scrollable-navigation.component.ts:34`, `headless/scrollable-buttons.component.ts:37`). Move it to one styles-only component. S
@@ -40,5 +37,4 @@ Scan of `libs/components/src/lib/{notification,tabs,scrollable,button}` from 202
 
 ## Spec gaps
 
-- Spec: no RTL keyboard test (`tabs/headless/tab-bar-keyboard.spec.ts`). S
 - Spec: `scrollable-snap`, `scrollable-navigation`, `scrollable-buttons` and the container paging path have no spec. M

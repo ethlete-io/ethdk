@@ -313,13 +313,15 @@ export class ScrollableDirective {
       const target = getScrollContainerTarget(this.childIntersections(), scrollDirection);
       if (target) this.scrollToElement(target);
     } else {
+      const isHorizontal = this.direction() === 'horizontal';
       const dimensions = this.scrollableDimensions().client;
-      const scrollableSize = this.direction() === 'horizontal' ? (dimensions?.width ?? 0) : (dimensions?.height ?? 0);
-      const currentScroll = this.direction() === 'horizontal' ? scrollElement.scrollLeft : scrollElement.scrollTop;
+      const scrollableSize = isHorizontal ? (dimensions?.width ?? 0) : (dimensions?.height ?? 0);
+      const currentScroll = isHorizontal ? scrollElement.scrollLeft : scrollElement.scrollTop;
+      const isRtl = isHorizontal && getComputedStyle(scrollElement).direction === 'rtl';
+      const towardEnd = scrollDirection === 'start' ? -scrollableSize : scrollableSize;
 
       scrollElement.scrollTo({
-        [this.direction() === 'horizontal' ? 'left' : 'top']:
-          currentScroll + (scrollDirection === 'start' ? -scrollableSize : scrollableSize),
+        [isHorizontal ? 'left' : 'top']: currentScroll + (isRtl ? -towardEnd : towardEnd),
         behavior: 'smooth',
       });
     }
