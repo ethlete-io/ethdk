@@ -174,7 +174,7 @@ export class DropzoneComponent {
   }
 
   protected openFilePicker() {
-    if (this.dropzoneDir.disabled()) {
+    if (!this.dropzoneDir.interactive()) {
       return;
     }
 

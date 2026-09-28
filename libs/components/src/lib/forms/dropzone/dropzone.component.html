@@ -16,8 +16,9 @@
 <div [attr.data-has-preview]="singleEntry() ? true : null" class="et-dropzone-area">
   <button
     #browseButton
-    [disabled]="!dropzoneDir.interactive()"
-    [attr.tabindex]="singleEntry() ? '-1' : null"
+    [disabled]="dropzoneDir.disabled()"
+    [attr.aria-disabled]="dropzoneDir.readonly() || null"
+    [attr.tabindex]="singleEntry() && !dropzoneDir.readonly() ? '-1' : null"
     [attr.aria-invalid]="dropzoneDir.shouldDisplayError() || null"
     [attr.aria-describedby]="dropzoneDir.describedBy() || null"
     [attr.aria-label]="dropzoneDir.ariaLabel() || null"

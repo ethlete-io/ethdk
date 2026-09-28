@@ -40,7 +40,6 @@ Scan of `libs/components/src/lib/forms/cascader/` and `libs/components/src/lib/f
 
 ## dropzone - a11y
 
-- Medium: The browse trigger is `[disabled]` whenever the control is not interactive, so a readonly dropzone is not focusable, `focus()` does nothing, and a readonly single entry has no focusable element at all (`forms/dropzone/dropzone.component.html:19`). This contradicts the `readonly` doc "the control stays focusable" (`forms/dropzone/headless/dropzone.directive.ts:89`). Use `aria-disabled` plus a click guard for readonly. S Verified.
 
 ## dropzone - cleanup
 

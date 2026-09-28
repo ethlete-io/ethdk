@@ -1,6 +1,6 @@
 @layer components {
   et-dropzone[data-readonly] {
-    .et-dropzone-trigger:disabled,
+    .et-dropzone-trigger,
     .et-icon-button:disabled {
       cursor: default;
     }

@@ -132,7 +132,7 @@
         background-color var(--et-dropzone-transition-duration) ease;
 
       @media (hover: hover) {
-        &:hover:not(:disabled) {
+        &:hover:not(:disabled, [aria-disabled='true']) {
           border-color: var(--et-surface-interaction-hover-solid, currentColor);
           background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 6%, transparent);
         }

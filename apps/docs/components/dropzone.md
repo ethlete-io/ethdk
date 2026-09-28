@@ -194,6 +194,8 @@ A read-only dropzone also stops looking like a drop target, so it does not offer
 gesture it will refuse:
 
 - The remove, replace and retry buttons are not rendered.
+- The drop area stays focusable and reachable with Tab (it is `aria-disabled`, not `disabled`),
+  so `focus()` and a screen reader still land on the field; activating it does nothing.
 - The dashed border turns solid.
 - With files in multiple mode the drop area is gone, leaving the file list alone. A
   single file keeps its preview, which fills that area anyway.

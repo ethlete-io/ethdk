@@ -20,7 +20,13 @@ const createFile = (name = 'photo.png', type = 'image/png', size = 4) =>
 
 @Component({
   template: `
-    <et-dropzone [(value)]="value" [upload]="upload()!" [multiple]="multiple()">
+    <et-dropzone
+      [(value)]="value"
+      [upload]="upload()!"
+      [multiple]="multiple()"
+      [readonly]="readonly()"
+      [disabled]="disabled()"
+    >
       <et-label>Attachments</et-label>
     </et-dropzone>
   `,
@@ -29,6 +35,8 @@ const createFile = (name = 'photo.png', type = 'image/png', size = 4) =>
 class DropzoneComponentTestHost {
   upload = signal<AnyDropzoneUploadConfig<string> | null>(null);
   multiple = signal(false);
+  readonly = signal(false);
+  disabled = signal(false);
   value = signal<string | string[] | null>(null);
 }
 
@@ -103,6 +111,39 @@ describe('DropzoneComponent', () => {
     driver.click(driver.triggerEl());
 
     expect(clickSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should keep a readonly trigger focusable without opening the file picker', () => {
+    driver.host.readonly.set(true);
+    driver.tick();
+
+    const trigger = driver.triggerEl();
+    const clickSpy = vi.spyOn(driver.nativeInput(), 'click');
+
+    expect(trigger.disabled).toBe(false);
+    expect(trigger.getAttribute('aria-disabled')).toBe('true');
+
+    driver.dropzone.focus();
+    expect(document.activeElement).toBe(trigger);
+
+    driver.click(trigger);
+    expect(clickSpy).not.toHaveBeenCalled();
+  });
+
+  it('should keep the trigger in the tab order for a readonly single entry', () => {
+    driver.host.value.set('e1');
+    driver.host.readonly.set(true);
+    driver.tick();
+
+    expect(driver.previewEl()).toBeTruthy();
+    expect(driver.triggerEl().getAttribute('tabindex')).toBe(null);
+  });
+
+  it('should still disable the trigger when disabled', () => {
+    driver.host.disabled.set(true);
+    driver.tick();
+
+    expect(driver.triggerEl().disabled).toBe(true);
   });
 
   it('should upload files picked via the native input and reset it', () => {
