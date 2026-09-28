@@ -68,6 +68,69 @@ describe('rich text editor token codec', () => {
     expect(htmlToMarkdown(serializeToString(rendered))).toBe(md);
   });
 
+  it('leaves a token inside an attribute value alone', () => {
+    const html =
+      '<p><a href="https://x/{{block:firstName}}" title=\'a > {{block:firstName}}\'>{{block:firstName}}</a></p>';
+    const rendered = codec.render(html);
+
+    expect(rendered).toContain('href="https://x/{{block:firstName}}"');
+    expect(rendered).toContain("title='a > {{block:firstName}}'");
+    expect(rendered.match(/data-et-token/g)).toHaveLength(1);
+  });
+
+  describe('hydrate', () => {
+    const container = (html: string) => {
+      const root = doc.createElement('div');
+
+      root.innerHTML = html;
+      doc.body.appendChild(root);
+      onTestFinished(() => root.remove());
+
+      return root;
+    };
+
+    it('resolves each async token once, however often and however many chips it hydrates', async () => {
+      const resolveItem = vi.fn((id: string) => Promise.resolve({ id, label: `Async ${id}` }));
+      const asyncCodec = createRichTextEditorTokenCodec(() => [{ char: '@', type: 'mention', items: [], resolveItem }]);
+      const root = container(asyncCodec.render('{{mention:a}} {{mention:b}} {{mention:a}}'));
+
+      asyncCodec.hydrate(root);
+      asyncCodec.hydrate(root);
+      await Promise.resolve();
+      asyncCodec.hydrate(root);
+      await new Promise((resolve) => setTimeout(resolve));
+
+      expect(resolveItem).toHaveBeenCalledTimes(2);
+      expect([...root.querySelectorAll(`.${TOKEN_LABEL_CLASS}`)].map((el) => el.textContent)).toEqual([
+        'Async a',
+        'Async b',
+        'Async a',
+      ]);
+    });
+
+    it('keeps the raw id and raises nothing when a lookup rejects, and retries it later', async () => {
+      const unhandled = vi.fn();
+      process.on('unhandledRejection', unhandled);
+      onTestFinished(() => {
+        process.off('unhandledRejection', unhandled);
+      });
+
+      const resolveItem = vi.fn((id: string) => Promise.reject(new Error(`no ${id}`)));
+      const asyncCodec = createRichTextEditorTokenCodec(() => [{ char: '@', type: 'mention', items: [], resolveItem }]);
+      const root = container(asyncCodec.render('{{mention:a}}'));
+
+      asyncCodec.hydrate(root);
+      await new Promise((resolve) => setTimeout(resolve));
+
+      expect(unhandled).not.toHaveBeenCalled();
+      expect(root.querySelector(`.${TOKEN_LABEL_CLASS}`)?.textContent).toBe('a');
+
+      asyncCodec.hydrate(root);
+
+      expect(resolveItem).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe('parseTokenText', () => {
     const MERGE_FIELDS = [
       { id: 'firstName', label: 'User Name' },

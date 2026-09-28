@@ -178,6 +178,28 @@ describe('RichTextEditorDirective', () => {
       expect(dir.value()).toBe('');
     });
 
+    it('pastes plain text into a code block, keeping the line breaks between pasted blocks', () => {
+      driver.setHtml('<pre><code>ab\n</code></pre>');
+      caretIn(editable.querySelector('code')!.firstChild!, 1);
+
+      dir.pasteHtml('<p>x <strong>y</strong></p><ul><li>z</li></ul>');
+
+      expect(editable.querySelectorAll('pre')).toHaveLength(1);
+      expect(editable.querySelector('pre')?.nextSibling).toBeNull();
+      expect(editable.querySelector('strong, ul')).toBeNull();
+      expect(editable.querySelector('code')?.textContent).toBe('ax y\nzb\n');
+    });
+
+    it('recognizes a pasted token only in text outside code and attributes', () => {
+      dir.tokenCodec.set(
+        createRichTextEditorTokenCodec(() => [{ char: '#', type: 'block', items: [{ id: 'intro', label: 'Intro' }] }]),
+      );
+
+      dir.pasteHtml('<p><a href="https://site/#intro">x</a> <code>#intro</code> #intro</p>');
+
+      expect(dir.value()).toBe('[x](https://site/#intro) `#intro` {{block:intro}}');
+    });
+
     it('locks the heading tool inside lists and table cells, but not in plain paragraphs', () => {
       driver.setHtml('<p>plain</p><ul><li>item</li></ul><table><tbody><tr><td>cell</td></tr></tbody></table>');
 

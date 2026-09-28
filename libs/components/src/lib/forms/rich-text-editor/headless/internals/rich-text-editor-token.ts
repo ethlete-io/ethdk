@@ -1,7 +1,11 @@
 import { RuntimeError } from '@ethlete/core';
-import { isObservable, Observable, take } from 'rxjs';
+import { catchError, EMPTY, from, isObservable, take, tap } from 'rxjs';
 import { RICH_TEXT_EDITOR_ERROR_CODES } from '../../rich-text-editor-errors';
-import { RichTextEditorTrigger, RichTextEditorTriggerItem } from '../../rich-text-editor-trigger';
+import {
+  RichTextEditorTrigger,
+  RichTextEditorTriggerItem,
+  RichTextEditorTriggerItemResolver,
+} from '../../rich-text-editor-trigger';
 import { EditorRenderer } from './rich-text-editor-dom-core';
 
 export const TOKEN_CHIP_CLASS = 'et-rte-token';
@@ -16,6 +20,7 @@ export const TOKEN_TYPE_RE = /^[a-z][a-z0-9-]*$/;
 export const TOKEN_ID_RE = /^[A-Za-z0-9._:-]+$/;
 
 const TOKEN_MARKDOWN_RE = /\{\{([a-z][a-z0-9-]*):([A-Za-z0-9._:-]+)\}\}/g;
+const HTML_TAG_RE = /(<(?:[^>"']|"[^"]*"|'[^']*')*>)/;
 
 export type RichTextEditorTokenChip = { type: string; id: string; label: string; prefix?: string };
 
@@ -100,26 +105,13 @@ export type RichTextEditorTokenCodec = {
   markdownPattern?: RegExp;
 };
 
+type ItemApplier = (item: RichTextEditorTriggerItem | null) => void;
+type ResolvedItemEntry = { item: RichTextEditorTriggerItem | null; settled: boolean; waiters: ItemApplier[] };
+
 export const createRichTextEditorTokenCodec = (
   triggers: () => readonly RichTextEditorTrigger[],
 ): RichTextEditorTokenCodec => {
   const triggerFor = (type: string) => triggers().find((trigger) => trigger.type === type) ?? null;
-
-  const resolveSyncLabel = (type: string, id: string): string | null => {
-    const trigger = triggerFor(type);
-
-    if (!trigger) return null;
-
-    const resolved = trigger.resolveItem?.(id);
-
-    if (resolved && !isPromiseLike<RichTextEditorTriggerItem | null>(resolved) && !isObservable(resolved)) {
-      return resolved.label;
-    }
-
-    if (!Array.isArray(trigger.items)) return null;
-
-    return trigger.items.find((item) => item.id === id)?.label ?? null;
-  };
 
   const serialize = (root: HTMLElement) => {
     // eslint-disable-next-line ethlete/no-dom-query -- atomic chips carry no unique hook other than the marker attribute
@@ -133,40 +125,121 @@ export const createRichTextEditorTokenCodec = (
     });
   };
 
-  const render = (html: string) =>
-    html.replace(TOKEN_MARKDOWN_RE, (_match, ...groups: string[]) => {
+  const resolvedItems = new WeakMap<RichTextEditorTriggerItemResolver, Map<string, ResolvedItemEntry>>();
+
+  const resolveItemOnce = ({
+    trigger,
+    id,
+    apply,
+  }: {
+    trigger: RichTextEditorTrigger;
+    id: string;
+    apply: ItemApplier;
+  }) => {
+    const resolver = trigger.resolveItem;
+
+    if (!resolver) return;
+
+    let byId = resolvedItems.get(resolver);
+
+    if (!byId) {
+      byId = new Map();
+      resolvedItems.set(resolver, byId);
+    }
+
+    const cached = byId.get(id);
+
+    if (cached) {
+      if (cached.settled) apply(cached.item);
+      else cached.waiters.push(apply);
+
+      return;
+    }
+
+    const resolved = resolver(id);
+
+    if (!isPromiseLike<RichTextEditorTriggerItem | null>(resolved) && !isObservable(resolved)) {
+      apply(resolved);
+
+      return;
+    }
+
+    const entry: ResolvedItemEntry = { item: null, settled: false, waiters: [apply] };
+    const forget = () => {
+      if (entry.settled) return;
+
+      byId.delete(id);
+      entry.waiters = [];
+    };
+
+    byId.set(id, entry);
+    from(resolved)
+      .pipe(
+        take(1),
+        tap({
+          next: (item) => {
+            entry.item = item;
+            entry.settled = true;
+            entry.waiters.splice(0).forEach((waiter) => waiter(item));
+          },
+          error: forget,
+          complete: forget,
+        }),
+        catchError(() => EMPTY),
+      )
+      .subscribe();
+  };
+
+  const resolveSyncLabel = (type: string, id: string): string | null => {
+    const trigger = triggerFor(type);
+
+    if (!trigger) return null;
+
+    let label: string | null = null;
+
+    resolveItemOnce({ trigger, id, apply: (item) => (label = item?.label ?? null) });
+
+    if (label) return label;
+    if (!Array.isArray(trigger.items)) return null;
+
+    return trigger.items.find((item) => item.id === id)?.label ?? null;
+  };
+
+  const renderText = (text: string) =>
+    text.replace(TOKEN_MARKDOWN_RE, (_match, ...groups: string[]) => {
       const [type = '', id = ''] = groups;
 
       return buildChipHtml({ type, id, label: resolveSyncLabel(type, id) ?? id, prefix: triggerFor(type)?.char ?? '' });
     });
+
+  const render = (html: string) =>
+    html
+      .split(HTML_TAG_RE)
+      .map((part, index) => (index % 2 === 0 ? renderText(part) : part))
+      .join('');
 
   const hydrate = (root: HTMLElement) => {
     // eslint-disable-next-line ethlete/no-dom-query -- same marker-attribute lookup as serialize
     root.querySelectorAll<HTMLElement>(`[${TOKEN_CHIP_ATTR}]`).forEach((chip) => {
       const type = chip.getAttribute(TOKEN_TYPE_ATTR);
       const id = chip.getAttribute(TOKEN_ID_ATTR);
-      const resolver = type ? triggerFor(type)?.resolveItem : null;
+      const trigger = type ? triggerFor(type) : null;
 
-      if (!type || !id || !resolver) return;
+      if (!id || !trigger) return;
 
-      const resolved = resolver(id);
-      const apply = (item: RichTextEditorTriggerItem | null) => {
-        if (!item || !chip.isConnected) return;
+      resolveItemOnce({
+        trigger,
+        id,
+        apply: (item) => {
+          if (!item || !chip.isConnected) return;
 
-        // eslint-disable-next-line ethlete/no-dom-query -- structured chip, label span has no other hook
-        const labelEl = chip.querySelector<HTMLElement>(`.${TOKEN_LABEL_CLASS}`);
+          // eslint-disable-next-line ethlete/no-dom-query -- structured chip, label span has no other hook
+          const labelEl = chip.querySelector<HTMLElement>(`.${TOKEN_LABEL_CLASS}`);
 
-        if (labelEl) labelEl.textContent = item.label;
-        else chip.textContent = item.label;
-      };
-
-      if (isPromiseLike<RichTextEditorTriggerItem | null>(resolved)) {
-        void resolved.then(apply);
-      } else if (isObservable(resolved)) {
-        (resolved as Observable<RichTextEditorTriggerItem | null>).pipe(take(1)).subscribe(apply);
-      } else {
-        apply(resolved);
-      }
+          if (labelEl) labelEl.textContent = item.label;
+          else chip.textContent = item.label;
+        },
+      });
     });
   };
 

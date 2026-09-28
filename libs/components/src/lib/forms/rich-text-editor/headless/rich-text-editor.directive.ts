@@ -51,6 +51,7 @@ import {
   RichTextMarkStates,
 } from './internals/rich-text-editor-dom';
 import { EditorRenderer } from './internals/rich-text-editor-dom-core';
+import { clipboardPlainText } from './internals/rich-text-editor-dom-paste';
 import { createRichTextEditorHistory, RichTextEditorHistoryEntry } from './internals/rich-text-editor-history';
 import {
   assertValidToken,
@@ -644,11 +645,14 @@ export class RichTextEditorDirective
     // eslint-disable-next-line ethlete/no-dom-query -- clipboard HTML (e.g. from Word) embeds <style> blocks whose CSS text would survive the tag-strip as plain text
     body.querySelectorAll('style, script, noscript, meta, link, title').forEach((junk) => junk.remove());
 
+    if (this.editorDom.markStates()?.codeBlock) return this.pasteIntoCodeBlock(clipboardPlainText(body));
+
     const codec = this.tokenCodec();
 
+    this.parseTokensInText(body);
     this.serializeTokens(body);
 
-    const markdown = this.parseTokenText(htmlToMarkdown(restoreStyleAttributes(body.innerHTML)));
+    const markdown = htmlToMarkdown(restoreStyleAttributes(body.innerHTML));
 
     if (!markdown) return false;
 
@@ -735,6 +739,35 @@ export class RichTextEditorDirective
     if (ngDevMode) assertValidToken(type, item.id);
 
     this.insertChip({ ...codec.resolveChip(type, item.id), label: item.label }, { focus: opts?.focus, hydrate: false });
+  }
+
+  private pasteIntoCodeBlock(text: string) {
+    if (!text) return false;
+
+    this.editorDom.insertNormalizedHtml(escapeHtmlText(text));
+    this.syncFromDom({ boundary: true });
+
+    return true;
+  }
+
+  private parseTokensInText(root: HTMLElement) {
+    const codec = this.tokenCodec();
+
+    if (!codec || !this.parsePastedTokens()) return;
+
+    for (const node of collectTextNodes(root)) {
+      // eslint-disable-next-line ethlete/no-dom-query -- a detached clipboard document, no component tree to inject from
+      if (node.parentElement?.closest('code, pre')) continue;
+
+      const parsed = codec.parseTokenText(node.data);
+
+      if (parsed === node.data) continue;
+
+      const template = this.renderer.createElement('template') as HTMLTemplateElement;
+
+      template.innerHTML = codec.render(escapeHtmlText(parsed));
+      node.replaceWith(template.content);
+    }
   }
 
   private parseTokenText(text: string) {

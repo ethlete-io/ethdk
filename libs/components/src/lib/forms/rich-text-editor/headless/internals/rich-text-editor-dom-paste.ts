@@ -1,5 +1,65 @@
 import { HEADING_SELECTOR, RichTextEditorDomCore } from './rich-text-editor-dom-core';
 
+const LINE_BLOCK_TAGS = /* @__PURE__ */ new Set([
+  'P',
+  'DIV',
+  'LI',
+  'PRE',
+  'BLOCKQUOTE',
+  'TR',
+  'UL',
+  'OL',
+  'TABLE',
+  'H1',
+  'H2',
+  'H3',
+  'H4',
+  'H5',
+  'H6',
+]);
+
+/** The text of pasted HTML with one line per block, for a target that only takes literal text. */
+export const clipboardPlainText = (root: Node) => {
+  let out = '';
+
+  const breakLine = () => {
+    if (out && !out.endsWith('\n')) out += '\n';
+  };
+
+  const walk = (node: Node, preformatted: boolean) => {
+    node.childNodes.forEach((child) => {
+      if (child.nodeType === Node.TEXT_NODE) {
+        const data = (child as Text).data;
+        const text = preformatted ? data : data.replace(/[\t\n\r ]+/g, ' ');
+
+        out += !out || out.endsWith('\n') ? (preformatted ? text : text.trimStart()) : text;
+
+        return;
+      }
+
+      if (child.nodeType !== Node.ELEMENT_NODE) return;
+
+      const { tagName } = child as Element;
+
+      if (tagName === 'BR') {
+        out += '\n';
+
+        return;
+      }
+
+      const block = LINE_BLOCK_TAGS.has(tagName);
+
+      if (block) breakLine();
+      walk(child, preformatted || tagName === 'PRE');
+      if (block) breakLine();
+    });
+  };
+
+  walk(root, false);
+
+  return out.replace(/[ \n]+$/, '');
+};
+
 export const createRichTextEditorPaste = (core: RichTextEditorDomCore) => {
   const { doc, renderer, root, getSelection, collectDescendants } = core;
 
