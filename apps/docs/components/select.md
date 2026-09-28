@@ -421,6 +421,8 @@ Focus stays on the trigger the whole time; options receive _virtual_ focus, expo
 | <kbd>Tab</kbd>                            | Moves focus on                                                                                | Closes, focus moves on                                                                                              |
 | Printable characters                      | Single: commits the first matching option directly (like a native `<select>`); multi: nothing | Moves virtual focus to the first match                                                                              |
 
+Typeahead follows the listbox pattern: repeating one character (<kbd>b</kbd>, <kbd>b</kbd>) cycles through the options that start with it, and a <kbd>Space</kbd> typed within the typeahead window is part of the query ("new york"), not a commit.
+
 Clicking anywhere on the form field's control frame - not just the trigger - opens the panel (the frame is the visual "input box", so all of it is clickable); clicking outside while open closes it. Hovering an option moves virtual focus to it, and the pointer highlight clears when the pointer leaves the list (like in the [menu](/components/menu)) - a keyboard-set highlight stays visible without hover.
 
 ## Accessibility

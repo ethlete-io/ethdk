@@ -2,11 +2,6 @@
 
 Scan of `libs/components/src/lib/forms/select/` from 2026-09-28. 0 High, 7 Medium, 14 Low, 3 Spec. Skipped: stories, most specs (read only to judge coverage). A second pass covered `forms/form-field/headless/anchored-panel-controller.ts` and `forms/selection-list/headless/internals/selection-state.ts` in full.
 
-## keyboard, typeahead
-
-- Medium: typeahead does not cycle and always searches from the list start (`forms/select/headless/select.directive.ts:1346-1350`). Pressing `b` twice builds the buffer `bb` and matches nothing instead of moving to the second "b" option. Match repeated single characters from the item after the active one, as the APG listbox pattern does. S Verified.
-- Medium: Space during a typeahead run commits the active option (`forms/select/headless/select.directive.ts:1115-1123`). Typing "new york" on an open select without search commits "New..." at the space. Append the space to the buffer while a typeahead run is in progress. S Verified.
-
 ## options, value comparison
 
 - Medium: `SelectOptionDirective` gives `listItem.id` its generated id, but writes that id to the element only when the element has no id (`forms/select/headless/select-option.directive.ts:105`, `:129-131`). An option with a consumer `id` (static or bound) gets an `aria-activedescendant` that points at no element, so screen readers lose the active option. Read the id from the element, or always use the element's final id. S Verified.

@@ -1118,6 +1118,17 @@ export class SelectDirective
         }
 
         event.preventDefault();
+
+        if (this.typeahead.isRunning()) {
+          const match = this.findTypeaheadMatch(event.key, this.activeItem());
+
+          if (match) {
+            this.setActiveItem(match);
+          }
+
+          return;
+        }
+
         this.commitActiveOrClose();
 
         return;
@@ -1149,7 +1160,7 @@ export class SelectDirective
           return;
         }
 
-        const match = this.findTypeaheadMatch(event.key);
+        const match = this.findTypeaheadMatch(event.key, this.activeItem());
 
         if (match) {
           this.setActiveItem(match);
@@ -1251,6 +1262,17 @@ export class SelectDirective
         }
 
         event.preventDefault();
+
+        if (event.key === ' ' && this.typeahead.isRunning()) {
+          const match = this.findTypeaheadMatch(event.key, this.selectedItems()[0] ?? null);
+
+          if (match) {
+            this.commitOptionWhileClosed(match);
+          }
+
+          return;
+        }
+
         this.show();
 
         return;
@@ -1267,7 +1289,7 @@ export class SelectDirective
           return;
         }
 
-        const match = this.findTypeaheadMatch(event.key);
+        const match = this.findTypeaheadMatch(event.key, this.selectedItems()[0] ?? null);
 
         if (match) {
           event.preventDefault();
@@ -1343,10 +1365,23 @@ export class SelectDirective
     this.pickSingleOption(item);
   }
 
-  private findTypeaheadMatch(character: string) {
+  private findTypeaheadMatch(character: string, from: SelectItem | null) {
     const query = this.typeahead.append(character);
+    const items = this.enabledItems();
+    const repeated = [...query].every((char) => char === query[0]);
+    const needle = repeated ? query.charAt(0) : query;
+    const fromIndex = from ? items.indexOf(from) : -1;
+    const startIndex = fromIndex === -1 ? 0 : fromIndex + (repeated ? 1 : 0);
 
-    return this.enabledItems().find((item) => item.label().toLowerCase().startsWith(query)) ?? null;
+    for (let offset = 0; offset < items.length; offset++) {
+      const item = items[(startIndex + offset) % items.length];
+
+      if (item?.label().toLowerCase().startsWith(needle)) {
+        return item;
+      }
+    }
+
+    return null;
   }
 
   private moveActive(delta: 1 | -1) {
