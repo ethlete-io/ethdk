@@ -1,6 +1,6 @@
 # Rich text editor headless scan - open findings
 
-Scan of `libs/components/src/lib/forms/rich-text-editor/headless/` from 2026-09-28. 2 High, 11 Medium, 11 Low, 2 Spec. Verification: 13 of 13 High/Medium confirmed, 0 re-rated, 0 refuted. Skipped: the spec files (read only to judge coverage), and `markdownToHtml`/`htmlToMarkdown`/`isSafeLinkUrl` in `libs/core` (out of scope, but read far enough to confirm that the pasted and typed link hrefs pass `isSafeLinkUrl` on both sides of the pipeline). Paths are relative to `forms/rich-text-editor/`.
+Scan of `libs/components/src/lib/forms/rich-text-editor/headless/` from 2026-09-28. 0 High, 0 Medium, 11 Low, 2 Spec. Verification: 13 of 13 High/Medium confirmed, 0 re-rated, 0 refuted. Skipped: the spec files (read only to judge coverage), and `markdownToHtml`/`htmlToMarkdown`/`isSafeLinkUrl` in `libs/core` (out of scope, but read far enough to confirm that the pasted and typed link hrefs pass `isSafeLinkUrl` on both sides of the pipeline). Paths are relative to `forms/rich-text-editor/`.
 
 ## Inline marks and links
 

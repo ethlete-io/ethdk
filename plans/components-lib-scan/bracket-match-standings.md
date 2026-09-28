@@ -1,6 +1,6 @@
 # bracket, match, standings (components) scan - open findings
 
-Scan of `libs/components/src/lib/bracket/`, `libs/components/src/lib/match/`, `libs/components/src/lib/standings/` from 2026-09-28. 0 High, 10 Medium, 19 Low, 3 Spec (verified: 9 confirmed, 3 re-rated, 0 refuted, 1 unverified). Skipped: specs, stories, `testing/` drivers, most CSS (checked for `@layer`, colours and Tailwind only). The framework-free model in `libs/bracket` is out of scope.
+Scan of `libs/components/src/lib/bracket/`, `libs/components/src/lib/match/`, `libs/components/src/lib/standings/` from 2026-09-28. 0 High, 3 Medium, 19 Low, 3 Spec (verified: 9 confirmed, 3 re-rated, 0 refuted, 1 unverified). Skipped: specs, stories, `testing/` drivers, most CSS (checked for `@layer`, colours and Tailwind only). The framework-free model in `libs/bracket` is out of scope.
 
 ## bracket: grid and journey highlight
 

@@ -1,6 +1,6 @@
 # tree, time-picker, icon, command-palette scan - open findings
 
-Scan of `libs/components/src/lib/{tree,time-picker,icon,command-palette}` from 2026-09-28. 0 High, 5 Medium, 16 Low, 3 Spec. Skipped: stories, the 50 icon data files (read one as a sample), CSS beyond the layer, colour and comment checks.
+Scan of `libs/components/src/lib/{tree,time-picker,icon,command-palette}` from 2026-09-28. 0 High, 0 Medium, 16 Low, 3 Spec. Skipped: stories, the 50 icon data files (read one as a sample), CSS beyond the layer, colour and comment checks.
 
 ## icon
 

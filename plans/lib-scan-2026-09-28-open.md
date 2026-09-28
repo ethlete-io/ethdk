@@ -1,6 +1,6 @@
 # lib scan 2026-09-28 — open decisions and queue
 
-The High findings are fixed. The Medium work is in progress. Each domain plan file keeps its
+The High findings are fixed. The Medium pass is done. Each domain plan file keeps its
 own open lines; this file lists what needs a user decision and what is still queued.
 
 ## Decisions for the user
@@ -88,6 +88,3 @@ own open lines; this file lists what needs a user decision and what is still que
 ## Queue
 
 - timetrack `stillFocused` tail order: real, but no failing test was found.
-- When all agents finish: run `tsc -p libs/components/tsconfig.spec.json`, and the
-  `forms-cascader` and `menu-selection` scenario specs, on the committed state. Then update the
-  counts in `lib-scan-2026-09-28.md` and `components-lib-scan/README.md`.

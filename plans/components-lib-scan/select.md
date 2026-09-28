@@ -1,6 +1,6 @@
 # forms/select scan - open findings
 
-Scan of `libs/components/src/lib/forms/select/` from 2026-09-28. 0 High, 7 Medium, 14 Low, 3 Spec. Skipped: stories, most specs (read only to judge coverage). A second pass covered `forms/form-field/headless/anchored-panel-controller.ts` and `forms/selection-list/headless/internals/selection-state.ts` in full.
+Scan of `libs/components/src/lib/forms/select/` from 2026-09-28. 0 High, 1 Medium, 14 Low, 0 Spec. Skipped: stories, most specs (read only to judge coverage). A second pass covered `forms/form-field/headless/anchored-panel-controller.ts` and `forms/selection-list/headless/internals/selection-state.ts` in full.
 
 ## options, value comparison
 

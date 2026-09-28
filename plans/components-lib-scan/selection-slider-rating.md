@@ -1,6 +1,6 @@
 # selection-list, slider, rating scan - open findings
 
-Scan of `libs/components/src/lib/forms/selection-list/`, `forms/slider/`, `forms/rating/` from 2026-09-28. 0 High, 3 Medium, 13 Low, 3 Spec (verified 2026-09-28: 3 confirmed, 1 re-rated). Skipped: stories, and the specs except to check coverage. Slider/range-slider CSS duplication is not listed, because the bundle-size round 2 already rejected that dedupe.
+Scan of `libs/components/src/lib/forms/selection-list/`, `forms/slider/`, `forms/rating/` from 2026-09-28. 0 High, 0 Medium, 13 Low, 2 Spec (verified 2026-09-28: 3 confirmed, 1 re-rated). Skipped: stories, and the specs except to check coverage. Slider/range-slider CSS duplication is not listed, because the bundle-size round 2 already rejected that dedupe.
 
 ## selection-list
 

@@ -1,6 +1,6 @@
 # Rich text editor scan - open findings
 
-Scan of `libs/components/src/lib/forms/rich-text-editor/` (without `headless/`) and `libs/components/src/lib/forms/multi-language-rich-text-editor/` from 2026-09-28. 1 High, 8 Medium, 21 Low, 4 Spec. Skipped: stories, most specs. The table caret-navigation code (`tools/rich-text-editor-table.util.ts:198-394`) got a second pass. Core's `markdown.ts` is out of scope; it is named where an RTE finding depends on it. Paths are relative to `forms/`.
+Scan of `libs/components/src/lib/forms/rich-text-editor/` (without `headless/`) and `libs/components/src/lib/forms/multi-language-rich-text-editor/` from 2026-09-28. 0 High, 1 Medium, 21 Low, 1 Spec. Skipped: stories, most specs. The table caret-navigation code (`tools/rich-text-editor-table.util.ts:198-394`) got a second pass. Core's `markdown.ts` is out of scope; it is named where an RTE finding depends on it. Paths are relative to `forms/`.
 
 ## Triggers and tokens
 

@@ -1,6 +1,6 @@
 # Components tree-shaking and bundle size scan - open findings
 
-Scan of `libs/components` (entry point, `package.json`, `ng-package.json`, module-scope statements, shared internals, CSS) and `tools/treeshake` from 2026-09-28. 2 Medium, 5 Low (Mediums verified). Skipped: per-domain bugs (other scans), the items the treeshake README marks as settled, `libs/cdk`.
+Scan of `libs/components` (entry point, `package.json`, `ng-package.json`, module-scope statements, shared internals, CSS) and `tools/treeshake` from 2026-09-28. 1 Medium, 5 Low (Medium verified). Skipped: per-domain bugs (other scans), the items the treeshake README marks as settled, `libs/cdk`.
 
 All numbers are gz bytes in `--external` mode, measured on a fresh build of `next` at `454a2c461`. `nx run treeshake:bundle-goldens` passes. Four stream and RTE entries drift +111 to +145 B inside the tolerance.
 

@@ -1,6 +1,6 @@
 # chart and grid scan - open findings
 
-Scan of `libs/components/src/lib/chart` and `libs/components/src/lib/grid` from 2026-09-28. 0 High, 4 Medium, 19 Low, 4 Spec. Skipped: stories, most specs, `grid/grid-debug.component.ts` template. A second pass covered `grid/headless/grid-adapter.ts` and `resolveCollisions` in `grid/headless/internals/layout-engine.ts`. SVG text injection: none found. Every label, tooltip and table cell reaches the DOM through Angular text interpolation or attribute bindings. Path `d` strings come from numbers only. There is no `innerHTML`, `bypassSecurityTrust*` or `href` in either folder.
+Scan of `libs/components/src/lib/chart` and `libs/components/src/lib/grid` from 2026-09-28. 0 High, 0 Medium, 19 Low, 4 Spec. Skipped: stories, most specs, `grid/grid-debug.component.ts` template. A second pass covered `grid/headless/grid-adapter.ts` and `resolveCollisions` in `grid/headless/internals/layout-engine.ts`. SVG text injection: none found. Every label, tooltip and table cell reaches the DOM through Angular text interpolation or attribute bindings. Path `d` strings come from numbers only. There is no `innerHTML`, `bypassSecurityTrust*` or `href` in either folder.
 
 ## chart - bundle size
 
