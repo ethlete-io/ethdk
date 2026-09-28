@@ -1150,6 +1150,26 @@ describe('RichTextEditorDom', () => {
     });
   });
 
+  describe('outdentListItem', () => {
+    it('keeps the siblings after the outdented item nested under it, in order', () => {
+      const { root, dom } = setup('<ul><li>A<ul><li>B</li><li>C</li></ul></li></ul>');
+      const b = root.querySelector('li li') as HTMLElement;
+      selectRange(b.firstChild as Node, 1, b.firstChild as Node, 1);
+
+      expect(dom.outdentListItem()).toBe(true);
+      expect(root.innerHTML).toBe('<ul><li>A</li><li>B<ul><li>C</li></ul></li></ul>');
+    });
+
+    it('appends the following siblings to the sublist the outdented item already has', () => {
+      const { root, dom } = setup('<ul><li>A<ul><li>B<ul><li>b1</li></ul></li><li>C</li></ul></li></ul>');
+      const b = root.querySelector('li li') as HTMLElement;
+      selectRange(b.firstChild as Node, 1, b.firstChild as Node, 1);
+
+      expect(dom.outdentListItem()).toBe(true);
+      expect(root.innerHTML).toBe('<ul><li>A</li><li>B<ul><li>b1</li><li>C</li></ul></li></ul>');
+    });
+  });
+
   describe('insertNormalizedHtml', () => {
     it('splices a single paragraph inline into the caret block', () => {
       const { root, dom } = setup('<p>ab</p>');
@@ -1171,14 +1191,59 @@ describe('RichTextEditorDom', () => {
       expect(root.innerHTML).toBe('<p>hXo</p>');
     });
 
-    it('inserts multi-block content after the caret block instead of nesting it', () => {
+    it('merges a leading pasted paragraph into the caret block and keeps later blocks unnested', () => {
       const { root, dom } = setup('<p>ab</p><p>cd</p>');
       const text = (root.firstChild as HTMLElement).firstChild as Node;
       selectRange(text, 2, text, 2);
 
       dom.insertNormalizedHtml('<p>one</p><ul><li>two</li></ul>');
 
-      expect(root.innerHTML).toBe('<p>ab</p><p>one</p><ul><li>two</li></ul><p>cd</p>');
+      expect(root.innerHTML).toBe('<p>abone</p><ul><li>two</li></ul><p>cd</p>');
+    });
+
+    it('splits the caret paragraph and merges the outer pasted paragraphs into its halves', () => {
+      const { root, dom } = setup('<p>Hello world</p>');
+      const text = (root.firstChild as HTMLElement).firstChild as Node;
+      selectRange(text, 6, text, 6);
+
+      dom.insertNormalizedHtml('<p>A</p><p>B</p>');
+
+      expect(root.innerHTML).toBe('<p>Hello A</p><p>Bworld</p>');
+
+      const range = document.getSelection()?.getRangeAt(0);
+
+      expect(range?.collapsed).toBe(true);
+      expect(range?.startContainer.textContent).toBe('Bworld');
+      expect(range?.startOffset).toBe(1);
+    });
+
+    it('lands pasted blocks before the caret block when the caret is at its start', () => {
+      const { root, dom } = setup('<p>ab</p>');
+      const text = (root.firstChild as HTMLElement).firstChild as Node;
+      selectRange(text, 0, text, 0);
+
+      dom.insertNormalizedHtml('<h2>t</h2><ul><li>x</li></ul>');
+
+      expect(root.innerHTML).toBe('<h2>t</h2><ul><li>x</li></ul><p>ab</p>');
+    });
+
+    it('splits a list at the caret item instead of pasting after the whole list', () => {
+      const { root, dom } = setup('<ul><li>ab</li><li>cd</li></ul>');
+      const text = (root.querySelector('li') as HTMLElement).firstChild as Node;
+      selectRange(text, 1, text, 1);
+
+      dom.insertNormalizedHtml('<p>X</p><p>Y</p>');
+
+      expect(root.innerHTML).toBe('<ul><li>a</li></ul><p>X</p><p>Y</p><ul><li>b</li><li>cd</li></ul>');
+    });
+
+    it('inserts at the caret offset when the caret sits directly on the root', () => {
+      const { root, dom } = setup('<p>ab</p><p>cd</p>');
+      selectRange(root, 1, root, 1);
+
+      dom.insertNormalizedHtml('<h2>t</h2><p>x</p>');
+
+      expect(root.innerHTML).toBe('<p>ab</p><h2>t</h2><p>x</p><p>cd</p>');
     });
 
     it('appends blocks to an empty editor', () => {

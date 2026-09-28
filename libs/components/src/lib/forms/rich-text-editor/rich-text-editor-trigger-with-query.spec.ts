@@ -1,5 +1,6 @@
+import { signal } from '@angular/core';
 import { QueryCreator, QueryErrorResponse, QueryExecutionState } from '@ethlete/query';
-import { firstValueFrom, Observable, Subject } from 'rxjs';
+import { BehaviorSubject, firstValueFrom, Observable } from 'rxjs';
 import { RichTextEditorTriggerItem } from './rich-text-editor-trigger';
 import { createRichTextEditorTriggerWithQuery } from './rich-text-editor-trigger-with-query';
 
@@ -8,12 +9,19 @@ type UserArgs = {
   queryParams: { q: string };
 };
 
+type State = QueryExecutionState<UserArgs> | null;
+
 describe('createRichTextEditorTriggerWithQuery', () => {
   const setup = () => {
-    const state$ = new Subject<QueryExecutionState<UserArgs> | null>();
+    const executionState = signal<State>(null);
+    const request = signal<{ args: { queryParams: { q: string } } } | null>(null);
+    const replay$ = new BehaviorSubject<State>(null);
 
-    // a query is created once; we fake it, exposing only what the factory reads
-    const fakeQuery = { executionState: { asObservable: () => state$.asObservable() } };
+    // Mirrors a real query: `asObservable()` replays the last state, the signals hold the current one.
+    const fakeQuery = {
+      executionState: Object.assign(() => executionState(), { asObservable: () => replay$.asObservable() }),
+      subtle: { request: Object.assign(() => request(), { asObservable: () => replay$.asObservable() }) },
+    };
     let createdCount = 0;
     const queryCreator = (() => {
       createdCount++;
@@ -25,19 +33,32 @@ describe('createRichTextEditorTriggerWithQuery', () => {
       char: '@',
       type: 'mention',
       queryCreator,
-      args: (search) => ({ queryParams: { q: search() } }),
+      args: (search) => (search() ? { queryParams: { q: search() } } : null),
       toItems: (res) => res.items.map((u) => ({ id: u.id, label: u.name })),
     });
 
+    const emit = (q: string, state: QueryExecutionState<UserArgs>) => {
+      request.set({ args: { queryParams: { q } } });
+      executionState.set(state);
+      replay$.next(state);
+    };
+
+    const settle = (q: string) => {
+      emit(q, { type: 'loading' } as QueryExecutionState<UserArgs>);
+      emit(q, {
+        type: 'success',
+        response: { items: [{ id: q, name: q.toUpperCase() }] },
+      } as QueryExecutionState<UserArgs>);
+    };
+
     const items = trigger.items as (query: string) => Observable<RichTextEditorTriggerItem[]>;
 
-    return { state$, items, createdCount: () => createdCount };
+    return { items, emit, settle, createdCount: () => createdCount };
   };
 
   it('creates the query once, not per keystroke', () => {
     const { items, createdCount } = setup();
 
-    // the query is created eagerly, once, when the trigger is built
     expect(createdCount()).toBe(1);
 
     void items('a');
@@ -46,27 +67,47 @@ describe('createRichTextEditorTriggerWithQuery', () => {
     expect(createdCount()).toBe(1);
   });
 
-  it('maps the first settled success state to items (ignoring loading)', async () => {
-    const { state$, items } = setup();
+  it('waits for the execution of the new text instead of taking the replayed previous result', () => {
+    const { items, settle } = setup();
+    settle('a');
 
-    const result = firstValueFrom(items('jane'));
+    const seen: RichTextEditorTriggerItem[][] = [];
+    items('ab').subscribe((value) => seen.push(value));
 
-    state$.next({ type: 'loading' } as QueryExecutionState<UserArgs>);
-    state$.next({
-      type: 'success',
-      response: { items: [{ id: 'jane', name: 'Jane Doe' }] },
-    } as QueryExecutionState<UserArgs>);
+    expect(seen).toEqual([]);
 
-    expect(await result).toEqual([{ id: 'jane', label: 'Jane Doe' }]);
+    settle('ab');
+
+    expect(seen).toEqual([[{ id: 'ab', label: 'AB' }]]);
+  });
+
+  it('takes the current result when it already belongs to the text', () => {
+    const { items, settle } = setup();
+    settle('a');
+
+    const seen: RichTextEditorTriggerItem[][] = [];
+    items('a').subscribe((value) => seen.push(value));
+
+    expect(seen).toEqual([[{ id: 'a', label: 'A' }]]);
+  });
+
+  it('resolves to no items when args skip the request', () => {
+    const { items, settle } = setup();
+    settle('a');
+
+    const seen: RichTextEditorTriggerItem[][] = [];
+    items('').subscribe((value) => seen.push(value));
+
+    expect(seen).toEqual([[]]);
   });
 
   it('surfaces a query failure as a thrown error message (→ popup error state)', async () => {
-    const { state$, items } = setup();
+    const { items, emit } = setup();
 
     const result = firstValueFrom(items('x'));
     const error = { errors: [{ message: 'Search failed' }] } as unknown as QueryErrorResponse;
 
-    state$.next({ type: 'failure', error } as QueryExecutionState<UserArgs>);
+    emit('x', { type: 'failure', error } as QueryExecutionState<UserArgs>);
 
     await expect(result).rejects.toThrow('Search failed');
   });

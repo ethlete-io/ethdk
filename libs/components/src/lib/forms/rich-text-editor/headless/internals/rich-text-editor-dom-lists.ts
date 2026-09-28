@@ -257,16 +257,36 @@ export const createRichTextEditorLists = (core: RichTextEditorDomCore) => {
     const sublist = li.parentElement;
     const parentLi = sublist?.parentElement;
 
-    if (!(parentLi instanceof HTMLElement) || parentLi.tagName !== 'LI') return false;
+    if (!sublist || !(parentLi instanceof HTMLElement) || parentLi.tagName !== 'LI') return false;
 
     const outerList = parentLi.parentElement;
 
     if (!outerList) return false;
 
     const { startContainer, startOffset } = editable.range;
+    const following: Element[] = [];
+
+    for (let sibling = li.nextElementSibling; sibling; sibling = sibling.nextElementSibling) {
+      following.push(sibling);
+    }
+
     renderer.insertBefore(outerList, li, parentLi.nextSibling);
 
-    if (sublist && sublist.childElementCount === 0 && sublist.parentElement) {
+    if (following.length > 0) {
+      const last = li.lastElementChild;
+      let continuation: HTMLElement;
+
+      if (last instanceof HTMLElement && (last.tagName === 'UL' || last.tagName === 'OL')) {
+        continuation = last;
+      } else {
+        continuation = renderer.createElement(sublist.tagName.toLowerCase() as ListTag);
+        renderer.appendChild(li, continuation);
+      }
+
+      following.forEach((item) => renderer.appendChild(continuation, item));
+    }
+
+    if (sublist.childElementCount === 0 && sublist.parentElement) {
       renderer.removeChild(sublist.parentElement, sublist);
     }
 

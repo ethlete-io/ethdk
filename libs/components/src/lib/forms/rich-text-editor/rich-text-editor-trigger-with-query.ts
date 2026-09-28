@@ -1,6 +1,8 @@
-import { Signal, signal } from '@angular/core';
+import { Signal, signal, untracked } from '@angular/core';
+import { equal } from '@ethlete/core';
 import {
   AnyQueryCreator,
+  QueryArgs,
   QueryArgsOf,
   QueryErrorResponse,
   QueryExecutionState,
@@ -8,7 +10,7 @@ import {
   ResponseType,
   withArgs,
 } from '@ethlete/query';
-import { filter, map, take } from 'rxjs';
+import { filter, map, of, take } from 'rxjs';
 import {
   createRichTextEditorTrigger,
   RichTextEditorTrigger,
@@ -50,6 +52,12 @@ export type RichTextEditorQueryTriggerConfig<TCreator extends AnyQueryCreator> =
   /** Debounce applied before the query text is written and results are read, in ms. @default 150 */
   debounceTime?: number;
 };
+
+const sameRequestArgs = (actual: RequestArgs<QueryArgs> | null | undefined, wanted: RequestArgs<QueryArgs>) =>
+  !!actual &&
+  equal(actual.pathParams, wanted.pathParams) &&
+  equal(actual.queryParams, wanted.queryParams) &&
+  equal(actual.body, wanted.body);
 
 const firstErrorMessage = (error: QueryErrorResponse) => {
   const message = 'errors' in error ? error.errors[0]?.message : error.error?.message;
@@ -98,12 +106,17 @@ export const createRichTextEditorTriggerWithQuery = <TCreator extends AnyQueryCr
     items: (text) => {
       search.set(text);
 
-      // The signal write above re-executes the query; take the first settled state for this text.
-      // A failure is thrown so the editor's async pipeline surfaces it as the popup's error.
+      const wanted = untracked(() => config.args(signal(text).asReadonly()));
+
+      if (wanted === null) return of([]);
+
+      // `asObservable()` replays the state of the previous text, and `withArgs` executes for this text
+      // only on the next effect flush: a state counts only once the request behind it has these args.
       return query.executionState.asObservable().pipe(
+        map(() => query.executionState()),
         filter(
           (state): state is Exclude<QueryExecutionState<TArgs>, { type: 'loading' }> =>
-            state !== null && state.type !== 'loading',
+            state !== null && state.type !== 'loading' && sameRequestArgs(query.subtle.request()?.args, wanted),
         ),
         take(1),
         map((state) => {
