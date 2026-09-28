@@ -96,7 +96,7 @@ Give a notification an `id` and a later `open` with that id replaces the live on
 this.manager.open({ id: 'message-sent', status: 'success', title: 'Message sent', message: `${count} sent` });
 ```
 
-The id also becomes the ref's `id`. If a notification with that id is already animating out, it is dropped immediately and the new one takes its place.
+The id also becomes the ref's `id`. If a notification with that id is already animating out, it is dropped immediately and the new one takes its place. A `promise()` whose toast a later `open` replaced no longer settles it.
 
 ### Following a promise, observable or query
 
@@ -202,7 +202,7 @@ At `480px` and below the stack spans both edges and every toast fills it, which 
 
 ## Behavior & accessibility
 
-- The stack animates reordering/stacking (FLIP), keeps at most `maxVisible` toasts, and removes its container when the last toast leaves.
+- The stack animates reordering/stacking (FLIP, skipped under `prefers-reduced-motion`), keeps at most `maxVisible` toasts, and removes its container when the last toast leaves.
 - Error toasts get `role="alert"`, all others `role="status"`; the stack itself is a polite `role="log"` live region.
 - <kbd>Escape</kbd> dismisses a focused toast; hover/focus pause its auto-dismiss timer, as does holding it under a finger.
 - Status icons are decorative (`aria-hidden`) - the status is already carried by the role and the wording.

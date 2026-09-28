@@ -15,8 +15,6 @@ export class NotificationDismissDirective {
   private hostElement = injectHostElement();
 
   constructor() {
-    this.notification?.registeredDismiss.set(this);
-
     if (ngDevMode) {
       afterNextRender(() => {
         if (!this.notification) {

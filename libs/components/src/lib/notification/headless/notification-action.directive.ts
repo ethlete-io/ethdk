@@ -34,8 +34,6 @@ export class NotificationActionDirective {
   );
 
   constructor() {
-    this.notification?.registeredActions.update((actions) => [...actions, this]);
-
     if (ngDevMode) {
       afterNextRender(() => {
         if (!this.notification) {
@@ -54,8 +52,6 @@ export class NotificationActionDirective {
 
     action?.handler();
 
-    // Dismissing is the default for an action: acting on a notification is done with it. Only an
-    // action that says otherwise leaves it up (e.g. one that starts a retry it wants to report on).
     if (action?.dismiss !== false) {
       this.notification?.ref().dismiss();
     }

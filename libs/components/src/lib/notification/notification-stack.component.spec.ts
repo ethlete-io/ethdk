@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DEFAULT_OVERLAY_LAYER } from '@ethlete/core';
+import { vi } from 'vitest';
 import '../../test-helpers';
 import { provideNotificationManagerConfig } from './notification-config';
 import { createNotificationRef, NotificationRef } from './notification-ref';
@@ -11,15 +12,18 @@ describe('NotificationStackComponent', () => {
   let fixture: ComponentFixture<NotificationStackComponent>;
   let host: HTMLElement;
   let visibleNotifications: ReturnType<typeof signal<NotificationRef[]>>;
+  let mockContext: { captureBeforeState: (() => void) | null };
 
   beforeEach(() => {
     visibleNotifications = signal<NotificationRef[]>([]);
 
-    const mockContext = {
+    const context = {
       visibleNotifications,
       position: 'bottom-end' as const,
       captureBeforeState: null,
     };
+
+    mockContext = context;
 
     TestBed.configureTestingModule({
       imports: [NotificationStackComponent],
@@ -29,7 +33,7 @@ describe('NotificationStackComponent', () => {
           maxVisible: 3,
           defaultDuration: { success: 0, info: 0, loading: 0, error: 0 },
         }),
-        { provide: NOTIFICATION_STACK_CONTEXT_TOKEN, useValue: mockContext },
+        { provide: NOTIFICATION_STACK_CONTEXT_TOKEN, useValue: context },
       ],
     });
     fixture = TestBed.createComponent(NotificationStackComponent);
@@ -117,5 +121,70 @@ describe('NotificationStackComponent', () => {
 
     expect(host.getAttribute('data-position')).toBe('top-end');
     expect(titles).toEqual(['Second', 'First']);
+  });
+
+  describe('resize FLIP', () => {
+    let itemHeight: number;
+
+    const mountResizableItem = () => {
+      visibleNotifications.set([createRef('First')]);
+      fixture.detectChanges();
+
+      const item = host.querySelector('[data-notification-id]') as HTMLElement;
+
+      item.getBoundingClientRect = () => ({ top: 0, left: 0, width: 300, height: itemHeight }) as DOMRect;
+
+      return item;
+    };
+
+    const resizeTo = (height: number) => {
+      mockContext.captureBeforeState?.();
+      itemHeight = height;
+      fixture.detectChanges();
+      vi.advanceTimersToNextFrame();
+    };
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      itemHeight = 50;
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('keeps a newer resize when an older one finishes inside its window', () => {
+      const item = mountResizableItem();
+
+      resizeTo(80);
+      expect(item.style.height).toBe('80px');
+
+      vi.advanceTimersByTime(100);
+      itemHeight = 65;
+      resizeTo(100);
+
+      vi.advanceTimersByTime(150);
+      expect(item.style.height).toBe('100px');
+
+      vi.advanceTimersByTime(100);
+      expect(item.style.height).toBe('');
+    });
+
+    it('does not animate under prefers-reduced-motion', () => {
+      const matchMedia = vi
+        .spyOn(window, 'matchMedia')
+        .mockImplementation((query: string) => ({ matches: query.includes('reduce'), media: query }) as MediaQueryList);
+
+      try {
+        const item = mountResizableItem();
+
+        resizeTo(80);
+
+        expect(item.style.height).toBe('');
+        expect(item.style.transition).toBe('');
+      } finally {
+        matchMedia.mockRestore();
+      }
+    });
   });
 });

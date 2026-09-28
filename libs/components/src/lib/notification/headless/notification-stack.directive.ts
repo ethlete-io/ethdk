@@ -1,7 +1,7 @@
 import { DestroyRef, Directive, Injector, afterNextRender, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DEFAULT_OVERLAY_LAYER, injectRenderer } from '@ethlete/core';
-import { animationFrameScheduler, take, tap, timer } from 'rxjs';
+import { DEFAULT_OVERLAY_LAYER, injectHostElement, injectRenderer, matchesReducedMotion } from '@ethlete/core';
+import { Subscription, animationFrameScheduler, take, tap, timer } from 'rxjs';
 import { NOTIFICATION_STACK_CONTEXT_TOKEN } from '../notification-stack-context.token';
 
 /**
@@ -39,6 +39,7 @@ export class NotificationStackDirective {
   private destroyRef = inject(DestroyRef);
   private injector = inject(Injector);
   private renderer = injectRenderer();
+  private hostElement = injectHostElement();
 
   protected readonly OVERLAY_LAYER = NOTIFICATION_STACK_OVERLAY_LAYER;
 
@@ -52,10 +53,23 @@ export class NotificationStackDirective {
 
   constructor() {
     const capturedRects = new Map<string, DOMRect>();
+    const resizedAwaitingReset = new Set<PendingAnimation>();
+    let resetSubscription: Subscription | null = null;
 
     this.destroyRef.onDestroy(() => {
       this.context.captureBeforeState = null;
     });
+
+    const resetResized = () => {
+      for (const anim of resizedAwaitingReset) {
+        this.renderer.setStyle(anim.el, { height: null, width: null, clipPath: null, transition: null });
+        if (anim.innerEl !== undefined) {
+          this.renderer.setStyle(anim.innerEl, { width: null });
+        }
+      }
+
+      resizedAwaitingReset.clear();
+    };
 
     const captureCurrentRects = () => {
       capturedRects.clear();
@@ -65,7 +79,11 @@ export class NotificationStackDirective {
     };
 
     this.context.captureBeforeState = () => {
+      if (matchesReducedMotion(this.hostElement)) return;
+
       captureCurrentRects();
+      resetSubscription?.unsubscribe();
+      resetResized();
 
       afterNextRender(
         {
@@ -148,22 +166,12 @@ export class NotificationStackDirective {
               )
               .subscribe();
 
-            const resized = animations.filter((a) => a.newHeight !== undefined || a.newWidth !== undefined);
-            if (resized.length) {
-              timer(210)
-                .pipe(
-                  take(1),
-                  tap(() => {
-                    for (const anim of resized) {
-                      this.renderer.setStyle(anim.el, { height: null, width: null, clipPath: null, transition: null });
-                      if (anim.innerEl !== undefined) {
-                        this.renderer.setStyle(anim.innerEl, { width: null });
-                      }
-                    }
-                  }),
-                  takeUntilDestroyed(this.destroyRef),
-                )
-                .subscribe();
+            for (const anim of animations) {
+              if (anim.newHeight !== undefined || anim.newWidth !== undefined) resizedAwaitingReset.add(anim);
+            }
+
+            if (resizedAwaitingReset.size) {
+              resetSubscription = timer(210).pipe(tap(resetResized), takeUntilDestroyed(this.destroyRef)).subscribe();
             }
           },
         },

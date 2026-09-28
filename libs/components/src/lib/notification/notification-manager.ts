@@ -57,7 +57,6 @@ const NOTIFICATION_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
     const visibleNotifications = computed(() => {
       const active = notifications().filter((r) => !r.entry().isDismissing && !r.entry().isDismissed);
       const cappedActiveIds = new Set(active.slice(-maxVisible).map((r) => r.id));
-      // Keep insertion order stable: dismissing items stay in their original position
       return notifications().filter((r) => r.entry().isDismissing || cappedActiveIds.has(r.id));
     });
 

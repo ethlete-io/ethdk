@@ -186,7 +186,6 @@ export class NotificationSwipeToDismissDirective {
       this.isCommitted = true;
       el.setPointerCapture(event.pointerId);
 
-      // Dragging text around would otherwise start selecting it.
       this.renderer.setStyle(el, { userSelect: 'none' });
     }
 
@@ -206,7 +205,6 @@ export class NotificationSwipeToDismissDirective {
       const dismissDistance = Math.max(MIN_DISMISS_DISTANCE_PX, width * DISMISS_DISTANCE_RATIO);
 
       if (this.offset >= dismissDistance || velocity >= MIN_DISMISS_VELOCITY) {
-        // On its way out - the timer it was paused on is moot.
         this.dismissWithMomentum(Math.abs(velocity));
 
         return;

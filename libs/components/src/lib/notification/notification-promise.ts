@@ -83,7 +83,18 @@ const runNotificationPromise = ({ work, content, open, injector }: RunNotificati
   const loading = toNotificationContent(content.loading);
   const ref = open({ ...loading, status: 'loading' });
 
+  const openedReplacementCount = ref.replacementCount();
+  const isReplacedByLaterOpen = () => ref.replacementCount() !== openedReplacementCount;
+
+  const updateProgress = (progress: number) => {
+    if (isReplacedByLaterOpen()) return;
+
+    ref.update({ progress });
+  };
+
   const settle = (status: Extract<NotificationStatus, 'success' | 'error'>, result: unknown) => {
+    if (isReplacedByLaterOpen()) return;
+
     const source = status === 'success' ? content.success : content.error;
     const resolved =
       typeof source === 'function' ? (source as (value: unknown) => NotificationContentInput)(result) : source;
@@ -92,7 +103,7 @@ const runNotificationPromise = ({ work, content, open, injector }: RunNotificati
   };
 
   if (isQuery(work)) {
-    followQuery({ query: work, ref, settle, followProgress: loading.progress !== undefined, injector });
+    followQuery({ query: work, ref, settle, updateProgress, followProgress: loading.progress !== undefined, injector });
   } else if (isObservable(work)) {
     let lastValue: unknown;
     let hasValue = false;
@@ -138,12 +149,14 @@ const followQuery = ({
   query,
   ref,
   settle,
+  updateProgress,
   followProgress,
   injector,
 }: {
   query: ReadonlyQuery<QueryArgs>;
   ref: NotificationRef;
   settle: (status: 'success' | 'error', result: unknown) => void;
+  updateProgress: (progress: number) => void;
   followProgress: boolean;
   injector: Injector;
 }) => {
@@ -165,7 +178,7 @@ const followQuery = ({
         const percentage = state.loading.progress?.percentage;
 
         if (followProgress && percentage !== undefined) {
-          untracked(() => ref.update({ progress: percentage }));
+          untracked(() => updateProgress(percentage));
         }
 
         return;
@@ -186,6 +199,5 @@ const followQuery = ({
     { injector },
   );
 
-  // Nothing left to say once the notification is gone. The query itself keeps running.
   ref.afterDismissed().subscribe(stopFollowing);
 };

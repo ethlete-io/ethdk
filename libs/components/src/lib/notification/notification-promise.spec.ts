@@ -55,6 +55,28 @@ describe('notification promise', () => {
     expect(ref.entry().config).toEqual({ status: 'success', title: 'Saved Report' });
   });
 
+  it('leaves the toast alone once a later open with the same id replaced it', async () => {
+    promise()(Promise.resolve('done'), {
+      loading: { id: 'save', title: 'Saving…' },
+      success: 'Saved',
+      error: 'Failed',
+    });
+
+    ref.replaceConfig({ status: 'info', title: 'Newer' });
+    await Promise.resolve();
+
+    expect(ref.entry().config).toEqual({ id: 'save', status: 'info', title: 'Newer' });
+  });
+
+  it('still settles after the caller merged an update into the loading toast', async () => {
+    promise()(Promise.resolve('done'), { loading: 'Saving…', success: 'Saved', error: 'Failed' });
+
+    ref.update({ message: 'Almost there' });
+    await Promise.resolve();
+
+    expect(ref.entry().config).toEqual({ status: 'success', title: 'Saved' });
+  });
+
   it('turns into the error content when the promise rejects', async () => {
     promise()(Promise.reject(new Error('nope')), {
       loading: 'Saving…',

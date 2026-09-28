@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
 import '../../../test-helpers';
 import { createNotificationRef, NotificationRef } from '../notification-ref';
 import { NotificationActionDirective } from './notification-action.directive';
@@ -49,21 +48,6 @@ describe('NotificationDirective', () => {
     fixture = TestBed.createComponent(NotificationDirectiveTestHost);
     fixture.componentInstance.ref = ref;
     fixture.detectChanges();
-  });
-
-  it('registers the action and dismiss directives on the notification', () => {
-    const notificationDirective = fixture.debugElement
-      .query(By.directive(NotificationDirective))
-      .injector.get(NotificationDirective);
-    const actionDirective = fixture.debugElement
-      .query(By.directive(NotificationActionDirective))
-      .injector.get(NotificationActionDirective);
-    const dismissDirective = fixture.debugElement
-      .query(By.directive(NotificationDismissDirective))
-      .injector.get(NotificationDismissDirective);
-
-    expect(notificationDirective.registeredActions()).toEqual([actionDirective]);
-    expect(notificationDirective.registeredDismiss()).toBe(dismissDirective);
   });
 
   it('runs the configured action handler and dismisses the notification on action click', () => {

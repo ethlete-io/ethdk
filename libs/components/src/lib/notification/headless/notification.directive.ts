@@ -1,10 +1,8 @@
-import { Directive, computed, inject, input, signal } from '@angular/core';
+import { Directive, computed, inject, input } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { ANIMATED_LIFECYCLE_TOKEN } from '@ethlete/core';
 import { filter, of, switchMap, take, tap } from 'rxjs';
 import { NotificationRef } from '../notification-ref';
-import { NotificationActionDirective } from './notification-action.directive';
-import { NotificationDismissDirective } from './notification-dismiss.directive';
 
 @Directive({
   selector: '[etNotification]',
@@ -35,11 +33,6 @@ export class NotificationDirective {
   public icon = computed(() => this.entry().config.icon);
 
   public ariaRole = computed(() => (this.status() === 'error' ? 'alert' : 'status'));
-
-  /** @internal Every action element inside this notification - one per slot at most, in registration order. */
-  public registeredActions = signal<NotificationActionDirective[]>([]);
-  /** @internal */
-  public registeredDismiss = signal<NotificationDismissDirective | null>(null);
 
   constructor() {
     toObservable(computed(() => this.entry().isDismissing))
