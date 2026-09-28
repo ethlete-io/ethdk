@@ -1,7 +1,7 @@
 import { AgentApiRequest } from '../agent-api/model';
 import { UnnamedContext } from '../model/attribution';
 import { contextKey, dominantContext } from '../model/block';
-import { mayAutoWrite } from '../model/field-source';
+import { mayAutoWrite, rowFieldSourceOf } from '../model/field-source';
 import { StandIn, standInResolutionSourceOf } from '../model/stand-in';
 import { WorkGroup } from '../rows/merge';
 import { unnamedRowId } from '../rows/propose';
@@ -142,6 +142,7 @@ export const withAutoModeRowNames = (options: {
 
   return options.rows.reduce((edits, row) => {
     if (row.issueKey || row.standInId || row.hidden || row.unattended || row.excluded) return edits;
+    if (rowFieldSourceOf(row, 'issue') !== 'observed') return edits;
 
     const contextId = contextOfRow.get(row.id);
     const issueKey = contextId ? keys.get(contextId) : undefined;

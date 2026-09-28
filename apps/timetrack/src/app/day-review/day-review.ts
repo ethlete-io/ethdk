@@ -4,6 +4,7 @@ import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   AgentApiRowEdit,
   AttributionRule,
+  withAutoModeRowNames,
   AttributionTarget,
   ClosedTimerRun,
   CollectedEvent,
@@ -695,12 +696,33 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     )
     .subscribe();
 
-  const apply = (next: DayReviewEdits) => {
-    const key = day();
-
+  const applyOn = (key: string, next: DayReviewEdits) => {
     local.update((all) => ({ ...all, [key]: next }));
     saves$.next({ key, edits: next });
   };
+
+  const apply = (next: DayReviewEdits) => applyOn(day(), next);
+
+  const editsReady = computed(() => {
+    const load = editsLoad();
+
+    return !!load && !load.failure;
+  });
+
+  /**
+   * Writes a change onto a day's edits whether or not the day is on screen, so an answer that lands
+   * after the user moved on still reaches the day it was asked on.
+   */
+  const changeDay$ = (key: string, change: (edits: DayReviewEdits) => DayReviewEdits): Observable<void> =>
+    defer(() => {
+      const held = key === day() && editsReady() ? edits() : local()[key];
+
+      if (held) return of(applyOn(key, change(held)));
+
+      return ports.review
+        .editsFor$(key)
+        .pipe(map((stored) => applyOn(key, change(local()[key] ?? stored ?? EMPTY_DAY_REVIEW_EDITS))));
+    });
 
   /**
    * Names a row and re-reads what each lane was named with, so the issue just picked for one call is
@@ -878,6 +900,21 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   return {
     dayKey: day.asReadonly(),
     targetMs,
+    /** What auto mode asked and answered on the day on screen, or `null` until its edits are read. */
+    autoAnswers: computed(() => (editsReady() ? (edits().auto ?? []) : null)),
+    changeDay$,
+
+    /** Names the unnamed rows of the day on screen with what auto mode found for their context. */
+    applyAutoModeNames: () => {
+      const deterministic = deterministicRows();
+
+      if (!editsReady() || !deterministic || !review()) return;
+
+      const current = edits();
+      const next = withAutoModeRowNames({ edits: current, rows: rows(), unattributed: deterministic.unattributed });
+
+      if (next !== current) apply(next);
+    },
     rows,
     /** The rows taken off the timeline. Neither written nor unattributed — this is where their time went. */
     hiddenRows,

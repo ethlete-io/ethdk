@@ -149,6 +149,14 @@ It runs with every tool disabled and sees only what the review shows you before 
 branch names, durations, commit subjects, and the issues the rest of the day already reached. Never a
 window title, never a file path. A suggestion never syncs on its own.`;
 
+const AUTO_MODE_WHY = `With auto mode on, the agent CLI runs without a press on each new unnamed band and each open
+stand-in of today, never on a past day. It sends the same masked payload the Ask AI press shows, and
+keeps it with the answer.
+
+An existing issue it finds names the band as auto, and resetting the row takes it back. A new ticket it
+drafts waits in the approval queue. It never overwrites a field you set, never remembers a meeting or a
+call name, and never writes to Tempo.`;
+
 /**
  * Everything the app cannot work out for itself, in five tabs.
  *
@@ -633,6 +641,17 @@ window title, never a file path. A suggestion never syncs on its own.`;
                 <ethlete-explain [text]="SUGGESTIONS_WHY" label="suggestions" />
               </div>
 
+              <div class="flex items-center gap-2">
+                <span>Auto mode</span>
+                <et-switch
+                  [checked]="store.settings().reasoning.autoMode"
+                  [disabled]="!store.settings().reasoning.enabled"
+                  (checkedChange)="setReasoningAutoMode($event)"
+                  aria-label="Auto mode"
+                />
+                <ethlete-explain [text]="AUTO_MODE_WHY" label="auto mode" />
+              </div>
+
               <div class="flex flex-wrap items-start gap-3">
                 <et-form-field class="w-40" appearance="underline" size="sm">
                   <et-label>Model</et-label>
@@ -741,6 +760,7 @@ export class SettingsViewComponent {
     }));
   });
   protected readonly SUGGESTIONS_WHY = SUGGESTIONS_WHY;
+  protected readonly AUTO_MODE_WHY = AUTO_MODE_WHY;
   protected readonly LOCK_WHY = LOCK_WHY;
   protected readonly LOCK_WAIT_WHY = LOCK_WAIT_WHY;
 
@@ -833,6 +853,10 @@ export class SettingsViewComponent {
 
   protected setReasoningEnabled(enabled: boolean) {
     this.store.setReasoning({ ...this.store.settings().reasoning, enabled });
+  }
+
+  protected setReasoningAutoMode(autoMode: boolean) {
+    this.store.setReasoning({ ...this.store.settings().reasoning, autoMode });
   }
 
   protected setReasoningModel(model: string) {

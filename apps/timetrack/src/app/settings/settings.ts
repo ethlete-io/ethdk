@@ -52,6 +52,9 @@ import {
   StandInSplitPiece,
   reopenStandIn,
   resolveStandIn,
+  withStandInParent,
+  withStandInResolutionReset,
+  WriteSource,
 } from '@ethlete/timetrack';
 import {
   Subject,
@@ -370,9 +373,13 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
       branches?: readonly string[];
       baseBranches?: readonly string[];
     }) => apply(withStandInDay({ settings: settings(), ...options })),
-    resolveStandIn: (options: { id: string; issueKey: string }) =>
+    resolveStandIn: (options: { id: string; issueKey: string; source?: WriteSource }) =>
       apply(resolveStandIn({ settings: settings(), ...options })),
     reopenStandIn: (id: string) => apply(reopenStandIn({ settings: settings(), id })),
+    /** Hands a stand-in the user reopened back to auto mode. */
+    resetStandInResolution: (id: string) => apply(withStandInResolutionReset({ settings: settings(), id })),
+    setStandInParent: (options: { id: string; parentKey: string; source?: WriteSource }) =>
+      apply(withStandInParent({ settings: settings(), ...options })),
 
     addProjectLink: (options: { path: string; target: ProjectLinkTarget }) => {
       const path = options.path.trim();

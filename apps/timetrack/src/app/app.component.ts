@@ -10,6 +10,7 @@ import {
 } from '../collectors';
 import { ApprovalBannerComponent, injectAgentEndpoint } from './agent';
 import { BuildStampComponent } from './build-stamp.component';
+import { injectAutoMode } from './day-review/auto-mode';
 import { injectCollectionPause } from './collection-pause';
 import { LockViewComponent } from './lock-view.component';
 import { LogoComponent } from './logo.component';
@@ -104,6 +105,7 @@ export class AppComponent {
 
     // Neither does the agent endpoint, and it has to answer whatever view the window is on.
     injectAgentEndpoint();
+    injectAutoMode();
 
     // Nor any backfill pass, each of which has to converge whether or not anybody opens the Sources screen.
     injectAgentSpendBackfill();
