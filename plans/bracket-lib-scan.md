@@ -1,6 +1,6 @@
 # Bracket lib scan - open findings
 
-Scan of `libs/bracket/src` from 2026-09-28. 1 High, 4 Medium, 20 Low, 5 Spec (verified 2026-09-28: 5 confirmed, 1 re-rated). A second pass covered what the
+Scan of `libs/bracket/src` from 2026-09-28. 4 Medium, 20 Low, 5 Spec (verified 2026-09-28: 5 confirmed, 1 re-rated; the High is fixed). A second pass covered what the
 first pass skipped: `drawing/grid/double-elimination-stacked.ts`, `drawing/curve.ts`, `drawing/shapes.ts`,
 `grid/prebuild/bracket-gap-master-column.ts`, `grid/prebuild/bracket-folded-third-place-section.ts` and the
 `grid/core` element/part/column/section/sub-column factories and finalizer. Skipped: nothing. Specs read only to

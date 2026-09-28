@@ -1,6 +1,6 @@
 # contentful + types scan - open findings
 
-Scan of `libs/contentful/src/` and `libs/types/src/` from 2026-09-28. 1 High, 4 Medium, 9 Low, 2 Spec (verified 2026-09-28: 5 confirmed, 1 re-rated). Skipped: stories, the 97 generated view files in `libs/types` beyond an export and `any` check.
+Scan of `libs/contentful/src/` and `libs/types/src/` from 2026-09-28. 4 Medium, 9 Low, 2 Spec (verified 2026-09-28: 5 confirmed, 1 re-rated; the High is fixed). Skipped: stories, the 97 generated view files in `libs/types` beyond an export and `any` check.
 
 ## contentful: rich-text renderer
 
