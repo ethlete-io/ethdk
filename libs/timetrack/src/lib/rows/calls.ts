@@ -147,10 +147,7 @@ const confidenceOf = (options: { meeting?: PickedCandidate; key?: NamedWork }): 
  * weekday, the length and what ran before it. It is what names a call the calendar never held, which
  * has no series to be remembered under. See ADR 0012.
  */
-export const rememberedCallNaming = (options: {
-  features: CallFeatures;
-  meetings: MeetingOptions;
-}): NamedWork | undefined => {
+const rememberedCallNaming = (options: { features: CallFeatures; meetings: MeetingOptions }): NamedWork | undefined => {
   const found = matchCallNaming({ features: options.features, namings: options.meetings.callNamings ?? [] });
 
   if (!found) return undefined;
@@ -262,25 +259,12 @@ const matchOne = (options: {
   const features = callFeaturesOf({ appId: call.appId, from: window.from, to: window.to, after: options.after });
 
   if (!call.countsAsWork) {
-    // `overlapMs` stays 0: a row that proposes nothing proposes no minute twice either.
     return { call, overlapMs: 0, candidates, features, group: excludedRow({ call, window }) };
   }
 
   const picked = pickCandidate({ call, window: options.naming, candidates, blocks: options.titled });
   const answered = rememberedCallNaming({ features, meetings });
-  /**
-   * An answer of the user's about this call outranks an occurrence the calendar only guessed at. A
-   * `certain` pick read the occurrence out of a window title seen during the call, so it stands. A
-   * `likely` pick is whatever single meeting was accepted over these minutes, and a call that starts
-   * when the meeting before it ends drifts into one week by week. See ADR 0012.
-   */
   const meeting = picked && (picked.match === 'certain' || answered?.strength !== 'likely') ? picked : undefined;
-  /**
-   * A rung that named nothing does not end the ladder: an occurrence the call confirms says which
-   * meeting this was, and that is not the same thing as saying which work it books. Below it the
-   * user's own answer is read before the history, because a remembered naming is a statement about
-   * this call and a pattern is a statement about this time of day. See ADR 0012.
-   */
   const occurrence = picked ? occurrenceIssueKey({ event: picked.event, meetings }) : undefined;
   const named = meeting ? occurrence : undefined;
   const key = named ?? answered ?? patternIssueKey({ at: window.from, meetings });
@@ -299,8 +283,6 @@ const matchOne = (options: {
       ...(disputed?.target.kind === 'stand-in' ? { disputedStandInId: disputed.target.standInId } : {}),
       from: window.from,
       to: window.to,
-      // The microphone's own span, which is time it observed rather than time it reconstructed. A call
-      // produces no input at all, so the blocks under it account for almost none of it.
       observedMs: window.to.getTime() - window.from.getTime(),
       confidence: confidenceOf({ meeting, key }),
       evidence: [
@@ -427,11 +409,7 @@ export const matchCalls = (options: {
 }): CallMatch[] => {
   const titled = options.titled ?? options.blocks;
   const occurrences = options.occurrences ?? [];
-  /**
-   * Every call of the day in start order, not only the ones a rule counted as work. A voice room the
-   * attendance gate dropped still ran before the call that follows it, and `after` asks what ran
-   * before rather than what books.
-   */
+  // Every call, not only the ones that count as work: `after` asks what ran before, not what books.
   const inOrder = [...options.calls].sort((left, right) => left.from.getTime() - right.from.getTime());
   const after = new Map<CallWindow, string | undefined>(
     inOrder.map((call, index) => [call, afterOf({ call, previous: inOrder[index - 1], occurrences, titled })]),

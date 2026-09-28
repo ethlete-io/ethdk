@@ -76,48 +76,21 @@ export type AttributeOptions = {
   activity?: IssueActivity[];
   /** Standing commitments read out of Tempo history by `detectRecurringPatterns`. */
   patterns?: RecurringPattern[];
-  /**
-   * The user's own context-to-issue rules. This is the ladder a repository that does not follow the
-   * branch grammar rests on: nothing else in it can name an issue for `refactor/hub-query-v3`.
-   */
+  /** The user's own context-to-issue rules. */
   rules?: AttributionRule[];
-  /**
-   * The names the user gave work Jira does not hold an issue for yet. A rule may point at one, and the
-   * record is what the evidence chain says — without the list such a rule names nothing readable, so
-   * the block is left for the rungs below.
-   */
+  /** The stand-ins a rule may point at; a rule naming one missing here names nothing. */
   standIns?: readonly StandIn[];
-  /**
-   * The user's path-to-project links. A private one is read before every rung below, because it is
-   * the user saying the time is not work — and no evidence can outrank that, least of all a branch
-   * name a side project happens to share with a client's.
-   */
+  /** The user's path-to-project links. A private one answers before every rung. */
   links?: readonly TimetrackProjectLink[];
-  /**
-   * What the reasoning provider proposed for contexts nothing deterministic could name. Read at the
-   * last rung and never above one, so a model answer can only fill a hole — it cannot overrule the
-   * branch grammar, a rule the user wrote, or a merge request that was actually observed.
-   */
+  /** What the reasoning provider proposed for contexts nothing deterministic could name; the last rung. */
   inferred?: readonly InferredAttribution[];
-  /**
-   * What the checkouts sharing a branch slug with this one already book, and the children of the
-   * parents those issues hang under. Pre-fetched by the caller from the day's first pass, which is
-   * why a day is read twice: the first read leaves this empty and the rung inert. See ADR 0029.
-   */
+  /** What the checkouts sharing this branch slug already book, from the day's first pass. */
   epics?: EpicOptions;
 };
 
 /**
- * The first issue key in free text — a window title, a calendar event's name — or nothing.
- *
- * A key whose prefix the grammar does not know is not a key: `SCRUM-2` in a page title is somebody
- * else's tracker, and attributing time to it is worse than leaving the block unattributed. Free text
- * is therefore read against the configured projects and nothing else, and an empty list yields
- * nothing at all — the pattern alone reads a cloud console's `ABC-1234` as an issue that has never
- * existed, and a row against a key nobody recognises is the one mistake this rung can make.
- *
- * A branch name is not free text and is not read here. `parseBranch` states both keys itself, which is
- * why it stays trusted on a machine whose project list is still empty.
+ * The first issue key in free text — a window title, a calendar event's name — or nothing. Only the
+ * configured project prefixes count, so an empty project list finds nothing.
  */
 export const issueKeyInText = (options: { text: string; config: GitFlowConfig }) => {
   const { text, config } = options;
@@ -263,35 +236,9 @@ const standInAttribution = (options: {
 };
 
 /**
- * Scores one block against the attribution ladder. A private link is read first and answers on its
- * own: it is the user saying the time is not work, and a rung that could overrule it would make the
- * statement worthless. Everything else follows in order — branch grammar, a branch-scoped rule of the
- * user's own, a merge request opened for this branch, a project-wide rule, the issue a sibling checkout
- * sharing this branch slug points at, the open stand-in another checkout of the same project holds for
- * this branch slug, then the coincidences: an issue opened while the block ran, a recurring Tempo
- * pattern, a key in a window title, and last of all what the reasoning provider proposed for this exact
- * context. Deterministic down to that final rung: a conforming branch name already states both keys, so
- * nothing above it guesses. A block that reaches the end without an `issueKey` is a first-class
- * outcome, not a failure — it is what the provider is offered, and what it leaves behind when it has
- * no answer either.
- *
- * Where the checkout is linked to a project, a coincidence naming an issue of another project is
- * skipped rather than taken: the link already says which project the time belongs to. See ADR 0032.
- *
- * The two rule rungs sit apart on purpose. A rule naming one branch is as good a statement about that
- * work as the branch name would have been, so it outranks activity; a rule naming a whole repository
- * says only which project the time belongs to, which a merge request opened for this very branch
- * beats. Collapsing them into one rung would make either the narrow rule too weak or the broad one
- * too strong.
- *
- * Both of them are `likely` though, and that is about the reviewer rather than the ladder: a rule
- * exists because the user wrote it, so a row it names is a row they already answered once. Only a
- * donating rule stays `weak` — it names no issue at all, and which work it joins is a guess the day
- * makes for it.
- *
- * A rule naming a stand-in is read at exactly those two rungs, and puts a `standInId` on the block
- * rather than a key. That placement is what ends a stand-in cleanly: the day the branch names the real
- * issue, the grammar above wins and nothing has to take the stand-in back.
+ * Scores one block against the attribution ladder: a private link first, then branch grammar, rules,
+ * activity, sibling checkouts and stand-ins, and the coincidences last. A block no rung names comes
+ * back without an `issueKey`.
  */
 export const attribute = (options: { block: ActivityBlock } & AttributeOptions): AttributedBlock => {
   const config = options.config ?? DEFAULT_GIT_FLOW_CONFIG;
@@ -314,25 +261,14 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
   const match = options.rules?.length
     ? matchAttributionRule({ context: block.context, rules: options.rules })
     : undefined;
-  /**
-   * A donating rule is not read here at all — which work it joins is a question about the whole day,
-   * so `donateBlocks` answers it once everything else has been attributed.
-   */
   const rule =
     match && match.rule.target.kind === 'issue' ? { ...match, issueKey: match.rule.target.issueKey } : undefined;
-  /**
-   * A rule pointing at a record the settings no longer hold names nothing, so the block falls to the
-   * rungs below rather than to a band labelled with an id.
-   */
   const standIn =
     match && match.rule.target.kind === 'stand-in'
       ? findStandIn({ id: match.rule.target.standInId, standIns: options.standIns ?? [] })
       : undefined;
-  /**
-   * Read before the two stand-in rungs, though it answers after them. A stand-in exists because Jira
-   * held no ticket for the work, so the day a sibling checkout names the real issue the stand-in has
-   * to step aside — otherwise it would have to be taken back by hand.
-   */
+  // Read before the stand-in rungs, though it answers after them: a sibling checkout naming the real
+  // issue has to beat a stand-in.
   const epic = options.epics
     ? epicSiblingFor({ context: block.context, epics: options.epics, links: options.links ?? [], config })
     : undefined;
@@ -377,12 +313,8 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
 
   if (standIn && !epic && match) return standInAttribution({ block, match, standIn, evidence });
 
-  /**
-   * A donating context leaves the ladder here, so that `donateBlocks` still sees it. The rungs below
-   * read a coincidence — a standing Tempo pattern, a key in whatever tab was open — and either would
-   * name an issue for work the user has already said belongs beside the day's own work instead. A key
-   * on a browser tab about another tracker is exactly how that goes wrong.
-   */
+  // Before the coincidence rungs, which would otherwise name an issue for time `donateBlocks` has to
+  // see unnamed.
   if (match?.rule.target.kind === 'donate') return { block, confidence: 'weak', evidence };
 
   if (epic) {

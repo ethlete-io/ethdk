@@ -54,7 +54,7 @@ export const calendarOccurrences = (events: readonly CollectedEvent[]): Calendar
  * browser puts in the window title, so it is the one string that ties a window to *this* meeting
  * rather than to any meeting.
  */
-export const conferenceIdOf = (event: CalendarOccurrenceEvent) => {
+const conferenceIdOf = (event: CalendarOccurrenceEvent) => {
   if (!event.conferenceUrl) return undefined;
 
   const path = event.conferenceUrl.replace(/^https?:\/\/[^/]+\/?/, '').split(/[?#]/)[0] ?? '';
@@ -196,8 +196,6 @@ export const pickCandidate = (options: {
       return { event: candidate.event, match: 'certain', evidence: [calendarEvidence(candidate.event), found] };
   }
 
-  // Only a call the machine can place in a conferencing product may rule anything out. A browser names
-  // no product, and a call in a browser could have been any of the candidates.
   const service = serviceIn(call.appId);
   const possible = service
     ? candidates.filter((candidate) => {
@@ -254,7 +252,7 @@ export const patternIssueKey = (options: { at: Date; meetings: MeetingOptions })
 };
 
 /** The issue the user already answered for this occurrence's series, and the answer as evidence. */
-export const rememberedIssueKey = (options: {
+const rememberedIssueKey = (options: {
   event: CalendarOccurrenceEvent;
   meetings: MeetingOptions;
 }): NamedIssue | undefined => {

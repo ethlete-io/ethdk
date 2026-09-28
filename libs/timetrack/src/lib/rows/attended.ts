@@ -37,10 +37,10 @@ const awayStretches = (events: readonly CollectedEvent[]): TimeWindow[] => {
 /**
  * The stretches a person was demonstrably at this machine, each instant widened by `graceMs`.
  *
- * Four things can say a person was there, and nothing else can: a window they brought to the front, an
- * idle transition the notifier saw, a prompt they gave an agent, and a call they held. A turn, a
- * session, a commit and an editor heartbeat all say the machine worked, which is a different question —
- * an agent on a schedule produces every one of them with nobody in the room.
+ * Three events say a person was there: a window they brought to the front, an idle transition the
+ * notifier saw, and a prompt they gave an agent. A call they held counts too, but reaches the day
+ * through `markAttendance({ claimed })` rather than through this. A turn, a session, a commit and an
+ * editor heartbeat only say the machine worked.
  *
  * An instant is widened because a person works a stretch of a day rather than a band of it: they step
  * away for ten minutes while an agent runs, and the quarter hour that leaves behind is still time they
