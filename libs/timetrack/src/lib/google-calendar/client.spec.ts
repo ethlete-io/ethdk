@@ -1,5 +1,5 @@
 import { of } from 'rxjs';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TimetrackTransport } from '../transport/ports';
 import { GoogleCalendarCredentials, GoogleCalendarRequestError, googleCalendarRequest$ } from './client';
 
@@ -22,6 +22,7 @@ const errorFrom = (transport: TimetrackTransport) => {
 const quotaBody = (reason: string) => ({ error: { errors: [{ reason }] } });
 
 describe('googleCalendarRequest$', () => {
+  afterEach(() => vi.useRealTimers());
   it('sends the bearer token and asks for json', () => {
     const transport = failing(200);
 
@@ -47,13 +48,79 @@ describe('googleCalendarRequest$', () => {
   });
 
   it('recognises a quota breach dressed as a 403', () => {
-    const error = errorFrom(failing(403, quotaBody('rateLimitExceeded')));
+    vi.useFakeTimers();
+
+    const failed = vi.fn();
+
+    request$(failing(403, quotaBody('rateLimitExceeded'))).subscribe({ error: failed });
+    vi.runAllTimers();
+
+    const error = failed.mock.calls[0]?.[0] as GoogleCalendarRequestError;
 
     expect(error.rateLimited).toBe(true);
     expect(error.message).toContain('rate-limited');
   });
 
   it('recognises a plain 429 with no error body', () => {
-    expect(errorFrom(failing(429)).rateLimited).toBe(true);
+    vi.useFakeTimers();
+
+    const failed = vi.fn();
+
+    request$(failing(429)).subscribe({ error: failed });
+    vi.runAllTimers();
+
+    expect((failed.mock.calls[0]?.[0] as GoogleCalendarRequestError).rateLimited).toBe(true);
+  });
+
+  describe('on a rate limit', () => {
+    const answering = (...responses: { status: number; headers?: Record<string, string>; body?: unknown }[]) => {
+      let call = 0;
+
+      return {
+        request$: vi.fn(() => {
+          const response = responses[Math.min(call++, responses.length - 1)];
+
+          return of({ headers: {}, body: {}, ...response }) as never;
+        }),
+      } satisfies TimetrackTransport;
+    };
+
+    it('asks again after the wait Google named, and answers with what follows', () => {
+      vi.useFakeTimers();
+
+      const transport = answering({ status: 429, headers: { 'Retry-After': '3' } }, { status: 200, body: 'ok' });
+      const seen = vi.fn();
+
+      request$(transport).subscribe(seen);
+      vi.advanceTimersByTime(2_999);
+
+      expect(seen).not.toHaveBeenCalled();
+
+      vi.advanceTimersByTime(1);
+
+      expect(seen).toHaveBeenCalledWith('ok');
+      expect(transport.request$).toHaveBeenCalledTimes(2);
+    });
+
+    it('gives up after a bounded number of retries', () => {
+      vi.useFakeTimers();
+
+      const transport = answering({ status: 403, body: quotaBody('userRateLimitExceeded') });
+      const failed = vi.fn();
+
+      request$(transport).subscribe({ error: failed });
+      vi.runAllTimers();
+
+      expect(failed).toHaveBeenCalledTimes(1);
+      expect(transport.request$).toHaveBeenCalledTimes(3);
+    });
+
+    it('never retries a refusal that is not a rate limit', () => {
+      const transport = answering({ status: 403, body: quotaBody('insufficientPermissions') });
+
+      request$(transport).subscribe({ error: vi.fn() });
+
+      expect(transport.request$).toHaveBeenCalledTimes(1);
+    });
   });
 });

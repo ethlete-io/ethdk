@@ -1,5 +1,5 @@
 import { of } from 'rxjs';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
 import { GitLabCredentials, GitLabRequestError, gitlabRequest$, normalizeGitLabHost } from './client';
 
@@ -58,5 +58,50 @@ describe('gitlabRequest$', () => {
     expect(requests).toHaveLength(0);
     expect(errors[0]).toBeInstanceOf(GitLabRequestError);
     expect(errors[0]?.message).toContain('is not https');
+  });
+});
+
+describe('gitlabRequest$ on a rate limit', () => {
+  afterEach(() => vi.useRealTimers());
+
+  const answering = (...responses: { status: number; headers?: Record<string, string> }[]) => {
+    let call = 0;
+
+    return {
+      request$: vi.fn(() => {
+        const response = responses[Math.min(call++, responses.length - 1)];
+
+        return of({ headers: {}, body: { id: 1 }, ...response }) as never;
+      }),
+    } satisfies TimetrackTransport;
+  };
+
+  const request$ = (transport: TimetrackTransport) =>
+    gitlabRequest$({ transport, credentials: CREDENTIALS, path: '/user', describe: 'you' });
+
+  it('asks again after the wait GitLab named', () => {
+    vi.useFakeTimers();
+
+    const transport = answering({ status: 429, headers: { 'retry-after': '5' } }, { status: 200 });
+    const seen = vi.fn();
+
+    request$(transport).subscribe(seen);
+    vi.advanceTimersByTime(5_000);
+
+    expect(seen).toHaveBeenCalledTimes(1);
+    expect(transport.request$).toHaveBeenCalledTimes(2);
+  });
+
+  it('gives up after a bounded number of retries with a rate-limit error', () => {
+    vi.useFakeTimers();
+
+    const transport = answering({ status: 429 });
+    const failed = vi.fn();
+
+    request$(transport).subscribe({ error: failed });
+    vi.runAllTimers();
+
+    expect((failed.mock.calls[0]?.[0] as GitLabRequestError).status).toBe(429);
+    expect(transport.request$).toHaveBeenCalledTimes(3);
   });
 });

@@ -1,5 +1,6 @@
-import { EMPTY, Observable, expand, map, reduce } from 'rxjs';
+import { EMPTY, Observable, defer, expand, map, reduce } from 'rxjs';
 import { TimetrackRequestMethod, TimetrackTransport } from '../transport/ports';
+import { responseHeaderOf, retryAfterMsOf, retryWhenRateLimited } from '../transport/rate-limit';
 
 /**
  * A Google access token for the user's own OAuth client. The host owns the whole OAuth dance — PKCE,
@@ -22,13 +23,16 @@ export class GoogleCalendarRequestError extends Error {
   readonly reason?: string;
   /** True for both of Google's rate-limit shapes, which is what makes the request worth retrying. */
   readonly rateLimited: boolean;
+  /** The wait the response's `Retry-After` asked for. */
+  readonly retryAfterMs?: number;
 
-  constructor(options: { status: number; describe: string; reason?: string; message: string }) {
+  constructor(options: { status: number; describe: string; reason?: string; message: string; retryAfterMs?: number }) {
     super(options.message);
     this.name = 'GoogleCalendarRequestError';
     this.status = options.status;
     this.describe = options.describe;
     this.reason = options.reason;
+    this.retryAfterMs = options.retryAfterMs;
     this.rateLimited = options.status === 429 || RATE_LIMIT_REASONS.includes(options.reason ?? '');
   }
 }
@@ -79,31 +83,35 @@ export const googleCalendarRequest$ = <T>(options: {
 }): Observable<T> => {
   const { transport, credentials, path, describe } = options;
 
-  return transport
-    .request$<T>({
+  return defer(() =>
+    transport.request$<T>({
       method: options.method ?? 'GET',
       url: withQuery(`${GOOGLE_CALENDAR_API_BASE}${path}`, options.query),
       headers: {
         authorization: `Bearer ${credentials.accessToken}`,
         accept: 'application/json',
       },
-    })
-    .pipe(
-      map((response) => {
-        if (response.status < 200 || response.status >= 300) {
-          const reason = reasonOf(response.body);
+    }),
+  ).pipe(
+    map((response) => {
+      if (response.status < 200 || response.status >= 300) {
+        const reason = reasonOf(response.body);
 
-          throw new GoogleCalendarRequestError({
-            status: response.status,
-            describe,
-            reason,
-            message: messageFor({ status: response.status, describe, reason }),
-          });
-        }
+        throw new GoogleCalendarRequestError({
+          status: response.status,
+          describe,
+          reason,
+          message: messageFor({ status: response.status, describe, reason }),
+          retryAfterMs: retryAfterMsOf(responseHeaderOf(response.headers, 'retry-after')),
+        });
+      }
 
-        return response.body;
-      }),
-    );
+      return response.body;
+    }),
+    retryWhenRateLimited((error) =>
+      error instanceof GoogleCalendarRequestError && error.rateLimited ? { retryAfterMs: error.retryAfterMs } : null,
+    ),
+  );
 };
 
 export type GoogleCalendarPage<T> = {

@@ -1,5 +1,5 @@
 import { of, throwError } from 'rxjs';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ProcessResult, ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
 import { ForgeRequestError, forgeApi$, forgeApiPaged$, isMissingCliError } from './cli';
 
@@ -38,6 +38,24 @@ const read = <T>(runner: TimetrackProcessRunner, query?: Record<string, string>)
 };
 
 describe('forgeApi$', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('runs a rate-limited call again after a backoff', () => {
+    vi.useFakeTimers();
+
+    const { runner } = runnerOf([
+      { code: 1, stdout: '', stderr: 'glab: 429 Too Many Requests (HTTP 429)' },
+      ok({ id: 1 }),
+    ]);
+    const seen = vi.fn();
+
+    forgeApi$({ runner, cli: 'glab', hostname: 'git.example.com', path: '/events', describe: 'x' }).subscribe(seen);
+    vi.runAllTimers();
+
+    expect(seen).toHaveBeenCalledWith({ id: 1 });
+    expect(runner.run$).toHaveBeenCalledTimes(2);
+  });
+
   it('calls the CLI with the endpoint, the host and no leading slash', () => {
     const { runner, specs } = runnerOf([ok([])]);
 

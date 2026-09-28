@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention -- Both forges take snake_case query parameters. */
-import { EMPTY, Observable, expand, map, reduce } from 'rxjs';
+import { EMPTY, Observable, defer, expand, map, reduce } from 'rxjs';
 import { ProcessResult, TimetrackProcessRunner } from '../transport/ports';
+import { retryWhenRateLimited } from '../transport/rate-limit';
 
 /**
  * A command-line client that speaks a forge's REST API under a login the app never sees.
@@ -106,27 +107,28 @@ export type ForgeApiCall = {
 
 /** Runs one API call through the CLI and parses its body. */
 export const forgeApi$ = <T>(call: ForgeApiCall): Observable<T> =>
-  call.runner
-    .run$({
+  defer(() =>
+    call.runner.run$({
       command: call.cli,
       args: ['api', '--hostname', call.hostname, withQuery(call.path, call.query).replace(/^\//, '')],
-    })
-    .pipe(
-      map((result) => {
-        if (result.code !== 0) throw failureOf({ cli: call.cli, describe: call.describe, result });
+    }),
+  ).pipe(
+    map((result) => {
+      if (result.code !== 0) throw failureOf({ cli: call.cli, describe: call.describe, result });
 
-        try {
-          return JSON.parse(result.stdout) as T;
-        } catch {
-          throw new ForgeRequestError({
-            cli: call.cli,
-            status: 0,
-            describe: call.describe,
-            message: `\`${call.cli}\` returned something that is not JSON for ${call.describe}.`,
-          });
-        }
-      }),
-    );
+      try {
+        return JSON.parse(result.stdout) as T;
+      } catch {
+        throw new ForgeRequestError({
+          cli: call.cli,
+          status: 0,
+          describe: call.describe,
+          message: `\`${call.cli}\` returned something that is not JSON for ${call.describe}.`,
+        });
+      }
+    }),
+    retryWhenRateLimited((error) => (error instanceof ForgeRequestError && error.status === 429 ? {} : null)),
+  );
 
 export type ForgePagingOptions = {
   /** Items per request. Both forges cap this at 100. */

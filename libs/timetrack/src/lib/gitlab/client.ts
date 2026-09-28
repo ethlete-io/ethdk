@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention -- GitLab's REST v4 wire format is snake_case. */
-import { EMPTY, Observable, expand, map, reduce, throwError } from 'rxjs';
+import { EMPTY, Observable, defer, expand, map, reduce, throwError } from 'rxjs';
 import { TimetrackRequestMethod, TimetrackResponse, TimetrackTransport } from '../transport/ports';
+import { retryAfterMsOf, retryWhenRateLimited } from '../transport/rate-limit';
 import { carriesCredentialsSafely, insecureHostMessage } from '../transport/secure-host';
 
 /**
@@ -18,12 +19,15 @@ export type GitLabCredentials = {
 export class GitLabRequestError extends Error {
   readonly status: number;
   readonly describe: string;
+  /** The wait the response's `Retry-After` asked for. */
+  readonly retryAfterMs?: number;
 
-  constructor(options: { status: number; describe: string; message: string }) {
+  constructor(options: { status: number; describe: string; message: string; retryAfterMs?: number }) {
     super(options.message);
     this.name = 'GitLabRequestError';
     this.status = options.status;
     this.describe = options.describe;
+    this.retryAfterMs = options.retryAfterMs;
   }
 }
 
@@ -83,8 +87,8 @@ export const gitlabRequest$ = <T>(options: {
     );
   }
 
-  return transport
-    .request$<T>({
+  return defer(() =>
+    transport.request$<T>({
       method: options.method ?? 'GET',
       url: withQuery(`${base}/api/v4${path}`, options.query),
       body: options.body,
@@ -94,20 +98,24 @@ export const gitlabRequest$ = <T>(options: {
         'private-token': credentials.token,
         accept: 'application/json',
       },
-    })
-    .pipe(
-      map((response) => {
-        if (response.status < 200 || response.status >= 300) {
-          throw new GitLabRequestError({
-            status: response.status,
-            describe,
-            message: messageFor({ status: response.status, describe }),
-          });
-        }
+    }),
+  ).pipe(
+    map((response) => {
+      if (response.status < 200 || response.status >= 300) {
+        throw new GitLabRequestError({
+          status: response.status,
+          describe,
+          message: messageFor({ status: response.status, describe }),
+          retryAfterMs: retryAfterMsOf(headerOf(response, 'retry-after')),
+        });
+      }
 
-        return response;
-      }),
-    );
+      return response;
+    }),
+    retryWhenRateLimited((error) =>
+      error instanceof GitLabRequestError && error.status === 429 ? { retryAfterMs: error.retryAfterMs } : null,
+    ),
+  );
 };
 
 export type GitLabPagingOptions = {
