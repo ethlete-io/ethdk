@@ -1,4 +1,4 @@
-import { Component, TemplateRef, viewChild } from '@angular/core';
+import { Component, PLATFORM_ID, TemplateRef, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { setInputSignal } from '@ethlete/core';
@@ -149,6 +149,22 @@ describe('TooltipDirective', () => {
   imports: [TooltipDirective],
 })
 class TooltipInsideDialogComponent {}
+
+describe('TooltipDirective on the server', () => {
+  it('adds no description node to the body and no aria-describedby, so hydration leaves no duplicate', () => {
+    TestBed.configureTestingModule({ providers: [{ provide: PLATFORM_ID, useValue: 'server' }] });
+
+    const fixture = TestBed.createComponent(TooltipDirectiveTestHost);
+    fixture.detectChanges();
+
+    const directive = fixture.debugElement.query(By.directive(TooltipDirective)).injector.get(TooltipDirective);
+    setInputSignal(directive.content, 'Tooltip body' satisfies TooltipContent);
+    fixture.detectChanges();
+
+    expect(document.querySelector('[id^="et-tooltip-description"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('button').hasAttribute('aria-describedby')).toBe(false);
+  });
+});
 
 describe('TooltipDirective inside a modal overlay', () => {
   let driver: ReturnType<typeof createOverlayDriver>;

@@ -1,12 +1,9 @@
 # components misc-b scan - open findings
 
-Scan of `libs/components/src/lib/{scrollbar,toggletip,tooltip,picture,filter-overlay,floating-action,query-error,chip,kbd,progress-steps,banner,avatar,skeleton,internals,toolbar,timeline,badge,empty-state,description-list,card,divider,copy-button,focus-ring}` from 2026-09-28. 0 High, 7 Medium, 25 Low, 4 Spec. Skipped: specs, stories, testing drivers, most CSS beyond the layer/colour check.
+Scan of `libs/components/src/lib/{scrollbar,toggletip,tooltip,picture,filter-overlay,floating-action,query-error,chip,kbd,progress-steps,banner,avatar,skeleton,internals,toolbar,timeline,badge,empty-state,description-list,card,divider,copy-button,focus-ring}` from 2026-09-28. 0 High, 1 Medium, 25 Low, 4 Spec. Skipped: specs, stories, testing drivers, most CSS beyond the layer/colour check.
 
 ## picture, avatar (image URL handling)
 
-- Medium: `withBaseUrl` treats a URL as absolute only if it starts with `http` or `data:` (`picture/picture.utils.ts:60`). A `blob:` preview URL or a protocol-relative `//cdn/…` gets the base URL in front and breaks, and a relative path such as `https-logo.png` does not get it. Test with a scheme regex (`/^[a-z][a-z\d+.-]*:/i`) plus `//`. S Verified: only bites when `baseUrl` is configured.
-- Medium: `loadResetKey` keys on the `sources()` array identity (`picture/picture.component.ts:156`). A parent that passes a new array with the same srcsets resets the state to `loading`, but `@for … track source.srcset` keeps the DOM and the browser fires no new `load`, so the placeholder overlays a loaded image forever. Key on the resolved srcset strings instead. S Verified: the computed builds a new array on each `sources()` change, so the `linkedSignal` resets.
-- Medium: the load state comes only from the `(load)`/`(error)` events (`picture/picture.component.html:23-24`). After SSR hydration an image that finished loading before the listeners attached never leaves `loading`. Check `img.complete`/`naturalWidth` once after render. S Verified: there is no `complete` check, and `load` does not bubble, so event replay cannot catch it.
 - Low: `extractFirstImageUrl` splits a candidate on `' '` only (`picture/picture.utils.ts:22`). A srcset written across lines (`a.jpg\n1x`) returns `a.jpg\n1x` as the URL. Split on `/\s+/`, as `withPictureBaseUrl` already does. S
 - Low: comments outside the allowlist - cdk narration at `picture/picture.utils.ts:57,68-69`, the "worth knowing" essay in the public JSDoc at `picture/picture.component.ts:27-31`, rationale at `avatar/avatar-group.component.ts:67,76-77`. S
 - Low: the `+N` overflow avatar has no accessible label, so a screen reader reads "+3" with no context (`avatar/avatar-group.component.ts:34`). Add a label ("3 more") to the avatar labels. S
@@ -14,7 +11,7 @@ Scan of `libs/components/src/lib/{scrollbar,toggletip,tooltip,picture,filter-ove
 
 ## tooltip, toggletip
 
-- Medium: every `etTooltip` instance appends a hidden description `<div>` to `document.body` at construction, even if it never shows (`tooltip/headless/tooltip.directive.ts:345-363`). A table with 1000 tooltip cells adds 1000 body nodes. Under SSR the server-made nodes serialize into the HTML, and hydration leaves them in place next to the client copies with the same ids. Create the node lazily on first focus/hover, or use `aria-description` for string content. M Verified: the node is made from a constructor `effect` for any string content, with no platform guard. It is not made when there is no string description.
+- Medium: every `etTooltip` instance appends a hidden description `<div>` to `document.body` at construction, even if it never shows (`tooltip/headless/tooltip.directive.ts`). A table with 1000 tooltip cells adds 1000 body nodes. The SSR duplicate is fixed (no node on the server); the node count is open: lazy creation on focus/hover would drop the description in screen-reader browse mode, and `aria-description` is ignored whenever the consumer sets `aria-describedby`, so it needs a decision. M
 - Low: tooltip and toggletip CSS is ~120 lines each and mostly the same (`tooltip/tooltip.component.css`, `toggletip/toggletip.component.css`). Both also hardcode the shadow colour `rgb(0 0 0 / 0.16)` (`tooltip.component.css:54`, `toggletip.component.css:47`). Move the shared rules to the floating-panel styles. M
 - Low: `tooltip.utils.ts` and `toggletip.utils.ts` are the same module-global id counter. The lib has 15 of these. One shared helper would do. S
 - Low: the same comment is repeated at `tooltip/tooltip.component.ts:39-40` and `toggletip/toggletip.component.ts:50-51`. S
@@ -22,19 +19,16 @@ Scan of `libs/components/src/lib/{scrollbar,toggletip,tooltip,picture,filter-ove
 
 ## toolbar
 
-- Medium: `handleKeydown` takes ArrowLeft/Right, Home and End from every control, text inputs included (`toolbar/headless/toolbar.directive.ts:54-88`). A search `<input>` or `<select>` in a toolbar loses caret movement and option navigation. It also ignores modifiers, so Ctrl+Arrow is taken too. Skip the event when `isFormInputTarget(event.target)` or when a modifier is held. S Verified: `CONTROL_SELECTOR` includes `input, select, textarea`.
 - Low: `afterEveryRender` runs `querySelectorAll` over the host twice per render (`toolbar/headless/toolbar.directive.ts:46,117-124`). Every toolbar on the page pays this on every change detection in the app. Re-sync from a `MutationObserver` or on `focusin` only. M Re-rated from Medium: the queries run over one small toolbar subtree, few toolbars sit on a page, and the tabIndex writes are skipped when unchanged.
 - Low: `CONTROL_SELECTOR` misses `[tabindex]` and `[contenteditable]` elements, and `focusableControls` keeps hidden controls, so arrow navigation stops on a `display: none` control (`toolbar/headless/toolbar.directive.ts:5,113-115`). S
 - Low: rationale comment at `toolbar/headless/toolbar.directive.ts:127-128`. S
 
 ## floating-action
 
-- Medium: the parts set themselves on the parent in their constructor and never clear themselves on destroy (`floating-action/headless/floating-action-parts.directive.ts:63,87,114,139`). A scope inside `@if (results().length)` that is destroyed leaves its frozen `intersection()` in `state()`, so the trigger stays `hidden` or `floating` for the rest of the page. Reset the signal in `DestroyRef.onDestroy` when it still points at this part. S Verified: `signalHostElementIntersection` only disconnects on destroy and keeps its last entry. A scope destroyed while `isAbove` keeps the trigger hidden until a new scope registers.
 - Low: migration narration and rationale in public JSDoc (`floating-action/headless/floating-action.directive.ts:36-42`, `floating-action-styles.component.ts:3-10`). S
 
 ## progress-steps, banner
 
-- Medium: a step's state reaches assistive tech only as `aria-current` for `current`. The `complete`/`success`/`warning`/`error` icons are `aria-hidden` and have no text (`progress-steps/progress-step.component.html:3`), and the step number is CSS only. A screen reader user cannot tell that a step failed. Add a visually hidden state label from a labels set. S Verified.
 - Low: `progress-step.component.ts:91-108` and `banner/banner.component.ts:102-126` repeat the same "inject the semantic theme by type inside an effect" block and the same comment. Extract one helper. S
 - Low: `et-progress-steps` has no list semantics (`progress-steps/progress-steps.component.ts:27`), unlike `et-timeline`, which sets `role="list"`. S
 

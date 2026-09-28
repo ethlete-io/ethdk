@@ -1,8 +1,10 @@
+import { isPlatformBrowser } from '@angular/common';
 import {
   DOCUMENT,
   DestroyRef,
   Directive,
   ElementRef,
+  PLATFORM_ID,
   TemplateRef,
   booleanAttribute,
   computed,
@@ -91,12 +93,16 @@ export class TooltipDirective {
   });
 
   constructor() {
+    const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
     mountFloatingPanelStyles();
 
     this.setupHoverBehavior();
     this.setupFocusBehavior();
 
     effect(() => {
+      if (!isBrowser) return;
+
       const description = this.accessibleDescription();
 
       untracked(() => {
