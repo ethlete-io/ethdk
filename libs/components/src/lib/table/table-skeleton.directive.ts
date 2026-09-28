@@ -57,14 +57,16 @@ export class TableSkeletonDirective {
     // Measured from a rendered body cell (a row is `display: contents` and has no box of its own)
     // whenever the render changes - cheap, and the only way to know a row's height when its cells hold
     // arbitrary content.
-    afterEveryRender(() => {
-      const cell = this.table.firstBodyCellElement();
+    afterEveryRender({
+      read: () => {
+        const cell = this.table.firstBodyCellElement();
 
-      if (!cell) return;
+        if (!cell) return;
 
-      const height = Math.round(cell.getBoundingClientRect().height);
+        const height = Math.round(cell.getBoundingClientRect().height);
 
-      if (height > 0 && height !== untracked(this.measuredRowHeight)) this.measuredRowHeight.set(height);
+        if (height > 0 && height !== untracked(this.measuredRowHeight)) this.measuredRowHeight.set(height);
+      },
     });
   }
 }

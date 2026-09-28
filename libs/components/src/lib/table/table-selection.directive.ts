@@ -26,8 +26,7 @@ export type TableSelectionConfig<T> = TableFeatureConfig & {
  * Opt-in multi-row selection for `et-table`: adds a leading checkbox column whose header checkbox
  * selects or clears every selectable row (indeterminate while only some are).
  *
- * It carries the [checkbox](/components/choice-inputs) component with it, which is why it is separate:
- * a table without selection never pulls that in.
+ * It carries the [checkbox](/components/choice-inputs) component with it.
  *
  * @example
  * protected selected = signal<Set<unknown>>(new Set());
@@ -104,9 +103,6 @@ export class TableSelectionDirective<T> {
       enabled: computed(() => this.config().enabled ?? true),
     });
 
-    // The selection is the feature's own state, so it travels in `state().features.selection` rather
-    // than in the base table's column entries - see TableStateSlice. A table without a `rowKey` keys by
-    // row reference and has nothing stable to write, so it contributes nothing.
     this.table.registerStateSlice({
       key: 'selection',
       read: () => {

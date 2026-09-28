@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { getFocusableElements, injectRenderer } from '@ethlete/core';
 import { injectTableFeatureHost, TableFeatureConfig, tableFeatureConfig } from './headless/table-features';
+import { bodyCellFromEvent } from './table-feature-host-utils';
 
 /** Options for {@link TableKeyboardNavDirective}. */
 export type TableKeyboardNavConfig = TableFeatureConfig;
@@ -142,7 +143,7 @@ export class TableKeyboardNavDirective {
   protected handleFocusIn(event: FocusEvent) {
     if (!this.enabled()) return;
 
-    const hit = this.cellFrom(event);
+    const hit = bodyCellFromEvent(this.table, event);
 
     if (!hit) return;
 
@@ -153,7 +154,7 @@ export class TableKeyboardNavDirective {
   protected handleKeydown(event: KeyboardEvent) {
     if (!this.enabled()) return;
 
-    const hit = this.cellFrom(event);
+    const hit = bodyCellFromEvent(this.table, event);
 
     if (!hit) return;
 
@@ -226,33 +227,6 @@ export class TableKeyboardNavDirective {
     target?.focus();
 
     return target !== undefined;
-  }
-
-  /**
-   * The body cell an event came from, with its position - `null` when the event started outside the
-   * grid body (a header button, the footer slot, a detail row). Found by matching the event's path
-   * against the cells the table rendered, which is also what makes the position pure arithmetic: the
-   * list is rows major, so the index carries both coordinates.
-   */
-  private cellFrom(event: Event) {
-    const cells = this.table.bodyCellElements();
-    const path = event.composedPath();
-    const index = cells.findIndex((candidate) => path.includes(candidate));
-    const cell = index === -1 ? undefined : cells[index];
-
-    if (!cell) return null;
-
-    const columns = untracked(() => this.table.visibleColumnsMeta()).length;
-
-    if (!columns) return null;
-
-    return {
-      cell,
-      position: {
-        row: this.table.renderedRowOffset() + Math.floor(index / columns),
-        column: index % columns,
-      },
-    };
   }
 
   // One `tabindex="0"` in the whole body, on the cell the roving target is on; every other cell keeps

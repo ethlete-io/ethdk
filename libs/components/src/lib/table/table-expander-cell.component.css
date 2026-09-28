@@ -31,7 +31,8 @@
     cursor: pointer;
   }
 
-  .et-table-expander:where(:hover, :focus-visible) {
+  .et-table-expander:hover,
+  .et-table-expander:focus-visible {
     background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 12%, transparent);
   }
 
@@ -47,5 +48,11 @@
 
   .et-table-expander-icon:where([data-expanded='true']) {
     transform: rotate(180deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-table-expander-icon {
+      transition: none;
+    }
   }
 }

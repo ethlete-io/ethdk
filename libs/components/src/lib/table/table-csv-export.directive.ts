@@ -1,7 +1,6 @@
 import { computed, DestroyRef, Directive, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize, map } from 'rxjs';
-import { RuntimeError } from '@ethlete/core';
 import {
   injectTableCsvExport,
   mergeTableCsvExportOptions,
@@ -9,15 +8,11 @@ import {
   TableCsvExportOptions,
   tableToCsv,
 } from './headless/table-csv-export';
-import { TABLE_ERROR_CODES } from './table-errors';
-import { TableComponent } from './table.component';
+import { injectHostTable } from './table-feature-host-utils';
 
 /** Options for {@link TableCsvExportDirective} - the defaults every `export()` call starts from. */
 export type TableCsvExportConfig<T> = TableCsvExportOptions<T>;
 
-// A feature directive is usually written bare (`etTableCsvExport`), which Angular binds as the empty
-// string - normalize that to "no options given". (`tableFeatureConfig` isn't reused here: this feature
-// registers nothing on the table, so it has no `enabled` to gate.)
 const csvExportConfig = <T>(value: TableCsvExportConfig<T> | '') => (value === '' ? {} : value);
 
 /**
@@ -48,7 +43,7 @@ const csvExportConfig = <T>(value: TableCsvExportConfig<T> | '') => (value === '
   exportAs: 'etTableCsvExport',
 })
 export class TableCsvExportDirective<T> {
-  private table = injectHostTable<T>();
+  private table = injectHostTable<T>('etTableCsvExport');
   private download = injectTableCsvExport();
   private destroyRef = inject(DestroyRef);
 
@@ -103,18 +98,3 @@ export class TableCsvExportDirective<T> {
     );
   }
 }
-
-// The table is a component on the same element, so it injects directly. Placed anywhere else the
-// directive could only ever silently do nothing, so name the mistake instead.
-const injectHostTable = <T>() => {
-  const table = inject(TableComponent, { optional: true }) as TableComponent<T> | null;
-
-  if (!table) {
-    throw new RuntimeError(
-      TABLE_ERROR_CODES.FEATURE_OUTSIDE_TABLE,
-      `[etTableCsvExport] must be used on an <et-table>.`,
-    );
-  }
-
-  return table;
-};

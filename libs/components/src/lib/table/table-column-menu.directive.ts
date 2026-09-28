@@ -58,7 +58,7 @@ export class TableColumnMenuDirective {
     });
   }
 
-  /** Whether the column is sorted, and which way - drives the menu's checked state. */
+  /** Whether the column is sorted, and which way - the menu offers "clear sort" only while it is. */
   public directionOf(column: TableColumnMeta) {
     return this.table.sortDirection(column.key);
   }

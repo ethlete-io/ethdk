@@ -46,8 +46,6 @@ export class TableVirtualScrollDirective {
   });
 
   constructor() {
-    // The spacer rule lives with the feature (see TableVirtualScrollStylesComponent), so a table that
-    // renders every row ships none of it.
     injectStyleManager().mount(TableVirtualScrollStylesComponent);
 
     this.table.registerRowWindow({

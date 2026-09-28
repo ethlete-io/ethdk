@@ -12,12 +12,10 @@ import {
   untracked,
 } from '@angular/core';
 import { FieldTree, form } from '@angular/forms/signals';
-import { getFocusableElements, injectRenderer, RuntimeError } from '@ethlete/core';
+import { getFocusableElements, injectRenderer, injectStyleManager } from '@ethlete/core';
 import { TableFeatureConfig, tableFeatureConfig } from './headless/table-features';
-import { TABLE_ERROR_CODES } from './table-errors';
 import { TableInlineEditStylesComponent } from './table-inline-edit-styles.component';
-import { injectStyleManager } from '@ethlete/core';
-import { TableComponent } from './table.component';
+import { bodyCellFromEvent, injectHostTable } from './table-feature-host-utils';
 import { TableCellEditContext, TableColumnDef } from './table.types';
 
 /** What one committed edit reports. The mutation is the consumer's - see {@link TableInlineEditDirective}. */
@@ -101,7 +99,7 @@ type TableEditSession<T> = {
   },
 })
 export class TableInlineEditDirective<T> {
-  private table = injectHostTable<T>();
+  private table = injectHostTable<T>('etTableInlineEdit');
   private renderer = injectRenderer();
   private injector = inject(Injector);
   private document = inject(DOCUMENT);
@@ -221,13 +219,13 @@ export class TableInlineEditDirective<T> {
   protected handleDoubleClick(event: MouseEvent) {
     if (!this.enabled()) return;
 
-    const hit = this.cellFrom(event);
+    const hit = bodyCellFromEvent(this.table, event);
 
     if (!hit) return;
 
     // A double-click also selects the text under it, which is exactly what the editor is about to
     // replace - so the selection would be left behind on top of the field.
-    if (this.editCell(hit.row, hit.column)) this.document.getSelection()?.removeAllRanges();
+    if (this.editCell(hit.position.row, hit.position.column)) this.document.getSelection()?.removeAllRanges();
   }
 
   protected handleKeydown(event: KeyboardEvent) {
@@ -376,42 +374,4 @@ export class TableInlineEditDirective<T> {
 
     return position && this.table.bodyCellElementAt(position.row, position.column);
   }
-
-  /**
-   * The body cell an event came from, as a position - `null` when it started outside the grid body.
-   * The rendered cells are rows major, so their index carries both coordinates; this is the same
-   * arithmetic keyboard navigation does, and it exists because `closest()` is banned here.
-   */
-  private cellFrom(event: Event) {
-    const cells = this.table.bodyCellElements();
-    const path = event.composedPath();
-    const index = cells.findIndex((candidate) => path.includes(candidate));
-
-    if (index === -1) return null;
-
-    const columns = untracked(() => this.table.visibleColumns()).length;
-
-    if (!columns) return null;
-
-    return {
-      row: this.table.renderedRowOffset() + Math.floor(index / columns),
-      column: index % columns,
-    };
-  }
 }
-
-// The feature reads cell values through the columns' `value` accessors, which the row-type-agnostic
-// feature seam deliberately hides - so it injects the table itself, as the CSV export does. Placed
-// anywhere else the directive could only ever silently do nothing, so name the mistake instead.
-const injectHostTable = <T>() => {
-  const table = inject(TableComponent, { optional: true }) as TableComponent<T> | null;
-
-  if (!table) {
-    throw new RuntimeError(
-      TABLE_ERROR_CODES.FEATURE_OUTSIDE_TABLE,
-      `[etTableInlineEdit] must be used on an <et-table>.`,
-    );
-  }
-
-  return table;
-};

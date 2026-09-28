@@ -7,7 +7,7 @@ import { TableDetailStylesComponent } from './table-detail-styles.component';
 import { TableExpanderCellComponent } from './table-expander-cell.component';
 import { TableRowDetailComponent } from './table-row-detail.component';
 
-/** Detail-row enter/leave duration (must match the CSS animations) - see {@link TableRowExpansionDirective.animates}. */
+/** Covers the 0.18s detail-row enter/leave animations in the CSS - see {@link TableRowExpansionDirective.animates}. */
 const DETAIL_ANIMATION_MS = 200;
 
 /** Options for {@link TableRowExpansionDirective}. */
@@ -90,9 +90,6 @@ export class TableRowExpansionDirective<T> {
       enabled: computed(() => this.config().enabled ?? true),
     });
 
-    // The expanded rows are the feature's own state, so they travel in `state().features.expansion`
-    // rather than in the base table's own entries - see TableStateSlice. A table without a `rowKey`
-    // keys by row reference and has nothing stable to write, so it contributes nothing.
     this.table.registerStateSlice({
       key: 'expansion',
       read: () => {
@@ -108,10 +105,7 @@ export class TableRowExpansionDirective<T> {
       },
     });
 
-    // The detail row's chrome and keyframes are the largest block the table's CSS had, and do nothing
-    // without expansion - so they arrive with the feature. Mounted here rather than from the detail row
-    // itself so the rules are in the document before the first expansion animates. The style manager
-    // de-duplicates across every table in the app.
+    // Mounted here, not from the detail row, so the keyframes exist before the first expansion animates.
     injectStyleManager().mount(TableDetailStylesComponent);
   }
 

@@ -51,26 +51,30 @@ export class TablePageStickyHeaderDirective {
       this.table.visibleColumnsMeta();
       this.table.leadColumnsMeta();
       this.table.trailColumnsMeta();
-      afterNextRender({ read: () => this.measure() }, { injector: this.injector });
+      afterNextRender(
+        { earlyRead: () => this.measure(), write: (layout) => this.apply(layout) },
+        { injector: this.injector },
+      );
     });
   }
 
   private measure() {
-    const host = this.table.element;
     const grid = this.table.gridElement();
     const headerGrid = this.table.pageHeaderGridElement();
     const scroller = this.table.scrollElement();
-    const view = host.ownerDocument.defaultView;
+    const view = this.table.element.ownerDocument.defaultView;
 
-    if (!this.enabled() || !grid || !headerGrid || !view) {
-      this.table.setPageHeaderColumns(null);
-      this.writeMaxScroll(host, 0);
+    if (!this.enabled() || !grid || !headerGrid || !view) return null;
 
-      return;
-    }
+    return {
+      columns: view.getComputedStyle(grid).gridTemplateColumns,
+      maxScroll: Math.max(0, scroller.scrollWidth - scroller.clientWidth),
+    };
+  }
 
-    this.table.setPageHeaderColumns(view.getComputedStyle(grid).gridTemplateColumns);
-    this.writeMaxScroll(host, Math.max(0, scroller.scrollWidth - scroller.clientWidth));
+  private apply(layout: { columns: string; maxScroll: number } | null) {
+    this.table.setPageHeaderColumns(layout?.columns ?? null);
+    this.writeMaxScroll(this.table.element, layout?.maxScroll ?? 0);
   }
 
   private writeMaxScroll(host: HTMLElement, maxScroll: number) {

@@ -17,8 +17,7 @@ export type TableFiltersConfig = TableFeatureConfig;
  * (provider-backed) options. The trigger and menu are stamped into the table's header cells (see
  * {@link TableFilterTriggerComponent}), so this directive itself renders nothing.
  *
- * It carries the whole [menu](/components/menu) system with it, which is exactly why it is separate:
- * a table without filters never pulls that in.
+ * It carries the whole [menu](/components/menu) system with it.
  *
  * @example
  * <et-table [data]="rows()" [columns]="COLUMNS" etTableFilters />
