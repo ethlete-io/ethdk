@@ -308,6 +308,40 @@ describe('a row ended before its end was marked as a cut', () => {
   });
 });
 
+describe('a rest of the call whose pin does not name the row it was cut from', () => {
+  const stored = () => {
+    const ended = setRowRange({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: reviewDay({ rows: day('16:07') }).rows[0]!,
+      from: at('14:00'),
+      to: at('16:00'),
+    });
+    const rest = reviewDay({ rows: day('16:37'), edits: ended }).rows[1]!;
+    const restEnded = setRowRange({ edits: ended, row: rest, from: rest.from, to: at('16:30') });
+
+    return {
+      ...restEnded,
+      pinned: restEnded.pinned.map((pin) =>
+        pin.issueKey ? { ...pin, replaces: [...pin.replaces, 'sliver'] } : { ...pin, replaces: ['sliver', 'recut'] },
+      ),
+    };
+  };
+
+  it('draws the rest as one band', () => {
+    expect(spans(stored(), '17:00')).toEqual([
+      { from: at('14:00').toISOString(), to: at('16:00').toISOString(), issueKey: 'FIP-3095' },
+      { from: at('16:00').toISOString(), to: at('17:00').toISOString(), issueKey: undefined },
+    ]);
+  });
+
+  it('counts the row as ended, so it can follow the call again', () => {
+    const edits = stored();
+    const [row] = reviewDay({ rows: day('17:00'), edits }).rows;
+
+    expect(isEndedCallRow({ row: row!, calls: day('17:00').calls, edits })).toBe(true);
+  });
+});
+
 describe('isEndedCallRow, on a call picked up again', () => {
   it('follows the call past a reconnect of the same process', () => {
     const ended = endedAt('16:07');

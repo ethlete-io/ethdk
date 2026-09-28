@@ -56,8 +56,9 @@ const cutFrom = (edits: DayReviewEdits, row: EndedRow) => {
   const sources = endPinOf(edits, row)?.replaces ?? [row.recutOf ?? row.id];
 
   return (id: string) =>
-    id.includes('#') &&
-    (sources.some((source) => id.startsWith(`${source}#`)) || (!!row.issueKey && id.startsWith(`${row.issueKey}@`)));
+    sources.includes(id) ||
+    (id.includes('#') &&
+      (sources.some((source) => id.startsWith(`${source}#`)) || (!!row.issueKey && id.startsWith(`${row.issueKey}@`))));
 };
 
 /**
@@ -66,16 +67,24 @@ const cutFrom = (edits: DayReviewEdits, row: EndedRow) => {
  */
 const restPinsOf = (edits: DayReviewEdits, row: EndedRow) => {
   const cutFromRow = cutFrom(edits, row);
-
-  return edits.pinned.filter(
-    (pin) =>
-      !pin.issueKey &&
-      !pin.standInId &&
-      storedLaneKey(pin.laneKey) === CALL_LANE_KEY &&
-      pin.from.getTime() >= row.from.getTime() &&
-      pin.replaces.length > 0 &&
-      pin.replaces.every(cutFromRow),
+  const unnamed = edits.pinned
+    .filter((pin) => !pin.issueKey && !pin.standInId && !pin.excluded && storedLaneKey(pin.laneKey) === CALL_LANE_KEY)
+    .sort((left, right) => left.from.getTime() - right.from.getTime());
+  const rest = new Set(
+    unnamed.filter(
+      (pin) => pin.from.getTime() >= row.from.getTime() && pin.replaces.length > 0 && pin.replaces.every(cutFromRow),
+    ),
   );
+  let reached = endPinOf(edits, row)?.to.getTime();
+
+  for (const pin of unnamed) {
+    if (reached === undefined || pin.from.getTime() !== reached) continue;
+
+    rest.add(pin);
+    reached = pin.to.getTime();
+  }
+
+  return [...rest];
 };
 
 const withoutRestPins = (edits: DayReviewEdits, row: EndedRow): DayReviewEdits => {
@@ -85,9 +94,7 @@ const withoutRestPins = (edits: DayReviewEdits, row: EndedRow): DayReviewEdits =
 };
 
 const endedCallPins = (edits: DayReviewEdits) =>
-  edits.pinned.filter(
-    (pin) => !!pin.issueKey && storedLaneKey(pin.laneKey) === CALL_LANE_KEY && pin.tracksTo === false,
-  );
+  edits.pinned.filter((pin) => !!pin.issueKey && storedLaneKey(pin.laneKey) === CALL_LANE_KEY && !pin.tracksTo);
 
 /**
  * Drops the ends a reviewer gave the rest of a call a named row was ended off, so that rest is one
@@ -165,7 +172,7 @@ export const isEndedCallRow = (options: {
   const { row, edits } = options;
   const pin = endPinOf(edits, row);
 
-  if (!row.issueKey || storedLaneKey(row.laneKey) !== CALL_LANE_KEY || !pin || pin.tracksTo !== false) return false;
+  if (!row.issueKey || storedLaneKey(row.laneKey) !== CALL_LANE_KEY || !pin || pin.tracksTo) return false;
   if (meetingBehindRow(options)) return false;
 
   const snipped = pin.snippedFromMs !== undefined || restPinsOf(edits, row).some((rest) => rest.tracksTo === false);
