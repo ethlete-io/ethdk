@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, booleanAttribute, computed, effect, inject, input, signal } from '@angular/core';
+import { Component, ViewEncapsulation, booleanAttribute, computed, inject, input } from '@angular/core';
 import { positiveIntegerAttribute } from '../../../internals/number-attributes';
 import { CALENDAR_IMPORTS } from '../../../calendar';
 import { CALENDAR_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../../icon';
@@ -9,6 +9,7 @@ import { DatePickerPanelComponent } from '../date-picker-panel.component';
 import { DatePickerSurfaceDirective } from '../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../picker/date-picker-trigger.directive';
 import { DateTimePickerPanesDirective } from '../internals/date-time-panes.directive';
+import { createPickerPanes } from '../internals/picker-pane-state';
 import { DateTimeInputDirective, DateTimeInputFieldDirective } from './headless';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 import { injectDateTimeLabels } from '../../../forms/date-time/date-time-labels';
@@ -130,25 +131,7 @@ export class DateTimeInputComponent {
       this.dateTimeInput.interactive(),
   );
 
-  protected activePane = signal<'date' | 'time'>('date');
-
-  /**
-   * Direction of the last pane switch. `null` while untouched, so opening the picker does not
-   * animate.
-   */
-  protected paneNav = signal<'forward' | 'backward' | null>(null);
-
-  private paneAdvanceSpent = signal(false);
-
-  constructor() {
-    effect(() => {
-      if (this.dateTimeInput.pickerOpen()) {
-        this.activePane.set('date');
-        this.paneNav.set(null);
-        this.paneAdvanceSpent.set(false);
-      }
-    });
-  }
+  protected panes = createPickerPanes(['date', 'time'], this.dateTimeInput.pickerOpen);
 
   protected handleClearClick(event: Event) {
     // clearing must not bubble into the form field's frame-click handling
@@ -163,29 +146,12 @@ export class DateTimeInputComponent {
   protected handleDateSelect(date: Date | null) {
     this.dateTimeInput.selectDate(date);
 
-    if (date === null || this.paneAdvanceSpent()) {
-      return;
+    if (date !== null) {
+      this.panes.advance();
     }
-
-    this.paneAdvanceSpent.set(true);
-    this.showPane('time');
-  }
-
-  protected setActivePane(pane: unknown) {
-    this.paneAdvanceSpent.set(true);
-    this.showPane(pane === 'time' ? 'time' : 'date');
   }
 
   public focus(options?: FocusOptions) {
     this.dateTimeInput.focus(options);
-  }
-
-  private showPane(next: 'date' | 'time') {
-    if (next === this.activePane()) {
-      return;
-    }
-
-    this.paneNav.set(next === 'time' ? 'forward' : 'backward');
-    this.activePane.set(next);
   }
 }

@@ -11,11 +11,12 @@ import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labe
 import { injectDateTimeLabels } from '../../../forms/date-time/date-time-labels';
 import { ControlSuffixDirective } from '../../form-field/partials';
 import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
+import { mountRangeInputShellStyles } from '../range-input-shell-styles.component';
 
 @Component({
   selector: 'et-date-range-input',
   templateUrl: './date-range-input.component.html',
-  styleUrls: ['../range-input-shell.css', './date-range-input.component.css'],
+  styleUrl: './date-range-input.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [
     ControlSuffixDirective,
@@ -108,6 +109,10 @@ export class DateRangeInputComponent {
   protected showClear = computed(
     () => this.clearable() && this.rangeInput.hasValue() && this.rangeInput.focused() && this.rangeInput.interactive(),
   );
+
+  constructor() {
+    mountRangeInputShellStyles();
+  }
 
   protected handleClearClick(event: Event) {
     // clearing must not bubble into the form field's frame-click handling

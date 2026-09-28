@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, booleanAttribute, computed, effect, inject, input, signal } from '@angular/core';
+import { Component, ViewEncapsulation, booleanAttribute, computed, inject, input } from '@angular/core';
 import { positiveIntegerAttribute } from '../../../internals/number-attributes';
 import { CALENDAR_IMPORTS } from '../../../calendar';
 import { CALENDAR_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../../icon';
@@ -11,19 +11,17 @@ import { SegmentedButtonComponent, SegmentedButtonGroupComponent } from '../../s
 import { DatePickerPanelComponent } from '../date-picker-panel.component';
 import { DateRangePresetsComponent } from '../date-range-presets.component';
 import { DateTimePickerPanesDirective } from '../internals/date-time-panes.directive';
+import { createPickerPanes } from '../internals/picker-pane-state';
 import { DatePickerSurfaceDirective } from '../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../picker/date-picker-trigger.directive';
 import { DateTimeRangeInputDirective, DateTimeRangeInputFieldDirective } from './headless';
 import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
-
-type DateTimeRangePane = 'dates' | 'times';
-
-const PANE_ORDER: readonly DateTimeRangePane[] = ['dates', 'times'];
+import { mountRangeInputShellStyles } from '../range-input-shell-styles.component';
 
 @Component({
   selector: 'et-date-time-range-input',
   templateUrl: './date-time-range-input.component.html',
-  styleUrls: ['../range-input-shell.css', './date-time-range-input.component.css'],
+  styleUrl: './date-time-range-input.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [
     ControlSuffixDirective,
@@ -155,24 +153,10 @@ export class DateTimeRangeInputComponent {
       this.rangeInput.interactive(),
   );
 
-  protected activePane = signal<DateTimeRangePane>('dates');
-
-  /**
-   * Direction of the last pane switch. `null` while untouched, so opening the picker does not
-   * animate.
-   */
-  protected paneNav = signal<'forward' | 'backward' | null>(null);
-
-  private paneAdvanceSpent = signal(false);
+  protected panes = createPickerPanes(['dates', 'times'], this.rangeInput.pickerOpen);
 
   constructor() {
-    effect(() => {
-      if (this.rangeInput.pickerOpen()) {
-        this.activePane.set('dates');
-        this.paneNav.set(null);
-        this.paneAdvanceSpent.set(false);
-      }
-    });
+    mountRangeInputShellStyles();
   }
 
   protected handleClearClick(event: Event) {
@@ -188,31 +172,12 @@ export class DateTimeRangeInputComponent {
   protected handleRangeSelect(range: { start: Date | null; end: Date | null }) {
     this.rangeInput.selectCalendarRange(range);
 
-    if (range.start === null || range.end === null || this.paneAdvanceSpent()) {
-      return;
+    if (range.start !== null && range.end !== null) {
+      this.panes.advance();
     }
-
-    this.paneAdvanceSpent.set(true);
-    this.showPane('times');
-  }
-
-  protected setActivePane(pane: unknown) {
-    this.paneAdvanceSpent.set(true);
-    this.showPane(PANE_ORDER.find((candidate) => candidate === pane) ?? 'dates');
   }
 
   public focus(options?: FocusOptions) {
     this.rangeInput.focus(options);
-  }
-
-  private showPane(next: DateTimeRangePane) {
-    const current = this.activePane();
-
-    if (next === current) {
-      return;
-    }
-
-    this.paneNav.set(PANE_ORDER.indexOf(next) > PANE_ORDER.indexOf(current) ? 'forward' : 'backward');
-    this.activePane.set(next);
   }
 }

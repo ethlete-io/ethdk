@@ -1,6 +1,4 @@
 @layer components {
-  /* Must be listed before each control's own stylesheet in `styleUrls`: its `flex: 1` ties on
-     specificity with the `@container` override, so order decides - reversed, narrow silently un-stacks. */
   et-date-range-input,
   et-time-range-input,
   et-date-time-range-input {
@@ -17,9 +15,11 @@
     color: inherit;
   }
 
-  et-date-range-input .et-date-range-input-field,
-  et-time-range-input .et-time-range-input-field,
-  et-date-time-range-input .et-date-time-range-input-field {
+  /* The host stays inside `:where()` so each control's `@container` override outweighs this
+     `flex: 1`, whichever stylesheet is injected last. */
+  :where(et-date-range-input) .et-date-range-input-field,
+  :where(et-time-range-input) .et-time-range-input-field,
+  :where(et-date-time-range-input) .et-date-time-range-input-field {
     flex: 1;
     min-inline-size: 0;
     border: none;

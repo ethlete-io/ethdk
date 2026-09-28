@@ -130,8 +130,6 @@ export class DateRangeInputDirective extends DateRangePickerInputDirective imple
   }
 
   public parseSideCommit(raw: string) {
-    // reference midnight so a date-only `displayFormat` doesn't fold the current wall-clock time
-    // into a time-bearing `valueFormat`
     const parsed = parseDateValue(raw, {
       format: this.effectiveDisplayFormat(),
       locale: this.effectiveLocale(),

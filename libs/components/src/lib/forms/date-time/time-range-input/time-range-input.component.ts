@@ -11,11 +11,12 @@ import { DatePickerSurfaceDirective } from '../picker/date-picker-surface.direct
 import { DatePickerTriggerDirective } from '../picker/date-picker-trigger.directive';
 import { TimeRangeInputDirective, TimeRangeInputFieldDirective } from './headless';
 import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
+import { mountRangeInputShellStyles } from '../range-input-shell-styles.component';
 
 @Component({
   selector: 'et-time-range-input',
   templateUrl: './time-range-input.component.html',
-  styleUrls: ['../range-input-shell.css', './time-range-input.component.css'],
+  styleUrl: './time-range-input.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [
     ControlSuffixDirective,
@@ -106,6 +107,10 @@ export class TimeRangeInputComponent {
       (this.rangeInput.focused() || this.rangeInput.pickerOpen()) &&
       this.rangeInput.interactive(),
   );
+
+  constructor() {
+    mountRangeInputShellStyles();
+  }
 
   protected handleClearClick(event: Event) {
     // clearing must not bubble into the form field's frame-click handling

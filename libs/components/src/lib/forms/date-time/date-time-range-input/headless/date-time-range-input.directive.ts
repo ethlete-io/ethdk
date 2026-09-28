@@ -1,4 +1,4 @@
-import { Directive, booleanAttribute, computed, effect, input, signal } from '@angular/core';
+import { Directive, booleanAttribute, computed, input, signal } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { CalendarDateClassFn, CalendarView } from '../../../../calendar/headless';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
@@ -10,23 +10,15 @@ import {
   DateRangeValue,
 } from '../../internals/date-range-picker-input.directive';
 import { withTimeOfDay } from '../../internals/date-time-merge';
-import {
-  combineInZone,
-  toZoneCalendar,
-  isValidTimeZone,
-  localReading,
-  timeZoneDisplayName,
-  withZonedDay,
-} from '../../internals/time-zone';
+import { combineInZone, toZoneCalendar, localReading, withZonedDay } from '../../internals/time-zone';
 import { parseDateTimeText } from '../../internals/date-time-parse';
 import { createPendingDateTime, renderPartialDateTime } from '../../internals/pending-date-time';
 import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
 import { DateRangePreset } from '../../date-range-presets';
 import { createDateRangePresets } from '../../internals/date-range-presets-state';
+import { effectiveTimeZoneOf, nextLocalReadingElementId, timeZoneLabelOf } from '../../internals/time-zone-state';
 
 export type { DateRangeValue as DateTimeRangeValue } from '../../internals/date-range-picker-input.directive';
-
-let localReadingIdCounter = 0;
 
 /**
  * Rejects individual times in the picker. The candidate is the picked time of day on the side's
@@ -119,20 +111,12 @@ export class DateTimeRangeInputDirective
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.DATE_TIME_RANGE_INPUT);
 
   /** The zone in effect, or `null` when none is set or the name is not one `Intl` knows. */
-  public override effectiveTimeZone = computed(() => {
-    const timeZone = this.timeZone();
-
-    return timeZone !== null && isValidTimeZone(timeZone) ? timeZone : null;
-  });
+  public override effectiveTimeZone = effectiveTimeZoneOf(this.timeZone, 'et-date-time-range-input');
 
   /** The name shown for the fields' zone. */
-  public resolvedTimeZoneLabel = computed(() => {
-    const timeZone = this.effectiveTimeZone();
+  public resolvedTimeZoneLabel = timeZoneLabelOf(this.effectiveTimeZone, this.timeZoneLabel);
 
-    return timeZone === null ? null : (this.timeZoneLabel() ?? timeZoneDisplayName(timeZone));
-  });
-
-  private readonly LOCAL_READING_ELEMENT_ID = `et-date-time-range-local-reading-${localReadingIdCounter++}`;
+  private readonly LOCAL_READING_ELEMENT_ID = nextLocalReadingElementId('et-date-time-range-input');
 
   /** @internal Id of the second-reading element, or `null` while it does not render. */
   public localReadingId = computed(() =>
@@ -171,20 +155,6 @@ export class DateTimeRangeInputDirective
 
   /** {@link maxDate} on the calendar the picker shows. */
   public pickerMaxDate = computed(() => toZoneCalendar(this.maxDate(), this.effectiveTimeZone()));
-
-  constructor() {
-    super();
-
-    if (ngDevMode) {
-      effect(() => {
-        const timeZone = this.timeZone();
-
-        if (timeZone !== null && !isValidTimeZone(timeZone)) {
-          console.warn(`[et-date-time-range-input] timeZone "${timeZone}" is not an IANA zone name, so it is ignored.`);
-        }
-      });
-    }
-  }
 
   /** One side read in the runtime's own zone, or `null` when it is empty or the readings agree. */
   public localReading(side: DateRangeSide) {

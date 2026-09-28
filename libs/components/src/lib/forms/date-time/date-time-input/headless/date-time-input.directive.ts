@@ -1,4 +1,4 @@
-import { booleanAttribute, computed, effect, input, signal, Directive } from '@angular/core';
+import { booleanAttribute, computed, input, signal, Directive } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { FORM_FIELD_CONTROL_TYPES } from '../../../form-field/headless';
 import { injectDateFormat } from '../../date-time-formats';
@@ -8,9 +8,7 @@ import {
   combineInZone,
   toZoneCalendar,
   formatInZone,
-  isValidTimeZone,
   localReading,
-  timeZoneDisplayName,
   withZonedDay,
   withZonedTimeOfDay,
   zonedProxy,
@@ -22,8 +20,7 @@ import { parseDateTimeText } from '../../internals/date-time-parse';
 import { createPendingDateTime, renderPartialDateTime } from '../../internals/pending-date-time';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
 import { CalendarDateClassFn, CalendarView } from '../../../../calendar/headless';
-
-let localReadingIdCounter = 0;
+import { effectiveTimeZoneOf, nextLocalReadingElementId, timeZoneLabelOf } from '../../internals/time-zone-state';
 
 /**
  * A combined date & time form control with a `string | null` value (a date-fns
@@ -99,18 +96,12 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.DATE_TIME_INPUT);
 
   /** The zone in effect, or `null` when none is set or the name is not one `Intl` knows. */
-  public effectiveTimeZone = computed(() => {
-    const timeZone = this.timeZone();
-
-    return timeZone !== null && isValidTimeZone(timeZone) ? timeZone : null;
-  });
+  public effectiveTimeZone = effectiveTimeZoneOf(this.timeZone, 'et-date-time-input');
 
   /** The name shown for the field's zone. */
-  public resolvedTimeZoneLabel = computed(() => {
-    const timeZone = this.effectiveTimeZone();
+  public resolvedTimeZoneLabel = timeZoneLabelOf(this.effectiveTimeZone, this.timeZoneLabel);
 
-    return timeZone === null ? null : (this.timeZoneLabel() ?? timeZoneDisplayName(timeZone));
-  });
+  private readonly LOCAL_READING_ELEMENT_ID = nextLocalReadingElementId('et-date-time-input');
 
   /** The current value as a `Date` (what the picker calendar and time picker bind to). */
   public dateTime = computed(() => {
@@ -175,8 +166,6 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
     }),
   );
 
-  private readonly LOCAL_READING_ELEMENT_ID = `et-date-time-local-reading-${localReadingIdCounter++}`;
-
   /** @internal Id of the second-reading element, or `null` while it does not render. */
   public localReadingId = computed(() => (this.localReading() === null ? null : this.LOCAL_READING_ELEMENT_ID));
 
@@ -209,20 +198,6 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
       }) ?? ''
     );
   });
-
-  constructor() {
-    super();
-
-    if (ngDevMode) {
-      effect(() => {
-        const timeZone = this.timeZone();
-
-        if (timeZone !== null && !isValidTimeZone(timeZone)) {
-          console.warn(`[et-date-time-input] timeZone "${timeZone}" is not an IANA zone name, so it is ignored.`);
-        }
-      });
-    }
-  }
 
   /** An actual edit invalidates whatever half was held. */
   public override beforeCommit() {

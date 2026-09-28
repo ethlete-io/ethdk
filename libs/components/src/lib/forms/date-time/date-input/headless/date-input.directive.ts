@@ -102,9 +102,6 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
 
   /** @internal A strict parse against `displayFormat`. */
   public parseCommitText(raw: string) {
-    // reference midnight, not `new Date()`: a date-only `displayFormat` leaves date-fns to fill
-    // H/M/S from the reference, so a typed day would otherwise carry the current wall-clock time
-    // into a time-bearing `valueFormat`.
     return parseDateValue(raw, {
       format: this.effectiveDisplayFormat(),
       locale: this.effectiveLocale(),

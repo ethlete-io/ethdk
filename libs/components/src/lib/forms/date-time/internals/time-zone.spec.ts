@@ -3,7 +3,6 @@ import {
   instantFromZonedFields,
   isValidTimeZone,
   localReading,
-  parseInZone,
   reinterpretInZone,
   timeZoneDisplayName,
   zonedFields,
@@ -74,24 +73,6 @@ describe('formatInZone', () => {
     expect(formatInZone(INSTANT, { format: ISO_FORMAT, timeZone: null })).toBe(
       formatInZone(INSTANT, { format: ISO_FORMAT, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
     );
-  });
-});
-
-describe('parseInZone', () => {
-  it('reads a wall clock in the given zone', () => {
-    expect(parseInZone('2026-08-18 14:00', { format: 'yyyy-MM-dd HH:mm', timeZone: TOKYO })?.toISOString()).toBe(
-      '2026-08-18T05:00:00.000Z',
-    );
-  });
-
-  it('returns null for text that does not parse', () => {
-    expect(parseInZone('nonsense', { format: 'yyyy-MM-dd HH:mm', timeZone: TOKYO })).toBeNull();
-  });
-
-  it('round trips through formatInZone', () => {
-    const wire = formatInZone(INSTANT, { format: ISO_FORMAT, timeZone: TOKYO }) as string;
-
-    expect(parseInZone(wire, { format: ISO_FORMAT, timeZone: null })?.getTime()).toBe(INSTANT.getTime());
   });
 });
 

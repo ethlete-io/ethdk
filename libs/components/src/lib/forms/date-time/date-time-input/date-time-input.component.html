@@ -38,9 +38,9 @@
     <div class="et-date-time-input-panel">
       <div class="et-date-time-input-panel-tabs">
         <et-segmented-button-group
-          [value]="activePane()"
+          [value]="panes.active()"
           [aria-label]="dateTimeLabels().paneSwitch"
-          (valueChange)="setActivePane($event)"
+          (valueChange)="panes.select($event)"
         >
           <et-segmented-button value="date">{{ resolvedDateTabLabel() }}</et-segmented-button>
           <et-segmented-button value="time">{{ resolvedTimeTabLabel() }}</et-segmented-button>
@@ -48,8 +48,8 @@
       </div>
 
       <div
-        [attr.data-active-pane]="activePane()"
-        [attr.data-nav]="paneNav()"
+        [attr.data-active-pane]="panes.active()"
+        [attr.data-nav]="panes.nav()"
         class="et-date-time-input-panel-panes"
         etDateTimePickerPanes
       >

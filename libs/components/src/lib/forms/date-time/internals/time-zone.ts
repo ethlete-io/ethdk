@@ -1,6 +1,6 @@
 import { TZDate } from '@date-fns/tz';
 import { Locale } from 'date-fns';
-import { formatDateValue, parseDateValue, FormatDateValueOptions, ParseDateValueOptions } from './date-value';
+import { formatDateValue, FormatDateValueOptions } from './date-value';
 import { splitDateTimeFormat } from './date-time-format-split';
 import { withTimeOfDay } from './date-time-merge';
 
@@ -15,9 +15,6 @@ export type ZonedFields = {
 };
 
 export type ZonedFormatOptions = FormatDateValueOptions & { timeZone: string | null };
-export type ZonedParseOptions = ParseDateValueOptions & { timeZone: string | null };
-
-export const viewerTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 export const isValidTimeZone = (timeZone: string) => {
   try {
@@ -99,8 +96,6 @@ export const formatInZone = (instant: Date, options: ZonedFormatOptions): string
 
   return formatDateValue(new TZDate(instant, timeZone) as Date, options);
 };
-
-export const parseInZone = (value: string, options: ZonedParseOptions): Date | null => parseDateValue(value, options);
 
 export const reinterpretInZone = (local: Date, timeZone: string | null): Date =>
   timeZone === null ? local : instantFromZonedFields(localFields(local), timeZone);

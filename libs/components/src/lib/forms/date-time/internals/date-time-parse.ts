@@ -24,8 +24,6 @@ export const parseDateTimeText = (value: string, options: ParseDateValueOptions)
 
   const locale = options.locale;
   const timeZone = options.timeZone ?? null;
-  // date-only parses must fill their missing time from midnight, not `new Date()` (parseDateValue's
-  // default), or a bare date leaks the current wall-clock time into the wire value
   const referenceDate = startOfDay(options.referenceDate ?? new Date(), {
     in: timeZone === null ? undefined : tz(timeZone),
   });
