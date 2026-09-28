@@ -68,7 +68,7 @@ describe('IconDirective', () => {
       expect(span.hasAttribute('aria-label')).toBe(false);
     });
 
-    it('centres its content without writing a style attribute a strict CSP would block', () => {
+    it('centres its content from a layered stylesheet, without a style attribute a class could not beat', () => {
       const setAttribute = vi.spyOn(Element.prototype, 'setAttribute');
       const csp = TestBed.createComponent(IconTestHost);
 
@@ -77,9 +77,8 @@ describe('IconDirective', () => {
       const host = csp.nativeElement.querySelector('span');
 
       expect(setAttribute.mock.calls.filter(([name]) => name === 'style')).toEqual([]);
-      expect(getComputedStyle(host).display).toBe('flex');
-      expect(host.style.alignItems).toBe('center');
-      expect(host.style.justifyContent).toBe('center');
+      expect(host.getAttribute('style')).toBeNull();
+      expect(document.querySelector('et-icon-styles')).not.toBeNull();
 
       setAttribute.mockRestore();
     });
@@ -198,6 +197,31 @@ describe('IconDirective', () => {
         providers: [provideIconOverrides(ADDED_ICON)],
       });
       expect(render('et-added')?.getAttribute('viewBox')).toBe('0 0 77 77');
+    });
+
+    it('merges a nested override with the ones above it', () => {
+      @Component({
+        selector: 'et-test-nested-override',
+        template: `<span etIcon="et-test"></span><span etIcon="et-added"></span>`,
+        imports: [IconDirective],
+        providers: [provideIcons(VALID_ICON), provideIconOverrides(ADDED_ICON)],
+      })
+      class NestedOverrideHost {}
+
+      TestBed.configureTestingModule({
+        imports: [NestedOverrideHost],
+        providers: [provideIconOverrides(OVERRIDE_TEST)],
+      });
+
+      const fixture = TestBed.createComponent(NestedOverrideHost);
+      fixture.detectChanges();
+
+      const [overridden, added] = Array.from(
+        fixture.nativeElement.querySelectorAll('span svg') as NodeListOf<SVGElement>,
+      );
+
+      expect(overridden?.getAttribute('viewBox')).toBe('0 0 99 99');
+      expect(added?.getAttribute('viewBox')).toBe('0 0 77 77');
     });
 
     it('throws when two overrides share the same name/variant', () => {

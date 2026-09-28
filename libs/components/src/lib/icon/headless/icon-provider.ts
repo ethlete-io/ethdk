@@ -10,6 +10,10 @@ export type IconDefinition = {
    * registered without a variant are matched by their bare name.
    */
   variant?: string;
+  /**
+   * The SVG markup. It is rendered as-is without sanitising, so it must be trusted, build-time markup -
+   * never a string from a CMS, an API or user input.
+   */
   data: string;
 };
 
@@ -185,7 +189,8 @@ export type IconOverride = Omit<IconDefinition, 'name'> & {
  * to guess which names exist; passing any other string registers a brand-new icon.
  *
  * Overrides are keyed by name/variant and merged *on top of* the component-level registry,
- * so unlisted icons keep their built-in defaults.
+ * so unlisted icons keep their built-in defaults. A nested `provideIconOverrides` merges with the
+ * overrides above it, and wins for the names it lists.
  *
  * ```ts
  * // app.config.ts
@@ -197,7 +202,15 @@ export type IconOverride = Omit<IconDefinition, 'name'> & {
  * ],
  * ```
  */
-export const provideIconOverrides = (...icons: IconOverride[]) => ({
-  provide: ICON_OVERRIDES_TOKEN,
-  useValue: buildIconMap('provideIconOverrides', icons),
-});
+export const provideIconOverrides = (...icons: IconOverride[]) => {
+  const own = buildIconMap('provideIconOverrides', icons);
+
+  return {
+    provide: ICON_OVERRIDES_TOKEN,
+    useFactory: (): Record<string, IconDefinition> => {
+      const inherited = inject(ICON_OVERRIDES_TOKEN, { skipSelf: true, optional: true });
+
+      return inherited ? { ...inherited, ...own } : own;
+    },
+  };
+};

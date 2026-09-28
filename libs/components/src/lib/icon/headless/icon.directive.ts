@@ -1,8 +1,9 @@
 import { booleanAttribute, computed, Directive, inject, InjectionToken, input, InputSignal } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
-import { RuntimeError } from '@ethlete/core';
+import { RuntimeError, injectStyleManager } from '@ethlete/core';
 import { injectReportError } from '../../internals/report-error';
 import { ICON_ERROR_CODES } from './icon-errors';
+import { IconStylesComponent } from './icon-styles.component';
 import {
   DEFAULT_ICON_VARIANT,
   ICON_OVERRIDES_TOKEN,
@@ -26,15 +27,10 @@ const SVG_COLOR_ATTRIBUTES = ['fill', 'stroke', 'stop-color', 'stop-opacity'];
   ],
   host: {
     '[innerHTML]': 'iconSrc()',
-    // Decorative by default - an icon almost always repeats a label right next to it, and announcing
-    // it again is noise. A `label` flips it to a real image with a name; see the input.
     '[attr.aria-hidden]': 'label() ? null : "true"',
     '[attr.role]': 'label() ? "img" : null',
     '[attr.aria-label]': 'label()',
     '[class]': 'hostClasses()',
-    '[style.display]': '"flex"',
-    '[style.align-items]': '"center"',
-    '[style.justify-content]': '"center"',
   },
 })
 export class IconDirective {
@@ -62,8 +58,6 @@ export class IconDirective {
    */
   public label = input<string | null>(null);
 
-  // App-level overrides win over the icons a component self-registers, keyed by name/variant.
-  // Names absent from the override map keep their built-in default.
   private registry = this.icons || this.iconOverrides ? { ...this.icons, ...this.iconOverrides } : null;
 
   private resolvedIcon = computed(() => {
@@ -74,8 +68,6 @@ export class IconDirective {
     const name = this.iconNameToUse();
     const variant = this.variant();
 
-    // Explicit variant → exact match only. Otherwise prefer a variant-less registration
-    // (the built-in et-* icons) before falling back to the default `solid` variant.
     const candidateKeys = variant
       ? [iconRegistryKey(name, variant)]
       : [iconRegistryKey(name), iconRegistryKey(name, DEFAULT_ICON_VARIANT)];
@@ -130,6 +122,8 @@ export class IconDirective {
   });
 
   constructor() {
+    injectStyleManager().mount(IconStylesComponent);
+
     if (!this.registry) {
       throw new RuntimeError(
         ICON_ERROR_CODES.NO_ICONS_PROVIDED,

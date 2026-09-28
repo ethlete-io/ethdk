@@ -23,7 +23,8 @@ import { CHEVRON_ICON, ICON_IMPORTS, TIMES_ICON, provideIcons } from '@ethlete/c
 
 - An icon is an `IconDefinition` - `{ name, variant?, data }` with an inline SVG string. The SDK ships a small built-in `et-*` set (`PLUS_ICON`, `CHEVRON_ICON`, `TIMES_ICON`, `ARROW_RIGHT_ICON`, `PENCIL_ICON`, …); your own icons are just more constants.
 - `provideIcons(...icons)` registers them for the injector scope it's provided in. Registering the same name+variant twice throws in dev mode.
-- `[etIcon]` renders the SVG via `innerHTML`, adds `aria-hidden="true"` (unless given a [`label`](#accessibility)) and the classes `et-icon et-icon--<name>`.
+- `[etIcon]` renders the SVG via `innerHTML`, adds `aria-hidden="true"` (unless given a [`label`](#accessibility)) and the classes `et-icon et-icon--<name>`. The markup is not sanitised, so `data` must be trusted, build-time SVG - never a string from a CMS, an API or user input.
+- `.et-icon` centres the SVG with `display: flex`, in the `components` cascade layer, so a class such as `inline-flex` or `hidden` overrides it.
 - `variant` selects between registered variants of the same name. When unset, a variant-less registration wins, falling back to the `'solid'` variant. With a variant set, the host also gets an `et-icon--<name>--<variant>` class.
 
 ## Sizing & color
@@ -167,7 +168,7 @@ bootstrapApplication(AppComponent, {
 - `name` autocompletes to the built-in set (`ET_BUILT_IN_ICON_NAMES` / the `EtBuiltInIconName` type) - you don't have to guess which names the SDK renders. Any other string still type-checks, for registering brand-new icons.
 - Overrides are matched by `name` (and `variant`) and merged **on top of** each component's own `provideIcons()` - so you only list the icons you want to change; everything else keeps its built-in default.
 - Because it's a separate provider, an app-root override reaches into components that self-register the same name - a plain root `provideIcons()` can't, since the component's own registration of that name wins over the inherited one.
-- Registering a name that no built-in uses simply makes that icon available to every `[etIcon]` under the same injector. Provide it lower in the tree (e.g. on a feature component) to scope the override to a subtree instead of the whole app.
+- Registering a name that no built-in uses simply makes that icon available to every `[etIcon]` under the same injector. Provide it lower in the tree (e.g. on a feature component) to scope the override to a subtree instead of the whole app. A nested `provideIconOverrides()` merges with the overrides above it, so the app-level ones stay in effect for every name it does not list.
 - The same dev-mode SVG validation applies to override data.
 
 ## Accessibility
