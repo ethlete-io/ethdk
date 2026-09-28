@@ -6,6 +6,7 @@ import { TempoWorkAttribute, missingRequiredAttributes } from './attributes';
 import { TempoCredentials, TempoRequestError } from './client';
 import { TempoSyncCreate, TempoSyncDelete, TempoSyncPlan, TempoSyncUpdate } from './diff';
 import { TempoMarkerScheme, applyWorklogMarker } from './marker';
+import { pieceSourceId } from './separate';
 import { createTempoWorklog$, deleteTempoWorklog$, updateTempoWorklog$ } from './write';
 
 export type TempoSyncRowKind = 'create' | 'update' | 'delete';
@@ -71,7 +72,7 @@ const valuesFor = (options: TempoSyncOptions, proposal: WorklogProposal) =>
     description: proposal.description,
     proposalId: proposal.id,
     scheme: options.marker,
-    attributes: options.attributesByProposalId?.[proposal.id],
+    attributes: options.attributesByProposalId?.[pieceSourceId(proposal.id)],
   });
 
 const blockersOf = (options: TempoSyncOptions, values: ReturnType<typeof valuesFor>) => {

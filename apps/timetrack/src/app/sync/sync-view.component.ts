@@ -16,6 +16,7 @@ import {
   TempoSyncUpdateReason,
   TempoWorklog,
   formatDurationMs,
+  pieceSourceId,
 } from '@ethlete/timetrack';
 import { formatClockTime, formatDayLabel } from '../day-review/format';
 import { injectTempoSync } from './sync';
@@ -266,7 +267,7 @@ export class SyncViewComponent {
           id: entry.proposalId,
           kind: 'delete',
           reason: REASONS[entry.reason],
-          row: rows.get(entry.proposalId),
+          row: rows.get(pieceSourceId(entry.proposalId)),
         }),
       ),
       ...plan.creates.map((entry) =>
@@ -306,8 +307,8 @@ export class SyncViewComponent {
       kind: row.kind,
       status: row.status,
       color: STATUS_COLORS[row.status],
-      issueKey: rows.get(row.proposalId)?.issueKey ?? row.proposalId,
-      description: rows.get(row.proposalId)?.description || '(no description)',
+      issueKey: rows.get(pieceSourceId(row.proposalId))?.issueKey ?? row.proposalId,
+      description: rows.get(pieceSourceId(row.proposalId))?.description || '(no description)',
       detail: this.detailOf(row),
     }));
   });

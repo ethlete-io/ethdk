@@ -297,3 +297,108 @@ describe('planTempoSync', () => {
     });
   });
 });
+
+describe('planTempoSync overlapping rows', () => {
+  const MINUTE = 60_000;
+  const at = (hour: number, minute = 0) => new Date(2026, 8, 28, hour, minute);
+  const row = (id: string, issueKey: string, from: Date, minutes: number, overrides: Partial<WorklogProposal> = {}) =>
+    proposal({
+      id,
+      issueKey,
+      from,
+      to: new Date(from.getTime() + minutes * MINUTE),
+      durationMs: minutes * MINUTE,
+      observedMs: minutes * MINUTE,
+      description: id,
+      state: 'edited',
+      ...overrides,
+    });
+  const meeting = (id: string, issueKey: string, from: Date, minutes: number) =>
+    row(id, issueKey, from, minutes, {
+      laneKey: 'lane:call',
+      evidence: [{ kind: 'call', at: from, detail: 'call' }],
+    });
+  const ids = new Map(
+    ['ET-772', 'BD-2049', 'FIFAGG-12662', 'FIFAGG-12652', 'FIFAGG-12664'].map((key, index) => [key, `${index + 1}`]),
+  );
+  const written = (result: ReturnType<typeof planTempoSync>) =>
+    [...result.creates, ...result.updates]
+      .map(({ proposal: entry }) => ({
+        id: entry.id,
+        issueKey: entry.issueKey,
+        from: entry.from.getTime(),
+        to: entry.from.getTime() + entry.durationMs,
+      }))
+      .sort((a, b) => a.from - b.from);
+  const expectNoOverlap = (rows: ReturnType<typeof written>) => {
+    for (const [index, entry] of rows.entries()) {
+      for (const other of rows.slice(index + 1)) {
+        expect(entry.to <= other.from || other.to <= entry.from, `${entry.id} overlaps ${other.id}`).toBe(true);
+      }
+    }
+  };
+  const clock = (ms: number) => new Date(ms).toTimeString().slice(0, 5);
+
+  it('lets the meetings of 2026-09-28 keep their time and trims the work under them', () => {
+    const result = planTempoSync({
+      proposals: [
+        row('et-night', 'ET-772', at(0), 90),
+        meeting('mome', 'BD-2049', at(9, 15), 45),
+        row('work-a', 'FIFAGG-12662', at(9, 15), 45),
+        meeting('sprint', 'FIFAGG-12652', at(10), 45),
+        row('work-b', 'FIFAGG-12664', at(10), 75),
+      ],
+      ledger: [],
+      remote: [],
+      issueIdsByKey: ids,
+      backgroundProjects: ['ET'],
+    });
+    const rows = written(result);
+
+    expectNoOverlap(rows);
+    expect(rows.map((entry) => `${entry.issueKey} ${clock(entry.from)}-${clock(entry.to)}`)).toEqual([
+      'ET-772 00:00-01:30',
+      'BD-2049 09:15-10:00',
+      'FIFAGG-12652 10:00-10:45',
+      'FIFAGG-12664 10:45-11:15',
+    ]);
+  });
+
+  it('splits a work row a meeting sits inside and gives ET-772 only the unclaimed minutes', () => {
+    const result = planTempoSync({
+      proposals: [
+        row('et', 'ET-772', at(8, 30), 180),
+        row('work', 'FIFAGG-12664', at(9), 120),
+        meeting('sprint', 'FIFAGG-12652', at(9, 30), 30),
+      ],
+      ledger: [],
+      remote: [],
+      issueIdsByKey: ids,
+      backgroundProjects: ['ET'],
+    });
+    const rows = written(result);
+
+    expectNoOverlap(rows);
+    expect(rows.map((entry) => `${entry.issueKey} ${clock(entry.from)}-${clock(entry.to)}`)).toEqual([
+      'ET-772 08:30-09:00',
+      'FIFAGG-12664 09:00-09:30',
+      'FIFAGG-12652 09:30-10:00',
+      'FIFAGG-12664 10:00-11:00',
+      'ET-772 11:00-11:30',
+    ]);
+    expect(rows.every((entry) => (entry.to - entry.from) % (15 * MINUTE) === 0)).toBe(true);
+  });
+
+  it('deletes the synced worklog of a row a meeting now covers in full', () => {
+    const work = row('work-a', 'FIFAGG-12662', at(9, 15), 45);
+    const result = planTempoSync({
+      proposals: [meeting('mome', 'BD-2049', at(9, 15), 45), work],
+      ledger: [ledgerFor(work)],
+      remote: [remoteFor(work, { issueId: '3' })],
+      issueIdsByKey: ids,
+    });
+
+    expect(result.deletes).toEqual([{ proposalId: 'work-a', tempoWorklogId: 'w1', reason: 'no-time-left' }]);
+    expectNoOverlap(written(result));
+  });
+});

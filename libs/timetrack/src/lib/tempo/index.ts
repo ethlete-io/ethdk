@@ -7,6 +7,7 @@ export * from './fetch-coverage';
 export * from './fetch-patterns';
 export * from './marker';
 export * from './preview';
+export * from './separate';
 export * from './subtract';
 export * from './wall-clock';
 export * from './worklogs';

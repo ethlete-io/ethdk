@@ -1,5 +1,6 @@
 import { SyncedWorklog, WorklogProposal, syncsInState } from '../model/proposal';
 import { TempoMarkerScheme, unmarkedDescription } from './marker';
+import { pieceSourceId, separateOverlappingProposals } from './separate';
 import { ForeignSubtraction, subtractForeignTime } from './subtract';
 import { TempoWorklog } from './worklogs';
 
@@ -95,6 +96,10 @@ export type TempoSyncPlan = {
  * holds for the same issue, so a day somebody logged by hand plans nothing rather than a second copy
  * of every hour. A reduction to zero on an app-owned row plans the delete that keeps the total right.
  *
+ * Rows over the same minutes are separated first, so no two written worklogs overlap - see
+ * {@link separateOverlappingProposals}. Pass `backgroundProjects` so a background project's row gives
+ * way to project work.
+ *
  * Pass the same `marker` the sync writes with: a description-suffix marker is part of the remote text
  * and not of the proposal's, so without it every synced worklog reads as edited in Tempo forever.
  */
@@ -105,7 +110,12 @@ export const planTempoSync = (options: {
   issueIdsByKey: Map<string, string>;
   attributesByProposalId?: Record<string, Record<string, string | number | boolean>>;
   marker?: TempoMarkerScheme;
+  backgroundProjects?: readonly string[];
 }): TempoSyncPlan => {
+  const proposals = separateOverlappingProposals({
+    proposals: options.proposals,
+    backgroundProjects: options.backgroundProjects,
+  });
   const ledgerByProposalId = new Map(options.ledger.map((entry) => [entry.proposalId, entry]));
   const remoteById = new Map(options.remote.map((worklog) => [worklog.id, worklog]));
   const ownedRemoteIds = new Set(
@@ -115,7 +125,7 @@ export const planTempoSync = (options: {
   const foreign = options.remote.filter((worklog) => !ownedRemoteIds.has(worklog.id));
   const keysByIssueId = new Map([...options.issueIdsByKey].map(([key, id]) => [id, key]));
   const subtraction = subtractForeignTime({
-    proposals: options.proposals.filter((proposal) => syncsInState(proposal.state) && proposal.durationMs > 0),
+    proposals: proposals.filter((proposal) => syncsInState(proposal.state) && proposal.durationMs > 0),
     // A foreign worklog on an issue the key map does not name can match no proposal, so dropping it
     // changes nothing but saves the preview a Jira round trip for every unrelated issue of the day.
     foreign: foreign.flatMap((worklog) => {
@@ -140,7 +150,7 @@ export const planTempoSync = (options: {
 
   const seenProposalIds = new Set<string>();
 
-  for (const original of options.proposals) {
+  for (const original of proposals) {
     const proposal = reducedById.get(original.id) ?? original;
 
     seenProposalIds.add(proposal.id);
@@ -183,7 +193,7 @@ export const planTempoSync = (options: {
 
     const contentHash = contentHashOf({
       proposal,
-      attributes: options.attributesByProposalId?.[proposal.id],
+      attributes: options.attributesByProposalId?.[pieceSourceId(proposal.id)],
     });
 
     if (!entry) {

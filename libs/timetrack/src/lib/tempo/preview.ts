@@ -50,6 +50,8 @@ export const previewTempoSync$ = (options: {
   /** The boundary the proposals and the ledger key the day by. */
   boundary: DayBoundary;
   marker?: TempoMarkerScheme;
+  /** The projects whose rows give way to project work. See {@link planTempoSync}. */
+  backgroundProjects?: readonly string[];
   attributesByProposalId?: Record<string, Record<string, string | number | boolean>>;
   /** Stamped on the coverage. Defaults to the moment the preview is built. */
   observedAt?: Date;
@@ -88,6 +90,7 @@ export const previewTempoSync$ = (options: {
                 remote,
                 issueIdsByKey,
                 marker: options.marker,
+                backgroundProjects: options.backgroundProjects,
                 attributesByProposalId: options.attributesByProposalId,
               });
 
