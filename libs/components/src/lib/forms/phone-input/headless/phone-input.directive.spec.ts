@@ -9,7 +9,7 @@ import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { mountPhoneInput, PhoneInputDriver } from '../../testing/phone-input-driver';
 import { PHONE_INPUT_IMPORTS } from '../phone-input.imports';
 import { phoneCountryName } from './phone-countries';
-import { matchCountryByDialCode, phoneCountryFlag } from './phone-countries';
+import { PHONE_COUNTRIES, matchCountryByDialCode, phoneCountryFlag, stripTrunkZero } from './phone-countries';
 
 @Component({
   template: `
@@ -17,6 +17,7 @@ import { matchCountryByDialCode, phoneCountryFlag } from './phone-countries';
       [value]="value()"
       [mixed]="mixed()"
       [defaultCountry]="defaultCountry()"
+      [preferredCountries]="preferredCountries()"
       (valueChange)="value.set($event)"
       (mixedChange)="mixed.set($event)"
       placeholder="Phone number"
@@ -28,6 +29,7 @@ class PhoneInputTestHost {
   value = signal('');
   mixed = signal(false);
   defaultCountry = signal('de');
+  preferredCountries = signal<string[]>([]);
 }
 
 describe('phone-countries', () => {
@@ -36,6 +38,37 @@ describe('phone-countries', () => {
     expect(matchCountryByDialCode('12025550123')?.iso2).toBe('us');
     expect(matchCountryByDialCode('35112345')?.iso2).toBe('pt');
     expect(matchCountryByDialCode('')).toBeNull();
+  });
+
+  it('matches the NANP countries that share +1 by their area code', () => {
+    expect(matchCountryByDialCode('18765550123')?.iso2).toBe('jm');
+    expect(matchCountryByDialCode('17875550123')?.iso2).toBe('pr');
+    expect(matchCountryByDialCode('18095550123')?.iso2).toBe('do');
+    expect(matchCountryByDialCode('12465550123')?.iso2).toBe('bb');
+  });
+
+  it('lists the Crown Dependencies, Åland and Vatican City', () => {
+    const codes = PHONE_COUNTRIES.map((country) => country.iso2);
+
+    expect(codes).toEqual(expect.arrayContaining(['gg', 'je', 'im', 'ax', 'va']));
+  });
+
+  it('keeps every table entry unique and resolvable by its own dial code', () => {
+    const codes = PHONE_COUNTRIES.map((country) => country.iso2);
+
+    expect(new Set(codes).size).toBe(codes.length);
+
+    for (const country of PHONE_COUNTRIES) {
+      expect(country.iso2).toMatch(/^[a-z]{2}$/);
+      expect(country.dialCode).toMatch(/^\d{1,4}$/);
+      expect(matchCountryByDialCode(`${country.dialCode}5550123`)?.dialCode).toBe(country.dialCode);
+    }
+  });
+
+  it('keeps the leading 0 where it belongs to the international number', () => {
+    expect(stripTrunkZero('0701234567', 'ci')).toBe('0701234567');
+    expect(stripTrunkZero('061234567', 'cg')).toBe('061234567');
+    expect(stripTrunkZero('01701234567', 'de')).toBe('1701234567');
   });
 
   it('computes regional-indicator flags', () => {
@@ -141,6 +174,62 @@ describe('PhoneInputDirective', () => {
     // +1 matches the US first, but Canada was chosen explicitly
     expect(driver.phone.country()).toBe('ca');
     expect(driver.host.value()).toBe('+12025550123');
+  });
+
+  it('derives a NANP country from an external +1 value with its area code', () => {
+    driver.host.value.set('+18765550123');
+    driver.tick();
+
+    expect(driver.phone.country()).toBe('jm');
+    expect(driver.phone.nationalNumber()).toBe('5550123');
+  });
+
+  it('keeps the US while national digits that start with another NANP area code are typed', () => {
+    driver.selectCountry('us');
+    driver.focus();
+    driver.typeChars('8765550123');
+
+    expect(driver.phone.country()).toBe('us');
+    expect(driver.host.value()).toBe('+18765550123');
+
+    driver.selectCountry('jm');
+
+    expect(driver.host.value()).toBe('+18768765550123');
+    expect(driver.phone.country()).toBe('jm');
+
+    driver.selectCountry('us');
+
+    expect(driver.phone.country()).toBe('us');
+    expect(driver.host.value()).toBe('+18765550123');
+  });
+
+  it('accepts upper-case ISO codes', () => {
+    driver.host.defaultCountry.set('FR');
+    driver.host.preferredCountries.set(['DE', 'At']);
+    driver.tick();
+
+    expect(driver.phone.country()).toBe('fr');
+    expect(driver.phone.preferredCountries()).toEqual(['de', 'at']);
+
+    driver.typeChars('0123456789');
+
+    expect(driver.host.value()).toBe('+33123456789');
+
+    driver.selectCountry('AT');
+
+    expect(driver.phone.country()).toBe('at');
+    expect(driver.host.value()).toBe('+43123456789');
+  });
+
+  it('warns in dev mode about an unknown ISO code', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    driver.host.defaultCountry.set('xx');
+    driver.tick();
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"xx"'));
+
+    warn.mockRestore();
   });
 
   it('adopts a defaultCountry that resolves after the first render', () => {

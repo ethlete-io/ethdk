@@ -8,11 +8,35 @@ export type PhoneCountry = {
 /**
  * ISO alpha-2 → dial code, nothing more. Display names come from
  * `Intl.DisplayNames(locale, { type: 'region' })` and flags from regional-indicator emoji -
- * no bundled name/flag data. Shared dial codes list their primary country first (`+1` → US).
+ * no bundled name/flag data. Shared dial codes list their primary country first (`+1` → US);
+ * the other NANP members carry their area code as part of the dial code (`1876` → JM).
  */
 export const PHONE_COUNTRIES: readonly PhoneCountry[] = [
   { iso2: 'us', dialCode: '1' },
   { iso2: 'ca', dialCode: '1' },
+  { iso2: 'ag', dialCode: '1268' },
+  { iso2: 'ai', dialCode: '1264' },
+  { iso2: 'as', dialCode: '1684' },
+  { iso2: 'bb', dialCode: '1246' },
+  { iso2: 'bm', dialCode: '1441' },
+  { iso2: 'bs', dialCode: '1242' },
+  { iso2: 'dm', dialCode: '1767' },
+  { iso2: 'do', dialCode: '1809' },
+  { iso2: 'gd', dialCode: '1473' },
+  { iso2: 'gu', dialCode: '1671' },
+  { iso2: 'jm', dialCode: '1876' },
+  { iso2: 'kn', dialCode: '1869' },
+  { iso2: 'ky', dialCode: '1345' },
+  { iso2: 'lc', dialCode: '1758' },
+  { iso2: 'mp', dialCode: '1670' },
+  { iso2: 'ms', dialCode: '1664' },
+  { iso2: 'pr', dialCode: '1787' },
+  { iso2: 'sx', dialCode: '1721' },
+  { iso2: 'tc', dialCode: '1649' },
+  { iso2: 'tt', dialCode: '1868' },
+  { iso2: 'vc', dialCode: '1784' },
+  { iso2: 'vg', dialCode: '1284' },
+  { iso2: 'vi', dialCode: '1340' },
   { iso2: 'ru', dialCode: '7' },
   { iso2: 'kz', dialCode: '7' },
   { iso2: 'eg', dialCode: '20' },
@@ -24,10 +48,14 @@ export const PHONE_COUNTRIES: readonly PhoneCountry[] = [
   { iso2: 'es', dialCode: '34' },
   { iso2: 'hu', dialCode: '36' },
   { iso2: 'it', dialCode: '39' },
+  { iso2: 'va', dialCode: '39' },
   { iso2: 'ro', dialCode: '40' },
   { iso2: 'ch', dialCode: '41' },
   { iso2: 'at', dialCode: '43' },
   { iso2: 'gb', dialCode: '44' },
+  { iso2: 'gg', dialCode: '44' },
+  { iso2: 'im', dialCode: '44' },
+  { iso2: 'je', dialCode: '44' },
   { iso2: 'dk', dialCode: '45' },
   { iso2: 'se', dialCode: '46' },
   { iso2: 'no', dialCode: '47' },
@@ -126,6 +154,7 @@ export const PHONE_COUNTRIES: readonly PhoneCountry[] = [
   { iso2: 'mt', dialCode: '356' },
   { iso2: 'cy', dialCode: '357' },
   { iso2: 'fi', dialCode: '358' },
+  { iso2: 'ax', dialCode: '358' },
   { iso2: 'bg', dialCode: '359' },
   { iso2: 'lt', dialCode: '370' },
   { iso2: 'lv', dialCode: '371' },
@@ -234,7 +263,7 @@ export const matchCountryByDialCode = (digits: string): PhoneCountry | null => {
 };
 
 /** Countries where a leading `0` is part of the international number (e.g. Italian landlines). */
-const TRUNK_ZERO_KEPT = /* @__PURE__ */ new Set(['it', 'sm']);
+const TRUNK_ZERO_KEPT = /* @__PURE__ */ new Set(['it', 'sm', 'va', 'ci', 'cg']);
 
 /**
  * Strips the national trunk prefix `0` (`'0171…'` → `'171…'`) - in most countries it replaces

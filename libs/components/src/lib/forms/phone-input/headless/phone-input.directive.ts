@@ -9,6 +9,16 @@ import { TextShellControlDirective } from '../../form-field/headless/text-shell-
 
 const onlyDigits = (raw: string) => raw.replace(/\D/g, '');
 
+const toPhoneCountryCode = (iso2: string) => {
+  const code = iso2.trim().toLowerCase();
+
+  if (ngDevMode && !PHONE_COUNTRIES.some((country) => country.iso2 === code)) {
+    console.warn(`[PhoneInputDirective] Unknown country code "${iso2}". Use an ISO 3166-1 alpha-2 code such as "de".`);
+  }
+
+  return code;
+};
+
 @Directive({
   selector: '[etPhoneInput]',
   exportAs: 'etPhoneInput',
@@ -22,9 +32,10 @@ export class PhoneInputDirective extends TextShellControlDirective implements Fo
   public value = model('');
   public placeholder = input('');
 
-  public defaultCountry = input('us');
-  /** ISO codes listed on top of the country dropdown. */
-  public preferredCountries = input<string[]>([]);
+  /** ISO 3166-1 alpha-2 code, case-insensitive. */
+  public defaultCountry = input('us', { transform: toPhoneCountryCode });
+  /** ISO codes listed on top of the country dropdown, case-insensitive. */
+  public preferredCountries = input([], { transform: (codes: string[]) => codes.map(toPhoneCountryCode) });
 
   public hasValue = computed(() => this.mixed() || this.value().length > 0);
 
@@ -41,18 +52,26 @@ export class PhoneInputDirective extends TextShellControlDirective implements Fo
   public interactive = computed(() => !this.disabled() && !this.readonly());
 
   private countryPicked = false;
+  private ownValue: { value: string; iso2: string } | null = null;
 
   /**
    * The active country's ISO code: derived from the value's dial code, manually selectable.
    * A manual pick survives value edits as long as its dial code still fits - dial codes are
    * shared (`+1` → US, CA, …) and typing digits must not flip a chosen country.
    */
-  public country = linkedSignal<{ matched: string | null; fallback: string }, string>({
+  public country = linkedSignal<{ value: string; matched: string | null; fallback: string }, string>({
     source: () => ({
+      value: this.value(),
       matched: matchCountryByDialCode(onlyDigits(this.value()))?.iso2 ?? null,
       fallback: this.defaultCountry(),
     }),
     computation: (source, previous) => {
+      // a number built for the active country keeps it even when a longer dial code matches
+      // (national `876…` with US active must not flip to Jamaica's `+1876` mid-typing)
+      if (this.ownValue && this.ownValue.value === source.value) {
+        return this.ownValue.iso2;
+      }
+
       // a defaultCountry that resolves late (a locale or geo lookup) still lands, but only while
       // nothing has moved the country off the previous default
       const followsDefault =
@@ -125,7 +144,9 @@ export class PhoneInputDirective extends TextShellControlDirective implements Fo
   }
 
   /** Switches the country, keeping the national number. */
-  public selectCountry(iso2: string) {
+  public selectCountry(code: string) {
+    const iso2 = code.trim().toLowerCase();
+
     if (!this.interactive() || !PHONE_COUNTRIES.some((country) => country.iso2 === iso2)) {
       return;
     }
@@ -144,7 +165,7 @@ export class PhoneInputDirective extends TextShellControlDirective implements Fo
     const national = this.nationalNumber();
 
     this.country.set(iso2);
-    this.value.set(national ? `+${this.dialCodeOf(iso2)}${national}` : '');
+    this.value.set(this.ownNumber(national, iso2));
   }
 
   /**
@@ -167,7 +188,7 @@ export class PhoneInputDirective extends TextShellControlDirective implements Fo
 
     const national = stripTrunkZero(digits, this.country());
 
-    this.commitTypedValue(national ? `+${this.dialCode()}${national}` : '');
+    this.commitTypedValue(this.ownNumber(national, this.country()));
   }
 
   public focusControl(options?: FocusOptions) {
@@ -189,6 +210,14 @@ export class PhoneInputDirective extends TextShellControlDirective implements Fo
     }
 
     this.value.set(next);
+  }
+
+  private ownNumber(national: string, iso2: string) {
+    const value = national ? `+${this.dialCodeOf(iso2)}${national}` : '';
+
+    this.ownValue = value ? { value, iso2 } : null;
+
+    return value;
   }
 
   private dialCodeOf(iso2: string) {
