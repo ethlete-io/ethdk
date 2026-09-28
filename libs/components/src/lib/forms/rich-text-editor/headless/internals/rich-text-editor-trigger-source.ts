@@ -21,7 +21,7 @@ export type RichTextEditorTriggerItemsState = {
   error: unknown | null;
 };
 
-const isPromiseLike = <T>(value: unknown): value is Promise<T> =>
+export const isPromiseLike = <T>(value: unknown): value is Promise<T> =>
   !!value && typeof (value as Promise<T>).then === 'function';
 
 const matchesQuery = (item: RichTextEditorTriggerItem, query: string) => {
@@ -33,10 +33,8 @@ const matchesQuery = (item: RichTextEditorTriggerItem, query: string) => {
   return haystack.includes(needle);
 };
 
-export const filterStaticItems = (
-  items: readonly RichTextEditorTriggerItem[],
-  query: string,
-): RichTextEditorTriggerItem[] => items.filter((item) => matchesQuery(item, query));
+const filterStaticItems = (items: readonly RichTextEditorTriggerItem[], query: string): RichTextEditorTriggerItem[] =>
+  items.filter((item) => matchesQuery(item, query));
 
 /**
  * Callers must pipe this through `switchMap`: that unsubscribes stale requests, which is why a

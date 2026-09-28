@@ -120,5 +120,3 @@ export const createRichTextEditorHistory = () => {
 
   return { canUndo, canRedo, commit, recordSelection, reset, undo, redo };
 };
-
-export type RichTextEditorHistory = ReturnType<typeof createRichTextEditorHistory>;

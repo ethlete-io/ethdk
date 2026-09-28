@@ -155,5 +155,3 @@ export const createRichTextEditorKeymap = (
 
   return { handleBackspace, handleEnter, codeExit };
 };
-
-export type RichTextEditorDomKeymap = ReturnType<typeof createRichTextEditorKeymap>;

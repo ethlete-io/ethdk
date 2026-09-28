@@ -97,7 +97,6 @@ export const setupRichTextEditorFloatingToolbar = (editor: RichTextEditorDirecti
     const config: OverlayConfig = {
       mode: 'non-modal',
       hasBackdrop: false,
-      // the toolbar formats the editor's selection, so it must never take focus away from it
       autoFocus: false,
       restoreFocus: false,
       closeOnEscape: false,

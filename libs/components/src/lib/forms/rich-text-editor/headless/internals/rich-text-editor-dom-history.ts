@@ -64,5 +64,3 @@ export const createRichTextEditorDomHistory = (core: RichTextEditorDomCore) => {
 
   return { readSelectionOffsets, restoreSelectionOffsets };
 };
-
-export type RichTextEditorDomHistory = ReturnType<typeof createRichTextEditorDomHistory>;

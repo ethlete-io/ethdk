@@ -205,5 +205,3 @@ export const createRichTextEditorPaste = (core: RichTextEditorDomCore) => {
 
   return { insertNormalizedHtml };
 };
-
-export type RichTextEditorDomPaste = ReturnType<typeof createRichTextEditorPaste>;

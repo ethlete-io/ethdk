@@ -31,8 +31,6 @@ export const setupRichTextEditorLinkEditor = (editor: RichTextEditorDirective, h
 
   const overlayRef = signal<OverlayRef<RichTextEditorLinkEditorComponent, unknown> | null>(null);
 
-  /** The selection the popover edits - captured on open, restored before applying (the popover's
-   *  inputs take focus, which would otherwise collapse the live selection). */
   let savedRange: Range | null = null;
 
   const close = () => {
@@ -101,8 +99,6 @@ export const setupRichTextEditorLinkEditor = (editor: RichTextEditorDirective, h
 
     if (editor.disabled() || editor.readonly()) return;
 
-    // a tap on the link button can move focus off the editor on touch; restore the selection so the
-    // popover edits and re-links what was actually selected
     editor.editorDom.restoreSelection();
 
     const selection = editor.editorDom.getSelection();
@@ -114,14 +110,10 @@ export const setupRichTextEditorLinkEditor = (editor: RichTextEditorDirective, h
 
     const config: OverlayConfig = {
       mode: 'non-modal',
-      // the overlay focuses this within the opening tap's user-activation window, so the mobile
-      // keyboard opens
       autoFocus: 'input[type="url"]',
       restoreFocus: false,
       closeOnEscape: true,
       closeOnOutsidePointer: true,
-      // the whole editor (toolbar + content) is the origin, so clicking the link button that opened
-      // the popover cleanly toggles it shut instead of closing-then-reopening
       origin: host,
       bindings: [
         inputBinding('href', () => info.href),

@@ -7,6 +7,7 @@ import {
   RichTextEditorTriggerItemResolver,
 } from '../../rich-text-editor-trigger';
 import { EditorRenderer } from './rich-text-editor-dom-core';
+import { isPromiseLike } from './rich-text-editor-trigger-source';
 
 export const TOKEN_CHIP_CLASS = 'et-rte-token';
 export const TOKEN_CHIP_ATTR = 'data-et-token';
@@ -86,9 +87,6 @@ export const assertValidToken = (type: string, id: string) => {
     );
   }
 };
-
-const isPromiseLike = <T>(value: unknown): value is Promise<T> =>
-  !!value && typeof (value as Promise<T>).then === 'function';
 
 /**
  * `serialize` must reconstruct a token purely from the chip's `type`/`id` attributes, never the
