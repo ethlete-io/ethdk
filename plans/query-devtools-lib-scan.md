@@ -10,7 +10,7 @@ Entry-point boundaries hold: `toggle/` imports only `@ethlete/query` and `@ethle
 
 ## Cleanup
 
-- Low: comment volume breaks the AGENTS.md allowlist - about 740 comment lines in `query-devtools.component.ts` alone, mostly rationale and narration, plus section headers at `query-devtools.component.ts:2412,2490,2521,2588,2622,2717`. M
+- Low: comment volume in `query-devtools.component.ts` - about 500 rationale lines and the section headers were cut on 2026-09-28; the ~240 kept lines are mostly workarounds and invariants, but several long JSDoc blocks (`resetDevtools`, `popOut`, `requestHeaders`, `chromeTokens`, `resolveEventQueryId`) still carry rationale to trim. S
 - Low: the status colours at `query-devtools.component.css:23-25` (`--_et-qdt-success`/`-error`/`-loading`) are hardcoded. There is no global CSS token for them - semantic colours come from DI (`injectErrorTheme()`), which throws in an app with no error theme, while the panel must stay legible in theme-less apps. Decide whether to bind optional semantic themes or keep the literals. S
 
 ## Spec gaps
