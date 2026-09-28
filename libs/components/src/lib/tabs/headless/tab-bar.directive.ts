@@ -123,6 +123,10 @@ export class TabBarDirective {
   }
 
   public handleKeydown(event: KeyboardEvent) {
+    if (!this.triggers().some((trigger) => trigger.getElement() === event.target)) {
+      return;
+    }
+
     const isHorizontal = this.orientation() === TAB_BAR_ORIENTATIONS.HORIZONTAL;
     const nextKey = isHorizontal ? 'ArrowRight' : 'ArrowDown';
     const prevKey = isHorizontal ? 'ArrowLeft' : 'ArrowUp';

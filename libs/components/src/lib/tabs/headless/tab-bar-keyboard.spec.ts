@@ -1,5 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { mountControl } from '../../testing/control-driver';
+import { pressKey } from '../../testing/driver-core';
 import { createTabBarDriver } from '../testing/tabs-driver';
 import { TabBarTriggerDirective } from './tab-bar-trigger.directive';
 import { TabBarDirective } from './tab-bar.directive';
@@ -14,6 +15,7 @@ type TriggerConfig = { label: string; disabled?: boolean };
       @for (t of triggers(); track t.label) {
         <button [disabled]="t.disabled ?? false" etTabBarTrigger type="button">{{ t.label }}</button>
       }
+      <input class="panel-input" />
     </div>
     <button class="outside" type="button">Outside</button>
   `,
@@ -196,5 +198,18 @@ describe('TabBarDirective keyboard model', () => {
     driver.tick();
 
     expect(driver.tabbableTrigger()).toBe(driver.trigger(0));
+  });
+
+  it('ignores keys pressed inside a descendant that is not a trigger', () => {
+    const driver = mount();
+    const input = driver.query<HTMLInputElement>('input.panel-input')!;
+
+    input.focus();
+
+    for (const key of ['ArrowRight', 'ArrowLeft', 'Home', 'End']) {
+      expect(pressKey(input, key).defaultPrevented).toBe(false);
+    }
+
+    expect(document.activeElement).toBe(input);
   });
 });
