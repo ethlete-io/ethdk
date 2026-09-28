@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { tick } from '../testing/driver-core';
+import { pointerEvent, tick } from '../testing/driver-core';
 import '../../test-helpers';
 import { expectNothingRunsAfterDestroy } from '../testing/destroyed-mid-gesture';
 import { fakeLayout } from '../testing/fake-layout';
@@ -120,6 +120,29 @@ describe('TableReorderDirective', () => {
     expect(driver.headerCell('role')?.style.transform).toBe('');
     expect(driver.headerCell('name')?.style.transform).toBe('');
     expect(driver.cell(0, 'name')?.style.transform).toBe('');
+    expect(driver.headerCell('name')?.style.transition).toBe('');
+    expect(driver.cell(0, 'name')?.style.transition).toBe('');
+  });
+
+  it('drops the inline transition once a cancelled preview has slid back', () => {
+    vi.useFakeTimers();
+
+    try {
+      const { driver } = create();
+      const drag = driver.grabColumn('role');
+
+      drag.moveOver('name', 'before');
+      drag.cancel();
+
+      expect(driver.headerCell('name')?.style.transition).not.toBe('');
+
+      vi.advanceTimersByTime(200);
+
+      expect(driver.headerCell('name')?.style.transition).toBe('');
+      expect(driver.cell(0, 'name')?.style.transition).toBe('');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('reverts a gesture the browser cancels, rather than dropping where the pointer stood', () => {
@@ -142,6 +165,20 @@ describe('TableReorderDirective', () => {
 
     expect(driver.query('.et-table-drag-ghost')).toBeNull();
     expect(driver.columnKeys()).toEqual(['name', 'role']);
+  });
+
+  it('leaves a press on a control inside the header cell to that control', () => {
+    const { driver } = create();
+    const button = document.createElement('button');
+
+    driver.headerCell('role')!.append(button);
+    pointerEvent(button, 'pointerdown', { button: 0, clientX: 300, clientY: 10, pointerId: 1, pointerType: 'mouse' });
+    pointerEvent(document, 'pointermove', { clientX: 50, clientY: 10, pointerId: 1, pointerType: 'mouse' });
+
+    expect(driver.query('.et-table-drag-ghost')).toBeNull();
+    expect(driver.headerCell('role')?.classList.contains('et-table-header-cell--dragging')).toBe(false);
+
+    pointerEvent(document, 'pointerup', { clientX: 50, clientY: 10, pointerId: 1, pointerType: 'mouse' });
   });
 
   describe('in a right-to-left table', () => {

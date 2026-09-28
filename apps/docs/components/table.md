@@ -356,8 +356,9 @@ column with `align: 'end'` and give it a fixed `width`; pin it with `sticky: 'en
 when the table scrolls horizontally.
 
 Action cells **compose with [row navigation](#row-navigation)**: when the table is
-`rowInteractive`, a click on any button, link, input or menu trigger inside a cell
-is ignored by `(rowClick)` (it's detected via `composedPath`), so "Edit" fires its
+`rowInteractive`, a click on any button, link, form control, label, editable text,
+menu trigger (anything with `aria-haspopup`) or element with a control role inside a
+cell is ignored by `(rowClick)` (it's detected via `composedPath`), so "Edit" fires its
 own handler without also triggering row navigation - no `stopPropagation` needed.
 
 With [`rowLink`](#row-links) the row is a real link stretched over the whole row, so an action
@@ -1405,7 +1406,8 @@ On **touch**, a **long press** (about 400 ms) on a header starts the reorder: th
 ghost appears while the finger is still down, and from then on the gesture drags the
 column instead of scrolling. A finger that moves or lifts sooner is left to the
 browser, so a quick swipe across the header still scrolls the table. Mouse and pen
-drags start as soon as the pointer moves.
+drags start as soon as the pointer moves. A press on a control inside the header (the
+filter or column-menu button) never starts a reorder.
 
 [Pinned columns](#sticky-columns-footer) are excluded from dragging - they anchor
 to an edge, so moving one into the scrolling middle would strand the layout -
@@ -1600,8 +1602,8 @@ set `bom: false` on the directive and be done with it.
 `tableToCsv()` never adds a BOM: it hands back a string, and how that gets encoded is the
 caller's business.
 
-`formulaGuard` prefixes a field whose text starts with `=`, `+`, `-`, `@`, a tab or a
-carriage return with a `'`, so the spreadsheet shows it instead of running it. This is CSV
+`formulaGuard` prefixes a field whose text starts with `=`, `+`, `-` or `@` (also after
+leading whitespace), a tab or a carriage return with a `'`, so the spreadsheet shows it instead of running it. This is CSV
 injection: without it, a row someone else authored can execute when a colleague opens the
 file. Numbers, booleans and dates are never touched, and neither is a string that is simply
 a number (`-5`), so ordinary exports are unaffected.

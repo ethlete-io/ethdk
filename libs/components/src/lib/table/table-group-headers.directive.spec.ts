@@ -93,6 +93,7 @@ describe('TableGroupHeadersDirective', () => {
     expect(cells[0]!.classList.contains('et-table-group-cell--labeled')).toBe(true);
     expect(cells[0]!.textContent?.trim()).toBe('Season');
     expect(cells[0]!.getAttribute('role')).toBe('columnheader');
+    expect(cells[0]!.getAttribute('aria-colspan')).toBe('2');
 
     // an ungrouped run still covers its track, but reads as empty rather than as a one-column group
     expect(cells[1]!.style.gridColumn).toBe('span 1');

@@ -22,6 +22,7 @@ import { TableGroupHeadersDirective } from './table-group-headers.directive';
         [style.grid-column]="'span ' + group.span"
         [class.et-table-group-cell--labeled]="group.label"
         [attr.role]="group.label ? 'columnheader' : null"
+        [attr.aria-colspan]="group.label ? group.span : null"
         [attr.aria-hidden]="group.label ? null : 'true'"
         class="et-table-group-cell"
       >

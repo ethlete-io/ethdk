@@ -20,6 +20,7 @@ import {
   fromEvent,
   merge,
   Observable,
+  Subscription,
   switchMap,
   take,
   takeUntil,
@@ -28,6 +29,17 @@ import {
 } from 'rxjs';
 import { injectTableFeatureHost, TableFeatureConfig, tableFeatureConfig } from './headless/table-features';
 import { TableReorderOverlayComponent } from './table-reorder-overlay.component';
+
+const INTERACTIVE = 'button, a[href], input, select, textarea, [role="button"], [contenteditable="true"]';
+
+const startsOnControl = (path: EventTarget[], cell: HTMLElement) => {
+  for (const target of path) {
+    if (target === cell) return false;
+    if (target instanceof Element && target.matches(INTERACTIVE)) return true;
+  }
+
+  return false;
+};
 
 /** Options for {@link TableReorderDirective}. */
 export type TableReorderConfig = TableFeatureConfig;
@@ -117,6 +129,8 @@ export class TableReorderDirective {
   // The preview offset currently applied to each shifted column, so clearing doesn't have to touch
   // every cell in the table.
   private previewOffsets = new Map<string, number>();
+  private transitionedCells = new Set<HTMLElement>();
+  private settleTransitions: Subscription | null = null;
 
   // The last previewed landing order, to skip re-applying identical transforms on every pointer move.
   private previewSignature: string | null = null;
@@ -131,7 +145,10 @@ export class TableReorderDirective {
   private touchHoldPending = false;
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => this.stopAutoScroll());
+    inject(DestroyRef).onDestroy(() => {
+      this.stopAutoScroll();
+      this.settleTransitions?.unsubscribe();
+    });
 
     this.table.registerLayer({
       component: TableReorderOverlayComponent,
@@ -252,6 +269,7 @@ export class TableReorderDirective {
     // Pinned columns can't be reordered - they anchor to an edge. A nested drag handle (the resize
     // grip) stops its own pointerdown, so reaching here means the header itself was grabbed.
     if (!column || !cell || this.table.effectiveStickyOf(column.key) !== null) return null;
+    if (startsOnControl(path, cell)) return null;
 
     return { cell, key: column.key };
   }
@@ -265,6 +283,7 @@ export class TableReorderDirective {
     this.rtl = getComputedStyle(this.table.element).direction === 'rtl';
     this.target.set(null);
     this.previewSignature = null;
+    this.settleTransitions?.unsubscribe();
     this.markDragging(key, true);
   }
 
@@ -498,6 +517,7 @@ export class TableReorderDirective {
 
       for (const element of this.cellsFor(key)) {
         this.renderer.setStyle(element, { transition, transform: shifted ? `translateX(${delta}px)` : '' });
+        this.transitionedCells.add(element);
       }
 
       if (shifted) this.previewOffsets.set(key, delta);
@@ -513,10 +533,26 @@ export class TableReorderDirective {
           transition: animated ? `transform ${PREVIEW_DURATION_MS}ms ease` : 'none',
         });
         this.renderer.removeStyle(element, 'transform');
+        this.transitionedCells.add(element);
       }
     }
 
     this.previewOffsets.clear();
+    this.settleTransitions?.unsubscribe();
+
+    if (animated) {
+      this.settleTransitions = timer(PREVIEW_DURATION_MS)
+        .pipe(tap(() => this.dropTransitions()))
+        .subscribe();
+    } else {
+      this.dropTransitions();
+    }
+  }
+
+  private dropTransitions() {
+    for (const element of this.transitionedCells) this.renderer.removeStyle(element, 'transition');
+
+    this.transitionedCells.clear();
   }
 
   /** A column's header cell plus every body cell under it. */

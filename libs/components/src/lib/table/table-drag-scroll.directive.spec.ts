@@ -59,6 +59,27 @@ const moveTo = (clientX: number) =>
   document.dispatchEvent(new PointerEvent('pointermove', { clientX, clientY: 100, pointerId: 1 }));
 
 describe('TableDragScrollDirective', () => {
+  it('becomes drag-scrollable when rows arriving after mount make it overflow', () => {
+    const fixture = TestBed.createComponent(HostComponent);
+
+    fixture.componentInstance.data.set([]);
+    fixture.detectChanges();
+
+    const driver = createTableDriver(fixture);
+
+    driver.fakeScrollExtent({ scrollWidth: 320, viewportWidth: 320 });
+    fixture.componentInstance.cols.set(columns());
+    fixture.detectChanges();
+
+    expect(driver.host().classList.contains('et-table-host--drag-scrollable')).toBe(false);
+
+    driver.fakeScrollExtent({ scrollWidth: 680, viewportWidth: 320 });
+    fixture.componentInstance.data.set(PEOPLE);
+    fixture.detectChanges();
+
+    expect(driver.host().classList.contains('et-table-host--drag-scrollable')).toBe(true);
+  });
+
   it('stops panning when the table is destroyed mid-drag', async () => {
     const { driver, fixture } = create();
 

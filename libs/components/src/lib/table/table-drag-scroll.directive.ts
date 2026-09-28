@@ -108,10 +108,11 @@ export class TableDragScrollDirective {
   constructor() {
     injectStyleManager().mount(TableDragScrollStylesComponent);
 
-    // Whether the table overflows has no signal of its own: recheck whenever the host resizes or the
-    // tracks change, both of which decide it.
+    // Whether the table overflows has no signal of its own: recheck whenever the host resizes, the
+    // tracks change or the rows do, all of which decide it.
     effect(() => {
       this.hostDimensions();
+      this.table.rows();
       this.table.columnWidths();
       this.table.visibleColumnsMeta();
       afterNextRender({ read: () => this.syncScrollable() }, { injector: this.injector });

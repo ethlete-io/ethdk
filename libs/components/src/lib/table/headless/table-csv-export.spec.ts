@@ -168,7 +168,7 @@ describe('tableToCsv', () => {
         { header: false, formulaGuard },
       );
 
-    it.each(['=1+1', '@SUM(A1)', "=cmd|' /C calc'!A0", "+cmd|' /C calc'!A0", '\tcmd', '\rcmd'])(
+    it.each(['=1+1', '@SUM(A1)', "=cmd|' /C calc'!A0", "+cmd|' /C calc'!A0", '\tcmd', '\rcmd', ' =1+1', '  @SUM(A1)'])(
       'escapes a text field starting with %j',
       (value) => {
         expect(exported(value)).toBe(quoteIfNeeded(`'${value}`));

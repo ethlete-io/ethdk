@@ -137,9 +137,9 @@ const NON_ASCII = /[\u0080-\uFFFF]/;
 const needsBom = (csv: string, bom: boolean | 'auto' | undefined) =>
   (bom ?? 'auto') === 'auto' ? NON_ASCII.test(csv) : bom === true;
 
-// Fields a spreadsheet would evaluate rather than display. Tab and CR are in the list because both
-// Excel and Sheets skip leading whitespace before deciding.
-const FORMULA_PREFIX = /^[=+\-@\t\r]/;
+// Fields a spreadsheet would evaluate rather than display. Whitespace is allowed before the trigger
+// because Excel, Sheets and several importers skip it before deciding.
+const FORMULA_PREFIX = /^(\s*[=+\-@]|[\t\r])/;
 
 // A field needs quoting when it carries the delimiter, a quote, a newline, or edge whitespace that
 // would otherwise be eaten by a lenient parser.
