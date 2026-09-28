@@ -140,3 +140,7 @@ auto-mode.ts` runs `writeTicketWithAgent$` once per band and stand-in, names unn
 - Settled in slice 2: a CLI write returns `queued` at once and never blocks; a queued item expires
   at the end of the day it was asked on, and a decided one is kept for 7 days.
 - Settled in ADR 0035: auto mode runs on the current day only.
+- Goal, not started: auto mode notices that a call went off topic and suggests hiding its unnamed
+  rest bands. Recommendation: no transcript or audio content; use the calendar meeting's end, the
+  rest band's length and the lack of other work evidence, and queue it as a `local` suggestion the
+  user confirms.
