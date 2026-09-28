@@ -464,7 +464,6 @@ describe('carousel scenarios', () => {
     showOnly(s, all('.et-carousel-item')[realStart] as HTMLElement);
 
     expect(region.hasAttribute('data-autoplaying')).toBe(true);
-    expect(toggle.getAttribute('aria-pressed')).toBe('true');
     expect(toggle.getAttribute('aria-label')).toBe(DEFAULT_CAROUSEL_LABELS.pause);
     expect(query('.et-carousel-dot[aria-current="true"]').hasAttribute('data-counting')).toBe(true);
 
@@ -487,7 +486,6 @@ describe('carousel scenarios', () => {
 
     region.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
     step(s);
-    expect(toggle.getAttribute('aria-pressed')).toBe('false');
     expect(toggle.getAttribute('aria-label')).toBe(DEFAULT_CAROUSEL_LABELS.play);
 
     const paused = scroll.calls().length;
@@ -497,7 +495,7 @@ describe('carousel scenarios', () => {
 
     toggle.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
     step(s);
-    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    expect(toggle.getAttribute('aria-label')).toBe(DEFAULT_CAROUSEL_LABELS.pause);
 
     toggle.click();
     step(s);
@@ -505,7 +503,7 @@ describe('carousel scenarios', () => {
     region.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }));
     step(s);
 
-    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle.getAttribute('aria-label')).toBe(DEFAULT_CAROUSEL_LABELS.play);
     expect(region.hasAttribute('data-autoplaying')).toBe(false);
 
     step(s, 10000);
@@ -513,11 +511,11 @@ describe('carousel scenarios', () => {
 
     toggle.click();
     step(s);
-    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    expect(toggle.getAttribute('aria-label')).toBe(DEFAULT_CAROUSEL_LABELS.pause);
 
     query<HTMLButtonElement>('[etCarouselNext]').dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
     step(s);
-    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle.getAttribute('aria-label')).toBe(DEFAULT_CAROUSEL_LABELS.play);
   });
 
   it('builds its own carousel over a scrollable, with its own controls, per-slide times and an end stop', async () => {
@@ -563,7 +561,7 @@ describe('carousel scenarios', () => {
     step(s);
 
     expect(text(toggle)).toBe('Play');
-    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle.hasAttribute('aria-pressed')).toBe(false);
   });
 
   it('reports parts outside a carousel, a carousel without slides, track or pause control', () => {
