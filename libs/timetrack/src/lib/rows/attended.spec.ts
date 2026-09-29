@@ -87,6 +87,22 @@ describe('attendedAt', () => {
     expect(windows.some((window) => window.from < AT(90) && window.to > AT(30))).toBe(false);
   });
 
+  it('ends an idle stretch no idle-end closed at the next window focus', () => {
+    const windows = present([idleStart(30), focus(120)]);
+
+    expect(windows).toEqual([
+      { from: AT(15), to: AT(30) },
+      { from: AT(105), to: AT(135) },
+    ]);
+  });
+
+  it('does not end an idle stretch no idle-end closed at a prompt a person gave from afar', () => {
+    expect(present([idleStart(30), prompt(60, 'human'), focus(120)])).toEqual([
+      { from: AT(15), to: AT(30) },
+      { from: AT(105), to: AT(135) },
+    ]);
+  });
+
   it('stops the grace dead at either edge of a stretch nobody was watching', () => {
     expect(present([focus(20), idleStart(30), idleEnd(90), focus(91)])).toEqual([
       { from: AT(5), to: AT(30) },

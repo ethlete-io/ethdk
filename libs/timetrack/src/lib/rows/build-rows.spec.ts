@@ -459,3 +459,29 @@ describe('buildRows with a break as long as the fillable gap', () => {
     expect(rows.filledMs).toBe(0);
   });
 });
+
+describe('buildRows after a restart that lost the end of an idle stretch', () => {
+  const RULE: AttributionRule = {
+    id: 'rule-1',
+    repoPath: '/dev/a',
+    target: { kind: 'issue', issueKey: 'FIP-2178' },
+    author: 'user',
+    createdAt: at(8),
+  };
+  const EVENTS: CollectedEvent[] = [
+    { at: at(12, 36), source: 'idle', kind: 'idle-start' },
+    { at: at(14, 7), source: 'window', kind: 'window-focus', appId: 'code', title: 'a.ts - a - Code' },
+  ];
+
+  it('keeps the issue key of a band after the first window focus', () => {
+    const rows = buildRows({
+      blocks: [block({ from: at(14, 10), to: at(14, 40), context: { repoPath: '/dev/a', branch: 'no-key-here' } })],
+      events: EVENTS,
+      rules: [RULE],
+    });
+
+    expect(rows.proposals).toHaveLength(1);
+    expect(rows.proposals[0]?.issueKey).toBe('FIP-2178');
+    expect(rows.unnamed).toEqual([]);
+  });
+});
