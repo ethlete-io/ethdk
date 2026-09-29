@@ -53,7 +53,7 @@ const WINDOW_CONTROL_BUTTON_SPINNER_CONFIG: Record<WindowControlButtonSize, { di
   hostDirectives: [
     {
       directive: ButtonDirective,
-      inputs: ['disabled', 'loading', 'progress', 'type', 'pressed'],
+      inputs: ['disabled', 'loading', 'progress', 'type', 'pressed', 'emitAriaPressed'],
     },
     ButtonStylesDirective,
     ColorInteractiveDirective,

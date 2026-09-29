@@ -94,6 +94,21 @@ describe('ButtonComponent', () => {
     });
   });
 
+  describe('emitAriaPressed', () => {
+    it('reports aria-pressed on a toggle by default', () => {
+      fixture.componentRef.setInput('pressed', false);
+      fixture.detectChanges();
+      expect(host.getAttribute('aria-pressed')).toBe('false');
+    });
+
+    it('omits aria-pressed when emitAriaPressed is false', () => {
+      fixture.componentRef.setInput('pressed', true);
+      fixture.componentRef.setInput('emitAriaPressed', false);
+      fixture.detectChanges();
+      expect(host.getAttribute('aria-pressed')).toBeNull();
+    });
+  });
+
   describe('pressed variant', () => {
     it('has no data-pressed-variant when not pressed', () => {
       fixture.detectChanges();
