@@ -22,6 +22,9 @@ input, the time range input, the date-time input and the date-time range input.
   the finger moves (call 04 C).
 - Centre text: a time-only range shows the duration. With a calendar, the centre shows the time
   and the day of the active end, and the calendar band shows the length (call 05 E).
+- Empty value: no handle and no arc. The centre shows `--:--` and a short hint label. A tap
+  on the track places the handle of the focused field; in a range, focus then moves to the end
+  (call 07 A).
 - Desktop with a calendar: calendar left, ring right, as today (call 05 A). Below `md`: the
   Dates and Times tabs stay, the Times tab holds the touch ring (call 06 A).
 
@@ -68,16 +71,10 @@ committed on its own.
 6. **Stories, docs, changeset**: update the time picker stories, `apps/docs/components/time-picker.md`
    and `date-time-inputs.md`, and write the changeset.
 
-## Open questions
+## Decisions (Tom, 2026-09-29)
 
-1. **The column directives.** Remove `TimePickerColumnDirective` and `TimePickerOptionDirective`
-   from the public API, or keep them for a consumer that builds its own columns?
-   Recommendation: remove them. This is a breaking change, so it needs a `major` note in the
-   changeset and a check of fut-frontend for direct use.
-2. **Seconds.** The ring snaps to `minuteStep`, so it cannot pick seconds. Recommendation: the
-   overlay picks hours and minutes only; seconds are typed in the input, and `secondStep`
-   keeps its meaning for the input.
-3. **The empty value.** No call drew a ring without a value, so where do the handles sit?
-   Recommendation: draw call 07 before slice 3. My proposal: no handle is shown, and a tap on
-   the track places one. In a range, the first tap sets the start and the second tap sets the
-   end.
+1. Remove `TimePickerColumnDirective`, `TimePickerOptionDirective` and the start and end side
+   buttons from the public API. This is a breaking change: note it in the changeset. fut-frontend
+   does not use the column or option directives.
+2. The ring picks hours and minutes only. Seconds are typed in the input, and `secondStep` keeps
+   its meaning for the input.
