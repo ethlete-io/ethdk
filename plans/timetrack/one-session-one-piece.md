@@ -120,3 +120,20 @@ are split, and the split follows focus, as `cutUnwatched` already does for unnam
   per session: 30 minutes after that session's last attended activity. This replaces the check on
   the row's end, which passed a 10-minute piece of ET-772 at 11:31 on 2026-09-29 that later grew to
   45 minutes (stored answer asked at 11:31:49, `minutes: 10`). Cause: see slice 6b.
+
+## Slice 7: one row per piece of work, not per session
+
+Tom decided (2026-09-29, replaces the "two parallel rows" decision above): parallel agent sessions
+that do one piece of work are one row. Target: `ethlete-sdk` on 2026-09-29, 10:45-14:00, is three
+parallel ET-772 rows (Timetrack, SDK audit fixes, the new time picker UI), not one row per session
+(about nine). Tempo still gets the wall-clock time once.
+
+- Directories alone separate the Timetrack work (`apps/timetrack`, `libs/timetrack`), but not the
+  audit fixes from the time picker: both touch `libs/components`. Session titles and the paths of
+  design calls and handoffs (`.ethlete/design/calls`, `.claude/handoffs/<slug>.md`) tell them apart.
+- First, a session must hold its own evidence: an observation with a `sessionId` goes to that session,
+  not to the oldest running one (`sessionAt` in `stream/stream-day.ts`). Without that, a parallel
+  session has no title and no prompts to group by.
+- Later: auto mode may dispute a row a rule named, when the row's own titles or commits point to a
+  stand-in or to Tempo history (FIP-3006 on 2026-09-29, 14:15, was the security audit); and the git
+  scan reads branch-ref reflogs, so a branch a session rebased or merged without a checkout counts.
