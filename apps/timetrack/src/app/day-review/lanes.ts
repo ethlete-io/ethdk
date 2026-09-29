@@ -3,7 +3,6 @@ import {
   BehindStretch,
   BreakWindow,
   CALL_LANE_KEY,
-  DEFAULT_ROUND_OPTIONS,
   ReviewedRow,
   TIMER_LANE_KEY,
   TimeWindow,
@@ -137,8 +136,6 @@ type Timed = {
 
 type Sibling = { block: SchedulerTimeGridBlock<TimelineEntry>; row: ReviewedRow };
 
-const SLOT_MS = DEFAULT_ROUND_OPTIONS.incrementMs;
-
 const wholeOf = (block: SchedulerTimeGridBlock<TimelineEntry>): Timed => ({
   block,
   start: block.node.appointment.start.getTime(),
@@ -174,49 +171,19 @@ const siblingsOf = (blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[]): S
   return [...sharingTicket(rows)].map(({ block, row }) => ({ block, row }));
 };
 
-/**
- * A sibling row as one piece per stretch its session ran, each widened to the increments the rows
- * sit on, so a session is drawn where it worked and not over the whole span its row covers.
- */
-const stretchPiecesOf = ({ block, row }: Sibling): Timed[] => {
-  const rowFrom = row.from.getTime();
-  const rowTo = row.to.getTime();
-  const runs: { from: number; to: number }[] = [];
-  const snapped = (row.stretches?.length ? row.stretches : [row])
-    .map((stretch) => ({
-      from: Math.max(rowFrom, Math.floor(stretch.from.getTime() / SLOT_MS) * SLOT_MS),
-      to: Math.min(rowTo, Math.ceil(stretch.to.getTime() / SLOT_MS) * SLOT_MS),
-    }))
-    .filter((run) => run.to > run.from)
-    .sort((a, b) => a.from - b.from);
-
-  for (const run of snapped) {
-    const last = runs.at(-1);
-
-    if (last && last.to >= run.from) last.to = Math.max(last.to, run.to);
-    else runs.push({ ...run });
-  }
-
-  const appointmentStart = block.node.appointment.start.getTime();
-
-  return runs.map((run) => ({
-    block: {
-      ...block,
-      offset: block.offset + ((run.from - appointmentStart) / DAY_MS) * 100,
-      span: ((run.to - run.from) / DAY_MS) * 100,
-    },
-    start: run.from,
-    end: run.to,
-    column: 0,
-    piece: { from: new Date(run.from), to: new Date(run.to) },
-  }));
-};
+const siblingCardOf = ({ block, row }: Sibling): Timed => ({
+  block,
+  start: row.from.getTime(),
+  end: row.to.getTime(),
+  column: 0,
+  piece: { from: row.from, to: row.to },
+});
 
 /**
  * Packs one lane's blocks into overlap-free columns, the same way a calendar packs a day, and splits
  * the lane only while blocks overlap: a block is full width wherever nothing else in the lane runs.
- * Parallel agent sessions on one ticket are drawn over the stretches each one ran (`stretchPiecesOf`),
- * and where only such pieces overlap they cascade instead of splitting the lane (`cascadeOf`).
+ * Where only parallel agent sessions on one ticket overlap, they cascade instead of splitting the lane
+ * (`cascadeOf`).
  *
  * Whether two blocks overlap is read off the clock and never off `offset` and `span`. The end of one
  * row and the start of the next are the same instant, but the two percentages of the day computed
@@ -226,10 +193,9 @@ const stretchPiecesOf = ({ block, row }: Sibling): Timed[] => {
 const packLane = (blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[]): LaneBlock[] => {
   const siblings = siblingsOf(blocks);
   const inPieces = new Set(siblings.map((sibling) => sibling.block));
-  const timed = [
-    ...blocks.filter((block) => !inPieces.has(block)).map(wholeOf),
-    ...siblings.flatMap(stretchPiecesOf),
-  ].sort((a, b) => a.start - b.start || a.end - b.end);
+  const timed = [...blocks.filter((block) => !inPieces.has(block)).map(wholeOf), ...siblings.map(siblingCardOf)].sort(
+    (a, b) => a.start - b.start || a.end - b.end,
+  );
 
   const endsPerColumn: number[] = [];
 

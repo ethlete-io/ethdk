@@ -164,34 +164,18 @@ test.describe('parallel sessions on one ticket, prompted in turn', () => {
     await seedDay(page, { prompts: [0, 30, 60], end: 90 });
   });
 
-  test('follow each other at full width over the stretches each one ran', async ({ page }) => {
-    const { laneBox, drawn, titles } = await drawnPieces(page);
+  test('draw each session as one card and cascade the one held inside the other', async ({ page }) => {
+    const { drawn, titles } = await drawnPieces(page);
 
     expect(titles).toHaveLength(2);
-    expect(drawn.length).toBeGreaterThan(titles.length);
-
-    for (const piece of drawn) {
-      expect(piece.box.width).toBeGreaterThan(laneBox.width - 2);
-      expect(piece.clipPath).toBe('none');
-    }
-
-    const byTop = drawn.map((piece) => piece.box).sort((a, b) => a.y - b.y);
-
-    byTop.slice(1).forEach((box, index) => {
-      const above = byTop[index];
-
-      expect(box.y).toBeGreaterThanOrEqual((above?.y ?? 0) + (above?.height ?? 0) - 1);
-    });
+    expect(drawn).toHaveLength(titles.length);
+    await expectCascaded(page);
   });
 
-  test('open the same row from any of its pieces', async ({ page }) => {
-    const { drawn, titles } = await drawnPieces(page);
-    const split = titles.find((title) => drawn.filter((piece) => piece.title === title).length > 1) ?? '';
-    const other = titles.find((title) => title !== split) ?? '';
-    const fromFirst = await surfaceOf(page, bandsOf(page, split).first());
+  test('open a different row from each card', async ({ page }) => {
+    const [first = '', second = ''] = (await drawnPieces(page)).titles;
 
-    expect(await surfaceOf(page, bandsOf(page, split).last())).toBe(fromFirst);
-    expect(await surfaceOf(page, bandsOf(page, other))).not.toBe(fromFirst);
+    expect(await surfaceOf(page, bandsOf(page, first))).not.toBe(await surfaceOf(page, bandsOf(page, second)));
   });
 });
 
