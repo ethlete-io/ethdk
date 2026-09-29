@@ -29,14 +29,14 @@
       flex-direction: column;
       gap: 4px;
       padding: 10px 12px;
-      background-color: rgb(0 0 0 / 0.6);
+      background-color: rgb(var(--et-scrim-color-rgb, 0 0 0) / 0.6);
       -webkit-backdrop-filter: blur(12px);
       backdrop-filter: blur(12px);
-      color: white;
+      color: rgb(var(--et-on-scrim-color-rgb, 255 255 255));
       transition: translate var(--et-dropzone-transition-duration) ease;
 
       .et-dropzone-entry-size {
-        color: rgb(255 255 255 / 0.7);
+        color: rgb(var(--et-on-scrim-color-rgb, 255 255 255) / 0.7);
       }
     }
 

@@ -44,7 +44,7 @@
     --_et-toggletip-background: var(--et-surface-background-solid, rgb(32 32 32));
     --_et-toggletip-color: var(--et-surface-color-solid, rgb(244 244 245));
     --_et-toggletip-border: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
-    --_et-toggletip-shadow: var(--et-anchored-panel-shadow, 0 10px 24px rgb(0 0 0 / 0.16));
+    --_et-toggletip-shadow: var(--et-anchored-panel-shadow, 0 10px 24px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.16));
     --_et-toggletip-radius: 16px;
     --_et-toggletip-max-width: min(34ch, calc(100vw - 24px));
     --_et-toggletip-focus-ring: var(--et-theme-color-primary-solid, rgb(59 130 246));

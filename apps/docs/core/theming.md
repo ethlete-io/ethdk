@@ -302,6 +302,26 @@ There is no separate categorical-color system: a categorical color is a register
 
 The charts read the palette for series order and take a per-series `colorToken` - see [chart series colors](/components/chart#series-colors). Inside CSS, the category's color is `--et-theme-color-primary-solid` under that scope; never repeat its hex value in a stylesheet.
 
+## Shadow and scrim colors
+
+Shadows and scrims are not part of a surface or color theme - they sit behind or over one. Three
+channel tokens set their base color, and each component keeps its own opacity on top:
+
+| Token                     | Default       | Read by                                                                                                                          |
+| ------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `--et-shadow-color-rgb`   | `0 0 0`       | The tooltip and toggletip panel shadows (while `--et-anchored-panel-shadow` is unset), the `elevated` card, the `enclosed` table |
+| `--et-scrim-color-rgb`    | `0 0 0`       | The overlay backdrop (`/ 0.32`), the dropzone preview's info bar (`/ 0.6`)                                                       |
+| `--et-on-scrim-color-rgb` | `255 255 255` | Text on a scrim - the dropzone preview's file name and size                                                                      |
+
+They are raw `R G B` channels, like the `-rgb` surface tokens, so an alpha can be applied to them.
+Neither is generated with the themes; set them on `:root` or on any scope:
+
+```css
+:root {
+  --et-shadow-color-rgb: 15 23 42;
+}
+```
+
 ## Semantic themes
 
 Because names are app-defined, code that needs "the error color" resolves it by `type`:

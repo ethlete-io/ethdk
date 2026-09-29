@@ -176,8 +176,8 @@
     --_et-table-header-bg: var(--et-table-header-background-color, var(--_et-table-band));
     --_et-table-row-divider: var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
     box-shadow:
-      0 1px 2px rgb(0 0 0 / 0.04),
-      0 6px 16px rgb(0 0 0 / 0.06);
+      0 1px 2px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.04),
+      0 6px 16px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.06);
   }
 
   .et-table-host:where([data-appearance='divided']) {

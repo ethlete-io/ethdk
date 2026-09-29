@@ -33,7 +33,7 @@
     }
 
     &:where([data-variant='elevated']) {
-      box-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
+      box-shadow: 0 4px 16px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.12);
     }
   }
 }
