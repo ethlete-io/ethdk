@@ -1,9 +1,9 @@
 import { Provider } from '@angular/core';
 import { CONTENTFUL_CONFIG } from '../constants';
-import { ContentfulConfig, ContentfulEntry } from '../types';
+import { ContentfulConfigOptions, ContentfulEntry } from '../types';
 import { createContentfulConfig } from './contentful-config';
 
-export const provideContentfulConfig = (contentfulConfig?: Partial<ContentfulConfig> | null): Provider => {
+export const provideContentfulConfig = (contentfulConfig?: ContentfulConfigOptions | null): Provider => {
   return { provide: CONTENTFUL_CONFIG, useValue: createContentfulConfig(contentfulConfig) };
 };
 

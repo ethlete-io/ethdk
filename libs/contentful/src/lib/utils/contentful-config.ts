@@ -1,11 +1,6 @@
 import { inject } from '@angular/core';
-import { ContentfulAudioComponent } from '../components/audio';
-import { ContentfulFileComponent } from '../components/file';
-import { ContentfulImageComponent } from '../components/image';
-import { ContentfulLinkComponent } from '../components/link';
-import { ContentfulVideoComponent } from '../components/video';
 import { CONTENTFUL_CONFIG } from '../constants/contentful.constants';
-import { ContentfulConfig } from '../types';
+import { ContentfulConfig, ContentfulConfigOptions } from '../types';
 
 /**
  * The config used when no `provideContentfulConfig()` is in scope. It declares no
@@ -23,29 +18,15 @@ const CONTENTFUL_FALLBACK_CONFIG: ContentfulConfig = {
   },
 };
 
-export const createContentfulConfig = (config?: Partial<ContentfulConfig> | null): ContentfulConfig => {
-  const defaults: ContentfulConfig = {
-    internalHosts: [],
-    components: {
-      audio: ContentfulAudioComponent,
-      file: ContentfulFileComponent,
-      image: ContentfulImageComponent,
-      video: ContentfulVideoComponent,
-      link: ContentfulLinkComponent,
-    },
-    customComponents: {},
-    imageOptions: {
-      srcsetSizes: ['375w', '1280w', '1920w', '2560w'],
-      sizes: ['100vw'],
-      backgroundColor: null,
-    },
-  };
+export const createContentfulConfig = (options?: ContentfulConfigOptions | null): ContentfulConfig => {
+  const { features = [], ...config } = options ?? {};
+  const featureComponents = features.reduce((components, feature) => ({ ...components, ...feature.components }), {});
 
   return {
-    ...defaults,
+    ...CONTENTFUL_FALLBACK_CONFIG,
     ...config,
-    components: { ...defaults.components, ...config?.components },
-    imageOptions: { ...defaults.imageOptions, ...config?.imageOptions },
+    components: { ...featureComponents, ...config.components },
+    imageOptions: { ...CONTENTFUL_FALLBACK_CONFIG.imageOptions, ...config.imageOptions },
   };
 };
 

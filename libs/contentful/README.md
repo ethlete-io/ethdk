@@ -13,7 +13,12 @@ yarn add @ethlete/contentful
 ```ts
 @Component({
   imports: [ContentfulRichTextRendererComponent],
-  providers: [provideContentfulConfig({ customComponents: { newsElement: NewsElementComponent } })],
+  providers: [
+    provideContentfulConfig({
+      customComponents: { newsElement: NewsElementComponent },
+      features: [withContentfulDefaultComponents()],
+    }),
+  ],
   template: `<et-contentful-rich-text-renderer [content]="data()" richTextPath="items[0].fields.html" />`,
 })
 export class NewsArticleComponent {}

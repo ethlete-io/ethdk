@@ -13,7 +13,11 @@ The package peers on `@ethlete/core`, `@ethlete/components`, `@ethlete/query` an
 Register the (optional) config where you use the renderer - globally or on the consuming component. This is also where custom components for embedded entries are mapped:
 
 ```ts
-import { ContentfulRichTextRendererComponent, provideContentfulConfig } from '@ethlete/contentful';
+import {
+  ContentfulRichTextRendererComponent,
+  provideContentfulConfig,
+  withContentfulDefaultComponents,
+} from '@ethlete/contentful';
 
 @Component({
   imports: [ContentfulRichTextRendererComponent],
@@ -23,6 +27,7 @@ import { ContentfulRichTextRendererComponent, provideContentfulConfig } from '@e
         teaserCollection: TeaserCollectionComponent,
         newsElement: NewsElementComponent,
       },
+      features: [withContentfulDefaultComponents()],
     }),
   ],
   template: `<et-contentful-rich-text-renderer [content]="data()" richTextPath="items[0].fields.html" />`,
@@ -38,23 +43,31 @@ export class NewsArticleComponent {
 
 All config options (defaults from `createContentfulConfig()`):
 
-| Option                         | Default                                                         | Purpose                                                                                                    |
-| ------------------------------ | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `components`                   | The built-in `ContentfulImage/Video/Audio/File/Link` components | Override how embedded assets and hyperlinks render.                                                        |
-| `customComponents`             | `{}`                                                            | Map of Contentful content-type id → component for [embedded entries](#embedded-entries-custom-components). |
-| `internalHosts`                | `[]`                                                            | Extra hostnames the [link component](#links) treats as internal (router navigation instead of `<a href>`). |
-| `imageOptions.srcsetSizes`     | `['375w', '1280w', '1920w', '2560w']`                           | Default srcset candidates for [images](#images).                                                           |
-| `imageOptions.sizes`           | `['100vw']`                                                     | Default `sizes` attribute entries for images.                                                              |
-| `imageOptions.backgroundColor` | `null`                                                          | Background color (`bg=rgb:…`) applied by the Contentful Images API.                                        |
+| Option                         | Default                               | Purpose                                                                                                    |
+| ------------------------------ | ------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `components`                   | `{}`                                  | Components for embedded assets and hyperlinks. Named ones win over a feature's.                            |
+| `features`                     | `[]`                                  | Opt-in additions - `withContentfulDefaultComponents()` registers the built-in asset and link components.   |
+| `customComponents`             | `{}`                                  | Map of Contentful content-type id → component for [embedded entries](#embedded-entries-custom-components). |
+| `internalHosts`                | `[]`                                  | Extra hostnames the [link component](#links) treats as internal (router navigation instead of `<a href>`). |
+| `imageOptions.srcsetSizes`     | `['375w', '1280w', '1920w', '2560w']` | Default srcset candidates for [images](#images).                                                           |
+| `imageOptions.sizes`           | `['100vw']`                           | Default `sizes` attribute entries for images.                                                              |
+| `imageOptions.backgroundColor` | `null`                                | Background color (`bg=rgb:…`) applied by the Contentful Images API.                                        |
 
 ::: tip Partial overrides
-`components` and `imageOptions` merge one level deep over the defaults, so `provideContentfulConfig({ components: { image: MyImage } })` keeps the default link, file, video and audio components. Other keys, such as `customComponents` and `internalHosts`, replace the default as a whole.
+`components` and `imageOptions` merge one level deep, so `provideContentfulConfig({ components: { image: MyImage }, features: [withContentfulDefaultComponents()] })` keeps the default link, file, video and audio components. Other keys, such as `customComponents` and `internalHosts`, replace the default as a whole.
 :::
 
-::: warning The built-in components need the provider
-The default `components` map only exists inside `provideContentfulConfig()`. **Without the provider in scope the renderer ships no embedded components at all**: embedded assets are skipped (with a dev-mode warning) and hyperlinks render as plain `<a href>` anchors instead of `ContentfulLinkComponent`. Call `provideContentfulConfig()` - with no arguments if you only want the defaults - as soon as your content contains embedded assets or links.
+::: warning The built-in components are opt-in
+`withContentfulDefaultComponents()` registers `ContentfulImage/Video/Audio/File/Link` for embedded assets and hyperlinks. **Without it, and without your own `components`, the renderer ships no embedded components at all**: embedded assets are skipped (with a dev-mode warning) and hyperlinks render as plain `<a href>` anchors instead of `ContentfulLinkComponent`.
 
-Keeping the components out of the fallback is what lets an app that imports only `ContentfulLinkComponent` (or only renders text) leave the image/video/audio/file components - and with them `PictureComponent` - out of its bundle.
+Leaving it out keeps the five components - and with them `PictureComponent` - out of the bundle, about 6.9 kB gz for an app that renders text only or brings its own components.
+
+Upgrading from a version that registered them by default? `et update` runs the migration, or run it directly. It adds the feature to every `provideContentfulConfig(...)` literal and lists the calls it could not edit in `contentful-default-components-migration-tasks.md`:
+
+```bash
+yarn nx g @ethlete/contentful:migrate-contentful-default-components
+```
+
 :::
 
 Everything else falls back to the defaults above without the provider. The standalone image component uses the fallback image options, so it does not require `provideContentfulConfig()`.
@@ -124,7 +137,7 @@ The `isContentfulEntryType<T>(entry, type)` guard narrows an entry by its conten
 
 ## Embedded assets
 
-`embedded-asset-block` nodes pick a component by the asset's MIME type: `image/*` → `components.image`, `video/*` → `components.video`, `audio/*` → `components.audio`, anything else → `components.file`. A node whose component is not registered (no `provideContentfulConfig()` in scope, or a `components` override that omits it) is skipped with a dev-mode warning, as is an asset missing from `includes`. Each receives the resolved asset as its `asset` input; all four accept both REST (`ContentfulRestAsset`) and GraphQL (`ContentfulGqlAsset`) asset shapes. You can use them standalone, too.
+`embedded-asset-block` nodes pick a component by the asset's MIME type: `image/*` → `components.image`, `video/*` → `components.video`, `audio/*` → `components.audio`, anything else → `components.file`. A node whose component is not registered (no `withContentfulDefaultComponents()` and no own `components` entry for it) is skipped with a dev-mode warning, as is an asset missing from `includes`. Each receives the resolved asset as its `asset` input; all four accept both REST (`ContentfulRestAsset`) and GraphQL (`ContentfulGqlAsset`) asset shapes. You can use them standalone, too.
 
 ### Images
 

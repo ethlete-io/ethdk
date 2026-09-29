@@ -240,6 +240,14 @@
       "entry": "import { ContentfulRichTextRendererComponent } from '@ethlete/contentful';\nconsole.log(ContentfulRichTextRendererComponent);",
       "gzip": 6876
     },
+    "contentful-config": {
+      "entry": "import { ContentfulRichTextRendererComponent, provideContentfulConfig } from '@ethlete/contentful';\nconsole.log(ContentfulRichTextRendererComponent, provideContentfulConfig());",
+      "gzip": 6974
+    },
+    "contentful-config-default-components": {
+      "entry": "import { ContentfulRichTextRendererComponent, provideContentfulConfig, withContentfulDefaultComponents } from '@ethlete/contentful';\nconsole.log(ContentfulRichTextRendererComponent, provideContentfulConfig({ features: [withContentfulDefaultComponents()] }));",
+      "gzip": 13810
+    },
     "contentful-image": {
       "entry": "import { ContentfulImageComponent } from '@ethlete/contentful';\nconsole.log(ContentfulImageComponent);",
       "gzip": 7016

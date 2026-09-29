@@ -4,6 +4,11 @@
       "factory": "./migrate-to-contentful-v5/migration",
       "schema": "./migrate-to-contentful-v5/schema.json",
       "description": "Migrate to @ethlete/contentful v5 (components picture, renamed image inputs, removed renderer internals)"
+    },
+    "migrate-contentful-default-components": {
+      "factory": "./migrate-contentful-default-components/migration",
+      "schema": "./migrate-contentful-default-components/schema.json",
+      "description": "Add withContentfulDefaultComponents() to provideContentfulConfig and report the calls that need it by hand"
     }
   }
 }

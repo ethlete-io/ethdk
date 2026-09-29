@@ -10,6 +10,7 @@ import {
   ContentfulRestAsset,
   RichTextResponse,
 } from '../../types';
+import { withContentfulDefaultComponents } from '../../utils/contentful-default-components';
 import { provideContentfulConfig } from '../../utils/contentful.util';
 import { ContentfulIncludeMap, ContentfulRichTextRendererComponent } from './rich-text-renderer.component';
 
@@ -167,6 +168,7 @@ type SetupOptions = {
   customComponents?: Record<string, any>;
   useStubAssetComponents?: boolean;
   withoutConfig?: boolean;
+  withoutDefaultComponents?: boolean;
 };
 
 const setup = (options: SetupOptions = {}) => {
@@ -190,6 +192,7 @@ const setup = (options: SetupOptions = {}) => {
             provideContentfulConfig({
               ...(components ? { components } : {}),
               customComponents: options.customComponents ?? {},
+              features: options.withoutDefaultComponents ? [] : [withContentfulDefaultComponents()],
             }),
           ]),
     ],
@@ -225,7 +228,13 @@ const setContent = (
 
 const readRenderCommands = (options: SetupOptions = {}) => {
   TestBed.configureTestingModule({
-    providers: [provideRouter([]), provideContentfulConfig({ customComponents: options.customComponents ?? {} })],
+    providers: [
+      provideRouter([]),
+      provideContentfulConfig({
+        customComponents: options.customComponents ?? {},
+        features: [withContentfulDefaultComponents()],
+      }),
+    ],
   });
 
   const fixture = TestBed.createComponent(ContentfulRichTextRendererComponent);
@@ -458,6 +467,22 @@ describe('ContentfulRichTextRendererComponent', () => {
 
       const { fixture } = setup({
         withoutConfig: true,
+        richText: doc(embeddedAsset('a1')),
+        includes: { Asset: [asset] },
+      });
+
+      expect(renderRoot(fixture).querySelector('et-contentful-image')).toBeNull();
+      expect(warn).toHaveBeenCalled();
+
+      warn.mockRestore();
+    });
+
+    it('skips an embedded asset when the config leaves out the default components', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => void 0);
+      const asset = createAsset('a1', 'image/png');
+
+      const { fixture } = setup({
+        withoutDefaultComponents: true,
         richText: doc(embeddedAsset('a1')),
         includes: { Asset: [asset] },
       });
