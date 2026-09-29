@@ -114,8 +114,18 @@ const matches = (expressions: readonly RegExp[], named: Named) =>
   expressions.some((expression) => expression.test(named.appId) || expression.test(named.title));
 
 /**
+ * Applications whose calls count as work with no rule naming them, `app_id` as each platform reports it.
+ * A deny rule still beats them.
+ */
+export const WORK_CALL_APPS = ['com.slack.Slack', 'slack', 'com.tinyspeck.slackmacgap'];
+
+const isWorkCallApp = (appId: string) =>
+  WORK_CALL_APPS.some((workApp) => workApp.toLowerCase() === appId.trim().toLowerCase());
+
+/**
  * Whether this call counts as work. Deny beats everything, and nothing saying so is no — except a
- * meeting the user accepted over the same minutes, which says so on its own.
+ * meeting the user accepted over the same minutes, which says so on its own, and a
+ * {@link WORK_CALL_APPS} application.
  *
  * Default-deny is the only default that cannot silently invent hours: an open voice room and a client
  * meeting are the same signal, and an application's own mute is invisible. An accepted meeting is the
@@ -124,7 +134,7 @@ const matches = (expressions: readonly RegExp[], named: Named) =>
  */
 const countsAsWork = (options: { rules: CompiledCallRules; named: Named; expected: boolean }) =>
   !matches(options.rules.neverCountsAsWork, options.named) &&
-  (options.expected || matches(options.rules.countsAsWork, options.named));
+  (options.expected || isWorkCallApp(options.named.appId) || matches(options.rules.countsAsWork, options.named));
 
 /** Each focus in order, holding until the next one takes over, and the last until the cut-off. */
 type HeldFocus = TimeWindow & { appId: string };

@@ -2,4 +2,4 @@
 '@ethlete/timetrack': patch
 ---
 
-Record on each call window why it does not count as work, and add `callExclusionReasonOf`, `appDisplayNameOf` and `countsAsWorkPatternOf`.
+Count Slack calls as work with no call rule, record on each call window why it does not count, and add `callExclusionReasonOf`, `appDisplayNameOf` and `countsAsWorkPatternOf`.

@@ -723,7 +723,7 @@ describe('classifyCalls, why a call is not counted', () => {
   ];
 
   it('says no rule counts it when nothing named the application', () => {
-    const [window] = classify(huddle('com.slack.Slack'), { countsAsWork: ['google-chrome', 'Discord'] });
+    const [window] = classify(huddle('us.zoom.Zoom'), { countsAsWork: ['google-chrome', 'Discord'] });
 
     expect(window!.countsAsWork).toBe(false);
     expect(window!.excludedBy).toBe('no-rule');
@@ -749,5 +749,29 @@ describe('classifyCalls, why a call is not counted', () => {
 
     expect(window!.countsAsWork).toBe(true);
     expect(window!.excludedBy).toBeUndefined();
+  });
+});
+
+describe('classifyCalls, a Slack huddle', () => {
+  const huddle = (appId: string) => [
+    focus(0, appId, 'Huddle'),
+    call(0, 'call-start', appId),
+    call(12, 'call-end', appId),
+  ];
+
+  it.each(['com.slack.Slack', 'slack', 'com.tinyspeck.slackmacgap'])(
+    'counts %s as work with no rule naming it',
+    (appId) => {
+      const [window] = classify(huddle(appId), { countsAsWork: ['google-chrome', 'Discord'] });
+
+      expect(window!.countsAsWork).toBe(true);
+      expect(window!.excludedBy).toBeUndefined();
+    },
+  );
+
+  it('still lets a deny rule beat it', () => {
+    const [window] = classify(huddle('com.slack.Slack'), { neverCountsAsWork: ['Huddle'] });
+
+    expect(window!.excludedBy).toBe('deny-rule');
   });
 });

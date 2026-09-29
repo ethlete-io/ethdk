@@ -228,9 +228,8 @@ export const clampStandInOverdueMs = (value: number) =>
  * than unclassified time — the bug `ownAppIds` avoided by deciding at read time as well.
  *
  * `neverCountsAsWork` beats `countsAsWork`, and a call neither list names is not work unless it overlaps
- * a meeting the user accepted; `neverCountsAsWork` beats that too. The process
- * matters on its own, because a huddle's title may not name the workspace at all and "every Slack call
- * is work" should be one line.
+ * a meeting the user accepted or is held in a `WORK_CALL_APPS` application; `neverCountsAsWork` beats
+ * both. The process matters on its own, because a huddle's title may not name the workspace at all.
  */
 export type TimetrackCallRules = {
   countsAsWork: string[];

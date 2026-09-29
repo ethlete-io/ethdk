@@ -7,10 +7,12 @@ const at = (clock: string) => new Date(`${E2E_DAY_KEY}T${clock}:00.000Z`);
 
 const SLACK = 'com.slack.Slack';
 
-const EVENTS: CollectedEvent[] = [
-  { at: at('14:00'), source: 'window', kind: 'window-focus', appId: SLACK, title: 'Huddle' },
-  { at: at('14:00'), source: 'call', kind: 'call-start', appId: SLACK },
-  { at: at('14:30'), source: 'call', kind: 'call-end', appId: SLACK },
+const ZOOM = 'us.zoom.Zoom';
+
+const callIn = (appId: string): CollectedEvent[] => [
+  { at: at('14:00'), source: 'window', kind: 'window-focus', appId, title: 'Huddle' },
+  { at: at('14:00'), source: 'call', kind: 'call-start', appId },
+  { at: at('14:30'), source: 'call', kind: 'call-end', appId },
 ];
 
 const settings = (neverCountsAsWork: string[] = []) => ({
@@ -23,26 +25,34 @@ const excludedBands = (page: Page) => page.locator('[data-kind="row"][title^="No
 
 test.describe('a call no rule counts', () => {
   test.beforeEach(async ({ page }) => {
-    await seedWorld(page, { now: E2E_NOW, events: EVENTS, settings: settings() });
+    await seedWorld(page, { now: E2E_NOW, events: callIn(ZOOM), settings: settings() });
     await page.goto('/day');
   });
 
   test('says on its band why it is not counted', async ({ page }) => {
     await expect(excludedBands(page)).toHaveCount(1);
-    await expect(excludedBands(page)).toHaveAttribute('title', /^Not counted · Slack, no rule counts it as work/);
+    await expect(excludedBands(page)).toHaveAttribute('title', /^Not counted · Zoom, no rule counts it as work/);
   });
 
   test('counts once its application is counted as work from the band menu', async ({ page }) => {
     await excludedBands(page).click({ button: 'right' });
-    await page.getByRole('menuitem', { name: 'Count Slack as work' }).click();
+    await page.getByRole('menuitem', { name: 'Count Zoom as work' }).click();
 
     await expect(excludedBands(page)).toHaveCount(0);
     await expect(page.locator('[data-kind="row"][title^="Not yet named"]')).toHaveCount(1);
   });
 });
 
+test('a Slack huddle counts though no rule names Slack', async ({ page }) => {
+  await seedWorld(page, { now: E2E_NOW, events: callIn(SLACK), settings: settings() });
+  await page.goto('/day');
+
+  await expect(page.locator('[data-kind="row"][title^="Not yet named"]')).toHaveCount(1);
+  await expect(excludedBands(page)).toHaveCount(0);
+});
+
 test('a call a rule excludes says so and offers no count', async ({ page }) => {
-  await seedWorld(page, { now: E2E_NOW, events: EVENTS, settings: settings(['Huddle']) });
+  await seedWorld(page, { now: E2E_NOW, events: callIn(SLACK), settings: settings(['Huddle']) });
   await page.goto('/day');
 
   await expect(excludedBands(page)).toHaveAttribute('title', /^Not counted · Slack, a rule excludes it/);

@@ -2,4 +2,4 @@
 'timetrack-app': patch
 ---
 
-Say on a band the day does not count why, such as no rule counting its application as work, and offer "Count Slack as work" in its menu.
+Count Slack huddles as work with no rule, say on any other uncounted call band why, and offer "Count <app> as work" in its menu.
