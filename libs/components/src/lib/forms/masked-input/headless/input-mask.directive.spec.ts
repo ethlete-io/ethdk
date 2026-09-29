@@ -296,15 +296,17 @@ describe('InputMaskDirective', () => {
     expect(element().value).toBe('12-');
     expect(fixture.componentInstance.value()).toBe('12');
 
-    // back to null: the masked text is kept as-is and native sync resumes
+    // back to null: the element shows the model again and native sync resumes
     fixture.componentInstance.mask.set(null);
     fixture.detectChanges();
     await fixture.whenStable();
 
+    expect(element().value).toBe('12');
+
     await type('x');
 
-    expect(element().value).toBe('12-x');
-    expect(fixture.componentInstance.value()).toBe('12-x');
+    expect(element().value).toBe('12x');
+    expect(fixture.componentInstance.value()).toBe('12x');
   });
 
   it('attaches to a custom INPUT_MASK_HOST provider (no et-input required)', async () => {

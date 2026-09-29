@@ -109,6 +109,8 @@ export class InputMaskDirective {
    */
   private committedRaw = '';
 
+  private paintedMask = false;
+
   /** Caret produced by the last handled edit - consumed once by the display enforcement. */
   private caret: number | null = null;
 
@@ -174,9 +176,16 @@ export class InputMaskDirective {
       const element = host?.nativeControl();
       const spec = this.spec();
 
+      if (host && element && !spec && this.paintedMask) {
+        this.paintedMask = false;
+        element.value = host.value();
+      }
+
       if (!host || !element || !spec || this.composing()) {
         return;
       }
+
+      this.paintedMask = true;
 
       // a mixed host renders empty with its mixed label as placeholder - repainting the masked
       // raw value here would leak the hidden value into the DOM. The next edit starts from an
