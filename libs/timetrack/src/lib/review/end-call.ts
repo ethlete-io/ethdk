@@ -4,6 +4,7 @@ import { CALL_LANE_KEY, storedLaneKey } from '../rows/lane';
 import { DEFAULT_ROUND_OPTIONS, RoundOptions } from '../rows/round';
 import { setRowRange } from './edits';
 import { DayReviewEdits, ReviewedRow } from './model';
+import { nearestOnGrid } from '../rows/grid';
 
 const overlaps = (left: { from: Date; to: Date }, right: { from: Date; to: Date }) =>
   left.from.getTime() < right.to.getTime() && right.from.getTime() < left.to.getTime();
@@ -150,7 +151,7 @@ const callEndOf = (options: { row: ReviewedRow; calls: readonly CallMatch[]; rou
     if (joins) end = Math.max(end ?? 0, call.to.getTime());
   }
 
-  return end === null ? null : Math.round(end / incrementMs) * incrementMs;
+  return end === null ? null : nearestOnGrid(end, incrementMs);
 };
 
 /**
@@ -213,7 +214,7 @@ export const callRowSnipAt = (options: {
   const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options.round };
   const until = meetingBehindRow(options)?.until;
   const inside = (ms: number) => ms > row.from.getTime() && ms < row.to.getTime();
-  const meetingEnd = until && Math.round(until.getTime() / incrementMs) * incrementMs;
+  const meetingEnd = until && nearestOnGrid(until.getTime(), incrementMs);
 
   if (meetingEnd && inside(meetingEnd)) return new Date(meetingEnd);
 
@@ -273,7 +274,7 @@ export const endRowAt = (options: {
 }): DayReviewEdits => {
   const { edits, row } = options;
   const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options.round };
-  const to = new Date(Math.round(options.at.getTime() / incrementMs) * incrementMs);
+  const to = new Date(nearestOnGrid(options.at.getTime(), incrementMs));
 
   if (to.getTime() <= row.from.getTime()) return edits;
 

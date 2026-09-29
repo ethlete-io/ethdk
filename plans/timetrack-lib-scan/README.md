@@ -7,5 +7,4 @@ were checked by a verify pass; see each file's own header for what that pass cov
 | --------------------- | --------------------------------------------------------------------------------------------------------------- | ----- | ------ | ----- | ----- |
 | `integrations.md`     | agent-api, agent-session, forge, git, github, gitlab, google-auth, google-calendar, ingest, transport, reporter | 0     | 1      | 1     | 1     |
 | `jira-tempo-model.md` | jira, tempo, model, reason, store                                                                               | 0     | 1      | 3     | 0     |
-| `rows-review.md`      | rows, review                                                                                                    | 0     | 0      | 1     | 0     |
-| **Total**             |                                                                                                                 | **0** | **2**  | **5** | **1** |
+| **Total**             |                                                                                                                 | **0** | **2**  | **4** | **1** |

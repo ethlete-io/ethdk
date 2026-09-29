@@ -2,6 +2,7 @@ import { PresenceStatement, statementWindows } from '../model/statement';
 import { TimeWindow, mergeWindows, subtractWindows } from '../model/time-window';
 import { DEFAULT_ROUND_OPTIONS, RoundOptions } from '../rows/round';
 import { DayReviewEdits } from './model';
+import { nearestOnGrid } from '../rows/grid';
 
 const statementIdFor = (options: { kind: PresenceStatement['kind']; from: Date; taken: Set<string> }) => {
   const base = `${options.kind}@${options.from.toISOString()}`;
@@ -22,7 +23,7 @@ const statementIdFor = (options: { kind: PresenceStatement['kind']; from: Date; 
  * break it changes lines up with both.
  */
 const snappedWindow = (options: { from: Date; to: Date; incrementMs: number }): TimeWindow => {
-  const nearest = (ms: number) => Math.round(ms / options.incrementMs) * options.incrementMs;
+  const nearest = (ms: number) => nearestOnGrid(ms, options.incrementMs);
   const from = nearest(options.from.getTime());
 
   return { from: new Date(from), to: new Date(Math.max(nearest(options.to.getTime()), from + options.incrementMs)) };

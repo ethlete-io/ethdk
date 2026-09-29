@@ -2,6 +2,7 @@ import { WorklogProposal, syncsInState } from '../model/proposal';
 import { backgroundTest } from '../review/recut';
 import { CALL_LANE_KEY, storedLaneKey } from '../rows/lane';
 import { DEFAULT_ROUND_OPTIONS, sharingTicket } from '../rows/round';
+import { floorToGrid } from '../rows/grid';
 
 type Span = { from: number; to: number };
 
@@ -59,7 +60,7 @@ const placeShared = (options: {
     left: Math.floor(proposal.durationMs / incrementMs),
     spans: [] as Span[],
   }));
-  const start = Math.floor(Math.min(...jobs.map((job) => job.from)) / incrementMs) * incrementMs;
+  const start = floorToGrid(Math.min(...jobs.map((job) => job.from)), incrementMs);
   const end = Math.max(...jobs.map((job) => job.to));
 
   for (let at = start; at + incrementMs <= end; at += incrementMs) {

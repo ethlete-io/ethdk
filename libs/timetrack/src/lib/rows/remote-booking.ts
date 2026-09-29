@@ -1,5 +1,6 @@
 import { TimeWindow, clipWindows, mergeWindows, subtractWindows, windowsMs } from '../model/time-window';
 import { DEFAULT_ROUND_OPTIONS, RoundOptions } from './round';
+import { nearestOnGrid } from './grid';
 
 /** A part of a remote stretch the day books, with the lane of the prompt that bought it. */
 export type BookedRemoteWindow = TimeWindow & { laneKey?: string };
@@ -24,7 +25,7 @@ export const remoteBookingOnGrid = (options: {
   round?: Partial<RoundOptions>;
 }): RemoteBooking => {
   const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options.round };
-  const nearest = (at: Date) => new Date(Math.round(at.getTime() / incrementMs) * incrementMs);
+  const nearest = (at: Date) => new Date(nearestOnGrid(at.getTime(), incrementMs));
   let leftMs = options.maxBookedMs ?? Infinity;
   const booked = options.booked
     .map((part) => ({ ...part, from: nearest(part.from), to: nearest(part.to) }))

@@ -1,4 +1,5 @@
 import { DEFAULT_ROUND_OPTIONS, RoundOptions, roundDurationUp } from './round';
+import { floorToGrid, nearestOnGrid } from './grid';
 
 /** A row's raw bounds and the whole increments it books, from `roundDurationUp`. */
 export type SnapInput = {
@@ -6,9 +7,6 @@ export type SnapInput = {
   to: Date;
   durationMs: number;
 };
-
-const floorTo = (ms: number, incrementMs: number) => Math.floor(ms / incrementMs) * incrementMs;
-const nearest = (ms: number, incrementMs: number) => Math.round(ms / incrementMs) * incrementMs;
 
 type Placed = {
   index: number;
@@ -21,7 +19,7 @@ type Placed = {
 
 const endOf = (row: Placed, incrementMs: number) =>
   Math.max(
-    nearest(row.rawTo, incrementMs),
+    nearestOnGrid(row.rawTo, incrementMs),
     row.from + Math.max(roundDurationUp(row.durationMs, { incrementMs }), incrementMs),
   );
 
@@ -51,7 +49,7 @@ export const snapRowBounds = <T extends SnapInput>(options: {
 }): T[] => {
   const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options.options };
   const placed: Placed[] = options.rows.map((row, index) => {
-    const from = floorTo(row.from.getTime(), incrementMs);
+    const from = floorToGrid(row.from.getTime(), incrementMs);
     const seed: Placed = {
       index,
       rawFrom: row.from.getTime(),
@@ -70,7 +68,7 @@ export const snapRowBounds = <T extends SnapInput>(options: {
     for (const earlier of done) {
       if (earlier.rawTo > row.rawFrom || earlier.to <= row.from) continue;
 
-      const pulled = floorTo(earlier.rawTo, incrementMs);
+      const pulled = floorToGrid(earlier.rawTo, incrementMs);
       // A push would put this row's start at or after its own last evidence, so it would be drawn over
       // minutes nothing happened in — on a running day, minutes that have not happened at all.
       const strands = earlier.to >= row.rawTo;
@@ -84,7 +82,7 @@ export const snapRowBounds = <T extends SnapInput>(options: {
       row.from = earlier.to;
       // Not `endOf`: the minutes this row gave up went to the row before it, and pushing its end out
       // to keep its old length would book them a second time.
-      row.to = Math.max(nearest(row.rawTo, incrementMs), row.from + incrementMs);
+      row.to = Math.max(nearestOnGrid(row.rawTo, incrementMs), row.from + incrementMs);
     }
 
     done.push(row);

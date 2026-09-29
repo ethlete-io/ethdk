@@ -10,6 +10,7 @@ import {
   windowsMs,
   windowsOverlap,
 } from '../model/time-window';
+import { ceilToGrid, floorToGrid, nearestOnGrid } from '../rows/grid';
 
 /**
  * The longest gap in presence that is not a break yet. It is `maxFillGapMs` on purpose: a gap short
@@ -295,8 +296,6 @@ const attended = (options: {
 export const breakMs = (breaks: readonly TimeWindow[]) =>
   breaks.reduce((sum, window) => sum + Math.max(0, window.to.getTime() - window.from.getTime()), 0);
 
-const nearest = (ms: number, incrementMs: number) => Math.round(ms / incrementMs) * incrementMs;
-
 /**
  * A break the rows cover, put on the grid the rows sit on.
  *
@@ -306,12 +305,12 @@ const nearest = (ms: number, incrementMs: number) => Math.round(ms / incrementMs
  * reads as nothing.
  */
 const snapped = (window: BreakWindow, incrementMs: number): BreakWindow => {
-  const from = nearest(window.from.getTime(), incrementMs);
+  const from = nearestOnGrid(window.from.getTime(), incrementMs);
 
   return {
     ...window,
     from: new Date(from),
-    to: new Date(Math.max(nearest(window.to.getTime(), incrementMs), from + incrementMs)),
+    to: new Date(Math.max(nearestOnGrid(window.to.getTime(), incrementMs), from + incrementMs)),
   };
 };
 
@@ -334,8 +333,8 @@ const clippedToPresence = (options: {
 
   return options.breaks.flatMap((window) =>
     subtractWindows({ windows: [window], without: options.presence }).flatMap((part) => {
-      const from = Math.ceil(part.from.getTime() / incrementMs) * incrementMs;
-      const to = Math.floor(part.to.getTime() / incrementMs) * incrementMs;
+      const from = ceilToGrid(part.from.getTime(), incrementMs);
+      const to = floorToGrid(part.to.getTime(), incrementMs);
 
       if (to - from < incrementMs) return [];
 

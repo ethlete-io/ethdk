@@ -6,6 +6,7 @@ import { AttributedBlock } from './attribute';
 import { clipBlocks } from './overlap';
 import { DEFAULT_ROUND_OPTIONS, RoundOptions } from './round';
 import { watchPrompts, watchedAt } from './watched';
+import { floorToGrid, nearestOnGrid } from './grid';
 
 export type CutOptions = {
   /**
@@ -64,7 +65,7 @@ const settledThrough = (options: { through?: Date; round?: Partial<RoundOptions>
 
   const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options.round };
 
-  return Math.floor(options.through.getTime() / incrementMs) * incrementMs;
+  return floorToGrid(options.through.getTime(), incrementMs);
 };
 
 /** The part of a block that falls in an increment already over, or none where no part does. */
@@ -138,7 +139,7 @@ const holesOf = (options: { block: ActivityBlock; kept: readonly ActivityBlock[]
  */
 const snapStretches = (stretches: readonly BehindStretch[], options?: Partial<RoundOptions>): BehindStretch[] => {
   const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options };
-  const nearest = (at: Date) => Math.round(at.getTime() / incrementMs) * incrementMs;
+  const nearest = (at: Date) => nearestOnGrid(at.getTime(), incrementMs);
 
   return stretches
     .map((stretch) => ({ ...stretch, from: new Date(nearest(stretch.from)), to: new Date(nearest(stretch.to)) }))
