@@ -79,7 +79,9 @@ export class ProgressStepComponent {
 
   public state = input<ProgressStepState>(PROGRESS_STEP_STATES.UPCOMING);
 
-  protected role = INTERACTIVE_HOSTS.has(inject<ElementRef<HTMLElement>>(ElementRef).nativeElement.nodeName) ? null : 'listitem';
+  protected role = INTERACTIVE_HOSTS.has(inject<ElementRef<HTMLElement>>(ElementRef).nativeElement.nodeName)
+    ? null
+    : 'listitem';
 
   protected markerIcon = computed(() => STATE_ICONS[this.state()] ?? null);
   protected stateLabel = computed(() => {
