@@ -241,28 +241,52 @@ const pairCallEdges = (calls: readonly CallEvent[]) => {
  *
  * A call the repair closed is given the wider {@link DEFAULT_CALL_RESTART_GAP_MS} instead, because the
  * break after it is the app being away rather than the microphone closing.
+ *
+ * The session stays one call for attendance, but each voice room in it is its own window: switching
+ * rooms closes the microphone and opens it again 2 seconds later, measured on 2026-09-29, and a title
+ * that changes over that break names the new room. After a restart the title says nothing, because no
+ * focus event names the room the app came back to.
  */
-const glueCalls = (options: { calls: readonly PairedCall[]; glueMs: number; restartMs: number }): PairedCall[] => {
-  const { glueMs, restartMs } = options;
-  const byApp = new Map<string, PairedCall[]>();
+const glueCalls = (options: {
+  calls: readonly PairedCall[];
+  glueMs: number;
+  restartMs: number;
+  titleOf: (call: PairedCall) => string;
+}): GluedCall[] => {
+  const { glueMs, restartMs, titleOf } = options;
+  const byApp = new Map<string, GluedCall[]>();
 
   for (const call of [...options.calls].sort((left, right) => left.from.getTime() - right.from.getTime())) {
     const held = byApp.get(call.appId) ?? [];
     const last = held[held.length - 1];
-    const allowed = last?.stoppedWatching ? Math.max(glueMs, restartMs) : glueMs;
+    const title = titleOf(call);
+    const restarted = last?.session.stoppedWatching ?? false;
+    const allowed = restarted ? Math.max(glueMs, restartMs) : glueMs;
 
-    if (last && call.from.getTime() - last.to.getTime() <= allowed) {
-      if (call.to > last.to) last.to = call.to;
-      last.stoppedWatching = call.stoppedWatching ?? false;
+    if (!last || call.from.getTime() - last.session.to.getTime() > allowed) {
+      held.push({ session: { ...call }, rooms: [{ call: { ...call }, title }] });
+      byApp.set(call.appId, held);
       continue;
     }
 
-    held.push({ ...call });
-    byApp.set(call.appId, held);
+    const room = last.rooms.at(-1);
+
+    if (!room || (!restarted && title && room.title && title !== room.title)) {
+      last.rooms.push({ call: { ...call }, title });
+    } else {
+      if (call.to > room.call.to) room.call.to = call.to;
+      if (title) room.title = title;
+    }
+
+    if (call.to > last.session.to) last.session.to = call.to;
+    last.session.stoppedWatching = call.stoppedWatching ?? false;
   }
 
   return [...byApp.values()].flat();
 };
+
+/** A run of calls the glue joined, and the voice rooms it passed through. */
+type GluedCall = { session: PairedCall; rooms: { call: PairedCall; title: string }[] };
 
 /**
  * Every call in the events, paired from its edges, named from the focus history and classified.
@@ -288,7 +312,7 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
     neverCountsAsWork: compiled(options.rules.neverCountsAsWork),
   };
 
-  const toWindow = (call: PairedCall): CallWindow => {
+  const toWindow = (call: PairedCall, session: PairedCall): CallWindow => {
     const focusTitle = titleAt(focus, { appId: call.appId, at: call.from, settleMs: titleSettleMs });
     const attended = attendedMs(held, call);
     // A day with no window-focus event at all cannot be judged on attendance, and must not be gated on
@@ -298,7 +322,7 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
     // so it is read instead of the gate. Without this a meeting the user only listened to is dropped,
     // and after the calendar stopped proposing rows of its own nothing else would propose it.
     const meeting = acceptedMeetingOver(invited, call);
-    const expected = !!meeting;
+    const expected = !!acceptedMeetingOver(invited, session);
     // The focus at the microphone opening can say nothing about the call — at app start it is the first
     // window of the day. Rules keep reading the focus title, which is what the user wrote them against.
     const title = meeting?.title || focusTitle;
@@ -306,7 +330,7 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
     const named = { appId: call.appId, title: focusTitle };
     // Attendance, not the work rules: a room nobody sat in is the one call that says nothing about
     // where the user was, and a rule denying the work still leaves them in the meeting. See ADR 0024.
-    const attendedCall = !readable || expected || attended >= minAttendedMs;
+    const attendedCall = !readable || expected || attendedMs(held, session) >= minAttendedMs;
     const denied = matches(rules.neverCountsAsWork, named);
     const counts = attendedCall && countsAsWork({ rules, named, expected });
 
@@ -331,8 +355,9 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
     calls: paired,
     glueMs: options.glueMs ?? DEFAULT_CALL_GLUE_MS,
     restartMs: options.restartGapMs ?? DEFAULT_CALL_RESTART_GAP_MS,
+    titleOf: (call) => titleAt(focus, { appId: call.appId, at: call.from, settleMs: titleSettleMs }),
   })
-    .map(toWindow)
+    .flatMap(({ session, rooms }) => rooms.map(({ call }) => toWindow(call, session)))
     .sort((left, right) => left.from.getTime() - right.from.getTime());
 };
 

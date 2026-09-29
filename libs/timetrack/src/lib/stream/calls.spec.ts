@@ -439,6 +439,50 @@ describe('classifyCalls, a microphone taken twice for one meeting', () => {
     expect(windows).toHaveLength(2);
   });
 
+  it('keeps each room of a switch between voice rooms apart', () => {
+    const DISCORD = 'Discord';
+    const windows = classify([
+      focus(7, 'discord', 'Meeting #1 | Braune Digital - Discord', 44),
+      call(7, 'call-start', DISCORD, 45),
+      focus(7, 'discord', 'Open Room #1 | Braune Digital - Discord', 46),
+      call(24, 'call-end', DISCORD, 29),
+      focus(24, 'discord', 'Meeting #1 | Braune Digital - Discord', 29),
+      call(24, 'call-start', DISCORD, 31),
+      call(43, 'call-end', DISCORD, 1),
+      focus(43, 'discord', 'Open Room #1 | Braune Digital - Discord', 1),
+      call(43, 'call-start', DISCORD, 3),
+      call(60, 'call-end', DISCORD),
+    ]);
+
+    expect(windows.map((window) => [window.from, window.to, window.title])).toEqual([
+      [at(7, 45), at(24, 29), 'Open Room #1 | Braune Digital - Discord'],
+      [at(24, 31), at(43, 1), 'Meeting #1 | Braune Digital - Discord'],
+      [at(43, 3), at(60), 'Open Room #1 | Braune Digital - Discord'],
+    ]);
+  });
+
+  it('counts every room of the switch when the session as a whole was attended', () => {
+    const DISCORD = 'Discord';
+    const windows = classify(
+      [
+        call(0, 'call-start', DISCORD),
+        focus(0, 'discord', 'Open Room #1 | Braune Digital - Discord', 5),
+        focus(2, 'code', 'calls.ts - ethlete-sdk'),
+        call(24, 'call-end', DISCORD),
+        focus(24, 'discord', 'Meeting #1 | Braune Digital - Discord', 1),
+        call(24, 'call-start', DISCORD, 2),
+        focus(24, 'code', 'calls.ts - ethlete-sdk', 20),
+        call(40, 'call-end', DISCORD),
+      ],
+      { countsAsWork: ['Braune Digital'] },
+    );
+
+    expect(windows.map((window) => [window.title, window.countsAsWork])).toEqual([
+      ['Open Room #1 | Braune Digital - Discord', true],
+      ['Meeting #1 | Braune Digital - Discord', true],
+    ]);
+  });
+
   it('never joins two applications', () => {
     const windows = classify([
       call(0, 'call-start', 'firefox'),
