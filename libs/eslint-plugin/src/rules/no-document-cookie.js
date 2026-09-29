@@ -39,16 +39,59 @@ const noDocumentCookie = {
     schema: [],
   },
   create(context) {
+    const documentAliases = new Set();
+    /** @type {any[]} */
+    const candidates = [];
+
+    const propertyName = (node) => {
+      if (!node.computed && node.property.type === 'Identifier') return node.property.name;
+      if (node.computed && node.property.type === 'Literal') return String(node.property.value);
+
+      return null;
+    };
+
+    const isGlobalObject = (node) =>
+      node.type === 'Identifier' &&
+      (node.name === 'window' || node.name === 'globalThis') &&
+      isGlobalReference(context.sourceCode, node);
+
+    const isInjectDocument = (node) =>
+      node?.type === 'CallExpression' &&
+      node.callee.type === 'Identifier' &&
+      node.callee.name === 'inject' &&
+      node.arguments[0]?.type === 'Identifier' &&
+      node.arguments[0].name === 'DOCUMENT';
+
+    const isDocument = (node) => {
+      if (node.type === 'Identifier') {
+        return node.name === 'document' && isGlobalReference(context.sourceCode, node);
+      }
+      if (node.type !== 'MemberExpression') return false;
+      if (propertyName(node) === 'document' && isGlobalObject(node.object)) return true;
+
+      return node.object.type === 'ThisExpression' && documentAliases.has(propertyName(node));
+    };
+
     return {
+      VariableDeclarator(node) {
+        if (node.id.type === 'Identifier' && isInjectDocument(node.init)) documentAliases.add(node.id.name);
+      },
+      PropertyDefinition(node) {
+        if (!node.computed && node.key.type === 'Identifier' && isInjectDocument(node.value)) {
+          documentAliases.add(node.key.name);
+        }
+      },
       MemberExpression(node) {
-        if (
-          node.object.type === 'Identifier' &&
-          node.object.name === 'document' &&
-          isGlobalReference(context.sourceCode, node.object) &&
-          node.property.type === 'Identifier' &&
-          node.property.name === 'cookie'
-        ) {
-          context.report({ node, messageId: 'noDocumentCookie' });
+        if (propertyName(node) === 'cookie') candidates.push(node);
+      },
+      'Program:exit'() {
+        for (const node of candidates) {
+          const object = node.object;
+          const isLocalAlias = object.type === 'Identifier' && documentAliases.has(object.name);
+
+          if (isLocalAlias || isDocument(object)) {
+            context.report({ node, messageId: 'noDocumentCookie' });
+          }
         }
       },
     };

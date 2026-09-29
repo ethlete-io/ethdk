@@ -25,6 +25,8 @@ document.cookie;`,
     { code: `document.title;` },
     { code: `document.body;` },
     { code: `document.getElementById('app');` },
+    { code: `class A { doc = inject(Other); read() { return this.doc.cookie; } }` },
+    { code: `const window = { document: { cookie: '' } }; window.document.cookie;` },
   ],
   invalid: [
     // read
@@ -47,5 +49,16 @@ document.cookie;`,
       code: `document.cookie.split(';').forEach(c => console.log(c));`,
       errors: [{ messageId: 'noDocumentCookie' }],
     },
+    {
+      code: `class A { doc = inject(DOCUMENT); read() { return this.doc.cookie; } }`,
+      errors: [{ messageId: 'noDocumentCookie' }],
+    },
+    {
+      code: `const doc = inject(DOCUMENT); doc.cookie = 'a=b';`,
+      errors: [{ messageId: 'noDocumentCookie' }],
+    },
+    { code: `window.document.cookie;`, errors: [{ messageId: 'noDocumentCookie' }] },
+    { code: `globalThis.document.cookie;`, errors: [{ messageId: 'noDocumentCookie' }] },
+    { code: `document['cookie'];`, errors: [{ messageId: 'noDocumentCookie' }] },
   ],
 });
