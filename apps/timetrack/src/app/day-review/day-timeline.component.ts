@@ -304,7 +304,7 @@ type RowDrag = {
                       class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border px-2 py-1 text-small text-et-surface-muted data-[compact]:py-0 data-[compact]:leading-none"
                       data-behind
                     >
-                      @if (band.label && labelled(band.span)) {
+                      @if (labelled(band.span)) {
                         <span class="block truncate">{{ BEHIND_LABEL_OF(band.stretch) }}</span>
                       }
                     </div>

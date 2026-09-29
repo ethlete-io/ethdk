@@ -65,8 +65,6 @@ export type BehindBand = {
   stretch: BehindStretch;
   offset: number;
   span: number;
-  /** Whether this band carries the stretch's label. Of a joined stretch's pieces, only the first does. */
-  label: boolean;
 };
 
 /** A stretch of a block drawn at one width. `from` and `to` are fractions of the block's own length. */
@@ -339,11 +337,10 @@ export const lanesOf = (options: {
 
   for (const stretch of options.behind ?? []) {
     const key = columnOf(stretch.laneKey);
-    const bands = (stretch.pieces ?? [stretch]).map((piece, at) => ({
+    const bands = (stretch.pieces ?? [stretch]).map((piece) => ({
       stretch,
       offset: offsetOf({ at: piece.from, dayStart: options.dayStart }),
       span: spanOf(piece),
-      label: at === 0,
     }));
 
     behindByLane.set(key, [...(behindByLane.get(key) ?? []), ...bands]);
