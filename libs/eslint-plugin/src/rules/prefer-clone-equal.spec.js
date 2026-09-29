@@ -14,6 +14,15 @@ tester.run('prefer-clone-equal', rule, {
       code: `const structuredClone = (value) => value;
 structuredClone({});`,
     },
+    {
+      code: `import * as _ from 'lodash';
+_.debounce(fn);`,
+    },
+    {
+      code: `const _ = { cloneDeep: (v) => v };
+_.cloneDeep(a);`,
+    },
+    { code: `require('lodash').debounce;` },
     // Using @ethlete/core utilities — fine
     { code: `import { clone, equal } from '@ethlete/core';` },
     { code: `const copy = clone(obj);` },
@@ -79,5 +88,18 @@ structuredClone({});`,
       code: `import { cloneDeep, isEqual } from 'lodash';`,
       errors: [{ messageId: 'preferClone' }, { messageId: 'preferEqual' }],
     },
+    {
+      code: `import * as _ from 'lodash';
+_.cloneDeep(a);`,
+      errors: [{ messageId: 'preferClone' }],
+    },
+    {
+      code: `import _ from 'lodash-es';
+_.isEqual(a, b);`,
+      errors: [{ messageId: 'preferEqual' }],
+    },
+    { code: `import cloneDeep from 'lodash.clonedeep';`, errors: [{ messageId: 'preferClone' }] },
+    { code: `import isEqual from 'lodash.isequal';`, errors: [{ messageId: 'preferEqual' }] },
+    { code: `const copy = require('lodash').cloneDeep(a);`, errors: [{ messageId: 'preferClone' }] },
   ],
 });

@@ -25,7 +25,20 @@
  *   import { clone, equal } from '@ethlete/core';
  */
 
-const { MODULE_REFERENCE_SELECTOR, getModuleReference, isGlobalReference } = require('./internals/import-resolution');
+const {
+  MODULE_REFERENCE_SELECTOR,
+  getModuleReference,
+  isGlobalReference,
+  resolveIdentifier,
+} = require('./internals/import-resolution');
+
+const LODASH_SOURCES = new Set(['lodash', 'lodash-es']);
+
+/** @type {Record<string, { messageId: 'preferClone' | 'preferEqual'; method: string }>} */
+const LODASH_METHODS = {
+  cloneDeep: { messageId: 'preferClone', method: 'lodash cloneDeep' },
+  isEqual: { messageId: 'preferEqual', method: 'isEqual' },
+};
 
 /** @type {import('eslint').Rule.RuleModule} */
 const preferCloneEqual = {
@@ -48,6 +61,43 @@ const preferCloneEqual = {
     return {
       CallExpression(node) {
         const { callee } = node;
+
+        if (
+          callee.type === 'MemberExpression' &&
+          !callee.computed &&
+          callee.object.type === 'Identifier' &&
+          callee.property.type === 'Identifier' &&
+          Object.hasOwn(LODASH_METHODS, callee.property.name)
+        ) {
+          const resolved = resolveIdentifier(context.sourceCode, callee.object);
+          if (
+            resolved?.source &&
+            LODASH_SOURCES.has(resolved.source) &&
+            (resolved.name === '*' || resolved.name === 'default')
+          ) {
+            const { messageId, method } = LODASH_METHODS[callee.property.name];
+            context.report({ node, messageId, data: { method } });
+            return;
+          }
+        }
+
+        if (
+          isGlobalReference(context.sourceCode, callee) &&
+          callee.name === 'require' &&
+          node.arguments[0]?.type === 'Literal' &&
+          LODASH_SOURCES.has(String(node.arguments[0].value))
+        ) {
+          const { parent } = node;
+          const method =
+            parent.type === 'MemberExpression' && parent.object === node && parent.property.type === 'Identifier'
+              ? parent.property.name
+              : null;
+          if (method && Object.hasOwn(LODASH_METHODS, method)) {
+            const { messageId, method: label } = LODASH_METHODS[method];
+            context.report({ node, messageId, data: { method: label } });
+          }
+          return;
+        }
 
         // ── JSON.parse(JSON.stringify(expr)) ─────────────────────────────────
         if (
@@ -93,6 +143,16 @@ const preferCloneEqual = {
               context.report({ node, messageId: 'preferEqual', data: { method: 'isEqual' } });
             }
           }
+          return;
+        }
+
+        if (src === 'lodash.clonedeep') {
+          context.report({ node, messageId: 'preferClone', data: { method: 'lodash cloneDeep' } });
+          return;
+        }
+
+        if (src === 'lodash.isequal') {
+          context.report({ node, messageId: 'preferEqual', data: { method: 'isEqual' } });
           return;
         }
 
