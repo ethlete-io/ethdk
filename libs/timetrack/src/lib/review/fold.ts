@@ -1,5 +1,5 @@
 import { mergeEvidence } from '../rows/merge';
-import { storedLaneKey } from '../rows/lane';
+import { CALL_LANE_KEY, storedLaneKey } from '../rows/lane';
 import { roundDurationUp, sharingTicket } from '../rows/round';
 import { Evidence } from '../model/evidence';
 import { TimeWindow, clipWindows } from '../model/time-window';
@@ -28,6 +28,9 @@ const spanOf = (row: TimeWindow) => row.to.getTime() - row.from.getTime();
 const gapMs = (a: TimeWindow, b: TimeWindow) =>
   Math.max(0, Math.max(a.from.getTime(), b.from.getTime()) - Math.min(a.to.getTime(), b.to.getTime()));
 
+const touches = (a: TimeWindow, b: TimeWindow) =>
+  a.to.getTime() === b.from.getTime() || a.from.getTime() === b.to.getTime();
+
 const overlaps = (a: TimeWindow, b: TimeWindow) =>
   a.from.getTime() < b.to.getTime() && b.from.getTime() < a.to.getTime();
 
@@ -40,7 +43,8 @@ const overlaps = (a: TimeWindow, b: TimeWindow) =>
  * folds into another short row of its name. An `unattended` short row folds only into a row it
  * touches, an attended one never into an `unattended` row, and the grown row keeps the neighbour's
  * mark. A short row with no neighbour at all, or whose neighbour would grow over another row of the
- * lane or one it `collides` with on both sides, stays as it is.
+ * lane or one it `collides` with on both sides, stays as it is. In the calls lane a short row folds
+ * only into a row of its name that touches it.
  * `fixed` rows neither fold nor absorb, and neither do the rows of parallel sessions on one ticket
  * (`sharingTicket`), which book their observed minutes rather than their span. `blockers` only stop a growth. The grown row keeps its id
  * and lists what it took in on `folded`.
@@ -79,7 +83,8 @@ export const foldShortRows = <T extends FoldRow>(options: {
           takesPart(row) &&
           canTakeIn(row, short) &&
           nameOf(row) === nameOf(short) &&
-          storedLaneKey(row.laneKey) === lane,
+          storedLaneKey(row.laneKey) === lane &&
+          (lane !== CALL_LANE_KEY || touches(row, short)),
       )
       .sort((a, b) => Number(isShort(a)) - Number(isShort(b)) || gapMs(a, short) - gapMs(b, short));
     const [neighbour] = candidates;

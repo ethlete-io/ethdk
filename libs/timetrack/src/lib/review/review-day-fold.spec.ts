@@ -172,7 +172,7 @@ describe('reviewDay folding single-increment rows', () => {
       rows: dayRows({
         proposals: [
           call('09:15', '09:30', 15),
-          call('09:45', '10:00', 6),
+          call('09:30', '09:45', 6),
           proposal({ issueKey: 'XYZ-1', from: '09:15', to: '09:45' }),
           proposal({ issueKey: 'ET-772', from: '09:00', to: '09:45', laneKey: 'repo:/home/tom/dev/ethlete-sdk' }),
         ],

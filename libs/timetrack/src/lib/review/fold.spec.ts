@@ -44,6 +44,23 @@ describe('foldShortRows', () => {
 
     expect(rows.map((entry) => entry.id)).toEqual(['one', 'two']);
   });
+
+  it('folds a short call only into a call of its issue that touches it', () => {
+    const call = (id: string, from: string, to: string) => ({ ...row({ id, from, to }), laneKey: 'lane:call' });
+    const options = { incrementMs: 15 * MINUTE, fixed: () => false, canFold: () => true, blockers: [] };
+
+    const far = foldShortRows({
+      ...options,
+      rows: [call('long', '09:00', '11:00'), call('short', '15:00', '15:15')],
+    });
+    const near = foldShortRows({
+      ...options,
+      rows: [call('long', '09:00', '11:00'), call('short', '11:00', '11:15')],
+    });
+
+    expect(far.map((entry) => entry.id)).toEqual(['long', 'short']);
+    expect(near.map((entry) => entry.id)).toEqual(['long']);
+  });
 });
 
 type Sibling = ReturnType<typeof row> & { folded?: string[] };
