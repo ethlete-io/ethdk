@@ -1,7 +1,10 @@
+import { Validator } from '@seriousme/openapi-schema-validator';
+import Ajv2020 from 'ajv/dist/2020';
 import {
   buildQueryDevtoolsOpenApiDocument,
   buildQueryDevtoolsOpenApiPathItem,
   inferQueryDevtoolsOpenApiSchema,
+  QueryDevtoolsOpenApiDocument,
   QueryDevtoolsOpenApiMock,
 } from './query-devtools-openapi';
 
@@ -359,5 +362,51 @@ describe('buildQueryDevtoolsOpenApiDocument edge cases', () => {
       },
       { name: 'q', in: 'query', required: false, schema: { type: 'string' }, example: ' ' },
     ]);
+  });
+});
+
+describe('the exported OpenAPI document', () => {
+  const nested = (levels: number): Record<string, unknown> =>
+    levels ? { type: 'object', properties: { child: nested(levels - 1) } } : { $ref: '#/components/schemas/Id' };
+
+  const exported = () =>
+    buildQueryDevtoolsOpenApiDocument({
+      mocks: [
+        mock({ pattern: '/scores', body: [1, 2.5, 'n/a'] }),
+        mock({ pattern: '/matches/:matchId', schemaName: 'Match', body: { child: {} } }),
+        mock({ pattern: '/users', query: 'page=2', body: { name: 'a', note: null, at: '2026-01-01T00:00:00.000Z' } }),
+      ],
+      schemas: { Match: nested(8), Id: { type: 'string' } },
+      now: NOW,
+    }).document;
+
+  const responseContents = (document: QueryDevtoolsOpenApiDocument) =>
+    Object.values(document.paths).flatMap((item) =>
+      Object.values(item).flatMap((operation) =>
+        Object.values((operation as { responses: Record<string, { content?: Record<string, unknown> }> }).responses),
+      ),
+    );
+
+  it('should pass the OpenAPI 3.1 schema, with every $ref resolving', async () => {
+    const result = await new Validator().validate(exported());
+
+    expect(result.errors).toBeUndefined();
+    expect(result.valid).toBe(true);
+  });
+
+  it('should hold response examples that satisfy their own schemas', () => {
+    const document = exported();
+    const ajv = new Ajv2020({ strict: false, validateFormats: false });
+    const media = responseContents(document).flatMap(
+      (response) => Object.values(response.content ?? {}) as { schema: Record<string, unknown>; example?: unknown }[],
+    );
+
+    expect(media.length).toBe(3);
+
+    for (const { schema, example } of media) {
+      const validate = ajv.compile({ ...schema, components: document.components });
+
+      expect(validate(example), JSON.stringify(validate.errors)).toBe(true);
+    }
   });
 });

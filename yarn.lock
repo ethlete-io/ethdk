@@ -4694,6 +4694,7 @@ __metadata:
     "@oxc-project/runtime": "npm:0.141.0"
     "@playwright/test": "npm:1.61.1"
     "@schematics/angular": "npm:22.1.6"
+    "@seriousme/openapi-schema-validator": "npm:2.11.0"
     "@storybook/addon-a11y": "npm:10.6.0"
     "@storybook/addon-docs": "npm:10.6.0"
     "@storybook/addon-vitest": "npm:10.6.0"
@@ -4713,6 +4714,7 @@ __metadata:
     "@vitest/coverage-v8": "npm:4.1.10"
     "@vitest/ui": "npm:4.1.10"
     "@vscode/vsce": "npm:^3.9.2"
+    ajv: "npm:8.20.0"
     angular-eslint: "npm:22.1.0"
     autoprefixer: "npm:10.5.4"
     date-fns: "npm:4.4.0"
@@ -8781,6 +8783,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@seriousme/openapi-schema-validator@npm:2.11.0":
+  version: 2.11.0
+  resolution: "@seriousme/openapi-schema-validator@npm:2.11.0"
+  dependencies:
+    ajv: "npm:^8.20.0"
+    ajv-draft-04: "npm:^1.0.0"
+    ajv-formats: "npm:^3.0.1"
+    yaml: "npm:^2.9.1"
+  bin:
+    bundle-api: bin/bundle-api-cli.js
+    validate-api: bin/validate-api-cli.js
+  checksum: 10c0/69d233f7ff0cb32de3d1549f8786ebb4e8030eca2f36454a389e5cc0f4449b515be301ddfb9aefd4d5e369e89bdb07a8ab6e134981121ecee1a03357f218e0da
+  languageName: node
+  linkType: hard
+
 "@shikijs/core@npm:2.5.0, @shikijs/core@npm:^2.1.0":
   version: 2.5.0
   resolution: "@shikijs/core@npm:2.5.0"
@@ -11147,6 +11164,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"ajv-draft-04@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "ajv-draft-04@npm:1.0.0"
+  peerDependencies:
+    ajv: ^8.5.0
+  peerDependenciesMeta:
+    ajv:
+      optional: true
+  checksum: 10c0/6044310bd38c17d77549fd326bd40ce1506fa10b0794540aa130180808bf94117fac8c9b448c621512bea60e4a947278f6a978e87f10d342950c15b33ddd9271
+  languageName: node
+  linkType: hard
+
 "ajv-formats@npm:3.0.1, ajv-formats@npm:^3.0.1":
   version: 3.0.1
   resolution: "ajv-formats@npm:3.0.1"
@@ -11195,7 +11224,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ajv@npm:8.20.0, ajv@npm:^8.0.0, ajv@npm:^8.0.1, ajv@npm:^8.11.0, ajv@npm:^8.17.1, ajv@npm:^8.9.0":
+"ajv@npm:8.20.0, ajv@npm:^8.0.0, ajv@npm:^8.0.1, ajv@npm:^8.11.0, ajv@npm:^8.17.1, ajv@npm:^8.20.0, ajv@npm:^8.9.0":
   version: 8.20.0
   resolution: "ajv@npm:8.20.0"
   dependencies:
@@ -24074,7 +24103,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"yaml@npm:^2.9.0":
+"yaml@npm:^2.9.0, yaml@npm:^2.9.1":
   version: 2.9.1
   resolution: "yaml@npm:2.9.1"
   bin:
