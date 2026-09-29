@@ -7,6 +7,7 @@ import {
   StandInAge,
   canReopenStandIn,
   dayBoundaryOf,
+  isStandInBooked,
   isStandInHidden,
   isStandInStale,
   localDayKey,
@@ -148,6 +149,39 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
   });
 
+  /**
+   * The days an open stand-in holds that Tempo already holds work on: written by this app, or read
+   * from Tempo when the day was last opened. The stored coverage is read, not Tempo itself, so the list
+   * costs no network call per day.
+   */
+  const bookedDays = toSignal(
+    toObservable(daysToTotal).pipe(
+      switchMap((days) =>
+        days.length
+          ? forkJoin(
+              days.map((day) =>
+                forkJoin({
+                  ledger: ports.ledger.entriesForDay$(day).pipe(catchError(() => of([]))),
+                  coverage: ports.coverage.forDay$(day).pipe(catchError(() => of(null))),
+                }).pipe(map(({ ledger, coverage }) => (ledger.length || coverage?.issues.length ? day : null))),
+              ),
+            ).pipe(map((answers) => new Set(answers.filter((day): day is string => !!day))))
+          : of(new Set<string>()),
+      ),
+    ),
+    { initialValue: new Set<string>() },
+  );
+
+  const booked = computed(() => {
+    const days = bookedDays();
+
+    return new Set(
+      open()
+        .filter((standIn) => isStandInBooked({ standIn, bookedDays: days }))
+        .map((standIn) => standIn.id),
+    );
+  });
+
   const hidden = computed(
     () =>
       new Set(
@@ -177,6 +211,8 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     hidden,
     /** The ids of the open stand-ins that took no band for a while. */
     stale,
+    /** The ids of the open stand-ins whose every day is already in Tempo. The list files them as hidden. */
+    booked,
     hide: (id: string) => hide([id]),
     show: (id: string) => settings.setStandInsHidden([id], ''),
     hideStale: () => hide([...stale()].filter((id) => !hidden().has(id))),

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AttributionRule } from './attribution';
 import {
+  isStandInBooked,
   isStandInHidden,
   isStandInStale,
   offeredStandIns,
@@ -275,6 +276,23 @@ describe('isStandInHidden', () => {
     const offered = offeredStandIns([standIn({ id: 'shown' }), standIn({ id: 'hidden', hiddenOn: '2026-09-29' })]);
 
     expect(offered.map((entry) => entry.id)).toEqual(['shown']);
+  });
+});
+
+describe('isStandInBooked', () => {
+  const bookedDays = new Set(['2026-09-22', '2026-09-23', '2026-09-24']);
+
+  it('reads an open stand-in as booked once every day it held is in Tempo', () => {
+    expect(isStandInBooked({ standIn: standIn({ days: ['2026-09-23', '2026-09-24'] }), bookedDays })).toBe(true);
+  });
+
+  it('brings it back when it takes a band on a day Tempo does not hold yet', () => {
+    expect(isStandInBooked({ standIn: standIn({ days: ['2026-09-24', '2026-09-29'] }), bookedDays })).toBe(false);
+  });
+
+  it('never reads a stand-in with no day, or a resolved one, as booked', () => {
+    expect(isStandInBooked({ standIn: standIn(), bookedDays })).toBe(false);
+    expect(isStandInBooked({ standIn: standIn({ state: 'resolved', days: ['2026-09-23'] }), bookedDays })).toBe(false);
   });
 });
 

@@ -72,3 +72,32 @@ test.describe('a stand-in that took no band for weeks', () => {
     await expect(page.getByRole('option', { name: STALE.name })).toHaveCount(0);
   });
 });
+
+test.describe('an open stand-in whose every day is booked in Tempo', () => {
+  const BOOKED = standIn('stand-in-booked', 'Booked by hand in Tempo', ['2026-07-02', '2026-07-03']);
+  const PARTLY = standIn('stand-in-partly', 'Half of it still open', ['2026-07-02', '2026-07-06']);
+
+  test('is filed with the hidden ones and carries a booked label', async ({ page }) => {
+    const covered = { issues: [{ issueKey: 'ET-772', coveredMs: 3_600_000 }] };
+
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: { ...defaultSettings(), standIns: [BOOKED, PARTLY] },
+      tempoCoverage: { '2026-07-02': covered, '2026-07-03': covered },
+    });
+    await page.goto('/day');
+
+    const list = await openStandIns(page);
+
+    await expect(list.locator(`[data-stand-in="${BOOKED.id}"]`)).toHaveCount(0);
+    await expect(list.locator(`[data-stand-in="${PARTLY.id}"]`)).toBeVisible();
+    await expect(list.locator(`[data-stand-in="${PARTLY.id}"] [data-booked]`)).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Show 1 hidden' }).click();
+
+    const booked = list.locator(`[data-stand-in="${BOOKED.id}"]`);
+
+    await expect(booked.locator('[data-booked]')).toHaveText('Booked in Tempo');
+    await expect(booked.getByRole('button', { name: 'Show again' })).toHaveCount(0);
+  });
+});

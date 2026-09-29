@@ -89,7 +89,12 @@ export const createFakePorts = (): HostPorts => {
   const edits = new Map<string, DayReviewEdits>(
     Object.entries(world.reviewOverrides).map(([day, overrides]) => [day, { ...EMPTY_DAY_REVIEW_EDITS, overrides }]),
   );
-  const coverage = new Map<string, TempoDayCoverage>();
+  const coverage = new Map<string, TempoDayCoverage>(
+    Object.entries(world.tempoCoverage).map(([day, held]) => [
+      day,
+      { day, issues: held.issues, observedAt: new Date(0) },
+    ]),
+  );
   const secrets = new Map<string, string>([
     [TIMETRACK_SECRET_KEYS.jiraToken, 'e2e-jira-token'],
     [TIMETRACK_SECRET_KEYS.tempoToken, 'e2e-tempo-token'],

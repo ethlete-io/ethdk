@@ -231,6 +231,18 @@ export const isStandInStale = (options: {
 };
 
 /**
+ * Whether every day an open stand-in holds bands on is already booked in Tempo, so nothing waits on
+ * its ticket. One with no day yet is never booked, and a band on a later, unbooked day brings it back.
+ */
+export const isStandInBooked = (options: {
+  standIn: Pick<StandIn, 'state' | 'days'>;
+  bookedDays: ReadonlySet<string>;
+}) =>
+  options.standIn.state === 'open' &&
+  options.standIn.days.length > 0 &&
+  options.standIn.days.every((day) => options.bookedDays.has(day));
+
+/**
  * Where a placeholder the app opened stands for its work: the checkout, then the narrowest thing the
  * record was cut to.
  *

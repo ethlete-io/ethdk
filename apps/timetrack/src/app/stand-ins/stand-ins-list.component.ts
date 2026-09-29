@@ -57,6 +57,9 @@ import { injectStandIns } from './stand-ins';
                   </span>
                 }
 
+                @if (entry.isBooked) {
+                  <span data-booked>Booked in Tempo</span>
+                }
                 @if (entry.isStale) {
                   <span data-stale>{{ entry.staleLabel }}</span>
                 }
@@ -102,10 +105,12 @@ import { injectStandIns } from './stand-ins';
                     </button>
                   }
 
-                  @if (entry.isHidden) {
-                    <button (click)="store.show(entry.id)" et-text-button>Show again</button>
-                  } @else {
-                    <button (click)="store.hide(entry.id)" et-text-button>Hide</button>
+                  @if (!entry.isBooked) {
+                    @if (entry.isHidden) {
+                      <button (click)="store.show(entry.id)" et-text-button>Show again</button>
+                    } @else {
+                      <button (click)="store.hide(entry.id)" et-text-button>Hide</button>
+                    }
                   }
 
                   <button (click)="store.remove(entry.id)" et-text-button etProvideColor="danger">Delete</button>
@@ -232,6 +237,7 @@ export class StandInsListComponent {
     const ages = this.store.ages();
     const hidden = this.store.hidden();
     const stale = this.store.stale();
+    const booked = this.store.booked();
     const only = this.only();
     const all = this.store.standIns();
 
@@ -250,7 +256,8 @@ export class StandInsListComponent {
             .join(' · '),
           where: standInWhere(standIn),
           isOverdue: !!age?.isOverdue,
-          isHidden: hidden.has(standIn.id),
+          isHidden: hidden.has(standIn.id) || booked.has(standIn.id),
+          isBooked: booked.has(standIn.id),
           isStale: stale.has(standIn.id),
           staleLabel: staleLabel(standIn),
           canReopen: this.store.canReopen(standIn),

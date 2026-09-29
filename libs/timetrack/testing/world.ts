@@ -131,6 +131,8 @@ export type TimetrackWorldSeed = {
    * page as JSON.
    */
   reviewOverrides?: Record<string, Record<string, ProposalOverride>>;
+  /** The Tempo coverage already stored, by local calendar day. */
+  tempoCoverage?: Record<string, { issues: { issueKey: string; coveredMs: number }[] }>;
 };
 
 export type FakeWorld = {
@@ -151,6 +153,7 @@ export type FakeWorld = {
   secrets: Record<string, string>;
   spec: SpecFiles | null;
   reviewOverrides: Record<string, Record<string, ProposalOverride>>;
+  tempoCoverage: Record<string, { issues: { issueKey: string; coveredMs: number }[] }>;
 };
 
 /** Where `seedWorld` leaves the seed, as a JSON string, for `createFakeWorld` to read before boot. */
@@ -402,6 +405,7 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   secrets: seed.secrets ?? {},
   spec: seed.spec ?? null,
   reviewOverrides: seed.reviewOverrides ?? {},
+  tempoCoverage: seed.tempoCoverage ?? {},
   glab: { ...defaultGlab(), ...seed.glab },
   gh: { ...defaultGh(), ...seed.gh },
   editors: seedEditors(seed.editors),
