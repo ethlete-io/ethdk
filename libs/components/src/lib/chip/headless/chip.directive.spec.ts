@@ -49,6 +49,21 @@ class NonButtonRemoveHost {}
 })
 class ManagedFocusHost {}
 
+@Component({
+  template: `
+    @for (item of items(); track item) {
+      <span [attr.data-item]="item" (remove)="removeRequests = removeRequests + 1" etChip removable tabindex="0">
+        {{ item }}
+      </span>
+    }
+  `,
+  imports: [ChipDirective],
+})
+class ChipListHost {
+  items = signal(['a', 'b', 'c']);
+  removeRequests = 0;
+}
+
 describe('ChipDirective', () => {
   let fixture: ComponentFixture<ChipTestHost>;
   let chip: HTMLElement;
@@ -140,5 +155,44 @@ describe('ChipRemoveDirective tab order', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[etChipRemove]').getAttribute('tabindex')).toBe('-1');
+  });
+});
+
+describe('ChipDirective focus hand-off', () => {
+  it('does not steal focus on a later destroy when the consumer ignored the earlier remove', async () => {
+    const fixture = TestBed.createComponent(ChipListHost);
+    fixture.detectChanges();
+
+    const chips = () => [...fixture.nativeElement.querySelectorAll('[etChip]')] as HTMLElement[];
+    const first = chips()[0]!;
+
+    first.focus();
+    first.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace' }));
+    expect(fixture.componentInstance.removeRequests).toBe(1);
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    first.blur();
+    fixture.componentInstance.items.set(['b', 'c']);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('still hands focus to the nearest sibling when the chip is removed right away', async () => {
+    const fixture = TestBed.createComponent(ChipListHost);
+    fixture.detectChanges();
+
+    const first = fixture.nativeElement.querySelector('[data-item="a"]') as HTMLElement;
+
+    first.focus();
+    first.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace' }));
+    fixture.componentInstance.items.set(['b', 'c']);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(fixture.nativeElement.querySelector('[data-item="b"]'));
   });
 });

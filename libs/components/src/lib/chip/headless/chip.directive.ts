@@ -102,6 +102,17 @@ export class ChipDirective {
 
     this.focusSuccessors = host.contains(this.document.activeElement) ? this.siblingChipsNearestFirst() : null;
     this.remove.emit();
+
+    const successors = this.focusSuccessors;
+
+    afterNextRender(
+      () => {
+        if (this.focusSuccessors === successors) {
+          this.focusSuccessors = null;
+        }
+      },
+      { injector: this.environmentInjector },
+    );
   }
 
   private siblingChipsNearestFirst() {
