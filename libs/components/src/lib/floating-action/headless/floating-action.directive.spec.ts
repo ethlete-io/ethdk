@@ -44,6 +44,22 @@ class FloatingActionWithTopTestHost {}
 })
 class FloatingActionMissingAnchorTestHost {}
 
+@Component({
+  template: `
+    <div etFloatingAction>
+      @if (withAnchor()) {
+        <div etFloatingActionAnchor>
+          <button etFloatingActionTrigger>Filter</button>
+        </div>
+      }
+    </div>
+  `,
+  imports: [FLOATING_ACTION_IMPORTS],
+})
+class FloatingActionRemovableAnchorTestHost {
+  withAnchor = signal(true);
+}
+
 describe('FloatingActionDirective', () => {
   it('starts inline while the anchor is on screen', async () => {
     const driver = await mountFloatingAction(FloatingActionTestHost);
@@ -102,6 +118,19 @@ describe('FloatingActionDirective', () => {
 
     expect(driver.floatingAction.scope()).toBeNull();
     expect(driver.floatingAction.state()).toBe(FLOATING_ACTION_STATES.FLOATING);
+  });
+
+  it('goes back to inline once its anchor is destroyed', async () => {
+    const driver = await mountFloatingAction(FloatingActionRemovableAnchorTestHost);
+
+    driver.scrollAnchorAbove();
+    expect(driver.floatingAction.state()).toBe(FLOATING_ACTION_STATES.FLOATING);
+
+    driver.host.withAnchor.set(false);
+    driver.detectChanges();
+
+    expect(driver.floatingAction.anchor()).toBeNull();
+    expect(driver.floatingAction.state()).toBe(FLOATING_ACTION_STATES.INLINE);
   });
 
   it('stays inline while disabled, whatever the scroll position', async () => {
