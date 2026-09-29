@@ -28,7 +28,8 @@ export default async function migrateCreateProvider(tree: Tree) {
   let filesModified = 0;
 
   for (const filePath of tsFiles) {
-    const wasModified = migrateCreateProviderInFile(tree, filePath);
+    const reexportsModified = migrateCreateProviderReexports(tree, filePath);
+    const wasModified = migrateCreateProviderInFile(tree, filePath) || reexportsModified;
     if (wasModified) {
       filesModified++;
       logger.log(`  ✓ ${filePath}`);
@@ -40,6 +41,68 @@ export default async function migrateCreateProvider(tree: Tree) {
   } else {
     logger.log('\nℹ️  No files needed migration\n');
   }
+}
+
+function migrateCreateProviderReexports(tree: Tree, filePath: string): boolean {
+  const content = tree.read(filePath, 'utf-8');
+  if (!content || !content.includes('createProvider')) return false;
+
+  const sourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
+  const edits: { start: number; end: number; text: string }[] = [];
+
+  for (const statement of sourceFile.statements) {
+    if (!ts.isImportDeclaration(statement) && !ts.isExportDeclaration(statement)) continue;
+    if (!statement.moduleSpecifier || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
+    if (statement.moduleSpecifier.text !== '@ethlete/cdk') continue;
+
+    if (ts.isImportDeclaration(statement)) {
+      const bindings = statement.importClause?.namedBindings;
+
+      if (bindings && ts.isNamespaceImport(bindings) && content.includes(`${bindings.name.text}.createProvider`)) {
+        logger.warn(
+          `  ⚠ ${filePath}: ${bindings.name.text}.createProvider is used through a namespace import of @ethlete/cdk. Switch it to createProvider from @ethlete/core manually.`,
+        );
+      }
+      continue;
+    }
+
+    const clause = statement.exportClause;
+
+    if (!clause) {
+      logger.warn(
+        `  ⚠ ${filePath}: "export * from '@ethlete/cdk'" may re-export createProvider. Re-export it from @ethlete/core manually.`,
+      );
+      continue;
+    }
+
+    if (ts.isNamespaceExport(clause)) continue;
+
+    const isCreateProvider = (element: ts.ExportSpecifier) =>
+      (element.propertyName?.text ?? element.name.text) === 'createProvider';
+    const moved = clause.elements.filter(isCreateProvider);
+    if (moved.length === 0) continue;
+
+    const rest = clause.elements.filter((element) => !isCreateProvider(element));
+    const typeOnly = statement.isTypeOnly ? 'type ' : '';
+    const lines = [
+      ...(rest.length > 0
+        ? [`export ${typeOnly}{ ${rest.map((el) => el.getText(sourceFile)).join(', ')} } from '@ethlete/cdk';`]
+        : []),
+      `export ${typeOnly}{ ${moved.map((el) => el.getText(sourceFile)).join(', ')} } from '@ethlete/core';`,
+    ];
+
+    edits.push({ start: statement.getStart(sourceFile), end: statement.getEnd(), text: lines.join('\n') });
+  }
+
+  if (edits.length === 0) return false;
+
+  let updatedContent = content;
+  for (const edit of edits.reverse()) {
+    updatedContent = updatedContent.slice(0, edit.start) + edit.text + updatedContent.slice(edit.end);
+  }
+
+  tree.write(filePath, updatedContent);
+  return true;
 }
 
 function migrateCreateProviderInFile(tree: Tree, filePath: string): boolean {

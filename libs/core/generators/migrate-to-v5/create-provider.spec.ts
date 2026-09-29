@@ -174,4 +174,36 @@ export const MyProvider = createProvider(() => {
 
     expect(tree.read('test.ts', 'utf-8')).toBe(expected);
   });
+  it('should move a createProvider re-export to @ethlete/core', async () => {
+    tree.write(
+      'src/index.ts',
+      `export { createProvider, injectFoo } from '@ethlete/cdk';\nexport { createProvider as cp } from '@ethlete/cdk';\n`,
+    );
+
+    await migrateCreateProvider(tree);
+
+    expect(tree.read('src/index.ts', 'utf-8')).toBe(
+      `export { injectFoo } from '@ethlete/cdk';\nexport { createProvider } from '@ethlete/core';\nexport { createProvider as cp } from '@ethlete/core';\n`,
+    );
+  });
+
+  it('should warn about createProvider used through a namespace import', async () => {
+    const input = `import * as cdk from '@ethlete/cdk';\n\nexport const x = cdk.createProvider(() => ({}));\n`;
+    tree.write('src/ns.ts', input);
+
+    await migrateCreateProvider(tree);
+
+    expect(tree.read('src/ns.ts', 'utf-8')).toBe(input);
+    expect(consoleWarnSpy.mock.calls.flat().join('\n')).toContain('src/ns.ts');
+  });
+
+  it('should warn about export star from @ethlete/cdk', async () => {
+    const input = `export * from '@ethlete/cdk';\n// createProvider\n`;
+    tree.write('src/star.ts', input);
+
+    await migrateCreateProvider(tree);
+
+    expect(tree.read('src/star.ts', 'utf-8')).toBe(input);
+    expect(consoleWarnSpy.mock.calls.flat().join('\n')).toContain('src/star.ts');
+  });
 });
