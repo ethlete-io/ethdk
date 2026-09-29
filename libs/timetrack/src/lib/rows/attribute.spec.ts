@@ -316,6 +316,50 @@ describe('attribute', () => {
     expect(result.standInId).toBeUndefined();
   });
 
+  describe('a deprecated spelling that leads with a key', () => {
+    const DEV_BRANCH = 'dev-ABC-2721-integrate-engagement-items';
+    const devBlock = block({ repoPath: '/Users/tom/dev/ea-frontend', branch: DEV_BRANCH });
+
+    it('names the key, short of certain', () => {
+      const result = attribute({ block: devBlock, config: CONFIG });
+
+      expect(result.issueKey).toBe('ABC-2721');
+      expect(result.confidence).toBe('likely');
+    });
+
+    it('loses to the stand-in the user opened for that branch', () => {
+      const result = attribute({
+        block: devBlock,
+        config: CONFIG,
+        rules: [{ ...STAND_IN_RULE, branch: DEV_BRANCH }],
+        standIns: [STAND_IN],
+      });
+
+      expect(result.standInId).toBe('stand-in-1');
+      expect(result.issueKey).toBeUndefined();
+    });
+
+    it('loses to the issue the user resolved that branch to', () => {
+      const result = attribute({
+        block: devBlock,
+        config: CONFIG,
+        rules: [{ ...BRANCH_RULE, branch: DEV_BRANCH, target: { kind: 'issue', issueKey: 'ABC-3006' } }],
+      });
+
+      expect(result.issueKey).toBe('ABC-3006');
+    });
+  });
+
+  it('lets a rule the user wrote for a conforming branch outrank the key it spells', () => {
+    const result = attribute({
+      block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'feat/ABC-2177-user-management' }),
+      config: CONFIG,
+      rules: [{ ...BRANCH_RULE, branch: 'feat/ABC-2177-user-management' }],
+    });
+
+    expect(result.issueKey).toBe('ABC-2904');
+  });
+
   it('lets a stand-in rule outrank a merge request naming another issue', () => {
     const result = attribute({
       block: block({ repoPath: '/Users/tom/dev/ea-frontend', branch: 'refactor/hub-query-v3' }),

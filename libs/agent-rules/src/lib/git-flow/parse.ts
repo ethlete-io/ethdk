@@ -93,6 +93,21 @@ const matchDeprecatedShape = (options: { branch: string; config: GitFlowConfig }
   return undefined;
 };
 
+const deprecatedKey = (options: {
+  groups: Record<string, string | undefined>;
+  config: GitFlowConfig;
+}): { key?: string; subject?: string } => {
+  const { groups, config } = options;
+  const subject = groups['subject'];
+
+  if (groups['key']) return { key: groups['key'].toUpperCase(), subject };
+  if (!subject) return { subject };
+
+  const parts = parseSegment({ segment: subject, config, role: 'story' });
+
+  return parts.key ? { key: parts.key, subject: parts.subject } : { subject };
+};
+
 const renameSuggestion = (options: { shape: GitFlowDeprecatedShape; groups: Record<string, string | undefined> }) => {
   const { shape, groups } = options;
   const key = groups['key'];
@@ -162,13 +177,22 @@ export const parseBranch = (options: { branch: string; config: GitFlowConfig }):
   const deprecated = matchDeprecatedShape({ branch, config });
 
   if (deprecated) {
-    const suggestion = renameSuggestion(deprecated);
+    const keyed = deprecatedKey({ groups: deprecated.groups, config });
+    const suggestion = renameSuggestion({
+      shape: deprecated.shape,
+      groups: { ...deprecated.groups, key: keyed.key, subject: keyed.subject },
+    });
+    const keys =
+      deprecated.shape.kind === 'main-feature'
+        ? { storyKey: keyed.key, issueKey: keyed.key }
+        : { taskKey: keyed.key, issueKey: keyed.key };
 
     return {
       branch,
       ok: false,
       kind: deprecated.shape.kind,
-      subject: deprecated.groups['subject'],
+      ...keys,
+      subject: keyed.subject,
       deprecated: true,
       suggestedName: suggestion,
       findings: [

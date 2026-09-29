@@ -74,6 +74,19 @@ describe('parseBranch', () => {
     expect(result.findings.map((finding) => finding.rule)).toEqual<GitFlowRule[]>(['deprecated-prefix']);
   });
 
+  it('reads the key a deprecated spelling leads its subject with', () => {
+    expect(parse('dev-FIP-2721-integrate-engagement-items')).toMatchObject({
+      ok: false,
+      kind: 'main-feature',
+      deprecated: true,
+      storyKey: 'FIP-2721',
+      issueKey: 'FIP-2721',
+      subject: 'integrate-engagement-items',
+      suggestedName: 'feat/FIP-2721-integrate-engagement-items',
+    });
+    expect(parse('dev-game-codes').issueKey).toBeUndefined();
+  });
+
   it('reads spec/ as a branch type of its own, so planning work is not an unknown shape', () => {
     const result = parse('spec/FIP-2177-user-management');
 

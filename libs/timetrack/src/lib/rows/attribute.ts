@@ -236,8 +236,8 @@ const standInAttribution = (options: {
 };
 
 /**
- * Scores one block against the attribution ladder: a private link first, then branch grammar, rules,
- * activity, sibling checkouts and stand-ins, and the coincidences last. A block no rung names comes
+ * Scores one block against the attribution ladder: a private link first, then a branch rule, branch
+ * grammar, the other rules, activity, sibling checkouts and stand-ins, and the coincidences last. A block no rung names comes
  * back without an `issueKey`.
  */
 export const attribute = (options: { block: ActivityBlock } & AttributeOptions): AttributedBlock => {
@@ -273,6 +273,11 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
     ? epicSiblingFor({ context: block.context, epics: options.epics, links: options.links ?? [], config })
     : undefined;
 
+  if (rule?.scope === 'branch')
+    return ruleAttribution({ block, match: rule, issueKey: rule.issueKey, evidence, confidence: 'likely' });
+
+  const branchStandIn = standIn && !epic && match?.scope === 'branch' ? standIn : undefined;
+
   if (block.context.branch) {
     const parsed = resolveBranch({ branch: block.context.branch, config, resolveBase: options.resolveBase });
 
@@ -284,7 +289,8 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
       });
     }
 
-    if (parsed.issueKey) {
+    // A conforming branch ends a stand-in on its own (ADR 0021); a deprecated spelling does not.
+    if (parsed.issueKey && !(branchStandIn && parsed.deprecated)) {
       return {
         block,
         issueKey: parsed.issueKey,
@@ -296,10 +302,7 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
     }
   }
 
-  if (rule?.scope === 'branch')
-    return ruleAttribution({ block, match: rule, issueKey: rule.issueKey, evidence, confidence: 'likely' });
-
-  if (standIn && !epic && match?.scope === 'branch') return standInAttribution({ block, match, standIn, evidence });
+  if (branchStandIn && match) return standInAttribution({ block, match, standIn: branchStandIn, evidence });
 
   const onBranch = options.activity?.length ? activityOnBranch({ block, activity: options.activity }) : undefined;
 

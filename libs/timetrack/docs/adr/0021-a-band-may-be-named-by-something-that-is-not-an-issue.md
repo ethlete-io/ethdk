@@ -30,7 +30,8 @@ opens a second one, and two checkouts that word the same feature differently nev
 - A stand-in rule sits at rung 2 of the ladder, branch-scoped (`rows/attribute.ts:243`). It beats an
   MR match, a Tempo pattern, a key in a window title and a model inference, and it loses to rung 1.
   That is what ends it cleanly: on the day the branch names the real key, rung 1 wins and the stand-in
-  steps aside with nobody telling it to.
+  steps aside with nobody telling it to. A deprecated spelling (`dev-<KEY>-…`) does not end it: that
+  key is a guess the user already overruled by opening the stand-in.
 - **A third bucket appears.** The nudge splits rows into undecided and unsynced (`nudge.ts:85`). A
   stand-in band is neither, so it is **waiting**: undecided means the user owes the app an answer,
   waiting means the app owes the user a ticket.
