@@ -992,6 +992,100 @@ class Vendored {
     });
   });
 
+  describe('regression cases', () => {
+    it('should leave a local class named ViewportService untouched', async () => {
+      const input = `import { inject } from '@angular/core';
+
+class ViewportService {
+  isXs = 1;
+}
+
+export class Dummy {
+  private _service = inject(ViewportService);
+  value = this._service.isXs;
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(tree.read('test.ts', 'utf-8')).toBe(input);
+    });
+
+    it('should migrate a service imported with import type', async () => {
+      tree.write(
+        'test.ts',
+        `import type { ViewportService } from '@ethlete/core';
+import { inject } from '@angular/core';
+
+export class Dummy {
+  private _service = inject(ViewportService);
+  value = this._service.isXs;
+}`,
+      );
+      await migrateViewportService(tree);
+
+      const result = tree.read('test.ts', 'utf-8')!;
+      expect(result).toContain('injectIsXs()');
+      expect(result).not.toContain('ViewportService');
+    });
+
+    it('should leave an aliased ViewportService import untouched', async () => {
+      const input = `import { inject } from '@angular/core';
+import { ViewportService as Aliased } from '@ethlete/core';
+
+export class Dummy {
+  private _service = inject(Aliased);
+  value = this._service.isXs;
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(tree.read('test.ts', 'utf-8')).toBe(input);
+    });
+
+    it('should not touch the name inside a template comment', async () => {
+      tree.write(
+        'test.ts',
+        `import { Component, inject } from '@angular/core';
+import { ViewportService } from '@ethlete/core';
+
+@Component({ template: '<!-- ViewportService isXs -->' })
+export class Dummy {
+  private _service = inject(ViewportService);
+  value = this._service.isXs;
+}`,
+      );
+      await migrateViewportService(tree);
+
+      const result = tree.read('test.ts', 'utf-8')!;
+      expect(result).toContain("template: '<!-- ViewportService isXs -->'");
+      expect(result).toContain('injectIsXs()');
+    });
+
+    it('should leave a second class that does not use the service byte-identical', async () => {
+      tree.write(
+        'test.ts',
+        `import { inject } from '@angular/core';
+import { ViewportService } from '@ethlete/core';
+
+export class First {
+  private _service = inject(ViewportService);
+  value = this._service.isXs;
+}
+
+export class Second {
+  value = 1;
+}`,
+      );
+      await migrateViewportService(tree);
+
+      const result = tree.read('test.ts', 'utf-8')!;
+      expect(result).toContain('injectIsXs()');
+      expect(result).toContain('export class Second {\n  value = 1;\n}');
+    });
+  });
+
   describe('edge cases', () => {
     it('should migrate inline inject observe method to toObservable(injectObserveBreakpoint())', async () => {
       const input = `import { inject } from '@angular/core';

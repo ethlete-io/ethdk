@@ -86,6 +86,51 @@ describe('devtools-about generator', () => {
     expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('No provideQueryDevtools() call found'));
   });
 
+  it('does not rewrite a spec or stories file that sits next to the real config', async () => {
+    addApp();
+    const spec = "import { provideQueryDevtools } from '@ethlete/query';\n\nprovideQueryDevtools();\n";
+    tree.write('apps/my-app/src/app/app.config.spec.ts', spec);
+    tree.write('apps/my-app/src/app/app.stories.ts', spec);
+    tree.write(
+      'apps/my-app/src/app/app.config.ts',
+      "import { provideQueryDevtools } from '@ethlete/query';\n\nexport const config = { providers: [provideQueryDevtools()] };\n",
+    );
+
+    await generator(tree, { project: 'my-app', skipFormat: true });
+
+    expect(tree.read('apps/my-app/src/app/app.config.spec.ts', 'utf-8')).toBe(spec);
+    expect(tree.read('apps/my-app/src/app/app.stories.ts', 'utf-8')).toBe(spec);
+    expect(tree.read('apps/my-app/src/app/app.config.ts', 'utf-8')).toContain('about: APP_BUILD_INFO');
+  });
+
+  it('is idempotent on an app that is already wired', async () => {
+    addApp();
+    tree.write(
+      'apps/my-app/src/app/app.config.ts',
+      "import { provideQueryDevtools } from '@ethlete/query';\n\nexport const config = { providers: [provideQueryDevtools()] };\n",
+    );
+
+    await generator(tree, { project: 'my-app', skipFormat: true });
+
+    const snapshot = (paths: string[]) => paths.map((path) => tree.read(path, 'utf-8'));
+    const paths = [
+      'apps/my-app/src/app/app.config.ts',
+      'apps/my-app/src/build-info.ts',
+      'tools/generate-build-info.cjs',
+      '.gitignore',
+      'apps/my-app/project.json',
+    ];
+    const first = snapshot(paths);
+
+    consoleWarnSpy.mockClear();
+    await generator(tree, { project: 'my-app', skipFormat: true });
+
+    expect(snapshot(paths)).toEqual(first);
+    expect(tree.read('apps/my-app/src/app/app.config.ts', 'utf-8')?.match(/APP_BUILD_INFO/g)).toHaveLength(2);
+    expect(readProjectConfiguration(tree, 'my-app').targets?.['build']?.dependsOn).toEqual(['build-info']);
+    expect(consoleWarnSpy).not.toHaveBeenCalled();
+  });
+
   it('writes a script that runs and reports the real version, SHA and branch', async () => {
     addApp();
     await generator(tree, { project: 'my-app' });

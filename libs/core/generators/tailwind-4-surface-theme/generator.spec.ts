@@ -301,6 +301,118 @@ describe('tailwind-4-surface-theme generator', () => {
       expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('migrate-surface-interaction-swatch'));
       expect(tree.exists('src/styles/tw.css')).toBe(false);
     });
+
+    it('should resolve a swatch color map shared through a const by several themes', async () => {
+      tree.write(
+        'src/surface-themes.ts',
+        `
+        const TINT = ${COLOR_MAP};
+
+        export const CARD = {
+          name: 'card',
+          type: 'light',
+          elevation: 1,
+          isDefault: true,
+          interactionColor: { color: TINT },
+          background: '255 255 255',
+          color: '0 0 0',
+          colorMuted: '100 100 100',
+          colorSubtle: '200 200 200',
+          border: '220 220 220',
+        } as const;
+
+        export const SHEET = {
+          name: 'sheet',
+          type: 'dark',
+          elevation: 2,
+          isDefault: true,
+          interactionColor: { color: TINT },
+          background: '10 10 10',
+          color: '255 255 255',
+          colorMuted: '180 180 180',
+          colorSubtle: '80 80 80',
+          border: '40 40 40',
+        } as const;
+
+        export const SURFACE_THEMES = [CARD, SHEET] satisfies SurfaceTheme[];
+      `,
+      );
+
+      await migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
+
+      const content = tree.read('src/styles/tw.css', 'utf-8');
+      expect(content).toContain('--color-et-surface-card-interaction-hover: rgb(64 64 64);');
+      expect(content).toContain('--color-et-surface-sheet-interaction-hover: rgb(64 64 64);');
+    });
+
+    it('should skip a theme whose swatch cannot be resolved and keep the others', async () => {
+      tree.write(
+        'src/surface-themes.ts',
+        `
+        export const BROKEN = {
+          name: 'broken',
+          type: 'dark',
+          elevation: 2,
+          isDefault: true,
+          interactionColor: { color: MISSING },
+          background: '10 10 10',
+          color: '255 255 255',
+          colorMuted: '180 180 180',
+          colorSubtle: '80 80 80',
+          border: '40 40 40',
+        } as const;
+
+        export const CARD = {
+          name: 'card',
+          type: 'light',
+          elevation: 1,
+          isDefault: true,
+          background: '255 255 255',
+          color: '0 0 0',
+          colorMuted: '100 100 100',
+          colorSubtle: '200 200 200',
+          border: '220 220 220',
+        } as const;
+
+        export const SURFACE_THEMES = [BROKEN, CARD] satisfies SurfaceTheme[];
+      `,
+      );
+
+      await migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('cannot be resolved'));
+
+      const content = tree.read('src/styles/tw.css', 'utf-8');
+      expect(content).toContain('--color-et-surface-card-bg: rgb(255 255 255);');
+      expect(content).not.toContain('broken');
+    });
+  });
+
+  it('should read themes written as inline literals in the SURFACE_THEMES array', async () => {
+    tree.write(
+      'src/surface-themes.ts',
+      `
+      export const SURFACE_THEMES = [
+        {
+          name: 'card',
+          type: 'light',
+          elevation: 1,
+          isDefault: true,
+          background: '255 255 255',
+          color: '0 0 0',
+          colorMuted: '100 100 100',
+          colorSubtle: '200 200 200',
+          border: '220 220 220',
+        },
+      ] satisfies SurfaceTheme[];
+    `,
+    );
+
+    await migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
+
+    const content = tree.read('src/styles/tw.css', 'utf-8');
+    expect(content).toContain('--color-et-surface-card-bg: rgb(255 255 255);');
+    expect(content).toContain('.et-surface--card {');
   });
 
   describe('defaultLightTheme / defaultDarkTheme options', () => {

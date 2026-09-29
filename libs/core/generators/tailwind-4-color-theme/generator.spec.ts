@@ -748,6 +748,55 @@ describe('tailwind-4-color-theme generator', () => {
     expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
 
+  it('should read themes written as inline literals in the THEMES array', async () => {
+    tree.write(
+      'src/themes.ts',
+      `
+      export const THEMES = [
+        { name: 'brand', isDefault: true, primary: { color: { default: '1 1 1' }, onColor: { default: '255 255 255' } } },
+        { name: 'accent', primary: { color: { default: '9 9 9' }, onColor: { default: '0 0 0' } } },
+      ];
+    `,
+    );
+
+    await migrate(tree, { themesPath: 'src/themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
+
+    const content = tree.read('src/styles/tw.css', 'utf-8');
+    expect(content).toContain('--et-color-primary: 1 1 1;');
+    expect(content).toContain('9 9 9');
+    expect(tree.read('src/styles/tw.d.ts', 'utf-8')).toContain(`name: 'brand' | 'accent';`);
+  });
+
+  describe('scss output path', () => {
+    const THEMES = `
+      export const BRAND = { name: 'brand', isDefault: true, primary: { color: { default: '1 1 1' }, onColor: { default: '255 255 255' } } };
+      export const THEMES = [BRAND];
+    `;
+
+    it('should write the CSS to a .scss path when the types path is given', async () => {
+      tree.write('src/themes.ts', THEMES);
+
+      await migrate(tree, {
+        themesPath: 'src/themes.ts',
+        outputPath: 'src/styles/tw.scss',
+        typesOutputPath: 'src/styles/tw-types.d.ts',
+        skipFormat: true,
+      });
+
+      expect(tree.read('src/styles/tw.scss', 'utf-8')).toContain('--et-color-primary: 1 1 1;');
+      expect(tree.exists('src/styles/tw-types.d.ts')).toBe(true);
+    });
+
+    it('should refuse a .scss path without a distinct types path', async () => {
+      tree.write('src/themes.ts', THEMES);
+
+      await expect(
+        migrate(tree, { themesPath: 'src/themes.ts', outputPath: 'src/styles/tw.scss', skipFormat: true }),
+      ).rejects.toThrow('typesOutputPath');
+      expect(tree.exists('src/styles/tw.scss')).toBe(false);
+    });
+  });
+
   describe('spreads of imported consts', () => {
     const THEME = (imports: string) => `
     ${imports}

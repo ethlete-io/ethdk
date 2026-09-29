@@ -289,6 +289,100 @@ class Vendored {
     });
   });
 
+  describe('regression cases', () => {
+    it('should leave a local class named RouterStateService untouched', async () => {
+      const input = `import { inject } from '@angular/core';
+
+class RouterStateService {
+  route$ = 1;
+}
+
+export class Dummy {
+  private _service = inject(RouterStateService);
+  value = this._service.route$;
+}`;
+
+      tree.write('test.ts', input);
+      await migrateRouterStateService(tree);
+
+      expect(tree.read('test.ts', 'utf-8')).toBe(input);
+    });
+
+    it('should migrate a service imported with import type', async () => {
+      tree.write(
+        'test.ts',
+        `import type { RouterStateService } from '@ethlete/core';
+import { inject } from '@angular/core';
+
+export class Dummy {
+  private _service = inject(RouterStateService);
+  value = this._service.route$;
+}`,
+      );
+      await migrateRouterStateService(tree);
+
+      const result = tree.read('test.ts', 'utf-8')!;
+      expect(result).toContain('injectRoute()');
+      expect(result).not.toContain('RouterStateService');
+    });
+
+    it('should leave an aliased RouterStateService import untouched', async () => {
+      const input = `import { inject } from '@angular/core';
+import { RouterStateService as Aliased } from '@ethlete/core';
+
+export class Dummy {
+  private _service = inject(Aliased);
+  value = this._service.route$;
+}`;
+
+      tree.write('test.ts', input);
+      await migrateRouterStateService(tree);
+
+      expect(tree.read('test.ts', 'utf-8')).toBe(input);
+    });
+
+    it('should not touch the name inside a template comment', async () => {
+      tree.write(
+        'test.ts',
+        `import { Component, inject } from '@angular/core';
+import { RouterStateService } from '@ethlete/core';
+
+@Component({ template: '<!-- RouterStateService route$ -->' })
+export class Dummy {
+  private _service = inject(RouterStateService);
+  value = this._service.route$;
+}`,
+      );
+      await migrateRouterStateService(tree);
+
+      const result = tree.read('test.ts', 'utf-8')!;
+      expect(result).toContain("template: '<!-- RouterStateService route$ -->'");
+      expect(result).toContain('injectRoute()');
+    });
+
+    it('should leave a second class that does not use the service byte-identical', async () => {
+      tree.write(
+        'test.ts',
+        `import { inject } from '@angular/core';
+import { RouterStateService } from '@ethlete/core';
+
+export class First {
+  private _service = inject(RouterStateService);
+  value = this._service.route$;
+}
+
+export class Second {
+  value = 1;
+}`,
+      );
+      await migrateRouterStateService(tree);
+
+      const result = tree.read('test.ts', 'utf-8')!;
+      expect(result).toContain('injectRoute()');
+      expect(result).toContain('export class Second {\n  value = 1;\n}');
+    });
+  });
+
   describe('edge cases', () => {
     it('should handle selectQueryParam with pipe chain and multiline formatting', async () => {
       const input = `import { RouterStateService } from '@ethlete/core';
