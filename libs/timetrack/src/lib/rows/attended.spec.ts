@@ -92,14 +92,14 @@ describe('attendedAt', () => {
 
     expect(windows).toEqual([
       { from: AT(15), to: AT(30) },
-      { from: AT(105), to: AT(135) },
+      { from: AT(120), to: AT(135) },
     ]);
   });
 
   it('does not end an idle stretch no idle-end closed at a prompt a person gave from afar', () => {
     expect(present([idleStart(30), prompt(60, 'human'), focus(120)])).toEqual([
       { from: AT(15), to: AT(30) },
-      { from: AT(105), to: AT(135) },
+      { from: AT(120), to: AT(135) },
     ]);
   });
 
