@@ -825,8 +825,7 @@ export class DayTimelineComponent {
 
     for (const row of this.rows()) {
       if (this.store.isEndedCall(row)) found.set(row.id, { kind: 'seam', row, at: row.to });
-      else if (row.issueKey && this.store.isLiveCall(row))
-        found.set(row.id, { kind: 'cut', row, at: this.store.snipAtOf(row) });
+      else if (this.store.isLiveCall(row)) found.set(row.id, { kind: 'cut', row, at: this.store.snipAtOf(row) });
     }
 
     return found;

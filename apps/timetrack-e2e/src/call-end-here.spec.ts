@@ -326,11 +326,18 @@ test.describe('a call row a calendar meeting names', () => {
   });
 });
 
-test('a growing call row nothing named shows no cut line', async ({ page }) => {
+test('a growing call row nothing named shows the cut line, and ends there', async ({ page }) => {
   await open(page, at(127));
   await expect(bands(page)).toHaveCount(1);
   await expect(bands(page).first()).toHaveAttribute('title', /^Not yet named · 2h 15m$/);
-  await expect(cut(page)).toHaveCount(0);
+  await expect(bands(page).first()).toHaveAttribute('data-growing');
+  await expect(cut(page)).toContainText(/(18|06):00/);
+
+  await cut(page).click();
+
+  await expect(bands(page)).toHaveCount(2);
+  await expect(bands(page).first()).toHaveAttribute('title', /^Not yet named · 2h 0m$/);
+  await expect(bands(page).last()).toHaveAttribute('title', /^Not yet named · 15m$/);
   await expect(bands(page).first()).not.toHaveAttribute('data-growing');
 });
 
