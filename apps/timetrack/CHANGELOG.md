@@ -1,5 +1,61 @@
 # timetrack-app
 
+## 0.2.0-next.3
+
+### Minor Changes
+
+- Settings can make each agent and auto mode action stricter, never looser, and the day's Debug dialog reads out what auto mode did.
+- Auto mode checks every minute for a code row that has settled, so a row gets its description without
+  another change to the day. The auto mode readout lists each description it wrote.
+- Auto mode writes the description of a settled code row of today that has a ticket, with the same
+  "Ask AI" call, once per row. A description you wrote is never replaced.
+- The sidebar shows when auto mode is working, and which job runs. The auto mode panel of the debug overlay also lists the jobs auto mode ran since the app started.
+- A growing call row offers "End here", which ends it at the current quarter and hands the rest of the call back as an unnamed call band.
+- The stand-in list offers "Join into <name>" for every other open stand-in of the same checkout, so work the automatic join cut too finely can be joined by hand. `standInJoinTargets` lists them.
+- Hide a stand-in from the name pickers without deleting it, and hide every stale stand-in with one press.
+- Show a waiting approval on the band it is for, with approve and reject inline, and put the rest behind a "N more waiting" pill in the day header.
+- The row edit popover shows the Jira status of the band's issue and moves it to any status the workflow offers. `fetchJiraIssueStatus$` reads one issue's current status.
+- A band two answers disagree about offers "Keep" beside "Use": it pins the key the band already books as your answer, settles the dispute and its day warning, and leaves both remembered answers as they were.
+- With auto mode on, suggest hiding the rest band of an ended call that went off topic; approving hides the band, and a rejected suggestion is not made again.
+- Show the AI agent tokens a row's work used in its edit panel, totalled from the agent turns inside the row's checkout and time range.
+- Timetrack: add `timetrack standins --merge <id> --into <id>` and the `standIn.merge` agent op, which waits for the user's approval. `standIn.list` now reports `hiddenOn` and `mergedIds`.
+- Merge an open stand-in into another open one with the same name from the stand-in list. The kept one takes the days, branches and rules of both, and past days named with the merged id read as the kept one.
+- A named call row that still grows shows a dashed ✂ cut line to press or drag its end, leaves the rest of the call as one unnamed band, and offers ↺ to follow the call again after a snip.
+- Preview a waiting `worklog.add` that lands on no row of the day as a dashed band at its span, with approve and reject inline, instead of behind the "N more waiting" pill.
+
+### Patch Changes
+
+- A paused collector still lists the repositories once, so the day view draws after a start with collection paused instead of staying empty.
+- A "Nobody was here" row with no ticket now paints in the muted theme instead of the orange weak-guess theme.
+- A stand-in whose row you keyed by hand, on any day it holds, resolves to that issue, so auto mode stops asking about it and its waiting ticket draft expires.
+- The day view now waits for the settings, repository discovery and saved edits before it draws, instead of showing a wrong first frame built from empty defaults.
+- Draw a waiting approval on a band too short for its chip as a dot, so the band's label stays readable. Approve it from the band's edit surface.
+- Auto mode no longer drafts a ticket for a stand-in whose row you already gave a ticket by hand today.
+- A background band now draws only the minutes its ticket lost, not the whole span it was joined across.
+- File an open stand-in whose every day is already in Tempo with the hidden ones, labelled "Booked in Tempo"; a band on a later, unbooked day brings it back.
+- Fix one unreadable agent session log blocking the others, and worklogs vanishing from their day after the day boundary changes.
+- Show only the evidence that names a row in its edit popover, or its first entry when none names it, until "Show all" is pressed. The popover of a stand-in band no longer fills a 1400x1300 window.
+- Count Slack huddles as work with no rule, say on any other uncounted call band why, and offer "Count <app> as work" in its menu.
+- The host lets reasoning runs through `codex exec`, so a codex reasoning command no longer fails at the process check.
+- Integrations fixes: agent shell commands parse closer to bash, long backfill logs resume, git, forge, calendar, Jira and Tempo reads report refusals and caps, GitLab remotes match by hostname, and ingested fields are bounded.
+- Rows and review fixes: named slivers fold, breaks stay unfilled, folded stretches clip, overlapping background rows rank, call edges pair by time, and the day nudge ends at the day boundary.
+- A call row ended by an older build draws the rest of its call as one band and offers ↺ again, even where the stored rest pin names another cut of the row.
+- A call row ended by an older build draws the rest of its call as one growing band and offers ↺ again.
+- The row edit surface shows one When row with the time range and duration side by side, offers a stand-in name only for work with no ticket, and folds long evidence behind "Show all".
+- Parallel agent session rows on one ticket are drawn in one column each over their whole span, instead of an L shape behind each other.
+- Parallel agent sessions on one ticket are drawn over the stretches each one ran. Where they overlap, the cards cascade like calendar events: a later card is indented and drawn on top.
+- Each piece of a parallel agent session is drawn with a gap below it and its own label, so parallel sessions no longer read as one block.
+- Parallel agent sessions on one ticket now take turns in their lane: each row is drawn at full width, only over the minutes it books.
+- The row editor's duration now shows what a row sharing its ticket and lane books, matching the band's label, instead of the span the band is drawn over.
+- Show in the sidebar when auto mode is on, with the count of requests waiting for approval. A click
+  opens the approval queue.
+- A resized split part keeps its own start and leaves its freed stretch empty, and a timeline drag no longer selects the band's text.
+- The Tempo sync plan never books two worklogs over the same minutes: meetings and hand-written rows keep their time, work trims or splits around them.
+- An idle stretch the app never saw end, after a restart, now ends at the next desk input, so the rest of the day is not read as unattended.
+- A still-open call band with no name now fades past the ✂ cut line too, and its "End here" ends the band there.
+- Auto mode writes a row's description as one line saying what the work did, and no longer repeats the ticket's title.
+- The spend readout lists the worklog description calls of auto mode as `a worklog`, apart from the ticket calls.
+
 ## 0.2.0-next.2
 
 ### Minor Changes

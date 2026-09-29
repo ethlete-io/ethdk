@@ -1,5 +1,26 @@
 # @ethlete/contentful
 
+## 4.0.0-next.11
+
+### Major Changes
+
+- `generateContentfulImageSources(asset, options)` now takes an options object (`srcsetSizes`, `backgroundColor`, `quality`, `focusArea`, `resizeBehavior`) instead of five positional parameters.
+
+### Minor Changes
+
+- `ContentfulRestAsset.fields.file` is now optional, so an asset without a file no longer throws. Rich text also keeps moved content in its new parent, and only the current host counts as internal.
+- `et-contentful-file`: the file size now scales to a readable unit (`(1.5 MB)` instead of `(1536000 Bytes)`) and can be localized with `provideContentfulFileLabels`.
+- `et-contentful-link`: the rich-text classes now come from the renderer through a new `anchorClass` input, so a standalone link no longer carries them.
+
+### Patch Changes
+
+- `provideContentfulConfig` now merges `components` and `imageOptions` one level deep, so overriding one component keeps the other defaults.
+- `et-contentful-link` resolves query-only and relative hrefs against the current router URL. The file link and audio caption fall back to the file name when the asset has no title; the GQL asset fragment selects `fileName`.
+- Rich text renderer: internal render-state failures now throw coded `RuntimeError`s (ET009-ET011) instead of plain `Error`s.
+- The rich-text renderer renders unsupported inlines as `span` and warns about unsupported node types in dev mode, keeps partial marks inside a hyperlink, opens external fallback anchors in a new tab, and finds parents and siblings in constant time.
+- The rich text renderer's node lookup tables no longer stay in bundles that do not render rich text.
+- The rich-text renderer skips an embedded entry or asset missing from `includes`, or an entry without a custom component, with a dev-mode warning instead of throwing ET004-ET006 and rendering nothing.
+
 ## 4.0.0-next.10
 
 ### Minor Changes

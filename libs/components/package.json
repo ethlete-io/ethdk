@@ -1,10 +1,10 @@
 {
   "name": "@ethlete/components",
-  "version": "1.0.0-next.63",
+  "version": "1.0.0-next.64",
   "license": "MIT",
   "sideEffects": false,
   "dependencies": {
-    "@ethlete/bracket": "^1.0.0-beta.0"
+    "@ethlete/bracket": "^1.0.0-next.2"
   },
   "peerDependencies": {
     "@analogjs/vitest-angular": "2.6.3",

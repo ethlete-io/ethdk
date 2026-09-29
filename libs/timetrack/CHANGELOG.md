@@ -1,5 +1,87 @@
 # @ethlete/timetrack
 
+## 0.1.0-next.9
+
+### Minor Changes
+
+- Settings can make each agent and auto mode action stricter, never looser, and the day's Debug dialog reads out what auto mode did.
+- `autoModeReadout` lists the rows auto mode described, and the testing world can start with collection paused.
+- Add `autoDescriptionAsks`, `autoDescriptionRequest` and `withAutoModeDescription`: auto mode writes the
+  description of a settled code row that names an issue, once per row and as `auto`, and never over a
+  description the user wrote. The answers are kept on `DayReviewEdits.autoDescriptions`.
+- `GoogleCalendar` drops `primary`, `selected` and `readOnly`, which nothing read; a calendar is its `id` and `name`.
+- A growing call row offers "End here", which ends it at the current quarter and hands the rest of the call back as an unnamed call band.
+- The stand-in list offers "Join into <name>" for every other open stand-in of the same checkout, so work the automatic join cut too finely can be joined by hand. `standInJoinTargets` lists them.
+- Hide a stand-in from the name pickers without deleting it, and hide every stale stand-in with one press.
+- Show a waiting approval on the band it is for, with approve and reject inline, and put the rest behind a "N more waiting" pill in the day header.
+- The row edit popover shows the Jira status of the band's issue and moves it to any status the workflow offers. `fetchJiraIssueStatus$` reads one issue's current status.
+- `searchJiraIssues$` errors instead of returning a truncated result past `maxPages`; the new `searchJiraTopIssues$` reads the first `limit` issues of a query.
+- With auto mode on, suggest hiding the rest band of an ended call that went off topic; approving hides the band, and a rejected suggestion is not made again.
+- Parallel agent sessions on a base branch that work in two directories now get one stand-in each, and a later session in the same directory reuses it.
+- A reasoning command of `codex` now runs `codex exec` read-only with its tools off, and its JSON event stream is read for the answer, so every model call works with codex as well as claude.
+- Show the AI agent tokens a row's work used in its edit panel, totalled from the agent turns inside the row's checkout and time range.
+- Join agent sessions of one checkout that ran one after the other in the same project directory into one piece of work, carried as `ActivityContext.piece`. Sessions that ran at the same time stay apart.
+- Timetrack: add `timetrack standins --merge <id> --into <id>` and the `standIn.merge` agent op, which waits for the user's approval. `standIn.list` now reports `hiddenOn` and `mergedIds`.
+- Merge an open stand-in into another open one with the same name from the stand-in list. The kept one takes the days, branches and rules of both, and past days named with the merged id read as the kept one.
+- A named call row that still grows shows a dashed ✂ cut line to press or drag its end, leaves the rest of the call as one unnamed band, and offers ↺ to follow the call again after a snip.
+
+### Patch Changes
+
+- `agentApiClientOf` also drops Unicode format characters, such as a bidi override, so a caller's name cannot read as something else in the approval panel.
+- Auto mode no longer drafts a ticket for a stand-in whose row you already gave a ticket by hand today.
+- A background band now draws only the minutes its ticket lost, not the whole span it was joined across.
+- File an open stand-in whose every day is already in Tempo with the hidden ones, labelled "Booked in Tempo"; a band on a later, unbooked day brings it back.
+- Read the reflogs of local branches, so a rebase or merge on a branch that was never checked out disputes a rule-named row.
+- A branch-scoped attribution rule now beats the key a branch name spells, and a stand-in rule beats a key read from a deprecated `dev-<KEY>-…` spelling.
+- A branch switch inside one checkout now cuts the band where each branch has a stand-in of its own, instead of folding both into the first stand-in.
+- Agent work nobody attended during a break now shows as one "Nobody was here" row per lane and stretch, not one per agent session.
+- Count Slack calls as work with no call rule, record on each call window why it does not count, and add `callExclusionReasonOf`, `appDisplayNameOf` and `countsAsWorkPatternOf`.
+- A switch between voice rooms now gives one call row per room instead of one row for the whole session. The session as a whole still decides if you attended the call.
+- Treat a changeset file as a named work file, so sessions that wrote the same changeset join one piece.
+- Record the token usage of Codex reasoning runs, read from the `turn.completed` event, so they no longer go unmetered.
+- Fix one unreadable agent session log blocking the others, and worklogs vanishing from their day after the day boundary changes.
+- `fetchJiraCreatableTypes$` reads the per-project createmeta endpoints instead of the deprecated `createmeta?expand=` form.
+- A call you sat in now counts as presence even when a rule excludes it as work, and an idle stretch nothing closed ends when you return to the desk.
+- A split, resized or merged row takes its description from the commits in its own span, unless you typed it.
+- Auto descriptions now name the changesets, plans and commits an agent session produced instead of the prompts that only agreed, and are rewritten when a row's notes change.
+- A rule-named row is now disputed when its stretch holds merge-request or commit activity on another branch that a rule names as other work.
+- An issue you set on an unnamed row now keeps applying after the day learns a name for that row, instead of the learned name replacing it and the short row folding away into another row of that name.
+- An agent session that runs beside an older one in the same checkout now keeps its own title and prompts, so its row is described by its own work instead of a generic repository line.
+- A lane now shows at most three parallel sessions of one ticket; `reviewDay` folds the shortest extra session into the longest one, and the day books the same time.
+- A short call row now folds only into a call row of the same issue that touches it, not one hours away.
+- A row whose issue key the user set by hand now reads as a certain match instead of a weak one.
+- Integrations fixes: agent shell commands parse closer to bash, long backfill logs resume, git, forge, calendar, Jira and Tempo reads report refusals and caps, GitLab remotes match by hostname, and ingested fields are bounded.
+- Rows and review fixes: named slivers fold, breaks stay unfilled, folded stretches clip, overlapping background rows rank, call edges pair by time, and the day nudge ends at the day boundary.
+- Ticket and settings fixes: a harder duplicate ticket guard, trimmed unmasked summaries, branch repair edge cases, pseudonyms that reserve unlisted key prefixes, a refused host with userinfo, and settings lists deduped by case.
+- Rows, breaks, statements and call ends snap to the increment on the local clock, so a 30- or 60-minute increment lands on the local half hour or hour in zones offset by :30 or :45 (India, Nepal).
+- Rank a merged row's confidence over the time of the whole row, so a short gap-fill no longer turns a rule-named row weak.
+- `sessionPieces` joins parallel agent sessions that wrote one handoff, plan or design call into one piece, and reads an app, its e2e app and its library as one project, so parallel sessions on one piece of work become one row.
+- An unnamed band of one agent session no longer continues the unnamed band of another piece of work in the same checkout.
+- A short unnamed sliver of one piece of work no longer folds into the band of another piece in the same checkout.
+- A band the merge now cuts differently no longer shows as its own row, or warns, inside rows you split or merged by hand.
+- A queued Claude Code prompt now counts as presence at the time it was typed, and adds none when that time cannot be recovered from the transcript.
+- A call row ended by an older build draws the rest of its call as one band and offers ↺ again, even where the stored rest pin names another cut of the row.
+- A call row ended by an older build draws the rest of its call as one growing band and offers ↺ again.
+- The review no longer warns that two rows claim the same minutes when one of them is a call row, since a sync books call rows apart from code rows.
+- Draw and book the rows of agent sessions sharing one stretch on a ticket one after another, each as long as it books.
+- `streamDay` reads a session's working directory after a `cd` as a directory, and takes the handoffs and plans a session wrote from its usage turns as well, so thinned samples no longer split one piece of work into several rows.
+- Two agent sessions of different pieces on one ticket at the same time are now two rows, each booking its own observed minutes, so the pair books the wall-clock time once.
+- Auto descriptions wait until a row's own agent session has been quiet for 30 minutes, so a sibling session's minutes no longer make a row look settled early.
+- `setRowRange` takes a `pinsTo` option that pins a row's end even where it did not move, and `endRowAt` uses it instead of resizing the row from one increment further.
+- A later agent session in the same library now joins its piece, also when an earlier session wrote there through a shell command.
+- Parallel agent sessions on one ticket now take turns in their lane: each row is drawn at full width, only over the minutes it books.
+- Parallel agent sessions on one ticket round their observed minutes up once, together, so they never book more than the clock they cover.
+- A resized split part keeps its own start and leaves its freed stretch empty, and a timeline drag no longer selects the band's text.
+- Add `withStandInsKeyedByHand`, which resolves an open stand-in to the issue a hand-keyed row of it names, and `withStaleStandInCreatesExpired`, which expires a waiting auto mode create for a stand-in that no longer waits.
+- `streamDay` no longer books the minutes after the window source's last report to a branch that a later checkout switched to.
+- The Tempo sync plan never books two worklogs over the same minutes: meetings and hand-written rows keep their time, work trims or splits around them.
+- An idle stretch the app never saw end, after a restart, now ends at the next desk input, so the rest of the day is not read as unattended.
+- Stop the rest of a call from growing on its own after "End here" on a call band with no name, like the rest of an ended named row.
+- Two unnamed rows of two pieces in one checkout that start at the same time no longer share one row id.
+- Quote no wording from an agent session without a title, so its session id and directory never become a stand-in name, a ticket description or a prompt note.
+- Auto mode writes a row's description as one line saying what the work did, and no longer repeats the ticket's title.
+- The spend readout lists the worklog description calls of auto mode as `a worklog`, apart from the ticket calls.
+
 ## 0.1.0-next.8
 
 ### Minor Changes
