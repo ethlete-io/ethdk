@@ -16,7 +16,6 @@ import {
   TableStateStorageKind,
   TableStateStorageOptions,
 } from './table-state-storage';
-import { TableComponent } from '../table.component';
 
 /** Options for {@link TableStatePersistenceDirective}. */
 export type TableStatePersistenceConfig = TableFeatureConfig &
@@ -24,14 +23,6 @@ export type TableStatePersistenceConfig = TableFeatureConfig &
     /** `'local'` survives a browser restart, `'session'` the tab only. @default 'local' */
     kind?: TableStateStorageKind;
   };
-
-// The feature host first: outside a table it throws the labelled ET3501, where injecting
-// `TableComponent` directly would throw a NullInjectorError.
-const injectHostTable = () => {
-  injectTableFeatureHost('etTableStatePersistence');
-
-  return inject<TableComponent<unknown>>(TableComponent);
-};
 
 /**
  * Opt-in persistence for a table's setup - column order, visibility, widths, sort, filters, expanded
@@ -55,7 +46,7 @@ const injectHostTable = () => {
 })
 export class TableStatePersistenceDirective {
   /** The host table whose state is persisted. */
-  public table = injectHostTable();
+  public table = injectTableFeatureHost('etTableStatePersistence');
 
   /** See {@link TableStatePersistenceConfig}. */
   public config = input({} as TableStatePersistenceConfig, {

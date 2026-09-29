@@ -1972,6 +1972,8 @@ A feature rather than an input because storing state is a side effect not every 
 whose columns depend on the route or a permission set should start from its definitions each time.
 Use `createTableStateStorage({ key })` (`load` / `save` / `clear`) to drive it yourself; every
 operation swallows its own failure, so a blocked or full store never stops a table from rendering.
+The directive's `table` field is typed as the `TableFeatureHost` it runs against, not
+`TableComponent`; `state()` and `restoreState()` are part of that contract.
 
 **Feature state.** `state()` carries a `features` bag alongside the columns - a selection lives in
 `features.selection` and the expanded rows in `features.expansion`, each contributed by its feature

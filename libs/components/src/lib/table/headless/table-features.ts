@@ -2,7 +2,7 @@ import { inject, Injector, InjectionToken, InputSignal, Signal, TemplateRef, Typ
 import { RuntimeError } from '@ethlete/core';
 import { TABLE_ERROR_CODES } from '../table-errors';
 import { TableLabels } from './table-labels';
-import { TableColumnDef, TableColumnPin, TableSortDirection, TableTemplateSlot } from '../table.types';
+import { TableColumnDef, TableColumnPin, TableSortDirection, TableState, TableTemplateSlot } from '../table.types';
 
 /**
  * The row-type-independent half of a {@link TableColumnDef} - everything a feature needs to read
@@ -398,6 +398,11 @@ export type TableFeatureHost = {
 
   /** The ARIA role a feature's own cells carry - `gridcell` while cell navigation is live, else `cell`. */
   cellRole(): 'cell' | 'gridcell';
+
+  /** The table's serializable, versioned state - see `TableComponent.state`. */
+  state: Signal<TableState>;
+  /** Apply a previously captured state - see `TableComponent.restoreState`. */
+  restoreState(next: TableState): void;
 
   /** The rows the table would render, after client filtering/sorting. */
   rows(): readonly unknown[];
