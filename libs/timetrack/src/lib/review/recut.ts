@@ -109,6 +109,8 @@ export const backgroundTest = (backgroundProjects: readonly string[] | undefined
   };
 };
 
+const piecesOf = (stretch: BehindStretch) => stretch.pieces ?? [{ from: stretch.from, to: stretch.to }];
+
 const lostMsOf = (stretch: BehindStretch) => stretch.durationMs ?? stretch.to.getTime() - stretch.from.getTime();
 
 /** Whether no stretch of the gap longer than a break is left uncovered by a row that books time. */
@@ -155,6 +157,7 @@ const joinOneTicket = (options: {
             ...band,
             to: stretch.to > band.to ? stretch.to : band.to,
             durationMs: lostMsOf(band) + lostMsOf(stretch),
+            pieces: [...piecesOf(band), ...piecesOf(stretch)],
           }
         : stretch,
     );

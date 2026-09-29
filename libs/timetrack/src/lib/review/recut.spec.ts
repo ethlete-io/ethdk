@@ -270,6 +270,7 @@ describe('recutReviewedRows', () => {
 
     expect(spans(result.behind)).toEqual(['09:45-17:45']);
     expect(result.behind[0]?.durationMs).toBe(6 * 60 * 60 * 1000);
+    expect(spans(result.behind[0]?.pieces ?? [])).toEqual(['09:45-11:30', '12:15-13:00', '13:15-13:45', '14:45-17:45']);
     expect(result.rows).toEqual(rows);
   });
 

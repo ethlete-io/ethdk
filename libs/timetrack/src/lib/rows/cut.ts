@@ -99,6 +99,8 @@ export type BehindStretch = {
    * none of. Absent, it lost the whole span.
    */
   durationMs?: number;
+  /** The stretches the ticket lost, where the stretch was joined across time it lost none of. */
+  pieces?: { from: Date; to: Date }[];
 };
 
 export type CutResult = {

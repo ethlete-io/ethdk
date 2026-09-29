@@ -123,6 +123,38 @@ test.describe('a band of a project the user marked as background', () => {
   });
 });
 
+test.describe('a background band that lost two stretches with its own row between them', () => {
+  test('draws only the minutes it lost, and says the total once', async ({ page }) => {
+    const code = (minutes: number) => focus(minutes, 'code', 'invite.ts - fut-frontend - Visual Studio Code');
+
+    await seedWorld(page, {
+      ...world(['XYZ']),
+      events: [
+        { at: at(0), source: 'git', kind: 'git-checkout', repoPath: FUT, branch: E2E_ISSUE_BRANCH },
+        ...[0, 15].map(code),
+        ...[30, 45].map((minutes) => focus(minutes, 'spotify', 'Spotify')),
+        ...[60, 75, 90].map(code),
+        ...Array.from({ length: 19 }, (_, step) => session(step * 5)),
+        { at: at(90), source: 'idle', kind: 'idle-start' },
+      ],
+    });
+    await page.goto('/day');
+
+    const lane = page.locator('[data-lane]').filter({ has: page.locator('[data-kind="row"][title^="XYZ-4200"]') });
+    const pieces = lane.locator('[data-behind]');
+
+    await expect(pieces).toHaveCount(2);
+    await expect(pieces.first()).toHaveText('XYZ-4200 · in the background · 1h 0m');
+    await expect(pieces.last()).toHaveText('');
+
+    const [first, second] = await Promise.all([pieces.first().boundingBox(), pieces.last().boundingBox()]);
+    const rowBox = await titleOf(page, 'XYZ-4200').boundingBox();
+
+    expect((first?.y ?? 0) + (first?.height ?? 0)).toBeLessThanOrEqual((rowBox?.y ?? 0) + 1);
+    expect(second?.y ?? 0).toBeGreaterThanOrEqual((rowBox?.y ?? 0) + (rowBox?.height ?? 0) - 1);
+  });
+});
+
 const DISCORD = 'com.hnc.Discord';
 const HELPER = 'com.hnc.Discord.helper.Renderer';
 

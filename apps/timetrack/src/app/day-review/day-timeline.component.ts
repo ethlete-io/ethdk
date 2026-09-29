@@ -296,7 +296,7 @@ type RowDrag = {
                     </button>
                   }
 
-                  @for (band of lane.behind; track band.stretch.from) {
+                  @for (band of lane.behind; track band.offset) {
                     <div
                       [style.top.%]="band.offset"
                       [style.height.%]="band.span"
@@ -305,7 +305,7 @@ type RowDrag = {
                       class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-[repeating-linear-gradient(135deg,transparent_0px,transparent_6px,var(--color-et-surface-border)_6px,var(--color-et-surface-border)_7px)] px-2 py-1 text-small text-et-surface-muted data-[compact]:py-0 data-[compact]:leading-none"
                       data-behind
                     >
-                      @if (labelled(band.span)) {
+                      @if (band.label && labelled(band.span)) {
                         <span class="block truncate">{{ BEHIND_LABEL_OF(band.stretch) }}</span>
                       }
                     </div>
