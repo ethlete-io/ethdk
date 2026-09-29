@@ -16,7 +16,6 @@
         [class]="lead.cellClass"
         [class.et-table-sticky-start]="lead.sticky"
         [style.inset-inline-start.px]="pageStickyHeader() ? null : lead.offset"
-        [attr.aria-hidden]="lead.lead.headerComponent ? null : 'true'"
         class="et-table-header-cell"
         role="columnheader"
       >
@@ -117,7 +116,6 @@
         [class]="trail.cellClass"
         [class.et-table-sticky-end]="trail.sticky"
         [style.inset-inline-end.px]="pageStickyHeader() ? null : trail.offset"
-        [attr.aria-hidden]="trail.lead.headerComponent ? null : 'true'"
         class="et-table-header-cell"
         role="columnheader"
       >

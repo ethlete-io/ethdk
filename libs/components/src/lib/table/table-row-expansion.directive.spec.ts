@@ -66,6 +66,14 @@ describe('TableRowExpansionDirective', () => {
     expect(queryAll(fixture, '.et-table-expander-cell .et-table-expander')).toHaveLength(PEOPLE.length);
   });
 
+  it('keeps the empty header cell of the expander column in the accessibility tree', () => {
+    const fixture = create();
+    const header = query(fixture, '.et-table-header-row .et-table-header-cell')!;
+
+    expect(header.className).toContain('et-table-expander-cell');
+    expect(header.getAttribute('aria-hidden')).toBeNull();
+  });
+
   it('adds a track to the grid template, ahead of the data columns', () => {
     const fixture = create();
     const grid = query(fixture, '.et-table')!;

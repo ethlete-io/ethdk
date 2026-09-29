@@ -951,7 +951,7 @@ export class TableComponent<T> implements TableFeatureHost {
       result = sortRows({ rows: result, sort: this.sort(), columns });
     }
 
-    return [...result];
+    return result;
   });
 
   /** The rows actually rendered - a registered row window's slice (virtual scrolling), or all of them. */
