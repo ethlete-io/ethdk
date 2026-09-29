@@ -1,4 +1,4 @@
-import { Tree } from '@nx/devkit';
+import { logger, Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import type { MockInstance } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -7,19 +7,20 @@ import reportRemovedExports from './removed-exports';
 
 describe('migrate-to-v5 -> removed exports report', () => {
   let tree: Tree;
-  let consoleLogSpy: MockInstance;
-
-  const output = () => consoleLogSpy.mock.calls.map((call) => call.join(' ')).join('\n');
+  let loggerWarnSpy: MockInstance;
 
   beforeEach(() => {
     tree = createTreeWithEmptyWorkspace();
-    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {
+    vi.spyOn(logger, 'info').mockImplementation(() => {
+      // noop
+    });
+    loggerWarnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {
       // noop
     });
   });
 
   afterEach(() => {
-    consoleLogSpy.mockRestore();
+    vi.restoreAllMocks();
   });
 
   it('should list each removed import per file without changing it', async () => {
@@ -40,15 +41,17 @@ export { templateComputed } from '@ethlete/core';
     tree.write('libs/app-a/some.service.ts', memoInput);
     tree.write('libs/app-b/some.component.ts', propsInput);
 
-    await reportRemovedExports(tree);
+    const { filesChanged, review } = await reportRemovedExports(tree);
+    const log = review.join('\n');
 
-    const log = output();
-    expect(log).toContain('Manual migration required for the following files:');
-    expect(log).toContain('📄 libs/app-a/some.service.ts:');
-    expect(log).toContain('Memo was removed from @ethlete/core together with the @Memo decorator');
+    expect(filesChanged).toBe(0);
+    expect(log).toContain(
+      'libs/app-a/some.service.ts: Memo was removed from @ethlete/core together with the @Memo decorator',
+    );
     expect(log).not.toContain('injectRoute');
-    expect(log).toContain('📄 libs/app-b/some.component.ts:');
-    expect(log).toContain('AnyTemplateType was removed from @ethlete/core together with the props module');
+    expect(log).toContain(
+      'libs/app-b/some.component.ts: AnyTemplateType was removed from @ethlete/core together with the props module',
+    );
     expect(log).toContain('createProps was removed');
     expect(log).toContain('PropsDirective was removed');
     expect(log).toContain('templateComputed was removed');
@@ -59,11 +62,11 @@ export { templateComputed } from '@ethlete/core';
   it('should list a template that binds [etProps]', async () => {
     tree.write('libs/app-a/some.component.html', `<div [etProps]="props"></div>\n`);
 
-    await reportRemovedExports(tree);
+    const { review } = await reportRemovedExports(tree);
 
-    const log = output();
-    expect(log).toContain('📄 libs/app-a/some.component.html:');
-    expect(log).toContain('[etProps] (PropsDirective) was removed');
+    expect(review).toEqual([
+      'libs/app-a/some.component.html: [etProps] (PropsDirective) was removed from @ethlete/core together with the props module.',
+    ]);
   });
 
   it('should stay silent for other packages and remaining core exports', async () => {
@@ -76,19 +79,21 @@ import { signalElementDimensions } from '@ethlete/core';
     );
     tree.write('libs/app-a/some.component.html', `<div [etPropsLike]="value"></div>\n`);
 
-    await reportRemovedExports(tree);
+    const { review } = await reportRemovedExports(tree);
 
-    expect(output()).not.toContain('Manual migration required');
+    expect(review).toEqual([]);
   });
 
   it('should run from the migration unless disabled', async () => {
     tree.write('some.ts', `import { MapLike } from '@ethlete/core';\n`);
 
-    await migration(tree, { skipFormat: true });
-    expect(output()).toContain('MapLike was removed');
+    const warnings = () => loggerWarnSpy.mock.calls.flat().join('\n');
 
-    consoleLogSpy.mockClear();
+    await migration(tree, { skipFormat: true });
+    expect(warnings()).toContain('some.ts: MapLike was removed');
+
+    loggerWarnSpy.mockClear();
     await migration(tree, { skipFormat: true, reportRemovedExports: false });
-    expect(output()).not.toContain('MapLike was removed');
+    expect(warnings()).not.toContain('MapLike was removed');
   });
 });

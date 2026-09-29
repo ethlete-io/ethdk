@@ -191,19 +191,19 @@ export const MyProvider = createProvider(() => {
     const input = `import * as cdk from '@ethlete/cdk';\n\nexport const x = cdk.createProvider(() => ({}));\n`;
     tree.write('src/ns.ts', input);
 
-    await migrateCreateProvider(tree);
+    const report = await migrateCreateProvider(tree);
 
     expect(tree.read('src/ns.ts', 'utf-8')).toBe(input);
-    expect(consoleWarnSpy.mock.calls.flat().join('\n')).toContain('src/ns.ts');
+    expect(report.review.join('\n')).toContain('src/ns.ts');
   });
 
   it('should warn about export star from @ethlete/cdk', async () => {
     const input = `export * from '@ethlete/cdk';\n// createProvider\n`;
     tree.write('src/star.ts', input);
 
-    await migrateCreateProvider(tree);
+    const report = await migrateCreateProvider(tree);
 
     expect(tree.read('src/star.ts', 'utf-8')).toBe(input);
-    expect(consoleWarnSpy.mock.calls.flat().join('\n')).toContain('src/star.ts');
+    expect(report.review.join('\n')).toContain('src/star.ts');
   });
 });

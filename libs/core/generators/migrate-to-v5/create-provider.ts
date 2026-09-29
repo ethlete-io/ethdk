@@ -1,49 +1,22 @@
-import { Tree, logger } from '@nx/devkit';
+import { Tree } from '@nx/devkit';
 import * as ts from 'typescript';
+import { MigrationScope } from '../migrate-provider-shape/migration-scope.js';
+import { collectFiles, TransformReport } from './migration-files.js';
 
-export default async function migrateCreateProvider(tree: Tree) {
-  logger.log('\n🔄 Migrating createProvider imports from @ethlete/cdk to @ethlete/core...\n');
-
-  const tsFiles: string[] = [];
-
-  // Recursively find all TypeScript files
-  function findTsFiles(dir: string) {
-    const children = tree.children(dir);
-    for (const child of children) {
-      const path = dir === '.' ? child : `${dir}/${child}`;
-
-      if (tree.isFile(path)) {
-        if (path.endsWith('.ts') && !path.includes('node_modules')) {
-          tsFiles.push(path);
-        }
-      } else {
-        if (child === 'node_modules') continue;
-        findTsFiles(path);
-      }
-    }
-  }
-
-  findTsFiles('.');
-
+export default async function migrateCreateProvider(tree: Tree, scope?: MigrationScope): Promise<TransformReport> {
+  const review: string[] = [];
   let filesModified = 0;
 
-  for (const filePath of tsFiles) {
-    const reexportsModified = migrateCreateProviderReexports(tree, filePath);
+  for (const filePath of collectFiles(tree, scope, ['.ts'])) {
+    const reexportsModified = migrateCreateProviderReexports(tree, filePath, review);
     const wasModified = migrateCreateProviderInFile(tree, filePath) || reexportsModified;
-    if (wasModified) {
-      filesModified++;
-      logger.log(`  ✓ ${filePath}`);
-    }
+    if (wasModified) filesModified++;
   }
 
-  if (filesModified > 0) {
-    logger.log(`\n✅ Successfully migrated createProvider in ${filesModified} file(s)\n`);
-  } else {
-    logger.log('\nℹ️  No files needed migration\n');
-  }
+  return { filesChanged: filesModified, review };
 }
 
-function migrateCreateProviderReexports(tree: Tree, filePath: string): boolean {
+function migrateCreateProviderReexports(tree: Tree, filePath: string, review: string[]): boolean {
   const content = tree.read(filePath, 'utf-8');
   if (!content || !content.includes('createProvider')) return false;
 
@@ -59,8 +32,8 @@ function migrateCreateProviderReexports(tree: Tree, filePath: string): boolean {
       const bindings = statement.importClause?.namedBindings;
 
       if (bindings && ts.isNamespaceImport(bindings) && content.includes(`${bindings.name.text}.createProvider`)) {
-        logger.warn(
-          `  ⚠ ${filePath}: ${bindings.name.text}.createProvider is used through a namespace import of @ethlete/cdk. Switch it to createProvider from @ethlete/core manually.`,
+        review.push(
+          `${filePath}: ${bindings.name.text}.createProvider is used through a namespace import of @ethlete/cdk. Switch it to createProvider from @ethlete/core manually.`,
         );
       }
       continue;
@@ -69,8 +42,8 @@ function migrateCreateProviderReexports(tree: Tree, filePath: string): boolean {
     const clause = statement.exportClause;
 
     if (!clause) {
-      logger.warn(
-        `  ⚠ ${filePath}: "export * from '@ethlete/cdk'" may re-export createProvider. Re-export it from @ethlete/core manually.`,
+      review.push(
+        `${filePath}: "export * from '@ethlete/cdk'" may re-export createProvider. Re-export it from @ethlete/core manually.`,
       );
       continue;
     }

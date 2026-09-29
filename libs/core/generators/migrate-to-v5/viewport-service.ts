@@ -1,45 +1,19 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Tree, logger } from '@nx/devkit';
 import * as ts from 'typescript';
+import { MigrationScope } from '../migrate-provider-shape/migration-scope.js';
 import { applyReplacements } from './apply-replacements.js';
+import { collectFiles, TransformReport } from './migration-files.js';
 
-export default async function migrateViewportService(tree: Tree) {
-  logger.log('\n🔄 Migrating ViewportService to standalone utilities...\n');
+export default async function migrateViewportService(tree: Tree, scope?: MigrationScope): Promise<TransformReport> {
+  const tsFiles = collectFiles(tree, scope, ['.ts']);
+  const review: string[] = [];
 
-  const tsFiles: string[] = [];
-  const styleFiles: string[] = [];
-
-  // Collect all TypeScript and style files
-  function findFiles(dir: string) {
-    const children = tree.children(dir);
-    for (const child of children) {
-      const path = dir === '.' ? child : `${dir}/${child}`;
-      if (tree.isFile(path)) {
-        if (path.endsWith('.ts') && !path.includes('node_modules')) {
-          tsFiles.push(path);
-        } else if (
-          path.endsWith('.css') ||
-          path.endsWith('.scss') ||
-          path.endsWith('.sass') ||
-          path.endsWith('.less')
-        ) {
-          styleFiles.push(path);
-        }
-      } else {
-        if (SKIPPED_DIRECTORIES.has(child)) continue;
-        findFiles(path);
-      }
-    }
-  }
-
-  findFiles('.');
-
-  // Detect which CSS variables are being used across the codebase
-  const cssVariablesUsed = detectCssVariableUsage(tree, styleFiles);
+  // Read across the whole workspace, not the scope: a variable can be consumed outside the migrated projects.
+  const cssVariablesUsed = detectCssVariableUsage(tree);
 
   let filesModified = 0;
   let templatesModified = 0;
-  let viewportServiceUsed = false;
 
   // Track which properties became signals for template migration
   const componentTemplateMigrations = new Map<string, TemplateMigrationInfo>();
@@ -51,8 +25,6 @@ export default async function migrateViewportService(tree: Tree) {
 
     // Skip files that don't use ViewportService
     if (!content.includes('ViewportService')) continue;
-
-    logger.log(`Processing: ${filePath}`);
 
     const sourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
     const viewportPackage = getViewportServicePackage(sourceFile);
@@ -82,8 +54,6 @@ export default async function migrateViewportService(tree: Tree) {
     if (viewportServiceVars.length === 0 && inlineResult.importsNeeded.size === 0) {
       continue;
     }
-
-    viewportServiceUsed = true;
 
     const allImportsNeeded: ImportsByPackage = {
       '@ethlete/core': new Set<string>(),
@@ -172,7 +142,9 @@ export default async function migrateViewportService(tree: Tree) {
 
     // Remove ViewportService import if no longer needed
     const sourceFileAfterRemoval = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
-    if (!checkIfViewportServiceStillUsed(sourceFileAfterRemoval, viewportServiceVars)) {
+    if (checkIfViewportServiceStillUsed(sourceFileAfterRemoval, viewportServiceVars)) {
+      review.push(`${filePath}: ViewportService is still used. Migrate the remaining usages manually.`);
+    } else {
       updatedContent = removeViewportServiceImport(sourceFileAfterRemoval, updatedContent);
     }
 
@@ -285,7 +257,6 @@ export default async function migrateViewportService(tree: Tree) {
     const templatePath = findTemplateForComponent(tree, tsFilePath, sourceFile);
 
     if (templatePath && tree.exists(templatePath)) {
-      logger.log(`Processing template: ${templatePath}`);
       const wasModified = migrateTemplateFile(tree, templatePath, migrationInfo);
       if (wasModified) {
         templatesModified++;
@@ -293,47 +264,19 @@ export default async function migrateViewportService(tree: Tree) {
     }
   }
 
-  // Log results
-  if (filesModified > 0 || templatesModified > 0) {
-    logger.log(
-      `\n✅ Successfully migrated ViewportService in ${filesModified} TypeScript file(s) and ${templatesModified} template(s)\n`,
-    );
-  } else if (viewportServiceUsed) {
-    logger.log('\nℹ️  ViewportService detected but no migrations needed\n');
-  } else {
-    logger.log('\nℹ️  No ViewportService usage found\n');
-  }
+  return { filesChanged: filesModified + templatesModified, review };
 }
-
-const SKIPPED_DIRECTORIES = new Set(['node_modules', 'dist', '.git', '.angular', '.nx']);
 
 type CssVariablesUsed = {
   hasViewportVariables: boolean; // --et-vw, --et-vh
   hasScrollbarVariables: boolean; // --et-sw, --et-sh
 };
 
-function detectCssVariableUsage(tree: Tree, styleFiles: string[]): CssVariablesUsed {
+function detectCssVariableUsage(tree: Tree): CssVariablesUsed {
   let hasViewportVariables = false;
   let hasScrollbarVariables = false;
 
-  // Check both style files AND TypeScript files (for inline styles)
-  const allFiles = [...styleFiles];
-
-  // Also check all TypeScript files for inline styles
-  function findTsFiles(dir: string) {
-    const children = tree.children(dir);
-    for (const child of children) {
-      const path = dir === '.' ? child : `${dir}/${child}`;
-      if (tree.isFile(path) && path.endsWith('.ts')) {
-        allFiles.push(path);
-      } else if (!tree.isFile(path)) {
-        if (SKIPPED_DIRECTORIES.has(child)) continue;
-        findTsFiles(path);
-      }
-    }
-  }
-
-  findTsFiles('.');
+  const allFiles = collectFiles(tree, undefined, ['.css', '.scss', '.sass', '.less', '.ts']);
 
   for (const filePath of allFiles) {
     const content = tree.read(filePath, 'utf-8');
@@ -1116,7 +1059,7 @@ function addMembersToClass(
       const openBraceIndex = classText.indexOf('{');
 
       if (openBraceIndex === -1) {
-        console.warn('Could not find class body opening brace');
+        logger.warn('Could not find class body opening brace');
         return content;
       }
 
@@ -1229,7 +1172,7 @@ function removeViewportServiceInjection(
           const closeParenIndex = findMatchingParen(constructorText, openParenIndex);
 
           if (openParenIndex === -1 || closeParenIndex === -1) {
-            console.warn(`Could not find constructor parameters in ${filePath}`);
+            logger.warn(`Could not find constructor parameters in ${filePath}`);
             return;
           }
 
@@ -1580,7 +1523,7 @@ function migrateMonitorViewport(
       const openBraceIndex = classText.indexOf('{');
 
       if (openBraceIndex === -1) {
-        console.warn('Could not find class body opening brace');
+        logger.warn('Could not find class body opening brace');
         continue;
       }
 

@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Tree } from '@nx/devkit';
+import { Tree, logger } from '@nx/devkit';
 import * as ts from 'typescript';
+import { MigrationScope } from '../migrate-provider-shape/migration-scope.js';
+import { collectFiles, TransformReport } from './migration-files.js';
 import { applyReplacements } from './apply-replacements.js';
 
 type ImportsByPackage = {
@@ -754,7 +756,7 @@ function addMembersToClass(
   );
 
   if (!routerStateProperty) {
-    console.warn('Could not find RouterStateService property to insert new members after');
+    logger.warn('Could not find RouterStateService property to insert new members after');
     return content;
   }
 
@@ -1108,7 +1110,7 @@ function removeRouterStateServiceInjection(
           const closeParenIndex = findMatchingParen(constructorText, openParenIndex);
 
           if (openParenIndex === -1 || closeParenIndex === -1) {
-            console.warn(`Could not find constructor parameters in ${filePath}`);
+            logger.warn(`Could not find constructor parameters in ${filePath}`);
             return;
           }
 
@@ -1262,38 +1264,17 @@ function removeUnusedImports(sourceFile: ts.SourceFile, content: string): string
   return updatedContent;
 }
 
-export default async function migrateRouterStateService(tree: Tree) {
-  console.log('\n🔄 Migrating RouterStateService usage...\n');
-
-  const tsFiles: string[] = [];
-
-  function findFiles(dir: string) {
-    const children = tree.children(dir);
-    for (const child of children) {
-      const path = dir === '.' ? child : `${dir}/${child}`;
-      if (tree.isFile(path)) {
-        if (path.endsWith('.ts') && !path.includes('node_modules')) {
-          tsFiles.push(path);
-        }
-      } else {
-        if (child === 'node_modules') continue;
-        findFiles(path);
-      }
-    }
-  }
-
-  findFiles('.');
+export default async function migrateRouterStateService(tree: Tree, scope?: MigrationScope): Promise<TransformReport> {
+  const tsFiles = collectFiles(tree, scope, ['.ts']);
+  const review: string[] = [];
 
   let filesModified = 0;
-  let routerStateServiceUsed = false;
 
   for (const filePath of tsFiles) {
     const content = tree.read(filePath, 'utf-8');
     if (!content) continue;
 
     if (!content.includes('RouterStateService')) continue;
-
-    console.log(`Processing: ${filePath}`);
 
     const sourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
     const hasEthleteImport = sourceFile.statements.some(
@@ -1322,8 +1303,6 @@ export default async function migrateRouterStateService(tree: Tree) {
     if (routerStateServiceVars.length === 0 && inlineResult.importsNeeded.size === 0) {
       continue;
     }
-
-    routerStateServiceUsed = true;
 
     const allImportsNeeded: ImportsByPackage = {
       '@ethlete/core': new Set<string>(),
@@ -1408,7 +1387,9 @@ export default async function migrateRouterStateService(tree: Tree) {
     );
 
     const sourceFileAfterRemoval = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
-    if (!checkIfRouterStateServiceStillUsed(sourceFileAfterRemoval, routerStateServiceVars)) {
+    if (checkIfRouterStateServiceStillUsed(sourceFileAfterRemoval, routerStateServiceVars)) {
+      review.push(`${filePath}: RouterStateService is still used. Migrate the remaining usages manually.`);
+    } else {
       updatedContent = removeRouterStateServiceImport(sourceFileAfterRemoval, updatedContent);
     }
 
@@ -1421,13 +1402,7 @@ export default async function migrateRouterStateService(tree: Tree) {
     }
   }
 
-  if (filesModified > 0) {
-    console.log(`\n✅ Successfully migrated RouterStateService in ${filesModified} file(s)\n`);
-  } else if (routerStateServiceUsed) {
-    console.log('\nℹ️  RouterStateService detected but no migrations needed\n');
-  } else {
-    console.log('\nℹ️  No RouterStateService usage found\n');
-  }
+  return { filesChanged: filesModified, review };
 }
 
 type InlineEdit = { start: number; end: number; text: string };

@@ -1,4 +1,6 @@
-import { Tree, logger } from '@nx/devkit';
+import { Tree } from '@nx/devkit';
+import { MigrationScope } from '../migrate-provider-shape/migration-scope.js';
+import { collectFiles, TransformReport } from './migration-files.js';
 
 /**
  * Symbol renames in TypeScript files (imports + usage).
@@ -50,69 +52,20 @@ const HOST_DIRECTIVE_REPLACEMENTS: [string, string][] = [
   ['"etProvideTheme: theme"', '"etProvideColor: color"'],
 ];
 
-export default async function migrateColorNaming(tree: Tree) {
-  logger.log('\n🔄 Migrating theme → color naming...\n');
-
-  const tsFiles: string[] = [];
-  const htmlFiles: string[] = [];
-  const cssFiles: string[] = [];
-
-  findFiles('.', tree, tsFiles, htmlFiles, cssFiles);
-
+export default async function migrateColorNaming(tree: Tree, scope?: MigrationScope): Promise<TransformReport> {
   let filesModified = 0;
 
-  for (const filePath of tsFiles) {
-    const wasModified = migrateTypeScriptFile(tree, filePath);
-    if (wasModified) {
-      filesModified++;
-      logger.log(`  ✓ ${filePath}`);
-    }
+  for (const filePath of collectFiles(tree, scope, ['.ts', '.html', '.css', '.scss'])) {
+    const wasModified = filePath.endsWith('.ts')
+      ? migrateTypeScriptFile(tree, filePath)
+      : filePath.endsWith('.html')
+        ? migrateTemplateFile(tree, filePath)
+        : migrateCssFile(tree, filePath);
+
+    if (wasModified) filesModified++;
   }
 
-  for (const filePath of htmlFiles) {
-    const wasModified = migrateTemplateFile(tree, filePath);
-    if (wasModified) {
-      filesModified++;
-      logger.log(`  ✓ ${filePath}`);
-    }
-  }
-
-  for (const filePath of cssFiles) {
-    const wasModified = migrateCssFile(tree, filePath);
-    if (wasModified) {
-      filesModified++;
-      logger.log(`  ✓ ${filePath}`);
-    }
-  }
-
-  if (filesModified > 0) {
-    logger.log(`\n✅ Successfully migrated color naming in ${filesModified} file(s)\n`);
-  } else {
-    logger.log('\nℹ️  No files needed migration\n');
-  }
-}
-
-function findFiles(dir: string, tree: Tree, tsFiles: string[], htmlFiles: string[], cssFiles: string[]) {
-  const children = tree.children(dir);
-
-  for (const child of children) {
-    const path = dir === '.' ? child : `${dir}/${child}`;
-
-    if (tree.isFile(path)) {
-      if (path.includes('node_modules')) continue;
-
-      if (path.endsWith('.ts')) {
-        tsFiles.push(path);
-      } else if (path.endsWith('.html')) {
-        htmlFiles.push(path);
-      } else if (path.endsWith('.css') || path.endsWith('.scss')) {
-        cssFiles.push(path);
-      }
-    } else {
-      if (child === 'node_modules') continue;
-      findFiles(path, tree, tsFiles, htmlFiles, cssFiles);
-    }
-  }
+  return { filesChanged: filesModified, review: [] };
 }
 
 function migrateTypeScriptFile(tree: Tree, filePath: string): boolean {

@@ -1,5 +1,7 @@
 import { Tree } from '@nx/devkit';
 import * as ts from 'typescript';
+import { MigrationScope } from '../migrate-provider-shape/migration-scope.js';
+import { collectFiles, TransformReport } from './migration-files.js';
 
 const REMOVED_EXPORTS = new Map<string, string>([
   ...['Memo', 'MemoConfig', 'MemoResolver', 'MapLike'].map((name) => [name, 'the @Memo decorator'] as const),
@@ -35,39 +37,16 @@ const REMOVED_EXPORTS = new Map<string, string>([
 
 const ET_PROPS_ATTRIBUTE = /\betProps\b/;
 
-export default async function reportRemovedExports(tree: Tree) {
-  const findings = new Map<string, string[]>();
+export default async function reportRemovedExports(tree: Tree, scope?: MigrationScope): Promise<TransformReport> {
+  const review: string[] = [];
 
-  function walkFiles(dir: string) {
-    for (const child of tree.children(dir)) {
-      if (child === 'node_modules') continue;
+  for (const filePath of collectFiles(tree, scope, ['.ts', '.html'])) {
+    const messages = filePath.endsWith('.ts') ? findRemovedImports(tree, filePath) : findEtPropsUsage(tree, filePath);
 
-      const path = dir === '.' ? child : `${dir}/${child}`;
-
-      if (!tree.isFile(path)) {
-        walkFiles(path);
-        continue;
-      }
-
-      const messages = path.endsWith('.ts')
-        ? findRemovedImports(tree, path)
-        : path.endsWith('.html')
-          ? findEtPropsUsage(tree, path)
-          : [];
-
-      if (messages.length > 0) findings.set(path, messages);
-    }
+    review.push(...messages.map((message) => `${filePath}: ${message}`));
   }
 
-  walkFiles('.');
-
-  if (findings.size === 0) return;
-
-  console.log('\n⚠️  Manual migration required for the following files:');
-  findings.forEach((messages, file) => {
-    console.log(`\n📄 ${file}:`);
-    messages.forEach((message) => console.log(`   - ${message}`));
-  });
+  return { filesChanged: 0, review };
 }
 
 function findRemovedImports(tree: Tree, filePath: string) {
