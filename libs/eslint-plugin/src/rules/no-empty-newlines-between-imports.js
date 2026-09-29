@@ -7,6 +7,7 @@ const noEmptyNewlinesBetweenImports = {
     type: 'layout',
     docs: {
       description: 'Disallow empty blank lines between consecutive import declarations.',
+      recommended: true,
     },
     fixable: 'code',
     schema: [],
@@ -33,7 +34,9 @@ const noEmptyNewlinesBetweenImports = {
             node: currentImport,
             messageId: 'noEmptyLine',
             fix(fixer) {
-              return fixer.replaceTextRange([previousImport.range[1], currentImport.range[0]], '\n');
+              const lineBreak = textBetween.includes('\r\n') ? '\r\n' : '\n';
+
+              return fixer.replaceTextRange([previousImport.range[1], currentImport.range[0]], lineBreak);
             },
           });
         }

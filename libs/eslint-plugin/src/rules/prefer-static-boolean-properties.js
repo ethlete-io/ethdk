@@ -57,6 +57,7 @@ const preferStaticBooleanProperties = {
     docs: {
       description:
         'Prefer a static attribute over a property binding for static boolean values when the input uses a booleanAttribute transform.',
+      recommended: true,
     },
     hasSuggestions: true,
     schema: [],

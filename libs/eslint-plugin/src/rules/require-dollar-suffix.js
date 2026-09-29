@@ -89,6 +89,7 @@ const rule = {
     type: 'suggestion',
     docs: {
       description: 'Require observable variables and class properties to use the $ suffix.',
+      recommended: true,
     },
     schema: [],
     messages: {

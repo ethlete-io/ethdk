@@ -221,6 +221,7 @@ const requireViewEncapsulationNone = {
     type: 'suggestion',
     docs: {
       description: 'Require `encapsulation: ViewEncapsulation.None` in all @Component decorators.',
+      recommended: true,
     },
     fixable: 'code',
     messages: {

@@ -32,6 +32,7 @@ const noLeadingUnderscoreClassMember = {
     type: 'suggestion',
     docs: {
       description: 'Disallow leading underscores on class members and rename private members automatically when safe.',
+      recommended: true,
     },
     fixable: 'code',
     schema: [],

@@ -36,6 +36,7 @@ const rule = {
     type: 'suggestion',
     docs: {
       description: "Disallow Angular's Title/Meta services. Use @ethlete/core SEO utilities instead.",
+      recommended: true,
     },
     schema: [],
     messages: {

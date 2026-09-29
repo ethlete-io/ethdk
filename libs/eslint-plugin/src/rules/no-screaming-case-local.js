@@ -70,15 +70,12 @@ const noScreamingCaseLocal = {
   create(context) {
     return {
       VariableDeclarator(node) {
-        // Only flag simple identifier bindings (not destructuring)
         if (node.id.type !== 'Identifier') return;
 
         const { name } = node.id;
 
-        // Must match the SCREAMING_CASE pattern
         if (!SCREAMING_CASE_RE.test(name)) return;
 
-        // Only flag inside function bodies
         if (!isInsideFunction(node)) return;
         if (node.init?.type === 'ArrowFunctionExpression' || node.init?.type === 'FunctionExpression') return;
 

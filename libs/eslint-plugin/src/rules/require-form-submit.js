@@ -36,6 +36,7 @@ const requireFormSubmit = {
     type: 'problem',
     docs: {
       description: 'Require a `<form>` to handle its own submission.',
+      recommended: true,
     },
     schema: [],
     messages: {

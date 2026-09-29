@@ -25,6 +25,7 @@ const rule = {
     type: 'layout',
     docs: {
       description: 'Require an empty line before a return in a multi-statement if-block (guard clause).',
+      recommended: true,
     },
     fixable: 'whitespace',
     schema: [],
@@ -37,18 +38,14 @@ const rule = {
       ReturnStatement(node) {
         const blockParent = node.parent;
 
-        // Must be directly inside a BlockStatement
         if (!blockParent || blockParent.type !== 'BlockStatement') return;
 
-        // The block's parent must be an IfStatement's consequent
         const ifStatement = blockParent.parent;
         if (!ifStatement || ifStatement.type !== 'IfStatement') return;
         if (ifStatement.consequent !== blockParent) return;
 
-        // Block must have more than one statement (multi-statement guard)
         if (blockParent.body.length <= 1) return;
 
-        // The return must be the last statement in the block
         if (blockParent.body[blockParent.body.length - 1] !== node) return;
 
         const prevStatement = blockParent.body[blockParent.body.length - 2];
@@ -56,11 +53,11 @@ const rule = {
         if (!node.loc || !prevStatement.loc) return;
 
         const prevEndLine = prevStatement.loc.end.line;
-        const returnStartLine = node.loc.start.line;
-
-        if (returnStartLine - prevEndLine >= 2) return;
-
         const sourceCode = context.sourceCode;
+
+        const textBetween = sourceCode.text.slice(prevStatement.range[1], node.range[0]);
+
+        if (/\n[ \t]*\r?\n/.test(textBetween)) return;
 
         context.report({
           node,

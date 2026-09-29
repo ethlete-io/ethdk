@@ -23,6 +23,7 @@ const noStandaloneFlag = {
     docs: {
       description:
         'Disallow standalone metadata on Angular decorators because standalone is the default and should be omitted.',
+      recommended: true,
     },
     fixable: 'code',
     schema: [],

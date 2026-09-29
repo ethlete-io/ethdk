@@ -19,6 +19,7 @@ const noPipeLogic = {
     docs: {
       description:
         'Pipes must not contain logic in the transform method. Extract to a utility function and assign it: `transform = myUtil;`',
+      recommended: true,
     },
     messages: {
       noLogicInTransform:

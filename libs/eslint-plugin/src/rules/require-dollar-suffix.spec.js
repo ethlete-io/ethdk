@@ -28,6 +28,19 @@ const merged = merge({}, defaults);`,
   ],
   invalid: [
     {
+      code: `let data = obs.pipe(map(x => x));`,
+      errors: [{ messageId: 'missingSuffix' }],
+    },
+    {
+      code: `var clicks = fromEvent(el, 'click');`,
+      errors: [{ messageId: 'missingSuffix' }],
+    },
+    {
+      code: `import { toObservable } from '@angular/core/rxjs-interop';
+const value = toObservable(source);`,
+      errors: [{ messageId: 'missingSuffix' }],
+    },
+    {
       code: `import { of as rxOf } from 'rxjs';
 const value = rxOf(1);`,
       errors: [{ messageId: 'missingSuffix' }],

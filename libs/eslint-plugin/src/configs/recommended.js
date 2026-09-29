@@ -53,7 +53,7 @@ const recommendedTs = {
     // Max two function parameters
     'max-params': ['error', 2],
 
-    // No _ or # prefixes; enforce camelCase / PascalCase / UPPER_CASE
+    // No # or trailing _ (leading _ only on variables, parameters, properties, methods); enforce camelCase / PascalCase / UPPER_CASE
     '@typescript-eslint/naming-convention': [
       'error',
       {

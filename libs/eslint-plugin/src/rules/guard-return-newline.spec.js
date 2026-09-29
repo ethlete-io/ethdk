@@ -43,6 +43,40 @@ if (!x) {
   invalid: [
     {
       code: `function fn() {
+if (!x) {
+  doSomething();
+  // bail out
+  return;
+}
+}`,
+      output: `function fn() {
+if (!x) {
+  doSomething();
+
+  // bail out
+  return;
+}
+}`,
+      errors: [{ messageId: 'missingEmptyLine' }],
+    },
+    {
+      code: `function fn() {
+if (!x) {
+  doSomething();
+  return value;
+}
+}`,
+      output: `function fn() {
+if (!x) {
+  doSomething();
+
+  return value;
+}
+}`,
+      errors: [{ messageId: 'missingEmptyLine' }],
+    },
+    {
+      code: `function fn() {
 if (!allFilled) {
   doSomething();
   return;

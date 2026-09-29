@@ -17,6 +17,7 @@ const enforceRoutingViewNaming = {
     docs: {
       description:
         'Routing components must import from a path containing "-view" and use a class name ending in "ViewComponent".',
+      recommended: true,
     },
     messages: {
       pathMustContainView: 'Routing import path must contain "-view". Got: "{{path}}".',

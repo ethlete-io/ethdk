@@ -112,6 +112,7 @@ const noTemplateLiteralBeforeInlineTemplate = {
     docs: {
       description:
         'Disallow a substituted template literal above an inline component template, which silently disables Angular language service completions for the rest of the file.',
+      recommended: true,
     },
     schema: [],
     messages: {

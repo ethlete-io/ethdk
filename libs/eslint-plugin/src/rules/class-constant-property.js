@@ -63,7 +63,7 @@ const getCallRootName = (node) => {
     return callee.name;
   }
 
-  if (callee.type === 'MemberExpression' && callee.object.type === 'Identifier') {
+  if (callee.type === 'MemberExpression' && !callee.computed && callee.object.type === 'Identifier') {
     return callee.object.name;
   }
 

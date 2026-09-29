@@ -88,6 +88,7 @@ const angularDecoratorPropertyOrder = {
     type: 'layout',
     docs: {
       description: 'Require a consistent property order in Angular @Component and @Directive metadata objects.',
+      recommended: true,
     },
     fixable: 'code',
     messages: {

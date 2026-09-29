@@ -268,6 +268,7 @@ const requireOnPushChangeDetection = {
     type: 'suggestion',
     docs: {
       description: 'Require `changeDetection: ChangeDetectionStrategy.OnPush` in all @Component decorators.',
+      recommended: true,
     },
     fixable: 'code',
     messages: {

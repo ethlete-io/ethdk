@@ -127,6 +127,7 @@ const noRedundantOnPushChangeDetection = {
     docs: {
       description:
         'Disallow redundant `changeDetection: ChangeDetectionStrategy.OnPush`. OnPush is the default since Angular 22.',
+      recommended: true,
     },
     fixable: 'code',
     schema: [],

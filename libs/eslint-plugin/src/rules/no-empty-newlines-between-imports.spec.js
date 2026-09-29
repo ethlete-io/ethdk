@@ -27,6 +27,11 @@ import { B } from './b';`,
   ],
   invalid: [
     {
+      code: "import { A } from './a';\r\n\r\nimport { B } from './b';",
+      output: "import { A } from './a';\r\nimport { B } from './b';",
+      errors: [{ messageId: 'noEmptyLine' }],
+    },
+    {
       code: `import { A } from './a';
 
 import { B } from './b';`,

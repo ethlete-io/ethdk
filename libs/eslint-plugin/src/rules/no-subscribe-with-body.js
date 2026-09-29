@@ -20,6 +20,7 @@ const rule = {
     type: 'suggestion',
     docs: {
       description: 'Require subscribe() to be called with an empty body. Move side effects into tap() inside the pipe.',
+      recommended: true,
     },
     schema: [],
     messages: {

@@ -228,6 +228,7 @@ const rule = {
     docs: {
       description:
         'Disallow legacy Angular decorators (@Input, @Output, @ViewChild, etc.) in favour of signal-based APIs and host: {} bindings.',
+      recommended: true,
     },
     fixable: 'code',
     schema: [],

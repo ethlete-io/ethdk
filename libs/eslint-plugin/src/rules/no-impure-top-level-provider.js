@@ -65,6 +65,7 @@ const noImpureTopLevelProvider = {
     docs: {
       description:
         'Disallow module-scope destructuring of a factory call, and require a pure annotation on module-scope calls in library source.',
+      recommended: true,
     },
     fixable: 'code',
     schema: [

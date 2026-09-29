@@ -27,6 +27,7 @@ const noEmptyAngularMetadataArrays = {
     type: 'suggestion',
     docs: {
       description: 'Disallow empty Angular metadata arrays such as imports: [] and hostDirectives: [].',
+      recommended: true,
     },
     fixable: 'code',
     schema: [],

@@ -1,22 +1,15 @@
 # eslint-plugin lib scan — open findings
 
 Scan of `libs/eslint-plugin` from 2026-08-19. Fixed findings were removed on 2026-09-26 (git history
-has them). All 23 Medium findings are done (740745cfd, 0e8f4306d, fdc275315, 2ff9e0dd3, 5070c1fac, 1115ebd01, b962944d7, d8a6c9352, 8f943a33c, b96cb14a9, e183dbc6b, d6e261816, 608346bb0, 9ce9b2b4c, 3d9bbb0e5, 562f182ac, 5d32f7e16, 10af4378d, 836c57050, 1dd03c288, 321ffa7e8, f4ba9f3c5, 64e382a80; the spread bail-out of `angular-decorator-property-order` is kept). Still open: 46 Low, 13 spec-coverage items. Paths are relative to
+has them). All 23 Medium findings are done (740745cfd, 0e8f4306d, fdc275315, 2ff9e0dd3, 5070c1fac, 1115ebd01, b962944d7, d8a6c9352, 8f943a33c, b96cb14a9, e183dbc6b, d6e261816, 608346bb0, 9ce9b2b4c, 3d9bbb0e5, 562f182ac, 5d32f7e16, 10af4378d, 836c57050, 1dd03c288, 321ffa7e8, f4ba9f3c5, 64e382a80; the spread bail-out of `angular-decorator-property-order` is kept). Still open: 39 Low, 13 spec-coverage items. Paths are relative to
 `libs/eslint-plugin/src/rules/` unless shown in full.
 
 ## ordering & naming
 
-- Low: `guard-return-newline` accepts a comment line as the blank line. S
-- Low: `no-empty-newlines-between-imports` inserts bare `\n` into CRLF files. S
-- Low: `meta.docs.recommended` missing on 22 rule files (e.g. `guard-return-newline`, `require-form-submit`, `require-view-encapsulation-none`). S
-- Low: `rules.md:120` marks `class-constant-property` 🔧 but `shouldUseScreamingCase` has no fixer. S
+- Spec: no trailing-comment spec for `angular-decorator-property-order`. S
 - Low: `no-leading-underscore-class-member` silent for parameter properties, `static`, `accessor`, `abstract`; `class-member-order` silent on `accessor`. M
-- Low: comments at `no-screaming-case-local.js:72,77,80`, `guard-return-newline.js:40,43,48,51`. S
-- Low: `configs/recommended.js:55` says "No \_ or # prefixes" but `:74,80` allow `_`. S
-- Low: `class-constant-property.js:66` lacks a `!callee.computed` guard. S
 - Spec: `class-member-order` never asserts `dependencyOrder`; no cycle or getter/setter tests; `class-member-order.spec.js:137-144` expects a stray blank line. S
 - Spec: no underscore-member specs for parameter properties/static/abstract/`accessor`; none for `#private`/`override` in `class-constant-property`. S
-- Spec: no single-line guard or `return <value>` spec in `guard-return-newline`; no `let`/`var`/`toObservable` spec in `require-dollar-suffix`; no trailing-comment spec for `angular-decorator-property-order`. S
 
 ## Angular metadata
 

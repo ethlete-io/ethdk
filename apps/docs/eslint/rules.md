@@ -117,7 +117,7 @@ annotate it - move it inside a function, because a library must not do work when
 | `no-leading-underscore-class-member` | No leading underscores on class members (renames private members automatically when safe)                                                                         | 🔧  | error   |
 | `no-member-alias`                    | No members that are pure aliases for a nested property of another member - widen the source member's accessibility instead                                        |     | error   |
 | `no-unused-class-member`             | No provably unread `private` / `protected` members; framework-decorated, overridden and abstract-base members are exempt                                          |     | error   |
-| `class-constant-property`            | True class constants use `readonly` and SCREAMING_CASE                                                                                                            | 🔧  | error   |
+| `class-constant-property`            | True class constants use `readonly` and SCREAMING_CASE (the fixer adds `readonly`; renaming is manual)                                                            | 🔧  | error   |
 | `class-member-order`                 | Class members follow the styleguide order: inject members, inputs, outputs, queries, properties, constructor, methods                                             | 🔧  | error   |
 
 ```ts

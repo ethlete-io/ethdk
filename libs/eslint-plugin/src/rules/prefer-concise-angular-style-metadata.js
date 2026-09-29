@@ -35,6 +35,7 @@ const preferConciseAngularStyleMetadata = {
     docs: {
       description:
         'Prefer `styleUrl` over single-item `styleUrls`, and avoid wrapping a single `styles` entry in an array.',
+      recommended: true,
     },
     fixable: 'code',
     messages: {
