@@ -24,5 +24,5 @@ Each domain plan file keeps its open Low lines; the decisions are listed there. 
 ## Queue
 
 - timetrack `stillFocused` tail order: real, but no failing test was found.
-- timetrack: codex reasoning runs record no usage; `agentRunSpend` reads only Claude's envelope.
+- timetrack: codex reasoning runs record no usage; `agentRunSpend` reads only Claude's envelope. Done in 29455534b.
 - cdk: the dead `overlay-host.storybook.component.ts` is deleted (5cc8ddd5a).
