@@ -30,6 +30,14 @@ automatic one cut too finely.
 
 ## Slice 5: open one stand-in per piece
 
+In progress (2026-09-29). Built: 578e66c24 gives a session stretch on a base branch its piece's
+directory as `workPath`, where the checkout's pieces name 2+ directories. A piece's identity across
+days is its directory, not its session id. Thus `groupByWork`, the rules and the stand-ins keep the
+`repo@branch#workPath` key, and stored rules still match. 6754ade81 keys the `lastOfStream` fallback in
+`mergePass` on checkout plus piece (`pieceOf`). Open: `absorbSlivers` still folds by checkout
+(`laneOf` → `streamOf` → `checkoutOf`), and the `BehindStretch` below. Named bands of two pieces on one
+issue still join through `lastOfTrack`; slice 6 changes that.
+
 - Key `groupByWork` in `ticket/auto-stand-in.ts` on the piece. Today it keys on
   `repoPath@branch#workPath`. `alreadyWaiting` and `alreadyAnswered` follow the piece.
 - A rule stored against `repo@branch` must still match, or every answer the user gave is lost.
