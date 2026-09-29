@@ -8,9 +8,13 @@ import { DateRangeValue } from './internals/date-range-picker-input.directive';
 import { parseDateValue } from './internals/date-value';
 import { displayFormatForPrecision } from './internals/precision-format';
 
+type DateValue = string | null;
+
+type DateFieldPath = Parameters<typeof validate<DateValue>>[0];
+
 type RangeFieldPath = Parameters<typeof validate<DateRangeValue>>[0];
 
-type RangeBound = Date | null | LogicFn<DateRangeValue, Date | null>;
+type Bound<TValue> = Date | null | LogicFn<TValue, Date | null>;
 
 export type RangeOrderOptions = {
   /**
@@ -26,9 +30,9 @@ export type RangeOrderOptions = {
 
 export type DateRangeBoundsOptions = {
   /** The earliest date either end may name, or a function returning it. */
-  min?: RangeBound;
+  min?: Bound<DateRangeValue>;
   /** The latest date either end may name, or a function returning it. */
-  max?: RangeBound;
+  max?: Bound<DateRangeValue>;
   /** date-fns format of the two wire strings. Defaults to the `DATE_FORMAT` token. */
   valueFormat?: string;
   /** Overrides the default "Choose dates on or after …" / "… on or before …" message. */
@@ -38,6 +42,22 @@ export type DateRangeBoundsOptions = {
 export type DateOnlyRangeBoundsOptions = DateRangeBoundsOptions & {
   /**
    * The unit both ends and the bounds are compared in - the control's `precision`. At `'day'` a
+   * `min` of "now" still admits today.
+   * @default 'day'
+   */
+  precision?: CalendarPrecision;
+};
+
+export type DateBoundsOptions = Omit<DateRangeBoundsOptions, 'min' | 'max'> & {
+  /** The earliest date the value may name, or a function returning it. */
+  min?: Bound<DateValue>;
+  /** The latest date the value may name, or a function returning it. */
+  max?: Bound<DateValue>;
+};
+
+export type DateOnlyBoundsOptions = DateBoundsOptions & {
+  /**
+   * The unit the value and the bounds are compared in - the control's `precision`. At `'day'` a
    * `min` of "now" still admits today.
    * @default 'day'
    */
@@ -98,23 +118,24 @@ export const dateRangeOrder = (path: RangeFieldPath, options: RangeOrderOptions 
 export const timeRangeOrder = (path: RangeFieldPath, options: RangeOrderOptions = {}) =>
   rangeOrder({ path, valueFormat: options.valueFormat ?? inject(TIME_FORMAT), options });
 
-type RangeBoundsConfig = {
-  path: RangeFieldPath;
+type BoundsConfig<TValue> = {
+  path: Parameters<typeof validate<TValue>>[0];
+  sidesOf: (value: TValue) => (string | null)[];
   valueFormat: string;
-  options: DateRangeBoundsOptions;
+  options: { min?: Bound<TValue>; max?: Bound<TValue>; message?: string };
   unit: (date: Date) => Date;
   label: string;
 };
 
-const resolveBound = (bound: RangeBound | undefined, ctx: FieldContext<DateRangeValue>) =>
+const resolveBound = <TValue>(bound: Bound<TValue> | undefined, ctx: FieldContext<TValue>) =>
   typeof bound === 'function' ? bound(ctx) : (bound ?? null);
 
-const rangeBounds = ({ path, valueFormat, options, unit, label }: RangeBoundsConfig) => {
+const bounds = <TValue>({ path, sidesOf, valueFormat, options, unit, label }: BoundsConfig<TValue>) => {
   const labels = injectDateTimeLabels();
   const locale = inject(DATE_LOCALE) ?? undefined;
 
   validate(path, (ctx): RangeMinError | RangeMaxError | undefined => {
-    const sides = [ctx.value().start, ctx.value().end]
+    const sides = sidesOf(ctx.value())
       .map((side) => parseSide(side, valueFormat))
       .filter((side) => side !== null)
       .map((side) => unit(side).getTime());
@@ -133,6 +154,9 @@ const rangeBounds = ({ path, valueFormat, options, unit, label }: RangeBoundsCon
     return undefined;
   });
 };
+
+const rangeBounds = (config: Omit<BoundsConfig<DateRangeValue>, 'sidesOf'>) =>
+  bounds({ ...config, sidesOf: (value) => [value.start, value.end] });
 
 /**
  * Signal-forms validator for `et-date-range-input`: fails the range while either end lies before
@@ -173,6 +197,53 @@ export const dateRangeBounds = (path: RangeFieldPath, options: DateOnlyRangeBoun
 export const dateTimeRangeBounds = (path: RangeFieldPath, options: DateRangeBoundsOptions) =>
   rangeBounds({
     path,
+    valueFormat: options.valueFormat ?? inject(DATE_FORMAT),
+    options,
+    unit: (date) => date,
+    label: 'Pp',
+  });
+
+/**
+ * Signal-forms validator for `et-date-input`: fails the value while it lies before `min` or after
+ * `max`, compared in whole `precision` units. The control's `minDate`/`maxDate` only shape the
+ * picker, so a typed or patched value needs this to be rejected.
+ *
+ * Reports `kind: 'rangeMin'` (with `min`) or `kind: 'rangeMax'` (with `max`), like
+ * {@link dateRangeBounds}. An empty or unparseable value passes; pair it with `required()`.
+ *
+ * ```ts
+ * form(model, (s) => {
+ *   dateBounds(s.birthday, { max: new Date(), valueFormat: 'yyyy-MM-dd' });
+ * });
+ * ```
+ */
+export const dateBounds = (path: DateFieldPath, options: DateOnlyBoundsOptions = {}) => {
+  const precision = options.precision ?? 'day';
+
+  bounds<DateValue>({
+    path,
+    sidesOf: (value) => [value],
+    valueFormat: options.valueFormat ?? inject(DATE_FORMAT),
+    options,
+    unit: (date) => startOfCalendarUnit(date, precision),
+    label: displayFormatForPrecision(precision, inject(DATE_LOCALE)),
+  });
+};
+
+/**
+ * Signal-forms validator for `et-date-time-input`: fails the value while it lies before `min` or
+ * after `max`, compared to the millisecond. Same contract as {@link dateBounds}.
+ *
+ * ```ts
+ * form(model, (s) => {
+ *   dateTimeBounds(s.appointment, { min: () => new Date() });
+ * });
+ * ```
+ */
+export const dateTimeBounds = (path: DateFieldPath, options: DateBoundsOptions = {}) =>
+  bounds<DateValue>({
+    path,
+    sidesOf: (value) => [value],
     valueFormat: options.valueFormat ?? inject(DATE_FORMAT),
     options,
     unit: (date) => date,

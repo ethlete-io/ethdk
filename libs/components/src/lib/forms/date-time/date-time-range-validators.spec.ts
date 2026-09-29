@@ -6,8 +6,10 @@ import { de } from 'date-fns/locale';
 import { provideDateFormat, provideDateLocale, provideTimeFormat } from './date-time-formats';
 import { provideDateTimeLabels } from './date-time-labels';
 import {
+  dateBounds,
   dateRangeBounds,
   dateRangeOrder,
+  dateTimeBounds,
   dateTimeRangeBounds,
   RangeOrderOptions,
   timeRangeOrder,
@@ -189,5 +191,63 @@ describe('dateTimeRangeBounds', () => {
       { kind: 'rangeMin' },
     ]);
     expect(errorsFor(range('2026-03-05T14:30:00+00:00', '2026-03-05T18:00:00+00:00'), apply)).toEqual([]);
+  });
+});
+
+describe('dateBounds and dateTimeBounds', () => {
+  beforeEach(() => TestBed.configureTestingModule({}));
+
+  const valueFormat = 'yyyy-MM-dd';
+
+  const singleErrors = (value: string | null, apply: (path: Parameters<typeof dateBounds>[0]) => void) => {
+    const model = signal({ date: value });
+    const dateForm = form(model, (s) => apply(s.date), { injector: TestBed.inject(Injector) });
+
+    return dateForm
+      .date()
+      .errors()
+      .map(({ kind, message }) => ({ kind, message }));
+  };
+
+  it('fails a date before min and after max with the range kinds and messages', () => {
+    const bound = new Date(2026, 2, 5);
+
+    expect(singleErrors('2026-03-04', (path) => dateBounds(path, { min: bound, valueFormat }))).toEqual([
+      { kind: 'rangeMin', message: 'Choose dates on or after 03/05/2026' },
+    ]);
+    expect(singleErrors('2026-03-06', (path) => dateBounds(path, { max: bound, valueFormat }))).toEqual([
+      { kind: 'rangeMax', message: 'Choose dates on or before 03/05/2026' },
+    ]);
+  });
+
+  it('admits the bound day and passes an empty or unparseable value', () => {
+    const bound = new Date(2026, 2, 5, 15);
+
+    expect(singleErrors('2026-03-05', (path) => dateBounds(path, { min: bound, max: bound, valueFormat }))).toEqual([]);
+    expect(singleErrors(null, (path) => dateBounds(path, { min: bound, valueFormat }))).toEqual([]);
+    expect(singleErrors('nope', (path) => dateBounds(path, { min: bound, valueFormat }))).toEqual([]);
+  });
+
+  it('resolves a function bound and honours a custom message', () => {
+    expect(
+      singleErrors('2026-03-04', (path) =>
+        dateBounds(path, { min: () => new Date(2026, 2, 5), valueFormat, message: 'Too early' }),
+      ),
+    ).toEqual([{ kind: 'rangeMin', message: 'Too early' }]);
+  });
+
+  it('compares a date-time to the millisecond', () => {
+    const bound = new Date(2026, 2, 5, 12, 0, 0);
+
+    expect(
+      singleErrors('2026-03-05T11:59:00', (path) =>
+        dateTimeBounds(path, { min: bound, valueFormat: "yyyy-MM-dd'T'HH:mm:ss" }),
+      ),
+    ).toHaveLength(1);
+    expect(
+      singleErrors('2026-03-05T12:00:00', (path) =>
+        dateTimeBounds(path, { min: bound, valueFormat: "yyyy-MM-dd'T'HH:mm:ss" }),
+      ),
+    ).toEqual([]);
   });
 });

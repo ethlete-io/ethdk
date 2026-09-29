@@ -318,6 +318,10 @@ validators parse the wire strings and compare the dates, not the strings. `dateR
 compares in whole days by default, so a `min` of "now" still admits today; pass
 `precision` alongside the control's own for a month or year range.
 
+The single `et-date-input` and `et-date-time-input` have the same check in `dateBounds` and
+`dateTimeBounds`: their `minDate`/`maxDate` only shape the picker, so a typed value outside the bounds
+needs `dateBounds(s.birthday, { max: new Date(), valueFormat: 'yyyy-MM-dd' })` to be rejected.
+
 ### Presets {#range-presets}
 
 `presets` offers ready-made ranges in the picker - a column beside the calendar on the

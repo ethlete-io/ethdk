@@ -462,6 +462,8 @@ other validator.
 | `timeRangeOrder(path, options?)`               | `et-time-range-input`      | a range whose start time is not after its end time                 |
 | `dateRangeBounds(path, { min?, max?, … })`     | `et-date-range-input`      | a range whose ends both lie within `min`/`max`, in whole days      |
 | `dateTimeRangeBounds(path, { min?, max?, … })` | `et-date-time-range-input` | a range whose ends both lie within `min`/`max`, to the millisecond |
+| `dateBounds(path, { min?, max?, … })`          | `et-date-input`            | a date within `min`/`max`, in whole days                           |
+| `dateTimeBounds(path, { min?, max?, … })`      | `et-date-time-input`       | a date-time within `min`/`max`, to the millisecond                 |
 
 ```ts
 import { hexColor, rgbColor } from '@ethlete/components';
@@ -573,6 +575,9 @@ the control's own parse error cover those. The kinds are `'rangeOrder'`, `'range
 `rangeOrder`, `rangeMin` and `rangeMax` keys of [`DATE_TIME_LABELS`](/components/localization),
 with the bound formatted in the `DATE_LOCALE`; a [custom error resolver](#custom-error-messages)
 can still format the error its own way.
+
+`dateBounds` and `dateTimeBounds` are the single-value counterparts of the two range bounds: same options, same
+`'rangeMin'`/`'rangeMax'` kinds and labels, applied to one date string.
 
 ### Server-side violations
 
