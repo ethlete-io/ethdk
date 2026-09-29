@@ -12,11 +12,42 @@ const tester = new RuleTester({
 
 tester.run('no-leading-underscore-class-member', rule, {
   valid: [
+    { code: `class Foo { constructor(private dep: Dep, _unused: number) {} }` },
+    { code: `class Foo { static shared = 1; accessor value = 1; }` },
     {
       code: `class Foo { private document = inject(DOCUMENT); read() { return this.document; } }`,
     },
   ],
   invalid: [
+    {
+      code: `class Foo { constructor(private _dep: Dep) {} run() { return this._dep; } }`,
+      errors: [{ messageId: 'noLeadingUnderscore' }],
+    },
+    {
+      code: `class Foo { constructor(private _dep: Dep = inject(Dep)) {} }`,
+      errors: [{ messageId: 'noLeadingUnderscore' }],
+    },
+    {
+      code: `class Foo { static _shared = 1; }`,
+      errors: [{ messageId: 'noLeadingUnderscore' }],
+    },
+    {
+      code: `class Foo { private static _shared = 1; }`,
+      errors: [{ messageId: 'noLeadingUnderscore' }],
+    },
+    {
+      code: `class Foo { accessor _value = 1; }`,
+      errors: [{ messageId: 'noLeadingUnderscore' }],
+    },
+    {
+      code: `class Foo { private accessor _value = 1; read() { return this._value; } }`,
+      output: `class Foo { private accessor value = 1; read() { return this.value; } }`,
+      errors: [{ messageId: 'noLeadingUnderscore' }],
+    },
+    {
+      code: `abstract class Foo { abstract _load(): void; abstract _value: number; }`,
+      errors: [{ messageId: 'noLeadingUnderscore' }, { messageId: 'noLeadingUnderscore' }],
+    },
     {
       code: `class Foo { private _document = inject(DOCUMENT); read() { return this._document; } }`,
       output: `class Foo { private document = inject(DOCUMENT); read() { return this.document; } }`,

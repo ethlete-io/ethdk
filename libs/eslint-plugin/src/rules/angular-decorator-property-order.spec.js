@@ -78,6 +78,33 @@ class TestComponent {}
   ],
   invalid: [
     {
+      code: `@Component({
+  template: '', // the template
+  selector: 'a', // the selector
+}) class A {}`,
+      output: `@Component({
+  selector: 'a', // the selector
+  template: '', // the template
+}) class A {}`,
+      errors: [{ messageId: 'outOfOrder' }],
+    },
+    {
+      code: `@Component({ template: '', // trailing
+selector: 'a' }) class A {}`,
+      output: `@Component({
+selector: 'a', template: '', // trailing
+ }) class A {}`,
+      errors: [{ messageId: 'outOfOrder' }],
+    },
+    {
+      code: `@Component({ x: 1, template: '', selector: 'a', // c
+}) class A {}`,
+      output: `@Component({ selector: 'a', // c
+ template: '', x: 1,
+}) class A {}`,
+      errors: [{ messageId: 'outOfOrder' }],
+    },
+    {
       code: `import { Component as Cmp } from '@angular/core';
 @Cmp({ template: '', selector: 'et-a' }) class A {}`,
       output: `import { Component as Cmp } from '@angular/core';

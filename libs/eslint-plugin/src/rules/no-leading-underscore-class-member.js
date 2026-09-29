@@ -11,7 +11,7 @@ const getFixedName = (name) => name.replace(/^_+/, '');
  */
 const getDirectMemberName = (node) => {
   if (node.parent?.type !== 'ClassBody') return null;
-  if (node.static || node.computed) return null;
+  if (node.computed) return null;
   if (node.type === 'MethodDefinition' && node.kind === 'constructor') return null;
   return node.key?.type === 'Identifier' ? node.key.name : null;
 };
@@ -99,7 +99,13 @@ const noLeadingUnderscoreClassMember = {
             !frame.declaredNames.has(newName) &&
             targetNameCounts.get(newName) === 1 &&
             !frame.untrackedNames.has(oldName) &&
-            memberNodes.every((memberNode) => memberNode.accessibility === 'private');
+            memberNodes.every(
+              (memberNode) =>
+                memberNode.accessibility === 'private' &&
+                !memberNode.static &&
+                !memberNode.abstract &&
+                !memberNode.parameterProperty,
+            );
 
           for (const memberNode of memberNodes) {
             context.report({
@@ -125,6 +131,24 @@ const noLeadingUnderscoreClassMember = {
 
       PropertyDefinition: registerMember,
       MethodDefinition: registerMember,
+      AccessorProperty: registerMember,
+      TSAbstractPropertyDefinition: registerMember,
+      TSAbstractMethodDefinition: registerMember,
+      TSAbstractAccessorProperty: registerMember,
+
+      TSParameterProperty(node) {
+        const frame = classStack[classStack.length - 1];
+        const parameter = node.parameter.type === 'AssignmentPattern' ? node.parameter.left : node.parameter;
+        if (!frame || parameter.type !== 'Identifier') return;
+
+        frame.declaredNames.add(parameter.name);
+
+        if (!parameter.name.startsWith('_')) return;
+
+        const members = frame.membersByName.get(parameter.name) ?? [];
+        members.push({ key: parameter, accessibility: node.accessibility, parameterProperty: true });
+        frame.membersByName.set(parameter.name, members);
+      },
 
       MemberExpression(node) {
         const frame = classStack[classStack.length - 1];

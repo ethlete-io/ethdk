@@ -2,4 +2,4 @@
 '@ethlete/eslint-plugin': patch
 ---
 
-`no-native-observers` and `no-direct-dom-manipulation` now catch aliased, subclassed, `window.`-prefixed and bracket-access uses. `no-impure-top-level-provider` sees through `satisfies` and `!`; `enforce-routing-view-naming` rejects `items-viewer`.
+The scan fixes: `no-native-observers` / `no-direct-dom-manipulation` catch aliases and bracket access, `no-leading-underscore-class-member` covers `static`, `abstract`, `accessor` and parameter properties, and `angular-decorator-property-order` no longer swallows `})` after a line comment.

@@ -9,7 +9,7 @@ const { getAngularDecoratorName } = require('./internals/import-resolution');
 /** @typedef {import('estree').Property & TNodeWithRange} TPropertyNode */
 /** @typedef {import('estree').SpreadElement & TNodeWithRange} TSpreadElementNode */
 /** @typedef {import('estree').ObjectExpression & TNodeWithRange & { properties: Array<TPropertyNode | TSpreadElementNode> }} TObjectExpressionNode */
-/** @typedef {{ hasComma: boolean; trailingText: string; originalIndex: number; orderIndex: number; property: TPropertyNode; segmentText: string }} TPropertyEntry */
+/** @typedef {{ endsWithLineComment: boolean; hasComma: boolean; trailingText: string; originalIndex: number; orderIndex: number; property: TPropertyNode; segmentText: string }} TPropertyEntry */
 
 /** @type {Record<TDecoratorName, TDecoratorConfig>} */
 const DECORATOR_CONFIG = {
@@ -144,6 +144,7 @@ const angularDecoratorPropertyOrder = {
             const segmentText = sourceCode.text.slice(segmentStart, segmentEnd);
 
             let trailingText = '';
+            let endsWithLineComment = false;
 
             if (hasComma && tokenAfter) {
               const sameLineComments = sourceCode
@@ -152,11 +153,13 @@ const angularDecoratorPropertyOrder = {
               const lastComment = sameLineComments[sameLineComments.length - 1];
               segmentStart = lastComment?.range ? lastComment.range[1] : tokenAfter.range[1];
               trailingText = sourceCode.text.slice(tokenAfter.range[1], segmentStart);
+              endsWithLineComment = lastComment?.type === 'Line';
             } else {
               segmentStart = propertyNode.range[1];
             }
 
             return {
+              endsWithLineComment,
               hasComma,
               trailingText,
               originalIndex,
@@ -199,9 +202,14 @@ const angularDecoratorPropertyOrder = {
               sortedEntries
                 .map((entry, index) => {
                   const needsComma = index < sortedEntries.length - 1 || trailingComma || entry.trailingText !== '';
-                  return `${entry.segmentText}${needsComma ? ',' : ''}${entry.trailingText}`;
+                  const previous = sortedEntries[index - 1];
+                  const lead = previous?.endsWithLineComment && !entry.segmentText.startsWith('\n') ? '\n' : '';
+
+                  return `${lead}${entry.segmentText}${needsComma ? ',' : ''}${entry.trailingText}`;
                 })
-                .join('') + suffix;
+                .join('') +
+              (sortedEntries.at(-1)?.endsWithLineComment && !suffix.startsWith('\n') ? '\n' : '') +
+              suffix;
 
             return fixer.replaceTextRange([openingBrace.range[1], closingBrace.range[0]], reorderedBody);
           },

@@ -30,6 +30,9 @@ const MEMBER_GROUP_INDEX = new Map(
   MEMBER_GROUP_ORDER.map(/** @param {TMemberGroup} group @param {number} index */ (group, index) => [group, index]),
 );
 
+/** @param {any} node */
+const isProperty = (node) => node.type === 'PropertyDefinition' || node.type === 'AccessorProperty';
+
 /**
  * @param {any} key
  */
@@ -95,7 +98,7 @@ const getAngularCallName = (sourceCode, value) => {
  * @param {Set<string>} apiNames
  */
 const isPropertyInitializedWith = (sourceCode, node, apiNames) => {
-  if (node.type !== 'PropertyDefinition') return false;
+  if (!isProperty(node)) return false;
 
   const apiName = getAngularCallName(sourceCode, node.value);
   return apiName !== null && apiNames.has(apiName);
@@ -108,7 +111,7 @@ const INJECT_HELPER_NAME_PATTERN = /^inject[A-Z]/;
  * @param {any} node
  */
 const isPropertyInitializedWithInject = (sourceCode, node) => {
-  if (node.type !== 'PropertyDefinition') return false;
+  if (!isProperty(node)) return false;
   if (getAngularCallName(sourceCode, node.value) === 'inject') return true;
 
   const rootName = getCallRootName(node.value);
@@ -123,7 +126,7 @@ const isPropertyInitializedWithInject = (sourceCode, node) => {
 const getMemberGroup = (sourceCode, node) => {
   if (node.static) return null;
 
-  if (node.type === 'PropertyDefinition') {
+  if (isProperty(node)) {
     if (isPropertyInitializedWithInject(sourceCode, node)) {
       return 'inject';
     }
@@ -194,7 +197,7 @@ const collectThisReferences = (node, references) => {
  * @param {any} node
  */
 const getInitializerDependencies = (node) => {
-  if (node.type !== 'PropertyDefinition' || !node.value) {
+  if (!isProperty(node) || !node.value) {
     return new Set();
   }
 

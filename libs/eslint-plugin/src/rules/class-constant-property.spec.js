@@ -29,6 +29,24 @@ tester.run('class-constant-property', rule, {
   ],
   invalid: [
     {
+      code: `class Foo { #limit = 1; }`,
+      output: `class Foo { readonly #limit = 1; }`,
+      errors: [{ messageId: 'shouldBeReadonly' }],
+    },
+    {
+      code: `class Foo extends Base { override limit = 1; }`,
+      output: `class Foo extends Base { override readonly limit = 1; }`,
+      errors: [{ messageId: 'shouldBeReadonly' }],
+    },
+    {
+      code: `class Foo { readonly #limit = 1; }`,
+      errors: [{ messageId: 'shouldUseScreamingCase' }],
+    },
+    {
+      code: `class Foo extends Base { override readonly limit = 1; }`,
+      errors: [{ messageId: 'shouldUseScreamingCase' }],
+    },
+    {
       code: `class Foo { ID = nextId++; }`,
       output: `class Foo { readonly ID = nextId++; }`,
       errors: [{ messageId: 'shouldBeReadonly' }],

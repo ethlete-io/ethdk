@@ -11,6 +11,9 @@ const tester = new RuleTester({
 
 tester.run('class-member-order', rule, {
   valid: [
+    { code: `class C { a = this.b; b = this.a; }` },
+    { code: `class C { get x() { return 1; } set x(v) {} }` },
+    { code: `class C { accessor a = input(); accessor b = 1; m() {} }` },
     {
       code: `import { inject } from 'some-other-lib';
 class C {
@@ -75,6 +78,21 @@ class C {
     },
   ],
   invalid: [
+    {
+      code: `class C { m() {} accessor a = 1; }`,
+      output: `class C { accessor a = 1; m() {} }`,
+      errors: [{ messageId: 'groupOrder' }],
+    },
+    {
+      code: `class C { get x() { return 1; } y = 1; }`,
+      output: `class C { y = 1; get x() { return 1; } }`,
+      errors: [{ messageId: 'groupOrder' }],
+    },
+    {
+      code: `class C { a = this.b; b = 1; }`,
+      output: `class C { b = 1; a = this.b; }`,
+      errors: [{ messageId: 'dependencyOrder' }],
+    },
     {
       code: `import { inject as ngInject } from '@angular/core';
 class C {
