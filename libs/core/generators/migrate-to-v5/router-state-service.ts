@@ -778,7 +778,7 @@ function handleInlineInjectPatterns(
   importsNeeded: Set<string>;
 } {
   const importsNeeded = new Set<string>();
-  let updatedContent = content;
+  const edits: InlineEdit[] = [];
 
   const { signalPropertyMap, observablePropertyMap } = getPropertyMaps();
 
@@ -835,9 +835,8 @@ function handleInlineInjectPatterns(
             const injectFn = signalPropertyMap[propertyName] || observablePropertyMap[propertyName];
 
             if (injectFn) {
-              const oldText = node.getText(sourceFile);
               const newText = `${injectFn}()`;
-              updatedContent = updatedContent.replace(oldText, newText);
+              edits.push({ start: node.getStart(sourceFile), end: node.getEnd(), text: newText });
               importsNeeded.add(injectFn);
 
               // Mark this property access as processed
@@ -861,8 +860,6 @@ function handleInlineInjectPatterns(
         ) {
           const injectArg = arg.expression.expression.arguments[0]!;
           if (ts.isIdentifier(injectArg) && injectArg.text === 'RouterStateService') {
-            const oldText = node.getText(sourceFile);
-
             // Extract generic type and args
             const innerCallText = arg.getText(sourceFile);
             const genericMatch = innerCallText.match(new RegExp(`${methodName}<([^>]+)>`));
@@ -875,7 +872,7 @@ function handleInlineInjectPatterns(
             // Since it's wrapped in toSignal and returns a signal, no need for toObservable
             const newText = injectCall;
 
-            updatedContent = updatedContent.replace(oldText, newText);
+            edits.push({ start: node.getStart(sourceFile), end: node.getEnd(), text: newText });
             importsNeeded.add(methodInfo.injectFn);
 
             // Mark this call as processed
@@ -923,7 +920,7 @@ function handleInlineInjectPatterns(
           const injectCall = `${methodInfo.injectFn}${genericType}(${args})`;
           const newText = methodInfo.type === 'observable' ? `toObservable(${injectCall})` : injectCall;
 
-          updatedContent = updatedContent.replace(oldText, newText);
+          edits.push({ start: node.getStart(sourceFile), end: node.getEnd(), text: newText });
           importsNeeded.add(methodInfo.injectFn);
 
           if (methodInfo.type === 'observable') {
@@ -964,13 +961,12 @@ function handleInlineInjectPatterns(
               return;
             }
 
-            const oldText = node.getText(sourceFile);
             const type = observablePropertyMap[propertyName] ? 'observable' : 'signal';
 
             const injectCall = `${injectFn}()`;
             const newText = type === 'observable' ? `toObservable(${injectCall})` : injectCall;
 
-            updatedContent = updatedContent.replace(oldText, newText);
+            edits.push({ start: node.getStart(sourceFile), end: node.getEnd(), text: newText });
             importsNeeded.add(injectFn);
 
             if (type === 'observable') {
@@ -986,7 +982,7 @@ function handleInlineInjectPatterns(
 
   sourceFile.forEachChild(visitNode);
 
-  return { content: updatedContent, importsNeeded };
+  return { content: applyInlineEdits(content, edits), importsNeeded };
 }
 
 function addImportsToPackage(
@@ -1021,7 +1017,7 @@ function addImportsToPackage(
     const newImportText = `import { ${allImports.join(', ')} } from '${packageName}';`;
     const oldImportText = existingImport.getText(sourceFile);
 
-    return content.replace(oldImportText, newImportText);
+    return content.replace(oldImportText, () => newImportText);
   } else {
     // Add new import at the top
     const newImportText = `import { ${importsList.join(', ')} } from '${packageName}';\n`;
@@ -1432,4 +1428,19 @@ export default async function migrateRouterStateService(tree: Tree) {
   } else {
     console.log('\nℹ️  No RouterStateService usage found\n');
   }
+}
+
+type InlineEdit = { start: number; end: number; text: string };
+
+function applyInlineEdits(content: string, edits: InlineEdit[]): string {
+  const accepted: InlineEdit[] = [];
+  for (const edit of [...edits].sort((a, b) => a.start - b.start || b.end - a.end)) {
+    const last = accepted.at(-1);
+    if (last && edit.start < last.end) continue;
+    accepted.push(edit);
+  }
+  return accepted.reduceRight(
+    (result, edit) => result.slice(0, edit.start) + edit.text + result.slice(edit.end),
+    content,
+  );
 }

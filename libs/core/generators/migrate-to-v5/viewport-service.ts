@@ -26,7 +26,7 @@ export default async function migrateViewportService(tree: Tree) {
           styleFiles.push(path);
         }
       } else {
-        if (child === 'node_modules') continue;
+        if (SKIPPED_DIRECTORIES.has(child)) continue;
         findFiles(path);
       }
     }
@@ -305,6 +305,8 @@ export default async function migrateViewportService(tree: Tree) {
   }
 }
 
+const SKIPPED_DIRECTORIES = new Set(['node_modules', 'dist', '.git', '.angular', '.nx']);
+
 type CssVariablesUsed = {
   hasViewportVariables: boolean; // --et-vw, --et-vh
   hasScrollbarVariables: boolean; // --et-sw, --et-sh
@@ -325,6 +327,7 @@ function detectCssVariableUsage(tree: Tree, styleFiles: string[]): CssVariablesU
       if (tree.isFile(path) && path.endsWith('.ts')) {
         allFiles.push(path);
       } else if (!tree.isFile(path)) {
+        if (SKIPPED_DIRECTORIES.has(child)) continue;
         findTsFiles(path);
       }
     }
@@ -1650,7 +1653,7 @@ function addImportsToPackage(
       const allImports = [...existingImportNames, ...newImports].sort();
       const importText = existingImport.getText(sourceFile);
       const newImportText = `import { ${allImports.join(', ')} } from '${packageName}';`;
-      return content.replace(importText, newImportText);
+      return content.replace(importText, () => newImportText);
     }
   } else if (!existingImport) {
     const firstStatement = sourceFile.statements[0];
@@ -1812,7 +1815,7 @@ function handleInlineInjectPatterns(
   importsNeeded: Set<string>;
 } {
   const importsNeeded = new Set<string>();
-  let updatedContent = content;
+  const edits: InlineEdit[] = [];
 
   // Get the ViewportService package to determine mapping
   const packageName = getViewportServicePackage(sourceFile);
@@ -1859,9 +1862,8 @@ function handleInlineInjectPatterns(
             const injectFn = signalPropertyMap[propertyName] || observablePropertyMap[propertyName];
 
             if (injectFn) {
-              const oldText = node.getText(sourceFile);
               const newText = `${injectFn}()`;
-              updatedContent = updatedContent.replace(oldText, newText);
+              edits.push({ start: node.getStart(sourceFile), end: node.getEnd(), text: newText });
               importsNeeded.add(injectFn);
               processedNodes.add(arg);
             }
@@ -1883,15 +1885,13 @@ function handleInlineInjectPatterns(
         ) {
           const injectArg = arg.expression.expression.arguments[0]!;
           if (ts.isIdentifier(injectArg) && injectArg.text === 'ViewportService') {
-            const oldText = node.getText(sourceFile);
-
             // Extract arguments from the method call
             const args = arg.arguments.map((a) => a.getText(sourceFile)).join(', ');
 
             // Since it's wrapped in toSignal and our inject functions return signals, remove toSignal
             const newText = `${methodInfo.injectFn}(${args})`;
 
-            updatedContent = updatedContent.replace(oldText, newText);
+            edits.push({ start: node.getStart(sourceFile), end: node.getEnd(), text: newText });
             importsNeeded.add(methodInfo.injectFn);
             processedNodes.add(arg);
           }
@@ -1923,7 +1923,6 @@ function handleInlineInjectPatterns(
             return;
           }
 
-          const oldText = node.getText(sourceFile);
           const args = node.arguments.map((arg) => arg.getText(sourceFile)).join(', ');
 
           // Only wrap with toObservable if the assigned variable/property ends with $
@@ -1942,7 +1941,7 @@ function handleInlineInjectPatterns(
             importsNeeded.add('toObservable');
           }
 
-          updatedContent = updatedContent.replace(oldText, newText);
+          edits.push({ start: node.getStart(sourceFile), end: node.getEnd(), text: newText });
           importsNeeded.add(methodInfo.injectFn);
         }
       }
@@ -1973,8 +1972,6 @@ function handleInlineInjectPatterns(
               return;
             }
 
-            const oldText = node.getText(sourceFile);
-
             // Check if this is an observable property (ends with $)
             const isObservable = !!observablePropertyMap[propertyName];
             let newText = `${injectFn}()`;
@@ -1982,7 +1979,7 @@ function handleInlineInjectPatterns(
               newText = `toObservable(${newText})`;
               importsNeeded.add('toObservable');
             }
-            updatedContent = updatedContent.replace(oldText, newText);
+            edits.push({ start: node.getStart(sourceFile), end: node.getEnd(), text: newText });
             importsNeeded.add(injectFn);
           }
         }
@@ -1994,7 +1991,7 @@ function handleInlineInjectPatterns(
 
   sourceFile.forEachChild(visitNode);
 
-  return { content: updatedContent, importsNeeded };
+  return { content: applyInlineEdits(content, edits), importsNeeded };
 }
 
 function removeUnusedImports(sourceFile: ts.SourceFile, content: string): string {
@@ -2152,4 +2149,19 @@ function checkIfPropertyIsUsedElsewhere(
   });
 
   return isUsed;
+}
+
+type InlineEdit = { start: number; end: number; text: string };
+
+function applyInlineEdits(content: string, edits: InlineEdit[]): string {
+  const accepted: InlineEdit[] = [];
+  for (const edit of [...edits].sort((a, b) => a.start - b.start || b.end - a.end)) {
+    const last = accepted.at(-1);
+    if (last && edit.start < last.end) continue;
+    accepted.push(edit);
+  }
+  return accepted.reduceRight(
+    (result, edit) => result.slice(0, edit.start) + edit.text + result.slice(edit.end),
+    content,
+  );
 }

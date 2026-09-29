@@ -908,6 +908,90 @@ class Dummy {
     });
   });
 
+  describe('multiple occurrences and skipped directories', () => {
+    it('should migrate every occurrence of an inline toSignal property', async () => {
+      tree.write(
+        'test.ts',
+        `import { toSignal } from '@angular/core/rxjs-interop';
+import { inject } from '@angular/core';
+import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  note = 'toSignal(inject(ViewportService).isXs$)';
+  a = toSignal(inject(ViewportService).isXs$);
+  b = toSignal(inject(ViewportService).isXs$);
+}`,
+      );
+      await migrateViewportService(tree);
+      const result = tree.read('test.ts', 'utf-8')!;
+      expect(result).toContain("note = 'toSignal(inject(ViewportService).isXs$)'");
+      expect(result.match(/injectIsXs\(\)/g)).toHaveLength(2);
+    });
+
+    it('should migrate every occurrence of an inline toSignal method call', async () => {
+      tree.write(
+        'test.ts',
+        `import { toSignal } from '@angular/core/rxjs-interop';
+import { inject } from '@angular/core';
+import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  note = "toSignal(inject(ViewportService).observe({ min: 'sm' }))";
+  a = toSignal(inject(ViewportService).observe({ min: 'sm' }));
+  b = toSignal(inject(ViewportService).observe({ min: 'sm' }));
+}`,
+      );
+      await migrateViewportService(tree);
+      const result = tree.read('test.ts', 'utf-8')!;
+      expect(result).toContain("toSignal(inject(ViewportService).observe({ min: 'sm' }))\";");
+      expect(result.match(/injectObserveBreakpoint\(\{ min: 'sm' \}\)/g)).toHaveLength(2);
+    });
+
+    it('should migrate every occurrence of an inline method call and property access', async () => {
+      tree.write(
+        'test.ts',
+        `import { inject } from '@angular/core';
+import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  note = 'inject(ViewportService).observe({ max: 1 }) inject(ViewportService).isXs$';
+  a$ = inject(ViewportService).observe({ max: 'sm' });
+  b$ = inject(ViewportService).observe({ max: 'sm' });
+  c = inject(ViewportService).isXs$;
+  d = inject(ViewportService).isXs$;
+}`,
+      );
+      await migrateViewportService(tree);
+      const result = tree.read('test.ts', 'utf-8')!;
+      expect(result).toContain("note = 'inject(ViewportService).observe({ max: 1 }) inject(ViewportService).isXs$'");
+      expect(result.match(/toObservable\(injectObserveBreakpoint\(\{ max: 'sm' \}\)\)/g)).toHaveLength(2);
+      expect(result.match(/toObservable\(injectIsXs\(\)\)/g)).toHaveLength(2);
+    });
+
+    it('should leave files under node_modules untouched and never read them', async () => {
+      const vendored = `import { inject } from '@angular/core';
+import { ViewportService } from '@ethlete/core';
+
+const style = 'width: var(--et-vw); height: var(--et-sh);';
+
+class Vendored {
+  a = inject(ViewportService).isXs$;
+}`;
+
+      tree.write('node_modules/pkg/vendored.ts', vendored);
+      tree.write('dist/out/bundle.ts', vendored);
+      tree.write('test.ts', `import { ViewportService } from '@ethlete/core';\n\nclass Dummy {}`);
+
+      const readSpy = vi.spyOn(tree, 'read');
+      await migrateViewportService(tree);
+
+      const readPaths = readSpy.mock.calls.map(([path]) => path);
+      expect(readPaths.filter((path) => path.startsWith('node_modules') || path.startsWith('dist'))).toEqual([]);
+      expect(tree.read('node_modules/pkg/vendored.ts', 'utf-8')).toBe(vendored);
+      expect(tree.read('dist/out/bundle.ts', 'utf-8')).toBe(vendored);
+    });
+  });
+
   describe('edge cases', () => {
     it('should migrate inline inject observe method to toObservable(injectObserveBreakpoint())', async () => {
       const input = `import { inject } from '@angular/core';

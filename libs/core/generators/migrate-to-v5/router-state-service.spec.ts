@@ -233,6 +233,62 @@ export class MyComponent {
     });
   });
 
+  describe('multiple occurrences', () => {
+    it('should migrate every occurrence of an inline property access', async () => {
+      tree.write(
+        'test.ts',
+        `import { inject } from '@angular/core';
+import { RouterStateService } from '@ethlete/core';
+
+class Dummy {
+  note = 'inject(RouterStateService).route$';
+  a$ = inject(RouterStateService).route$;
+  b$ = inject(RouterStateService).route$;
+}`,
+      );
+      await migrateRouterStateService(tree);
+      const result = tree.read('test.ts', 'utf-8')!;
+      expect(result).toContain("note = 'inject(RouterStateService).route$'");
+      expect(result.match(/toObservable\(injectRoute\(\)\)/g)).toHaveLength(2);
+    });
+
+    it('should migrate every occurrence of an inline toSignal property and method call', async () => {
+      tree.write(
+        'test.ts',
+        `import { toSignal } from '@angular/core/rxjs-interop';
+import { inject } from '@angular/core';
+import { RouterStateService } from '@ethlete/core';
+
+class Dummy {
+  note = 'toSignal(inject(RouterStateService).route$) toSignal(inject(RouterStateService).selectQueryParam(1))';
+  a = toSignal(inject(RouterStateService).route$);
+  b = toSignal(inject(RouterStateService).route$);
+  c = toSignal(inject(RouterStateService).selectQueryParam('x'));
+  d = toSignal(inject(RouterStateService).selectQueryParam('x'));
+}`,
+      );
+      await migrateRouterStateService(tree);
+      const result = tree.read('test.ts', 'utf-8')!;
+      expect(result).toContain(
+        "note = 'toSignal(inject(RouterStateService).route$) toSignal(inject(RouterStateService).selectQueryParam(1))'",
+      );
+      expect(result.match(/injectRoute\(\)/g)).toHaveLength(2);
+      expect(result.match(/injectQueryParam\('x'\)/g)).toHaveLength(2);
+    });
+
+    it('should leave files under node_modules untouched', async () => {
+      const vendored = `import { inject } from '@angular/core';
+import { RouterStateService } from '@ethlete/core';
+
+class Vendored {
+  a$ = inject(RouterStateService).route$;
+}`;
+      tree.write('node_modules/pkg/vendored.ts', vendored);
+      await migrateRouterStateService(tree);
+      expect(tree.read('node_modules/pkg/vendored.ts', 'utf-8')).toBe(vendored);
+    });
+  });
+
   describe('edge cases', () => {
     it('should handle selectQueryParam with pipe chain and multiline formatting', async () => {
       const input = `import { RouterStateService } from '@ethlete/core';
