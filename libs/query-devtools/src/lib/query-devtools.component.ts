@@ -1516,12 +1516,8 @@ export class QueryDevtoolsComponent implements OnInit {
   }
 
   /**
-   * Puts the panel back the way it ships: layout, filters, selections, pins and the stored overrides.
-   * The settings themselves stay - a panel behaving oddly is a reason to reset its state, not to lose the
-   * scopes and limits that were chosen deliberately.
-   *
-   * Resetting the live state is the point, not just clearing the keys: the persistence effects would
-   * write the current state straight back into whatever store the scopes name.
+   * Puts layout, filters, selections, pins and stored overrides back the way they ship; the settings stay.
+   * Resets the live state too, or the persistence effects write it straight back.
    */
   public resetDevtools() {
     clearQueryDevtoolsStore(STORAGE_KEY);
@@ -1619,11 +1615,8 @@ export class QueryDevtoolsComponent implements OnInit {
   }
 
   /**
-   * Moves the panel into a window of its own - the same element, adopted by the pop-up's document, so
-   * every signal binding in it keeps updating from the app it is inspecting.
-   *
-   * The panel's styles are global `<style>` tags in the host document, and the theming tokens it reads
-   * hang off the root element, so both are copied over; without them the pop-out renders unstyled.
+   * Moves the panel element into a pop-up window. The host document's `<style>` tags and root theming
+   * tokens must be copied over with it, or the pop-out renders unstyled.
    */
   public popOut() {
     const panel = this.panelEl()?.nativeElement;
@@ -1786,14 +1779,9 @@ export class QueryDevtoolsComponent implements OnInit {
   }
 
   /**
-   * The headers a query's request carries, as a plain `name: value` record, or `null` for a query that
-   * has none the panel can read. The set the last run sent, so it stays readable after the token it
-   * used was replaced; for a query that has not run, what its current args and its client resolve to
-   * now. `null` while a header provider throws - a secure query's needs an access token.
-   *
-   * The args tree cannot answer this on its own: a `withArgs` query reads its args from the feature's
-   * source, which the secure `Authorization` provider is never written back to, and client-level
-   * headers are merged in per execution rather than being part of the args at all.
+   * The headers the last run sent, or what the args and client resolve to now for a query that has not
+   * run; `null` while a header provider throws. Client headers and the secure `Authorization` never
+   * reach the args, so the args alone cannot answer this.
    */
   public requestHeaders(query: AnyQuery) {
     const request = query.subtle.request();
@@ -2935,13 +2923,8 @@ export class QueryDevtoolsComponent implements OnInit {
   }
 
   /**
-   * The panel's chrome tokens as the app currently resolves them, so a pop-out keeps the surface it was
-   * docked in. Its own CSS resolves them from the host app's theme, and that theme is set on an ancestor
-   * the pop-out does not have - inherited afresh over there, the panel would take the document's theme
-   * (usually the light one) rather than the one it was just being read against.
-   *
-   * Empty on a browser that does not enumerate custom properties, which leaves the tokens to be
-   * inherited as before.
+   * The chrome tokens as the app resolves them now: the pop-out has no ancestor carrying the host theme.
+   * Empty on a browser that does not enumerate custom properties.
    */
   private chromeTokens() {
     const styles = this.document.defaultView?.getComputedStyle(this.hostEl.nativeElement);
