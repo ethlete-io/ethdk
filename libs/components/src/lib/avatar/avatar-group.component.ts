@@ -9,6 +9,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { AvatarComponent, AVATAR_SHAPES, AVATAR_SIZES } from './avatar.component';
+import { injectAvatarLabels } from './avatar-labels';
 
 /**
  * Overlaps a row of `et-avatar`s into a stack, each one ringed so it reads apart from its neighbor.
@@ -31,7 +32,12 @@ import { AvatarComponent, AVATAR_SHAPES, AVATAR_SIZES } from './avatar.component
     <ng-content />
 
     @if (overflowCount() > 0) {
-      <et-avatar [size]="overflowSize()" [shape]="overflowShape()" class="et-avatar-group-overflow"
+      <et-avatar
+        [size]="overflowSize()"
+        [shape]="overflowShape()"
+        [attr.aria-label]="labels().more(overflowCount())"
+        class="et-avatar-group-overflow"
+        role="img"
         >+{{ overflowCount() }}</et-avatar
       >
     }
@@ -44,6 +50,8 @@ import { AvatarComponent, AVATAR_SHAPES, AVATAR_SIZES } from './avatar.component
   },
 })
 export class AvatarGroupComponent {
+  protected labels = injectAvatarLabels();
+
   /**
    * How many of the projected avatars to show. The rest are hidden and counted into a trailing `+N`
    * avatar. Unset shows all of them.

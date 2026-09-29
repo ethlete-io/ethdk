@@ -46,7 +46,7 @@ Theme names are project-specific - the SDK ships none; examples in these guides 
 | ------------ | --------------------- | ------- | ------------------------------------------------------------------------------------------------ |
 | `maxVisible` | `number \| undefined` | -       | How many projected avatars to show. The rest are hidden and counted into a trailing `+N` avatar. |
 
-`maxVisible` counts the avatars you projected, not the `+N` - `maxVisible: 3` with five members shows three plus a `+2`. The overflow avatar is the group's own and copies the first projected avatar's `size` and `shape`, so nothing has to be kept in sync. Leave `maxVisible` unset and every avatar is shown; a `+N` you project yourself is then just another avatar, exactly as before.
+`maxVisible` counts the avatars you projected, not the `+N` - `maxVisible: 3` with five members shows three plus a `+2`. The overflow avatar is the group's own and copies the first projected avatar's `size` and `shape`, so nothing has to be kept in sync. Leave `maxVisible` unset and every avatar is shown; a `+N` you project yourself is then just another avatar, exactly as before. The overflow avatar is exposed to screen readers as `"2 more"`; localize it with `provideAvatarLabels({ more: (count) => `${count} weitere` })`.
 
 ### Avatars that link somewhere
 
