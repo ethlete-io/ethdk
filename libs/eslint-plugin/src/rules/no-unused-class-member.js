@@ -139,7 +139,6 @@ const noUnusedClassMember = {
     const registerMember = (node) => {
       const frame = classStack[classStack.length - 1];
       if (!frame) return;
-      // Only register members that belong directly to this class body
       if (node.parent !== frame.classBody) return;
 
       if (node.static) return;

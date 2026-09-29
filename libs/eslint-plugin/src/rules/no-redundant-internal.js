@@ -28,6 +28,7 @@ const getAttachedInternalComment = (sourceCode, node) => {
 const getMemberName = (node) => {
   if (node.key?.type === 'Identifier') return node.key.name;
   if (node.key?.type === 'Literal' && typeof node.key.value === 'string') return node.key.value;
+  if (node.key?.type === 'PrivateIdentifier') return `#${node.key.name}`;
 
   return 'member';
 };
@@ -87,7 +88,9 @@ const noRedundantInternal = {
         return;
       }
 
-      if (node.accessibility !== 'private') {
+      const isPrivateIdentifier = node.key?.type === 'PrivateIdentifier';
+
+      if (node.accessibility !== 'private' && !isPrivateIdentifier) {
         return;
       }
 
@@ -95,7 +98,7 @@ const noRedundantInternal = {
         node: internalComment,
         messageId: 'redundantInternal',
         data: {
-          accessibility: node.accessibility,
+          accessibility: 'private',
           kind: getMemberKind(node),
           name: getMemberName(node),
         },

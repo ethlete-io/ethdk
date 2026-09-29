@@ -231,7 +231,7 @@ const isReferencedFromTemplateOrHostMetadata = (memberName, metadata, context) =
  * @param {any} node
  */
 const getMemberName = (node) => {
-  if (node.key?.type === 'Identifier') return node.key.name;
+  if (node.key?.type === 'Identifier' && !node.computed) return node.key.name;
   if (node.key?.type === 'Literal' && typeof node.key.value === 'string') return node.key.value;
 
   return null;

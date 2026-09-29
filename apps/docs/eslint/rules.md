@@ -128,16 +128,16 @@ Creators are recognised by name (`^legacy` by default); set `creatorPattern` to 
 
 ## Class members & accessibility
 
-| Rule                                 | What it enforces                                                                                                                                                  | Fix | Default |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
-| `inject-member-accessibility`        | Injected members are `private` by default and `protected` for template/host use or abstract bases; explicit `public` only to intentionally expose an API          | 🔧  | error   |
-| `template-member-accessibility`      | Non-injected members referenced from templates/host bindings need an explicit accessibility modifier; implicitly public surface members must be explicit `public` | 🔧  | error   |
-| `no-redundant-internal`              | No `@internal` JSDoc tag on members already hidden by `private`; protected members may need it for `stripInternal`                                                | 🔧  | error   |
-| `no-leading-underscore-class-member` | No leading underscores on class members (renames private members automatically when safe)                                                                         | 🔧  | error   |
-| `no-member-alias`                    | No members that are pure aliases for a nested property of another member - widen the source member's accessibility instead                                        |     | error   |
-| `no-unused-class-member`             | No provably unread `private` / `protected` members; framework-decorated, overridden and abstract-base members are exempt                                          |     | error   |
-| `class-constant-property`            | True class constants use `readonly` and SCREAMING_CASE (the fixer adds `readonly`; renaming is manual)                                                            | 🔧  | error   |
-| `class-member-order`                 | Class members follow the styleguide order: inject members, inputs, outputs, queries, properties, constructor, methods                                             | 🔧  | error   |
+| Rule                                 | What it enforces                                                                                                                                                                                                                                   | Fix | Default |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| `inject-member-accessibility`        | Injected members are `private` by default and `protected` for template/host use or abstract bases; explicit `public` only to intentionally expose an API                                                                                           | 🔧  | error   |
+| `template-member-accessibility`      | Non-injected members referenced from templates/host bindings need an explicit accessibility modifier; implicitly public surface members must be explicit `public`                                                                                  | 🔧  | error   |
+| `no-redundant-internal`              | No `@internal` JSDoc tag on members already hidden by `private`; protected members may need it for `stripInternal`                                                                                                                                 | 🔧  | error   |
+| `no-leading-underscore-class-member` | No leading underscores on class members (renames private members automatically when safe)                                                                                                                                                          | 🔧  | error   |
+| `no-member-alias`                    | No members that are pure aliases for a nested property of another member - widen the source member's accessibility instead                                                                                                                         |     | error   |
+| `no-unused-class-member`             | No members that are never referenced via `this.x` (a write-only member counts as used); `private` always, `protected` only in `@Directive` / `@Pipe` / `@Injectable` classes; framework-decorated, overridden and abstract-base members are exempt |     | error   |
+| `class-constant-property`            | True class constants use `readonly` and SCREAMING_CASE (the fixer adds `readonly`; renaming is manual)                                                                                                                                             | 🔧  | error   |
+| `class-member-order`                 | Class members follow the styleguide order: inject members, inputs, outputs, queries, properties, constructor, methods                                                                                                                              | 🔧  | error   |
 
 ```ts
 // ❌

@@ -23,6 +23,16 @@ fs.writeFileSync(externalContractPath, ['export type PublicApi = {', '  activate
 tester.run('template-member-accessibility', rule, {
   valid: [
     {
+      code: `
+        @Component({
+          template: '{{ themeClass() }}',
+        })
+        class C {
+          [themeClass]() {}
+        }
+      `,
+    },
+    {
       code: `import { Component } from 'some-other-lib';
 @Component({ template: '{{ themeClass() }}' }) class C { themeClass = computed(() => 'x'); }`,
     },

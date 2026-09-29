@@ -63,11 +63,9 @@ const getMethodAliasInfo = (node) => {
   }
   if (!callExpr || callExpr.type !== 'CallExpression') return null;
 
-  // Must have zero arguments
   if (callExpr.arguments.length !== 0) return null;
 
   const callee = callExpr.callee;
-  // callee must be: this.something.method
   if (callee.type !== 'MemberExpression') return null;
   if (callee.computed) return null;
   if (callee.property.type !== 'Identifier') return null;
@@ -115,14 +113,11 @@ const noMemberAlias = {
         const value = node.value;
         if (!value) return;
 
-        // Must be: this.something.property
         if (value.type !== 'MemberExpression') return;
-        // Outer property must be a plain identifier (not computed)
         if (value.computed) return;
         if (value.property.type !== 'Identifier') return;
 
         const obj = value.object;
-        // Object must itself be: this.something
         if (obj.type !== 'MemberExpression') return;
         if (obj.computed) return;
         if (obj.object.type !== 'ThisExpression') return;

@@ -13,6 +13,12 @@ tester.run('no-redundant-internal', rule, {
   valid: [
     {
       code: `class C {
+  // @internal
+  private service = inject(Service);
+}`,
+    },
+    {
+      code: `class C {
   private service = inject(Service);
 }`,
     },
@@ -50,6 +56,18 @@ tester.run('no-redundant-internal', rule, {
     },
   ],
   invalid: [
+    {
+      code: `class C {
+  /** @internal */
+  #service = inject(Service);
+}`,
+      output: `class C {
+  #service = inject(Service);
+}`,
+      errors: [
+        { messageId: 'redundantInternal', data: { accessibility: 'private', kind: 'property', name: '#service' } },
+      ],
+    },
     {
       code: `class C {
   /** @internal */

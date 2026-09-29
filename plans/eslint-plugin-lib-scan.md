@@ -1,7 +1,7 @@
 # eslint-plugin lib scan — open findings
 
 Scan of `libs/eslint-plugin` from 2026-08-19. Fixed findings were removed on 2026-09-26 (git history
-has them). All 23 Medium findings are done (740745cfd, 0e8f4306d, fdc275315, 2ff9e0dd3, 5070c1fac, 1115ebd01, b962944d7, d8a6c9352, 8f943a33c, b96cb14a9, e183dbc6b, d6e261816, 608346bb0, 9ce9b2b4c, 3d9bbb0e5, 562f182ac, 5d32f7e16, 10af4378d, 836c57050, 1dd03c288, 321ffa7e8, f4ba9f3c5, 64e382a80; the spread bail-out of `angular-decorator-property-order` is kept). Still open: 33 Low, 13 spec-coverage items. Paths are relative to
+has them). All 23 Medium findings are done (740745cfd, 0e8f4306d, fdc275315, 2ff9e0dd3, 5070c1fac, 1115ebd01, b962944d7, d8a6c9352, 8f943a33c, b96cb14a9, e183dbc6b, d6e261816, 608346bb0, 9ce9b2b4c, 3d9bbb0e5, 562f182ac, 5d32f7e16, 10af4378d, 836c57050, 1dd03c288, 321ffa7e8, f4ba9f3c5, 64e382a80; the spread bail-out of `angular-decorator-property-order` is kept). Still open: 29 Low, 13 spec-coverage items. Paths are relative to
 `libs/eslint-plugin/src/rules/` unless shown in full.
 
 ## ordering & naming
@@ -20,12 +20,8 @@ has them). All 23 Medium findings are done (740745cfd, 0e8f4306d, fdc275315, 2ff
 
 ## visibility, members & internals
 
-- Low: `no-redundant-internal` accepts `// @internal` and `/** @internal */ #x`. S
 - Low: `accessor`/`abstract` members invisible to `template-member-accessibility` and `no-unused-class-member`. M
-- Low: `rules.md:119` omits that write-only members count as read and that `protected` is only checked on some decorators. S
-- Low: comments in `no-member-alias.js:66,70,118,120,125`, `no-unused-class-member.js:142`. S
-- Low: `getMemberName` ignores `node.computed` (`angular-member-visibility.js:211-216`). S
-- Spec: `template-member-accessibility.spec.js` lacks getter/setter, `static`, `override`, `async`, `declare`, computed-key, `${}` cases; `no-redundant-internal.spec.js` lacks `// @internal`, `#private`, decorated cases. S
+- Spec: `template-member-accessibility.spec.js` lacks getter/setter, `static`, `override`, `async`, `declare`, `${}` cases; `no-redundant-internal.spec.js` lacks decorated cases. S
 
 ## import & API bans
 
