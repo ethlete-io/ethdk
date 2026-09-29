@@ -10,6 +10,10 @@ const tester = new RuleTester({
 
 tester.run('enforce-routing-view-naming', rule, {
   valid: [
+    { code: `const r = { loadComponent: () => import('./items-view.component') };` },
+    {
+      code: `const r = { loadComponent: () => import('./items-view/items-view.component').then((m) => { return m.ItemsViewComponent; }) };`,
+    },
     { code: `const routes = [{ loadComponent: () => import('./items-list-view/items-list-view.component') }];` },
     {
       code: `const routes = [{ loadComponent: () => import('./items-list-view/items-list-view.component').then(m => { return m.ItemsListViewComponent; }) }];`,
@@ -31,6 +35,14 @@ tester.run('enforce-routing-view-naming', rule, {
     },
   ],
   invalid: [
+    {
+      code: `const r = { loadComponent: () => import('./items-viewer/items-viewer.component') };`,
+      errors: [{ messageId: 'pathMustContainView' }],
+    },
+    {
+      code: `const r = { loadComponent: () => import('./a-view/a').then((m) => { return m.Items; }) };`,
+      errors: [{ messageId: 'classMustEndWithViewComponent' }],
+    },
     {
       // Path missing "-view"
       code: `const routes = [{ loadComponent: () => import('./items-list/items-list.component').then(m => m.ItemsListViewComponent) }];`,

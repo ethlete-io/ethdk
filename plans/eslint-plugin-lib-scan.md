@@ -1,7 +1,7 @@
 # eslint-plugin lib scan — open findings
 
 Scan of `libs/eslint-plugin` from 2026-08-19. Fixed findings were removed on 2026-09-26 (git history
-has them). All 23 Medium findings are done (740745cfd, 0e8f4306d, fdc275315, 2ff9e0dd3, 5070c1fac, 1115ebd01, b962944d7, d8a6c9352, 8f943a33c, b96cb14a9, e183dbc6b, d6e261816, 608346bb0, 9ce9b2b4c, 3d9bbb0e5, 562f182ac, 5d32f7e16, 10af4378d, 836c57050, 1dd03c288, 321ffa7e8, f4ba9f3c5, 64e382a80; the spread bail-out of `angular-decorator-property-order` is kept). Still open: 11 Low, 11 spec-coverage items. Paths are relative to
+has them). All 23 Medium findings are done (740745cfd, 0e8f4306d, fdc275315, 2ff9e0dd3, 5070c1fac, 1115ebd01, b962944d7, d8a6c9352, 8f943a33c, b96cb14a9, e183dbc6b, d6e261816, 608346bb0, 9ce9b2b4c, 3d9bbb0e5, 562f182ac, 5d32f7e16, 10af4378d, 836c57050, 1dd03c288, 321ffa7e8, f4ba9f3c5, 64e382a80; the spread bail-out of `angular-decorator-property-order` is kept). Still open: 9 Low, 10 spec-coverage items. Paths are relative to
 `libs/eslint-plugin/src/rules/` unless shown in full.
 
 ## ordering & naming
@@ -41,11 +41,8 @@ has them). All 23 Medium findings are done (740745cfd, 0e8f4306d, fdc275315, 2ff
 
 ## misc, config, packaging & docs
 
-- Low: `no-impure-top-level-provider` passes destructuring wrapped in `satisfies` or `!`. S
-- Low: `enforce-routing-view-naming` reports non-route object literals; substring test lets `items-viewer` pass. S
-- Low: dead `recommendedTs.plugins: {}` (`configs/recommended.js:12`). S
-- Spec: no namespace/default/`require` lodash cases, no `satisfies` case, no default-export/block `.then`/non-route case, nothing pins the `no-trivial-return-type` false negative. S
-- Spec: no test that every registered rule is in `recommended` or on an exclusion list (`configs/recommended.spec.js` covers 26). M
+- Low: `enforce-routing-view-naming` reports non-route object literals (needs a design call: no type info to tell a route). S
+- Spec: `enforce-routing-view-naming` has no default-export or non-route case (both would pin a questionable report; needs a design call). S
 
 ## Kept on purpose / do not re-open
 

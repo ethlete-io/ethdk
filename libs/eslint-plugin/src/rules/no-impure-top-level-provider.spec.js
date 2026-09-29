@@ -49,6 +49,18 @@ export const provideThing = /* @__PURE__ */ toProvideFn(THING_DEF);`,
   ],
   invalid: [
     {
+      code: `const { a } = createThing() satisfies Thing;`,
+      errors: [{ messageId: 'noDestructuring' }],
+    },
+    {
+      code: `const [a] = createThing()!;`,
+      errors: [{ messageId: 'noDestructuring' }],
+    },
+    {
+      code: `const { a } = (createThing() as Thing)!;`,
+      errors: [{ messageId: 'noDestructuring' }],
+    },
+    {
       code: 'export const [provideThing, injectThing] = createRootProvider(() => ({}));',
       errors: [{ messageId: 'noDestructuring' }],
     },

@@ -9,9 +9,6 @@
  */
 const recommendedTs = {
   files: ['**/*.ts'],
-  plugins: {
-    // The plugin itself is injected by the caller (see index.js)
-  },
   rules: {
     // No interface — use type (owned by ethlete/consistent-type-definitions)
     '@typescript-eslint/consistent-type-definitions': 'off',

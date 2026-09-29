@@ -11,6 +11,7 @@ const tester = new RuleTester({
 
 tester.run('no-trivial-return-type', rule, {
   valid: [
+    { code: `const check = (check): boolean => { return check; };` },
     { code: `function walk(node): boolean { return node.ok && walk(node.next); }` },
     // No return type annotation — inferred
     { code: `const fn = () => {};` },

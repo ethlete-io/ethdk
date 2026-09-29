@@ -34,6 +34,15 @@ const calleeName = (node) => {
   return null;
 };
 
+const TRANSPARENT_WRAPPERS = new Set([
+  'TSAsExpression',
+  'TSSatisfiesExpression',
+  'TSNonNullExpression',
+  'TSTypeAssertion',
+]);
+
+const unwrap = (node) => (TRANSPARENT_WRAPPERS.has(node.type) ? unwrap(node.expression) : node);
+
 const isConstantExpression = (node) =>
   node.type === 'Literal' ||
   (node.type === 'UnaryExpression' && isConstantExpression(node.argument)) ||
@@ -117,7 +126,7 @@ const noImpureTopLevelProvider = {
       VariableDeclarator(node) {
         if (!isModuleScope(node) || !node.init) return;
 
-        const initializer = node.init.type === 'TSAsExpression' ? node.init.expression : node.init;
+        const initializer = unwrap(node.init);
 
         if (
           initializer.type === 'CallExpression' &&

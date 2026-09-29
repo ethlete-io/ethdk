@@ -885,3 +885,23 @@ test('template/elements-content: hosts that render their own content are valid',
     expect(ruleIds(lintTemplate(template))).not.toContain('@angular-eslint/template/elements-content');
   }
 });
+
+const NOT_IN_RECOMMENDED = new Set(['no-cdk-import', 'no-legacy-query-import']);
+
+test('every registered rule is in a recommended config or on the exclusion list', () => {
+  const configured = new Set(
+    [
+      plugin.configs.recommendedTs,
+      plugin.configs.recommendedAngularTs,
+      plugin.configs.recommendedTemplate,
+      plugin.configs.recommendedSpec,
+    ].flatMap((config) => Object.keys(config.rules ?? {})),
+  );
+
+  const missing = Object.keys(plugin.rules ?? {}).filter(
+    (name) => !configured.has(`ethlete/${name}`) && !NOT_IN_RECOMMENDED.has(name),
+  );
+
+  expect(missing).toEqual([]);
+  for (const name of NOT_IN_RECOMMENDED) expect(configured.has(`ethlete/${name}`)).toBe(false);
+});

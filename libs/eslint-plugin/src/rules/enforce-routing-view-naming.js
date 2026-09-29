@@ -10,6 +10,8 @@
  *   loadComponent: () => import('./items-list-view/items-list-view.component').then((m) => m.ItemsListViewComponent)
  */
 
+const VIEW_PATH = /-view(?![\w-])/;
+
 /** @type {import('eslint').Rule.RuleModule} */
 const enforceRoutingViewNaming = {
   meta: {
@@ -31,7 +33,7 @@ const enforceRoutingViewNaming = {
       if (!importExpr || importExpr.type !== 'ImportExpression') return;
 
       const source = importExpr.source;
-      if (source && source.type === 'Literal' && typeof source.value === 'string' && !source.value.includes('-view')) {
+      if (source && source.type === 'Literal' && typeof source.value === 'string' && !VIEW_PATH.test(source.value)) {
         context.report({
           node: source,
           messageId: 'pathMustContainView',

@@ -10,6 +10,8 @@ const tester = new RuleTester({
 
 tester.run('prefer-clone-equal', rule, {
   valid: [
+    { code: `const _ = require('lodash'); _.cloneDeep(a);` },
+    { code: `const { isEqual } = require('lodash'); isEqual(a, b);` },
     {
       code: `const structuredClone = (value) => value;
 structuredClone({});`,
@@ -37,6 +39,16 @@ _.cloneDeep(a);`,
     { code: `import { throttle } from 'lodash-es';` },
   ],
   invalid: [
+    {
+      code: `import _ from 'lodash';
+_.cloneDeep(a);`,
+      errors: [{ messageId: 'preferClone' }],
+    },
+    {
+      code: `import * as _ from 'lodash-es';
+_.isEqual(a, b);`,
+      errors: [{ messageId: 'preferEqual' }],
+    },
     {
       code: `export { cloneDeep } from 'lodash-es';`,
       errors: [{ messageId: 'preferClone' }],
