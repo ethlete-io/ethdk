@@ -10,7 +10,7 @@ import {
   ContentfulRestAsset,
   RichTextResponse,
 } from '../../types';
-import { withContentfulDefaultComponents } from '../../utils/contentful-default-components';
+import { CONTENTFUL_DEFAULT_COMPONENTS } from '../../utils/contentful-default-components';
 import { provideContentfulConfig } from '../../utils/contentful.util';
 import { ContentfulIncludeMap, ContentfulRichTextRendererComponent } from './rich-text-renderer.component';
 
@@ -190,9 +190,9 @@ const setup = (options: SetupOptions = {}) => {
         ? []
         : [
             provideContentfulConfig({
+              ...(options.withoutDefaultComponents ? {} : CONTENTFUL_DEFAULT_COMPONENTS),
               ...(components ? { components } : {}),
               customComponents: options.customComponents ?? {},
-              features: options.withoutDefaultComponents ? [] : [withContentfulDefaultComponents()],
             }),
           ]),
     ],
@@ -231,8 +231,8 @@ const readRenderCommands = (options: SetupOptions = {}) => {
     providers: [
       provideRouter([]),
       provideContentfulConfig({
+        ...CONTENTFUL_DEFAULT_COMPONENTS,
         customComponents: options.customComponents ?? {},
-        features: [withContentfulDefaultComponents()],
       }),
     ],
   });

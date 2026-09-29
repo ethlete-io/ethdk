@@ -15,8 +15,8 @@ yarn add @ethlete/contentful
   imports: [ContentfulRichTextRendererComponent],
   providers: [
     provideContentfulConfig({
+      ...CONTENTFUL_DEFAULT_COMPONENTS,
       customComponents: { newsElement: NewsElementComponent },
-      features: [withContentfulDefaultComponents()],
     }),
   ],
   template: `<et-contentful-rich-text-renderer [content]="data()" richTextPath="items[0].fields.html" />`,

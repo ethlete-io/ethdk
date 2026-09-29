@@ -10,14 +10,31 @@ export type ContentfulDefaultComponentsScan = {
   tasks: ContentfulDefaultComponentsTask[];
 };
 
-const FEATURE = 'withContentfulDefaultComponents';
-const FEATURES_ENTRY = `features: [${FEATURE}()]`;
+const CONSTANT = 'CONTENTFUL_DEFAULT_COMPONENTS';
+const SPREAD = `...${CONSTANT}`;
 const CONTENTFUL_IMPORT = /import\s*\{([^}]*)\}\s*from\s*['"]@ethlete\/contentful['"]/g;
 
 const lineOf = (content: string, index: number) => content.slice(0, index).split('\n').length;
 
 const taskId = (filePath: string, line: number) =>
   `contentful-default-components--${filePath.replace(/[^a-zA-Z0-9]+/g, '-')}-${line}`;
+
+const namesOwnComponents = (content: string, braceIndex: number) => {
+  let depth = 0;
+  let topLevel = '';
+
+  for (let i = braceIndex; i < content.length; i++) {
+    const char = content[i] ?? '';
+
+    if ('{[('.includes(char)) depth++;
+    else if ('}])'.includes(char)) depth--;
+    else if (depth === 1) topLevel += char;
+
+    if (depth === 0) break;
+  }
+
+  return /(^|[,\s])components\s*:/.test(topLevel);
+};
 
 export const scanContentfulDefaultComponentsInFile = (
   filePath: string,
@@ -29,7 +46,7 @@ export const scanContentfulDefaultComponentsInFile = (
     /\bprovideContentfulConfig\b/.test(match[1] ?? ''),
   );
 
-  if (!importStatement || content.includes(FEATURE)) return { next: null, tasks };
+  if (!importStatement || content.includes(CONSTANT)) return { next: null, tasks };
 
   const report = (index: number, message: string) => {
     const line = lineOf(content, index);
@@ -44,26 +61,29 @@ export const scanContentfulDefaultComponentsInFile = (
     (call: string, opening: string, index: number) => {
       if (opening === ')') {
         rewrote = true;
-        return `provideContentfulConfig({ ${FEATURES_ENTRY} })`;
+        return `provideContentfulConfig({ ${SPREAD} })`;
       }
 
       if (opening.startsWith('{')) {
-        if (/^\s*features\s*:/.test(content.slice(index + call.length))) {
-          report(index, `\`provideContentfulConfig\` names its own \`features\`. Add \`${FEATURE}()\` to them.`);
-          return call;
+        rewrote = true;
+
+        if (namesOwnComponents(content, index + call.length - opening.length)) {
+          report(
+            index,
+            `\`provideContentfulConfig\` names its own \`components\`, which replaces the spread. Write \`components: { ...${CONSTANT}.components, ... }\` to keep the defaults.`,
+          );
         }
 
-        rewrote = true;
         return opening.endsWith('}')
-          ? `provideContentfulConfig({ ${FEATURES_ENTRY} }`
-          : `provideContentfulConfig({ ${FEATURES_ENTRY}, `;
+          ? `provideContentfulConfig({ ${SPREAD} }`
+          : `provideContentfulConfig({ ${SPREAD}, `;
       }
 
       const argument = content.slice(index + call.length - 1).match(/^[^)\n]*/)?.[0] ?? '';
 
       report(
         index,
-        `\`provideContentfulConfig(${argument})\` is not a literal the migration can edit. Add \`${FEATURES_ENTRY}\` to it unless it names every asset and link component itself.`,
+        `\`provideContentfulConfig(${argument})\` is not a literal the migration can edit. Spread \`${CONSTANT}\` into it unless it names every asset and link component itself.`,
       );
 
       return call;
@@ -72,7 +92,7 @@ export const scanContentfulDefaultComponentsInFile = (
 
   if (!rewrote) return { next: null, tasks };
 
-  const rewrittenImport = importStatement[0].replace('{', `{ ${FEATURE},`);
+  const rewrittenImport = importStatement[0].replace('{', `{ ${CONSTANT},`);
   const importIndex = next.indexOf(importStatement[0]);
 
   return {

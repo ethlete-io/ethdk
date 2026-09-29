@@ -48,7 +48,7 @@ export type ContentfulAssetComponents = {
 export type ContentfulConfig = {
   /**
    * Components for rendering contentful assets and hyperlinks. Empty unless
-   * `withContentfulDefaultComponents()` is in `features` or a component is named here.
+   * `CONTENTFUL_DEFAULT_COMPONENTS` is spread into the config or a component is named here.
    */
   components: ContentfulAssetComponents;
 
@@ -96,16 +96,7 @@ export type ContentfulConfig = {
   };
 };
 
-/** An opt-in addition to a contentful config, created by a `withContentful…()` function. */
-export type ContentfulConfigFeature = {
-  type: 'default-components';
-  components: ContentfulAssetComponents;
-};
-
-export type ContentfulConfigOptions = Partial<ContentfulConfig> & {
-  /** Opt-in additions, e.g. `withContentfulDefaultComponents()`. */
-  features?: readonly ContentfulConfigFeature[];
-};
+export type ContentfulConfigOptions = Partial<ContentfulConfig>;
 
 export type ContentfulLinkType = 'Space' | 'ContentType' | 'Environment' | 'Entry' | 'Asset' | 'Tag';
 export type ContentfulLink<T extends ContentfulLinkType> = {

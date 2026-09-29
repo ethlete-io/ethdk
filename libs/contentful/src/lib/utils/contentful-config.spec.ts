@@ -2,16 +2,16 @@ import { ContentfulFileComponent } from '../components/file';
 import { ContentfulImageComponent } from '../components/image';
 import { ContentfulLinkComponent } from '../components/link';
 import { createContentfulConfig } from './contentful-config';
-import { withContentfulDefaultComponents } from './contentful-default-components';
+import { CONTENTFUL_DEFAULT_COMPONENTS } from './contentful-default-components';
 
 describe('createContentfulConfig', () => {
-  it('registers no components without the default components feature', () => {
+  it('registers no components without the default components', () => {
     expect(createContentfulConfig().components).toEqual({});
     expect(createContentfulConfig(null).internalHosts).toEqual([]);
   });
 
-  it('registers the shipped components with the default components feature', () => {
-    const { components } = createContentfulConfig({ features: [withContentfulDefaultComponents()] });
+  it('registers the shipped components when the default components are spread', () => {
+    const { components } = createContentfulConfig({ ...CONTENTFUL_DEFAULT_COMPONENTS });
 
     expect(components.image).toBe(ContentfulImageComponent);
     expect(components.link).toBe(ContentfulLinkComponent);
@@ -24,13 +24,11 @@ describe('createContentfulConfig', () => {
     class MyImage extends ContentfulImageComponent {}
 
     const config = createContentfulConfig({
-      components: { image: MyImage },
-      features: [withContentfulDefaultComponents()],
+      components: { ...CONTENTFUL_DEFAULT_COMPONENTS.components, image: MyImage },
     });
 
     expect(config.components.image).toBe(MyImage);
     expect(config.components.link).toBe(ContentfulLinkComponent);
-    expect('features' in config).toBe(false);
   });
 
   it('keeps the default image options when one is overridden', () => {

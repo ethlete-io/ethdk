@@ -2,7 +2,7 @@ import { Component, ViewEncapsulation, computed, input, linkedSignal } from '@an
 import { clone } from '@ethlete/core';
 import { ContentfulIncludeMap, ContentfulRichTextRendererComponent } from '../components/rich-text-renderer';
 import { ContentfulCollection, ContentfulEntry, ContentfulEntrySys } from '../types';
-import { withContentfulDefaultComponents } from '../utils/contentful-default-components';
+import { CONTENTFUL_DEFAULT_COMPONENTS } from '../utils/contentful-default-components';
 import { provideContentfulConfig } from '../utils/contentful.util';
 import { CALLOUT_ENTRY_ID, RICH_TEXT_EMBEDS, RICH_TEXT_LISTS, RICH_TEXT_TABLES } from './rich-text-fixtures';
 
@@ -79,12 +79,12 @@ export class RichTextProductTeaserComponent {
   imports: [ContentfulRichTextRendererComponent],
   providers: [
     provideContentfulConfig({
+      ...CONTENTFUL_DEFAULT_COMPONENTS,
       customComponents: {
         callout: RichTextCalloutComponent,
         statCard: RichTextStatCardComponent,
         productTeaser: RichTextProductTeaserComponent,
       },
-      features: [withContentfulDefaultComponents()],
     }),
   ],
   host: { class: 'block font-sans' },

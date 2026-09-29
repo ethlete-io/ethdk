@@ -27,19 +27,19 @@ describe('migrate-contentful-default-components', () => {
     return tree.read(FILE, 'utf-8');
   };
 
-  it('adds the feature to a call without arguments', async () => {
+  it('spreads the constant into a call without arguments', async () => {
     const result = await run(
       ["import { provideContentfulConfig } from '@ethlete/contentful';", '', 'provideContentfulConfig();'].join('\n'),
     );
 
     expect(result).toContain(
-      "import { withContentfulDefaultComponents, provideContentfulConfig } from '@ethlete/contentful';",
+      "import { CONTENTFUL_DEFAULT_COMPONENTS, provideContentfulConfig } from '@ethlete/contentful';",
     );
-    expect(result).toContain('provideContentfulConfig({ features: [withContentfulDefaultComponents()] });');
+    expect(result).toContain('provideContentfulConfig({ ...CONTENTFUL_DEFAULT_COMPONENTS });');
     expect(tree.exists(CONTENTFUL_DEFAULT_COMPONENTS_REPORT_PATH)).toBe(false);
   });
 
-  it('adds the feature to an empty and a filled literal', async () => {
+  it('spreads the constant into an empty and a filled literal', async () => {
     const result = await run(
       [
         "import { ContentfulImports, provideContentfulConfig } from '@ethlete/contentful';",
@@ -51,12 +51,12 @@ describe('migrate-contentful-default-components', () => {
       ].join('\n'),
     );
 
-    expect(result).toContain('provideContentfulConfig({ features: [withContentfulDefaultComponents()] });');
+    expect(result).toContain('provideContentfulConfig({ ...CONTENTFUL_DEFAULT_COMPONENTS });');
     expect(result).toContain(
-      "provideContentfulConfig({ features: [withContentfulDefaultComponents()], internalHosts: ['example.com'],",
+      "provideContentfulConfig({ ...CONTENTFUL_DEFAULT_COMPONENTS, internalHosts: ['example.com'],",
     );
     expect(result).toContain(
-      "import { withContentfulDefaultComponents, ContentfulImports, provideContentfulConfig } from '@ethlete/contentful';",
+      "import { CONTENTFUL_DEFAULT_COMPONENTS, ContentfulImports, provideContentfulConfig } from '@ethlete/contentful';",
     );
   });
 
@@ -75,22 +75,36 @@ describe('migrate-contentful-default-components', () => {
     expect(report).toContain('`provideContentfulConfig(CONFIG)` is not a literal');
   });
 
-  it('reports a literal that names its own features', async () => {
-    const content = [
-      "import { provideContentfulConfig } from '@ethlete/contentful';",
-      '',
-      'provideContentfulConfig({ features: FEATURES });',
-    ].join('\n');
+  it('spreads into a literal that names its own components and reports it', async () => {
+    const result = await run(
+      [
+        "import { provideContentfulConfig } from '@ethlete/contentful';",
+        '',
+        'provideContentfulConfig({ customComponents: { a: A }, components: { image: MyImage } });',
+      ].join('\n'),
+    );
 
-    expect(await run(content)).toBe(content);
-    expect(tree.read(CONTENTFUL_DEFAULT_COMPONENTS_REPORT_PATH, 'utf-8')).toContain('names its own `features`');
+    expect(result).toContain('provideContentfulConfig({ ...CONTENTFUL_DEFAULT_COMPONENTS, customComponents');
+    expect(tree.read(CONTENTFUL_DEFAULT_COMPONENTS_REPORT_PATH, 'utf-8')).toContain('names its own `components`');
   });
 
-  it('leaves a file alone that already uses the feature or imports nothing from the package', async () => {
+  it('does not report customComponents as own components', async () => {
+    await run(
+      [
+        "import { provideContentfulConfig } from '@ethlete/contentful';",
+        '',
+        'provideContentfulConfig({ customComponents: { components: A } });',
+      ].join('\n'),
+    );
+
+    expect(tree.exists(CONTENTFUL_DEFAULT_COMPONENTS_REPORT_PATH)).toBe(false);
+  });
+
+  it('leaves a file alone that already spreads the constant or imports nothing from the package', async () => {
     const migrated = [
-      "import { provideContentfulConfig, withContentfulDefaultComponents } from '@ethlete/contentful';",
+      "import { CONTENTFUL_DEFAULT_COMPONENTS, provideContentfulConfig } from '@ethlete/contentful';",
       '',
-      'provideContentfulConfig({ features: [withContentfulDefaultComponents()] });',
+      'provideContentfulConfig({ ...CONTENTFUL_DEFAULT_COMPONENTS });',
     ].join('\n');
     const unrelated = ["import { provideContentfulConfig } from './local';", '', 'provideContentfulConfig();'].join(
       '\n',

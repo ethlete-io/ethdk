@@ -3,18 +3,17 @@ import { ContentfulFileComponent } from '../components/file';
 import { ContentfulImageComponent } from '../components/image';
 import { ContentfulLinkComponent } from '../components/link';
 import { ContentfulVideoComponent } from '../components/video';
-import { ContentfulConfigFeature } from '../types';
+import { ContentfulConfig } from '../types';
 
 /**
- * Registers the shipped audio, file, image, video and link components for embedded assets and
- * hyperlinks. An app that brings its own components, or renders text only, leaves this out and
- * bundles none of them. A component named in `components` still wins.
+ * The shipped audio, file, image, video and link components, to spread into `provideContentfulConfig`.
+ * An app that brings its own components, or renders text only, leaves this out and bundles none of them.
+ * To replace one, spread the map instead: `components: { ...CONTENTFUL_DEFAULT_COMPONENTS.components, image: MyImage }`.
  *
  * @example
- * provideContentfulConfig({ features: [withContentfulDefaultComponents()] });
+ * provideContentfulConfig({ ...CONTENTFUL_DEFAULT_COMPONENTS });
  */
-export const withContentfulDefaultComponents = (): ContentfulConfigFeature => ({
-  type: 'default-components',
+export const CONTENTFUL_DEFAULT_COMPONENTS = {
   components: {
     audio: ContentfulAudioComponent,
     file: ContentfulFileComponent,
@@ -22,4 +21,4 @@ export const withContentfulDefaultComponents = (): ContentfulConfigFeature => ({
     video: ContentfulVideoComponent,
     link: ContentfulLinkComponent,
   },
-});
+} satisfies Partial<ContentfulConfig>;

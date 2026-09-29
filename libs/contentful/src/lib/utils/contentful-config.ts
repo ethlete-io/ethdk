@@ -19,13 +19,12 @@ const CONTENTFUL_FALLBACK_CONFIG: ContentfulConfig = {
 };
 
 export const createContentfulConfig = (options?: ContentfulConfigOptions | null): ContentfulConfig => {
-  const { features = [], ...config } = options ?? {};
-  const featureComponents = features.reduce((components, feature) => ({ ...components, ...feature.components }), {});
+  const config = options ?? {};
 
   return {
     ...CONTENTFUL_FALLBACK_CONFIG,
     ...config,
-    components: { ...featureComponents, ...config.components },
+    components: config.components ?? CONTENTFUL_FALLBACK_CONFIG.components,
     imageOptions: { ...CONTENTFUL_FALLBACK_CONFIG.imageOptions, ...config.imageOptions },
   };
 };

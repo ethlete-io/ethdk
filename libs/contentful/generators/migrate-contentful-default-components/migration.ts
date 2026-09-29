@@ -12,13 +12,13 @@ const renderReport = (tasks: ContentfulDefaultComponentsTask[]) =>
     '# Contentful default components migration tasks',
     '',
     'The shipped asset and link components are opt-in. Without them embedded assets are skipped and',
-    'hyperlinks render as plain anchors. The migration added `withContentfulDefaultComponents()` to every',
+    'hyperlinks render as plain anchors. The migration spread `CONTENTFUL_DEFAULT_COMPONENTS` into every',
     'literal `provideContentfulConfig` call; the calls below need it by hand:',
     '',
     '```ts',
-    "import { provideContentfulConfig, withContentfulDefaultComponents } from '@ethlete/contentful';",
+    "import { CONTENTFUL_DEFAULT_COMPONENTS, provideContentfulConfig } from '@ethlete/contentful';",
     '',
-    'provideContentfulConfig({ features: [withContentfulDefaultComponents()] });',
+    'provideContentfulConfig({ ...CONTENTFUL_DEFAULT_COMPONENTS });',
     '```',
     '',
     'A config that names every asset and link component itself needs nothing. Delete this file when done.',
@@ -33,7 +33,7 @@ type MigrationSchema = MigrationScopeOptions & {
 };
 
 export default async function migrateContentfulDefaultComponents(tree: Tree, schema: MigrationSchema) {
-  console.log('\n🔎 Adding withContentfulDefaultComponents() to provideContentfulConfig...');
+  console.log('\n🔎 Spreading CONTENTFUL_DEFAULT_COMPONENTS into provideContentfulConfig...');
 
   const scope = createMigrationScope(tree, schema);
 
@@ -67,7 +67,7 @@ export default async function migrateContentfulDefaultComponents(tree: Tree, sch
   }
 
   if (changed.length > 0) {
-    console.log(`\n✅ Added withContentfulDefaultComponents() in ${changed.length} file(s).`);
+    console.log(`\n✅ Spread CONTENTFUL_DEFAULT_COMPONENTS in ${changed.length} file(s).`);
   }
 
   if (tasks.length > 0) {
