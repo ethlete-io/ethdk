@@ -80,7 +80,7 @@ export class QueryErrorDirective {
     const labels = this.resolvedLabels();
     const status = error.code;
     const title = labels.title(status);
-    const statusMessage = `${labels.message(status)} (Code: ${status})`;
+    const statusMessage = labels.messageWithCode(labels.message(status), status);
     const messages = queryErrorMessages(error);
     const [single] = messages;
 

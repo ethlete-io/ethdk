@@ -23,6 +23,8 @@ export type QueryErrorLabels = {
    * the response's only message merely repeats the title.
    */
   message: (status: number) => string;
+  /** Appends the status code to the fallback message, e.g. `'Not found (Code: 404)'`. */
+  messageWithCode: (message: string, status: number) => string;
   /** The retry button's label. */
   retry: string;
 };
@@ -31,6 +33,7 @@ export type QueryErrorLabels = {
 export const DEFAULT_QUERY_ERROR_LABELS: QueryErrorLabels = {
   title: (status) => parseHttpErrorCodeToTitleEn(status),
   message: (status) => parseHttpErrorCodeToMessageEn(status),
+  messageWithCode: (message, status) => `${message} (Code: ${status})`,
   retry: 'Retry',
 };
 
@@ -38,6 +41,7 @@ export const DEFAULT_QUERY_ERROR_LABELS: QueryErrorLabels = {
 export const GERMAN_QUERY_ERROR_LABELS: QueryErrorLabels = {
   title: (status) => parseHttpErrorCodeToTitleDe(status),
   message: (status) => parseHttpErrorCodeToMessageDe(status),
+  messageWithCode: (message, status) => `${message} (Code: ${status})`,
   retry: 'Erneut versuchen',
 };
 

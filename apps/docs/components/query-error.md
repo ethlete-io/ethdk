@@ -82,6 +82,7 @@ Partial: what you leave out keeps the English default, which is also how you loc
 ```ts
 provideQueryErrorLabels({
   retry: 'Réessayer',
+  messageWithCode: (message, status) => `${message} (Code : ${status})`,
   title: (status) => (status === 403 ? 'Accès refusé' : 'Une erreur est survenue'),
 });
 ```

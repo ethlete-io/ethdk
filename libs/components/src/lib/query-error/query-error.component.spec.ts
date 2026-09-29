@@ -207,6 +207,18 @@ describe('QueryErrorComponent', () => {
     expect(text(fixture, '.et-query-error-actions button')).toBe('Retry');
   });
 
+  it('lets a label set own the wording around the status code', () => {
+    const fixture = createHost([
+      provideQueryErrorLabels({ messageWithCode: (message, status) => `${message} [Statuscode ${status}]` }),
+    ]);
+
+    fixture.componentInstance.error.set(errorResponse(500, null));
+    fixture.detectChanges();
+
+    expect(text(fixture, '.et-query-error-message')).toContain('[Statuscode 500]');
+    expect(text(fixture, '.et-query-error-message')).not.toContain('Code: 500');
+  });
+
   it('uses the German labels for a German locale with provideQueryErrorLabels(queryErrorLabelsForLocale)', () => {
     const fixture = createHost([provideQueryErrorLabels(queryErrorLabelsForLocale)]);
 
