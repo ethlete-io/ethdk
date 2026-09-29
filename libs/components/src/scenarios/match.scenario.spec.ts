@@ -120,6 +120,7 @@ class FixtureListComponent {
     ...normalizeEthleteMatch(ethleteMatch({ status: 'preparing', home: null, homeScore: null, awayScore: null })),
     gameScores: null,
     label: null,
+    number: null,
   };
   outcome: NormalizedMatch = {
     ...normalizeEthleteMatch(ethleteMatch({ status: 'finished', winningSide: 'away' })),
@@ -222,7 +223,7 @@ describe('match scenarios', () => {
 
     const card = host.querySelector('.card');
 
-    expect(card?.getAttribute('aria-label')).toBe('Match 3: Team A vs. Team B, 1 : 0, Live');
+    expect(card?.getAttribute('aria-label')).toBe('Match 3: Team A vs Team B, 1 : 0, Live');
     expect(card?.getAttribute('role')).toBeNull();
     expect(card?.hasAttribute('data-interactive')).toBe(true);
     expect(card?.getAttribute('data-status')).toBe('live');
@@ -292,7 +293,7 @@ describe('match scenarios', () => {
     expect(page.changes.at(-1)).toEqual({ side: 'away', from: 0, to: 1, delta: 1 });
     expect(card?.getAttribute('data-winner')).toBe('home');
     expect(card?.getAttribute('aria-label')).toBe(
-      `Match 3: Team A vs. Team B, 2 : 1, ${format(new Date('2026-09-26T18:30:00.000Z'), DEFAULT_MATCH_CARD_START_TIME_FORMAT)}, Finished`,
+      `Match 3: Team A vs Team B, 2 : 1, ${format(new Date('2026-09-26T18:30:00.000Z'), DEFAULT_MATCH_CARD_START_TIME_FORMAT)}, Finished`,
     );
     expect(sides.map((side) => text(side.querySelector('.et-match-participant-name')))).toEqual(['TMA', 'TMB']);
     expect(
@@ -324,7 +325,7 @@ describe('match scenarios', () => {
     expect(scheduled?.querySelector('et-match-score')).toBeNull();
     expect(scheduled?.querySelector('[data-side="home"] et-match-participant')?.hasAttribute('data-tbd')).toBe(true);
     expect(text(scheduled?.querySelector('[data-side="home"] .et-match-participant-name'))).toBe('Offen');
-    expect(scheduled?.getAttribute('aria-label')).toBe(`Offen vs. Team B, ${format(kickOff, 'P p')}`);
+    expect(scheduled?.getAttribute('aria-label')).toBe(`Offen gegen Team B, ${format(kickOff, 'P p')}`);
     expect(resolveNormalizedMatchSideState(page.scheduled, 'home')).toBe('unavailable');
     expect(resolveNormalizedMatchSideState(page.scheduled, 'away')).toBe('occupied');
     expect(resolveNormalizedMatchSideState({ ...page.scheduled, homeState: 'predicted' }, 'home')).toBe('predicted');
@@ -340,12 +341,14 @@ describe('match scenarios', () => {
     expect(outcome?.querySelector('et-match-score')).toBeNull();
     expect(Array.from(outcome?.querySelectorAll('.et-match-card-outcome') ?? []).map(text)).toEqual(['L', 'W']);
     expect(text(outcome?.querySelector('.et-match-card-announcement'))).toBe('Team B won');
-    expect(outcome?.getAttribute('aria-label')).toContain('Match 3: Team A vs. Team B, Team B won');
+    expect(outcome?.getAttribute('aria-label')).toContain('Match 3: Team A gegen Team B, Team B won');
 
     const points = host.querySelector('.points');
 
     expect(text(points?.querySelector('.et-match-card-announcement'))).toBe('3 : 0 points');
-    expect(points?.getAttribute('aria-label')).toContain('Group A: Team A vs. Team B, 3 : 0 points');
+    expect(points?.getAttribute('aria-label')).toBe(
+      `Group A: Team A gegen Team B, 3 : 0 points, ${format(kickOff, 'P p')}, Done`,
+    );
     expect(points?.querySelector('.et-match-card-games')?.getAttribute('aria-label')).toBe('Maps');
 
     expect(host.querySelector('.live .et-match-card-live')?.classList).toContain('et-color--calm');
@@ -365,7 +368,7 @@ describe('match scenarios', () => {
     expect(page.labels().scoreSeparator).toBe('-');
     expect(card?.getAttribute('role')).toBeNull();
     expect(card?.getAttribute('aria-label')).toBe(
-      `Match 3: Team A vs. Team B, 1-0, ${format(new Date('2026-09-26T18:30:00.000Z'), 'P p')}, Finished`,
+      `Match 3: Team A vs Team B, 1-0, ${format(new Date('2026-09-26T18:30:00.000Z'), 'P p')}, Finished`,
     );
     expect(card?.querySelector('.own-meta')?.getAttribute('aria-hidden')).toBe('true');
     expect(card?.querySelector('.own-score')?.getAttribute('aria-live')).toBe('polite');

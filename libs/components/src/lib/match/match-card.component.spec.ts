@@ -100,7 +100,7 @@ describe('MatchCardComponent', () => {
   describe('the composed name', () => {
     it('is one string on the card itself, so a screen reader reads the match', () => {
       expect(create().card().getAttribute('aria-label')).toBe(
-        'Match 3: FC Berlin vs. Neon Esports, 2 : 1, 2026, Finished',
+        'Match 3: FC Berlin vs Neon Esports, 2 : 1, 2026, Finished',
       );
     });
 
@@ -117,7 +117,7 @@ describe('MatchCardComponent', () => {
       driver.host.match.set({ ...FINISHED, status: 'live' });
       driver.detectChanges();
 
-      expect(driver.card().getAttribute('aria-label')).toBe('Match 3: FC Berlin vs. Neon Esports, 2 : 1, Live');
+      expect(driver.card().getAttribute('aria-label')).toBe('Match 3: FC Berlin vs Neon Esports, 2 : 1, Live');
     });
 
     it('names the kick-off instead of a score while the match is scheduled', () => {
@@ -132,7 +132,7 @@ describe('MatchCardComponent', () => {
       });
       driver.detectChanges();
 
-      expect(driver.card().getAttribute('aria-label')).toBe('Match 3: FC Berlin vs. Neon Esports, 2026');
+      expect(driver.card().getAttribute('aria-label')).toBe('Match 3: FC Berlin vs Neon Esports, 2026');
     });
 
     it('uses the full name even where the card draws a short code', () => {
@@ -142,7 +142,7 @@ describe('MatchCardComponent', () => {
       driver.detectChanges();
 
       expect(driver.text('.et-match-participant-name')).toBe('FCB');
-      expect(driver.card().getAttribute('aria-label')).toContain('FC Berlin vs. Neon Esports');
+      expect(driver.card().getAttribute('aria-label')).toContain('FC Berlin vs Neon Esports');
     });
 
     it('names a TBD slot rather than leaving a gap in the sentence', () => {
@@ -151,7 +151,7 @@ describe('MatchCardComponent', () => {
       driver.host.match.set({ ...FINISHED, away: null });
       driver.detectChanges();
 
-      expect(driver.card().getAttribute('aria-label')).toContain('FC Berlin vs. TBD');
+      expect(driver.card().getAttribute('aria-label')).toContain('FC Berlin vs TBD');
     });
 
     it('comes from the match labels', () => {
@@ -160,6 +160,33 @@ describe('MatchCardComponent', () => {
       ]);
 
       expect(driver.card().getAttribute('aria-label')).toBe('FC Berlin gegen Neon Esports');
+    });
+
+    it('speaks the localized status and versus labels through the default matchName', () => {
+      const driver = mountMatchCard(HostComponent, [
+        provideMatchLabels({ live: 'Läuft', finished: 'Beendet', versus: 'gegen' }),
+      ]);
+
+      expect(driver.card().getAttribute('aria-label')).toBe(
+        'Match 3: FC Berlin gegen Neon Esports, 2 : 1, 2026, Beendet',
+      );
+
+      driver.host.match.set({ ...FINISHED, status: 'live' });
+      driver.detectChanges();
+
+      expect(driver.card().getAttribute('aria-label')).toBe('Match 3: FC Berlin gegen Neon Esports, 2 : 1, Läuft');
+    });
+
+    it('names an unlabelled match by its number through the matchNumber label', () => {
+      const driver = mountMatchCard(HostComponent, [
+        provideMatchLabels({ matchNumber: (number) => `Spiel ${number}` }),
+      ]);
+
+      driver.host.match.set({ ...FINISHED, label: null, number: 5 });
+      driver.detectChanges();
+
+      expect(driver.text('.et-match-card-label')).toBe('Spiel 5');
+      expect(driver.card().getAttribute('aria-label')).toMatch(/^Spiel 5: /);
     });
   });
 
@@ -376,7 +403,7 @@ describe('MatchCardComponent', () => {
       driver.detectChanges();
 
       expect(driver.card().hasAttribute('data-hide-names')).toBe(true);
-      expect(driver.card().getAttribute('aria-label')).toContain('FC Berlin vs. Neon Esports');
+      expect(driver.card().getAttribute('aria-label')).toContain('FC Berlin vs Neon Esports');
     });
   });
 
@@ -457,7 +484,7 @@ describe('MatchCardComponent', () => {
       expect(element.tagName).toBe('A');
       expect(element.hasAttribute('role')).toBe(false);
       expect(element.hasAttribute('data-interactive')).toBe(true);
-      expect(element.getAttribute('aria-label')).toContain('FC Berlin vs. Neon Esports');
+      expect(element.getAttribute('aria-label')).toContain('FC Berlin vs Neon Esports');
     });
   });
 

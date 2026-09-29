@@ -13,6 +13,8 @@ export type MatchResultNameContext = {
   winner: string | null;
   /** The `scoreSeparator` in effect, passed in so this label honours an override of it. */
   separator: string;
+  /** Every match label in effect, so this one can reuse the localized strings. */
+  labels: MatchLabels;
 };
 
 /** What a match card announces about itself, once composed. */
@@ -33,8 +35,10 @@ export type MatchCardNameContext = {
   /** The kick-off, already formatted for the active locale, or `null` when unscheduled. */
   startTime: string | null;
   status: NormalizedMatchStatus;
-  /** The match's own `label` (`'Grand Final'`), or `null` when it has none. */
+  /** The match's `label` (`'Grand Final'`), or its `number` named by `matchNumber`, or `null`. */
   label: string | null;
+  /** Every match label in effect, so this one can reuse the localized `live`, `finished` and `versus`. */
+  labels: MatchLabels;
 };
 
 /**
@@ -71,6 +75,8 @@ export type MatchLabels = {
   emblemAlt: (participant: string) => string;
   /** A participant's seed, e.g. `'Seed 3'`. */
   seed: (seed: number) => string;
+  /** Names a match by its `number` when it has no `label`, e.g. `'Match 3'`. */
+  matchNumber: (number: number) => string;
   /**
    * The card's whole accessible name. One string per card, so a screen reader reads the match rather
    * than walking six unrelated fragments.
@@ -104,10 +110,12 @@ export const DEFAULT_MATCH_LABELS: MatchLabels = {
   outcomeDraw: 'D',
   emblemAlt: (participant) => `${participant} emblem`,
   seed: (seed) => `Seed ${seed}`,
-  matchName: ({ home, away, result, startTime, status, label }) => {
+  matchNumber: (number) => `Match ${number}`,
+  matchName: ({ home, away, result, startTime, status, label, labels }) => {
     const kickOff = status === 'live' ? null : startTime;
-    const state = status === 'live' ? 'Live' : status === 'finished' ? 'Finished' : null;
-    const matchUp = label ? `${label}: ${home} vs. ${away}` : `${home} vs. ${away}`;
+    const state = status === 'live' ? labels.live : status === 'finished' ? labels.finished : null;
+    const pairing = `${home} ${labels.versus} ${away}`;
+    const matchUp = label ? `${label}: ${pairing}` : pairing;
 
     return [matchUp, result, kickOff, state].filter(Boolean).join(', ');
   },

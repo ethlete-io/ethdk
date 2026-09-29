@@ -46,7 +46,8 @@ type NormalizedMatch = {
   resultKind: 'score' | 'points' | 'outcome'; // what those two values are, or ignored for 'outcome'
   gameScores: { home: number; away: number }[] | null; // Bo3/Bo5/Bo7 games; null = single game
   winnerSide: 'home' | 'away' | null;
-  label: string | null; // "Match 3", "Grand Final"
+  label: string | null; // "Grand Final" - wins over number
+  number?: number | null; // named through the matchNumber label while label is null
 };
 
 type NormalizedMatchParticipant = {
@@ -330,6 +331,7 @@ provideMatchLabels({
 | `outcomeDraw`    | `'D'`                       | Both sides' letter for a draw                              |
 | `emblemAlt`      | `(p) => '<p> emblem'`       | The emblem image's alt text                                |
 | `seed`           | `(n) => 'Seed <n>'`         | The seed badge's accessible label                          |
+| `matchNumber`    | `(n) => 'Match <n>'`        | Names a match by its `number` when it has no `label`       |
 | `gameScores`     | `'Games'`                   | Names the per-game breakdown                               |
 | `gameScore`      | `(n, s) => 'Game <n>: <s>'` | One game of a series                                       |
 | `resultName`     | see below                   | How the result is announced                                |
@@ -337,14 +339,18 @@ provideMatchLabels({
 
 Two of them do the composing, and they are where you change phrasing rather than words:
 
-- **`resultName({ home, away, kind, winner, separator })`** turns the result into the phrase the card
+- **`resultName({ home, away, kind, winner, separator, labels })`** turns the result into the phrase the card
   announces - which is not what it draws. With values it reads `"2 : 1"` (or `"3 : 0 points"`); with none it
-  names the winner, `"FC Berlin won"`, or says `"Draw"`.
-- **`matchName({ home, away, result, resultKind, winner, startTime, status, label })`** composes the card's
-  whole accessible name, taking `resultName`'s output as `result`. The default reads
-  `"Grand Final: FC Berlin vs. Neon Esports, 2 : 1, 05/02/2026 8:30 PM, Finished"` - which match, who is
+  names the winner, `"FC Berlin won"`, or says `"Draw"`. Those words are English in the default, so **a
+  localized app overrides `resultName` too**.
+- **`matchName({ home, away, result, resultKind, winner, startTime, status, label, labels })`** composes the
+  card's whole accessible name, taking `resultName`'s output as `result`. The default reads
+  `"Grand Final: FC Berlin vs Neon Esports, 2 : 1, 05/02/2026 8:30 PM, Finished"` - which match, who is
   playing, how it stands, when it kicks off, whether it is still going. The kick-off is in the name wherever
   the card draws it, which is every status but `live`, where the badge takes its place.
+
+Both get `labels`, the whole set in effect, and the default `matchName` speaks its `versus`, `live` and
+`finished` - so localizing those three localizes the name without rewriting `matchName`.
 
 ## Build your own card
 

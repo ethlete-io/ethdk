@@ -146,7 +146,8 @@ export const normalizeEthleteMatch = (match: EthleteMatchInput): NormalizedMatch
   resultKind: 'score',
   gameScores: normalizeGameScores(match),
   winnerSide: match.winningSide,
+  label: null,
   // `matchNumber` is the number within the round, which is what a bracket cell says; `number` is the
   // running one across the whole competition and reads as noise on a card.
-  label: typeof match.matchNumber === 'number' ? `Match ${match.matchNumber}` : null,
+  number: match.matchNumber ?? null,
 });

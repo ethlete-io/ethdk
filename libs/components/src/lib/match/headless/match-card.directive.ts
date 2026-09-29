@@ -171,6 +171,15 @@ export class MatchCardDirective {
   /** Whether the card acts as a click target, and should therefore look and feel like one. */
   public isInteractive = computed(() => this.interactive() ?? this.IS_NATIVELY_INTERACTIVE);
 
+  /** The match's `label`, or its `number` named by the `matchNumber` label, or `null`. */
+  public label = computed(() => {
+    const { label, number } = this.match();
+
+    if (label) return label;
+
+    return typeof number === 'number' ? this.resolvedLabels().matchNumber(number) : null;
+  });
+
   public isLive = computed(() => this.match().status === 'live');
   public isFinished = computed(() => this.match().status === 'finished');
   public isScheduled = computed(() => this.match().status === 'scheduled');
@@ -258,6 +267,7 @@ export class MatchCardDirective {
       kind: resultKind,
       winner: this.winnerName(),
       separator: this.resolvedLabels().scoreSeparator,
+      labels: this.resolvedLabels(),
     });
   });
 
@@ -317,7 +327,8 @@ export class MatchCardDirective {
       winner: this.winnerName(),
       startTime: this.formattedStartTime(),
       status: this.match().status,
-      label: this.match().label,
+      label: this.label(),
+      labels: this.resolvedLabels(),
     }),
   );
 

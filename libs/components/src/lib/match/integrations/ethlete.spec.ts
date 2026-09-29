@@ -122,7 +122,8 @@ describe('normalizeEthleteMatch', () => {
       homeScore: 2,
       awayScore: 1,
       winnerSide: 'home',
-      label: 'Match 3',
+      label: null,
+      number: 3,
       gameScores: null,
     });
   });
@@ -168,8 +169,8 @@ describe('normalizeEthleteMatch', () => {
     });
   });
 
-  it('has no label when the match is unnumbered', () => {
-    expect(normalizeEthleteMatch(matchView({ matchNumber: null })).label).toBeNull();
+  it('has no number when the match is unnumbered', () => {
+    expect(normalizeEthleteMatch(matchView({ matchNumber: null })).number).toBeNull();
   });
 
   it('reads a model without matchNumber, matchGameNumber, footballClubEmblem and original like one where they are null', () => {
@@ -189,6 +190,7 @@ describe('normalizeEthleteMatch', () => {
     });
 
     expect(match.label).toBeNull();
+    expect(match.number).toBeNull();
     expect(match.home?.emblem).toEqual({ defaultSrc: '/home.png' });
     expect(match.gameScores).toEqual([
       { home: 1, away: 0 },

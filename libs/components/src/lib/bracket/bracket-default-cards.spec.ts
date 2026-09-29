@@ -102,7 +102,7 @@ describe('the bracket default cards', () => {
       const card = (fixture.nativeElement as HTMLElement).querySelector('.et-match-card');
 
       expect(card?.getAttribute('data-size')).toBe('compact');
-      expect(card?.getAttribute('aria-label')).toBe('FC Berlin vs. Neon Esports, 2 : 1, Finished');
+      expect(card?.getAttribute('aria-label')).toBe('FC Berlin vs Neon Esports, 2 : 1, Finished');
     });
 
     it('draws nothing without a normalizer, rather than an empty card', () => {

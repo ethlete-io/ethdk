@@ -95,8 +95,10 @@ export type NormalizedMatch = {
   gameScores: NormalizedGameScore[] | null;
   /** Who won, once it is decided. `null` while undecided or drawn. */
   winnerSide: 'home' | 'away' | null;
-  /** Free text naming this match - `'Match 3'`, `'Grand Final'`. */
+  /** Free text naming this match - `'Grand Final'`. Wins over {@link number}. */
   label: string | null;
+  /** The match's number within its round, drawn through the `matchNumber` label when `label` is `null`. */
+  number?: number | null;
 };
 
 export const resolveNormalizedMatchSideState = (

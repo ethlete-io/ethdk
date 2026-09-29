@@ -21,7 +21,7 @@ const POINTS_STORY_ID = 'components-sports-match--points';
 const TBD_STORY_ID = 'components-sports-match--tbd';
 const STATES_STORY_ID = 'components-sports-match--states';
 
-const FINISHED_CARD_NAME = 'Quarter-final 2: FC Berlin vs. Neon Esports, 2 : 1, 05/02/2026 8:30 PM, Finished';
+const FINISHED_CARD_NAME = 'Quarter-final 2: FC Berlin vs Neon Esports, 2 : 1, 05/02/2026 8:30 PM, Finished';
 
 function card(root: Locator, index = 0): Locator {
   return root.locator('.et-match-card').nth(index);
@@ -117,7 +117,7 @@ test.describe('match / aria', () => {
     await expect(card(root).locator('.et-match-card-outcome[aria-hidden="true"]')).toHaveText(['W', 'L']);
     await expect(announcement(root)).toHaveText('FC Berlin won');
     await expect(card(root)).toHaveAccessibleName(
-      'Quarter-final 2: FC Berlin vs. Neon Esports, FC Berlin won, 05/02/2026 8:30 PM, Finished',
+      'Quarter-final 2: FC Berlin vs Neon Esports, FC Berlin won, 05/02/2026 8:30 PM, Finished',
     );
   });
 

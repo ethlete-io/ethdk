@@ -67,6 +67,10 @@ from `@ethlete/types` fit them, and so does an API variant's own model.
 Two mapping notes: `score` is what the API ranks by so it becomes `points`, and the list views carry no form
 history - fill `form` in yourself if you have it elsewhere.
 
+The advancing zone's label defaults to the English `'Advances'`, which a screen reader reads on every row in
+the zone. **Pass `advancingLabel` in a localized app**: `normalizeEthleteGroupRanking({ group, advancingColor,
+advancingLabel: 'Weiter' })`.
+
 ## Zones
 
 A zone is a band of positions that means something. One config drives both the row banding and the legend,
