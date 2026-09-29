@@ -52,7 +52,17 @@ describe('TooltipDirective', () => {
     tooltipDirective.hide();
   });
 
-  it('creates no description node until the tooltip is first shown', () => {
+  it('creates the description node as soon as the tooltip has text, before any show', () => {
+    const descriptionId = button.getAttribute('aria-describedby');
+
+    expect(descriptionId).toContain('et-tooltip-description');
+    expect(document.getElementById(descriptionId ?? '')?.textContent).toBe('Tooltip body');
+  });
+
+  it('creates no description node while the tooltip has no text', () => {
+    setInputSignal(tooltipDirective.content, null);
+    fixture.detectChanges();
+
     expect(document.querySelector('[id^="et-tooltip-description"]')).toBeNull();
     expect(button.hasAttribute('aria-describedby')).toBe(false);
   });
@@ -125,7 +135,7 @@ describe('TooltipDirective', () => {
     setInputSignal(directive.content, 'Tooltip body');
     describedFixture.detectChanges();
 
-    expect(describedButton.getAttribute('aria-describedby')).toBe('consumer-hint');
+    expect(describedButton.getAttribute('aria-describedby')).toMatch(/^consumer-hint et-tooltip-description/);
 
     directive.show();
     describedFixture.detectChanges();

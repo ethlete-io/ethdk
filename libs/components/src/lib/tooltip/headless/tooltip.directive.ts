@@ -163,7 +163,7 @@ export class TooltipDirective {
     enableAnchoredOverlayPositionExtras();
 
     if (this.isBrowser) {
-      this.syncDescriptionElement(accessibleDescription, true);
+      this.syncDescriptionElement(accessibleDescription);
     }
 
     const tooltipId = createTooltipId();
@@ -350,7 +350,7 @@ export class TooltipDirective {
     }
   }
 
-  private syncDescriptionElement(description: string | null, create = false) {
+  private syncDescriptionElement(description: string | null) {
     if (!description) {
       this.removeDescriptionElement();
 
@@ -358,10 +358,6 @@ export class TooltipDirective {
     }
 
     if (!this.descriptionElement) {
-      if (!create) {
-        return;
-      }
-
       const descriptionElement = this.renderer.createElement('div');
 
       this.renderer.setAttribute(descriptionElement, 'id', this.descriptionId);
