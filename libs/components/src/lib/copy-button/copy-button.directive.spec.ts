@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import '../../test-helpers';
 import { CopyButtonDirective } from './copy-button.directive';
+import { provideCopyButtonLabels } from './copy-button-labels';
 import { COPY_BUTTON_IMPORTS } from './copy-button.imports';
 
 const stubClipboard = (clipboard: Partial<Clipboard> | undefined) => {
@@ -54,6 +55,41 @@ describe('CopyButtonDirective', () => {
     expect(writeText).toHaveBeenCalledWith('hello');
     expect(button(fixture).getAttribute('data-copied')).toBe('true');
     expect(fixture.componentInstance.copyCount).toBe(1);
+  });
+
+  it('announces the copy through a polite live region next to the button', async () => {
+    stubClipboard({ writeText: vi.fn().mockResolvedValue(undefined) });
+
+    const fixture = TestBed.createComponent(CopyButtonHostComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const region = button(fixture).nextElementSibling!;
+
+    expect(region.getAttribute('aria-live')).toBe('polite');
+    expect(region.textContent).toBe('');
+
+    button(fixture).click();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    expect(region.textContent).toBe('Copied');
+    expect(button(fixture).textContent).not.toContain('Copied');
+  });
+
+  it('localizes the announcement', async () => {
+    stubClipboard({ writeText: vi.fn().mockResolvedValue(undefined) });
+    TestBed.configureTestingModule({ providers: [provideCopyButtonLabels({ copied: 'Kopiert' })] });
+
+    const fixture = TestBed.createComponent(CopyButtonHostComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    button(fixture).click();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    expect(button(fixture).nextElementSibling!.textContent).toBe('Kopiert');
   });
 
   it('accepts a getter, evaluated at copy time', async () => {

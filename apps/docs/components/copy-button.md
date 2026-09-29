@@ -50,7 +50,7 @@ Read `exportAs="etCopyButton"` (`#copyBtn="etCopyButton"`) to reach `copied()` f
 
 ## Accessibility
 
-The directive sets `data-copied` on the host while `copied()` is true - style off that attribute if you want a state beyond the icon/label swap (e.g. a tooltip). It does not manage focus or announce anything itself; give the button a static `aria-label` (or visible text) that describes what it copies, since the label swap alone isn't reliably announced by every screen reader.
+The directive sets `data-copied` on the host while `copied()` is true - style off that attribute if you want a state beyond the icon/label swap (e.g. a tooltip). It does not manage focus. On a successful copy it announces "Copied" through a visually hidden polite live region inserted after the button (localize with `provideCopyButtonLabels({ copied: 'Kopiert' })`). Give the button a static `aria-label` (or visible text) that describes what it copies.
 
 ## Theming
 

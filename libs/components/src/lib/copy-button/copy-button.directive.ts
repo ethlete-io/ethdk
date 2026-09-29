@@ -1,7 +1,32 @@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DestroyRef, Directive, inject, input, numberAttribute, output, signal } from '@angular/core';
+import {
+  DestroyRef,
+  Directive,
+  ElementRef,
+  Renderer2,
+  afterNextRender,
+  effect,
+  inject,
+  input,
+  numberAttribute,
+  output,
+  signal,
+} from '@angular/core';
 import { copyToClipboard } from '@ethlete/core';
+import { injectCopyButtonLabels } from './copy-button-labels';
 import { Subject, switchMap, tap, timer } from 'rxjs';
+
+const VISUALLY_HIDDEN = {
+  position: 'absolute',
+  width: '1px',
+  height: '1px',
+  margin: '-1px',
+  padding: '0',
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  'white-space': 'nowrap',
+  border: '0',
+};
 
 /**
  * Copies `text` to the clipboard on click and ticks `copied()` for `resetDelay` ms - the
@@ -28,6 +53,9 @@ import { Subject, switchMap, tap, timer } from 'rxjs';
 })
 export class CopyButtonDirective {
   private destroyRef = inject(DestroyRef);
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private renderer = inject(Renderer2);
+  private labels = injectCopyButtonLabels();
 
   /** The value to copy, or a getter for it - a getter avoids re-serializing on every change detection. */
   public text = input<string | (() => string)>('');
@@ -37,12 +65,36 @@ export class CopyButtonDirective {
 
   /** Fires once the value has actually reached the clipboard. */
   public copySuccess = output<void>();
+  private liveRegion = signal<HTMLElement | null>(null);
 
   public copied = signal(false);
 
   private reset$ = new Subject<void>();
 
   constructor() {
+    afterNextRender(() => {
+      const host = this.elementRef.nativeElement;
+      const renderer = this.renderer;
+      const region: HTMLElement = renderer.createElement('span');
+
+      renderer.setAttribute(region, 'role', 'status');
+      renderer.setAttribute(region, 'aria-live', 'polite');
+
+      for (const [property, value] of Object.entries(VISUALLY_HIDDEN)) {
+        renderer.setStyle(region, property, value);
+      }
+
+      renderer.insertBefore(renderer.parentNode(host), region, renderer.nextSibling(host));
+      this.liveRegion.set(region);
+      this.destroyRef.onDestroy(() => renderer.removeChild(renderer.parentNode(region), region));
+    });
+
+    effect(() => {
+      const region = this.liveRegion();
+
+      if (region) region.textContent = this.copied() ? this.labels().copied : '';
+    });
+
     // Each copy restarts the countdown; switchMap drops the pending reset of the previous one.
     this.reset$
       .pipe(
