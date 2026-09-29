@@ -6,6 +6,8 @@ import {
   MultiLanguageRichTextEditorLanguage,
   MultiLanguageRichTextEditorValue,
 } from '../multi-language-rich-text-editor-config';
+import { AccessibleNameControlDirective } from '../../form-field/headless';
+import { RichTextEditorLabels } from '../../rich-text-editor/rich-text-editor-labels';
 import { MULTI_LANGUAGE_RICH_TEXT_EDITOR_ERROR_CODES } from '../multi-language-rich-text-editor-errors';
 import { injectReportError } from '../../../internals/report-error';
 import { controlTouches } from '../../../internals/touch-output';
@@ -13,7 +15,10 @@ import { controlTouches } from '../../../internals/touch-output';
 @Directive({
   selector: '[etMultiLanguageRichTextEditor]',
 })
-export class MultiLanguageRichTextEditorDirective implements FormValueControl<MultiLanguageRichTextEditorValue> {
+export class MultiLanguageRichTextEditorDirective
+  extends AccessibleNameControlDirective
+  implements FormValueControl<MultiLanguageRichTextEditorValue>
+{
   private reportError = injectReportError();
   public value = model<MultiLanguageRichTextEditorValue>({});
   public touched = model(false);
@@ -23,6 +28,11 @@ export class MultiLanguageRichTextEditorDirective implements FormValueControl<Mu
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
   public required = input(false, { transform: booleanAttribute });
   public name = input('');
+  // eslint-disable-next-line ethlete/no-native-html-input-name
+  public hidden = input(false, { transform: booleanAttribute });
+
+  /** Per-instance overrides of the editor's strings, merged over the injected label set. */
+  public labels = input<Partial<RichTextEditorLabels> | null>(null);
 
   /** The languages to offer, in switcher order. Consumer-provided - no languages are hard-wired. */
   public languages = input.required<readonly MultiLanguageRichTextEditorLanguage[]>();
@@ -54,6 +64,8 @@ export class MultiLanguageRichTextEditorDirective implements FormValueControl<Mu
   public hasValue = computed(() => Object.values(this.value()).some((markdown) => (markdown ?? '').trim().length > 0));
 
   constructor() {
+    super();
+
     effect(() => {
       const error = this.languagesError();
 

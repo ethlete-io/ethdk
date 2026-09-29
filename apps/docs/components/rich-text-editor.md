@@ -638,9 +638,13 @@ field chrome all work the same - the switcher tool is prepended to the toolbar a
 with a badge dot while any language is empty. Opening it marks the active language with a leading
 check and shows a trailing status dot per language - solid when it has content, hollow while it is
 still empty (announced as `RICH_TEXT_EDITOR_LABELS.languageFilled` / `languageEmpty`, `'has content'` /
-`'empty'`). Emptiness is "trimmed Markdown is blank", so it reflects real content, not just edits.
+`'empty'`); while any language is empty, the trigger's accessible name also says so
+(`languageMissing(count)`). Emptiness is "trimmed Markdown is blank", so it reflects real content, not just edits.
 Translations stored under a code not in `languages` are preserved untouched (never dropped) and
 don't affect the status counts.
+
+The multi-language editor takes the single editor's `labels`, `hidden`, `aria-label` and
+`aria-labelledby` inputs and hands them to the editor it embeds.
 
 <StoryEmbed id="components-forms-rich-text-editor-multi-language--with-existing-translations" height="420px" />
 
@@ -702,6 +706,7 @@ provideRichTextEditorLabels({
   bold: 'Fett',
   heading: (level) => `Überschrift ${level}`,
   linkEditorAdd: 'Link hinzufügen',
+  languageMissing: (count) => (count === 1 ? '1 Sprache fehlt' : `${count} Sprachen fehlen`),
 });
 ```
 

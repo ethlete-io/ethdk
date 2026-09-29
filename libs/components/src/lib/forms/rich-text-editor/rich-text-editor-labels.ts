@@ -147,6 +147,8 @@ export type RichTextEditorLabels = {
   language: string;
   /** Accessible name for the language switcher's trigger, given the active language's own name. */
   languageTrigger: (currentLanguage: string) => string;
+  /** Appended to the language switcher trigger's accessible name while `count` languages still lack content. */
+  languageMissing: (count: number) => string;
   /** Accessible label for a language switcher entry's status dot while that language has content. */
   languageFilled: string;
   /** Accessible label for a language switcher entry's status dot while that language is still empty. */
@@ -225,6 +227,7 @@ export const DEFAULT_RICH_TEXT_EDITOR_LABELS: RichTextEditorLabels = {
   image: 'Image',
   language: 'Language',
   languageTrigger: (currentLanguage) => `Language: ${currentLanguage}`,
+  languageMissing: (count) => (count === 1 ? '1 language missing' : `${count} languages missing`),
   languageFilled: 'has content',
   languageEmpty: 'empty',
 };

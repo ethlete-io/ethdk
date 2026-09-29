@@ -198,7 +198,7 @@ describe('forms multi-language rich-text-editor scenarios', () => {
     expect(
       getDebugNode(query('et-multi-language-rich-text-editor-language-tool', host))?.componentInstance,
     ).toBeInstanceOf(MultiLanguageRichTextEditorLanguageToolComponent);
-    expect(toolbarLabels(host)[0]).toBe('Language: English');
+    expect(toolbarLabels(host)[0]).toBe('Language: English, 2 languages missing');
     expect(toolbarLabels(host)).toContain('Bold');
     expect(editable.textContent).toBe('Hello');
     expect(trigger(host).textContent?.trim()).toBe('en');
@@ -222,7 +222,7 @@ describe('forms multi-language rich-text-editor scenarios', () => {
     pickLanguage(s, 'Deutsch');
 
     expect(document.querySelector('et-menu-radio-item')).toBeNull();
-    expect(trigger(host).getAttribute('aria-label')).toBe('Language: Deutsch');
+    expect(trigger(host).getAttribute('aria-label')).toBe('Language: Deutsch, 2 languages missing');
     expect(editable.textContent).toBe('');
 
     editable.focus();
@@ -280,7 +280,7 @@ describe('forms multi-language rich-text-editor scenarios', () => {
     s.flush();
 
     expect(box?.translations).toBeInstanceOf(MultiLanguageRichTextEditorDirective);
-    expect(toolbarLabels(host)).toEqual(['Bold', 'Language: English']);
+    expect(toolbarLabels(host)).toEqual(['Bold', 'Language: English, 2 languages missing']);
     expect(query('.progress', host).textContent).toBe('0/2');
 
     const editable = textbox(host);

@@ -4,6 +4,8 @@ import '../../../test-helpers';
 import { flushFrames, latestPane, textOf, tick } from '../../testing/driver-core';
 import { mountRichTextEditor, RichTextEditorDriver } from '../testing/rich-text-editor-driver';
 import { provideRichTextEditorDefaultTools } from '../rich-text-editor';
+import { RichTextEditorDirective } from '../rich-text-editor/headless/rich-text-editor.directive';
+import { RichTextEditorLabels } from '../rich-text-editor/rich-text-editor-labels';
 import { MultiLanguageRichTextEditorDirective } from './headless/multi-language-rich-text-editor.directive';
 import {
   MultiLanguageRichTextEditorLanguage,
@@ -14,7 +16,14 @@ import { MULTI_LANGUAGE_RICH_TEXT_EDITOR_IMPORTS } from './multi-language-rich-t
 
 @Component({
   template: `
-    <et-multi-language-rich-text-editor [(value)]="value" [languages]="languages()" [readonly]="readonly()" />
+    <et-multi-language-rich-text-editor
+      [(value)]="value"
+      [languages]="languages()"
+      [readonly]="readonly()"
+      [hidden]="hidden()"
+      [labels]="labels()"
+      aria-label="Body"
+    />
   `,
   imports: [MULTI_LANGUAGE_RICH_TEXT_EDITOR_IMPORTS],
   providers: [provideRichTextEditorDefaultTools()],
@@ -22,6 +31,8 @@ import { MULTI_LANGUAGE_RICH_TEXT_EDITOR_IMPORTS } from './multi-language-rich-t
 class MultiLanguageEditorTestHost {
   public value = signal<MultiLanguageRichTextEditorValue>({});
   public readonly = signal(false);
+  public hidden = signal(false);
+  public labels = signal<Partial<RichTextEditorLabels> | null>(null);
   public languages = signal<readonly MultiLanguageRichTextEditorLanguage[]>([
     { code: 'en', label: 'English' },
     { code: 'de', label: 'German' },
@@ -63,6 +74,34 @@ describe('MultiLanguageRichTextEditorComponent', () => {
     expect(wrapper.activeLanguage()).toBe('en');
     expect(textOf(trigger())).toBe('en');
     expect(trigger().getAttribute('aria-label')).toContain('English');
+  });
+
+  it('says in the trigger name that languages are missing', () => {
+    expect(trigger().getAttribute('aria-label')).toBe('Language: English, 2 languages missing');
+
+    driver.host.value.set({ en: 'Hello' });
+    tick();
+
+    expect(trigger().getAttribute('aria-label')).toBe('Language: English, 1 language missing');
+
+    driver.host.value.set({ en: 'Hello', de: 'Hallo' });
+    tick();
+
+    expect(trigger().getAttribute('aria-label')).toBe('Language: English');
+  });
+
+  it('forwards labels, hidden and the accessible name to the embedded editor', () => {
+    const inner = driver.directive(RichTextEditorDirective, 'et-rich-text-editor');
+
+    expect(inner.ariaLabel()).toBe('Body');
+    expect(inner.hidden()).toBe(false);
+
+    driver.host.hidden.set(true);
+    driver.host.labels.set({ languageTrigger: (language) => `Sprache: ${language}`, languageMissing: () => 'fehlt' });
+    tick();
+
+    expect(inner.hidden()).toBe(true);
+    expect(trigger().getAttribute('aria-label')).toBe('Sprache: English, fehlt');
   });
 
   it('writes what is typed under the active language only', () => {

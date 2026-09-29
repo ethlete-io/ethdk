@@ -1,4 +1,5 @@
 import { booleanAttribute, Component, computed, inject, input, viewChild, ViewEncapsulation } from '@angular/core';
+import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
 import {
   DEFAULT_RICH_TEXT_EDITOR_TOOLS,
   RICH_TEXT_EDITOR_IMPORTS,
@@ -21,7 +22,20 @@ import {
   hostDirectives: [
     {
       directive: MultiLanguageRichTextEditorDirective,
-      inputs: ['value', 'touched', 'disabled', 'readonly', 'invalid', 'errors', 'required', 'name', 'languages'],
+      inputs: [
+        'value',
+        'touched',
+        'disabled',
+        'readonly',
+        'hidden',
+        'invalid',
+        'errors',
+        'required',
+        'name',
+        'languages',
+        'labels',
+        ...ACCESSIBLE_NAME_INPUTS,
+      ],
       outputs: ['valueChange', 'touchedChange', 'touch'],
     },
   ],

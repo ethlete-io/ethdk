@@ -26,11 +26,18 @@ export class MultiLanguageRichTextEditorLanguageToolComponent {
 
   protected languages = computed(() => this.wrapper?.languages() ?? []);
   protected activeCode = computed(() => this.wrapper?.activeLanguage() ?? '');
-  protected activeLabel = computed(
+  public activeLabel = computed(
     () => this.languages().find((language) => language.code === this.activeCode())?.label ?? this.activeCode(),
   );
 
   protected missingCount = computed(() => this.wrapper?.missingLanguages().length ?? 0);
+
+  protected triggerLabel = computed(() => {
+    const label = this.labels().languageTrigger(this.activeLabel());
+    const missing = this.missingCount();
+
+    return missing > 0 ? `${label}, ${this.labels().languageMissing(missing)}` : label;
+  });
 
   protected disabled = computed(
     () => this.editor().disabled() || this.editor().readonly() || this.languages().length === 0,
