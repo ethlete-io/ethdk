@@ -95,10 +95,7 @@ export const agentApiClientOf = (body: unknown) => {
 
   if (typeof raw !== 'string') return undefined;
 
-  const name = [...raw]
-    .filter((char) => char >= ' ' && char !== '\u007f')
-    .join('')
-    .trim();
+  const name = raw.replace(/[\p{Cc}\p{Cf}]/gu, '').trim();
 
   return name ? name.slice(0, CLIENT_MAX_LENGTH) : undefined;
 };

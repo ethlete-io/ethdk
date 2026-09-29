@@ -169,6 +169,10 @@ describe('agentApiClientOf', () => {
     expect(agentApiClientOf({ op: 'status', client: ' Claude Code\u001b[2J ' })).toBe('Claude Code[2J');
   });
 
+  it('reads the name without format characters that reorder or hide text', () => {
+    expect(agentApiClientOf({ op: 'status', client: 'Claude\u202e edoC\u200b\u2066' })).toBe('Claude edoC');
+  });
+
   it('reads nothing where the caller gave no name', () => {
     expect(agentApiClientOf({ op: 'status' })).toBeUndefined();
     expect(agentApiClientOf({ op: 'status', client: 3 })).toBeUndefined();
