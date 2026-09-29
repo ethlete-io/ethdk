@@ -464,3 +464,82 @@ describe('streamDay, on an agent that ran through a lunch break', () => {
     expect(drawn.some((window) => window.from <= AT(95) && window.to >= AT(255))).toBe(true);
   });
 });
+
+describe('streamDay, on a day still being collected while the user steers from a phone', () => {
+  const input = (minute: number, kind: 'input-idle' | 'input-active'): CollectedEvent => ({
+    at: AT(minute),
+    source: 'input',
+    kind,
+  });
+  const siblingPrompt = (minute: number, sessionId: string): CollectedEvent => ({
+    at: AT(minute),
+    source: 'agent-prompt',
+    kind: 'agent-prompt',
+    provider: 'claude-code',
+    sessionId,
+    promptId: `${sessionId}-${minute}`,
+    cwd: REPO,
+    gitBranch: BRANCH,
+    askedBy: 'human',
+  });
+
+  /**
+   * 2026-09-29: Tom left the desk at 15:01 and prompted two sessions of one checkout from his phone
+   * at 15:21 to 15:24. He was still away when the day was read.
+   */
+  const AWAY: CollectedEvent[] = [
+    ...EVENING,
+    input(0, 'input-active'),
+    input(89, 'input-idle'),
+    idle(90, 'idle-start'),
+    ...running(90, 130, 'session-a'),
+    ...running(95, 130, 'session-b'),
+    siblingPrompt(110, 'session-b'),
+    siblingPrompt(111, 'session-a'),
+    siblingPrompt(112, 'session-a'),
+    siblingPrompt(113, 'session-a'),
+    siblingPrompt(114, 'session-b'),
+  ];
+  const BACK: CollectedEvent[] = [
+    ...AWAY,
+    idle(150, 'idle-end'),
+    input(150, 'input-active'),
+    focus(150),
+    commit(155, 'fix(repo): Read a phone prompt as remote while the user is away'),
+    focus(165),
+  ];
+
+  const read = (events: CollectedEvent[], now?: Date) =>
+    streamDay({
+      events: events.slice().sort((a, b) => a.at.getTime() - b.at.getTime()),
+      options: {
+        repoRoots: [REPO],
+        windowsSeenThroughMs: (now ?? AT(170)).getTime(),
+        now,
+        rows: { config: CONFIG, cut: { through: now } },
+      },
+    });
+  const inAway = (row: { from: Date; to: Date }) =>
+    row.to.getTime() > AT(90).getTime() && row.from.getTime() < AT(135).getTime();
+
+  it('books the prompts as remote work before the user is back', () => {
+    const { rows } = read(AWAY, AT(135));
+    const unattended = rows.unnamed.filter((row) => row.unattended && inAway(row));
+
+    expect(rows.remote?.booked.length).toBeGreaterThan(0);
+    expect(unattended).toHaveLength(1);
+    expect(unattended[0]?.from.getTime()).toBeGreaterThanOrEqual(AT(114).getTime());
+  });
+
+  it('reads the stretch the same once the user is back', () => {
+    const live = read(AWAY, AT(135)).rows;
+    const settled = read(BACK).rows;
+
+    expect(settled.remote).toEqual(live.remote);
+    expect(settled.unnamed.filter(inAway)).toEqual(live.unnamed.filter(inAway));
+  });
+
+  it('keeps a day that is over as it was without the live instant', () => {
+    expect(read(AWAY).rows.remote).toEqual({ booked: [], drawn: [] });
+  });
+});

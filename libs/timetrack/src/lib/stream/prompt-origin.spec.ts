@@ -95,6 +95,22 @@ describe('promptOriginAt', () => {
     expect(promptOriginAt({ events, at: at('10:45:00') })).toBe('remote');
   });
 
+  it('reads a prompt in a stretch still open on a day being collected as remote', () => {
+    const events = [input('input-active', '2026-09-15T09:00:00Z'), input('input-idle', '2026-09-15T09:30:00Z')];
+
+    expect(promptOriginAt({ events, at: at('10:00:00'), now: at('10:15:00') })).toBe('remote');
+  });
+
+  it('still cannot tell on a live day when the app restarted after the prompt', () => {
+    const events = [
+      input('input-active', '2026-09-15T09:00:00Z'),
+      input('input-idle', '2026-09-15T09:30:00Z'),
+      input('input-idle', '2026-09-15T10:10:00Z'),
+    ];
+
+    expect(promptOriginAt({ events, at: at('10:00:00'), now: at('10:15:00') })).toBe('unknown');
+  });
+
   it('widens the window when asked to', () => {
     const events = [input('input-active', '2026-09-15T09:00:00Z'), input('input-idle', '2026-09-15T09:55:00Z')];
 

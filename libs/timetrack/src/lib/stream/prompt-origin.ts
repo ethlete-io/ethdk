@@ -18,16 +18,23 @@ const isInput = (event: CollectedEvent): event is InputEvent => event.source ===
  *
  * A prompt is `remote` only inside an idle stretch an `input-active` closes. A restarted notifier's
  * first transition is always `input-idle`, so that closing edge is the proof the app watched the seat
- * the whole time; a stretch the app was closed in reads `unknown`.
+ * the whole time; a stretch the app was closed in reads `unknown`. On a day still being collected,
+ * `now` closes a stretch no input event follows yet: the app is watching the seat at that instant.
  */
 export const promptOriginAt = (options: {
   events: readonly CollectedEvent[];
   at: Date;
   windowMs?: number;
+  now?: Date;
 }): PromptOrigin => promptOriginReader(options)(options.at);
 
 /** {@link promptOriginAt} for many prompts over the same events, which it sorts once. */
-export const promptOriginReader = (options: { events: readonly CollectedEvent[]; windowMs?: number }) => {
+export const promptOriginReader = (options: {
+  events: readonly CollectedEvent[];
+  windowMs?: number;
+  /** The instant a day still being collected is read at. Left out for a day that is over. */
+  now?: Date;
+}) => {
   const windowMs = options.windowMs ?? DESK_INPUT_WINDOW_MS;
   const inputs = options.events.filter(isInput).sort((left, right) => left.at.getTime() - right.at.getTime());
 
@@ -60,6 +67,8 @@ export const promptOriginReader = (options: { events: readonly CollectedEvent[];
     if (activeAtFrom === undefined) return 'unknown';
     if (activeAtFrom) return 'desk';
 
-    return next?.kind === 'input-active' ? 'remote' : 'unknown';
+    if (next) return next.kind === 'input-active' ? 'remote' : 'unknown';
+
+    return options.now && until <= options.now.getTime() ? 'remote' : 'unknown';
   };
 };

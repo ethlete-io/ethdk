@@ -76,6 +76,10 @@ const overlaps = (window: TimeWindow, windows: readonly TimeWindow[]) =>
  * left on overnight samples presence hours before the first block and hours after the last, and one
  * gap of that size is the night rather than a break somebody took.
  *
+ * On a day still being collected, the absence after the last stretch of presence runs to `now` once
+ * it holds a remote prompt, and the day's work need not reach its end: the agent's time is clipped to
+ * presence, so it never does.
+ *
  * This is the whole absence, before any prompt buys its attention back. The day's work is clipped to
  * it as well as to presence, so an agent that ran through a break still builds the row its time books
  * and the break is drawn over that row. `breakWindows` is what the day reports.
@@ -100,6 +104,8 @@ export const breakGaps = (options: {
   promptAttentionMs?: number;
   /** The most of one break its prompts may buy back. Defaults to `DEFAULT_MAX_ATTENTION_SHARE`. */
   maxAttentionShare?: number;
+  /** The instant a day still being collected is read at. Left out for a day that is over. */
+  now?: Date;
 }): BreakWindow[] => {
   const ordered = options.presence.slice().sort((a, b) => a.from.getTime() - b.from.getTime());
   const events = (options.events ?? []).filter(isPresence).filter((event) => event.kind === 'lock');
@@ -114,19 +120,23 @@ export const breakGaps = (options: {
     ? work.reduce((latest, window) => Math.max(latest, window.to.getTime()), -Infinity)
     : undefined;
   const breaks: BreakWindow[] = [];
+  const now = options.now?.getTime();
+  const remoteBefore = (from: number) =>
+    now !== undefined && (options.remotePrompts ?? []).some((at) => at.getTime() > from && at.getTime() <= now);
 
   ordered.forEach((earlier, index) => {
     const later = ordered[index + 1];
+    const trailing = !later && remoteBefore(earlier.to.getTime());
 
-    if (!later) return;
+    if (!later && !trailing) return;
 
-    const window = { from: earlier.to, to: later.from };
+    const window = { from: earlier.to, to: later ? later.from : new Date(now ?? earlier.to.getTime()) };
 
     if (window.to.getTime() <= window.from.getTime()) return;
     if (overlaps(window, pauses)) return;
 
     if (workFrom !== undefined && workTo !== undefined) {
-      if (window.from.getTime() < workFrom || window.to.getTime() > workTo) return;
+      if (window.from.getTime() < workFrom || (!trailing && window.to.getTime() > workTo)) return;
     }
 
     if (window.to.getTime() - window.from.getTime() > maxBreakMs) return;

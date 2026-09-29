@@ -106,6 +106,8 @@ export type StreamDayOptions = {
    * sample. Without it a day still being collected reports its own live tail as rebuilt.
    */
   windowsSeenThroughMs?: number;
+  /** The instant a day still being collected is read at. Left out for a day that is over. */
+  now?: Date;
   /** Which calls counted as work. Nothing configured leaves every call unclassified — see `classifyCalls`. */
   callRules?: TimetrackCallRules;
   /**
@@ -1044,9 +1046,18 @@ export const streamDay = (options: {
   // otherwise let a run the app made open a band or rebuild a minute of presence.
   const turns = usage.filter((turn) => turn.provider !== TIMETRACK_PROVIDER);
 
+  const inputs = events.filter((event) => event.source === 'input');
+  const originAt = promptOriginReader({ events: inputs, now: config.now });
+  const settledOriginAt = promptOriginReader({ events: inputs });
+  // A remote prompt the user has not come back from yet would reopen presence, which the idle-end
+  // that later closes the stretch takes back. Left out, the live day reads as the settled one will.
+  const awaitingReturn = new Set(
+    prompts.filter((prompt) => originAt(prompt.at) === 'remote' && settledOriginAt(prompt.at) !== 'remote'),
+  );
+
   const rebuildSamples: PresenceSample[] = [
     ...observed.filter((sample) => PRESENCE_SOURCES.includes(sample.source)),
-    ...prompts,
+    ...prompts.filter((prompt) => !awaitingReturn.has(prompt)),
     ...turns,
   ].sort((a, b) => a.at.getTime() - b.at.getTime());
 
@@ -1517,11 +1528,9 @@ export const streamDay = (options: {
     ...clipSpans({ spans: rebuiltSpans, within: rebuilt }),
   ];
 
-  const inputs = events.filter((event) => event.source === 'input');
   // A prompt the agent gave itself buys nothing back: nobody read anything and nobody typed. See
   // ADR 0018.
   const typed = prompts.filter((prompt) => prompt.askedBy !== 'machine');
-  const originAt = promptOriginReader({ events: inputs });
   const remote = typed.filter((prompt) => originAt(prompt.at) === 'remote');
   const remoteSet = new Set(remote);
   const away = {
@@ -1533,6 +1542,7 @@ export const streamDay = (options: {
     prompts: typed.filter((prompt) => !remoteSet.has(prompt)).map((prompt) => prompt.at),
     remotePrompts: remote.map((prompt) => prompt.at),
     promptAttentionMs: config.promptAttentionMs,
+    now: config.now,
   };
   const gaps = breakGaps(away);
   const breaks = breakWindows({ ...away, gaps });

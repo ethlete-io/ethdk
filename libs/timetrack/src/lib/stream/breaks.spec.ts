@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CollectedEvent } from '../model/event';
 import { TimeWindow } from '../model/time-window';
-import { breakMs, breakWindows, bookedRemoteWindows, breaksBetweenRows } from './breaks';
+import { breakGaps, breakMs, breakWindows, bookedRemoteWindows, breaksBetweenRows } from './breaks';
 
 const at = (hour: number, minute = 0) => new Date(2026, 8, 10, hour, minute);
 
@@ -195,6 +195,24 @@ describe('breakWindows', () => {
 
   it('sums the breaks it found', () => {
     expect(breakMs(breakWindows({ presence: [MORNING, AFTERNOON] }))).toBe(90 * 60_000);
+  });
+});
+
+describe('breakGaps, on a day still being collected', () => {
+  const work = [window([9, 0], [11, 0])];
+
+  it('runs the absence the user has not come back from to now when it holds a remote prompt', () => {
+    expect(breakGaps({ presence: [MORNING], work, remotePrompts: [at(11, 40)], now: at(12, 0) })).toEqual([
+      { from: at(11, 0), to: at(12, 0), locked: false },
+    ]);
+  });
+
+  it('reads nothing after the last presence without a remote prompt in it', () => {
+    expect(breakGaps({ presence: [MORNING], work, prompts: [at(11, 40)], now: at(12, 0) })).toEqual([]);
+  });
+
+  it('reads nothing after the last presence on a day that is over', () => {
+    expect(breakGaps({ presence: [MORNING], work, remotePrompts: [at(11, 40)] })).toEqual([]);
   });
 });
 

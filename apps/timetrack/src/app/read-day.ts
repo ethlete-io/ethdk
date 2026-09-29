@@ -77,6 +77,7 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
         patterns: options.patterns,
         windowsSeenThroughMs: options.windowsSeenThroughMs,
         through: at,
+        now: at < to ? at : undefined,
         rows: { timerRuns: runs.map((run) => closeTimerRun(run, at)), pauses },
       });
       const day = streamDay({ events, options: dayOptions });

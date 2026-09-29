@@ -81,6 +81,8 @@ export const streamDayOptionsOf = (options: {
   windowsSeenThroughMs?: number;
   /** The instant the day is read through: now, or the day's end once the day is over. */
   through?: Date;
+  /** Now, while the day is still being collected. Left out for a day that is over. */
+  now?: Date;
   /** What this reader adds to the shared row options: the day's timer runs, pauses and edits. */
   rows?: Omit<BuildRowsOptions, 'links' | 'calls'>;
 }): Partial<StreamDayOptions> => ({
@@ -88,6 +90,7 @@ export const streamDayOptionsOf = (options: {
   links: options.links,
   ownAppIds: OWN_APP_IDS,
   windowsSeenThroughMs: options.windowsSeenThroughMs,
+  now: options.now,
   callRules: options.settings.callRules,
   noWorkContextApps: effectiveNoWorkContextApps(options.settings),
   transientApps: effectiveTransientApps(options.settings),

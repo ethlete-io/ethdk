@@ -144,6 +144,7 @@ type DayEvidence = {
   pauses: TimeWindow[];
   /** The instant the day is read through, for anything that has to cut off a stretch still open. */
   through: Date;
+  now?: Date;
 };
 
 /**
@@ -230,6 +231,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
             map((loaded) => ({
               ...loaded,
               through,
+              now: through < to ? through : undefined,
               // The same rule as an open timer run, for the same reason: a pause taken this morning
               // must not claim every hour left until midnight.
               pauses: pauseWindows({ events: loaded.events, window: { from, to }, through }),
@@ -417,6 +419,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
             patterns: recurring.patterns(),
             epics: epics.optionsFor(day()),
             windowsSeenThroughMs: windows.lastRun()?.at.getTime(),
+            now: collected.now,
             rows: rowOptions(),
           }),
         })
