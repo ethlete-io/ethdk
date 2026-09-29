@@ -1,12 +1,10 @@
 # Stream scan - open findings
 
-Scan of `libs/components/src/lib/stream/` from 2026-09-28. 0 High, 1 Medium, 2 Low, 1 Spec. Skipped: stories, `testing/stream-driver.ts`, `pip-window` / `pip-chrome` templates and CSS beyond the layer and colour check.
+Scan of `libs/components/src/lib/stream/` from 2026-09-28. 0 High, 1 Medium, 1 Low (1 fixed: consent and error headings are paragraphs in fcdd41719), 1 Spec. Skipped: stories, `testing/stream-driver.ts`, `pip-window` / `pip-chrome` templates and CSS beyond the layer and colour check.
 
 ## Slot and manager lifecycle
 
 ## Consent
-
-- Low: the consent and error cards hard-code an `<h3>` (`stream/consent/stream-consent.component.ts:24`, `stream/error/stream-player-error.component.ts:21`). The heading level is wrong in most page outlines. Use a `role="heading"` element with a configurable `aria-level`, or a non-heading element. S
 
 ## Platform embeds
 

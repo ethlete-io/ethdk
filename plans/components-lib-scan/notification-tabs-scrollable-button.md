@@ -1,6 +1,6 @@
 # notification, tabs, scrollable, button scan - open findings
 
-Scan of `libs/components/src/lib/{notification,tabs,scrollable,button}` from 2026-09-28. 0 High, 1 Medium, 2 Low, 1 Spec (verified 2026-09-28). Skipped: stories, most specs, testing drivers, and a line-by-line read of the large CSS files (grep only for `@layer`, colours and transitions).
+Scan of `libs/components/src/lib/{notification,tabs,scrollable,button}` from 2026-09-28. 0 High, 1 Medium, 1 Low (1 fixed: `emitAriaPressed` forwarded on button and window-control-button in b3b76368b), 1 Spec (verified 2026-09-28). Skipped: stories, most specs, testing drivers, and a line-by-line read of the large CSS files (grep only for `@layer`, colours and transitions).
 
 ## notification
 
@@ -9,10 +9,6 @@ Scan of `libs/components/src/lib/{notification,tabs,scrollable,button}` from 202
 ## scrollable
 
 - Low: `et-scrollable-masks` renders by default and always calls `activateChildIntersections()`, so every plain track runs an IntersectionObserver with 27 thresholds per child (`headless/scrollable-masks.component.ts:21`, `scrollable.component.html:24`). Activate only for a mask variant that needs partial-item state. S
-
-## button
-
-- Low: `et-button` does not forward `emitAriaPressed`, but `et-icon-button` does (`button.component.ts:92`, `icon-button.component.ts:44`). S
 
 ## Spec gaps
 
