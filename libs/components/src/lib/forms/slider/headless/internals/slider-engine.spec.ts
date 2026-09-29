@@ -160,6 +160,7 @@ describe('slider-engine', () => {
       expect(resolveMarks(false, { min: 0, max: 100, step: 10 })).toEqual([]);
       expect(resolveMarks(true, { min: 10, max: 10, step: 1 })).toEqual([]);
       expect(resolveMarks(true, { min: 0, max: 100, step: 0 })).toEqual([]);
+      expect(resolveMarks(true, { min: 0, max: 100, step: -5 })).toEqual([]);
     });
 
     it('derives one tick per step from `true`', () => {
