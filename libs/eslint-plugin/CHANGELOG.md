@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.0.0-next.26
+
+### Minor Changes
+
+- Drop the last module-scope pins from the components import floor (2,870 B gz) and add a `forbidImpureReads` option to `no-impure-top-level-provider`.
+
+### Patch Changes
+
+- The `class-member-order` fix keeps members without semicolons apart, so the reordered class still parses.
+- `recommendedTemplate` no longer reports an empty `<a>` or `<button>` carrying `et-match-card`, `et-match-participant` or `aria-labelledby` under `@angular-eslint/template/elements-content`.
+- Close rule gaps: `no-document-cookie`, `no-window-location`, `prefer-rxjs-timer`, `no-subscribe-with-body`, `prefer-match-media`, `prefer-clone-equal` and `no-dom-query` catch more escapes, and the `no-async-await` `play` exemption only applies in story files.
+- The `prefer-concise-angular-host-directives` fix no longer lets a trailing line comment swallow the closing brace.
+- Lint-scan fixes: observer, DOM, `accessor`/`abstract`/`static` member and on-push version detection gaps are closed, and importing `constructor` or `toString` from `@ethlete/cdk` or `@ethlete/query` is no longer misread as a mapped symbol.
+- Several rule fixes: `guard-return-newline` no longer counts a comment as the blank line, fixers keep multi-line imports, `no-legacy-prepare-without-injector` accepts `untracked` and IIFEs, `no-cdk-import` re-reads a changed migration map, `router.snapshot` is no longer reported, and `no-rxjs-in-effect` covers `afterRenderEffect` and `linkedSignal`.
+- `no-angular-router-api`, `prefer-element-dimensions`, `prefer-viewport-size` and the legacy query rules report fewer false positives and catch more escapes, and member-visibility rules see files changed during an editor session.
+- Declare `@typescript-eslint/parser` as a peer dependency.
+- Fix several rule gaps: decorator property order keeps trailing comments, `require-dollar-suffix` handles `toObservable` and `asObservable` but not `partition`, and legacy decorator, template literal type, recursion and routing view checks catch more cases.
+
 ## 1.0.0-next.25
 
 ### Minor Changes

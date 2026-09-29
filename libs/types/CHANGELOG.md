@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 2.0.0-next.9
+
+### Patch Changes
+
+- Export `LineupPlayerV2View` from the package root.
+
 ## 2.0.0-next.8
 
 ### Patch Changes

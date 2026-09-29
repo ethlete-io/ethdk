@@ -1,5 +1,48 @@
 # @ethlete/query
 
+## 6.0.0-next.53
+
+### Major Changes
+
+- Calling a query creator whose route uses `pathParams` without `withArgs` is now a type error; opt out with the literal `silenceMissingWithArgsFeatureError: true`, and let a stored `withArgs` feature's type be inferred rather than annotated `QueryFeature`.
+
+### Minor Changes
+
+- Add the `reportErrors` creator option: set it to `false` to keep a query's failed requests away from Angular's `ErrorHandler`.
+- `tableSortQueryField()` holds the `et-table` sort and keeps it in the URL, so `[(sort)]="qf.fields.sort().value"` binds it with no mapping.
+
+### Patch Changes
+
+- Legacy v2 queries that differ only in headers are now cached separately, `InfinityQuery` retries a failed page instead of skipping it, and `poll()` works again after `stopPolling()` ran while polling was blur-paused.
+- An aborted execution no longer counts as a success: `createQuerySubmission` skips `onSuccess`, `querySequence` stops with `error: null`, and `executeUntilSettled` on a destroyed query resolves a cancelled snapshot instead of throwing NG0205.
+- Auth: `createPersistentAuthFeature` and `createTrackingFeature` run in the feature context's injector, so calling them outside an injection context no longer throws NG0203.
+- Auth: `AuthQueryConfig.retryFn` is now part of the published type declarations.
+- Auth fixes: `redirectOnSessionEnd` fires with `withTokenRevocation`, only the tab a logout started in revokes tokens, a logout during an in-flight revocation still revokes, and multi-tab sync is inert on the server.
+- Auth: the `withPersistentAuth` guide now says the remember-me cookie token is obfuscated with a per-origin key, not encrypted.
+- Query batch: `retryFailed()` no longer resends a mutation that an unsubscribe aborted in flight, since the server may already have applied it.
+- Query: `queryParams` written in a different key order now share one cache entry, in the current and the legacy client, while the URL keeps the written order.
+- `prep-for-query-v3` rewrites `CLEAR_QUERY_ARGS` to `null` and drops its import, and warns about each `withArgs` callback that returns `null`, which now parks the query instead of keeping the previous args.
+- A `Date` in `queryParams` is now sent as its ISO string and keys the cache, retries resolve headers again per attempt, and a root-path devtools override no longer invents a response while nothing has settled.
+- The devtools serialize a response body once for the stats and the event log, and an event row finds its query only when it renders.
+- Devtools mocks now match clients whose `baseUrl` has a path, batch item tombstones stay bounded, bad stored overrides and vault values are ignored, and `setupAuthTest().refresh` honours `buildRefreshArgs`.
+- A query error's `retryState.retry` now says whether a manual retry is worth offering, even after automatic retries are exhausted or without `withDefaultRetry()`; a configured retry policy alone decides it, so `<et-query-error>` shows Retry without `alwaysAllowRetry`.
+- Two signal query forms on one route that commit in the same tick no longer re-parse their own URL write, so no spurious commit, refetch or dropped debounce follows and a committed `Date` keeps its milliseconds.
+- `migrate-to-query-v3` now renames only identifiers bound to the migrated client, keeps default and `type` imports, resolves `.js` and `baseUrl` imports, rewrites `.prepare()` only on legacy creators, and merges a scoped run into the existing report.
+- `execute({ args })` without `withArgs` now records the args so a bare `execute()` re-sends them and polling does not execute twice; refreshes update `lastTimeExecutedAt()` and `triggeredBy()`, and `subtle.setResponse` no longer re-runs `transformResponse`.
+- Legacy `[etInfinityQuery]`: `canLoadMore` stays `true` while the current page has failed or is retrying, so a trigger shown only when it is `true` can retry the first or last page.
+- A secure interop query that waits for a token no longer reports its own request as an `auto` refresh once the token arrives; the load keeps the trigger it was started with.
+- Auth: a negative numeric `refreshStrategy` now counts as `0`, so the proactive refresh fires at token expiry instead of after it.
+- The ngrx-toolkit interop no longer shares a handle between `FormData`, `Blob`, `Map` or `Set` args it cannot tell apart, keys `Date` args by time value, and every `toolkitCall` sends its own headers and args.
+- `migrate-from-ngrx-toolkit` now reports `on()` / `once()` calls on a migrated facade as `NTK-FACADE-ON`, and `NTK-UNCONVERTED-ACTION-GROUP` says the file does not typecheck against migrated facades.
+- A response that cannot be structured-cloned is now skipped with a dev warning instead of disabling persistence writes; in `@ethlete/query/testing`, the fake `BroadcastChannel` delivers as a task (await `flushMultiTabSync()`) and fake store reads are consistent.
+- Auth: `withPersistentAuth` no longer sends a garbled token, or deletes the shared cookie, when a sibling subdomain finds a remember-me cookie another origin wrote under `cookie.domain`.
+- `prep-for-query-v3` now handles re-exported `CLEAR_QUERY_ARGS`, leaves shadowing local names alone, and checks `withArgs` callbacks passed by reference, listing the ones it cannot follow.
+- Query repository: the `unbind` JSDoc now says an entry with a response is kept for `keepUnusedFor` instead of destroyed.
+- `withTokenRevocation` no longer sends a logout revocation queued behind another one when its tokens are live again by the time its turn comes.
+- Paged query stacks now report `isLastPageLoaded` for empty and shrunk results and allow `fetchNextPage()` during a load with `blockExecutionDuringLoading: false`; a query batch unsubscribed mid-flight settles as `cancelled` and `retryFailed()` resends it.
+- `refresh()` and `startPolling()` on a toolkit handle a newer unhashable-args call released now do nothing and warn once, naming the release, instead of warning on every call or polling tick.
+- The web socket client now reconnects with backoff and the current `auth` after a server disconnect or rejected handshake, resets its backoff after 10 s of uptime, and opens no connection during a server render.
+
 ## 6.0.0-next.52
 
 ### Major Changes

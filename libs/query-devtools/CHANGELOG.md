@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.0.0-next.14
+
+### Patch Changes
+
+- Stop the `Ctrl/Cmd + Alt + Q` shortcut from firing on AltGr + Q, which types `@` on a German Windows layout.
+- Drop `@analogjs/vitest-angular` and `@angular/compiler` from the peer dependencies; only the package's own tests used them.
+- The devtools serialize a response body once for the stats and the event log, and an event row finds its query only when it renders.
+- Escape keys, routes and control characters correctly in the JSONPath, diff, TypeScript, OpenAPI, YAML and Insomnia exports, and type repeated query keys as arrays.
+- Unfold only the value explorer nodes that hold a search match, so searching a self-referential value no longer hangs the tab.
+- Text on the panel's accent fills now follows the theme's `on-primary` colour instead of a fixed near-black.
+- The About section and the Mocks tab copy through the panel's own clipboard helper, so they work on plain `http://` origins and in a pop-out too.
+- Write `anyOf` for mixed array members in the OpenAPI export, and keep named schemas that are referenced deep inside another schema.
+- Copy and paste through the pop-up's clipboard while the panel is popped out, instead of the unfocused host page's.
+- The toggle shortcut works inside a pop-out, a hidden pop-out pauses its clock, pop-out listeners and blobs are released on dock-back, inspect mode keeps its clicks and Escape from the app, and a resize writes the view state once.
+- Redact credential query and fragment parameters (`token`, `api_key`, `code`, signatures) from the URLs in the session export.
+- Fix stale session ages, inputs that kept rejected values, folded runs staying open across queries, duplicate dropped-entry keys, socket errors shown as invalid JSON, lost focus after a fallback copy, and unvalidated custom API URLs.
+
 ## 1.0.0-next.13
 
 ### Patch Changes

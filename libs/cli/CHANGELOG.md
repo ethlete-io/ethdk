@@ -1,5 +1,19 @@
 # @ethlete/cli
 
+## 2.1.0-next.12
+
+### Patch Changes
+
+- `et api clear` keeps a checkout git cannot read, and `et api up` and `setup` no longer fail on output over 1 MB.
+- `et api clear` also keeps a checkout with stashes or detached-HEAD commits, `checkout` never reads a branch as a flag or path, `-h` shows help, and a port held on loopback or IPv6 counts as taken.
+- `ethlete api` no longer leaves an `ethlete-api-*` directory in the temp folder after each podman run.
+- GitLab token checks refuse redirects, `auth.json` is narrowed before the token is written, `release` matches its flags exactly, and `doctor` reports a broken legacy config file.
+- `et design check` closes the browser when the page fails, and `et design serve` resolves calls on Windows.
+- `et doctor` reports an `ethlete.apis.js` that throws while it loads instead of crashing.
+- `release --force` stages only the files `changeset version` changed instead of running `git add .`, so unrelated uncommitted changes stay out of the "Release versions" commit.
+- `et update` passes the agent prompt through environment variables, sends `.npmrc` registry tokens, keeps CRLF line endings, skips git-ignored manifests, and rejects migration names or instructions outside the package.
+- `et update` prefers the lockfile over the calling `npx`, runs package managers on Windows, and points every run to `--continue` while an update is unfinished.
+
 ## 2.1.0-next.11
 
 ### Minor Changes

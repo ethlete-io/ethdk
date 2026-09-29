@@ -1,5 +1,29 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.18
+
+### Minor Changes
+
+- Timetrack: every write command now queues for the user's approval in the app and prints an approval id; `timetrack approval <id>` reads the outcome, and the agent contract moves to version 3.
+- Timetrack: add `timetrack sync <day>` to plan a day's Tempo sync, and `--write --plan <hash>` to write the confirmed plan; `worklogs --json` now reports a midnight `startTime`.
+- Timetrack: add `timetrack worklog --delete <id> --day <YYYY-MM-DD>` to delete one of the account's own Tempo worklogs; the app refuses any other id.
+- Timetrack: add `timetrack standins --merge <id> --into <id>` and the `standIn.merge` agent op, which waits for the user's approval. `standIn.list` now reports `hiddenOn` and `mergedIds`.
+
+### Patch Changes
+
+- `parseBranch` now reads a leading issue key from a deprecated spelling such as `dev-FIP-2721-subject`, so it returns the key and a rename suggestion that carries it.
+- The design exploration skill now tells an agent in the ethlete SDK that the user reads calls in Ethlete Studio (`yarn studio`), so the agent does not start `yarn design` next to it.
+- Git-flow matches a project key prefix as a whole word, keeps the subject with a grouped `keyPattern`, drops the `CI_JOB_TOKEN` fallback, and prints an undo hint when the push after a repair rename fails.
+- `git-flow repair` sends `GITLAB_TOKEN` only to the hosts in `GITLAB_HOST` or `CI_SERVER_HOST`, and no longer follows redirects.
+- `git-flow repair` and `start` no longer mistake a remote branch that only ends with the name, such as `team/feat/x` for `feat/x`, for the branch.
+- `sync` writes only changed files, survives dangling symlinks, warns about an unparseable hook settings file, and rejects duplicate frontmatter keys; `output-style --remove` works for a style no longer shipped.
+- `timetrack` rejects a flag whose value is another flag, a malformed `naming` day and a non-positive `--limit`; `day --out` honours `--json` and resolves against the root.
+- `timetrack` reads a date-only `--at`, `--from` or `--to` as local midnight and accepts a local `HH:MM`, and `timetrack project` resolves a relative path.
+- `sync` refuses a file whose ethlete marker block has lost a marker, instead of deleting the text after it on the next run.
+- Git flow: a lowercase `<word>-<number>` branch subject such as `step-2-rework` is no longer read as an issue key when no key prefixes are configured.
+- `tableSortQueryField()` holds the `et-table` sort and keeps it in the URL, so `[(sort)]="qf.fields.sort().value"` binds it with no mapping.
+- Recommend `sonnet` for scoped subagent work and keep `opus` for hard work, in the subagent-models rule and the subagent-model-policy hook.
+
 ## 0.1.0-next.17
 
 ### Minor Changes
