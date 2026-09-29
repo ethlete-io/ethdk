@@ -86,7 +86,7 @@ Time is cyclic, so the arrows wrap past midnight. Blocked spans are skipped: a k
 
 ## Touch
 
-Below the `md` breakpoint the date and time pickers open as a bottom sheet, where the ring grows to 328px and the handles to 44px. The ring sets `touch-action: none`, so a drag on it does not scroll the sheet.
+Below the `md` breakpoint the date and time pickers open as a bottom sheet, where the ring grows to 328px, or to the screen width minus 24px when that is less. The handles keep their size, because a press anywhere on the ring moves the nearest handle. The ring sets `touch-action: none`, so a drag on it does not scroll the sheet.
 
 ## Headless usage
 
@@ -174,7 +174,7 @@ Selection colors come from the nearest [color theme](/core/theming) (`--et-theme
 | Token                          | Default | Purpose                                                          |
 | ------------------------------ | ------- | ---------------------------------------------------------------- |
 | `--et-time-picker-ring-size`   | `280px` | Inline and block size of the ring (`328px` in the bottom sheet). |
-| `--et-time-picker-handle-size` | `24px`  | Size of a handle (`44px` in the bottom sheet).                   |
+| `--et-time-picker-handle-size` | `24px`  | Size of a handle.                                                |
 
 ## Error codes
 
