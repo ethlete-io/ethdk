@@ -84,7 +84,10 @@ import {
   standInBranches,
   standInNameFor,
   statedPresence,
+  agentTurnsOf,
+  agentUsageWithin,
   streamDay,
+  TokenUsage,
   unnamedContexts,
   windowsMs,
 } from '@ethlete/timetrack';
@@ -590,6 +593,20 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   });
 
   const rows = computed(() => review()?.rows ?? []);
+
+  const agentUsageByRow = computed(() => {
+    const roots = git.discovery()?.repos ?? [];
+    const turns = agentTurnsOf({ events: evidence()?.events ?? [], roots });
+    const found = new Map<string, TokenUsage & { turns: number }>();
+
+    for (const row of rows()) {
+      const usage = agentUsageWithin({ turns, roots, laneKey: row.laneKey, from: row.from, to: row.to });
+
+      if (usage) found.set(row.id, usage);
+    }
+
+    return found;
+  });
   const hiddenRows = computed(() => review()?.hidden ?? []);
   const statements = computed(() => edits().statements);
   const breaks = computed(() =>
@@ -959,6 +976,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     /** The branch a checkout the day named none for was on, by checkout path, from its reflog. */
     headBranches,
     isToday,
+    /** The agents' tokens inside each row's checkout and range, by row id; a row with none has no entry. */
+    agentUsageByRow,
     /** The rows the model's answers are in, which is what the screen draws and the reviewer edits. */
     reasoned: reasonedRows,
     /**

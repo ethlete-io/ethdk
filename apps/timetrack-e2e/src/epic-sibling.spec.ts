@@ -120,6 +120,39 @@ test.describe('a checkout that shares a branch name with a checkout that is alre
     await expect(page.getByText(`only other open child of ${E2E_PARENT_KEY} (Epic)`)).toBeVisible();
   });
 
+  test('sums the agent tokens spent in the row’s checkout and range, and no others', async ({ page }) => {
+    const turn = (clock: string, cwd: string, tokens: number): CollectedEvent => ({
+      at: at(clock),
+      source: 'agent-usage',
+      kind: 'agent-usage',
+      provider: 'claude-code',
+      sessionId: `session-${cwd}`,
+      turnId: `turn-${clock}-${cwd}`,
+      cwd,
+      model: 'claude-opus-5',
+      usage: { input: 0, output: 0, cacheWrite: 0, cacheRead: tokens, thinking: 0 },
+    });
+
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: [
+        ...EVENTS,
+        turn('09:35', SPECS_REPO, 700_000),
+        turn('09:40', SPECS_REPO, 500_000),
+        turn('09:40', E2E_REPO, 90_000_000),
+        turn('13:00', SPECS_REPO, 90_000_000),
+      ],
+      settings: settings(),
+      git: { extraRepos: [SPECS_REPO] },
+      jira: { issues: ISSUES },
+    });
+    await page.goto('/day');
+
+    await rows(page).filter({ hasText: FREE_CHILD }).click();
+
+    await expect(page.getByText('1.2 M tokens by agents')).toBeVisible();
+  });
+
   test('names nothing when the two checkouts file into different Jira projects', async ({ page }) => {
     await seedWorld(page, {
       now: E2E_NOW,

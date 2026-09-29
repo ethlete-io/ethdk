@@ -6,3 +6,4 @@ export * from './presence';
 export * from './prompt-origin';
 export * from './stream-day';
 export * from './unnamed-focus';
+export * from './row-agent-usage';

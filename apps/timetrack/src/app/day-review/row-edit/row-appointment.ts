@@ -3,6 +3,7 @@ import {
   BehindStretch,
   Confidence,
   ReviewedRow,
+  TokenUsage,
   formatDurationMs,
   isManualRow,
   isStandInRow,
@@ -81,6 +82,7 @@ export type RowEntry = {
   /** What the row's stand-in is called, so the band reads it without a second lookup per redraw. */
   standInName?: string;
   excludedReason?: string;
+  agentUsage?: TokenUsage;
 };
 
 /** A story or epic several of the day's rows roll up to. Drawn in the all-day strip, never billed. */
@@ -123,6 +125,7 @@ export const appointmentOf = (options: {
   to?: Date;
   standInName?: string;
   excludedReason?: string;
+  agentUsage?: TokenUsage;
 }): Appointment<TimelineEntry> => ({
   id: options.row.id,
   parentId: options.parentId ?? null,
@@ -138,6 +141,7 @@ export const appointmentOf = (options: {
     willSync: syncsInState(options.row.state),
     standInName: options.standInName,
     excludedReason: options.excludedReason,
+    agentUsage: options.agentUsage,
   },
 });
 

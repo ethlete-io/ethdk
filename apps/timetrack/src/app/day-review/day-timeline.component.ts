@@ -923,6 +923,7 @@ export class DayTimelineComponent {
    */
   protected appointments = computed<Appointment<TimelineEntry>[]>(() => {
     const storyIds = this.storyIdOf();
+    const agentUsage = this.store.agentUsageByRow();
 
     return [
       ...this.stories().map(([issueKey, rows]): Appointment<TimelineEntry> => ({
@@ -945,6 +946,7 @@ export class DayTimelineComponent {
           to: drag?.boundary.before.id === row.id ? drag.at : row.to,
           standInName: this.standInNameOf(row),
           excludedReason: this.excludedReasonOf(row),
+          agentUsage: agentUsage.get(row.id),
         });
       }),
     ];

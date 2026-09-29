@@ -10,7 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { Appointment, BUTTON_IMPORTS, injectSchedulerEditSurfaceHost } from '@ethlete/components';
-import { EvidenceKind } from '@ethlete/timetrack';
+import { EvidenceKind, formatTokenCount, totalTokens } from '@ethlete/timetrack';
 import { formatClockTime } from '../format';
 import { rowEntryOf } from './row-appointment';
 
@@ -28,6 +28,10 @@ const NAMING_KINDS: ReadonlySet<EvidenceKind> = new Set([
   template: `
     <div class="flex flex-col gap-2">
       <h3 class="text-small text-et-surface-muted">Evidence</h3>
+
+      @if (agentTokens(); as tokens) {
+        <p class="text-small text-et-surface-subtle">{{ tokens }} tokens by agents</p>
+      }
 
       @if (evidence().length) {
         <ul class="flex flex-col gap-2">
@@ -75,6 +79,12 @@ export class EditEvidenceComponent {
         parts: entry.detail.split('`').map((text, index) => ({ text, code: index % 2 === 1 })),
       })) ?? [],
   );
+
+  protected agentTokens = computed(() => {
+    const usage = rowEntryOf(this.draft()())?.agentUsage;
+
+    return usage ? formatTokenCount(totalTokens(usage)) : null;
+  });
 
   protected expanded = signal(false);
 
