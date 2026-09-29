@@ -152,6 +152,47 @@ describe('isLiveCallRow', () => {
   });
 });
 
+describe('endRowAt, on a growing call band nothing named', () => {
+  const HELPER = 'com.hnc.Discord.helper.Renderer';
+  const started: CollectedEvent[] = [{ at: at('14:00'), source: 'call', kind: 'call-start', appId: HELPER }];
+
+  const unnamedDay = (to: string): DayRows => {
+    const { id, from, durationMs, observedMs, laneKey, description, evidence, state } = meeting(to);
+    const band = {
+      id: `unnamed@${id}`,
+      from,
+      to: at(to),
+      durationMs,
+      observedMs,
+      laneKey,
+      description,
+      evidence,
+      state,
+    };
+
+    return { ...day(to), proposals: [], unnamed: [{ ...band, confidence: 'weak' }] };
+  };
+  const ended = () =>
+    endRowAt({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: reviewDay({ rows: unnamedDay('16:07') }).rows[0]!,
+      at: at('16:00'),
+    });
+
+  it('keeps the end, and the rest of the call no longer grows as a call row of its own', () => {
+    const edits = ended();
+    const rows = reviewDay({ rows: unnamedDay('17:00'), edits }).rows;
+
+    expect(rows.map((row) => [row.from.toISOString(), row.to.toISOString()])).toEqual([
+      [at('14:00').toISOString(), at('16:00').toISOString()],
+      [at('16:00').toISOString(), at('17:00').toISOString()],
+    ]);
+    expect(rows.map((row) => isLiveCallRow({ row, calls: unnamedDay('17:00').calls, events: started, edits }))).toEqual(
+      [false, false],
+    );
+  });
+});
+
 describe('followCallAgain', () => {
   const HELPER = 'com.hnc.Discord.helper.Renderer';
   const started: CollectedEvent[] = [{ at: at('14:00'), source: 'call', kind: 'call-start', appId: HELPER }];

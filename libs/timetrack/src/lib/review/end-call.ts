@@ -67,15 +67,19 @@ const cutFrom = (edits: DayReviewEdits, row: EndedRow) => {
  */
 const restPinsOf = (edits: DayReviewEdits, row: EndedRow) => {
   const cutFromRow = cutFrom(edits, row);
+  const own = endPinOf(edits, row);
   const unnamed = edits.pinned
-    .filter((pin) => !pin.issueKey && !pin.standInId && !pin.excluded && storedLaneKey(pin.laneKey) === CALL_LANE_KEY)
+    .filter(
+      (pin) =>
+        pin !== own && !pin.issueKey && !pin.standInId && !pin.excluded && storedLaneKey(pin.laneKey) === CALL_LANE_KEY,
+    )
     .sort((left, right) => left.from.getTime() - right.from.getTime());
   const rest = new Set(
     unnamed.filter(
       (pin) => pin.from.getTime() >= row.from.getTime() && pin.replaces.length > 0 && pin.replaces.every(cutFromRow),
     ),
   );
-  let reached = endPinOf(edits, row)?.to.getTime();
+  let reached = own?.to.getTime();
 
   for (const pin of unnamed) {
     if (reached === undefined || pin.from.getTime() !== reached) continue;
@@ -94,10 +98,15 @@ const withoutRestPins = (edits: DayReviewEdits, row: EndedRow): DayReviewEdits =
 };
 
 const endedCallPins = (edits: DayReviewEdits) =>
-  edits.pinned.filter((pin) => !!pin.issueKey && storedLaneKey(pin.laneKey) === CALL_LANE_KEY && !pin.tracksTo);
+  edits.pinned.filter(
+    (pin) =>
+      (!!pin.issueKey || pin.snippedFromMs !== undefined) &&
+      storedLaneKey(pin.laneKey) === CALL_LANE_KEY &&
+      !pin.tracksTo,
+  );
 
 /**
- * Drops the ends a reviewer gave the rest of a call a named row was ended off, so that rest is one
+ * Drops the ends a reviewer gave the rest of a call a row was ended off, so that rest is one
  * band that grows with the call. Edits written before the rest had no end of its own still hold such
  * pins, each drawn as a second band with no name.
  *
@@ -116,7 +125,7 @@ export const foldEndedRests = (edits: DayReviewEdits): { edits: DayReviewEdits; 
   };
 };
 
-/** Whether a row is the band with no name a call ran on into after {@link endRowAt} ended its named row. */
+/** Whether a row is the band with no name a call ran on into after {@link endRowAt} ended the row before it. */
 export const isRestOfEndedCall = (edits: DayReviewEdits, row: ReviewedRow) =>
   !row.issueKey &&
   storedLaneKey(row.laneKey) === CALL_LANE_KEY &&
@@ -147,7 +156,7 @@ const callEndOf = (options: { row: ReviewedRow; calls: readonly CallMatch[]; rou
 /**
  * Whether a row in the call lane still grows with a call no `call-end` closed yet, so ending it by
  * hand is an answer the day cannot give itself. A row whose end the reviewer already placed is done,
- * and so is the rest of a call a named row was ended off: it grows with the call as one band.
+ * and so is the rest of a call a row was ended off: it grows with the call as one band.
  */
 export const isLiveCallRow = (options: {
   row: ReviewedRow;

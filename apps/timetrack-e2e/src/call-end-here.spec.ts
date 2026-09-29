@@ -339,6 +339,8 @@ test('a growing call row nothing named shows the cut line, and ends there', asyn
   await expect(bands(page).first()).toHaveAttribute('title', /^Not yet named · 2h 0m$/);
   await expect(bands(page).last()).toHaveAttribute('title', /^Not yet named · 15m$/);
   await expect(bands(page).first()).not.toHaveAttribute('data-growing');
+  await expect(bands(page).last()).not.toHaveAttribute('data-growing');
+  await expect(cut(page)).toHaveCount(0);
 });
 
 test('a call row the call already closed shows no cut line', async ({ page }) => {
