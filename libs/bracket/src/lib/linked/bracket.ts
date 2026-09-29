@@ -13,8 +13,8 @@ import {
   TournamentMode,
 } from '../core';
 import { BracketDataSource } from '../integrations';
-import { BracketMatchRelation, generateMatchRelationsNew } from './match-relations';
-import { BracketRoundRelation, generateRoundRelationsNew } from './round-relations';
+import { BracketMatchRelation, BracketMatchRelationNone, generateMatchRelationsNew } from './match-relations';
+import { BracketRoundRelation, BracketRoundRelationNone, generateRoundRelationsNew } from './round-relations';
 import { BracketRuntimeError } from '../bracket-runtime-error';
 import { BRACKET_ERROR_CODES } from '../bracket-errors';
 
@@ -68,11 +68,9 @@ export const createBracket = <TRoundData, TMatchData>(
   >();
 
   for (const roundBase of bracketNewBase.rounds.values()) {
-    const newRound: BracketRound<TRoundData, TMatchData> = {
-      ...roundBase,
-      matches: new BracketMap(),
-      relation: { type: 'dummy' } as unknown as BracketRoundRelation<TRoundData, TMatchData>,
-    };
+    const relation = { type: 'none' } as BracketRoundRelationNone<TRoundData, TMatchData>;
+    const newRound: BracketRound<TRoundData, TMatchData> = { ...roundBase, matches: new BracketMap(), relation };
+    relation.currentRound = newRound;
     rounds.set(roundBase.id, newRound);
     if (!roundsByType.has(roundBase.type)) {
       roundsByType.set(roundBase.type, new BracketMap());
@@ -101,14 +99,16 @@ export const createBracket = <TRoundData, TMatchData>(
       ? { ...matchBase.away, matches: new BracketMap<BracketMatchId, BracketMatch<TRoundData, TMatchData>>() }
       : null;
 
+    const relation = { type: 'none', currentRound: round } as BracketMatchRelationNone<TRoundData, TMatchData>;
     const newMatch: BracketMatch<TRoundData, TMatchData> = {
       ...matchBase,
       home: homeParticipant,
       away: awayParticipant,
       winner: null,
       round,
-      relation: { type: 'dummy' } as unknown as BracketMatchRelation<TRoundData, TMatchData>,
+      relation,
     };
+    relation.currentMatch = newMatch;
 
     if (matchBase.winner) {
       const winnerParticipant = homeParticipant?.id === matchBase.winner.id ? homeParticipant : awayParticipant;

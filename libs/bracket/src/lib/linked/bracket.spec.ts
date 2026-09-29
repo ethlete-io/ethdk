@@ -1,6 +1,7 @@
 import {
   BRACKET_DATA_LAYOUT,
   BracketMatchId,
+  BracketRoundId,
   MatchParticipantId,
   SINGLE_ELIMINATION_BRACKET_ROUND_TYPE,
 } from '../core';
@@ -60,6 +61,19 @@ describe('createBracket', () => {
         { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT },
       ),
     ).toThrowError(/^ET3404:/);
+  });
+
+  it('gives a round and a match that no relation reaches a none relation', () => {
+    const bracket = createBracket(
+      { ...source, rounds: [source.rounds[1]!], matches: [source.matches[2]!] },
+      { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT },
+    );
+
+    const round = bracket.rounds.getOrThrow('r2' as BracketRoundId);
+    const match = bracket.matches.getOrThrow('f1' as BracketMatchId);
+
+    expect(round.relation).toEqual({ type: 'none', currentRound: round });
+    expect(match.relation).toEqual({ type: 'none', currentMatch: match, currentRound: round });
   });
 
   it('links a stage whose rounds are all still waiting for their draw', () => {

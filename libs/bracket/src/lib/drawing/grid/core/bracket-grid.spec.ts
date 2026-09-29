@@ -7,7 +7,7 @@ import { createBracketSubColumn } from './bracket-sub-column';
 const buildSection = (padding?: { top: number; bottom: number; left: number; right: number }) => {
   const { masterColumnSection, pushSubColumn } = createBracketMasterColumnSection({ type: 'round', padding });
   const { subColumn, pushElement } = createBracketSubColumn({ span: { isStart: true, isEnd: true } });
-  const { element } = createBracketElement({
+  const element = createBracketElement({
     type: 'matchGap',
     area: '.',
     partHeights: [20],
@@ -66,14 +66,12 @@ describe('createBracketGrid', () => {
       type: 'round',
       padding: { top: 0, bottom: 0, left: 20, right: 0 },
     });
-    const { element } = createBracketElement({ type: 'matchGap', area: '.', partHeights: [20], elementHeight: 20 });
+    const element = createBracketElement({ type: 'matchGap', area: '.', partHeights: [20], elementHeight: 20 });
     const first = createBracketSubColumn({ span: { isStart: true, isEnd: false } });
     const second = createBracketSubColumn({ span: { isStart: false, isEnd: true } });
 
     first.pushElement(element);
-    second.pushElement(
-      createBracketElement({ type: 'matchGap', area: '.', partHeights: [20], elementHeight: 20 }).element,
-    );
+    second.pushElement(createBracketElement({ type: 'matchGap', area: '.', partHeights: [20], elementHeight: 20 }));
     pushSubColumn(first.subColumn, second.subColumn);
     pushSection(masterColumnSection);
     pushMasterColumn(masterColumn);

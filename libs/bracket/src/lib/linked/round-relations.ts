@@ -57,7 +57,13 @@ export type BracketRoundRelationTwoToNothing<TRoundData, TMatchData> = {
   lowerRootRoundMatchFactor: number;
 };
 
+export type BracketRoundRelationNone<TRoundData, TMatchData> = {
+  type: 'none';
+  currentRound: BracketRound<TRoundData, TMatchData>;
+};
+
 export type BracketRoundRelation<TRoundData, TMatchData> =
+  | BracketRoundRelationNone<TRoundData, TMatchData>
   | BracketRoundRelationNothingToOne<TRoundData, TMatchData>
   | BracketRoundRelationOneToNothing<TRoundData, TMatchData>
   | BracketRoundRelationOneToOne<TRoundData, TMatchData>

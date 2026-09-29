@@ -170,7 +170,6 @@ export const createBracketGrid = <TRoundData, TMatchData>(config: {
             if (storedDimensions) {
               element.dimensions.width = storedDimensions.width;
               element.dimensions.left = storedDimensions.left;
-              element.isHidden = !isStartPosition;
             }
           }
         }

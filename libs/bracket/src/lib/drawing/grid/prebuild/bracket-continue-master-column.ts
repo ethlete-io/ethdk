@@ -90,7 +90,7 @@ export const createBracketContinueMasterColumn = <TRoundData, TMatchData>(
   });
 
   if (headerOffset > 0) {
-    const { element: headerGapElement } = createBracketElement<TRoundData, TMatchData>({
+    const headerGapElement = createBracketElement<TRoundData, TMatchData>({
       area: '.',
       type: 'colGap',
       elementHeight: headerOffset,
@@ -102,7 +102,7 @@ export const createBracketContinueMasterColumn = <TRoundData, TMatchData>(
 
   const containerHeight = Math.max(elementHeight, totalHeight - headerOffset);
 
-  const { element: continueElement } = createBracketElement<TRoundData, TMatchData>({
+  const continueElement = createBracketElement<TRoundData, TMatchData>({
     area: 'continue',
     type: 'continue',
     elementHeight,

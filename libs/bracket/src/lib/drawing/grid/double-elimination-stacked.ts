@@ -199,7 +199,7 @@ export const createStackedDoubleEliminationGrid = <TRoundData, TMatchData>(
         type: 'colGap',
         elementHeight: height,
         partHeights: [height],
-      }).element,
+      }),
     );
 
     return subColumn;
@@ -293,7 +293,7 @@ export const createStackedDoubleEliminationGrid = <TRoundData, TMatchData>(
     }
 
     for (const elementData of elementsToCreate) {
-      pushElement(createBracketElement<TRoundData, TMatchData>(elementData).element);
+      pushElement(createBracketElement<TRoundData, TMatchData>(elementData));
     }
 
     return subColumn;
@@ -333,7 +333,7 @@ export const createStackedDoubleEliminationGrid = <TRoundData, TMatchData>(
         type: 'roundGap',
         elementHeight: options.rowRoundGap,
         partHeights: [options.rowRoundGap],
-      }).element,
+      }),
     );
 
     return subColumn;

@@ -63,7 +63,14 @@ export type BracketMatchRelationTwoToNothing<TRoundData, TMatchData> = {
   previousLowerRound: BracketRound<TRoundData, TMatchData>;
 };
 
+export type BracketMatchRelationNone<TRoundData, TMatchData> = {
+  type: 'none';
+  currentMatch: BracketMatch<TRoundData, TMatchData>;
+  currentRound: BracketRound<TRoundData, TMatchData>;
+};
+
 export type BracketMatchRelation<TRoundData, TMatchData> =
+  | BracketMatchRelationNone<TRoundData, TMatchData>
   | BracketMatchRelationOneToOne<TRoundData, TMatchData>
   | BracketMatchRelationTwoToOne<TRoundData, TMatchData>
   | BracketMatchRelationNothingToOne<TRoundData, TMatchData>
@@ -112,6 +119,9 @@ export const generateMatchRelationPositions = <TRoundData, TMatchData>(
   match: BracketMatch<TRoundData, TMatchData>,
 ) => {
   switch (relation.type) {
+    case 'none':
+      return null;
+
     case 'nothing-to-one':
       return {
         nextRoundMatchPosition: generateMatchPosition(match, relation.nextRoundMatchFactor),
@@ -374,9 +384,6 @@ export const generateMatchRelationsNew = <TRoundData, TMatchData>(
 
     const positions = generateMatchRelationPositions(relation, match);
 
-    // A round without a resolved relation (e.g. a truncated bracket where a round has no
-    // successor/predecessor to wire up) keeps the placeholder relation from createBracket.
-    // Skip it so the match renders without connector lines instead of crashing the whole bracket.
     if (!positions) continue;
 
     const { nextRoundMatchPosition, previousUpperRoundMatchPosition, previousLowerRoundMatchPosition } = positions;

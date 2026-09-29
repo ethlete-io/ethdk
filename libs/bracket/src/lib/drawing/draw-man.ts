@@ -128,6 +128,7 @@ export const drawMan = <TRoundData, TMatchData>(
       }
 
       switch (el.match.relation.type) {
+        case 'none':
         case 'nothing-to-one': {
           continue;
         }

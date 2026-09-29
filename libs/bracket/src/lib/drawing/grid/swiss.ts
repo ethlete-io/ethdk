@@ -148,7 +148,7 @@ export const createSwissGrid = <TRoundData, TMatchData>(
           elementHeight: options.roundHeaderGap,
         });
 
-        headerSubColumn.pushElement(headerElement.element, headerGapElement.element);
+        headerSubColumn.pushElement(headerElement, headerGapElement);
         headerColumnSection.pushSubColumn(headerSubColumn.subColumn);
         pushSection(headerColumnSection.masterColumnSection);
       }
@@ -197,7 +197,7 @@ export const createSwissGrid = <TRoundData, TMatchData>(
       }
 
       for (const elementData of elementsToCreate) {
-        const { element } = createBracketElement(elementData);
+        const element = createBracketElement(elementData);
 
         pushElement(element);
       }
@@ -224,7 +224,7 @@ export const createSwissGrid = <TRoundData, TMatchData>(
           partHeights: [rowRoundGap],
         });
 
-        groupGapSubColumn.pushElement(groupGapElement.element);
+        groupGapSubColumn.pushElement(groupGapElement);
 
         groupGapColumnSection.pushSubColumn(groupGapSubColumn.subColumn);
 
@@ -255,7 +255,7 @@ export const createSwissGrid = <TRoundData, TMatchData>(
         partHeights: [fillerHeight],
       });
 
-      fillerSubColumn.pushElement(fillerElement.element);
+      fillerSubColumn.pushElement(fillerElement);
       fillerColumnSection.pushSubColumn(fillerSubColumn.subColumn);
       pushSection(fillerColumnSection.masterColumnSection);
     }

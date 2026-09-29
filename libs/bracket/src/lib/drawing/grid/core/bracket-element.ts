@@ -12,8 +12,6 @@ export type BracketElementBase = {
   parts: ReadonlyArray<BracketElementPart>;
 
   span?: BracketElementSpanCoordinates;
-
-  isHidden?: boolean;
 };
 
 export type HeaderBracketElement<TRoundData, TMatchData> = BracketElementBase &
@@ -90,19 +88,9 @@ export type BracketElementToCreate<TRoundData, TMatchData> =
   | GapBracketElementToCreate
   | ContinueBracketElementToCreate<TRoundData, TMatchData>;
 
-export type BracketElementType =
-  | HeaderBracketElementToCreate<unknown, unknown>['type']
-  | MatchBracketElementToCreate<unknown, unknown>['type']
-  | GapBracketElementToCreate['type']
-  | ContinueBracketElementToCreate<unknown, unknown>['type'];
-
-export type MutableBracketElement<TRoundData, TMatchData> = {
-  element: BracketElement<TRoundData, TMatchData>;
-};
-
 export const createBracketElement = <TRoundData, TMatchData>(
   config: BracketElementToCreate<TRoundData, TMatchData>,
-): MutableBracketElement<TRoundData, TMatchData> => {
+): BracketElement<TRoundData, TMatchData> => {
   const { type, area, elementHeight, partHeights } = config;
 
   const parts: BracketElementPart[] = [];
@@ -166,18 +154,9 @@ export const createBracketElement = <TRoundData, TMatchData>(
     }
   })();
 
-  const pushPart = (...newParts: BracketElementPart[]) => {
-    parts.push(...newParts);
-  };
-
   for (const partHeight of partHeights) {
-    const { elementPart } = createBracketElementPart({
-      elementPartHeight: partHeight,
-    });
-    pushPart(elementPart);
+    parts.push(createBracketElementPart({ elementPartHeight: partHeight }));
   }
 
-  return {
-    element: newElement,
-  };
+  return newElement;
 };

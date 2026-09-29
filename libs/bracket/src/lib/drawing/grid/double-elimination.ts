@@ -105,7 +105,7 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
       Math.max(0, firstUpperRound.matchCount - 1) * options.rowGap;
 
     const { subColumn, pushElement } = createBracketSubColumn<TRoundData, TMatchData>({ span: config.span });
-    const { element } = createBracketElement<TRoundData, TMatchData>({
+    const element = createBracketElement<TRoundData, TMatchData>({
       area: '.',
       type: 'colGap',
       elementHeight: emptyUpperHeight,
@@ -122,7 +122,7 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
     const { subColumn, pushElement } = createBracketSubColumn<TRoundData, TMatchData>({
       span: { isStart: true, isEnd: true },
     });
-    const { element } = createBracketElement<TRoundData, TMatchData>({
+    const element = createBracketElement<TRoundData, TMatchData>({
       area: '.',
       type: 'roundGap',
       elementHeight: options.rowRoundGap,
@@ -329,7 +329,7 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
       partHeights: [options.rowRoundGap],
     });
 
-    upperLowerGapSubColumn.pushElement(upperLowerGapElement.element);
+    upperLowerGapSubColumn.pushElement(upperLowerGapElement);
 
     pushUpperLowerSubColumn(upperLowerGapSubColumn.subColumn);
 
@@ -378,7 +378,7 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
           partHeights: element.parts.map((p) => p.dimensions.height),
         });
 
-        lowerSubColumn.pushElement(el.element);
+        lowerSubColumn.pushElement(el);
       }
 
       pushLowerSubColumn(lowerSubColumn.subColumn);

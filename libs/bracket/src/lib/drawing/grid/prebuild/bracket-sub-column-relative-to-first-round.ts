@@ -125,7 +125,7 @@ export const createRoundBracketSubColumnRelativeToFirstRound = <TRoundData, TMat
   }
 
   for (const elementData of elementsToCreate) {
-    const { element } = createBracketElement(elementData);
+    const element = createBracketElement(elementData);
 
     pushElement(element);
   }

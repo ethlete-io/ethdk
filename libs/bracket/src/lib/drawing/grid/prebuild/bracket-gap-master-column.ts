@@ -109,7 +109,7 @@ export const createBracketGapMasterColumn = <TRoundData, TMatchData>(
         };
       })();
 
-      pushElement(createBracketElement<TRoundData, TMatchData>(elementToCreate).element);
+      pushElement(createBracketElement<TRoundData, TMatchData>(elementToCreate));
     }
 
     pushSubColumn(subColumn);
