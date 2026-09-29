@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Tree, logger } from '@nx/devkit';
 import * as ts from 'typescript';
 import { MigrationScope } from '../migrate-provider-shape/migration-scope.js';
@@ -35,7 +34,6 @@ interface PropertyUsageInfo {
 }
 
 function getPropertyMaps() {
-  // Property map for signals (getters for latest value)
   const signalPropertyMap: Record<string, string> = {
     route: 'injectRoute',
     state: 'injectRouterState',
@@ -47,7 +45,6 @@ function getPropertyMaps() {
     latestEvent: 'injectRouterEvent',
   };
 
-  // Property map for observables
   const observablePropertyMap: Record<string, string> = {
     route$: 'injectRoute',
     state$: 'injectRouterState',
@@ -67,7 +64,6 @@ function findRouterStateServiceVariables(sourceFile: ts.SourceFile): string[] {
   const variables: string[] = [];
 
   function visit(node: ts.Node) {
-    // Check for inject(RouterStateService) pattern
     if (
       ts.isCallExpression(node) &&
       ts.isIdentifier(node.expression) &&
@@ -76,7 +72,6 @@ function findRouterStateServiceVariables(sourceFile: ts.SourceFile): string[] {
     ) {
       const arg = node.arguments[0]!;
       if (ts.isIdentifier(arg) && arg.text === 'RouterStateService') {
-        // Find the variable name
         let parent = node.parent;
         while (parent) {
           if (ts.isPropertyDeclaration(parent) && ts.isIdentifier(parent.name)) {
@@ -92,7 +87,6 @@ function findRouterStateServiceVariables(sourceFile: ts.SourceFile): string[] {
       }
     }
 
-    // Check for constructor parameter injection
     if (ts.isParameter(node)) {
       const typeNode = node.type;
       if (typeNode && ts.isTypeReferenceNode(typeNode) && ts.isIdentifier(typeNode.typeName)) {
@@ -155,10 +149,9 @@ function analyzeClassMigration(
     membersToAdd: [],
     replacements: new Map(),
     importsNeeded: new Set(),
-    constructorCalls: [], // Initialize
+    constructorCalls: [],
   };
 
-  // Collect existing member names and detect property initializers
   const propertyInitializers = new Map<string, ts.PropertyDeclaration>();
 
   classNode.members.forEach((member) => {
@@ -166,7 +159,6 @@ function analyzeClassMigration(
       const memberName = member.name.text;
       context.existingMembers.add(memberName);
 
-      // Check if this property has an initializer that uses RouterStateService
       if (member.initializer) {
         const initializerText = member.initializer.getText(sourceFile);
         if (initializerText.includes(routerStateServiceVar)) {
@@ -180,7 +172,6 @@ function analyzeClassMigration(
 
   const { signalPropertyMap, observablePropertyMap } = getPropertyMaps();
 
-  // Method map
   const methodMap: Record<
     string,
     { injectFn: string; type: 'signal' | 'observable'; requiresArgs?: boolean; needsInjectionContext?: boolean }
@@ -196,14 +187,11 @@ function analyzeClassMigration(
     },
   };
 
-  // Track usages
   const usagesWrappedInToSignal = new Map<string, number>();
   const usagesOutsideToSignal = new Map<string, number>();
   const usagesInPropertyInitializers = new Map<string, PropertyUsageInfo>();
 
-  // First pass: detect toSignal usages, property initializers, and count all usages
   function detectUsages(node: ts.Node, insideToSignal = false, currentProperty?: string): void {
-    // Handle toSignal wrapper
     if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'toSignal') {
       const arg = node.arguments[0];
       if (arg) {
@@ -212,7 +200,6 @@ function analyzeClassMigration(
       return;
     }
 
-    // Track RouterStateService property access
     if (ts.isPropertyAccessExpression(node)) {
       const propertyName = node.name.text;
 
@@ -234,7 +221,6 @@ function analyzeClassMigration(
               propertyDecl,
             });
 
-            // Also track if it's wrapped in toSignal
             if (insideToSignal) {
               usagesWrappedInToSignal.set(fullAccess, (usagesWrappedInToSignal.get(fullAccess) || 0) + 1);
             }
@@ -247,7 +233,6 @@ function analyzeClassMigration(
       }
     }
 
-    // Track method calls
     if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
       const methodName = node.expression.name.text;
 
@@ -270,7 +255,6 @@ function analyzeClassMigration(
                 propertyDecl,
               });
 
-              // Also track if it's wrapped in toSignal
               if (insideToSignal) {
                 usagesWrappedInToSignal.set(fullCall, (usagesWrappedInToSignal.get(fullCall) || 0) + 1);
               }
@@ -287,7 +271,6 @@ function analyzeClassMigration(
     ts.forEachChild(node, (child) => detectUsages(child, insideToSignal, currentProperty));
   }
 
-  // Detect usages in property initializers
   classNode.members.forEach((member) => {
     if (ts.isPropertyDeclaration(member) && member.initializer && ts.isIdentifier(member.name)) {
       const propertyName = member.name.text;
@@ -299,27 +282,24 @@ function analyzeClassMigration(
       ts.isIdentifier(member.name) &&
       member.name.text === routerStateServiceVar
     ) {
-      // Skip the RouterStateService property itself
       return;
     } else {
       detectUsages(member);
     }
   });
 
-  // Group property initializer usages by usage pattern
   const propertyInitializerUsages = new Map<
     string,
     {
       injectFn: string;
       args?: string;
-      genericType?: string; // Add this
+      genericType?: string;
       type: 'signal' | 'observable';
       properties: Array<{ propertyDecl: ts.PropertyDeclaration; wrappedInToSignal: boolean }>;
     }
   >();
 
   for (const [usage, info] of usagesInPropertyInitializers) {
-    // Determine if this is a property access or method call
     const isMethodCall = usage.includes('(');
     let usageKey: string;
     let injectFn: string;
@@ -328,8 +308,6 @@ function analyzeClassMigration(
     let genericType = '';
 
     if (isMethodCall) {
-      // Extract method name, generic type, and args
-      // Remove whitespace and newlines for matching
       const normalizedUsage = usage.replace(/\s+/g, ' ');
       const match = normalizedUsage.match(/\.(\w+)(?:<([^>]+)>)?\(([^)]*)\)/);
       if (!match) continue;
@@ -344,7 +322,6 @@ function analyzeClassMigration(
       injectFn = methodInfo.injectFn;
       type = methodInfo.type;
     } else {
-      // Extract property name
       const match = usage.match(/\.(\w+\$?)$/);
       if (!match) continue;
 
@@ -371,11 +348,9 @@ function analyzeClassMigration(
     });
   }
 
-  // Process property initializer usages
   for (const [usageKey, usageInfo] of propertyInitializerUsages) {
     const { injectFn, args, type, genericType, properties } = usageInfo;
 
-    // Check if this same usage is used outside property initializers
     const isUsedOutsideInitializers =
       usagesOutsideToSignal.has(usageKey) ||
       Array.from(usagesOutsideToSignal.keys()).some((key) => {
@@ -386,7 +361,6 @@ function analyzeClassMigration(
       });
 
     if (isUsedOutsideInitializers && type === 'observable') {
-      // Create a shared member
       const baseName = usageKey.endsWith('$') ? usageKey : `${usageKey}$`;
       const memberName = findAvailableMemberName(baseName, context.existingMembers);
 
@@ -402,11 +376,9 @@ function analyzeClassMigration(
       context.membersToAdd.push(memberInfo);
       context.existingMembers.add(memberName);
 
-      // For each property, replace the usage with the member reference
       for (const { propertyDecl } of properties) {
         const initializerText = propertyDecl.initializer!.getText(sourceFile);
 
-        // Create pattern to match only the RouterStateService access part
         const isMethodCall = usageKey.includes('(');
 
         if (isMethodCall) {
@@ -421,7 +393,6 @@ function analyzeClassMigration(
 
           const match = initializerText.match(pattern);
           if (match && match[0]) {
-            // Check if the original has 'this.' prefix
             const hasThisPrefix = match[0].startsWith('this.');
             const replacement = hasThisPrefix ? `this.${memberName}` : memberName;
             context.replacements.set(match[0], replacement);
@@ -433,7 +404,6 @@ function analyzeClassMigration(
           );
           const matches = initializerText.match(pattern);
           if (matches && matches[0]) {
-            // Check if the original has 'this.' prefix
             const hasThisPrefix = matches[0].startsWith('this.');
             const replacement = hasThisPrefix ? `this.${memberName}` : memberName;
             context.replacements.set(matches[0], replacement);
@@ -443,28 +413,19 @@ function analyzeClassMigration(
 
       context.importsNeeded.add(injectFn);
     } else {
-      // Replace each property initializer directly
       for (const { propertyDecl, wrappedInToSignal } of properties) {
         const initializerText = propertyDecl.initializer!.getText(sourceFile);
         const injectCall = args ? `${injectFn}${genericType || ''}(${args})` : `${injectFn}()`;
 
         const propertyName = ts.isIdentifier(propertyDecl.name) ? propertyDecl.name.text : '';
         const isObservableProperty = propertyName.endsWith('$');
-        const isPropertyUsedElsewhere = checkIfPropertyIsUsedElsewhere(
-          sourceFile,
-          classNode,
-          propertyName,
-          propertyDecl,
-        );
+        const isPropertyUsedElsewhere = checkIfPropertyIsUsedElsewhere(classNode, propertyName, propertyDecl);
 
         const hasChainedCalls =
           initializerText.includes('.pipe(') ||
           initializerText.includes('.subscribe(') ||
           initializerText.match(/\)\s*\./);
 
-        // Determine if we need toObservable wrapper:
-        // 1. If NOT wrapped in toSignal and type is observable and (property ends with $ or used elsewhere)
-        // 2. If wrapped in toSignal but has chained calls (pipe/subscribe), we need toObservable
         const needsToObservable =
           (type === 'observable' && !wrappedInToSignal && (isObservableProperty || isPropertyUsedElsewhere)) ||
           (wrappedInToSignal && hasChainedCalls);
@@ -507,7 +468,6 @@ function analyzeClassMigration(
     }
   }
 
-  // Handle direct usages (not in property initializers)
   for (const [usage] of usagesWrappedInToSignal) {
     if (!usagesInPropertyInitializers.has(usage)) {
       const isMethodCall = usage.includes('(');
@@ -536,9 +496,7 @@ function analyzeClassMigration(
     }
   }
 
-  // Handle direct usages in method bodies (outside toSignal, not in property initializers)
   for (const [usage] of usagesOutsideToSignal) {
-    // Skip if already handled in property initializers
     if (usagesInPropertyInitializers.has(usage)) continue;
 
     const isMethodCall = usage.includes('(');
@@ -564,18 +522,9 @@ function analyzeClassMigration(
       needsInjectionContext = methodInfo.needsInjectionContext || false;
 
       if (needsInjectionContext) {
-        // Add to constructor calls
         const injectCall = args ? `${injectFn}${genericType}(${args})` : `${injectFn}()`;
         context.constructorCalls.push(injectCall);
 
-        // Create pattern to match the full statement including semicolon and potential whitespace
-        const methodNameOnly = methodName;
-        const pattern = new RegExp(
-          `(this\\.)?${escapeRegExp(routerStateServiceVar)}\\s*\\.\\s*${escapeRegExp(methodNameOnly)}(?:<[^>]+>)?\\s*\\([^)]*\\)\\s*;`,
-          'gs',
-        );
-
-        // Replace with empty string (removes the entire statement)
         context.replacements.set(usage + ';', '');
 
         context.importsNeeded.add(injectFn);
@@ -590,7 +539,6 @@ function analyzeClassMigration(
       type = propertyName.endsWith('$') ? 'observable' : 'signal';
     }
 
-    // For properties used in method bodies, create a shared member
     const baseName = usage.split('.').pop()!;
     const memberName = findAvailableMemberName(baseName, context.existingMembers);
 
@@ -606,10 +554,6 @@ function analyzeClassMigration(
     context.membersToAdd.push(memberInfo);
     context.existingMembers.add(memberName);
 
-    // Replace usage with member reference
-    // For signals (non-observable), we need to call them: this.route()
-    // For observables, we just reference them: this.route$
-    // Check if the original usage has 'this.' prefix
     const hasThisPrefix = usage.includes('this.');
     const baseReplacement = type === 'signal' ? `${memberName}()` : `${memberName}`;
     const replacement = hasThisPrefix ? `this.${baseReplacement}` : baseReplacement;
@@ -629,22 +573,19 @@ function addOrUpdateConstructor(
 ): string {
   if (constructorCalls.length === 0) return content;
 
-  // Find existing constructor
   const existingConstructor = classNode.members.find((member) => ts.isConstructorDeclaration(member)) as
     ts.ConstructorDeclaration | undefined;
 
   const callStatements = constructorCalls.map((call) => `    ${call};`).join('\n');
 
   if (existingConstructor) {
-    // Add calls to existing constructor
     const constructorBody = existingConstructor.body;
     if (!constructorBody) return content;
 
-    const insertPos = constructorBody.getStart(sourceFile) + 1; // After opening brace
+    const insertPos = constructorBody.getStart(sourceFile) + 1;
     const indent = '\n    ';
     return content.slice(0, insertPos) + indent + callStatements + content.slice(insertPos);
   } else {
-    // Create new constructor
     const firstMethod = classNode.members.find(
       (member) => ts.isMethodDeclaration(member) || ts.isGetAccessor(member) || ts.isSetAccessor(member),
     );
@@ -655,19 +596,10 @@ function addOrUpdateConstructor(
       const insertPos = firstMethod.getStart(sourceFile);
       return content.slice(0, insertPos) + constructorText + '\n\n  ' + content.slice(insertPos);
     } else {
-      // Insert at end of class, before closing brace
       const classEnd = classNode.getEnd() - 1;
       return content.slice(0, classEnd) + constructorText + '\n' + content.slice(classEnd);
     }
   }
-}
-
-function generateNameFromArgs(usageKey: string, args: string, type: 'signal' | 'observable'): string {
-  const baseName = usageKey.split('(')[0]!.replace(/^\w/, (c) => c.toUpperCase());
-  const cleanArgs = args.replace(/['"]/g, '').replace(/[^\w]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
-
-  const name = `${baseName.charAt(0).toLowerCase()}${baseName.slice(1)}${cleanArgs.charAt(0).toUpperCase()}${cleanArgs.slice(1)}`;
-  return type === 'observable' ? `${name}$` : name;
 }
 
 function findAvailableMemberName(baseName: string, existingMembers: Set<string>): string {
@@ -682,35 +614,7 @@ function findAvailableMemberName(baseName: string, existingMembers: Set<string>)
   return name;
 }
 
-function createReplacementsForMember(
-  sourceFile: ts.SourceFile,
-  classNode: ts.ClassDeclaration,
-  routerStateServiceVar: string,
-  usageKey: string,
-  memberName: string,
-  type: 'signal' | 'observable',
-  context: ClassMigrationContext,
-  args?: string,
-) {
-  // Find all occurrences outside property initializers
-  classNode.members.forEach((member) => {
-    if (ts.isMethodDeclaration(member) || ts.isGetAccessor(member) || ts.isSetAccessor(member)) {
-      // Search in method bodies
-      const searchPattern = args
-        ? `${routerStateServiceVar}.${usageKey.split('(')[0]}(${args})`
-        : `${routerStateServiceVar}.${usageKey}`;
-
-      const memberText = member.getText(sourceFile);
-      if (memberText.includes(searchPattern)) {
-        context.replacements.set(searchPattern, `this.${memberName}`);
-        context.replacements.set(`this.${searchPattern}`, `this.${memberName}`);
-      }
-    }
-  });
-}
-
 function checkIfPropertyIsUsedElsewhere(
-  sourceFile: ts.SourceFile,
   classNode: ts.ClassDeclaration,
   propertyName: string,
   propertyDecl: ts.PropertyDeclaration,
@@ -743,13 +647,11 @@ function escapeRegExp(string: string): string {
 }
 
 function addMembersToClass(
-  sourceFile: ts.SourceFile,
   content: string,
   classNode: ts.ClassDeclaration,
   members: MemberInfo[],
   routerStateServiceVar: string,
 ): string {
-  // Find the RouterStateService property to insert after
   const routerStateProperty = classNode.members.find(
     (member) =>
       ts.isPropertyDeclaration(member) && ts.isIdentifier(member.name) && member.name.text === routerStateServiceVar,
@@ -762,7 +664,6 @@ function addMembersToClass(
 
   const insertPosition = routerStateProperty.getEnd();
 
-  // Generate member declarations
   const memberDeclarations = members.map((member) => {
     const injectCall = member.args ? `${member.injectFn}(${member.args})` : `${member.injectFn}()`;
     const value = member.type === 'observable' ? `toObservable(${injectCall})` : injectCall;
@@ -784,7 +685,6 @@ function handleInlineInjectPatterns(
 
   const { signalPropertyMap, observablePropertyMap } = getPropertyMaps();
 
-  // Method map
   const methodMap: Record<
     string,
     { injectFn: string; type: 'signal' | 'observable'; requiresArgs?: boolean; needsInjectionContext?: boolean }
@@ -800,7 +700,6 @@ function handleInlineInjectPatterns(
     },
   };
 
-  // Track which nodes are already inside toSignal to avoid double processing
   const processedNodes = new Set<ts.Node>();
 
   function isInsideToSignal(node: ts.Node): boolean {
@@ -819,7 +718,6 @@ function handleInlineInjectPatterns(
   }
 
   function visitNode(node: ts.Node) {
-    // Look for: toSignal(inject(RouterStateService).property)
     if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'toSignal') {
       const arg = node.arguments[0];
 
@@ -841,14 +739,12 @@ function handleInlineInjectPatterns(
               edits.push({ start: node.getStart(sourceFile), end: node.getEnd(), text: newText });
               importsNeeded.add(injectFn);
 
-              // Mark this property access as processed
               processedNodes.add(arg);
             }
           }
         }
       }
 
-      // NEW: Look for: toSignal(inject(RouterStateService).methodCall(...))
       if (arg && ts.isCallExpression(arg) && ts.isPropertyAccessExpression(arg.expression)) {
         const methodName = arg.expression.name.text;
         const methodInfo = methodMap[methodName];
@@ -862,31 +758,25 @@ function handleInlineInjectPatterns(
         ) {
           const injectArg = arg.expression.expression.arguments[0]!;
           if (ts.isIdentifier(injectArg) && injectArg.text === 'RouterStateService') {
-            // Extract generic type and args
             const innerCallText = arg.getText(sourceFile);
             const genericMatch = innerCallText.match(new RegExp(`${methodName}<([^>]+)>`));
             const genericType = genericMatch ? `<${genericMatch[1]}>` : '';
 
-            // Get the arguments from the call
             const args = arg.arguments.map((a) => a.getText(sourceFile)).join(', ');
 
             const injectCall = `${methodInfo.injectFn}${genericType}(${args})`;
-            // Since it's wrapped in toSignal and returns a signal, no need for toObservable
             const newText = injectCall;
 
             edits.push({ start: node.getStart(sourceFile), end: node.getEnd(), text: newText });
             importsNeeded.add(methodInfo.injectFn);
 
-            // Mark this call as processed
             processedNodes.add(arg);
           }
         }
       }
     }
 
-    // Look for: inject(RouterStateService).selectQueryParam() or other method calls (NOT inside toSignal)
     if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
-      // Skip if already processed by toSignal handler
       if (processedNodes.has(node)) {
         ts.forEachChild(node, visitNode);
         return;
@@ -904,7 +794,6 @@ function handleInlineInjectPatterns(
       ) {
         const injectArg = node.expression.expression.arguments[0]!;
         if (ts.isIdentifier(injectArg) && injectArg.text === 'RouterStateService') {
-          // Check if inside toSignal
           if (isInsideToSignal(node)) {
             ts.forEachChild(node, visitNode);
             return;
@@ -912,11 +801,9 @@ function handleInlineInjectPatterns(
 
           const oldText = node.getText(sourceFile);
 
-          // Extract generic type and args
           const genericMatch = oldText.match(new RegExp(`${methodName}<([^>]+)>`));
           const genericType = genericMatch ? `<${genericMatch[1]}>` : '';
 
-          // Get the arguments from the call
           const args = node.arguments.map((arg) => arg.getText(sourceFile)).join(', ');
 
           const injectCall = `${methodInfo.injectFn}${genericType}(${args})`;
@@ -932,10 +819,7 @@ function handleInlineInjectPatterns(
       }
     }
 
-    // Look for: inject(RouterStateService).property (not wrapped in toSignal)
-    // This handles: inject(RouterStateService).pathParams$.pipe(...)
     if (ts.isPropertyAccessExpression(node)) {
-      // Skip if already processed by toSignal handler
       if (processedNodes.has(node)) {
         ts.forEachChild(node, visitNode);
         return;
@@ -954,10 +838,8 @@ function handleInlineInjectPatterns(
           const injectFn = signalPropertyMap[propertyName] || observablePropertyMap[propertyName];
 
           if (injectFn) {
-            // Check if this is inside a toSignal wrapper
             const insideToSignal = isInsideToSignal(node);
 
-            // Skip if inside toSignal - it will be handled by the toSignal pattern above
             if (insideToSignal) {
               ts.forEachChild(node, visitNode);
               return;
@@ -995,7 +877,6 @@ function addImportsToPackage(
 ): string {
   const importsList = Array.from(imports).sort();
 
-  // Check if import already exists
   let existingImport: ts.ImportDeclaration | undefined;
   sourceFile.forEachChild((node) => {
     if (
@@ -1021,7 +902,6 @@ function addImportsToPackage(
 
     return content.replace(oldImportText, () => newImportText);
   } else {
-    // Add new import at the top
     const newImportText = `import { ${importsList.join(', ')} } from '${packageName}';\n`;
     const firstImport = sourceFile.statements.find((stmt) => ts.isImportDeclaration(stmt));
 
@@ -1045,7 +925,6 @@ function removeRouterStateServiceInjection(
 
   sourceFile.forEachChild((node) => {
     if (ts.isClassDeclaration(node)) {
-      // Collect property removals
       node.members.forEach((member) => {
         if (ts.isPropertyDeclaration(member) && ts.isIdentifier(member.name)) {
           const memberName = member.name.text;
@@ -1085,7 +964,6 @@ function removeRouterStateServiceInjection(
         }
       });
 
-      // Collect constructor parameter modifications
       node.members.forEach((member) => {
         if (ts.isConstructorDeclaration(member) && member.parameters.length > 0) {
           const newParams: string[] = [];
@@ -1232,7 +1110,6 @@ function checkIfRouterStateServiceStillUsed(sourceFile: ts.SourceFile, routerSta
 function removeUnusedImports(sourceFile: ts.SourceFile, content: string): string {
   let updatedContent = content;
 
-  // Check if toSignal is still used
   const hasToSignal = content.includes('toSignal(');
   if (!hasToSignal) {
     sourceFile.forEachChild((node) => {
@@ -1348,7 +1225,6 @@ export default async function migrateRouterStateService(tree: Tree, scope?: Migr
         const classNodeUpdated = findClassForRouterStateService(sourceFileUpdated, routerStateServiceVar);
         if (classNodeUpdated) {
           updatedContent = addMembersToClass(
-            sourceFileUpdated,
             updatedContent,
             classNodeUpdated,
             context.membersToAdd,

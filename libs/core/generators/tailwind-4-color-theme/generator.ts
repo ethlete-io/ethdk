@@ -2,9 +2,6 @@ import { Tree, formatFiles, logger, visitNotIgnoredFiles } from '@nx/devkit';
 import { posix } from 'path';
 import { Expression, ObjectLiteralExpression, Project, SourceFile, SyntaxKind } from 'ts-morph';
 
-//#region Types
-
-// Minimal type definitions needed for the generator
 export type ThemeRGBColor = `${number} ${number} ${number}`;
 export type ThemeHSLColor = `${number} ${number}% ${number}%`;
 
@@ -51,10 +48,6 @@ type Theme = {
   tertiary?: ThemeSwatch;
 };
 
-//#endregion
-
-//#region Migration main
-
 type GeneratorSchema = {
   themesPath?: string;
   outputPath?: string;
@@ -71,12 +64,8 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
   const themesPath = schema.themesPath || 'src/themes.ts';
   const outputPath = schema.outputPath || 'src/styles/generated-tailwind-themes.css';
   const prefix = schema.prefix || 'et';
-  // The runtime prefix drives the theme-swap CSS variables (--<runtimePrefix>-color-primary)
-  // and selectors (.<runtimePrefix>-color--<name>). It defaults to `prefix` so existing
-  // consumers who only ever passed one prefix see no change in output.
   const runtimePrefix = schema.runtimePrefix || prefix;
 
-  // Step 1: Check if themes file exists
   if (!tree.exists(themesPath)) {
     logger.error(`❌ Themes file not found at: ${themesPath}`);
     logger.log(`\nPlease specify the correct path using --themesPath option.`);
@@ -86,14 +75,12 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
 
   logger.log(`📁 Reading themes from: ${themesPath}`);
 
-  // Step 2: Read and parse themes file
   const themesContent = tree.read(themesPath, 'utf-8');
   if (!themesContent) {
     logger.error('❌ Failed to read themes file');
     return;
   }
 
-  // Step 3: Try to extract themes using TypeScript
   let themes: Theme[];
   try {
     themes = extractThemesFromContent(tree, themesContent, themesPath);
@@ -106,7 +93,7 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
     return;
   }
 
-  // Step 4: Apply the generation-time default override, if any. The shared theme
+  // Apply the generation-time default override, if any. The shared theme
   // definitions may mark a default via isDefault, but in a monorepo each app picks its
   // own default at its generation invocation - the option wins over the definitions.
   if (schema.defaultTheme) {
@@ -120,7 +107,6 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
     }
   }
 
-  // Step 5: Validate theme configuration
   try {
     validateThemeConfiguration(themes);
   } catch (error) {
@@ -129,7 +115,6 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
     return;
   }
 
-  // Step 6: Generate Tailwind CSS
   logger.log('\n🎨 Generating Tailwind theme CSS...');
   const css = generateTailwindThemeCss(themes, prefix, runtimePrefix, schema);
 
@@ -138,7 +123,6 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
     throw new Error('A custom outputPath must end in .css or be paired with a distinct typesOutputPath.');
   }
 
-  // Step 7: Write the generated CSS file
   const outputDir = outputPath.substring(0, outputPath.lastIndexOf('/'));
   if (outputDir && !tree.exists(outputDir)) {
     logger.log(`📁 Creating directory: ${outputDir}`);
@@ -147,7 +131,7 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
   tree.write(outputPath, css);
   logger.log(`✅ Generated Tailwind themes at: ${outputPath}`);
 
-  // Step 8: Generate the `EthleteColorThemeNameRegistry` augmentation, so `etProvideColor`
+  // Generate the `EthleteColorThemeNameRegistry` augmentation, so `etProvideColor`
   // (and anything else that accepts a `RegisteredColorThemeName`) is checked/autocompleted
   // against this app's actual theme names, instead of a plain `string`.
   const typesDts = generateColorThemeNameTypes(themes, schema);
@@ -155,7 +139,6 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
   tree.write(typesOutputPath, typesDts);
   logger.log(`✅ Generated color theme name types at: ${typesOutputPath}`);
 
-  // Step 9: Try to find and update main styles file
   const mainStylesFiles = findMainStylesFile(tree);
   if (mainStylesFiles.length > 0) {
     logger.log('\n📝 Found potential main styles files:');
@@ -171,35 +154,27 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
   logger.log('\n✅ Generation completed successfully!\n');
 }
 
-//#endregion
-
-//#region Helper Functions
-
 type ParseContext = { tree: Tree; project: Project };
 
 function extractThemesFromContent(tree: Tree, content: string, filePath: string): Theme[] {
-  // Create an in-memory TypeScript project
   const project = new Project({
     useInMemoryFileSystem: true,
     compilerOptions: {
-      target: 99, // ESNext
-      module: 99, // ESNext
+      target: 99,
+      module: 99,
     },
   });
 
-  // Add the source file
   const sourceFile = project.createSourceFile(filePath, content);
   const context: ParseContext = { tree, project };
 
   const themes: Theme[] = [];
 
-  // Find all exported const declarations
   const exportedDeclarations = sourceFile.getVariableDeclarations().filter((decl) => {
     const statement = decl.getVariableStatement();
     return statement?.isExported();
   });
 
-  // Look for the THEMES or themes array
   const themesArray = exportedDeclarations.find((decl) => {
     const name = decl.getName();
     return name === 'THEMES' || name === 'themes';
@@ -224,7 +199,6 @@ function extractThemesFromContent(tree: Tree, content: string, filePath: string)
     throw new Error('THEMES export must be an array literal');
   }
 
-  // Get the array elements (these are references to the theme const declarations)
   const elements = initializer.getElements();
 
   for (const element of elements) {
@@ -326,8 +300,6 @@ function parseThemeObject(obj: ObjectLiteralExpression, sourceFile: SourceFile, 
   return theme as Theme;
 }
 
-// Makes the named theme the sole default, overriding any isDefault flags in the theme
-// definitions. Matches the theme's name or its CSS-safe form. Returns the resolved name.
 function applyDefaultThemeOverride(themes: Theme[], defaultTheme: string): string {
   const wanted = createCssThemeName(defaultTheme);
   const target = themes.find((t) => t.name === defaultTheme || createCssThemeName(t.name) === wanted);
@@ -348,19 +320,16 @@ function applyDefaultThemeOverride(themes: Theme[], defaultTheme: string): strin
 function validateThemeConfiguration(themes: Theme[]): void {
   const defaultThemes = themes.filter((t) => t.isDefault);
 
-  // Error: No default theme
   if (defaultThemes.length === 0) {
     throw new Error('No default theme found. At least one theme must have isDefault: true');
   }
 
-  // Error: Multiple default themes
   if (defaultThemes.length > 1) {
     throw new Error(
       `Multiple default themes found: ${defaultThemes.map((t) => t.name).join(', ')}. Only one theme can have isDefault: true`,
     );
   }
 
-  // Error: Duplicate theme types
   const typeMap = new Map<string, string[]>();
 
   for (const theme of themes) {
@@ -513,7 +482,6 @@ function parseColorMap(
     return resolved ? parseColorMap(resolved.initializer, resolved.sourceFile, context) : null;
   }
 
-  // Handle spread expressions by resolving references
   if (initializer.isKind(SyntaxKind.ObjectLiteralExpression)) {
     const colorMap: Partial<Record<ColorMapKey, ThemeColor>> = {};
 
@@ -528,7 +496,6 @@ function parseColorMap(
           colorMap[propName] = propValue.getLiteralValue() as ThemeColor;
         }
       } else if (prop.isKind(SyntaxKind.SpreadAssignment)) {
-        // Handle spread: { ...onColorDark, disabled: '...' }
         const spreadExpr = prop.getExpression();
 
         if (spreadExpr.isKind(SyntaxKind.Identifier)) {
@@ -545,16 +512,13 @@ function parseColorMap(
       }
     }
 
-    // Apply fallbacks for required fields
     const defaultColor = colorMap.default;
 
     if (defaultColor) {
-      // Check if this is a ThemeColorMap (has hover, active, or disabled explicitly set)
       const isThemeColorMap =
         colorMap.hover !== undefined || colorMap.active !== undefined || colorMap.disabled !== undefined;
 
       if (isThemeColorMap) {
-        // For ThemeColorMap - apply fallbacks for all required fields
         const hoverColor = colorMap.hover || defaultColor;
 
         const result: ThemeColorMap = {
@@ -567,7 +531,6 @@ function parseColorMap(
         return result;
       }
 
-      // For OnThemeColorMap - no fallbacks needed, all fields are optional except default
       return colorMap as OnThemeColorMap;
     }
 
@@ -578,7 +541,6 @@ function parseColorMap(
 }
 
 function createCssThemeName(name: string): string {
-  // Convert theme name to CSS-safe format (e.g., "Primary Blue" -> "primary-blue")
   return name
     .toLowerCase()
     .replace(/\s+/g, '-')
@@ -633,26 +595,17 @@ function generateTailwindThemeCss(
 
 `;
 
-  // Validation is now done separately before this function is called
-  const defaultThemes = themes.filter((t) => t.isDefault);
-  const regularThemes = themes.filter((t) => !t.isDefault);
-
-  // Generate static Tailwind @theme block for each theme
   for (const theme of themes) {
     const name = createCssThemeName(theme.name);
 
-    // Add comment for theme section
     tailwindVars.push(`  /* ${theme.name} theme */`);
 
-    // Primary colors for Tailwind utilities
     addTailwindColorVariants(tailwindVars, `${utilityPrefix}-${name}`, theme.primary.color);
     tailwindVars.push('');
 
-    // On colors for Tailwind utilities
     addTailwindColorVariants(tailwindVars, `${utilityPrefix}-on-${name}`, theme.primary.onColor);
     tailwindVars.push('');
 
-    // Ink colors for standalone foreground usage
     addTailwindColorVariants(
       tailwindVars,
       `${utilityPrefix}-${name}-ink`,
@@ -660,7 +613,6 @@ function generateTailwindThemeCss(
     );
     tailwindVars.push('');
 
-    // Secondary colors if present
     if (theme.secondary) {
       addTailwindColorVariants(tailwindVars, `${utilityPrefix}-${name}-secondary`, theme.secondary.color);
       tailwindVars.push('');
@@ -668,7 +620,6 @@ function generateTailwindThemeCss(
       tailwindVars.push('');
     }
 
-    // Tertiary colors if present
     if (theme.tertiary) {
       addTailwindColorVariants(tailwindVars, `${utilityPrefix}-${name}-tertiary`, theme.tertiary.color);
       tailwindVars.push('');
@@ -679,10 +630,8 @@ function generateTailwindThemeCss(
 
   tailwindVars.push('');
 
-  // Main theme dynamic colors
-  const mainThemes = [...defaultThemes, ...regularThemes];
-  const hasSecondary = mainThemes.some((t) => t.secondary);
-  const hasTertiary = mainThemes.some((t) => t.tertiary);
+  const hasSecondary = themes.some((t) => t.secondary);
+  const hasTertiary = themes.some((t) => t.tertiary);
 
   // Collect the dynamic theme colors once. They are emitted in `@theme` (so Tailwind generates
   // the utilities) and ALSO re-declared on every color selector in the alias block below. A
@@ -705,20 +654,15 @@ function generateTailwindThemeCss(
   tailwindVars.push('  /* Dynamic theme colors (references runtime CSS variables) */');
   tailwindVars.push(...dynamicColorVars);
 
-  // Generate runtime CSS for all themes
   themes.forEach((theme) => {
     const name = createCssThemeName(theme.name);
 
-    // Determine if this is the default theme
     const isDefault = theme.isDefault;
 
-    // Generate color variant (.<runtimePrefix>-color--{name})
     if (isDefault) {
-      // Default color gets :root and .<runtimePrefix>-color--default selectors
       const selectors = [':root', `.${runtimePrefix}-color--default`, `.${runtimePrefix}-color--${name}`];
       themeVars.push(`${selectors.join(', ')} {`);
     } else {
-      // Regular colors just get their own class
       themeVars.push(`.${runtimePrefix}-color--${name} {`);
     }
 
@@ -733,7 +677,6 @@ function generateTailwindThemeCss(
     dynamicColorAliasLines.pop();
   }
 
-  // Convenience var aliases - available on any element with a color class (or root for default)
   const aliasBlock = `/* Convenience aliases (rgb + solid + opacity variants) */
 @layer base {
   :root, :where([class*="${runtimePrefix}-color--"]) {
@@ -783,7 +726,6 @@ function addDynamicThemeColors(
     vars.push('');
   }
 
-  // Color variants
   vars.push(`  --color-${utilityPrefix}-${tailwindName}: rgb(var(--${runtimePrefix}-color-${cssVarName}));`);
   vars.push(
     `  --color-${utilityPrefix}-${tailwindName}-hover: rgb(var(--${runtimePrefix}-color-${cssVarName}-hover));`,
@@ -799,7 +741,6 @@ function addDynamicThemeColors(
   );
   vars.push('');
 
-  // On-color variants
   vars.push(`  --color-${utilityPrefix}-on-${tailwindName}: rgb(var(--${runtimePrefix}-color-on-${cssVarName}));`);
   vars.push(
     `  --color-${utilityPrefix}-on-${tailwindName}-hover: rgb(var(--${runtimePrefix}-color-on-${cssVarName}-hover));`,
@@ -840,31 +781,23 @@ function addDynamicInkColors(
 }
 
 function addTailwindColorVariants(vars: string[], colorName: string, colorSet: ThemeColorMap | OnThemeColorMap): void {
-  // Tailwind 4 requires --color-* prefix and rgb() wrapper
-  // Always generate all variants with fallbacks
-
   vars.push(`  --color-${colorName}: rgb(${colorSet.default});`);
 
-  // For hover: use hover if exists, otherwise default
   const hoverValue = 'hover' in colorSet && colorSet.hover ? colorSet.hover : colorSet.default;
   vars.push(`  --color-${colorName}-hover: rgb(${hoverValue});`);
 
-  // For focus: use focus if exists, otherwise hover, otherwise default
   const focusValue = 'focus' in colorSet && colorSet.focus ? colorSet.focus : hoverValue;
   vars.push(`  --color-${colorName}-focus: rgb(${focusValue});`);
 
-  // For active: use active if exists, otherwise hover, otherwise default
   const activeValue = 'active' in colorSet && colorSet.active ? colorSet.active : hoverValue;
   vars.push(`  --color-${colorName}-active: rgb(${activeValue});`);
 
-  // For disabled: use disabled if exists, otherwise default
   const disabledValue = 'disabled' in colorSet && colorSet.disabled ? colorSet.disabled : colorSet.default;
   vars.push(`  --color-${colorName}-disabled: rgb(${disabledValue});`);
 }
 
 function addThemeColorVariants(vars: string[], prefix: string, altPrefix: string, theme: Theme): void {
   const addSwatch = (level: 'primary' | 'secondary' | 'tertiary', swatch: ThemeSwatch) => {
-    // Color variants with fallbacks
     const defaultColor = swatch.color.default;
     const hoverColor = swatch.color.hover || defaultColor;
     const focusColor = swatch.color.focus || hoverColor;
@@ -878,7 +811,6 @@ function addThemeColorVariants(vars: string[], prefix: string, altPrefix: string
     vars.push(`  --${prefix}-color-${altPrefix}${level}-disabled: ${disabledColor};`);
     vars.push('');
 
-    // On color variants with fallbacks
     const onDefaultColor = swatch.onColor.default;
     const onHoverColor = swatch.onColor.hover || onDefaultColor;
     const onFocusColor = swatch.onColor.focus || onHoverColor;
@@ -931,5 +863,3 @@ function findMainStylesFile(tree: Tree): string[] {
 
   return potentialFiles;
 }
-
-//#endregion

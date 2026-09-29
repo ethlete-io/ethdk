@@ -88,7 +88,6 @@ function migrateCreateProviderInFile(tree: Tree, filePath: string): boolean {
   let hasCreateProviderInCdk = false;
   let createProviderImport = 'createProvider';
 
-  // Find relevant imports
   for (const statement of sourceFile.statements) {
     if (ts.isImportDeclaration(statement) && ts.isStringLiteral(statement.moduleSpecifier)) {
       const modulePath = statement.moduleSpecifier.text;
@@ -106,12 +105,10 @@ function migrateCreateProviderInFile(tree: Tree, filePath: string): boolean {
     }
   }
 
-  // If createProvider is not imported from @ethlete/cdk, nothing to do
   if (!hasCreateProviderInCdk) return false;
 
   let updatedContent = content;
 
-  // Remove createProvider from @ethlete/cdk import
   if (cdkImport && cdkImport.importClause?.namedBindings && ts.isNamedImports(cdkImport.importClause.namedBindings)) {
     const namedBindings = cdkImport.importClause.namedBindings;
     const otherImports = namedBindings.elements.filter(
@@ -122,7 +119,6 @@ function migrateCreateProviderInFile(tree: Tree, filePath: string): boolean {
     const importEnd = cdkImport.getEnd();
 
     if (otherImports.length === 0) {
-      // Remove entire import line including newline
       let lineStart = importStart;
       while (lineStart > 0 && content[lineStart - 1] !== '\n') {
         lineStart--;
@@ -137,17 +133,14 @@ function migrateCreateProviderInFile(tree: Tree, filePath: string): boolean {
 
       updatedContent = content.slice(0, lineStart) + content.slice(lineEnd);
     } else {
-      // Keep other imports
       const newImports = otherImports.map((el) => el.getText(sourceFile)).join(', ');
       const newImportText = `import { ${newImports} } from '@ethlete/cdk';`;
       updatedContent = content.slice(0, importStart) + newImportText + content.slice(importEnd);
     }
   }
 
-  // Re-parse after first modification
   const intermediateSourceFile = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
 
-  // Find @ethlete/core import in the updated content
   let updatedCoreImport: ts.ImportDeclaration | undefined;
   for (const statement of intermediateSourceFile.statements) {
     if (ts.isImportDeclaration(statement) && ts.isStringLiteral(statement.moduleSpecifier)) {
@@ -158,14 +151,12 @@ function migrateCreateProviderInFile(tree: Tree, filePath: string): boolean {
     }
   }
 
-  // Add createProvider to @ethlete/core import
   if (
     updatedCoreImport?.importClause?.namedBindings &&
     ts.isNamedImports(updatedCoreImport.importClause.namedBindings)
   ) {
     const namedBindings = updatedCoreImport.importClause.namedBindings;
 
-    // Check if createProvider already exists
     const hasCreateProvider = namedBindings.elements.some(
       (element) => (element.propertyName?.text ?? element.name.text) === 'createProvider',
     );
@@ -181,11 +172,9 @@ function migrateCreateProviderInFile(tree: Tree, filePath: string): boolean {
       updatedContent = updatedContent.slice(0, importStart) + newImportText + updatedContent.slice(importEnd);
     }
   } else {
-    // Add new import from @ethlete/core at the top
     const firstImportIndex = updatedContent.indexOf('import');
 
     if (firstImportIndex !== -1) {
-      // Add after other imports
       let insertPosition: number;
       let lastImportEnd = firstImportIndex;
 
@@ -198,7 +187,6 @@ function migrateCreateProviderInFile(tree: Tree, filePath: string): boolean {
       }
 
       insertPosition = lastImportEnd;
-      // Find end of line
       while (insertPosition < updatedContent.length && updatedContent[insertPosition] !== '\n') {
         insertPosition++;
       }
@@ -211,7 +199,6 @@ function migrateCreateProviderInFile(tree: Tree, filePath: string): boolean {
         `import { ${createProviderImport} } from '@ethlete/core';\n` +
         updatedContent.slice(insertPosition);
     } else {
-      // No imports, add at the beginning
       updatedContent = `import { ${createProviderImport} } from '@ethlete/core';\n\n` + updatedContent;
     }
   }

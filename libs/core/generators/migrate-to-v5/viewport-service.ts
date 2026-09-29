@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Tree, logger } from '@nx/devkit';
 import * as ts from 'typescript';
 import { MigrationScope } from '../migrate-provider-shape/migration-scope.js';
@@ -8,9 +7,6 @@ import { collectFiles, TransformReport } from './migration-files.js';
 export default async function migrateViewportService(tree: Tree, scope?: MigrationScope): Promise<TransformReport> {
   const tsFiles = collectFiles(tree, scope, ['.ts']);
   const review: string[] = [];
-
-  // Read across the whole workspace, not the scope: a variable can be consumed outside the migrated projects.
-  const cssVariablesUsed = detectCssVariableUsage(tree);
 
   let filesModified = 0;
   let templatesModified = 0;
@@ -31,7 +27,7 @@ export default async function migrateViewportService(tree: Tree, scope?: Migrati
     if (viewportPackage !== '@ethlete/core' && !viewportPackage?.startsWith('@fifa-gg/uikit')) continue;
 
     // Check if this is a component with a template
-    const templatePath = findTemplateForComponent(tree, filePath, sourceFile);
+    const templatePath = findTemplateForComponent(filePath, sourceFile);
 
     // Track signal properties for template migration
     const templateMigrationInfo: TemplateMigrationInfo = {
@@ -123,7 +119,6 @@ export default async function migrateViewportService(tree: Tree, scope?: Migrati
       sourceFileAfterReplacements,
       updatedContent,
       viewportServiceVars,
-      cssVariablesUsed,
     );
     updatedContent = monitorViewportResult.content;
     monitorViewportResult.imports.forEach((imp) => allImportsNeeded['@ethlete/core'].add(imp));
@@ -254,7 +249,7 @@ export default async function migrateViewportService(tree: Tree, scope?: Migrati
   for (const [tsFilePath, migrationInfo] of componentTemplateMigrations) {
     const sourceFile = ts.createSourceFile(tsFilePath, tree.read(tsFilePath, 'utf-8')!, ts.ScriptTarget.Latest, true);
 
-    const templatePath = findTemplateForComponent(tree, tsFilePath, sourceFile);
+    const templatePath = findTemplateForComponent(tsFilePath, sourceFile);
 
     if (templatePath && tree.exists(templatePath)) {
       const wasModified = migrateTemplateFile(tree, templatePath, migrationInfo);
@@ -265,36 +260,6 @@ export default async function migrateViewportService(tree: Tree, scope?: Migrati
   }
 
   return { filesChanged: filesModified + templatesModified, review };
-}
-
-type CssVariablesUsed = {
-  hasViewportVariables: boolean; // --et-vw, --et-vh
-  hasScrollbarVariables: boolean; // --et-sw, --et-sh
-};
-
-function detectCssVariableUsage(tree: Tree): CssVariablesUsed {
-  let hasViewportVariables = false;
-  let hasScrollbarVariables = false;
-
-  const allFiles = collectFiles(tree, undefined, ['.css', '.scss', '.sass', '.less', '.ts']);
-
-  for (const filePath of allFiles) {
-    const content = tree.read(filePath, 'utf-8');
-    if (!content) continue;
-
-    if (content.includes('--et-vw') || content.includes('--et-vh')) {
-      hasViewportVariables = true;
-    }
-    if (content.includes('--et-sw') || content.includes('--et-sh')) {
-      hasScrollbarVariables = true;
-    }
-
-    if (hasViewportVariables && hasScrollbarVariables) {
-      break; // Found both, no need to continue
-    }
-  }
-
-  return { hasViewportVariables, hasScrollbarVariables };
 }
 
 type TemplateMigrationInfo = {
@@ -343,7 +308,7 @@ function migrateTemplateFile(tree: Tree, htmlFilePath: string, migrationInfo: Te
   return hasChanges;
 }
 
-function findTemplateForComponent(tree: Tree, tsFilePath: string, sourceFile: ts.SourceFile): string | null {
+function findTemplateForComponent(tsFilePath: string, sourceFile: ts.SourceFile): string | null {
   let templatePath: string | null = null;
 
   function visit(node: ts.Node) {
@@ -616,7 +581,7 @@ function analyzeClassMigration(
     }
   >();
 
-  for (const [usageText, { propertyName, usage, propertyDecl }] of usagesInPropertyInitializers) {
+  for (const [, { propertyName, usage, propertyDecl }] of usagesInPropertyInitializers) {
     let injectFn: string | undefined;
     let args: string | undefined;
     let type: 'signal' | 'observable' = 'signal';
@@ -689,7 +654,7 @@ function analyzeClassMigration(
 
     if (isUsedOutsideInitializers && type === 'observable') {
       // Create a shared member for all properties that use this observable
-      const baseName = args ? generateNameFromArgs(usageKey, args, type) : usageKey;
+      const baseName = args ? generateNameFromArgs(args, type) : usageKey;
       const memberName = findAvailableMemberName(baseName, context.existingMembers);
 
       const memberInfo: MemberInfo = {
@@ -726,12 +691,7 @@ function analyzeClassMigration(
         // OR if the property is used elsewhere in the class
         const propertyName = ts.isIdentifier(propertyDecl.name) ? propertyDecl.name.text : '';
         const isObservableProperty = propertyName.endsWith('$');
-        const isPropertyUsedElsewhere = checkIfPropertyIsUsedElsewhere(
-          sourceFile,
-          classNode,
-          propertyName,
-          propertyDecl,
-        );
+        const isPropertyUsedElsewhere = checkIfPropertyIsUsedElsewhere(classNode, propertyName, propertyDecl);
 
         // Wrap with toObservable if:
         // 1. It's an observable type AND
@@ -894,7 +854,7 @@ function analyzeClassMigration(
       let baseName: string;
 
       if (usage.args) {
-        baseName = generateNameFromArgs(originalProperty, usage.args, usage.type);
+        baseName = generateNameFromArgs(usage.args, usage.type);
       } else {
         baseName = usage.type === 'observable' ? originalProperty : originalProperty.replace(/\$$/, '');
       }
@@ -1219,7 +1179,7 @@ function findMatchingParen(text: string, openIndex: number): number {
   return depth === 0 ? i - 1 : -1;
 }
 
-function generateNameFromArgs(methodName: string, args: string, type: 'signal' | 'observable'): string {
+function generateNameFromArgs(args: string, type: 'signal' | 'observable'): string {
   // Parse the arguments to generate a meaningful name
   // e.g., { min: 'lg' } => isMinLg or isMinLg$
   // e.g., { max: 'sm' } => isMaxSm or isMaxSm$
@@ -1391,7 +1351,6 @@ function migrateMonitorViewport(
   sourceFile: ts.SourceFile,
   content: string,
   viewportServiceVars: string[],
-  cssVariablesUsed: CssVariablesUsed,
 ): { content: string; imports: string[] } {
   let updatedContent = content;
   const imports: string[] = [];
@@ -1640,8 +1599,6 @@ function removeViewportServiceImport(sourceFile: ts.SourceFile, content: string)
     if (ts.isImportDeclaration(node)) {
       const moduleSpecifier = node.moduleSpecifier;
       if (ts.isStringLiteral(moduleSpecifier)) {
-        const importPath = moduleSpecifier.text;
-
         // Check if this import contains ViewportService from any package
         // (e.g., '@ethlete/core' or '@fifa-gg/uikit/core')
         if (!node.importClause?.namedBindings) return;
@@ -1656,7 +1613,6 @@ function removeViewportServiceImport(sourceFile: ts.SourceFile, content: string)
 
           // If ViewportService is the only import, remove the entire import statement
           if (imports.length === 1) {
-            const importText = node.getText(sourceFile);
             const importStart = node.getStart(sourceFile);
             const importEnd = node.getEnd();
 
@@ -1672,7 +1628,6 @@ function removeViewportServiceImport(sourceFile: ts.SourceFile, content: string)
             updatedContent = content.slice(0, importStart) + content.slice(lineEnd);
           } else {
             // Remove only ViewportService from the named imports
-            const viewportServiceText = viewportServiceImport.getText(sourceFile);
             const namedImportsText = node.importClause.namedBindings.getText(sourceFile);
 
             // Handle different formatting cases
@@ -1947,7 +1902,7 @@ function removeUnusedImports(sourceFile: ts.SourceFile, content: string): string
 
   for (const importToCheck of importsToCheck) {
     // Check if the import specifier is used anywhere in the code
-    const isUsed = checkIfImportIsUsed(sourceFile, content, importToCheck.specifier);
+    const isUsed = checkIfImportIsUsed(sourceFile, importToCheck.specifier);
 
     if (!isUsed) {
       updatedContent = removeImportSpecifier(
@@ -1962,7 +1917,7 @@ function removeUnusedImports(sourceFile: ts.SourceFile, content: string): string
   return updatedContent;
 }
 
-function checkIfImportIsUsed(sourceFile: ts.SourceFile, content: string, specifier: string): boolean {
+function checkIfImportIsUsed(sourceFile: ts.SourceFile, specifier: string): boolean {
   let isUsed = false;
 
   function visit(node: ts.Node) {
@@ -2047,7 +2002,6 @@ function removeImportSpecifier(
 }
 
 function checkIfPropertyIsUsedElsewhere(
-  sourceFile: ts.SourceFile,
   classNode: ts.ClassDeclaration,
   propertyName: string,
   propertyDecl: ts.PropertyDeclaration,
