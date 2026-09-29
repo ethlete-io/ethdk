@@ -1,6 +1,7 @@
 import { Page, expect, test } from '@playwright/test';
 import {
   boxOf,
+  clickRing,
   expectFieldFocusVisible,
   expectFocusVisible,
   openStory,
@@ -350,7 +351,8 @@ test.describe('date-inputs / date-time input keyboard', () => {
 
     await expect(page.locator(DIALOG)).toHaveAttribute('aria-label', 'Choose a date and time');
     await expect(page.locator('.et-calendar')).toBeVisible();
-    await expect(page.getByRole('listbox', { name: 'Hours' })).toBeVisible();
+    await expect(page.getByRole('slider', { name: 'Time', includeHidden: true })).toBeAttached();
+    await expect(page.locator('.et-time-picker-ring')).toBeVisible();
     await expect(page.locator('.et-date-time-input-panel-tabs')).toBeHidden();
   });
 
@@ -363,8 +365,8 @@ test.describe('date-inputs / date-time input keyboard', () => {
     await expect(page.locator(DIALOG)).toBeVisible();
     await expect(root.getByText('Form value: null')).toBeVisible();
 
-    await page.getByRole('listbox', { name: 'Hours' }).getByText('9', { exact: true }).click();
-    await page.getByRole('listbox', { name: 'Minutes' }).getByText('30', { exact: true }).click();
+    await waitForPickerEntered(page);
+    await clickRing(page, page.locator('.et-time-picker-ring'), 9 * 60 + 30);
 
     await expect(page.locator(DIALOG)).toBeVisible();
     await expect(root.getByText('Form value: null')).toBeHidden();
@@ -395,19 +397,22 @@ test.describe('date-inputs / date-time input touch', () => {
 test.describe('date-inputs / date-time range input keyboard', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: grouped fields and side switch');
 
-  test('the control is a labelled group with two fields and the time picker side switch', async ({ page }) => {
+  test('the control is a labelled group with two fields, and the ring edits the end of the focused field', async ({
+    page,
+  }) => {
     const root = await openStory(page, DATE_TIME_RANGE_INPUT_ID);
 
     await expect(root.locator('et-date-time-range-input')).toHaveAttribute('role', 'group');
     await expect(root.locator('.et-date-time-range-input-field')).toHaveCount(2);
 
+    await root.locator('.et-date-time-range-input-field').last().click();
     await root.locator('.et-input-picker-trigger').click();
 
-    const startSide = page.getByRole('button', { name: /Start time/ });
-    const endSide = page.getByRole('button', { name: /End time/ });
+    const startHandle = page.getByRole('slider', { name: 'Start time', includeHidden: true });
+    const endHandle = page.getByRole('slider', { name: 'End time', includeHidden: true });
 
-    await expect(startSide).toHaveAttribute('aria-pressed', 'true');
-    await expect(endSide).toHaveAttribute('aria-pressed', 'false');
+    await expect(endHandle).toHaveAttribute('data-active', 'true');
+    await expect(startHandle).not.toHaveAttribute('data-active');
   });
 
   test('typing into each side commits it independently', async ({ page }) => {
@@ -662,7 +667,6 @@ test.describe('date-inputs / time zone', () => {
       'aria-label',
       /August 18th, 2026/,
     );
-    await expect(dialog.getByRole('option', { name: '14', selected: true })).toHaveCount(1);
-    await expect(dialog.getByRole('option', { name: '00', selected: true })).toHaveCount(1);
+    await expect(dialog.getByRole('slider', { name: 'Time' })).toHaveAttribute('aria-valuenow', '840');
   });
 });

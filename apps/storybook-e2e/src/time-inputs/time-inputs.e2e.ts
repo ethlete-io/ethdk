@@ -1,5 +1,5 @@
 import { Page, expect, test } from '@playwright/test';
-import { expectFieldFocusVisible, expectFocusVisible, openStory, pressKey, tap } from '../support';
+import { clickRing, expectFieldFocusVisible, expectFocusVisible, openStory, pressKey, tap, tapRing } from '../support';
 
 const TIME_INPUT_DEFAULT = 'components-forms-time-input--default';
 const TIME_INPUT_PREFILLED = 'components-forms-time-input--prefilled';
@@ -12,7 +12,8 @@ const TIME_RANGE_MASKED = 'components-forms-time-range-input--masked';
 
 const DURATION_DEFAULT = 'components-forms-duration-input--default';
 
-const FOCUSED_OPTION = "[tabindex='0']";
+const RING = '.et-time-picker-ring';
+const BLOCKED_SPAN = '.et-time-picker-blocked';
 
 /** The picker overlay ignores Escape until its enter transition has started. */
 async function waitForPickerEntered(page: Page): Promise<void> {
@@ -84,29 +85,32 @@ test.describe('time-inputs / time-input keyboard', () => {
     await expectFieldFocusVisible(field);
   });
 
-  test('completing an hour and a minute in the picker commits the time and the picker stays open', async ({ page }) => {
+  test('a click on the ring commits the time and the picker stays open', async ({ page }) => {
     const root = await openStory(page, TIME_INPUT_DEFAULT);
     const field = root.locator('.et-time-input-field');
+
+    await root.locator('.et-input-picker-trigger').click();
+    await waitForPickerEntered(page);
+    await clickRing(page, page.locator(RING), 9 * 60 + 30);
+
+    await expect(page.getByRole('dialog', { name: 'Choose a time' })).toBeVisible();
+    await expect(field).toHaveValue('9:30 AM');
+  });
+
+  test('Alt+ArrowDown on a filled field focuses the handle, and its keys commit the time', async ({ page }) => {
+    const root = await openStory(page, TIME_INPUT_PREFILLED);
+    const field = root.locator('.et-time-input-field');
+    const handle = page.getByRole('slider', { name: 'Time' });
 
     await pressKey(page, 'Tab');
     await page.keyboard.press('Alt+ArrowDown');
 
-    const hour = page.getByRole('listbox', { name: 'Hours' }).locator(FOCUSED_OPTION);
-    await expectFocusVisible(hour);
+    await expectFocusVisible(handle);
 
-    await pressKey(page, 'Home');
-    await expect(hour).toHaveText('12');
+    await pressKey(page, 'PageUp');
 
-    await pressKey(page, 'Tab');
-    const minute = page.getByRole('listbox', { name: 'Minutes' }).locator(FOCUSED_OPTION);
-    await pressKey(page, 'Home');
-    await expect(minute).toHaveText('00');
-
-    await pressKey(page, 'Tab');
-    await pressKey(page, 'Home');
-
+    await expect(field).toHaveValue('3:30 PM');
     await expect(page.getByRole('dialog', { name: 'Choose a time' })).toBeVisible();
-    await expect(field).toHaveValue('12:00 AM');
   });
 
   test('the opening-hours story bounds the picker but typed entry outside those bounds still commits', async ({
@@ -125,10 +129,14 @@ test.describe('time-inputs / time-input keyboard', () => {
 
     await trigger.click();
 
-    const hourListbox = page.getByRole('listbox', { name: 'Hours' });
-    await expect(hourListbox.getByText('08', { exact: true })).toHaveAttribute('aria-disabled', 'true');
-    await expect(hourListbox.getByText('18', { exact: true })).toHaveAttribute('aria-disabled', 'true');
-    await expect(hourListbox.getByText('09', { exact: true })).not.toHaveAttribute('aria-disabled', 'true');
+    const handle = page.getByRole('slider', { name: 'Time' });
+    await expect(handle).toBeFocused();
+    await expect(handle).toHaveAttribute('aria-valuenow', '180');
+    await expect(page.locator(BLOCKED_SPAN).first()).toBeAttached();
+
+    await pressKey(page, 'Home');
+
+    await expect(field).toHaveValue('0900');
   });
 });
 
@@ -144,6 +152,16 @@ test.describe('time-inputs / time-input touch', () => {
     const dialog = page.getByRole('dialog', { name: 'Choose a time' });
     await expect(dialog).toBeVisible();
     await expect(page.locator('.et-overlay--bottom-sheet')).toBeVisible();
+  });
+
+  test('a tap on the ring in the sheet commits the time', async ({ page }) => {
+    const root = await openStory(page, TIME_INPUT_DEFAULT);
+
+    await tap(root.locator('.et-input-picker-trigger'));
+    await waitForPickerEntered(page);
+    await tapRing(page, page.locator(RING), 6 * 60);
+
+    await expect(root.locator('.et-time-input-field')).toHaveValue('6:00 AM');
   });
 
   test('a tap on the clear button clears a focused field with a value', async ({ page }) => {
@@ -201,42 +219,82 @@ test.describe('time-inputs / time-range-input keyboard', () => {
     await expect(root.getByRole('group', { name: 'Time range' })).toBeVisible();
   });
 
-  test('picking a time on either side leaves the picker open', async ({ page }) => {
+  test('opening the picker from the start field focuses the start handle', async ({ page }) => {
     const root = await openStory(page, TIME_RANGE_PREFILLED);
-    const trigger = root.locator('.et-input-picker-trigger');
+
+    await pressKey(page, 'Tab');
+    await expect(root.locator('.et-time-range-input-field[side="start"]')).toBeFocused();
+    await page.keyboard.press('Alt+ArrowDown');
+
+    const start = page.getByRole('slider', { name: 'Start time' });
+    await expectFocusVisible(start);
+    await expect(start).toHaveAttribute('data-active', 'true');
+  });
+
+  test('opening the picker from the end field focuses the end handle', async ({ page }) => {
+    const root = await openStory(page, TIME_RANGE_PREFILLED);
     const end = root.locator('.et-time-range-input-field[side="end"]');
 
-    await trigger.click();
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'Tab');
+    await expect(end).toBeFocused();
+    await page.keyboard.press('Alt+ArrowDown');
 
-    const hourListbox = page.getByRole('listbox', { name: 'Hours' });
-    await hourListbox.getByText('11', { exact: true }).click();
+    const endHandle = page.getByRole('slider', { name: 'End time' });
+    await expectFocusVisible(endHandle);
+    await expect(endHandle).toHaveAttribute('data-active', 'true');
 
-    await expect(page.getByRole('dialog', { name: 'Choose a time range' })).toBeVisible();
+    await pressKey(page, 'PageUp');
 
-    await page.getByRole('button', { name: /^End time/ }).click();
-    const minuteListbox = page.getByRole('listbox', { name: 'Minutes' });
-    await minuteListbox.getByText('45', { exact: true }).click();
+    await expect(end).toHaveValue('6:30 PM');
+  });
 
-    await expect(page.getByRole('dialog', { name: 'Choose a time range' })).toBeVisible();
+  test('a click on the trigger after the end field focuses the end handle', async ({ page }) => {
+    const root = await openStory(page, TIME_RANGE_PREFILLED);
+
+    await root.locator('.et-time-range-input-field[side="end"]').click();
+    await root.locator('.et-input-picker-trigger').click();
+
+    await expect(page.getByRole('slider', { name: 'End time' })).toBeFocused();
+  });
+
+  test('a click on the ring moves the nearer end and leaves the picker open', async ({ page }) => {
+    const root = await openStory(page, TIME_RANGE_PREFILLED);
+    const start = root.locator('.et-time-range-input-field[side="start"]');
+    const end = root.locator('.et-time-range-input-field[side="end"]');
+    const ring = page.locator(RING);
+
+    await root.locator('.et-input-picker-trigger').click();
+    await waitForPickerEntered(page);
+
+    await clickRing(page, ring, 17 * 60 + 45);
     await expect(end).toHaveValue('5:45 PM');
+
+    await clickRing(page, ring, 11 * 60);
+    await expect(start).toHaveValue('11:00 AM');
+
+    await expect(page.getByRole('dialog', { name: 'Choose a time range' })).toBeVisible();
   });
 
   test('the bounded story bounds the picker but typed entry outside those bounds still commits', async ({ page }) => {
     const root = await openStory(page, TIME_RANGE_BOUNDED, { args: { displayFormat: 'HHmm' } });
     const start = root.locator('.et-time-range-input-field[side="start"]');
-    const trigger = root.locator('.et-input-picker-trigger');
 
     await pressKey(page, 'Tab');
     await start.pressSequentially('0200');
-    await pressKey(page, 'Tab');
+    await pressKey(page, 'Enter');
     await expect(start).toHaveValue('0200');
 
-    await trigger.click();
+    await page.keyboard.press('Alt+ArrowDown');
 
-    const hourListbox = page.getByRole('listbox', { name: 'Hours' });
-    await expect(hourListbox.getByText('02', { exact: true })).toHaveAttribute('aria-disabled', 'true');
-    await expect(hourListbox.getByText('22', { exact: true })).toHaveAttribute('aria-disabled', 'true');
-    await expect(hourListbox.getByText('10', { exact: true })).not.toHaveAttribute('aria-disabled', 'true');
+    const startHandle = page.getByRole('slider', { name: 'Start time' });
+    await expect(startHandle).toBeFocused();
+    await expect(startHandle).toHaveAttribute('aria-valuenow', '120');
+    await expect(page.locator(BLOCKED_SPAN).first()).toBeAttached();
+
+    await pressKey(page, 'Home');
+
+    await expect(start).toHaveValue('0800');
   });
 
   test('the masked story shows a guide while empty and auto-inserts the separator while typing', async ({ page }) => {
@@ -262,7 +320,18 @@ test.describe('time-inputs / time-range-input touch', () => {
 
     await expect(page.getByRole('dialog', { name: 'Choose a time range' })).toBeVisible();
     await expect(page.locator('.et-overlay--bottom-sheet')).toBeVisible();
-    await expect(page.getByRole('listbox', { name: 'Hours' })).toBeVisible();
+    await expect(page.getByRole('slider', { name: 'Start time' })).toBeVisible();
+    await expect(page.getByRole('slider', { name: 'End time' })).toBeVisible();
+  });
+
+  test('a tap on the ring in the sheet moves the nearer end', async ({ page }) => {
+    const root = await openStory(page, TIME_RANGE_PREFILLED);
+
+    await tap(root.locator('.et-input-picker-trigger'));
+    await waitForPickerEntered(page);
+    await tapRing(page, page.locator(RING), 18 * 60);
+
+    await expect(root.locator('.et-time-range-input-field[side="end"]')).toHaveValue('6:00 PM');
   });
 });
 
