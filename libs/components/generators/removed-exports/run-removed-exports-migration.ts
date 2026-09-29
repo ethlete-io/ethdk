@@ -72,6 +72,4 @@ export const runRemovedExportsMigration = async (
   } else if (changed.length === 0) {
     console.log('\n✅ Nothing to do.');
   }
-
-  return { changed, tasks };
 };

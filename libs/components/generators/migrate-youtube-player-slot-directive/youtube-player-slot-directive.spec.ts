@@ -116,12 +116,11 @@ describe('migrate-youtube-player-slot-directive', () => {
       "import { YoutubePlayerSlotDirective } from '@ethlete/components';\n@Directive({ hostDirectives: [YoutubePlayerSlotDirective] })\n",
     );
 
-    const { tasks } = await migrateYoutubePlayerSlotDirective(tree, { skipFormat: true });
+    await migrateYoutubePlayerSlotDirective(tree, { skipFormat: true });
 
     expect(tree.read(FILE, 'utf-8')).toBe('@Component({ imports: [] })\n');
-    expect(tasks).toHaveLength(1);
-    expect(tree.read(YOUTUBE_PLAYER_SLOT_DIRECTIVE_REPORT_PATH, 'utf-8')).toContain(
-      'apps/shop/src/app/host.directive.ts:3',
-    );
+    const report = tree.read(YOUTUBE_PLAYER_SLOT_DIRECTIVE_REPORT_PATH, 'utf-8');
+    expect(report).toContain('apps/shop/src/app/host.directive.ts:3');
+    expect(report).not.toContain(FILE);
   });
 });

@@ -8,7 +8,7 @@ import { YOUTUBE_PLAYER_SLOT_DIRECTIVE_REMOVALS } from './youtube-player-slot-di
 export const YOUTUBE_PLAYER_SLOT_DIRECTIVE_REPORT_PATH = 'youtube-player-slot-directive-migration-tasks.md';
 
 export default async function migrateYoutubePlayerSlotDirective(tree: Tree, schema: RemovedExportsMigrationSchema) {
-  return runRemovedExportsMigration(tree, schema, {
+  await runRemovedExportsMigration(tree, schema, {
     title: 'Removing YoutubePlayerSlotDirective and YOUTUBE_PLAYER_SLOT_TOKEN',
     removed: YOUTUBE_PLAYER_SLOT_DIRECTIVE_REMOVALS,
     reportPath: YOUTUBE_PLAYER_SLOT_DIRECTIVE_REPORT_PATH,
