@@ -52,7 +52,7 @@ input, the time range input, the date-time input and the date-time range input.
 - Slice 6 (stories, docs, changeset): done, ring stories (`FineSteps`, `CoarseSteps`, `WithDay`, `RangeWithDays`, `RangeWithDaysOvernight`, `RangeHandOff`), the time picker and date-time inputs guides, and the breaking changeset `time-picker-ring`.
 - Slice 5 (e2e): done, `time-picker`, `time-inputs`, `date-inputs` suites drive the ring (helpers in `apps/storybook-e2e/src/support/time-ring.ts`). Run them with `STORYBOOK_URL=http://localhost:4400`; without it the config serves the old static `dist/storybook`.
 - Fixes after review: round arc caps; the sheet ring shrinks to the screen width and keeps the desktop handle style; with both `rangeDays` on one day the other end is a wall; a drag follows the pointer path (`clampRingTravel`), so it no longer jumps over midnight once the pointer is 12h away.
-- Open: an empty handle is `display:none`, so Tab never reaches an empty picker (e2e `test.fail` "Tab reaches the handle of an empty picker"). The sheet tabs do not show their values (call 06 A). A range longer than one day without `rangeDays` shows the clock-arc duration and no note. The hint reads "Tap the ring" on desktop too.
+- Open: an empty handle is `display:none`, so Tab never reaches an empty picker (e2e `test.fail` "Tab reaches the handle of an empty picker"). Recommended, waiting for Tom: keep the empty handle invisible but focusable, so the keys start from "now" and the first tap still leaves focus in the field. The sheet tabs do not show their values (call 06 A). A range longer than one day without `rangeDays` shows the clock-arc duration and no note. The hint reads "Tap the ring" on desktop too.
 
 ## Slices
 
