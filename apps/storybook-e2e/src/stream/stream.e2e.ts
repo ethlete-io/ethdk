@@ -406,8 +406,8 @@ test.describe('stream / structure', () => {
     const failure = slotAt(root).locator(ERROR);
 
     await expect(failure).toHaveAttribute('role', 'alert');
-    await expect(failure.locator('h3')).toHaveText('Playback failed');
-    await expect(failure.locator('p')).toHaveText(
+    await expect(failure.locator('.et-stream-player-error-heading')).toHaveText('Playback failed');
+    await expect(failure.locator('.et-stream-player-error-description')).toHaveText(
       'The player could not be loaded. Please check your connection or try again.',
     );
     await expect(failure.getByRole('button', { name: 'Retry' })).toBeVisible();
@@ -458,8 +458,8 @@ test.describe('stream / structure', () => {
     const gate = slotAt(root).locator(CONSENT);
 
     await expect(gate).toHaveAttribute('role', 'group');
-    await expect(gate.locator('h3')).toHaveText('Content blocked');
-    await expect(gate.locator('p')).toHaveText(
+    await expect(gate.locator('.et-stream-consent-heading')).toHaveText('Content blocked');
+    await expect(gate.locator('.et-stream-consent-description')).toHaveText(
       'Playback requires your consent. Third-party cookies and data may be used.',
     );
     await expect(gate.getByRole('button', { name: 'Allow and play' })).toBeVisible();

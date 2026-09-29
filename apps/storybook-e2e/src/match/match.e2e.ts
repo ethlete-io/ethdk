@@ -154,14 +154,14 @@ test.describe('match / aria', () => {
 
     await expect(card(root).locator('.et-match-participant-names').first()).toBeHidden();
     await expect(side(root, 'home').locator('img')).toHaveAttribute('alt', 'FC Berlin emblem');
-    await expect(card(root)).toHaveAccessibleName(/FC Berlin vs\. Neon Esports/);
+    await expect(card(root)).toHaveAccessibleName(/FC Berlin vs Neon Esports/);
   });
 
   test('an undecided slot is drawn and announced as TBD', async ({ page }) => {
     const root = await openStory(page, TBD_STORY_ID);
 
     await expect(side(root, 'away').locator('.et-match-participant-name')).toHaveText('TBD');
-    await expect(card(root)).toHaveAccessibleName(/FC Berlin vs\. TBD/);
+    await expect(card(root)).toHaveAccessibleName(/FC Berlin vs TBD/);
   });
 
   test('the dense row keeps the match label in the composed name', async ({ page }) => {
