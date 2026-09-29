@@ -109,6 +109,23 @@ const noTrivialReturnType = {
     };
 
     /**
+     * Whether an identifier is a property name (`a.name`, `{ name: 1 }`) rather than a reference.
+     * @param {any} identifier
+     */
+    const isNonReference = (identifier) => {
+      const parent = identifier.parent;
+
+      if (!parent || parent.computed) return false;
+      if (parent.type === 'MemberExpression') return parent.property === identifier;
+
+      return (
+        (parent.type === 'Property' || parent.type === 'PropertyDefinition' || parent.type === 'MethodDefinition') &&
+        parent.key === identifier &&
+        !parent.shorthand
+      );
+    };
+
+    /**
      * Whether the function body references the function itself (recursion) — there the
      * annotation is required, since TypeScript cannot infer a self-dependent return type.
      * @param {any} fn
@@ -135,7 +152,7 @@ const noTrivialReturnType = {
         if (typeof current.type !== 'string') continue;
 
         for (const { kind, name } of names) {
-          if (kind === 'name' && current.type === 'Identifier' && current.name === name) {
+          if (kind === 'name' && current.type === 'Identifier' && current.name === name && !isNonReference(current)) {
             return true;
           }
 

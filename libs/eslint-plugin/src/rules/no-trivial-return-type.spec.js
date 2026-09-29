@@ -38,6 +38,16 @@ tester.run('no-trivial-return-type', rule, {
   ],
   invalid: [
     {
+      code: `const disabled = (v: any): boolean => { return v.disabled; };`,
+      output: `const disabled = (v: any) => { return v.disabled; };`,
+      errors: [{ messageId: 'trivialReturnType' }],
+    },
+    {
+      code: `const disabled = (v: any): boolean => { return { disabled: 1 } && v; };`,
+      output: `const disabled = (v: any) => { return { disabled: 1 } && v; };`,
+      errors: [{ messageId: 'trivialReturnType' }],
+    },
+    {
       code: `const fn = (): void => {};`,
       output: `const fn = () => {};`,
       errors: [{ messageId: 'trivialReturnType' }],
