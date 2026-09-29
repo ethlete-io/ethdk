@@ -74,8 +74,6 @@ export const signalElementScrollState = (el: SignalElementBindingType, options?:
       const element = observedEl().currentElement;
       const dimensions = elementDimensions();
 
-      // We are not interested what the mutation is, just that there is one.
-      // Changes to the DOM can affect the scroll state of the element.
       elementMutations();
 
       if (!element || !isRendered()) return notScrollable(dimensions);

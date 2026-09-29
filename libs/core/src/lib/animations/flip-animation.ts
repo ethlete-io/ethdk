@@ -1,4 +1,4 @@
-import { Subject } from 'rxjs';
+import { Subject, tap } from 'rxjs';
 import { matchesReducedMotion } from './animation-utils';
 
 type FlipAnimationGroupConfig = {
@@ -67,15 +67,19 @@ export const createFlipAnimationGroup = (config: FlipAnimationGroupConfig) => {
   };
 
   flips.forEach((animation) => {
-    animation.onStart$.subscribe(() => {
-      startedCount++;
+    animation.onStart$
+      .pipe(
+        tap(() => {
+          startedCount++;
 
-      if (startedCount === flips.length) {
-        onStart$.next();
-      }
-    });
-    animation.onFinish$.subscribe(() => settle(false));
-    animation.onCancel$.subscribe(() => settle(true));
+          if (startedCount === flips.length) {
+            onStart$.next();
+          }
+        }),
+      )
+      .subscribe();
+    animation.onFinish$.pipe(tap(() => settle(false))).subscribe();
+    animation.onCancel$.pipe(tap(() => settle(true))).subscribe();
   });
 
   const updateInit = () => {

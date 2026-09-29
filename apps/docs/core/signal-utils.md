@@ -170,6 +170,6 @@ whether to show days, when to drop to seconds and how to pad them.
 
 Higher-level behaviors composed from the primitives:
 
-- **`useCursorDragScroll(el, options?)`** - click-and-drag ("grab") scrolling on any scrollable element. Options: `enabled` (signal, default `true`), `allowedDirection` (`'horizontal' | 'vertical' | 'both'`, default `'both'`). Returns `{ isDragging, currentDragAmount }` signals; the [scrollable component](/components/scrollable) uses it under the hood.
+- **`useCursorDragScroll(el, options?)`** - click-and-drag ("grab") scrolling on any scrollable element. Options: `enabled` (signal, default `true`), `allowedDirection` (`'horizontal' | 'vertical' | 'both'`, default `'both'`), `canScroll` (signal; pass it when you already track overflow, otherwise the recipe measures it with its own observers). Returns `{ isDragging, currentDragAmount }` signals; the [scrollable component](/components/scrollable) uses it under the hood.
 - **`setupScrollRestoration(config?)`** - app-wide navigation scroll management: scroll-to-top, fragment scrolling and - opt-in - real scroll restoration on back/forward. See [scroll restoration](/core/scroll-restoration).
 - **`writeScrollbarSizeToCssVariables()`** / **`writeViewportSizeToCssVariables()`** - write `--et-sw`/`--et-sh` (scrollbar size) and `--et-vw`/`--et-vh` (viewport size excl. scrollbar) onto `<html>`. Call once at app start (idempotent, browser-only).

@@ -90,7 +90,6 @@ export default [
       'ethlete/no-inject-chain': 'off',
       'ethlete/no-leading-underscore-class-member': 'off',
       'ethlete/no-member-alias': 'off',
-      'ethlete/no-subscribe-with-body': 'off',
       'ethlete/no-trivial-wrapper-method': 'off',
       'ethlete/prefer-linked-signal': 'off',
       'ethlete/prefer-present-tense-output': 'off',

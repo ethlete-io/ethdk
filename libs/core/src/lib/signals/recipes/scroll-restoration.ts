@@ -2,7 +2,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { afterNextRender, DestroyRef, DOCUMENT, inject, Injector, PLATFORM_ID } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, NavigationSkipped, NavigationStart, Params, Router } from '@angular/router';
-import { filter } from 'rxjs';
+import { filter, tap } from 'rxjs';
 import { defineRootProvider, toInjectFn } from '../../utils';
 import { createRoute, createRouterState } from '../router';
 
@@ -497,17 +497,18 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
         (e): e is NavigationStart | NavigationEnd | NavigationSkipped =>
           e instanceof NavigationStart || e instanceof NavigationEnd || e instanceof NavigationSkipped,
       ),
+      tap((event) => {
+        if (event instanceof NavigationStart) {
+          onNavigationStart(event);
+
+          return;
+        }
+
+        onNavigationEnd(event);
+      }),
       takeUntilDestroyed(),
     )
-    .subscribe((event) => {
-      if (event instanceof NavigationStart) {
-        onNavigationStart(event);
-
-        return;
-      }
-
-      onNavigationEnd(event);
-    });
+    .subscribe();
 
   destroyRef.onDestroy(() => {
     cancelPendingRestore();

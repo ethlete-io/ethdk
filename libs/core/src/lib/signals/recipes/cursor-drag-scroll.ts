@@ -77,7 +77,6 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
   // `<html>` would outlive the page it was dragged on.
   destroyRef.onDestroy(() => renderer.removeStyle(document.documentElement, 'cursor'));
 
-  // Cleanup if the element the cursor drag scroll is bound to gets changed
   effect(() => {
     const { previousElement } = element();
 
@@ -86,7 +85,6 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
     }
   });
 
-  // Conditionally apply styles/classes to the element and the document
   effect(() => {
     const currCanScroll = canScroll();
     const isEnabled = enabled();
@@ -134,7 +132,6 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
     });
   });
 
-  // Update the element's scroll position when the user drags
   effect(() => {
     const currDragAmount = dragAmount();
 

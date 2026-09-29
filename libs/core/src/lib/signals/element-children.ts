@@ -30,8 +30,6 @@ export const signalElementChildren = (el: SignalElementBindingType, options?: Si
 
       const els = firstEl();
 
-      // We are not interested what the mutation is, just that there is one.
-      // Changes to the DOM may affect the children of the element.
       elementMutations();
 
       if (!els.currentElement) return [];

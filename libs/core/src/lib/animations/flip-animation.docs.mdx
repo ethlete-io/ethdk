@@ -3,3 +3,15 @@ import { Meta } from '@storybook/addon-docs/blocks';
 <Meta title="Core/Animations/FLIP Animation" />
 
 # FLIP Animation
+
+`createFlipAnimation` animates an element from its previously measured position and size to its current one with the Web Animations API. `createFlipAnimationGroup` runs several in lockstep. Reduced motion is respected unless `ignoreReducedMotion` is set.
+
+```ts
+const flip = createFlipAnimation({ element: indicator, duration: 250 });
+
+flip.updateInit(); // measure the starting box
+indicator.style.left = '120px'; // change the layout
+flip.play(); // animate from the measured box to the new one
+```
+
+See the [animations guide](/core/animations#flip-animations) for the full option list.

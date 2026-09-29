@@ -3,3 +3,13 @@ import { Meta } from '@storybook/addon-docs/blocks';
 <Meta title="Core/Animations/Animation Utils" />
 
 # Animation Utils
+
+Small helpers for driving CSS-class animations: `nextFrame`, `fromNextFrame`, `forceReflow` and `matchesReducedMotion`.
+
+```ts
+element.classList.add('et-animation-enter-from');
+forceReflow(element); // commit the -from styles before the transition starts
+element.classList.add('et-animation-enter-active');
+```
+
+See the [animations guide](/core/animations) for details.

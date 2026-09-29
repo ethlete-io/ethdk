@@ -1,4 +1,4 @@
-import { Subject, takeUntil, timer } from 'rxjs';
+import { Subject, takeUntil, tap, timer } from 'rxjs';
 
 export class KeyPressManager {
   private isKeyPressed = false;
@@ -17,8 +17,11 @@ export class KeyPressManager {
       this._stopTimeout$.next();
 
       timer(100)
-        .pipe(takeUntil(this._stopTimeout$))
-        .subscribe(() => this.clear());
+        .pipe(
+          takeUntil(this._stopTimeout$),
+          tap(() => this.clear()),
+        )
+        .subscribe();
     } else {
       this.clear();
     }

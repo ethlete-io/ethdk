@@ -23,8 +23,6 @@ export const fromNextFrame = () => {
 };
 
 export const forceReflow = (element?: HTMLElement) => {
-  // The `document.body` fallback is resolved lazily and guarded: there is nothing to reflow on the
-  // server, so this becomes a no-op instead of throwing on a missing `document`.
   const el = element ?? (typeof document === 'undefined' ? null : document.body);
 
   return el?.offsetHeight ?? 0;

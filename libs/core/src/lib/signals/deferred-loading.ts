@@ -1,7 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
 import { PLATFORM_ID, Signal, computed, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { EMPTY, map, of, switchMap, timer } from 'rxjs';
+import { EMPTY, map, of, switchMap, tap, timer } from 'rxjs';
 
 export type SignalDeferredLoadingOptions = {
   /** How long the source must stay truthy before the indicator turns on, in ms. @default 200 */
@@ -56,15 +56,16 @@ export const signalDeferredLoading = (
 
         return remaining <= 0 ? of(false) : timer(remaining).pipe(map(() => false));
       }),
+      tap((isVisible) => {
+        if (isVisible) {
+          shownAt = performance.now();
+        }
+
+        visible.set(isVisible);
+      }),
       takeUntilDestroyed(),
     )
-    .subscribe((isVisible) => {
-      if (isVisible) {
-        shownAt = performance.now();
-      }
-
-      visible.set(isVisible);
-    });
+    .subscribe();
 
   return visible.asReadonly();
 };

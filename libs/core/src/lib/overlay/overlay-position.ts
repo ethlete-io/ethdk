@@ -9,10 +9,6 @@ import {
 } from './overlay-runtime.types';
 import { onOverlayViewportInsetsChange, overlayViewportInsetsFor } from './overlay-viewport-inset';
 
-/**
- * Shrinks the host box to the part of the viewport nothing above this overlay has reserved, so a
- * centered or globally placed pane is laid out inside it instead of under a docked panel.
- */
 const applyViewportInsets = (hostElement: HTMLElement, renderer: AngularRenderer) => {
   const insets = overlayViewportInsetsFor(hostElement);
 

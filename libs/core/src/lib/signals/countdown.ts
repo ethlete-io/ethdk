@@ -1,7 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
 import { PLATFORM_ID, Signal, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { EMPTY, expand, of, skip, switchMap, timer } from 'rxjs';
+import { EMPTY, expand, of, skip, switchMap, tap, timer } from 'rxjs';
 
 export type CountdownDeadline = Date | string | number | null | undefined;
 
@@ -71,9 +71,10 @@ export const signalCountdown = (deadline: () => CountdownDeadline): Signal<Count
             skip(1),
           );
         }),
+        tap(() => tick.update((count) => count + 1)),
         takeUntilDestroyed(),
       )
-      .subscribe(() => tick.update((count) => count + 1));
+      .subscribe();
   }
 
   return computed(() => {

@@ -1,8 +1,6 @@
 import { clamp } from '../utils';
 
 export const elementCanScroll = (element?: HTMLElement | null, direction?: 'x' | 'y') => {
-  // Omitting the element means "the document scroller". Resolved lazily and guarded so a call on the
-  // server answers "cannot scroll" instead of throwing on a missing `document`.
   const el = element || (typeof document === 'undefined' ? null : document.documentElement);
 
   if (!el) {
@@ -21,9 +19,6 @@ export const elementCanScroll = (element?: HTMLElement | null, direction?: 'x' |
 };
 
 const createViewportRect = (): DOMRect => {
-  // Collapses to a zero rect where there is no window (server). `isElementVisible` never reaches the
-  // intersection math there anyway - `elementCanScroll` already reports the document as unscrollable
-  // - so the rect only has to be a valid shape.
   const hasWindow = typeof window !== 'undefined';
   const width = hasWindow ? window.innerWidth : 0;
   const height = hasWindow ? window.innerHeight : 0;

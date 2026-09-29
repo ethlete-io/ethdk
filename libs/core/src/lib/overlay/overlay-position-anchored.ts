@@ -141,10 +141,6 @@ const toSideObject = (padding: Padding): SideObject =>
         left: padding.left ?? 0,
       };
 
-/**
- * The strategy's own viewport padding plus the space reserved on each edge. Every middleware that
- * measures overflow gets it, so an edge a docked panel covers is as unavailable as the viewport edge.
- */
 const paddingWithInsets = (padding: Padding, insets: OverlayViewportInset): SideObject => {
   const own = toSideObject(padding);
 

@@ -85,7 +85,7 @@ Recomputes on both resizes and DOM mutations. Pass `{ initialScrollPosition }` (
 
 ## Children
 
-`signalElementChildren(el)` → `Signal<HTMLElement[]>` - the element's direct children, kept in sync via a MutationObserver. Handy for headless components that observe projected content.
+`signalElementChildren(el)` → `Signal<HTMLElement[]>` - the element's direct children, kept in sync via a MutationObserver. Handy for headless components that observe projected content. Pass `{ mutations }` (a `MutationObserverInit`) to narrow what is watched; the default includes `attributes: true`, which re-runs on every style or class write in the subtree.
 
 ## Class, attribute & style bindings
 

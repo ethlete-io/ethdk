@@ -11,7 +11,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { filter, take } from 'rxjs';
+import { filter, take, tap } from 'rxjs';
 import { ANIMATED_LIFECYCLE_TOKEN, animationDebugLog, nextFrame } from '../animations';
 import { injectRenderer } from '../providers';
 import { defineRootProvider, toInjectFn, toProvideFn } from '../utils';
@@ -205,8 +205,6 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
 
       animationDebugLog(`runtime ${config.id}`, 'mount');
 
-      // matches the previous overlay behavior: escape/outside-pointer closes are
-      // ignored until the enter transition has started plus one frame
       let interactiveCloseReady = false;
 
       const cleanupFns: Array<() => void> = [];
@@ -379,10 +377,9 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
           .pipe(
             filter((state) => state === 'left'),
             take(1),
+            tap(() => destroyMountedOverlay(closeEvent)),
           )
-          .subscribe(() => {
-            destroyMountedOverlay(closeEvent);
-          });
+          .subscribe();
       };
 
       const closeOnEscape = config.closeOnEscape ?? true;
@@ -487,12 +484,13 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
           .pipe(
             filter((state) => state === 'entering' || state === 'entered'),
             take(1),
+            tap(() => {
+              nextFrame(() => {
+                interactiveCloseReady = true;
+              });
+            }),
           )
-          .subscribe(() => {
-            nextFrame(() => {
-              interactiveCloseReady = true;
-            });
-          });
+          .subscribe();
         cleanupFns.push(() => readySubscription.unsubscribe());
 
         if (config.animationDelegate?.enter) {
@@ -505,11 +503,12 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
           .pipe(
             filter((state) => state === 'entered'),
             take(1),
+            tap(() => {
+              applyInitialFocus(paneElement, autoFocus, targetDocument);
+              overlayRef.markOpened();
+            }),
           )
-          .subscribe(() => {
-            applyInitialFocus(paneElement, autoFocus, targetDocument);
-            overlayRef.markOpened();
-          });
+          .subscribe();
       });
 
       return overlayRef;
