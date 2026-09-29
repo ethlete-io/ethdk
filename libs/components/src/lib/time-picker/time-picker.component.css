@@ -48,6 +48,7 @@
 
     .et-time-picker-arc {
       stroke: var(--et-theme-color-primary-solid, currentColor);
+      stroke-linecap: round;
       opacity: 0.45;
     }
 
