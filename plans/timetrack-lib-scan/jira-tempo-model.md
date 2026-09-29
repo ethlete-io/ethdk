@@ -8,4 +8,4 @@ Scan of `libs/timetrack/src/lib/{jira,tempo,model,reason,store}` from 2026-09-28
 
 ## second pass
 
-- Low: `suggestedParenting` is `parent-field` whenever any type is off level 0 (`jira/hierarchy.ts:87-89`). Almost every instance has Sub-task and Epic, so the report says `parent-field` even when the configured parent and child sit on the same level, which is the case the JSDoc warns about. Derive it from the configured parent and child types, or drop the field. S
+- Low: `suggestedParenting` is `parent-field` whenever any type is off level 0 (`jira/hierarchy.ts:87-89`). Almost every instance has Sub-task and Epic, so the report says `parent-field` even when the configured parent and child sit on the same level, which is the case the JSDoc warns about. Derive it from the configured parent and child types, or drop the field. S Open: the field is in the agent contract (`agent-api/model.ts`, `libs/agent-rules/src/lib/timetrack*.ts`) and the `instance` op reads no settings on purpose, so dropping or deriving it is a contract decision.
