@@ -25,6 +25,7 @@ import {
   withAutoModeAnswer,
   withAutoModeCreated,
   withAutoModeRowNames,
+  withStaleStandInCreatesExpired,
 } from './auto-mode';
 import { autoDescriptionRowId, withAutoModeDescription } from './auto-description';
 import { setRowDescription, setRowIssue } from './edits';
@@ -588,5 +589,35 @@ describe('approvalRowIdsOf', () => {
 
   it('previews nothing for a tempo sync', () => {
     expect(idsOf({ request: { op: 'tempo.sync', day: TODAY, planHash: 'x' } })).toEqual([]);
+  });
+});
+
+describe('withStaleStandInCreatesExpired', () => {
+  const create = { op: 'jira.create' as const, summary: 'Engagement items', description: '', projectKey: 'ABC' };
+  const queued = (options: { id: string; target: string; client?: string }) =>
+    enqueueApproval([], {
+      ...options,
+      request: create,
+      client: options.client ?? AUTO_MODE_CLIENT,
+      at: new Date(),
+      day: TODAY,
+    })[0]!;
+  const forStandIn = queued({ id: 'a', target: autoModeApprovalTarget(TODAY, { kind: 'stand-in', standInId: 's1' }) });
+
+  it('expires the create waiting for a stand-in that resolved', () => {
+    const [item] = withStaleStandInCreatesExpired([forStandIn], [{ id: 's1', state: 'resolved' }]);
+
+    expect(item?.state).toBe('expired');
+  });
+
+  it('leaves one for an open stand-in, a context, or another client alone', () => {
+    const forContext = queued({ id: 'b', target: autoModeApprovalTarget(TODAY, { kind: 'context', contextId: 'c' }) });
+    const fromCli = queued({ id: 'c', target: forStandIn.target ?? '', client: 'Claude Code' });
+    const states = withStaleStandInCreatesExpired([forStandIn, forContext, fromCli], [{ id: 's1', state: 'open' }]).map(
+      (item) => item.state,
+    );
+
+    expect(states).toEqual(['queued', 'queued', 'queued']);
+    expect(withStaleStandInCreatesExpired([fromCli], [])[0]?.state).toBe('queued');
   });
 });

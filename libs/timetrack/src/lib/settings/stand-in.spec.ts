@@ -13,6 +13,7 @@ import {
   withStandInCheckoutAllowed,
   withStandInParent,
   withStandInResolutionReset,
+  withStandInsKeyedByHand,
   withoutOrphanedStandIns,
   withoutStandIn,
 } from './stand-in';
@@ -225,6 +226,29 @@ describe('withoutOrphanedStandIns', () => {
       'stand-in-2',
       'stand-in-3',
     ]);
+  });
+});
+
+describe('withStandInsKeyedByHand', () => {
+  const pin = { standInId: 'stand-in-1', issueKey: 'FIP-3006', sources: { issue: 'human' as const } };
+
+  it('resolves the stand-in a row keyed by hand carries, as the user', () => {
+    const settings = withStandInsKeyedByHand({ settings: settingsWith(), rows: [pin] });
+
+    expect(settings.standIns[0]).toMatchObject({ state: 'resolved', issueKey: 'FIP-3006', resolutionSource: 'human' });
+    expect(settings.attributionRules[0]?.target).toEqual({ kind: 'issue', issueKey: 'FIP-3006' });
+  });
+
+  it('leaves it open for a key auto mode wrote', () => {
+    const settings = settingsWith();
+
+    expect(withStandInsKeyedByHand({ settings, rows: [{ ...pin, sources: { issue: 'auto' } }] })).toBe(settings);
+  });
+
+  it('leaves one the user reopened alone', () => {
+    const settings = settingsWith({ standIns: [standIn({ resolutionSource: 'human' })] });
+
+    expect(withStandInsKeyedByHand({ settings, rows: [pin] })).toBe(settings);
   });
 });
 

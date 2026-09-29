@@ -1,6 +1,6 @@
 import { Page } from '@playwright/test';
 import { E2E_KEYLESS_BRANCH, E2E_REPO, defaultSettings } from '@ethlete/timetrack/testing';
-import { E2E_NOW, expect, openStandIns, pickIssue, seedWorld, test } from './support';
+import { E2E_NOW, expect, openStandIns, pickIssue, readStoredSettings, seedWorld, test } from './support';
 
 /** The name the user gave the work before Jira held a ticket for it. */
 const STAND_IN = {
@@ -90,5 +90,40 @@ test.describe('the work waiting on a ticket', () => {
     await expect(card(page)).toHaveCount(0);
     await expect(band(page)).toHaveCount(0);
     await expect(list(page).locator('[data-stand-in]')).toHaveCount(0);
+  });
+});
+
+test.describe('a stand-in whose row the user keyed by hand on an earlier day', () => {
+  const EARLIER_DAY = '2026-08-11';
+
+  test.beforeEach(async ({ page }) => {
+    const settings = defaultSettings();
+
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: {
+        ...settings,
+        reasoning: { ...settings.reasoning, autoMode: true },
+        attributionRules: [NAMES_THE_BRANCH],
+        standIns: [{ ...STAND_IN, days: [EARLIER_DAY, ...STAND_IN.days] }],
+      },
+      reviewOverrides: {
+        [EARLIER_DAY]: {
+          'pin:ABC-2000': { issueKey: 'ABC-2000', standInId: STAND_IN.id, sources: { issue: 'human' } },
+        },
+      },
+    });
+    await page.goto('/day');
+  });
+
+  test('resolves to that key as the user', async ({ page }) => {
+    await expect
+      .poll(async () => {
+        const standIn = (await readStoredSettings(page))?.standIns.find((entry) => entry.id === STAND_IN.id);
+
+        return standIn && { state: standIn.state, issueKey: standIn.issueKey, source: standIn.resolutionSource };
+      })
+      .toEqual({ state: 'resolved', issueKey: 'ABC-2000', source: 'human' });
+    await expect(namedBand(page)).toHaveCount(1);
   });
 });

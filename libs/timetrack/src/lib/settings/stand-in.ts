@@ -1,6 +1,6 @@
 import { AttributionRule, standInIdOf } from '../model/attribution';
 import { describeProjectLink } from '../model/project-link';
-import { WriteSource, mayWrite } from '../model/field-source';
+import { RowFieldSources, WriteSource, mayAutoWrite, mayWrite, rowFieldSourceOf } from '../model/field-source';
 import {
   StandIn,
   StandInRefusal,
@@ -383,6 +383,24 @@ export const resolveStandIn = (options: {
     attributionRules: settings.attributionRules.flatMap((rule) => replacements.get(rule.id) ?? rule),
   };
 };
+
+/**
+ * Resolves each open stand-in a row the user keyed by hand still carries, to the issue that row names.
+ * A stand-in the user reopened keeps waiting. Nothing to resolve returns `settings` itself.
+ */
+export const withStandInsKeyedByHand = (options: {
+  settings: TimetrackSettings;
+  rows: readonly { standInId?: string; issueKey?: string; sources?: RowFieldSources }[];
+}): TimetrackSettings =>
+  options.rows.reduce((settings, row) => {
+    const standIn = row.standInId ? settings.standIns.find((entry) => entry.id === row.standInId) : undefined;
+
+    if (!standIn || standIn.state !== 'open' || !row.issueKey || rowFieldSourceOf(row, 'issue') !== 'human')
+      return settings;
+    if (!mayAutoWrite(standInResolutionSourceOf(standIn))) return settings;
+
+    return resolveStandIn({ settings, id: standIn.id, issueKey: row.issueKey, source: 'human' });
+  }, options.settings);
 
 /**
  * Undoes a resolve: the stand-in waits again, and the rules it rewrote name it rather than the issue.

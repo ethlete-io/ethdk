@@ -40,6 +40,7 @@ import {
   withNamedStandIn,
   withStandIn,
   withStandInDay,
+  withStandInsKeyedByHand,
   withReplacedAttributionRule,
   withoutAttributionRule,
   withoutFavoriteProject,
@@ -380,6 +381,12 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     }) => apply(withStandInDay({ settings: settings(), ...options })),
     resolveStandIn: (options: { id: string; issueKey: string; source?: WriteSource }) =>
       apply(resolveStandIn({ settings: settings(), ...options })),
+    resolveStandInsKeyedByHand: (rows: Parameters<typeof withStandInsKeyedByHand>[0]['rows']) => {
+      const current = settings();
+      const next = withStandInsKeyedByHand({ settings: current, rows });
+
+      if (next !== current) apply(next);
+    },
     reopenStandIn: (id: string) => apply(reopenStandIn({ settings: settings(), id })),
     /** Hands a stand-in the user reopened back to auto mode. */
     resetStandInResolution: (id: string) => apply(withStandInResolutionReset({ settings: settings(), id })),

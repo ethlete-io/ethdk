@@ -15,6 +15,7 @@ import {
   markApproval,
   openApprovalFor,
   settleApprovalQueue,
+  withStaleStandInCreatesExpired,
 } from '@ethlete/timetrack';
 import {
   EMPTY,
@@ -68,7 +69,7 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const settle = () => {
     const current = queue();
-    const settled = settleApprovalQueue(current, today());
+    const settled = withStaleStandInCreatesExpired(settleApprovalQueue(current, today()), settings.settings().standIns);
 
     if (settled.length !== current.length || settled.some((item, index) => item !== current[index])) change(settled);
   };
@@ -116,6 +117,14 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     .subscribe();
 
   interval(SETTLE_EVERY_MS)
+    .pipe(
+      filter(() => loaded()),
+      tap(settle),
+      takeUntilDestroyed(),
+    )
+    .subscribe();
+
+  toObservable(computed(() => settings.settings().standIns))
     .pipe(
       filter(() => loaded()),
       tap(settle),

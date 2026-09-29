@@ -1,4 +1,4 @@
-import { ActionClasses, actionClassOf } from '../agent-api/action-classes';
+import { AUTO_MODE_CLIENT, ActionClasses, actionClassOf } from '../agent-api/action-classes';
 import { AgentApproval, AgentApprovalRequest, AutoModeApplyRequest } from '../agent-api/approval-queue';
 import { AgentApiRequest } from '../agent-api/model';
 import { UnnamedContext } from '../model/attribution';
@@ -95,6 +95,25 @@ export const approvalRowIdsOf = (options: {
   }
 
   return [];
+};
+
+/**
+ * Expires each waiting auto mode create for a stand-in that no longer waits: once it resolved, or was
+ * removed, the drafted ticket would file work that already has an answer.
+ */
+export const withStaleStandInCreatesExpired = (
+  queue: readonly AgentApproval[],
+  standIns: readonly Pick<StandIn, 'id' | 'state'>[],
+): AgentApproval[] => {
+  const open = new Set(standIns.filter((standIn) => standIn.state === 'open').map((standIn) => standIn.id));
+
+  return queue.map((item) => {
+    if (item.state !== 'queued' || item.client !== AUTO_MODE_CLIENT || item.request.op !== 'jira.create') return item;
+
+    const subject = subjectOfTarget(item.target, item.day);
+
+    return subject?.kind === 'stand-in' && !open.has(subject.standInId) ? { ...item, state: 'expired' } : item;
+  });
 };
 
 const answeredKeys = (answers: readonly AutoModeAnswer[]) =>
