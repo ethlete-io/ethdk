@@ -1,10 +1,10 @@
 # selection-list, slider, rating scan - open findings
 
-Scan of `libs/components/src/lib/forms/selection-list/`, `forms/slider/`, `forms/rating/` from 2026-09-28. 0 High, 0 Medium, 2 Low, 2 Spec (verified 2026-09-28: 3 confirmed, 1 re-rated; Low fixes 2026-09-28: 8 fixed, 1 already covered by the docs). Skipped: stories, and the specs except to check coverage. Slider/range-slider CSS duplication is not listed, because the bundle-size round 2 already rejected that dedupe.
+Scan of `libs/components/src/lib/forms/selection-list/`, `forms/slider/`, `forms/rating/` from 2026-09-28. 0 High, 0 Medium, 1 Low, 2 Spec (verified 2026-09-28: 3 confirmed, 1 re-rated; Low fixes 2026-09-28: 8 fixed, 1 already covered by the docs). Skipped: stories, and the specs except to check coverage. Slider/range-slider CSS duplication is not listed, because the bundle-size round 2 already rejected that dedupe.
 
 ## selection-list
 
-- Low: `labelId` is a `signal` that never changes (`selection-option.directive.ts:59`). A readonly field is enough. S
+None open.
 
 ## slider
 

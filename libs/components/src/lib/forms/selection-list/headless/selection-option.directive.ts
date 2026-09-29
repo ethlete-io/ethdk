@@ -8,12 +8,10 @@ import {
   inject,
   input,
   model,
-  signal,
 } from '@angular/core';
+import { createComponentId } from '@ethlete/core';
 import { DescriptionComponent } from '../../description/description.component';
 import { SELECTION_LIST_TOKEN, SelectionListItem } from './selection-list.tokens';
-
-let uniqueOptionLabelId = 0;
 
 const UNBOUND_VALUE = /* @__PURE__ */ Symbol('et-selection-option-unbound');
 
@@ -22,7 +20,7 @@ const UNBOUND_VALUE = /* @__PURE__ */ Symbol('et-selection-option-unbound');
   host: {
     '[attr.role]': 'role()',
     '[attr.aria-checked]': 'checked()',
-    '[attr.aria-labelledby]': 'labelId()',
+    '[attr.aria-labelledby]': 'labelId',
     '[attr.aria-describedby]': 'descriptionId()',
     '[attr.aria-disabled]': 'effectiveDisabled() || null',
     '[attr.aria-readonly]': '(role() === "checkbox" && effectiveReadonly()) || null',
@@ -55,7 +53,7 @@ export class SelectionOptionDirective {
   public effectiveReadonly = computed(() => this.list?.readonly() ?? false);
   public role = computed(() => (this.list?.multiple() ? 'checkbox' : 'radio'));
 
-  public labelId = signal(`et-selection-option-label-${uniqueOptionLabelId++}`);
+  public readonly labelId = createComponentId('et-selection-option-label');
 
   /**
    * The id of a projected `<et-description>`. The option pins its name to the label span, so the

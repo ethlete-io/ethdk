@@ -21,7 +21,7 @@ import { SegmentedButtonGroupComponent } from './segmented-button-group.componen
   selector: 'et-segmented-button',
   template: `
     <div #background class="et-segmented-button-bg"></div>
-    <span [attr.id]="optionDirective.labelId()" class="et-segmented-button-label">
+    <span [attr.id]="optionDirective.labelId" class="et-segmented-button-label">
       <ng-content />
     </span>
   `,

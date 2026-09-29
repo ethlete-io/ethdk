@@ -49,4 +49,11 @@ describe('SelectionOptionDirective', () => {
     expect(driver.optionAttr(0, 'aria-checked')).toBe('true');
     expect(driver.optionAttr(2, 'aria-checked')).toBe('false');
   });
+
+  it('should name every option by its own label id', () => {
+    const ids = [0, 1, 2].map((index) => driver.optionAttr(index, 'aria-labelledby'));
+
+    expect(ids[0]).toMatch(/^et-selection-option-label-\d+$/);
+    expect(new Set(ids).size).toBe(3);
+  });
 });
