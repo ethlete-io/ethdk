@@ -161,6 +161,27 @@ describe('streamDay agent sessions', () => {
     ]);
   });
 
+  it('names the stretches of sessions on a base branch after the directory each worked in', () => {
+    const blocks = blocksOf([
+      ...sessionRun({ sessionId: 'one', from: 0, to: 60, branchAt: () => 'main', workedIn: 'src/app/totw/a.ts' }),
+      ...sessionRun({ sessionId: 'two', from: 30, to: 90, branchAt: () => 'main', workedIn: 'src/app/shop/b.ts' }),
+    ]);
+
+    expect(blocks.map((block) => [block.context.session, block.context.workPath])).toEqual([
+      ['one', 'src/app/totw'],
+      ['two', 'src/app/shop'],
+    ]);
+  });
+
+  it('leaves the stretches of sessions that all worked in one directory without one', () => {
+    const blocks = blocksOf([
+      ...sessionRun({ sessionId: 'one', from: 0, to: 60, branchAt: () => 'main', workedIn: 'src/app/totw/a.ts' }),
+      ...sessionRun({ sessionId: 'two', from: 30, to: 90, branchAt: () => 'main', workedIn: 'src/app/totw/b.ts' }),
+    ]);
+
+    expect(blocks.map((block) => block.context.workPath)).toEqual([undefined, undefined]);
+  });
+
   it('leaves a checkout that ran no session on the key it always had', () => {
     const blocks = blocksOf(focusRun({ from: 0, to: 60 }));
 

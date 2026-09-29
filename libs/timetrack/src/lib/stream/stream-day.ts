@@ -1108,8 +1108,21 @@ export const streamDay = (options: {
       ...sessionPieces({ sessions: held, projectRoots: config.projectRoots?.[repoPath] }),
     ]),
   );
+  const pieceGrains = new Set(
+    [...runs].flatMap(([repoPath, held]) => {
+      const paths = held.map((run) => pieces.get(run.sessionId)?.workPath);
+
+      return workPathsSplit({ paths }) ? [repoPath] : [];
+    }),
+  );
   const inSession = (session: string | undefined) =>
-    session ? { session, piece: pieces.get(session) ?? session } : { session };
+    session ? { session, piece: pieces.get(session)?.piece ?? session } : { session };
+  /**
+   * The directory a stretch's session worked in, where the checkout's sessions worked in more than one.
+   * It outranks the commits' reading, because a commit cannot say which of two parallel sessions made it.
+   */
+  const pieceWorkPath = (options: { repoPath: string; session: string | undefined }) =>
+    options.session && pieceGrains.has(options.repoPath) ? pieces.get(options.session)?.workPath : undefined;
   /**
    * The branch and the directory one stretch of a checkout belongs to.
    *
@@ -1117,17 +1130,22 @@ export const streamDay = (options: {
    * was either, the branch it was next cut onto is the only fact left that can, and it names the
    * stretch whether or not the cut had happened yet.
    */
-  const workedOn = (options: { repoPath: string; branch?: string; at: Date }) => {
+  const workedOn = (options: { repoPath: string; branch?: string; at: Date; session?: string }) => {
     const cutOnto =
       options.branch && baseBranches.has(options.branch) && !workPathFor(options)
         ? cutOntoAt({ marks: cuts.get(options.repoPath), at: options.at, baseBranches })
         : undefined;
     const branch = cutOnto ?? options.branch;
 
+    const session = options.session ?? sessionAt({ runs: runs.get(options.repoPath), at: options.at });
+    const isBase = !branch || baseBranches.has(branch);
+
     return {
       branch,
-      workPath: workPathFor({ ...options, branch }),
-      ...inSession(sessionAt({ runs: runs.get(options.repoPath), at: options.at })),
+      workPath:
+        (isBase ? pieceWorkPath({ repoPath: options.repoPath, session }) : undefined) ??
+        workPathFor({ ...options, branch }),
+      ...inSession(session),
     };
   };
   const witnessed = witnessedBranches(samples, roots);
@@ -1262,7 +1280,10 @@ export const streamDay = (options: {
         at: sample.at,
         reported: branchOf(sample.gitBranch) ?? branches.get(cwd),
       });
-      const ran: ActivityContext = { repoPath: cwd, ...workedOn({ repoPath: cwd, branch: ranOn, at: sample.at }) };
+      const ran: ActivityContext = {
+        repoPath: cwd,
+        ...workedOn({ repoPath: cwd, branch: ranOn, at: sample.at, session: sample.sessionId }),
+      };
       const draft = draftFor(drafts, ran);
       // The gap between two samples is agent time only while it is one session's own gap. Read per
       // checkout, the quarter of an hour between one session ending and the next one starting counted
@@ -1276,7 +1297,7 @@ export const streamDay = (options: {
         // The stretch belongs to the session that ran it, not to whichever session `sessionAt` hands
         // the checkout at that instant. That is the whole cut: two sessions of one checkout running at
         // once are two pieces here, where reading the checkout's answer collapsed them into one.
-        const ranIn = { ...ran, ...inSession(sample.sessionId) };
+        const ranIn = ran;
 
         pieceFor(draft, ranIn).agent.push({ from: last, to: sample.at });
         agentSpans.push({ from: last, to: sample.at, context: ranIn });

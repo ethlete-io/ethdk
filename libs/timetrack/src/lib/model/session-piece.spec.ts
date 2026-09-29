@@ -12,7 +12,8 @@ const session = (options: { id: string; from: number; to: number; paths: string[
   paths: options.paths,
 });
 
-const piecesOf = (sessions: PieceSession[]) => Object.fromEntries(sessionPieces({ sessions, projectRoots: ROOTS }));
+const piecesOf = (sessions: PieceSession[]) =>
+  Object.fromEntries([...sessionPieces({ sessions, projectRoots: ROOTS })].map(([id, found]) => [id, found.piece]));
 
 describe('sessionPieces', () => {
   it('joins sessions one after the other that worked in the same project', () => {
@@ -64,6 +65,19 @@ describe('sessionPieces', () => {
         }),
       ]),
     ).toEqual({ a: 'a', b: 'a' });
+  });
+
+  it('names the directory each session worked in', () => {
+    const found = sessionPieces({
+      sessions: [
+        session({ id: 'a', from: 0, to: 40, paths: ['libs/timetrack/src/a.ts'] }),
+        session({ id: 'b', from: 60, to: 90, paths: [] }),
+      ],
+      projectRoots: ROOTS,
+    });
+
+    expect(found.get('a')).toEqual({ piece: 'a', workPath: 'libs/timetrack' });
+    expect(found.get('b')).toEqual({ piece: 'b', workPath: undefined });
   });
 
   it('leaves a session whose files name no directory as a piece of its own', () => {

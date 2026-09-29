@@ -20,6 +20,9 @@ const dominant = (paths: readonly (string | undefined)[]) => {
   return best;
 };
 
+/** The piece an agent session belongs to: its first session's id, and the directory it worked in. */
+export type SessionPiece = { piece: string; workPath?: string };
+
 /**
  * The piece of work each agent session of one checkout belongs to, keyed by session id.
  *
@@ -32,7 +35,7 @@ const dominant = (paths: readonly (string | undefined)[]) => {
 export const sessionPieces = (options: {
   sessions: readonly PieceSession[];
   projectRoots?: readonly string[];
-}): Map<string, string> => {
+}): Map<string, SessionPiece> => {
   const commits = options.sessions.flatMap((session) => session.paths.map((path) => ({ paths: [path] })));
   const workPaths = workPathsOf({ commits, projectRoots: options.projectRoots });
   const sorted = [...options.sessions].sort((left, right) => left.from.getTime() - right.from.getTime());
@@ -45,7 +48,7 @@ export const sessionPieces = (options: {
   }
 
   const open = new Map<string, { piece: string; to: number }[]>();
-  const found = new Map<string, string>();
+  const found = new Map<string, SessionPiece>();
 
   for (const session of sorted) {
     const start = offsets.get(session) ?? 0;
@@ -57,11 +60,11 @@ export const sessionPieces = (options: {
 
     if (joined) {
       joined.to = Math.max(joined.to, session.to.getTime());
-      found.set(session.sessionId, joined.piece);
+      found.set(session.sessionId, { piece: joined.piece, workPath });
       continue;
     }
 
-    found.set(session.sessionId, session.sessionId);
+    found.set(session.sessionId, { piece: session.sessionId, workPath });
 
     if (workPath) open.set(workPath, [...candidates, { piece: session.sessionId, to: session.to.getTime() }]);
   }
