@@ -57,7 +57,9 @@ const parseSegment = (options: { segment: string; config: GitFlowConfig; role: s
   const match = new RegExp(`^(?<etKey>${config.keyPattern})(?:-(?<etSubject>.*))?$`, 'i').exec(segment);
   const rawKey = match?.groups?.['etKey'];
   const known =
-    config.keyPrefixes.length === 0 || config.keyPrefixes.some((prefix) => hasKeyPrefix({ key: rawKey, prefix }));
+    config.keyPrefixes.length === 0
+      ? !!rawKey && rawKey === rawKey.toUpperCase()
+      : config.keyPrefixes.some((prefix) => hasKeyPrefix({ key: rawKey, prefix }));
 
   if (!rawKey || !known) {
     return {

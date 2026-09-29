@@ -161,12 +161,17 @@ describe('parseBranch', () => {
 
     expect(rules('feature/FIP-2926')).toEqual<GitFlowRule[]>(['type-alias', 'missing-subject']);
 
-    expect(parse('feat/fip-2762-managers-and-contacts-widget')).toMatchObject({
+    const scoped = resolveGitFlowConfig({ keyPrefixes: ['FIP'] });
+    const parseScoped = (branch: string) => parseBranch({ branch, config: scoped });
+
+    expect(parseScoped('feat/fip-2762-managers-and-contacts-widget')).toMatchObject({
       kind: 'main-feature',
       storyKey: 'FIP-2762',
       suggestedName: 'feat/FIP-2762-managers-and-contacts-widget',
     });
-    expect(rules('feat/fip-2762-managers-and-contacts-widget')).toEqual<GitFlowRule[]>(['key-case']);
+    expect(parseScoped('feat/fip-2762-managers-and-contacts-widget').findings.map((finding) => finding.rule)).toEqual<
+      GitFlowRule[]
+    >(['key-case']);
 
     for (const branch of [
       'feat/collection-item-rejection-tooltip',
@@ -196,7 +201,15 @@ describe('parseBranch', () => {
       suggestedName: undefined,
     });
     expect(parseBranch({ branch: 'feat/fip-2762-widget', config: scoped }).storyKey).toBe('FIP-2762');
-    expect(parse('chore/angular-22').storyKey).toBe('ANGULAR-22');
+    expect(parse('chore/ANGULAR-22').storyKey).toBe('ANGULAR-22');
+  });
+
+  it('does not read a lowercase word-number subject as a key without configured prefixes', () => {
+    const result = parse('feat/step-2-rework');
+
+    expect(result.issueKey).toBeUndefined();
+    expect(result.storyKey).toBeUndefined();
+    expect(result.subject).toBe('step-2-rework');
   });
 
   it('matches a project prefix as a whole word, not as the start of a longer one', () => {
