@@ -1,7 +1,7 @@
 # Core lib scan — open findings
 
 Scan of `libs/core` from 2026-08-19. Fixed findings were removed on 2026-09-26 (git history has
-them). Still open: 5 Medium, 18 Low, 17 spec-coverage items.
+them). Still open: 5 Medium, 17 Low, 17 spec-coverage items.
 
 ## signals
 
@@ -36,7 +36,6 @@ them). Still open: 5 Medium, 18 Low, 17 spec-coverage items.
 - Low: stores disagree on pre-existing tags — `meta-binding.ts:199-200` wipes them, `link-binding.ts:131` removes only its own; undocumented. M
 - Low: the `no-async-await` disable (`eslint.config.mjs:71-74`) names two call sites, but `app-update/build-fingerprint.ts:27` and `app-updates.ts:143` use `async`/`await` too; `check`/`runCheck` still return Promises. S
 - Low: `@internal` on exported `UnsavedChangesRegistration`, `runCheck`, `register` (`unsaved-changes-coordinator.ts:28,53,89`). S
-- ~~Low: natively dismissed SW notification leaves its `clickHandlers` entry (`notifications.ts:253`). S~~ Fixed: pruned on next show.
 - Spec: app-update poll pipeline (visibility, `minCheckInterval`) and `NavigationError` untested; specs use `pollInterval: 0` only. S
 - Spec: unsaved-changes has no test for `compareFn` or the unsupported-source throw. S
 

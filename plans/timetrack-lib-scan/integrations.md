@@ -1,27 +1,10 @@
 # timetrack integrations scan - open findings
 
-Scan of `libs/timetrack/src/lib/{agent-api,agent-session,forge,git,github,gitlab,google-auth,google-calendar,ingest,transport,reporter}` from 2026-09-28. 0 High, 1 Medium, 1 Low, 1 Spec (second pass included). Skipped: all specs. The second pass covered `agent-api/model.ts`, the shell-word parser in `agent-session/claude-code.ts` (lines 47-345), the helpers of `agent-session/codex.ts` and `google-calendar/calendars.ts`. OAuth `state` and PKCE live in the Rust host, so this scan could not check them. Every process call passes an args array with no shell, so no command injection was found.
-
-## agent-session
-
-- Low (fixed 2026-09-29: `collectAgentSessions$` catches per log, keeps that log's cursor and reports `unreadLogs`; the app collector holds `modifiedAfter` back while any are unread): One failed `readLines$` fails the whole collection run (`agent-session/collect.ts:67,114-126`). A log that the agent deletes between `logs$` and the read blocks every other log and every cursor for that run, and again on each timer tick while the listing is stale. Catch per log and keep the old cursor. S Re-rated from Medium: the app collector catches the error and retries on the next tick, cursors are not advanced, and a deleted log drops out of the next listing, so the cost is one delayed run. Decision (2026-09-28 Low pass): a per-log catch alone loses data, because the app collector sets `modifiedAfter = startedAt` after a successful run and a finished session log is never listed again. Options: report the unread logs in the collection and hold `modifiedAfter` back, or keep failing the run.
-- Low (decided: accepted, user decision 2026-09-29: a cursor row is small, a delete needs a host-store op): Cursors of logs that no longer exist are kept for ever, because `collect` returns every cursor it was given (`agent-session/collect.ts:130-136`). Drop cursors whose id is absent from the listing when `modifiedAfter` is unset. S Decision (2026-09-28 Low pass): the host store upserts cursors (`events_append`), so leaving one out of the result deletes nothing. Options: add a cursor delete to the host store and its port, or accept the stale rows.
-
-## google-auth / google-calendar
-
-## forge / github / gitlab
-
-## git
-
-## agent-api / ingest / reporter
-
-## Spec gaps
+Scan of `libs/timetrack/src/lib/{agent-api,agent-session,forge,git,github,gitlab,google-auth,google-calendar,ingest,transport,reporter}` from 2026-09-28. 0 High, 1 Medium, 1 Low, 1 Spec (second pass included; 2 Low closed 2026-09-29: `collectAgentSessions$` isolates unreadable logs, stale cursor rows accepted). Skipped: all specs. The second pass covered `agent-api/model.ts`, the shell-word parser in `agent-session/claude-code.ts` (lines 47-345), the helpers of `agent-session/codex.ts` and `google-calendar/calendars.ts`. OAuth `state` and PKCE live in the Rust host, so this scan could not check them. Every process call passes an args array with no shell, so no command injection was found.
 
 ## second pass
 
 Parser findings below were each checked by running the parser on the command shown.
-
-### agent-session: shell parser
 
 ### agent-session: codex
 
@@ -30,8 +13,6 @@ Parser findings below were each checked by running the parser on the command sho
 ### google-calendar
 
 - Low: Nothing outside the spec reads `primary`, `selected` or `readOnly` (`google-calendar/calendars.ts:7-13`), and the app picker does not use `selected` as its default. The `readOnly` JSDoc also describes the token, but `accessRole` is the user's role on the calendar. Remove the fields, or use them in the picker and fix the JSDoc. S
-
-### agent-api/model.ts
 
 ### Spec gaps
 

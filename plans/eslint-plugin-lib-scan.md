@@ -1,15 +1,11 @@
 # eslint-plugin lib scan — open findings
 
 Scan of `libs/eslint-plugin` from 2026-08-19. Fixed findings were removed on 2026-09-26 (git history
-has them). Still open: 23 Medium, 46 Low, 13 spec-coverage items. Paths are relative to
+has them). All 23 Medium findings are done (740745cfd, 0e8f4306d, fdc275315, 2ff9e0dd3, 5070c1fac, 1115ebd01, b962944d7, d8a6c9352, 8f943a33c, b96cb14a9, e183dbc6b, d6e261816, 608346bb0, 9ce9b2b4c, 3d9bbb0e5, 562f182ac, 5d32f7e16, 10af4378d, 836c57050, 1dd03c288, 321ffa7e8, f4ba9f3c5, 64e382a80; the spread bail-out of `angular-decorator-property-order` is kept). Still open: 46 Low, 13 spec-coverage items. Paths are relative to
 `libs/eslint-plugin/src/rules/` unless shown in full.
 
 ## ordering & naming
 
-- Medium: `angular-decorator-property-order` moves a trailing same-line comment onto `@Component({`. S Done in 740745cfd.
-- Medium: `require-dollar-suffix` reports rxjs `partition` (returns a tuple, `:43`); misses `toObservable(s)` and `.asObservable()`. S Done in 0e8f4306d.
-- Medium: `no-screaming-case-local` description (`:58-59`, `apps/docs/eslint/rules.md:17`) says "inside function bodies", but module-level consts are reported. S Done in fdc275315.
-- Medium: `angular-decorator-property-order` silent when metadata has a spread (`:114-119`, deliberate bail-out kept by spec). S Kept: sorting around an unknown spread cannot verify the global order, so the bail-out stays. Done in (no code change).
 - Low: `guard-return-newline` accepts a comment line as the blank line. S
 - Low: `no-empty-newlines-between-imports` inserts bare `\n` into CRLF files. S
 - Low: `meta.docs.recommended` missing on 22 rule files (e.g. `guard-return-newline`, `require-form-submit`, `require-view-encapsulation-none`). S
@@ -24,8 +20,6 @@ has them). Still open: 23 Medium, 46 Low, 13 spec-coverage items. Paths are rela
 
 ## Angular metadata
 
-- Medium: `no-template-literal-before-inline-template` misses `` type A = `pre-${string}` ``. M Done in 2ff9e0dd3.
-- Medium: `no-legacy-angular-decorators` ignores `@Input() accessor` / `@Input() abstract`. S Done in 5070c1fac.
 - Low: `apps/docs/eslint/index.md:88` says "all but four" rules take options; `settings.ethlete.angularMajor` undocumented. S
 - Low: Angular version probe resolves from the plugin's own path (`require-on-push-change-detection.js:31`, `no-redundant-on-push-change-detection.js:39`). M
 - Low: `require-on-push-change-detection.js` / `require-view-encapsulation-none.js` duplicate ~200 lines of helpers (`:12-199`). M
@@ -38,9 +32,6 @@ has them). Still open: 23 Medium, 46 Low, 13 spec-coverage items. Paths are rela
 
 ## visibility, members & internals
 
-- Medium: `SOURCE_FILE_CACHE` never invalidated (`internals/implemented-contract-members.js:9,34-46`). Done in 1115ebd01 (keyed by mtime + size).
-- Medium: `templateUrl` re-read from disk on every member check (`internals/angular-member-visibility.js:83-93,186`). Done in b962944d7 (cached per linted file).
-- Medium: current file re-parsed even without an `implements` clause (`implemented-contract-members.js:265`). Done in d8a6c9352.
 - Low: `no-redundant-internal` accepts `// @internal` and `/** @internal */ #x`. S
 - Low: `accessor`/`abstract` members invisible to `template-member-accessibility` and `no-unused-class-member`. M
 - Low: `rules.md:119` omits that write-only members count as read and that `protected` is only checked on some decorators. S
@@ -50,10 +41,6 @@ has them). Still open: 23 Medium, 46 Low, 13 spec-coverage items. Paths are rela
 
 ## import & API bans
 
-- Medium: `no-document-cookie` misses `this.doc.cookie` (injected `DOCUMENT`), `globalThis.document.cookie`, `document['cookie']`, `window.document.cookie`. Done in 8f943a33c (injected-DOCUMENT via `inject(DOCUMENT)` members/consts).
-- Medium: `no-window-location` misses bare `location.href`, `const loc = window.location; loc.href`, destructuring, `href +=`. Done in b96cb14a9.
-- Medium: alias escapes — `import { legacyGetUsers as gu }` + `gu.prepare({})`, `import * as q` + `new q.V2QueryClient()`. Done in e183dbc6b (`no-legacy-prepare-without-injector` and `no-legacy-query-import`).
-- Medium: `no-angular-router-api` bindings are file-global (a class whose `router` is `inject(MyThing)`, an unrelated `(router) => router.events` both reported). Done in d6e261816.
 - Low: `no-cdk-import` note is a lowercase fragment (`no-cdk-import.js:138`, spec `:56`, `rules.md:297`). S
 - Low: migration-map cache never invalidates, caches a missing map as `null`, constant default key (`no-cdk-import.js:28-51`). S
 - Low: prepare fixer inserts the injector member under the next member's leading comment. S
@@ -66,9 +53,6 @@ has them). Still open: 23 Medium, 46 Low, 13 spec-coverage items. Paths are rela
 
 ## reactive & signals
 
-- Medium: `no-async-await`'s `play` exemption is a bare property-name match (`no-async-await.js:22-31`). Done in 608346bb0.
-- Medium: `no-subscribe-with-body` passes handlers by reference (`subscribe(this.handleNext)`, `{ next: this.handleNext }`, `.bind(this)`). Done in 9ce9b2b4c.
-- Medium: `prefer-rxjs-timer` misses `this.win.setTimeout`, `globalThis.setTimeout`. Done in 3d9bbb0e5.
 - Low: comments at `no-readonly-signal.js:80,89,93`; two dividers in `prefer-rxjs-timer.js`. S
 - Low: `no-rxjs-in-effect` doesn't cover `afterRenderEffect` or `linkedSignal`. S
 - Low: `rules.md:149` omits `clear*`/`removeEventListener`; `:144` omits the `play` exemption; `:71` omits that `inject(X).method()` is allowed. S
@@ -78,10 +62,6 @@ has them). Still open: 23 Medium, 46 Low, 13 spec-coverage items. Paths are rela
 
 ## DOM & platform
 
-- Medium: `prefer-element-dimensions` reports reads in nested `addEventListener`/`untracked`/`afterNextRender`/`setTimeout` callbacks inside an `effect`. Done in 562f182ac.
-- Medium: `prefer-element-dimensions` ignores the receiver (`this.layout().scrollWidth` reported). Done in 5d32f7e16 and 10af4378d.
-- Medium: `prefer-viewport-size` misses stored `this.win = document.defaultView`, `globalThis.innerWidth`, bare `innerWidth`, `window['innerWidth']`. Done in 836c57050.
-- Medium: `prefer-match-media` reports `BreakpointObserver` twice; misses `mq.addEventListener('change', …)` and bare `matchMedia()`. Done in 1dd03c288 (change listener is covered by `prefer-rxjs-timer`).
 - Low: `myMock.notTheDefaultView.innerWidth` reported. S
 - Low: shadowed `class MutationObserver` reported. S
 - Low: aliased/subclassed observers missed (`no-native-observers`). S
@@ -96,9 +76,6 @@ has them). Still open: 23 Medium, 46 Low, 13 spec-coverage items. Paths are rela
 
 ## misc, config, packaging & docs
 
-- Medium: `no-trivial-return-type` self-reference guard matches property names (`return v.disabled` in `const disabled` not reported). S Done in 321ffa7e8.
-- Medium: `enforce-routing-view-naming` doesn't check a default-export `loadComponent`; block-bodied `.then` skips the class-name check. S Done in f4ba9f3c5.
-- Medium: `prefer-clone-equal` misses `import * as _`, default `lodash` import, `lodash.clonedeep`, `require('lodash')`. Done in 64e382a80 (`require` aliases not tracked).
 - Low: `no-impure-top-level-provider` passes destructuring wrapped in `satisfies` or `!`. S
 - Low: `enforce-routing-view-naming` reports non-route object literals; substring test lets `items-viewer` pass. S
 - Low: dead `recommendedTs.plugins: {}` (`configs/recommended.js:12`). S
