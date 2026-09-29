@@ -1181,6 +1181,64 @@ describe('RichTextEditorDom', () => {
     });
   });
 
+  describe('indentListItem', () => {
+    it('nests the item in a new sublist under the item before it', () => {
+      const { root, dom } = setup('<ul><li>A</li><li>B</li></ul>');
+      const b = root.querySelectorAll('li')[1] as HTMLElement;
+      selectRange(b.firstChild as Node, 1, b.firstChild as Node, 1);
+
+      expect(dom.indentListItem()).toBe(true);
+      expect(root.innerHTML).toBe('<ul><li>A<ul><li>B</li></ul></li></ul>');
+    });
+
+    it('opens the sublist with the same list type as the item', () => {
+      const { root, dom } = setup('<ol><li>A</li><li>B</li></ol>');
+      const b = root.querySelectorAll('li')[1] as HTMLElement;
+      selectRange(b.firstChild as Node, 0, b.firstChild as Node, 0);
+
+      expect(dom.indentListItem()).toBe(true);
+      expect(root.innerHTML).toBe('<ol><li>A<ol><li>B</li></ol></li></ol>');
+    });
+
+    it('appends to the sublist the previous item already has', () => {
+      const { root, dom } = setup('<ul><li>A<ul><li>a1</li></ul></li><li>B</li></ul>');
+      const b = root.querySelectorAll('li')[2] as HTMLElement;
+      selectRange(b.firstChild as Node, 1, b.firstChild as Node, 1);
+
+      expect(dom.indentListItem()).toBe(true);
+      expect(root.innerHTML).toBe('<ul><li>A<ul><li>a1</li><li>B</li></ul></li></ul>');
+    });
+
+    it('keeps the caret where it was in the moved item', () => {
+      const { root, dom } = setup('<ul><li>A</li><li>Bcd</li></ul>');
+      const b = root.querySelectorAll('li')[1] as HTMLElement;
+      selectRange(b.firstChild as Node, 2, b.firstChild as Node, 2);
+
+      dom.indentListItem();
+
+      const range = window.getSelection()?.getRangeAt(0);
+
+      expect(range?.startContainer).toBe(b.firstChild);
+      expect(range?.startOffset).toBe(2);
+    });
+
+    it('does nothing for the first item of a list', () => {
+      const { root, dom } = setup('<ul><li>A</li><li>B</li></ul>');
+      const a = root.querySelector('li') as HTMLElement;
+      selectRange(a.firstChild as Node, 1, a.firstChild as Node, 1);
+
+      expect(dom.indentListItem()).toBe(false);
+      expect(root.innerHTML).toBe('<ul><li>A</li><li>B</li></ul>');
+    });
+
+    it('does nothing outside a list', () => {
+      const { root, dom } = setup('<p>A</p>');
+      selectRange(root.firstChild?.firstChild as Node, 1, root.firstChild?.firstChild as Node, 1);
+
+      expect(dom.indentListItem()).toBe(false);
+    });
+  });
+
   describe('insertNormalizedHtml', () => {
     it('splices a single paragraph inline into the caret block', () => {
       const { root, dom } = setup('<p>ab</p>');

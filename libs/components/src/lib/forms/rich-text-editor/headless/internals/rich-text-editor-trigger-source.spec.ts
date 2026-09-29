@@ -64,4 +64,54 @@ describe('trackTriggerItems', () => {
 
     expect(states.at(-1)).toEqual({ items: [{ id: 'b', label: 'b' }], loading: false, error: null });
   });
+
+  describe('a result that arrives after a newer request', () => {
+    const deferredSource = () => {
+      const resolvers = new Map<string, (items: { id: string; label: string }[]) => void>();
+      const trigger: RichTextEditorTrigger = {
+        char: '@',
+        type: 'mention',
+        debounceTime: 0,
+        items: (query) =>
+          new Promise((resolve) => {
+            resolvers.set(query, resolve);
+          }),
+      };
+
+      return { trigger, resolve: (query: string) => resolvers.get(query)?.([{ id: query, label: query }]) };
+    };
+
+    it('is dropped in favour of the newer query', async () => {
+      const { trigger, resolve } = deferredSource();
+      const { request$, states } = track();
+
+      request$.next({ trigger, query: 'a' });
+      await vi.advanceTimersByTimeAsync(0);
+      request$.next({ trigger, query: 'ab' });
+      await vi.advanceTimersByTimeAsync(0);
+
+      resolve('ab');
+      await vi.advanceTimersByTimeAsync(0);
+      resolve('a');
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(states.at(-1)).toEqual({ items: [{ id: 'ab', label: 'ab' }], loading: false, error: null });
+      expect(states.some((state) => state.items.some((item) => item.id === 'a'))).toBe(false);
+    });
+
+    it('is dropped when the trigger closes before it lands', async () => {
+      const { trigger, resolve } = deferredSource();
+      const { request$, states } = track();
+
+      request$.next({ trigger, query: 'a' });
+      await vi.advanceTimersByTimeAsync(0);
+      const emitted = states.length;
+
+      request$.next(null);
+      resolve('a');
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(states).toHaveLength(emitted);
+    });
+  });
 });
