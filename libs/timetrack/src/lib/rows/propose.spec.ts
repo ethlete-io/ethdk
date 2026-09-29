@@ -176,6 +176,20 @@ describe('propose, the work nothing named', () => {
     expect(new Set(unnamed.map((row) => row.id)).size).toBe(2);
   });
 
+  it('keeps two pieces of one checkout that started together apart, and the first on its old id', () => {
+    const inPiece = (piece: string): WorkGroup => {
+      const base = group({ fromMinute: 0, observedMinutes: 30 });
+
+      return { ...base, blocks: base.blocks.map((block) => ({ ...block, context: { repoPath: '/dev/a', piece } })) };
+    };
+
+    const alone = propose({ groups: [inPiece('one')] });
+    const { unnamed, unattributed } = propose({ groups: [inPiece('one'), inPiece('two')] });
+
+    expect(unnamed.map((row) => row.id)).toEqual([alone.unnamed[0]?.id, `${alone.unnamed[0]?.id}+two`]);
+    expect(unattributed.map((row) => row.rowId)).toEqual(unnamed.map((row) => row.id));
+  });
+
   it('gives a band one id whatever branches its blocks were on', () => {
     const onBranches = (...branches: string[]): WorkGroup => {
       const base = group({ fromMinute: 0, observedMinutes: 60 });

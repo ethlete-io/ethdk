@@ -61,15 +61,15 @@ const isAttributedRow = (row: BoundGroup): row is BoundGroup & { group: Attribut
 const proposalId = (group: AttributedGroup) => `${group.issueKey}@${group.from.toISOString()}`;
 
 /**
- * Hands out {@link proposalId}s, and gives a second row on the same issue and start the piece of its agent
- * session as a suffix: two parallel sessions on one ticket can snap to one start.
+ * Hands out the ids `baseOf` builds, and gives a second row with the same id the piece of its agent session
+ * as a suffix: two parallel sessions of one checkout can snap to one start.
  */
-const proposalIds = () => {
+const rowIds = <T extends WorkGroup>(baseOf: (group: T) => string) => {
   const used = new Set<string>();
 
   return {
-    next: (group: AttributedGroup) => {
-      const base = proposalId(group);
+    next: (group: T) => {
+      const base = baseOf(group);
       let id = used.has(base) ? `${base}+${dominantContext(group.blocks)?.piece ?? 'row'}` : base;
 
       for (let n = 2; used.has(id); n++) id = `${base}+${n}`;
@@ -94,7 +94,9 @@ const proposalIds = () => {
  * Exported because a review answers a band through its row, and `reviewDay` needs the group that row
  * came from to stop counting it as time nothing named.
  */
-export const unnamedRowId = (group: WorkGroup) => {
+export const unnamedRowId = (group: WorkGroup) => group.rowId ?? unnamedBaseId(group);
+
+const unnamedBaseId = (group: WorkGroup) => {
   const context = dominantContext(group.blocks);
 
   return `unnamed:${context ? streamKey(context) : ''}@${group.from.toISOString()}`;
@@ -149,9 +151,12 @@ export const propose = (options: {
       : row,
   );
   const attributed = booked.filter(isAttributedRow);
-  const unnamed = booked.filter((row) => !isAttributedRow(row));
+  const unnamedIds = rowIds(unnamedBaseId);
+  const unnamed = booked
+    .filter((row) => !isAttributedRow(row))
+    .map((row) => ({ ...row, group: { ...row.group, rowId: unnamedIds.next(row.group) } }));
   const unattributed = unnamed.filter((row) => !row.group.standInId);
-  const ids = proposalIds();
+  const ids = rowIds(proposalId);
 
   return {
     proposals: attributed.map(({ group, from, to, durationMs }) => ({

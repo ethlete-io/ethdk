@@ -50,6 +50,8 @@ export type WorkGroup = {
    * call a rule excluded from work. Absent leaves the answer to the lane, in `isBookable`.
    */
   bookable?: boolean;
+  /** The id `propose` gave the row of an unnamed band. Read it through `unnamedRowId`. */
+  rowId?: string;
 };
 
 export type MergeOptions = {
