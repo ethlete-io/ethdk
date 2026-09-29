@@ -228,7 +228,9 @@ describe('isRepairableBranch', () => {
   });
 
   it('leaves a branch whose only fault is the key case alone — no ticket is missing', () => {
-    expect(isRepairableBranch({ branch: 'feat/fip-1-user-management', config })).toBe(false);
+    expect(
+      isRepairableBranch({ branch: 'feat/fip-1-user-management', config: { ...config, keyPrefixes: ['FIP'] } }),
+    ).toBe(false);
   });
 
   it('leaves a protected branch alone', () => {
