@@ -940,6 +940,20 @@ describe('setRowRange', () => {
     ]);
   });
 
+  it('holds an end that did not move when asked to, and lets the start follow the day', () => {
+    const day = laned({ from: '09:00', to: '12:00', minutes: 180 });
+    const edits = setRowRange({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: rowFor(reviewDay({ rows: day }), 'ABC-1'),
+      from: at('09:00'),
+      to: at('12:00'),
+      pinsTo: true,
+    });
+    const review = reviewDay({ rows: laned({ from: '09:30', to: '14:00', minutes: 240 }), edits });
+
+    expect(rowFor(review, 'ABC-1')).toMatchObject({ from: at('09:30'), to: at('12:00') });
+  });
+
   it('keeps the end a first drag set while a second drag moves the start', () => {
     const day = laned({ from: '09:00', to: '12:00', minutes: 180 });
     const grown = setRowRange({

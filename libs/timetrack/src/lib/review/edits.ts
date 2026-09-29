@@ -478,19 +478,21 @@ export const setRowRange = (options: {
   round?: Partial<RoundOptions>;
   /** Pins both ends even where one of them did not move. A typed duration is a span, not one end. */
   pinsBothEnds?: boolean;
+  /** Pins the end even where it did not move, the way ending a row where it is drawn to does. */
+  pinsTo?: boolean;
 }): DayReviewEdits => {
   const { edits, from, to } = options;
   const row = editTarget(options.row);
 
   if (to.getTime() <= from.getTime()) return edits;
-  if (from.getTime() === row.from.getTime() && to.getTime() === row.to.getTime()) return edits;
+  if (!options.pinsTo && from.getTime() === row.from.getTime() && to.getTime() === row.to.getTime()) return edits;
 
   const pinned = pinnedById(edits, row.id);
-  const moved = to.getTime() - from.getTime() === row.to.getTime() - row.from.getTime();
+  const moved = !options.pinsTo && to.getTime() - from.getTime() === row.to.getTime() - row.from.getTime();
   const replaces = replacedBy(edits, row);
   const kept = edits.pinned.filter((entry) => entry.id !== row.id);
   const heldFrom = from.getTime() !== row.from.getTime();
-  const heldTo = to.getTime() !== row.to.getTime();
+  const heldTo = !!options.pinsTo || to.getTime() !== row.to.getTime();
 
   return {
     ...edits,

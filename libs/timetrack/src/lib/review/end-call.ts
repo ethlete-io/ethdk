@@ -268,12 +268,8 @@ export const endRowAt = (options: {
 
   if (to.getTime() <= row.from.getTime()) return edits;
 
-  // `setRowRange` pins only an end that moved, and a growing row is already drawn to the increment
-  // nearest now: resize it from one increment further so the end is pinned where it is.
-  const drawn = to.getTime() === row.to.getTime() ? { ...row, to: new Date(to.getTime() + incrementMs) } : row;
-
   const cleared = withoutRestPins(edits, row);
-  const ended = setRowRange({ edits: cleared, row: drawn, from: row.from, to, round: options.round });
+  const ended = setRowRange({ edits: cleared, row, from: row.from, to, round: options.round, pinsTo: true });
   const snippedFromMs = endPinOf(edits, row)?.snippedFromMs ?? row.to.getTime();
 
   if (ended === cleared) return ended;
