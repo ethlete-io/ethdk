@@ -230,6 +230,9 @@ const LINK_STORE_DEF = /* @__PURE__ */ defineRootProvider(
 export const provideLinkStore = /* @__PURE__ */ toProvideFn(LINK_STORE_DEF);
 export const injectLinkStore = /* @__PURE__ */ toInjectFn(LINK_STORE_DEF);
 
+/**
+ * Binds a link tag. Only removes the elements it created; pre-existing links are left in place, unlike meta bindings.
+ */
 export const applyLinkBinding = (binding: MaybeSignal<LinkConfig | null | undefined>) => {
   const linkStore = injectLinkStore();
   const linkId = Symbol('link-tag');

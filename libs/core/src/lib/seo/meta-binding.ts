@@ -56,7 +56,6 @@ export type MetaConfig = {
 };
 
 export const DEFAULT_MULTI_INSTANCE_TAGS = /* @__PURE__ */ new Set([
-  // Open Graph - Media
   'property="og:image"',
   'property="og:image:url"',
   'property="og:image:secure_url"',
@@ -66,41 +65,23 @@ export const DEFAULT_MULTI_INSTANCE_TAGS = /* @__PURE__ */ new Set([
   'property="og:audio"',
   'property="og:audio:url"',
   'property="og:audio:secure_url"',
-
-  // Open Graph - Locale alternatives
   'property="og:locale:alternate"',
-
-  // Twitter Card
   'name="twitter:image"',
   'name="twitter:player"',
-
-  // Article tags (arrays)
   'property="article:author"',
   'property="article:tag"',
-
-  // Music tags (arrays)
   'property="music:song"',
   'property="music:musician"',
   'property="music:album"',
-
-  // Video tags (arrays)
   'property="video:actor"',
   'property="video:director"',
   'property="video:writer"',
   'property="video:tag"',
-
-  // Book tags (arrays)
   'property="book:author"',
   'property="book:tag"',
-
-  // Profile (arrays)
   'property="profile:username"',
-
-  // Product tags (arrays)
   'property="product:category"',
   'property="product:retailer_item_id"',
-
-  // App Links (multiple platforms)
   'property="al:ios:url"',
   'property="al:ios:app_store_id"',
   'property="al:ios:app_name"',
@@ -117,20 +98,12 @@ export const DEFAULT_MULTI_INSTANCE_TAGS = /* @__PURE__ */ new Set([
   'property="al:windows_universal:url"',
   'property="al:windows_universal:app_id"',
   'property="al:windows_universal:app_name"',
-
-  // Dublin Core (can have multiple)
   'name="DC.creator"',
   'name="DC.contributor"',
   'name="DC.subject"',
-
-  // Schema.org (via meta tags - though JSON-LD is preferred)
   'itemprop="image"',
   'itemprop="author"',
-
-  // Apple iOS
   'name="apple-itunes-app"', // Can have multiple app arguments
-
-  // Verification tags (multiple services)
   'name="google-site-verification"',
   'name="msvalidate.01"',
   'name="yandex-verification"',
@@ -298,6 +271,9 @@ const META_STORE_DEF = /* @__PURE__ */ defineRootProvider(
 export const provideMetaStore = /* @__PURE__ */ toProvideFn(META_STORE_DEF);
 export const injectMetaStore = /* @__PURE__ */ toInjectFn(META_STORE_DEF);
 
+/**
+ * Binds a meta tag. Removes any pre-existing tags matching the same selector, unlike link bindings, which leave pre-existing links alone.
+ */
 export const applyMetaBinding = (binding: MaybeSignal<MetaTagConfig | null | undefined>) => {
   const metaStore = injectMetaStore();
   const tagId = Symbol('meta-tag');

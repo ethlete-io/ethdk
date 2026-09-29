@@ -86,6 +86,8 @@ This is the only real answer to "show progress on the tab": no browser exposes t
 
 Duplicate tags are deduplicated by selector with the highest-priority binding winning, except for multi-instance tags (`og:image`, `twitter:image`, `article:tag`, …) which all render. Extend the set via `provideMetaConfig({ multiInstanceTags })`.
 
+A meta binding replaces tags already in the document: the first binding for a selector removes every existing `<meta>` matching it (for example one from `index.html` or server-rendered HTML), and so does the last binding going away.
+
 ## Links
 
 | Function                                                    | Writes                                                                                              |
@@ -95,6 +97,8 @@ Duplicate tags are deduplicated by selector with the highest-priority binding wi
 | `applyAlternateBinding` / `applyAlternateLanguagesBindings` | `rel="alternate"` with `hreflang` - the plural form takes `{ en: url, de: url, 'x-default': url }`. |
 | `applyPrevBinding` / `applyNextBinding`                     | `rel="prev"` / `rel="next"` pagination links.                                                       |
 | `applyResourceHintsBindings`                                | `preconnect` / `dns-prefetch` / `prefetch` / `prerender` from arrays of URLs.                       |
+
+Link bindings only ever touch the `<link>` elements they created (marked with `data-link-key`); a `<link>` already in the document is left in place and can end up alongside the bound one.
 
 ## Structured data (JSON-LD)
 
