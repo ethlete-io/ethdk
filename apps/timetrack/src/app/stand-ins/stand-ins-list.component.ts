@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, computed, input } from '@angular/core';
+import { Component, ViewEncapsulation, computed, input, signal } from '@angular/core';
 import { BUTTON_IMPORTS, EMPTY_STATE_IMPORTS, FORM_FIELD_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective } from '@ethlete/core';
 import { StandIn, formatDurationMs, standInWhere } from '@ethlete/timetrack';
@@ -27,10 +27,17 @@ import { injectStandIns } from './stand-ins';
   template: `
     @if (listed().length) {
       <div class="flex flex-col gap-3">
-        @for (entry of listed(); track entry.id) {
+        @if (staleCount()) {
+          <button (click)="store.hideStale()" class="self-start" et-button variant="outline">
+            Hide {{ staleCount() }} stale
+          </button>
+        }
+
+        @for (entry of shown(); track entry.id) {
           <div
             [attr.data-stand-in]="entry.id"
             [attr.data-state]="entry.standIn.state"
+            [attr.data-hidden]="entry.isHidden || null"
             [class.rounded-md]="!only()"
             [class.border]="!only()"
             [class.p-3]="!only()"
@@ -48,6 +55,10 @@ import { injectStandIns } from './stand-ins';
                   <span class="rounded-sm bg-et-warning/15 px-2 text-et-warning-ink" data-overdue>
                     Waited long enough
                   </span>
+                }
+
+                @if (entry.isStale) {
+                  <span data-stale>{{ entry.staleLabel }}</span>
                 }
               </div>
 
@@ -81,6 +92,12 @@ import { injectStandIns } from './stand-ins';
                 }
 
                 @if (!only()) {
+                  @if (entry.isHidden) {
+                    <button (click)="store.show(entry.id)" et-text-button>Show again</button>
+                  } @else {
+                    <button (click)="store.hide(entry.id)" et-text-button>Hide</button>
+                  }
+
                   <button (click)="store.remove(entry.id)" et-text-button etProvideColor="danger">Delete</button>
                 }
               </div>
@@ -167,6 +184,12 @@ import { injectStandIns } from './stand-ins';
             }
           </div>
         }
+
+        @if (hiddenCount()) {
+          <button (click)="showHidden.set(!showHidden())" class="self-start" et-text-button>
+            {{ showHidden() ? 'Close the hidden ones' : 'Show ' + hiddenCount() + ' hidden' }}
+          </button>
+        }
       </div>
     } @else {
       <et-empty-state
@@ -193,8 +216,12 @@ export class StandInsListComponent {
   /** The one placeholder to show, by id. Null lists every one of them. */
   public only = input<string | null>(null);
 
+  protected showHidden = signal(false);
+
   protected listed = computed(() => {
     const ages = this.store.ages();
+    const hidden = this.store.hidden();
+    const stale = this.store.stale();
     const only = this.only();
 
     return this.store
@@ -212,10 +239,26 @@ export class StandInsListComponent {
             .join(' · '),
           where: standInWhere(standIn),
           isOverdue: !!age?.isOverdue,
+          isHidden: hidden.has(standIn.id),
+          isStale: stale.has(standIn.id),
+          staleLabel: staleLabel(standIn),
           canReopen: this.store.canReopen(standIn),
         };
       });
   });
+
+  /** A hidden one shows only when asked for, and always when it is the one placeholder shown. */
+  protected shown = computed(() =>
+    this.only() || this.showHidden()
+      ? [...this.listed()].sort((a, b) => Number(a.isHidden) - Number(b.isHidden))
+      : this.listed().filter((entry) => !entry.isHidden),
+  );
+
+  protected hiddenCount = computed(() => (this.only() ? 0 : this.listed().filter((entry) => entry.isHidden).length));
+
+  protected staleCount = computed(() =>
+    this.only() ? 0 : this.listed().filter((entry) => entry.isStale && !entry.isHidden).length,
+  );
 
   protected resolve(id: string, issueKey: string) {
     if (issueKey) this.store.resolve({ id, issueKey });
@@ -233,4 +276,10 @@ const daysLabel = (standIn: StandIn) => {
   return count === 1
     ? `on ${formatWeekdayLabel(first)}`
     : `${count} days, ${formatDayRangeLabel(first, standIn.days[count - 1] as string)}`;
+};
+
+const staleLabel = (standIn: StandIn) => {
+  const last = standIn.days[standIn.days.length - 1];
+
+  return last ? `no band since ${formatWeekdayLabel(last)}` : 'no band yet';
 };

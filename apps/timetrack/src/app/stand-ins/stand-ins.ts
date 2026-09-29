@@ -1,7 +1,18 @@
 import { computed, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
-import { ReviewedRow, StandIn, StandInAge, canReopenStandIn, standInAge, standInHeldMs } from '@ethlete/timetrack';
+import {
+  ReviewedRow,
+  StandIn,
+  StandInAge,
+  canReopenStandIn,
+  dayBoundaryOf,
+  isStandInHidden,
+  isStandInStale,
+  localDayKey,
+  standInAge,
+  standInHeldMs,
+} from '@ethlete/timetrack';
 import { catchError, combineLatest, forkJoin, map, of, switchMap, tap, timer } from 'rxjs';
 import { injectGitCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
@@ -15,6 +26,8 @@ import { injectProjectLinks } from '../project-links';
  * on the screen happens to change.
  */
 const AGE_TICK_MS = 3_600_000;
+
+const STALE_AFTER_WORKDAYS = 10;
 
 /**
  * Every stand-in the settings hold, and the three acts that end one.
@@ -135,9 +148,38 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
   });
 
+  const hidden = computed(
+    () =>
+      new Set(
+        standIns()
+          .filter(isStandInHidden)
+          .map((standIn) => standIn.id),
+      ),
+  );
+
+  const stale = computed(() => {
+    const at = now();
+
+    return new Set(
+      open()
+        .filter((standIn) => isStandInStale({ standIn, now: at, afterWorkdays: STALE_AFTER_WORKDAYS }))
+        .map((standIn) => standIn.id),
+    );
+  });
+
+  const hide = (ids: readonly string[]) =>
+    settings.setStandInsHidden(ids, localDayKey(new Date(), dayBoundaryOf(settings.settings())));
+
   return {
     standIns,
     open,
+    /** The ids of the stand-ins the user hid, which the list shows apart and the pickers leave out. */
+    hidden,
+    /** The ids of the open stand-ins that took no band for a while. */
+    stale,
+    hide: (id: string) => hide([id]),
+    show: (id: string) => settings.setStandInsHidden([id], ''),
+    hideStale: () => hide([...stale()].filter((id) => !hidden().has(id))),
     /** How long each one has waited, by id. The list reads it, and marks the ones past a limit. */
     ages,
     syncedDays,

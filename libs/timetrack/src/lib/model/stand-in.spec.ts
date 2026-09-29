@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { AttributionRule } from './attribution';
 import {
+  isStandInHidden,
+  isStandInStale,
+  offeredStandIns,
   StandIn,
   canReopenStandIn,
   findStandIn,
@@ -235,5 +238,37 @@ describe('standInAge', () => {
     });
 
     expect(off.isOverdue).toBe(false);
+  });
+});
+
+describe('isStandInHidden', () => {
+  it('holds while the stand-in took no band after the day it was hidden on', () => {
+    expect(isStandInHidden(standIn({ days: ['2026-09-20', '2026-09-29'], hiddenOn: '2026-09-29' }))).toBe(true);
+    expect(isStandInHidden(standIn({ days: ['2026-09-30'], hiddenOn: '2026-09-29' }))).toBe(false);
+    expect(isStandInHidden(standIn({ days: [] }))).toBe(false);
+  });
+
+  it('leaves a hidden stand-in out of what the pickers offer', () => {
+    const offered = offeredStandIns([standIn({ id: 'shown' }), standIn({ id: 'hidden', hiddenOn: '2026-09-29' })]);
+
+    expect(offered.map((entry) => entry.id)).toEqual(['shown']);
+  });
+});
+
+describe('isStandInStale', () => {
+  const now = new Date('2026-09-29T10:00:00');
+
+  it('counts workdays from the last day that held a band, or from its creation', () => {
+    expect(isStandInStale({ standIn: standIn({ days: ['2026-09-14'] }), now, afterWorkdays: 10 })).toBe(true);
+    expect(isStandInStale({ standIn: standIn({ days: ['2026-09-24'] }), now, afterWorkdays: 10 })).toBe(false);
+    expect(
+      isStandInStale({ standIn: standIn({ createdAt: new Date('2026-09-28T09:00:00') }), now, afterWorkdays: 10 }),
+    ).toBe(false);
+  });
+
+  it('never marks a resolved stand-in', () => {
+    expect(
+      isStandInStale({ standIn: standIn({ state: 'resolved', days: ['2026-08-01'] }), now, afterWorkdays: 10 }),
+    ).toBe(false);
   });
 });

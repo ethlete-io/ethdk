@@ -331,6 +331,14 @@ describe('parseTimetrackSettings', () => {
     expect(settings.standIns.map((standIn) => standIn.resolutionSource)).toEqual(['auto', undefined]);
   });
 
+  it('reads back the day a stand-in was hidden on', () => {
+    const settings = parseTimetrackSettings({
+      standIns: [{ id: 'stand-in-1', name: 'Journey', state: 'open', hiddenOn: '2026-09-29' }],
+    });
+
+    expect(settings.standIns[0]?.hiddenOn).toBe('2026-09-29');
+  });
+
   it('reads back a stand-in parent and who picked it', () => {
     const settings = parseTimetrackSettings({
       standIns: [{ id: 'stand-in-1', name: 'Journey', state: 'open', parentKey: 'abc-9', parentSource: 'auto' }],

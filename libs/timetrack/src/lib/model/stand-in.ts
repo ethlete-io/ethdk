@@ -89,6 +89,11 @@ export type StandIn = {
    * that window cannot be replayed — which is exactly the one that waited longest.
    */
   days: string[];
+  /**
+   * The local day key the user hid it on. It stays hidden until it holds a band on a later day.
+   * Only the pickers and the list read it: a hidden stand-in still names its bands.
+   */
+  hiddenOn?: string;
   author: NamingAuthor;
   createdAt: Date;
 };
@@ -182,6 +187,33 @@ export const isStandInRefused = (options: {
 /** The stand-ins still waiting on a ticket, newest first, which is what a picker offers. */
 export const openStandIns = (standIns: readonly StandIn[]) =>
   standIns.filter((standIn) => standIn.state === 'open').sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+/** Whether the user hid it and it took no band on a later day since. */
+export const isStandInHidden = (standIn: Pick<StandIn, 'state' | 'days' | 'hiddenOn'>) => {
+  const hiddenOn = standIn.hiddenOn;
+
+  return standIn.state === 'open' && !!hiddenOn && !standIn.days.some((day) => day > hiddenOn);
+};
+
+/** The open stand-ins the user did not hide, newest first. */
+export const offeredStandIns = (standIns: readonly StandIn[]) =>
+  openStandIns(standIns).filter((standIn) => !isStandInHidden(standIn));
+
+/**
+ * Whether an open stand-in took no band for `afterWorkdays` workdays. One with no day yet counts from
+ * when it was created.
+ */
+export const isStandInStale = (options: {
+  standIn: Pick<StandIn, 'state' | 'days' | 'createdAt'>;
+  now: Date;
+  afterWorkdays: number;
+}) => {
+  const { standIn } = options;
+  const lastDay = standIn.days[standIn.days.length - 1];
+  const from = lastDay ? new Date(`${lastDay}T12:00:00`) : standIn.createdAt;
+
+  return standIn.state === 'open' && workdaysBetween({ from, to: options.now }) >= options.afterWorkdays;
+};
 
 /**
  * Where a placeholder the app opened stands for its work: the checkout, then the narrowest thing the

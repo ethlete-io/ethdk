@@ -187,6 +187,7 @@ const asStandIn = (value: unknown, index: number): StandIn | null => {
     resolutionSource: asFieldSource(raw['resolutionSource']),
     ...(parentKey ? { parentKey, parentSource: asFieldSource(raw['parentSource']) } : {}),
     days: asTextList(raw['days']).sort(),
+    hiddenOn: asText(raw['hiddenOn']) || undefined,
     author: asAuthor(raw['author']),
     createdAt: asDate(raw['createdAt']),
   };

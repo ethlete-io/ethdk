@@ -457,6 +457,26 @@ export const withStandInResolutionReset = (options: {
 });
 
 /**
+ * Hides open stand-ins from the pickers and the list as of `day`, or shows them again when `day` is
+ * empty. Their bands keep their names.
+ */
+export const withStandInsHidden = (options: {
+  settings: TimetrackSettings;
+  ids: readonly string[];
+  day: string;
+}): TimetrackSettings => ({
+  ...options.settings,
+  standIns: options.settings.standIns.map((entry) => {
+    if (!options.ids.includes(entry.id) || entry.state !== 'open') return entry;
+    if (options.day) return { ...entry, hiddenOn: options.day };
+
+    const { hiddenOn: _hiddenOn, ...kept } = entry;
+
+    return kept;
+  }),
+});
+
+/**
  * Stores the parent the stand-in's ticket is filed under, stamped with who picked it. An `auto` write
  * to a parent the user picked changes nothing. An empty key clears it.
  */

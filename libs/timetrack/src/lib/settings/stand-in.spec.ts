@@ -13,6 +13,7 @@ import {
   withStandInCheckoutAllowed,
   withStandInParent,
   withStandInResolutionReset,
+  withStandInsHidden,
   withStandInsKeyedByHand,
   withoutOrphanedStandIns,
   withoutStandIn,
@@ -738,6 +739,25 @@ describe('splitStandIn', () => {
     expect(split().opened.map((entry) => entry.name)).toEqual(['Competition journey', 'Season pass']);
     expect(split({ pieces: [{ ...pieces[0]!, name: 'Journey spec' }, pieces[1]!] }).opened[0]?.name).toBe(
       'Journey spec',
+    );
+  });
+});
+
+describe('withStandInsHidden', () => {
+  it('hides the open stand-ins named as of the day given, and shows them again on an empty day', () => {
+    const settings = settingsWith({
+      standIns: [
+        standIn(),
+        standIn({ id: 'stand-in-2' }),
+        standIn({ id: 'stand-in-3', state: 'resolved', issueKey: 'FIP-1' }),
+      ],
+    });
+
+    const hidden = withStandInsHidden({ settings, ids: ['stand-in-1', 'stand-in-3'], day: '2026-09-29' });
+
+    expect(hidden.standIns.map((entry) => entry.hiddenOn)).toEqual(['2026-09-29', undefined, undefined]);
+    expect(withStandInsHidden({ settings: hidden, ids: ['stand-in-1'], day: '' }).standIns[0]).not.toHaveProperty(
+      'hiddenOn',
     );
   });
 });

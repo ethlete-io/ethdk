@@ -54,7 +54,7 @@ import {
   namedIssueKeys,
   offTopicRests,
   openStandIn,
-  openStandIns,
+  offeredStandIns,
   pauseWindows,
   pausedMs,
   projectKeyFor,
@@ -1083,8 +1083,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     keepIssue: (row: ReviewedRow) => {
       if (row.issueKey) nameRow(row, row.issueKey);
     },
-    /** The names the user gave work Jira does not hold yet and has not answered, newest first. */
-    openStandIns: computed(() => openStandIns(settings.settings().standIns)),
+    /** The names the user gave work Jira does not hold yet, has not answered and did not hide, newest first. */
+    openStandIns: computed(() => offeredStandIns(settings.settings().standIns)),
 
     /** Every stand-in, resolved ones included, so a band that names one can still show its name. */
     allStandIns: computed(() => settings.settings().standIns),

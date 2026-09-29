@@ -55,6 +55,7 @@ import {
   resolveStandIn,
   withStandInParent,
   withStandInResolutionReset,
+  withStandInsHidden,
   WriteSource,
   ClassedAction,
   OpClass,
@@ -390,6 +391,9 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     reopenStandIn: (id: string) => apply(reopenStandIn({ settings: settings(), id })),
     /** Hands a stand-in the user reopened back to auto mode. */
     resetStandInResolution: (id: string) => apply(withStandInResolutionReset({ settings: settings(), id })),
+    /** Hides stand-ins as of `day`, or shows them again when `day` is empty. */
+    setStandInsHidden: (ids: readonly string[], day: string) =>
+      apply(withStandInsHidden({ settings: settings(), ids, day })),
     setStandInParent: (options: { id: string; parentKey: string; source?: WriteSource }) =>
       apply(withStandInParent({ settings: settings(), ...options })),
 
