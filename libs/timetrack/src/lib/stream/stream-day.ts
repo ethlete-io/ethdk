@@ -33,6 +33,7 @@ import { promptOriginReader } from './prompt-origin';
 import { PresenceSample, presenceWindows } from './presence';
 import { UnnamedFocus, UnnamedFocusReason, mergeUnnamedTitles } from './unnamed-focus';
 import { fileAgentEventsByWork } from './worked-in';
+import { sessionPieces } from '../model/session-piece';
 
 /** The key of the one line every application with no checkout folds into. */
 export const OTHER_APPLICATIONS_KEY = 'other-applications';
@@ -569,7 +570,7 @@ const workPathAt = (options: { marks: readonly WorkPathMark[] | undefined; at: D
 };
 
 /** One agent session's run in a checkout: the first and the last instant it was sampled there. */
-type SessionRun = { sessionId: string; from: Date; to: Date };
+type SessionRun = { sessionId: string; from: Date; to: Date; paths: string[] };
 
 /**
  * The agent sessions each checkout ran, oldest start first.
@@ -587,8 +588,19 @@ const sessionRuns = (samples: readonly ActivityEvent[], roots: readonly string[]
     const runs = held.get(repoPath) ?? new Map<string, SessionRun>();
     const run = runs.get(sample.sessionId);
 
-    if (run) run.to = sample.at;
-    else runs.set(sample.sessionId, { sessionId: sample.sessionId, from: sample.at, to: sample.at });
+    const path =
+      sample.workedIn && sample.workedIn.startsWith(`${repoPath}/`) ? sample.workedIn.slice(repoPath.length + 1) : '';
+
+    if (run) {
+      run.to = sample.at;
+      if (path) run.paths.push(path);
+    } else
+      runs.set(sample.sessionId, {
+        sessionId: sample.sessionId,
+        from: sample.at,
+        to: sample.at,
+        paths: path ? [path] : [],
+      });
 
     held.set(repoPath, runs);
   }
@@ -1091,6 +1103,13 @@ export const streamDay = (options: {
    * are the same piece of work, and a key that told them apart would book those minutes twice.
    */
   const runs = sessionRuns(samples, roots);
+  const pieces = new Map(
+    [...runs].flatMap(([repoPath, held]) => [
+      ...sessionPieces({ sessions: held, projectRoots: config.projectRoots?.[repoPath] }),
+    ]),
+  );
+  const inSession = (session: string | undefined) =>
+    session ? { session, piece: pieces.get(session) ?? session } : { session };
   /**
    * The branch and the directory one stretch of a checkout belongs to.
    *
@@ -1108,7 +1127,7 @@ export const streamDay = (options: {
     return {
       branch,
       workPath: workPathFor({ ...options, branch }),
-      session: sessionAt({ runs: runs.get(options.repoPath), at: options.at }),
+      ...inSession(sessionAt({ runs: runs.get(options.repoPath), at: options.at })),
     };
   };
   const witnessed = witnessedBranches(samples, roots);
@@ -1257,7 +1276,7 @@ export const streamDay = (options: {
         // The stretch belongs to the session that ran it, not to whichever session `sessionAt` hands
         // the checkout at that instant. That is the whole cut: two sessions of one checkout running at
         // once are two pieces here, where reading the checkout's answer collapsed them into one.
-        const ranIn = { ...ran, session: sample.sessionId };
+        const ranIn = { ...ran, ...inSession(sample.sessionId) };
 
         pieceFor(draft, ranIn).agent.push({ from: last, to: sample.at });
         agentSpans.push({ from: last, to: sample.at, context: ranIn });

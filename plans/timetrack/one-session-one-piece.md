@@ -15,10 +15,14 @@ already draw overlapping bands side by side. Slices 4, 5 and 6 are open.
 
 ## Slice 4: join the sessions that are one piece
 
-Before any stand-in opens, gather the sessions of one checkout into pieces. The join criterion is
-not decided. The candidates are the directory their commits touched, the branch they sat on, and the
-user saying so by hand. A wrong join is cheap to undo through `standIn.split`; a wrong cut leaves a
-list nobody answers.
+Built (2026-09-29): Tom picked the directory rule. `sessionPieces` in `model/session-piece.ts` reads
+each session's directory from the files its tool calls named (`workedIn`), through the same
+`workPathsOf` rule commits use. A commit cannot say which of two parallel sessions made it. A session
+joins the latest earlier piece in the same directory that had ended before it started. Parallel
+sessions stay apart (slice 6). A session with no directory is its own piece. The piece is the first
+session's id, on `ActivityContext.piece`. Nothing reads it yet; slice 5 does.
+
+Open: the hand join below.
 
 The stand-in list also needs the reverse of `standIn.split`: a join the user can ask for when the
 automatic one cut too finely.

@@ -22,6 +22,7 @@ const sessionRun = (options: {
   to: number;
   cwd?: string;
   branchAt?: (minutes: number) => string;
+  workedIn?: string;
 }): CollectedEvent[] =>
   Array.from({ length: options.to - options.from + 1 }, (_, offset) => ({
     at: AT(options.from + offset),
@@ -30,6 +31,7 @@ const sessionRun = (options: {
     sessionId: options.sessionId,
     cwd: options.cwd ?? REPO,
     gitBranch: options.branchAt?.(options.from + offset) ?? BRANCH,
+    ...(options.workedIn ? { workedIn: `${REPO}/${options.workedIn}` } : {}),
   }));
 
 const dayOf = (events: CollectedEvent[]) =>
@@ -143,6 +145,20 @@ describe('streamDay agent sessions', () => {
     ];
 
     expect(bookedMs(events)).toBe(120 * 60_000);
+  });
+
+  it('joins sessions one after the other in one directory into one piece, and keeps another apart', () => {
+    const blocks = blocksOf([
+      ...sessionRun({ sessionId: 'one', from: 0, to: 30, workedIn: 'src/app/totw/totw.component.ts' }),
+      ...sessionRun({ sessionId: 'two', from: 60, to: 90, workedIn: 'src/app/totw/totw.store.ts' }),
+      ...sessionRun({ sessionId: 'three', from: 120, to: 150, workedIn: 'src/app/shop/shop.component.ts' }),
+    ]);
+
+    expect(blocks.map((block) => [block.context.session, block.context.piece])).toEqual([
+      ['one', 'one'],
+      ['two', 'one'],
+      ['three', 'three'],
+    ]);
   });
 
   it('leaves a checkout that ran no session on the key it always had', () => {

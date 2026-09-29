@@ -15,6 +15,11 @@ export type ActivityContext = {
    * of work is cut at. See `sessionAt` in `streamDay`.
    */
   session?: string;
+  /**
+   * The first session of the piece of work `session` belongs to: sessions one after the other in one
+   * directory of the checkout are one piece. See `sessionPieces`.
+   */
+  piece?: string;
 };
 
 /** Contiguous same-context time, after idle gaps have split it and sub-minute flapping is merged. */
