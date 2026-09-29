@@ -137,6 +137,20 @@ const buildAngularCoreImportFix = (sourceCode, importNode) => {
     return (fixer) => fixer.insertTextAfter(importNode, `\nimport { ChangeDetectionStrategy } from '@angular/core';`);
   }
 
+  const lastNamed = namedSpecifiers.at(-1);
+
+  if (lastNamed) {
+    const isMultiline = importNode.loc.start.line !== importNode.loc.end.line;
+    const indent = /^\s*/.exec(sourceCode.lines[lastNamed.loc.start.line - 1] ?? '')?.[0] ?? '';
+    const startsLine = sourceCode.lines[lastNamed.loc.start.line - 1].trim().startsWith(sourceCode.getText(lastNamed));
+
+    return (fixer) =>
+      fixer.insertTextAfter(
+        lastNamed,
+        isMultiline && startsLine ? `,\n${indent}ChangeDetectionStrategy` : ', ChangeDetectionStrategy',
+      );
+  }
+
   const importParts = [];
   if (defaultSpecifier) {
     importParts.push(sourceCode.getText(defaultSpecifier));

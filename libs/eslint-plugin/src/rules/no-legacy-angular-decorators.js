@@ -266,7 +266,6 @@ const rule = {
       const reportedInputNames = new Set();
       const reportedOutputNames = new Set();
 
-      // Detect @Input() x + @Output() xChange pairs → suggest model()
       for (const [outputName, outputDecoratorNode] of ctx.outputs) {
         if (!outputName.endsWith('Change')) continue;
         const inputName = outputName.slice(0, -'Change'.length);
@@ -287,14 +286,12 @@ const rule = {
         });
       }
 
-      // Report remaining @Input() decorators that are not part of a pair
       for (const [name, decoratorNode] of ctx.inputs) {
         if (!reportedInputNames.has(name)) {
           context.report({ node: decoratorNode, messageId: 'useInput' });
         }
       }
 
-      // Report remaining @Output() decorators that are not part of a pair
       for (const [name, decoratorNode] of ctx.outputs) {
         if (!reportedOutputNames.has(name)) {
           context.report({ node: decoratorNode, messageId: 'useOutput' });
@@ -313,7 +310,6 @@ const rule = {
         const decoratorName = getAngularDecoratorName(context.sourceCode, anyNode);
         if (!decoratorName) return;
 
-        // Only act on decorators attached to class members, not to the class itself
         const parent = anyNode.parent;
         if (!parent) return;
         if (!CLASS_MEMBER_TYPES.has(parent.type)) return;
@@ -330,7 +326,6 @@ const rule = {
             if (memberName !== null) {
               ctx.inputs.set(memberName, node);
             } else {
-              // Computed key — cannot be part of a two-way binding pair, report immediately
               context.report({ node, messageId: 'useInput' });
             }
             break;

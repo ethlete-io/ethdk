@@ -2,4 +2,4 @@
 '@ethlete/eslint-plugin': patch
 ---
 
-`guard-return-newline` no longer treats a comment line as the blank line, and `no-empty-newlines-between-imports` keeps CRLF line endings.
+Several rule fixes: comment lines no longer count as blank lines in `guard-return-newline`, CRLF is kept, multi-line `@angular/core` imports survive the fixers, and `as const` casts no longer hide host directives and styles.

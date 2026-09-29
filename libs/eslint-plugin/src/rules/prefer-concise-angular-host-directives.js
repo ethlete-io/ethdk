@@ -21,6 +21,24 @@ const getPropertyName = (key) => {
 };
 
 /**
+ * @param {any} node
+ */
+const unwrapTypeAssertions = (node) => {
+  let current = node;
+
+  while (
+    current &&
+    (current.type === 'TSAsExpression' ||
+      current.type === 'TSSatisfiesExpression' ||
+      current.type === 'TSNonNullExpression')
+  ) {
+    current = current.expression;
+  }
+
+  return current;
+};
+
+/**
  * @param {TDecoratorName} decoratorName
  * @param {import('estree').Node} node
  */
@@ -35,9 +53,10 @@ const getHostDirectivesArray = (decoratorName, node) => {
   for (const property of metadata.properties) {
     if (!property || property.type !== 'Property') continue;
     if (getPropertyName(property.key) !== 'hostDirectives') continue;
-    if (property.value.type !== 'ArrayExpression') return null;
+    const value = unwrapTypeAssertions(property.value);
+    if (value.type !== 'ArrayExpression') return null;
 
-    return /** @type {TArrayExpressionNode} */ (property.value);
+    return /** @type {TArrayExpressionNode} */ (value);
   }
 
   return null;
@@ -189,9 +208,10 @@ const preferConciseAngularHostDirectives = {
         if (!hostDirectives) return;
 
         for (const element of hostDirectives.elements) {
-          if (!element || element.type !== 'ObjectExpression') continue;
+          const unwrapped = unwrapTypeAssertions(element);
+          if (!unwrapped || unwrapped.type !== 'ObjectExpression') continue;
 
-          const config = /** @type {TObjectExpressionNode} */ (element);
+          const config = /** @type {TObjectExpressionNode} */ (unwrapped);
           const properties = getHostDirectiveConfigProperties(config);
           if (!properties) continue;
 
@@ -199,12 +219,12 @@ const preferConciseAngularHostDirectives = {
             const directiveValue = getDirectiveValueNode(config);
             if (!directiveValue) continue;
 
-            const hasComments = sourceCode.getCommentsInside(config).length > 0;
+            const hasComments = sourceCode.getCommentsInside(element).length > 0;
 
             context.report({
               node: config,
               messageId: 'preferShorthand',
-              fix: hasComments ? null : (fixer) => fixer.replaceText(config, sourceCode.getText(directiveValue)),
+              fix: hasComments ? null : (fixer) => fixer.replaceText(element, sourceCode.getText(directiveValue)),
             });
 
             continue;

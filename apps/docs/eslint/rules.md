@@ -107,6 +107,25 @@ in every consumer's bundle; in an application every top-level statement is reach
 The fixer inserts the annotation. If the call is genuinely not side-effect free at import time, do not
 annotate it - move it inside a function, because a library must not do work when it is imported.
 
+### `no-legacy-prepare-without-injector`
+
+A legacy query creator's `prepare()` throws `ET950` when it runs outside the injection context that created it - typically inside a `computed()`, an `effect()` or an RxJS operator. The rule requires an explicit `injector` there; the fixer adds one from an `inject(Injector)` member. Calls that already run in a context (constructors, field initializers, `runInInjectionContext()`, the `queryComputed` family) are left alone.
+
+```ts
+// ❌ ET950 once the field initializer's context is gone
+users = computed(() => legacyGetUsers.prepare({ queryParams: { page: this.page() } }));
+
+// ✅
+private injector = inject(Injector);
+users = computed(() => legacyGetUsers.prepare({ queryParams: { page: this.page() }, injector: this.injector }));
+```
+
+Creators are recognised by name (`^legacy` by default); set `creatorPattern` to match a different prefix:
+
+```js
+'ethlete/no-legacy-prepare-without-injector': ['error', { creatorPattern: '^oldClient' }],
+```
+
 ## Class members & accessibility
 
 | Rule                                 | What it enforces                                                                                                                                                  | Fix | Default |
@@ -179,7 +198,7 @@ source$
 | `enforce-routing-view-naming`                | Routing components import from a path containing `-view` and use a class name ending in `ViewComponent`                                                                   |     | error   |
 
 ::: info The OnPush pair is version-aware
-`require-on-push-change-detection` and `no-redundant-on-push-change-detection` are both part of `recommended` and detect the installed Angular version: on Angular ≤ 21 the first enforces explicit `OnPush` and the second is inert; on Angular 22+ (where `OnPush` is the default) the roles flip and the redundant metadata - including the now-unused import - is removed.
+`require-on-push-change-detection` and `no-redundant-on-push-change-detection` are both part of `recommended` and detect the installed Angular version: on Angular ≤ 21 the first enforces explicit `OnPush` and the second is inert; on Angular 22+ (where `OnPush` is the default) the roles flip and the redundant metadata - including the now-unused import - is removed. To pin the version instead of detecting it, set `settings: { ethlete: { angularMajor: 21 } }` in the flat config.
 :::
 
 ```ts

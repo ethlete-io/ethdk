@@ -13,8 +13,6 @@ const recommendedTs = {
     // The plugin itself is injected by the caller (see index.js)
   },
   rules: {
-    // ── TypeScript ──────────────────────────────────────────────────────────
-
     // No interface — use type (owned by ethlete/consistent-type-definitions)
     '@typescript-eslint/consistent-type-definitions': 'off',
 
@@ -35,8 +33,6 @@ const recommendedTs = {
         ignoreRestSiblings: true,
       },
     ],
-
-    // ── Naming & formatting ─────────────────────────────────────────────────
 
     // No var
     'no-var': 'error',
@@ -102,8 +98,6 @@ const recommendedTs = {
         format: ['UPPER_CASE', 'PascalCase'],
       },
     ],
-
-    // ── Banned syntax ───────────────────────────────────────────────────────
 
     'no-restricted-syntax': [
       'error',
@@ -188,8 +182,6 @@ const recommendedTs = {
       },
     ],
 
-    // ── Native DOM globals ──────────────────────────────────────────────────
-
     // No direct document/window access — use inject(DOCUMENT) / inject(WINDOW) instead
     'no-restricted-globals': [
       'error',
@@ -202,8 +194,6 @@ const recommendedTs = {
         message: 'Avoid accessing the global window directly. Use platform detection or a dedicated injection token.',
       },
     ],
-
-    // ── Custom plugin rules ─────────────────────────────────────────────────
 
     // No inject(X).member chaining — assign to a const first
     'ethlete/no-inject-chain': 'error',
@@ -356,8 +346,6 @@ const recommendedTs = {
     // No interpolated template literal above an inline template — it silently kills
     // Angular language service completions for the rest of the file
     'ethlete/no-template-literal-before-inline-template': 'error',
-
-    // ── Angular components ──────────────────────────────────────────────────
 
     // Require ChangeDetectionStrategy.OnPush on Angular <= 21, where it is opt-in
     // (version-aware: inert on Angular 22+, where OnPush is the default).

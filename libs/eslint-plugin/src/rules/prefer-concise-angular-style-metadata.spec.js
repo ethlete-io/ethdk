@@ -37,6 +37,11 @@ tester.run('prefer-concise-angular-style-metadata', rule, {
   ],
   invalid: [
     {
+      code: '@Component({ styles: [`a{}`] as string[] }) class Foo {}',
+      output: '@Component({ styles: `a{}` }) class Foo {}',
+      errors: [{ messageId: 'preferSingleStyle' }],
+    },
+    {
       code: `import { Component as Cmp } from '@angular/core';
 @Cmp({ styleUrls: ['./a.css'] }) class A {}`,
       output: `import { Component as Cmp } from '@angular/core';

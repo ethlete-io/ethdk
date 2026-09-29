@@ -1,7 +1,7 @@
 # eslint-plugin lib scan — open findings
 
 Scan of `libs/eslint-plugin` from 2026-08-19. Fixed findings were removed on 2026-09-26 (git history
-has them). All 23 Medium findings are done (740745cfd, 0e8f4306d, fdc275315, 2ff9e0dd3, 5070c1fac, 1115ebd01, b962944d7, d8a6c9352, 8f943a33c, b96cb14a9, e183dbc6b, d6e261816, 608346bb0, 9ce9b2b4c, 3d9bbb0e5, 562f182ac, 5d32f7e16, 10af4378d, 836c57050, 1dd03c288, 321ffa7e8, f4ba9f3c5, 64e382a80; the spread bail-out of `angular-decorator-property-order` is kept). Still open: 39 Low, 13 spec-coverage items. Paths are relative to
+has them). All 23 Medium findings are done (740745cfd, 0e8f4306d, fdc275315, 2ff9e0dd3, 5070c1fac, 1115ebd01, b962944d7, d8a6c9352, 8f943a33c, b96cb14a9, e183dbc6b, d6e261816, 608346bb0, 9ce9b2b4c, 3d9bbb0e5, 562f182ac, 5d32f7e16, 10af4378d, 836c57050, 1dd03c288, 321ffa7e8, f4ba9f3c5, 64e382a80; the spread bail-out of `angular-decorator-property-order` is kept). Still open: 33 Low, 13 spec-coverage items. Paths are relative to
 `libs/eslint-plugin/src/rules/` unless shown in full.
 
 ## ordering & naming
@@ -13,15 +13,10 @@ has them). All 23 Medium findings are done (740745cfd, 0e8f4306d, fdc275315, 2ff
 
 ## Angular metadata
 
-- Low: `apps/docs/eslint/index.md:88` says "all but four" rules take options; `settings.ethlete.angularMajor` undocumented. S
 - Low: Angular version probe resolves from the plugin's own path (`require-on-push-change-detection.js:31`, `no-redundant-on-push-change-detection.js:39`). M
 - Low: `require-on-push-change-detection.js` / `require-view-encapsulation-none.js` duplicate ~200 lines of helpers (`:12-199`). M
-- Low: import rebuild flattens a multi-line import and drops its comments. S
 - Low: fix output not clean on its own (`template: '' , host: {…}}`; multi-line insert lacks trailing comma). S
-- Low: comments in `no-legacy-angular-decorators.js:259-323`; six `// ──` dividers in `configs/recommended.js`. S
-- Low: `[{ directive: Foo } as const]` skipped by `prefer-concise-angular-host-directives`; ``styles: [`a{}`] as string[]`` skipped by `prefer-concise-angular-style-metadata`. S
-- Low: `no-empty-angular-metadata-arrays` reports `imports: []` on `@Directive`. S
-- Spec: none for `accessor`/`abstract` in `no-legacy-angular-decorators`, `TSTemplateLiteralType`, or comment preservation in the import rebuild. S
+- Spec: none for `accessor`/`abstract` in `no-legacy-angular-decorators` or `TSTemplateLiteralType`. S
 
 ## visibility, members & internals
 
@@ -72,7 +67,6 @@ has them). All 23 Medium findings are done (740745cfd, 0e8f4306d, fdc275315, 2ff
 - Low: `no-impure-top-level-provider` passes destructuring wrapped in `satisfies` or `!`. S
 - Low: `enforce-routing-view-naming` reports non-route object literals; substring test lets `items-viewer` pass. S
 - Low: dead `recommendedTs.plugins: {}` (`configs/recommended.js:12`). S
-- Low: `apps/docs/eslint/index.md:88` links to a missing `#no-legacy-prepare-without-injector` anchor. S
 - Low: comments in `prefer-clone-equal.js`, `no-pipe-logic`, `enforce-routing-view-naming`. S
 - Spec: no namespace/default/`require` lodash cases, no `satisfies` case, no default-export/block `.then`/non-route case, nothing pins the `no-trivial-return-type` false negative. S
 - Spec: no test that every registered rule is in `recommended` or on an exclusion list (`configs/recommended.spec.js` covers 26). M

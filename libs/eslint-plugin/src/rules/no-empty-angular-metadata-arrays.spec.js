@@ -12,6 +12,7 @@ const tester = new RuleTester({
 
 tester.run('no-empty-angular-metadata-arrays', rule, {
   valid: [
+    { code: `@Directive({ selector: '[etTest]', imports: [] }) class Foo {}` },
     {
       code: `import { Component } from 'some-other-lib';
 @Component({ selector: 'et-a', imports: [] }) class A {}`,

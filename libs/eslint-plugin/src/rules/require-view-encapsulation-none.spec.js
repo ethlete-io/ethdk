@@ -35,6 +35,20 @@ class MyPipe {}`,
   ],
   invalid: [
     {
+      code: `import {
+  // the decorator
+  Component,
+} from '@angular/core';
+@Component({ selector: 'et-a', template: '' }) class A {}`,
+      output: `import {
+  // the decorator
+  Component,
+  ViewEncapsulation,
+} from '@angular/core';
+@Component({ selector: 'et-a', template: '', encapsulation: ViewEncapsulation.None }) class A {}`,
+      errors: [{ messageId: 'missing' }],
+    },
+    {
       code: `import { Component as Cmp, ViewEncapsulation as VE } from '@angular/core';
 @Cmp({ selector: 'et-a', template: '' }) class A {}
 @Cmp({ selector: 'et-b', encapsulation: VE.Emulated }) class B {}`,

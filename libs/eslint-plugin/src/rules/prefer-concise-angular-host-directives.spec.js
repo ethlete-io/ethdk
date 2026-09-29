@@ -49,6 +49,16 @@ class TestDirective {}
   ],
   invalid: [
     {
+      code: `@Component({ hostDirectives: [{ directive: Foo } as const] }) class A {}`,
+      output: `@Component({ hostDirectives: [Foo] }) class A {}`,
+      errors: [{ messageId: 'preferShorthand' }],
+    },
+    {
+      code: `@Component({ hostDirectives: [{ outputs: ['a'], directive: Foo } satisfies HostDirectiveConfig] }) class A {}`,
+      output: `@Component({ hostDirectives: [{ directive: Foo, outputs: ['a'] } satisfies HostDirectiveConfig] }) class A {}`,
+      errors: [{ messageId: 'hostDirectiveOrder' }],
+    },
+    {
       code: `import { Component as Cmp } from '@angular/core';
 @Cmp({ hostDirectives: [{ directive: X }] }) class A {}`,
       output: `import { Component as Cmp } from '@angular/core';

@@ -57,6 +57,7 @@ const noEmptyAngularMetadataArrays = {
 
           const propertyName = getPropertyName(property.key);
           if (propertyName !== 'imports' && propertyName !== 'hostDirectives') continue;
+          if (propertyName === 'imports' && decoratorName !== 'Component') continue;
           if (property.value.type !== 'ArrayExpression' || property.value.elements.length > 0) continue;
 
           context.report({

@@ -20,9 +20,16 @@ const getPropertyName = (key) => {
  * @returns {import('estree').Expression | null}
  */
 const getSingleArrayElement = (property) => {
-  if (property.value.type !== 'ArrayExpression' || property.value.elements.length !== 1) return null;
+  /** @type {any} */
+  let value = property.value;
 
-  const firstElement = /** @type {TArrayElement} */ (property.value.elements[0]);
+  while (value.type === 'TSAsExpression' || value.type === 'TSSatisfiesExpression') {
+    value = value.expression;
+  }
+
+  if (value.type !== 'ArrayExpression' || value.elements.length !== 1) return null;
+
+  const firstElement = /** @type {TArrayElement} */ (value.elements[0]);
   if (!firstElement || firstElement.type === 'SpreadElement') return null;
 
   return firstElement;
