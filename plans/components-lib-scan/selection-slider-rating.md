@@ -1,6 +1,6 @@
 # selection-list, slider, rating scan - open findings
 
-Scan of `libs/components/src/lib/forms/selection-list/`, `forms/slider/`, `forms/rating/` from 2026-09-28. 0 High, 0 Medium, 1 Low, 2 Spec (verified 2026-09-28: 3 confirmed, 1 re-rated; Low fixes 2026-09-28: 8 fixed, 1 already covered by the docs). Skipped: stories, and the specs except to check coverage. Slider/range-slider CSS duplication is not listed, because the bundle-size round 2 already rejected that dedupe.
+Scan of `libs/components/src/lib/forms/selection-list/`, `forms/slider/`, `forms/rating/` from 2026-09-28. 0 High, 0 Medium, 0 Low, 2 Spec (verified 2026-09-28: 3 confirmed, 1 re-rated; Low fixes 2026-09-28: 8 fixed, 1 already covered by the docs). Skipped: stories, and the specs except to check coverage. Slider/range-slider CSS duplication is not listed, because the bundle-size round 2 already rejected that dedupe.
 
 ## selection-list
 
@@ -12,7 +12,7 @@ None open.
 
 ## rating
 
-- Low: PageUp and PageDown are not handled (`rating/headless/rating.directive.ts:199-250`). The slider role expects them. With `max` of 10 and half steps, a user must press 20 times. S
+None open.
 
 ## Spec gaps
 

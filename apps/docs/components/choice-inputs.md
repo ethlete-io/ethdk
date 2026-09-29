@@ -353,7 +353,7 @@ current value **clears** to `null`), and **dragging/swiping across the stars**
 scrolling stays untouched (`touch-action: pan-y`). A drag the browser takes away
 mid-gesture (a system swipe, an incoming call) commits nothing and drops the
 preview. Arrows step by `1` (or `0.5`; Left/Right flip in RTL),
-<kbd>Home</kbd>/<kbd>End</kbd> jump to first/last step,
+<kbd>PageUp</kbd>/<kbd>PageDown</kbd> move by ten steps, <kbd>Home</kbd>/<kbd>End</kbd> jump to first/last step,
 <kbd>Backspace</kbd>/<kbd>Delete</kbd> clear - arrowing below the first step also
 clears. The host exposes `aria-valuemin="0"`/`aria-valuemax`/`aria-valuenow` (capped at `max`) and
 an `aria-valuetext` like `3.5 of 5`.

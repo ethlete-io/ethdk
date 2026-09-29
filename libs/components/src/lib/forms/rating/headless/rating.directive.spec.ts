@@ -21,7 +21,7 @@ import { TEST_COLOR_THEMES } from '../../../testing/color-themes';
       [allowHalf]="allowHalf()"
       [disabled]="disabled()"
       [readonly]="readonly()"
-      [max]="4"
+      [max]="max()"
       (valueChange)="value.set($event)"
       (mixedChange)="mixed.set($event)"
     >
@@ -32,6 +32,7 @@ import { TEST_COLOR_THEMES } from '../../../testing/color-themes';
 })
 class RatingTestHost {
   value = signal<number | null>(null);
+  max = signal(4);
   mixed = signal(false);
   mixedLabel = signal('Mixed');
   allowHalf = signal(false);
@@ -111,6 +112,35 @@ describe('RatingDirective', () => {
 
     driver.press('Backspace');
     expect(driver.host.value()).toBeNull();
+  });
+
+  it('pages by ten steps with PageUp and PageDown, clamping at max and clearing below the first step', () => {
+    driver.host.max.set(30);
+    driver.tick();
+
+    driver.press('PageUp');
+    expect(driver.host.value()).toBe(10);
+
+    driver.press('PageUp');
+    driver.press('PageUp');
+    driver.press('PageUp');
+    expect(driver.host.value()).toBe(30);
+
+    driver.press('PageDown');
+    expect(driver.host.value()).toBe(20);
+
+    driver.press('PageDown');
+    driver.press('PageDown');
+    expect(driver.host.value()).toBeNull();
+  });
+
+  it('pages by ten half steps when allowHalf is set', () => {
+    driver.host.max.set(10);
+    driver.host.allowHalf.set(true);
+    driver.tick();
+
+    driver.press('PageUp');
+    expect(driver.host.value()).toBe(5);
   });
 
   it('uses half steps for keyboard when allowHalf is set', () => {

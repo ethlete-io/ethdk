@@ -21,6 +21,8 @@ import { RatingIconDirective } from './rating-icon.directive';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 import { controlTouches } from '../../../internals/touch-output';
 
+const PAGE_STEP_MULTIPLIER = 10;
+
 export type RatingIconState = 'full' | 'half' | 'empty';
 
 @Directive({
@@ -221,6 +223,21 @@ export class RatingDirective
         event.preventDefault();
 
         const next = Math.max(0, current - step);
+
+        this.commitUserValue(next === 0 ? null : next);
+
+        return;
+      }
+      case 'PageUp': {
+        event.preventDefault();
+        this.commitUserValue(Math.min(this.effectiveMax(), current + step * PAGE_STEP_MULTIPLIER));
+
+        return;
+      }
+      case 'PageDown': {
+        event.preventDefault();
+
+        const next = Math.max(0, current - step * PAGE_STEP_MULTIPLIER);
 
         this.commitUserValue(next === 0 ? null : next);
 
