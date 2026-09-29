@@ -1,5 +1,6 @@
 import { EMPTY, Observable, catchError, concatMap, defaultIfEmpty, map, of, take } from 'rxjs';
 import { asJsonObject, countAt, objectAt, stringAt } from '../agent-session/record';
+import { codexEvents } from './envelope';
 import { AgentUsageEvent, TIMETRACK_PROVIDER, TokenUsage } from '../model/event';
 import { ModelAsk, ProcessResult, ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
 
@@ -15,13 +16,71 @@ const tokenUsageOf = (usage: Record<string, unknown>): TokenUsage => ({
 const modelOf = (envelope: Record<string, unknown>) =>
   Object.keys(objectAt(envelope, 'modelUsage') ?? {})[0] ?? stringAt(envelope, 'model') ?? 'unknown';
 
+const codexRunSpend = (options: {
+  stdout: string;
+  args: string[];
+  ask: ModelAsk;
+  at: Date;
+}): AgentUsageEvent | null => {
+  const events = codexEvents(options.stdout);
+  const completed = events.filter((event) => event.type === 'turn.completed');
+  const counts = completed.flatMap((event) => {
+    const usage = objectAt({ usage: event.usage }, 'usage');
+
+    return usage ? [usage] : [];
+  });
+
+  if (!counts.length) return null;
+
+  const threadId = events.find((event) => event.type === 'thread.started')?.thread_id;
+  const modelIndex = options.args.lastIndexOf('--model');
+  const usage = counts.map((count) => {
+    const cacheRead = countAt(count, 'cached_input_tokens');
+
+    return {
+      input: Math.max(countAt(count, 'input_tokens') - cacheRead, 0),
+      output: countAt(count, 'output_tokens'),
+      cacheWrite: countAt(count, 'cache_write_input_tokens'),
+      cacheRead,
+      thinking: countAt(count, 'reasoning_output_tokens'),
+    };
+  });
+
+  return {
+    at: options.at,
+    source: 'agent-usage',
+    kind: 'agent-usage',
+    provider: TIMETRACK_PROVIDER,
+    sessionId: options.ask,
+    turnId: typeof threadId === 'string' ? threadId : options.at.toISOString(),
+    cwd: '',
+    model: (modelIndex >= 0 ? options.args[modelIndex + 1] : undefined) ?? 'unknown',
+    usage: {
+      input: usage.reduce((sum, u) => sum + u.input, 0),
+      output: usage.reduce((sum, u) => sum + u.output, 0),
+      cacheWrite: usage.reduce((sum, u) => sum + u.cacheWrite, 0),
+      cacheRead: usage.reduce((sum, u) => sum + u.cacheRead, 0),
+      thinking: usage.reduce((sum, u) => sum + u.thinking, 0),
+    },
+  };
+};
+
 /**
- * What one agent-CLI run spent, read out of its own JSON envelope, or `null` where it reports none.
+ * What one agent-CLI run spent, read out of its own JSON envelope (or, for `codex`, its event stream), or `null` where it reports none.
  *
  * A run that answered an error still spent its tokens, so the envelope is read whatever it says. A
  * `usage` of all zeros is kept for the same reason a turn of one token is: the call was made.
  */
-export const agentRunSpend = (options: { stdout: string; ask: ModelAsk; at: Date }): AgentUsageEvent | null => {
+export const agentRunSpend = (options: {
+  stdout: string;
+  ask: ModelAsk;
+  at: Date;
+  command?: string;
+  args?: string[];
+}): AgentUsageEvent | null => {
+  if (options.command === 'codex')
+    return codexRunSpend({ stdout: options.stdout, args: options.args ?? [], ask: options.ask, at: options.at });
+
   const envelope = asJsonObject(options.stdout);
   const usage = objectAt(envelope, 'usage');
 
@@ -58,7 +117,9 @@ export const meteredRunner = (options: {
     options.runner.run$(spec).pipe(
       concatMap((result: ProcessResult) => {
         const at = (options.now ?? (() => new Date()))();
-        const spend = spec.ask ? agentRunSpend({ stdout: result.stdout, ask: spec.ask, at }) : null;
+        const spend = spec.ask
+          ? agentRunSpend({ stdout: result.stdout, ask: spec.ask, at, command: spec.command, args: spec.args })
+          : null;
 
         if (!spend) return of(result);
 

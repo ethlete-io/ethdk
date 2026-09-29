@@ -34,7 +34,42 @@ const stubRunner = (results: ProcessResult[]): TimetrackProcessRunner & { specs:
   };
 };
 
+const CODEX_RUN = [
+  '{"type":"thread.started","thread_id":"01a0e841-ca64-72d3-a97c-13151408f482"}',
+  '{"type":"turn.started"}',
+  '{"type":"item.completed","item":{"id":"item_1","type":"agent_message","text":"{}"}}',
+  '{"type":"turn.completed","usage":{"input_tokens":12014,"cached_input_tokens":9728,"cache_write_input_tokens":0,"output_tokens":343,"reasoning_output_tokens":265}}',
+].join('\n');
+
 describe('agentRunSpend', () => {
+  it('reads what a codex run spent out of its turn.completed event', () => {
+    const spend = agentRunSpend({
+      stdout: CODEX_RUN,
+      ask: 'the day',
+      at: AT,
+      command: 'codex',
+      args: ['exec', '--model', 'gpt-5.6-luna', '-'],
+    });
+
+    expect(spend).toEqual<AgentUsageEvent>({
+      at: AT,
+      source: 'agent-usage',
+      kind: 'agent-usage',
+      provider: TIMETRACK_PROVIDER,
+      sessionId: 'the day',
+      turnId: '01a0e841-ca64-72d3-a97c-13151408f482',
+      cwd: '',
+      model: 'gpt-5.6-luna',
+      usage: { input: 2286, output: 343, cacheWrite: 0, cacheRead: 9728, thinking: 265 },
+    });
+  });
+
+  it('reports nothing for a codex run that failed before completing a turn', () => {
+    const stdout = '{"type":"thread.started","thread_id":"t"}\n{"type":"turn.failed","error":{"message":"x"}}';
+
+    expect(agentRunSpend({ stdout, ask: 'the day', at: AT, command: 'codex', args: [] })).toBeNull();
+  });
+
   it('reads what one run spent out of the CLI envelope, under the reserved provider', () => {
     const spend = agentRunSpend({ stdout: ENVELOPE, ask: 'the day', at: AT });
 

@@ -42,14 +42,16 @@ const answerDocument = <T>(text: string, isValid: (value: unknown) => value is T
   return parsed;
 };
 
-type CodexEvent = {
+export type CodexEvent = {
   type?: unknown;
+  thread_id?: unknown;
+  usage?: unknown;
   message?: unknown;
   error?: { message?: unknown };
   item?: { type?: unknown; text?: unknown };
 };
 
-const codexEvents = (stdout: string): CodexEvent[] =>
+export const codexEvents = (stdout: string): CodexEvent[] =>
   stdout.split('\n').flatMap((line) => {
     if (!line.trim().startsWith('{')) return [];
 
