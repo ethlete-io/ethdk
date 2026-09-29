@@ -50,19 +50,19 @@ A directive cannot be applied conditionally, so each takes a value to switch it 
 
 ## Options
 
-| Input                     | Default        | Notes                                                                                                 |
-| ------------------------- | -------------- | ----------------------------------------------------------------------------------------------------- |
-| `direction`               | `'horizontal'` | or `'vertical'`                                                                                       |
-| `itemSize`                | `'auto'`       | `'auto' \| 'same' \| 'half' \| 'third' \| 'quarter' \| 'full'` - sizes children as viewport fractions |
-| `scrollMode`              | `'container'`  | `'element'` scrolls child-by-child (pair with snap)                                                   |
-| `scrollOrigin`            | `'auto'`       | Where scrolled-to elements align: `'auto' \| 'start' \| 'center' \| 'end'`                            |
-| `scrollMargin`            | `0`            | Extra margin (px) when scrolling elements into view (incl. snap)                                      |
-| `renderMasks`             | `true`         | Edge fades; `maskVariant: 'gradient' \| 'border'`                                                     |
-| `renderScrollbars`        | `false`        | Show the native scrollbar instead of hiding it                                                        |
-| `loadingTemplatePosition` | `'end'`        | Where `etScrollableLoadingTemplate` content renders                                                   |
-| `scrollableRole`          | -              | `role` attribute for the scroll container (e.g. `list`)                                               |
-| `scrollableClass`         | -              | Extra class(es) on the scroll container                                                               |
-| `color`                   | -              | App-registered color theme for buttons/dots                                                           |
+| Input                     | Default        | Notes                                                                                                         |
+| ------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------- |
+| `direction`               | `'horizontal'` | or `'vertical'`                                                                                               |
+| `itemSize`                | `'auto'`       | `'auto' \| 'same' \| 'half' \| 'third' \| 'quarter' \| 'full'` - sizes children as viewport fractions         |
+| `scrollMode`              | `'container'`  | `'element'` scrolls child-by-child (pair with snap)                                                           |
+| `scrollOrigin`            | `'auto'`       | Where scrolled-to elements align: `'auto' \| 'start' \| 'center' \| 'end'`                                    |
+| `scrollMargin`            | `0`            | Extra margin (px) when scrolling elements into view (incl. snap)                                              |
+| `renderMasks`             | `true`         | Edge fades; `maskVariant: 'gradient' \| 'border'`. Child visibility is only observed once the track overflows |
+| `renderScrollbars`        | `false`        | Show the native scrollbar instead of hiding it                                                                |
+| `loadingTemplatePosition` | `'end'`        | Where `etScrollableLoadingTemplate` content renders                                                           |
+| `scrollableRole`          | -              | `role` attribute for the scroll container (e.g. `list`)                                                       |
+| `scrollableClass`         | -              | Extra class(es) on the scroll container                                                                       |
+| `color`                   | -              | App-registered color theme for buttons/dots                                                                   |
 
 ### Snapping
 

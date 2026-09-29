@@ -94,6 +94,52 @@ describe('ScrollableComponent opt-in features', () => {
   });
 });
 
+describe('ScrollableComponent masks and child intersections', () => {
+  @Component({
+    template: `
+      <et-scrollable>
+        <div class="et-scrollable-item">one</div>
+        <div class="et-scrollable-item">two</div>
+      </et-scrollable>
+    `,
+    imports: [SCROLLABLE_IMPORTS],
+  })
+  class TestHostComponent {}
+
+  const create = (sizes: { scrollWidth: number; clientWidth: number }) => {
+    const intersections = fakeIntersectionObserver();
+
+    for (const [name, value] of Object.entries(sizes)) {
+      Object.defineProperty(Element.prototype, name, { configurable: true, get: () => value });
+    }
+
+    onTestFinished(() => {
+      for (const name of Object.keys(sizes)) Reflect.deleteProperty(Element.prototype, name);
+    });
+
+    const fixture = TestBed.createComponent(TestHostComponent);
+
+    fixture.detectChanges();
+    TestBed.tick();
+
+    const observedItems = () => intersections.targets().filter((el) => el.matches('.et-scrollable-item'));
+
+    return { fixture, observedItems };
+  };
+
+  it('observes no children while the track does not scroll', () => {
+    const { observedItems } = create({ scrollWidth: 200, clientWidth: 200 });
+
+    expect(observedItems()).toEqual([]);
+  });
+
+  it('observes the children once the track scrolls, since partial items drive the masks', () => {
+    const { observedItems } = create({ scrollWidth: 400, clientWidth: 200 });
+
+    expect(observedItems()).toHaveLength(2);
+  });
+});
+
 describe('ScrollableComponent buttons without masks', () => {
   @Component({
     template: `

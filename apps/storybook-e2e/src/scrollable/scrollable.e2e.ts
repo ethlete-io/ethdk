@@ -293,6 +293,17 @@ test.describe('scrollable / pointer', () => {
 test.describe('scrollable / edges and chrome', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: desktop viewport sizes');
 
+  test('a track that fits shows no masks, and gains them once it starts to overflow', async ({ page }) => {
+    await page.setViewportSize({ width: 2400, height: 720 });
+    const root = await openStory(page, DEFAULT_STORY_ID);
+
+    await expect.poll(() => maskOpacities(root)).toEqual([0, 0]);
+
+    await page.setViewportSize({ width: 600, height: 720 });
+
+    await expect.poll(() => maskOpacities(root)).toEqual([0, 1]);
+  });
+
   test('the gradient masks show only on the edges that still have content beyond them', async ({ page }) => {
     await page.setViewportSize({ width: 600, height: 720 });
     const root = await openStory(page, DEFAULT_STORY_ID);
