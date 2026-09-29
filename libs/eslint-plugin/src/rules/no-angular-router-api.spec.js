@@ -34,6 +34,13 @@ inject(ActivatedRoute);`,
     // Accessing state props on a non-router variable — not flagged
     { code: `const x = someService.url;` },
     { code: `const x = someService.events;` },
+    {
+      code: `class A { router = inject(Router); }
+class B { router = inject(MyThing); read() { return this.router.events; } }`,
+    },
+    { code: `const router = inject(Router); const read = (router) => router.events;` },
+    { code: `const router = inject(Router); function read() { const router = other(); return router.url; }` },
+    { code: `class A { router = inject(Router); read() { return function () { return this.router.url; }; } }` },
   ],
   invalid: [
     {
@@ -61,6 +68,18 @@ router.url;`,
       errors: [{ messageId: 'noActivatedRoute' }],
     },
     // ── router.{stateProp} access ────────────────────────────────────────────
+    {
+      code: `class A { read() { return this.router.url; } router = inject(Router); }`,
+      errors: [{ messageId: 'noRouterStateProp' }],
+    },
+    {
+      code: `class A { router = inject(Router); read = () => () => this.router.events; }`,
+      errors: [{ messageId: 'noRouterStateProp' }],
+    },
+    {
+      code: `const router = inject(Router); function read() { return router.url; }`,
+      errors: [{ messageId: 'noRouterStateProp' }],
+    },
     {
       code: `const router = inject(Router); const u = router.url;`,
       errors: [{ messageId: 'noRouterStateProp' }],

@@ -81,47 +81,103 @@ const noAngularRouterApi = {
       isImportedAs(sourceCode, call.callee, 'inject') &&
       isImportedAs(sourceCode, call.arguments[0], token, ANGULAR_ROUTER);
 
+    /** @type {WeakMap<any, Set<string>>} */
+    const classRouterMembers = new WeakMap();
+
     /**
-     * Names of variables/properties assigned from inject(Router).
-     * We track identifiers whose initializer is inject(Router) so we can
-     * detect property access on them anywhere in the file.
-     * @type {Set<string>}
+     * @param {any} classBody
      */
-    const routerBindings = new Set();
+    const getClassRouterMembers = (classBody) => {
+      let members = classRouterMembers.get(classBody);
+
+      if (!members) {
+        members = new Set();
+
+        for (const member of classBody.body) {
+          if (member.type === 'PropertyDefinition' && member.key.type === 'Identifier' && !member.computed) {
+            if (isInjectOf(member.value, 'Router')) members.add(member.key.name);
+          }
+        }
+
+        classRouterMembers.set(classBody, members);
+      }
+
+      return members;
+    };
+
+    /**
+     * @param {any} thisExpression
+     */
+    const getThisClassBody = (thisExpression) => {
+      let current = thisExpression.parent;
+
+      while (current) {
+        if (current.type === 'ClassBody') return current;
+
+        if (current.type === 'FunctionExpression' || current.type === 'FunctionDeclaration') {
+          const parent = current.parent;
+          const isMember = parent?.type === 'MethodDefinition' || parent?.type === 'PropertyDefinition';
+          if (!isMember) return null;
+        }
+
+        current = current.parent;
+      }
+
+      return null;
+    };
+
+    /**
+     * @param {any} identifier
+     */
+    const isRouterVariable = (identifier) => {
+      /** @type {import('eslint').Scope.Scope | null} */
+      let scope = sourceCode.getScope(identifier);
+
+      while (scope) {
+        const variable = scope.set.get(identifier.name);
+
+        if (variable) {
+          const definition = /** @type {any} */ (variable.defs[0]);
+
+          return (
+            definition?.type === 'Variable' &&
+            definition.node.id.type === 'Identifier' &&
+            isInjectOf(definition.node.init, 'Router')
+          );
+        }
+
+        scope = scope.upper;
+      }
+
+      return false;
+    };
+
+    /**
+     * @param {any} object
+     */
+    const isRouterReference = (object) => {
+      if (object.type === 'Identifier') return isRouterVariable(object);
+
+      if (
+        object.type !== 'MemberExpression' ||
+        object.computed ||
+        object.object.type !== 'ThisExpression' ||
+        object.property.type !== 'Identifier'
+      ) {
+        return false;
+      }
+
+      const classBody = getThisClassBody(object.object);
+
+      return !!classBody && getClassRouterMembers(classBody).has(object.property.name);
+    };
 
     return {
-      // ── Track inject(Router) bindings ──────────────────────────────────────
-      // const router = inject(Router);
-      VariableDeclarator(node) {
-        if (isInjectOf(node.init, 'Router') && node.id.type === 'Identifier') {
-          routerBindings.add(node.id.name);
-        }
-      },
-
-      // ── Track class property assignments: router = inject(Router) ──────────
-      PropertyDefinition(node) {
-        if (isInjectOf(node.value, 'Router') && node.key.type === 'Identifier') {
-          routerBindings.add(node.key.name);
-        }
-      },
-
-      // ── Detect router.{stateProp} access ───────────────────────────────────
       MemberExpression(node) {
         if (node.property.type !== 'Identifier') return;
         const prop = node.property.name;
         if (!ROUTER_STATE_PROPS.has(prop)) return;
-
-        // Check object is a known router binding (direct: router.url)
-        // or a this.router.url / self.router.url pattern
-        const obj = node.object;
-        const isDirectBinding = obj.type === 'Identifier' && routerBindings.has(obj.name);
-        const isThisBinding =
-          obj.type === 'MemberExpression' &&
-          obj.object.type === 'ThisExpression' &&
-          obj.property.type === 'Identifier' &&
-          routerBindings.has(obj.property.name);
-
-        if (!isDirectBinding && !isThisBinding) return;
+        if (!isRouterReference(node.object)) return;
 
         context.report({
           node,
@@ -130,7 +186,6 @@ const noAngularRouterApi = {
         });
       },
 
-      // ── ActivatedRoute import ───────────────────────────────────────────────
       [MODULE_REFERENCE_SELECTOR](node) {
         const reference = getModuleReference(node);
         if (reference?.source !== ANGULAR_ROUTER) return;
@@ -139,7 +194,6 @@ const noAngularRouterApi = {
         }
       },
 
-      // ── inject(ActivatedRoute) ──────────────────────────────────────────────
       CallExpression(node) {
         if (isInjectOf(node, 'ActivatedRoute')) {
           context.report({ node, messageId: 'noActivatedRoute' });
