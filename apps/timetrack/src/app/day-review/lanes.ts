@@ -122,6 +122,7 @@ type Timed = { block: SchedulerTimeGridBlock<TimelineEntry>; start: number; end:
 /**
  * Packs one lane's blocks into overlap-free columns, the same way a calendar packs a day, and splits
  * the lane only while blocks overlap: a block is full width wherever nothing else in the lane runs.
+ * Overlapping rows of one ticket are parallel agent sessions, and each keeps one column over its whole span.
  *
  * Whether two blocks overlap is read off the clock and never off `offset` and `span`. The end of one
  * row and the start of the next are the same instant, but the two percentages of the day computed
@@ -147,7 +148,49 @@ const packLane = (blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[]): Lan
     endsPerColumn[entry.column] = entry.end;
   }
 
-  return timed.map((entry) => placeOf(entry, timed));
+  return timed.map((entry) => {
+    const cluster = clusterOf(entry, timed);
+
+    return cluster.length > 1 && oneTicket(cluster) ? inFixedColumn(entry, cluster) : placeOf(entry, timed);
+  });
+};
+
+const clusterOf = (entry: Timed, lane: readonly Timed[]): Timed[] => {
+  const cluster = new Set([entry]);
+
+  for (const member of cluster) {
+    for (const other of lane) {
+      if (other.start < member.end && other.end > member.start) cluster.add(other);
+    }
+  }
+
+  return [...cluster];
+};
+
+const ticketOf = (entry: Timed) => {
+  const row = rowEntryOf(entry.block.node.appointment)?.row;
+
+  return row?.issueKey ?? row?.standInId;
+};
+
+const oneTicket = (cluster: readonly Timed[]) => {
+  const tickets = new Set(cluster.map(ticketOf));
+
+  return tickets.size === 1 && !tickets.has(undefined);
+};
+
+const inFixedColumn = (entry: Timed, cluster: readonly Timed[]): LaneBlock => {
+  const columns = Math.max(...cluster.map((member) => member.column)) + 1;
+  const inlineSize = 100 / columns;
+  const inlineOffset = entry.column * inlineSize;
+
+  return {
+    block: entry.block,
+    inlineOffset,
+    inlineSize,
+    segments: [{ from: 0, to: 1, inlineOffset, inlineSize }],
+    clipPath: null,
+  };
 };
 
 const placeOf = (entry: Timed, lane: readonly Timed[]): LaneBlock => {
