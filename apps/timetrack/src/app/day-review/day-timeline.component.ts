@@ -427,6 +427,12 @@ type RowDrag = {
                           @if (UNBOOKED_OF(laid.block.node.appointment); as unbooked) {
                             <span class="text-et-surface-muted" data-unbooked>{{ unbooked }}</span>
                           }
+                          @if (
+                            !detailed(laid.block.span) && descriptionOf(laid.block.node.appointment);
+                            as description
+                          ) {
+                            <span class="text-et-surface-muted" data-inline-description>{{ ' · ' + description }}</span>
+                          }
                         </span>
                       }
                       @if (detailed(laid.block.span) && descriptionOf(laid.block.node.appointment); as description) {
