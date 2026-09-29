@@ -11,7 +11,7 @@ own open lines; this file lists what needs a user decision and what is still que
 
 - bracket: swiss `MODE_UNSUPPORTED` is parked until a swiss event gives real API data.
 
-## Low pass (in progress)
+## Low pass (done)
 
 Each domain plan file keeps its open Low lines; the decisions are listed there. Flags to check:
 
@@ -23,4 +23,5 @@ Each domain plan file keeps its open Low lines; the decisions are listed there. 
 
 ## Queue
 
-Nothing is queued.
+Nothing is queued from the 2026-09-28 scans. The older `core-lib-scan.md` (5 Medium) and
+`eslint-plugin-lib-scan.md` (23 Medium) plans still hold open Medium lines.

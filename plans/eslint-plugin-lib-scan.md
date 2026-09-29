@@ -1,7 +1,7 @@
 # eslint-plugin lib scan — open findings
 
 Scan of `libs/eslint-plugin` from 2026-08-19. Fixed findings were removed on 2026-09-26 (git history
-has them). Still open: 22 Medium, 48 Low, ~37 spec-coverage items. Paths are relative to
+has them). Still open: 23 Medium, 46 Low, 13 spec-coverage items. Paths are relative to
 `libs/eslint-plugin/src/rules/` unless shown in full.
 
 ## ordering & naming
