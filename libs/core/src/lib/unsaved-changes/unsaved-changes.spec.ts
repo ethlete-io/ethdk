@@ -199,6 +199,42 @@ describe('unsaved-changes', () => {
     });
   });
 
+  describe('compareFn', () => {
+    it('replaces the deep-equal check', () => {
+      const value = signal({ name: 'Ada' });
+      const compareFn = vi.fn(
+        (current: Model, defaultValue: Model) => current.name.toLowerCase() === defaultValue.name.toLowerCase(),
+      );
+      const tracker = makeTracker({ source: value, confirm: () => true, compareFn });
+      TestBed.tick();
+
+      value.set({ name: 'ADA' });
+      TestBed.tick();
+
+      expect(tracker.hasChanges()).toBe(false);
+      expect(compareFn).toHaveBeenCalledWith({ name: 'ADA' }, { name: 'Ada' });
+
+      value.set({ name: 'Grace' });
+      TestBed.tick();
+
+      expect(tracker.hasChanges()).toBe(true);
+    });
+
+    it('can report a change that deep-equal would miss', () => {
+      const value = signal({ name: 'Ada' });
+      const tracker = makeTracker({ source: value, confirm: () => true, compareFn: () => false });
+      TestBed.tick();
+
+      expect(tracker.hasChanges()).toBe(true);
+    });
+  });
+
+  describe('unsupported source', () => {
+    it('throws a descriptive error', () => {
+      expect(() => makeTracker({ source: 'nope' as never, confirm: () => true })).toThrow(/Unsupported source/);
+    });
+  });
+
   describe('createUnsavedChangesGuard', () => {
     it('canDeactivate mirrors runCheck', async () => {
       const tree = makeForm({ name: 'Ada' });

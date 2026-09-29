@@ -48,7 +48,8 @@ describe('getObjectProperty', () => {
     };
 
     expect(getObjectProperty(obj, 'a.b.c.d')).toBeUndefined();
-    expect(getObjectProperty(obj, 'a.b.e[1')).toBeUndefined();
+    expect(getObjectProperty(obj, 'a.b.e[1]')).toBeUndefined();
+    expect(getObjectProperty(obj, 'a.b.e[x')).toBeUndefined();
     expect(getObjectProperty(obj, 'a.b.g0].i')).toBeUndefined();
   });
 });

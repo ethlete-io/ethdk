@@ -33,6 +33,18 @@ describe('createSwipeTracker', () => {
     expect(update.isScrolling).toBe(false);
   });
 
+  it('should not lock an axis until the pointer moves', () => {
+    const tracker = createSwipeTracker(mouseEvent(50, 50));
+    const update = tracker.update(mouseEvent(50, 50));
+
+    expect(update.isSwiping).toBe(false);
+    expect(update.isScrolling).toBe(false);
+
+    const moved = tracker.update(mouseEvent(50, 70));
+
+    expect(moved.isScrolling).toBe(true);
+  });
+
   it('should classify vertical movement as scrolling', () => {
     const tracker = createSwipeTracker(mouseEvent(0, 0));
     const update = tracker.update(mouseEvent(10, 30));
