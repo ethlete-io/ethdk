@@ -1,6 +1,6 @@
 # Stream scan - open findings
 
-Scan of `libs/components/src/lib/stream/` from 2026-09-28. 0 High, 2 Medium, 2 Low, 1 Spec. Skipped: stories, `testing/stream-driver.ts`, `pip-window` / `pip-chrome` templates and CSS beyond the layer and colour check.
+Scan of `libs/components/src/lib/stream/` from 2026-09-28. 0 High, 1 Medium, 2 Low, 1 Spec. Skipped: stories, `testing/stream-driver.ts`, `pip-window` / `pip-chrome` templates and CSS beyond the layer and colour check.
 
 ## Slot and manager lifecycle
 
@@ -10,13 +10,11 @@ Scan of `libs/components/src/lib/stream/` from 2026-09-28. 0 High, 2 Medium, 2 L
 
 ## Platform embeds
 
-- Medium: the Facebook SDK URL hard-codes the `de_DE` locale and SDK `version=v3.2` (`stream/platform/facebook/headless/facebook-player.directive.ts:13`). Every consumer gets German Facebook UI and a very old API version. Make the locale and version configurable, or use the app's `LOCALE_ID`. S Verified.
-
 ## Script loader
 
 ## Tree-shaking / bundle size
 
-- Medium: `DEFAULT_STREAM_CONFIG` refers directly to `StreamPlayerLoadingComponent` and `StreamPlayerErrorComponent` (`stream/stream-config.ts:3-4`, `:38-43`). Every slot therefore bundles the spinner, the button and the icon, even when the app supplies its own overlays. Resolve the defaults lazily in the slot, or move them into an opt-in provider. M Verified.
+- Medium: `DEFAULT_STREAM_CONFIG` refers directly to `StreamPlayerLoadingComponent` and `StreamPlayerErrorComponent` (`stream/stream-config.ts:3-4`, `:46-51`). Every slot therefore bundles the spinner, the button and the icon, even when the app supplies its own overlays. Resolve the defaults lazily in the slot, or move them into an opt-in provider. M Verified.
 
 ## Cleanup
 
@@ -24,4 +22,4 @@ Scan of `libs/components/src/lib/stream/` from 2026-09-28. 0 High, 2 Medium, 2 L
 
 ## pip internals (second pass)
 
-- Spec: the window geometry (`checkAndCollapse`, `applyResizeDelta`, `handlePositionAfterResize`, sticky edges) and `pip-animation.ts` have no unit test. M
+- Spec: the window geometry in `stream/pip/headless/internals/pip-window-position.ts` (`checkAndCollapse`, `applyResizeDelta`, `handlePositionAfterResize`, sticky edges) has no unit test. (`pip-animation.ts` now has one.) M
