@@ -136,4 +136,16 @@ describe('markdown scenarios', () => {
       expect(isSafeLinkUrl(href)).toBe(true);
     }
   });
+
+  it('renders a markdown link the link editor would refuse as its text', () => {
+    scenario();
+
+    for (const href of ['file:///etc/passwd', 'intent://scan#Intent;end', 'ftp://a.dev/f']) {
+      expect(isSafeLinkUrl(href)).toBe(false);
+      expect(markdownToHtml(`[docs](${href})`)).toBe('<p>docs</p>');
+      expect(markdownToHtml(`<a href="${href}" target="_blank">docs</a>`)).toBe('<p>docs</p>');
+    }
+
+    expect(markdownToHtml('[docs](https://a.dev)')).toBe('<p><a href="https://a.dev">docs</a></p>');
+  });
 });

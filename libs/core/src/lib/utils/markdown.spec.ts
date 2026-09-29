@@ -72,10 +72,9 @@ describe('markdownToHtml', () => {
     );
   });
 
-  it('drops a new-tab link with an unsafe href (escaped as text)', () => {
-    expect(markdownToHtml('<a href="javascript:alert(1)" target="_blank">x</a>')).toBe(
-      '<p>&lt;a href=&quot;javascript:alert(1)&quot; target=&quot;_blank&quot;&gt;x&lt;/a&gt;</p>',
-    );
+  it('renders a new-tab link with an unsafe href as its text', () => {
+    expect(markdownToHtml('<a href="javascript:alert(1)" target="_blank">**x**</a>')).toBe('<p><strong>x</strong></p>');
+    expect(markdownToHtml('<a href="file:///etc/passwd" target="_blank">x</a>')).toBe('<p>x</p>');
   });
 
   it.each([
@@ -84,7 +83,7 @@ describe('markdownToHtml', () => {
     'java&Tab;script:alert(1)',
     '&#x6a;avascript:alert(1)',
   ])('rejects entity-encoded script URLs: %s', (url) => {
-    expect(markdownToHtml(`[click](${url})`)).toBe(`<p>[click](${url})</p>`);
+    expect(markdownToHtml(`[click](${url})`)).toBe('<p>click)</p>');
   });
 
   it('allows non-script image data URLs', () => {
@@ -194,11 +193,25 @@ describe('markdownToHtml', () => {
     expect(markdownToHtml('a &amp; b')).toBe('<p>a &amp; b</p>');
   });
 
-  it('keeps links and images with script-running url schemes as literal text', () => {
-    expect(markdownToHtml('[click](javascript:alert(1))')).toBe('<p>[click](javascript:alert(1))</p>');
-    expect(markdownToHtml('[click](java\tscript:alert(1))')).toBe('<p>[click](java\tscript:alert(1))</p>');
+  it('renders a link with an unsafe url scheme as its text and keeps an unsafe image literal', () => {
+    expect(markdownToHtml('[click](javascript:alert(1))')).toBe('<p>click)</p>');
+    expect(markdownToHtml('[click](java\tscript:alert(1))')).toBe('<p>click)</p>');
     expect(markdownToHtml('![x](javascript:alert(1))')).toBe('<p>![x](javascript:alert(1))</p>');
   });
+
+  it.each(['file:///etc/passwd', 'intent://scan#Intent;end', 'ftp://a.dev/f', 'sms:+49123'])(
+    'renders a link with the scheme the link editor refuses as its text: %s',
+    (href) => {
+      expect(markdownToHtml(`[docs](${href})`)).toBe('<p>docs</p>');
+    },
+  );
+
+  it.each(['https://a.dev', 'http://a.dev', 'mailto:a@b.dev', 'tel:+49123', '/docs', '#top'])(
+    'keeps a link the link editor accepts: %s',
+    (href) => {
+      expect(markdownToHtml(`[docs](${href})`)).toBe(`<p><a href="${href}">docs</a></p>`);
+    },
+  );
 
   it('strips foreign attributes and unsafe tags from an aligned block', () => {
     expect(markdownToHtml('<p style="text-align: center" onmouseover="alert(1)">hi <script>x</script></p>')).toBe(

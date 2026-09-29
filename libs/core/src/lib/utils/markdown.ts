@@ -120,7 +120,7 @@ const sanitizeInlineHtml = (html: string) => {
 
     if (name === 'a') {
       const href = closing ? null : /\bhref\s*=\s*"([^"]*)"/i.exec(full)?.[1];
-      const anchor = closing ? '</a>' : href && isSafeUrl(href) ? `<a href="${href}">` : '<a>';
+      const anchor = closing ? '</a>' : href && isSafeLinkUrl(href) ? `<a href="${href}">` : '<a>';
 
       return makePlaceholder('TAG', kept.push(anchor) - 1);
     }
@@ -151,9 +151,11 @@ const processInline = (text: string): string => {
     const href = /\bhref\s*=\s*"([^"]*)"/i.exec(attrs)?.[1];
     const newTab = /\btarget\s*=\s*"_blank"/i.test(attrs);
 
-    if (!newTab || !href || !isSafeUrl(href)) return full;
+    if (!newTab || !href) return full;
 
-    const anchor = `<a href="${href}" target="_blank" rel="noopener noreferrer">${processInline(inner)}</a>`;
+    const anchor = isSafeLinkUrl(href)
+      ? `<a href="${href}" target="_blank" rel="noopener noreferrer">${processInline(inner)}</a>`
+      : processInline(inner);
 
     return makePlaceholder('NTLINK', newTabLinks.push(anchor) - 1);
   });
@@ -177,8 +179,8 @@ const processInline = (text: string): string => {
   text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt: string, src: string) =>
     isSafeUrl(src) ? `<img src="${src}" alt="${alt}">` : match,
   );
-  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, label: string, href: string) =>
-    isSafeUrl(href) ? `<a href="${href}">${label}</a>` : match,
+  text = text.replace(/(?<!!)\[([^\]]+)\]\(([^)]+)\)/g, (_match, label: string, href: string) =>
+    isSafeLinkUrl(href) ? `<a href="${href}">${label}</a>` : label,
   );
 
   // New-tab links first: their inner markup still holds this call's code and escape placeholders.

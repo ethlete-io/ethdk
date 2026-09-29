@@ -653,7 +653,8 @@ describe('forms rich-text-editor scenarios', () => {
     view.body.set('<img src=x onerror="steal()"> [bad](javascript:steal()) [ok](https://example.com)');
     s.tick();
     expect(viewer.querySelector('img')).toBeNull();
-    expect(viewer.textContent).toContain('[bad](javascript:steal())');
+    expect(viewer.textContent).toContain('bad)');
+    expect(viewer.textContent).not.toContain('javascript:');
     expect(Array.from(viewer.querySelectorAll('a')).map((link) => link.getAttribute('href'))).toEqual([
       'https://example.com',
     ]);
