@@ -34,8 +34,9 @@ In progress (2026-09-29). Built: 578e66c24 gives a session stretch on a base bra
 directory as `workPath`, where the checkout's pieces name 2+ directories. A piece's identity across
 days is its directory, not its session id. Thus `groupByWork`, the rules and the stand-ins keep the
 `repo@branch#workPath` key, and stored rules still match. 6754ade81 keys the `lastOfStream` fallback in
-`mergePass` on checkout plus piece (`pieceOf`). Open: `absorbSlivers` still folds by checkout
-(`laneOf` → `streamOf` → `checkoutOf`), and the `BehindStretch` below. Named bands of two pieces on one
+`mergePass` on checkout plus piece (`pieceOf`). `absorbSlivers` folds an unnamed sliver only into a band
+of its own piece (`streamOf` → `pieceOf`); a sliver no band of its piece takes is dropped. Open: the
+`BehindStretch` below. Named bands of two pieces on one
 issue still join through `lastOfTrack`; slice 6 changes that.
 
 - Key `groupByWork` in `ticket/auto-stand-in.ts` on the piece. Today it keys on

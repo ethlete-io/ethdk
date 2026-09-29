@@ -15,11 +15,19 @@ const attributed = (options: {
   confidence?: Confidence;
   branch?: string;
   repoPath?: string;
+  session?: string;
+  piece?: string;
 }): AttributedBlock => {
   const block: ActivityBlock = {
     from: AT(options.fromMinute),
     to: AT(options.toMinute),
-    context: { appId: 'code', branch: options.branch, repoPath: options.repoPath },
+    context: {
+      appId: 'code',
+      branch: options.branch,
+      repoPath: options.repoPath,
+      session: options.session,
+      piece: options.piece,
+    },
     evidence: [{ kind: 'branch', at: AT(options.fromMinute), detail: `branch \`${options.branch}\`` }],
   };
 
@@ -484,6 +492,20 @@ describe('mergeBlocks and a sliver', () => {
     });
 
     expect(rows).toEqual([]);
+  });
+
+  it('does not fold the sliver of one piece into the band of another piece of its checkout', () => {
+    const piece = (options: { fromMinute: number; toMinute: number; session: string; piece: string }) =>
+      attributed({ ...options, confidence: 'weak', repoPath: '/a', branch: 'main' });
+    const rows = mergeBlocks({
+      blocks: [
+        piece({ fromMinute: 0, toMinute: 10, session: 'one', piece: 'totw' }),
+        piece({ fromMinute: 12, toMinute: 30, session: 'two', piece: 'shop' }),
+        piece({ fromMinute: 30.2, toMinute: 30.5, session: 'one', piece: 'totw' }),
+      ],
+    });
+
+    expect(rows.map((row) => row.observedMs)).toEqual([10 * 60_000, 18 * 60_000]);
   });
 
   it('keeps a short band once it holds the shortest band the day draws', () => {

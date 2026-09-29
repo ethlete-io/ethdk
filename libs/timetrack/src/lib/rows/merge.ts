@@ -217,12 +217,12 @@ const trackOf = (group: WorkGroup) => {
 };
 
 /**
- * The checkout an unnamed band belongs to, which is the lane it is drawn in. A named band has none:
- * its issue or stand-in is its track, and reaching across a checkout would join two lanes into one row.
+ * The piece of a checkout an unnamed band belongs to. A named band has none: its issue or stand-in is its
+ * track, and reaching across a checkout would join two lanes into one row.
  */
-const streamOf = (group: WorkGroup) => (nameOf(group) ? undefined : checkoutOf(group));
+const streamOf = (group: WorkGroup) => (nameOf(group) ? undefined : pieceOf(group));
 
-/** The band a sliver may fold into: its own issue or stand-in once one names it, its checkout otherwise. */
+/** The band a sliver may fold into: its own issue or stand-in once one names it, its piece otherwise. */
 const laneOf = (group: WorkGroup) => nameOf(group) ?? streamOf(group);
 
 /** The checkout behind a band, whether or not anything has named the band's work. */
