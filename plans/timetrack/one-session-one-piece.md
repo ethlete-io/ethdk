@@ -58,6 +58,10 @@ each with its own auto description. Example: ET-772 in `ethlete-sdk`, one sessio
 and one builds the scan-files sub-agents. Tempo gets the wall-clock time once: the shared minutes
 are split, and the split follows focus, as `cutUnwatched` already does for unnamed stretches.
 
+- Tom decided (2026-09-29): a per-session row books its own observed minutes, snapped to 15m, not its
+  snapped span. `cutUnwatched` gives each shared minute to the last-prompted session, so the rows of
+  two sessions interleave; booking spans would book the same hour twice. The rows are drawn side by
+  side in the lane. Rejected: cut rows at every switch (many short rows); one row with a split text.
 - Today `join()` in `rows/merge.ts` merges named rows by issue, so the two sessions become one row.
   Key the join on issue plus piece (slice 4), not issue alone. Needs slice 4 first, or a ticket turns
   into a row per session.
