@@ -48,21 +48,13 @@ describe('fetchGoogleCalendarList$', () => {
       },
     ]);
 
-    expect(collect(transport)).toEqual([
-      { id: 'trb@braune-digital.com', name: 'Work', primary: true, selected: true, readOnly: false },
-    ]);
+    expect(collect(transport)).toEqual([{ id: 'trb@braune-digital.com', name: 'Work' }]);
   });
 
-  it('marks a shared calendar the token can only read', () => {
-    const { transport } = listTransport([{ id: 'team', summary: 'Team', accessRole: 'reader' }]);
+  it('falls back to the id for a calendar with no name', () => {
+    const { transport } = listTransport([{ id: 'team' }]);
 
-    expect(collect(transport)[0]).toEqual({
-      id: 'team',
-      name: 'Team',
-      primary: false,
-      selected: false,
-      readOnly: true,
-    });
+    expect(collect(transport)).toEqual([{ id: 'team', name: 'team' }]);
   });
 
   it('drops a deleted calendar and one with no id', () => {

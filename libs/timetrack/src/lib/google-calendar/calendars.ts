@@ -5,25 +5,14 @@ import { GoogleCalendarCredentials, googleCalendarPaged$ } from './client';
 export type GoogleCalendar = {
   id: string;
   name: string;
-  /** The account's own calendar, which is the one `fetchGoogleCalendarEvents$` defaults to. */
-  primary: boolean;
-  /** Whether the user has this calendar shown in Google's own UI — a sensible default for the picker. */
-  selected: boolean;
-  /** True when the token may only read the calendar, which is all this app ever needs. */
-  readOnly: boolean;
 };
 
 type GoogleCalendarListResource = {
   id?: string;
   summary?: string;
   summaryOverride?: string;
-  primary?: boolean;
-  selected?: boolean;
-  accessRole?: string;
   deleted?: boolean;
 };
-
-const READ_ONLY_ROLES = ['freeBusyReader', 'reader'];
 
 /**
  * The calendars the account can read, for the settings picker. A user has several — a work calendar, a
@@ -47,9 +36,6 @@ export const fetchGoogleCalendarList$ = (options: {
         return {
           id: resource.id,
           name: resource.summaryOverride ?? resource.summary ?? resource.id,
-          primary: resource.primary === true,
-          selected: resource.selected === true,
-          readOnly: READ_ONLY_ROLES.includes(resource.accessRole ?? ''),
         };
       }),
     ),
