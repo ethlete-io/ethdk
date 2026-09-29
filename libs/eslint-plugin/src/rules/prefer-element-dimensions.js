@@ -95,6 +95,146 @@ const getReactiveContext = (sourceCode, node) => {
   return null;
 };
 
+const DOM_QUERY_METHODS = new Set(['querySelector', 'getElementById', 'closest', 'elementFromPoint']);
+const DOM_LIST_QUERY_METHODS = new Set([
+  'querySelectorAll',
+  'getElementsByClassName',
+  'getElementsByTagName',
+  'getElementsByName',
+]);
+const ELEMENT_NAVIGATION_PROPS = new Set([
+  'parentElement',
+  'offsetParent',
+  'firstElementChild',
+  'lastElementChild',
+  'nextElementSibling',
+  'previousElementSibling',
+]);
+const ELEMENT_INJECTORS = new Set(['injectHostElement', 'injectAngularRootElement', 'injectBoundaryElement']);
+const ELEMENT_TYPE_NAME = /^(Element|HTMLElement|SVGElement|HTML\w*Element|SVG\w*Element)$/u;
+
+/**
+ * @param {any} typeAnnotation
+ */
+const isElementType = (typeAnnotation) => {
+  const type = typeAnnotation?.type === 'TSTypeAnnotation' ? typeAnnotation.typeAnnotation : typeAnnotation;
+
+  if (type?.type === 'TSUnionType') return type.types.some(isElementType);
+
+  return (
+    type?.type === 'TSTypeReference' &&
+    type.typeName.type === 'Identifier' &&
+    ELEMENT_TYPE_NAME.test(type.typeName.name)
+  );
+};
+
+/**
+ * @param {any} node
+ */
+const isDocumentReference = (node) =>
+  (node.type === 'Identifier' && node.name === 'document') ||
+  (node.type === 'MemberExpression' &&
+    !node.computed &&
+    node.property.type === 'Identifier' &&
+    /^(document|doc)$/u.test(node.property.name));
+
+/**
+ * @param {any} node
+ */
+const getThisClassBody = (node) => {
+  let current = node.parent;
+
+  while (current) {
+    if (current.type === 'ClassBody') return current;
+    current = current.parent;
+  }
+
+  return null;
+};
+
+/**
+ * @param {import('eslint').SourceCode} sourceCode
+ * @param {any} node
+ * @param {Set<any>} seen
+ * @returns {boolean}
+ */
+const isElementExpression = (sourceCode, node, seen = new Set()) => {
+  if (!node || seen.has(node)) return false;
+  seen.add(node);
+
+  switch (node.type) {
+    case 'ChainExpression':
+    case 'TSNonNullExpression':
+      return isElementExpression(sourceCode, node.expression, seen);
+    case 'TSAsExpression':
+    case 'TSTypeAssertion':
+      return isElementType(node.typeAnnotation) || isElementExpression(sourceCode, node.expression, seen);
+    case 'CallExpression': {
+      const { callee } = node;
+
+      if (callee.type === 'Identifier') return ELEMENT_INJECTORS.has(callee.name);
+
+      return (
+        callee.type === 'MemberExpression' &&
+        callee.property.type === 'Identifier' &&
+        DOM_QUERY_METHODS.has(callee.property.name)
+      );
+    }
+    case 'MemberExpression': {
+      if (node.computed) {
+        const list = node.object;
+
+        return (
+          list.type === 'CallExpression' &&
+          list.callee.type === 'MemberExpression' &&
+          list.callee.property.type === 'Identifier' &&
+          DOM_LIST_QUERY_METHODS.has(list.callee.property.name)
+        );
+      }
+
+      if (node.property.type !== 'Identifier') return false;
+
+      const prop = node.property.name;
+      if (prop === 'nativeElement' || ELEMENT_NAVIGATION_PROPS.has(prop)) return true;
+      if (prop === 'documentElement' || prop === 'body') return isDocumentReference(node.object);
+      if (node.object.type !== 'ThisExpression') return false;
+
+      const classBody = getThisClassBody(node);
+      const field = classBody?.body.find(
+        (/** @type {any} */ member) =>
+          member.type === 'PropertyDefinition' &&
+          !member.computed &&
+          member.key.type === 'Identifier' &&
+          member.key.name === prop,
+      );
+
+      return !!field && (isElementType(field.typeAnnotation) || isElementExpression(sourceCode, field.value, seen));
+    }
+    case 'Identifier': {
+      /** @type {import('eslint').Scope.Scope | null} */
+      let scope = sourceCode.getScope(node);
+
+      while (scope) {
+        const variable = scope.set.get(node.name);
+
+        if (variable) {
+          const definition = /** @type {any} */ (variable.defs[0]);
+          if (!definition) return false;
+          if (isElementType(definition.name.typeAnnotation)) return true;
+
+          return definition.type === 'Variable' && isElementExpression(sourceCode, definition.node.init, seen);
+        }
+
+        scope = scope.upper;
+      }
+
+      return false;
+    }
+    default:
+      return false;
+  }
+};
+
 /** @type {import('eslint').Rule.RuleModule} */
 const preferElementDimensions = {
   meta: {
@@ -112,10 +252,10 @@ const preferElementDimensions = {
   },
   create(context) {
     return {
-      // el.offsetWidth, el.clientWidth, etc.
       MemberExpression(node) {
         if (node.property.type !== 'Identifier') return;
         if (!ELEMENT_SIZE_PROPS.has(node.property.name)) return;
+        if (!isElementExpression(context.sourceCode, node.object)) return;
 
         const reactiveCtx = getReactiveContext(context.sourceCode, node);
         if (!reactiveCtx) return;
@@ -127,12 +267,12 @@ const preferElementDimensions = {
         });
       },
 
-      // el.getBoundingClientRect(), el.getClientRects()
       CallExpression(node) {
         const { callee } = node;
         if (callee.type !== 'MemberExpression') return;
         if (callee.property.type !== 'Identifier') return;
         if (!ELEMENT_SIZE_METHODS.has(callee.property.name)) return;
+        if (!isElementExpression(context.sourceCode, callee.object)) return;
 
         const reactiveCtx = getReactiveContext(context.sourceCode, node);
         if (!reactiveCtx) return;
