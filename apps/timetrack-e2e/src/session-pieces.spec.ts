@@ -7,8 +7,6 @@ const SDK = '/Users/e2e/dev/ethlete-sdk';
 
 const XYZ = { key: 'XYZ', name: 'Beta' };
 
-const PIECE_GAP_PX = 2;
-
 const ISSUES: FakeJiraIssue[] = [
   {
     id: '10400',
@@ -111,16 +109,39 @@ const drawnPieces = async (page: Page) => {
   return { laneBox, drawn, titles: [...new Set(drawn.map((piece) => piece.title))] };
 };
 
-const expectAsTallAsLabel = async (page: Page) => {
-  const { laneBox, drawn, titles } = await drawnPieces(page);
-  const pxPerMinute = laneBox.height / (24 * 60);
+const expectCascaded = async (page: Page) => {
+  const { laneBox, drawn } = await drawnPieces(page);
 
-  for (const title of titles) {
-    const height = drawn
-      .filter((piece) => piece.title === title)
-      .reduce((sum, piece) => sum + piece.box.height + PIECE_GAP_PX, 0);
+  for (const piece of drawn) {
+    expect(piece.clipPath).toBe('none');
+    expect(piece.text).toContain(piece.title.replace(/ · .*$/, ''));
+    expect(piece.box.width).toBeGreaterThan(laneBox.width / 2);
+  }
 
-    expect(height).toBeCloseTo(minutesOf(title) * pxPerMinute, 0);
+  const overlapping = drawn.flatMap((lower) =>
+    drawn
+      .filter((upper) => upper !== lower && upper.title !== lower.title && upper.box.x > lower.box.x)
+      .filter((upper) => upper.box.y < lower.box.y + lower.box.height && upper.box.y + upper.box.height > lower.box.y)
+      .map((upper) => ({ lower, upper })),
+  );
+
+  expect(overlapping).not.toHaveLength(0);
+
+  for (const { lower, upper } of overlapping) {
+    expect(upper.box.x + upper.box.width).toBeCloseTo(lower.box.x + lower.box.width, 0);
+
+    const x = upper.box.x + upper.box.width / 2;
+    const y = Math.max(upper.box.y, lower.box.y) + 4;
+    const onTop = await page.evaluate(
+      ([px, py]) =>
+        document
+          .elementFromPoint(px ?? 0, py ?? 0)
+          ?.closest('[data-kind="row"]')
+          ?.getAttribute('title'),
+      [x, y],
+    );
+
+    expect(onTop).toBe(upper.title);
   }
 };
 
@@ -179,11 +200,11 @@ test.describe('parallel sessions on one ticket that each round up past the clock
     await seedDay(page, { prompts: [0, 20, 40], end: 60 });
   });
 
-  test('book the clock once, each card as tall as its label', async ({ page }) => {
+  test('book the clock once and cascade, the later one indented and on top', async ({ page }) => {
     const { titles } = await drawnPieces(page);
 
     expect(titles.reduce((sum, title) => sum + minutesOf(title), 0)).toBeLessThanOrEqual(60);
-    await expectAsTallAsLabel(page);
+    await expectCascaded(page);
   });
 
   test('open each card with the duration its band books', async ({ page }) => {
@@ -202,7 +223,7 @@ test.describe('parallel sessions on one ticket that each round up past the clock
     }
   });
 
-  test('open a different row from each card', async ({ page }) => {
+  test('open a different row from each cascaded card', async ({ page }) => {
     const [first = '', second = ''] = (await drawnPieces(page)).titles;
 
     expect(await surfaceOf(page, bandsOf(page, first).first())).not.toBe(

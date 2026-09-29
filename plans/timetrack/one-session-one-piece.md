@@ -88,13 +88,13 @@ Open:
   held most of it, and each row gets as many steps as it books. Where the rows book more than the clock
   holds, a row is drawn shorter instead of over another. Sibling rows now carry their own unjoined
   stretches (`propose`). The row list keeps one row per session. e2e `session-pieces.spec.ts`.
-- Tom decided (2026-09-29, option C, replaces c0cb8243f's cascade and d98b3de8d's one card per session
-  after another): this layout stays. The step assignment lives in the lib (`siblingStepsOf` in
-  `rows/round.ts`); `packLane` draws it and `separateOverlappingProposals` books the same steps in
-  Tempo. A session may show as several pieces; any piece opens the same row; each card is as tall as
-  its label. Rejected: A, cards over their own stretches snapped to 15m and cascaded (a card labelled
-  45m was drawn 60m); B, cards over their exact unsnapped stretches (off the 15m grid, and still not
-  as tall as the label). d98b3de8d drew the sessions one after another, not where each worked.
+- Tom decided (2026-09-29, c0cb8243f, restored after d98b3de8d and 02c2a5051 replaced it): parallel
+  sessions on one ticket are drawn side by side. `packLane` draws each sibling row over its own
+  stretches widened to 15m steps (`stretchPiecesOf`), and where only such pieces overlap they cascade
+  (`cascadeOf`), the later one indented and on top. `separateOverlappingProposals` books the shared
+  minutes once in Tempo (`placeShared`). Tom: "it makes 0 sense to stack parallel tasks below each
+  other." Rejected: one card per session after another (d98b3de8d); cards in turns over the 15m steps
+  each session held most of (02c2a5051).
 - Open: the background band that covers 10:00-14:00 on the live day should become a thin marker.
 - Open: the phone stretch 13:15-14:00 on the live day lost its ticket (issueKey missing, description is
   the branch `next`).
@@ -116,8 +116,8 @@ are split, and the split follows focus, as `cutUnwatched` already does for unnam
 
 - Tom decided (2026-09-29): a per-session row books its own observed minutes, snapped to 15m, not its
   snapped span. `cutUnwatched` gives each shared minute to the last-prompted session, so the rows of
-  two sessions interleave; booking spans would book the same hour twice. The lane draws them in
-  turns (option C above). Rejected: cut rows at every switch (many short rows); one row with a split text.
+  two sessions interleave; booking spans would book the same hour twice. The rows are drawn side by
+  side in the lane. Rejected: cut rows at every switch (many short rows); one row with a split text.
 - Today `join()` in `rows/merge.ts` merges named rows by issue, so the two sessions become one row.
   Key the join on issue plus piece (slice 4), not issue alone. Needs slice 4 first, or a ticket turns
   into a row per session.

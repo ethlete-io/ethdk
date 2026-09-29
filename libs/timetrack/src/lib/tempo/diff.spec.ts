@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SyncedWorklog, WorklogProposal } from '../model/proposal';
 import { MIDNIGHT, localDayKey } from '../review/day';
-import { siblingStepsOf } from '../rows/round';
 import { contentHashOf, planTempoSync } from './diff';
 import { TempoMarkerScheme } from './marker';
 import { TempoWorklog } from './worklogs';
@@ -437,32 +436,5 @@ describe('planTempoSync overlapping rows', () => {
       'one~2 10:00-10:30',
       'two 10:30-11:00',
     ]);
-  });
-
-  it('books two sessions on one ticket over the increments the day review draws them in', () => {
-    const window = (from: Date, to: Date) => ({ from, to });
-    const one = row('one', 'ET-772', at(9), 60, {
-      durationMs: 45 * MINUTE,
-      laneKey: 'repo:/dev/sdk',
-      state: 'accepted',
-      stretches: [window(at(9), at(9, 20)), window(at(9, 40), at(10))],
-    });
-    const two = row('two', 'ET-772', at(9), 60, {
-      durationMs: 15 * MINUTE,
-      laneKey: 'repo:/dev/sdk',
-      state: 'accepted',
-      stretches: [window(at(9, 20), at(9, 40))],
-    });
-    const drawn = siblingStepsOf([one, two]);
-    const result = planTempoSync({ proposals: [one, two], ledger: [], remote: [], issueIdsByKey: ids });
-
-    expect(written(result).map((entry) => `${entry.id} ${clock(entry.from)}-${clock(entry.to)}`)).toEqual([
-      'one 09:00-09:15',
-      'two 09:15-09:30',
-      'one~2 09:30-10:00',
-    ]);
-    expect(written(result).map((entry) => ({ from: entry.from, to: entry.to }))).toEqual(
-      [...(drawn.get(one) ?? []), ...(drawn.get(two) ?? [])].sort((a, b) => a.from - b.from),
-    );
   });
 });

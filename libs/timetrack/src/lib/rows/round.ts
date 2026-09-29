@@ -2,7 +2,6 @@ import { streamKeyLabel, streamKeyRepoPath } from '../model/block';
 import { formatDurationMs, formatTimeOfDay } from '../model/duration';
 import { AgedNaming } from '../model/naming-age';
 import { WorklogProposal } from '../model/proposal';
-import { floorToGrid } from './grid';
 import { CALL_LANE_KEY, TIMER_LANE_KEY, laneKeyOf } from './lane';
 import { WorkGroup } from './merge';
 
@@ -55,10 +54,10 @@ export const sharingTicket = <T extends TicketRow>(rows: readonly T[]): Set<T> =
   return shared;
 };
 
-const overlapGroupsOf = <T extends TicketRow>(rows: readonly T[]): T[][] => {
+const siblingGroupsOf = <T extends TicketRow>(rows: readonly T[]): T[][] => {
   const groups: { ticket: string; end: number; members: T[] }[] = [];
 
-  for (const row of [...rows].sort((a, b) => a.from.getTime() - b.from.getTime())) {
+  for (const row of [...sharingTicket(rows)].sort((a, b) => a.from.getTime() - b.from.getTime())) {
     const ticket = `${row.laneKey}|${ticketOf(row)}`;
     const group = groups.find((open) => open.ticket === ticket && open.end > row.from.getTime());
 
@@ -72,8 +71,6 @@ const overlapGroupsOf = <T extends TicketRow>(rows: readonly T[]): T[][] => {
 
   return groups.map((group) => group.members);
 };
-
-const siblingGroupsOf = <T extends TicketRow>(rows: readonly T[]): T[][] => overlapGroupsOf([...sharingTicket(rows)]);
 
 /**
  * What each row {@link sharingTicket} returned books. A group of overlapping sibling rows rounds its summed
@@ -128,121 +125,6 @@ export const siblingBookingsOf = <T extends TicketRow & { observedMs: number }>(
   }
 
   return booked;
-};
-
-type StepSpan = { from: number; to: number };
-
-const stepsOfGroup = <T extends TicketRow & { durationMs: number; stretches?: readonly TicketRow[] }>(
-  group: readonly T[],
-  options: { incrementMs: number; blocked: readonly StepSpan[] },
-): [T, StepSpan[]][] => {
-  const { incrementMs, blocked } = options;
-  const start = floorToGrid(Math.min(...group.map((row) => row.from.getTime())), incrementMs);
-  const end = Math.max(...group.map((row) => row.to.getTime()));
-  const slots = Array.from({ length: Math.ceil((end - start) / incrementMs) }, (_, at) => ({
-    from: start + at * incrementMs,
-    to: Math.min(end, start + (at + 1) * incrementMs),
-  }));
-  const blockedAt = new Set(
-    slots.flatMap((slot, at) => (blocked.some((span) => span.from < slot.to && slot.from < span.to) ? [at] : [])),
-  );
-  const taken = new Set<number>();
-  const owned = new Map(group.map((row) => [row, [] as number[]]));
-  const need = new Map(
-    group.map((row) => {
-      const spanMs = row.to.getTime() - row.from.getTime();
-
-      return [row, Math.max(1, Math.round(Math.min(row.durationMs, spanMs) / incrementMs))];
-    }),
-  );
-  const within = (row: T, at: number) =>
-    (slots[at]?.from ?? 0) < row.to.getTime() && (slots[at]?.to ?? 0) > row.from.getTime();
-  const heldIn = (row: T, at: number) => {
-    const slot = slots[at];
-
-    if (!slot) return 0;
-
-    return (row.stretches?.length ? row.stretches : [row]).reduce(
-      (sum, stretch) =>
-        sum +
-        Math.max(
-          0,
-          Math.min(stretch.to.getTime(), slot.to, row.to.getTime()) -
-            Math.max(stretch.from.getTime(), slot.from, row.from.getTime()),
-        ),
-      0,
-    );
-  };
-  const give = (row: T, at: number) => {
-    taken.add(at);
-    owned.get(row)?.push(at);
-    need.set(row, (need.get(row) ?? 0) - 1);
-  };
-  const free = (at: number) => !taken.has(at) && !blockedAt.has(at);
-
-  const bids = group
-    .flatMap((row, order) => slots.map((_, at) => ({ row, order, at, held: heldIn(row, at) })))
-    .filter((bid) => bid.held > 0 && within(bid.row, bid.at))
-    .sort((a, b) => b.held - a.held || a.at - b.at || a.order - b.order);
-
-  for (const bid of bids) {
-    if (free(bid.at) && (need.get(bid.row) ?? 0) > 0) give(bid.row, bid.at);
-  }
-
-  for (const row of group) {
-    while ((need.get(row) ?? 0) > 0) {
-      const mine = owned.get(row) ?? [];
-      const home = mine.length
-        ? mine
-        : slots
-            .map((_, at) => at)
-            .filter((at) => within(row, at))
-            .slice(0, 1);
-      const distance = (at: number) => Math.min(...home.map((own) => Math.abs(own - at)));
-      const rank = (at: number) => (free(at) ? 0 : 2) + (within(row, at) ? 0 : 1);
-      const [best] = slots
-        .map((_, at) => at)
-        .filter((at) => !mine.includes(at) && !blockedAt.has(at) && (free(at) || (!mine.length && within(row, at))))
-        .sort((a, b) => rank(a) - rank(b) || distance(a) - distance(b) || a - b);
-
-      if (best === undefined) break;
-
-      give(row, best);
-    }
-  }
-
-  return group.map((row) => {
-    const runs: StepSpan[] = [];
-
-    for (const at of [...(owned.get(row) ?? [])].sort((a, b) => a - b)) {
-      const slot = slots[at];
-      const last = runs.at(-1);
-
-      if (!slot) continue;
-      if (last && last.to === slot.from) last.to = slot.to;
-      else runs.push({ ...slot });
-    }
-
-    return [row, runs];
-  });
-};
-
-/**
- * Where the rows of parallel agent sessions on one ticket are drawn and booked, as runs of whole
- * increments. Pass the rows {@link sharingTicket} returned. Each increment of an overlapping group goes
- * to the row whose `stretches` hold most of it, and each row gets as many increments as it books; a row
- * that won fewer takes the free ones nearest its own. An increment that overlaps `blocked` goes to no
- * row.
- */
-export const siblingStepsOf = <T extends TicketRow & { durationMs: number; stretches?: readonly TicketRow[] }>(
-  rows: readonly T[],
-  options?: { round?: Partial<RoundOptions>; blocked?: readonly StepSpan[] },
-): Map<T, StepSpan[]> => {
-  const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options?.round };
-
-  return new Map(
-    overlapGroupsOf(rows).flatMap((group) => stepsOfGroup(group, { incrementMs, blocked: options?.blocked ?? [] })),
-  );
 };
 
 export type DayWarningKind =
