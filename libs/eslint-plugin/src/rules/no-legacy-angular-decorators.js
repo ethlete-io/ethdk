@@ -27,6 +27,15 @@ const { getAngularDecoratorName } = require('./internals/import-resolution');
  *   → ✅ host: { '[class.active]': 'isActive', '(click)': 'onClick()' }
  */
 
+const CLASS_MEMBER_TYPES = new Set([
+  'PropertyDefinition',
+  'MethodDefinition',
+  'AccessorProperty',
+  'TSAbstractPropertyDefinition',
+  'TSAbstractMethodDefinition',
+  'TSAbstractAccessorProperty',
+]);
+
 /**
  * Returns the static string key of a class member, or null for computed keys.
  *
@@ -306,7 +315,7 @@ const rule = {
         // Only act on decorators attached to class members, not to the class itself
         const parent = anyNode.parent;
         if (!parent) return;
-        if (parent.type !== 'PropertyDefinition' && parent.type !== 'MethodDefinition') return;
+        if (!CLASS_MEMBER_TYPES.has(parent.type)) return;
 
         const ctx = currentClass();
 

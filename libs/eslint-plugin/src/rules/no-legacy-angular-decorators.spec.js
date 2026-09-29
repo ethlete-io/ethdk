@@ -37,6 +37,14 @@ class A { @Input() value; }`,
 
   invalid: [
     {
+      code: `class A { @Input() accessor value = 1; }`,
+      errors: [{ messageId: 'useInput' }],
+    },
+    {
+      code: `abstract class A { @Input() abstract value: string; }`,
+      errors: [{ messageId: 'useInput' }],
+    },
+    {
       code: `import { Input as NgInput } from '@angular/core';
 class A { @NgInput() value; }`,
       errors: [{ messageId: 'useInput' }],
