@@ -137,3 +137,12 @@ parallel ET-772 rows (Timetrack, SDK audit fixes, the new time picker UI), not o
 - Later: auto mode may dispute a row a rule named, when the row's own titles or commits point to a
   stand-in or to Tempo history (FIP-3006 on 2026-09-29, 14:15, was the security audit); and the git
   scan reads branch-ref reflogs, so a branch a session rebased or merged without a checkout counts.
+
+In progress (2026-09-29): the grouping key, decided by Tom. `sessionPieces` (`model/session-piece.ts`)
+joins two sessions of a checkout into one piece when they wrote the same named work file - a handoff
+(`.claude/handoffs/<slug>.md`), a plan file (`plans/...`) or a design call
+(`.ethlete/design/calls/<area>/<name>`) - also when they ran at the same time. Code directories still
+join only a session that starts after the piece ended, and project roots with the same last folder
+name (an `-e2e` suffix folded) count as one directory: `apps/timetrack`, `apps/timetrack-e2e` and
+`libs/timetrack`. Known limit: an audit session that only wrote time picker code joins the audit only
+because the audit piece ended last before it started.
