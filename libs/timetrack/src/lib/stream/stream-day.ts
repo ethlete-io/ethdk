@@ -1565,6 +1565,7 @@ export const streamDay = (options: {
     links,
     calls,
     breaks,
+    gaps,
     remoteWork: remoteWorkWindows(remoteOptions),
     bookedRemote: bookedRemoteWindows({ ...remoteOptions, remotePrompts, maxRemoteAttentionMs }),
     maxRemoteAttentionMs,

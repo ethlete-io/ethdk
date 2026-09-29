@@ -4,6 +4,7 @@ import { Confidence, Evidence, compareConfidence } from '../model/evidence';
 import { TimeWindow } from '../model/time-window';
 import { AttributedBlock } from './attribute';
 import { AttributionScope } from '../model/attribution';
+import { laneKeyOf } from './lane';
 
 /** One or more attributed blocks that will become a single reviewable row. */
 export type WorkGroup = {
@@ -584,4 +585,46 @@ export const mergeBlocks = (options: {
     minBandMs: config.minBandMs,
     pass: { ...pass, maxGapMs: config.maxMergeGapMs },
   }).map(reconsider);
+};
+
+/**
+ * Joins the bands of work nobody attended that start inside one of `gaps`, one per lane and name,
+ * while no more than `maxGapMs` separates two of them. A call carries no blocks and is left alone.
+ *
+ * `mergeBlocks` keeps each agent session's piece its own band, which is right for work somebody
+ * steered. Nobody told the sessions of an unattended break apart, so one row per piece would put a row
+ * every few minutes into a break and ask the reviewer the same question for each.
+ */
+export const joinUnattended = (options: {
+  groups: readonly WorkGroup[];
+  /** The whole absences of the day, from `breakGaps`. */
+  gaps: readonly TimeWindow[];
+  maxGapMs: number;
+}): WorkGroup[] => {
+  const rows: WorkGroup[] = [];
+  const openAt = new Map<string, number>();
+  const gapOf = (group: WorkGroup) => options.gaps.findIndex((gap) => gap.from <= group.from && group.from < gap.to);
+
+  for (const group of [...options.groups].sort((a, b) => a.from.getTime() - b.from.getTime())) {
+    const gap = group.attended === false && group.blocks.length ? gapOf(group) : -1;
+
+    if (gap < 0) {
+      rows.push(group);
+      continue;
+    }
+
+    const key = `${gap}\n${group.laneKey ?? laneKeyOf(group.blocks) ?? ''}\n${nameOf(group) ?? ''}`;
+    const at = openAt.get(key);
+    const previous = at === undefined ? undefined : rows[at];
+
+    if (at !== undefined && previous && group.from.getTime() - previous.to.getTime() <= options.maxGapMs) {
+      rows[at] = join(previous, group);
+      continue;
+    }
+
+    openAt.set(key, rows.length);
+    rows.push(group);
+  }
+
+  return rows;
 };

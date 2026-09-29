@@ -13,7 +13,7 @@ import { DescribeOptions } from './describe';
 import { DonateOptions, donateBlocks } from './donate';
 import { DEFAULT_FILL_OPTIONS, FillOptions, fillGaps } from './fill';
 import { MeetingOptions, UnobservedOccurrence, calendarOccurrences, unobservedOccurrences } from './meetings';
-import { DEFAULT_MERGE_OPTIONS, MergeOptions, WorkGroup, mergeBlocks } from './merge';
+import { DEFAULT_MERGE_OPTIONS, MergeOptions, WorkGroup, joinUnattended, mergeBlocks } from './merge';
 import { mergeRequestActivity } from './merge-request-activity';
 import { NoWorkContextOptions, dropNoWorkContext } from './no-work-context';
 import { clipBlocks } from './overlap';
@@ -84,6 +84,11 @@ export type BuildRowsOptions = {
    * so the work before it and the work after it are two stretches.
    */
   breaks?: readonly TimeWindow[];
+  /**
+   * The whole absences of the day, from `breakGaps`. The bands nobody attended that start inside one are
+   * one row per lane and stretch — see `joinUnattended`.
+   */
+  gaps?: readonly TimeWindow[];
   /** The stretches the user worked from another device, from `remoteWorkWindows`. A band in one is attended. */
   remoteWork?: readonly TimeWindow[];
   /** The part of `remoteWork` the day books, from `bookedRemoteWindows`. The rest is drawn and never booked. */
@@ -237,21 +242,25 @@ export const buildRows = (
   // Attendance is marked after the merge and before the proposal: a band is the unit the user books,
   // so it is the unit the question "was anybody here" has to be answered for. A call and a timed run
   // are the user's own acts, so they answer it themselves.
-  const groups = markAttendance({
-    groups: [
-      ...mergeBlocks({ blocks: filled.blocks, barriers: options.breaks, options: options.merge }),
-      ...calls.map((call) => call.group),
-      ...timers.filter((timer) => timerProposesRow(timer.run)).map((timer) => timer.group),
-    ],
-    at: [
-      ...attendedAt({
-        events: options.events,
-        graceMs: options.fill?.maxFillGapMs ?? DEFAULT_FILL_OPTIONS.maxFillGapMs,
-      }),
-      ...(options.remoteWork ?? []),
-    ],
-    claimed: [...unwatched, ...booked.map((call) => ({ from: call.group.from, to: call.group.to }))],
-  }).sort((a, b) => a.from.getTime() - b.from.getTime());
+  const groups = joinUnattended({
+    groups: markAttendance({
+      groups: [
+        ...mergeBlocks({ blocks: filled.blocks, barriers: options.breaks, options: options.merge }),
+        ...calls.map((call) => call.group),
+        ...timers.filter((timer) => timerProposesRow(timer.run)).map((timer) => timer.group),
+      ],
+      at: [
+        ...attendedAt({
+          events: options.events,
+          graceMs: options.fill?.maxFillGapMs ?? DEFAULT_FILL_OPTIONS.maxFillGapMs,
+        }),
+        ...(options.remoteWork ?? []),
+      ],
+      claimed: [...unwatched, ...booked.map((call) => ({ from: call.group.from, to: call.group.to }))],
+    }),
+    gaps: options.gaps ?? [],
+    maxGapMs: options.merge?.maxMergeGapMs ?? DEFAULT_MERGE_OPTIONS.maxMergeGapMs,
+  });
   const { proposals, unattributed, unnamed } = propose({
     groups,
     config: options.config,

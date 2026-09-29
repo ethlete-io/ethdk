@@ -37,11 +37,11 @@ const commit = (minute: number, subject: string): CollectedEvent => ({
   subject,
 });
 
-const session = (minute: number): CollectedEvent => ({
+const session = (minute: number, sessionId = SESSION): CollectedEvent => ({
   at: AT(minute),
   source: 'agent-session',
   kind: 'agent-session',
-  sessionId: SESSION,
+  sessionId,
   cwd: REPO,
   gitBranch: BRANCH,
 });
@@ -58,13 +58,13 @@ const prompt = (minute: number, askedBy: 'human' | 'machine'): CollectedEvent =>
   askedBy,
 });
 
-const turn = (minute: number): CollectedEvent => ({
+const turn = (minute: number, sessionId = SESSION): CollectedEvent => ({
   at: AT(minute),
   source: 'agent-usage',
   kind: 'agent-usage',
   provider: 'claude-code',
-  sessionId: SESSION,
-  turnId: `msg-${minute}`,
+  sessionId,
+  turnId: `msg-${sessionId}-${minute}`,
   cwd: REPO,
   gitBranch: BRANCH,
   model: 'claude-opus-5',
@@ -103,10 +103,10 @@ const EVENING: CollectedEvent[] = [
  * fifteen-minute agent gap. This is what holds an `idle-start` bridged — the day cannot tell it from a
  * person who sat and watched.
  */
-const running = (from: number, to: number): CollectedEvent[] =>
+const running = (from: number, to: number, sessionId = SESSION): CollectedEvent[] =>
   Array.from({ length: Math.floor((to - from) / 10) + 1 }, (_, step) => [
-    session(from + step * 10),
-    turn(from + step * 10),
+    session(from + step * 10, sessionId),
+    turn(from + step * 10, sessionId),
   ]).flat();
 
 describe('streamDay, on an agent that ran while nobody was there', () => {
@@ -393,5 +393,74 @@ describe('streamDay, on prompts the short input idleness reads as remote', () =>
     ];
 
     expect(breaksAway([...AWAY, ...restarted])).toEqual([[90, 196]]);
+  });
+});
+
+describe('streamDay, on an agent that ran through a lunch break', () => {
+  const DISCORD = 'com.hnc.Discord';
+  const call = (minute: number, kind: 'call-start' | 'call-end'): CollectedEvent => ({
+    at: AT(minute),
+    source: 'call',
+    kind,
+    appId: DISCORD,
+  });
+
+  /**
+   * 2026-09-29: Tom left at 12:36 and nothing closed the idle-start. Agent sessions kept working one
+   * after another for 2h 40m, and a meeting that counts as work brought him back. The gap is under
+   * `DEFAULT_MAX_BREAK_MS`, and each session is a piece of its own.
+   */
+  const LUNCH: CollectedEvent[] = [
+    ...EVENING,
+    idle(90, 'idle-start'),
+    ...running(95, 145, 'session-a'),
+    ...running(150, 200, 'session-b'),
+    ...running(205, 255, 'session-c'),
+    { at: AT(257), source: 'window', kind: 'window-focus', appId: DISCORD, title: '#meeting | Braune Digital' },
+    call(258, 'call-start'),
+    call(300, 'call-end'),
+    focus(301),
+    prompt(305, 'human'),
+    turn(306),
+    commit(330, 'fix(repo): Keep a lunch break off the rows'),
+    focus(335),
+  ];
+  const lunchDay = () =>
+    streamDay({
+      events: LUNCH.slice().sort((a, b) => a.at.getTime() - b.at.getTime()),
+      options: {
+        repoRoots: [REPO],
+        windowsSeenThroughMs: AT(900).getTime(),
+        callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: [] },
+        rows: { config: CONFIG },
+      },
+    });
+  const inLunch = (row: { from: Date; to: Date }) =>
+    row.to.getTime() > AT(95).getTime() && row.from.getTime() < AT(255).getTime();
+
+  it('proposes one unattended row for the stretch the agents worked inside the break', () => {
+    const { proposals, unnamed } = lunchDay().rows;
+    const lunch = unnamed.filter(inLunch);
+
+    expect(proposals.filter(inLunch)).toEqual([]);
+    expect(lunch.map((row) => ({ unattended: row.unattended, withheld: row.withheldIssueKey }))).toEqual([
+      { unattended: true, withheld: 'ET-772' },
+    ]);
+    expect(lunch[0]?.from.getTime()).toBeLessThanOrEqual(AT(95).getTime());
+    expect(lunch[0]?.to.getTime()).toBeGreaterThanOrEqual(AT(255).getTime());
+  });
+
+  it('shows the reviewer one row nobody was there for', () => {
+    const unattended = reviewDay({ rows: lunchDay().rows }).rows.filter((row) => row.unattended);
+
+    expect(unattended.filter(inLunch)).toHaveLength(1);
+  });
+
+  it('counts the agent time as unattended and still draws the break', () => {
+    const day = lunchDay();
+    const drawn = breaksBetweenRows({ breaks: day.breaks, rows: day.rows.proposals, presence: day.presence });
+
+    expect(day.unattendedMs).toBeGreaterThanOrEqual(150 * MINUTE);
+    expect(drawn.some((window) => window.from <= AT(95) && window.to >= AT(255))).toBe(true);
   });
 });
