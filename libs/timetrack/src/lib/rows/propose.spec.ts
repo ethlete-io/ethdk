@@ -298,6 +298,13 @@ describe('propose, the work nothing named', () => {
     expect(later.unnamed[0]?.id).toBe(first.unnamed[0]?.id);
   });
 
+  it('keeps on a band that gains a name the id it carried while unnamed', () => {
+    const unnamed = propose({ groups: [group({ fromMinute: 0, observedMinutes: 30 })] });
+    const named = propose({ groups: [group({ fromMinute: 0, observedMinutes: 30, issueKey: 'FIP-2866' })] });
+
+    expect(named.proposals[0]?.unnamedId).toBe(unnamed.unnamed[0]?.id);
+  });
+
   describe('activeUntil', () => {
     const inPiece = (piece: string, fromMinute: number, observedMinutes: number): WorkGroup => {
       const base = group({ fromMinute, observedMinutes, issueKey: 'FIP-2178' });

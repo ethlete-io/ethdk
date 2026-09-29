@@ -4,7 +4,7 @@ import { CALL_LANE_KEY } from '../rows/lane';
 import { UnnamedProposal } from '../rows/propose';
 import { Evidence } from '../model/evidence';
 import { WorklogProposal } from '../model/proposal';
-import { hideRow, setRowDescription, splitRow } from './edits';
+import { hideRow, resetRow, setRowDescription, setRowIssue, splitRow } from './edits';
 import { DayReview, DayReviewEdits, EMPTY_DAY_REVIEW_EDITS } from './model';
 import { reviewDay } from './review-day';
 
@@ -335,5 +335,61 @@ describe('reviewDay folding crowded sessions of one ticket', () => {
 
     expect(spans(result)).toEqual(['09:00-11:00 90m', '09:30-10:15 15m', '09:45-11:15 30m']);
     expect(bookedMs(result)).toBe(135 * MINUTE);
+  });
+});
+
+describe('reviewDay, an edit on a call band that gains a name later', () => {
+  const callBand = (options: { from: string; to: string; excluded?: boolean }): UnnamedProposal => {
+    const row = band({ ...options, laneKey: CALL_LANE_KEY });
+
+    return { ...row, id: `unnamed:@${at(options.from).toISOString()}`, standInId: undefined };
+  };
+  const morning = proposal({ issueKey: 'FIP-2866', from: '08:00', to: '08:45', laneKey: CALL_LANE_KEY });
+  const before = callBand({ from: '12:00', to: '13:30', excluded: true });
+  const after = callBand({ from: '13:45', to: '14:15', excluded: true });
+  const meeting = callBand({ from: '13:30', to: '13:45' });
+  const unnamedDay = dayRows({ proposals: [morning], unnamed: [before, meeting, after] });
+  const namedDay = dayRows({
+    proposals: [
+      morning,
+      {
+        ...proposal({ issueKey: 'FIP-2866', from: '13:30', to: '13:45', laneKey: CALL_LANE_KEY }),
+        unnamedId: meeting.id,
+      },
+    ],
+    unnamed: [before, after],
+  });
+  const edits = setRowIssue({
+    edits: EMPTY_DAY_REVIEW_EDITS,
+    row: { ...meeting, edited: false, hidden: false },
+    issueKey: 'FIFAGG-12652',
+  });
+  const drawn = (result: DayReview) =>
+    result.rows.map((row) => `${hhmm(row.from)}-${hhmm(row.to)} ${row.issueKey ?? '-'}`);
+
+  it('keeps the issue the reviewer gave the band over the name the day learned for it', () => {
+    const result = review(namedDay, edits);
+
+    expect(drawn(result)).toEqual([
+      '08:00-08:45 FIP-2866',
+      '12:00-13:30 -',
+      '13:30-13:45 FIFAGG-12652',
+      '13:45-14:15 -',
+    ]);
+    expect(result.rows.find((row) => row.issueKey === 'FIFAGG-12652')).toMatchObject({
+      id: meeting.id,
+      sources: { issue: 'human' },
+    });
+  });
+
+  it('still reads the band as the reviewer named it while nothing else names it', () => {
+    expect(drawn(review(unnamedDay, edits))).toEqual(drawn(review(namedDay, edits)));
+  });
+
+  it('gives the band its learned name back once the reviewer resets it', () => {
+    const edited = review(namedDay, edits).rows.find((row) => row.issueKey === 'FIFAGG-12652');
+
+    expect(edited).toBeDefined();
+    expect(drawn(review(namedDay, resetRow({ edits, row: edited! })))).toEqual(drawn(review(namedDay)));
   });
 });

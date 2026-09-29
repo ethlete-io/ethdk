@@ -11,7 +11,7 @@ import {
   siblingBookingsOf,
 } from '../rows/round';
 import { CALL_LANE_KEY, storedLaneKey } from '../rows/lane';
-import { unnamedRowId } from '../rows/propose';
+import { UnnamedProposal, unnamedRowId } from '../rows/propose';
 import { describeWork } from '../rows/describe';
 import { snapRowBounds } from '../rows/snap';
 import { AttributionRule } from '../model/attribution';
@@ -355,6 +355,30 @@ const coveredByPins = (options: {
 };
 
 /**
+ * Gives a proposal back the id it carried while unnamed where an edit of the reviewer's still hangs on
+ * that id and on nothing else, so a name the day learns for a band later never drops what they said.
+ */
+const onEditedIds = (options: {
+  proposals: readonly WorklogProposal[];
+  unnamed: readonly UnnamedProposal[];
+  edits: DayReviewEdits;
+  pinnedIds: ReadonlySet<string>;
+}): WorklogProposal[] => {
+  const taken = new Set([...options.proposals, ...options.unnamed].map((row) => row.id));
+  const edited = (id: string) => !!options.edits.overrides[id] || options.pinnedIds.has(id);
+
+  return options.proposals.map((row) => {
+    const id = row.unnamedId;
+
+    if (!id || taken.has(id) || edited(row.id) || !edited(id)) return row;
+
+    taken.add(id);
+
+    return { ...row, id };
+  });
+};
+
+/**
  * A row books the time its band covers. One number reaches the reviewer, so a band drawn 13:15 to
  * 13:45 logs 30 minutes and never a shorter time the label would then have to explain. See ADR 0019.
  * The exceptions are remote time past the day's allowance, which ADR 0033 draws and never books, and
@@ -416,9 +440,10 @@ export const reviewDay = (options: {
   const pinnedIds = new Set(edits.pinned.flatMap((row) => [row.id, ...row.replaces]));
   const isBackground = backgroundTest(options.cut?.backgroundProjects);
   const incrementMs = { ...DEFAULT_ROUND_OPTIONS, ...options.round }.incrementMs;
+  const proposals = onEditedIds({ proposals: options.rows.proposals, unnamed: options.rows.unnamed, edits, pinnedIds });
   const sources = foldShortRows<RowSource>({
     rows: foldCrowdedSiblings<RowSource>({
-      rows: [...options.rows.proposals, ...options.rows.unnamed],
+      rows: [...proposals, ...options.rows.unnamed],
       most: MOST_PARALLEL_SIBLINGS,
       incrementMs,
       fixed: (row) => pinnedIds.has(row.id),
@@ -469,10 +494,10 @@ export const reviewDay = (options: {
   });
   const rows = bookTheSpan({ rows: recut.rows, remote: options.rows.remote, round: options.round });
 
-  const replacedMs = options.rows.proposals
+  const replacedMs = proposals
     .filter((proposal) => answered.has(proposal.id))
     .reduce((sum, proposal) => sum + proposal.observedMs, 0);
-  const proposalIds = new Set(options.rows.proposals.map((proposal) => proposal.id));
+  const proposalIds = new Set(proposals.map((proposal) => proposal.id));
   const pinnedMs = tracked.rows
     .filter((pin) => [pin.id, ...pin.replaces, tracked.matched.get(pin.id)].some((id) => !!id && proposalIds.has(id)))
     .reduce((sum, row) => sum + row.observedMs, 0);
@@ -511,7 +536,7 @@ export const reviewDay = (options: {
     check: withOverlaps({
       check: withStaleEdits({
         check: withDrift({ check, unreconciledMs, options: options.check }),
-        rows: options.rows,
+        rows: { ...options.rows, proposals },
         edits,
         matched: tracked.matched,
       }),

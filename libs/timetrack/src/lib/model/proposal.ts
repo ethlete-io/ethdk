@@ -70,6 +70,11 @@ export type WorklogProposal = {
    * until they name it themselves. See ADR 0024.
    */
   excluded?: boolean;
+  /**
+   * The id the band would carry had nothing named it. A reviewer who named the band while it was still
+   * unnamed wrote their edit against that id, so `reviewDay` reads the edit through it.
+   */
+  unnamedId?: string;
 };
 
 /**

@@ -194,6 +194,7 @@ export const propose = (options: {
   return {
     proposals: attributed.map(({ group, from, to, durationMs, stretches }) => ({
       id: ids.next(group),
+      unnamedId: unnamedBaseId(group),
       issueKey: group.issueKey,
       storyKey: group.storyKey,
       ...(group.disputedIssueKey ? { disputedIssueKey: group.disputedIssueKey } : {}),
