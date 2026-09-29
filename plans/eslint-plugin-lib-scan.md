@@ -6,10 +6,10 @@ has them). Still open: 23 Medium, 46 Low, 13 spec-coverage items. Paths are rela
 
 ## ordering & naming
 
-- Medium: `angular-decorator-property-order` moves a trailing same-line comment onto `@Component({`. S
-- Medium: `require-dollar-suffix` reports rxjs `partition` (returns a tuple, `:43`); misses `toObservable(s)` and `.asObservable()`. S
-- Medium: `no-screaming-case-local` description (`:58-59`, `apps/docs/eslint/rules.md:17`) says "inside function bodies", but module-level consts are reported. S
-- Medium: `angular-decorator-property-order` silent when metadata has a spread (`:114-119`, deliberate bail-out kept by spec). S
+- Medium: `angular-decorator-property-order` moves a trailing same-line comment onto `@Component({`. S Done in 740745cfd.
+- Medium: `require-dollar-suffix` reports rxjs `partition` (returns a tuple, `:43`); misses `toObservable(s)` and `.asObservable()`. S Done in 0e8f4306d.
+- Medium: `no-screaming-case-local` description (`:58-59`, `apps/docs/eslint/rules.md:17`) says "inside function bodies", but module-level consts are reported. S Done in fdc275315.
+- Medium: `angular-decorator-property-order` silent when metadata has a spread (`:114-119`, deliberate bail-out kept by spec). S Kept: sorting around an unknown spread cannot verify the global order, so the bail-out stays. Done in (no code change).
 - Low: `guard-return-newline` accepts a comment line as the blank line. S
 - Low: `no-empty-newlines-between-imports` inserts bare `\n` into CRLF files. S
 - Low: `meta.docs.recommended` missing on 22 rule files (e.g. `guard-return-newline`, `require-form-submit`, `require-view-encapsulation-none`). S
@@ -24,8 +24,8 @@ has them). Still open: 23 Medium, 46 Low, 13 spec-coverage items. Paths are rela
 
 ## Angular metadata
 
-- Medium: `no-template-literal-before-inline-template` misses `` type A = `pre-${string}` ``. M
-- Medium: `no-legacy-angular-decorators` ignores `@Input() accessor` / `@Input() abstract`. S
+- Medium: `no-template-literal-before-inline-template` misses `` type A = `pre-${string}` ``. M Done in 2ff9e0dd3.
+- Medium: `no-legacy-angular-decorators` ignores `@Input() accessor` / `@Input() abstract`. S Done in 5070c1fac.
 - Low: `apps/docs/eslint/index.md:88` says "all but four" rules take options; `settings.ethlete.angularMajor` undocumented. S
 - Low: Angular version probe resolves from the plugin's own path (`require-on-push-change-detection.js:31`, `no-redundant-on-push-change-detection.js:39`). M
 - Low: `require-on-push-change-detection.js` / `require-view-encapsulation-none.js` duplicate ~200 lines of helpers (`:12-199`). M
@@ -96,8 +96,8 @@ has them). Still open: 23 Medium, 46 Low, 13 spec-coverage items. Paths are rela
 
 ## misc, config, packaging & docs
 
-- Medium: `no-trivial-return-type` self-reference guard matches property names (`return v.disabled` in `const disabled` not reported). S
-- Medium: `enforce-routing-view-naming` doesn't check a default-export `loadComponent`; block-bodied `.then` skips the class-name check. S
+- Medium: `no-trivial-return-type` self-reference guard matches property names (`return v.disabled` in `const disabled` not reported). S Done in 321ffa7e8.
+- Medium: `enforce-routing-view-naming` doesn't check a default-export `loadComponent`; block-bodied `.then` skips the class-name check. S Done in f4ba9f3c5.
 - Medium: `prefer-clone-equal` misses `import * as _`, default `lodash` import, `lodash.clonedeep`, `require('lodash')`. Done in 64e382a80 (`require` aliases not tracked).
 - Low: `no-impure-top-level-provider` passes destructuring wrapped in `satisfies` or `!`. S
 - Low: `enforce-routing-view-naming` reports non-route object literals; substring test lets `items-viewer` pass. S
