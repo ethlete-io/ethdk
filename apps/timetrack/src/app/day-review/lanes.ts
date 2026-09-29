@@ -89,6 +89,8 @@ export type LaneBlock = {
   key: string;
   /** The window this piece of a sibling row covers, or null for a block that draws its whole row. */
   piece: TimeWindow | null;
+  /** The stacking order of a cascaded sibling piece, later columns on top, or null for a packed block. */
+  layer: number | null;
   inlineOffset: number;
   inlineSize: number;
   segments: LaneSegment[];
@@ -146,10 +148,10 @@ const wholeOf = (block: SchedulerTimeGridBlock<TimelineEntry>): Timed => ({
 });
 
 /**
- * The rows of parallel agent sessions on one ticket (`sharingTicket`), in groups that overlap. A row
- * being dragged is drawn whole, at the range the drag gives it.
+ * The rows of parallel agent sessions on one ticket (`sharingTicket`). A row being dragged is drawn
+ * whole, at the range the drag gives it.
  */
-const siblingGroupsOf = (blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[]): Sibling[][] => {
+const siblingsOf = (blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[]): Sibling[] => {
   const rows = blocks.flatMap((block) => {
     const row = rowEntryOf(block.node.appointment)?.row;
     const { start, end } = block.node.appointment;
@@ -168,136 +170,53 @@ const siblingGroupsOf = (blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[
         ]
       : [];
   });
-  const shared = [...sharingTicket(rows)].sort((a, b) => a.from.getTime() - b.from.getTime());
-  const groups: { ticket: string; end: number; members: Sibling[] }[] = [];
 
-  for (const sibling of shared) {
-    const ticket = `${sibling.laneKey}|${sibling.issueKey ?? ''}|${sibling.standInId ?? ''}`;
-    const group = groups.find((open) => open.ticket === ticket && open.end > sibling.from.getTime());
-
-    if (group) {
-      group.members.push(sibling);
-      group.end = Math.max(group.end, sibling.to.getTime());
-    } else {
-      groups.push({ ticket, end: sibling.to.getTime(), members: [sibling] });
-    }
-  }
-
-  return groups.map((group) => group.members);
+  return [...sharingTicket(rows)].map(({ block, row }) => ({ block, row }));
 };
 
 /**
- * Splits a group of sibling rows into the increments of the grid the rows sit on. Each increment goes
- * to the row whose observed stretches hold most of it, and each row gets as many increments as it
- * books; a row that won fewer takes the free ones nearest to its own. Where the rows book more than the
- * group's clock holds, a row is drawn shorter rather than over another, down to one increment.
+ * A sibling row as one piece per stretch its session ran, each widened to the increments the rows
+ * sit on, so a session is drawn where it worked and not over the whole span its row covers.
  */
-const piecesOf = (group: readonly Sibling[]): Timed[] => {
-  const start = Math.min(...group.map(({ row }) => row.from.getTime()));
-  const end = Math.max(...group.map(({ row }) => row.to.getTime()));
-  const slots = Array.from({ length: Math.ceil((end - start) / SLOT_MS) }, (_, at) => ({
-    from: start + at * SLOT_MS,
-    to: Math.min(end, start + (at + 1) * SLOT_MS),
+const stretchPiecesOf = ({ block, row }: Sibling): Timed[] => {
+  const rowFrom = row.from.getTime();
+  const rowTo = row.to.getTime();
+  const runs: { from: number; to: number }[] = [];
+  const snapped = (row.stretches?.length ? row.stretches : [row])
+    .map((stretch) => ({
+      from: Math.max(rowFrom, Math.floor(stretch.from.getTime() / SLOT_MS) * SLOT_MS),
+      to: Math.min(rowTo, Math.ceil(stretch.to.getTime() / SLOT_MS) * SLOT_MS),
+    }))
+    .filter((run) => run.to > run.from)
+    .sort((a, b) => a.from - b.from);
+
+  for (const run of snapped) {
+    const last = runs.at(-1);
+
+    if (last && last.to >= run.from) last.to = Math.max(last.to, run.to);
+    else runs.push({ ...run });
+  }
+
+  const appointmentStart = block.node.appointment.start.getTime();
+
+  return runs.map((run) => ({
+    block: {
+      ...block,
+      offset: block.offset + ((run.from - appointmentStart) / DAY_MS) * 100,
+      span: ((run.to - run.from) / DAY_MS) * 100,
+    },
+    start: run.from,
+    end: run.to,
+    column: 0,
+    piece: { from: new Date(run.from), to: new Date(run.to) },
   }));
-  const taken = new Set<number>();
-  const owned = new Map(group.map((sibling) => [sibling, [] as number[]]));
-  const need = new Map(
-    group.map((sibling) => {
-      const spanMs = sibling.row.to.getTime() - sibling.row.from.getTime();
-
-      return [sibling, Math.max(1, Math.round(Math.min(sibling.row.durationMs, spanMs) / SLOT_MS))];
-    }),
-  );
-  const within = (sibling: Sibling, at: number) =>
-    (slots[at]?.from ?? 0) < sibling.row.to.getTime() && (slots[at]?.to ?? 0) > sibling.row.from.getTime();
-  const heldIn = (sibling: Sibling, at: number) => {
-    const slot = slots[at];
-    const { row } = sibling;
-
-    if (!slot) return 0;
-
-    return (row.stretches?.length ? row.stretches : [row]).reduce(
-      (sum, stretch) =>
-        sum +
-        Math.max(
-          0,
-          Math.min(stretch.to.getTime(), slot.to, row.to.getTime()) -
-            Math.max(stretch.from.getTime(), slot.from, row.from.getTime()),
-        ),
-      0,
-    );
-  };
-  const give = (sibling: Sibling, at: number) => {
-    taken.add(at);
-    owned.get(sibling)?.push(at);
-    need.set(sibling, (need.get(sibling) ?? 0) - 1);
-  };
-
-  const bids = group
-    .flatMap((sibling, order) => slots.map((_, at) => ({ sibling, order, at, held: heldIn(sibling, at) })))
-    .filter((bid) => bid.held > 0 && within(bid.sibling, bid.at))
-    .sort((a, b) => b.held - a.held || a.at - b.at || a.order - b.order);
-
-  for (const bid of bids) {
-    if (!taken.has(bid.at) && (need.get(bid.sibling) ?? 0) > 0) give(bid.sibling, bid.at);
-  }
-
-  for (const sibling of group) {
-    while ((need.get(sibling) ?? 0) > 0) {
-      const mine = owned.get(sibling) ?? [];
-      const home = mine.length
-        ? mine
-        : slots
-            .map((_, at) => at)
-            .filter((at) => within(sibling, at))
-            .slice(0, 1);
-      const distance = (at: number) => Math.min(...home.map((own) => Math.abs(own - at)));
-      const rank = (at: number) => (taken.has(at) ? 2 : 0) + (within(sibling, at) ? 0 : 1);
-      const [best] = slots
-        .map((_, at) => at)
-        .filter((at) => !mine.includes(at) && (!taken.has(at) || (!mine.length && within(sibling, at))))
-        .sort((a, b) => rank(a) - rank(b) || distance(a) - distance(b) || a - b);
-
-      if (best === undefined) break;
-
-      give(sibling, best);
-    }
-  }
-
-  return group.flatMap((sibling) => {
-    const runs: { from: number; to: number }[] = [];
-
-    for (const at of [...(owned.get(sibling) ?? [])].sort((a, b) => a - b)) {
-      const slot = slots[at];
-      const last = runs.at(-1);
-
-      if (!slot) continue;
-      if (last && last.to === slot.from) last.to = slot.to;
-      else runs.push({ ...slot });
-    }
-
-    const { block } = sibling;
-    const appointmentStart = block.node.appointment.start.getTime();
-
-    return runs.map((run): Timed => ({
-      block: {
-        ...block,
-        offset: block.offset + ((run.from - appointmentStart) / DAY_MS) * 100,
-        span: ((run.to - run.from) / DAY_MS) * 100,
-      },
-      start: run.from,
-      end: run.to,
-      column: 0,
-      piece: { from: new Date(run.from), to: new Date(run.to) },
-    }));
-  });
 };
 
 /**
  * Packs one lane's blocks into overlap-free columns, the same way a calendar packs a day, and splits
  * the lane only while blocks overlap: a block is full width wherever nothing else in the lane runs.
- * Parallel agent sessions on one ticket book their observed minutes, so each of their rows is drawn
- * as pieces over the minutes it books, and the sessions take turns in the lane (`piecesOf`).
+ * Parallel agent sessions on one ticket are drawn over the stretches each one ran (`stretchPiecesOf`),
+ * and where only such pieces overlap they cascade instead of splitting the lane (`cascadeOf`).
  *
  * Whether two blocks overlap is read off the clock and never off `offset` and `span`. The end of one
  * row and the start of the next are the same instant, but the two percentages of the day computed
@@ -305,11 +224,12 @@ const piecesOf = (group: readonly Sibling[]): Timed[] => {
  * half the lane's width.
  */
 const packLane = (blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[]): LaneBlock[] => {
-  const groups = siblingGroupsOf(blocks);
-  const inPieces = new Set(groups.flatMap((group) => group.map((sibling) => sibling.block)));
-  const timed = [...blocks.filter((block) => !inPieces.has(block)).map(wholeOf), ...groups.flatMap(piecesOf)].sort(
-    (a, b) => a.start - b.start || a.end - b.end,
-  );
+  const siblings = siblingsOf(blocks);
+  const inPieces = new Set(siblings.map((sibling) => sibling.block));
+  const timed = [
+    ...blocks.filter((block) => !inPieces.has(block)).map(wholeOf),
+    ...siblings.flatMap(stretchPiecesOf),
+  ].sort((a, b) => a.start - b.start || a.end - b.end);
 
   const endsPerColumn: number[] = [];
 
@@ -323,8 +243,33 @@ const packLane = (blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[]): Lan
   return timed.map((entry) => placeOf(entry, timed));
 };
 
+/**
+ * A sibling piece that overlaps only other sibling pieces, placed the way a calendar cascades
+ * overlapping events: each column is indented a step further and drawn over the columns before it,
+ * so every piece stays wider than an even split would leave it.
+ */
+const cascadeOf = (entry: Timed, others: readonly Timed[]): LaneBlock => {
+  const columns = Math.max(entry.column, ...others.map((other) => other.column)) + 1;
+  const inlineOffset = others.length ? (entry.column / (columns + 1)) * 100 : 0;
+  const inlineSize = 100 - inlineOffset;
+
+  return {
+    block: entry.block,
+    key: `${entry.block.node.appointment.id}@${entry.start}`,
+    piece: entry.piece,
+    layer: entry.column + 1,
+    inlineOffset,
+    inlineSize,
+    segments: [{ from: 0, to: 1, inlineOffset, inlineSize }],
+    clipPath: null,
+  };
+};
+
 const placeOf = (entry: Timed, lane: readonly Timed[]): LaneBlock => {
   const others = lane.filter((other) => other !== entry && other.start < entry.end && other.end > entry.start);
+
+  if (entry.piece && others.every((other) => other.piece)) return cascadeOf(entry, others);
+
   const cuts = [...new Set([entry.start, entry.end, ...others.flatMap((other) => [other.start, other.end])])]
     .filter((at) => at >= entry.start && at <= entry.end)
     .sort((a, b) => a - b);
@@ -356,6 +301,7 @@ const placeOf = (entry: Timed, lane: readonly Timed[]): LaneBlock => {
     block: entry.block,
     key: entry.piece ? `${entry.block.node.appointment.id}@${entry.start}` : entry.block.node.appointment.id,
     piece: entry.piece,
+    layer: null,
     inlineOffset,
     inlineSize,
     segments,

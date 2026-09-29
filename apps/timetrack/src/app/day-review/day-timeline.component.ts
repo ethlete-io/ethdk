@@ -139,7 +139,6 @@ const DEFAULT_DRAFT_MS = 4 * SNAP_MS;
 /** Where a press on a block lands: on one of its ends, or on the body that moves the whole of it. */
 const EDGE_FRACTION = 0.25;
 const MAX_EDGE_PX = 12;
-const PIECE_GAP_PX = 2;
 
 type Marking = {
   ids: ReadonlySet<string>;
@@ -324,9 +323,9 @@ type RowDrag = {
                       [style.--tt-cut-at]="cutPercentOf(laid)"
                       [etProvideColor]="laid.block.node.appointment.colorToken ?? 'neutral'"
                       [style.top.%]="laid.block.offset"
-                      [style.height]="
-                        laid.piece ? 'calc(' + laid.block.span + '% - ' + PIECE_GAP_PX + 'px)' : laid.block.span + '%'
-                      "
+                      [style.height.%]="laid.block.span"
+                      [style.zIndex]="laid.layer"
+                      [attr.data-cascade]="laid.layer !== null || null"
                       [style.left.%]="laid.inlineOffset"
                       [style.width.%]="laid.inlineSize"
                       [style.clipPath]="laid.clipPath"
@@ -344,7 +343,7 @@ type RowDrag = {
                       "
                       (click)="select(laid.block.node.appointment, $event)"
                       (keydown.enter)="select(laid.block.node.appointment, $event)"
-                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small outline-none hover:bg-et-theme/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-et-theme-ink data-[compact]:py-0 data-[compact]:leading-none data-[dragging]:opacity-70 data-[excluded]:cursor-cell data-[marked]:ring-2 data-[marked]:ring-et-theme-ink data-[marked]:ring-inset data-[stand-in]:border-dashed"
+                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small outline-none hover:bg-et-theme/30 data-[cascade]:bg-[color-mix(in_oklab,var(--color-et-theme)_15%,var(--color-et-surface-bg))] data-[cascade]:shadow-[0_0_0_1px_var(--color-et-surface-bg)] data-[cascade]:hover:bg-[color-mix(in_oklab,var(--color-et-theme)_30%,var(--color-et-surface-bg))] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-et-theme-ink data-[compact]:py-0 data-[compact]:leading-none data-[dragging]:opacity-70 data-[excluded]:cursor-cell data-[marked]:ring-2 data-[marked]:ring-et-theme-ink data-[marked]:ring-inset data-[stand-in]:border-dashed"
                       etMenu
                       etMenuContextTrigger
                       role="button"
@@ -819,7 +818,6 @@ export class DayTimelineComponent {
   protected readonly STRIP_ROW_REM = STRIP_ROW_REM;
   protected readonly EDGE_PERCENT = EDGE_FRACTION * 100;
   protected readonly MAX_EDGE_PX = MAX_EDGE_PX;
-  protected readonly PIECE_GAP_PX = PIECE_GAP_PX;
   protected readonly HOURS = Array.from({ length: 25 }, (_, hour) => hour);
   protected readonly COUNT_DESCENDANTS = countDescendants;
   protected readonly LABEL_OF = appointmentLabel;
