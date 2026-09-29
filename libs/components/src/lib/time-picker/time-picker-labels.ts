@@ -1,6 +1,6 @@
 import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
-/** The strings the time picker's columns announce - each is a listbox of numbers with no visible label. */
+/** The strings the time picker shows and announces. */
 export type TimePickerLabels = {
   /** Accessible label for the hours column. */
   hours: string;
@@ -16,6 +16,14 @@ export type TimePickerLabels = {
   startTime: string;
   /** Heading and accessible name of a time range picker's end side. */
   endTime: string;
+  /** Short hint in the centre of an empty ring. */
+  emptyHint: string;
+  /** Unit after the hours of a range's duration in the centre of the ring, as in `8 h 30 min`. */
+  durationHours: string;
+  /** Unit after the minutes of a range's duration in the centre of the ring. */
+  durationMinutes: string;
+  /** Note under a range's duration when the end is earlier in the day than the start. */
+  endsNextDay: string;
 };
 
 /** The built-in English labels. */
@@ -27,6 +35,10 @@ export const DEFAULT_TIME_PICKER_LABELS: TimePickerLabels = {
   time: 'Time',
   startTime: 'Start time',
   endTime: 'End time',
+  emptyHint: 'Tap the ring',
+  durationHours: 'h',
+  durationMinutes: 'min',
+  endsNextDay: 'ends next day',
 };
 
 const TIME_PICKER_LABELS_DEF = /* @__PURE__ */ defineLabels<TimePickerLabels>(

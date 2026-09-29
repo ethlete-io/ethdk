@@ -1,4 +1,4 @@
-import { Component, inject, signal, viewChild, ViewEncapsulation } from '@angular/core';
+import { Component, inject, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField, required } from '@angular/forms/signals';
 import { ColorTheme, provideColorThemesWithTailwind4, ThemeSwatch } from '@ethlete/core';
@@ -48,10 +48,9 @@ import {
   TimeInputFieldDirective,
   UNIT_MS,
 } from '../index';
+import { minuteOfDay, tapRing, timeRing } from '../lib/time-picker/testing/time-picker-driver';
 import '../test-helpers';
 import { Scenario, useScenario } from './harness';
-
-const UNSTYLED_BLOCKS = 'et-scrollbar { display: block; }';
 
 const swatch = (value: `${number} ${number} ${number}`): ThemeSwatch => ({
   color: { default: value, hover: value, active: value, disabled: value },
@@ -147,8 +146,6 @@ class BillingMonthComponent {
 
 @Component({
   selector: 'et-scenario-alarm',
-  styles: [UNSTYLED_BLOCKS],
-  encapsulation: ViewEncapsulation.None,
   imports: [TIME_INPUT_IMPORTS],
   template: `
     <et-time-input
@@ -184,8 +181,6 @@ class HeadlessAlarmComponent {
 
 @Component({
   selector: 'et-scenario-meeting',
-  styles: [UNSTYLED_BLOCKS],
-  encapsulation: ViewEncapsulation.None,
   imports: [DATE_TIME_INPUT_IMPORTS],
   template: `
     <et-date-time-input
@@ -322,17 +317,6 @@ const dayCell = (label: string) => {
   if (!cell) throw new Error(`no day ${label}`);
 
   return cell;
-};
-
-const timeOption = (column: number, label: string) => {
-  const listbox = document.querySelectorAll('.et-time-picker-column')[column];
-  const option = Array.from(listbox?.querySelectorAll<HTMLButtonElement>('[role="option"]') ?? []).find(
-    (candidate) => candidate.textContent?.trim() === label,
-  );
-
-  if (!option) throw new Error(`no time option ${label} in column ${column}`);
-
-  return option;
 };
 
 const takeErrorPayload = (s: Scenario) => {
@@ -543,7 +527,7 @@ describe('forms date-time scenarios', () => {
     expect(document.querySelector('et-date-picker-panel')).toBeNull();
   });
 
-  it('takes a typed time leniently and picks hours and minutes above the minimum from the columns', () => {
+  it('takes a typed time leniently and picks a time above the minimum from the ring', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(AlarmComponent);
     const host = fixture.nativeElement as HTMLElement;
@@ -566,11 +550,13 @@ describe('forms date-time scenarios', () => {
     s.flush();
 
     expect(alarm.input()).toBeInstanceOf(TimeInputComponent);
-    expect(timeOption(0, '05').getAttribute('aria-disabled')).toBe('true');
+    expect(document.querySelectorAll('path.et-time-picker-blocked')).toHaveLength(1);
 
-    timeOption(0, '09').click();
+    tapRing(timeRing(), minuteOfDay(5));
     s.flush();
-    timeOption(1, '30').click();
+    expect(alarm.alarm()).toBeNull();
+
+    tapRing(timeRing(), minuteOfDay(9, 30));
     s.flush();
 
     expect(alarm.alarm()).toBe('09:30');
@@ -628,11 +614,7 @@ describe('forms date-time scenarios', () => {
     expect(meeting.startsAt()).toBeNull();
     expect(query('.et-date-time-input-panel-panes').dataset['activePane']).toBe('time');
 
-    timeOption(0, '08').click();
-    s.flush();
-    expect(meeting.startsAt()).toBeNull();
-
-    timeOption(1, '45').click();
+    tapRing(timeRing(), minuteOfDay(8, 45));
     s.flush();
     expect(meeting.startsAt()).toBe('2026-07-20T08:45');
 

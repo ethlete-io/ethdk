@@ -1,4 +1,4 @@
-import { Component, inject, signal, ViewEncapsulation } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   DEFAULT_TIME_PICKER_LABELS,
@@ -14,16 +14,20 @@ import {
   TimeRange,
   TimeRangePick,
 } from '../index';
+import {
+  minuteOfDay,
+  ringHandle,
+  ringNote,
+  ringReadout,
+  tapRing,
+  timeRing,
+} from '../lib/time-picker/testing/time-picker-driver';
 import '../test-helpers';
 import { Scenario, useScenario } from './harness';
 
 const code = (value: number) => `ET${value}`;
 
-const UNSTYLED_BLOCKS = 'et-scrollbar { display: block; }';
-
 const text = (element: Element | null | undefined) => element?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
-
-const columns = () => Array.from(document.querySelectorAll<HTMLElement>('[role="listbox"]'));
 
 const options = (column: Element) => Array.from(column.querySelectorAll<HTMLButtonElement>('[role="option"]'));
 
@@ -40,11 +44,6 @@ const selected = (column: Element) =>
     .filter((candidate) => candidate.getAttribute('aria-selected') === 'true')
     .map((candidate) => text(candidate));
 
-const disabledLabels = (column: Element) =>
-  options(column)
-    .filter((candidate) => candidate.getAttribute('aria-disabled') === 'true')
-    .map((candidate) => text(candidate));
-
 const settle = (s: Scenario) => {
   s.tick();
   s.frame(2);
@@ -56,8 +55,6 @@ const hhmm = (date: Date | null | undefined) =>
 
 @Component({
   selector: 'et-scenario-kickoff-time',
-  styles: [UNSTYLED_BLOCKS],
-  encapsulation: ViewEncapsulation.None,
   imports: [TimePickerComponent],
   template: `<et-time-picker [(value)]="kickoff" [minuteStep]="15" [format]="format()" />`,
 })
@@ -68,8 +65,6 @@ class KickoffTimeComponent {
 
 @Component({
   selector: 'et-scenario-opening-hours',
-  styles: [UNSTYLED_BLOCKS],
-  encapsulation: ViewEncapsulation.None,
   imports: [TimePickerComponent],
   template: `
     <et-time-picker
@@ -79,7 +74,6 @@ class KickoffTimeComponent {
       [timeFilter]="noLunch"
       [minuteStep]="30"
       format="h:mm a"
-      hoursLabel="Hour"
     />
   `,
 })
@@ -92,8 +86,6 @@ class OpeningHoursComponent {
 
 @Component({
   selector: 'et-scenario-training-slot',
-  styles: [UNSTYLED_BLOCKS],
-  encapsulation: ViewEncapsulation.None,
   imports: [TIME_PICKER_IMPORTS],
   template: `
     <et-time-picker
@@ -140,10 +132,10 @@ class TimeLabelProbeComponent {
 
 @Component({
   selector: 'et-scenario-german-time',
-  styles: [UNSTYLED_BLOCKS],
-  encapsulation: ViewEncapsulation.None,
   imports: [TimePickerComponent, TimeLabelProbeComponent],
-  providers: [provideTimePickerLabels({ hours: 'Stunden', minutes: 'Minuten', startTime: 'Beginn' })],
+  providers: [
+    provideTimePickerLabels({ hours: 'Stunden', minutes: 'Minuten', startTime: 'Beginn', emptyHint: 'Ring antippen' }),
+  ],
   template: `
     <et-time-picker mode="range" />
     <et-scenario-time-label-probe />
@@ -176,48 +168,38 @@ describe('time-picker scenarios', () => {
 
   beforeEach(() => vi.setSystemTime(new Date(2026, 8, 27, 14, 7)));
 
-  it('holds the hour until the minute completes a kickoff time, then edits it directly', () => {
+  it('picks a kickoff time on the ring in one press, shows it live, and edits it by a drag', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(KickoffTimeComponent);
     const page = fixture.componentInstance;
 
     settle(s);
 
-    const [hours, minutes] = columns();
+    const handle = ringHandle();
 
-    expect(columns()).toHaveLength(2);
-    expect(hours!.getAttribute('aria-label')).toBe(DEFAULT_TIME_PICKER_LABELS.hours);
-    expect(hours!.getAttribute('aria-orientation')).toBe('vertical');
-    expect(minutes!.getAttribute('aria-label')).toBe(DEFAULT_TIME_PICKER_LABELS.minutes);
-    expect(options(hours!)).toHaveLength(24);
-    expect(options(minutes!).map((entry) => text(entry))).toEqual(['00', '15', '30', '45']);
-    expect(
-      options(hours!)
-        .filter((entry) => entry.getAttribute('tabindex') === '0')
-        .map((e) => text(e)),
-    ).toEqual(['14']);
-    expect(selected(hours!)).toEqual([]);
+    expect(document.querySelectorAll('[etTimePickerRingHandle]')).toHaveLength(1);
+    expect(handle.getAttribute('role')).toBe('slider');
+    expect(handle.getAttribute('aria-label')).toBe(DEFAULT_TIME_PICKER_LABELS.time);
+    expect(handle.hasAttribute('data-empty')).toBe(true);
+    expect(ringReadout()).toBe('--:--');
+    expect(ringNote()).toBe(DEFAULT_TIME_PICKER_LABELS.emptyHint);
 
-    option(hours!, '18').click();
-    settle(s);
-
-    expect(page.kickoff()).toBeNull();
-    expect(option(hours!, '18').getAttribute('tabindex')).toBe('0');
-
-    option(minutes!, '30').click();
+    tapRing(timeRing(), minuteOfDay(18, 35));
     settle(s);
 
     expect(hhmm(page.kickoff())).toBe('18:30');
-    expect(selected(hours!)).toEqual(['18']);
-    expect(selected(minutes!)).toEqual(['30']);
-    expect(option(minutes!, '30').hasAttribute('data-selected')).toBe(true);
+    expect(page.kickoff()?.getDate()).toBe(27);
+    expect(handle.getAttribute('aria-valuetext')).toBe('18:30');
+    expect(handle.hasAttribute('data-empty')).toBe(false);
+    expect(ringReadout()).toBe('18:30');
 
-    option(hours!, '20').click();
+    tapRing(timeRing(), minuteOfDay(20, 30));
     settle(s);
     expect(hhmm(page.kickoff())).toBe('20:30');
+    expect(ringReadout()).toBe('20:30');
   });
 
-  it('drives the columns by keyboard: arrows wrap, Home and End jump, typeahead and column hops', async () => {
+  it('drives the handle by keyboard: arrows wrap past midnight, PageUp moves an hour, Home and End jump', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(KickoffTimeComponent);
     const page = fixture.componentInstance;
@@ -225,164 +207,152 @@ describe('time-picker scenarios', () => {
     page.kickoff.set(new Date(2026, 8, 27, 23, 45));
     settle(s);
 
-    const [hours, minutes] = columns();
-
-    option(hours!, '23').focus();
+    ringHandle().focus();
     settle(s);
-
-    s.keydown('ArrowDown');
-    settle(s);
-    expect(hhmm(page.kickoff())).toBe('00:45');
-    expect(document.activeElement).toBe(option(hours!, '00'));
 
     s.keydown('ArrowUp');
     settle(s);
+    expect(hhmm(page.kickoff())).toBe('00:00');
+
+    s.keydown('ArrowDown');
+    settle(s);
     expect(hhmm(page.kickoff())).toBe('23:45');
 
-    s.keydown('Home');
+    s.keydown('PageUp');
     settle(s);
     expect(hhmm(page.kickoff())).toBe('00:45');
 
-    s.keydown('1');
-    s.keydown('7');
+    s.keydown('PageDown');
+    s.keydown('PageDown');
     settle(s);
-    expect(hhmm(page.kickoff())).toBe('17:45');
+    expect(hhmm(page.kickoff())).toBe('22:45');
 
-    s.keydown('ArrowRight');
+    s.keydown('Home');
     settle(s);
-    await Promise.resolve();
-    expect(document.activeElement).toBe(option(minutes!, '45'));
+    expect(hhmm(page.kickoff())).toBe('00:00');
 
     s.keydown('End');
-    s.keydown('ArrowDown');
     settle(s);
-    expect(hhmm(page.kickoff())).toBe('17:00');
-
-    s.keydown('ArrowRight');
-    settle(s);
-    expect(document.activeElement).toBe(option(minutes!, '00'));
-
-    s.keydown('ArrowLeft');
-    settle(s);
-    expect(document.activeElement).toBe(option(hours!, '17'));
-    s.tick(1000);
+    expect(hhmm(page.kickoff())).toBe('23:45');
+    expect(ringReadout()).toBe('23:45');
   });
 
-  it('adds a seconds column from the format and keeps an off-step value selectable', () => {
+  it('keeps an off-step value with seconds on the ring and writes second 0 on a pick', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(KickoffTimeComponent);
+    const page = fixture.componentInstance;
 
-    fixture.componentInstance.kickoff.set(new Date(2026, 8, 27, 9, 7, 30));
-    fixture.componentInstance.format.set('HH:mm:ss');
+    page.kickoff.set(new Date(2026, 8, 27, 9, 7, 30));
+    page.format.set('HH:mm:ss');
     settle(s);
 
-    const [, minutes, seconds] = columns();
+    expect(ringHandle().getAttribute('aria-valuenow')).toBe(String(minuteOfDay(9, 7)));
+    expect(ringReadout()).toBe('09:07:30');
 
-    expect(columns().map((column) => column.getAttribute('aria-label'))).toEqual(['Hours', 'Minutes', 'Seconds']);
-    expect(options(minutes!).map((entry) => text(entry))).toEqual(['00', '07', '15', '30', '45']);
-    expect(selected(minutes!)).toEqual(['07']);
-    expect(options(seconds!)).toHaveLength(60);
-    expect(selected(seconds!)).toEqual(['30']);
+    tapRing(timeRing(), minuteOfDay(10, 15));
+    settle(s);
+
+    expect(page.kickoff()?.getSeconds()).toBe(0);
+    expect(ringReadout()).toBe('10:15:00');
   });
 
-  it('offers only opening hours on a 12-hour clock and skips closed times', () => {
+  it('offers only opening hours on a 12-hour ring and skips closed times', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(OpeningHoursComponent);
     const page = fixture.componentInstance;
 
     settle(s);
 
-    const [hours, minutes, period] = columns();
-
-    expect(columns().map((column) => column.getAttribute('aria-label'))).toEqual([
-      'Hour',
-      DEFAULT_TIME_PICKER_LABELS.minutes,
-      DEFAULT_TIME_PICKER_LABELS.period,
+    expect(Array.from(document.querySelectorAll('.et-time-picker-labels text')).map((label) => text(label))).toEqual([
+      '12 AM',
+      '3',
+      '6 AM',
+      '9',
+      '12 PM',
+      '3',
+      '6 PM',
+      '9',
     ]);
-    expect(options(period!).map((entry) => text(entry))).toEqual(['AM', 'PM']);
-    expect(selected(period!)).toEqual(['AM']);
-    expect(selected(hours!)).toEqual(['9']);
-    expect(disabledLabels(hours!)).toEqual(['12', '1', '2', '3', '4', '5', '6', '7', '8']);
+    expect(document.querySelectorAll('.et-time-picker-mark')).toHaveLength(2);
+    expect(ringReadout()).toBe('9:30 AM');
+    expect(document.querySelectorAll('path.et-time-picker-track')).toHaveLength(2);
+    expect(document.querySelectorAll('path.et-time-picker-blocked')).toHaveLength(2);
 
-    option(hours!, '8').click();
+    tapRing(timeRing(), minuteOfDay(8));
     settle(s);
     expect(hhmm(page.slot())).toBe('09:30');
 
-    option(hours!, '11').focus();
-    settle(s);
-    s.keydown('ArrowDown');
-    settle(s);
-    expect(hhmm(page.slot())).toBe('10:30');
-
-    s.keydown('End');
-    settle(s);
-    expect(hhmm(page.slot())).toBe('11:30');
-
-    s.keydown('ArrowDown');
+    tapRing(timeRing(), minuteOfDay(12, 30));
     settle(s);
     expect(hhmm(page.slot())).toBe('09:30');
 
     page.slot.set(new Date(2026, 8, 27, 11, 30));
     settle(s);
-    option(period!, 'PM').click();
+    ringHandle().focus();
+    s.keydown('ArrowUp');
     settle(s);
+    expect(hhmm(page.slot())).toBe('13:00');
 
+    s.keydown('End');
+    settle(s);
     expect(hhmm(page.slot())).toBe('17:00');
-    expect(disabledLabels(hours!)).toEqual(['12', '6', '7', '8', '9', '10', '11']);
-    expect(selected(period!)).toEqual(['PM']);
-    expect(options(minutes!).map((entry) => text(entry))).toEqual(['00', '30']);
+    expect(ringReadout()).toBe('5:00 PM');
+
+    s.keydown('Home');
+    settle(s);
+    expect(hhmm(page.slot())).toBe('09:00');
   });
 
-  it('picks a training slot as a range, hopping to the end once and banding the options between', () => {
+  it('picks a training slot as a range: the start hands on to the end, and the centre shows the length', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(TrainingSlotComponent);
     const page = fixture.componentInstance;
 
     settle(s);
 
-    const sideButtons = () => Array.from(document.querySelectorAll<HTMLButtonElement>('.et-time-picker-side'));
-
     expect(document.querySelector('et-time-picker')?.getAttribute('data-mode')).toBe('range');
-    expect(sideButtons().map((button) => text(button))).toEqual(['Start time—', 'End time—']);
-    expect(sideButtons().map((button) => button.getAttribute('aria-pressed'))).toEqual(['true', 'false']);
+    expect(document.querySelector('.et-time-picker-side')).toBeNull();
+    expect(
+      Array.from(document.querySelectorAll('[etTimePickerRingHandle]')).map((handle) =>
+        handle.getAttribute('aria-label'),
+      ),
+    ).toEqual([DEFAULT_TIME_PICKER_LABELS.startTime, DEFAULT_TIME_PICKER_LABELS.endTime]);
+    expect(ringReadout()).toBe('--:--');
 
-    const [hours, minutes] = columns();
-
-    option(hours!, '17').click();
-    option(minutes!, '00').click();
+    tapRing(timeRing(), minuteOfDay(17));
     settle(s);
 
     expect(hhmm(page.range().start)).toBe('17:00');
     expect(page.side()).toBe('end');
     expect(page.picks.map((pick) => [pick.side, hhmm(pick.time)])).toEqual([['start', '17:00']]);
-    expect(sideButtons().map((button) => button.getAttribute('aria-pressed'))).toEqual(['false', 'true']);
+    expect(ringHandle('end').hasAttribute('data-active')).toBe(true);
 
-    option(hours!, '19').click();
-    option(minutes!, '30').click();
+    tapRing(timeRing(), minuteOfDay(19, 30));
     settle(s);
 
     expect(hhmm(page.range().end)).toBe('19:30');
     expect(page.side()).toBe('end');
-    expect(sideButtons().map((button) => text(button))).toEqual(['Start time17:00', 'End time19:30']);
-    expect(option(hours!, '17').hasAttribute('data-range-start')).toBe(true);
-    expect(option(hours!, '19').hasAttribute('data-range-end')).toBe(true);
-    expect(['17', '18', '19'].map((hour) => option(hours!, hour).getAttribute('data-band'))).toEqual([
-      'start',
-      'middle',
-      'end',
-    ]);
-    expect(option(hours!, '16').hasAttribute('data-band')).toBe(false);
+    expect(ringReadout()).toBe('2 h 30 min');
+    expect(ringNote()).toBeNull();
+    expect(document.querySelector('.et-time-picker-arc')).not.toBeNull();
 
-    sideButtons()[0]!.click();
+    tapRing(timeRing(), minuteOfDay(6));
+    settle(s);
+
+    expect(hhmm(page.range().end)).toBe('06:00');
+    expect(ringReadout()).toBe('13 h');
+    expect(ringNote()).toBe(DEFAULT_TIME_PICKER_LABELS.endsNextDay);
+
+    ringHandle('start').focus();
     settle(s);
     expect(page.side()).toBe('start');
 
-    option(hours!, '18').click();
+    s.keydown('PageUp');
     settle(s);
 
     expect(hhmm(page.range().start)).toBe('18:00');
     expect(page.side()).toBe('start');
-    expect(page.picks).toHaveLength(3);
+    expect(page.picks).toHaveLength(4);
   });
 
   it('builds a compact picker from the headless directives', () => {
@@ -403,20 +373,24 @@ describe('time-picker scenarios', () => {
     expect(hhmm(fixture.componentInstance.time())).toBe('08:20');
   });
 
-  it('localizes the column and side labels for a subtree', () => {
+  it('localizes the ring labels for a subtree', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(GermanTimeComponent);
 
     settle(s);
 
-    expect(columns().map((column) => column.getAttribute('aria-label'))).toEqual(['Stunden', 'Minuten']);
-    expect(text(document.querySelector('.et-time-picker-side[data-side="start"] .et-time-picker-side-label'))).toBe(
-      'Beginn',
-    );
+    expect(ringHandle('start').getAttribute('aria-label')).toBe('Beginn');
+    expect(ringHandle('end').getAttribute('aria-label')).toBe(DEFAULT_TIME_PICKER_LABELS.endTime);
+    expect(ringNote()).toBe('Ring antippen');
     expect(text(document.querySelector('et-scenario-time-label-probe'))).toBe(
       `Stunden|Minuten|${DEFAULT_TIME_PICKER_LABELS.endTime}`,
     );
-    expect(fixture.componentInstance.source).toEqual({ hours: 'Stunden', minutes: 'Minuten', startTime: 'Beginn' });
+    expect(fixture.componentInstance.source).toEqual({
+      hours: 'Stunden',
+      minutes: 'Minuten',
+      startTime: 'Beginn',
+      emptyHint: 'Ring antippen',
+    });
   });
 
   it('reports a column outside a picker and an option outside a column', () => {

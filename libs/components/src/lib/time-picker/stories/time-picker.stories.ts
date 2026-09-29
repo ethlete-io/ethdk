@@ -41,8 +41,12 @@ type Story = StoryObj<TimePickerStorybookComponent>;
 
 export const Default: Story = {};
 
+export const WithValue: Story = {
+  args: { start: '14:30', minuteStep: 15 },
+};
+
 export const TwelveHour: Story = {
-  args: { format: 'h:mm a' },
+  args: { format: 'h:mm a', start: '14:30' },
 };
 
 export const WithSeconds: Story = {
@@ -54,11 +58,19 @@ export const Bounded: Story = {
 };
 
 export const OpeningHours: Story = {
-  args: { minTime: '08:00', maxTime: '20:00', filter: 'noLunchBreak' },
+  args: { minTime: '08:00', maxTime: '20:00', filter: 'noLunchBreak', start: '10:30' },
 };
 
 export const Range: Story = {
   args: { mode: 'range', start: '09:00', end: '17:30' },
+};
+
+export const RangeOvernight: Story = {
+  args: { mode: 'range', start: '22:00', end: '06:30' },
+};
+
+export const RangeBounded: Story = {
+  args: { mode: 'range', minTime: '08:00', maxTime: '20:00', filter: 'noLunchBreak', start: '09:00', end: '17:30' },
 };
 
 export const RangeEmpty: Story = {

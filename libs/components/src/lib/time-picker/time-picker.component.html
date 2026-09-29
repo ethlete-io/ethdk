@@ -1,30 +1,80 @@
-@if (timePicker.mode() === 'range') {
-  <div class="et-time-picker-sides">
-    @for (side of timePicker.sides(); track side.side) {
-      <button
-        [attr.aria-pressed]="side.active"
-        [attr.data-side]="side.side"
-        (click)="timePicker.setActiveSide(side.side)"
-        class="et-time-picker-side"
-        type="button"
-      >
-        <span class="et-time-picker-side-label">{{ side.label }}</span>
-        <span class="et-time-picker-side-value">{{ side.value ?? '—' }}</span>
-      </button>
+@let readoutState = readout();
+
+<div class="et-time-picker-ring" etTimePickerRing>
+  <svg class="et-time-picker-ring-graphic" aria-hidden="true" focusable="false" viewBox="0 0 280 280">
+    @let trackState = track();
+
+    @if (trackState.allBlocked) {
+      <circle [attr.cx]="CENTER" [attr.cy]="CENTER" [attr.r]="RADIUS" class="et-time-picker-blocked" />
     }
-  </div>
-}
+    @for (path of trackState.blocked; track $index) {
+      <path [attr.d]="path" class="et-time-picker-blocked" />
+    }
+    @if (trackState.full) {
+      <circle [attr.cx]="CENTER" [attr.cy]="CENTER" [attr.r]="RADIUS" class="et-time-picker-track" />
+    }
+    @for (path of trackState.open; track $index) {
+      <path [attr.d]="path" class="et-time-picker-track" />
+    }
+    @if (arc(); as arcPath) {
+      <path [attr.d]="arcPath" class="et-time-picker-arc" />
+    }
 
-<div class="et-time-picker-columns">
-  @for (column of timePicker.columns(); track column.unit) {
-    <div class="et-time-picker-column-wrapper">
-      <div #columnElement [column]="column" class="et-time-picker-column" etTimePickerColumn>
-        @for (option of column.options; track option.value) {
-          <button [option]="option" class="et-time-picker-option" etTimePickerOption>{{ option.label }}</button>
+    <g class="et-time-picker-ticks">
+      @for (tick of ticks; track tick.hour) {
+        <line [attr.x1]="tick.x1" [attr.y1]="tick.y1" [attr.x2]="tick.x2" [attr.y2]="tick.y2" />
+      }
+    </g>
+
+    <g class="et-time-picker-labels">
+      @for (label of hourLabels(); track label.hour) {
+        <text [attr.x]="label.x" [attr.y]="label.y">{{ label.text }}</text>
+      }
+    </g>
+
+    @if (twelveHour()) {
+      <path
+        [attr.transform]="'translate(' + MOON.x + ' ' + MOON.y + ')'"
+        class="et-time-picker-mark"
+        d="M8.5 0.8 A6 6 0 1 0 11.2 8.6 A4.6 4.6 0 0 1 8.5 0.8 Z"
+      />
+      <g class="et-time-picker-mark">
+        <circle [attr.cx]="sun.x" [attr.cy]="sun.y" r="3.2" />
+        @for (ray of sunRays; track ray.index) {
+          <line [attr.x1]="ray.x1" [attr.y1]="ray.y1" [attr.x2]="ray.x2" [attr.y2]="ray.y2" />
         }
-      </div>
+      </g>
+    }
 
-      <et-scrollbar [for]="columnElement" autoHide />
-    </div>
+    <text
+      [attr.x]="CENTER"
+      [attr.y]="readoutState.note === null ? CENTER : CENTER - (readoutState.kind === 'duration' ? 2 : 4)"
+      [attr.data-kind]="readoutState.kind"
+      [attr.data-long]="readoutState.main.length > 5 || null"
+      class="et-time-picker-readout"
+    >
+      {{ readoutState.main }}
+    </text>
+    @if (readoutState.note !== null) {
+      <text [attr.x]="CENTER" [attr.y]="CENTER + 20" class="et-time-picker-note">{{ readoutState.note }}</text>
+    }
+  </svg>
+
+  <div
+    #startHandle="etTimePickerRingHandle"
+    [style.--_et-time-picker-handle-angle]="(startHandle.angle() ?? 0) + 'deg'"
+    class="et-time-picker-handle"
+    etTimePickerRingHandle
+    side="start"
+  ></div>
+
+  @if (timePicker.mode() === 'range') {
+    <div
+      #endHandle="etTimePickerRingHandle"
+      [style.--_et-time-picker-handle-angle]="(endHandle.angle() ?? 0) + 'deg'"
+      class="et-time-picker-handle"
+      etTimePickerRingHandle
+      side="end"
+    ></div>
   }
 </div>

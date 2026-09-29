@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { form, FormField } from '@angular/forms/signals';
 import { ColorTheme, provideColorThemesWithTailwind4, ThemeSwatch } from '@ethlete/core';
 import { de } from 'date-fns/locale';
+import { minuteOfDay, tapRing, timeRing } from '../lib/time-picker/testing/time-picker-driver';
 import '../test-helpers';
 import {
   DATE_RANGE_INPUT_ERROR_CODES,
@@ -244,17 +245,6 @@ const dayCell = (label: string) => {
   return cell;
 };
 
-const timeOption = (column: number, label: string) => {
-  const listbox = document.querySelectorAll('.et-time-picker-column')[column];
-  const option = Array.from(listbox?.querySelectorAll<HTMLButtonElement>('[role="option"]') ?? []).find(
-    (candidate) => candidate.textContent?.trim() === label,
-  );
-
-  if (!option) throw new Error(`no time option ${label} in column ${column}`);
-
-  return option;
-};
-
 const presetButton = (label: string) => {
   const button = Array.from(document.querySelectorAll<HTMLButtonElement>('.et-date-range-preset')).find(
     (candidate) => candidate.textContent?.trim() === label,
@@ -263,18 +253,6 @@ const presetButton = (label: string) => {
   if (!button) throw new Error(`no preset ${label}`);
 
   return button;
-};
-
-const dropUnstyledScrollbarErrors = (s: Scenario) => {
-  const before = s.errors.length;
-
-  s.errors.splice(
-    0,
-    s.errors.length,
-    ...s.errors.filter((entry) => !String(entry.error).includes('<et-scrollbar> is an Angular component')),
-  );
-
-  expect(s.errors.length).toBeLessThan(before);
 };
 
 const takeErrorPayload = (s: Scenario) => {
@@ -427,7 +405,7 @@ describe('forms date-time range scenarios', () => {
     expect(fixture.componentInstance.stay()).toEqual({ start: '2026-07-01', end: '2026-07-10' });
   });
 
-  it('picks a time range from the columns and rejects an empty span with a strict order check', () => {
+  it('picks a time range from the ring and rejects an empty span with a strict order check', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(ShiftComponent);
     const host = fixture.nativeElement as HTMLElement;
@@ -440,22 +418,17 @@ describe('forms date-time range scenarios', () => {
 
     expect(shift.input()).toBeInstanceOf(TimeRangeInputComponent);
 
-    timeOption(0, '09').click();
-    s.flush();
-    timeOption(1, '00').click();
+    tapRing(timeRing(), minuteOfDay(9));
     s.flush();
     expect(shift.model().shift).toEqual({ start: '09:00', end: null });
 
-    timeOption(0, '17').click();
-    s.flush();
-    timeOption(1, '30').click();
+    tapRing(timeRing(), minuteOfDay(17, 30));
     s.flush();
     expect(shift.model().shift).toEqual({ start: '09:00', end: '17:30' });
     expect(shift.shiftForm.shift().valid()).toBe(true);
 
     s.keydown('Escape');
     s.flush();
-    dropUnstyledScrollbarErrors(s);
 
     const [, end] = Array.from(host.querySelectorAll<HTMLInputElement>('et-time-range-input input'));
 
@@ -495,13 +468,9 @@ describe('forms date-time range scenarios', () => {
     expect(event.model().window).toEqual({ start: null, end: null });
     expect(query('.et-date-time-range-input-panel-panes').dataset['activePane']).toBe('times');
 
-    timeOption(0, '09').click();
+    tapRing(timeRing(), minuteOfDay(9));
     s.flush();
-    timeOption(1, '00').click();
-    s.flush();
-    timeOption(0, '17').click();
-    s.flush();
-    timeOption(1, '30').click();
+    tapRing(timeRing(), minuteOfDay(17, 30));
     s.flush();
 
     expect(event.model().window).toEqual({ start: '2026-07-20T09:00', end: '2026-07-24T17:30' });
@@ -513,7 +482,6 @@ describe('forms date-time range scenarios', () => {
 
     event.control().closePicker();
     s.flush();
-    dropUnstyledScrollbarErrors(s);
 
     const [, end] = Array.from(host.querySelectorAll<HTMLInputElement>('et-date-time-range-input input'));
 

@@ -47,7 +47,7 @@ input, the time range input, the date-time input and the date-time range input.
 
 - Slice 1 (ring math): done, `time-picker/headless/internals/time-ring.ts`.
 - Slice 2 (headless ring): done, `TimePickerRingDirective`, `TimePickerRingHandleDirective`, ring state on `TimePickerDirective` (`ringStops`, `ringMinute`, `commitRingMinute`). The columns still exist.
-- Slice 3 (default component): in progress.
+- Slice 3 (default component): done, `et-time-picker` renders the SVG ring (open track, dotted blocked spans, range arc, 24h or 12h labels with moon and sun, handles, centre readout with the duration), tokens `--et-time-picker-ring-size` and `--et-time-picker-handle-size`, labels `emptyHint`, `durationHours`, `durationMinutes`, `endsNextDay`. The side buttons are gone.
 
 ## Slices
 

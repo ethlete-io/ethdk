@@ -74,7 +74,8 @@
 
   .et-overlay.et-date-picker-sheet {
     --et-calendar-cell-size: 44px;
-    --et-time-picker-option-size: 44px;
+    --et-time-picker-ring-size: 328px;
+    --et-time-picker-handle-size: 44px;
 
     border-radius: 16px 16px 0 0;
 

@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, computed, input, linkedSignal, signal } from '@angular/core';
+import { Component, ViewEncapsulation, computed, input, linkedSignal } from '@angular/core';
 import { ProvideColorDirective } from '@ethlete/core';
 import { de } from 'date-fns/locale';
 import { TimePickerMode, TimePickerTimeFilterFn, TimeRange } from '../headless';
@@ -54,7 +54,7 @@ export class TimePickerStorybookComponent {
   public endLabel = input<string | null>(null);
   public color = input('brand');
 
-  public value = signal<Date | null>(null);
+  public value = linkedSignal<Date | null>(() => (this.mode() === 'range' ? null : parseTimeOfDay(this.start())));
 
   public rangeValue = linkedSignal<TimeRange>(() => ({
     start: parseTimeOfDay(this.start()),
