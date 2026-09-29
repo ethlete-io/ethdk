@@ -174,13 +174,31 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       ),
     );
 
+  const discoverWhilePaused$ = (): Observable<unknown> =>
+    discovery()
+      ? EMPTY
+      : settings.ready$.pipe(
+          concatMap(() => {
+            discoveredAt = Date.now();
+            discoveredRoots = settings.settings().gitScanRoots.join('\n');
+
+            return discover$();
+          }),
+          catchError((error: unknown) => {
+            failure.set(error instanceof Error ? error.message : String(error));
+
+            return EMPTY;
+          }),
+        );
+
   /**
-   * A paused collector walks no repository. What it would have found is refused by the store as well:
+   * A paused collector scans no repository. What it would have found is refused by the store as well:
    * a scan reads a window of history, so the first one after a resume reaches back over the pause.
+   * It still lists the repositories once, since the day is not drawn before that list is known.
    */
   timer(0, GIT_WATCH_POLL_INTERVAL_MS)
     .pipe(
-      exhaustMap(() => (pause.isPaused() ? EMPTY : collect$())),
+      exhaustMap(() => (pause.isPaused() ? discoverWhilePaused$() : collect$())),
       takeUntilDestroyed(),
     )
     .subscribe();
