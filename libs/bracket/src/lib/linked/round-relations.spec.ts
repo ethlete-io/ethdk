@@ -1,5 +1,6 @@
 import {
   BRACKET_DATA_LAYOUT,
+  BracketDataLayout,
   BracketRoundId,
   BracketRoundType,
   DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
@@ -62,11 +63,11 @@ const describeRelation = (relation: BracketRoundRelation<null, null>) => {
   return parts.join(' ');
 };
 
-const relationOf = (source: BracketDataSource<null, null>, roundId: string) =>
-  describeRelation(
-    createBracket(source, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT }).rounds.getOrThrow(roundId as BracketRoundId)
-      .relation,
-  );
+const relationOf = (
+  source: BracketDataSource<null, null>,
+  roundId: string,
+  layout: BracketDataLayout = BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT,
+) => describeRelation(createBracket(source, { layout }).rounds.getOrThrow(roundId as BracketRoundId).relation);
 
 describe('generateRoundRelations', () => {
   it('links a bracket whose final round has no matches yet', () => {
@@ -115,5 +116,16 @@ describe('generateRoundRelations', () => {
 
     expect(relationOf(source, 'l1')).toBe('nothing-to-one next=gf');
     expect(relationOf(source, 'gf')).toBe('two-to-one next=rf');
+  });
+
+  it('links both halves of a mirrored bracket to the middle round', () => {
+    const source = singleElimination([4, 2, 1]);
+    const mirrored = BRACKET_DATA_LAYOUT.MIRRORED;
+
+    expect(relationOf(source, 'r0--half-1', mirrored)).toBe('nothing-to-one next=r1--half-1');
+    expect(relationOf(source, 'r1--half-1', mirrored)).toBe('one-to-one prev=r0--half-1 next=r2');
+    expect(relationOf(source, 'r2', mirrored)).toBe('one-to-nothing prev=r1--half-1');
+    expect(relationOf(source, 'r1--half-2', mirrored)).toBe('one-to-one prev=r0--half-2 next=r2');
+    expect(relationOf(source, 'r0--half-2', mirrored)).toBe('nothing-to-one next=r1--half-2');
   });
 });
