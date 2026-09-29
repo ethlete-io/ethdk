@@ -35,6 +35,19 @@ describe('query devtools stats', () => {
       expect(measureQueryDevtoolsPayload({ body: new Blob(['abcd']) }).bytes).toBe(4);
     });
 
+    it('should serialize the same body only once', () => {
+      const body = { a: 1 };
+      const stringify = vi.spyOn(JSON, 'stringify');
+
+      measureQueryDevtoolsPayload({ body });
+      const second = measureQueryDevtoolsPayload({ body });
+
+      expect(stringify).toHaveBeenCalledTimes(1);
+      expect(second).toEqual({ bytes: JSON.stringify({ a: 1 }).length, isExact: false });
+
+      stringify.mockRestore();
+    });
+
     it('should report nothing for an empty or unserializable body', () => {
       const circular: Record<string, unknown> = {};
       circular['self'] = circular;

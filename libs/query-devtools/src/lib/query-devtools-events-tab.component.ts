@@ -48,14 +48,6 @@ export class QueryDevtoolsEventsTabComponent {
   }
 
   /**
-   * Opens the query a row belongs to in this tab's own drawer, rather than jumping to the Queries tab -
-   * the log is read by walking rows, and a jump ends that walk on every click.
-   */
-  protected selectEventRow(item: EventLogItem) {
-    if (item.queryId) this.host.eventSelectedQueryId.set(item.queryId);
-  }
-
-  /**
    * Whether a row's query can still be opened. An id alone does not say so: a query batch destroys each
    * item's query as that item settles and leaves no tombstone behind, so a bulk run's rows would
    * otherwise all render as links that open nothing.

@@ -125,6 +125,7 @@ export type QueryDevtoolsHost = {
   clock: Signal<number>;
 
   findQuery(id: string | null): QueryDevtoolsSelection | null;
+  eventQueryId(event: EventLogItem): string | null;
   queryLinkFor(entry: QueryDevtoolsEntry | undefined, query?: AnyQuery): QueryLink;
 
   asStack(entry: QueryDevtoolsEntry): AnyQueryStack;

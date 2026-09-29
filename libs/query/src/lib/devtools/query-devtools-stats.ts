@@ -219,6 +219,18 @@ const textEncoder = typeof TextEncoder === 'function' ? /* @__PURE__ */ new Text
 
 const byteLengthOf = (text: string) => textEncoder?.encode(text).length ?? text.length;
 
+/** Keyed on identity, so a body mutated in place after its first measurement keeps that first size. */
+const serializedSizes = /* @__PURE__ */ new WeakMap<object, number>();
+
+const serializedSizeOf = (body: unknown) => {
+  try {
+    return byteLengthOf(JSON.stringify(body) ?? '');
+  } catch {
+    // A body holding a circular reference or a BigInt has no serialized size to report.
+    return 0;
+  }
+};
+
 const estimateBodySize = (body: unknown) => {
   if (body === null || body === undefined) return 0;
   if (typeof body === 'string') return byteLengthOf(body);
@@ -226,13 +238,17 @@ const estimateBodySize = (body: unknown) => {
   if (body instanceof ArrayBuffer) return body.byteLength;
   if (ArrayBuffer.isView(body)) return body.byteLength;
   if (typeof FormData !== 'undefined' && body instanceof FormData) return 0;
+  if (typeof body !== 'object') return serializedSizeOf(body);
 
-  try {
-    return byteLengthOf(JSON.stringify(body) ?? '');
-  } catch {
-    // A body holding a circular reference or a BigInt has no serialized size to report.
-    return 0;
-  }
+  const cached = serializedSizes.get(body);
+
+  if (cached !== undefined) return cached;
+
+  const size = serializedSizeOf(body);
+
+  serializedSizes.set(body, size);
+
+  return size;
 };
 
 /** How many runs a query keeps. Enough to see a stampede or a chain without growing unbounded. */

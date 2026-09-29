@@ -208,11 +208,8 @@ export type EventLogItem = {
   isSecure: boolean;
   status: number | null;
 
-  /**
-   * The registered query the request belonged to when the event fired, so the row can open it. Resolved
-   * here rather than at click time so the log holds an id instead of a reference to the request itself.
-   */
-  queryId: string | null;
+  /** Weak, so the log never keeps a destroyed request alive. `null` for an event that is not one request. */
+  request: WeakRef<object> | null;
 
   /** What asked for a refresh, for a `queries-refreshed` row. `null` for every other type. */
   cause: QueryRefreshCause | null;

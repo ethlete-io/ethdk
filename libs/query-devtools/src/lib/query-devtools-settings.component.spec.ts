@@ -15,7 +15,7 @@ const eventRow = (client: string, id: number): EventLogItem => ({
   url: `${client}/thing`,
   isSecure: false,
   status: 200,
-  queryId: null,
+  request: null,
   cause: null,
   destroyCause: null,
   refreshed: null,

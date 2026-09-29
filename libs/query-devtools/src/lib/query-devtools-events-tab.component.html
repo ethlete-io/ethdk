@@ -67,9 +67,10 @@
         </thead>
         <tbody>
           @for (event of filteredEvents(); track event.id) {
+            @let eventQueryId = host.eventQueryId(event);
             <tr
               [attr.data-status]="eventRowStatus(event)"
-              [class.et-query-devtools-row--active]="!!event.queryId && host.eventSelectedQueryId() === event.queryId"
+              [class.et-query-devtools-row--active]="!!eventQueryId && host.eventSelectedQueryId() === eventQueryId"
             >
               <td>{{ host.formatTime(event.timestamp) }}</td>
               <td [title]="event.client" class="et-query-devtools-mono et-query-devtools-cell-origin">
@@ -118,9 +119,9 @@
                 </td>
               } @else if (event.url; as url) {
                 <td>
-                  @if (canOpenEventRow(event.queryId)) {
+                  @if (canOpenEventRow(eventQueryId)) {
                     <button
-                      (click)="selectEventRow(event)"
+                      (click)="host.eventSelectedQueryId.set(eventQueryId)"
                       class="et-query-devtools-row-link"
                       type="button"
                       title="Open {{ event.method }} {{ url }}"

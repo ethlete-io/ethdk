@@ -141,6 +141,7 @@ import { QueryDevtoolsFaultsTabComponent } from './query-devtools-faults-tab.com
 import { QueryDevtoolsFormsTabComponent } from './query-devtools-forms-tab.component';
 import { writeQueryDevtoolsClipboard } from './query-devtools-clipboard';
 import { createQueryDevtoolsCopiedTick, QueryDevtoolsCopiedTick } from './query-devtools-copied-tick';
+import { resolveQueryDevtoolsEventOwner } from './query-devtools-event-owner';
 import { QUERY_DEVTOOLS_HOST } from './query-devtools-host';
 import { QueryDevtoolsLocksTabComponent } from './query-devtools-locks-tab.component';
 import {
@@ -859,6 +860,7 @@ export class QueryDevtoolsComponent implements OnInit {
   public pinnedQueryIds = signal<ReadonlySet<string>>(new Set(readPinnedQueryIds()));
 
   public eventLog = signal<EventLogItem[]>([]);
+  private eventOwners = new WeakMap<EventLogItem, string | null>();
 
   public droppedCacheEntries = signal<DroppedCacheEntry[]>([]);
 
@@ -957,7 +959,7 @@ export class QueryDevtoolsComponent implements OnInit {
 
   /**
    * The queries that still exist. Everything that measures what the application is doing right now -
-   * the tab bar's error flags, the tamper dot, the timeline, the identity match behind an event row -
+   * the tab bar's error flags, the tamper dot, the timeline -
    * reads this rather than {@link queryEntries}, so a tombstone never inflates a live number.
    */
   private liveQueryEntries = computed(() => this.queryEntries().filter((e) => !e.destroyedAt));
@@ -2749,6 +2751,16 @@ export class QueryDevtoolsComponent implements OnInit {
     this.download({ content: file.content, filename: file.name, type: file.type });
   }
 
+  public eventQueryId(event: EventLogItem) {
+    if (this.eventOwners.has(event)) return this.eventOwners.get(event) ?? null;
+
+    const id = resolveQueryDevtoolsEventOwner(this.queryEntries(), event);
+
+    this.eventOwners.set(event, id);
+
+    return id;
+  }
+
   private resolvedHeaders(
     request: { subtle: { resolveHeaders: () => HttpHeaders | undefined } } | null | undefined,
     args: { headers?: unknown } | null,
@@ -3551,14 +3563,14 @@ export class QueryDevtoolsComponent implements OnInit {
         isSecure: event.isSecure,
         status: null,
         destroyCause: event.cause,
-        queryId: this.resolveEventQueryId(event),
+        request: null,
       });
 
       return;
     }
 
     if (event.type === 'unbind-all-secure') {
-      this.pushEventItem({ ...base, method: null, url: null, isSecure: true, status: null, queryId: null });
+      this.pushEventItem({ ...base, method: null, url: null, isSecure: true, status: null, request: null });
 
       return;
     }
@@ -3570,7 +3582,7 @@ export class QueryDevtoolsComponent implements OnInit {
         url: null,
         isSecure: false,
         status: null,
-        queryId: null,
+        request: null,
         cause: event.cause,
         refreshed: event.requests.map((request) => this.refreshedRequestOf(request)),
       });
@@ -3591,33 +3603,8 @@ export class QueryDevtoolsComponent implements OnInit {
       durationMs: event.request.subtle.lastDurationMs(),
       bytes: measured?.bytes ?? null,
       isEstimatedBytes: !!measured && !measured.isExact,
-      queryId: this.resolveEventQueryId(event.request),
+      request: new WeakRef(event.request),
     });
-  }
-
-  /**
-   * The registered query an event's request belongs to. A request is shared by every query on the same
-   * cache key, so the first owner is as good as any - they all show the same response.
-   *
-   * The url fallback is what makes a row clickable when the query is already gone: an error that fires
-   * as the component holding it is being destroyed (a `401` that redirects to login) has no live owner
-   * left to match on identity, and its tombstone holds a copy of the request rather than the request.
-   */
-  private resolveEventQueryId(source: { url: string }) {
-    const live = this.liveQueryEntries();
-    const owner =
-      live.find((e) => (e.handle as AnyQuery).subtle.request() === source) ??
-      live.find((e) => this.requestUrl(e.handle as AnyQuery) === source.url);
-
-    if (owner) return owner.id;
-
-    // Youngest first: the same route destroyed twice leaves two tombstones, and the newer one is the
-    // one this event belongs to.
-    return (
-      this.queryEntries()
-        .filter((e) => e.destroyedAt && this.requestUrl(e.handle as AnyQuery) === source.url)
-        .sort((a, b) => (b.destroyedAt ?? 0) - (a.destroyedAt ?? 0))[0]?.id ?? null
-    );
   }
 
   private measureResponse(request: { currentEvent: () => unknown; response: () => unknown }) {
