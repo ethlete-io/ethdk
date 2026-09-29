@@ -155,7 +155,11 @@ describe('createAnchoredPanelController with a real overlay', () => {
     expect(event.defaultPrevented).toBe(true);
     expect(document.activeElement).toBe(byId('after'));
     expect(host.open()).toBe(false);
-    expect(host.closes[0]?.byFocusLeave).toBe(true);
+
+    await vi.waitFor(async () => {
+      await driver.settle();
+      expect(host.closes[0]?.byFocusLeave).toBe(true);
+    });
     driver.closeAll();
   });
 
