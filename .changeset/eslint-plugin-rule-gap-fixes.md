@@ -2,4 +2,4 @@
 '@ethlete/eslint-plugin': patch
 ---
 
-Close rule gaps: `no-document-cookie`, `no-window-location`, `prefer-rxjs-timer`, `no-subscribe-with-body`, `prefer-match-media`, `prefer-clone-equal` and `no-dom-query` catch more escapes, and the `no-async-await` `play` exemption only applies in story files.
+Fix several rule gaps: decorator property order keeps trailing comments, `require-dollar-suffix` handles `toObservable` and `asObservable` but not `partition`, and legacy decorator, template literal type, recursion and routing view checks catch more cases.
