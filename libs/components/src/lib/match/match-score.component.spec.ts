@@ -1,7 +1,13 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import '../../test-helpers';
 import { MatchScoreComponent } from './match-score.component';
+
+// jsdom drops the component stylesheet whole (`@layer`, nesting) and vitest stubs CSS imports to an empty
+// string, so the source text is the only place the reduced-motion rule is observable from a spec.
+const scoreCss = readFileSync(fileURLToPath(import.meta.url).replace(/[^/]+$/, 'match-score.component.css'), 'utf8');
 
 @Component({
   template: `<et-match-score [value]="value()" [subject]="subject()" animate />`,
@@ -77,5 +83,15 @@ describe('MatchScoreComponent', () => {
 
     expect(driver.digits()).toEqual([['5', 'static']]);
     expect(driver.flashCount()).toBe(0);
+  });
+
+  it('shortens the roll under reduced motion instead of removing it, so animationend still fires', () => {
+    const block = /@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n {2}\}/.exec(scoreCss)?.[1] ?? '';
+
+    expect(block).toContain(".et-match-score-digit:where([data-state='in'])");
+    expect(block).toContain(".et-match-score-digit:where([data-state='out'])");
+    expect(block).toContain('.et-match-score-flash');
+    expect(block).toMatch(/animation-duration: 1ms;/);
+    expect(block).not.toMatch(/animation(-name)?: none/);
   });
 });
