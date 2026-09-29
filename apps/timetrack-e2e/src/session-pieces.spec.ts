@@ -109,40 +109,21 @@ const drawnPieces = async (page: Page) => {
   return { laneBox, drawn, titles: [...new Set(drawn.map((piece) => piece.title))] };
 };
 
-const expectCascaded = async (page: Page) => {
-  const { laneBox, drawn } = await drawnPieces(page);
+const expectInSequence = (
+  laneBox: { height: number },
+  drawn: readonly { title: string; box: { y: number; height: number } }[],
+) => {
+  const pxPerMinute = laneBox.height / (24 * 60);
 
-  for (const piece of drawn) {
-    expect(piece.clipPath).toBe('none');
-    expect(piece.text).toContain(piece.title.replace(/ · .*$/, ''));
-    expect(piece.box.width).toBeGreaterThan(laneBox.width / 2);
-  }
+  for (const piece of drawn) expect(piece.box.height).toBeCloseTo(minutesOf(piece.title) * pxPerMinute, 0);
 
-  const overlapping = drawn.flatMap((lower) =>
-    drawn
-      .filter((upper) => upper !== lower && upper.title !== lower.title && upper.box.x > lower.box.x)
-      .filter((upper) => upper.box.y < lower.box.y + lower.box.height && upper.box.y + upper.box.height > lower.box.y)
-      .map((upper) => ({ lower, upper })),
-  );
+  const byTop = drawn.map((piece) => piece.box).sort((a, b) => a.y - b.y);
 
-  expect(overlapping).not.toHaveLength(0);
+  byTop.slice(1).forEach((box, index) => {
+    const above = byTop[index];
 
-  for (const { lower, upper } of overlapping) {
-    expect(upper.box.x + upper.box.width).toBeCloseTo(lower.box.x + lower.box.width, 0);
-
-    const x = upper.box.x + upper.box.width / 2;
-    const y = Math.max(upper.box.y, lower.box.y) + 4;
-    const onTop = await page.evaluate(
-      ([px, py]) =>
-        document
-          .elementFromPoint(px ?? 0, py ?? 0)
-          ?.closest('[data-kind="row"]')
-          ?.getAttribute('title'),
-      [x, y],
-    );
-
-    expect(onTop).toBe(upper.title);
-  }
+    expect(box.y).toBeGreaterThanOrEqual((above?.y ?? 0) + (above?.height ?? 0) - 1);
+  });
 };
 
 const surfaceOf = async (page: Page, band: Locator) => {
@@ -164,34 +145,18 @@ test.describe('parallel sessions on one ticket, prompted in turn', () => {
     await seedDay(page, { prompts: [0, 30, 60], end: 90 });
   });
 
-  test('follow each other at full width over the stretches each one ran', async ({ page }) => {
+  test('follow each other at full width, one card per session', async ({ page }) => {
     const { laneBox, drawn, titles } = await drawnPieces(page);
 
     expect(titles).toHaveLength(2);
-    expect(drawn.length).toBeGreaterThan(titles.length);
+    expect(drawn).toHaveLength(titles.length);
 
     for (const piece of drawn) {
       expect(piece.box.width).toBeGreaterThan(laneBox.width - 2);
       expect(piece.clipPath).toBe('none');
     }
 
-    const byTop = drawn.map((piece) => piece.box).sort((a, b) => a.y - b.y);
-
-    byTop.slice(1).forEach((box, index) => {
-      const above = byTop[index];
-
-      expect(box.y).toBeGreaterThanOrEqual((above?.y ?? 0) + (above?.height ?? 0) - 1);
-    });
-  });
-
-  test('open the same row from any of its pieces', async ({ page }) => {
-    const { drawn, titles } = await drawnPieces(page);
-    const split = titles.find((title) => drawn.filter((piece) => piece.title === title).length > 1) ?? '';
-    const other = titles.find((title) => title !== split) ?? '';
-    const fromFirst = await surfaceOf(page, bandsOf(page, split).first());
-
-    expect(await surfaceOf(page, bandsOf(page, split).last())).toBe(fromFirst);
-    expect(await surfaceOf(page, bandsOf(page, other))).not.toBe(fromFirst);
+    expectInSequence(laneBox, drawn);
   });
 });
 
@@ -200,11 +165,11 @@ test.describe('parallel sessions on one ticket that each round up past the clock
     await seedDay(page, { prompts: [0, 20, 40], end: 60 });
   });
 
-  test('book the clock once and cascade, the later one indented and on top', async ({ page }) => {
-    const { titles } = await drawnPieces(page);
+  test('book the clock once, one card after the other', async ({ page }) => {
+    const { laneBox, drawn, titles } = await drawnPieces(page);
 
     expect(titles.reduce((sum, title) => sum + minutesOf(title), 0)).toBeLessThanOrEqual(60);
-    await expectCascaded(page);
+    expectInSequence(laneBox, drawn);
   });
 
   test('open each card with the duration its band books', async ({ page }) => {
@@ -223,7 +188,7 @@ test.describe('parallel sessions on one ticket that each round up past the clock
     }
   });
 
-  test('open a different row from each cascaded card', async ({ page }) => {
+  test('open a different row from each card', async ({ page }) => {
     const [first = '', second = ''] = (await drawnPieces(page)).titles;
 
     expect(await surfaceOf(page, bandsOf(page, first).first())).not.toBe(
