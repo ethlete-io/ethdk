@@ -26,6 +26,7 @@ export type ProgressStepsOrientation = (typeof PROGRESS_STEPS_ORIENTATIONS)[keyo
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-progress-steps',
+    role: 'list',
     '[attr.data-orientation]': 'orientation()',
   },
 })

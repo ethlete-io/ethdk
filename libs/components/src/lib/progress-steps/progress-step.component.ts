@@ -1,4 +1,4 @@
-import { Component, Injector, ViewEncapsulation, computed, effect, inject, input } from '@angular/core';
+import { Component, ElementRef, Injector, ViewEncapsulation, computed, effect, inject, input } from '@angular/core';
 import { ProvideColorDirective } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import {
@@ -22,6 +22,8 @@ export const PROGRESS_STEP_STATES = {
 } as const;
 
 export type ProgressStepState = (typeof PROGRESS_STEP_STATES)[keyof typeof PROGRESS_STEP_STATES];
+
+const INTERACTIVE_HOSTS = /* @__PURE__ */ new Set(['A', 'BUTTON']);
 
 const STATE_ICONS: Partial<Record<ProgressStepState, RegisteredIconName>> = {
   [PROGRESS_STEP_STATES.COMPLETE]: 'et-check',
@@ -67,6 +69,7 @@ const STATE_ICONS: Partial<Record<ProgressStepState, RegisteredIconName>> = {
     class: 'et-progress-step',
     '[attr.data-state]': 'state()',
     '[attr.aria-current]': 'ariaCurrent()',
+    '[attr.role]': 'role',
   },
 })
 export class ProgressStepComponent {
@@ -75,6 +78,8 @@ export class ProgressStepComponent {
   private labels = injectProgressStepLabels();
 
   public state = input<ProgressStepState>(PROGRESS_STEP_STATES.UPCOMING);
+
+  protected role = INTERACTIVE_HOSTS.has(inject<ElementRef<HTMLElement>>(ElementRef).nativeElement.nodeName) ? null : 'listitem';
 
   protected markerIcon = computed(() => STATE_ICONS[this.state()] ?? null);
   protected stateLabel = computed(() => {

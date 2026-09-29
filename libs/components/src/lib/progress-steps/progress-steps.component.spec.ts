@@ -16,6 +16,13 @@ import { PROGRESS_STEPS_IMPORTS } from './progress-steps.imports';
 })
 class ProgressStepsHostComponent {}
 
+@Component({
+  selector: 'et-test-progress-steps-link-host',
+  template: `<et-progress-steps><a href="/a" state="complete" et-progress-step>Account</a></et-progress-steps>`,
+  imports: [PROGRESS_STEPS_IMPORTS],
+})
+class ProgressStepsLinkHostComponent {}
+
 describe('ProgressStepsComponent', () => {
   it('renders the projected steps in order', () => {
     const fixture = TestBed.createComponent(ProgressStepsHostComponent);
@@ -29,5 +36,22 @@ describe('ProgressStepsComponent', () => {
       'Shipping',
       'Payment',
     ]);
+  });
+
+  it('exposes the steps as a list', () => {
+    const fixture = TestBed.createComponent(ProgressStepsHostComponent);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('et-progress-steps').getAttribute('role')).toBe('list');
+    expect(
+      [...fixture.nativeElement.querySelectorAll('et-progress-step')].map((el: Element) => el.getAttribute('role')),
+    ).toEqual(['listitem', 'listitem', 'listitem']);
+  });
+
+  it('keeps the native role of a step written as a link', () => {
+    const fixture = TestBed.createComponent(ProgressStepsLinkHostComponent);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('a').getAttribute('role')).toBeNull();
   });
 });

@@ -144,8 +144,9 @@ normal case: only the steps behind the user are reachable.
 
 ## Accessibility
 
-A plain step renders `<span>`s with no ARIA role or live region of its own - a static indicator has
-nothing to announce beyond the labels' own text. If a step's completion should be announced as it
+The group is a `role="list"` and each plain step a `listitem`, so a screen reader announces the count and
+position; a step written as a link or button keeps its native role. There is no live region - a static
+indicator has nothing to announce beyond the labels' own text. If a step's completion should be announced as it
 changes, wrap the group in your own `aria-live` region.
 
 The step in the `current` state carries `aria-current="step"`, and every other step carries no
