@@ -1,4 +1,4 @@
-import { computed, effect, untracked } from '@angular/core';
+import { computed, effect, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
@@ -78,7 +78,20 @@ const DESCRIPTION_TICK_MS = 60_000;
 
 type Ask = { day: string; subject: AutoModeSubject };
 
-type Job = { key: string; run: () => Observable<void> };
+type Job = { key: string; day: string; label: string; stillNeeded: () => boolean; work: () => Observable<void> };
+
+/** One job auto mode ran in this app session. Nothing stores it: the per-day readout is the record. */
+export type AutoModeActivity = {
+  id: number;
+  day: string;
+  label: string;
+  startedAtMs: number;
+  endedAtMs?: number;
+  state: 'running' | 'done' | 'failed';
+  error?: string;
+};
+
+const ACTIVITY_LIMIT = 50;
 
 /** What one ask sends: the payload, and the project a new ticket would be filed in. */
 type Prepared = { request: TicketWritingRequest; projectKey?: string };
@@ -124,6 +137,27 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const windowLock = injectWindowLock();
   const jobs$ = new Subject<Job>();
   const pending = new Set<string>();
+  const queuedCount = signal(0);
+  const activity = signal<readonly AutoModeActivity[]>([]);
+  let nextActivityId = 0;
+
+  const began = (job: Job) => {
+    const id = nextActivityId++;
+
+    activity.update((entries) =>
+      [{ id, day: job.day, label: job.label, startedAtMs: Date.now(), state: 'running' as const }, ...entries].slice(
+        0,
+        ACTIVITY_LIMIT,
+      ),
+    );
+
+    return id;
+  };
+
+  const ended = (id: number, end: Pick<AutoModeActivity, 'state' | 'error'>) =>
+    activity.update((entries) =>
+      entries.map((entry) => (entry.id === id ? { ...entry, ...end, endedAtMs: Date.now() } : entry)),
+    );
   const minuteTick = toSignal(interval(DESCRIPTION_TICK_MS), { initialValue: -1 });
 
   const enabled = computed(() => {
@@ -419,6 +453,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     if (pending.has(job.key)) return;
 
     pending.add(job.key);
+    queuedCount.set(pending.size);
     jobs$.next(job);
   };
 
@@ -429,9 +464,24 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     .pipe(
       observeOn(asyncScheduler),
       concatMap((job) =>
-        defer(job.run).pipe(
+        defer(() => {
+          if (!job.stillNeeded()) return EMPTY;
+
+          const id = began(job);
+
+          return job.work().pipe(
+            tap({
+              complete: () => ended(id, { state: 'done' }),
+              error: (error: unknown) =>
+                ended(id, { state: 'failed', error: error instanceof Error ? error.message : String(error) }),
+            }),
+          );
+        }).pipe(
           catchError(() => EMPTY),
-          finalize(() => pending.delete(job.key)),
+          finalize(() => {
+            pending.delete(job.key);
+            queuedCount.set(pending.size);
+          }),
         ),
       ),
       takeUntilDestroyed(),
@@ -448,10 +498,10 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
         queue({
           key: `${day}|${autoModeSubjectKey(subject)}`,
-          run: () =>
-            askedNow(day).some((held) => autoModeSubjectKey(held) === autoModeSubjectKey(subject))
-              ? answer$(ask)
-              : EMPTY,
+          day,
+          label: `Asks about ${labelOf(subject) || 'unnamed work'}`,
+          stillNeeded: () => askedNow(day).some((held) => autoModeSubjectKey(held) === autoModeSubjectKey(subject)),
+          work: () => answer$(ask),
         });
       }
     });
@@ -465,12 +515,17 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       for (const row of rows) {
         const rowId = autoDescriptionRowId(row);
 
+        const still = () => describedNow(day).find((held) => autoDescriptionRowId(held) === rowId);
+
         queue({
           key: `${day}|description:${rowId}`,
-          run: () => {
-            const still = describedNow(day).find((held) => autoDescriptionRowId(held) === rowId);
+          day,
+          label: `Describes the worklog of ${row.issueKey ?? 'a row'}`,
+          stillNeeded: () => !!still(),
+          work: () => {
+            const held = still();
 
-            return still ? describe$(day, still) : EMPTY;
+            return held ? describe$(day, held) : EMPTY;
           },
         });
       }
@@ -485,7 +540,10 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       for (const row of rests) {
         queue({
           key: `${day}|hide:${row.id}`,
-          run: () => (hidesNow(day).some((held) => held.id === row.id) ? suggestHide$(day, row) : EMPTY),
+          day,
+          label: 'Suggests to hide an off-topic call rest',
+          stillNeeded: () => hidesNow(day).some((held) => held.id === row.id),
+          work: () => suggestHide$(day, row),
         });
       }
     });
@@ -556,6 +614,12 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   return {
     /** Whether auto mode runs: it needs the suggestions switch as well as its own. */
     enabled,
+    /** The job auto mode runs now, if any. */
+    running: computed(() => activity().find((entry) => entry.state === 'running')),
+    /** The jobs that wait for their turn or run now. */
+    queuedCount: queuedCount.asReadonly(),
+    /** The jobs auto mode ran in this app session, newest first. */
+    activity: activity.asReadonly(),
     /** What auto mode did on the day on screen, read from the stored answers, rows, stand-ins and queue. */
     readout: computed(() => {
       const edits = dayReview.storedEdits();

@@ -15,6 +15,7 @@ import {
   editSurface,
   expect,
   openApprovals,
+  openAutoModeActivity,
   openAutoModeReadout,
   openStandIns,
   queuedId,
@@ -120,6 +121,14 @@ test.describe('auto mode on a stand-in of today', () => {
 
     await expect(applied).toHaveCount(1);
     await expect(applied).toContainText('applied');
+  });
+
+  test('lists the ask it ran this session as done', async ({ page }) => {
+    const activity = await openAutoModeActivity(page);
+
+    await expect(
+      activity.locator('[data-auto-activity][data-state="done"]').filter({ hasText: 'Asks about' }),
+    ).toHaveCount(1);
   });
 });
 

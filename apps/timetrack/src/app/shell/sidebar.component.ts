@@ -29,11 +29,26 @@ import { SHELL_VIEWS } from './views';
         type="button"
         data-auto-mode-status
       >
-        <span class="size-2 shrink-0 rounded-full bg-et-brand" aria-hidden="true"></span>
-        <span>
-          Auto mode · on
-          @if (queue.waiting().length; as count) {
-            · {{ count }} waiting
+        <span
+          [class.animate-pulse]="!!autoMode.running()"
+          class="size-2 shrink-0 self-start rounded-full bg-et-brand mt-1.5"
+          aria-hidden="true"
+        ></span>
+        <span class="flex min-w-0 flex-col">
+          <span>
+            Auto mode · {{ autoMode.running() ? 'working' : 'on' }}
+            @if (queue.waiting().length; as count) {
+              · {{ count }} waiting
+            }
+          </span>
+
+          @if (autoMode.running(); as running) {
+            <span [title]="running.label" class="truncate text-et-surface-muted" data-auto-mode-running>
+              {{ running.label }}
+              @if (autoMode.queuedCount() > 1) {
+                · {{ autoMode.queuedCount() - 1 }} more queued
+              }
+            </span>
           }
         </span>
       </button>

@@ -12,6 +12,7 @@ import {
 } from '@ethlete/components';
 import { formatDurationMs } from '@ethlete/timetrack';
 import { injectAutoMode } from './auto-mode';
+import { AutoModeActivityComponent } from './auto-mode-activity.component';
 import { AutoModeReadoutComponent } from './auto-mode-readout.component';
 import { BranchRepairComponent } from './branch-repair.component';
 import { injectBranchRepair } from './branch-repair';
@@ -197,6 +198,10 @@ import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
           <ethlete-auto-mode-readout [entries]="autoMode.readout()" />
         </et-accordion>
 
+        <et-accordion [label]="activityLabel()">
+          <ethlete-auto-mode-activity [entries]="autoMode.activity()" />
+        </et-accordion>
+
         <et-accordion label="Day notes">
           <ethlete-day-notes [day]="store.day()" />
         </et-accordion>
@@ -210,6 +215,7 @@ import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
   encapsulation: ViewEncapsulation.None,
   imports: [
     ACCORDION_IMPORTS,
+    AutoModeActivityComponent,
     AutoModeReadoutComponent,
     BANNER_IMPORTS,
     BUTTON_IMPORTS,
@@ -261,6 +267,12 @@ export class DayDebugComponent {
   });
 
   protected autoModeLabel = computed(() => `Auto mode — ${this.autoMode.readout().length} ask(s)`);
+
+  protected activityLabel = computed(() => {
+    const running = this.autoMode.running() ? ', 1 running' : '';
+
+    return `Auto mode this session — ${this.autoMode.activity().length} job(s)${running}`;
+  });
 
   protected hiddenLabel = computed(() => {
     const hidden = this.store.hiddenRows();
