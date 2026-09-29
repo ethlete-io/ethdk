@@ -301,7 +301,7 @@ type RowDrag = {
                       [style.height.%]="band.span"
                       [title]="BEHIND_LABEL_OF(band.stretch)"
                       [attr.data-compact]="compact(band.span) || null"
-                      class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-[repeating-linear-gradient(135deg,transparent_0px,transparent_6px,var(--color-et-surface-border)_6px,var(--color-et-surface-border)_7px)] px-2 py-1 text-small text-et-surface-muted data-[compact]:py-0 data-[compact]:leading-none"
+                      class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border px-2 py-1 text-small text-et-surface-muted data-[compact]:py-0 data-[compact]:leading-none"
                       data-behind
                     >
                       @if (band.label && labelled(band.span)) {

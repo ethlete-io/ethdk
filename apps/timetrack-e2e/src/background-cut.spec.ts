@@ -106,6 +106,17 @@ test.describe('a band of a project the user marked as background', () => {
     await expect(band).toHaveAttribute('title', 'XYZ-4200 · in the background · 30m');
   });
 
+  test('draws the minutes it lost as an outline, leaving the hatching to breaks', async ({ page }) => {
+    await seedWorld(page, world(['XYZ']));
+    await page.goto('/day');
+
+    const band = page.locator('[data-behind]');
+
+    await expect(band).toHaveCount(1);
+    await expect(band).toHaveCSS('background-image', 'none');
+    await expect(band).toHaveCSS('border-top-style', 'dashed');
+  });
+
   test('draws the band it lost the minutes to over the whole lane, and no row beside it', async ({ page }) => {
     await seedWorld(page, world(['XYZ']));
     await page.goto('/day');
