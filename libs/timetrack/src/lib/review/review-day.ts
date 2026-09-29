@@ -16,7 +16,7 @@ import { describeWork } from '../rows/describe';
 import { snapRowBounds } from '../rows/snap';
 import { AttributionRule } from '../model/attribution';
 import { streamKeyRepoPath } from '../model/block';
-import { foldShortRows } from './fold';
+import { foldCrowdedSiblings, foldShortRows } from './fold';
 import { describeCallPiece } from './call-pieces';
 import { backgroundTest, recutReviewedRows } from './recut';
 import { formatDurationMs, formatTimeOfDay } from '../model/duration';
@@ -40,6 +40,8 @@ import { mayAutoWrite, rowFieldSourceOf, storedSourceOf } from '../model/field-s
 
 /** What the engine offered for one band: a proposal, or a band nothing could name. */
 type RowSource = Omit<WorklogProposal, 'issueKey'> & { issueKey?: string; standInId?: string; folded?: string[] };
+
+const MOST_PARALLEL_SIBLINGS = 3;
 
 /**
  * The state an untouched row reviews in. A well-evidenced row is accepted on sight — asking for a
@@ -417,7 +419,13 @@ export const reviewDay = (options: {
   const isBackground = backgroundTest(options.cut?.backgroundProjects);
   const incrementMs = { ...DEFAULT_ROUND_OPTIONS, ...options.round }.incrementMs;
   const sources = foldShortRows<RowSource>({
-    rows: [...options.rows.proposals, ...options.rows.unnamed],
+    rows: foldCrowdedSiblings<RowSource>({
+      rows: [...options.rows.proposals, ...options.rows.unnamed],
+      most: MOST_PARALLEL_SIBLINGS,
+      incrementMs,
+      fixed: (row) => pinnedIds.has(row.id),
+      canFold: (row) => !edits.overrides[row.id],
+    }),
     incrementMs,
     fixed: (row) => pinnedIds.has(row.id),
     canFold: (row) => !edits.overrides[row.id],

@@ -300,3 +300,40 @@ describe('reviewDay folding single-increment rows', () => {
     expect(spans(result)).toEqual(['12:15-13:45 90m', '13:45-14:00 15m']);
   });
 });
+
+describe('reviewDay folding crowded sessions of one ticket', () => {
+  const session = (options: { from: string; to: string; observed: number }): WorklogProposal => ({
+    ...proposal({ issueKey: 'ET-772', ...options }),
+    id: `ET-772@${options.from}`,
+    durationMs: options.observed * MINUTE,
+    observedMs: options.observed * MINUTE,
+  });
+  const day = dayRows({
+    proposals: [
+      session({ from: '09:00', to: '11:00', observed: 60 }),
+      session({ from: '09:15', to: '10:30', observed: 30 }),
+      session({ from: '09:30', to: '10:15', observed: 15 }),
+      session({ from: '09:45', to: '11:15', observed: 30 }),
+    ],
+  });
+  const bookedMs = (result: DayReview) => result.rows.reduce((sum, row) => sum + row.durationMs, 0);
+
+  it('draws at most three parallel sessions and books what the four observed', () => {
+    const result = review(day);
+
+    expect(spans(result)).toEqual(['09:00-11:00 75m', '09:15-10:30 30m', '09:45-11:15 30m']);
+    expect(bookedMs(result)).toBe(135 * MINUTE);
+  });
+
+  it('never folds a session the reviewer edited', () => {
+    const edits = setRowDescription({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: { ...day.proposals[2]!, edited: false, hidden: false },
+      description: 'mine',
+    });
+    const result = review(day, edits);
+
+    expect(spans(result)).toEqual(['09:00-11:00 90m', '09:30-10:15 15m', '09:45-11:15 30m']);
+    expect(bookedMs(result)).toBe(135 * MINUTE);
+  });
+});

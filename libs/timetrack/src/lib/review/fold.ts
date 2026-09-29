@@ -1,6 +1,6 @@
 import { mergeEvidence } from '../rows/merge';
 import { storedLaneKey } from '../rows/lane';
-import { sharingTicket } from '../rows/round';
+import { roundDurationUp, sharingTicket } from '../rows/round';
 import { Evidence } from '../model/evidence';
 import { TimeWindow, clipWindows } from '../model/time-window';
 
@@ -135,4 +135,84 @@ export const foldShortRows = <T extends FoldRow>(options: {
   }
 
   return rows.filter((row) => !gone.has(row));
+};
+
+const ticketLaneOf = (row: FoldRow) => (row.laneKey && nameOf(row) ? `${nameOf(row)}|${row.laneKey}` : undefined);
+
+const crowdedInstants = <T extends FoldRow>(rows: readonly T[], most: number) =>
+  [...new Set(rows.map((row) => row.from.getTime()))]
+    .sort((a, b) => a - b)
+    .map((instant) => ({
+      instant,
+      rows: rows.filter((row) => row.from.getTime() <= instant && instant < row.to.getTime()),
+    }))
+    .filter((crowd) => crowd.rows.length > most);
+
+/**
+ * Folds the shortest of the rows of parallel sessions on one ticket in one lane (`sharingTicket`) into
+ * the one with the longest span, wherever more than `most` of them run at one instant, until none does.
+ * The grown row keeps its id and description, spans both rows and books both rows' observed minutes.
+ *
+ * `fixed` rows count toward `most` but neither fold nor absorb; a row `canFold` refuses can still absorb.
+ */
+export const foldCrowdedSiblings = <T extends FoldRow>(options: {
+  rows: readonly T[];
+  most: number;
+  incrementMs: number;
+  fixed: (row: T) => boolean;
+  canFold: (row: T) => boolean;
+}): T[] => {
+  let rows = [...options.rows];
+  const takesPart = (row: T) => !options.fixed(row) && !row.excluded;
+
+  for (;;) {
+    const shared = sharingTicket(rows);
+    const lanes = new Map<string, T[]>();
+
+    for (const row of rows) {
+      const key = ticketLaneOf(row);
+
+      if (!key || !shared.has(row)) continue;
+
+      lanes.set(key, [...(lanes.get(key) ?? []), row]);
+    }
+
+    const fold = [...lanes.values()]
+      .flatMap((siblings) => crowdedInstants(siblings, options.most))
+      .map((crowd) => {
+        const bySpan = crowd.rows.filter(takesPart).sort((a, b) => spanOf(a) - spanOf(b));
+        const short = bySpan.find(options.canFold);
+        const wide = bySpan.filter((row) => row !== short).at(-1);
+
+        return short && wide ? { short, wide } : undefined;
+      })
+      .find((pair) => !!pair);
+
+    if (!fold) return rows;
+
+    const { short, wide } = fold;
+    const window: TimeWindow = {
+      from: new Date(Math.min(wide.from.getTime(), short.from.getTime())),
+      to: new Date(Math.max(wide.to.getTime(), short.to.getTime())),
+    };
+    const observedMs = wide.observedMs + short.observedMs;
+    const grown: T = {
+      ...wide,
+      from: window.from,
+      to: window.to,
+      durationMs: Math.min(spanOf(window), roundDurationUp(observedMs, { incrementMs: options.incrementMs })),
+      observedMs,
+      evidence: mergeEvidence([wide.evidence, short.evidence]),
+      folded: [...(wide.folded ?? []), short.id, ...(short.folded ?? [])],
+      ...(wide.stretches || short.stretches
+        ? {
+            stretches: [...(wide.stretches ?? []), ...(short.stretches ?? [])].sort(
+              (a, b) => a.from.getTime() - b.from.getTime(),
+            ),
+          }
+        : {}),
+    };
+
+    rows = rows.filter((row) => row !== short).map((row) => (row === wide ? grown : row));
+  }
 };
