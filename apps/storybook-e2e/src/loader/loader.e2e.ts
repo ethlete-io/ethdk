@@ -92,13 +92,13 @@ test.describe('loader / structure', () => {
     await expect(root.locator(SPINNER)).toHaveAttribute('aria-valuenow', '100');
   });
 
-  test('a spinner has no accessible name of its own', async ({ page }) => {
+  test('a spinner is named by the default loading label', async ({ page }) => {
     const root = await openStory(page, SPINNER_STORY_ID);
     const spinner = root.locator(SPINNER);
 
-    await expect(spinner).not.toHaveAttribute('aria-label', /.*/);
+    await expect(spinner).toHaveAttribute('aria-label', 'Loading');
     await expect(spinner).not.toHaveAttribute('aria-labelledby', /.*/);
-    await expect(spinner).toHaveAccessibleName('');
+    await expect(spinner).toHaveAccessibleName('Loading');
   });
 
   test('every spinner graphic is hidden from the accessibility tree', async ({ page }) => {
@@ -268,12 +268,12 @@ test.describe('loader / structure', () => {
     await expectNoAriaValues(bar);
   });
 
-  test('a progress bar has no accessible name of its own and hides its track', async ({ page }) => {
+  test('a progress bar is named by the default loading label and hides its track', async ({ page }) => {
     const root = await openStory(page, PROGRESS_BAR_STORY_ID);
     const bar = root.locator(PROGRESS_BAR);
 
-    await expect(bar).not.toHaveAttribute('aria-label', /.*/);
-    await expect(bar).toHaveAccessibleName('');
+    await expect(bar).toHaveAttribute('aria-label', 'Loading');
+    await expect(bar).toHaveAccessibleName('Loading');
     await expect(bar.locator(PROGRESS_BAR_TRACK)).toHaveAttribute('aria-hidden', 'true');
   });
 

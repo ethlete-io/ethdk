@@ -92,7 +92,7 @@ describe('loader scenarios', () => {
     s.tick();
 
     const bar = query('et-progress-bar');
-    const spinner = query('et-spinner[aria-label]');
+    const spinner = query('et-spinner:not(.inline)');
 
     expect(bar.getAttribute('role')).toBe('progressbar');
     expect(bar.getAttribute('aria-label')).toBe('Upload team-a roster');
@@ -141,12 +141,13 @@ describe('loader scenarios', () => {
 
     s.tick();
 
-    const spinner = query('et-spinner[aria-label]');
+    const spinner = query('et-spinner:not(.inline)');
     const inline = query('et-spinner.inline');
 
     expect(spinner.classList).not.toContain('et-spinner--themed');
     expect(inline.classList).not.toContain('et-spinner--themed');
-    expect(inline.hasAttribute('aria-label')).toBe(false);
+    expect(inline.getAttribute('aria-label')).toBe(DEFAULT_LOADER_LABELS.loading);
+    expect(spinner.getAttribute('aria-label')).toBe('Upload progress');
 
     fixture.componentInstance.color.set('accent');
     s.tick();
@@ -202,7 +203,7 @@ describe('loader scenarios with localized labels', () => {
     expect(query('et-scenario-label-probe').textContent).toBe(`Lädt|${DEFAULT_LOADER_LABELS.loadingContent}`);
   });
 
-  it('leaves a spinner without an aria-label unnamed, whatever the loader labels say', () => {
+  it('names a spinner without an aria-label from the localized loader labels, and keeps its own aria-label', () => {
     const s = scenario();
 
     TestBed.createComponent(UploadProgressComponent);
@@ -212,7 +213,8 @@ describe('loader scenarios with localized labels', () => {
     const inline = query('et-spinner.inline');
 
     expect(inline.getAttribute('role')).toBe('progressbar');
-    expect(inline.hasAttribute('aria-label')).toBe(false);
+    expect(inline.getAttribute('aria-label')).toBe('Lädt');
+    expect(query('et-spinner:not(.inline)').getAttribute('aria-label')).toBe('Upload progress');
     expect(inline.hasAttribute('aria-labelledby')).toBe(false);
     expect(inline.textContent?.trim()).toBe('');
   });
