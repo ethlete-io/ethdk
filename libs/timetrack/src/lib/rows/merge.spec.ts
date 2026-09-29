@@ -508,6 +508,67 @@ describe('mergeBlocks and a sliver', () => {
     expect(rows.map((row) => row.observedMs)).toEqual([10 * 60_000, 18 * 60_000]);
   });
 
+  describe('two pieces on one issue', () => {
+    const session = (options: { fromMinute: number; toMinute: number; piece?: string; repoPath?: string }) =>
+      attributed({
+        ...options,
+        issueKey: 'ET-772',
+        repoPath: options.repoPath ?? '/a',
+        branch: 'main',
+        session: options.piece,
+      });
+    const piecesOf = (rows: ReturnType<typeof mergeBlocks>) =>
+      rows.map((row) => [...new Set(row.blocks.map((block) => block.context.piece))]);
+
+    it('keeps two pieces of one checkout two rows, each across the minutes the other took', () => {
+      const rows = mergeBlocks({
+        blocks: [
+          session({ fromMinute: 0, toMinute: 10, piece: 'one' }),
+          session({ fromMinute: 10, toMinute: 30, piece: 'two' }),
+          session({ fromMinute: 30, toMinute: 40, piece: 'one' }),
+          session({ fromMinute: 40, toMinute: 60, piece: 'two' }),
+        ],
+      });
+
+      expect(piecesOf(rows)).toEqual([['one'], ['two']]);
+      expect(rows.map((row) => row.observedMs)).toEqual([20 * 60_000, 40 * 60_000]);
+    });
+
+    it('joins the pieces of two checkouts on one issue into one row, as it did before sessions had pieces', () => {
+      const rows = mergeBlocks({
+        blocks: [
+          session({ fromMinute: 0, toMinute: 20, piece: 'one' }),
+          session({ fromMinute: 20, toMinute: 40, piece: 'two', repoPath: '/b' }),
+        ],
+      });
+
+      expect(rows).toHaveLength(1);
+    });
+
+    it('continues a row of its piece with a stretch no session ran', () => {
+      const rows = mergeBlocks({
+        blocks: [
+          session({ fromMinute: 0, toMinute: 20, piece: 'one' }),
+          session({ fromMinute: 20, toMinute: 30 }),
+          session({ fromMinute: 30, toMinute: 40, piece: 'one' }),
+        ],
+      });
+
+      expect(rows).toHaveLength(1);
+    });
+
+    it('does not fold the sliver of one piece into the row of another piece on the same issue', () => {
+      const rows = mergeBlocks({
+        blocks: [
+          session({ fromMinute: 0, toMinute: 30, piece: 'one' }),
+          session({ fromMinute: 30.2, toMinute: 30.5, piece: 'two' }),
+        ],
+      });
+
+      expect(piecesOf(rows)).toEqual([['one']]);
+    });
+  });
+
   it('keeps a short band once it holds the shortest band the day draws', () => {
     const rows = mergeBlocks({
       blocks: [attributed({ fromMinute: 0, toMinute: 2, confidence: 'weak', repoPath: '/a' })],

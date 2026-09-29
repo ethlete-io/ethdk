@@ -4,7 +4,7 @@ import { WorklogProposal } from '../model/proposal';
 import { DescribeOptions, describeWork } from './describe';
 import { laneKeyOf } from './lane';
 import { WorkGroup } from './merge';
-import { RoundOptions, roundDurationUp } from './round';
+import { RoundOptions, bookedMsOf, roundDurationUp, sharingTicket } from './round';
 import { snapRowBounds } from './snap';
 import { stretchesOf } from './stretches';
 
@@ -61,6 +61,27 @@ const isAttributedRow = (row: BoundGroup): row is BoundGroup & { group: Attribut
 const proposalId = (group: AttributedGroup) => `${group.issueKey}@${group.from.toISOString()}`;
 
 /**
+ * Hands out {@link proposalId}s, and gives a second row on the same issue and start the piece of its agent
+ * session as a suffix: two parallel sessions on one ticket can snap to one start.
+ */
+const proposalIds = () => {
+  const used = new Set<string>();
+
+  return {
+    next: (group: AttributedGroup) => {
+      const base = proposalId(group);
+      let id = used.has(base) ? `${base}+${dominantContext(group.blocks)?.piece ?? 'row'}` : base;
+
+      for (let n = 2; used.has(id); n++) id = `${base}+${n}`;
+
+      used.add(id);
+
+      return id;
+    },
+  };
+};
+
+/**
  * The id the row of an unnamed band carries. Stable the same way {@link proposalId} is, by the stream
  * behind the band rather than by an issue: two streams can hold the same minute, so the instant alone
  * would give a concurrent day two rows with one id.
@@ -108,13 +129,33 @@ export const propose = (options: {
     group: { ...row.group, from: row.from, to: row.to },
     durationMs: row.to.getTime() - row.from.getTime(),
   }));
-  const attributed = rows.filter(isAttributedRow);
-  const unnamed = rows.filter((row) => !isAttributedRow(row));
+  const shared = sharingTicket(
+    rows.map((row) => ({
+      row,
+      from: row.from,
+      to: row.to,
+      laneKey: row.group.laneKey ?? laneKeyOf(row.group.blocks),
+      issueKey: isAttributedRow(row) ? row.group.issueKey : undefined,
+      standInId: row.group.standInId,
+    })),
+  );
+  const sharedRows = new Set([...shared].map((ticket) => ticket.row));
+  const booked = rows.map((row) =>
+    sharedRows.has(row)
+      ? {
+          ...row,
+          durationMs: bookedMsOf({ row: row.group, spanMs: row.durationMs, shared: true, round: options.round }),
+        }
+      : row,
+  );
+  const attributed = booked.filter(isAttributedRow);
+  const unnamed = booked.filter((row) => !isAttributedRow(row));
   const unattributed = unnamed.filter((row) => !row.group.standInId);
+  const ids = proposalIds();
 
   return {
     proposals: attributed.map(({ group, from, to, durationMs }) => ({
-      id: proposalId(group),
+      id: ids.next(group),
       issueKey: group.issueKey,
       storyKey: group.storyKey,
       ...(group.disputedIssueKey ? { disputedIssueKey: group.disputedIssueKey } : {}),

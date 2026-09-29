@@ -24,6 +24,48 @@ export const roundDurationUp = (durationMs: number, options?: Partial<RoundOptio
   return Math.ceil(durationMs / incrementMs) * incrementMs;
 };
 
+type TicketRow = { from: Date; to: Date; laneKey?: string; issueKey?: string; standInId?: string };
+
+const ticketOf = (row: TicketRow) =>
+  row.issueKey ? `issue:${row.issueKey}` : row.standInId ? `stand-in:${row.standInId}` : undefined;
+
+/**
+ * The rows that share their issue or stand-in with another row of their lane over the same minutes: the
+ * rows of two agent sessions on one ticket. `cutUnwatched` gave each shared minute to one of the sessions,
+ * so their spans interleave, and booking both spans would book the same hour twice.
+ */
+export const sharingTicket = <T extends TicketRow>(rows: readonly T[]): Set<T> => {
+  const shared = new Set<T>();
+
+  rows.forEach((row, at) => {
+    const ticket = ticketOf(row);
+
+    if (!ticket || !row.laneKey) return;
+
+    for (const other of rows.slice(at + 1)) {
+      if (ticketOf(other) !== ticket || other.laneKey !== row.laneKey) continue;
+      if (other.from >= row.to || row.from >= other.to) continue;
+
+      shared.add(row);
+      shared.add(other);
+    }
+  });
+
+  return shared;
+};
+
+/**
+ * What a row books out of `spanMs`: the span, or for a row {@link sharingTicket} returned, its own observed
+ * minutes rounded up to the increment - never more than the span.
+ */
+export const bookedMsOf = (options: {
+  row: { observedMs: number };
+  spanMs: number;
+  shared: boolean;
+  round?: Partial<RoundOptions>;
+}) =>
+  options.shared ? Math.min(options.spanMs, roundDurationUp(options.row.observedMs, options.round)) : options.spanMs;
+
 export type DayWarningKind =
   | 'under-target'
   | 'over-target'

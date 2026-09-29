@@ -202,6 +202,9 @@ const nameOf = (group: WorkGroup) => {
  * Which row a block continues: the issue or stand-in a rule named, or the context behind a block nothing could
  * name. A group with neither - a meeting, a timer run - continues nothing and stays its own row.
  *
+ * A named band of an agent session's piece is its name within that piece, so two pieces of one checkout on
+ * one issue are two rows. A named band with no piece is its name alone, and continues any row of it.
+ *
  * A context is the right identity for an unnamed band, because the reasoning provider is asked per
  * context as well: `unnamedContexts` folds the day's unattributed groups by this same key. One band
  * per context and stretch therefore asks exactly what hundreds of one-block bands asked.
@@ -209,21 +212,57 @@ const nameOf = (group: WorkGroup) => {
 const trackOf = (group: WorkGroup) => {
   const name = nameOf(group);
 
-  if (name) return name;
+  if (name) return namedTrackOf(name, group.blocks[0]);
 
   const context = group.blocks[0]?.context;
 
   return context ? `context:${contextKey(context)}` : undefined;
 };
 
+const namedTrackOf = (name: string, block: ActivityBlock | undefined) => {
+  const piece = block ? pieceOfBlock(block) : undefined;
+
+  return piece ? `${name}~${piece.checkout}~${piece.piece}` : name;
+};
+
+const pieceOfBlock = (block: ActivityBlock) => {
+  const { context } = block;
+
+  return context.repoPath && context.piece ? { checkout: streamKey(context), piece: context.piece } : undefined;
+};
+
 /**
- * The piece of a checkout an unnamed band belongs to. A named band has none: its issue or stand-in is its
- * track, and reaching across a checkout would join two lanes into one row.
+ * Whether two bands hold different pieces of one checkout. Pieces of two checkouts never conflict: the same
+ * issue in two repositories is one row, as it was before sessions had pieces.
+ */
+const holdsOtherPiece = (left: WorkGroup, right: WorkGroup) => {
+  const piecesOf = (group: WorkGroup) => group.blocks.flatMap((block) => pieceOfBlock(block) ?? []);
+  const held = piecesOf(left);
+
+  return piecesOf(right).some((own) =>
+    held.some((other) => other.checkout === own.checkout && other.piece !== own.piece),
+  );
+};
+
+/**
+ * The piece of a checkout an unnamed band belongs to. A named band has none: its issue or stand-in, within
+ * its piece, is its track, and reaching across a checkout would join two lanes into one row.
  */
 const streamOf = (group: WorkGroup) => (nameOf(group) ? undefined : pieceOf(group));
 
-/** The band a sliver may fold into: its own issue or stand-in once one names it, its piece otherwise. */
-const laneOf = (group: WorkGroup) => nameOf(group) ?? streamOf(group);
+/**
+ * Whether a sliver may fold into a band: its own issue or stand-in in its own piece once one names it, its
+ * piece otherwise.
+ */
+const foldsInto = (sliver: WorkGroup, host: WorkGroup) => {
+  const name = nameOf(sliver);
+
+  if (name) return nameOf(host) === name && !holdsOtherPiece(host, sliver);
+
+  const stream = streamOf(sliver);
+
+  return stream !== undefined && !nameOf(host) && streamOf(host) === stream;
+};
 
 /** The checkout behind a band, whether or not anything has named the band's work. */
 const checkoutOf = (group: WorkGroup) => {
@@ -264,6 +303,59 @@ type PassOptions = {
   maxSpanRatio: number;
   maxLaneSpanRatio: number;
   barriers: readonly TimeWindow[];
+  /** The part of a window another piece of the band's checkout worked on the band's own ticket. */
+  siblingMs?: (group: WorkGroup, window: TimeWindow) => number;
+};
+
+/**
+ * The time each window of a named band another piece of its checkout spent on the same ticket. Parallel
+ * sessions split their shared minutes between them, so each session's band is full of the other's
+ * stretches; a band that books its own observed minutes must not be cut at every switch for them.
+ */
+const siblingTime = (ordered: readonly AttributedBlock[]) => {
+  const held = new Map<string, { piece: string; from: number; to: number }[]>();
+  const keyOf = (name: string, checkout: string) => `${name}\n${checkout}`;
+
+  for (const entry of ordered) {
+    const name = nameOf(groupFrom(entry));
+    const piece = pieceOfBlock(entry.block);
+
+    if (!name || !piece) continue;
+
+    const key = keyOf(name, piece.checkout);
+    const list = held.get(key) ?? [];
+
+    list.push({ piece: piece.piece, from: entry.block.from.getTime(), to: entry.block.to.getTime() });
+    held.set(key, list);
+  }
+
+  return (group: WorkGroup, window: TimeWindow) => {
+    const name = nameOf(group);
+    const pieces = new Map(group.blocks.flatMap((block) => pieceOfBlock(block) ?? []).map((own) => [own.piece, own]));
+    const [own, ...more] = [...pieces.values()];
+
+    if (!name || !own || more.length) return 0;
+
+    const from = window.from.getTime();
+    const to = window.to.getTime();
+    const clipped = (held.get(keyOf(name, own.checkout)) ?? [])
+      .filter((other) => other.piece !== own.piece && other.from < to && other.to > from)
+      .map((other) => ({ from: Math.max(from, other.from), to: Math.min(to, other.to) }))
+      .sort((left, right) => left.from - right.from);
+
+    let at = from;
+    let totalMs = 0;
+
+    for (const part of clipped) {
+      const start = Math.max(at, part.from);
+
+      if (part.to > start) totalMs += part.to - start;
+
+      at = Math.max(at, part.to);
+    }
+
+    return totalMs;
+  };
 };
 
 /**
@@ -276,11 +368,12 @@ type PassOptions = {
  */
 const joinable = (options: { joined: WorkGroup; gap: TimeWindow; pass: PassOptions }) => {
   const { joined, gap, pass } = options;
-  const span = joined.to.getTime() - joined.from.getTime();
+  const siblingMs = (window: TimeWindow) => pass.siblingMs?.(joined, window) ?? 0;
+  const span = joined.to.getTime() - joined.from.getTime() - siblingMs(joined);
   const ratio = oneLane(joined) ? pass.maxLaneSpanRatio : pass.maxSpanRatio;
 
   return (
-    gap.to.getTime() - gap.from.getTime() <= pass.maxGapMs &&
+    gap.to.getTime() - gap.from.getTime() - siblingMs(gap) <= pass.maxGapMs &&
     span <= joined.observedMs * ratio &&
     !barred({ from: gap.from, to: gap.to, barriers: pass.barriers })
   );
@@ -300,6 +393,10 @@ const joinable = (options: { joined: WorkGroup; gap: TimeWindow; pass: PassOptio
  * the branch somebody worked on before they created the one that names the work. Only in that
  * direction: a named band is continued by its own name alone, so no key or stand-in ever takes the
  * minutes of another.
+ *
+ * Two pieces of one checkout on one name are two bands, one per agent session's piece, and neither is cut
+ * for the stretches the other took from it - see `siblingTime`. A band with no piece, or one in another
+ * checkout, continues the latest band of its name as long as that band holds no other piece of its checkout.
  */
 const mergePass = (options: { ordered: readonly AttributedBlock[] } & PassOptions) => {
   const { ordered, ...pass } = options;
@@ -313,6 +410,12 @@ const mergePass = (options: { ordered: readonly AttributedBlock[] } & PassOption
 
     if (at !== undefined) return at;
 
+    const name = nameOf(group);
+    const named = name === undefined ? undefined : lastOfTrack.get(name);
+    const namedRow = named === undefined ? undefined : rows[named];
+
+    if (namedRow && !holdsOtherPiece(namedRow, group)) return named;
+
     const stream = pieceOf(group);
     const streamAt = stream === undefined ? undefined : lastOfStream.get(stream);
     const candidate = streamAt === undefined ? undefined : rows[streamAt];
@@ -322,17 +425,24 @@ const mergePass = (options: { ordered: readonly AttributedBlock[] } & PassOption
     return streamAt;
   };
 
-  const open = (group: WorkGroup, at: number) => {
-    const track = trackOf(group);
-    const stream = nameOf(group) ? undefined : pieceOf(group);
+  const open = (options: { row: WorkGroup; added: WorkGroup; at: number }) => {
+    const { row, added, at } = options;
+    const name = nameOf(row);
+    const stream = name ? undefined : pieceOf(row);
 
-    if (nameOf(group)) {
+    if (name) {
       for (const [key, index] of lastOfTrack) {
         if (index === at && key.startsWith('context:')) lastOfTrack.delete(key);
       }
+
+      lastOfTrack.set(name, at);
+      lastOfTrack.set(namedTrackOf(name, added.blocks[0]), at);
+    } else {
+      const track = trackOf(row);
+
+      if (track !== undefined) lastOfTrack.set(track, at);
     }
 
-    if (track !== undefined) lastOfTrack.set(track, at);
     if (stream !== undefined) lastOfStream.set(stream, at);
   };
 
@@ -346,12 +456,12 @@ const mergePass = (options: { ordered: readonly AttributedBlock[] } & PassOption
 
       if (joinable({ joined, gap: { from: previous.to, to: group.from }, pass })) {
         rows[at] = joined;
-        open(joined, at);
+        open({ row: joined, added: group, at });
         continue;
       }
     }
 
-    open(group, rows.length);
+    open({ row: group, added: group, at: rows.length });
     rows.push(group);
   }
 
@@ -391,13 +501,9 @@ const absorbSlivers = (options: { rows: readonly WorkGroup[]; minBandMs: number;
   rows.forEach((sliver, index) => {
     if (!isSliver(sliver, minBandMs) || taken.has(index)) return;
 
-    const lane = laneOf(sliver);
-
-    if (lane === undefined) return;
-
     const hosts = rows
       .map((row, at) => ({ row, at }))
-      .filter((entry) => entry.at !== index && !taken.has(entry.at) && laneOf(entry.row) === lane)
+      .filter((entry) => entry.at !== index && !taken.has(entry.at) && foldsInto(sliver, entry.row))
       .filter((entry) => !isSliver(entry.row, minBandMs))
       .sort((left, right) => distance(sliver, left.row) - distance(sliver, right.row));
 
@@ -432,8 +538,8 @@ const reconsider = (row: WorkGroup): WorkGroup => {
 };
 
 /**
- * Combines a track's blocks into reviewable rows - the same issue, or the same context while nothing
- * has named it. Two blocks of one track join while less than `maxMergeGapMs` separates them, whatever
+ * Combines a track's blocks into reviewable rows - the same issue within one piece of a checkout, or the
+ * same context while nothing has named it. Two blocks of one track join while less than `maxMergeGapMs` separates them, whatever
  * held the machine in that gap: a day that moves between two checkouts every minute is two lines of
  * work and not four hundred, and each row still counts only the time its own blocks held.
  *
@@ -466,6 +572,7 @@ export const mergeBlocks = (options: {
     maxSpanRatio: config.maxSpanRatio,
     maxLaneSpanRatio: config.maxLaneSpanRatio,
     barriers: options.barriers ?? [],
+    siblingMs: siblingTime(ordered),
   };
   const cut = mergePass({ ...pass, ordered, maxGapMs: config.maxMergeGapMs });
   const rows = cut.length > config.maxRowsPerDay ? mergePass({ ...pass, ordered, maxGapMs: Infinity }) : cut;

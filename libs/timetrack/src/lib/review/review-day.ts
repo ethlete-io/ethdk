@@ -1,7 +1,15 @@
 import { DayRows, dayCheckOptions } from '../rows/build-rows';
 import { RemoteBooking, bookedSpanMs, unbookedRemoteByRow } from '../rows/remote-booking';
 import { CutOptions } from '../rows/cut';
-import { CheckDayOptions, DEFAULT_ROUND_OPTIONS, DayCheck, RoundOptions, checkDay } from '../rows/round';
+import {
+  CheckDayOptions,
+  DEFAULT_ROUND_OPTIONS,
+  DayCheck,
+  RoundOptions,
+  bookedMsOf,
+  checkDay,
+  sharingTicket,
+} from '../rows/round';
 import { CALL_LANE_KEY, storedLaneKey } from '../rows/lane';
 import { unnamedRowId } from '../rows/propose';
 import { describeWork } from '../rows/describe';
@@ -347,18 +355,30 @@ const coveredByPins = (options: {
 /**
  * A row books the time its band covers. One number reaches the reviewer, so a band drawn 13:15 to
  * 13:45 logs 30 minutes and never a shorter time the label would then have to explain. See ADR 0019.
- * The one exception is remote time past the day's allowance, which ADR 0033 draws and never books; a
- * row the reviewer wrote by hand books its span regardless.
+ * The exceptions are remote time past the day's allowance, which ADR 0033 draws and never books, and
+ * the rows of two agent sessions on one ticket, which book their own observed minutes (`sharingTicket`);
+ * a row the reviewer wrote by hand books its span regardless.
  *
  * Run after `snapRowBounds`, whose bounds are whole increments, so this books whole increments too.
  */
-const bookTheSpan = (rows: ReviewedRow[], remote?: RemoteBooking): ReviewedRow[] => {
+const bookTheSpan = (options: {
+  rows: ReviewedRow[];
+  remote?: RemoteBooking;
+  round?: Partial<RoundOptions>;
+}): ReviewedRow[] => {
+  const { rows } = options;
   const observed = rows.filter((row) => !isManualRow(row));
-  const unbooked = unbookedRemoteByRow({ rows: observed, remote });
+  const unbooked = unbookedRemoteByRow({ rows: observed, remote: options.remote });
+  const shared = sharingTicket(observed);
 
   return rows.map((row) => {
     const windows = unbooked[observed.indexOf(row)] ?? [];
-    const durationMs = bookedSpanMs(row, windows);
+    const durationMs = bookedMsOf({
+      row,
+      spanMs: bookedSpanMs(row, windows),
+      shared: shared.has(row),
+      round: options.round,
+    });
     const unbookedMs = windowsMs(windows) || undefined;
 
     if (durationMs === row.durationMs && unbookedMs === row.unbookedMs) return row;
@@ -441,7 +461,7 @@ export const reviewDay = (options: {
     stated: new Set(edits.pinned.filter((row) => !row.replaces.length).map((row) => row.id)),
     round: options.round,
   });
-  const rows = bookTheSpan(recut.rows, options.rows.remote);
+  const rows = bookTheSpan({ rows: recut.rows, remote: options.rows.remote, round: options.round });
 
   const replacedMs = options.rows.proposals
     .filter((proposal) => answered.has(proposal.id))
@@ -546,7 +566,8 @@ const overlapDetail = (pairs: readonly { left: NamedRow; right: NamedRow; overla
  * Only a pair the reviewer had a hand in is reported. The machine's own overlaps are the day running
  * two things at once, which `concurrency` and `meeting-overlap` already say; a pair left over after
  * the re-cut is instead the one thing no rule resolved, and nothing else on the screen names it.
- * A pair with a call row is expected: a sync books call rows apart from code rows.
+ * A pair with a call row is expected: a sync books call rows apart from code rows. So is the pair of two
+ * sessions' rows on one ticket, which book their own minutes rather than their spans.
  */
 const withOverlaps = (options: {
   check: DayCheck;
@@ -566,7 +587,8 @@ const withOverlaps = (options: {
         from: new Date(Math.max(left.from.getTime(), right.from.getTime())),
       })),
     )
-    .filter((pair) => (pair.left.edited || pair.right.edited) && pair.overlapMs >= tolerance);
+    .filter((pair) => (pair.left.edited || pair.right.edited) && pair.overlapMs >= tolerance)
+    .filter((pair) => !sharingTicket([pair.left, pair.right]).size);
 
   if (!pairs.length) return options.check;
 

@@ -1,5 +1,6 @@
 import { mergeEvidence } from '../rows/merge';
 import { storedLaneKey } from '../rows/lane';
+import { sharingTicket } from '../rows/round';
 import { Evidence } from '../model/evidence';
 import { TimeWindow, clipWindows } from '../model/time-window';
 
@@ -40,7 +41,8 @@ const overlaps = (a: TimeWindow, b: TimeWindow) =>
  * touches, an attended one never into an `unattended` row, and the grown row keeps the neighbour's
  * mark. A short row with no neighbour at all, or whose neighbour would grow over another row of the
  * lane or one it `collides` with on both sides, stays as it is.
- * `fixed` rows neither fold nor absorb, and `blockers` only stop a growth. The grown row keeps its id
+ * `fixed` rows neither fold nor absorb, and neither do the rows of parallel sessions on one ticket
+ * (`sharingTicket`), which book their observed minutes rather than their span. `blockers` only stop a growth. The grown row keeps its id
  * and lists what it took in on `folded`.
  *
  * Two short rows `startsAtEarliest` holds for become one row from the earlier start forward, and only
@@ -58,7 +60,8 @@ export const foldShortRows = <T extends FoldRow>(options: {
 }): T[] => {
   const rows = [...options.rows].sort((a, b) => a.from.getTime() - b.from.getTime());
   const gone = new Set<T>();
-  const takesPart = (row: T) => !options.fixed(row) && !row.excluded && !!nameOf(row);
+  const shared = sharingTicket(rows);
+  const takesPart = (row: T) => !options.fixed(row) && !row.excluded && !!nameOf(row) && !shared.has(row);
   const isShort = (row: T) => spanOf(row) === options.incrementMs;
   const canTakeIn = (row: T, short: T) => (short.unattended ? gapMs(row, short) === 0 : !row.unattended);
 

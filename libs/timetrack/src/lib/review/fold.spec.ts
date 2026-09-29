@@ -32,4 +32,16 @@ describe('foldShortRows', () => {
     expect(grown?.to).toEqual(at('10:15'));
     expect(grown?.stretches).toEqual([{ from: at('09:00'), to: at('10:00') }]);
   });
+
+  it('folds no short row of a parallel session into the other session of its ticket', () => {
+    const rows = foldShortRows({
+      rows: [row({ id: 'one', from: '09:00', to: '10:00' }), row({ id: 'two', from: '09:30', to: '09:45' })],
+      incrementMs: 15 * MINUTE,
+      fixed: () => false,
+      canFold: () => true,
+      blockers: [],
+    });
+
+    expect(rows.map((entry) => entry.id)).toEqual(['one', 'two']);
+  });
 });

@@ -6,6 +6,15 @@ import { ReviewedRow } from './model';
 
 type Span = { from: number; to: number };
 
+type CoveringRow = LaneRow & { issueKey?: string };
+
+/**
+ * Whether a covering row is another session's row of the same ticket in the same lane. The two already
+ * split their shared minutes between them, and each books only its own - see `sharingTicket`.
+ */
+const sameTicketAndLane = (row: ReviewedRow, other: CoveringRow) =>
+  !!row.issueKey && other.issueKey === row.issueKey && other.laneKey === row.laneKey;
+
 /**
  * The stretches of a background row that no foreground row covers, in order.
  *
@@ -193,17 +202,24 @@ export const recutReviewedRows = (options: {
     return { rows: [...options.rows], behind: joinOneTicket({ stretches: options.behind, rows: options.rows }) };
   }
 
-  const covered: LaneRow[] = options.rows.filter((row) => !isBackground(row) && !takesNothing(row));
+  const covered: CoveringRow[] = options.rows.filter((row) => !isBackground(row) && !takesNothing(row));
   const focusOf = (row: ReviewedRow) => options.focusMsByStream?.[row.laneKey ?? ''] ?? 0;
   const keptOf = new Map<ReviewedRow, Span[]>();
 
   for (const row of options.rows
     .filter((entry) => isBackground(entry) && !!entry.issueKey)
     .sort((a, b) => focusOf(b) - focusOf(a) || a.from.getTime() - b.from.getTime())) {
-    const kept = keptSpansOf({ row, covered });
+    const kept = keptSpansOf({ row, covered: covered.filter((other) => !sameTicketAndLane(row, other)) });
 
     keptOf.set(row, kept);
-    covered.push(...kept.map((span) => ({ laneKey: row.laneKey, from: new Date(span.from), to: new Date(span.to) })));
+    covered.push(
+      ...kept.map((span) => ({
+        laneKey: row.laneKey,
+        issueKey: row.issueKey,
+        from: new Date(span.from),
+        to: new Date(span.to),
+      })),
+    );
   }
 
   const rows: ReviewedRow[] = [];

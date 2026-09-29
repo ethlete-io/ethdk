@@ -344,4 +344,21 @@ describe('recutReviewedRows', () => {
       ['ET-2', '10:00-12:00'],
     ]);
   });
+
+  it('leaves two sessions of one ticket in one lane both whole, and cuts both behind a foreground row', () => {
+    const result = recut({
+      rows: [
+        { ...row({ issueKey: 'ET-772', from: '09:00', to: '11:00' }), id: 'one' },
+        { ...row({ issueKey: 'ET-772', from: '09:15', to: '11:00' }), id: 'two' },
+        row({ issueKey: 'FIFAGG-1', from: '10:00', to: '10:30' }),
+      ],
+    });
+
+    expect(result.rows.filter((entry) => entry.issueKey === 'ET-772').map((entry) => spans([entry])[0])).toEqual([
+      '09:00-10:00',
+      '10:30-11:00',
+      '09:15-10:00',
+      '10:30-11:00',
+    ]);
+  });
 });

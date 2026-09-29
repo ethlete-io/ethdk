@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CollectedEvent } from '../model/event';
+import { reviewDay } from '../review/review-day';
 import { streamDay } from './stream-day';
 
 const REPO = '/home/tom/dev/fut-frontend';
@@ -51,7 +52,7 @@ const promptAt = (options: { sessionId: string; minutes: number }): CollectedEve
   cwd: REPO,
 });
 
-/** Every minute the day would write, named or not. A row books its whole snapped span. */
+/** Every minute the day would write, named or not. */
 const bookedMs = (events: CollectedEvent[]) => {
   const { rows } = dayOf(events);
 
@@ -198,6 +199,57 @@ describe('streamDay agent sessions', () => {
         ...sessionRun({ sessionId: 'two', from: 70, to: 120, branchAt: () => 'main', workedIn: 'src/app/totw/b.ts' }),
       ]),
     ).toEqual([['one', 'two']]);
+  });
+
+  describe('two sessions of two pieces on one ticket', () => {
+    const branchAt = () => 'feature/ET-772-parallel-work';
+    const events = [
+      ...focusRun({ from: 0, to: 120 }),
+      ...sessionRun({ sessionId: 'one', from: 0, to: 120, branchAt }),
+      ...sessionRun({ sessionId: 'two', from: 0, to: 120, branchAt }),
+      ...[0, 30, 60, 90].map((minutes) => promptAt({ sessionId: 'one', minutes })),
+      ...[15, 45, 75, 105].map((minutes) => promptAt({ sessionId: 'two', minutes })),
+    ];
+    const minutesOf = (rows: readonly { durationMs: number }[]) =>
+      rows.map((row) => row.durationMs / 60_000).sort((a, b) => a - b);
+
+    it('are two rows that each book their own minutes, so the pair books the wall clock once', () => {
+      const booked = dayOf(events).rows.proposals.filter((row) => row.issueKey === 'ET-772');
+
+      expect(booked).toHaveLength(2);
+      expect(minutesOf(booked)).toEqual([60, 60]);
+    });
+
+    it('still book the wall clock once after the review, including a pair the reviewer edited', () => {
+      const { rows } = dayOf(events);
+      const review = reviewDay({
+        rows,
+        edits: {
+          overrides: Object.fromEntries(rows.proposals.map((row) => [row.id, { description: 'parallel work' }])),
+          pinned: [],
+          statements: [],
+        },
+      });
+      const booked = review.rows.filter((row) => row.issueKey === 'ET-772');
+
+      expect(minutesOf(booked)).toEqual([60, 60]);
+      expect(review.check.warnings.map((warning) => warning.kind)).not.toContain('rows-overlap');
+    });
+  });
+
+  it('keeps a session one row on its ticket across the stretches its parallel sessions took from it', () => {
+    const branchAt = () => 'feature/ET-772-parallel-work';
+    const { rows } = dayOf([
+      ...focusRun({ from: 0, to: 60 }),
+      ...['one', 'two', 'three'].flatMap((sessionId) => sessionRun({ sessionId, from: 0, to: 60, branchAt })),
+      promptAt({ sessionId: 'one', minutes: 0 }),
+      promptAt({ sessionId: 'two', minutes: 5 }),
+      promptAt({ sessionId: 'three', minutes: 15 }),
+      promptAt({ sessionId: 'one', minutes: 35 }),
+    ]);
+    const booked = rows.proposals.filter((row) => row.issueKey === 'ET-772');
+
+    expect(booked).toHaveLength(3);
   });
 
   it('leaves a checkout that ran no session on the key it always had', () => {

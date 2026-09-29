@@ -412,4 +412,29 @@ describe('planTempoSync overlapping rows', () => {
     expect(result.deletes).toEqual([{ proposalId: 'work-a', tempoWorklogId: 'w1', reason: 'no-time-left' }]);
     expectNoOverlap(written(result));
   });
+
+  it('books the minutes of two sessions on one ticket one after the other, so the pair writes the wall clock', () => {
+    const session = (id: string, from: Date, to: Date) =>
+      row(id, 'ET-772', from, 60, { to, laneKey: 'repo:/dev/sdk', state: 'accepted' });
+    const result = planTempoSync({
+      proposals: [
+        session('one', at(9), at(10, 45)),
+        session('two', at(9, 15), at(11)),
+        row('work', 'FIFAGG-12664', at(9, 30), 30),
+      ],
+      ledger: [],
+      remote: [],
+      issueIdsByKey: ids,
+      backgroundProjects: ['ET'],
+    });
+    const rows = written(result);
+
+    expectNoOverlap(rows);
+    expect(rows.map((entry) => `${entry.id} ${clock(entry.from)}-${clock(entry.to)}`)).toEqual([
+      'one 09:00-09:30',
+      'work 09:30-10:00',
+      'one~2 10:00-10:30',
+      'two 10:30-11:00',
+    ]);
+  });
 });
