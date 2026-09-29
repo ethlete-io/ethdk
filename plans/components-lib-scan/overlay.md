@@ -1,16 +1,10 @@
 # overlay scan - open findings
 
-Scan of `libs/components/src/lib/overlay/` from 2026-09-28. 0 High, 0 Medium (1 fixed: `syncUrl` deep-link claim dropped in 772d67f5b), 7 Low (1 fixed: positioning inputs documented in efce4e0a6), 5 Spec (after verification). Skipped: stories, the CSS beyond layer and colour checks. `anchored.strategy.ts`, `full-screen.strategy.ts` and `fullscreen-animation.ts` were read in a second pass (see the last section). Focus trap, focus restore and outside-pointer logic live in `@ethlete/core`'s overlay runtime and are out of scope.
-
-## headless
+Scan of `libs/components/src/lib/overlay/` from 2026-09-28. 0 High, 0 Medium (1 fixed: `syncUrl` deep-link claim dropped in 772d67f5b), 6 Low (2 fixed: positioning inputs documented in efce4e0a6, query-param model writes replace the history entry in 8a8bf2aae), 5 Spec (after verification). Skipped: stories, the CSS beyond layer and colour checks. `anchored.strategy.ts`, `full-screen.strategy.ts` and `fullscreen-animation.ts` were read in a second pass (see the last section). Focus trap, focus restore and outside-pointer logic live in `@ethlete/core`'s overlay runtime and are out of scope.
 
 ## routing
 
 - Low: a vetoed browser navigation restores the param with a push, not a replace (`routing/overlay-router.ts:478`), so the forward history is lost and `nativeBrowserBackStack` is not updated. S
-
-## openers
-
-- Low: the model-sync effect pushes one history entry per model change (`overlay-opener.ts:265-266,293-299`), so each tab switch inside a query-param overlay costs one Back press. Consider `replaceUrl` for model writes. S
 
 ## strategies
 
