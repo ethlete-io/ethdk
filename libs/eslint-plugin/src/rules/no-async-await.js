@@ -19,7 +19,7 @@
  *   }
  */
 
-/** Storybook's play function is called by the test runner and has to be a promise. */
+/** Storybook's play function is called by the test runner and has to be a promise; only exempt in story files. */
 const isStorybookPlayFunction = (node) => {
   const { parent } = node;
 
@@ -49,7 +49,11 @@ const noAsyncAwait = {
     schema: [],
   },
   create(context) {
+    const isStoryFile = /\.stories\.[cm]?[jt]sx?$/.test(context.filename);
+
     const isExempt = (node) => {
+      if (!isStoryFile) return false;
+
       for (let current = node; current; current = current.parent) {
         if (isStorybookPlayFunction(current)) return true;
       }

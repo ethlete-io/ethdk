@@ -14,8 +14,14 @@ tester.run('no-async-await', rule, {
     { code: `function load() { return defer(() => http.get('/x')); }` },
     { code: `class A { save() { return this.http.post('/x').pipe(tap(() => this.done.set(true))); } }` },
     // Storybook play functions are called by the test runner and have to be promises
-    { code: `export const Basic = { play: async ({ canvasElement }) => { await userEvent.click(el); } };` },
-    { code: `export const Basic = { async play({ canvasElement }) { await userEvent.click(el); } };` },
+    {
+      code: `export const Basic = { play: async ({ canvasElement }) => { await userEvent.click(el); } };`,
+      filename: 'button.stories.ts',
+    },
+    {
+      code: `export const Basic = { async play({ canvasElement }) { await userEvent.click(el); } };`,
+      filename: 'button.stories.ts',
+    },
   ],
   invalid: [
     {
@@ -40,6 +46,11 @@ tester.run('no-async-await', rule, {
     },
     {
       code: `export const Basic = { render: async () => { await tick(); } };`,
+      errors: [{ messageId: 'noAsync' }, { messageId: 'noAwait' }],
+    },
+    {
+      code: `const player = { play: async () => { await start(); } };`,
+      filename: 'player.ts',
       errors: [{ messageId: 'noAsync' }, { messageId: 'noAwait' }],
     },
   ],
