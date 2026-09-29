@@ -139,6 +139,7 @@ export abstract class PickerInputBaseDirective extends AccessibleNameControlDire
     surface: this.registeredSurface,
     anchor: () => this.resolveAnchorElement(),
     context: () => ({ $implicit: this, close: () => this.closePicker() }),
+    autoFocus: () => this.pickerAutoFocus(),
     onAfterClosed: ({ byOutsidePointer, byFocusLeave, fromBottomSheet }) => {
       if (
         !byOutsidePointer &&
@@ -172,6 +173,11 @@ export abstract class PickerInputBaseDirective extends AccessibleNameControlDire
 
   protected abstract anchorField(): DatePickerInputFieldBase | null;
 
+  /** @internal Where focus lands when the picker opens: `'first-tabbable'` or a selector inside the pane. */
+  public pickerAutoFocus() {
+    return 'first-tabbable';
+  }
+
   public activate() {
     this.focus();
   }
@@ -198,6 +204,11 @@ export abstract class PickerInputBaseDirective extends AccessibleNameControlDire
     } else {
       this.openPicker();
     }
+  }
+
+  /** @internal Whether the open picker is the bottom sheet rather than the anchored pane. */
+  public pickerInBottomSheet() {
+    return this.overlay.inBottomSheet();
   }
 
   public resolveAnchorElement() {

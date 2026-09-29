@@ -3,13 +3,21 @@ import { TestBed } from '@angular/core/testing';
 import { form, FormField } from '@angular/forms/signals';
 import { ColorTheme, provideColorThemesWithTailwind4, ThemeSwatch } from '@ethlete/core';
 import { de } from 'date-fns/locale';
-import { minuteOfDay, tapRing, timeRing } from '../lib/time-picker/testing/time-picker-driver';
+import {
+  minuteOfDay,
+  ringHandle,
+  ringNote,
+  ringReadout,
+  tapRing,
+  timeRing,
+} from '../lib/time-picker/testing/time-picker-driver';
 import '../test-helpers';
 import {
   DATE_RANGE_INPUT_ERROR_CODES,
   DATE_RANGE_INPUT_IMPORTS,
   DATE_TIME_RANGE_INPUT_ERROR_CODES,
   DATE_TIME_RANGE_INPUT_IMPORTS,
+  FORM_FIELD_IMPORTS,
   dateRangeBounds,
   dateRangeOrder,
   DateRangeInputComponent,
@@ -162,6 +170,31 @@ class EventWindowComponent {
 }
 
 @Component({
+  selector: 'et-scenario-rota',
+  imports: [FORM_FIELD_IMPORTS, TIME_RANGE_INPUT_IMPORTS, DATE_TIME_RANGE_INPUT_IMPORTS],
+  template: `
+    <et-form-field class="rota-shift">
+      <et-label>Shift</et-label>
+      <et-time-range-input [(value)]="shift" displayFormat="HH:mm" />
+    </et-form-field>
+    <et-form-field class="rota-trip">
+      <et-label>Trip</et-label>
+      <et-date-time-range-input
+        [(value)]="trip"
+        [startAt]="startAt"
+        valueFormat="yyyy-MM-dd'T'HH:mm"
+        displayFormat="dd.MM.yyyy HH:mm"
+      />
+    </et-form-field>
+  `,
+})
+class RotaComponent {
+  shift = signal<DateRangeValue>({ start: null, end: null });
+  trip = signal<DateRangeValue>({ start: null, end: null });
+  startAt = new Date(2026, 6, 1);
+}
+
+@Component({
   selector: 'et-scenario-stray-date-range-field',
   imports: [DateRangeInputFieldDirective],
   template: '<input etDateRangeInputField side="start" />',
@@ -253,6 +286,18 @@ const presetButton = (label: string) => {
   if (!button) throw new Error(`no preset ${label}`);
 
   return button;
+};
+
+const useDesktopViewport = () => {
+  const original = window.matchMedia;
+
+  window.matchMedia = (media: string) => ({
+    ...original(media),
+    matches: media.includes('min-width') && !media.includes('max-width'),
+  });
+  onTestFinished(() => {
+    window.matchMedia = original;
+  });
 };
 
 const takeErrorPayload = (s: Scenario) => {
@@ -496,6 +541,155 @@ describe('forms date-time range scenarios', () => {
     typeAndBlur(s, query<HTMLInputElement>('.setup-start', host), '14.07.2026 08:00');
     expect(event.setup()).toEqual({ start: '2026-07-14T08:00', end: null });
     expect(event.setupField().elementRef.nativeElement).toBe(query('.setup-start', host));
+  });
+
+  it('lets the focused field pick the active handle and moves focus to the end after the first tap', () => {
+    useDesktopViewport();
+
+    const s = scenario();
+    const fixture = TestBed.createComponent(RotaComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const rota = fixture.componentInstance;
+
+    s.flush();
+
+    const [start, end] = Array.from(host.querySelectorAll<HTMLInputElement>('.rota-shift input'));
+
+    end?.focus();
+    query('.rota-shift .et-input-picker-trigger', host).click();
+    s.flush();
+
+    expect(ringHandle('end').hasAttribute('data-active')).toBe(true);
+    expect(document.activeElement).toBe(end);
+
+    start?.focus();
+    s.flush();
+
+    expect(ringHandle('start').hasAttribute('data-active')).toBe(true);
+
+    tapRing(timeRing(), minuteOfDay(9));
+    s.flush();
+
+    expect(rota.shift()).toEqual({ start: '09:00', end: null });
+    expect(document.activeElement).toBe(end);
+    expect(ringHandle('end').hasAttribute('data-active')).toBe(true);
+
+    tapRing(timeRing(), minuteOfDay(17, 30));
+    s.flush();
+
+    expect(rota.shift()).toEqual({ start: '09:00', end: '17:30' });
+    expect(ringReadout()).toBe('8 h 30 min');
+
+    s.keydown('Escape');
+    s.flush();
+    end?.focus();
+    query('.rota-shift .et-input-picker-trigger', host).click();
+    s.flush();
+
+    expect(document.activeElement).toBe(ringHandle('end'));
+  });
+
+  it('writes a tap into the field that keeps focus, so its blur commits nothing stale', () => {
+    useDesktopViewport();
+
+    const s = scenario();
+    const fixture = TestBed.createComponent(RotaComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const rota = fixture.componentInstance;
+
+    s.flush();
+
+    const [start, end] = Array.from(host.querySelectorAll<HTMLInputElement>('.rota-shift input'));
+
+    start?.focus();
+    query('.rota-shift .et-input-picker-trigger', host).click();
+    s.flush();
+
+    // an empty handle is display: none in a browser, so a press cannot focus it and the field keeps focus
+    for (const side of ['start', 'end'] as const) {
+      ringHandle(side).removeAttribute('tabindex');
+    }
+
+    start?.focus();
+    tapRing(timeRing(), minuteOfDay(9));
+    s.flush();
+
+    expect(document.activeElement).toBe(end);
+    expect(start?.value).toBe('09:00');
+
+    tapRing(timeRing(), minuteOfDay(17, 30));
+    s.flush();
+
+    expect(end?.value).toBe('17:30');
+
+    end?.blur();
+    s.flush();
+
+    expect(rota.shift()).toEqual({ start: '09:00', end: '17:30' });
+  });
+
+  it('shows the time and the day of the active end in the ring next to the calendar', async () => {
+    useDesktopViewport();
+
+    const s = scenario();
+    const fixture = TestBed.createComponent(RotaComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const rota = fixture.componentInstance;
+
+    s.flush();
+
+    const [start, end] = Array.from(host.querySelectorAll<HTMLInputElement>('.rota-trip input'));
+
+    start?.focus();
+    query('.rota-trip .et-input-picker-trigger', host).click();
+    s.flush();
+
+    for (const day of ['20', '24']) {
+      dayCell(day).focus();
+      dayCell(day).click();
+      s.flush();
+    }
+
+    tapRing(timeRing(), minuteOfDay(9));
+    // the calendar grid gives up its focus claim in a microtask, which a browser runs before the next render
+    await Promise.resolve();
+    s.flush();
+
+    expect(document.activeElement).toBe(end);
+    expect(ringReadout()).toBe('--:--');
+
+    tapRing(timeRing(), minuteOfDay(17, 30));
+    s.flush();
+
+    expect(rota.trip()).toEqual({ start: '2026-07-20T09:00', end: '2026-07-24T17:30' });
+    expect(ringReadout()).toBe('17:30');
+    expect(ringNote()).toBe('Fri 24 Jul');
+
+    start?.focus();
+    s.flush();
+
+    expect(ringReadout()).toBe('09:00');
+    expect(ringNote()).toBe('Mon 20 Jul');
+  });
+
+  it('keeps focus in the bottom sheet after the first tap', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(RotaComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.flush();
+
+    query('.rota-shift .et-input-picker-trigger', host).click();
+    s.flush();
+
+    expect(query('.et-overlay--bottom-sheet')).toBeTruthy();
+
+    tapRing(timeRing(), minuteOfDay(9));
+    s.flush();
+
+    expect(fixture.componentInstance.shift()).toEqual({ start: '09:00', end: null });
+    expect(document.activeElement).toBe(ringHandle('start'));
+    expect(ringHandle('end').hasAttribute('data-active')).toBe(true);
   });
 
   it.each([

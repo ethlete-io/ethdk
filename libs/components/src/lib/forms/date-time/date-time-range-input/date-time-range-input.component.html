@@ -90,7 +90,9 @@
           />
 
           <et-time-picker
+            [(activeSide)]="rangeInput.pickerActiveSide"
             [rangeValue]="rangeInput.pickerTimeRange()"
+            [rangeDays]="rangeInput.pickerDateRange()"
             [format]="rangeInput.effectiveDisplayFormat()"
             [locale]="rangeInput.effectiveLocale()"
             [minuteStep]="minuteStep()"
@@ -101,6 +103,7 @@
             [startLabel]="startTimeLabel()"
             [endLabel]="endTimeLabel()"
             (timeSelect)="rangeInput.selectTime($event.side, $event.time)"
+            (rangeHandOff)="rangeInput.focusSideFromPicker($event)"
             mode="range"
           />
         </div>

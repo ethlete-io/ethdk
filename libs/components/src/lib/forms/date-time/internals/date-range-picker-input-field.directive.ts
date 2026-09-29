@@ -92,8 +92,11 @@ export abstract class DateRangePickerInputFieldDirective implements InputMaskHos
       onCleanup(() => rangeInput.unregisterField(side, this));
     });
 
-    // mid-typing rewrites would fight the caret, so the element only mirrors while unfocused; an
-    // attached mask owns the element text instead
+    // mid-typing rewrites would fight the caret, so a focused element only mirrors a change of the
+    // side itself (a picker commit), never a keystroke; an attached mask owns the element text instead
+    const mirror = computed(() => (this.rangeInput ? this.mirrorText(this.rangeInput) : ''));
+    let mirrored: string | null = null;
+
     effect(() => {
       const rangeInput = this.rangeInput;
 
@@ -101,9 +104,12 @@ export abstract class DateRangePickerInputFieldDirective implements InputMaskHos
         return;
       }
 
-      const text = this.mirrorText(rangeInput);
+      const text = mirror();
+      const changed = text !== mirrored;
 
-      if (rangeInput.focusedSide() !== this.side() && this.elementRef.nativeElement.value !== text) {
+      mirrored = text;
+
+      if ((changed || rangeInput.focusedSide() !== this.side()) && this.elementRef.nativeElement.value !== text) {
         this.elementRef.nativeElement.value = text;
       }
     });
@@ -133,6 +139,15 @@ export abstract class DateRangePickerInputFieldDirective implements InputMaskHos
   /** @internal */
   public focus(options?: FocusOptions) {
     this.elementRef.nativeElement.focus(options ?? { preventScroll: true });
+  }
+
+  /** @internal Writes the side's current text into the element, so a blur that follows commits nothing stale. */
+  public syncText() {
+    const rangeInput = this.rangeInput;
+
+    if (rangeInput && !this.maskAttached()) {
+      this.elementRef.nativeElement.value = this.mirrorText(rangeInput);
+    }
   }
 
   /**

@@ -113,7 +113,10 @@ export class TimePickerRingDirective {
     this.handles()
       .find((handle) => handle.side() === side)
       ?.focus({ preventScroll: true, origin: 'pointer' });
-    picker.commitRingMinute(side, pressMinute);
+    if (picker.commitRingMinute(side, pressMinute)) {
+      picker.rangeHandOff.emit('end');
+    }
+
     this.draggingSide.set(side);
 
     dragGestureFrom(event, this.elementRef.nativeElement, { commitThreshold: 0 })

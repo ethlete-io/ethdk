@@ -48,7 +48,7 @@ import {
   TimeInputFieldDirective,
   UNIT_MS,
 } from '../index';
-import { minuteOfDay, tapRing, timeRing } from '../lib/time-picker/testing/time-picker-driver';
+import { minuteOfDay, ringNote, ringReadout, tapRing, timeRing } from '../lib/time-picker/testing/time-picker-driver';
 import '../test-helpers';
 import { Scenario, useScenario } from './harness';
 
@@ -617,6 +617,8 @@ describe('forms date-time scenarios', () => {
     tapRing(timeRing(), minuteOfDay(8, 45));
     s.flush();
     expect(meeting.startsAt()).toBe('2026-07-20T08:45');
+    expect(ringReadout()).toBe('08:45');
+    expect(ringNote()).toBe('Mon 20 Jul');
 
     meeting.control().closePicker();
     s.flush();

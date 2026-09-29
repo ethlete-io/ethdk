@@ -170,8 +170,26 @@ export class TimePickerDirective {
   /** `range` mode: the end the columns show, and the one a pick writes. */
   public activeSide = model<TimeRangeSide>('start');
 
+  /**
+   * The day the time falls on, from a calendar next to the picker. Set, the ring centre shows it under the time.
+   * `single` mode.
+   */
+  public day = input<Date | null>(null);
+
+  /**
+   * `range` mode: the day of each end, from a calendar next to the picker. Set, the ring centre shows the time and
+   * the day of the active end instead of the duration.
+   */
+  public rangeDays = input<TimeRange | null>(null);
+
   /** `range` mode: an end became a whole time. */
   public timeSelect = output<TimeRangePick>();
+
+  /**
+   * `range` mode: a tap on the ring filled the start of an empty range and handed the active side on to the end.
+   * Emits the side that became active, so a host can move focus to its field.
+   */
+  public rangeHandOff = output<TimeRangeSide>();
 
   public resolvedHoursLabel = computed(() => this.hoursLabel() ?? this.timePickerLabels().hours);
 
@@ -517,11 +535,11 @@ export class TimePickerDirective {
   /**
    * @internal Writes a whole time from the ring: the hour and minute of `minute`, second 0, on the day of the end.
    * A blocked minute writes nothing. In `range` mode the end becomes the active side; the first start on an empty
-   * range hands the active side on to the end.
+   * range hands the active side on to the end. Returns whether it handed on.
    */
   public commitRingMinute(side: TimeRangeSide, minute: number) {
     if (!isStopOpen(this.ringStops()[side], minute)) {
-      return;
+      return false;
     }
 
     const current = this.ringValue(side);
@@ -535,7 +553,7 @@ export class TimePickerDirective {
     );
 
     if (current !== null && current.getTime() === next.getTime()) {
-      return;
+      return false;
     }
 
     this.clearPending();
@@ -543,7 +561,7 @@ export class TimePickerDirective {
     if (this.mode() !== 'range') {
       this.value.set(next);
 
-      return;
+      return false;
     }
 
     const range = this.rangeValue();
@@ -552,6 +570,8 @@ export class TimePickerDirective {
     this.rangeValue.set({ ...range, [side]: next });
     this.timeSelect.emit({ side, time: next });
     this.activeSide.set(handsOn ? 'end' : side);
+
+    return handsOn;
   }
 
   protected refreshNow(event: FocusEvent) {

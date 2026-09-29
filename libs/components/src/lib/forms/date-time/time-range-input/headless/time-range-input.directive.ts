@@ -71,6 +71,10 @@ export class TimeRangeInputDirective extends DateRangePickerInputDirective imple
     this.touched.set(true);
   }
 
+  public override pickerAutoFocus() {
+    return '[etTimePickerRingHandle][data-active]:not([data-empty])';
+  }
+
   public override valueReferenceDate() {
     return this.referenceDate;
   }

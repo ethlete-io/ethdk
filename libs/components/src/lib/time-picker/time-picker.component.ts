@@ -1,4 +1,5 @@
 import { Component, ViewEncapsulation, computed, inject, viewChild } from '@angular/core';
+import { differenceInCalendarDays } from 'date-fns';
 import { formatDateValue } from '../forms/date-time/internals/date-value';
 import { TimePickerDirective, TimePickerRingDirective, TimePickerRingHandleDirective, TimeRangeSide } from './headless';
 import { MINUTES_PER_DAY, RingCircle, angleToPoint, minuteToAngle, ringDuration } from './headless/internals/time-ring';
@@ -90,8 +91,10 @@ const sunRays = (sun: { x: number; y: number }) =>
         'value',
         'rangeValue',
         'activeSide',
+        'day',
+        'rangeDays',
       ],
-      outputs: ['valueChange', 'rangeValueChange', 'activeSideChange', 'timeSelect'],
+      outputs: ['valueChange', 'rangeValueChange', 'activeSideChange', 'timeSelect', 'rangeHandOff'],
     },
   ],
   host: {
@@ -162,16 +165,17 @@ export class TimePickerComponent {
     if (picker.mode() !== 'range') {
       const time = picker.ringValueText('start');
 
-      return time === null ? this.emptyReadout() : { main: time, note: null, kind: 'time' };
+      return time === null ? this.emptyReadout() : { main: time, note: this.dayText(picker.day()), kind: 'time' };
     }
 
+    const days = picker.rangeDays();
     const start = picker.ringMinute('start');
     const end = picker.ringMinute('end');
 
-    if (start !== null && end !== null) {
+    if (days === null && start !== null && end !== null) {
       return {
         main: this.formatDuration(ringDuration(start, end)),
-        note: end < start ? labels.endsNextDay : null,
+        note: this.endsNextDay() ? labels.endsNextDay : null,
         kind: 'duration',
       };
     }
@@ -179,8 +183,32 @@ export class TimePickerComponent {
     const active = picker.activeSide();
     const time = picker.ringValueText(active);
 
-    return time === null ? this.emptyReadout() : { main: time, note: this.sideLabel(active), kind: 'time' };
+    if (time === null) {
+      return this.emptyReadout();
+    }
+
+    return { main: time, note: this.dayText(days?.[active] ?? null) ?? this.sideLabel(active), kind: 'time' };
   });
+
+  private endsNextDay() {
+    const { start, end } = this.timePicker.rangeValue();
+
+    if (start === null || end === null) {
+      return false;
+    }
+
+    const days = differenceInCalendarDays(end, start);
+
+    return days === 0
+      ? end.getHours() * 60 + end.getMinutes() < start.getHours() * 60 + start.getMinutes()
+      : days === 1;
+  }
+
+  private dayText(day: Date | null) {
+    return day === null
+      ? null
+      : formatDateValue(day, { format: 'EEE d MMM', locale: this.timePicker.effectiveLocale() });
+  }
 
   private emptyReadout(): TimePickerReadout {
     return { main: '--:--', note: this.labels().emptyHint, kind: 'empty' };

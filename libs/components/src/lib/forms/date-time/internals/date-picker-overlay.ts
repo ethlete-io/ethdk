@@ -25,6 +25,7 @@ export type CreateDatePickerOverlayOptions = {
   surface: Signal<DatePickerSurfaceBase | null>;
   anchor: () => HTMLElement | null | undefined;
   context: () => DatePickerSurfaceContext;
+  autoFocus: () => string;
   onAfterClosed?: (closeInfo: DatePickerOverlayCloseInfo) => void;
 };
 
@@ -48,7 +49,7 @@ export const createDatePickerOverlay = (options: CreateDatePickerOverlayOptions)
       return {
         bindings: [inputBinding('template', () => templateRef), inputBinding('context', options.context)],
         mode: 'non-modal',
-        autoFocus: 'first-tabbable',
+        autoFocus: options.autoFocus(),
         restoreFocus: false,
         // outside-pointer closing is owned by the controller: a pointerdown on the field/trigger
         // must toggle instead of close-and-reopen
@@ -84,5 +85,6 @@ export const createDatePickerOverlay = (options: CreateDatePickerOverlayOptions)
 
   return {
     close: () => panel.close(),
+    inBottomSheet: () => overlayRef()?.elements?.paneElement?.classList.contains('et-overlay--bottom-sheet') ?? false,
   };
 };

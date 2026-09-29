@@ -1,7 +1,7 @@
 import { ApplicationRef, Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import '../../test-helpers';
-import { TimeRange } from './headless';
+import { TimeRange, TimeRangeSide } from './headless';
 import { minuteOfDay, ringHandle, ringNote, ringReadout, tapRing, timeRing } from './testing/time-picker-driver';
 import { TimePickerComponent } from './time-picker.component';
 
@@ -10,6 +10,9 @@ import { TimePickerComponent } from './time-picker.component';
     <et-time-picker
       [(value)]="value"
       [(rangeValue)]="rangeValue"
+      [(activeSide)]="activeSide"
+      [day]="day()"
+      [rangeDays]="rangeDays()"
       [mode]="mode()"
       [format]="format()"
       [min]="min()"
@@ -23,6 +26,9 @@ class TimePickerHost {
   mode = signal<'single' | 'range'>('single');
   value = signal<Date | null>(null);
   rangeValue = signal<TimeRange>({ start: new Date(2026, 6, 8, 9, 0), end: null });
+  activeSide = signal<TimeRangeSide>('start');
+  day = signal<Date | null>(null);
+  rangeDays = signal<TimeRange | null>(null);
   format = signal('HH:mm');
   min = signal<Date | null>(null);
   max = signal<Date | null>(null);
@@ -83,6 +89,16 @@ describe('TimePickerComponent', () => {
       });
 
       expect(ringReadout(root)).toBe('09:00');
+    });
+
+    it('shows the day under the time when one is passed', () => {
+      const { root } = setup((host) => {
+        host.value.set(at(8, 45));
+        host.day.set(new Date(2026, 6, 20));
+      });
+
+      expect(ringReadout(root)).toBe('08:45');
+      expect(ringNote(root)).toBe('Mon 20 Jul');
     });
 
     it('labels the hours on a 24h ring every three hours', () => {
@@ -161,6 +177,44 @@ describe('TimePickerComponent', () => {
 
       expect(ringReadout(root)).toBe('14 h');
       expect(root.querySelector('.et-time-picker-arc')?.getAttribute('d')).toMatch(/ A 112 112 0 1 1 /);
+    });
+
+    it('reads the next day from the days of the ends where they differ', () => {
+      const { root, tick, host } = setup((host) => {
+        host.mode.set('range');
+        host.rangeValue.set({ start: new Date(2026, 6, 6, 9), end: new Date(2026, 6, 7, 17) });
+      });
+
+      expect(ringReadout(root)).toBe('8 h');
+      expect(ringNote(root)).toBe('ends next day');
+
+      host.rangeValue.set({ start: new Date(2026, 6, 3, 22), end: new Date(2026, 6, 5, 6, 30) });
+      tick();
+
+      expect(ringNote(root)).toBeNull();
+    });
+
+    it('shows the time and the day of the active end instead of the duration next to a calendar', () => {
+      const { root, tick, host } = setup((host) => {
+        host.mode.set('range');
+        host.rangeValue.set({ start: at(22), end: at(6, 30) });
+        host.rangeDays.set({ start: new Date(2026, 9, 2), end: new Date(2026, 9, 16) });
+        host.activeSide.set('end');
+      });
+
+      expect(ringReadout(root)).toBe('06:30');
+      expect(ringNote(root)).toBe('Fri 16 Oct');
+
+      host.activeSide.set('start');
+      tick();
+
+      expect(ringReadout(root)).toBe('22:00');
+      expect(ringNote(root)).toBe('Fri 2 Oct');
+
+      host.rangeDays.set({ start: null, end: null });
+      tick();
+
+      expect(ringNote(root)).toBe('Start time');
     });
 
     it('shows an empty range as an empty ring', () => {

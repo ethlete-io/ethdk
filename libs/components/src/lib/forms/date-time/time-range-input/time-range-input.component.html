@@ -46,6 +46,7 @@
 <ng-template etDatePickerSurface>
   <et-date-picker-panel [dialogLabel]="resolvedDialogLabel()">
     <et-time-picker
+      [(activeSide)]="rangeInput.pickerActiveSide"
       [rangeValue]="rangeInput.calendarRange()"
       [format]="rangeInput.effectiveDisplayFormat()"
       [locale]="rangeInput.effectiveLocale()"
@@ -57,6 +58,7 @@
       [startLabel]="startTimeLabel()"
       [endLabel]="endTimeLabel()"
       (timeSelect)="rangeInput.selectTime($event.side, $event.time)"
+      (rangeHandOff)="rangeInput.focusSideFromPicker($event)"
       mode="range"
     />
   </et-date-picker-panel>

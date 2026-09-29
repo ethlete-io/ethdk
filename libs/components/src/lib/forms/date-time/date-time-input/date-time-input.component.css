@@ -107,7 +107,6 @@
     .et-time-picker {
       border-inline-start: none;
       padding-inline-start: 0;
-      --et-time-picker-column-size: 300px;
     }
 
     .et-date-time-input-panel-panes[data-active-pane='date'] > .et-date-time-input-panel-time-pane {

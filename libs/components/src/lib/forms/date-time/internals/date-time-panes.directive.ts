@@ -14,11 +14,11 @@ import { CalendarComponent } from '../../../calendar';
 const COMPENSATION_DURATION = 160;
 const COMPENSATION_EASING = 'ease';
 
-const PICKER_ROWS = '.et-time-picker-sides, .et-time-picker-columns';
+const PICKER_RING = '.et-time-picker-ring';
 
 /**
  * @internal Applied to the pane row of a date-time picker panel: when month navigation changes the
- * calendar height, the stretched time picker's vertically centered content jumps by half the delta,
+ * calendar height, the stretched time picker's vertically centered ring jumps by half the delta,
  * and this slides it from its old visual position to the new one.
  *
  * Must stay a transform, never an animated `block-size`: animating the height would feed every
@@ -42,7 +42,7 @@ export class DateTimePickerPanesDirective {
 
   constructor() {
     // runs synchronously inside the resize-observer callback - after layout, before paint - so the
-    // columns never paint a frame at the jumped position; a signal-routed observer would be one
+    // ring never paints a frame at the jumped position; a signal-routed observer would be one
     // painted frame late
     // eslint-disable-next-line ethlete/no-native-observers -- pre-paint timing, see above
     const observer = new ResizeObserver(() => {
@@ -90,8 +90,8 @@ export class DateTimePickerPanesDirective {
       return;
     }
 
-    // eslint-disable-next-line ethlete/no-dom-query -- the rows live inside et-time-picker's own view, out of reach of a content query from here
-    const rows = Array.from(this.host.nativeElement.querySelectorAll<HTMLElement>(PICKER_ROWS));
+    // eslint-disable-next-line ethlete/no-dom-query -- the ring lives inside et-time-picker's own view, out of reach of a content query from here
+    const rows = Array.from(this.host.nativeElement.querySelectorAll<HTMLElement>(PICKER_RING));
     const firstRow = rows[0];
 
     if (!firstRow) {

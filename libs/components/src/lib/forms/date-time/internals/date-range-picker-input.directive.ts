@@ -6,6 +6,7 @@ import {
   computed,
   inject,
   input,
+  linkedSignal,
   model,
   signal,
   untracked,
@@ -28,15 +29,17 @@ export type DateRangeSide = 'start' | 'end';
 
 export const DATE_RANGE_SIDES = ['start', 'end'] as const;
 
+type DateRangeInputField = DatePickerInputFieldBase & { syncText(): void };
+
 type SideState = {
   inputText: WritableSignal<string>;
   parseError: WritableSignal<boolean>;
-  field: WritableSignal<DatePickerInputFieldBase | null>;
+  field: WritableSignal<DateRangeInputField | null>;
 };
 
 type RegisterFieldOptions = {
   side: DateRangeSide;
-  field: DatePickerInputFieldBase;
+  field: DateRangeInputField;
   duplicateFieldError: () => RuntimeError<number>;
 };
 
@@ -82,6 +85,12 @@ export abstract class DateRangePickerInputDirective
 
   /** The side the focused field edits. */
   public focusedSide = signal<DateRangeSide | null>(null);
+
+  /** @internal The end the picker's time ring edits: the side of the focused field, else the last one set. */
+  public pickerActiveSide = linkedSignal<DateRangeSide | null, DateRangeSide>({
+    source: this.focusedSide,
+    computation: (side, previous) => side ?? previous?.value ?? 'start',
+  });
 
   private sides: Record<DateRangeSide, SideState> = {
     start: { inputText: signal(''), parseError: signal(false), field: signal(null) },
@@ -214,6 +223,26 @@ export abstract class DateRangePickerInputDirective
     this.sides[target].field()?.focus(options);
   }
 
+  /**
+   * @internal Moves focus from the picker to one side's field. Skipped in the bottom sheet, which covers the fields,
+   * and where the field sits outside the overlay's anchor: focus there would close the picker.
+   */
+  public focusSideFromPicker(side: DateRangeSide) {
+    const field = this.sides[side].field();
+    const element = field?.elementRef.nativeElement;
+
+    if (!field || !element || this.pickerInBottomSheet() || !this.resolveAnchorElement()?.contains(element)) {
+      return;
+    }
+
+    // the blur this focus move causes commits the text of the field it leaves, which a picker commit made stale
+    for (const other of DATE_RANGE_SIDES) {
+      this.sides[other].field()?.syncText();
+    }
+
+    field.focus({ preventScroll: true });
+  }
+
   /** @internal */
   public setInputText(side: DateRangeSide, text: string) {
     this.sides[side].inputText.set(text);
@@ -286,7 +315,7 @@ export abstract class DateRangePickerInputDirective
   }
 
   /** @internal See {@link registerField} for why the read is untracked. */
-  public unregisterField(side: DateRangeSide, field: DatePickerInputFieldBase) {
+  public unregisterField(side: DateRangeSide, field: DateRangeInputField) {
     if (untracked(() => this.sides[side].field()) === field) {
       this.sides[side].field.set(null);
     }
