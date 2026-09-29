@@ -190,6 +190,89 @@ describe('SchedulerMonthViewComponent after a drag', () => {
   });
 });
 
+describe('SchedulerMonthViewComponent overflow menu', () => {
+  let driver: ReturnType<typeof schedulerTestDriver>;
+
+  const trigger = () => driver.query('.et-scheduler-month-view-overflow-trigger');
+  const menuItems = () => Array.from(document.querySelectorAll<HTMLElement>('et-menu [et-menu-item]'));
+
+  beforeEach(() => {
+    driver = schedulerTestDriver({
+      appointments: ['a', 'b', 'c', 'd', 'e'].map((id) => testAppointment(id)),
+      focusedDate: new Date(2026, 6, 15),
+    });
+  });
+
+  afterEach(() => {
+    for (const overlay of TestBed.runInInjectionContext(() => injectOverlayManager()).openOverlays()) {
+      overlay.close();
+    }
+
+    driver.fixture.destroy();
+  });
+
+  it('lists only the appointments the cell has no room for, and selects the one picked', () => {
+    expect(driver.queryAll('.et-scheduler-appointment')).toHaveLength(3);
+
+    trigger()?.click();
+    driver.detectChanges();
+
+    expect(menuItems().map((item) => item.textContent?.trim())).toEqual(['d', 'e']);
+
+    menuItems()[1]?.click();
+    driver.detectChanges();
+
+    expect(driver.scheduler().headless.selectedAppointmentId()).toBe('e');
+  });
+});
+
+describe('SchedulerMonthViewComponent keyboard after a drag', () => {
+  let driver: ReturnType<typeof schedulerTestDriver>;
+
+  const nextTask = () => new Promise<void>((resolve) => setTimeout(resolve));
+  const active = () => document.activeElement as HTMLElement;
+
+  beforeEach(() => {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 700, 600));
+
+    driver = schedulerTestDriver({
+      appointments: [testAppointment('a'), testAppointment('b')],
+      focusedDate: new Date(2026, 6, 15),
+    });
+  });
+
+  afterEach(() => {
+    for (const overlay of TestBed.runInInjectionContext(() => injectOverlayManager()).openOverlays()) {
+      overlay.close();
+    }
+
+    driver.fixture.destroy();
+    vi.restoreAllMocks();
+  });
+
+  it('activates a badge from the keyboard once the drag has settled', async () => {
+    const badge = driver.query('.et-scheduler-appointment[title="a"]');
+
+    badge?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, button: 0 }));
+    document.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 1, clientX: 40, clientY: 40 }));
+    document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1, clientX: 40, clientY: 40 }));
+    driver.detectChanges();
+
+    await nextTask();
+
+    const cell = driver.queryAll('.et-scheduler-month-view-cell').find((element) => element.contains(badge));
+
+    cell?.focus();
+    pressKey(active(), 'Enter');
+    expect(active().getAttribute('title')).toBeTruthy();
+
+    active().click();
+    driver.detectChanges();
+
+    expect(driver.scheduler().headless.selectedAppointmentId()).toBe(active().getAttribute('title'));
+  });
+});
+
 describe('SchedulerMonthViewComponent in a right-to-left layout', () => {
   let driver: ReturnType<typeof schedulerTestDriver>;
 
