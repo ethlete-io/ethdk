@@ -472,7 +472,7 @@ export class MembersPageComponent {
 - The guard receives `{ from, to }` - both resolved absolute paths - and returns `boolean | Promise<boolean>`. `false` cancels the navigation and leaves the current route rendered.
 - Guards run **in registration order** and stop at the first veto, so a later guard never asks a question the first one already settled.
 - Navigating to the route already showing consults no guard at all.
-- For a **browser-driven** navigation the URL has already moved before anyone can veto, so a cancelled one puts the query param back on the route still being rendered.
+- For a **browser-driven** navigation the URL has already moved before anyone can veto, so a cancelled one steps the browser back to the entry it left. The forward history survives, and the next Back or Forward behaves as if the vetoed step never happened.
 - `router.navigationPending()` is `true` while a guard is deciding, and stays `true` until the committed route is observable on `currentRoute` a frame later. Use it to show progress or disable further navigation while a guard is asking its question.
 - A nav tab link's selection follows the router rather than the click, so the underline stays on the current tab until the guard lets the navigation through - and never moves at all when one vetoes.
 - A navigation stays **synchronous for as long as the guards do**, and goes async from the first one that returns a promise - a route change deferred by a microtask lands after the frame the outlet measured for its transition. Answer `true` synchronously on the paths that have nothing to ask about, rather than wrapping every answer in a promise.

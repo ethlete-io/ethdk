@@ -453,6 +453,7 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
 
       let isFirstRouteEvent = true;
       let isClosing = false;
+      let isUndoingVetoedMove = false;
 
       overlayRef
         .beforeClosed()
@@ -505,10 +506,16 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
                 });
                 nativeBrowserBackStack.set(nextStack);
               },
-              // The browser already moved, so a veto has to put the param back or the URL names a
-              // route that is not being rendered.
-              blocked: () => updateBrowserUrl(curr),
+              // The browser already moved, so a veto has to step it back to the entry it left, or
+              // the URL names a route that is not being rendered.
+              blocked: () => {
+                ownHistoryEntries = Math.max(0, ownHistoryEntries + (isForward ? -1 : 1));
+                isUndoingVetoedMove = true;
+                location?.historyGo(isForward ? -1 : 1);
+              },
             });
+          } else if (isUndoingVetoedMove) {
+            isUndoingVetoedMove = false;
           } else {
             // The navigation was triggered by ui interaction. Clear the back nav stack.
             nativeBrowserBackStack.set([]);
