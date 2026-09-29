@@ -54,15 +54,25 @@ export class OverlayDirective {
   public hostClass = input<string | string[] | undefined>(undefined);
   public backdropClass = input<string | string[] | undefined>(undefined);
   public panelClass = input<string | string[] | undefined>(undefined);
+  /** Floating-ui placement of an anchored overlay. Applies at the next open. */
   public placement = input<Placement>('bottom');
+  /** Placements tried when `placement` does not fit. Applies at the next open. */
   public fallbackPlacements = input<Placement[] | undefined>(undefined);
+  /** Distance between the overlay and its anchor. Applies at the next open. */
   public offset = input<OffsetOptions | null>(8);
+  /** Minimum distance between the overlay and the viewport edges. Applies at the next open. */
   public viewportPadding = input<Padding | null>(8);
+  /** Constrains the overlay's size to the available space. Applies at the next open. */
   public autoResize = input(false, { transform: booleanAttribute });
+  /** Shrinks the overlay into its current side above this many pixels instead of flipping. Applies at the next open. */
   public minAvailableSpace = input<number | undefined>(undefined);
+  /** Slides the overlay along its axis to keep it in the viewport. Applies at the next open. */
   public shift = input(true, { transform: booleanAttribute });
+  /** Hides the overlay while its anchor is outside the viewport. Applies at the next open. */
   public autoHide = input(false, { transform: booleanAttribute });
+  /** Closes the overlay instead of hiding it when its anchor leaves the viewport. Applies at the next open. */
   public autoCloseIfReferenceHidden = input(false, { transform: booleanAttribute });
+  /** Matches the overlay's width to its anchor. Applies at the next open. */
   public mirrorWidth = input(false, { transform: booleanAttribute });
 
   /** @internal */

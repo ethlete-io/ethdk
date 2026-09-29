@@ -406,6 +406,8 @@ When an anchor/trigger exists (and mode is non-modal) the surface opens anchored
 | `autoCloseIfReferenceHidden`                 | `false`       | Close instead of just hiding                                        |
 | `mirrorWidth`                                | `false`       | Match the anchor's width (select-style panels)                      |
 
+Apart from `disabled`, the overlay reads these inputs when it opens. A change while it is open, such as a new `placement`, applies at the next open.
+
 ## Routing inside overlays
 
 Multi-step overlays (wizards, settings dialogs) use the overlay router - an internal router independent of Angular's, optionally mirrored into the URL:
