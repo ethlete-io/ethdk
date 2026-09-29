@@ -85,11 +85,10 @@ Open:
 - Done e0f482bbc: a second unnamed row with the same stream and start gets `+<piece>` on its id.
 - Done 68a9e9aae: a Bash `workedIn` directory ends in `/`, so `workPathOf` no longer reads it one level
   too high. On the live 2026-09-29 this joined one ET-772 session to its predecessor (6 pieces to 5).
-- In progress (2026-09-29, subagent): Tom decided a lane shows at most 3 parallel rows of one ticket.
-  Where more overlap, the rows step folds the shortest sibling row into the widest one (a model fold in
-  `review/fold.ts` near `foldShortRows`, same pattern as `absorbSlivers`), not a drawing fold. The live
-  day had up to 4 parallel ET-772 sessions from 10 real sessions; none of them was a spurious split
-  after 68a9e9aae.
+- Done 8c0c299af: a lane shows at most 3 parallel rows of one ticket. Where more overlap, `reviewDay`
+  folds the shortest sibling row into the one with the longest span (`foldCrowdedSiblings` in
+  `review/fold.ts`). The grown row books the observed minutes of both. A pinned row counts but does not
+  fold; an edited row does not fold but can take in another row.
 
 Tom decided (2026-09-29): two agent sessions on one ticket at the same time are two parallel rows,
 each with its own auto description. Example: ET-772 in `ethlete-sdk`, one session builds Timetrack
