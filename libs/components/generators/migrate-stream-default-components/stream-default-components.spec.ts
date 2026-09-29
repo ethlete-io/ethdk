@@ -1,6 +1,6 @@
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { describe, expect, it } from 'vitest';
-import { scanStreamDefaultComponentsInFile } from './stream-default-components';
+import { addStreamOverlayImportsToFile, scanStreamDefaultComponentsInFile } from './stream-default-components';
 import migrateStreamDefaultComponents, { STREAM_DEFAULT_COMPONENTS_REPORT_PATH } from './migration';
 
 const FILE = 'apps/shop/src/app/app.config.ts';
@@ -103,5 +103,28 @@ describe('migrate-stream-default-components', () => {
 
     expect(report).toContain('apps/shop/src/app/stream.component.html:1');
     expect(report).toContain('provideStreamConfig({ ...STREAM_DEFAULT_COMPONENTS })');
+  });
+
+  it('adds an overlay component next to STREAM_IMPORTS where a template renders its selector', () => {
+    const content = [
+      "import { STREAM_IMPORTS, STREAM_YOUTUBE_IMPORTS } from '@ethlete/components';",
+      "@Component({ imports: [STREAM_IMPORTS, STREAM_YOUTUBE_IMPORTS], template: '<et-stream-player-loading />' })",
+    ].join('\n');
+
+    expect(addStreamOverlayImportsToFile(content, [])).toBe(
+      [
+        "import { STREAM_IMPORTS, StreamPlayerLoadingComponent, STREAM_YOUTUBE_IMPORTS } from '@ethlete/components';",
+        "@Component({ imports: [STREAM_IMPORTS, StreamPlayerLoadingComponent, STREAM_YOUTUBE_IMPORTS], template: '<et-stream-player-loading />' })",
+      ].join('\n'),
+    );
+  });
+
+  it('reads an external template and leaves a component that renders neither overlay alone', () => {
+    const content = "import { STREAM_IMPORTS } from '@ethlete/components';\nconst i = [...STREAM_IMPORTS];";
+
+    expect(addStreamOverlayImportsToFile(content, ['<et-stream-player-error />'])).toBe(
+      "import { STREAM_IMPORTS, StreamPlayerErrorComponent } from '@ethlete/components';\nconst i = [...STREAM_IMPORTS, StreamPlayerErrorComponent];",
+    );
+    expect(addStreamOverlayImportsToFile(content, ['<et-youtube-player-slot />'])).toBeNull();
   });
 });

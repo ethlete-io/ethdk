@@ -95,3 +95,44 @@ export const streamUsageTask = (filePath: string, content: string): StreamDefaul
       'Renders a stream player slot, but the app has no `provideStreamConfig`, so no loading or error overlay is registered.',
   };
 };
+
+export const TEMPLATE_URL = /templateUrl\s*:\s*['"]([^'"]+)['"]/g;
+
+const STREAM_IMPORTS_NAME = /\bSTREAM_IMPORTS\b/;
+
+const OVERLAY_SELECTORS = [
+  { selector: '<et-stream-player-loading', component: 'StreamPlayerLoadingComponent' },
+  { selector: '<et-stream-player-error', component: 'StreamPlayerErrorComponent' },
+] as const;
+
+/**
+ * Adds the loading and error overlay components next to every `STREAM_IMPORTS` in a file whose templates
+ * render their selectors, or returns `null` when nothing needs adding.
+ */
+export const addStreamOverlayImportsToFile = (content: string, externalTemplates: string[]): string | null => {
+  const importStatement = [...content.matchAll(COMPONENTS_IMPORT)].find(
+    (match) => STREAM_IMPORTS_NAME.test(match[1] ?? '') && !/\bSTREAM_IMPORTS\s+as\b/.test(match[1] ?? ''),
+  );
+
+  if (!importStatement || importStatement.index === undefined) return null;
+
+  const templates = [content, ...externalTemplates];
+  const missing = OVERLAY_SELECTORS.filter(
+    ({ selector, component }) =>
+      templates.some((template) => template.includes(selector)) &&
+      !new RegExp(`\\b${component}\\b`).test(importStatement[1] ?? ''),
+  ).map(({ component }) => component);
+
+  if (missing.length === 0) return null;
+
+  const extra = missing.join(', ');
+  const start = importStatement.index;
+  const end = start + importStatement[0].length;
+  const rewrittenImport = importStatement[0].replace(STREAM_IMPORTS_NAME, `STREAM_IMPORTS, ${extra}`);
+  const addNextToUsage = (code: string) =>
+    code.replace(/(\.\.\.)?\bSTREAM_IMPORTS\b/g, (_, spread: string | undefined) =>
+      spread ? `...STREAM_IMPORTS, ${extra}` : `STREAM_IMPORTS, ${extra}`,
+    );
+
+  return addNextToUsage(content.slice(0, start)) + rewrittenImport + addNextToUsage(content.slice(end));
+};

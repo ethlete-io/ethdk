@@ -23,8 +23,8 @@ import {
 } from '@ethlete/components';
 ```
 
-`STREAM_IMPORTS` holds only what every stream shares - the consent gate and the loading and error
-overlays. Each platform ships its own barrel, so the seven you don't use stay out of your bundle:
+`STREAM_IMPORTS` holds only what every stream shares - the consent gate and the error overlay
+directive. The shipped loading and error overlays are not in it (see [below](#loading-and-error-overlays-are-opt-in)). Each platform ships its own barrel, so the seven you don't use stay out of your bundle:
 
 | Platform    | Barrel                       |
 | ----------- | ---------------------------- |
@@ -134,6 +134,8 @@ provideStreamConfig({ ...STREAM_DEFAULT_COMPONENTS });
 ```
 
 `et update` adds the spread to every literal `provideStreamConfig` call and lists the stream slots of an app with no config.
+
+The overlays are no longer part of `STREAM_IMPORTS` either, so an app that renders `<et-stream-player-loading>` or `<et-stream-player-error>` in its own template imports `StreamPlayerLoadingComponent` or `StreamPlayerErrorComponent` itself; `et update` adds them. `STREAM_ALL_IMPORTS` still includes both.
 
 Rebinding the slot to another video while the gate is still up is safe: accepting creates the player for the id the slot holds at that moment, not the one it held when the gate appeared.
 

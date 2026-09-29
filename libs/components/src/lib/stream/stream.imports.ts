@@ -27,15 +27,14 @@ import { YoutubePlayerSlotComponent } from './platform/youtube/youtube-player-sl
 import { YoutubePlayerComponent } from './platform/youtube/youtube-player.component';
 
 /**
- * The parts every stream shares: the consent gate and the loading and error overlays. Deliberately lean -
+ * The parts every stream shares: the consent gate and the error overlay directive. The shipped loading and error
+ * overlays are not here; see `STREAM_DEFAULT_COMPONENTS`. Deliberately lean -
  * add the barrel of each platform you actually embed (e.g. {@link STREAM_YOUTUBE_IMPORTS}), so the seven
  * you don't stay out of your bundle.
  */
 export const STREAM_IMPORTS = [
   StreamConsentComponent,
   StreamConsentAcceptDirective,
-  StreamPlayerLoadingComponent,
-  StreamPlayerErrorComponent,
   StreamPlayerErrorDirective,
 ] as const;
 
@@ -83,6 +82,8 @@ export const STREAM_PIP_IMPORTS = [
  */
 export const STREAM_ALL_IMPORTS = [
   STREAM_IMPORTS,
+  StreamPlayerLoadingComponent,
+  StreamPlayerErrorComponent,
   STREAM_YOUTUBE_IMPORTS,
   STREAM_TWITCH_IMPORTS,
   STREAM_VIMEO_IMPORTS,

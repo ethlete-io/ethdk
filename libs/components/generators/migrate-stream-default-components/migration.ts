@@ -1,9 +1,12 @@
-import { formatFiles, Tree } from '@nx/devkit';
+import { formatFiles, joinPathFragments, Tree } from '@nx/devkit';
+import { dirname } from 'node:path/posix';
 import { createMigrationScope, MigrationScopeOptions } from '../migrate-query-error-labels/migration-scope.js';
 import {
+  addStreamOverlayImportsToFile,
   StreamDefaultComponentsTask,
   streamUsageTask,
   scanStreamDefaultComponentsInFile,
+  TEMPLATE_URL,
 } from './stream-default-components.js';
 
 export const STREAM_DEFAULT_COMPONENTS_REPORT_PATH = 'stream-default-components-migration-tasks.md';
@@ -58,8 +61,18 @@ export default async function migrateStreamDefaultComponents(tree: Tree, schema:
 
     if (result.usesStream) usages.push(streamUsageTask(filePath, content));
 
-    if (result.next !== null) {
-      tree.write(filePath, result.next);
+    let next = result.next;
+
+    if (filePath.endsWith('.ts') && content.includes('STREAM_IMPORTS')) {
+      const templates = [...content.matchAll(TEMPLATE_URL)]
+        .map((match) => tree.read(joinPathFragments(dirname(filePath), match[1] ?? ''), 'utf-8'))
+        .filter((template): template is string => template !== null);
+
+      next = addStreamOverlayImportsToFile(next ?? content, templates) ?? next;
+    }
+
+    if (next !== null) {
+      tree.write(filePath, next);
       changed.push(filePath);
     }
   });
