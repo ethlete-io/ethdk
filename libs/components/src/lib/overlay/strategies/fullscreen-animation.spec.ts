@@ -165,4 +165,44 @@ describe('fullscreen dialog strategy', () => {
 
     strategy.onSwitchedAwayFrom?.(context);
   });
+
+  it('shows the origin while switched away and hides it again on the switch back', async () => {
+    const containerEl = document.body.appendChild(document.createElement('div'));
+    const origin = document.body.appendChild(document.createElement('button'));
+    vi.spyOn(origin, 'getBoundingClientRect').mockReturnValue(new DOMRect(10, 20, 100, 40));
+
+    const context = {
+      containerEl,
+      origin,
+      lifecycle: { enter: vi.fn(), forceEnteredState: vi.fn(), leave: vi.fn(), state$: { value: 'entered' } },
+    } as unknown as OverlayStrategyContext;
+    const strategy = TestBed.runInInjectionContext(() => injectFullscreenDialogStrategy().build());
+    const cloneCount = () => document.querySelectorAll('et-overlay-origin-clone').length;
+
+    strategy.onSwitchedTo?.(context);
+
+    expect(origin.style.opacity).toBe('0');
+    expect(cloneCount()).toBe(1);
+
+    strategy.onSwitchedAwayFrom?.(context);
+    await flushFrames();
+
+    expect(origin.style.opacity).toBe('');
+    expect(cloneCount()).toBe(0);
+
+    strategy.onSwitchedTo?.(context);
+
+    expect(origin.style.opacity).toBe('0');
+    expect(cloneCount()).toBe(1);
+
+    strategy.onAfterLeave?.(context);
+    await flushFrames();
+
+    expect(origin.style.opacity).toBe('');
+    expect(origin.hasAttribute('data-et-origin-hidden-count')).toBe(false);
+    expect(cloneCount()).toBe(0);
+
+    origin.remove();
+    containerEl.remove();
+  });
 });
