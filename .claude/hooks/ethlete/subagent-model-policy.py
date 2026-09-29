@@ -44,8 +44,10 @@ would run on the model leading this session - which is how one expensive model e
 Call the tool again with `model` set:
 
 - `haiku` - mechanical lookups: grep, find, read a file, run a command and report what it said.
-- `opus` - the default for real work: code changes, tests, debugging, reviewing a diff.
-- `sonnet` - a middle ground where opus is more than the task needs.
+- `sonnet` - scoped work with a clear target: a fix in a named file, a spec, a docs page, a lint cleanup, \
+research that needs reasoning. Sonnet 5.5 is close to opus here and costs less.
+- `opus` - hard work: a bug with no known cause, a change across many files, a review of a diff, and any task \
+sonnet did not finish.
 - `fable` - judgment-heavy work: planning, design, cross-cutting review, leading other subagents. The most \
 expensive of the four, so choosing it asks the user first.
 
@@ -55,7 +57,7 @@ effort, so a call that names one needs no `model` of its own."""
 
 FABLE_REASON = """This subagent would run on fable, the most expensive model. Approve it where the task is \
 judgment-heavy - planning, design, cross-cutting review, or leading other subagents. Deny it for implementation \
-(`model: "opus"`) or for a mechanical lookup (`model: "haiku"`), then repeat the call with that model."""
+(`model: "sonnet"` or `"opus"`) or for a mechanical lookup (`model: "haiku"`), then repeat the call with that model."""
 
 
 def agent_name(argv):
