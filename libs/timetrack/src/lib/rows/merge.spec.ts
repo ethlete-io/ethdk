@@ -69,6 +69,20 @@ describe('mergeBlocks', () => {
     expect(rows[0]?.confidence).toBe('weak');
   });
 
+  it('takes the confidence of the tier holding most of the time over the whole row, not pair by pair', () => {
+    const rows = mergeBlocks({
+      blocks: [
+        ruled({ fromMinute: 0, toMinute: 2, branch: 'next' }),
+        { ...ruled({ fromMinute: 2, toMinute: 7, branch: 'next' }), confidence: 'weak' },
+        ruled({ fromMinute: 7, toMinute: 13, branch: 'next' }),
+      ],
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.observedMs).toBe(13 * 60_000);
+    expect(rows[0]?.confidence).toBe('likely');
+  });
+
   it('leaves a branch rule stating its row across the swap that started the work', () => {
     const rows = mergeBlocks({
       blocks: [

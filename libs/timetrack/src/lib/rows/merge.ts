@@ -28,6 +28,8 @@ export type WorkGroup = {
    */
   observedMs: number;
   confidence: Confidence;
+  /** The observed time behind each confidence tier across every join. `confidence` is ranked from it. */
+  observedByConfidence?: Partial<Record<Confidence, number>>;
   /** The scope of the rule that named the row, when a rule did. See `AttributedBlock.ruleScope`. */
   ruleScope?: AttributionScope;
   evidence: Evidence[];
@@ -122,6 +124,18 @@ export const mergeEvidence = (chains: readonly Evidence[][]): Evidence[] => {
   return merged.sort((a, b) => a.at.getTime() - b.at.getTime());
 };
 
+const tiersOf = (group: WorkGroup) => group.observedByConfidence ?? { [group.confidence]: group.observedMs };
+
+const joinTiers = (left: WorkGroup, right: WorkGroup) => {
+  const tiers: Partial<Record<Confidence, number>> = { ...tiersOf(left) };
+
+  for (const [tier, ms] of Object.entries(tiersOf(right)) as [Confidence, number][]) {
+    tiers[tier] = (tiers[tier] ?? 0) + ms;
+  }
+
+  return tiers;
+};
+
 const groupFrom = (attributed: AttributedBlock): WorkGroup => ({
   issueKey: attributed.issueKey,
   standInId: attributed.standInId,
@@ -156,6 +170,7 @@ const swapEvidence = (unnamed: WorkGroup, named: WorkGroup): Evidence => {
 
 const join = (into: WorkGroup, next: WorkGroup): WorkGroup => {
   const swapped = !nameOf(into) && !!nameOf(next);
+  const tiers = joinTiers(into, next);
 
   return {
     ...into,
@@ -167,7 +182,10 @@ const join = (into: WorkGroup, next: WorkGroup): WorkGroup => {
     from: into.from <= next.from ? into.from : next.from,
     to: into.to >= next.to ? into.to : next.to,
     observedMs: into.observedMs + next.observedMs,
-    confidence: dominantConfidence([into, next]),
+    confidence: dominantConfidence(
+      (Object.entries(tiers) as [Confidence, number][]).map(([confidence, observedMs]) => ({ confidence, observedMs })),
+    ),
+    observedByConfidence: tiers,
     evidence: mergeEvidence([into.evidence, next.evidence, swapped ? [swapEvidence(into, next)] : []]),
     blocks: [...into.blocks, ...next.blocks],
   };
