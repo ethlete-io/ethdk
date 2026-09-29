@@ -233,6 +233,17 @@ const checkoutOf = (group: WorkGroup) => {
 };
 
 /**
+ * The checkout behind a band, narrowed to the piece of work its agent session belongs to. Two pieces of
+ * one checkout are two efforts, so an unnamed band of one never continues the other's.
+ */
+const pieceOf = (group: WorkGroup) => {
+  const checkout = checkoutOf(group);
+  const piece = group.blocks[0]?.context.piece;
+
+  return checkout && piece ? `${checkout}~${piece}` : checkout;
+};
+
+/**
  * Whether every block behind a band is one checkout, which is one lane on the day screen. A block with
  * no context at all is in no lane, so a band holding one is not.
  */
@@ -302,7 +313,7 @@ const mergePass = (options: { ordered: readonly AttributedBlock[] } & PassOption
 
     if (at !== undefined) return at;
 
-    const stream = checkoutOf(group);
+    const stream = pieceOf(group);
     const streamAt = stream === undefined ? undefined : lastOfStream.get(stream);
     const candidate = streamAt === undefined ? undefined : rows[streamAt];
 
@@ -313,7 +324,7 @@ const mergePass = (options: { ordered: readonly AttributedBlock[] } & PassOption
 
   const open = (group: WorkGroup, at: number) => {
     const track = trackOf(group);
-    const stream = streamOf(group);
+    const stream = nameOf(group) ? undefined : pieceOf(group);
 
     if (nameOf(group)) {
       for (const [key, index] of lastOfTrack) {

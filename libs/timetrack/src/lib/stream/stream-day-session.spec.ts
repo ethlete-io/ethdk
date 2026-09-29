@@ -182,6 +182,24 @@ describe('streamDay agent sessions', () => {
     expect(blocks.map((block) => block.context.workPath)).toEqual([undefined, undefined]);
   });
 
+  it('keeps the unnamed rows of two pieces apart, and joins the sessions of one piece into one row', () => {
+    const rowsOf = (events: CollectedEvent[]) =>
+      dayOf(events).rows.unattributed.map((row) => [...new Set(row.blocks.map((block) => block.context.session))]);
+
+    expect(
+      rowsOf([
+        ...sessionRun({ sessionId: 'one', from: 0, to: 60, branchAt: () => 'main', workedIn: 'src/app/totw/a.ts' }),
+        ...sessionRun({ sessionId: 'two', from: 70, to: 120, branchAt: () => 'main', workedIn: 'src/app/shop/b.ts' }),
+      ]),
+    ).toEqual([['one'], ['two']]);
+    expect(
+      rowsOf([
+        ...sessionRun({ sessionId: 'one', from: 0, to: 60, branchAt: () => 'main', workedIn: 'src/app/totw/a.ts' }),
+        ...sessionRun({ sessionId: 'two', from: 70, to: 120, branchAt: () => 'main', workedIn: 'src/app/totw/b.ts' }),
+      ]),
+    ).toEqual([['one', 'two']]);
+  });
+
   it('leaves a checkout that ran no session on the key it always had', () => {
     const blocks = blocksOf(focusRun({ from: 0, to: 60 }));
 
