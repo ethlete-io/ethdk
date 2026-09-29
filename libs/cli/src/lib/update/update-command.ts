@@ -5,7 +5,7 @@ import { AGENT_RULES_PACKAGE, planAgentRulesSync, runAgentRulesSync } from './ag
 import { parseUpdateArgs } from './args';
 import { UPDATE_IGNORE_ENTRY, ignoreUpdateDir } from './gitignore';
 import { readPackageMigrations } from './migration-manifest';
-import { PackageManager, detectPackageManager } from './package-manager';
+import { PackageManager, detectPackageManager, spawnPackageManager } from './package-manager';
 import {
   DeclaredPackage,
   ROOT_MANIFEST,
@@ -255,6 +255,27 @@ const handToAgent = (options: { root: string; template: string; tasks: readonly 
 
 const agentFailedHint = (invocation: string) =>
   `\nAn agent run failed. Run \`${invocation} --ai\` again to hand it the tasks that are still open.`;
+
+const CLI_PACKAGE = '@ethlete/cli';
+
+/**
+ * Runs the migration phase in the `et` the install just put in place. The running process is the old one, and
+ * it lacks every step a newer CLI added to the phase.
+ */
+const continueWithInstalledCli = (options: { root: string; manager: PackageManager; ai: boolean }) => {
+  const { root, manager, ai } = options;
+  const [binary, ...args] = [...manager.run, 'et', 'update', '--continue', ...(ai ? ['--ai'] : [])];
+
+  if (binary === undefined) return 1;
+
+  console.log(
+    `\n  ${CLI_PACKAGE} moved, so the new version runs the migrations.\n\n  ${[binary, ...args].join(' ')}\n`,
+  );
+
+  const result = spawnPackageManager({ binary, args, spawn: { cwd: root, stdio: 'inherit' } });
+
+  return result.error ? 1 : (result.status ?? 1);
+};
 
 const runMigrationPhase = (options: {
   root: string;
@@ -613,6 +634,10 @@ export const updateCommand = async ({
     );
 
     return 1;
+  }
+
+  if (writable.some((update) => update.name === CLI_PACKAGE && update.from !== update.to)) {
+    return continueWithInstalledCli({ root, manager, ai: args.ai });
   }
 
   const result = runMigrationPhase({

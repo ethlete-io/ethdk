@@ -101,6 +101,32 @@ describe('et update under yarn run', () => {
   });
 });
 
+describe('an update that moves @ethlete/cli', () => {
+  it('hands the migrations to the installed CLI', async () => {
+    const root = makeRepo();
+
+    rmSync(join(root, UPDATE_DIR), { recursive: true });
+    writeJson(join(root, 'package.json'), {
+      name: 'app',
+      packageManager: 'yarn@1.22.21',
+      devDependencies: { '@ethlete/cli': '2.0.0' },
+    });
+    writeJson(join(root, 'node_modules', '@ethlete', 'cli', 'package.json'), {
+      name: '@ethlete/cli',
+      version: '2.0.0',
+    });
+    stubRegistry('2.1.0');
+    spawnSync.mockImplementation((_binary, args) => ({ status: args[0] === 'et' ? 4 : 0 }));
+
+    expect(await updateCommand({ argv: ['--ai'], root: withAgent(root) })).toBe(4);
+    expect(
+      spawnSync.mock.calls
+        .map(([binary, args]) => [binary, ...args])
+        .filter(([binary, first]) => binary === 'yarn' && first !== 'install'),
+    ).toEqual([['yarn', 'et', 'update', '--continue', '--ai']]);
+  });
+});
+
 describe('et update --continue', () => {
   it('does not run a codemod again that applied in the earlier run', async () => {
     const root = makeRepo();

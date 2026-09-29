@@ -25,6 +25,8 @@ The sync comes before the codemods because the tasks, and an agent that works th
 
 Step 7 is why the install comes first: the migrations of a version ship inside that version.
 
+When the update moves `@ethlete/cli` itself, steps 7 to 10 run in the freshly installed `et`, through `et update --continue`. The old CLI lacks the steps a newer one added, for example the agent rules sync. A CLI older than `2.1.0-next.13` has no such hand-over. After an update from one, run `ethlete-agents sync` yourself.
+
 ## Every manifest, not only the root
 
 An Nx repo keeps a `package.json` per buildable library, and Nx syncs the `@ethlete/*` versions a library imports into it. Those manifests are part of the update: one target is picked per package, then written into every manifest and field that declares it. `node_modules`, `dist`, `coverage`, `tmp` and dot directories are skipped.
