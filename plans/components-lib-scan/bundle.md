@@ -15,4 +15,4 @@ All numbers are gz bytes in `--external` mode, measured on a fresh build of `nex
 
 ## CSS
 
-- Low: 13 stylesheets each declare their own visually-hidden rule (`clip-path: inset(50%)` / `clip: rect(0 …)`): `kbd`, `password-input`, `counter`, `phone-input`, `dropzone`, `match-card`, `standings`, `standings-pick`, `skeleton`, `chart-data-table`, `scheduler`, `scheduler-month-view` and `bracket-pick-card`. gzip removes most of the byte cost. Each copy is still a separate rule that the browser parses and that can drift. Put one shared `.et-visually-hidden` class in core. S
+- Low: 16 stylesheets each declare their own visually-hidden rule (`clip-path: inset(50%)` / `clip: rect(0 …)`): `kbd`, `password-input`, `counter`, `phone-input`, `dropzone`, `match-card`, `match-participant`, `standings`, `standings-pick`, `skeleton`, `progress-step`, `chart-data-table`, `scheduler`, `scheduler-month-view`, `bracket-pick-card` and the multi-language rich text editor language tool. gzip removes most of the byte cost. Each copy is still a separate rule that the browser parses and that can drift. Put one shared `.et-visually-hidden` class in core. S

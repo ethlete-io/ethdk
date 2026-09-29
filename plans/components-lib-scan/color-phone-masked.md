@@ -1,6 +1,6 @@
 # color-input, phone-input, masked-input, forms/testing scan - open findings
 
-Scan of `libs/components/src/lib/forms/{color-input,phone-input,masked-input,testing}` from 2026-09-28. 0 High, 0 Medium open (4 fixed 2026-09-28), 3 Low (5 fixed 2026-09-28), 2 Spec. Skipped: stories, the CSS files apart from a check for layers and colours, and most `testing/` drivers. `testing/` is excluded from the build (`tsconfig.lib.json:9`), so it cannot ship.
+Scan of `libs/components/src/lib/forms/{color-input,phone-input,masked-input,testing}` from 2026-09-28. 0 High, 0 Medium open (4 fixed 2026-09-28), 3 Low (5 fixed 2026-09-28), 0 Spec. Skipped: stories, the CSS files apart from a check for layers and colours, and most `testing/` drivers. `testing/` is excluded from the build (`tsconfig.lib.json:9`), so it cannot ship.
 
 ## Bundle size (measured)
 
@@ -19,14 +19,9 @@ The country table does not reach every consumer bundle. `PHONE_COUNTRIES` is a p
 
 ## phone-input
 
-- Low: a bound value whose dial code is not in the table (for example `+999123`) falls back to the default country, and `nationalNumber` keeps all the digits (`headless/phone-input.directive.ts:83`). The first keystroke then rewrites the value with the fallback dial code. S
-- Low: the search-field CSS copies the menu search styles (`phone-input.component.css:109-133`). Share the select or menu search rule instead. S
+- Low: a bound value whose dial code is not in the table (for example `+999123`) falls back to the default country, and `nationalNumber` keeps all the digits (`headless/phone-input.directive.ts:114-123`). The first keystroke then rewrites the value with the fallback dial code. S
+- Low: the search-field CSS copies the menu search styles (`phone-input.component.css:100-133`). Share the select or menu search rule instead. S
 
 ## masked-input
 
-- Low: when the mask changes to `null`, the element keeps the masked text while the model holds the raw value (`headless/input-mask.directive.ts:119-125`, spec `:274`). The next keystroke writes the formatted text and the literals into the model. The spec treats this as intended; document it or repaint the raw value on hand-back. S
-
-## Spec gaps
-
-- Spec: no case covers malformed HSL or RGB numbers (`1.2.3`, `.`) in `color-convert.spec.ts` or `color-parse-corpus.spec.ts`. S
-- Spec: no spec runs `stripTrunkZero` or `matchCountryByDialCode` over the full table, and no spec checks for shared-code or 4-digit NANP collisions (`headless/phone-countries.ts`). S
+- Low: when the mask changes to `null`, the element keeps the masked text while the model holds the raw value (`headless/input-mask.directive.ts:116-125`, spec `:273`). The next keystroke writes the formatted text and the literals into the model. The spec treats this as intended; document it or repaint the raw value on hand-back. S
