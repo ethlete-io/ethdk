@@ -22,6 +22,8 @@ fs.writeFileSync(externalContractPath, ['export type PublicApi = {', '  activate
 
 tester.run('template-member-accessibility', rule, {
   valid: [
+    `@Directive({}) abstract class C { protected abstract x: number; }`,
+    `@Directive({}) abstract class C { protected abstract x(): void; }`,
     {
       code: `
         @Component({

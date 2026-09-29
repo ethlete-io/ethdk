@@ -141,6 +141,7 @@ const templateMemberAccessibility = {
       }
 
       if (node.accessibility !== 'protected') return;
+      if (node.type.startsWith('TSAbstract')) return;
 
       context.report({
         node,
