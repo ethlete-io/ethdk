@@ -53,6 +53,7 @@ describe('the @ethlete/components migrations', () => {
         'chart-baseline-y',
         'grid-engine-internals',
         'overlay-fullscreen-animation',
+        'stream-default-components',
       ]),
     );
   });

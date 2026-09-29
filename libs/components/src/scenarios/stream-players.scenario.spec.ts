@@ -28,6 +28,7 @@ import {
   KickPlayerSlotComponent,
   NO_STREAM_PLAYER_CAPABILITIES,
   provideStreamConfig,
+  STREAM_DEFAULT_COMPONENTS,
   provideStreamLabels,
   provideStreamManager,
   provideStreamPlayerErrorConfig,
@@ -556,7 +557,7 @@ class SlotControlsComponent {
 @Component({
   selector: 'et-scenario-gated-playback',
   imports: [STREAM_IMPORTS, STREAM_YOUTUBE_IMPORTS, STREAM_KICK_IMPORTS, SlotControlsComponent],
-  providers: [provideStreamConfig({ consentComponent: StreamConsentComponent })],
+  providers: [provideStreamConfig({ ...STREAM_DEFAULT_COMPONENTS, consentComponent: StreamConsentComponent })],
   template: `
     <et-youtube-player-slot class="final" videoId="final"><et-scenario-slot-controls /></et-youtube-player-slot>
     <et-kick-player-slot class="arena" channel="arena"><et-scenario-slot-controls /></et-kick-player-slot>
@@ -580,6 +581,7 @@ class SecondScreenComponent {
 
 const SCENARIO_PROVIDERS = [
   provideStreamManager(),
+  ...provideStreamConfig({ ...STREAM_DEFAULT_COMPONENTS }),
   provideStreamLabels({ playerFrame: (platform) => `${platform} stream` }),
   ...provideStreamPlayerLoadingConfig({ spinnerDiameter: 48 }),
   ...provideStreamPlayerErrorConfig({ retryButtonColor: 'danger' }),
@@ -589,7 +591,10 @@ const SCENARIO_PROVIDERS = [
 
 describe('facebook SDK url', () => {
   const scenario = useScenario({
-    providers: [...SCENARIO_PROVIDERS, provideStreamConfig({ facebookSdkVersion: 'v25.0' })],
+    providers: [
+      ...SCENARIO_PROVIDERS,
+      provideStreamConfig({ ...STREAM_DEFAULT_COMPONENTS, facebookSdkVersion: 'v25.0' }),
+    ],
   });
 
   afterEach(() => {
@@ -613,6 +618,30 @@ describe('facebook SDK url', () => {
     s.flush();
 
     expect(scriptTag(`https://connect.facebook.net/${facebookLocale}/sdk.js#xfbml=1&version=v25.0`)).not.toBeNull();
+  });
+});
+
+describe('stream player scenarios without the default components', () => {
+  const scenario = useScenario({ providers: [provideStreamManager(), provideColorThemesWithTailwind4(COLOR_THEMES)] });
+
+  afterEach(() => {
+    scriptTag(YT_API_URL)?.remove();
+    delete globals()['YT'];
+  });
+
+  it('renders the slot without a loading overlay while the SDK loads', () => {
+    const s = scenario();
+    installYoutube();
+    const fixture = TestBed.createComponent(HighlightsComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.flush();
+
+    const slotHost = query('et-youtube-player-slot', host);
+
+    expect(scriptTag(YT_API_URL)).not.toBeNull();
+    expect(slotHost.querySelector('et-stream-player-loading')).toBeNull();
+    expect(slotHost.querySelector('et-stream-player-error')).toBeNull();
   });
 });
 
@@ -695,7 +724,7 @@ describe('stream player scenarios', () => {
 
     const retry = query('button', error);
 
-    expect(createStreamConfig().errorComponent).toBe(StreamPlayerErrorComponent);
+    expect(createStreamConfig(STREAM_DEFAULT_COMPONENTS).errorComponent).toBe(StreamPlayerErrorComponent);
 
     expect(retry.className).toContain('et-color--danger');
 

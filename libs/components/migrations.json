@@ -87,6 +87,14 @@
       "description": "Remove the overlay fullscreen animation internals from @ethlete/components imports and mark the uses that need another approach.",
       "generator": "@ethlete/components:migrate-overlay-fullscreen-animation",
       "docs": "/components/overlays"
+    },
+    {
+      "name": "stream-default-components",
+      "version": "1.0.0-next.64",
+      "kind": "auto",
+      "description": "Spread STREAM_DEFAULT_COMPONENTS into provideStreamConfig and report stream slots without one.",
+      "generator": "@ethlete/components:migrate-stream-default-components",
+      "docs": "/components/stream"
     }
   ]
 }

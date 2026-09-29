@@ -40,6 +40,11 @@
       "schema": "./migrate-rich-text-editor-tools/schema.json",
       "description": "Find rich text editor usage that loses the heading, quote, code-block and link tools and report where to re-opt-in"
     },
+    "migrate-stream-default-components": {
+      "factory": "./migrate-stream-default-components/migration",
+      "schema": "./migrate-stream-default-components/schema.json",
+      "description": "Spread STREAM_DEFAULT_COMPONENTS into provideStreamConfig and report stream slots without one"
+    },
     "migrate-youtube-player-slot-directive": {
       "factory": "./migrate-youtube-player-slot-directive/migration",
       "schema": "./migrate-youtube-player-slot-directive/schema.json",

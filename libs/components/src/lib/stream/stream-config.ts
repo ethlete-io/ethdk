@@ -1,7 +1,5 @@
 import { Type } from '@angular/core';
 import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
-import { StreamPlayerErrorComponent } from './error';
-import { StreamPlayerLoadingComponent } from './loading';
 
 export type StreamConfig = {
   /**
@@ -19,20 +17,20 @@ export type StreamConfig = {
   pipSlotPlaceholderComponent: Type<unknown> | null;
 
   /**
-   * An optional component shown while the player is initializing (before `isReady`).
+   * A component shown while the player is initializing (before `isReady`).
    * It is automatically destroyed once the player fires its ready event.
    *
-   * @default `StreamPlayerLoadingComponent`
+   * @default null - spread `STREAM_DEFAULT_COMPONENTS` for the shipped one
    */
-  loadingComponent: Type<unknown>;
+  loadingComponent: Type<unknown> | null;
 
   /**
    * An optional component shown when the player fails to load (e.g. SDK blocked by an ad-blocker).
    * It is automatically destroyed when the player is retried and hid again when retry succeeds.
    *
-   * @default `StreamPlayerErrorComponent`
+   * @default null - spread `STREAM_DEFAULT_COMPONENTS` for the shipped one
    */
-  errorComponent: Type<unknown>;
+  errorComponent: Type<unknown> | null;
 
   /**
    * The Facebook JS SDK version the Facebook player loads, e.g. `v26.0`.
@@ -46,8 +44,8 @@ export type StreamConfig = {
 const DEFAULT_STREAM_CONFIG: StreamConfig = {
   consentComponent: null,
   pipSlotPlaceholderComponent: null,
-  loadingComponent: StreamPlayerLoadingComponent,
-  errorComponent: StreamPlayerErrorComponent,
+  loadingComponent: null,
+  errorComponent: null,
   facebookSdkVersion: 'v26.0',
 };
 

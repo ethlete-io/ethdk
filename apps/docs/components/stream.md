@@ -123,6 +123,18 @@ provideStreamConfig({
 
 The built-in `et-stream-consent` shows a lock icon, heading/description and an accept button; texts are configurable via `provideStreamLabels` and react to the app [locale](/core/providers#locale); `provideStreamConsentConfig` keeps only the accept button's color. Loading (`et-stream-player-loading`) and error (`et-stream-player-error`, with retry) overlays are equally replaceable via `provideStreamConfig`.
 
+### Loading and error overlays are opt-in
+
+`provideStreamConfig` defaults `loadingComponent` and `errorComponent` to `null`, so a slot draws no overlay while the player loads or fails, and an app that brings its own bundles neither shipped one. Spread `STREAM_DEFAULT_COMPONENTS` to register both:
+
+```ts
+import { provideStreamConfig, STREAM_DEFAULT_COMPONENTS } from '@ethlete/components';
+
+provideStreamConfig({ ...STREAM_DEFAULT_COMPONENTS });
+```
+
+`et update` adds the spread to every literal `provideStreamConfig` call and lists the stream slots of an app with no config.
+
 Rebinding the slot to another video while the gate is still up is safe: accepting creates the player for the id the slot holds at that moment, not the one it held when the gate appeared.
 
 Revoking consent through the `ConsentHandler` destroys every mounted player, ends its PiP, and puts the gate back up.
