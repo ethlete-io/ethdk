@@ -15,7 +15,7 @@ Scan of `libs/timetrack/src/lib/{agent-api,agent-session,forge,git,github,gitlab
 
 ## agent-api / ingest / reporter
 
-- Low: `agentApiClientOf` removes control characters but keeps Unicode format characters such as U+202E (`agent-api/approval-queue.ts:60-62`). A caller can make its name read as something else in the approval panel. Drop the `\p{Cf}` category as well. S
+- Low: `agentApiClientOf` removes control characters but keeps Unicode format characters such as U+202E (`agent-api/approval-queue.ts:60-62`). A caller can make its name read as something else in the approval panel. Drop the `\p{Cf}` category as well. S Done in b14767766.
 
 ## Spec gaps
 

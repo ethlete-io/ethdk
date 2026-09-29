@@ -4,4 +4,4 @@ Scan of `libs/timetrack/src/lib/{stream,ticket,settings}` and `libs/timetrack/sr
 
 ## stream
 
-- Medium: `stillFocused` pushes the tail sample onto `observed` after the sort (`stream/stream-day.ts:985`). If a git, editor or agent sample is later than `windowsSeenThroughMs`, `samples` goes out of order. The `next` stretch then runs backwards, and the tail's focus is added to the wrong context. Insert the tail at its sorted position. S Verified.
+- Medium: `stillFocused` pushes the tail sample onto `observed` after the sort (`stream/stream-day.ts:985`). If a git, editor or agent sample is later than `windowsSeenThroughMs`, `samples` goes out of order. The `next` stretch then runs backwards, and the tail's focus is added to the wrong context. Insert the tail at its sorted position. S Verified. Done in 534498700: a checkout after `windowsSeenThroughMs` gave the minutes before it its new branch.
