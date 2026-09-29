@@ -20,7 +20,7 @@ Import `MASONRY_IMPORTS`. There is no provider to register.
 
 Masonry ships as directives only - there is no `<et-masonry>` element. The layout has no visual opinion to wrap
 in a default component, and the element being yours is what lets the markup be a real list: `<ul>` plus `<li>`
-needs no ARIA at all. The structural CSS the layout depends on is injected by the directive itself, so a
+says the same thing natively. The structural CSS the layout depends on is injected by the directive itself, so a
 hand-built masonry behaves identically to the snippet above.
 
 ## Live demo

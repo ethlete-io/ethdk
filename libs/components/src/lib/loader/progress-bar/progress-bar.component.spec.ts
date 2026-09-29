@@ -1,5 +1,7 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
+import { provideLoaderLabels } from '../loader-labels';
 import { ProgressBarComponent } from './progress-bar.component';
 
 describe('ProgressBarComponent', () => {
@@ -82,5 +84,39 @@ describe('ProgressBarComponent', () => {
     it('adds the indeterminate class', () => {
       expect(host.classList.contains('et-progress-bar--indeterminate')).toBe(true);
     });
+  });
+});
+
+describe('ProgressBarComponent accessible name', () => {
+  @Component({
+    template: `<et-progress-bar aria-label="Uploading" />`,
+    imports: [ProgressBarComponent],
+  })
+  class NamedHost {}
+
+  it('defaults to the loader loading label', () => {
+    const fixture = TestBed.createComponent(ProgressBarComponent);
+
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.getAttribute('aria-label')).toBe('Loading');
+  });
+
+  it('follows the provided loader labels', () => {
+    TestBed.configureTestingModule({ providers: [provideLoaderLabels({ loading: 'Lädt' })] });
+
+    const fixture = TestBed.createComponent(ProgressBarComponent);
+
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.getAttribute('aria-label')).toBe('Lädt');
+  });
+
+  it('keeps an aria-label the consumer sets', () => {
+    const fixture = TestBed.createComponent(NamedHost);
+
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('et-progress-bar').getAttribute('aria-label')).toBe('Uploading');
   });
 });

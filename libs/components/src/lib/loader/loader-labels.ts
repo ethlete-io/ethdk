@@ -10,8 +10,8 @@ import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
  */
 export type LoaderLabels = {
   /**
-   * The `aria-label` of the brand loader and a stream's loading overlay. The spinner never uses it and has no
-   * accessible name unless you give it an `aria-label`.
+   * The default `aria-label` of the brand loader, spinner and progress bar, and of a stream's loading overlay.
+   * An `aria-label` on the spinner or progress bar takes precedence.
    */
   loading: string;
   /** Announced in place of a skeleton's shapes, which are `aria-hidden`. */

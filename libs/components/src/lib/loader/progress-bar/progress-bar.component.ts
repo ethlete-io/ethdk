@@ -1,9 +1,10 @@
 import { Component, ViewEncapsulation, booleanAttribute, computed, input, numberAttribute } from '@angular/core';
 import { clampProgress } from '../clamp-progress';
+import { injectLoaderName } from '../inject-loader-name';
 
 /**
- * A linear loading indicator, determinate by default. Inherits `currentColor`. It has no accessible name of its
- * own, so give a standalone bar an `aria-label`.
+ * A linear loading indicator, determinate by default. Inherits `currentColor`. Its accessible name is the loader
+ * `loading` label; set an `aria-label` to name it more specifically.
  *
  * @example
  * <et-progress-bar [value]="42" aria-label="Upload progress" />
@@ -29,12 +30,15 @@ import { clampProgress } from '../clamp-progress';
     class: 'et-progress-bar',
     '[class.et-progress-bar--indeterminate]': 'indeterminate()',
     role: 'progressbar',
+    '[attr.aria-label]': 'name()',
     '[attr.aria-valuenow]': 'indeterminate() ? null : clampedValue()',
     '[attr.aria-valuemin]': 'indeterminate() ? null : 0',
     '[attr.aria-valuemax]': 'indeterminate() ? null : 100',
   },
 })
 export class ProgressBarComponent {
+  protected name = injectLoaderName();
+
   /** The progress, 0-100 and clamped. @default 0 */
   public value = input(0, { transform: numberAttribute });
 

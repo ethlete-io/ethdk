@@ -1,7 +1,9 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import '../../../test-helpers';
+import { provideLoaderLabels } from '../loader-labels';
 import { SpinnerComponent } from './spinner.component';
 
 // jsdom drops the component stylesheet whole (`@layer`, nesting) and vitest stubs CSS imports to an empty
@@ -174,5 +176,39 @@ describe('SpinnerComponent styles', () => {
 
     expect(durations).not.toHaveLength(0);
     expect(durations.filter((duration) => /^[\d.]+m?s$/.test(duration))).toEqual([]);
+  });
+});
+
+describe('SpinnerComponent accessible name', () => {
+  @Component({
+    template: `<et-spinner aria-label="Uploading" />`,
+    imports: [SpinnerComponent],
+  })
+  class NamedHost {}
+
+  it('defaults to the loader loading label', () => {
+    const fixture = TestBed.createComponent(SpinnerComponent);
+
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.getAttribute('aria-label')).toBe('Loading');
+  });
+
+  it('follows the provided loader labels', () => {
+    TestBed.configureTestingModule({ providers: [provideLoaderLabels({ loading: 'Lädt' })] });
+
+    const fixture = TestBed.createComponent(SpinnerComponent);
+
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.getAttribute('aria-label')).toBe('Lädt');
+  });
+
+  it('keeps an aria-label the consumer sets', () => {
+    const fixture = TestBed.createComponent(NamedHost);
+
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('et-spinner').getAttribute('aria-label')).toBe('Uploading');
   });
 });

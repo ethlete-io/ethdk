@@ -21,7 +21,7 @@ import { MASONRY_TOKEN } from './masonry.tokens';
  * reflows when a translation swaps in, a description that expands on click.
  *
  * The element is yours, which is what lets a masonry be a real list - `<ul etMasonry>` with `<li
- * etMasonryItem>` children needs no ARIA roles at all.
+ * etMasonryItem>` children. The item sets `role="listitem"` itself, so it works on any element.
  *
  * @example
  * <li etMasonryItem>…</li>

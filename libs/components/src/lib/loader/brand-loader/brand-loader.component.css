@@ -78,7 +78,7 @@
   }
 
   .et-brand-loader {
-    --_et-brand-loader-accent: var(--et-brand-loader-accent, #00ffa1);
+    --_et-brand-loader-accent: var(--et-brand-loader-accent, var(--et-theme-color-primary-solid, #00ffa1));
     --_et-brand-loader-ghost: var(
       --et-brand-loader-ghost,
       color-mix(in srgb, var(--_et-brand-loader-accent) 14%, currentColor)

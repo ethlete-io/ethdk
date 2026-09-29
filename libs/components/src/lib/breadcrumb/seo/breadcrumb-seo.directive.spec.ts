@@ -113,4 +113,19 @@ describe('BreadcrumbSeoDirective', () => {
 
     expect(settle(fixture)?.itemListElement.at(-1)?.name).toBe('Rockets 2024');
   });
+
+  it('keeps a crumb name that contains a closing script tag inside the script element', () => {
+    const fixture = create();
+    const name = '</script><img src=x onerror=alert(1)> a < b';
+
+    fixture.componentInstance.teamsName.set(name);
+    fixture.detectChanges();
+
+    const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+
+    expect(scripts).toHaveLength(1);
+    expect(scripts[0]?.textContent).not.toContain('<');
+    expect(document.querySelector('img[src="x"]')).toBeNull();
+    expect(emitted()?.itemListElement[1]?.name).toBe(name);
+  });
 });

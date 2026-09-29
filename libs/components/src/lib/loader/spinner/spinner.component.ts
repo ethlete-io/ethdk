@@ -10,12 +10,13 @@ import {
 } from '@angular/core';
 import { ProvideColorDirective } from '@ethlete/core';
 import { clampProgress } from '../clamp-progress';
+import { injectLoaderName } from '../inject-loader-name';
 
 const BASE_STROKE_WIDTH = 10;
 
 /**
  * A circular loading indicator, indeterminate by default. Inherits `currentColor` unless `color` is set.
- * It has no accessible name of its own, so give a standalone spinner an `aria-label`.
+ * Its accessible name is the loader `loading` label; set an `aria-label` to name it more specifically.
  *
  * @example
  * <et-spinner [determinate]="true" [value]="65" [track]="true" aria-label="Uploading" />
@@ -111,6 +112,7 @@ const BASE_STROKE_WIDTH = 10;
     '[style.--et-spinner-size.px]': 'diameter()',
     '[style.--et-spinner-stroke-width.px]': 'strokeWidth()',
     role: 'progressbar',
+    '[attr.aria-label]': 'name()',
     '[attr.aria-valuenow]': 'determinate() ? clampedValue() : null',
     '[attr.aria-valuemin]': 'determinate() ? 0 : null',
     '[attr.aria-valuemax]': 'determinate() ? 100 : null',
@@ -118,6 +120,8 @@ const BASE_STROKE_WIDTH = 10;
 })
 export class SpinnerComponent {
   private provideColor = inject(ProvideColorDirective);
+
+  protected name = injectLoaderName();
 
   /** The size in px. @default 18 */
   public diameter = input(18, { transform: numberAttribute });
