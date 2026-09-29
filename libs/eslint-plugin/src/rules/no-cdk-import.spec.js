@@ -1,7 +1,10 @@
 // @ts-check
 'use strict';
 
-const { RuleTester } = require('eslint');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const { Linter, RuleTester } = require('eslint');
 const rule = require('./no-cdk-import');
 
 const tester = new RuleTester({
@@ -53,7 +56,7 @@ tester.run('no-cdk-import', rule, {
       errors: [
         {
           message:
-            '`ButtonComponent` is legacy @ethlete/cdk. Use `ButtonComponent` from @ethlete/components instead (https://docs.example.com/components/button). a real button system: variant, size and color inputs plus theming instead of CSS-only classes.',
+            '`ButtonComponent` is legacy @ethlete/cdk. Use `ButtonComponent` from @ethlete/components instead (https://docs.example.com/components/button). A real button system: variant, size and color inputs plus theming instead of CSS-only classes.',
         },
       ],
     },
@@ -77,7 +80,7 @@ tester.run('no-cdk-import', rule, {
       errors: [
         {
           message:
-            '`AnimatedOverlayState` is legacy @ethlete/cdk. Use `AnimatedLifecycleState` from @ethlete/core instead (https://docs.example.com/cdk/migration). the mount lifecycle is the core animated-lifecycle state.',
+            '`AnimatedOverlayState` is legacy @ethlete/cdk. Use `AnimatedLifecycleState` from @ethlete/core instead (https://docs.example.com/cdk/migration). The mount lifecycle is the core animated-lifecycle state.',
         },
       ],
     },
@@ -133,4 +136,34 @@ tester.run('no-cdk-import', rule, {
       errors: [{ messageId: 'successor' }, { messageId: 'successor' }],
     },
   ],
+});
+
+describe('no-cdk-import migration map cache', () => {
+  const verify = (/** @type {string} */ mapPath) =>
+    new Linter({ configType: 'flat' }).verify(
+      `import { Foo } from '@ethlete/cdk';`,
+      [
+        {
+          files: ['**/*.ts'],
+          languageOptions: { parser: require('@typescript-eslint/parser') },
+          plugins: { x: { rules: { 'no-cdk-import': rule } } },
+          rules: { 'x/no-cdk-import': ['error', { migrationMapPath: mapPath }] },
+        },
+      ],
+      'test.ts',
+    );
+
+  it('picks up a map that appears or changes after the first run', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'no-cdk-import-'));
+    const mapPath = path.join(dir, 'map.json');
+
+    expect(verify(mapPath)[0].message).toContain('Move it to');
+
+    fs.writeFileSync(mapPath, JSON.stringify({ Foo: { kind: 'rename', to: 'Bar' } }));
+    expect(verify(mapPath)[0].message).toContain('Use `Bar`');
+
+    fs.writeFileSync(mapPath, JSON.stringify({ Foo: { kind: 'rename', to: 'Baz' } }));
+    fs.utimesSync(mapPath, new Date(Date.now() + 5000), new Date(Date.now() + 5000));
+    expect(verify(mapPath)[0].message).toContain('Use `Baz`');
+  });
 });

@@ -1,7 +1,7 @@
 # eslint-plugin lib scan — open findings
 
 Scan of `libs/eslint-plugin` from 2026-08-19. Fixed findings were removed on 2026-09-26 (git history
-has them). All 23 Medium findings are done (740745cfd, 0e8f4306d, fdc275315, 2ff9e0dd3, 5070c1fac, 1115ebd01, b962944d7, d8a6c9352, 8f943a33c, b96cb14a9, e183dbc6b, d6e261816, 608346bb0, 9ce9b2b4c, 3d9bbb0e5, 562f182ac, 5d32f7e16, 10af4378d, 836c57050, 1dd03c288, 321ffa7e8, f4ba9f3c5, 64e382a80; the spread bail-out of `angular-decorator-property-order` is kept). Still open: 29 Low, 13 spec-coverage items. Paths are relative to
+has them). All 23 Medium findings are done (740745cfd, 0e8f4306d, fdc275315, 2ff9e0dd3, 5070c1fac, 1115ebd01, b962944d7, d8a6c9352, 8f943a33c, b96cb14a9, e183dbc6b, d6e261816, 608346bb0, 9ce9b2b4c, 3d9bbb0e5, 562f182ac, 5d32f7e16, 10af4378d, 836c57050, 1dd03c288, 321ffa7e8, f4ba9f3c5, 64e382a80; the spread bail-out of `angular-decorator-property-order` is kept). Still open: 20 Low, 13 spec-coverage items. Paths are relative to
 `libs/eslint-plugin/src/rules/` unless shown in full.
 
 ## ordering & naming
@@ -25,19 +25,12 @@ has them). All 23 Medium findings are done (740745cfd, 0e8f4306d, fdc275315, 2ff
 
 ## import & API bans
 
-- Low: `no-cdk-import` note is a lowercase fragment (`no-cdk-import.js:138`, spec `:56`, `rules.md:297`). S
-- Low: migration-map cache never invalidates, caches a missing map as `null`, constant default key (`no-cdk-import.js:28-51`). S
-- Low: prepare fixer inserts the injector member under the next member's leading comment. S
 - Low: `.runInContext` counts as an injection context. S
-- Low: `router.snapshot` maps to `injectRouterState()` (`no-angular-router-api.js:50`), but Angular 22's `Router` has no `snapshot`. S
-- Low: `untracked(() => legacyGetUsers.prepare({}))` and an IIFE still reported. S
-- Low: `// ──` dividers in `no-angular-router-api.js` (5), `no-window-location.js` (2). S
 - Spec: `no-legacy-prepare-without-injector` lacks namespace/default `@angular/core` import, `creatorPattern`, `untracked`/IIFE, `runInContext` cases. S
 - Spec: no prototype-key case (`no-cdk-import`), namespace case (`no-legacy-query-import`), `this.router.<prop>`/cross-scope case (`no-angular-router-api`), injected-`DOCUMENT` case, bare `location.*` case; `configs/recommended.spec.js` misses `no-legacy-prepare-without-injector`. S
 
 ## reactive & signals
 
-- Low: comments at `no-readonly-signal.js:80,89,93`; two dividers in `prefer-rxjs-timer.js`. S
 - Low: `no-rxjs-in-effect` doesn't cover `afterRenderEffect` or `linkedSignal`. S
 - Low: `rules.md:149` omits `clear*`/`removeEventListener`; `:144` omits the `play` exemption; `:71` omits that `inject(X).method()` is allowed. S
 - Low: `new (inject(Foo).Bar)()` reported by `no-inject-chain`. S
@@ -54,7 +47,6 @@ has them). All 23 Medium findings are done (740745cfd, 0e8f4306d, fdc275315, 2ff
 - Low: `no-dom-query` has no receiver check (`points.closest(target)`); `innerHTML`, `className`, `textContent`, `Object.assign(el.style, …)` not reported. M
 - Low: `prefer-element-dimensions.js:32` header shows `rect.width` instead of `rect().width`. S
 - Low: `<form method="DIALOG">` false positive in `require-form-submit`. S
-- Low: `// ──` dividers in `no-direct-dom-manipulation`, `prefer-match-media`, `prefer-scroll-state`. S
 - Spec: `prefer-viewport-size` lacks `defaultView`/`outerHeight`/non-window receiver; `prefer-element-dimensions` lacks other properties/nested functions; `no-direct-dom-manipulation` covers few methods; `prefer-match-media` lacks change listener/bare `matchMedia()`/double report. S
 - Spec: none for observer aliases/subclasses, uppercase `method`, or `no-dom-query` negatives. S
 
@@ -63,7 +55,6 @@ has them). All 23 Medium findings are done (740745cfd, 0e8f4306d, fdc275315, 2ff
 - Low: `no-impure-top-level-provider` passes destructuring wrapped in `satisfies` or `!`. S
 - Low: `enforce-routing-view-naming` reports non-route object literals; substring test lets `items-viewer` pass. S
 - Low: dead `recommendedTs.plugins: {}` (`configs/recommended.js:12`). S
-- Low: comments in `prefer-clone-equal.js`, `no-pipe-logic`, `enforce-routing-view-naming`. S
 - Spec: no namespace/default/`require` lodash cases, no `satisfies` case, no default-export/block `.then`/non-route case, nothing pins the `no-trivial-return-type` false negative. S
 - Spec: no test that every registered rule is in `recommended` or on an exclusion list (`configs/recommended.spec.js` covers 26). M
 

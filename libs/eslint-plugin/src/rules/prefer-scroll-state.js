@@ -41,7 +41,6 @@ const preferScrollState = {
         const { callee } = node;
         const args = node.arguments;
 
-        // ── el.addEventListener('scroll', fn) / window.addEventListener('scroll', fn) ──
         if (
           callee.type === 'MemberExpression' &&
           callee.property.type === 'Identifier' &&
@@ -53,7 +52,6 @@ const preferScrollState = {
           return;
         }
 
-        // ── fromEvent(el, 'scroll') ──────────────────────────────────────────
         if (
           callee.type === 'Identifier' &&
           callee.name === 'fromEvent' &&
@@ -64,7 +62,6 @@ const preferScrollState = {
           return;
         }
 
-        // ── renderer.listen(el, 'scroll', fn) ───────────────────────────────
         if (
           callee.type === 'MemberExpression' &&
           callee.property.type === 'Identifier' &&
@@ -77,7 +74,6 @@ const preferScrollState = {
       },
 
       AssignmentExpression(node) {
-        // ── el.onscroll = fn ────────────────────────────────────────────────
         const { left } = node;
         if (
           left.type === 'MemberExpression' &&

@@ -99,7 +99,6 @@ const preferCloneEqual = {
           return;
         }
 
-        // ── JSON.parse(JSON.stringify(expr)) ─────────────────────────────────
         if (
           callee.type === 'MemberExpression' &&
           callee.object.type === 'Identifier' &&
@@ -121,7 +120,6 @@ const preferCloneEqual = {
           }
         }
 
-        // ── structuredClone(expr) ─────────────────────────────────────────────
         if (isGlobalReference(context.sourceCode, callee) && callee.name === 'structuredClone') {
           context.report({ node, messageId: 'preferClone', data: { method: 'structuredClone()' } });
         }
@@ -132,9 +130,6 @@ const preferCloneEqual = {
         if (!reference) return;
         const src = reference.source;
 
-        // ── lodash cloneDeep / isEqual ────────────────────────────────────────
-        // import { cloneDeep } from 'lodash' / 'lodash-es'
-        // import { isEqual } from 'lodash' / 'lodash-es'
         if (src === 'lodash' || src === 'lodash-es') {
           for (const { name } of reference.named) {
             if (name === 'cloneDeep') {
@@ -156,13 +151,11 @@ const preferCloneEqual = {
           return;
         }
 
-        // import cloneDeep from 'lodash/cloneDeep'
         if (src === 'lodash/cloneDeep' || src === 'lodash-es/cloneDeep') {
           context.report({ node, messageId: 'preferClone', data: { method: 'lodash cloneDeep' } });
           return;
         }
 
-        // import isEqual from 'lodash/isEqual'
         if (src === 'lodash/isEqual' || src === 'lodash-es/isEqual') {
           context.report({ node, messageId: 'preferEqual', data: { method: 'isEqual' } });
         }

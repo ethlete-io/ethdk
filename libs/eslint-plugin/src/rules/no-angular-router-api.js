@@ -47,7 +47,6 @@ const ROUTER_STATE_PROPS = new Map([
   ['url', "injectUrl() from '@ethlete/core'"],
   ['events', "injectRouterEvent() from '@ethlete/core'"],
   ['routerState', "injectRouterState() from '@ethlete/core'"],
-  ['snapshot', "injectRouterState() from '@ethlete/core'"],
   ['lastSuccessfulNavigation', "injectRouterState() from '@ethlete/core'"],
   ['currentNavigation', "injectRouterState() from '@ethlete/core'"],
 ]);

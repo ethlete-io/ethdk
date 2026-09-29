@@ -29,7 +29,6 @@ const noPipeLogic = {
   },
   create(context) {
     return {
-      // Case 1: transform() { ... } — method with a body
       MethodDefinition(node) {
         const key = /** @type {any} */ (node).key;
         if (key.type !== 'Identifier' || key.name !== 'transform') return;
@@ -46,7 +45,6 @@ const noPipeLogic = {
         context.report({ node, messageId: 'noLogicInTransform' });
       },
 
-      // Case 2: transform = () => { ... } or transform = function() { ... }
       PropertyDefinition(node) {
         const key = /** @type {any} */ (node).key;
         if (key.type !== 'Identifier' || key.name !== 'transform') return;

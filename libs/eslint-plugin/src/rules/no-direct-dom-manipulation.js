@@ -117,7 +117,6 @@ const noDirectDomManipulation = {
           return;
         }
 
-        // ── classList.add / .remove / .toggle / .replace ─────────────────────
         if (
           callee.object.type === 'MemberExpression' &&
           callee.object.property.type === 'Identifier' &&
@@ -137,7 +136,6 @@ const noDirectDomManipulation = {
         // Skip calls on a Renderer2 instance — those are the correct pattern.
         if (isRendererReceiver(callee.object, context)) return;
 
-        // ── DOM creation ──────────────────────────────────────────────────────
         if (DOM_CREATE_METHODS.has(methodName)) {
           context.report({
             node,
@@ -147,7 +145,6 @@ const noDirectDomManipulation = {
           return;
         }
 
-        // ── DOM mutation ──────────────────────────────────────────────────────
         if (DOM_MUTATION_METHODS.has(methodName)) {
           context.report({
             node,
@@ -157,7 +154,6 @@ const noDirectDomManipulation = {
         }
       },
 
-      // ── el.style.prop = value ─────────────────────────────────────────────
       AssignmentExpression(node) {
         const { left } = node;
         if (

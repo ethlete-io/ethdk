@@ -2,4 +2,4 @@
 '@ethlete/eslint-plugin': patch
 ---
 
-Several rule fixes: comment lines no longer count as blank lines in `guard-return-newline`, CRLF is kept, multi-line `@angular/core` imports survive the fixers, `as const` no longer hides host directives, and `no-redundant-internal` flags `#private` members.
+Several rule fixes: `guard-return-newline` no longer counts a comment as the blank line, fixers keep multi-line imports, `no-legacy-prepare-without-injector` accepts `untracked` and IIFEs, `no-cdk-import` re-reads a changed migration map, and `router.snapshot` is no longer reported.

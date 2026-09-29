@@ -26,17 +26,33 @@ const CDK_PACKAGE = '@ethlete/cdk';
 const MIGRATION_MAP = '@ethlete/cdk/migration-map.json';
 const DEFAULT_DOCS_BASE_URL = 'https://ethlete-sdk-docs.web.app';
 
-/** @type {Map<string, Record<string, { kind: string, to?: string, package?: string, docs?: string, note?: string }> | null>} */
+/** @typedef {Record<string, { kind: string, to?: string, package?: string, docs?: string, note?: string }>} TMigrationMap */
+
+/** @type {Map<string, { mtimeMs: number | null, map: TMigrationMap }>} */
 const mapCache = new Map();
+
+/**
+ * @param {string} path
+ */
+const getMtimeMs = (path) => {
+  try {
+    return fs.statSync(path).mtimeMs;
+  } catch {
+    return null;
+  }
+};
 
 /**
  * @param {string | undefined} mapPath
  * @param {string} cwd
+ * @returns {TMigrationMap | null}
  */
 const loadMigrationMap = (mapPath, cwd) => {
-  const cacheKey = mapPath ? path.resolve(cwd, mapPath) : MIGRATION_MAP;
+  const cacheKey = mapPath ? path.resolve(cwd, mapPath) : `${cwd}:${MIGRATION_MAP}`;
+  const mtimeMs = mapPath ? getMtimeMs(cacheKey) : null;
+  const cached = mapCache.get(cacheKey);
 
-  if (mapCache.has(cacheKey)) return mapCache.get(cacheKey) ?? null;
+  if (cached && cached.mtimeMs === mtimeMs) return cached.map;
 
   let map;
 
@@ -45,12 +61,21 @@ const loadMigrationMap = (mapPath, cwd) => {
       ? JSON.parse(fs.readFileSync(cacheKey, 'utf8'))
       : createRequire(path.join(cwd, 'noop.js'))(MIGRATION_MAP);
   } catch {
-    map = null;
+    return null;
   }
 
-  mapCache.set(cacheKey, map);
+  mapCache.set(cacheKey, { mtimeMs, map });
 
   return map;
+};
+
+/**
+ * @param {string} note
+ */
+const formatNote = (note) => {
+  const sentence = note.charAt(0).toUpperCase() + note.slice(1);
+
+  return /[.!?]$/u.test(sentence) ? sentence : `${sentence}.`;
 };
 
 /** @type {import('eslint').Rule.RuleModule} */
@@ -135,7 +160,7 @@ const noCdkImport = {
               to: entry.to,
               package: entry.package ?? '@ethlete/components',
               docs: entry.docs ? `${docsBaseUrl}${entry.docs}` : migrationDocs,
-              note: entry.note ? ` ${entry.note}.` : '',
+              note: entry.note ? ` ${formatNote(entry.note)}` : '',
             },
           });
         }

@@ -77,7 +77,6 @@ const noReadonlySignal = {
   create(context) {
     return {
       PropertyDefinition(node) {
-        // Only flag when readonly is set
         if (!node.readonly) return;
 
         const init = node.value;
@@ -86,12 +85,9 @@ const noReadonlySignal = {
         const { callee } = init;
         let apiName = null;
 
-        // Simple call: signal(), input(), computed(), inject(), etc.
         if (callee.type === 'Identifier' && (REACTIVE_APIS.has(callee.name) || callee.name.startsWith('inject'))) {
           apiName = callee.name;
-        }
-        // Member call: input.required(), outputFromObservable.something(), etc.
-        else if (
+        } else if (
           callee.type === 'MemberExpression' &&
           callee.object.type === 'Identifier' &&
           REACTIVE_APIS.has(callee.object.name)

@@ -10,6 +10,7 @@ const tester = new RuleTester({
 
 tester.run('no-angular-router-api', rule, {
   valid: [
+    { code: `const router = inject(Router); const s = router.snapshot;` },
     {
       code: `import { inject } from 'some-other-lib';
 import { ActivatedRoute } from './route';
@@ -90,10 +91,6 @@ router.url;`,
     },
     {
       code: `const router = inject(Router); const s = router.routerState;`,
-      errors: [{ messageId: 'noRouterStateProp' }],
-    },
-    {
-      code: `const router = inject(Router); const s = router.snapshot;`,
       errors: [{ messageId: 'noRouterStateProp' }],
     },
     {

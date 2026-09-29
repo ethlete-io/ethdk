@@ -28,6 +28,8 @@ tester.run('no-legacy-prepare-without-injector', rule, {
     { code: withImport(`class A { users = queryArrayComputed(() => [legacyGetUsers.prepare({})]); }`) },
     // synchronous array callbacks run before the constructor returns
     { code: withImport(`class A { constructor() { [1, 2].forEach(() => legacyGetUsers.prepare({})); } }`) },
+    { code: withImport(`class A { constructor() { untracked(() => legacyGetUsers.prepare({})); } }`) },
+    { code: withImport(`class A { constructor() { (() => legacyGetUsers.prepare({}))(); } }`) },
     // a function that injects can only be called from a context
     {
       code: withImport(
@@ -39,6 +41,43 @@ tester.run('no-legacy-prepare-without-injector', rule, {
     { code: `import { getUsers } from './queries';\nclass A { load() { getUsers.prepare({}); } }` },
   ],
   invalid: [
+    {
+      code: `import { inject, Injector } from '@angular/core';
+import { legacyGetUsers } from './queries';
+class A {
+  // the page
+  page = signal(1);
+  users = computed(() => legacyGetUsers.prepare({}));
+}`,
+      output: `import { inject, Injector } from '@angular/core';
+import { legacyGetUsers } from './queries';
+class A {
+  private injector = inject(Injector);
+
+  // the page
+  page = signal(1);
+  users = computed(() => legacyGetUsers.prepare({ injector: this.injector }));
+}`,
+      errors: [{ messageId: 'missingInjector' }],
+    },
+    {
+      code: withImport(`class A { users = computed(() => untracked(() => legacyGetUsers.prepare({}))); }`),
+      output: `import { legacyGetUsers } from './queries';
+import { inject, Injector } from '@angular/core';
+class A { private injector = inject(Injector);
+
+          users = computed(() => untracked(() => legacyGetUsers.prepare({ injector: this.injector }))); }`,
+      errors: [{ messageId: 'missingInjector' }],
+    },
+    {
+      code: withImport(`class A { users = computed(() => (() => legacyGetUsers.prepare({}))()); }`),
+      output: `import { legacyGetUsers } from './queries';
+import { inject, Injector } from '@angular/core';
+class A { private injector = inject(Injector);
+
+          users = computed(() => (() => legacyGetUsers.prepare({ injector: this.injector }))()); }`,
+      errors: [{ messageId: 'missingInjector' }],
+    },
     {
       code: `import { legacyGetUsers as gu } from './queries';
 class A {

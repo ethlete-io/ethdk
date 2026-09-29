@@ -101,9 +101,16 @@ const isContextProvidingHost = (host) => {
  */
 const isTransparentHost = (host) =>
   !!host &&
-  host.callee.type === 'MemberExpression' &&
-  host.callee.property.type === 'Identifier' &&
-  TRANSPARENT_ARRAY_METHODS.has(host.callee.property.name);
+  ((host.callee.type === 'Identifier' && host.callee.name === 'untracked') ||
+    (host.callee.type === 'MemberExpression' &&
+      host.callee.property.type === 'Identifier' &&
+      TRANSPARENT_ARRAY_METHODS.has(host.callee.property.name)));
+
+/**
+ * @param {any} fn
+ * @returns {boolean}
+ */
+const isImmediatelyInvoked = (fn) => fn.parent?.type === 'CallExpression' && fn.parent.callee === fn;
 
 /**
  * Whether the function's own body calls `inject()`. Such a function can only be called from an injection
@@ -175,7 +182,7 @@ const classifyCallSite = (node) => {
         return { needsInjector: false, boundary: 'injection context' };
       }
 
-      if (!isTransparentHost(host)) {
+      if (!isTransparentHost(host) && !isImmediatelyInvoked(current)) {
         if (!host && callsInject(current)) {
           return { needsInjector: false, boundary: 'function that injects' };
         }
@@ -313,11 +320,12 @@ const noLegacyPrepareWithoutInjector = {
      */
     const buildInjectorMemberFix = (classBody, injectorName) => {
       const firstMember = classBody.body[0];
-      const indentation = ' '.repeat(firstMember ? firstMember.loc.start.column : 2);
+      const insertBefore = firstMember ? (sourceCode.getCommentsBefore(firstMember)[0] ?? firstMember) : null;
+      const indentation = ' '.repeat(insertBefore ? insertBefore.loc.start.column : 2);
       const declaration = `private ${injectorName} = inject(Injector);`;
 
-      return firstMember
-        ? /** @param {any} fixer */ (fixer) => fixer.insertTextBefore(firstMember, `${declaration}\n\n${indentation}`)
+      return insertBefore
+        ? /** @param {any} fixer */ (fixer) => fixer.insertTextBefore(insertBefore, `${declaration}\n\n${indentation}`)
         : /** @param {any} fixer */ (fixer) => fixer.replaceText(classBody, `{\n${indentation}${declaration}\n}`);
     };
 

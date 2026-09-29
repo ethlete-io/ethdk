@@ -45,7 +45,6 @@ const enforceRoutingViewNaming = {
         const key = /** @type {any} */ (node).key;
         if (key.type !== 'Identifier' || key.name !== 'loadComponent') return;
 
-        // Must be an arrow function: () => import(...).then(m => m.XxxViewComponent)
         const arrow = /** @type {any} */ (node).value;
         if (!arrow || arrow.type !== 'ArrowFunctionExpression') return;
 
