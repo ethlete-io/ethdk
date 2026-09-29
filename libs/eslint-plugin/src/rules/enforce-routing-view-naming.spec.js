@@ -10,6 +10,10 @@ const tester = new RuleTester({
 
 tester.run('enforce-routing-view-naming', rule, {
   valid: [
+    { code: `const routes = [{ loadComponent: () => import('./items-list-view/items-list-view.component') }];` },
+    {
+      code: `const routes = [{ loadComponent: () => import('./items-list-view/items-list-view.component').then(m => { return m.ItemsListViewComponent; }) }];`,
+    },
     // Correct path and class name
     {
       code: `const routes = [{ loadComponent: () => import('./items-list-view/items-list-view.component').then(m => m.ItemsListViewComponent) }];`,
@@ -41,6 +45,14 @@ tester.run('enforce-routing-view-naming', rule, {
       // Both violations
       code: `const routes = [{ loadComponent: () => import('./dashboard/dashboard.component').then(m => m.DashboardComponent) }];`,
       errors: [{ messageId: 'pathMustContainView' }, { messageId: 'classMustEndWithViewComponent' }],
+    },
+    {
+      code: `const routes = [{ loadComponent: () => import('./items-list/items-list.component') }];`,
+      errors: [{ messageId: 'pathMustContainView' }],
+    },
+    {
+      code: `const routes = [{ loadComponent: () => import('./items-list-view/items-list-view.component').then(m => { return m.ItemsListComponent; }) }];`,
+      errors: [{ messageId: 'classMustEndWithViewComponent' }],
     },
   ],
 });

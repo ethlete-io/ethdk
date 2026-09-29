@@ -25,6 +25,20 @@ const enforceRoutingViewNaming = {
     schema: [],
   },
   create(context) {
+    /** @param {any} importExpr */
+    const checkImportPath = (importExpr) => {
+      if (!importExpr || importExpr.type !== 'ImportExpression') return;
+
+      const source = importExpr.source;
+      if (source && source.type === 'Literal' && typeof source.value === 'string' && !source.value.includes('-view')) {
+        context.report({
+          node: source,
+          messageId: 'pathMustContainView',
+          data: { path: source.value },
+        });
+      }
+    };
+
     return {
       Property(node) {
         const key = /** @type {any} */ (node).key;
@@ -35,38 +49,33 @@ const enforceRoutingViewNaming = {
         if (!arrow || arrow.type !== 'ArrowFunctionExpression') return;
 
         const body = arrow.body;
-        if (!body || body.type !== 'CallExpression') return;
+        if (!body) return;
+
+        if (body.type === 'ImportExpression') {
+          checkImportPath(body);
+          return;
+        }
+
+        if (body.type !== 'CallExpression') return;
 
         const callee = body.callee;
         if (!callee || callee.type !== 'MemberExpression') return;
         if (callee.property.type !== 'Identifier' || callee.property.name !== 'then') return;
 
-        // Check the import path contains "-view"
-        const importExpr = callee.object;
-        if (importExpr && importExpr.type === 'ImportExpression') {
-          const source = importExpr.source;
-          if (source && source.type === 'Literal' && typeof source.value === 'string') {
-            if (!source.value.includes('-view')) {
-              context.report({
-                node: source,
-                messageId: 'pathMustContainView',
-                data: { path: source.value },
-              });
-            }
-          }
-        }
+        checkImportPath(callee.object);
 
-        // Check the class name in .then(m => m.XxxViewComponent)
-        const args = body.arguments;
-        if (!args || args.length === 0) return;
-
-        const callback = args[0];
+        const callback = body.arguments?.[0];
         if (!callback || callback.type !== 'ArrowFunctionExpression') return;
 
         const cbBody = callback.body;
-        if (!cbBody || cbBody.type !== 'MemberExpression') return;
+        const returned =
+          cbBody?.type === 'BlockStatement'
+            ? cbBody.body.find(/** @param {any} statement */ (statement) => statement.type === 'ReturnStatement')
+                ?.argument
+            : cbBody;
+        if (!returned || returned.type !== 'MemberExpression') return;
 
-        const prop = cbBody.property;
+        const prop = returned.property;
         if (!prop || prop.type !== 'Identifier') return;
 
         if (!prop.name.endsWith('ViewComponent')) {
