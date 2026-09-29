@@ -7,10 +7,10 @@ import {
   TIME_PICKER_ERROR_CODES,
   TIME_PICKER_IMPORTS,
   TIME_PICKER_LABELS,
-  TimePickerColumnDirective,
   TimePickerComponent,
   TimePickerDirective,
-  TimePickerOptionDirective,
+  TimePickerRingDirective,
+  TimePickerRingHandleDirective,
   TimeRange,
   TimeRangePick,
 } from '../index';
@@ -28,21 +28,6 @@ import { Scenario, useScenario } from './harness';
 const code = (value: number) => `ET${value}`;
 
 const text = (element: Element | null | undefined) => element?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
-
-const options = (column: Element) => Array.from(column.querySelectorAll<HTMLButtonElement>('[role="option"]'));
-
-const option = (column: Element, label: string) => {
-  const match = options(column).find((candidate) => text(candidate) === label);
-
-  if (!match) throw new Error(`No option ${label}`);
-
-  return match;
-};
-
-const selected = (column: Element) =>
-  options(column)
-    .filter((candidate) => candidate.getAttribute('aria-selected') === 'true')
-    .map((candidate) => text(candidate));
 
 const settle = (s: Scenario) => {
   s.tick();
@@ -105,16 +90,12 @@ class TrainingSlotComponent {
 
 @Component({
   selector: 'et-scenario-compact-time',
-  imports: [TimePickerDirective, TimePickerColumnDirective, TimePickerOptionDirective],
+  imports: [TimePickerDirective, TimePickerRingDirective, TimePickerRingHandleDirective],
   template: `
-    <div #picker="etTimePicker" [(value)]="time" [minuteStep]="20" class="compact" etTimePicker>
-      @for (column of picker.columns(); track column.unit) {
-        <div [column]="column" [attr.data-unit]="column.unit" etTimePickerColumn>
-          @for (entry of column.options; track entry.value) {
-            <button [option]="entry" class="compact-option" etTimePickerOption>{{ entry.label }}</button>
-          }
-        </div>
-      }
+    <div [(value)]="time" [minuteStep]="20" class="compact" etTimePicker>
+      <div class="compact-ring" etTimePickerRing>
+        <span #handle="etTimePickerRingHandle" [style.rotate]="handle.angle() + 'deg'" etTimePickerRingHandle></span>
+      </div>
     </div>
   `,
 })
@@ -124,7 +105,7 @@ class CompactTimeComponent {
 
 @Component({
   selector: 'et-scenario-time-label-probe',
-  template: `{{ labels().hours }}|{{ labels().minutes }}|{{ labels().endTime }}`,
+  template: `{{ labels().time }}|{{ labels().startTime }}|{{ labels().endTime }}`,
 })
 class TimeLabelProbeComponent {
   labels = injectTimePickerLabels();
@@ -133,9 +114,7 @@ class TimeLabelProbeComponent {
 @Component({
   selector: 'et-scenario-german-time',
   imports: [TimePickerComponent, TimeLabelProbeComponent],
-  providers: [
-    provideTimePickerLabels({ hours: 'Stunden', minutes: 'Minuten', startTime: 'Beginn', emptyHint: 'Ring antippen' }),
-  ],
+  providers: [provideTimePickerLabels({ time: 'Uhrzeit', startTime: 'Beginn', emptyHint: 'Ring antippen' })],
   template: `
     <et-time-picker mode="range" />
     <et-scenario-time-label-probe />
@@ -146,22 +125,22 @@ class GermanTimeComponent {
 }
 
 @Component({
-  selector: 'et-scenario-stray-column',
-  imports: [TimePickerColumnDirective],
-  template: `<div [column]="{ unit: 'hour', label: 'Hours', options: [] }" etTimePickerColumn></div>`,
+  selector: 'et-scenario-stray-ring',
+  imports: [TimePickerRingDirective],
+  template: `<div etTimePickerRing></div>`,
 })
-class StrayColumnComponent {}
+class StrayRingComponent {}
 
 @Component({
-  selector: 'et-scenario-stray-option',
-  imports: [TimePickerDirective, TimePickerOptionDirective],
+  selector: 'et-scenario-stray-handle',
+  imports: [TimePickerDirective, TimePickerRingHandleDirective],
   template: `
-    <div #picker="etTimePicker" etTimePicker>
-      <button [option]="picker.columns()[0]!.options[0]!" etTimePickerOption>00</button>
+    <div etTimePicker>
+      <span etTimePickerRingHandle></span>
     </div>
   `,
 })
-class StrayOptionComponent {}
+class StrayHandleComponent {}
 
 describe('time-picker scenarios', () => {
   const scenario = useScenario();
@@ -361,16 +340,21 @@ describe('time-picker scenarios', () => {
 
     settle(s);
 
-    const minutes = document.querySelector<HTMLElement>('[data-unit="minute"]')!;
+    const handle = ringHandle();
 
-    expect(minutes.getAttribute('role')).toBe('listbox');
-    expect(options(minutes).map((entry) => text(entry))).toEqual(['00', '20', '40']);
-    expect(option(minutes, '40').getAttribute('type')).toBe('button');
-    expect(selected(minutes)).toEqual(['40']);
+    expect(handle.getAttribute('role')).toBe('slider');
+    expect(handle.getAttribute('aria-valuetext')).toBe('08:40');
+    expect(parseFloat(handle.style.rotate)).toBeCloseTo(130);
 
-    option(minutes, '20').click();
+    handle.focus();
+    s.keydown('ArrowUp');
     settle(s);
-    expect(hhmm(fixture.componentInstance.time())).toBe('08:20');
+    expect(hhmm(fixture.componentInstance.time())).toBe('09:00');
+
+    tapRing(timeRing(), minuteOfDay(12, 25));
+    settle(s);
+    expect(hhmm(fixture.componentInstance.time())).toBe('12:20');
+    expect(parseFloat(handle.style.rotate)).toBeCloseTo(185);
   });
 
   it('localizes the ring labels for a subtree', () => {
@@ -383,30 +367,29 @@ describe('time-picker scenarios', () => {
     expect(ringHandle('end').getAttribute('aria-label')).toBe(DEFAULT_TIME_PICKER_LABELS.endTime);
     expect(ringNote()).toBe('Ring antippen');
     expect(text(document.querySelector('et-scenario-time-label-probe'))).toBe(
-      `Stunden|Minuten|${DEFAULT_TIME_PICKER_LABELS.endTime}`,
+      `Uhrzeit|Beginn|${DEFAULT_TIME_PICKER_LABELS.endTime}`,
     );
     expect(fixture.componentInstance.source).toEqual({
-      hours: 'Stunden',
-      minutes: 'Minuten',
+      time: 'Uhrzeit',
       startTime: 'Beginn',
       emptyHint: 'Ring antippen',
     });
   });
 
-  it('reports a column outside a picker and an option outside a column', () => {
+  it('reports a ring outside a picker and a handle outside a ring', () => {
     const s = scenario();
 
-    expect(() => TestBed.createComponent(StrayColumnComponent)).toThrow(
-      code(TIME_PICKER_ERROR_CODES.COLUMN_OUTSIDE_TIME_PICKER),
+    expect(() => TestBed.createComponent(StrayRingComponent)).toThrow(
+      code(TIME_PICKER_ERROR_CODES.RING_OUTSIDE_TIME_PICKER),
     );
-    expect(() => TestBed.createComponent(StrayOptionComponent)).toThrow(
-      code(TIME_PICKER_ERROR_CODES.OPTION_OUTSIDE_COLUMN),
+    expect(() => TestBed.createComponent(StrayHandleComponent)).toThrow(
+      code(TIME_PICKER_ERROR_CODES.RING_HANDLE_OUTSIDE_RING),
     );
 
     s.tick(1);
 
     const contexts = s.errors.splice(0).map((entry) => (entry.error as { element?: HTMLElement }).element?.tagName);
 
-    expect(contexts).toEqual(['DIV', 'BUTTON']);
+    expect(contexts).toEqual(['DIV', 'SPAN']);
   });
 });

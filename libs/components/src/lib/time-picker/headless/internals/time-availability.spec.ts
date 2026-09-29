@@ -1,20 +1,12 @@
-import {
-  findSelectableTime,
-  hasSelectableTime,
-  isTimeSelectable,
-  secondsOfDay,
-  setTimeOfDay,
-} from './time-availability';
+import { TimeBoundsOptions, isTimeSelectable, secondsOfDay, setTimeOfDay } from './time-availability';
 
 const DAY = new Date(2026, 6, 17);
 
-const options = (overrides: Partial<Parameters<typeof findSelectableTime>[1]> = {}) => ({
+const options = (overrides: Partial<TimeBoundsOptions> = {}): TimeBoundsOptions => ({
   min: null,
   max: null,
   filter: null,
   day: DAY,
-  minuteValues: [0, 15, 30, 45],
-  secondValues: [0],
   ...overrides,
 });
 
@@ -64,41 +56,6 @@ describe('time-availability', () => {
       expect(isTimeSelectable({ hour: 13, minute: 0, second: 0 }, filtered)).toBe(false);
       expect(isTimeSelectable({ hour: 14, minute: 0, second: 0 }, filtered)).toBe(true);
       expect(seen.map((date) => date.getDate())).toEqual([17, 17]);
-    });
-  });
-
-  describe('findSelectableTime', () => {
-    it('returns the first open combination for a fixed hour', () => {
-      const bounded = options({ min: new Date(2026, 6, 17, 9, 20) });
-
-      expect(findSelectableTime({ hour: 9 }, bounded)).toEqual({ hour: 9, minute: 30, second: 0 });
-    });
-
-    it('keeps fixed parts put and only moves the open ones', () => {
-      const filtered = options({
-        secondValues: [0, 30],
-        filter: (date: Date) => date.getSeconds() === 30,
-      });
-
-      expect(findSelectableTime({ hour: 9, minute: 15 }, filtered)).toEqual({ hour: 9, minute: 15, second: 30 });
-      expect(findSelectableTime({ hour: 9, minute: 15, second: 0 }, filtered)).toBeNull();
-    });
-
-    it('is null when the fixed parts admit nothing', () => {
-      const bounded = options({ max: new Date(2026, 6, 17, 8) });
-
-      expect(findSelectableTime({ hour: 9 }, bounded)).toBeNull();
-    });
-  });
-
-  describe('hasSelectableTime', () => {
-    it('reports whether an hour or minute has any open time inside it', () => {
-      const bounded = options({ min: new Date(2026, 6, 17, 9, 20) });
-
-      expect(hasSelectableTime({ hour: 8 }, bounded)).toBe(false);
-      expect(hasSelectableTime({ hour: 9 }, bounded)).toBe(true);
-      expect(hasSelectableTime({ hour: 9, minute: 0 }, bounded)).toBe(false);
-      expect(hasSelectableTime({ hour: 9, minute: 30 }, bounded)).toBe(true);
     });
   });
 });

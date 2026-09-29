@@ -1,11 +1,10 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
-import { tick } from '../../testing/driver-core';
-import { column, columns, option, press } from '../testing/time-picker-driver';
-import { TIME_PICKER_ERROR_CODES } from '../time-picker-errors';
-import { TimePickerColumnDirective } from './time-picker-column.directive';
-import { TimePickerOptionDirective } from './time-picker-option.directive';
+import { pressKey, query, tick } from '../../testing/driver-core';
+import { minuteOfDay, tapRing } from '../testing/time-picker-driver';
+import { TimePickerRingHandleDirective } from './time-picker-ring-handle.directive';
+import { TimePickerRingDirective } from './time-picker-ring.directive';
 import { TimePickerDirective } from './time-picker.directive';
 
 @Component({
@@ -15,113 +14,121 @@ import { TimePickerDirective } from './time-picker.directive';
       [(value)]="value"
       [format]="format()"
       [minuteStep]="minuteStep()"
+      [secondStep]="secondStep()"
       [min]="min()"
       [max]="max()"
       [timeFilter]="timeFilter()"
       etTimePicker
     >
-      @for (column of picker.columns(); track column.unit) {
-        <div [column]="column" [attr.data-unit]="column.unit" etTimePickerColumn>
-          @for (option of column.options; track option.value) {
-            <button [option]="option" [attr.data-value]="option.value" etTimePickerOption>{{ option.label }}</button>
-          }
-        </div>
-      }
+      <div class="ring" etTimePickerRing>
+        <span class="handle" etTimePickerRingHandle></span>
+      </div>
     </div>
   `,
-  imports: [TimePickerDirective, TimePickerColumnDirective, TimePickerOptionDirective],
+  imports: [TimePickerDirective, TimePickerRingDirective, TimePickerRingHandleDirective],
 })
 class TimePickerTestHost {
   value = signal<Date | null>(null);
   format = signal('HH:mm');
   minuteStep = signal(5);
+  secondStep = signal(1);
   min = signal<Date | null>(null);
   max = signal<Date | null>(null);
   timeFilter = signal<((date: Date) => boolean) | null>(null);
 }
 
+const at = (hours: number, minutes = 0, seconds = 0) => new Date(2026, 6, 17, hours, minutes, seconds);
+
+const timeOf = (date: Date | null) =>
+  date === null
+    ? null
+    : [date.getHours(), date.getMinutes(), date.getSeconds()].map((part) => String(part).padStart(2, '0')).join(':');
+
 describe('TimePickerDirective', () => {
   let fixture: ComponentFixture<TimePickerTestHost>;
   let host: TimePickerTestHost;
 
-  const selectedIn = (unit: string) =>
-    column(fixture, unit)?.querySelector<HTMLButtonElement>('[data-selected]') ?? null;
+  const picker = () => fixture.debugElement.children[0]!.injector.get(TimePickerDirective);
+  const ring = () => query(fixture, '.ring') as HTMLElement;
+  const handle = () => query(fixture, '.handle') as HTMLElement;
+  const key = (name: string) => pressKey(handle(), name);
+  const tap = (hours: number, minutes = 0) => {
+    tapRing(ring(), minuteOfDay(hours, minutes));
+    tick();
+  };
 
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(at(10, 7, 42));
+
     TestBed.configureTestingModule({ imports: [TimePickerTestHost] });
     fixture = TestBed.createComponent(TimePickerTestHost);
     host = fixture.componentInstance;
     fixture.detectChanges();
   });
 
-  it('renders hour and minute columns for a 24-hour format without seconds', () => {
-    expect(columns(fixture).map((columnElement) => columnElement.dataset['unit'])).toEqual(['hour', 'minute']);
-    expect(column(fixture, 'hour')?.querySelectorAll('button').length).toBe(24);
-    expect(column(fixture, 'minute')?.querySelectorAll('button').length).toBe(12);
-    expect(column(fixture, 'hour')?.getAttribute('role')).toBe('listbox');
-    expect(column(fixture, 'hour')?.getAttribute('aria-label')).toBe('Hours');
+  afterEach(() => vi.useRealTimers());
+
+  it('commits a whole time from one pick, on the current day, with second 0', () => {
+    tap(9, 30);
+
+    expect(timeOf(host.value())).toBe('09:30:00');
+    expect(host.value()?.getDate()).toBe(17);
+    expect(host.value()?.getMilliseconds()).toBe(0);
   });
 
-  it('adds seconds and period columns per format', () => {
+  it('edits the time of a value and keeps its day', () => {
+    host.value.set(new Date(2026, 6, 20, 9, 30, 15, 250));
+    tick();
+
+    key('ArrowUp');
+
+    expect(host.value()?.getDate()).toBe(20);
+    expect(timeOf(host.value())).toBe('09:35:00');
+    expect(host.value()?.getMilliseconds()).toBe(0);
+  });
+
+  it('keeps an off-step value as it is, and snaps it onto the steps on the next pick', () => {
+    host.value.set(at(9, 32));
+    tick();
+
+    expect(handle().getAttribute('aria-valuenow')).toBe(String(minuteOfDay(9, 32)));
+    expect(handle().getAttribute('aria-valuetext')).toBe('09:32');
+
+    key('ArrowUp');
+
+    expect(timeOf(host.value())).toBe('09:35:00');
+  });
+
+  it('formats the value by the format, with seconds and a 12-hour cycle', () => {
+    host.value.set(at(14, 5, 30));
+    tick();
+
+    expect(handle().getAttribute('aria-valuetext')).toBe('14:05');
+
     host.format.set('h:mm:ss a');
     tick();
 
-    expect(columns(fixture).map((columnElement) => columnElement.dataset['unit'])).toEqual([
-      'hour',
-      'minute',
-      'second',
-      'period',
-    ]);
-    expect(column(fixture, 'hour')?.querySelectorAll('button').length).toBe(12);
-    expect(option(fixture, 'hour', 0)?.textContent?.trim()).toBe('12');
+    expect(picker().formatSpec()).toEqual({ hourCycle: 12, showSeconds: true });
+    expect(handle().getAttribute('aria-valuetext')).toBe('2:05:30 PM');
   });
 
-  it('holds the picks made while empty and commits once every column has one', () => {
-    option(fixture, 'minute', 30)?.click();
+  it('anchors an empty ring to now, snapped to the minute and second steps', () => {
+    expect(timeOf(picker().anchorTime())).toBe('10:05:00');
+
+    host.format.set('HH:mm:ss');
+    host.secondStep.set(15);
     tick();
 
-    expect(host.value()).toBeNull();
-    expect(selectedIn('minute')?.dataset['value']).toBe('30');
-    expect(selectedIn('hour')).toBeNull();
+    expect(timeOf(picker().anchorTime())).toBe('10:05:30');
 
-    option(fixture, 'hour', 9)?.click();
+    host.value.set(at(8, 12, 3));
     tick();
 
-    expect(host.value()?.getHours()).toBe(9);
-    expect(host.value()?.getMinutes()).toBe(30);
-    expect(selectedIn('hour')?.dataset['value']).toBe('9');
-    expect(selectedIn('hour')?.getAttribute('aria-selected')).toBe('true');
-  });
-
-  it('edits the value directly once it is whole', () => {
-    option(fixture, 'minute', 30)?.click();
-    option(fixture, 'hour', 9)?.click();
-    tick();
-
-    option(fixture, 'hour', 11)?.click();
-    tick();
-
-    expect(host.value()?.getHours()).toBe(11);
-    expect(host.value()?.getMinutes()).toBe(30);
-  });
-
-  it('keeps an off-step selection visible in its column', async () => {
-    host.value.set(new Date(2026, 6, 17, 9, 32));
-    tick();
-    await fixture.whenStable();
-
-    expect(selectedIn('minute')?.textContent?.trim()).toBe('32');
-
-    const values = Array.from(column(fixture, 'minute')?.querySelectorAll<HTMLElement>('button') ?? []).map(
-      (button) => button.dataset['value'],
-    );
-
-    expect(values).toContain('32');
-    expect(values.indexOf('32')).toBe(values.indexOf('30') + 1);
+    expect(timeOf(picker().anchorTime())).toBe('08:12:03');
   });
 
   it('filters against the current day once focus enters a picker that stayed mounted past midnight', () => {
-    vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date(2026, 6, 17, 23, 58));
 
     const days = new Set<number>();
@@ -134,284 +141,84 @@ describe('TimePickerDirective', () => {
     });
     mounted.detectChanges();
 
+    const mountedPicker = mounted.debugElement.children[0]!.injector.get(TimePickerDirective);
+
+    mountedPicker.ringStops();
     vi.setSystemTime(new Date(2026, 6, 18, 0, 3));
     days.clear();
 
     mounted.nativeElement
-      .querySelector('[etTimePickerOption]')
+      .querySelector('[etTimePickerRingHandle]')
       .dispatchEvent(new FocusEvent('focusin', { bubbles: true, relatedTarget: null }));
     mounted.detectChanges();
-
-    vi.useRealTimers();
+    mountedPicker.ringStops();
 
     expect([...days]).toEqual([18]);
   });
 
   it('clamps a zero, negative or fractional minuteStep to one minute instead of hanging', () => {
-    host.minuteStep.set(0);
-    tick();
+    host.value.set(at(9, 0));
 
-    expect(column(fixture, 'minute')?.querySelectorAll('button').length).toBe(60);
+    for (const step of [0, -5, 0.5, Number.NaN]) {
+      host.minuteStep.set(step);
+      tick();
 
-    host.minuteStep.set(-5);
-    tick();
+      key('ArrowUp');
+    }
 
-    expect(column(fixture, 'minute')?.querySelectorAll('button').length).toBe(60);
-
-    host.minuteStep.set(0.5);
-    tick();
-
-    expect(column(fixture, 'minute')?.querySelectorAll('button').length).toBe(60);
-  });
-
-  it('keeps a clamped step focusable by the keyboard', async () => {
-    host.minuteStep.set(Number.NaN);
-    tick();
-    await fixture.whenStable();
-
-    const options = Array.from(column(fixture, 'minute')?.querySelectorAll<HTMLButtonElement>('button') ?? []);
-
-    expect(options.length).toBe(60);
-    expect(options.some((option) => option.tabIndex === 0)).toBe(true);
-  });
-
-  it('maps 12-hour picks through the period', async () => {
-    host.format.set('h:mm a');
-    host.value.set(new Date(2026, 6, 17, 14, 0));
-    tick();
-    await fixture.whenStable();
-
-    expect(selectedIn('hour')?.textContent?.trim()).toBe('2');
-    expect(selectedIn('period')?.dataset['value']).toBe('1');
-
-    option(fixture, 'hour', 9)?.click();
-    tick();
-
-    expect(host.value()?.getHours()).toBe(21);
-
-    option(fixture, 'period', 0)?.click();
-    tick();
-
-    expect(host.value()?.getHours()).toBe(9);
-  });
-
-  it('holds an AM/PM pick made while empty instead of committing a time nobody chose', () => {
-    host.format.set('h:mm a');
-    tick();
-
-    option(fixture, 'period', 1)?.click();
-    tick();
-
-    expect(host.value()).toBeNull();
-    expect(selectedIn('period')?.dataset['value']).toBe('1');
-    expect(selectedIn('hour')).toBeNull();
-    expect(selectedIn('minute')).toBeNull();
-  });
-
-  it('commits without an AM/PM pick, in the half-day the anchor already sits in', () => {
-    host.format.set('h:mm a');
-    tick();
-
-    option(fixture, 'hour', 9)?.click();
-    option(fixture, 'minute', 30)?.click();
-    tick();
-
-    expect(host.value()?.getHours()).toBe(new Date().getHours() < 12 ? 9 : 21);
-    expect(host.value()?.getMinutes()).toBe(30);
-    expect(selectedIn('period')).not.toBeNull();
-  });
-
-  it('completes a held AM/PM into the half-day the later picks land in', () => {
-    host.format.set('h:mm a');
-    tick();
-
-    option(fixture, 'period', 1)?.click();
-    tick();
-
-    option(fixture, 'hour', 9)?.click();
-    tick();
-
-    expect(host.value()).toBeNull();
-    expect(selectedIn('hour')?.dataset['value']).toBe('9');
-    expect(selectedIn('minute')).toBeNull();
-
-    option(fixture, 'minute', 30)?.click();
-    tick();
-
-    expect(host.value()?.getHours()).toBe(21);
-    expect(host.value()?.getMinutes()).toBe(30);
-  });
-
-  it('moves the selection with arrows, wrapping at the edges', async () => {
-    host.value.set(new Date(2026, 6, 17, 23, 0));
-    tick();
-    await fixture.whenStable();
-
-    press(fixture, 'hour', 'ArrowDown');
-    tick();
-
-    expect(host.value()?.getHours()).toBe(0);
-
-    press(fixture, 'hour', 'ArrowUp');
-    tick();
-
-    expect(host.value()?.getHours()).toBe(23);
-
-    press(fixture, 'minute', 'End');
-    tick();
-
-    expect(host.value()?.getMinutes()).toBe(55);
-
-    press(fixture, 'minute', 'Home');
-    tick();
-
-    expect(host.value()?.getMinutes()).toBe(0);
-  });
-
-  it('moves focus between columns with ArrowLeft and ArrowRight, without wrapping', async () => {
-    document.body.appendChild(fixture.nativeElement);
-    host.value.set(new Date(2026, 6, 17, 8, 30));
-    tick();
-    await fixture.whenStable();
-
-    option(fixture, 'hour', 8)?.focus();
-    press(fixture, 'hour', 'ArrowRight');
-    tick();
-    await fixture.whenStable();
-
-    expect(document.activeElement).toBe(option(fixture, 'minute', 30));
-
-    press(fixture, 'minute', 'ArrowRight');
-    tick();
-    await fixture.whenStable();
-
-    expect(document.activeElement).toBe(option(fixture, 'minute', 30));
-
-    press(fixture, 'minute', 'ArrowLeft');
-    tick();
-    await fixture.whenStable();
-
-    expect(document.activeElement).toBe(option(fixture, 'hour', 8));
-
-    press(fixture, 'hour', 'ArrowLeft');
-    tick();
-    await fixture.whenStable();
-
-    expect(document.activeElement).toBe(option(fixture, 'hour', 8));
-    expect(host.value()?.getHours()).toBe(8);
-    expect(host.value()?.getMinutes()).toBe(30);
-
-    fixture.nativeElement.remove();
-  });
-
-  it('jumps to a typed option', async () => {
-    host.value.set(new Date(2026, 6, 17, 8, 0));
-    tick();
-    await fixture.whenStable();
-
-    press(fixture, 'hour', '1');
-    press(fixture, 'hour', '7');
-    tick();
-
-    expect(host.value()?.getHours()).toBe(17);
+    expect(timeOf(host.value())).toBe('09:04:00');
   });
 
   describe('bounds and filter', () => {
-    const disabledIn = (unit: string) =>
-      Array.from(column(fixture, unit)?.querySelectorAll<HTMLElement>('[data-disabled]') ?? []).map(
-        (button) => button.dataset['value'],
-      );
-
-    beforeEach(async () => {
-      host.value.set(new Date(2026, 6, 17, 12, 0));
-      tick();
-      await fixture.whenStable();
+    it('leaves every time selectable without bounds or a filter', () => {
+      expect(picker().ringStops().start.open.every(Boolean)).toBe(true);
     });
 
-    it('leaves every option selectable without bounds or a filter', () => {
-      expect(disabledIn('hour')).toEqual([]);
-      expect(disabledIn('minute')).toEqual([]);
-      expect(option(fixture, 'hour', 3)?.hasAttribute('aria-disabled')).toBe(false);
-    });
-
-    it('disables the hours and minutes outside min/max', () => {
-      host.min.set(new Date(2026, 6, 17, 9, 30));
-      host.max.set(new Date(2026, 6, 17, 17, 0));
+    it('writes nothing outside min and max, and stops the keyboard at them', () => {
+      host.value.set(at(12));
+      host.min.set(at(9, 30));
+      host.max.set(at(17));
       tick();
 
-      expect(disabledIn('hour')).toEqual([
-        '0',
-        '1',
-        '2',
-        '3',
-        '4',
-        '5',
-        '6',
-        '7',
-        '8',
-        '18',
-        '19',
-        '20',
-        '21',
-        '22',
-        '23',
-      ]);
-      expect(option(fixture, 'hour', 8)?.getAttribute('aria-disabled')).toBe('true');
+      tap(8);
 
-      expect(disabledIn('minute')).toEqual([]);
+      expect(timeOf(host.value())).toBe('12:00:00');
 
-      host.value.set(new Date(2026, 6, 17, 9, 30));
-      tick();
+      key('End');
+      expect(timeOf(host.value())).toBe('17:00:00');
 
-      expect(disabledIn('minute')).toEqual(['0', '5', '10', '15', '20', '25']);
+      key('ArrowUp');
+      expect(timeOf(host.value())).toBe('09:30:00');
+
+      key('Home');
+      expect(timeOf(host.value())).toBe('09:30:00');
     });
 
     it('treats a min later than max as a window that wraps past midnight', () => {
-      host.min.set(new Date(2026, 6, 17, 22, 0));
-      host.max.set(new Date(2026, 6, 17, 6, 0));
+      host.value.set(at(23));
+      host.min.set(at(22));
+      host.max.set(at(6));
       tick();
 
-      expect(disabledIn('hour')).toEqual([
-        '7',
-        '8',
-        '9',
-        '10',
-        '11',
-        '12',
-        '13',
-        '14',
-        '15',
-        '16',
-        '17',
-        '18',
-        '19',
-        '20',
-        '21',
-      ]);
+      tap(12);
+
+      expect(timeOf(host.value())).toBe('23:00:00');
+
+      key('PageUp');
+      expect(timeOf(host.value())).toBe('00:00:00');
+
+      key('End');
+      expect(timeOf(host.value())).toBe('23:55:00');
     });
 
-    it('ignores the seconds and milliseconds of the value when the format hides seconds', () => {
-      host.value.set(new Date(2026, 6, 17, 12, 0, 30, 250));
-      host.max.set(new Date(2026, 6, 17, 17, 0));
+    it('keeps the whole minute of a bound with seconds open', () => {
+      host.value.set(at(16, 55));
+      host.max.set(new Date(2026, 6, 17, 17, 0, 30, 250));
       tick();
 
-      expect(disabledIn('hour')).not.toContain('17');
+      key('ArrowUp');
 
-      option(fixture, 'hour', 17)?.click();
-      tick();
-
-      const value = host.value();
-
-      expect([value?.getHours(), value?.getMinutes(), value?.getSeconds(), value?.getMilliseconds()]).toEqual([
-        17, 0, 0, 0,
-      ]);
-    });
-
-    it('disables an hour only when no minute inside it is selectable', () => {
-      host.max.set(new Date(2026, 6, 17, 14, 20));
-      tick();
-
-      expect(disabledIn('hour')).toEqual(['15', '16', '17', '18', '19', '20', '21', '22', '23']);
+      expect(timeOf(host.value())).toBe('17:00:00');
     });
 
     it('asks the filter with the full candidate timestamp', () => {
@@ -422,157 +229,31 @@ describe('TimePickerDirective', () => {
 
         return date.getHours() % 2 === 0;
       });
+      host.value.set(at(12));
       tick();
 
-      expect(disabledIn('hour')).toEqual(['1', '3', '5', '7', '9', '11', '13', '15', '17', '19', '21', '23']);
+      tap(13, 30);
+      expect(timeOf(host.value())).toBe('12:00:00');
+
+      key('PageUp');
+      expect(timeOf(host.value())).toBe('14:00:00');
+
+      expect(seen.length).toBeGreaterThan(0);
       expect(seen.every((date) => date.getDate() === 17)).toBe(true);
     });
 
-    it('refuses a click on a disabled option', () => {
-      host.min.set(new Date(2026, 6, 17, 9));
+    it('asks the filter about the day of the value', () => {
+      host.timeFilter.set((date) => date.getDate() === 20);
       tick();
 
-      option(fixture, 'hour', 4)!.click();
+      tap(9);
+      expect(host.value()).toBeNull();
+
+      host.value.set(new Date(2026, 6, 20, 9));
       tick();
 
-      expect(host.value()?.getHours()).toBe(12);
+      tap(11);
+      expect(timeOf(host.value())).toBe('11:00:00');
     });
-
-    it('moves the finer parts of a pick onto the first selectable value', () => {
-      host.min.set(new Date(2026, 6, 17, 9, 40));
-      host.max.set(new Date(2026, 6, 17, 18, 10));
-      tick();
-
-      option(fixture, 'hour', 9)?.click();
-      tick();
-
-      expect([host.value()?.getHours(), host.value()?.getMinutes()]).toEqual([9, 40]);
-
-      option(fixture, 'hour', 18)?.click();
-      tick();
-
-      expect([host.value()?.getHours(), host.value()?.getMinutes()]).toEqual([18, 0]);
-    });
-
-    it('skips disabled options with the keyboard', () => {
-      host.timeFilter.set((date) => date.getHours() % 2 === 0);
-      tick();
-
-      press(fixture, 'hour', 'ArrowDown');
-      tick();
-
-      expect(host.value()?.getHours()).toBe(14);
-
-      press(fixture, 'hour', 'ArrowUp');
-      press(fixture, 'hour', 'ArrowUp');
-      tick();
-
-      expect(host.value()?.getHours()).toBe(10);
-
-      press(fixture, 'hour', 'Home');
-      tick();
-
-      expect(host.value()?.getHours()).toBe(0);
-
-      press(fixture, 'hour', 'End');
-      tick();
-
-      expect(host.value()?.getHours()).toBe(22);
-    });
-
-    it('skips disabled options when typing', () => {
-      host.min.set(new Date(2026, 6, 17, 10));
-      tick();
-
-      press(fixture, 'hour', '1');
-      tick();
-
-      expect(host.value()?.getHours()).toBe(10);
-    });
-
-    it('selects nothing when a typed query only matches a disabled option', () => {
-      host.min.set(new Date(2026, 6, 17, 10));
-      tick();
-
-      press(fixture, 'hour', '4');
-      tick();
-
-      expect(host.value()?.getHours()).toBe(12);
-    });
-
-    it('moves the hour inside the picked half-day when the clock position is closed', async () => {
-      host.format.set('h:mm a');
-      host.value.set(new Date(2026, 6, 17, 10, 0));
-      host.timeFilter.set((date) => date.getHours() >= 9 && date.getHours() < 17);
-      tick();
-      await fixture.whenStable();
-
-      option(fixture, 'period', 1)?.click();
-      tick();
-
-      expect([host.value()?.getHours(), host.value()?.getMinutes()]).toEqual([16, 0]);
-
-      option(fixture, 'period', 0)?.click();
-      tick();
-
-      expect(host.value()?.getHours()).toBe(9);
-    });
-
-    it('disables a half-day with no selectable hour', async () => {
-      host.format.set('h:mm a');
-      host.min.set(new Date(2026, 6, 17, 13));
-      tick();
-      await fixture.whenStable();
-
-      expect(option(fixture, 'period', 0)?.getAttribute('aria-disabled')).toBe('true');
-      expect(option(fixture, 'period', 1)?.hasAttribute('aria-disabled')).toBe(false);
-    });
-  });
-
-  it('roves the tabindex with the selection', async () => {
-    host.value.set(new Date(2026, 6, 17, 9, 15));
-    tick();
-    await fixture.whenStable();
-
-    expect(option(fixture, 'hour', 9)?.tabIndex).toBe(0);
-    expect(option(fixture, 'hour', 10)?.tabIndex).toBe(-1);
-
-    option(fixture, 'hour', 10)?.click();
-    tick();
-
-    expect(option(fixture, 'hour', 9)?.tabIndex).toBe(-1);
-    expect(option(fixture, 'hour', 10)?.tabIndex).toBe(0);
-  });
-});
-
-@Component({
-  template: `<div etTimePickerColumn></div>`,
-  imports: [TimePickerColumnDirective],
-})
-class OrphanTimePickerColumnTestHost {}
-
-@Component({
-  template: `<button etTimePickerOption>9</button>`,
-  imports: [TimePickerOptionDirective],
-})
-class OrphanTimePickerOptionTestHost {}
-
-describe('TimePickerColumnDirective errors', () => {
-  it('rejects a column outside a time picker while the directive is constructed', () => {
-    TestBed.configureTestingModule({ imports: [OrphanTimePickerColumnTestHost] });
-
-    expect(() => TestBed.createComponent(OrphanTimePickerColumnTestHost)).toThrow(
-      `ET${TIME_PICKER_ERROR_CODES.COLUMN_OUTSIDE_TIME_PICKER}`,
-    );
-  });
-});
-
-describe('TimePickerOptionDirective errors', () => {
-  it('rejects an option outside a column while the directive is constructed', () => {
-    TestBed.configureTestingModule({ imports: [OrphanTimePickerOptionTestHost] });
-
-    expect(() => TestBed.createComponent(OrphanTimePickerOptionTestHost)).toThrow(
-      `ET${TIME_PICKER_ERROR_CODES.OPTION_OUTSIDE_COLUMN}`,
-    );
   });
 });

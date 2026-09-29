@@ -2,19 +2,11 @@ import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /** The strings the time picker shows and announces. */
 export type TimePickerLabels = {
-  /** Accessible label for the hours column. */
-  hours: string;
-  /** Accessible label for the minutes column. */
-  minutes: string;
-  /** Accessible label for the seconds column. */
-  seconds: string;
-  /** Accessible label for the AM/PM column. */
-  period: string;
   /** Accessible name of the handle of a single time ring. */
   time: string;
-  /** Heading and accessible name of a time range picker's start side. */
+  /** Accessible name of a time range's start handle, and its note in the ring centre. */
   startTime: string;
-  /** Heading and accessible name of a time range picker's end side. */
+  /** Accessible name of a time range's end handle, and its note in the ring centre. */
   endTime: string;
   /** Short hint in the centre of an empty ring. */
   emptyHint: string;
@@ -28,10 +20,6 @@ export type TimePickerLabels = {
 
 /** The built-in English labels. */
 export const DEFAULT_TIME_PICKER_LABELS: TimePickerLabels = {
-  hours: 'Hours',
-  minutes: 'Minutes',
-  seconds: 'Seconds',
-  period: 'AM/PM',
   time: 'Time',
   startTime: 'Start time',
   endTime: 'End time',
@@ -52,7 +40,7 @@ const TIME_PICKER_LABELS_DEF = /* @__PURE__ */ defineLabels<TimePickerLabels>(
  * for the shape, which every domain in this library shares.
  *
  * @example
- * provideTimePickerLabels({ hours: 'Stunden', minutes: 'Minuten' });
+ * provideTimePickerLabels({ startTime: 'Beginn', endTime: 'Ende' });
  */
 export const provideTimePickerLabels = /* @__PURE__ */ toProvideFn(TIME_PICKER_LABELS_DEF);
 export const injectTimePickerLabels = /* @__PURE__ */ toInjectFn(TIME_PICKER_LABELS_DEF);

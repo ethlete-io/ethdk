@@ -99,7 +99,7 @@ export class TimePickerRingHandleDirective {
 
   protected handleFocus() {
     if (this.picker.mode() === 'range') {
-      this.picker.setActiveSide(this.side());
+      this.picker.activeSide.set(this.side());
     }
   }
 

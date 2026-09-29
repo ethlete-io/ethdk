@@ -7,22 +7,11 @@ export type TimeCandidate = {
   second: number;
 };
 
-export type PartialTimeCandidate = {
-  hour: number;
-  minute?: number | null;
-  second?: number | null;
-};
-
 export type TimeBoundsOptions = {
   min: Date | null;
   max: Date | null;
   filter: ((date: Date) => boolean) | null;
   day: Date;
-};
-
-export type TimeAvailabilityOptions = TimeBoundsOptions & {
-  minuteValues: readonly number[];
-  secondValues: readonly number[];
 };
 
 export const secondsOfDay = (date: Date) => date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
@@ -45,28 +34,3 @@ export const isTimeSelectable = (candidate: TimeCandidate, options: TimeBoundsOp
 
   return filter === null || filter(setTimeOfDay(day, candidate));
 };
-
-export const findSelectableTime = (
-  fixed: PartialTimeCandidate,
-  options: TimeAvailabilityOptions,
-): TimeCandidate | null => {
-  const minutes = fixed.minute ?? null;
-  const seconds = fixed.second ?? null;
-  const minuteValues = minutes === null ? options.minuteValues : [minutes];
-  const secondValues = seconds === null ? options.secondValues : [seconds];
-
-  for (const minute of minuteValues) {
-    for (const second of secondValues) {
-      const candidate = { hour: fixed.hour, minute, second };
-
-      if (isTimeSelectable(candidate, options)) {
-        return candidate;
-      }
-    }
-  }
-
-  return null;
-};
-
-export const hasSelectableTime = (fixed: PartialTimeCandidate, options: TimeAvailabilityOptions) =>
-  findSelectableTime(fixed, options) !== null;

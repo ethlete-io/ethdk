@@ -4,9 +4,10 @@ import '../../../../../test-helpers';
 import { InputMaskDirective } from '../../../masked-input/headless';
 import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
 import { describePickerCommitContract } from '../../../testing/picker-commit-contract';
-import { TimePickerColumnDirective } from '../../../../time-picker/headless/time-picker-column.directive';
-import { TimePickerOptionDirective } from '../../../../time-picker/headless/time-picker-option.directive';
+import { TimePickerRingHandleDirective } from '../../../../time-picker/headless/time-picker-ring-handle.directive';
+import { TimePickerRingDirective } from '../../../../time-picker/headless/time-picker-ring.directive';
 import { TimePickerDirective } from '../../../../time-picker/headless/time-picker.directive';
+import { minuteOfDay, tapRing } from '../../../../time-picker/testing/time-picker-driver';
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
 import { TimeInputFieldDirective } from './time-input-field.directive';
@@ -30,21 +31,10 @@ import { pressKey, tick } from '../../../../testing/driver-core';
       <button class="open-picker" etDatePickerTrigger>open</button>
 
       <ng-template etDatePickerSurface let-timeInput>
-        <div
-          #picker="etTimePicker"
-          [value]="timeInput.time()"
-          (valueChange)="timeInput.selectTime($event)"
-          etTimePicker
-        >
-          @for (column of picker.columns(); track column.unit) {
-            <div [column]="column" [attr.data-unit]="column.unit" etTimePickerColumn>
-              @for (option of column.options; track option.value) {
-                <button [option]="option" [attr.data-value]="option.value" etTimePickerOption>
-                  {{ option.label }}
-                </button>
-              }
-            </div>
-          }
+        <div [value]="timeInput.time()" (valueChange)="timeInput.selectTime($event)" etTimePicker>
+          <div etTimePickerRing>
+            <span etTimePickerRingHandle></span>
+          </div>
         </div>
       </ng-template>
     </div>
@@ -55,8 +45,8 @@ import { pressKey, tick } from '../../../../testing/driver-core';
     DatePickerTriggerDirective,
     DatePickerSurfaceDirective,
     TimePickerDirective,
-    TimePickerColumnDirective,
-    TimePickerOptionDirective,
+    TimePickerRingDirective,
+    TimePickerRingHandleDirective,
   ],
 })
 class TimeInputTestHost {
@@ -70,8 +60,14 @@ class TimeInputTestHost {
 describe('TimeInputDirective', () => {
   let driver: DatePickerDriver<TimeInputTestHost, TimeInputDirective>;
 
-  const pickOption = (unit: string, value: number) =>
-    driver.clickInPane(`[data-unit='${unit}'] [data-value='${value}']`);
+  const pickTime = (hours: number, minutes: number) => {
+    const ring = driver.paneEl('[etTimePickerRing]');
+
+    if (!ring) throw new Error('no time ring in the pane');
+
+    tapRing(ring, minuteOfDay(hours, minutes));
+    tick();
+  };
 
   beforeEach(() => {
     driver = mountDatePicker(TimeInputTestHost, TimeInputDirective);
@@ -140,7 +136,7 @@ describe('TimeInputDirective', () => {
     expect(driver.control.time()?.getMinutes()).toBe(5);
   });
 
-  it('opens the picker from the trigger and keeps it open across part picks', async () => {
+  it('opens the picker from the trigger and keeps it open across picks', async () => {
     expect(driver.trigger().getAttribute('aria-expanded')).toBe('false');
 
     await driver.open();
@@ -148,23 +144,22 @@ describe('TimeInputDirective', () => {
     expect(driver.control.pickerOpen()).toBe(true);
     expect(driver.trigger().getAttribute('aria-expanded')).toBe('true');
 
-    pickOption('hour', 9);
-
-    expect(driver.host.value()).toBeNull();
-    expect(driver.control.pickerOpen()).toBe(true);
-
-    pickOption('minute', 30);
+    pickTime(9, 30);
 
     expect(driver.host.value()).toBe('09:30');
     expect(driver.control.pickerOpen()).toBe(true);
     expect(driver.control.touched()).toBe(true);
+
+    pickTime(14, 0);
+
+    expect(driver.host.value()).toBe('14:00');
+    expect(driver.control.pickerOpen()).toBe(true);
   });
 
   it('reflects a picked value in the field after closing', async () => {
     await driver.open();
 
-    pickOption('hour', 9);
-    pickOption('minute', 30);
+    pickTime(9, 30);
 
     driver.control.closePicker();
     tick();
@@ -245,8 +240,7 @@ describe('TimeInputDirective', () => {
 
       expect(driver.host.mixed()).toBe(true);
 
-      pickOption('hour', 9);
-      pickOption('minute', 30);
+      pickTime(9, 30);
 
       expect(driver.host.mixed()).toBe(false);
       expect(driver.host.value()).toBe('09:30');
@@ -257,8 +251,14 @@ describe('TimeInputDirective', () => {
 describe('TimeInputDirective on the runtime daylight-saving day', () => {
   let driver: DatePickerDriver<TimeInputTestHost, TimeInputDirective>;
 
-  const pickOption = (unit: string, value: number) =>
-    driver.clickInPane(`[data-unit='${unit}'] [data-value='${value}']`);
+  const pickTime = (hours: number, minutes: number) => {
+    const ring = driver.paneEl('[etTimePickerRing]');
+
+    if (!ring) throw new Error('no time ring in the pane');
+
+    tapRing(ring, minuteOfDay(hours, minutes));
+    tick();
+  };
 
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ['Date'] });
@@ -290,7 +290,7 @@ describe('TimeInputDirective on the runtime daylight-saving day', () => {
     tick();
     await driver.open();
 
-    pickOption('hour', 2);
+    pickTime(2, 30);
 
     expect(driver.host.value()).toBe('02:30');
   });
