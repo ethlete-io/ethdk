@@ -23,8 +23,8 @@ const CONTENTFUL_FALLBACK_CONFIG: ContentfulConfig = {
   },
 };
 
-export const createContentfulConfig = (config?: Partial<ContentfulConfig> | null): ContentfulConfig => ({
-  ...{
+export const createContentfulConfig = (config?: Partial<ContentfulConfig> | null): ContentfulConfig => {
+  const defaults: ContentfulConfig = {
     internalHosts: [],
     components: {
       audio: ContentfulAudioComponent,
@@ -39,9 +39,15 @@ export const createContentfulConfig = (config?: Partial<ContentfulConfig> | null
       sizes: ['100vw'],
       backgroundColor: null,
     },
-  },
-  ...(config ?? {}),
-});
+  };
+
+  return {
+    ...defaults,
+    ...config,
+    components: { ...defaults.components, ...config?.components },
+    imageOptions: { ...defaults.imageOptions, ...config?.imageOptions },
+  };
+};
 
 /**
  * Reads the contentful config from the current injector. Falls back to a config without

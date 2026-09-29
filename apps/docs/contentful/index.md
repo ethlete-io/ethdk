@@ -47,8 +47,8 @@ All config options (defaults from `createContentfulConfig()`):
 | `imageOptions.sizes`           | `['100vw']`                                                     | Default `sizes` attribute entries for images.                                                              |
 | `imageOptions.backgroundColor` | `null`                                                          | Background color (`bg=rgb:…`) applied by the Contentful Images API.                                        |
 
-::: warning Shallow merge
-`provideContentfulConfig` spreads your partial over the defaults **shallowly** - passing `imageOptions` or `components` replaces the whole sub-object, so include every key you still want.
+::: tip Partial overrides
+`components` and `imageOptions` merge one level deep over the defaults, so `provideContentfulConfig({ components: { image: MyImage } })` keeps the default link, file, video and audio components. Other keys, such as `customComponents` and `internalHosts`, replace the default as a whole.
 :::
 
 ::: warning The built-in components need the provider
