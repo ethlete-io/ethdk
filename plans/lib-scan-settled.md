@@ -1,9 +1,10 @@
-# Query lib scan - settled decisions and open questions
+# Lib scans - settled decisions
 
-Every finding of the `libs/query` scans (2026-08-19, 2026-09-27 waves 1-3) is fixed; git history has them. A
-future scan must not report the settled items again.
+Findings a future scan must not report again. The scans themselves are closed; git history has them.
 
-## Settled - do not re-open
+## query
+
+From the `libs/query` scans of 2026-08-19 and 2026-09-27 (waves 1-3).
 
 - `refreshStrategy` from 0 to 1 is a fraction of the token lifetime, above 1 it is milliseconds. Only a negative
   value clamps (to 0).
@@ -30,3 +31,16 @@ future scan must not report the settled items again.
 - `refresh()` / `startPolling()` on a released ngrx-toolkit handle are no-ops with one dev warning per handle that
   names the release; no throw, no re-create.
 - The `withArgs` type check: generic helpers that pass `withArgs` compile, a `QueryFeature` annotation drops the mark (use `WithArgsQueryFeature`), a spread is left to ET100.
+
+## core
+
+From the `libs/core` scan of 2026-08-19, closed 2026-09-29.
+
+- `object.ts` path reads accept an unterminated bracket (`'a.b.e[0'` returns the value). Kept lenient: it is a public util.
+- `settleWatcher` in `auto-surface.directive.ts` stays alive until the element is connected: windowed lists mount it in an off-pane container first.
+- unsaved-changes `runCheck` still returns a Promise; `canDeactivate` consumes it.
+- The animation directives' `BehaviorSubject`s. `state$` is a stream of transition events whose ~20 consumers need every state synchronously inside `.next()`; the signal version (`toObservable(state)` plus effects) dropped the middle state of a synchronous `entering→entered` / `leaving→left` jump and was reverted in `6296a5b41`.
+
+## components
+
+- The rich text viewer keeps its table and image style imports (accepted 2026-09-29: base capability per AGENTS.md).

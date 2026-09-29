@@ -125,4 +125,4 @@ it('dedupes identical requests', () => {
 10. Change signal args at least 3 times; assert one request per change and that the superseded one aborts.
 11. Legacy patterns run on both clients: native `V2QueryClient` and the interop creator (`describe.each`).
 
-Open query findings live in `plans/query-lib-scan.md`.
+Settled query decisions that a scan must not re-open live in `plans/lib-scan-settled.md`.
