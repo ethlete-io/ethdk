@@ -109,10 +109,21 @@ describe('describeWork', () => {
     expect(describeWork({ group: swapped, config: FIP })).toBe('user management');
   });
 
-  it('uses the whole branch name when the grammar finds no subject', () => {
-    const text = describeWork({ group: group({ branch: 'main' }), config: FIP });
+  it('names the issue rather than a branch the grammar reads no subject from', () => {
+    expect(describeWork({ group: group({ branch: 'next', issueKey: 'FIP-2222' }), config: FIP })).toBe(
+      'work on FIP-2222',
+    );
+    expect(describeWork({ group: group({ branch: 'main' }), config: FIP })).toBe('unattributed activity');
+  });
 
-    expect(text).toBe('main');
+  it('quotes no agent session title that only agrees, and falls back past it', () => {
+    const agreed = (summary: string): Evidence => ({ kind: 'agent-session', at: AT, detail: summary, summary });
+    const text = describeWork({
+      group: group({ branch: 'feat/FIP-2177-user-management', evidence: [agreed('Sounds good'), agreed('next')] }),
+      config: FIP,
+    });
+
+    expect(text).toBe('user management');
   });
 
   it('ignores an agent session that never had a title', () => {

@@ -1,4 +1,5 @@
 import { DEFAULT_GIT_FLOW_CONFIG, GitFlowConfig, parseBranch } from '@ethlete/agent-rules/git-flow';
+import { isAcknowledgement } from '../model/acknowledgement';
 import { EvidenceKind } from '../model/evidence';
 import { WorkGroup } from './merge';
 
@@ -33,7 +34,7 @@ const summariesOf = (group: WorkGroup, kind: EvidenceKind) => {
   for (const entry of group.evidence) {
     const summary = entry.kind === kind ? entry.summary?.trim() : undefined;
 
-    if (summary && !found.includes(summary)) found.push(summary);
+    if (summary && !isAcknowledgement(summary) && !found.includes(summary)) found.push(summary);
   }
 
   return found;
@@ -54,17 +55,14 @@ const branchOf = (group: WorkGroup, config: GitFlowConfig) => {
 const fromBranch = (group: WorkGroup, config: GitFlowConfig) => {
   const branch = branchOf(group, config);
 
-  if (!branch) return undefined;
-
-  const subject = parseBranch({ branch, config }).subject;
-
-  return subject ? subject.replace(/-/g, ' ') : branch;
+  return branch ? parseBranch({ branch, config }).subject?.replace(/-/g, ' ') : undefined;
 };
 
 /**
  * Writes the worklog text a reviewer would otherwise have to type forty times a month. Commit
  * subjects win because they are the only source the user already wrote about this exact work; the
- * branch subject is the floor, and it still beats the issue key alone.
+ * branch subject is the floor, and it still beats the issue key alone. A prompt that only agrees is
+ * never quoted, and neither is a branch whose name carries no subject, such as `next`.
  */
 export const describeWork = (options: {
   group: WorkGroup;

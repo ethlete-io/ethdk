@@ -1,6 +1,7 @@
 import { TimeWindow } from '../model/time-window';
 import { ActivityBlock, streamKey } from '../model/block';
 import { CollectedEvent } from '../model/event';
+import { Evidence } from '../model/evidence';
 import { projectKeyOf } from '../ticket/project';
 import { AttributedBlock } from './attribute';
 import { clipBlocks } from './overlap';
@@ -49,15 +50,53 @@ export type CutOptions = {
 
 const windowOf = (entry: AttributedBlock): TimeWindow => ({ from: entry.block.from, to: entry.block.to });
 
-/** The parts of a block the given windows leave, each keeping the evidence observed inside it. */
-const piecesOf = (entry: AttributedBlock, windows: readonly TimeWindow[]): AttributedBlock[] =>
-  clipBlocks({ blocks: [entry.block], windows }).map((block) => ({
+const distanceTo = (block: TimeWindow, at: Date) =>
+  Math.max(0, block.from.getTime() - at.getTime(), at.getTime() - block.to.getTime());
+
+const spreadOver = <T extends { at: Date }>(evidence: readonly T[], pieces: readonly TimeWindow[]) => {
+  const spread = pieces.map((): T[] => []);
+
+  for (const observed of evidence) {
+    let nearest = 0;
+
+    pieces.forEach((piece, index) => {
+      const nearestPiece = pieces[nearest];
+
+      if (nearestPiece && distanceTo(piece, observed.at) < distanceTo(nearestPiece, observed.at)) nearest = index;
+    });
+
+    spread[nearest]?.push(observed);
+  }
+
+  return spread;
+};
+
+const producedBy = (entry: AttributedBlock) => (evidence: Evidence) =>
+  evidence.kind === 'agent-session' ||
+  evidence.kind === 'prompt' ||
+  (!!evidence.session && evidence.session === entry.block.context.session);
+
+/**
+ * The parts of a block the given windows leave, each keeping the evidence observed inside it. What
+ * the block's session produced in the windows cut away goes to the nearest part: no other band shows it.
+ */
+const piecesOf = (entry: AttributedBlock, windows: readonly TimeWindow[]): AttributedBlock[] => {
+  const blocks = clipBlocks({ blocks: [entry.block], windows });
+  const moves = producedBy(entry);
+  const spread = (evidence: readonly Evidence[]) =>
+    spreadOver(
+      evidence.filter((observed) => moves(observed) || blocks.some((block) => distanceTo(block, observed.at) === 0)),
+      blocks,
+    );
+  const blockEvidence = spread(entry.block.evidence);
+  const evidence = spread(entry.evidence);
+
+  return blocks.map((block, index) => ({
     ...entry,
-    block,
-    evidence: entry.evidence.filter(
-      (observed) => observed.at.getTime() >= block.from.getTime() && observed.at.getTime() <= block.to.getTime(),
-    ),
+    block: { ...block, evidence: blockEvidence[index] ?? [] },
+    evidence: evidence[index] ?? [],
   }));
+};
 
 /** The start of the increment an instant falls in: everything before it is an increment already over. */
 const settledThrough = (options: { through?: Date; round?: Partial<RoundOptions> }) => {

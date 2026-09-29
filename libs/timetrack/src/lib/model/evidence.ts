@@ -42,6 +42,8 @@ export type Evidence = {
    * has to parse a string written for the UI.
    */
   summary?: string;
+  /** The agent session that produced it, where the observation proves one: a file it wrote, a commit of such a file. */
+  session?: string;
 };
 
 /**

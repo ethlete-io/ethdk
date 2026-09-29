@@ -1,5 +1,6 @@
 import { ActionClasses, actionClassOf } from '../agent-api/action-classes';
 import { streamKeyLabel, streamKeyRepoPath } from '../model/block';
+import { isAcknowledgement } from '../model/acknowledgement';
 import { QUOTABLE_EVIDENCE_KINDS } from '../model/evidence';
 import { mayAutoWrite, rowFieldSourceOf, storedSourceOf } from '../model/field-source';
 import { maskIssueKey, maskNames, pseudonymMap } from '../reason/pseudonym';
@@ -18,22 +19,6 @@ export const AUTO_DESCRIPTION_SETTLE_MS = 30 * 60_000;
 export const autoDescriptionRowId = (row: Pick<ReviewedRow, 'id' | 'recutOf'>) => row.recutOf ?? row.id;
 
 const isCodeRow = (row: Pick<ReviewedRow, 'laneKey'>) => !!row.laneKey && !!streamKeyRepoPath(row.laneKey);
-
-const ACKNOWLEDGEMENT =
-  /^(?:(?:ok(?:ay)?|yes|yep|yeah|sure|agreed?|sounds (?:good|great|fine)|go(?: on| ahead)?|continue|proceed|thanks?|thank you|lgtm|perfect|great|nice|good|fine|do it|ja|jo|passt|weiter|mach weiter|einverstanden)\s*)+$/;
-const NEXT_STEP_QUESTION =
-  /^(?:where|what|how) (?:do|should|shall|can|will) we (?:continue|go|proceed|pick up|go on)\b/;
-
-/** A prompt that only agrees or asks what comes next: it names the conversation, never the work. */
-const isAcknowledgement = (note: string) => {
-  const plain = note
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  return !plain || ACKNOWLEDGEMENT.test(plain) || NEXT_STEP_QUESTION.test(plain);
-};
 
 const notesOf = (evidence: ReviewedRow['evidence']) => {
   const notes: string[] = [];

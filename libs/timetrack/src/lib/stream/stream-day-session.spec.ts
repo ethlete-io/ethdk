@@ -200,6 +200,46 @@ describe('streamDay agent sessions', () => {
     );
   });
 
+  it('describes the row of a session by the commit it made from its shell, in minutes a sibling session kept', () => {
+    const shellTurn = (minutes: number, directory: string): CollectedEvent => ({
+      at: AT(minutes),
+      source: 'agent-usage',
+      kind: 'agent-usage',
+      provider: 'claude-code',
+      sessionId: 'two',
+      turnId: `two-${minutes}`,
+      cwd: `${REPO}/${directory}`,
+      workedIn: `${REPO}/${directory}`,
+      model: 'claude-opus-5',
+      usage: { input: 2, output: 289, cacheWrite: 17_421, cacheRead: 18_910, thinking: 0 },
+    });
+    const { rows } = dayOf([
+      ...focusRun({ from: 0, to: 120 }),
+      ...sessionRun({ sessionId: 'one', from: 10, to: 110, branchAt: () => 'main', title: 'Older work' }),
+      ...sessionRun({ sessionId: 'two', from: 60, to: 100, branchAt: () => 'main', title: 'Sounds good' }),
+      promptAt({ sessionId: 'two', minutes: 60 }),
+      promptAt({ sessionId: 'one', minutes: 70 }),
+      promptAt({ sessionId: 'two', minutes: 85 }),
+      shellTurn(72, 'libs/core/generators'),
+      {
+        at: AT(75),
+        source: 'git',
+        kind: 'git-commit',
+        repoPath: REPO,
+        branch: 'main',
+        sha: 'b2fbfb3e7aaaaaaa',
+        subject: 'fix(core): Scope the v5 migration',
+        paths: ['libs/core/generators/migrate-to-v5/migration.ts'],
+      },
+      handoffTurn({ sessionId: 'two', minutes: 90, workedIn: '' }),
+    ]);
+    const two = [...rows.proposals, ...rows.unnamed].find((row) =>
+      row.evidence.some((evidence) => evidence.summary === 'Sounds good'),
+    );
+
+    expect(two?.description).toBe('fix(core): Scope the v5 migration');
+  });
+
   it('books an overlap the user prompted neither session in once, to the older session', () => {
     const events = [
       ...focusRun({ from: 0, to: 120 }),
