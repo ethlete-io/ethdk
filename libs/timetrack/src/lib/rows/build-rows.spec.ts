@@ -553,6 +553,26 @@ describe('buildRows with activity on another branch inside a rule-named band', (
     expect(rows.proposals[0]?.disputedIssueKey).toBe('FIP-3100');
   });
 
+  it('disputes the band with the issue a rule names for a branch rebased without a checkout', () => {
+    const rebase: CollectedEvent = {
+      at: at(14, 29),
+      source: 'git',
+      kind: 'git-branch-update',
+      repoPath: REPO,
+      branch: 'feat/login',
+      action: 'rebase (finish): refs/heads/feat/login onto 57f59f5',
+    };
+    const rows = buildRows({
+      blocks: WORK,
+      events: [FOCUS, rebase],
+      rules: [NAMED, rule({ repoPath: REPO, branch: 'feat/login', target: { kind: 'issue', issueKey: 'FIP-3100' } })],
+    });
+
+    expect(rows.proposals[0]?.issueKey).toBe('FIP-3006');
+    expect(rows.proposals[0]?.disputedIssueKey).toBe('FIP-3100');
+    expect(rows.proposals[0]?.evidence.map((item) => item.detail)).toContain('rebase (finish) on `feat/login`');
+  });
+
   it('leaves the band alone when the branch belongs to another checkout or to a resolved stand-in', () => {
     const rows = buildRows({
       blocks: WORK,

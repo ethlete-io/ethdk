@@ -66,6 +66,19 @@ export type GitCommitEvent = CollectedEventBase<'git', 'git-commit'> & {
   paths?: string[];
 };
 
+/**
+ * A move of a local branch that its own reflog records: a commit, a rebase, a merge or a reset. It
+ * catches work on a branch that was never checked out, which the `HEAD` reflog cannot see.
+ *
+ * It is no `ActivityEvent`: it names no checkout anybody had in front of them, so it opens no block.
+ */
+export type GitBranchUpdateEvent = CollectedEventBase<'git', 'git-branch-update'> & {
+  repoPath: string;
+  branch: string;
+  /** The reflog message, such as `rebase (finish): refs/heads/x onto …`. */
+  action: string;
+};
+
 export type AgentSessionEvent = CollectedEventBase<'agent-session', 'agent-session'> & {
   sessionId: string;
   cwd: string;
@@ -279,6 +292,7 @@ export type CollectedEvent =
   | InputEvent
   | GitCheckoutEvent
   | GitCommitEvent
+  | GitBranchUpdateEvent
   | AgentSessionEvent
   | AgentUsageEvent
   | AgentPromptEvent
@@ -308,4 +322,5 @@ export const isActivityEvent = (event: CollectedEvent): event is ActivityEvent =
   event.source !== 'gitlab' &&
   event.source !== 'agent-usage' &&
   event.source !== 'agent-prompt' &&
-  event.source !== 'input';
+  event.source !== 'input' &&
+  event.kind !== 'git-branch-update';

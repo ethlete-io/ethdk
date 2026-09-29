@@ -146,6 +146,35 @@ describe('collectGitEvents$', () => {
     expect(result?.failures.map((failure) => failure.args[0])).toEqual(['reflog']);
   });
 
+  it('reads the moves of a branch that was never checked out, once per repository', () => {
+    const worktree = `${REPO}-e2e`;
+    const reflog = [
+      REFLOG,
+      `feat/login-altcha@{2026-08-11T14:29:35+02:00}${GIT_FIELD_SEPARATOR}rebase (finish): refs/heads/feat/login-altcha onto 57f59f5`,
+      `wt/components-e2e@{2026-08-11T14:41:00+02:00}${GIT_FIELD_SEPARATOR}commit (merge): Merge main`,
+      `next@{2026-08-11T15:00:00+02:00}${GIT_FIELD_SEPARATOR}commit: feat(repo): Read by the log`,
+      `feat/login-altcha@{2026-08-10T14:29:35+02:00}${GIT_FIELD_SEPARATOR}commit: Before the window`,
+    ].join('\n');
+    const { result, specs } = scan({
+      repos: [
+        { path: REPO, window: WINDOW },
+        { path: worktree, window: WINDOW },
+      ],
+      outputs: (spec) =>
+        spec.args[0] === 'worktree'
+          ? { stdout: WORKTREES(worktree) }
+          : { stdout: spec.args[0] === 'reflog' ? reflog : '' },
+    });
+
+    expect(specs.find((spec) => spec.args[0] === 'reflog')?.args.slice(-2)).toEqual(['HEAD', '--branches']);
+    expect(
+      result?.events.flatMap((event) => (event.kind === 'git-branch-update' ? [[event.repoPath, event.branch]] : [])),
+    ).toEqual([
+      [REPO, 'feat/login-altcha'],
+      [worktree, 'wt/components-e2e'],
+    ]);
+  });
+
   it('runs nothing when no repository is configured', () => {
     const { result, specs } = scan({ repos: [] });
 

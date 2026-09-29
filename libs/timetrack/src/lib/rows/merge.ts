@@ -638,6 +638,12 @@ const branchActivityOf = (event: CollectedEvent): BranchActivity | [] => {
     return { at: event.at, branch: event.branch, repoPath: event.repoPath, detail: `a commit on \`${event.branch}\`` };
   }
 
+  if (event.kind === 'git-branch-update') {
+    const verb = event.action.split(':')[0] || 'an update';
+
+    return { at: event.at, branch: event.branch, repoPath: event.repoPath, detail: `${verb} on \`${event.branch}\`` };
+  }
+
   if (event.kind !== 'merge-request-activity' || !event.branch) return [];
 
   const mergeRequest = event.mergeRequestIid ? `!${event.mergeRequestIid}` : 'a merge request';
@@ -647,8 +653,9 @@ const branchActivityOf = (event: CollectedEvent): BranchActivity | [] => {
 
 /**
  * Marks a band a rule named as disputed when its stretch holds activity on another branch of its
- * checkout, or of a worktree of it, that a branch rule names as other work: a merge request, or a
- * commit made without a checkout. The band still books what its rule named; the review sees both.
+ * checkout, or of a worktree of it, that a branch rule names as other work: a merge request, a
+ * commit, or a rebase or merge made without a checkout. The band still books what its rule named;
+ * the review sees both.
  */
 export const disputeOtherBranches = (options: {
   groups: readonly WorkGroup[];

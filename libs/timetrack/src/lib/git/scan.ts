@@ -3,7 +3,7 @@ import { CollectedEvent } from '../model/event';
 import { ProcessResult, ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
 import { GIT_LOG_FORMAT, GIT_REFLOG_FORMAT, GitScanWindow } from './format';
 import { parseGitLog } from './log';
-import { parseGitReflog } from './reflog';
+import { parseGitBranchReflog, parseGitReflog } from './reflog';
 import { gitWorktreeArgs, parseGitWorktrees } from './worktree';
 
 export type GitRepoScan = {
@@ -33,7 +33,18 @@ export type GitScanResult = {
   failures: GitScanFailure[];
 };
 
-const gitReflogArgs = () => ['reflog', 'show', '--date=iso-strict', `--format=${GIT_REFLOG_FORMAT}`];
+/**
+ * `HEAD` and every local branch in one call: a branch an agent rebased or merged without checking it
+ * out moves only its own reflog.
+ */
+const gitReflogArgs = () => [
+  'reflog',
+  'show',
+  '--date=iso-strict',
+  `--format=${GIT_REFLOG_FORMAT}`,
+  'HEAD',
+  '--branches',
+];
 
 /**
  * Merges are left out: the subject is generated text rather than a statement of what was worked on, and
@@ -152,17 +163,18 @@ const logScanOf = (options: { group: RepoGroup; log: GitRun }): GitScanResult =>
   const { group, log } = options;
   const repo = group.scanner.repo;
   const failure = failureOf({ repoPath: repo.path, run: log });
+  const owners = ownersOf(group);
+  const reflog = group.scanner.reflog.result;
 
   return {
-    events:
-      log.result.code === 0
-        ? parseGitLog({
-            repoPath: repo.path,
-            output: log.result.stdout,
-            window: repo.window,
-            owners: ownersOf(group),
-          })
-        : [],
+    events: [
+      ...(log.result.code === 0
+        ? parseGitLog({ repoPath: repo.path, output: log.result.stdout, window: repo.window, owners })
+        : []),
+      ...(reflog.code === 0
+        ? parseGitBranchReflog({ repoPath: repo.path, output: reflog.stdout, window: repo.window, owners })
+        : []),
+    ],
     failures: failure ? [failure] : [],
   };
 };
@@ -173,8 +185,8 @@ const merged = (scans: GitScanResult[]): GitScanResult => ({
 });
 
 /**
- * Reads a day out of the configured repositories: the branch switches from each one's reflog and the
- * commits authored inside the window, as collected events.
+ * Reads a day out of the configured repositories: the branch switches from each one's reflog, the
+ * moves of its local branches, and the commits authored inside the window, as collected events.
  *
  * This is the reconcile pass, and it stands on its own — it needs no watcher to have been running, so a
  * day still arrives after the app was closed. The host's inotify watch on `.git/HEAD` is what makes a
