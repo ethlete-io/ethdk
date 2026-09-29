@@ -1,5 +1,13 @@
 # @ethlete/timetrack
 
+## 0.1.0-next.10
+
+### Patch Changes
+
+- Count prompts sent from another device as remote work while the user is still away, not only once they are back at the desk.
+- A session's row is now described by the commits and files that session produced, never by a prompt that only agrees or a branch name like `next`.
+- Parallel agent sessions on one ticket are drawn side by side again, each over its own stretches widened to 15-minute steps and cascaded where they overlap.
+
 ## 0.1.0-next.9
 
 ### Minor Changes

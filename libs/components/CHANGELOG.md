@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.0-next.65
+
+### Major Changes
+
+- Breaking: remove the deprecated chart-grid `baselineY` alias; use `baseline`. `et update` runs a migration that renames it.
+- Breaking: stop exporting the grid layout engine internals (collision, geometry, snapping and auto-scroll helpers and their types). `serializeGridLayout`, `deserializeGridLayout`, `SerializeOptions` and `DEFAULT_BREAKPOINTS` stay public. `et update` runs a migration that removes the names from imports and marks their uses.
+- Breaking: stop exporting the overlay full-screen animation internals (`startFullscreenEnterAnimation`, `startFullscreenLeaveAnimation`, `cleanupFullscreenAnimation`, `cleanupFullscreenAnimationStyles`, `abortFullscreenAnimation` and their state and dependency types). `fullScreenDialogOverlayStrategy` is unchanged. `et update` runs a migration that removes the names from imports and marks their uses.
+- Breaking: the stream loading and error overlays are opt-in and no longer in `STREAM_IMPORTS`; spread `STREAM_DEFAULT_COMPONENTS` into `provideStreamConfig` to keep them. `et update` migrates both.
+
+### Patch Changes
+
+- Fix `et update` failing with "task is not a function" after the removed-exports migrations, such as `youtube-player-slot-directive`, finished their work.
+
 ## 1.0.0-next.64
 
 ### Major Changes

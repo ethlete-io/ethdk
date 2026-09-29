@@ -1,5 +1,12 @@
 # @ethlete/cli
 
+## 2.1.0-next.13
+
+### Patch Changes
+
+- `et update` hands the migrations to the newly installed `et` when the update moves `@ethlete/cli`, so steps a newer CLI added, such as the agent rules sync, run in that same update.
+- `et update` follows the dist tag that holds the newest version of the installed prerelease line, so a package that changesets published to `latest`, such as `@ethlete/agent-rules`, no longer stays on the older `next` version.
+
 ## 2.1.0-next.12
 
 ### Patch Changes
