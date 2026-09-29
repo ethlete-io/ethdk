@@ -971,6 +971,19 @@ describe('streamDay, on a day still being collected', () => {
     expect(streamOf(day, `repo:${SDK}`)?.engagedMs).toBe(13 * MINUTE);
   });
 
+  it('keeps the branch the focused window held until a later checkout, when that checkout came after what the window source reported', () => {
+    const day = streamDay({
+      events: [
+        commit(0, 'feat: x'),
+        ...focusRun({ from: 0, to: 10, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),
+        checkout(20, 'feature'),
+      ],
+      options: { repoRoots: [SDK], windowsSeenThroughMs: AT(15).getTime() },
+    });
+
+    expect(day.blocks.map((block) => [block.from, block.to, block.context.branch])).toEqual([[AT(0), AT(20), 'next']]);
+  });
+
   it('holds nothing open across a gap wider than the safety valve', () => {
     const day = streamDay({
       events: focusRun({ from: 0, to: 10, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),

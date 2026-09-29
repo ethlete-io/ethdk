@@ -979,7 +979,11 @@ export const streamDay = (options: {
     maxUnobservedMs: config.maxUnobservedMs,
   });
 
-  if (tail) observed.push(tail);
+  if (tail) {
+    const after = observed.findIndex((sample) => sample.at > tail.at);
+
+    observed.splice(after === -1 ? observed.length : after, 0, tail);
+  }
 
   const secluded = privateNames({ samples: observed, roots, links });
   const samples = observed.filter((sample) => {
