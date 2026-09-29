@@ -281,6 +281,31 @@ const noLegacyPrepareWithoutInjector = {
     }
     /** Names known to be legacy creators: imported under the naming convention, or declared locally. */
     const creatorNames = new Set();
+    /** @type {Set<string>} */
+    const namespaceNames = new Set();
+
+    /**
+     * @param {any} object
+     * @returns {string | null}
+     */
+    const getCreatorName = (object) => {
+      if (object.type === 'Identifier') {
+        return creatorNames.has(object.name) ? object.name : null;
+      }
+
+      if (
+        object.type === 'MemberExpression' &&
+        !object.computed &&
+        object.object.type === 'Identifier' &&
+        namespaceNames.has(object.object.name) &&
+        object.property.type === 'Identifier' &&
+        creatorPattern.test(object.property.name)
+      ) {
+        return `${object.object.name}.${object.property.name}`;
+      }
+
+      return null;
+    };
 
     /**
      * @param {any} classBody
@@ -393,7 +418,15 @@ const noLegacyPrepareWithoutInjector = {
           if (node.type === 'ImportDeclaration') {
             node.specifiers.forEach(
               /** @param {any} specifier */ (specifier) => {
-                if (specifier.type === 'ImportSpecifier' && creatorPattern.test(specifier.local.name)) {
+                if (specifier.type === 'ImportNamespaceSpecifier') {
+                  namespaceNames.add(specifier.local.name);
+                }
+
+                if (specifier.type !== 'ImportSpecifier') return;
+
+                const importedName = specifier.imported.name ?? specifier.imported.value;
+
+                if (creatorPattern.test(specifier.local.name) || creatorPattern.test(importedName)) {
                   creatorNames.add(specifier.local.name);
                 }
               },
@@ -433,10 +466,14 @@ const noLegacyPrepareWithoutInjector = {
         if (
           callee.type !== 'MemberExpression' ||
           callee.property.type !== 'Identifier' ||
-          callee.property.name !== 'prepare' ||
-          callee.object.type !== 'Identifier' ||
-          !creatorNames.has(callee.object.name)
+          callee.property.name !== 'prepare'
         ) {
+          return;
+        }
+
+        const creatorName = getCreatorName(callee.object);
+
+        if (!creatorName) {
           return;
         }
 
@@ -479,7 +516,7 @@ const noLegacyPrepareWithoutInjector = {
         context.report({
           node,
           messageId: 'missingInjector',
-          data: { creator: callee.object.name, boundary },
+          data: { creator: creatorName, boundary },
           // Only the in-class shape is auto-fixed: a standalone function has no obvious injector to reach
           // for, and inventing an `inject()` call there would move the failure rather than fix it.
           fix:

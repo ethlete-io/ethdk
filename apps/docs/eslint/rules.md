@@ -298,7 +298,7 @@ Two opt-in rules for an app leaving a maintenance-mode API behind. Both are **of
 instead of CSS-only classes.
 ```
 
-`no-legacy-query-import` matches every `V2`/`AnyV2`-prefixed export - the prefix the library gives the legacy system's half of a colliding name - plus the legacy APIs that never collided (`def`, `filterSuccess`, `InfinityQuery`, `EntityStore`, `QueryDirective`, `toQuerySignal`, …), each carrying its counterpart from the [legacy migration map](/query/legacy#migrating-to-the-current-system). `createLegacyQueryCreator` is deliberately never reported: it is the interop seam a migration runs on until its call sites are converted. It is not type-aware on purpose; for the whole deprecated surface - including the types this rule leaves alone - enable `@typescript-eslint/no-deprecated` alongside it.
+`no-legacy-query-import` matches every `V2`/`AnyV2`-prefixed export - the prefix the library gives the legacy system's half of a colliding name - plus the legacy APIs that never collided (`def`, `filterSuccess`, `InfinityQuery`, `EntityStore`, `QueryDirective`, `toQuerySignal`, …), each carrying its counterpart from the [legacy migration map](/query/legacy#migrating-to-the-current-system). A namespace import (`import * as q from '@ethlete/query'`) is reported at each legacy name read off it, such as `new q.V2QueryClient()`. `createLegacyQueryCreator` is deliberately never reported: it is the interop seam a migration runs on until its call sites are converted. It is not type-aware on purpose; for the whole deprecated surface - including the types this rule leaves alone - enable `@typescript-eslint/no-deprecated` alongside it.
 
 ## DOM, platform & `@ethlete/core`
 

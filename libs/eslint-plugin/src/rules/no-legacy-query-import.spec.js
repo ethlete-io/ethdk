@@ -31,6 +31,11 @@ tester.run('no-legacy-query-import', rule, {
       filename: 'test.ts',
       options,
     },
+    {
+      code: `import * as q from '@my-org/state';\nconst client = new q.V2QueryClient();`,
+      filename: 'test.ts',
+      options,
+    },
     // Another package's symbol of the same name is none of this rule's business
     {
       code: `import { EntityStore } from '@my-org/state';`,
@@ -92,6 +97,20 @@ tester.run('no-legacy-query-import', rule, {
       filename: 'test.ts',
       options,
       errors: [{ messageId: 'successor' }],
+    },
+    {
+      code: `import * as q from '@ethlete/query';
+const client = new q.V2QueryClient();
+const config: q.V2QueryClientConfig = {};
+const current = q.createQueryClient();
+q['filterSuccess']();`,
+      filename: 'test.ts',
+      options,
+      errors: [
+        { messageId: 'successor', line: 2 },
+        { messageId: 'successor', line: 3 },
+        { messageId: 'successor', line: 5 },
+      ],
     },
     // Mixed import: only the legacy half is reported
     {

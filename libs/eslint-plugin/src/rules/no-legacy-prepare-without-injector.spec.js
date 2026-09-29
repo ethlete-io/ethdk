@@ -34,10 +34,49 @@ tester.run('no-legacy-prepare-without-injector', rule, {
         `export const useUsers = () => { const client = inject(Client); return legacyGetUsers.prepare({}); };`,
       ),
     },
+    { code: `import * as queries from './queries';\nclass A { load() { queries.getUsers.prepare({}); } }` },
     // not a legacy creator
     { code: `import { getUsers } from './queries';\nclass A { load() { getUsers.prepare({}); } }` },
   ],
   invalid: [
+    {
+      code: `import { legacyGetUsers as gu } from './queries';
+class A {
+  private injector = inject(Injector);
+
+  load() {
+    gu.prepare({});
+  }
+}`,
+      output: `import { legacyGetUsers as gu } from './queries';
+class A {
+  private injector = inject(Injector);
+
+  load() {
+    gu.prepare({ injector: this.injector });
+  }
+}`,
+      errors: [{ messageId: 'missingInjector', data: { creator: 'gu', boundary: 'method' } }],
+    },
+    {
+      code: `import * as queries from './queries';
+class A {
+  private injector = inject(Injector);
+
+  load() {
+    queries.legacyGetUsers.prepare({});
+  }
+}`,
+      output: `import * as queries from './queries';
+class A {
+  private injector = inject(Injector);
+
+  load() {
+    queries.legacyGetUsers.prepare({ injector: this.injector });
+  }
+}`,
+      errors: [{ messageId: 'missingInjector', data: { creator: 'queries.legacyGetUsers', boundary: 'method' } }],
+    },
     {
       // the shape that started this: a computed at a class field
       code: withImport(`class A {

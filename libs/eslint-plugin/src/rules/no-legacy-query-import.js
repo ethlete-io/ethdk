@@ -92,6 +92,54 @@ const noLegacyQueryImport = {
     const options = context.options[0] ?? {};
     const docsBaseUrl = (options.docsBaseUrl ?? DEFAULT_DOCS_BASE_URL).replace(/\/$/, '');
 
+    /**
+     * @param {string} name
+     * @param {any} node
+     */
+    const reportName = (name, node) => {
+      const successor = V2_SUCCESSORS[name] ?? LEGACY_SYMBOLS[name];
+
+      if (successor) {
+        context.report({
+          node,
+          messageId: 'successor',
+          data: { name, to: successor.to, docs: `${docsBaseUrl}${successor.docs}` },
+        });
+
+        return;
+      }
+
+      if (!isV2Symbol(name)) return;
+
+      context.report({
+        node,
+        messageId: 'legacySystem',
+        data: { name, docs: `${docsBaseUrl}/query/migrating-from-v2` },
+      });
+    };
+
+    /**
+     * @param {any} identifier
+     * @returns {{ name: string, node: any } | null}
+     */
+    const getNamespaceMember = (identifier) => {
+      const parent = identifier.parent;
+
+      if (parent?.type === 'MemberExpression' && parent.object === identifier) {
+        if (!parent.computed && parent.property.type === 'Identifier')
+          return { name: parent.property.name, node: parent };
+        if (parent.property.type === 'Literal' && typeof parent.property.value === 'string') {
+          return { name: parent.property.value, node: parent };
+        }
+      }
+
+      if (parent?.type === 'TSQualifiedName' && parent.left === identifier) {
+        return { name: parent.right.name, node: parent };
+      }
+
+      return null;
+    };
+
     return {
       [MODULE_REFERENCE_SELECTOR](node) {
         const reference = getModuleReference(node);
@@ -99,25 +147,20 @@ const noLegacyQueryImport = {
         if (reference?.source !== QUERY_PACKAGE) return;
 
         for (const { name, node: specifier } of reference.named) {
-          const successor = V2_SUCCESSORS[name] ?? LEGACY_SYMBOLS[name];
+          reportName(name, specifier);
+        }
 
-          if (successor) {
-            context.report({
-              node: specifier,
-              messageId: 'successor',
-              data: { name, to: successor.to, docs: `${docsBaseUrl}${successor.docs}` },
-            });
+        if (node.type !== 'ImportDeclaration') return;
 
-            continue;
+        for (const specifier of node.specifiers) {
+          if (specifier.type !== 'ImportNamespaceSpecifier') continue;
+
+          for (const variable of context.sourceCode.getDeclaredVariables(specifier)) {
+            for (const variableReference of variable.references) {
+              const member = getNamespaceMember(variableReference.identifier);
+              if (member) reportName(member.name, member.node);
+            }
           }
-
-          if (!isV2Symbol(name)) continue;
-
-          context.report({
-            node: specifier,
-            messageId: 'legacySystem',
-            data: { name, docs: `${docsBaseUrl}/query/migrating-from-v2` },
-          });
         }
       },
     };
