@@ -12,10 +12,10 @@ check coverage.
 
 ## Spec gaps
 
-- Spec: `drawMan` and `drawSwissMan` have no spec. The High finding above and the loser-feed connectors would both show in a spec that draws a fixture. M
-- Spec: `createDoubleEliminationGrid` and `createDoubleEliminationStackedGrid` have no grid spec. Only single elimination and swiss have one. M
-- Spec: `round-relations.spec.ts` has no double elimination case: none with a reverse final, none with a truncated lower bracket, none mirrored. M
+- Spec: `drawMan` has no spec (`drawSwissMan` has `draw-man-swiss.spec.ts`). A spec that draws a double elimination fixture would show the loser-feed connectors. M
+- Spec: `double-elimination.spec.ts` covers only the ET3405 error of `createDoubleEliminationGrid`, not a drawn grid; `createDoubleEliminationStackedGrid` has no spec. M
+- Spec: `round-relations.spec.ts` covers a truncated lower bracket and a reverse final, but no mirrored layout. S
 
 ## stacked double elimination and drawing helpers (second pass)
 
-- Low: `BracketElementBase.isHidden` is written (`drawing/grid/core/bracket-grid.ts:172`) but nothing reads it, and the exported `BracketElementType` has no user (`core/bracket-element.ts:24,101-105`). `createBracketElementPart` and `createBracketElement` wrap their result in `{ elementPart }`/`{ element }`, and every caller unwraps it at once. Delete the dead members and return the value itself. S Decision: all three are exported from `@ethlete/bracket`, so removing them is a breaking API change.
+- Low: `BracketElementBase.isHidden` is written (`drawing/grid/core/bracket-grid.ts:172`) but nothing reads it, and the exported `BracketElementType` has no user (`core/bracket-element.ts:16,93,103`). `createBracketElementPart` and `createBracketElement` wrap their result in `{ elementPart }`/`{ element }`, and every caller unwraps it at once. Delete the dead members and return the value itself. S Decision: all three are exported from `@ethlete/bracket`, so removing them is a breaking API change.

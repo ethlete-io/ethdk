@@ -6,7 +6,7 @@ Entry-point boundaries hold: `toggle/` imports only `@ethlete/query` and `@ethle
 
 ## Cost while closed
 
-- Medium: every repository event goes through `pushEvent` even with the panel closed, and each `request-success` measures the response body again (`query-devtools.component.ts:4049`) - the query stats recorder already serializes the same body. `resolveEventQueryId` (`:4072`) then scans all live entries, and on a miss filters and sorts all tombstones, per event. Reuse the recorder's measurement and resolve the owner lazily when a row is rendered. M Verified. The stats recorder calls `measureQueryDevtoolsPayload` on the same body (`query/src/lib/devtools/query-devtools-stats.ts:413`), so a response without `content-length` is stringified twice.
+- Medium: every repository event goes through `pushEvent` even with the panel closed, and each `request-success` measures the response body again (`query-devtools.component.ts:3583`) - the query stats recorder already serializes the same body. `resolveEventQueryId` (`:3606`) then scans all live entries, and on a miss filters and sorts all tombstones, per event. Reuse the recorder's measurement and resolve the owner lazily when a row is rendered. M Verified. The stats recorder calls `measureQueryDevtoolsPayload` on the same body (`query/src/lib/devtools/query-devtools-stats.ts:413`), so a response without `content-length` is stringified twice.
 
 ## Cleanup
 
@@ -15,7 +15,7 @@ Entry-point boundaries hold: `toggle/` imports only `@ethlete/query` and `@ethle
 
 ## Spec gaps
 
-- Spec: no test for the shortcut matcher (`code` vs `key`, the lazy shell stopping after the handover). S
+- Spec: no test for the shortcut matcher (`code` vs `key`, `toggle/query-devtools-shortcut.ts:18`); the lazy shell and the pop-up specs only press ctrl+alt+q with both set. S
 
 ## second pass
 
