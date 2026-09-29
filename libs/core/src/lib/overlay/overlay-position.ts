@@ -152,8 +152,6 @@ let anchoredPositionSetup: AnchoredPositionSetup | null = null;
  * Installs the anchored positioning implementation. Called by `anchoredOverlayPosition()`, which is
  * the only thing that pulls `@floating-ui/dom` into the bundle - apps that never anchor an overlay
  * do not ship it.
- *
- * @internal
  */
 export const registerAnchoredPositionSetup = (setup: AnchoredPositionSetup) => {
   anchoredPositionSetup = setup;

@@ -143,12 +143,10 @@ export class ProvideSurfaceDirective {
     }
   }
 
-  /** @internal */
   forceSurface(surface: RegisteredSurfaceThemeName | null) {
     this.forcedSurface.set(surface);
   }
 
-  /** @internal */
   clearForcedSurface() {
     if (this.forcedSurface() === FORCED_SURFACE_UNSET) {
       return;

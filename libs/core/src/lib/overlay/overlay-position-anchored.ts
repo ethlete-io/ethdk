@@ -27,8 +27,6 @@ import {
 /**
  * The floating-ui middleware only a subset of anchored overlays needs. Installed by
  * `enableAnchoredOverlayPositionExtras()`.
- *
- * @internal
  */
 export type AnchoredPositionMiddlewareExtras = {
   size: typeof import('@floating-ui/dom').size;
@@ -41,8 +39,6 @@ let middlewareExtras: AnchoredPositionMiddlewareExtras | null = null;
 /**
  * Installs the `size` / `arrow` / `hide` middleware. Called by
  * `enableAnchoredOverlayPositionExtras()`.
- *
- * @internal
  */
 export const registerAnchoredPositionMiddlewareExtras = (extras: AnchoredPositionMiddlewareExtras) => {
   middlewareExtras = extras;

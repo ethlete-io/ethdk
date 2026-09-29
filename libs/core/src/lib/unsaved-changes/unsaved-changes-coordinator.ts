@@ -25,7 +25,7 @@ export type UnsavedChangesConfirmContext = {
   signal: AbortSignal;
 };
 
-/** @internal A live tracker, as seen by the coordinator. */
+/** A live tracker, as seen by the coordinator. */
 export type UnsavedChangesRegistration = {
   abandon: (reason: UnsavedChangesAbandonReason) => void;
 
@@ -50,7 +50,7 @@ const UNSAVED_CHANGES_COORDINATOR_DEF = /* @__PURE__ */ defineRootProvider(
       settle: (result: boolean) => void;
     } | null = null;
 
-    /** @internal Runs a tracker's confirm under the single-flight + abandon regime. */
+    /** Runs a tracker's confirm under the single-flight + abandon regime. */
     const runCheck = (runner: (context: UnsavedChangesConfirmContext) => Promise<boolean>): Promise<boolean> => {
       // A confirm is already on screen - adopt its answer rather than opening a second dialog.
       if (pending) {
@@ -86,7 +86,6 @@ const UNSAVED_CHANGES_COORDINATOR_DEF = /* @__PURE__ */ defineRootProvider(
       return promise;
     };
 
-    /** @internal */
     const register = (registration: UnsavedChangesRegistration) => {
       _registrations.update((current) => [...current, registration]);
 

@@ -116,8 +116,6 @@ export const overlayViewportInsetsFor = (element: Element) => overlayViewportIns
 /**
  * Runs `listener` whenever a reservation is made or released, so an already positioned overlay can be
  * laid out again. Returns the unsubscribe callback.
- *
- * @internal
  */
 export const onOverlayViewportInsetsChange = (listener: () => void) => {
   listeners.add(listener);

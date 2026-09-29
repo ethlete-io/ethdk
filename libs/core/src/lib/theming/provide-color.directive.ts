@@ -30,8 +30,6 @@ export const COLOR_PROVIDER = new InjectionToken<ProvideColorDirective>('ColorPr
  * it through element DI, so overlay containers fall back to this when resolving the provider to
  * `syncWithProvider()` - resolve at sync time, not at injection time, since root components only
  * register with `ApplicationRef` once bootstrap completes.
- *
- * @internal
  */
 export const resolveAppRootColorProvider = (appRef: ApplicationRef): ProvideColorDirective | null => {
   for (const componentRef of appRef.components) {
@@ -151,12 +149,10 @@ export class ProvideColorDirective {
     }
   }
 
-  /** @internal */
   forceColor(color: ColorThemeInput) {
     this.forcedColor.set(color);
   }
 
-  /** @internal */
   clearForcedColor() {
     if (this.forcedColor() === FORCED_COLOR_UNSET) {
       return;
