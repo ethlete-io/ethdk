@@ -7,7 +7,7 @@ import {
   RingPoint,
   TimeRingSpan,
   angleToMinute,
-  clampRingTravel,
+  dragRingTravel,
   pointToAngle,
   ringOffset,
   ringDuration,
@@ -34,8 +34,8 @@ const outsideTimePicker = (element: Element): never => {
 };
 
 /**
- * The pointer's path since the press, unwrapped, so a handle held at a blocked edge moves again only once the
- * pointer comes back round to it.
+ * The pointer's path since the press, or since the last jump over a blocked span, unwrapped, so a handle held at a
+ * blocked edge moves again only once the pointer reaches open time.
  */
 type RingDrag = { side: TimeRangeSide; origin: number | null; pointer: number; travel: number };
 
@@ -44,8 +44,9 @@ const ringDistance = (first: number, second: number) =>
 
 /**
  * The pointer surface of a 24h time ring, with midnight at the top. A press moves the nearest handle to the pressed
- * time, and a drag moves it on, snapped to `minuteStep`. A drag stops at the edge of a blocked span. Place the
- * `[etTimePickerRingHandle]`s inside it.
+ * time, and a drag moves it on, snapped to `minuteStep`. A drag holds the handle at the edge of a blocked span while
+ * the pointer is over it, and jumps to the pointer once it reaches open time again, never past the other end of a
+ * range. Place the `[etTimePickerRingHandle]`s inside it.
  */
 @Directive({
   selector: '[etTimePickerRing]',
@@ -174,12 +175,24 @@ export class TimePickerRingDirective {
     drag.travel += ringOffset(drag.pointer, target);
     drag.pointer = target;
 
-    picker.commitRingMinute(
-      drag.side,
-      drag.origin === null
-        ? target
-        : clampRingTravel(picker.ringStops()[drag.side], { from: drag.origin, travel: drag.travel }),
-    );
+    if (drag.origin === null) {
+      picker.commitRingMinute(drag.side, target);
+
+      return;
+    }
+
+    const step = dragRingTravel(picker.ringStops()[drag.side], {
+      from: drag.origin,
+      travel: drag.travel,
+      other: picker.mode() === 'range' ? picker.ringMinute(drag.side === 'start' ? 'end' : 'start') : null,
+    });
+
+    if (step.jumped) {
+      drag.origin = step.minute;
+      drag.travel = 0;
+    }
+
+    picker.commitRingMinute(drag.side, step.minute);
   }
 
   private sideForPress(minute: number): TimeRangeSide {

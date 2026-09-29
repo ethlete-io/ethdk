@@ -103,6 +103,8 @@ export const timeRingSpans = (stops: TimeRingStops): TimeRingSpans => ({
   blocked: collectRuns(stops, false),
 });
 
+export const ringDuration = (start: number, end: number) => wrapMinute(end - start);
+
 /** The signed minutes from `from` to `to` the short way round the ring, positive clockwise. */
 export const ringOffset = (from: number, to: number) => {
   const forward = wrapMinute(to - from);
@@ -140,6 +142,36 @@ export const clampRingTravel = (stops: TimeRingStops, move: { from: number; trav
   return stops.minutes[index] ?? from;
 };
 
+/**
+ * {@link clampRingTravel}, except that a travel held at a blocked edge but ending on an open stop jumps to that stop,
+ * unless `other` lies on the skipped arc. `jumped` is true when it jumped.
+ */
+export const dragRingTravel = (stops: TimeRingStops, move: { from: number; travel: number; other: number | null }) => {
+  const { from, travel, other } = move;
+  const edge = clampRingTravel(stops, move);
+  const target = snapMinute(from + travel, stops.step);
+  const held = { minute: edge, jumped: false };
+
+  if (edge === target || !isStopOpen(stops, target)) {
+    return held;
+  }
+
+  const forward = travel > 0;
+  const start = snapMinute(from, stops.step);
+  const moved = forward ? ringDuration(start, edge) : ringDuration(edge, start);
+  const skipped = Math.abs(travel) - moved;
+
+  if (other !== null) {
+    const passed = forward ? ringDuration(edge, other) : ringDuration(other, edge);
+
+    if (passed > 0 && passed <= skipped) {
+      return held;
+    }
+  }
+
+  return { minute: target, jumped: true };
+};
+
 /** {@link clampRingTravel} from `from` towards `target` the short way round the ring. */
 export const clampRingMove = (stops: TimeRingStops, move: { from: number; target: number }) =>
   clampRingTravel(stops, {
@@ -158,8 +190,6 @@ export const lastOpenMinute = (stops: TimeRingStops) => {
 
   return index === -1 ? null : (stops.minutes[index] ?? null);
 };
-
-export const ringDuration = (start: number, end: number) => wrapMinute(end - start);
 
 /** Moves `delta` minutes from `from`, then on in the same direction to the next open stop. `null` when no stop is open. */
 export const stepToOpenMinute = (stops: TimeRingStops, move: { from: number; delta: number }) => {

@@ -53,7 +53,7 @@ The centre of the ring reads the time live. While no value is set there is no ha
 
 ## Bounds and filtering
 
-`min` / `max` bound the time of day (their date part is ignored, so one bound covers every day; a `min` later than `max`, such as 22:00-06:00, is a window that wraps past midnight), and `timeFilter` rejects individual times. The track exists only where a time can be picked, with butt ends; a blocked span is drawn as a dotted line. A drag stops at the edge of a blocked span, and the keyboard skips over it.
+`min` / `max` bound the time of day (their date part is ignored, so one bound covers every day; a `min` later than `max`, such as 22:00-06:00, is a window that wraps past midnight), and `timeFilter` rejects individual times. The track exists only where a time can be picked, with butt ends; a blocked span is drawn as a dotted line. While a drag is over a blocked span the handle waits at its edge; once the pointer reaches open time again, even past the night outside `min` / `max`, the handle jumps there - but never past the other end of a range. The keyboard skips over a blocked span.
 
 ```html
 <et-time-picker [(value)]="slot" [min]="openingTime" [max]="closingTime" [timeFilter]="notDuringLunch" />

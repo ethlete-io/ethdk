@@ -147,6 +147,38 @@ describe('TimePickerRingDirective', () => {
       expect(timeOf(host.value())).toBe('17:30:00');
     });
 
+    it('jumps across a blocked span once the pointer reaches open time on the other side', () => {
+      host.timeFilter.set((date) => date.getHours() !== 12);
+      host.value.set(at(13));
+      tick();
+
+      press(13);
+      move(12, 30);
+
+      expect(timeOf(host.value())).toBe('13:00:00');
+
+      move(11, 45);
+
+      expect(timeOf(host.value())).toBe('11:45:00');
+
+      move(12, 30);
+
+      expect(timeOf(host.value())).toBe('11:45:00');
+    });
+
+    it('jumps through the blocked night into the morning', () => {
+      host.min.set(at(8));
+      host.max.set(at(18));
+      tick();
+
+      press(17);
+
+      for (const hours of [19, 21, 23, 1, 3, 5, 7]) move(hours);
+      move(8, 30);
+
+      expect(timeOf(host.value())).toBe('08:30:00');
+    });
+
     it('writes nothing for a press on blocked time', () => {
       host.min.set(at(8));
       tick();
@@ -285,6 +317,21 @@ describe('TimePickerRingDirective', () => {
       tick();
 
       expect(ring().spans().blocked).toEqual([{ start: 0, end: minuteOf(11, 45) }]);
+    });
+
+    it('does not let a drag jump the end over the start', () => {
+      host.timeFilter.set((date, side) => side === 'start' || date.getHours() !== 12);
+      host.rangeValue.set({ start: at(12, 30), end: at(13, 15) });
+      host.activeSide.set('end');
+      tick();
+
+      press(13, 15);
+      move(12, 45);
+      move(12, 15);
+      move(11, 45);
+
+      expect(timeOf(host.rangeValue().start)).toBe('12:30:00');
+      expect(timeOf(host.rangeValue().end)).toBe('13:00:00');
     });
 
     it('makes the end of a focused handle the active side', () => {

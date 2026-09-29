@@ -9,6 +9,7 @@ import {
   openStory,
   pressKey,
   pressKeys,
+  ringPoint,
   tapRing,
   touchDragAlongRing,
 } from '../support';
@@ -211,6 +212,26 @@ test.describe('time-picker / pointer', () => {
     await page.mouse.up();
 
     await expect(handle).toHaveAttribute('aria-valuenow', '715');
+  });
+
+  test('a drag across a blocked span jumps to the open time on the other side', async ({ page }) => {
+    const root = await openStory(page, OPENING_HOURS_STORY_ID);
+    const handle = root.getByRole('slider', { name: 'Time' });
+
+    const ring = root.locator(RING);
+
+    await mouseDownAlongRing(page, ring, 630, [670, 710, 750]);
+    await expect(handle).toHaveAttribute('aria-valuenow', '715');
+
+    for (const minute of [790, 810]) {
+      const point = await ringPoint(ring, minute);
+
+      await page.mouse.move(point.x, point.y, { steps: 4 });
+    }
+
+    await page.mouse.up();
+
+    await expect(handle).toHaveAttribute('aria-valuenow', '810');
   });
 
   test('a press in the centre of the ring leaves the time alone', async ({ page }) => {
