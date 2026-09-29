@@ -393,7 +393,9 @@ const workedInOfTool = (block: Record<string, unknown>): string | null | undefin
   if (!input) return undefined;
 
   if (name === 'Bash') {
-    return writingDirectoryOf(stringAt(input, 'command') ?? '', null);
+    const directory = writingDirectoryOf(stringAt(input, 'command') ?? '', null);
+
+    return directory ? `${directory.replace(/\/+$/, '')}/` : directory;
   }
 
   if (!WRITE_TOOLS.has(name ?? '')) return undefined;

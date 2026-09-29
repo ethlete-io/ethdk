@@ -548,6 +548,7 @@ describe('parseClaudeCodeSessionLog prompts', () => {
 });
 
 const ALTCHA = '/home/tom/dev/fut-frontend-altcha';
+const ALTCHA_DIR = `${ALTCHA}/`;
 
 const toolCall = (options: { minute: number; second?: number; name: string; input: Record<string, unknown> }) =>
   JSON.stringify({
@@ -586,7 +587,7 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
       { sampleIntervalMs: 60_000 },
     );
 
-    expect(workedIn(result.events)).toEqual([CWD, ALTCHA, ALTCHA]);
+    expect(workedIn(result.events)).toEqual([CWD, ALTCHA_DIR, ALTCHA_DIR]);
     expect(times(result.events)).toEqual([at(0, 0), at(0, 5), at(0, 30)].map((date) => date.toISOString()));
   });
 
@@ -647,7 +648,12 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
       { sampleIntervalMs: 60_000 },
     );
 
-    expect(workedIn(result.events)).toEqual([`${sdk}/libs/query/src/lib/auth/features`, sdk, sdk, sdk]);
+    expect(workedIn(result.events)).toEqual([
+      `${sdk}/libs/query/src/lib/auth/features/`,
+      `${sdk}/`,
+      `${sdk}/`,
+      `${sdk}/`,
+    ]);
   });
 
   it.each([
@@ -693,7 +699,7 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
   ])('follows a command that clearly writes into another checkout: %s', (command) => {
     const result = parse([toolCall({ minute: 0, name: 'Bash', input: { command: `cd ${ALTCHA} && ${command}` } })]);
 
-    expect(workedIn(result.events)).toEqual([ALTCHA]);
+    expect(workedIn(result.events)).toEqual([ALTCHA_DIR]);
   });
 
   it.each([
@@ -703,7 +709,7 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
   ])('follows the directory in force at the step that writes: %s', (command) => {
     const result = parse([toolCall({ minute: 0, name: 'Bash', input: { command } })]);
 
-    expect(workedIn(result.events)).toEqual([ALTCHA]);
+    expect(workedIn(result.events)).toEqual([ALTCHA_DIR]);
   });
 
   it('returns to the working directory for a command that changes into no absolute path', () => {
@@ -715,7 +721,7 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
       { sampleIntervalMs: 60_000 },
     );
 
-    expect(workedIn(result.events)).toEqual([ALTCHA, CWD]);
+    expect(workedIn(result.events)).toEqual([ALTCHA_DIR, CWD]);
   });
 
   it('keeps where the work was for a tool call that names no path', () => {
@@ -727,7 +733,7 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
       { sampleIntervalMs: 60_000 },
     );
 
-    expect(workedIn(result.events)).toEqual([ALTCHA, ALTCHA]);
+    expect(workedIn(result.events)).toEqual([ALTCHA_DIR, ALTCHA_DIR]);
   });
 
   it('stamps the turn and the prompt with it as well', () => {
@@ -736,8 +742,8 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
       prompt({ minute: 1 }),
     ]);
 
-    expect(workedIn(result.usage)).toEqual([ALTCHA]);
-    expect(workedIn(result.prompts)).toEqual([ALTCHA]);
+    expect(workedIn(result.usage)).toEqual([ALTCHA_DIR]);
+    expect(workedIn(result.prompts)).toEqual([ALTCHA_DIR]);
   });
 
   it('carries it into the next read of the same log', () => {
@@ -746,6 +752,6 @@ describe('parseClaudeCodeSessionLog, on where the work happened', () => {
       resume: { after: first.events.at(-1)?.at, title: first.title, cwd: CWD, session: first.session },
     });
 
-    expect(workedIn(next.events)).toEqual([ALTCHA]);
+    expect(workedIn(next.events)).toEqual([ALTCHA_DIR]);
   });
 });

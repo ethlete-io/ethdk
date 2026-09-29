@@ -25,6 +25,23 @@ describe('sessionPieces', () => {
     ).toEqual({ a: 'a', b: 'a' });
   });
 
+  it('reads a directory a shell command wrote in at the grain of the files beside it', () => {
+    const found = sessionPieces({
+      sessions: [
+        session({ id: 'a', from: 0, to: 40, paths: ['libs/timetrack/src/lib/rows/merge.ts', 'libs/timetrack/'] }),
+        session({ id: 'b', from: 60, to: 90, paths: ['libs/timetrack/'] }),
+        session({
+          id: 'c',
+          from: 30,
+          to: 50,
+          paths: ['libs/eslint-plugin/src/rules/a.ts', 'libs/eslint-plugin/src/rules/b.ts', 'libs/eslint-plugin/'],
+        }),
+      ],
+    });
+
+    expect(found.get('b')).toEqual({ piece: 'a', workPath: 'libs/timetrack' });
+  });
+
   it('keeps sessions one after the other in two projects apart', () => {
     expect(
       piecesOf([

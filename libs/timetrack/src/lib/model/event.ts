@@ -74,6 +74,9 @@ export type AgentSessionEvent = CollectedEventBase<'agent-session', 'agent-sessi
    * Where the work happened: the absolute path the latest tool call named, else `cwd`. An agent can
    * work in another checkout than the one it was started in, and `cwd` alone never says so. Absent on
    * everything a parser that did not read tool calls wrote.
+   *
+   * A path that ends in `/` names a directory a shell command wrote in; any other names a file, or is
+   * `cwd` itself. Samples written before 2026-09-29 name a directory without the `/`.
    */
   workedIn?: string;
   /** The session's own summary line, when it has one. */
