@@ -86,7 +86,8 @@ export const autoDescriptionRequest = (options: {
   };
 };
 
-const storedDescriptionSource = (edits: DayReviewEdits, id: string) => {
+/** Who wrote the description the edits hold for a row, or `observed` where none is stored. */
+export const storedDescriptionSource = (edits: DayReviewEdits, id: string) => {
   const pinned = edits.pinned.find((entry) => entry.id === id);
 
   if (pinned) return storedSourceOf({ set: !!pinned.description, source: pinned.sources?.description });

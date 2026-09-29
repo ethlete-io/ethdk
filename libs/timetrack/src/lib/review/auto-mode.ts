@@ -2,13 +2,15 @@ import { ActionClasses, actionClassOf } from '../agent-api/action-classes';
 import { AgentApproval, AgentApprovalRequest, AutoModeApplyRequest } from '../agent-api/approval-queue';
 import { AgentApiRequest } from '../agent-api/model';
 import { UnnamedContext } from '../model/attribution';
-import { contextKey, dominantContext } from '../model/block';
+import { contextKey, dominantContext, streamKeyLabel } from '../model/block';
 import { RowFieldSources, mayAutoWrite, rowFieldSourceOf } from '../model/field-source';
 import { StandIn, standInResolutionSourceOf } from '../model/stand-in';
 import { WorkGroup } from '../rows/merge';
 import { unnamedRowId } from '../rows/propose';
 import { setRowIssue } from './edits';
+import { WorklogWritingRequest } from '../ticket/worklog';
 import { TicketWritingRequest } from '../ticket/write';
+import { autoDescriptionRowId, storedDescriptionSource } from './auto-description';
 import { AutoModeAnswer, AutoModeSubject, DayReviewEdits, ReviewedRow } from './model';
 
 export const autoModeSubjectKey = (subject: AutoModeSubject) =>
@@ -374,12 +376,13 @@ export type AutoModeReadoutStatus =
   | 'overruled'
   | 'unused'
   | 'not-queued'
+  | 'written'
   | 'failed';
 
 /** One thing auto mode asked about today, and what came of it, read from what the app stored. */
 export type AutoModeReadoutEntry = {
   key: string;
-  kind: AutoModeSubject['kind'];
+  kind: AutoModeSubject['kind'] | 'description';
   label: string;
   askedAtMs: number;
   status: AutoModeReadoutStatus;
@@ -388,9 +391,11 @@ export type AutoModeReadoutEntry = {
   summary?: string;
   /** The rows of the day that carry `issueKey` as auto mode's naming. */
   namedRows: number;
+  /** The worklog line it wrote for a row. */
+  description?: string;
   error?: string;
   /** The masked payload that left the machine. */
-  request: TicketWritingRequest;
+  request: TicketWritingRequest | WorklogWritingRequest;
 };
 
 const autoNamedRows = (edits: DayReviewEdits, issueKey: string | undefined) => {
@@ -409,9 +414,95 @@ const approvalStatusFor = (approval: ApprovalView): AutoModeReadoutStatus | unde
   return approval.error === undefined ? undefined : 'failed';
 };
 
+const descriptionReadout = (options: {
+  edits: DayReviewEdits;
+  rows: readonly Pick<ReviewedRow, 'id' | 'recutOf' | 'laneKey' | 'issueKey'>[];
+}): AutoModeReadoutEntry[] =>
+  (options.edits.autoDescriptions ?? []).map((answer): AutoModeReadoutEntry => {
+    const row = options.rows.find((entry) => autoDescriptionRowId(entry) === answer.rowId);
+    const base = {
+      key: `description:${answer.rowId}`,
+      kind: 'description' as const,
+      label: row?.laneKey ? streamKeyLabel(row.laneKey) : (answer.request.repo ?? 'a code row'),
+      askedAtMs: answer.askedAtMs,
+      namedRows: 0,
+      request: answer.request,
+      ...(row?.issueKey ? { issueKey: row.issueKey } : {}),
+    };
+
+    if (!answer.description) return { ...base, status: 'failed' };
+
+    const status = storedDescriptionSource(options.edits, answer.rowId) === 'human' ? 'overruled' : 'written';
+
+    return { ...base, status, description: answer.description };
+  });
+
+const ticketReadout = (options: {
+  day: string;
+  edits: DayReviewEdits;
+  approvals: readonly ApprovalView[];
+  classes: ActionClasses;
+  standIns: readonly Pick<StandIn, 'id' | 'name' | 'state' | 'issueKey' | 'resolutionSource'>[];
+}): AutoModeReadoutEntry[] =>
+  (options.edits.auto ?? []).map((answer): AutoModeReadoutEntry => {
+    const { subject, outcome } = answer;
+    const standIn =
+      subject.kind === 'stand-in' ? options.standIns.find((entry) => entry.id === subject.standInId) : undefined;
+    const base = {
+      key: autoModeSubjectKey(subject),
+      kind: subject.kind,
+      label:
+        subject.kind === 'context' ? autoModeContextLabel(subject.contextId) : (standIn?.name ?? 'a deleted stand-in'),
+      askedAtMs: answer.askedAtMs,
+      request: answer.request,
+    };
+
+    if (outcome.kind === 'failed') return { ...base, status: 'failed', namedRows: 0 };
+
+    if (outcome.kind === 'draft') {
+      const approval = outcome.approvalId
+        ? options.approvals.find((item) => item.id === outcome.approvalId)
+        : undefined;
+      const issueKey =
+        outcome.createdKey ?? (approval?.state === 'approved' ? createdIssueKeyOf(approval.result) : undefined);
+      const draft = { ...base, summary: outcome.summary, namedRows: autoNamedRows(options.edits, issueKey) };
+      const waiting = approval ? approvalStatusFor(approval) : undefined;
+
+      if (waiting) return { ...draft, status: waiting, ...(approval?.error ? { error: approval.error } : {}) };
+      if (issueKey) return { ...draft, status: 'filed', issueKey };
+      if (actionClassOf('autoMode.create', options.classes) === 'human-only') return { ...draft, status: 'held' };
+
+      return { ...draft, status: 'not-queued' };
+    }
+
+    const { issueKey } = outcome;
+    const found = { ...base, issueKey, namedRows: autoNamedRows(options.edits, issueKey) };
+    const approval = applyApprovalOf({ approvals: options.approvals, day: options.day, subject });
+    const applied =
+      subject.kind === 'context'
+        ? found.namedRows > 0
+        : standIn?.state === 'resolved' && standIn.issueKey === issueKey && standIn.resolutionSource === 'auto';
+
+    if (applied) return { ...found, status: 'applied' };
+    if (standIn && standInResolutionSourceOf(standIn) === 'human') return { ...found, status: 'overruled' };
+
+    if (approval) {
+      const waiting = approvalStatusFor(approval);
+
+      if (waiting) return { ...found, status: waiting, ...(approval.error ? { error: approval.error } : {}) };
+
+      return { ...found, status: 'approved' };
+    }
+
+    if (actionClassOf('autoMode.apply', options.classes) === 'human-only') return { ...found, status: 'held' };
+
+    return { ...found, status: 'unused' };
+  });
+
 /**
- * What auto mode did on a day, one entry per band or stand-in it asked about, oldest first. Every
- * status is read from the stored answers, rows, stand-ins and queue, never from what it meant to do.
+ * What auto mode did on a day, one entry per band or stand-in it asked about and per row it described,
+ * oldest first. Every status is read from the stored answers, rows, stand-ins and queue, never from
+ * what it meant to do.
  */
 export const autoModeReadout = (options: {
   day: string;
@@ -419,62 +510,8 @@ export const autoModeReadout = (options: {
   approvals: readonly ApprovalView[];
   classes: ActionClasses;
   standIns: readonly Pick<StandIn, 'id' | 'name' | 'state' | 'issueKey' | 'resolutionSource'>[];
+  rows?: readonly Pick<ReviewedRow, 'id' | 'recutOf' | 'laneKey' | 'issueKey'>[];
 }): AutoModeReadoutEntry[] =>
-  [...(options.edits.auto ?? [])]
-    .sort((left, right) => left.askedAtMs - right.askedAtMs)
-    .map((answer): AutoModeReadoutEntry => {
-      const { subject, outcome } = answer;
-      const standIn =
-        subject.kind === 'stand-in' ? options.standIns.find((entry) => entry.id === subject.standInId) : undefined;
-      const base = {
-        key: autoModeSubjectKey(subject),
-        kind: subject.kind,
-        label:
-          subject.kind === 'context'
-            ? autoModeContextLabel(subject.contextId)
-            : (standIn?.name ?? 'a deleted stand-in'),
-        askedAtMs: answer.askedAtMs,
-        request: answer.request,
-      };
-
-      if (outcome.kind === 'failed') return { ...base, status: 'failed', namedRows: 0 };
-
-      if (outcome.kind === 'draft') {
-        const approval = outcome.approvalId
-          ? options.approvals.find((item) => item.id === outcome.approvalId)
-          : undefined;
-        const issueKey =
-          outcome.createdKey ?? (approval?.state === 'approved' ? createdIssueKeyOf(approval.result) : undefined);
-        const draft = { ...base, summary: outcome.summary, namedRows: autoNamedRows(options.edits, issueKey) };
-        const waiting = approval ? approvalStatusFor(approval) : undefined;
-
-        if (waiting) return { ...draft, status: waiting, ...(approval?.error ? { error: approval.error } : {}) };
-        if (issueKey) return { ...draft, status: 'filed', issueKey };
-        if (actionClassOf('autoMode.create', options.classes) === 'human-only') return { ...draft, status: 'held' };
-
-        return { ...draft, status: 'not-queued' };
-      }
-
-      const { issueKey } = outcome;
-      const found = { ...base, issueKey, namedRows: autoNamedRows(options.edits, issueKey) };
-      const approval = applyApprovalOf({ approvals: options.approvals, day: options.day, subject });
-      const applied =
-        subject.kind === 'context'
-          ? found.namedRows > 0
-          : standIn?.state === 'resolved' && standIn.issueKey === issueKey && standIn.resolutionSource === 'auto';
-
-      if (applied) return { ...found, status: 'applied' };
-      if (standIn && standInResolutionSourceOf(standIn) === 'human') return { ...found, status: 'overruled' };
-
-      if (approval) {
-        const waiting = approvalStatusFor(approval);
-
-        if (waiting) return { ...found, status: waiting, ...(approval.error ? { error: approval.error } : {}) };
-
-        return { ...found, status: 'approved' };
-      }
-
-      if (actionClassOf('autoMode.apply', options.classes) === 'human-only') return { ...found, status: 'held' };
-
-      return { ...found, status: 'unused' };
-    });
+  [...ticketReadout(options), ...descriptionReadout({ edits: options.edits, rows: options.rows ?? [] })].sort(
+    (left, right) => left.askedAtMs - right.askedAtMs,
+  );

@@ -101,7 +101,7 @@ export const createFakePorts = (): HostPorts => {
   // Read through the same parse the real store uses. A seed crosses into the page as JSON, so every
   // `Date` on it arrives as a string, and only the parse turns them back.
   let settings: TimetrackSettings = parseTimetrackSettings(world.settings);
-  let pausedAt: Date | null = null;
+  let pausedAt: Date | null = world.collectionPausedAt;
   let reasoningRuns = 0;
   let agentRuns = 0;
 

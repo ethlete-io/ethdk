@@ -1,5 +1,5 @@
 import { computed, effect, untracked } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   AUTO_MODE_CLIENT,
@@ -59,6 +59,7 @@ import {
   defer,
   finalize,
   from,
+  interval,
   map,
   of,
   switchMap,
@@ -71,6 +72,9 @@ import { injectTimetrackSettings } from '../settings/settings';
 import { injectWindowLock } from '../window-lock';
 import { injectDayReview } from './day-review';
 import { ProjectIssues, readProjectIssues$ } from './project-issues';
+
+/** How often a row's settle time is checked again: a row settles by the clock, not by a change. */
+const DESCRIPTION_TICK_MS = 60_000;
 
 type Ask = { day: string; subject: AutoModeSubject };
 
@@ -120,6 +124,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const windowLock = injectWindowLock();
   const jobs$ = new Subject<Job>();
   const pending = new Set<string>();
+  const minuteTick = toSignal(interval(DESCRIPTION_TICK_MS), { initialValue: -1 });
 
   const enabled = computed(() => {
     const { reasoning } = settings.settings();
@@ -162,6 +167,8 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const describedNow = (day: string) => {
     const edits = dayReview.storedEdits();
+
+    minuteTick();
 
     if (!edits || dayReview.isLoading() || dayReview.dayKey() !== day) return [];
 
@@ -561,6 +568,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         approvals: approvals.items(),
         classes: settings.settings().actionClasses,
         standIns: settings.settings().standIns,
+        rows: dayReview.rows(),
       });
     }),
   };

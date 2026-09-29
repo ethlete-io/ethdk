@@ -13,6 +13,7 @@ const STATUS_TEXT: Record<AutoModeReadoutStatus, string> = {
   overruled: 'you named it yourself',
   unused: 'found, not applied',
   'not-queued': 'drafted, not queued',
+  written: 'described',
   failed: 'the ask failed',
 };
 
@@ -36,6 +37,10 @@ const STATUS_TEXT: Record<AutoModeReadoutStatus, string> = {
 
             @if (entry.summary) {
               <span class="text-et-surface-muted">Draft: {{ entry.summary }}</span>
+            }
+
+            @if (entry.description) {
+              <span class="text-et-surface-muted">Worklog: {{ entry.description }}</span>
             }
 
             @if (entry.error) {

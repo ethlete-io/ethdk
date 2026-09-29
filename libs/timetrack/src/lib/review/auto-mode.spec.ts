@@ -26,7 +26,8 @@ import {
   withAutoModeCreated,
   withAutoModeRowNames,
 } from './auto-mode';
-import { setRowIssue } from './edits';
+import { autoDescriptionRowId, withAutoModeDescription } from './auto-description';
+import { setRowDescription, setRowIssue } from './edits';
 import { AutoModeAnswer, DayReviewEdits, EMPTY_DAY_REVIEW_EDITS, ReviewedRow } from './model';
 import { reviewDay } from './review-day';
 
@@ -496,6 +497,60 @@ describe('autoModeReadout', () => {
     const edits = withAutoModeAnswer(EMPTY_DAY_REVIEW_EDITS, { ...drafted, outcome: { kind: 'failed' } });
 
     expect(readout({ edits })[0]?.status).toBe('failed');
+  });
+
+  describe('a row auto mode described', () => {
+    const [row] = rowsOf(EMPTY_DAY_REVIEW_EDITS);
+
+    if (!row) throw new Error('no row');
+
+    const request = { repo: 'Repo-1', minutes: 60, issue: { key: 'ABC-1' }, notes: [] };
+    const described = (description?: string) =>
+      withAutoModeDescription({
+        edits: EMPTY_DAY_REVIEW_EDITS,
+        row,
+        answer: {
+          rowId: autoDescriptionRowId(row),
+          askedAtMs: at('10:00').getTime(),
+          request,
+          ...(description ? { description } : {}),
+        },
+      });
+    const readRows = (edits: DayReviewEdits) =>
+      autoModeReadout({ day: TODAY, edits, approvals: [], classes: {}, standIns: [], rows: rowsOf(edits) });
+
+    it('reads the line it wrote, under the lane label of the row rather than the masked one', () => {
+      expect(readRows(described('Built the export'))).toEqual([
+        expect.objectContaining({
+          key: `description:${autoDescriptionRowId(row)}`,
+          kind: 'description',
+          status: 'written',
+          description: 'Built the export',
+          label: 'shop',
+        }),
+      ]);
+    });
+
+    it('reads a line the user wrote over as overruled', () => {
+      const edits = described('Built the export');
+      const [current] = rowsOf(edits);
+
+      if (!current) throw new Error('no row');
+
+      const overruled = setRowDescription({ edits, row: current, description: 'My own words' });
+
+      expect(readRows(overruled)[0]?.status).toBe('overruled');
+    });
+
+    it('reads an answer with no line as failed', () => {
+      expect(readRows(described())[0]?.status).toBe('failed');
+    });
+
+    it('orders descriptions and ticket asks by when they were asked', () => {
+      const edits = withAutoModeAnswer(described('Built the export'), { ...drafted, askedAtMs: at('11:00').getTime() });
+
+      expect(readRows(edits).map((entry) => entry.kind)).toEqual(['description', 'context']);
+    });
   });
 });
 

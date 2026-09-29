@@ -1,6 +1,13 @@
 import { Page } from '@playwright/test';
-import { E2E_PARENT_ID, E2E_PARENT_KEY, E2E_REPO, defaultSettings } from '@ethlete/timetrack/testing';
-import { TimetrackSettings } from '@ethlete/timetrack';
+import {
+  E2E_ISSUE_BRANCH,
+  E2E_ISSUE_KEY,
+  E2E_PARENT_ID,
+  E2E_PARENT_KEY,
+  E2E_REPO,
+  defaultSettings,
+} from '@ethlete/timetrack/testing';
+import { CollectedEvent, TimetrackSettings } from '@ethlete/timetrack';
 import {
   E2E_DAY_KEY,
   E2E_NOW,
@@ -34,7 +41,21 @@ const openSuggestions = async (page: Page) => {
   await page.getByRole('tab', { name: 'Suggestions' }).click();
 };
 
-type DayRows = { rows: { issueKey?: string; sources: { issue: string } }[] };
+type DayRows = {
+  rows: { issueKey?: string; description: string; sources: { issue: string; description: string } }[];
+};
+
+const FAKE_WORKLOG = 'Worked by the fake agent.';
+
+const describedRow = async (page: Page) => {
+  const answer = await askAgent<DayRows>(page, { op: 'day.rows', day: E2E_DAY_KEY });
+
+  if (!answer.ok) return undefined;
+
+  const row = answer.value.rows.find((entry) => entry.issueKey === E2E_ISSUE_KEY);
+
+  return row && { description: row.description, source: row.sources.description };
+};
 
 test.describe('auto mode on a band no issue matches', () => {
   test.beforeEach(async ({ page }) => {
@@ -95,8 +116,10 @@ test.describe('auto mode on a stand-in of today', () => {
   test('reads out the stand-in it resolved', async ({ page }) => {
     const readout = await openAutoModeReadout(page);
 
-    await expect(readout.locator('[data-auto-entry][data-status="applied"]')).toHaveCount(1);
-    await expect(readout.locator('[data-auto-entry]').first()).toContainText('applied');
+    const applied = readout.locator('[data-auto-entry][data-status="applied"]');
+
+    await expect(applied).toHaveCount(1);
+    await expect(applied).toContainText('applied');
   });
 });
 
@@ -191,5 +214,63 @@ test.describe('the sidebar line of auto mode', () => {
 
     await expect(page.getByRole('link', { name: /Settings/ })).toBeVisible();
     await expect(statusLine(page)).toHaveCount(0);
+  });
+});
+
+test.describe('auto mode on a settled code row with a ticket', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, settings: withAutoMode(defaultSettings()) });
+    await page.goto('/day');
+  });
+
+  test('writes its worklog description and reads it out', async ({ page }) => {
+    await expect.poll(() => describedRow(page)).toEqual({ description: FAKE_WORKLOG, source: 'auto' });
+
+    const readout = await openAutoModeReadout(page);
+    const entry = readout.locator('[data-auto-entry^="description:"]');
+
+    await expect(entry).toHaveCount(1);
+    await expect(entry).toHaveAttribute('data-status', 'written');
+    await expect(entry).toContainText(`Worklog: ${FAKE_WORKLOG}`);
+  });
+});
+
+test.describe('auto mode on a code row that has not settled yet', () => {
+  const at = (clock: string) => new Date(`${E2E_DAY_KEY}T${clock}:00.000Z`);
+  const focus = (clock: string, title: string): CollectedEvent => ({
+    at: at(clock),
+    source: 'window',
+    kind: 'window-focus',
+    appId: 'com.microsoft.VSCode',
+    title,
+  });
+
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, {
+      now: at('10:58'),
+      // Every collector run reloads the day, which asks again by itself. Paused, only the clock can.
+      collectionPausedAt: at('10:40'),
+      events: [
+        { at: at('09:00'), source: 'git', kind: 'git-checkout', repoPath: E2E_REPO, branch: E2E_ISSUE_BRANCH },
+        focus('09:01', 'user-management.ts - fut-frontend - Visual Studio Code'),
+        focus('09:25', 'invite.ts - fut-frontend - Visual Studio Code'),
+        focus('09:50', 'invite.spec.ts - fut-frontend - Visual Studio Code'),
+        focus('10:15', 'member.ts - fut-frontend - Visual Studio Code'),
+        { at: at('10:30'), source: 'idle', kind: 'idle-start' },
+      ],
+      settings: withAutoMode(defaultSettings()),
+    });
+    await page.goto('/day');
+  });
+
+  test('describes it once the clock alone has carried it past the settle time', async ({ page }) => {
+    await expect.poll(() => describedRow(page)).toBeDefined();
+    await page.clock.runFor(2_000);
+
+    expect((await describedRow(page))?.source).not.toBe('auto');
+
+    await page.clock.runFor('04:00');
+
+    await expect.poll(() => describedRow(page)).toEqual({ description: FAKE_WORKLOG, source: 'auto' });
   });
 });

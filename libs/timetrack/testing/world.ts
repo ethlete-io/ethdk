@@ -120,6 +120,8 @@ export type TimetrackWorldSeed = {
    * which a window must not read as an unlocked one.
    */
   windowLock?: FakeWindowLock;
+  /** When collection was paused. Absent: the app starts collecting. */
+  collectionPausedAt?: Date | string;
   faults?: FakeFault[];
   /** Secrets the keychain already holds, over the three tokens every seed starts with. */
   secrets?: Record<string, string>;
@@ -144,6 +146,7 @@ export type FakeWorld = {
   windowSource: FakeWindowSourceStatus;
   callSource: FakeCallSourceStatus;
   windowLock: FakeWindowLock;
+  collectionPausedAt: Date | null;
   backend: FakeBackend;
   secrets: Record<string, string>;
   spec: SpecFiles | null;
@@ -395,6 +398,7 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   windowSource: { kind: 'none', detail: null, capabilities: [], ...seed.windowSource },
   callSource: { kind: 'none', detail: null, watchingSinceMs: Date.now(), ...seed.callSource },
   windowLock: seed.windowLock ?? 'unlocked',
+  collectionPausedAt: seed.collectionPausedAt === undefined ? null : new Date(seed.collectionPausedAt),
   secrets: seed.secrets ?? {},
   spec: seed.spec ?? null,
   reviewOverrides: seed.reviewOverrides ?? {},
