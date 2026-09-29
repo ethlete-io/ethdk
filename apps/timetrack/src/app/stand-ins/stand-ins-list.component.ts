@@ -1,7 +1,7 @@
 import { Component, ViewEncapsulation, computed, input, signal } from '@angular/core';
 import { BUTTON_IMPORTS, EMPTY_STATE_IMPORTS, FORM_FIELD_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective } from '@ethlete/core';
-import { StandIn, formatDurationMs, standInWhere } from '@ethlete/timetrack';
+import { StandIn, formatDurationMs, standInDuplicateOf, standInWhere } from '@ethlete/timetrack';
 import { CreateTicketComponent } from '../day-review/create-ticket.component';
 import { formatDayRangeLabel, formatWeekdayLabel } from '../day-review/format';
 import { injectTicketDraft } from '../day-review/ticket-draft';
@@ -92,6 +92,16 @@ import { injectStandIns } from './stand-ins';
                 }
 
                 @if (!only()) {
+                  @if (entry.duplicate; as duplicate) {
+                    <button
+                      [attr.aria-label]="'Merge into the other ' + duplicate.name + ', ' + duplicate.where"
+                      (click)="store.merge({ fromId: entry.id, intoId: duplicate.id })"
+                      et-text-button
+                    >
+                      Merge into the other
+                    </button>
+                  }
+
                   @if (entry.isHidden) {
                     <button (click)="store.show(entry.id)" et-text-button>Show again</button>
                   } @else {
@@ -223,12 +233,13 @@ export class StandInsListComponent {
     const hidden = this.store.hidden();
     const stale = this.store.stale();
     const only = this.only();
+    const all = this.store.standIns();
 
-    return this.store
-      .standIns()
+    return all
       .filter((standIn) => !only || standIn.id === only)
       .map((standIn) => {
         const age = ages.get(standIn.id);
+        const duplicate = standInDuplicateOf({ standIn, standIns: all });
 
         return {
           id: standIn.id,
@@ -243,6 +254,11 @@ export class StandInsListComponent {
           isStale: stale.has(standIn.id),
           staleLabel: staleLabel(standIn),
           canReopen: this.store.canReopen(standIn),
+          duplicate: duplicate && {
+            id: duplicate.id,
+            name: duplicate.name,
+            where: standInWhere(duplicate) || 'written by hand',
+          },
         };
       });
   });

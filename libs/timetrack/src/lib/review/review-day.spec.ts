@@ -1589,6 +1589,16 @@ describe('reviewDay over a row named to a stand-in', () => {
     expect(reviewed([resolved])).toMatchObject({ issueKey: 'ABC-42', standInId: undefined });
   });
 
+  it('reads the stand-in it was merged into, and the issue once that one resolves', () => {
+    const into: StandIn = { ...standIn, id: 'stand-in:kept', mergedIds: [standIn.id] };
+
+    expect(reviewed([into])).toMatchObject({ standInId: 'stand-in:kept' });
+    expect(reviewed([{ ...into, state: 'resolved', issueKey: 'ABC-42' }])).toMatchObject({
+      issueKey: 'ABC-42',
+      standInId: undefined,
+    });
+  });
+
   it('reads as unnamed again once the stand-in it points at is gone', () => {
     const row = reviewed([]);
 

@@ -12,6 +12,7 @@ import {
   openStandIns,
   standInAge,
   standInDays,
+  standInDuplicateOf,
   standInHeldMs,
   standInWhere,
   workdaysBetween,
@@ -34,6 +35,28 @@ const rule = (overrides: Partial<AttributionRule> = {}): AttributionRule => ({
   author: 'user',
   createdAt: new Date('2026-09-14T00:00:00.000Z'),
   ...overrides,
+});
+
+describe('standInDuplicateOf', () => {
+  const oldest = standIn({ id: 'a', name: 'Competition journey overlay' });
+  const newer = standIn({ id: 'b', name: ' competition  journey overlay', createdAt: new Date('2026-09-20') });
+  const newest = standIn({ id: 'c', name: 'Competition journey overlay', createdAt: new Date('2026-09-25') });
+  const standIns = [
+    oldest,
+    newer,
+    newest,
+    standIn({ id: 'd', name: 'Other' }),
+    standIn({ id: 'e', name: 'Competition journey overlay', state: 'resolved', createdAt: new Date('2026-09-01') }),
+  ];
+
+  it('answers the oldest other open one with the same name, whatever the case and spacing', () => {
+    expect(standInDuplicateOf({ standIn: newest, standIns })?.id).toBe('a');
+    expect(standInDuplicateOf({ standIn: oldest, standIns })?.id).toBe('b');
+  });
+
+  it('answers nothing for a name no other open one carries', () => {
+    expect(standInDuplicateOf({ standIn: standIns[3] as StandIn, standIns })).toBeUndefined();
+  });
 });
 
 describe('matchStandIn', () => {

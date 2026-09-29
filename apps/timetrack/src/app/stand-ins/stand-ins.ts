@@ -202,6 +202,9 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     /** Lets auto mode resolve a stand-in the user reopened. */
     handBack: (id: string) => settings.resetStandInResolution(id),
 
+    /** Folds a stand-in into the other open one with its name. */
+    merge: (options: { fromId: string; intoId: string }) => settings.mergeStandIn(options),
+
     /** Puts the bands back to unnamed on every day the stand-in held, and takes its rules with it. */
     remove: (id: string) => settings.removeStandIn(id),
   };

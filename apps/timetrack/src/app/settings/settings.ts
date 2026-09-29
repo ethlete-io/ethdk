@@ -50,6 +50,7 @@ import {
   withoutStandIn,
   splitStandIn,
   withRenamedStandIn,
+  mergeStandIn,
   StandInSplitPiece,
   reopenStandIn,
   resolveStandIn,
@@ -351,6 +352,15 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     /** Gives one placeholder another name, leaving its days and the rules that name it alone. */
     renameStandIn: (options: { id: string; name: string }) =>
       apply(withRenamedStandIn({ settings: settings(), ...options })),
+
+    /** Folds one open placeholder into another. A refused merge writes nothing. */
+    mergeStandIn: (options: { fromId: string; intoId: string }) => {
+      const merge = mergeStandIn({ settings: settings(), ...options });
+
+      if (!merge.problem) apply(merge.settings);
+
+      return merge;
+    },
 
     /**
      * Cuts one placeholder into one per directory it covered. Answers what it did, or why it refused:

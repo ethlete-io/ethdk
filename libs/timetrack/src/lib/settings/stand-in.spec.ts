@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { AttributionRule, matchAttributionRule, standInIdOf } from '../model/attribution';
-import { StandIn } from '../model/stand-in';
+import { StandIn, findStandIn } from '../model/stand-in';
 import { DEFAULT_TIMETRACK_SETTINGS } from './model';
 import {
+  mergeStandIn,
   reopenStandIn,
   splitStandIn,
   resolveStandIn,
@@ -50,6 +51,60 @@ describe('withStandIn', () => {
 
     expect(settings.standIns).toHaveLength(1);
     expect(settings.standIns[0]?.name).toBe('Journey');
+  });
+});
+
+describe('mergeStandIn', () => {
+  const into = standIn({
+    id: 'stand-in-2',
+    name: 'Competition journey overlay',
+    days: ['2026-09-21'],
+    heldOn: ['feature/overlay'],
+    createdAt: new Date('2026-09-18T00:00:00.000Z'),
+  });
+  const from = standIn({ days: ['2026-09-14', '2026-09-21'], heldOn: ['main-spec'], mergedIds: ['stand-in-0'] });
+  const merged = () =>
+    mergeStandIn({
+      settings: settingsWith({
+        standIns: [from, into, standIn({ id: 'stand-in-3' })],
+        rules: [rule(), rule({ id: 'rule-2', target: { kind: 'stand-in', standInId: 'stand-in-3' } })],
+      }),
+      fromId: 'stand-in-1',
+      intoId: 'stand-in-2',
+    });
+
+  it('keeps one record with the days, branches and age of both, and the name of the kept one', () => {
+    const { settings, problem } = merged();
+
+    expect(problem).toBeUndefined();
+    expect(settings.standIns.map((entry) => entry.id)).toEqual(['stand-in-2', 'stand-in-3']);
+    expect(settings.standIns[0]).toMatchObject({
+      name: 'Competition journey overlay',
+      days: ['2026-09-14', '2026-09-21'],
+      heldOn: ['feature/overlay', 'main-spec'],
+      mergedIds: ['stand-in-1', 'stand-in-0'],
+      createdAt: new Date('2026-09-14T00:00:00.000Z'),
+    });
+  });
+
+  it('points the rules of the merged one at the kept one and leaves other rules alone', () => {
+    expect(merged().settings.attributionRules.map(standInIdOf)).toEqual(['stand-in-2', 'stand-in-3']);
+  });
+
+  it('finds the kept record under every merged id', () => {
+    const { standIns } = merged().settings;
+
+    expect(findStandIn({ id: 'stand-in-1', standIns })?.id).toBe('stand-in-2');
+    expect(findStandIn({ id: 'stand-in-0', standIns })?.id).toBe('stand-in-2');
+  });
+
+  it('refuses a resolved one, an unknown id, and a merge into itself', () => {
+    const settings = settingsWith({ standIns: [from, { ...into, state: 'resolved', issueKey: 'ET-1' }] });
+
+    expect(mergeStandIn({ settings, fromId: 'stand-in-1', intoId: 'stand-in-2' }).problem).toBeTruthy();
+    expect(mergeStandIn({ settings, fromId: 'stand-in-9', intoId: 'stand-in-1' }).problem).toBeTruthy();
+    expect(mergeStandIn({ settings, fromId: 'stand-in-1', intoId: 'stand-in-1' }).problem).toBeTruthy();
+    expect(mergeStandIn({ settings, fromId: 'stand-in-1', intoId: 'stand-in-2' }).settings).toBe(settings);
   });
 });
 

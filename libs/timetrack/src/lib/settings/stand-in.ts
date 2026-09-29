@@ -4,6 +4,7 @@ import { RowFieldSources, WriteSource, mayAutoWrite, mayWrite, rowFieldSourceOf 
 import {
   StandIn,
   StandInRefusal,
+  findStandIn,
   openStandIn,
   standInBranches,
   standInDays,
@@ -41,6 +42,52 @@ export const withNamedStandIn = (options: {
     rule: options.rule,
     supersededIds: options.supersededIds,
   });
+
+/** What a merge did, or why it did nothing. */
+export type StandInMerge = { settings: TimetrackSettings; problem?: string };
+
+/**
+ * Folds one open stand-in into another. The rules that named `fromId` name `intoId`, and the kept
+ * record takes the days and branches of both and the older `createdAt`. Its name, description and
+ * parent stay. Past days still store `fromId`; `findStandIn` reads it as `intoId`.
+ */
+export const mergeStandIn = (options: {
+  settings: TimetrackSettings;
+  fromId: string;
+  intoId: string;
+}): StandInMerge => {
+  const { settings, fromId, intoId } = options;
+  const from = settings.standIns.find((entry) => entry.id === fromId);
+  const into = settings.standIns.find((entry) => entry.id === intoId);
+
+  if (fromId === intoId) return { settings, problem: 'A stand-in cannot be merged into itself.' };
+  if (!from) return { settings, problem: `No stand-in ${fromId}.` };
+  if (!into) return { settings, problem: `No stand-in ${intoId}.` };
+  if (from.state !== 'open' || into.state !== 'open') return { settings, problem: 'Only open stand-ins merge.' };
+
+  const heldOn = [...new Set([...(into.heldOn ?? []), ...(from.heldOn ?? [])])];
+  const merged: StandIn = {
+    ...into,
+    days: [...new Set([...into.days, ...from.days])].sort(),
+    ...(heldOn.length ? { heldOn } : {}),
+    mergedIds: [...(into.mergedIds ?? []), from.id, ...(from.mergedIds ?? [])],
+    createdAt: from.createdAt < into.createdAt ? from.createdAt : into.createdAt,
+  };
+
+  return {
+    settings: {
+      ...settings,
+      standIns: settings.standIns.flatMap((entry) => {
+        if (entry.id === fromId) return [];
+
+        return entry.id === intoId ? [merged] : [entry];
+      }),
+      attributionRules: settings.attributionRules.map((rule) =>
+        standInIdOf(rule) === fromId ? { ...rule, target: { kind: 'stand-in', standInId: intoId } } : rule,
+      ),
+    },
+  };
+};
 
 /**
  * Gives one placeholder another name, and changes nothing else about it.
@@ -393,7 +440,7 @@ export const withStandInsKeyedByHand = (options: {
   rows: readonly { standInId?: string; issueKey?: string; sources?: RowFieldSources }[];
 }): TimetrackSettings =>
   options.rows.reduce((settings, row) => {
-    const standIn = row.standInId ? settings.standIns.find((entry) => entry.id === row.standInId) : undefined;
+    const standIn = row.standInId ? findStandIn({ id: row.standInId, standIns: settings.standIns }) : undefined;
 
     if (!standIn || standIn.state !== 'open' || !row.issueKey || rowFieldSourceOf(row, 'issue') !== 'human')
       return settings;

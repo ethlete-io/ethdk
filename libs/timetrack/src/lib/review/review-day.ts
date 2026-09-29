@@ -14,7 +14,7 @@ import { backgroundTest, recutReviewedRows } from './recut';
 import { formatDurationMs, formatTimeOfDay } from '../model/duration';
 import { Evidence, syncsWithoutReview } from '../model/evidence';
 import { WorklogProposal, WorklogProposalState, syncsInState } from '../model/proposal';
-import { StandIn, matchStandIn } from '../model/stand-in';
+import { StandIn, findStandIn, matchStandIn } from '../model/stand-in';
 import { TimeWindow, subtractWindows, windowsMs } from '../model/time-window';
 import {
   DayReview,
@@ -134,10 +134,11 @@ const evidenceWithinPin = (options: { evidence: readonly Evidence[]; pin: Pinned
 const readStandIn = (row: ReviewedRow, standIns: readonly StandIn[]): ReviewedRow => {
   if (!row.standInId) return row;
 
-  const standIn = standIns.find((entry) => entry.id === row.standInId);
+  const standIn = findStandIn({ id: row.standInId, standIns });
 
   if (!standIn) return { ...row, standInId: undefined };
-  if (standIn.state !== 'resolved' || !standIn.issueKey) return row;
+  if (standIn.state !== 'resolved' || !standIn.issueKey)
+    return standIn.id === row.standInId ? row : { ...row, standInId: standIn.id };
 
   return { ...row, standInId: undefined, issueKey: standIn.issueKey };
 };

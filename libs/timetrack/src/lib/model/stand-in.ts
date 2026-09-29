@@ -94,6 +94,11 @@ export type StandIn = {
    * Only the pickers and the list read it: a hidden stand-in still names its bands.
    */
   hiddenOn?: string;
+  /**
+   * The ids of the stand-ins merged into this one. A day review stores the id a row was named with, and
+   * a merge does not rewrite past days, so a lookup of a merged id must still reach this record.
+   */
+  mergedIds?: string[];
   author: NamingAuthor;
   createdAt: Date;
 };
@@ -188,6 +193,16 @@ export const isStandInRefused = (options: {
 export const openStandIns = (standIns: readonly StandIn[]) =>
   standIns.filter((standIn) => standIn.state === 'open').sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
+const nameKey = (name: string) => name.trim().replace(/\s+/g, ' ').toLowerCase();
+
+/** The oldest other open stand-in with the same name, which a merge folds this one into. */
+export const standInDuplicateOf = (options: { standIn: StandIn; standIns: readonly StandIn[] }) =>
+  options.standIn.state === 'open'
+    ? openStandIns(options.standIns)
+        .filter((other) => other.id !== options.standIn.id && nameKey(other.name) === nameKey(options.standIn.name))
+        .at(-1)
+    : undefined;
+
 /** Whether the user hid it and it took no band on a later day since. */
 export const isStandInHidden = (standIn: Pick<StandIn, 'state' | 'days' | 'hiddenOn'>) => {
   const hiddenOn = standIn.hiddenOn;
@@ -233,9 +248,13 @@ export const standInWhere = (standIn: Pick<StandIn, 'openedFor' | 'openedForBran
   return standIn.openedForBranch ? `${checkout}, on ${standIn.openedForBranch}` : checkout;
 };
 
-/** The stand-in with this id, or nothing when a rule points at one that was deleted. */
+/**
+ * The stand-in with this id, or the one it was merged into. Nothing when a rule points at one that was
+ * deleted.
+ */
 export const findStandIn = (options: { id: string; standIns: readonly StandIn[] }) =>
-  options.standIns.find((standIn) => standIn.id === options.id);
+  options.standIns.find((standIn) => standIn.id === options.id) ??
+  options.standIns.find((standIn) => standIn.mergedIds?.includes(options.id));
 
 /**
  * The stand-in covering a context, read through the narrowest rule that matches it.
