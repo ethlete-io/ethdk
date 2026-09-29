@@ -235,6 +235,20 @@ test.describe('choice-inputs / keyboard', () => {
     await expect(cheese).toHaveAttribute('aria-checked', 'false');
   });
 
+  test('checkbox group toggles on Space but leaves Enter alone', async ({ page }) => {
+    const root = await openStory(page, CHECKBOX_GROUP_DEFAULT);
+    const cheese = root.getByRole('checkbox', { name: 'Cheese' });
+
+    await pressKey(page, 'Tab');
+    await expect(cheese).toBeFocused();
+
+    await pressKey(page, 'Enter');
+    await expect(cheese).toHaveAttribute('aria-checked', 'false');
+
+    await pressKey(page, 'Space');
+    await expect(cheese).toHaveAttribute('aria-checked', 'true');
+  });
+
   test('segmented button group follows the same roving-selection pattern as radio', async ({ page }) => {
     const root = await openStory(page, SEGMENTED_BUTTON_GROUP_DEFAULT);
     const list = root.getByRole('radio', { name: 'List' });

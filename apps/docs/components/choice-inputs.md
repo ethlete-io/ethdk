@@ -113,7 +113,11 @@ Checkbox options and radios accept an `et-description` child for secondary text.
 | <kbd>ArrowUp</kbd> / <kbd>ArrowLeft</kbd>    | Previous enabled option, wrapping; checks it                          | Previous enabled option     |
 | <kbd>Home</kbd> / <kbd>End</kbd>             | First / last enabled option; checks it                                | First / last enabled option |
 | Printable characters                         | Next enabled option whose label starts with the typed text; checks it | Same, focus only            |
-| <kbd>Space</kbd> / <kbd>Enter</kbd>          | Checks the focused option                                             | Toggles the focused option  |
+| <kbd>Space</kbd>                             | Checks the focused option                                             | Toggles the focused option  |
+
+<kbd>Enter</kbd> does not select, per the ARIA radio and checkbox patterns, so it still
+submits the surrounding form. A checkbox group's value lists the checked options in their
+display order, not the order they were toggled or rendered.
 
 Typeahead buffers characters typed within 500 ms, so `bl` reaches "Blueberry" past
 "Banana"; repeating one letter cycles through the options that start with it. The

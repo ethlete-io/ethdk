@@ -478,3 +478,33 @@ describe('SelectionListDirective (roving tab stop and DOM order)', () => {
     expect(driver.host.value()).toBe('a');
   });
 });
+
+@Component({
+  template: `
+    <div [value]="value()" (valueChange)="value.set($event)" multiple etSelectionList>
+      @for (item of items(); track item) {
+        <div [value]="item" etSelectionOption>{{ item }}</div>
+      }
+    </div>
+  `,
+  imports: [SelectionListDirective, SelectionOptionDirective],
+})
+class ReorderingMultiSelectTestHost {
+  value = signal<string[]>([]);
+  items = signal(['a', 'c']);
+}
+
+describe('SelectionListDirective (multi value order)', () => {
+  it('builds the value in display order when an option is inserted in the middle', () => {
+    const driver = mountSelectionList(ReorderingMultiSelectTestHost);
+
+    driver.host.items.set(['a', 'b', 'c']);
+    driver.tick();
+
+    driver.selectOption(2);
+    driver.selectOption(0);
+    driver.selectOption(1);
+
+    expect(driver.host.value()).toEqual(['a', 'b', 'c']);
+  });
+});

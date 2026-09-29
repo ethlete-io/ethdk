@@ -30,7 +30,6 @@ const UNBOUND_VALUE = /* @__PURE__ */ Symbol('et-selection-option-unbound');
     '[attr.tabindex]': 'tabindex()',
     '(click)': 'select()',
     '(keydown.space)': 'select(); $event.preventDefault()',
-    '(keydown.enter)': 'select(); $event.preventDefault()',
     '(keydown.ArrowDown)': 'focusNext($event)',
     '(keydown.ArrowRight)': 'focusNext($event)',
     '(keydown.ArrowUp)': 'focusPrevious($event)',

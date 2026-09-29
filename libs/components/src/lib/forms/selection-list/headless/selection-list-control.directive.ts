@@ -11,7 +11,6 @@ import { SELECTION_LIST_TOKEN } from './selection-list.tokens';
     '[attr.tabindex]': 'list.disabled() ? -1 : 0',
     '(click)': 'toggle()',
     '(keydown.space)': 'toggle(); $event.preventDefault()',
-    '(keydown.enter)': 'toggle(); $event.preventDefault()',
   },
 })
 export class SelectionListControlDirective {

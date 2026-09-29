@@ -72,13 +72,17 @@ describe('CheckboxGroupSelectAllComponent', () => {
     expect(driver.controlAttr('aria-checked')).toBe('mixed');
   });
 
-  it('toggles with Space and Enter, like the checkbox it claims to be', () => {
+  it('toggles with Space and leaves Enter to the form, like the checkbox it claims to be', () => {
     const driver = create();
 
     driver.pressControl(' ');
     expect(driver.host.value()).toEqual(['a', 'b', 'c']);
 
-    driver.pressControl('Enter');
+    const enter = driver.pressControl('Enter');
+    expect(driver.host.value()).toEqual(['a', 'b', 'c']);
+    expect(enter.defaultPrevented).toBe(false);
+
+    driver.pressControl(' ');
     expect(driver.host.value()).toEqual([]);
   });
 

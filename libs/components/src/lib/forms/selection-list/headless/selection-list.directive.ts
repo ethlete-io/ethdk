@@ -29,6 +29,11 @@ import {
 } from './selection-list.tokens';
 import { controlTouches } from '../../../internals/touch-output';
 
+const sortConnectedItems = (items: SelectionListItem[]) =>
+  items.some((item) => !item.elementRef.nativeElement.isConnected)
+    ? items
+    : sortByDomOrder(items, (item) => item.elementRef.nativeElement);
+
 @Directive({
   selector: '[etSelectionList]',
   providers: [{ provide: SELECTION_LIST_TOKEN, useExisting: SelectionListDirective }],
@@ -79,6 +84,7 @@ export class SelectionListDirective
     disabled: this.disabled,
     pruneValueOnUnregister: true,
     mixed: this.mixed,
+    orderItems: sortConnectedItems,
   });
 
   private childMutations = signalElementMutations(inject<ElementRef<HTMLElement>>(ElementRef), {
@@ -90,13 +96,8 @@ export class SelectionListDirective
   public items = computed(
     () => {
       this.childMutations();
-      const items = this.selection.items();
 
-      if (items.some((item) => !item.elementRef.nativeElement.isConnected)) {
-        return items;
-      }
-
-      return sortByDomOrder(items, (item) => item.elementRef.nativeElement);
+      return sortConnectedItems(this.selection.items());
     },
     { equal: isSameOrder },
   );

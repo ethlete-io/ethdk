@@ -42,6 +42,19 @@ describe('SelectionOptionDirective (Home/End and typeahead)', () => {
     vi.useRealTimers();
   });
 
+  it('Enter does not select and is not swallowed, so a form can submit', () => {
+    driver.focusOption(1);
+
+    const enter = driver.pressOption(1, 'Enter');
+
+    expect(driver.host.value()).toBeNull();
+    expect(enter.defaultPrevented).toBe(false);
+
+    driver.pressOption(1, ' ');
+
+    expect(driver.host.value()).toBe('banana');
+  });
+
   describe('radio group', () => {
     it('End moves focus to and checks the last enabled option, Home the first', () => {
       driver.focusOption(1);

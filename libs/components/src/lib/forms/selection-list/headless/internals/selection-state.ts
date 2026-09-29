@@ -6,7 +6,7 @@ export type SelectionStateItem<TValue = unknown> = {
   disabled: Signal<boolean>;
 };
 
-export type SelectionStateConfig<TValue = unknown> = {
+export type SelectionStateConfig<TValue = unknown, TItem = SelectionStateItem<TValue>> = {
   value: WritableSignal<TValue | TValue[] | null>;
   multiple: Signal<boolean>;
   disabled: Signal<boolean>;
@@ -29,6 +29,8 @@ export type SelectionStateConfig<TValue = unknown> = {
   mixed?: WritableSignal<boolean>;
   /** Whether an item's value matches a value in `value`. Defaults to `===`. */
   compareWith?: Signal<(itemValue: TValue, value: TValue) => boolean>;
+  /** Orders the items a multi value is built from. Defaults to registration order. */
+  orderItems?: (items: TItem[]) => TItem[];
 };
 
 export type SelectionState<TValue = unknown, TItem extends SelectionStateItem<TValue> = SelectionStateItem<TValue>> = {
@@ -52,7 +54,7 @@ export const createSelectionState = <
   TValue = unknown,
   TItem extends SelectionStateItem<TValue> = SelectionStateItem<TValue>,
 >(
-  config: SelectionStateConfig<TValue>,
+  config: SelectionStateConfig<TValue, TItem>,
 ): SelectionState<TValue, TItem> => {
   const items = signal<TItem[]>([]);
 
@@ -143,6 +145,12 @@ export const createSelectionState = <
     });
   });
 
+  const checkedValues = () => {
+    const all = items();
+
+    return (config.orderItems ? config.orderItems(all) : all).filter((i) => i.checked()).map((i) => i.value());
+  };
+
   const registerItem = (item: TItem) => {
     items.update((list) => [...list, item]);
   };
@@ -165,12 +173,14 @@ export const createSelectionState = <
         return;
       }
 
-      const remainingChecked = items().filter((i) => i.checked());
-
       if (config.multiple()) {
-        config.value.set(remainingChecked.map((i) => i.value()));
+        config.value.set(checkedValues());
       } else {
-        config.value.set(remainingChecked[0]?.value() ?? null);
+        config.value.set(
+          items()
+            .find((i) => i.checked())
+            ?.value() ?? null,
+        );
       }
     });
   };
@@ -193,11 +203,7 @@ export const createSelectionState = <
 
     if (config.multiple()) {
       item.checked.update((v) => !v);
-      config.value.set(
-        items()
-          .filter((i) => i.checked())
-          .map((i) => i.value()),
-      );
+      config.value.set(checkedValues());
     } else {
       for (const i of items()) {
         i.checked.set(i === item);
@@ -217,11 +223,7 @@ export const createSelectionState = <
         item.checked.set(!item.disabled());
       }
 
-      config.value.set(
-        items()
-          .filter((i) => i.checked())
-          .map((i) => i.value()),
-      );
+      config.value.set(checkedValues());
       config.mixed.set(false);
 
       return;
@@ -235,11 +237,7 @@ export const createSelectionState = <
       }
     }
 
-    config.value.set(
-      items()
-        .filter((i) => i.checked())
-        .map((i) => i.value()),
-    );
+    config.value.set(checkedValues());
   };
 
   return {
