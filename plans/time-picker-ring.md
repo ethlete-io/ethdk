@@ -45,7 +45,8 @@ input, the time range input, the date-time input and the date-time range input.
 
 ## Status
 
-- Slice 1 (ring math): in progress.
+- Slice 1 (ring math): done, `time-picker/headless/internals/time-ring.ts`.
+- Slice 2 (headless ring): in progress.
 
 ## Slices
 
