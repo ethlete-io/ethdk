@@ -28,6 +28,7 @@ import {
   timetrackSearch,
   timetrackRemoveStandIn,
   timetrackRenameStandIn,
+  timetrackMergeStandIn,
   timetrackResyncAgentSessions,
   timetrackSplitStandIn,
   timetrackStandIns,
@@ -69,6 +70,8 @@ const FLAGS_WITH_VALUE = [
   '--repo',
   '--name',
   '--rename',
+  '--merge',
+  '--into',
 ];
 
 /** Every human-readable line, with anything a terminal would act on printed rather than obeyed. */
@@ -644,6 +647,8 @@ Every write waits in the app until the user approves it there, and prints an app
                                 Delete one placeholder, and the rule that named it
   timetrack standins --rename <id> --name <text>
                                 Give one placeholder another name, keeping its days and its rules
+  timetrack standins --merge <id> --into <id>
+                                Fold one open placeholder into another, with its days and its rules
   timetrack standins --split <id> [--repo <dir>] [--paths <dir>,<dir>] [--claim <dir>] [--author <email>]
                                 [--force]
                                 Cut one that covered a whole checkout into one per directory
@@ -1059,6 +1064,21 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
       const queued = await timetrackRenameStandIn({ id: rename, name });
 
       return printedQueued({ queued, what: `rename ${rename} to ${name}`, json });
+    }
+
+    const merge = flagValue(argv, '--merge');
+    const into = flagValue(argv, '--into');
+
+    if (merge && !into) {
+      say(`A merge needs the placeholder it goes into. Pass --into <id> with --merge ${merge}.`);
+
+      return 1;
+    }
+
+    if (merge && into) {
+      const queued = await timetrackMergeStandIn({ id: merge, into });
+
+      return printedQueued({ queued, what: `merge ${merge} into ${into}`, json });
     }
 
     const remove = flagValue(argv, '--remove');

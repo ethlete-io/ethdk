@@ -136,6 +136,17 @@ describe('parseAgentRequest', () => {
     });
   });
 
+  it('reads a stand-in merge, and refuses one without the stand-in it goes into', () => {
+    expect(parseAgentRequest({ op: 'standIn.merge', id: 'stand-in:2', into: 'stand-in:1' })).toEqual({
+      ok: true,
+      request: { op: 'standIn.merge', id: 'stand-in:2', into: 'stand-in:1' },
+    });
+    expect(parseAgentRequest({ op: 'standIn.merge', id: 'stand-in:2' })).toEqual({
+      ok: false,
+      message: 'standIn.merge needs a into.',
+    });
+  });
+
   it('takes the stand-in split op, and drops a commit that names no day or no file', () => {
     expect(
       parseAgentRequest({

@@ -122,6 +122,10 @@ export type AgentApiStandIn = {
   openedForBranch?: string;
   /** The directory of that branch it covers, where the branch names no piece of work of its own. */
   openedForWorkPath?: string;
+  /** The day the user hid it on. It stays hidden until it holds a band on a later day. */
+  hiddenOn?: string;
+  /** The ids of the stand-ins merged into this one. */
+  mergedIds?: string[];
 };
 
 /** One standing statement about a path: whether it is work, and which project it files into. */
@@ -488,6 +492,7 @@ export type AgentApiRequest =
   | { op: 'standIn.list' }
   | { op: 'standIn.remove'; id: string }
   | { op: 'standIn.rename'; id: string; name: string }
+  | { op: 'standIn.merge'; id: string; into: string }
   | {
       op: 'standIn.split';
       id: string;
@@ -576,6 +581,7 @@ export const AGENT_API_OP_CLASSES: Record<AgentApiOp, OpClass> = {
   'standIn.list': 'read',
   'standIn.remove': 'human-only',
   'standIn.rename': 'local',
+  'standIn.merge': 'human-only',
   'standIn.split': 'local',
   'naming.offers': 'read',
   'tempo.worklogs': 'read',

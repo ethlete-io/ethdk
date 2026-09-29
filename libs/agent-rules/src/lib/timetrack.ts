@@ -596,6 +596,13 @@ export const timetrackRenameStandIn = (options: { id: string; name: string }) =>
   askTimetrack<TimetrackQueued>({ op: 'standIn.rename', ...options });
 
 /**
+ * Queues the merge of one open placeholder into another. Once approved, the result is the list as it
+ * reads afterwards. The kept one takes the days and the rules of both.
+ */
+export const timetrackMergeStandIn = (options: { id: string; into: string }) =>
+  askTimetrack<TimetrackQueued>({ op: 'standIn.merge', ...options });
+
+/**
  * Plans the cut of one placeholder into one per directory it turned out to cover, and writes nothing.
  *
  * The commits come from the caller: one

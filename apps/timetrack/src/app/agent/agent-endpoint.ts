@@ -636,6 +636,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         openedFor: standIn.openedFor,
         openedForBranch: standIn.openedForBranch,
         openedForWorkPath: standIn.openedForWorkPath,
+        hiddenOn: standIn.hiddenOn,
+        mergedIds: standIn.mergedIds && [...standIn.mergedIds],
       })),
     });
 
@@ -669,6 +671,12 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     settings.renameStandIn(options);
 
     return standIns$();
+  };
+
+  const mergeStandIn$ = (options: { id: string; into: string }): Observable<{ standIns: AgentApiStandIn[] }> => {
+    const merge = settings.mergeStandIn({ fromId: options.id, intoId: options.into });
+
+    return merge.problem ? throwError(() => new Error(merge.problem)) : standIns$();
   };
 
   /**
@@ -770,6 +778,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return removeStandIn$(request.id);
       case 'standIn.rename':
         return renameStandIn$(request);
+      case 'standIn.merge':
+        return mergeStandIn$(request);
       case 'standIn.split':
         return splitStandIn$(request);
       case 'naming.offers':

@@ -22,7 +22,7 @@ in this machine's keychain, and every repository asks it:
 Add `--json` to any of them when you need to read a field rather than a line.
 
 **Every write waits for the user's approval in the app.** `create`, `log`, `edit`, `standins
---remove | --rename | --split --force`, `sync --write`, `worklog --delete` and `resync` answer at
+--remove | --rename | --merge | --split --force`, `sync --write`, `worklog --delete` and `resync` answer at
 once with an approval id and write nothing yet. The user approves or rejects the request in
 Timetrack; `approval <id>` reads the outcome:
 
@@ -42,28 +42,29 @@ nobody can rotate.
 
 ## What each command is for
 
-| Command                                    | Use it when                                                               |
-| ------------------------------------------ | ------------------------------------------------------------------------- |
-| `status`                                   | Before anything else, when a Jira command failed and you need the cause   |
-| `instance`                                 | A setup step needs the instance's levels or its branch-subject field      |
-| `issue <KEY>`                              | The user names a key and you need its summary, type or parent             |
-| `search [text]`                            | The user describes work but names no key                                  |
-| `project [path]`                           | You need the project a repository files into                              |
-| `create --summary "…"`                     | The work has no ticket and the user asked for one                         |
-| `log --issue <KEY> --minutes <n>`          | The user asks to record time that nothing observed                        |
-| `day [YYYY-MM-DD]`                         | You need the evidence a day holds, not a screenshot of it                 |
-| `rows [YYYY-MM-DD]`                        | You need the rows the day drew, and the ids an edit names them by         |
-| `edit <row-id> …`                          | The user asks you to correct one row of a day                             |
-| `rules`                                    | You need to know why a band was named, or why it was not                  |
-| `standins`                                 | You need to know which work still waits for a ticket, and for how long    |
-| `standins --remove <id>`                   | A placeholder is wrong or too wide, and the user asked you to delete it   |
-| `standins --rename <id> --name <text>`     | The name a placeholder carries is wrong, and the user asked you to fix it |
-| `naming [YYYY-MM-DD]`                      | A checkout was never offered a name and you need the step that stopped    |
-| `worklogs [from] [to]`                     | You need what the user already booked in Tempo over a span of days        |
-| `calendar [from] [to]`                     | You need the user's meetings and calendar entries over a span of days     |
-| `sync <YYYY-MM-DD>`                        | The user asks what a Tempo sync of a day would write, or asks to sync it  |
-| `worklog --delete <id> --day <YYYY-MM-DD>` | The user asked you to delete one of their own Tempo worklogs              |
-| `approval <id>`                            | A write you queued: whether the user approved it, and what it answered    |
+| Command                                    | Use it when                                                                 |
+| ------------------------------------------ | --------------------------------------------------------------------------- |
+| `status`                                   | Before anything else, when a Jira command failed and you need the cause     |
+| `instance`                                 | A setup step needs the instance's levels or its branch-subject field        |
+| `issue <KEY>`                              | The user names a key and you need its summary, type or parent               |
+| `search [text]`                            | The user describes work but names no key                                    |
+| `project [path]`                           | You need the project a repository files into                                |
+| `create --summary "…"`                     | The work has no ticket and the user asked for one                           |
+| `log --issue <KEY> --minutes <n>`          | The user asks to record time that nothing observed                          |
+| `day [YYYY-MM-DD]`                         | You need the evidence a day holds, not a screenshot of it                   |
+| `rows [YYYY-MM-DD]`                        | You need the rows the day drew, and the ids an edit names them by           |
+| `edit <row-id> …`                          | The user asks you to correct one row of a day                               |
+| `rules`                                    | You need to know why a band was named, or why it was not                    |
+| `standins`                                 | You need to know which work still waits for a ticket, and for how long      |
+| `standins --remove <id>`                   | A placeholder is wrong or too wide, and the user asked you to delete it     |
+| `standins --rename <id> --name <text>`     | The name a placeholder carries is wrong, and the user asked you to fix it   |
+| `standins --merge <id> --into <id>`        | Two placeholders are one piece of work, and the user asked you to join them |
+| `naming [YYYY-MM-DD]`                      | A checkout was never offered a name and you need the step that stopped      |
+| `worklogs [from] [to]`                     | You need what the user already booked in Tempo over a span of days          |
+| `calendar [from] [to]`                     | You need the user's meetings and calendar entries over a span of days       |
+| `sync <YYYY-MM-DD>`                        | The user asks what a Tempo sync of a day would write, or asks to sync it    |
+| `worklog --delete <id> --day <YYYY-MM-DD>` | The user asked you to delete one of their own Tempo worklogs                |
+| `approval <id>`                            | A write you queued: whether the user approved it, and what it answered      |
 
 `git-flow start` uses the same channel, so a branch is named from the real issue rather than
 from a key you typed. Follow the repository's branch workflow when creating a branch.

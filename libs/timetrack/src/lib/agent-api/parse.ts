@@ -137,6 +137,15 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
     return name ? { ok: true, request: { op, id, name } } : missing(op, 'name');
   }
 
+  if (op === 'standIn.merge') {
+    const id = asText(raw['id']);
+    const into = asText(raw['into']);
+
+    if (!id) return missing(op, 'id');
+
+    return into ? { ok: true, request: { op, id, into } } : missing(op, 'into');
+  }
+
   if (op === 'standIn.split') {
     const id = asText(raw['id']);
     const branch = asText(raw['branch']);

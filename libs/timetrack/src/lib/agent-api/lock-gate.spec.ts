@@ -17,7 +17,7 @@ describe('agentApiLockRefusal', () => {
 
 describe('AGENT_API_OP_CLASSES', () => {
   it('keeps the Tempo writes and the stand-in delete for the human', () => {
-    expect(opsOf('human-only')).toEqual(['standIn.remove', 'tempo.delete', 'tempo.sync']);
+    expect(opsOf('human-only')).toEqual(['standIn.merge', 'standIn.remove', 'tempo.delete', 'tempo.sync']);
   });
 
   it('classes the Jira create as external', () => {
