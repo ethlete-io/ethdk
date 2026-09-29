@@ -92,6 +92,28 @@ const readFileIfExists = (filePath) => {
   return null;
 };
 
+/** @type {WeakMap<import('eslint').SourceCode, Map<string, string | null>>} */
+const TEMPLATE_TEXT_CACHE = new WeakMap();
+
+/**
+ * @param {import('eslint').SourceCode} sourceCode
+ * @param {string} templatePath
+ */
+const readTemplateText = (sourceCode, templatePath) => {
+  let templates = TEMPLATE_TEXT_CACHE.get(sourceCode);
+
+  if (!templates) {
+    templates = new Map();
+    TEMPLATE_TEXT_CACHE.set(sourceCode, templates);
+  }
+
+  if (!templates.has(templatePath)) {
+    templates.set(templatePath, readFileIfExists(templatePath));
+  }
+
+  return templates.get(templatePath) ?? null;
+};
+
 /**
  * @param {import('eslint').Rule.RuleContext} context
  */
@@ -183,7 +205,7 @@ const isReferencedFromTemplateOrHostMetadata = (memberName, metadata, context) =
 
     if (templateUrl && filename) {
       const templatePath = path.resolve(path.dirname(filename), templateUrl);
-      const templateText = readFileIfExists(templatePath);
+      const templateText = readTemplateText(context.sourceCode, templatePath);
       if (templateReferencesMember(memberName, templateText)) {
         return true;
       }
