@@ -154,6 +154,40 @@ describe('createOverlayUnsavedChangesGuard', () => {
     expect(paneCount()).toBe(0);
   });
 
+  it('vetoes a dirty drag dismiss and re-issues it once the discard is confirmed', async () => {
+    const instance = await open();
+    const sources: string[] = [];
+    ref.afterClosedEvent().subscribe((event) => sources.push(event.source));
+
+    instance.form().value.set({ name: 'Grace' });
+    tick();
+
+    ref.closeVia('drag');
+
+    expect(paneCount()).toBe(1);
+    expect(instance.confirmCalls).toBe(1);
+
+    await flushMicrotasks();
+    await flushFrames();
+
+    expect(paneCount()).toBe(0);
+    expect(sources).toEqual(['drag']);
+  });
+
+  it('lets a dirty drag dismiss through when drag is disabled in dismissSources', async () => {
+    GuardedOverlayComponent.nextDismissSources = { drag: false };
+    const instance = await open();
+
+    instance.form().value.set({ name: 'Grace' });
+    tick();
+
+    ref.closeVia('drag');
+    await flushFrames();
+
+    expect(instance.confirmCalls).toBe(0);
+    expect(paneCount()).toBe(0);
+  });
+
   it('guards a replace and re-issues it as a replace once confirmed', async () => {
     const instance = await open();
     const sources: string[] = [];
