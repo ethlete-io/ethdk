@@ -97,6 +97,18 @@ describe('draftTicket', () => {
     expect(drafted.description).not.toContain('Salary review');
   });
 
+  it('quotes nothing from an agent session with no title, so no session id or path reaches the draft', () => {
+    const drafted = draft({
+      context: { repoPath: REPO, branch: 'next' },
+      entries: [evidence('agent-session', `agent session 5f0c2a9e-1b7d-4c3e-9a51-0d8e6f4b2c17 in ${REPO}/libs/env`)],
+    });
+
+    expect(drafted.summary).toBe('ea-frontend');
+    expect(drafted.notes).toEqual([]);
+    expect(drafted.description).not.toContain('5f0c2a9e');
+    expect(drafted.description).not.toContain('/Users/tom');
+  });
+
   it('leads with the work rather than with where the time came from', () => {
     const drafted = draft({
       context: { repoPath: REPO, branch: 'feat/user-management' },

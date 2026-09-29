@@ -68,7 +68,7 @@ export const autoDescriptionRequest = (options: {
   const notes: string[] = [];
 
   for (const entry of row.evidence) {
-    const note = QUOTABLE_EVIDENCE_KINDS.includes(entry.kind) ? (entry.summary ?? entry.detail) : undefined;
+    const note = QUOTABLE_EVIDENCE_KINDS.includes(entry.kind) ? entry.summary : undefined;
 
     if (note && !notes.includes(note)) notes.push(note);
   }

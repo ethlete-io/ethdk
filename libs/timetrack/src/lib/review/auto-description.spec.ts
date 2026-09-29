@@ -174,6 +174,15 @@ describe('autoDescriptionRequest', () => {
     });
   });
 
+  it('quotes nothing from an agent session with no title, so no session id or path is sent', () => {
+    const row = {
+      ...codeRow(),
+      evidence: [{ kind: 'agent-session' as const, at: at('08:30'), detail: 'agent session 5f0c2a9e in /work/shop' }],
+    };
+
+    expect(autoDescriptionRequest({ row }).notes).toEqual([]);
+  });
+
   it('sends the key alone where the ticket summary is not known', () => {
     expect(autoDescriptionRequest({ row: codeRow() }).issue).toEqual({ key: 'ABC-1' });
   });

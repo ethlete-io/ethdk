@@ -30,7 +30,7 @@ const notesFor = (options: { groups: readonly WorkGroup[]; contextId: string; ma
       for (const entry of block.evidence) {
         if (!QUOTABLE_EVIDENCE_KINDS.includes(entry.kind)) continue;
 
-        const quoted = entry.summary ?? entry.detail;
+        const quoted = entry.summary;
 
         if (!quoted) continue;
 

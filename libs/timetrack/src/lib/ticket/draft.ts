@@ -58,7 +58,7 @@ const notesForAll = (options: { groups: readonly WorkGroup[]; contextIds: readon
       for (const entry of block.evidence) {
         if (!QUOTABLE_EVIDENCE_KINDS.includes(entry.kind)) continue;
 
-        const note = entry.summary ?? entry.detail;
+        const note = entry.summary;
 
         if (!note || seen.has(note)) continue;
 

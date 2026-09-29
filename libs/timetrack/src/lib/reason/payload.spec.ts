@@ -75,6 +75,20 @@ describe('reasoningPlan', () => {
     expect(JSON.stringify(request)).not.toContain('Contoso');
   });
 
+  it('quotes nothing from an agent session with no title, so no session id or path is sent', () => {
+    const context = { repoPath: REPO, branch: 'next' };
+    const blocks = [
+      block(context, [
+        evidence('agent-session', `agent session 5f0c2a9e-1b7d-4c3e-9a51-0d8e6f4b2c17 in ${REPO}/libs/env`),
+      ]),
+    ];
+
+    const { request } = reasoningPlan({ contexts: [unnamed(context)], unattributed: [group(blocks)] });
+
+    expect(request.contexts[0]?.notes).toEqual([]);
+    expect(JSON.stringify(request)).not.toContain('5f0c2a9e');
+  });
+
   it('cuts a long note, so no single title can carry a whole instruction', () => {
     const context = { repoPath: REPO, branch: 'refactor/hub-query-v3' };
     const blocks = [block(context, [evidence('commit', 'x', 'a'.repeat(1000))])];
