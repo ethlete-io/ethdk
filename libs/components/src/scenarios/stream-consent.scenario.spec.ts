@@ -151,7 +151,7 @@ describe('stream consent scenarios', () => {
     expect(player(host)).toBeNull();
     expect(card.getAttribute('role')).toBe('group');
 
-    const heading = query('h3', card);
+    const heading = query('.et-stream-consent-heading', card);
 
     expect(card.getAttribute('aria-labelledby')).toBe(heading.id);
     expect(heading.textContent?.trim()).toBe('Inhalt blockiert');
