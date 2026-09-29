@@ -91,6 +91,10 @@ Open:
 - Open: the background band that covers 10:00-14:00 on the live day should become a thin marker.
 - Open: the phone stretch 13:15-14:00 on the live day lost its ticket (issueKey missing, description is
   the branch `next`).
+- Open: sibling rows can book more than the clock holds. Each rounds its observed minutes up to 15m on
+  its own, so two sessions that fill one hour can book 45m + 30m. The drawing hides it (a row is drawn
+  shorter), but Tempo would get 75m for 60m. Fix it in the booking (`bookedMsOf` in `rows/round.ts`), not
+  in the drawing.
 - Done 68a9e9aae: a Bash `workedIn` directory ends in `/`, so `workPathOf` no longer reads it one level
   too high. On the live 2026-09-29 this joined one ET-772 session to its predecessor (6 pieces to 5).
 - Done 8c0c299af: a lane shows at most 3 parallel rows of one ticket. Where more overlap, `reviewDay`
