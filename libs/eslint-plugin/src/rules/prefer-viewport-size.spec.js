@@ -11,6 +11,9 @@ const tester = new RuleTester({
 
 tester.run('prefer-viewport-size', rule, {
   valid: [
+    { code: `const h = window.outerHeight;` },
+    { code: `const w = foo.window.innerWidth;` },
+    { code: `const h = document.defaultView?.outerHeight;` },
     // Signal-based alternative — fine
     { code: `const viewport = injectViewportSize(); const w = viewport().width;` },
     // Unrelated window property
@@ -25,6 +28,14 @@ tester.run('prefer-viewport-size', rule, {
     { code: `class A { win = createMock(); read() { return this.win.innerWidth; } }` },
   ],
   invalid: [
+    {
+      code: `const w = document.defaultView.innerWidth;`,
+      errors: [{ messageId: 'preferViewportSize' }],
+    },
+    {
+      code: `const h = self.innerHeight;`,
+      errors: [{ messageId: 'preferViewportSize' }],
+    },
     {
       code: `class A {
   constructor() { this.win = document.defaultView; }

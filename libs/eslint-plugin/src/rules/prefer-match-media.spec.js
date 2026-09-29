@@ -30,6 +30,14 @@ inject(BreakpointObserver);`,
   ],
   invalid: [
     {
+      code: `window.matchMedia('(min-width: 1px)').addEventListener('change', onChange);`,
+      errors: [{ messageId: 'preferMatchMedia' }],
+    },
+    {
+      code: `const list = window.matchMedia('x'); list.addListener(cb);`,
+      errors: [{ messageId: 'preferMatchMedia' }],
+    },
+    {
       code: `import { inject as ngInject } from '@angular/core';
 ngInject(BreakpointObserver);`,
       errors: [{ messageId: 'noBreakpointObserver' }],

@@ -17,11 +17,12 @@
  *   element.classList.add('active')         → renderer.addClass(element, 'active')
  *   element.classList.remove('active')      → renderer.removeClass(element, 'active')
  *   element.style.color = 'red'             → renderer.setStyle(element, 'color', 'red')
+ *   Object.assign(element.style, { … })     → renderer.setStyle(element, prop, value) per property
  *
  * GOOD:
  *   private renderer = injectRenderer(); // from @ethlete/core
  *
- * NOTE: Calls where the receiver name contains 'renderer' (e.g. this.renderer.createElement)
+ * NOTE: Calls where the receiver name ends in 'renderer' (e.g. this.renderer.createElement)
  * are excluded — that is the correct injectRenderer() usage.
  */
 
@@ -63,15 +64,38 @@ const CLASSLIST_METHODS = new Map([
 ]);
 
 /**
+ * @param {any} node
+ * @returns {string | null}
+ */
+const getMemberName = (node) => {
+  if (node.type !== 'MemberExpression') return null;
+  if (!node.computed && node.property.type === 'Identifier') return node.property.name;
+  if (node.computed && node.property.type === 'Literal' && typeof node.property.value === 'string') {
+    return node.property.value;
+  }
+
+  return null;
+};
+
+/**
+ * @param {any} node
+ * @returns {string | null}
+ */
+const getTerminalName = (node) => {
+  if (node.type === 'Identifier') return node.name;
+  if (node.type === 'MemberExpression') return getMemberName(node);
+  if (node.type === 'CallExpression') return getTerminalName(node.callee);
+  if (node.type === 'ChainExpression' || node.type === 'TSNonNullExpression') return getTerminalName(node.expression);
+
+  return null;
+};
+
+/**
  * Returns true when the receiver of a MemberExpression looks like a Renderer2 instance,
  * which means the call is already using the correct API.
- * @param {import('eslint').Rule.Node} objectNode
- * @param {import('eslint').Rule.RuleContext} context
+ * @param {any} objectNode
  */
-const isRendererReceiver = (objectNode, context) => {
-  const receiverText = context.sourceCode.getText(objectNode).toLowerCase();
-  return receiverText.includes('renderer');
-};
+const isRendererReceiver = (objectNode) => /renderer2?$/i.test(getTerminalName(objectNode) ?? '');
 
 /** @type {import('eslint').Rule.RuleModule} */
 const noDirectDomManipulation = {
@@ -96,16 +120,25 @@ const noDirectDomManipulation = {
       CallExpression(node) {
         const { callee } = node;
         if (callee.type !== 'MemberExpression') return;
-        if (callee.property.type !== 'Identifier') return;
 
-        const methodName = callee.property.name;
+        const [target] = node.arguments;
 
         if (
-          methodName === 'setProperty' &&
-          callee.object.type === 'MemberExpression' &&
-          callee.object.property.type === 'Identifier' &&
-          callee.object.property.name === 'style'
+          callee.object.type === 'Identifier' &&
+          callee.object.name === 'Object' &&
+          getMemberName(callee) === 'assign' &&
+          target &&
+          getMemberName(target) === 'style' &&
+          !isRendererReceiver(target.object)
         ) {
+          context.report({ node, messageId: 'domStyle' });
+          return;
+        }
+
+        const methodName = getMemberName(callee);
+        if (!methodName) return;
+
+        if (methodName === 'setProperty' && getMemberName(callee.object) === 'style') {
           context.report({
             node,
             messageId: 'domMutation',
@@ -117,11 +150,7 @@ const noDirectDomManipulation = {
           return;
         }
 
-        if (
-          callee.object.type === 'MemberExpression' &&
-          callee.object.property.type === 'Identifier' &&
-          callee.object.property.name === 'classList'
-        ) {
+        if (getMemberName(callee.object) === 'classList') {
           const alternative = CLASSLIST_METHODS.get(methodName);
           if (alternative) {
             context.report({
@@ -133,8 +162,7 @@ const noDirectDomManipulation = {
           return;
         }
 
-        // Skip calls on a Renderer2 instance — those are the correct pattern.
-        if (isRendererReceiver(callee.object, context)) return;
+        if (isRendererReceiver(callee.object)) return;
 
         if (DOM_CREATE_METHODS.has(methodName)) {
           context.report({
@@ -158,10 +186,8 @@ const noDirectDomManipulation = {
         const { left } = node;
         if (
           left.type === 'MemberExpression' &&
-          left.object.type === 'MemberExpression' &&
-          left.object.property.type === 'Identifier' &&
-          left.object.property.name === 'style' &&
-          !isRendererReceiver(left.object.object, context)
+          getMemberName(left.object) === 'style' &&
+          !isRendererReceiver(left.object.object)
         ) {
           context.report({ node, messageId: 'domStyle' });
         }

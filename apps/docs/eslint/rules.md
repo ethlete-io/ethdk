@@ -329,22 +329,22 @@ instead of CSS-only classes.
 
 These rules steer code away from raw browser and Angular platform APIs toward the reactive utilities in `@ethlete/core`.
 
-| Rule                         | What it enforces                                                                                                                         | Fix | Default |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
-| `no-direct-dom-manipulation` | No direct DOM manipulation - use `injectRenderer()`                                                                                      |     | error   |
-| `no-dom-query`               | No `querySelector`, `getElementById`, … - use `viewChild()` / `viewChildren()` / `contentChild()` / `contentChildren()`                  |     | error   |
-| `no-native-observers`        | No raw `IntersectionObserver` / `MutationObserver` / `ResizeObserver` - use the signal-based observer utilities                          |     | error   |
-| `prefer-match-media`         | No `window.matchMedia()` - use `injectMediaQueryIsMatched()` for a one-shot boolean or `injectObserveMediaQuery()` for a reactive signal |     | error   |
-| `prefer-viewport-size`       | `injectViewportSize()` instead of `window.innerWidth` / `innerHeight`                                                                    |     | warn    |
-| `prefer-element-dimensions`  | `signalElementDimensions()` / `signalHostElementDimensions()` instead of reading element size properties in reactive contexts            |     | warn    |
-| `prefer-scroll-state`        | Scroll signal utilities or `ScrollableComponent` from `@ethlete/components` instead of raw scroll event listeners                        |     | warn    |
-| `no-document-cookie`         | No direct `document.cookie` access - use `getCookie` / `setCookie` / `hasCookie` / `deleteCookie`                                        |     | error   |
-| `no-window-location`         | No URL state reads from `window.location.*` - use `injectUrl()` / `injectRoute()` / `injectQueryParam()` etc.                            |     | warn    |
-| `no-angular-router-api`      | No injecting `ActivatedRoute` (fully replaced) and no state reads off an injected `Router` - use the `inject*` router utilities          |     | warn    |
-| `no-angular-seo-services`    | No Angular `Title` / `Meta` services - use `applyHeadTitleBinding()`, `applyMetaBinding()` and `applyLinkBinding()`                      |     | error   |
-| `no-locale-id`               | No `inject(LOCALE_ID)` for application locale state - use `injectLocale()`; Angular provider registration remains allowed                |     | error   |
-| `prefer-clone-equal`         | `clone()` / `equal()` instead of JSON round-trips, `structuredClone` or lodash `cloneDeep` / `isEqual`                                   |     | error   |
-| `no-csp-unsafe`              | No code a strict CSP (no `'unsafe-inline'` / `'unsafe-eval'`) blocks - see below                                                         | 🔧  | error   |
+| Rule                         | What it enforces                                                                                                                                                      | Fix | Default |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| `no-direct-dom-manipulation` | No direct DOM manipulation, including `Object.assign(el.style, …)` and bracket access - use `injectRenderer()`                                                        |     | error   |
+| `no-dom-query`               | No `querySelector`, `getElementById`, … - use `viewChild()` / `viewChildren()` / `contentChild()` / `contentChildren()`                                               |     | error   |
+| `no-native-observers`        | No raw `IntersectionObserver` / `MutationObserver` / `ResizeObserver`, also through `window.`, a `const` alias or `extends` - use the signal-based observer utilities |     | error   |
+| `prefer-match-media`         | No `window.matchMedia()` - use `injectMediaQueryIsMatched()` for a one-shot boolean or `injectObserveMediaQuery()` for a reactive signal                              |     | error   |
+| `prefer-viewport-size`       | `injectViewportSize()` instead of `window.innerWidth` / `innerHeight`                                                                                                 |     | warn    |
+| `prefer-element-dimensions`  | `signalElementDimensions()` / `signalHostElementDimensions()` instead of reading element size properties in reactive contexts                                         |     | warn    |
+| `prefer-scroll-state`        | Scroll signal utilities or `ScrollableComponent` from `@ethlete/components` instead of raw scroll event listeners                                                     |     | warn    |
+| `no-document-cookie`         | No direct `document.cookie` access - use `getCookie` / `setCookie` / `hasCookie` / `deleteCookie`                                                                     |     | error   |
+| `no-window-location`         | No URL state reads from `window.location.*` - use `injectUrl()` / `injectRoute()` / `injectQueryParam()` etc.                                                         |     | warn    |
+| `no-angular-router-api`      | No injecting `ActivatedRoute` (fully replaced) and no state reads off an injected `Router` - use the `inject*` router utilities                                       |     | warn    |
+| `no-angular-seo-services`    | No Angular `Title` / `Meta` services - use `applyHeadTitleBinding()`, `applyMetaBinding()` and `applyLinkBinding()`                                                   |     | error   |
+| `no-locale-id`               | No `inject(LOCALE_ID)` for application locale state - use `injectLocale()`; Angular provider registration remains allowed                                             |     | error   |
+| `prefer-clone-equal`         | `clone()` / `equal()` instead of JSON round-trips, `structuredClone` or lodash `cloneDeep` / `isEqual`                                                                |     | error   |
+| `no-csp-unsafe`              | No code a strict CSP (no `'unsafe-inline'` / `'unsafe-eval'`) blocks - see below                                                                                      | 🔧  | error   |
 
 `prefer-viewport-size` reports `innerWidth` / `innerHeight` read bare, off `window` / `globalThis` / `self` (dotted or bracketed), off a `defaultView`, or off a variable or `this` member that stores one of those.
 

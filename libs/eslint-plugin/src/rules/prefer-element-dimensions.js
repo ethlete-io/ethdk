@@ -29,7 +29,7 @@ const { ANGULAR_CORE, getImportedName } = require('./internals/import-resolution
  *   // or
  *   dimensions = signalElementDimensions(inject(ElementRef));
  *   // Then:
- *   effect(() => { const w = this.dimensions().rect.width; }); // ✅ reactive
+ *   effect(() => { const w = this.dimensions().rect().width; }); // ✅ reactive
  */
 
 /** Size-related properties read from DOM elements. */

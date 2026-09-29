@@ -1,7 +1,7 @@
 # eslint-plugin lib scan — open findings
 
 Scan of `libs/eslint-plugin` from 2026-08-19. Fixed findings were removed on 2026-09-26 (git history
-has them). All 23 Medium findings are done (740745cfd, 0e8f4306d, fdc275315, 2ff9e0dd3, 5070c1fac, 1115ebd01, b962944d7, d8a6c9352, 8f943a33c, b96cb14a9, e183dbc6b, d6e261816, 608346bb0, 9ce9b2b4c, 3d9bbb0e5, 562f182ac, 5d32f7e16, 10af4378d, 836c57050, 1dd03c288, 321ffa7e8, f4ba9f3c5, 64e382a80; the spread bail-out of `angular-decorator-property-order` is kept). Still open: 18 Low, 13 spec-coverage items. Paths are relative to
+has them). All 23 Medium findings are done (740745cfd, 0e8f4306d, fdc275315, 2ff9e0dd3, 5070c1fac, 1115ebd01, b962944d7, d8a6c9352, 8f943a33c, b96cb14a9, e183dbc6b, d6e261816, 608346bb0, 9ce9b2b4c, 3d9bbb0e5, 562f182ac, 5d32f7e16, 10af4378d, 836c57050, 1dd03c288, 321ffa7e8, f4ba9f3c5, 64e382a80; the spread bail-out of `angular-decorator-property-order` is kept). Still open: 11 Low, 11 spec-coverage items. Paths are relative to
 `libs/eslint-plugin/src/rules/` unless shown in full.
 
 ## ordering & naming
@@ -37,16 +37,7 @@ has them). All 23 Medium findings are done (740745cfd, 0e8f4306d, fdc275315, 2ff
 
 ## DOM & platform
 
-- Low: `myMock.notTheDefaultView.innerWidth` reported. S
-- Low: shadowed `class MutationObserver` reported. S
-- Low: aliased/subclassed observers missed (`no-native-observers`). S
-- Low: bracket access escapes `no-direct-dom-manipulation` and `no-dom-query`. `no-dom-query` done in 9ce021f7b.
-- Low: `isRendererReceiver` is a substring test. S
-- Low: `no-dom-query` has no receiver check (`points.closest(target)`); `innerHTML`, `className`, `textContent`, `Object.assign(el.style, …)` not reported. M
-- Low: `prefer-element-dimensions.js:32` header shows `rect.width` instead of `rect().width`. S
-- Low: `<form method="DIALOG">` false positive in `require-form-submit`. S
-- Spec: `prefer-viewport-size` lacks `defaultView`/`outerHeight`/non-window receiver; `prefer-element-dimensions` lacks other properties/nested functions; `no-direct-dom-manipulation` covers few methods; `prefer-match-media` lacks change listener/bare `matchMedia()`/double report. S
-- Spec: none for observer aliases/subclasses, uppercase `method`, or `no-dom-query` negatives. S
+- Low: `no-dom-query` has no receiver check (`points.closest(target)`); `innerHTML`, `className`, `textContent` assignments not reported (needs a design call: without types both false-positive on non-DOM objects). M
 
 ## misc, config, packaging & docs
 

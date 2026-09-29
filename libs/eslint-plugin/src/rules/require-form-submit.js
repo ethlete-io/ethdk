@@ -28,7 +28,9 @@ const handlesSubmit = (node) =>
 
 /** @param {any} node */
 const submitsNatively = (node) =>
-  hasBinding(node, 'action') || hasBinding(node, 'ngNoForm') || attribute(node, 'method')?.value === 'dialog';
+  hasBinding(node, 'action') ||
+  hasBinding(node, 'ngNoForm') ||
+  attribute(node, 'method')?.value?.trim().toLowerCase() === 'dialog';
 
 /** @type {import('eslint').Rule.RuleModule} */
 const requireFormSubmit = {

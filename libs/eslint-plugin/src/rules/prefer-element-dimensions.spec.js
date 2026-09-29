@@ -13,6 +13,8 @@ const el = `const el = document.querySelector('.box');\n`;
 
 tester.run('prefer-element-dimensions', rule, {
   valid: [
+    { code: `${el}effect(() => { function read() { return el.scrollWidth; } });` },
+    { code: `${el}effect(() => { const x = { read() { return el.clientHeight; } }; });` },
     {
       code: `import { effect } from 'some-other-lib';
 ${el}effect(() => { const w = el.offsetWidth; });`,
@@ -35,6 +37,26 @@ ${el}effect(() => { const w = el.offsetWidth; });`,
     { code: `computed(() => this.items().map((item) => item.offsetWidth));` },
   ],
   invalid: [
+    {
+      code: `${el}effect(() => { el.clientHeight; });`,
+      errors: [{ messageId: 'preferElementDimensions' }],
+    },
+    {
+      code: `${el}effect(() => { el.scrollHeight; });`,
+      errors: [{ messageId: 'preferElementDimensions' }],
+    },
+    {
+      code: `${el}effect(() => { el.offsetHeight; });`,
+      errors: [{ messageId: 'preferElementDimensions' }],
+    },
+    {
+      code: `${el}effect(() => { el.getClientRects(); });`,
+      errors: [{ messageId: 'preferElementDimensions' }],
+    },
+    {
+      code: `${el}effect(() => { if (a) { for (;;) { el.scrollWidth; } } });`,
+      errors: [{ messageId: 'preferElementDimensions' }],
+    },
     {
       code: `import { effect as ngEffect } from '@angular/core';
 ${el}ngEffect(() => { const w = el.offsetWidth; });`,

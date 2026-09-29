@@ -47,6 +47,10 @@ tester.run('require-form-submit', rule, {
       code: `<form method="dialog"></form>`,
       filename: 'test.html',
     },
+    {
+      code: `<form method="DIALOG"></form>`,
+      filename: 'test.html',
+    },
     // Associated by id, so it needs no ancestor
     {
       code: `<button type="submit" form="edit-user">Save</button>`,

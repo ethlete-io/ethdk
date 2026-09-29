@@ -10,6 +10,10 @@ const tester = new RuleTester({
 
 tester.run('no-native-observers', rule, {
   valid: [
+    { code: `class MutationObserver {} new MutationObserver();` },
+    { code: `const window = { ResizeObserver: Fake }; new window.ResizeObserver();` },
+    { code: `let R = ResizeObserver; new R();` },
+    { code: `class Sub extends Base {}` },
     // signal-based alternatives — fine
     { code: `signalElementIntersection(el, options);` },
     { code: `signalElementDimensions(inject(ElementRef));` },
@@ -22,6 +26,22 @@ tester.run('no-native-observers', rule, {
     { code: `new toString();` },
   ],
   invalid: [
+    {
+      code: `const Alias = ResizeObserver; new Alias(cb);`,
+      errors: [{ messageId: 'useSignalUtil' }],
+    },
+    {
+      code: `class Sub extends MutationObserver {}`,
+      errors: [{ messageId: 'useSignalUtil' }],
+    },
+    {
+      code: `new window.IntersectionObserver(cb);`,
+      errors: [{ messageId: 'useSignalUtil' }],
+    },
+    {
+      code: `new globalThis.PerformanceObserver(cb);`,
+      errors: [{ messageId: 'avoidObserver' }],
+    },
     {
       code: `new IntersectionObserver(callback, options);`,
       errors: [{ messageId: 'useSignalUtil' }],

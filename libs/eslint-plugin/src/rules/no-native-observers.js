@@ -31,6 +31,8 @@
  *   signalHostElementDimensions()
  */
 
+const { isGlobalReference } = require('./internals/import-resolution');
+
 /**
  * Maps Observer constructor names to their @ethlete/core signal equivalents.
  * @type {Record<string, { alternatives: string[], from: string } | null>}
@@ -51,6 +53,8 @@ const OBSERVER_ALTERNATIVES = {
   PerformanceObserver: null,
 };
 
+const GLOBAL_OBJECTS = new Set(['window', 'globalThis', 'self']);
+
 /** @type {import('eslint').Rule.RuleModule} */
 const noNativeObservers = {
   meta: {
@@ -68,35 +72,96 @@ const noNativeObservers = {
     schema: [],
   },
   create(context) {
-    return {
-      NewExpression(node) {
-        if (node.callee.type !== 'Identifier') return;
+    const { sourceCode } = context;
 
-        const name = node.callee.name;
+    /**
+     * @param {any} node
+     * @param {Set<any>} seen
+     * @returns {string | null}
+     */
+    const resolveObserverName = (node, seen = new Set()) => {
+      if (!node || seen.has(node)) return null;
+      seen.add(node);
 
+      if (node.type === 'TSNonNullExpression' || node.type === 'TSAsExpression') {
+        return resolveObserverName(node.expression, seen);
+      }
+
+      if (node.type === 'MemberExpression') {
+        if (node.computed || node.property.type !== 'Identifier') return null;
+        if (!Object.hasOwn(OBSERVER_ALTERNATIVES, node.property.name)) return null;
+
+        return node.object.type === 'Identifier' &&
+          GLOBAL_OBJECTS.has(node.object.name) &&
+          isGlobalReference(sourceCode, node.object)
+          ? node.property.name
+          : null;
+      }
+
+      if (node.type !== 'Identifier') return null;
+
+      if (isGlobalReference(sourceCode, node)) {
         // hasOwn, not `in`: `new constructor()` / `new toString()` would otherwise match an
         // inherited Object.prototype key and read a function where an entry is expected
-        if (!Object.hasOwn(OBSERVER_ALTERNATIVES, name)) return;
+        return Object.hasOwn(OBSERVER_ALTERNATIVES, node.name) ? node.name : null;
+      }
 
-        const info = OBSERVER_ALTERNATIVES[name];
+      /** @type {import('eslint').Scope.Scope | null} */
+      let scope = sourceCode.getScope(node);
 
-        if (info) {
-          context.report({
-            node,
-            messageId: 'useSignalUtil',
-            data: {
-              observer: name,
-              alternatives: info.alternatives.join(' or '),
-              from: info.from,
-            },
-          });
-        } else {
-          context.report({
-            node,
-            messageId: 'avoidObserver',
-            data: { observer: name },
-          });
+      while (scope) {
+        const variable = scope.set.get(node.name);
+
+        if (variable) {
+          const definition = /** @type {any} */ (variable.defs[0]);
+
+          return definition?.type === 'Variable' && definition.parent.kind === 'const'
+            ? resolveObserverName(definition.node.init, seen)
+            : null;
         }
+
+        scope = scope.upper;
+      }
+
+      return null;
+    };
+
+    /**
+     * @param {any} node
+     * @param {any} callee
+     */
+    const check = (node, callee) => {
+      const name = resolveObserverName(callee);
+
+      if (!name) return;
+
+      const info = OBSERVER_ALTERNATIVES[name];
+
+      if (info) {
+        context.report({
+          node,
+          messageId: 'useSignalUtil',
+          data: {
+            observer: name,
+            alternatives: info.alternatives.join(' or '),
+            from: info.from,
+          },
+        });
+      } else {
+        context.report({
+          node,
+          messageId: 'avoidObserver',
+          data: { observer: name },
+        });
+      }
+    };
+
+    return {
+      NewExpression(node) {
+        check(node, node.callee);
+      },
+      'ClassDeclaration, ClassExpression'(node) {
+        if (node.superClass) check(node.superClass, node.superClass);
       },
     };
   },

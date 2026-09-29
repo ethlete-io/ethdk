@@ -10,6 +10,10 @@ const tester = new RuleTester({
 
 tester.run('no-dom-query', rule, {
   valid: [
+    { code: `this.query.get(closestKey);` },
+    { code: `el.closestTo(x);` },
+    { code: `el[query](x);` },
+    { code: `const closest = pick(x); closest(x);` },
     // Angular signal queries — the correct pattern
     { code: `const label = viewChild('labelRef');` },
     { code: `const items = viewChildren(ItemDirective);` },
