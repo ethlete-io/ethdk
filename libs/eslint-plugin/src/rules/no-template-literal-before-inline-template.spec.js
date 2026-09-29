@@ -97,6 +97,19 @@ class Foo {}
   ],
   invalid: [
     {
+      name: 'template literal type with a substitution',
+      code: `
+type Prefixed = \`pre-\${string}\`;
+
+@Component({
+  selector: 'et-test',
+  template: \`<p>{{ label }}</p>\`,
+})
+class Foo {}
+`,
+      errors: [{ messageId: 'breaksLanguageService' }],
+    },
+    {
       code: `import { Component as Cmp } from '@angular/core';
 const makeLabel = (i) => \`Item \${i}\`;
 

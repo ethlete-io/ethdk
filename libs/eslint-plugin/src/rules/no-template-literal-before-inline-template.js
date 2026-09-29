@@ -134,6 +134,11 @@ const noTemplateLiteralBeforeInlineTemplate = {
         if (node.expressions.length > 0) interpolatedLiteralStarts.push(node.range[0]);
       },
 
+      /** @param {any} node */
+      TSTemplateLiteralType(node) {
+        if (node.types.length > 0) interpolatedLiteralStarts.push(node.range[0]);
+      },
+
       /** @param {import('eslint').Rule.Node} node */
       Decorator(node) {
         const decoratorName = getAngularDecoratorName(context.sourceCode, node);
