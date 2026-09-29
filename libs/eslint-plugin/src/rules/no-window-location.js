@@ -1,6 +1,8 @@
 // @ts-check
 'use strict';
 
+const { isGlobalReference } = require('./internals/import-resolution');
+
 /**
  * Disallows reading URL state from window.location properties.
  *
@@ -52,29 +54,55 @@ const noWindowLocation = {
     schema: [],
   },
   create(context) {
+    const isGlobalObject = (node) =>
+      node.type === 'Identifier' &&
+      (node.name === 'window' || node.name === 'globalThis') &&
+      isGlobalReference(context.sourceCode, node);
+
+    const findVariable = (identifier) => {
+      for (let scope = context.sourceCode.getScope(identifier); scope; scope = scope.upper) {
+        const variable = scope.set.get(identifier.name);
+        if (variable) return variable;
+      }
+
+      return null;
+    };
+
+    const isLocation = (node) => {
+      if (node.type === 'Identifier') {
+        if (node.name === 'location' && isGlobalReference(context.sourceCode, node)) return true;
+
+        const definitions = findVariable(node)?.defs ?? [];
+
+        return (
+          definitions.length === 1 &&
+          definitions[0].type === 'Variable' &&
+          definitions[0].node.id.type === 'Identifier' &&
+          definitions[0].parent.kind === 'const' &&
+          !!definitions[0].node.init &&
+          isLocation(definitions[0].node.init)
+        );
+      }
+
+      return (
+        node.type === 'MemberExpression' &&
+        !node.computed &&
+        isGlobalObject(node.object) &&
+        node.property.type === 'Identifier' &&
+        node.property.name === 'location'
+      );
+    };
+
     return {
-      // ── window.location.{prop} reads ────────────────────────────────────────
       MemberExpression(node) {
-        if (node.property.type !== 'Identifier') return;
+        if (node.property.type !== 'Identifier' || node.computed) return;
         const prop = node.property.name;
 
         if (!LOCATION_STATE_PROPS.has(prop)) return;
+        if (!isLocation(node.object)) return;
 
-        // Must be window.location.{prop} — check the object is window.location
-        const parent = node.object;
-        if (
-          parent.type !== 'MemberExpression' ||
-          parent.object.type !== 'Identifier' ||
-          parent.object.name !== 'window' ||
-          parent.property.type !== 'Identifier' ||
-          parent.property.name !== 'location'
-        ) {
-          return;
-        }
-
-        // Skip assignments TO window.location.href (navigation redirect)
         if (prop === 'href' && node.parent.type === 'AssignmentExpression' && node.parent.left === node) {
-          return;
+          if (node.parent.operator === '=') return;
         }
 
         context.report({
@@ -84,18 +112,28 @@ const noWindowLocation = {
         });
       },
 
-      // ── new URLSearchParams(window.location.search) ─────────────────────────
+      VariableDeclarator(node) {
+        if (node.id.type !== 'ObjectPattern' || !node.init || !isLocation(node.init)) return;
+
+        for (const property of node.id.properties) {
+          if (property.type !== 'Property' || property.computed || property.key.type !== 'Identifier') continue;
+          if (!LOCATION_STATE_PROPS.has(property.key.name)) continue;
+
+          context.report({
+            node: property,
+            messageId: 'noWindowLocation',
+            data: { prop: property.key.name, replacement: LOCATION_STATE_PROPS.get(property.key.name) },
+          });
+        }
+      },
+
       NewExpression(node) {
         if (node.callee.type !== 'Identifier' || node.callee.name !== 'URLSearchParams') return;
         const arg = node.arguments[0];
         if (!arg) return;
         if (
           arg.type === 'MemberExpression' &&
-          arg.object.type === 'MemberExpression' &&
-          arg.object.object.type === 'Identifier' &&
-          arg.object.object.name === 'window' &&
-          arg.object.property.type === 'Identifier' &&
-          arg.object.property.name === 'location' &&
+          isLocation(arg.object) &&
           arg.property.type === 'Identifier' &&
           arg.property.name === 'search'
         ) {
