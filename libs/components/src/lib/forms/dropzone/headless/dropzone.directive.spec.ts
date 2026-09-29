@@ -5,6 +5,7 @@ import { QueryTestSetup, setupQueryTest } from '@ethlete/query/testing';
 import '../../../../test-helpers';
 import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
 import { MountedDropzoneDriver, mountDropzone } from '../../testing/dropzone-driver';
+import { provideDropzoneLabels } from '../dropzone-labels';
 import { DropzoneEntry, createExistingDropzoneEntry, isFileAccepted } from './dropzone-entry';
 import { AnyDropzoneUploadConfig, createDropzoneUpload } from './dropzone-upload';
 import { DropzoneFileConstraints, DropzoneFileRejection, dropzoneFiles } from './dropzone-validation';
@@ -89,6 +90,39 @@ class DropzoneSchemaTestHost {
   });
 
   rejections: DropzoneFileRejection[][] = [];
+}
+
+@Component({
+  template: `<div [upload]="upload()!" [maxPreviewFileSize]="maxPreviewFileSize()" etDropzone></div>`,
+  imports: [DropzoneDirective],
+})
+class DropzonePreviewCapTestHost {
+  upload = signal<AnyDropzoneUploadConfig<string> | null>(null);
+  maxPreviewFileSize = signal(8);
+}
+
+@Component({
+  template: `<div [upload]="upload()!" [multiple]="multiple()" [formField]="demoForm.media" etDropzone></div>`,
+  imports: [DropzoneDirective, FormField],
+  providers: [
+    provideDropzoneLabels({
+      unsupportedFileType: (fileName) => `${fileName}: Dateityp nicht erlaubt`,
+      fileTooLarge: (fileName, maxFileSize) => `${fileName}: größer als ${maxFileSize} Bytes`,
+      fileTooSmall: (fileName, minFileSize) => `${fileName}: kleiner als ${minFileSize} Bytes`,
+      tooManyFiles: (fileName) => `${fileName}: nur eine Datei erlaubt`,
+    }),
+  ],
+})
+class DropzoneLocalizedSchemaTestHost {
+  upload = signal<AnyDropzoneUploadConfig<string> | null>(null);
+  multiple = signal(false);
+  constraints = signal<DropzoneFileConstraints>({});
+
+  model = signal<{ media: string | string[] | null }>({ media: null });
+
+  demoForm = form(this.model, (s) => {
+    dropzoneFiles(s.media, () => this.constraints());
+  });
 }
 
 const createUploadConfig = (
@@ -188,6 +222,21 @@ describe('DropzoneDirective', () => {
       driver.tick();
 
       expect(entry.previewUrl()).toBe(null);
+    });
+
+    it('should not preview an image above the 10 MB default cap', () => {
+      const readAsDataURL = vi.spyOn(FileReader.prototype, 'readAsDataURL');
+      const file = createFile('huge.png');
+
+      Object.defineProperty(file, 'size', { value: 10 * 1024 * 1024 + 1 });
+      driver.dropzone.selectFiles([file]);
+      driver.tick();
+
+      expect(readAsDataURL).not.toHaveBeenCalled();
+      expect(driver.dropzone.entries()[0]!.previewUrl()).toBe(null);
+      readAsDataURL.mockRestore();
+
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
     });
 
     it('should not preview non-image files', () => {
@@ -885,6 +934,84 @@ describe('DropzoneDirective', () => {
           message: '"b.png" was not added (only one file is allowed).',
         }),
       ]);
+
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-a' });
+    });
+  });
+
+  describe('with a preview size cap', () => {
+    it('should preview images up to maxPreviewFileSize and skip larger ones', async () => {
+      const driver = mountDropzone(DropzonePreviewCapTestHost);
+
+      driver.host.upload.set(createUploadConfig(driver.query));
+      driver.tick();
+
+      const readAsDataURL = vi.spyOn(FileReader.prototype, 'readAsDataURL');
+
+      driver.dropzone.selectFiles([createFile('big.png', 'image/png', 9)]);
+      driver.tick();
+
+      expect(readAsDataURL).not.toHaveBeenCalled();
+      readAsDataURL.mockRestore();
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-1' });
+
+      driver.dropzone.selectFiles([createFile('small.png', 'image/png', 8)]);
+      driver.tick();
+
+      const entry = driver.dropzone.entries()[0]!;
+
+      await vi.waitFor(() => expect(entry.previewUrl()).toMatch(/^data:image\/png;base64,/));
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-2' });
+
+      driver.fixture.destroy();
+      driver.query.httpTesting.verify();
+    });
+  });
+
+  describe('with localized rejection labels', () => {
+    let driver: MountedDropzoneDriver<DropzoneLocalizedSchemaTestHost>;
+
+    const messages = () =>
+      driver.host.demoForm
+        .media()
+        .errors()
+        .map((error) => error.message);
+
+    beforeEach(() => {
+      driver = mountDropzone(DropzoneLocalizedSchemaTestHost);
+      driver.host.upload.set(createUploadConfig(driver.query));
+      driver.tick();
+    });
+
+    afterEach(() => {
+      driver.fixture.destroy();
+      driver.query.httpTesting.verify();
+    });
+
+    it('should word every rejection reason through DROPZONE_LABELS', () => {
+      driver.host.multiple.set(true);
+      driver.host.constraints.set({ accept: 'image/*', maxFileSize: 10, minFileSize: 2 });
+      driver.tick();
+
+      driver.dropzone.selectFiles([
+        createFile('doc.pdf', 'application/pdf'),
+        createFile('big.png', 'image/png', 20),
+        createFile('tiny.png', 'image/png', 1),
+      ]);
+      driver.tick();
+
+      expect(messages()).toEqual([
+        'doc.pdf: Dateityp nicht erlaubt',
+        'big.png: größer als 10 Bytes',
+        'tiny.png: kleiner als 2 Bytes',
+      ]);
+    });
+
+    it('should word the single-mode extra file through DROPZONE_LABELS', () => {
+      driver.dropzone.selectFiles([createFile('a.png'), createFile('b.png')]);
+      driver.tick();
+
+      expect(messages()).toEqual(['b.png: nur eine Datei erlaubt']);
 
       driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-a' });
     });

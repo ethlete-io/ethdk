@@ -8,7 +8,7 @@ import {
   validate,
   ValidationError,
 } from '@angular/forms/signals';
-import { formatFileSize } from './dropzone-entry';
+import { DEFAULT_DROPZONE_LABELS, DropzoneLabels } from '../dropzone-labels';
 
 export const DROPZONE_FILE_REJECTION_REASONS = {
   ACCEPT: 'accept',
@@ -54,6 +54,7 @@ export type DropzoneFileConstraints = {
 export type DropzoneFileValidationChannel = {
   constraints: Signal<DropzoneFileConstraints | undefined>;
   rejections: WritableSignal<DropzoneFileRejection[]>;
+  labels: WritableSignal<DropzoneLabels>;
 };
 
 /** @internal Read by the dropzone directive via the bound field's metadata. */
@@ -63,29 +64,32 @@ export const DROPZONE_FILE_CONSTRAINTS = /* @__PURE__ */ createManagedMetadataKe
 >((_state, data) => ({
   constraints: data,
   rejections: signal<DropzoneFileRejection[]>([]),
+  labels: signal(DEFAULT_DROPZONE_LABELS),
 }));
+
+const rejectionMessage = (
+  rejection: DropzoneFileRejection,
+  context: { constraints: DropzoneFileConstraints | undefined; labels: DropzoneLabels },
+) => {
+  const name = rejection.file.name;
+  const { constraints, labels } = context;
+
+  switch (rejection.reason) {
+    case DROPZONE_FILE_REJECTION_REASONS.ACCEPT:
+      return labels.unsupportedFileType(name);
+    case DROPZONE_FILE_REJECTION_REASONS.MAX_FILE_SIZE:
+      return labels.fileTooLarge(name, constraints?.maxFileSize);
+    case DROPZONE_FILE_REJECTION_REASONS.MIN_FILE_SIZE:
+      return labels.fileTooSmall(name, constraints?.minFileSize);
+    default:
+      return labels.tooManyFiles(name);
+  }
+};
 
 export const defaultDropzoneRejectionMessage = (
   rejection: DropzoneFileRejection,
   constraints: DropzoneFileConstraints | undefined,
-) => {
-  const name = rejection.file.name;
-
-  switch (rejection.reason) {
-    case DROPZONE_FILE_REJECTION_REASONS.ACCEPT:
-      return `"${name}" has an unsupported file type.`;
-    case DROPZONE_FILE_REJECTION_REASONS.MAX_FILE_SIZE:
-      return `"${name}" is too large${
-        constraints?.maxFileSize !== undefined ? ` (max ${formatFileSize(constraints.maxFileSize)})` : ''
-      }.`;
-    case DROPZONE_FILE_REJECTION_REASONS.MIN_FILE_SIZE:
-      return `"${name}" is too small${
-        constraints?.minFileSize !== undefined ? ` (min ${formatFileSize(constraints.minFileSize)})` : ''
-      }.`;
-    default:
-      return `"${name}" was not added (only one file is allowed).`;
-  }
-};
+) => rejectionMessage(rejection, { constraints, labels: DEFAULT_DROPZONE_LABELS });
 
 /**
  * Schema rule that validates the files selected in a dropzone bound to this field.
@@ -118,11 +122,13 @@ export const dropzoneFiles = <TValue, TPathKind extends PathKind = PathKind.Root
     }
 
     const currentConstraints = channel.constraints();
+    const labels = channel.labels();
 
     return channel.rejections().map((rejection): ValidationError.WithoutFieldTree => ({
       kind: DROPZONE_FILES_ERROR_KIND,
       message:
-        currentConstraints?.message?.(rejection) ?? defaultDropzoneRejectionMessage(rejection, currentConstraints),
+        currentConstraints?.message?.(rejection) ??
+        rejectionMessage(rejection, { constraints: currentConstraints, labels }),
     }));
   });
 };

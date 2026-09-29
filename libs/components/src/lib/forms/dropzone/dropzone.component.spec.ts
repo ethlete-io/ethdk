@@ -345,6 +345,52 @@ describe('DropzoneComponent with localized labels', () => {
   });
 });
 
+@Component({
+  template: `
+    <et-dropzone [upload]="upload()!" multiple>
+      <et-label>Media</et-label>
+    </et-dropzone>
+  `,
+  imports: [DropzoneComponent, LabelDirective],
+  providers: [
+    provideDropzoneLabels({
+      uploadFailed: 'nicht hochgeladen',
+      uploadFailedMessage: ({ fileName, uploadFailed }) => `${fileName} wurde ${uploadFailed}`,
+    }),
+  ],
+})
+class DropzoneLocalizedFailureTestHost {
+  upload = signal<AnyDropzoneUploadConfig<string> | null>(null);
+}
+
+describe('DropzoneComponent with a localized upload failure', () => {
+  beforeEach(() => {
+    URL.createObjectURL = vi.fn(() => `blob:mock-${Math.random()}`);
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  it('should word an upload failure through DROPZONE_LABELS', () => {
+    const driver = mountDropzone(DropzoneLocalizedFailureTestHost);
+
+    driver.host.upload.set(
+      createDropzoneUpload<UploadArgs, string>({
+        queryCreator: driver.query.createPost<UploadArgs>('/upload'),
+        selectValue: (response) => response.uuid,
+      }),
+    );
+    driver.tick();
+
+    driver.pickFiles([createFile('a.png')]);
+    driver.query.httpTesting.expectOne(UPLOAD_URL).flush(null, { status: 500, statusText: 'Server Error' });
+    driver.tick();
+
+    expect(driver.internalErrorsText()).toBe('a.png wurde nicht hochgeladen');
+
+    driver.fixture.destroy();
+    driver.query.httpTesting.verify();
+  });
+});
+
 describe('DropzoneComponent with schema constraints', () => {
   beforeEach(() => {
     URL.createObjectURL = vi.fn(() => `blob:mock-${Math.random()}`);

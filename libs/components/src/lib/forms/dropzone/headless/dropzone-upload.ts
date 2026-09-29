@@ -89,8 +89,7 @@ export type ResolvedDropzoneUploadConfig<TValue = unknown> = {
    * Maps the upload response to the value that gets pushed into the form control
    * (e.g. `(media) => media.uuid`).
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  selectValue: (response: any) => TValue;
+  selectValue: (response: unknown) => TValue;
 
   /**
    * Maps a value that is already part of the form control (edit forms) to display info.

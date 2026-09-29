@@ -74,6 +74,7 @@ import { injectDropzoneLabels } from './dropzone-labels';
         'name',
         'upload',
         'multiple',
+        'maxPreviewFileSize',
         ...ACCESSIBLE_NAME_INPUTS,
       ],
       outputs: [
@@ -280,10 +281,10 @@ export class DropzoneComponent {
   }
 
   private defaultUploadErrorMessage(entry: DropzoneEntry) {
-    const serverMessage = entry.errorMessage();
-
-    return serverMessage
-      ? `"${entry.name()}": ${serverMessage}`
-      : `"${entry.name()}" ${this.resolvedUploadErrorLabel()}.`;
+    return this.dropzoneLabels().uploadFailedMessage({
+      fileName: entry.name(),
+      serverMessage: entry.errorMessage(),
+      uploadFailed: this.resolvedUploadErrorLabel(),
+    });
   }
 }

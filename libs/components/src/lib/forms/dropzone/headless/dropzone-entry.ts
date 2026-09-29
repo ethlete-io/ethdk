@@ -79,17 +79,22 @@ const readImagePreview = (file: File) => {
   };
 };
 
+/** The image preview size cap a dropzone applies unless `maxPreviewFileSize` says otherwise: 10 MB. */
+export const DEFAULT_DROPZONE_MAX_PREVIEW_FILE_SIZE = 10 * 1024 * 1024;
+
 export type CreateFileDropzoneEntryOptions<TValue> = {
   file: File;
   handle: DropzoneUploadHandle<TValue>;
+  /** Images larger than this many bytes get no preview. @default DEFAULT_DROPZONE_MAX_PREVIEW_FILE_SIZE */
+  maxPreviewFileSize?: number;
 };
 
 export const createFileDropzoneEntry = <TValue>(
   options: CreateFileDropzoneEntryOptions<TValue>,
 ): DropzoneEntry<TValue> => {
-  const { file, handle } = options;
+  const { file, handle, maxPreviewFileSize = DEFAULT_DROPZONE_MAX_PREVIEW_FILE_SIZE } = options;
 
-  const preview = file.type.startsWith('image/') ? readImagePreview(file) : null;
+  const preview = file.type.startsWith('image/') && file.size <= maxPreviewFileSize ? readImagePreview(file) : null;
 
   const status = computed<DropzoneEntryStatus>(() => {
     switch (handle.state()) {

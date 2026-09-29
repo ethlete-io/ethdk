@@ -29,6 +29,7 @@ import {
 import {
   createExistingDropzoneEntry,
   createFileDropzoneEntry,
+  DEFAULT_DROPZONE_MAX_PREVIEW_FILE_SIZE,
   disposeDropzoneEntry,
   DROPZONE_ENTRY_STATUSES,
   DropzoneEntry,
@@ -42,6 +43,7 @@ import {
   DropzoneFileRejection,
 } from './dropzone-validation';
 import { controlTouches } from '../../../internals/touch-output';
+import { injectDropzoneLabels } from '../dropzone-labels';
 
 const isValueInControl = <TValue>(entry: DropzoneEntry<TValue>) => {
   const status = entry.status();
@@ -84,6 +86,7 @@ export class DropzoneDirective<TValue = unknown>
   private injector = inject(Injector);
   private environmentInjector = inject(EnvironmentInjector);
   private hostElement = injectHostElement();
+  private dropzoneLabels = injectDropzoneLabels();
 
   public value = model<TValue | TValue[] | null>(null);
   public touched = model(false);
@@ -97,6 +100,9 @@ export class DropzoneDirective<TValue = unknown>
 
   /** The upload workflow configuration. Create it via `createDropzoneUpload()`. */
   public upload = input.required<AnyDropzoneUploadConfig<TValue>>();
+
+  /** Images larger than this many bytes get no preview, so a large photo is not held in memory as a data URL. */
+  public maxPreviewFileSize = input(DEFAULT_DROPZONE_MAX_PREVIEW_FILE_SIZE);
 
   /** Whether multiple files can be uploaded. The control value becomes an array. */
   public multiple = input(false, { transform: booleanAttribute });
@@ -171,6 +177,13 @@ export class DropzoneDirective<TValue = unknown>
       for (const entry of this.internalEntries()) {
         this.disposeEntry(entry);
       }
+    });
+
+    effect(() => {
+      const channel = this.fileValidation();
+      const labels = this.dropzoneLabels();
+
+      untracked(() => channel?.labels.set(labels));
     });
 
     effect(() => {
@@ -419,7 +432,7 @@ export class DropzoneDirective<TValue = unknown>
   private createFileEntry(file: File): DropzoneEntry<TValue> {
     const config = this.upload();
     const handle = config.createUploadHandle({ file, injector: this.injector });
-    const entry = createFileDropzoneEntry({ file, handle });
+    const entry = createFileDropzoneEntry({ file, handle, maxPreviewFileSize: this.maxPreviewFileSize() });
 
     let previousStatus: string | null = null;
 
