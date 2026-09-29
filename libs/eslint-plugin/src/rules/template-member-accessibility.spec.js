@@ -102,6 +102,56 @@ tester.run('template-member-accessibility', rule, {
   ],
   invalid: [
     {
+      code: `@Component({ template: '{{ x() }}' }) class C { accessor x = 1; }`,
+      output: `@Component({ template: '{{ x() }}' }) class C { public accessor x = 1; }`,
+      errors: [{ messageId: 'shouldBeExplicit' }],
+    },
+    {
+      code: `@Component({ template: '{{ x() }}' }) abstract class C { abstract x: number; }`,
+      output: `@Component({ template: '{{ x() }}' }) abstract class C { public abstract x: number; }`,
+      errors: [{ messageId: 'shouldBeExplicit' }],
+    },
+    {
+      code: `@Component({ template: '{{ x() }}' }) class C { get x() { return 1; } }`,
+      output: `@Component({ template: '{{ x() }}' }) class C { public get x() { return 1; } }`,
+      errors: [{ messageId: 'shouldBeExplicit' }],
+    },
+    {
+      code: `@Component({ template: '{{ x() }}' }) class C { set x(v) {} }`,
+      output: `@Component({ template: '{{ x() }}' }) class C { public set x(v) {} }`,
+      errors: [{ messageId: 'shouldBeExplicit' }],
+    },
+    {
+      code: `@Component({ template: '{{ x() }}' }) class C { static x = 1; }`,
+      output: `@Component({ template: '{{ x() }}' }) class C { public static x = 1; }`,
+      errors: [{ messageId: 'shouldBeExplicit' }],
+    },
+    {
+      code: `@Component({ template: '{{ x() }}' }) class C extends B { override x = 1; }`,
+      output: `@Component({ template: '{{ x() }}' }) class C extends B { public override x = 1; }`,
+      errors: [{ messageId: 'shouldBeExplicit' }],
+    },
+    {
+      code: `@Component({ template: '{{ x() }}' }) class C { async x() {} }`,
+      output: `@Component({ template: '{{ x() }}' }) class C { public async x() {} }`,
+      errors: [{ messageId: 'shouldBeExplicit' }],
+    },
+    {
+      code: `@Component({ template: '{{ x() }}' }) class C { declare x: number; }`,
+      output: `@Component({ template: '{{ x() }}' }) class C { public declare x: number; }`,
+      errors: [{ messageId: 'shouldBeExplicit' }],
+    },
+    {
+      code: '@Component({ template: `{{ ${a}() }}` }) class C { x = 1; }',
+      output: '@Component({ template: `{{ ${a}() }}` }) class C { public x = 1; }',
+      errors: [{ messageId: 'shouldBeExplicitPublic' }],
+    },
+    {
+      code: `@Component({ template: '' }) class C { accessor x = 1; }`,
+      output: `@Component({ template: '' }) class C { public accessor x = 1; }`,
+      errors: [{ messageId: 'shouldBeExplicitPublic' }],
+    },
+    {
       code: `import { Component } from '@angular/core';
 import { inject } from 'some-other-lib';
 @Component({ template: '{{ store.value }}' }) class C { store = inject(Store); }`,

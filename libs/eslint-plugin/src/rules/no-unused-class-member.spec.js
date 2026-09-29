@@ -11,6 +11,7 @@ const tester = new RuleTester({
 
 tester.run('no-unused-class-member', rule, {
   valid: [
+    { code: `class C { private accessor x = 1; read() { return this.x; } }` },
     // private — used in a method
     { code: `class C { private doc = inject(DOCUMENT); doThing() { this.doc.createElement('div'); } }` },
 
@@ -71,6 +72,10 @@ tester.run('no-unused-class-member', rule, {
     { code: `@Directive({ host: { '[class.active]': 'active' } }) class C { private active = true; }` },
   ],
   invalid: [
+    {
+      code: `class C { private accessor x = 1; }`,
+      errors: [{ messageId: 'noUnused' }],
+    },
     {
       code: `import { Directive as Dir } from '@angular/core';
 @Dir({}) class C { protected svc = inject(S); }`,

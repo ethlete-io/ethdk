@@ -13,6 +13,18 @@ tester.run('no-redundant-internal', rule, {
   valid: [
     {
       code: `class C {
+  /** @internal */
+  @Input() protected x = 1;
+}`,
+    },
+    {
+      code: `class C {
+  /** @internal */
+  @ViewChild('a') x;
+}`,
+    },
+    {
+      code: `class C {
   // @internal
   private service = inject(Service);
 }`,
@@ -56,6 +68,26 @@ tester.run('no-redundant-internal', rule, {
     },
   ],
   invalid: [
+    {
+      code: `class C {
+  /** @internal */
+  @Input() private x = 1;
+}`,
+      output: `class C {
+  @Input() private x = 1;
+}`,
+      errors: [{ messageId: 'redundantInternal' }],
+    },
+    {
+      code: `class C {
+  /** @internal */
+  @HostListener('click') private onClick() {}
+}`,
+      output: `class C {
+  @HostListener('click') private onClick() {}
+}`,
+      errors: [{ messageId: 'redundantInternal' }],
+    },
     {
       code: `class C {
   /** @internal */

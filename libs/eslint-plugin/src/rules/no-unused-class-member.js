@@ -188,6 +188,7 @@ const noUnusedClassMember = {
 
       PropertyDefinition: registerMember,
       MethodDefinition: registerMember,
+      AccessorProperty: registerMember,
 
       MemberExpression(node) {
         if (node.object?.type !== 'ThisExpression') return;

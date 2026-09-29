@@ -35,15 +35,22 @@ const buildRemoveProtectedFix = (node, sourceCode) => {
   return (fixer) => fixer.removeRange([protectedToken.range[0], nextToken.range[0]]);
 };
 
+const MEMBER_TYPES = new Set([
+  'PropertyDefinition',
+  'AccessorProperty',
+  'TSAbstractPropertyDefinition',
+  'TSAbstractAccessorProperty',
+]);
+
 /**
  * @param {any} node
  */
 const isSupportedMember = (node) => {
-  if (node.type === 'PropertyDefinition') {
+  if (MEMBER_TYPES.has(node.type)) {
     return true;
   }
 
-  if (node.type === 'MethodDefinition') {
+  if (node.type === 'MethodDefinition' || node.type === 'TSAbstractMethodDefinition') {
     return node.kind !== 'constructor';
   }
 
@@ -174,11 +181,11 @@ const templateMemberAccessibility = {
     };
 
     return {
-      PropertyDefinition(node) {
+      'PropertyDefinition, AccessorProperty, TSAbstractPropertyDefinition, TSAbstractAccessorProperty'(node) {
         checkMember(node);
         checkImplicitPublicMember(node);
       },
-      MethodDefinition(node) {
+      'MethodDefinition, TSAbstractMethodDefinition'(node) {
         checkMember(node);
         checkImplicitPublicMember(node);
       },
