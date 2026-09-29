@@ -7,6 +7,7 @@ import {
   AgentUsageEvent,
   CollectedEvent,
   CollectedEventSource,
+  GitCommitEvent,
   TIMETRACK_PROVIDER,
   TokenUsage,
   isActivityEvent,
@@ -32,6 +33,7 @@ import { classifyCalls, lastHostSampleAt } from './calls';
 import { promptOriginReader } from './prompt-origin';
 import { PresenceSample, presenceWindows } from './presence';
 import { UnnamedFocus, UnnamedFocusReason, mergeUnnamedTitles } from './unnamed-focus';
+import { sessionWork } from './session-work';
 import { fileAgentEventsByWork } from './worked-in';
 import { namedWorkFileOf, sessionPieces } from '../model/session-piece';
 
@@ -1387,6 +1389,18 @@ export const streamDay = (options: {
     addEvidence(draftFor(drafts, state ?? {}), typed);
     observations.push({ at: prompt.at, context: state ?? {}, evidence: typed });
     marks.push({ at: prompt.at, state });
+  }
+
+  const commits = samples.filter((sample): sample is GitCommitEvent => sample.kind === 'git-commit');
+
+  for (const work of sessionWork({ turns, commits, checkoutOf })) {
+    const { repoPath, evidence } = work;
+    const session = runs.get(repoPath)?.some((run) => run.sessionId === work.sessionId) ? work.sessionId : undefined;
+    const on = branchAt({ repoPath, at: evidence.at, reported: branchOf(work.gitBranch) });
+    const state: RepoState = { repoPath, ...workedOn({ repoPath, branch: on, at: evidence.at, session }) };
+
+    addEvidence(draftFor(drafts, state), evidence);
+    observations.push({ at: evidence.at, context: state, evidence });
   }
 
   for (const turn of turns) {

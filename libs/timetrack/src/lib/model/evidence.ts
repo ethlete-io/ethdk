@@ -5,6 +5,8 @@ export type EvidenceKind =
   | 'branch-swap'
   | 'commit'
   | 'agent-session'
+  /** A handoff, plan, changeset or design call an agent session wrote. */
+  | 'work-file'
   /** A prompt the user typed at an agent. It carries no text, so its instant is the whole observation. */
   | 'prompt'
   | 'merge-request'
@@ -57,6 +59,7 @@ export type Evidence = {
 export const QUOTABLE_EVIDENCE_KINDS: readonly EvidenceKind[] = [
   'commit',
   'agent-session',
+  'work-file',
   'merge-request',
   'issue-view',
 ];

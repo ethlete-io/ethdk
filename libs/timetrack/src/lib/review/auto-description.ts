@@ -19,9 +19,41 @@ export const autoDescriptionRowId = (row: Pick<ReviewedRow, 'id' | 'recutOf'>) =
 
 const isCodeRow = (row: Pick<ReviewedRow, 'laneKey'>) => !!row.laneKey && !!streamKeyRepoPath(row.laneKey);
 
+const ACKNOWLEDGEMENT =
+  /^(?:(?:ok(?:ay)?|yes|yep|yeah|sure|agreed?|sounds (?:good|great|fine)|go(?: on| ahead)?|continue|proceed|thanks?|thank you|lgtm|perfect|great|nice|good|fine|do it|ja|jo|passt|weiter|mach weiter|einverstanden)\s*)+$/;
+const NEXT_STEP_QUESTION =
+  /^(?:where|what|how) (?:do|should|shall|can|will) we (?:continue|go|proceed|pick up|go on)\b/;
+
+/** A prompt that only agrees or asks what comes next: it names the conversation, never the work. */
+const isAcknowledgement = (note: string) => {
+  const plain = note
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return !plain || ACKNOWLEDGEMENT.test(plain) || NEXT_STEP_QUESTION.test(plain);
+};
+
+const notesOf = (evidence: ReviewedRow['evidence']) => {
+  const notes: string[] = [];
+
+  for (const entry of evidence) {
+    const note = QUOTABLE_EVIDENCE_KINDS.includes(entry.kind) ? entry.summary?.trim() : undefined;
+
+    if (note && !isAcknowledgement(note) && !notes.includes(note)) notes.push(note);
+  }
+
+  return notes;
+};
+
+const sameNotes = (left: readonly string[], right: readonly string[]) =>
+  left.length === right.length && left.every((note, index) => note === right[index]);
+
 /**
  * The rows of today auto mode still has to describe: settled code rows that name an issue, whose
- * description the user did not write, and that hold no answer yet. Nothing on any day but today,
+ * description the user did not write, and that hold notes no answer was asked from yet: a row whose
+ * notes changed since its answer is asked again, and a row with none is not asked. Nothing on any day but today,
  * nothing while auto mode is off, and nothing where the user made `autoMode.apply` stricter than `local`.
  */
 export const autoDescriptionAsks = (options: {
@@ -32,19 +64,23 @@ export const autoDescriptionAsks = (options: {
   classes: ActionClasses;
   rows: readonly ReviewedRow[];
   answers: readonly AutoModeDescription[];
+  /** The names the requests are masked with, so a held answer's notes compare to the row's own. */
+  maskedNames?: readonly string[];
   settleMs?: number;
 }): ReviewedRow[] => {
   if (!options.enabled || options.day !== options.today) return [];
   if (actionClassOf('autoMode.apply', options.classes) !== 'local') return [];
 
   const settledBy = options.nowMs - (options.settleMs ?? AUTO_DESCRIPTION_SETTLE_MS);
-  const answered = new Set(options.answers.map((answer) => answer.rowId));
+  const answered = new Map(options.answers.map((answer) => [answer.rowId, answer.request.notes]));
   const asked = new Set<string>();
 
   return options.rows.filter((row) => {
     const id = autoDescriptionRowId(row);
+    const notes = autoDescriptionRequest({ row, maskedNames: options.maskedNames }).notes;
+    const heldNotes = answered.get(id);
 
-    if (answered.has(id) || asked.has(id)) return false;
+    if (asked.has(id) || notes.length === 0 || (heldNotes && sameNotes(heldNotes, notes))) return false;
     if (!row.issueKey || row.hidden || row.unattended || row.excluded || row.state === 'rejected') return false;
     if (!isCodeRow(row) || Math.max(row.to.getTime(), row.activeUntil?.getTime() ?? 0) > settledBy) return false;
     if (!mayAutoWrite(rowFieldSourceOf(row, 'description'))) return false;
@@ -68,14 +104,7 @@ export const autoDescriptionRequest = (options: {
 }): WorklogWritingRequest => {
   const { row } = options;
   const map = pseudonymMap(options.maskedNames ?? []);
-  const notes: string[] = [];
-
-  for (const entry of row.evidence) {
-    const note = QUOTABLE_EVIDENCE_KINDS.includes(entry.kind) ? entry.summary : undefined;
-
-    if (note && !notes.includes(note)) notes.push(note);
-  }
-
+  const notes = notesOf(row.evidence);
   const summary = options.issueSummary?.trim();
 
   return {

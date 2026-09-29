@@ -14,7 +14,15 @@ export const DEFAULT_DESCRIBE_OPTIONS: DescribeOptions = {
 };
 
 /** What the row is called, in descending order of how well each source describes actual work. */
-const SUMMARY_PRIORITY: EvidenceKind[] = ['timer', 'commit', 'agent-session', 'merge-request', 'calendar', 'call'];
+const SUMMARY_PRIORITY: EvidenceKind[] = [
+  'timer',
+  'commit',
+  'agent-session',
+  'work-file',
+  'merge-request',
+  'calendar',
+  'call',
+];
 
 const truncate = (text: string, maxLength: number) =>
   text.length <= maxLength ? text : `${text.slice(0, maxLength - 1).trimEnd()}…`;

@@ -171,6 +171,35 @@ describe('streamDay agent sessions', () => {
     expect(new Set(evidenceOf('one'))).toEqual(new Set(['Older work']));
   });
 
+  it('hangs the changeset and the commits a session beside an older one wrote on its own stretch', () => {
+    const blocks = blocksOf([
+      ...focusRun({ from: 0, to: 120 }),
+      ...sessionRun({ sessionId: 'one', from: 10, to: 110, title: 'Older work' }),
+      ...sessionRun({ sessionId: 'two', from: 60, to: 80, title: 'Sounds good' }),
+      handoffTurn({ sessionId: 'two', minutes: 65, workedIn: 'libs/core/generators/migration.ts' }),
+      handoffTurn({ sessionId: 'two', minutes: 70, workedIn: '.changeset/core-generator-scan-mediums.md' }),
+      {
+        at: AT(75),
+        source: 'git',
+        kind: 'git-commit',
+        repoPath: REPO,
+        branch: BRANCH,
+        sha: 'b2fbfb3e7aaaaaaa',
+        subject: 'fix(core): Scope the v5 migration',
+        paths: ['libs/core/generators/migration.ts', '.changeset/core-generator-scan-mediums.md'],
+      },
+    ]);
+    const summariesOf = (session: string) =>
+      blocks
+        .filter((block) => block.context.session === session)
+        .flatMap((block) => block.evidence)
+        .flatMap((evidence) => (evidence.kind === 'prompt' || !evidence.summary ? [] : [evidence.summary]));
+
+    expect(new Set(summariesOf('two'))).toEqual(
+      new Set(['Sounds good', 'changeset core generator scan mediums', 'fix(core): Scope the v5 migration']),
+    );
+  });
+
   it('books an overlap the user prompted neither session in once, to the older session', () => {
     const events = [
       ...focusRun({ from: 0, to: 120 }),

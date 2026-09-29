@@ -129,6 +129,36 @@ describe('autoDescriptionAsks', () => {
     expect(asks({ rows: rowsOf(edits), answers: edits.autoDescriptions })).toEqual([]);
   });
 
+  it('asks again once the notes of a row it described changed, and rewrites its description', () => {
+    const row = codeRow();
+    const edits = withAutoModeDescription({ edits: EMPTY_DAY_REVIEW_EDITS, row, answer: answerFor(row, 'First') });
+    const grown = proposal({
+      id: CODE.id,
+      evidence: [
+        ...CODE.evidence,
+        { kind: 'commit', at: at('08:40'), detail: 'a commit', summary: 'Add the export button' },
+      ],
+    });
+    const [again] = rowsOf(edits, [grown]);
+
+    expect(asks({ rows: rowsOf(edits, [grown]), answers: edits.autoDescriptions })).toEqual([CODE.id]);
+
+    if (!again) throw new Error('no row');
+
+    const rewritten = withAutoModeDescription({ edits, row: again, answer: answerFor(again, 'Second') });
+
+    expect(rowsOf(rewritten, [grown])[0]?.description).toBe('Second');
+  });
+
+  it('asks nothing about a row whose only notes are acknowledgements', () => {
+    const acknowledged = proposal({
+      id: CODE.id,
+      evidence: [{ kind: 'agent-session', at: at('08:30'), detail: 'Sounds good', summary: 'Sounds good' }],
+    });
+
+    expect(asks({ rows: rowsOf(EMPTY_DAY_REVIEW_EDITS, [acknowledged]) })).toEqual([]);
+  });
+
   it('asks a failed row no second time', () => {
     const row = codeRow();
 
@@ -209,6 +239,35 @@ describe('autoDescriptionRequest', () => {
     };
 
     expect(autoDescriptionRequest({ row }).notes).toEqual([]);
+  });
+
+  it('drops prompts that only agree or ask what comes next, and keeps the work', () => {
+    const session = (summary: string) => ({
+      kind: 'agent-session' as const,
+      at: at('08:30'),
+      detail: summary,
+      summary,
+    });
+    const row = {
+      ...codeRow(),
+      evidence: [
+        session('Sounds good'),
+        session('Agree.'),
+        session('Where do we continue on now? The audit…'),
+        { kind: 'work-file' as const, at: at('08:35'), detail: 'wrote a changeset', summary: 'changeset scan mediums' },
+        {
+          kind: 'commit' as const,
+          at: at('08:40'),
+          detail: 'a commit',
+          summary: 'docs(core): Close the scan findings',
+        },
+      ],
+    };
+
+    expect(autoDescriptionRequest({ row }).notes).toEqual([
+      'changeset scan mediums',
+      'docs(core): Close the scan findings',
+    ]);
   });
 
   it('sends the key alone where the ticket summary is not known', () => {

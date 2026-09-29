@@ -214,6 +214,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       classes: settings.settings().actionClasses,
       rows: dayReview.rows(),
       answers: edits.autoDescriptions ?? [],
+      maskedNames: settings.settings().reasoning.maskedNames,
     });
   };
 
