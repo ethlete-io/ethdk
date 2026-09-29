@@ -2,14 +2,17 @@
 'use strict';
 
 const { RuleTester } = require('eslint');
+const tsParser = require('@typescript-eslint/parser');
 const rule = require('./no-subscribe-with-body');
 
 const tester = new RuleTester({
-  languageOptions: { ecmaVersion: 2022, sourceType: 'module' },
+  languageOptions: { ecmaVersion: 2022, sourceType: 'module', parser: tsParser },
 });
 
 tester.run('no-subscribe-with-body', rule, {
   valid: [
+    { code: `a$.subscribe(handler);` },
+    { code: `a$.subscribe({ next: handler });` },
     // Empty subscribe call — fine
     { code: `obs$.subscribe();` },
     { code: `obs$.subscribe(this.forward$);` },

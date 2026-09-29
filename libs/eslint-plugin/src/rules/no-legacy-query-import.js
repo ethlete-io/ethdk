@@ -97,7 +97,9 @@ const noLegacyQueryImport = {
      * @param {any} node
      */
     const reportName = (name, node) => {
-      const successor = V2_SUCCESSORS[name] ?? LEGACY_SYMBOLS[name];
+      const successor =
+        (Object.hasOwn(V2_SUCCESSORS, name) ? V2_SUCCESSORS[name] : null) ??
+        (Object.hasOwn(LEGACY_SYMBOLS, name) ? LEGACY_SYMBOLS[name] : null);
 
       if (successor) {
         context.report({

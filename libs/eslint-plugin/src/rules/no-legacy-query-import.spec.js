@@ -14,6 +14,11 @@ const options = [{ docsBaseUrl: 'https://docs.example.com' }];
 
 tester.run('no-legacy-query-import', rule, {
   valid: [
+    { code: `import { constructor, toString } from '@ethlete/query';` },
+    {
+      code: `import * as q from '@ethlete/query';
+q.hasOwnProperty;`,
+    },
     {
       code: `import { createQueryClient, createGetQuery } from '@ethlete/query';`,
       filename: 'test.ts',

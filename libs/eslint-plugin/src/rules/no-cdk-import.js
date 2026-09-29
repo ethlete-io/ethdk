@@ -111,7 +111,7 @@ const noCdkImport = {
     const map = loadMigrationMap(options.migrationMapPath, context.cwd);
 
     /** @param {string} name */
-    const entryFor = (name) => map?.[name] ?? null;
+    const entryFor = (name) => (map && Object.hasOwn(map, name) ? map[name] : null);
 
     return {
       [MODULE_REFERENCE_SELECTOR](node) {

@@ -2,10 +2,11 @@
 'use strict';
 
 const { RuleTester } = require('eslint');
+const tsParser = require('@typescript-eslint/parser');
 const rule = require('./no-async-await');
 
 const tester = new RuleTester({
-  languageOptions: { ecmaVersion: 2022, sourceType: 'module' },
+  languageOptions: { ecmaVersion: 2022, sourceType: 'module', parser: tsParser },
 });
 
 tester.run('no-async-await', rule, {
@@ -24,6 +25,11 @@ tester.run('no-async-await', rule, {
     },
   ],
   invalid: [
+    {
+      code: `export const Basic = { render: async () => { await load(); } };`,
+      filename: 'button.stories.ts',
+      errors: [{ messageId: 'noAsync' }, { messageId: 'noAwait' }],
+    },
     {
       code: `async function load() { return 1; }`,
       errors: [{ messageId: 'noAsync' }],

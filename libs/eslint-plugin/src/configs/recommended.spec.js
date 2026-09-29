@@ -905,3 +905,41 @@ test('every registered rule is in a recommended config or on the exclusion list'
   expect(missing).toEqual([]);
   for (const name of NOT_IN_RECOMMENDED) expect(configured.has(`ethlete/${name}`)).toBe(false);
 });
+
+test('prefer-rxjs-timer: setTimeout is flagged, a member setTimeout is not', () => {
+  expect(ruleIds(lint(`setTimeout(handler, 10);`))).toContain('ethlete/prefer-rxjs-timer');
+  expect(ruleIds(lint(`obj.setTimeout(handler, 10);`))).not.toContain('ethlete/prefer-rxjs-timer');
+});
+
+test('no-async-await: a story play function is exempt, a render function is not', () => {
+  const linter = new Linter({ configType: 'flat' });
+  const run = (/** @type {string} */ code) =>
+    linter.verify(
+      code,
+      [
+        {
+          ...plugin.configs.recommendedTs,
+          plugins: {
+            ...plugin.configs.recommendedTs.plugins,
+            '@typescript-eslint': tsPlugin,
+            '@angular-eslint': angularEslint,
+          },
+          languageOptions: { parser: tsParser, ecmaVersion: 2022, sourceType: 'module' },
+        },
+      ],
+      { filename: 'button.stories.ts' },
+    );
+
+  expect(ruleIds(run(`export const A = { play: async () => { await go(); } };`))).not.toContain(
+    'ethlete/no-async-await',
+  );
+  expect(ruleIds(run(`export const A = { render: async () => { await go(); } };`))).toContain('ethlete/no-async-await');
+});
+
+test('no-legacy-prepare-without-injector: a legacy prepare in a later callback is flagged', () => {
+  const msgs = lint(`import { legacyGetUsers } from './queries';
+class A {
+  users = computed(() => legacyGetUsers.prepare({}));
+}`);
+  expect(ruleIds(msgs)).toContain('ethlete/no-legacy-prepare-without-injector');
+});

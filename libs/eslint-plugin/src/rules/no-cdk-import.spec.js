@@ -37,6 +37,12 @@ tester.run('no-cdk-import', rule, {
   ],
   invalid: [
     {
+      code: `import { constructor, toString } from '@ethlete/cdk';`,
+      filename: 'test.ts',
+      options: withMap,
+      errors: [{ messageId: 'unmapped' }, { messageId: 'unmapped' }],
+    },
+    {
       code: `export * from '@ethlete/cdk';`,
       errors: [{ messageId: 'module' }],
     },

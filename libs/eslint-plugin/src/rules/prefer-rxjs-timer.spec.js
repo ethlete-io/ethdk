@@ -2,14 +2,18 @@
 'use strict';
 
 const { RuleTester } = require('eslint');
+const tsParser = require('@typescript-eslint/parser');
 const rule = require('./prefer-rxjs-timer');
 
 const tester = new RuleTester({
-  languageOptions: { ecmaVersion: 2022, sourceType: 'module' },
+  languageOptions: { ecmaVersion: 2022, sourceType: 'module', parser: tsParser },
 });
 
 tester.run('prefer-rxjs-timer', rule, {
   valid: [
+    { code: `obj.setTimeout(fn, 1);` },
+    { code: `this.setTimeout(fn, 1);` },
+    { code: `foo.window.setTimeout(fn, 1);` },
     {
       code: `const setTimeout = (fn) => fn;
 setTimeout(() => {});`,
@@ -29,6 +33,10 @@ clearInterval(setInterval(() => {}, 10));`,
     { code: `Promise.resolve();` },
   ],
   invalid: [
+    {
+      code: `setTimeout(handler, 10);`,
+      errors: [{ messageId: 'preferTimer' }],
+    },
     {
       code: `setTimeout(() => this.refresh(), 500);`,
       errors: [{ messageId: 'preferTimer' }],

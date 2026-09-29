@@ -2,10 +2,11 @@
 'use strict';
 
 const { RuleTester } = require('eslint');
+const tsParser = require('@typescript-eslint/parser');
 const rule = require('./prefer-linked-signal');
 
 const tester = new RuleTester({
-  languageOptions: { ecmaVersion: 2022, sourceType: 'module' },
+  languageOptions: { ecmaVersion: 2022, sourceType: 'module', parser: tsParser },
 });
 
 tester.run('prefer-linked-signal', rule, {

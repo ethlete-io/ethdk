@@ -13,6 +13,10 @@ const withImport = (code) => `import { legacyGetUsers } from './queries';\n${cod
 
 tester.run('no-legacy-prepare-without-injector', rule, {
   valid: [
+    {
+      code: `import { legacyGetUsers } from './queries';\nclass A { load() { legacyGetUsers.prepare({}); } }`,
+      options: [{ creatorPattern: '^query' }],
+    },
     // already threaded
     { code: withImport(`class A { load = computed(() => legacyGetUsers.prepare({ injector: this.injector })); }`) },
     // directly in a field initializer or constructor: both are injection contexts
@@ -41,6 +45,62 @@ tester.run('no-legacy-prepare-without-injector', rule, {
     { code: `import { getUsers } from './queries';\nclass A { load() { getUsers.prepare({}); } }` },
   ],
   invalid: [
+    {
+      code: `import * as ng from '@angular/core';
+import { legacyGetUsers } from './queries';
+class A {
+  page = signal(1);
+  users = computed(() => legacyGetUsers.prepare({}));
+}`,
+      output: `import * as ng from '@angular/core';
+import { inject, Injector } from '@angular/core';
+import { legacyGetUsers } from './queries';
+class A {
+  private injector = inject(Injector);
+
+  page = signal(1);
+  users = computed(() => legacyGetUsers.prepare({ injector: this.injector }));
+}`,
+      errors: [{ messageId: 'missingInjector' }],
+    },
+    {
+      code: `import ng from '@angular/core';
+import { legacyGetUsers } from './queries';
+class A {
+  page = signal(1);
+  users = computed(() => legacyGetUsers.prepare({}));
+}`,
+      output: `import ng from '@angular/core';
+import { inject, Injector } from '@angular/core';
+import { legacyGetUsers } from './queries';
+class A {
+  private injector = inject(Injector);
+
+  page = signal(1);
+  users = computed(() => legacyGetUsers.prepare({ injector: this.injector }));
+}`,
+      errors: [{ messageId: 'missingInjector' }],
+    },
+    {
+      code: `import { queryGetUsers } from './queries';
+class A {
+  private injector = inject(Injector);
+
+  load() {
+    queryGetUsers.prepare({});
+  }
+}`,
+      output: `import { queryGetUsers } from './queries';
+class A {
+  private injector = inject(Injector);
+
+  load() {
+    queryGetUsers.prepare({ injector: this.injector });
+  }
+}`,
+      options: [{ creatorPattern: '^query' }],
+      errors: [{ messageId: 'missingInjector' }],
+    },
     {
       code: `import { inject, Injector } from '@angular/core';
 import { legacyGetUsers } from './queries';
