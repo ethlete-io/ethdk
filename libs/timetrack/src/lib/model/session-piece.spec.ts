@@ -179,4 +179,13 @@ describe('sessionPieces', () => {
       ]),
     ).toEqual({ a: 'a', b: 'a' });
   });
+
+  it('joins two sessions that ran at the same time and wrote one changeset', () => {
+    expect(
+      piecesOf([
+        session({ id: 'a', from: 0, to: 60, paths: ['.changeset/core-scan.md', 'libs/timetrack/a.ts'] }),
+        session({ id: 'b', from: 30, to: 90, paths: ['.changeset/core-scan.md'] }),
+      ]),
+    ).toEqual({ a: 'a', b: 'a' });
+  });
 });

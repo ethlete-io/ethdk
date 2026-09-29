@@ -27,10 +27,11 @@ export type SessionPiece = { piece: string; workPath?: string };
 const NAMED_WORK_FILES = [
   { prefix: '.claude/handoffs/', segments: 3 },
   { prefix: 'plans/', segments: 2 },
+  { prefix: '.changeset/', segments: 2 },
   { prefix: '.ethlete/design/calls/', segments: 5 },
 ];
 
-/** The handoff, plan or design call a path names, or nothing. */
+/** The handoff, plan, changeset or design call a path names, or nothing. */
 export const namedWorkFileOf = (path: string) => {
   const named = NAMED_WORK_FILES.find((candidate) => path.startsWith(candidate.prefix));
   const segments = path.replace(/\/+$/, '').split('/');
