@@ -84,6 +84,7 @@ export class TooltipDirective {
   private descriptionId = createTooltipDescriptionId();
   private descriptionElement: HTMLElement | null = null;
   private appliedDescriptionId: string | null = null;
+  private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   private accessibleDescription = computed(() => {
     const ariaDescription = this.ariaDescription();
@@ -97,15 +98,13 @@ export class TooltipDirective {
   });
 
   constructor() {
-    const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-
     mountFloatingPanelStyles();
 
     this.setupHoverBehavior();
     this.setupFocusBehavior();
 
     effect(() => {
-      if (!isBrowser) return;
+      if (!this.isBrowser) return;
 
       const description = this.accessibleDescription();
 
@@ -113,7 +112,7 @@ export class TooltipDirective {
         this.syncDescriptionElement(description);
 
         if (!this.overlayRef()) {
-          this.syncHostDescription(description ? this.descriptionId : null);
+          this.syncHostDescription(this.descriptionElement ? this.descriptionId : null);
         }
       });
     });
@@ -163,6 +162,10 @@ export class TooltipDirective {
 
     enableAnchoredOverlayPositionExtras();
 
+    if (this.isBrowser) {
+      this.syncDescriptionElement(accessibleDescription, true);
+    }
+
     const tooltipId = createTooltipId();
     const hostElement = this.elementRef.nativeElement;
     const config: OverlayConfig = {
@@ -210,7 +213,7 @@ export class TooltipDirective {
             this.overlayRef.set(null);
           }
 
-          this.syncHostDescription(this.accessibleDescription() ? this.descriptionId : null);
+          this.syncHostDescription(this.descriptionElement ? this.descriptionId : null);
         }),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -347,7 +350,7 @@ export class TooltipDirective {
     }
   }
 
-  private syncDescriptionElement(description: string | null) {
+  private syncDescriptionElement(description: string | null, create = false) {
     if (!description) {
       this.removeDescriptionElement();
 
@@ -355,6 +358,10 @@ export class TooltipDirective {
     }
 
     if (!this.descriptionElement) {
+      if (!create) {
+        return;
+      }
+
       const descriptionElement = this.renderer.createElement('div');
 
       this.renderer.setAttribute(descriptionElement, 'id', this.descriptionId);

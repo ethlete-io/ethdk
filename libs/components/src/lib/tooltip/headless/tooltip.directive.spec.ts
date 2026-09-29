@@ -52,7 +52,16 @@ describe('TooltipDirective', () => {
     tooltipDirective.hide();
   });
 
-  it('creates a hidden accessible description for string content', () => {
+  it('creates no description node until the tooltip is first shown', () => {
+    expect(document.querySelector('[id^="et-tooltip-description"]')).toBeNull();
+    expect(button.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('creates a hidden accessible description for string content once shown', () => {
+    tooltipDirective.show();
+    tooltipDirective.hide();
+    fixture.detectChanges();
+
     const descriptionId = button.getAttribute('aria-describedby');
 
     expect(descriptionId).toContain('et-tooltip-description');
@@ -60,8 +69,6 @@ describe('TooltipDirective', () => {
   });
 
   it('switches aria-describedby to the live tooltip id while shown', () => {
-    const fallbackDescriptionId = button.getAttribute('aria-describedby');
-
     tooltipDirective.show();
     fixture.detectChanges();
 
@@ -70,7 +77,7 @@ describe('TooltipDirective', () => {
     tooltipDirective.hide();
     fixture.detectChanges();
 
-    expect(button.getAttribute('aria-describedby')).toBe(fallbackDescriptionId);
+    expect(button.getAttribute('aria-describedby')).toContain('et-tooltip-description');
   });
 
   it('points at the anchor element while the trigger keeps the description', () => {
@@ -118,9 +125,7 @@ describe('TooltipDirective', () => {
     setInputSignal(directive.content, 'Tooltip body');
     describedFixture.detectChanges();
 
-    const idle = describedButton.getAttribute('aria-describedby') ?? '';
-    expect(idle).toContain('consumer-hint');
-    expect(idle).toContain('et-tooltip-description');
+    expect(describedButton.getAttribute('aria-describedby')).toBe('consumer-hint');
 
     directive.show();
     describedFixture.detectChanges();
@@ -132,8 +137,7 @@ describe('TooltipDirective', () => {
 
     directive.hide();
     describedFixture.detectChanges();
-
-    expect(describedButton.getAttribute('aria-describedby')).toBe(idle);
+    expect(describedButton.getAttribute('aria-describedby')).toMatch(/^consumer-hint et-tooltip-description/);
   });
 
   it('throws when template content is used without an aria description', () => {
