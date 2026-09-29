@@ -578,11 +578,12 @@ type SessionRun = { sessionId: string; from: Date; to: Date; paths: string[] };
  * A session reports the directory it was started in, so the checkout it ran in is read the same way
  * every other agent fact is read - through `repoRootOf`.
  */
-const sessionRuns = (
-  samples: readonly ActivityEvent[],
-  turns: readonly AgentUsageEvent[],
-  roots: readonly string[],
-) => {
+const sessionRuns = (options: {
+  samples: readonly ActivityEvent[];
+  turns: readonly AgentUsageEvent[];
+  roots: readonly string[];
+}) => {
+  const { samples, turns, roots } = options;
   const held = new Map<string, Map<string, SessionRun>>();
 
   for (const sample of samples) {
@@ -1118,7 +1119,7 @@ export const streamDay = (options: {
    * than only the stretches an `agent-session` sample covers: a session and the window watching it
    * are the same piece of work, and a key that told them apart would book those minutes twice.
    */
-  const runs = sessionRuns(samples, turns, roots);
+  const runs = sessionRuns({ samples, turns, roots });
   const pieces = new Map(
     [...runs].flatMap(([repoPath, held]) => [
       ...sessionPieces({ sessions: held, projectRoots: config.projectRoots?.[repoPath] }),
