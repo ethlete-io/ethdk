@@ -67,7 +67,9 @@ drawings. A project the config names not draws bare.
 Start the page with `et design [checkout]`, which serves the port `config.json` names. The
 checkout defaults to the working directory, and `DE_PORT` overrules the config, so two
 checkouts can be drawn at once. A repository that builds the tool rather than installing it
-wraps this in a script - in the ethlete SDK, `yarn design` and `yarn design:check`.
+wraps this in a script - in the ethlete SDK, `yarn design:check`. There, the user reads the
+calls in Ethlete Studio, started with `yarn studio`, and Studio serves the page itself. Do not
+start `yarn design` next to it.
 
 Ethlete Studio carries its own copy of the tool, so it draws a checkout that installs nothing.
 The machine still needs Node, and the render stage still needs `playwright` where the copy in
