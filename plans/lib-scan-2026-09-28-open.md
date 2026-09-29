@@ -25,5 +25,4 @@ Each domain plan file keeps its open Low lines; the decisions are listed there. 
 
 - timetrack `stillFocused` tail order: real, but no failing test was found.
 - timetrack: codex reasoning runs record no usage; `agentRunSpend` reads only Claude's envelope.
-- cdk: `overlay-host.storybook.component.ts:40` imports `./overlay.storybook.component`, which
-  6cfb462c0 deleted (cdk lib tsc error).
+- cdk: the dead `overlay-host.storybook.component.ts` is deleted (5cc8ddd5a).
