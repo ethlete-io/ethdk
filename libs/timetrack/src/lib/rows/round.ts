@@ -54,17 +54,78 @@ export const sharingTicket = <T extends TicketRow>(rows: readonly T[]): Set<T> =
   return shared;
 };
 
+const siblingGroupsOf = <T extends TicketRow>(rows: readonly T[]): T[][] => {
+  const groups: { ticket: string; end: number; members: T[] }[] = [];
+
+  for (const row of [...sharingTicket(rows)].sort((a, b) => a.from.getTime() - b.from.getTime())) {
+    const ticket = `${row.laneKey}|${ticketOf(row)}`;
+    const group = groups.find((open) => open.ticket === ticket && open.end > row.from.getTime());
+
+    if (group) {
+      group.members.push(row);
+      group.end = Math.max(group.end, row.to.getTime());
+    } else {
+      groups.push({ ticket, end: row.to.getTime(), members: [row] });
+    }
+  }
+
+  return groups.map((group) => group.members);
+};
+
 /**
- * What a row books out of `spanMs`: the span, or for a row {@link sharingTicket} returned, its own observed
- * minutes rounded up to the increment - never more than the span.
+ * What each row {@link sharingTicket} returned books. A group of overlapping sibling rows rounds its summed
+ * observed minutes up once, never past the clock the group covers, and shares the increments out by
+ * observed minutes: one to each row first, then the largest remainder first. No row books past `spanMsOf`.
  */
-export const bookedMsOf = (options: {
-  row: { observedMs: number };
-  spanMs: number;
-  shared: boolean;
-  round?: Partial<RoundOptions>;
-}) =>
-  options.shared ? Math.min(options.spanMs, roundDurationUp(options.row.observedMs, options.round)) : options.spanMs;
+export const siblingBookingsOf = <T extends TicketRow & { observedMs: number }>(
+  rows: readonly T[],
+  options?: { spanMsOf?: (row: T) => number; round?: Partial<RoundOptions> },
+): Map<T, number> => {
+  const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options?.round };
+  const spanMsOf = options?.spanMsOf ?? ((row: T) => row.to.getTime() - row.from.getTime());
+  const booked = new Map<T, number>();
+
+  for (const group of siblingGroupsOf(rows)) {
+    const clockMs = group.reduce(
+      (clock, row) => ({
+        ms: clock.ms + Math.max(0, row.to.getTime() - Math.max(clock.end, row.from.getTime())),
+        end: Math.max(clock.end, row.to.getTime()),
+      }),
+      { ms: 0, end: -Infinity },
+    ).ms;
+    const observedMs = group.reduce((sum, row) => sum + row.observedMs, 0);
+    let left = Math.min(Math.ceil(observedMs / incrementMs), Math.floor(clockMs / incrementMs));
+    const room = new Map(group.map((row) => [row, Math.floor(spanMsOf(row) / incrementMs)]));
+    const given = new Map(group.map((row) => [row, 0]));
+    const give = (row: T) => {
+      given.set(row, (given.get(row) ?? 0) + 1);
+      left--;
+    };
+    const canTake = (row: T) => left > 0 && (given.get(row) ?? 0) < (room.get(row) ?? 0);
+    const byObserved = [...group].sort((a, b) => b.observedMs - a.observedMs);
+
+    for (const row of byObserved) if (canTake(row)) give(row);
+    for (const row of byObserved) {
+      while (canTake(row) && (given.get(row) ?? 0) < Math.floor(row.observedMs / incrementMs)) give(row);
+    }
+    while (left > 0) {
+      const [next] = byObserved
+        .filter(canTake)
+        .sort(
+          (a, b) =>
+            b.observedMs / incrementMs - (given.get(b) ?? 0) - (a.observedMs / incrementMs - (given.get(a) ?? 0)),
+        );
+
+      if (!next) break;
+
+      give(next);
+    }
+
+    for (const row of group) booked.set(row, (given.get(row) ?? 0) * incrementMs);
+  }
+
+  return booked;
+};
 
 export type DayWarningKind =
   | 'under-target'

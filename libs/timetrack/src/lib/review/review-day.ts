@@ -6,9 +6,9 @@ import {
   DEFAULT_ROUND_OPTIONS,
   DayCheck,
   RoundOptions,
-  bookedMsOf,
   checkDay,
   sharingTicket,
+  siblingBookingsOf,
 } from '../rows/round';
 import { CALL_LANE_KEY, storedLaneKey } from '../rows/lane';
 import { unnamedRowId } from '../rows/propose';
@@ -358,7 +358,7 @@ const coveredByPins = (options: {
  * A row books the time its band covers. One number reaches the reviewer, so a band drawn 13:15 to
  * 13:45 logs 30 minutes and never a shorter time the label would then have to explain. See ADR 0019.
  * The exceptions are remote time past the day's allowance, which ADR 0033 draws and never books, and
- * the rows of two agent sessions on one ticket, which book their own observed minutes (`sharingTicket`);
+ * the rows of two agent sessions on one ticket, which share their observed minutes out (`siblingBookingsOf`);
  * a row the reviewer wrote by hand books its span regardless.
  *
  * Run after `snapRowBounds`, whose bounds are whole increments, so this books whole increments too.
@@ -371,16 +371,14 @@ const bookTheSpan = (options: {
   const { rows } = options;
   const observed = rows.filter((row) => !isManualRow(row));
   const unbooked = unbookedRemoteByRow({ rows: observed, remote: options.remote });
-  const shared = sharingTicket(observed);
+  const siblings = siblingBookingsOf(observed, {
+    spanMsOf: (row) => bookedSpanMs(row, unbooked[observed.indexOf(row)] ?? []),
+    round: options.round,
+  });
 
   return rows.map((row) => {
     const windows = unbooked[observed.indexOf(row)] ?? [];
-    const durationMs = bookedMsOf({
-      row,
-      spanMs: bookedSpanMs(row, windows),
-      shared: shared.has(row),
-      round: options.round,
-    });
+    const durationMs = siblings.get(row) ?? bookedSpanMs(row, windows);
     const unbookedMs = windowsMs(windows) || undefined;
 
     if (durationMs === row.durationMs && unbookedMs === row.unbookedMs) return row;

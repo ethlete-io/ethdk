@@ -368,4 +368,21 @@ describe('propose, for parallel sessions on one ticket', () => {
 
     expect(turns).toEqual([[AT(0).getTime(), AT(60).getTime()], [AT(30).getTime()]]);
   });
+
+  it('rounds the minutes of the pair up once, so the pair never books more than the clock it covers', () => {
+    const { proposals } = propose({
+      groups: [
+        session([
+          [0, 20],
+          [30, 41],
+        ]),
+        session([
+          [20, 30],
+          [41, 60],
+        ]),
+      ],
+    });
+
+    expect(proposals.map((row) => row.durationMs / MINUTE)).toEqual([30, 30]);
+  });
 });

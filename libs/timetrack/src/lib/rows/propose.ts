@@ -5,7 +5,7 @@ import { mergeWindows } from '../model/time-window';
 import { DescribeOptions, describeWork } from './describe';
 import { laneKeyOf } from './lane';
 import { WorkGroup } from './merge';
-import { RoundOptions, bookedMsOf, roundDurationUp, sharingTicket } from './round';
+import { RoundOptions, roundDurationUp, siblingBookingsOf } from './round';
 import { snapRowBounds } from './snap';
 import { stretchesOf } from './stretches';
 
@@ -160,25 +160,26 @@ export const propose = (options: {
     group: { ...row.group, from: row.from, to: row.to },
     durationMs: row.to.getTime() - row.from.getTime(),
   }));
-  const shared = sharingTicket(
+  const siblings = siblingBookingsOf(
     rows.map((row) => ({
       row,
       from: row.from,
       to: row.to,
+      observedMs: row.group.observedMs,
       laneKey: row.group.laneKey ?? laneKeyOf(row.group.blocks),
       issueKey: isAttributedRow(row) ? row.group.issueKey : undefined,
       standInId: row.group.standInId,
     })),
+    { round: options.round },
   );
-  const sharedRows = new Set([...shared].map((ticket) => ticket.row));
+  const bookedByRow = new Map([...siblings].map(([sibling, bookedMs]) => [sibling.row, bookedMs]));
   const booked = rows.map((row) => {
-    const shared = sharedRows.has(row);
+    const bookedMs = bookedByRow.get(row);
+    const shared = bookedMs !== undefined;
 
     return {
       ...row,
-      durationMs: shared
-        ? bookedMsOf({ row: row.group, spanMs: row.durationMs, shared, round: options.round })
-        : row.durationMs,
+      durationMs: bookedMs ?? row.durationMs,
       stretches: shared ? mergeWindows(row.group.blocks) : stretchesOf(row.group.blocks),
     };
   });
