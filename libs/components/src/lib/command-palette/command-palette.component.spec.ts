@@ -333,3 +333,37 @@ describe('CommandPaletteComponent group labels', () => {
     ).toEqual(['Дата', '設定']);
   });
 });
+
+describe('CommandPaletteComponent group labels', () => {
+  @Component({
+    template: `<et-command-palette />`,
+    imports: [COMMAND_PALETTE_IMPORTS],
+    providers: [provideCommandPaletteRegistry()],
+  })
+  class SimilarGroupsHostComponent {
+    constructor() {
+      registerCommands([
+        { id: 'a', label: 'Alpha', group: 'Rows', run: () => undefined },
+        { id: 'b', label: 'Beta', group: 'rows', run: () => undefined },
+        { id: 'c', label: 'Gamma', group: 'Add row', run: () => undefined },
+        { id: 'd', label: 'Delta', group: 'add-row', run: () => undefined },
+        { id: 'e', label: 'Epsilon', group: 'Rows', run: () => undefined },
+      ]);
+    }
+  }
+
+  it('gives every group heading its own id and labels each group by its own heading', () => {
+    const fixture = TestBed.createComponent(SimilarGroupsHostComponent);
+
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const headings = [...host.querySelectorAll<HTMLElement>('.et-command-palette-group-label')];
+    const groups = [...host.querySelectorAll<HTMLElement>('[role="group"]')];
+
+    expect(headings.map((heading) => heading.textContent?.trim())).toEqual(['Rows', 'rows', 'Add row', 'add-row']);
+    expect(new Set(headings.map((heading) => heading.id)).size).toBe(4);
+    expect(groups.map((group) => group.getAttribute('aria-labelledby'))).toEqual(headings.map((heading) => heading.id));
+    expect(groups[0]?.querySelectorAll('et-command-palette-item')).toHaveLength(2);
+  });
+});
