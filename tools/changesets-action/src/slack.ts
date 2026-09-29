@@ -7,6 +7,7 @@ import { getChangelogEntry } from "./utils.ts";
 type SlackSection = { type: "section"; text: { type: "mrkdwn"; text: string } };
 
 const SLACK_SECTION_MAX_CHARACTERS = 3000;
+const SLACK_MAX_BLOCKS = 50;
 
 export function markdownToSlackMrkdwn(markdown: string): string {
   const codeBlocks: string[] = [];
@@ -65,7 +66,9 @@ export function splitIntoSlackSections(text: string): SlackSection[] {
   return blocks;
 }
 
-async function getPackageBlocks(pkg: Package) {
+type PackageNotes = { pkg: Package; sections: SlackSection[] };
+
+async function getPackageNotes(pkg: Package): Promise<PackageNotes | null> {
   const { name, version } = pkg.packageJson;
   let changelog: string;
   try {
@@ -74,23 +77,86 @@ async function getPackageBlocks(pkg: Package) {
     core.error(
       `Error reading changelog for ${name}. Is the changelog file missing?`,
     );
-    return [];
+    return null;
   }
 
   const changelogEntry = getChangelogEntry(changelog, version);
   if (!changelogEntry) {
     core.error(`Could not find changelog entry for ${name}@${version}`);
-    return [];
+    return null;
   }
 
-  return [
-    { type: "divider" } as const,
-    {
-      type: "section" as const,
-      text: { type: "mrkdwn" as const, text: `*${name}@${version}*` },
+  return {
+    pkg,
+    sections: splitIntoSlackSections(
+      markdownToSlackMrkdwn(changelogEntry.content),
+    ),
+  };
+}
+
+function sectionBudgets(notes: PackageNotes[], budget: number): number[] {
+  const budgets = notes.map(() => 0);
+  let left = budget;
+  for (let round = 0; left > 0; round++) {
+    let granted = false;
+    for (let i = 0; i < notes.length && left > 0; i++) {
+      if (notes[i].sections.length > round) {
+        budgets[i]++;
+        left--;
+        granted = true;
+      }
+    }
+    if (!granted) break;
+  }
+  return budgets;
+}
+
+function changelogUrl(pkg: Package): string | null {
+  const { GITHUB_SERVER_URL, GITHUB_REPOSITORY, GITHUB_SHA } = process.env;
+  if (!GITHUB_SERVER_URL || !GITHUB_REPOSITORY || !GITHUB_SHA) return null;
+  return `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA}/${pkg.relativeDir}/CHANGELOG.md`;
+}
+
+function truncationNotice(cut: Package[]): SlackSection {
+  const names = cut.map((pkg) => {
+    const url = changelogUrl(pkg);
+    return url ? `<${url}|${pkg.packageJson.name}>` : pkg.packageJson.name;
+  });
+  return {
+    type: "section",
+    text: {
+      type: "mrkdwn",
+      text: `_Cut to fit Slack. Full notes: ${names.join(", ")}_`,
     },
-    ...splitIntoSlackSections(markdownToSlackMrkdwn(changelogEntry.content)),
-  ];
+  };
+}
+
+function packageBlocks(notes: PackageNotes[], budget: number): unknown[] {
+  const titleBlocks = notes.length * 2;
+  const needed =
+    titleBlocks + notes.reduce((sum, n) => sum + n.sections.length, 0);
+  const fits = needed <= budget;
+  const budgets = fits
+    ? notes.map((n) => n.sections.length)
+    : sectionBudgets(notes, budget - titleBlocks - 1);
+
+  const blocks: unknown[] = notes.flatMap(({ pkg, sections }, i) => [
+    { type: "divider" },
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `*${pkg.packageJson.name}@${pkg.packageJson.version}*`,
+      },
+    },
+    ...sections.slice(0, budgets[i]),
+  ]);
+  if (fits) return blocks;
+
+  const cut = notes
+    .filter((n, i) => budgets[i] < n.sections.length)
+    .map((n) => n.pkg);
+  return [...blocks.slice(0, budget - 1), truncationNotice(cut)];
 }
 
 export type SlackPayload = {
@@ -105,9 +171,9 @@ export async function createSlackPayload(
   packages: Package[],
   { title, channel }: { title: string; channel?: string },
 ): Promise<SlackPayload> {
-  const packageBlocks = (
-    await Promise.all(packages.map(getPackageBlocks))
-  ).flat();
+  const notes = (await Promise.all(packages.map(getPackageNotes))).filter(
+    (n): n is PackageNotes => n !== null,
+  );
 
   return {
     ...(channel ? { channel } : {}),
@@ -119,7 +185,7 @@ export async function createSlackPayload(
         type: "header",
         text: { type: "plain_text", text: title, emoji: true },
       },
-      ...packageBlocks,
+      ...packageBlocks(notes, SLACK_MAX_BLOCKS - 1),
     ],
   };
 }

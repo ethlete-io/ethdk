@@ -77,4 +77,41 @@ describe("createSlackPayload", () => {
     const payload = await createSlackPayload([], { title: "Release" });
     expect(payload).not.toHaveProperty("channel");
   });
+
+  it("keeps every package title and cuts the notes to 50 blocks", async () => {
+    const longNotes = Array.from(
+      { length: 40 },
+      (_, i) => `- ${String(i).padEnd(2990, "x")}`,
+    ).join("\n");
+    const changelog = (name: string) =>
+      `# ${name}\n\n## 1.0.0\n\n${longNotes}\n`;
+    await using fixture = await testdir({
+      "pkg-a/CHANGELOG.md": changelog("pkg-a"),
+      "pkg-b/CHANGELOG.md": changelog("pkg-b"),
+    });
+    const pkgs = ["pkg-a", "pkg-b"].map(
+      (name) =>
+        ({
+          dir: fixture.getPath(name),
+          relativeDir: name,
+          packageJson: { name, version: "1.0.0" },
+        }) as Package,
+    );
+    vi.stubEnv("GITHUB_SERVER_URL", "https://github.com");
+    vi.stubEnv("GITHUB_REPOSITORY", "org/repo");
+    vi.stubEnv("GITHUB_SHA", "abc");
+
+    const { blocks } = await createSlackPayload(pkgs, { title: "Release" });
+    vi.unstubAllEnvs();
+
+    expect(blocks).toHaveLength(50);
+    const texts = blocks.map(
+      (block) => (block as { text?: { text: string } }).text?.text,
+    );
+    expect(texts).toContain("*pkg-a@1.0.0*");
+    expect(texts).toContain("*pkg-b@1.0.0*");
+    expect(texts.at(-1)).toBe(
+      "_Cut to fit Slack. Full notes: <https://github.com/org/repo/blob/abc/pkg-a/CHANGELOG.md|pkg-a>, <https://github.com/org/repo/blob/abc/pkg-b/CHANGELOG.md|pkg-b>_",
+    );
+  });
 });
