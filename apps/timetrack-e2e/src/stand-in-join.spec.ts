@@ -4,7 +4,7 @@ import { E2E_DAY_KEY, E2E_NOW, closeStandIns, expect, openStandIns, seedWorld, t
 const standIn = (options: { id: string; name: string; days: string[]; createdAt: string }) => ({
   ...options,
   state: 'open' as const,
-  author: 'app' as const,
+  author: 'user' as const,
   openedFor: E2E_REPO,
   createdAt: new Date(options.createdAt),
 });
