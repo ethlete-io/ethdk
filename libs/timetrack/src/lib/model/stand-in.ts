@@ -203,6 +203,22 @@ export const standInDuplicateOf = (options: { standIn: StandIn; standIns: readon
         .at(-1)
     : undefined;
 
+/**
+ * The other open stand-ins of the same checkout that `standIn` can be joined into by hand, oldest
+ * first. The one `standInDuplicateOf` names is left out, because the list already offers it.
+ */
+export const standInJoinTargets = (options: { standIn: StandIn; standIns: readonly StandIn[] }) => {
+  const { standIn } = options;
+
+  if (standIn.state !== 'open' || !standIn.openedFor) return [];
+
+  const duplicate = standInDuplicateOf(options);
+
+  return openStandIns(options.standIns)
+    .filter((other) => other.id !== standIn.id && other.id !== duplicate?.id && other.openedFor === standIn.openedFor)
+    .reverse();
+};
+
 /** Whether the user hid it and it took no band on a later day since. */
 export const isStandInHidden = (standIn: Pick<StandIn, 'state' | 'days' | 'hiddenOn'>) => {
   const hiddenOn = standIn.hiddenOn;

@@ -22,7 +22,8 @@ joins the latest earlier piece in the same directory that had ended before it st
 sessions stay apart (slice 6). A session with no directory is its own piece. The piece is the first
 session's id, on `ActivityContext.piece`. Nothing reads it yet; slice 5 does.
 
-Open: the hand join below.
+Hand join built (2026-09-29): "Join into <name>" in the stand-in list, through `mergeStandIn`, for
+every other open stand-in of the same checkout (`standInJoinTargets`). Slice 4 is done.
 
 The stand-in list also needs the reverse of `standIn.split`: a join the user can ask for when the
 automatic one cut too finely.

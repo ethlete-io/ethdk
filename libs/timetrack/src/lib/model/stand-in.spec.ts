@@ -15,6 +15,7 @@ import {
   standInDays,
   standInDuplicateOf,
   standInHeldMs,
+  standInJoinTargets,
   standInWhere,
   workdaysBetween,
 } from './stand-in';
@@ -36,6 +37,31 @@ const rule = (overrides: Partial<AttributionRule> = {}): AttributionRule => ({
   author: 'user',
   createdAt: new Date('2026-09-14T00:00:00.000Z'),
   ...overrides,
+});
+
+describe('standInJoinTargets', () => {
+  const REPO = '/home/tom/dev/ethlete-sdk';
+  const standIns = [
+    standIn({ id: 'a', name: 'Timetrack pieces', openedFor: REPO }),
+    standIn({ id: 'b', name: 'Scan sub-agents', openedFor: REPO, createdAt: new Date('2026-09-20') }),
+    standIn({ id: 'c', name: 'Timetrack pieces', openedFor: REPO, createdAt: new Date('2026-09-25') }),
+    standIn({ id: 'd', name: 'Other checkout', openedFor: '/home/tom/dev/fut-frontend' }),
+    standIn({ id: 'e', name: 'Resolved', openedFor: REPO, state: 'resolved' }),
+    standIn({ id: 'f', name: 'Written by hand' }),
+  ];
+
+  it('answers the other open ones of the same checkout, oldest first, without the same-name one', () => {
+    expect(standInJoinTargets({ standIn: standIns[2] as StandIn, standIns }).map((other) => other.id)).toEqual(['b']);
+    expect(standInJoinTargets({ standIn: standIns[1] as StandIn, standIns }).map((other) => other.id)).toEqual([
+      'a',
+      'c',
+    ]);
+  });
+
+  it('answers nothing for one written by hand or already resolved', () => {
+    expect(standInJoinTargets({ standIn: standIns[5] as StandIn, standIns })).toEqual([]);
+    expect(standInJoinTargets({ standIn: standIns[4] as StandIn, standIns })).toEqual([]);
+  });
 });
 
 describe('standInDuplicateOf', () => {

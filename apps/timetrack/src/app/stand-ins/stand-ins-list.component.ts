@@ -1,7 +1,7 @@
 import { Component, ViewEncapsulation, computed, input, signal } from '@angular/core';
 import { BUTTON_IMPORTS, EMPTY_STATE_IMPORTS, FORM_FIELD_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective } from '@ethlete/core';
-import { StandIn, formatDurationMs, standInDuplicateOf, standInWhere } from '@ethlete/timetrack';
+import { StandIn, formatDurationMs, standInDuplicateOf, standInJoinTargets, standInWhere } from '@ethlete/timetrack';
 import { CreateTicketComponent } from '../day-review/create-ticket.component';
 import { formatDayRangeLabel, formatWeekdayLabel } from '../day-review/format';
 import { injectTicketDraft } from '../day-review/ticket-draft';
@@ -102,6 +102,12 @@ import { injectStandIns } from './stand-ins';
                       et-text-button
                     >
                       Merge into the other
+                    </button>
+                  }
+
+                  @for (target of entry.joinTargets; track target.id) {
+                    <button (click)="store.merge({ fromId: entry.id, intoId: target.id })" et-text-button>
+                      Join into {{ target.name }}
                     </button>
                   }
 
@@ -266,6 +272,10 @@ export class StandInsListComponent {
             name: duplicate.name,
             where: standInWhere(duplicate) || 'written by hand',
           },
+          joinTargets: standInJoinTargets({ standIn, standIns: all }).map((target) => ({
+            id: target.id,
+            name: target.name,
+          })),
         };
       });
   });
