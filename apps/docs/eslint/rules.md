@@ -104,6 +104,12 @@ in every consumer's bundle; in an application every top-level statement is reach
 'ethlete/no-impure-top-level-provider': ['error', { requirePureAnnotation: true }],
 ```
 
+A second opt-in, `forbidImpureReads`, flags member reads (`A.b`), spreads and arithmetic on identifiers in module-scope initializers, because a bundler cannot prove them side-effect free and keeps the whole declaration. Write the literal key or number instead:
+
+```js
+'ethlete/no-impure-top-level-provider': ['error', { requirePureAnnotation: true, forbidImpureReads: true }],
+```
+
 The fixer inserts the annotation. If the call is genuinely not side-effect free at import time, do not
 annotate it - move it inside a function, because a library must not do work when it is imported.
 

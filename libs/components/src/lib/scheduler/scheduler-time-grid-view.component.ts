@@ -40,9 +40,8 @@ import { Appointment, SchedulerAppointmentDragMode } from './scheduler.types';
 const HOURS = /* @__PURE__ */ Array.from({ length: 24 }, (_, hour) => hour);
 
 const SLOT_MINUTES = 15;
-const MINIMUM_DURATION = SLOT_MINUTES * 60 * 1000;
-const DEFAULT_DRAFT_MINUTES = 60;
-const DEFAULT_DRAFT_DURATION = DEFAULT_DRAFT_MINUTES * 60 * 1000;
+const MINIMUM_DURATION = 900_000;
+const DEFAULT_DRAFT_DURATION = 3_600_000;
 
 type SchedulerTimeGridColumn = { element: HTMLElement; day: Date };
 

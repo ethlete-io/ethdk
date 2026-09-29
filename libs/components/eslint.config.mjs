@@ -72,7 +72,7 @@ export default [
       '**/stories/**',
     ],
     rules: {
-      'ethlete/no-impure-top-level-provider': ['error', { requirePureAnnotation: true }],
+      'ethlete/no-impure-top-level-provider': ['error', { requirePureAnnotation: true, forbidImpureReads: true }],
     },
   },
   // Ethlete styleguide rules — HTML templates

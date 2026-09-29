@@ -12,6 +12,7 @@ const tester = new RuleTester({
 });
 
 const LIBRARY = [{ requirePureAnnotation: true }];
+const STRICT = [{ requirePureAnnotation: true, forbidImpureReads: true }];
 
 tester.run('no-impure-top-level-provider', rule, {
   valid: [
@@ -41,6 +42,10 @@ export const provideThing = /* @__PURE__ */ toProvideFn(THING_DEF);`,
     { code: "export const TOKEN = new InjectionToken<string>('TOKEN');", options: LIBRARY },
     // Without the option, an unannotated module-scope call is accepted (application code).
     { code: 'export const routes = buildRoutes();' },
+    { code: 'const ICONS = { complete: 1, [KEY.A]: 2 };', options: LIBRARY },
+    { code: 'const ICONS = { complete: 1 }; const MS = 15 * 60 * 1000;', options: STRICT },
+    { code: 'const LOOKUP = () => ({ [KEY.A]: 1, ...OTHER, x: A * B });', options: STRICT },
+    { code: 'const TABLE = /* @__PURE__ */ Object.freeze({ a: 1 });', options: STRICT },
   ],
   invalid: [
     {
@@ -82,6 +87,21 @@ export const provideThing = /* @__PURE__ */ toProvideFn(THING_DEF);`,
       options: LIBRARY,
       output: 'const DEF = /* @__PURE__ */ defineStaticRootProvider({ position: /* @__PURE__ */ build(DEFAULTS) });',
       errors: [{ messageId: 'missingPure', data: { name: 'build' } }],
+    },
+    {
+      code: 'const ICONS = { [STATES.COMPLETE]: 1 };',
+      options: STRICT,
+      errors: [{ messageId: 'impureRead' }],
+    },
+    {
+      code: 'const ALL = { ...BASE, a: 1 };',
+      options: STRICT,
+      errors: [{ messageId: 'impureRead' }],
+    },
+    {
+      code: 'const DURATION = SLOT_MINUTES * 60 * 1000;',
+      options: STRICT,
+      errors: [{ messageId: 'impureRead' }, { messageId: 'impureRead' }],
     },
     {
       code: 'const PROBE_DATE = new Date(2000, 0, 1);',

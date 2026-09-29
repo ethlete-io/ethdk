@@ -45,7 +45,6 @@ import { RichTextEditorTriggerItem } from '../rich-text-editor-trigger';
 import {
   HeadingTag,
   injectRichTextEditorDom,
-  INLINE_TAGS,
   InlineTag,
   provideRichTextEditorDom,
   RichTextMarkStates,
@@ -63,7 +62,7 @@ import {
 import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
 import { FormFieldRichTextStylesComponent } from '../../form-field/form-field-rich-text-styles.component';
 
-const EMPTY_INLINE_SWEEP_SELECTOR = /* @__PURE__ */ [...INLINE_TAGS, 'a'].join(', ');
+const EMPTY_INLINE_SWEEP_SELECTOR = 'strong, em, del, u, code, a';
 
 const INERT_STYLE_ATTRIBUTE = 'data-et-paste-style';
 

@@ -26,10 +26,10 @@ export type ProgressStepState = (typeof PROGRESS_STEP_STATES)[keyof typeof PROGR
 const INTERACTIVE_HOSTS = /* @__PURE__ */ new Set(['A', 'BUTTON']);
 
 const STATE_ICONS: Partial<Record<ProgressStepState, RegisteredIconName>> = {
-  [PROGRESS_STEP_STATES.COMPLETE]: 'et-check',
-  [PROGRESS_STEP_STATES.SUCCESS]: 'et-check',
-  [PROGRESS_STEP_STATES.WARNING]: 'et-triangle-exclamation',
-  [PROGRESS_STEP_STATES.ERROR]: 'et-times',
+  complete: 'et-check',
+  success: 'et-check',
+  warning: 'et-triangle-exclamation',
+  error: 'et-times',
 };
 
 /**
