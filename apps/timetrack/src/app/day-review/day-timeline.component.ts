@@ -310,7 +310,7 @@ type RowDrag = {
                     </div>
                   }
 
-                  @for (laid of lane.blocks; track laid.block.node.appointment.id) {
+                  @for (laid of lane.blocks; track laid.key) {
                     <div
                       [attr.data-kind]="kindOf(laid.block.node.appointment)"
                       [attr.data-compact]="compact(laid.block.span) || null"
@@ -319,8 +319,8 @@ type RowDrag = {
                       [attr.data-marked]="marks(laid.block.node.appointment) || null"
                       [attr.data-stand-in]="STANDS_IN(laid.block.node.appointment) || null"
                       [attr.data-pending]="pendingOn(laid.block.node.appointment) || null"
-                      [attr.data-growing]="cutPercentOf(laid.block.node.appointment) !== null || null"
-                      [style.--tt-cut-at]="cutPercentOf(laid.block.node.appointment)"
+                      [attr.data-growing]="cutPercentOf(laid) !== null || null"
+                      [style.--tt-cut-at]="cutPercentOf(laid)"
                       [etProvideColor]="laid.block.node.appointment.colorToken ?? 'neutral'"
                       [style.top.%]="laid.block.offset"
                       [style.height.%]="laid.block.span"
@@ -331,7 +331,13 @@ type RowDrag = {
                       [style.paddingInlineEnd]="insetOf(laid).end"
                       [title]="LABEL_OF(laid.block.node.appointment) + UNBOOKED_OF(laid.block.node.appointment)"
                       (pointerdown)="
-                        startDrag({ event: $event, appointment: laid.block.node.appointment, column, lane })
+                        startDrag({
+                          event: $event,
+                          appointment: laid.block.node.appointment,
+                          column,
+                          lane,
+                          piece: !!laid.piece,
+                        })
                       "
                       (click)="select(laid.block.node.appointment, $event)"
                       (keydown.enter)="select(laid.block.node.appointment, $event)"
@@ -372,7 +378,7 @@ type RowDrag = {
                       <!-- These carry the resize cursor over the zone modeAt reads as an end, and nothing
                       else: the press is handled on the band, so they must let it through. A band a rule
                       excluded resizes nowhere, so it shows neither. -->
-                      @if (!excluded(laid.block.node.appointment)) {
+                      @if (!excluded(laid.block.node.appointment) && !laid.piece) {
                         <span
                           [style.height.%]="EDGE_PERCENT"
                           [style.maxHeight.px]="MAX_EDGE_PX"
@@ -395,7 +401,7 @@ type RowDrag = {
                         ></span>
                       }
 
-                      @for (held of breaksIn(laid.block.node.appointment); track held.offset) {
+                      @for (held of breaksIn(laid); track held.offset) {
                         <span
                           [style.top.%]="held.offset"
                           [style.height.%]="held.span"
@@ -404,7 +410,7 @@ type RowDrag = {
                         ></span>
                       }
 
-                      @for (swap of swapsIn(laid.block.node.appointment); track swap.offset) {
+                      @for (swap of swapsIn(laid); track swap.offset) {
                         <span
                           [style.top.%]="swap.offset"
                           [title]="swap.detail"
@@ -413,7 +419,7 @@ type RowDrag = {
                         ></span>
                       }
 
-                      @if (labelled(laid.block.span)) {
+                      @if (laid.label && labelled(laid.block.span)) {
                         <span class="block truncate">
                           {{ LABEL_OF(laid.block.node.appointment) }}
                           @if (UNBOOKED_OF(laid.block.node.appointment); as unbooked) {
@@ -421,7 +427,10 @@ type RowDrag = {
                           }
                         </span>
                       }
-                      @if (detailed(laid.block.span) && descriptionOf(laid.block.node.appointment); as description) {
+                      @if (
+                        laid.label && detailed(laid.block.span) && descriptionOf(laid.block.node.appointment);
+                        as description
+                      ) {
                         <span class="block truncate text-et-surface-muted">{{ description }}</span>
                       }
                     </div>
@@ -1132,14 +1141,18 @@ export class DayTimelineComponent {
     });
   }
 
-  protected cutPercentOf(appointment: Appointment<TimelineEntry>) {
+  protected cutPercentOf(laid: LaneBlock) {
+    const appointment = laid.block.node.appointment;
     const row = this.rowOf(appointment);
     const cut = row && this.cuts().get(row.id);
-    const span = row ? row.to.getTime() - row.from.getTime() : 0;
+    const drawn = laid.piece ?? row;
+    const span = drawn ? drawn.to.getTime() - drawn.from.getTime() : 0;
 
-    if (!row || cut?.kind !== 'cut' || span <= 0 || this.dragging(appointment)) return null;
+    if (!row || !drawn || cut?.kind !== 'cut' || span <= 0 || this.dragging(appointment)) return null;
 
-    return `${((cut.at.getTime() - row.from.getTime()) / span) * 100}%`;
+    const percent = ((cut.at.getTime() - drawn.from.getTime()) / span) * 100;
+
+    return percent >= 0 && percent <= 100 ? `${percent}%` : null;
   }
 
   protected followTitleOf(row: ReviewedRow) {
@@ -1227,15 +1240,16 @@ export class DayTimelineComponent {
    * one the swap was observed at, while the band is drawn on the increment its row snapped to, so the
    * mark says where the work changed hands and not where a row starts.
    */
-  protected swapsIn(appointment: Appointment<TimelineEntry>) {
-    const row = this.rowOf(appointment);
-    const span = row ? row.to.getTime() - row.from.getTime() : 0;
+  protected swapsIn(laid: LaneBlock) {
+    const row = this.rowOf(laid.block.node.appointment);
+    const drawn = laid.piece ?? row;
+    const span = drawn ? drawn.to.getTime() - drawn.from.getTime() : 0;
 
-    if (!row || span <= 0) return [];
+    if (!row || !drawn || span <= 0) return [];
 
     return row.evidence
       .filter((entry) => entry.kind === 'branch-swap')
-      .map((entry) => ({ detail: entry.detail, offset: ((entry.at.getTime() - row.from.getTime()) / span) * 100 }))
+      .map((entry) => ({ detail: entry.detail, offset: ((entry.at.getTime() - drawn.from.getTime()) / span) * 100 }))
       .filter((swap) => swap.offset > 0 && swap.offset < 100);
   }
 
@@ -1244,18 +1258,18 @@ export class DayTimelineComponent {
    * leaves no gap between the rows, so its own lane draws it beside the band rather than in it; this
    * marks the same window on the band that books the time.
    */
-  protected breaksIn(appointment: Appointment<TimelineEntry>) {
-    const row = this.rowOf(appointment);
-    const span = row ? row.to.getTime() - row.from.getTime() : 0;
+  protected breaksIn(laid: LaneBlock) {
+    const drawn = laid.piece ?? this.rowOf(laid.block.node.appointment);
+    const span = drawn ? drawn.to.getTime() - drawn.from.getTime() : 0;
 
-    if (!row || span <= 0) return [];
+    if (!drawn || span <= 0) return [];
 
     return this.breaks()
       .map((window) => {
-        const from = Math.max(window.from.getTime(), row.from.getTime());
-        const to = Math.min(window.to.getTime(), row.to.getTime());
+        const from = Math.max(window.from.getTime(), drawn.from.getTime());
+        const to = Math.min(window.to.getTime(), drawn.to.getTime());
 
-        return { offset: ((from - row.from.getTime()) / span) * 100, span: ((to - from) / span) * 100 };
+        return { offset: ((from - drawn.from.getTime()) / span) * 100, span: ((to - from) / span) * 100 };
       })
       .filter((held) => held.span > 0);
   }
@@ -1335,6 +1349,7 @@ export class DayTimelineComponent {
     appointment: Appointment<TimelineEntry>;
     column: HTMLElement;
     lane: DayLane;
+    piece?: boolean;
   }) {
     const { event, appointment, column, lane } = options;
     const entry = appointment.extra;
@@ -1353,7 +1368,7 @@ export class DayTimelineComponent {
       column,
       drag: {
         row: entry.row,
-        mode: this.modeAt({ event, appointment }),
+        mode: options.piece ? 'move' : this.modeAt({ event, appointment }),
         grabMs: this.instantAt({ column, clientY: event.clientY }).getTime(),
       },
     });

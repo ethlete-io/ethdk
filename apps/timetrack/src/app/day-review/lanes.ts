@@ -3,8 +3,11 @@ import {
   BehindStretch,
   BreakWindow,
   CALL_LANE_KEY,
+  DEFAULT_ROUND_OPTIONS,
   ReviewedRow,
   TIMER_LANE_KEY,
+  TimeWindow,
+  sharingTicket,
   streamKey,
   streamKeyLabel,
   streamKeyRepoPath,
@@ -81,6 +84,11 @@ export type LaneSegment = {
  */
 export type LaneBlock = {
   block: SchedulerTimeGridBlock<TimelineEntry>;
+  key: string;
+  /** The window this piece of a sibling row covers, or null for a block that draws its whole row. */
+  piece: TimeWindow | null;
+  /** Whether this block carries the row's label. Of a row's pieces, only the tallest does. */
+  label: boolean;
   inlineOffset: number;
   inlineSize: number;
   segments: LaneSegment[];
@@ -117,12 +125,186 @@ const laneKeyOfBlock = (block: SchedulerTimeGridBlock<TimelineEntry>) => {
   return entry ? laneKeyOfRow(entry.row) : NO_LANE_KEY;
 };
 
-type Timed = { block: SchedulerTimeGridBlock<TimelineEntry>; start: number; end: number; column: number };
+type Timed = {
+  block: SchedulerTimeGridBlock<TimelineEntry>;
+  start: number;
+  end: number;
+  column: number;
+  piece: TimeWindow | null;
+  label: boolean;
+};
+
+type Sibling = { block: SchedulerTimeGridBlock<TimelineEntry>; row: ReviewedRow };
+
+const SLOT_MS = DEFAULT_ROUND_OPTIONS.incrementMs;
+
+const wholeOf = (block: SchedulerTimeGridBlock<TimelineEntry>): Timed => ({
+  block,
+  start: block.node.appointment.start.getTime(),
+  end: block.node.appointment.end.getTime(),
+  column: 0,
+  piece: null,
+  label: true,
+});
+
+/**
+ * The rows of parallel agent sessions on one ticket (`sharingTicket`), in groups that overlap. A row
+ * being dragged is drawn whole, at the range the drag gives it.
+ */
+const siblingGroupsOf = (blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[]): Sibling[][] => {
+  const rows = blocks.flatMap((block) => {
+    const row = rowEntryOf(block.node.appointment)?.row;
+    const { start, end } = block.node.appointment;
+
+    return row && start.getTime() === row.from.getTime() && end.getTime() === row.to.getTime()
+      ? [
+          {
+            block,
+            row,
+            from: row.from,
+            to: row.to,
+            laneKey: row.laneKey,
+            issueKey: row.issueKey,
+            standInId: row.standInId,
+          },
+        ]
+      : [];
+  });
+  const shared = [...sharingTicket(rows)].sort((a, b) => a.from.getTime() - b.from.getTime());
+  const groups: { ticket: string; end: number; members: Sibling[] }[] = [];
+
+  for (const sibling of shared) {
+    const ticket = `${sibling.laneKey}|${sibling.issueKey ?? ''}|${sibling.standInId ?? ''}`;
+    const group = groups.find((open) => open.ticket === ticket && open.end > sibling.from.getTime());
+
+    if (group) {
+      group.members.push(sibling);
+      group.end = Math.max(group.end, sibling.to.getTime());
+    } else {
+      groups.push({ ticket, end: sibling.to.getTime(), members: [sibling] });
+    }
+  }
+
+  return groups.map((group) => group.members);
+};
+
+/**
+ * Splits a group of sibling rows into the increments of the grid the rows sit on. Each increment goes
+ * to the row whose observed stretches hold most of it, and each row gets as many increments as it
+ * books; a row that won fewer takes the free ones nearest to its own. Where the rows book more than the
+ * group's clock holds, a row is drawn shorter rather than over another, down to one increment.
+ */
+const piecesOf = (group: readonly Sibling[]): Timed[] => {
+  const start = Math.min(...group.map(({ row }) => row.from.getTime()));
+  const end = Math.max(...group.map(({ row }) => row.to.getTime()));
+  const slots = Array.from({ length: Math.ceil((end - start) / SLOT_MS) }, (_, at) => ({
+    from: start + at * SLOT_MS,
+    to: Math.min(end, start + (at + 1) * SLOT_MS),
+  }));
+  const taken = new Set<number>();
+  const owned = new Map(group.map((sibling) => [sibling, [] as number[]]));
+  const need = new Map(
+    group.map((sibling) => {
+      const spanMs = sibling.row.to.getTime() - sibling.row.from.getTime();
+
+      return [sibling, Math.max(1, Math.round(Math.min(sibling.row.durationMs, spanMs) / SLOT_MS))];
+    }),
+  );
+  const within = (sibling: Sibling, at: number) =>
+    (slots[at]?.from ?? 0) < sibling.row.to.getTime() && (slots[at]?.to ?? 0) > sibling.row.from.getTime();
+  const heldIn = (sibling: Sibling, at: number) => {
+    const slot = slots[at];
+    const { row } = sibling;
+
+    if (!slot) return 0;
+
+    return (row.stretches?.length ? row.stretches : [row]).reduce(
+      (sum, stretch) =>
+        sum +
+        Math.max(
+          0,
+          Math.min(stretch.to.getTime(), slot.to, row.to.getTime()) -
+            Math.max(stretch.from.getTime(), slot.from, row.from.getTime()),
+        ),
+      0,
+    );
+  };
+  const give = (sibling: Sibling, at: number) => {
+    taken.add(at);
+    owned.get(sibling)?.push(at);
+    need.set(sibling, (need.get(sibling) ?? 0) - 1);
+  };
+
+  const bids = group
+    .flatMap((sibling, order) => slots.map((_, at) => ({ sibling, order, at, held: heldIn(sibling, at) })))
+    .filter((bid) => bid.held > 0 && within(bid.sibling, bid.at))
+    .sort((a, b) => b.held - a.held || a.at - b.at || a.order - b.order);
+
+  for (const bid of bids) {
+    if (!taken.has(bid.at) && (need.get(bid.sibling) ?? 0) > 0) give(bid.sibling, bid.at);
+  }
+
+  for (const sibling of group) {
+    while ((need.get(sibling) ?? 0) > 0) {
+      const mine = owned.get(sibling) ?? [];
+      const home = mine.length
+        ? mine
+        : slots
+            .map((_, at) => at)
+            .filter((at) => within(sibling, at))
+            .slice(0, 1);
+      const distance = (at: number) => Math.min(...home.map((own) => Math.abs(own - at)));
+      const rank = (at: number) => (taken.has(at) ? 2 : 0) + (within(sibling, at) ? 0 : 1);
+      const [best] = slots
+        .map((_, at) => at)
+        .filter((at) => !mine.includes(at) && (!taken.has(at) || (!mine.length && within(sibling, at))))
+        .sort((a, b) => rank(a) - rank(b) || distance(a) - distance(b) || a - b);
+
+      if (best === undefined) break;
+
+      give(sibling, best);
+    }
+  }
+
+  return group.flatMap((sibling) => {
+    const runs: { from: number; to: number }[] = [];
+
+    for (const at of [...(owned.get(sibling) ?? [])].sort((a, b) => a - b)) {
+      const slot = slots[at];
+      const last = runs.at(-1);
+
+      if (!slot) continue;
+      if (last && last.to === slot.from) last.to = slot.to;
+      else runs.push({ ...slot });
+    }
+
+    const tallest = runs.reduce<(typeof runs)[number] | undefined>(
+      (best, run) => (!best || run.to - run.from > best.to - best.from ? run : best),
+      undefined,
+    );
+    const { block } = sibling;
+    const appointmentStart = block.node.appointment.start.getTime();
+
+    return runs.map((run): Timed => ({
+      block: {
+        ...block,
+        offset: block.offset + ((run.from - appointmentStart) / DAY_MS) * 100,
+        span: ((run.to - run.from) / DAY_MS) * 100,
+      },
+      start: run.from,
+      end: run.to,
+      column: 0,
+      piece: { from: new Date(run.from), to: new Date(run.to) },
+      label: run === tallest,
+    }));
+  });
+};
 
 /**
  * Packs one lane's blocks into overlap-free columns, the same way a calendar packs a day, and splits
  * the lane only while blocks overlap: a block is full width wherever nothing else in the lane runs.
- * Overlapping rows of one ticket are parallel agent sessions, and each keeps one column over its whole span.
+ * Parallel agent sessions on one ticket book their observed minutes, so each of their rows is drawn
+ * as pieces over the minutes it books, and the sessions take turns in the lane (`piecesOf`).
  *
  * Whether two blocks overlap is read off the clock and never off `offset` and `span`. The end of one
  * row and the start of the next are the same instant, but the two percentages of the day computed
@@ -130,14 +312,11 @@ type Timed = { block: SchedulerTimeGridBlock<TimelineEntry>; start: number; end:
  * half the lane's width.
  */
 const packLane = (blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[]): LaneBlock[] => {
-  const timed = blocks
-    .map((block) => ({
-      block,
-      start: block.node.appointment.start.getTime(),
-      end: block.node.appointment.end.getTime(),
-      column: 0,
-    }))
-    .sort((a, b) => a.start - b.start || a.end - b.end);
+  const groups = siblingGroupsOf(blocks);
+  const inPieces = new Set(groups.flatMap((group) => group.map((sibling) => sibling.block)));
+  const timed = [...blocks.filter((block) => !inPieces.has(block)).map(wholeOf), ...groups.flatMap(piecesOf)].sort(
+    (a, b) => a.start - b.start || a.end - b.end,
+  );
 
   const endsPerColumn: number[] = [];
 
@@ -148,49 +327,7 @@ const packLane = (blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[]): Lan
     endsPerColumn[entry.column] = entry.end;
   }
 
-  return timed.map((entry) => {
-    const cluster = clusterOf(entry, timed);
-
-    return cluster.length > 1 && oneTicket(cluster) ? inFixedColumn(entry, cluster) : placeOf(entry, timed);
-  });
-};
-
-const clusterOf = (entry: Timed, lane: readonly Timed[]): Timed[] => {
-  const cluster = new Set([entry]);
-
-  for (const member of cluster) {
-    for (const other of lane) {
-      if (other.start < member.end && other.end > member.start) cluster.add(other);
-    }
-  }
-
-  return [...cluster];
-};
-
-const ticketOf = (entry: Timed) => {
-  const row = rowEntryOf(entry.block.node.appointment)?.row;
-
-  return row?.issueKey ?? row?.standInId;
-};
-
-const oneTicket = (cluster: readonly Timed[]) => {
-  const tickets = new Set(cluster.map(ticketOf));
-
-  return tickets.size === 1 && !tickets.has(undefined);
-};
-
-const inFixedColumn = (entry: Timed, cluster: readonly Timed[]): LaneBlock => {
-  const columns = Math.max(...cluster.map((member) => member.column)) + 1;
-  const inlineSize = 100 / columns;
-  const inlineOffset = entry.column * inlineSize;
-
-  return {
-    block: entry.block,
-    inlineOffset,
-    inlineSize,
-    segments: [{ from: 0, to: 1, inlineOffset, inlineSize }],
-    clipPath: null,
-  };
+  return timed.map((entry) => placeOf(entry, timed));
 };
 
 const placeOf = (entry: Timed, lane: readonly Timed[]): LaneBlock => {
@@ -224,6 +361,9 @@ const placeOf = (entry: Timed, lane: readonly Timed[]): LaneBlock => {
 
   return {
     block: entry.block,
+    key: entry.piece ? `${entry.block.node.appointment.id}@${entry.start}` : entry.block.node.appointment.id,
+    piece: entry.piece,
+    label: entry.label,
     inlineOffset,
     inlineSize,
     segments,

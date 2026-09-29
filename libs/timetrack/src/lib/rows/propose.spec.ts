@@ -339,3 +339,33 @@ describe('propose, the work nothing named', () => {
     });
   });
 });
+
+describe('propose, for parallel sessions on one ticket', () => {
+  const session = (windows: readonly [number, number][]): WorkGroup => {
+    const [first] = windows;
+    const last = windows.at(-1);
+
+    return {
+      ...group({ fromMinute: first?.[0] ?? 0, observedMinutes: 0, issueKey: 'FIP-1' }),
+      to: AT(last?.[1] ?? 0),
+      observedMs: windows.reduce((sum, [from, to]) => sum + (to - from) * MINUTE, 0),
+      laneKey: 'repo:/dev/a',
+      blocks: windows.map(([from, to]) => ({ from: AT(from), to: AT(to), context: {}, evidence: [] })),
+    };
+  };
+
+  it('keeps the windows each row held apart, so a screen can draw the turns they took', () => {
+    const { proposals } = propose({
+      groups: [
+        session([
+          [0, 30],
+          [60, 90],
+        ]),
+        session([[30, 60]]),
+      ],
+    });
+    const turns = proposals.map((row) => row.stretches?.map((stretch) => stretch.from.getTime()));
+
+    expect(turns).toEqual([[AT(0).getTime(), AT(60).getTime()], [AT(30).getTime()]]);
+  });
+});

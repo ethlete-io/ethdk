@@ -1,6 +1,7 @@
 import { GitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { ActivityBlock, dominantContext, streamKey } from '../model/block';
 import { WorklogProposal } from '../model/proposal';
+import { mergeWindows } from '../model/time-window';
 import { DescribeOptions, describeWork } from './describe';
 import { laneKeyOf } from './lane';
 import { WorkGroup } from './merge';
@@ -49,7 +50,8 @@ const isAttributed = (group: WorkGroup): group is AttributedGroup => !!group.iss
 /** A group with the bounds and the booked time its row will carry. */
 type BoundGroup = { group: WorkGroup; from: Date; to: Date; durationMs: number };
 
-const isAttributedRow = (row: BoundGroup): row is BoundGroup & { group: AttributedGroup } => isAttributed(row.group);
+const isAttributedRow = <T extends BoundGroup>(row: T): row is T & { group: AttributedGroup } =>
+  isAttributed(row.group);
 
 /**
  * Stable across re-runs of a day, so an already-synced row is recognised rather than duplicated.
@@ -169,14 +171,17 @@ export const propose = (options: {
     })),
   );
   const sharedRows = new Set([...shared].map((ticket) => ticket.row));
-  const booked = rows.map((row) =>
-    sharedRows.has(row)
-      ? {
-          ...row,
-          durationMs: bookedMsOf({ row: row.group, spanMs: row.durationMs, shared: true, round: options.round }),
-        }
-      : row,
-  );
+  const booked = rows.map((row) => {
+    const shared = sharedRows.has(row);
+
+    return {
+      ...row,
+      durationMs: shared
+        ? bookedMsOf({ row: row.group, spanMs: row.durationMs, shared, round: options.round })
+        : row.durationMs,
+      stretches: shared ? mergeWindows(row.group.blocks) : stretchesOf(row.group.blocks),
+    };
+  });
   const attributed = booked.filter(isAttributedRow);
   const unnamedIds = rowIds(unnamedBaseId);
   const unnamed = booked
@@ -186,7 +191,7 @@ export const propose = (options: {
   const ids = rowIds(proposalId);
 
   return {
-    proposals: attributed.map(({ group, from, to, durationMs }) => ({
+    proposals: attributed.map(({ group, from, to, durationMs, stretches }) => ({
       id: ids.next(group),
       issueKey: group.issueKey,
       storyKey: group.storyKey,
@@ -196,7 +201,7 @@ export const propose = (options: {
       to,
       durationMs,
       observedMs: group.observedMs,
-      stretches: stretchesOf(group.blocks),
+      stretches,
       ...activeUntilOf({ group, blocks: sessionBlocks }),
       laneKey: group.laneKey ?? laneKeyOf(group.blocks),
       description: describeWork({ group, config: options.config, options: options.describe }),
@@ -205,7 +210,7 @@ export const propose = (options: {
       state: 'suggested',
     })),
     unattributed: unattributed.map((row) => row.group),
-    unnamed: unnamed.map(({ group, from, to, durationMs }) => ({
+    unnamed: unnamed.map(({ group, from, to, durationMs, stretches }) => ({
       id: unnamedRowId(group),
       ...(group.standInId ? { standInId: group.standInId } : {}),
       ...(group.attended === false ? { unattended: true } : {}),
@@ -217,7 +222,7 @@ export const propose = (options: {
       to,
       durationMs,
       observedMs: group.observedMs,
-      stretches: stretchesOf(group.blocks),
+      stretches,
       ...activeUntilOf({ group, blocks: sessionBlocks }),
       laneKey: group.laneKey ?? laneKeyOf(group.blocks),
       description: describeWork({ group, config: options.config, options: options.describe }),
