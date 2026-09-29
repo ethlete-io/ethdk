@@ -310,3 +310,43 @@ describe('parseCodexSessionLog prompts', () => {
     expect(result.prompts).toHaveLength(1);
   });
 });
+
+describe('parseCodexSessionLog forked rollout', () => {
+  const PARENT = '01a0160b-2c11-7c40-9d1e-5a0f3e2b7c11';
+
+  const forkedLines = () => [
+    line({
+      timestamp: '2026-08-31T09:00:00.000Z',
+      type: 'session_meta',
+      payload: { session_id: PARENT, cwd: CWD, cli_version: '0.147.0' },
+    }),
+    turnContext('2026-08-31T09:00:01.000Z'),
+    userMessage('2026-08-31T09:00:02.000Z', { id: 'msg_parent' }),
+    tokenCount('2026-08-31T09:00:30.000Z', { input: 100, output: 10 }),
+    line({
+      timestamp: '2026-08-31T11:00:00.000Z',
+      type: 'session_meta',
+      payload: { session_id: SESSION, forked_from_id: PARENT, cwd: CWD, cli_version: '0.147.0' },
+    }),
+    turnContext('2026-08-31T11:00:01.000Z'),
+    userMessage('2026-08-31T11:00:02.000Z', { id: 'msg_fork' }),
+    tokenCount('2026-08-31T11:00:30.000Z', { input: 200, output: 20 }),
+  ];
+
+  it('gives each turn and prompt to the session the latest session_meta names', () => {
+    const result = parse({ lines: forkedLines() });
+
+    expect(result.prompts.map((event) => [event.promptId, event.sessionId])).toEqual([
+      ['msg_parent', PARENT],
+      ['msg_fork', SESSION],
+    ]);
+    expect(result.usage.map((event) => [event.turnId, event.usage.input])).toEqual([
+      [`${PARENT}#3`, 100],
+      [`${SESSION}#7`, 200],
+    ]);
+  });
+
+  it('hands back the forked session as the one the log ends on', () => {
+    expect(parse({ lines: forkedLines() }).session?.sessionId).toBe(SESSION);
+  });
+});
