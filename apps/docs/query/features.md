@@ -40,6 +40,15 @@ getPost(withArgs(() => ({ pathParams: { postId: this.postId() } }))); // ok
 getPost({ silenceMissingWithArgsFeatureError: true }); // ok, pass the args to execute({ args })
 ```
 
+The check needs the concrete args type, so a helper that is generic over the creator cannot call it: for an unresolved `T` it fails with `TS2684`. Let the helper take a function that creates the query instead, and call the creator where its type is known.
+
+```ts
+const track = <T extends QueryArgs>(creator: QueryCreator<T>) => creator(); // TS2684
+const track = <T extends QueryArgs>(create: () => Query<T>) => create(); // ok
+
+track(() => getPost(withArgs(() => ({ pathParams: { postId: this.postId() } }))));
+```
+
 ## withPolling
 
 Re-executes the query on an interval. The interval restarts when args change, and stops when the query's scope is destroyed.
