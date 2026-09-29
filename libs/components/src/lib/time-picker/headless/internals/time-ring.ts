@@ -103,23 +103,30 @@ export const timeRingSpans = (stops: TimeRingStops): TimeRingSpans => ({
   blocked: collectRuns(stops, false),
 });
 
+/** The signed minutes from `from` to `to` the short way round the ring, positive clockwise. */
+export const ringOffset = (from: number, to: number) => {
+  const forward = wrapMinute(to - from);
+
+  return forward <= MINUTES_PER_DAY / 2 ? forward : forward - MINUTES_PER_DAY;
+};
+
 /**
- * Moves from the stop at `from` towards `target` the short way round the ring, and stops at the last open stop
- * before a blocked one. A closed `from` returns `target` if it is open, and `from` if not.
+ * Moves `travel` minutes from the stop at `from`, clockwise when positive, and stops at the last open stop before a
+ * blocked one. A closed `from` returns the stop it travels to if that is open, and `from` if not.
  */
-export const clampRingMove = (stops: TimeRingStops, move: { from: number; target: number }) => {
-  const { from, target } = move;
+export const clampRingTravel = (stops: TimeRingStops, move: { from: number; travel: number }) => {
+  const { from, travel } = move;
   const count = stops.minutes.length;
   const fromIndex = stopIndex(stops, from);
-  const targetIndex = stopIndex(stops, target);
 
   if (!stops.open[fromIndex]) {
+    const targetIndex = stopIndex(stops, from + travel);
+
     return stops.open[targetIndex] ? (stops.minutes[targetIndex] ?? from) : (stops.minutes[fromIndex] ?? from);
   }
 
-  const forward = (targetIndex - fromIndex + count) % count;
-  const direction = forward <= count / 2 ? 1 : -1;
-  const distance = direction === 1 ? forward : count - forward;
+  const direction = travel < 0 ? -1 : 1;
+  const distance = Math.round(Math.abs(travel) / stops.step);
   let index = fromIndex;
 
   for (let moved = 0; moved < distance; moved++) {
@@ -132,6 +139,13 @@ export const clampRingMove = (stops: TimeRingStops, move: { from: number; target
 
   return stops.minutes[index] ?? from;
 };
+
+/** {@link clampRingTravel} from `from` towards `target` the short way round the ring. */
+export const clampRingMove = (stops: TimeRingStops, move: { from: number; target: number }) =>
+  clampRingTravel(stops, {
+    from: move.from,
+    travel: ringOffset(snapMinute(move.from, stops.step), snapMinute(move.target, stops.step)),
+  });
 
 export const firstOpenMinute = (stops: TimeRingStops) => {
   const index = stops.open.indexOf(true);

@@ -144,7 +144,7 @@ export class DateTimeRangeInputDirective
     end: this.pickerSideDate('end') ?? this.halfPicks.end.day(),
   }));
 
-  /** The two times the picker's columns mark as selected - committed, else picked with no day yet. */
+  /** The two times the picker's ring marks as selected - committed, else picked with no day yet. */
   public pickerTimeRange = computed(() => ({
     start: this.pickerSideTime('start') ?? this.halfPicks.start.time(),
     end: this.pickerSideTime('end') ?? this.halfPicks.end.time(),

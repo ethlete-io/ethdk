@@ -1,6 +1,6 @@
 import { Directive, computed, input, model, output, signal } from '@angular/core';
 import { injectHostElement } from '@ethlete/core';
-import { Locale, setMilliseconds, setMinutes, setSeconds, startOfDay } from 'date-fns';
+import { Locale, isSameDay, setMilliseconds, setMinutes, setSeconds, startOfDay } from 'date-fns';
 import { injectDateLocale, injectTimeFormat } from '../../forms/date-time/date-time-formats';
 import { formatDateValue } from '../../forms/date-time/internals/date-value';
 import { setTimeOfDay } from './internals/time-availability';
@@ -133,7 +133,16 @@ export class TimePickerDirective {
   private startRingDay = computed(() => startOfDay(this.ringValue('start') ?? this.now()).getTime());
   private endRingDay = computed(() => startOfDay(this.ringValue('end') ?? this.now()).getTime());
 
-  /** @internal The ring stops of each end, open where `min`, `max` and `timeFilter` allow a time. */
+  private sameDayRange = computed(() => {
+    const days = this.rangeDays();
+
+    return this.mode() === 'range' && !!days?.start && !!days.end && isSameDay(days.start, days.end);
+  });
+
+  /**
+   * @internal The ring stops of each end, open where `min`, `max` and `timeFilter` allow a time. With both
+   * `rangeDays` on one day, an end is also closed past the other end.
+   */
   public ringStops = computed<Record<TimeRangeSide, TimeRingStops>>(() => ({
     start: this.ringStopsFor('start', this.startRingDay()),
     end: this.ringStopsFor('end', this.endRingDay()),
@@ -222,15 +231,17 @@ export class TimePickerDirective {
 
   private ringStopsFor(side: TimeRangeSide, day: number) {
     const filter = this.timeFilter();
+    const isOpen = timeRingOpenCheck({
+      min: this.min(),
+      max: this.max(),
+      filter: filter === null ? null : (date) => filter(date, side),
+      day: new Date(day),
+    });
+    const other = this.sameDayRange() ? this.ringMinute(side === 'start' ? 'end' : 'start') : null;
 
     return createTimeRingStops(
       this.minuteStep(),
-      timeRingOpenCheck({
-        min: this.min(),
-        max: this.max(),
-        filter: filter === null ? null : (date) => filter(date, side),
-        day: new Date(day),
-      }),
+      other === null ? isOpen : (minute) => isOpen(minute) && (side === 'end' ? minute >= other : minute <= other),
     );
   }
 }

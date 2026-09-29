@@ -130,6 +130,23 @@ describe('TimePickerRingDirective', () => {
       expect(timeOf(host.value())).toBe('18:00:00');
     });
 
+    it('keeps a drag at the blocked edge while the pointer goes on round the ring, until it comes back', () => {
+      host.min.set(at(8));
+      host.max.set(at(18));
+      tick();
+
+      press(17);
+
+      for (const hours of [19, 21, 23, 1, 3, 5, 7]) move(hours);
+
+      expect(timeOf(host.value())).toBe('18:00:00');
+
+      for (const hours of [5, 3, 1, 23, 21, 19]) move(hours);
+      move(17, 30);
+
+      expect(timeOf(host.value())).toBe('17:30:00');
+    });
+
     it('writes nothing for a press on blocked time', () => {
       host.min.set(at(8));
       tick();

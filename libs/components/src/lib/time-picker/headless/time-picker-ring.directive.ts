@@ -7,8 +7,9 @@ import {
   RingPoint,
   TimeRingSpan,
   angleToMinute,
-  clampRingMove,
+  clampRingTravel,
   pointToAngle,
+  ringOffset,
   ringDuration,
   snapMinute,
   timeRingSpans,
@@ -31,6 +32,12 @@ const outsideTimePicker = (element: Element): never => {
     { element },
   );
 };
+
+/**
+ * The pointer's path since the press, unwrapped, so a handle held at a blocked edge moves again only once the
+ * pointer comes back round to it.
+ */
+type RingDrag = { side: TimeRangeSide; origin: number | null; pointer: number; travel: number };
 
 const ringDistance = (first: number, second: number) =>
   Math.min(ringDuration(first, second), ringDuration(second, first));
@@ -119,21 +126,29 @@ export class TimePickerRingDirective {
 
     this.draggingSide.set(side);
 
+    const origin = picker.ringMinute(side);
+    const drag: RingDrag = {
+      side,
+      origin,
+      pointer: pressMinute,
+      travel: origin === null ? 0 : ringOffset(origin, pressMinute),
+    };
+
     dragGestureFrom(event, this.elementRef.nativeElement, { commitThreshold: 0 })
       .pipe(
-        tap((gesture) => this.applyGesture(gesture, side)),
+        tap((gesture) => this.applyGesture(gesture, drag)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
   }
 
-  private applyGesture(gesture: DragGestureEvent, side: TimeRangeSide) {
+  private applyGesture(gesture: DragGestureEvent, drag: RingDrag) {
     switch (gesture.type) {
       case 'start':
         return;
       case 'move':
       case 'end':
-        this.dragTo(side, { x: gesture.data.clientX, y: gesture.data.clientY });
+        this.dragTo(drag, { x: gesture.data.clientX, y: gesture.data.clientY });
 
         if (gesture.type === 'end') {
           this.draggingSide.set(null);
@@ -148,16 +163,23 @@ export class TimePickerRingDirective {
     }
   }
 
-  private dragTo(side: TimeRangeSide, point: RingPoint) {
+  private dragTo(drag: RingDrag, point: RingPoint) {
     const picker = this.picker;
     const target = this.minuteAt(point, { ignoreCentre: false });
-    const from = picker.ringMinute(side);
 
     if (target === null) {
       return;
     }
 
-    picker.commitRingMinute(side, from === null ? target : clampRingMove(picker.ringStops()[side], { from, target }));
+    drag.travel += ringOffset(drag.pointer, target);
+    drag.pointer = target;
+
+    picker.commitRingMinute(
+      drag.side,
+      drag.origin === null
+        ? target
+        : clampRingTravel(picker.ringStops()[drag.side], { from: drag.origin, travel: drag.travel }),
+    );
   }
 
   private sideForPress(minute: number): TimeRangeSide {

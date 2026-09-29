@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
 import { pressKey, query, tick } from '../../testing/driver-core';
 import { minuteOfDay, tapRing } from '../testing/time-picker-driver';
+import { isStopOpen } from './internals/time-ring';
 import { TimePickerRingHandleDirective } from './time-picker-ring-handle.directive';
 import { TimePickerRingDirective } from './time-picker-ring.directive';
 import {
@@ -19,6 +20,7 @@ import {
       [(rangeValue)]="rangeValue"
       [(activeSide)]="activeSide"
       [timeFilter]="timeFilter()"
+      [rangeDays]="rangeDays()"
       [startLabel]="startLabel()"
       [endLabel]="endLabel()"
       (timeSelect)="picks.push($event)"
@@ -39,6 +41,7 @@ class TimePickerRangeTestHost {
   rangeValue = signal<TimeRange>({ start: null, end: null });
   activeSide = signal<TimeRangeSide>('start');
   timeFilter = signal<TimePickerTimeFilterFn | null>(null);
+  rangeDays = signal<TimeRange | null>(null);
   startLabel = signal<string | null>(null);
   endLabel = signal<string | null>(null);
   picks: TimeRangePick[] = [];
@@ -73,6 +76,38 @@ describe('TimePickerDirective - range mode', () => {
   });
 
   afterEach(() => vi.useRealTimers());
+
+  describe('with both range days on one day', () => {
+    beforeEach(() => {
+      host.rangeDays.set({ start: at(0), end: at(0) });
+      host.rangeValue.set({ start: at(21), end: at(22) });
+      host.activeSide.set('end');
+      tick();
+    });
+
+    it('does not move the end before the start', () => {
+      tap(3);
+
+      expect(range()).toEqual(['21:00', '22:00']);
+    });
+
+    it('lets the end meet the start', () => {
+      const stops = picker().ringStops();
+
+      expect(isStopOpen(stops.end, minuteOfDay(21))).toBe(true);
+      expect(isStopOpen(stops.end, minuteOfDay(20, 55))).toBe(false);
+      expect(isStopOpen(stops.start, minuteOfDay(22))).toBe(true);
+      expect(isStopOpen(stops.start, minuteOfDay(22, 5))).toBe(false);
+    });
+
+    it('lets the end move before the start once the end is on a later day', () => {
+      host.rangeDays.set({ start: at(0), end: new Date(2026, 6, 9) });
+      tick();
+      tap(3);
+
+      expect(range()).toEqual(['21:00', '03:00']);
+    });
+  });
 
   it('shows the active end as the active value', () => {
     host.rangeValue.set({ start: at(9), end: at(17, 30) });
