@@ -22,6 +22,7 @@ import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import {
   RuntimeError,
   createComponentId,
+  enableAnchoredOverlayPositionExtras,
   injectHostElement,
   injectStyleManager,
   nextFrame,
@@ -310,6 +311,8 @@ export class SelectDirective
     anchor: () => this.resolveAnchorElement(),
     config: ({ origin }) => {
       const context: SelectSurfaceContext = { $implicit: this, select: this, close: () => this.hide() };
+
+      enableAnchoredOverlayPositionExtras();
 
       return {
         bindings: [

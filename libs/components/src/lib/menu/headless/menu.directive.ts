@@ -815,6 +815,9 @@ export class MenuDirective {
   private buildStrategies(): () => OverlayStrategyBreakpoint[] {
     const point = this.anchorPoint();
     const containerClass = ['et-overlay--anchored', 'et-overlay--menu', 'et-floating-panel'];
+
+    enableAnchoredOverlayPositionExtras();
+
     const positionOptions = {
       placement: this.resolvedPlacement(),
       fallbackPlacements: this.resolvedFallbackPlacements(),
@@ -854,8 +857,6 @@ export class MenuDirective {
       getBoundingClientRect: () => new DOMRect(point.x, point.y, 0, 0),
       contextElement: this.registeredContextTrigger()?.elementRef.nativeElement,
     };
-
-    enableAnchoredOverlayPositionExtras();
 
     return anchoredOverlayPosition({
       referenceElement,

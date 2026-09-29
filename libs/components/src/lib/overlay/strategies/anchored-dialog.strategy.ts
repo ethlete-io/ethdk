@@ -1,6 +1,7 @@
 import {
   defineRootProvider,
   defineStaticRootProvider,
+  enableAnchoredOverlayPositionExtras,
   forceReflow,
   injectRenderer,
   nextFrame,
@@ -56,6 +57,8 @@ const ANCHORED_DIALOG_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
     const renderer = injectRenderer();
 
     const build = (config: Partial<OverlayBreakpointConfig> = {}): OverlayStrategy => {
+      enableAnchoredOverlayPositionExtras();
+
       const cfg = mergeOverlayBreakpointConfigs(defaults, config);
 
       // must run while the pane is untransformed - both hooks are called before the enter/leave classes land

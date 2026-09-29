@@ -2,12 +2,15 @@ import {
   OverlayRuntimePositionStrategy,
   OverlayRuntimeShiftOptions,
   anchoredOverlayPosition,
-  enableAnchoredOverlayPositionExtras,
   randomId,
 } from '@ethlete/core';
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
 import { OverlayBreakpointConfig, OverlayStrategy, OverlayStrategyBreakpoint } from './overlay-strategy.types';
 
+/**
+ * Options of an anchored overlay strategy. `autoResize`, `autoHide`, `autoCloseIfReferenceHidden` and
+ * `arrow` need `enableAnchoredOverlayPositionExtras()` from `@ethlete/core`, called where the strategy is built.
+ */
 export type AnchoredOverlayStrategyOptions = {
   containerClass?: string | string[];
   hostClass?: string | string[];
@@ -64,10 +67,8 @@ export type AnchoredPositionOptions = Pick<
 
 export const buildAnchoredRuntimePositionStrategy =
   (options: AnchoredPositionOptions = {}) =>
-  (origin?: Element): OverlayRuntimePositionStrategy => {
-    enableAnchoredOverlayPositionExtras();
-
-    return origin
+  (origin?: Element): OverlayRuntimePositionStrategy =>
+    origin
       ? anchoredOverlayPosition({
           referenceElement: origin,
           placement: options.placement,
@@ -83,7 +84,6 @@ export const buildAnchoredRuntimePositionStrategy =
           mirrorWidth: options.mirrorWidth,
         })
       : { kind: 'global' };
-  };
 
 const buildAnchoredConfig = (options: AnchoredOverlayStrategyOptions): OverlayBreakpointConfig => ({
   containerClass: options.containerClass,

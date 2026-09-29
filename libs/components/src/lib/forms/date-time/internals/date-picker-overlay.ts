@@ -1,5 +1,5 @@
 import { ModelSignal, Signal, inputBinding, signal } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { RuntimeError, enableAnchoredOverlayPositionExtras } from '@ethlete/core';
 import {
   AnchoredPanelCloseInfo,
   AnchoredPanelOverlayRef,
@@ -42,31 +42,35 @@ export const createDatePickerOverlay = (options: CreateDatePickerOverlayOptions)
     overlayRef,
     surface: options.surface,
     anchor: options.anchor,
-    config: ({ origin, templateRef }) => ({
-      bindings: [inputBinding('template', () => templateRef), inputBinding('context', options.context)],
-      mode: 'non-modal',
-      autoFocus: 'first-tabbable',
-      restoreFocus: false,
-      // outside-pointer closing is owned by the controller: a pointerdown on the field/trigger
-      // must toggle instead of close-and-reopen
-      closeOnEscape: true,
-      closeOnOutsidePointer: false,
-      origin,
-      panelClass: 'et-date-input-overlay-pane',
-      strategies: () => [
-        {
-          strategy: bottomSheetStrategy.build({ hasBackdrop: true, containerClass: 'et-date-picker-sheet' }),
-        },
-        ...anchoredOverlayStrategy({
-          containerClass: ['et-overlay--anchored', 'et-overlay--date-picker'],
-          placement: 'bottom-start',
-          offset: 4,
-          viewportPadding: 8,
-          autoResize: true,
-          minAvailableSpace: PICKER_MIN_AVAILABLE_SPACE,
-        })().map((entry) => ({ ...entry, breakpoint: 'md' as const })),
-      ],
-    }),
+    config: ({ origin, templateRef }) => {
+      enableAnchoredOverlayPositionExtras();
+
+      return {
+        bindings: [inputBinding('template', () => templateRef), inputBinding('context', options.context)],
+        mode: 'non-modal',
+        autoFocus: 'first-tabbable',
+        restoreFocus: false,
+        // outside-pointer closing is owned by the controller: a pointerdown on the field/trigger
+        // must toggle instead of close-and-reopen
+        closeOnEscape: true,
+        closeOnOutsidePointer: false,
+        origin,
+        panelClass: 'et-date-input-overlay-pane',
+        strategies: () => [
+          {
+            strategy: bottomSheetStrategy.build({ hasBackdrop: true, containerClass: 'et-date-picker-sheet' }),
+          },
+          ...anchoredOverlayStrategy({
+            containerClass: ['et-overlay--anchored', 'et-overlay--date-picker'],
+            placement: 'bottom-start',
+            offset: 4,
+            viewportPadding: 8,
+            autoResize: true,
+            minAvailableSpace: PICKER_MIN_AVAILABLE_SPACE,
+          })().map((entry) => ({ ...entry, breakpoint: 'md' as const })),
+        ],
+      };
+    },
     onAfterClosed: (info) => options.onAfterClosed?.(info),
     onMissingSurface: () => {
       if (ngDevMode) {

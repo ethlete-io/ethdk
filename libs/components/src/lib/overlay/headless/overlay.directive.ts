@@ -13,7 +13,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { injectHostElement, RuntimeError } from '@ethlete/core';
+import { enableAnchoredOverlayPositionExtras, injectHostElement, RuntimeError } from '@ethlete/core';
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
 import { take, tap } from 'rxjs';
 import { OverlayConfig, OverlayAutoFocusTarget, OverlayMode, OverlayRole } from '../overlay-config';
@@ -217,6 +217,10 @@ export class OverlayDirective {
 
     const origin = this.originElement();
     const isAnchored = this.mode() === 'non-modal' && origin !== null;
+
+    if (isAnchored) {
+      enableAnchoredOverlayPositionExtras();
+    }
     const config: OverlayConfig = {
       autoFocus: this.autoFocus(),
       backdropClass: this.backdropClass(),

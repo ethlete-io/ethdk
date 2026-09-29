@@ -14,7 +14,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { COLOR_PROVIDER, RuntimeError, injectRenderer } from '@ethlete/core';
+import { COLOR_PROVIDER, RuntimeError, enableAnchoredOverlayPositionExtras, injectRenderer } from '@ethlete/core';
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
 import { tap } from 'rxjs';
 import { injectReportError } from '../../internals/report-error';
@@ -206,6 +206,8 @@ export class ToggletipDirective {
 
       return;
     }
+
+    enableAnchoredOverlayPositionExtras();
 
     const hostElement = this.elementRef.nativeElement;
     const config: OverlayConfig = {

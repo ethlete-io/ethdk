@@ -17,7 +17,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, outputFromObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { RuntimeError, injectHostElement, nextFrame } from '@ethlete/core';
+import { RuntimeError, enableAnchoredOverlayPositionExtras, injectHostElement, nextFrame } from '@ethlete/core';
 import { EMPTY, Subscription, catchError, defer, fromEvent, merge, switchMap, take, tap } from 'rxjs';
 import { createTypeahead } from '../../../internals/typeahead';
 import { mountFloatingPanelStyles } from '../../../overlay/floating-panel-styles.component';
@@ -358,6 +358,8 @@ export class CascaderDirective<T = unknown>
     anchor: () => this.resolveAnchorElement(),
     config: ({ origin }) => {
       const context = { $implicit: this, cascader: this, close: () => this.hide() };
+
+      enableAnchoredOverlayPositionExtras();
 
       return {
         bindings: [

@@ -23,6 +23,7 @@ import {
   injectRenderer,
   isOnHigherOverlayLayer,
   resolveOverlayLayer,
+  enableAnchoredOverlayPositionExtras,
 } from '@ethlete/core';
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
 import { filter, fromEvent, map, switchMap, takeUntil, tap, timer } from 'rxjs';
@@ -159,6 +160,8 @@ export class TooltipDirective {
     if (this.overlayRef()) {
       return;
     }
+
+    enableAnchoredOverlayPositionExtras();
 
     const tooltipId = createTooltipId();
     const hostElement = this.elementRef.nativeElement;

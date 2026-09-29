@@ -67,7 +67,9 @@ Two shapes make a dependency unshakeable, and neither is visible in `--external`
   maps and every import of that package stays `import type`.
 
 `goldens.json` carries one `"thirdParty": true` floor per lib for exactly this surface, plus
-`menu-anchored-deps` - the only entry in which `@floating-ui/dom`'s middleware is visible.
+`menu-anchored-deps` and `anchored-strategy-deps` - the only entries in which `@floating-ui/dom`'s
+middleware is visible. The second is an anchored overlay without `autoResize`, `autoHide` or an arrow,
+so it fails if the `size` / `arrow` / `hide` middleware stops being opt-in.
 
 ### Consumer caveat
 
