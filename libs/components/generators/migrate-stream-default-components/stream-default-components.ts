@@ -136,3 +136,36 @@ export const addStreamOverlayImportsToFile = (content: string, externalTemplates
 
   return addNextToUsage(content.slice(0, start)) + rewrittenImport + addNextToUsage(content.slice(end));
 };
+
+const APP_CONFIG_MARKER = /\bApplicationConfig\b|\bbootstrapApplication\(/;
+
+/**
+ * Adds `provideStreamConfig({ ...STREAM_DEFAULT_COMPONENTS })` as the first provider of an application config,
+ * or returns `null` when the file is no application config with a literal `providers` array.
+ */
+export const addStreamConfigToAppConfig = (content: string): string | null => {
+  if (!APP_CONFIG_MARKER.test(content) || content.includes('mergeApplicationConfig(')) return null;
+
+  const providers = content.match(/\bproviders\s*:\s*\[(\s*\])?/);
+  if (!providers || providers.index === undefined) return null;
+
+  const provider = 'provideStreamConfig({ ...STREAM_DEFAULT_COMPONENTS })';
+  const insertAt = providers.index + providers[0].length;
+  const withProvider = providers[1]
+    ? `${content.slice(0, providers.index)}providers: [${provider}]${content.slice(insertAt)}`
+    : `${content.slice(0, insertAt)}${provider}, ${content.slice(insertAt)}`;
+
+  const importStatement = [...withProvider.matchAll(COMPONENTS_IMPORT)][0];
+
+  if (!importStatement || importStatement.index === undefined) {
+    return `import { STREAM_DEFAULT_COMPONENTS, provideStreamConfig } from '@ethlete/components';\n${withProvider}`;
+  }
+
+  const rewrittenImport = importStatement[0].replace('{', '{ STREAM_DEFAULT_COMPONENTS, provideStreamConfig,');
+
+  return (
+    withProvider.slice(0, importStatement.index) +
+    rewrittenImport +
+    withProvider.slice(importStatement.index + importStatement[0].length)
+  );
+};

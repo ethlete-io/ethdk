@@ -2,6 +2,7 @@ import { formatFiles, joinPathFragments, Tree } from '@nx/devkit';
 import { dirname } from 'node:path/posix';
 import { createMigrationScope, MigrationScopeOptions } from '../migrate-query-error-labels/migration-scope.js';
 import {
+  addStreamConfigToAppConfig,
   addStreamOverlayImportsToFile,
   StreamDefaultComponentsTask,
   streamUsageTask,
@@ -17,7 +18,8 @@ const renderReport = (tasks: StreamDefaultComponentsTask[]) =>
     '',
     'The shipped loading and error overlays are opt-in. A stream slot whose config names none renders no',
     'overlay while the player loads or fails. The migration spread `STREAM_DEFAULT_COMPONENTS` into every literal',
-    '`provideStreamConfig` call; the sites below need it by hand. Add once, app-wide or where the slots render:',
+    '`provideStreamConfig` call, and added one to each application config of an app without any. The sites below',
+    'need it by hand. Add once, app-wide or where the slots render:',
     '',
     '```ts',
     "import { STREAM_DEFAULT_COMPONENTS, provideStreamConfig } from '@ethlete/components';",
@@ -46,6 +48,7 @@ export default async function migrateStreamDefaultComponents(tree: Tree, schema:
   const changed: string[] = [];
   const tasks: StreamDefaultComponentsTask[] = [];
   const usages: StreamDefaultComponentsTask[] = [];
+  const appConfigs: string[] = [];
   let hasConfig = false;
 
   scope.visit(tree, (filePath) => {
@@ -60,6 +63,7 @@ export default async function migrateStreamDefaultComponents(tree: Tree, schema:
     tasks.push(...result.tasks);
 
     if (result.usesStream) usages.push(streamUsageTask(filePath, content));
+    if (filePath.endsWith('.ts') && addStreamConfigToAppConfig(content) !== null) appConfigs.push(filePath);
 
     let next = result.next;
 
@@ -77,7 +81,18 @@ export default async function migrateStreamDefaultComponents(tree: Tree, schema:
     }
   });
 
-  const report = hasConfig ? tasks : [...tasks, ...usages];
+  if (!hasConfig && usages.length > 0) {
+    for (const filePath of appConfigs) {
+      const next = addStreamConfigToAppConfig(tree.read(filePath, 'utf-8') ?? '');
+      if (next === null) continue;
+
+      tree.write(filePath, next);
+      if (!changed.includes(filePath)) changed.push(filePath);
+    }
+  }
+
+  const addedConfig = !hasConfig && usages.length > 0 && appConfigs.length > 0;
+  const report = hasConfig || addedConfig ? tasks : [...tasks, ...usages];
 
   if (report.length > 0) {
     tree.write(STREAM_DEFAULT_COMPONENTS_REPORT_PATH, renderReport(report));

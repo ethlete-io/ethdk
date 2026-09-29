@@ -133,7 +133,7 @@ import { provideStreamConfig, STREAM_DEFAULT_COMPONENTS } from '@ethlete/compone
 provideStreamConfig({ ...STREAM_DEFAULT_COMPONENTS });
 ```
 
-`et update` adds the spread to every literal `provideStreamConfig` call and lists the stream slots of an app with no config.
+`et update` adds the spread to every literal `provideStreamConfig` call. In an app with no config, it adds `provideStreamConfig({ ...STREAM_DEFAULT_COMPONENTS })` to the application config, and it lists the stream slots when it finds no application config.
 
 The overlays are no longer part of `STREAM_IMPORTS` either, so an app that renders `<et-stream-player-loading>` or `<et-stream-player-error>` in its own template imports `StreamPlayerLoadingComponent` or `StreamPlayerErrorComponent` itself; `et update` adds them. `STREAM_ALL_IMPORTS` still includes both.
 

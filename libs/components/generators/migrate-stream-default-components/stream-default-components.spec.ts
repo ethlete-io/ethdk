@@ -1,6 +1,10 @@
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { describe, expect, it } from 'vitest';
-import { addStreamOverlayImportsToFile, scanStreamDefaultComponentsInFile } from './stream-default-components';
+import {
+  addStreamConfigToAppConfig,
+  addStreamOverlayImportsToFile,
+  scanStreamDefaultComponentsInFile,
+} from './stream-default-components';
 import migrateStreamDefaultComponents, { STREAM_DEFAULT_COMPONENTS_REPORT_PATH } from './migration';
 
 const FILE = 'apps/shop/src/app/app.config.ts';
@@ -103,6 +107,42 @@ describe('migrate-stream-default-components', () => {
 
     expect(report).toContain('apps/shop/src/app/stream.component.html:1');
     expect(report).toContain('provideStreamConfig({ ...STREAM_DEFAULT_COMPONENTS })');
+  });
+
+  it('adds the default components to the application config of an app without any stream config', async () => {
+    const tree = createTreeWithEmptyWorkspace();
+
+    tree.write('apps/shop/src/app/stream.component.html', '<et-youtube-player-slot videoId="a" />\n');
+    tree.write(
+      'apps/shop/src/app/app.config.ts',
+      "import { ApplicationConfig } from '@angular/core';\nimport { provideBracketConfig } from '@ethlete/components';\n\nexport const appConfig: ApplicationConfig = { providers: [provideBracketConfig()] };\n",
+    );
+
+    await migrateStreamDefaultComponents(tree, { skipFormat: true });
+
+    expect(tree.read('apps/shop/src/app/app.config.ts', 'utf-8')).toBe(
+      "import { ApplicationConfig } from '@angular/core';\nimport { STREAM_DEFAULT_COMPONENTS, provideStreamConfig, provideBracketConfig } from '@ethlete/components';\n\nexport const appConfig: ApplicationConfig = { providers: [provideStreamConfig({ ...STREAM_DEFAULT_COMPONENTS }), provideBracketConfig()] };\n",
+    );
+    expect(tree.exists(STREAM_DEFAULT_COMPONENTS_REPORT_PATH)).toBe(false);
+  });
+
+  it('adds an import and fills an empty providers array', () => {
+    expect(
+      addStreamConfigToAppConfig(
+        "import { ApplicationConfig } from '@angular/core';\nexport const appConfig: ApplicationConfig = { providers: [ ] };",
+      ),
+    ).toBe(
+      "import { STREAM_DEFAULT_COMPONENTS, provideStreamConfig } from '@ethlete/components';\nimport { ApplicationConfig } from '@angular/core';\nexport const appConfig: ApplicationConfig = { providers: [provideStreamConfig({ ...STREAM_DEFAULT_COMPONENTS })] };",
+    );
+  });
+
+  it('leaves a merged server config and a file without an application config alone', () => {
+    expect(
+      addStreamConfigToAppConfig(
+        'const serverConfig: ApplicationConfig = { providers: [provideServerRendering()] };\nmergeApplicationConfig(appConfig, serverConfig);',
+      ),
+    ).toBeNull();
+    expect(addStreamConfigToAppConfig('@Component({ providers: [Foo] })')).toBeNull();
   });
 
   it('adds an overlay component next to STREAM_IMPORTS where a template renders its selector', () => {
