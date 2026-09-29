@@ -4,7 +4,7 @@
 const { ANGULAR_CORE, getImportedName } = require('./internals/import-resolution');
 
 /**
- * Disallows calling .subscribe() inside Angular's effect() or computed() callbacks.
+ * Disallows calling .subscribe() inside Angular's effect(), computed(), afterRenderEffect() or linkedSignal() callbacks.
  *
  * This creates unmanaged subscriptions and causes memory leaks because neither
  * effect() nor computed() provides a lifecycle-tied cleanup mechanism for subscriptions.
@@ -24,6 +24,8 @@ const { ANGULAR_CORE, getImportedName } = require('./internals/import-resolution
  *     .subscribe();
  */
 
+const REACTIVE_CONTEXTS = new Set(['effect', 'computed', 'afterRenderEffect', 'linkedSignal']);
+
 /**
  * @param {any} node
  */
@@ -34,7 +36,8 @@ const noRxjsInEffect = {
   meta: {
     type: 'problem',
     docs: {
-      description: 'Disallow .subscribe() inside effect() or computed() callbacks.',
+      description:
+        'Disallow .subscribe() inside effect(), computed(), afterRenderEffect() or linkedSignal() callbacks.',
       recommended: true,
     },
     messages: {
@@ -45,8 +48,7 @@ const noRxjsInEffect = {
   },
   create(context) {
     /**
-     * Returns the name of the wrapping reactive context ('effect' | 'computed') if
-     * the given node is inside one, or null otherwise.
+     * Returns the name of the wrapping reactive context if the given node is inside one, or null otherwise.
      * @param {import('eslint').Rule.Node} node
      * @returns {string | null}
      */
@@ -59,7 +61,7 @@ const noRxjsInEffect = {
         }
         if (crossedFunctionBoundary && current.type === 'CallExpression') {
           const calleeName = getImportedName(context.sourceCode, current.callee, ANGULAR_CORE);
-          if (calleeName === 'effect' || calleeName === 'computed') return calleeName;
+          if (calleeName && REACTIVE_CONTEXTS.has(calleeName)) return calleeName;
         }
         current = current.parent;
       }

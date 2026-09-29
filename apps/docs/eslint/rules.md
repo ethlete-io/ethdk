@@ -68,7 +68,7 @@ enum is reported without a fix. After the fix, a member used in a type position 
 
 | Rule                                 | What it enforces                                                                                                                               | Fix | Default |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
-| `no-inject-chain`                    | No member access chained directly off `inject()` - assign the injected value to a `const` first                                                |     | error   |
+| `no-inject-chain`                    | No member access chained directly off `inject()` - assign the injected value to a `const` first; `inject(X).method()` calls are allowed        |     | error   |
 | `no-typed-injected-element-ref`      | `inject<ElementRef<HTMLElement>>(ElementRef)` - the generic goes on `inject()`, not on `ElementRef`                                            | 🔧  | error   |
 | `no-impure-top-level-provider`       | No module-scope destructuring of a factory call; optionally require `@__PURE__` on module-scope calls                                          | 🔧  | error   |
 | `no-legacy-prepare-without-injector` | A legacy query creator's `prepare()` passes an explicit `injector` when it runs from a callback, outside the injection context that created it | 🔧  | error   |
@@ -160,18 +160,18 @@ export class ProfileAvatarComponent {
 
 ## RxJS & signals
 
-| Rule                        | What it enforces                                                                                                  | Fix | Default |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------- | --- | ------- |
-| `require-dollar-suffix`     | Observable variables and class properties end with `$`                                                            |     | error   |
-| `no-subscribe-with-body`    | `subscribe()` is called with an empty body - side effects go into `tap()` inside the pipe                         |     | error   |
-| `no-subscribe-in-pipe`      | No `.subscribe()` calls inside `.pipe()` callbacks                                                                |     | error   |
-| `take-until-destroyed-last` | `takeUntilDestroyed()` is the last operator in a `.pipe()` - an operator after it can keep the subscription alive |     | error   |
-| `no-async-await`            | No `async` / `await` - asynchronous work returns a cold Observable                                                |     | error   |
-| `no-rxjs-in-effect`         | No `.subscribe()` inside `effect()` or `computed()` - bridge with `toObservable()` instead                        |     | error   |
-| `no-effect-cleanup-return`  | No cleanup function returned from `effect()` - Angular ignores it; use the `onCleanup` parameter or `DestroyRef`  | 🔧  | error   |
-| `no-readonly-signal`        | No `readonly` on class properties initialized with reactive APIs (`signal`, `input`, `computed`, `inject`, …)     | 🔧  | error   |
-| `prefer-linked-signal`      | `linkedSignal()` instead of an `effect()` that only calls `.set()` on a signal, also behind an `if`/`else`        |     | warn    |
-| `prefer-rxjs-timer`         | RxJS `timer` / `interval` / `fromEvent` instead of `setTimeout` / `setInterval` / `addEventListener`              |     | error   |
+| Rule                        | What it enforces                                                                                                                                                          | Fix | Default |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| `require-dollar-suffix`     | Observable variables and class properties end with `$`                                                                                                                    |     | error   |
+| `no-subscribe-with-body`    | `subscribe()` is called with an empty body - side effects go into `tap()` inside the pipe                                                                                 |     | error   |
+| `no-subscribe-in-pipe`      | No `.subscribe()` calls inside `.pipe()` callbacks                                                                                                                        |     | error   |
+| `take-until-destroyed-last` | `takeUntilDestroyed()` is the last operator in a `.pipe()` - an operator after it can keep the subscription alive                                                         |     | error   |
+| `no-async-await`            | No `async` / `await` - asynchronous work returns a cold Observable; a Storybook `play` function in a story file is exempt                                                 |     | error   |
+| `no-rxjs-in-effect`         | No `.subscribe()` inside `effect()`, `computed()`, `afterRenderEffect()` or `linkedSignal()` - bridge with `toObservable()` instead                                       |     | error   |
+| `no-effect-cleanup-return`  | No cleanup function returned from `effect()` - Angular ignores it; use the `onCleanup` parameter or `DestroyRef`                                                          | 🔧  | error   |
+| `no-readonly-signal`        | No `readonly` on class properties initialized with reactive APIs (`signal`, `input`, `computed`, `inject`, …)                                                             | 🔧  | error   |
+| `prefer-linked-signal`      | `linkedSignal()` instead of an `effect()` that only calls `.set()` on a signal, also behind an `if`/`else`                                                                |     | warn    |
+| `prefer-rxjs-timer`         | RxJS `timer` / `interval` / `fromEvent` instead of `setTimeout` / `setInterval` / `addEventListener`; also flags `clearTimeout` / `clearInterval` / `removeEventListener` |     | error   |
 
 ```ts
 // ❌ logic in the subscribe callback

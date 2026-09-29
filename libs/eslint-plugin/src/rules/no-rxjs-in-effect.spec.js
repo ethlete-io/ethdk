@@ -31,6 +31,14 @@ effect(() => { store.subscribe(cb); });`,
   ],
   invalid: [
     {
+      code: `afterRenderEffect(() => { this.obs$.subscribe(); });`,
+      errors: [{ messageId: 'noSubscribeInEffect', data: { context: 'afterRenderEffect' } }],
+    },
+    {
+      code: `linkedSignal(() => { this.obs$.subscribe(); return 1; });`,
+      errors: [{ messageId: 'noSubscribeInEffect', data: { context: 'linkedSignal' } }],
+    },
+    {
       code: `import { effect as ngEffect } from '@angular/core';
 ngEffect(() => { obs$.subscribe(); });`,
       errors: [{ messageId: 'noSubscribeInEffect' }],
