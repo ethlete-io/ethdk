@@ -1,4 +1,5 @@
 import { Tree, formatFiles, logger, visitNotIgnoredFiles } from '@nx/devkit';
+import { posix } from 'path';
 import { Expression, ObjectLiteralExpression, Project, SourceFile, SyntaxKind } from 'ts-morph';
 
 //#region Types
@@ -95,7 +96,7 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
   // Step 3: Try to extract themes using TypeScript
   let themes: Theme[];
   try {
-    themes = extractThemesFromContent(themesContent, themesPath);
+    themes = extractThemesFromContent(tree, themesContent, themesPath);
     logger.log(`✅ Found ${themes.length} theme(s)`);
   } catch (error) {
     logger.error('❌ Failed to parse themes file');
@@ -174,7 +175,9 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
 
 //#region Helper Functions
 
-function extractThemesFromContent(content: string, filePath: string): Theme[] {
+type ParseContext = { tree: Tree; project: Project };
+
+function extractThemesFromContent(tree: Tree, content: string, filePath: string): Theme[] {
   // Create an in-memory TypeScript project
   const project = new Project({
     useInMemoryFileSystem: true,
@@ -186,6 +189,7 @@ function extractThemesFromContent(content: string, filePath: string): Theme[] {
 
   // Add the source file
   const sourceFile = project.createSourceFile(filePath, content);
+  const context: ParseContext = { tree, project };
 
   const themes: Theme[] = [];
 
@@ -255,7 +259,7 @@ function extractThemesFromContent(content: string, filePath: string): Theme[] {
     }
 
     try {
-      const theme = parseThemeObject(themeObj, sourceFile);
+      const theme = parseThemeObject(themeObj, sourceFile, context);
       themes.push(theme);
     } catch (error) {
       logger.warn(`⚠️  Failed to parse theme ${name}: ${error instanceof Error ? error.message : String(error)}`);
@@ -269,7 +273,7 @@ function extractThemesFromContent(content: string, filePath: string): Theme[] {
   return themes;
 }
 
-function parseThemeObject(obj: ObjectLiteralExpression, sourceFile: SourceFile): Theme {
+function parseThemeObject(obj: ObjectLiteralExpression, sourceFile: SourceFile, context: ParseContext): Theme {
   const properties = obj.getProperties();
 
   const theme: Partial<Theme> = {};
@@ -309,7 +313,7 @@ function parseThemeObject(obj: ObjectLiteralExpression, sourceFile: SourceFile):
       case 'secondary':
       case 'tertiary':
         if (initializer.isKind(SyntaxKind.ObjectLiteralExpression)) {
-          theme[propName] = parseThemeSwatch(initializer, sourceFile);
+          theme[propName] = parseThemeSwatch(initializer, sourceFile, context);
         }
         break;
     }
@@ -378,7 +382,7 @@ function validateThemeConfiguration(themes: Theme[]): void {
   }
 }
 
-function parseThemeSwatch(obj: ObjectLiteralExpression, sourceFile: SourceFile): ThemeSwatch {
+function parseThemeSwatch(obj: ObjectLiteralExpression, sourceFile: SourceFile, context: ParseContext): ThemeSwatch {
   const properties = obj.getProperties();
   const swatch: Partial<ThemeSwatch> = {};
 
@@ -394,7 +398,7 @@ function parseThemeSwatch(obj: ObjectLiteralExpression, sourceFile: SourceFile):
       continue;
     }
 
-    const colorMap = parseColorMap(initializer, sourceFile);
+    const colorMap = parseColorMap(initializer, sourceFile, context);
 
     if (!colorMap) {
       continue;
@@ -422,12 +426,91 @@ type ColorMapKey = (typeof COLOR_MAP_KEYS)[number];
 
 const isColorMapKey = (name: string): name is ColorMapKey => COLOR_MAP_KEYS.some((key) => key === name);
 
-function parseColorMap(initializer: Expression, sourceFile: SourceFile): ThemeColorMap | OnThemeColorMap | null {
-  if (initializer.isKind(SyntaxKind.Identifier)) {
-    const declaration = sourceFile.getVariableDeclarations().find((decl) => decl.getName() === initializer.getText());
-    const referencedInitializer = declaration?.getInitializer();
+function unwrapTypeExpressions(expression: Expression | undefined): Expression | undefined {
+  let current = expression;
 
-    return referencedInitializer ? parseColorMap(referencedInitializer, sourceFile) : null;
+  while (current?.isKind(SyntaxKind.AsExpression) || current?.isKind(SyntaxKind.SatisfiesExpression)) {
+    current = current.getExpression();
+  }
+
+  return current;
+}
+
+function resolveConstInitializer(
+  name: string,
+  sourceFile: SourceFile,
+  context: ParseContext,
+): { initializer: Expression; sourceFile: SourceFile } | null {
+  const local = sourceFile.getVariableDeclarations().find((decl) => decl.getName() === name);
+
+  if (local) {
+    const initializer = unwrapTypeExpressions(local.getInitializer());
+
+    return initializer ? { initializer, sourceFile } : null;
+  }
+
+  const importDecl = sourceFile
+    .getImportDeclarations()
+    .find((decl) =>
+      decl.getNamedImports().some((named) => (named.getAliasNode()?.getText() ?? named.getName()) === name),
+    );
+
+  if (!importDecl) {
+    return null;
+  }
+
+  const specifier = importDecl.getModuleSpecifierValue();
+  const filePath = sourceFile.getFilePath();
+
+  const importedName =
+    importDecl
+      .getNamedImports()
+      .find((named) => (named.getAliasNode()?.getText() ?? named.getName()) === name)
+      ?.getName() ?? name;
+
+  const warnUnresolved = (reason: string) =>
+    logger.warn(
+      `⚠️  Could not resolve "${name}" imported from "${specifier}" in ${filePath} (${reason}); it is ignored.`,
+    );
+
+  if (!specifier.startsWith('.')) {
+    warnUnresolved('package imports are not followed');
+    return null;
+  }
+
+  const base = posix.join(posix.dirname(filePath), specifier).replace(/^\//, '');
+  const candidates = [`${base}.ts`, posix.join(base, 'index.ts'), base];
+  const resolvedPath = candidates.find((candidate) => context.tree.isFile(candidate));
+
+  if (!resolvedPath) {
+    warnUnresolved('file not found in the workspace');
+    return null;
+  }
+
+  const importedFile =
+    context.project.getSourceFile(resolvedPath) ??
+    context.project.createSourceFile(resolvedPath, context.tree.read(resolvedPath, 'utf-8') ?? '');
+
+  const declaration = importedFile.getVariableDeclarations().find((decl) => decl.getName() === importedName);
+  const initializer = unwrapTypeExpressions(declaration?.getInitializer());
+
+  if (!initializer?.isKind(SyntaxKind.ObjectLiteralExpression)) {
+    warnUnresolved(`not an object literal in ${resolvedPath}`);
+    return null;
+  }
+
+  return { initializer, sourceFile: importedFile };
+}
+
+function parseColorMap(
+  initializer: Expression,
+  sourceFile: SourceFile,
+  context: ParseContext,
+): ThemeColorMap | OnThemeColorMap | null {
+  if (initializer.isKind(SyntaxKind.Identifier)) {
+    const resolved = resolveConstInitializer(initializer.getText(), sourceFile, context);
+
+    return resolved ? parseColorMap(resolved.initializer, resolved.sourceFile, context) : null;
   }
 
   // Handle spread expressions by resolving references
@@ -449,18 +532,15 @@ function parseColorMap(initializer: Expression, sourceFile: SourceFile): ThemeCo
         const spreadExpr = prop.getExpression();
 
         if (spreadExpr.isKind(SyntaxKind.Identifier)) {
-          const referencedName = spreadExpr.getText();
-          const referencedDecl = sourceFile.getVariableDeclarations().find((decl) => decl.getName() === referencedName);
+          const resolved = resolveConstInitializer(spreadExpr.getText(), sourceFile, context);
 
-          if (referencedDecl) {
-            const referencedObj = referencedDecl.getInitializer();
-            if (referencedObj?.isKind(SyntaxKind.ObjectLiteralExpression)) {
-              const spreadColors = parseColorMap(referencedObj, sourceFile);
-              if (spreadColors) {
-                Object.assign(colorMap, spreadColors);
-              }
-            }
+          if (resolved) {
+            Object.assign(colorMap, parseColorMap(resolved.initializer, resolved.sourceFile, context));
           }
+        } else {
+          logger.warn(
+            `⚠️  Unsupported spread "...${spreadExpr.getText()}" in ${sourceFile.getFilePath()}; it is ignored.`,
+          );
         }
       }
     }

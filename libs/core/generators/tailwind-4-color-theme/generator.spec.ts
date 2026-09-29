@@ -748,6 +748,51 @@ describe('tailwind-4-color-theme generator', () => {
     expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
 
+  describe('spreads of imported consts', () => {
+    const THEME = (imports: string) => `
+    ${imports}
+
+    export const BRAND = {
+      name: 'brand',
+      isDefault: true,
+      primary: {
+        color: { default: '1 2 3' },
+        onColor: { ...ON_COLOR, hover: '9 9 9' },
+      },
+    } as const;
+
+    export const THEMES = [BRAND] as const;
+    `;
+
+    it('should resolve a spread of a const imported from a relative file', async () => {
+      tree.write('src/shared/on-color.ts', `export const ON_COLOR = { default: '200 201 202' } as const;`);
+      tree.write('src/themes.ts', THEME(`import { ON_COLOR } from './shared/on-color';`));
+
+      await migrate(tree, { themesPath: 'src/themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
+
+      expect(tree.read('src/styles/tw.css', 'utf-8')).toContain('200 201 202');
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should warn when a spread comes from a package import', async () => {
+      tree.write('src/themes.ts', THEME(`import { ON_COLOR } from '@acme/tokens';`));
+
+      await migrate(tree, { themesPath: 'src/themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Could not resolve "ON_COLOR" imported from "@acme/tokens" in /src/themes.ts'),
+      );
+    });
+
+    it('should warn when a relative import cannot be read from the tree', async () => {
+      tree.write('src/themes.ts', THEME(`import { ON_COLOR } from './missing';`));
+
+      await migrate(tree, { themesPath: 'src/themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('Could not resolve "ON_COLOR"'));
+    });
+  });
+
   describe('defaultTheme option', () => {
     const TWO_THEMES = `
     export const THEME1 = {
