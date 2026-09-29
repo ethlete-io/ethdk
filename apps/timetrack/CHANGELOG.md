@@ -1,5 +1,18 @@
 # timetrack-app
 
+## 0.2.0-next.4
+
+### Patch Changes
+
+- Each piece of a background band names its stretch, so a piece after a row no longer looks like an empty place.
+- A card too short for a second line shows its description after its title.
+- A card's title and description sit on the card's own colour above the hatching of a break, so the hatching no longer runs through the text.
+- Count prompts sent from another device as remote work while the user is still away, not only once they are back at the desk.
+- A session's row is now described by the commits and files that session produced, never by a prompt that only agrees or a branch name like `next`.
+- A parallel agent session on one ticket is drawn as one card over its whole row, cascaded where it overlaps another, instead of one card per stretch it ran.
+- The minutes a background band lost to another band are drawn as a dashed outline without hatching, so hatching only marks a break or a band nobody was at.
+- Parallel agent sessions on one ticket are drawn side by side again, each over its own stretches widened to 15-minute steps and cascaded where they overlap.
+
 ## 0.2.0-next.3
 
 ### Minor Changes

@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 4.0.0-next.12
+
+### Major Changes
+
+- Breaking: `provideContentfulConfig` no longer registers the asset and link components; spread `CONTENTFUL_DEFAULT_COMPONENTS` into it to keep them. `et update` migrates existing calls.
+
 ## 4.0.0-next.11
 
 ### Major Changes
