@@ -1,6 +1,8 @@
 import { JsonPipe } from '@angular/common';
 import { Component, ViewEncapsulation, input, viewChild } from '@angular/core';
 import { TikTokPlayerSlotComponent } from '../../platform/tiktok/tiktok-player-slot.component';
+import { provideStreamConfig } from '../../stream-config';
+import { STREAM_DEFAULT_COMPONENTS } from '../../stream-default-components';
 import { STREAM_IMPORTS, STREAM_TIKTOK_IMPORTS } from '../../stream.imports';
 
 @Component({
@@ -17,6 +19,7 @@ import { STREAM_IMPORTS, STREAM_TIKTOK_IMPORTS } from '../../stream.imports';
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [STREAM_IMPORTS, STREAM_TIKTOK_IMPORTS, JsonPipe],
+  providers: [provideStreamConfig({ ...STREAM_DEFAULT_COMPONENTS })],
 })
 export class TikTokPlayerStorybookComponent {
   public videoId = input('6718335390845095173');
