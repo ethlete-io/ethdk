@@ -200,6 +200,26 @@ describe('provideFilterOverlay', () => {
       expect(filterOverlay.submitButton()).toEqual({ label: 'Show 42 results', disabled: false });
     });
 
+    it('reads as loading while a debounce is pending, then follows the preview', () => {
+      vi.useFakeTimers();
+
+      const { preview, totalHits } = createPreview({ totalHits: 7 });
+      const { filterOverlay } = setup({ fields: DEBOUNCED_FIELDS, preview: () => preview });
+
+      expect(filterOverlay.submitButton()).toEqual({ label: 'Show 7 results', disabled: false });
+
+      filterOverlay.draft.fields.search().value.set('che');
+      TestBed.tick();
+
+      expect(filterOverlay.submitButton()).toEqual({ label: 'Loading results…', disabled: true });
+
+      vi.advanceTimersByTime(300);
+      TestBed.tick();
+      totalHits.set(3);
+
+      expect(filterOverlay.submitButton()).toEqual({ label: 'Show 3 results', disabled: false });
+    });
+
     it('stops counting exactly past maxCountedHits', () => {
       const { preview } = createPreview({ totalHits: 900 });
       const { filterOverlay } = setup({ preview: () => preview, maxCountedHits: 500 });

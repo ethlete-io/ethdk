@@ -112,7 +112,7 @@ const createFilterOverlay = <TFields extends QueryFormFields>(
   const submitButton = computed(() => {
     const state: FilterOverlaySubmitState = {
       totalHits: preview?.totalHits() ?? null,
-      loading: preview?.loading() ?? false,
+      loading: preview !== null && (preview.loading() || !equal(draft.value(), draft.liveValue())),
       hasError: preview?.hasError() ?? false,
       hasPreview: preview !== null,
       maxCountedHits,

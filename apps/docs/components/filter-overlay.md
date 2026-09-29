@@ -83,7 +83,9 @@ It is a factory of a factory because the query has to be created in the _overlay
 exists once the overlay is open - a query built at config time would belong to the page and outlive the panel.
 
 Debouncing is the query form's job. The branch's value is already debounced wherever a field asked for it, so
-typing in a search box does not fire a request per keystroke.
+typing in a search box does not fire a request per keystroke. While that debounce is pending the count is for the
+previous value, so the submit button reads as loading until the preview catches up. `submit()` still applies what the
+controls hold.
 
 For a count that doesn't come from a single query - a local collection, an aggregate of several endpoints - write
 the `FilterOverlayPreview` shape yourself: three signals (`loading`, `hasError`, `totalHits`). A preview whose `totalHits` is
