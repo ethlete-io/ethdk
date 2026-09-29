@@ -1,7 +1,7 @@
 # Core lib scan — open findings
 
 Scan of `libs/core` from 2026-08-19. Fixed findings were removed on 2026-09-26 (git history has
-them). Still open: 5 Medium, 17 Low, 17 spec-coverage items.
+them). Still open: 16 Low, 15 spec-coverage items. The Medium lines were fixed on 2026-09-29.
 
 ## signals
 
@@ -41,25 +41,17 @@ them). Still open: 5 Medium, 17 Low, 17 spec-coverage items.
 
 ## generator: migrate-to-v5
 
-- Medium: `export { createProvider } from '@ethlete/cdk'` and namespace imports skipped silently (`create-provider.ts:56-57`). S
-- Medium: `detectCssVariableUsage` walks `node_modules` (`viewport-service.ts:322-330`). S
-- Medium: first-match `string.replace` edits (`router-state-service.ts:840,878,926,973,1024`, `viewport-service.ts:1653,1864,1894,1945,1985`). M
-- Medium: no scope flag (`schema.json`); transforms emit no review warnings (only `removed-exports.ts` reports). M
 - Low: dead code hidden by file-level eslint-disable (`router-state-service.ts:1,663,683`, `viewport-service.ts:1`). S
 - Low: comments at `create-provider.ts:9,55,73,78…`, `router-state-service.ts:36,48,68,…`. S
-- Low: `migration.ts:36` has no router-state bullet; `console.log` and `logger` mixed. S
 - Spec: no regression cases for the High fixes (two components per file, local `RouterStateService`, two classes per file, `type`/aliased imports, name in a template comment). M
-- Spec: `migration.spec.ts` tests only `skipFormat`; nothing asserts reported counts/log output. S
-- Spec: no `node_modules` fixture, no byte-identical check on an unrelated file. S
 
 ## other generators, packaging
 
-- Medium: `tailwind-4-color-theme` drops spreads of imported consts silently (`generator.ts:448-462`); `theming.md` doesn't document it. M
 - Low: `//#region` dividers, "Step 1..9" narration (`tailwind-4-color-theme/generator.ts:78-157`), restatements (`:178,187,223`), wrong "Migration main" label (`:55`). S
 - Low: `defaultThemes`/`regularThemes`/`mainThemes` reorder still there (`generator.ts:557-605`). S
 - Low: `stories/changelog-page.mdx:3` names the import `Readme`. S
 - Spec: surface generator lacks malformed swatch, shared tint const, inline theme literal cases. S
-- Spec: color generator lacks imported spreads, inline literals, `.scss` output path cases. S
+- Spec: color generator lacks inline literals, `.scss` output path cases. S
 - Spec: `devtools-about` never tests a spec file next to the real config, or a re-run on a wired app. S
 - Spec: `migration-scope.ts` has no spec. S
 

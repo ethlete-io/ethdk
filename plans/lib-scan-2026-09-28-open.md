@@ -21,5 +21,5 @@ Each domain plan file keeps its open Low lines; the decisions are listed there. 
 
 ## Queue
 
-Nothing is queued from the 2026-09-28 scans. The older `core-lib-scan.md` plan still holds 5 open Medium lines; the
+Nothing is queued from the 2026-09-28 scans. The older `core-lib-scan.md` Medium lines were fixed on 2026-09-29; the
 `eslint-plugin-lib-scan.md` Medium lines are all done.
