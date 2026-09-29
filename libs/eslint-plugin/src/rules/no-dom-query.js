@@ -62,9 +62,12 @@ const noDomQuery = {
       CallExpression(node) {
         const { callee } = node;
         if (callee.type !== 'MemberExpression') return;
-        if (callee.property.type !== 'Identifier') return;
 
-        const methodName = callee.property.name;
+        let methodName;
+        if (!callee.computed && callee.property.type === 'Identifier') methodName = callee.property.name;
+        else if (callee.computed && callee.property.type === 'Literal') methodName = String(callee.property.value);
+        else return;
+
         const alternative = DOM_QUERY_METHODS.get(methodName);
         if (!alternative) return;
 

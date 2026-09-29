@@ -14,6 +14,8 @@ tester.run('no-dom-query', rule, {
     { code: `const label = viewChild('labelRef');` },
     { code: `const items = viewChildren(ItemDirective);` },
     { code: `const content = contentChild(ContentDirective);` },
+    { code: `el[closest](x);` },
+    { code: `el['find'](x);` },
     // Unrelated method calls that happen to share part of the name
     { code: `arr.find(x => x.id === id);` },
     { code: `map.get('key');` },
@@ -58,5 +60,6 @@ tester.run('no-dom-query', rule, {
       code: `Array.from(host.querySelectorAll('[data-notification-id]'));`,
       errors: [{ messageId: 'noDomQuery' }],
     },
+    { code: `el['querySelector']('a');`, errors: [{ messageId: 'noDomQuery' }] },
   ],
 });
