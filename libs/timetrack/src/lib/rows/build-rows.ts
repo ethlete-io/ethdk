@@ -13,7 +13,14 @@ import { DescribeOptions } from './describe';
 import { DonateOptions, donateBlocks } from './donate';
 import { DEFAULT_FILL_OPTIONS, FillOptions, fillGaps } from './fill';
 import { MeetingOptions, UnobservedOccurrence, calendarOccurrences, unobservedOccurrences } from './meetings';
-import { DEFAULT_MERGE_OPTIONS, MergeOptions, WorkGroup, joinUnattended, mergeBlocks } from './merge';
+import {
+  DEFAULT_MERGE_OPTIONS,
+  MergeOptions,
+  WorkGroup,
+  disputeOtherBranches,
+  joinUnattended,
+  mergeBlocks,
+} from './merge';
 import { mergeRequestActivity } from './merge-request-activity';
 import { NoWorkContextOptions, dropNoWorkContext } from './no-work-context';
 import { clipBlocks } from './overlap';
@@ -262,7 +269,13 @@ export const buildRows = (
     maxGapMs: options.merge?.maxMergeGapMs ?? DEFAULT_MERGE_OPTIONS.maxMergeGapMs,
   });
   const { proposals, unattributed, unnamed } = propose({
-    groups,
+    groups: disputeOtherBranches({
+      groups,
+      events: options.events,
+      rules: options.rules,
+      standIns: options.standIns,
+      worktrees: options.worktrees,
+    }),
     config: options.config,
     round: options.round,
     describe: options.describe,

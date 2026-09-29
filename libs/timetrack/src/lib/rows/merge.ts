@@ -1,9 +1,11 @@
 import { ActivityBlock, blockDurationMs, contextKey, dominantContext, streamKey } from '../model/block';
 import { formatDurationMs } from '../model/duration';
+import { CollectedEvent } from '../model/event';
 import { Confidence, Evidence, compareConfidence } from '../model/evidence';
+import { StandIn, findStandIn } from '../model/stand-in';
 import { TimeWindow } from '../model/time-window';
 import { AttributedBlock } from './attribute';
-import { AttributionScope } from '../model/attribution';
+import { AttributionRule, AttributionScope, matchAttributionRule } from '../model/attribution';
 import { laneKeyOf } from './lane';
 
 /** One or more attributed blocks that will become a single reviewable row. */
@@ -627,4 +629,83 @@ export const joinUnattended = (options: {
   }
 
   return rows;
+};
+
+type BranchActivity = { at: Date; branch: string; repoPath?: string; detail: string };
+
+const branchActivityOf = (event: CollectedEvent): BranchActivity | [] => {
+  if (event.kind === 'git-commit') {
+    return { at: event.at, branch: event.branch, repoPath: event.repoPath, detail: `a commit on \`${event.branch}\`` };
+  }
+
+  if (event.kind !== 'merge-request-activity' || !event.branch) return [];
+
+  const mergeRequest = event.mergeRequestIid ? `!${event.mergeRequestIid}` : 'a merge request';
+
+  return { at: event.at, branch: event.branch, detail: `you ${event.action} ${mergeRequest} on \`${event.branch}\`` };
+};
+
+/**
+ * Marks a band a rule named as disputed when its stretch holds activity on another branch of its
+ * checkout, or of a worktree of it, that a branch rule names as other work: a merge request, or a
+ * commit made without a checkout. The band still books what its rule named; the review sees both.
+ */
+export const disputeOtherBranches = (options: {
+  groups: readonly WorkGroup[];
+  events: readonly CollectedEvent[];
+  rules?: readonly AttributionRule[];
+  standIns?: readonly StandIn[];
+  /** Each linked worktree's path, mapped to its main checkout. */
+  worktrees?: Readonly<Record<string, string>>;
+}): WorkGroup[] => {
+  const rules = options.rules ?? [];
+  const worktrees = options.worktrees ?? {};
+  const mainOf = (path: string) => worktrees[path] ?? path;
+  const ruled = [...new Set(rules.flatMap((rule) => rule.repoPath ?? []))];
+  const standIns = options.standIns ?? [];
+  const activities = options.events.flatMap(branchActivityOf);
+
+  const rivalOf = (activity: { group: WorkGroup; branch: string; repoPaths: readonly string[] }) => {
+    for (const repoPath of activity.repoPaths) {
+      const match = matchAttributionRule({ context: { repoPath, branch: activity.branch }, rules });
+      const target = match?.scope === 'branch' ? match.rule.target : undefined;
+
+      if (target?.kind === 'issue' && target.issueKey !== activity.group.issueKey) {
+        return { disputedIssueKey: target.issueKey };
+      }
+
+      const standIn = target?.kind === 'stand-in' ? findStandIn({ id: target.standInId, standIns }) : undefined;
+
+      if (standIn?.state === 'open' && standIn.id !== activity.group.standInId)
+        return { disputedStandInId: standIn.id };
+    }
+
+    return undefined;
+  };
+
+  return options.groups.map((group) => {
+    const repoPath = dominantContext(group.blocks)?.repoPath;
+
+    if (!group.ruleScope || !repoPath || group.disputedIssueKey || group.disputedStandInId) return group;
+
+    const main = mainOf(repoPath);
+    const checkouts = ruled.filter((path) => mainOf(path) === main);
+
+    for (const activity of activities) {
+      if (activity.at < group.from || activity.at > group.to) continue;
+
+      const repoPaths = activity.repoPath ? [activity.repoPath].filter((path) => mainOf(path) === main) : checkouts;
+      const rival = rivalOf({ group, branch: activity.branch, repoPaths });
+
+      if (rival) {
+        return {
+          ...group,
+          ...rival,
+          evidence: mergeEvidence([group.evidence, [{ kind: 'branch', at: activity.at, detail: activity.detail }]]),
+        };
+      }
+    }
+
+    return group;
+  });
 };

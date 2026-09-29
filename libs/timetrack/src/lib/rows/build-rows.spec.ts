@@ -485,3 +485,88 @@ describe('buildRows after a restart that lost the end of an idle stretch', () =>
     expect(rows.unnamed).toEqual([]);
   });
 });
+
+describe('buildRows with activity on another branch inside a rule-named band', () => {
+  const REPO = '/dev/app';
+  const WORKTREE = '/dev/app-login';
+
+  const STAND_IN: StandIn = {
+    id: 'stand-in-login',
+    name: 'Login captcha',
+    state: 'open',
+    days: [],
+    author: 'app',
+    createdAt: at(8),
+  };
+
+  const rule = (options: { repoPath: string; branch: string; target: AttributionRule['target'] }): AttributionRule => ({
+    id: `rule-${options.branch}`,
+    ...options,
+    author: 'user',
+    createdAt: at(8),
+  });
+
+  const NAMED = rule({ repoPath: REPO, branch: 'dev-feature', target: { kind: 'issue', issueKey: 'FIP-3006' } });
+  const WORK = [block({ from: at(14, 15), to: at(15), context: { repoPath: REPO, branch: 'dev-feature' } })];
+
+  const FOCUS: CollectedEvent = {
+    at: at(14, 30),
+    source: 'window',
+    kind: 'window-focus',
+    appId: 'code',
+    title: 'a.ts - app - Code',
+  };
+
+  const mergeRequest = (branch: string, minute: number): CollectedEvent => ({
+    source: 'gitlab',
+    kind: 'merge-request-activity',
+    at: at(14, minute),
+    eventId: `mr-${branch}`,
+    action: 'accepted',
+    mergeRequestIid: '1072',
+    branch,
+  });
+
+  it('disputes the band with the open stand-in a worktree rule names for the merge request branch', () => {
+    const rows = buildRows({
+      blocks: WORK,
+      events: [FOCUS, mergeRequest('feat/login', 38)],
+      rules: [
+        NAMED,
+        rule({ repoPath: WORKTREE, branch: 'feat/login', target: { kind: 'stand-in', standInId: STAND_IN.id } }),
+      ],
+      standIns: [STAND_IN],
+      worktrees: { [WORKTREE]: REPO },
+    });
+
+    expect(rows.proposals[0]?.issueKey).toBe('FIP-3006');
+    expect(rows.proposals[0]?.disputedStandInId).toBe(STAND_IN.id);
+  });
+
+  it('disputes the band with the issue a rule names for a merge request branch of its own checkout', () => {
+    const rows = buildRows({
+      blocks: WORK,
+      events: [FOCUS, mergeRequest('fix/audit', 45)],
+      rules: [NAMED, rule({ repoPath: REPO, branch: 'fix/audit', target: { kind: 'issue', issueKey: 'FIP-3100' } })],
+    });
+
+    expect(rows.proposals[0]?.disputedIssueKey).toBe('FIP-3100');
+  });
+
+  it('leaves the band alone when the branch belongs to another checkout or to a resolved stand-in', () => {
+    const rows = buildRows({
+      blocks: WORK,
+      events: [FOCUS, mergeRequest('feat/login', 38), mergeRequest('fix/audit', 45)],
+      rules: [
+        NAMED,
+        rule({ repoPath: '/dev/other', branch: 'fix/audit', target: { kind: 'issue', issueKey: 'FIP-3100' } }),
+        rule({ repoPath: REPO, branch: 'feat/login', target: { kind: 'stand-in', standInId: STAND_IN.id } }),
+      ],
+      standIns: [{ ...STAND_IN, state: 'resolved', issueKey: 'FIP-3200' }],
+    });
+
+    expect(rows.proposals[0]?.issueKey).toBe('FIP-3006');
+    expect(rows.proposals[0]?.disputedIssueKey).toBeUndefined();
+    expect(rows.proposals[0]?.disputedStandInId).toBeUndefined();
+  });
+});
