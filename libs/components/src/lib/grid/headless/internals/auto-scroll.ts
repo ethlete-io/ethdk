@@ -45,7 +45,7 @@ export const createAutoScroller = (options: {
 
     const isRoot = el === doc.scrollingElement || el === doc.documentElement || el === doc.body;
     const rect = isRoot
-      ? { left: 0, top: 0, right: win.innerWidth, bottom: win.innerHeight }
+      ? { left: 0, top: 0, right: doc.documentElement.clientWidth, bottom: doc.documentElement.clientHeight }
       : el.getBoundingClientRect();
 
     const speed = (distance: number) =>
