@@ -4,8 +4,9 @@ import { CALL_LANE_KEY } from '../rows/lane';
 import { UnnamedProposal } from '../rows/propose';
 import { Evidence } from '../model/evidence';
 import { WorklogProposal } from '../model/proposal';
-import { hideRow, resetRow, setRowDescription, setRowIssue, splitRow } from './edits';
-import { DayReview, DayReviewEdits, EMPTY_DAY_REVIEW_EDITS } from './model';
+import { separateOverlappingProposals } from '../tempo/separate';
+import { hideRow, resetRow, setRowDescription, setRowIssue, setRowRange, splitRow } from './edits';
+import { DayReview, DayReviewEdits, EMPTY_DAY_REVIEW_EDITS, ReviewedRow, isNamedRow } from './model';
 import { reviewDay } from './review-day';
 
 const MINUTE = 60_000;
@@ -321,7 +322,7 @@ describe('reviewDay folding crowded sessions of one ticket', () => {
   it('draws at most three parallel sessions and books what the four observed', () => {
     const result = review(day);
 
-    expect(spans(result)).toEqual(['09:00-11:00 75m', '09:15-10:30 30m', '09:45-11:15 30m']);
+    expect(spans(result)).toEqual(['09:00-10:15 75m', '10:15-10:45 30m', '10:45-11:15 30m']);
     expect(bookedMs(result)).toBe(135 * MINUTE);
   });
 
@@ -333,8 +334,53 @@ describe('reviewDay folding crowded sessions of one ticket', () => {
     });
     const result = review(day, edits);
 
-    expect(spans(result)).toEqual(['09:00-11:00 90m', '09:30-10:15 15m', '09:45-11:15 30m']);
+    expect(spans(result)).toEqual(['09:00-10:30 90m', '10:30-10:45 15m', '10:45-11:15 30m']);
     expect(bookedMs(result)).toBe(135 * MINUTE);
+  });
+});
+
+describe('reviewDay, sessions of one ticket sharing a stretch', () => {
+  const session = (options: { from: string; to: string; observed: number; id?: string }): WorklogProposal => ({
+    ...proposal({ issueKey: 'ET-772', ...options }),
+    id: options.id ?? `ET-772@${options.from}`,
+    durationMs: options.observed * MINUTE,
+    observedMs: options.observed * MINUTE,
+  });
+  const day = dayRows({
+    proposals: [
+      session({ from: '08:45', to: '10:30', observed: 67 }),
+      session({ from: '09:00', to: '10:00', observed: 10 }),
+      session({ from: '09:45', to: '10:30', observed: 33 }),
+      session({ from: '11:15', to: '12:00', observed: 12 }),
+      session({ from: '11:15', to: '12:00', observed: 21, id: 'ET-772@11:15+second' }),
+    ],
+  });
+  const written = (rows: readonly ReviewedRow[]) =>
+    separateOverlappingProposals({ proposals: rows.filter(isNamedRow) }).map(
+      (row) => `${hhmm(row.from)}-${hhmm(new Date(row.from.getTime() + row.durationMs))} ${row.durationMs / MINUTE}m`,
+    );
+
+  it('draws each session one after another, as long as it books, where Tempo writes it', () => {
+    const result = review(day);
+
+    expect(spans(result)).toEqual([
+      '08:45-09:45 60m',
+      '09:45-10:00 15m',
+      '10:00-10:30 30m',
+      '11:15-11:30 15m',
+      '11:30-12:00 30m',
+    ]);
+    expect(result.rows.map((row) => row.id)).toEqual(day.proposals.map((row) => row.id));
+    expect(written(result.rows)).toEqual(spans(result));
+  });
+
+  it('keeps a session the reviewer resized where they put it and lays the others around it', () => {
+    const middle = review(day).rows[1]!;
+    const edits = setRowRange({ edits: EMPTY_DAY_REVIEW_EDITS, row: middle, from: at('09:45'), to: at('10:15') });
+    const result = review(day, edits);
+
+    expect(spans(result).slice(0, 3).sort()).toEqual(['08:45-09:45 60m', '09:45-10:15 30m', '10:15-10:30 15m']);
+    expect(written(result.rows).sort()).toEqual(spans(result).sort());
   });
 });
 

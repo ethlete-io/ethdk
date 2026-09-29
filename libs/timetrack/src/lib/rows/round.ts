@@ -72,6 +72,13 @@ const siblingGroupsOf = <T extends TicketRow>(rows: readonly T[]): T[][] => {
   return groups.map((group) => group.members);
 };
 
+type SiblingOptions<T> = {
+  spanMsOf?: (row: T) => number;
+  round?: Partial<RoundOptions>;
+  /** A row the reviewer placed: it books its own span, keeps its place, and the others share the rest. */
+  fixed?: (row: T) => boolean;
+};
+
 /**
  * What each row {@link sharingTicket} returned books. A group of overlapping sibling rows rounds its summed
  * observed minutes up once, never past the clock the group covers, and shares the increments out by
@@ -79,14 +86,17 @@ const siblingGroupsOf = <T extends TicketRow>(rows: readonly T[]): T[][] => {
  */
 export const siblingBookingsOf = <T extends TicketRow & { observedMs: number }>(
   rows: readonly T[],
-  options?: { spanMsOf?: (row: T) => number; round?: Partial<RoundOptions> },
+  options?: SiblingOptions<T>,
 ): Map<T, number> => {
   const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options?.round };
   const spanMsOf = options?.spanMsOf ?? ((row: T) => row.to.getTime() - row.from.getTime());
+  const isFixed = options?.fixed ?? (() => false);
   const booked = new Map<T, number>();
 
-  for (const group of siblingGroupsOf(rows)) {
-    const clockMs = group.reduce(
+  for (const all of siblingGroupsOf(rows)) {
+    const group = all.filter((row) => !isFixed(row));
+    const fixedIncrements = all.filter(isFixed).reduce((sum, row) => sum + Math.floor(spanMsOf(row) / incrementMs), 0);
+    const clockMs = all.reduce(
       (clock, row) => ({
         ms: clock.ms + Math.max(0, row.to.getTime() - Math.max(clock.end, row.from.getTime())),
         end: Math.max(clock.end, row.to.getTime()),
@@ -94,7 +104,10 @@ export const siblingBookingsOf = <T extends TicketRow & { observedMs: number }>(
       { ms: 0, end: -Infinity },
     ).ms;
     const observedMs = group.reduce((sum, row) => sum + row.observedMs, 0);
-    let left = Math.min(Math.ceil(observedMs / incrementMs), Math.floor(clockMs / incrementMs));
+    let left = Math.max(
+      0,
+      Math.min(Math.ceil(observedMs / incrementMs), Math.floor(clockMs / incrementMs) - fixedIncrements),
+    );
     const room = new Map(group.map((row) => [row, Math.floor(spanMsOf(row) / incrementMs)]));
     const given = new Map(group.map((row) => [row, 0]));
     const give = (row: T) => {
@@ -125,6 +138,45 @@ export const siblingBookingsOf = <T extends TicketRow & { observedMs: number }>(
   }
 
   return booked;
+};
+
+const firstActivityOf = (row: TicketRow & { stretches?: readonly { from: Date }[] }) =>
+  Math.min(row.from.getTime(), ...(row.stretches ?? []).map((stretch) => stretch.from.getTime()));
+
+/**
+ * Where each row {@link siblingBookingsOf} shares minutes out to is drawn and booked: its group's rows one
+ * after another from the group's start, in the order their sessions first worked, each as long as it
+ * books. A `fixed` row keeps its span and is stepped over.
+ */
+export const siblingSlotsOf = <T extends TicketRow & { observedMs: number; stretches?: readonly { from: Date }[] }>(
+  rows: readonly T[],
+  options?: SiblingOptions<T>,
+): Map<T, { from: Date; to: Date; durationMs: number }> => {
+  const isFixed = options?.fixed ?? (() => false);
+  const booked = siblingBookingsOf(rows, options);
+  const slots = new Map<T, { from: Date; to: Date; durationMs: number }>();
+
+  for (const group of siblingGroupsOf(rows)) {
+    const taken = group.filter(isFixed).map((row) => ({ from: row.from.getTime(), to: row.to.getTime() }));
+    const movable = group
+      .filter((row) => !isFixed(row))
+      .map((row, at) => ({ row, at, first: firstActivityOf(row) }))
+      .sort((a, b) => a.first - b.first || a.row.from.getTime() - b.row.from.getTime() || a.at - b.at);
+    let cursor = Math.min(...group.map((row) => row.from.getTime()));
+
+    for (const { row } of movable) {
+      const durationMs = booked.get(row) ?? 0;
+      const clashAt = (from: number) => taken.find((span) => span.from < from + durationMs && from < span.to);
+      let from = cursor;
+
+      for (let clash = clashAt(from); clash; clash = clashAt(from)) from = clash.to;
+
+      slots.set(row, { from: new Date(from), to: new Date(from + durationMs), durationMs });
+      cursor = from + durationMs;
+    }
+  }
+
+  return slots;
 };
 
 export type DayWarningKind =
