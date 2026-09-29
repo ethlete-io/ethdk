@@ -3,7 +3,8 @@ import { afterEveryRender, Directive, ElementRef, inject, input } from '@angular
 import { isFormInputTarget } from '../../internals/form-input-target';
 import { TOOLBAR_ORIENTATIONS, ToolbarOrientation } from './toolbar.types';
 
-const CONTROL_SELECTOR = 'button, [href], input, select, textarea, [contenteditable]:not([contenteditable="false"])';
+const OWNED_ATTRIBUTE = 'data-et-toolbar-control';
+const CONTROL_SELECTOR = `button, [href], input, select, textarea, [contenteditable]:not([contenteditable="false"]), [tabindex]:not([tabindex="-1"]), [${OWNED_ATTRIBUTE}]`;
 const TOOLBAR_SELECTOR = '[role="toolbar"]';
 const KEYLESS_INPUT_TYPES = /* @__PURE__ */ new Set(['button', 'checkbox', 'image', 'reset', 'submit']);
 
@@ -145,6 +146,7 @@ export class ToolbarDirective {
     for (const control of controls) {
       const tabIndex = control === this.tabStop ? 0 : -1;
 
+      control.setAttribute(OWNED_ATTRIBUTE, '');
       if (control.tabIndex !== tabIndex) control.tabIndex = tabIndex;
     }
   }

@@ -37,7 +37,7 @@ Group related controls with [`et-divider`](/components/divider) - a `vertical` d
 
 ## Which elements become toolbar controls
 
-Every focusable element rendered inside the toolbar - `button`, `a[href]`, `input`, `select`, `textarea`, an editable `[contenteditable]` - is a toolbar control, in DOM order. Nothing is marked up per item, deliberately: content arriving through `ng-content`, a `@for`, or a component that owns its own button template can't be made to carry a marker directive, and that dynamic case is exactly what a toolbar is for. Three exceptions:
+Every focusable element rendered inside the toolbar - `button`, `a[href]`, `input`, `select`, `textarea`, an editable `[contenteditable]`, any element with a `tabindex` other than `-1` - is a toolbar control, in DOM order. Nothing is marked up per item, deliberately: content arriving through `ng-content`, a `@for`, or a component that owns its own button template can't be made to carry a marker directive, and that dynamic case is exactly what a toolbar is for. Three exceptions:
 
 - **Hidden controls are skipped** by arrow navigation - a control with `hidden` or `display: none` cannot take focus.
 - **Natively disabled controls are skipped** by arrow navigation - a `disabled` button cannot hold focus at all, so including it would strand the user. Use `aria-disabled` instead of `disabled` if you want a control to stay reachable and announce itself as unavailable.

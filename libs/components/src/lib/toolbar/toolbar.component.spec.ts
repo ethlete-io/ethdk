@@ -77,6 +77,19 @@ class ToolbarInputHostComponent {}
 })
 class ToolbarHiddenHostComponent {}
 
+@Component({
+  selector: 'et-test-toolbar-tabindex-host',
+  template: `
+    <et-toolbar aria-label="Formatting">
+      <button type="button">Bold</button>
+      <div aria-label="Custom" role="button" tabindex="0"></div>
+      <div id="target" tabindex="-1"></div>
+    </et-toolbar>
+  `,
+  imports: [TOOLBAR_IMPORTS],
+})
+class ToolbarTabindexHostComponent {}
+
 const buttonsOf = (fixture: { nativeElement: HTMLElement }) =>
   Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[];
 
@@ -189,6 +202,29 @@ describe('ToolbarComponent', () => {
     press(toolbar, 'ArrowRight');
 
     expect(document.activeElement).toBe(note);
+  });
+
+  it('counts an element with a tabindex as a control, and keeps it one across renders', () => {
+    const fixture = TestBed.createComponent(ToolbarTabindexHostComponent);
+    fixture.detectChanges();
+
+    const [bold] = buttonsOf(fixture);
+    const custom = fixture.nativeElement.querySelector('[role="button"]') as HTMLElement;
+    const target = fixture.nativeElement.querySelector('#target') as HTMLElement;
+    const toolbar = fixture.nativeElement.querySelector('et-toolbar') as HTMLElement;
+
+    expect(custom.tabIndex).toBe(-1);
+    expect(target.getAttribute('data-et-toolbar-control')).toBeNull();
+
+    fixture.detectChanges();
+    bold!.focus();
+    press(toolbar, 'ArrowRight');
+
+    expect(document.activeElement).toBe(custom);
+
+    press(toolbar, 'ArrowRight');
+
+    expect(document.activeElement).toBe(bold);
   });
 
   it('uses the vertical arrow keys when vertical', () => {
