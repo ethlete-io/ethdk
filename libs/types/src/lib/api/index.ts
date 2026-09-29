@@ -32,6 +32,7 @@ export type { IdentityView } from './Identity/identity.view';
 export type { FormationStructureView } from './Lineup/formationStructure.view';
 export type { LineupListView } from './Lineup/lineupList.view';
 export type { LineupPlayerView } from './Lineup/lineupPlayer.view';
+export type { LineupPlayerV2View } from './Lineup/lineupPlayerV.view';
 export type { DetailedMatchListView } from './Match/detailedMatchList.view';
 export type { MatchGameLineupRequestData } from './Match/Game/matchGameLineupRequest.data';
 export type { IdentityMatchResultView } from './Match/identityMatchResult.view';

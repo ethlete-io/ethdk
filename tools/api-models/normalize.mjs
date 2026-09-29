@@ -207,6 +207,29 @@ const runtimeModuleGraph = (entry, read) => {
   return reached;
 };
 
+const missingRootExports = (entry, files, contents, valuesOf) => {
+  const dir = dirname(entry);
+  const rootSource = contents.get(entry);
+  const added = [];
+  for (const barrel of files.filter((file) => basename(file) === 'index.ts' && dirname(dirname(file)) === dir)) {
+    for (const line of contents.get(barrel).split('\n')) {
+      const statement = FROM_STATEMENT.exec(line);
+      if (!statement || statement[1] !== 'export') continue;
+      const target = resolveSpecifier(barrel, statement[4]);
+      if (!target) continue;
+      for (const name of parseNames(statement[3]).map((entry) => entry.replace(/^type\s+/, ''))) {
+        if (new RegExp(`\\b${escapeRegExp(name)}\\b`).test(rootSource)) continue;
+        const modifier = valuesOf(target).has(name) ? '' : 'type ';
+        const specifier = toSpecifier(entry, target.slice(0, -3));
+        added.push(`export ${modifier}{ ${name} } from '${specifier}';`);
+      }
+    }
+  }
+  if (!added.length) return rootSource;
+  const body = rootSource.trimEnd();
+  return `${body}\n${added.join('\n')}${rootSource.slice(body.length)}`;
+};
+
 export const normalize = (root) => {
   const dir = resolve(root);
   const entry = join(dir, 'index.ts');
@@ -224,7 +247,7 @@ export const normalize = (root) => {
     contents.set(file, typeOnlyReExports(file, contents.get(file), valuesOf));
   }
 
-  contents.set(entry, sortStatements(contents.get(entry), 'export'));
+  contents.set(entry, sortStatements(missingRootExports(entry, files, contents, valuesOf), 'export'));
 
   for (const file of files) {
     if (readFileSync(file, 'utf8') !== contents.get(file)) writeFileSync(file, contents.get(file));
