@@ -4,6 +4,7 @@ import { fetchJiraIssueIds$, fetchJiraIssueKeysByIds$ } from '../jira/issue';
 import { JiraMyself, fetchJiraMyself$ } from '../jira/myself';
 import { WorklogProposal } from '../model/proposal';
 import { DayBoundary } from '../review/day';
+import { ledgerEntriesForRange$ } from '../store/ledger-range';
 import { TimetrackLedgerStore } from '../store/ports';
 import { TimetrackTransport } from '../transport/ports';
 import { TempoCredentials } from './client';
@@ -71,7 +72,7 @@ export const previewTempoSync$ = (options: {
           day: options.day,
           boundary: options.boundary,
         }),
-        ledger: options.ledger.entriesForDay$(options.day),
+        ledger: ledgerEntriesForRange$({ ledger: options.ledger, day: options.day, boundary: options.boundary }),
       }).pipe(
         switchMap(({ issueIdsByKey, remote, ledger }) => {
           const known = new Map([...issueIdsByKey].map(([key, id]) => [id, key]));

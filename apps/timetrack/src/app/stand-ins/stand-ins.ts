@@ -13,6 +13,7 @@ import {
   localDayKey,
   standInAge,
   standInHeldMs,
+  ledgerEntriesForRange$,
 } from '@ethlete/timetrack';
 import { catchError, combineLatest, forkJoin, map, of, switchMap, tap, timer } from 'rxjs';
 import { injectGitCollector } from '../../collectors';
@@ -76,7 +77,11 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
         days.length
           ? forkJoin(
               days.map((day) =>
-                ports.ledger.entriesForDay$(day).pipe(
+                ledgerEntriesForRange$({
+                  ledger: ports.ledger,
+                  day: day,
+                  boundary: dayBoundaryOf(settings.settings()),
+                }).pipe(
                   map((entries) => (entries.length ? day : null)),
                   catchError(() => of(null)),
                 ),
@@ -161,7 +166,11 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
           ? forkJoin(
               days.map((day) =>
                 forkJoin({
-                  ledger: ports.ledger.entriesForDay$(day).pipe(catchError(() => of([]))),
+                  ledger: ledgerEntriesForRange$({
+                    ledger: ports.ledger,
+                    day: day,
+                    boundary: dayBoundaryOf(settings.settings()),
+                  }).pipe(catchError(() => of([]))),
                   coverage: ports.coverage.forDay$(day).pipe(catchError(() => of(null))),
                 }).pipe(map(({ ledger, coverage }) => (ledger.length || coverage?.issues.length ? day : null))),
               ),

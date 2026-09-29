@@ -3,6 +3,7 @@ import { JiraCredentials } from '../jira/client';
 import { fetchJiraIssueKeysByIds$ } from '../jira/issue';
 import { fetchJiraMyself$ } from '../jira/myself';
 import { DayBoundary } from '../review/day';
+import { ledgerEntriesForRange$ } from '../store/ledger-range';
 import { TimetrackLedgerStore } from '../store/ports';
 import { TimetrackTransport } from '../transport/ports';
 import { TempoCredentials } from './client';
@@ -41,7 +42,7 @@ export const fetchTempoDayCoverage$ = (options: {
           day: options.day,
           boundary: options.boundary,
         }),
-        ledger: options.ledger.entriesForDay$(options.day),
+        ledger: ledgerEntriesForRange$({ ledger: options.ledger, day: options.day, boundary: options.boundary }),
       }),
     ),
     switchMap(({ remote, ledger }) => {

@@ -100,7 +100,7 @@ const createAgentSessionCollector = (source: AgentLogSource) => {
   const failure = signal<string | null>(null);
   const isCollecting = signal(false);
 
-  /** Only ever moved by a run that persisted, or a failed run would skip the logs it never read. */
+  /** Only ever moved by a run that persisted and read every listed log, or a failed run would skip the logs it never read. */
   let modifiedAfter: Date | undefined;
 
   /**
@@ -156,7 +156,7 @@ const createAgentSessionCollector = (source: AgentLogSource) => {
       .pipe(
         map(() => collection),
         tap(() => {
-          modifiedAfter = startedAt;
+          if (!collection.unreadLogs.length) modifiedAfter = startedAt;
           failure.set(null);
           lastRun.set({
             at: startedAt,

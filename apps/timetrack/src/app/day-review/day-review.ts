@@ -90,6 +90,7 @@ import {
   TokenUsage,
   unnamedContexts,
   windowsMs,
+  ledgerEntriesForRange$,
 } from '@ethlete/timetrack';
 import {
   Observable,
@@ -701,7 +702,11 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   // would end the subscription and no later day would be read at all.
   const ledger = toSignal(
     toObservable(day).pipe(
-      switchMap((key) => ports.ledger.entriesForDay$(key).pipe(catchError(() => of<SyncedWorklog[]>([])))),
+      switchMap((key) =>
+        ledgerEntriesForRange$({ ledger: ports.ledger, day: key, boundary: boundary() }).pipe(
+          catchError(() => of<SyncedWorklog[]>([])),
+        ),
+      ),
     ),
     { initialValue: [] as SyncedWorklog[] },
   );

@@ -1,4 +1,4 @@
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { parseClaudeCodeSessionLog } from './claude-code';
 import { AgentSessionCollection, AgentSessionCursor, collectAgentSessions$ } from './collect';
@@ -239,7 +239,7 @@ describe('collectAgentSessions$', () => {
   it('emits an empty collection when the agent has never run', () => {
     const { result } = collect({ logs: [] });
 
-    expect(result).toEqual({ events: [], usage: [], prompts: [], cursors: [], unparsedLines: 0 });
+    expect(result).toEqual({ events: [], usage: [], prompts: [], cursors: [], unparsedLines: 0, unreadLogs: [] });
   });
 
   it('reports the spend of every log it read, oldest turn first', () => {
@@ -262,5 +262,43 @@ describe('collectAgentSessions$', () => {
 
     expect(result.events).toEqual([]);
     expect(result.usage.map((event) => event.turnId)).toEqual(['msg_a']);
+  });
+
+  it('keeps reading the other logs when one cannot be read, and reports the unread one with its old cursor', () => {
+    const { reader } = readerFor([
+      { ref: ref('s2'), lines: [record({ timestamp: '2026-08-11T09:10:00.000Z', sessionId: 's2' })] },
+    ]);
+    const broken = ref('s1');
+    const kept: AgentSessionCursor = { id: 's1', nextLine: 3, after: new Date('2026-08-11T09:00:00.000Z') };
+    const seen = vi.fn();
+
+    reader.logs$ = vi.fn(() => of([broken, ref('s2')]));
+    const read = reader.readLines$;
+
+    reader.readLines$ = vi.fn((options) =>
+      options.ref.id === 's1' ? throwError(() => new Error('gone')) : read(options),
+    );
+
+    collectAgentSessions$({
+      parser: parseClaudeCodeSessionLog,
+      reader,
+      cursors: [kept],
+      parsing: { sampleIntervalMs: 0 },
+    }).subscribe(seen);
+
+    const result = seen.mock.calls[0]?.[0] as AgentSessionCollection;
+
+    expect(result.events).toHaveLength(1);
+    expect(result.unreadLogs).toEqual(['s1']);
+    expect(result.cursors.find((cursor) => cursor.id === 's1')).toEqual(kept);
+    expect(result.cursors.find((cursor) => cursor.id === 's2')?.nextLine).toBe(1);
+  });
+
+  it('reports no unread logs when every log was read', () => {
+    const { result } = collect({
+      logs: [{ ref: ref('s1'), lines: [record({ timestamp: '2026-08-11T09:00:00.000Z' })] }],
+    });
+
+    expect(result.unreadLogs).toEqual([]);
   });
 });

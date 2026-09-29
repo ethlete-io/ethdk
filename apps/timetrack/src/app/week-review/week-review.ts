@@ -10,6 +10,7 @@ import {
   shiftWeekKey,
   startOfWeekKey,
   weekDayKeys,
+  ledgerEntriesForRange$,
 } from '@ethlete/timetrack';
 import { Observable, catchError, combineLatest, map, of, startWith, switchMap } from 'rxjs';
 import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector } from '../../collectors';
@@ -58,7 +59,11 @@ const WEEK_REVIEW_DEF = /* @__PURE__ */ defineProvider(() => {
         readDay$({ ...options, day }).pipe(
           switchMap(({ review }) =>
             combineLatest({
-              ledger: ports.ledger.entriesForDay$(day),
+              ledger: ledgerEntriesForRange$({
+                ledger: ports.ledger,
+                day: day,
+                boundary: dayBoundaryOf(settings.settings()),
+              }),
               coverage: ports.coverage.forDay$(day),
             }).pipe(map(({ ledger, coverage }): WeekReviewDayInput => ({ day, review, ledger, coverage }))),
           ),

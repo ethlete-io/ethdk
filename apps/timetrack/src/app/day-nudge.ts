@@ -9,6 +9,7 @@ import {
   dayBoundaryOf,
   localDayKey,
   localDayRange,
+  ledgerEntriesForRange$,
 } from '@ethlete/timetrack';
 import {
   EMPTY,
@@ -63,7 +64,7 @@ const DAY_NUDGE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     }).pipe(
       switchMap(({ key, review }) =>
         combineLatest({
-          ledger: ports.ledger.entriesForDay$(key),
+          ledger: ledgerEntriesForRange$({ ledger: ports.ledger, day: key, boundary: dayBoundaryOf(current) }),
           coverage: ports.coverage.forDay$(key),
           record: ports.nudge.recordFor$(key),
         }).pipe(

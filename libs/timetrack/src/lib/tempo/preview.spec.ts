@@ -144,7 +144,7 @@ describe('previewTempoSync$', () => {
 
     const result = seen.mock.calls[0]?.[0];
 
-    expect(asked[0]).toBe('2026-08-11');
+    expect(asked).toContain('2026-08-11');
     expect(result.account).toEqual({ accountId: 'acc:123', displayName: 'Tom', emailAddress: undefined });
     expect(result.plan.creates).toHaveLength(1);
     expect(result.plan.creates[0]).toMatchObject({ issueId: '10100', reason: 'new' });
@@ -273,5 +273,41 @@ describe('previewTempoSync$', () => {
       'from=2026-08-11&to=2026-08-12',
     );
     expect(result.plan.foreign.map((worklog: { id: string }) => worklog.id)).toEqual(['2']);
+  });
+
+  it('still owns a late-night worklog after the boundary moved, although the ledger keyed it under the other day', () => {
+    const late = proposal({
+      id: 'FIP-3010@2026-08-12',
+      from: new Date(2026, 7, 12, 1, 0),
+      to: new Date(2026, 7, 12, 2, 0),
+    });
+    const { transport } = previewTransport({
+      worklogs: [{ ...WORKLOG_RESOURCE, startDate: '2026-08-12', startTime: '01:00:00' }],
+    });
+    const entry: SyncedWorklog = {
+      proposalId: `FIP-3010@${late.from.toISOString()}`,
+      day: '2026-08-12',
+      tempoWorklogId: '98765',
+      contentHash: 'h',
+      syncedAt: new Date(),
+    };
+    const store: TimetrackLedgerStore = {
+      entriesForDay$: (day) => of(day === entry.day ? [entry] : []),
+      upsert$: () => of(undefined),
+      remove$: () => of(undefined),
+    };
+    const seen = vi.fn();
+
+    preview({
+      transport,
+      ledger: store,
+      proposals: [{ ...late, id: entry.proposalId }],
+      boundary: { startHour: 4 },
+    }).subscribe(seen);
+
+    const result = seen.mock.calls[0]?.[0];
+
+    expect(result.plan.foreign).toEqual([]);
+    expect(result.plan.creates).toEqual([]);
   });
 });

@@ -1,4 +1,4 @@
-import { Observable, concatMap, from, map, toArray } from 'rxjs';
+import { Observable, catchError, concatMap, from, map, of, toArray } from 'rxjs';
 import { AgentPromptEvent, AgentSessionEvent, AgentUsageEvent } from '../model/event';
 import { AgentLogSessionState, AgentSessionLogParseOptions, AgentSessionLogParser } from './source';
 import { AgentSessionLogReader, AgentSessionLogRef } from './ports';
@@ -45,9 +45,15 @@ export type AgentSessionCollection = {
   cursors: AgentSessionCursor[];
   /** Lines that were not JSON, across every log this run read. A growing count means a corrupt log. */
   unparsedLines: number;
+  /**
+   * The ids of the logs whose read failed. Their cursors are unchanged, so a caller that skips logs by
+   * `modifiedAfter` must not move it past them, or a finished log is never listed again.
+   */
+  unreadLogs: string[];
 };
 
 type LogRead = {
+  unread?: boolean;
   events: AgentSessionEvent[];
   usage: AgentUsageEvent[];
   prompts: AgentPromptEvent[];
@@ -121,13 +127,24 @@ export const collectAgentSessions$ = (options: {
             reader: options.reader,
             ref,
             cursor: cursors.get(ref.id),
-          }),
+          }).pipe(
+            catchError(() =>
+              of<LogRead>({
+                unread: true,
+                events: [],
+                usage: [],
+                prompts: [],
+                unparsedLines: 0,
+                cursor: cursors.get(ref.id) ?? { id: ref.id, nextLine: 0 },
+              }),
+            ),
+          ),
         ),
         toArray(),
       ),
     ),
     map((reads) => {
-      for (const read of reads) cursors.set(read.cursor.id, read.cursor);
+      for (const read of reads) if (!read.unread) cursors.set(read.cursor.id, read.cursor);
 
       return {
         events: reads.flatMap((read) => read.events).sort((a, b) => a.at.getTime() - b.at.getTime()),
@@ -135,6 +152,7 @@ export const collectAgentSessions$ = (options: {
         prompts: reads.flatMap((read) => read.prompts).sort((a, b) => a.at.getTime() - b.at.getTime()),
         cursors: [...cursors.values()],
         unparsedLines: reads.reduce((total, read) => total + read.unparsedLines, 0),
+        unreadLogs: reads.filter((read) => read.unread).map((read) => read.cursor.id),
       };
     }),
   );
