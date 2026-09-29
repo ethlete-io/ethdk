@@ -1,4 +1,4 @@
-import { Component, input, signal } from '@angular/core';
+import { Component, input, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   BRACKET_DATA_LAYOUT,
@@ -12,6 +12,7 @@ import {
   BracketLayout,
   BracketMap,
   BracketMatchComponent,
+  BRACKET_ROUNDS_LIST_IMPORTS,
   BracketRoundsListComponent,
   bracketFitsWidth,
   bracketNaturalWidth,
@@ -194,7 +195,7 @@ class BracketSwissCardsComponent {
 
 @Component({
   selector: 'et-scenario-bracket-list',
-  imports: [BracketRoundsListComponent],
+  imports: [BRACKET_ROUNDS_LIST_IMPORTS],
   providers: [
     provideBracketConfig({ layouts: ALL_LAYOUTS, matchNormalizer: normalize, ...BRACKET_DEFAULT_CARDS }),
     provideBracketLabels({ finalsSection: 'Deciders' }),
@@ -208,6 +209,7 @@ class BracketSwissCardsComponent {
   `,
 })
 class BracketListComponent {
+  list = viewChild.required(BracketRoundsListComponent);
   source = signal<Source>(DOUBLE);
   selectedRoundId = signal<string | null>(null);
   hideRoundHeaders = signal(false);
@@ -355,6 +357,7 @@ describe('bracket layout scenarios', () => {
   it('lists double elimination rounds under upper, lower and finals sections', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(BracketListComponent);
+    expect(fixture.componentInstance.list()).toBeInstanceOf(BracketRoundsListComponent);
     const host = fixture.nativeElement as HTMLElement;
     const list = fixture.componentInstance;
 

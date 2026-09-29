@@ -18,6 +18,7 @@ import {
   createDropzoneUpload,
   createV2DropzoneUpload,
   DEFAULT_DROPZONE_LABELS,
+  DEFAULT_DROPZONE_MAX_PREVIEW_FILE_SIZE,
   defaultDropzoneRejectionMessage,
   DROPZONE_ENTRY_STATUSES,
   DROPZONE_FILE_CONSTRAINTS,
@@ -431,6 +432,32 @@ describe('forms dropzone scenarios', () => {
     s.tick();
     expect(query<HTMLButtonElement>('.et-dropzone-trigger', host).disabled).toBe(true);
     s.frame(5);
+  });
+
+  it('previews a small picked image and skips one above the default size cap', async () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(GalleryUploadComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+    pick(s, host, [
+      file('small.png', 1024, 'image/png'),
+      file('over.png', DEFAULT_DROPZONE_MAX_PREVIEW_FILE_SIZE + 1, 'image/png'),
+    ]);
+
+    for (let i = 0; i < 5; i++) {
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      s.tick();
+    }
+
+    const preview = (name: string) =>
+      queryAll('et-dropzone-item', host)
+        .find((item) => text(query('.et-dropzone-entry-name', item)) === name)
+        ?.querySelector<HTMLImageElement>('img');
+
+    expect(preview('small.png')?.src).toMatch(/^data:image\/png/);
+    expect(preview('over.png')).toBeNull();
+    s.flush();
   });
 
   it('renders the readonly empty state and a per-locale prompt from the DROPZONE_LABELS token', () => {

@@ -1,7 +1,15 @@
-import { Component, signal, viewChild } from '@angular/core';
+import { Component, inject, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
-import { COPY_BUTTON_IMPORTS, CopyButtonDirective, IconButtonComponent } from '../index';
+import {
+  COPY_BUTTON_IMPORTS,
+  COPY_BUTTON_LABELS,
+  CopyButtonDirective,
+  DEFAULT_COPY_BUTTON_LABELS,
+  IconButtonComponent,
+  injectCopyButtonLabels,
+  provideCopyButtonLabels,
+} from '../index';
 import { TEST_COLOR_THEMES } from '../lib/testing/color-themes';
 import '../test-helpers';
 import { Scenario, useScenario } from './harness';
@@ -51,6 +59,26 @@ class InviteCodeComponent {
   copied: string[] = [];
   copyButton = viewChild.required(CopyButtonDirective);
 }
+
+@Component({
+  selector: 'et-scenario-copy-label-probe',
+  template: `{{ labels().copied }}|{{ token.copied }}`,
+})
+class CopyLabelProbeComponent {
+  labels = injectCopyButtonLabels();
+  token = inject(COPY_BUTTON_LABELS);
+}
+
+@Component({
+  selector: 'et-scenario-localized-copy',
+  imports: [CopyButtonDirective, CopyLabelProbeComponent],
+  providers: [provideCopyButtonLabels({ copied: 'Kopiert' })],
+  template: `
+    <button etCopyButton text="TEAM-A-42" type="button">Copy code</button>
+    <et-scenario-copy-label-probe />
+  `,
+})
+class LocalizedCopyComponent {}
 
 describe('copy button scenarios', () => {
   const scenario = useScenario({ providers: [provideColorThemes([...TEST_COLOR_THEMES])] });
@@ -192,6 +220,31 @@ describe('copy button scenarios', () => {
     s.tick(1200);
 
     expect(app.copyButton().copied()).toBe(false);
+    s.flush();
+  });
+
+  it('announces the copy with the default label and with a localized one', async () => {
+    stubClipboard({ writeText: vi.fn().mockResolvedValue(undefined) });
+
+    const s = scenario();
+    const defaults = TestBed.createComponent(InviteCodeComponent);
+    const defaultHost = defaults.nativeElement as HTMLElement;
+
+    s.tick();
+    defaultHost.querySelector('button')!.click();
+    await drain(s);
+
+    expect(defaultHost.querySelector('[role="status"]')?.textContent).toBe(DEFAULT_COPY_BUTTON_LABELS.copied);
+
+    const localized = TestBed.createComponent(LocalizedCopyComponent);
+    const host = localized.nativeElement as HTMLElement;
+
+    s.tick();
+    host.querySelector('button')!.click();
+    await drain(s);
+
+    expect(host.querySelector('[role="status"]')?.textContent).toBe('Kopiert');
+    expect(host.querySelector('et-scenario-copy-label-probe')?.textContent).toBe('Kopiert|Kopiert');
     s.flush();
   });
 });

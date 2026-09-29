@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   BRACKET_CARD_CONTEXT,
@@ -15,6 +15,7 @@ import {
   BracketDefaultFinalMatchComponent,
   BracketDefaultMatchComponent,
   BracketDefaultRoundHeaderComponent,
+  BRACKET_PARTICIPANTS_IMPORTS,
   BracketParticipantsComponent,
   BracketLayout,
   BracketMatch,
@@ -82,7 +83,7 @@ const text = (element: Element | null | undefined) => element?.textContent?.repl
 
 @Component({
   selector: 'et-scenario-bracket-page',
-  imports: [BracketComponent, BracketParticipantsComponent],
+  imports: [BracketComponent, BRACKET_PARTICIPANTS_IMPORTS],
   providers: [
     { provide: BRACKET_LABELS, useValue: { participantsLegend: 'Teams' } },
     provideBracketConfig({
@@ -107,6 +108,7 @@ const text = (element: Element | null | undefined) => element?.textContent?.repl
   `,
 })
 class BracketPageComponent {
+  participants = viewChild.required(BracketParticipantsComponent);
   finalWinner = signal<'home' | 'away' | null>(null);
   source = computed(() => generateBracketDataForEthlete(stage(this.finalWinner())));
   focusedTeamId = signal<string | null>(null);
@@ -198,6 +200,7 @@ describe('bracket scenarios', () => {
     s.tick();
     s.flush();
 
+    expect(fixture.componentInstance.participants()).toBeInstanceOf(BracketParticipantsComponent);
     expect(host.querySelector('.et-bracket')?.classList.contains('et-bracket--single-elimination')).toBe(true);
 
     const headers = Array.from(host.querySelectorAll('et-bracket-default-round-header'));

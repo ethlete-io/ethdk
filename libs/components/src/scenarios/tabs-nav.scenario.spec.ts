@@ -1,4 +1,4 @@
-import { Component, inject, signal, viewChild } from '@angular/core';
+import { Component, inject, signal, viewChild, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideLocationMocks } from '@angular/common/testing';
 import { provideRouter, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -17,6 +17,7 @@ import {
   NavTabsOutletComponent,
   NavTabsOutletDirective,
   OVERLAY_NAV_TAB_IMPORTS,
+  OverlayNavTabLinkComponent,
   OverlayRouterOutletComponent,
   provideOverlay,
   provideOverlayRouter,
@@ -152,6 +153,7 @@ class PrivacyPageComponent {}
 })
 class PreferencesOverlayComponent {
   router = injectOverlayRouter();
+  links = viewChildren(OverlayNavTabLinkComponent);
 }
 
 const queryAll = <E extends HTMLElement = HTMLElement>(selector: string, root: ParentNode = document) =>
@@ -431,6 +433,7 @@ describe('nav tabs scenarios', () => {
       await s.settle();
 
       expect(overlay?.router.currentRoute()).toBe('/privacy');
+      expect(overlay?.links()).toHaveLength(2);
       expect(query('.overlay-page').textContent).toBe('Privacy');
       expect(selectedLabels()).toEqual(['Privacy']);
       expect(tab('Privacy').classList.contains('et-nav-tab-link--active')).toBe(true);

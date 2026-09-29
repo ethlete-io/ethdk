@@ -22,6 +22,8 @@ import {
   DateTimeInputDirective,
   DateTimeInputFieldDirective,
   DEFAULT_DATE_TIME_LABELS,
+  dateBounds,
+  dateTimeBounds,
   DURATION_INPUT_ERROR_CODES,
   DURATION_INPUT_IMPORTS,
   DurationInputComponent,
@@ -288,6 +290,32 @@ class LocalizedBookingComponent {
   startAt = new Date(2026, 6, 1);
 }
 
+@Component({
+  selector: 'et-scenario-appointment',
+  imports: [DATE_INPUT_IMPORTS, DATE_TIME_INPUT_IMPORTS, FormField],
+  template: `
+    <et-date-input
+      [formField]="appointment.birthday"
+      valueFormat="yyyy-MM-dd"
+      displayFormat="dd.MM.yyyy"
+      aria-label="Birthday"
+    />
+    <et-date-time-input
+      [formField]="appointment.slot"
+      valueFormat="yyyy-MM-dd'T'HH:mm"
+      displayFormat="dd.MM.yyyy HH:mm"
+      aria-label="Slot"
+    />
+  `,
+})
+class AppointmentComponent {
+  model = signal<{ birthday: string | null; slot: string | null }>({ birthday: null, slot: null });
+  appointment = form(this.model, (path) => {
+    dateBounds(path.birthday, { max: new Date(2026, 6, 10), valueFormat: 'yyyy-MM-dd' });
+    dateTimeBounds(path.slot, { min: new Date(2026, 6, 10, 9, 0), valueFormat: "yyyy-MM-dd'T'HH:mm" });
+  });
+}
+
 const query = <E extends HTMLElement = HTMLElement>(selector: string, root: ParentNode = document) => {
   const element = root.querySelector<E>(selector);
 
@@ -369,6 +397,33 @@ describe('forms date-time scenarios', () => {
     expect(query('et-form-error', host).textContent).toContain('Pick an arrival day');
     expect(fixture.componentInstance.model().arrival).toBeNull();
     expect(field.hasAttribute('aria-invalid')).toBe(true);
+  });
+
+  it('rejects typed dates and date-times outside the bounds validators', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(AppointmentComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const { appointment } = fixture.componentInstance;
+    const kinds = (field: typeof appointment.birthday) =>
+      field()
+        .errors()
+        .map((error) => error.kind);
+
+    s.flush();
+
+    const [birthday, slot] = Array.from(host.querySelectorAll<HTMLInputElement>('input'));
+
+    typeAndBlur(s, birthday!, '09.07.2026');
+    expect(kinds(appointment.birthday)).toEqual([]);
+
+    typeAndBlur(s, birthday!, '11.07.2026');
+    expect(kinds(appointment.birthday)).toEqual(['rangeMax']);
+
+    typeAndBlur(s, slot!, '10.07.2026 08:59');
+    expect(kinds(appointment.slot)).toEqual(['rangeMin']);
+
+    typeAndBlur(s, slot!, '10.07.2026 09:00');
+    expect(kinds(appointment.slot)).toEqual([]);
   });
 
   it('marks the bound signal-form field touched when the user leaves the field', () => {

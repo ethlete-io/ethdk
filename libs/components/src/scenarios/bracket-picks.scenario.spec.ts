@@ -1,4 +1,4 @@
-import { Component, computed, input, signal } from '@angular/core';
+import { Component, computed, input, signal, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   BRACKET_DATA_LAYOUT,
@@ -7,6 +7,7 @@ import {
   BracketDataSource,
   BracketMatch,
   BracketMatchSource,
+  BRACKET_PICK_CARD_IMPORTS,
   BracketPickCardComponent,
   BracketPickSet,
   BracketSlotSource,
@@ -140,7 +141,7 @@ const normalizeWithPicks = (options: {
 
 @Component({
   selector: 'et-scenario-prediction',
-  imports: [BracketPickCardComponent],
+  imports: [BRACKET_PICK_CARD_IMPORTS],
   template: `
     @for (row of rows(); track row.match.id) {
       <et-bracket-pick-card
@@ -158,6 +159,7 @@ const normalizeWithPicks = (options: {
   `,
 })
 class PredictionComponent {
+  cards = viewChildren(BracketPickCardComponent);
   source = input(WITH_BYE);
   picks = signal<Record<string, string>>({});
   locked = signal(false);
@@ -191,7 +193,7 @@ class PredictionComponent {
 
 @Component({
   selector: 'et-scenario-results',
-  imports: [BracketPickCardComponent],
+  imports: [BRACKET_PICK_CARD_IMPORTS],
   providers: [provideBracketLabels({ slotBye: 'Freilos' })],
   template: `
     <et-bracket-pick-card [bracketMatch]="match" [normalized]="normalized" readonly pickedSide="home" />
@@ -243,6 +245,7 @@ describe('bracket prediction scenarios', () => {
 
     s.tick();
 
+    expect(page.cards()).toHaveLength(page.rows().length);
     expect(buttons('semi-1').map(sideText)).toEqual(['Team A', 'Team B']);
     expect(buttons('semi-2')).toHaveLength(0);
     expect(text(card('semi-2')?.querySelector('.et-bracket-pick-card-empty'))).toBe(DEFAULT_BRACKET_LABELS.slotBye);

@@ -1,13 +1,17 @@
-import { Component, signal, viewChild, viewChildren } from '@angular/core';
+import { Component, inject, signal, viewChild, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   AVATAR_IMPORTS,
+  AVATAR_LABELS,
   AVATAR_SHAPES,
   AVATAR_SIZES,
   AvatarComponent,
   AvatarGroupComponent,
   AvatarShape,
   AvatarSize,
+  DEFAULT_AVATAR_LABELS,
+  injectAvatarLabels,
+  provideAvatarLabels,
 } from '../index';
 import '../test-helpers';
 import { useScenario } from './harness';
@@ -78,6 +82,30 @@ class ReviewersComponent {
   group = viewChild.required(AvatarGroupComponent);
   avatars = viewChildren(AvatarComponent);
 }
+
+@Component({
+  selector: 'et-scenario-avatar-label-probe',
+  template: `{{ labels().more(3) }}|{{ token.more(3) }}`,
+})
+class AvatarLabelProbeComponent {
+  labels = injectAvatarLabels();
+  token = inject(AVATAR_LABELS);
+}
+
+@Component({
+  selector: 'et-scenario-localized-members',
+  imports: [AvatarComponent, AvatarGroupComponent, AvatarLabelProbeComponent],
+  providers: [provideAvatarLabels({ more: (count) => `${count} weitere` })],
+  template: `
+    <et-avatar-group [maxVisible]="1">
+      <et-avatar name="Jane Doe" />
+      <et-avatar name="Team A" />
+      <et-avatar name="Team B" />
+    </et-avatar-group>
+    <et-scenario-avatar-label-probe />
+  `,
+})
+class LocalizedMembersComponent {}
 
 describe('avatar scenarios', () => {
   const scenario = useScenario();
@@ -189,5 +217,24 @@ describe('avatar scenarios', () => {
     expect(app.group().maxVisible()).toBeUndefined();
     expect(shown(host)).toEqual(['JD', 'TA', 'TB']);
     expect(host.querySelector('.et-avatar-group-overflow')).toBeNull();
+  });
+
+  it('names the overflow avatar with the default labels and with localized ones', () => {
+    const s = scenario();
+    const defaults = TestBed.createComponent(MembersComponent);
+
+    s.tick();
+
+    expect(
+      (defaults.nativeElement as HTMLElement).querySelector('.et-avatar-group-overflow')?.getAttribute('aria-label'),
+    ).toBe(DEFAULT_AVATAR_LABELS.more(2));
+
+    const localized = TestBed.createComponent(LocalizedMembersComponent);
+    const host = localized.nativeElement as HTMLElement;
+
+    s.tick();
+
+    expect(host.querySelector('.et-avatar-group-overflow')?.getAttribute('aria-label')).toBe('2 weitere');
+    expect(host.querySelector('et-scenario-avatar-label-probe')?.textContent).toBe('3 weitere|3 weitere');
   });
 });
