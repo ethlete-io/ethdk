@@ -10,7 +10,7 @@
     },
     {
       "name": "contentful-default-components",
-      "version": "4.0.0-next.11",
+      "version": "4.0.0-next.12",
       "kind": "auto",
       "description": "Add withContentfulDefaultComponents() to provideContentfulConfig, and report the calls that need it by hand.",
       "generator": "@ethlete/contentful:migrate-contentful-default-components",
