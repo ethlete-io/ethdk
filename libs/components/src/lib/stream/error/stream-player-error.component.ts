@@ -18,7 +18,7 @@ import { injectStreamPlayerErrorConfig } from './stream-player-error-config';
   template: `
     <div [etProvideSurface]="cardSurface()" class="et-stream-player-error-card" etSurfaced>
       <span class="et-stream-player-error-icon" etIcon="et-triangle-exclamation"></span>
-      <h3 class="et-stream-player-error-heading">{{ heading() }}</h3>
+      <p class="et-stream-player-error-heading">{{ heading() }}</p>
       <p class="et-stream-player-error-description">{{ description() }}</p>
       <button [color]="retryButtonColor()" (click)="retry()" et-button type="button">
         {{ retryLabel() }}

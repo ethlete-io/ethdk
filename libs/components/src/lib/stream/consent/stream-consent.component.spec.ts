@@ -46,4 +46,14 @@ describe('StreamConsentComponent', () => {
     expect(button).not.toBeNull();
     expect(button?.textContent).toContain('Accept');
   });
+
+  it('names the group after a plain paragraph, not a heading that would break the page outline', () => {
+    fixture.detectChanges();
+
+    const heading = host.querySelector('.et-stream-consent-heading')!;
+
+    expect(heading.tagName).toBe('P');
+    expect(host.getAttribute('aria-labelledby')).toBe(heading.id);
+    expect(host.querySelector('h1, h2, h3, h4, h5, h6')).toBeNull();
+  });
 });

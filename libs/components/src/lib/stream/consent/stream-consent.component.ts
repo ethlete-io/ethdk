@@ -21,7 +21,7 @@ let nextHeadingId = 0;
   template: `
     <div [etProvideSurface]="cardSurface()" class="et-stream-consent-card" etSurfaced>
       <span class="et-stream-consent-icon" etIcon="et-lock"></span>
-      <h3 [id]="HEADING_ID" class="et-stream-consent-heading">{{ heading() }}</h3>
+      <p [id]="HEADING_ID" class="et-stream-consent-heading">{{ heading() }}</p>
       <p class="et-stream-consent-description">{{ description() }}</p>
       <button [color]="acceptButtonColor()" et-button etStreamConsentAccept>
         {{ acceptLabel() }}
