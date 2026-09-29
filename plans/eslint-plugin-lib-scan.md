@@ -38,9 +38,9 @@ has them). Still open: 23 Medium, 46 Low, 13 spec-coverage items. Paths are rela
 
 ## visibility, members & internals
 
-- Medium: `SOURCE_FILE_CACHE` never invalidated (`internals/implemented-contract-members.js:9,34-46`). S
-- Medium: `templateUrl` re-read from disk on every member check (`internals/angular-member-visibility.js:83-93,186`). S
-- Medium: current file re-parsed even without an `implements` clause (`implemented-contract-members.js:265`). S
+- Medium: `SOURCE_FILE_CACHE` never invalidated (`internals/implemented-contract-members.js:9,34-46`). Done in 1115ebd01 (keyed by mtime + size).
+- Medium: `templateUrl` re-read from disk on every member check (`internals/angular-member-visibility.js:83-93,186`). Done in b962944d7 (cached per linted file).
+- Medium: current file re-parsed even without an `implements` clause (`implemented-contract-members.js:265`). Done in d8a6c9352.
 - Low: `no-redundant-internal` accepts `// @internal` and `/** @internal */ #x`. S
 - Low: `accessor`/`abstract` members invisible to `template-member-accessibility` and `no-unused-class-member`. M
 - Low: `rules.md:119` omits that write-only members count as read and that `protected` is only checked on some decorators. S
@@ -52,8 +52,8 @@ has them). Still open: 23 Medium, 46 Low, 13 spec-coverage items. Paths are rela
 
 - Medium: `no-document-cookie` misses `this.doc.cookie` (injected `DOCUMENT`), `globalThis.document.cookie`, `document['cookie']`, `window.document.cookie`. Done in 8f943a33c (injected-DOCUMENT via `inject(DOCUMENT)` members/consts).
 - Medium: `no-window-location` misses bare `location.href`, `const loc = window.location; loc.href`, destructuring, `href +=`. Done in b96cb14a9.
-- Medium: alias escapes — `import { legacyGetUsers as gu }` + `gu.prepare({})`, `import * as q` + `new q.V2QueryClient()`. S
-- Medium: `no-angular-router-api` bindings are file-global (a class whose `router` is `inject(MyThing)`, an unrelated `(router) => router.events` both reported). M
+- Medium: alias escapes — `import { legacyGetUsers as gu }` + `gu.prepare({})`, `import * as q` + `new q.V2QueryClient()`. Done in e183dbc6b (`no-legacy-prepare-without-injector` and `no-legacy-query-import`).
+- Medium: `no-angular-router-api` bindings are file-global (a class whose `router` is `inject(MyThing)`, an unrelated `(router) => router.events` both reported). Done in d6e261816.
 - Low: `no-cdk-import` note is a lowercase fragment (`no-cdk-import.js:138`, spec `:56`, `rules.md:297`). S
 - Low: migration-map cache never invalidates, caches a missing map as `null`, constant default key (`no-cdk-import.js:28-51`). S
 - Low: prepare fixer inserts the injector member under the next member's leading comment. S
@@ -78,9 +78,9 @@ has them). Still open: 23 Medium, 46 Low, 13 spec-coverage items. Paths are rela
 
 ## DOM & platform
 
-- Medium: `prefer-element-dimensions` reports reads in nested `addEventListener`/`untracked`/`afterNextRender`/`setTimeout` callbacks inside an `effect`. S
-- Medium: `prefer-element-dimensions` ignores the receiver (`this.layout().scrollWidth` reported). M
-- Medium: `prefer-viewport-size` misses stored `this.win = document.defaultView`, `globalThis.innerWidth`, bare `innerWidth`, `window['innerWidth']`. S
+- Medium: `prefer-element-dimensions` reports reads in nested `addEventListener`/`untracked`/`afterNextRender`/`setTimeout` callbacks inside an `effect`. Done in 562f182ac.
+- Medium: `prefer-element-dimensions` ignores the receiver (`this.layout().scrollWidth` reported). Done in 5d32f7e16 and 10af4378d.
+- Medium: `prefer-viewport-size` misses stored `this.win = document.defaultView`, `globalThis.innerWidth`, bare `innerWidth`, `window['innerWidth']`. Done in 836c57050.
 - Medium: `prefer-match-media` reports `BreakpointObserver` twice; misses `mq.addEventListener('change', …)` and bare `matchMedia()`. Done in 1dd03c288 (change listener is covered by `prefer-rxjs-timer`).
 - Low: `myMock.notTheDefaultView.innerWidth` reported. S
 - Low: shadowed `class MutationObserver` reported. S
