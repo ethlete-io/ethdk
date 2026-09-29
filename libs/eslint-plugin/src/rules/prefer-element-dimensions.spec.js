@@ -31,6 +31,8 @@ ${el}effect(() => { const w = el.offsetWidth; });`,
     { code: `computed(() => options.scrollHeight);` },
     { code: `const box = { offsetWidth: 1 }; computed(() => box.offsetWidth);` },
     { code: `computed(() => response.body.scrollHeight);` },
+    { code: `computed(() => { for (const item of this.items()) item.offsetWidth; });` },
+    { code: `computed(() => this.items().map((item) => item.offsetWidth));` },
   ],
   invalid: [
     {
@@ -64,6 +66,18 @@ ${el}ngEffect(() => { const w = el.offsetWidth; });`,
     },
     {
       code: `class A { host = injectHostElement(); w = computed(() => this.host.getBoundingClientRect()); }`,
+      errors: [{ messageId: 'preferElementDimensions' }],
+    },
+    {
+      code: `computed(() => { for (const child of this.scrollableChildren()) child.offsetWidth; });`,
+      errors: [{ messageId: 'preferElementDimensions' }],
+    },
+    {
+      code: `computed(() => [...host.children].map((child) => child.offsetWidth));`,
+      errors: [{ messageId: 'preferElementDimensions' }],
+    },
+    {
+      code: `computed(() => Array.from(document.querySelectorAll('.row')).map((row) => row.clientHeight));`,
       errors: [{ messageId: 'preferElementDimensions' }],
     },
     {

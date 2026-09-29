@@ -152,6 +152,76 @@ const getThisClassBody = (node) => {
   return null;
 };
 
+const ELEMENT_COLLECTION_NAME = /(Children|Elements)$/u;
+
+/**
+ * @param {any} node
+ * @returns {string | null}
+ */
+const getReferenceName = (node) => {
+  if (node.type === 'Identifier') return node.name;
+  if (node.type === 'MemberExpression' && !node.computed && node.property.type === 'Identifier') {
+    return node.property.name;
+  }
+
+  return null;
+};
+
+/**
+ * @param {import('eslint').SourceCode} sourceCode
+ * @param {any} node
+ * @param {Set<any>} seen
+ * @returns {boolean}
+ */
+const isElementCollection = (sourceCode, node, seen) => {
+  if (!node || seen.has(node)) return false;
+  seen.add(node);
+
+  if (node.type === 'ChainExpression' || node.type === 'TSNonNullExpression') {
+    return isElementCollection(sourceCode, node.expression, seen);
+  }
+
+  if (node.type === 'ArrayExpression') {
+    return (
+      node.elements.length > 0 &&
+      node.elements.every(
+        (/** @type {any} */ element) =>
+          element?.type === 'SpreadElement' && isElementCollection(sourceCode, element.argument, seen),
+      )
+    );
+  }
+
+  if (node.type === 'CallExpression') {
+    const name = getReferenceName(node.callee);
+    if (name && DOM_LIST_QUERY_METHODS.has(name)) return true;
+    if (name === 'from' && node.arguments[0]) return isElementCollection(sourceCode, node.arguments[0], seen);
+
+    return !!name && ELEMENT_COLLECTION_NAME.test(name);
+  }
+
+  const name = getReferenceName(node);
+  if (name === 'children') return true;
+  if (name && ELEMENT_COLLECTION_NAME.test(name)) return true;
+  if (node.type !== 'Identifier') return false;
+
+  /** @type {import('eslint').Scope.Scope | null} */
+  let scope = sourceCode.getScope(node);
+
+  while (scope) {
+    const variable = scope.set.get(node.name);
+
+    if (variable) {
+      const definition = /** @type {any} */ (variable.defs[0]);
+
+      return definition?.type === 'Variable' && isElementCollection(sourceCode, definition.node.init, seen);
+    }
+
+    scope = scope.upper;
+  }
+
+  return false;
+};
+
 /**
  * @param {import('eslint').SourceCode} sourceCode
  * @param {any} node
@@ -222,7 +292,27 @@ const isElementExpression = (sourceCode, node, seen = new Set()) => {
           if (!definition) return false;
           if (isElementType(definition.name.typeAnnotation)) return true;
 
-          return definition.type === 'Variable' && isElementExpression(sourceCode, definition.node.init, seen);
+          if (definition.type === 'Parameter') {
+            const host = definition.node.parent;
+            const isArrayCallback =
+              host?.type === 'CallExpression' &&
+              host.arguments[0] === definition.node &&
+              host.callee.type === 'MemberExpression' &&
+              host.callee.property.type === 'Identifier' &&
+              SYNCHRONOUS_ARRAY_METHODS.has(host.callee.property.name) &&
+              definition.node.params[0] === definition.name;
+
+            return isArrayCallback && isElementCollection(sourceCode, host.callee.object, seen);
+          }
+
+          if (definition.type !== 'Variable') return false;
+
+          const loop = definition.parent?.parent;
+          if (loop?.type === 'ForOfStatement' && loop.left === definition.parent) {
+            return isElementCollection(sourceCode, loop.right, seen);
+          }
+
+          return isElementExpression(sourceCode, definition.node.init, seen);
         }
 
         scope = scope.upper;
