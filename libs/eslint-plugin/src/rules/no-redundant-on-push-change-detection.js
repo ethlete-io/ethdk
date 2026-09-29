@@ -3,7 +3,8 @@
 
 const { getAngularDecoratorName, isImportedAs } = require('./internals/import-resolution');
 
-const { getMetadataEntryRemovalRange } = require('./internals/angular-metadata-fix');
+const { getMetadataEntryRemovalRange, getPropertyName } = require('./internals/angular-metadata-fix');
+const { getAngularMajor } = require('./internals/angular-version');
 
 /**
  * Disallow explicit `changeDetection: ChangeDetectionStrategy.OnPush` on
@@ -23,53 +24,6 @@ const { getMetadataEntryRemovalRange } = require('./internals/angular-metadata-f
  */
 
 const REQUIRED_MAJOR = 22;
-
-/** @type {number | null | undefined} */
-let cachedAngularMajor;
-
-/**
- * Detect the workspace's installed Angular major version. Cached across files.
- *
- * @returns {number | null} major version, or null when it cannot be determined
- */
-const detectAngularMajor = () => {
-  if (cachedAngularMajor !== undefined) return cachedAngularMajor;
-
-  try {
-    const pkg = require('@angular/core/package.json');
-    const major = Number.parseInt(String(pkg.version).split('.')[0], 10);
-    cachedAngularMajor = Number.isNaN(major) ? null : major;
-  } catch {
-    cachedAngularMajor = null;
-  }
-
-  return cachedAngularMajor;
-};
-
-/**
- * Resolve the Angular major version to gate on. An explicit
- * `settings.ethlete.angularMajor` wins over auto-detection — handy for
- * pinning behaviour and for tests.
- *
- * @param {import('eslint').Rule.RuleContext} context
- * @returns {number | null}
- */
-const getAngularMajor = (context) => {
-  const settings = /** @type {any} */ (context.settings);
-  const override = settings?.ethlete?.angularMajor;
-  if (typeof override === 'number') return override;
-
-  return detectAngularMajor();
-};
-
-/**
- * @param {import('estree').Property['key']} key
- */
-const getPropertyName = (key) => {
-  if (key.type === 'Identifier') return key.name;
-  if (key.type === 'Literal' && typeof key.value === 'string') return key.value;
-  return null;
-};
 
 /**
  * @param {import('eslint').SourceCode} sourceCode

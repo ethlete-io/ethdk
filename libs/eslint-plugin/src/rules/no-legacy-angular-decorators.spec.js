@@ -37,6 +37,19 @@ class A { @Input() value; }`,
 
   invalid: [
     {
+      code: 'class A { @Input() value: `a${string}` = "a1"; }',
+      errors: [{ messageId: 'useInput' }],
+    },
+    {
+      code: 'class A { @Output() changed = new EventEmitter<`a${string}`>(); }',
+      errors: [{ messageId: 'useOutput' }],
+    },
+    {
+      code: `@Directive({}) class A { @HostBinding('class.a') accessor on = false; }`,
+      output: `@Directive({ host: { '[class.a]': 'on' } }) class A { accessor on = false; }`,
+      errors: [{ messageId: 'useHostBinding' }],
+    },
+    {
       code: `class A { @Input() accessor value = 1; }`,
       errors: [{ messageId: 'useInput' }],
     },
