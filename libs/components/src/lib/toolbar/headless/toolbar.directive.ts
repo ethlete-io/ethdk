@@ -1,5 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { afterEveryRender, Directive, ElementRef, inject, input } from '@angular/core';
+import { injectRenderer } from '@ethlete/core';
 import { isFormInputTarget } from '../../internals/form-input-target';
 import { TOOLBAR_ORIENTATIONS, ToolbarOrientation } from './toolbar.types';
 
@@ -52,6 +53,7 @@ const ownsNavigationKeys = (target: EventTarget | null) =>
 export class ToolbarDirective {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private document = inject(DOCUMENT);
+  private renderer = injectRenderer();
 
   public orientation = input<ToolbarOrientation>(TOOLBAR_ORIENTATIONS.HORIZONTAL);
 
@@ -146,7 +148,7 @@ export class ToolbarDirective {
     for (const control of controls) {
       const tabIndex = control === this.tabStop ? 0 : -1;
 
-      control.setAttribute(OWNED_ATTRIBUTE, '');
+      this.renderer.setAttribute(control, OWNED_ATTRIBUTE, '');
       if (control.tabIndex !== tabIndex) control.tabIndex = tabIndex;
     }
   }
