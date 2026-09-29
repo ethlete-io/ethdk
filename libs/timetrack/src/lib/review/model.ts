@@ -165,11 +165,6 @@ export type ReviewedRow = Omit<WorklogProposal, 'issueKey'> & {
   hidden: boolean;
   /** The remote time the row draws and does not book, when there is any. See ADR 0033. */
   unbookedMs?: number;
-  /**
-   * True on the row of an agent session that shares its stretch with other sessions on the ticket. It
-   * is drawn and booked at its place in that stretch rather than over the whole of it.
-   */
-  sharesStretch?: boolean;
   /** Who set each field. A field absent here holds what the engine observed. See `rowFieldSourceOf`. */
   sources?: RowFieldSources;
 };

@@ -7,6 +7,8 @@ const SDK = '/Users/e2e/dev/ethlete-sdk';
 
 const XYZ = { key: 'XYZ', name: 'Beta' };
 
+const PIECE_GAP_PX = 2;
+
 const ISSUES: FakeJiraIssue[] = [
   {
     id: '10400',
@@ -109,21 +111,17 @@ const drawnPieces = async (page: Page) => {
   return { laneBox, drawn, titles: [...new Set(drawn.map((piece) => piece.title))] };
 };
 
-const expectInSequence = (
-  laneBox: { height: number },
-  drawn: readonly { title: string; box: { y: number; height: number } }[],
-) => {
+const expectAsTallAsLabel = async (page: Page) => {
+  const { laneBox, drawn, titles } = await drawnPieces(page);
   const pxPerMinute = laneBox.height / (24 * 60);
 
-  for (const piece of drawn) expect(piece.box.height).toBeCloseTo(minutesOf(piece.title) * pxPerMinute, 0);
+  for (const title of titles) {
+    const height = drawn
+      .filter((piece) => piece.title === title)
+      .reduce((sum, piece) => sum + piece.box.height + PIECE_GAP_PX, 0);
 
-  const byTop = drawn.map((piece) => piece.box).sort((a, b) => a.y - b.y);
-
-  byTop.slice(1).forEach((box, index) => {
-    const above = byTop[index];
-
-    expect(box.y).toBeGreaterThanOrEqual((above?.y ?? 0) + (above?.height ?? 0) - 1);
-  });
+    expect(height).toBeCloseTo(minutesOf(title) * pxPerMinute, 0);
+  }
 };
 
 const surfaceOf = async (page: Page, band: Locator) => {
@@ -145,18 +143,34 @@ test.describe('parallel sessions on one ticket, prompted in turn', () => {
     await seedDay(page, { prompts: [0, 30, 60], end: 90 });
   });
 
-  test('follow each other at full width, one card per session', async ({ page }) => {
+  test('follow each other at full width over the stretches each one ran', async ({ page }) => {
     const { laneBox, drawn, titles } = await drawnPieces(page);
 
     expect(titles).toHaveLength(2);
-    expect(drawn).toHaveLength(titles.length);
+    expect(drawn.length).toBeGreaterThan(titles.length);
 
     for (const piece of drawn) {
       expect(piece.box.width).toBeGreaterThan(laneBox.width - 2);
       expect(piece.clipPath).toBe('none');
     }
 
-    expectInSequence(laneBox, drawn);
+    const byTop = drawn.map((piece) => piece.box).sort((a, b) => a.y - b.y);
+
+    byTop.slice(1).forEach((box, index) => {
+      const above = byTop[index];
+
+      expect(box.y).toBeGreaterThanOrEqual((above?.y ?? 0) + (above?.height ?? 0) - 1);
+    });
+  });
+
+  test('open the same row from any of its pieces', async ({ page }) => {
+    const { drawn, titles } = await drawnPieces(page);
+    const split = titles.find((title) => drawn.filter((piece) => piece.title === title).length > 1) ?? '';
+    const other = titles.find((title) => title !== split) ?? '';
+    const fromFirst = await surfaceOf(page, bandsOf(page, split).first());
+
+    expect(await surfaceOf(page, bandsOf(page, split).last())).toBe(fromFirst);
+    expect(await surfaceOf(page, bandsOf(page, other))).not.toBe(fromFirst);
   });
 });
 
@@ -165,11 +179,11 @@ test.describe('parallel sessions on one ticket that each round up past the clock
     await seedDay(page, { prompts: [0, 20, 40], end: 60 });
   });
 
-  test('book the clock once, one card after the other', async ({ page }) => {
-    const { laneBox, drawn, titles } = await drawnPieces(page);
+  test('book the clock once, each card as tall as its label', async ({ page }) => {
+    const { titles } = await drawnPieces(page);
 
     expect(titles.reduce((sum, title) => sum + minutesOf(title), 0)).toBeLessThanOrEqual(60);
-    expectInSequence(laneBox, drawn);
+    await expectAsTallAsLabel(page);
   });
 
   test('open each card with the duration its band books', async ({ page }) => {

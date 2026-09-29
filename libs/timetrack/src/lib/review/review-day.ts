@@ -8,7 +8,7 @@ import {
   RoundOptions,
   checkDay,
   sharingTicket,
-  siblingSlotsOf,
+  siblingBookingsOf,
 } from '../rows/round';
 import { CALL_LANE_KEY, storedLaneKey } from '../rows/lane';
 import { UnnamedProposal, unnamedRowId } from '../rows/propose';
@@ -384,9 +384,8 @@ const onEditedIds = (options: {
  * A row books the time its band covers. One number reaches the reviewer, so a band drawn 13:15 to
  * 13:45 logs 30 minutes and never a shorter time the label would then have to explain. See ADR 0019.
  * The exceptions are remote time past the day's allowance, which ADR 0033 draws and never books, and
- * the rows of two agent sessions on one ticket, which share their observed minutes out and sit one after
- * another (`siblingSlotsOf`). A row the reviewer wrote by hand books its span regardless, and so does one
- * they placed.
+ * the rows of two agent sessions on one ticket, which share their observed minutes out (`siblingBookingsOf`);
+ * a row the reviewer wrote by hand books its span regardless.
  *
  * Run after `snapRowBounds`, whose bounds are whole increments, so this books whole increments too.
  */
@@ -394,29 +393,25 @@ const bookTheSpan = (options: {
   rows: ReviewedRow[];
   remote?: RemoteBooking;
   round?: Partial<RoundOptions>;
-  placed: (row: ReviewedRow) => boolean;
 }): ReviewedRow[] => {
   const { rows } = options;
   const observed = rows.filter((row) => !isManualRow(row));
   const unbooked = unbookedRemoteByRow({ rows: observed, remote: options.remote });
-  const siblings = siblingSlotsOf(observed, {
+  const siblings = siblingBookingsOf(observed, {
     spanMsOf: (row) => bookedSpanMs(row, unbooked[observed.indexOf(row)] ?? []),
     round: options.round,
-    fixed: options.placed,
   });
 
   return rows.map((row) => {
     const windows = unbooked[observed.indexOf(row)] ?? [];
-    const slot = siblings.get(row);
-    const durationMs = slot?.durationMs ?? bookedSpanMs(row, windows);
+    const durationMs = siblings.get(row) ?? bookedSpanMs(row, windows);
     const unbookedMs = windowsMs(windows) || undefined;
 
-    if (!slot && durationMs === row.durationMs && unbookedMs === row.unbookedMs) return row;
+    if (durationMs === row.durationMs && unbookedMs === row.unbookedMs) return row;
 
     const { unbookedMs: _stale, ...rest } = row;
-    const placed = slot ? { ...rest, from: slot.from, to: slot.to, sharesStretch: true } : rest;
 
-    return unbookedMs ? { ...placed, durationMs, unbookedMs } : { ...placed, durationMs };
+    return unbookedMs ? { ...rest, durationMs, unbookedMs } : { ...rest, durationMs };
   });
 };
 
@@ -499,12 +494,7 @@ export const reviewDay = (options: {
     stated: new Set(edits.pinned.filter((row) => !row.replaces.length).map((row) => row.id)),
     round: options.round,
   });
-  const rows = bookTheSpan({
-    rows: recut.rows,
-    remote: options.rows.remote,
-    round: options.round,
-    placed: (row) => pinnedIds.has(row.id),
-  });
+  const rows = bookTheSpan({ rows: recut.rows, remote: options.rows.remote, round: options.round });
 
   const replacedMs = proposals
     .filter((proposal) => answered.has(proposal.id))

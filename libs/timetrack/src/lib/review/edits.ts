@@ -491,8 +491,8 @@ export const setRowRange = (options: {
   const moved = !options.pinsTo && to.getTime() - from.getTime() === row.to.getTime() - row.from.getTime();
   const replaces = replacedBy(edits, row);
   const kept = edits.pinned.filter((entry) => entry.id !== row.id);
-  const heldFrom = !!row.sharesStretch || from.getTime() !== row.from.getTime();
-  const heldTo = !!row.sharesStretch || !!options.pinsTo || to.getTime() !== row.to.getTime();
+  const heldFrom = from.getTime() !== row.from.getTime();
+  const heldTo = !!options.pinsTo || to.getTime() !== row.to.getTime();
 
   return {
     ...edits,
