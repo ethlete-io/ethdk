@@ -79,6 +79,27 @@ test.describe('a break an agent ran through', () => {
     await expect(page.locator('[data-break-overlap]').first()).toBeVisible();
   });
 
+  test('is drawn under the label of the band, not over it', async ({ page }) => {
+    const band = page.locator('[data-kind="row"]').filter({ has: page.locator('[data-break-overlap]') });
+    const label = band.locator('[data-label]').first();
+
+    await expect(label).toBeVisible();
+
+    const { position, alpha } = await label.evaluate((element) => {
+      const canvas = document.createElement('canvas').getContext('2d');
+
+      if (canvas) {
+        canvas.fillStyle = getComputedStyle(element).backgroundColor;
+        canvas.fillRect(0, 0, 1, 1);
+      }
+
+      return { position: getComputedStyle(element).position, alpha: canvas?.getImageData(0, 0, 1, 1).data[3] };
+    });
+
+    expect(position).not.toBe('static');
+    expect(alpha).toBe(255);
+  });
+
   test('is as long as the notifier measured, because the rows leave it no gap', async ({ page }) => {
     await expect(page.locator('[data-break]').first()).toHaveAttribute('title', '10:15 AM - 11:00 AM');
   });

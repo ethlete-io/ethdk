@@ -343,7 +343,7 @@ type RowDrag = {
                       "
                       (click)="select(laid.block.node.appointment, $event)"
                       (keydown.enter)="select(laid.block.node.appointment, $event)"
-                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small outline-none hover:bg-et-theme/30 data-[cascade]:bg-[color-mix(in_oklab,var(--color-et-theme)_15%,var(--color-et-surface-bg))] data-[cascade]:shadow-[0_0_0_1px_var(--color-et-surface-bg)] data-[cascade]:hover:bg-[color-mix(in_oklab,var(--color-et-theme)_30%,var(--color-et-surface-bg))] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-et-theme-ink data-[compact]:py-0 data-[compact]:leading-none data-[dragging]:opacity-70 data-[excluded]:cursor-cell data-[marked]:ring-2 data-[marked]:ring-et-theme-ink data-[marked]:ring-inset data-[stand-in]:border-dashed"
+                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 [--tt-card-bg:color-mix(in_oklab,var(--color-et-theme)_15%,var(--color-et-surface-bg))] hover:[--tt-card-bg:color-mix(in_oklab,var(--color-et-theme)_30%,var(--color-et-surface-bg))] border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small outline-none hover:bg-et-theme/30 data-[cascade]:bg-[color-mix(in_oklab,var(--color-et-theme)_15%,var(--color-et-surface-bg))] data-[cascade]:shadow-[0_0_0_1px_var(--color-et-surface-bg)] data-[cascade]:hover:bg-[color-mix(in_oklab,var(--color-et-theme)_30%,var(--color-et-surface-bg))] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-et-theme-ink data-[compact]:py-0 data-[compact]:leading-none data-[dragging]:opacity-70 data-[excluded]:cursor-cell data-[marked]:ring-2 data-[marked]:ring-et-theme-ink data-[marked]:ring-inset data-[stand-in]:border-dashed"
                       etMenu
                       etMenuContextTrigger
                       role="button"
@@ -422,7 +422,7 @@ type RowDrag = {
                       }
 
                       @if (labelled(laid.block.span)) {
-                        <span class="block truncate">
+                        <span class="relative block w-fit max-w-full truncate bg-[var(--tt-card-bg)]" data-label>
                           {{ LABEL_OF(laid.block.node.appointment) }}
                           @if (UNBOOKED_OF(laid.block.node.appointment); as unbooked) {
                             <span class="text-et-surface-muted" data-unbooked>{{ unbooked }}</span>
@@ -430,7 +430,10 @@ type RowDrag = {
                         </span>
                       }
                       @if (detailed(laid.block.span) && descriptionOf(laid.block.node.appointment); as description) {
-                        <span class="block truncate text-et-surface-muted">{{ description }}</span>
+                        <span
+                          class="relative block w-fit max-w-full truncate bg-[var(--tt-card-bg)] text-et-surface-muted"
+                          >{{ description }}</span
+                        >
                       }
                     </div>
                   }
