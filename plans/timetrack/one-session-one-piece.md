@@ -53,6 +53,31 @@ issue still join through `lastOfTrack`; slice 6 changes that.
 
 ## Slice 6: one row per session on the same ticket
 
+Slice 6a built (2026-09-29, 06a5fca3a), the engine side:
+
+- `mergePass` keys a named track on name plus piece (`namedTrackOf`). A band with no piece, or in
+  another checkout, still continues the latest band of its name, unless that band holds another piece
+  of its checkout (`holdsOtherPiece`). A named sliver folds only into its own name and piece.
+- `joinable` does not count the time another piece spent on the same ticket in the same checkout
+  (`siblingTime`) against a band's gap or span. Without it, the prompt switches cut one session into
+  many short rows. On the real 2026-09-29, 3 parallel ET-772 sessions went from 7 rows to one per piece.
+- Booking rule: a row that overlaps another row of the same lane and ticket (`sharingTicket` in
+  `rows/round.ts`) books its observed minutes, rounded up and capped at its span. `propose` and
+  `reviewDay`'s `bookTheSpan` apply it. Every other row still books its span. The rule is not "a row
+  with a piece", because nearly every agent row has a piece, and that would break ADR 0019 for them.
+- Downstream: `recutReviewedRows` does not cut a background row behind its sibling session's row. Both
+  still lose minutes to foreground rows. `foldShortRows` does not fold a sibling row. `withOverlaps`
+  does not warn about an edited sibling pair. `separateOverlappingProposals` places the sibling rows'
+  minutes in the free increments of their spans, earliest deadline first, so Tempo gets the wall clock
+  once. A second proposal with the same issue and start gets `+<piece>` on its id.
+
+Open:
+
+- Drawing the sibling rows side by side in `apps/timetrack/src/app/day-review/lanes.ts`.
+- A per-session "settled" check in `review/auto-description.ts` (below).
+- `BehindStretch` for the stretch an unwatched session lost (slice 5).
+- `unnamedRowId` does not tell two unnamed pieces of one stream apart when both start at the same time.
+
 Tom decided (2026-09-29): two agent sessions on one ticket at the same time are two parallel rows,
 each with its own auto description. Example: ET-772 in `ethlete-sdk`, one session builds Timetrack
 and one builds the scan-files sub-agents. Tempo gets the wall-clock time once: the shared minutes
