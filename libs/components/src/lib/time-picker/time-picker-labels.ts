@@ -10,6 +10,8 @@ export type TimePickerLabels = {
   seconds: string;
   /** Accessible label for the AM/PM column. */
   period: string;
+  /** Accessible name of the handle of a single time ring. */
+  time: string;
   /** Heading and accessible name of a time range picker's start side. */
   startTime: string;
   /** Heading and accessible name of a time range picker's end side. */
@@ -22,6 +24,7 @@ export const DEFAULT_TIME_PICKER_LABELS: TimePickerLabels = {
   minutes: 'Minutes',
   seconds: 'Seconds',
   period: 'AM/PM',
+  time: 'Time',
   startTime: 'Start time',
   endTime: 'End time',
 };

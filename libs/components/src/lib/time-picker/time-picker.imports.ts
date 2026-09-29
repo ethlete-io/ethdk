@@ -1,4 +1,10 @@
-import { TimePickerColumnDirective, TimePickerDirective, TimePickerOptionDirective } from './headless';
+import {
+  TimePickerColumnDirective,
+  TimePickerDirective,
+  TimePickerOptionDirective,
+  TimePickerRingDirective,
+  TimePickerRingHandleDirective,
+} from './headless';
 import { TimePickerComponent } from './time-picker.component';
 
 export const TIME_PICKER_IMPORTS = [
@@ -6,4 +12,6 @@ export const TIME_PICKER_IMPORTS = [
   TimePickerDirective,
   TimePickerColumnDirective,
   TimePickerOptionDirective,
+  TimePickerRingDirective,
+  TimePickerRingHandleDirective,
 ] as const;

@@ -146,3 +146,20 @@ export const lastOpenMinute = (stops: TimeRingStops) => {
 };
 
 export const ringDuration = (start: number, end: number) => wrapMinute(end - start);
+
+/** Moves `delta` minutes from `from`, then on in the same direction to the next open stop. `null` when no stop is open. */
+export const stepToOpenMinute = (stops: TimeRingStops, move: { from: number; delta: number }) => {
+  const count = stops.minutes.length;
+  const direction = move.delta < 0 ? -1 : 1;
+  const start = stopIndex(stops, move.from + move.delta);
+
+  for (let offset = 0; offset < count; offset++) {
+    const index = (((start + direction * offset) % count) + count) % count;
+
+    if (stops.open[index]) {
+      return stops.minutes[index] ?? null;
+    }
+  }
+
+  return null;
+};

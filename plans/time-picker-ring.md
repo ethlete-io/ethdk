@@ -46,7 +46,8 @@ input, the time range input, the date-time input and the date-time range input.
 ## Status
 
 - Slice 1 (ring math): done, `time-picker/headless/internals/time-ring.ts`.
-- Slice 2 (headless ring): in progress.
+- Slice 2 (headless ring): done, `TimePickerRingDirective`, `TimePickerRingHandleDirective`, ring state on `TimePickerDirective` (`ringStops`, `ringMinute`, `commitRingMinute`). The columns still exist.
+- Slice 3 (default component): in progress.
 
 ## Slices
 

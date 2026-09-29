@@ -13,6 +13,7 @@ import {
   setTimeOfDay,
 } from './internals/time-availability';
 import { TimeParts, deriveTimeFormatSpec, generateSteppedValues, getTimeParts } from './internals/time-format';
+import { TimeRingStops, createTimeRingStops, isStopOpen, timeRingOpenCheck } from './internals/time-ring';
 import { injectTimePickerLabels } from '../../time-picker/time-picker-labels';
 import { positiveIntegerAttribute } from '../../internals/number-attributes';
 
@@ -180,6 +181,8 @@ export class TimePickerDirective {
 
   public resolvedPeriodLabel = computed(() => this.periodLabel() ?? this.timePickerLabels().period);
 
+  public resolvedTimeLabel = computed(() => this.timePickerLabels().time);
+
   public resolvedStartLabel = computed(() => this.startLabel() ?? this.timePickerLabels().startTime);
 
   public resolvedEndLabel = computed(() => this.endLabel() ?? this.timePickerLabels().endTime);
@@ -223,6 +226,15 @@ export class TimePickerDirective {
       { side: 'end', label: this.resolvedEndLabel(), value: rendered(range.end), active: active === 'end' },
     ];
   });
+
+  private startRingDay = computed(() => startOfDay(this.ringValue('start') ?? this.now()).getTime());
+  private endRingDay = computed(() => startOfDay(this.ringValue('end') ?? this.now()).getTime());
+
+  /** @internal The ring stops of each end, open where `min`, `max` and `timeFilter` allow a time. */
+  public ringStops = computed<Record<TimeRangeSide, TimeRingStops>>(() => ({
+    start: this.ringStopsFor('start', this.startRingDay()),
+    end: this.ringStopsFor('end', this.endRingDay()),
+  }));
 
   private requiredUnits = computed<readonly TimePickerUnit[]>(() =>
     this.formatSpec().showSeconds ? ['hour', 'minute', 'second'] : ['hour', 'minute'],
@@ -486,6 +498,62 @@ export class TimePickerDirective {
     this.activeSide.set(side);
   }
 
+  /** @internal The value of one end as a minute of the day. `single` mode reads `start`. */
+  public ringMinute(side: TimeRangeSide) {
+    const value = this.ringValue(side);
+
+    return value === null ? null : value.getHours() * 60 + value.getMinutes();
+  }
+
+  /** @internal */
+  public ringValueText(side: TimeRangeSide) {
+    const value = this.ringValue(side);
+
+    return value === null
+      ? null
+      : formatDateValue(value, { format: this.sideFormat(), locale: this.effectiveLocale() });
+  }
+
+  /**
+   * @internal Writes a whole time from the ring: the hour and minute of `minute`, second 0, on the day of the end.
+   * A blocked minute writes nothing. In `range` mode the end becomes the active side; the first start on an empty
+   * range hands the active side on to the end.
+   */
+  public commitRingMinute(side: TimeRangeSide, minute: number) {
+    if (!isStopOpen(this.ringStops()[side], minute)) {
+      return;
+    }
+
+    const current = this.ringValue(side);
+    const next = setMilliseconds(
+      setTimeOfDay(current ?? startOfDay(this.now()), {
+        hour: Math.floor(minute / 60),
+        minute: minute % 60,
+        second: 0,
+      }),
+      0,
+    );
+
+    if (current !== null && current.getTime() === next.getTime()) {
+      return;
+    }
+
+    this.clearPending();
+
+    if (this.mode() !== 'range') {
+      this.value.set(next);
+
+      return;
+    }
+
+    const range = this.rangeValue();
+    const handsOn = side === 'start' && range.start === null && range.end === null;
+
+    this.rangeValue.set({ ...range, [side]: next });
+    this.timeSelect.emit({ side, time: next });
+    this.activeSide.set(handsOn ? 'end' : side);
+  }
+
   protected refreshNow(event: FocusEvent) {
     if (event.relatedTarget instanceof Node && this.hostElement.contains(event.relatedTarget)) return;
 
@@ -715,6 +783,24 @@ export class TimePickerDirective {
           : { hour: candidate.hour };
 
     return findSelectableTime(fixed, availability);
+  }
+
+  private ringValue(side: TimeRangeSide) {
+    return this.mode() === 'range' ? this.rangeValue()[side] : this.value();
+  }
+
+  private ringStopsFor(side: TimeRangeSide, day: number) {
+    const filter = this.timeFilter();
+
+    return createTimeRingStops(
+      this.minuteStep(),
+      timeRingOpenCheck({
+        min: this.min(),
+        max: this.max(),
+        filter: filter === null ? null : (date) => filter(date, side),
+        day: new Date(day),
+      }),
+    );
   }
 
   private optionsOf(unit: TimePickerUnit) {

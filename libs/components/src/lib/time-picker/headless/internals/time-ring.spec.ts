@@ -10,6 +10,7 @@ import {
   pointToAngle,
   ringDuration,
   snapMinute,
+  stepToOpenMinute,
   timeRingOpenCheck,
   timeRingSpans,
 } from './time-ring';
@@ -162,6 +163,29 @@ describe('time-ring', () => {
     it('jumps from a blocked start to an open target, and stays otherwise', () => {
       expect(clampRingMove(stops, { from: at(3), target: at(9) })).toBe(at(9));
       expect(clampRingMove(stops, { from: at(3), target: at(4) })).toBe(at(3));
+    });
+  });
+
+  describe('stepToOpenMinute', () => {
+    const stops = createTimeRingStops(15, openBetween(at(8), at(18)));
+
+    it('moves by the delta inside an open span', () => {
+      expect(stepToOpenMinute(stops, { from: at(9), delta: 15 })).toBe(at(9, 15));
+      expect(stepToOpenMinute(stops, { from: at(9), delta: -60 })).toBe(at(8));
+    });
+
+    it('skips a blocked span in the direction of the move', () => {
+      expect(stepToOpenMinute(stops, { from: at(18), delta: 15 })).toBe(at(8));
+      expect(stepToOpenMinute(stops, { from: at(8), delta: -15 })).toBe(at(18));
+    });
+
+    it('gives null when no stop is open', () => {
+      expect(
+        stepToOpenMinute(
+          createTimeRingStops(15, () => false),
+          { from: 0, delta: 15 },
+        ),
+      ).toBeNull();
     });
   });
 
