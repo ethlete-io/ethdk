@@ -18,20 +18,55 @@ const OVERLAY_SCROLL_BLOCKER_DEF = /* @__PURE__ */ defineRootProvider(
     const renderer = injectRenderer();
     const documentScrollState = signalElementScrollState(createDocumentElementSignal());
 
-    const hasBlockingOverlay = computed(() =>
-      overlayManager
-        .openOverlays()
-        .some((overlayRef) => overlayRef.config.mode !== 'non-modal' || !!overlayRef.elements?.backdropElement()),
+    const blockedDocuments = computed(
+      () => {
+        const documents = new Set<Document>();
+
+        for (const overlayRef of overlayManager.openOverlays()) {
+          const elements = overlayRef.elements;
+
+          if (overlayRef.config.mode !== 'non-modal' || !!elements?.backdropElement()) {
+            documents.add(elements?.hostElement.ownerDocument ?? document);
+          }
+        }
+
+        return documents;
+      },
+      { equal: (a, b) => a.size === b.size && [...a].every((entry) => b.has(entry)) },
     );
 
-    const root = document.documentElement;
-    let savedTop: number | null = null;
+    const savedTops = new Map<Document, number>();
 
-    const unlock = () => {
-      if (savedTop === null) return;
+    const canScrollVertically = (target: Document, mainDocumentCanScroll: boolean) => {
+      if (target === document) return mainDocumentCanScroll;
 
-      const top = savedTop;
-      savedTop = null;
+      const root = target.documentElement;
+
+      return root.scrollHeight > root.clientHeight;
+    };
+
+    const lock = (target: Document) => {
+      const top = target.defaultView?.scrollY ?? 0;
+
+      savedTops.set(target, top);
+
+      renderer.setStyle(target.documentElement, {
+        position: 'fixed',
+        top: `-${top}px`,
+        left: '0',
+        right: '0',
+        overflowY: 'scroll',
+      });
+    };
+
+    const unlock = (target: Document) => {
+      const top = savedTops.get(target);
+
+      if (top === undefined) return;
+
+      savedTops.delete(target);
+
+      const root = target.documentElement;
 
       renderer.setStyle(root, {
         position: null,
@@ -42,28 +77,24 @@ const OVERLAY_SCROLL_BLOCKER_DEF = /* @__PURE__ */ defineRootProvider(
         scrollBehavior: 'auto',
       });
 
-      document.defaultView?.scrollTo(0, top);
+      target.defaultView?.scrollTo(0, top);
 
       renderer.setStyle(root, { scrollBehavior: null });
     };
 
-    inject(DestroyRef).onDestroy(unlock);
+    inject(DestroyRef).onDestroy(() => [...savedTops.keys()].forEach(unlock));
 
-    combineLatest([toObservable(hasBlockingOverlay), toObservable(documentScrollState)])
+    combineLatest([toObservable(blockedDocuments), toObservable(documentScrollState)])
       .pipe(
-        tap(([hasOpenOverlays, scrollState]) => {
-          if (hasOpenOverlays && scrollState.canScrollVertically && savedTop === null) {
-            savedTop = document.defaultView?.scrollY ?? 0;
+        tap(([blocked, scrollState]) => {
+          for (const target of [...savedTops.keys()]) {
+            if (!blocked.has(target)) unlock(target);
+          }
 
-            renderer.setStyle(root, {
-              position: 'fixed',
-              top: `-${savedTop}px`,
-              left: '0',
-              right: '0',
-              overflowY: 'scroll',
-            });
-          } else if (!hasOpenOverlays) {
-            unlock();
+          for (const target of blocked) {
+            if (!savedTops.has(target) && canScrollVertically(target, scrollState.canScrollVertically)) {
+              lock(target);
+            }
           }
         }),
         takeUntilDestroyed(),
@@ -74,7 +105,7 @@ const OVERLAY_SCROLL_BLOCKER_DEF = /* @__PURE__ */ defineRootProvider(
 );
 
 /**
- * Blocks body scrolling while a modal overlay is open.
+ * Blocks page scrolling while a modal overlay is open, in the window the overlay is mounted in.
  * Register once via `provideOverlay()` (or call `injectOverlayScrollBlocker()` in an environment initializer).
  */
 export const provideOverlayScrollBlocker = /* @__PURE__ */ toProvideFn(OVERLAY_SCROLL_BLOCKER_DEF);

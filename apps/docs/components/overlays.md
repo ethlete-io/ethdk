@@ -15,7 +15,7 @@ lifecycle callbacks.
 
 ## Setup
 
-Call `provideOverlay()` once at bootstrap - it registers the scroll blocker that locks body scroll while overlays are open:
+Call `provideOverlay()` once at bootstrap - it registers the scroll blocker that locks page scroll while modal overlays are open, in the window each one is mounted in (a same-origin pop-up included):
 
 ```ts
 import { provideOverlay } from '@ethlete/components';

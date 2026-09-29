@@ -110,4 +110,55 @@ describe('overlay scroll blocker', () => {
 
     expect(isLocked()).toBe(false);
   });
+
+  describe('in a pop-up window', () => {
+    let frame: HTMLIFrameElement;
+    let popupDocument: Document;
+    let trigger: HTMLButtonElement;
+
+    beforeEach(() => {
+      frame = document.createElement('iframe');
+      document.body.appendChild(frame);
+
+      const contentDocument = frame.contentDocument;
+
+      if (!contentDocument) throw new Error('iframe without a document');
+
+      popupDocument = contentDocument;
+      vi.spyOn(popupDocument.documentElement, 'scrollHeight', 'get').mockReturnValue(2000);
+      trigger = popupDocument.createElement('button');
+      popupDocument.body.appendChild(trigger);
+    });
+
+    afterEach(() => {
+      openedRef?.close();
+      openedRef = null;
+      TestBed.tick();
+      frame.remove();
+    });
+
+    const isPopupLocked = () => popupDocument.documentElement.style.position === 'fixed';
+
+    it('locks the window the modal overlay is mounted in, not the main page', () => {
+      setup();
+      open({ mode: 'modal', origin: trigger });
+
+      expect(isPopupLocked()).toBe(true);
+      expect(isLocked()).toBe(false);
+    });
+
+    it('unlocks that window again on close', async () => {
+      setup();
+      const overlayRef = open({ mode: 'modal', origin: trigger });
+
+      expect(isPopupLocked()).toBe(true);
+
+      overlayRef.close();
+      openedRef = null;
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      TestBed.tick();
+
+      expect(isPopupLocked()).toBe(false);
+    });
+  });
 });
