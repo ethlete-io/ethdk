@@ -18,6 +18,7 @@ const ISSUES: FakeJiraIssue[] = [
 ];
 
 const PX_PER_MINUTE = 80 / 60;
+const PIECE_GAP_PX = 2;
 
 const at = (minutes: number) => new Date(new Date(`${E2E_DAY_KEY}T09:00:00.000Z`).getTime() + minutes * 60_000);
 
@@ -103,6 +104,7 @@ const drawnPieces = async (page: Page) => {
     (await pieces.all()).map(async (piece) => ({
       title: (await piece.getAttribute('title')) ?? '',
       box: await boxOf(piece),
+      text: await piece.innerText(),
       clipPath: await piece.evaluate((element) => getComputedStyle(element).clipPath),
     })),
   );
@@ -116,6 +118,7 @@ const expectFullWidthInTurn = async (page: Page) => {
   for (const piece of drawn) {
     expect(piece.box.width).toBeGreaterThan(laneBox.width - 2);
     expect(piece.clipPath).toBe('none');
+    expect(piece.text).toContain('XYZ-4200');
   }
 
   const byTop = drawn.map((piece) => piece.box).sort((a, b) => a.y - b.y);
@@ -123,7 +126,7 @@ const expectFullWidthInTurn = async (page: Page) => {
   byTop.slice(1).forEach((box, index) => {
     const above = byTop[index];
 
-    expect(box.y).toBeGreaterThanOrEqual((above?.y ?? 0) + (above?.height ?? 0) - 1);
+    expect(box.y).toBeGreaterThanOrEqual((above?.y ?? 0) + (above?.height ?? 0) + PIECE_GAP_PX - 1);
   });
 };
 
@@ -140,7 +143,9 @@ test.describe('parallel sessions on one ticket, prompted in turn', () => {
     await expectFullWidthInTurn(page);
 
     for (const title of titles) {
-      const height = drawn.filter((piece) => piece.title === title).reduce((sum, piece) => sum + piece.box.height, 0);
+      const height = drawn
+        .filter((piece) => piece.title === title)
+        .reduce((sum, piece) => sum + piece.box.height + PIECE_GAP_PX, 0);
 
       expect(height).toBeCloseTo(minutesOf(title) * PX_PER_MINUTE, 0);
     }
@@ -170,13 +175,13 @@ test.describe('parallel sessions on one ticket, prompted in turn', () => {
   });
 });
 
-test.describe('parallel sessions on one ticket that book more than the clock holds', () => {
-  test('still take turns in the lane at full width', async ({ page }) => {
+test.describe('parallel sessions on one ticket that each round up past the clock', () => {
+  test('book the clock once and take turns in the lane at full width', async ({ page }) => {
     await seedDay(page, { prompts: [0, 20, 40], end: 60 });
 
     const { titles } = await drawnPieces(page);
 
-    expect(titles.reduce((sum, title) => sum + minutesOf(title), 0)).toBeGreaterThan(60);
+    expect(titles.reduce((sum, title) => sum + minutesOf(title), 0)).toBeLessThanOrEqual(60);
     await expectFullWidthInTurn(page);
   });
 });

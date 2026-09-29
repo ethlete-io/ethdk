@@ -87,8 +87,6 @@ export type LaneBlock = {
   key: string;
   /** The window this piece of a sibling row covers, or null for a block that draws its whole row. */
   piece: TimeWindow | null;
-  /** Whether this block carries the row's label. Of a row's pieces, only the tallest does. */
-  label: boolean;
   inlineOffset: number;
   inlineSize: number;
   segments: LaneSegment[];
@@ -131,7 +129,6 @@ type Timed = {
   end: number;
   column: number;
   piece: TimeWindow | null;
-  label: boolean;
 };
 
 type Sibling = { block: SchedulerTimeGridBlock<TimelineEntry>; row: ReviewedRow };
@@ -144,7 +141,6 @@ const wholeOf = (block: SchedulerTimeGridBlock<TimelineEntry>): Timed => ({
   end: block.node.appointment.end.getTime(),
   column: 0,
   piece: null,
-  label: true,
 });
 
 /**
@@ -278,10 +274,6 @@ const piecesOf = (group: readonly Sibling[]): Timed[] => {
       else runs.push({ ...slot });
     }
 
-    const tallest = runs.reduce<(typeof runs)[number] | undefined>(
-      (best, run) => (!best || run.to - run.from > best.to - best.from ? run : best),
-      undefined,
-    );
     const { block } = sibling;
     const appointmentStart = block.node.appointment.start.getTime();
 
@@ -295,7 +287,6 @@ const piecesOf = (group: readonly Sibling[]): Timed[] => {
       end: run.to,
       column: 0,
       piece: { from: new Date(run.from), to: new Date(run.to) },
-      label: run === tallest,
     }));
   });
 };
@@ -363,7 +354,6 @@ const placeOf = (entry: Timed, lane: readonly Timed[]): LaneBlock => {
     block: entry.block,
     key: entry.piece ? `${entry.block.node.appointment.id}@${entry.start}` : entry.block.node.appointment.id,
     piece: entry.piece,
-    label: entry.label,
     inlineOffset,
     inlineSize,
     segments,

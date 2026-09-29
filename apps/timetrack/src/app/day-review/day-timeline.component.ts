@@ -139,6 +139,7 @@ const DEFAULT_DRAFT_MS = 4 * SNAP_MS;
 /** Where a press on a block lands: on one of its ends, or on the body that moves the whole of it. */
 const EDGE_FRACTION = 0.25;
 const MAX_EDGE_PX = 12;
+const PIECE_GAP_PX = 2;
 
 type Marking = {
   ids: ReadonlySet<string>;
@@ -323,7 +324,9 @@ type RowDrag = {
                       [style.--tt-cut-at]="cutPercentOf(laid)"
                       [etProvideColor]="laid.block.node.appointment.colorToken ?? 'neutral'"
                       [style.top.%]="laid.block.offset"
-                      [style.height.%]="laid.block.span"
+                      [style.height]="
+                        laid.piece ? 'calc(' + laid.block.span + '% - ' + PIECE_GAP_PX + 'px)' : laid.block.span + '%'
+                      "
                       [style.left.%]="laid.inlineOffset"
                       [style.width.%]="laid.inlineSize"
                       [style.clipPath]="laid.clipPath"
@@ -419,7 +422,7 @@ type RowDrag = {
                         ></span>
                       }
 
-                      @if (laid.label && labelled(laid.block.span)) {
+                      @if (labelled(laid.block.span)) {
                         <span class="block truncate">
                           {{ LABEL_OF(laid.block.node.appointment) }}
                           @if (UNBOOKED_OF(laid.block.node.appointment); as unbooked) {
@@ -427,10 +430,7 @@ type RowDrag = {
                           }
                         </span>
                       }
-                      @if (
-                        laid.label && detailed(laid.block.span) && descriptionOf(laid.block.node.appointment);
-                        as description
-                      ) {
+                      @if (detailed(laid.block.span) && descriptionOf(laid.block.node.appointment); as description) {
                         <span class="block truncate text-et-surface-muted">{{ description }}</span>
                       }
                     </div>
@@ -819,6 +819,7 @@ export class DayTimelineComponent {
   protected readonly STRIP_ROW_REM = STRIP_ROW_REM;
   protected readonly EDGE_PERCENT = EDGE_FRACTION * 100;
   protected readonly MAX_EDGE_PX = MAX_EDGE_PX;
+  protected readonly PIECE_GAP_PX = PIECE_GAP_PX;
   protected readonly HOURS = Array.from({ length: 25 }, (_, hour) => hour);
   protected readonly COUNT_DESCENDANTS = countDescendants;
   protected readonly LABEL_OF = appointmentLabel;
