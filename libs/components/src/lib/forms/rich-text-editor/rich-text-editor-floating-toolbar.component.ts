@@ -41,7 +41,7 @@ const provideFloatingToolbarIcons = () =>
   hostDirectives: [ProvideColorDirective, AutoSurfaceDirective],
   host: {
     class: 'et-rte-floating-toolbar',
-    role: 'toolbar',
+    role: 'group',
     '[attr.aria-label]': 'labels().selectionToolbar',
     // keep the caret/selection in the editor when the user clicks a button
     '(mousedown)': '$event.preventDefault()',

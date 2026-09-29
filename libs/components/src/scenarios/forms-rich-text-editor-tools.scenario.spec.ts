@@ -556,7 +556,7 @@ describe('forms rich-text-editor tool scenarios', () => {
 
     const toolbar = query('et-rich-text-editor-floating-toolbar');
 
-    expect(toolbar.getAttribute('role')).toBe('toolbar');
+    expect(toolbar.getAttribute('role')).toBe('group');
     expect(toolbar.getAttribute('aria-label')).toBe('Selection formatting');
     expect(Array.from(toolbar.querySelectorAll('button')).map((b) => b.getAttribute('aria-label'))).toEqual([
       'Bold',
