@@ -326,21 +326,6 @@ export class Dummy {
       expect(result).not.toContain('RouterStateService');
     });
 
-    it('should leave an aliased RouterStateService import untouched', async () => {
-      const input = `import { inject } from '@angular/core';
-import { RouterStateService as Aliased } from '@ethlete/core';
-
-export class Dummy {
-  private _service = inject(Aliased);
-  value = this._service.route$;
-}`;
-
-      tree.write('test.ts', input);
-      await migrateRouterStateService(tree);
-
-      expect(tree.read('test.ts', 'utf-8')).toBe(input);
-    });
-
     it('should not touch the name inside a template comment', async () => {
       tree.write(
         'test.ts',
@@ -814,6 +799,155 @@ export class MyComponent {
       await migrateRouterStateService(tree);
 
       expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+    });
+  });
+
+  describe('per-class migration', () => {
+    it('should migrate two classes that inject the service under different field names', async () => {
+      const input = `import { RouterStateService } from '@ethlete/core';
+
+export class First {
+  private _rs = inject(RouterStateService);
+
+  log() {
+    console.log(this._rs.queryParams);
+  }
+}
+
+export class Second {
+  private router = inject(RouterStateService);
+
+  log() {
+    console.log(this.router.pathParams);
+  }
+}`;
+
+      const expected = `import { injectPathParams, injectQueryParams } from '@ethlete/core';
+
+export class First {
+  private queryParams = injectQueryParams();
+
+  log() {
+    console.log(this.queryParams());
+  }
+}
+
+export class Second {
+  private pathParams = injectPathParams();
+
+  log() {
+    console.log(this.pathParams());
+  }
+}`;
+
+      tree.write('test.ts', input);
+      await migrateRouterStateService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+    });
+
+    it('should migrate two components in one file', async () => {
+      const input = `import { Component } from '@angular/core';
+import { RouterStateService } from '@ethlete/core';
+
+@Component({ selector: 'app-first', template: '' })
+export class FirstComponent {
+  private _routerStateService = inject(RouterStateService);
+
+  route$ = this._routerStateService.route$;
+}
+
+@Component({ selector: 'app-second', template: '' })
+export class SecondComponent {
+  private _routerStateService = inject(RouterStateService);
+
+  log() {
+    console.log(this._routerStateService.queryParams);
+  }
+}`;
+
+      const expected = `import { toObservable } from '@angular/core/rxjs-interop';
+import { Component } from '@angular/core';
+import { injectQueryParams, injectRoute } from '@ethlete/core';
+
+@Component({ selector: 'app-first', template: '' })
+export class FirstComponent {
+
+  route$ = toObservable(injectRoute());
+}
+
+@Component({ selector: 'app-second', template: '' })
+export class SecondComponent {
+  private queryParams = injectQueryParams();
+
+  log() {
+    console.log(this.queryParams());
+  }
+}`;
+
+      tree.write('test.ts', input);
+      await migrateRouterStateService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+    });
+
+    it('should leave a class that does not inject the service untouched', async () => {
+      const other = `export class Other {
+  private _rs = inject(OtherService);
+
+  log() {
+    console.log(this._rs.queryParams);
+  }
+}`;
+
+      const input = `import { RouterStateService } from '@ethlete/core';
+
+export class First {
+  private _rs = inject(RouterStateService);
+
+  log() {
+    console.log(this._rs.queryParams);
+  }
+}
+
+${other}`;
+
+      tree.write('test.ts', input);
+      await migrateRouterStateService(tree);
+
+      const output = tree.read('test.ts', 'utf-8')!;
+      expect(output).toContain(other);
+      expect(normalizeCode(output)).toContain(`export class First {
+  private queryParams = injectQueryParams();
+
+  log() {
+    console.log(this.queryParams());
+  }
+}`);
+    });
+
+    it('should migrate an aliased import', async () => {
+      const input = `import { RouterStateService as Rss } from '@ethlete/core';
+
+export class MyComponent {
+  private _router = inject(Rss);
+
+  route$ = this._router.route$;
+}`;
+
+      const expected = `import { toObservable } from '@angular/core/rxjs-interop';
+import { injectRoute } from '@ethlete/core';
+
+export class MyComponent {
+
+  route$ = toObservable(injectRoute());
+}`;
+
+      tree.write('test.ts', input);
+      const report = await migrateRouterStateService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(report.review).toEqual([]);
     });
   });
 });

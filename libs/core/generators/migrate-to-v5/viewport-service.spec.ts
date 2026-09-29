@@ -1029,21 +1029,6 @@ export class Dummy {
       expect(result).not.toContain('ViewportService');
     });
 
-    it('should leave an aliased ViewportService import untouched', async () => {
-      const input = `import { inject } from '@angular/core';
-import { ViewportService as Aliased } from '@ethlete/core';
-
-export class Dummy {
-  private _service = inject(Aliased);
-  value = this._service.isXs;
-}`;
-
-      tree.write('test.ts', input);
-      await migrateViewportService(tree);
-
-      expect(tree.read('test.ts', 'utf-8')).toBe(input);
-    });
-
     it('should not touch the name inside a template comment', async () => {
       tree.write(
         'test.ts',
@@ -2037,7 +2022,12 @@ export class RescheduleRoundDialogComponent implements OnInit {
 
   protected readonly isMdUp = injectObserveBreakpoint({ min: 'md' });
 
-  constructor(@Inject(OVERLAY_DATA) public data: RescheduleRoundOverlayData | null, private _competitionStageFacade: CompetitionStageFacade, private _notificationService: NotificationService, private _competitionDataService: CompetitionDataService) {}
+  constructor(
+    @Inject(OVERLAY_DATA) public data: RescheduleRoundOverlayData | null,
+    private _competitionStageFacade: CompetitionStageFacade,
+    private _notificationService: NotificationService,
+    private _competitionDataService: CompetitionDataService,
+  ) {}
 
   ngOnInit(): void {
     this.competitionData$ = this._competitionDataService.competitionData$;
@@ -2152,6 +2142,167 @@ export class StreamBannerComponent implements OnInit {
 
       expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
       expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('per-class migration', () => {
+    it('should migrate two classes that inject the service under different field names', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class First {
+  private _v = inject(ViewportService);
+
+  get small() {
+    return this._v.isXs;
+  }
+}
+
+class Second {
+  private viewport = inject(ViewportService);
+
+  get large() {
+    return this.viewport.isLg;
+  }
+}`;
+
+      const expected = `import { injectIsLg, injectIsXs } from '@ethlete/core';
+
+class First {
+  private isXs = injectIsXs();
+
+  get small() {
+    return this.isXs();
+  }
+}
+
+class Second {
+  private isLg = injectIsLg();
+
+  get large() {
+    return this.isLg();
+  }
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+    });
+
+    it('should migrate two components in one file with their own templates', async () => {
+      const input = `import { Component } from '@angular/core';
+import { ViewportService } from '@ethlete/core';
+
+@Component({
+  selector: 'app-first',
+  template: \`{{ isLg }}\`,
+})
+export class FirstComponent {
+  private _viewportService = inject(ViewportService);
+
+  isLg = this._viewportService.isLg;
+}
+
+@Component({
+  selector: 'app-second',
+  template: \`{{ isXs }} {{ isLg }}\`,
+})
+export class SecondComponent {
+  private _viewportService = inject(ViewportService);
+
+  isLg = false;
+  isXs = this._viewportService.isXs;
+}`;
+
+      const expected = `import { Component } from '@angular/core';
+import { injectIsLg, injectIsXs } from '@ethlete/core';
+
+@Component({
+  selector: 'app-first',
+  template: \`{{ isLg() }}\`,
+})
+export class FirstComponent {
+
+  isLg = injectIsLg();
+}
+
+@Component({
+  selector: 'app-second',
+  template: \`{{ isXs() }} {{ isLg }}\`,
+})
+export class SecondComponent {
+
+  isLg = false;
+  isXs = injectIsXs();
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+    });
+
+    it('should leave a class that does not inject the service untouched', async () => {
+      const other = `class Other {
+  private _v = inject(OtherService);
+
+  get large() {
+    return this._v.isLg;
+  }
+}`;
+
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class First {
+  private _v = inject(ViewportService);
+
+  get large() {
+    return this._v.isLg;
+  }
+}
+
+${other}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      const output = tree.read('test.ts', 'utf-8')!;
+      expect(output).toContain(other);
+      expect(normalizeCode(output)).toContain(`class First {
+  private isLg = injectIsLg();
+
+  get large() {
+    return this.isLg();
+  }
+}`);
+    });
+
+    it('should migrate an aliased import', async () => {
+      const input = `import { ViewportService as Vs } from '@ethlete/core';
+
+class Dummy {
+  private viewport = inject(Vs);
+
+  get small() {
+    return this.viewport.isXs;
+  }
+}`;
+
+      const expected = `import { injectIsXs } from '@ethlete/core';
+
+class Dummy {
+  private isXs = injectIsXs();
+
+  get small() {
+    return this.isXs();
+  }
+}`;
+
+      tree.write('test.ts', input);
+      const report = await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(report.review).toEqual([]);
     });
   });
 });
