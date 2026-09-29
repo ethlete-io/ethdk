@@ -1,4 +1,4 @@
-import { htmlToMarkdown, isSafeLinkUrl, MARKDOWN_VERBATIM_ATTR, markdownToHtml } from '../index';
+import { htmlToMarkdown, isSafeLinkUrl, isSafeUrl, MARKDOWN_VERBATIM_ATTR, markdownToHtml } from '../index';
 import { useScenario } from './harness';
 
 const roundTrip = (html: string) => markdownToHtml(htmlToMarkdown(html));
@@ -147,5 +147,17 @@ describe('markdown scenarios', () => {
     }
 
     expect(markdownToHtml('[docs](https://a.dev)')).toBe('<p><a href="https://a.dev">docs</a></p>');
+  });
+
+  it('refuses image sources that can run script and keeps real images', () => {
+    scenario();
+
+    for (const src of ['javascript:alert(1)', ' JaVa\tScript:alert(1)', 'vbscript:x', 'data:text/html,<b>x</b>']) {
+      expect(isSafeUrl(src)).toBe(false);
+    }
+
+    for (const src of ['https://a.dev/i.png', '/i.png', 'data:image/png;base64,AAAA']) {
+      expect(isSafeUrl(src)).toBe(true);
+    }
   });
 });
