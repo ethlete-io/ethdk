@@ -1,5 +1,14 @@
 # @ethlete/cdk
 
+## 5.0.0-next.36
+
+### Patch Changes
+
+- `etIcon` reports an icon named after an `Object.prototype` member (e.g. `constructor`) as not found instead of throwing a `TypeError`, and the not-found error prints the icon name.
+- `<et-pagination>` reads the current url from `DOCUMENT` instead of `window`, so it no longer throws under SSR; `paginate()` accepts a `currentUrl` option for use outside a browser.
+- Query button: the success/failure reset timer is cleared on destroy and no longer calls `window` directly.
+- The swiss `new-bracket` escapes `swissColors` values before writing them into the SVG, so a color string can no longer inject markup.
+
 ## 5.0.0-next.35
 
 ### Patch Changes

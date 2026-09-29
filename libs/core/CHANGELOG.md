@@ -1,5 +1,33 @@
 # @ethlete/core
 
+## 5.0.0-next.61
+
+### Minor Changes
+
+- Breaking: `injectAppUpdates().check()` is now `check$()` and `fetchDeployedBuildFingerprint()` is now `fetchDeployedBuildFingerprint$()`; both return cold Observables instead of Promises.
+- Markdown: `htmlToMarkdown` now backslash-escapes literal text (except code, rich-text editor tokens and `data-markdown-verbatim` spans) and drops links with unsafe URL schemes, which the rich-text editor's link tools also refuse.
+- Markdown: `markdownToHtml` takes a `verbatim` pattern whose matches render as plain text. The rich-text editor and viewer pass their token codec's new `markdownPattern`, so `{{field:__x__}}` no longer loses its chip on reload.
+- Rich text editor: an image upload that resolves to an unsafe URL reports `upload-failed`; core exports `isSafeUrl`.
+
+### Patch Changes
+
+- The `provideAppUpdates` check no longer logs CSP `style-src` violations under a nonce policy. It reads the entry scripts from the fetched HTML text instead of parsing it with `DOMParser`.
+- An anchored overlay with `autoResize` now flips to the roomier side when its content grows after it opened, instead of staying squeezed on its first side.
+- Drag gestures now also suppress text selection in Safari and WebKitGTK, which ignore the unprefixed `user-select`.
+- `migrate-to-v5` takes a `projects`/`include` scope, migrates every usage it used to skip, and prints what to review by hand. `tailwind-4-color-theme` resolves imported spreads or warns.
+- The `migrate-to-v5` generator no longer rewrites `.foo$` when it migrates `.foo` from `ViewportService` or `RouterStateService`.
+- `fromNextFrame()` now cancels its animation frames on unsubscribe, so an animated lifecycle destroyed mid-transition (e.g. an open menu when its page goes away) leaves no frame pending; `nextFrame()` returns a cancel function.
+- Fix a service-worker notification that the user dismissed natively keeping its click handler. Handlers of notifications no longer shown are now dropped when the next service-worker notification is shown.
+- Overlay runtime: a component that throws during `mount` no longer leaves its host element, its overlay root or its injectors behind.
+- Internal cleanup from the core lib scan; no behaviour change. Exported API no longer carries `@internal` tags.
+- `scrollToElement` with the `nearest` origin now scrolls an element that starts exactly at a container edge into view.
+- `applyStructuredDataBinding` escapes `<` in its JSON-LD, so a value holding `</script>` or `<!--` no longer corrupts or breaks the script in SSR output.
+- The `migrate-to-v5` generator now migrates `ViewportService` and `RouterStateService` per class, leaves classes that do not inject them untouched, and handles aliased imports.
+- The `migrate-to-v5` generator now renames `ProvideThemeDirective` to `ProvideColorDirective` in files that import it from `@ethlete/theming`. Before, it left the old name, and the cdk migration then imported that old name from `@ethlete/core`.
+- `markdownToHtml` now renders a link with a scheme the link editor refuses (`file:`, `intent:`, `ftp:`, ...) as its text.
+- The rich text editor keeps an image whose URL holds parentheses or spaces an image after a save and reload. `htmlToMarkdown` escapes brackets and backslashes in image alt text, so the alt text comes back exactly as written.
+- `getScrollItemTarget` no longer rounds a half-visible item up to fully visible, so element-mode paging in a scrollable lands on that item instead of skipping it.
+
 ## 5.0.0-next.60
 
 ### Minor Changes

@@ -1,5 +1,328 @@
 # Changelog
 
+## 1.0.0-next.64
+
+### Major Changes
+
+- Breaking: remove `YoutubePlayerSlotDirective` and `YOUTUBE_PLAYER_SLOT_TOKEN`; use `YoutubePlayerSlotComponent` or `createStreamPlayerSlot`. `et update` runs a migration that drops the directive and marks the other uses.
+- Time picker: a 24h ring replaces the column overlay. The column directives, their methods, `setActiveSide` (use `activeSide.set`), the per-unit label inputs and label keys, and the option and column size tokens are removed. See the time picker guide.
+
+### Minor Changes
+
+- Breaking: `anchoredOverlayStrategy` no longer bundles floating-ui's `size`, `arrow` and `hide` middleware; call `enableAnchoredOverlayPositionExtras()` from `@ethlete/core` when you use `autoResize`, `autoHide`, `autoCloseIfReferenceHidden` or `arrow` with it.
+- `createAnchoredPanelController` now renders the surface template itself, with `close` and an optional `context` option in its context, so a custom control no longer binds the internal template host's inputs.
+- Add `--et-anchored-panel-shadow`, one shadow token read by every anchored panel (menu, tooltip, toggletip, select, cascader, date and colour pickers, rich-text editor toolbar and popups).
+- Avatar: an `initials` input renders explicit initials over the ones derived from `name`, and `--et-avatar-background` / `--et-avatar-color` override the fill and text colour per avatar.
+- `et-bar-chart` thins dense category labels (`categoryLabelSpacing`) and projects `etBarChartTitle`, `etBarChartNote` and `etBarChartEmpty` content.
+- Bracket pick card: a locked, disabled or readonly card now names the picked side in visually hidden text, worded by the new `pickCardPicked` label.
+- Breaking (migrations included): bracket cards are opt-in (`...BRACKET_DEFAULT_CARDS`), `BRACKET_IMPORTS` holds only `BracketComponent`, a `normal` Ethlete round is the final only when last, and `generateTournamentModeFormEthleteRounds` is renamed `generateTournamentModeFromEthleteRounds`; match names speak the localized `live`, `finished` and `versus`.
+- Fix the cascader in RTL, for readonly `[(open)]`, for sync data-source throws and for typed-over search text; only the committed node is `aria-selected`, and the error fallback is the new `CASCADER_LABELS.error`.
+- Removing a focused chip now moves focus to the next chip, the previous one, or the tag input / select instead of dropping it to the page.
+- Add `commitColor()` to `[etColorInput]`, so a custom picker surface can commit a color as the normalized hex value.
+- Add the `dateBounds` and `dateTimeBounds` signal-forms validators for a single `et-date-input` / `et-date-time-input` value, the counterparts of `dateRangeBounds` and `dateTimeRangeBounds`.
+- Dropzone: images above the new `maxPreviewFileSize` input (default 10 MB) get no preview, and the rejection and upload-failure messages are now `DROPZONE_LABELS` entries.
+- Breaking: `NAV_TAB_IMPORTS` no longer holds `OverlayNavTabLinkComponent`. Import `OVERLAY_NAV_TAB_IMPORTS` for `et-overlay-nav-tab-link`; the migration adds it where a template uses one. Router nav tabs bundle about 2 kB gz less.
+- Table: `TableFeatureHost` gains `state` and `restoreState`, and `TableStatePersistenceDirective.table` is typed as `TableFeatureHost`.
+- Theming: new `--et-shadow-color-rgb`, `--et-scrim-color-rgb` and `--et-on-scrim-color-rgb` tokens recolour the tooltip, toggletip, card and table shadows, the overlay backdrop and the dropzone preview bar. Defaults are unchanged.
+- Center the scheduler's edit surface for an appointment picked from the "+N more" menu or selected programmatically instead of anchoring it to the focused element; an overlay `origin: null` now opens without an origin.
+- `et-counter` takes its announcements from the new `counterRemaining`, `counterLimitReached` and `counterOverLimit` form field labels, and keeps its live region in place so the first announcement is read.
+- The range validators read their messages from `DATE_TIME_LABELS` (`rangeOrder`, `rangeMin`, `rangeMax`) and format the bound in the `DATE_LOCALE`; `--et-date-picker-panel-shadow` sets the picker panel's shadow.
+- `[etDropzone]` now has `exportAs: 'etDropzone'`, and an upload config's `createUploadHandle` is public, so `createFileDropzoneEntry` can be used outside the directive.
+- `FormFieldDirective` exposes `controlSuffixTemplate`, so a custom field chrome built on `etFormField` can render a control's own affordances, for example the clear button and the picker trigger. The forms guide now tells apps to remove a schema-`hidden` field with `@if`.
+- Remove `GridItemRef` and `GridComponentRegistration.configComponent`. The grid never rendered a config component or provided a `GridItemRef`. Build item editing in the app instead, for example from a custom `actionsComponent` that opens your own overlay.
+- The line chart takes `categoryHeader` and `dateHeader` inputs, so the table view's default x column header can be translated.
+- Match card: a different match taking a card's place no longer emits `scoreChange` or rolls its digits (new `subject` input on `et-match-score`), and an invalid start time draws no kick-off instead of throwing.
+- `et-nav-tab-link` now ignores query params when deciding whether it is active, so a link with `[queryParams]` stays selected on its route whatever the URL's query; pass `[routerLinkActiveOptions]` to restore the router's `subset` matching.
+- A sheet whose drag-to-dismiss a close guard vetoes settles back instead of staying at the drag offset. `DragToDismissContext.overlayRef` now needs `beforeClosed`, so update custom mocks.
+- Add optional `additionalDialCodes` to `PhoneCountry`. Phone input now detects the Dominican Republic, Puerto Rico, Jamaica, Canada, Kazakhstan, Guernsey, Jersey, Isle of Man, Åland and Vatican City by the longest matching prefix.
+- `et-progress-step` names a complete, success, warning or error state in visually hidden text, localizable with the new `provideProgressStepLabels`.
+- A range slider thumb limited by an off-grid `minDistance` snaps away from its sibling, its ARIA bounds stay inside the track, and `--et-slider-thumb-shadow` sets the thumb shadow.
+- Rating and multi-language editor: the rating's value text (`FORM_FIELD_LABELS.ratingEmpty` / `ratingValue`) and the language switcher's status dots (`RICH_TEXT_EDITOR_LABELS.languageFilled` / `languageEmpty`) are now localizable.
+- A headless `[etRichTextEditor]` can now attach its own `contenteditable` with `attachEditable()`, and renders outside value changes into it.
+- Cancel a rich text image upload when its editor is destroyed, also for a tool provided on a route. The upload function receives `{ signal }` as a second argument, and tool definitions gain an `editorDestroyed(editor)` hook.
+- The rich text editor link editor shows an error and disables its confirm button for a URL scheme it refuses (new `linkUrlUnsupported` label), and links a bare domain such as `www.example.com` over `https://`.
+- The rich text editor's link `prompt()` text and the token popup's fallback error text now come from the new `linkPrompt` and `loadFailed` labels.
+- Multi-language rich text editor: `labels`, `hidden` and `aria-label` / `aria-labelledby` reach the embedded editor, and the language trigger's name says when languages are missing (new `languageMissing` label).
+- Add `createSchedulerRegistry()`, the registration list `<et-scheduler>` and `<et-scheduler-edit-surface>` use for badge adornments, toolbar actions, edit fields and appointment actions. A custom `SCHEDULER_FEATURE_HOST` or `SCHEDULER_EDIT_SURFACE_HOST` can use it instead of re-implementing register, filter by `enabled` and sort by `order`.
+- `SELECT_LABELS` gains an `error` label, the fallback text the select query adapters show for a failure without a message.
+- Add `selectedCount` to a selection list's `selection` state, so a summary no longer counts the checked options by hand.
+- Standings pick: the drawn order now follows a `participants` change after a move, and a keyboard move announces the new position through the new `pickMoved` label.
+- Export `STREAM_ERROR_CODES` so apps can match stream errors by code, like the other domains.
+- The Facebook stream player loads its SDK in the app locale instead of `de_DE`, and `provideStreamConfig` takes a new `facebookSdkVersion` field (default `v26.0`, previously a hard-coded `v3.2`).
+- Stream: the consent, error, loading and PiP placeholder styles sit in `@layer components`, so utilities can override them, and the stream barrels list only template-usable components and directives.
+- Remove the unused `pipWindow.minHeight` and `pipWindow.maxHeight` options from `provideStreamPip`. They were never read; the PiP window height follows from its width and aspect ratio.
+- Stream slots can now play, pause, mute and seek the player, and report what each player supports.
+- `etTableKeyboardNav` reaches the selection and expander cells with the arrow keys and takes their controls and the error mark out of the Tab order. `activeCell()` and `focusCell()` column indexes now count the utility columns.
+- Resize table columns from the keyboard: the `etTableResize` grip is now a focusable `role="separator"` with its width as `aria-valuenow`; arrow keys step it (Shift for larger steps), Home/End jump to its bounds. New `resizeColumn` label.
+- Toggletip: the trigger no longer writes its own `data-pressed-variant`, so an icon button shows its own pressed variant. `ToggletipTriggerDirective.pressedVariant()` is removed.
+- Add `provideTreeLabels` to localize the tree's loading, empty and retry text app-wide; the `loadingLabel`, `emptyLabel` and `retryLabel` inputs still override it per tree.
+
+### Patch Changes
+
+- Accordion: arrow-key and `Home`/`End` navigation ignores `Ctrl`/`Alt`/`Meta` combinations, so page shortcuts like `Ctrl+End` keep working.
+- Accordion group arrow keys, Home/End and `autoCloseOthers` follow DOM order after a keyed `@for` re-orders the accordions.
+- The default accordion header separates its label and hint with a space, so the trigger's accessible name reads "Returns 30 days" instead of "Returns30 days".
+- Warn in dev mode when `openAll()` is called on an accordion group with `autoCloseOthers` on, where it does nothing.
+- A Tab or Shift+Tab past the edge of a select, cascader, color or date picker panel now moves focus to the tab stop after or before the field.
+- Give the `+N` overflow avatar of `et-avatar-group` an accessible name ("3 more"), localizable with the new `provideAvatarLabels`.
+- Bracket: an Escape another component already handled no longer drops the journey pin, and a swiss participant is crossed out only at the loss that eliminates them.
+- Name bracket pick buttons once instead of repeating the emblem alt, and treat a finished but unpublished Ethlete match as completed in the bracket model.
+- When the breadcrumb collapses while a crumb that moves into the overflow has focus, focus now lands on the overflow trigger instead of falling to the page body.
+- `et-breadcrumb-outlet` warns in dev mode when anything other than an `etBreadcrumbSeparator` template is projected into it, since nothing else renders.
+- Breadcrumb: dev mode warns when two `et-breadcrumb-outlet`s render one manager, and `etBreadcrumbSegment`'s `order` accepts a static attribute like `order="0"`.
+- Drop the last module-scope pins from the components import floor (2,870 B gz) and add a `forbidImpureReads` option to `no-impure-top-level-provider`.
+- A disabled or loading `etButton` now also blocks middle clicks, so a disabled link no longer opens in a new tab. The window-control close colours are overridable through `--et-window-control-button-close-*` tokens.
+- Forward `emitAriaPressed` on `et-button` and `et-window-control-button`, as `et-icon-button` already does.
+- Calendar: keyboard moves stop at `min`/`max` instead of paging into months past them, and the today marker moves to the new day when focus enters the calendar or the page becomes visible again.
+- The calendar's leaving header label is now `inert` during its leave animation, so assistive tech announces only the new month.
+- A calendar range strategy result whose start or end is disabled (before `min`, after `max`, or filtered out) is now rejected: the pick selects nothing and the hover preview bands nothing.
+- Calendar: `ArrowLeft` and `ArrowRight` swap in a right-to-left grid, so focus moves toward the cell the key points at.
+- Carousel: a touch tap no longer pauses autoplay as a hover until the next tap elsewhere.
+- Carousel: an `<et-carousel>` without `autoplay` no longer injects the autoplay stylesheet.
+- Carousel: a looping carousel in RTL now starts on its first real slide and crosses the seam seamlessly.
+- A carousel without `etCarouselItem` slides (`ET3801`) now reports to the `ErrorHandler` instead of throwing out of change detection.
+- Carousel: the play toggle drops its contradicting `aria-pressed` and is `aria-disabled` under reduced motion, and `<et-carousel>` without autoplay no longer runs an IntersectionObserver.
+- Carousel: previous and next in a right-to-left carousel now align the slide to its logical start, so a looping carousel wraps across the seam onto a real slide.
+- Carousel: a `goTo` the scroll cannot reach, such as the first slide of a centred track without `loop`, no longer freezes the active slide and dots.
+- Cascader: the `cascaderFromQuery` example now marks search leaves with `isLeaf` and lists `toNodes` before `args`, so the node value type is inferred.
+- Cascader now resolves the current value's path again when `dataSource` changes, so a data source that arrives after the value labels it, and a swapped source no longer leaves the old tree's path on the trigger.
+- Cascader search results: arrow keys, Home and End now skip disabled results, so a disabled first result no longer traps focus in the search input.
+- Cascader keyboard navigation (arrows, Home, End and the initial focus) now skips disabled nodes instead of getting stuck on them.
+- Cascader now marks itself touched when its panel closes through an outside pointer or a focus leave, so a required cascader shows its error after the user clicks away.
+- Line and sankey chart data errors (`ET5120`, `ET5160`-`ET5163`) now go to the `ErrorHandler` and the chart draws nothing instead of throwing.
+- Charts: line charts no longer crash on a long series or an invalid `timeZone` (now `ET5121`), bar and pie charts show `NaN` as 0, and sankey charts drop duplicate node ids.
+- Holding Space on a checkbox or switch toggles it once instead of flipping it on every key repeat.
+- Stop a chip from moving focus to a sibling on a later destroy when the consumer did not remove it after `remove` fired.
+- Chip: `et-chip`'s remove button is described by the chip's label, so a row of remove buttons is told apart.
+- Links and buttons inside an `et-choice-field` card (label, description, trailing slot) are clickable again, and a link in an `et-label` no longer toggles its control.
+- An `et-description` inside `et-choice-field` now renders under the label and describes the control: its id joins the control's `aria-describedby` next to the hint, warning or error.
+- Color input rejects HSL values with malformed numbers such as `hsl(0 1.2.3% 50%)` instead of emitting `#NaNNaNNaN`.
+- Color input: `rgb()` and `hsl()` reject mixed comma and space separators. Swatches get a positional accessible name, and the `hexColor`, `rgbColor` and `colorContrast` messages come from new `ColorInputLabels` entries (`swatch`, `invalidColor`, `contrastTooLow`).
+- `et-command-palette` ignores Enter and arrow keys during an IME composition, and each group now points `aria-labelledby` at its own heading when labels use non-Latin scripts or differ only in punctuation.
+- Command palette: the shortcut ignores a held chord's auto-repeat and a chord a focused widget already prevented, `closeOnRun` accepts attribute strings, and fuzzy highlights stay aligned after characters like "İ".
+- Destroying a select, date picker, cascader or colour input while its panel is open no longer logs `NG0953` for writes to the destroyed control.
+- The bracket's default continue card now reads "1 winner advances" instead of "1 winner advance".
+- Breadcrumb: an `etBreadcrumbSeparator` projected into `<et-breadcrumb-outlet>` now replaces the chevron of the composed trail instead of being ignored and reporting ET3700.
+- The calendar's outgoing month grid is now `inert` during the month-change animation, so focus and assistive technology can no longer reach it.
+- Cascader nodes and flat-search results now show the shared focus ring when focused with the keyboard, instead of only a background tint.
+- An `et-color-input` without a label or `aria-label` names its picker button "Choose a color" again, and `etColorPickerTrigger` gains a `fallbackAriaLabel` input.
+- Command palette: with an empty query, commands of equal `priority` now keep their registration order, as documented, instead of being sorted by label length and name.
+- Masked input: a currency mask with `allowNegative` now keeps a typed leading minus, so a negative amount can be typed from the start.
+- `createDefaultDropzoneArgs` now returns `{ body: FormData }`, so a custom `createArgs` can reuse its `body` without a cast.
+- A dropzone `delete` request no longer gets cancelled when the dropzone is destroyed, so removing a file and navigating away right after still deletes it server-side.
+- Destroying a dropzone while a `delete` request is in flight no longer throws `NG0205` or warns `NG0953`.
+- Module-scope constants no longer read other constants at load time, so every `@ethlete/components` import is about 0.7 kB gz smaller.
+- Typing into a native `<input etNumberInput>` or `<input etPasswordInput>` now updates its value, as it already did for `<input etInput>`.
+- `etIcon` reports an icon named after an `Object.prototype` member (e.g. `constructor`) as not found instead of throwing a `TypeError`, and `provideIcons` no longer rejects such names as duplicates.
+- Correct the `LoaderLabels.loading` docs: the spinner never uses it and has no accessible name unless given an `aria-label`.
+- `et-progress-step` now sets `aria-current="step"` on the step in the `current` state.
+- The connector between horizontal `et-progress-steps` markers now sits on the markers' centre line instead of 1px below it.
+- `et-rating` caps `aria-valuenow` and the filled stars at a lowered `max`, and flips ArrowLeft/ArrowRight in RTL.
+- `et-rating` in a right-to-left layout now fills its stars from the right and rates the star under the pointer, instead of the mirrored one.
+- `et-rich-text-editor` no longer stores the Enter after the first line typed into an empty editor as a soft line break.
+- Filter overlay: while a field's debounce is pending, the submit button reads as loading instead of showing the count for the previous value.
+- Scrollable: the edge masks observe the track's children only once it overflows, so a track that fits runs no child IntersectionObserver.
+- Selection list: `Enter` no longer selects an option or toggles the select-all control, and is no longer swallowed, so a radio or checkbox group can submit its form. `Space` selects, per the ARIA patterns.
+- Selection list: a multiple group's value lists the checked options in display order, so an option inserted in the middle of a list no longer lands at the end of the array.
+- Scheduler: a touch swipe that starts on an empty time slot no longer opens the create surface for that slot after navigating.
+- Theming: every remaining component shadow (menu, select, cascader, color and date picker, rich-text editor, fab, slider, notification, scheduler) now reads `--et-shadow-color-rgb`. Defaults are unchanged.
+- `et-slider` reads static `min` / `max` attributes (`min="0" max="10"`) as numbers instead of breaking on the strings.
+- Tabs: arrow keys now move from the trigger that holds focus rather than the selected one, so a trigger focused by an aborted pointer press navigates from itself.
+- A table's numeric `rowKey` now stays a number in selection, expansion and saved state, so a consumer's `new Set([3])` selects the row instead of matching nothing.
+- A long press on a reorderable table header no longer starts text selection in iOS Safari.
+- `etTableReorder` now works on touch: a long press on a header starts the reorder, while a quick swipe still scrolls the table.
+- `et-tag-input` no longer turns the Enter that confirms an IME composition into a tag.
+- Stop iOS Safari from selecting text on sliders, OTP input, tab bar, scheduler drags and other controls that turn text selection off.
+- Show the shared focus ring on a keyboard-focused `et-window-control-button`, which used to suppress its outline.
+- Announce "Copied" to screen readers after `etCopyButton` copies, localizable with the new `provideCopyButtonLabels`.
+- The date picker sheet no longer overflows a screen narrower than 332px; its calendar and time ring shrink to fit.
+- The date, date range and duration fields no longer commit on the Enter that ends an IME composition, and range presets re-resolve "today" each time the picker opens.
+- A date or time field holding unparseable text now shows its `parseErrorMessage` instead of the `required` error the cleared value triggers.
+- With a `timeZone`, `et-date-time-input` and `et-date-time-range-input` now read an offsetless value, typed text and picked times as the zone's wall clock even in the runtime's skipped hour, and read `minDate`/`maxDate` on the zone's calendar.
+- Dropzone now emits `deleteFail` when the delete request rejects or its `createArgs` throws, instead of leaving an unhandled rejection and firing neither delete output.
+- Fix the dropzone for `accept: '*/*'`, for files dropped on a disabled or readonly dropzone, for a drag-over state stuck after disabling, for an entry left invisible by a refused removal, and for `[object Object]` names.
+- A readonly dropzone keeps its drop area focusable (`aria-disabled` instead of `disabled`), so `focus()` and Tab reach it, including with a single readonly file; activating it still opens nothing.
+- A read-only multi-mode dropzone with files is reachable again: its file list becomes the Tab stop and `focus()` target, labelled by the field's label.
+- `et-duration-input` no longer rewrites its value on a focus and blur that leaves the text unchanged, and reads unit-suffixed entry like `1h30m` by its units.
+- Cover floating-action anchor teardown with a spec.
+- Keep the content below an `etFloatingActionAnchor` in place when its trigger starts floating. The anchor now holds the trigger's in-flow size while the trigger is pinned, instead of collapsing and pulling the page up.
+- An `etFloatingActionAnchor` no longer holds a trigger's floating size when the trigger was never measured in the flow, for example when it first renders with the anchor already scrolled past.
+- A floating action's anchor, trigger, scope or top element unregisters when it is destroyed, so a removed scope no longer keeps the trigger hidden.
+- Every form and menu selection control now emits `touch` when the user leaves it, so a bound signal form field's `touched()` and touched-gated errors follow blur.
+- Forms: number and password inputs sync each keystroke once, support-region ids no longer use the control `name`, `et-label` and `et-description` styles sit in the components layer, and a label click on a switch shows no focus ring.
+- Form field: the missing-control and missing-label errors (ET2200/ET2201) now name the nested field, e.g. an `et-rating` wrapped in `et-form-field`, and say to project the label into it.
+- The form-field control type set no longer stays in bundles that do not use a form field.
+- The full-screen dialog falls back to its reduced animation when its origin is detached or has no size, instead of shrinking into the corner.
+- Grid: drag auto-scroll on the page measures the viewport edge without the scrollbar.
+- Grid: a drag or resize also suppresses text selection in Safari, through `-webkit-user-select`.
+- A grid given duplicate item ids (`ET1902`) now reports to the `ErrorHandler` and renders no items instead of throwing out of change detection.
+- `etGrid` no longer hangs on a non-numeric span attribute or a breakpoint with no columns; they fall back to a single cell or column.
+- Grid: items keep their registration across input changes, end a drag or resize when destroyed, no longer swap past other items, and get a localizable `GRID_LABELS.item` name plus `aria-keyshortcuts`.
+- `etGrid` keeps an item the host adds back while its leave animation is still running, instead of removing it.
+- `et-grid` keeps an item's data change when the same `items` update adds or removes an item, and no longer throws `ET1904` for a projected item unrendered while it leaves.
+- A bare native `input[etInput]`, `input[etNumberInput]`, `input[etPasswordInput]` or `textarea[etTextarea]` now tracks focus and marks itself touched on blur, so signal-form errors show.
+- A headless `textarea[etTextarea]` or `input[etOtpInput]` now writes what the user types into its `value`, and the OTP input also tracks focus and touched.
+- Select, cascader and colour input: a static `aria-label` on a headless trigger is no longer erased when the control has none of its own.
+- An unknown icon name or invalid icon SVG now goes to the `ErrorHandler` and renders an empty icon instead of throwing out of change detection.
+- Icon: a nested `provideIconOverrides()` merges with the overrides above it, and the centring `display: flex` moved from inline host styles to a layered `.et-icon` rule a class can override.
+- `provideIcons()` now inherits the icons registered above it, so a consumer icon projected into an SDK component that registers its own icons no longer throws `ICON_NOT_FOUND`.
+- `et-input` and `[etInputMask]` no longer write the native field while an IME composition is active, so a composition that starts right after a keystroke is no longer torn down.
+- `[etInputMask]` turns off autocorrect, autocapitalize and spellcheck on the native input, so mobile keyboards no longer rewrite the masked text.
+- `[etInputMask]` sets `inputmode="numeric"` for a digit-only pattern such as `00-00-0000`, so mobile devices open the number keyboard.
+- `parseKbdKeys`, `et-kbd` and `matchesKbdChord` read a `+` standing alone in a key's place as the plus key, so `mod++` is `mod+plus` instead of `mod`.
+- `et-line-chart` leaves out an invalid `Date` instead of throwing during render.
+- The spinner and progress bar now default their `aria-label` to the loader `loading` label, and the brand loader accent follows the theme primary colour.
+- Loaders: a non-numeric `value` on `et-spinner` or `et-progress-bar` renders as 0 instead of `aria-valuenow="NaN"`, and the spinner's geometry signals are no longer public.
+- Markdown: `htmlToMarkdown` now backslash-escapes literal text (except code, rich-text editor tokens and `data-markdown-verbatim` spans) and drops links with unsafe URL schemes, which the rich-text editor's link tools also refuse.
+- Markdown: `markdownToHtml` takes a `verbatim` pattern whose matches render as plain text. The rich-text editor and viewer pass their token codec's new `markdownPattern`, so `{{field:__x__}}` no longer loses its chip on reload.
+- Masked input: a composition in another input inside the mask host no longer stops the mask from repainting.
+- Masked `et-input`: an IME composition is no longer broken mid-typing, and keystrokes no longer write the unmasked text to the model before the mask applies.
+- Masked input: setting the mask to `null` repaints the element with the model value, so the next keystroke no longer writes the mask literals into the model.
+- Masonry: the first measured container width no longer counts as a resize, and a DOM change inside a card no longer re-sorts every item.
+- `normalizeEthleteParticipant` now returns a non-null `NormalizedMatchParticipant` when called with a non-null participant.
+- Keep `et-match-participant`'s emblem initial out of its `textContent`, so a standings row or card reads as the participant's name alone.
+- Keep a match score's flash for its full length, announce a seed through hidden text, skip blank participant names, take a whole emoji for the emblem mark, and key the standings legend by zone position.
+- Menu: picking in a multiple selection group no longer drops checked values whose rows a search filter hides.
+- Menu: a multiple selection group writes its value in option order again, not in the order the items were picked.
+- Menu: in RTL, submenus and context menus open to the left, and `ArrowLeft` opens a submenu while `ArrowRight` closes it.
+- Menu: the arrow keys on the trigger now move focus into an already open panel, and repeating a typeahead letter cycles through the items starting with it.
+- Internal cleanup in tooltip, toggletip, banner, progress steps and several JSDoc blocks; no behaviour change.
+- Skeleton text and query error lists no longer log duplicate `@for` keys, `et-picture` splits srcset candidates on any whitespace, and a zero virtual-scroll row estimate no longer yields a `NaN` range.
+- Multi-language rich text editor: a `null` translation counts as missing instead of throwing, and each language's content status is announced as visually hidden text.
+- An empty or duplicate `languages` list (`ET2600`/`ET2601`) on the multi-language rich text editor now reports to the `ErrorHandler` and renders no editor instead of throwing.
+- Notification: a dismissed notification leaves `notifications()` once its leave animation ends, instead of staying until the whole stack is empty.
+- Notification: the stack's FLIP skips under `prefers-reduced-motion` and no longer lets an older resize reset a newer one, and a `promise()` no longer settles a toast a later `open()` with its id replaced.
+- A partial `defaultDuration` in `provideNotificationManager` keeps the default duration of every status it leaves out.
+- Drop `role="log"`, `aria-live` and `aria-relevant` from `et-notification-stack`. Each notification already is its own `status` or `alert` live region, so screen readers no longer announce it twice.
+- A fine (Alt) scrub on the `et-number-input` stepper no longer writes float noise such as `0.7000000000000001` into the value.
+- A `masked` OTP input keeps its native input at `type="password"`, and headless `<input etOtpInput>` now writes its value, input hints and ARIA state onto the input.
+- `[etOverlay]` keeps `open` and `aria-expanded` true when a close guard vetoes `hide()` or an `open = false` write.
+- `[etOverlay]` now closes its overlay when its host is destroyed, instead of leaving the pane open.
+- Overlay: document that the `[etOverlay]` positioning inputs apply at the next open.
+- Full-screen dialog: the origin no longer blinks out on a close before the first frame, no longer shows under another overlay's clone, keeps its own transition after a quick reopen, and the animation measures the layout viewport.
+- An overlay opened without `strategies` now anchors to an `Event` origin's clickable target, as the strategies path already did, instead of centering.
+- The `syncUrl` JSDoc on `provideOverlayRouter` no longer claims deep-link support. The query param key is per instance, so a URL cannot restore an overlay route.
+- The overlay router resolves a relative route from `/` without a double slash, a `syncUrl` overlay leaves no history entries behind on close, and a guard-vetoed browser Back puts the URL param back for routed and query-param overlays.
+- A browser Back or Forward that an overlay router navigation guard vetoes now steps the browser back to the entry it left instead of pushing a new one, so the forward history survives.
+- The overlay scroll blocker now locks the window a modal overlay is mounted in, so a modal opened in a same-origin pop-up locks that pop-up instead of the main page.
+- Overlay: a failed mount releases the strategy controller, the full-screen clone animates in the overlay's own document, arrow/sheet pane detection stops at a shallow depth, and dividers and the drag handle follow `--et-surface-border-solid`.
+- Overlay: `etOverlayTrigger` adds `aria-haspopup` and `aria-disabled`, a routed overlay's title hands `aria-labelledby` to the next page's title, and a destroyed query-param opener closes its overlay even when a guard vetoes.
+- Pagination: focus follows the clicked page when the page window shifts, `etPaginationSeo` clamps its links to `totalPages`, and the jump input's border fallback is visible on light surfaces.
+- `et-pagination` moves focus to the current page when the control a keyboard user activated disables itself at the first or last page, instead of dropping it to `<body>`.
+- `et-password-input` shows its Caps Lock hint as a native `title` instead of a tooltip, so a password field no longer bundles the tooltip and overlay runtime (about 16 kB gz).
+- A bare `input[etPasswordInput]` now clears `capsLockOn` on blur, as `et-password-input` already did.
+- `etPasswordInput` and `etTextarea` read a `null` bound value as empty instead of throwing.
+- Phone input accepts upper-case country codes (with a dev-mode warning for unknown ones), lists the NANP countries, Guernsey, Jersey, Isle of Man, Åland and Vatican City, and keeps the leading `0` for Côte d'Ivoire and Congo.
+- Phone input: the country list builds one `Intl.DisplayNames` and one `Intl.Collator` per locale instead of one per country and comparison.
+- The phone input's country trigger is now named by `countryLabel`, the active country and its dial code (`Select country Germany +49`) instead of `countryLabel` alone.
+- `et-picture` leaves `blob:` and protocol-relative URLs alone when a `baseUrl` is set, keeps its loaded state when `sources` is replaced by an equal array, and picks up an image that finished loading before hydration.
+- `et-picture` now warns about `sources` without a `defaultSrc` once per instance instead of on every state change.
+- Stream PiP window: destroying the window mid-drag or mid-resize no longer snaps it and writes a transition onto the removed element.
+- The PiP window no longer opens partly off-screen on a narrow viewport; it keeps its viewport padding when the corner offset does not fit.
+- Expose `et-progress-steps` as a list, with each step a list item.
+- Move the "(Code: 404)" suffix of the query error fallback message into a new `messageWithCode` label so it can be localized.
+- Overlay openers: a query-param overlay's model write now replaces the history entry, so one browser Back closes the overlay after tab switches inside it.
+- The three range inputs share one injected copy of their field-row stylesheet.
+- The rating reads its text direction once per pointer move instead of once per icon.
+- `et-rating` handles PageUp and PageDown, moving ten steps at a time like the slider.
+- Rating: the fill transition now respects `prefers-reduced-motion`, jumping to the new value instead of animating.
+- Rich-text editor: an image file dropped into the editor now uploads at the drop point instead of at the last caret position.
+- `et-rich-text-editor` now marks its signal form field as touched on blur, so a field's `touched()` and blur-based rules see the editor.
+- `et-rich-text-editor-token-palette` no longer shows a "null" tooltip on chips whose item has no `description`.
+- Rich text editor: block commands treat a loose first line as one block, list toggling keeps nested items valid, cross-block marks and links stay per block, and quotes no longer autoformat.
+- Rich text editor: the floating selection toolbar is a labelled group instead of an unreachable `toolbar`.
+- Rich text editor: a pending mark inside a link no longer splits the link, attributed native `<div>` lines serialize as paragraphs, token triggers follow a newly attached editable, and `aria-activedescendant` is set only while options are listed.
+- The rich text editor keeps an image whose URL holds parentheses or spaces an image after a save and reload. `htmlToMarkdown` escapes brackets and backslashes in image alt text, so the alt text comes back exactly as written.
+- Rich text editor: an image upload that resolves to an unsafe URL reports `upload-failed`; core exports `isSafeUrl`.
+- The rich text editor image tool reports an upload that completes without a URL as failed, releases each upload once it settles, and keeps one image popover per editor when provided on a route.
+- The rich text editor tracks the soft keyboard inset only while touch input is present, so desktop pages no longer measure on every scroll.
+- Fix the rich text editor reordering items on outdent, pasting multiple blocks after the caret's block instead of at the caret, and showing the previous search's results in `createRichTextEditorTriggerWithQuery`.
+- Rich text editor table arrow keys leave a cell only from its first or last line, ignore modified keys, and never land the caret in an image, table or list element.
+- Rich text editor: fix the image popover on a second image or a `%` in its URL, table insertion between blocks, and table arrow keys in RTL and into the last cell.
+- Rich text editor: debounce Promise trigger sources, survive a throwing one, keep chips in a readonly editor, resolve each token label once, leave tokens in link URLs and code alone, and paste plain text into a code block.
+- Rich text viewer: a viewer that is destroyed or re-rendered no longer keeps waiting on a token resolver that never settles.
+- Scheduler: after an appointment drag, keyboard activation, the month "+N more" menu and clicks with dragging turned off open appointments again.
+- Scheduler edit surface: a field that renders nothing no longer leaves a gap between the fields around it.
+- Scheduler: a click on an appointment `selectAppointment()` highlighted now opens its edit surface, and a surface closing while the next one opens no longer clears that one's selection.
+- Scheduler `ET4505` and `ET4506` now go to the `ErrorHandler` instead of throwing; invalid business hours shade nothing until fixed.
+- An appointment that ends at 00:00 no longer shows on the next day in the scheduler's time grid, month and agenda views.
+- Scheduler: the today highlight moves to the new day when focus enters the scheduler or the page becomes visible again, and month stepping keeps the day of month instead of drifting at month ends.
+- Scheduler: hide "Add sub-appointment" and "Delete" for an unsaved appointment, pack zero-length appointments beside their neighbours, keep one time grid across week and day, and add `--et-scheduler-appointment-drag-shadow`.
+- Scheduler: a month-view drag or drag-to-create in a right-to-left layout lands on the day under the pointer.
+- Scheduler: resize handles appear only where a block shows the appointment's real start or end, so resizing a multi-day appointment no longer cuts it at a day boundary.
+- Scheduler: on a daylight-saving day the time grid places blocks, the now line, drafted ranges and pointer times by wall-clock time, matching the hour rows.
+- Make the scrollable's previous/next buttons scroll when the masks are off, which fixes the dead overflow buttons in the tab group and nav tabs.
+- Scrollable: the navigation dots shift the right way in RTL and no longer stick after a click that scrolls nothing, turning masks off stops the partial-item state, the footer CSS ships once, and the gap read is SSR-safe.
+- Scrollable: the previous/next buttons page in the right direction in a right-to-left horizontal track with `scrollMode="container"` and no snap.
+- A scrollbar bound to a non-element `for` (`ET4900`) now reports to the `ErrorHandler` instead of throwing out of change detection.
+- The segmented button group no longer holds on to the background of a destroyed checked button.
+- Select: "Select all" now orders the selection by option order instead of appending the rest after what was already picked.
+- Windowed data-driven select rows announce their position in the full list, and a trigger that contains the search input no longer carries a name ARIA forbids on it.
+- Select: a paste with a `-` custom value separator no longer splits on the characters between the separators.
+- A closed multi select no longer toggles an option or emits `pickOption` when a letter is typed on its trigger.
+- Select: an option with its own `id` keeps it as the `aria-activedescendant` target, so screen readers announce the active option.
+- A select option without a `label` follows its projected text when it changes, and a select, cascader or picker opened without a registered surface resets its open state.
+- Select: a search now hides an option group whose options it filters out, also in apps without Tailwind's preflight.
+- The select's option, virtual option and select-all rows share one stylesheet, injected once instead of once per row component.
+- Stop `selectOptionsFromQuery` from passing a failed search to Angular's `ErrorHandler`, since the select already shows it in its error row.
+- Select: `[etSelectOptions]` follows a swapped bundle, so `loading`, `error` and `hasMore` read the bundle that `setQuery` and `loadMore` now go to.
+- Select now marks itself touched when its panel closes through an outside pointer or a focus leave, so a required select shows its error after the user clicks away.
+- A select trigger keeps its `aria-labelledby` while the panel's search is registered, so a searchable select (and the phone input's country trigger) keeps its full name with the panel open.
+- Select: typeahead cycles through options on a repeated character, and a space inside a typeahead run is part of the query instead of committing.
+- Selection lists keep a tab stop when the checked or first option is disabled, and arrow keys, Home/End and typeahead follow DOM order after an `@for` inserts or re-orders options.
+- `SelectionOptionDirective.labelId` is a plain string instead of a signal. Read it as `option.labelId`, not `option.labelId()`.
+- Skeleton: drop `aria-busy` from the `role="status"` container, so screen readers announce the loading text.
+- `et-slider` and `et-range-slider` treat a `step` of zero or below as `1` instead of rendering and committing `NaN`.
+- Standings: each form result is now named in visually hidden text instead of an `aria-label` on an empty span, so screen readers announce it.
+- `et-standings` draws a letter (W / D / L) inside each form result, so results no longer differ by opacity alone. Localize it with the new `formResultShort` label.
+- The hidden zone and highlighted-row notes in an `et-standings` position cell are now separated by a space, so a screen reader no longer runs them together.
+- Stream: embed URLs encode provider ids, TikTok commands target the TikTok origin, a YouTube player error shows the error card (`ET1609`), Twitch rejects invalid channel names, and every platform parses numeric `width`/`height` alike.
+- Render the stream consent and error overlay headings as paragraphs instead of `<h3>`, so they no longer break the page's heading outline.
+- The PiP grid toggle now reads its label from `STREAM_LABELS` (`pipGridView` / `pipSingleView`), and a pip that enters while the PiP window closes keeps the window visible.
+- A stream player whose slot is destroyed while it animates back out of PiP now moves to the next slot for its id, or is destroyed when none is left.
+- Stream PiP: overlapping snaps, mode transitions, new-pip animations and resizes no longer cut each other short, a cancelled exit still settles, a non-positive aspect ratio falls back to 16:9, and the SSR body stays free of the player container.
+- Stream slots now react to `streamSlotPriority` changes after mount, keep a shared player when one slot rebinds, show their overlays in the slot that holds the player, and tear the player down when consent is revoked.
+- A unitless string `width` or `height` (e.g. `width="480"`) on a Vimeo or Facebook player now means pixels instead of producing an invalid CSS size.
+- The tab bar only handles keys pressed on a tab, so arrow keys, Home and End in an input inside an `et-tab-group` panel work again.
+- Tabs: `ArrowLeft` and `ArrowRight` swap in a right-to-left horizontal tab bar, so focus moves toward the tab the key points at.
+- `rowClick` now ignores clicks on labels, editable text, control-role elements and `aria-haspopup` triggers; a rows source error without text falls back to the table's `error` label; `etTableStatePersistence` outside a table throws ET3501.
+- The table CSV export's formula guard now also escapes array and object values, not only strings.
+- `et-table` treats `[error]="false"` as no error, hands a `rowsSource` error to `errorTemplate`, and drops the virtual-scroll spacers around the error state.
+- Table: the CSV formula guard catches leading whitespace, header controls no longer start a column reorder, reorder leaves no inline transition, drag scroll notices rows loaded after mount, and group headers set `aria-colspan`.
+- Disabling `etTableGroupHeaders` drops the group row's sticky offset, so the column headers no longer stick with a gap above them.
+- `etTableInlineEdit` finds the edited cell again after a sort or column move while its editor is open, so Enter, Tab and Escape keep working and focus returns to the right cell.
+- `etTableKeyboardNav` swaps ArrowLeft and ArrowRight in a right-to-left table, so the arrows move to the visually neighbouring cell.
+- Table: the empty header cell of a utility column such as the row expander is no longer hidden from assistive technology, so the header row matches the body's column count.
+- `etTableReorder` previews, drops and edge-scrolls correctly in a right-to-left table, where the columns used to slide the wrong way and land on the wrong side.
+- Start a column reorder again from a sortable header. Only a press on a control inside the header cell, such as the filter or column-menu button, is left to that control.
+- `etTableResize` widens a column when its grip is dragged toward the inline end in a right-to-left table, instead of narrowing it.
+- Table `restoreState()` keeps columns the restored state does not name, so a stored setup no longer hides a newly declared column.
+- `et-table` renders `role="table"` / `role="cell"` and switches to `role="grid"` / `role="gridcell"` only while `etTableKeyboardNav` is enabled.
+- `etTableStatePersistence` restores the stored setup when it is enabled later or moves to another key, instead of overwriting it with the current state.
+- `deserializeTableState()` and `restoreState()` reject a column state with a malformed `sort`, `filterValues`, `width` or `sortPriority`, so a hand-edited link no longer breaks the table.
+- `etTableStickyColumns` re-measures its pinned offsets after a render in which the rows changed, so a content-sized pinned column no longer leaves its neighbours at stale offsets.
+- Tabs: a selected tab that turns disabled now hands the selection to its nearest enabled neighbour, and dev mode warns (`ET2004`) when a sibling `et-nav-tabs-outlet` sits next to more than one `et-nav-tabs`.
+- Tag input: a separator typed mid-text commits the text before it, and a paste with a `-` separator no longer splits on the characters between the separators.
+- A headless `etInput`, `etNumberInput`, `etPasswordInput` or `etTextarea` on its native element now renders its `name`, `aria-invalid` and the form field's `aria-describedby` onto the element, keeping an `aria-describedby` written on it.
+- A headless `etInput`, `etNumberInput`, `etPasswordInput` or `etTextarea` on its native element now renders a bound `[placeholder]`, `[disabled]`, `[readonly]` and `[required]` onto the element, and `etNumberInput` its `[min]`, `[max]` and `[step]`.
+- A headless `etInput`, `etNumberInput`, `etPasswordInput` or `etTextarea` on its native element now renders its bound value, and a bound `[type]` on `input[etInput]` reaches the element.
+- `et-time-input` and `et-time-range-input` no longer move a time in the skipped hour one hour later on the day the runtime's clocks change.
+- `et-time-picker` treats a `min` later than `max` as a window that wraps past midnight, and with seconds hidden it checks bounds and commits picks at second 0 without milliseconds.
+- Time picker: "now" is re-read when focus enters the picker, so one that stays mounted past midnight anchors and filters against the current day.
+- A time picker ring drag now jumps across a blocked span to the pointer once it reaches open time again, instead of stopping at the edge, and never passes the other end of a range.
+- The time picker ring shows a 12h time with seconds at a smaller size, so it no longer covers the 6 AM and 6 PM labels.
+- The timeline rail now runs into the next default dot instead of stopping short of it.
+- A template toggletip without an accessible name (`ET1500`) now reports to the `ErrorHandler` and stays closed instead of throwing.
+- Toolbar: arrow navigation skips hidden controls and treats an editable `[contenteditable]` as a control.
+- `etToolbar` no longer takes the arrow keys, Home or End from a text input, `select` or `textarea` inside it, or keys pressed with a modifier.
+- Treat elements with a `tabindex` other than `-1` as `etToolbar` controls, so a custom focusable element joins the toolbar's single tab stop.
+- Create the tooltip's hidden description element when the tooltip first has text, not on construction, so tooltips without text add no node to `document.body`.
+- `etTooltip` no longer creates its hidden description node during server rendering, so hydration leaves no duplicate ids in the body.
+- Stop tooltip and toggletip panels from clipping their shadow to a square patch behind the rounded corners.
+- Tree: a collapsed failed branch reloads when expanded again, a stale response from an abandoned load no longer overwrites a retry, the failed root row retries on `Space`, and `visibleRows` indexes levels for the default `compareWith`.
+- Updated dependencies:
+  - @ethlete/bracket@1.0.0-next.2
+
 ## 1.0.0-next.63
 
 ### Minor Changes
