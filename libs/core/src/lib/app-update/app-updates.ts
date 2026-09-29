@@ -12,11 +12,11 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { NavigationError, Router } from '@angular/router';
-import { EMPTY, filter, from, switchMap, timer } from 'rxjs';
+import { defer, EMPTY, filter, map, Observable, switchMap, tap, timer } from 'rxjs';
 import { injectIsDocumentVisible } from '../signals';
 import { injectUnsavedChangesCoordinator } from '../unsaved-changes';
 import { createSessionMemory, defineRootProvider, defineStaticRootProvider, toInjectFn, toProvideFn } from '../utils';
-import { fetchDeployedBuildFingerprint, readBuildFingerprint } from './build-fingerprint';
+import { fetchDeployedBuildFingerprint$, readBuildFingerprint } from './build-fingerprint';
 import { isStaleBuildError } from './stale-build-error';
 
 const RELOADED_AT_KEY = 'et-app-update-reloaded-at';
@@ -42,7 +42,7 @@ export type AppUpdatesConfig = {
    * pauses while the tab is hidden and resumes the moment it is looked at again, so a tab left open
    * overnight asks once on return rather than thousands of times in the dark.
    *
-   * `0` polls not at all, leaving {@link AppUpdates.check} to the app.
+   * `0` polls not at all, leaving {@link AppUpdates.check$} to the app.
    * @default 300_000
    */
   pollInterval: number;
@@ -91,8 +91,8 @@ export type AppUpdates = {
   /** Whether reloading right now would throw away unsaved changes - the reason an update can't just reload. */
   wouldDiscardChanges: Signal<boolean>;
 
-  /** Checks for a new deploy now, regardless of the poll schedule. */
-  check: () => Promise<void>;
+  /** Checks for a new deploy now, regardless of the poll schedule. Cold: nothing is fetched until it is subscribed. */
+  check$: () => Observable<void>;
 
   /**
    * Reloads the page, releasing the unsaved-changes tab locks first so the browser does not ask its
@@ -140,23 +140,21 @@ const APP_UPDATES_DEF = /* @__PURE__ */ defineRootProvider(
 
     let lastCheckAt = 0;
 
-    const check = async () => {
-      lastCheckAt = Date.now();
+    const check$ = () =>
+      defer(() => {
+        lastCheckAt = Date.now();
 
-      const deployed = await fetchDeployedBuildFingerprint(config.entryUrl);
+        return fetchDeployedBuildFingerprint$(config.entryUrl);
+      }).pipe(
+        tap((deployed) => {
+          if (deployed) {
+            _deployedBuild.set(deployed);
+          }
+        }),
+        map(() => undefined),
+      );
 
-      if (deployed) {
-        _deployedBuild.set(deployed);
-      }
-    };
-
-    const checkIfDue = async () => {
-      if (Date.now() - lastCheckAt < config.minCheckInterval) {
-        return;
-      }
-
-      await check();
-    };
+    const checkIfDue$ = () => defer(() => (Date.now() - lastCheckAt < config.minCheckInterval ? EMPTY : check$()));
 
     const reload = () => {
       // The reload is deliberate and the user has already answered for it, so release every
@@ -225,7 +223,7 @@ const APP_UPDATES_DEF = /* @__PURE__ */ defineRootProvider(
         toObservable(isDocumentVisible)
           .pipe(
             switchMap((isVisible) => (isVisible ? timer(0, config.pollInterval) : EMPTY)),
-            switchMap(() => from(checkIfDue())),
+            switchMap(() => checkIfDue$()),
             takeUntilDestroyed(destroyRef),
           )
           .subscribe();
@@ -236,7 +234,7 @@ const APP_UPDATES_DEF = /* @__PURE__ */ defineRootProvider(
       isAvailable,
       isRequired: _isRequired.asReadonly(),
       wouldDiscardChanges: coordinator.hasUnsavedChanges,
-      check,
+      check$,
       reload,
     };
   },

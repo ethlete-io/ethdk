@@ -50,13 +50,13 @@ background tab, not stopped, so this is a real difference rather than a micro-op
 const updates = injectAppUpdates();
 ```
 
-| Member                | Type                  | Description                                                         |
-| --------------------- | --------------------- | ------------------------------------------------------------------- |
-| `isAvailable`         | `Signal<boolean>`     | A different build is deployed. This tab still works.                |
-| `isRequired`          | `Signal<boolean>`     | A lazy chunk failed: part of the app is unreachable until a reload. |
-| `wouldDiscardChanges` | `Signal<boolean>`     | Whether reloading now would throw away unsaved changes.             |
-| `check`               | `() => Promise<void>` | Check for a new deploy now, off the poll schedule.                  |
-| `reload`              | `() => void`          | Reload, releasing the unsaved-changes tab locks first.              |
+| Member                | Type                     | Description                                                                    |
+| --------------------- | ------------------------ | ------------------------------------------------------------------------------ |
+| `isAvailable`         | `Signal<boolean>`        | A different build is deployed. This tab still works.                           |
+| `isRequired`          | `Signal<boolean>`        | A lazy chunk failed: part of the app is unreachable until a reload.            |
+| `wouldDiscardChanges` | `Signal<boolean>`        | Whether reloading now would throw away unsaved changes.                        |
+| `check$`              | `() => Observable<void>` | Check for a new deploy now, off the poll schedule. Cold: fetches on subscribe. |
+| `reload`              | `() => void`             | Reload, releasing the unsaved-changes tab locks first.                         |
 
 ## What happens when a chunk fails
 

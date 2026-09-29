@@ -1,6 +1,7 @@
 import { Injector, runInInjectionContext, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
+import { lastValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createUnsavedChangesTracker } from '../unsaved-changes';
 import { AppUpdatesConfig, injectAppUpdates, provideAppUpdates } from './app-updates';
@@ -38,7 +39,16 @@ describe('provideAppUpdates', () => {
 
   const setup = (config?: Partial<AppUpdatesConfig>) => {
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), ...provideAppUpdates({ pollInterval: 0, ...config })],
+      providers: [
+        provideRouter([
+          {
+            path: 'lazy',
+            loadComponent: () =>
+              Promise.reject(new TypeError('Failed to fetch dynamically imported module: /chunk-A1B2C3.js')),
+          },
+        ]),
+        ...provideAppUpdates({ pollInterval: 0, ...config }),
+      ],
     });
     injector = TestBed.inject(Injector);
 
@@ -120,6 +130,16 @@ describe('provideAppUpdates', () => {
       expect(reload).toHaveBeenCalledTimes(1);
     });
 
+    it('reports the build as broken when the router fails to load a lazy route', async () => {
+      const updates = setup({ autoReload: 'never' });
+
+      await TestBed.inject(Router)
+        .navigateByUrl('/lazy')
+        .catch(() => false);
+
+      expect(updates.isRequired()).toBe(true);
+    });
+
     it('ignores an error that is not a chunk failure', () => {
       const updates = setup();
 
@@ -147,7 +167,7 @@ describe('provideAppUpdates', () => {
     });
   });
 
-  describe('check()', () => {
+  describe('check$()', () => {
     const respondWith = (html: string) =>
       vi.stubGlobal(
         'fetch',
@@ -162,7 +182,7 @@ describe('provideAppUpdates', () => {
       const updates = setup();
       respondWith('<script src="/main-AAA.js"></script>');
 
-      await updates.check();
+      await lastValueFrom(updates.check$());
 
       expect(updates.isAvailable()).toBe(false);
 
@@ -177,7 +197,7 @@ describe('provideAppUpdates', () => {
       const updates = setup();
       respondWith('<script src="/main-BBB.js"></script>');
 
-      await updates.check();
+      await lastValueFrom(updates.check$());
 
       expect(updates.isAvailable()).toBe(true);
       expect(updates.isRequired()).toBe(false);
@@ -196,11 +216,94 @@ describe('provideAppUpdates', () => {
         vi.fn(() => Promise.reject(new TypeError('Failed to fetch'))),
       );
 
-      await updates.check();
+      await lastValueFrom(updates.check$());
 
       expect(updates.isAvailable()).toBe(false);
 
       script.remove();
+    });
+
+    it('does not fetch until the returned Observable is subscribed', async () => {
+      const updates = setup();
+      respondWith('<script src="/main-BBB.js"></script>');
+
+      const check$ = updates.check$();
+
+      expect(fetch).not.toHaveBeenCalled();
+
+      await lastValueFrom(check$);
+
+      expect(fetch).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('polling', () => {
+    let isVisible = true;
+
+    const setVisible = (visible: boolean) => {
+      isVisible = visible;
+      document.dispatchEvent(new Event('visibilitychange'));
+      TestBed.tick();
+      vi.advanceTimersByTime(0);
+    };
+
+    beforeEach(() => {
+      isVisible = true;
+      vi.useFakeTimers();
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => (isVisible ? 'visible' : 'hidden'),
+      });
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(() => Promise.resolve(new Response('<script src="/main-AAA.js"></script>'))),
+      );
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      Reflect.deleteProperty(document, 'visibilityState');
+    });
+
+    it('checks on the poll interval while visible and pauses while hidden', () => {
+      setup({ pollInterval: 60_000, minCheckInterval: 30_000 });
+      TestBed.tick();
+      vi.advanceTimersByTime(0);
+
+      expect(fetch).toHaveBeenCalledTimes(1);
+
+      vi.advanceTimersByTime(60_000);
+
+      expect(fetch).toHaveBeenCalledTimes(2);
+
+      setVisible(false);
+      vi.advanceTimersByTime(300_000);
+
+      expect(fetch).toHaveBeenCalledTimes(2);
+
+      setVisible(true);
+
+      expect(fetch).toHaveBeenCalledTimes(3);
+    });
+
+    it('skips a check on return when the last one is within minCheckInterval', () => {
+      setup({ pollInterval: 60_000, minCheckInterval: 30_000 });
+      TestBed.tick();
+      vi.advanceTimersByTime(0);
+
+      expect(fetch).toHaveBeenCalledTimes(1);
+
+      setVisible(false);
+      vi.advanceTimersByTime(10_000);
+      setVisible(true);
+
+      expect(fetch).toHaveBeenCalledTimes(1);
+
+      setVisible(false);
+      vi.advanceTimersByTime(30_000);
+      setVisible(true);
+
+      expect(fetch).toHaveBeenCalledTimes(2);
     });
   });
 });

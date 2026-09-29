@@ -1,5 +1,6 @@
+import { firstValueFrom } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fetchDeployedBuildFingerprint, readBuildFingerprint } from './build-fingerprint';
+import { fetchDeployedBuildFingerprint$, readBuildFingerprint } from './build-fingerprint';
 
 const parse = (html: string) => new DOMParser().parseFromString(html, 'text/html');
 
@@ -36,7 +37,7 @@ describe('readBuildFingerprint', () => {
   });
 });
 
-describe('fetchDeployedBuildFingerprint', () => {
+describe('fetchDeployedBuildFingerprint$', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
@@ -44,7 +45,19 @@ describe('fetchDeployedBuildFingerprint', () => {
   it('reads the fingerprint out of the served document', async () => {
     respondWith('<html><head><script src="/main-BBB.js" type="module"></script></head></html>');
 
-    await expect(fetchDeployedBuildFingerprint('/')).resolves.toBe('/main-BBB.js');
+    await expect(firstValueFrom(fetchDeployedBuildFingerprint$('/'))).resolves.toBe('/main-BBB.js');
+  });
+
+  it('does not fetch until subscribed', async () => {
+    respondWith('<script src="/main-BBB.js"></script>');
+
+    const fingerprint$ = fetchDeployedBuildFingerprint$('/');
+
+    expect(fetch).not.toHaveBeenCalled();
+
+    await firstValueFrom(fingerprint$);
+
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 
   it.each([
@@ -61,6 +74,6 @@ describe('fetchDeployedBuildFingerprint', () => {
   ])('answers null rather than a fingerprint for %s', async (_case, arrange) => {
     arrange();
 
-    await expect(fetchDeployedBuildFingerprint('/')).resolves.toBeNull();
+    await expect(firstValueFrom(fetchDeployedBuildFingerprint$('/'))).resolves.toBeNull();
   });
 });

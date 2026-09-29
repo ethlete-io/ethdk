@@ -39,14 +39,14 @@ describe('app-update scenarios', () => {
     const s = scenario();
     const updates = s.run(() => injectAppUpdates());
 
-    void updates.check();
+    updates.check$().subscribe();
     await s.settle();
 
     expect(updates.isAvailable()).toBe(false);
 
     const widget = appendScript(document.head, '/chat-widget.js');
 
-    void updates.check();
+    updates.check$().subscribe();
     await s.settle();
 
     expect(updates.isAvailable()).toBe(false);
@@ -60,7 +60,7 @@ describe('app-update scenarios', () => {
 
     deployed = indexHtml('/main-BBB.js');
 
-    void updates.check();
+    updates.check$().subscribe();
     await s.settle();
 
     expect(updates.isAvailable()).toBe(true);
