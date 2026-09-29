@@ -83,13 +83,14 @@ Open:
 - Done b2f55fa44: `packLane` in `apps/timetrack/src/app/day-review/lanes.ts` draws a one-ticket overlap group in fixed columns (Tom picked this over one outer band or a collapsed band). e2e `session-columns.spec.ts`.
 - `BehindStretch` for the stretch an unwatched session lost (slice 5).
 - Done e0f482bbc: a second unnamed row with the same stream and start gets `+<piece>` on its id.
-- In progress (2026-09-29, subagent): Tom saw the live lane at 14:10 and called it a mess. Cause: sibling
-  rows were drawn by span (fixed columns, b2f55fa44) but book their observed minutes, so a 15m row filled
-  11:00-13:15, and the greedy pack put two sessions in one column. Tom decided: draw each sibling row only
-  over its own observed stretches, in one full-width column. `cutUnwatched` gives each minute to one
-  session, so the stretches do not overlap and no columns are needed. The sidebar keeps one row per
-  session. Later, separately: the background band that covers 10:00-14:00 becomes a thin marker, and the
-  phone stretch 13:15-14:00 lost its ticket (issueKey missing, description is the branch `next`).
+- Done 45403c8ae: sibling rows no longer sit in columns. `packLane` in `lanes.ts` draws each one as full-width
+  pieces over the minutes it books (`piecesOf`): each 15-minute step of the group goes to the session that
+  held most of it, and each row gets as many steps as it books. Where the rows book more than the clock
+  holds, a row is drawn shorter instead of over another. Sibling rows now carry their own unjoined
+  stretches (`propose`). The row list keeps one row per session. e2e `session-pieces.spec.ts`.
+- Open: the background band that covers 10:00-14:00 on the live day should become a thin marker.
+- Open: the phone stretch 13:15-14:00 on the live day lost its ticket (issueKey missing, description is
+  the branch `next`).
 - Done 68a9e9aae: a Bash `workedIn` directory ends in `/`, so `workPathOf` no longer reads it one level
   too high. On the live 2026-09-29 this joined one ET-772 session to its predecessor (6 pieces to 5).
 - Done 8c0c299af: a lane shows at most 3 parallel rows of one ticket. Where more overlap, `reviewDay`
