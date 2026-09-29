@@ -9,7 +9,7 @@ const { getAngularDecoratorName } = require('./internals/import-resolution');
 /** @typedef {import('estree').Property & TNodeWithRange} TPropertyNode */
 /** @typedef {import('estree').SpreadElement & TNodeWithRange} TSpreadElementNode */
 /** @typedef {import('estree').ObjectExpression & TNodeWithRange & { properties: Array<TPropertyNode | TSpreadElementNode> }} TObjectExpressionNode */
-/** @typedef {{ hasComma: boolean; originalIndex: number; orderIndex: number; property: TPropertyNode; segmentText: string }} TPropertyEntry */
+/** @typedef {{ hasComma: boolean; trailingText: string; originalIndex: number; orderIndex: number; property: TPropertyNode; segmentText: string }} TPropertyEntry */
 
 /** @type {Record<TDecoratorName, TDecoratorConfig>} */
 const DECORATOR_CONFIG = {
@@ -142,14 +142,22 @@ const angularDecoratorPropertyOrder = {
             const segmentEnd = hasComma && tokenAfter ? tokenAfter.range[0] : propertyNode.range[1];
             const segmentText = sourceCode.text.slice(segmentStart, segmentEnd);
 
+            let trailingText = '';
+
             if (hasComma && tokenAfter) {
-              segmentStart = tokenAfter.range[1];
+              const sameLineComments = sourceCode
+                .getCommentsAfter(tokenAfter)
+                .filter((comment) => comment.loc?.start.line === tokenAfter.loc.end.line);
+              const lastComment = sameLineComments[sameLineComments.length - 1];
+              segmentStart = lastComment?.range ? lastComment.range[1] : tokenAfter.range[1];
+              trailingText = sourceCode.text.slice(tokenAfter.range[1], segmentStart);
             } else {
               segmentStart = propertyNode.range[1];
             }
 
             return {
               hasComma,
+              trailingText,
               originalIndex,
               orderIndex,
               property: propertyNode,
@@ -188,10 +196,10 @@ const angularDecoratorPropertyOrder = {
           fix(fixer) {
             const reorderedBody =
               sortedEntries
-                .map(
-                  (entry, index) =>
-                    `${entry.segmentText}${index < sortedEntries.length - 1 || trailingComma ? ',' : ''}`,
-                )
+                .map((entry, index) => {
+                  const needsComma = index < sortedEntries.length - 1 || trailingComma || entry.trailingText !== '';
+                  return `${entry.segmentText}${needsComma ? ',' : ''}${entry.trailingText}`;
+                })
                 .join('') + suffix;
 
             return fixer.replaceTextRange([openingBrace.range[1], closingBrace.range[0]], reorderedBody);

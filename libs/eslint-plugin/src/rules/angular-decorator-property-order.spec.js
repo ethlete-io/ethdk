@@ -195,5 +195,33 @@ class TestComponent {}
       output: `@Component({ selector: 'et-a', standalone: true, template: '' }) class A {}`,
       errors: [{ messageId: 'outOfOrder' }],
     },
+    {
+      code: `@Component({
+  host: {}, // keep with host
+  selector: 'et-test',
+  template: '',
+})
+class A {}`,
+      output: `@Component({
+  selector: 'et-test',
+  template: '',
+  host: {}, // keep with host
+})
+class A {}`,
+      errors: [{ messageId: 'outOfOrder' }],
+    },
+    {
+      code: `@Component({
+  host: {}, // keep with host
+  selector: 'et-test'
+})
+class A {}`,
+      output: `@Component({
+  selector: 'et-test',
+  host: {}, // keep with host
+})
+class A {}`,
+      errors: [{ messageId: 'outOfOrder' }],
+    },
   ],
 });
