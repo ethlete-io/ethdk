@@ -50,8 +50,8 @@ has them). Still open: 22 Medium, 48 Low, ~37 spec-coverage items. Paths are rel
 
 ## import & API bans
 
-- Medium: `no-document-cookie` misses `this.doc.cookie` (injected `DOCUMENT`), `globalThis.document.cookie`, `document['cookie']`, `window.document.cookie`. M
-- Medium: `no-window-location` misses bare `location.href`, `const loc = window.location; loc.href`, destructuring, `href +=`. M
+- Medium: `no-document-cookie` misses `this.doc.cookie` (injected `DOCUMENT`), `globalThis.document.cookie`, `document['cookie']`, `window.document.cookie`. Done in 8f943a33c (injected-DOCUMENT via `inject(DOCUMENT)` members/consts).
+- Medium: `no-window-location` misses bare `location.href`, `const loc = window.location; loc.href`, destructuring, `href +=`. Done in b96cb14a9.
 - Medium: alias escapes — `import { legacyGetUsers as gu }` + `gu.prepare({})`, `import * as q` + `new q.V2QueryClient()`. S
 - Medium: `no-angular-router-api` bindings are file-global (a class whose `router` is `inject(MyThing)`, an unrelated `(router) => router.events` both reported). M
 - Low: `no-cdk-import` note is a lowercase fragment (`no-cdk-import.js:138`, spec `:56`, `rules.md:297`). S
@@ -66,9 +66,9 @@ has them). Still open: 22 Medium, 48 Low, ~37 spec-coverage items. Paths are rel
 
 ## reactive & signals
 
-- Medium: `no-async-await`'s `play` exemption is a bare property-name match (`no-async-await.js:22-31`). S
-- Medium: `no-subscribe-with-body` passes handlers by reference (`subscribe(this.handleNext)`, `{ next: this.handleNext }`, `.bind(this)`). M
-- Medium: `prefer-rxjs-timer` misses `this.win.setTimeout`, `globalThis.setTimeout`. S
+- Medium: `no-async-await`'s `play` exemption is a bare property-name match (`no-async-await.js:22-31`). Done in 608346bb0.
+- Medium: `no-subscribe-with-body` passes handlers by reference (`subscribe(this.handleNext)`, `{ next: this.handleNext }`, `.bind(this)`). Done in 9ce9b2b4c.
+- Medium: `prefer-rxjs-timer` misses `this.win.setTimeout`, `globalThis.setTimeout`. Done in 3d9bbb0e5.
 - Low: comments at `no-readonly-signal.js:80,89,93`; two dividers in `prefer-rxjs-timer.js`. S
 - Low: `no-rxjs-in-effect` doesn't cover `afterRenderEffect` or `linkedSignal`. S
 - Low: `rules.md:149` omits `clear*`/`removeEventListener`; `:144` omits the `play` exemption; `:71` omits that `inject(X).method()` is allowed. S
@@ -81,11 +81,11 @@ has them). Still open: 22 Medium, 48 Low, ~37 spec-coverage items. Paths are rel
 - Medium: `prefer-element-dimensions` reports reads in nested `addEventListener`/`untracked`/`afterNextRender`/`setTimeout` callbacks inside an `effect`. S
 - Medium: `prefer-element-dimensions` ignores the receiver (`this.layout().scrollWidth` reported). M
 - Medium: `prefer-viewport-size` misses stored `this.win = document.defaultView`, `globalThis.innerWidth`, bare `innerWidth`, `window['innerWidth']`. S
-- Medium: `prefer-match-media` reports `BreakpointObserver` twice; misses `mq.addEventListener('change', …)` and bare `matchMedia()`. S
+- Medium: `prefer-match-media` reports `BreakpointObserver` twice; misses `mq.addEventListener('change', …)` and bare `matchMedia()`. Done in 1dd03c288 (change listener is covered by `prefer-rxjs-timer`).
 - Low: `myMock.notTheDefaultView.innerWidth` reported. S
 - Low: shadowed `class MutationObserver` reported. S
 - Low: aliased/subclassed observers missed (`no-native-observers`). S
-- Low: bracket access escapes `no-direct-dom-manipulation` and `no-dom-query`. S
+- Low: bracket access escapes `no-direct-dom-manipulation` and `no-dom-query`. `no-dom-query` done in 9ce021f7b.
 - Low: `isRendererReceiver` is a substring test. S
 - Low: `no-dom-query` has no receiver check (`points.closest(target)`); `innerHTML`, `className`, `textContent`, `Object.assign(el.style, …)` not reported. M
 - Low: `prefer-element-dimensions.js:32` header shows `rect.width` instead of `rect().width`. S
@@ -98,7 +98,7 @@ has them). Still open: 22 Medium, 48 Low, ~37 spec-coverage items. Paths are rel
 
 - Medium: `no-trivial-return-type` self-reference guard matches property names (`return v.disabled` in `const disabled` not reported). S
 - Medium: `enforce-routing-view-naming` doesn't check a default-export `loadComponent`; block-bodied `.then` skips the class-name check. S
-- Medium: `prefer-clone-equal` misses `import * as _`, default `lodash` import, `lodash.clonedeep`, `require('lodash')`. M
+- Medium: `prefer-clone-equal` misses `import * as _`, default `lodash` import, `lodash.clonedeep`, `require('lodash')`. Done in 64e382a80 (`require` aliases not tracked).
 - Low: `no-impure-top-level-provider` passes destructuring wrapped in `satisfies` or `!`. S
 - Low: `enforce-routing-view-naming` reports non-route object literals; substring test lets `items-viewer` pass. S
 - Low: dead `recommendedTs.plugins: {}` (`configs/recommended.js:12`). S
