@@ -103,7 +103,7 @@ export class ProvideColorDirective {
 
     if (!this.themes || !value) return;
 
-    if (isDevMode() && !this.themes.some((theme) => theme.name === value) && value !== null) {
+    if (isDevMode() && !this.themes.some((theme) => theme.name === value)) {
       console.error(`Theme ${value} does not exist. Please make sure to add it to provideColorThemesWithTailwind4()`);
     }
 

@@ -6,7 +6,6 @@ them). Still open: 5 Medium, 22 Low, 18 spec-coverage items.
 ## signals
 
 - Low: narration comments at `recipes/cursor-drag-scroll.ts:80,89,137`; duplicated comment at `element-children.ts:33-34` / `element-scroll-state.ts:77-78`. S
-- Low: `breakpointTransformBase` exported and undocumented (`breakpoint-input.ts:56`). S
 - Low: subscribe with a body at `deferred-loading.ts:61`, `recipes/scroll-restoration.ts:502`; rule still off (`eslint.config.mjs:93`). S
 - Low: undocumented `canScroll` (`cursor-drag-scroll.ts:26`, missing from `signal-utils.md:173`) and `signalElementChildren`'s `mutations` (`element-children.ts:16`). S
 - Spec: no spec/scenario for `animated-block-size.ts`; `element.ts` coercion matrix only covered indirectly. M
@@ -19,11 +18,8 @@ them). Still open: 5 Medium, 22 Low, 18 spec-coverage items.
 
 ## theming, providers
 
-- Low: unreachable `&& value !== null` at `provide-color.directive.ts:106`. S
-- Low: `surface-theming.docs.mdx:193` credits "The context tracker" with the elevation stack. S
-- Low: `as any` at `auto-surface.directive.ts:151`; `settleWatcher` destroyed only once connected (`:141`). S
+- Low: `settleWatcher` destroyed only once connected (`auto-surface.directive.ts`); harmless, it dies with the injector. S
 - Low: `@internal` on cross-package API (`provide-color.directive.ts:34,154,159`, `provide-surface.directive.ts:146,151`); core has no `stripInternal`. M, decision first
-- Low: comments at `auto-surface.directive.ts:34-42,61-76,122-131`. S
 - Spec: no spec for `labels.ts`, `style-manager.ts`, `renderer.ts`, `surface-theme.util.ts`, `color-palette.util.ts`, the color/surface interactive directives, `boundary-element.ts`, `user-consent.ts`. M
 
 ## utils, pipes, directives

@@ -190,7 +190,7 @@ Every token above also has an `-rgb` variant for constructing `rgba()` values ma
 
 ## Elevation nesting
 
-Surfaces can be nested. The context tracker maintains the current elevation stack — a component inside a `dark` (elevation 0) surface can request elevation 1 and automatically receive `dark-elevated` without being explicitly told which surface to use.
+Surfaces can be nested. The surface provider hierarchy carries the current elevation — a component inside a `dark` (elevation 0) surface can request elevation 1 and automatically receive `dark-elevated` without being explicitly told which surface to use.
 
 In Figma: model elevation levels as separate frames/components with their own surface variable modes. Nesting a raised card inside a base page automatically applies the elevation-1 mode.
 

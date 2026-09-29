@@ -53,6 +53,7 @@ const resolveFromMap = <T>(map: BreakpointMap<T>, bp: Breakpoint, defaultValue: 
   return defaultValue;
 };
 
+/** Builds an input transform that coerces a value or a per-breakpoint map to `T` for the current breakpoint. */
 export const breakpointTransformBase = <T, WriteT = BreakpointInput<T>>(
   coerce: (value: WriteT) => T,
   defaultValue: T,

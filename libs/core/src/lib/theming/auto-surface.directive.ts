@@ -12,7 +12,12 @@ import {
 import { setInputSignal } from '../utils';
 import { injectParentSurface, ProvideSurfaceDirective } from './provide-surface.directive';
 import { injectSurfaceContextTracker } from './surface-context-tracker';
-import { injectSurfaceThemes, resolveSurfaceByElevation, SurfaceType } from './surface-theme.util';
+import {
+  injectSurfaceThemes,
+  RegisteredSurfaceThemeName,
+  resolveSurfaceByElevation,
+  SurfaceType,
+} from './surface-theme.util';
 
 @Directive({
   selector: '[etAutoSurface]',
@@ -31,15 +36,9 @@ export class AutoSurfaceDirective {
    */
   surfaceProvider = input<ProvideSurfaceDirective | null>(null);
 
-  // An overlay *panel* that IS its overlay's own painted surface opts in (see
-  // matchOverlaySurface) so it adopts the overlay's registered elevation exactly,
-  // rather than layering one level above a parent surface.
   private isOverlaySurface = signal(false);
 
-  // Bumped by the afterEveryRender watcher in the constructor whenever this element's overlay
-  // containment changes. surfaceForElement() below does a non-reactive element.contains() read,
-  // so the computed must be re-triggered when this element is (re)grafted into an overlay pane -
-  // otherwise a value cached from before the graft (one elevation too low) sticks forever.
+  // surfaceForElement() reads the DOM non-reactively; bumping this re-runs resolvedSurface after a re-graft.
   private domSettleTick = signal(0);
 
   resolvedSurface = computed(() => {
@@ -49,8 +48,6 @@ export class AutoSurfaceDirective {
       return null;
     }
 
-    // Establish a dependency on the DOM-settle tick so the non-reactive containment read below
-    // is re-evaluated after the element is grafted into its final overlay pane.
     this.domSettleTick();
 
     const explicitProvider = this.surfaceProvider();
@@ -58,28 +55,17 @@ export class AutoSurfaceDirective {
     const contextElevation = contextTheme?.elevation ?? null;
     const contextType = contextTheme?.type ?? null;
 
-    // An overlay's projected/portaled content keeps the injector of where it was
-    // *declared* (the trigger location), not the pane it renders into - so the
-    // injector-derived parent surface is one elevation too low. The surface-context
-    // tracker records each open overlay's surface *and* its pane element, so we consult
-    // only the overlay whose pane actually contains this element in the DOM (portaling
-    // moves the DOM into the pane even though the injector stays at the trigger). An
-    // auto-surface on the base page therefore stays put when an overlay opens elsewhere.
+    // Portaled content keeps the trigger's injector, so only the pane that contains this element in the DOM counts.
     const overlaySurface = this.surfaceContextTracker.surfaceForElement(this.elementRef.nativeElement);
     const overlayElevation = overlaySurface?.elevation ?? null;
     const overlayType = overlaySurface?.type ?? null;
 
-    // A panel that IS its overlay's own surface (see matchOverlaySurface) must paint exactly the
-    // overlay's elevation: the overlay container already resolved it (one above the trigger) and
-    // registered it in the tracker. It must NOT re-derive from its declaration injector - that
-    // points back at the trigger location and disagrees with the pane whenever the trigger itself
-    // sits on a surface, which would double-elevate the panel relative to its own pane.
+    // Must not re-derive from the declaration injector: it points at the trigger and would double-elevate the panel.
     if (this.isOverlaySurface()) {
       if (overlayElevation !== null) {
         return resolveSurfaceByElevation(themes, overlayType ?? contextType ?? 'dark', overlayElevation)?.name ?? null;
       }
 
-      // Rendered outside any tracked overlay: fall back to the injector context unchanged.
       if (contextElevation !== null) {
         return resolveSurfaceByElevation(themes, contextType ?? 'dark', contextElevation)?.name ?? null;
       }
@@ -87,8 +73,6 @@ export class AutoSurfaceDirective {
       return null;
     }
 
-    // A regular auto-surface sits one elevation *above* the deeper of its injector context and the
-    // overlay pane it renders into (content painted onto the surface it lives on).
     let parentElevation: number;
     let parentType: SurfaceType;
 
@@ -119,14 +103,8 @@ export class AutoSurfaceDirective {
   }
 
   constructor() {
-    // Projected/portaled auto-surface content (e.g. a select option's avatar) can have its
-    // resolvedSurface computed run *before* it is grafted into the overlay pane it visually lives
-    // in - or while it is briefly mounted in an off-pane measuring container, as windowed lists do.
-    // surfaceForElement()'s element.contains() check then returns the wrong (or no) overlay, so it
-    // resolves off the declaration injector (the trigger location) one elevation too low. That check
-    // is a plain DOM read, not a signal, so nothing re-runs the computed once the element reaches its
-    // final pane. Watch the tracker result across renders and re-trigger the computed whenever the
-    // element's overlay containment changes, settling (and unsubscribing) once it stops moving.
+    // The containment check is a plain DOM read, so nothing re-runs resolvedSurface once the element
+    // reaches its final pane (windowed lists mount it in an off-pane container first). Watch it across renders.
     let lastElevation: number | null =
       this.surfaceContextTracker.surfaceForElement(this.elementRef.nativeElement)?.elevation ?? null;
     let stableRenders = 0;
@@ -139,7 +117,6 @@ export class AutoSurfaceDirective {
         stableRenders = 0;
         this.domSettleTick.update((v) => v + 1);
       } else if (el.isConnected && ++stableRenders >= 2) {
-        // containment has held for a couple of renders and the element is in the DOM - done moving
         settleWatcher.destroy();
       }
     });
@@ -148,7 +125,7 @@ export class AutoSurfaceDirective {
       const surface = this.resolvedSurface();
 
       untracked(() => {
-        setInputSignal(this.ownSurfaceProvider.surface as any, surface);
+        setInputSignal(this.ownSurfaceProvider.surface, surface as RegisteredSurfaceThemeName | null);
       });
     });
   }
