@@ -43,6 +43,10 @@ input, the time range input, the date-time input and the date-time range input.
   and the keyboard model of `forms/slider/headless/slider-thumb.directive.ts`.
 - `time-availability.ts` already computes disabled options; its rules become blocked spans.
 
+## Status
+
+- Slice 1 (ring math): in progress.
+
 ## Slices
 
 Each slice ends green (lint with no new warnings, `tsc -p tsconfig.spec.json`, vitest) and is
