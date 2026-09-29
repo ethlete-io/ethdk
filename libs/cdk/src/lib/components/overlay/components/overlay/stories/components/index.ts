@@ -1,6 +1,5 @@
 export * from './overlay-edge-cases-host.component';
 export * from './overlay-handler-host.component';
-export * from './overlay-host.storybook.component';
 export * from './overlay-route-host.storybook.component';
 export * from './overlay-routing-host.component';
 export * from './overlay-shared-content.component';
