@@ -44,6 +44,26 @@ const rule = {
       return false;
     };
 
+    /** @param {any} value */
+    const isHandlerReference = (value) => {
+      if (value.type === 'CallExpression') {
+        return (
+          value.callee.type === 'MemberExpression' &&
+          !value.callee.computed &&
+          value.callee.property.type === 'Identifier' &&
+          value.callee.property.name === 'bind'
+        );
+      }
+
+      return (
+        value.type === 'MemberExpression' &&
+        value.object.type === 'ThisExpression' &&
+        !value.computed &&
+        value.property.type === 'Identifier' &&
+        !value.property.name.endsWith('$')
+      );
+    };
+
     return {
       CallExpression(node) {
         const callee = /** @type {any} */ (node.callee);
@@ -75,12 +95,20 @@ const rule = {
             continue;
           }
 
+          if (isHandlerReference(arg)) {
+            context.report({ node, messageId: 'noSubscribeBody' });
+            return;
+          }
+
           // Observer object: .subscribe({ next: (res) => ..., error: ..., complete: ... })
           if (arg.type === 'ObjectExpression') {
             for (const prop of arg.properties) {
               if (prop.type !== 'Property') continue;
               const val = /** @type {any} */ (prop.value);
-              if ((val.type === 'ArrowFunctionExpression' || val.type === 'FunctionExpression') && hasBody(val)) {
+              if (
+                ((val.type === 'ArrowFunctionExpression' || val.type === 'FunctionExpression') && hasBody(val)) ||
+                isHandlerReference(val)
+              ) {
                 context.report({ node, messageId: 'noSubscribeBody' });
                 return;
               }

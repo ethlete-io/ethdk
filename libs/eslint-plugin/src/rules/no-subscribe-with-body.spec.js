@@ -12,6 +12,7 @@ tester.run('no-subscribe-with-body', rule, {
   valid: [
     // Empty subscribe call — fine
     { code: `obs$.subscribe();` },
+    { code: `obs$.subscribe(this.forward$);` },
     // Empty arrow body
     { code: `obs$.subscribe(() => {});` },
     // Patterns not using subscribe
@@ -45,5 +46,8 @@ tester.run('no-subscribe-with-body', rule, {
       code: `obs$.subscribe({ next: res => { this.data = res; } });`,
       errors: [{ messageId: 'noSubscribeBody' }],
     },
+    { code: `obs$.subscribe(this.handleNext);`, errors: [{ messageId: 'noSubscribeBody' }] },
+    { code: `obs$.subscribe({ next: this.handleNext });`, errors: [{ messageId: 'noSubscribeBody' }] },
+    { code: `obs$.subscribe(this.handleNext.bind(this));`, errors: [{ messageId: 'noSubscribeBody' }] },
   ],
 });
