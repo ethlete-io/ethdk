@@ -140,6 +140,7 @@ const NOTIFICATIONS_DEF = /* @__PURE__ */ defineRootProvider(
 
     let nextTagId = 0;
     const clickHandlers = new Map<string, (context: NotificationClickContext) => void>();
+    const confirmedTags = new Set<string>();
     const openCloseFns = new Set<() => void>();
     let isClickRelayAttached = false;
 
@@ -184,6 +185,25 @@ const NOTIFICATIONS_DEF = /* @__PURE__ */ defineRootProvider(
         tap((notifications) => notifications.forEach((notification) => notification.close())),
       );
 
+    const pruneDismissedHandlers = (registration: ServiceWorkerRegistration): Observable<void> =>
+      from(registration.getNotifications()).pipe(
+        catchError(() => of(null)),
+        map((shown) => {
+          if (!shown) {
+            return;
+          }
+
+          const shownTags = new Set(shown.map((notification) => notification.tag));
+
+          for (const tag of confirmedTags) {
+            if (!shownTags.has(tag)) {
+              confirmedTags.delete(tag);
+              clickHandlers.delete(tag);
+            }
+          }
+        }),
+      );
+
     const show = (config: ShowNotificationConfig): NotificationRef => {
       const tag = config.tag ?? `et-notification-${++nextTagId}`;
       const options = toNotificationOptions(config, tag);
@@ -205,6 +225,7 @@ const NOTIFICATIONS_DEF = /* @__PURE__ */ defineRootProvider(
         closed$.next();
         closed$.complete();
         clickHandlers.delete(tag);
+        confirmedTags.delete(tag);
         openCloseFns.delete(close);
         pageNotification?.close();
 
@@ -249,22 +270,36 @@ const NOTIFICATIONS_DEF = /* @__PURE__ */ defineRootProvider(
               return of('unavailable');
             }
 
-            if (config.onClick) {
-              clickHandlers.set(tag, config.onClick);
-              attachClickRelay();
-            }
+            return pruneDismissedHandlers(registration).pipe(
+              switchMap((): Observable<NotificationDeliveryPath> => {
+                if (isClosed) {
+                  return of('unavailable');
+                }
 
-            return from(registration.showNotification(config.title, options)).pipe(
-              switchMap((): Observable<NotificationDeliveryPath> =>
-                isClosed
-                  ? // Closed while the worker was still putting it up - take back what just appeared.
-                    closePersistentNotifications(tag).pipe(map((): NotificationDeliveryPath => 'unavailable'))
-                  : of('service-worker'),
-              ),
-              catchError(() => {
-                clickHandlers.delete(tag);
+                if (config.onClick) {
+                  clickHandlers.set(tag, config.onClick);
+                  attachClickRelay();
+                }
 
-                return of<NotificationDeliveryPath>('unavailable');
+                return from(registration.showNotification(config.title, options)).pipe(
+                  switchMap((): Observable<NotificationDeliveryPath> => {
+                    if (isClosed) {
+                      // Closed while the worker was still putting it up - take back what just appeared.
+                      return closePersistentNotifications(tag).pipe(map((): NotificationDeliveryPath => 'unavailable'));
+                    }
+
+                    if (config.onClick) {
+                      confirmedTags.add(tag);
+                    }
+
+                    return of('service-worker');
+                  }),
+                  catchError(() => {
+                    clickHandlers.delete(tag);
+
+                    return of<NotificationDeliveryPath>('unavailable');
+                  }),
+                );
               }),
             );
           }),
