@@ -1,6 +1,9 @@
 import { Component, input, inputBinding, model, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
+import { Location } from '@angular/common';
+import { provideLocationMocks } from '@angular/common/testing';
+import { NavigationEnd, Router, provideRouter } from '@angular/router';
+import { filter, firstValueFrom, of } from 'rxjs';
 import '../../test-helpers';
 import { defineOverlay, defineQueryParamOverlay } from './overlay-definition';
 import { injectOverlayManager } from './overlay-manager';
@@ -41,7 +44,9 @@ const flushFrames = () =>
 
 describe('query param overlay opener', () => {
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideRouter([{ path: '**', children: [] }])] });
+    TestBed.configureTestingModule({
+      providers: [provideRouter([{ path: '**', children: [] }]), provideLocationMocks()],
+    });
   });
 
   const openOverlayCount = () => TestBed.runInInjectionContext(() => injectOverlayManager().openOverlays().length);
@@ -114,6 +119,43 @@ describe('query param overlay opener', () => {
     await flushFrames();
 
     expect(openOverlayCount()).toBe(0);
+  });
+
+  it('replaces the history entry on a model change, so one Back closes the overlay', async () => {
+    TestBed.inject(Router).setUpLocationChangeListener();
+    const fixture = await createHost();
+    const location = TestBed.inject(Location);
+
+    await setParam('42');
+
+    const ref = TestBed.runInInjectionContext(() => injectOverlayManager().openOverlays()[0]);
+    await firstValueFrom(ref?.afterOpened() ?? of(undefined), { defaultValue: undefined });
+    TestBed.tick();
+
+    const instance = ref?.componentInstance() as QueryParamOverlayComponent;
+
+    for (const value of ['tab-a', 'tab-b']) {
+      instance.overlayQueryParam.set(value);
+      TestBed.tick();
+      await fixture.whenStable();
+    }
+
+    expect(location.path()).toBe('/?product=tab-b');
+
+    const router = TestBed.inject(Router);
+    const navigated = firstValueFrom(router.events.pipe(filter((event) => event instanceof NavigationEnd)));
+    location.back();
+    await navigated;
+    TestBed.tick();
+
+    for (let attempt = 0; attempt < 10 && openOverlayCount() > 0; attempt++) {
+      await flushFrames();
+    }
+
+    expect(location.path()).toBe('/');
+    expect(openOverlayCount()).toBe(0);
+
+    fixture.destroy();
   });
 });
 

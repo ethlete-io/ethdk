@@ -140,7 +140,7 @@ Inside the overlay component, `definition.injectRef()` returns the fully typed `
 
 `defineQueryParamOverlay` creates an overlay whose lifecycle is driven by a URL query param: it opens while the param is present, closes (clearing the param) when dismissed, and survives deep links and browser back/forward. A browser Back that a close guard vetoes puts the param back, so the URL keeps naming the open overlay.
 
-The component **must** expose an `overlayQueryParam` [model](https://angular.dev/api/core/model) - this is enforced at compile time. It receives the param value and is kept in two-way sync with the URL: writing to the model updates the URL, external URL changes are pushed into the model.
+The component **must** expose an `overlayQueryParam` [model](https://angular.dev/api/core/model) - this is enforced at compile time. It receives the param value and is kept in two-way sync with the URL: writing to the model updates the URL, external URL changes are pushed into the model. A model write replaces the current history entry instead of adding one, so switching tabs inside the overlay costs no Back presses and one Back closes it.
 
 ```ts
 import { defineQueryParamOverlay, dialogOverlayStrategy } from '@ethlete/components';

@@ -263,8 +263,12 @@ const createQueryParamOverlayOpener = <TComponent extends object, TResult>(
   let modelSyncEffect: EffectRef | null = null;
   let openValue: string | null = null;
 
-  const updateQueryParam = (value: string | null) =>
-    router.navigate([], { queryParams: { [definition.queryParamKey]: value }, queryParamsHandling: 'merge' });
+  const updateQueryParam = (value: string | null, replaceUrl = false) =>
+    router.navigate([], {
+      queryParams: { [definition.queryParamKey]: value },
+      queryParamsHandling: 'merge',
+      replaceUrl,
+    });
 
   const queryParamModel = () => {
     const instance = overlayRef?.componentInstance() as Record<string, unknown> | null;
@@ -292,7 +296,7 @@ const createQueryParamOverlayOpener = <TComponent extends object, TResult>(
         () => {
           const modelValue = model();
           openValue = modelValue;
-          untracked(() => updateQueryParam(modelValue));
+          untracked(() => updateQueryParam(modelValue, true));
         },
         { injector },
       );
