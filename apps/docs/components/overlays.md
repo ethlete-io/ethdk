@@ -55,7 +55,7 @@ Defaults worth knowing:
 | `role`                                   | `'dialog'` when modal                                                                                                               |
 | `hasBackdrop`                            | The strategy's own default when it sets one, otherwise follows `mode` (modal → backdrop)                                            |
 | `closeOnEscape`, `closeOnOutsidePointer` | `true`; `disableClose: true` forces both off                                                                                        |
-| Position                                 | Anchored to `origin` when it's an element, otherwise centered                                                                       |
+| Position                                 | Anchored to `origin` when it's an element or an event (its clickable target), otherwise centered                                    |
 | `origin` (with strategies)               | Falls back to the currently focused element (used as transform origin too); `null` opens without one, so anchored strategies center |
 | `customAnimated`                         | `false` - set `true` to disable the built-in animations and drive your own via the [animation lifecycle](/core/animations)          |
 | `zIndex`                                 | The level declared by the nearest `data-et-overlay-layer` ancestor of `origin`, else `2147483003`                                   |

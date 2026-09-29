@@ -1,14 +1,10 @@
 # overlay scan - open findings
 
-Scan of `libs/components/src/lib/overlay/` from 2026-09-28. 0 High, 0 Medium (1 fixed: `syncUrl` deep-link claim dropped in 772d67f5b), 3 Low (5 fixed: backdrop scrim token 7575a109e, positioning inputs documented in efce4e0a6, query-param model writes replace the history entry in 8a8bf2aae, anchored `size`/`arrow`/`hide` middleware opt-in per consumer in 38198384e, a vetoed browser step undone instead of pushed in the router), 4 Spec (after verification). Skipped: stories, the CSS beyond layer and colour checks. `anchored.strategy.ts`, `full-screen.strategy.ts` and `fullscreen-animation.ts` were read in a second pass (see the last section). Focus trap, focus restore and outside-pointer logic live in `@ethlete/core`'s overlay runtime and are out of scope.
+Scan of `libs/components/src/lib/overlay/` from 2026-09-28. 0 High, 0 Medium (1 fixed: `syncUrl` deep-link claim dropped in 772d67f5b), 2 Low (6 fixed: backdrop scrim token 7575a109e, positioning inputs documented in efce4e0a6, query-param model writes replace the history entry in 8a8bf2aae, anchored `size`/`arrow`/`hide` middleware opt-in per consumer in 38198384e, a vetoed browser step undone instead of pushed in the router, plain `open` anchors to an `Event` origin), 4 Spec (after verification). Skipped: stories, the CSS beyond layer and colour checks. `anchored.strategy.ts`, `full-screen.strategy.ts` and `fullscreen-animation.ts` were read in a second pass (see the last section). Focus trap, focus restore and outside-pointer logic live in `@ethlete/core`'s overlay runtime and are out of scope.
 
 ## strategies
 
 - Low: the scroll blocker only locks the main document (`overlay-scroll-blocker.ts`), so a modal opened in a pop-up window does not lock that window. S
-
-## cleanup
-
-- Low: the plain `open` path (no `strategies`) ignores an `Event` origin for positioning (`overlay-manager.ts:96-100`) and does not resolve the focused element as origin, unlike `openWithStrategies` (`:144`). The two paths anchor differently for the same config. S
 
 ## Spec gaps
 

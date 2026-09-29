@@ -21,8 +21,6 @@ import {
   injectBreakpointObserver,
   injectRenderer,
   injectStyleManager,
-  isElement,
-  isHTMLElement,
   nextFrame,
 } from '@ethlete/core';
 import { tap } from 'rxjs';
@@ -32,7 +30,7 @@ import { OVERLAY_ERROR_CODES } from '../overlay-errors';
 import { resolveOverlayHasBackdrop } from '../overlay-has-backdrop';
 import { OverlayRef } from '../overlay-ref';
 import { OverlayArrowStylesComponent } from './overlay-arrow-styles.component';
-import { findNextRelevantHtmlElement } from './overlay-origin';
+import { resolveOriginElement } from './resolve-origin-element';
 import { OverlayBreakpointConfig, OverlayStrategy, OverlayStrategyContext } from './overlay-strategy.types';
 
 export type OverlayStrategyControllerMountConfig = {
@@ -101,11 +99,7 @@ export const createOverlayStrategyController = (
   };
 
   const origin = config.origin;
-  const originElement = isElement(origin)
-    ? origin
-    : origin && isHTMLElement(origin.target)
-      ? (findNextRelevantHtmlElement(origin.target) ?? origin.target)
-      : undefined;
+  const originElement = resolveOriginElement(origin);
 
   // The overlay mounts into its origin's document (see the overlay manager), so `documentClass` and
   // `bodyClass` have to land on that document too - scroll locks and the like are for the window the

@@ -15,6 +15,7 @@ import { OverlayContainerComponent } from './overlay-container.component';
 import { OVERLAY_HAS_BACKDROP, resolveOverlayHasBackdrop } from './overlay-has-backdrop';
 import { OVERLAY_REF, OverlayRef, createOverlayRef } from './overlay-ref';
 import { createOverlayStrategyController } from './strategies/overlay-strategy-controller';
+import { resolveOriginElement } from './strategies/resolve-origin-element';
 
 export type OverlayManager = {
   open: <TComponent extends object, TResult = unknown>(
@@ -84,8 +85,9 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
       const modal = config.mode !== 'non-modal';
       const role = config.role ?? (modal ? 'dialog' : undefined);
       const disableClose = config.disableClose ?? false;
-      const positionStrategy = isElement(config.origin)
-        ? anchoredOverlayPosition({ referenceElement: config.origin })
+      const originElement = resolveOriginElement(config.origin);
+      const positionStrategy = originElement
+        ? anchoredOverlayPosition({ referenceElement: originElement })
         : {
             kind: 'center' as const,
           };
