@@ -1,5 +1,5 @@
 import { GitFlowConfig } from '@ethlete/agent-rules/git-flow';
-import { dominantContext, streamKey } from '../model/block';
+import { ActivityBlock, dominantContext, streamKey } from '../model/block';
 import { WorklogProposal } from '../model/proposal';
 import { DescribeOptions, describeWork } from './describe';
 import { laneKeyOf } from './lane';
@@ -102,6 +102,27 @@ const unnamedBaseId = (group: WorkGroup) => {
   return `unnamed:${context ? streamKey(context) : ''}@${group.from.toISOString()}`;
 };
 
+const activeUntilOf = (options: { group: WorkGroup; blocks: readonly ActivityBlock[] }) => {
+  const own = dominantContext(options.group.blocks);
+
+  if (!own?.piece) return {};
+
+  const from = options.group.from.getTime();
+  const to = options.group.to.getTime();
+  let last = 0;
+
+  for (const block of options.blocks) {
+    const { context } = block;
+
+    if (context.piece !== own.piece || context.repoPath !== own.repoPath) continue;
+    if (block.from.getTime() > to || block.to.getTime() < from) continue;
+
+    last = Math.max(last, block.to.getTime());
+  }
+
+  return last ? { activeUntil: new Date(last) } : {};
+};
+
 /**
  * Turns merged groups into reviewable rows: booked in whole increments, described from their own
  * evidence, and carrying that evidence and their confidence so a reviewer can see why each row
@@ -117,7 +138,13 @@ export const propose = (options: {
   config?: GitFlowConfig;
   round?: Partial<RoundOptions>;
   describe?: Partial<DescribeOptions>;
+  /**
+   * Every block of the day before the sessions sharing an instant were cut apart. A row with a piece
+   * reads from it how long its own session went on, which the cut rows no longer say.
+   */
+  sessionBlocks?: readonly ActivityBlock[];
 }): ProposeResult => {
+  const sessionBlocks = options.sessionBlocks ?? [];
   const rows = snapRowBounds({
     rows: options.groups.map((group) => ({
       group,
@@ -170,6 +197,7 @@ export const propose = (options: {
       durationMs,
       observedMs: group.observedMs,
       stretches: stretchesOf(group.blocks),
+      ...activeUntilOf({ group, blocks: sessionBlocks }),
       laneKey: group.laneKey ?? laneKeyOf(group.blocks),
       description: describeWork({ group, config: options.config, options: options.describe }),
       confidence: group.confidence,
@@ -190,6 +218,7 @@ export const propose = (options: {
       durationMs,
       observedMs: group.observedMs,
       stretches: stretchesOf(group.blocks),
+      ...activeUntilOf({ group, blocks: sessionBlocks }),
       laneKey: group.laneKey ?? laneKeyOf(group.blocks),
       description: describeWork({ group, config: options.config, options: options.describe }),
       confidence: group.confidence,

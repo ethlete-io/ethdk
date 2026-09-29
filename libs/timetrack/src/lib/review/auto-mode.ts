@@ -89,7 +89,12 @@ export const approvalRowIdsOf = (options: {
     const from = request.fromMs;
     const to = from + request.durationMs;
     const overlapping = rows.filter((row) => row.from.getTime() < to && row.to.getTime() > from);
-    const row = overlapping.find((entry) => entry.issueKey === request.issueKey) ?? overlapping[0];
+    const overlapOf = (entry: ReviewedRow) => Math.min(entry.to.getTime(), to) - Math.max(entry.from.getTime(), from);
+    const named = overlapping.filter((entry) => entry.issueKey === request.issueKey);
+    const row = (named.length ? named : overlapping).reduce<ReviewedRow | undefined>(
+      (best, entry) => (best && overlapOf(best) >= overlapOf(entry) ? best : entry),
+      undefined,
+    );
 
     return row ? [row.id] : [];
   }

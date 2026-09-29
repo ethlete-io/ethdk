@@ -257,6 +257,7 @@ export const buildRows = (
     config: options.config,
     round: options.round,
     describe: options.describe,
+    sessionBlocks: working.map((entry) => entry.block),
   });
   const secludedTime = privateTime({ blocks: secluded });
   const remote = remoteBookingOnGrid({

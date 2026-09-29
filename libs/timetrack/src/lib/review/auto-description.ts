@@ -8,7 +8,10 @@ import { WorklogWritingRequest } from '../ticket/worklog';
 import { setRowDescription } from './edits';
 import { AutoModeDescription, DayReviewEdits, ReviewedRow } from './model';
 
-/** How long a row's end has to lie behind now before auto mode writes its description. */
+/**
+ * How long a row's session has to be quiet before auto mode writes its description: 30 minutes past the
+ * row's end, or past the last activity of the row's own session where the row has a piece.
+ */
 export const AUTO_DESCRIPTION_SETTLE_MS = 30 * 60_000;
 
 /** The id auto mode keys a row's description by: the id an edit to the row is written against. */
@@ -43,7 +46,7 @@ export const autoDescriptionAsks = (options: {
 
     if (answered.has(id) || asked.has(id)) return false;
     if (!row.issueKey || row.hidden || row.unattended || row.excluded || row.state === 'rejected') return false;
-    if (!isCodeRow(row) || row.to.getTime() > settledBy) return false;
+    if (!isCodeRow(row) || Math.max(row.to.getTime(), row.activeUntil?.getTime() ?? 0) > settledBy) return false;
     if (!mayAutoWrite(rowFieldSourceOf(row, 'description'))) return false;
 
     asked.add(id);

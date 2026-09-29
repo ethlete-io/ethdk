@@ -86,6 +86,34 @@ describe('autoDescriptionAsks', () => {
     expect(asks({ rows: rowsOf(EMPTY_DAY_REVIEW_EDITS) })).toEqual([CODE.id]);
   });
 
+  it("waits on the row's own session, which went on past the row's end", () => {
+    const session = proposal({
+      id: 'ABC-1@10:00',
+      from: at('10:00'),
+      to: at('10:15'),
+      durationMs: 900_000,
+      observedMs: 900_000,
+      activeUntil: at('11:45'),
+    });
+
+    expect(asks({ rows: rowsOf(EMPTY_DAY_REVIEW_EDITS, [session]) })).toEqual([]);
+    expect(asks({ rows: rowsOf(EMPTY_DAY_REVIEW_EDITS, [session]), nowMs: at('12:20').getTime() })).toEqual([
+      session.id,
+    ]);
+  });
+
+  it('settles a row with no piece on its end', () => {
+    const plain = proposal({
+      id: 'ABC-1@11:00',
+      from: at('11:00'),
+      to: at('11:15'),
+      durationMs: 900_000,
+      observedMs: 900_000,
+    });
+
+    expect(asks({ rows: rowsOf(EMPTY_DAY_REVIEW_EDITS, [plain]), nowMs: at('11:50').getTime() })).toEqual([plain.id]);
+  });
+
   it('writes the description once, as auto, and never asks about the row again', () => {
     const row = codeRow();
 

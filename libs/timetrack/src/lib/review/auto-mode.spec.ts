@@ -587,6 +587,26 @@ describe('approvalRowIdsOf', () => {
     expect(idsOf({ request: { ...request, fromMs: at('10:00').getTime() } })).toEqual([]);
   });
 
+  it('previews a worklog add on the sibling session row it covers most', () => {
+    const [first] = rows;
+
+    if (!first) throw new Error('no row');
+
+    const early = { ...first, id: 'ABC-1@08:00', issueKey: 'ABC-1', from: at('08:00'), to: at('08:30') };
+    const late = { ...early, id: 'ABC-1@08:00+b', from: at('08:15'), to: at('09:15') };
+    const request = {
+      op: 'worklog.add' as const,
+      issueKey: 'ABC-1',
+      description: '',
+      fromMs: at('08:20').getTime(),
+      durationMs: 2_700_000,
+    };
+
+    expect(
+      approvalRowIdsOf({ item: { request }, day: TODAY, rows: [early, late], unattributed: DAY.unattributed }),
+    ).toEqual([late.id]);
+  });
+
   it('previews nothing for a tempo sync', () => {
     expect(idsOf({ request: { op: 'tempo.sync', day: TODAY, planHash: 'x' } })).toEqual([]);
   });

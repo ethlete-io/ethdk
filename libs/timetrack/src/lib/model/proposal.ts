@@ -25,6 +25,12 @@ export type WorklogProposal = {
    */
   stretches?: TimeWindow[];
   /**
+   * The end of the last activity of the agent session piece behind the row, sibling sessions of the
+   * same checkout left out. It lies past `to` where a sibling held the row's later minutes. Absent on
+   * a row with no piece, whose activity is its own end.
+   */
+  activeUntil?: Date;
+  /**
    * The checkout whose work this row mostly is, as a `streamKey`. Absent when nothing behind the row
    * resolved to a checkout or an application, and on a row read back from an older store.
    */

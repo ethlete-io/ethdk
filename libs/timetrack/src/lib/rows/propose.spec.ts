@@ -297,4 +297,45 @@ describe('propose, the work nothing named', () => {
     expect(later.unnamed[0]?.from).toEqual(first.unnamed[0]?.from);
     expect(later.unnamed[0]?.id).toBe(first.unnamed[0]?.id);
   });
+
+  describe('activeUntil', () => {
+    const inPiece = (piece: string, fromMinute: number, observedMinutes: number): WorkGroup => {
+      const base = group({ fromMinute, observedMinutes, issueKey: 'FIP-2178' });
+
+      return { ...base, blocks: base.blocks.map((block) => ({ ...block, context: { repoPath: '/dev/a', piece } })) };
+    };
+    const ran = (piece: string, fromMinute: number, toMinute: number) => ({
+      from: AT(fromMinute),
+      to: AT(toMinute),
+      context: { repoPath: '/dev/a', piece },
+      evidence: [],
+    });
+
+    it("reads how long the row's own session went on, past the minutes a sibling held", () => {
+      const { proposals } = propose({
+        groups: [inPiece('a', 0, 10)],
+        sessionBlocks: [ran('a', 0, 45), ran('b', 10, 90)],
+      });
+
+      expect(proposals[0]?.activeUntil).toEqual(AT(45));
+    });
+
+    it("leaves a sibling session's later activity out", () => {
+      const { proposals } = propose({
+        groups: [inPiece('a', 0, 30)],
+        sessionBlocks: [ran('a', 0, 30), ran('b', 0, 120)],
+      });
+
+      expect(proposals[0]?.activeUntil).toEqual(AT(30));
+    });
+
+    it('is absent on a row with no piece', () => {
+      const { proposals } = propose({
+        groups: [group({ fromMinute: 0, observedMinutes: 10, issueKey: 'FIP-2178' })],
+        sessionBlocks: [ran('a', 0, 45)],
+      });
+
+      expect(proposals[0]?.activeUntil).toBeUndefined();
+    });
+  });
 });

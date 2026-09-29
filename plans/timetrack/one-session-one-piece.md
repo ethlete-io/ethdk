@@ -71,10 +71,16 @@ Slice 6a built (2026-09-29, 06a5fca3a), the engine side:
   minutes in the free increments of their spans, earliest deadline first, so Tempo gets the wall clock
   once. A second proposal with the same issue and start gets `+<piece>` on its id.
 
+Slice 6b built (2026-09-29): a row with a piece carries `activeUntil`, the end of the last activity of its
+own piece in the same checkout, read by `propose` from the blocks before `cutUnwatched`. Auto descriptions
+settle 30 minutes after the later of `to` and `activeUntil`; a row without a piece keeps the check on `to`.
+Cause of the 10-minute piece: `cutUnwatched` gave the shared minutes to the sibling session, so the row's
+`to` lay early while its session still ran. `approvalRowIdsOf` picks the sibling row a `worklog.add`
+covers most.
+
 Open:
 
 - Drawing the sibling rows side by side in `apps/timetrack/src/app/day-review/lanes.ts`.
-- A per-session "settled" check in `review/auto-description.ts` (below).
 - `BehindStretch` for the stretch an unwatched session lost (slice 5).
 - `unnamedRowId` does not tell two unnamed pieces of one stream apart when both start at the same time.
 
@@ -95,4 +101,4 @@ are split, and the split follows focus, as `cutUnwatched` already does for unnam
 - Auto description (`review/auto-description.ts`): with one row per session, "settled" can be read
   per session: 30 minutes after that session's last attended activity. This replaces the check on
   the row's end, which passed a 10-minute piece of ET-772 at 11:31 on 2026-09-29 that later grew to
-  45 minutes (stored answer asked at 11:31:49, `minutes: 10`). Cause of the short piece not found.
+  45 minutes (stored answer asked at 11:31:49, `minutes: 10`). Cause: see slice 6b.
