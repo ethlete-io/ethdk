@@ -22,15 +22,15 @@ The command runs the full release sequence synchronously and aborts on the first
 2. **Asks for confirmation** - a reminder not to release a version that was already released from another branch. Press <kbd>Enter</kbd> to continue; typing anything else aborts.
 3. Runs `yarn changeset version` - consumes the pending changesets, bumps package versions and writes changelogs. If there are no pending changesets, the command aborts here.
 4. Runs `yarn changeset git-tag` (Changesets 3) or `yarn changeset tag` (Changesets 2) - creates a git tag per released package version.
-5. Stages everything and commits as `Release versions` (your pre-commit hooks run here).
+5. Stages only the files the version step changed (package versions, changelogs, consumed changesets) and commits as `Release versions` (your pre-commit hooks run here).
 6. Runs `git push --follow-tags` (unless [`--skip-push`](#flags)).
 
 ### Flags
 
-| Flag          | Alias | Default | Effect                                                                                                                   |
-| ------------- | ----- | ------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `--force`     | `-f`  | off     | Proceed even when the working tree has uncommitted changes (they get committed into the release commit - use with care). |
-| `--skip-push` | `-sp` | off     | Do everything except the final `git push --follow-tags`, e.g. to inspect the release commit and tags before publishing.  |
+| Flag          | Alias | Default | Effect                                                                                                                     |
+| ------------- | ----- | ------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `--force`     | `-f`  | off     | Proceed even when the working tree has uncommitted changes (they are left uncommitted and stay out of the release commit). |
+| `--skip-push` | `-sp` | off     | Do everything except the final `git push --follow-tags`, e.g. to inspect the release commit and tags before publishing.    |
 
 ### Requirements
 

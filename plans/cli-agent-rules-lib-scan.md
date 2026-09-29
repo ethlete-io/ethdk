@@ -1,11 +1,11 @@
 # cli + agent-rules scan - open findings
 
-Scan of `libs/cli/src/` and `libs/agent-rules/src/` from 2026-09-28. 0 High, 1 Medium, 2 Low, 4 Spec (second pass included; verified 2026-09-28: 15 confirmed, 3 re-rated, 0 refuted). Skipped: nothing from the first-pass skip list; the second pass read `timetrack-command.ts`, `git-flow/parse.ts`, `frontmatter.ts`, `load-content.ts`, `plan.ts` warnings, `doctor/`, `config/diagnose.ts`, `api/help.ts`, `api/suggest.ts` and `api/state.ts`. Tree-shaking does not apply. Paths are relative to `libs/cli/src/lib/` or `libs/agent-rules/src/lib/`.
+Scan of `libs/cli/src/` and `libs/agent-rules/src/` from 2026-09-28. 0 High, 1 Medium, 0 Low, 4 Spec (second pass included; verified 2026-09-28: 15 confirmed, 3 re-rated, 0 refuted). Skipped: nothing from the first-pass skip list; the second pass read `timetrack-command.ts`, `git-flow/parse.ts`, `frontmatter.ts`, `load-content.ts`, `plan.ts` warnings, `doctor/`, `config/diagnose.ts`, `api/help.ts`, `api/suggest.ts` and `api/state.ts`. Tree-shaking does not apply. Paths are relative to `libs/cli/src/lib/` or `libs/agent-rules/src/lib/`.
 
 ## cli: design, auth, release
 
-- Low: the CLI takes the GitLab token as a positional argument (`auth/auth-command.ts`), so it lands in shell history and `ps`. Decision: keep it, or read it from stdin / an env var / a prompt instead. S
-- Low: with `--force`, `git add .` puts every unrelated uncommitted change into the "Release versions" commit (`release.ts:60`). Decision: the docs (`apps/docs/cli/index.md`) promise exactly that; keep it, or stage only what `changeset version` changed. S
+- Low: the CLI takes the GitLab token as a positional argument (`auth/auth-command.ts`), so it lands in shell history and `ps`. Decided: kept (user decision 2026-09-29) - the positional argument stays.
+- Low: with `--force`, `git add .` puts every unrelated uncommitted change into the "Release versions" commit (`release.ts:60`). Fixed 2026-09-29: only the files `changeset version` changed are staged.
 
 ## Spec gaps
 

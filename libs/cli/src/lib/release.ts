@@ -1,4 +1,5 @@
-import { execSync } from 'child_process';
+import { execFileSync, execSync } from 'child_process';
+import { existsSync } from 'fs';
 import { askQuestion } from './utils';
 
 const NO_CHANGESETS_MESSAGE = 'No unreleased changesets found';
@@ -21,6 +22,26 @@ const runChangesetVersion = () => {
     console.error(`${NO_CHANGESETS_MESSAGE}, aborting...\n`);
     process.exit(1);
   }
+};
+
+export type WorkingTreeSnapshot = Map<string, string>;
+
+export const pathsChangedBetween = (before: WorkingTreeSnapshot, after: WorkingTreeSnapshot) => {
+  const paths = new Set([...before.keys(), ...after.keys()]);
+
+  return [...paths].filter((path) => before.get(path) !== after.get(path));
+};
+
+const snapshotWorkingTree = (): WorkingTreeSnapshot => {
+  const entries = execSync('git status --porcelain -z -uall').toString().split('\0').filter(Boolean);
+
+  return new Map(
+    entries.map((entry) => {
+      const path = entry.slice(3);
+
+      return [path, existsSync(path) ? execFileSync('git', ['hash-object', '--', path]).toString().trim() : 'deleted'];
+    }),
+  );
 };
 
 export const releaseFlags = (args: string[]) => ({
@@ -51,13 +72,17 @@ export const release = async (args: string[]) => {
     process.exit(1);
   }
 
+  const before = snapshotWorkingTree();
+
   console.log(runChangesetVersion());
 
   const changesetTag = execSync(`yarn changeset ${changesetMajorVersion() >= 3 ? 'git-tag' : 'tag'}`).toString();
 
   console.log(changesetTag);
 
-  execSync('git add .');
+  const changedPaths = pathsChangedBetween(before, snapshotWorkingTree());
+
+  if (changedPaths.length) execFileSync('git', ['add', '--', ...changedPaths]);
 
   console.log('Committing release... 🚀 \n(This may take a while depending on your pre-commit hooks) \n');
 
