@@ -1,11 +1,18 @@
-import { Component, ViewEncapsulation, computed, input, linkedSignal } from '@angular/core';
+import { Component, ViewEncapsulation, computed, input, linkedSignal, signal } from '@angular/core';
 import { ProvideColorDirective } from '@ethlete/core';
+import { isValid, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { TimePickerMode, TimePickerTimeFilterFn, TimeRange } from '../headless';
+import { TimePickerMode, TimePickerTimeFilterFn, TimeRange, TimeRangeSide } from '../headless';
 import { TIME_PICKER_IMPORTS } from '../time-picker.imports';
 import { TimeFilterPreset, parseTimeOfDay, resolveTimeFilterPreset } from './time-filter-presets';
 
 export type TimePickerFilterPreset = TimeFilterPreset | 'endAfterStart';
+
+const parseDay = (value: string | null) => {
+  const day = value === null ? null : parseISO(value);
+
+  return day !== null && isValid(day) ? day : null;
+};
 
 @Component({
   selector: 'et-sb-time-picker',
@@ -24,15 +31,19 @@ export type TimePickerFilterPreset = TimeFilterPreset | 'endAfterStart';
         [timeFilter]="filterFn()"
         [startLabel]="startLabel()"
         [endLabel]="endLabel()"
+        [day]="dayDate()"
+        [rangeDays]="rangeDaysValue()"
+        (rangeHandOff)="handOff.set($event)"
       />
 
       @if (mode() === 'range') {
-        <p class="text-sm opacity-60">
+        <p class="text-small opacity-60">
           Start: {{ rangeValue().start?.toTimeString() ?? 'null' }} · End:
           {{ rangeValue().end?.toTimeString() ?? 'null' }}
         </p>
+        <p class="text-small opacity-60">Hand-off: {{ handOff() ?? 'none' }}</p>
       } @else {
-        <p class="text-sm opacity-60">Value: {{ value()?.toTimeString() ?? 'null' }}</p>
+        <p class="text-small opacity-60">Value: {{ value()?.toTimeString() ?? 'null' }}</p>
       }
     </div>
   `,
@@ -52,7 +63,12 @@ export class TimePickerStorybookComponent {
   public end = input<string | null>(null);
   public startLabel = input<string | null>(null);
   public endLabel = input<string | null>(null);
+  public startDay = input<string | null>(null);
+  public endDay = input<string | null>(null);
+  public day = input<string | null>(null);
   public color = input('brand');
+
+  protected handOff = signal<TimeRangeSide | null>(null);
 
   public value = linkedSignal<Date | null>(() => (this.mode() === 'range' ? null : parseTimeOfDay(this.start())));
 
@@ -62,6 +78,15 @@ export class TimePickerStorybookComponent {
   }));
 
   protected localeObject = computed(() => (this.locale() === 'de' ? de : null));
+
+  protected dayDate = computed(() => parseDay(this.day()));
+
+  protected rangeDaysValue = computed<TimeRange | null>(() => {
+    const start = parseDay(this.startDay());
+    const end = parseDay(this.endDay());
+
+    return start === null && end === null ? null : { start, end };
+  });
 
   protected minTimeDate = computed(() => parseTimeOfDay(this.minTime()));
   protected maxTimeDate = computed(() => parseTimeOfDay(this.maxTime()));

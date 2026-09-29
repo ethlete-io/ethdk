@@ -49,6 +49,7 @@ input, the time range input, the date-time input and the date-time range input.
 - Slice 2 (headless ring): done, `TimePickerRingDirective`, `TimePickerRingHandleDirective`, ring state on `TimePickerDirective` (`ringStops`, `ringMinute`, `commitRingMinute`). The columns still exist.
 - Slice 3 (default component): done, `et-time-picker` renders the SVG ring (open track, dotted blocked spans, range arc, 24h or 12h labels with moon and sun, handles, centre readout with the duration), tokens `--et-time-picker-ring-size` and `--et-time-picker-handle-size`, labels `emptyHint`, `durationHours`, `durationMinutes`, `endsNextDay`. The side buttons are gone.
 - Slice 4 (inputs): done, the range inputs bind `activeSide` two-way to the focused field (`pickerActiveSide`), a first tap moves focus to the end field (`rangeHandOff`, desktop only), the time range picker opens on the active handle, the calendar inputs pass `day` / `rangeDays` so the centre shows the time and the day, `ends next day` reads the real days, the panes compensation targets the ring, and the dead column sizes are gone.
+- Slice 6 (stories, docs, changeset): done, ring stories (`FineSteps`, `CoarseSteps`, `WithDay`, `RangeWithDays`, `RangeWithDaysOvernight`, `RangeHandOff`), the time picker and date-time inputs guides, and the breaking changeset `time-picker-ring`.
 
 ## Slices
 

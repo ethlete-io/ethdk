@@ -156,7 +156,7 @@ The value is a `string | null`. On `et-date-input` (forwarded from the headless
 ² `null` falls through to [`DATE_TIME_LABELS`](/components/localization) - `invalidDate` here, and the matching `invalidTime` / `invalidDateTime` / `invalidDateRange` / `invalidTimeRange` / `invalidDateTimeRange` / `invalidDuration` for the other controls.
 ³ `null` falls through to [`DATE_TIME_LABELS`](/components/localization) - the range fields' `startDate`/`endDate` (`'Start date'` / `'End date'`), `startTime`/`endTime`, `startDateTime`/`endDateTime`, and the bottom sheet's `dateTab`/`timeTab` (`'Date'` / `'Time'`) and `datesTab`/`timesTab` (`'Dates'` / `'Times'`), whose switch is named by `paneSwitch` (`'Picker view'`).
 ⁴ `null` derives the format from `precision`: the locale's short date (`'P'`) at day precision, that same pattern without its day at month precision, `'yyyy'` at year precision.
-⁵ `null` falls through to [`TIME_PICKER_LABELS`](/components/localization) (`'Start time'` / `'End time'`). These name the [time picker's own side switch](/components/time-picker#range-picker), not the control's two fields - that is what `startAriaLabel`/`endAriaLabel` do.
+⁵ `null` falls through to [`TIME_PICKER_LABELS`](/components/localization) (`'Start time'` / `'End time'`). These name the [time picker's two ring handles](/components/time-picker#range-picker), not the control's two fields - that is what `startAriaLabel`/`endAriaLabel` do.
 
 Typed text is parsed **strictly** against `displayFormat` on blur/Enter. Picking
 a day writes `format(date, valueFormat)` and closes the picker (a named
@@ -393,7 +393,7 @@ The value is a `string | null`. On `et-time-input` (forwarded from the headless
 | `valueFormat`               | `string`                            | `TIME_FORMAT` token | date-fns format of the string value (token default: `HH:mm`).                               |
 | `displayFormat`             | `string`                            | `'p'`               | date-fns format shown in and parsed from the field (locale-aware).                          |
 | `locale`                    | `Locale \| null` (date-fns)         | `DATE_LOCALE` token | Display/parse locale (also decides the picker's 12/24-hour layout).                         |
-| `minuteStep` / `secondStep` | `number`                            | `5` / `1`           | Forwarded to the picker columns, clamped to at least 1.                                     |
+| `minuteStep` / `secondStep` | `number`                            | `5` / `1`           | Forwarded to the picker, clamped to at least 1.                                             |
 | `minTime` / `maxTime`       | `Date \| null`                      | `null`              | Bound the picker's time of day (`min`/`max` are reserved by signal forms).                  |
 | `timeFilter`                | `((date: Date) => boolean) \| null` | `null`              | Rejects individual times in the picker.                                                     |
 | `pickerOpen`                | `boolean` (model)                   | `false`             | The picker overlay's open state.                                                            |
@@ -405,14 +405,14 @@ The value is a `string | null`. On `et-time-input` (forwarded from the headless
 Typed text is parsed against `displayFormat` first, then **leniently**: bare
 digit runs (`930` → 09:30, `0930`, `93015`), loose separators (`9.30`, `9 30`)
 and meridiem suffixes (`930pm`, `9 a.m.`) all commit, and 24-hour entry is
-accepted even under a 12-hour display format. Picking parts writes
+accepted even under a 12-hour display format. Dragging the ring writes
 `format(time, valueFormat)` and - unlike the calendar picker - **keeps the
-overlay open**, since a time takes one pick per column. See the `Default` and
-`With seconds` stories.
+overlay open**, since a drag passes through many times before the right one. The ring
+sets hours and minutes; seconds are typed. See the `Default` and `With seconds` stories.
 
 `minTime` / `maxTime` / `timeFilter` are forwarded to the picker and follow its
 [bounds and filtering](/components/time-picker#bounds-and-filtering) rules - only the
-bounds' time of day is read, and unselectable options stay in place, dimmed. They shape
+bounds' time of day is read, and unselectable times show as a dotted span on the ring that a drag cannot enter. They shape
 the **picker** only: typed entry is not gated by them (the same split the date inputs make
 with `minDate`/`maxDate`), so pair them with a schema validator when the form must reject
 out-of-range times.
@@ -422,8 +422,8 @@ out-of-range times.
 ## Time range input - `et-time-range-input` {#time-range-input}
 
 One registered form control containing two text inputs (start – end) that share a
-single range-mode [**time picker**](/components/time-picker#range-picker) - one set of
-columns holding both ends, switched between by name. The value shape is the date range
+single range-mode [**time picker**](/components/time-picker#range-picker) - one ring
+with a handle for each end, the focused field choosing the active one. The value shape is the date range
 input's `{ start: string | null; end: string | null }`, both strings in the time
 `valueFormat`; each side commits exactly like the single time input. Reach for it
 wherever an opening hour and a closing hour belong together - a shift, a slot, a
@@ -446,12 +446,12 @@ top of the [shared contract set](#shared-contract):
 | `valueFormat`                         | `string`                                                    | `TIME_FORMAT` token | date-fns format of both string values (token default: `HH:mm`).        |
 | `displayFormat`                       | `string`                                                    | `'p'`               | date-fns format shown in and parsed from both fields (locale-aware).   |
 | `locale`                              | `Locale \| null` (date-fns)                                 | `DATE_LOCALE` token | Display/parse locale (also decides the picker's 12/24-hour layout).    |
-| `minuteStep` / `secondStep`           | `number`                                                    | `5` / `1`           | Forwarded to the picker columns, clamped to at least 1.                |
+| `minuteStep` / `secondStep`           | `number`                                                    | `5` / `1`           | Forwarded to the picker, clamped to at least 1.                        |
 | `minTime` / `maxTime`                 | `Date \| null`                                              | `null`              | Bound the picker's time of day, for both ends.                         |
 | `timeFilter`                          | `((date: Date, side: 'start' \| 'end') => boolean) \| null` | `null`              | Rejects individual times; receives the end being filled.               |
 | `startPlaceholder` / `endPlaceholder` | `string`                                                    | `''`                | Placeholders of the two fields.                                        |
 | `startAriaLabel` / `endAriaLabel`     | `string \| null`                                            | `null` ³            | `aria-label`s of the two fields (`'Start time'` / `'End time'`).       |
-| `startTimeLabel` / `endTimeLabel`     | `string \| null`                                            | `null` ⁵            | Names of the two ends on the picker's own side switch.                 |
+| `startTimeLabel` / `endTimeLabel`     | `string \| null`                                            | `null` ⁵            | Names of the two ring handles.                                         |
 | `pickerOpen`                          | `boolean` (model)                                           | `false`             | The picker overlay's open state.                                       |
 | `pickerTriggerLabel`                  | `string \| null`                                            | `null` ¹            | `aria-label` of the suffix clock button.                               |
 | `parseErrorMessage`                   | `string \| null`                                            | `null` ²            | Message shown below the field when either side's text can't be parsed. |
@@ -461,12 +461,13 @@ top of the [shared contract set](#shared-contract):
 Each side parses **leniently**, with the single time input's rules (`930` → 09:30,
 `930pm` → 21:30). The picker **never closes on its own**: filling one end still leaves
 the other to set, so the reader closes it (Escape, outside click, the trigger). Picking
-a part writes only the active end - which one that is, is the side switch's job, and it
-auto-advances to the end exactly once, after the first activation of a start option.
+a drag writes only the active end - the one whose field has focus. The first press on an
+empty range places the start and, on desktop, moves focus on to the end field (`rangeHandOff`)
+exactly once; the bottom sheet, which covers the fields, does not move focus.
 
 The host is a `role="group"` labelled by the field label. There is no calendar here,
 so the picker has no panes and no tabs: the bottom sheet below the `md` breakpoint
-shows the same single set of columns.
+shows the same ring.
 
 **Ordering is not enforced.** The control never reorders or clamps the two ends - same
 contract as the other two ranges - so an end before the start is a
@@ -521,7 +522,7 @@ The value is a `string | null`. On `et-date-time-input` (forwarded from the head
 | `startView`                     | `'month' \| 'year' \| 'multiYear'`           | `'month'`           | Which grid the picker calendar opens on.                                                    |
 | `dateClass`                     | `(date, view) => string \| string[] \| null` | `null`              | Per-cell classes for the picker calendar.                                                   |
 | `weekNumbers`                   | `boolean`                                    | `false`             | Renders the picker calendar's week-number column.                                           |
-| `minuteStep` / `secondStep`     | `number`                                     | `5` / `1`           | Forwarded to the time picker columns, clamped to at least 1.                                |
+| `minuteStep` / `secondStep`     | `number`                                     | `5` / `1`           | Forwarded to the time picker, clamped to at least 1.                                        |
 | `minTime` / `maxTime`           | `Date \| null`                               | `null`              | Bound the time pane's time of day (see the time input).                                     |
 | `timeFilter`                    | `((date: Date) => boolean) \| null`          | `null`              | Rejects individual times; receives the full candidate timestamp.                            |
 | `pickerOpen`                    | `boolean` (model)                            | `false`             | The picker overlay's open state.                                                            |
@@ -549,9 +550,8 @@ commits a bare date at midnight, because there the reader wrote the whole entry.
 A held half survives an unedited blur, and is dropped by an edit to the field or by
 clearing the control.
 
-The time pane holds its parts the same way: an hour with no minute is not a time either, so
-nothing reaches the field until an hour and a minute are both picked. See
-[the time picker](/components/time-picker#held-picks).
+The ring sets hour and minute together, so a time pick is always a whole time, and the ring's
+centre shows the picked day under it.
 
 The date bounds (`minDate`/`maxDate`/`dateFilter`) and the time bounds
 (`minTime`/`maxTime`/`timeFilter`) are independent: the first gate the calendar pane, the
@@ -575,8 +575,8 @@ const openingHours = (candidate: Date) => {
 The two controls above, combined: one registered form control containing two
 text inputs (start – end) that share a single picker holding a range-mode
 [calendar](/components/calendar) plus a range-mode
-[**time picker**](/components/time-picker#range-picker) - one set of time columns
-holding both ends, switched between by name. The value shape is the date range input's
+[**time picker**](/components/time-picker#range-picker) - one ring
+holding both ends, the focused field choosing the active handle. The value shape is the date range input's
 `{ start: string | null; end: string | null }` in `valueFormat`, except both
 strings carry a time; each side commits exactly like the single date-time input.
 Reach for it wherever a start and an end belong together - a booking, a shift, an
@@ -608,12 +608,12 @@ directive), on top of the [shared contract set](#shared-contract):
 | `dateClass`                           | `(date, view) => string \| string[] \| null`                | `null`              | Per-cell classes for the picker calendar.                                                            |
 | `weekNumbers`                         | `boolean`                                                   | `false`             | Renders the picker calendar's week-number column.                                                    |
 | `presets`                             | `readonly DateRangePreset[]`                                | `[]`                | Ranges offered beside the picker - see [presets](#range-presets). 00:00 to 23:59 from the factories. |
-| `minuteStep` / `secondStep`           | `number`                                                    | `5` / `1`           | Forwarded to the time picker columns, clamped to at least 1.                                         |
+| `minuteStep` / `secondStep`           | `number`                                                    | `5` / `1`           | Forwarded to the time picker, clamped to at least 1.                                                 |
 | `minTime` / `maxTime`                 | `Date \| null`                                              | `null`              | Bound the times pane's time of day, for both ends.                                                   |
 | `timeFilter`                          | `((date: Date, side: 'start' \| 'end') => boolean) \| null` | `null`              | Rejects individual times; receives the full candidate timestamp and the end it fills.                |
 | `startPlaceholder` / `endPlaceholder` | `string`                                                    | `''`                | Placeholders of the two fields.                                                                      |
 | `startAriaLabel` / `endAriaLabel`     | `string \| null`                                            | `null` ³            | `aria-label`s of the two fields (`'Start date and time'` / `'End date and time'`).                   |
-| `startTimeLabel` / `endTimeLabel`     | `string \| null`                                            | `null` ⁵            | Names of the two ends on the time picker's own side switch.                                          |
+| `startTimeLabel` / `endTimeLabel`     | `string \| null`                                            | `null` ⁵            | Names of the two ring handles.                                                                       |
 | `datesTabLabel` / `timesTabLabel`     | `string \| null`                                            | `null` ³            | Labels of the pane tabs in the bottom sheet.                                                         |
 | `pickerOpen`                          | `boolean` (model)                                           | `false`             | The picker overlay's open state.                                                                     |
 | `pickerTriggerLabel`                  | `string \| null`                                            | `null` ¹            | `aria-label` of the suffix calendar button.                                                          |
@@ -755,8 +755,8 @@ the overview. Notes specific to this family:
   (`chooseDate`, `chooseTime`, `chooseDateRange`, `chooseTimeRange`,
   `chooseDateTime`, `chooseDateTimeRange`). All three range hosts are a
   `role="group"` labelled by the field label. Inside the date-time range picker,
-  which of the two times the columns are editing is announced by the time picker's
-  own `aria-pressed` side switch.
+  which of the two times the ring is editing is announced by the time picker's
+  handles, each a named `role="slider"`.
 - <kbd>Alt</kbd>+<kbd>ArrowDown</kbd> opens the picker from the field.
 
 ## Theming
@@ -771,14 +771,14 @@ time-zone reading read `--et-surface-background-solid`, `--et-surface-border-sol
 `--et-surface-interaction-disabled-solid` and `--et-theme-color-primary-solid`. The other
 tokens this domain reads itself:
 
-| Token                              | Default                      | Purpose                                                                                                                                                                                                                                                                                                                            |
-| ---------------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--et-range-input-stack-threshold` | `13em` / `11em` / `22em`     | The inline size a date / time / date-time range asks for, below which it [stacks](#shared-behavior) its two fields. A container query cannot read a custom property, so each host repeats the value as a literal in its own `@container` condition - overriding the token alone moves the requested width, not the stacking point. |
-| `--et-calendar-cell-size`          | `44px` in the bottom sheet   | The [calendar](/components/calendar#theming) token, raised to touch size while the picker is a sheet (and what the sheet reserves six rows of, so its height never moves between views).                                                                                                                                           |
-| `--et-time-picker-option-size`     | `44px` in the bottom sheet   | The [time picker](/components/time-picker#theming) token, raised the same way.                                                                                                                                                                                                                                                     |
-| `--et-form-field-hint-font-size`   | the form field's             | Size of the [time-zone](#value-time-zone) reading under a date-time field.                                                                                                                                                                                                                                                         |
-| `--et-overlay-anchored-x` / `-y`   | set by the runtime           | The anchored offset the panel's enter/leave transform is composed on top of - see [overlays](/components/overlays#anchored-overlays-and-the-arrow).                                                                                                                                                                                |
-| `--et-date-picker-panel-shadow`    | `--et-anchored-panel-shadow` | The anchored picker panel's shadow; falls back to the [shared anchored-panel shadow](/components/overlays#anchored-overlays-and-the-arrow).                                                                                                                                                                                        |
+| Token                                                         | Default                              | Purpose                                                                                                                                                                                                                                                                                                                            |
+| ------------------------------------------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--et-range-input-stack-threshold`                            | `13em` / `11em` / `22em`             | The inline size a date / time / date-time range asks for, below which it [stacks](#shared-behavior) its two fields. A container query cannot read a custom property, so each host repeats the value as a literal in its own `@container` condition - overriding the token alone moves the requested width, not the stacking point. |
+| `--et-calendar-cell-size`                                     | `44px` in the bottom sheet           | The [calendar](/components/calendar#theming) token, raised to touch size while the picker is a sheet (and what the sheet reserves six rows of, so its height never moves between views).                                                                                                                                           |
+| `--et-time-picker-ring-size` / `--et-time-picker-handle-size` | `328px` / `44px` in the bottom sheet | The [time picker](/components/time-picker#theming) tokens, raised the same way.                                                                                                                                                                                                                                                    |
+| `--et-form-field-hint-font-size`                              | the form field's                     | Size of the [time-zone](#value-time-zone) reading under a date-time field.                                                                                                                                                                                                                                                         |
+| `--et-overlay-anchored-x` / `-y`                              | set by the runtime                   | The anchored offset the panel's enter/leave transform is composed on top of - see [overlays](/components/overlays#anchored-overlays-and-the-arrow).                                                                                                                                                                                |
+| `--et-date-picker-panel-shadow`                               | `--et-anchored-panel-shadow`         | The anchored picker panel's shadow; falls back to the [shared anchored-panel shadow](/components/overlays#anchored-overlays-and-the-arrow).                                                                                                                                                                                        |
 
 ## Error codes
 

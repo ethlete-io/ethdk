@@ -18,6 +18,9 @@ export default {
     end: { control: 'text' },
     startLabel: { control: 'text' },
     endLabel: { control: 'text' },
+    day: { control: 'text' },
+    startDay: { control: 'text' },
+    endDay: { control: 'text' },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
   },
   args: {
@@ -33,6 +36,9 @@ export default {
     end: null,
     startLabel: null,
     endLabel: null,
+    day: null,
+    startDay: null,
+    endDay: null,
     color: 'brand',
   },
 } as Meta<TimePickerStorybookComponent>;
@@ -91,4 +97,28 @@ export const RangeEndAfterStart: Story = {
 
 export const RangeCustomLabels: Story = {
   args: { mode: 'range', startLabel: 'Doors open', endLabel: 'Doors close', start: '18:00', end: '23:00' },
+};
+
+export const FineSteps: Story = {
+  args: { minuteStep: 1, start: '14:37' },
+};
+
+export const CoarseSteps: Story = {
+  args: { minuteStep: 30, start: '14:30' },
+};
+
+export const WithDay: Story = {
+  args: { day: '2026-07-16', start: '14:30' },
+};
+
+export const RangeWithDays: Story = {
+  args: { mode: 'range', start: '09:00', end: '17:30', startDay: '2026-07-16', endDay: '2026-07-16' },
+};
+
+export const RangeWithDaysOvernight: Story = {
+  args: { mode: 'range', start: '22:00', end: '06:30', startDay: '2026-07-16', endDay: '2026-07-17' },
+};
+
+export const RangeHandOff: Story = {
+  args: { mode: 'range' },
 };

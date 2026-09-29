@@ -1,6 +1,6 @@
 # Time picker
 
-`et-time-picker` is an inline column-list time picker operating purely on `Date` objects - one scrollable listbox column per time unit, with the column layout (12/24-hour cycle, optional seconds, AM/PM) derived from a date-fns format string. It is a standalone element (usable outside forms) and the surface the [time input](/components/date-time-inputs#time-input)'s picker overlay hosts. [`mode="range"`](#range-picker) puts a time _range_ on the same columns.
+`et-time-picker` is an inline 24-hour ring time picker operating purely on `Date` objects - one drag on the ring sets the hour and the minute together, snapped to `minuteStep`. It is a standalone element (usable outside forms) and the surface the [time input](/components/date-time-inputs#time-input)'s picker overlay hosts. [`mode="range"`](#range-picker) puts a time _range_ on the same ring, with two handles and an arc between them, also past midnight.
 
 ```ts
 import { TIME_PICKER_IMPORTS } from '@ethlete/components';
@@ -12,53 +12,48 @@ import { TIME_PICKER_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-date-time-time-picker--default" height="360px" />
+<StoryEmbed id="components-date-time-time-picker--default" height="420px" />
 
 ## Options
 
 On `et-time-picker` (forwarded from the headless `[etTimePicker]` directive):
 
-| Input        | Type                                | Default             | Description                                                                                                              |
-| ------------ | ----------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `format`     | `string`                            | `TIME_FORMAT` token | date-fns time format the columns derive from (token default: `HH:mm`).                                                   |
-| `locale`     | `Locale \| null` (date-fns)         | `DATE_LOCALE` token | Expands localized format tokens (`p`, `pp`) and the AM/PM labels.                                                        |
-| `minuteStep` | `number`                            | `5`                 | Minute column granularity, clamped to a whole number of at least 1. An off-step selection is kept visible in the column. |
-| `secondStep` | `number`                            | `1`                 | Seconds column granularity, clamped the same way (the column only renders when the format carries seconds).              |
-| `min`        | `Date \| null`                      | `null`              | Earliest selectable time - only the time of day is read, so it applies every day.                                        |
-| `max`        | `Date \| null`                      | `null`              | Latest selectable time, same reading.                                                                                    |
-| `timeFilter` | `((date: Date) => boolean) \| null` | `null`              | Return `false` to make a time unselectable. Receives the full candidate timestamp.                                       |
+| Input        | Type                                | Default             | Description                                                                                                     |
+| ------------ | ----------------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `format`     | `string`                            | `TIME_FORMAT` token | date-fns time format of the ring's labels and readout (token default: `HH:mm`).                                 |
+| `locale`     | `Locale \| null` (date-fns)         | `DATE_LOCALE` token | Expands localized format tokens (`p`, `pp`) and the AM/PM labels.                                               |
+| `minuteStep` | `number`                            | `5`                 | Minute granularity of the ring, clamped to a whole number of at least 1.                                        |
+| `secondStep` | `number`                            | `1`                 | Seconds granularity of typed entry and of the "now" anchor, clamped the same way. The ring never picks seconds. |
+| `min`        | `Date \| null`                      | `null`              | Earliest selectable time - only the time of day is read, so it applies every day.                               |
+| `max`        | `Date \| null`                      | `null`              | Latest selectable time, same reading.                                                                           |
+| `timeFilter` | `((date: Date) => boolean) \| null` | `null`              | Return `false` to make a time unselectable. Receives the full candidate timestamp.                              |
+| `day`        | `Date \| null`                      | `null`              | The day the time falls on, from a calendar next to the picker. Set, the ring centre shows it under the time.    |
 
-The four columns' `aria-label`s are inputs of their own - `hoursLabel`, `minutesLabel`, `secondsLabel` and `periodLabel`, all `string | null` and `null` by default, falling through to [`TIME_PICKER_LABELS`](/components/localization) (`'Hours'`, `'Minutes'`, `'Seconds'`, `'AM/PM'`), which `provideTimePickerLabels({ … })` overrides for a whole subtree.
+| Model   | Type           | Default | Description                                                                |
+| ------- | -------------- | ------- | -------------------------------------------------------------------------- |
+| `value` | `Date \| null` | `null`  | The selected time of day, carried on a `Date`. `null` until a time is set. |
 
-| Model   | Type           | Default | Description                                                                   |
-| ------- | -------------- | ------- | ----------------------------------------------------------------------------- |
-| `value` | `Date \| null` | `null`  | The selected time of day, carried on a `Date`. `null` until a part is picked. |
+[`mode`, `rangeValue`, `activeSide`, `rangeDays`, `startLabel`/`endLabel`, and the `timeSelect` and `rangeHandOff` outputs](#range-picker) belong to range mode.
 
-[`mode`, `rangeValue`, `activeSide`, `startLabel`/`endLabel` and the `timeSelect` output](#range-picker) belong to range mode.
+**The ring picks hours and minutes only.** A drag, a press or a key writes a whole time with seconds at 0, on the current day. Seconds are typed in the [time input](/components/date-time-inputs#time-input); `secondStep` still applies to that typing and to the "now" anchor, which is where the keyboard starts on an empty ring - "now" snapped to the steps, and re-read whenever focus enters the picker.
 
-The format decides the columns, not just their labels: `HH:mm` renders hour + minute columns, `HH:mm:ss` adds seconds, `h:mm a` switches to a 12-hour cycle with an AM/PM column. Localized tokens work too - `p` resolves per locale (12-hour in en-US, 24-hour in de).
+The format decides the labels, not the granularity: a 24-hour format labels the ring `00 03 06 … 21`; a 12-hour one (`h:mm a`, or a localized `p` in en-US) keeps the 24-hour ring and labels it `12 AM / 3 / 6 / 9 / 12 PM / …`, with a moon under 12 AM and a sun over 12 PM. Localized tokens work too - `p` resolves per locale (12-hour in en-US, 24-hour in de).
 
-While no value is set, the columns anchor their focus and scroll position to "now" (snapped to the steps). "Now" is re-read whenever focus enters the picker, so one that stays mounted follows the clock and filters against the current day.
-
-Each column carries its own auto-hiding [`et-scrollbar`](/components/scrollbar), which appears while
-that column scrolls or the pointer is over it. The half-faded rows at the column edges stay as the
-resting cue.
-
-### Held picks {#held-picks}
-
-**From an empty picker, picks are held until they add up to a whole time.** A lone hour is not a time, and neither is a lone `PM` - so each pick marks its column and moves the anchor, but `value` stays `null` until an **hour** and a **minute** (and a **second**, where the format shows one) have all been picked. The pick that supplies the last of them commits them together. Without that, tapping `6` would commit whatever minute "now" happened to sit on, and a value nobody chose is worse than no value.
-
-**AM/PM is not one of the units a time waits for.** Every hour already sits in a half-day, so an untouched AM/PM column follows the anchor rather than blocking the value - picking `9` and `:30` alone commits 9:30 in whichever half-day the columns are showing. Picking it _is_ still held, though: `PM` says nothing about which hour, so it waits for the hour and minute to land on it instead of committing a time of its own.
-
-Once a whole time exists the columns edit it directly: every later pick rewrites that part and leaves the rest alone.
+The centre of the ring reads the time live. While no value is set there is no handle and no arc: the centre shows `--:--` and a short hint (`emptyHint`), and the first press on the track places the handle.
 
 ## 12-hour cycle
 
-<StoryEmbed id="components-date-time-time-picker--twelve-hour" height="360px" />
+<StoryEmbed id="components-date-time-time-picker--twelve-hour" height="420px" />
+
+## Steps
+
+`minuteStep` sets where a drag lands. A finer step (`1`) makes every minute reachable by drag; a coarser one (`30`) leaves only the half-hours.
+
+<StoryEmbed id="components-date-time-time-picker--fine-steps" height="420px" />
 
 ## Bounds and filtering
 
-`min` / `max` bound the time of day (their date part is ignored, so one bound covers every day; a `min` later than `max`, such as 22:00-06:00, is a window that wraps past midnight), and `timeFilter` rejects individual times. Options that fall out stay in place, dimmed and `aria-disabled` - they keep their position in the column so the list never reflows, and the keyboard model steps over them.
+`min` / `max` bound the time of day (their date part is ignored, so one bound covers every day; a `min` later than `max`, such as 22:00-06:00, is a window that wraps past midnight), and `timeFilter` rejects individual times. The track exists only where a time can be picked, with butt ends; a blocked span is drawn as a dotted line. A drag stops at the edge of a blocked span, and the keyboard skips over it.
 
 ```html
 <et-time-picker [(value)]="slot" [min]="openingTime" [max]="closingTime" [timeFilter]="notDuringLunch" />
@@ -68,57 +63,54 @@ Once a whole time exists the columns edit it directly: every later pick rewrites
 const notDuringLunch = (candidate: Date) => candidate.getHours() !== 12;
 ```
 
-<StoryEmbed id="components-date-time-time-picker--opening-hours" height="360px" />
+<StoryEmbed id="components-date-time-time-picker--opening-hours" height="420px" />
 
-Availability is computed per column, not per leaf option:
-
-- An **hour** is disabled only when no minute inside it is selectable, a **minute** only when no second inside it is, and an **AM/PM** option only when none of its twelve hours has a selectable time.
-- Picking a part keeps that part and moves the **finer** ones to the first value that works: with `min` at 09:40, clicking hour `9` commits `09:40`, not the out-of-bounds `09:00`.
-- An **AM/PM** pick chooses a half-day, not an hour, so the hour may move inside it as well - closest to the current clock position first. Picking PM at 10:00 AM under 09:00–17:00 opening hours commits 4 PM rather than doing nothing.
 - `timeFilter` receives the whole timestamp (the candidate time of day on the current day), so opening hours can differ per weekday.
+- Every step is evaluated, so a filter can carve out any set of times; runs of blocked steps merge into one span, also across midnight.
 - A value set from outside that falls out of bounds is still shown as the selection - bounds gate what a user can pick, they never rewrite the model.
 
 Typed entry in the [time input](/components/date-time-inputs#time-input) and [date-time input](/components/date-time-inputs#date-time-input) is deliberately **not** gated by these bounds - just like the calendar's `minDate`/`maxDate`, they shape the picker, and out-of-range values are a job for a schema validator.
 
 ## Keyboard
 
-Each column is a vertical listbox with a roving tabindex; selection follows focus. Every column is its own tab stop, and the left/right arrows move between them without leaving the picker.
+Each handle is a `role="slider"` and a tab stop. On an empty ring the keys start from the "now" anchor.
 
-| Key                    | Action                                                                                 |
-| ---------------------- | -------------------------------------------------------------------------------------- |
-| ArrowUp / ArrowDown    | Previous / next option (wrapping - time is cyclic)                                     |
-| Home / End             | First / last option                                                                    |
-| ArrowLeft / ArrowRight | Focus the previous / next column (no wrap, mirrored in RTL); the value does not change |
-| Typing digits          | Jump to the matching option (`2`,`3` → 23)                                             |
+| Key                   | Action                     |
+| --------------------- | -------------------------- |
+| ArrowRight / ArrowUp  | One `minuteStep` later     |
+| ArrowLeft / ArrowDown | One `minuteStep` earlier   |
+| PageUp / PageDown     | One hour later / earlier   |
+| Home / End            | The first / last open time |
 
-Disabled options are skipped by all of these - arrows walk to the next selectable option, Home/End go to the first/last selectable one, and a typed query that only matches disabled options selects nothing.
+Time is cyclic, so the arrows wrap past midnight. Blocked spans are skipped: a key lands on the next open time. Keys with Ctrl, Meta or Alt held are left alone.
+
+## Touch
+
+Below the `md` breakpoint the date and time pickers open as a bottom sheet, where the ring grows to 328px and the handles to 44px. The ring sets `touch-action: none`, so a drag on it does not scroll the sheet.
 
 ## Headless usage
 
-`[etTimePicker]` owns all state; `[etTimePickerColumn]` (one per unit, fed a `TimePickerColumn` from `picker.columns()`) and `[etTimePickerOption]` (one per option button) render however you like:
+`[etTimePicker]` owns all state; `[etTimePickerRing]` is the pointer surface (a press moves the nearest handle, a drag moves it on) and `[etTimePickerRingHandle]` one handle each. Draw the ring however you like:
 
 ```html
-<div #picker="etTimePicker" [(value)]="time" etTimePicker>
-  @for (column of picker.columns(); track column.unit) {
-  <div [column]="column" etTimePickerColumn>
-    @for (option of column.options; track option.value) {
-    <button [option]="option" etTimePickerOption>{{ option.label }}</button>
-    }
+<div [(value)]="time" etTimePicker>
+  <div etTimePickerRing>
+    <svg><!-- your track, arc and labels --></svg>
+    <button etTimePickerRingHandle></button>
   </div>
-  }
 </div>
 ```
 
-| Directive              | Input    | Type               | Description                                   |
-| ---------------------- | -------- | ------------------ | --------------------------------------------- |
-| `[etTimePickerColumn]` | `column` | `TimePickerColumn` | Required. The column this element renders.    |
-| `[etTimePickerOption]` | `option` | `TimePickerOption` | Required. The option this element represents. |
+| Directive                  | Input   | Type               | Description                                                              |
+| -------------------------- | ------- | ------------------ | ------------------------------------------------------------------------ |
+| `[etTimePickerRingHandle]` | `side`  | `'start' \| 'end'` | The end of a range the handle sets. `'start'` by default and for single. |
+| `[etTimePickerRingHandle]` | `label` | `string \| null`   | Accessible name. Defaults to the `time` label, or the name of the end.   |
 
-Each `TimePickerOption` carries `selected` / `focused` / `disabled` flags the option directive mirrors as `data-*` attributes for styling; the column keeps the focused option centered in its scrollport. In `range` mode it also carries `rangeStart` / `rangeEnd` / `band` (`data-range-start`, `data-range-end`, `data-band`), and `picker.sides()` gives you the two ends - name, formatted value, which is active - to build your own side switch out of.
+The ring directive exposes `spans()` (the open and blocked spans as minutes of the day), `arc()` (the range's start-to-end arc), `empty()` and `draggingSide()`; a handle exposes `minute()`, `angle()` (degrees clockwise from midnight at the top), `active()` and `dragging()`, and mirrors them as `data-active`, `data-dragging`, `data-empty` and `data-side`. A handle outside a ring, or a ring outside a picker, throws in dev mode - see [error codes](#error-codes).
 
 ## Range mode {#range-picker}
 
-`mode="range"` puts a **range** on the same one set of columns, the way `mode="range"` does for the [calendar](/components/calendar). The two ends take turns: a side switch above the columns names them, shows both times, and says which one a pick writes.
+`mode="range"` puts a **range** on the same ring: a start handle, an end handle and one arc between them, clockwise from the start - so 22:00 to 06:30 is one arc across midnight. There is no start/end toggle; the active handle is whichever end has focus or was pressed last.
 
 ```html
 <et-time-picker [(rangeValue)]="slot" mode="range" />
@@ -132,26 +124,26 @@ Each `TimePickerOption` carries `selected` / `focused` / `disabled` flags the op
 <et-time-picker [rangeValue]="slot()" (timeSelect)="commit($event.side, $event.time)" mode="range" />
 ```
 
-| Input                     | Type                                                 | Default     | Description                                             |
-| ------------------------- | ---------------------------------------------------- | ----------- | ------------------------------------------------------- |
-| `mode`                    | `'single' \| 'range'`                                | `'single'`  | Whether the columns hold `value` or `rangeValue`.       |
-| `rangeValue`              | `{ start: Date \| null; end: Date \| null }` (model) | both `null` | The two selected times.                                 |
-| `activeSide`              | `'start' \| 'end'` (model)                           | `'start'`   | The end the columns show, and the one a pick writes.    |
-| `timeFilter`              | `(date, side) => boolean`                            | `null`      | Rejects individual times, told which end it is filling. |
-| `startLabel` / `endLabel` | `string \| null`                                     | `null` ¹    | The two ends' names on the side switch.                 |
-| `timeSelect` (output)     | `{ side, time }`                                     | -           | A part was picked, and which end it filled.             |
+| Input                     | Type                                                 | Default     | Description                                                                                             |
+| ------------------------- | ---------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------- |
+| `mode`                    | `'single' \| 'range'`                                | `'single'`  | Whether the ring holds `value` or `rangeValue`.                                                         |
+| `rangeValue`              | `{ start: Date \| null; end: Date \| null }` (model) | both `null` | The two selected times.                                                                                 |
+| `activeSide`              | `'start' \| 'end'` (model)                           | `'start'`   | The end the ring centre shows and whose blocked spans the track draws. Set it with `activeSide.set(…)`. |
+| `rangeDays`               | `{ start: Date \| null; end: Date \| null } \| null` | `null`      | The day of each end, from a calendar next to the picker.                                                |
+| `timeFilter`              | `(date, side) => boolean`                            | `null`      | Rejects individual times, told which end it is filling.                                                 |
+| `startLabel` / `endLabel` | `string \| null`                                     | `null` ¹    | The two handles' accessible names.                                                                      |
+| `timeSelect` (output)     | `{ side, time }`                                     | -           | An end became a whole time, and which one.                                                              |
+| `rangeHandOff` (output)   | `'start' \| 'end'`                                   | -           | A press on an empty range placed the start and handed the active side on to the end.                    |
 
 ¹ `null` falls through to [`TIME_PICKER_LABELS`](/components/localization) (`startTime` / `endTime`: `'Start time'` / `'End time'`).
 
-`format`, `locale`, `minuteStep`/`secondStep` and `min`/`max` mean the same as above and apply to both ends. The side switch always renders a **bare** time, even where the columns derive from a combined date & time format - which is what lets the [date-time range input](/components/date-time-inputs#date-time-range-input) hand the picker its `Pp`. The [time range input](/components/date-time-inputs#time-range-input) is the plain-time control built on this mode.
+`format`, `locale`, `minuteStep`/`secondStep` and `min`/`max` mean the same as above and apply to both ends.
 
-### Which end a pick fills
+### Which handle moves
 
-The columns edit one end at a time because a column can only show one value. A day is one click, but a time is two to four, so a range cannot be built by "first pick opens, second closes" the way the calendar's is - the side switch is what makes the current end explicit.
+A press moves the handle nearest to the pressed time - a tie goes to the active one - and a drag carries that handle on. Moving a handle makes its end the active side, and a keyboard focus does too, so a form's two fields can drive the ring by focus: the [range inputs](/components/date-time-inputs#time-range-input) bind `activeSide` to the focused field.
 
-It hops **once**, on its own: the pick that _completes_ the start moves the columns to the end, which is the calendar's "first pick opens the range" translated into clicks. Held parts move nothing, so the columns stay put until the start really is a time - the hop can never land mid-pick. After that the switch stays where it is put, so going back to correct a start is never interrupted mid-edit. Keyboard browsing never hops at all - arrows commit as they move, so a hop there would strand you on the other end halfway through the column.
-
-Each end holds its own parts, so switching sides mid-pick and coming back finds them where they were.
+From an **empty** range, the first press places the start and hands the active side on to the end **once**, emitting `rangeHandOff`. The range inputs answer by moving focus to the end field on desktop; in the bottom sheet, which covers the fields, they do not.
 
 **Ordering is not enforced**, exactly as in the calendar and the range inputs: an end before its start is a [validator's](/components/forms#validation) job. The hook for pushing that rule into the picker instead is `timeFilter`'s side argument - "the end must be after the start" is not expressible as a `min`/`max` bound, because the bound differs per end and moves with the value.
 
@@ -162,35 +154,28 @@ const endAfterStart = (candidate: Date, side: 'start' | 'end') =>
 
 <StoryEmbed id="components-date-time-time-picker--range-end-after-start" height="440px" />
 
-### The band
+### Centre readout
 
-Every column marks **both** ends, and bands the options that are **inside** the range: an option is banded when the time picking it would produce - itself, with every other column left where it stands - falls between the two ends. So the band answers "does picking this stay inside the range", and it moves as the other columns do.
+With no `rangeDays`, the centre shows the **duration** of the range (`8 h 30 min`) and, when the end is earlier in the day than the start or falls on the next calendar day, the note `ends next day`. With `rangeDays` set - the date-time range input passes the day of each end - the centre shows the time and the day of the active end instead, and the calendar band carries the length. A range that is not complete shows the active end's time under its name.
 
-Editing the end of a 12:00 AM – 3:40 PM range, that puts the columns on 3:40 PM: the hours band 12 through 3, because 12:40 PM to 3:40 PM are inside the range while 4:40 PM is not; the minutes band 00 through 40, because 3:00 PM to 3:40 PM are; and AM and PM both band, because 3:40 AM and 3:40 PM both are. Switch to the start and the same rule redraws every column around 12:00 AM instead.
-
-Only the time of day is compared, never the date - the two ends of a [date-time range](/components/date-time-inputs#date-time-range-input) may sit on different days, and the columns show clock positions.
-
-The end that is **not** being edited is outlined rather than filled, so both stay readable while only one of them moves.
-
-<StoryEmbed id="components-date-time-time-picker--range-twelve-hour" height="440px" />
+<StoryEmbed id="components-date-time-time-picker--range-with-days-overnight" height="440px" />
 
 ## Accessibility
 
-- Each column is a labelled `role="listbox"` (`aria-orientation="vertical"`) whose options carry `aria-selected`; exactly one option per column is tabbable.
-- Arrow selection follows focus, so what's announced is always what's selected.
-- Unselectable options carry `aria-disabled` rather than the `disabled` attribute: the roving tabindex needs them focusable, so they are reachable and announced, just not pickable.
+- Each handle is a `role="slider"` with `aria-valuemin="0"`, `aria-valuemax="1439"` (minutes of the day), `aria-valuenow` and an `aria-valuetext` holding the formatted time. An empty end has no `aria-valuenow`.
+- The handle's name is the `time` label; in range mode it is the start or end label, so which end is being edited is announced rather than only drawn.
+- The ring graphic is `aria-hidden`; everything it shows is on the handles.
 - Disabled/readonly states belong to the hosting control (e.g. the time input) - the inline picker itself is always interactive.
-- In `range` mode the side switch is two toggle buttons carrying `aria-pressed`, each named by its label and its current time ("Start time 09:00"), so which end the columns are editing is announced rather than only drawn.
 
 ## Theming
 
-Selection colors come from the nearest [color theme](/core/theming) (`--et-theme-color-primary-solid`, `--et-theme-color-on-primary`); text and hover tints use surface tokens. Public design tokens:
+Selection colors come from the nearest [color theme](/core/theming) (`--et-theme-color-primary-solid`); text and the track use surface tokens. Public design tokens:
 
-| Token                          | Default | Purpose                              |
-| ------------------------------ | ------- | ------------------------------------ |
-| `--et-time-picker-column-size` | `240px` | Block size of the scrollable columns |
-| `--et-time-picker-option-size` | `36px`  | Block size of one option             |
+| Token                          | Default | Purpose                                                          |
+| ------------------------------ | ------- | ---------------------------------------------------------------- |
+| `--et-time-picker-ring-size`   | `280px` | Inline and block size of the ring (`328px` in the bottom sheet). |
+| `--et-time-picker-handle-size` | `24px`  | Size of a handle (`44px` in the bottom sheet).                   |
 
 ## Error codes
 
-The time picker's structural checks live in the shared date & time block - see [error codes](/components/error-codes#date-time-inputs-et30xx) (`ET3020`/`ET3021`).
+The time picker's structural checks live in the shared date & time block - see [error codes](/components/error-codes#date-time-inputs-et30xx) (`ET3022`/`ET3023`).
