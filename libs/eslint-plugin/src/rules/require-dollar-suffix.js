@@ -12,7 +12,8 @@ const { getImportedName } = require('./internals/import-resolution');
  *   - `new Subject / BehaviorSubject / ReplaySubject / AsyncSubject / Observable()`
  *   - a call to a known RxJS creator: from, of, interval, timer, fromEvent,
  *     fromEventPattern, combineLatest, merge, concat, forkJoin, race, zip,
- *     defer, iif, throwError, using, partition
+ *     defer, iif, throwError, using
+ *   - `toObservable(...)` or `.asObservable()`
  *
  * ❌ const myData = someObs.pipe(map(...));
  * ❌ const clicks = fromEvent(el, 'click');
@@ -40,7 +41,6 @@ const RXJS_CREATORS = new Set([
   'iif',
   'throwError',
   'using',
-  'partition',
 ]);
 
 const RXJS_SUBJECT_CTORS = new Set(['Subject', 'BehaviorSubject', 'ReplaySubject', 'AsyncSubject', 'Observable']);
@@ -58,13 +58,20 @@ const isObservableInit = (sourceCode, node) => {
     node.type === 'CallExpression' &&
     node.callee.type === 'MemberExpression' &&
     node.callee.property.type === 'Identifier' &&
-    node.callee.property.name === 'pipe'
+    (node.callee.property.name === 'pipe' || node.callee.property.name === 'asObservable')
   ) {
     return true;
   }
 
   // from(...), of(...), interval(...), etc.
   if (node.type === 'CallExpression' && RXJS_CREATORS.has(getImportedName(sourceCode, node.callee, 'rxjs') ?? '')) {
+    return true;
+  }
+
+  if (
+    node.type === 'CallExpression' &&
+    getImportedName(sourceCode, node.callee, '@angular/core/rxjs-interop') === 'toObservable'
+  ) {
     return true;
   }
 

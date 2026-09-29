@@ -10,6 +10,8 @@ const tester = new RuleTester({
 
 tester.run('require-dollar-suffix', rule, {
   valid: [
+    { code: `import { partition } from 'rxjs'; const [even, odd] = partition(source, isEven);` },
+    { code: `import { partition } from 'rxjs'; const pair = partition(source, isEven);` },
     {
       code: `import { merge } from 'lodash-es';
 const merged = merge({}, defaults);`,
@@ -52,6 +54,14 @@ const value = rxOf(1);`,
     },
     {
       code: `class Foo { stream = this.src.pipe(filter(x => x)); }`,
+      errors: [{ messageId: 'missingSuffix' }],
+    },
+    {
+      code: `import { toObservable } from '@angular/core/rxjs-interop'; const v = toObservable(s);`,
+      errors: [{ messageId: 'missingSuffix' }],
+    },
+    {
+      code: `class Foo { value = this.subject.asObservable(); }`,
       errors: [{ messageId: 'missingSuffix' }],
     },
   ],
