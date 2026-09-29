@@ -121,6 +121,79 @@ describe('query param overlay opener', () => {
     expect(openOverlayCount()).toBe(0);
   });
 
+  const openRef = () => TestBed.runInInjectionContext(() => injectOverlayManager().openOverlays()[0]);
+
+  const waitForClose = async () => {
+    for (let attempt = 0; attempt < 10 && openOverlayCount() > 0; attempt++) {
+      await flushFrames();
+    }
+  };
+
+  const productParam = () => TestBed.inject(Router).parseUrl(TestBed.inject(Router).url).queryParams['product'];
+
+  it('puts the last model value back into the URL when a close guard vetoes a cleared param', async () => {
+    const fixture = await createHost();
+
+    await setParam('42');
+
+    const ref = openRef();
+    await firstValueFrom(ref?.afterOpened() ?? of(undefined), { defaultValue: undefined });
+    TestBed.tick();
+
+    (ref?.componentInstance() as QueryParamOverlayComponent).overlayQueryParam.set('tab-b');
+    TestBed.tick();
+    await fixture.whenStable();
+
+    let vetoing = true;
+
+    ref?.registerCloseGuard(() => !vetoing);
+
+    await setParam(null);
+    await fixture.whenStable();
+    TestBed.tick();
+
+    expect(openOverlayCount()).toBe(1);
+    expect(productParam()).toBe('tab-b');
+
+    vetoing = false;
+    await setParam(null);
+    await waitForClose();
+
+    expect(openOverlayCount()).toBe(0);
+    expect(productParam()).toBeUndefined();
+
+    fixture.destroy();
+  });
+
+  it('keeps the param while a close guard vetoes a close from the overlay itself', async () => {
+    const fixture = await createHost();
+
+    await setParam('42');
+
+    const ref = openRef();
+    let vetoing = true;
+
+    ref?.registerCloseGuard(() => !vetoing);
+
+    ref?.close();
+    TestBed.tick();
+    await fixture.whenStable();
+
+    expect(openOverlayCount()).toBe(1);
+    expect(productParam()).toBe('42');
+
+    vetoing = false;
+    ref?.close();
+    TestBed.tick();
+    await fixture.whenStable();
+    await waitForClose();
+
+    expect(openOverlayCount()).toBe(0);
+    expect(productParam()).toBeUndefined();
+
+    fixture.destroy();
+  });
+
   it('replaces the history entry on a model change, so one Back closes the overlay', async () => {
     TestBed.inject(Router).setUpLocationChangeListener();
     const fixture = await createHost();
