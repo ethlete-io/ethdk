@@ -207,6 +207,22 @@ test.describe('parallel sessions on one ticket that each round up past the clock
     await expectCascaded(page);
   });
 
+  test('open each card with the duration its band books', async ({ page }) => {
+    for (const title of (await drawnPieces(page)).titles) {
+      await bandsOf(page, title)
+        .first()
+        .click({ position: { x: 8, y: 8 } });
+
+      const logged = await editSurface(page).getByLabel('Time this band logs').locator('input').inputValue();
+      const [hours = 0, minutes = 0] = logged.split(':').map(Number);
+
+      expect(hours * 60 + minutes).toBe(minutesOf(title));
+
+      await editSurface(page).getByRole('button', { name: 'Cancel' }).click();
+      await expect(editSurface(page)).toBeHidden();
+    }
+  });
+
   test('open a different row from each cascaded card', async ({ page }) => {
     const [first = '', second = ''] = (await drawnPieces(page)).titles;
 

@@ -79,6 +79,11 @@ export class EditWhenComponent {
 
   protected durationMs = computed(() => {
     const appointment = this.draft()();
+    const row = this.entry()?.row;
+
+    if (row && appointment.start.getTime() === row.from.getTime() && appointment.end.getTime() === row.to.getTime()) {
+      return row.durationMs;
+    }
 
     return appointment.end.getTime() - appointment.start.getTime();
   });
