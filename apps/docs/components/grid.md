@@ -209,6 +209,14 @@ An empty `layout: {}` says "place this for me" and never warns - it is what `add
 
 The `BackendIntegration` story shows the full round trip. A `<et-grid-debug />` component visualizes the underlying cells while developing - it lives in its own `GRID_DEBUG_IMPORTS` barrel so it never reaches a production bundle.
 
+### Layout engine internals
+
+The layout engine (`autoPlace`, `findCollision`, `compactLayout`, `computeGeometry`, `createAutoScroller` and the rest of the collision, geometry, snapping and auto-scroll helpers) is no longer exported; drive the grid through its inputs, outputs and imperative API instead. `serializeGridLayout`, `deserializeGridLayout`, `SerializeOptions` and `DEFAULT_BREAKPOINTS` stay public. `et update` removes the dropped names from `@ethlete/components` imports and marks each use with a `TODO(ethlete-migration)` comment:
+
+```bash
+yarn nx g @ethlete/components:migrate-grid-engine-internals
+```
+
 ## Accessibility
 
 - The grid host is a `role="region"` labelled from `GRID_LABELS` - `interactiveGrid` normally, `readonlyGrid` when `readOnly` (both [localizable](/components/localization)).

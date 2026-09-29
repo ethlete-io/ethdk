@@ -50,6 +50,11 @@
       "schema": "./migrate-chart-baseline-y/schema.json",
       "description": "Rename the removed chart-grid baselineY alias to baseline"
     },
+    "migrate-grid-engine-internals": {
+      "factory": "./migrate-grid-engine-internals/migration",
+      "schema": "./migrate-grid-engine-internals/schema.json",
+      "description": "Remove the grid engine internals from @ethlete/components imports and mark their uses"
+    },
     "icons": {
       "factory": "./icons/generator",
       "schema": "./icons/schema.json",

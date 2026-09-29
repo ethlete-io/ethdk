@@ -71,6 +71,14 @@
       "description": "Rename the removed chart-grid baselineY alias to baseline.",
       "generator": "@ethlete/components:migrate-chart-baseline-y",
       "docs": "/components/chart"
+    },
+    {
+      "name": "grid-engine-internals",
+      "version": "1.0.0-next.64",
+      "kind": "auto",
+      "description": "Remove the grid layout engine internals from @ethlete/components imports and mark the uses that need another approach.",
+      "generator": "@ethlete/components:migrate-grid-engine-internals",
+      "docs": "/components/grid"
     }
   ]
 }

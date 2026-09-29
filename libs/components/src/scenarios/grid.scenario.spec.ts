@@ -16,7 +16,6 @@ import {
   GridItemToolbarComponent,
   GridSerializedState,
   injectGridConfig,
-  itemsCollide,
   injectGridLabels,
   provideGridConfig,
   provideGridLabels,
@@ -326,7 +325,14 @@ describe('grid scenarios', () => {
     press(s, itemById(host, 'Note a'), 'ArrowRight', { ctrlKey: true });
     const after = positionsOf(changes.at(-1));
 
-    expect(itemsCollide(after['a']!, after['b']!)).toBe(false);
+    const [a, b2] = [after['a']!, after['b']!];
+
+    expect(
+      a.col < b2.col + b2.colSpan &&
+        b2.col < a.col + a.colSpan &&
+        a.row < b2.row + b2.rowSpan &&
+        b2.row < a.row + a.rowSpan,
+    ).toBe(false);
 
     const beforeRemove = changes.length;
 

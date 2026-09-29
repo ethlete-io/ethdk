@@ -8,4 +8,6 @@ export type { GridConfig } from './grid-config';
 export * from './grid.types';
 export { createGridAdapter, mapGridLayout, toGridPosition, fromGridPosition } from './grid-adapter';
 export type { GridAdapter, GridAdapterBreakpoints, CreateGridAdapterOptions } from './grid-adapter';
-export * from './internals';
+export { serializeGridLayout, deserializeGridLayout } from './internals/serialization';
+export type { SerializeOptions } from './internals/serialization';
+export { DEFAULT_BREAKPOINTS } from './internals/responsive';
