@@ -1,6 +1,6 @@
 # forms/select scan - open findings
 
-Scan of `libs/components/src/lib/forms/select/` from 2026-09-28. 0 High, 1 Medium, 2 Low, 0 Spec. Skipped: stories, most specs (read only to judge coverage). A second pass covered `forms/form-field/headless/anchored-panel-controller.ts` and `forms/selection-list/headless/internals/selection-state.ts` in full.
+Scan of `libs/components/src/lib/forms/select/` from 2026-09-28. 0 High, 1 Medium, 1 Low, 0 Spec. Skipped: stories, most specs (read only to judge coverage). A second pass covered `forms/form-field/headless/anchored-panel-controller.ts` and `forms/selection-list/headless/internals/selection-state.ts` in full.
 
 ## options, value comparison
 
@@ -9,7 +9,3 @@ Scan of `libs/components/src/lib/forms/select/` from 2026-09-28. 0 High, 1 Mediu
 ## bundle size
 
 - Low: `SelectComponent` statically imports `SelectVirtualOptionComponent`, `SelectAllOptionComponent` and `ChipComponent` (`forms/select/select.component.ts:23-36`), and every `SelectDirective` creates a virtual window (`forms/select/headless/select.directive.ts:476`). A single select with projected options bundles the data-driven, select-all and multi-chip code. Measure first; a split needs an API decision. M
-
-## panel controller and selection state (second pass)
-
-- Low: `select`, `toggleAll` and the unregister prune build the multi value in registration order (`forms/selection-list/headless/internals/selection-state.ts:146-148`, `:165-173`, `:196-200`, `:236-240`). An option that `@for` inserts in the middle of a list registers last, so its value lands at the end of the array, not at its display position. Sort by DOM position, or document the order. S
