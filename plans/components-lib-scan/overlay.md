@@ -1,6 +1,6 @@
 # overlay scan - open findings
 
-Scan of `libs/components/src/lib/overlay/` from 2026-09-28. 0 High, 0 Medium (1 fixed: `syncUrl` deep-link claim dropped in 772d67f5b), 6 Low (2 fixed: positioning inputs documented in efce4e0a6, query-param model writes replace the history entry in 8a8bf2aae), 5 Spec (after verification). Skipped: stories, the CSS beyond layer and colour checks. `anchored.strategy.ts`, `full-screen.strategy.ts` and `fullscreen-animation.ts` were read in a second pass (see the last section). Focus trap, focus restore and outside-pointer logic live in `@ethlete/core`'s overlay runtime and are out of scope.
+Scan of `libs/components/src/lib/overlay/` from 2026-09-28. 0 High, 0 Medium (1 fixed: `syncUrl` deep-link claim dropped in 772d67f5b), 5 Low (3 fixed: positioning inputs documented in efce4e0a6, query-param model writes replace the history entry in 8a8bf2aae, anchored `size`/`arrow`/`hide` middleware opt-in per consumer in 38198384e), 5 Spec (after verification). Skipped: stories, the CSS beyond layer and colour checks. `anchored.strategy.ts`, `full-screen.strategy.ts` and `fullscreen-animation.ts` were read in a second pass (see the last section). Focus trap, focus restore and outside-pointer logic live in `@ethlete/core`'s overlay runtime and are out of scope.
 
 ## routing
 
@@ -24,6 +24,5 @@ Scan of `libs/components/src/lib/overlay/` from 2026-09-28. 0 High, 0 Medium (1 
 
 ## strategies and fullscreen animation (second pass)
 
-- Low: `buildAnchoredRuntimePositionStrategy` always calls `enableAnchoredOverlayPositionExtras()` (`strategies/anchored.strategy.ts:68-69`). Every consumer of tooltip, select, menu or `[etOverlay]` bundles floating-ui `size`, `arrow` and `hide`, so the opt-in split in `@ethlete/core` has no effect through `components`. Call it only from the consumers that use those options, or drop the split. M
 - Low: `strategies/index.ts:6` re-exports all of `fullscreen-animation.ts` as public API, which includes `ViewportTransformData`, `cleanupFullscreenAnimationStyles` and the start, leave and abort functions that only `full-screen.strategy.ts` calls. Export the module by name from `full-screen.strategy.ts` only. S
 - Spec: no spec for `fullscreen-animation.ts` or `full-screen.strategy.ts` (close during the enter frame, breakpoint switch away and back, a detached origin at close, the shared hidden count). M
