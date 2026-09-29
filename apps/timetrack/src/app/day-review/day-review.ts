@@ -404,12 +404,13 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
    */
   const streamed = computed(() => {
     const collected = evidence();
+    const discovery = git.discovery();
 
-    return collected
+    return collected && discovery && !settings.isLoading() && editsReady()
       ? streamDay({
           events: collected.events,
           options: streamDayOptionsOf({
-            repoRoots: git.discovery()?.repos ?? [],
+            repoRoots: discovery.repos,
             settings: settings.settings(),
             links: projectLinks(),
             worktrees: git.worktrees(),

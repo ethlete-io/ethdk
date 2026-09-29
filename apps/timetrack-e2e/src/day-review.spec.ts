@@ -251,3 +251,14 @@ test.describe('the day view, with parents filed as issue links Jira refuses', ()
     expect((await readBackend(page)).jira.created).toHaveLength(1);
   });
 });
+
+test.describe('the first frame of the day view', () => {
+  test('draws no rows from the default settings while the settings document is still arriving', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, settings: defaultSettings(), settingsReadDelayMs: 4000 });
+    await page.goto('/day');
+    await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 500)));
+
+    await expect(page.locator('[data-kind="row"]')).toHaveCount(0);
+    await expect(page.locator('[data-kind="row"]').first()).toBeVisible();
+  });
+});
