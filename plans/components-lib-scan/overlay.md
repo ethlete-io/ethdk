@@ -1,6 +1,6 @@
 # overlay scan - open findings
 
-Scan of `libs/components/src/lib/overlay/` from 2026-09-28. 0 High, 1 Medium, 8 Low, 5 Spec (after verification). Skipped: stories, the CSS beyond layer and colour checks. `anchored.strategy.ts`, `full-screen.strategy.ts` and `fullscreen-animation.ts` were read in a second pass (see the last section). Focus trap, focus restore and outside-pointer logic live in `@ethlete/core`'s overlay runtime and are out of scope.
+Scan of `libs/components/src/lib/overlay/` from 2026-09-28. 0 High, 0 Medium (1 fixed: `syncUrl` deep-link claim dropped in 772d67f5b), 8 Low, 5 Spec (after verification). Skipped: stories, the CSS beyond layer and colour checks. `anchored.strategy.ts`, `full-screen.strategy.ts` and `fullscreen-animation.ts` were read in a second pass (see the last section). Focus trap, focus restore and outside-pointer logic live in `@ethlete/core`'s overlay runtime and are out of scope.
 
 ## headless
 
@@ -8,7 +8,6 @@ Scan of `libs/components/src/lib/overlay/` from 2026-09-28. 0 High, 1 Medium, 8 
 
 ## routing
 
-- Medium: `syncUrl` does not deep-link, although the JSDoc (`routing/overlay-router.ts:74-76`) and `apps/docs/components/overlays.md:422` say it does. The param key comes from a counter (`createComponentId('ovr')`, `:164`), and the constructor overwrites the param with the initial route (`:437`) instead of reading it. Either restore the route from a stable key or drop the deep-link claim. M Verified: `createComponentId` is a module counter, and the effect skips the first param event.
 - Low: a vetoed browser navigation restores the param with a push, not a replace (`routing/overlay-router.ts:478`), so the forward history is lost and `nativeBrowserBackStack` is not updated. S
 
 ## openers
