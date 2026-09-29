@@ -208,7 +208,7 @@ describe('forms selection list scenarios', () => {
     expect(document.activeElement).toBe(options[0]);
     press(s, 'd');
     expect(document.activeElement).toBe(options[1]);
-    press(s, 'Enter');
+    press(s, ' ');
     s.tick(1000);
 
     expect(app.model().positions).toEqual(['goal', 'defense', 'attack']);
@@ -360,7 +360,7 @@ describe('forms selection list scenarios', () => {
     expect(all.getAttribute('aria-checked')).toBe('mixed');
     expect(text(query('.count', host))).toBe('1 picked');
 
-    press(s, 'Enter', all);
+    press(s, ' ', all);
     expect(app.teams()).toEqual(['team-a', 'team-b']);
     expect(all.getAttribute('aria-checked')).toBe('true');
     expect(text(query('.count', host))).toBe('2 picked');
