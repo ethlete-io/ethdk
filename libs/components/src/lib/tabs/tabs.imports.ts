@@ -6,11 +6,8 @@ import { TabGroupComponent } from './tabs/tab-group.component';
 import { TabLabelDirective } from './tabs/tab-label.directive';
 import { TabComponent } from './tabs/tab.component';
 
-export const NAV_TAB_IMPORTS = [
-  NavTabsComponent,
-  NavTabLinkComponent,
-  NavTabsOutletComponent,
-  OverlayNavTabLinkComponent,
-] as const;
+export const NAV_TAB_IMPORTS = [NavTabsComponent, NavTabLinkComponent, NavTabsOutletComponent] as const;
+
+export const OVERLAY_NAV_TAB_IMPORTS = [NavTabsComponent, OverlayNavTabLinkComponent] as const;
 
 export const TAB_IMPORTS = [TabGroupComponent, TabComponent, TabLabelDirective] as const;

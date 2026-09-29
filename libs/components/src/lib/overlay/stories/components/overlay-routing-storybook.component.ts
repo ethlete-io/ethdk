@@ -1,6 +1,6 @@
 import { Component, ViewEncapsulation, inject, signal } from '@angular/core';
 import { BUTTON_IMPORTS } from '../../../button';
-import { NAV_TAB_IMPORTS } from '../../../tabs/tabs.imports';
+import { OVERLAY_NAV_TAB_IMPORTS } from '../../../tabs/tabs.imports';
 import { OverlayBodyComponent } from '../../overlay-body.component';
 import { OverlayCloseDirective } from '../../overlay-close.directive';
 import { OverlayFooterDirective } from '../../overlay-footer.directive';
@@ -498,7 +498,7 @@ export class SidebarDemoPage3Component {
   encapsulation: ViewEncapsulation.None,
   imports: [
     BUTTON_IMPORTS,
-    NAV_TAB_IMPORTS,
+    OVERLAY_NAV_TAB_IMPORTS,
     OverlaySidebarComponent,
     OverlayRouterOutletComponent,
     OverlayHeaderTemplateDirective,

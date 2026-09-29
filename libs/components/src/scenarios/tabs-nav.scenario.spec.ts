@@ -16,7 +16,7 @@ import {
   NavTabsDirective,
   NavTabsOutletComponent,
   NavTabsOutletDirective,
-  OverlayNavTabLinkComponent,
+  OVERLAY_NAV_TAB_IMPORTS,
   OverlayRouterOutletComponent,
   provideOverlay,
   provideOverlayRouter,
@@ -141,7 +141,7 @@ class PrivacyPageComponent {}
 
 @Component({
   selector: 'et-scenario-preferences-overlay',
-  imports: [NavTabsComponent, OverlayNavTabLinkComponent, OverlayRouterOutletComponent],
+  imports: [OVERLAY_NAV_TAB_IMPORTS, OverlayRouterOutletComponent],
   template: `
     <et-nav-tabs orientation="vertical">
       <button et-overlay-nav-tab-link="/email" type="button">Email</button>

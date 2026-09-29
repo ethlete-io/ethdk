@@ -1,6 +1,6 @@
 # Tabs
 
-Two flavors sharing one accessible tab-bar engine: **content tabs** (`et-tab-group`, panels in place) and **nav tabs** (`et-nav-tabs`, anchors bound to the Angular router). Import `TAB_IMPORTS` or `NAV_TAB_IMPORTS`.
+Two flavors sharing one accessible tab-bar engine: **content tabs** (`et-tab-group`, panels in place) and **nav tabs** (`et-nav-tabs`, anchors bound to the Angular router). Import `TAB_IMPORTS` or `NAV_TAB_IMPORTS` (`OVERLAY_NAV_TAB_IMPORTS` for [nav tabs in an overlay](#nav-tabs-in-an-overlay)).
 
 ## Content tabs
 
@@ -58,7 +58,7 @@ A nav tab link is active on its route whatever the URL's query params - it defau
 
 ### Nav tabs in an overlay
 
-Inside an overlay the Angular router is usually not the one moving between pages - the [overlay router](/components/overlays#routing-inside-overlays) is. `button[et-overlay-nav-tab-link]` is the nav tab link for that case: it takes the target overlay route as its selector input and otherwise behaves like `a[et-nav-tab-link]`. It ships in the same `NAV_TAB_IMPORTS`.
+Inside an overlay the Angular router is usually not the one moving between pages - the [overlay router](/components/overlays#routing-inside-overlays) is. `button[et-overlay-nav-tab-link]` is the nav tab link for that case: it takes the target overlay route as its selector input and otherwise behaves like `a[et-nav-tab-link]`. Import `OVERLAY_NAV_TAB_IMPORTS`: it holds `et-nav-tabs` and the overlay link, so plain router nav tabs do not bundle the overlay router.
 
 ```html
 <et-nav-tabs fit="fill" orientation="vertical">
@@ -67,6 +67,17 @@ Inside an overlay the Angular router is usually not the one moving between pages
 </et-nav-tabs>
 
 <et-overlay-router-outlet />
+```
+
+```ts
+import { OVERLAY_NAV_TAB_IMPORTS } from '@ethlete/components';
+```
+
+Upgrading from a version where `NAV_TAB_IMPORTS` held the overlay link? The migration adds
+`OVERLAY_NAV_TAB_IMPORTS` next to `NAV_TAB_IMPORTS` in every component whose template uses it:
+
+```bash
+yarn nx g @ethlete/components:migrate-overlay-nav-tab-imports
 ```
 
 It is a `button` rather than an anchor - an overlay route is not an address unless the router mirrors it into the URL - so it activates on <kbd>Enter</kbd> and <kbd>Space</kbd>. `disabled` and the router link's `navigationDirection` work as usual, and `orientation="vertical"` is what pairs it with a [sidebar overlay](/components/overlays#sidebar-layouts). Active state comes from the overlay router rather than from the click, so a navigation an [unsaved-changes guard](/components/overlays#guarding-navigation) is still deciding on leaves the underline on the page currently rendered - it moves once the guard lets the navigation through, and not at all when one refuses.

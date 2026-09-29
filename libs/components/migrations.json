@@ -47,6 +47,14 @@
       "description": "Spread BRACKET_DEFAULT_CARDS into provideBracketConfig, and report the brackets that need it by hand.",
       "generator": "@ethlete/components:migrate-bracket-default-cards",
       "docs": "/components/bracket"
+    },
+    {
+      "name": "overlay-nav-tab-imports",
+      "version": "1.0.0-next.64",
+      "kind": "auto",
+      "description": "Add OVERLAY_NAV_TAB_IMPORTS where a NAV_TAB_IMPORTS component renders et-overlay-nav-tab-link.",
+      "generator": "@ethlete/components:migrate-overlay-nav-tab-imports",
+      "docs": "/components/tabs"
     }
   ]
 }

@@ -20,6 +20,11 @@
       "schema": "./migrate-query-error-labels/schema.json",
       "description": "Find query-error usage affected by the English-only label default and report where German must be re-opted-in"
     },
+    "migrate-overlay-nav-tab-imports": {
+      "factory": "./migrate-overlay-nav-tab-imports/migration",
+      "schema": "./migrate-overlay-nav-tab-imports/schema.json",
+      "description": "Add OVERLAY_NAV_TAB_IMPORTS where a NAV_TAB_IMPORTS component renders et-overlay-nav-tab-link"
+    },
     "migrate-rich-text-editor-floating-toolbar": {
       "factory": "./migrate-rich-text-editor-floating-toolbar/migration",
       "schema": "./migrate-rich-text-editor-floating-toolbar/schema.json",
