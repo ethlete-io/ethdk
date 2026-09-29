@@ -129,6 +129,24 @@ describe('rich text editor token codec', () => {
 
       expect(resolveItem).toHaveBeenCalledTimes(2);
     });
+
+    it('drops only the torn-down hydration, leaving the shared request to other viewers', async () => {
+      let resolve: (item: { id: string; label: string }) => void = () => undefined;
+      const resolveItem = vi.fn(() => new Promise<{ id: string; label: string }>((r) => (resolve = r)));
+      const asyncCodec = createRichTextEditorTokenCodec(() => [{ char: '@', type: 'mention', items: [], resolveItem }]);
+      const gone = container(asyncCodec.render('{{mention:a}}'));
+      const kept = container(asyncCodec.render('{{mention:a}}'));
+
+      const teardown = asyncCodec.hydrate(gone);
+      asyncCodec.hydrate(kept);
+      teardown();
+      resolve({ id: 'a', label: 'Ada' });
+      await new Promise((r) => setTimeout(r));
+
+      expect(resolveItem).toHaveBeenCalledTimes(1);
+      expect(gone.querySelector(`.${TOKEN_LABEL_CLASS}`)?.textContent).toBe('a');
+      expect(kept.querySelector(`.${TOKEN_LABEL_CLASS}`)?.textContent).toBe('Ada');
+    });
   });
 
   describe('parseTokenText', () => {

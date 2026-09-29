@@ -96,7 +96,8 @@ export const assertValidToken = (type: string, id: string) => {
 export type RichTextEditorTokenCodec = {
   serialize: (root: HTMLElement) => void;
   render: (html: string) => string;
-  hydrate: (root: HTMLElement) => void;
+  /** Resolves the chips under `root`; the returned teardown drops this call's pending waiters and leaves the shared request alone. */
+  hydrate: (root: HTMLElement) => () => void;
   resolveChip: (type: string, id: string) => RichTextEditorTokenChip;
   parseTokenText: (text: string) => string;
   /** Matches a token in the Markdown value; the editor hands it to `markdownToHtml` as `verbatim`, so Markdown characters in a token stay literal. */
@@ -105,6 +106,14 @@ export type RichTextEditorTokenCodec = {
 
 type ItemApplier = (item: RichTextEditorTriggerItem | null) => void;
 type ResolvedItemEntry = { item: RichTextEditorTriggerItem | null; settled: boolean; waiters: ItemApplier[] };
+
+const noop = () => undefined;
+
+const dropWaiter = (entry: ResolvedItemEntry, waiter: ItemApplier) => {
+  const index = entry.waiters.indexOf(waiter);
+
+  if (index !== -1) entry.waiters.splice(index, 1);
+};
 
 export const createRichTextEditorTokenCodec = (
   triggers: () => readonly RichTextEditorTrigger[],
@@ -133,10 +142,10 @@ export const createRichTextEditorTokenCodec = (
     trigger: RichTextEditorTrigger;
     id: string;
     apply: ItemApplier;
-  }) => {
+  }): (() => void) => {
     const resolver = trigger.resolveItem;
 
-    if (!resolver) return;
+    if (!resolver) return noop;
 
     let byId = resolvedItems.get(resolver);
 
@@ -151,7 +160,7 @@ export const createRichTextEditorTokenCodec = (
       if (cached.settled) apply(cached.item);
       else cached.waiters.push(apply);
 
-      return;
+      return () => dropWaiter(cached, apply);
     }
 
     const resolved = resolver(id);
@@ -159,7 +168,7 @@ export const createRichTextEditorTokenCodec = (
     if (!isPromiseLike<RichTextEditorTriggerItem | null>(resolved) && !isObservable(resolved)) {
       apply(resolved);
 
-      return;
+      return noop;
     }
 
     const entry: ResolvedItemEntry = { item: null, settled: false, waiters: [apply] };
@@ -186,6 +195,8 @@ export const createRichTextEditorTokenCodec = (
         catchError(() => EMPTY),
       )
       .subscribe();
+
+    return () => dropWaiter(entry, apply);
   };
 
   const resolveSyncLabel = (type: string, id: string): string | null => {
@@ -217,6 +228,8 @@ export const createRichTextEditorTokenCodec = (
       .join('');
 
   const hydrate = (root: HTMLElement) => {
+    const teardowns: (() => void)[] = [];
+
     // eslint-disable-next-line ethlete/no-dom-query -- same marker-attribute lookup as serialize
     root.querySelectorAll<HTMLElement>(`[${TOKEN_CHIP_ATTR}]`).forEach((chip) => {
       const type = chip.getAttribute(TOKEN_TYPE_ATTR);
@@ -225,7 +238,7 @@ export const createRichTextEditorTokenCodec = (
 
       if (!id || !trigger) return;
 
-      resolveItemOnce({
+      const teardown = resolveItemOnce({
         trigger,
         id,
         apply: (item) => {
@@ -238,7 +251,11 @@ export const createRichTextEditorTokenCodec = (
           else chip.textContent = item.label;
         },
       });
+
+      teardowns.push(teardown);
     });
+
+    return () => teardowns.forEach((teardown) => teardown());
   };
 
   const resolveChip = (type: string, id: string): RichTextEditorTokenChip => ({

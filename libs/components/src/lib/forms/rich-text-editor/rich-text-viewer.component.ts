@@ -42,7 +42,7 @@ export class RichTextViewerComponent {
   constructor() {
     mountRichTextContentStyles();
 
-    effect(() => {
+    effect((onCleanup) => {
       const html = this.html();
       const host = this.host.nativeElement;
 
@@ -50,7 +50,9 @@ export class RichTextViewerComponent {
       if (html.includes('<img')) this.styleManager.mount(RichTextEditorImageStylesComponent);
 
       this.renderer.setProperty(host, 'innerHTML', html);
-      this.tokenCodec?.hydrate(host);
+      const teardown = this.tokenCodec?.hydrate(host);
+
+      if (teardown) onCleanup(teardown);
     });
   }
 }
