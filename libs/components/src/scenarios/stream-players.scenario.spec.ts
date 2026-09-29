@@ -70,13 +70,11 @@ import {
   VimeoPlayerDirective,
   VimeoPlayerParamsDirective,
   VimeoPlayerSlotComponent,
-  YOUTUBE_PLAYER_SLOT_TOKEN,
   YOUTUBE_PLAYER_TOKEN,
   YoutubePlayerComponent,
   YoutubePlayerDirective,
   YoutubePlayerParamsDirective,
   YoutubePlayerSlotComponent,
-  YoutubePlayerSlotDirective,
   YtPlayerConfig,
 } from '../index';
 import { Scenario, useScenario } from './harness';
@@ -319,24 +317,6 @@ class HeadlessYoutubeComponent {
 class ReplayComponent {
   replay = viewChild.required(YoutubePlayerComponent);
   headless = viewChild.required(HeadlessYoutubeComponent);
-}
-
-@Component({
-  selector: 'et-scenario-custom-slot',
-  template: '',
-  hostDirectives: [{ directive: YoutubePlayerParamsDirective, inputs: ['videoId'] }, YoutubePlayerSlotDirective],
-})
-class CustomYoutubeSlotComponent {
-  slot = inject(YOUTUBE_PLAYER_SLOT_TOKEN);
-}
-
-@Component({
-  selector: 'et-scenario-custom-slot-host',
-  imports: [CustomYoutubeSlotComponent],
-  template: `<et-scenario-custom-slot videoId="teaser" />`,
-})
-class CustomSlotHostComponent {
-  custom = viewChild.required(CustomYoutubeSlotComponent);
 }
 
 @Component({
@@ -819,22 +799,6 @@ describe('stream player scenarios', () => {
     expect(src('.soop-vod')).toBe('https://vod.afreecatv.com/player/1%232');
     expect(src('.dailymotion')).toBe('https://www.dailymotion.com/embed/video/..%2Fx?autoplay=0');
     expect(src('.tiktok')).toBe('https://www.tiktok.com/player/v1/v%3Frel%3D1?rel=0');
-  });
-
-  it('builds a slot of its own from the YouTube params and slot directives', () => {
-    const s = scenario();
-    const players = installYoutube();
-    const fixture = TestBed.createComponent(CustomSlotHostComponent);
-
-    s.flush();
-    fireScript(s, YT_API_URL);
-
-    const custom = fixture.componentInstance.custom();
-
-    expect(custom.slot).toBeInstanceOf(YoutubePlayerSlotDirective);
-    expect(custom.slot.slot.currentPlayerIdSignal()).toBe('youtube-teaser');
-    expect(players[0]?.config.videoId).toBe('teaser');
-    expect(query('et-scenario-custom-slot et-youtube-player')).toBeTruthy();
   });
 
   it('embeds a Twitch channel or video and follows the embed events', async () => {

@@ -9,7 +9,7 @@ import { StreamPlayer } from './stream-player';
 export type StreamPlayerId = string;
 
 /**
- * Token provided by player-slot directives/components (e.g. `YoutubePlayerSlotDirective`).
+ * Token provided by player-slot directives/components (e.g. `YoutubePlayerSlotComponent`).
  * Yields a reactive signal of the current player id the slot is bound to, or `null` when
  * the slot has not yet initialised. Consumed by `PipSlotPlaceholderComponent` to
  * auto-detect whether its hosting slot currently has its player in PIP mode.
