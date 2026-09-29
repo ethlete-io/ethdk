@@ -10,10 +10,17 @@ import {
   signal,
 } from '@angular/core';
 import { Appointment, BUTTON_IMPORTS, injectSchedulerEditSurfaceHost } from '@ethlete/components';
+import { EvidenceKind } from '@ethlete/timetrack';
 import { formatClockTime } from '../format';
 import { rowEntryOf } from './row-appointment';
 
-const COLLAPSED_EVIDENCE_COUNT = 3;
+const NAMING_KINDS: ReadonlySet<EvidenceKind> = new Set([
+  'attribution-rule',
+  'sibling-checkout',
+  'project-link',
+  'model',
+  'tempo-history',
+]);
 
 /** Why the row exists: every observation behind it, oldest first. Read-only — evidence is not edited. */
 @Component({
@@ -71,9 +78,15 @@ export class EditEvidenceComponent {
 
   protected expanded = signal(false);
 
-  protected shown = computed(() =>
-    this.expanded() ? this.evidence() : this.evidence().slice(0, COLLAPSED_EVIDENCE_COUNT),
-  );
+  protected shown = computed(() => {
+    const evidence = this.evidence();
+
+    if (this.expanded()) return evidence;
+
+    const naming = evidence.filter((entry) => NAMING_KINDS.has(entry.kind));
+
+    return naming.length ? naming : evidence.slice(0, 1);
+  });
 
   protected hiddenCount = computed(() => this.evidence().length - this.shown().length);
 }

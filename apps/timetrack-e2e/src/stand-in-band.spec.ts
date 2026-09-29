@@ -47,6 +47,21 @@ test.describe('a band a stand-in names', () => {
     await expect(editSurface(page).getByRole('checkbox')).not.toBeChecked();
   });
 
+  test('shows only the evidence that names it until all of it is asked for', async ({ page }) => {
+    const title = await band(page).getAttribute('title');
+
+    await openBand(page, title as string);
+
+    const evidence = editSurface(page).locator('ethlete-edit-evidence li');
+
+    await expect(evidence).toHaveCount(1);
+    await expect(evidence).toContainText('attribution rule');
+
+    await editSurface(page).getByRole('button', { name: 'Show all 4' }).click();
+
+    await expect(evidence).toHaveCount(4);
+  });
+
   test('is reported by the tray as waiting on a ticket', async ({ page }) => {
     await expect(band(page)).toHaveCount(1);
     await expect.poll(async () => (await readTray(page))?.total).toContain('waiting on a ticket');
