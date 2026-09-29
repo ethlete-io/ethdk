@@ -498,10 +498,19 @@ const askedByOf = (record: Record<string, unknown>): PromptAskedBy | undefined =
  * type with `toolUseResult` beside it, and a content array is never typed by hand. A sidechain record
  * is a subagent's instructions written by the model, so it is nobody at a keyboard.
  *
+ * A queued prompt is written when it is delivered, not when it was typed. The typed time is the
+ * timestamp of the `enqueue` record carrying the same text; without one, nobody is known to have been
+ * there at delivery, so it is `machine`.
+ *
  * A prompt nobody asked for is still emitted, with `askedBy: 'machine'`. It is what the session ran
  * on, so the day needs it to say what happened; it simply may not say that a person was there.
  */
-const promptOf = (record: Record<string, unknown>, workedIn: string | undefined): AgentPromptEvent | null => {
+const promptOf = (
+  record: Record<string, unknown>,
+  context: { workedIn: string | undefined; enqueued: Map<string, Date[]> },
+): AgentPromptEvent | null => {
+  const { workedIn, enqueued } = context;
+
   if (stringAt(record, 'type') !== 'user') return null;
   if (record['toolUseResult'] !== undefined && record['toolUseResult'] !== null) return null;
   if (record['isMeta'] === true || record['isSidechain'] === true) return null;
@@ -512,10 +521,12 @@ const promptOf = (record: Record<string, unknown>, workedIn: string | undefined)
 
   if (!message || !activity || !promptId || typeof message['content'] !== 'string') return null;
 
-  const askedBy = askedByOf(record);
+  const isQueued = stringAt(record, 'promptSource') === 'queued';
+  const typedAt = isQueued ? enqueued.get(message['content'])?.shift() : undefined;
+  const askedBy = isQueued && !typedAt ? 'machine' : askedByOf(record);
 
   return {
-    at: activity.at,
+    at: typedAt ?? activity.at,
     source: 'agent-prompt',
     kind: 'agent-prompt',
     provider: CLAUDE_CODE_PROVIDER,
@@ -526,6 +537,18 @@ const promptOf = (record: Record<string, unknown>, workedIn: string | undefined)
     workedIn: workedIn ?? activity.cwd,
     ...(askedBy ? { askedBy } : {}),
   };
+};
+
+const readEnqueue = (record: Record<string, unknown>, into: Map<string, Date[]>) => {
+  if (stringAt(record, 'type') !== 'queue-operation' || stringAt(record, 'operation') !== 'enqueue') return;
+
+  const content = stringAt(record, 'content');
+  const timestamp = stringAt(record, 'timestamp');
+  const at = timestamp ? new Date(timestamp) : undefined;
+
+  if (content === undefined || !at || Number.isNaN(at.getTime())) return;
+
+  into.set(content, [...(into.get(content) ?? []), at]);
 };
 
 const readTitle = (record: Record<string, unknown>, into: TitleCandidates) => {
@@ -602,6 +625,7 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
   // an id, and a repeated id never carried different counts. So the first one wins.
   const usageByTurnId = new Map<string, AgentUsageEvent>();
   const promptById = new Map<string, AgentPromptEvent>();
+  const enqueued = new Map<string, Date[]>();
   let unparsedLines = 0;
   let workedIn = options.resume?.session?.workedIn;
 
@@ -616,6 +640,7 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
     }
 
     readTitle(parsed, titles);
+    readEnqueue(parsed, enqueued);
 
     const said = workedInOfRecord(parsed);
 
@@ -629,7 +654,7 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
 
     // Kept behind `after` for the same reason spend is: the record's own id is what the store
     // deduplicates a prompt on, so a re-read appends nothing.
-    const prompt = promptOf(parsed, workedIn);
+    const prompt = promptOf(parsed, { workedIn, enqueued });
 
     if (prompt && !promptById.has(prompt.promptId)) promptById.set(prompt.promptId, prompt);
 

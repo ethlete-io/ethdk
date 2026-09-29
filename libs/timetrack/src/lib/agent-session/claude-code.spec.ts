@@ -532,10 +532,32 @@ describe('parseClaudeCodeSessionLog prompts', () => {
 
   it('reads promptSource where the record names no origin', () => {
     expect(parse([prompt({ minute: 5, extra: { promptSource: 'system' } })]).prompts[0]?.askedBy).toBe('machine');
-    expect(parse([prompt({ minute: 6, extra: { promptSource: 'queued' } })]).prompts[0]?.askedBy).toBe('human');
     expect(parse([prompt({ minute: 7, extra: { promptSource: 'suggestion_accepted' } })]).prompts[0]?.askedBy).toBe(
       'human',
     );
+  });
+
+  it('counts a queued prompt at the time it was typed, not delivered', () => {
+    const enqueue = JSON.stringify({
+      type: 'queue-operation',
+      operation: 'enqueue',
+      timestamp: at(2).toISOString(),
+      sessionId: SESSION,
+      content: 'Agree',
+    });
+    const result = parse([
+      enqueue,
+      prompt({ minute: 30, content: 'Agree', extra: { origin: { kind: 'human' }, promptSource: 'queued' } }),
+    ]);
+
+    expect(result.prompts[0]?.at.toISOString()).toBe(at(2).toISOString());
+    expect(result.prompts[0]?.askedBy).toBe('human');
+  });
+
+  it('adds no presence for a queued prompt whose typed time is unknown', () => {
+    const result = parse([prompt({ minute: 30, extra: { origin: { kind: 'human' }, promptSource: 'queued' } })]);
+
+    expect(result.prompts[0]?.askedBy).toBe('machine');
   });
 
   it('leaves askedBy unanswered for a log that records neither field', () => {
