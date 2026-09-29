@@ -45,25 +45,48 @@ const ELEMENT_SIZE_PROPS = new Set([
 /** Size-related methods called on DOM elements. */
 const ELEMENT_SIZE_METHODS = new Set(['getBoundingClientRect', 'getClientRects']);
 
+const SYNCHRONOUS_ARRAY_METHODS = new Set([
+  'map',
+  'flatMap',
+  'filter',
+  'forEach',
+  'find',
+  'findLast',
+  'findIndex',
+  'findLastIndex',
+  'some',
+  'every',
+  'reduce',
+  'reduceRight',
+  'sort',
+]);
+
 /**
- * Returns the name of the wrapping reactive context ('effect' | 'computed') if
- * the node is inside one, crossing exactly one function boundary.
  * @param {import('eslint').SourceCode} sourceCode
  * @param {import('eslint').Rule.Node} node
  * @returns {string | null}
  */
 const getReactiveContext = (sourceCode, node) => {
-  let crossedFunctionBoundary = false;
+  /** @type {any} */
   let current = node.parent;
 
   while (current) {
-    if (current.type === 'ArrowFunctionExpression' || current.type === 'FunctionExpression') {
-      crossedFunctionBoundary = true;
-    }
+    if (
+      current.type === 'ArrowFunctionExpression' ||
+      current.type === 'FunctionExpression' ||
+      current.type === 'FunctionDeclaration'
+    ) {
+      const host = current.parent;
+      if (host?.type !== 'CallExpression' || !host.arguments.includes(current)) return null;
 
-    if (crossedFunctionBoundary && current.type === 'CallExpression') {
-      const calleeName = getImportedName(sourceCode, current.callee, ANGULAR_CORE);
+      const calleeName = getImportedName(sourceCode, host.callee, ANGULAR_CORE);
       if (calleeName === 'effect' || calleeName === 'computed') return calleeName;
+
+      const isSynchronousArrayCallback =
+        host.callee.type === 'MemberExpression' &&
+        host.callee.property.type === 'Identifier' &&
+        SYNCHRONOUS_ARRAY_METHODS.has(host.callee.property.name);
+      if (!isSynchronousArrayCallback) return null;
     }
 
     current = current.parent;
