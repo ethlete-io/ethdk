@@ -55,6 +55,14 @@
       "description": "Add OVERLAY_NAV_TAB_IMPORTS where a NAV_TAB_IMPORTS component renders et-overlay-nav-tab-link.",
       "generator": "@ethlete/components:migrate-overlay-nav-tab-imports",
       "docs": "/components/tabs"
+    },
+    {
+      "name": "youtube-player-slot-directive",
+      "version": "1.0.0-next.64",
+      "kind": "auto",
+      "description": "Remove YoutubePlayerSlotDirective and YOUTUBE_PLAYER_SLOT_TOKEN, and mark the uses that need a YoutubePlayerSlotComponent.",
+      "generator": "@ethlete/components:migrate-youtube-player-slot-directive",
+      "docs": "/components/stream"
     }
   ]
 }

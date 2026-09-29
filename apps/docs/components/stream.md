@@ -55,6 +55,15 @@ Source inputs per platform:
 
 Every slot additionally accepts `width` / `height` (iframe sizing - usually leave them alone and size via CSS), `streamSlotPriority` (when several slots want the same player id, a priority slot wins the player) and `streamSlotOnPipBack` (declarative PiP-return callback, the template-friendly alternative to `pipActivate(onBack)`).
 
+Upgrading from a version that shipped `YoutubePlayerSlotDirective`? The migration drops it from
+`imports` arrays and marks each other use - a host directive, an injected `YOUTUBE_PLAYER_SLOT_TOKEN` -
+with a `TODO(ethlete-migration)` comment. Replace those with `<et-youtube-player-slot>` or
+`createStreamPlayerSlot`:
+
+```bash
+yarn nx g @ethlete/components:migrate-youtube-player-slot-directive
+```
+
 Only a change of the source input creates a new embed. The extras, `width` and `height` are read when the embed is created, so changing them later has no effect until the source changes or the player is retried.
 
 ## Live demo
