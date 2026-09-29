@@ -268,6 +268,10 @@ const collectMemberNamesForTypeByName = ({
  * @param {{ classNode: any, context: import('eslint').Rule.RuleContext }} config
  */
 const getImplementedContractMemberNames = ({ classNode, context }) => {
+  if (!classNode.implements?.length) {
+    return new Set();
+  }
+
   const filename = context.physicalFilename || context.filename;
   if (!filename || filename === '<input>' || filename === '<text>') {
     return new Set();
@@ -281,7 +285,7 @@ const getImplementedContractMemberNames = ({ classNode, context }) => {
   /** @type {Set<string>} */
   const memberNames = new Set();
 
-  for (const implementedType of classNode.implements || []) {
+  for (const implementedType of classNode.implements) {
     if (!implementedType.expression || implementedType.expression.type !== 'Identifier') continue;
 
     const typeMemberNames = collectMemberNamesForTypeByName({

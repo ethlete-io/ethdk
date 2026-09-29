@@ -39,4 +39,18 @@ describe('getImplementedContractMemberNames', () => {
       'deactivate',
     ]);
   });
+
+  it('does not parse the current file for a class without implements', () => {
+    const throwingContext = /** @type {any} */ ({
+      filename: componentPath,
+      sourceCode: {
+        get text() {
+          throw new Error('source text read');
+        },
+      },
+    });
+
+    expect(getImplementedContractMemberNames({ classNode: {}, context: throwingContext }).size).toBe(0);
+    expect(getImplementedContractMemberNames({ classNode: { implements: [] }, context: throwingContext }).size).toBe(0);
+  });
 });
