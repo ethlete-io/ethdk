@@ -37,7 +37,12 @@
  *   // … etc. All from @ethlete/core.
  */
 
-const { MODULE_REFERENCE_SELECTOR, getModuleReference, isImportedAs } = require('./internals/import-resolution');
+const {
+  MODULE_REFERENCE_SELECTOR,
+  getModuleReference,
+  isGlobalReference,
+  isImportedAs,
+} = require('./internals/import-resolution');
 
 const CDK_LAYOUT = '@angular/cdk/layout';
 
@@ -62,7 +67,15 @@ const preferMatchMedia = {
       CallExpression(node) {
         const { callee } = node;
 
-        // ── window.matchMedia() ───────────────────────────────────────────────
+        if (
+          callee.type === 'Identifier' &&
+          callee.name === 'matchMedia' &&
+          isGlobalReference(context.sourceCode, callee)
+        ) {
+          context.report({ node, messageId: 'preferMatchMedia' });
+          return;
+        }
+
         if (
           callee.type === 'MemberExpression' &&
           callee.property.type === 'Identifier' &&
@@ -74,9 +87,10 @@ const preferMatchMedia = {
           return;
         }
 
-        // ── inject(BreakpointObserver) ────────────────────────────────────────
         if (
           isImportedAs(context.sourceCode, callee, 'inject') &&
+          node.arguments[0]?.type === 'Identifier' &&
+          isGlobalReference(context.sourceCode, node.arguments[0]) &&
           isImportedAs(context.sourceCode, node.arguments[0], 'BreakpointObserver', CDK_LAYOUT)
         ) {
           context.report({ node, messageId: 'noBreakpointObserver' });

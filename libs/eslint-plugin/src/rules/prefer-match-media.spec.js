@@ -14,6 +14,7 @@ tester.run('prefer-match-media', rule, {
       code: `import { inject } from 'some-other-lib';
 inject(BreakpointObserver);`,
     },
+    { code: `const matchMedia = (q) => q; matchMedia('x');` },
     // Signal-based alternative — fine
     { code: `const isDark = injectMediaQueryIsMatched('(prefers-color-scheme: dark)');` },
     { code: `const canHover = injectCanHover();` },
@@ -61,5 +62,12 @@ ngInject(BreakpointObserver);`,
       code: `const bo = inject(BreakpointObserver);`,
       errors: [{ messageId: 'noBreakpointObserver' }],
     },
+    {
+      code: `import { inject } from '@angular/core';
+import { BreakpointObserver } from '@angular/cdk/layout';
+const bo = inject(BreakpointObserver);`,
+      errors: [{ messageId: 'noBreakpointObserver' }],
+    },
+    { code: `matchMedia('(min-width: 1px)');`, errors: [{ messageId: 'preferMatchMedia' }] },
   ],
 });
