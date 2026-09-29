@@ -3,7 +3,14 @@ import { PieceSession, sessionPieces } from './session-piece';
 
 const AT = (minutes: number) => new Date(new Date(2026, 8, 29, 10, 0, 0).getTime() + minutes * 60_000);
 
-const ROOTS = ['libs/timetrack', 'libs/eslint-plugin', 'apps/timetrack'];
+const ROOTS = [
+  'libs/timetrack',
+  'libs/eslint-plugin',
+  'apps/timetrack',
+  'apps/timetrack-e2e',
+  'libs/query',
+  'libs/query-devtools',
+];
 
 const session = (options: { id: string; from: number; to: number; paths: string[] }): PieceSession => ({
   sessionId: options.id,
@@ -105,5 +112,62 @@ describe('sessionPieces', () => {
         session({ id: 'c', from: 100, to: 120, paths: ['.changeset/x.md'] }),
       ]),
     ).toEqual({ a: 'a', b: 'b', c: 'c' });
+  });
+
+  it('joins two sessions that ran at the same time and wrote one handoff', () => {
+    expect(
+      piecesOf([
+        session({ id: 'a', from: 0, to: 60, paths: ['.claude/handoffs/lib-scan.md', 'libs/timetrack/a.ts'] }),
+        session({ id: 'b', from: 30, to: 90, paths: ['libs/eslint-plugin/a.ts', '.claude/handoffs/lib-scan.md'] }),
+      ]),
+    ).toEqual({ a: 'a', b: 'a' });
+  });
+
+  it('joins two sessions that ran at the same time and wrote one design call', () => {
+    expect(
+      piecesOf([
+        session({ id: 'a', from: 0, to: 60, paths: ['.ethlete/design/calls/components/time-range/01/call.ts'] }),
+        session({ id: 'b', from: 30, to: 90, paths: ['.ethlete/design/calls/components/time-range/02/call.ts'] }),
+        session({ id: 'c', from: 30, to: 90, paths: ['.ethlete/design/calls/components/color/01/call.ts'] }),
+      ]),
+    ).toEqual({ a: 'a', b: 'a', c: 'c' });
+  });
+
+  it('keeps two sessions that ran at the same time and wrote two handoffs apart', () => {
+    expect(
+      piecesOf([
+        session({ id: 'a', from: 0, to: 60, paths: ['.claude/handoffs/one.md', 'libs/timetrack/a.ts'] }),
+        session({ id: 'b', from: 30, to: 90, paths: ['.claude/handoffs/two.md', 'libs/timetrack/b.ts'] }),
+      ]),
+    ).toEqual({ a: 'a', b: 'b' });
+  });
+
+  it('joins a later session to the piece a parallel session joined through a handoff', () => {
+    expect(
+      piecesOf([
+        session({ id: 'a', from: 0, to: 60, paths: ['.claude/handoffs/one.md', 'libs/eslint-plugin/a.ts'] }),
+        session({ id: 'b', from: 30, to: 90, paths: ['.claude/handoffs/one.md', 'libs/eslint-plugin/b.ts'] }),
+        session({ id: 'c', from: 100, to: 120, paths: ['libs/eslint-plugin/c.ts'] }),
+      ]),
+    ).toEqual({ a: 'a', b: 'a', c: 'a' });
+  });
+
+  it('reads an app, its e2e app and its library as one project', () => {
+    expect(
+      piecesOf([
+        session({ id: 'a', from: 0, to: 40, paths: ['libs/timetrack/src/a.ts'] }),
+        session({ id: 'b', from: 60, to: 90, paths: ['apps/timetrack/src/b.ts'] }),
+        session({ id: 'c', from: 100, to: 120, paths: ['apps/timetrack-e2e/src/c.ts'] }),
+      ]),
+    ).toEqual({ a: 'a', b: 'a', c: 'a' });
+  });
+
+  it('keeps two libraries whose names only share a prefix apart', () => {
+    expect(
+      piecesOf([
+        session({ id: 'a', from: 0, to: 40, paths: ['libs/query/src/a.ts'] }),
+        session({ id: 'b', from: 60, to: 90, paths: ['libs/query-devtools/src/b.ts'] }),
+      ]),
+    ).toEqual({ a: 'a', b: 'b' });
   });
 });
