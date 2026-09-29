@@ -124,14 +124,14 @@ describe('BarChartComponent', () => {
     const { chart } = setup();
 
     expect(chart.valueTicks().domain).toEqual([-20, 100]);
-    expect(chart.baselineY()).toBeCloseTo(200 * (100 / 120));
+    expect(chart.baseline()).toBeCloseTo(200 * (100 / 120));
 
     const [jan, feb, mar] = chart.bars();
 
     expect(feb?.y).toBe(0);
     expect(jan?.height).toBeCloseTo((feb?.height ?? 0) * 0.4);
     expect(mar?.isNegative).toBe(true);
-    expect(mar?.y).toBeCloseTo(chart.baselineY());
+    expect(mar?.y).toBeCloseTo(chart.baseline());
     expect(mar?.height).toBeCloseTo((feb?.height ?? 0) * 0.2);
   });
 
@@ -167,7 +167,7 @@ describe('BarChartComponent', () => {
     expect(anchorYs[0]).toBeCloseTo(jan?.y ?? NaN);
     expect(anchorYs[1]).toBe(0);
     expect(anchorYs[2]).toBeCloseTo((mar?.y ?? NaN) + (mar?.height ?? NaN));
-    expect(anchorYs[3]).toBeCloseTo(chart.baselineY());
+    expect(anchorYs[3]).toBeCloseTo(chart.baseline());
   });
 
   it('mirrors the data in a table view', () => {

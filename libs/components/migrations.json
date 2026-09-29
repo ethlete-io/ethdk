@@ -63,6 +63,14 @@
       "description": "Remove YoutubePlayerSlotDirective and YOUTUBE_PLAYER_SLOT_TOKEN, and mark the uses that need a YoutubePlayerSlotComponent.",
       "generator": "@ethlete/components:migrate-youtube-player-slot-directive",
       "docs": "/components/stream"
+    },
+    {
+      "name": "chart-baseline-y",
+      "version": "1.0.0-next.64",
+      "kind": "auto",
+      "description": "Rename the removed chart-grid baselineY alias to baseline.",
+      "generator": "@ethlete/components:migrate-chart-baseline-y",
+      "docs": "/components/chart"
     }
   ]
 }

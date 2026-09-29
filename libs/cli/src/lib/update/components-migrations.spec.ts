@@ -47,7 +47,7 @@ describe('the @ethlete/components migrations', () => {
       }),
     ).map((entry) => entry.migration.name);
 
-    expect(pending).toEqual(expect.arrayContaining(['youtube-player-slot-directive']));
+    expect(pending).toEqual(expect.arrayContaining(['youtube-player-slot-directive', 'chart-baseline-y']));
   });
 
   it('name no version past the next prerelease, which an update would never reach', () => {

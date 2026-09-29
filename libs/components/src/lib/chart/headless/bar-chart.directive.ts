@@ -243,9 +243,6 @@ export class BarChartDirective implements ChartPlotHost {
   /** The zero line's offset along the value axis, in plot pixels. */
   public baseline = computed(() => this.valueScale()(0));
 
-  /** @deprecated Use `baseline`, which also covers horizontal charts. */
-  public baselineY = this.baseline;
-
   public ticks = computed<BarChartTick[]>(() => {
     const scale = this.valueScale();
     const format = this.formatValue();

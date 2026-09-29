@@ -42,6 +42,12 @@ signUps: BarChartDatum[] = [
 
 Without a `valueFormatter`, values are formatted with `Intl.NumberFormat` in the locale from `injectLocale()` (`@ethlete/core`), so `3320` reads `3,320` in English.
 
+Upgrading from a version that shipped the `baselineY` alias on `BarChartDirective`? It is removed; read `baseline()`, which also covers horizontal charts. The migration renames it in `.ts` files that import `@ethlete/components` and in their templates:
+
+```bash
+yarn nx g @ethlete/components:migrate-chart-baseline-y
+```
+
 ## Scale and layout
 
 The value axis always includes zero and rounds out to a 1, 2 or 5 step, so `[12, 87, 40]` gets the ticks `0, 20, … 100`. Negative values grow down from the zero baseline (left, when horizontal) and are rounded at that end.

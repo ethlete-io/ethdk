@@ -45,6 +45,11 @@
       "schema": "./migrate-youtube-player-slot-directive/schema.json",
       "description": "Remove YoutubePlayerSlotDirective and YOUTUBE_PLAYER_SLOT_TOKEN, and mark the uses it cannot remove"
     },
+    "migrate-chart-baseline-y": {
+      "factory": "./migrate-chart-baseline-y/migration",
+      "schema": "./migrate-chart-baseline-y/schema.json",
+      "description": "Rename the removed chart-grid baselineY alias to baseline"
+    },
     "icons": {
       "factory": "./icons/generator",
       "schema": "./icons/schema.json",
