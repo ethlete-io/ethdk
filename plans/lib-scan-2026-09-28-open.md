@@ -23,7 +23,4 @@ Each domain plan file keeps its open Low lines; the decisions are listed there. 
 
 ## Queue
 
-- timetrack `stillFocused` tail order: a checkout after the window source's last report took the minutes before it. Done in 534498700.
-- timetrack `agentApiClientOf` keeps format characters (U+202E). Done in b14767766.
-- timetrack: codex reasoning runs record no usage; `agentRunSpend` reads only Claude's envelope. Done in 29455534b.
-- cdk: the dead `overlay-host.storybook.component.ts` is deleted (5cc8ddd5a).
+Nothing is queued.
