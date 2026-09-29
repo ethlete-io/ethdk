@@ -37,6 +37,19 @@ const sessionRun = (options: {
     ...(options.title ? { title: options.title } : {}),
   }));
 
+const handoffTurn = (options: { sessionId: string; minutes: number; workedIn: string }): CollectedEvent => ({
+  at: AT(options.minutes),
+  source: 'agent-usage',
+  kind: 'agent-usage',
+  provider: 'claude-code',
+  sessionId: options.sessionId,
+  turnId: `${options.sessionId}-${options.minutes}`,
+  cwd: REPO,
+  workedIn: `${REPO}/${options.workedIn}`,
+  model: 'claude-opus-5',
+  usage: { input: 2, output: 289, cacheWrite: 17_421, cacheRead: 18_910, thinking: 0 },
+});
+
 const dayOf = (events: CollectedEvent[]) =>
   streamDay({ events, options: { repoRoots: [REPO], baseBranches: ['main'] } });
 
@@ -219,6 +232,32 @@ describe('streamDay agent sessions', () => {
         ...sessionRun({ sessionId: 'two', from: 70, to: 120, branchAt: () => 'main', workedIn: 'src/app/totw/b.ts' }),
       ]),
     ).toEqual([['one', 'two']]);
+  });
+
+  it('reads a working directory the shell changed into as a directory', () => {
+    const blocks = blocksOf([
+      ...sessionRun({ sessionId: 'one', from: 0, to: 30, cwd: `${REPO}/libs/timetrack`, workedIn: 'libs/timetrack' }),
+      ...sessionRun({ sessionId: 'two', from: 60, to: 90, workedIn: 'libs/timetrack/a.ts' }),
+    ]);
+
+    expect(blocks.map((block) => [block.context.session, block.context.piece])).toEqual([
+      ['one', 'one'],
+      ['two', 'one'],
+    ]);
+  });
+
+  it('joins parallel sessions through a handoff only a usage turn wrote', () => {
+    const blocks = blocksOf([
+      ...sessionRun({ sessionId: 'one', from: 0, to: 60 }),
+      ...sessionRun({ sessionId: 'two', from: 30, to: 90 }),
+      handoffTurn({ sessionId: 'one', minutes: 20, workedIn: '.claude/handoffs/one.md' }),
+      handoffTurn({ sessionId: 'two', minutes: 40, workedIn: '.claude/handoffs/one.md' }),
+    ]);
+
+    expect(blocks.map((block) => [block.context.session, block.context.piece])).toEqual([
+      ['one', 'one'],
+      ['two', 'one'],
+    ]);
   });
 
   describe('two sessions of two pieces on one ticket', () => {

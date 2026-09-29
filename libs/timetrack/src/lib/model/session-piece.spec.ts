@@ -170,4 +170,13 @@ describe('sessionPieces', () => {
       ]),
     ).toEqual({ a: 'a', b: 'b' });
   });
+
+  it('joins two sessions that ran at the same time and wrote in one plan directory', () => {
+    expect(
+      piecesOf([
+        session({ id: 'a', from: 0, to: 60, paths: ['plans/lib-scan/', 'libs/timetrack/a.ts'] }),
+        session({ id: 'b', from: 30, to: 90, paths: ['plans/lib-scan', 'libs/eslint-plugin/a.ts'] }),
+      ]),
+    ).toEqual({ a: 'a', b: 'a' });
+  });
 });

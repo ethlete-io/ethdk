@@ -30,11 +30,10 @@ const NAMED_WORK_FILES = [
   { prefix: '.ethlete/design/calls/', segments: 5 },
 ];
 
-const namedWorkFileOf = (path: string) => {
-  if (path.endsWith('/')) return undefined;
-
+/** The handoff, plan or design call a path names, or nothing. */
+export const namedWorkFileOf = (path: string) => {
   const named = NAMED_WORK_FILES.find((candidate) => path.startsWith(candidate.prefix));
-  const segments = path.split('/');
+  const segments = path.replace(/\/+$/, '').split('/');
 
   if (!named || segments.length < named.segments) return undefined;
 

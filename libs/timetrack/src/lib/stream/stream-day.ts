@@ -33,7 +33,7 @@ import { promptOriginReader } from './prompt-origin';
 import { PresenceSample, presenceWindows } from './presence';
 import { UnnamedFocus, UnnamedFocusReason, mergeUnnamedTitles } from './unnamed-focus';
 import { fileAgentEventsByWork } from './worked-in';
-import { sessionPieces } from '../model/session-piece';
+import { namedWorkFileOf, sessionPieces } from '../model/session-piece';
 
 /** The key of the one line every application with no checkout folds into. */
 export const OTHER_APPLICATIONS_KEY = 'other-applications';
@@ -578,7 +578,11 @@ type SessionRun = { sessionId: string; from: Date; to: Date; paths: string[] };
  * A session reports the directory it was started in, so the checkout it ran in is read the same way
  * every other agent fact is read - through `repoRootOf`.
  */
-const sessionRuns = (samples: readonly ActivityEvent[], roots: readonly string[]) => {
+const sessionRuns = (
+  samples: readonly ActivityEvent[],
+  turns: readonly AgentUsageEvent[],
+  roots: readonly string[],
+) => {
   const held = new Map<string, Map<string, SessionRun>>();
 
   for (const sample of samples) {
@@ -588,8 +592,9 @@ const sessionRuns = (samples: readonly ActivityEvent[], roots: readonly string[]
     const runs = held.get(repoPath) ?? new Map<string, SessionRun>();
     const run = runs.get(sample.sessionId);
 
-    const path =
-      sample.workedIn && sample.workedIn.startsWith(`${repoPath}/`) ? sample.workedIn.slice(repoPath.length + 1) : '';
+    // A record's `cwd` follows the shell's `cd`, and the parser falls back to it: it names a directory.
+    const workedIn = sample.workedIn === sample.cwd ? `${sample.cwd.replace(/\/+$/, '')}/` : sample.workedIn;
+    const path = workedIn && workedIn.startsWith(`${repoPath}/`) ? workedIn.slice(repoPath.length + 1) : '';
 
     if (run) {
       run.to = sample.at;
@@ -603,6 +608,17 @@ const sessionRuns = (samples: readonly ActivityEvent[], roots: readonly string[]
       });
 
     held.set(repoPath, runs);
+  }
+
+  // Samples are thinned to one a minute, so the write of a handoff or a plan often survives only in
+  // the turn that spent on it.
+  for (const turn of turns) {
+    if (!turn.workedIn) continue;
+
+    const repoPath = repoRootOf({ path: turn.cwd, roots });
+    const path = turn.workedIn.startsWith(`${repoPath}/`) ? turn.workedIn.slice(repoPath.length + 1) : '';
+
+    if (namedWorkFileOf(path)) held.get(repoPath)?.get(turn.sessionId)?.paths.push(path);
   }
 
   return new Map(
@@ -1102,7 +1118,7 @@ export const streamDay = (options: {
    * than only the stretches an `agent-session` sample covers: a session and the window watching it
    * are the same piece of work, and a key that told them apart would book those minutes twice.
    */
-  const runs = sessionRuns(samples, roots);
+  const runs = sessionRuns(samples, turns, roots);
   const pieces = new Map(
     [...runs].flatMap(([repoPath, held]) => [
       ...sessionPieces({ sessions: held, projectRoots: config.projectRoots?.[repoPath] }),
