@@ -16,19 +16,32 @@ const DESK_INPUT: ReadonlySet<string> = new Set(['window-focus', 'input-active']
  * The stretches the notifier said nobody was watching, from the transitions that open and close them.
  *
  * A stretch no `idle-end` or `unlock` closes ends at the next window focus or `input-active` instead: a
- * restarted app never sends the resume. An agent prompt cannot end it, since a prompt from the phone
- * lies inside an away stretch.
+ * restarted app never sends the resume. A second `idle-start` or `lock` while it is open says the same,
+ * so the `idle-end` after that closes only the second stretch. An agent prompt cannot end it, since a
+ * prompt from the phone lies inside an away stretch.
  */
 const awayStretches = (events: readonly CollectedEvent[]): TimeWindow[] => {
   const transitions = events
     .filter((event) => event.source === 'idle' && (LEAVING.has(event.kind) || RETURNING.has(event.kind)))
     .sort((a, b) => a.at.getTime() - b.at.getTime());
+  const deskInput = events
+    .filter((event) => DESK_INPUT.has(event.kind))
+    .map((event) => event.at)
+    .sort((a, b) => a.getTime() - b.getTime());
+  const backAfter = (left: Date) => deskInput.find((at) => at.getTime() > left.getTime() + ECHO_MS);
   const away: TimeWindow[] = [];
 
   let left: Date | undefined;
 
   for (const event of transitions) {
     if (LEAVING.has(event.kind)) {
+      const back = left && backAfter(left);
+
+      if (left && back && back < event.at) {
+        away.push({ from: left, to: back });
+        left = event.at;
+      }
+
       left ??= event.at;
       continue;
     }
@@ -37,14 +50,7 @@ const awayStretches = (events: readonly CollectedEvent[]): TimeWindow[] => {
     left = undefined;
   }
 
-  if (left) {
-    const since = left.getTime() + ECHO_MS;
-    const back = events
-      .filter((event) => DESK_INPUT.has(event.kind) && event.at.getTime() > since)
-      .sort((a, b) => a.at.getTime() - b.at.getTime())[0];
-
-    away.push({ from: left, to: back?.at ?? NEVER_CAME_BACK });
-  }
+  if (left) away.push({ from: left, to: backAfter(left) ?? NEVER_CAME_BACK });
 
   return away;
 };

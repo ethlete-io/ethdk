@@ -1030,13 +1030,14 @@ describe('streamDay, on a day something held the microphone', () => {
     expect(day.presenceMs).toBe(48 * MINUTE);
   });
 
-  it('counts no presence for a room a rule marks as never work, which is the open room left running', () => {
+  it('counts a room a rule marks as never work as presence when the user sat in it', () => {
     const day = streamDay({
       events: meeting,
       options: { callRules: { countsAsWork: [], neverCountsAsWork: ['Braune Digital'] } },
     });
 
-    expect(day.presenceMs).toBe(0);
+    expect(day.calls[0]?.countsAsWork).toBe(false);
+    expect(day.presenceMs).toBe(48 * MINUTE);
   });
 
   it('draws no break over a meeting nobody typed in, whether or not a rule made it work', () => {

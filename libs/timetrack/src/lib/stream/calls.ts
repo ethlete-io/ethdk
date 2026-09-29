@@ -342,7 +342,7 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
       attendedMs: attended,
       countsAsWork: counts,
       ...(counts ? {} : { excludedBy: !attendedCall ? 'unattended' : denied ? 'deny-rule' : 'no-rule' }),
-      isPresence: attendedCall && !denied,
+      isPresence: attendedCall,
     };
   };
 

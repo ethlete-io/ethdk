@@ -609,6 +609,21 @@ describe('classifyCalls, the voice room left open', () => {
     expect(windows[0]!.countsAsWork).toBe(false);
   });
 
+  it('keeps a room a deny rule excludes as presence when the user sat in it', () => {
+    const [window] = classify(
+      [
+        focus(10, 'com.hnc.Discord', 'Open Room #1 | Braune Digital'),
+        call(10, 'call-start', 'com.hnc.Discord'),
+        focus(15, 'code', 'calls.ts - timetrack'),
+        call(70, 'call-end', 'com.hnc.Discord'),
+      ],
+      { ...WORK, neverCountsAsWork: ['Open Room'] },
+    );
+
+    expect(window?.countsAsWork).toBe(false);
+    expect(window?.isPresence).toBe(true);
+  });
+
   it('judges no call on attendance when the day reports no window at all', () => {
     const windows = classify(
       [call(10, 'call-start', 'com.tinyspeck.slackmacgap'), call(40, 'call-end', 'com.tinyspeck.slackmacgap')],

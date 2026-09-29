@@ -96,6 +96,15 @@ describe('attendedAt', () => {
     ]);
   });
 
+  it('ends an idle stretch no idle-end closed at the next window focus, though a later one opens and closes', () => {
+    expect(present([idleStart(30), focus(120), idleStart(200), idleEnd(210), focus(211)])).toEqual([
+      { from: AT(15), to: AT(30) },
+      { from: AT(120), to: AT(135) },
+      { from: AT(185), to: AT(200) },
+      { from: AT(210), to: AT(226) },
+    ]);
+  });
+
   it('does not end an idle stretch no idle-end closed at a prompt a person gave from afar', () => {
     expect(present([idleStart(30), prompt(60, 'human'), focus(120)])).toEqual([
       { from: AT(15), to: AT(30) },

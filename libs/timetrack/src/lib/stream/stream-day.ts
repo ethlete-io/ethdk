@@ -292,13 +292,13 @@ export type StreamDay = {
    */
   ambiguousNames: string[];
   /**
-   * Every call of the day, in order — the ones a rule made work and the ones nothing classified alike.
+   * Every call of the day, in order — the ones a rule made work and the ones it did not alike.
    *
-   * The unclassified ones are here so the review can show them and the user can write the rule; under
-   * default-deny they add no presence and propose nothing. A call is no `Stream`, because a stream is a
-   * checkout and a call is not one, so a working call adds to `presenceMs` and to no `engagedMs`. On a
-   * day of long calls `concurrency` therefore reads below 1, which is what an hour of presence that no
-   * checkout booked should read as.
+   * The ones no rule counts are here so the review can show them and the user can write the rule. They
+   * propose nothing, and one the user sat in still adds presence. A call is no `Stream`, because a
+   * stream is a checkout and a call is not one, so a working call adds to `presenceMs` and to no
+   * `engagedMs`. On a day of long calls `concurrency` therefore reads below 1, which is what an hour
+   * of presence that no checkout booked should read as.
    */
   calls: CallWindow[];
 };
