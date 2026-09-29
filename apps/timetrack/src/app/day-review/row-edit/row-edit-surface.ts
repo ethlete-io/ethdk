@@ -8,7 +8,7 @@ import {
   SCHEDULER_LABELS,
 } from '@ethlete/components';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
-import { ReviewedRow, syncsInState } from '@ethlete/timetrack';
+import { ReviewedRow, callExclusionReasonOf, syncsInState } from '@ethlete/timetrack';
 import { injectDayReview } from '../day-review';
 import { EditApprovalDirective } from './edit-approval.component';
 import { EditEvidenceDirective } from './edit-evidence.component';
@@ -75,7 +75,9 @@ const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       ? store.allStandIns().find((standIn) => standIn.id === row.standInId)?.name
       : undefined;
 
-    return unnamedLabelOf({ row, standInName });
+    const call = store.excludedCallOf(row);
+
+    return unnamedLabelOf({ row, standInName, excludedReason: call && callExclusionReasonOf(call) });
   };
 
   const injector = inject(Injector);

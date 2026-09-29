@@ -297,6 +297,8 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
     // Attendance, not the work rules: a room nobody sat in is the one call that says nothing about
     // where the user was, and a rule denying the work still leaves them in the meeting. See ADR 0024.
     const attendedCall = !readable || expected || attended >= minAttendedMs;
+    const denied = matches(rules.neverCountsAsWork, named);
+    const counts = attendedCall && countsAsWork({ rules, named, expected });
 
     return {
       appId: call.appId,
@@ -304,8 +306,9 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
       to: call.to,
       title,
       attendedMs: attended,
-      countsAsWork: attendedCall && countsAsWork({ rules, named, expected }),
-      isPresence: attendedCall && !matches(rules.neverCountsAsWork, named),
+      countsAsWork: counts,
+      ...(counts ? {} : { excludedBy: !attendedCall ? 'unattended' : denied ? 'deny-rule' : 'no-rule' }),
+      isPresence: attendedCall && !denied,
     };
   };
 

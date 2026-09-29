@@ -42,6 +42,7 @@ import {
   matchAttributionRule,
   callBehindRow,
   callLabel,
+  countsAsWorkPatternOf,
   callRowSnipAt,
   endRowAt,
   followCallAgain,
@@ -1146,6 +1147,15 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     /** Where a dragged row now sits. A move keeps its duration; dragging one end re-reads it. */
     rescheduleRow: (move: { row: ReviewedRow; from: Date; to: Date }) =>
       apply(setRowRange({ edits: edits(), ...move })),
+
+    excludedCallOf: (row: ReviewedRow) =>
+      row.excluded && !row.issueKey ? callBehindRow({ row, calls: deterministicRows()?.calls ?? [] })?.call : undefined,
+
+    countCallAsWork: (row: ReviewedRow) => {
+      const call = callBehindRow({ row, calls: deterministicRows()?.calls ?? [] })?.call;
+
+      if (call) settings.addCallRule('countsAsWork', countsAsWorkPatternOf(call.appId));
+    },
 
     isLiveCall: (row: ReviewedRow) =>
       isToday() &&

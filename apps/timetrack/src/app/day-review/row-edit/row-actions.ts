@@ -1,4 +1,4 @@
-import { ReviewedRow, isManualRow } from '@ethlete/timetrack';
+import { ReviewedRow, appDisplayNameOf, isManualRow } from '@ethlete/timetrack';
 import { injectDayReview } from '../day-review';
 
 type DayReviewStore = NonNullable<ReturnType<typeof injectDayReview>>;
@@ -10,7 +10,7 @@ export type RowActionContext = {
 };
 
 type RowActionDefinition = {
-  label: string;
+  label: string | ((context: RowActionContext) => string);
   order: number;
   destructive?: boolean;
   enabled: (context: RowActionContext) => boolean;
@@ -39,6 +39,12 @@ export const ROW_ACTIONS: readonly RowActionDefinition[] = [
     order: 5,
     enabled: ({ store, row }) => store.isLiveCall(row),
     run: ({ store, row }) => store.endRowNow(row),
+  },
+  {
+    label: ({ store, row }) => `Count ${appDisplayNameOf(store.excludedCallOf(row)?.appId ?? '')} as work`,
+    order: 7,
+    enabled: ({ store, row }) => store.excludedCallOf(row)?.excludedBy === 'no-rule',
+    run: ({ store, row }) => store.countCallAsWork(row),
   },
   {
     label: 'Merge with the next band',
@@ -78,12 +84,15 @@ export type RowAction = {
   run: () => void;
 };
 
+export const rowActionLabelOf = (action: RowActionDefinition, context: RowActionContext) =>
+  typeof action.label === 'string' ? action.label : action.label(context);
+
 /** The actions a row can take right now, in render order, each bound to that row. */
 export const rowActionsFor = (context: RowActionContext): RowAction[] =>
   ROW_ACTIONS.filter((action) => action.enabled(context))
     .sort((a, b) => a.order - b.order)
     .map((action) => ({
-      label: action.label,
+      label: rowActionLabelOf(action, context),
       order: action.order,
       destructive: action.destructive === true,
       run: () => action.run(context),

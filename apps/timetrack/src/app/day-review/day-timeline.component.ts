@@ -32,6 +32,7 @@ import {
   DEFAULT_ROUND_OPTIONS,
   ReviewedRow,
   TimeWindow,
+  callExclusionReasonOf,
   describeApproval,
   formatDurationMs,
 } from '@ethlete/timetrack';
@@ -944,6 +945,7 @@ export class DayTimelineComponent {
           from: drag?.boundary.after.id === row.id ? drag.at : row.from,
           to: drag?.boundary.before.id === row.id ? drag.at : row.to,
           standInName: this.standInNameOf(row),
+          excludedReason: this.excludedReasonOf(row),
         });
       }),
     ];
@@ -1424,7 +1426,9 @@ export class DayTimelineComponent {
   }
 
   protected labelOf(boundary: TimelineBoundary) {
-    const named = (row: ReviewedRow) => row.issueKey ?? unnamedLabelOf({ row, standInName: this.standInNameOf(row) });
+    const named = (row: ReviewedRow) =>
+      row.issueKey ??
+      unnamedLabelOf({ row, standInName: this.standInNameOf(row), excludedReason: this.excludedReasonOf(row) });
 
     return `Boundary between ${named(boundary.before)} and ${named(boundary.after)}`;
   }
@@ -1526,6 +1530,12 @@ export class DayTimelineComponent {
     dragGestureFrom(event, event.currentTarget as HTMLElement)
       .pipe(tap(track), takeUntilDestroyed(this.destroyRef))
       .subscribe();
+  }
+
+  private excludedReasonOf(row: ReviewedRow) {
+    const call = this.store.excludedCallOf(row);
+
+    return call && callExclusionReasonOf(call);
   }
 
   private standInNameOf(row: ReviewedRow) {

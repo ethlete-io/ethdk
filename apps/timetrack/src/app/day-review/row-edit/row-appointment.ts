@@ -23,8 +23,8 @@ export const UNNAMED_LABEL = 'Not yet named';
 export const UNATTENDED_LABEL = 'Nobody was here';
 
 /**
- * What a band a call rule excluded is called. It is neither waiting for a name nor a problem: the
- * rules already answered what this room is, and the band is there for the day they are wrong about it.
+ * What a band for a call the day does not count is called. The reason follows it where the call behind
+ * the band is still known — see `callExclusionReasonOf`.
  */
 export const EXCLUDED_LABEL = 'Not counted';
 
@@ -35,10 +35,10 @@ export const EXCLUDED_LABEL = 'Not counted';
  * ticket. `standInName` is absent when the rule points at a stand-in the user deleted, and the band
  * then reads as unnamed again, exactly as the ladder now reads it.
  */
-export const unnamedLabelOf = (options: { row: ReviewedRow; standInName?: string }) => {
+export const unnamedLabelOf = (options: { row: ReviewedRow; standInName?: string; excludedReason?: string }) => {
   const { row } = options;
 
-  if (row.excluded) return EXCLUDED_LABEL;
+  if (row.excluded) return options.excludedReason ? `${EXCLUDED_LABEL} · ${options.excludedReason}` : EXCLUDED_LABEL;
   if (row.standInId && options.standInName) return options.standInName;
   if (!row.unattended) return UNNAMED_LABEL;
 
@@ -80,6 +80,7 @@ export type RowEntry = {
   willSync: boolean;
   /** What the row's stand-in is called, so the band reads it without a second lookup per redraw. */
   standInName?: string;
+  excludedReason?: string;
 };
 
 /** A story or epic several of the day's rows roll up to. Drawn in the all-day strip, never billed. */
@@ -121,6 +122,7 @@ export const appointmentOf = (options: {
   from?: Date;
   to?: Date;
   standInName?: string;
+  excludedReason?: string;
 }): Appointment<TimelineEntry> => ({
   id: options.row.id,
   parentId: options.parentId ?? null,
@@ -135,6 +137,7 @@ export const appointmentOf = (options: {
     durationMs: options.row.durationMs,
     willSync: syncsInState(options.row.state),
     standInName: options.standInName,
+    excludedReason: options.excludedReason,
   },
 });
 
@@ -163,7 +166,13 @@ export const appointmentLabel = (appointment: Appointment) => {
 
   if (!entry) return appointment.title;
 
-  const named = entry.row.issueKey ?? unnamedLabelOf({ row: entry.row, standInName: entry.standInName });
+  const named =
+    entry.row.issueKey ??
+    unnamedLabelOf({
+      row: entry.row,
+      standInName: entry.standInName,
+      excludedReason: entry.excludedReason,
+    });
   const alone = entry.row.issueKey && entry.row.unattended ? ' · nobody was here' : '';
   const disputed = disputedLabelOf(entry.row);
 

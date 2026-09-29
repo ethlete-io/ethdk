@@ -2,7 +2,7 @@ import { Directive, computed, inject } from '@angular/core';
 import { OVERLAY_REF, OverlayRef, injectSchedulerEditSurfaceHost } from '@ethlete/components';
 import { injectDayReview } from '../day-review';
 import { rowEntryOf } from './row-appointment';
-import { ROW_ACTIONS, RowActionContext } from './row-actions';
+import { ROW_ACTIONS, RowActionContext, rowActionLabelOf } from './row-actions';
 
 /**
  * What the surface's own action menu offers a row: the cuts and the undos that are not a field.
@@ -25,7 +25,11 @@ export class RowActionsDirective {
   constructor() {
     for (const action of ROW_ACTIONS) {
       this.host.registerAppointmentAction({
-        label: computed(() => action.label),
+        label: computed(() => {
+          const context = this.context();
+
+          return context ? rowActionLabelOf(action, context) : '';
+        }),
         order: action.order,
         destructive: action.destructive,
         enabled: computed(() => {

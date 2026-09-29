@@ -714,3 +714,40 @@ describe('classifyCalls, a call over a meeting the user accepted', () => {
     expect(windows[0]!.countsAsWork).toBe(false);
   });
 });
+
+describe('classifyCalls, why a call is not counted', () => {
+  const huddle = (appId: string) => [
+    focus(0, appId, 'Huddle'),
+    call(0, 'call-start', appId),
+    call(12, 'call-end', appId),
+  ];
+
+  it('says no rule counts it when nothing named the application', () => {
+    const [window] = classify(huddle('com.slack.Slack'), { countsAsWork: ['google-chrome', 'Discord'] });
+
+    expect(window!.countsAsWork).toBe(false);
+    expect(window!.excludedBy).toBe('no-rule');
+  });
+
+  it('says a rule excluded it when a deny rule matched', () => {
+    const [window] = classify(huddle('com.slack.Slack'), { countsAsWork: ['Slack'], neverCountsAsWork: ['Huddle'] });
+
+    expect(window!.excludedBy).toBe('deny-rule');
+  });
+
+  it('says nobody was in front of it when its window never held the focus', () => {
+    const [window] = classify(
+      [focus(0, 'code', 'calls.ts'), call(1, 'call-start', 'com.slack.Slack'), call(40, 'call-end', 'com.slack.Slack')],
+      { countsAsWork: ['Slack'] },
+    );
+
+    expect(window!.excludedBy).toBe('unattended');
+  });
+
+  it('gives no reason for a call that counts', () => {
+    const [window] = classify(huddle('com.slack.Slack'), { countsAsWork: ['Slack'] });
+
+    expect(window!.countsAsWork).toBe(true);
+    expect(window!.excludedBy).toBeUndefined();
+  });
+});
