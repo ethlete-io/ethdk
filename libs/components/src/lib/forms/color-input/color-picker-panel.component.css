@@ -48,7 +48,7 @@
     border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
     background: var(--et-surface-background-solid, rgb(32 32 32));
     color: var(--et-surface-color-solid, rgb(244 244 245));
-    box-shadow: var(--et-anchored-panel-shadow, 0 10px 24px rgb(0 0 0 / 0.16));
+    box-shadow: var(--et-anchored-panel-shadow, 0 10px 24px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.16));
     /* the pane is detached from the field, so it inherits the root font size (10px in this
        workspace) rather than the field's - it has to name its own */
     font-size: var(--et-color-picker-font-size);
@@ -153,7 +153,7 @@
     block-size: var(--et-color-picker-thumb-size);
     border-radius: 50%;
     border: 2px solid #fff;
-    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35);
+    box-shadow: 0 0 0 1px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.35);
     pointer-events: none;
   }
 

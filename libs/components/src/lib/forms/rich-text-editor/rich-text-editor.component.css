@@ -87,7 +87,7 @@
       background: var(--et-surface-background-solid, rgb(24 24 24));
       border-block-start: var(--et-form-field-control-border-width, 1px) solid
         color-mix(in srgb, currentColor 12%, transparent);
-      box-shadow: 0 -6px 20px rgb(0 0 0 / 0.24);
+      box-shadow: 0 -6px 20px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.24);
       opacity: 0;
       transform: translateY(100%);
       pointer-events: none;

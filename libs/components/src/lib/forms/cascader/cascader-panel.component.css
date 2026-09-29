@@ -40,7 +40,7 @@
     background: var(--et-surface-background-solid, rgb(32 32 32));
     color: var(--et-surface-color-solid, rgb(244 244 245));
     font-size: 14px;
-    box-shadow: var(--et-anchored-panel-shadow, 0 10px 24px rgb(0 0 0 / 0.16));
+    box-shadow: var(--et-anchored-panel-shadow, 0 10px 24px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.16));
     overflow: hidden;
 
     &.et-cascader-panel--resizing {

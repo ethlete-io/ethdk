@@ -307,11 +307,11 @@ The charts read the palette for series order and take a per-series `colorToken` 
 Shadows and scrims are not part of a surface or color theme - they sit behind or over one. Three
 channel tokens set their base color, and each component keeps its own opacity on top:
 
-| Token                     | Default       | Read by                                                                                                                          |
-| ------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `--et-shadow-color-rgb`   | `0 0 0`       | The tooltip and toggletip panel shadows (while `--et-anchored-panel-shadow` is unset), the `elevated` card, the `enclosed` table |
-| `--et-scrim-color-rgb`    | `0 0 0`       | The overlay backdrop (`/ 0.32`), the dropzone preview's info bar (`/ 0.6`)                                                       |
-| `--et-on-scrim-color-rgb` | `255 255 255` | Text on a scrim - the dropzone preview's file name and size                                                                      |
+| Token                     | Default       | Read by                                                                                                                                                                                                                                                                |
+| ------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--et-shadow-color-rgb`   | `0 0 0`       | Every component shadow: the anchored panels (menu, select, cascader, color picker, date picker, rich-text popups) while `--et-anchored-panel-shadow` is unset, tooltip, toggletip, `elevated` card, `enclosed` table, fab, slider thumbs, notification, scheduler drag |
+| `--et-scrim-color-rgb`    | `0 0 0`       | The overlay backdrop (`/ 0.32`), the dropzone preview's info bar (`/ 0.6`)                                                                                                                                                                                             |
+| `--et-on-scrim-color-rgb` | `255 255 255` | Text on a scrim - the dropzone preview's file name and size                                                                                                                                                                                                            |
 
 They are raw `R G B` channels, like the `-rgb` surface tokens, so an alpha can be applied to them.
 Neither is generated with the themes; set them on `:root` or on any scope:

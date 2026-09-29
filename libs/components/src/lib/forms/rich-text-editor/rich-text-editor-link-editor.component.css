@@ -26,7 +26,7 @@
   .et-overlay.et-rte-link-editor-overlay {
     background: var(--et-surface-background-solid, rgb(30 30 30));
     border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
-    box-shadow: 0 12px 32px rgb(0 0 0 / 0.24);
+    box-shadow: 0 12px 32px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.24);
   }
 
   /* Anchored popover (>= md): a compact, fully-rounded card pointing at the selection. */

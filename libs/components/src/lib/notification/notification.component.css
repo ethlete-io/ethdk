@@ -27,8 +27,8 @@
     syntax: '*';
     inherits: false;
     initial-value:
-      0 4px 16px rgb(0 0 0 / 10%),
-      0 0 0 1px rgb(0 0 0 / 5%);
+      0 4px 16px rgb(var(--et-shadow-color-rgb, 0 0 0) / 10%),
+      0 0 0 1px rgb(var(--et-shadow-color-rgb, 0 0 0) / 5%);
   }
 
   @property --et-notification-border-width {

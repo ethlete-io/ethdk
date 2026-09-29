@@ -56,7 +56,7 @@
     /* base font size for panel content beyond the options themselves (custom search inputs
        etc.) — the detached pane would otherwise inherit the root font size (10px here) */
     font-size: var(--et-select-option-font-size, 14px);
-    box-shadow: var(--et-anchored-panel-shadow, 0 10px 24px rgb(0 0 0 / 0.16));
+    box-shadow: var(--et-anchored-panel-shadow, 0 10px 24px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.16));
 
     /* the listbox wraps only the options, and the extras wrapper only the state/action rows —
        both are structural (ARIA grouping); `display: contents` keeps every child in the panel's

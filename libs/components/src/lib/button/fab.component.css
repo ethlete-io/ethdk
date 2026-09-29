@@ -32,7 +32,9 @@
     --_et-fab-label-fade-expand-delay: 40ms;
     --_et-fab-contents-padding: 0 var(--et-fab-contents-gap) 0 0;
 
-    --et-button-shadow: 0 0.3rem 0.8rem rgb(0 0 0 / 0.2), 0 0.1rem 0.3rem rgb(0 0 0 / 0.12);
+    --et-button-shadow:
+      0 0.3rem 0.8rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.2),
+      0 0.1rem 0.3rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.12);
 
     display: inline-flex;
     position: relative;
@@ -135,16 +137,22 @@
 
     @media (hover: hover) {
       &:hover {
-        --et-button-shadow: 0 0.6rem 1.2rem rgb(0 0 0 / 0.22), 0 0.2rem 0.4rem rgb(0 0 0 / 0.14);
+        --et-button-shadow:
+          0 0.6rem 1.2rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.22),
+          0 0.2rem 0.4rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.14);
       }
     }
 
     &:active {
-      --et-button-shadow: 0 0.2rem 0.6rem rgb(0 0 0 / 0.18), 0 0.1rem 0.2rem rgb(0 0 0 / 0.1);
+      --et-button-shadow:
+        0 0.2rem 0.6rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.18),
+        0 0.1rem 0.2rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.1);
     }
 
     &:focus-visible:active {
-      --et-button-shadow: 0 0.2rem 0.6rem rgb(0 0 0 / 0.18), 0 0.1rem 0.2rem rgb(0 0 0 / 0.1);
+      --et-button-shadow:
+        0 0.2rem 0.6rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.18),
+        0 0.1rem 0.2rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.1);
     }
 
     &:where([disabled]),
