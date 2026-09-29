@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
 import { PackageManagerName } from './package-manager';
-import { prereleaseTag } from './semver';
+import { compareVersions, prereleaseTag } from './semver';
 
 const TIMEOUT_MS = 15_000;
 
@@ -225,9 +225,18 @@ export const fetchRegistryPackage = async (options: {
  * Which dist tag an update follows when the caller names none: the one the installed prerelease belongs
  * to, so a repo on `-next.46` stays on `next` instead of being pulled back to the stable line.
  */
+/**
+ * The dist tag an update follows: for a prerelease, the tag holding the newest version of the same prerelease
+ * line, which is not always the tag named after it.
+ */
 export const tagForInstalled = (options: { version?: string; distTags: Record<string, string> }) => {
   const { version, distTags } = options;
   const tag = version ? prereleaseTag(version) : undefined;
 
-  return tag !== undefined && distTags[tag] !== undefined ? tag : 'latest';
+  if (tag === undefined || distTags[tag] === undefined) return 'latest';
+
+  // changesets publishes a package with only prereleases to `latest`, and leaves the `next` tag behind.
+  return Object.entries(distTags)
+    .filter(([, tagged]) => prereleaseTag(tagged) === tag)
+    .reduce((newest, [name, tagged]) => (compareVersions(tagged, distTags[newest] ?? tagged) > 0 ? name : newest), tag);
 };

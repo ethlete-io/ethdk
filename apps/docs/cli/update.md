@@ -35,7 +35,7 @@ The count of manifests that were read is printed above the plan, and the count t
 
 ## Which version it picks
 
-The target follows the dist tag the installed version belongs to. A repo on `5.0.0-next.40` follows `next` and lands on the newest `next`; a repo on `4.9.0` follows `latest`. The tag is printed, so the choice is never silent.
+The target follows the dist tag the installed version belongs to. A repo on `5.0.0-next.40` follows `next` and lands on the newest `next`; a repo on `4.9.0` follows `latest`. A package that has only prereleases is an exception: changesets publishes it to `latest` and leaves `next` behind, so the update follows whichever tag holds the newest `next` version. The tag is printed, so the choice is never silent.
 
 A dist tag can point backwards. If the tag this command picks by itself is older than the version the repo is on, the tag is stale and the package is reported instead of downgraded. An explicit `--tag` or `--to` is taken as asked, so `--tag latest` still moves a repo off the prerelease line.
 

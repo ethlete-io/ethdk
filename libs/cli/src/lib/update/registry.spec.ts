@@ -152,6 +152,18 @@ describe('tagForInstalled', () => {
     );
   });
 
+  it('follows the tag with the newest version of the same prerelease line', () => {
+    expect(
+      tagForInstalled({
+        version: '0.1.0-next.15',
+        distTags: { beta: '0.1.0-beta.9', latest: '0.1.0-next.18', next: '0.1.0-next.16' },
+      }),
+    ).toBe('latest');
+    expect(
+      tagForInstalled({ version: '1.0.0-next.60', distTags: { latest: '1.0.0-next.62', next: '1.0.0-next.64' } }),
+    ).toBe('next');
+  });
+
   it('follows latest for a release', () => {
     expect(tagForInstalled({ version: '4.8.0', distTags: { latest: '4.9.0', next: '5.0.0-next.55' } })).toBe('latest');
   });
