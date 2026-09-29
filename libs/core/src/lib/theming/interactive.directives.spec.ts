@@ -8,11 +8,11 @@ import { SurfaceInteractiveDirective } from './surface-interactive.directive';
 
 @Component({
   template: `
-    <button id="color" etColorInteractive></button>
+    <div id="color" etColorInteractive></div>
     <div id="container" etColorInteractiveContainer></div>
     <div id="has-focus" etColorInteractiveHasFocus></div>
     <div id="exclude" etColorInteractiveExclude></div>
-    <button id="surface" etSurfaceInteractive></button>
+    <div id="surface" etSurfaceInteractive></div>
   `,
   imports: [
     ColorInteractiveDirective,
