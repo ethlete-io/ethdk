@@ -1,4 +1,4 @@
-import { Observable, map } from 'rxjs';
+import { EMPTY, Observable, concatMap, expand, from, map, reduce, throwError, toArray } from 'rxjs';
 import { TimetrackTransport } from '../transport/ports';
 import { JiraCredentials, jiraRequest$ } from './client';
 
@@ -19,27 +19,69 @@ type CreateMetaTypeResource = {
   name?: string;
   subtask?: boolean;
   hierarchyLevel?: number;
-  fields?: Record<string, CreateMetaFieldResource>;
 };
 
-type CreateMetaResource = { projects?: { issuetypes?: CreateMetaTypeResource[] }[] };
+type NamedTypeResource = CreateMetaTypeResource & { id: string; name: string };
 
-const requiredOf = (fields: Record<string, CreateMetaFieldResource> | undefined) =>
-  Object.entries(fields ?? {})
-    .filter(([, field]) => field.required === true)
-    .map(([key, field]) => field.fieldId ?? field.key ?? key)
-    .sort();
+const isNamed = (resource: CreateMetaTypeResource): resource is NamedTypeResource => !!resource.id && !!resource.name;
 
-const toCreatableType = (resource: CreateMetaTypeResource): JiraCreatableType | undefined =>
-  resource.id && resource.name
-    ? {
-        id: resource.id,
-        name: resource.name,
-        subtask: resource.subtask ?? false,
-        hierarchyLevel: resource.hierarchyLevel ?? 0,
-        requiredFieldIds: requiredOf(resource.fields),
+type CreateMetaPage = { total?: number };
+
+type CreateMetaTypesPage = CreateMetaPage & {
+  issueTypes?: CreateMetaTypeResource[];
+  createMetaIssueType?: CreateMetaTypeResource[];
+};
+
+type CreateMetaFieldsPage = CreateMetaPage & {
+  fields?: CreateMetaFieldResource[];
+  results?: CreateMetaFieldResource[];
+};
+
+const JIRA_CREATEMETA_PAGE_SIZE = 200;
+
+const CREATEMETA_MAX_PAGES = 10;
+
+const createMetaPaged$ = <TPage extends CreateMetaPage, TItem>(options: {
+  transport: TimetrackTransport;
+  credentials: JiraCredentials;
+  path: string;
+  describe: string;
+  itemsOf: (page: TPage) => TItem[] | undefined;
+}): Observable<TItem[]> => {
+  const page$ = (startAt: number) =>
+    jiraRequest$<TPage>({
+      transport: options.transport,
+      credentials: options.credentials,
+      path: options.path,
+      describe: options.describe,
+      query: { startAt, maxResults: JIRA_CREATEMETA_PAGE_SIZE },
+    }).pipe(map((page) => ({ startAt, total: page.total, items: options.itemsOf(page) ?? [] })));
+
+  return page$(0).pipe(
+    expand((page, index) => {
+      const next = page.startAt + page.items.length;
+      const more =
+        page.items.length > 0 &&
+        (page.total === undefined ? page.items.length >= JIRA_CREATEMETA_PAGE_SIZE : next < page.total);
+
+      if (!more) return EMPTY;
+      if (index >= CREATEMETA_MAX_PAGES - 1) {
+        return throwError(
+          () => new Error(`Jira offered more than ${CREATEMETA_MAX_PAGES} pages of ${options.describe}.`),
+        );
       }
-    : undefined;
+
+      return page$(next);
+    }),
+    reduce((all: TItem[], page) => [...all, ...page.items], []),
+  );
+};
+
+const requiredOf = (fields: readonly CreateMetaFieldResource[]) =>
+  fields
+    .filter((field) => field.required === true)
+    .flatMap((field) => field.fieldId ?? field.key ?? [])
+    .sort();
 
 /**
  * The issue types **this account may create in this project**, with the fields each one requires.
@@ -56,20 +98,37 @@ export const fetchJiraCreatableTypes$ = (options: {
   transport: TimetrackTransport;
   credentials: JiraCredentials;
   projectKey: string;
-}): Observable<JiraCreatableType[]> =>
-  jiraRequest$<CreateMetaResource>({
+}): Observable<JiraCreatableType[]> => {
+  const base = `/rest/api/3/issue/createmeta/${encodeURIComponent(options.projectKey)}/issuetypes`;
+
+  return createMetaPaged$<CreateMetaTypesPage, CreateMetaTypeResource>({
     transport: options.transport,
     credentials: options.credentials,
-    path: '/rest/api/3/issue/createmeta',
+    path: base,
     describe: `what may be created in ${options.projectKey}`,
-    query: { projectKeys: options.projectKey, expand: 'projects.issuetypes.fields' },
+    itemsOf: (page) => page.issueTypes ?? page.createMetaIssueType,
   }).pipe(
-    map((resource) =>
-      (resource.projects ?? []).flatMap((project) =>
-        (project.issuetypes ?? []).flatMap((issueType) => toCreatableType(issueType) ?? []),
+    concatMap((resources) => from(resources.filter(isNamed))),
+    concatMap((resource) =>
+      createMetaPaged$<CreateMetaFieldsPage, CreateMetaFieldResource>({
+        transport: options.transport,
+        credentials: options.credentials,
+        path: `${base}/${encodeURIComponent(resource.id)}`,
+        describe: `the fields a ${resource.name} in ${options.projectKey} needs`,
+        itemsOf: (page) => page.fields ?? page.results,
+      }).pipe(
+        map((fields): JiraCreatableType => ({
+          id: resource.id,
+          name: resource.name,
+          subtask: resource.subtask ?? false,
+          hierarchyLevel: resource.hierarchyLevel ?? 0,
+          requiredFieldIds: requiredOf(fields),
+        })),
       ),
     ),
+    toArray(),
   );
+};
 
 /** Whether the account may create this type here, matched by name the way settings name it. */
 export const mayCreateType = (options: { typeName: string; types: readonly JiraCreatableType[] }) =>

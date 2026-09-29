@@ -6,11 +6,14 @@ import { JiraCreatableType, creatableTypeNames, fetchJiraCreatableTypes$, mayCre
 
 const CREDENTIALS: JiraCredentials = { host: 'https://team.atlassian.net', email: 'you@x.com', token: 't' };
 
-const fakeTransport = (body: unknown) => {
+const routedTransport = (answer: (path: string, startAt: number) => unknown) => {
   const requests: TimetrackRequest[] = [];
   const transport: TimetrackTransport = {
     request$: vi.fn((request: TimetrackRequest) => {
       requests.push(request);
+
+      const url = new URL(request.url);
+      const body = answer(url.pathname, Number(url.searchParams.get('startAt') ?? 0));
 
       return of({ status: 200, headers: {}, body }) as never;
     }),
@@ -19,62 +22,117 @@ const fakeTransport = (body: unknown) => {
   return { transport, requests };
 };
 
-const read = (body: unknown) => {
-  const { transport, requests } = fakeTransport(body);
+const read = (answer: (path: string, startAt: number) => unknown) => {
+  const { transport, requests } = routedTransport(answer);
   let types: JiraCreatableType[] = [];
+  let failure: unknown;
 
-  fetchJiraCreatableTypes$({ transport, credentials: CREDENTIALS, projectKey: 'FIP' }).subscribe((answer) => {
-    types = answer;
+  fetchJiraCreatableTypes$({ transport, credentials: CREDENTIALS, projectKey: 'FIP' }).subscribe({
+    next: (answered) => {
+      types = answered;
+    },
+    error: (error: unknown) => {
+      failure = error;
+    },
   });
 
-  return { types, requests };
+  return { types, requests, failure };
 };
 
-const type = (options: { id: string; name: string; hierarchyLevel?: number; fields?: unknown }) => ({
-  id: options.id,
-  name: options.name,
-  subtask: false,
-  hierarchyLevel: options.hierarchyLevel ?? 0,
-  fields: options.fields,
-});
+const TYPES_PATH = '/rest/api/3/issue/createmeta/FIP/issuetypes';
+
+const field = (fieldId: string, required: boolean) => ({ fieldId, key: fieldId, name: fieldId, required });
 
 describe('fetchJiraCreatableTypes$', () => {
-  it('asks Jira what this account may create in this project', () => {
-    const { requests } = read({ projects: [] });
+  it('asks the per-project createmeta read what this account may create', () => {
+    const { requests } = read(() => ({ issueTypes: [], total: 0 }));
 
+    expect(requests).toHaveLength(1);
     expect(requests[0]?.method).toBe('GET');
-    expect(requests[0]?.url).toContain('/rest/api/3/issue/createmeta');
-    expect(requests[0]?.url).toContain('projectKeys=FIP');
+    expect(new URL(requests[0]?.url ?? '').pathname).toBe(TYPES_PATH);
+    expect(requests[0]?.url).toContain('maxResults=200');
   });
 
-  it('reads the types and the fields each one insists on', () => {
-    const { types } = read({
-      projects: [
-        {
-          issuetypes: [
-            type({
-              id: '10001',
-              name: 'Task',
-              fields: {
-                summary: { fieldId: 'summary', required: true },
-                description: { fieldId: 'description', required: false },
-                customfield_10099: { fieldId: 'customfield_10099', required: true },
-              },
-            }),
-            type({ id: '10002', name: 'Epic', hierarchyLevel: 1 }),
+  it('reads the types, then the fields each one insists on', () => {
+    const { types, requests } = read((path) => {
+      if (path === TYPES_PATH) {
+        return {
+          issueTypes: [
+            { id: '10001', name: 'Task', subtask: false, hierarchyLevel: 0 },
+            { id: '10002', name: 'Epic', subtask: false, hierarchyLevel: 1 },
+            { name: 'Nameless' },
           ],
-        },
-      ],
+          startAt: 0,
+          maxResults: 200,
+          total: 3,
+        };
+      }
+
+      if (path === `${TYPES_PATH}/10001`) {
+        return {
+          fields: [field('summary', true), field('description', false), field('customfield_10099', true)],
+          total: 3,
+        };
+      }
+
+      return { fields: [field('summary', true)], total: 1 };
     });
 
-    expect(types.map((entry) => entry.name)).toEqual(['Task', 'Epic']);
+    expect(requests.map((request) => new URL(request.url).pathname)).toEqual([
+      TYPES_PATH,
+      `${TYPES_PATH}/10001`,
+      `${TYPES_PATH}/10002`,
+    ]);
+    expect(types).toEqual([
+      {
+        id: '10001',
+        name: 'Task',
+        subtask: false,
+        hierarchyLevel: 0,
+        requiredFieldIds: ['customfield_10099', 'summary'],
+      },
+      { id: '10002', name: 'Epic', subtask: false, hierarchyLevel: 1, requiredFieldIds: ['summary'] },
+    ]);
+  });
+
+  it('reads the alternate array names the schema also documents', () => {
+    const { types } = read((path) =>
+      path === TYPES_PATH
+        ? { createMetaIssueType: [{ id: '10001', name: 'Task' }], total: 1 }
+        : { results: [field('summary', true)], total: 1 },
+    );
+
+    expect(types).toEqual([
+      { id: '10001', name: 'Task', subtask: false, hierarchyLevel: 0, requiredFieldIds: ['summary'] },
+    ]);
+  });
+
+  it('follows startAt until the total is read', () => {
+    const { types, requests } = read((path, startAt) => {
+      if (path === TYPES_PATH) return { issueTypes: [{ id: '10001', name: 'Task' }], total: 1 };
+
+      return startAt === 0
+        ? { fields: [field('summary', true)], startAt: 0, total: 2 }
+        : { fields: [field('customfield_10099', true)], startAt: 1, total: 2 };
+    });
+
+    expect(requests[2]?.url).toContain('startAt=1');
     expect(types[0]?.requiredFieldIds).toEqual(['customfield_10099', 'summary']);
-    expect(types[1]?.hierarchyLevel).toBe(1);
+  });
+
+  it('errors rather than answer with part of a field list that never ends', () => {
+    const { failure } = read((path, startAt) =>
+      path === TYPES_PATH
+        ? { issueTypes: [{ id: '10001', name: 'Task' }], total: 1 }
+        : { fields: [field(`customfield_${startAt}`, true)], total: 1_000 },
+    );
+
+    expect(failure).toBeInstanceOf(Error);
   });
 
   it('answers nothing for a project the account may create nothing in', () => {
-    expect(read({ projects: [{ issuetypes: [] }] }).types).toEqual([]);
-    expect(read({}).types).toEqual([]);
+    expect(read(() => ({ issueTypes: [], total: 0 })).types).toEqual([]);
+    expect(read(() => ({})).types).toEqual([]);
   });
 });
 

@@ -130,19 +130,27 @@ const linkIssues = (backend: FakeBackend, request: FakeRoutedRequest): FakeAnswe
  * What the account may create in the project, which is not what the instance defines: a type named by
  * `notCreatable` stays in `/issuetype` and is left out here.
  */
-const createMeta = (backend: FakeBackend): FakeAnswer => {
+const creatableTypes = (backend: FakeBackend) => {
   const refused = new Set(backend.jira.notCreatable.map((name) => name.toLowerCase()));
 
-  return ok({
-    projects: [
-      {
-        issuetypes: backend.jira.issueTypes
-          .filter((type) => !refused.has(type.name.toLowerCase()))
-          .map((type) => ({ ...type, fields: { summary: { fieldId: 'summary', required: true } } })),
-      },
-    ],
-  });
+  return backend.jira.issueTypes.filter((type) => !refused.has(type.name.toLowerCase()));
 };
+
+const createMetaTypes = (backend: FakeBackend): FakeAnswer => {
+  const issueTypes = creatableTypes(backend);
+
+  return ok({ issueTypes, startAt: 0, maxResults: issueTypes.length, total: issueTypes.length });
+};
+
+const createMetaFields = (backend: FakeBackend, issueTypeId: string): FakeAnswer =>
+  creatableTypes(backend).some((type) => type.id === issueTypeId)
+    ? ok({
+        fields: [{ fieldId: 'summary', key: 'summary', name: 'Summary', required: true }],
+        startAt: 0,
+        maxResults: 1,
+        total: 1,
+      })
+    : ok({ fields: [], startAt: 0, maxResults: 0, total: 0 });
 
 /** Answers a Jira Cloud REST v3 call, and applies the writes to `backend.jira`. */
 export const respondJira = (backend: FakeBackend, request: FakeRoutedRequest): FakeAnswer => {
@@ -152,7 +160,11 @@ export const respondJira = (backend: FakeBackend, request: FakeRoutedRequest): F
   if (path === '/search/jql') return search(backend, request);
   if (path === '/project/search') return projectSearch(backend);
   if (path === '/issuetype' || path === '/issuetype/project') return ok(backend.jira.issueTypes);
-  if (path === '/issue/createmeta') return createMeta(backend);
+  if (/^\/issue\/createmeta\/[^/]+\/issuetypes$/.test(path)) return createMetaTypes(backend);
+
+  const createMetaType = /^\/issue\/createmeta\/[^/]+\/issuetypes\/([^/]+)$/.exec(path);
+
+  if (createMetaType) return createMetaFields(backend, decodeURIComponent(createMetaType[1] ?? ''));
   if (path === '/field') {
     return ok(
       backend.jira.fields.map((field) => ({
