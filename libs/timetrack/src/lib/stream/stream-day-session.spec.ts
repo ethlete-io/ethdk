@@ -24,6 +24,7 @@ const sessionRun = (options: {
   cwd?: string;
   branchAt?: (minutes: number) => string;
   workedIn?: string;
+  title?: string;
 }): CollectedEvent[] =>
   Array.from({ length: options.to - options.from + 1 }, (_, offset) => ({
     at: AT(options.from + offset),
@@ -33,6 +34,7 @@ const sessionRun = (options: {
     cwd: options.cwd ?? REPO,
     gitBranch: options.branchAt?.(options.from + offset) ?? BRANCH,
     ...(options.workedIn ? { workedIn: `${REPO}/${options.workedIn}` } : {}),
+    ...(options.title ? { title: options.title } : {}),
   }));
 
 const dayOf = (events: CollectedEvent[]) =>
@@ -136,6 +138,24 @@ describe('streamDay agent sessions', () => {
 
     expect(bookedMs(events)).toBe(120 * 60_000);
     expect(streamOf(events)?.engagedMs).toBe((71 + 60) * 60_000);
+  });
+
+  it('hangs the title and the prompts of a session that ran beside an older one on its own stretch', () => {
+    const blocks = blocksOf([
+      ...focusRun({ from: 0, to: 120 }),
+      ...sessionRun({ sessionId: 'one', from: 10, to: 110, title: 'Older work' }),
+      ...sessionRun({ sessionId: 'two', from: 60, to: 80, title: 'Auto mode debug pages' }),
+      promptAt({ sessionId: 'two', minutes: 65 }),
+    ]);
+    const evidenceOf = (session: string) =>
+      blocks
+        .filter((block) => block.context.session === session)
+        .flatMap((block) => block.evidence)
+        .filter((evidence) => evidence.kind === 'agent-session' || evidence.kind === 'prompt')
+        .map((evidence) => evidence.summary ?? evidence.kind);
+
+    expect(new Set(evidenceOf('two'))).toEqual(new Set(['Auto mode debug pages', 'prompt']));
+    expect(new Set(evidenceOf('one'))).toEqual(new Set(['Older work']));
   });
 
   it('books an overlap the user prompted neither session in once, to the older session', () => {

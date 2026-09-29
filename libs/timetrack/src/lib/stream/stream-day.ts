@@ -1148,6 +1148,11 @@ export const streamDay = (options: {
       ...inSession(session),
     };
   };
+  const ownSession = (options: { repoPath: string; sample: CollectedEvent }) => {
+    const sessionId = 'sessionId' in options.sample ? options.sample.sessionId : undefined;
+
+    return runs.get(options.repoPath)?.some((run) => run.sessionId === sessionId) ? sessionId : undefined;
+  };
   const witnessed = witnessedBranches(samples, roots);
   const branchAt = (options: { repoPath: string; at: Date; reported: string | undefined }) =>
     witnessedAt({ marks: witnessed.get(options.repoPath), at: options.at }) ?? options.reported;
@@ -1318,7 +1323,15 @@ export const streamDay = (options: {
             ? branchAt({ repoPath: observed.repoPath, at: sample.at, reported })
             : reported;
 
-        return { repoPath: observed.repoPath, ...workedOn({ repoPath: observed.repoPath, branch: on, at: sample.at }) };
+        return {
+          repoPath: observed.repoPath,
+          ...workedOn({
+            repoPath: observed.repoPath,
+            branch: on,
+            at: sample.at,
+            session: ownSession({ repoPath: observed.repoPath, sample }),
+          }),
+        };
       })();
     const of = state ?? context;
     const seenHere = secludedWindow || ownWindow ? null : evidenceFor(sample);
@@ -1346,7 +1359,10 @@ export const streamDay = (options: {
     const repoPath = checkoutOf(prompt.cwd);
     const on = repoPath ? branchAt({ repoPath, at: prompt.at, reported: branchOf(prompt.gitBranch) }) : undefined;
     const state: RepoState | null = repoPath
-      ? { repoPath, ...workedOn({ repoPath, branch: on, at: prompt.at }) }
+      ? {
+          repoPath,
+          ...workedOn({ repoPath, branch: on, at: prompt.at, session: ownSession({ repoPath, sample: prompt }) }),
+        }
       : null;
 
     const typed = promptEvidence(prompt);
