@@ -5,8 +5,20 @@ const fs = require('fs');
 const path = require('path');
 const ts = require('typescript');
 
-/** @type {Map<string, import('typescript').SourceFile | null>} */
+/** @type {Map<string, { stamp: string, sourceFile: import('typescript').SourceFile | null }>} */
 const SOURCE_FILE_CACHE = new Map();
+
+/**
+ * @param {string} filePath
+ */
+const getFileStamp = (filePath) => {
+  try {
+    const stats = fs.statSync(filePath);
+    return `${stats.mtimeMs}:${stats.size}`;
+  } catch {
+    return 'missing';
+  }
+};
 
 /**
  * @param {string} filePath
@@ -31,19 +43,18 @@ const getSourceFile = ({ filePath, text = null }) => {
     return ts.createSourceFile(filePath, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
   }
 
-  if (SOURCE_FILE_CACHE.has(filePath)) {
-    return SOURCE_FILE_CACHE.get(filePath) ?? null;
+  const stamp = getFileStamp(filePath);
+  const cached = SOURCE_FILE_CACHE.get(filePath);
+
+  if (cached && cached.stamp === stamp) {
+    return cached.sourceFile;
   }
 
   const fileText = readFileIfExists(filePath);
+  const sourceFile =
+    fileText === null ? null : ts.createSourceFile(filePath, fileText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
 
-  if (fileText === null) {
-    SOURCE_FILE_CACHE.set(filePath, null);
-    return null;
-  }
-
-  const sourceFile = ts.createSourceFile(filePath, fileText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-  SOURCE_FILE_CACHE.set(filePath, sourceFile);
+  SOURCE_FILE_CACHE.set(filePath, { stamp, sourceFile });
   return sourceFile;
 };
 
