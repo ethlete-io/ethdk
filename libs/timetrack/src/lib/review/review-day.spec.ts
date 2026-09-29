@@ -1115,6 +1115,19 @@ describe('reviewDay, a band nothing named', () => {
     expect(review.rows.map((row) => row.durationMs / MINUTE)).toEqual([30, 30]);
   });
 
+  it('reads a weak row as certain once the user names its issue by hand', () => {
+    const base = dayRows({
+      proposals: [proposal({ issueKey: 'ABC-1', from: '08:00', to: '09:00', confidence: 'weak' })],
+    });
+    const edits = setRowIssue({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: reviewDay({ rows: base }).rows[0]!,
+      issueKey: 'ABC-9',
+    });
+
+    expect(reviewDay({ rows: base, edits }).rows[0]).toMatchObject({ issueKey: 'ABC-9', confidence: 'certain' });
+  });
+
   it('becomes a bookable row once it is named', () => {
     const edits = setRowIssue({
       edits: EMPTY_DAY_REVIEW_EDITS,

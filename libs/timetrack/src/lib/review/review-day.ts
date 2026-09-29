@@ -72,11 +72,13 @@ const withOverride = (row: RowSource, override: ProposalOverride | undefined): R
     set: override.issueKey !== undefined || override.standInId !== undefined,
     source: override.sources?.issue,
   });
+  const namedByHand = issueSource === 'human' && !override.standInId && !!override.issueKey;
   const { disputedIssueKey: _disputedIssueKey, disputedStandInId: _disputedStandInId, ...undisputed } = row;
 
   return {
     ...(issueSource === 'human' ? undisputed : row),
     ...named,
+    ...(namedByHand ? { confidence: 'certain' as const } : {}),
     description: override.description ?? row.description,
     state: override.state ?? (changed ? 'edited' : defaultState(row)),
     edited: changed || override.state !== undefined,
