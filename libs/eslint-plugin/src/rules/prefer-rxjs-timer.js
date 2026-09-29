@@ -21,6 +21,9 @@
 
 const { isGlobalReference } = require('./internals/import-resolution');
 
+const GLOBAL_OBJECTS = new Set(['window', 'globalThis', 'self']);
+const WINDOW_MEMBERS = new Set(['win', 'window', '_win', '_window']);
+
 /** @type {import('eslint').Rule.RuleModule} */
 const preferRxjsTimer = {
   meta: {
@@ -44,13 +47,33 @@ const preferRxjsTimer = {
     schema: [],
   },
   create(context) {
+    const getTimerName = (callee) => {
+      if (callee.type === 'Identifier') {
+        return isGlobalReference(context.sourceCode, callee) ? callee.name : null;
+      }
+      if (callee.type !== 'MemberExpression' || callee.computed || callee.property.type !== 'Identifier') return null;
+
+      const { object } = callee;
+      const isWindow =
+        (object.type === 'Identifier' &&
+          GLOBAL_OBJECTS.has(object.name) &&
+          isGlobalReference(context.sourceCode, object)) ||
+        (object.type === 'MemberExpression' &&
+          object.object.type === 'ThisExpression' &&
+          !object.computed &&
+          object.property.type === 'Identifier' &&
+          WINDOW_MEMBERS.has(object.property.name));
+
+      return isWindow ? callee.property.name : null;
+    };
+
     return {
       CallExpression(node) {
         const { callee } = node;
 
-        // ── Global timer calls ────────────────────────────────────────────────
-        if (isGlobalReference(context.sourceCode, callee)) {
-          const { name } = callee;
+        const timerName = getTimerName(callee);
+        if (timerName) {
+          const name = timerName;
           if (name === 'setTimeout') {
             context.report({ node, messageId: 'preferTimer' });
             return;
@@ -65,7 +88,6 @@ const preferRxjsTimer = {
           }
         }
 
-        // ── Member calls: .addEventListener / .removeEventListener ────────────
         if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
           const methodName = callee.property.name;
           if (methodName === 'addEventListener') {
