@@ -19,8 +19,6 @@ import { formatClockTime, formatWeekdayLabel } from './format';
           </li>
         }
       </ul>
-    } @else {
-      <p class="text-small text-et-surface-muted">Auto mode ran nothing since the app started.</p>
     }
   `,
   encapsulation: ViewEncapsulation.None,

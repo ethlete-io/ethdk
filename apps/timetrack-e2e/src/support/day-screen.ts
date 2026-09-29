@@ -95,9 +95,6 @@ export const openLoggedElsewhere = (page: Page) => openDebugPanel(page, /^Logged
 /** The panel reading out what auto mode asked about on the day, and what came of each ask. */
 export const openAutoModeReadout = (page: Page) => openDebugPanel(page, /^Auto mode —/);
 
-/** The panel listing the jobs auto mode ran since the app started. */
-export const openAutoModeActivity = (page: Page) => openDebugPanel(page, /^Auto mode this session —/);
-
 /** The panel holding the rows taken off the timeline, and the way back for each. */
 export const openHiddenRows = (page: Page) => openDebugPanel(page, /^Hidden —/);
 

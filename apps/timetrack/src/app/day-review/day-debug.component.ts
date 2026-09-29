@@ -196,10 +196,11 @@ import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
 
         <et-accordion [label]="autoModeLabel()">
           <ethlete-auto-mode-readout [entries]="autoMode.readout()" />
-        </et-accordion>
 
-        <et-accordion [label]="activityLabel()">
-          <ethlete-auto-mode-activity [entries]="autoMode.activity()" />
+          @if (autoMode.activity().length) {
+            <h4 class="mb-2 mt-4 text-small text-et-surface-muted">Jobs since the app started</h4>
+            <ethlete-auto-mode-activity [entries]="autoMode.activity()" />
+          }
         </et-accordion>
 
         <et-accordion label="Day notes">
@@ -266,13 +267,9 @@ export class DayDebugComponent {
     return `Logged elsewhere — ${elsewhere} in Tempo, ${secluded} private, ${runs} timed run(s)`;
   });
 
-  protected autoModeLabel = computed(() => `Auto mode — ${this.autoMode.readout().length} ask(s)`);
-
-  protected activityLabel = computed(() => {
-    const running = this.autoMode.running() ? ', 1 running' : '';
-
-    return `Auto mode this session — ${this.autoMode.activity().length} job(s)${running}`;
-  });
+  protected autoModeLabel = computed(
+    () => `Auto mode — ${this.autoMode.readout().length} ask(s)${this.autoMode.running() ? ', working' : ''}`,
+  );
 
   protected hiddenLabel = computed(() => {
     const hidden = this.store.hiddenRows();
