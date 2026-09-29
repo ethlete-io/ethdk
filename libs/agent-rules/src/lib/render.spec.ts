@@ -28,4 +28,12 @@ describe('replaceMarkedBlock', () => {
       'AGENTS.md has an ethlete marker block with no matching end marker',
     );
   });
+
+  it('rewrites only the first block when the file holds two', () => {
+    const second = `${START_MARKER}\nsecond\n${END_MARKER}`;
+
+    expect(replace(`${START_MARKER}\nold\n${END_MARKER}\n\nOwn\n\n${second}\n`)).toBe(
+      `${START_MARKER}\nnew\n${END_MARKER}\n\nOwn\n\n${second}\n`,
+    );
+  });
 });
