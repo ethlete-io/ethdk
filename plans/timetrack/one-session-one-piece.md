@@ -82,7 +82,7 @@ Open:
 
 - Done b2f55fa44: `packLane` in `apps/timetrack/src/app/day-review/lanes.ts` draws a one-ticket overlap group in fixed columns (Tom picked this over one outer band or a collapsed band). e2e `session-columns.spec.ts`.
 - `BehindStretch` for the stretch an unwatched session lost (slice 5).
-- `unnamedRowId` does not tell two unnamed pieces of one stream apart when both start at the same time.
+- Done e0f482bbc: a second unnamed row with the same stream and start gets `+<piece>` on its id.
 
 Tom decided (2026-09-29): two agent sessions on one ticket at the same time are two parallel rows,
 each with its own auto description. Example: ET-772 in `ethlete-sdk`, one session builds Timetrack
