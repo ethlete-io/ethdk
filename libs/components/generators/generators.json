@@ -5,6 +5,11 @@
       "schema": "./component/schema.json",
       "description": "Scaffold a component domain following the three-tier architecture (folder layout, headless + default split, styles, spec, stories, docs page, barrel wiring)"
     },
+    "migrate-bracket-default-cards": {
+      "factory": "./migrate-bracket-default-cards/migration",
+      "schema": "./migrate-bracket-default-cards/schema.json",
+      "description": "Spread BRACKET_DEFAULT_CARDS into provideBracketConfig and report brackets without one"
+    },
     "migrate-bracket-ethlete-renames": {
       "factory": "./migrate-bracket-ethlete-renames/migration",
       "schema": "./migrate-bracket-ethlete-renames/schema.json",

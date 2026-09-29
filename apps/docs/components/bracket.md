@@ -349,6 +349,14 @@ naming one it throws [`ET3414`](/components/error-codes#bracket-et34xx). The fin
 card when nothing names a final card, and a continue card is needed only while `showContinueElement`
 is on.
 
+Upgrading from a version that shipped the cards by default? The migration spreads
+`BRACKET_DEFAULT_CARDS` into every `provideBracketConfig({ ... })` literal and lists the brackets it
+could not fix in `bracket-default-cards-migration-tasks.md`:
+
+```bash
+yarn nx g @ethlete/components:migrate-bracket-default-cards
+```
+
 | Slot         | Default                                                                                                                 |
 | ------------ | ----------------------------------------------------------------------------------------------------------------------- |
 | Match        | A compact match card - two rows, short codes, the winner emphasized with an accent bar                                  |

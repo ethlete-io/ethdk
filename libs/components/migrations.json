@@ -39,6 +39,14 @@
       "description": "Rename generateTournamentModeFormEthleteRounds to generateTournamentModeFromEthleteRounds.",
       "generator": "@ethlete/components:migrate-bracket-ethlete-renames",
       "docs": "/components/bracket"
+    },
+    {
+      "name": "bracket-default-cards",
+      "version": "1.0.0-next.64",
+      "kind": "auto",
+      "description": "Spread BRACKET_DEFAULT_CARDS into provideBracketConfig, and report the brackets that need it by hand.",
+      "generator": "@ethlete/components:migrate-bracket-default-cards",
+      "docs": "/components/bracket"
     }
   ]
 }
