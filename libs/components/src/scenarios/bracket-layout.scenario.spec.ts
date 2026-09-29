@@ -2,6 +2,7 @@ import { Component, input, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   BRACKET_DATA_LAYOUT,
+  BRACKET_DEFAULT_CARDS,
   BRACKET_DEFAULTS,
   BRACKET_ERROR_CODES,
   BRACKET_ROUND_MIRROR_TYPE,
@@ -21,7 +22,7 @@ import {
   EthleteRoundWithMatchesInput,
   generateBracketDataForEthlete,
   generateRoundTypeFromEthleteRoundType,
-  generateTournamentModeFormEthleteRounds,
+  generateTournamentModeFromEthleteRounds,
   GROUP_BRACKET_ROUND_TYPE,
   mirroredDoubleEliminationBracketLayout,
   mirroredSingleEliminationBracketLayout,
@@ -156,7 +157,7 @@ const ALL_LAYOUTS = [singleEliminationBracketLayout(), doubleEliminationBracketL
 @Component({
   selector: 'et-scenario-bracket-canvas',
   imports: [BracketComponent],
-  providers: [provideBracketConfig({ matchNormalizer: normalize })],
+  providers: [provideBracketConfig({ matchNormalizer: normalize, ...BRACKET_DEFAULT_CARDS })],
   template: `<et-bracket [source]="source()" [layouts]="layouts()" [swissColors]="swissColors()" />`,
 })
 class BracketCanvasComponent {
@@ -182,7 +183,7 @@ class SwissGroupMatchCardComponent implements SwissMatchCardInputs {
 @Component({
   selector: 'et-scenario-bracket-swiss-cards',
   imports: [BracketComponent],
-  providers: [provideBracketConfig({ matchNormalizer: normalize })],
+  providers: [provideBracketConfig({ matchNormalizer: normalize, ...BRACKET_DEFAULT_CARDS })],
   template: `<et-bracket [source]="source" [layouts]="layouts" [matchComponent]="card" />`,
 })
 class BracketSwissCardsComponent {
@@ -195,7 +196,7 @@ class BracketSwissCardsComponent {
   selector: 'et-scenario-bracket-list',
   imports: [BracketRoundsListComponent],
   providers: [
-    provideBracketConfig({ layouts: ALL_LAYOUTS, matchNormalizer: normalize }),
+    provideBracketConfig({ layouts: ALL_LAYOUTS, matchNormalizer: normalize, ...BRACKET_DEFAULT_CARDS }),
     provideBracketLabels({ finalsSection: 'Deciders' }),
   ],
   template: `
@@ -459,46 +460,46 @@ describe('bracket Ethlete integration scenarios', () => {
   const round = (id: string, type: Round['type'], matches: Match[]) => ({ round: { id, name: null, type }, matches });
 
   it('maps Ethlete round kinds onto bracket round types per tournament mode', () => {
-    const map = (type: Round['type'], mode: Source['mode'], count: number) =>
-      generateRoundTypeFromEthleteRoundType(type, mode, count);
+    const map = (type: Round['type'], mode: Source['mode'], isLastRound: boolean) =>
+      generateRoundTypeFromEthleteRoundType(type, mode, isLastRound);
 
-    expect(map('normal', TOURNAMENT_MODE.SINGLE_ELIMINATION, 4)).toBe(SE);
-    expect(map('normal', TOURNAMENT_MODE.SINGLE_ELIMINATION, 1)).toBe(COMMON_BRACKET_ROUND_TYPE.FINAL);
-    expect(map('normal', TOURNAMENT_MODE.SWISS_WITH_ELIMINATION, 8)).toBe(SWISS_BRACKET_ROUND_TYPE.SWISS);
-    expect(map('third_place', TOURNAMENT_MODE.SINGLE_ELIMINATION, 1)).toBe(COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE);
-    expect(map('winner_bracket', TOURNAMENT_MODE.DOUBLE_ELIMINATION, 2)).toBe(UB);
-    expect(map('loser_bracket', TOURNAMENT_MODE.DOUBLE_ELIMINATION, 1)).toBe(LB);
-    expect(map('reverse_final', TOURNAMENT_MODE.DOUBLE_ELIMINATION, 1)).toBe(
+    expect(map('normal', TOURNAMENT_MODE.SINGLE_ELIMINATION, false)).toBe(SE);
+    expect(map('normal', TOURNAMENT_MODE.SINGLE_ELIMINATION, true)).toBe(COMMON_BRACKET_ROUND_TYPE.FINAL);
+    expect(map('normal', TOURNAMENT_MODE.SWISS_WITH_ELIMINATION, true)).toBe(SWISS_BRACKET_ROUND_TYPE.SWISS);
+    expect(map('third_place', TOURNAMENT_MODE.SINGLE_ELIMINATION, true)).toBe(COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE);
+    expect(map('winner_bracket', TOURNAMENT_MODE.DOUBLE_ELIMINATION, false)).toBe(UB);
+    expect(map('loser_bracket', TOURNAMENT_MODE.DOUBLE_ELIMINATION, false)).toBe(LB);
+    expect(map('reverse_final', TOURNAMENT_MODE.DOUBLE_ELIMINATION, true)).toBe(
       DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.REVERSE_FINAL,
     );
-    expect(() => map('normal', TOURNAMENT_MODE.DOUBLE_ELIMINATION, 2)).toThrow(
+    expect(() => map('normal', TOURNAMENT_MODE.DOUBLE_ELIMINATION, false)).toThrow(
       `ET${BRACKET_ERROR_CODES.MODE_UNSUPPORTED}`,
     );
   });
 
   it('detects the tournament mode from the first drawn match', () => {
     expect(
-      generateTournamentModeFormEthleteRounds([
+      generateTournamentModeFromEthleteRounds([
         round('empty', 'winner_bracket', []),
         round('ub', 'winner_bracket', [ethleteMatch('m1', 'double_elimination')]),
       ]),
     ).toBe(TOURNAMENT_MODE.DOUBLE_ELIMINATION);
     expect(
-      generateTournamentModeFormEthleteRounds([round('r', 'normal', [ethleteMatch('m1', 'single_elimination')])]),
+      generateTournamentModeFromEthleteRounds([round('r', 'normal', [ethleteMatch('m1', 'single_elimination')])]),
     ).toBe(TOURNAMENT_MODE.SINGLE_ELIMINATION);
     expect(
-      generateTournamentModeFormEthleteRounds([
+      generateTournamentModeFromEthleteRounds([
         round('s1', 'normal', [ethleteMatch('m1', 'fifa_swiss'), ethleteMatch('m2', 'fifa_swiss')]),
         round('ko', 'final', [ethleteMatch('m3', 'fifa_swiss')]),
       ]),
     ).toBe(TOURNAMENT_MODE.SWISS_WITH_ELIMINATION);
 
-    expect(() => generateTournamentModeFormEthleteRounds([])).toThrow(`ET${BRACKET_ERROR_CODES.SOURCE_EMPTY}`);
-    expect(() => generateTournamentModeFormEthleteRounds([round('r', 'normal', [])])).toThrow(
+    expect(() => generateTournamentModeFromEthleteRounds([])).toThrow(`ET${BRACKET_ERROR_CODES.SOURCE_EMPTY}`);
+    expect(() => generateTournamentModeFromEthleteRounds([round('r', 'normal', [])])).toThrow(
       `ET${BRACKET_ERROR_CODES.SOURCE_EMPTY}`,
     );
     expect(() =>
-      generateTournamentModeFormEthleteRounds([round('r', 'normal', [ethleteMatch('m1', 'league')])]),
+      generateTournamentModeFromEthleteRounds([round('r', 'normal', [ethleteMatch('m1', 'league')])]),
     ).toThrow(`ET${BRACKET_ERROR_CODES.MODE_UNSUPPORTED}`);
   });
 
@@ -510,7 +511,12 @@ describe('bracket Ethlete integration scenarios', () => {
 
     expect(source.mode).toBe(TOURNAMENT_MODE.SINGLE_ELIMINATION);
     expect(source.rounds).toEqual([
-      { id: 'r1', type: SE, name: 'normal', data: { id: 'r1', name: null, type: 'normal' } },
+      {
+        id: 'r1',
+        type: COMMON_BRACKET_ROUND_TYPE.FINAL,
+        name: 'normal',
+        data: { id: 'r1', name: null, type: 'normal' },
+      },
     ]);
     expect(source.matches.map(({ id, home, away, winner, status }) => ({ id, home, away, winner, status }))).toEqual([
       { id: 'm1', home: 'm1-home', away: 'm1-away', winner: 'away', status: 'completed' },

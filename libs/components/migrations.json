@@ -31,6 +31,14 @@
       "description": "Find the rich text editors that lose the selection toolbar, and report where to opt back in.",
       "generator": "@ethlete/components:migrate-rich-text-editor-floating-toolbar",
       "docs": "/components/rich-text-editor"
+    },
+    {
+      "name": "bracket-ethlete-renames",
+      "version": "1.0.0-next.64",
+      "kind": "auto",
+      "description": "Rename generateTournamentModeFormEthleteRounds to generateTournamentModeFromEthleteRounds.",
+      "generator": "@ethlete/components:migrate-bracket-ethlete-renames",
+      "docs": "/components/bracket"
     }
   ]
 }

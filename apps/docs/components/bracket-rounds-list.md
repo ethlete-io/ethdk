@@ -6,8 +6,8 @@ phone, an article column, or a match-day page. It takes the same `BracketDataSou
 the same cards through the same `provideBracketConfig`, and reads your matches through the same
 [`matchNormalizer`](/components/bracket#the-normalizer).
 
-Import `BRACKET_IMPORTS` (or `BracketRoundsListComponent` directly), and register the same
-[layouts](/components/bracket#layouts) the grid needs - the list draws no connectors, but it asks the
+Import `BRACKET_ROUNDS_LIST_IMPORTS` (or `BracketRoundsListComponent` directly), and register the same
+[layouts](/components/bracket#layouts) and [cards](/components/bracket#default-cards) the grid needs - the list draws no connectors, but it asks the
 matching layout how to group and section the rounds (see [What it draws](#what-it-draws)).
 
 ::: tip This is not only a fallback
@@ -17,11 +17,11 @@ there is. The [responsive switch](#responsive-switching) below is one use of it,
 
 ```ts
 import { Component } from '@angular/core';
-import { BRACKET_IMPORTS, BracketDataSource, generateBracketDataForEthlete } from '@ethlete/components';
+import { BRACKET_ROUNDS_LIST_IMPORTS, BracketDataSource, generateBracketDataForEthlete } from '@ethlete/components';
 
 @Component({
   selector: 'app-match-day',
-  imports: [BRACKET_IMPORTS],
+  imports: [BRACKET_ROUNDS_LIST_IMPORTS],
   template: `<et-bracket-rounds-list [source]="source" />`,
 })
 export class MatchDayComponent {
@@ -121,10 +121,13 @@ for the source's `mode`, or the helpers throw
 [`ET3413`](/components/error-codes#bracket-et34xx) just as rendering would. One config object shared
 between the provider, the helper and the component is the way to keep them honest.
 
+The helpers only measure: they never render a card, so they need no card registered and bundle
+none of them.
+
 ```ts
 @Component({
   selector: 'app-bracket',
-  imports: [BRACKET_IMPORTS, SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS],
+  imports: [BRACKET_IMPORTS, BRACKET_ROUNDS_LIST_IMPORTS, SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS],
   template: `
     @if (fitsBracket()) {
       <et-scrollable [etScrollableButtons]="{ sticky: true }">
@@ -174,7 +177,8 @@ they do in [the grid](/components/bracket#accessibility):
   [`et-match-card`](/components/match#accessibility)s.
 - **Rounds are real headings** at `roundHeaderLevel` (default `3`), and a double-elimination
   section heading sits one level above them - so a screen reader walks upper bracket → round →
-  matches by structure.
+  matches by structure. In a sectioned list a `roundHeaderLevel` of `1` is raised to `2`, so the
+  section heading keeps a level of its own.
 - **Nothing is a click target by default.** Cells navigate only if you supply a
   [card that links](/components/bracket#making-cells-navigate).
 

@@ -10,7 +10,13 @@ tournament on hover or on demand.
 Import `BRACKET_IMPORTS` (or `BracketComponent` directly) and **register the
 [layouts](#layouts) your app draws** - a layout is an opt-in value, so only the ways of drawing a
 bracket you actually name end up in your bundle. `provideBracketConfig({ layouts, ... })` registers
-them and sets app-wide defaults for the layout inputs in the same call.
+them and sets app-wide defaults for the layout inputs in the same call. The
+[cards](#default-cards) are opt-in the same way: spread `BRACKET_DEFAULT_CARDS` into the config, or
+bind cards of your own.
+
+Every bracket component has an import tuple of its own - `BRACKET_IMPORTS` (`et-bracket`),
+`BRACKET_ROUNDS_LIST_IMPORTS`, `BRACKET_PARTICIPANTS_IMPORTS` and `BRACKET_PICK_CARD_IMPORTS` - so a
+page that draws only the grid bundles only the grid.
 
 ::: warning The default cards need a `matchNormalizer`
 The bracket carries your match payload from the data source to the cards untouched, so the
@@ -23,11 +29,13 @@ defaults work; leave it out and they render nothing (dev mode throws
 ## Usage
 
 Registering a layout is step one - without one the bracket has no code for your source's `mode` and
-throws [`ET3413`](#layouts) rather than guessing:
+throws [`ET3413`](#layouts) rather than guessing. Registering the cards is step two - without them it
+throws [`ET3414`](#default-cards):
 
 ```ts
 import { ApplicationConfig } from '@angular/core';
 import {
+  BRACKET_DEFAULT_CARDS,
   normalizeEthleteBracketMatch,
   provideBracketConfig,
   singleEliminationBracketLayout,
@@ -38,6 +46,8 @@ export const appConfig: ApplicationConfig = {
     provideBracketConfig({
       // what this app can draw - see Layouts below
       layouts: [singleEliminationBracketLayout()],
+      // the shipped cards - leave this out when every card is your own
+      ...BRACKET_DEFAULT_CARDS,
       // how to read your match data, for the shipped cards
       matchNormalizer: normalizeEthleteBracketMatch,
     }),
@@ -244,8 +254,14 @@ variant's own model. The function is generic: the source it returns is typed wit
 types, so the extra fields of an extended model are still there on `bracketRound().data` /
 `bracketMatch().data`.
 
-It infers the tournament mode from the first round that has matches, so a stage whose opening
-rounds are drawn but still empty maps fine.
+It infers the tournament mode from the stage type of the first round that has matches
+(`generateTournamentModeFromEthleteRounds`), so a stage whose opening rounds are drawn but still empty
+maps fine, and a `fifa_swiss` stage is a swiss stage however many of its rounds are listed yet.
+
+A round the API types `final` is the final. A `normal` round of a single elimination stage is the final
+only when it is the **last** round of the stage - a third place round listed after it does not count -
+whatever its match count, so a one-match play-in round stays an ordinary round. Map a single round
+yourself with `generateRoundTypeFromEthleteRoundType(type, mode, isLastRound)`.
 
 For any other backend, construct a `BracketDataSource` by hand (or write a small adapter in
 your app).
@@ -323,7 +339,15 @@ wants, where the header names the panel rather than labelling a column it starts
 ## Default cards
 
 Four cards ship with the bracket, and all three match-bearing ones are built on
-[`et-match-card`](/components/match):
+[`et-match-card`](/components/match). They are **opt-in**: spread `BRACKET_DEFAULT_CARDS` into
+`provideBracketConfig`, or name single ones (`BracketDefaultRoundHeaderComponent`, …) next to cards of
+your own. An app that draws only its own cards leaves them out and bundles none of them - the default
+set is about 14 kB gzipped.
+
+A bracket needs a match card and a round header card; with neither an input, the layout nor the config
+naming one it throws [`ET3414`](/components/error-codes#bracket-et34xx). The final uses the match
+card when nothing names a final card, and a continue card is needed only while `showContinueElement`
+is on.
 
 | Slot         | Default                                                                                                                 |
 | ------------ | ----------------------------------------------------------------------------------------------------------------------- |
@@ -428,7 +452,17 @@ label set:
 ## Custom cards
 
 Each slot is an Angular component rendered per element via `ngComponentOutlet`. Provide
-your own to replace any default:
+your own to replace any default - as an input, in `provideBracketConfig`, or on a
+[layout](#what-a-layout-is-made-of). A bracket with its own match card and the shipped round header
+imports just that one default:
+
+```ts
+provideBracketConfig({
+  layouts: [singleEliminationBracketLayout()],
+  matchComponent: MatchCardComponent,
+  roundHeaderComponent: BracketDefaultRoundHeaderComponent,
+});
+```
 
 | Input                  | Receives (all `input.required`)                          |
 | ---------------------- | -------------------------------------------------------- |
@@ -694,7 +728,7 @@ participants legend beside the bracket, a search box, a query param. That is als
 screen-reader path, since a list of buttons is navigable in a way an absolutely-positioned grid
 is not.
 
-The legend ships as `et-bracket-participants` (in `BRACKET_IMPORTS`): a `role="group"` labelled
+The legend ships as `et-bracket-participants` (in `BRACKET_PARTICIPANTS_IMPORTS`): a `role="group"` labelled
 from `BRACKET_LABELS.participantsLegend`, with one [pressed](/components/button) `et-button` per
 participant. It holds no pin of its own - bind its `focusedParticipantId` two-way to the same
 signal as the bracket's. A toggle pins that participant (<kbd>Enter</kbd>/<kbd>Space</kbd> or a
@@ -736,7 +770,7 @@ semantics live in the cards, and the shipped ones carry them:
 
 - **Every match announces itself as one thing.** The default cards are
   [`et-match-card`](/components/match#accessibility)s, so each cell has a composed accessible
-  name ("Neon Esports vs. Rote Löwen Pankow, 2 : 1, Finished") rather than a handful of loose
+  name ("Neon Esports vs Rote Löwen Pankow, 2 : 1, Finished") rather than a handful of loose
   fragments, and score changes are announced once through a polite live region.
 - **The columns are real headings.** The default round header is `role="heading"` with an
   `aria-level` from `roundHeaderLevel` (default `3`) - set it to match where the bracket sits in
@@ -782,8 +816,9 @@ rules in its document.
 ## Error codes
 
 In dev and prod the bracket throws `RuntimeError`s in the **ET34xx** range when a
-`BracketDataSource` is malformed or unsupported, or when no [layout](#layouts) is registered for its
-`mode` ([`ET3413`](/components/error-codes#bracket-et34xx)) - see
+`BracketDataSource` is malformed or unsupported, when no [layout](#layouts) is registered for its
+`mode` ([`ET3413`](/components/error-codes#bracket-et34xx)), or when no [card](#default-cards) is
+registered for a cell it draws (`ET3414`) - see
 [/components/error-codes#bracket-et34xx](/components/error-codes#bracket-et34xx).
 
 ## Migrating from `@ethlete/cdk`

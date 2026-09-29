@@ -2,6 +2,7 @@ import { Component, computed, inject, input, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   BRACKET_CARD_CONTEXT,
+  BRACKET_DEFAULT_CARDS,
   BRACKET_DEFAULTS,
   BRACKET_DENSITY,
   BRACKET_DENSITY_PRESETS,
@@ -118,11 +119,22 @@ class BracketPageComponent {
 @Component({
   selector: 'et-scenario-bracket-no-normalizer',
   imports: [BracketComponent],
+  providers: [provideBracketConfig(BRACKET_DEFAULT_CARDS)],
   template: `<et-bracket [source]="source" [layouts]="layouts" />`,
 })
 class BracketWithoutNormalizerComponent {
   source = generateBracketDataForEthlete(stage('home'));
   layouts = LAYOUTS;
+}
+
+@Component({
+  selector: 'et-scenario-bracket-no-cards',
+  imports: [BracketComponent],
+  providers: [provideBracketConfig({ layouts: LAYOUTS, matchNormalizer: normalizeEthleteBracketMatch })],
+  template: `<et-bracket [source]="source" />`,
+})
+class BracketWithoutCardsComponent {
+  source = generateBracketDataForEthlete(stage('home'));
 }
 
 @Component({
@@ -155,16 +167,16 @@ class LinkedMatchCardComponent {
   imports: [BRACKET_IMPORTS],
   providers: [
     provideBracketLabels({ roundMatchCount: (matches) => `${matches} Spiele` }),
-    provideBracketConfig({ layouts: LAYOUTS, columnWidth: 180, roundHeaderLevel: 4 }),
+    provideBracketConfig({
+      layouts: LAYOUTS,
+      columnWidth: 180,
+      roundHeaderLevel: 4,
+      roundHeaderComponent: BracketDefaultRoundHeaderComponent,
+      continueComponent: BracketDefaultContinueComponent,
+    }),
   ],
   template: `
-    <et-bracket
-      [source]="source"
-      [matchComponent]="card"
-      [finalMatchComponent]="card"
-      [matchNormalizer]="normalizer"
-      showContinueElement
-    />
+    <et-bracket [source]="source" [matchComponent]="card" [matchNormalizer]="normalizer" showContinueElement />
   `,
 })
 class BracketCustomCardsComponent {
@@ -318,6 +330,7 @@ describe('bracket scenarios', () => {
       ['/matches/final-1', 'A v D'],
     ]);
     expect(host.querySelector('et-bracket-default-match')).toBeNull();
+    expect(host.querySelector('et-bracket-default-final-match')).toBeNull();
     expect(host.querySelector<HTMLElement>('[data-match-id="semi-1"]')?.style.width).toBe('180px');
 
     const continueCard = host.querySelector('et-bracket-default-continue');
@@ -352,6 +365,16 @@ describe('bracket scenarios', () => {
     );
     expect(handled[0]).toContain('provideBracketConfig({ matchNormalizer');
     s.allow('errors', 'each default card reports the missing normalizer');
+  });
+
+  it('throws ET3414 when nothing names a card for the cells it draws', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(BracketWithoutCardsComponent);
+
+    expect(() => fixture.detectChanges()).toThrow(
+      new RegExp(`ET${BRACKET_ERROR_CODES.CARD_NOT_REGISTERED}.*BRACKET_DEFAULT_CARDS`),
+    );
+    s.allow('errors', 'the failed first render is the behavior under test');
   });
 
   it('throws ET3413 when no registered layout draws the source mode', () => {

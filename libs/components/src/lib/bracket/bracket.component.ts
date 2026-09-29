@@ -261,16 +261,17 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
     const bracketData = this.bracketData();
     const options = createBracketGridConfig(this.settings(), layout.dataLayout);
 
-    const components = resolveBracketComponents(
-      {
+    const components = resolveBracketComponents({
+      overrides: {
         roundHeader: this.roundHeaderComponent(),
         match: this.matchComponent(),
         finalMatch: this.finalMatchComponent(),
         continue: this.continueComponent(),
       },
-      this.config,
-      layout.components,
-    );
+      config: this.config,
+      layoutComponents: layout.components,
+      showsContinueElement: !!options.continueElement,
+    });
 
     return layout.createGrid(bracketData, options, components);
   });

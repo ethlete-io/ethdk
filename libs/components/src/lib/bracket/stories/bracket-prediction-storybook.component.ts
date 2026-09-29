@@ -25,6 +25,8 @@ import { NormalizedMatch, NormalizedMatchParticipant, NormalizedMatchSideState }
 import { SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS } from '../../scrollable/scrollable.imports';
 import { BracketPickCardComponent, BracketPickCardNoteTone } from '../bracket-pick-card.component';
 import { BracketComponent } from '../bracket.component';
+import { BracketDefaultRoundHeaderComponent } from '../bracket-default-round-header.component';
+import { provideBracketConfig } from '../bracket.config';
 import { singleEliminationBracketLayout } from '../layouts';
 
 const matchOutcome = (matchId: string): BracketSlotSource => ({
@@ -231,6 +233,7 @@ export class StorybookBracketPickCardComponent {
   encapsulation: ViewEncapsulation.None,
   imports: [BracketComponent, ...SCROLLABLE_IMPORTS, ...SCROLLABLE_NAVIGATION_IMPORTS],
   providers: [
+    provideBracketConfig({ roundHeaderComponent: BracketDefaultRoundHeaderComponent }),
     {
       provide: PREDICTION_STORY_STATE,
       useExisting: forwardRef(() => StorybookBracketPredictionComponent),

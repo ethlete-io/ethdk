@@ -4,6 +4,7 @@ import { queryAll } from '../testing/driver-core';
 import { BRACKET_ERROR_CODES } from './bracket-errors';
 import { resolveBracketLayout } from './bracket-layout';
 import { provideBracketConfig } from './bracket.config';
+import { BRACKET_DEFAULT_CARDS } from './bracket-default-cards';
 import { TOURNAMENT_MODE } from '@ethlete/bracket';
 import { generateBracketDataForEthlete } from './integrations/ethlete';
 import {
@@ -46,7 +47,7 @@ describe('the layouts input', () => {
   it('replaces the provideBracketConfig list rather than adding to it', () => {
     const driver = bracketTestDriver({
       // Only single elimination app-wide - the double-elimination source below would throw on this alone.
-      providers: [provideBracketConfig({ layouts: [singleEliminationBracketLayout()] })],
+      providers: [provideBracketConfig({ layouts: [singleEliminationBracketLayout()], ...BRACKET_DEFAULT_CARDS })],
       source: generateDoubleEliminationBracket({ participantCount: 8, includeFinal: true }),
       layouts: [doubleEliminationBracketLayout()],
     });

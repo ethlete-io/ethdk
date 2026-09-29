@@ -5,6 +5,11 @@
       "schema": "./component/schema.json",
       "description": "Scaffold a component domain following the three-tier architecture (folder layout, headless + default split, styles, spec, stories, docs page, barrel wiring)"
     },
+    "migrate-bracket-ethlete-renames": {
+      "factory": "./migrate-bracket-ethlete-renames/migration",
+      "schema": "./migrate-bracket-ethlete-renames/schema.json",
+      "description": "Rename generateTournamentModeFormEthleteRounds to generateTournamentModeFromEthleteRounds"
+    },
     "migrate-query-error-labels": {
       "factory": "./migrate-query-error-labels/migration",
       "schema": "./migrate-query-error-labels/schema.json",

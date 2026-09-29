@@ -53,21 +53,23 @@ export type EthleteRoundWithMatchesInput<
   matches: readonly TMatch[];
 };
 
+/**
+ * Maps an Ethlete round kind onto a bracket round type. A single elimination `normal` round is the
+ * `FINAL` only when `isLastRound` says it has no later round other than a third place one.
+ */
 export const generateRoundTypeFromEthleteRoundType = (
   type: EthleteRoundTypeInput,
   tournamentMode: TournamentMode,
-  roundMatchCount: number,
-  // eslint-disable-next-line max-params -- round-type derivation keyed on three independent facts (type, mode, matchCount)
+  isLastRound: boolean,
+  // eslint-disable-next-line max-params -- round-type derivation keyed on three independent facts (type, mode, position)
 ): BracketRoundType => {
   switch (type) {
     case 'normal':
       switch (tournamentMode) {
         case 'single-elimination':
-          if (roundMatchCount === 1) {
-            return COMMON_BRACKET_ROUND_TYPE.FINAL;
-          } else {
-            return SINGLE_ELIMINATION_BRACKET_ROUND_TYPE.SINGLE_ELIMINATION_BRACKET;
-          }
+          return isLastRound
+            ? COMMON_BRACKET_ROUND_TYPE.FINAL
+            : SINGLE_ELIMINATION_BRACKET_ROUND_TYPE.SINGLE_ELIMINATION_BRACKET;
         case 'swiss-with-elimination':
           return SWISS_BRACKET_ROUND_TYPE.SWISS;
         default:
@@ -89,30 +91,17 @@ export const generateRoundTypeFromEthleteRoundType = (
   }
 };
 
-export const generateTournamentModeFormEthleteRounds = (
+export const generateTournamentModeFromEthleteRounds = (
   source: readonly EthleteRoundWithMatchesInput[],
 ): TournamentMode => {
-  const firstDrawnRound = source.find((round) => round.matches.length > 0);
-  const firstMatch = firstDrawnRound?.matches[0];
+  const firstMatch = source.find((round) => round.matches.length > 0)?.matches[0];
 
   if (!source.length) throw new RuntimeError(BRACKET_ERROR_CODES.SOURCE_EMPTY, 'No rounds found');
-  if (!firstDrawnRound || !firstMatch) throw new RuntimeError(BRACKET_ERROR_CODES.SOURCE_EMPTY, 'No matches found');
+  if (!firstMatch) throw new RuntimeError(BRACKET_ERROR_CODES.SOURCE_EMPTY, 'No matches found');
 
   switch (firstMatch.matchType) {
-    case 'fifa_swiss': {
-      const lastRound = source[source.length - 1];
-
-      if (!lastRound) throw new RuntimeError(BRACKET_ERROR_CODES.SOURCE_EMPTY, 'No last round found');
-
-      if (lastRound.matches.length !== firstDrawnRound.matches.length) {
-        return TOURNAMENT_MODE.SWISS_WITH_ELIMINATION;
-      } else {
-        throw new RuntimeError(
-          BRACKET_ERROR_CODES.MODE_UNSUPPORTED,
-          'Unsupported tournament mode: swiss without elimination',
-        );
-      }
-    }
+    case 'fifa_swiss':
+      return TOURNAMENT_MODE.SWISS_WITH_ELIMINATION;
     case 'double_elimination':
       return TOURNAMENT_MODE.DOUBLE_ELIMINATION;
     case 'single_elimination':
@@ -131,7 +120,7 @@ export const generateBracketDataForEthlete = <
 >(
   source: readonly EthleteRoundWithMatchesInput<TRound, TMatch>[],
 ): BracketDataSource<TRound, TMatch> => {
-  const tournamentMode = generateTournamentModeFormEthleteRounds(source);
+  const tournamentMode = generateTournamentModeFromEthleteRounds(source);
 
   const bracketData: BracketDataSource<TRound, TMatch> = {
     rounds: [],
@@ -141,6 +130,8 @@ export const generateBracketDataForEthlete = <
 
   const roundIds = new Set<string>();
   const matchIds = new Set<string>();
+
+  const lastRound = source.filter((item) => item.round.type !== 'third_place').at(-1);
 
   for (const currentItem of source) {
     if (roundIds.has(currentItem.round.id)) {
@@ -153,7 +144,7 @@ export const generateBracketDataForEthlete = <
     const roundType = generateRoundTypeFromEthleteRoundType(
       currentItem.round.type,
       tournamentMode,
-      currentItem.matches.length,
+      currentItem === lastRound,
     );
 
     const bracketRound: BracketRoundSource<TRound> = {

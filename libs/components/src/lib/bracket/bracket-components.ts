@@ -8,11 +8,9 @@ import {
   Bracket,
   BracketRound,
 } from '@ethlete/bracket';
-import { BracketDefaultContinueComponent } from './bracket-default-continue.component';
-import { BracketDefaultFinalMatchComponent } from './bracket-default-final-match.component';
-import { BracketDefaultMatchComponent } from './bracket-default-match.component';
-import { BracketDefaultRoundHeaderComponent } from './bracket-default-round-header.component';
+import { RuntimeError } from '@ethlete/core';
 import { BracketConfig } from './bracket.config';
+import { BRACKET_ERROR_CODES } from './bracket-errors';
 
 /**
  * The cards a host component was told to draw with, each `undefined` where its input was left unset.
@@ -26,36 +24,48 @@ export type BracketComponentOverrides<TRoundData, TMatchData> = {
   continue?: BracketContinueComponent<TRoundData, TMatchData>;
 };
 
+const cardNotRegistered = (card: string) =>
+  new RuntimeError(
+    BRACKET_ERROR_CODES.CARD_NOT_REGISTERED,
+    ngDevMode
+      ? `The bracket has no ${card} card. Spread BRACKET_DEFAULT_CARDS into provideBracketConfig({ ... }), or bind a card of your own.`
+      : '',
+  );
+
 /**
  * Which component draws each kind of cell: the host's own inputs first, the active layout's cards
- * second (`swissBracketLayout({ matchComponent })`), `provideBracketConfig` third, the shipped
- * defaults last.
+ * second (`swissBracketLayout({ matchComponent })`), `provideBracketConfig` last. The final falls back
+ * to the match card. Throws `ET3414` for a match or round header card nothing names, and for a missing
+ * continue card while the continue element is shown.
  *
  * Shared so that every representation of a bracket - the grid and the rounds list - picks the same card
  * for the same source.
  *
  * @internal
  */
-export const resolveBracketComponents = <TRoundData, TMatchData>(
-  overrides: BracketComponentOverrides<TRoundData, TMatchData>,
-  config: BracketConfig<TRoundData, TMatchData>,
-  layoutComponents: BracketComponentOverrides<TRoundData, TMatchData> | undefined,
-  // eslint-disable-next-line max-params -- the precedence chain, one argument per link
-): BracketComponents<TRoundData, TMatchData> => ({
-  match: overrides.match ?? layoutComponents?.match ?? config.matchComponent ?? BracketDefaultMatchComponent,
-  finalMatch:
-    overrides.finalMatch ??
-    layoutComponents?.finalMatch ??
-    config.finalMatchComponent ??
-    BracketDefaultFinalMatchComponent,
-  roundHeader:
-    overrides.roundHeader ??
-    layoutComponents?.roundHeader ??
-    config.roundHeaderComponent ??
-    BracketDefaultRoundHeaderComponent,
-  continue:
-    overrides.continue ?? layoutComponents?.continue ?? config.continueComponent ?? BracketDefaultContinueComponent,
-});
+export const resolveBracketComponents = <TRoundData, TMatchData>(options: {
+  overrides: BracketComponentOverrides<TRoundData, TMatchData>;
+  config: BracketConfig<TRoundData, TMatchData>;
+  layoutComponents: BracketComponentOverrides<TRoundData, TMatchData> | undefined;
+  showsContinueElement: boolean;
+}): BracketComponents<TRoundData, TMatchData> => {
+  const { overrides, config, layoutComponents } = options;
+
+  const match = overrides.match ?? layoutComponents?.match ?? config.matchComponent;
+  const roundHeader = overrides.roundHeader ?? layoutComponents?.roundHeader ?? config.roundHeaderComponent;
+  const continueCard = overrides.continue ?? layoutComponents?.continue ?? config.continueComponent;
+
+  if (!match) throw cardNotRegistered('match');
+  if (!roundHeader) throw cardNotRegistered('round header');
+  if (options.showsContinueElement && !continueCard) throw cardNotRegistered('continue');
+
+  return {
+    match,
+    finalMatch: overrides.finalMatch ?? layoutComponents?.finalMatch ?? config.finalMatchComponent ?? match,
+    roundHeader,
+    continue: continueCard,
+  };
+};
 
 /**
  * Whether a round's matches get the *final* card rather than the ordinary one.

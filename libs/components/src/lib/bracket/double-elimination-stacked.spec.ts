@@ -1,5 +1,6 @@
 import { BRACKET_DATA_LAYOUT, createStackedDoubleEliminationGrid, createBracket } from '@ethlete/bracket';
 import { resolveBracketComponents } from './bracket-components';
+import { BRACKET_DEFAULT_CARDS } from './bracket-default-cards';
 import { createBracketGridConfig, resolveBracketLayoutSettings } from './bracket-grid';
 import { BracketDataSource } from './integrations';
 import { DoubleEliminationOptions, generateDoubleEliminationBracket } from './stories/generate-bracket';
@@ -15,7 +16,12 @@ const build = (source: BracketDataSource<null, null>, rowSpanRoundId: string | n
   const grid = createStackedDoubleEliminationGrid(
     bracketData,
     createBracketGridConfig({ ...settings, rowSpanRoundId }, BRACKET_DATA_LAYOUT.MIRRORED),
-    resolveBracketComponents({}, {}, undefined),
+    resolveBracketComponents({
+      overrides: {},
+      config: BRACKET_DEFAULT_CARDS,
+      layoutComponents: undefined,
+      showsContinueElement: false,
+    }),
   );
 
   // Gap columns carry no rounds, so the round columns are every other master column.

@@ -2,6 +2,8 @@ import { Component, input } from '@angular/core';
 import '../../test-helpers';
 import { query, queryAll, textOf } from '../testing/driver-core';
 import { provideBracketLabels } from './bracket-labels';
+import { provideBracketConfig } from './bracket.config';
+import { BRACKET_DEFAULT_CARDS } from './bracket-default-cards';
 import { bracketFitsWidth, bracketNaturalWidth } from './bracket-fits-width';
 import { BracketMatch, BracketRound, BracketRoundSwissGroup } from '@ethlete/bracket';
 import { bracketTestDriver, testBracketLayouts } from './testing/bracket-driver';
@@ -93,6 +95,36 @@ describe('BracketRoundsListComponent', () => {
     });
 
     expect(query(driver.fixture, '.et-bracket-rounds-list-section-name')?.textContent).toContain('Oberes Bracket');
+  });
+
+  it('keeps the round headers below their section heading when roundHeaderLevel is 1', () => {
+    driver = bracketTestDriver({
+      component: 'rounds-list',
+      source: generateDoubleEliminationBracket({ participantCount: 8 }),
+      layouts: testBracketLayouts,
+      providers: [provideBracketConfig({ roundHeaderLevel: 1, ...BRACKET_DEFAULT_CARDS })],
+    });
+
+    const levels = (selector: string) =>
+      new Set(queryAll(driver.fixture, selector).map((element) => element.getAttribute('aria-level')));
+
+    expect(levels('.et-bracket-rounds-list-section-name')).toEqual(new Set(['1']));
+    expect(levels('et-bracket-default-round-header')).toEqual(new Set(['2']));
+  });
+
+  it('keeps roundHeaderLevel 1 in an unsectioned list', () => {
+    driver = bracketTestDriver({
+      component: 'rounds-list',
+      source: generateSingleEliminationBracket(8),
+      layouts: testBracketLayouts,
+      providers: [provideBracketConfig({ roundHeaderLevel: 1, ...BRACKET_DEFAULT_CARDS })],
+    });
+
+    const levels = queryAll(driver.fixture, 'et-bracket-default-round-header').map((element) =>
+      element.getAttribute('aria-level'),
+    );
+
+    expect(new Set(levels)).toEqual(new Set(['1']));
   });
 });
 

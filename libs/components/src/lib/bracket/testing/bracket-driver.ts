@@ -7,7 +7,8 @@ import { BracketMatchNormalizer } from '../bracket-card-context';
 import { BracketRoundsListComponent } from '../bracket-rounds-list.component';
 import { BracketLayout } from '../bracket-layout';
 import { BracketComponent } from '../bracket.component';
-import { BracketRoundHeaderAlign } from '../bracket.config';
+import { BracketRoundHeaderAlign, provideBracketConfig } from '../bracket.config';
+import { BRACKET_DEFAULT_CARDS } from '../bracket-default-cards';
 import { BracketMatchComponent } from '@ethlete/bracket';
 import { BracketDataSource } from '../integrations';
 import { doubleEliminationBracketLayout, singleEliminationBracketLayout } from '../layouts';
@@ -118,6 +119,7 @@ export const bracketTestDriver = (options: BracketTestDriverOptions) => {
   TestBed.resetTestingModule();
 
   const fixture = mountControl(BracketTestHost, [
+    provideBracketConfig(BRACKET_DEFAULT_CARDS),
     ...(options.providers ?? []),
     { provide: BRACKET_TEST_OPTIONS, useValue: options },
   ]);

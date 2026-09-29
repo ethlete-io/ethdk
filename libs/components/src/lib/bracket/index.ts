@@ -30,6 +30,7 @@ export type {
   BracketMatchParticipant,
   BracketMatchPosition,
   BracketMatchRelation,
+  BracketMatchRelationNone,
   BracketMatchRelationNothingToOne,
   BracketMatchRelationOneToNothing,
   BracketMatchRelationOneToOne,
@@ -50,6 +51,7 @@ export type {
   BracketRoundMirrorType,
   BracketRoundPosition,
   BracketRoundRelation,
+  BracketRoundRelationNone,
   BracketRoundRelationNothingToOne,
   BracketRoundRelationOneToNothing,
   BracketRoundRelationOneToOne,
@@ -88,6 +90,7 @@ export * from './bracket-layout';
 export * from './bracket-participants.component';
 export * from './bracket-pick-card.component';
 export * from './bracket.imports';
+export * from './bracket-default-cards';
 export * from './bracket-default-continue.component';
 export * from './bracket-default-final-match.component';
 export * from './bracket-default-match.component';

@@ -1,4 +1,5 @@
 import { resolveBracketComponents } from './bracket-components';
+import { BRACKET_DEFAULT_CARDS } from './bracket-default-cards';
 import { createBracketGridConfig, resolveBracketLayoutSettings } from './bracket-grid';
 import { BracketLayoutConfig } from './bracket.config';
 import {
@@ -65,7 +66,12 @@ const swissGrid = (source: BracketDataSource<null, null>, config: BracketLayoutC
   return layout.createGrid(
     createBracket(source, { layout: layout.dataLayout }),
     createBracketGridConfig(settings, layout.dataLayout),
-    resolveBracketComponents({}, {}, undefined),
+    resolveBracketComponents({
+      overrides: {},
+      config: BRACKET_DEFAULT_CARDS,
+      layoutComponents: undefined,
+      showsContinueElement: false,
+    }),
   );
 };
 

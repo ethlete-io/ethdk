@@ -128,9 +128,6 @@ export class BracketRoundsListComponent<TRoundData = unknown, TMatchData = unkno
   /** @internal The normalizer in effect, read by the default cards through `BRACKET_CARD_CONTEXT`. */
   public resolvedMatchNormalizer = createBracketHostMatchNormalizer(this.matchNormalizer, this.config);
 
-  /** @internal The heading level in effect, read by the default round headers. */
-  public resolvedRoundHeaderLevel: Signal<number> = this.roundHeaderLevel;
-
   /**
    * @internal The featured card, pinned. A list row is as wide as the page it sits in, and an unpinned
    * final measuring that would flip to the wide side-by-side arrangement past 560px while every dense
@@ -147,19 +144,17 @@ export class BracketRoundsListComponent<TRoundData = unknown, TMatchData = unkno
    */
   public bracketData = computed(() => createBracket(this.source(), { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT }));
 
-  /** The section heading sits one level above the round headers it covers. */
-  protected sectionHeadingLevel = computed(() => Math.max(1, this.resolvedRoundHeaderLevel() - 1));
-
   private components = computed(() =>
-    resolveBracketComponents(
-      {
+    resolveBracketComponents({
+      overrides: {
         roundHeader: this.roundHeaderComponent(),
         match: this.matchComponent(),
         finalMatch: this.finalMatchComponent(),
       },
-      this.config,
-      this.resolvedLayout().components,
-    ),
+      config: this.config,
+      layoutComponents: this.resolvedLayout().components,
+      showsContinueElement: false,
+    }),
   );
 
   protected sections = computed<BracketRoundsListSection<TRoundData, TMatchData>[]>(() => {
@@ -205,6 +200,19 @@ export class BracketRoundsListComponent<TRoundData = unknown, TMatchData = unkno
 
     return Array.from(sections.values());
   });
+
+  /**
+   * @internal The heading level in effect, read by the default round headers. At least 2 in a sectioned
+   * list, so the section heading above it stays a level of its own.
+   */
+  public resolvedRoundHeaderLevel: Signal<number> = computed(() => {
+    const level = this.roundHeaderLevel();
+
+    return this.sections().some((section) => section.name !== null) ? Math.max(2, level) : level;
+  });
+
+  /** The section heading sits one level above the round headers it covers. */
+  protected sectionHeadingLevel = computed(() => this.resolvedRoundHeaderLevel() - 1);
 
   /**
    * Which component draws a block's matches - the deciding round gets the final card here just as it does

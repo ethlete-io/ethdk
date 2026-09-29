@@ -1,5 +1,6 @@
 import { drawMan, BRACKET_DATA_LAYOUT, BracketDataLayout, createBracket } from '@ethlete/bracket';
 import { resolveBracketComponents } from './bracket-components';
+import { BRACKET_DEFAULT_CARDS } from './bracket-default-cards';
 import { createBracketGridConfig, resolveBracketLayoutSettings } from './bracket-grid';
 import { resolveBracketLayout } from './bracket-layout';
 import { BracketLayoutConfig } from './bracket.config';
@@ -29,7 +30,12 @@ const drawing = (
   const bracketGrid = layout.createGrid(
     bracketData,
     createBracketGridConfig(settings, layout.dataLayout),
-    resolveBracketComponents({}, {}, undefined),
+    resolveBracketComponents({
+      overrides: {},
+      config: BRACKET_DEFAULT_CARDS,
+      layoutComponents: undefined,
+      showsContinueElement: false,
+    }),
   );
 
   return drawMan({

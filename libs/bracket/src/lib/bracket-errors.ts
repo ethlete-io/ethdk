@@ -25,4 +25,6 @@ export const BRACKET_ERROR_CODES = {
   MISSING_MATCH_NORMALIZER: 3412,
   /** No registered {@link BracketLayout} matches the source's tournament `mode`. */
   LAYOUT_NOT_REGISTERED: 3413,
+  /** A cell the bracket draws has no card - neither an input, the layout, nor the config names one. */
+  CARD_NOT_REGISTERED: 3414,
 } as const;

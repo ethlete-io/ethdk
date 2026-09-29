@@ -1,6 +1,5 @@
 import { BracketDataSource } from './integrations';
-import { createBracket } from '@ethlete/bracket';
-import { resolveBracketComponents } from './bracket-components';
+import { BracketComponents, BracketMatchComponent, createBracket } from '@ethlete/bracket';
 import { createBracketGridConfig, resolveBracketLayoutSettings } from './bracket-grid';
 import { resolveBracketLayout } from './bracket-layout';
 import { BracketConfig } from './bracket.config';
@@ -34,7 +33,13 @@ export const bracketNaturalWidth = <TRoundData, TMatchData>(
   const layout = resolveBracketLayout(config.layouts, source.mode);
   const settings = resolveBracketLayoutSettings(config);
   const bracketData = createBracket(source, { layout: layout.dataLayout });
-  const components = resolveBracketComponents({}, config, layout.components);
+  const cell = class {} as unknown as BracketMatchComponent<TRoundData, TMatchData>;
+  const components: BracketComponents<TRoundData, TMatchData> = {
+    roundHeader: cell,
+    match: cell,
+    finalMatch: cell,
+    continue: layout.components?.continue ?? config.continueComponent,
+  };
   const grid = layout.createGrid(bracketData, createBracketGridConfig(settings, layout.dataLayout), components);
 
   return grid.raw.grid.dimensions.width;

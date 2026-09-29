@@ -12,7 +12,7 @@ import { SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS } from '../../scrolla
 import { BRACKET_DENSITY, BracketDensity } from '../bracket-density';
 import { BracketComponent } from '../bracket.component';
 import { BracketParticipantsComponent } from '../bracket-participants.component';
-import { BRACKET_ROUND_HEADER_ALIGN, BracketRoundHeaderAlign } from '../bracket.config';
+import { BRACKET_ROUND_HEADER_ALIGN, BracketRoundHeaderAlign, provideBracketConfig } from '../bracket.config';
 import {
   BRACKET_DATA_LAYOUT,
   BracketDataLayout,
@@ -30,6 +30,7 @@ import {
   swissBracketLayout,
 } from '../layouts';
 import { demoMatchNormalizer, demoParticipant } from './demo-match-normalizer';
+import { BRACKET_DEFAULT_CARDS } from '../bracket-default-cards';
 
 /**
  * Every layout the stories can draw, created once - the `layout` control picks between these two lists
@@ -152,6 +153,7 @@ export class StorybookRoundHeaderComponent<TRoundData = unknown, TMatchData = un
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [BracketComponent, BUTTON_IMPORTS],
+  providers: [provideBracketConfig(BRACKET_DEFAULT_CARDS)],
 })
 export class StorybookBracketSqueezeComponent {
   public source = input.required<BracketDataSource<unknown, unknown>>();
@@ -199,6 +201,7 @@ export class StorybookBracketSqueezeComponent {
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [BracketComponent, ...SCROLLABLE_IMPORTS, ...SCROLLABLE_NAVIGATION_IMPORTS],
+  providers: [provideBracketConfig(BRACKET_DEFAULT_CARDS)],
 })
 export class StorybookBracketDensityComponent {
   public source = input.required<BracketDataSource<unknown, unknown>>();
@@ -264,6 +267,7 @@ export class StorybookBracketDensityComponent {
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [BracketComponent, BracketParticipantsComponent, ...SCROLLABLE_IMPORTS, ...SCROLLABLE_NAVIGATION_IMPORTS],
+  providers: [provideBracketConfig(BRACKET_DEFAULT_CARDS)],
 })
 export class StorybookBracketComponent {
   public source = input.required<BracketDataSource<unknown, unknown>>();

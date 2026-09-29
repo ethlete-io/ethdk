@@ -4,7 +4,7 @@ import { EthleteMatchInput } from '../../match';
 import { BracketMatchNormalizer } from '../bracket-card-context';
 import { queryAll } from '../../testing/driver-core';
 import { BRACKET_ERROR_CODES } from '../bracket-errors';
-import { TOURNAMENT_MODE } from '@ethlete/bracket';
+import { COMMON_BRACKET_ROUND_TYPE, SINGLE_ELIMINATION_BRACKET_ROUND_TYPE, TOURNAMENT_MODE } from '@ethlete/bracket';
 import { singleEliminationBracketLayout } from '../layouts';
 import { bracketTestDriver } from '../testing/bracket-driver';
 import { BracketDataSource } from './base';
@@ -13,7 +13,7 @@ import {
   EthleteRoundInput,
   EthleteRoundWithMatchesInput,
   generateBracketDataForEthlete,
-  generateTournamentModeFormEthleteRounds,
+  generateTournamentModeFromEthleteRounds,
   normalizeEthleteBracketMatch,
 } from './ethlete';
 
@@ -90,7 +90,7 @@ describe('input types', () => {
   });
 });
 
-describe('generateTournamentModeFormEthleteRounds', () => {
+describe('generateTournamentModeFromEthleteRounds', () => {
   it('reads the mode off the first drawn round, so a leading empty round is not fatal', () => {
     const stage = stubStage([
       { name: 'r1', type: 'normal', matchCount: 0 },
@@ -98,29 +98,61 @@ describe('generateTournamentModeFormEthleteRounds', () => {
       { name: 'r3', type: 'final', matchType: 'single_elimination', matchCount: 1 },
     ]);
 
-    expect(generateTournamentModeFormEthleteRounds(stage)).toBe(TOURNAMENT_MODE.SINGLE_ELIMINATION);
+    expect(generateTournamentModeFromEthleteRounds(stage)).toBe(TOURNAMENT_MODE.SINGLE_ELIMINATION);
   });
 
-  it('compares the swiss round sizes against the first drawn round', () => {
+  it('reads a swiss stage off its stage type, even while every listed round has the same size', () => {
     const stage = stubStage([
-      { name: 'r1', type: 'normal', matchCount: 0 },
-      { name: 'r2', type: 'normal', matchType: 'fifa_swiss', matchCount: 4 },
-      { name: 'r3', type: 'final', matchType: 'fifa_swiss', matchCount: 1 },
+      { name: 'r1', type: 'normal', matchType: 'fifa_swiss', matchCount: 8 },
+      { name: 'r2', type: 'normal', matchType: 'fifa_swiss', matchCount: 8 },
+      { name: 'r3', type: 'normal', matchType: 'fifa_swiss', matchCount: 8 },
     ]);
 
-    expect(generateTournamentModeFormEthleteRounds(stage)).toBe(TOURNAMENT_MODE.SWISS_WITH_ELIMINATION);
+    expect(generateTournamentModeFromEthleteRounds(stage)).toBe(TOURNAMENT_MODE.SWISS_WITH_ELIMINATION);
   });
 
   it('still rejects a stage without a single match', () => {
     expect(() =>
-      generateTournamentModeFormEthleteRounds(stubStage([{ name: 'r1', type: 'normal', matchCount: 0 }])),
+      generateTournamentModeFromEthleteRounds(stubStage([{ name: 'r1', type: 'normal', matchCount: 0 }])),
     ).toThrow(`ET${BRACKET_ERROR_CODES.SOURCE_EMPTY}`);
 
-    expect(() => generateTournamentModeFormEthleteRounds([])).toThrow(`ET${BRACKET_ERROR_CODES.SOURCE_EMPTY}`);
+    expect(() => generateTournamentModeFromEthleteRounds([])).toThrow(`ET${BRACKET_ERROR_CODES.SOURCE_EMPTY}`);
   });
 });
 
 describe('generateBracketDataForEthlete', () => {
+  it('types a one-match normal round as the final only when it is the last round', () => {
+    const source = generateBracketDataForEthlete(
+      stubStage([
+        { name: 'playIn', type: 'normal', matchType: 'single_elimination', matchCount: 1 },
+        { name: 'semi', type: 'normal', matchType: 'single_elimination', matchCount: 2 },
+        { name: 'final', type: 'normal', matchType: 'single_elimination', matchCount: 1 },
+      ]),
+    );
+
+    expect(source.rounds.map((round) => round.type)).toEqual([
+      SINGLE_ELIMINATION_BRACKET_ROUND_TYPE.SINGLE_ELIMINATION_BRACKET,
+      SINGLE_ELIMINATION_BRACKET_ROUND_TYPE.SINGLE_ELIMINATION_BRACKET,
+      COMMON_BRACKET_ROUND_TYPE.FINAL,
+    ]);
+  });
+
+  it('keeps the last normal round the final when a third place round is listed after it', () => {
+    const source = generateBracketDataForEthlete([
+      ...stubStage([
+        { name: 'semi', type: 'normal', matchType: 'single_elimination', matchCount: 2 },
+        { name: 'final', type: 'normal', matchType: 'single_elimination', matchCount: 1 },
+      ]),
+      { round: { id: 'round-third', name: 'third', type: 'third_place' }, matches: [] },
+    ]);
+
+    expect(source.rounds.map((round) => round.type)).toEqual([
+      SINGLE_ELIMINATION_BRACKET_ROUND_TYPE.SINGLE_ELIMINATION_BRACKET,
+      COMMON_BRACKET_ROUND_TYPE.FINAL,
+      COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE,
+    ]);
+  });
+
   it('keeps a leading empty round in the source and draws the stage', () => {
     const source = generateBracketDataForEthlete(
       stubStage([

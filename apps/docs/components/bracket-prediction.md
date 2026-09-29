@@ -5,8 +5,10 @@ pieces make one up: `resolveBracketSlot()` reads every slot through the viewer's
 `<et-bracket-pick-card>` is the cell they pick in. To predict the order of a group table rather than a
 knockout pairing, use [standings pick](/components/standings-pick) instead.
 
-Import `BRACKET_IMPORTS` and register a [layout](/components/bracket#layouts) with
-`provideBracketConfig()`, the same as for a results bracket. `resolveBracketSlot`,
+Import `BRACKET_IMPORTS` for the bracket and `BRACKET_PICK_CARD_IMPORTS` for the cell, and register a
+[layout](/components/bracket#layouts) and a round header card with `provideBracketConfig()`, the same
+as for a results bracket - `roundHeaderComponent: BracketDefaultRoundHeaderComponent` when the pick
+cell is the only card of your own. `resolveBracketSlot`,
 `describeBracketSlot`, `createBracket` and `migrateBracketPicks` are pure functions, and they also
 ship from the framework-free `@ethlete/bracket` package, which has no Angular peer dependency.
 
@@ -16,11 +18,11 @@ from the picks your app holds, and writes a new pick back to them:
 
 ```ts
 import { Component, computed, inject, input } from '@angular/core';
-import { BRACKET_IMPORTS, BracketMatch, BracketRound, BracketRoundSwissGroup } from '@ethlete/components';
+import { BRACKET_PICK_CARD_IMPORTS, BracketMatch, BracketRound, BracketRoundSwissGroup } from '@ethlete/components';
 
 @Component({
   selector: 'app-pick-cell',
-  imports: [BRACKET_IMPORTS],
+  imports: [BRACKET_PICK_CARD_IMPORTS],
   template: `
     <et-bracket-pick-card
       [bracketMatch]="bracketMatch()"

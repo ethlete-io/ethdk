@@ -13,10 +13,11 @@ import { SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS } from '../../scrolla
 import { bracketFitsWidth, bracketNaturalWidth } from '../bracket-fits-width';
 import { BracketRoundsListComponent } from '../bracket-rounds-list.component';
 import { BracketComponent } from '../bracket.component';
-import { BracketConfig } from '../bracket.config';
+import { BracketConfig, provideBracketConfig } from '../bracket.config';
 import { BracketDataSource } from '../integrations/base';
 import { doubleEliminationBracketLayout, singleEliminationBracketLayout, swissBracketLayout } from '../layouts';
 import { demoMatchNormalizer } from './demo-match-normalizer';
+import { BRACKET_DEFAULT_CARDS } from '../bracket-default-cards';
 
 /** Every mode the stories feed these demos, created once and bound to both representations. */
 const DEMO_LAYOUTS = [singleEliminationBracketLayout(), doubleEliminationBracketLayout(), swissBracketLayout()];
@@ -69,6 +70,7 @@ const DEMO_BRACKET_CONFIG: BracketConfig = { layouts: DEMO_LAYOUTS, columnWidth:
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [BracketRoundsListComponent, BUTTON_IMPORTS],
+  providers: [provideBracketConfig(BRACKET_DEFAULT_CARDS)],
 })
 export class StorybookBracketRoundsListComponent {
   public source = input.required<BracketDataSource<unknown, unknown>>();
@@ -109,6 +111,7 @@ export class StorybookBracketRoundsListComponent {
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [BracketComponent, BracketRoundsListComponent, ...SCROLLABLE_IMPORTS, ...SCROLLABLE_NAVIGATION_IMPORTS],
+  providers: [provideBracketConfig(BRACKET_DEFAULT_CARDS)],
   host: {
     class: 'block',
     // `max-inline-size`, not `inline-size`: a demo about fitting the space available must not be wider
