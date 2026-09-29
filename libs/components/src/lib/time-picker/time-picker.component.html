@@ -51,6 +51,7 @@
       [attr.y]="readoutState.note === null ? CENTER : CENTER - (readoutState.kind === 'duration' ? 2 : 4)"
       [attr.data-kind]="readoutState.kind"
       [attr.data-long]="readoutState.main.length > 5 || null"
+      [attr.data-longer]="readoutState.main.length > 8 || null"
       class="et-time-picker-readout"
     >
       {{ readoutState.main }}

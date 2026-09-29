@@ -120,6 +120,23 @@ describe('TimePickerComponent', () => {
       expect(ringReadout(root)).toBe('2:30 PM');
     });
 
+    it('steps the readout down a size for a 12h time with seconds, so it clears the side hour labels', () => {
+      const { root, fixture, host } = setup((host) => {
+        host.value.set(at(14, 30));
+        host.format.set('h:mm a');
+      });
+      const readout = () => root.querySelector('.et-time-picker-readout');
+
+      expect(readout()?.hasAttribute('data-long')).toBe(true);
+      expect(readout()?.hasAttribute('data-longer')).toBe(false);
+
+      host.format.set('h:mm:ss a');
+      fixture.detectChanges();
+
+      expect(ringReadout(root)).toBe('2:30:00 PM');
+      expect(readout()?.hasAttribute('data-longer')).toBe(true);
+    });
+
     it('draws the track only where a time can be picked and the blocked span as a dotted line', () => {
       const { root, host, tick } = setup();
 

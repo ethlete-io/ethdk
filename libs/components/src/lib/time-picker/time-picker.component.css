@@ -94,6 +94,10 @@
         font-size: 22px;
       }
 
+      &:where([data-longer]) {
+        font-size: 16px;
+      }
+
       &:where([data-kind='duration']) {
         font-size: 20px;
       }
