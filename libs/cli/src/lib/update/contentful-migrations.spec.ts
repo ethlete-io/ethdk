@@ -14,7 +14,10 @@ const installedVersion = (
   JSON.parse(readFileSync(join(contentfulSource, 'package.json'), 'utf8')) as { version: string }
 ).version;
 
-const nextPrerelease = (version: string) => version.replace(/\.(\d+)$/, (_, build: string) => `.${Number(build) + 1}`);
+const shiftPrerelease = (version: string, by: number) =>
+  version.replace(/\.(\d+)$/, (_, build: string) => `.${Number(build) + by}`);
+
+const nextPrerelease = (version: string) => shiftPrerelease(version, 1);
 
 const installContentful = () => {
   const root = mkdtempSync(join(tmpdir(), 'cli-contentful-migrations-'));
@@ -38,11 +41,13 @@ describe('the @ethlete/contentful migrations', () => {
     expect(problems).toEqual([]);
   });
 
-  it('run on the update from the published version to the next prerelease', () => {
+  // The release PR bumps package.json to the version these migrations name, so the range starts one
+  // prerelease below it to cover both that branch and next.
+  it('run on an update across the current prerelease', () => {
     const pending = orderMigrations(
       pendingMigrations({
         packageMigrations: { packageName, migrations, problems },
-        from: installedVersion,
+        from: shiftPrerelease(installedVersion, -1),
         to: nextPrerelease(installedVersion),
       }),
     ).map((entry) => entry.migration.name);
