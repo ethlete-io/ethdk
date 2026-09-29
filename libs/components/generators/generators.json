@@ -55,6 +55,11 @@
       "schema": "./migrate-grid-engine-internals/schema.json",
       "description": "Remove the grid engine internals from @ethlete/components imports and mark their uses"
     },
+    "migrate-overlay-fullscreen-animation": {
+      "factory": "./migrate-overlay-fullscreen-animation/migration",
+      "schema": "./migrate-overlay-fullscreen-animation/schema.json",
+      "description": "Remove the overlay fullscreen animation internals from @ethlete/components imports and mark their uses"
+    },
     "icons": {
       "factory": "./icons/generator",
       "schema": "./icons/schema.json",

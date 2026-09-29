@@ -642,7 +642,7 @@
   },
   "ConnectedMatches": {
     "kind": "removed",
-    "note": "internal to the legacy renderer’s connector drawing"
+    "note": "internal to the legacy renderer\u2019s connector drawing"
   },
   "CreateFormChangesTrackerConfig": {
     "docs": "/core/utilities",
@@ -804,7 +804,7 @@
   },
   "EXPOSE_INPUT_VARS_TOKEN": {
     "kind": "removed",
-    "note": "read the control state from the field’s own signals"
+    "note": "read the control state from the field\u2019s own signals"
   },
   "EmailInputComponent": {
     "docs": "/components/text-inputs",
@@ -829,11 +829,11 @@
   },
   "ExposeInputVarsContext": {
     "kind": "removed",
-    "note": "read the control state from the field’s own signals"
+    "note": "read the control state from the field\u2019s own signals"
   },
   "ExposeInputVarsDirective": {
     "kind": "removed",
-    "note": "read the control state from the field’s own signals"
+    "note": "read the control state from the field\u2019s own signals"
   },
   "FILTER_OVERLAY_CONFIG": {
     "docs": "/components/filter-overlay",
@@ -874,7 +874,7 @@
   },
   "FocusElementRegistryEntry": {
     "kind": "removed",
-    "note": "the overlay runtime restores focus itself; @ethlete/core’s setupFocusTrap / applyInitialFocus cover manual cases"
+    "note": "the overlay runtime restores focus itself; @ethlete/core\u2019s setupFocusTrap / applyInitialFocus cover manual cases"
   },
   "FooterCellDefDirective": {
     "docs": "/components/table",
@@ -917,16 +917,12 @@
     "note": "signal forms hold group state in the schema"
   },
   "FullscreenAnimationDeps": {
-    "docs": "/components/overlays",
-    "kind": "move",
-    "package": "@ethlete/components",
-    "to": "FullscreenAnimationDeps"
+    "kind": "removed",
+    "note": "internal to the full-screen overlay strategy, no longer exported from @ethlete/components"
   },
   "FullscreenAnimationState": {
-    "docs": "/components/overlays",
-    "kind": "move",
-    "package": "@ethlete/components",
-    "to": "FullscreenAnimationState"
+    "kind": "removed",
+    "note": "internal to the full-screen overlay strategy, no longer exported from @ethlete/components"
   },
   "HeaderCellDefDirective": {
     "docs": "/components/table",
@@ -1003,11 +999,11 @@
   },
   "IfInputEmptyDirective": {
     "kind": "removed",
-    "note": "bind on the control’s own signals"
+    "note": "bind on the control\u2019s own signals"
   },
   "IfInputFilledDirective": {
     "kind": "removed",
-    "note": "bind on the control’s own signals"
+    "note": "bind on the control\u2019s own signals"
   },
   "IfSupportsShowPickerDirective": {
     "kind": "removed",
@@ -1606,7 +1602,7 @@
   "OverlayConfig": {
     "docs": "/components/overlays",
     "kind": "reshape",
-    "note": "config merges definition → opener → open",
+    "note": "config merges definition \u2192 opener \u2192 open",
     "package": "@ethlete/components",
     "to": "OverlayConfig"
   },
@@ -1980,14 +1976,14 @@
   "QueryButtonComponent": {
     "docs": "/components/button",
     "kind": "replaced-by",
-    "note": "bind the query state to the button’s loading input; no one-second success/failure flash",
+    "note": "bind the query state to the button\u2019s loading input; no one-second success/failure flash",
     "package": "@ethlete/components",
     "to": "ButtonComponent"
   },
   "QueryButtonDirective": {
     "docs": "/components/button",
     "kind": "replaced-by",
-    "note": "bind the query state to the button’s loading input; no one-second success/failure flash",
+    "note": "bind the query state to the button\u2019s loading input; no one-second success/failure flash",
     "package": "@ethlete/components",
     "to": "ButtonDirective"
   },
@@ -2817,14 +2813,14 @@
   "TableBusyDirective": {
     "docs": "/components/table",
     "kind": "replaced-by",
-    "note": "[loading] / [error] take a query’s signals, with placeholder rows and a refetch bar",
+    "note": "[loading] / [error] take a query\u2019s signals, with placeholder rows and a refetch bar",
     "package": "@ethlete/components",
     "to": "TableComponent"
   },
   "TableBusyOutletDirective": {
     "docs": "/components/table",
     "kind": "replaced-by",
-    "note": "[loading] / [error] take a query’s signals, with placeholder rows and a refetch bar",
+    "note": "[loading] / [error] take a query\u2019s signals, with placeholder rows and a refetch bar",
     "package": "@ethlete/components",
     "to": "TableComponent"
   },
@@ -2838,7 +2834,7 @@
   "TableDataSource": {
     "docs": "/components/table",
     "kind": "replaced-by",
-    "note": "the table’s own client mode, the exported sortRows() helper and the opt-in filter menus",
+    "note": "the table\u2019s own client mode, the exported sortRows() helper and the opt-in filter menus",
     "package": "@ethlete/components",
     "to": "TableComponent"
   },
@@ -2993,10 +2989,8 @@
     "note": "validation errors come from the signal-forms schema"
   },
   "ViewportTransformData": {
-    "docs": "/components/overlays",
-    "kind": "move",
-    "package": "@ethlete/components",
-    "to": "ViewportTransformData"
+    "kind": "removed",
+    "note": "internal to the full-screen overlay strategy, no longer exported from @ethlete/components"
   },
   "WRITEABLE_INPUT_TOKEN": {
     "kind": "removed",
@@ -3023,10 +3017,8 @@
     "note": "internal to the cdk underline implementation"
   },
   "abortFullscreenAnimation": {
-    "docs": "/components/overlays",
-    "kind": "move",
-    "package": "@ethlete/components",
-    "to": "abortFullscreenAnimation"
+    "kind": "removed",
+    "note": "internal to the full-screen overlay strategy, no longer exported from @ethlete/components"
   },
   "anchoredDialogOverlayStrategy": {
     "docs": "/components/overlays",
@@ -3041,16 +3033,12 @@
     "to": "bottomSheetOverlayStrategy"
   },
   "cleanupFullscreenAnimation": {
-    "docs": "/components/overlays",
-    "kind": "move",
-    "package": "@ethlete/components",
-    "to": "cleanupFullscreenAnimation"
+    "kind": "removed",
+    "note": "internal to the full-screen overlay strategy, no longer exported from @ethlete/components"
   },
   "cleanupFullscreenAnimationStyles": {
-    "docs": "/components/overlays",
-    "kind": "move",
-    "package": "@ethlete/components",
-    "to": "cleanupFullscreenAnimationStyles"
+    "kind": "removed",
+    "note": "internal to the full-screen overlay strategy, no longer exported from @ethlete/components"
   },
   "createBracketConfig": {
     "kind": "removed",
@@ -3084,14 +3072,14 @@
   "createOverlayHandler": {
     "docs": "/components/overlay-openers",
     "kind": "rename+reshape",
-    "note": "no longer a factory returning a factory; config merges definition → opener → open",
+    "note": "no longer a factory returning a factory; config merges definition \u2192 opener \u2192 open",
     "package": "@ethlete/components",
     "to": "defineOverlay"
   },
   "createOverlayHandlerWithQueryParamLifecycle": {
     "docs": "/components/overlay-openers",
     "kind": "rename+reshape",
-    "note": "no longer a factory returning a factory; config merges definition → opener → open",
+    "note": "no longer a factory returning a factory; config merges definition \u2192 opener \u2192 open",
     "package": "@ethlete/components",
     "to": "defineQueryParamOverlay"
   },
@@ -3206,7 +3194,7 @@
   },
   "injectFocusRegistry": {
     "kind": "removed",
-    "note": "the overlay runtime restores focus itself; @ethlete/core’s setupFocusTrap / applyInitialFocus cover manual cases"
+    "note": "the overlay runtime restores focus itself; @ethlete/core\u2019s setupFocusTrap / applyInitialFocus cover manual cases"
   },
   "injectFullscreenDialogStrategy": {
     "docs": "/components/overlays",
@@ -3445,7 +3433,7 @@
   },
   "provideFocusRegistry": {
     "kind": "removed",
-    "note": "the overlay runtime restores focus itself; @ethlete/core’s setupFocusTrap / applyInitialFocus cover manual cases"
+    "note": "the overlay runtime restores focus itself; @ethlete/core\u2019s setupFocusTrap / applyInitialFocus cover manual cases"
   },
   "provideFullscreenDialogStrategy": {
     "docs": "/components/overlays",
@@ -3585,16 +3573,12 @@
     "to": "FloatingActionState"
   },
   "startFullscreenEnterAnimation": {
-    "docs": "/components/overlays",
-    "kind": "move",
-    "package": "@ethlete/components",
-    "to": "startFullscreenEnterAnimation"
+    "kind": "removed",
+    "note": "internal to the full-screen overlay strategy, no longer exported from @ethlete/components"
   },
   "startFullscreenLeaveAnimation": {
-    "docs": "/components/overlays",
-    "kind": "move",
-    "package": "@ethlete/components",
-    "to": "startFullscreenLeaveAnimation"
+    "kind": "removed",
+    "note": "internal to the full-screen overlay strategy, no longer exported from @ethlete/components"
   },
   "subsetMatchOptions": {
     "kind": "removed",

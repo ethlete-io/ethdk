@@ -79,6 +79,14 @@
       "description": "Remove the grid layout engine internals from @ethlete/components imports and mark the uses that need another approach.",
       "generator": "@ethlete/components:migrate-grid-engine-internals",
       "docs": "/components/grid"
+    },
+    {
+      "name": "overlay-fullscreen-animation",
+      "version": "1.0.0-next.64",
+      "kind": "auto",
+      "description": "Remove the overlay fullscreen animation internals from @ethlete/components imports and mark the uses that need another approach.",
+      "generator": "@ethlete/components:migrate-overlay-fullscreen-animation",
+      "docs": "/components/overlays"
     }
   ]
 }

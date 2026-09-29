@@ -290,6 +290,14 @@ The consequence is for hand-rolled strategies: an overlay that sets a layout `co
 
 `anchoredDialogOverlayStrategy` enters and leaves with the same scale-and-fade the plain dialog uses, but around a `transform-origin` set to the origin element's center - so the pane grows out of its trigger without ever taking the trigger's dimensions. Scaling _to the origin's width and height_ reads as the trigger morphing into the pane, which is what the full-screen dialog does and an anchored dialog does not: it appears beside its origin and stays a separate surface. `applyTransformOrigin` (default `true`) is what computes and writes that origin point; set it to `false` to scale from the pane's own center instead.
 
+### Full-screen animation internals
+
+The full-screen morph helpers (`startFullscreenEnterAnimation`, `startFullscreenLeaveAnimation`, `cleanupFullscreenAnimation`, `cleanupFullscreenAnimationStyles`, `abortFullscreenAnimation` and their state and dependency types) are no longer exported; configure `fullScreenDialogOverlayStrategy` instead. `et update` removes the dropped names from `@ethlete/components` imports and marks each use with a `TODO(ethlete-migration)` comment:
+
+```bash
+yarn nx g @ethlete/components:migrate-overlay-fullscreen-animation
+```
+
 ### Drag-to-dismiss direction
 
 `dragToDismiss.direction` takes either a physical direction (`'to-top'`, `'to-bottom'`, `'to-left'`, `'to-right'`) or a **logical** one (`'to-inline-start'`, `'to-inline-end'`). Logical values are resolved against the overlay container's computed `direction` when the gesture is attached, so they follow the writing direction the same way the `horizontal: 'start' | 'end'` position strategies do - a side sheet stays draggable toward the edge it is docked to under `dir="rtl"`. The side-sheet strategies use the logical values by default; physical values keep meaning exactly what they say.

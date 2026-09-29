@@ -3,7 +3,6 @@ export * from './anchored-dialog.strategy';
 export * from './bottom-sheet.strategy';
 export * from './dialog.strategy';
 export * from './full-screen.strategy';
-export * from './fullscreen-animation';
 export * from './left-sheet.strategy';
 export * from './overlay-drag-to-dismiss';
 export * from './overlay-origin';

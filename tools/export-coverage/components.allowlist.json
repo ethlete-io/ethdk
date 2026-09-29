@@ -2,13 +2,8 @@
   "OverlayOriginCloneComponent": "S8b overlay e2e: full-screen morph from origin needs real layout rects and transition timing",
   "PipCollapseOverlayDirective": "S8b stream: internal to et-pip-window, collapse is a drag gesture - e2e",
   "PipTitleBarDirective": "S8b stream: internal to et-pip-window, drag is a pointer gesture - e2e",
-  "abortFullscreenAnimation": "S8b overlay e2e: full-screen morph from origin needs real layout rects and transition timing",
-  "cleanupFullscreenAnimation": "S8b overlay e2e: full-screen morph from origin needs real layout rects and transition timing",
-  "cleanupFullscreenAnimationStyles": "S8b overlay e2e: full-screen morph from origin needs real layout rects and transition timing",
   "injectPipChromeManager": "S8b stream: plumbing of provideStreamPip, no standalone consumer use",
   "matchedDialPrefix": "spec: libs/components/src/lib/forms/phone-input/headless/phone-input.directive.spec.ts",
   "providePipChromeManager": "S8b stream: plumbing of provideStreamPip, no standalone consumer use",
-  "providePipManager": "S8b stream: plumbing of provideStreamPip, no standalone consumer use",
-  "startFullscreenEnterAnimation": "S8b overlay e2e: full-screen morph from origin needs real layout rects and transition timing",
-  "startFullscreenLeaveAnimation": "S8b overlay e2e: full-screen morph from origin needs real layout rects and transition timing"
+  "providePipManager": "S8b stream: plumbing of provideStreamPip, no standalone consumer use"
 }
