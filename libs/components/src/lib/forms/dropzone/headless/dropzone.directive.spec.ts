@@ -290,6 +290,25 @@ describe('DropzoneDirective', () => {
       expect(driver.host.value()).toBe('uuid-b');
     });
 
+    it('should leave the value null and keep the failed entry when a single-mode replace fails', () => {
+      driver.dropzone.selectFiles([createFile('a.png')]);
+      driver.tick();
+      driver.query.httpTesting.expectOne(UPLOAD_URL).flush({ uuid: 'uuid-a' });
+      driver.tick();
+
+      driver.dropzone.selectFiles([createFile('b.png')]);
+      driver.tick();
+      driver.query.httpTesting
+        .expectOne(UPLOAD_URL)
+        .flush('upload failed', { status: 500, statusText: 'Server Error' });
+      driver.tick();
+
+      expect(driver.dropzone.entries().length).toBe(1);
+      expect(driver.dropzone.entries()[0]!.status()).toBe('error');
+      expect(driver.dropzone.anyFailed()).toBe(true);
+      expect(driver.host.value()).toBe(null);
+    });
+
     it('should only keep the first file in single mode and reject the rest', () => {
       driver.dropzone.selectFiles([createFile('a.png'), createFile('b.png')]);
       driver.tick();
