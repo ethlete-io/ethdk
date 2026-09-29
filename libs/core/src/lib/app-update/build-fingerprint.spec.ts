@@ -61,6 +61,34 @@ describe('fetchDeployedBuildFingerprint$', () => {
   });
 
   it.each([
+    ['double-quoted', '<script type="module" src="/main-AAA.js"></script>'],
+    ['single-quoted', "<script src='/main-AAA.js'></script>"],
+    ['unquoted', '<script defer src=/main-AAA.js></script>'],
+    ['character references', '<script src="/main.js?v=1&amp;h=&#65;&#x42;"></script>'],
+    ['upper-case tags', '<SCRIPT SRC="/main-AAA.js"></SCRIPT>'],
+    ['a commented-out script', '<!-- <script src="/old-ZZZ.js"></script> --><script src="/main-AAA.js"></script>'],
+    ['a data-src attribute', '<script data-src="/lazy-ZZZ.js"></script><script src="/main-AAA.js"></script>'],
+    [
+      'a nonced style and inline script',
+      '<style nonce="a">p{}</style><script nonce="a">1</script><script src="/a.js">',
+    ],
+  ])('matches the running document for %s', async (_case, html) => {
+    respondWith(html);
+
+    await expect(firstValueFrom(fetchDeployedBuildFingerprint$('/'))).resolves.toBe(readBuildFingerprint(parse(html)));
+  });
+
+  it('does not parse the served document into a DOM', async () => {
+    const parseFromString = vi.spyOn(DOMParser.prototype, 'parseFromString');
+    respondWith('<style>p{}</style><script src="/main-BBB.js"></script>');
+
+    await firstValueFrom(fetchDeployedBuildFingerprint$('/'));
+
+    expect(parseFromString).not.toHaveBeenCalled();
+    parseFromString.mockRestore();
+  });
+
+  it.each([
     ['a non-2xx response', () => respondWith('Not found', { status: 404 })],
     ['a body with no scripts in it', () => respondWith('<html><body>502 Bad Gateway</body></html>')],
     [
