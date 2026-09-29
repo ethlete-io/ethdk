@@ -80,7 +80,7 @@ covers most.
 
 Open:
 
-- Drawing the sibling rows side by side in `apps/timetrack/src/app/day-review/lanes.ts`.
+- Done b2f55fa44: `packLane` in `apps/timetrack/src/app/day-review/lanes.ts` draws a one-ticket overlap group in fixed columns (Tom picked this over one outer band or a collapsed band). e2e `session-columns.spec.ts`.
 - `BehindStretch` for the stretch an unwatched session lost (slice 5).
 - `unnamedRowId` does not tell two unnamed pieces of one stream apart when both start at the same time.
 
