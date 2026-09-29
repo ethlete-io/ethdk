@@ -15,7 +15,7 @@ import { injectRichTextEditorDom, provideRichTextEditorDom } from '../headless/i
 import { DEFAULT_RICH_TEXT_EDITOR_LABELS } from '../rich-text-editor-labels';
 import { RICH_TEXT_EDITOR_TOOL, RichTextEditorToolDefinition } from '../rich-text-editor-tools';
 import { provideRichTextEditorImageTool } from './rich-text-editor-image.provider';
-import { RichTextEditorImageUploadFn } from './rich-text-editor-image-upload';
+import { RichTextEditorImageFailure, RichTextEditorImageUploadFn } from './rich-text-editor-image-upload';
 
 const FILE = new File(['x'], 'photo.png', { type: 'image/png' });
 
@@ -24,9 +24,12 @@ describe('provideRichTextEditorImageTool in a shared scope', () => {
   let scope: EnvironmentInjector;
   let liveDestroyCallbacks: number;
 
-  const setupScope = (upload: RichTextEditorImageUploadFn) => {
+  const setupScope = (
+    upload: RichTextEditorImageUploadFn,
+    onFailure?: (failure: RichTextEditorImageFailure) => void,
+  ) => {
     scope = createEnvironmentInjector(
-      [provideRichTextEditorImageTool({ upload })],
+      [provideRichTextEditorImageTool({ upload, onFailure })],
       TestBed.inject(EnvironmentInjector),
     );
 
@@ -104,6 +107,19 @@ describe('provideRichTextEditorImageTool in a shared scope', () => {
     uploads.next('https://cdn/b.png');
 
     expect(liveDestroyCallbacks).toBe(baseline);
+  });
+
+  it('reports upload-failed and inserts nothing when the upload returns an unsafe url', () => {
+    const onFailure = vi.fn();
+    const tool = setupScope(() => of('javascript:alert(1)'), onFailure);
+    const { editor, root } = createEditor();
+
+    pasteImage(tool, editor);
+
+    expect(onFailure).toHaveBeenCalledTimes(1);
+    expect(onFailure.mock.calls[0]?.[0]).toMatchObject({ file: FILE, reason: 'upload-failed' });
+    expect(root.querySelectorAll('img')).toHaveLength(1);
+    expect(root.querySelector('img[src^="javascript:"]')).toBeNull();
   });
 
   it('registers nothing for an upload that settles synchronously', () => {

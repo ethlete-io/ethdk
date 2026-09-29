@@ -29,7 +29,9 @@ const decodeUrlCharacterReferences = (url: string) =>
       entity.toLowerCase() === 'colon' ? ':' : entity.toLowerCase() === 'tab' ? '\t' : '\n',
     );
 
-const isSafeUrl = (url: string) => {
+/** Whether `url` may be embedded as an image `src`: everything except `javascript:` and `vbscript:`
+ *  URLs and non-image `data:` URLs, however they are cased, spaced or entity-encoded. */
+export const isSafeUrl = (url: string) => {
   // eslint-disable-next-line no-control-regex -- URL parsers ignore these characters inside schemes.
   const normalized = decodeUrlCharacterReferences(url).replace(/[\s\u0000-\u001f]/g, '');
 

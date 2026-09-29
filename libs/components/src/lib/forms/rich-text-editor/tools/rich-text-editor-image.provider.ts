@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { DestroyRef, inject, Injector, inputBinding, outputBinding, Provider } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { anchoredOverlayPosition, enableAnchoredOverlayPositionExtras, injectRenderer } from '@ethlete/core';
+import { anchoredOverlayPosition, enableAnchoredOverlayPositionExtras, injectRenderer, isSafeUrl } from '@ethlete/core';
 import { fromEvent, Subscription, take, tap, timer } from 'rxjs';
 import { OverlayConfig } from '../../../overlay/overlay-config';
 import { injectOverlayManager } from '../../../overlay/overlay-manager';
@@ -229,12 +229,24 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
       untrack?.();
     };
 
+    const failUpload = (error: unknown, message?: string | null) => {
+      settle();
+      showFailure(placeholder, labels.imageUploadFailed);
+      fail({ file, reason: 'upload-failed', error, message });
+    };
+
     const run = startImageUpload({
       file,
       upload: config.upload,
       injector,
       onProgress: (percentage) => ops.setPlaceholderProgress(placeholder, percentage),
       onSuccess: (url) => {
+        if (!isSafeUrl(url)) {
+          failUpload(new Error(`The upload returned an unsafe image URL: ${url}`));
+
+          return;
+        }
+
         settle();
 
         const image = ops.replacePlaceholderWithImage({ dom, placeholder, image: { src: url, alt: '' } });
@@ -243,11 +255,7 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
         // silently drop the result rather than putting an image back into a document that moved on.
         if (image) editor.syncFromDom({ boundary: true });
       },
-      onError: (error, message) => {
-        settle();
-        showFailure(placeholder, labels.imageUploadFailed);
-        fail({ file, reason: 'upload-failed', error, message });
-      },
+      onError: failUpload,
     });
 
     if (settled) return;

@@ -358,7 +358,7 @@ While a file uploads, a placeholder takes the image's place - a block the size o
 upload's progress on it (see below) - and **the caret moves to the line below it right away**, so
 writing continues under the image from the moment the upload starts. On success the image replaces the
 placeholder where it stands, without disturbing the caret; on failure the placeholder shows that
-briefly, removes itself and calls `onFailure`. **The value never sees the placeholder** - it carries no
+briefly, removes itself and calls `onFailure`; an upload that resolves to an unsafe URL (`javascript:`, `vbscript:`, a non-image `data:`) counts as a failure with reason `'upload-failed'`. **The value never sees the placeholder** - it carries no
 text, so an upload in flight leaves the Markdown (and the undo history) untouched, and a single undo
 takes the finished image back out.
 
