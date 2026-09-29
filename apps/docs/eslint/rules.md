@@ -14,7 +14,7 @@ Reference for all custom rules in `@ethlete/eslint-plugin`. Every rule is used w
 | `no-trivial-return-type`            | No explicit return types TypeScript can infer on block-bodied implementations; concise arrows keep annotations that may narrow their API contract                                | 🔧  | error   |
 | `no-type-only-import`               | No `import type { Foo }` or `import { type Foo }` - use a regular value import                                                                                                   | 🔧  | error   |
 | `no-trivial-wrapper-method`         | No wrapper methods that only forward all arguments to another call; inherited, implemented and Angular/DOM contract methods are exempt                                           |     | error   |
-| `no-screaming-case-local`           | No SCREAMING_CASE variable names inside function bodies - locals are camelCase                                                                                                   |     | error   |
+| `no-screaming-case-local`           | No SCREAMING_CASE variable names inside function bodies, or for function-valued variables at any scope                                                                           |     | error   |
 | `guard-return-newline`              | Empty line before a `return` in a multi-statement if-block (guard clause)                                                                                                        | 🔧  | error   |
 | `no-empty-newlines-between-imports` | No blank lines between consecutive import declarations                                                                                                                           | 🔧  | error   |
 

@@ -2,7 +2,8 @@
 'use strict';
 
 /**
- * Disallows SCREAMING_CASE variable names inside function bodies.
+ * Disallows SCREAMING_CASE variable names inside function bodies, and SCREAMING_CASE names
+ * for function-valued variables at any scope.
  *
  * At module level, SCREAMING_CASE is fine for true constants. Inside functions,
  * all local variables must be camelCase — there is no meaningful distinction
@@ -56,7 +57,7 @@ const noScreamingCaseLocal = {
     type: 'suggestion',
     docs: {
       description:
-        'Disallow SCREAMING_CASE variable names inside function bodies. Use camelCase for all local variables.',
+        'Disallow SCREAMING_CASE variable names inside function bodies, and SCREAMING_CASE names for function-valued variables at any scope.',
       recommended: true,
     },
     messages: {
