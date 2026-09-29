@@ -2,7 +2,7 @@ import { Observable, map } from 'rxjs';
 import { TimetrackTransport } from '../transport/ports';
 import { JiraCredentials } from './client';
 import { JiraIssue, toJiraIssue } from './issue';
-import { searchJiraIssues$ } from './search';
+import { searchJiraTopIssues$ } from './search';
 
 /** How many parents a picker offers. A list nobody scrolls is a list nobody reads. */
 export const DEFAULT_PARENT_CANDIDATE_LIMIT = 30;
@@ -36,13 +36,13 @@ export const fetchJiraOpenIssues$ = (options: {
     ...(types.length ? [`issuetype in (${types.map(quoted).join(', ')})`] : []),
   ].join(' AND ');
 
-  return searchJiraIssues$({
+  return searchJiraTopIssues$({
     transport: options.transport,
     credentials: options.credentials,
     jql: `${jql} ORDER BY updated DESC`,
     fields: ['summary', 'issuetype', 'parent', ...(options.subjectField ? [options.subjectField] : [])],
     describe: `open issues in ${options.projectKey}`,
-    options: { pageSize: options.limit ?? DEFAULT_OPEN_ISSUE_LIMIT, maxPages: 1 },
+    limit: options.limit ?? DEFAULT_OPEN_ISSUE_LIMIT,
   }).pipe(map((resources) => resources.flatMap((resource) => toJiraIssue(resource, options.subjectField) ?? [])));
 };
 
@@ -58,13 +58,13 @@ export const fetchJiraDuplicateCandidates$ = (options: {
   subjectField?: string;
   limit?: number;
 }): Observable<JiraIssue[]> =>
-  searchJiraIssues$({
+  searchJiraTopIssues$({
     transport: options.transport,
     credentials: options.credentials,
     jql: `project = ${quoted(options.projectKey)} AND (statusCategory != Done OR created >= -1d) ORDER BY created DESC`,
     fields: ['summary', 'issuetype', 'parent', ...(options.subjectField ? [options.subjectField] : [])],
     describe: `open and new issues in ${options.projectKey}`,
-    options: { pageSize: options.limit ?? DEFAULT_OPEN_ISSUE_LIMIT, maxPages: 1 },
+    limit: options.limit ?? DEFAULT_OPEN_ISSUE_LIMIT,
   }).pipe(map((resources) => resources.flatMap((resource) => toJiraIssue(resource, options.subjectField) ?? [])));
 
 /**

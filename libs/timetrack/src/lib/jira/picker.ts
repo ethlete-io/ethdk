@@ -4,7 +4,7 @@ import { TimetrackTransport } from '../transport/ports';
 import { JiraCredentials } from './client';
 import { JiraIssue, fetchJiraIssues$, toJiraIssue } from './issue';
 import { JiraProject, fetchJiraProjects$ } from './projects';
-import { searchJiraIssues$ } from './search';
+import { searchJiraTopIssues$ } from './search';
 
 /** How many issues a picker reads. A list longer than this is one nobody scrolls to the end of. */
 export const DEFAULT_JIRA_PICKER_LIMIT = 100;
@@ -152,13 +152,13 @@ export const fetchJiraIssuePicks$ = (options: {
   }
 
   const jql = jqlFor(filter);
-  const found$ = searchJiraIssues$({
+  const found$ = searchJiraTopIssues$({
     transport: options.transport,
     credentials: options.credentials,
     jql: `${jql ? `${jql} ` : ''}ORDER BY updated DESC`,
     fields: ['summary', 'issuetype', 'parent', ...(options.subjectField ? [options.subjectField] : [])],
     describe: 'issues to pick from',
-    options: { pageSize: filter.limit ?? DEFAULT_JIRA_PICKER_LIMIT, maxPages: 1 },
+    limit: filter.limit ?? DEFAULT_JIRA_PICKER_LIMIT,
   }).pipe(map((resources) => resources.flatMap((resource) => toJiraIssue(resource, options.subjectField) ?? [])));
 
   const typedNumber = typedNumberIn(filter.text);

@@ -1,10 +1,6 @@
 # timetrack jira, tempo, model, reason, store scan - open findings
 
-Scan of `libs/timetrack/src/lib/{jira,tempo,model,reason,store}` from 2026-09-28. 0 High, 1 Medium, 3 Low, 0 Spec (1 Low and 1 Spec fixed 2026-09-29: `ledgerEntriesForRange$`; second pass included; verified 2026-09-28: 6 confirmed, 4 re-rated, 0 refuted, 1 unverified). Skipped: all specs. The second pass read `jira/{adf,fields,hierarchy,projects,myself,status}.ts`, `tempo/attributes.ts`, `model/{event,evidence,context,field-source,statement,tokens,meeting-naming}.ts` and `reason/prompt.ts`; `model/event.ts` was read for its functions only.
-
-## tempo
-
-- Low: `searchJiraIssues$` stops at `maxPages` and gives no signal (`jira/search.ts:63`), so a caller cannot tell a complete history from a truncated one. `tempoPaged$` now errors instead. Several callers pass `maxPages: 1` on purpose to read the top N, so this needs a `truncated` flag or a separate top-N read. S
+Scan of `libs/timetrack/src/lib/{jira,tempo,model,reason,store}` from 2026-09-28. 0 High, 1 Medium, 2 Low, 0 Spec (2 Low and 1 Spec fixed 2026-09-29: `ledgerEntriesForRange$`, `searchJiraIssues$` errors past `maxPages`; second pass included; verified 2026-09-28: 6 confirmed, 4 re-rated, 0 refuted, 1 unverified). Skipped: all specs. The second pass read `jira/{adf,fields,hierarchy,projects,myself,status}.ts`, `tempo/attributes.ts`, `model/{event,evidence,context,field-source,statement,tokens,meeting-naming}.ts` and `reason/prompt.ts`; `model/event.ts` was read for its functions only.
 
 ## jira
 

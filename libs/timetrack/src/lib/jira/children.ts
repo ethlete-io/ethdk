@@ -1,7 +1,7 @@
 import { Observable, forkJoin, map, of } from 'rxjs';
 import { TimetrackTransport } from '../transport/ports';
 import { JiraCredentials } from './client';
-import { searchJiraIssues$ } from './search';
+import { searchJiraTopIssues$ } from './search';
 
 /** How many children of one parent the epic rung reads. Settable as `epicChildLimit`. */
 export const DEFAULT_EPIC_CHILD_LIMIT = 100;
@@ -41,14 +41,14 @@ export const fetchJiraIssueChildren$ = (options: {
 
   return forkJoin(
     keys.map((parentKey) =>
-      searchJiraIssues$({
+      searchJiraTopIssues$({
         transport: options.transport,
         credentials: options.credentials,
         jql: `parent = ${quoted(parentKey)} AND statusCategory != Done ORDER BY created ASC`,
         fields: ['summary'],
         describe: `open children of ${parentKey}`,
         // One over the cap, so a list that filled it exactly can still be told from one that was cut.
-        options: { pageSize: limit + 1, maxPages: 1 },
+        limit: limit + 1,
       }).pipe(
         map((resources): JiraIssueChildren => {
           const childKeys = resources.map((resource) => resource.key).filter((key): key is string => !!key);

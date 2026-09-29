@@ -2,7 +2,7 @@ import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
 import { JiraCredentials } from './client';
-import { searchJiraIssues$ } from './search';
+import { searchJiraIssues$, searchJiraTopIssues$ } from './search';
 
 const CREDENTIALS: JiraCredentials = { host: 'https://team.atlassian.net', email: 'you@x.com', token: 't' };
 
@@ -54,14 +54,30 @@ describe('searchJiraIssues$', () => {
     expect(seen.mock.calls[0]?.[0].map((issue: { key: string }) => issue.key)).toEqual(['FIP-1', 'FIP-2', 'FIP-3']);
   });
 
-  it('stops at maxPages rather than paging a runaway query forever', () => {
+  it('errors at maxPages rather than answer a runaway query with part of it', () => {
     const { transport, requests } = pagingTransport(
       Array.from({ length: 10 }, (_, index) => ({ issues: [{ key: `FIP-${index}` }], nextPageToken: 'more' })),
     );
+    const seen = vi.fn();
+    const failed = vi.fn();
 
-    search$(transport, { maxPages: 3 }).subscribe();
+    search$(transport, { maxPages: 3 }).subscribe({ next: seen, error: failed });
 
     expect(requests).toHaveLength(3);
+    expect(seen).not.toHaveBeenCalled();
+    expect(failed).toHaveBeenCalledWith(new Error('Jira offered more than 3 pages of issues.'));
+  });
+
+  it('reads a last page that fills maxPages exactly as complete', () => {
+    const { transport } = pagingTransport([
+      { issues: [{ key: 'FIP-1' }], nextPageToken: 'p2' },
+      { issues: [{ key: 'FIP-2' }] },
+    ]);
+    const seen = vi.fn();
+
+    search$(transport, { maxPages: 2 }).subscribe(seen);
+
+    expect(seen).toHaveBeenCalledWith([{ key: 'FIP-1' }, { key: 'FIP-2' }]);
   });
 
   it('emits once, after the last page', () => {
@@ -71,5 +87,28 @@ describe('searchJiraIssues$', () => {
     search$(transport).subscribe(seen);
 
     expect(seen).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('searchJiraTopIssues$', () => {
+  it('reads one page of the given size and never follows the cursor', () => {
+    const { transport, requests } = pagingTransport([
+      { issues: [{ key: 'FIP-1' }, { key: 'FIP-2' }], nextPageToken: 'p2' },
+      { issues: [{ key: 'FIP-3' }] },
+    ]);
+    const seen = vi.fn();
+
+    searchJiraTopIssues$({
+      transport,
+      credentials: CREDENTIALS,
+      jql: 'project = FIP ORDER BY updated DESC',
+      fields: ['summary'],
+      describe: 'issues',
+      limit: 2,
+    }).subscribe(seen);
+
+    expect(requests).toHaveLength(1);
+    expect(requests[0]?.url).toContain('maxResults=2');
+    expect(seen).toHaveBeenCalledWith([{ key: 'FIP-1' }, { key: 'FIP-2' }]);
   });
 });
