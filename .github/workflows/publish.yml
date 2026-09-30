@@ -165,11 +165,18 @@ jobs:
           fi
           unset MACOS_SIGNING_CERTIFICATE MACOS_SIGNING_CERTIFICATE_PASSWORD
           # Git Bash puts its MSYS perl first, which lacks the modules OpenSSL's Configure needs.
+          # Without a working libclang, whisper-rs-sys falls back to its bundled glibc bindings,
+          # which fail to compile on Windows.
           if [ "$RUNNER_OS" = Windows ]; then
             export OPENSSL_SRC_PERL='C:\Strawberry\perl\bin\perl.exe'
+            export LIBCLANG_PATH='C:\Program Files\LLVM\bin'
           fi
           echo '{ "bundle": { "createUpdaterArtifacts": true } }' > "$RUNNER_TEMP/updater.json"
-          yarn nx run ${{ matrix.app.project }}:tauri:build -- --config "$RUNNER_TEMP/updater.json"
+          # Cargo hides a registry crate's build-script warnings, which is where bindgen reports why it failed.
+          yarn nx run ${{ matrix.app.project }}:tauri:build -- --config "$RUNNER_TEMP/updater.json" || {
+            grep -h "cargo:warning" ${{ matrix.app.dir }}/src-tauri/target/release/build/*/output 2>/dev/null || true
+            exit 1
+          }
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
