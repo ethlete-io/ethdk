@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DayRows } from '../rows/build-rows';
 import { CALL_LANE_KEY } from '../rows/lane';
+import { WorkGroup } from '../rows/merge';
 import { UnnamedProposal } from '../rows/propose';
 import { Evidence } from '../model/evidence';
 import { WorklogProposal } from '../model/proposal';
@@ -391,5 +392,73 @@ describe('reviewDay, an edit on a call band that gains a name later', () => {
 
     expect(edited).toBeDefined();
     expect(drawn(review(namedDay, resetRow({ edits, row: edited! })))).toEqual(drawn(review(namedDay)));
+  });
+});
+
+describe('reviewDay, a band the reviewer named whose rule answers differently later', () => {
+  const lane = 'repo:/work/app-a';
+  const ruled = proposal({ issueKey: 'ABC-1', from: '12:15', to: '13:00', laneKey: lane });
+  const edits = setRowIssue({
+    edits: EMPTY_DAY_REVIEW_EDITS,
+    row: { ...ruled, edited: false, hidden: false },
+    issueKey: 'ABC-9',
+  });
+  const named = (result: DayReview) =>
+    result.rows.map((row) => `${hhmm(row.from)} ${row.issueKey ?? '-'} ${row.state}`);
+
+  it('keeps the issue the reviewer gave once a stand-in names the band instead', () => {
+    const renamed = { ...band({ from: '12:15', to: '13:00', laneKey: lane }), disputedIssueKey: 'ABC-1' };
+    const result = review(dayRows({ unnamed: [renamed] }), edits);
+
+    expect(named(result)).toEqual(['12:15 ABC-9 edited']);
+    expect(result.rows[0]).toMatchObject({ id: ruled.id, sources: { issue: 'human' } });
+  });
+
+  it('counts the band as named once nothing names it any more', () => {
+    const unruled = band({ from: '12:15', to: '13:00', laneKey: lane, standInId: '' });
+    const group: WorkGroup = {
+      rowId: unruled.id,
+      from: unruled.from,
+      to: unruled.to,
+      observedMs: unruled.observedMs,
+      confidence: 'certain',
+      evidence: [],
+      blocks: [],
+      laneKey: lane,
+    };
+    const result = review({ ...dayRows({ unnamed: [unruled] }), unattributed: [group] }, edits);
+
+    expect(named(result)).toEqual(['12:15 ABC-9 edited']);
+    expect(result.check.unattributedMs).toBe(0);
+  });
+
+  it('keeps the issue the reviewer gave once another issue names the band instead', () => {
+    const renamed = proposal({ issueKey: 'ABC-2', from: '12:15', to: '13:00', laneKey: lane });
+
+    expect(named(review(dayRows({ proposals: [renamed] }), edits))).toEqual(['12:15 ABC-9 edited']);
+  });
+
+  it('leaves a band of another lane or another start to its own answer', () => {
+    const elsewhere = proposal({ issueKey: 'ABC-2', from: '12:15', to: '13:00', laneKey: 'repo:/work/app-b' });
+    const later = proposal({ issueKey: 'ABC-2', from: '12:30', to: '13:00', laneKey: lane });
+
+    expect(named(review(dayRows({ proposals: [elsewhere, later] }), edits))).toEqual([
+      '12:15 ABC-2 accepted',
+      '12:30 ABC-2 accepted',
+    ]);
+  });
+
+  it('carries no edit the reviewer left without naming the band', () => {
+    const described = setRowDescription({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: { ...ruled, edited: false, hidden: false },
+      description: 'mine',
+    });
+    const renamed = proposal({ issueKey: 'ABC-2', from: '12:15', to: '13:00', laneKey: lane });
+
+    expect(review(dayRows({ proposals: [renamed] }), described).rows[0]).toMatchObject({
+      issueKey: 'ABC-2',
+      edited: false,
+    });
   });
 });

@@ -356,20 +356,26 @@ const coveredByPins = (options: {
   );
 };
 
+const idStartOf = (id: string) => id.slice(id.lastIndexOf('@') + 1);
+
 /**
- * Gives a proposal back the id it carried while unnamed where an edit of the reviewer's still hangs on
- * that id and on nothing else, so a name the day learns for a band later never drops what they said.
+ * Gives a row back the id an edit of the reviewer's still hangs on, so an answer the day learns for a
+ * band later never drops what they said. A proposal takes the id it carried while unnamed. Any row
+ * takes the id of a band of its lane and start the reviewer named by hand, where no row carries that
+ * id any more: a rule the day learns later changes the id, and the reviewer's name still wins.
  */
 const onEditedIds = (options: {
   proposals: readonly WorklogProposal[];
   unnamed: readonly UnnamedProposal[];
   edits: DayReviewEdits;
   pinnedIds: ReadonlySet<string>;
-}): WorklogProposal[] => {
+}): { proposals: WorklogProposal[]; unnamed: UnnamedProposal[]; formerIds: Map<string, string> } => {
+  const { overrides } = options.edits;
   const taken = new Set([...options.proposals, ...options.unnamed].map((row) => row.id));
-  const edited = (id: string) => !!options.edits.overrides[id] || options.pinnedIds.has(id);
+  const edited = (id: string) => !!overrides[id] || options.pinnedIds.has(id);
+  const formerIds = new Map<string, string>();
 
-  return options.proposals.map((row) => {
+  const proposals = options.proposals.map((row) => {
     const id = row.unnamedId;
 
     if (!id || taken.has(id) || edited(row.id) || !edited(id)) return row;
@@ -378,6 +384,35 @@ const onEditedIds = (options: {
 
     return { ...row, id };
   });
+
+  const orphans = Object.entries(overrides).filter(
+    ([id, override]) =>
+      !taken.has(id) &&
+      !options.pinnedIds.has(id) &&
+      !!override.laneKey &&
+      !!(override.issueKey || override.standInId) &&
+      storedSourceOf({ set: true, source: override.sources?.issue }) === 'human',
+  );
+
+  const reclaim = <T extends WorklogProposal | UnnamedProposal>(row: T): T => {
+    if (edited(row.id)) return row;
+
+    const lane = storedLaneKey(row.laneKey);
+    const start = idStartOf(row.id);
+    const found = orphans.filter(
+      ([id, override]) => !taken.has(id) && storedLaneKey(override.laneKey) === lane && idStartOf(id) === start,
+    );
+    const id = found.length === 1 ? found[0]?.[0] : undefined;
+
+    if (!id) return row;
+
+    taken.add(id);
+    formerIds.set(id, row.id);
+
+    return { ...row, id };
+  };
+
+  return { proposals: proposals.map(reclaim), unnamed: options.unnamed.map(reclaim), formerIds };
 };
 
 /**
@@ -442,10 +477,15 @@ export const reviewDay = (options: {
   const pinnedIds = new Set(edits.pinned.flatMap((row) => [row.id, ...row.replaces]));
   const isBackground = backgroundTest(options.cut?.backgroundProjects);
   const incrementMs = { ...DEFAULT_ROUND_OPTIONS, ...options.round }.incrementMs;
-  const proposals = onEditedIds({ proposals: options.rows.proposals, unnamed: options.rows.unnamed, edits, pinnedIds });
+  const { proposals, unnamed, formerIds } = onEditedIds({
+    proposals: options.rows.proposals,
+    unnamed: options.rows.unnamed,
+    edits,
+    pinnedIds,
+  });
   const sources = foldShortRows<RowSource>({
     rows: foldCrowdedSiblings<RowSource>({
-      rows: [...proposals, ...options.rows.unnamed],
+      rows: [...proposals, ...unnamed],
       most: MOST_PARALLEL_SIBLINGS,
       incrementMs,
       fixed: (row) => pinnedIds.has(row.id),
@@ -510,10 +550,11 @@ export const reviewDay = (options: {
    * built. Each is drawn with that answer on it, so counting it as time nothing named would report a
    * band the screen does not show and book the same minutes twice over.
    */
-  const settled = new Set([
+  const answeredIds = [
     ...consumed,
     ...reviewed.filter((row) => !!row.issueKey || !!row.standInId || row.hidden).map((row) => row.id),
-  ]);
+  ];
+  const settled = new Set([...answeredIds, ...answeredIds.flatMap((id) => formerIds.get(id) ?? [])]);
 
   const check = checkDay({
     proposals: rows.filter(isNamedRow).filter((row) => syncsInState(row.state)),
@@ -538,7 +579,7 @@ export const reviewDay = (options: {
     check: withOverlaps({
       check: withStaleEdits({
         check: withDrift({ check, unreconciledMs, options: options.check }),
-        rows: { ...options.rows, proposals },
+        rows: { ...options.rows, proposals, unnamed },
         edits,
         matched: tracked.matched,
       }),
