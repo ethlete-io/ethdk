@@ -21,7 +21,9 @@ Two rules bound the result. The end never lands before `from + durationMs`, so a
 narrower than the time it books. And where the widening would reach into the row after it, the
 earlier row's end rounds down instead of to the nearest boundary; only when that row's own booked
 time leaves no room does the later row's start move up to meet it. A snap must not invent an overlap
-the raw clock never held.
+the raw clock never held. A call row is the exception: its end is a real call-end event, so it ends
+on the boundary nearest that event, and books its observed time rounded to the nearest quarter,
+when that boundary still covers it. The next row then starts there instead of being pushed.
 
 What the raw clock did hold is kept. `observedMs` carries the evidence-backed duration behind
 `durationMs`, and the day screen shows both, so a reviewer can always see what the rounding did. What
