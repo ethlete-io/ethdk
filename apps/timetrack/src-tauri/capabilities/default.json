@@ -66,6 +66,8 @@
     "allow-transcription-status",
     "allow-tray-set-readout",
     "allow-unlock-window",
+    "allow-update-install",
+    "allow-update-ready",
     "allow-widget-close",
     "allow-widget-is-open",
     "allow-widget-open",

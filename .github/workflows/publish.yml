@@ -95,7 +95,7 @@ jobs:
             prerelease=()
             [[ "$version" == *-* ]] && prerelease=(--prerelease)
             gh release create "$tag" --draft --target "$GITHUB_SHA" --title "$tag" --notes-file notes.md "${prerelease[@]}"
-            apps=$(jq -c --arg project "$name" --arg dir "$dir" --arg tag "$tag" '. + [{ project: $project, dir: $dir, tag: $tag }]' <<< "$apps")
+            apps=$(jq -c --arg project "$name" --arg dir "$dir" --arg tag "$tag" --arg version "$version" '. + [{ project: $project, dir: $dir, tag: $tag, version: $version }]' <<< "$apps")
           done
           echo "apps=$apps" >> "$GITHUB_OUTPUT"
 
@@ -130,21 +130,35 @@ jobs:
 
       # A keychain item's "Always Allow" names the signing certificate. An ad-hoc build has a new
       # identity each release, and Timetrack then asks for the login password once per item.
-      - if: runner.os == 'macOS'
+      # The updater artifacts are enabled here only: a local `tauri build` has no private key to sign them.
+      - name: Build the bundles
+        shell: bash
         run: |
-          if [ -z "$APPLE_CERTIFICATE" ]; then
-            echo "::error::MACOS_SIGNING_CERTIFICATE is not set. Run tools/scripts/macos-release-identity.sh once."
+          set -euo pipefail
+          if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            echo "::error::TAURI_SIGNING_PRIVATE_KEY is not set. Run tools/scripts/tauri-updater-key.sh once."
             exit 1
           fi
-          yarn nx run ${{ matrix.app.project }}:tauri:build
+          if [ "$RUNNER_OS" = macOS ]; then
+            if [ -z "$APPLE_CERTIFICATE" ]; then
+              echo "::error::MACOS_SIGNING_CERTIFICATE is not set. Run tools/scripts/macos-release-identity.sh once."
+              exit 1
+            fi
+          else
+            unset APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY
+          fi
+          echo '{ "bundle": { "createUpdaterArtifacts": true } }' > "$RUNNER_TEMP/updater.json"
+          yarn nx run ${{ matrix.app.project }}:tauri:build -- --config "$RUNNER_TEMP/updater.json"
         env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           APPLE_CERTIFICATE: ${{ secrets.MACOS_SIGNING_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_SIGNING_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: Ethlete Release Signing
 
-      - if: runner.os != 'macOS'
-        run: yarn nx run ${{ matrix.app.project }}:tauri:build
-
+      # GitHub turns a space in an asset name into a dot, and the manifest must name the asset as
+      # GitHub stores it. The updater looks up `<os>-<arch>-<installer>` first, so each bundle type
+      # gets its own entry and a deb install never downloads the AppImage.
       - name: Attach the bundles to the draft release
         shell: bash
         env:
@@ -153,12 +167,48 @@ jobs:
           set -euo pipefail
           shopt -s nullglob
           bundle=${{ matrix.app.dir }}/src-tauri/target/release/bundle
-          files=("$bundle"/deb/*.deb "$bundle"/rpm/*.rpm "$bundle"/appimage/*.AppImage "$bundle"/dmg/*.dmg "$bundle"/nsis/*.exe)
+          for file in "$bundle"/*/*; do
+            renamed="$(dirname "$file")/$(basename "$file" | tr ' ' '.')"
+            [ "$file" = "$renamed" ] || mv "$file" "$renamed"
+          done
+          files=("$bundle"/deb/*.deb "$bundle"/rpm/*.rpm "$bundle"/appimage/*.AppImage "$bundle"/dmg/*.dmg "$bundle"/macos/*.app.tar.gz "$bundle"/nsis/*.exe)
           if [ ${#files[@]} -eq 0 ]; then
             echo "No bundle found in $bundle" >&2
             exit 1
           fi
           gh release upload "${{ matrix.app.tag }}" "${files[@]}" --clobber
+
+          case "$RUNNER_ARCH" in
+            X64) arch=x86_64 ;;
+            ARM64) arch=aarch64 ;;
+            *) echo "Unknown runner architecture $RUNNER_ARCH" >&2; exit 1 ;;
+          esac
+          base="https://github.com/$GITHUB_REPOSITORY/releases/download/$(jq -rn --arg tag "${{ matrix.app.tag }}" '$tag | @uri')"
+          platforms='{}'
+          for sig in "$bundle"/*/*.sig; do
+            file=${sig%.sig}
+            case "$file" in
+              *.AppImage) key="linux-$arch-appimage" ;;
+              *.deb) key="linux-$arch-deb" ;;
+              *.rpm) key="linux-$arch-rpm" ;;
+              *.app.tar.gz) key="darwin-$arch-app" ;;
+              *.exe) key="windows-$arch-nsis" ;;
+              *) continue ;;
+            esac
+            platforms=$(jq -c --arg key "$key" --arg url "$base/$(basename "$file")" --rawfile signature "$sig" \
+              '. + { ($key): { url: $url, signature: $signature } }' <<< "$platforms")
+          done
+          if [ "$platforms" = '{}' ]; then
+            echo "No updater signature found in $bundle" >&2
+            exit 1
+          fi
+          echo "$platforms" > "$RUNNER_TEMP/platforms.json"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: updater-${{ matrix.app.project }}-${{ matrix.os }}
+          path: ${{ runner.temp }}/platforms.json
+          retention-days: 1
 
   apps-release:
     needs: [apps-plan, apps-bundle]
@@ -169,6 +219,27 @@ jobs:
     permissions:
       contents: write
     steps:
-      - env:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: updater-${{ matrix.app.project }}-*
+          path: platforms
+
+      - run: gh release edit "${{ matrix.app.tag }}" --repo "$GITHUB_REPOSITORY" --draft=false
+        env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release edit "${{ matrix.app.tag }}" --repo "$GITHUB_REPOSITORY" --draft=false
+
+      # One fixed release per app holds the manifest the installed apps read. GitHub's "latest
+      # release" URL cannot serve it: the latest release of this repository is a lib release.
+      - name: Point the installed apps at the new version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPDATES_TAG: ${{ matrix.app.project }}-updates
+        run: |
+          set -euo pipefail
+          jq -s --arg version "${{ matrix.app.version }}" --arg date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{ version: $version, pub_date: $date, platforms: add }' platforms/*/platforms.json > latest.json
+          if ! gh release view "$UPDATES_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$UPDATES_TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest=false \
+              --title "${{ matrix.app.project }} updates" --notes "The update manifest the installed app reads. Download a bundle from the release of its version."
+          fi
+          gh release upload "$UPDATES_TAG" latest.json --repo "$GITHUB_REPOSITORY" --clobber

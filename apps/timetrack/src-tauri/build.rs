@@ -61,6 +61,8 @@ const COMMANDS: &[&str] = &[
     "transcription_status",
     "tray_set_readout",
     "unlock_window",
+    "update_install",
+    "update_ready",
     "widget_close",
     "widget_is_open",
     "widget_open",

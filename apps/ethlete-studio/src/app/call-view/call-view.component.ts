@@ -44,6 +44,7 @@ import {
   touchedLabel,
   unsettledCalls,
 } from './grouping';
+import { UpdateButtonComponent } from '../update-button.component';
 import { CheckoutsComponent } from './checkouts.component';
 import { ProjectPickerComponent } from './project-picker.component';
 import {
@@ -87,6 +88,8 @@ const SETTLE_MS = 300;
               </button>
             }
           </div>
+
+          <ethlete-update-button />
 
           <div class="studio__search">
             <svg viewBox="0 0 24 24">
@@ -565,6 +568,7 @@ const SETTLE_MS = 300;
     ProjectPickerComponent,
     ProvideColorDirective,
     ProvideSurfaceDirective,
+    UpdateButtonComponent,
   ],
   host: { class: 'studio' },
 })

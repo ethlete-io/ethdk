@@ -48,5 +48,11 @@
         }
       }
     }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEU1N0RCOTNFNzhDNDE3MDkKUldRSkY4UjRQcmw5NVp4SGtDWTE0VUhRemd6R29PTHhkTllPSS9iS0ZjWTdQa2dmZXJSNW01ajcK",
+      "endpoints": ["https://github.com/ethlete-io/ethdk/releases/download/timetrack-app-updates/latest.json"]
+    }
   }
 }

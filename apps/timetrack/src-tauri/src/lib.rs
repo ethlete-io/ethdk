@@ -38,6 +38,7 @@ mod timer;
 mod transcribe;
 mod transcript;
 mod tray;
+mod update;
 mod widget;
 mod window;
 #[cfg(target_os = "macos")]
@@ -64,6 +65,8 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .manage(update::PendingUpdate::default())
         .setup(|app| {
             // Before the database: the window is declared invisible so its stored size and position
             // can be applied before it is drawn, and a keychain that asks for a password must not be
@@ -206,6 +209,8 @@ pub fn run() {
             transcript::transcript_delete_day,
             transcript::transcription_status,
             tray::tray_set_readout,
+            update::update_install,
+            update::update_ready,
             widget::widget_close,
             widget::widget_is_open,
             widget::widget_open,

@@ -26,6 +26,8 @@
     "allow-design-server-state",
     "allow-design-server-stop",
     "allow-design-check",
+    "allow-update-install",
+    "allow-update-ready",
     "allow-workspace-check",
     "allow-workspace-diff",
     "allow-workspace-root",

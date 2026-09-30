@@ -7,6 +7,7 @@ mod design_server;
 mod design_watch;
 mod error;
 mod tools;
+mod update;
 
 use std::path::PathBuf;
 use std::process::Command;
@@ -114,9 +115,11 @@ pub fn run() {
     widen_path();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(agent::AgentRuns::default())
         .manage(design_server::DesignServers::default())
         .manage(design_watch::DesignWatch::default())
+        .manage(update::PendingUpdate::default())
         .invoke_handler(tauri::generate_handler![
             agent::agent_cancel,
             agent::agent_list,
@@ -135,6 +138,8 @@ pub fn run() {
             design_server::design_server_state,
             design_server::design_server_stop,
             tools::design_check,
+            update::update_install,
+            update::update_ready,
             workspace_check,
             workspace_diff,
             workspace_root,

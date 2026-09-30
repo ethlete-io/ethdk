@@ -18,6 +18,7 @@ import { LogoComponent } from './logo.component';
 import { NudgeBannerComponent } from './nudge-banner.component';
 import { SidebarComponent } from './shell';
 import { injectTrayReadout } from './tray-readout';
+import { UpdateButtonComponent } from './update-button.component';
 import { rememberViewState } from './view-state';
 import { WindowControlsComponent } from './window-controls.component';
 import { injectWindowLock } from './window-lock';
@@ -53,6 +54,8 @@ const viewPathOf = (route: string) => route.split('/').filter(Boolean)[0];
           class="flex shrink-0 items-center justify-end gap-3 border-b border-et-surface-border px-3 py-2"
           data-tauri-drag-region="deep"
         >
+          <ethlete-update-button />
+
           <ethlete-window-controls />
         </div>
 
@@ -91,6 +94,7 @@ const viewPathOf = (route: string) => route.split('/').filter(Boolean)[0];
     RouterOutlet,
     SidebarComponent,
     NudgeBannerComponent,
+    UpdateButtonComponent,
     WindowControlsComponent,
   ],
 })

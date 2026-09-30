@@ -23,6 +23,7 @@ export * from './timer-store';
 export * from './transport';
 export * from './transcription';
 export * from './tray';
+export * from './update';
 export * from './widget';
 export * from './window-controls';
 export * from './window-lock';

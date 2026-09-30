@@ -157,6 +157,13 @@ signed with a self-signed identity, so a keychain grant survives an update. It i
 the Windows installer is not signed. `tools/scripts/macos-release-identity.sh` makes the identity;
 running it again replaces it, and each keychain item then asks once more.
 
+The apps update themselves with `tauri-plugin-updater`. The same job signs each update bundle with the
+key in the secrets `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, and writes
+`latest.json` into the fixed release `<app>-updates`, which the app reads at startup. The public key is
+`plugins.updater.pubkey` in `tauri.conf.json`. `tools/scripts/tauri-updater-key.sh` makes the key pair.
+Do not run it again: an installed app accepts only its own key, so a new key stops every update. Only a
+release build checks for updates, and `createUpdaterArtifacts` is on in CI only.
+
 ## Documentation
 
 Written docs live in the VitePress site at `apps/docs` (deployed per branch),
