@@ -1,5 +1,11 @@
 import { CollectedEvent } from '@ethlete/timetrack';
-import { E2E_ISSUE_KEY, E2E_PARENT_KEY, defaultSettings } from '@ethlete/timetrack/testing';
+import {
+  E2E_ISSUE_ID,
+  E2E_ISSUE_KEY,
+  E2E_PARENT_ID,
+  E2E_PARENT_KEY,
+  defaultSettings,
+} from '@ethlete/timetrack/testing';
 import { Page } from '@playwright/test';
 import { E2E_DAY_KEY, E2E_NOW, expect, saveSurface, seedWorld, test } from './support';
 
@@ -80,6 +86,40 @@ test.describe('a band two answers disagree about', () => {
 
     await expect(band(page)).toContainText(E2E_PARENT_KEY);
     await expect(band(page)).not.toContainText('or ');
+  });
+
+  test('names each answer with its summary, and keeps the buttons on the key', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: EVENTS,
+      settings: settings(),
+      jira: {
+        projects: [{ key: 'ABC', name: 'Alpha' }],
+        issues: [
+          {
+            id: E2E_ISSUE_ID,
+            key: E2E_ISSUE_KEY,
+            summary: 'User management',
+            issueType: 'Task',
+            updated: at(0).toISOString(),
+          },
+          {
+            id: E2E_PARENT_ID,
+            key: E2E_PARENT_KEY,
+            summary: 'Member onboarding',
+            issueType: 'Story',
+            updated: at(0).toISOString(),
+          },
+        ],
+      },
+    });
+    await page.goto('/day');
+    await band(page).click();
+
+    await expect(dispute(page)).toContainText(
+      `It books ${E2E_ISSUE_KEY} User management, and could be ${E2E_PARENT_KEY} Member onboarding.`,
+    );
+    await expect(dispute(page).getByRole('button')).toHaveText([`Keep ${E2E_ISSUE_KEY}`, `Use ${E2E_PARENT_KEY}`]);
   });
 
   test('keeps the booked answer in one press, and leaves both remembered answers as they were', async ({ page }) => {

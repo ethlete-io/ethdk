@@ -94,6 +94,14 @@ test.describe('the issue picker field', () => {
   });
 });
 
+test.describe('the issue picker value', () => {
+  test('reads with its summary before the picker was ever opened', async ({ page }) => {
+    const surface = await openBand(page, 'ABC-3010 · 1h 30m');
+
+    await expect(surface.locator('ethlete-issue-select et-select')).toContainText('User management');
+  });
+});
+
 const openPicker = async (surface: Locator) => {
   const picker = surface.locator('ethlete-issue-select et-select');
 

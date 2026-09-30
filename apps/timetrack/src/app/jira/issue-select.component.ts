@@ -145,14 +145,21 @@ export class IssueSelectComponent {
 
   protected options = computed(() => {
     const above = new Set(this.remembered().map((option) => option.key));
+    const listed = this.catalog.issuesFor(this.scope()).map(toOption);
+    const held = this.value().trim().toUpperCase();
+    const chosen = held && !this.query().trim() ? this.catalog.issueForKey(held) : undefined;
+    const all = chosen && !listed.some((option) => option.key === held) ? [toOption(chosen), ...listed] : listed;
 
-    return this.catalog
-      .issuesFor(this.scope())
-      .map(toOption)
-      .filter((option) => !above.has(option.key));
+    return all.filter((option) => !above.has(option.key));
   });
 
   constructor() {
+    effect(() => {
+      const held = this.value().trim().toUpperCase();
+
+      if (held) untracked(() => this.catalog.askForIssueKeys([held]));
+    });
+
     effect(() => {
       const scope = this.scope();
       const text = this.query();
