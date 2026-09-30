@@ -160,6 +160,24 @@ describe('reviewDay', () => {
     expect(reviewDay({ rows: base, edits }).check.proposedMs).toBe(60 * MINUTE);
   });
 
+  it('keeps the answer on a weak row whose start moved to an earlier boundary', () => {
+    const answered = dayRows({
+      proposals: [proposal({ issueKey: 'ABC-1', from: '10:00', to: '10:15', minutes: 15, confidence: 'weak' })],
+    });
+    const edits = setRowState({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: reviewDay({ rows: answered }).rows[0]!,
+      state: 'accepted',
+    });
+    const moved = dayRows({
+      proposals: [proposal({ issueKey: 'ABC-1', from: '09:45', to: '10:15', minutes: 30, confidence: 'weak' })],
+    });
+
+    expect(reviewDay({ rows: moved, edits }).rows.map((row) => [row.from, row.state])).toEqual([
+      [at('09:45'), 'accepted'],
+    ]);
+  });
+
   it('drops the proposal a split consumed instead of showing it beside the halves', () => {
     const base = dayRows({
       proposals: [proposal({ issueKey: 'ABC-1', from: '08:00', to: '10:00', minutes: 120 })],

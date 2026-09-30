@@ -13,6 +13,7 @@ type Placed = {
   rawFrom: number;
   rawTo: number;
   durationMs: number;
+  observedMs?: number;
   from: number;
   to: number;
 };
@@ -35,9 +36,12 @@ const endOf = (row: Placed, incrementMs: number) =>
  *
  * Widening a row can make it reach into a row it only touched before. Where the snap alone would
  * create such an overlap, the earlier row's end rounds down instead of to the nearest boundary; when
- * its own booked time leaves no room for that, the later row's start moves up to meet it. Rows that
- * already overlapped on the raw clock are left overlapping - a meeting held during coding is a real
- * overlap and this is not the place to resolve it.
+ * its own booked time leaves no room for that, the later row's start moves up to meet it. A row with
+ * an `observedMsOf` ends at the boundary below it instead when that is the boundary nearest its end
+ * and still holds its observed time rounded to the nearest increment: a call that ended at 09:47 ends
+ * at 09:45, and the call after it starts there. Rows that already overlapped on the raw clock are
+ * left overlapping - a meeting held during coding is a real overlap and this is not the place to
+ * resolve it.
  *
  * The earlier row gives up booked time rather than strand the later one past its own last evidence.
  * A day still running widens its last row into an increment the clock has not reached, and a row
@@ -46,6 +50,11 @@ const endOf = (row: Placed, incrementMs: number) =>
 export const snapRowBounds = <T extends SnapInput>(options: {
   rows: readonly T[];
   options?: Partial<RoundOptions>;
+  /**
+   * The raw time behind a row's `durationMs`, for a row whose end is an instant it was seen to end at,
+   * like a call's. Such a row gives up its rounding to the row after it — see above.
+   */
+  observedMsOf?: (row: T) => number | undefined;
 }): T[] => {
   const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options.options };
   const placed: Placed[] = options.rows.map((row, index) => {
@@ -55,6 +64,7 @@ export const snapRowBounds = <T extends SnapInput>(options: {
       rawFrom: row.from.getTime(),
       rawTo: row.to.getTime(),
       durationMs: row.durationMs,
+      observedMs: options.observedMsOf?.(row),
       from,
       to: from,
     };
@@ -74,7 +84,12 @@ export const snapRowBounds = <T extends SnapInput>(options: {
       const strands = earlier.to >= row.rawTo;
       const room = earlier.from + (strands ? incrementMs : Math.max(earlier.durationMs, incrementMs));
 
-      if (pulled >= room) {
+      const endsNearerBelow =
+        earlier.observedMs !== undefined &&
+        pulled === nearestOnGrid(earlier.rawTo, incrementMs) &&
+        pulled >= earlier.from + Math.max(Math.round(earlier.observedMs / incrementMs) * incrementMs, incrementMs);
+
+      if (pulled >= room || endsNearerBelow) {
         earlier.to = pulled;
         continue;
       }

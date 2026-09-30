@@ -4,7 +4,7 @@ import { WorklogProposal } from '../model/proposal';
 import { TimeWindow, mergeWindows, windowsMs } from '../model/time-window';
 import { breaksBetweenRows } from '../stream/breaks';
 import { DescribeOptions, describeWork } from './describe';
-import { laneKeyOf } from './lane';
+import { CALL_LANE_KEY, laneKeyOf } from './lane';
 import { WorkGroup } from './merge';
 import { clipBlocks } from './overlap';
 import { RoundOptions, roundDurationUp, siblingBookingsOf } from './round';
@@ -213,6 +213,7 @@ export const propose = (options: {
       durationMs: roundDurationUp(group.observedMs, options.round),
     })),
     options: options.round,
+    observedMsOf: (row) => (row.group.laneKey === CALL_LANE_KEY ? row.group.observedMs : undefined),
   }).map((row) => ({
     ...row,
     group: { ...row.group, from: row.from, to: row.to },

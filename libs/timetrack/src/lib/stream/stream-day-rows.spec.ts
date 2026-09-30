@@ -357,4 +357,26 @@ describe('the rows a switch from one call to the next produces', () => {
       [AT(90), AT(105), undefined, 'general (Channel) - Acme - Slack'],
     ]);
   });
+
+  it('ends the call where the microphone moved, off the quarter hour, and starts the next one there', () => {
+    const offGrid: CollectedEvent[] = [
+      checkout(0, BRANCH),
+      ...focusRun({ from: 0, to: 59, appId: 'code', title: 'pack.ts - fut-frontend - Code' }),
+      calendar({ minute: 60, minutes: 45, title: 'Sprint planning', recurringEventId: SERIES }),
+      ...focusRun({ from: 60, to: 91, appId: 'firefox', title: 'Mozilla Firefox' }),
+      call(60, 'call-start'),
+      call(92, 'call-end'),
+      call(92, 'call-start', SLACK),
+      ...focusRun({ from: 92, to: 119, appId: SLACK, title: 'general (Channel) - Acme - Slack' }),
+      call(119, 'call-end', SLACK),
+    ];
+    const review = reviewDay({ rows: rowsOf(offGrid, { callRules: ['firefox'], namings }) });
+
+    expect(
+      review.rows.filter((row) => row.laneKey === CALL_LANE_KEY).map((row) => [row.from, row.to, row.issueKey]),
+    ).toEqual([
+      [AT(60), AT(90), 'FIP-3000'],
+      [AT(90), AT(120), undefined],
+    ]);
+  });
 });

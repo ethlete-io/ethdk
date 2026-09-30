@@ -79,6 +79,26 @@ describe('snapRowBounds', () => {
     ).toEqual(['09:00-10:15', '10:15-11:15']);
   });
 
+  it('ends a row seen to end at the boundary nearest that end, where the next row starts', () => {
+    const rows = [row({ from: '09:15', to: '09:47', durationMinutes: 45 }), row({ from: '09:47', to: '10:14' })];
+    const observed = new Map([
+      [rows[0], 32 * MINUTE],
+      [rows[1], 27 * MINUTE],
+    ]);
+
+    expect(
+      snapRowBounds({ rows, observedMsOf: (entry) => observed.get(entry) }).map(
+        (result) => `${CLOCK(result.from)}-${CLOCK(result.to)}`,
+      ),
+    ).toEqual(['09:15-09:45', '09:45-10:15']);
+    expect(
+      snap([
+        { from: '09:15', to: '09:47', durationMinutes: 45 },
+        { from: '09:47', to: '10:14' },
+      ]),
+    ).toEqual(['09:15-10:00', '10:00-10:15']);
+  });
+
   it('leaves an overlap the raw clock already held', () => {
     expect(
       snap([
