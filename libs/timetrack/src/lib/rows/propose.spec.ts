@@ -393,3 +393,63 @@ describe('propose, for parallel sessions on one ticket', () => {
     expect(proposals.map((row) => row.durationMs / MINUTE)).toEqual([30, 30]);
   });
 });
+
+describe('propose, on a row nobody attended', () => {
+  const SECOND = 1_000;
+  const AT_SECOND = (minute: number, second: number) => new Date(AT(minute).getTime() + second * SECOND);
+  const ALONE: WorkGroup = {
+    issueKey: 'ABC-100',
+    from: AT_SECOND(34, 28),
+    to: AT_SECOND(49, 56),
+    observedMs: 15 * MINUTE + 28 * SECOND,
+    confidence: 'certain',
+    evidence: [],
+    attended: false,
+    blocks: [
+      {
+        from: AT_SECOND(34, 28),
+        to: AT_SECOND(49, 56),
+        context: { repoPath: '/work/app-a', branch: 'feat/ABC-100-thing' },
+        evidence: [],
+      },
+    ],
+  };
+
+  it('ends the unattended row with the drawn break and books the rest as attended', () => {
+    const { proposals, unnamed } = propose({
+      groups: [ALONE],
+      breaks: [{ from: AT_SECOND(31, 48), to: AT_SECOND(51, 42) }],
+    });
+
+    expect(unnamed).toHaveLength(1);
+    expect(unnamed[0]).toMatchObject({
+      id: `unnamed:repo:/work/app-a@${AT(30).toISOString()}`,
+      unattended: true,
+      withheldIssueKey: 'ABC-100',
+      from: AT(30),
+      to: AT(45),
+      durationMs: 15 * MINUTE,
+    });
+    expect(proposals).toHaveLength(1);
+    expect(proposals[0]).toMatchObject({ issueKey: 'ABC-100', from: AT(45), to: AT(60), durationMs: 15 * MINUTE });
+    expect((unnamed[0]?.observedMs ?? 0) + (proposals[0]?.observedMs ?? 0)).toBe(ALONE.observedMs);
+  });
+
+  it('leaves an unattended row alone when its break holds the whole of it', () => {
+    const { proposals, unnamed } = propose({
+      groups: [ALONE],
+      breaks: [{ from: AT(30), to: AT(60) }],
+    });
+
+    expect(proposals).toEqual([]);
+    expect(unnamed).toHaveLength(1);
+    expect(unnamed[0]).toMatchObject({ unattended: true, from: AT(30), to: AT(60) });
+  });
+
+  it('leaves an unattended row alone when no break was drawn over it', () => {
+    const { proposals, unnamed } = propose({ groups: [ALONE] });
+
+    expect(proposals).toEqual([]);
+    expect(unnamed[0]).toMatchObject({ unattended: true, from: AT(30), to: AT(60) });
+  });
+});

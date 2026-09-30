@@ -1,10 +1,12 @@
 import { GitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { ActivityBlock, dominantContext, streamKey } from '../model/block';
 import { WorklogProposal } from '../model/proposal';
-import { mergeWindows } from '../model/time-window';
+import { TimeWindow, mergeWindows, windowsMs } from '../model/time-window';
+import { breaksBetweenRows } from '../stream/breaks';
 import { DescribeOptions, describeWork } from './describe';
 import { laneKeyOf } from './lane';
 import { WorkGroup } from './merge';
+import { clipBlocks } from './overlap';
 import { RoundOptions, roundDurationUp, siblingBookingsOf } from './round';
 import { snapRowBounds } from './snap';
 import { stretchesOf } from './stretches';
@@ -52,6 +54,57 @@ type BoundGroup = { group: WorkGroup; from: Date; to: Date; durationMs: number }
 
 const isAttributedRow = <T extends BoundGroup>(row: T): row is T & { group: AttributedGroup } =>
   isAttributed(row.group);
+
+const ALL_TIME = { from: new Date(-8.64e15), to: new Date(8.64e15) };
+
+/** The unattended part must keep the row's start: its id, and the user's edits on it, hang on that start. */
+const cutAtBreakEnd = <T extends BoundGroup>(options: {
+  rows: readonly T[];
+  breaks: readonly TimeWindow[];
+  presence: readonly TimeWindow[];
+  round?: Partial<RoundOptions>;
+}): T[] => {
+  if (!options.breaks.length || !options.rows.some((row) => row.group.attended === false)) return [...options.rows];
+
+  const drawn = breaksBetweenRows({
+    breaks: options.breaks.map((window) => ({ from: window.from, to: window.to, locked: false })),
+    rows: options.rows,
+    round: options.round,
+    presence: options.presence,
+  });
+
+  return options.rows.flatMap((row) => {
+    if (row.group.attended !== false) return [row];
+
+    const from = row.from.getTime();
+    const sitsIn = drawn.find((window) => window.from.getTime() <= from && from < window.to.getTime());
+
+    if (!sitsIn || sitsIn.to.getTime() >= row.to.getTime()) return [row];
+
+    const cut = sitsIn.to;
+    const inside = clipBlocks({ blocks: row.group.blocks, windows: [{ from: cut, to: ALL_TIME.to }] });
+    const after = clipBlocks({ blocks: row.group.blocks, windows: [{ from: ALL_TIME.from, to: cut }] });
+
+    if (!inside.length || !after.length) return [row];
+
+    const afterMs = Math.min(row.group.observedMs, windowsMs(mergeWindows(after)));
+
+    return [
+      {
+        ...row,
+        to: cut,
+        durationMs: cut.getTime() - from,
+        group: { ...row.group, to: cut, blocks: inside, observedMs: row.group.observedMs - afterMs },
+      },
+      {
+        ...row,
+        from: cut,
+        durationMs: row.to.getTime() - cut.getTime(),
+        group: { ...row.group, from: cut, blocks: after, observedMs: afterMs, attended: true },
+      },
+    ];
+  });
+};
 
 /**
  * Stable across re-runs of a day, so an already-synced row is recognised rather than duplicated.
@@ -145,9 +198,13 @@ export const propose = (options: {
    * reads from it how long its own session went on, which the cut rows no longer say.
    */
   sessionBlocks?: readonly ActivityBlock[];
+  /** The breaks the day held, from `breakWindows`. A row nobody attended ends with the break it starts in. */
+  breaks?: readonly TimeWindow[];
+  /** The stretches no break may cover: a call the user attended and a run they timed — see ADR 0030. */
+  presence?: readonly TimeWindow[];
 }): ProposeResult => {
   const sessionBlocks = options.sessionBlocks ?? [];
-  const rows = snapRowBounds({
+  const snapped = snapRowBounds({
     rows: options.groups.map((group) => ({
       group,
       from: group.from,
@@ -160,6 +217,12 @@ export const propose = (options: {
     group: { ...row.group, from: row.from, to: row.to },
     durationMs: row.to.getTime() - row.from.getTime(),
   }));
+  const rows = cutAtBreakEnd({
+    rows: snapped,
+    breaks: options.breaks ?? [],
+    presence: options.presence ?? [],
+    round: options.round,
+  });
   const siblings = siblingBookingsOf(
     rows.map((row) => ({
       row,

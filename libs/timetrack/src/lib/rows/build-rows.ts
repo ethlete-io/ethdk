@@ -280,6 +280,8 @@ export const buildRows = (
     round: options.round,
     describe: options.describe,
     sessionBlocks: working.map((entry) => entry.block),
+    breaks: options.breaks,
+    presence: [...(options.calls ?? []).filter((call) => call.isPresence), ...(options.timerRuns ?? [])],
   });
   const secludedTime = privateTime({ blocks: secluded });
   const remote = remoteBookingOnGrid({
