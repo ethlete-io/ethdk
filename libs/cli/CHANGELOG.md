@@ -1,5 +1,17 @@
 # @ethlete/cli
 
+## 2.1.0-next.14
+
+### Minor Changes
+
+- `et update` commits each step by itself - the version bump, each codemod, the agent rules sync and each finished `--ai` task - and never a file that was dirty before the run; `--no-commit` turns this off.
+- `et update --ai` without `updateAgentCommand` lists the agent CLIs on `PATH` and saves the one you pick, as an interactive session or a headless run.
+
+### Patch Changes
+
+- The Claude Code choices in `et update --ai` start the agent in auto mode, so it can run its checks without asking.
+- `et update --ai` tells you, for each task and in the agent's last message, to type `/exit` so the next task starts.
+
 ## 2.1.0-next.13
 
 ### Patch Changes
