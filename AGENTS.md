@@ -97,9 +97,12 @@ two facts are how a big sheet stops being a tax on every consumer:
   saves injection and style recalculation, not bundle size - the reference is still static.
 
 The style manager de-duplicates per component type, so mounting from many instances
-injects one `<style>`. Reach for this when a sheet grows past a few hundred lines and an
-identifiable slice of it serves a minority of consumers - `form-field` is the next
-candidate.
+injects one `<style>`. A mounted sheet stays in the document, but Angular removes a
+component's own `<style>` with its last instance and re-appends it after everything else,
+so a rule that overrides the base sheet must outweigh it
+(`.et-table-row.et-table-row--box`), never merely follow it. Reach for this when a sheet
+grows past a few hundred lines and an identifiable slice of it serves a minority of
+consumers - `form-field` is the next candidate.
 
 Read the **`theming`** skill (`.agents/skills/theming/`) before touching any color,
 background, border, or interaction-state styling - the token systems, the DI-based

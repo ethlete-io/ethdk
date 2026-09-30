@@ -41,6 +41,7 @@ export default {
     inlineEdit: false,
     serverPaged: false,
     surface: 'dark',
+    mounted: true,
   },
   argTypes: {
     rowCount: { control: { type: 'range', min: 0, max: 40, step: 1 } },
@@ -78,6 +79,7 @@ export default {
     inlineEdit: { control: 'boolean' },
     serverPaged: { control: 'boolean' },
     surface: { control: 'text' },
+    mounted: { control: 'boolean' },
   },
 } as Meta<TableStorybookComponent>;
 

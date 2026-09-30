@@ -30,6 +30,8 @@ const DRAG_SCROLL_STORY_ID = 'components-data-display-table--drag-scroll';
 const REORDERABLE_STORY_ID = 'components-data-display-table--reorderable';
 const RESIZABLE_STORY_ID = 'components-data-display-table--resizable-columns';
 const CSV_EXPORT_STORY_ID = 'components-data-display-table--csv-export';
+const CARD_ROWS_STORY_ID = 'components-data-display-table--card-rows';
+const INLINE_EDITING_STORY_ID = 'components-data-display-table--inline-editing';
 
 const VIRTUAL_ROW_COUNT = 2000;
 
@@ -71,6 +73,27 @@ function rowCheckbox(root: Locator, rowIndex = 0): Locator {
 
 function resizeGrip(root: Locator, colKey: string): Locator {
   return headerCell(root, colKey).locator('.et-table-resize-grip');
+}
+
+async function setMounted(page: Page, mounted: boolean): Promise<void> {
+  await page.evaluate(
+    (updatedArgs) => {
+      const channel = (
+        window as unknown as { __STORYBOOK_ADDONS_CHANNEL__: { emit(event: string, data: unknown): void } }
+      ).__STORYBOOK_ADDONS_CHANNEL__;
+
+      channel.emit('updateStoryArgs', { storyId: new URL(location.href).searchParams.get('id'), updatedArgs });
+    },
+    { mounted },
+  );
+}
+
+/** Destroys the only table on the page and creates it again, so Angular re-appends the table's own `<style>` after the sheets the style manager keeps mounted. */
+async function remountTable(page: Page, root: Locator): Promise<void> {
+  await setMounted(page, false);
+  await expect(root.locator('et-table')).toHaveCount(0);
+  await setMounted(page, true);
+  await expect(root.locator('.et-table-row').first()).toBeVisible();
 }
 
 function stickyClasses(root: Locator): Promise<string[]> {
@@ -622,6 +645,18 @@ test.describe('table / pointer', () => {
     expect(selection.lines).toHaveLength(2);
     expect(selection.lines[1]?.startsWith(`${thirdName},`)).toBe(true);
   });
+
+  test('a cell in edit mode hands its padding to the editor after a remount', async ({ page }) => {
+    const root = await openStory(page, INLINE_EDITING_STORY_ID);
+
+    await remountTable(page, root);
+    await cell(root, 0, 'name').dblclick();
+
+    const editing = root.locator('.et-table-cell--editing');
+
+    await expect(editing).toHaveCSS('padding-top', '0px');
+    await expect(editing).toHaveCSS('overflow', 'visible');
+  });
 });
 
 test.describe('table / layout', () => {
@@ -727,6 +762,23 @@ test.describe('table / layout', () => {
     const stripBox = await boxOf(strip);
     const tableBox = await boxOf(root.locator('et-table'));
     expect(stripBox.y + stripBox.height).toBeLessThanOrEqual(tableBox.y + tableBox.height + 1);
+  });
+
+  test('card rows keep their box, and a pinned select cell its place above the row link, after a remount', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    const root = await openStory(page, CARD_ROWS_STORY_ID, { args: { selectable: true, stickyColumns: true } });
+
+    await remountTable(page, root);
+
+    const row = root.locator('.et-table-row').first();
+    const rowBox = await boxOf(row);
+
+    await expect(row).toHaveCSS('display', 'grid');
+    expect(rowBox.height).toBeGreaterThan(0);
+    expect((await boxOf(row.locator('.et-table-row-link'))).height).toBeCloseTo(rowBox.height, 0);
+    await expect(row.locator('.et-table-select-cell.et-table-sticky-start')).toHaveCSS('z-index', '3');
   });
 });
 

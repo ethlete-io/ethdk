@@ -4,8 +4,11 @@
      and the footer — the same shape the detail row already uses inside this grid.
 
      `z-index: 0` makes it a stacking context, so a cell that lifts itself over the row's link cannot
-     also rise over the sticky header. */
-  .et-table-row--box {
+     also rise over the sticky header.
+
+     Two classes, to outweigh the base sheet's `display: contents`: this sheet stays mounted while the
+     table's own style is removed with the last table and re-appended after it by the next one. */
+  .et-table-row.et-table-row--box {
     grid-column: 1 / -1;
     display: grid;
     grid-template-columns: subgrid;
@@ -233,18 +236,25 @@
   /* Cells that hold their own controls stay above the stretched link, so the control keeps the click: the
      utility cells always, a column that says so with `interactive`, and the one cell in edit mode. */
   .et-table-row--link
-    :where(.et-table-select-cell, .et-table-expander-cell, .et-table-cell--interactive, .et-table-cell--editing) {
+    .et-table-cell:where(
+      .et-table-select-cell,
+      .et-table-expander-cell,
+      .et-table-cell--interactive,
+      .et-table-cell--editing
+    ) {
     z-index: 3;
   }
 
-  /* `relative` only where the cell is not pinned: it has the same weight as the `sticky` above and comes
-     later, so applying it to a pinned cell unpins it. The utility cells then scroll away with the rows
-     and let scrolled content show through the strip they were holding at the pinned column's edge. */
+  /* `relative` only where the cell is not pinned: it outweighs the base sheet's `sticky`, so applying it
+     to a pinned cell unpins it. The utility cells then scroll away with the rows and let scrolled content
+     show through the strip they were holding at the pinned column's edge. */
   .et-table-row--link
-    :where(.et-table-select-cell, .et-table-expander-cell, .et-table-cell--interactive, .et-table-cell--editing):not(
-      .et-table-sticky-start,
-      .et-table-sticky-end
-    ) {
+    .et-table-cell:where(
+      .et-table-select-cell,
+      .et-table-expander-cell,
+      .et-table-cell--interactive,
+      .et-table-cell--editing
+    ):not(.et-table-sticky-start, .et-table-sticky-end) {
     position: relative;
   }
 }

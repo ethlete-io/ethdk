@@ -77,259 +77,265 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
          demo gets a deliberately narrower frame than its columns need, so the table scrolls horizontally
          and the pinned columns have something to pin against (narrow the viewport further to watch them
          auto-unstick). -->
-    <div
-      [style.max-inline-size.px]="stickyColumns() || runtimePinning() ? 700 : 768"
-      [etProvideSurface]="surface()"
-      class="text-medium p-8 font-sans"
-    >
-      @if (csvExport() || columnMenu()) {
-        <div class="mb-2 flex items-center justify-end gap-2">
-          @if (csvExport()) {
-            <!-- The directive carries the options; the button only says when. export() takes overrides,
+    @if (mounted()) {
+      <div
+        [style.max-inline-size.px]="stickyColumns() || runtimePinning() ? 700 : 768"
+        [etProvideSurface]="surface()"
+        class="text-medium p-8 font-sans"
+      >
+        @if (csvExport() || columnMenu()) {
+          <div class="mb-2 flex items-center justify-end gap-2">
+            @if (csvExport()) {
+              <!-- The directive carries the options; the button only says when. export() takes overrides,
                  which is how one directive serves both "everything" and "just the selection". -->
-            <button (click)="csv.export()" size="sm" variant="outline" et-button type="button">Export CSV</button>
+              <button (click)="csv.export()" size="sm" variant="outline" et-button type="button">Export CSV</button>
 
-            @if (selectable()) {
-              <button
-                [disabled]="!selectedPeople().length"
-                (click)="csv.export({ rows: selectedPeople(), filename: 'people-selection.csv' })"
-                size="sm"
-                variant="outline"
-                et-button
-                type="button"
-              >
-                Export selection
-              </button>
-            }
+              @if (selectable()) {
+                <button
+                  [disabled]="!selectedPeople().length"
+                  (click)="csv.export({ rows: selectedPeople(), filename: 'people-selection.csv' })"
+                  size="sm"
+                  variant="outline"
+                  et-button
+                  type="button"
+                >
+                  Export selection
+                </button>
+              }
 
-            @if (serverPaged()) {
-              <!-- The table holds one page, so this button is the whole dataset: a provider walks the
+              @if (serverPaged()) {
+                <!-- The table holds one page, so this button is the whole dataset: a provider walks the
                    pages and the export waits for it. The exporting signal is what makes the wait visible. -->
-              <button
-                [disabled]="csv.exporting()"
-                (click)="csv.export({ rows: allPeople, filename: 'people-all.csv' })"
-                size="sm"
-                variant="outline"
-                et-button
-                type="button"
-              >
-                {{ csv.exporting() ? 'Exporting…' : 'Export all pages' }}
-              </button>
+                <button
+                  [disabled]="csv.exporting()"
+                  (click)="csv.export({ rows: allPeople, filename: 'people-all.csv' })"
+                  size="sm"
+                  variant="outline"
+                  et-button
+                  type="button"
+                >
+                  {{ csv.exporting() ? 'Exporting…' : 'Export all pages' }}
+                </button>
 
-              <!-- And this one is the page, said out loud. Without partial:true the export throws ET3506
+                <!-- And this one is the page, said out loud. Without partial:true the export throws ET3506
                    rather than write a plausible, wrong file. -->
-              <button
-                [disabled]="csv.exporting()"
-                (click)="csv.export({ partial: true, filename: 'people-page.csv' })"
-                size="sm"
-                variant="outline"
-                et-button
-                type="button"
-              >
-                Export this page
-              </button>
+                <button
+                  [disabled]="csv.exporting()"
+                  (click)="csv.export({ partial: true, filename: 'people-page.csv' })"
+                  size="sm"
+                  variant="outline"
+                  et-button
+                  type="button"
+                >
+                  Export this page
+                </button>
+              }
             }
-          }
-        </div>
-      }
+          </div>
+        }
 
-      @if (quickFilter()) {
-        <div class="mb-2">
-          <et-form-field appearance="box" size="sm">
-            <et-label>Search people</et-label>
-            <et-input [formField]="searchForm.query" type="search" />
-          </et-form-field>
-        </div>
-      }
+        @if (quickFilter()) {
+          <div class="mb-2">
+            <et-form-field appearance="box" size="sm">
+              <et-label>Search people</et-label>
+              <et-input [formField]="searchForm.query" type="search" />
+            </et-form-field>
+          </div>
+        }
 
-      @if (columnMenu()) {
-        <!-- Above the table, not in a header cell: a visibility list must not hang off the header it
+        @if (columnMenu()) {
+          <!-- Above the table, not in a header cell: a visibility list must not hang off the header it
              edits - hiding a column relays that header out and would drag the menu with it, and hiding
              the column it was opened from would destroy its anchor. A toolbar here never moves, not
              even when the table's own height changes. -->
-        <div class="mb-2 flex justify-end">
-          <et-table-column-chooser [table]="table" />
-        </div>
-      }
+          <div class="mb-2 flex justify-end">
+            <et-table-column-chooser [table]="table" />
+          </div>
+        }
 
-      <!-- The table is its own scroll container: a bounded height (sticky/virtual demos) makes it scroll. -->
-      <et-table
-        #table
-        #selection="etTableSelection"
-        #csv="etTableCsvExport"
-        [style.block-size.px]="constrainHeight() || virtualScroll() || paginated() ? 400 : null"
-        [appearance]="appearance()"
-        [density]="density()"
-        [data]="displayRows()"
-        [rowsSource]="serverPaged() ? serverRows : undefined"
-        [columns]="columns()"
-        [multiSort]="multiSort()"
-        [quickFilter]="quickFilter() ? searchForm.query().value() : ''"
-        [rowInteractive]="rowInteractive()"
-        [rowLink]="rowLinks() ? personLink : undefined"
-        [rowKey]="rowKey"
-        [expandedRowTemplate]="detail"
-        [etTableRowExpansion]="{ enabled: expandable() }"
-        [etTableGroupHeaders]="{ enabled: grouped() }"
-        [loading]="loading()"
-        [error]="failed() ? 'Request failed with status 500' : null"
-        [cellState]="cellStates() || inlineEdit() ? cellStateOf() : undefined"
-        [etTableCellErrorTooltip]="{ enabled: cellStates() || inlineEdit() }"
-        [etTableResize]="{ enabled: resizableColumns() }"
-        [etTableColumnMenu]="{ enabled: columnMenu() }"
-        [etTableCsvExport]="{ filename: 'people.csv' }"
-        [etTableInlineEdit]="{ enabled: inlineEdit() }"
-        [etTableKeyboardNav]="{ enabled: keyboardNav() || inlineEdit() }"
-        [etTableReorder]="{ enabled: reorderable() }"
-        [etTableSelection]="{ selection: selected, enabled: selectable(), side: selectionSide() }"
-        [etTableVirtualScroll]="{ enabled: virtualScroll() }"
-        [etTableDragScroll]="{ enabled: dragScroll() }"
-        [etTablePageStickyHeader]="{ enabled: pageStickyHeader() }"
-        [labels]="{ empty: 'No people found' }"
-        (cellCommit)="saveCell($event)"
-        (rowClick)="lastClicked.set($event)"
-        etTableSkeleton
-        etTableStickyColumns
-        etTableFilters
-      >
-        <!-- Custom cells are ng-templates bound to the column they render, so let-row / let-value are
+        <!-- The table is its own scroll container: a bounded height (sticky/virtual demos) makes it scroll. -->
+        <et-table
+          #table
+          #selection="etTableSelection"
+          #csv="etTableCsvExport"
+          [style.block-size.px]="constrainHeight() || virtualScroll() || paginated() ? 400 : null"
+          [appearance]="appearance()"
+          [density]="density()"
+          [data]="displayRows()"
+          [rowsSource]="serverPaged() ? serverRows : undefined"
+          [columns]="columns()"
+          [multiSort]="multiSort()"
+          [quickFilter]="quickFilter() ? searchForm.query().value() : ''"
+          [rowInteractive]="rowInteractive()"
+          [rowLink]="rowLinks() ? personLink : undefined"
+          [rowKey]="rowKey"
+          [expandedRowTemplate]="detail"
+          [etTableRowExpansion]="{ enabled: expandable() }"
+          [etTableGroupHeaders]="{ enabled: grouped() }"
+          [loading]="loading()"
+          [error]="failed() ? 'Request failed with status 500' : null"
+          [cellState]="cellStates() || inlineEdit() ? cellStateOf() : undefined"
+          [etTableCellErrorTooltip]="{ enabled: cellStates() || inlineEdit() }"
+          [etTableResize]="{ enabled: resizableColumns() }"
+          [etTableColumnMenu]="{ enabled: columnMenu() }"
+          [etTableCsvExport]="{ filename: 'people.csv' }"
+          [etTableInlineEdit]="{ enabled: inlineEdit() }"
+          [etTableKeyboardNav]="{ enabled: keyboardNav() || inlineEdit() }"
+          [etTableReorder]="{ enabled: reorderable() }"
+          [etTableSelection]="{ selection: selected, enabled: selectable(), side: selectionSide() }"
+          [etTableVirtualScroll]="{ enabled: virtualScroll() }"
+          [etTableDragScroll]="{ enabled: dragScroll() }"
+          [etTablePageStickyHeader]="{ enabled: pageStickyHeader() }"
+          [labels]="{ empty: 'No people found' }"
+          (cellCommit)="saveCell($event)"
+          (rowClick)="lastClicked.set($event)"
+          etTableSkeleton
+          etTableStickyColumns
+          etTableFilters
+        >
+          <!-- Custom cells are ng-templates bound to the column they render, so let-row / let-value are
              typed from that column - no viewChild, and the column definitions stay plain data.
              A cell composes the library's own components rather than restyling text: et-chip already
              draws its pill from the surface tokens, so the cell needs no colors of its own (the
              Storybook's Tailwind theme resets --color-*, so a bg-blue-500 would do nothing anyway -
              see the storybook-styling skill). -->
-        <ng-template [etTableCell]="columns().role" let-value="value">
-          <et-chip>{{ value }}</et-chip>
-        </ng-template>
+          <ng-template [etTableCell]="columns().role" let-value="value">
+            <et-chip>{{ value }}</et-chip>
+          </ng-template>
 
-        @if (rowLinks()) {
-          <!-- The row is the link; the Joined column is not - it says so with interactive: true, which
+          @if (rowLinks()) {
+            <!-- The row is the link; the Joined column is not - it says so with interactive: true, which
                keeps the row's stretched hit area out of its cells. So the button is the button, and the
                rest of the row is the link. -->
-          <ng-template [etTableCell]="columns().joined">
-            <button (click)="lastClicked.set(null)" size="sm" variant="outline" et-button type="button">Archive</button>
-          </ng-template>
-        }
+            <ng-template [etTableCell]="columns().joined">
+              <button (click)="lastClicked.set(null)" size="sm" variant="outline" et-button type="button">
+                Archive
+              </button>
+            </ng-template>
+          }
 
-        @if (keyboardNav()) {
-          <!-- A cell with a control in it, so Enter has somewhere to drill into and Escape somewhere to
+          @if (keyboardNav()) {
+            <!-- A cell with a control in it, so Enter has somewhere to drill into and Escape somewhere to
                come back from. The button is the cell's, not the row's: the arrows move between cells and
                only Enter hands the keyboard over to what a cell holds. -->
-          <ng-template [etTableCell]="columns().joined" let-value="value">
-            <button (click)="lastClicked.set(null)" type="button" et-text-button>{{ value }}</button>
-          </ng-template>
-        }
+            <ng-template [etTableCell]="columns().joined" let-value="value">
+              <button (click)="lastClicked.set(null)" type="button" et-text-button>{{ value }}</button>
+            </ng-template>
+          }
 
-        @if (inlineEdit()) {
-          <!-- The editor is a plain form field bound to the draft the feature hands the template - no
+          @if (inlineEdit()) {
+            <!-- The editor is a plain form field bound to the draft the feature hands the template - no
                cell-editor interface, the same [formField] every control in the library takes. The field
                names itself: a form field with neither a projected label nor an aria-label throws ET2201,
                and a column header is not an accessible name. -->
-          <ng-template [etTableCellEdit]="columns().name" let-field="field">
-            <et-form-field appearance="box" size="sm">
-              <et-input [formField]="field" aria-label="Name" />
-            </et-form-field>
-          </ng-template>
+            <ng-template [etTableCellEdit]="columns().name" let-field="field">
+              <et-form-field appearance="box" size="sm">
+                <et-input [formField]="field" aria-label="Name" />
+              </et-form-field>
+            </ng-template>
 
-          <ng-template [etTableCellEdit]="columns().email" let-field="field">
-            <et-form-field appearance="box" size="sm">
-              <et-input [formField]="field" type="email" aria-label="Email" />
-            </et-form-field>
-          </ng-template>
-        }
+            <ng-template [etTableCellEdit]="columns().email" let-field="field">
+              <et-form-field appearance="box" size="sm">
+                <et-input [formField]="field" type="email" aria-label="Email" />
+              </et-form-field>
+            </ng-template>
+          }
 
-        <!-- The Role cell is a chip, which is taller than a line of text, so its loading placeholder says
+          <!-- The Role cell is a chip, which is taller than a line of text, so its loading placeholder says
              so too - otherwise the table would grow when the data lands. The bone is chip-shaped: the
              chip's own height and pill radius. -->
-        <ng-template [etTableCellSkeleton]="columns().role">
-          <et-skeleton-item [style]="CHIP_SKELETON_STYLE" shape="rect" />
-        </ng-template>
+          <ng-template [etTableCellSkeleton]="columns().role">
+            <et-skeleton-item [style]="CHIP_SKELETON_STYLE" shape="rect" />
+          </ng-template>
 
-        @if (richFilterOptions()) {
-          <!-- A filter option can hold whatever a cell can. The menu keeps the row, its mark and its
+          @if (richFilterOptions()) {
+            <!-- A filter option can hold whatever a cell can. The menu keeps the row, its mark and its
                keyboard behaviour; only the content is ours. let-selected is there for a row that wants
                to look different when picked. -->
-          <ng-template [etTableFilterOption]="columns().role" let-option let-selected="selected">
-            <span class="flex flex-col">
-              <span>{{ option.label }}</span>
-              <span class="text-small opacity-60">{{ ROLE_HINTS[option.label] }}{{ selected ? ' · active' : '' }}</span>
-            </span>
-          </ng-template>
-        }
+            <ng-template [etTableFilterOption]="columns().role" let-option let-selected="selected">
+              <span class="flex flex-col">
+                <span>{{ option.label }}</span>
+                <span class="text-small opacity-60"
+                  >{{ ROLE_HINTS[option.label] }}{{ selected ? ' · active' : '' }}</span
+                >
+              </span>
+            </ng-template>
+          }
 
-        @if (footer()) {
-          <!-- A template inside a control-flow block registers and unregisters with the block. -->
-          <ng-template [etTableFooterCell]="columns().name" let-rows>{{ rows.length }} people</ng-template>
-        }
+          @if (footer()) {
+            <!-- A template inside a control-flow block registers and unregisters with the block. -->
+            <ng-template [etTableFooterCell]="columns().name" let-rows>{{ rows.length }} people</ng-template>
+          }
 
-        @if (paginated()) {
-          <!-- Material-style controls row: label + page-size select + range readout + prev/next, right
+          @if (paginated()) {
+            <!-- Material-style controls row: label + page-size select + range readout + prev/next, right
                aligned and inline (wrapping when tight). The "Items per page:" label lives here (not baked
                into the select) so it's the app's to translate, and takes the table's own
                .et-table-footer-label so it matches the paginator's readout exactly.
                Centered (items-center): the label, the select's value and the paginator's readout are
                different heights, so aligning their boxes' centers is what puts the three texts on one
                line. justify-end + flex-wrap keeps every row right-aligned once it wraps. -->
-          <div class="flex w-full flex-wrap items-center justify-end gap-x-3 gap-y-2" etTableFooter>
-            <span class="et-table-footer-label">Items per page:</span>
-            <!-- size="sm" keeps the field compact, but its 12px control text would read a size smaller
+            <div class="flex w-full flex-wrap items-center justify-end gap-x-3 gap-y-2" etTableFooter>
+              <span class="et-table-footer-label">Items per page:</span>
+              <!-- size="sm" keeps the field compact, but its 12px control text would read a size smaller
                  than the label and readout either side of it, so pull just the font back to their 14px. -->
-            <et-form-field
-              [style.inline-size.px]="72"
-              appearance="underline"
-              size="sm"
-              style="--et-form-field-control-font-size: 14px"
-            >
-              <!-- A page-size trigger is far narrower than its option rows (value + check indicator), so
+              <et-form-field
+                [style.inline-size.px]="72"
+                appearance="underline"
+                size="sm"
+                style="--et-form-field-control-font-size: 14px"
+              >
+                <!-- A page-size trigger is far narrower than its option rows (value + check indicator), so
                    the panel must size to its own content instead of mirroring the field. -->
-              <!-- The visible label sits outside the field (it is the app's to translate), so the control
+                <!-- The visible label sits outside the field (it is the app's to translate), so the control
                    names itself - a form field with neither a projected label nor an aria-label throws
                    ET2201. -->
-              <et-select
-                [formField]="pageSizeForm.pageSize"
-                aria-label="Items per page"
-                clearable="false"
-                mirrorPanelWidth="false"
-                placeholder="Page size"
-              >
-                <et-select-option [value]="5">5</et-select-option>
-                <et-select-option [value]="10">10</et-select-option>
-                <et-select-option [value]="20">20</et-select-option>
-              </et-select>
-            </et-form-field>
+                <et-select
+                  [formField]="pageSizeForm.pageSize"
+                  aria-label="Items per page"
+                  clearable="false"
+                  mirrorPanelWidth="false"
+                  placeholder="Page size"
+                >
+                  <et-select-option [value]="5">5</et-select-option>
+                  <et-select-option [value]="10">10</et-select-option>
+                  <et-select-option [value]="20">20</et-select-option>
+                </et-select>
+              </et-form-field>
 
-            <et-pagination
-              [(page)]="page"
-              [totalPages]="totalPages()"
-              [totalItems]="PEOPLE_COUNT"
-              [pageSize]="pageSize()"
-              [compact]="COMPACT_PAGER"
-            />
-          </div>
+              <et-pagination
+                [(page)]="page"
+                [totalPages]="totalPages()"
+                [totalItems]="PEOPLE_COUNT"
+                [pageSize]="pageSize()"
+                [compact]="COMPACT_PAGER"
+              />
+            </div>
+          }
+        </et-table>
+
+        @if (rowInteractive()) {
+          <p class="text-small mt-4 opacity-70">Last clicked: {{ lastClicked()?.name ?? '-' }}</p>
         }
-      </et-table>
 
-      @if (rowInteractive()) {
-        <p class="text-small mt-4 opacity-70">Last clicked: {{ lastClicked()?.name ?? '-' }}</p>
-      }
+        @if (serverPaged()) {
+          <p class="text-small mt-4 opacity-70">
+            The rows come from a "server" that hands over one page of {{ SERVER_PAGE_SIZE }} out of {{ PEOPLE_COUNT }}.
+            "Export all pages" walks every page before writing the file; "Export this page" writes the
+            {{ SERVER_PAGE_SIZE }} rows on screen and says so. An export that said neither throws ET3506 in dev rather
+            than write a file that looks like the whole dataset.
+          </p>
+        }
 
-      @if (serverPaged()) {
-        <p class="text-small mt-4 opacity-70">
-          The rows come from a "server" that hands over one page of {{ SERVER_PAGE_SIZE }} out of {{ PEOPLE_COUNT }}.
-          "Export all pages" walks every page before writing the file; "Export this page" writes the
-          {{ SERVER_PAGE_SIZE }} rows on screen and says so. An export that said neither throws ET3506 in dev rather
-          than write a file that looks like the whole dataset.
-        </p>
-      }
-
-      @if (inlineEdit()) {
-        <p class="text-small mt-4 opacity-70">
-          Double-click a Name or Email cell - or focus one and press Enter - to edit it. Enter saves, Escape restores,
-          Tab saves and moves on. Saving takes a moment (the cell shows a bar); typing
-          <code>fail</code> makes the request fail, which marks the cell.
-        </p>
-      }
-    </div>
+        @if (inlineEdit()) {
+          <p class="text-small mt-4 opacity-70">
+            Double-click a Name or Email cell - or focus one and press Enter - to edit it. Enter saves, Escape restores,
+            Tab saves and moves on. Saving takes a moment (the cell shows a bar); typing
+            <code>fail</code> makes the request fail, which marks the cell.
+          </p>
+        }
+      </div>
+    }
 
     <ng-template #detail let-person>
       @if (subTable()) {
@@ -392,6 +398,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
 })
 export class TableStorybookComponent {
   private destroyRef = inject(DestroyRef);
+  public mounted = input(true);
   public rowCount = input(6);
   public constrainHeight = input(false);
   public empty = input(false);

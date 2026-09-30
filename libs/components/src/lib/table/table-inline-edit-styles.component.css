@@ -3,7 +3,7 @@
      padding, so keeping the cell's would inset the field inside a box the reader can already see and
      make the row jump the moment editing starts. A thin inline gutter is left so the field's border
      doesn't sit flush against the column divider. */
-  .et-table-cell--editing {
+  .et-table-cell.et-table-cell--editing {
     padding-block: 0;
     padding-inline: 2px;
     /* Cells clip by default so long values can't bleed into the next column. An editor is the one thing
