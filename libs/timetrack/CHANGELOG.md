@@ -1,5 +1,11 @@
 # @ethlete/timetrack
 
+## 0.1.0-next.12
+
+### Patch Changes
+
+- Back-to-back agent sessions on one base branch of a checkout now form one row instead of one 15-minute row each, unless they worked in different projects.
+
 ## 0.1.0-next.11
 
 ### Minor Changes

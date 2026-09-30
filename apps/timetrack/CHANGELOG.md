@@ -1,5 +1,11 @@
 # timetrack-app
 
+## 0.2.0-next.7
+
+### Patch Changes
+
+- Back-to-back agent sessions on one base branch of a checkout now form one row instead of one 15-minute row each, unless they worked in different projects.
+
 ## 0.2.0-next.6
 
 ### Patch Changes
