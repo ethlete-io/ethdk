@@ -1238,6 +1238,80 @@ describe('features scenario', () => {
     c.destroy();
   });
 
+  describe('parking with a request in flight', () => {
+    type Item = { id: string };
+
+    it('lets a mutation finish, then parks it', () => {
+      const s = scenario();
+      s.api.on('POST', '/items', ({ body }) => ({ status: 201, body: { id: (body as Item).id }, delay: 1_000 }));
+      const createItem = s.post<{ response: Item; body: Item }>('/items');
+      const selected = signal<string | null>('a');
+
+      const page = s.consumer();
+      const query = page.run(() =>
+        createItem(withArgs(() => (selected() ? { body: { id: selected() as string } } : null))),
+      );
+      s.tick();
+
+      query.execute();
+      s.tick(100);
+      selected.set(null);
+      s.tick(100);
+
+      expect(s.api.requests[0]?.aborted).toBe(false);
+      expect(query.executionState()?.type).toBe('loading');
+
+      s.flush();
+
+      expect(s.api.requestCount('POST', '/items')).toBe(1);
+      expect(query.response()).toBeNull();
+      expect(query.executionState()).toBeNull();
+    });
+
+    it('does not park a mutation whose args return before it settles', () => {
+      const s = scenario();
+      s.api.on('POST', '/items', ({ body }) => ({ status: 201, body: { id: (body as Item).id }, delay: 1_000 }));
+      const createItem = s.post<{ response: Item; body: Item }>('/items');
+      const selected = signal<string | null>('a');
+
+      const page = s.consumer();
+      const query = page.run(() =>
+        createItem(withArgs(() => (selected() ? { body: { id: selected() as string } } : null))),
+      );
+      s.tick();
+
+      query.execute();
+      s.tick(100);
+      selected.set(null);
+      s.tick(100);
+      selected.set('b');
+      s.flush();
+
+      expect(query.args()).toEqual({ body: { id: 'b' } });
+      expect(s.api.requests[0]?.aborted).toBe(false);
+      expect(query.response()).toEqual({ id: 'a' });
+    });
+
+    it('still aborts a GET when its args park', () => {
+      const s = scenario();
+      s.api.on('GET', '/items/:id', ({ params }) => ({ body: { id: params['id'] }, delay: 1_000 }));
+      const getItem = s.get<{ response: Item; pathParams: { id: string } }>((p) => `/items/${p.id}`);
+      const selected = signal<string | null>('a');
+
+      const page = s.consumer();
+      const query = page.run(() =>
+        getItem(withArgs(() => (selected() ? { pathParams: { id: selected() as string } } : null))),
+      );
+      s.tick(100);
+
+      selected.set(null);
+      s.flush();
+
+      expect(s.api.requests[0]?.aborted).toBe(true);
+      expect(query.executionState()).toBeNull();
+    });
+  });
+
   describe('authoring custom features', () => {
     const withArgsLog = <TArgs extends QueryArgs>(log: unknown[], calls: { fn: number; flags: QueryFeatureFlags[] }) =>
       createQueryFeature<TArgs>({

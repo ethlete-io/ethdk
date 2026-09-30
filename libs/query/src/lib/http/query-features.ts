@@ -104,7 +104,8 @@ export const createQueryFeature = <TArgs extends QueryArgs>(config: {
  * The arguments are read within a computed function, so you can use reactive values.
  *
  * Return `null` to park the query: it is reset (`response()` and `executionState()` become `null`),
- * and polling and auto refresh pause until args are set again.
+ * and polling and auto refresh pause until args are set again. A mutation that is still in flight
+ * finishes first and the query parks once it has settled.
  *
  * Changing arguments will automatically trigger a new execution of the query if it is eligible for auto execution (e.g. a GET request).
  */
@@ -127,6 +128,8 @@ export const withArgs = <TArgs extends QueryArgs>(
           const currArgsNow = context.state.args();
 
           if (currArgsNow === null) {
+            if (!context.flags.shouldAutoExecuteMethod && context.state.loading() !== null) return;
+
             untracked(() => {
               if (context.state.subtle.request() !== null || context.state.loading() !== null) context.execute.reset();
             });
