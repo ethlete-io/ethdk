@@ -517,16 +517,17 @@ pub async fn day_review_edits_between(
 /// a setting means belongs to the core, and the host only has to keep it.
 #[tauri::command]
 pub async fn app_settings(db: State<'_, Db>) -> TimetrackResult<Option<serde_json::Value>> {
-    db.run(move |connection| {
-        let stored = connection
-            .query_row("SELECT document FROM app_setting WHERE id = 1", [], |row| {
-                row.get::<_, String>(0)
-            })
-            .optional()?;
+    db.run(move |connection| settings_document(connection)).await
+}
 
-        Ok(stored.and_then(|document| serde_json::from_str(&document).ok()))
-    })
-    .await
+pub fn settings_document(connection: &Connection) -> TimetrackResult<Option<serde_json::Value>> {
+    let stored = connection
+        .query_row("SELECT document FROM app_setting WHERE id = 1", [], |row| {
+            row.get::<_, String>(0)
+        })
+        .optional()?;
+
+    Ok(stored.and_then(|document| serde_json::from_str(&document).ok()))
 }
 
 /// The part of the settings document the host reads for itself: what the window lock is told to do.
@@ -556,6 +557,7 @@ pub async fn lock_settings(db: &Db) -> crate::lock::LockSettings {
 pub async fn set_app_settings(
     db: State<'_, Db>,
     lock: State<'_, crate::lock::WindowLock>,
+    transcription: State<'_, crate::transcript::TranscriptionState>,
     settings: serde_json::Value,
 ) -> TimetrackResult<()> {
     // A locked window shows the password prompt and nothing else, so no settings change can be the
@@ -567,6 +569,7 @@ pub async fn set_app_settings(
     }
 
     let lock_settings = crate::lock::LockSettings::read(&settings);
+    let transcribe = crate::transcript::TranscriptionState::read_enabled(&settings);
 
     db.run(move |connection| {
         connection.execute(
@@ -583,6 +586,7 @@ pub async fn set_app_settings(
     // reads neither the webview nor the database again, so a wait the user just changed would
     // otherwise not apply until the next start.
     lock.apply(&lock_settings);
+    transcription.set_enabled(transcribe);
 
     Ok(())
 }

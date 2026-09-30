@@ -522,6 +522,10 @@ export const createFakePorts = (): HostPorts => {
       lock$: () => done(),
       unlock$: () => ok(true),
     },
+
+    transcription: {
+      status$: () => ok({ available: false, enabled: false, listening: false, model: null, detail: null }),
+    },
   };
 };
 

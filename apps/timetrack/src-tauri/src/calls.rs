@@ -117,6 +117,11 @@ impl CallSource {
         }
     }
 
+    #[cfg(feature = "transcribe")]
+    pub fn on_call(&self) -> Option<String> {
+        self.holding.lock().ok()?.first().cloned()
+    }
+
     pub fn set_status(&self, kind: &str, detail: Option<String>) {
         if let Ok(mut status) = self.status.lock() {
             status.kind = kind.to_string();

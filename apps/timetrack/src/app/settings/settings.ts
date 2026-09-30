@@ -239,6 +239,7 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     setKeepDefaultExclusionRules: (keepDefaultExclusionRules: boolean) => patch({ keepDefaultExclusionRules }),
     setLockWindow: (lockWindow: boolean) => patch({ lockWindow }),
     setLockAfterIdleMs: (lockAfterIdleMs: number) => patch({ lockAfterIdleMs: clampLockAfterIdleMs(lockAfterIdleMs) }),
+    setTranscribeCalls: (transcribeCalls: boolean) => patch({ transcribeCalls }),
 
     addExclusionRule: (rule: TimetrackExclusionRule) => {
       const rules = settings().exclusionRules;

@@ -470,5 +470,6 @@ const readTimetrackSettings = (raw: unknown): TimetrackSettings => {
     noStandInCheckouts: asStandInRefusals(document['noStandInCheckouts']),
     lockWindow: document['lockWindow'] !== false,
     lockAfterIdleMs: asLockAfterIdle(document['lockAfterIdleMs']),
+    transcribeCalls: document['transcribeCalls'] === true,
   };
 };

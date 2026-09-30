@@ -389,6 +389,11 @@ export type TimetrackSettings = {
    * it must not depend on a webview that is showing the password prompt.
    */
   lockAfterIdleMs: number;
+  /**
+   * Whether the host transcribes the user's own microphone during a call, locally, into the encrypted
+   * store. Off by default, and only a build with the host's `transcribe` feature acts on it.
+   */
+  transcribeCalls: boolean;
 };
 
 export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
@@ -438,4 +443,5 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   noStandInCheckouts: [],
   lockWindow: true,
   lockAfterIdleMs: DEFAULT_LOCK_AFTER_IDLE_MS,
+  transcribeCalls: false,
 };

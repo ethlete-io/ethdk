@@ -210,6 +210,24 @@ CREATE TABLE IF NOT EXISTS approval_queue (
 );
 ";
 
+/// What the user said on a call, as text only: the audio it came from is never stored. One row per
+/// transcribed chunk, written as soon as the chunk is transcribed, so a restart loses at most the chunk
+/// that was being listened to.
+const SCHEMA_V17: &str = "
+CREATE TABLE IF NOT EXISTS transcript_chunk (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  day TEXT NOT NULL,
+  at_ms INTEGER NOT NULL,
+  call_started_at_ms INTEGER NOT NULL,
+  app_id TEXT NOT NULL,
+  model TEXT NOT NULL,
+  language TEXT,
+  text TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS transcript_chunk_day ON transcript_chunk (day);
+CREATE INDEX IF NOT EXISTS transcript_chunk_at_ms ON transcript_chunk (at_ms);
+";
+
 /// Repairs a store whose v11 ran before `read_through_ms` was part of it.
 ///
 /// The column was added to `SCHEMA_V11` after that migration had already run on real stores, and a
@@ -468,6 +486,10 @@ pub fn migrate(connection: &Connection) -> TimetrackResult<()> {
         step(connection, 16, |connection| Ok(connection.execute_batch(SCHEMA_V16)?))?;
     }
 
+    if version < 17 {
+        step(connection, 17, |connection| Ok(connection.execute_batch(SCHEMA_V17)?))?;
+    }
+
     Ok(())
 }
 
@@ -542,7 +564,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            16
+            17
         );
         assert_eq!(connection.execute(INSERT, params![1_i64, "git-commit:abc"]).unwrap(), 1);
     }
@@ -666,7 +688,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            16
+            17
         );
     }
 

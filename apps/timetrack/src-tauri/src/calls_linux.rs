@@ -14,6 +14,9 @@ use std::time::Duration;
 /// `libs/timetrack/docs/adr/0008-the-linux-call-source-reads-pw-dump.md`.
 const DUMP: &str = "pw-dump";
 
+/// Marks the stream Timetrack records the microphone with, so that stream is never a call of its own.
+pub const OWN_STREAM_PROPERTY: &str = "timetrack.own";
+
 const NO_DUMP: &str = "Timetrack cannot see which application is on a call, because `pw-dump` is not \
 installed. It ships with PipeWire, in the `pipewire-utils` package on most distributions.";
 
@@ -49,6 +52,7 @@ struct Node {
     media_class: String,
     state: String,
     app_id: String,
+    own: bool,
 }
 
 struct Link {
@@ -130,6 +134,10 @@ impl Registry {
                     if let Some(app_id) = app_id_of(&props) {
                         node.app_id = app_id;
                     }
+
+                    if props.get(OWN_STREAM_PROPERTY).and_then(Value::as_bool) == Some(true) {
+                        node.own = true;
+                    }
                 }
             }
             "PipeWire:Interface:Link" => {
@@ -174,6 +182,7 @@ impl Registry {
     fn holds_the_microphone(&self, id: u32, node: &Node) -> bool {
         node.media_class == "Stream/Input/Audio"
             && node.state == "running"
+            && !node.own
             && self
                 .links
                 .values()
@@ -412,6 +421,26 @@ mod tests {
         );
 
         assert_eq!(registry.holding(), vec!["google-chrome".to_string()]);
+    }
+
+    #[test]
+    fn does_not_count_its_own_recording_stream_as_a_call() {
+        let mut registry = Registry::default();
+
+        fold(
+            &mut registry,
+            r#"[
+              { "id": 67, "type": "PipeWire:Interface:Node",
+                "info": { "state": "running", "props": { "media.class": "Audio/Source" } } },
+              { "id": 114, "type": "PipeWire:Interface:Node",
+                "info": { "state": "running", "props": {
+                  "media.class": "Stream/Input/Audio", "node.name": "timetrack-transcribe", "timetrack.own": true } } },
+              { "id": 203, "type": "PipeWire:Interface:Link",
+                "info": { "props": { "link.output.node": 67, "link.input.node": 114 } } }
+            ]"#,
+        );
+
+        assert!(registry.holding().is_empty());
     }
 
     #[test]

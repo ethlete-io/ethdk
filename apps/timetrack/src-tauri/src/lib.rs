@@ -34,6 +34,9 @@ mod spec;
 mod state;
 mod store;
 mod timer;
+#[cfg(feature = "transcribe")]
+mod transcribe;
+mod transcript;
 mod tray;
 mod widget;
 mod window;
@@ -81,6 +84,13 @@ pub fn run() {
                 }
             };
             let paused = pause::paused_at(&connection)?.is_some();
+            let transcription = transcript::TranscriptionState::new(
+                store::settings_document(&connection)?
+                    .as_ref()
+                    .is_some_and(transcript::TranscriptionState::read_enabled),
+            );
+
+            transcript::prune(&connection, chrono::Utc::now().timestamp_millis())?;
 
             app.manage(state::Db::new(connection));
             app.manage(http::Http(http::client()?));
@@ -107,6 +117,16 @@ pub fn run() {
             window::start(&windows);
             ingest::start(reporters.clone(), data_dir.clone());
             calls::start(&calls);
+
+            #[cfg(feature = "transcribe")]
+            transcribe::start(transcribe::Listener {
+                db: app.state::<state::Db>().inner().clone(),
+                calls: calls.clone(),
+                state: transcription.clone(),
+                data_dir: data_dir.clone(),
+            });
+
+            app.manage(transcription);
             app.manage(windows);
             app.manage(reporters);
             app.manage(calls);
@@ -183,6 +203,8 @@ pub fn run() {
             timer::timer_runs_between,
             timer::timer_start,
             timer::timer_stop,
+            transcript::transcript_delete_day,
+            transcript::transcription_status,
             tray::tray_set_readout,
             widget::widget_close,
             widget::widget_is_open,

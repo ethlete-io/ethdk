@@ -90,12 +90,19 @@ describe('parseTimetrackSettings', () => {
       noStandInCheckouts: [],
       lockWindow: true,
       lockAfterIdleMs: DEFAULT_LOCK_AFTER_IDLE_MS,
+      transcribeCalls: false,
     });
   });
 
   it('keeps the window lock on unless the document turns it off', () => {
     expect(parseTimetrackSettings({ lockWindow: false }).lockWindow).toBe(false);
     expect(parseTimetrackSettings({ lockWindow: 'yes' }).lockWindow).toBe(true);
+  });
+
+  it('transcribes calls only when the document turns it on', () => {
+    expect(parseTimetrackSettings({}).transcribeCalls).toBe(false);
+    expect(parseTimetrackSettings({ transcribeCalls: 'yes' }).transcribeCalls).toBe(false);
+    expect(parseTimetrackSettings({ transcribeCalls: true }).transcribeCalls).toBe(true);
   });
 
   it('keeps the idle wait inside its range, and defaults it to a minute', () => {
@@ -137,6 +144,7 @@ describe('parseTimetrackSettings', () => {
       noStandInCheckouts: [],
       lockWindow: true,
       lockAfterIdleMs: DEFAULT_LOCK_AFTER_IDLE_MS,
+      transcribeCalls: false,
     });
     expect(parseTimetrackSettings({ dayTargetMs: 'eight hours' }).dayTargetMs).toBe(DEFAULT_DAY_TARGET_MS);
   });

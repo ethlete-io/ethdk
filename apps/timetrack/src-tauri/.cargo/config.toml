@@ -6,3 +6,7 @@ runner = "tools/sign-and-run.sh"
 
 [target.aarch64-apple-darwin]
 runner = "tools/sign-and-run.sh"
+
+# whisper-rs-sys runs bindgen, which needs libclang, unless told to use the bindings it ships.
+[env]
+WHISPER_DONT_GENERATE_BINDINGS = "1"
