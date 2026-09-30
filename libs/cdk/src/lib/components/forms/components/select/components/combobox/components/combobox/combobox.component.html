@@ -73,6 +73,7 @@
     <button
       [disabled]="input.disabled"
       (click)="combobox.clearValue(); $event.stopPropagation(); combobox.focus()"
+      (mousedown)="$event.preventDefault()"
       class="et-combobox-clear"
       tabindex="-1"
       type="button"
