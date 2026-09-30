@@ -32,6 +32,12 @@ for entry in "$root"/node_modules/* "$root"/node_modules/.[!.]*; do
   fi
 done
 
+for nested in $(cd "$root" && find libs apps tools -mindepth 1 -maxdepth 2 -name node_modules -prune); do
+  if [ -d "$(dirname "$nested")" ] && [ ! -e "$nested" ]; then
+    ln -s "$root/$nested" "$nested"
+  fi
+done
+
 export NX_BASE="$base" NX_HEAD="$head"
 pids=""
 for check in agents:check versions:check lint:changesets query:export-coverage core:export-coverage components:export-coverage; do
