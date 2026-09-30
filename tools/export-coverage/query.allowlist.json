@@ -9,7 +9,6 @@
   "EMPTY_QUERY_DEVTOOLS_FAULT": "constant: value",
   "IGNORED_FILTER_COUNT_FIELDS": "constant: value",
   "INFINITY_QUERY_TOKEN": "constant: injection token",
-  "InfinityQuery": "internal: created by InfinityQueryDirective, covered by legacy-infinity-trigger.scenario",
   "LegacyQuery": "internal: interop plumbing, instances covered by legacy-interop.scenario",
   "LegacyQueryCreator": "spec: libs/query/src/lib/legacy/interop/legacy-query-creator.spec.ts",
   "MAX_QUERY_DEVTOOLS_TOMBSTONES": "constant: value",
