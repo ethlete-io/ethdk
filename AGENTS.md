@@ -208,12 +208,16 @@ Playwright layer in `apps/storybook-e2e` - the **`component-behavior-tests`** sk
 
 ## Testing beyond unit specs
 
-jsdom unit specs catch value logic, not regressions in behavior. Four layers cover the rest:
+jsdom unit specs catch value logic, not regressions in behavior. Five layers cover the rest:
 
 - `libs/query/src/scenarios` - consumer-level scenarios against a fake API with leak
   invariants; the **`query-scenario-tests`** skill. Every bug fix in `libs/query` adds one.
 - `libs/core/src/scenarios` - the same for core: a real app on fake time and frames, with leak
   invariants; the **`core-scenario-tests`** skill. Every bug fix in `libs/core` adds one.
+- `timetrack snapshot` - before a change in `libs/timetrack` or `apps/timetrack` that can change rows, run
+  `node dist/libs/agent-rules/src/index.js timetrack snapshot` (build agent-rules first if `dist` is stale);
+  after it, run `... snapshot --compare <file>` and explain every changed row in the report. An unexplained
+  change is a regression. The file holds client names, so it stays outside the repo.
 - `apps/storybook-e2e` - Playwright against real stories, desktop and touch; the
   **`component-behavior-tests`** skill.
 - `nx run storybook:test-storybook` - `@storybook/addon-vitest` renders every story in

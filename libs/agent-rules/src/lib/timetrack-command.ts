@@ -1,5 +1,5 @@
-import { closeSync, lstatSync, openSync, unlinkSync, writeFileSync } from 'fs';
-import { resolve } from 'path';
+import { closeSync, lstatSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
+import { dirname, join, resolve } from 'path';
 import {
   TimetrackApprovalStatus,
   TimetrackAttributionRule,
@@ -40,7 +40,8 @@ import {
   timetrackCalendarEvents,
 } from './timetrack';
 import { plain } from './plain-text';
-import { commitAuthorOf, commitPathsOnDays, currentBranch, projectRootsOf } from './git';
+import { diffLines, diffSnapshots, Snapshot, SnapshotDay, snapshotDayOf } from './timetrack-snapshot';
+import { commitAuthorOf, commitPathsOnDays, currentBranch, git, projectRootsOf } from './git';
 
 const FLAGS_WITH_VALUE = [
   '--root',
@@ -72,6 +73,7 @@ const FLAGS_WITH_VALUE = [
   '--rename',
   '--merge',
   '--into',
+  '--compare',
 ];
 
 /** Every human-readable line, with anything a terminal would act on printed rather than obeyed. */
@@ -625,6 +627,39 @@ const splitStandIn = async (options: { id: string; argv: string[]; json: boolean
   return printed(answer, json);
 };
 
+const daysBetween = (from: string, to: string) => {
+  const days: string[] = [];
+
+  for (let day = from; day <= to && days.length < 92; day = shiftDay(day, 1)) days.push(day);
+
+  return days;
+};
+
+const gitState = (root: string) => {
+  try {
+    const uncommitted = git({ root, args: ['status', '--porcelain'] })
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => line.slice(3));
+
+    return { head: git({ root, args: ['rev-parse', 'HEAD'] }), uncommitted };
+  } catch {
+    return {};
+  }
+};
+
+const takeSnapshot = async (options: { days: string[]; root: string }): Promise<Snapshot> => ({
+  takenAt: new Date().toISOString(),
+  ...gitState(options.root),
+  days: await options.days.reduce<Promise<SnapshotDay[]>>(
+    async (done, day) => [...(await done), snapshotDayOf(await timetrackDayRows(day))],
+    Promise.resolve([]),
+  ),
+});
+
+const defaultSnapshotPath = () =>
+  join(dirname(timetrackDiscoveryPath()), 'snapshots', `${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+
 const USAGE = `ethlete-agents timetrack — ask the running Timetrack app about Jira
 
 The app holds this machine's Jira credentials, so no repository needs a token of its own.
@@ -640,6 +675,10 @@ Every write waits in the app until the user approves it there, and prints an app
                                 Add a row nothing observed to the day it belongs to
   timetrack day [YYYY-MM-DD]    The evidence a day holds, which the encrypted store hides otherwise
   timetrack rows [YYYY-MM-DD]   The rows the day drew, with the ids an edit names them by
+  timetrack snapshot [from] [to] [--out <file>]
+                                Record the rows of the last 7 days (default) before a change
+  timetrack snapshot --compare <file>
+                                Print every row the change altered since; exit 1 when any did
   timetrack edit <row-id> …     Change one row of a day: its times, its name, its note or its state
   timetrack rules               The rules that name a day's work: attribution, project links, apps
   timetrack standins            The names the user gave work Jira does not hold yet, and their age
@@ -874,6 +913,42 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     }
 
     return printed(found, json);
+  }
+
+  if (subcommand === 'snapshot') {
+    const compare = flagValue(argv, '--compare');
+
+    if (compare) {
+      const recorded = JSON.parse(readFileSync(resolve(root, compare), 'utf8')) as Snapshot;
+      const now = await takeSnapshot({ days: recorded.days.map((entry) => entry.day), root });
+      const diff = diffSnapshots(recorded, now);
+
+      if (json) console.log(JSON.stringify(diff, null, 2));
+      else diffLines(diff).forEach((line) => say(line));
+
+      return diff.changedRows || diff.days.length ? 1 : 0;
+    }
+
+    const named = positionalArgs(argv).slice(1);
+    const to = named[1] ?? today();
+    const from = named[0] ?? shiftDay(to, -6);
+
+    if (!DAY.test(from)) throw new Error(`Pass a day as YYYY-MM-DD, not ${from}.`);
+    if (!DAY.test(to)) throw new Error(`Pass a day as YYYY-MM-DD, not ${to}.`);
+
+    const path = resolve(root, flagValue(argv, '--out') ?? defaultSnapshotPath());
+    const recorded = await takeSnapshot({ days: daysBetween(from, to), root });
+
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, JSON.stringify(recorded, null, 2), { mode: 0o600 });
+
+    if (json) console.log(JSON.stringify({ path, days: recorded.days.length }));
+    else
+      say(
+        `Recorded ${recorded.days.length} day(s), ${recorded.days.reduce((sum, day) => sum + day.rows.length, 0)} row(s) in ${path}`,
+      );
+
+    return 0;
   }
 
   if (subcommand === 'edit') {

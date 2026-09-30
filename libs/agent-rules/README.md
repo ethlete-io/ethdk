@@ -252,6 +252,11 @@ npx ethlete-agents timetrack log --issue FIP-2177 --minutes 45
 npx ethlete-agents timetrack approval <id>         # where a queued write stands
 ```
 
+`timetrack snapshot [from] [to] [--out <file>]` records the rows of real days (default: the last 7) with
+the git HEAD and uncommitted files of the current repo; without `--out` the file lands in the app's data
+directory under `snapshots/`, never in a repo. `timetrack snapshot --compare <file>` reads the same days
+again and prints every row gone, new or changed (`--json` for a script); it exits 1 when anything changed.
+
 `--json` prints the raw answer instead of lines. `git-flow start` uses the same channel.
 
 **Every write waits for the user.** `create`, `log` and every other write answer at once with an
