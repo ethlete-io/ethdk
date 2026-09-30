@@ -15,7 +15,7 @@ import {
 import { Observable, catchError, distinctUntilChanged, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 import { injectGitCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
-import { readDay$ } from '../read-day';
+import { DayReadOptions, readDay$ } from '../read-day';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectProjectLinks } from '../project-links';
 
@@ -112,6 +112,22 @@ const resolve$ = (options: {
   );
 };
 
+export const readEpicOptions$ = (options: DayReadOptions & { day: string }): Observable<EpicOptions> =>
+  readDay$(options).pipe(
+    map((day) =>
+      epicQuestionOf({
+        blocks: day.day.blocks,
+        unattributed: day.day.rows.unattributed,
+        proposals: day.day.rows.proposals,
+        rules: options.settings.attributionRules,
+        config: gitFlowConfigFor(options.settings),
+      }),
+    ),
+    distinctUntilChanged((a, b) => questionKey(a) === questionKey(b)),
+    switchMap((question) => resolve$({ question, settings: options.settings, ports: options.ports })),
+    catchError(() => of(NOTHING)),
+  );
+
 /**
  * The epic rung's input: what a sibling checkout on the same branch name books, and which children of
  * its parent are already spoken for.
@@ -143,7 +159,7 @@ const EPIC_SIBLINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     toObservable(probe).pipe(
       switchMap((current) =>
         current.day
-          ? readDay$({
+          ? readEpicOptions$({
               ports,
               settings: current.settings,
               repoRoots: current.repoRoots,
@@ -151,19 +167,7 @@ const EPIC_SIBLINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
               worktrees: current.worktrees,
               day: current.day,
             }).pipe(
-              map((day) =>
-                epicQuestionOf({
-                  blocks: day.day.blocks,
-                  unattributed: day.day.rows.unattributed,
-                  proposals: day.day.rows.proposals,
-                  rules: current.settings.attributionRules,
-                  config: gitFlowConfigFor(current.settings),
-                }),
-              ),
-              distinctUntilChanged((a, b) => questionKey(a) === questionKey(b)),
-              switchMap((question) => resolve$({ question, settings: current.settings, ports })),
               map((options): EpicSiblingsState => ({ state: 'ready', options })),
-              catchError(() => of<EpicSiblingsState>({ state: 'ready', options: NOTHING })),
               startWith<EpicSiblingsState>({ state: 'loading' }),
             )
           : of<EpicSiblingsState>({ state: 'idle' }),

@@ -1,7 +1,9 @@
 import {
+  AgedNaming,
   CollectedEvent,
   DayReview,
   EMPTY_DAY_REVIEW_EDITS,
+  EpicOptions,
   RecurringPattern,
   StreamDay,
   TimetrackProjectLink,
@@ -45,6 +47,10 @@ export type DayReadOptions = {
    * tray would report presence rising on a machine that observes nothing.
    */
   windowsSeenThroughMs?: number;
+  /** What a sibling checkout on the same branch name books, from `readEpicOptions$`. */
+  epics?: EpicOptions;
+  /** What only the day screen reads for its warnings: the aged namings and whether the day is over. */
+  check?: { agedNamings?: readonly AgedNaming[]; finished?: boolean };
 };
 
 /**
@@ -75,6 +81,7 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
         links: options.links,
         worktrees: options.worktrees,
         patterns: options.patterns,
+        epics: options.epics,
         windowsSeenThroughMs: options.windowsSeenThroughMs,
         through: at,
         now: at < to ? at : undefined,
@@ -93,7 +100,12 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
           cut: dayOptions.rows?.cut,
           standIns: settings.standIns,
           rules: settings.attributionRules,
-          check: { targetMs: settings.dayTargetMs, coveredMs: coveredMsOf(coverage), pausedMs: pausedMs(pauses) },
+          check: {
+            targetMs: settings.dayTargetMs,
+            coveredMs: coveredMsOf(coverage),
+            pausedMs: pausedMs(pauses),
+            ...options.check,
+          },
         }),
       };
     }),
