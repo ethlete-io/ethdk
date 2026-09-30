@@ -44,6 +44,14 @@ export const forgeHostname = (host: string) =>
     .replace(/^[a-z+]+:\/\//i, '')
     .replace(/\/.*$/, '');
 
+const HOSTNAME = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*(?::\d+)?$/i;
+
+/**
+ * Whether a settings field names an instance at all. An email address or an scp-style git remote
+ * (`git@git.example.com:group/repo`) is not a host, and no `--hostname` built from one reaches anything.
+ */
+export const isForgeHostname = (host: string) => HOSTNAME.test(forgeHostname(host));
+
 export type ForgeQuery = Record<string, string | number | boolean | undefined>;
 
 const HTTP_STATUS = /\(HTTP (\d{3})\)\s*$/m;

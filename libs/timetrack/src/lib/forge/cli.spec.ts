@@ -1,7 +1,7 @@
 import { of, throwError } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ProcessResult, ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
-import { ForgeRequestError, forgeApi$, forgeApiPaged$, isMissingCliError } from './cli';
+import { ForgeRequestError, forgeApi$, forgeApiPaged$, isForgeHostname, isMissingCliError } from './cli';
 
 const runnerOf = (results: ProcessResult[]) => {
   const specs: ProcessSpec[] = [];
@@ -154,5 +154,20 @@ describe('isMissingCliError', () => {
 
     expect(isMissingCliError(missing.mock.calls[0]?.[0])).toBe(true);
     expect(isMissingCliError(new Error('glab: 404 Not Found (HTTP 404)'))).toBe(false);
+  });
+});
+
+describe('isForgeHostname', () => {
+  it('takes a host however the field spells it', () => {
+    expect(isForgeHostname('git.example.com')).toBe(true);
+    expect(isForgeHostname('https://git.example.com/')).toBe(true);
+    expect(isForgeHostname('localhost:8080')).toBe(true);
+  });
+
+  it('refuses an email address and a git remote, which name an account and not an instance', () => {
+    expect(isForgeHostname('someone@example.com')).toBe(false);
+    expect(isForgeHostname('https://someone@git.example.com')).toBe(false);
+    expect(isForgeHostname('git@git.example.com:group/repo.git')).toBe(false);
+    expect(isForgeHostname('')).toBe(false);
   });
 });

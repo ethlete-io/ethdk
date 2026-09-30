@@ -23,9 +23,13 @@ test.describe('the GitLab instance field', () => {
     });
     await openSources(page);
 
+    await expect(page.locator('[data-gitlab-not-hostname]')).toBeVisible();
+    await expect(page.locator('[data-gitlab-insecure-host]')).toHaveCount(0);
+
     await page.locator('[data-glab-offers] button', { hasText: HELD }).click();
 
     await expect(page.locator('[data-glab-offers]')).toHaveCount(0);
+    await expect(page.locator('[data-gitlab-not-hostname]')).toHaveCount(0);
   });
 
   test('offers it while the field is still empty, so the instance never has to be typed', async ({ page }) => {

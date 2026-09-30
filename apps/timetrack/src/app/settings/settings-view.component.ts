@@ -18,6 +18,7 @@ import {
   carriesCredentialsSafely,
   findStandIn,
   forgeLoginFor,
+  isForgeHostname,
   normalizeGitLabHost,
   normalizeJiraHost,
 } from '@ethlete/timetrack';
@@ -106,6 +107,9 @@ Give it the api scope. Leave it empty if you never use those two.`;
 const INSECURE_HOST = `Every call to it carries your token, and a plain http request puts that token and
 everything it answers on the wire for anyone on the network to read. No call is made to this host until
 it is https.`;
+
+const NOT_A_HOSTNAME = `Name the instance by its hostname, like git.example.com. An email address or a git
+remote names an account, and no GitLab answers at it.`;
 
 const GITHUB_WHY = `The same reading as GitLab, for github.com. It runs gh, which holds its own login,
 so there is no host and no token to give - only this switch.
@@ -526,7 +530,14 @@ waits for your approval; set it to one by one and "Approve all" leaves it out.`;
                   />
                 </et-form-field>
 
-                @if (gitlabHostInsecure()) {
+                @if (gitlabHostNotHostname()) {
+                  <et-banner
+                    [description]="NOT_A_HOSTNAME"
+                    type="error"
+                    heading="This is not an instance"
+                    data-gitlab-not-hostname
+                  />
+                } @else if (gitlabHostInsecure()) {
                   <et-banner
                     [description]="INSECURE_HOST"
                     type="error"
@@ -757,6 +768,7 @@ export class SettingsViewComponent {
   protected readonly TEMPO_WHY = TEMPO_WHY;
   protected readonly GITLAB_WHY = GITLAB_WHY;
   protected readonly INSECURE_HOST = INSECURE_HOST;
+  protected readonly NOT_A_HOSTNAME = NOT_A_HOSTNAME;
   protected readonly GITHUB_WHY = GITHUB_WHY;
   protected readonly MEETING_WHY = MEETING_WHY;
   protected readonly CALL_NAMING_WHY = CALL_NAMING_WHY;
@@ -809,6 +821,12 @@ export class SettingsViewComponent {
     const { host } = this.store.settings().jira;
 
     return host.length > 0 && !carriesCredentialsSafely(normalizeJiraHost(host));
+  });
+
+  protected gitlabHostNotHostname = computed(() => {
+    const { host } = this.store.settings().gitlab;
+
+    return host.length > 0 && !isForgeHostname(host);
   });
 
   protected gitlabHostInsecure = computed(() => {

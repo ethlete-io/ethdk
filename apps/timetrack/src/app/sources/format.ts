@@ -1,4 +1,4 @@
-import { ForgeCli, GitScanFailure } from '@ethlete/timetrack';
+import { ForgeCli, GitScanFailure, isForgeHostname } from '@ethlete/timetrack';
 import {
   AgentSessionCollectorTotals,
   AgentLogBackfillRun,
@@ -195,6 +195,14 @@ export const formatForgeLoginGap = (options: {
   hasInstanceField: boolean;
 }) => {
   const { cli, host, held, hasInstanceField } = options;
+  if (!isForgeHostname(host)) {
+    return sentences([
+      `${host} is not a hostname.`,
+      held.length ? `\`${cli}\` holds a login for ${listOf(held)}.` : null,
+      'Correct the instance in Settings.',
+    ]);
+  }
+
   const command = `\`${cli} auth login --hostname ${host}\``;
 
   if (held.length === 0) return `Waiting on ${command}.`;
