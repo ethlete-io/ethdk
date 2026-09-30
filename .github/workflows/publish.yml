@@ -164,6 +164,10 @@ jobs:
             export APPLE_SIGNING_IDENTITY="Ethlete Release Signing"
           fi
           unset MACOS_SIGNING_CERTIFICATE MACOS_SIGNING_CERTIFICATE_PASSWORD
+          # Git Bash puts its MSYS perl first, which lacks the modules OpenSSL's Configure needs.
+          if [ "$RUNNER_OS" = Windows ]; then
+            export OPENSSL_SRC_PERL='C:\Strawberry\perl\bin\perl.exe'
+          fi
           echo '{ "bundle": { "createUpdaterArtifacts": true } }' > "$RUNNER_TEMP/updater.json"
           yarn nx run ${{ matrix.app.project }}:tauri:build -- --config "$RUNNER_TEMP/updater.json"
         env:
