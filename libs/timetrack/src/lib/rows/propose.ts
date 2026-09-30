@@ -63,7 +63,7 @@ const cutAtBreakEnd = <T extends BoundGroup>(options: {
   breaks: readonly TimeWindow[];
   presence: readonly TimeWindow[];
   round?: Partial<RoundOptions>;
-}): T[] => {
+}): (T & { afterBreak?: true })[] => {
   if (!options.breaks.length || !options.rows.some((row) => row.group.attended === false)) return [...options.rows];
 
   const drawn = breaksBetweenRows({
@@ -98,6 +98,7 @@ const cutAtBreakEnd = <T extends BoundGroup>(options: {
       },
       {
         ...row,
+        afterBreak: true as const,
         from: cut,
         durationMs: row.to.getTime() - cut.getTime(),
         group: { ...row.group, from: cut, blocks: after, observedMs: afterMs, attended: true },
@@ -255,13 +256,14 @@ export const propose = (options: {
   const ids = rowIds(proposalId);
 
   return {
-    proposals: attributed.map(({ group, from, to, durationMs, stretches }) => ({
+    proposals: attributed.map(({ group, from, to, durationMs, stretches, afterBreak }) => ({
       id: ids.next(group),
       unnamedId: unnamedBaseId(group),
       issueKey: group.issueKey,
       storyKey: group.storyKey,
       ...(group.disputedIssueKey ? { disputedIssueKey: group.disputedIssueKey } : {}),
       ...(group.disputedStandInId ? { disputedStandInId: group.disputedStandInId } : {}),
+      ...(afterBreak ? { afterBreak } : {}),
       from,
       to,
       durationMs,
@@ -275,12 +277,13 @@ export const propose = (options: {
       state: 'suggested',
     })),
     unattributed: unattributed.map((row) => row.group),
-    unnamed: unnamed.map(({ group, from, to, durationMs, stretches }) => ({
+    unnamed: unnamed.map(({ group, from, to, durationMs, stretches, afterBreak }) => ({
       id: unnamedRowId(group),
       ...(group.standInId ? { standInId: group.standInId } : {}),
       ...(group.attended === false ? { unattended: true } : {}),
       ...(group.attended === false && group.issueKey ? { withheldIssueKey: group.issueKey } : {}),
       ...(group.bookable === false ? { excluded: true } : {}),
+      ...(afterBreak ? { afterBreak } : {}),
       ...(group.disputedIssueKey ? { disputedIssueKey: group.disputedIssueKey } : {}),
       ...(group.disputedStandInId ? { disputedStandInId: group.disputedStandInId } : {}),
       from,

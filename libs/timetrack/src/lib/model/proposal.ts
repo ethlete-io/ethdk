@@ -57,6 +57,11 @@ export type WorklogProposal = {
    */
   withheldIssueKey?: string;
   /**
+   * True on the part of a row nobody attended that lies past the break the row started in, which the
+   * user was back for. Like an unattended row, it folds only into a row it touches.
+   */
+  afterBreak?: boolean;
+  /**
    * The other work a second rung named for this band, when two rungs named different work. The row
    * books `issueKey` all the same — the ranking in ADR 0012 decides that — and this is drawn beside it
    * so the band shows both answers and applying the other one is a single press. See ADR 0012.

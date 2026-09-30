@@ -49,6 +49,8 @@ all, because this machine held no agent events to read — the second is what re
   the machine's own time is not. The band never reaches past the drawn break it starts in: what is
   past it is an attended row with the same issue, since the prompt that ended the break bought that
   time back ([ADR 0028](./0028-a-break-is-the-time-away-less-what-each-prompt-bought-back.md)).
+  That row stays where the break ended: it folds only into a row it touches, never into a row of its
+  issue hours away.
 - **The user can still name it by hand**, and that names it. The barrier is against a day proposing
   such an hour, not against a person deciding they were in fact there. A refusal nothing could
   override would be a refusal that gets worked around.

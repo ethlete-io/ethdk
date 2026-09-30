@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DayRows } from '../rows/build-rows';
 import { CALL_LANE_KEY } from '../rows/lane';
 import { WorkGroup } from '../rows/merge';
-import { UnnamedProposal } from '../rows/propose';
+import { UnnamedProposal, propose } from '../rows/propose';
 import { Evidence } from '../model/evidence';
 import { WorklogProposal } from '../model/proposal';
 import { hideRow, resetRow, setRowDescription, setRowIssue, splitRow } from './edits';
@@ -299,6 +299,42 @@ describe('reviewDay folding single-increment rows', () => {
     );
 
     expect(spans(result)).toEqual(['12:15-13:45 90m', '13:45-14:00 15m']);
+  });
+});
+
+describe('reviewDay folding the attended rest of a row nobody attended', () => {
+  const SECOND = 1_000;
+  const atSecond = (time: string, second: number) => new Date(at(time).getTime() + second * SECOND);
+  const work = (options: { from: Date; to: Date; attended?: boolean }): WorkGroup => ({
+    issueKey: 'ABC-100',
+    from: options.from,
+    to: options.to,
+    observedMs: options.to.getTime() - options.from.getTime(),
+    confidence: 'certain',
+    evidence: [],
+    ...(options.attended === false ? { attended: false } : {}),
+    blocks: [
+      {
+        from: options.from,
+        to: options.to,
+        context: { repoPath: '/work/app-a', branch: 'feat/ABC-100-thing' },
+        evidence: [],
+      },
+    ],
+  });
+  const { proposals, unnamed } = propose({
+    groups: [
+      work({ from: atSecond('16:34', 28), to: atSecond('16:49', 56), attended: false }),
+      work({ from: at('19:15'), to: at('19:45') }),
+    ],
+    breaks: [{ from: atSecond('16:31', 48), to: atSecond('16:51', 42) }],
+  });
+
+  it('keeps the rest where the break ended, rather than on a row of its name hours away', () => {
+    const result = review(dayRows({ proposals, unnamed }));
+
+    expect(spans(result)).toEqual(['16:30-16:45 15m', '16:45-17:00 15m', '19:15-19:45 30m']);
+    expect(result.rows[0]?.unattended).toBe(true);
   });
 });
 
