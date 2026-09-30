@@ -573,6 +573,64 @@ describe('buildRows with activity on another branch inside a rule-named band', (
     expect(rows.proposals[0]?.evidence.map((item) => item.detail)).toContain('rebase (finish) on `feat/login`');
   });
 
+  describe('when an agent session merged into another branch without a checkout', () => {
+    const SESSION_WORK = [
+      block({ from: at(14, 15), to: at(15), context: { repoPath: REPO, branch: 'dev-feature', session: 's-1' } }),
+    ];
+    const LOGIN = rule({ repoPath: REPO, branch: 'feat/login', target: { kind: 'issue', issueKey: 'FIP-3100' } });
+    const merge = (branch: string, repoPath = REPO): CollectedEvent => ({
+      at: at(14, 40),
+      source: 'git',
+      kind: 'git-branch-update',
+      repoPath,
+      branch,
+      action: `commit (merge): Merge remote-tracking branch 'origin/next' into ${branch}`,
+    });
+
+    it('books the branch the session wrote to and disputes the rule of the checked-out branch', () => {
+      const rows = buildRows({
+        blocks: SESSION_WORK,
+        events: [FOCUS, merge('feat/unruled'), merge('feat/login')],
+        rules: [NAMED, LOGIN],
+      });
+
+      expect(rows.proposals[0]?.issueKey).toBe('FIP-3100');
+      expect(rows.proposals[0]?.disputedIssueKey).toBe('FIP-3006');
+    });
+
+    it('keeps the rule when the session also committed on the checked-out branch', () => {
+      const commit: CollectedEvent = {
+        at: at(14, 50),
+        source: 'git',
+        kind: 'git-commit',
+        repoPath: REPO,
+        branch: 'dev-feature',
+        sha: 'abc1234',
+        subject: 'fix: A change',
+      };
+      const rows = buildRows({
+        blocks: SESSION_WORK,
+        events: [FOCUS, merge('feat/login'), commit],
+        rules: [NAMED, LOGIN],
+      });
+
+      expect(rows.proposals[0]?.issueKey).toBe('FIP-3006');
+      expect(rows.proposals[0]?.disputedIssueKey).toBe('FIP-3100');
+    });
+
+    it('keeps the rule when a linked worktree owns the branch the write landed on', () => {
+      const rows = buildRows({
+        blocks: SESSION_WORK,
+        events: [FOCUS, merge('feat/login', WORKTREE)],
+        rules: [NAMED, { ...LOGIN, repoPath: WORKTREE }],
+        worktrees: { [WORKTREE]: REPO },
+      });
+
+      expect(rows.proposals[0]?.issueKey).toBe('FIP-3006');
+      expect(rows.proposals[0]?.disputedIssueKey).toBe('FIP-3100');
+    });
+  });
+
   it('leaves the band alone when the branch belongs to another checkout or to a resolved stand-in', () => {
     const rows = buildRows({
       blocks: WORK,

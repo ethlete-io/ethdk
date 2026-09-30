@@ -631,24 +631,55 @@ export const joinUnattended = (options: {
   return rows;
 };
 
-type BranchActivity = { at: Date; branch: string; repoPath?: string; detail: string };
+type BranchActivity = { at: Date; branch: string; repoPath?: string; detail: string; written: boolean };
 
 const branchActivityOf = (event: CollectedEvent): BranchActivity | [] => {
   if (event.kind === 'git-commit') {
-    return { at: event.at, branch: event.branch, repoPath: event.repoPath, detail: `a commit on \`${event.branch}\`` };
+    return {
+      at: event.at,
+      branch: event.branch,
+      repoPath: event.repoPath,
+      detail: `a commit on \`${event.branch}\``,
+      written: true,
+    };
   }
 
   if (event.kind === 'git-branch-update') {
     const verb = event.action.split(':')[0] || 'an update';
 
-    return { at: event.at, branch: event.branch, repoPath: event.repoPath, detail: `${verb} on \`${event.branch}\`` };
+    return {
+      at: event.at,
+      branch: event.branch,
+      repoPath: event.repoPath,
+      detail: `${verb} on \`${event.branch}\``,
+      written: true,
+    };
   }
 
   if (event.kind !== 'merge-request-activity' || !event.branch) return [];
 
   const mergeRequest = event.mergeRequestIid ? `!${event.mergeRequestIid}` : 'a merge request';
 
-  return { at: event.at, branch: event.branch, detail: `you ${event.action} ${mergeRequest} on \`${event.branch}\`` };
+  return {
+    at: event.at,
+    branch: event.branch,
+    detail: `you ${event.action} ${mergeRequest} on \`${event.branch}\``,
+    written: false,
+  };
+};
+
+type Rival = { disputedIssueKey: string } | { disputedStandInId: string };
+
+const rivalKey = (rival: Rival) =>
+  'disputedIssueKey' in rival ? `issue:${rival.disputedIssueKey}` : `stand-in:${rival.disputedStandInId}`;
+
+const swapTo = (group: WorkGroup, rival: Rival): WorkGroup => {
+  const { issueKey, standInId, storyKey: _storyKey, taskKey: _taskKey, ...rest } = group;
+  const lost = issueKey ? { disputedIssueKey: issueKey } : standInId ? { disputedStandInId: standInId } : {};
+  const won =
+    'disputedIssueKey' in rival ? { issueKey: rival.disputedIssueKey } : { standInId: rival.disputedStandInId };
+
+  return { ...rest, ...won, ...lost };
 };
 
 /**
@@ -656,6 +687,12 @@ const branchActivityOf = (event: CollectedEvent): BranchActivity | [] => {
  * checkout, or of a worktree of it, that a branch rule names as other work: a merge request, a
  * commit, or a rebase or merge made without a checkout. The band still books what its rule named;
  * the review sees both.
+ *
+ * An agent session's band is the exception. A session reports the branch its checkout had checked out,
+ * yet it can commit or merge on another one through a worktree it removes again. When every write to
+ * this checkout inside the session's own stretches names one other piece of work, and nothing wrote to
+ * the band's branch, the band books that work and the rule's answer becomes the dispute. A write a
+ * linked worktree owns is that worktree's session's, never this one's.
  */
 export const disputeOtherBranches = (options: {
   groups: readonly WorkGroup[];
@@ -672,7 +709,7 @@ export const disputeOtherBranches = (options: {
   const standIns = options.standIns ?? [];
   const activities = options.events.flatMap(branchActivityOf);
 
-  const rivalOf = (activity: { group: WorkGroup; branch: string; repoPaths: readonly string[] }) => {
+  const rivalOf = (activity: { group: WorkGroup; branch: string; repoPaths: readonly string[] }): Rival | undefined => {
     for (const repoPath of activity.repoPaths) {
       const match = matchAttributionRule({ context: { repoPath, branch: activity.branch }, rules });
       const target = match?.scope === 'branch' ? match.rule.target : undefined;
@@ -691,28 +728,44 @@ export const disputeOtherBranches = (options: {
   };
 
   return options.groups.map((group) => {
-    const repoPath = dominantContext(group.blocks)?.repoPath;
+    const context = dominantContext(group.blocks);
+    const repoPath = context?.repoPath;
 
     if (!group.ruleScope || !repoPath || group.disputedIssueKey || group.disputedStandInId) return group;
 
     const main = mainOf(repoPath);
     const checkouts = ruled.filter((path) => mainOf(path) === main);
+    const bySession = (at: Date) =>
+      group.blocks.some((block) => !!block.context.session && block.from <= at && at <= block.to);
+    const found: { activity: BranchActivity; rival?: Rival; repoPaths: readonly string[] }[] = [];
 
     for (const activity of activities) {
       if (activity.at < group.from || activity.at > group.to) continue;
 
       const repoPaths = activity.repoPath ? [activity.repoPath].filter((path) => mainOf(path) === main) : checkouts;
-      const rival = rivalOf({ group, branch: activity.branch, repoPaths });
 
-      if (rival) {
-        return {
-          ...group,
-          ...rival,
-          evidence: mergeEvidence([group.evidence, [{ kind: 'branch', at: activity.at, detail: activity.detail }]]),
-        };
-      }
+      found.push({ activity, repoPaths, rival: rivalOf({ group, branch: activity.branch, repoPaths }) });
     }
 
-    return group;
+    const ownWrite = found.some(
+      (entry) => entry.activity.written && entry.repoPaths.length && entry.activity.branch === context.branch,
+    );
+    const sessionWrites = found.filter(
+      (entry) => entry.activity.written && entry.activity.repoPath === repoPath && bySession(entry.activity.at),
+    );
+    const named = new Set(sessionWrites.flatMap((entry) => (entry.rival ? rivalKey(entry.rival) : [])));
+    const written = !ownWrite && named.size === 1 ? sessionWrites.find((entry) => entry.rival) : undefined;
+    const disputed = written ?? found.find((entry) => entry.rival);
+
+    if (!disputed?.rival) return group;
+
+    const evidence = mergeEvidence([
+      group.evidence,
+      [{ kind: 'branch', at: disputed.activity.at, detail: disputed.activity.detail }],
+    ]);
+
+    if (written) return { ...swapTo(group, disputed.rival), evidence };
+
+    return { ...group, ...disputed.rival, evidence };
   });
 };
