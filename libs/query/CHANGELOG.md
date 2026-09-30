@@ -1,5 +1,15 @@
 # @ethlete/query
 
+## 6.0.0-next.54
+
+### Patch Changes
+
+- Stop a legacy `InfinityQuery` from aborting a non-cacheable page (such as a POST) that is still loading when it is reset or destroyed; the page now finishes and is destroyed once it settles.
+- A legacy query container or collection destroyed while its mutation is in flight now lets the request finish instead of cancelling it.
+- An interop mutation whose prepare injector is destroyed while its request is in flight now finishes before it is destroyed, as it did in v2.
+- Destroying the owner of a legacy mutation that waits to settle after its container let go no longer throws NG0205.
+- A mutation whose `withArgs` source returns `null` while its request is in flight is no longer aborted; it finishes and the query parks once it has settled.
+
 ## 6.0.0-next.53
 
 ### Major Changes

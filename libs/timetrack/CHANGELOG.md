@@ -1,5 +1,28 @@
 # @ethlete/timetrack
 
+## 0.1.0-next.11
+
+### Minor Changes
+
+- Auto mode now settles a band two answers disagree about, under the same approval rules as a match, and says what it chose and why; an unsure answer or your own edit leaves the band alone.
+- Add an opt-in, local-only transcript of your own microphone during calls, stored in the encrypted database and deleted after seven days; built only with the host's `transcribe` feature.
+
+### Patch Changes
+
+- An email address or a git remote in the GitLab instance field is named as not a hostname, instead of offered as the host of a `glab auth login` command. Adds `isForgeHostname`.
+- Keep the attended row past a break where the break ended, instead of folding it into a row of its issue hours away
+- Auto mode no longer books a done Jira issue: it leaves that band to you and says why in its readout.
+- End a call row at the quarter hour nearest the moment the call ended, so the call after it starts there instead of a quarter hour later, and keep an answer given on a row whose start moves.
+- Start a new call row when the microphone moves to another app or voice room, without a calendar entry, and stop naming it after the meeting it left.
+- Agent sessions that run one after another on the same feature branch of one checkout are one piece of work, so short back-to-back sessions become one row instead of one 15-minute row each.
+- A band the user named by hand keeps that name when a rule the day learns later gives the band another issue or a stand-in.
+- An agent session's row books the branch the session merged or committed into without a checkout, and keeps the checked-out branch's rule as the dispute, when nothing wrote to the checked-out branch.
+- Draw short rows that all ran inside one quarter hour side by side in that quarter, instead of pushing each one a quarter hour later, which drew a running day's rows in the future.
+- Two agent sessions on one ticket both count the remote time their lane booked, so the second no longer reads part of it as not booked.
+- The card of a parallel session on one ticket reads its share of what all sessions book together, for example `15m of 45m`.
+- A call no longer takes its name from an entry on the user's own calendar. Only an occurrence with somebody else in it or a conference link can name a call, count it as work or cut it.
+- End a row nobody attended with the drawn break it starts in, and book what lies past the break as an attended row of the same issue
+
 ## 0.1.0-next.10
 
 ### Patch Changes

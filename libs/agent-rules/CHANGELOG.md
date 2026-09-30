@@ -1,5 +1,16 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.19
+
+### Minor Changes
+
+- `timetrack snapshot` records the rows of recent days and `timetrack snapshot --compare <file>` lists every row a change altered, exiting 1 when any did.
+
+### Patch Changes
+
+- Each migration task now asks for a change one session can finish and ends with a `Done when` list; restyling views and moving lists or hand-built UI happen when a file is next edited.
+- The `search-query-field` task tells a search inside a dialog to pass `syncOnNavigation: false` too, so it stops reading the page's URL params.
+
 ## 0.1.0-next.18
 
 ### Minor Changes

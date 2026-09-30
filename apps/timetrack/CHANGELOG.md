@@ -1,5 +1,26 @@
 # timetrack-app
 
+## 0.2.0-next.5
+
+### Minor Changes
+
+- Auto mode now settles a band two answers disagree about, under the same approval rules as a match, and says what it chose and why; an unsure answer or your own edit leaves the band alone.
+- Add an opt-in, local-only transcript of your own microphone during calls, stored in the encrypted database and deleted after seven days; built only with the host's `transcribe` feature.
+
+### Patch Changes
+
+- A day-review row you edited and named now paints as certain, and its card says "confirmed by you" instead of "weak match".
+- An email address or a git remote in the GitLab instance field is named as not a hostname, instead of offered as the host of a `glab auth login` command. Adds `isForgeHostname`.
+- The Issue select in the row editor shows the issue's summary from the start, and the dispute card names both issues with their summaries.
+- No agent request moves the day on screen any more. `day.inputs`, `day.edits`, `naming.offers`, `tempo.sync` and `worklog.add` read and write the day they name directly, and leave the screen and its saved view where the user left them.
+- Auto mode no longer books a done Jira issue: it leaves that band to you and says why in its readout.
+- Each piece of a background band reads the minutes it lost, not the total of the whole stretch.
+- `timetrack rows` and `timetrack snapshot` read a day without moving the day on screen, so several requests at once no longer race and time out.
+- Build the development app with call transcription, so its switch shows in Settings
+- Agent sessions that run one after another on the same feature branch of one checkout are one piece of work, so short back-to-back sessions become one row instead of one 15-minute row each.
+- Draw short rows that all ran inside one quarter hour side by side in that quarter, instead of pushing each one a quarter hour later, which drew a running day's rows in the future.
+- The card of a parallel session on one ticket reads its share of what all sessions book together, for example `15m of 45m`.
+
 ## 0.2.0-next.4
 
 ### Patch Changes
