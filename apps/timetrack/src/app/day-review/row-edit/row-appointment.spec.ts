@@ -1,5 +1,5 @@
 import { ReviewedRow } from '@ethlete/timetrack';
-import { EXCLUDED_THEME, appointmentOf } from './row-appointment';
+import { EXCLUDED_THEME, appointmentLabel, appointmentOf, sharedMsByRow } from './row-appointment';
 
 const rowOf = (overrides: Partial<ReviewedRow>) =>
   ({
@@ -10,6 +10,7 @@ const rowOf = (overrides: Partial<ReviewedRow>) =>
     description: '',
     confidence: 'weak',
     state: 'pending',
+    evidence: [],
     ...overrides,
   }) as ReviewedRow;
 
@@ -28,5 +29,27 @@ describe('appointmentOf colour', () => {
 
   it('still paints an unnamed attended row as a weak guess', () => {
     expect(appointmentOf({ row: rowOf({}) }).colorToken).toBe('warning');
+  });
+});
+
+describe('appointmentLabel of parallel sessions', () => {
+  it("reads each session's share out of what the ticket books over the span", () => {
+    const at = (minute: number) => new Date(Date.UTC(2026, 0, 5, 17, minute));
+    const session = (id: string, durationMs: number) =>
+      rowOf({ id, from: at(15), to: at(60), durationMs, issueKey: 'ABC-1', laneKey: 'repo:/a' });
+    const rows = [session('a', 900_000), session('b', 1_800_000)];
+    const shared = sharedMsByRow(rows);
+
+    expect(rows.map((row) => appointmentLabel(appointmentOf({ row, sharedMs: shared.get(row.id) })))).toEqual([
+      'ABC-1 · 15m of 45m',
+      'ABC-1 · 30m of 45m',
+    ]);
+  });
+
+  it('reads a row alone on its ticket without a share', () => {
+    const row = rowOf({ issueKey: 'ABC-1', laneKey: 'repo:/a' });
+
+    expect(sharedMsByRow([row]).size).toBe(0);
+    expect(appointmentLabel(appointmentOf({ row }))).toBe('ABC-1 · 1h 0m');
   });
 });

@@ -54,7 +54,8 @@ export const sharingTicket = <T extends TicketRow>(rows: readonly T[]): Set<T> =
   return shared;
 };
 
-const siblingGroupsOf = <T extends TicketRow>(rows: readonly T[]): T[][] => {
+/** The rows {@link sharingTicket} returns, grouped by ticket and lane into runs that overlap on the clock. */
+export const siblingGroupsOf = <T extends TicketRow>(rows: readonly T[]): T[][] => {
   const groups: { ticket: string; end: number; members: T[] }[] = [];
 
   for (const row of [...sharingTicket(rows)].sort((a, b) => a.from.getTime() - b.from.getTime())) {

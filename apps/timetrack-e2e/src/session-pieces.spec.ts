@@ -85,7 +85,7 @@ const seedDay = async (page: Page, options: { prompts: readonly number[]; end: n
 const boxOf = async (locator: Locator) => (await locator.boundingBox()) ?? { x: 0, y: 0, width: 0, height: 0 };
 
 const minutesOf = (title: string) => {
-  const [, hours, minutes] = /· (?:(\d+)h )?(\d+)m$/.exec(title) ?? [];
+  const [, hours, minutes] = /· (?:(\d+)h )?(\d+)m(?: of (?:\d+h )?\d+m)?$/.exec(title) ?? [];
 
   return Number(hours ?? 0) * 60 + Number(minutes ?? 0);
 };

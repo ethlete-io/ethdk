@@ -60,6 +60,7 @@ import {
   rowEntryOf,
   unbookedLabel,
   unnamedLabelOf,
+  sharedMsByRow,
 } from './row-edit/row-appointment';
 import { rowActionsFor } from './row-edit/row-actions';
 import { injectRowEditSurface } from './row-edit/row-edit-surface';
@@ -941,6 +942,7 @@ export class DayTimelineComponent {
   protected appointments = computed<Appointment<TimelineEntry>[]>(() => {
     const storyIds = this.storyIdOf();
     const agentUsage = this.store.agentUsageByRow();
+    const sharedMs = sharedMsByRow(this.rows());
 
     return [
       ...this.stories().map(([issueKey, rows]): Appointment<TimelineEntry> => ({
@@ -964,6 +966,7 @@ export class DayTimelineComponent {
           standInName: this.standInNameOf(row),
           excludedReason: this.excludedReasonOf(row),
           agentUsage: agentUsage.get(row.id),
+          sharedMs: sharedMs.get(row.id),
         });
       }),
     ];

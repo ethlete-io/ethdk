@@ -7,6 +7,7 @@ import {
   formatDurationMs,
   isManualRow,
   isStandInRow,
+  siblingGroupsOf,
   syncsInState,
 } from '@ethlete/timetrack';
 
@@ -83,7 +84,19 @@ export type RowEntry = {
   standInName?: string;
   excludedReason?: string;
   agentUsage?: TokenUsage;
+  /** What the parallel sessions on this row's ticket book together, when the row is one of them. */
+  sharedMs?: number;
 };
+
+/** What the parallel sessions on each shared row's ticket book together, by row id. */
+export const sharedMsByRow = (rows: readonly ReviewedRow[]) =>
+  new Map(
+    siblingGroupsOf(rows.filter((row) => !isManualRow(row))).flatMap((group) => {
+      const totalMs = group.reduce((sum, row) => sum + row.durationMs, 0);
+
+      return group.map((row) => [row.id, totalMs] as const);
+    }),
+  );
 
 /** A story or epic several of the day's rows roll up to. Drawn in the all-day strip, never billed. */
 export type StoryEntry = { kind: 'story'; issueKey: string };
@@ -127,6 +140,7 @@ export const appointmentOf = (options: {
   standInName?: string;
   excludedReason?: string;
   agentUsage?: TokenUsage;
+  sharedMs?: number;
 }): Appointment<TimelineEntry> => ({
   id: options.row.id,
   parentId: options.parentId ?? null,
@@ -143,6 +157,7 @@ export const appointmentOf = (options: {
     standInName: options.standInName,
     excludedReason: options.excludedReason,
     agentUsage: options.agentUsage,
+    sharedMs: options.sharedMs,
   },
 });
 
@@ -165,7 +180,10 @@ const disputedLabelOf = (row: ReviewedRow) => {
   return other ? ` · or ${other}?` : '';
 };
 
-/** What a band reads: the issue it is logged against, and how much time it logs. */
+/**
+ * What a band reads: the issue it is logged against, and how much time it logs. A parallel session's
+ * band adds what all sessions on its ticket book together, so its share reads as a share.
+ */
 export const appointmentLabel = (appointment: Appointment) => {
   const entry = rowEntryOf(appointment);
 
@@ -180,8 +198,9 @@ export const appointmentLabel = (appointment: Appointment) => {
     });
   const alone = entry.row.issueKey && entry.row.unattended ? ' · nobody was here' : '';
   const disputed = disputedLabelOf(entry.row);
+  const shared = entry.sharedMs ? ` of ${formatDurationMs(entry.sharedMs)}` : '';
 
-  return `${named} · ${formatDurationMs(entry.durationMs)}${alone}${disputed}${isManualRow(entry.row) ? ' · by hand' : ''}`;
+  return `${named} · ${formatDurationMs(entry.durationMs)}${shared}${alone}${disputed}${isManualRow(entry.row) ? ' · by hand' : ''}`;
 };
 
 /** What a band adds when part of the time it draws is remote work the day does not book. See ADR 0033. */
