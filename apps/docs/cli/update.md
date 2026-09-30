@@ -107,11 +107,18 @@ An `assisted` task file states one change and how to apply it. Hand it to an age
 
 ```json
 {
-  "updateAgentCommand": "claude --permission-mode acceptEdits -p"
+  "updateAgentCommand": "claude --permission-mode acceptEdits"
 }
 ```
 
-The agent runs headless, so it has to be allowed to edit files without asking: a plain `claude -p` can read the task but not apply it.
+Without the key, `et update --ai` lists the agent CLIs it finds on `PATH` - Claude Code, Codex, Gemini CLI, GitHub Copilot CLI and Cursor Agent - and saves the command you pick, or one you type. It adds the file to `.gitignore` when git does not ignore it yet. Without a terminal it only prints the commands and stops.
+
+Each CLI is offered twice:
+
+- **Interactive** opens a normal agent session with the prompt. You see its progress, and it can ask you when a task needs a decision. Close the session when the task is done, and the next task starts.
+- **Headless** runs to the end with no question and prints only its final answer. A task that needs a decision stays open.
+
+Pick the interactive command for a large migration. Either way the agent has to be allowed to edit files without asking: a plain `claude -p` can read the task but not apply it.
 
 `et update --ai` runs the command once per assisted task, in order, so each run has one change to make. Each run gets a prompt that names the task file and asks the agent to delete it once the change is complete. The prompt is appended to the command, or replaces `<prompt>` in it; `<file>` is replaced by the path of the task file alone, for a command that brings its own prompt. Both reach the shell as the quoted variables `ETHLETE_UPDATE_PROMPT` and `ETHLETE_UPDATE_TASK_FILE`, so a repo path with shell characters is passed as it is.
 
@@ -119,7 +126,7 @@ Each task is reported as its run ends: **done** when the agent deleted the task 
 
 `--ai` also works when there is nothing to update: `et update --ai`, or `et update --continue --ai` with no unfinished run, hands the tasks still open in `.ethlete/update/tasks.json` to the agent. Run it again to retry the ones that are left.
 
-Nothing runs an agent unless `--ai` is passed, and no agent is auto-detected: without the key, `--ai` names the key and stops before it changes anything.
+Nothing runs an agent unless `--ai` is passed, and nothing is saved until you pick a command.
 
 Repos that use `@ethlete/agent-rules` also get the `sdk-update` skill, which teaches an agent how to work the whole list on its own. The skill is only written while `@ethlete/cli` is installed, so install both.
 

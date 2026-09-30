@@ -6,8 +6,8 @@ import { UpdateTask } from './tasks';
 /** Where the agent command sits in `ethlete.config.local.json`. */
 export const AGENT_COMMAND_KEY = 'updateAgentCommand';
 
-/** An agent command that can edit files without asking, for the docs and the error that names the key. */
-export const AGENT_COMMAND_EXAMPLE = 'claude --permission-mode acceptEdits -p';
+/** An interactive agent command that can edit files without asking, for the error that names the key. */
+export const AGENT_COMMAND_EXAMPLE = 'claude --permission-mode acceptEdits';
 
 /** Where the command template takes the whole prompt. */
 export const PROMPT_PLACEHOLDER = '<prompt>';
@@ -121,6 +121,10 @@ export const runAgentTasks = (options: {
 }): AgentRun[] => {
   const { root, template } = options;
   const tasks = assistedTasks(options.tasks);
+
+  console.log(
+    '\n  Each task gets its own agent session. If a session stays open after its task, close it to start the next.',
+  );
 
   return tasks.map((task, index) => {
     const label = `[${index + 1}/${tasks.length}] ${task.packageName} ${task.name}`;

@@ -1,6 +1,7 @@
 import { hasUncommittedChanges } from '../api/git';
 import { readLocalConfig } from '../config/local-config';
-import { AGENT_COMMAND_EXAMPLE, AGENT_COMMAND_KEY, AgentRunState, assistedTasks, runAgentTasks } from './ai';
+import { AgentRunState, assistedTasks, runAgentTasks } from './ai';
+import { setUpAgentCommand } from './agent-setup';
 import { AGENT_RULES_PACKAGE, planAgentRulesSync, runAgentRulesSync } from './agent-rules-sync';
 import { parseUpdateArgs } from './args';
 import { UPDATE_IGNORE_ENTRY, ignoreUpdateDir } from './gitignore';
@@ -477,16 +478,11 @@ export const updateCommand = async ({
     return 1;
   }
 
-  const agent = args.ai ? readLocalConfig(root).config.updateAgentCommand : undefined;
+  const agent = args.ai
+    ? (readLocalConfig(root).config.updateAgentCommand ?? (await setUpAgentCommand({ root })))
+    : undefined;
 
-  if (args.ai && !agent) {
-    console.error(
-      `--ai needs "${AGENT_COMMAND_KEY}" in ethlete.config.local.json, for example "${AGENT_COMMAND_EXAMPLE}".\n` +
-        'Nothing was changed.',
-    );
-
-    return 1;
-  }
+  if (args.ai && !agent) return 1;
 
   const manifest = readManifest(root);
 
