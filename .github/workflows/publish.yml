@@ -88,13 +88,18 @@ jobs:
             name=$(jq -r .name "$dir/package.json")
             version=$(jq -r .version "$dir/package.json")
             tag="$name@$version"
-            if gh release view "$tag" >/dev/null 2>&1; then
+            draft=$(gh release view "$tag" --json isDraft --jq .isDraft 2>/dev/null || echo missing)
+            if [ "$draft" = false ]; then
               continue
             fi
-            awk -v heading="## $version" '$0 == heading { found = 1; next } found && /^## / { exit } found' "$dir/CHANGELOG.md" > notes.md
-            prerelease=()
-            [[ "$version" == *-* ]] && prerelease=(--prerelease)
-            gh release create "$tag" --draft --target "$GITHUB_SHA" --title "$tag" --notes-file notes.md "${prerelease[@]}"
+            if [ "$draft" = true ]; then
+              gh release edit "$tag" --target "$GITHUB_SHA"
+            else
+              awk -v heading="## $version" '$0 == heading { found = 1; next } found && /^## / { exit } found' "$dir/CHANGELOG.md" > notes.md
+              prerelease=()
+              [[ "$version" == *-* ]] && prerelease=(--prerelease)
+              gh release create "$tag" --draft --target "$GITHUB_SHA" --title "$tag" --notes-file notes.md "${prerelease[@]}"
+            fi
             apps=$(jq -c --arg project "$name" --arg dir "$dir" --arg tag "$tag" --arg version "$version" '. + [{ project: $project, dir: $dir, tag: $tag, version: $version }]' <<< "$apps")
           done
           echo "apps=$apps" >> "$GITHUB_OUTPUT"
