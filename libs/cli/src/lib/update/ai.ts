@@ -18,7 +18,8 @@ export const FILE_PLACEHOLDER = '<file>';
 /** The prompt one assisted task is handed to an agent with. */
 export const agentPrompt = (taskPath: string) =>
   `Apply the migration task described in ${taskPath} to this repository. ` +
-  'Follow its instructions, then delete that file once the change is complete.';
+  'Follow its instructions, then delete that file once the change is complete. ' +
+  'Do not commit: et update commits your change.';
 
 export const PROMPT_ENV = 'ETHLETE_UPDATE_PROMPT';
 export const FILE_ENV = 'ETHLETE_UPDATE_TASK_FILE';
@@ -113,12 +114,16 @@ const runOne = (options: { root: string; template: string; task: UpdateTask }): 
 /**
  * Runs the configured agent once per assisted task, in order, so each run has one change to make, and
  * reports each one as it ends. The command is a user-written string, so it runs through a shell.
+ * `afterRun` runs after each task, before the next one starts; it is how `et update` commits a task that
+ * ended done, so the report of any other task says it is not committed.
  */
 export const runAgentTasks = (options: {
   root: string;
   template: string;
   tasks: readonly UpdateTask[];
+  afterRun?: (run: AgentRun) => void;
 }): AgentRun[] => {
+  const { afterRun } = options;
   const { root, template } = options;
   const tasks = assistedTasks(options.tasks);
 
@@ -134,7 +139,9 @@ export const runAgentTasks = (options: {
     const run = runOne({ root, template, task });
 
     if (run.state === 'done') console.log(`\n  ${label}: done`);
-    else console.error(`\n  ${label}: ${run.reason}`);
+    else console.error(`\n  ${label}: ${run.reason}${afterRun ? ', so it is not committed' : ''}`);
+
+    afterRun?.(run);
 
     return run;
   });

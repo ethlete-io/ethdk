@@ -1,9 +1,10 @@
 import { hasUncommittedChanges } from '../api/git';
 import { readLocalConfig } from '../config/local-config';
-import { AgentRunState, assistedTasks, runAgentTasks } from './ai';
+import { AgentRun, AgentRunState, assistedTasks, runAgentTasks } from './ai';
 import { setUpAgentCommand } from './agent-setup';
 import { AGENT_RULES_PACKAGE, planAgentRulesSync, runAgentRulesSync } from './agent-rules-sync';
 import { parseUpdateArgs } from './args';
+import { CommitState, StepCommitter, createStepCommitter, startCommits } from './commits';
 import { UPDATE_IGNORE_ENTRY, ignoreUpdateDir } from './gitignore';
 import { readPackageMigrations } from './migration-manifest';
 import { PackageManager, detectPackageManager, spawnPackageManager } from './package-manager';
@@ -67,6 +68,7 @@ const usage = (invocation: string) =>
     '  --no-install    Write package.json, then stop. Install yourself and re-run with --continue',
     '  --continue      Run the migrations of an update that was written but never finished',
     '  --ai            Hand every open agent-assisted task to the command in updateAgentCommand',
+    '  --no-commit     Leave every change uncommitted. By default each step is committed by itself',
     '  --force         Update even when the working tree has uncommitted changes',
   ].join('\n');
 
@@ -198,16 +200,57 @@ const printOutcomes = (outcomes: readonly MigrationOutcome[], syncFailure: SyncF
   if (syncFailure) console.error(`  - ${syncFailure.command}: ${syncFailure.reason}`);
 };
 
+const SYNC_MESSAGE = 'chore(deps): Sync the ethlete agent rules';
+
+const migrationMessage = (options: { packageName: string; name: string }) =>
+  `chore(deps): Apply the ${options.packageName} ${options.name} migration`;
+
+const NOT_A_CHECKOUT = '\n  This is not a git checkout, so nothing is committed.';
+
+const committerFor = (root: string, state: CommitState | undefined) =>
+  state &&
+  createStepCommitter({
+    root,
+    state,
+    save: (commits) => {
+      const saved = readPendingUpdate(root);
+
+      if (saved) writePendingUpdate({ root, pending: { ...saved, commits } });
+    },
+  });
+
+const commitBump = (options: { committer: StepCommitter | undefined; updates: readonly UpdatedPackage[] }) => {
+  const { committer, updates } = options;
+
+  if (!committer || committer.state.bumped) return;
+
+  committer.commit({
+    message: 'chore(deps): Update the ethlete SDK',
+    body: updates.map((update) => `${update.name} ${update.from ?? 'not installed'} → ${update.to}`).join('\n'),
+  });
+  committer.markBumped();
+};
+
+const commitMigration = (committer: StepCommitter | undefined, outcome: MigrationOutcome) => {
+  if (outcome.state === 'applied')
+    committer?.commit({
+      message: migrationMessage({ packageName: outcome.pending.packageName, name: outcome.pending.migration.name }),
+    });
+  else if (outcome.state === 'failed') committer?.skip();
+};
+
+type SyncResult = { synced: boolean; failure?: SyncFailure };
+
 const syncAgentRules = (options: {
   root: string;
   manager: PackageManager;
   updates: readonly UpdatedPackage[];
   dryRun: boolean;
-}): SyncFailure | undefined => {
+}): SyncResult => {
   const { root, manager, updates, dryRun } = options;
   const plan = planAgentRulesSync({ root, manager, updates });
 
-  if (plan.state === 'not-updated') return undefined;
+  if (plan.state === 'not-updated') return { synced: false };
 
   const command = plan.command.join(' ');
 
@@ -216,29 +259,34 @@ const syncAgentRules = (options: {
       `\n  ${AGENT_RULES_PACKAGE} moved, but this repo has no config for it. Run \`${command}\` where it has one.`,
     );
 
-    return undefined;
+    return { synced: false };
   }
 
   if (dryRun) {
     console.log(`\n  ${AGENT_RULES_PACKAGE} moved: a real run regenerates the agent rules with \`${command}\`.`);
 
-    return undefined;
+    return { synced: false };
   }
 
   console.log(`\n  ${AGENT_RULES_PACKAGE} moved, so the agent rules and skills are regenerated.\n\n  ${command}\n`);
 
   const outcome = runAgentRulesSync(plan, root);
 
-  if (outcome.state !== 'failed') return undefined;
+  if (outcome.state !== 'failed') return { synced: true };
 
   console.error(`  The agent rules sync failed: ${outcome.reason}`);
 
-  return { command, reason: outcome.reason };
+  return { synced: false, failure: { command, reason: outcome.reason } };
 };
 
 /** Hands the open assisted tasks to the agent and reports the runs. False when one of them failed. */
-const handToAgent = (options: { root: string; template: string; tasks: readonly UpdateTask[] }) => {
-  const { root, template, tasks } = options;
+const handToAgent = (options: {
+  root: string;
+  template: string;
+  tasks: readonly UpdateTask[];
+  committer: StepCommitter | undefined;
+}) => {
+  const { root, template, tasks, committer } = options;
 
   if (assistedTasks(tasks).length === 0) {
     console.log('\n  --ai had nothing to do: no open task is agent-assisted.');
@@ -246,7 +294,17 @@ const handToAgent = (options: { root: string; template: string; tasks: readonly 
     return true;
   }
 
-  const runs = runAgentTasks({ root, template, tasks });
+  const runs = runAgentTasks({
+    root,
+    template,
+    tasks,
+    ...(committer && {
+      afterRun: (run: AgentRun) => {
+        if (run.state === 'done') committer.commit({ message: migrationMessage(run.task) });
+        else committer.skip();
+      },
+    }),
+  });
   const count = (state: AgentRunState) => runs.filter((run) => run.state === state).length;
 
   console.log(`\n  ${count('done')} agent task(s) done, ${count('open')} still open, ${count('failed')} failed`);
@@ -263,9 +321,16 @@ const CLI_PACKAGE = '@ethlete/cli';
  * Runs the migration phase in the `et` the install just put in place. The running process is the old one, and
  * it lacks every step a newer CLI added to the phase.
  */
-const continueWithInstalledCli = (options: { root: string; manager: PackageManager; ai: boolean }) => {
-  const { root, manager, ai } = options;
-  const [binary, ...args] = [...manager.run, 'et', 'update', '--continue', ...(ai ? ['--ai'] : [])];
+const continueWithInstalledCli = (options: { root: string; manager: PackageManager; ai: boolean; commit: boolean }) => {
+  const { root, manager, ai, commit } = options;
+  const [binary, ...args] = [
+    ...manager.run,
+    'et',
+    'update',
+    '--continue',
+    ...(ai ? ['--ai'] : []),
+    ...(commit ? [] : ['--no-commit']),
+  ];
 
   if (binary === undefined) return 1;
 
@@ -286,8 +351,9 @@ const runMigrationPhase = (options: {
   from: Record<string, string>;
   dryRun: boolean;
   agent: string | undefined;
+  committer: StepCommitter | undefined;
 }) => {
-  const { root, manager, pendingUpdate, updates, from, dryRun, agent } = options;
+  const { root, manager, pendingUpdate, updates, from, dryRun, agent, committer } = options;
   const finished = pendingUpdate.finished ?? [];
   const collected = collectMigrations({ root, updates, from });
   const skipped = collected.pending.filter((entry) =>
@@ -303,7 +369,11 @@ const runMigrationPhase = (options: {
   for (const problem of collected.problems) console.error(`  ${problem}`);
 
   // Before the tasks and any --ai run: the tasks assume the skills of the version that was installed.
-  const syncFailure = syncAgentRules({ root, manager, updates, dryRun });
+  const sync = syncAgentRules({ root, manager, updates, dryRun });
+  const syncFailure = sync.failure;
+
+  if (sync.synced) committer?.commit({ message: SYNC_MESSAGE });
+  else if (syncFailure) committer?.skip();
 
   const nothingPending = collected.pending.length === 0;
 
@@ -317,7 +387,13 @@ const runMigrationPhase = (options: {
     }
   }
 
-  const outcomes = runPendingMigrations({ root, manager, pending: collected.pending, dryRun });
+  const outcomes = runPendingMigrations({
+    root,
+    manager,
+    pending: collected.pending,
+    dryRun,
+    afterEach: (outcome) => commitMigration(committer, outcome),
+  });
 
   if (!nothingPending) printOutcomes(outcomes, syncFailure);
 
@@ -326,7 +402,14 @@ const runMigrationPhase = (options: {
       .filter((outcome) => outcome.state === 'applied')
       .map((outcome) => ({ packageName: outcome.pending.packageName, name: outcome.pending.migration.name }));
 
-    writePendingUpdate({ root, pending: { ...pendingUpdate, finished: [...finished, ...applied] } });
+    writePendingUpdate({
+      root,
+      pending: {
+        ...pendingUpdate,
+        ...(committer && { commits: committer.state }),
+        finished: [...finished, ...applied],
+      },
+    });
   }
 
   if (dryRun) {
@@ -352,7 +435,7 @@ const runMigrationPhase = (options: {
     console.log(`  The same list for an agent: ${written.dataPath}`);
   }
 
-  const agentOk = agent === undefined || handToAgent({ root, template: agent, tasks: written.tasks });
+  const agentOk = agent === undefined || handToAgent({ root, template: agent, tasks: written.tasks, committer });
 
   return {
     agentFailed: !agentOk,
@@ -373,8 +456,8 @@ const continueHint = (invocation: string) =>
   `\nRun \`${invocation} --continue\` again once the failures above are fixed.`;
 
 /** Hands the tasks an earlier run left to the agent, for an `--ai` run that has no update to make. */
-const workOpenTasks = (options: { root: string; agent: string; invocation: string }) => {
-  const { root, agent, invocation } = options;
+const workOpenTasks = (options: { root: string; agent: string; invocation: string; commit: boolean }) => {
+  const { root, agent, invocation, commit } = options;
   const tasks = refreshUpdateTasks(root);
 
   if (tasks === undefined) {
@@ -383,7 +466,11 @@ const workOpenTasks = (options: { root: string; agent: string; invocation: strin
     return 0;
   }
 
-  if (handToAgent({ root, template: agent, tasks })) return 0;
+  const commits = commit ? startCommits(root) : undefined;
+
+  if (commit && !commits) console.log(NOT_A_CHECKOUT);
+
+  if (handToAgent({ root, template: agent, tasks, committer: committerFor(root, commits) })) return 0;
 
   console.error(agentFailedHint(invocation));
 
@@ -411,7 +498,7 @@ const resume = (options: {
   if (!pending && agent !== undefined && !argv.dryRun) {
     console.log(`No update to continue: handing the open tasks in ${UPDATE_DIR} to the agent.`);
 
-    return workOpenTasks({ root, agent, invocation });
+    return workOpenTasks({ root, agent, invocation, commit: argv.commit });
   }
 
   if (!pending) {
@@ -432,6 +519,10 @@ const resume = (options: {
 
   printUpdates(updates);
 
+  const committer = argv.commit && !argv.dryRun ? committerFor(root, pending.commits) : undefined;
+
+  commitBump({ committer, updates });
+
   const result = runMigrationPhase({
     root,
     manager,
@@ -440,6 +531,7 @@ const resume = (options: {
     from: { ...pending.from, ...argv.from },
     dryRun: argv.dryRun,
     agent,
+    committer,
   });
 
   if (argv.dryRun) return result.failed ? 1 : 0;
@@ -542,7 +634,7 @@ export const updateCommand = async ({
 
     if (args.check || args.dryRun) return 0;
 
-    if (agent !== undefined) return workOpenTasks({ root, agent, invocation });
+    if (agent !== undefined) return workOpenTasks({ root, agent, invocation, commit: args.commit });
 
     refreshUpdateTasks(root);
 
@@ -594,6 +686,10 @@ export const updateCommand = async ({
     return 1;
   }
 
+  const commits = args.commit ? startCommits(root) : undefined;
+
+  if (args.commit && !commits) console.log(NOT_A_CHECKOUT);
+
   ignoreTaskList(root);
 
   const changedManifests = writeRanges({ root, writes: writable.flatMap((update) => update.writes) });
@@ -602,6 +698,7 @@ export const updateCommand = async ({
     startedAt: new Date().toISOString(),
     packages: writable.map((update) => ({ name: update.name, from: update.from ?? null, to: update.to })),
     ...(Object.keys(args.from).length > 0 ? { from: args.from } : {}),
+    ...(commits && { commits }),
   };
 
   writePendingUpdate({ root, pending: pendingUpdate });
@@ -632,8 +729,12 @@ export const updateCommand = async ({
     return 1;
   }
 
+  const committer = committerFor(root, commits);
+
+  commitBump({ committer, updates: writable });
+
   if (writable.some((update) => update.name === CLI_PACKAGE && update.from !== update.to)) {
-    return continueWithInstalledCli({ root, manager, ai: args.ai });
+    return continueWithInstalledCli({ root, manager, ai: args.ai, commit: args.commit });
   }
 
   const result = runMigrationPhase({
@@ -644,6 +745,7 @@ export const updateCommand = async ({
     from: args.from,
     dryRun: false,
     agent,
+    committer,
   });
 
   if (result.failed) {

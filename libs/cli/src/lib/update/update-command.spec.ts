@@ -1,3 +1,4 @@
+import { execFileSync } from 'child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -10,13 +11,15 @@ const spawnSync = vi.hoisted(() =>
   vi.fn<(binary: string, args: string[], options?: { env?: NodeJS.ProcessEnv }) => { status: number }>(),
 );
 
+const REAL_GIT = ['ls-files', 'rev-parse', 'status', 'add', 'commit', 'reset'];
+
 vi.mock('child_process', async (importOriginal) => {
   const actual = await importOriginal<typeof import('child_process')>();
 
   return {
     ...actual,
     spawnSync: (binary: string, args: string[], options?: { env?: NodeJS.ProcessEnv }) =>
-      binary === 'git' && args[0] === 'ls-files'
+      binary === 'git' && REAL_GIT.includes(args[0] ?? '')
         ? actual.spawnSync(binary, args, options)
         : spawnSync(binary, args, options),
   };
@@ -425,5 +428,155 @@ describe('the printed plan', () => {
 
     expect(console.log).toHaveBeenCalledWith('  @ethlete/core         5.0.0 → 5.1.0');
     expect(console.log).toHaveBeenCalledWith('  @ethlete/agent-rules  0.1.0 → 0.2.0');
+  });
+});
+
+const gitIn = (root: string, ...args: string[]) => execFileSync('git', args, { cwd: root, encoding: 'utf8' });
+
+const makeGitRepo = () => {
+  const root = makeRepo();
+
+  rmSync(join(root, UPDATE_DIR), { recursive: true });
+  writeJson(join(root, 'node_modules', '@ethlete', 'core', 'migrations.json'), {
+    migrations: ['first', 'second'].map((name) => ({
+      name,
+      version: '5.2.0',
+      kind: 'auto',
+      description: `Rewrite ${name}`,
+      generator: `@ethlete/core:${name}`,
+    })),
+  });
+  writeFileSync(join(root, '.gitignore'), 'node_modules/\n.ethlete/update/\n', 'utf8');
+  writeJson(join(root, 'src', 'mine.ts'), 'mine');
+  gitIn(root, 'init', '--quiet');
+  gitIn(root, 'config', 'user.email', 'test@example.com');
+  gitIn(root, 'config', 'user.name', 'Test');
+  gitIn(root, 'config', 'commit.gpgsign', 'false');
+  gitIn(root, 'config', 'core.hooksPath', mkdtempSync(join(tmpdir(), 'cli-update-hooks-')));
+  gitIn(root, 'add', '--all');
+  gitIn(root, 'commit', '--quiet', '-m', 'initial');
+  gitIn(root, 'tag', 'initial');
+  writeFileSync(join(root, 'src', 'mine.ts'), 'my own work', 'utf8');
+
+  return root;
+};
+
+const runTools = (root: string, writes: Record<string, string>) =>
+  spawnSync.mockImplementation((binary, args) => {
+    if (binary === 'yarn' && args[0] === 'install') writeFileSync(join(root, 'yarn.lock'), 'lock', 'utf8');
+
+    for (const [generator, path] of Object.entries(writes)) {
+      if (args.includes(generator)) writeFileSync(join(root, path), generator, 'utf8');
+    }
+
+    return { status: 0 };
+  });
+
+const subjects = (root: string) => gitIn(root, 'log', '--format=%s').trim().split('\n');
+
+const committedFiles = (root: string) =>
+  gitIn(root, 'log', '--name-only', '--format=', 'initial..HEAD').trim().split('\n').filter(Boolean);
+
+describe('the commits of et update', () => {
+  it("commits the bump and each codemod by itself, and leaves the user's changes alone", async () => {
+    const root = makeGitRepo();
+
+    stubRegistry('5.2.0');
+    runTools(root, { '@ethlete/core:first': 'src/first.ts', '@ethlete/core:second': 'src/second.ts' });
+
+    expect(await updateCommand({ argv: ['--force'], root })).toBe(0);
+    expect(subjects(root)).toEqual([
+      'chore(deps): Apply the @ethlete/core second migration',
+      'chore(deps): Apply the @ethlete/core first migration',
+      'chore(deps): Update the ethlete SDK',
+      'initial',
+    ]);
+    expect(gitIn(root, 'log', '-1', '--format=%b', 'HEAD~2').trim()).toBe('@ethlete/core 5.1.0 → 5.2.0');
+    expect(gitIn(root, 'show', '--name-only', '--format=', 'HEAD~2').trim()).toBe('package.json\nyarn.lock');
+    expect(gitIn(root, 'show', '--name-only', '--format=', 'HEAD~1').trim()).toBe('src/first.ts');
+    expect(gitIn(root, 'status', '--porcelain')).toBe(' M src/mine.ts\n');
+  });
+
+  it('does not commit a codemod that rewrote a file the user had changed', async () => {
+    const root = makeGitRepo();
+
+    stubRegistry('5.2.0');
+    runTools(root, { '@ethlete/core:first': 'src/mine.ts', '@ethlete/core:second': 'src/second.ts' });
+
+    expect(await updateCommand({ argv: ['--force'], root })).toBe(0);
+    expect(committedFiles(root)).not.toContain('src/mine.ts');
+    expect(subjects(root)).not.toContain('chore(deps): Apply the @ethlete/core first migration');
+    expect(subjects(root)[0]).toBe('chore(deps): Apply the @ethlete/core second migration');
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Not committed: src/mine.ts'));
+  });
+
+  it('keeps the snapshot of the run for a --continue after --no-install', async () => {
+    const root = makeGitRepo();
+
+    stubRegistry('5.2.0');
+    runTools(root, { '@ethlete/core:first': 'src/mine.ts' });
+
+    expect(await updateCommand({ argv: ['--force', '--no-install'], root })).toBe(0);
+    expect(subjects(root)).toEqual(['initial']);
+
+    writeFileSync(join(root, 'yarn.lock'), 'lock', 'utf8');
+
+    expect(await updateCommand({ argv: ['--continue'], root })).toBe(0);
+    expect(subjects(root)).toEqual(['chore(deps): Update the ethlete SDK', 'initial']);
+    expect(committedFiles(root)).not.toContain('src/mine.ts');
+  });
+
+  it('commits an agent task that ends done, and not one that stays open', async () => {
+    const root = withAgent(makeGitRepo());
+
+    rmSync(join(root, PENDING_FILE), { force: true });
+    withOpenTasks(root);
+    writeFileSync(join(root, UPDATE_DIR, 'core-done.md'), 'Change it.', 'utf8');
+    spawnSync.mockImplementation((command: string, options) => {
+      const taskFile = (options as { env?: NodeJS.ProcessEnv } | undefined)?.env?.['ETHLETE_UPDATE_TASK_FILE'] ?? '';
+
+      if (!command.startsWith('agent -p')) return { status: 0 };
+
+      if (taskFile.endsWith('core-done.md')) {
+        rmSync(taskFile);
+        writeFileSync(join(root, 'src', 'done.ts'), 'done', 'utf8');
+      } else writeFileSync(join(root, 'src', 'open.ts'), 'open', 'utf8');
+
+      return { status: 0 };
+    });
+
+    expect(await updateCommand({ argv: ['--continue', '--ai'], root })).toBe(0);
+    expect(subjects(root)).toEqual(['chore(deps): Apply the @ethlete/core done migration', 'initial']);
+    expect(committedFiles(root)).toEqual(['src/done.ts']);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('so it is not committed'));
+  });
+
+  it('commits nothing with --no-commit', async () => {
+    const root = makeGitRepo();
+
+    stubRegistry('5.2.0');
+    runTools(root, { '@ethlete/core:first': 'src/first.ts' });
+
+    expect(await updateCommand({ argv: ['--force', '--no-commit'], root })).toBe(0);
+    expect(subjects(root)).toEqual(['initial']);
+  });
+
+  it('passes --no-commit to the installed CLI', async () => {
+    const root = makeGitRepo();
+
+    writeJson(join(root, 'package.json'), {
+      name: 'app',
+      packageManager: 'yarn@1.22.21',
+      devDependencies: { '@ethlete/cli': '2.0.0' },
+    });
+    writeJson(join(root, 'node_modules', '@ethlete', 'cli', 'package.json'), {
+      name: '@ethlete/cli',
+      version: '2.0.0',
+    });
+    stubRegistry('2.1.0');
+    spawnSync.mockReturnValue({ status: 0 });
+
+    expect(await updateCommand({ argv: ['--force', '--no-commit'], root })).toBe(0);
+    expect(spawnSync).toHaveBeenCalledWith('yarn', ['et', 'update', '--continue', '--no-commit'], expect.anything());
   });
 });

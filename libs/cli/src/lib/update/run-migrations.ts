@@ -74,26 +74,43 @@ export const manualGeneratorCommand = (options: { manager: PackageManager; migra
     ' ',
   );
 
+const runOne = (options: {
+  root: string;
+  manager: PackageManager;
+  entry: PendingMigration;
+  dryRun: boolean;
+  nxAvailable: boolean;
+}): MigrationOutcome => {
+  const { root, manager, entry, dryRun, nxAvailable } = options;
+
+  if (entry.migration.kind !== 'auto') return { pending: entry, state: 'task' };
+
+  if (!nxAvailable) {
+    return {
+      pending: entry,
+      state: 'unsupported',
+      reason: 'this repo has no Nx, so the generator has to be run by hand',
+    };
+  }
+
+  return runAutoMigration({ root, manager, pending: entry, dryRun });
+};
+
 export const runPendingMigrations = (options: {
   root: string;
   manager: PackageManager;
   pending: readonly PendingMigration[];
   dryRun: boolean;
+  afterEach?: (outcome: MigrationOutcome) => void;
 }): MigrationOutcome[] => {
-  const { root, manager, pending, dryRun } = options;
+  const { root, manager, pending, dryRun, afterEach } = options;
   const nxAvailable = hasNx(root);
 
   return pending.map((entry) => {
-    if (entry.migration.kind !== 'auto') return { pending: entry, state: 'task' };
+    const outcome = runOne({ root, manager, entry, dryRun, nxAvailable });
 
-    if (!nxAvailable) {
-      return {
-        pending: entry,
-        state: 'unsupported',
-        reason: 'this repo has no Nx, so the generator has to be run by hand',
-      };
-    }
+    afterEach?.(outcome);
 
-    return runAutoMigration({ root, manager, pending: entry, dryRun });
+    return outcome;
   });
 };

@@ -64,8 +64,24 @@ A range no single version can be written into - `workspace:*`, `>=5 <6` - is rep
 | `--continue`     | Run the migrations of an update that was written but never finished.                                          |
 | `--ai`           | Hand every open agent-assisted task to the command in [`updateAgentCommand`](/cli/config).                    |
 | `--force`        | Update even when the working tree has uncommitted changes.                                                    |
+| `--no-commit`    | Leave every change uncommitted. By default each step is [committed by itself](#commits).                      |
 
 The working tree must be clean, because the codemods rewrite files and you need a diff you can read. `--force` skips that check.
+
+## Commits
+
+Each step of a run is committed by itself, so the history shows which change came from where:
+
+| Step                                  | Commit message                                                                   |
+| ------------------------------------- | -------------------------------------------------------------------------------- |
+| The version bump, lockfile included   | `chore(deps): Update the ethlete SDK`, with one `@ethlete/x from → to` body line |
+| Each codemod that changed files       | `chore(deps): Apply the <package> <migration name> migration`                    |
+| The agent rules sync                  | `chore(deps): Sync the ethlete agent rules`                                      |
+| Each `--ai` agent task that ends done | `chore(deps): Apply the <package> <migration name> migration`                    |
+
+A commit takes only the paths its step changed. The files that were dirty before the run - with `--force` - are never committed: a step that touched one of them is left uncommitted, and the run names the files that blocked it. An agent task that stays open or fails is not committed either, and the prompt tells the agent not to commit.
+
+Commits go through your hooks. When one fails, the run prints git's reason, leaves the changes in the working tree, and goes on. `--dry-run`, `--no-commit` and a repo that is not a git checkout commit nothing; `--continue` keeps the choice of the run it continues.
 
 ## When something fails
 
@@ -122,7 +138,7 @@ Pick the interactive command for a large migration. Either way the agent has to 
 
 `et update --ai` runs the command once per assisted task, in order, so each run has one change to make. Each run gets a prompt that names the task file and asks the agent to delete it once the change is complete. The prompt is appended to the command, or replaces `<prompt>` in it; `<file>` is replaced by the path of the task file alone, for a command that brings its own prompt. Both reach the shell as the quoted variables `ETHLETE_UPDATE_PROMPT` and `ETHLETE_UPDATE_TASK_FILE`, so a repo path with shell characters is passed as it is.
 
-Each task is reported as its run ends: **done** when the agent deleted the task file, **still open** when it exited `0` but left the file, and **failed** when it exited with another code. Nothing runs between two tasks - no build, no lint - so review the diff before you commit it. A failed run makes `et update` exit `1`.
+Each task is reported as its run ends: **done** when the agent deleted the task file, **still open** when it exited `0` but left the file, and **failed** when it exited with another code. Nothing runs between two tasks - no build, no lint - so review each commit before you push it. A failed run makes `et update` exit `1`.
 
 `--ai` also works when there is nothing to update: `et update --ai`, or `et update --continue --ai` with no unfinished run, hands the tasks still open in `.ethlete/update/tasks.json` to the agent. Run it again to retry the ones that are left.
 

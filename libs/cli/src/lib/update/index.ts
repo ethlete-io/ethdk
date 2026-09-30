@@ -1,6 +1,7 @@
 export * from './agent-rules-sync';
 export * from './ai';
 export * from './args';
+export * from './commits';
 export * from './migration-manifest';
 export * from './package-manager';
 export * from './packages';

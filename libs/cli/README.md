@@ -47,6 +47,7 @@ yarn et update --tag latest               # leave the prerelease line
 yarn et update core --to 5.0.0-next.55    # an exact version for the package you name
 yarn et update --continue                 # finish a run that stopped
 yarn et update --ai                       # hand every agent-assisted task to an agent
+yarn et update --no-commit                # leave every change uncommitted
 ```
 
 The target follows the dist tag the installed version is on, so a repo on a `-next` prerelease stays
@@ -70,6 +71,11 @@ has no Nx to run, with the command to run it by hand).
 `ethlete.config.local.json` (for example `claude --permission-mode acceptEdits`), one run per task,
 and reports each run. It also works on the tasks an earlier run left. When the key is missing, `--ai`
 lists the agent CLIs on `PATH` and saves the command you pick.
+
+Each step is committed by itself: the version bump with the lockfile, each codemod that changed files,
+the agent rules sync, and each agent task that ends done. A commit takes only the paths its step
+changed, and a step that touched a file you had changed before the run is left uncommitted.
+`--no-commit` commits nothing.
 
 A package declares its migrations in `migrations.json` at its own root, pointed at from `package.json`
 with `"ethlete": { "migrations": "./migrations.json" }`. The full format is on the docs site.

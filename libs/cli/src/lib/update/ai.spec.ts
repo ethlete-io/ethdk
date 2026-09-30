@@ -30,6 +30,7 @@ describe('agentCommand', () => {
       'claude --permission-mode acceptEdits -p "$ETHLETE_UPDATE_PROMPT"',
     );
     expect(agentPrompt('/repo/task.md')).toMatch(/^Apply the migration task described in \/repo\/task\.md /);
+    expect(agentPrompt('/repo/task.md')).toContain('Do not commit');
   });
 
   it('puts the prompt where the template asks for it', () => {
@@ -97,6 +98,31 @@ describe('runAgentTasks', () => {
     expect(log).toHaveBeenCalledWith('\n  [1/3] @ethlete/core first: done');
     expect(error).toHaveBeenCalledWith(expect.stringContaining('[2/3] @ethlete/core second: the agent left'));
     expect(error).toHaveBeenCalledWith('\n  [3/3] @ethlete/core third: exited with 2');
+
+    vi.restoreAllMocks();
+  });
+
+  it('settles each task before the next starts, and names the ones that are not committed', () => {
+    const root = makeRoot();
+    const order: string[] = [];
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    spawnSync.mockImplementation((_command: string, options?: { env?: Record<string, string> }) => {
+      const taskFile = options?.env?.['ETHLETE_UPDATE_TASK_FILE'] ?? '';
+
+      order.push(`run ${taskFile.slice(-8)}`);
+
+      if (!taskFile.endsWith('core-second.md')) rmSync(taskFile);
+
+      return { status: 0 };
+    });
+
+    runAgentTasks({ root, template: 'agent', tasks, afterRun: (run) => order.push(`${run.state} ${run.task.name}`) });
+
+    expect(order).toEqual(['run first.md', 'done first', 'run econd.md', 'open second', 'run third.md', 'done third']);
+    expect(error).toHaveBeenCalledWith(expect.stringMatching(/second: the agent left .*, so it is not committed$/));
 
     vi.restoreAllMocks();
   });

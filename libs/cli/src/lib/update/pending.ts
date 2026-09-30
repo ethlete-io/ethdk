@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { CommitState, DirtySnapshot } from './commits';
 import { UPDATE_DIR } from './tasks';
 
 export const PENDING_FILE = join(UPDATE_DIR, 'pending.json');
@@ -23,6 +24,8 @@ export type PendingUpdate = {
   finished?: FinishedMigration[];
   /** The `--from` versions of the run, so `--continue` migrates from the same place. */
   from?: Record<string, string>;
+  /** Absent when the run commits nothing: `--no-commit`, or no git checkout. */
+  commits?: CommitState;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -37,6 +40,24 @@ export const writePendingUpdate = (options: { root: string; pending: PendingUpda
 
   mkdirSync(join(root, UPDATE_DIR), { recursive: true });
   writeFileSync(join(root, PENDING_FILE), `${JSON.stringify(pending, null, 2)}\n`, 'utf8');
+};
+
+const readStringRecord = (value: unknown): DirtySnapshot | undefined =>
+  isRecord(value)
+    ? Object.fromEntries(
+        Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
+      )
+    : undefined;
+
+const readCommits = (value: unknown): CommitState | undefined => {
+  if (!isRecord(value)) return undefined;
+
+  const baseline = readStringRecord(value['baseline']);
+  const snapshot = readStringRecord(value['snapshot']);
+
+  if (!baseline || !snapshot) return undefined;
+
+  return { baseline, snapshot, bumped: value['bumped'] === true };
 };
 
 export const readPendingUpdate = (root: string): PendingUpdate | undefined => {
@@ -66,17 +87,15 @@ export const readPendingUpdate = (root: string): PendingUpdate | undefined => {
       )
     : [];
 
-  const from = isRecord(parsed['from'])
-    ? Object.fromEntries(
-        Object.entries(parsed['from']).filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
-      )
-    : undefined;
+  const from = readStringRecord(parsed['from']);
+  const commits = readCommits(parsed['commits']);
 
   return {
     startedAt: typeof parsed['startedAt'] === 'string' ? parsed['startedAt'] : 'an earlier run',
     packages: packages.map((entry) => ({ name: entry.name, from: entry.from ?? null, to: entry.to })),
     finished: finished.map((entry) => ({ packageName: entry.packageName, name: entry.name })),
     ...(from ? { from } : {}),
+    ...(commits ? { commits } : {}),
   };
 };
 

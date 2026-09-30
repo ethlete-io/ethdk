@@ -11,6 +11,8 @@ export type UpdateArgs = {
   check: boolean;
   dryRun: boolean;
   install: boolean;
+  /** Whether each step of the run is committed by itself. */
+  commit: boolean;
   resume: boolean;
   ai: boolean;
   force: boolean;
@@ -20,7 +22,17 @@ export type UpdateArgs = {
 
 const VALUE_FLAGS = ['--tag', '--to', '--from'];
 
-const BOOLEAN_FLAGS = ['--check', '--dry-run', '--no-install', '--continue', '--ai', '--force', '--help', '-h'];
+const BOOLEAN_FLAGS = [
+  '--check',
+  '--dry-run',
+  '--no-install',
+  '--no-commit',
+  '--continue',
+  '--ai',
+  '--force',
+  '--help',
+  '-h',
+];
 
 /** `core` and `@ethlete/core` both name the same package on the command line. */
 export const fullPackageName = (name: string) => (name.includes('/') ? name : `${ETHLETE_SCOPE}${name}`);
@@ -41,6 +53,7 @@ export const parseUpdateArgs = (argv: readonly string[]): UpdateArgs => {
     check: false,
     dryRun: false,
     install: true,
+    commit: true,
     resume: false,
     ai: false,
     force: false,
@@ -91,6 +104,7 @@ export const parseUpdateArgs = (argv: readonly string[]): UpdateArgs => {
     if (flag === '--check') args.check = true;
     if (flag === '--dry-run') args.dryRun = true;
     if (flag === '--no-install') args.install = false;
+    if (flag === '--no-commit') args.commit = false;
     if (flag === '--continue') args.resume = true;
     if (flag === '--ai') args.ai = true;
     if (flag === '--force') args.force = true;
