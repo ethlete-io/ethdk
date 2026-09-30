@@ -1,5 +1,5 @@
 import { DestroyRef, inject } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   AGENT_API_VERSION,
@@ -25,13 +25,9 @@ import {
   DayReview,
   JiraCredentials,
   JiraIssue,
-  TempoDayCoverage,
-  agedNamings,
   createJiraIssue$,
   deleteOwnTempoWorklog$,
   fetchJiraIssueKeysByIds$,
-  fetchJiraIssueTouchedAt$,
-  fetchTempoDayCoverage$,
   fetchJiraMyself$,
   fetchTempoWorklogs$,
   listGoogleCalendarEvents$,
@@ -58,7 +54,6 @@ import {
   MIDNIGHT,
   shiftDayKey,
   matchProjectLink,
-  namedIssueKeys,
   parseAgentRequest,
   readJiraCredentials$,
   readTempoCredentials$,
@@ -74,14 +69,12 @@ import {
   Observable,
   catchError,
   concatMap,
-  filter,
   forkJoin,
   from,
   map,
   mergeMap,
   of,
   switchMap,
-  take,
   tap,
   throwError,
   toArray,
@@ -91,20 +84,16 @@ import {
   injectAgentSpendBackfill,
   injectCodexSessionCollector,
   injectCodexSpendBackfill,
-  injectGitCollector,
-  injectWindowCollector,
 } from '../../collectors';
 import { injectHostPorts } from '../../host';
-import { injectDayReview } from '../day-review/day-review';
 import { injectGoogleAccount } from '../google';
 import { LANE_ISSUE_WINDOW_DAYS } from '../jira';
-import { readEpicOptions$ } from '../naming/epic-siblings';
 import { injectRecurringPatterns } from '../naming/recurring-patterns';
-import { readDay$ } from '../read-day';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectProjectLinks } from '../project-links';
 import { injectTempoSync } from '../sync/sync';
 import { injectWindowLock } from '../window-lock';
+import { injectAgentDay } from './agent-day';
 import { injectApprovalQueue } from './approval-queue';
 
 const NO_JIRA = 'Timetrack has no Jira host, account email and token yet. Set them in its Settings.';
@@ -142,14 +131,12 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
   const settings = injectTimetrackSettings();
   const projectLinks = injectProjectLinks();
-  const review = injectDayReview();
+  const agentDay = injectAgentDay();
   const tempoSync = injectTempoSync();
   const recurring = injectRecurringPatterns();
   const googleAccount = injectGoogleAccount();
   const windowLock = injectWindowLock();
   const approvals = injectApprovalQueue();
-  const git = injectGitCollector();
-  const windows = injectWindowCollector();
   const destroyRef = inject(DestroyRef);
   const agentSessionCollectors = [injectAgentSessionCollector(), injectCodexSessionCollector()];
   const agentSpendBackfills = [injectAgentSpendBackfill(), injectCodexSpendBackfill()];
@@ -302,8 +289,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     const to = new Date(request.fromMs + request.durationMs);
     const day = localDayKey(from, dayBoundaryOf(settings.settings()));
 
-    return review
-      .addRowOnDay$({
+    return agentDay
+      .addRow$({
         day,
         row: {
           issueKey: request.issueKey,
@@ -372,94 +359,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     })),
   });
 
-  const discovery$ = toObservable(git.discovery).pipe(
-    filter((found) => !!found),
-    take(1),
-  );
-
-  const refreshCoverage$ = (day: string): Observable<TempoDayCoverage | null> =>
-    forkJoin({
-      jira: readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }),
-      tempo: readTempoCredentials$({ secrets: ports.secrets }),
-    }).pipe(
-      switchMap(({ jira, tempo }) =>
-        jira && tempo
-          ? fetchTempoDayCoverage$({
-              transport: ports.transport,
-              jira,
-              tempo,
-              ledger: ports.ledger,
-              day,
-              boundary: dayBoundaryOf(settings.settings()),
-            }).pipe(concatMap((read) => ports.coverage.save$(read).pipe(map(() => read))))
-          : of(null),
-      ),
-      catchError(() => of(null)),
-    );
-
-  const touchedAt$ = (keys: readonly string[]): Observable<ReadonlyMap<string, Date>> =>
-    keys.length
-      ? readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }).pipe(
-          switchMap((jira) =>
-            jira
-              ? fetchJiraIssueTouchedAt$({ transport: ports.transport, credentials: jira, keys: [...keys] })
-              : of(new Map<string, Date>()),
-          ),
-          catchError(() => of(new Map<string, Date>())),
-        )
-      : of(new Map<string, Date>());
-
-  /**
-   * The day as the day screen draws it from what is saved, read without moving the screen.
-   *
-   * It leaves out what only the screen holds in memory: edits still inside the save debounce and the
-   * names a provider run inferred on screen.
-   */
   const dayRows$ = (day: string): Observable<AgentApiDayRows> =>
-    settings.ready$.pipe(
-      switchMap((current) =>
-        forkJoin({
-          discovery: discovery$,
-          settled: recurring.settled$,
-          coverage: refreshCoverage$(day),
-          touchedAt: touchedAt$(namedIssueKeys({ namings: current.meetingNamings, callNamings: current.callNamings })),
-        }).pipe(
-          switchMap(({ discovery, touchedAt }) => {
-            const read = {
-              ports,
-              settings: current,
-              repoRoots: discovery?.repos ?? [],
-              links: projectLinks(),
-              worktrees: git.worktrees(),
-              patterns: recurring.patterns(),
-              windowsSeenThroughMs: windows.lastRun()?.at.getTime(),
-              day,
-            };
-            const now = new Date();
-            const check = {
-              agedNamings: agedNamings({
-                namings: current.meetingNamings,
-                callNamings: current.callNamings,
-                touchedAt,
-                now,
-              }),
-              finished: day !== localDayKey(now, dayBoundaryOf(current)),
-            };
-
-            return readEpicOptions$(read).pipe(
-              take(1),
-              switchMap((epics) => readDay$({ ...read, epics, check })),
-              take(1),
-            );
-          }),
-        ),
-      ),
-      map((read) => toApiDay(day, read.review)),
-    );
-
-  /** The day as the screen draws it, including its unsaved edits. Moves the screen to that day. */
-  const screenDayRows$ = (day: string): Observable<AgentApiDayRows> =>
-    review.reviewOfDay$(day).pipe(map((current) => toApiDay(day, current)));
+    agentDay.review$(day).pipe(map((current) => toApiDay(day, current)));
 
   /**
    * Makes the edits a caller stated, then answers the day as it reads afterwards.
@@ -468,9 +369,9 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
    * other row of the day, so what an edit did is only legible in the day it left behind.
    */
   const editDay$ = (request: Extract<AgentApiRequest, { op: 'day.edits' }>): Observable<AgentApiEditedDay> =>
-    review
-      .editRowsOnDay$({ day: request.day, edits: request.edits })
-      .pipe(mergeMap((applied) => screenDayRows$(request.day).pipe(map((day) => ({ ...day, applied })))));
+    agentDay
+      .editRows$({ day: request.day, edits: request.edits })
+      .pipe(map(({ applied, review }) => ({ ...toApiDay(request.day, review), applied })));
 
   const dayEvents$ = (request: Extract<AgentApiRequest, { op: 'day.events' }>) => {
     const { from, to } = localDayRange(request.day, dayBoundaryOf(settings.settings()));
@@ -492,7 +393,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     forkJoin({
       tempo: readTempoCredentials$({ secrets: ports.secrets }),
       history: recurring.settled$,
-      decisions: review.namingDecisionsOnDay$(request.day),
+      decisions: agentDay.namingDecisions$(request.day),
     }).pipe(
       map(({ tempo, history, decisions }) => ({
         day: request.day,
@@ -562,7 +463,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
    * the hash of the plan the user confirmed. A fresh plan that hashes differently is refused.
    */
   const tempoSync$ = (request: Extract<AgentApiRequest, { op: 'tempo.sync' }>): Observable<AgentApiTempoSync> =>
-    review.reviewOfDay$(request.day).pipe(
+    agentDay.review$(request.day).pipe(
       switchMap((current) => tempoSync.preview$({ day: request.day, proposals: current.rows.filter(isNamedRow) })),
       switchMap((preview) => {
         const plan = toAgentApiTempoSyncPlan({ day: request.day, preview });
@@ -860,7 +761,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       case 'day.rows':
         return dayRows$(request.day);
       case 'day.inputs':
-        return review.reviewInputsOfDay$(request.day);
+        return agentDay.inputs$(request.day);
       case 'day.edits':
         return editDay$(request);
       case 'settings.rules':

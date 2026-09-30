@@ -1,7 +1,9 @@
 import {
   AgedNaming,
   CollectedEvent,
+  CutOptions,
   DayReview,
+  DayReviewEdits,
   EMPTY_DAY_REVIEW_EDITS,
   EpicOptions,
   RecurringPattern,
@@ -28,7 +30,10 @@ export type DayRead = {
   at: Date;
   events: CollectedEvent[];
   day: StreamDay;
+  edits: DayReviewEdits;
+  cut?: CutOptions;
   review: DayReview;
+  reviewWith: (edits: DayReviewEdits) => DayReview;
 };
 
 export type DayReadOptions = {
@@ -88,15 +93,10 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
         rows: { timerRuns: runs.map((run) => closeTimerRun(run, at)), pauses },
       });
       const day = streamDay({ events, options: dayOptions });
-
-      return {
-        key,
-        at,
-        events,
-        day,
-        review: reviewDay({
+      const reviewWith = (current: DayReviewEdits) =>
+        reviewDay({
           rows: day.rows,
-          edits: edits ?? EMPTY_DAY_REVIEW_EDITS,
+          edits: current,
           cut: dayOptions.rows?.cut,
           standIns: settings.standIns,
           rules: settings.attributionRules,
@@ -106,7 +106,18 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
             pausedMs: pausedMs(pauses),
             ...options.check,
           },
-        }),
+        });
+      const stored = edits ?? EMPTY_DAY_REVIEW_EDITS;
+
+      return {
+        key,
+        at,
+        events,
+        day,
+        edits: stored,
+        cut: dayOptions.rows?.cut,
+        review: reviewWith(stored),
+        reviewWith,
       };
     }),
   );

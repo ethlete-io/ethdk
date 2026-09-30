@@ -80,6 +80,7 @@ import {
   tap,
 } from 'rxjs';
 import { injectHostPorts } from '../../host';
+import { injectAgentDay } from '../agent/agent-day';
 import { injectApprovalQueue } from '../agent/approval-queue';
 import { injectProjectLinks } from '../project-links';
 import { injectTimetrackSettings } from '../settings/settings';
@@ -154,6 +155,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
   const settings = injectTimetrackSettings();
   const dayReview = injectDayReview();
+  const agentDay = injectAgentDay();
   const approvals = injectApprovalQueue();
   const projectLinks = injectProjectLinks();
   const windowLock = injectWindowLock();
@@ -292,10 +294,10 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       .pipe(map(() => undefined));
 
   const hideApproved$ = (item: Pick<AgentApproval, 'id'> & { request: AutoModeHideRequest }): Observable<void> =>
-    dayReview
-      .editRowsOnDay$({ day: item.request.day, edits: [{ kind: 'hidden', rowId: item.request.rowId, hidden: true }] })
+    agentDay
+      .editRows$({ day: item.request.day, edits: [{ kind: 'hidden', rowId: item.request.rowId, hidden: true }] })
       .pipe(
-        map((applied) =>
+        map(({ applied }) =>
           approvals.finish(
             item.id,
             applied
