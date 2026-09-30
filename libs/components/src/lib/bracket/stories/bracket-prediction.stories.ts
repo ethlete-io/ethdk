@@ -16,8 +16,7 @@ export default {
 export const Interactive: StoryObj<StorybookBracketPredictionComponent> = {};
 
 const Cases = (cases: PickCardCase[]): StoryObj => ({
-  render: (args) => ({ props: args, template: '<et-sb-bracket-pick-card-cases [cases]="cases" />' }),
-  args: { cases },
+  render: () => ({ props: { cases }, template: '<et-sb-bracket-pick-card-cases [cases]="cases" />' }),
 });
 
 export const PickCardStates: StoryObj = Cases(PICK_CARD_STATE_CASES);
