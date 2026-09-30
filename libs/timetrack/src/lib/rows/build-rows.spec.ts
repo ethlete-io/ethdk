@@ -618,6 +618,18 @@ describe('buildRows with activity on another branch inside a rule-named band', (
       expect(rows.proposals[0]?.disputedIssueKey).toBe('FIP-3100');
     });
 
+    it('keeps the issue and disputes the stand-in when the written branch names only a stand-in', () => {
+      const rows = buildRows({
+        blocks: SESSION_WORK,
+        events: [FOCUS, merge('feat/login')],
+        rules: [NAMED, { ...LOGIN, target: { kind: 'stand-in', standInId: STAND_IN.id } }],
+        standIns: [STAND_IN],
+      });
+
+      expect(rows.proposals[0]?.issueKey).toBe('FIP-3006');
+      expect(rows.proposals[0]?.disputedStandInId).toBe(STAND_IN.id);
+    });
+
     it('keeps the rule when a linked worktree owns the branch the write landed on', () => {
       const rows = buildRows({
         blocks: SESSION_WORK,
