@@ -30,6 +30,15 @@ describe('appointmentOf colour', () => {
   it('still paints an unnamed attended row as a weak guess', () => {
     expect(appointmentOf({ row: rowOf({}) }).colorToken).toBe('warning');
   });
+
+  it('paints an edited weak row with an issue as certain', () => {
+    const row = rowOf({ edited: true, issueKey: 'ABC-1', confidence: 'weak' });
+
+    expect(appointmentOf({ row }).colorToken).toBe(
+      appointmentOf({ row: rowOf({ issueKey: 'ABC-1', confidence: 'certain' }) }).colorToken,
+    );
+    expect(appointmentOf({ row }).colorToken).not.toBe('warning');
+  });
 });
 
 describe('appointmentLabel of parallel sessions', () => {

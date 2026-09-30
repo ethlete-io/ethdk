@@ -41,7 +41,11 @@ const CONFIDENCE_TONE: Record<Confidence, string> = {
         <et-badge size="sm">edited</et-badge>
       }
 
-      <span [class]="tone()" class="text-small">{{ confidence() }} match</span>
+      @if (confirmed()) {
+        <span class="text-small text-et-success-ink">confirmed by you</span>
+      } @else {
+        <span [class]="tone()" class="text-small">{{ confidence() }} match</span>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -55,6 +59,11 @@ export class EditStateComponent {
   protected willSync = computed(() => this.entry()?.willSync ?? true);
   protected confidence = computed(() => this.entry()?.row.confidence ?? 'weak');
   protected edited = computed(() => this.entry()?.row.edited ?? false);
+  protected confirmed = computed(() => {
+    const row = this.entry()?.row;
+
+    return !!row?.edited && !!row.issueKey;
+  });
   protected tone = computed(() => CONFIDENCE_TONE[this.confidence()]);
 
   protected set(willSync: boolean) {
