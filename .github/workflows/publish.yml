@@ -128,7 +128,22 @@ jobs:
         with:
           workspaces: ${{ matrix.app.dir }}/src-tauri -> target
 
-      - run: yarn nx run ${{ matrix.app.project }}:tauri:build
+      # A keychain item's "Always Allow" names the signing certificate. An ad-hoc build has a new
+      # identity each release, and Timetrack then asks for the login password once per item.
+      - if: runner.os == 'macOS'
+        run: |
+          if [ -z "$APPLE_CERTIFICATE" ]; then
+            echo "::error::MACOS_SIGNING_CERTIFICATE is not set. Run tools/scripts/macos-release-identity.sh once."
+            exit 1
+          fi
+          yarn nx run ${{ matrix.app.project }}:tauri:build
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.MACOS_SIGNING_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_SIGNING_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: Ethlete Release Signing
+
+      - if: runner.os != 'macOS'
+        run: yarn nx run ${{ matrix.app.project }}:tauri:build
 
       - name: Attach the bundles to the draft release
         shell: bash
