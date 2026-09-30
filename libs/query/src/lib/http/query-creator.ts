@@ -1,4 +1,4 @@
-import { Injector } from '@angular/core';
+import { DestroyRef, Injector } from '@angular/core';
 import { createBaseQueryCreator } from './base-query-creator-factory';
 import { HttpRequestResponseType, HttpRequestTransferCacheConfig } from './http-request';
 import { AnyNewQuery, PathParamsType, Query, QueryArgs, RawResponseType, ResponseType, createQuery } from './query';
@@ -301,6 +301,13 @@ export type QueryConfig = {
    * A custom injector to use for this query.
    */
   injector?: Injector;
+
+  /**
+   * Replaces the injector's `DestroyRef` as the lifetime that destroys the query.
+   *
+   * @internal
+   */
+  scopeDestroyRef?: DestroyRef;
 };
 
 export const splitQueryConfig = <TArgs extends QueryArgs>(args: (QueryFeature<TArgs> | QueryConfig)[]) => {

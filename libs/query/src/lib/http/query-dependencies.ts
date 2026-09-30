@@ -57,7 +57,7 @@ export const setupQueryDependencies = (options: SetupQueryDependenciesOptions) =
 
   const dependencies: QueryDependencies = {
     destroyRef: undefined as unknown as DestroyRef, // Will be set after injector creation
-    scopeDestroyRef: hostInjector.get(DestroyRef),
+    scopeDestroyRef: options.queryConfig?.scopeDestroyRef ?? hostInjector.get(DestroyRef),
     client: hostInjector.get<QueryClient>(clientToken),
     injector: undefined as unknown as EnvironmentInjector, // Will be set after injector creation
     ngErrorHandler: hostInjector.get(ErrorHandler),

@@ -1,5 +1,7 @@
 import { HttpHeaders } from '@angular/common/http';
 import {
+  ApplicationRef,
+  createEnvironmentInjector,
   DestroyRef,
   effect,
   inject,
@@ -25,11 +27,20 @@ import {
   shouldCacheQuery,
 } from '../../http';
 import { EntityStore } from '../entity';
-import { BaseArguments, QueryEntityConfig, V2QueryConfig, V2RouteType, WithHeaders, WithInjector } from '../query';
+import {
+  BaseArguments,
+  isQueryStateLoading,
+  QueryEntityConfig,
+  takeUntilResponse,
+  V2QueryConfig,
+  V2RouteType,
+  WithHeaders,
+  WithInjector,
+} from '../query';
 import { addQueryContainerHandling, QueryContainerConfig } from '../utils';
 import { createInertQuery } from './inert-query';
 import { legacyPrepareFallbackInjector } from './legacy-prepare-fallback';
-import { LegacyQuery } from './legacy-query';
+import { AnyLegacyQuery, LegacyQuery } from './legacy-query';
 
 /**
  * Whether an injector can still be used. A destroyed `R3Injector` throws on `get()` rather than
@@ -42,6 +53,39 @@ const isInjectorUsable = (injector: Injector) => {
   } catch {
     return false;
   }
+};
+
+/**
+ * The scope ends when its owner dies with no request in flight, when that request settles, or when the
+ * application dies - a destroyed root injector does not destroy the environment injectors below it.
+ */
+const createSettleScope = (owner: Injector) => {
+  const appInjector = owner.get(ApplicationRef).injector;
+  const scope = createEnvironmentInjector([], appInjector);
+  const end = () => {
+    if (!scope.destroyed) scope.destroy();
+  };
+
+  const bind = (query: AnyLegacyQuery, queryInjector: Injector) => {
+    const stopOnAppDestroy = appInjector.get(DestroyRef).onDestroy(end);
+    const stopOnOwnerDestroy = owner.get(DestroyRef).onDestroy(() => {
+      if (isQueryStateLoading(untracked(() => query.rawState))) {
+        query.state$.pipe(takeUntilResponse()).subscribe({ complete: end });
+
+        return;
+      }
+
+      end();
+    });
+
+    queryInjector.get(DestroyRef).onDestroy(() => {
+      stopOnAppDestroy();
+      stopOnOwnerDestroy();
+      end();
+    });
+  };
+
+  return { destroyRef: scope.get(DestroyRef), bind };
 };
 
 /**
@@ -224,9 +268,12 @@ export class LegacyQueryCreator<
 
     return runInInjectionContext(injector, () => {
       return untracked(() => {
+        const settleScope = this.canBeCached ? null : createSettleScope(injector);
+
         const newQuery = this.options.creator({
           onlyManualExecution: true,
           injector,
+          ...(settleScope ? { scopeDestroyRef: settleScope.destroyRef } : {}),
           silenceMissingWithArgsFeatureError: true,
           // `LegacyQuery.execute()` forwards v2's `skipCache` as `allowCache` for every method, cacheable or not.
           silenceUncacheableAllowCacheError: true,
@@ -241,6 +288,8 @@ export class LegacyQueryCreator<
           Id,
           Query<TArgs>
         >(newQuery, queryArgs, this.options.entity, false, this.canBeCached);
+
+        settleScope?.bind(legacyQuery, newQuery.subtle.injector);
 
         if (args?.config?.destroyOnResponse) {
           // Owned by the query's own injector, not the caller's. Call sites are told to pass an injector

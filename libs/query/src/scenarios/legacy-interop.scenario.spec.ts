@@ -1,5 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, createEnvironmentInjector, EnvironmentInjector, inject, input } from '@angular/core';
+import {
+  Component,
+  createEnvironmentInjector,
+  EnvironmentInjector,
+  inject,
+  Injector,
+  input,
+  signal,
+} from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   AnyInfinityQueryConfig,
@@ -7,6 +15,7 @@ import {
   createGqlQueryViaPost,
   createInfinityQueryConfig,
   createLegacyQueryCreator,
+  createQueryCollectionSignal,
   createSecureGetQuery,
   filterSuccess,
   gql,
@@ -423,6 +432,100 @@ describe('legacy interop scenario', () => {
       await s.settle();
       recorded.stop();
       c.destroy();
+    });
+  });
+
+  describe('an owner destroyed while its request is in flight', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    const legacyCreateUserFor = (s: ReturnType<typeof scenario>) => {
+      s.api.on('POST', '/users', ({ body }) => ({
+        status: 201,
+        body: { id: 'u1', ...(body as { name: string }) },
+        delay: 1000,
+      }));
+
+      const createUser = s.post<{ response: User; body: { name: string } }>('/users');
+
+      return createLegacyQueryCreator({ creator: createUser, name: 'legacyCreateUser' });
+    };
+
+    const postRequest = (s: ReturnType<typeof scenario>) => s.api.requests.find((r) => r.method === 'POST');
+
+    it('lets a POST prepared in a component finish, then destroys it', () => {
+      const s = scenario();
+      const legacyCreateUser = legacyCreateUserFor(s);
+
+      const dialog = s.consumer();
+      const query = dialog.run(() =>
+        legacyCreateUser.prepare({ body: { name: 'Ada' }, injector: inject(Injector) }).execute(),
+      );
+      s.tick(100);
+
+      dialog.destroy();
+      s.flush();
+
+      expect(postRequest(s)?.aborted).toBe(false);
+      expect(query.rawState.type).toBe(QueryStateType.Success);
+      expect(s.liveQueries()).toHaveLength(0);
+    });
+
+    it('lets a POST held by queryComputed finish after its component is destroyed', () => {
+      const s = scenario();
+      const legacyCreateUser = legacyCreateUserFor(s);
+      const name = signal('Ada');
+
+      const form = s.consumer();
+      const held = form.run(() => queryComputed(() => legacyCreateUser.prepare({ body: { name: name() } })));
+      s.tick();
+
+      const query = held();
+      query?.execute();
+      s.tick(100);
+
+      form.destroy();
+      s.flush();
+
+      expect(postRequest(s)?.aborted).toBe(false);
+      expect(query?.rawState.type).toBe(QueryStateType.Success);
+      expect(s.liveQueries()).toHaveLength(0);
+    });
+
+    it('lets an overlay that prepares a POST into its own collection close without cancelling it', () => {
+      const s = scenario();
+      const legacyCreateUser = legacyCreateUserFor(s);
+
+      const overlay = s.consumer();
+      const injector = overlay.run(() => inject(Injector));
+      const collection = overlay.run(() => createQueryCollectionSignal({ createUser: legacyCreateUser as never }));
+      const query = legacyCreateUser.prepare({ body: { name: 'Ada' }, injector }).execute();
+      collection.set({ type: 'createUser', query } as never);
+      s.tick(100);
+
+      overlay.destroy();
+      s.flush();
+
+      expect(postRequest(s)?.aborted).toBe(false);
+      expect(query.rawState.type).toBe(QueryStateType.Success);
+      expect(s.liveQueries()).toHaveLength(0);
+    });
+
+    it('still aborts a GET prepared in a component when the component is destroyed', () => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 1000 }));
+
+      const getUser = s.get<GetUserArgs>((p) => `/users/${p.id}`);
+      const legacyGetUser = createLegacyQueryCreator({ creator: getUser, name: 'legacyGetUser' });
+
+      const page = s.consumer();
+      page.run(() => legacyGetUser.prepare({ pathParams: { id: '1' }, injector: inject(Injector) }).execute());
+      s.tick(100);
+
+      page.destroy();
+      s.flush();
+
+      expect(s.api.requests.find((r) => r.method === 'GET')?.aborted).toBe(true);
+      expect(s.liveQueries()).toHaveLength(0);
     });
   });
 
