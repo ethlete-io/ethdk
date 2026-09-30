@@ -12,15 +12,27 @@ const ROOTS = [
   'libs/query-devtools',
 ];
 
-const session = (options: { id: string; from: number; to: number; paths: string[] }): PieceSession => ({
+const session = (options: {
+  id: string;
+  from: number;
+  to: number;
+  paths: string[];
+  branch?: string;
+}): PieceSession => ({
   sessionId: options.id,
   from: AT(options.from),
   to: AT(options.to),
   paths: options.paths,
+  branch: options.branch,
 });
 
 const piecesOf = (sessions: PieceSession[]) =>
-  Object.fromEntries([...sessionPieces({ sessions, projectRoots: ROOTS })].map(([id, found]) => [id, found.piece]));
+  Object.fromEntries(
+    [...sessionPieces({ sessions, projectRoots: ROOTS, baseBranches: ['main', 'next'] })].map(([id, found]) => [
+      id,
+      found.piece,
+    ]),
+  );
 
 describe('sessionPieces', () => {
   it('joins sessions one after the other that worked in the same project', () => {
@@ -187,5 +199,43 @@ describe('sessionPieces', () => {
         session({ id: 'b', from: 30, to: 90, paths: ['.changeset/core-scan.md'] }),
       ]),
     ).toEqual({ a: 'a', b: 'a' });
+  });
+
+  it('joins sessions one after the other on one feature branch, whatever they worked in', () => {
+    expect(
+      piecesOf([
+        session({ id: 'a', from: 0, to: 5, paths: [], branch: 'feat/ET-1-x' }),
+        session({ id: 'b', from: 6, to: 12, paths: ['libs/eslint-plugin/a.ts'], branch: 'feat/ET-1-x' }),
+        session({ id: 'c', from: 13, to: 17, paths: ['libs/timetrack/a.ts'], branch: 'feat/ET-1-x' }),
+      ]),
+    ).toEqual({ a: 'a', b: 'a', c: 'a' });
+  });
+
+  it('keeps sessions one after the other on a base branch apart when they worked in two projects', () => {
+    expect(
+      piecesOf([
+        session({ id: 'a', from: 0, to: 5, paths: ['libs/timetrack/a.ts'], branch: 'next' }),
+        session({ id: 'b', from: 6, to: 12, paths: ['libs/eslint-plugin/a.ts'], branch: 'next' }),
+        session({ id: 'c', from: 13, to: 17, paths: [], branch: 'next' }),
+      ]),
+    ).toEqual({ a: 'a', b: 'b', c: 'c' });
+  });
+
+  it('keeps sessions on one feature branch that ran at the same time apart', () => {
+    expect(
+      piecesOf([
+        session({ id: 'a', from: 0, to: 40, paths: [], branch: 'feat/ET-1-x' }),
+        session({ id: 'b', from: 30, to: 60, paths: [], branch: 'feat/ET-1-x' }),
+      ]),
+    ).toEqual({ a: 'a', b: 'b' });
+  });
+
+  it('keeps sessions one after the other on two feature branches apart', () => {
+    expect(
+      piecesOf([
+        session({ id: 'a', from: 0, to: 5, paths: [], branch: 'feat/ET-1-x' }),
+        session({ id: 'b', from: 6, to: 12, paths: [], branch: 'feat/ET-2-y' }),
+      ]),
+    ).toEqual({ a: 'a', b: 'b' });
   });
 });

@@ -574,7 +574,7 @@ const workPathAt = (options: { marks: readonly WorkPathMark[] | undefined; at: D
 };
 
 /** One agent session's run in a checkout: the first and the last instant it was sampled there. */
-type SessionRun = { sessionId: string; from: Date; to: Date; paths: string[] };
+type SessionRun = { sessionId: string; from: Date; to: Date; paths: string[]; branch?: string };
 
 /**
  * The agent sessions each checkout ran, oldest start first.
@@ -603,6 +603,7 @@ const sessionRuns = (options: {
 
     if (run) {
       run.to = sample.at;
+      run.branch = sample.gitBranch ?? run.branch;
       if (path) run.paths.push(path);
     } else
       runs.set(sample.sessionId, {
@@ -610,6 +611,7 @@ const sessionRuns = (options: {
         from: sample.at,
         to: sample.at,
         paths: path ? [path] : [],
+        branch: sample.gitBranch,
       });
 
     held.set(repoPath, runs);
@@ -1135,7 +1137,11 @@ export const streamDay = (options: {
   const runs = sessionRuns({ samples, turns, roots });
   const pieces = new Map(
     [...runs].flatMap(([repoPath, held]) => [
-      ...sessionPieces({ sessions: held, projectRoots: config.projectRoots?.[repoPath] }),
+      ...sessionPieces({
+        sessions: held,
+        projectRoots: config.projectRoots?.[repoPath],
+        baseBranches: config.baseBranches,
+      }),
     ]),
   );
   const pieceGrains = new Set(

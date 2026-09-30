@@ -251,10 +251,11 @@ describe('streamDay agent sessions', () => {
   });
 
   it('joins sessions one after the other in one directory into one piece, and keeps another apart', () => {
+    const onMain = { branchAt: () => 'main' };
     const blocks = blocksOf([
-      ...sessionRun({ sessionId: 'one', from: 0, to: 30, workedIn: 'src/app/totw/totw.component.ts' }),
-      ...sessionRun({ sessionId: 'two', from: 60, to: 90, workedIn: 'src/app/totw/totw.store.ts' }),
-      ...sessionRun({ sessionId: 'three', from: 120, to: 150, workedIn: 'src/app/shop/shop.component.ts' }),
+      ...sessionRun({ sessionId: 'one', from: 0, to: 30, workedIn: 'src/app/totw/totw.component.ts', ...onMain }),
+      ...sessionRun({ sessionId: 'two', from: 60, to: 90, workedIn: 'src/app/totw/totw.store.ts', ...onMain }),
+      ...sessionRun({ sessionId: 'three', from: 120, to: 150, workedIn: 'src/app/shop/shop.component.ts', ...onMain }),
     ]);
 
     expect(blocks.map((block) => [block.context.session, block.context.piece])).toEqual([
@@ -301,6 +302,18 @@ describe('streamDay agent sessions', () => {
         ...sessionRun({ sessionId: 'two', from: 70, to: 120, branchAt: () => 'main', workedIn: 'src/app/totw/b.ts' }),
       ]),
     ).toEqual([['one', 'two']]);
+  });
+
+  it('joins short sessions one after the other on one feature branch into one row', () => {
+    const events = [
+      ...sessionRun({ sessionId: 'one', from: 0, to: 5, workedIn: 'src/app/totw/a.ts' }),
+      ...sessionRun({ sessionId: 'two', from: 6, to: 11, workedIn: 'src/app/shop/b.ts' }),
+      ...sessionRun({ sessionId: 'three', from: 12, to: 17 }),
+    ];
+    const { rows } = dayOf(events);
+
+    expect([...rows.proposals, ...rows.unnamed]).toHaveLength(1);
+    expect(bookedMs(events)).toBe(30 * 60_000);
   });
 
   it('reads a working directory the shell changed into as a directory', () => {

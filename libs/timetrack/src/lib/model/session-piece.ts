@@ -1,7 +1,10 @@
 import { workPathsOf } from './work-path';
 
-/** One agent session of a checkout: when it ran, and the files its tool calls named, relative to it. */
-export type PieceSession = { sessionId: string; from: Date; to: Date; paths: readonly string[] };
+/**
+ * One agent session of a checkout: when it ran, the files its tool calls named relative to it, and the
+ * branch it ran on.
+ */
+export type PieceSession = { sessionId: string; from: Date; to: Date; paths: readonly string[]; branch?: string };
 
 const dominant = (paths: readonly (string | undefined)[]) => {
   const held = new Map<string, number>();
@@ -44,7 +47,7 @@ export const namedWorkFileOf = (path: string) => {
 /** An app, its e2e app and its library share one name, and are one piece of work. */
 const areaOf = (workPath: string | undefined) => workPath?.split('/').pop()?.replace(/-e2e$/, '');
 
-type PieceUnit = { sessions: PieceSession[]; from: number; to: number; area?: string };
+type PieceUnit = { sessions: PieceSession[]; from: number; to: number; area?: string; branch?: string };
 
 /**
  * The sessions that wrote a common named work file - a handoff, a plan or a design call - joined into
@@ -97,6 +100,7 @@ const unitsOf = (
     from: Math.min(...sessions.map((session) => session.from.getTime())),
     to: Math.max(...sessions.map((session) => session.to.getTime())),
     area: dominant(sessions.flatMap((session) => areas.get(session) ?? [])),
+    branch: dominant(sessions.map((session) => session.branch)),
   }));
 };
 
@@ -104,17 +108,20 @@ const unitsOf = (
  * The piece of work each agent session of one checkout belongs to, keyed by session id.
  *
  * Sessions that wrote a common handoff, plan or design call are one piece, whenever they ran. Beyond
- * that a session joins the piece of an earlier session that worked in the same project and had ended
- * before it started; an app, its e2e app and its library count as one project. Two sessions that ran
- * at the same time and share no such file stay two pieces. A session whose files name no directory
- * and no such file stays a piece of its own.
+ * that a session joins the piece of an earlier session that had ended before it started and either
+ * worked in the same project or ran on the same branch, where that branch is not one of
+ * `baseBranches`; an app, its e2e app and its library count as one project. Two sessions that ran at
+ * the same time and share no such file stay two pieces. A session whose files name no directory and
+ * no such file, on a base branch or no branch, stays a piece of its own.
  *
  * A piece is named after its first session, so a session that joins later never renames it.
  */
 export const sessionPieces = (options: {
   sessions: readonly PieceSession[];
   projectRoots?: readonly string[];
+  baseBranches?: readonly string[];
 }): Map<string, SessionPiece> => {
+  const baseBranches = new Set(options.baseBranches ?? []);
   const commits = options.sessions.flatMap((session) => session.paths.map((path) => ({ paths: [path] })));
   const workPaths = workPathsOf({ commits, projectRoots: options.projectRoots });
   const sorted = [...options.sessions].sort((left, right) => left.from.getTime() - right.from.getTime());
@@ -131,14 +138,24 @@ export const sessionPieces = (options: {
   const found = new Map<string, SessionPiece>();
 
   for (const unit of unitsOf(sorted, areas)) {
-    const candidates = unit.area ? (open.get(unit.area) ?? []) : [];
-    const joined = candidates
+    const keys = [
+      ...(unit.area ? [`area:${unit.area}`] : []),
+      ...(unit.branch && !baseBranches.has(unit.branch) ? [`branch:${unit.branch}`] : []),
+    ];
+    const joined = keys
+      .flatMap((key) => open.get(key) ?? [])
       .filter((candidate) => candidate.to < unit.from)
       .sort((left, right) => right.to - left.to)[0];
-    const piece = joined?.piece ?? unit.sessions[0]?.sessionId ?? '';
+    const entry = joined ?? { piece: unit.sessions[0]?.sessionId ?? '', to: unit.to };
+    const piece = entry.piece;
 
-    if (joined) joined.to = Math.max(joined.to, unit.to);
-    else if (unit.area) open.set(unit.area, [...candidates, { piece, to: unit.to }]);
+    entry.to = Math.max(entry.to, unit.to);
+
+    for (const key of keys) {
+      const held = open.get(key) ?? [];
+
+      if (!held.includes(entry)) open.set(key, [...held, entry]);
+    }
 
     for (const session of unit.sessions)
       found.set(session.sessionId, { piece, workPath: dominant(slices.get(session) ?? []) });
