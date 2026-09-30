@@ -21,3 +21,9 @@ workspace unless the team asks for it.
    block and drops the edit. If `AGENTS.md` holds nothing but the block, add the decisions above it.
 
 An agent may prepare the list in step 2. It must not move a project without that decision.
+
+## Done when
+
+- Each deviation from step 2 has a decision, recorded as step 4 says.
+
+Then delete this task file.

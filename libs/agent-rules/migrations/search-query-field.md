@@ -24,23 +24,29 @@ A call site is in scope when the debounced value ends up in the args of a query.
 
 1. Add a `search: searchQueryField()` field to the list's `defineQueryForm`, or declare a form with
    that one field.
-2. Call `.observe()` on it. When the search must not touch the URL, for example a search inside a
-   dialog, pass `{ writeToQueryParams: false, syncOnNavigation: false }`. `writeToQueryParams: false`
-   alone stops the writes only: the form still reads the page's own params, such as `page`.
+2. Call `.observe()` on it. Keep the URL behaviour the old search had. If it did not write the
+   URL, as a search inside a dialog, pass `{ writeToQueryParams: false, syncOnNavigation: false }`.
+   `writeToQueryParams: false` alone stops the writes only: the form still reads the page's own
+   params, such as `page`.
 3. Read `this.qf.value().search` in `withArgs`, and bind the input with `[formField]="qf.fields.search"`.
 4. Delete the debounce, the subject or timer, and the intermediate signal.
 5. Pass `debounce` to the field when the old delay was deliberately different from 300ms.
 
-If the `list-state-query-form` task already moved this list to a query form, the search is done.
+If the search text is part of list state the component syncs to the URL by hand, skip the call
+site: it moves with the rest of the list to `defineQueryForm` when that list is next edited.
 
 ## Leave these alone
 
 - A debounce whose value never reaches a query: resize and scroll handlers, autosave, analytics.
 - An SDK control that takes a search input of its own.
 
-## When you are done
+## Done when
 
-Run the type check, the lint task and the tests of every project you changed.
+- No hit of the greps above feeds a query any more, apart from the hand-synced lists you skipped.
+  Your final message names each skipped one.
+- The type check, lint and tests pass for every project you changed.
+
+Then delete this task file.
 
 The guide the `Docs` line at the top of this file links (`/query/query-forms` on the SDK docs site)
 has the field creators and their options.

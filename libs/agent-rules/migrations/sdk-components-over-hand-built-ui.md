@@ -1,69 +1,27 @@
 # Use the SDK component where one exists
 
-The earlier `ethlete-sdk-docs` skill listed only part of the component domains, and named some by a
-word an agent would not search for. So apps built their own bar charts, avatars and progress bars,
-although `@ethlete/components` ships all three. The skill now lists every domain and maps the common
-needs to them.
+The `ethlete-sdk-docs` skill now lists every component domain, with a table that maps common needs
+to them ("Check this list before you build any UI by hand"). Apps built their own bar charts,
+avatars and progress bars because the old list did not name them. Replacing one restyles its view,
+so it happens when someone next edits that view, not in this task.
 
-## Before you start
+When you do replace one, check every feature of the hand-built one against the SDK component's
+inputs, slots and `--et-*` tokens first, and keep the hand-built one where a feature has no
+counterpart. Known gaps:
 
-`et update` regenerates the skills when it moves `@ethlete/agent-rules`. If
-`.agents/skills/ethlete-sdk-docs/SKILL.md` has no "Check this list before you build any UI by hand"
-table, run `ethlete-agents sync` with this repo's package manager (`yarn`, `pnpm exec` or `npx`) first. Read that table: it covers more than the three below.
+- `et-bar-chart` renders every category label and only truncates it, and has no slot for a title,
+  a note or an empty state.
+- `et-avatar` derives initials from `name` only, and takes its colours from a colour theme only.
 
-## Find the call sites
+No code changes in this task. To count the candidates, skipping hits that already use an `et-`
+element:
 
 ```bash
-grep -rnE 'chart|bar-?graph|<rect ' apps libs --include='*.html' --include='*.ts'
-grep -rnE 'avatar|initials' apps libs --include='*.html' --include='*.ts' --include='*.css'
-grep -rnE '\b[A-Z0-9_]*(INITIALS|AVATAR|ABBR)[A-Z0-9_]*\b' apps libs --include='*.ts'
-grep -rnE '\.(charAt\(0\)|at\(0\)|\[0\])[^;]*\.toUpperCase\(\)|split\(.*\)\.map\(.*\[0\]' apps libs --include='*.ts' --include='*.html'
-grep -rnE 'progress' apps libs --include='*.html' --include='*.ts' --include='*.css'
+grep -rlE 'bar-?chart|bar-?graph|avatar|initials|progress-?bar' apps libs --include='*.html' --include='*.ts' | xargs grep -LE '<et-(bar-chart|avatar|progress-bar)' | wc -l
 ```
 
-The third and fourth catch initials built by hand: a constant map from a name or key to its letters, and
-first letters taken and upper-cased. Skip every hit that already uses an `et-` element.
+## Done when
 
-## The replacement for each
+- The count is in your final message, or in the report you give the developer.
 
-| Hand-built                                | SDK component                  | Guide                |
-| ----------------------------------------- | ------------------------------ | -------------------- |
-| Bar or stacked bar chart, a series legend | `et-bar-chart`                 | `/components/chart`  |
-| Initials or a user picture in a circle    | `et-avatar`, `et-avatar-group` | `/components/avatar` |
-| Progress bar                              | `et-progress-bar`              | `/components/loader` |
-
-## What to change
-
-1. Read the guide of the component, and map the data the hand-built one received onto its inputs.
-2. Replace the markup, and delete the component, the CSS and the helpers only it used.
-3. Style it through its `--et-*` tokens, not by overriding its internals.
-
-## When the SDK component cannot cover it
-
-Check every feature of the hand-built one against the component's inputs, slots and `--et-*`
-tokens before you replace it. Known gaps:
-
-- `et-bar-chart` renders every category label and only truncates it, so a long axis cannot be
-  thinned. It has no slot for a title, a note or an empty state.
-- `et-avatar` derives initials from `name` only, so explicit initials (a constant map, a team
-  abbreviation) cannot be passed. Its fill and text colour come from a colour theme only; there is
-  no `--et-avatar-*` colour token.
-
-When a feature has no counterpart, keep the hand-built one and record the gap for the user: which
-view, which feature, which component. Do not drop the feature to make the component fit, and do not
-register or invent a colour theme to reach a colour the component has no token for.
-
-## Leave these alone
-
-- A visual the SDK component cannot express, such as a chart type it does not have. Report it
-  instead of forcing a fit.
-- A component another repo imports from this one: replacing it is a change to that repo's contract,
-  so report it.
-
-## When you are done
-
-Run the type check, the lint task and the tests of every project you changed, and compare each
-replaced view in the browser with how it looked before.
-
-The page the `Docs` line at the top of this file links (`/components/` on the SDK docs site) lists
-every component domain.
+Then delete this task file.

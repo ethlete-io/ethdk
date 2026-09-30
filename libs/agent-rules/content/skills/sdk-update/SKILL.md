@@ -69,9 +69,11 @@ Two files describe what is left. Read the JSON one when you work through the lis
 
 Every task carries a `kind`, and the kind decides who acts:
 
-- **`assisted`** - written for you. The task file states one change to apply across this repo. Read the
-  whole file before the first edit, then apply it. These are the changes no codemod can make, so expect
-  a decision per call site rather than one pattern.
+- **`assisted`** - written for you. The task file states one bounded change to apply across this repo.
+  Read the whole file before the first edit, then work it until its `Done when` list holds. These are
+  the changes no codemod can make, so expect a decision per call site rather than one pattern. What the
+  file leaves for later stays for later: report it, do not do it. A view you cannot open in the browser
+  (a login fails, no API) goes into your report as unchecked; it does not block the task.
 - **`manual`** - a recommendation for the developer. It needs a product or design decision, or a
   command with answers only they have. Do not guess the answer. Report the task and what it needs.
 - **`unsupported`** - a codemod that could not run here, because this repo has no Nx. The task carries

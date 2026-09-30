@@ -53,9 +53,9 @@ describe('the @ethlete/agent-rules migrations', () => {
     expect(problems).toEqual([]);
     expect(written.tasks.map((task) => `${task.name} (${task.kind})`)).toEqual([
       'app-styling-utilities (assisted)',
-      'list-state-query-form (assisted)',
+      'list-state-query-form (manual)',
       'search-query-field (assisted)',
-      'sdk-components-over-hand-built-ui (assisted)',
+      'sdk-components-over-hand-built-ui (manual)',
       'nx-layout (manual)',
     ]);
 

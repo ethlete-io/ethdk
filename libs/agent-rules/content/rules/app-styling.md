@@ -18,6 +18,10 @@ component a host class (`host: { class: 'app-player-card' }`) and scope every se
 the way SDK components scope theirs under their `et-` classes. Never write a bare element or
 unprefixed class selector in a component stylesheet.
 
+In an existing repo, apply this to the component you are editing, not to the rest of the app. A
+legacy component that relies on emulated encapsulation keeps it until its CSS is scoped under a
+host class: without that scope, `ViewEncapsulation.None` leaks its CSS into every view.
+
 Write CSS only for what utilities cannot express. Keep that CSS **unlayered** or in
 `@layer utilities` — never in `@layer components`, and that includes the global stylesheet. SDK component styles are injected into
 `@layer components` at runtime, after your stylesheet, so an app rule in the same layer
@@ -34,7 +38,8 @@ The SDK sizes everything in `rem` on a **10px root**: the app's global styleshee
 The 10px root also shrinks every rem-based Tailwind scale to 62.5% of its nominal size (1.6×
 smaller): `p-4` is 10px instead of 16px, and `max-w-3xl` is 480px instead of 768px. Set
 `--spacing: 0.4rem` in the app's `@theme` so the spacing scale keeps its 4px step, as the SDK's
-own Storybook does. Redefine any other rem scale the app uses (`--text-*`, `--container-*`,
+own Storybook does. In an app that already uses utilities without it, setting it rescales every
+view: tell the user rather than set it. Redefine any other rem scale the app uses (`--text-*`, `--container-*`,
 `--radius-*`) the same way, or use px where a size matters. Breakpoints are not affected: a
 media query's `rem` ignores the root font size.
 

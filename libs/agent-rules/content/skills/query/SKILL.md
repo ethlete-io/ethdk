@@ -159,6 +159,13 @@ Bind form controls with `[formField]="qf.fields.search"`. `et-pagination` and
 change pushes a history entry; pass `observe({ replaceUrl: true })` to replace it instead. See {%docsBaseUrl%}/query/query-forms for the other field creators,
 filter overlays and `activeFilterCount`.
 
+When you move a list that syncs its params by hand, keep the param names the URL already uses, so
+saved links keep working (`queryParamPrefix` when two lists share a route). Keep each old default as
+the field's `defaultValue`. A URL with sort and direction in two params (`?sort=name&dir=asc`)
+keeps two `queryField`s, `dir` with `skipInFilterCount: true`; `sortQueryField()` writes one
+`name:asc` param, so it breaks old links. A date field bound to `et-date-input`,
+`et-date-time-input` or `et-time-input` needs `dateQueryField({ as: 'string' })`.
+
 ## The query object
 
 Every state member is an **`ObservableSignal`** - call it, or `.asObservable()` it without an
