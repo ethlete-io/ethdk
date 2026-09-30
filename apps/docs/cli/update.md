@@ -123,7 +123,7 @@ An `assisted` task file states one change and how to apply it. Hand it to an age
 
 ```json
 {
-  "updateAgentCommand": "claude --permission-mode acceptEdits"
+  "updateAgentCommand": "claude --permission-mode auto"
 }
 ```
 
@@ -134,7 +134,7 @@ Each CLI is offered twice:
 - **Interactive** opens a normal agent session with the prompt. You see its progress, and it can ask you when a task needs a decision. Close the session when the task is done, and the next task starts.
 - **Headless** runs to the end with no question and prints only its final answer. A task that needs a decision stays open.
 
-Pick the interactive command for a large migration. Either way the agent has to be allowed to edit files without asking: a plain `claude -p` can read the task but not apply it.
+Pick the interactive command for a large migration. Either way the agent has to be allowed to edit files without asking: a plain `claude -p` can read the task but not apply it. The Claude Code commands use auto mode, so the agent can also run its checks. If your account has no auto mode, type `claude --permission-mode acceptEdits` instead.
 
 `et update --ai` runs the command once per assisted task, in order, so each run has one change to make. Each run gets a prompt that names the task file and asks the agent to delete it once the change is complete. The prompt is appended to the command, or replaces `<prompt>` in it; `<file>` is replaced by the path of the task file alone, for a command that brings its own prompt. Both reach the shell as the quoted variables `ETHLETE_UPDATE_PROMPT` and `ETHLETE_UPDATE_TASK_FILE`, so a repo path with shell characters is passed as it is.
 

@@ -7,7 +7,7 @@ import { UpdateTask } from './tasks';
 export const AGENT_COMMAND_KEY = 'updateAgentCommand';
 
 /** An interactive agent command that can edit files without asking, for the error that names the key. */
-export const AGENT_COMMAND_EXAMPLE = 'claude --permission-mode acceptEdits';
+export const AGENT_COMMAND_EXAMPLE = 'claude --permission-mode auto';
 
 /** Where the command template takes the whole prompt. */
 export const PROMPT_PLACEHOLDER = '<prompt>';

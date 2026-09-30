@@ -32,8 +32,8 @@ describe('agentChoices', () => {
     const env = { PATH: binDir('codex', 'claude') };
 
     expect(agentChoices({ env, platform: 'linux' }).map(({ command }) => command)).toEqual([
-      'claude --permission-mode acceptEdits',
-      'claude --permission-mode acceptEdits -p',
+      'claude --permission-mode auto',
+      'claude --permission-mode auto -p',
       'codex --sandbox workspace-write',
       'codex exec --sandbox workspace-write',
     ]);
@@ -59,9 +59,9 @@ describe('setUpAgentCommand', () => {
   it('saves the first choice on Enter and gitignores the file', async () => {
     const { root, result } = setUp('');
 
-    expect(await result).toBe('claude --permission-mode acceptEdits');
+    expect(await result).toBe('claude --permission-mode auto');
     expect(readJson(join(root, 'ethlete.config.local.json'))).toEqual({
-      updateAgentCommand: 'claude --permission-mode acceptEdits',
+      updateAgentCommand: 'claude --permission-mode auto',
     });
     expect(readFileSync(join(root, '.gitignore'), 'utf8')).toBe('ethlete.config.local.json\n');
   });
@@ -71,10 +71,10 @@ describe('setUpAgentCommand', () => {
 
     writeFileSync(join(root, 'ethlete.config.local.json'), JSON.stringify({ sdkSourcePath: '../sdk' }), 'utf8');
 
-    expect(await setUp('2', root).result).toBe('claude --permission-mode acceptEdits -p');
+    expect(await setUp('2', root).result).toBe('claude --permission-mode auto -p');
     expect(readJson(join(root, 'ethlete.config.local.json'))).toEqual({
       sdkSourcePath: '../sdk',
-      updateAgentCommand: 'claude --permission-mode acceptEdits -p',
+      updateAgentCommand: 'claude --permission-mode auto -p',
     });
   });
 
@@ -89,7 +89,7 @@ describe('setUpAgentCommand', () => {
     await setUp('1', root).result;
 
     expect(readJson(join(root, 'ethlete-agents.config.local.json')).updateAgentCommand).toBe(
-      'claude --permission-mode acceptEdits',
+      'claude --permission-mode auto',
     );
   });
 
@@ -120,6 +120,6 @@ describe('setUpAgentCommand', () => {
       await setUpAgentCommand({ root, env: { PATH: binDir('claude') }, platform: 'linux', isTTY: false }),
     ).toBeUndefined();
     expect(asked).not.toHaveBeenCalled();
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('claude --permission-mode acceptEdits -p'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('claude --permission-mode auto -p'));
   });
 });

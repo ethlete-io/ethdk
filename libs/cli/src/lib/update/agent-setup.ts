@@ -18,8 +18,8 @@ export const AGENT_CLIS: readonly AgentCli[] = [
   {
     binary: 'claude',
     label: 'Claude Code',
-    interactive: 'claude --permission-mode acceptEdits',
-    headless: 'claude --permission-mode acceptEdits -p',
+    interactive: 'claude --permission-mode auto',
+    headless: 'claude --permission-mode auto -p',
   },
   {
     binary: 'codex',

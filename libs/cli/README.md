@@ -68,7 +68,7 @@ needs a decision), `assisted` (written as a prompt for an agent) or `unsupported
 has no Nx to run, with the command to run it by hand).
 
 `--ai` hands each open assisted task to the command in `updateAgentCommand` in
-`ethlete.config.local.json` (for example `claude --permission-mode acceptEdits`), one run per task,
+`ethlete.config.local.json` (for example `claude --permission-mode auto`), one run per task,
 and reports each run. It also works on the tasks an earlier run left. When the key is missing, `--ai`
 lists the agent CLIs on `PATH` and saves the command you pick.
 
