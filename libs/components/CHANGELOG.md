@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.66
+
+### Patch Changes
+
+- Fix card and link rows of `et-table` collapsing, and one row link covering the whole table, after the table is destroyed and created again (e.g. browser Back).
+
 ## 1.0.0-next.65
 
 ### Major Changes
