@@ -26,7 +26,7 @@ export const roundDurationUp = (durationMs: number, options?: Partial<RoundOptio
 
 type TicketRow = { from: Date; to: Date; laneKey?: string; issueKey?: string; standInId?: string };
 
-const ticketOf = (row: TicketRow) =>
+export const ticketOf = (row: TicketRow) =>
   row.issueKey ? `issue:${row.issueKey}` : row.standInId ? `stand-in:${row.standInId}` : undefined;
 
 /**

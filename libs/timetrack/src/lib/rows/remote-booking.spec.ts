@@ -47,6 +47,16 @@ describe('unbookedRemoteByRow', () => {
 
     expect(bookedMs(rows, remote)).toEqual([0, 0, 60]);
   });
+
+  it('books it on every session row of one ticket in that lane, which share it out later', () => {
+    const rows = [
+      row('session-a', 600, 660, { laneKey: 'repo:/phone', issueKey: 'ET-2' }),
+      row('session-b', 600, 660, { laneKey: 'repo:/phone', issueKey: 'ET-2' }),
+      row('other-ticket', 600, 660, { laneKey: 'repo:/phone', issueKey: 'ET-3' }),
+    ];
+
+    expect(bookedMs(rows)).toEqual([60, 60, 0]);
+  });
 });
 
 describe('remoteBookingOnGrid', () => {

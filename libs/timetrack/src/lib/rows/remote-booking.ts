@@ -1,5 +1,5 @@
 import { TimeWindow, clipWindows, mergeWindows, subtractWindows, windowsMs } from '../model/time-window';
-import { DEFAULT_ROUND_OPTIONS, RoundOptions } from './round';
+import { DEFAULT_ROUND_OPTIONS, RoundOptions, ticketOf } from './round';
 import { nearestOnGrid } from './grid';
 
 /** A part of a remote stretch the day books, with the lane of the prompt that bought it. */
@@ -8,7 +8,7 @@ export type BookedRemoteWindow = TimeWindow & { laneKey?: string };
 /** A day's remote stretches on the row grid: all of `drawn` is drawn as work, and only `booked` books. */
 export type RemoteBooking = { drawn: TimeWindow[]; booked: BookedRemoteWindow[] };
 
-type BookingRow = TimeWindow & { id: string; laneKey?: string; issueKey?: string };
+type BookingRow = TimeWindow & { id: string; laneKey?: string; issueKey?: string; standInId?: string };
 
 /** What a row spanning `from` to `to` books: its span, less the unbooked remote time inside it. */
 export const bookedSpanMs = (row: TimeWindow, unbooked: readonly TimeWindow[] = []) =>
@@ -57,7 +57,8 @@ const ownerOrder = (a: BookingRow, b: BookingRow) =>
  * A booked part counts only on the rows in the lane of the prompt that bought it. When none of `rows`
  * is in that lane, it counts on the one row over it that names an issue before one that does not, then
  * has the lowest lane key, then starts first. Every other row over it treats it as unbooked, so the day
- * books each part at most once.
+ * books each part at most once. The session rows of one ticket in the lane all count it, because
+ * `siblingBookingsOf` shares their minutes out and books the clock they cover once.
  */
 export const unbookedRemoteByRow = (options: {
   rows: readonly BookingRow[];
@@ -72,10 +73,16 @@ export const unbookedRemoteByRow = (options: {
       ({ row }) => row.from.getTime() < part.to.getTime() && row.to.getTime() > part.from.getTime(),
     );
     const owners = lane.length ? over : over.sort((a, b) => ownerOrder(a.row, b.row)).slice(0, 1);
+    const byTicket = new Map<string, TimeWindow[]>();
     let left: TimeWindow[] = [part];
 
     for (const { row, index } of owners) {
-      owned[index]?.push(...clipWindows({ windows: left, within: [row] }));
+      const ticket = lane.length ? ticketOf(row) : undefined;
+      const sibling = (ticket && byTicket.get(ticket)) || [];
+      const taken = clipWindows({ windows: left, within: [row] });
+
+      owned[index]?.push(...clipWindows({ windows: mergeWindows([...sibling, ...taken]), within: [row] }));
+      if (ticket) byTicket.set(ticket, mergeWindows([...sibling, ...taken]));
       left = subtractWindows({ windows: left, without: [row] });
     }
   }
