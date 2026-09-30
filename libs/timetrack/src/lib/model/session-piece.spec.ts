@@ -217,8 +217,47 @@ describe('sessionPieces', () => {
         session({ id: 'a', from: 0, to: 5, paths: ['libs/timetrack/a.ts'], branch: 'next' }),
         session({ id: 'b', from: 6, to: 12, paths: ['libs/eslint-plugin/a.ts'], branch: 'next' }),
         session({ id: 'c', from: 13, to: 17, paths: [], branch: 'next' }),
+        session({ id: 'd', from: 18, to: 20, paths: ['libs/timetrack/b.ts'], branch: 'next' }),
       ]),
-    ).toEqual({ a: 'a', b: 'b', c: 'c' });
+    ).toEqual({ a: 'a', b: 'b', c: 'b', d: 'a' });
+  });
+
+  it('joins sessions one after the other on a base branch that name no project', () => {
+    expect(
+      piecesOf([
+        session({ id: 'a', from: 0, to: 5, paths: [], branch: 'next' }),
+        session({ id: 'b', from: 6, to: 12, paths: [], branch: 'next' }),
+        session({ id: 'c', from: 13, to: 17, paths: [], branch: 'next' }),
+      ]),
+    ).toEqual({ a: 'a', b: 'a', c: 'a' });
+  });
+
+  it('joins a session on a base branch that names no project to the project before it, and keeps another project apart', () => {
+    expect(
+      piecesOf([
+        session({ id: 'a', from: 0, to: 5, paths: [], branch: 'next' }),
+        session({ id: 'b', from: 6, to: 12, paths: ['libs/timetrack/a.ts'], branch: 'next' }),
+        session({ id: 'c', from: 13, to: 17, paths: ['libs/eslint-plugin/a.ts'], branch: 'next' }),
+      ]),
+    ).toEqual({ a: 'a', b: 'a', c: 'c' });
+  });
+
+  it('keeps sessions on a base branch that ran at the same time apart', () => {
+    expect(
+      piecesOf([
+        session({ id: 'a', from: 0, to: 40, paths: [], branch: 'next' }),
+        session({ id: 'b', from: 30, to: 60, paths: [], branch: 'next' }),
+      ]),
+    ).toEqual({ a: 'a', b: 'b' });
+  });
+
+  it('keeps sessions one after the other on two base branches apart', () => {
+    expect(
+      piecesOf([
+        session({ id: 'a', from: 0, to: 5, paths: [], branch: 'main' }),
+        session({ id: 'b', from: 6, to: 12, paths: [], branch: 'next' }),
+      ]),
+    ).toEqual({ a: 'a', b: 'b' });
   });
 
   it('keeps sessions on one feature branch that ran at the same time apart', () => {

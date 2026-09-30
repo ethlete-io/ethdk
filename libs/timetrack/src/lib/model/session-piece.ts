@@ -109,10 +109,11 @@ const unitsOf = (
  *
  * Sessions that wrote a common handoff, plan or design call are one piece, whenever they ran. Beyond
  * that a session joins the piece of an earlier session that had ended before it started and either
- * worked in the same project or ran on the same branch, where that branch is not one of
- * `baseBranches`; an app, its e2e app and its library count as one project. Two sessions that ran at
- * the same time and share no such file stay two pieces. A session whose files name no directory and
- * no such file, on a base branch or no branch, stays a piece of its own.
+ * worked in the same project or ran on the same branch; an app, its e2e app and its library count as
+ * one project. On one of `baseBranches` the project picks the ticket, so there a session joins only a
+ * piece in its own project, or one of the two names no project. Two sessions that ran at the same time
+ * and share no such file stay two pieces. A session whose files name no directory and no such file,
+ * on no branch, stays a piece of its own.
  *
  * A piece is named after its first session, so a session that joins later never renames it.
  */
@@ -134,22 +135,22 @@ export const sessionPieces = (options: {
   }
 
   const areas = new Map([...slices].map(([session, paths]) => [session, paths.map(areaOf)]));
-  const open = new Map<string, { piece: string; to: number }[]>();
+  const open = new Map<string, { piece: string; to: number; area?: string }[]>();
   const found = new Map<string, SessionPiece>();
 
   for (const unit of unitsOf(sorted, areas)) {
-    const keys = [
-      ...(unit.area ? [`area:${unit.area}`] : []),
-      ...(unit.branch && !baseBranches.has(unit.branch) ? [`branch:${unit.branch}`] : []),
-    ];
+    const onBase = !!unit.branch && baseBranches.has(unit.branch);
+    const keys = [...(unit.area ? [`area:${unit.area}`] : []), ...(unit.branch ? [`branch:${unit.branch}`] : [])];
     const joined = keys
       .flatMap((key) => open.get(key) ?? [])
       .filter((candidate) => candidate.to < unit.from)
+      .filter((candidate) => !onBase || !candidate.area || !unit.area || candidate.area === unit.area)
       .sort((left, right) => right.to - left.to)[0];
-    const entry = joined ?? { piece: unit.sessions[0]?.sessionId ?? '', to: unit.to };
+    const entry = joined ?? { piece: unit.sessions[0]?.sessionId ?? '', to: unit.to, area: unit.area };
     const piece = entry.piece;
 
     entry.to = Math.max(entry.to, unit.to);
+    entry.area ??= unit.area;
 
     for (const key of keys) {
       const held = open.get(key) ?? [];

@@ -316,6 +316,33 @@ describe('streamDay agent sessions', () => {
     expect(bookedMs(events)).toBe(30 * 60_000);
   });
 
+  it('joins short sessions one after the other on a base branch that name no directory into one row', () => {
+    const onMain = { branchAt: () => 'main' };
+    const events = [
+      ...sessionRun({ sessionId: 'one', from: 0, to: 5, ...onMain }),
+      ...sessionRun({ sessionId: 'two', from: 6, to: 11, ...onMain }),
+      ...sessionRun({ sessionId: 'three', from: 12, to: 17, ...onMain }),
+    ];
+    const { rows } = dayOf(events);
+
+    expect([...rows.proposals, ...rows.unnamed]).toHaveLength(1);
+    expect(bookedMs(events)).toBe(30 * 60_000);
+  });
+
+  it('keeps sessions one after the other on a base branch in two checkouts apart', () => {
+    const other = '/home/tom/dev/other-frontend';
+    const onMain = { branchAt: () => 'main' };
+    const { rows } = streamDay({
+      events: [
+        ...sessionRun({ sessionId: 'one', from: 0, to: 5, ...onMain }),
+        ...sessionRun({ sessionId: 'two', from: 6, to: 11, cwd: other, ...onMain }),
+      ],
+      options: { repoRoots: [REPO, other], baseBranches: ['main'] },
+    });
+
+    expect([...rows.proposals, ...rows.unnamed]).toHaveLength(2);
+  });
+
   it('reads a working directory the shell changed into as a directory', () => {
     const blocks = blocksOf([
       ...sessionRun({ sessionId: 'one', from: 0, to: 30, cwd: `${REPO}/libs/timetrack`, workedIn: 'libs/timetrack' }),
