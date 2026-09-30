@@ -254,6 +254,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      # Full debug info makes the cached dependencies several GB, and the restore then costs more
+      # than the build it saves.
+      CARGO_PROFILE_DEV_DEBUG: line-tables-only
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
@@ -274,15 +278,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
 
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            apps/timetrack/src-tauri/target
-            apps/ethlete-studio/src-tauri/target
-          key: cargo-${{ runner.os }}-${{ hashFiles('apps/timetrack/src-tauri/Cargo.lock', 'apps/ethlete-studio/src-tauri/Cargo.lock') }}
-          restore-keys: cargo-${{ runner.os }}-
+          workspaces: |
+            apps/timetrack/src-tauri -> target
+            apps/ethlete-studio/src-tauri -> target
 
       # After the build dependencies: clippy compiles the crate, where `cargo fmt --check` reads it.
       - run: yarn nx run timetrack-app:lint-rust
