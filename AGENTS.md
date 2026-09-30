@@ -133,7 +133,9 @@ and this workspace is already connected.)
 
 ## Releasing
 
-Every change to a published package needs a changeset. Use the **`changeset`**
+Every change to a workspace package needs a changeset: every `@ethlete/*` lib, and the private
+`timetrack-app`, `ethlete-studio` and `@ethlete/timetrack` too. A test or story change names the package with the
+level `none`. `yarn lint:changesets` fails the push when a changed package has none. Use the **`changeset`**
 skill (`.agents/skills/changeset/`) - write the file directly; don't run the
 interactive `npx changeset` CLI.
 

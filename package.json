@@ -22,7 +22,7 @@
     "design:check": "nx build cli && node dist/libs/cli/src/index.js design check",
     "docs": "nx serve docs",
     "e2e:affected": "node apps/storybook-e2e/affected.mjs origin/next --run",
-    "lint:changesets": "node ./tools/scripts/lint-changesets.js",
+    "lint:changesets": "node ./tools/scripts/lint-changesets.js && node ./tools/scripts/check-changeset-coverage.js",
     "lint:css-properties": "node ./tools/scripts/lint-css-properties.js",
     "prepare": "husky",
     "prepare:release": "node ./tools/scripts/prepare-release.js",

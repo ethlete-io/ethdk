@@ -1,6 +1,6 @@
 ---
 name: changeset
-description: Create a changeset for a change to any @ethlete/* package (release notes + version bump). Use whenever you finish a code change to a publishable library (components, cdk, core, query, contentful, cli, types, eslint-plugin) and need to record it for release - e.g. the user says "add a changeset", or a PR needs one.
+description: Create a changeset for a change to any workspace package (release notes + version bump) - every @ethlete/* lib, and the private timetrack-app, ethlete-studio and @ethlete/timetrack too. Use whenever you commit a change under libs/*, apps/timetrack or apps/ethlete-studio, even a test or a story - `yarn lint:changesets` fails the push without one - or when the user says "add a changeset".
 ---
 
 # Add a changeset
@@ -41,15 +41,28 @@ same way, but they are private, so they keep their plain nx project names:
 | `timetrack-app`          | The Timetrack desktop app (private, never published) |
 | `ethlete-studio`         | The Ethlete Studio desktop app (private, never published) |
 
-List **only** the packages whose source you actually changed. Story-only,
-test-only, or `.claude/` changes don't need a changeset. If one logical change
-spans several packages (e.g. a cross-cutting cleanup), list them all in one
-changeset.
+List **only** the packages whose source you actually changed. The private apps
+count: a change to Timetrack or Studio gets a changeset like any lib. If one
+logical change spans several packages (e.g. a cross-cutting cleanup), list them
+all in one changeset.
+
+A change that needs no release - a test, a story, a lint fix with no runtime
+effect - still gets a changeset, with the level **`none`** and no note:
+
+```md
+---
+'@ethlete/components': none
+---
+```
+
+Changesets bumps nothing and writes no changelog entry for it. `.claude/` and
+other files outside a package need nothing.
 
 ## 2. Pick the bump level
 
 Follow semver, judged from the consumer's perspective:
 
+- **none** - no release: a test, a story, or tooling inside the package. Leave the note out.
 - **patch** - bug fix or internal change; no new API, no breaking change. (Most common.)
 - **minor** - new backwards-compatible API (new component, input, exported function, option).
 - **major** - breaking change (removed/renamed export, changed signature or default behaviour consumers rely on).
@@ -188,6 +201,9 @@ than **one paragraph**, more than **three bullets**, or with frontmatter that na
 unknown package or bump level. It runs in three places: a `PostToolUse` hook checks the
 single file the moment you write it, `.husky/pre-commit` checks the staged ones, and CI
 checks every unreleased one - so an over-long note comes straight back at you.
+
+`.husky/pre-push` and CI also run `tools/scripts/check-changeset-coverage.js`. It fails
+when a commit in the pushed range changes a package that no changeset in the range names.
 
 When it fires, **delete the note and write the one-sentence version**. Do not shave
 words off the paragraphs you have until the count passes: a 40-word note that is a

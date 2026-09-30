@@ -37,7 +37,7 @@ const PACKAGES = [
   'timetrack-app',
 ];
 
-const LEVELS = ['major', 'minor', 'patch'];
+const LEVELS = ['major', 'minor', 'patch', 'none'];
 
 const SKILL_HINT =
   'The bar is in the `changeset` skill (.agents/skills/changeset/SKILL.md): the note is the line a\n' +
@@ -129,7 +129,10 @@ const lint = (paths) => {
     if (!existsSync(path)) continue;
 
     const { error, frontmatter, note } = parse(readFileSync(path, 'utf8'));
-    const problems = error ? [error] : [...checkFrontmatter(frontmatter), ...checkNote(note)];
+    const releasesNothing = !error && frontmatter.every((line) => /:\s*none\s*$/.test(line));
+    const problems = error
+      ? [error]
+      : [...checkFrontmatter(frontmatter), ...(releasesNothing && note.length === 0 ? [] : checkNote(note))];
 
     if (problems.length > 0) failures.push({ file, problems });
   }
