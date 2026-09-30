@@ -170,11 +170,14 @@ jobs:
           if [ "$RUNNER_OS" = Windows ]; then
             export OPENSSL_SRC_PERL='C:\Strawberry\perl\bin\perl.exe'
             export LIBCLANG_PATH='C:\Program Files\LLVM\bin'
+            export BINDGEN_EXTRA_CLANG_ARGS='--target=x86_64-pc-windows-msvc -v'
           fi
           echo '{ "bundle": { "createUpdaterArtifacts": true } }' > "$RUNNER_TEMP/updater.json"
           # Cargo hides a registry crate's build-script warnings, which is where bindgen reports why it failed.
           yarn nx run ${{ matrix.app.project }}:tauri:build -- --config "$RUNNER_TEMP/updater.json" || {
-            grep -h "cargo:warning" ${{ matrix.app.dir }}/src-tauri/target/release/build/*/output 2>/dev/null || true
+            grep -ah "cargo:warning" ${{ matrix.app.dir }}/src-tauri/target/release/build/*/output 2>/dev/null || true
+            cat ${{ matrix.app.dir }}/src-tauri/target/release/build/whisper-rs-sys-*/stderr 2>/dev/null || true
+            env | grep -iE '^(include|lib|cpath|c_include_path|cplus_include_path)=' || true
             exit 1
           }
         env:
