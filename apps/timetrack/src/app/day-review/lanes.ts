@@ -338,7 +338,9 @@ export const lanesOf = (options: {
   for (const stretch of options.behind ?? []) {
     const key = columnOf(stretch.laneKey);
     const bands = (stretch.pieces ?? [stretch]).map((piece) => ({
-      stretch,
+      stretch: stretch.pieces
+        ? { ...stretch, ...piece, durationMs: piece.to.getTime() - piece.from.getTime(), pieces: undefined }
+        : stretch,
       offset: offsetOf({ at: piece.from, dayStart: options.dayStart }),
       span: spanOf(piece),
     }));

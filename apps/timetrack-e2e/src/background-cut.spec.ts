@@ -135,7 +135,7 @@ test.describe('a band of a project the user marked as background', () => {
 });
 
 test.describe('a background band that lost two stretches with its own row between them', () => {
-  test('draws only the minutes it lost, and names the stretch on each piece', async ({ page }) => {
+  test('draws only the minutes it lost, and gives each piece its own duration', async ({ page }) => {
     const code = (minutes: number) => focus(minutes, 'code', 'invite.ts - fut-frontend - Visual Studio Code');
 
     await seedWorld(page, {
@@ -155,8 +155,8 @@ test.describe('a background band that lost two stretches with its own row betwee
     const pieces = lane.locator('[data-behind]');
 
     await expect(pieces).toHaveCount(2);
-    await expect(pieces.first()).toHaveText('XYZ-4200 · in the background · 1h 0m');
-    await expect(pieces.last()).toHaveText('XYZ-4200 · in the background · 1h 0m');
+    await expect(pieces.first()).toHaveText('XYZ-4200 · in the background · 30m');
+    await expect(pieces.last()).toHaveText('XYZ-4200 · in the background · 30m');
 
     const [first, second] = await Promise.all([pieces.first().boundingBox(), pieces.last().boundingBox()]);
     const rowBox = await titleOf(page, 'XYZ-4200').boundingBox();
