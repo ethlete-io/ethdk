@@ -87,6 +87,9 @@ that it is not running inside the shell rather than failing obscurely. Use it fo
 `tauri:dev` and `tauri:build` are deliberately outside the default CI pipeline and the `ci-check`
 skill: they need a Rust toolchain and a per-OS matrix that the Angular libraries do not.
 
+`yarn timetrack` builds the host with the `transcribe` cargo feature, so it compiles whisper.cpp and
+needs `cmake` on the `PATH`. The call transcript stays off until it is turned on in Settings.
+
 ## Where the window comes back
 
 The window's size, its position and whether it was maximised or minimised are stored in

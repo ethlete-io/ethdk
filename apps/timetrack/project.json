@@ -118,7 +118,7 @@
     "tauri:dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tauri dev",
+        "command": "tauri dev --features transcribe",
         "cwd": "apps/timetrack"
       }
     },
