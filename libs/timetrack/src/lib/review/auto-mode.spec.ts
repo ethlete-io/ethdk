@@ -406,6 +406,27 @@ describe('autoModeApplies', () => {
   });
 });
 
+describe('a match Jira had done', () => {
+  const done = (): AutoModeAnswer => {
+    const answer = matched('FOO-1');
+
+    return answer.outcome.kind === 'match' ? { ...answer, outcome: { ...answer.outcome, done: true } } : answer;
+  };
+
+  it('is never written, queued or named onto a band, and reads out as done', () => {
+    const edits = withAutoModeAnswer(EMPTY_DAY_REVIEW_EDITS, done());
+
+    expect(autoModeApplies({ day: TODAY, answer: done(), classes: {}, approvals: [] })).toBe(false);
+    expect(
+      autoModeApplyRequest({ day: TODAY, answer: done(), label: 'shop', classes: { 'autoMode.apply': 'external' } }),
+    ).toBeNull();
+    expect(withAutoModeRowNames({ edits, rows: rowsOf(edits), unattributed: DAY.unattributed })).toBe(edits);
+    expect(autoModeReadout({ day: TODAY, edits, approvals: [], classes: {}, standIns: [] })).toEqual([
+      expect.objectContaining({ status: 'done', issueKey: 'FOO-1', namedRows: 0 }),
+    ]);
+  });
+});
+
 describe('autoModeContextLabel', () => {
   it('names a checkout by its folder and branch, and an application by its id', () => {
     expect(autoModeContextLabel(CONTEXT.id)).toBe('shop · feature/export');

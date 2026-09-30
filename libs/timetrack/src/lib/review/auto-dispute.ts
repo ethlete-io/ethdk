@@ -167,6 +167,19 @@ const chosenOf = (dispute: AutoModeDispute) => {
   return choice === 'keep' || choice === 'use' ? choice : undefined;
 };
 
+/** The issue a keep or use answer chose, where Jira had it done when the answer came. Auto mode leaves that band. */
+export const autoDisputeDoneChoice = (dispute: AutoModeDispute) => {
+  const choice = chosenOf(dispute);
+  const key =
+    choice === 'keep'
+      ? dispute.booked
+      : choice === 'use' && dispute.other.kind === 'issue'
+        ? dispute.other.issueKey
+        : undefined;
+
+  return key && dispute.doneKeys?.includes(key) ? key : undefined;
+};
+
 /**
  * The apply a keep or use answer queues where the user made `autoMode.apply` stricter than `local`,
  * and `null` for an unsure or failed answer or any other class.
@@ -180,7 +193,9 @@ export const autoDisputeResolveRequest = (options: {
   const { dispute } = options;
   const choice = chosenOf(dispute);
 
-  if (!choice || actionClassOf('autoMode.apply', options.classes) !== 'external') return null;
+  if (!choice || autoDisputeDoneChoice(dispute) || actionClassOf('autoMode.apply', options.classes) !== 'external') {
+    return null;
+  }
 
   return {
     op: 'autoMode.resolve',
@@ -206,8 +221,8 @@ const resolveApprovalOf = (options: { approvals: readonly ApprovalView[]; day: s
 
 /**
  * Whether auto mode may write a dispute answer now, by the rules a match follows: at `local`, at
- * `external` once its queued apply is approved, and never at `human-only`, after a rejected apply, or
- * for an unsure answer.
+ * `external` once its queued apply is approved, and never at `human-only`, after a rejected apply, for
+ * an unsure answer, or for a choice Jira had done.
  */
 export const autoDisputeApplies = (options: {
   day: string;
@@ -215,7 +230,7 @@ export const autoDisputeApplies = (options: {
   classes: ActionClasses;
   approvals: readonly ApprovalView[];
 }) => {
-  if (!chosenOf(options.dispute)) return false;
+  if (!chosenOf(options.dispute) || autoDisputeDoneChoice(options.dispute)) return false;
 
   const approval = resolveApprovalOf({ approvals: options.approvals, day: options.day, rowId: options.dispute.rowId });
 

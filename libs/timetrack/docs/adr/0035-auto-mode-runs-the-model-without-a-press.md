@@ -10,8 +10,9 @@ preview, on each new unnamed band and each open stand-in of the current day. Whe
 an existing issue, auto mode applies it as a `local` action, at the confidence the match gives, not
 capped at `weak`. Where nothing matches, it drafts a ticket and picks its epic, and the create waits
 in the approval queue as an `external` action. A band two rungs disagree about (ADR 0012) is settled
-the same way a match is applied, once per pair of answers, and an unsure answer leaves it. With auto
-mode off, ADR 0013 holds unchanged.
+the same way a match is applied, once per pair of answers, and an unsure answer leaves it. An issue
+Jira has in its done category is never applied or queued: a match or a dispute choice that names one
+leaves the band to the user. With auto mode off, ADR 0013 holds unchanged.
 
 What stays:
 

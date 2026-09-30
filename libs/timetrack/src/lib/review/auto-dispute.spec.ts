@@ -276,6 +276,37 @@ describe('autoDisputeApplies', () => {
   });
 });
 
+describe('a dispute where Jira had one side done', () => {
+  const bookedDone = (answer: DisputeAnswer): AutoModeDispute => ({ ...disputeOf(answer), doneKeys: [BOOKED] });
+  const pass = (dispute: AutoModeDispute) => {
+    const edits = withAutoModeDispute(EMPTY_DAY_REVIEW_EDITS, dispute);
+
+    return {
+      edits,
+      written: withAutoModeDisputeResolutions({
+        edits,
+        rows: reviewOf(edits).rows,
+        applies: (held) => autoDisputeApplies({ day: TODAY, dispute: held, classes: {}, approvals: [] }),
+      }),
+    };
+  };
+
+  it('changes nothing where the model picked the done side, and reads out why', () => {
+    const dispute = bookedDone(KEEP);
+    const { edits, written } = pass(dispute);
+
+    expect(written).toBe(edits);
+    expect(autoDisputeResolveRequest({ day: TODAY, dispute, label: 'shop', classes: EXTERNAL })).toBeNull();
+    expect(
+      autoModeReadout({ day: TODAY, edits, approvals: [], classes: {}, standIns: [], rows: reviewOf(edits).rows }),
+    ).toEqual([expect.objectContaining({ kind: 'dispute', status: 'done', issueKey: BOOKED })]);
+  });
+
+  it('lets the other side win where the model picked it', () => {
+    expect(rowOf(pass(bookedDone(USE)).written)?.issueKey).toBe(OTHER);
+  });
+});
+
 describe('autoDisputeResolveRequest', () => {
   it('queues a keep or use answer only where applying waits for an approval', () => {
     expect(autoDisputeResolveRequest({ day: TODAY, dispute: disputeOf(KEEP), label: 'shop', classes: {} })).toBeNull();

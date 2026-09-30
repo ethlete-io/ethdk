@@ -112,7 +112,13 @@ export type AutoModeSubject = { kind: 'context'; contextId: string } | { kind: '
  * `approvalId` names the queue item and `createdKey` the issue its approval filed.
  */
 export type AutoModeOutcome =
-  | { kind: 'match'; issueKey: string; reason?: string }
+  | {
+      kind: 'match';
+      issueKey: string;
+      reason?: string;
+      /** Jira had the issue in its done category when the answer came, so auto mode never applies it. */
+      done?: boolean;
+    }
   | {
       kind: 'draft';
       summary: string;
@@ -147,6 +153,8 @@ export type AutoModeDispute = {
   /** The masked payload that left the machine. */
   request: DisputeResolvingRequest;
   answer?: DisputeAnswer;
+  /** The issue keys of the pair Jira had in its done category when the answer came. Auto mode never applies one. */
+  doneKeys?: string[];
 };
 
 /** What auto mode asked for one settled row. A run that failed holds no `description`, and is not asked again. */

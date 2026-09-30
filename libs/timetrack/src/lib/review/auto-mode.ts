@@ -11,7 +11,7 @@ import { setRowIssue } from './edits';
 import { WorklogWritingRequest } from '../ticket/worklog';
 import { TicketWritingRequest } from '../ticket/write';
 import { autoDescriptionRowId, storedDescriptionSource } from './auto-description';
-import { autoDisputeApplied, autoDisputeOverruled, autoModeResolveTarget } from './auto-dispute';
+import { autoDisputeApplied, autoDisputeDoneChoice, autoDisputeOverruled, autoModeResolveTarget } from './auto-dispute';
 import { DisputeResolvingRequest } from '../ticket/dispute';
 import { disputedTargetLabel } from '../agent-api/approval-queue';
 import { AutoModeAnswer, AutoModeSubject, DayReviewEdits, ReviewedRow } from './model';
@@ -279,6 +279,7 @@ export const withAutoModeRowNames = (options: {
 
   for (const answer of options.edits.auto ?? []) {
     if (options.applies && !options.applies(answer)) continue;
+    if (answer.outcome.kind === 'match' && answer.outcome.done) continue;
 
     const issueKey = autoModeIssueKeyOf(answer);
 
@@ -351,7 +352,9 @@ export const autoModeApplyRequest = (options: {
 }): AutoModeApplyRequest | null => {
   const { outcome, subject } = options.answer;
 
-  if (outcome.kind !== 'match' || actionClassOf('autoMode.apply', options.classes) !== 'external') return null;
+  if (outcome.kind !== 'match' || outcome.done || actionClassOf('autoMode.apply', options.classes) !== 'external') {
+    return null;
+  }
 
   return { op: 'autoMode.apply', day: options.day, subject, label: options.label, issueKey: outcome.issueKey };
 };
@@ -359,7 +362,7 @@ export const autoModeApplyRequest = (options: {
 /**
  * Whether auto mode may write what an answer found now. A match writes at `local`, at `external` once
  * its queued apply is approved, and never at `human-only` or after a rejected apply. The key an
- * approved create filed is written whatever the class.
+ * approved create filed is written whatever the class. A match Jira had done is never written.
  */
 export const autoModeApplies = (options: {
   day: string;
@@ -370,7 +373,7 @@ export const autoModeApplies = (options: {
   const { outcome, subject } = options.answer;
 
   if (outcome.kind === 'draft') return !!outcome.createdKey;
-  if (outcome.kind !== 'match') return false;
+  if (outcome.kind !== 'match' || outcome.done) return false;
 
   const approval = applyApprovalOf({ approvals: options.approvals, day: options.day, subject });
 
@@ -408,6 +411,7 @@ export type AutoModeReadoutStatus =
   | 'held'
   | 'overruled'
   | 'unused'
+  | 'done'
   | 'not-queued'
   | 'written'
   | 'unsure'
@@ -502,6 +506,7 @@ const disputeReadout = (options: {
 
     if (!answer) return { ...base, status: 'failed' };
     if (answer.choice === 'unsure') return { ...base, status: 'unsure' };
+    if (autoDisputeDoneChoice(dispute)) return { ...base, status: 'done' };
     if (autoDisputeApplied(options.edits, dispute)) return { ...base, status: 'applied' };
     if (autoDisputeOverruled(options.edits, dispute)) return { ...base, status: 'overruled' };
 
@@ -569,6 +574,7 @@ const ticketReadout = (options: {
 
     if (applied) return { ...found, status: 'applied' };
     if (standIn && standInResolutionSourceOf(standIn) === 'human') return { ...found, status: 'overruled' };
+    if (outcome.done) return { ...found, status: 'done' };
 
     if (approval) {
       const waiting = approvalStatusFor(approval);

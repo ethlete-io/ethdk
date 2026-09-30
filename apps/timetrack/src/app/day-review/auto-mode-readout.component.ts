@@ -12,6 +12,7 @@ const STATUS_TEXT: Record<AutoModeReadoutStatus, string> = {
   held: 'held, set to never',
   overruled: 'you named it yourself',
   unused: 'found, not applied',
+  done: 'is done, left to you',
   'not-queued': 'drafted, not queued',
   written: 'described',
   unsure: 'unsure, left to you',

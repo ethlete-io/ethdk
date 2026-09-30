@@ -31,6 +31,7 @@ import {
   autoDescriptionAsks,
   autoDisputeApplies,
   autoDisputeAsks,
+  autoDisputeDoneChoice,
   autoDisputeRequest,
   autoDisputeResolveRequest,
   autoModeResolveTarget,
@@ -44,6 +45,7 @@ import {
   dayBoundaryOf,
   draftTicket,
   favoriteProjectKeys,
+  fetchJiraDoneIssueKeys$,
   fetchJiraIssues$,
   gitFlowConfigFor,
   isAgentApiRequest,
@@ -69,6 +71,7 @@ import {
   concatMap,
   defer,
   finalize,
+  forkJoin,
   from,
   interval,
   map,
@@ -428,7 +431,17 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     }
   };
 
-  const answer$ = (ask: Ask): Observable<void> =>
+  const withDone$ = (answer: AutoModeAnswer): Observable<AutoModeAnswer> => {
+    const { outcome } = answer;
+
+    if (outcome.kind !== 'match') return of(answer);
+
+    return doneKeys$([outcome.issueKey]).pipe(
+      map((done) => (done.has(outcome.issueKey) ? { ...answer, outcome: { ...outcome, done: true } } : answer)),
+    );
+  };
+
+  const answer$ = (ask: Ask): Observable<string | void> =>
     prepare$(ask.subject).pipe(
       switchMap((prepared) => {
         if (!prepared) return EMPTY;
@@ -449,12 +462,21 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
           })),
         );
       }),
+      switchMap((answer) => withDone$(answer)),
       switchMap((answer) => queued$(ask.day, answer)),
       switchMap((answer) => queuedApply$(ask.day, answer)),
       switchMap((answer) =>
         dayReview
           .changeDay$(ask.day, (edits) => withAutoModeAnswer(edits, answer))
-          .pipe(map(() => applyAnswer(ask.day, answer))),
+          .pipe(
+            map(() => {
+              applyAnswer(ask.day, answer);
+
+              return answer.outcome.kind === 'match' && answer.outcome.done
+                ? `${answer.outcome.issueKey} is done, left to you`
+                : undefined;
+            }),
+          ),
       ),
     );
 
@@ -465,6 +487,16 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       ),
       map((issues) => Object.fromEntries(issues.map((issue) => [issue.key, issue.summary]))),
       catchError(() => of({})),
+    );
+
+  const doneKeys$ = (keys: readonly string[]): Observable<Set<string>> =>
+    readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }).pipe(
+      switchMap((credentials) =>
+        credentials
+          ? fetchJiraDoneIssueKeys$({ transport: ports.transport, credentials, keys })
+          : of(new Set<string>()),
+      ),
+      catchError(() => of(new Set<string>())),
     );
 
   const issueSummary$ = (issueKey: string): Observable<string | undefined> =>
@@ -490,6 +522,10 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     if (!answer) return 'The ask failed; the dispute stays as it is.';
 
+    const done = autoDisputeDoneChoice(dispute);
+
+    if (done) return `${done} is done, left to you: ${answer.reason}`;
+
     const did = {
       keep: `Keeps ${dispute.booked}`,
       use: `Takes ${otherLabel} over ${dispute.booked}`,
@@ -510,8 +546,10 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     const rowId = autoDescriptionRowId(row);
     const label = row.laneKey ? streamKeyLabel(row.laneKey) : booked;
 
-    return issueSummaries$(other.kind === 'issue' ? [booked, other.issueKey] : [booked]).pipe(
-      switchMap((summaries) => {
+    const keys = other.kind === 'issue' ? [booked, other.issueKey] : [booked];
+
+    return forkJoin([issueSummaries$(keys), doneKeys$(keys)]).pipe(
+      switchMap(([summaries, done]) => {
         const request = autoDisputeRequest({ row, other, summaries, standIns: current.standIns, maskedNames });
 
         return resolveDisputeWithAgent$({
@@ -527,6 +565,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
             other,
             request,
             ...(answer ? { answer } : {}),
+            ...(done.size ? { doneKeys: keys.filter((key) => done.has(key)) } : {}),
           })),
         );
       }),

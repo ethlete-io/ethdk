@@ -1,6 +1,7 @@
 import { Page } from '@playwright/test';
 import {
   E2E_ISSUE_BRANCH,
+  E2E_ISSUE_ID,
   E2E_ISSUE_KEY,
   E2E_PARENT_ID,
   E2E_PARENT_KEY,
@@ -352,6 +353,31 @@ test.describe('auto mode on a band two answers disagree about', () => {
     await expect(
       readout.locator('[data-auto-activity][data-state="done"]').filter({ hasText: `Settles ${E2E_ISSUE_KEY}` }),
     ).toContainText(`Takes ${E2E_PARENT_KEY} over ${E2E_ISSUE_KEY}: ${REASON}`);
+  });
+
+  test('changes nothing where the answer it picked is done in Jira, and says so', async ({ page }) => {
+    const world = disputedWorld();
+
+    await seedWorld(page, {
+      ...world,
+      jira: {
+        issues: [
+          { id: E2E_ISSUE_ID, key: E2E_ISSUE_KEY, summary: 'User management', issueType: 'Task' },
+          { id: E2E_PARENT_ID, key: E2E_PARENT_KEY, summary: 'Member onboarding', issueType: 'Story', status: 'Done' },
+        ],
+      },
+    });
+    await page.goto('/day');
+
+    const readout = await openAutoModeReadout(page);
+    const entry = readout.locator('[data-auto-entry^="dispute:"]');
+
+    await expect(entry).toHaveAttribute('data-status', 'done');
+    await expect(entry).toContainText(`${E2E_PARENT_KEY} is done, left to you`);
+    await expect(
+      readout.locator('[data-auto-activity][data-state="done"]').filter({ hasText: `Settles ${E2E_ISSUE_KEY}` }),
+    ).toContainText(`${E2E_PARENT_KEY} is done, left to you`);
+    await expect(band(page)).toContainText(`or ${E2E_PARENT_KEY}?`);
   });
 
   test('waits for the approval where applying is set to approve first', async ({ page }) => {

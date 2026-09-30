@@ -171,3 +171,36 @@ export const fetchJiraIssueTouchedAt$ = (options: {
     }, new Map<string, Date>()),
   );
 };
+
+/**
+ * The keys among `keys` whose issue stands in a status of Jira's done category. A key Jira does not
+ * know, or may not show, is absent, so it reads as not done.
+ */
+export const fetchJiraDoneIssueKeys$ = (options: {
+  transport: TimetrackTransport;
+  credentials: JiraCredentials;
+  keys: readonly string[];
+}): Observable<Set<string>> => {
+  const keys = issueKeysOf(options.keys);
+
+  if (keys.length === 0) return of(new Set<string>());
+
+  return from(chunk(keys, KEYS_PER_REQUEST)).pipe(
+    concatMap((batch) =>
+      searchJiraIssues$({
+        transport: options.transport,
+        credentials: options.credentials,
+        jql: `key in (${batch.join(',')}) AND statusCategory = Done`,
+        fields: ['summary'],
+        describe: `which of ${batch[0]}… are done`,
+      }),
+    ),
+    reduce((all: Set<string>, resources) => {
+      for (const resource of resources) {
+        if (resource.key) all.add(resource.key);
+      }
+
+      return all;
+    }, new Set<string>()),
+  );
+};

@@ -3,7 +3,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
 import { JiraCredentials } from './client';
 import { JiraIssueResource } from './search';
-import { fetchJiraIssueIds$, fetchJiraIssueKeysByIds$, fetchJiraIssueTouchedAt$, fetchJiraIssues$ } from './issue';
+import {
+  fetchJiraDoneIssueKeys$,
+  fetchJiraIssueIds$,
+  fetchJiraIssueKeysByIds$,
+  fetchJiraIssueTouchedAt$,
+  fetchJiraIssues$,
+} from './issue';
 
 const CREDENTIALS: JiraCredentials = { host: 'https://team.atlassian.net', email: 'you@x.com', token: 't' };
 
@@ -247,6 +253,26 @@ describe('fetchJiraIssueTouchedAt$', () => {
     const { transport, requests } = issuesTransport([STORY]);
 
     fetchJiraIssueTouchedAt$({ transport, credentials: CREDENTIALS, keys: [] }).subscribe();
+
+    expect(requests).toHaveLength(0);
+  });
+});
+
+describe('fetchJiraDoneIssueKeys$', () => {
+  it('asks Jira for the keys that stand in the done category, and reads the answer as a set', () => {
+    const { transport, requests } = issuesTransport([{ id: '1', key: 'FOO-1', fields: {} }]);
+    const seen = vi.fn();
+
+    fetchJiraDoneIssueKeys$({ transport, credentials: CREDENTIALS, keys: ['FOO-1', 'FOO-2'] }).subscribe(seen);
+
+    expect(decodeURIComponent(requests[0]?.url ?? '')).toContain('key in (FOO-1,FOO-2) AND statusCategory = Done');
+    expect([...(seen.mock.calls[0]?.[0] ?? [])]).toEqual(['FOO-1']);
+  });
+
+  it('asks nothing when there are no keys', () => {
+    const { transport, requests } = issuesTransport([]);
+
+    fetchJiraDoneIssueKeys$({ transport, credentials: CREDENTIALS, keys: [] }).subscribe();
 
     expect(requests).toHaveLength(0);
   });

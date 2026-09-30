@@ -60,6 +60,12 @@ describe('filterByJql', () => {
     expect(keysOf('project = ABC AND issuetype in ("Task")')).toEqual(['ABC-1']);
   });
 
+  it('matches the done category by an issue whose status is named Done', () => {
+    expect(keysOf('key in (ABC-1,ABC-2) AND statusCategory = Done', [{ ...TASK, status: 'Done' }, STORY])).toEqual([
+      'ABC-1',
+    ]);
+  });
+
   it('narrows nothing on a clause it does not know', () => {
     expect(keysOf('statusCategory != Done AND assignee = currentUser()')).toEqual(['ABC-1', 'ABC-2', 'XYZ-3']);
   });
