@@ -5,6 +5,7 @@ import {
   AnyLegacyQuery,
   AnyV2Query,
   createLegacyQueryCreator,
+  createQueryCollectionSignal,
   def,
   queryComputed,
   QueryStateType,
@@ -333,5 +334,40 @@ describe('legacy query container scenario', () => {
     expect(isUnderlyingQueryDestroyed(query)).toBe(true);
 
     owner.destroy();
+  });
+
+  it('lets an in-flight POST finish when its collection is destroyed, then tears it down', () => {
+    const s = scenario();
+    s.api.on('POST', '/users', ({ body }) => ({ status: 201, body, delay: 1_000 }));
+
+    const legacyCreateUser = createLegacyQueryCreator({
+      creator: s.post<CreateUserArgs>('/users'),
+      name: 'legacyCreateUser',
+    });
+
+    const page = s.consumer();
+    const query = page.run(() => legacyCreateUser.prepare({ body: { name: 'Ada' } }).execute());
+
+    let wasDestroyed = false;
+    query.state$.subscribe({ complete: () => (wasDestroyed = true) });
+
+    const overlay = s.consumer();
+    const collection = overlay.run(() => createQueryCollectionSignal({ createUser: legacyCreateUser }));
+    collection.set({ type: 'createUser', query });
+    s.tick(100);
+
+    overlay.destroy();
+    s.tick();
+
+    expect(s.api.pending()).toHaveLength(1);
+    expect(wasDestroyed).toBe(false);
+
+    s.flush();
+
+    expect(s.api.requests.find((request) => request.method === 'POST')?.aborted).toBe(false);
+    expect(query.rawState.type).toBe(QueryStateType.Success);
+    expect(wasDestroyed).toBe(true);
+
+    page.destroy();
   });
 });

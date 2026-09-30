@@ -91,8 +91,8 @@ const queryContainerOwnerId = (injector: Injector) => {
 
 /**
  * Destroying a legacy query tears down the underlying query's injector, which cancels its request - so
- * a superseded query that was not aborted (a mutation the server may already have accepted) is torn
- * down only once it has settled. `state$` completes with the query, so this ends either way.
+ * a superseded or released query that was not aborted (a mutation the server may already have accepted)
+ * is torn down only once it has settled. `state$` completes with the query, so this ends either way.
  */
 const destroyOnceSettled = (query: AnyLegacyQuery) => {
   query.state$.pipe(takeUntilResponse()).subscribe({ complete: () => query.destroy() });
@@ -205,7 +205,17 @@ export const addQueryContainerHandling = (
         q?.abort();
       }
 
-      (q as unknown as AnyLegacyQuery)?.destroy?.();
+      const legacyQuery = q as unknown as AnyLegacyQuery | null | undefined;
+
+      if (!legacyQuery?.destroy) return;
+
+      if (isQueryStateLoading(q?.rawState)) {
+        destroyOnceSettled(legacyQuery);
+
+        return;
+      }
+
+      legacyQuery.destroy();
     };
 
     if (isQuery(query)) {
