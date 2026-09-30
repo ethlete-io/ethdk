@@ -17,6 +17,7 @@ import { ToObservableOptions, ToSignalOptions, toObservable, toSignal } from '@a
 import { computedTillTruthy, createDestroy } from '@ethlete/core';
 import { Observable, Subscribable, of, pairwise, startWith, switchMap, takeUntil, tap } from 'rxjs';
 import { AnyLegacyQuery } from '../interop';
+import { destroyOnceSettled } from './destroy-once-settled.util';
 import {
   AnyQueryCollection,
   AnyV2Query,
@@ -29,7 +30,6 @@ import {
   isQueryStateFailure,
   isQueryStateLoading,
   isQueryStateSuccess,
-  takeUntilResponse,
 } from '../query';
 import { QueryDataOf } from '../query-creator';
 
@@ -87,15 +87,6 @@ const queryContainerOwnerId = (injector: Injector) => {
   queryContainerOwnerIds.set(injector, id);
 
   return id;
-};
-
-/**
- * Destroying a legacy query tears down the underlying query's injector, which cancels its request - so
- * a superseded or released query that was not aborted (a mutation the server may already have accepted)
- * is torn down only once it has settled. `state$` completes with the query, so this ends either way.
- */
-const destroyOnceSettled = (query: AnyLegacyQuery) => {
-  query.state$.pipe(takeUntilResponse()).subscribe({ complete: () => query.destroy() });
 };
 
 /**

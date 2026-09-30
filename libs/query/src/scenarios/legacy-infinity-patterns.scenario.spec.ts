@@ -1,5 +1,5 @@
-import { AfterContentInit, Component, ComponentRef, inject, InjectionToken, OnDestroy } from '@angular/core';
-import { Subscription, timer } from 'rxjs';
+import { AfterContentInit, Component, ComponentRef, inject, Injector, InjectionToken, OnDestroy } from '@angular/core';
+import { Subject, Subscription, timer } from 'rxjs';
 import { describe, expect, it } from 'vitest';
 import {
   AnyInfinityQueryConfig,
@@ -7,6 +7,7 @@ import {
   def,
   InfinityQueryDirective,
   InfinityQueryTriggerDirective,
+  InfinityQuery,
   injectInfinityQueryResponseDelay,
   provideInfinityQueryResponseDelay,
   skipPaginationPageParamCalculator,
@@ -15,6 +16,7 @@ import { createLegacyClient, LEGACY_CLIENT_KINDS, LegacyClient, Scenario, useSce
 
 type News = { id: string };
 type NewsPage = { items: News[]; total: number };
+type SearchPage = { items: string[]; total: number };
 type NewsArgs = { queryParams: { skip: number; limit: number } };
 
 const NEWS_CONFIG = new InjectionToken<AnyInfinityQueryConfig>('NEWS_CONFIG');
@@ -338,6 +340,59 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy infinity patterns on the %s client', 
 
       a.destroy();
       b.destroy();
+    });
+  });
+
+  describe('destroying the InfinityQuery with a page in flight', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    const destroyMidFlight = (method: 'GET' | 'POST') => {
+      const s = scenario();
+      s.api.on(method, '/search', () => ({ body: { items: ['a', 'b'], total: 4 } satisfies SearchPage, delay: 1_000 }));
+      const legacy = createLegacyClient(s, kind);
+      const search = method === 'GET' ? legacy.get('/search') : legacy.post('/search');
+
+      const list = s.consumer();
+      const destroy$ = new Subject<boolean>();
+      const infinity = list.run(
+        () =>
+          new InfinityQuery(
+            createInfinityQueryConfig({
+              queryCreator: search as never,
+              limitParam: { key: 'limit', value: 2 },
+              response: {
+                arrayType: def<string[]>(),
+                valueExtractor: (response: SearchPage) => response.items,
+                totalPagesExtractor: ({ response, itemsPerPage }: { response: SearchPage; itemsPerPage: number }) =>
+                  Math.ceil(response.total / itemsPerPage),
+              },
+              injector: inject(Injector),
+            } as never) as never,
+            destroy$,
+          ),
+      );
+
+      infinity.nextPage();
+      s.tick(100);
+
+      infinity.destroy();
+      s.flush();
+
+      const request = s.api.requests.find((r) => r.method === method && r.path === '/search');
+
+      destroy$.next(true);
+      list.destroy();
+      legacy.destroy();
+
+      return request;
+    };
+
+    it('lets an in-flight POST page finish', () => {
+      expect(destroyMidFlight('POST')?.aborted).toBe(false);
+    });
+
+    it('still aborts an in-flight GET page', () => {
+      expect(destroyMidFlight('GET')?.aborted).toBe(true);
     });
   });
 });

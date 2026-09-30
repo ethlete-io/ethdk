@@ -1,7 +1,8 @@
 import { BehaviorSubject, Observable, combineLatest, map, of, shareReplay, switchMap, tap } from 'rxjs';
-import { AnyLegacyQueryCreator } from '../interop';
-import { filterSuccess, isQueryStateFailure } from '../query';
+import { AnyLegacyQuery, AnyLegacyQueryCreator } from '../interop';
+import { filterSuccess, isQueryStateFailure, isQueryStateLoading } from '../query';
 import { AnyV2QueryCreator, ConstructQuery, QueryDataOf, V2QueryArgsOf } from '../query-creator';
+import { destroyOnceSettled } from '../utils/destroy-once-settled.util';
 import { InfinityQueryConfig, InfinityQueryParamLocation } from './infinity-query.types';
 
 /**
@@ -205,9 +206,16 @@ export class InfinityQuery<
   private destroyQueries() {
     for (const query of this.queries$.value) {
       query.stopPolling();
-      query.abort();
 
-      if ('destroy' in query && typeof query.destroy === 'function') query.destroy();
+      if (query.canBeCached) query.abort();
+
+      if (!('destroy' in query) || typeof query.destroy !== 'function') continue;
+
+      if (!query.canBeCached && isQueryStateLoading(query.rawState)) {
+        destroyOnceSettled(query as unknown as AnyLegacyQuery);
+      } else {
+        query.destroy();
+      }
     }
   }
 
