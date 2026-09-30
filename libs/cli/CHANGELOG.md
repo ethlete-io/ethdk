@@ -1,5 +1,11 @@
 # @ethlete/cli
 
+## 2.1.0-next.15
+
+### Minor Changes
+
+- `et update --ai` ends an interactive agent session by itself once the agent writes the task's `.finished` file, then commits the task and starts the next one. `/exit` still works.
+
 ## 2.1.0-next.14
 
 ### Minor Changes

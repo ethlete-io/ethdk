@@ -1,5 +1,11 @@
 # timetrack-app
 
+## 0.2.0-next.6
+
+### Patch Changes
+
+- Give the in-the-background band in the day view a faint fill.
+
 ## 0.2.0-next.5
 
 ### Minor Changes
