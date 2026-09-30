@@ -32,6 +32,11 @@ export type CallWindow = {
    * meeting the day books nothing for is still a meeting somebody sat through — see `classifyCalls`.
    */
   isPresence: boolean;
+  /**
+   * The occurrence ids of the accepted meetings a call the user switched to or from holds instead of
+   * this one — see `classifyCalls`. None of them names this call or its rows.
+   */
+  heldElsewhere?: string[];
 };
 
 /** What a call reads as: the window it was named from, or the process alone when it had no title. */

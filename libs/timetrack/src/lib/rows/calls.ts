@@ -416,10 +416,12 @@ export const matchCalls = (options: {
   );
 
   return inOrder
-    .flatMap((call) =>
-      subtractWindows({ windows: [{ from: call.from, to: call.to }], without: options.claimed })
+    .flatMap((call) => {
+      const held = occurrences.filter((event) => !call.heldElsewhere?.includes(event.occurrenceId));
+
+      return subtractWindows({ windows: [{ from: call.from, to: call.to }], without: options.claimed })
         .filter((window) => lengthOf(window) >= MIN_PROPOSED_CALL_MS)
-        .flatMap((window) => cutAtMeetings({ window, occurrences }))
+        .flatMap((window) => cutAtMeetings({ window, occurrences: held }))
         .map(({ window, naming }) =>
           matchOne({
             call,
@@ -428,10 +430,10 @@ export const matchCalls = (options: {
             after: after.get(call),
             blocks: options.blocks,
             titled,
-            occurrences,
+            occurrences: held,
             meetings: options.meetings ?? {},
           }),
-        ),
-    )
+        );
+    })
     .sort((left, right) => left.group.from.getTime() - right.group.from.getTime());
 };

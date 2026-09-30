@@ -298,6 +298,52 @@ describe('a call that ran through several meetings', () => {
   });
 });
 
+describe('a call the user switched to from another call', () => {
+  const namings: MeetingNaming[] = [
+    { seriesKey: 'series-standup', issueKey: 'ABC-1', title: 'Daily Standup', createdAt: at(8) },
+    { seriesKey: 'series-review', issueKey: 'ABC-2', title: 'Sprint Review', createdAt: at(8) },
+  ];
+  const voice = call({ from: at(10), to: at(10, 30), title: 'Daily Standup' });
+  const huddle = call({
+    from: at(10, 30),
+    to: at(10, 50),
+    appId: 'com.slack.Slack',
+    title: 'general (Channel) - Acme - Slack',
+    heldElsewhere: ['occ-standup'],
+  });
+
+  it('is not named after the meeting the call before it holds', () => {
+    const found = match({ calls: [voice, huddle], occurrences: [occurrence()], meetings: { namings } });
+
+    expect(
+      found.map((entry) => [entry.call.appId, entry.group.issueKey, describeWork({ group: entry.group })]),
+    ).toEqual([
+      ['com.hnc.Discord', 'ABC-1', 'Daily Standup'],
+      ['com.slack.Slack', undefined, 'general (Channel) - Acme - Slack'],
+    ]);
+  });
+
+  it('is named after the meeting it switched into', () => {
+    const review = occurrence({
+      at: at(10, 30),
+      until: at(11, 30),
+      occurrenceId: 'occ-review',
+      recurringEventId: 'series-review',
+      title: 'Sprint Review',
+    });
+    const found = match({
+      calls: [voice, { ...huddle, title: 'Sprint Review' }],
+      occurrences: [occurrence(), review],
+      meetings: { namings },
+    });
+
+    expect(found.map((entry) => [entry.group.from, entry.group.issueKey, entry.meeting?.event.title])).toEqual([
+      [at(10), 'ABC-1', 'Daily Standup'],
+      [at(10, 30), 'ABC-2', 'Sprint Review'],
+    ]);
+  });
+});
+
 describe('dropCallWindows', () => {
   const app = (options: { from: Date; to: Date; appId: string; repoPath?: string }): ActivityBlock => ({
     from: options.from,

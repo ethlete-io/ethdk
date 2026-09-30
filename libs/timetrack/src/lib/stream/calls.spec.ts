@@ -835,3 +835,94 @@ describe('classifyCalls, a Slack huddle', () => {
     expect(window!.excludedBy).toBe('deny-rule');
   });
 });
+
+describe('classifyCalls, a switch from one call to the next', () => {
+  const VOICE = 'Voice';
+  const SLACK = 'com.slack.Slack';
+  const WORK = { countsAsWork: ['Acme'] };
+  const meeting = (over: Partial<CalendarOccurrenceEvent> = {}): CalendarOccurrenceEvent => ({
+    at: at(0),
+    source: 'calendar',
+    kind: 'calendar-event',
+    occurrenceId: 'planning',
+    until: at(45),
+    title: 'Planning',
+    accepted: true,
+    participants: ['someone@example.com'],
+    ...over,
+  });
+  const daily = meeting({ occurrenceId: 'daily', title: 'Daily', at: at(30), until: at(60) });
+  const voiceCall = [
+    focus(0, 'voice', 'Team Room | Acme - Voice'),
+    call(0, 'call-start', VOICE, 5),
+    call(30, 'call-end', VOICE, 35),
+  ];
+  const huddle = [
+    call(30, 'call-start', SLACK),
+    focus(30, SLACK, 'Huddle preview - Slack', 1),
+    call(30, 'call-end', SLACK, 42),
+    call(30, 'call-start', SLACK, 42),
+    focus(30, SLACK, 'general (Channel) - Acme - Slack', 50),
+    call(50, 'call-end', SLACK),
+  ];
+  const read = (events: CollectedEvent[]) =>
+    classify(events, WORK).map((window) => [window.appId, window.title, window.heldElsewhere]);
+
+  it('leaves the meeting with the call before when the microphone moves to another application', () => {
+    expect(read([meeting(), ...voiceCall, ...huddle])).toEqual([
+      [VOICE, 'Planning', undefined],
+      [SLACK, 'Planning', undefined],
+      [SLACK, 'general (Channel) - Acme - Slack', ['planning']],
+    ]);
+  });
+
+  it('names the call switched into after the meeting it joined', () => {
+    expect(read([meeting(), daily, ...voiceCall, ...huddle]).map(([, title]) => title)).toEqual([
+      'Planning',
+      'Planning',
+      'Daily',
+    ]);
+  });
+
+  it('takes a meeting from the call before when that call only ran into it', () => {
+    expect(read([meeting({ at: at(25), until: at(60) }), ...voiceCall, ...huddle])).toEqual([
+      [VOICE, 'Team Room | Acme - Voice', ['planning']],
+      [SLACK, 'Planning', undefined],
+      [SLACK, 'Planning', undefined],
+    ]);
+  });
+
+  it('leaves the meeting with the room before when the microphone moves to another room', () => {
+    expect(
+      read([
+        meeting(),
+        focus(0, 'voice', 'Team Room | Acme - Voice'),
+        call(0, 'call-start', VOICE, 5),
+        call(25, 'call-end', VOICE),
+        focus(25, 'voice', 'Side Room | Acme - Voice', 1),
+        call(25, 'call-start', VOICE, 2),
+        call(40, 'call-end', VOICE),
+      ]),
+    ).toEqual([
+      [VOICE, 'Planning', undefined],
+      [VOICE, 'Side Room | Acme - Voice', ['planning']],
+    ]);
+  });
+
+  it('keeps the meeting on both calls when another application runs beside the whole time', () => {
+    expect(
+      read([
+        meeting(),
+        focus(0, 'voice', 'Team Room | Acme - Voice'),
+        call(0, 'call-start', VOICE, 5),
+        focus(10, SLACK, 'general (Channel) - Acme - Slack'),
+        call(10, 'call-start', SLACK),
+        call(40, 'call-end', SLACK),
+        call(44, 'call-end', VOICE),
+      ]),
+    ).toEqual([
+      [VOICE, 'Planning', undefined],
+      [SLACK, 'Planning', undefined],
+    ]);
+  });
+});

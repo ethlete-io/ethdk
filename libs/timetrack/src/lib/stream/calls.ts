@@ -319,7 +319,13 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
     neverCountsAsWork: compiled(options.rules.neverCountsAsWork),
   };
 
-  const toWindow = (call: PairedCall, session: PairedCall): CallWindow => {
+  const toWindow = (options: {
+    call: PairedCall;
+    session: PairedCall;
+    meeting: CalendarOccurrenceEvent | undefined;
+    heldElsewhere: readonly string[];
+  }): CallWindow => {
+    const { call, session, meeting, heldElsewhere } = options;
     const focusTitle = titleAt(focus, { appId: call.appId, at: call.from, settleMs: titleSettleMs });
     const attended = attendedMs(held, call);
     // A day with no window-focus event at all cannot be judged on attendance, and must not be gated on
@@ -328,7 +334,6 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
     // A meeting the user accepted over the same minutes is the evidence the focus gate stands in for,
     // so it is read instead of the gate. Without this a meeting the user only listened to is dropped,
     // and after the calendar stopped proposing rows of its own nothing else would propose it.
-    const meeting = acceptedMeetingOver(invited, call);
     const expected = !!acceptedMeetingOver(invited, session);
     // The focus at the microphone opening can say nothing about the call — at app start it is the first
     // window of the day. Rules keep reading the focus title, which is what the user wrote them against.
@@ -350,6 +355,7 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
       countsAsWork: counts,
       ...(counts ? {} : { excludedBy: !attendedCall ? 'unattended' : denied ? 'deny-rule' : 'no-rule' }),
       isPresence: attendedCall,
+      ...(heldElsewhere.length ? { heldElsewhere: [...heldElsewhere] } : {}),
     };
   };
 
@@ -358,14 +364,83 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
     ...[...open].flatMap(([appId, from]) => (from < options.until ? [{ appId, from, to: options.until }] : [])),
   ];
 
-  return glueCalls({
+  const glueMs = options.glueMs ?? DEFAULT_CALL_GLUE_MS;
+  const rooms = glueCalls({
     calls: paired,
-    glueMs: options.glueMs ?? DEFAULT_CALL_GLUE_MS,
+    glueMs,
     restartMs: options.restartGapMs ?? DEFAULT_CALL_RESTART_GAP_MS,
     titleOf: (call) => titleAt(focus, { appId: call.appId, at: call.from, settleMs: titleSettleMs }),
   })
-    .flatMap(({ session, rooms }) => rooms.map(({ call }) => toWindow(call, session)))
-    .sort((left, right) => left.from.getTime() - right.from.getTime());
+    .flatMap(({ session, rooms }) => rooms.map((room) => ({ ...room, session })))
+    .sort((left, right) => left.call.from.getTime() - right.call.from.getTime());
+  const elsewhere = meetingsHeldElsewhere({ rooms, invited, glueMs });
+
+  return rooms.map((room) => {
+    const heldElsewhere = [...(elsewhere.get(room) ?? [])];
+    const meeting = acceptedMeetingOver(
+      invited.filter((event) => !heldElsewhere.includes(event.occurrenceId)),
+      room.call,
+    );
+
+    return toWindow({ call: room.call, session: room.session, meeting, heldElsewhere });
+  });
+};
+
+type SwitchedRoom = { call: PairedCall; title: string };
+
+/**
+ * Whether the user left one call for the other: the microphone moved to another application, or to
+ * another room of the same one, at the instant the first call ended.
+ *
+ * A call shorter than the glue is no side of a switch: it is a join passing through, like the half
+ * minute a huddle is held before Slack's title names the channel it settles on.
+ */
+const switchedBetween = (options: { from: SwitchedRoom; to: SwitchedRoom; glueMs: number }) => {
+  const { from, to } = options;
+
+  if (from.call.from >= to.call.from) return false;
+  if ([from, to].some(({ call }) => call.to.getTime() - call.from.getTime() < options.glueMs)) return false;
+  if (Math.abs(from.call.to.getTime() - to.call.from.getTime()) > options.glueMs) return false;
+  if (from.call.appId.toLowerCase() !== to.call.appId.toLowerCase()) return true;
+
+  return !!from.title && !!to.title && from.title !== to.title;
+};
+
+/** How much of the call the meeting covers, from 0 to 1. */
+const coveredBy = (event: CalendarOccurrenceEvent, call: TimeWindow) =>
+  windowsMs(clipWindows({ windows: [{ from: event.at, to: event.until }], within: [call] })) /
+  Math.max(1, call.to.getTime() - call.from.getTime());
+
+/**
+ * The accepted meetings each call gives up to a call the user switched to or from.
+ *
+ * A meeting over both sides of a switch was one of the two calls, not both: it stays with the call it
+ * covers more of, and with the earlier one on a tie, so the call switched into is never named after the
+ * meeting it left.
+ */
+const meetingsHeldElsewhere = <T extends SwitchedRoom>(options: {
+  rooms: readonly T[];
+  invited: readonly CalendarOccurrenceEvent[];
+  glueMs: number;
+}) => {
+  const given = new Map<T, Set<string>>();
+  const give = (room: T, event: CalendarOccurrenceEvent) =>
+    given.set(room, (given.get(room) ?? new Set()).add(event.occurrenceId));
+
+  for (const to of options.rooms) {
+    for (const from of options.rooms.filter((room) => switchedBetween({ from: room, to, glueMs: options.glueMs }))) {
+      for (const event of options.invited) {
+        const before = coveredBy(event, from.call);
+        const after = coveredBy(event, to.call);
+
+        if (before === 0 || after === 0) continue;
+
+        give(after > before ? from : to, event);
+      }
+    }
+  }
+
+  return given;
 };
 
 /**

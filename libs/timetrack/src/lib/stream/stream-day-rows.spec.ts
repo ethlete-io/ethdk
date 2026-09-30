@@ -6,6 +6,8 @@ import { WorklogProposal } from '../model/proposal';
 import { ClosedTimerRun } from '../model/timer';
 import { pauseWindows } from './pauses';
 import { streamDay } from './stream-day';
+import { reviewDay } from '../review/review-day';
+import { CALL_LANE_KEY } from '../rows/lane';
 
 const MINUTE = 60_000;
 const DAY_START = new Date(2026, 7, 11, 8, 0, 0);
@@ -320,6 +322,39 @@ describe('the rows a remembered naming produces', () => {
     expect(rows.calls).toEqual([]);
     expect(rows.unobserved.map((entry) => [entry.event.title, entry.issueKey])).toEqual([
       ['Sprint planning', 'FIP-3000'],
+    ]);
+  });
+});
+
+describe('the rows a switch from one call to the next produces', () => {
+  const SERIES = 'series-sprint-planning';
+  const SLACK = 'com.slack.Slack';
+  const namings: MeetingNaming[] = [
+    { seriesKey: SERIES, issueKey: 'FIP-3000', title: 'Sprint planning', createdAt: AT(-1440) },
+  ];
+  const events: CollectedEvent[] = [
+    checkout(0, BRANCH),
+    ...focusRun({ from: 0, to: 59, appId: 'code', title: 'pack.ts - fut-frontend - Code' }),
+    calendar({ minute: 60, minutes: 45, title: 'Sprint planning', recurringEventId: SERIES }),
+    ...focusRun({ from: 60, to: 89, appId: 'firefox', title: 'Mozilla Firefox' }),
+    call(60, 'call-start'),
+    call(90, 'call-end'),
+    call(90, 'call-start', SLACK),
+    ...focusRun({ from: 90, to: 105, appId: SLACK, title: 'general (Channel) - Acme - Slack' }),
+    call(105, 'call-end', SLACK),
+  ];
+
+  it('ends the call before it rather than joining the meeting it left', () => {
+    const rows = rowsOf(events, { callRules: ['firefox'], namings });
+    const review = reviewDay({ rows });
+
+    expect(
+      review.rows
+        .filter((row) => row.laneKey === CALL_LANE_KEY)
+        .map((row) => [row.from, row.to, row.issueKey, row.description]),
+    ).toEqual([
+      [AT(60), AT(90), 'FIP-3000', 'Sprint planning'],
+      [AT(90), AT(105), undefined, 'general (Channel) - Acme - Slack'],
     ]);
   });
 });
