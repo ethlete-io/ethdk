@@ -19,7 +19,9 @@ export const FILE_PLACEHOLDER = '<file>';
 export const agentPrompt = (taskPath: string) =>
   `Apply the migration task described in ${taskPath} to this repository. ` +
   'Follow its instructions, then delete that file once the change is complete. ' +
-  'Do not commit: et update commits your change.';
+  'Do not commit: et update commits your change. ' +
+  'In an interactive session, end your last message with: ' +
+  '"Type /exit to hand back to et update. It commits this change and starts the next task."';
 
 export const PROMPT_ENV = 'ETHLETE_UPDATE_PROMPT';
 export const FILE_ENV = 'ETHLETE_UPDATE_TASK_FILE';
@@ -127,14 +129,10 @@ export const runAgentTasks = (options: {
   const { root, template } = options;
   const tasks = assistedTasks(options.tasks);
 
-  console.log(
-    '\n  Each task gets its own agent session. If a session stays open after its task, close it to start the next.',
-  );
-
   return tasks.map((task, index) => {
     const label = `[${index + 1}/${tasks.length}] ${task.packageName} ${task.name}`;
 
-    console.log(`\n  ${label}`);
+    console.log(`\n  ${label}\n  When an interactive session has finished the task, type /exit to start the next one.`);
 
     const run = runOne({ root, template, task });
 

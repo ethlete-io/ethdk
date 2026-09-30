@@ -131,7 +131,7 @@ Without the key, `et update --ai` lists the agent CLIs it finds on `PATH` - Clau
 
 Each CLI is offered twice:
 
-- **Interactive** opens a normal agent session with the prompt. You see its progress, and it can ask you when a task needs a decision. Close the session when the task is done, and the next task starts.
+- **Interactive** opens a normal agent session with the prompt. You see its progress, and it can ask you when a task needs a decision. The session does not end by itself: type `/exit` when the task is done, and `et update` commits it and starts the next task. The agent says so in its last message.
 - **Headless** runs to the end with no question and prints only its final answer. A task that needs a decision stays open.
 
 Pick the interactive command for a large migration. Either way the agent has to be allowed to edit files without asking: a plain `claude -p` can read the task but not apply it. The Claude Code commands use auto mode, so the agent can also run its checks. If your account has no auto mode, type `claude --permission-mode acceptEdits` instead.

@@ -31,6 +31,7 @@ describe('agentCommand', () => {
     );
     expect(agentPrompt('/repo/task.md')).toMatch(/^Apply the migration task described in \/repo\/task\.md /);
     expect(agentPrompt('/repo/task.md')).toContain('Do not commit');
+    expect(agentPrompt('/repo/task.md')).toContain('Type /exit to hand back to et update');
   });
 
   it('puts the prompt where the template asks for it', () => {
