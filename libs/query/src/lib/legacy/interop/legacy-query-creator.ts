@@ -1,9 +1,9 @@
 import { HttpHeaders } from '@angular/common/http';
 import {
-  ApplicationRef,
   createEnvironmentInjector,
   DestroyRef,
   effect,
+  EnvironmentInjector,
   inject,
   Injector,
   isDevMode,
@@ -57,17 +57,18 @@ const isInjectorUsable = (injector: Injector) => {
 
 /**
  * The scope ends when its owner dies with no request in flight, when that request settles, or when the
- * application dies - a destroyed root injector does not destroy the environment injectors below it.
+ * owner's nearest environment injector dies - a destroyed injector does not destroy the environment
+ * injectors made with `createEnvironmentInjector` below it.
  */
 const createSettleScope = (owner: Injector) => {
-  const appInjector = owner.get(ApplicationRef).injector;
-  const scope = createEnvironmentInjector([], appInjector);
+  const anchor = owner.get(EnvironmentInjector);
+  const scope = createEnvironmentInjector([], anchor);
   const end = () => {
     if (!scope.destroyed) scope.destroy();
   };
 
   const bind = (query: AnyLegacyQuery, queryInjector: Injector) => {
-    const stopOnAppDestroy = appInjector.get(DestroyRef).onDestroy(end);
+    const stopOnAnchorDestroy = anchor.get(DestroyRef).onDestroy(end);
     const stopOnOwnerDestroy = owner.get(DestroyRef).onDestroy(() => {
       if (isQueryStateLoading(untracked(() => query.rawState))) {
         query.state$.pipe(takeUntilResponse()).subscribe({ complete: end });
@@ -79,7 +80,7 @@ const createSettleScope = (owner: Injector) => {
     });
 
     queryInjector.get(DestroyRef).onDestroy(() => {
-      stopOnAppDestroy();
+      stopOnAnchorDestroy();
       stopOnOwnerDestroy();
       end();
     });

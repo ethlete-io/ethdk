@@ -6,12 +6,14 @@ import {
   inject,
   Injector,
   input,
+  runInInjectionContext,
   signal,
 } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   AnyInfinityQueryConfig,
   AnyLegacyQuery,
+  createGqlMutationViaPost,
   createGqlQueryViaPost,
   createInfinityQueryConfig,
   createLegacyQueryCreator,
@@ -71,6 +73,11 @@ class InteropInfinityQueryHost {
 })
 class InteropQueryHost {
   query = input.required<AnyLegacyQuery | null>();
+}
+
+@Component({ template: '' })
+class InteropOwnerHost {
+  injector = inject(Injector);
 }
 
 const slotText = (fixture: { nativeElement: HTMLElement }, slot: string) =>
@@ -450,13 +457,40 @@ describe('legacy interop scenario', () => {
       return createLegacyQueryCreator({ creator: createUser, name: 'legacyCreateUser' });
     };
 
+    const renameUserFor = (s: ReturnType<typeof scenario>) => {
+      s.api.on('POST', '/', () => ({ body: { data: { renameUser: { ok: true } } }, delay: 1000 }));
+
+      const renameUser = createGqlMutationViaPost(s.clientRef)<{
+        response: { renameUser: { ok: boolean } };
+        variables: { name: string };
+      }>(gql`
+        mutation RenameUser($name: String!) {
+          renameUser(name: $name) {
+            ok
+          }
+        }
+      `);
+
+      return createLegacyQueryCreator({ creator: renameUser, name: 'legacyRenameUser' });
+    };
+
     const postRequest = (s: ReturnType<typeof scenario>) => s.api.requests.find((r) => r.method === 'POST');
+
+    const mountComponent = (s: ReturnType<typeof scenario>, parent?: EnvironmentInjector) => {
+      const ref = s.mount(InteropOwnerHost, parent);
+
+      return {
+        injector: ref.instance.injector,
+        run: <T>(fn: () => T) => runInInjectionContext(ref.instance.injector, fn),
+        destroy: () => ref.destroy(),
+      };
+    };
 
     it('lets a POST prepared in a component finish, then destroys it', () => {
       const s = scenario();
       const legacyCreateUser = legacyCreateUserFor(s);
 
-      const dialog = s.consumer();
+      const dialog = mountComponent(s);
       const query = dialog.run(() =>
         legacyCreateUser.prepare({ body: { name: 'Ada' }, injector: inject(Injector) }).execute(),
       );
@@ -475,7 +509,7 @@ describe('legacy interop scenario', () => {
       const legacyCreateUser = legacyCreateUserFor(s);
       const name = signal('Ada');
 
-      const form = s.consumer();
+      const form = mountComponent(s);
       const held = form.run(() => queryComputed(() => legacyCreateUser.prepare({ body: { name: name() } })));
       s.tick();
 
@@ -495,8 +529,8 @@ describe('legacy interop scenario', () => {
       const s = scenario();
       const legacyCreateUser = legacyCreateUserFor(s);
 
-      const overlay = s.consumer();
-      const injector = overlay.run(() => inject(Injector));
+      const overlay = mountComponent(s);
+      const injector = overlay.injector;
       const collection = overlay.run(() => createQueryCollectionSignal({ createUser: legacyCreateUser as never }));
       const query = legacyCreateUser.prepare({ body: { name: 'Ada' }, injector }).execute();
       collection.set({ type: 'createUser', query } as never);
@@ -517,7 +551,7 @@ describe('legacy interop scenario', () => {
       const getUser = s.get<GetUserArgs>((p) => `/users/${p.id}`);
       const legacyGetUser = createLegacyQueryCreator({ creator: getUser, name: 'legacyGetUser' });
 
-      const page = s.consumer();
+      const page = mountComponent(s);
       page.run(() => legacyGetUser.prepare({ pathParams: { id: '1' }, injector: inject(Injector) }).execute());
       s.tick(100);
 
@@ -526,6 +560,97 @@ describe('legacy interop scenario', () => {
 
       expect(s.api.requests.find((r) => r.method === 'GET')?.aborted).toBe(true);
       expect(s.liveQueries()).toHaveLength(0);
+    });
+
+    it('lets a GQL mutation prepared in a component finish, then destroys it', () => {
+      const s = scenario();
+      const legacyRenameUser = renameUserFor(s);
+
+      const form = mountComponent(s);
+      const query = form.run(() =>
+        legacyRenameUser.prepare({ variables: { name: 'Ada' }, injector: inject(Injector) }).execute(),
+      );
+      s.tick(100);
+
+      form.destroy();
+      s.flush();
+
+      expect(postRequest(s)?.aborted).toBe(false);
+      expect(query.rawState.type).toBe(QueryStateType.Success);
+      expect(s.liveQueries()).toHaveLength(0);
+    });
+
+    it('still aborts a GQL query prepared in a component when the component is destroyed', () => {
+      const s = scenario();
+      s.api.on('POST', '/', () => ({ body: { data: { user: { id: '1', name: 'Ada' } } }, delay: 1000 }));
+
+      const getUser = createGqlQueryViaPost(s.clientRef)<{
+        response: { user: User };
+        variables: { userId: string };
+      }>(gql`
+        query GetUser($userId: ID!) {
+          user(id: $userId) {
+            id
+            name
+          }
+        }
+      `);
+      const legacyGetUser = createLegacyQueryCreator({ creator: getUser, name: 'legacyGetUser' });
+
+      const page = mountComponent(s);
+      page.run(() => legacyGetUser.prepare({ variables: { userId: '1' }, injector: inject(Injector) }).execute());
+      s.tick(100);
+
+      page.destroy();
+      s.flush();
+
+      expect(postRequest(s)?.aborted).toBe(true);
+      expect(s.liveQueries()).toHaveLength(0);
+    });
+
+    describe('below a child environment injector that provides the client', () => {
+      const childClient = (s: ReturnType<typeof scenario>) =>
+        createEnvironmentInjector(
+          s.clientRef.provide(),
+          s.run(() => inject(EnvironmentInjector)),
+        );
+
+      it('lets a POST finish when its component is destroyed', () => {
+        const s = scenario();
+        const legacyCreateUser = legacyCreateUserFor(s);
+        const lazyRoute = childClient(s);
+
+        const dialog = mountComponent(s, lazyRoute);
+        const query = dialog.run(() =>
+          legacyCreateUser.prepare({ body: { name: 'Ada' }, injector: inject(Injector) }).execute(),
+        );
+        s.tick(100);
+
+        dialog.destroy();
+        s.flush();
+
+        expect(postRequest(s)?.aborted).toBe(false);
+        expect(query.rawState.type).toBe(QueryStateType.Success);
+        expect(s.liveQueries()).toHaveLength(0);
+
+        lazyRoute.destroy();
+      });
+
+      it('aborts a POST when the child environment injector is destroyed mid-flight', () => {
+        const s = scenario();
+        const legacyCreateUser = legacyCreateUserFor(s);
+        const lazyRoute = childClient(s);
+
+        const dialog = mountComponent(s, lazyRoute);
+        dialog.run(() => legacyCreateUser.prepare({ body: { name: 'Ada' }, injector: inject(Injector) }).execute());
+        s.tick(100);
+
+        lazyRoute.destroy();
+        s.flush();
+
+        expect(postRequest(s)?.aborted).toBe(true);
+        expect(s.liveQueries()).toHaveLength(0);
+      });
     });
   });
 
