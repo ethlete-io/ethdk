@@ -16,9 +16,13 @@ const vsix = resolve(OUT_DIR, `timetrack-vscode-${version}.vsix`);
 
 mkdirSync(OUT_DIR, { recursive: true });
 
-execFileSync(resolve('node_modules/.bin/vsce'), ['package', '--no-dependencies', '--out', vsix], {
-  cwd: EXTENSION_ROOT,
-  stdio: 'inherit',
-});
+execFileSync(
+  process.execPath,
+  [resolve('node_modules/@vscode/vsce/vsce'), 'package', '--no-dependencies', '--out', vsix],
+  {
+    cwd: EXTENSION_ROOT,
+    stdio: 'inherit',
+  },
+);
 
 console.log(vsix);

@@ -27,10 +27,13 @@ writeFileSync(
 /**
  * `--omit=optional` would drop esbuild's platform binary, which vite cannot run without. The
  * install is therefore per platform, which is what a bundle is anyway.
+ *
+ * On Windows `npm` is `npm.cmd`, which Node spawns only through a shell.
  */
 execFileSync('npm', ['install', '--omit=dev', '--omit=peer', '--no-audit', '--no-fund', '--no-package-lock'], {
   cwd: runtime,
   stdio: 'inherit',
+  shell: process.platform === 'win32',
 });
 
 cpSync(built, resolve(runtime, 'node_modules/@ethlete/cli'), { recursive: true });
