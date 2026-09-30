@@ -13,6 +13,10 @@ import { formatClockTime, formatWeekdayLabel } from './format';
             <span>{{ startedAt(entry) }} · {{ entry.label }}</span>
             <span class="text-et-surface-muted">{{ meta(entry) }}</span>
 
+            @if (entry.detail) {
+              <span data-auto-activity-detail>{{ entry.detail }}</span>
+            }
+
             @if (entry.error) {
               <span class="text-et-error">{{ entry.error }}</span>
             }

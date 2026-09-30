@@ -9,7 +9,9 @@ day by itself. Tom decided this on 2026-09-28.
 preview, on each new unnamed band and each open stand-in of the current day. Where the match finds
 an existing issue, auto mode applies it as a `local` action, at the confidence the match gives, not
 capped at `weak`. Where nothing matches, it drafts a ticket and picks its epic, and the create waits
-in the approval queue as an `external` action. With auto mode off, ADR 0013 holds unchanged.
+in the approval queue as an `external` action. A band two rungs disagree about (ADR 0012) is settled
+the same way a match is applied, once per pair of answers, and an unsure answer leaves it. With auto
+mode off, ADR 0013 holds unchanged.
 
 What stays:
 

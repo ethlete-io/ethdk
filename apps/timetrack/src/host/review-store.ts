@@ -19,6 +19,7 @@ const toStored = (edits: DayReviewEdits): StoredEdits => ({
   overrides: edits.overrides,
   ...(edits.auto ? { auto: edits.auto } : {}),
   ...(edits.autoDescriptions ? { autoDescriptions: edits.autoDescriptions } : {}),
+  ...(edits.autoDisputes ? { autoDisputes: edits.autoDisputes } : {}),
   pinned: edits.pinned.map(({ from, to, evidence, ...rest }) => ({
     ...rest,
     fromMs: from.getTime(),
@@ -36,6 +37,7 @@ const revive = (stored: StoredEdits): DayReviewEdits => ({
   overrides: stored.overrides ?? {},
   ...(Array.isArray(stored.auto) ? { auto: stored.auto } : {}),
   ...(Array.isArray(stored.autoDescriptions) ? { autoDescriptions: stored.autoDescriptions } : {}),
+  ...(Array.isArray(stored.autoDisputes) ? { autoDisputes: stored.autoDisputes } : {}),
   pinned: (stored.pinned ?? []).map(({ fromMs, toMs, evidence, ...rest }) => ({
     ...rest,
     from: new Date(fromMs),

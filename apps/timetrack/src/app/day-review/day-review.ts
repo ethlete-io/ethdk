@@ -4,8 +4,10 @@ import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   AgentApiRowEdit,
   AutoModeAnswer,
+  AutoModeDispute,
   AttributionRule,
   withAutoModeRowNames,
+  withAutoModeDisputeResolutions,
   AttributionTarget,
   ClosedTimerRun,
   CollectedEvent,
@@ -961,6 +963,14 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
         unattributed: deterministic.unattributed,
         applies,
       });
+
+      if (next !== current) apply(next);
+    },
+    applyAutoModeDisputes: (applies: (dispute: AutoModeDispute) => boolean) => {
+      if (!editsReady() || !review()) return;
+
+      const current = edits();
+      const next = withAutoModeDisputeResolutions({ edits: current, rows: rows(), applies });
 
       if (next !== current) apply(next);
     },

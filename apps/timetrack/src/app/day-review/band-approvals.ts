@@ -1,6 +1,13 @@
 import { computed } from '@angular/core';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
-import { AUTO_MODE_CLIENT, AgentApproval, approvalRowIdsOf, formatDurationMs, localDayKey } from '@ethlete/timetrack';
+import {
+  AUTO_MODE_CLIENT,
+  AgentApproval,
+  approvalRowIdsOf,
+  disputedTargetLabel,
+  formatDurationMs,
+  localDayKey,
+} from '@ethlete/timetrack';
 import { injectApprovalQueue } from '../agent/approval-queue';
 import { injectDayReview } from './day-review';
 import { formatClockTime } from './format';
@@ -21,6 +28,8 @@ export const approvalChipOf = (item: AgentApproval) => {
       return `${who} · +${formatDurationMs(request.durationMs)} on ${request.issueKey}`;
     case 'autoMode.apply':
       return `${who} · Name ${request.issueKey}`;
+    case 'autoMode.resolve':
+      return `${who} · ${request.choice === 'keep' ? `Keep ${request.booked}` : `Use ${disputedTargetLabel(request.other)}`}`;
     case 'autoMode.hide':
       return `${who} · Hide, off topic`;
     default:
@@ -53,6 +62,18 @@ export const approvalLinesOf = (item: AgentApproval): ApprovalLine[] => {
     }
     case 'autoMode.apply':
       return [{ label: 'Ticket', value: `${request.label} → ${request.issueKey}` }, asked];
+    case 'autoMode.resolve':
+      return [
+        {
+          label: 'Dispute',
+          value:
+            request.choice === 'keep'
+              ? `Keep ${request.booked}`
+              : `${request.booked} → ${disputedTargetLabel(request.other)}`,
+        },
+        { label: 'Why', value: request.reason },
+        asked,
+      ];
     case 'autoMode.hide':
       return [
         {

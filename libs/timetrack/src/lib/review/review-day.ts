@@ -35,6 +35,7 @@ import {
   isNamedRow,
 } from './model';
 import { isManualRow } from './edits';
+import { autoDisputeSettles } from './auto-dispute';
 import { foldEndedRests } from './end-call';
 import { mayAutoWrite, rowFieldSourceOf, storedSourceOf } from '../model/field-source';
 
@@ -509,8 +510,17 @@ export const reviewDay = (options: {
     incrementMs,
   });
   const consumed = new Set([...answered, ...covered]);
+  const settledRow = <T extends RowSource>(row: T): T => {
+    if (!autoDisputeSettles({ edits, row })) return row;
+
+    const { disputedIssueKey: _disputedIssueKey, disputedStandInId: _disputedStandInId, ...undisputed } = row;
+
+    return undisputed as T;
+  };
   const reviewed = [
-    ...sources.filter((row) => !consumed.has(row.id)).map((row) => withOverride(row, edits.overrides[row.id])),
+    ...sources
+      .filter((row) => !consumed.has(row.id))
+      .map((row) => withOverride(settledRow(row), edits.overrides[row.id])),
     ...tracked.rows
       .map((pin) => {
         const row = describeOwnSpan(fromPinned(pin));
@@ -518,7 +528,9 @@ export const reviewDay = (options: {
         return pin.replaces.length ? describeCallPiece({ row, calls }) : row;
       })
       .map((row) => nameFromStandInRule({ row, rules, standIns })),
-    ...tracked.leftovers.map((row) => withOverride(describeCallPiece({ row, calls }), edits.overrides[row.id])),
+    ...tracked.leftovers.map((row) =>
+      withOverride(settledRow(describeCallPiece({ row, calls })), edits.overrides[row.id]),
+    ),
   ]
     .map((row) => readStandIn(row, standIns))
     .sort((a, b) => a.from.getTime() - b.from.getTime() || (a.issueKey ?? '').localeCompare(b.issueKey ?? ''));

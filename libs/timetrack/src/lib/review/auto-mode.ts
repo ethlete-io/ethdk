@@ -11,6 +11,9 @@ import { setRowIssue } from './edits';
 import { WorklogWritingRequest } from '../ticket/worklog';
 import { TicketWritingRequest } from '../ticket/write';
 import { autoDescriptionRowId, storedDescriptionSource } from './auto-description';
+import { autoDisputeApplied, autoDisputeOverruled, autoModeResolveTarget } from './auto-dispute';
+import { DisputeResolvingRequest } from '../ticket/dispute';
+import { disputedTargetLabel } from '../agent-api/approval-queue';
 import { AutoModeAnswer, AutoModeSubject, DayReviewEdits, ReviewedRow } from './model';
 
 export const autoModeSubjectKey = (subject: AutoModeSubject) =>
@@ -72,6 +75,12 @@ export const approvalRowIdsOf = (options: {
   if (request.op === 'autoMode.apply') {
     return request.day === day
       ? subjectRowIds({ subject: request.subject, rows, unattributed: options.unattributed })
+      : [];
+  }
+
+  if (request.op === 'autoMode.resolve') {
+    return request.day === day
+      ? rows.filter((row) => autoDescriptionRowId(row) === request.rowId).map((row) => row.id)
       : [];
   }
 
@@ -401,12 +410,13 @@ export type AutoModeReadoutStatus =
   | 'unused'
   | 'not-queued'
   | 'written'
+  | 'unsure'
   | 'failed';
 
 /** One thing auto mode asked about today, and what came of it, read from what the app stored. */
 export type AutoModeReadoutEntry = {
   key: string;
-  kind: AutoModeSubject['kind'] | 'description';
+  kind: AutoModeSubject['kind'] | 'description' | 'dispute';
   label: string;
   askedAtMs: number;
   status: AutoModeReadoutStatus;
@@ -417,9 +427,11 @@ export type AutoModeReadoutEntry = {
   namedRows: number;
   /** The worklog line it wrote for a row. */
   description?: string;
+  /** Why the model settled a disputed band the way it did. */
+  reason?: string;
   error?: string;
   /** The masked payload that left the machine. */
-  request: TicketWritingRequest | WorklogWritingRequest;
+  request: TicketWritingRequest | WorklogWritingRequest | DisputeResolvingRequest;
 };
 
 const autoNamedRows = (edits: DayReviewEdits, issueKey: string | undefined) => {
@@ -459,6 +471,54 @@ const descriptionReadout = (options: {
     const status = storedDescriptionSource(options.edits, answer.rowId) === 'human' ? 'overruled' : 'written';
 
     return { ...base, status, description: answer.description };
+  });
+
+const disputeReadout = (options: {
+  day: string;
+  edits: DayReviewEdits;
+  approvals: readonly ApprovalView[];
+  classes: ActionClasses;
+  rows: readonly Pick<ReviewedRow, 'id' | 'recutOf' | 'laneKey'>[];
+}): AutoModeReadoutEntry[] =>
+  (options.edits.autoDisputes ?? []).map((dispute): AutoModeReadoutEntry => {
+    const row = options.rows.find((entry) => autoDescriptionRowId(entry) === dispute.rowId);
+    const { answer } = dispute;
+    const chosen =
+      answer?.choice === 'keep'
+        ? dispute.booked
+        : answer?.choice === 'use'
+          ? disputedTargetLabel(dispute.other)
+          : undefined;
+    const base = {
+      key: `dispute:${dispute.rowId}`,
+      kind: 'dispute' as const,
+      label: row?.laneKey ? streamKeyLabel(row.laneKey) : (dispute.request.repo ?? 'a disputed band'),
+      askedAtMs: dispute.askedAtMs,
+      namedRows: 0,
+      request: dispute.request,
+      ...(chosen ? { issueKey: chosen } : {}),
+      ...(answer?.reason ? { reason: answer.reason } : {}),
+    };
+
+    if (!answer) return { ...base, status: 'failed' };
+    if (answer.choice === 'unsure') return { ...base, status: 'unsure' };
+    if (autoDisputeApplied(options.edits, dispute)) return { ...base, status: 'applied' };
+    if (autoDisputeOverruled(options.edits, dispute)) return { ...base, status: 'overruled' };
+
+    const target = autoModeResolveTarget(options.day, dispute.rowId);
+    const approval = [...options.approvals].reverse().find((item) => item.target === target);
+
+    if (approval) {
+      const waiting = approvalStatusFor(approval);
+
+      if (waiting) return { ...base, status: waiting, ...(approval.error ? { error: approval.error } : {}) };
+
+      return { ...base, status: 'approved' };
+    }
+
+    if (actionClassOf('autoMode.apply', options.classes) === 'human-only') return { ...base, status: 'held' };
+
+    return { ...base, status: 'unused' };
   });
 
 const ticketReadout = (options: {
@@ -524,8 +584,8 @@ const ticketReadout = (options: {
   });
 
 /**
- * What auto mode did on a day, one entry per band or stand-in it asked about and per row it described,
- * oldest first. Every status is read from the stored answers, rows, stand-ins and queue, never from
+ * What auto mode did on a day, one entry per band or stand-in it asked about, per row it described and
+ * per disputed band it settled, oldest first. Every status is read from the stored answers, rows, stand-ins and queue, never from
  * what it meant to do.
  */
 export const autoModeReadout = (options: {
@@ -536,6 +596,8 @@ export const autoModeReadout = (options: {
   standIns: readonly Pick<StandIn, 'id' | 'name' | 'state' | 'issueKey' | 'resolutionSource'>[];
   rows?: readonly Pick<ReviewedRow, 'id' | 'recutOf' | 'laneKey' | 'issueKey'>[];
 }): AutoModeReadoutEntry[] =>
-  [...ticketReadout(options), ...descriptionReadout({ edits: options.edits, rows: options.rows ?? [] })].sort(
-    (left, right) => left.askedAtMs - right.askedAtMs,
-  );
+  [
+    ...ticketReadout(options),
+    ...descriptionReadout({ edits: options.edits, rows: options.rows ?? [] }),
+    ...disputeReadout({ ...options, rows: options.rows ?? [] }),
+  ].sort((left, right) => left.askedAtMs - right.askedAtMs);

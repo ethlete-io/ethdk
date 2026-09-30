@@ -1,5 +1,5 @@
 import { shiftDayKey } from '../review/day';
-import { AutoModeSubject } from '../review/model';
+import { AutoModeSubject, DisputedTarget } from '../review/model';
 import { AUTO_MODE_CLIENT, ActionClasses, actionClassOf, stricterClass } from './action-classes';
 import { AGENT_API_OP_CLASSES, AgentApiRequest, OpClass } from './model';
 import { parseAgentRequest } from './parse';
@@ -30,12 +30,28 @@ export type AutoModeHideRequest = {
   fromMs: number;
 };
 
-export type AutoModeRequest = AutoModeApplyRequest | AutoModeHideRequest;
+/**
+ * Auto mode's answer for a band two rungs disagree about, waiting where the user made `autoMode.apply`
+ * stricter than `local`: keep the key the band books, or take the other answer. Only auto mode queues one.
+ */
+export type AutoModeResolveRequest = {
+  op: 'autoMode.resolve';
+  day: string;
+  rowId: string;
+  /** The band's lane, as the queue panel shows it. */
+  label: string;
+  booked: string;
+  other: DisputedTarget;
+  choice: 'keep' | 'use';
+  reason: string;
+};
+
+export type AutoModeRequest = AutoModeApplyRequest | AutoModeHideRequest | AutoModeResolveRequest;
 
 export type AgentApprovalRequest = AgentApiRequest | AutoModeRequest;
 
 export const isAgentApiRequest = (request: AgentApprovalRequest): request is AgentApiRequest =>
-  request.op !== 'autoMode.apply' && request.op !== 'autoMode.hide';
+  request.op !== 'autoMode.apply' && request.op !== 'autoMode.hide' && request.op !== 'autoMode.resolve';
 
 /** `running` is internal: the wire reads it as `queued` until the op has an outcome. */
 export type AgentApprovalState = 'queued' | 'running' | 'approved' | 'rejected' | 'expired';
@@ -229,8 +245,42 @@ const parseAutoModeHide = (value: unknown): AutoModeHideRequest | undefined => {
   return { op: 'autoMode.hide', day, rowId, label: textOf(raw['label']), fromMs };
 };
 
+const asDisputedTarget = (value: unknown): DisputedTarget | undefined => {
+  const raw = typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
+  const issueKey = textOf(raw['issueKey']).toUpperCase();
+  const standInId = textOf(raw['standInId']);
+
+  if (raw['kind'] === 'issue' && issueKey) return { kind: 'issue', issueKey };
+  if (raw['kind'] === 'stand-in' && standInId) return { kind: 'stand-in', standInId };
+
+  return undefined;
+};
+
+const parseAutoModeResolve = (value: unknown): AutoModeResolveRequest | undefined => {
+  const raw = typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
+  const day = textOf(raw['day']);
+  const rowId = textOf(raw['rowId']);
+  const booked = textOf(raw['booked']).toUpperCase();
+  const other = asDisputedTarget(raw['other']);
+  const choice = raw['choice'];
+
+  if (raw['op'] !== 'autoMode.resolve' || !DAY_KEY.test(day) || !rowId || !booked || !other) return undefined;
+  if (choice !== 'keep' && choice !== 'use') return undefined;
+
+  return {
+    op: 'autoMode.resolve',
+    day,
+    rowId,
+    label: textOf(raw['label']),
+    booked,
+    other,
+    choice,
+    reason: textOf(raw['reason']),
+  };
+};
+
 const parseApprovalRequest = (value: unknown): AgentApprovalRequest | undefined => {
-  const applied = parseAutoModeApply(value) ?? parseAutoModeHide(value);
+  const applied = parseAutoModeApply(value) ?? parseAutoModeHide(value) ?? parseAutoModeResolve(value);
 
   if (applied) return applied;
 
@@ -288,6 +338,10 @@ export const parseApprovalQueue = (stored: unknown): AgentApproval[] => {
 
 const minutesOf = (ms: number) => `${Math.round(ms / 60_000)}m`;
 
+/** The other answer of a disputed band in a few words: its key, or that it is work with no ticket yet. */
+export const disputedTargetLabel = (target: DisputedTarget) =>
+  target.kind === 'issue' ? target.issueKey : 'work with no ticket yet';
+
 /** One line saying what an approved request writes, for the queue panel. */
 export const describeApproval = (request: AgentApprovalRequest) => {
   switch (request.op) {
@@ -295,6 +349,8 @@ export const describeApproval = (request: AgentApprovalRequest) => {
       return request.subject.kind === 'context'
         ? `Names today's ${request.label} band with ${request.issueKey}`
         : `Resolves stand-in ${request.label} with ${request.issueKey}`;
+    case 'autoMode.resolve':
+      return `${request.choice === 'keep' ? `Keeps ${request.booked}` : `Takes ${disputedTargetLabel(request.other)} instead of ${request.booked}`} on today's ${request.label} band: ${request.reason}`;
     case 'autoMode.hide':
       return `Hides the rest of the ${request.label || 'call'} call, which went off topic`;
     case 'jira.create':

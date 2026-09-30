@@ -6,6 +6,7 @@ import { WorklogProposal } from '../model/proposal';
 import { RowFieldSources } from '../model/field-source';
 import { TicketWritingRequest } from '../ticket/write';
 import { WorklogWritingRequest } from '../ticket/worklog';
+import { DisputeAnswer, DisputeResolvingRequest } from '../ticket/dispute';
 
 /** The fields a reviewer can change on a machine-proposed row, keyed by the proposal's id. */
 export type ProposalOverride = {
@@ -99,6 +100,8 @@ export type DayReviewEdits = {
   auto?: AutoModeAnswer[];
   /** The descriptions auto mode wrote for this day's settled code rows, one entry per row it asked about. */
   autoDescriptions?: AutoModeDescription[];
+  /** What auto mode answered for this day's disputed bands, one entry per band and pair of answers. */
+  autoDisputes?: AutoModeDispute[];
 };
 
 /** What auto mode asks about: an unnamed context of the day, or an open stand-in the day holds. */
@@ -127,6 +130,23 @@ export type AutoModeAnswer = {
   /** The masked payload that left the machine: what the "Ask AI" press would have shown. */
   request: TicketWritingRequest;
   outcome: AutoModeOutcome;
+};
+
+/** The other answer of a disputed band: the issue or the stand-in a second rung named. */
+export type DisputedTarget = { kind: 'issue'; issueKey: string } | { kind: 'stand-in'; standInId: string };
+
+/**
+ * What auto mode asked for one disputed band: the key the band booked, the other answer, and what the
+ * model chose. A run that failed holds no `answer`, and is not asked again.
+ */
+export type AutoModeDispute = {
+  rowId: string;
+  askedAtMs: number;
+  booked: string;
+  other: DisputedTarget;
+  /** The masked payload that left the machine. */
+  request: DisputeResolvingRequest;
+  answer?: DisputeAnswer;
 };
 
 /** What auto mode asked for one settled row. A run that failed holds no `description`, and is not asked again. */

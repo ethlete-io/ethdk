@@ -10,5 +10,6 @@ export * from './spec';
 export * from './spec-source';
 export * from './start';
 export * from './start-execute';
+export * from './dispute';
 export * from './write';
 export * from './worklog';

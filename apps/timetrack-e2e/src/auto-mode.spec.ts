@@ -291,3 +291,85 @@ test.describe('auto mode on a code row that has not settled yet', () => {
     await expect.poll(() => describedRow(page)).toEqual({ description: FAKE_WORKLOG, source: 'auto' });
   });
 });
+
+test.describe('auto mode on a band two answers disagree about', () => {
+  const at = (minutes: number) => new Date(new Date(`${E2E_DAY_KEY}T14:00:00.000Z`).getTime() + minutes * 60_000);
+  const helper = 'com.hnc.Discord.helper.Renderer';
+  const REASON = 'The fake agent reads the other answer.';
+
+  const disputedWorld = (settings: Partial<TimetrackSettings> = {}) => ({
+    now: E2E_NOW,
+    events: [
+      {
+        at: at(0),
+        until: at(60),
+        source: 'calendar',
+        kind: 'calendar-event',
+        occurrenceId: 'o-weekly',
+        recurringEventId: 'weekly',
+        title: 'Weekly sync',
+        accepted: true,
+        conferenceUrl: 'https://call.example.com/qzx-room-71',
+      },
+      { at: at(0), source: 'window', kind: 'window-focus', appId: helper, title: 'Open Room #1 | Braune Digital' },
+      { at: at(1), source: 'call', kind: 'call-start', appId: helper },
+      { at: at(41), source: 'call', kind: 'call-end', appId: helper },
+    ] satisfies CollectedEvent[],
+    settings: withAutoMode({
+      ...defaultSettings(),
+      callRules: { countsAsWork: ['Braune Digital'], neverCountsAsWork: [] },
+      nudge: { ...defaultSettings().nudge, enabled: false },
+      meetingNamings: [{ seriesKey: 'weekly', issueKey: E2E_PARENT_KEY, title: 'Weekly sync', createdAt: at(-60) }],
+      callNamings: [
+        {
+          appId: helper.toLowerCase(),
+          weekday: 3,
+          durationBand: '30-60',
+          startMinute: 14 * 60 + 1,
+          target: { kind: 'issue' as const, issueKey: E2E_ISSUE_KEY },
+          label: 'Open Room #1',
+          createdAt: at(-60),
+        },
+      ],
+      ...settings,
+    }),
+  });
+  const band = (page: Page) => page.locator('[data-kind="row"]').first();
+
+  test('settles it with the answer the model gave, and says what it did and why', async ({ page }) => {
+    await seedWorld(page, disputedWorld());
+    await page.goto('/day');
+
+    await expect(band(page)).toContainText(E2E_PARENT_KEY);
+    await expect(band(page)).not.toContainText('or ');
+    await expect(page.locator('[data-warning="naming-disagreement"]')).toHaveCount(0);
+
+    const readout = await openAutoModeReadout(page);
+    const entry = readout.locator('[data-auto-entry^="dispute:"]');
+
+    await expect(entry).toHaveAttribute('data-status', 'applied');
+    await expect(entry).toContainText(`Why: ${REASON}`);
+    await expect(
+      readout.locator('[data-auto-activity][data-state="done"]').filter({ hasText: `Settles ${E2E_ISSUE_KEY}` }),
+    ).toContainText(`Takes ${E2E_PARENT_KEY} over ${E2E_ISSUE_KEY}: ${REASON}`);
+  });
+
+  test('waits for the approval where applying is set to approve first', async ({ page }) => {
+    await seedWorld(page, disputedWorld({ actionClasses: { 'autoMode.apply': 'external' } }));
+    await page.goto('/day');
+
+    const dialog = await openApprovals(page);
+    const item = dialog.locator('[data-approval]').filter({ hasText: 'instead of' });
+
+    await expect(item).toContainText(`Takes ${E2E_PARENT_KEY} instead of ${E2E_ISSUE_KEY}`);
+    await expect(band(page)).toContainText(`or ${E2E_PARENT_KEY}?`);
+
+    await item.getByRole('button', { name: 'Approve' }).click();
+    await expect(item).toBeHidden();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+
+    await expect(band(page)).not.toContainText('or ');
+    await expect(band(page)).toContainText(E2E_PARENT_KEY);
+  });
+});

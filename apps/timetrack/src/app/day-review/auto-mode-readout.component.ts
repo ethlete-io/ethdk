@@ -14,6 +14,7 @@ const STATUS_TEXT: Record<AutoModeReadoutStatus, string> = {
   unused: 'found, not applied',
   'not-queued': 'drafted, not queued',
   written: 'described',
+  unsure: 'unsure, left to you',
   failed: 'the ask failed',
 };
 
@@ -37,6 +38,10 @@ const STATUS_TEXT: Record<AutoModeReadoutStatus, string> = {
 
             @if (entry.summary) {
               <span class="text-et-surface-muted">Draft: {{ entry.summary }}</span>
+            }
+
+            @if (entry.reason) {
+              <span class="text-et-surface-muted">Why: {{ entry.reason }}</span>
             }
 
             @if (entry.description) {

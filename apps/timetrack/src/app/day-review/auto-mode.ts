@@ -5,6 +5,7 @@ import {
   AUTO_MODE_CLIENT,
   AgentApproval,
   AutoModeAnswer,
+  AutoModeDispute,
   AutoModeHideRequest,
   AutoModeOutcome,
   AutoModeSubject,
@@ -28,6 +29,16 @@ import {
   autoModeReadout,
   autoModeSubjectKey,
   autoDescriptionAsks,
+  autoDisputeApplies,
+  autoDisputeAsks,
+  autoDisputeRequest,
+  autoDisputeResolveRequest,
+  autoModeResolveTarget,
+  disputedTargetLabel,
+  disputedTargetOf,
+  resolveDisputeWithAgent$,
+  streamKeyLabel,
+  withAutoModeDispute,
   autoDescriptionRequest,
   autoDescriptionRowId,
   dayBoundaryOf,
@@ -78,7 +89,13 @@ const DESCRIPTION_TICK_MS = 60_000;
 
 type Ask = { day: string; subject: AutoModeSubject };
 
-type Job = { key: string; day: string; label: string; stillNeeded: () => boolean; work: () => Observable<void> };
+type Job = {
+  key: string;
+  day: string;
+  label: string;
+  stillNeeded: () => boolean;
+  work: () => Observable<string | void>;
+};
 
 /** One job auto mode ran in this app session. Nothing stores it: the per-day readout is the record. */
 export type AutoModeActivity = {
@@ -88,6 +105,7 @@ export type AutoModeActivity = {
   startedAtMs: number;
   endedAtMs?: number;
   state: 'running' | 'done' | 'failed';
+  detail?: string;
   error?: string;
 };
 
@@ -126,7 +144,8 @@ const outcomeOf = (options: { wording: TicketWording | null; projectKey?: string
  * the same way. Every answer is stored against the day with the payload it sent, so a band is asked
  * once. A settled code row with a ticket gets a one-line worklog description written as `auto`, once
  * per row, where applying is `local`. The rest band of a call gone off topic waits as an
- * `autoMode.hide` suggestion, once per band.
+ * `autoMode.hide` suggestion, once per band. A band two rungs disagree about is settled with a keep or
+ * use answer the same way a match is applied, once per pair of answers; an unsure answer leaves it.
  */
 const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
@@ -154,7 +173,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     return id;
   };
 
-  const ended = (id: number, end: Pick<AutoModeActivity, 'state' | 'error'>) =>
+  const ended = (id: number, end: Pick<AutoModeActivity, 'state' | 'error' | 'detail'>) =>
     activity.update((entries) =>
       entries.map((entry) => (entry.id === id ? { ...entry, ...end, endedAtMs: Date.now() } : entry)),
     );
@@ -173,6 +192,9 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const appliesOn = (day: string) => (answer: AutoModeAnswer) =>
     autoModeApplies({ day, answer, classes: settings.settings().actionClasses, approvals: approvals.items() });
+
+  const disputeAppliesOn = (day: string) => (dispute: AutoModeDispute) =>
+    autoDisputeApplies({ day, dispute, classes: settings.settings().actionClasses, approvals: approvals.items() });
 
   const labelOf = (subject: AutoModeSubject) =>
     subject.kind === 'context'
@@ -216,6 +238,32 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       answers: edits.autoDescriptions ?? [],
       maskedNames: settings.settings().reasoning.maskedNames,
     });
+  };
+
+  const disputesNow = (day: string) => {
+    const edits = dayReview.storedEdits();
+
+    if (!edits || !approvals.isLoaded() || dayReview.isLoading() || !dayReview.namingSettled()) return [];
+    if (dayReview.dayKey() !== day) return [];
+
+    return autoDisputeAsks({
+      enabled: enabled(),
+      day,
+      today: today(),
+      classes: settings.settings().actionClasses,
+      rows: dayReview.rows(),
+      edits,
+    });
+  };
+
+  const otherLabelOf = (row: ReviewedRow) => {
+    const other = disputedTargetOf(row);
+
+    if (other?.kind !== 'stand-in') return other ? disputedTargetLabel(other) : '';
+
+    return (
+      settings.settings().standIns.find((entry) => entry.id === other.standInId)?.name ?? disputedTargetLabel(other)
+    );
   };
 
   const hidesNow = (day: string) => {
@@ -410,14 +458,95 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       ),
     );
 
-  const issueSummary$ = (issueKey: string): Observable<string | undefined> =>
+  const issueSummaries$ = (keys: readonly string[]): Observable<Record<string, string>> =>
     readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }).pipe(
       switchMap((credentials) =>
-        credentials ? fetchJiraIssues$({ transport: ports.transport, credentials, keys: [issueKey] }) : of([]),
+        credentials ? fetchJiraIssues$({ transport: ports.transport, credentials, keys: [...keys] }) : of([]),
       ),
-      map((issues) => issues.find((issue) => issue.key === issueKey)?.summary),
-      catchError(() => of(undefined)),
+      map((issues) => Object.fromEntries(issues.map((issue) => [issue.key, issue.summary]))),
+      catchError(() => of({})),
     );
+
+  const issueSummary$ = (issueKey: string): Observable<string | undefined> =>
+    issueSummaries$([issueKey]).pipe(map((summaries) => summaries[issueKey]));
+
+  const queuedResolve$ = (options: { day: string; dispute: AutoModeDispute; label: string }): Observable<boolean> => {
+    const { day, dispute, label } = options;
+    const request = autoDisputeResolveRequest({ day, dispute, label, classes: settings.settings().actionClasses });
+
+    if (!request) return of(false);
+
+    return approvals
+      .enqueue$({ request, client: AUTO_MODE_CLIENT, target: autoModeResolveTarget(day, dispute.rowId) })
+      .pipe(
+        map(() => true),
+        catchError(() => of(false)),
+      );
+  };
+
+  const disputeDetail = (options: { dispute: AutoModeDispute; otherLabel: string; queued: boolean }) => {
+    const { dispute, otherLabel, queued } = options;
+    const { answer } = dispute;
+
+    if (!answer) return 'The ask failed; the dispute stays as it is.';
+
+    const did = {
+      keep: `Keeps ${dispute.booked}`,
+      use: `Takes ${otherLabel} over ${dispute.booked}`,
+      unsure: 'Unsure, leaves the dispute to you',
+    }[answer.choice];
+
+    return `${did}${queued ? ', waits for your approval' : ''}: ${answer.reason}`;
+  };
+
+  const settle$ = (day: string, row: ReviewedRow): Observable<string> => {
+    const other = disputedTargetOf(row);
+    const booked = row.issueKey;
+
+    if (!other || !booked) return EMPTY;
+
+    const current = settings.settings();
+    const maskedNames = current.reasoning.maskedNames;
+    const rowId = autoDescriptionRowId(row);
+    const label = row.laneKey ? streamKeyLabel(row.laneKey) : booked;
+
+    return issueSummaries$(other.kind === 'issue' ? [booked, other.issueKey] : [booked]).pipe(
+      switchMap((summaries) => {
+        const request = autoDisputeRequest({ row, other, summaries, standIns: current.standIns, maskedNames });
+
+        return resolveDisputeWithAgent$({
+          runner: ports.processes,
+          request,
+          options: reasoningOptionsOf(current),
+          maskedNames,
+        }).pipe(
+          map((answer): AutoModeDispute => ({
+            rowId,
+            askedAtMs: Date.now(),
+            booked,
+            other,
+            request,
+            ...(answer ? { answer } : {}),
+          })),
+        );
+      }),
+      switchMap((dispute) =>
+        queuedResolve$({ day, dispute, label }).pipe(
+          switchMap((queued) =>
+            dayReview
+              .changeDay$(day, (edits) => withAutoModeDispute(edits, dispute))
+              .pipe(
+                map(() => {
+                  if (enabled() && dayReview.dayKey() === day) dayReview.applyAutoModeDisputes(disputeAppliesOn(day));
+
+                  return disputeDetail({ dispute, otherLabel: otherLabelOf(row), queued });
+                }),
+              ),
+          ),
+        ),
+      ),
+    );
+  };
 
   const describe$ = (day: string, row: ReviewedRow): Observable<void> =>
     (row.issueKey ? issueSummary$(row.issueKey) : of(undefined)).pipe(
@@ -469,10 +598,14 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
           if (!job.stillNeeded()) return EMPTY;
 
           const id = began(job);
+          let detail: string | undefined;
 
           return job.work().pipe(
             tap({
-              complete: () => ended(id, { state: 'done' }),
+              next: (value) => {
+                if (typeof value === 'string') detail = value;
+              },
+              complete: () => ended(id, { state: 'done', ...(detail ? { detail } : {}) }),
               error: (error: unknown) =>
                 ended(id, { state: 'failed', error: error instanceof Error ? error.message : String(error) }),
             }),
@@ -551,6 +684,30 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   });
 
   effect(() => {
+    const day = dayReview.dayKey();
+    const rows = disputesNow(day);
+
+    untracked(() => {
+      for (const row of rows) {
+        const rowId = autoDescriptionRowId(row);
+        const still = () => disputesNow(day).find((held) => autoDescriptionRowId(held) === rowId);
+
+        queue({
+          key: `${day}|dispute:${rowId}|${row.issueKey ?? ''}|${otherLabelOf(row)}`,
+          day,
+          label: `Settles ${row.issueKey ?? 'a band'} or ${otherLabelOf(row)}`,
+          stillNeeded: () => !!still(),
+          work: () => {
+            const held = still();
+
+            return held ? settle$(day, held) : EMPTY;
+          },
+        });
+      }
+    });
+  });
+
+  effect(() => {
     if (!enabled() || !dayReview.isToday()) return;
 
     dayReview.autoAnswers();
@@ -558,7 +715,10 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     approvals.items();
     settings.settings();
 
-    untracked(() => dayReview.applyAutoModeNames(appliesOn(dayReview.dayKey())));
+    untracked(() => {
+      dayReview.applyAutoModeNames(appliesOn(dayReview.dayKey()));
+      dayReview.applyAutoModeDisputes(disputeAppliesOn(dayReview.dayKey()));
+    });
   });
 
   approvals.approved$
@@ -566,6 +726,12 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       concatMap(({ id, request }) => {
         if (isAgentApiRequest(request)) return EMPTY;
         if (request.op === 'autoMode.hide') return hideApproved$({ id, request });
+
+        if (request.op === 'autoMode.resolve') {
+          approvals.finish(id, { ok: true, value: { rowId: request.rowId, choice: request.choice } });
+
+          return EMPTY;
+        }
 
         approvals.finish(id, { ok: true, value: { issueKey: request.issueKey } });
 

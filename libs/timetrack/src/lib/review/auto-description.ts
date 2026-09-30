@@ -20,7 +20,8 @@ export const autoDescriptionRowId = (row: Pick<ReviewedRow, 'id' | 'recutOf'>) =
 
 const isCodeRow = (row: Pick<ReviewedRow, 'laneKey'>) => !!row.laneKey && !!streamKeyRepoPath(row.laneKey);
 
-const notesOf = (evidence: ReviewedRow['evidence']) => {
+/** The wording a row's quotable evidence lends a prompt, each note once, acknowledgements left out. */
+export const quotableNotesOf = (evidence: ReviewedRow['evidence']) => {
   const notes: string[] = [];
 
   for (const entry of evidence) {
@@ -89,7 +90,7 @@ export const autoDescriptionRequest = (options: {
 }): WorklogWritingRequest => {
   const { row } = options;
   const map = pseudonymMap(options.maskedNames ?? []);
-  const notes = notesOf(row.evidence);
+  const notes = quotableNotesOf(row.evidence);
   const summary = options.issueSummary?.trim();
 
   return {
