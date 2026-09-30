@@ -165,19 +165,20 @@ jobs:
           fi
           unset MACOS_SIGNING_CERTIFICATE MACOS_SIGNING_CERTIFICATE_PASSWORD
           # Git Bash puts its MSYS perl first, which lacks the modules OpenSSL's Configure needs.
-          # Without a working libclang, whisper-rs-sys falls back to its bundled glibc bindings,
-          # which fail to compile on Windows.
           if [ "$RUNNER_OS" = Windows ]; then
             export OPENSSL_SRC_PERL='C:\Strawberry\perl\bin\perl.exe'
+          fi
+          # The bindings whisper-rs-sys ships assume an 8-byte C long and fail to compile on Windows, so
+          # there bindgen must run. Its build script does not rerun when the flag goes, hence the clean.
+          if [ "$RUNNER_OS" = Windows ] && [ "${{ matrix.app.project }}" = timetrack-app ]; then
             export LIBCLANG_PATH='C:\Program Files\LLVM\bin'
-            export BINDGEN_EXTRA_CLANG_ARGS='--target=x86_64-pc-windows-msvc -v'
+            sed -i '/^WHISPER_DONT_GENERATE_BINDINGS/d' ${{ matrix.app.dir }}/src-tauri/.cargo/config.toml
+            (cd ${{ matrix.app.dir }}/src-tauri && cargo clean --release -p whisper-rs-sys)
           fi
           echo '{ "bundle": { "createUpdaterArtifacts": true } }' > "$RUNNER_TEMP/updater.json"
-          # Cargo hides a registry crate's build-script warnings, which is where bindgen reports why it failed.
+          # Cargo hides a registry crate's build-script warnings, which is where bindgen reports a failure.
           yarn nx run ${{ matrix.app.project }}:tauri:build -- --config "$RUNNER_TEMP/updater.json" || {
             grep -ah "cargo:warning" ${{ matrix.app.dir }}/src-tauri/target/release/build/*/output 2>/dev/null || true
-            cat ${{ matrix.app.dir }}/src-tauri/target/release/build/whisper-rs-sys-*/stderr 2>/dev/null || true
-            env | grep -iE '^(include|lib|cpath|c_include_path|cplus_include_path)=' || true
             exit 1
           }
         env:
