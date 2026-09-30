@@ -167,7 +167,7 @@ patterns), see the **`styleguide`** skill.
 To run what CI runs before pushing - format, changesets, lint, test, build, bundle-size
 goldens, Storybook build - use the **`ci-check`** skill (`.agents/skills/ci-check/`). The
 `.husky/pre-push` hook already runs the CI "Checks" job (format, agent rules, versions, changesets,
-affected typecheck and lint) over the commits being pushed; fix what it reports rather than skipping it.
+affected typecheck and lint) over the committed state of HEAD (in a throwaway clone, so uncommitted edits never count); fix what it reports rather than skipping it.
 
 ## Agent rules & skills for other repos
 

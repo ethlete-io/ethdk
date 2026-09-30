@@ -1,28 +1,51 @@
 #!/usr/bin/env sh
-# Runs the CI "Checks" job over the commits about to leave, so a push never lands code that job rejects.
-# Skip once with `git push --no-verify`.
+# Runs the CI "Checks" job over the committed state of HEAD in a throwaway clone, so a push never lands code
+# that job rejects and other sessions' uncommitted edits never block it. Skip once with `git push --no-verify`.
 set -e
 
 export NX_NO_CLOUD=true
+export NX_DAEMON=false
 
+root=$(git rev-parse --show-toplevel)
 base=$(git rev-parse --verify --quiet '@{upstream}' || git merge-base HEAD origin/main)
-logs=$(mktemp -d "${TMPDIR:-/tmp}/pre-push.XXXXXX")
-trap 'rm -rf "$logs"' EXIT
+head=$(git rev-parse HEAD)
+tmp=$(mktemp -d "${TMPDIR:-/tmp}/pre-push.XXXXXX")
+trap 'rm -rf "$tmp"' EXIT
+
+export NX_CACHE_DIRECTORY="${NX_CACHE_DIRECTORY:-$root/.nx/cache}"
+git clone --quiet --shared --no-checkout "$root" "$tmp/repo"
+cd "$tmp/repo"
+git checkout --quiet --detach "$head"
+
+mkdir node_modules
+for entry in "$root"/node_modules/* "$root"/node_modules/.[!.]*; do
+  name=$(basename "$entry")
+  if [ -L "$entry" ]; then
+    ln -s "$(readlink "$entry")" "node_modules/$name"
+  elif [ "$name" = "@ethlete" ]; then
+    mkdir node_modules/@ethlete
+    for scoped in "$entry"/*; do
+      ln -s "$(readlink "$scoped")" "node_modules/@ethlete/$(basename "$scoped")"
+    done
+  else
+    ln -s "$entry" "node_modules/$name"
+  fi
+done
 
 pids=""
 for check in agents:check versions:check lint:changesets query:export-coverage core:export-coverage components:export-coverage; do
-  yarn "$check" >"$logs/$check.log" 2>&1 &
+  yarn "$check" >"$tmp/$check.log" 2>&1 &
   pids="$pids $!:$check"
 done
 
-yarn nx format:check --base="$base" --head=HEAD
-yarn nx affected -t typecheck lint --base="$base" --head=HEAD --parallel=8
-
 failed=0
+yarn nx format:check --base="$base" --head=HEAD || failed=1
+yarn nx affected -t typecheck lint --base="$base" --head=HEAD --parallel=8 || failed=1
+
 for entry in $pids; do
   if ! wait "${entry%%:*}"; then
     echo "pre-push: yarn ${entry#*:} failed:"
-    cat "$logs/${entry#*:}.log"
+    cat "$tmp/${entry#*:}.log"
     failed=1
   fi
 done
