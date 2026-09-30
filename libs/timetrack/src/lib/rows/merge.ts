@@ -673,13 +673,11 @@ type Rival = { disputedIssueKey: string } | { disputedStandInId: string };
 const rivalKey = (rival: Rival) =>
   'disputedIssueKey' in rival ? `issue:${rival.disputedIssueKey}` : `stand-in:${rival.disputedStandInId}`;
 
-const swapTo = (group: WorkGroup, rival: Rival): WorkGroup => {
+const swapTo = (group: WorkGroup, won: string): WorkGroup => {
   const { issueKey, standInId, storyKey: _storyKey, taskKey: _taskKey, ...rest } = group;
   const lost = issueKey ? { disputedIssueKey: issueKey } : standInId ? { disputedStandInId: standInId } : {};
-  const won =
-    'disputedIssueKey' in rival ? { issueKey: rival.disputedIssueKey } : { standInId: rival.disputedStandInId };
 
-  return { ...rest, ...won, ...lost };
+  return { ...rest, issueKey: won, ...lost };
 };
 
 /**
@@ -690,9 +688,10 @@ const swapTo = (group: WorkGroup, rival: Rival): WorkGroup => {
  *
  * An agent session's band is the exception. A session reports the branch its checkout had checked out,
  * yet it can commit or merge on another one through a worktree it removes again. When every write to
- * this checkout inside the session's own stretches names one other piece of work, and nothing wrote to
- * the band's branch, the band books that work and the rule's answer becomes the dispute. A write a
- * linked worktree owns is that worktree's session's, never this one's.
+ * this checkout inside the session's own stretches names one other issue, and nothing wrote to the
+ * band's branch, the band books that issue and the rule's answer becomes the dispute. A branch that
+ * names only a stand-in never takes a band from an issue: it stays the dispute. A write a linked
+ * worktree owns is that worktree's session's, never this one's.
  */
 export const disputeOtherBranches = (options: {
   groups: readonly WorkGroup[];
@@ -754,7 +753,10 @@ export const disputeOtherBranches = (options: {
       (entry) => entry.activity.written && entry.activity.repoPath === repoPath && bySession(entry.activity.at),
     );
     const named = new Set(sessionWrites.flatMap((entry) => (entry.rival ? rivalKey(entry.rival) : [])));
-    const written = !ownWrite && named.size === 1 ? sessionWrites.find((entry) => entry.rival) : undefined;
+    const onlyRival = !ownWrite && named.size === 1 ? sessionWrites.find((entry) => entry.rival) : undefined;
+    const won =
+      onlyRival?.rival && 'disputedIssueKey' in onlyRival.rival ? onlyRival.rival.disputedIssueKey : undefined;
+    const written = won ? onlyRival : undefined;
     const disputed = written ?? found.find((entry) => entry.rival);
 
     if (!disputed?.rival) return group;
@@ -764,7 +766,7 @@ export const disputeOtherBranches = (options: {
       [{ kind: 'branch', at: disputed.activity.at, detail: disputed.activity.detail }],
     ]);
 
-    if (written) return { ...swapTo(group, disputed.rival), evidence };
+    if (won) return { ...swapTo(group, won), evidence };
 
     return { ...group, ...disputed.rival, evidence };
   });
