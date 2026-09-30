@@ -143,7 +143,9 @@ export type CreateQueryObjectOptions<TArgs extends QueryArgs> = {
 export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryObjectOptions<TArgs>) => {
   const { state, execute, deps } = options;
 
-  const destroy = () => deps.injector.destroy();
+  const destroy = () => {
+    if (!deps.injector.destroyed) deps.injector.destroy();
+  };
   const setResponse = (response: ResponseType<TArgs>) => state.response.set(response);
   const setLoading = (loading: HttpRequestLoadingState | null) => state.loading.set(loading);
   const setError = (error: QueryErrorResponse | null) => state.error.set(error);

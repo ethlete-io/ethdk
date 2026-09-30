@@ -370,4 +370,49 @@ describe('legacy query container scenario', () => {
 
     page.destroy();
   });
+
+  it('does not throw when the owner of a released in-flight POST is destroyed before it settles', () => {
+    const s = scenario();
+    s.api.on('POST', '/users', ({ body }) => ({ status: 201, body, delay: 1_000 }));
+
+    const legacyCreateUser = createLegacyQueryCreator({
+      creator: s.post<CreateUserArgs>('/users'),
+      name: 'legacyCreateUser',
+    });
+
+    const page = s.consumer();
+    const query = page.run(() => legacyCreateUser.prepare({ body: { name: 'Ada' } }).execute());
+
+    const overlay = s.consumer();
+    const collection = overlay.run(() => createQueryCollectionSignal({ createUser: legacyCreateUser }));
+    collection.set({ type: 'createUser', query });
+    s.tick(100);
+
+    overlay.destroy();
+    s.tick();
+
+    expect(() => page.destroy()).not.toThrow();
+    s.flush();
+  });
+
+  it('does not throw when the owner of a superseded in-flight POST is destroyed before it settles', () => {
+    const s = scenario();
+    s.api.on('POST', '/users', ({ body }) => ({ status: 201, body, delay: 1_000 }));
+
+    const legacyCreateUser = createLegacyQueryCreator({
+      creator: s.post<CreateUserArgs>('/users'),
+      name: 'legacyCreateUser',
+    });
+
+    const page = s.consumer();
+    const holder = legacyCreateUser.createSignal(null, { injector: page.injector });
+    holder.set(page.run(() => legacyCreateUser.prepare({ body: { name: 'Ada' } }).execute()));
+    s.tick(100);
+
+    holder.set(page.run(() => legacyCreateUser.prepare({ body: { name: 'Grace' } })));
+    s.tick();
+
+    expect(() => page.destroy()).not.toThrow();
+    s.flush();
+  });
 });
