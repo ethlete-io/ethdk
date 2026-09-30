@@ -41,6 +41,7 @@ const occurrence = (overrides: Partial<CalendarOccurrenceEvent> = {}): CalendarO
   until: at(11),
   title: 'Daily Standup',
   accepted: true,
+  conferenceUrl: 'https://call.example.com/qzx-room-71',
   ...overrides,
 });
 
@@ -629,5 +630,31 @@ describe('a call over an accepted meeting no rule counts', () => {
     expect(found?.group.bookable).not.toBe(false);
     expect(found?.meeting?.event.occurrenceId).toBe('occ-standup');
     expect(callLabel(found!.call)).toBe('Team Daily');
+  });
+
+  it('keeps its own name over an entry nobody else is in and no link joins', () => {
+    const errand = occurrence({
+      at: at(10),
+      until: at(11),
+      title: 'Errand',
+      conferenceUrl: undefined,
+      participants: undefined,
+    });
+    const calls = classifyCalls({
+      events: [
+        { at: at(9, 56), source: 'window', kind: 'window-focus', appId: SLACK, title: 'office (Channel) - Slack' },
+        { at: at(9, 56), source: 'call', kind: 'call-start', appId: SLACK },
+        { at: at(10, 36), source: 'call', kind: 'call-end', appId: SLACK },
+        errand,
+      ],
+      rules: { countsAsWork: ['tinyspeck'], neverCountsAsWork: [] },
+      until: at(12),
+    });
+
+    const [found] = match({ calls, occurrences: [errand] });
+
+    expect(found?.meeting).toBeUndefined();
+    expect(found?.candidates).toEqual([]);
+    expect(callLabel(found!.call)).toBe('office (Channel) - Slack');
   });
 });

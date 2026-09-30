@@ -92,6 +92,7 @@ const weekly = (until: Date): CollectedEvent => ({
   occurrenceId: 'o-weekly',
   title: 'ABC-2000 Weekly',
   accepted: true,
+  conferenceUrl: 'https://call.example.com/qzx-room-71',
 });
 
 /** The same call, over a meeting the calendar held until 16:45: the rest of the call was small talk. */

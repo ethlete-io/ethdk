@@ -79,7 +79,14 @@ describe('reviewDay over a piece of a call', () => {
   it('names a piece after the later meeting that covers it', () => {
     const rows = dayOf([
       occurrence({}),
-      occurrence({ occurrenceId: 'occ-daily', title: 'Daily', participants: [], at: at(12, 30), until: at(13) }),
+      occurrence({
+        occurrenceId: 'occ-daily',
+        title: 'Daily',
+        participants: [],
+        conferenceUrl: 'https://call.example.com/qzx-room-71',
+        at: at(12, 30),
+        until: at(13),
+      }),
     ]);
     const [, gap] = review(rows);
     const edits = setRowRange({ edits: EMPTY_DAY_REVIEW_EDITS, row: gap as ReviewedRow, from: at(12), to: at(12, 45) });

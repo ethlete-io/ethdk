@@ -3,7 +3,7 @@ import { ActivityBlock } from '../model/block';
 import { CallWindow, callLabel } from '../model/call';
 import { CallFeatures, DEFAULT_CALL_AFTER_GAP_MS, callFeaturesOf, matchCallNaming } from '../model/call-naming';
 import { NamedTarget } from '../model/attribution';
-import { CalendarOccurrenceEvent } from '../model/event';
+import { CalendarOccurrenceEvent, isSharedOccurrence } from '../model/event';
 import { Confidence, Evidence } from '../model/evidence';
 import { meetingSeriesKey } from '../model/meeting-naming';
 import { TimeWindow, subtractWindows } from '../model/time-window';
@@ -408,7 +408,7 @@ export const matchCalls = (options: {
   meetings?: MeetingOptions;
 }): CallMatch[] => {
   const titled = options.titled ?? options.blocks;
-  const occurrences = options.occurrences ?? [];
+  const occurrences = (options.occurrences ?? []).filter(isSharedOccurrence);
   // Every call, not only the ones that count as work: `after` asks what ran before, not what books.
   const inOrder = [...options.calls].sort((left, right) => left.from.getTime() - right.from.getTime());
   const after = new Map<CallWindow, string | undefined>(

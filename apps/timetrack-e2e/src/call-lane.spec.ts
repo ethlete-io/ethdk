@@ -18,6 +18,7 @@ const EVENTS: CollectedEvent[] = [
     occurrenceId: 'o-refinement',
     title: 'ABC-2000 Refinement',
     accepted: true,
+    conferenceUrl: 'https://call.example.com/qzx-room-71',
   },
   { at: at(0), source: 'window', kind: 'window-focus', appId: DISCORD, title: 'Refinement - Discord' },
   { at: at(1), source: 'call', kind: 'call-start', appId: HELPER },

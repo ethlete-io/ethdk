@@ -724,6 +724,7 @@ describe('classifyCalls, a call over a meeting the user accepted', () => {
     until: at(30),
     title: 'Team Daily',
     accepted: true,
+    conferenceUrl: 'https://call.example.com/qzx-room-71',
     ...over,
   });
   const huddle = [

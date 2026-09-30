@@ -13,6 +13,7 @@ const occurrence = (options: { id: string; title: string; from: number; to: numb
   occurrenceId: options.id,
   title: options.title,
   accepted: true,
+  conferenceUrl: 'https://call.example.com/qzx-room-71',
 });
 
 /** An accepted invitation whose own title names the issue, so the card can offer it with one press. */

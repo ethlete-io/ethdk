@@ -284,6 +284,7 @@ describe('followCallAgain', () => {
       until: at('15:00'),
       title: 'Meeting #1',
       accepted: true,
+      conferenceUrl: 'https://call.example.com/qzx-room-71',
     };
     const ended = endedAt('16:07');
     const [row] = rowsOf(ended, '17:00');
@@ -466,6 +467,7 @@ describe('callRowSnipAt', () => {
     until: at(until),
     title: 'Meeting #1',
     accepted: true,
+    conferenceUrl: 'https://call.example.com/qzx-room-71',
   });
 
   const rowOf = (through: string) => reviewDay({ rows: day(through) }).rows[0]!;

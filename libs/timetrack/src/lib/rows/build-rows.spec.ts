@@ -74,6 +74,7 @@ describe('buildRows with a transient window over the work', () => {
     occurrenceId: 'one',
     title: 'weekly',
     accepted: true,
+    conferenceUrl: 'https://call.example.com/qzx-room-71',
   };
 
   const laneKeys = (rows: ReturnType<typeof buildRows>) =>

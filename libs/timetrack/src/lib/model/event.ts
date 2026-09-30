@@ -260,6 +260,13 @@ export type CalendarOccurrenceEvent = CollectedEventBase<'calendar', 'calendar-e
 };
 
 /**
+ * Whether a call can have been this occurrence: it has a conference link or somebody else in it. An
+ * entry the user put on their own calendar — a commute, a focus block — is neither, and names no call.
+ */
+export const isSharedOccurrence = (event: CalendarOccurrenceEvent) =>
+  !!event.conferenceUrl || (event.participants?.length ?? 0) > 0;
+
+/**
  * Something the user did in GitLab: pushed, opened, commented on or approved a merge request.
  *
  * It carries an instant and no duration, so it never becomes time on its own — a comment at 10:02

@@ -37,6 +37,7 @@ const occurrence = (from: string, until: string): CalendarOccurrenceEvent => ({
   occurrenceId: `sync@${from}`,
   title: 'Sync',
   accepted: true,
+  conferenceUrl: 'https://call.example.com/qzx-room-71',
 });
 
 const day = (to: string, occurrences: CalendarOccurrenceEvent[] = []): DayRows => ({

@@ -1,5 +1,11 @@
 import { CallWindow } from '../model/call';
-import { CalendarOccurrenceEvent, CallEvent, CollectedEvent, WindowFocusEvent } from '../model/event';
+import {
+  CalendarOccurrenceEvent,
+  CallEvent,
+  CollectedEvent,
+  WindowFocusEvent,
+  isSharedOccurrence,
+} from '../model/event';
 import { TimeWindow, clipWindows, windowsMs } from '../model/time-window';
 import { TimetrackCallRules } from '../settings/model';
 
@@ -303,7 +309,8 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
   const held = focusHeld(focus, options.until);
   const minAttendedMs = options.minAttendedMs ?? DEFAULT_MIN_ATTENDED_MS;
   const invited = options.events.filter(
-    (event): event is CalendarOccurrenceEvent => event.kind === 'calendar-event' && event.accepted,
+    (event): event is CalendarOccurrenceEvent =>
+      event.kind === 'calendar-event' && event.accepted && isSharedOccurrence(event),
   );
 
   const titleSettleMs = options.titleSettleMs ?? DEFAULT_CALL_TITLE_SETTLE_MS;

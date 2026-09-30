@@ -25,6 +25,7 @@ const EVENTS: CollectedEvent[] = [
     recurringEventId: 'weekly',
     title: 'Weekly sync',
     accepted: true,
+    conferenceUrl: 'https://call.example.com/qzx-room-71',
   },
   { at: at(0), source: 'window', kind: 'window-focus', appId: HELPER, title: 'Open Room #1 | Braune Digital' },
   { at: at(1), source: 'call', kind: 'call-start', appId: HELPER },

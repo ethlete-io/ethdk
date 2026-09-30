@@ -32,3 +32,7 @@ honest answer for a meeting held in a room or on a telephone.
   history stays the rung below it: it names a time of day rather than a call, so it never returns
   better than `weak`, while a remembered call naming may reach `likely`. Neither reaches `certain`,
   because nothing confirmed which call it was.
+- Only an occurrence somebody else is in, or that carries a conference link, is a candidate at all
+  (`isSharedOccurrence`). An entry on the user's own calendar — a commute, a focus block — has
+  neither, and a call over it keeps its own name (2026-09-29, a Discord room renamed after "Tom Tom
+  unterwegs").
