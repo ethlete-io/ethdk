@@ -1,18 +1,10 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { spawnSync } from 'child_process';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
-import { agentCommand, agentEnv, agentPrompt, assistedTasks, runAgentTasks } from './ai';
+import { agentCommand, agentEnv, agentPrompt, assistedTasks, finishedPath, runAgentTasks } from './ai';
 import { UpdateTask } from './tasks';
-
-const spawnSync = vi.hoisted(() =>
-  vi.fn<(command: string, options?: { env?: Record<string, string> }) => { status: number }>(),
-);
-
-vi.mock('child_process', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('child_process')>()),
-  spawnSync,
-}));
 
 const task = (overrides: Partial<UpdateTask> = {}): UpdateTask => ({
   packageName: '@ethlete/core',
@@ -31,7 +23,7 @@ describe('agentCommand', () => {
     );
     expect(agentPrompt('/repo/task.md')).toMatch(/^Apply the migration task described in \/repo\/task\.md /);
     expect(agentPrompt('/repo/task.md')).toContain('Do not commit');
-    expect(agentPrompt('/repo/task.md')).toContain('Type /exit to hand back to et update');
+    expect(agentPrompt('/repo/task.md')).toContain('create the empty file /repo/task.finished');
   });
 
   it('puts the prompt where the template asks for it', () => {
@@ -44,57 +36,73 @@ describe('agentCommand', () => {
     expect(agentCommand({ template: 'agent <file>', platform: 'win32' })).toBe('agent "%ETHLETE_UPDATE_TASK_FILE%"');
   });
 
-  it.runIf(process.platform !== 'win32')(
-    'passes a task path with shell characters to the command unchanged',
-    async () => {
-      const actual = await vi.importActual<typeof import('child_process')>('child_process');
-      const taskPath = `/my repo/$HOME/\`id\`/"it's" (a)&b/task.md`;
+  it.runIf(process.platform !== 'win32')('passes a task path with shell characters to the command unchanged', () => {
+    const taskPath = `/my repo/$HOME/\`id\`/"it's" (a)&b/task.md`;
 
-      for (const template of ['printf %s <file>', 'printf %s "in <file> now"']) {
-        const result = actual.spawnSync(agentCommand({ template }), {
-          shell: true,
-          encoding: 'utf8',
-          env: { ...process.env, ...agentEnv(taskPath) },
-        });
+    for (const template of ['printf %s <file>', 'printf %s "in <file> now"']) {
+      const result = spawnSync(agentCommand({ template }), {
+        shell: true,
+        encoding: 'utf8',
+        env: { ...process.env, ...agentEnv(taskPath) },
+      });
 
-        expect(result.stdout).toBe(template.includes('in ') ? `in ${taskPath} now` : taskPath);
-      }
-    },
-  );
+      expect(result.stdout).toBe(template.includes('in ') ? `in ${taskPath} now` : taskPath);
+    }
+  });
 });
 
 describe('runAgentTasks', () => {
-  const makeRoot = () => {
+  const FAKE_AGENT = `
+    const fs = require('fs');
+    const task = process.env.ETHLETE_UPDATE_TASK_FILE;
+    const [mode] = fs.readFileSync(task, 'utf8').split('\\n');
+
+    fs.appendFileSync(process.argv[2], task.slice(-8) + '\\n');
+
+    if (mode === 'done') fs.rmSync(task);
+    if (mode === 'fail') process.exit(2);
+    if (mode.startsWith('finish')) {
+      fs.rmSync(task);
+      fs.writeFileSync(process.env.ETHLETE_UPDATE_FINISHED_FILE, '');
+      if (mode === 'finish-stubborn') process.on('SIGTERM', () => undefined);
+      setTimeout(() => undefined, 60_000);
+    }
+  `;
+
+  const makeRoot = (modes: Record<string, string>) => {
     const root = mkdtempSync(join(tmpdir(), 'cli-ai-'));
 
     mkdirSync(join(root, '.ethlete', 'update'), { recursive: true });
+    writeFileSync(join(root, 'agent.js'), FAKE_AGENT, 'utf8');
 
-    for (const name of ['first', 'second', 'third']) {
-      writeFileSync(join(root, '.ethlete', 'update', `core-${name}.md`), 'Do it.', 'utf8');
+    for (const [name, mode] of Object.entries(modes)) {
+      writeFileSync(join(root, '.ethlete', 'update', `core-${name}.md`), `${mode}\n`, 'utf8');
     }
 
-    return root;
+    return {
+      root,
+      template: `node agent.js runs.log; true`,
+      started: () => readFileSync(join(root, 'runs.log'), 'utf8').trim().split('\n'),
+      tasks: Object.keys(modes).map((name) =>
+        task({ name, instructionsFile: join('.ethlete', 'update', `core-${name}.md`) }),
+      ),
+    };
   };
 
-  const tasks = ['first', 'second', 'third'].map((name) =>
-    task({ name, instructionsFile: join('.ethlete', 'update', `core-${name}.md`) }),
-  );
+  const quiet = () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-  it('reports every task as it ends: done, left open, or failed', () => {
-    const root = makeRoot();
+    return vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  };
+
+  it('reports every task as it ends: done, left open, or failed', async () => {
+    const { root, template, tasks } = makeRoot({ first: 'done', second: 'open', third: 'fail' });
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    spawnSync.mockImplementation((_command: string, options?: { env?: Record<string, string> }) => {
-      const taskFile = options?.env?.['ETHLETE_UPDATE_TASK_FILE'] ?? '';
+    const runs = await runAgentTasks({ root, template: 'node agent.js runs.log', tasks });
 
-      if (taskFile.endsWith('core-first.md')) rmSync(taskFile);
-
-      return { status: taskFile.endsWith('core-third.md') ? 2 : 0 };
-    });
-
-    const runs = runAgentTasks({ root, template: 'agent', tasks });
-
+    expect(template).toContain('agent.js');
     expect(runs.map((run) => run.state)).toEqual(['done', 'open', 'failed']);
     expect(log).toHaveBeenCalledWith('\n  [1/3] @ethlete/core first: done');
     expect(error).toHaveBeenCalledWith(expect.stringContaining('[2/3] @ethlete/core second: the agent left'));
@@ -103,30 +111,45 @@ describe('runAgentTasks', () => {
     vi.restoreAllMocks();
   });
 
-  it('settles each task before the next starts, and names the ones that are not committed', () => {
-    const root = makeRoot();
+  it('settles each task before the next starts, and names the ones that are not committed', async () => {
+    const { root, template, tasks, started } = makeRoot({ first: 'done', second: 'open', third: 'done' });
     const order: string[] = [];
+    const error = quiet();
 
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
-    spawnSync.mockImplementation((_command: string, options?: { env?: Record<string, string> }) => {
-      const taskFile = options?.env?.['ETHLETE_UPDATE_TASK_FILE'] ?? '';
-
-      order.push(`run ${taskFile.slice(-8)}`);
-
-      if (!taskFile.endsWith('core-second.md')) rmSync(taskFile);
-
-      return { status: 0 };
+    await runAgentTasks({
+      root,
+      template,
+      tasks,
+      afterRun: (run) => order.push(`${run.state} ${run.task.name} after ${started().length} run(s)`),
     });
 
-    runAgentTasks({ root, template: 'agent', tasks, afterRun: (run) => order.push(`${run.state} ${run.task.name}`) });
-
-    expect(order).toEqual(['run first.md', 'done first', 'run econd.md', 'open second', 'run third.md', 'done third']);
+    expect(order).toEqual(['done first after 1 run(s)', 'open second after 2 run(s)', 'done third after 3 run(s)']);
     expect(error).toHaveBeenCalledWith(expect.stringMatching(/second: the agent left .*, so it is not committed$/));
 
     vi.restoreAllMocks();
   });
+
+  it.runIf(process.platform !== 'win32')(
+    'ends a session that wrote the finished file and moves on to the next task',
+    async () => {
+      const { root, template, tasks, started } = makeRoot({
+        first: 'finish',
+        second: 'finish-stubborn',
+        third: 'open',
+      });
+
+      quiet();
+
+      const runs = await runAgentTasks({ root, template, tasks, timing: { pollMs: 20, settleMs: 50, killMs: 300 } });
+
+      expect(runs.map((run) => run.state)).toEqual(['done', 'done', 'open']);
+      expect(started()).toEqual(['first.md', 'econd.md', 'third.md']);
+      expect(existsSync(finishedPath(join(root, tasks[0]?.instructionsFile ?? '')))).toBe(false);
+
+      vi.restoreAllMocks();
+    },
+    10_000,
+  );
 });
 
 describe('assistedTasks', () => {

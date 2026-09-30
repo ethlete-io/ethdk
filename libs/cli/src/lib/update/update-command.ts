@@ -280,7 +280,7 @@ const syncAgentRules = (options: {
 };
 
 /** Hands the open assisted tasks to the agent and reports the runs. False when one of them failed. */
-const handToAgent = (options: {
+const handToAgent = async (options: {
   root: string;
   template: string;
   tasks: readonly UpdateTask[];
@@ -294,7 +294,7 @@ const handToAgent = (options: {
     return true;
   }
 
-  const runs = runAgentTasks({
+  const runs = await runAgentTasks({
     root,
     template,
     tasks,
@@ -343,7 +343,7 @@ const continueWithInstalledCli = (options: { root: string; manager: PackageManag
   return result.error ? 1 : (result.status ?? 1);
 };
 
-const runMigrationPhase = (options: {
+const runMigrationPhase = async (options: {
   root: string;
   manager: PackageManager;
   pendingUpdate: PendingUpdate;
@@ -435,7 +435,8 @@ const runMigrationPhase = (options: {
     console.log(`  The same list for an agent: ${written.dataPath}`);
   }
 
-  const agentOk = agent === undefined || handToAgent({ root, template: agent, tasks: written.tasks, committer });
+  const agentOk =
+    agent === undefined || (await handToAgent({ root, template: agent, tasks: written.tasks, committer }));
 
   return {
     agentFailed: !agentOk,
@@ -456,7 +457,7 @@ const continueHint = (invocation: string) =>
   `\nRun \`${invocation} --continue\` again once the failures above are fixed.`;
 
 /** Hands the tasks an earlier run left to the agent, for an `--ai` run that has no update to make. */
-const workOpenTasks = (options: { root: string; agent: string; invocation: string; commit: boolean }) => {
+const workOpenTasks = async (options: { root: string; agent: string; invocation: string; commit: boolean }) => {
   const { root, agent, invocation, commit } = options;
   const tasks = refreshUpdateTasks(root);
 
@@ -470,7 +471,7 @@ const workOpenTasks = (options: { root: string; agent: string; invocation: strin
 
   if (commit && !commits) console.log(NOT_A_CHECKOUT);
 
-  if (handToAgent({ root, template: agent, tasks, committer: committerFor(root, commits) })) return 0;
+  if (await handToAgent({ root, template: agent, tasks, committer: committerFor(root, commits) })) return 0;
 
   console.error(agentFailedHint(invocation));
 
@@ -485,7 +486,7 @@ const exitAfterAgent = (options: { agentFailed: boolean; invocation: string }) =
   return 1;
 };
 
-const resume = (options: {
+const resume = async (options: {
   root: string;
   manager: PackageManager;
   argv: ReturnType<typeof parseUpdateArgs>;
@@ -523,7 +524,7 @@ const resume = (options: {
 
   commitBump({ committer, updates });
 
-  const result = runMigrationPhase({
+  const result = await runMigrationPhase({
     root,
     manager,
     pendingUpdate: pending,
@@ -737,7 +738,7 @@ export const updateCommand = async ({
     return continueWithInstalledCli({ root, manager, ai: args.ai, commit: args.commit });
   }
 
-  const result = runMigrationPhase({
+  const result = await runMigrationPhase({
     root,
     manager,
     pendingUpdate,

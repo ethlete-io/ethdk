@@ -1,4 +1,5 @@
 import { execFileSync } from 'child_process';
+import { EventEmitter } from 'events';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -22,6 +23,14 @@ vi.mock('child_process', async (importOriginal) => {
       binary === 'git' && REAL_GIT.includes(args[0] ?? '')
         ? actual.spawnSync(binary, args, options)
         : spawnSync(binary, args, options),
+    spawn: (command: string, options?: { env?: NodeJS.ProcessEnv }) => {
+      const child = Object.assign(new EventEmitter(), { pid: undefined, exitCode: null });
+      const { status } = spawnSync(command, options as unknown as string[]);
+
+      process.nextTick(() => child.emit('exit', status));
+
+      return child;
+    },
   };
 });
 
