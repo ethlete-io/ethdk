@@ -47,6 +47,9 @@
           "/etc/pam.d/timetrack": "pam/timetrack.rpm"
         }
       }
+    },
+    "macOS": {
+      "minimumSystemVersion": "11.0"
     }
   },
   "plugins": {
