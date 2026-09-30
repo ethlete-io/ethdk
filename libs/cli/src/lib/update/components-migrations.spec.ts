@@ -44,23 +44,18 @@ describe('the @ethlete/components migrations', () => {
   // The release PR bumps package.json to the version these migrations name, so the range starts one
   // prerelease below it to cover both that branch and next.
   it('run on an update across the current prerelease', () => {
+    const from = shiftPrerelease(installedVersion, -1);
+    const to = nextPrerelease(installedVersion);
     const pending = orderMigrations(
-      pendingMigrations({
-        packageMigrations: { packageName, migrations, problems },
-        from: shiftPrerelease(installedVersion, -1),
-        to: nextPrerelease(installedVersion),
-      }),
+      pendingMigrations({ packageMigrations: { packageName, migrations, problems }, from, to }),
     ).map((entry) => entry.migration.name);
+    const inRange = migrations
+      .filter(
+        (migration) => compareVersions(migration.version, from) > 0 && compareVersions(migration.version, to) <= 0,
+      )
+      .map((migration) => migration.name);
 
-    expect(pending).toEqual(
-      expect.arrayContaining([
-        'youtube-player-slot-directive',
-        'chart-baseline-y',
-        'grid-engine-internals',
-        'overlay-fullscreen-animation',
-        'stream-default-components',
-      ]),
-    );
+    expect(new Set(pending)).toEqual(new Set(inRange));
   });
 
   it('name no version past the next prerelease, which an update would never reach', () => {
