@@ -125,7 +125,7 @@
     "tauri:build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tauri build",
+        "command": "tauri build --features transcribe",
         "cwd": "apps/timetrack"
       }
     }
