@@ -64,3 +64,96 @@ jobs:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
           payload: ${{ steps.changesets.outputs.slack-payload }}
+
+  # The private apps are versioned by changesets but never published, so `changeset publish`
+  # makes no release for them. A version without a GitHub release gets a draft here, the bundles
+  # below, and is published once every bundle is attached.
+  apps-plan:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      apps: ${{ steps.plan.outputs.apps }}
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+
+      - id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          apps='[]'
+          for dir in apps/timetrack apps/ethlete-studio; do
+            name=$(jq -r .name "$dir/package.json")
+            version=$(jq -r .version "$dir/package.json")
+            tag="$name@$version"
+            if gh release view "$tag" >/dev/null 2>&1; then
+              continue
+            fi
+            awk -v heading="## $version" '$0 == heading { found = 1; next } found && /^## / { exit } found' "$dir/CHANGELOG.md" > notes.md
+            prerelease=()
+            [[ "$version" == *-* ]] && prerelease=(--prerelease)
+            gh release create "$tag" --draft --target "$GITHUB_SHA" --title "$tag" --notes-file notes.md "${prerelease[@]}"
+            apps=$(jq -c --arg project "$name" --arg dir "$dir" --arg tag "$tag" '. + [{ project: $project, dir: $dir, tag: $tag }]' <<< "$apps")
+          done
+          echo "apps=$apps" >> "$GITHUB_OUTPUT"
+
+  apps-bundle:
+    needs: apps-plan
+    if: needs.apps-plan.outputs.apps != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.apps-plan.outputs.apps) }}
+        os: [ubuntu-latest, macos-latest]
+    name: Bundle ${{ matrix.app.project }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+
+      - if: runner.os == 'Linux'
+        name: Install the Tauri Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: ${{ matrix.app.dir }}/src-tauri -> target
+
+      - run: yarn nx run ${{ matrix.app.project }}:tauri:build
+
+      - name: Attach the bundles to the draft release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          bundle=${{ matrix.app.dir }}/src-tauri/target/release/bundle
+          files=("$bundle"/deb/*.deb "$bundle"/rpm/*.rpm "$bundle"/appimage/*.AppImage "$bundle"/dmg/*.dmg)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No bundle found in $bundle" >&2
+            exit 1
+          fi
+          gh release upload "${{ matrix.app.tag }}" "${files[@]}" --clobber
+
+  apps-release:
+    needs: [apps-plan, apps-bundle]
+    strategy:
+      matrix:
+        app: ${{ fromJSON(needs.apps-plan.outputs.apps) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "${{ matrix.app.tag }}" --repo "$GITHUB_REPOSITORY" --draft=false
