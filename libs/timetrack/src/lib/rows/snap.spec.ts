@@ -108,6 +108,16 @@ describe('snapRowBounds', () => {
     ).toEqual(['09:00-11:00', '10:00-11:00']);
   });
 
+  it('leaves rows that all ran inside one increment overlapping there, rather than pushing them past their evidence', () => {
+    expect(
+      snap([
+        { from: '10:15', to: '10:19' },
+        { from: '10:19', to: '10:22' },
+        { from: '10:22', to: '10:28' },
+      ]),
+    ).toEqual(['10:15-10:30', '10:15-10:30', '10:15-10:30']);
+  });
+
   it('repairs a run of rows in order, and a pushed row gives up the time rather than taking it back', () => {
     expect(
       snap([

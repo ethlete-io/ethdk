@@ -23,7 +23,10 @@ earlier row's end rounds down instead of to the nearest boundary; only when that
 time leaves no room does the later row's start move up to meet it. A snap must not invent an overlap
 the raw clock never held. A call row is the exception: its end is a real call-end event, so it ends
 on the boundary nearest that event, and books its observed time rounded to the nearest quarter,
-when that boundary still covers it. The next row then starts there instead of being pushed.
+when that boundary still covers it. The next row then starts there instead of being pushed. A row
+whose evidence all lies inside the earlier row's single increment is not pushed either: pushing it
+would draw it past its own last evidence, on a running day in the future, so the two share that
+increment side by side.
 
 What the raw clock did hold is kept. `observedMs` carries the evidence-backed duration behind
 `durationMs`, and the day screen shows both, so a reviewer can always see what the rounding did. What

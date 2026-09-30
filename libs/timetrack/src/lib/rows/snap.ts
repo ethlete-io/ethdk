@@ -45,7 +45,9 @@ const endOf = (row: Placed, incrementMs: number) =>
  *
  * The earlier row gives up booked time rather than strand the later one past its own last evidence.
  * A day still running widens its last row into an increment the clock has not reached, and a row
- * pushed beyond that is drawn entirely in the future.
+ * pushed beyond that is drawn entirely in the future. Where the earlier row has only one increment
+ * left to give, the later row stays overlapping it: short rows that all ran inside one increment are
+ * drawn side by side there.
  */
 export const snapRowBounds = <T extends SnapInput>(options: {
   rows: readonly T[];
@@ -93,6 +95,8 @@ export const snapRowBounds = <T extends SnapInput>(options: {
         earlier.to = pulled;
         continue;
       }
+
+      if (strands) continue;
 
       row.from = earlier.to;
       // Not `endOf`: the minutes this row gave up went to the row before it, and pushing its end out
