@@ -2,4 +2,4 @@
 '@ethlete/components': minor
 ---
 
-A stacked line chart area fills with an opaque mix of 45% series color with the surface background, and every area draws before every line. `--et-line-chart-stacked-area-mix` sets the share; `--et-line-chart-stacked-area-opacity` is gone.
+A stacked line chart band is an opaque mix of series color and surface, set by `--et-line-chart-stacked-area-mix`. `et update` migrates `--et-line-chart-stacked-area-opacity`.

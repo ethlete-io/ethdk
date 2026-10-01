@@ -55,6 +55,11 @@
       "schema": "./migrate-chart-baseline-y/schema.json",
       "description": "Rename the removed chart-grid baselineY alias to baseline"
     },
+    "migrate-line-chart-stacked-area-mix": {
+      "factory": "./migrate-line-chart-stacked-area-mix/migration",
+      "schema": "./migrate-line-chart-stacked-area-mix/schema.json",
+      "description": "Rename the removed --et-line-chart-stacked-area-opacity token to --et-line-chart-stacked-area-mix"
+    },
     "migrate-grid-engine-internals": {
       "factory": "./migrate-grid-engine-internals/migration",
       "schema": "./migrate-grid-engine-internals/schema.json",

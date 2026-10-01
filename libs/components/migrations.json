@@ -134,6 +134,15 @@
       "description": "Remove the duration format helpers from @ethlete/components imports and mark the uses that need another approach.",
       "generator": "@ethlete/components:migrate-duration-format-internals",
       "docs": "/components/date-time-inputs"
+    },
+    {
+      "name": "line-chart-stacked-area-mix",
+      "version": "1.0.0-next.67",
+      "kind": "auto",
+      "level": "required",
+      "description": "Rename --et-line-chart-stacked-area-opacity to --et-line-chart-stacked-area-mix and map each opacity to a percentage.",
+      "generator": "@ethlete/components:migrate-line-chart-stacked-area-mix",
+      "docs": "/components/line-chart"
     }
   ]
 }
