@@ -1,0 +1,3 @@
+---
+"@ethlete/eslint-plugin": none
+---

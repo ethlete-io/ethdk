@@ -28,6 +28,11 @@ tester.run('no-legacy-prepare-without-injector', rule, {
         `class A { constructor() { runInInjectionContext(this.injector, () => legacyGetUsers.prepare({})); } }`,
       ),
     },
+    {
+      code: withImport(
+        `class A { load() { this.environmentInjector.runInContext(() => legacyGetUsers.prepare({})); } }`,
+      ),
+    },
     { code: withImport(`class A { users = queryComputed(() => legacyGetUsers.prepare({})); }`) },
     { code: withImport(`class A { users = queryArrayComputed(() => [legacyGetUsers.prepare({})]); }`) },
     // synchronous array callbacks run before the constructor returns
