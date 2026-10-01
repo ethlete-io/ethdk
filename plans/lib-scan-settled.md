@@ -58,3 +58,16 @@ From the `libs/core` scan of 2026-08-19, closed 2026-09-29.
 
 - The status colours (`--_et-qdt-success`, `-error`, `-loading`) stay literals. Semantic themes come only from DI, and
   the panel must stay readable in an app without them.
+
+## eslint-plugin
+
+From the `libs/eslint-plugin` scan of 2026-08-19, closed 2026-10-01.
+
+- `no-window-location` leaves `inject(DOCUMENT).location` unreported.
+- `no-subscribe-with-body` keeps reporting `subscribe(this.handle)`: the handler belongs in `.pipe(tap(this.handle)).subscribe()`.
+- `no-dom-query` stays without a receiver check and without `innerHTML` / `className` / `textContent` reports: without types both false-positive on non-DOM objects.
+- Telling an RxJS `.pipe`/`.subscribe`/signal `.set()` receiver from a Node stream, a store or another one-argument `set` needs type information the rules don't have (incl. the Node-stream `.pipe` case in `no-subscribe-in-pipe` and the store `.subscribe` false positive).
+- `export *` and `import('…')` of a package where only some symbols are banned cannot name the symbol, so they stay unreported.
+- `window` in `no-window-location` / `prefer-viewport-size`, shadowed `window`, and the name lists in `no-readonly-signal` / `class-constant-property` / `no-legacy-prepare-without-injector` match by name.
+- The contract lookup's `extends`/`Pick` limit is harmless.
+- `no-legacy-prepare-without-injector` treats `x.runInContext(cb)` as an injection context: `EnvironmentInjector.runInContext` still ships in Angular 22 (deprecated) and this repo's scenarios use it.
