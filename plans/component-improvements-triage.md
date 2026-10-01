@@ -14,20 +14,20 @@ Triage 2026-10-01: calls 1-6 keep the shipped default. Calls 7-9 are drawn in
 
 - Call 7, several series without a palette (`00-series-without-palette`): **C won**. The series take steps of
   the accent, from 100% down to a 40% mix with the surface, the same rule as the pie chart. Rejected: all in the
-  accent (series look the same), an error (stops a quick chart), accent plus patterns (busy at bar size). Not
-  built yet.
+  accent (series look the same), an error (stops a quick chart), accent plus patterns (busy at bar size). Built
+  in `2c3a679f9`.
 
 - Call 8, a palette on a dark surface (`01-palette-on-dark`): **B won**. `provideColorPalette` takes one list per
   surface theme the app registered, for example `{ default: [...], 'dark-card': [...] }` (app-owned names). Rejected:
-  one static list (weak hues on dark), a second theme per entry for a dark kind, an automatic lift by the SDK. Not
-  built yet.
+  one static list (weak hues on dark), a second theme per entry for a dark kind, an automatic lift by the SDK. Built
+  in `61961f317` (core) and `1a0271e7a` (charts).
 
 - Call 9, colours through a filter (`02-colour-on-filter`): **C won**. No new API: the bar chart docs name
   `colorToken` on each series as the way to keep colours when the app filters series. Rejected: position only
   (repaints the rest), a remembered key → slot map (differs after a reload), a palette keyed by series key.
-  Docs not written yet.
+  Docs written.
 
-To build: C of call 7 (accent steps), B of call 8 (a palette per surface), the `colorToken` docs of call 9.
+All three are built. The `colorToken` docs of call 9 are in `apps/docs/components/chart.md` (series colors).
 
 ### Sankey (`b64d0f519`)
 
