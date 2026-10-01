@@ -31,7 +31,11 @@
 
         <svg:g [etProvideColor]="colorToken()" class="et-line-chart-series-layer" aria-hidden="true">
           @for (line of chart.lines(); track line.key) {
-            <svg:g [etProvideColor]="line.colorToken" class="et-line-chart-series">
+            <svg:g
+              [etProvideColor]="line.colorToken"
+              [style.--_et-chart-accent-mix.%]="line.accentMix"
+              class="et-line-chart-series"
+            >
               @if (chart.area()) {
                 <svg:path [attr.d]="line.areaPath" class="et-line-chart-area" />
               }
@@ -74,6 +78,7 @@
               @for (entry of slice.entries; track entry.key) {
                 <svg:circle
                   [etProvideColor]="entry.colorToken"
+                  [style.--_et-chart-accent-mix.%]="entry.accentMix"
                   [attr.cx]="slice.position"
                   [attr.cy]="entry.y"
                   class="et-line-chart-slice-point"

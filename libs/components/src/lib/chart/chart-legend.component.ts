@@ -8,7 +8,12 @@ import { ChartLegendItem } from './chart.types';
     <ul class="et-chart-legend-list">
       @for (item of items(); track item.key) {
         <li class="et-chart-legend-item">
-          <span [etProvideColor]="item.colorToken" class="et-chart-legend-swatch" aria-hidden="true"></span>
+          <span
+            [etProvideColor]="item.colorToken"
+            [style.--_et-chart-accent-mix.%]="item.accentMix"
+            class="et-chart-legend-swatch"
+            aria-hidden="true"
+          ></span>
           <span class="et-chart-legend-label">{{ item.label }}</span>
         </li>
       }

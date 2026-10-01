@@ -525,12 +525,72 @@ describe('BarChartComponent series colors', () => {
     expect(chart.bars().every((bar) => bar.colorToken === null)).toBe(true);
   });
 
-  it('warns in dev mode when two series would share the accent', () => {
+  it('steps the accent from 100% down to a 40% mix for series without a color', () => {
+    const { chart, element } = setupSeries({ providers: [] });
+
+    expect(chart.bars().map((bar) => bar.accentMix)).toEqual([100, 70, 40, 100, 40, 100, 70, 40]);
+    expect(chart.legendItems().map((item) => item.accentMix)).toEqual([100, 70, 40]);
+    expect(
+      [...element.querySelectorAll<SVGGElement>('.et-bar-chart-bar')]
+        .slice(0, 3)
+        .map((bar) => bar.style.getPropertyValue('--_et-chart-accent-mix')),
+    ).toEqual(['100%', '70%', '40%']);
+    expect(
+      [...element.querySelectorAll<HTMLElement>('.et-chart-legend-swatch')].map((swatch) =>
+        swatch.style.getPropertyValue('--_et-chart-accent-mix'),
+      ),
+    ).toEqual(['100%', '70%', '40%']);
+  });
+
+  it('keeps a series with a color at full strength and steps only the rest', () => {
+    const { fixture, chart } = setupSeries({ providers: [] });
+
+    fixture.componentInstance.series.update(([home, away, cup]) => [
+      home as BarChartSeries,
+      { ...(away as BarChartSeries), colorToken: 'lava' },
+      cup as BarChartSeries,
+    ]);
+    fixture.detectChanges();
+
+    expect(chart.legendItems().map((item) => item.accentMix)).toEqual([100, null, 40]);
+    expect(
+      chart
+        .bars()
+        .slice(0, 3)
+        .map((bar) => bar.accentMix),
+    ).toEqual([100, null, 40]);
+  });
+
+  it('draws a single series at full strength', () => {
+    const { chart, element } = measure(BarChartHostComponent, []);
+
+    expect(chart.bars().every((bar) => bar.accentMix === null)).toBe(true);
+    expect(
+      element.querySelector<SVGGElement>('.et-bar-chart-bar')?.style.getPropertyValue('--_et-chart-accent-mix'),
+    ).toBe('');
+  });
+
+  it('does not warn when series without a color take steps of the accent', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
     setupSeries({ providers: [] });
 
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('share one color'));
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('warns in dev mode when two series share a colorToken', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { fixture } = setupSeries({ providers: [] });
+
+    fixture.componentInstance.series.update(([home, away, cup]) => [
+      { ...(home as BarChartSeries), colorToken: 'lava' },
+      { ...(away as BarChartSeries), colorToken: 'lava' },
+      cup as BarChartSeries,
+    ]);
+    fixture.detectChanges();
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('share the colorToken "lava"'));
     warn.mockRestore();
   });
 

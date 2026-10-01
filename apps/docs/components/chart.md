@@ -97,11 +97,11 @@ Positive values stack up from the baseline and negative values stack down from i
 
 ### Series colors
 
-The chart reads the app's [color palette](/core/theming#offering-colors-to-a-user) (`provideColorPalette`, optional): series `i` is drawn in palette entry `i`, so the palette order is the app's categorical order. A series with its own `colorToken` uses that instead. Without a palette, or past its end, a series takes `colorToken` from the chart, then the surrounding accent.
+The chart reads the app's [color palette](/core/theming#offering-colors-to-a-user) (`provideColorPalette`, optional): series `i` is drawn in palette entry `i`, so the palette order is the app's categorical order. A series with its own `colorToken` uses that instead. Without a palette, or past its end, a series takes a step of the accent from `colorToken` on the chart, else the surrounding accent: the first such series draws it at full strength and the rest step down to a 40% mix with the surface, so they stay apart. For distinct hues, give each series a `colorToken` or provide a palette.
 
 A single series never takes a palette entry - it stays on the accent (or `colorToken`), so a lone series matches the rest of the page.
 
-Colors follow the series' position in `series`. When series come and go (a filter, say), give each one its own `colorToken` so a survivor keeps its color. In dev mode the chart warns when two series would share one color.
+Colors follow the series' position in `series`. When series come and go (a filter, say), give each one its own `colorToken` so a survivor keeps its color. In dev mode the chart warns when two series share one `colorToken`.
 
 ```ts
 providers: [
@@ -182,7 +182,7 @@ The title and note are plain projected elements; `label` still names the chart f
 
 ## Custom template
 
-`BarChartDirective` (`[etBarChart]`) holds the geometry without markup: `bars()` (per bar its rect, `path`, hit `target`, tooltip `anchor` and `placement`, `series`, `colorToken`, `valueText` and a `name` such as `Mar, Online`), `ticks()`, `baseline()`, `categoryLabels()` (already thinned), `categoryLabelStride()`, `isEmpty()`, `valueLabels()`, `legendItems()`, `table()`, `plotWidth()` and `formatValue()`. Put `etChartPlot` on the element the bars are laid out in - its width is what the bands divide. Without one the directive throws `ET5100` in dev mode. `etBarChartPlot` still works as another name for it. Import `BarChartDirective` and `ChartPlotDirective`.
+`BarChartDirective` (`[etBarChart]`) holds the geometry without markup: `bars()` (per bar its rect, `path`, hit `target`, tooltip `anchor` and `placement`, `series`, `colorToken`, `accentMix`, `valueText` and a `name` such as `Mar, Online`), `ticks()`, `baseline()`, `categoryLabels()` (already thinned), `categoryLabelStride()`, `isEmpty()`, `valueLabels()`, `legendItems()`, `table()`, `plotWidth()` and `formatValue()`. Put `etChartPlot` on the element the bars are laid out in - its width is what the bands divide. Without one the directive throws `ET5100` in dev mode. `etBarChartPlot` still works as another name for it. Import `BarChartDirective` and `ChartPlotDirective`.
 
 ```html
 <div #chart="etBarChart" [data]="data" etBarChart label="Sign-ups per month">
@@ -207,7 +207,7 @@ The title and note are plain projected elements; `label` still names the chart f
 
 ## Theming
 
-The bars use `--et-theme-color-primary-solid` from the nearest color scope, from the theme named by `colorToken`, or from each series' palette entry. The grid uses `--et-surface-border-solid`, the axis and legend text `--et-surface-color-muted-solid`. Theme names are registered by the application - see [theming](/core/theming).
+The bars use `--et-theme-color-primary-solid` from the nearest color scope, from the theme named by `colorToken`, or from each series' palette entry - mixed with `--et-surface-background-solid` for a series that takes a step of the accent. The grid uses `--et-surface-border-solid`, the axis and legend text `--et-surface-color-muted-solid`. Theme names are registered by the application - see [theming](/core/theming).
 
 | Token                           | Default | Description                                                       |
 | ------------------------------- | ------- | ----------------------------------------------------------------- |

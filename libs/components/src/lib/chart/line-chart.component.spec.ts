@@ -367,3 +367,74 @@ describe('LineChartComponent', () => {
     expect(element.querySelector('.et-line-chart-slice, .et-line-chart-point')).toBeNull();
   });
 });
+
+describe('LineChartComponent series colors', () => {
+  const THREE_SERIES: LineChartSeries[] = [
+    { key: 'home', label: 'Home' },
+    { key: 'away', label: 'Away' },
+    { key: 'cup', label: 'Cup' },
+  ];
+
+  const THREE_SERIES_DATA: LineChartSeriesDatum[] = [
+    { x: 'W1', values: { home: 10, away: 5, cup: 2 } },
+    { x: 'W2', values: { home: 20, away: 8, cup: 4 } },
+  ];
+
+  const setupThree = (series: LineChartSeries[] = THREE_SERIES) => {
+    const result = setup([provideColorPalette([])]);
+
+    result.host.data.set(THREE_SERIES_DATA);
+    result.host.series.set(series);
+    result.fixture.detectChanges();
+
+    return result;
+  };
+
+  const accentMixOf = (element: Element | null) =>
+    (element as HTMLElement | SVGElement | null)?.style.getPropertyValue('--_et-chart-accent-mix');
+
+  it('steps the accent from 100% down to a 40% mix for series without a color', () => {
+    const { chart, element } = setupThree();
+
+    expect(chart.lines().map((line) => line.accentMix)).toEqual([100, 70, 40]);
+    expect(chart.legendItems().map((item) => item.accentMix)).toEqual([100, 70, 40]);
+    expect(chart.slices()[0]?.entries.map((entry) => entry.accentMix)).toEqual([100, 70, 40]);
+    expect([...element.querySelectorAll('.et-line-chart-series')].map(accentMixOf)).toEqual(['100%', '70%', '40%']);
+    expect([...element.querySelectorAll('.et-chart-legend-swatch')].map(accentMixOf)).toEqual(['100%', '70%', '40%']);
+  });
+
+  it('keeps a series with a color at full strength and steps only the rest', () => {
+    const { chart } = setupThree([
+      { key: 'home', label: 'Home' },
+      { key: 'away', label: 'Away', colorToken: 'lava' },
+      { key: 'cup', label: 'Cup' },
+    ]);
+
+    expect(chart.lines().map((line) => line.accentMix)).toEqual([100, null, 40]);
+    expect(chart.legendItems().map((item) => item.accentMix)).toEqual([100, null, 40]);
+  });
+
+  it('draws a single series at full strength', () => {
+    const { chart, element } = setup([provideColorPalette([])]);
+
+    expect(chart.lines().map((line) => line.accentMix)).toEqual([null]);
+    expect(accentMixOf(element.querySelector('.et-line-chart-series'))).toBe('');
+  });
+
+  it('warns in dev mode only when two series share a colorToken', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { host, fixture } = setupThree();
+
+    expect(warn).not.toHaveBeenCalled();
+
+    host.series.set([
+      { key: 'home', label: 'Home', colorToken: 'lava' },
+      { key: 'away', label: 'Away', colorToken: 'lava' },
+      { key: 'cup', label: 'Cup' },
+    ]);
+    fixture.detectChanges();
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('share the colorToken "lava"'));
+    warn.mockRestore();
+  });
+});

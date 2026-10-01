@@ -86,21 +86,27 @@
   }
 
   .et-line-chart-series {
+    --_et-line-chart-color: color-mix(
+      in oklab,
+      var(--et-theme-color-primary-solid, currentColor) var(--_et-chart-accent-mix, 100%),
+      var(--et-surface-background-solid, transparent)
+    );
+
     .et-line-chart-line {
       fill: none;
-      stroke: var(--et-theme-color-primary-solid, currentColor);
+      stroke: var(--_et-line-chart-color);
       stroke-width: var(--et-line-chart-line-width);
       stroke-linecap: round;
       stroke-linejoin: round;
     }
 
     .et-line-chart-area {
-      fill: var(--et-theme-color-primary-solid, currentColor);
+      fill: var(--_et-line-chart-color);
       fill-opacity: var(--et-line-chart-area-opacity);
     }
 
     .et-line-chart-point {
-      fill: var(--et-theme-color-primary-solid, currentColor);
+      fill: var(--_et-line-chart-color);
       stroke: var(--et-surface-background-solid, transparent);
       stroke-width: 2px;
     }
@@ -129,7 +135,11 @@
     }
 
     .et-line-chart-slice-point {
-      fill: var(--et-theme-color-primary-solid, currentColor);
+      fill: color-mix(
+        in oklab,
+        var(--et-theme-color-primary-solid, currentColor) var(--_et-chart-accent-mix, 100%),
+        var(--et-surface-background-solid, transparent)
+      );
       stroke: var(--et-surface-background-solid, transparent);
       stroke-width: 2px;
       opacity: 0;

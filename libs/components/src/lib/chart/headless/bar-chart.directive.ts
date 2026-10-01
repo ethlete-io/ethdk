@@ -13,7 +13,7 @@ import { assertChartPlot } from './internals/chart-plot-check';
 import { ChartValueFormatter, resolveChartValueFormatter } from './internals/chart-format';
 import { createBandScale, createBarPath, createLinearScale, createValueTicks } from './internals/chart-scale';
 import { createCategoryLabelStride, estimateCategoryLabelSpacing } from './internals/chart-label-thinning';
-import { hasSharedSeriesColor, resolveChartSeriesColors } from './internals/chart-series';
+import { findSharedSeriesColor, resolveChartAccentMixes, resolveChartSeriesColors } from './internals/chart-series';
 import { ChartStackSegment, stackExtent, stackValues } from './internals/chart-stack';
 
 /** One bar of a single-series chart: a category and the value its bar encodes. */
@@ -33,7 +33,7 @@ export type BarChartSeries = {
   key: string;
   /** Names the series in the legend, the tooltip, the bar's accessible name and the table header. */
   label: string;
-  /** The color theme the series is drawn in. @default the palette entry at the series' position, else the accent */
+  /** The color theme the series is drawn in. @default the palette entry at the series' position, else a step of the accent */
   colorToken?: RegisteredColorThemeName | null;
 };
 
@@ -64,8 +64,10 @@ export type BarChartBar = {
   seriesIndex: number;
   /** The series this bar belongs to; `null` in a single-series chart. */
   series: BarChartSeries | null;
-  /** The color theme the bar is drawn in; `null` takes the surrounding accent. */
+  /** The color theme the bar is drawn in; `null` takes the surrounding accent at `accentMix`. */
   colorToken: RegisteredColorThemeName | null;
+  /** How much of the accent a bar without a color theme is mixed with the surface, in percent; `null` for a bar with one or in a single-series chart. */
+  accentMix: number | null;
   /** Left edge of the bar's hit target - its share of the category band. */
   slotX: number;
   slotWidth: number;
@@ -198,14 +200,23 @@ export class BarChartDirective implements ChartPlotHost {
   /** The color theme per entry of `series`, resolved against the palette. */
   public seriesColors = computed(() => resolveChartSeriesColors(this.series(), this.palette));
 
+  /** The accent mix per entry of `series`, in percent; `null` for a series with a color theme. */
+  public seriesAccentMixes = computed(() => resolveChartAccentMixes(this.seriesColors()));
+
   /** The legend entries - one per series when there are two or more, else none. */
   public legendItems = computed<ChartLegendItem[]>(() => {
     const series = this.series();
     const colors = this.seriesColors();
+    const mixes = this.seriesAccentMixes();
 
     if (series.length < 2) return [];
 
-    return series.map((entry, index) => ({ key: entry.key, label: entry.label, colorToken: colors[index] ?? null }));
+    return series.map((entry, index) => ({
+      key: entry.key,
+      label: entry.label,
+      colorToken: colors[index] ?? null,
+      accentMix: mixes[index] ?? null,
+    }));
   });
 
   private categories = computed<NormalizedCategory[]>(() => {
@@ -308,6 +319,7 @@ export class BarChartDirective implements ChartPlotHost {
     const categories = this.categories();
     const series = this.series();
     const colors = this.seriesColors();
+    const mixes = this.seriesAccentMixes();
     const stacked = this.isStacked();
     const horizontal = this.isHorizontal();
     const scale = this.valueScale();
@@ -385,6 +397,7 @@ export class BarChartDirective implements ChartPlotHost {
           seriesIndex,
           series: entry,
           colorToken: entry ? (colors[seriesIndex] ?? null) : null,
+          accentMix: entry ? (mixes[seriesIndex] ?? null) : null,
           slotX: target.x,
           slotWidth: target.width,
           ...rect,
@@ -422,12 +435,12 @@ export class BarChartDirective implements ChartPlotHost {
 
     if (ngDevMode) {
       effect(() => {
-        const colors = this.seriesColors();
+        const shared = findSharedSeriesColor(this.seriesColors());
 
-        if (colors.length > 1 && hasSharedSeriesColor(colors)) {
+        if (shared !== null) {
           console.warn(
-            '[BarChartDirective] Two or more series share one color. Provide a palette with provideColorPalette() ' +
-              'or give each series its own colorToken.',
+            `[BarChartDirective] Two or more series share the colorToken "${shared}". Give each series its own ` +
+              'colorToken or provide a palette with provideColorPalette().',
           );
         }
       });

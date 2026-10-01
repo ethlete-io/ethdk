@@ -24,7 +24,11 @@
       inline-size: 10px;
       block-size: 10px;
       border-radius: 2px;
-      background: var(--et-theme-color-primary-solid, currentColor);
+      background: color-mix(
+        in oklab,
+        var(--et-theme-color-primary-solid, currentColor) var(--_et-chart-accent-mix, 100%),
+        var(--et-surface-background-solid, transparent)
+      );
     }
 
     .et-chart-legend-label {

@@ -87,7 +87,7 @@ data: LineChartSeriesDatum[] = [
 <et-line-chart [data]="data" [series]="series" label="Tickets sold per month" />
 ```
 
-Series colors come from the app's color palette exactly as for the [bar chart](/components/chart#series-colors): series `i` takes palette entry `i` unless it has its own `colorToken`, and a single series stays on the accent.
+Series colors come from the app's color palette exactly as for the [bar chart](/components/chart#series-colors): series `i` takes palette entry `i` unless it has its own `colorToken`, and a single series stays on the accent. Series without a palette entry or `colorToken` take steps of the accent, from full strength down to a 40% mix with the surface; give each series a `colorToken` or provide a palette for distinct hues.
 
 ## Areas and stacking
 
@@ -99,7 +99,7 @@ Series colors come from the app's color palette exactly as for the [bar chart](/
 
 ## Custom template
 
-`LineChartDirective` (`[etLineChart]`) holds the geometry without markup: `lines()` (per series its `linePath`, `areaPath`, `points` and `colorToken`), `slices()` (per x its `position`, `label`, `entries`, hit `target`, tooltip `anchor` and `description`), `ticks()`, `baseline()`, `valueLabels()`, `xLabels()`, `legendItems()`, `table()`, `plotWidth()` and `formatValue()`. Put `etChartPlot` on the element the chart is laid out in - without one the directive throws `ET5100` in dev mode. Import `LineChartDirective`, `LineChartSliceDirective` and `ChartPlotDirective`.
+`LineChartDirective` (`[etLineChart]`) holds the geometry without markup: `lines()` (per series its `linePath`, `areaPath`, `points`, `colorToken` and `accentMix`), `slices()` (per x its `position`, `label`, `entries`, hit `target`, tooltip `anchor` and `description`), `ticks()`, `baseline()`, `valueLabels()`, `xLabels()`, `legendItems()`, `table()`, `plotWidth()` and `formatValue()`. Put `etChartPlot` on the element the chart is laid out in - without one the directive throws `ET5100` in dev mode. Import `LineChartDirective`, `LineChartSliceDirective` and `ChartPlotDirective`.
 
 `LineChartSliceDirective` (`[etLineChartSlice]="slice.index"`) makes an element one x of the chart: it takes part in the chart's single tab stop and its arrow-key navigation, opens its tooltip on hover, focus, tap and touch drag, and sets `data-active` while that tooltip is open. Its tooltip inputs are `etLineChartSliceTooltip`, `etLineChartSliceDescription` (required with a template tooltip), `etLineChartSliceAnchor`, `etLineChartSlicePlacement` and `etLineChartSliceShowDelay`.
 
@@ -148,7 +148,7 @@ Series colors come from the app's color palette exactly as for the [bar chart](/
 
 ## Theming
 
-Lines, areas and dots use `--et-theme-color-primary-solid` from the nearest color scope, from the theme named by `colorToken`, or from each series' palette entry. The dots wear a ring in `--et-surface-background-solid`, the crosshair `--et-surface-color-subtle-solid`, the grid `--et-surface-border-solid`, and the axis and legend text `--et-surface-color-muted-solid`. Theme names are registered by the application - see [theming](/core/theming).
+Lines, areas and dots use `--et-theme-color-primary-solid` from the nearest color scope, from the theme named by `colorToken`, or from each series' palette entry - mixed with `--et-surface-background-solid` for a series that takes a step of the accent. The dots wear a ring in `--et-surface-background-solid`, the crosshair `--et-surface-color-subtle-solid`, the grid `--et-surface-border-solid`, and the axis and legend text `--et-surface-color-muted-solid`. Theme names are registered by the application - see [theming](/core/theming).
 
 | Token                                  | Default | Description                                                       |
 | -------------------------------------- | ------- | ----------------------------------------------------------------- |

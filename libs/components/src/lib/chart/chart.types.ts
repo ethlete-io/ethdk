@@ -31,8 +31,10 @@ export type ChartAxisLabel = {
 export type ChartLegendItem = {
   key: string;
   label: string;
-  /** The color theme the swatch is drawn in; `null` takes the surrounding accent. */
+  /** The color theme the swatch is drawn in; `null` takes the surrounding accent at `accentMix`. */
   colorToken: RegisteredColorThemeName | null;
+  /** How much of the accent a swatch without a color theme is mixed with the surface, in percent; `null` for full strength. */
+  accentMix: number | null;
 };
 
 /** The rows of an `et-chart-data-table`: a header column followed by one cell per value column. */

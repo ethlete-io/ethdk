@@ -34,7 +34,7 @@ import {
 } from './internals/chart-line';
 import { assertChartPlot } from './internals/chart-plot-check';
 import { createLinearScale, createValueTicks, numberExtent } from './internals/chart-scale';
-import { hasSharedSeriesColor, resolveChartSeriesColors } from './internals/chart-series';
+import { findSharedSeriesColor, resolveChartAccentMixes, resolveChartSeriesColors } from './internals/chart-series';
 import {
   createTimeTicks,
   createTimeValueFormatter,
@@ -62,7 +62,7 @@ export type LineChartSeries = {
   key: string;
   /** Names the series in the legend, the tooltip, the description and the table header. */
   label: string;
-  /** The color theme the series is drawn in. @default the palette entry at the series' position, else the accent */
+  /** The color theme the series is drawn in. @default the palette entry at the series' position, else a step of the accent */
   colorToken?: RegisteredColorThemeName | null;
 };
 
@@ -92,8 +92,10 @@ export type LineChartLine = {
   seriesIndex: number;
   /** The series; `null` in a single-series chart. */
   series: LineChartSeries | null;
-  /** The color theme the series is drawn in; `null` takes the surrounding accent. */
+  /** The color theme the series is drawn in; `null` takes the surrounding accent at `accentMix`. */
   colorToken: RegisteredColorThemeName | null;
+  /** How much of the accent a series without a color theme is mixed with the surface, in percent; `null` for a series with one or in a single-series chart. */
+  accentMix: number | null;
   /** The line through every run of defined points. Missing values leave a gap. */
   linePath: string;
   /** The fill between the line and the baseline - or the series below, when stacked. */
@@ -106,6 +108,7 @@ export type LineChartSliceEntry = {
   key: string;
   series: LineChartSeries | null;
   colorToken: RegisteredColorThemeName | null;
+  accentMix: number | null;
   value: number;
   valueText: string;
   /** The point's offset from the top of the plot. */
@@ -243,14 +246,23 @@ export class LineChartDirective implements ChartPlotHost {
   /** The color theme per entry of `series`, resolved against the palette. */
   public seriesColors = computed(() => resolveChartSeriesColors(this.series(), this.palette));
 
+  /** The accent mix per entry of `series`, in percent; `null` for a series with a color theme. */
+  public seriesAccentMixes = computed(() => resolveChartAccentMixes(this.seriesColors()));
+
   /** The legend entries - one per series when there are two or more, else none. */
   public legendItems = computed<ChartLegendItem[]>(() => {
     const series = this.series();
     const colors = this.seriesColors();
+    const mixes = this.seriesAccentMixes();
 
     if (series.length < 2) return [];
 
-    return series.map((entry, index) => ({ key: entry.key, label: entry.label, colorToken: colors[index] ?? null }));
+    return series.map((entry, index) => ({
+      key: entry.key,
+      label: entry.label,
+      colorToken: colors[index] ?? null,
+      accentMix: mixes[index] ?? null,
+    }));
   });
 
   private requestedTabStop = signal(0);
@@ -403,6 +415,7 @@ export class LineChartDirective implements ChartPlotHost {
   public lines = computed<LineChartLine[]>(() => {
     const series = this.series();
     const colors = this.seriesColors();
+    const mixes = this.seriesAccentMixes();
     const positions = this.positions();
     const scale = this.valueScale();
 
@@ -419,6 +432,7 @@ export class LineChartDirective implements ChartPlotHost {
         seriesIndex,
         series: entry,
         colorToken: entry ? (colors[seriesIndex] ?? null) : null,
+        accentMix: entry ? (mixes[seriesIndex] ?? null) : null,
         linePath: createLinePath(segments.map((segment) => segment.map((point) => ({ x: point.x, y: point.y1 })))),
         areaPath: createAreaPath(segments),
         points: segments.flatMap((segment) =>
@@ -437,6 +451,7 @@ export class LineChartDirective implements ChartPlotHost {
     const rows = this.rows();
     const series = this.series();
     const colors = this.seriesColors();
+    const mixes = this.seriesAccentMixes();
     const positions = this.positions();
     const bounds = createSliceBounds(positions, this.plotWidth());
     const scale = this.valueScale();
@@ -459,6 +474,7 @@ export class LineChartDirective implements ChartPlotHost {
             key: entry?.key ?? '',
             series: entry,
             colorToken: entry ? (colors[seriesIndex] ?? null) : null,
+            accentMix: entry ? (mixes[seriesIndex] ?? null) : null,
             value,
             valueText: format(value),
             y: scale(band.end),
@@ -541,12 +557,12 @@ export class LineChartDirective implements ChartPlotHost {
       });
 
       effect(() => {
-        const colors = this.seriesColors();
+        const shared = findSharedSeriesColor(this.seriesColors());
 
-        if (colors.length > 1 && hasSharedSeriesColor(colors)) {
+        if (shared !== null) {
           console.warn(
-            '[LineChartDirective] Two or more series share one color. Provide a palette with provideColorPalette() ' +
-              'or give each series its own colorToken.',
+            `[LineChartDirective] Two or more series share the colorToken "${shared}". Give each series its own ` +
+              'colorToken or provide a palette with provideColorPalette().',
           );
         }
       });

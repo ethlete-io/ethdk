@@ -1,10 +1,16 @@
 import { Component, input, ViewEncapsulation } from '@angular/core';
+import { ProvideColorDirective, RegisteredColorThemeName } from '@ethlete/core';
 
 @Component({
   selector: 'et-chart-tooltip',
   template: `
     @if (series()) {
-      <span class="et-chart-tooltip-key" aria-hidden="true"></span>
+      <span
+        [etProvideColor]="colorToken()"
+        [style.--_et-chart-accent-mix.%]="accentMix()"
+        class="et-chart-tooltip-key"
+        aria-hidden="true"
+      ></span>
     }
     <strong class="et-chart-tooltip-value">{{ value() }}</strong>
     @if (series(); as seriesName) {
@@ -14,6 +20,7 @@ import { Component, input, ViewEncapsulation } from '@angular/core';
   `,
   styleUrl: './chart-tooltip.component.css',
   encapsulation: ViewEncapsulation.None,
+  imports: [ProvideColorDirective],
   host: {
     class: 'et-chart-tooltip',
   },
@@ -22,4 +29,6 @@ export class ChartTooltipComponent {
   public value = input.required<string>();
   public label = input.required<string>();
   public series = input<string | null>(null);
+  public colorToken = input<RegisteredColorThemeName | null>(null);
+  public accentMix = input<number | null>(null);
 }

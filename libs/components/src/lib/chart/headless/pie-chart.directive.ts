@@ -12,7 +12,7 @@ import {
 } from './internals/chart-arc';
 import { ChartValueFormatter, resolveChartValueFormatter } from './internals/chart-format';
 import { assertChartPlot } from './internals/chart-plot-check';
-import { resolveChartSeriesColors } from './internals/chart-series';
+import { resolveChartAccentMixes, resolveChartSeriesColors } from './internals/chart-series';
 
 /** One slice of a pie chart: its label and the non-negative value its angle encodes. */
 export type PieChartDatum = {
@@ -59,14 +59,8 @@ export type PieChartSlice = PieChartEntry & {
 
 const SLICE_GAP = 2;
 const MAX_INNER_RADIUS = 0.9;
-const MIN_ACCENT_MIX = 40;
 
 const drawnValue = (value: number) => (Number.isFinite(value) && value > 0 ? value : 0);
-
-const accentMixSteps = (count: number) =>
-  Array.from({ length: count }, (_, step) =>
-    count < 2 ? 100 : Math.round(100 - (step * (100 - MIN_ACCENT_MIX)) / (count - 1)),
-  );
 
 /**
  * Headless pie and donut chart: turns `data` into slice outlines, legend entries with shares, and the
@@ -151,12 +145,10 @@ export class PieChartDirective implements ChartPlotHost {
   public entries = computed<PieChartEntry[]>(() => {
     const data = this.data();
     const colors = resolveChartSeriesColors(data, this.palette);
-    const uncovered = colors.filter((color) => color === null).length;
-    const mixes = data.length > 1 ? accentMixSteps(uncovered) : [];
+    const mixes = resolveChartAccentMixes(colors);
     const percents = createWholePercentages(data.map((datum) => datum.value));
     const format = this.formatValue();
     const formatPercent = this.formatPercent();
-    let uncoveredIndex = 0;
 
     return data.map((datum, index) => {
       const colorToken = colors[index] ?? null;
@@ -167,7 +159,7 @@ export class PieChartDirective implements ChartPlotHost {
         datum,
         index,
         colorToken,
-        accentMix: colorToken === null ? (mixes[uncoveredIndex++] ?? null) : null,
+        accentMix: mixes[index] ?? null,
         percent,
         valueText: format(Number.isFinite(datum.value) ? datum.value : 0),
         percentText: formatPercent(percent),

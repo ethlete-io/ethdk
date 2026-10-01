@@ -37,6 +37,7 @@
               [etChartMarkAnchor]="anchor"
               [etChartMarkPlacement]="bar.placement"
               [etProvideColor]="bar.colorToken"
+              [style.--_et-chart-accent-mix.%]="bar.accentMix"
               [attr.aria-label]="bar.name"
               [attr.data-negative]="bar.isNegative ? '' : null"
               class="et-bar-chart-bar"
@@ -81,7 +82,13 @@
 
 @for (bar of chart.bars(); track bar.key) {
   <ng-template #barTooltip>
-    <et-chart-tooltip [value]="bar.valueText" [label]="bar.datum.label" [series]="bar.series?.label ?? null" />
+    <et-chart-tooltip
+      [value]="bar.valueText"
+      [label]="bar.datum.label"
+      [series]="bar.series?.label ?? null"
+      [colorToken]="bar.colorToken"
+      [accentMix]="bar.accentMix"
+    />
   </ng-template>
 }
 

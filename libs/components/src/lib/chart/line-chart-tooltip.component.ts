@@ -9,7 +9,11 @@ import { LineChartSliceEntry } from './headless/line-chart.directive';
     @if (entries().length) {
       <ul class="et-line-chart-tooltip-list">
         @for (entry of entries(); track entry.key) {
-          <li [etProvideColor]="entry.colorToken" class="et-line-chart-tooltip-row">
+          <li
+            [etProvideColor]="entry.colorToken"
+            [style.--_et-chart-accent-mix.%]="entry.accentMix"
+            class="et-line-chart-tooltip-row"
+          >
             <span class="et-line-chart-tooltip-key" aria-hidden="true"></span>
             @if (entry.series; as series) {
               <span class="et-line-chart-tooltip-series">{{ series.label }}</span>
