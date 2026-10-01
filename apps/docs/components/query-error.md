@@ -67,7 +67,8 @@ hatches:
 - **`retryRequest`** fires on every retry, with or without a `query` bound - the hook for a recovery that isn't
   a re-execution.
 
-`[query]` takes anything with an `execute` method, and the retry **bypasses the cache**: a retry exists because
+`[query]` takes anything with an `execute` method, a [query group](/query/groups) included (it retries the member
+that ran last), and the retry **bypasses the cache**: a retry exists because
 the last answer was unusable, so serving it again from memory would make the button do nothing.
 
 <StoryEmbed id="components-feedback-query-error--retryable" height="320px" />

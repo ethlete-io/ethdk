@@ -1,6 +1,13 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { AnyNewQuery, AnyPagedQueryStack, AnyQueryBatch, HttpRequestLoadingState, QuerySequence } from '@ethlete/query';
+import {
+  AnyNewQuery,
+  AnyPagedQueryStack,
+  AnyQueryBatch,
+  AnyQueryGroup,
+  HttpRequestLoadingState,
+  QuerySequence,
+} from '@ethlete/query';
 import '../../../test-helpers';
 import { ButtonComponent } from '../button.component';
 import { QueryButtonDirective, QueryButtonSource } from './query-button.directive';
@@ -49,6 +56,7 @@ describe('QueryButtonDirective', () => {
     expectTypeOf<AnyPagedQueryStack>().toExtend<QueryButtonSource>();
     expectTypeOf<AnyQueryBatch>().toExtend<QueryButtonSource>();
     expectTypeOf<QuerySequence<[unknown]>>().toExtend<QueryButtonSource>();
+    expectTypeOf<AnyQueryGroup>().toExtend<QueryButtonSource>();
   });
 
   it('stays idle without a source', () => {

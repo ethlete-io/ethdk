@@ -100,7 +100,7 @@ All flavors share the headless `ButtonDirective` (`[etButton]`):
 <button [etQueryButton]="createPost" [disabled]="form().invalid()" et-button type="submit">Save</button>
 ```
 
-It accepts a `Query`, a [paged query stack](/query/stacks#paged-queries), a [query batch](/query/batching) and a [query sequence](/query/dependent-queries#imperative-waterfalls-dependent-mutations) directly. `null` leaves the button idle, so `[etQueryButton]="scope() === 'team' ? teamQuery : null"` picks one query of several. The `loading` and `progress` inputs keep working next to it: the button loads while either says so, and a bound `progress` wins over the query's.
+It accepts a `Query`, a [paged query stack](/query/stacks#paged-queries), a [query batch](/query/batching), a [query sequence](/query/dependent-queries#imperative-waterfalls-dependent-mutations) and a [query group](/query/groups) directly. `null` leaves the button idle, so `[etQueryButton]="scope() === 'team' ? teamQuery : null"` picks one query of several. The `loading` and `progress` inputs keep working next to it: the button loads while either says so, and a bound `progress` wins over the query's.
 
 | Input           | Type                        | Default    | Description                                                         |
 | --------------- | --------------------------- | ---------- | ------------------------------------------------------------------- |

@@ -209,9 +209,13 @@ Both versions render `<et-query-devtools>`, so templates need no change. Only tw
 
 The two panels do not merge. The current one lists current-system queries, and the `legacy*` interop queries, which are real queries underneath; a client still on `V2QueryClient` only shows up in the legacy panel. Both panels use the `et-query-devtools` selector, so one template cannot import both. While some clients are still on v2, mount the current panel through its [lazy shell](/query-devtools/), `<et-query-devtools-lazy>`, next to the legacy `<et-query-devtools>`. The two keep their settings under different storage keys.
 
-### Query collections become `executionState`
+### Query collections
 
-A v2 query collection tracked "which of these queries is currently doing something". For auth that role belongs to [`provider.executionState()`](/query/auth#execution-state); for everything else, read the queries' own `executionState()` signals and combine them in a `computed`.
+A v2 query collection tracked "which of these queries ran last". What replaces one depends on what it held:
+
+- **An action set, the latest wins** (accept/decline, create/edit/delete): a [query group](/query/groups). Execute each member through `group.members.<key>.execute()`, and bind the group where the collection went - `[etQueryButton]="group"`, `<et-query-error [error]="group.error()" [query]="group">`. `*etQuery="collection(); …"` has no v3 counterpart; read `group.loading()` and `group.error()` in the template. A `switchQueryCollectionState()` or `pushQueryCollection` subscription for "the current member succeeded" becomes `group.succeeded$`, and a `type === '…'` check reads `group.latest()?.key`.
+- **One endpoint chosen by context** (player or team, organisation or team): select the query in a `computed`, `current = computed(() => (this.isTeam() ? this.inviteTeam : this.inviteOrganisation))`. The context signal already says which query applies.
+- **Auth** (refresh, login, two-factor): [`createBearerAuthProvider`](/query/auth) replaces it; read [`provider.executionState()`](/query/auth#execution-state).
 
 ### EntityStore becomes `invalidates` and tags
 

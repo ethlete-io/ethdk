@@ -3,6 +3,8 @@ import { Component, Provider, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ColorTheme, injectLocale, provideColorThemesWithTailwind4 } from '@ethlete/core';
 import {
+  AnyNewQuery,
+  AnyQueryGroup,
   QueryErrorResponse,
   createQueryErrorResponse,
   registerQueryErrorParser,
@@ -22,6 +24,7 @@ import { provideQueryErrorLabels, queryErrorLabelsForLocale } from './query-erro
 import { queryErrorResponseFromLegacyError } from './query-error-legacy';
 import { QueryErrorComponent } from './query-error.component';
 import { QUERY_ERROR_IMPORTS } from './query-error.imports';
+import { QueryErrorRetryTarget } from './query-error.types';
 
 /** The component needs *a* theme registered with `type: 'error'` - the name is the app's business. */
 const COLOR_THEMES: ColorTheme[] = [
@@ -159,6 +162,11 @@ describe('QueryErrorComponent', () => {
   });
 
   describe('retrying', () => {
+    it('accepts a query and a query group as the retry target', () => {
+      expectTypeOf<AnyNewQuery>().toExtend<QueryErrorRetryTarget>();
+      expectTypeOf<AnyQueryGroup>().toExtend<QueryErrorRetryTarget>();
+    });
+
     it('offers no retry for a failure the policy considers final', () => {
       const fixture = createHost();
 
