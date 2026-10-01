@@ -60,7 +60,7 @@ describe('SchedulerTimeGridViewComponent keyboard', () => {
   it('names each slot after its day and hour', () => {
     mount();
 
-    expect(slotOf(WEDNESDAY, 9)?.getAttribute('aria-label')).toBe('Wednesday, July 15th, 2026, 09:00');
+    expect(slotOf(WEDNESDAY, 9)?.getAttribute('aria-label')).toBe('Wednesday, July 15th, 2026, 9:00 AM');
   });
 
   it('moves by a slot with Up/Down and by a day with Left/Right', () => {

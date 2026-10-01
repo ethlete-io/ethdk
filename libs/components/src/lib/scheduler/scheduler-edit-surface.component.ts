@@ -118,7 +118,7 @@ export class SchedulerEditSurfaceComponent implements SchedulerEditSurfaceHost {
 
     return this.surface.children().map((node: AppointmentTreeNode) => ({
       node,
-      startTime: node.appointment.allDay ? null : format(node.appointment.start, 'HH:mm', options),
+      startTime: node.appointment.allDay ? null : format(node.appointment.start, 'p', options),
     }));
   });
 

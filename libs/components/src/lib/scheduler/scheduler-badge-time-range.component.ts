@@ -31,6 +31,6 @@ export class SchedulerBadgeTimeRangeComponent {
     const locale = this.scheduler?.effectiveLocale();
     const options = locale ? { locale } : undefined;
 
-    return `${format(appointment.start, 'HH:mm', options)}–${format(appointment.end, 'HH:mm', options)}`;
+    return `${format(appointment.start, 'p', options)}–${format(appointment.end, 'p', options)}`;
   });
 }

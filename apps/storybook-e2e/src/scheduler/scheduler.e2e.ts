@@ -334,7 +334,7 @@ test.describe('scheduler / grid keyboard', () => {
     const header = root.locator('.et-scheduler-header-label');
     const cell = await tabIntoGrid(page);
 
-    await expect(cell).toHaveAttribute('aria-label', /^Wednesday, July 15th, 2026, \d\d:00$/);
+    await expect(cell).toHaveAttribute('aria-label', /^Wednesday, July 15th, 2026, \d\d?:00 [AP]M$/);
 
     await pressKeys(
       page,
@@ -343,16 +343,16 @@ test.describe('scheduler / grid keyboard', () => {
     await expectFocusVisible(root.getByRole('gridcell', { name: 'Wednesday, July 15th, 2026, All day' }));
 
     await pressKey(page, 'ArrowDown');
-    await expectFocusVisible(root.getByRole('gridcell', { name: 'Wednesday, July 15th, 2026, 00:00' }));
+    await expectFocusVisible(root.getByRole('gridcell', { name: 'Wednesday, July 15th, 2026, 12:00 AM' }));
 
     await pressKey(page, 'ArrowRight');
-    await expectFocusVisible(root.getByRole('gridcell', { name: 'Thursday, July 16th, 2026, 00:00' }));
+    await expectFocusVisible(root.getByRole('gridcell', { name: 'Thursday, July 16th, 2026, 12:00 AM' }));
 
     const before = await header.textContent();
     await pressKey(page, 'PageDown');
 
     await expect(header).not.toHaveText(before ?? '');
-    await expectFocusVisible(root.getByRole('gridcell', { name: 'Thursday, July 23rd, 2026, 00:00' }));
+    await expectFocusVisible(root.getByRole('gridcell', { name: 'Thursday, July 23rd, 2026, 12:00 AM' }));
   });
 
   test('Space on a time slot opens the create surface', async ({ page }) => {

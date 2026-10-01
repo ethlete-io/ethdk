@@ -54,17 +54,17 @@ type Appointment<TExtra = unknown> = {
 
 On `et-scheduler` (forwarded from the headless `[etScheduler]` directive):
 
-| Input                   | Type                                        | Default             | Description                                                                                                   |
-| ----------------------- | ------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `appointments`          | `readonly Appointment[]`                    | `[]`                | Every appointment the scheduler knows about - not pre-filtered to the visible range.                          |
-| `view`                  | `SchedulerView`                             | `'month'`           | Which view is on screen - `'month' \| 'week' \| 'day' \| 'agenda'`.                                           |
-| `focusedDate`           | `Date`                                      | today               | The date the visible period is derived from.                                                                  |
-| `selectedAppointmentId` | `AppointmentId \| null`                     | `null`              | The currently selected appointment.                                                                           |
-| `locale`                | `Locale \| null` (date-fns)                 | `DATE_LOCALE` token | Weekday names and the header label. Falls back to date-fns' built-in en-US.                                   |
-| `firstDayOfWeek`        | `0–6`                                       | locale, else `1`    | `0` = Sunday. Defaults to the locale's week start, Monday without one.                                        |
-| `agendaDays`            | `number \| null`                            | `null`              | How many days the agenda lists, from `focusedDate` on - see [infinite agenda](#infinite-agenda).              |
-| `businessHours`         | `readonly SchedulerBusinessHours[] \| null` | `null`              | Open hours per weekday; the time grid shades everything outside them - see [business hours](#business-hours). |
-| `nowIndicator`          | `boolean`                                   | `true`              | Marks the current time on today's time-grid column - see [the now line](#now-line).                           |
+| Input                   | Type                                        | Default             | Description                                                                                                             |
+| ----------------------- | ------------------------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `appointments`          | `readonly Appointment[]`                    | `[]`                | Every appointment the scheduler knows about - not pre-filtered to the visible range.                                    |
+| `view`                  | `SchedulerView`                             | `'month'`           | Which view is on screen - `'month' \| 'week' \| 'day' \| 'agenda'`.                                                     |
+| `focusedDate`           | `Date`                                      | today               | The date the visible period is derived from.                                                                            |
+| `selectedAppointmentId` | `AppointmentId \| null`                     | `null`              | The currently selected appointment.                                                                                     |
+| `locale`                | `Locale \| null` (date-fns)                 | `DATE_LOCALE` token | Weekday names, the header label and every time (`p`: 12-hour in en-US, 24-hour in `de`). Falls back to date-fns' en-US. |
+| `firstDayOfWeek`        | `0–6`                                       | locale, else `1`    | `0` = Sunday. Defaults to the locale's week start, Monday without one.                                                  |
+| `agendaDays`            | `number \| null`                            | `null`              | How many days the agenda lists, from `focusedDate` on - see [infinite agenda](#infinite-agenda).                        |
+| `businessHours`         | `readonly SchedulerBusinessHours[] \| null` | `null`              | Open hours per weekday; the time grid shades everything outside them - see [business hours](#business-hours).           |
+| `nowIndicator`          | `boolean`                                   | `true`              | Marks the current time on today's time-grid column - see [the now line](#now-line).                                     |
 
 | Model                   | Type                    | Description                                  |
 | ----------------------- | ----------------------- | -------------------------------------------- |
@@ -491,7 +491,7 @@ The same works for `editFields` / `registerEditField` and `appointmentActions` /
 
 ## Keyboard {#keyboard}
 
-The month grid and the time grid each follow the ARIA grid pattern the [calendar](/components/calendar#accessibility) uses: the whole grid is **one Tab stop**, and the arrow keys move a roving focus between its cells. Only the focused cell has `tabindex="0"`; every other cell, every appointment and the "+N more" trigger have `tabindex="-1"`, so Tab leaves the grid in one press. The grid's stop starts on `focusedDate`'s day - on the time grid, at the hour the body opens scrolled to.
+The month grid and the time grid each follow the ARIA grid pattern the [calendar](/components/calendar#accessibility) uses: the whole grid is **one Tab stop**, and the arrow keys move a roving focus between its cells. Only the focused cell has `tabindex="0"`; every other cell, every appointment and the "+N more" trigger have `tabindex="-1"`, so Tab leaves the grid in one press. The grid's stop starts on `focusedDate`'s day - on the time grid, at the hour the body opens scrolled to. The time grid's body is a `rowgroup` with one `row` per hour, each owning its seven slots through `aria-owns`, so a screen reader reports 24 rows of 7 cells.
 
 The month grid's cells are days. The time grid's cells are hour slots, one per hour per day, with the all-day strip as row 0 above the first slot while the strip is shown (it is only rendered when an all-day appointment is in view).
 

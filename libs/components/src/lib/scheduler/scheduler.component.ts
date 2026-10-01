@@ -13,7 +13,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RuntimeError, randomId, signalHostElementDimensions } from '@ethlete/core';
 import { tap } from 'rxjs';
-import { addHours, format, isSameDay, isSameMonth, isSameYear, setHours, setMinutes, startOfDay } from 'date-fns';
+import { addHours, format, isSameDay, setHours, setMinutes, startOfDay } from 'date-fns';
 import { BUTTON_IMPORTS } from '../button';
 import { FLOATING_ACTION_IMPORTS } from '../floating-action';
 import { LabelDirective, SEGMENTED_BUTTON_IMPORTS } from '../forms';
@@ -133,21 +133,16 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     const view = this.headless.view();
 
     if (view === 'day') {
-      return format(this.headless.focusedDate(), 'EEEE, d MMMM yyyy', options);
+      return format(this.headless.focusedDate(), 'PPPP', options);
     }
 
     if (view === 'week' || view === 'agenda') {
       const { start, end } = this.headless.visibleRange();
 
-      if (isSameMonth(start, end)) {
-        return `${format(start, 'd', options)} – ${format(end, 'd MMMM yyyy', options)}`;
-      }
-
-      if (isSameYear(start, end)) {
-        return `${format(start, 'd MMMM', options)} – ${format(end, 'd MMMM yyyy', options)}`;
-      }
-
-      return `${format(start, 'd MMMM yyyy', options)} – ${format(end, 'd MMMM yyyy', options)}`;
+      return new Intl.DateTimeFormat(locale?.code, { day: 'numeric', month: 'long', year: 'numeric' }).formatRange(
+        start,
+        end,
+      );
     }
 
     return format(this.headless.focusedDate(), 'LLLL yyyy', options);

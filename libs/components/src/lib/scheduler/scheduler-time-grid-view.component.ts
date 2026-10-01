@@ -128,7 +128,7 @@ export class SchedulerTimeGridViewComponent {
 
     return HOURS.map((hour) => ({
       hour,
-      label: format(setHours(reference, hour), 'HH:mm', locale ? { locale } : undefined),
+      label: format(setHours(reference, hour), 'p', locale ? { locale } : undefined),
     }));
   });
 

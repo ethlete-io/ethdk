@@ -1,6 +1,8 @@
 import { ErrorHandler, getDebugNode } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import '../../test-helpers';
+import { de } from 'date-fns/locale';
+import { provideDateLocale } from '../forms/date-time/date-time-formats';
 import { injectOverlayManager } from '../overlay';
 import { expectAriaGrid, expectUniformCellsPerRow } from '../testing/aria-structure';
 import { SchedulerEditSurfaceComponent } from './scheduler-edit-surface.component';
@@ -135,6 +137,17 @@ describe('SchedulerComponent', () => {
     expectAriaGrid(view);
   });
 
+  it('formats times and the day header in the locale, so a 24-hour locale shows 24-hour times', () => {
+    driver = schedulerTestDriver({
+      view: 'day',
+      appointments: [testAppointment('a')],
+      providers: [provideDateLocale(de)],
+    });
+
+    expect(driver.badges()[0]?.timeRange).toBe('09:00–10:00');
+    expect(driver.query('.et-scheduler-header-label')?.textContent?.trim()).toBe('Mittwoch, 15. Juli 2026');
+  });
+
   it('names each grid view after the period the header shows', () => {
     const headerLabel = () => driver.query('.et-scheduler-header-label')?.textContent?.trim();
 
@@ -200,7 +213,7 @@ describe('SchedulerComponent', () => {
 
     expect(badge).toBeDefined();
     expect(badge?.title).toBe('a');
-    expect(badge?.timeRange).toBe('09:00–10:00');
+    expect(badge?.timeRange).toBe('9:00 AM–10:00 AM');
   });
 
   it('places a visible appointment inside its month cell', () => {
