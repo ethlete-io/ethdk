@@ -101,7 +101,7 @@ pub fn run() {
             let window_lock = lock::WindowLock::new();
             let windows = window::WindowSource::new(window_lock.clone());
             let reporters = ingest::IngestSource::new();
-            let calls = calls::CallSource::new();
+            let calls = calls::CallSource::new(windows.titles());
 
             app.manage(window_lock);
             lock::start(app.handle().clone());

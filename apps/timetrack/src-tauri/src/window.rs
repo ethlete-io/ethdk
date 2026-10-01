@@ -3,6 +3,7 @@ use crate::error::{TimetrackError, TimetrackResult};
 use crate::samples::Sample;
 use crate::samples::{SampleBatch, SampleBuffer};
 use serde::Serialize;
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tauri::State;
 
@@ -83,6 +84,72 @@ fn capabilities_of(kind: &str) -> Vec<WindowSourceCapability> {
     }
 }
 
+struct OpenWindow {
+    app_id: String,
+    title: String,
+    activated: bool,
+    committed: u64,
+}
+
+#[derive(Default)]
+struct OpenWindows {
+    commits: u64,
+    by_key: HashMap<u32, OpenWindow>,
+}
+
+/// The title every open window carries right now, focused or not, for naming a call whose window
+/// never took the focus.
+#[derive(Clone, Default)]
+pub struct WindowTitles(Arc<Mutex<OpenWindows>>);
+
+impl WindowTitles {
+    #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+    pub fn commit(&self, key: u32, app_id: &str, title: &str, activated: bool) {
+        let Ok(mut open) = self.0.lock() else {
+            return;
+        };
+
+        open.commits += 1;
+
+        let committed = open.commits;
+
+        open.by_key.insert(
+            key,
+            OpenWindow {
+                app_id: app_id.to_string(),
+                title: title.to_string(),
+                activated,
+                committed,
+            },
+        );
+    }
+
+    #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+    pub fn close(&self, key: u32) {
+        if let Ok(mut open) = self.0.lock() {
+            open.by_key.remove(&key);
+        }
+    }
+
+    /// The title of the window the microphone holder belongs to, matched the way the read side's
+    /// `callHolderBelongsTo` matches them: the activated one, else the one that changed last.
+    pub fn title_of(&self, holder: &str) -> Option<String> {
+        let open = self.0.lock().ok()?;
+        let holder = holder.to_lowercase();
+
+        open.by_key
+            .values()
+            .filter(|window| !window.title.is_empty())
+            .filter(|window| {
+                let owner = window.app_id.to_lowercase();
+
+                !owner.is_empty() && (holder == owner || holder.starts_with(&format!("{owner}.")))
+            })
+            .max_by_key(|window| (window.activated, window.committed))
+            .map(|window| window.title.clone())
+    }
+}
+
 #[cfg(test)]
 pub type WindowEvent = Sample<WindowEventPayload>;
 pub type WindowEventBatch = SampleBatch<WindowEventPayload>;
@@ -94,6 +161,7 @@ pub struct WindowSource {
     samples: SampleBuffer<WindowEventPayload>,
     status: Arc<Mutex<WindowSourceStatus>>,
     lock: crate::lock::WindowLock,
+    titles: WindowTitles,
 }
 
 impl WindowSource {
@@ -106,7 +174,12 @@ impl WindowSource {
                 capabilities: Vec::new(),
             })),
             lock,
+            titles: WindowTitles::default(),
         }
+    }
+
+    pub fn titles(&self) -> WindowTitles {
+        self.titles.clone()
     }
 
     pub fn set_paused(&self, paused: bool) {
@@ -212,6 +285,59 @@ mod tests {
             app_id: app_id.to_string(),
             title: title.to_string(),
         }
+    }
+
+    #[test]
+    fn names_a_call_after_its_window_even_when_another_one_has_the_focus() {
+        let titles = WindowTitles::default();
+
+        titles.commit(1, "discord", "Meeting #2 | Braune Digital - Discord", false);
+        titles.commit(2, "code", "lib.rs - timetrack", true);
+
+        assert_eq!(
+            titles.title_of("Discord").as_deref(),
+            Some("Meeting #2 | Braune Digital - Discord")
+        );
+    }
+
+    #[test]
+    fn matches_a_helper_process_to_the_window_of_its_application() {
+        let titles = WindowTitles::default();
+
+        titles.commit(1, "com.hnc.Discord", "General - Discord", false);
+
+        assert_eq!(
+            titles.title_of("com.hnc.Discord.helper.Renderer").as_deref(),
+            Some("General - Discord")
+        );
+        assert_eq!(titles.title_of("com.hnc"), None);
+        assert_eq!(titles.title_of("com.hnc.DiscordCanary"), None);
+    }
+
+    #[test]
+    fn prefers_the_activated_window_then_the_one_that_changed_last() {
+        let titles = WindowTitles::default();
+
+        titles.commit(1, "google-chrome", "Meet - Daily", true);
+        titles.commit(2, "google-chrome", "Inbox", false);
+
+        assert_eq!(titles.title_of("google-chrome").as_deref(), Some("Meet - Daily"));
+
+        titles.commit(1, "google-chrome", "Meet - Daily", false);
+        titles.commit(2, "google-chrome", "Inbox (1)", false);
+
+        assert_eq!(titles.title_of("google-chrome").as_deref(), Some("Inbox (1)"));
+    }
+
+    #[test]
+    fn forgets_a_window_once_it_closed_and_names_nothing_without_a_title() {
+        let titles = WindowTitles::default();
+
+        titles.commit(1, "discord", "General - Discord", false);
+        titles.close(1);
+        titles.commit(2, "discord", "", true);
+
+        assert_eq!(titles.title_of("Discord"), None);
     }
 
     #[test]

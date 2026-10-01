@@ -6,6 +6,7 @@ use crate::error::{TimetrackError, TimetrackResult};
 #[cfg(test)]
 use crate::samples::Sample;
 use crate::samples::{SampleBatch, SampleBuffer};
+use crate::window::WindowTitles;
 use serde::Serialize;
 use std::sync::{Arc, Mutex};
 use tauri::State;
@@ -24,6 +25,8 @@ pub enum CallEventPayload {
     CallStart {
         #[serde(rename = "appId")]
         app_id: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        title: Option<String>,
     },
     CallEnd {
         #[serde(rename = "appId")]
@@ -57,10 +60,11 @@ pub struct CallSource {
     samples: SampleBuffer<CallEventPayload>,
     status: Arc<Mutex<CallSourceStatus>>,
     holding: Arc<Mutex<Vec<String>>>,
+    titles: WindowTitles,
 }
 
 impl CallSource {
-    pub fn new() -> Self {
+    pub fn new(titles: WindowTitles) -> Self {
         Self {
             samples: SampleBuffer::new(),
             status: Arc::new(Mutex::new(CallSourceStatus {
@@ -69,6 +73,7 @@ impl CallSource {
                 watching_since_ms: chrono::Utc::now().timestamp_millis(),
             })),
             holding: Arc::new(Mutex::new(Vec::new())),
+            titles,
         }
     }
 
@@ -99,8 +104,13 @@ impl CallSource {
 
         for app_id in &holding {
             if !held.contains(app_id) {
-                self.samples
-                    .push(at_ms, CallEventPayload::CallStart { app_id: app_id.clone() });
+                self.samples.push(
+                    at_ms,
+                    CallEventPayload::CallStart {
+                        app_id: app_id.clone(),
+                        title: self.titles.title_of(app_id),
+                    },
+                );
             }
         }
 
@@ -140,7 +150,7 @@ impl CallSource {
 
 impl Default for CallSource {
     fn default() -> Self {
-        Self::new()
+        Self::new(WindowTitles::default())
     }
 }
 
@@ -182,7 +192,7 @@ mod tests {
 
     fn app_of(payload: &CallEventPayload) -> &str {
         match payload {
-            CallEventPayload::CallStart { app_id } | CallEventPayload::CallEnd { app_id } => app_id,
+            CallEventPayload::CallStart { app_id, .. } | CallEventPayload::CallEnd { app_id } => app_id,
         }
     }
 
@@ -317,5 +327,27 @@ mod tests {
         assert_eq!(json["atMs"], 1_700_000_000_000_i64);
         assert_eq!(json["kind"], "call-start");
         assert_eq!(json["appId"], "com.hnc.Discord.helper.Renderer");
+        assert!(json.get("title").is_none());
+    }
+
+    #[test]
+    fn names_the_call_after_its_window_when_the_microphone_opens() {
+        let titles = WindowTitles::default();
+        let source = CallSource::new(titles.clone());
+
+        titles.commit(1, "discord", "Meeting #2 | Braune Digital - Discord", false);
+        source.reconcile(10, vec!["Discord".to_string()]);
+        titles.commit(1, "discord", "General | Braune Digital - Discord", false);
+        source.reconcile(20, vec![]);
+
+        let json: Vec<_> = held(&source)
+            .iter()
+            .map(|event| serde_json::to_value(event).unwrap())
+            .collect();
+
+        assert_eq!(json[0]["kind"], "call-start");
+        assert_eq!(json[0]["title"], "Meeting #2 | Braune Digital - Discord");
+        assert_eq!(json[1]["kind"], "call-end");
+        assert!(json[1].get("title").is_none());
     }
 }

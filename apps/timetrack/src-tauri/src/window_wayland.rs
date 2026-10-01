@@ -1,4 +1,4 @@
-use crate::window::{WindowEventPayload, WindowSource};
+use crate::window::{WindowEventPayload, WindowSource, WindowTitles};
 use std::collections::HashMap;
 use wayland_client::backend::ObjectId;
 use wayland_client::protocol::{wl_registry, wl_seat};
@@ -32,6 +32,7 @@ struct Toplevel {
 
 struct WaylandState {
     sink: WindowSource,
+    titles: WindowTitles,
     manager: Option<zwlr_foreign_toplevel_manager_v1::ZwlrForeignToplevelManagerV1>,
     notifier: Option<ext_idle_notifier_v1::ExtIdleNotifierV1>,
     notification: Option<ext_idle_notification_v1::ExtIdleNotificationV1>,
@@ -51,6 +52,11 @@ impl WaylandState {
     /// can do is forget what it last emitted, so the first event after a resume re-establishes the
     /// window instead of comparing equal to the one the pause started in.
     fn commit(&mut self, id: ObjectId) {
+        if let Some(toplevel) = self.pending.get(&id) {
+            self.titles
+                .commit(id.protocol_id(), &toplevel.app_id, &toplevel.title, toplevel.activated);
+        }
+
         if self.sink.is_paused() {
             self.emitted = None;
 
@@ -82,6 +88,7 @@ impl WaylandState {
     }
 
     fn close(&mut self, id: ObjectId) {
+        self.titles.close(id.protocol_id());
         self.pending.remove(&id);
 
         if self.emitted.as_ref().is_some_and(|(emitted, _, _)| emitted == &id) {
@@ -243,6 +250,7 @@ fn run(sink: WindowSource) -> Result<(), String> {
     connection.display().get_registry(&qh, ());
 
     let mut state = WaylandState {
+        titles: sink.titles(),
         sink,
         manager: None,
         notifier: None,
