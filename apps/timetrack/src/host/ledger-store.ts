@@ -7,6 +7,7 @@ type StoredWorklog = {
   day: string;
   tempoWorklogId: string;
   contentHash: string;
+  durationMs: number | null;
   syncedAtMs: number;
 };
 
@@ -15,6 +16,7 @@ const toStored = (entry: SyncedWorklog): StoredWorklog => ({
   day: entry.day,
   tempoWorklogId: entry.tempoWorklogId,
   contentHash: entry.contentHash,
+  durationMs: entry.durationMs ?? null,
   syncedAtMs: entry.syncedAt.getTime(),
 });
 
@@ -23,6 +25,7 @@ const revive = (stored: StoredWorklog): SyncedWorklog => ({
   day: stored.day,
   tempoWorklogId: stored.tempoWorklogId,
   contentHash: stored.contentHash,
+  ...(stored.durationMs === null ? {} : { durationMs: stored.durationMs }),
   syncedAt: new Date(stored.syncedAtMs),
 });
 

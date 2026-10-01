@@ -24,8 +24,10 @@ export type DayNudgeReason =
 export type DayReviewGap = {
   /** Widest first, so the wording leads with the reason worth acting on. */
   reasons: DayNudgeReason[];
-  /** Time in rows a sync would write. */
+  /** Time Tempo does not hold yet: whole new rows, and what a synced row grew by since it was written. */
   unsyncedMs: number;
+  /** Synced rows a sync would rewrite that added no time Tempo lacks. */
+  changedRows: number;
   undecidedMs: number;
   unattributedMs: number;
   waitingMs: number;
@@ -65,6 +67,7 @@ export const dayReviewGap = (options: {
   const reducedById = new Map(reduced.proposals.map((proposal) => [proposal.id, proposal]));
   const reasons: DayNudgeReason[] = [];
   let unsyncedMs = 0;
+  let changedRows = 0;
   let undecidedMs = 0;
   let waitingMs = 0;
   let pendingDelete = false;
@@ -105,7 +108,17 @@ export const dayReviewGap = (options: {
       attributes: options.attributesByProposalId?.[row.id],
     });
 
-    if (!entry || entry.contentHash !== hash) unsyncedMs += row.durationMs;
+    if (!entry) {
+      unsyncedMs += row.durationMs;
+      continue;
+    }
+
+    if (entry.contentHash === hash) continue;
+
+    const grownMs = entry.durationMs === undefined ? 0 : row.durationMs - entry.durationMs;
+
+    if (grownMs > 0) unsyncedMs += grownMs;
+    else changedRows += 1;
   }
 
   const claimed = new Set(options.review.rows.map((row) => row.id));
@@ -114,12 +127,12 @@ export const dayReviewGap = (options: {
 
   const unattributedMs = options.review.check.unattributedMs;
 
-  if (unsyncedMs >= tolerance || pendingDelete) reasons.push('unsynced');
+  if (unsyncedMs >= tolerance || changedRows > 0 || pendingDelete) reasons.push('unsynced');
   if (undecidedMs >= tolerance) reasons.push('undecided');
   if (unattributedMs >= tolerance) reasons.push('unattributed');
   if (waitingMs >= tolerance) reasons.push('waiting');
 
-  return reasons.length > 0 ? { reasons, unsyncedMs, undecidedMs, unattributedMs, waitingMs } : null;
+  return reasons.length > 0 ? { reasons, unsyncedMs, changedRows, undecidedMs, unattributedMs, waitingMs } : null;
 };
 
 /** How long the desktop notification stays quiet after it fired. The banner behind it does not blink. */
@@ -189,10 +202,16 @@ export type DayNudge = {
 };
 
 const WORDING: Record<DayNudgeReason, (gap: DayReviewGap) => string> = {
-  unsynced: (gap) =>
-    gap.unsyncedMs > 0
-      ? `${formatDurationMs(gap.unsyncedMs)} is not in Tempo yet`
-      : 'Tempo still holds time this day no longer has',
+  unsynced: (gap) => {
+    const parts = [
+      ...(gap.unsyncedMs > 0 ? [`${formatDurationMs(gap.unsyncedMs)} is not in Tempo yet`] : []),
+      ...(gap.changedRows > 0
+        ? [`${gap.changedRows} ${gap.changedRows === 1 ? 'row' : 'rows'} changed since the sync`]
+        : []),
+    ];
+
+    return parts.length > 0 ? parts.join(', ') : 'Tempo still holds time this day no longer has';
+  },
   undecided: (gap) => `${formatDurationMs(gap.undecidedMs)} is waiting for a yes or a no`,
   unattributed: (gap) => `${formatDurationMs(gap.unattributedMs)} matched no issue`,
   waiting: (gap) => `${formatDurationMs(gap.waitingMs)} waits on a ticket`,

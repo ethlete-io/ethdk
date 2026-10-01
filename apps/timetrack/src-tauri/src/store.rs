@@ -69,6 +69,8 @@ pub struct SyncedWorklogRow {
     pub day: String,
     pub tempo_worklog_id: String,
     pub content_hash: String,
+    #[serde(default)]
+    pub duration_ms: Option<i64>,
     pub synced_at_ms: i64,
 }
 
@@ -391,7 +393,7 @@ pub async fn set_compacted_through(db: State<'_, Db>, through_ms: Option<i64>) -
 pub async fn ledger_entries_for_day(db: State<'_, Db>, day: String) -> TimetrackResult<Vec<SyncedWorklogRow>> {
     db.run(move |connection| {
         let mut statement = connection.prepare(
-            "SELECT proposal_id, day, tempo_worklog_id, content_hash, synced_at_ms FROM synced_worklog
+            "SELECT proposal_id, day, tempo_worklog_id, content_hash, synced_at_ms, duration_ms FROM synced_worklog
              WHERE day = ?1",
         )?;
         let rows = statement.query_map(params![day], |row| {
@@ -401,6 +403,7 @@ pub async fn ledger_entries_for_day(db: State<'_, Db>, day: String) -> Timetrack
                 tempo_worklog_id: row.get(2)?,
                 content_hash: row.get(3)?,
                 synced_at_ms: row.get(4)?,
+                duration_ms: row.get(5)?,
             })
         })?;
 
@@ -416,10 +419,10 @@ pub async fn ledger_upsert(db: State<'_, Db>, entries: Vec<SyncedWorklogRow>) ->
 
         {
             let mut upsert = transaction.prepare(
-                "INSERT INTO synced_worklog (proposal_id, day, tempo_worklog_id, content_hash, synced_at_ms)
-                 VALUES (?1, ?2, ?3, ?4, ?5)
+                "INSERT INTO synced_worklog (proposal_id, day, tempo_worklog_id, content_hash, synced_at_ms, duration_ms)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)
                  ON CONFLICT (proposal_id) DO UPDATE SET
-                   day = ?2, tempo_worklog_id = ?3, content_hash = ?4, synced_at_ms = ?5",
+                   day = ?2, tempo_worklog_id = ?3, content_hash = ?4, synced_at_ms = ?5, duration_ms = ?6",
             )?;
             for entry in &entries {
                 upsert.execute(params![
@@ -427,7 +430,8 @@ pub async fn ledger_upsert(db: State<'_, Db>, entries: Vec<SyncedWorklogRow>) ->
                     entry.day,
                     entry.tempo_worklog_id,
                     entry.content_hash,
-                    entry.synced_at_ms
+                    entry.synced_at_ms,
+                    entry.duration_ms
                 ])?;
             }
         }

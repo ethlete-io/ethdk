@@ -99,5 +99,7 @@ export type SyncedWorklog = {
   day: string;
   tempoWorklogId: string;
   contentHash: string;
+  /** The duration Tempo holds for the worklog. Absent on an entry written before it was recorded. */
+  durationMs?: number;
   syncedAt: Date;
 };

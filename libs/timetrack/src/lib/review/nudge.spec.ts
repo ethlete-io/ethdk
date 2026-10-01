@@ -9,6 +9,7 @@ import {
   DayNudgeRecord,
   dayNudge,
   dayReviewGap,
+  describeDayReviewGap,
   hasNudgeRepeatElapsed,
   isNudgeDue,
 } from './nudge';
@@ -65,6 +66,7 @@ const ledgerFor = (entry: NamedRow): SyncedWorklog => ({
   day: localDayKey(entry.from, MIDNIGHT),
   tempoWorklogId: '900',
   contentHash: contentHashOf({ proposal: entry }),
+  durationMs: entry.durationMs,
   syncedAt: at('18:00'),
 });
 
@@ -92,6 +94,57 @@ describe('dayReviewGap', () => {
     });
 
     expect(gap?.reasons).toEqual(['unsynced']);
+  });
+
+  it('counts only the time a synced row grew by since it was written', () => {
+    const logged = row({ issueKey: 'FIP-1', from: '09:00', minutes: 300, state: 'accepted' });
+    const grown = row({ issueKey: 'FIP-1', from: '09:00', minutes: 315, state: 'accepted' });
+    const gap = dayReviewGap({ review: review({ rows: [grown] }), ledger: [ledgerFor(logged)] });
+
+    expect(gap?.reasons).toEqual(['unsynced']);
+    expect(gap?.unsyncedMs).toBe(15 * MINUTE);
+    expect(gap && describeDayReviewGap(gap)).toBe('15m is not in Tempo yet');
+  });
+
+  it('says a synced row changed when it did not grow', () => {
+    const logged = row({ issueKey: 'FIP-1', from: '09:00', minutes: 120, state: 'accepted' });
+    const gap = dayReviewGap({
+      review: review({ rows: [{ ...logged, description: 'a description the reviewer retyped' }] }),
+      ledger: [ledgerFor(logged)],
+    });
+
+    expect(gap?.unsyncedMs).toBe(0);
+    expect(gap && describeDayReviewGap(gap)).toBe('1 row changed since the sync');
+  });
+
+  it('reads a grown row whose entry predates the recorded duration as changed, not as all new', () => {
+    const logged = row({ issueKey: 'FIP-1', from: '09:00', minutes: 120, state: 'accepted' });
+    const shorter = row({ issueKey: 'FIP-2', from: '13:00', minutes: 60, state: 'accepted' });
+    const withoutDuration: SyncedWorklog = { ...ledgerFor(logged), durationMs: undefined };
+    const gap = dayReviewGap({
+      review: review({
+        rows: [
+          row({ issueKey: 'FIP-1', from: '09:00', minutes: 135, state: 'accepted' }),
+          { ...shorter, durationMs: 45 * MINUTE },
+        ],
+      }),
+      ledger: [withoutDuration, ledgerFor(shorter)],
+    });
+
+    expect(gap?.reasons).toEqual(['unsynced']);
+    expect(gap?.unsyncedMs).toBe(0);
+    expect(gap && describeDayReviewGap(gap)).toBe('2 rows changed since the sync');
+  });
+
+  it('names new time and changed rows in one sentence', () => {
+    const logged = row({ issueKey: 'FIP-1', from: '09:00', minutes: 120, state: 'accepted' });
+    const added = row({ issueKey: 'FIP-2', from: '13:00', minutes: 30, state: 'accepted' });
+    const gap = dayReviewGap({
+      review: review({ rows: [{ ...logged, description: 'retyped' }, added] }),
+      ledger: [ledgerFor(logged)],
+    });
+
+    expect(gap && describeDayReviewGap(gap)).toBe('30m is not in Tempo yet, 1 row changed since the sync');
   });
 
   it('reads a rejected row Tempo still holds as work owed, without claiming its time', () => {

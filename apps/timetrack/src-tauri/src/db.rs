@@ -331,6 +331,21 @@ fn repair_agent_session_cursor(connection: &Connection) -> TimetrackResult<()> {
     Ok(())
 }
 
+/// The duration each worklog was written with, so a row that grew after its sync owes Tempo only the
+/// growth. NULL on an entry written before it was recorded. Checked first because a store re-run from
+/// an older version already has the column.
+fn add_synced_worklog_duration(connection: &Connection) -> TimetrackResult<()> {
+    let present = connection
+        .prepare("SELECT 1 FROM pragma_table_info('synced_worklog') WHERE name = 'duration_ms'")?
+        .exists([])?;
+
+    if !present {
+        connection.execute_batch("ALTER TABLE synced_worklog ADD COLUMN duration_ms INTEGER;")?;
+    }
+
+    Ok(())
+}
+
 /// Gives every ledger entry written before schema v8 its day.
 ///
 /// A proposal id is `<issueKey>@<ISO instant>`, so the day is in the row already; a row whose id does
@@ -503,6 +518,10 @@ pub fn migrate(connection: &Connection) -> TimetrackResult<()> {
         step(connection, 18, |connection| Ok(connection.execute_batch(SCHEMA_V18)?))?;
     }
 
+    if version < 19 {
+        step(connection, 19, add_synced_worklog_duration)?;
+    }
+
     Ok(())
 }
 
@@ -577,7 +596,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            18
+            19
         );
         assert_eq!(connection.execute(INSERT, params![1_i64, "git-commit:abc"]).unwrap(), 1);
     }
@@ -701,7 +720,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            18
+            19
         );
     }
 
@@ -869,6 +888,30 @@ mod tests {
     #[test]
     fn falls_back_to_when_a_ledger_entry_was_synced_when_its_proposal_id_says_nothing() {
         assert_eq!(ledger_day_after_migrating("hand-written", 0), local_day_of_ms(0));
+    }
+
+    #[test]
+    fn gives_a_ledger_entry_its_duration_and_leaves_one_without_it_null() {
+        let connection = migrated_from(10);
+
+        connection
+            .execute_batch(
+                "INSERT INTO synced_worklog (proposal_id, day, tempo_worklog_id, content_hash, synced_at_ms, duration_ms)
+                 VALUES ('a', '2026-10-01', 'w1', 'h', 0, 900000);
+                 INSERT INTO synced_worklog (proposal_id, day, tempo_worklog_id, content_hash, synced_at_ms)
+                 VALUES ('b', '2026-10-01', 'w2', 'h', 0);",
+            )
+            .unwrap();
+
+        let durations = connection
+            .prepare("SELECT duration_ms FROM synced_worklog ORDER BY proposal_id")
+            .unwrap()
+            .query_map([], |row| row.get::<_, Option<i64>>(0))
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+
+        assert_eq!(durations, vec![Some(900_000), None]);
     }
 
     #[test]

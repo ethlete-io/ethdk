@@ -155,6 +155,7 @@ describe('executeTempoSync$', () => {
         day: '2026-08-11',
         tempoWorklogId: '555',
         contentHash: entry.contentHash,
+        durationMs: entry.proposal.durationMs,
         syncedAt: SYNCED_AT,
       },
     ]);
@@ -197,6 +198,7 @@ describe('executeTempoSync$', () => {
         day: '2026-08-11',
         tempoWorklogId: 'w1',
         contentHash: entry.contentHash,
+        durationMs: entry.proposal.durationMs,
         syncedAt: SYNCED_AT,
       },
     ]);
@@ -253,6 +255,7 @@ describe('executeTempoSync$', () => {
         day: '2026-08-11',
         tempoWorklogId: '556',
         contentHash: createOf().contentHash,
+        durationMs: createOf().proposal.durationMs,
         syncedAt: SYNCED_AT,
       },
     ]);
