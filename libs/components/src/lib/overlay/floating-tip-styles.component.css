@@ -1,0 +1,78 @@
+@layer components {
+  .et-overlay.et-overlay--tooltip,
+  .et-overlay.et-overlay--toggletip {
+    overflow: visible;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .et-overlay--tooltip,
+  .et-overlay--toggletip {
+    --et-floating-panel-enter-duration: 200ms;
+    --et-floating-panel-leave-duration: 140ms;
+    --et-floating-panel-distance: 0.45rem;
+  }
+
+  .et-tooltip,
+  .et-toggletip {
+    --_et-floating-tip-background: var(--et-surface-background-solid, rgb(32 32 32));
+    --_et-floating-tip-color: var(--et-surface-color-solid, rgb(244 244 245));
+    --_et-floating-tip-border: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    --_et-floating-tip-shadow: var(
+      --et-anchored-panel-shadow,
+      0 10px 24px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.16)
+    );
+    --_et-floating-tip-radius: 16px;
+    --_et-floating-tip-max-width: min(34ch, calc(100vw - 24px));
+
+    position: relative;
+    display: block;
+    inline-size: max-content;
+    max-inline-size: var(--_et-floating-tip-max-width);
+    color: var(--_et-floating-tip-color);
+    font-family: var(--et-font-family, inherit);
+  }
+
+  .et-tooltip__surface,
+  .et-toggletip__surface {
+    position: relative;
+    z-index: 1;
+    display: block;
+    max-inline-size: var(--_et-floating-tip-max-width);
+    border-radius: var(--_et-floating-tip-radius);
+    border: 1px solid var(--_et-floating-tip-border);
+    background: var(--_et-floating-tip-background);
+    color: var(--_et-floating-tip-color);
+    box-shadow: var(--_et-floating-tip-shadow);
+  }
+
+  .et-tooltip__content,
+  .et-toggletip__content {
+    position: relative;
+    z-index: 1;
+    display: grid;
+
+    :where(p) {
+      margin: 0;
+      opacity: 0.88;
+    }
+
+    :where(a) {
+      color: inherit;
+    }
+
+    :where(strong) {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 18px;
+      letter-spacing: -0.02em;
+      opacity: 1;
+    }
+  }
+
+  .et-tooltip__text,
+  .et-toggletip__text {
+    margin: 0;
+  }
+}

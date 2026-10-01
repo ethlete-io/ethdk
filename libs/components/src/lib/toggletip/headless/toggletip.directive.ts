@@ -20,6 +20,7 @@ import { tap } from 'rxjs';
 import { injectReportError } from '../../internals/report-error';
 import { OverlayConfig, OverlayRef, anchoredOverlayStrategy } from '../../overlay';
 import { mountFloatingPanelStyles } from '../../overlay/floating-panel-styles.component';
+import { mountFloatingTipStyles } from '../../overlay/floating-tip-styles.component';
 import { injectOverlayManager } from '../../overlay/overlay-manager';
 import { TOGGLETIP_ERROR_CODES } from '../toggletip-errors';
 import { ToggletipComponent } from '../toggletip.component';
@@ -102,6 +103,7 @@ export class ToggletipDirective {
 
   constructor() {
     mountFloatingPanelStyles();
+    mountFloatingTipStyles();
 
     effect(() => {
       const content = this.content();
