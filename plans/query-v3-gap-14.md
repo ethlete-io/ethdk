@@ -255,13 +255,9 @@ selector. Polling works on a paged stack, but every loaded page polls. Slice 6 s
 unused entries marked stale (`ff5e3e855`), no double restart in other tabs (`428835be7`), `withOptimisticUpdate`
 (`b3b13858a`; `read` types `current`). Goldens updated (`ead917717`). Follow-ups shipped: `RawResponseType`
 falls back to `response` (`fd516705a`); `signalElementIntersection` reads after layout and re-creates the observer
-on a `rootMargin` change (`fb0eedd6d`), and the trigger runs on it (`9d103adae`). All slices are done. Left: the
-fifagg migration (check the per-page polling cost there), `hub-lookup-state` in fut, the Dyn numbers. Ship item by item.
+on a `rootMargin` change (`fb0eedd6d`), and the trigger runs on it (`9d103adae`). All slices are done.
 
 Order: `etQueryButton` + `queryButtonSourceFromV2Query`, `invalidates` + tags, `createQueryGroup`,
 `etPagedQueryTrigger`, `withOptimisticUpdate`.
 
-1. Decided (2026-10-01): `selectOptionsFromQuery` moves onto `createPagedQueryStack` (slice 6, after slice 4).
-   `hub-lookup-state` is fut code and follows in fut.
-2. Ship as one "query v3 UI helpers" project, or item by item in the order above?
-3. Verify the Dyn numbers (45 buttons, 27 collections, 18 stores) when the repo is available.
+Consumer apps migrate on their own schedule, with the SDK's migration scripts.
