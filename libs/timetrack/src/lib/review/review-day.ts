@@ -576,13 +576,15 @@ export const reviewDay = (options: {
   const unreconciledMs = Math.max(0, replacedMs - pinnedMs);
 
   /**
-   * The bands the reviewer has answered: named, given a stand-in, hidden, or consumed by a row they
-   * built. Each is drawn with that answer on it, so counting it as time nothing named would report a
+   * The bands the reviewer has answered: named, given a stand-in, hidden, not to be logged, or consumed
+   * by a row they built. Each is drawn with that answer on it, so counting it as time nothing named would report a
    * band the screen does not show and book the same minutes twice over.
    */
   const answeredIds = [
     ...consumed,
-    ...reviewed.filter((row) => !!row.issueKey || !!row.standInId || row.hidden).map((row) => row.id),
+    ...reviewed
+      .filter((row) => !!row.issueKey || !!row.standInId || row.hidden || row.state === 'rejected')
+      .map((row) => row.id),
   ];
   const settled = new Set([...answeredIds, ...answeredIds.flatMap((id) => formerIds.get(id) ?? [])]);
 
@@ -594,7 +596,8 @@ export const reviewDay = (options: {
       if (!settled.has(id)) return [group];
 
       const left = reviewed.filter(
-        (row) => row.id.startsWith(`${id}#`) && !row.issueKey && !row.standInId && !row.hidden,
+        (row) =>
+          row.id.startsWith(`${id}#`) && !row.issueKey && !row.standInId && !row.hidden && row.state !== 'rejected',
       );
 
       return left.length ? [{ ...group, observedMs: left.reduce((sum, row) => sum + row.observedMs, 0) }] : [];

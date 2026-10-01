@@ -1368,6 +1368,42 @@ describe('reviewDay, a band the reviewer has answered', () => {
     expect(reviewDay({ rows, edits }).check.unattributedMs).toBe(0);
   });
 
+  const rowEndingAt = (review: DayReview, time: string) => {
+    const row = review.rows.find((entry) => entry.to.getTime() === at(time).getTime());
+
+    if (!row) throw new Error(`no row ends at ${time}`);
+
+    return row;
+  };
+
+  it('stops counting it once the reviewer says not to log it', () => {
+    const rows = day();
+    const edits = setRowState({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: rowEndingAt(reviewDay({ rows }), '09:00'),
+      state: 'rejected',
+    });
+    const check = reviewDay({ rows, edits }).check;
+
+    expect(check.unattributedMs).toBe(0);
+    expect(check.warnings.map((warning) => warning.kind)).not.toContain('unattributed-time');
+  });
+
+  it('stops counting the part the reviewer cut off once they say not to log it', () => {
+    const rows = day();
+    const shortened = setRowRange({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: rowEndingAt(reviewDay({ rows }), '09:00'),
+      from: at('08:00'),
+      to: at('08:30'),
+    });
+    const pieces = reviewDay({ rows, edits: shortened });
+    const named = setRowIssue({ edits: shortened, row: rowEndingAt(pieces, '08:30'), issueKey: 'ABC-9' });
+    const edits = setRowState({ edits: named, row: rowEndingAt(pieces, '09:00'), state: 'rejected' });
+
+    expect(reviewDay({ rows, edits }).check.unattributedMs).toBe(0);
+  });
+
   it('still counts the part the reviewer cut off a band they named', () => {
     const rows = day();
     const shortened = setRowRange({
