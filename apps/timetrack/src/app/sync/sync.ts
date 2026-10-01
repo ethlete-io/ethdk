@@ -295,6 +295,10 @@ const SYNC_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   return {
     dayKey: dayReview.dayKey,
+    /** Every run that reached Tempo, once its ledger is stored. */
+    written$: runStates$.pipe(
+      filter((state): state is Extract<SyncRunStatus, { kind: 'written' }> => state.kind === 'written'),
+    ),
     shiftDay: dayReview.shiftDay,
     /** The rows the next preview would be built from, so the view can say what it is about to plan. */
     rows: dayReview.rows,

@@ -92,6 +92,7 @@ import {
   ledgerEntriesForRange$,
 } from '@ethlete/timetrack';
 import {
+  EMPTY,
   Observable,
   Subject,
   catchError,
@@ -196,6 +197,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const targetMs = computed(() => settings.settings().dayTargetMs);
   const local = signal<Record<string, DayReviewEdits>>({});
   const saves$ = new Subject<{ key: string; edits: DayReviewEdits }>();
+  const saved$ = new Subject<string>();
 
   effect(() => epics.watch(day()));
 
@@ -702,9 +704,15 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       mergeMap((perDay) =>
         perDay.pipe(
           debounceTime(SAVE_DEBOUNCE_MS),
-          concatMap(({ key, edits: next }) => ports.review.save$(key, next).pipe(catchError(() => of(undefined)))),
+          concatMap(({ key, edits: next }) =>
+            ports.review.save$(key, next).pipe(
+              map(() => key),
+              catchError(() => EMPTY),
+            ),
+          ),
         ),
       ),
+      tap((key) => saved$.next(key)),
       takeUntilDestroyed(destroyRef),
     )
     .subscribe();
@@ -793,6 +801,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   return {
     dayKey: day.asReadonly(),
+    /** The day whose edits just reached the store, once per write. */
+    saved$: saved$.asObservable(),
     targetMs,
     /** What auto mode asked and answered on the day on screen, or `null` until its edits are read. */
     autoAnswers: computed(() => (editsReady() ? (edits().auto ?? []) : null)),

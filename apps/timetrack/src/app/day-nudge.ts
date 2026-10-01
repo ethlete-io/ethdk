@@ -29,6 +29,8 @@ import { injectHostPorts } from '../host';
 import { injectTimetrackSettings } from './settings/settings';
 import { readToday$ } from './read-day';
 import { injectProjectLinks } from './project-links';
+import { injectDayReview } from './day-review/day-review';
+import { injectTempoSync } from './sync/sync';
 
 /** How often the day is asked whether it is finished. The reminder is due to the minute, not sooner. */
 const NUDGE_INTERVAL_MS = 60_000;
@@ -46,6 +48,8 @@ const DAY_NUDGE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const projectLinks = injectProjectLinks();
   const windows = injectWindowCollector();
   const settings = injectTimetrackSettings();
+  const dayReview = injectDayReview();
+  const sync = injectTempoSync();
   const pending = signal<DayNudge | null>(null);
   const silences$ = new Subject<Date>();
 
@@ -96,7 +100,7 @@ const DAY_NUDGE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       .save$({ day: nudge.day, lastNudgedAt: new Date(), silencedUntil: null })
       .pipe(concatMap(() => ports.nudge.notify$({ title: nudge.title, body: nudge.body })));
 
-  merge(toObservable(settings.settings), timer(0, NUDGE_INTERVAL_MS))
+  merge(toObservable(settings.settings), timer(0, NUDGE_INTERVAL_MS), dayReview.saved$, sync.written$)
     .pipe(
       concatMap(() => read$().pipe(catchError(() => EMPTY))),
       concatMap((next) => {

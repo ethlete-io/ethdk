@@ -1,6 +1,17 @@
 import { Page } from '@playwright/test';
 import { E2E_ISSUE_ID } from '@ethlete/timetrack/testing';
-import { E2E_NOW, expect, goToView, logTheNamedRow, readBackend, seedWorld, test } from './support';
+import {
+  E2E_NOW,
+  addAnEntry,
+  expect,
+  goToView,
+  logTheNamedRow,
+  pickIssue,
+  readBackend,
+  saveSurface,
+  seedWorld,
+  test,
+} from './support';
 
 /**
  * The only flow in the app that writes to somebody else's system. Every assertion here reads the fake
@@ -60,6 +71,30 @@ test.describe('writing the day to tempo', () => {
 
     await expect(page.getByRole('heading', { name: 'Last write' })).toBeVisible();
     await expect(page.getByText(/^worklog /)).toBeVisible();
+  });
+
+  test('rewords the reminder as soon as a row is added to the day', async ({ page }) => {
+    const reminder = page.getByRole('status').filter({ hasText: 'Your day is not logged yet' });
+
+    await page.goto('/day');
+    await expect(reminder).toContainText('1h 30m is not in Tempo yet');
+
+    await pickIssue(page, await addAnEntry(page), /ABC-2000/);
+    await saveSurface(page);
+
+    await expect(reminder).toContainText('2h 30m is not in Tempo yet');
+  });
+
+  test('takes the reminder down as soon as the write lands', async ({ page }) => {
+    const reminder = page.getByRole('status').filter({ hasText: 'Your day is not logged yet' });
+
+    await planTheNamedRow(page);
+    await expect(reminder).toContainText('1h 30m is not in Tempo yet');
+
+    await writeButton(page).click();
+    await expect(page.getByRole('heading', { name: 'Last write' })).toBeVisible();
+
+    await expect(reminder).toBeHidden();
   });
 
   test('names the refusal on the row tempo rejected, and leaves tempo empty', async ({ page }) => {
