@@ -48,7 +48,7 @@ Component domains under `/components/`:
 `focus-ring` `forms` `grid` `icon` `kbd` `line-chart` `loader` `localization` `masonry`
 `match` `menu` `mixed-state` `notification` `overlay-openers` `overlays` `paged-query-trigger`
 `pagination` `picture` `pie-chart` `progress-steps` `query-error` `rich-text-editor` `sankey-chart`
-`scheduler` `scrollable` `scrollbar` `select` `setup` `skeleton` `slider` `sport-recipes`
+`scheduler` `scrollable` `scrollbar` `select` `setup` `skeleton` `slider` `sport-recipes` `stat-tile`
 `standings` `standings-pick` `stream` `table` `tabs` `text-inputs` `time-picker`
 `timeline` `toggletip` `toolbar` `tooltip` `tree`
 
