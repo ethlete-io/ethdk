@@ -3,7 +3,14 @@ import { ActivityBlock, streamKey } from '../model/block';
 import { Evidence } from '../model/evidence';
 import { AttributedBlock } from './attribute';
 import { CollectedEvent } from '../model/event';
-import { cutBackground, cutSessionAcrossCheckouts, cutUnwatched, joinTouching, meetLaneRows } from './cut';
+import {
+  clearOfLaneRows,
+  cutBackground,
+  cutSessionAcrossCheckouts,
+  cutUnwatched,
+  joinTouching,
+  meetLaneRows,
+} from './cut';
 
 const SDK = '/home/you/dev/shared-sdk';
 const APP = '/home/you/dev/abc-frontend';
@@ -324,6 +331,15 @@ describe('meetLaneRows', () => {
     expect(met?.to).toEqual(at('16:15'));
   });
 
+  it('drops a stretch the rows beside it leave no room for', () => {
+    expect(
+      meetLaneRows({
+        behind: [{ ...stretch, from: at('12:45'), to: at('13:00') }],
+        rows: [{ laneKey: LANE, from: at('12:45'), to: at('13:15') }],
+      }),
+    ).toEqual([]);
+  });
+
   it('ignores a row of another lane, which took the minutes rather than losing them', () => {
     const [met] = meetLaneRows({
       behind: [stretch],
@@ -331,6 +347,59 @@ describe('meetLaneRows', () => {
     });
 
     expect(met?.to).toEqual(at('16:15'));
+  });
+});
+
+describe('clearOfLaneRows', () => {
+  const LANE = streamKey({ repoPath: SPECS, branch: 'main' });
+  const stretch = { from: at('12:45'), to: at('13:15'), issueKey: 'AB-1', laneKey: LANE };
+
+  it('drops a stretch a row of its own lane covers whole', () => {
+    expect(
+      clearOfLaneRows({ behind: [stretch], rows: [{ laneKey: LANE, from: at('12:30'), to: at('13:30') }] }),
+    ).toEqual([]);
+  });
+
+  it('keeps the part of a stretch no row of its own lane covers', () => {
+    expect(
+      clearOfLaneRows({ behind: [stretch], rows: [{ laneKey: LANE, from: at('12:45'), to: at('13:00') }] }),
+    ).toEqual([{ ...stretch, from: at('13:00') }]);
+  });
+
+  it('recounts the minutes of a joined stretch from the pieces it keeps', () => {
+    const [cleared] = clearOfLaneRows({
+      behind: [
+        {
+          ...stretch,
+          to: at('14:00'),
+          durationMs: 45 * 60_000,
+          pieces: [
+            { from: at('12:45'), to: at('13:15') },
+            { from: at('13:45'), to: at('14:00') },
+          ],
+        },
+      ],
+      rows: [{ laneKey: LANE, from: at('12:30'), to: at('13:00') }],
+    });
+
+    expect(cleared).toEqual({
+      ...stretch,
+      from: at('13:00'),
+      to: at('14:00'),
+      durationMs: 30 * 60_000,
+      pieces: [
+        { from: at('13:00'), to: at('13:15') },
+        { from: at('13:45'), to: at('14:00') },
+      ],
+    });
+  });
+
+  it('leaves a stretch under a row of another lane alone', () => {
+    const other = streamKey({ repoPath: APP, branch: 'main' });
+
+    expect(
+      clearOfLaneRows({ behind: [stretch], rows: [{ laneKey: other, from: at('12:30'), to: at('13:30') }] }),
+    ).toEqual([stretch]);
   });
 });
 

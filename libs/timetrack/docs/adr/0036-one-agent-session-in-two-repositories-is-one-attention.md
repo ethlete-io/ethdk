@@ -37,6 +37,8 @@ What stays two things at once:
   The same holds when both repositories book one ticket: the other repository's block over that
   stretch does not continue the band by name.
   `DayRows.handedOver` carries those stretches to the review.
+- A stretch the lane still books draws no strip: `reviewDay` takes the minutes a row of the same lane
+  covers out of each strip, after the rows are snapped.
 - A person who watches the agent's terminal in one repository while it edits the other books that
   minute in both. Tom kept the focus rule on 2026-10-01 regardless: focus is the only sign of a person
   the cut has, and dropping it would cut a person's own editor time too.

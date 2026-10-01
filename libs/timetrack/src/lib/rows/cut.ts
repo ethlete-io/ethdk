@@ -1,4 +1,4 @@
-import { TimeWindow, mergeWindows } from '../model/time-window';
+import { TimeWindow, mergeWindows, subtractWindows, windowsMs } from '../model/time-window';
 import { ActivityBlock, streamKey } from '../model/block';
 import { CollectedEvent } from '../model/event';
 import { Evidence } from '../model/evidence';
@@ -198,7 +198,8 @@ export type LaneRow = { laneKey?: string; from: Date; to: Date };
  * and closes as the row beside it grows.
  *
  * The reach is one increment because that is the size of the disagreement. A wider gap is time the
- * lane really held nothing, and a band drawn across it would claim presence there was none of.
+ * lane really held nothing, and a band drawn across it would claim presence there was none of. A
+ * stretch the rows beside it leave no room for is dropped, because those rows book its minutes.
  */
 export const meetLaneRows = (options: {
   behind: readonly BehindStretch[];
@@ -211,7 +212,7 @@ export const meetLaneRows = (options: {
       .filter((edge) => Math.abs(edge - at.getTime()) <= incrementMs)
       .sort((a, b) => Math.abs(a - at.getTime()) - Math.abs(b - at.getTime()))[0] ?? at.getTime();
 
-  return options.behind.map((stretch) => {
+  return options.behind.flatMap((stretch) => {
     const lane = options.rows.filter((row) => row.laneKey === stretch.laneKey);
     const from = nearestTo(
       stretch.from,
@@ -222,11 +223,45 @@ export const meetLaneRows = (options: {
       lane.map((row) => row.from.getTime()),
     );
 
-    if (to <= from) return stretch;
+    if (to <= from) return [];
 
-    return { ...stretch, from: new Date(from), to: new Date(to) };
+    return [{ ...stretch, from: new Date(from), to: new Date(to) }];
   });
 };
+
+/**
+ * Each stretch with the minutes a row of its own lane covers taken out, and dropped where nothing is
+ * left. The row books those minutes, so a band there would say the lane lost what it kept.
+ */
+export const clearOfLaneRows = (options: {
+  behind: readonly BehindStretch[];
+  rows: readonly LaneRow[];
+}): BehindStretch[] =>
+  options.behind.flatMap((stretch) => {
+    const without = options.rows.filter((row) => row.laneKey === stretch.laneKey);
+    const pieces = stretch.pieces ?? [{ from: stretch.from, to: stretch.to }];
+    const left = subtractWindows({ windows: pieces, without });
+
+    if (windowsMs(left) === windowsMs(pieces)) return [stretch];
+
+    const first = left[0];
+    const last = left[left.length - 1];
+
+    if (!first || !last) return [];
+
+    if (stretch.pieces) {
+      return [{ ...stretch, from: first.from, to: last.to, durationMs: windowsMs(left), pieces: left }];
+    }
+
+    return left.map((window) => {
+      const { durationMs, ...rest } = stretch;
+      const spanMs = window.to.getTime() - window.from.getTime();
+
+      return durationMs === undefined
+        ? { ...rest, ...window }
+        : { ...rest, ...window, durationMs: Math.min(durationMs, spanMs) };
+    });
+  });
 
 /**
  * Consecutive stretches of one lane and one key as one, so an afternoon behind another checkout is one

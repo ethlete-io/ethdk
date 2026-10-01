@@ -107,6 +107,30 @@ describe('streamDay agent sessions in two checkouts', () => {
     expect(booked).toEqual({ app: 45, specs: 15, overlapping: false });
   });
 
+  it('draws no strip under a row of its own lane that books the same minutes', () => {
+    const day = streamDay({
+      events: steered({
+        sessionId: 'one',
+        cwd: SPECS,
+        from: 30,
+        to: 62,
+        workedIn: (minutes) => (minutes >= 48 && minutes < 63 ? `${APP}/src/a.ts` : `${SPECS}/docs/spec.md`),
+      }),
+      options: {
+        repoRoots: [APP, SPECS],
+        baseBranches: ['main'],
+        rows: { rules: [ruleFor(APP, 'AB-1'), ruleFor(SPECS, 'AB-1')] },
+      },
+    });
+    const { rows, behind } = reviewDay({ rows: day.rows });
+    const underOwnRow = behind.filter((stretch) =>
+      rows.some((row) => row.laneKey === stretch.laneKey && row.from < stretch.to && stretch.from < row.to),
+    );
+
+    expect(rows.some((row) => row.laneKey === `repo:${SPECS}`)).toBe(true);
+    expect(underOwnRow).toEqual([]);
+  });
+
   it('books both repositories where two sessions ran in them at once', () => {
     const booked = bookedByLane([
       ...steered({ sessionId: 'one', cwd: APP, from: 0, to: 60, workedIn: () => `${APP}/src/a.ts` }),

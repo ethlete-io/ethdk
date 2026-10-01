@@ -1,4 +1,4 @@
-import { BehindStretch, LaneRow, joinTouching, meetLaneRows } from '../rows/cut';
+import { BehindStretch, LaneRow, clearOfLaneRows, joinTouching, meetLaneRows } from '../rows/cut';
 import { RoundOptions } from '../rows/round';
 import { DEFAULT_MIN_BREAK_MS } from '../stream/breaks';
 import { projectKeyOf } from '../ticket/project';
@@ -132,6 +132,9 @@ const workedAcross = (options: { from: number; to: number; rows: readonly Review
   return options.to - at <= DEFAULT_MIN_BREAK_MS;
 };
 
+const clearOfBookedRows = (behind: readonly BehindStretch[], rows: readonly ReviewedRow[]) =>
+  clearOfLaneRows({ behind, rows: rows.filter((row) => !takesNothing(row)) });
+
 /**
  * One band per ticket and lane across worked time. A gap no row accounts for starts a new band, or a
  * band would claim the night. `durationMs` stays the sum of what the pieces lost.
@@ -202,7 +205,10 @@ export const recutReviewedRows = (options: {
   const hasBackground = options.rows.some(isBackground);
 
   if (!hasBackground && !stated.length) {
-    return { rows: [...options.rows], behind: joinOneTicket({ stretches: options.behind, rows: options.rows }) };
+    return {
+      rows: [...options.rows],
+      behind: clearOfBookedRows(joinOneTicket({ stretches: options.behind, rows: options.rows }), options.rows),
+    };
   }
 
   const covered: CoveringRow[] = options.rows.filter((row) => !isBackground(row) && !takesNothing(row));
@@ -258,13 +264,17 @@ export const recutReviewedRows = (options: {
     rows.push(...kept.map((span, at) => pieceOf({ row, span, at })));
   }
 
-  if (!hasBackground) return { rows, behind: joinOneTicket({ stretches: options.behind, rows }) };
+  if (!hasBackground)
+    return { rows, behind: clearOfBookedRows(joinOneTicket({ stretches: options.behind, rows }), rows) };
 
   return {
     rows,
-    behind: joinOneTicket({
-      stretches: meetLaneRows({ behind: joinTouching([...options.behind, ...lost]), rows, round: options.round }),
+    behind: clearOfBookedRows(
+      joinOneTicket({
+        stretches: meetLaneRows({ behind: joinTouching([...options.behind, ...lost]), rows, round: options.round }),
+        rows,
+      }),
       rows,
-    }),
+    ),
   };
 };
