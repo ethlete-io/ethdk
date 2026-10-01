@@ -1,4 +1,14 @@
-import { afterNextRender, computed, contentChildren, Directive, effect, inject, signal } from '@angular/core';
+import {
+  afterNextRender,
+  afterRenderEffect,
+  computed,
+  contentChildren,
+  Directive,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { FORM_FIELD } from '@angular/forms/signals';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { FIELD_WARNINGS, FieldWarning, toFieldWarnings } from './field-warnings';
@@ -198,34 +208,36 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
 
     if (ngDevMode) {
       afterNextRender(() => {
-        const control = this.registeredControl();
-
         const nestedField = this.nestedFields()[0];
 
-        if (!control) {
+        if (!this.registeredControl() && nestedField) {
           throw new RuntimeError(
             FORM_FIELD_ERROR_CODES.MISSING_CONTROL,
-            nestedField
-              ? `[FormFieldDirective] No form control found. ${tagOf(nestedField.element)} is a field of its own: ` +
-                  `remove the ${tagOf(this.element)} around it and project the <et-label> and <et-hint> into it.`
-              : '[FormFieldDirective] No form control found. Add <et-input> or <et-checkbox> inside <et-form-field>.',
+            `[FormFieldDirective] No form control found. ${tagOf(nestedField.element)} is a field of its own: ` +
+              `remove the ${tagOf(this.element)} around it and project the <et-label> and <et-hint> into it.`,
             { element: this.element },
           );
+        }
+      });
+
+      afterRenderEffect(() => {
+        const control = this.registeredControl();
+
+        if (!control || untracked(() => this.registeredLabel() || control.hasCustomAccessibleName?.())) {
+          return;
         }
 
-        if (!this.registeredLabel() && !(control.hasCustomAccessibleName?.() ?? false)) {
-          throw new RuntimeError(
-            FORM_FIELD_ERROR_CODES.MISSING_LABEL,
-            this.outerField
-              ? `[FormFieldDirective] The control has no accessible name. ${tagOf(this.element)} sits inside ` +
-                  `another field (${tagOf(this.outerField.element)}), whose <et-label> does not reach it: move the ` +
-                  `<et-label> into ${tagOf(this.element)}, or set aria-label / aria-labelledby on it.`
-              : '[FormFieldDirective] The control has no accessible name. Project an <et-label> into the ' +
-                  '<et-form-field>, or set aria-label / aria-labelledby on the control. A placeholder is not ' +
-                  'an accessible name.',
-            { element: this.element },
-          );
-        }
+        throw new RuntimeError(
+          FORM_FIELD_ERROR_CODES.MISSING_LABEL,
+          this.outerField
+            ? `[FormFieldDirective] The control has no accessible name. ${tagOf(this.element)} sits inside ` +
+                `another field (${tagOf(this.outerField.element)}), whose <et-label> does not reach it: move the ` +
+                `<et-label> into ${tagOf(this.element)}, or set aria-label / aria-labelledby on it.`
+            : '[FormFieldDirective] The control has no accessible name. Project an <et-label> into the ' +
+                '<et-form-field>, or set aria-label / aria-labelledby on the control. A placeholder is not ' +
+                'an accessible name.',
+          { element: this.element },
+        );
       });
     }
   }

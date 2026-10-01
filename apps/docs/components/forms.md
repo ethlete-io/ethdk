@@ -753,9 +753,11 @@ theme registered with `type: 'error'`, a warning message uses `type: 'warning'`)
 
 ## Error codes
 
-An `et-form-field` without a control throws
+An `et-form-field` wrapped around a field of its own (such as `<et-rating>`) throws
 [`ET2200`](/components/error-codes#form-field-et22xx) in dev mode, and a control
 with no accessible name throws
-[`ET2201`](/components/error-codes#form-field-et22xx). The per-control ranges
-(tag, phone, masked, date & time) are documented in their guides and on the
+[`ET2201`](/components/error-codes#form-field-et22xx) once it renders. A control
+inside an `@if` that is still false (data loading) is checked when it appears.
+The per-control ranges (tag, phone, masked, date & time) are documented in their
+guides and on the
 central [error codes](/components/error-codes) page.

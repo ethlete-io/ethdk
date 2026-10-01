@@ -128,11 +128,26 @@ class SearchComponent {
 }
 
 @Component({
-  selector: 'et-scenario-empty-field',
-  imports: [FORM_FIELD_IMPORTS],
-  template: '<et-form-field><et-label>Nothing</et-label></et-form-field>',
+  selector: 'et-scenario-loading-field',
+  imports: [INPUT_IMPORTS, FORM_FIELD_IMPORTS],
+  template: `
+    <et-form-field>
+      <et-label>Country</et-label>
+      @if (ready()) {
+        <et-input [(value)]="country" />
+      }
+    </et-form-field>
+    <et-form-field>
+      @if (ready()) {
+        <et-input [(value)]="country" placeholder="Not a name" />
+      }
+    </et-form-field>
+  `,
 })
-class EmptyFieldComponent {}
+class LoadingFieldComponent {
+  ready = signal(false);
+  country = signal('');
+}
 
 @Component({
   selector: 'et-scenario-unnamed-field',
@@ -527,12 +542,22 @@ describe('forms form-field scenarios', () => {
     expect(query('et-form-warning', host).textContent?.trim()).toBe('Try fewer words.');
   });
 
-  it('reports a field without a control and a control without an accessible name in dev mode', () => {
+  it('waits for a control rendered later and checks its accessible name once it registers', () => {
     const s = scenario();
 
-    TestBed.createComponent(EmptyFieldComponent);
+    const fixture = TestBed.createComponent(LoadingFieldComponent);
+    render(s);
+    expect(s.errors).toEqual([]);
+
+    fixture.componentInstance.ready.set(true);
     s.tick(1);
-    s.expectError(new RegExp(String(FORM_FIELD_ERROR_CODES.MISSING_CONTROL)));
+    s.expectError(new RegExp(String(FORM_FIELD_ERROR_CODES.MISSING_LABEL)));
+    s.errors.splice(0);
+    render(s);
+  });
+
+  it('reports a control without an accessible name in dev mode', () => {
+    const s = scenario();
 
     TestBed.createComponent(UnnamedFieldComponent);
     s.tick(1);
