@@ -44,6 +44,8 @@ From the `libs/core` scan of 2026-08-19, closed 2026-09-29.
 ## components
 
 - The rich text viewer keeps its table and image style imports (accepted 2026-09-29: base capability per AGENTS.md).
+- A select with projected options keeps its static chip, virtual-row and select-all imports. They cost 2.8 kB gz of
+  49.4 kB (chips 1.7 kB); measured 2026-10-01.
 
 ## query-devtools
 
