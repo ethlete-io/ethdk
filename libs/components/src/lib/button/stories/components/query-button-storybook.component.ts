@@ -3,6 +3,7 @@ import { ProvideColorDirective } from '@ethlete/core';
 import { createPostQuery, createQueryClient } from '@ethlete/query';
 import { MOCK_UPLOAD_BASE_URL } from '../../../forms/dropzone/stories/upload-mock';
 import { BUTTON_IMPORTS } from '../../button.imports';
+import { QueryButtonDirective } from '../../headless';
 
 type PublishArgs = { response: { uuid: string }; body: FormData };
 
@@ -21,7 +22,7 @@ const publish = createPostQuery(client)<PublishArgs>('/upload', { reportProgress
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, ProvideColorDirective],
+  imports: [BUTTON_IMPORTS, QueryButtonDirective, ProvideColorDirective],
 })
 export class QueryButtonStorybookComponent {
   public color = input('brand');

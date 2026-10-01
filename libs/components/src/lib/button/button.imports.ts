@@ -2,7 +2,6 @@ import { ButtonComponent } from './button.component';
 import { FabComponent } from './fab.component';
 import {
   ButtonDirective,
-  QueryButtonDirective,
   SplitButtonActionDirective,
   SplitButtonDirective,
   SplitButtonTriggerDirective,
@@ -20,7 +19,6 @@ export const BUTTON_IMPORTS = [
   TextButtonComponent,
   WindowControlButtonComponent,
   ButtonDirective,
-  QueryButtonDirective,
   SplitButtonDirective,
   SplitButtonActionDirective,
   SplitButtonTriggerDirective,

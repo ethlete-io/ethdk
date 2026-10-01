@@ -93,7 +93,7 @@ All flavors share the headless `ButtonDirective` (`[etButton]`):
 
 ## Query button
 
-`etQueryButton` (in `BUTTON_IMPORTS`) binds a query to any button flavor. While the query loads, the button is in its `loading` state, and a query that reports progress drives the determinate spinner. The directive only observes: run the query from your own `(click)` handler or form submit, and report the result through a [notification](/components/notification). There is no success or failure flash.
+`etQueryButton` (`QueryButtonDirective`, imported on its own, not part of `BUTTON_IMPORTS`) binds a query to any button flavor. While the query loads, the button is in its `loading` state, and a query that reports progress drives the determinate spinner. The directive only observes: run the query from your own `(click)` handler or form submit, and report the result through a [notification](/components/notification). There is no success or failure flash.
 
 ```html
 <button [etQueryButton]="deletePost" (click)="delete()" et-button>Delete</button>
