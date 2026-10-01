@@ -130,7 +130,8 @@
       touch-action: none;
 
       &:where([data-empty]) {
-        display: none;
+        opacity: 0;
+        pointer-events: none;
       }
 
       &:where([data-dragging]) {

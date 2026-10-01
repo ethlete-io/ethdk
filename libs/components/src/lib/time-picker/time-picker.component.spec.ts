@@ -63,7 +63,7 @@ describe('TimePickerComponent', () => {
       expect(handles()[0]?.getAttribute('aria-label')).toBe('Time');
       expect(handles()[0]?.hasAttribute('data-empty')).toBe(true);
       expect(ringReadout(root)).toBe('--:--');
-      expect(ringNote(root)).toBe('Tap the ring');
+      expect(ringNote(root)).toBe('Pick a time');
       expect(root.querySelector('.et-time-picker-arc')).toBeNull();
       expect(root.querySelector('.et-time-picker-side')).toBeNull();
       expect(root.querySelector('[role="listbox"]')).toBeNull();

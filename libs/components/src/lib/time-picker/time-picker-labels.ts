@@ -8,7 +8,7 @@ export type TimePickerLabels = {
   startTime: string;
   /** Accessible name of a time range's end handle, and its note in the ring centre. */
   endTime: string;
-  /** Short hint in the centre of an empty ring. */
+  /** Short hint in the centre of an empty ring, and the value an empty handle announces. */
   emptyHint: string;
   /** Unit after the hours of a range's duration in the centre of the ring, as in `8 h 30 min`. */
   durationHours: string;
@@ -23,7 +23,7 @@ export const DEFAULT_TIME_PICKER_LABELS: TimePickerLabels = {
   time: 'Time',
   startTime: 'Start time',
   endTime: 'End time',
-  emptyHint: 'Tap the ring',
+  emptyHint: 'Pick a time',
   durationHours: 'h',
   durationMinutes: 'min',
   endsNextDay: 'ends next day',

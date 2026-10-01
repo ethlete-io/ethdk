@@ -117,10 +117,13 @@ export class TimePickerRingDirective {
 
     event.preventDefault();
 
-    // the handle's focus makes its end the active side, and the commit may hand the active side on to the end
-    this.handles()
-      .find((handle) => handle.side() === side)
-      ?.focus({ preventScroll: true, origin: 'pointer' });
+    // the handle's focus makes its end the active side, and the commit may hand the active side on to the end;
+    // a press on an empty end leaves focus where it is, so the field keeps it
+    if (picker.ringMinute(side) !== null) {
+      this.handles()
+        .find((handle) => handle.side() === side)
+        ?.focus({ preventScroll: true, origin: 'pointer' });
+    }
     if (picker.commitRingMinute(side, pressMinute)) {
       picker.rangeHandOff.emit('end');
     }

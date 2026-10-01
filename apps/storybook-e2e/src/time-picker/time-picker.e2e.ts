@@ -79,13 +79,19 @@ test.describe('time-picker / focus', () => {
     await expect(handle).not.toHaveAttribute('data-pointer-focused');
   });
 
-  test('Tab reaches the handle of an empty picker', async ({ page }) => {
-    test.fail(true, 'defect: an empty handle is display: none, so no key can set the first time');
+  test('Tab reaches the handle of an empty picker, and a key sets the first time', async ({ page }) => {
     const root = await openStory(page, DEFAULT_STORY_ID);
+    const handle = root.getByRole('slider', { name: 'Time' });
 
     await pressKey(page, 'Tab');
 
-    await expect(root.getByRole('slider', { name: 'Time' })).toBeFocused({ timeout: 1_000 });
+    await expect(handle).toBeFocused({ timeout: 1_000 });
+    await expect(handle).not.toHaveAttribute('aria-valuenow');
+
+    await pressKey(page, 'ArrowUp');
+
+    await expect(handle).toHaveAttribute('aria-valuenow', /^\d+$/);
+    await expect(handle).not.toHaveAttribute('data-empty');
   });
 });
 

@@ -1,6 +1,7 @@
 import { DestroyRef, Directive, ElementRef, computed, inject, input, signal } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { TIME_PICKER_ERROR_CODES } from '../time-picker-errors';
+import { injectTimePickerLabels } from '../time-picker-labels';
 import { firstOpenMinute, lastOpenMinute, minuteToAngle, stepToOpenMinute } from './internals/time-ring';
 import { TimePickerRingDirective } from './time-picker-ring.directive';
 import { TimePickerDirective, TimeRangeSide } from './time-picker.directive';
@@ -16,7 +17,7 @@ const outsideRing = (element: Element): never => {
 /**
  * One handle of a time ring: carries the ARIA slider semantics and the keyboard model. Arrows move one
  * `minuteStep`, PageUp and PageDown one hour, and Home and End go to the first and last open time. A key skips a
- * blocked span.
+ * blocked span. An empty handle is still focusable: its keys start from now.
  */
 @Directive({
   selector: '[etTimePickerRingHandle]',
@@ -42,6 +43,7 @@ const outsideRing = (element: Element): never => {
 export class TimePickerRingHandleDirective {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private picker = inject(TimePickerDirective);
+  private labels = injectTimePickerLabels();
 
   /** The end of a range this handle sets. A single time uses `start`. */
   public side = input<TimeRangeSide>('start');
@@ -67,7 +69,7 @@ export class TimePickerRingHandleDirective {
   /** Set while the current focus came from a press on the ring, so the focus ring stays off until a key press. */
   public pointerFocused = signal(false);
 
-  protected valueText = computed(() => this.picker.ringValueText(this.side()));
+  protected valueText = computed(() => this.picker.ringValueText(this.side()) ?? this.labels().emptyHint);
 
   protected resolvedLabel = computed(() => {
     const label = this.label();

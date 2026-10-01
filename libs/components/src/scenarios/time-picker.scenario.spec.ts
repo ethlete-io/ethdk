@@ -216,6 +216,38 @@ describe('time-picker scenarios', () => {
     expect(ringReadout()).toBe('23:45');
   });
 
+  it('sets a first time from now by keyboard on an empty ring, and a press on it leaves focus in place', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(KickoffTimeComponent);
+    const page = fixture.componentInstance;
+
+    settle(s);
+
+    const handle = ringHandle();
+
+    expect(handle.getAttribute('aria-valuetext')).toBe(DEFAULT_TIME_PICKER_LABELS.emptyHint);
+    expect(handle.hasAttribute('aria-valuenow')).toBe(false);
+
+    handle.focus();
+    settle(s);
+    s.keydown('ArrowUp');
+    settle(s);
+    expect(hhmm(page.kickoff())).toBe('14:15');
+
+    page.kickoff.set(null);
+    handle.blur();
+    settle(s);
+
+    tapRing(timeRing(), minuteOfDay(9, 0));
+    settle(s);
+    expect(hhmm(page.kickoff())).toBe('09:00');
+    expect(document.activeElement).not.toBe(handle);
+
+    tapRing(timeRing(), minuteOfDay(10, 0));
+    settle(s);
+    expect(document.activeElement).toBe(handle);
+  });
+
   it('keeps an off-step value with seconds on the ring and writes second 0 on a pick', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(KickoffTimeComponent);

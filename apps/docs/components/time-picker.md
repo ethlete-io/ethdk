@@ -39,7 +39,7 @@ On `et-time-picker` (forwarded from the headless `[etTimePicker]` directive):
 
 The format decides the labels, not the granularity: a 24-hour format labels the ring `00 03 06 … 21`; a 12-hour one (`h:mm a`, or a localized `p` in en-US) keeps the 24-hour ring and labels it `12 AM / 3 / 6 / 9 / 12 PM / …`, with a moon under 12 AM and a sun over 12 PM. Localized tokens work too - `p` resolves per locale (12-hour in en-US, 24-hour in de).
 
-The centre of the ring reads the time live. While no value is set there is no handle and no arc: the centre shows `--:--` and a short hint (`emptyHint`), and the first press on the track places the handle.
+The centre of the ring reads the time live. While no value is set there is no visible handle and no arc: the centre shows `--:--` and a short hint (`emptyHint`), and the first press on the track places the handle. The invisible handle stays in the tab order, so the keys set a first time from "now"; a press on an empty end leaves focus where it was, such as in the input field.
 
 ## 12-hour cycle
 
@@ -162,7 +162,7 @@ With no `rangeDays`, the centre shows the **duration** of the range (`8 h 30 min
 
 ## Accessibility
 
-- Each handle is a `role="slider"` with `aria-valuemin="0"`, `aria-valuemax="1439"` (minutes of the day), `aria-valuenow` and an `aria-valuetext` holding the formatted time. An empty end has no `aria-valuenow`.
+- Each handle is a `role="slider"` with `aria-valuemin="0"`, `aria-valuemax="1439"` (minutes of the day), `aria-valuenow` and an `aria-valuetext` holding the formatted time. An empty end has no `aria-valuenow` and announces `emptyHint` as its `aria-valuetext`.
 - The handle's name is the `time` label; in range mode it is the start or end label, so which end is being edited is announced rather than only drawn.
 - The ring graphic is `aria-hidden`; everything it shows is on the handles.
 - Disabled/readonly states belong to the hosting control (e.g. the time input) - the inline picker itself is always interactive.
