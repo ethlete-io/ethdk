@@ -16,6 +16,7 @@ export const QueryRuntimeErrorCode = {
   SILENCE_MISSING_WITH_ARGS_FEATURE_ERROR_USED_BUT_WITH_ARGS_PRESENT: 104,
   WITH_LONG_POLLING_USED_ON_UNSUPPORTED_HTTP_METHOD: 105,
   WITH_LONG_POLLING_USED_WITH_POLLING: 106,
+  WITH_OPTIMISTIC_UPDATE_USED_ON_READ: 107,
 
   // Auth provider
   AUTH_EXTRACT_TOKENS_RESPONSE_NOT_OBJECT: 200,
@@ -85,6 +86,13 @@ export const invalidatesUsedOnRead = (method: string) => {
   return new RuntimeError(
     QueryRuntimeErrorCode.INVALIDATES_USED_ON_READ,
     `This is a "${method}" request, "invalidates" is only supported on mutations. Give the read "tags" and invalidate them from the mutation.`,
+  );
+};
+
+export const withOptimisticUpdateUsedOnRead = (method: string) => {
+  return new RuntimeError(
+    QueryRuntimeErrorCode.WITH_OPTIMISTIC_UPDATE_USED_ON_READ,
+    `This is a "${method}" request, "withOptimisticUpdate()" is only supported on mutations.`,
   );
 };
 

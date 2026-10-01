@@ -30,6 +30,7 @@ export * from './query-group';
 export * from './query-headers';
 export * from './query-http-context';
 export * from './query-invalidation';
+export * from './query-optimistic-update';
 export * from './query-repository';
 export * from './query-retry-utils';
 export * from './query-sequence';

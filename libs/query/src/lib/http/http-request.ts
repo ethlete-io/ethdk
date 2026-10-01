@@ -260,6 +260,12 @@ export type HttpRequestSubtle<TArgs extends QueryArgs> = {
 
   /** Ends the freshness window of the response it holds, so the next `allowCache` execution sends the request. */
   markStale: () => void;
+
+  /**
+   * Replaces the response every query bound to this request shows, without an event and without touching
+   * its freshness. What `withOptimisticUpdate` writes and rolls back.
+   */
+  setResponse: (body: ResponseType<TArgs> | null) => void;
 };
 
 export type HttpRequest<TArgs extends QueryArgs> = {
@@ -767,6 +773,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
       markStale: () => {
         if (!isStale()) expiresIn.set(Date.now());
       },
+      setResponse: (body) => response.set(body),
     },
   };
 

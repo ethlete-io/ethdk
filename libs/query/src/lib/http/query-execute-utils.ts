@@ -78,6 +78,8 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
   const runQueryOptions =
     defaultRunOptions || options.options ? { ...defaultRunOptions, ...options.options } : undefined;
 
+  const onRequest = state.subtle.beforeExecute()?.(args);
+
   const { key, request, executed } = deps.client.repository.request({
     route: creatorInternals.route,
     method: creatorInternals.method,
@@ -98,6 +100,7 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
   state.lastTimeExecutedAt.set(Date.now());
   state.lastTriggeredBy.set(runQueryOptions?.triggeredBy ?? null);
   state.subtle.request.set(request);
+  onRequest?.(request);
   state.subtle.bindRequestEvents(request);
   state.subtle.devtoolsStats?.recordExecution({ didRequest: executed, body: args?.body, url: request.url });
 };

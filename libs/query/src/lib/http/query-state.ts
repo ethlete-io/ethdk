@@ -63,6 +63,12 @@ export type QueryStateSubtle<TArgs extends QueryArgs> = {
   autoExecuteGuard: WritableSignal<(() => boolean) | null>;
 
   /**
+   * Called by every execution before its request is made; a function it returns is called with that request.
+   * Set by a feature during creation (`withOptimisticUpdate` writes the cache before the request leaves).
+   */
+  beforeExecute: WritableSignal<QueryBeforeExecuteFn<TArgs> | null>;
+
+  /**
    * Installs the reactive source that backs `state.args`. The `withArgs` feature uses this so that
    * `state.args` always reflects the latest args (pulled from the reactive source on read) instead
    * of being push-updated by an effect that may not have run yet. Without a `withArgs` feature the
@@ -88,6 +94,10 @@ export type QueryStateSubtle<TArgs extends QueryArgs> = {
   /** @see SetupQueryStateOptions.devtoolsFormLinks */
   devtoolsFormLinks: QueryDevtoolsFormLinksRecorder | null;
 };
+
+export type QueryBeforeExecuteFn<TArgs extends QueryArgs> = (
+  args: RequestArgs<TArgs> | null,
+) => ((request: HttpRequest<TArgs>) => void) | null;
 
 export type QueryState<TArgs extends QueryArgs> = {
   rawResponse: WritableSignal<RawResponseType<TArgs> | null>;
@@ -247,6 +257,7 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
 
   const defaultRunOptions = signal<RunQueryExecuteOptions | null>(null);
   const autoExecuteGuard = signal<(() => boolean) | null>(null);
+  const beforeExecute = signal<QueryBeforeExecuteFn<TArgs> | null>(null);
 
   options.destroyRef?.onDestroy(() => {
     requestEventsSubscription.unsubscribe();
@@ -317,6 +328,7 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
       unbindRequestEvents,
       defaultRunOptions,
       autoExecuteGuard,
+      beforeExecute,
       setArgsSource,
       hasArgsSource: hasArgsSource.asReadonly(),
       setExplicitArgs,

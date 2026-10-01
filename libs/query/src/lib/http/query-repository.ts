@@ -223,6 +223,12 @@ export type QueryRepositoryCacheEntry = {
    */
   isUnused: boolean;
 
+  /** @see QueryRepositoryRequestOptions.isRefreshable */
+  isRefreshable: boolean;
+
+  /** The tags the entry's consumers declared. */
+  tags: readonly string[];
+
   /** The underlying HTTP request. */
   request: HttpRequest<QueryArgs>;
 };
@@ -938,6 +944,8 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       isSecure: entry.isSecure,
       consumerCount: entry.consumers.size,
       isUnused: entry.consumers.size === 0,
+      isRefreshable: entry.isRefreshable,
+      tags: entry.tags,
       request: entry.request,
     }));
 

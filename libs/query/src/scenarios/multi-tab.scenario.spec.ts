@@ -18,6 +18,7 @@ import {
   QUERY_SYNC_PROTOCOL_VERSION,
   withArgs,
   withMultiTabSync,
+  withOptimisticUpdate,
   withPolling,
 } from '../index';
 import { Scenario, useScenario } from './harness';
@@ -482,6 +483,63 @@ describe('multi-tab sync scenario', () => {
     expect(s.api.requests.filter((r) => r.path === '/teams/1').map((r) => r.aborted)).toEqual([false, true, false]);
     expect(teamB.response()).toEqual({ id: '1', v: 2 });
 
+    b.destroy();
+    tabB.destroy();
+  });
+
+  it('keeps an optimistic update in its tab and lets the invalidation reach the other one', async () => {
+    const s = scenario();
+    let version = 1;
+    s.api.on('GET', '/teams/:id', ({ params }) => ({ body: { id: params['id'], v: version } }));
+    s.api.on('PATCH', '/teams/:id', () => {
+      version = 5;
+
+      return { body: null, status: 204, delay: 50 };
+    });
+
+    type TeamArgs = { response: { id: string; v: number }; pathParams: { id: string } };
+    const getTeam = s.get<TeamArgs>((p) => `/teams/${p.id}`, { tags: ({ args }) => [`team:${args.pathParams.id}`] });
+    const patchTeam = s.patch<{ response: null; pathParams: { id: string } }>((p) => `/teams/${p.id}`, {
+      invalidates: ({ args }) => [{ tag: `team:${args.pathParams.id}` }],
+    });
+    const tabB = createTab(s);
+    const getTeamB = tabB.get<TeamArgs>((p) => `/teams/${p.id}`, {
+      tags: ({ args }) => [`team:${args.pathParams.id}`],
+    });
+
+    const a = s.consumer();
+    const b = tabB.consumer();
+    const teamA = a.run(() => getTeam(withArgs(() => ({ pathParams: { id: '1' } }))));
+    const patch = a.run(() =>
+      patchTeam(
+        withArgs(() => ({ pathParams: { id: '1' } })),
+        withOptimisticUpdate({
+          read: getTeam,
+          target: ({ args }) => ({ tag: `team:${args.pathParams.id}` }),
+          update: ({ current }) => ({ ...current, v: 4 }),
+        }),
+      ),
+    );
+    const teamB = b.run(() => getTeamB(withArgs(() => ({ pathParams: { id: '1' } }))));
+
+    await s.settle();
+    await flushMultiTabSync();
+    await s.settle();
+
+    patch.execute();
+    await flushMultiTabSync();
+
+    expect(teamA.response()).toEqual({ id: '1', v: 4 });
+    expect(teamB.response()).toEqual({ id: '1', v: 1 });
+
+    await s.settle(50);
+    await flushMultiTabSync();
+    await s.settle(1);
+
+    expect(teamA.response()).toEqual({ id: '1', v: 5 });
+    expect(teamB.response()).toEqual({ id: '1', v: 5 });
+
+    a.destroy();
     b.destroy();
     tabB.destroy();
   });

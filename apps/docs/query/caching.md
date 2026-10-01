@@ -133,6 +133,28 @@ Two creators can share one cache entry (same route and args); the entry carries 
 
 Which queries an invalidation actually hit is the one thing the queries themselves cannot report - from inside any of them it is just a refetch. The [query devtools](/query-devtools/#why-did-this-refetch) log each invalidation as one Events row listing every cache entry it re-executed, and name it back on each query's Overview under **Refetched by**.
 
+### Optimistic updates
+
+`withOptimisticUpdate` shows a mutation's expected result before the server answers. Before the request leaves it rewrites the cached response of every read its `target` matches - a `{ url }` or `{ tag }`, or an array of them - so every query bound to those entries shows the guess at once:
+
+```ts
+patchOpportunityPerson(
+  withArgs(() => ({ pathParams: { uuid, peopleUuid }, body })),
+  withOptimisticUpdate({
+    read: getOpportunity,
+    target: ({ args }) => ({ tag: `opportunity:${args.pathParams.uuid}` }),
+    update: ({ current, args }) => ({ ...current, people: toggle(current.people, args.pathParams.peopleUuid) }),
+  }),
+);
+```
+
+- **`update` returns the next response or `null`.** `null` leaves that entry alone, and an entry without a response is skipped. `current` is the cached response before the read's `transformResponse`. Keep `update` pure: it runs again whenever the entry has to be recomputed.
+- **`read` types `current`.** It only gives `current` the read creator's response type; the entries are still found by `target`, so a target must not match another read's entries. Without `read`, `current` is `unknown`.
+- **Failure rolls back.** A failed, aborted or destroyed mutation restores what the entry held before. A refetch or another tab that wrote the entry in the meantime wins: the rollback leaves it alone. Other optimistic updates of the entry that are still pending are re-applied on top of the original.
+- **Success runs `update` once more**, with the mutation's `response` (`null` for a `204`; `undefined` before the request). Return `null` there to keep the guess. The creator's [`invalidates`](#invalidating-from-the-mutation) refetch then replaces the guess with the server's answer.
+- **It stays in this tab.** The guess is never broadcast or persisted; the other tabs get the server's answer through the invalidation.
+- **Mutations only.** On a read it throws `ET107`.
+
 ## See it live
 
 In the demo, the mocked backend sends `cache-control: max-age=20` (a 10s freshness window after halving). `requestNumber` only increments when the server is actually hit - `execute (allowCache)` within the window serves the cache:

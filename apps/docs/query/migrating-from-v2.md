@@ -162,7 +162,7 @@ Provide them together. An auth provider injects its client from its own injector
 
 ### Templates read signals, not directives
 
-`*etQuery` and `<et-query-error>` are legacy-only **by design**. A current-system query already exposes everything they computed, so a template reads it directly:
+[`<et-query-error>`](/components/query-error) takes the `error()` of a v3 query or a [query group](/query/groups) and retries through `[query]`. `*etQuery` is legacy-only **by design**: a current-system query already exposes everything it computed, so a template reads it directly:
 
 ```html
 @if (postQuery.loading()) {
@@ -252,7 +252,18 @@ export const patchOpportunityPerson = createPatchQuery(client)<PatchPersonArgs>(
 );
 ```
 
-A hand-written `refresh()` after a mutation becomes the same one line on the creator.
+A hand-written `refresh()` after a mutation becomes the same one line on the creator. Where the store's write-through made the UI update before the server answered, add [`withOptimisticUpdate`](/query/caching#optimistic-updates) at the call site: it writes the guess into the matched reads, rolls it back on failure, and the `invalidates` refetch corrects it.
+
+```ts
+patchOpportunityPerson(
+  withArgs(() => ({ pathParams: { uuid, peopleUuid }, body })),
+  withOptimisticUpdate({
+    read: getOpportunity,
+    target: ({ args }) => ({ tag: `opportunity:${args.pathParams.uuid}` }),
+    update: ({ current, args }) => ({ ...current, people: toggle(current.people, args.pathParams.peopleUuid) }),
+  }),
+);
+```
 
 ### Reactive-forms async validators
 

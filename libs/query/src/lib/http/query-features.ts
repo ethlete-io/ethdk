@@ -66,6 +66,7 @@ export const QueryFeatureType = {
   WITH_AUTO_REFRESH: 'WITH_AUTO_REFRESH',
   WITH_RESPONSE_UPDATE: 'WITH_RESPONSE_UPDATE',
   WITH_PAGE_RESET_ON_ERROR: 'WITH_PAGE_RESET_ON_ERROR',
+  WITH_OPTIMISTIC_UPDATE: 'WITH_OPTIMISTIC_UPDATE',
 } as const;
 export type QueryFeatureType = (typeof QueryFeatureType)[keyof typeof QueryFeatureType];
 
