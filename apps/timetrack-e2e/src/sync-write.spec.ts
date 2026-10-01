@@ -50,6 +50,18 @@ test.describe('writing the day to tempo', () => {
     expect((await readBackend(page)).tempo.writes).toHaveLength(1);
   });
 
+  test('shows the last write of the day again after a reload', async ({ page }) => {
+    await planTheNamedRow(page);
+    await writeButton(page).click();
+    await expect(page.getByRole('heading', { name: 'Last write' })).toBeVisible();
+
+    await page.reload();
+    await goToView(page, 'sync');
+
+    await expect(page.getByRole('heading', { name: 'Last write' })).toBeVisible();
+    await expect(page.getByText(/^worklog /)).toBeVisible();
+  });
+
   test('names the refusal on the row tempo rejected, and leaves tempo empty', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, faults: [{ url: '/worklogs', method: 'POST', status: 401 }] });
     await planTheNamedRow(page);

@@ -18,6 +18,7 @@ import { createTauriSpecSource } from './spec-source';
 import { createTauriReviewStore } from './review-store';
 import { createTauriSecretStore } from './secrets';
 import { createTauriSettingsStore } from './settings-store';
+import { TauriSyncRunStore, createTauriSyncRunStore } from './sync-run-store';
 import { createTauriTimerStore } from './timer-store';
 import { createTauriTransport } from './transport';
 import { TauriTranscription, createTauriTranscription } from './transcription';
@@ -39,6 +40,7 @@ export type HostPorts = TimetrackPorts & {
   ingest: TauriIngestSource;
   nudge: TauriNudge;
   oauth: TauriOAuth;
+  syncRuns: TauriSyncRunStore;
   transcription: TauriTranscription;
   tray: TauriTray;
   widget: TauriWidget;
@@ -62,6 +64,7 @@ export const createHostPorts = (): HostPorts => {
     coverage: createTauriCoverageStore(),
     review: createTauriReviewStore(),
     settings: createTauriSettingsStore(),
+    syncRuns: createTauriSyncRunStore(),
     timers: createTauriTimerStore(),
     processes: meteredRunner({
       runner: createTauriProcessRunner(),

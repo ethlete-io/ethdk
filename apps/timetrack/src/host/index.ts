@@ -19,6 +19,7 @@ export * from './reporter-bundle';
 export * from './review-store';
 export * from './secrets';
 export * from './settings-store';
+export * from './sync-run-store';
 export * from './timer-store';
 export * from './transport';
 export * from './transcription';

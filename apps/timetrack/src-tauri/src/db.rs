@@ -228,6 +228,15 @@ CREATE INDEX IF NOT EXISTS transcript_chunk_day ON transcript_chunk (day);
 CREATE INDEX IF NOT EXISTS transcript_chunk_at_ms ON transcript_chunk (at_ms);
 ";
 
+/// The last write the Sync view ran for a day, as one JSON document read and written whole, like
+/// `tempo_coverage`. Each write replaces the day's row, so there is one short row per synced day.
+const SCHEMA_V18: &str = "
+CREATE TABLE IF NOT EXISTS tempo_sync_run (
+  day TEXT PRIMARY KEY,
+  run TEXT NOT NULL
+);
+";
+
 /// Repairs a store whose v11 ran before `read_through_ms` was part of it.
 ///
 /// The column was added to `SCHEMA_V11` after that migration had already run on real stores, and a
@@ -490,6 +499,10 @@ pub fn migrate(connection: &Connection) -> TimetrackResult<()> {
         step(connection, 17, |connection| Ok(connection.execute_batch(SCHEMA_V17)?))?;
     }
 
+    if version < 18 {
+        step(connection, 18, |connection| Ok(connection.execute_batch(SCHEMA_V18)?))?;
+    }
+
     Ok(())
 }
 
@@ -564,7 +577,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            17
+            18
         );
         assert_eq!(connection.execute(INSERT, params![1_i64, "git-commit:abc"]).unwrap(), 1);
     }
@@ -688,7 +701,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            17
+            18
         );
     }
 

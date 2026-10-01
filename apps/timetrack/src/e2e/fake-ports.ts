@@ -47,9 +47,12 @@ import {
 import { EMPTY, Observable, Subject, delay, of, throwError } from 'rxjs';
 import { AgentRequestEvent } from '../host/agent-channel';
 import { HostPorts } from '../host/ports';
+import { parseSyncRun, toStoredSyncRun } from '../host/sync-run-store';
 
 const ok = <T>(value: T): Observable<T> => of(value);
 const done = (): Observable<void> => of(undefined);
+
+const SYNC_RUN_KEY = 'ethlete.timetrack.e2e.sync-run';
 
 /**
  * Serves one provider's seeded session logs. A read never yields a line the seed does not hold, so a
@@ -467,6 +470,16 @@ export const createFakePorts = (): HostPorts => {
     },
 
     oauth: { authorize$: () => ok({ code: 'e2e', redirectUri: 'http://localhost', codeVerifier: 'e2e' }) },
+
+    // The one fake store that outlives a reload, so a spec can see the Sync view read it back.
+    syncRuns: {
+      forDay$: (day) => ok(parseSyncRun(JSON.parse(sessionStorage.getItem(`${SYNC_RUN_KEY}:${day}`) ?? 'null'))),
+      save$: (day, run) => {
+        sessionStorage.setItem(`${SYNC_RUN_KEY}:${day}`, JSON.stringify(toStoredSyncRun(run)));
+
+        return done();
+      },
+    },
 
     tray: {
       setReadout$: (readout) => {

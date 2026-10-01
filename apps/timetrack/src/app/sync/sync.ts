@@ -1,5 +1,5 @@
 import { computed, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   TempoSyncOutcome,
@@ -34,7 +34,7 @@ import {
   throwError,
   toArray,
 } from 'rxjs';
-import { injectHostPorts } from '../../host';
+import { SyncRunRecord, injectHostPorts } from '../../host';
 import { injectDayReview } from '../day-review/day-review';
 import { injectTimetrackSettings } from '../settings/settings';
 
@@ -59,6 +59,11 @@ export type SyncRequest = { day: string; plan: TempoSyncPlan; authorAccountId: s
 type FinishedRun = Extract<SyncRunStatus, { kind: 'written' | 'failed' }>;
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
+const recordOf = (run: FinishedRun): SyncRunRecord =>
+  run.kind === 'written'
+    ? { kind: 'written', rows: run.outcome.rows, unrecorded: run.unrecorded }
+    : { kind: 'failed', message: run.message };
 
 const writeCount = (plan: TempoSyncPlan) => plan.creates.length + plan.updates.length + plan.deletes.length;
 
@@ -187,11 +192,15 @@ const SYNC_DEF = /* @__PURE__ */ defineRootProvider(() => {
       }),
       switchMap((outcome) =>
         record$(outcome).pipe(
-          map((unrecorded): SyncRunStatus => ({ kind: 'written', day: request.day, outcome, unrecorded })),
+          map((unrecorded): FinishedRun => ({ kind: 'written', day: request.day, outcome, unrecorded })),
         ),
       ),
-      catchError((error: unknown) =>
-        of<SyncRunStatus>({ kind: 'failed', day: request.day, message: messageOf(error) }),
+      catchError((error: unknown) => of<FinishedRun>({ kind: 'failed', day: request.day, message: messageOf(error) })),
+      switchMap((finished) =>
+        ports.syncRuns.save$(request.day, recordOf(finished)).pipe(
+          catchError(() => of(undefined)),
+          map((): SyncRunStatus => finished),
+        ),
       ),
     );
 
@@ -216,6 +225,35 @@ const SYNC_DEF = /* @__PURE__ */ defineRootProvider(() => {
   });
 
   const isWriting = computed(() => run().kind === 'writing');
+
+  const storedRun = toSignal(
+    toObservable(dayReview.dayKey).pipe(
+      switchMap((day) =>
+        ports.syncRuns.forDay$(day).pipe(
+          map((record) => ({ day, record })),
+          catchError(() => of({ day, record: null })),
+        ),
+      ),
+    ),
+    { initialValue: null },
+  );
+
+  const shownRun = computed((): SyncRunRecord | null => {
+    const value = run();
+
+    if (value.kind === 'written' || value.kind === 'failed') return recordOf(value);
+    if (value.kind === 'writing') return null;
+
+    const stored = storedRun();
+
+    return stored?.day === dayReview.dayKey() ? stored.record : null;
+  });
+
+  const shownWrite = computed(() => {
+    const value = shownRun();
+
+    return value?.kind === 'written' ? value : null;
+  });
 
   /**
    * Runs a plan an agent confirmed through the same queue the page's own button uses, so the page
@@ -274,19 +312,19 @@ const SYNC_DEF = /* @__PURE__ */ defineRootProvider(() => {
     credentials: settings.credentials,
 
     isWriting,
-    /** Every row the finished run attempted, and what became of it. */
-    runRows: computed(() => written()?.outcome.rows ?? []),
+    /** Every row the day's last run attempted, and what became of it. It is read back after a restart. */
+    runRows: computed(() => shownWrite()?.rows ?? []),
     /** How many rows did not land. They are retried from the run's own plan, never from a new read. */
     retryCount: computed(() => {
       const outcome = written()?.outcome;
 
       return outcome ? writeCount(outcome.retry) : 0;
     }),
-    unrecorded: computed(() => written()?.unrecorded ?? null),
+    unrecorded: computed(() => shownWrite()?.unrecorded ?? null),
     runFailure: computed(() => {
-      const value = run();
+      const value = shownRun();
 
-      return value.kind === 'failed' ? value.message : null;
+      return value?.kind === 'failed' ? value.message : null;
     }),
     writeCount: computed(() => {
       const plan = ready()?.plan;

@@ -700,10 +700,55 @@ pub async fn set_tempo_coverage(db: State<'_, Db>, day: String, coverage: serde_
     .await
 }
 
+fn sync_run_for_day(connection: &Connection, day: &str) -> TimetrackResult<Option<serde_json::Value>> {
+    let stored = connection
+        .query_row("SELECT run FROM tempo_sync_run WHERE day = ?1", params![day], |row| {
+            row.get::<_, String>(0)
+        })
+        .optional()?;
+
+    Ok(stored.and_then(|run| serde_json::from_str(&run).ok()))
+}
+
+fn save_sync_run(connection: &Connection, day: &str, run: &serde_json::Value) -> TimetrackResult<()> {
+    connection.execute(
+        "INSERT INTO tempo_sync_run (day, run) VALUES (?1, ?2)
+         ON CONFLICT (day) DO UPDATE SET run = ?2",
+        params![day, serde_json::to_string(run)?],
+    )?;
+
+    Ok(())
+}
+
+/// The last write the Sync view ran for a day, or `None` for a day it never wrote.
+#[tauri::command]
+pub async fn tempo_sync_run_for_day(db: State<'_, Db>, day: String) -> TimetrackResult<Option<serde_json::Value>> {
+    db.run(move |connection| sync_run_for_day(connection, &day)).await
+}
+
+#[tauri::command]
+pub async fn set_tempo_sync_run(db: State<'_, Db>, day: String, run: serde_json::Value) -> TimetrackResult<()> {
+    db.run(move |connection| save_sync_run(connection, &day, &run)).await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::db;
+
+    #[test]
+    fn keeps_only_the_last_sync_run_of_a_day() {
+        let connection = store();
+
+        save_sync_run(&connection, "2026-08-12", &serde_json::json!({ "kind": "failed" })).unwrap();
+        save_sync_run(&connection, "2026-08-12", &serde_json::json!({ "kind": "written" })).unwrap();
+
+        assert_eq!(
+            sync_run_for_day(&connection, "2026-08-12").unwrap(),
+            Some(serde_json::json!({ "kind": "written" }))
+        );
+        assert_eq!(sync_run_for_day(&connection, "2026-08-13").unwrap(), None);
+    }
 
     fn store() -> Connection {
         let connection = Connection::open_in_memory().unwrap();
