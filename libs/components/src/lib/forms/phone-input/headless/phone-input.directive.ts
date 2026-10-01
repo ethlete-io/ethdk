@@ -110,13 +110,28 @@ export class PhoneInputDirective extends TextShellControlDirective implements Fo
     return prefix && !prefix.startsWith(dialCode) ? prefix : dialCode;
   });
 
-  /** The digits after the dial code. Mixed masks the hidden raw number - it is never displayed. */
+  /** Whether the value starts with a dial code no listed country has, such as `+999…`. */
+  public hasUnknownDialCode = computed(() => {
+    const digits = onlyDigits(this.value());
+
+    return !this.mixed() && digits.length > 0 && matchCountryByDialCode(digits) === null;
+  });
+
+  /**
+   * The digits after the dial code, or the whole `+…` number while its dial code is unknown, so an
+   * edit keeps it. Mixed masks the hidden raw number - it is never displayed.
+   */
   public nationalNumber = computed(() => {
     if (this.mixed()) {
       return '';
     }
 
     const digits = onlyDigits(this.value());
+
+    if (this.hasUnknownDialCode()) {
+      return `+${digits}`;
+    }
+
     const dialCode = this.dialCode();
 
     return digits.startsWith(dialCode) ? digits.slice(dialCode.length) : digits;
@@ -134,7 +149,7 @@ export class PhoneInputDirective extends TextShellControlDirective implements Fo
 
   /** A cheap length-window sanity check (4–14 national digits) - not real validation. */
   public isPlausible = computed(() => {
-    const length = this.nationalNumber().length;
+    const length = onlyDigits(this.nationalNumber()).length;
 
     return length >= 4 && length <= 14;
   });
@@ -182,7 +197,7 @@ export class PhoneInputDirective extends TextShellControlDirective implements Fo
       return;
     }
 
-    const national = this.nationalNumber();
+    const national = onlyDigits(this.nationalNumber());
 
     this.country.set(iso2);
     this.value.set(this.ownNumber(national, this.dialCodeOf(iso2)));

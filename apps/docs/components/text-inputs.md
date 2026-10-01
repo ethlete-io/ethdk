@@ -525,7 +525,10 @@ area code as part of the dial code (`+1876…` → Jamaica); a `PhoneCountry`'s 
 Dominican Republic, shown as `+1829`), Canada's area codes, and the ranges of
 shared dial codes (`+441481…` → Guernsey, `+77…` → Kazakhstan, shown as `+44` and
 `+7`). Switching countries keeps the national number. A focused field always shows exactly what you typed, `+` prefix
-included; it collapses to the national number when you leave it. The display groups
+included; it collapses to the national number when you leave it. A value whose
+dial code no listed country has (`+999…`) is shown and edited in full, `+`
+included, and never rebuilt with the active country's dial code
+(`hasUnknownDialCode` reports it). The display groups
 digits in threes while unfocused (**cosmetic only** - not per-country metadata
 formatting; validate on the backend/schema, with `isPlausible` as a cheap
 length-window helper).

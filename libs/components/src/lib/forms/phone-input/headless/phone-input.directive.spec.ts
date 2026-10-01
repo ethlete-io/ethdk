@@ -350,6 +350,27 @@ describe('PhoneInputDirective', () => {
     expect(driver.phone.nationalNumber()).toBe('8012345678');
   });
 
+  it('keeps an external value with an unknown dial code intact while it is edited', () => {
+    driver.host.value.set('+999123');
+    driver.tick();
+
+    expect(driver.fieldValue()).toBe('+999 123');
+
+    driver.focus();
+    expect(driver.fieldValue()).toBe('+999123');
+
+    driver.typeChars('4');
+    expect(driver.host.value()).toBe('+9991234');
+
+    driver.blur();
+    expect(driver.host.value()).toBe('+9991234');
+    expect(driver.fieldValue()).toBe('+999 123 4');
+
+    driver.phone.selectCountry('fr');
+    driver.tick();
+    expect(driver.host.value()).toBe('+339991234');
+  });
+
   it('groups the display while unfocused and shows raw digits while editing', () => {
     driver.host.value.set('+491701234567');
     driver.tick();
