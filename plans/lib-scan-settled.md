@@ -46,6 +46,13 @@ From the `libs/core` scan of 2026-08-19, closed 2026-09-29.
 - The rich text viewer keeps its table and image style imports (accepted 2026-09-29: base capability per AGENTS.md).
 - A select with projected options keeps its static chip, virtual-row and select-all imports. They cost 2.8 kB gz of
   49.4 kB (chips 1.7 kB); measured 2026-10-01.
+- Kept as is (2026-09-27, reopen only when a consumer needs it): the phone input groups by 3 for every country;
+  cascader leaf mode counts a node without `isLeaf` as a branch; `cascaderFromQuery` infers `TValue` as `{}` when
+  an unannotated `args` comes before `toNodes`; table state saved before 53497453e loses numeric row keys once; the
+  password reveal needs `et-form-field`; `et-icon-button` projects only `[etIcon]`; a slider tap with no move
+  commits the press value; the filter overlay shows "Show results" without `totalHits`.
+- Masked input dead keys and IME composition have no e2e coverage. They need a hardware keyboard on a real
+  device; soft keyboard, paste and backspace passed on the iOS Simulator.
 
 ## query-devtools
 

@@ -6,6 +6,8 @@
  * Fails when an export is neither covered nor allowlisted, and when an allowlist entry is stale
  * (the export is covered now, or no longer exists), so the allowlist only shrinks.
  * `--update` rewrites the allowlist: stale entries are dropped, new gaps are added as "uncovered".
+ * Never use it to make a run pass: it allowlists every new gap without a reason. Cover the export or
+ * add its entry by hand.
  *
  * Usage:
  *   node tools/export-coverage/check.mjs [<lib>...] [--update] [--list]
