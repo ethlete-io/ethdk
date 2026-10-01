@@ -6,8 +6,10 @@ import {
   availableMigrationsLine,
   chooseTarget,
   isDowngrade,
+  orderAvailableMigrations,
   orderMigrations,
   pendingMigrations,
+  PendingMigration,
 } from './plan';
 import { RegistryPackage } from './registry';
 
@@ -245,18 +247,39 @@ describe('migration levels', () => {
     expect(pendingMigrations(range).map((entry) => entry.migration.name)).toEqual(['must']);
   });
 
-  it('lists the others that the update crosses', () => {
-    expect(availableMigrations(range).map((entry) => entry.migration.name)).toEqual(['should', 'could']);
+  const reached = { packageMigrations, installed: '5.0.0-next.50', record: {} };
+  const names = (entries: readonly PendingMigration[]) => entries.map((entry) => entry.migration.name);
+
+  it('makes the others available once the installed version reaches them', () => {
+    expect(names(availableMigrations(reached))).toEqual(['should', 'could', 'older']);
+  });
+
+  it('keeps a migration the installed version has not reached out', () => {
+    expect(names(availableMigrations({ ...reached, installed: '5.0.0-next.49' }))).toEqual(['should', 'older']);
+  });
+
+  it('drops a migration the record holds a run of', () => {
+    const record = { '@ethlete/core:older': { version: '5.0.0-next.31', ranAt: '2026-09-01T00:00:00.000Z' } };
+
+    expect(names(availableMigrations({ ...reached, record }))).toEqual(['should', 'could']);
+  });
+
+  it('orders recommended before optional', () => {
+    const optionalFirst = availableMigrations(reached).reverse();
+
+    expect(names(orderAvailableMigrations(optionalFirst))).toEqual(['should', 'older', 'could']);
   });
 
   it('counts each level in one line', () => {
-    expect(availableMigrationsLine(availableMigrations(range))).toBe(
-      '1 recommended and 1 optional migrations are available - run et migrations',
+    expect(availableMigrationsLine(availableMigrations(reached))).toBe(
+      '1 recommended and 2 optional migrations are available - run et migrations',
     );
   });
 
   it('leaves out a level with no migration', () => {
-    const optional = availableMigrations(range).filter((entry) => entry.migration.level === 'optional');
+    const optional = availableMigrations({ ...reached, installed: '5.0.0-next.49' }).filter(
+      (entry) => entry.migration.level === 'optional',
+    );
 
     expect(availableMigrationsLine(optional)).toBe('1 optional migration is available - run et migrations');
   });

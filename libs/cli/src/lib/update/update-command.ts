@@ -6,6 +6,7 @@ import { AGENT_RULES_PACKAGE, planAgentRulesSync, runAgentRulesSync } from './ag
 import { parseUpdateArgs } from './args';
 import { CommitState, StepCommitter, createStepCommitter, startCommits } from './commits';
 import { UPDATE_IGNORE_ENTRY, ignoreUpdateDir } from './gitignore';
+import { collectAvailableMigrations } from './available-migrations';
 import { readPackageMigrations } from './migration-manifest';
 import { PackageManager, detectPackageManager, spawnPackageManager } from './package-manager';
 import {
@@ -24,7 +25,6 @@ import {
   chooseTarget,
   isDowngrade,
   orderMigrations,
-  availableMigrations,
   availableMigrationsLine,
   pendingMigrations,
 } from './plan';
@@ -146,7 +146,6 @@ const resolveUpdates = async (options: {
 
 type CollectedMigrations = {
   pending: PendingMigration[];
-  available: PendingMigration[];
   notes: string[];
   problems: string[];
 };
@@ -157,7 +156,7 @@ const collectMigrations = (options: {
   from: Record<string, string>;
 }): CollectedMigrations => {
   const { root, updates, from } = options;
-  const collected: CollectedMigrations = { pending: [], available: [], notes: [], problems: [] };
+  const collected: CollectedMigrations = { pending: [], notes: [], problems: [] };
 
   for (const update of updates) {
     const start = from[update.name] ?? update.from;
@@ -171,7 +170,6 @@ const collectMigrations = (options: {
 
     collected.problems.push(...packageMigrations.problems);
     collected.pending.push(...pendingMigrations({ packageMigrations, from: start, to: update.to }));
-    collected.available.push(...availableMigrations({ packageMigrations, from: start, to: update.to }));
   }
 
   collected.pending = orderMigrations(collected.pending);
@@ -189,7 +187,7 @@ const printMigrations = (pending: readonly PendingMigration[]) => {
   }
 };
 
-const printOutcomes = (outcomes: readonly MigrationOutcome[], syncFailure: SyncFailure | undefined) => {
+export const printOutcomes = (outcomes: readonly MigrationOutcome[], syncFailure: SyncFailure | undefined) => {
   const applied = outcomes.filter((outcome) => outcome.state === 'applied').length;
   const failed = outcomes.filter((outcome) => outcome.state === 'failed');
   const tasks = outcomes.filter((outcome) => outcome.state === 'task' || outcome.state === 'unsupported').length;
@@ -209,7 +207,7 @@ const SYNC_MESSAGE = 'chore(deps): Sync the ethlete agent rules';
 const migrationMessage = (options: { packageName: string; name: string }) =>
   `chore(deps): Apply the ${options.packageName} ${options.name} migration`;
 
-const NOT_A_CHECKOUT = '\n  This is not a git checkout, so nothing is committed.';
+export const NOT_A_CHECKOUT = '\n  This is not a git checkout, so nothing is committed.';
 
 const committerFor = (root: string, state: CommitState | undefined) =>
   state &&
@@ -235,7 +233,7 @@ const commitBump = (options: { committer: StepCommitter | undefined; updates: re
   committer.markBumped();
 };
 
-const commitMigration = (committer: StepCommitter | undefined, outcome: MigrationOutcome) => {
+export const commitMigration = (committer: StepCommitter | undefined, outcome: MigrationOutcome) => {
   if (outcome.state === 'applied')
     committer?.commit({
       message: migrationMessage({ packageName: outcome.pending.packageName, name: outcome.pending.migration.name }),
@@ -401,7 +399,7 @@ const runMigrationPhase = async (options: {
 
   if (!nothingPending) printOutcomes(outcomes, syncFailure);
 
-  const availableLine = availableMigrationsLine(collected.available);
+  const availableLine = availableMigrationsLine(collectAvailableMigrations(root).available);
 
   if (availableLine) console.log(`\n  ${availableLine}`);
 
@@ -455,7 +453,7 @@ const runMigrationPhase = async (options: {
   };
 };
 
-const ignoreTaskList = (root: string) => {
+export const ignoreTaskList = (root: string) => {
   if (!ignoreUpdateDir(root)) return;
 
   console.log(`\n  ${UPDATE_IGNORE_ENTRY} added to .gitignore: the task list is yours, not the repo's.`);

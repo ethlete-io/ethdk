@@ -4,6 +4,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { writeMigrationRun } from './migration-record';
 import { PENDING_FILE, readPendingUpdate, writePendingUpdate } from './pending';
 import { TASKS_DATA_FILE, TASKS_FILE, UPDATE_DIR } from './tasks';
 import { updateCommand } from './update-command';
@@ -167,6 +168,19 @@ describe('the migrations an update does not run', () => {
     expect(generatorsRun()).toEqual(['@ethlete/core:must']);
     expect(console.log).toHaveBeenCalledWith(
       expect.stringContaining('1 recommended and 2 optional migrations are available - run et migrations'),
+    );
+  });
+
+  it('leaves out a migration the record holds a run of', async () => {
+    const root = makeRepo();
+
+    withLevels(root);
+    writeMigrationRun({ root, packageName: '@ethlete/core', name: 'might', run: { version: '5.1.0', ranAt: 'then' } });
+    spawnSync.mockReturnValue({ status: 0 });
+
+    expect(await updateCommand({ argv: ['--continue'], root })).toBe(0);
+    expect(console.log).toHaveBeenCalledWith(
+      expect.stringContaining('1 recommended and 1 optional migrations are available - run et migrations'),
     );
   });
 

@@ -1,5 +1,6 @@
 import { DeclaredPackage, DeclaredSite, RangeWrite, newestDeclaredVersion, rangeFor } from './packages';
 import { Migration, MigrationLevel, PackageMigrations } from './migration-manifest';
+import { MigrationRecord, migrationKey } from './migration-record';
 import { RegistryPackage, tagForInstalled } from './registry';
 import { compareVersions, isInUpdateRange, isNewer, isValidVersion } from './semver';
 
@@ -137,12 +138,27 @@ export const pendingMigrations = (options: {
   to: string;
 }): PendingMigration[] => migrationsInRange(options).filter((entry) => entry.migration.level === 'required');
 
-/** The recommended and optional migrations of one package that an update from `from` to `to` crosses. */
+/**
+ * The recommended and optional migrations of one package that the installed version has reached and the
+ * record holds no run of.
+ */
 export const availableMigrations = (options: {
   packageMigrations: PackageMigrations;
-  from: string;
-  to: string;
-}): PendingMigration[] => migrationsInRange(options).filter((entry) => entry.migration.level !== 'required');
+  installed: string;
+  record: MigrationRecord;
+}): PendingMigration[] => {
+  const { packageMigrations, installed, record } = options;
+  const { packageName, manifestPath } = packageMigrations;
+
+  return packageMigrations.migrations
+    .filter(
+      (migration) =>
+        migration.level !== 'required' &&
+        compareVersions(migration.version, installed) <= 0 &&
+        record[migrationKey({ packageName, name: migration.name })] === undefined,
+    )
+    .map((migration) => ({ packageName, migration, manifestPath }));
+};
 
 /** The sentence that points at the migrations `et update` did not run, or `undefined` when there are none. */
 export const availableMigrationsLine = (available: readonly PendingMigration[]) => {
@@ -168,7 +184,7 @@ const packageRank = (name: string) => {
 };
 
 /** Oldest version first, and inside one version the package that others build on first. */
-export const orderMigrations = (pending: readonly PendingMigration[]) =>
+export const orderMigrations = <T extends PendingMigration>(pending: readonly T[]) =>
   [...pending].sort((left, right) => {
     const byVersion = compareVersions(left.migration.version, right.migration.version);
 
@@ -176,3 +192,9 @@ export const orderMigrations = (pending: readonly PendingMigration[]) =>
 
     return packageRank(left.packageName) - packageRank(right.packageName);
   });
+
+/** Recommended before optional, and inside one level in the order `et update` runs migrations. */
+export const orderAvailableMigrations = <T extends PendingMigration>(available: readonly T[]) => [
+  ...orderMigrations(available.filter((entry) => entry.migration.level === 'recommended')),
+  ...orderMigrations(available.filter((entry) => entry.migration.level !== 'recommended')),
+];

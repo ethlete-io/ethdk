@@ -16,7 +16,7 @@ Never bump an `@ethlete/*` range by hand. The version that lands is what selects
 4. Writes the new ranges into every manifest that declares the package, keeping the `^` or `~` each range was written with.
 5. Records the plan in `.ethlete/update/pending.json`, so an interrupted run can be continued.
 6. Runs the install with the package manager the repo already uses.
-7. Reads the migration manifest out of every **freshly installed** package, and selects the migrations the update crossed.
+7. Reads the migration manifest out of every **freshly installed** package, and selects the `required` migrations the update crossed.
 8. Runs `ethlete-agents sync` when the update moved `@ethlete/agent-rules` and the repo has an `ethlete-agents.config.json`, so the rules and skills match the tasks the update writes.
 9. Runs each codemod, oldest version first.
 10. Writes everything that needs a decision to `.ethlete/update`.
@@ -26,6 +26,27 @@ The sync comes before the codemods because the tasks, and an agent that works th
 Step 7 is why the install comes first: the migrations of a version ship inside that version.
 
 When the update moves `@ethlete/cli` itself, steps 7 to 10 run in the freshly installed `et`, through `et update --continue`. The old CLI lacks the steps a newer one added, for example the agent rules sync. A CLI older than `2.1.0-next.13` has no such hand-over. After an update from one, run `ethlete-agents sync` yourself.
+
+## Migration levels
+
+Each migration has a level. `et update` runs only the `required` ones.
+
+| Level         | Meaning                                                               | `et update`                 |
+| ------------- | --------------------------------------------------------------------- | --------------------------- |
+| `required`    | Without it the app does not build or run on the new version.          | Runs it.                    |
+| `recommended` | The old API still works, but is deprecated and goes in a later major. | Counts it in its last line. |
+| `optional`    | A move to a newer system. The old one stays supported.                | Counts it in its last line. |
+
+A `recommended` or `optional` migration is available once the installed version of its package is at or above the migration's `version`, until it has run. The app decides when. List them, then run one:
+
+```bash
+yarn et migrations                                # recommended first: level, kind, description, docs link
+yarn et migrations run query:to-query-v3          # run one; the package may be named short or in full
+```
+
+A run follows the flow of `et update`: a clean working tree unless `--force`, a commit of its own unless `--no-commit`, and a task in `.ethlete/update` for a `manual` or `assisted` migration. Hand an assisted task to an agent with `et update --continue --ai`. It does not run while an update is unfinished.
+
+Each run that does not fail is recorded in `.ethlete/migrations.json`, keyed by `<package>:<name>`, with the installed version and the time. Commit that file: it is how the next run knows the migration is done, so it is not ignored like `.ethlete/update/`. A `required` migration cannot run this way - `et update` runs it.
 
 ## Every manifest, not only the root
 
@@ -188,18 +209,19 @@ A package declares its migrations in `migrations.json` at its own root, and poin
 }
 ```
 
-| Field          | Meaning                                                                                           |
-| -------------- | ------------------------------------------------------------------------------------------------- |
-| `name`         | Unique inside the package, and stable: it names the migration in every report.                    |
-| `version`      | The version the change landed in. The migration is pending for an update that crosses it.         |
-| `kind`         | `auto`, `manual` or `assisted`.                                                                   |
-| `description`  | One line. It is the summary a developer reads first.                                              |
-| `generator`    | `auto` only: the Nx generator that rewrites the code.                                             |
-| `options`      | `auto` only: flags handed to the generator, for example `{ "skipFormat": true }`.                 |
-| `instructions` | A markdown file next to the manifest: the recommendation for `manual`, the prompt for `assisted`. |
-| `docs`         | A path on this site, for example `/components/button`.                                            |
+| Field          | Meaning                                                                                                  |
+| -------------- | -------------------------------------------------------------------------------------------------------- |
+| `name`         | Unique inside the package, and stable: it names the migration in every report.                           |
+| `version`      | The version the change landed in. The migration is pending for an update that crosses it.                |
+| `kind`         | `auto`, `manual` or `assisted`.                                                                          |
+| `level`        | `required`, `recommended` or `optional`. A missing level is `required`. See [levels](#migration-levels). |
+| `description`  | One line. It is the summary a developer reads first.                                                     |
+| `generator`    | `auto` only: the Nx generator that rewrites the code.                                                    |
+| `options`      | `auto` only: flags handed to the generator, for example `{ "skipFormat": true }`.                        |
+| `instructions` | A markdown file next to the manifest: the recommendation for `manual`, the prompt for `assisted`.        |
+| `docs`         | A path on this site, for example `/components/button`.                                                   |
 
-A migration is selected when `installed < version <= target`. Two rules follow from that:
+A `required` migration is selected when `installed < version <= target`. Two rules follow from that:
 
 - Set `version` to the version the change **shipped** in, not the one being developed.
 - Never change the `version` of a published entry. A repo that already passed it would run it again.

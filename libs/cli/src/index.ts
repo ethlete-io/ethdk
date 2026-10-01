@@ -1,5 +1,14 @@
 #!/usr/bin/env node
-import { apiCommand, authCommand, designCommand, doctorCommand, release, repoInvocation, updateCommand } from './lib';
+import {
+  apiCommand,
+  authCommand,
+  designCommand,
+  doctorCommand,
+  migrationsCommand,
+  release,
+  repoInvocation,
+  updateCommand,
+} from './lib';
 
 const USAGE_ROWS = [
   { subcommand: 'release', args: '', lines: ['Turn pending changesets into a tagged, pushed release commit'] },
@@ -36,6 +45,11 @@ const USAGE_ROWS = [
     subcommand: 'update',
     args: ' [packages...]',
     lines: ['Move the @ethlete/* packages to a newer version and run the', 'migrations those versions ship'],
+  },
+  {
+    subcommand: 'migrations',
+    args: ' [run <package>:<name>]',
+    lines: ['List the recommended and optional migrations this repo has', 'not run yet, or run one of them'],
   },
 ];
 
@@ -91,6 +105,14 @@ const cli = async (args: string[]): Promise<number> => {
         root: process.cwd(),
         argv: args.slice(1),
         invocation: repoInvocation({ root: process.cwd(), subcommand: 'update' }),
+      });
+
+    case 'migrations':
+      return migrationsCommand({
+        root: process.cwd(),
+        argv: args.slice(1),
+        invocation: repoInvocation({ root: process.cwd(), subcommand: 'migrations' }),
+        updateInvocation: repoInvocation({ root: process.cwd(), subcommand: 'update' }),
       });
 
     case 'doctor':

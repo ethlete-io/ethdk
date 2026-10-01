@@ -133,10 +133,14 @@ const renderReport = (options: {
   return [
     '# Ethlete update: what is left to do',
     '',
-    '`et update` moved these packages:',
-    '',
-    ...updates.map((update) => `- \`${update.name}\`: ${update.from ?? 'not installed'} → ${update.to}`),
-    '',
+    ...(updates.length > 0
+      ? [
+          '`et update` moved these packages:',
+          '',
+          ...updates.map((update) => `- \`${update.name}\`: ${update.from ?? 'not installed'} → ${update.to}`),
+          '',
+        ]
+      : []),
     ...(applied.length > 0
       ? [
           'It applied these codemods:',
