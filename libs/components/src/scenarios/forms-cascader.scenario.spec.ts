@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { form, FormField, required } from '@angular/forms/signals';
 import { provideColorThemes } from '@ethlete/core';
-import { delay, map } from 'rxjs';
+import { delay, map, of } from 'rxjs';
 import {
   CASCADER_LABELS,
   CASCADER_SELECTABLE_LEVELS,
@@ -16,9 +16,6 @@ import {
   injectCascaderLabels,
   provideCascaderLabels,
   provideOverlay,
-  toChildrenObservable,
-  toPathObservable,
-  toSearchObservable,
 } from '../index';
 import { TEST_COLOR_THEMES } from '../lib/testing/color-themes';
 import '../test-helpers';
@@ -87,13 +84,13 @@ const toPlaceNodes = (nodes: CascaderNode<string>[]): CascaderNode<Place>[] =>
   nodes.map((node) => ({ ...node, value: { id: node.value } }));
 
 const slowPlacesSource = (ms: number): CascaderDataSource<Place> => ({
-  loadChildren: (parent) => toChildrenObservable(toPlaceNodes(TREE[parent?.value.id ?? 'root'] ?? [])).pipe(delay(ms)),
+  loadChildren: (parent) => of(toPlaceNodes(TREE[parent?.value.id ?? 'root'] ?? [])).pipe(delay(ms)),
   resolvePath: (value) =>
-    toPathObservable(pathTo(value.id)).pipe(
+    of(pathTo(value.id)).pipe(
       map((path) => path && toPlaceNodes(path)),
       delay(ms),
     ),
-  search: (query) => toSearchObservable(searchTree(query).map(toPlaceNodes)).pipe(delay(ms)),
+  search: (query) => of(searchTree(query).map(toPlaceNodes)).pipe(delay(ms)),
 });
 
 @Component({

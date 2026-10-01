@@ -15,8 +15,6 @@ import {
   CascaderTriggerDirective,
   canHaveChildren,
   defaultCompareWith,
-  indexOfNode,
-  nodesEqual,
   provideOverlay,
 } from '../index';
 import { TEST_COLOR_THEMES } from '../lib/testing/color-themes';
@@ -107,11 +105,11 @@ class TeamCascaderComponent {
   surface = viewChild.required(CascaderSurfaceDirective);
 
   isHome(node: CascaderNode<unknown>) {
-    return nodesEqual({ a: node, b: HOME, compareWith: defaultCompareWith });
+    return defaultCompareWith(node.value, HOME.value);
   }
 
   position(nodes: CascaderNode<unknown>[], node: CascaderNode<unknown>) {
-    return `${indexOfNode({ nodes, node, compareWith: defaultCompareWith }) + 1}/${nodes.length}`;
+    return `${nodes.findIndex((candidate) => defaultCompareWith(candidate.value, node.value)) + 1}/${nodes.length}`;
   }
 }
 

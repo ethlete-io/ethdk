@@ -237,6 +237,12 @@ For [flat search](#flat-search), place an `input[etCascaderSearch]` in the surfa
 | `[etCascaderSearchOption]` | `path`             | `CascaderNode<T>[]` | Required. The root → match chain this result represents.      |
 | `[etCascaderSearchOption]` | `index`            | `number`            | Required. The result's position in the flat list.             |
 
+`canHaveChildren` and `defaultCompareWith` are the tree helpers that stay public. `toChildrenObservable`, `toSearchObservable`, `toPathObservable`, `nodesEqual` and `indexOfNode` are no longer exported: a data source returns an array, a `Promise` or an `Observable` as it is, and two nodes are equal when the cascader's `compareWith` matches their `value`s. `et update` removes the dropped names from `@ethlete/components` imports and marks each use with a `TODO(ethlete-migration)` comment:
+
+```bash
+yarn nx g @ethlete/components:migrate-cascader-tree-internals
+```
+
 ## Accessibility
 
 - The trigger is a `role="combobox"` with `aria-haspopup="tree"`, `aria-expanded`, and `aria-controls` pointing at the open tree panel; the panel is a `role="tree"` of `role="group"` columns and `role="treeitem"` nodes carrying `aria-level`, `aria-selected`, and `aria-expanded` on branches. In single mode only the committed node is `aria-selected`; its ancestors mark the chain with `data-selected` alone.

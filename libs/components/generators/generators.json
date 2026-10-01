@@ -65,6 +65,11 @@
       "schema": "./migrate-overlay-fullscreen-animation/schema.json",
       "description": "Remove the overlay fullscreen animation internals from @ethlete/components imports and mark their uses"
     },
+    "migrate-cascader-tree-internals": {
+      "factory": "./migrate-cascader-tree-internals/migration",
+      "schema": "./migrate-cascader-tree-internals/schema.json",
+      "description": "Remove the cascader tree helpers from @ethlete/components imports and mark their uses"
+    },
     "migrate-time-picker-ring": {
       "factory": "./migrate-time-picker-ring/migration",
       "schema": "./migrate-time-picker-ring/schema.json",

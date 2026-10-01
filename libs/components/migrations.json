@@ -103,6 +103,14 @@
       "description": "Replace the removed time picker setActiveSide with activeSide.set, and mark the removed column and option directives.",
       "generator": "@ethlete/components:migrate-time-picker-ring",
       "docs": "/components/time-picker"
+    },
+    {
+      "name": "cascader-tree-internals",
+      "version": "1.0.0-next.67",
+      "kind": "auto",
+      "description": "Remove the cascader tree helpers from @ethlete/components imports and mark the uses that need another approach.",
+      "generator": "@ethlete/components:migrate-cascader-tree-internals",
+      "docs": "/components/cascader"
     }
   ]
 }

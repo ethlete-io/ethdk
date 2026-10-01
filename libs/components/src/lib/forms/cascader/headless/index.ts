@@ -6,4 +6,5 @@ export * from './cascader-surface.directive';
 export * from './cascader-trigger.directive';
 export * from './cascader.directive';
 export * from './cascader.tokens';
-export * from './internals/cascader-tree';
+export { canHaveChildren, defaultCompareWith } from './internals/cascader-tree';
+export type { CascaderCompareWith, CascaderDataSource, CascaderNode } from './internals/cascader-tree';
