@@ -95,6 +95,14 @@
       "description": "Spread STREAM_DEFAULT_COMPONENTS into provideStreamConfig, add it to the app config of an app without one, and report the rest.",
       "generator": "@ethlete/components:migrate-stream-default-components",
       "docs": "/components/stream"
+    },
+    {
+      "name": "time-picker-ring",
+      "version": "1.0.0-next.67",
+      "kind": "auto",
+      "description": "Replace the removed time picker setActiveSide with activeSide.set, and mark the removed column and option directives.",
+      "generator": "@ethlete/components:migrate-time-picker-ring",
+      "docs": "/components/time-picker"
     }
   ]
 }

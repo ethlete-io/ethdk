@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "migrate-time-picker-ring",
+  "title": "Replace the removed time picker setActiveSide with activeSide.set, and mark the removed column and option directives",
+  "type": "object",
+  "properties": {
+    "projects": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Nx projects to scan. Defaults to every project in the workspace.",
+      "alias": "project"
+    },
+    "include": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Path prefixes to scan, relative to the workspace root (e.g. 'apps/shop'). Unioned with `projects`.",
+      "alias": "includePath"
+    },
+    "skipFormat": {
+      "type": "boolean",
+      "description": "Skip formatting files after migration",
+      "default": false
+    }
+  },
+  "required": []
+}

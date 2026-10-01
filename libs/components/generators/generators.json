@@ -65,6 +65,11 @@
       "schema": "./migrate-overlay-fullscreen-animation/schema.json",
       "description": "Remove the overlay fullscreen animation internals from @ethlete/components imports and mark their uses"
     },
+    "migrate-time-picker-ring": {
+      "factory": "./migrate-time-picker-ring/migration",
+      "schema": "./migrate-time-picker-ring/schema.json",
+      "description": "Replace the removed time picker setActiveSide with activeSide.set and mark the removed column and option directives"
+    },
     "icons": {
       "factory": "./icons/generator",
       "schema": "./icons/schema.json",
