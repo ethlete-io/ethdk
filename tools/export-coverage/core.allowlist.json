@@ -216,7 +216,6 @@
   "provideBoundaryElement": "internal: building block of @ethlete/cdk, @ethlete/components, no app imports it",
   "provideBreakpointInstance": "spec: libs/core/src/lib/signals/breakpoint-input.spec.ts",
   "provideBreakpointObserver": "internal: DI accessor of a root provider that its covered API resolves itself; no app or lib imports it",
-  "provideColorPalette": "internal: building block of @ethlete/components, no app imports it",
   "provideColorThemes": "internal: building block of @ethlete/cdk, @ethlete/components, no app imports it",
   "provideFaviconStore": "internal: DI accessor of a root provider that its covered API resolves itself; no app or lib imports it",
   "provideFocusVisibleTracker": "internal: DI accessor of a root provider that its covered API resolves itself; no app or lib imports it",
