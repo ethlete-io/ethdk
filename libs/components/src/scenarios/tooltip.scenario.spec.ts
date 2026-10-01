@@ -270,4 +270,31 @@ describe('tooltip scenarios', () => {
 
     expect(fixture.componentInstance.hint().overlayRef()).toBeNull();
   });
+  it('cancels a pending hover show when the tooltip is closed before the delay ends', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(SaveHintComponent);
+
+    document.body.appendChild(fixture.nativeElement);
+    s.tick();
+
+    const trigger = query('.save');
+    const hint = fixture.componentInstance.hint();
+
+    hover(s, trigger);
+    hint.show();
+    s.tick(100);
+    s.frame(3);
+    expect(tooltip()).not.toBeNull();
+
+    s.keydown('Escape');
+    settle(s);
+    expect(tooltip()).toBeNull();
+
+    leave(s, trigger);
+    hover(s, trigger);
+    s.tick(100);
+    hint.hide();
+    settle(s);
+    expect(tooltip()).toBeNull();
+  });
 });

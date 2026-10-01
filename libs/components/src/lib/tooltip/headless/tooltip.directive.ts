@@ -26,7 +26,7 @@ import {
   enableAnchoredOverlayPositionExtras,
 } from '@ethlete/core';
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
-import { filter, fromEvent, map, switchMap, takeUntil, tap, timer } from 'rxjs';
+import { Subject, filter, fromEvent, map, merge, switchMap, takeUntil, tap, timer } from 'rxjs';
 import { OverlayConfig, OverlayRef, anchoredOverlayStrategy } from '../../overlay';
 import { mountFloatingPanelStyles } from '../../overlay/floating-panel-styles.component';
 import { injectOverlayManager } from '../../overlay/overlay-manager';
@@ -80,6 +80,7 @@ export class TooltipDirective {
   public overlayRef = signal<OverlayRef<TooltipComponent, unknown> | null>(null);
 
   private hasHover = signal(false);
+  private hideRequest$ = new Subject<void>();
   private hasFocus = signal(false);
   private descriptionId = createTooltipDescriptionId();
   private descriptionElement: HTMLElement | null = null;
@@ -221,6 +222,7 @@ export class TooltipDirective {
   }
 
   public hide() {
+    this.hideRequest$.next();
     this.overlayRef()?.close();
   }
 
@@ -237,7 +239,11 @@ export class TooltipDirective {
       .pipe(
         filter((event) => event.pointerType !== 'touch'),
         tap(() => this.hasHover.set(true)),
-        switchMap(() => timer(this.showDelay()).pipe(takeUntil(leave$.pipe(tap(() => this.hasHover.set(false)))))),
+        switchMap(() =>
+          timer(this.showDelay()).pipe(
+            takeUntil(merge(leave$.pipe(tap(() => this.hasHover.set(false))), this.hideRequest$)),
+          ),
+        ),
         tap(() => {
           if (!this.hasHover()) {
             return;

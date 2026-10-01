@@ -34,7 +34,7 @@ import { TOOLTIP_IMPORTS } from '@ethlete/components';
 ## Behavior
 
 - Shows on **hover** (after `showDelay`, default 300ms) and on **keyboard focus** (immediately - and only for focus made visible by the keyboard, so clicking a button doesn't pop its tooltip).
-- Hides when neither hover nor focus remains, or on <kbd>Escape</kbd> - from anywhere, focus does not have to be on the trigger. The tooltip consumes that <kbd>Escape</kbd>, so a dialog it is shown inside stays open.
+- Hides when neither hover nor focus remains, or on <kbd>Escape</kbd> - from anywhere, focus does not have to be on the trigger. The tooltip consumes that <kbd>Escape</kbd>, so a dialog it is shown inside stays open. Closing it, by <kbd>Escape</kbd> or `hide()`, also cancels a hover show still waiting for its delay, so it stays closed until the pointer enters again.
 - The overlay is fully passive: non-modal, no backdrop, never steals focus or pointer events. It also never becomes the top layer, so a dialog it shows inside still closes on <kbd>Escape</kbd> and on a backdrop press.
 - `etTooltipDisabled` disables it; it also hides automatically when the content becomes `null`.
 - For programmatic control, grab the directive via `#tooltip="etTooltip"` - it exposes `show()` and `hide()`.
