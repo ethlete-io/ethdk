@@ -51,6 +51,7 @@ links: SankeyChartLinkInput[] = [
 | `targetHeader`   | `string`                               | `'Target'` | The table view's target column header.                                                 |
 | `valueHeader`    | `string`                               | `'Value'`  | The table view's value column header.                                                  |
 | `linkSeparator`  | `string`                               | `'to'`     | The word between source and target in a link's name, tooltip and accessible name.      |
+| `linkKeyHint`    | `SankeyChartLinkKeyHint \| null`       | English    | Writes the key hint under a keyboard-focused link's tooltip. `null` shows none.        |
 | `colorToken`     | registered color theme name \| `null`  | `null`     | The color theme for nodes without their own `colorToken` or a palette entry.           |
 
 Without a `valueFormatter`, values are formatted with `Intl.NumberFormat` in the locale from `injectLocale()` (`@ethlete/core`).
@@ -146,7 +147,16 @@ The chart is one tab stop. Tab enters on the first node - or on the mark that wa
 | `Enter`      | The node's first outgoing link, top to bottom; nothing on a sink            | -                                        |
 | `Escape`     | Closes the tooltip                                                          | Back to the link's source node           |
 
-Nodes go column by column, top to bottom; a node's outgoing links top to bottom at the node. In a vertical flow the keys turn with it: `↓` / `↑` move to the nearest node of the next / previous row, `→` / `←` move within a row and cycle a node's outgoing links, left to right. An incoming link is reached from its source node. Screen readers in browse mode keep the arrow keys for themselves, so the table view stays the route through every link.
+Nodes go column by column, top to bottom; a node's outgoing links top to bottom at the node. In a vertical flow the keys turn with it: `↓` / `↑` move to the nearest node of the next / previous row, `→` / `←` move within a row and cycle a node's outgoing links, left to right. An incoming link is reached from its source node.
+
+A link focused from the keyboard ends its tooltip in a muted key hint: `1 of 2 · ↑↓ next link · Esc back to Reserve` (`←→` in a vertical flow; a lone link drops the middle part). Hover, a click or a tap shows no hint. `linkKeyHint` writes the text from `{ position, count, sourceLabel, direction }`, so it can be translated:
+
+```ts
+linkKeyHint: SankeyChartLinkKeyHint = ({ position, count, sourceLabel, direction }) =>
+  `${position} von ${count} · ${direction === 'vertical' ? '←→' : '↑↓'} nächster Link · Esc zurück zu ${sourceLabel}`;
+```
+
+The hint is `aria-hidden` and not part of the link's description, so a screen reader hears the link's name and value only. Screen readers in browse mode keep the arrow keys for themselves, so the table view stays the route through every link.
 
 ## Theming
 

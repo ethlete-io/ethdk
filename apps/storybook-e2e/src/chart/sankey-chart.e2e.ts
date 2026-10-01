@@ -139,6 +139,34 @@ test.describe('sankey chart / keyboard', () => {
     await expect(page.getByRole('tooltip')).toHaveCount(1);
   });
 
+  test("a keyboard-focused link's tooltip ends in a muted key hint", async ({ page }) => {
+    await openStory(page, STORY_ID);
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'ArrowRight');
+    await pressKey(page, 'Enter');
+
+    const hint = page.getByRole('tooltip').locator('.et-sankey-chart-tooltip-hint');
+
+    await expect(hint).toHaveText(`1 of 4 · ↑↓ next link · Esc back to ${MIDDLE}`);
+
+    const label = page.getByRole('tooltip').locator('.et-chart-tooltip-label');
+    const [hintBox, labelBox] = [await boxOf(hint), await boxOf(label)];
+    const [hintColor, labelColor] = [
+      await hint.evaluate((el) => getComputedStyle(el).color),
+      await page
+        .getByRole('tooltip')
+        .locator('.et-chart-tooltip-value')
+        .evaluate((el) => getComputedStyle(el).color),
+    ];
+
+    expect(hintBox.y).toBeGreaterThanOrEqual(labelBox.y + labelBox.height);
+    expect(hintColor).not.toBe(labelColor);
+
+    await pressKey(page, 'ArrowDown');
+    await expect(hint).toHaveText(`2 of 4 · ↑↓ next link · Esc back to ${MIDDLE}`);
+  });
+
   test('leaving the chart and coming back with Shift+Tab lands on the last focused mark', async ({ page }) => {
     const root = await openStory(page, STORY_ID);
 
@@ -241,6 +269,20 @@ test.describe('sankey chart / pointer', () => {
     await expectTooltipAboveMidpoint(page, link);
     expect(await highlightedLinks(root)).toEqual([`${MIDDLE} to Reserves`]);
   });
+
+  test('a hovered or clicked link shows no key hint', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const midpoint = await linkMidpoint(mark(root, `${MIDDLE} to Reserves`));
+
+    await page.mouse.move(midpoint.x, midpoint.y);
+    await expectLinkTooltip(page, `${MIDDLE} to Reserves`, '190');
+    await expect(page.locator('.et-sankey-chart-tooltip-hint')).toHaveCount(0);
+
+    await page.mouse.click(midpoint.x, midpoint.y);
+    await expect(mark(root, `${MIDDLE} to Reserves`)).toBeFocused();
+    await expectLinkTooltip(page, `${MIDDLE} to Reserves`, '190');
+    await expect(page.locator('.et-sankey-chart-tooltip-hint')).toHaveCount(0);
+  });
 });
 
 test.describe('sankey chart / accessibility', () => {
@@ -312,6 +354,7 @@ test.describe('sankey chart / touch', () => {
     await page.touchscreen.tap(second.x, second.y);
     await expectLinkTooltip(page, `${MIDDLE} to Security`, '140');
     await expect(page.getByRole('tooltip')).toHaveCount(1);
+    await expect(page.locator('.et-sankey-chart-tooltip-hint')).toHaveCount(0);
   });
 
   test('a tap elsewhere closes the tooltip and clears the highlight', async ({ page }) => {

@@ -113,7 +113,14 @@
 
 @for (link of chart.renderedLinks(); track link.key) {
   <ng-template #linkTooltip>
-    <et-chart-tooltip [value]="link.valueText" [label]="link.name" />
+    <span class="et-sankey-chart-link-tooltip">
+      <et-chart-tooltip [value]="link.valueText" [label]="link.name" />
+      @if (chart.linkKeyHintText(); as hint) {
+        @if (hint.key === link.key) {
+          <span class="et-sankey-chart-tooltip-hint" aria-hidden="true">{{ hint.text }}</span>
+        }
+      }
+    </span>
   </ng-template>
 }
 

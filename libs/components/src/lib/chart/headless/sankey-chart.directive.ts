@@ -1,5 +1,6 @@
 import { computed, Directive, effect, input, numberAttribute, signal } from '@angular/core';
 import {
+  injectFocusVisibleTracker,
   injectLocale,
   injectSurfaceColorPalette,
   RegisteredColorThemeName,
@@ -35,6 +36,27 @@ export type SankeyChartValueFormatter = ChartValueFormatter;
 
 /** Which way the flow runs: left to right in columns, or top to bottom in rows. */
 export type SankeyChartDirection = 'horizontal' | 'vertical';
+
+/** Where a keyboard-focused link sits among its source's outgoing links. `position` counts from 1. */
+export type SankeyChartLinkKeyHintContext = {
+  position: number;
+  count: number;
+  sourceLabel: string;
+  direction: SankeyChartDirection;
+};
+
+/** Writes the key hint a keyboard-focused link's tooltip shows. */
+export type SankeyChartLinkKeyHint = (context: SankeyChartLinkKeyHintContext) => string;
+
+/** The English key hint, e.g. `"1 of 2 · ↑↓ next link · Esc back to Reserve"`. */
+export const defaultSankeyChartLinkKeyHint: SankeyChartLinkKeyHint = ({ position, count, sourceLabel, direction }) =>
+  [
+    `${position} of ${count}`,
+    count > 1 ? `${direction === 'vertical' ? '←→' : '↑↓'} next link` : null,
+    `Esc back to ${sourceLabel}`,
+  ]
+    .filter((part) => part !== null)
+    .join(' · ');
 
 /** Where a node's label sits along the flow: before the node (first column), after it, or on a chip centred on it (large middle-column nodes). */
 export type SankeyChartLabelSide = 'start' | 'end' | 'center';
@@ -131,6 +153,7 @@ export class SankeyChartDirective implements ChartPlotHost {
   private palette = injectSurfaceColorPalette();
   private locale = injectLocale();
   private reportError = injectReportError();
+  private focusVisibleTracker = injectFocusVisibleTracker();
   /** The stages of the flow. Their order sets their palette colour and the first ordering guess. */
   public nodes = input.required<readonly SankeyChartNodeInput[]>();
 
@@ -178,6 +201,9 @@ export class SankeyChartDirective implements ChartPlotHost {
 
   /** The table view's value column header. @default 'Value' */
   public valueHeader = input('Value');
+
+  /** Writes the key hint under a keyboard-focused link's tooltip; `null` shows none. Visual only, assistive tech does not read it. @default {@link defaultSankeyChartLinkKeyHint} */
+  public linkKeyHint = input<SankeyChartLinkKeyHint | null>(defaultSankeyChartLinkKeyHint);
 
   public formatValue = computed(() => resolveChartValueFormatter(this.valueFormatter(), this.locale.currentLocale()));
 
@@ -418,6 +444,31 @@ export class SankeyChartDirective implements ChartPlotHost {
 
   /** The hovered mark, else the focused one. */
   public activeMark = computed(() => this.hovered() ?? this.focused());
+
+  /** The key hint of the link that has keyboard focus; `null` while no link has it or {@link linkKeyHint} is `null`. */
+  public linkKeyHintText = computed<{ key: string; text: string } | null>(() => {
+    const write = this.linkKeyHint();
+    const focused = this.focused();
+
+    if (!write || focused?.kind !== 'link' || !this.focusVisibleTracker.isFocusVisible()) return null;
+
+    const links = this.renderedLinks();
+    const link = links.find((entry) => entry.key === focused.key);
+
+    if (!link) return null;
+
+    const siblings = links.filter((entry) => entry.source.key === link.source.key);
+
+    return {
+      key: link.key,
+      text: write({
+        position: siblings.indexOf(link) + 1,
+        count: siblings.length,
+        sourceLabel: link.source.name,
+        direction: this.flowDirection(),
+      }),
+    };
+  });
 
   /** The id of the active node, if the active mark is a node. */
   public activeNodeKey = computed(() => {

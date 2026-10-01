@@ -190,6 +190,17 @@
     }
   }
 
+  .et-sankey-chart-link-tooltip {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    .et-sankey-chart-tooltip-hint {
+      color: var(--et-surface-color-muted-solid, currentColor);
+      white-space: nowrap;
+    }
+  }
+
   @keyframes et-sankey-chart-fade {
     from {
       opacity: 0;

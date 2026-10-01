@@ -6,9 +6,11 @@ import { provideColorPalette } from '@ethlete/core';
 import '../../test-helpers';
 import { ChartPlotDirective } from './headless/chart-plot.directive';
 import {
+  defaultSankeyChartLinkKeyHint,
   SankeyChartDirection,
   SankeyChartDirective,
   SankeyChartLinkInput,
+  SankeyChartLinkKeyHint,
   SankeyChartNodeInput,
 } from './headless/sankey-chart.directive';
 import { SankeyChartComponent } from './sankey-chart.component';
@@ -21,6 +23,7 @@ import { SankeyChartComponent } from './sankey-chart.component';
     [height]="200"
     [linkSeparator]="separator()"
     [direction]="direction()"
+    [linkKeyHint]="keyHint()"
     label="Budget"
   />`,
   imports: [SankeyChartComponent],
@@ -28,6 +31,7 @@ import { SankeyChartComponent } from './sankey-chart.component';
 class SankeyChartHostComponent {
   separator = signal('to');
   direction = signal<SankeyChartDirection | 'auto'>('auto');
+  keyHint = signal<SankeyChartLinkKeyHint | null>(defaultSankeyChartLinkKeyHint);
   nodes = signal<SankeyChartNodeInput[]>([
     { id: 'a', label: 'Tickets' },
     { id: 'b', label: 'Sponsors' },
@@ -156,6 +160,71 @@ describe('SankeyChartComponent', () => {
 
     press(fixture, document.activeElement as SVGElement, 'Escape');
     expect(document.activeElement).toBe(mark(element, 'Budget'));
+  });
+
+  describe('link key hint', () => {
+    const enterBudgetLinks = async (fixture: { detectChanges: () => void }, element: HTMLElement) => {
+      mark(element, 'Budget').focus();
+      press(fixture, mark(element, 'Budget'), 'Enter');
+      await Promise.resolve();
+      fixture.detectChanges();
+    };
+
+    it('writes the position, the keys and the source of a keyboard-focused link', async () => {
+      const { fixture, element, chart } = setup();
+      const outgoing = chart.renderedLinks().filter((link) => link.source.key === 'c');
+
+      await enterBudgetLinks(fixture, element);
+      expect(chart.linkKeyHintText()).toEqual({
+        key: outgoing[0]?.key,
+        text: '1 of 2 · ↑↓ next link · Esc back to Budget',
+      });
+
+      press(fixture, document.activeElement as SVGElement, 'ArrowDown');
+      await Promise.resolve();
+      expect(chart.linkKeyHintText()?.text).toBe('2 of 2 · ↑↓ next link · Esc back to Budget');
+    });
+
+    it('drops the next-link keys for a lone link and names ←→ in a vertical flow', async () => {
+      const { fixture, element, chart } = setup([], { direction: 'vertical' });
+
+      await enterBudgetLinks(fixture, element);
+      expect(chart.linkKeyHintText()?.text).toBe('1 of 2 · ←→ next link · Esc back to Budget');
+
+      mark(element, 'Sponsors').focus();
+      press(fixture, mark(element, 'Sponsors'), 'Enter');
+      await Promise.resolve();
+      expect(chart.linkKeyHintText()?.text).toBe('1 of 1 · Esc back to Sponsors');
+    });
+
+    it('shows no hint for a link focused by a pointer or on a node', async () => {
+      const { fixture, element, chart } = setup();
+      const link = mark(element, 'Sponsors to Budget');
+
+      mark(element, 'Budget').focus();
+      press(fixture, mark(element, 'Budget'), 'ArrowUp');
+      await Promise.resolve();
+      expect(chart.linkKeyHintText()).toBeNull();
+
+      link.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      link.focus();
+      await Promise.resolve();
+      expect(chart.linkKeyHintText()).toBeNull();
+    });
+
+    it('takes the text from linkKeyHint and shows none when it is null', async () => {
+      const { fixture, element, chart } = setup();
+
+      fixture.componentInstance.keyHint.set(
+        ({ position, count, sourceLabel }) => `${position}/${count} · Esc zurück zu ${sourceLabel}`,
+      );
+      await enterBudgetLinks(fixture, element);
+      expect(chart.linkKeyHintText()?.text).toBe('1/2 · Esc zurück zu Budget');
+
+      fixture.componentInstance.keyHint.set(null);
+      fixture.detectChanges();
+      expect(chart.linkKeyHintText()).toBeNull();
+    });
   });
 
   it('leaves Enter alone on a node without outgoing links', () => {

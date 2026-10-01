@@ -47,6 +47,7 @@ import { SankeyChartDirective } from './headless/sankey-chart.directive';
         'targetHeader',
         'valueHeader',
         'linkSeparator',
+        'linkKeyHint',
         'direction',
         'verticalBelow',
       ],
