@@ -39,8 +39,8 @@ every scope class - so the tokens are always resolvable and components just read
 
 **Theme names are yours.** Never hardcode them as an SDK-defined union or reusable API
 contract. App-specific docs may name their own themes when they label them as app values.
-The portable handle is the theme **`type`**: `injectErrorTheme()` finds whichever theme
-the app registered with `type: 'error'`.
+The portable handle is the theme **`type`**: `injectSemanticColorTheme('error')` finds
+whichever theme the app registered with `type: 'error'`.
 
 ## Tokens components may consume
 
@@ -85,15 +85,17 @@ the interactive element itself, never on a wrapper.
   color and `resolveSurfaceByElevation(themes, type, elevation + 1)` for the surface.
 - **Semantic colors come through DI, not CSS.** There is no global "error color"
   variable - error/warning/success are just color themes. To render something in the
-  error color, `injectErrorTheme()` (it throws if the app registered no `type: 'error'`
-  theme) and either bind it (`[etProvideColor]="errorColorTheme"`) or force it
-  programmatically (`provideColor.forceColor(theme)` / `clearForcedColor()`). Inside
-  that scope, `--et-theme-color-primary-*` _is_ the error color.
-- **A semantic color that must read on both dark and light surfaces** comes from
-  `injectSemanticColorTheme(type)`: a signal of the theme the nearest surface names in
-  `SurfaceTheme.semanticColorThemes` (e.g. `{ success: 'success-on-light' }`, an extra
-  theme registered without a `type`), else the theme of that `type`. Never add
-  per-surface logic to a color theme or new CSS vars for it.
+  error color, `injectSemanticColorTheme('error')` (reading it throws if the app
+  registered no `type: 'error'` theme) and either bind it
+  (`[etProvideColor]="errorColorTheme()"`) or force it programmatically
+  (`provideColor.forceColor(theme)` / `clearForcedColor()`). Inside that scope,
+  `--et-theme-color-primary-*` _is_ the error color.
+- **`injectSemanticColorTheme(type)` follows the surface**: it is a signal of the theme
+  the nearest surface names in `SurfaceTheme.semanticColorThemes` (e.g.
+  `{ success: 'success-on-light' }`, an extra theme registered without a `type`), else
+  the theme of that `type`. Never add per-surface logic to a color theme or new CSS vars
+  for it. `injectErrorTheme()`, `injectWarningTheme()` and `injectSuccessTheme()` are
+  deprecated: they ignore the surface.
 
 ## Pitfalls
 
@@ -111,8 +113,8 @@ the interactive element itself, never on a wrapper.
   hardcoded semantic color in CSS can't be replaced by it unless the right theme is
   provided on that element.
 - A static fallback (`var(--et-surface-border-solid, rgb(255 255 255 / 0.1))`) is
-  permitted for theme-less setups, but themes make it unnecessary. `injectErrorTheme()`
-  is a hard requirement wherever it is used.
+  permitted for theme-less setups, but themes make it unnecessary. `injectSemanticColorTheme()`
+  is a hard requirement wherever it is read.
 - **Cascade layers, not `:where()`, decide who wins against SDK component CSS.** SDK
   styles live in `@layer components`, so a utility or unlayered app CSS overrides them.
   An app rule inside `@layer components` loses. See the `app-styling` rule.

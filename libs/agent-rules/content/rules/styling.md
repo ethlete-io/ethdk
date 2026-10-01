@@ -34,4 +34,4 @@ interaction states resolve from the surface and colour theming tokens
 Theme **names** (`brand`, `danger`, `dark-elevated`, …) are registered by the application;
 the SDK ships none. Never hardcode them as an SDK-defined union or reusable API contract.
 If an app-specific example names one, label it as belonging to that app. Semantic colours
-resolve by theme `type` (e.g. `injectErrorTheme()`).
+resolve by theme `type` (e.g. `injectSemanticColorTheme('error')`).

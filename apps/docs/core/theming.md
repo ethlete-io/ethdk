@@ -348,17 +348,17 @@ Neither is generated with the themes; set them on `:root` or on any scope:
 Because names are app-defined, code that needs "the error color" resolves it by `type`:
 
 ```ts
-import { injectErrorTheme } from '@ethlete/core';
+import { injectSemanticColorTheme } from '@ethlete/core';
 
 @Component({
-  template: `<span [etProvideColor]="errorTheme">…</span>`,
+  template: `<span [etProvideColor]="errorTheme()">…</span>`,
 })
 export class ViolationHintComponent {
-  errorTheme = injectErrorTheme();
+  errorTheme = injectSemanticColorTheme('error');
 }
 ```
 
-`injectErrorTheme()`, `injectWarningTheme()` and `injectSuccessTheme()` return the registered `ColorTheme` with the matching `type` - and throw if the app hasn't registered one, so components can rely on them.
+`injectSemanticColorTheme('error' | 'warning' | 'success')` returns a signal of the registered `ColorTheme` with the matching `type`, and reading it throws if the app hasn't registered one, so components can rely on it. `injectErrorTheme()`, `injectWarningTheme()` and `injectSuccessTheme()` are deprecated: they return the theme once and ignore the surface.
 
 ### Semantic themes per surface
 
@@ -394,7 +394,7 @@ export class DeltaComponent {
 Every SDK component resolves its semantic colors this way: the form field's error and warning states,
 select, cascader, menu, alert dialog, table, match card, bracket pick card, rich text editor popup, banner,
 progress step, stat tile and the query devtools. Content in an overlay panel follows the surface the panel
-paints, not the one its trigger sits on. `injectErrorTheme()` and its siblings stay surface-independent. The surface only picks which `.et-color--<name>` class an
+paints, not the one its trigger sits on. The surface only picks which `.et-color--<name>` class an
 element gets: CSS that reads `--et-theme-color-ink-solid` from an outer `.et-color--<name>` scope keeps
 that scope's theme until something re-provides the color.
 

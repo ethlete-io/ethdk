@@ -91,8 +91,8 @@ the interactive element itself, never a wrapper).
   without a `type`). `injectSemanticColorTheme(type)` returns a signal of that theme,
   else the theme of that `type`. Every component in `libs/components` and
   `libs/query-devtools` uses it (helpers in `libs/components/src/lib/internals/semantic-theme.ts`;
-  `injectOptionalSemanticTheme` where a missing theme must not throw). Do not use
-  `injectErrorTheme()` and its siblings in components: they ignore the surface.
+  `injectOptionalSemanticTheme` where a missing theme must not throw). Do not use the
+  deprecated `injectErrorTheme()` and its siblings: they ignore the surface.
   Never put surface logic into a color theme or add CSS vars for it.
 - **Semantic themes in overlay panels.** The lookup reads the surface of the injector
   that calls it. Content a component declares but stamps into a detached panel (select,

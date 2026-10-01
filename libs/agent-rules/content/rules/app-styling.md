@@ -56,4 +56,4 @@ the app's Tailwind config defines. Never write an arbitrary colour value such as
 permitted, but not required.
 
 Theme **names** (`brand`, `danger`, `dark-elevated`, …) are registered by this app; the SDK
-ships none. Semantic colours resolve by theme `type` (e.g. `injectErrorTheme()`).
+ships none. Semantic colours resolve by theme `type` (e.g. `injectSemanticColorTheme('error')`).

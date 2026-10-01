@@ -30,7 +30,7 @@ A color theme is a named set of color swatches. Components pull from it via CSS 
   <tr>
     <td>`type?`</td>
     <td>`'success' | 'warning' | 'error'`</td>
-    <td>Semantic role — enables injection helpers like `injectErrorTheme()`</td>
+    <td>Semantic role — enables `injectSemanticColorTheme(type)`</td>
   </tr>
   <tr>
     <td>`isDefault?`</td>
@@ -142,7 +142,7 @@ const LIGHT_SURFACE: SurfaceTheme = {
 
 `injectSemanticColorTheme('success')` returns a signal of the theme the nearest surface names, else the registered
 theme with `type: 'success'`. Every SDK component resolves its semantic colors this way - content in an overlay
-panel follows the panel's surface; `injectErrorTheme()` and its siblings do not look at the surface.
+panel follows the panel's surface; the deprecated `injectErrorTheme()` and its siblings do not look at the surface.
 
 ---
 

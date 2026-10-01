@@ -174,8 +174,11 @@ export const injectSemanticColorTheme = (type: ColorThemeType): Signal<ColorThem
   });
 };
 
+/** @deprecated Use `injectSemanticColorTheme('error')`, which follows the surface the element renders on. */
 export const injectErrorTheme = () => injectColorThemeByType('error');
+/** @deprecated Use `injectSemanticColorTheme('warning')`, which follows the surface the element renders on. */
 export const injectWarningTheme = () => injectColorThemeByType('warning');
+/** @deprecated Use `injectSemanticColorTheme('success')`, which follows the surface the element renders on. */
 export const injectSuccessTheme = () => injectColorThemeByType('success');
 
 export const injectDefaultColorTheme = () => {
