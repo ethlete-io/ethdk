@@ -257,6 +257,9 @@ export type HttpRequestSubtle<TArgs extends QueryArgs> = {
    * instead of retrying into an empty room.
    */
   abort: () => boolean;
+
+  /** Ends the freshness window of the response it holds, so the next `allowCache` execution sends the request. */
+  markStale: () => void;
 };
 
 export type HttpRequest<TArgs extends QueryArgs> = {
@@ -761,6 +764,9 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
       retryState: retryState.asReadonly(),
       lastDurationMs: lastDurationMs.asReadonly(),
       abort,
+      markStale: () => {
+        if (!isStale()) expiresIn.set(Date.now());
+      },
     },
   };
 

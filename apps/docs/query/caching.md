@@ -94,7 +94,7 @@ It refreshes the same set as `refreshQueriesInUse()` - reads with at least one c
 
 The options bag is a `QueryInvalidationOptions`, and `filter` a `QueryInvalidationFilterFn` - it is handed a `QueryInvalidationCandidate` (`{ method, url }`, the URL fully built) and returns whether that query should be re-run.
 
-Entries sitting out their `keepUnusedFor` window are deliberately left alone. They revalidate on their own when a consumer binds again, and refreshing what nobody is looking at is how an invalidation turns into a request storm.
+Entries sitting out their `keepUnusedFor` window are not refetched: refreshing what nobody is looking at is how an invalidation turns into a request storm. The invalidation marks them stale instead, so the next consumer that binds, or an `execute({ options: { allowCache: true } })`, refetches rather than serving the old response.
 
 A `filter` is a function, so it cannot cross a `BroadcastChannel`: the other tabs narrow by `url` and `tag` alone and invalidate a superset. Pair it with `otherTabs: false` when the two must agree.
 

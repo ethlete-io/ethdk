@@ -196,8 +196,8 @@ export type QueryClient = {
    *
    * Same set as {@link QueryClient.refreshQueriesInUse}: reads with at least one
    * consumer, cache bypassed, in-flight requests restarted. Entries sitting out their `keepUnusedFor`
-   * window are deliberately left alone - they revalidate on their own when a consumer binds again,
-   * and refreshing what nobody is looking at is how an invalidation turns into a request storm.
+   * window are only marked stale - refreshing what nobody is looking at is how an invalidation turns
+   * into a request storm - so the next consumer, or an `allowCache` execution, refetches them.
    *
    * Reaching the other tabs needs the {@link withMultiTabSync} client feature; without it this is a
    * local call, and `otherTabs: false` makes it one deliberately.

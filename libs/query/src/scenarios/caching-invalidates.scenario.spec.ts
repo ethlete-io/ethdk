@@ -274,4 +274,83 @@ describe('invalidates and tags with retained entries', () => {
     c.destroy();
     s.tick(5_001);
   });
+
+  it.each([
+    { by: 'url', target: { url: '/players' } },
+    { by: 'tag', target: { tag: 'player:1' } },
+  ])('marks an unused entry stale on a $by invalidation, so allowCache refetches it', ({ target }) => {
+    const s = scenario();
+    let version = 1;
+    s.api.on('GET', '/players/:id', ({ params }) => ({
+      body: { id: params['id'], v: version },
+      headers: { 'cache-control': 'max-age=600' },
+    }));
+
+    const getPlayer = s.get<PlayerArgs>((p) => `/players/${p.id}`, {
+      tags: ({ args }) => [`player:${args.pathParams.id}`],
+    });
+    const getPlayerManually = s.get<PlayerArgs>((p) => `/players/${p.id}`);
+
+    const orphan = s.consumer();
+    orphan.run(() => getPlayer(withArgs(() => ({ pathParams: { id: '1' } }))));
+    s.tick();
+    orphan.destroy();
+
+    version = 2;
+    s.client.invalidateQueries(target);
+    s.tick();
+
+    expect(s.api.requestCount('GET', '/players/1')).toBe(1);
+
+    const c = s.consumer();
+    const returning = c.run(() =>
+      getPlayerManually(
+        { onlyManualExecution: true },
+        withArgs(() => ({ pathParams: { id: '1' } })),
+      ),
+    );
+    returning.execute({ options: { allowCache: true } });
+    s.tick();
+
+    expect(s.api.requestCount('GET', '/players/1')).toBe(2);
+    expect(returning.response()).toEqual({ id: '1', v: 2 });
+
+    c.destroy();
+    s.tick(5_001);
+  });
+
+  it('leaves an unused entry outside the invalidation fresh', () => {
+    const s = scenario();
+    s.api.on('GET', '/teams/:id', ({ params }) => ({
+      body: { id: params['id'], v: 1 },
+      headers: { 'cache-control': 'max-age=600' },
+    }));
+
+    const getTeam = s.get<PlayerArgs>((p) => `/teams/${p.id}`);
+
+    const orphan = s.consumer();
+    orphan.run(() => getTeam(withArgs(() => ({ pathParams: { id: '1' } }))));
+    s.tick();
+    orphan.destroy();
+
+    s.client.invalidateQueries({ url: '/players' });
+    s.client.invalidateQueries({ tag: 'player:1' });
+    s.tick();
+
+    const c = s.consumer();
+    const returning = c.run(() =>
+      getTeam(
+        { onlyManualExecution: true },
+        withArgs(() => ({ pathParams: { id: '1' } })),
+      ),
+    );
+    returning.execute({ options: { allowCache: true } });
+    s.tick();
+
+    expect(s.api.requestCount('GET', '/teams/1')).toBe(1);
+    expect(returning.response()).toEqual({ id: '1', v: 1 });
+
+    c.destroy();
+    s.tick(5_001);
+  });
 });

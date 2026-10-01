@@ -299,8 +299,9 @@ export type QueryRepository = {
 
   /**
    * Re-executes every cacheable entry that still has consumers, bypassing the cache and restarting
-   * in-flight requests. Entries kept only for their `keepUnusedFor` window are skipped - nobody is
-   * looking at them, and they revalidate on their own when a consumer binds again.
+   * in-flight requests. Entries kept only for their `keepUnusedFor` window are not re-executed - nobody is
+   * looking at them, and they revalidate on their own when a consumer binds again. An `invalidation`
+   * marks them stale, so an `allowCache` execution does not serve them either.
    *
    * Pass a filter to narrow it down to a subset of those entries, and a cause to describe what asked
    * for it - which is what the devtools report as the reason a query refetched.
@@ -739,8 +740,12 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
   const refreshInUse = (filter?: QueryRepositoryRefreshFilterFn, cause?: QueryRefreshCause) => {
     const refreshed: HttpRequest<QueryArgs>[] = [];
 
+    const marksUnusedStale = cause?.type === 'invalidation';
+
     for (const cacheEntry of cache.values()) {
-      if (cacheEntry.consumers.size === 0) continue;
+      const isUnused = cacheEntry.consumers.size === 0;
+
+      if (isUnused && !marksUnusedStale) continue;
 
       // Re-firing a mutation would be a side effect nobody asked for, so only reads are refreshed:
       // a cacheable method, or a GQL query transported via POST. Opting into the cache alone does not
@@ -749,6 +754,11 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       if (!cacheEntry.isRefreshable) continue;
 
       if (filter && !filter(cacheEntry.request, cacheEntry.tags)) continue;
+
+      if (isUnused) {
+        cacheEntry.request.subtle.markStale();
+        continue;
+      }
 
       refreshed.push(cacheEntry.request);
       cacheEntry.request.execute({ force: true });
