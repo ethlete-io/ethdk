@@ -2,6 +2,14 @@
 
 Live work only, ordered by what to do first. Finished items are removed; git history has them.
 
+## Surface-aware ink colour
+
+A colour theme has one `inkColor` for every surface, so semantic text (stat tile delta, badge,
+scheduler) cannot reach 4.5:1 on both a dark and a light surface. The Storybook `danger` and
+`success` inks are tuned for `dark`: on `#fff` they fall to 2.77:1 and 1.74:1. Needs an API
+decision in `@ethlete/core` theming, for example an ink per surface `type`. Then give the stat
+tile `KpiRow` story its light row back.
+
 ## Watchlist - gated on browsers
 
 Nothing here is actionable now. **Re-check support before planning any of it.** Last checked
