@@ -264,8 +264,8 @@ Consumer apps migrate on their own schedule, with the SDK's migration scripts.
 
 ## Next: migration scripts (audit 2026-10-01)
 
-Shipped (2026-10-01): `QueryButton*` map notes (`cd6fbed5d`); `@ethlete/query:report-legacy-query-apis` (optional, run by hand; not in `migrations.json`, because the move to the new
-APIs is the app's choice),
+Shipped (2026-10-01): `QueryButton*` map notes (`cd6fbed5d`); `@ethlete/query:report-legacy-query-apis` (`level: optional` in `migrations.json`, so only `et migrations` offers it, with a
+scan count),
 report only, and the entity follow-up pointer (`33f2501e3`). Not scanned: `pushQueryCollection` and `createEntityStore`, which `@ethlete/query` never exported.
 
 `et update` reads `libs/query/migrations.json` and `libs/cdk/migrations.json` (`libs/cli/src/lib/update/plan.ts`).

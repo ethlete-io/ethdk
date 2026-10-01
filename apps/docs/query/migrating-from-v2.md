@@ -38,10 +38,16 @@ yarn nx g @ethlete/query:deprecate-legacy-queries
 
 It takes the same `--projects` / `--include` scoping, skips anything already tagged, and is safe to re-run.
 
-Query collections, infinity queries and entity stores have no mechanical rewrite: each needs a choice at the call site. The move is optional: `et update` never runs it. When you decide to move, run the report-only generator. It adds a task to `query-v3-migration-tasks.md` for every [query collection](#query-collections), `switchQueryCollectionState()`, [`createInfinityQueryConfig`, `*etInfinityQuery` and `etInfinityQueryTrigger`](#infinity-queries), and every [`EntityStore` and creator `entity` config](#entitystore-becomes-invalidates-and-tags), with the docs link for its replacement. It finds a symbol only through its `@ethlete/query` import, changes no source file, and keeps the tasks of earlier runs. It takes the same scoping:
+Query collections, infinity queries and entity stores have no mechanical rewrite: each needs a choice at the call site. The move is optional: `et update` never runs it, and `et migrations` lists it as the optional `report-legacy-query-apis`, with the number of files that still use one of these APIs. When you decide to move, run the report-only migration. It adds a task to `query-v3-migration-tasks.md` for every [query collection](#query-collections), `switchQueryCollectionState()`, [`createInfinityQueryConfig`, `*etInfinityQuery` and `etInfinityQueryTrigger`](#infinity-queries), and every [`EntityStore` and creator `entity` config](#entitystore-becomes-invalidates-and-tags), with the docs link for its replacement. It finds a symbol only through its `@ethlete/query` import, changes no source file, and keeps the tasks of earlier runs.
 
 ```bash
-yarn nx g @ethlete/query:report-legacy-query-apis
+yarn et migrations run query:report-legacy-query-apis
+```
+
+`et migrations run` scans the whole workspace and records the run. To scan only part of it, run the generator by hand with the same scoping:
+
+```bash
+yarn nx g @ethlete/query:report-legacy-query-apis --projects=my-app
 ```
 
 ## 2. Make it boot

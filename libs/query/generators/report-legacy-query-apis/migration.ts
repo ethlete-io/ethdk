@@ -1,4 +1,5 @@
 import { Tree, joinPathFragments } from '@nx/devkit';
+import { writeFileSync } from 'fs';
 import { dirname } from 'path';
 import * as ts from 'typescript';
 import { MigrationScopeOptions, createMigrationScope } from '../migrate-to-query-v3/migration-scope.js';
@@ -12,6 +13,7 @@ import { createSourceFile, getLineNumber, getLineNumberFromPosition } from '../m
 type MigrationSchema = MigrationScopeOptions;
 
 const SOURCE = 'report-legacy-query-apis';
+const SCAN_FILE_ENV = 'ETHLETE_SCAN_FILE';
 const QUERY_PACKAGE = '@ethlete/query';
 const DOCS_URL = 'https://ethlete-sdk-docs.web.app';
 
@@ -315,6 +317,15 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
   console.log(`   Scope: ${scope.describe()}`);
 
   const report = reportLegacyQueryApis(tree, scope);
+  const scanFile = process.env[SCAN_FILE_ENV];
+
+  if (scanFile) {
+    const files = new Set(report.tasks.flatMap((task) => task.locations.map((location) => location.filePath)));
+
+    writeFileSync(scanFile, JSON.stringify([...files].sort()), 'utf8');
+
+    return;
+  }
 
   if (report.tasks.length === 0 && !tree.exists(QUERY_V3_MIGRATION_REPORT_PATH)) {
     console.log('   Nothing found.');

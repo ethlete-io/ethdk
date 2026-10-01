@@ -1,5 +1,8 @@
 import { Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
+import { mkdtempSync, readFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import { QUERY_V3_MIGRATION_REPORT_PATH } from '../migrate-to-query-v3/report';
 import migration from './migration';
 
@@ -175,5 +178,28 @@ describe('report-legacy-query-apis', () => {
 
     expect(report).toContain('QV3-001 - Verify generated types for getUser');
     expect(report).toContain('QV3-002 - Replace the query collection actions');
+  });
+
+  it('writes the affected files to ETHLETE_SCAN_FILE and changes nothing when et migrations scans', async () => {
+    const scanFile = join(mkdtempSync(join(tmpdir(), 'query-scan-')), 'files.json');
+
+    vi.stubEnv('ETHLETE_SCAN_FILE', scanFile);
+    tree.write(
+      'libs/app/actions.ts',
+      `import { createQueryCollection, switchQueryCollectionState } from '@ethlete/query';\n\nexport const actions = createQueryCollection({ accept: acceptQuery });\nexport const state$ = actions$.pipe(switchQueryCollectionState());\n`,
+    );
+    tree.write(
+      'libs/app/matches.ts',
+      `import { createInfinityQueryConfig } from '@ethlete/query';\n\nexport const matches = createInfinityQueryConfig({ queryCreator: getMatches });\n`,
+    );
+    tree.write('libs/app/plain.ts', `export const plain = 1;\n`);
+
+    const before = changedPaths(tree);
+
+    await migration(tree, {});
+    vi.unstubAllEnvs();
+
+    expect(JSON.parse(readFileSync(scanFile, 'utf8'))).toEqual(['libs/app/actions.ts', 'libs/app/matches.ts']);
+    expect(changedPaths(tree)).toEqual(before);
   });
 });
