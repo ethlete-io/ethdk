@@ -29,14 +29,11 @@ import {
   DurationInputComponent,
   DurationInputDirective,
   DurationInputFieldDirective,
-  deriveDurationFormatSpec,
   FORM_FIELD_IMPORTS,
-  formatDuration,
   injectDateFormat,
   injectDateLocale,
   injectDateTimeLabels,
   injectTimeFormat,
-  parseDuration,
   provideDateFormat,
   provideDateLocale,
   provideDateTimeLabels,
@@ -48,11 +45,13 @@ import {
   TimeInputComponent,
   TimeInputDirective,
   TimeInputFieldDirective,
-  UNIT_MS,
 } from '../index';
 import { minuteOfDay, ringNote, ringReadout, tapRing, timeRing } from '../lib/time-picker/testing/time-picker-driver';
 import '../test-helpers';
 import { Scenario, useScenario } from './harness';
+
+const SECOND = 1000;
+const MINUTE = 60 * SECOND;
 
 const swatch = (value: `${number} ${number} ${number}`): ThemeSwatch => ({
   color: { default: value, hover: value, active: value, disabled: value },
@@ -229,7 +228,7 @@ class HeadlessMeetingComponent {
 })
 class LapComponent {
   lap = signal<number | null>(null);
-  plank = signal<number | null>(90 * UNIT_MS.m);
+  plank = signal<number | null>(90 * MINUTE);
   input = viewChild.required(DurationInputComponent);
   field = viewChild.required(DurationInputFieldDirective);
 }
@@ -719,12 +718,12 @@ describe('forms date-time scenarios', () => {
     expect(lap.field().elementRef.nativeElement).toBe(plankField);
 
     typeAndBlur(s, lapField, '130');
-    expect(lap.lap()).toBe(UNIT_MS.m + 30 * UNIT_MS.s);
+    expect(lap.lap()).toBe(MINUTE + 30 * SECOND);
     expect(lapField.value).toBe('01:30');
 
     type(s, lapField, '2:05');
     s.keydown('Enter', lapField);
-    expect(lap.lap()).toBe(2 * UNIT_MS.m + 5 * UNIT_MS.s);
+    expect(lap.lap()).toBe(2 * MINUTE + 5 * SECOND);
     expect(lapField.value).toBe('02:05');
     lapField.blur();
     s.tick();
@@ -735,28 +734,16 @@ describe('forms date-time scenarios', () => {
     expect(lapField.getAttribute('aria-invalid')).toBe('true');
 
     typeAndBlur(s, plankField, '45:00');
-    expect(lap.plank()).toBe(45 * UNIT_MS.m);
+    expect(lap.plank()).toBe(45 * MINUTE);
 
     lapField.focus();
     s.tick();
-    lap.lap.set(UNIT_MS.m);
+    lap.lap.set(MINUTE);
     s.tick();
     query<HTMLButtonElement>('.et-duration-input-clear', host).click();
     s.flush();
     expect(lap.lap()).toBeNull();
     expect(lap.input()).toBeInstanceOf(DurationInputComponent);
-  });
-
-  it('formats and parses durations outside a control with a derived spec', () => {
-    scenario();
-
-    const spec = deriveDurationFormatSpec('hh:mm:ss.SSS');
-
-    expect(spec.segments.map((segment) => segment.unit)).toEqual(['h', 'm', 's', 'ms']);
-    expect(formatDuration(UNIT_MS.h + 2 * UNIT_MS.m + 3 * UNIT_MS.s + 4, spec)).toBe('01:02:03.004');
-    expect(formatDuration(null, spec)).toBe('');
-    expect(parseDuration('01:02:03.004', spec)).toBe(3_723_004);
-    expect(parseDuration('abc', spec)).toBeNull();
   });
 
   it.each([

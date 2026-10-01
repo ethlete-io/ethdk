@@ -70,6 +70,11 @@
       "schema": "./migrate-cascader-tree-internals/schema.json",
       "description": "Remove the cascader tree helpers from @ethlete/components imports and mark their uses"
     },
+    "migrate-duration-format-internals": {
+      "factory": "./migrate-duration-format-internals/migration",
+      "schema": "./migrate-duration-format-internals/schema.json",
+      "description": "Remove the duration format helpers from @ethlete/components imports and mark their uses"
+    },
     "migrate-time-picker-ring": {
       "factory": "./migrate-time-picker-ring/migration",
       "schema": "./migrate-time-picker-ring/schema.json",

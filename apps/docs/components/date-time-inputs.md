@@ -715,6 +715,16 @@ would block valid entries (`100:00`), and its lenient parse fills from the
 _smallest_ unit up (`130` → `01:30`) while a mask fills slots left-to-right
 (`130` → `13:0…`), silently changing what an established entry habit means.
 
+The format helpers behind the input (`UNIT_MS`, `deriveDurationFormatSpec`,
+`formatDuration`, `parseDuration`) are not exported; the `DurationFormatSpec`,
+`DurationSegment` and `DurationUnit` types are. `et update` removes the dropped names
+from `@ethlete/components` imports and marks each use with a `TODO(ethlete-migration)`
+comment:
+
+```bash
+yarn nx g @ethlete/components:migrate-duration-format-internals
+```
+
 ## Picker parts
 
 Every control mounts its picker out of the same exported pieces. The trigger

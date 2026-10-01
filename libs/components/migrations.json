@@ -111,6 +111,14 @@
       "description": "Remove the cascader tree helpers from @ethlete/components imports and mark the uses that need another approach.",
       "generator": "@ethlete/components:migrate-cascader-tree-internals",
       "docs": "/components/cascader"
+    },
+    {
+      "name": "duration-format-internals",
+      "version": "1.0.0-next.67",
+      "kind": "auto",
+      "description": "Remove the duration format helpers from @ethlete/components imports and mark the uses that need another approach.",
+      "generator": "@ethlete/components:migrate-duration-format-internals",
+      "docs": "/components/date-time-inputs"
     }
   ]
 }
