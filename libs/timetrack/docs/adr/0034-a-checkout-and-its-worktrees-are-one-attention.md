@@ -17,7 +17,8 @@ oldest. What the others lose is reported as `behind`, not dropped, so the worktr
 its hole. A worktree running while its main checkout holds nothing keeps its minutes.
 
 Two repositories that are not worktrees of each other are unchanged: their overlap is a day that ran
-two things at once, which `concurrency` measures.
+two things at once, which `concurrency` measures. One agent session in both of them is not — see
+ADR 0036.
 
 `BuildRowsOptions.worktrees` carries the map, as `linkedWorktreesOf` builds it. Without it every
 checkout is its own attention, which is the rule this replaces.

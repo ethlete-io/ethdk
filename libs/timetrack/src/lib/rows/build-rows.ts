@@ -8,7 +8,15 @@ import { TimeWindow } from '../model/time-window';
 import { attendedAt, markAttendance } from './attended';
 import { AttributeOptions, attribute } from './attribute';
 import { CallMatch, dropCallWindows, matchCalls } from './calls';
-import { BehindStretch, CutOptions, cutBackground, cutUnwatched, joinTouching, meetLaneRows } from './cut';
+import {
+  BehindStretch,
+  CutOptions,
+  cutBackground,
+  cutSessionAcrossCheckouts,
+  cutUnwatched,
+  joinTouching,
+  meetLaneRows,
+} from './cut';
 import { DescribeOptions } from './describe';
 import { DonateOptions, donateBlocks } from './donate';
 import { DEFAULT_FILL_OPTIONS, FillOptions, fillGaps } from './fill';
@@ -128,6 +136,11 @@ export type DayRows = {
    * explained. Not rows: another band already claims the minutes, and no worklog may hold them twice.
    */
   behind: BehindStretch[];
+  /**
+   * The stretches an agent session handed from one checkout to another, per `streamKey` of the one it
+   * left. No band of that checkout may be drawn across them — see `cutSessionAcrossCheckouts`.
+   */
+  handedOver?: Record<string, TimeWindow[]>;
   /** Time in a path the user marked private, for the day to label rather than bill. */
   private: PrivateTime[];
   /** How much of the day that time covers. It is owed to nobody and counts against no target. */
@@ -205,8 +218,26 @@ export const buildRows = (
   const working = attributed.filter((entry) => !entry.privateLink);
   // Before donation rather than after: a minute another session of the same checkout already books
   // must not lend its time to the work beside it either.
-  const watched = cutUnwatched({
+  const across = cutSessionAcrossCheckouts({
     blocks: working,
+    events: options.events,
+    worktrees: options.worktrees,
+    focusByStream: options.cut?.focusByStream,
+    round: options.round,
+  });
+  const minBandMs = options.merge?.minBandMs ?? DEFAULT_MERGE_OPTIONS.minBandMs;
+  // A stretch shorter than the shortest band is drawn as no band in the checkout it went to, so a band
+  // barred across it would split the checkout it left for nothing.
+  const handedOver = Object.fromEntries(
+    Object.entries(across.handedOver)
+      .map(
+        ([key, windows]) =>
+          [key, windows.filter((window) => window.to.getTime() - window.from.getTime() >= minBandMs)] as const,
+      )
+      .filter(([, windows]) => windows.length),
+  );
+  const watched = cutUnwatched({
+    blocks: across.blocks,
     events: options.events,
     worktrees: options.worktrees,
     focusByStream: options.cut?.focusByStream,
@@ -252,7 +283,12 @@ export const buildRows = (
   const groups = joinUnattended({
     groups: markAttendance({
       groups: [
-        ...mergeBlocks({ blocks: filled.blocks, barriers: options.breaks, options: options.merge }),
+        ...mergeBlocks({
+          blocks: filled.blocks,
+          barriers: options.breaks,
+          laneBarriers: handedOver,
+          options: options.merge,
+        }),
         ...calls.map((call) => call.group),
         ...timers.filter((timer) => timerProposesRow(timer.run)).map((timer) => timer.group),
       ],
@@ -306,10 +342,11 @@ export const buildRows = (
     timers,
     filledMs: filled.filledMs,
     behind: meetLaneRows({
-      behind: joinTouching([...watched.behind, ...cut.behind]),
+      behind: joinTouching([...across.behind, ...watched.behind, ...cut.behind]),
       rows: [...proposals, ...unnamed],
       round: options.round,
     }),
+    ...(Object.keys(handedOver).length ? { handedOver } : {}),
     private: secludedTime,
     privateMs: secludedTime.reduce((sum, entry) => sum + entry.observedMs, 0),
     remote,

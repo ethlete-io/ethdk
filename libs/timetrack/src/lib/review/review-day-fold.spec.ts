@@ -498,3 +498,28 @@ describe('reviewDay, a band the reviewer named whose rule answers differently la
     });
   });
 });
+
+describe('reviewDay folding across a repository one agent session moved to', () => {
+  const APP = 'repo:/home/dev/app-a';
+  const SPECS = 'repo:/home/dev/app-a-specs';
+  const rows = (handedOver?: DayRows['handedOver']): DayRows => ({
+    ...dayRows({
+      unnamed: [
+        band({ from: '10:00', to: '11:00', laneKey: APP }),
+        band({ from: '11:00', to: '11:15', laneKey: SPECS, standInId: 'stand-in:2:specs' }),
+        band({ from: '11:15', to: '11:30', laneKey: APP }),
+      ],
+    }),
+    ...(handedOver ? { handedOver } : {}),
+  });
+
+  it('never grows a row over the minutes its session handed to the other repository', () => {
+    const result = review(rows({ [APP]: [{ from: at('11:02'), to: at('11:12') }] }));
+
+    expect(spans(result)).toEqual(['09:45-11:00 75m', '11:00-11:15 15m']);
+  });
+
+  it('still grows over a row of another repository nothing handed over', () => {
+    expect(spans(review(rows()))).toEqual(['10:00-11:15 75m', '11:00-11:15 15m']);
+  });
+});

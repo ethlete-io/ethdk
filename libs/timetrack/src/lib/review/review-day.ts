@@ -497,6 +497,11 @@ export const reviewDay = (options: {
     edits,
     pinnedIds,
   });
+  const handedOverTo = (grower: RowSource, other: TimeWindow & { laneKey?: string }) =>
+    other.laneKey !== grower.laneKey &&
+    (options.rows.handedOver?.[grower.laneKey ?? ''] ?? []).some(
+      (window) => window.from < other.to && other.from < window.to,
+    );
   const sources = foldShortRows<RowSource>({
     rows: foldCrowdedSiblings<RowSource>({
       rows: [...proposals, ...unnamed],
@@ -511,7 +516,7 @@ export const reviewDay = (options: {
     blockers: edits.pinned.filter((row) => !row.hidden),
     // The re-cut below hands a background row's minutes to any foreground row over them, so a growth
     // across that divide would take minutes a background row books, or be cut away again.
-    collides: (grower, other) => isBackground(grower) !== isBackground(other),
+    collides: (grower, other) => isBackground(grower) !== isBackground(other) || handedOverTo(grower, other),
     startsAtEarliest: (row) => storedLaneKey(row.laneKey) === CALL_LANE_KEY,
   });
   const tracked = trackPinnedRows({ pinned: edits.pinned, sources, claiming: ended });

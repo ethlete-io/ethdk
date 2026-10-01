@@ -1,4 +1,4 @@
-import { TimeWindow } from '../model/time-window';
+import { TimeWindow, mergeWindows } from '../model/time-window';
 import { ActivityBlock, streamKey } from '../model/block';
 import { CollectedEvent } from '../model/event';
 import { Evidence } from '../model/evidence';
@@ -352,7 +352,8 @@ export const cutBackground = (options: { blocks: readonly AttributedBlock[] } & 
  * A checkout and its linked worktrees are one attention — ADR 0034. Where two of them hold the same
  * instant, the one the focused window was on keeps it, else the one holding the session the user
  * prompted last. What the others lose is reported as `behind`, the way `cutBackground` reports it.
- * Two checkouts that are not worktrees of each other are two things at once and keep their minutes.
+ * Two checkouts that are not worktrees of each other are two things at once and keep their minutes,
+ * unless one session holds both — `cutSessionAcrossCheckouts` has already resolved that.
  *
  * Only an instant two sessions really held is cut. A session running alone keeps its minutes whatever
  * the last prompt named: nothing else claims them, so nothing would be booked twice.
@@ -520,5 +521,137 @@ export const cutUnwatched = (options: {
   return {
     blocks: blocks.sort((left, right) => left.block.from.getTime() - right.block.from.getTime()),
     behind: snapStretches(joinTouching(behind), options.round),
+  };
+};
+
+const isWithin = (path: string, root: string) => path === root || path.startsWith(`${root}/`);
+
+/**
+ * Takes an instant away from an agent session's band in one checkout where the same session's tool
+ * calls were in another — ADR 0036.
+ *
+ * One session that works in two repositories is one attention, the way a checkout and its worktrees
+ * are, so the instant goes to the checkout the session's last tool call before it touched. Before its
+ * first one it goes to the checkout the session's oldest band is in. What the other checkout loses is
+ * reported as `behind`.
+ *
+ * A checkout whose window held the focus keeps the instant: a person there is a second attention.
+ * Two sessions, or a checkout and its own worktree, are not this rule's business — see `cutUnwatched`.
+ */
+export const cutSessionAcrossCheckouts = (options: {
+  blocks: readonly AttributedBlock[];
+  events: readonly CollectedEvent[];
+  /** Each linked worktree mapped to its main checkout, as `linkedWorktreesOf` builds it. */
+  worktrees?: Readonly<Record<string, string>>;
+  focusByStream?: CutOptions['focusByStream'];
+  round?: Partial<RoundOptions>;
+}): CutResult & { handedOver: Record<string, TimeWindow[]> } => {
+  const worktrees = options.worktrees ?? {};
+  const attentionOf = (repoPath: string) => worktrees[repoPath] ?? repoPath;
+  const bySession = new Map<string, AttributedBlock[]>();
+
+  for (const entry of options.blocks) {
+    const { session, repoPath } = entry.block.context;
+
+    if (!session || !repoPath) continue;
+
+    const found = bySession.get(session);
+
+    if (found) found.push(entry);
+    else bySession.set(session, [entry]);
+  }
+
+  const lost = new Map<AttributedBlock, TimeWindow[]>();
+
+  for (const [session, entries] of bySession) {
+    const repoPaths = [...new Set(entries.map((entry) => entry.block.context.repoPath ?? ''))];
+
+    if (new Set(repoPaths.map(attentionOf)).size < 2) continue;
+
+    const touches = options.events
+      .flatMap((event) => {
+        if (event.kind !== 'agent-session' && event.kind !== 'agent-usage' && event.kind !== 'agent-prompt') return [];
+
+        const workedIn = event.workedIn;
+
+        if (event.sessionId !== session || !workedIn) return [];
+
+        const touched = repoPaths
+          .filter((repoPath) => isWithin(workedIn, repoPath))
+          .sort((left, right) => right.length - left.length)[0];
+
+        return touched ? [{ at: event.at.getTime(), attention: attentionOf(touched) }] : [];
+      })
+      .sort((left, right) => left.at - right.at);
+    const oldest = [...entries].sort((left, right) => left.block.from.getTime() - right.block.from.getTime())[0];
+    const firstHeld = attentionOf(oldest?.block.context.repoPath ?? '');
+    const focus = new Map(
+      repoPaths.map((repoPath) => [repoPath, options.focusByStream?.[streamKey({ repoPath })] ?? []]),
+    );
+    const edges = [
+      ...new Set([
+        ...entries.flatMap((entry) => [entry.block.from.getTime(), entry.block.to.getTime()]),
+        ...touches.map((touch) => touch.at),
+        ...[...focus.values()].flatMap((windows) => windows.flatMap((w) => [w.from.getTime(), w.to.getTime()])),
+      ]),
+    ].sort((left, right) => left - right);
+
+    for (let index = 0; index < edges.length - 1; index++) {
+      const from = edges[index] ?? 0;
+      const to = edges[index + 1] ?? 0;
+      const covering = entries.filter((entry) => entry.block.from.getTime() <= from && entry.block.to.getTime() >= to);
+      const held = new Set(covering.map((entry) => attentionOf(entry.block.context.repoPath ?? '')));
+
+      if (held.size < 2) continue;
+
+      const touched = touches.filter((touch) => touch.at <= from && held.has(touch.attention)).at(-1);
+      const holder = touched?.attention ?? (held.has(firstHeld) ? firstHeld : [...held][0]);
+
+      for (const entry of covering) {
+        const repoPath = entry.block.context.repoPath ?? '';
+        const focused = (focus.get(repoPath) ?? []).some((w) => w.from.getTime() <= from && w.to.getTime() >= to);
+
+        if (attentionOf(repoPath) === holder || focused) continue;
+
+        const found = lost.get(entry);
+        const window = { from: new Date(from), to: new Date(to) };
+
+        if (found) found.push(window);
+        else lost.set(entry, [window]);
+      }
+    }
+  }
+
+  if (!lost.size) return { blocks: [...options.blocks], behind: [], handedOver: {} };
+
+  const handedOver: Record<string, TimeWindow[]> = {};
+  const behind: BehindStretch[] = [];
+  const blocks = options.blocks.flatMap((entry) => {
+    const windows = lost.get(entry);
+
+    if (!windows) return [entry];
+
+    (handedOver[streamKey(entry.block.context)] ??= []).push(...windows);
+
+    const pieces = piecesOf(entry, windows);
+    const issueKey = entry.issueKey;
+
+    if (issueKey) {
+      behind.push(
+        ...holesOf({ block: entry.block, kept: pieces.map((piece) => piece.block) }).map((hole) => ({
+          ...hole,
+          issueKey,
+          laneKey: streamKey(entry.block.context),
+        })),
+      );
+    }
+
+    return pieces;
+  });
+
+  return {
+    blocks: blocks.sort((left, right) => left.block.from.getTime() - right.block.from.getTime()),
+    behind: snapStretches(joinTouching(behind), options.round),
+    handedOver: Object.fromEntries(Object.entries(handedOver).map(([key, windows]) => [key, mergeWindows(windows)])),
   };
 };

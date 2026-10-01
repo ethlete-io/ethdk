@@ -308,6 +308,7 @@ type PassOptions = {
   maxSpanRatio: number;
   maxLaneSpanRatio: number;
   barriers: readonly TimeWindow[];
+  laneBarriers: Readonly<Record<string, readonly TimeWindow[]>>;
   /** The part of a window another piece of the band's checkout worked on the band's own ticket. */
   siblingMs?: (group: WorkGroup, window: TimeWindow) => number;
 };
@@ -380,7 +381,10 @@ const joinable = (options: { joined: WorkGroup; gap: TimeWindow; pass: PassOptio
   return (
     gap.to.getTime() - gap.from.getTime() - siblingMs(gap) <= pass.maxGapMs &&
     span <= joined.observedMs * ratio &&
-    !barred({ from: gap.from, to: gap.to, barriers: pass.barriers })
+    !barred({ from: gap.from, to: gap.to, barriers: pass.barriers }) &&
+    !joined.blocks.some((block) =>
+      barred({ from: gap.from, to: gap.to, barriers: pass.laneBarriers[streamKey(block.context)] ?? [] }),
+    )
   );
 };
 
@@ -569,6 +573,8 @@ export const mergeBlocks = (options: {
   blocks: AttributedBlock[];
   /** Instants no band may be drawn across, whatever the gap rule allows — the day's breaks. */
   barriers?: readonly TimeWindow[];
+  /** The same, per `streamKey`, for a band of that checkout alone — see `cutSessionAcrossCheckouts`. */
+  laneBarriers?: Readonly<Record<string, readonly TimeWindow[]>>;
   options?: Partial<MergeOptions>;
 }): WorkGroup[] => {
   const config = { ...DEFAULT_MERGE_OPTIONS, ...options.options };
@@ -577,6 +583,7 @@ export const mergeBlocks = (options: {
     maxSpanRatio: config.maxSpanRatio,
     maxLaneSpanRatio: config.maxLaneSpanRatio,
     barriers: options.barriers ?? [],
+    laneBarriers: options.laneBarriers ?? {},
     siblingMs: siblingTime(ordered),
   };
   const cut = mergePass({ ...pass, ordered, maxGapMs: config.maxMergeGapMs });

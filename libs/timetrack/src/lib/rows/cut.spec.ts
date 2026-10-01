@@ -3,7 +3,7 @@ import { ActivityBlock, streamKey } from '../model/block';
 import { Evidence } from '../model/evidence';
 import { AttributedBlock } from './attribute';
 import { CollectedEvent } from '../model/event';
-import { cutBackground, cutUnwatched, joinTouching, meetLaneRows } from './cut';
+import { cutBackground, cutSessionAcrossCheckouts, cutUnwatched, joinTouching, meetLaneRows } from './cut';
 
 const SDK = '/home/you/dev/shared-sdk';
 const APP = '/home/you/dev/abc-frontend';
@@ -503,6 +503,86 @@ describe('cutUnwatched', () => {
       expect(result.blocks).toEqual(blocks);
       expect(result.behind).toEqual([]);
     });
+  });
+});
+
+describe('cutSessionAcrossCheckouts', () => {
+  const ran = (options: { session: string; repoPath: string; from: string; to: string }): AttributedBlock => ({
+    block: {
+      from: at(options.from),
+      to: at(options.to),
+      context: { repoPath: options.repoPath, branch: 'next', session: options.session },
+      evidence: [],
+    },
+    issueKey: options.repoPath === APP ? 'ABC-7' : 'ABC-8',
+    confidence: 'likely',
+    evidence: [],
+  });
+
+  const touched = (options: { session: string; clock: string; path: string }): CollectedEvent => ({
+    at: at(options.clock),
+    source: 'agent-session',
+    kind: 'agent-session',
+    sessionId: options.session,
+    cwd: APP,
+    workedIn: options.path,
+  });
+
+  const held = (blocks: readonly AttributedBlock[]) =>
+    blocks.map((entry) => ({
+      repoPath: entry.block.context.repoPath,
+      from: entry.block.from.toISOString().slice(11, 16),
+      to: entry.block.to.toISOString().slice(11, 16),
+    }));
+
+  const alternating = {
+    blocks: [
+      ran({ session: 's', repoPath: APP, from: '10:00', to: '11:00' }),
+      ran({ session: 's', repoPath: SPECS, from: '10:15', to: '10:45' }),
+    ],
+    events: [
+      touched({ session: 's', clock: '10:00', path: `${APP}/src/a.ts` }),
+      touched({ session: 's', clock: '10:15', path: `${SPECS}/docs/spec.md` }),
+      touched({ session: 's', clock: '10:30', path: `${APP}/src/b.ts` }),
+      touched({ session: 's', clock: '10:40', path: `${SPECS}/docs/spec.md` }),
+      touched({ session: 's', clock: '10:45', path: `${APP}/src/c.ts` }),
+    ],
+  };
+
+  it('gives an instant one session held in two repositories to the one its last tool call touched', () => {
+    const result = cutSessionAcrossCheckouts(alternating);
+
+    expect(held(result.blocks)).toEqual([
+      { repoPath: APP, from: '10:00', to: '10:15' },
+      { repoPath: SPECS, from: '10:15', to: '10:30' },
+      { repoPath: APP, from: '10:30', to: '10:40' },
+      { repoPath: SPECS, from: '10:40', to: '10:45' },
+      { repoPath: APP, from: '10:45', to: '11:00' },
+    ]);
+    expect(behinds(result.behind)).toEqual([
+      { issueKey: 'ABC-7', laneKey: streamKey({ repoPath: APP }), from: '10:15', to: '10:30' },
+      { issueKey: 'ABC-8', laneKey: streamKey({ repoPath: SPECS }), from: '10:30', to: '10:45' },
+    ]);
+  });
+
+  it('leaves the minutes of a repository whose window held the focus', () => {
+    const result = cutSessionAcrossCheckouts({
+      ...alternating,
+      focusByStream: { [streamKey({ repoPath: APP })]: [{ from: at('10:00'), to: at('11:00') }] },
+    });
+
+    expect(held(result.blocks).filter((entry) => entry.repoPath === APP)).toEqual([
+      { repoPath: APP, from: '10:00', to: '11:00' },
+    ]);
+  });
+
+  it('cuts nothing between two sessions in two repositories', () => {
+    const blocks = [
+      ran({ session: 'a', repoPath: APP, from: '10:00', to: '11:00' }),
+      ran({ session: 'b', repoPath: SPECS, from: '10:15', to: '10:45' }),
+    ];
+
+    expect(cutSessionAcrossCheckouts({ blocks, events: alternating.events }).blocks).toEqual(blocks);
   });
 });
 
