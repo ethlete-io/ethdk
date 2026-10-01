@@ -127,6 +127,8 @@ export type AutoModeOutcome =
       parentKey?: string;
       approvalId?: string;
       createdKey?: string;
+      /** The issue the answer this draft replaced named. Rows auto mode named with it lose it until the create is approved. */
+      supersededKey?: string;
     }
   | { kind: 'failed' };
 

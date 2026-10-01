@@ -438,6 +438,43 @@ describe('withAutoModeRowNames', () => {
 
     expect(rowsOf(edits)[0]?.issueKey).toBe('ABC-12');
   });
+
+  describe('a match replaced by a draft', () => {
+    const redrafted = (edits: DayReviewEdits) => withAutoModeAnswer(edits, drafted);
+
+    it('unnames the rows the match named, once', () => {
+      const named = autoPass(withAutoModeAnswer(EMPTY_DAY_REVIEW_EDITS, matched('ABC-1')));
+      const edits = autoPass(redrafted(named));
+
+      expect(rowsOf(edits)[0]?.issueKey).toBeFalsy();
+      expect(autoPass(edits)).toBe(edits);
+    });
+
+    it('keeps the issue of a row the user named', () => {
+      const [unnamed] = rowsOf(EMPTY_DAY_REVIEW_EDITS);
+
+      if (!unnamed) throw new Error('no row');
+
+      const byHand = setRowIssue({ edits: EMPTY_DAY_REVIEW_EDITS, row: unnamed, issueKey: 'ABC-1' });
+      const edits = autoPass(redrafted(withAutoModeAnswer(byHand, matched('ABC-1'))));
+
+      expect(rowsOf(edits)[0]?.issueKey).toBe('ABC-1');
+    });
+
+    it('names the rows with the key the approved create filed', () => {
+      const named = autoPass(withAutoModeAnswer(EMPTY_DAY_REVIEW_EDITS, matched('ABC-1')));
+      const queued = autoPass(
+        withAutoModeAnswer(named, {
+          ...drafted,
+          outcome: { ...drafted.outcome, approvalId: 'a-1' } as AutoModeAnswer['outcome'],
+        }),
+      );
+      const edits = autoPass(withAutoModeCreated(queued, { approvalId: 'a-1', issueKey: 'ABC-12' }));
+
+      expect(rowsOf(edits)[0]?.issueKey).toBe('ABC-12');
+      expect(rowsOf(edits)[0]?.sources?.issue).toBe('auto');
+    });
+  });
 });
 
 describe('autoModeCreateRequest', () => {

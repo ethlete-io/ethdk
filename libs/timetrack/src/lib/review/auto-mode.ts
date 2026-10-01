@@ -352,10 +352,18 @@ export const autoModeIssueKeyOf = (answer: AutoModeAnswer) => {
 /** Stores an answer, replacing the one the same subject held. */
 export const withAutoModeAnswer = (edits: DayReviewEdits, answer: AutoModeAnswer): DayReviewEdits => {
   const key = autoModeSubjectKey(answer.subject);
+  const held = (edits.auto ?? []).find((entry) => autoModeSubjectKey(entry.subject) === key);
+  const heldKey =
+    held && (autoModeIssueKeyOf(held) ?? (held.outcome.kind === 'draft' ? held.outcome.supersededKey : undefined));
+  const { outcome } = answer;
+  const stored: AutoModeAnswer =
+    outcome.kind === 'draft' && !outcome.createdKey && heldKey && heldKey !== outcome.supersededKey
+      ? { ...answer, outcome: { ...outcome, supersededKey: heldKey } }
+      : answer;
 
   return {
     ...edits,
-    auto: [...(edits.auto ?? []).filter((held) => autoModeSubjectKey(held.subject) !== key), answer],
+    auto: [...(edits.auto ?? []).filter((entry) => autoModeSubjectKey(entry.subject) !== key), stored],
   };
 };
 
@@ -432,6 +440,7 @@ export const autoModeQueuedAnswer = (
  * Names the day's unnamed rows with the issue auto mode found for the context behind each one, stamped
  * `auto`, over the name an earlier answer gave it. A row the user named or cleared keeps their answer,
  * and a band nobody was at the machine for, or one a rule says is not work, stays the user's to name.
+ * Where a new draft replaced a match, the rows that match named lose its issue until the create is approved.
  */
 export const withAutoModeRowNames = (options: {
   edits: DayReviewEdits;
@@ -452,7 +461,17 @@ export const withAutoModeRowNames = (options: {
     if (answer.subject.kind === 'context' && issueKey) keys.set(answer.subject.contextId, issueKey);
   }
 
-  if (!keys.size) return options.edits;
+  const superseded = new Map<string, string>();
+
+  for (const answer of options.edits.auto ?? []) {
+    const { outcome } = answer;
+
+    if (answer.subject.kind === 'context' && outcome.kind === 'draft' && !outcome.createdKey && outcome.supersededKey) {
+      superseded.set(answer.subject.contextId, outcome.supersededKey);
+    }
+  }
+
+  if (!keys.size && !superseded.size) return options.edits;
 
   const contextOfRow = new Map<string, string>();
 
@@ -469,6 +488,11 @@ export const withAutoModeRowNames = (options: {
     if (source === 'human' || (row.issueKey && source !== 'auto')) return edits;
 
     const contextId = contextOfRow.get(row.id);
+
+    if (contextId && source === 'auto' && row.issueKey && row.issueKey === superseded.get(contextId)) {
+      return setRowIssue({ edits, row, issueKey: '', source: 'auto' });
+    }
+
     const issueKey = contextId ? keys.get(contextId) : undefined;
 
     return issueKey && issueKey !== row.issueKey ? setRowIssue({ edits, row, issueKey, source: 'auto' }) : edits;
