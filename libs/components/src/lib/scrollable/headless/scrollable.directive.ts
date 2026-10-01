@@ -6,6 +6,7 @@ import {
   afterNextRender,
   booleanAttribute,
   computed,
+  inject,
   input,
   numberAttribute,
   signal,
@@ -31,6 +32,7 @@ import {
 } from '@ethlete/core';
 import { ResolvedScrollableChrome, ScrollableChrome } from './scrollable-chrome';
 import { SCROLLABLE_ERROR_CODES } from './scrollable-errors';
+import { SCROLLABLE_SCROLL_CONTAINER } from './scrollable-scroll-container';
 import {
   ScrollableDirection,
   ScrollableItemSize,
@@ -58,7 +60,10 @@ const ELEMENT_INTERSECTION_THRESHOLD = /* @__PURE__ */ (() => [
 @Directive({
   selector: '[etScrollable]',
   exportAs: 'etScrollable',
-  providers: [provideBreakpointInstance(ScrollableDirective)],
+  providers: [
+    provideBreakpointInstance(ScrollableDirective),
+    { provide: SCROLLABLE_SCROLL_CONTAINER, useFactory: () => inject(ScrollableDirective).getScrollContainerRef() },
+  ],
   host: {
     class: 'et-scrollable',
   },

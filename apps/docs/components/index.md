@@ -164,6 +164,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 - [Filter overlay](/components/filter-overlay) - a filter panel with an explicit apply: draft the page's query form, see the result count, commit or discard.
 - [Floating action](/components/floating-action) - keeps a trigger reachable after it scrolls away, pinned to the viewport corner while its region is in play.
 - [Focus ring](/components/focus-ring) - the shared keyboard-focus outline for custom interactive elements.
+- [Paged query trigger](/components/paged-query-trigger) - infinite scroll for a paged query stack: fetches the next page when the end of a list or rail scrolls into view.
 - [Query error](/components/query-error) - the default rendering of a failed query: status title, message or violation list, and a retry when it's worth offering.
 - [Error codes](/components/error-codes) - every `ETxxxx` runtime error, what causes it and how to fix it.
 

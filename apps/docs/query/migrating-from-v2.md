@@ -198,7 +198,25 @@ The cdk query button (`[et-query-button]`, `QueryButtonDirective`) becomes [`etQ
 
 Until a query is migrated, wrap it with [`queryButtonSourceFromV2Query`](/components/button#legacy-queries), which also accepts a query collection.
 
-`[etInfinityQuery]` has no replacement either - infinite lists are [paged query stacks](/query/stacks#paged-queries) now.
+### Infinity queries
+
+`createInfinityQueryConfig` with `*etInfinityQuery` becomes a [paged query stack](/query/stacks#paged-queries), and `etInfinityQueryTrigger` becomes [`etPagedQueryTrigger`](/components/paged-query-trigger) bound to it:
+
+```ts
+protected matches = createPagedQueryStack({
+  queryCreator: getMatches,
+  responseNormalizer: ethletePaginationAdapter,
+  args: (page) => ({ queryParams: { page } }),
+  features: [withPolling({ interval: 30_000 })],
+});
+```
+
+```html
+@for (match of matches.items(); track match.id) { … }
+<div [etPagedQueryTrigger]="matches"></div>
+```
+
+Drop the `@if (canLoadMore && !loading)` around the trigger: it waits for a loading page and fetches again while it stays in view. Inside an `et-scrollable` it measures against the track, so `rootMargin` pre-fetches in a horizontal rail. A trigger on a `<button>` becomes `(click)="matches.fetchNextPage()"` with [`[etQueryButton]`](/components/button#query-button), and `infinityQueryOverride` becomes a stack switch in the binding: `[etPagedQueryTrigger]="upcoming.isLastPageLoaded() ? completed : upcoming"`.
 
 ### Devtools keep their markup
 

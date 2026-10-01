@@ -27,6 +27,7 @@ export * from './lib/masonry';
 export * from './lib/menu';
 export * from './lib/notification';
 export * from './lib/overlay';
+export * from './lib/paged-query-trigger';
 export * from './lib/pagination';
 export * from './lib/match';
 export * from './lib/picture';
