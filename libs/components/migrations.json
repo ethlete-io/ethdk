@@ -143,6 +143,15 @@
       "description": "Rename --et-line-chart-stacked-area-opacity to --et-line-chart-stacked-area-mix and map each opacity to a percentage.",
       "generator": "@ethlete/components:migrate-line-chart-stacked-area-mix",
       "docs": "/components/line-chart"
+    },
+    {
+      "name": "error-color-theme-signal",
+      "version": "1.0.0-next.67",
+      "kind": "auto",
+      "level": "required",
+      "description": "Call errorColorTheme() where an injectFormSupport() result or a TableComponent reads it, now that it is a signal.",
+      "generator": "@ethlete/components:migrate-error-color-theme-signal",
+      "docs": "/components/forms"
     }
   ]
 }
