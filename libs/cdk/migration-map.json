@@ -1976,14 +1976,14 @@
   "QueryButtonComponent": {
     "docs": "/components/button#query-button",
     "kind": "replaced-by",
-    "note": "[etQueryButton] on a button; loading and progress only, no one-second success/failure flash; queryButtonSourceFromV2Query for a legacy query",
+    "note": "[etQueryButton] on an et-button; loading and progress only, no one-second success/failure flash; wrap a legacy query or collection with queryButtonSourceFromV2Query(query), which needs an injection context (a field initializer or the constructor)",
     "package": "@ethlete/components",
     "to": "QueryButtonDirective"
   },
   "QueryButtonDirective": {
     "docs": "/components/button#query-button",
     "kind": "replaced-by",
-    "note": "[etQueryButton] on a button; loading and progress only, no one-second success/failure flash; queryButtonSourceFromV2Query for a legacy query",
+    "note": "has no selector, so it runs as a hostDirective of an app wrapper component and no template is rewritten: replace the wrapper with [etQueryButton] on an et-button, or keep the wrapper and feed its query input through queryButtonSourceFromV2Query(query), which needs an injection context (a field initializer or the constructor); loading and progress only, no one-second success/failure flash",
     "package": "@ethlete/components",
     "to": "QueryButtonDirective"
   },
