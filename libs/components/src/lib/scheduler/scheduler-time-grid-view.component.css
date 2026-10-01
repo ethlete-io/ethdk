@@ -32,6 +32,10 @@
     display: flex;
   }
 
+  .et-scheduler-time-grid-hour-aria-row {
+    display: contents;
+  }
+
   .et-scheduler-time-grid-body {
     overflow-y: auto;
     max-block-size: var(--et-scheduler-time-grid-body-max-height);

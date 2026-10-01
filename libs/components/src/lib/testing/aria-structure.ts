@@ -29,6 +29,17 @@ const describeElement = (element: Element) => {
  * required-owned relationship and why marking it presentational fixes it.
  */
 export const resolveAriaOwner = (element: Element) => {
+  const explicitOwner =
+    element.id === ''
+      ? undefined
+      : [...(element.getRootNode() as ParentNode).querySelectorAll('[aria-owns]')].find((candidate) =>
+          candidate.getAttribute('aria-owns')?.split(/\s+/).includes(element.id),
+        );
+
+  if (explicitOwner) {
+    return explicitOwner;
+  }
+
   let parent = element.parentElement;
 
   while (parent) {

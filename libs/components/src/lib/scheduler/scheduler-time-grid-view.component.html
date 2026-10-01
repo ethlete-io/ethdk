@@ -93,7 +93,11 @@
   </div>
 }
 
-<div #timeGridBody class="et-scheduler-time-grid-row et-scheduler-time-grid-body" role="row">
+<div #timeGridBody class="et-scheduler-time-grid-row et-scheduler-time-grid-body" role="rowgroup">
+  @for (hour of hours(); track hour.hour) {
+    <div [attr.aria-owns]="hourRowOwns(hour.hour)" class="et-scheduler-time-grid-hour-aria-row" role="row"></div>
+  }
+
   <div class="et-scheduler-time-grid-gutter" role="presentation">
     @for (hour of hours(); track hour.hour) {
       <div #hourRow class="et-scheduler-time-grid-hour-row">
@@ -147,6 +151,7 @@
         @for (slot of column.slots; track slot.hour) {
           <div
             #slotCell
+            [id]="slotId(dayIndex, slot.hour)"
             [attr.aria-label]="slot.label"
             [attr.tabindex]="cellTabIndex(dayIndex, slot.hour + 1)"
             (focus)="focusedSlot.set({ day: day.date, row: slot.hour + 1 })"

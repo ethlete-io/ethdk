@@ -39,6 +39,8 @@ import { Appointment, SchedulerAppointmentDragMode } from './scheduler.types';
 
 const HOURS = /* @__PURE__ */ Array.from({ length: 24 }, (_, hour) => hour);
 
+let uniqueIdCounter = 0;
+
 const SLOT_MINUTES = 15;
 const MINIMUM_DURATION = 900_000;
 const DEFAULT_DRAFT_DURATION = 3_600_000;
@@ -114,6 +116,7 @@ export class SchedulerTimeGridViewComponent {
   private slotItems = viewChildren<ElementRef<HTMLElement>>('slotItem');
   private allDayCellElements = viewChildren<ElementRef<HTMLElement>>('allDayCell');
   private allDayItems = viewChildren<ElementRef<HTMLElement>>('allDayItem');
+  private readonly ID_PREFIX = `et-scheduler-time-grid-${uniqueIdCounter++}`;
 
   protected canDragAppointments = computed(() => this.appointmentDrag?.isEnabled() ?? false);
 
@@ -213,6 +216,17 @@ export class SchedulerTimeGridViewComponent {
     const locale = this.scheduler?.effectiveLocale();
 
     return format(date, 'EEE', locale ? { locale } : undefined);
+  }
+
+  protected slotId(dayIndex: number, hour: number) {
+    return `${this.ID_PREFIX}-slot-${dayIndex}-${hour}`;
+  }
+
+  protected hourRowOwns(hour: number) {
+    return this.grid
+      .days()
+      .map((_, dayIndex) => this.slotId(dayIndex, hour))
+      .join(' ');
   }
 
   protected cellTabIndex(dayIndex: number, row: number) {

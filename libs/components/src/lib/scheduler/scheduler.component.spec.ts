@@ -110,6 +110,31 @@ describe('SchedulerComponent', () => {
     expectAriaGrid(view!);
   });
 
+  it('gives each hour of the time grid its own row owning one slot per day', () => {
+    driver.host.view.set('week');
+    driver.detectChanges();
+
+    const view = driver.query('et-scheduler-time-grid-view')!;
+    const body = view.querySelector('.et-scheduler-time-grid-body')!;
+    const rows = [...body.querySelectorAll(':scope > [role="row"]')];
+
+    expect(body.getAttribute('role')).toBe('rowgroup');
+    expect(rows).toHaveLength(24);
+
+    for (const row of rows) {
+      const owned = row.getAttribute('aria-owns')!.split(' ');
+
+      expect(owned).toHaveLength(7);
+
+      for (const id of owned) {
+        expect(view.querySelector(`#${id}`)?.getAttribute('role')).toBe('gridcell');
+      }
+    }
+
+    expect(new Set(rows.flatMap((row) => row.getAttribute('aria-owns')!.split(' '))).size).toBe(168);
+    expectAriaGrid(view);
+  });
+
   it('names each grid view after the period the header shows', () => {
     const headerLabel = () => driver.query('.et-scheduler-header-label')?.textContent?.trim();
 
