@@ -143,10 +143,15 @@ const countsAsWork = (options: { rules: CompiledCallRules; named: Named; expecte
   (options.expected || isWorkCallApp(options.named.appId) || matches(options.rules.countsAsWork, options.named));
 
 /** Each focus in order, holding until the next one takes over, and the last until the cut-off. */
-type HeldFocus = TimeWindow & { appId: string };
+type HeldFocus = TimeWindow & { appId: string; title: string };
 
 const focusHeld = (focus: readonly WindowFocusEvent[], until: Date): HeldFocus[] =>
-  focus.map((event, index) => ({ appId: event.appId, from: event.at, to: focus[index + 1]?.at ?? until }));
+  focus.map((event, index) => ({
+    appId: event.appId,
+    title: event.title,
+    from: event.at,
+    to: focus[index + 1]?.at ?? until,
+  }));
 
 /**
  * How long the call's own application held the focus inside the call.
@@ -165,8 +170,9 @@ const attendedMs = (held: readonly HeldFocus[], call: PairedCall) =>
   );
 
 /**
- * The title the call settled on: the last one inside `settleMs`, or the one before the call when
- * nothing lands inside it.
+ * The title the call settled on: the last focus title inside `settleMs`, else the title the host read
+ * at the `call-start`, else the focus before the call — but only while that window still held the
+ * focus within `settleMs` of the microphone opening.
  *
  * A title inside `settleMs` wins over the one before the microphone, because joining a voice channel
  * opens the microphone before it switches the view — without that, a call was named after the channel
@@ -177,19 +183,19 @@ const attendedMs = (held: readonly HeldFocus[], call: PairedCall) =>
  * `Meeting #1` 0.138 seconds later, and the first of the two was denied by a rule that named the room
  * the user never stayed in. The same reading covers a user the room moved.
  *
- * Joining a call means focusing the application, so one of the two events is nearly always there, and
- * it names the channel that was deliberately opened. It is read from the focus history rather than
- * from the compositor because a title read now would name whatever is in front now, and because the
- * window source carries no process id to match a call against on every platform.
+ * The focus before the call is bounded because a window left hours earlier names the room it was in
+ * then: measured on 2026-10-01 a call opened four hours after Discord last held the focus, and was
+ * named after a room the user had long left.
  */
-const titleAt = (focus: readonly WindowFocusEvent[], call: { appId: string; at: Date; settleMs: number }) => {
-  const own = focus.filter((event) => callHolderBelongsTo(call.appId, event.appId));
+const titleAt = (held: readonly HeldFocus[], call: { appId: string; at: Date; settleMs: number; title?: string }) => {
+  const own = held.filter((window) => callHolderBelongsTo(call.appId, window.appId));
   const settled = own
-    .filter((event) => event.at > call.at && event.at.getTime() - call.at.getTime() <= call.settleMs)
+    .filter((window) => window.from > call.at && window.from.getTime() - call.at.getTime() <= call.settleMs)
     .at(-1);
-  const before = own.filter((event) => event.at <= call.at).at(-1);
+  const before = own.filter((window) => window.from <= call.at).at(-1);
+  const recent = before && call.at.getTime() - before.to.getTime() <= call.settleMs ? before : undefined;
 
-  return (settled ?? before)?.title ?? '';
+  return settled?.title ?? call.title ?? recent?.title ?? '';
 };
 
 /** The accepted meeting that shares the most time with the call, if any shares some. */
@@ -209,6 +215,7 @@ type PairedCall = {
   to: Date;
   /** Whether the edge that closed it was the app stopping watching rather than the microphone closing. */
   stoppedWatching?: boolean;
+  title?: string;
 };
 
 /**
@@ -219,22 +226,28 @@ type PairedCall = {
  * a call.
  */
 const pairCallEdges = (calls: readonly CallEvent[]) => {
-  const open = new Map<string, Date>();
+  const open = new Map<string, CallEvent>();
   const closed: PairedCall[] = [];
 
   for (const call of [...calls].sort((left, right) => left.at.getTime() - right.at.getTime())) {
     if (call.kind === 'call-start') {
-      if (!open.has(call.appId)) open.set(call.appId, call.at);
+      if (!open.has(call.appId)) open.set(call.appId, call);
 
       continue;
     }
 
-    const from = open.get(call.appId);
+    const start = open.get(call.appId);
 
-    if (!from) continue;
+    if (!start) continue;
 
     open.delete(call.appId);
-    closed.push({ appId: call.appId, from, to: call.at, stoppedWatching: call.stoppedWatching ?? false });
+    closed.push({
+      appId: call.appId,
+      from: start.at,
+      to: call.at,
+      stoppedWatching: call.stoppedWatching ?? false,
+      ...(start.title ? { title: start.title } : {}),
+    });
   }
 
   return { closed, open };
@@ -250,8 +263,8 @@ const pairCallEdges = (calls: readonly CallEvent[]) => {
  *
  * The session stays one call for attendance, but each voice room in it is its own window: switching
  * rooms closes the microphone and opens it again 2 seconds later, measured on 2026-09-29, and a title
- * that changes over that break names the new room. After a restart the title says nothing, because no
- * focus event names the room the app came back to.
+ * that changes over that break names the new room. A restart never splits a room: the start after it
+ * is the room the app was already in.
  */
 const glueCalls = (options: {
   calls: readonly PairedCall[];
@@ -326,7 +339,12 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
     heldElsewhere: readonly string[];
   }): CallWindow => {
     const { call, session, meeting, heldElsewhere } = options;
-    const focusTitle = titleAt(focus, { appId: call.appId, at: call.from, settleMs: titleSettleMs });
+    const windowTitle = titleAt(held, {
+      appId: call.appId,
+      at: call.from,
+      settleMs: titleSettleMs,
+      title: call.title,
+    });
     const attended = attendedMs(held, call);
     // A day with no window-focus event at all cannot be judged on attendance, and must not be gated on
     // it: a platform whose window source is off would otherwise lose every call it ever recorded.
@@ -335,11 +353,10 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
     // so it is read instead of the gate. Without this a meeting the user only listened to is dropped,
     // and after the calendar stopped proposing rows of its own nothing else would propose it.
     const expected = !!acceptedMeetingOver(invited, session);
-    // The focus at the microphone opening can say nothing about the call — at app start it is the first
-    // window of the day. Rules keep reading the focus title, which is what the user wrote them against.
-    const title = meeting?.title || focusTitle;
+    // Rules keep reading the window title, which is what the user wrote them against.
+    const title = meeting?.title || windowTitle;
 
-    const named = { appId: call.appId, title: focusTitle };
+    const named = { appId: call.appId, title: windowTitle };
     // Attendance, not the work rules: a room nobody sat in is the one call that says nothing about
     // where the user was, and a rule denying the work still leaves them in the meeting. See ADR 0024.
     const attendedCall = !readable || expected || attendedMs(held, session) >= minAttendedMs;
@@ -361,7 +378,11 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
 
   const paired = [
     ...closed,
-    ...[...open].flatMap(([appId, from]) => (from < options.until ? [{ appId, from, to: options.until }] : [])),
+    ...[...open.values()].flatMap((start) =>
+      start.at < options.until
+        ? [{ appId: start.appId, from: start.at, to: options.until, ...(start.title ? { title: start.title } : {}) }]
+        : [],
+    ),
   ];
 
   const glueMs = options.glueMs ?? DEFAULT_CALL_GLUE_MS;
@@ -369,7 +390,7 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
     calls: paired,
     glueMs,
     restartMs: options.restartGapMs ?? DEFAULT_CALL_RESTART_GAP_MS,
-    titleOf: (call) => titleAt(focus, { appId: call.appId, at: call.from, settleMs: titleSettleMs }),
+    titleOf: (call) => titleAt(held, { appId: call.appId, at: call.from, settleMs: titleSettleMs, title: call.title }),
   })
     .flatMap(({ session, rooms }) => rooms.map((room) => ({ ...room, session })))
     .sort((left, right) => left.call.from.getTime() - right.call.from.getTime());
@@ -489,11 +510,11 @@ export const closeAbandonedCalls = (options: {
 
   const { open } = pairCallEdges(earlier.filter((event): event is CallEvent => event.source === 'call'));
 
-  return [...open].map(([appId, from]) => ({
-    at: at > from ? at : from,
+  return [...open.values()].map((start) => ({
+    at: at > start.at ? at : start.at,
     source: 'call' as const,
     kind: 'call-end' as const,
-    appId,
+    appId: start.appId,
     stoppedWatching: true as const,
   }));
 };

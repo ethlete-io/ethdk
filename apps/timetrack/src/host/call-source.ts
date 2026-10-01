@@ -2,7 +2,13 @@ import { CallEvent, CollectedEvent } from '@ethlete/timetrack';
 import { Observable, map } from 'rxjs';
 import { invokeHost$ } from './invoke';
 
-type HostCallEvent = { seq: number; atMs: number; kind: 'call-start' | 'call-end'; appId: string };
+type HostCallEvent = {
+  seq: number;
+  atMs: number;
+  kind: 'call-start' | 'call-end';
+  appId: string;
+  title?: string | null;
+};
 
 type HostCallBatch = {
   events: HostCallEvent[];
@@ -35,6 +41,7 @@ const reviveEvent = (event: HostCallEvent): CollectedEvent =>
     source: 'call',
     kind: event.kind,
     appId: event.appId,
+    ...(event.title ? { title: event.title } : {}),
   }) satisfies CallEvent;
 
 /**

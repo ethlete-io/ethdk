@@ -70,9 +70,7 @@ const pathOf = (event: CollectedEvent) => {
  * A call event is a presence sample, so denying it before the store would turn the hours in a voice
  * room into **absence** rather than into unclassified time — that is why `TimetrackCallRules` decides
  * at read time instead, and this is what keeps an `app-id` rule from reaching the same event by
- * another route. Nothing private is left unprotected: a call carries a process id and two instants and
- * no title, and the title the review names it with comes from a `window-focus` event these rules
- * already deny.
+ * another route. A title pattern that matches a call's title strips the title and keeps the call.
  */
 const appIdOf = (event: CollectedEvent) => (event.source !== 'call' && 'appId' in event ? event.appId : undefined);
 
@@ -163,6 +161,13 @@ export const applyExclusionRules = (options: {
 
   for (const event of options.events) {
     const rule = matching(compiled, event);
+
+    if (rule && event.source === 'call') {
+      const { title: _title, ...untitled } = event;
+
+      result.kept.push(untitled);
+      continue;
+    }
 
     if (rule) {
       result.excluded.push({ at: event.at, source: event.source, kind: event.kind, rule });

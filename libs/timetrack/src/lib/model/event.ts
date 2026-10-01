@@ -238,6 +238,11 @@ export type CallEvent = CollectedEventBase<'call', 'call-start' | 'call-end'> & 
    * so a room held across a restart stays one call.
    */
   stoppedWatching?: true;
+  /**
+   * The title of the call application's window as the host read it when the microphone opened, on a
+   * `call-start`. It names the room even when that window was not in front.
+   */
+  title?: string;
 };
 
 export type CalendarOccurrenceEvent = CollectedEventBase<'calendar', 'calendar-event'> & {

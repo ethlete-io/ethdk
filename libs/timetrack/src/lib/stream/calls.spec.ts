@@ -81,7 +81,7 @@ describe('classifyCalls', () => {
     const windows = classify([
       focus(0, 'com.hnc.Discord', '#general | Some Server'),
       focus(5, 'com.hnc.Discord', '#divinity-general | Divinity of Thrones'),
-      focus(8, 'com.microsoft.VSCode', 'calls.rs - timetrack'),
+      focus(9, 'com.microsoft.VSCode', 'calls.rs - timetrack', 45),
       call(10, 'call-start', 'com.hnc.Discord.helper.Renderer'),
       call(40, 'call-end', 'com.hnc.Discord.helper.Renderer'),
     ]);
@@ -139,6 +139,81 @@ describe('classifyCalls', () => {
     ]);
 
     expect(windows[0]!.title).toBe('Meeting #1 | Braune Digital - Discord');
+  });
+
+  it('reads no title from a focus the application lost long before the call opened', () => {
+    const windows = classify([
+      focus(0, 'discord', 'Open Room #1 | Braune Digital - Discord'),
+      focus(14, 'firefox', 'a tab'),
+      call(60, 'call-start', 'Discord'),
+      call(90, 'call-end', 'Discord'),
+    ]);
+
+    expect(windows[0]!.title).toBe('');
+  });
+
+  it('names the call from the start event when the application lost the focus long before', () => {
+    const windows = classify([
+      focus(0, 'discord', 'Open Room #1 | Braune Digital - Discord'),
+      focus(14, 'firefox', 'a tab'),
+      { ...call(60, 'call-start', 'Discord'), title: 'Meeting #2 | Braune Digital - Discord' },
+      call(90, 'call-end', 'Discord'),
+    ]);
+
+    expect(windows[0]!.title).toBe('Meeting #2 | Braune Digital - Discord');
+  });
+
+  it('keeps the focus before the call when the application lost it just before the microphone opened', () => {
+    const windows = classify([
+      focus(0, 'discord', 'Meeting #1 | Braune Digital - Discord'),
+      focus(9, 'firefox', 'a tab', 40),
+      call(10, 'call-start', 'Discord'),
+      call(40, 'call-end', 'Discord'),
+    ]);
+
+    expect(windows[0]!.title).toBe('Meeting #1 | Braune Digital - Discord');
+  });
+
+  it('prefers the start event over the focus before the call', () => {
+    const windows = classify([
+      focus(0, 'discord', 'Open Room #1 | Braune Digital - Discord', 27),
+      { ...call(0, 'call-start', 'Discord', 29), title: 'Meeting #2 | Braune Digital - Discord' },
+      call(12, 'call-end', 'Discord'),
+    ]);
+
+    expect(windows[0]!.title).toBe('Meeting #2 | Braune Digital - Discord');
+  });
+
+  it('prefers the title the join settled on over the start event', () => {
+    const windows = classify(
+      [
+        { ...call(0, 'call-start', 'Discord', 6), title: 'Open Room #1 | Braune Digital - Discord' },
+        focus(0, 'discord', 'Meeting #1 | Braune Digital - Discord', 9),
+        call(12, 'call-end', 'Discord'),
+      ],
+      { countsAsWork: ['Braune Digital'], neverCountsAsWork: ['Open Room'] },
+    );
+
+    expect(windows[0]!.title).toBe('Meeting #1 | Braune Digital - Discord');
+    expect(windows[0]!.countsAsWork).toBe(true);
+  });
+
+  it('matches the rules against the start event title', () => {
+    const windows = classify(
+      [
+        { ...call(0, 'call-start', 'Discord'), title: 'Open Room #1 | Braune Digital - Discord' },
+        call(12, 'call-end', 'Discord'),
+      ],
+      { countsAsWork: ['Braune Digital'], neverCountsAsWork: ['Open Room'] },
+    );
+
+    expect(windows[0]!.excludedBy).toBe('deny-rule');
+  });
+
+  it('names a call still open from its start event', () => {
+    const windows = classify([{ ...call(0, 'call-start', 'Discord'), title: 'Meeting #2 | Braune Digital - Discord' }]);
+
+    expect(windows[0]!.title).toBe('Meeting #2 | Braune Digital - Discord');
   });
 
   it('never reads a title from an application whose id the holder only starts like', () => {
@@ -637,7 +712,7 @@ describe('classifyCalls, the voice room left open', () => {
   it('takes the attendance a call needs from the options', () => {
     const events = [
       focus(0, 'com.hnc.Discord', 'Meeting #1 | Braune Digital'),
-      focus(1, 'code', 'calls.ts - timetrack'),
+      focus(9, 'code', 'calls.ts - timetrack', 45),
       call(10, 'call-start', 'com.hnc.Discord'),
       focus(20, 'com.hnc.Discord', 'Meeting #1 | Braune Digital'),
       focus(21, 'code', 'calls.ts - timetrack'),

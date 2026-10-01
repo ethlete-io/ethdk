@@ -172,6 +172,37 @@ describe('applyExclusionRules, for a source with no title', () => {
   });
 });
 
+describe('applyExclusionRules, on a call', () => {
+  const callStart = (title: string): CollectedEvent => ({
+    at: new Date(2026, 7, 11, 15, 0),
+    source: 'call',
+    kind: 'call-start',
+    appId: 'discord',
+    title,
+  });
+
+  it('strips a title a pattern names and keeps the call', () => {
+    const result = applyExclusionRules({
+      events: [callStart('Private | Some Server - Discord')],
+      rules: [{ kind: 'title-pattern', pattern: 'private' }],
+    });
+
+    expect(result.kept).toEqual([
+      { at: new Date(2026, 7, 11, 15, 0), source: 'call', kind: 'call-start', appId: 'discord' },
+    ]);
+    expect(result.excluded).toEqual([]);
+  });
+
+  it('keeps a title no rule names', () => {
+    const result = applyExclusionRules({
+      events: [callStart('Meeting #2 | Braune Digital - Discord')],
+      rules: [{ kind: 'title-pattern', pattern: 'private' }],
+    });
+
+    expect(result.kept).toEqual([callStart('Meeting #2 | Braune Digital - Discord')]);
+  });
+});
+
 describe('DEFAULT_EXCLUSION_RULES', () => {
   it('covers password managers, private browsing and banking', () => {
     const result = applyExclusionRules({
