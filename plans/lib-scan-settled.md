@@ -32,6 +32,17 @@ From the `libs/query` scans of 2026-08-19 and 2026-09-27 (waves 1-3).
   names the release; no throw, no re-create.
 - The `withArgs` type check: generic helpers that pass `withArgs` compile, a `QueryFeature` annotation drops the mark (use `WithArgsQueryFeature`), a spread is left to ET100.
 
+From gap 14 of the v2 → v3 move (closed 2026-10-01):
+
+- No entity store. A normalized store goes wrong on a PATCH that returns nothing or part of the object.
+  `invalidates`, tags and `withOptimisticUpdate` replace it.
+- `etQueryButton` shows loading and progress only, no success or failure flash. Results go to notifications.
+- `invalidates` re-runs only reads in use, not entries that wait out `keepUnusedFor`.
+- `etPagedQueryTrigger`: `root` takes no selector. Polling on a paged stack polls every loaded page.
+- `selectOptionsFromQuery` makes its own `createPagedQueryStack`; it does not accept an existing stack.
+- The migration scripts report the legacy button, collections, infinity queries and entity stores; they do not
+  rewrite them. No `createQueryGroup` rewrite of a collection until a consumer asks for one.
+
 ## core
 
 From the `libs/core` scan of 2026-08-19, closed 2026-09-29.
