@@ -127,7 +127,8 @@ opt out of it. `otherTabs: false` keeps a single invalidation local.
 
 What travels is the resolved URL and the [tag](/query/caching#tags), never the `filter` function: the
 receiving tabs narrow by those alone and invalidate a superset of what the calling tab did. A mutation's
-[`invalidates`](/query/caching#invalidating-from-the-mutation) travels the same way.
+[`invalidates`](/query/caching#invalidating-from-the-mutation) travels the same way. A read that the
+mutation refresh and several of its invalidations all match restarts once, here and in every other tab.
 
 ## Configuration
 

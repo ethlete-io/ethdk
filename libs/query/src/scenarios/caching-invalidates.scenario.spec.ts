@@ -121,6 +121,38 @@ describe('invalidates and tags', () => {
     expect(player.response()).toEqual({ id: '1', v: 2 });
   });
 
+  it('restarts a read once when several invalidates targets of one mutation match it', () => {
+    const s = scenario();
+    let version = 1;
+    s.api.on('GET', '/players/:id', ({ params }) => ({ body: { id: params['id'], v: version }, delay: 50 }));
+    s.api.on('PATCH', '/players/:id', () => {
+      version++;
+
+      return { body: null, status: 204 };
+    });
+
+    const getPlayer = s.get<PlayerArgs>((p) => `/players/${p.id}`, {
+      tags: ({ args }) => [`player:${args.pathParams.id}`],
+    });
+    const patchPlayer = s.patch<{ response: null; pathParams: { id: string } }>((p) => `/players/${p.id}`, {
+      invalidates: ({ args }) => [{ tag: `player:${args.pathParams.id}` }, { url: '/players' }],
+    });
+
+    const c = s.consumer();
+    const player = c.run(() => getPlayer(withArgs(() => ({ pathParams: { id: '1' } }))));
+    const patch = c.run(() => patchPlayer(withArgs(() => ({ pathParams: { id: '1' } }))));
+    s.tick(100);
+
+    patch.execute();
+    s.flush();
+
+    expect(s.api.requests.filter((r) => r.path === '/players/1' && r.method === 'GET').map((r) => r.aborted)).toEqual([
+      false,
+      false,
+    ]);
+    expect(player.response()).toEqual({ id: '1', v: 2 });
+  });
+
   it('invalidates nothing when the mutation fails', () => {
     const s = scenario();
     s.api.on('GET', '/players/:id', ({ params }) => ({ body: { id: params['id'], v: 1 } }));

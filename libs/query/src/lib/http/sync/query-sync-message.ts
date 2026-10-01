@@ -39,6 +39,9 @@ export type QuerySyncMutationMessage = {
 
   /** The full URL the mutation was sent to. */
   url: string;
+
+  /** @see QuerySyncInvalidateMessage.batch */
+  batch?: string;
 };
 
 /** Another tab was told to invalidate queries, explicitly. */
@@ -56,6 +59,12 @@ export type QuerySyncInvalidateMessage = {
    * invalidates by `url` alone, a superset.
    */
   tag?: string | null;
+
+  /**
+   * Shared by the messages one tab posted in the same synchronous turn, so the receiver restarts a read
+   * once for all of them. A tab from an older deploy neither sends nor reads it, and restarts once per message.
+   */
+  batch?: string;
 };
 
 export type QuerySyncMessage = QuerySyncResponseMessage | QuerySyncMutationMessage | QuerySyncInvalidateMessage;
@@ -95,14 +104,16 @@ export const unwrapQuerySyncMessage = (data: unknown): QuerySyncMessage | null =
     };
   }
 
+  const batch = typeof raw['batch'] === 'string' ? { batch: raw['batch'] } : {};
+
   if (type === 'mutation' && typeof method === 'string' && typeof url === 'string') {
-    return { type: 'mutation', method: method as QueryMethod, url };
+    return { type: 'mutation', method: method as QueryMethod, url, ...batch };
   }
 
   if (type === 'invalidate' && (typeof url === 'string' || url === null)) {
     const tag = raw['tag'];
 
-    return { type: 'invalidate', url, tag: typeof tag === 'string' ? tag : null };
+    return { type: 'invalidate', url, tag: typeof tag === 'string' ? tag : null, ...batch };
   }
 
   return null;

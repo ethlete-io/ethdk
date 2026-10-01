@@ -1,3 +1,4 @@
+import { randomId } from '@ethlete/core';
 import { shouldCacheQuery } from '../query-cache-utils';
 import { createQueryInvalidationFilter } from '../query-invalidation';
 import { QueryRepository, QueryRepositoryEvent } from '../query-repository';
@@ -55,6 +56,17 @@ export const createQuerySyncEngine = (options: CreateQuerySyncEngineOptions): Qu
 
   const mutationFilter = typeof refreshOnMutation === 'object' ? refreshOnMutation.filter : null;
 
+  let outgoingBatch: string | null = null;
+
+  const currentOutgoingBatch = () => {
+    if (outgoingBatch === null) {
+      outgoingBatch = randomId();
+      queueMicrotask(() => (outgoingBatch = null));
+    }
+
+    return outgoingBatch;
+  };
+
   const broadcast = (event: QueryRepositoryEvent) => {
     if (event.type !== 'request-success' || !event.isMultiTabSyncEnabled) return;
 
@@ -78,7 +90,12 @@ export const createQuerySyncEngine = (options: CreateQuerySyncEngineOptions): Qu
     // worth telling the other tabs about - and an uncacheable read has no shared key to send anyway.
     if (!refreshOnMutation || shouldCacheQuery(event.request.method)) return;
 
-    transport.post({ type: 'mutation', method: event.request.method, url: event.request.url });
+    transport.post({
+      type: 'mutation',
+      method: event.request.method,
+      url: event.request.url,
+      batch: currentOutgoingBatch(),
+    });
   };
 
   const apply = (message: QuerySyncMessage) => {
@@ -93,12 +110,16 @@ export const createQuerySyncEngine = (options: CreateQuerySyncEngineOptions): Qu
     // An invalidation is something the other tab's app code asked for explicitly, so unlike the
     // mutation heuristic it is not something `refreshOnMutation: false` opts out of.
     if (message.type === 'invalidate') {
-      repository.refreshInUse(createQueryInvalidationFilter({ url: message.url, tag: message.tag }), {
-        type: 'invalidation',
-        url: message.url,
-        otherTab: true,
-        ...(message.tag && { tag: message.tag }),
-      });
+      repository.refreshInUse(
+        createQueryInvalidationFilter({ url: message.url, tag: message.tag }),
+        {
+          type: 'invalidation',
+          url: message.url,
+          otherTab: true,
+          ...(message.tag && { tag: message.tag }),
+        },
+        message.batch,
+      );
 
       return;
     }
@@ -107,15 +128,15 @@ export const createQuerySyncEngine = (options: CreateQuerySyncEngineOptions): Qu
 
     const mutation = { method: message.method, url: message.url };
 
-    repository.refreshInUse(mutationFilter ? (request) => mutationFilter(mutation, request) : undefined, {
-      type: 'mutation',
-      url: message.url,
-      otherTab: true,
-    });
+    repository.refreshInUse(
+      mutationFilter ? (request) => mutationFilter(mutation, request) : undefined,
+      { type: 'mutation', url: message.url, otherTab: true },
+      message.batch,
+    );
   };
 
   const postInvalidation = (url: string | null, tag?: string | null) =>
-    transport.post(tag ? { type: 'invalidate', url, tag } : { type: 'invalidate', url });
+    transport.post({ type: 'invalidate', url, ...(tag && { tag }), batch: currentOutgoingBatch() });
 
   const eventSubscription = repository.events$.subscribe(broadcast);
   const unlisten = transport.listen(apply);

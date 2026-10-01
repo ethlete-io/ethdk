@@ -306,9 +306,12 @@ export type QueryRepository = {
    * Pass a filter to narrow it down to a subset of those entries, and a cause to describe what asked
    * for it - which is what the devtools report as the reason a query refetched.
    *
+   * An `invalidation` or `mutation` does not restart a request that one of the same batch already
+   * restarted: `batch` names it, and leaving it out makes the current synchronous turn the batch.
+   *
    * @see QueryClient.refreshQueriesInUse
    */
-  refreshInUse: (filter?: QueryRepositoryRefreshFilterFn, cause?: QueryRefreshCause) => void;
+  refreshInUse: (filter?: QueryRepositoryRefreshFilterFn, cause?: QueryRefreshCause, batch?: string) => void;
 
   /**
    * Writes a response that another tab received onto the matching cache entry, so the same query
@@ -737,10 +740,33 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     eventsSubject.next({ type: 'unbind-all-secure' });
   };
 
-  const refreshInUse = (filter?: QueryRepositoryRefreshFilterFn, cause?: QueryRefreshCause) => {
+  let restartedBatch: { key: string; requests: WeakSet<HttpRequest<QueryArgs>> } | null = null;
+  let turnBatchKey: string | null = null;
+
+  const currentTurnBatchKey = () => {
+    if (turnBatchKey === null) {
+      turnBatchKey = generateUuid();
+      queueMicrotask(() => (turnBatchKey = null));
+    }
+
+    return turnBatchKey;
+  };
+
+  const resolveRestartedBatch = (cause: QueryRefreshCause | undefined, batch: string | undefined) => {
+    if (!cause || cause.type === 'refresh') return null;
+
+    const key = batch ?? currentTurnBatchKey();
+
+    if (restartedBatch?.key !== key) restartedBatch = { key, requests: new WeakSet() };
+
+    return restartedBatch.requests;
+  };
+
+  const refreshInUse = (filter?: QueryRepositoryRefreshFilterFn, cause?: QueryRefreshCause, batch?: string) => {
     const refreshed: HttpRequest<QueryArgs>[] = [];
 
     const marksUnusedStale = cause?.type === 'invalidation';
+    const restartedInBatch = resolveRestartedBatch(cause, batch);
 
     for (const cacheEntry of cache.values()) {
       const isUnused = cacheEntry.consumers.size === 0;
@@ -760,6 +786,9 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
         continue;
       }
 
+      if (restartedInBatch?.has(cacheEntry.request)) continue;
+
+      restartedInBatch?.add(cacheEntry.request);
       refreshed.push(cacheEntry.request);
       cacheEntry.request.execute({ force: true });
     }

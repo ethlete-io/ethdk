@@ -350,7 +350,9 @@ describe('multi-tab sync scenario', () => {
       .map((message) => message.data)
       .filter((data) => (data as { type: string }).type === 'invalidate');
 
-    expect(invalidations).toEqual([{ v: QUERY_SYNC_PROTOCOL_VERSION, type: 'invalidate', url: null, tag: 'team:1' }]);
+    expect(invalidations).toEqual([
+      { v: QUERY_SYNC_PROTOCOL_VERSION, type: 'invalidate', url: null, tag: 'team:1', batch: expect.any(String) },
+    ]);
     expect(s.api.requestCount('GET', '/teams/1')).toBe(2);
     expect(s.api.requestCount('GET', '/teams/2')).toBe(1);
 
@@ -395,10 +397,91 @@ describe('multi-tab sync scenario', () => {
       type: 'invalidate',
       url: null,
       tag: 'team:1',
+      batch: expect.any(String),
     });
     expect(teamB.response()).toEqual({ id: '1', v: 2 });
 
     a.destroy();
+    b.destroy();
+    tabB.destroy();
+  });
+
+  it('restarts a read in the other tab once for a mutation that also invalidates it', async () => {
+    const s = scenario();
+    let version = 1;
+    s.api.on('GET', '/teams/:id', ({ params }) => ({ body: { id: params['id'], v: version }, delay: 50 }));
+    s.api.on('PATCH', '/teams/:id', () => {
+      version++;
+
+      return { body: null, status: 204 };
+    });
+
+    const patchTeam = s.patch<{ response: null; pathParams: { id: string } }>((p) => `/teams/${p.id}`, {
+      invalidates: ({ args }) => [{ tag: `team:${args.pathParams.id}` }, { url: '/teams' }],
+    });
+    const tabB = createTab(s);
+    const getTeamB = tabB.get<{ response: { id: string; v: number }; pathParams: { id: string } }>(
+      (p) => `/teams/${p.id}`,
+      { tags: ({ args }) => [`team:${args.pathParams.id}`] },
+    );
+
+    const a = s.consumer();
+    const b = tabB.consumer();
+    const patch = a.run(() => patchTeam(withArgs(() => ({ pathParams: { id: '1' } }))));
+    const teamB = b.run(() => getTeamB(withArgs(() => ({ pathParams: { id: '1' } }))));
+
+    await s.settle(100);
+    await flushMultiTabSync();
+
+    patch.execute();
+    await s.settle();
+    await flushMultiTabSync();
+    await s.settle(100);
+
+    expect(s.api.requests.filter((r) => r.path === '/teams/1' && r.method === 'GET').map((r) => r.aborted)).toEqual([
+      false,
+      false,
+    ]);
+    expect(teamB.response()).toEqual({ id: '1', v: 2 });
+
+    a.destroy();
+    b.destroy();
+    tabB.destroy();
+  });
+
+  it('still refreshes on both messages of a tab that does not link them', async () => {
+    const s = scenario();
+    let version = 1;
+    s.api.on('GET', '/teams/:id', ({ params }) => ({ body: { id: params['id'], v: version }, delay: 50 }));
+
+    const tabB = createTab(s);
+    const getTeamB = tabB.get<{ response: { id: string; v: number }; pathParams: { id: string } }>(
+      (p) => `/teams/${p.id}`,
+      { tags: ({ args }) => [`team:${args.pathParams.id}`] },
+    );
+
+    const b = tabB.consumer();
+    const teamB = b.run(() => getTeamB(withArgs(() => ({ pathParams: { id: '1' } }))));
+
+    await s.settle(100);
+    await flushMultiTabSync();
+
+    version = 2;
+    const olderTab = new BroadcastChannel(CHANNEL);
+    olderTab.postMessage({
+      v: QUERY_SYNC_PROTOCOL_VERSION,
+      type: 'mutation',
+      method: 'PATCH',
+      url: `${BASE_URL}/teams/1`,
+    });
+    olderTab.postMessage({ v: QUERY_SYNC_PROTOCOL_VERSION, type: 'invalidate', url: null, tag: 'team:1' });
+    olderTab.close();
+    await flushMultiTabSync();
+    await s.settle(100);
+
+    expect(s.api.requests.filter((r) => r.path === '/teams/1').map((r) => r.aborted)).toEqual([false, true, false]);
+    expect(teamB.response()).toEqual({ id: '1', v: 2 });
+
     b.destroy();
     tabB.destroy();
   });
@@ -681,7 +764,9 @@ describe('multi-tab sync scenario', () => {
       .map((message) => message.data)
       .filter((data) => (data as { type: string }).type === 'invalidate');
 
-    expect(invalidations).toEqual([{ v: QUERY_SYNC_PROTOCOL_VERSION, type: 'invalidate', url: `${BASE_URL}/players` }]);
+    expect(invalidations).toEqual([
+      { v: QUERY_SYNC_PROTOCOL_VERSION, type: 'invalidate', url: `${BASE_URL}/players`, batch: expect.any(String) },
+    ]);
     expect(s.api.requestCount('GET', '/players/1')).toBe(firstBefore + 2);
     expect(s.api.requestCount('GET', '/players/2')).toBe(secondBefore + 1);
 
