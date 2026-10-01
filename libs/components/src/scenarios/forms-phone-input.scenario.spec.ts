@@ -167,11 +167,11 @@ describe('forms phone input scenarios', () => {
 
     expect(optionNames.slice(0, 2)).toEqual([phoneCountryName('de'), phoneCountryName('at')]);
     expect(optionNames).toHaveLength(PHONE_COUNTRIES.length);
-    expect(query<HTMLInputElement>('[etSelectSearch], .et-phone-input-country-search input', panel).placeholder).toBe(
+    expect(query<HTMLInputElement>('[etSelectSearch], .et-select-panel-search input', panel).placeholder).toBe(
       'Land suchen',
     );
 
-    const search = query<HTMLInputElement>('.et-phone-input-country-search input', panel);
+    const search = query<HTMLInputElement>('.et-select-panel-search input', panel);
 
     search.focus();
     typeInto(s, search, '+43');
