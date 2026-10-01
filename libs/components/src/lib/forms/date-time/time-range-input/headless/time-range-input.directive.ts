@@ -72,7 +72,7 @@ export class TimeRangeInputDirective extends DateRangePickerInputDirective imple
   }
 
   public override pickerAutoFocus() {
-    return '[etTimePickerRingHandle][data-active]:not([data-empty])';
+    return '[etTimePickerRingHandle][data-active]:not([data-empty]), .et-overlay--bottom-sheet [etTimePickerRingHandle][data-active]';
   }
 
   public override valueReferenceDate() {
