@@ -2,10 +2,6 @@
 
 Live work only, ordered by what to do first. Finished items are removed; git history has them.
 
-## Chart follow-ups
-
-- Sankey: the call 10 B drawing has a muted key hint in the link tooltip ("1 of 2 · ↑↓ next link · Esc back to …"). Not built; it needs text inputs that can be translated.
-
 ## Stat tile
 
 A new component, not started. Low priority, opportunistic. The `dataviz` guidance already covers
