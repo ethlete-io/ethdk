@@ -36,6 +36,7 @@
 
   .et-bracket-skeleton-continue .et-bracket-skeleton-continue-bone {
     flex: 1;
+    block-size: 100%;
     --et-skeleton-radius: 6px;
   }
 

@@ -18,6 +18,8 @@ export default {
     },
     animated: { control: { type: 'boolean' } },
     loaded: { control: { type: 'boolean' } },
+    showContinueElement: { control: { type: 'boolean' } },
+    includeFinal: { control: { type: 'boolean' } },
   },
   args: {
     mode: TOURNAMENT_MODE.SINGLE_ELIMINATION,
@@ -25,6 +27,8 @@ export default {
     density: BRACKET_DENSITY.DEFAULT,
     animated: true,
     loaded: false,
+    showContinueElement: false,
+    includeFinal: true,
   },
 } as Meta<StorybookBracketSkeletonComponent>;
 
@@ -38,5 +42,14 @@ export const DoubleElimination = {
   render: Template,
   args: {
     mode: TOURNAMENT_MODE.DOUBLE_ELIMINATION,
+  },
+};
+
+export const DoubleEliminationContinue = {
+  render: Template,
+  args: {
+    mode: TOURNAMENT_MODE.DOUBLE_ELIMINATION,
+    includeFinal: false,
+    showContinueElement: true,
   },
 };

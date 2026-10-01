@@ -17,9 +17,19 @@ type SkeletonMode = PlaceholderBracketShape['mode'];
   template: `
     <et-scrollable [etScrollableButtons]="{ sticky: true }">
       @if (loaded()) {
-        <et-bracket [source]="source()" [density]="density()" [matchNormalizer]="MATCH_NORMALIZER" />
+        <et-bracket
+          [source]="source()"
+          [density]="density()"
+          [showContinueElement]="showContinueElement()"
+          [matchNormalizer]="MATCH_NORMALIZER"
+        />
       } @else {
-        <et-bracket-skeleton [shape]="shape()" [density]="density()" [animated]="animated()" />
+        <et-bracket-skeleton
+          [shape]="shape()"
+          [density]="density()"
+          [showContinueElement]="showContinueElement()"
+          [animated]="animated()"
+        />
       }
     </et-scrollable>
   `,
@@ -37,19 +47,28 @@ export class StorybookBracketSkeletonComponent {
   public participantCount = input(8, { transform: numberAttribute });
   public density = input<BracketDensity>(BRACKET_DENSITY.DEFAULT);
   public animated = input(true, { transform: booleanAttribute });
+  public showContinueElement = input(false, { transform: booleanAttribute });
+  public includeFinal = input(true, { transform: booleanAttribute });
 
   /** Swaps in the real bracket of the same shape, to check that nothing moves. */
   public loaded = input(false, { transform: booleanAttribute });
 
-  protected shape = computed<PlaceholderBracketShape>(() => ({
-    mode: this.mode(),
-    participantCount: this.participantCount(),
-  }));
+  protected shape = computed<PlaceholderBracketShape>(
+    () =>
+      ({
+        mode: this.mode(),
+        participantCount: this.participantCount(),
+        ...(this.mode() === TOURNAMENT_MODE.DOUBLE_ELIMINATION ? { includeFinal: this.includeFinal() } : {}),
+      }) as PlaceholderBracketShape,
+  );
 
   protected source = computed(() =>
     this.mode() === TOURNAMENT_MODE.SINGLE_ELIMINATION
       ? generateSingleEliminationBracket(this.participantCount())
-      : generateDoubleEliminationBracket({ participantCount: this.participantCount() }),
+      : generateDoubleEliminationBracket({
+          participantCount: this.participantCount(),
+          includeFinal: this.includeFinal(),
+        }),
   );
 
   protected readonly MATCH_NORMALIZER = demoMatchNormalizer;
