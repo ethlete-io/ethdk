@@ -54,7 +54,7 @@ import { SelectSurfaceContext, SelectSurfaceDirective } from './select-surface.d
 import { SelectTriggerDirective } from './select-trigger.directive';
 import { SelectValueDirective } from './select-value.directive';
 import { SelectViewportDirective } from './select-viewport.directive';
-import { SelectCompareWith, SelectItem, SelectOptionData, SelectSelectedEntry } from './select.tokens';
+import { SelectCompareWith, SelectItem, SelectOptionData, SelectSelectedEntry, SelectValueKey } from './select.tokens';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
 import { controlTouches } from '../../../internals/touch-output';
@@ -148,6 +148,13 @@ export class SelectDirective
    */
   public compareWith = input<SelectCompareWith<never>>(referenceEquality);
 
+  /**
+   * Derives a value's stable identity (e.g. `(team) => team.id`): two non-null values with the
+   * same key are the same choice. Takes precedence over `compareWith` and keeps syncing large
+   * data-driven `options` lists linear.
+   */
+  public valueKey = input<SelectValueKey<never> | null>(null);
+
   public filterModeInput = input<SelectFilterMode>(SELECT_FILTER_MODES.INTERNAL, { alias: 'filterMode' });
   /** Enter with a search query that matches no option commits the raw query string as the value. */
   public allowCustomValues = input(false, { transform: booleanAttribute });
@@ -202,9 +209,18 @@ export class SelectDirective
   public pickOption = output<unknown>();
 
   private valuesMatch = computed<SelectCompareWith>(() => {
-    const compareWith = this.compareWith() as SelectCompareWith;
+    const valueKey = this.valueKey() as SelectValueKey | null;
+    const compareWith: SelectCompareWith = valueKey
+      ? (a, b) => valueKey(a) === valueKey(b)
+      : (this.compareWith() as SelectCompareWith);
 
     return (a, b) => a === b || (a !== null && a !== undefined && b !== null && b !== undefined && compareWith(a, b));
+  });
+
+  private valueIdentity = computed<(value: unknown) => unknown>(() => {
+    const valueKey = this.valueKey() as SelectValueKey | null;
+
+    return valueKey ? (value) => (value === null || value === undefined ? value : valueKey(value)) : (value) => value;
   });
 
   /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
@@ -365,6 +381,7 @@ export class SelectDirective
 
   private dataItems = signal<SelectItem[]>([]);
   private dataItemRegistry = new Map<unknown, SelectDataItemEntry>();
+  private dataItemRegistryIdentity: ((value: unknown) => unknown) | null = null;
 
   public sortedItems = computed(() => {
     const dataItems = this.dataItems();
@@ -626,28 +643,31 @@ export class SelectDirective
 
     effect(() => {
       const optionsData = this.options();
-      const usesReferenceEquality = this.compareWith() === referenceEquality;
+      const identify = this.valueIdentity();
+      const scansRegistry = !this.valueKey() && this.compareWith() !== referenceEquality;
       const valuesMatch = this.valuesMatch();
 
       untracked(() => {
+        if (this.dataItemRegistryIdentity !== identify) {
+          this.rekeyDataItemRegistry(identify);
+        }
+
         const registry = this.dataItemRegistry;
         const nextItems: SelectItem[] = [];
-        const seenValues = new Set<unknown>();
-        const isDuplicate = (value: unknown) =>
-          seenValues.has(value) ||
-          (!usesReferenceEquality && nextItems.some((item) => valuesMatch(item.value(), value)));
-        const findReusableEntry = (value: unknown) => {
-          const exact = registry.get(value);
+        const seenKeys = new Set<unknown>();
+        const isDuplicate = (key: unknown, value: unknown) =>
+          seenKeys.has(key) || (scansRegistry && nextItems.some((item) => valuesMatch(item.value(), value)));
+        const findReusableEntry = (key: unknown, value: unknown) => {
+          const exact = registry.get(key);
 
-          if (exact || usesReferenceEquality) {
+          if (exact || !scansRegistry) {
             return exact;
           }
 
           for (const [registeredValue, candidate] of registry) {
-            if (!seenValues.has(registeredValue) && valuesMatch(registeredValue, value)) {
+            if (!seenKeys.has(registeredValue) && valuesMatch(registeredValue, value)) {
               registry.delete(registeredValue);
-              registry.set(value, candidate);
-              candidate.value.set(value);
+              registry.set(key, candidate);
 
               return candidate;
             }
@@ -657,43 +677,35 @@ export class SelectDirective
         };
 
         for (const data of optionsData ?? []) {
-          if (isDuplicate(data.value)) {
+          const key = identify(data.value);
+
+          if (isDuplicate(key, data.value)) {
             continue;
           }
 
-          let entry = findReusableEntry(data.value);
+          let entry = findReusableEntry(key, data.value);
 
-          seenValues.add(data.value);
+          seenKeys.add(key);
 
           if (entry) {
+            entry.value.set(data.value);
             entry.label.set(data.label);
             entry.disabledInput.set(data.disabled ?? false);
             entry.data.set(data);
           } else {
             entry = this.createDataItem(data);
-            registry.set(data.value, entry);
+            registry.set(key, entry);
             this.selection.registerItem(entry.item);
           }
 
           nextItems.push(entry.item);
         }
 
-        for (const [value, entry] of registry) {
-          if (seenValues.has(value)) {
-            continue;
+        for (const [key, entry] of registry) {
+          if (!seenKeys.has(key)) {
+            registry.delete(key);
+            this.releaseDataItem(entry);
           }
-
-          registry.delete(value);
-
-          if (this.activeItem() === entry.item) {
-            this.activeItem.set(null);
-          }
-
-          if (this.pendingActiveScrollItem === entry.item) {
-            this.pendingActiveScrollItem = null;
-          }
-
-          this.selection.unregisterItem(entry.item);
         }
 
         this.dataItems.set(nextItems);
@@ -1258,6 +1270,35 @@ export class SelectDirective
     };
 
     return { item, value, label, disabledInput, element, data: dataSignal };
+  }
+
+  private rekeyDataItemRegistry(identify: (value: unknown) => unknown) {
+    const rekeyed = new Map<unknown, SelectDataItemEntry>();
+
+    for (const entry of this.dataItemRegistry.values()) {
+      const key = identify(entry.value());
+
+      if (rekeyed.has(key)) {
+        this.releaseDataItem(entry);
+      } else {
+        rekeyed.set(key, entry);
+      }
+    }
+
+    this.dataItemRegistry = rekeyed;
+    this.dataItemRegistryIdentity = identify;
+  }
+
+  private releaseDataItem(entry: SelectDataItemEntry) {
+    if (this.activeItem() === entry.item) {
+      this.activeItem.set(null);
+    }
+
+    if (this.pendingActiveScrollItem === entry.item) {
+      this.pendingActiveScrollItem = null;
+    }
+
+    this.selection.unregisterItem(entry.item);
   }
 
   private handleClosedKeydown(event: KeyboardEvent) {

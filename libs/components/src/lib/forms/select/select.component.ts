@@ -65,6 +65,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
         'name',
         'options',
         'compareWith',
+        'valueKey',
         'filterMode',
         'allowCustomValues',
         'customValueSeparators',

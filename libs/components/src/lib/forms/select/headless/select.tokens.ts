@@ -40,3 +40,6 @@ export type SelectSelectedEntry = {
 
 /** Whether an option value and a model value are the same choice - see the select's `compareWith` input. */
 export type SelectCompareWith<TValue = unknown> = (optionValue: TValue, value: TValue) => boolean;
+
+/** A value's stable identity - see the select's `valueKey` input. */
+export type SelectValueKey<TValue = unknown> = (value: TValue) => string | number;
