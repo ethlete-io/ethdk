@@ -45,7 +45,7 @@ Without a `valueFormatter`, values are formatted with `Intl.NumberFormat` in the
 
 Slices start at 12 o'clock and run clockwise in the order of `data` - the chart never sorts them, and it never folds small slices into an "Other" slice. Sort the data, or group the tail yourself, before handing it over.
 
-Every share is a whole percentage, rounded so that the shares in the legend and the table always add up to exactly 100%. Neighbouring slices are 2px apart, the same width from the centre to the rim.
+Every share is a whole percentage, rounded so that the shares in the legend and the table always add up to exactly 100%. A slice with a value above 0 that rounds to 0% reads `<1%` (in the locale's percent format) in the tooltip, legend, table view and screen reader text; a slice of exactly 0 reads `0%`. Neighbouring slices are 2px apart, the same width from the centre to the rim.
 
 - **A value of 0** draws no slice and is no tab stop, but keeps its row in the legend and the table, at 0%.
 - **A negative or non-finite value** is not a part of a whole: it counts as 0 as well, and in dev mode the chart warns with `ET5140`.

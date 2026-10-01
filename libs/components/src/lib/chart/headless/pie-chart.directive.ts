@@ -110,7 +110,10 @@ export class PieChartDirective implements ChartPlotHost {
   private formatPercent = computed(() => {
     const format = new Intl.NumberFormat(this.locale.currentLocale(), { style: 'percent' });
 
-    return (percent: number) => format.format(percent / 100);
+    const belowOne = `<${format.format(0.01)}`;
+
+    return (percent: number, value: number) =>
+      percent === 0 && drawnValue(value) > 0 ? belowOne : format.format(percent / 100);
   });
 
   /**
@@ -162,7 +165,7 @@ export class PieChartDirective implements ChartPlotHost {
         accentMix: mixes[index] ?? null,
         percent,
         valueText: format(Number.isFinite(datum.value) ? datum.value : 0),
-        percentText: formatPercent(percent),
+        percentText: formatPercent(percent, datum.value),
       };
     });
   });

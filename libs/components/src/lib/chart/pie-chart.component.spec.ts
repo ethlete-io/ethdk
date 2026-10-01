@@ -130,6 +130,27 @@ describe('PieChartComponent', () => {
     ]);
   });
 
+  it('reads a share above 0 that rounds to 0 as "<1%" in the legend, tooltip text and table, and a zero as "0%"', () => {
+    const { fixture, host, chart, element } = setup();
+
+    host.data.set([
+      { label: 'Search', value: 100000 },
+      { label: 'Tiny', value: 1 },
+      { label: 'Direct', value: 0 },
+    ]);
+    fixture.detectChanges();
+
+    expect(chart.entries().map((entry) => entry.percentText)).toEqual(['100%', '<1%', '0%']);
+    expect(chart.slices().map((slice) => slice.percentText)).toEqual(['100%', '<1%']);
+    expect(chart.slices()[1]?.description).toContain('(<1%)');
+    expect(chart.table().rows.map((row) => row.cells[1])).toEqual(['100%', '<1%', '0%']);
+    expect([...element.querySelectorAll('.et-pie-chart-legend-percent')].map((cell) => cell.textContent)).toEqual([
+      '100%',
+      '<1%',
+      '0%',
+    ]);
+  });
+
   it('draws a single slice as a full disc without a gap, its tooltip at the top', () => {
     const { fixture, host, chart } = setup();
 
