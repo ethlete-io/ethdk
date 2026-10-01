@@ -1,4 +1,4 @@
-import { Component, ElementRef, Injector, ViewEncapsulation, computed, effect, inject, input } from '@angular/core';
+import { Component, ElementRef, ViewEncapsulation, computed, effect, inject, input } from '@angular/core';
 import { ProvideColorDirective, mountVisuallyHidden } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import {
@@ -9,7 +9,7 @@ import {
   TRIANGLE_EXCLAMATION_ICON,
   provideIcons,
 } from '../icon';
-import { injectSemanticTheme } from '../internals/semantic-theme';
+import { injectSemanticThemes } from '../internals/semantic-theme';
 import { injectProgressStepLabels } from './progress-step-labels';
 
 export const PROGRESS_STEP_STATES = {
@@ -74,7 +74,7 @@ const STATE_ICONS: Partial<Record<ProgressStepState, RegisteredIconName>> = {
 })
 export class ProgressStepComponent {
   private provideColor = inject(ProvideColorDirective);
-  private injector = inject(Injector);
+  private semanticThemes = injectSemanticThemes();
   private labels = injectProgressStepLabels();
 
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -102,7 +102,7 @@ export class ProgressStepComponent {
         state === PROGRESS_STEP_STATES.SUCCESS ||
         state === PROGRESS_STEP_STATES.WARNING ||
         state === PROGRESS_STEP_STATES.ERROR
-          ? injectSemanticTheme(this.injector, state)
+          ? this.semanticThemes[state]()
           : null;
 
       if (!theme) {

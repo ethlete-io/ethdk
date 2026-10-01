@@ -89,6 +89,11 @@ the interactive element itself, never on a wrapper.
   theme) and either bind it (`[etProvideColor]="errorColorTheme"`) or force it
   programmatically (`provideColor.forceColor(theme)` / `clearForcedColor()`). Inside
   that scope, `--et-theme-color-primary-*` _is_ the error color.
+- **A semantic color that must read on both dark and light surfaces** comes from
+  `injectSemanticColorTheme(type)`: a signal of the theme the nearest surface names in
+  `SurfaceTheme.semanticColorThemes` (e.g. `{ success: 'success-on-light' }`, an extra
+  theme registered without a `type`), else the theme of that `type`. Never add
+  per-surface logic to a color theme or new CSS vars for it.
 
 ## Pitfalls
 

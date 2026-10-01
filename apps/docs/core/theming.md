@@ -47,18 +47,19 @@ For code that needs to know the currently active surface (e.g. pickers rendering
 
 A `SurfaceTheme` - all colors are `"R G B"` channel strings:
 
-| Field              | Type                | Required | Description                                     |
-| ------------------ | ------------------- | -------- | ----------------------------------------------- |
-| `name`             | `string`            | yes      | Becomes the scope class `et-surface--<name>`.   |
-| `type`             | `'light' \| 'dark'` | yes      | The elevation family.                           |
-| `elevation`        | `number`            | yes      | Integer; auto-surface resolves `elevation + 1`. |
-| `isDefault`        | `boolean`           | no       | Exactly one per `type`; paints `:root`.         |
-| `background`       | `"R G B"`           | yes      | Surface background.                             |
-| `color`            | `"R G B"`           | yes      | Primary text.                                   |
-| `colorMuted`       | `"R G B"`           | yes      | Secondary text.                                 |
-| `colorSubtle`      | `"R G B"`           | yes      | Tertiary text.                                  |
-| `border`           | `"R G B"`           | yes      | Border color.                                   |
-| `interactionColor` | swatch              | no       | The surface's neutral swatch - see below.       |
+| Field                 | Type                             | Required | Description                                                                                                                     |
+| --------------------- | -------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                | `string`                         | yes      | Becomes the scope class `et-surface--<name>`.                                                                                   |
+| `type`                | `'light' \| 'dark'`              | yes      | The elevation family.                                                                                                           |
+| `elevation`           | `number`                         | yes      | Integer; auto-surface resolves `elevation + 1`.                                                                                 |
+| `isDefault`           | `boolean`                        | no       | Exactly one per `type`; paints `:root`.                                                                                         |
+| `background`          | `"R G B"`                        | yes      | Surface background.                                                                                                             |
+| `color`               | `"R G B"`                        | yes      | Primary text.                                                                                                                   |
+| `colorMuted`          | `"R G B"`                        | yes      | Secondary text.                                                                                                                 |
+| `colorSubtle`         | `"R G B"`                        | yes      | Tertiary text.                                                                                                                  |
+| `border`              | `"R G B"`                        | yes      | Border color.                                                                                                                   |
+| `interactionColor`    | swatch                           | no       | The surface's neutral swatch - see below.                                                                                       |
+| `semanticColorThemes` | `{ success?, warning?, error? }` | no       | The color theme serving each semantic `type` on this surface - see [semantic themes per surface](#semantic-themes-per-surface). |
 
 As an example, this repo's Storybook registers `light` (elevation 0), `light-elevated` (1), `dark` (0), `dark-elevated` (1) and `dark-elevated-2` (2).
 
@@ -358,6 +359,42 @@ export class ViolationHintComponent {
 ```
 
 `injectErrorTheme()`, `injectWarningTheme()` and `injectSuccessTheme()` return the registered `ColorTheme` with the matching `type` - and throw if the app hasn't registered one, so components can rely on them.
+
+### Semantic themes per surface
+
+One `inkColor` cannot read well on both a dark and a light surface. Register a second, ordinary color theme
+for the other surface - without a `type`, so the type lookup stays unambiguous - and let the surface name it:
+
+```ts
+// The app's own names
+export const SUCCESS_ON_LIGHT_THEME: ColorTheme = {
+  name: 'success-on-light',
+  primary: { color: { … }, onColor: { … }, inkColor: { default: '22 101 52' } },
+};
+
+export const LIGHT_SURFACE: SurfaceTheme = {
+  name: 'light',
+  type: 'light',
+  elevation: 0,
+  semanticColorThemes: { success: 'success-on-light', error: 'danger-on-light' },
+  // …
+};
+```
+
+`injectSemanticColorTheme(type)` returns a signal of the theme the nearest surface names for `type`, else
+the registered theme of that `type`. It follows the surface through nesting, overlays that sync their
+surface, and runtime changes. Reading it throws where the app registered no theme of that `type`.
+
+```ts
+export class DeltaComponent {
+  successTheme = injectSemanticColorTheme('success'); // [etProvideColor]="successTheme()"
+}
+```
+
+The SDK's banner, progress step and stat tile resolve their semantic colors this way. `injectErrorTheme()`
+and its siblings stay surface-independent. The surface only picks which `.et-color--<name>` class an
+element gets: CSS that reads `--et-theme-color-ink-solid` from an outer `.et-color--<name>` scope keeps
+that scope's theme until something re-provides the color.
 
 `injectDefaultColorTheme()` returns the registered `ColorTheme` with `isDefault: true` the same way - useful for a shared component with no themed ancestor to inherit from (a page-level `et-spinner`, say), where "the app's default accent" is the right fallback. It throws if no theme is marked `isDefault: true`.
 

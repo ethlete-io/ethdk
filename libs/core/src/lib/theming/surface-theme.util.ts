@@ -1,4 +1,5 @@
 import { defineStaticProvider, toInjectFn, toProvideFn } from '../utils';
+import { ColorThemeType, RegisteredColorThemeName } from './color-theme.util';
 import { provideRootFontSizeCheck } from './root-font-size-check';
 
 export const SURFACE_TYPE = {
@@ -46,6 +47,12 @@ export type SurfaceTheme = {
   elevation: number;
   isDefault?: boolean;
   interactionColor?: SurfaceInteractionColor;
+  /**
+   * The registered color theme that serves a semantic `type` on this surface, e.g.
+   * `{ success: 'success-on-light' }`. A `type` left out falls back to the first registered theme of
+   * that `type`. Read by `injectSemanticColorTheme()`.
+   */
+  semanticColorThemes?: Partial<Record<ColorThemeType, RegisteredColorThemeName>>;
   background: SurfaceThemeColor;
   color: SurfaceThemeColor;
   colorMuted: SurfaceThemeColor;

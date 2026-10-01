@@ -1,6 +1,6 @@
-import { booleanAttribute, Component, computed, inject, Injector, input, ViewEncapsulation } from '@angular/core';
+import { booleanAttribute, Component, computed, input, ViewEncapsulation } from '@angular/core';
 import { injectLocale, mountVisuallyHidden, ProvideColorDirective } from '@ethlete/core';
-import { injectSemanticTheme } from '../internals/semantic-theme';
+import { injectSemanticThemes } from '../internals/semantic-theme';
 import { SkeletonComponent, SkeletonItemComponent } from '../skeleton';
 import { formatStatTileNumber, statTileDirection, statTileSentiment } from './stat-tile-format';
 import { injectStatTileLabels } from './stat-tile-labels';
@@ -27,7 +27,7 @@ import { StatTileFormat, StatTileGoodDirection } from './stat-tile.types';
   },
 })
 export class StatTileComponent {
-  private injector = inject(Injector);
+  private semanticThemes = injectSemanticThemes();
   private locale = injectLocale();
 
   protected labels = injectStatTileLabels();
@@ -88,7 +88,7 @@ export class StatTileComponent {
 
     if (!sentiment || sentiment === 'neutral') return undefined;
 
-    return injectSemanticTheme(this.injector, sentiment === 'good' ? 'success' : 'error');
+    return this.semanticThemes[sentiment === 'good' ? 'success' : 'error']();
   });
 
   protected directionLabel = computed(() => {

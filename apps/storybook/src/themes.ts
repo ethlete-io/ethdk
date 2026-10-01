@@ -68,6 +68,54 @@ export const SUCCESS_THEME: ColorTheme = {
   },
 };
 
+export const DANGER_ON_LIGHT_THEME: ColorTheme = {
+  name: 'danger-on-light',
+  primary: {
+    color: {
+      default: '220 38 38',
+      hover: '239 68 68',
+      focus: '239 68 68',
+      active: '185 28 28',
+      disabled: '120 52 52',
+    },
+    onColor: {
+      default: '255 255 255',
+      disabled: '255 220 220',
+    },
+    inkColor: {
+      default: '185 28 28',
+      hover: '153 27 27',
+      focus: '153 27 27',
+      active: '127 29 29',
+      disabled: '220 150 150',
+    },
+  },
+};
+
+export const SUCCESS_ON_LIGHT_THEME: ColorTheme = {
+  name: 'success-on-light',
+  primary: {
+    color: {
+      default: '22 163 74',
+      hover: '34 197 94',
+      focus: '34 197 94',
+      active: '21 128 61',
+      disabled: '46 111 68',
+    },
+    onColor: {
+      default: '255 255 255',
+      disabled: '221 247 231',
+    },
+    inkColor: {
+      default: '22 101 52',
+      hover: '20 83 45',
+      focus: '20 83 45',
+      active: '5 46 22',
+      disabled: '134 190 150',
+    },
+  },
+};
+
 export const WARNING_THEME: ColorTheme = {
   name: 'warning',
   type: 'warning',
@@ -195,4 +243,6 @@ export const THEMES = [
   CHART_ORANGE_THEME,
   CHART_AQUA_THEME,
   CHART_YELLOW_THEME,
+  DANGER_ON_LIGHT_THEME,
+  SUCCESS_ON_LIGHT_THEME,
 ];

@@ -1,5 +1,7 @@
-import { isDevMode } from '@angular/core';
+import { computed, inject, isDevMode, Signal } from '@angular/core';
 import { defineStaticProvider, toInjectFn, toProvideFn } from '../utils';
+import { SURFACE_PROVIDER } from './provide-surface.directive';
+import { injectDefaultSurfaceTheme } from './surface-theme.util';
 
 export type ThemeRGBColor = `${number} ${number} ${number}`;
 export type ThemeHSLColor = `${number} ${number}% ${number}%`;
@@ -112,20 +114,16 @@ export const provideColorThemesWithTailwind4 = (themes: ColorTheme[], prefix = '
   return [ɵProvideColorThemes(themes), ɵProvideColorThemesPrefix(prefix)];
 };
 
-const injectColorThemeByType = (type: ColorThemeType) => {
-  const themes = injectColorThemes({ optional: true });
-
+const findColorThemeByType = (themes: ColorTheme[] | null, type: ColorThemeType, caller: string) => {
   if (!themes) {
-    throw new Error(
-      `[injectColorThemeByType] No color themes provided. Call provideColorThemesWithTailwind4() in your app config.`,
-    );
+    throw new Error(`[${caller}] No color themes provided. Call provideColorThemesWithTailwind4() in your app config.`);
   }
 
   const theme = themes.find((t) => t.type === type);
 
   if (!theme) {
     throw new Error(
-      `[injectColorThemeByType] No color theme with type "${type}" found. Add a theme with type: "${type}" to provideColorThemesWithTailwind4().`,
+      `[${caller}] No color theme with type "${type}" found. Add a theme with type: "${type}" to provideColorThemesWithTailwind4().`,
     );
   }
 
@@ -134,12 +132,46 @@ const injectColorThemeByType = (type: ColorThemeType) => {
 
     if (duplicates.length > 1) {
       console.error(
-        `[injectColorThemeByType] Multiple themes with type "${type}" found: ${duplicates.map((t) => t.name).join(', ')}. Only the first one will be used.`,
+        `[${caller}] Multiple themes with type "${type}" found: ${duplicates.map((t) => t.name).join(', ')}. Only the first one will be used.`,
       );
     }
   }
 
   return theme;
+};
+
+const injectColorThemeByType = (type: ColorThemeType) =>
+  findColorThemeByType(injectColorThemes({ optional: true }), type, 'injectColorThemeByType');
+
+/**
+ * A signal of the color theme for `type` on the surface this element renders on: the theme the nearest
+ * surface names in `semanticColorThemes`, else the first registered theme of that `type`. Reading it throws
+ * when the app registered no theme of that `type`, so read it only for a state that renders.
+ *
+ * @example
+ * protected successTheme = injectSemanticColorTheme('success');
+ * // <span [etProvideColor]="successTheme()">+12%</span>
+ */
+export const injectSemanticColorTheme = (type: ColorThemeType): Signal<ColorTheme> => {
+  const themes = injectColorThemes({ optional: true });
+  const surfaceProvider = inject(SURFACE_PROVIDER, { optional: true });
+  const defaultSurface = injectDefaultSurfaceTheme();
+
+  return computed(() => {
+    const surface = surfaceProvider?.activeTheme() ?? defaultSurface;
+    const mappedName = surface?.semanticColorThemes?.[type];
+    const mapped = mappedName ? themes?.find((t) => t.name === mappedName) : undefined;
+
+    if (mapped) return mapped;
+
+    if (mappedName && isDevMode()) {
+      console.error(
+        `[injectSemanticColorTheme] Surface theme "${surface?.name}" maps "${type}" to the color theme "${mappedName}", which is not registered. Add it to provideColorThemesWithTailwind4().`,
+      );
+    }
+
+    return findColorThemeByType(themes, type, 'injectSemanticColorTheme');
+  });
 };
 
 export const injectErrorTheme = () => injectColorThemeByType('error');

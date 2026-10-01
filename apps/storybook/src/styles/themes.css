@@ -198,6 +198,44 @@
   --color-et-chart-yellow-ink-active: rgb(237 161 0);
   --color-et-chart-yellow-ink-disabled: rgb(237 161 0);
 
+  /* danger-on-light theme */
+  --color-et-danger-on-light: rgb(220 38 38);
+  --color-et-danger-on-light-hover: rgb(239 68 68);
+  --color-et-danger-on-light-focus: rgb(239 68 68);
+  --color-et-danger-on-light-active: rgb(185 28 28);
+  --color-et-danger-on-light-disabled: rgb(120 52 52);
+
+  --color-et-on-danger-on-light: rgb(255 255 255);
+  --color-et-on-danger-on-light-hover: rgb(255 255 255);
+  --color-et-on-danger-on-light-focus: rgb(255 255 255);
+  --color-et-on-danger-on-light-active: rgb(255 255 255);
+  --color-et-on-danger-on-light-disabled: rgb(255 220 220);
+
+  --color-et-danger-on-light-ink: rgb(185 28 28);
+  --color-et-danger-on-light-ink-hover: rgb(153 27 27);
+  --color-et-danger-on-light-ink-focus: rgb(153 27 27);
+  --color-et-danger-on-light-ink-active: rgb(127 29 29);
+  --color-et-danger-on-light-ink-disabled: rgb(220 150 150);
+
+  /* success-on-light theme */
+  --color-et-success-on-light: rgb(22 163 74);
+  --color-et-success-on-light-hover: rgb(34 197 94);
+  --color-et-success-on-light-focus: rgb(34 197 94);
+  --color-et-success-on-light-active: rgb(21 128 61);
+  --color-et-success-on-light-disabled: rgb(46 111 68);
+
+  --color-et-on-success-on-light: rgb(255 255 255);
+  --color-et-on-success-on-light-hover: rgb(255 255 255);
+  --color-et-on-success-on-light-focus: rgb(255 255 255);
+  --color-et-on-success-on-light-active: rgb(255 255 255);
+  --color-et-on-success-on-light-disabled: rgb(221 247 231);
+
+  --color-et-success-on-light-ink: rgb(22 101 52);
+  --color-et-success-on-light-ink-hover: rgb(20 83 45);
+  --color-et-success-on-light-ink-focus: rgb(20 83 45);
+  --color-et-success-on-light-ink-active: rgb(5 46 22);
+  --color-et-success-on-light-ink-disabled: rgb(134 190 150);
+
   /* Dynamic theme colors (references runtime CSS variables) */
   --color-et-theme: rgb(var(--et-color-primary));
   --color-et-theme-hover: rgb(var(--et-color-primary-hover));
@@ -419,6 +457,46 @@
     --et-color-primary-ink-focus: 237 161 0;
     --et-color-primary-ink-active: 237 161 0;
     --et-color-primary-ink-disabled: 237 161 0;
+  }
+
+  .et-color--danger-on-light {
+    --et-color-primary: 220 38 38;
+    --et-color-primary-hover: 239 68 68;
+    --et-color-primary-focus: 239 68 68;
+    --et-color-primary-active: 185 28 28;
+    --et-color-primary-disabled: 120 52 52;
+
+    --et-color-on-primary: 255 255 255;
+    --et-color-on-primary-hover: 255 255 255;
+    --et-color-on-primary-focus: 255 255 255;
+    --et-color-on-primary-active: 255 255 255;
+    --et-color-on-primary-disabled: 255 220 220;
+
+    --et-color-primary-ink: 185 28 28;
+    --et-color-primary-ink-hover: 153 27 27;
+    --et-color-primary-ink-focus: 153 27 27;
+    --et-color-primary-ink-active: 127 29 29;
+    --et-color-primary-ink-disabled: 220 150 150;
+  }
+
+  .et-color--success-on-light {
+    --et-color-primary: 22 163 74;
+    --et-color-primary-hover: 34 197 94;
+    --et-color-primary-focus: 34 197 94;
+    --et-color-primary-active: 21 128 61;
+    --et-color-primary-disabled: 46 111 68;
+
+    --et-color-on-primary: 255 255 255;
+    --et-color-on-primary-hover: 255 255 255;
+    --et-color-on-primary-focus: 255 255 255;
+    --et-color-on-primary-active: 255 255 255;
+    --et-color-on-primary-disabled: 221 247 231;
+
+    --et-color-primary-ink: 22 101 52;
+    --et-color-primary-ink-hover: 20 83 45;
+    --et-color-primary-ink-focus: 20 83 45;
+    --et-color-primary-ink-active: 5 46 22;
+    --et-color-primary-ink-disabled: 134 190 150;
   }
 }
 

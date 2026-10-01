@@ -1,18 +1,8 @@
-import {
-  Component,
-  Injector,
-  ViewEncapsulation,
-  booleanAttribute,
-  computed,
-  effect,
-  inject,
-  input,
-  output,
-} from '@angular/core';
+import { Component, ViewEncapsulation, booleanAttribute, computed, effect, inject, input, output } from '@angular/core';
 import { ColorTheme, ProvideColorDirective, RegisteredColorThemeName } from '@ethlete/core';
 import { IconButtonComponent } from '../button/icon-button.component';
 import { ICON_IMPORTS, TIMES_ICON, provideIcons } from '../icon';
-import { injectSemanticTheme } from '../internals/semantic-theme';
+import { injectSemanticThemes } from '../internals/semantic-theme';
 import { injectBannerLabels } from './banner-labels';
 
 export const BANNER_TYPES = {
@@ -57,7 +47,7 @@ const ALERT_BANNER_TYPES: ReadonlySet<BannerType> = /* @__PURE__ */ new Set<Bann
 })
 export class BannerComponent {
   private provideColor = inject(ProvideColorDirective);
-  private injector = inject(Injector);
+  private semanticThemes = injectSemanticThemes();
 
   protected resolvedLabels = injectBannerLabels();
 
@@ -107,7 +97,7 @@ export class BannerComponent {
         return;
       }
 
-      this.provideColor.forceColor(injectSemanticTheme(this.injector, type));
+      this.provideColor.forceColor(this.semanticThemes[type]());
     });
   }
 }

@@ -125,6 +125,27 @@ been run since upgrading.
 
 ---
 
+## Semantic themes per surface
+
+A theme has one `inkColor`, so a semantic color tuned for dark surfaces can fail contrast on light ones. Register
+a second theme without a `type` (the app's own name, e.g. `success-on-light`) and name it on the surface:
+
+```ts
+const LIGHT_SURFACE: SurfaceTheme = {
+  name: 'light',
+  type: 'light',
+  elevation: 0,
+  semanticColorThemes: { success: 'success-on-light' },
+  // …
+};
+```
+
+`injectSemanticColorTheme('success')` returns a signal of the theme the nearest surface names, else the registered
+theme with `type: 'success'`. Banner, progress step and stat tile resolve their semantic colors this way;
+`injectErrorTheme()` and its siblings do not look at the surface.
+
+---
+
 ## CSS tokens generated
 
 When a color theme is active, these custom properties are available on the element and its descendants:

@@ -85,6 +85,13 @@ the interactive element itself, never a wrapper).
   (`provideColor.forceColor(theme)` / `clearForcedColor()`, see form-field's
   error state and the menu item destructive variant). Inside that scope,
   `--et-theme-color-primary-*` *is* the error color.
+- **Semantic colors that follow the surface.** One `inkColor` cannot read on both
+  dark and light surfaces, so a surface theme names the theme serving each type:
+  `semanticColorThemes: { success: 'success-on-light' }` (an extra theme registered
+  without a `type`). `injectSemanticColorTheme(type)` returns a signal of that theme,
+  else the theme of that `type` - banner, progress step and stat tile use it via
+  `libs/components/src/lib/internals/semantic-theme.ts`. `injectErrorTheme()` stays
+  surface-independent. Never put surface logic into a color theme or add CSS vars for it.
 
 ## Pitfalls
 
