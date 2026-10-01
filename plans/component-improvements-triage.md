@@ -2,6 +2,29 @@
 
 Live work only, ordered by what to do first. Finished items are removed; git history has them.
 
+## Light-surface contrast in stories
+
+`SurfaceTheme.semanticColorThemes` (`44b743455`) lets a surface pick the colour theme for a
+semantic type. Storybook maps `error` and `success` on `light` and `light-elevated` to
+`danger-on-light` and `success-on-light`. Rejected on the way, do not re-open: an ink per surface
+type on the colour theme (`inkColorBySurfaceType`, reverted in `ad6028304`) and an ink derived
+with `color-mix` (it invents colours).
+
+- Badge and scheduler stories use fixed theme names (`color="success"`, event `colorToken`), so
+  they do not switch. Forced onto `light`, they fall to 1.02-3.18:1. They need `-on-light`
+  themes for `brand` and `warning` too (or a palette per surface) before they can show a light
+  row.
+- Axe failures on `dark` that predate this work: scheduler date number 3.78:1, danger event time
+  3.92:1, month-view outside dates `#737373`, the warning appointment text `#af620a` on
+  `#322415` 3.27:1, and badge `filled` (white on the success and warning fills).
+
+## Run the error-color-theme migration on a consumer
+
+`error-color-theme-signal` (`dd4a84727`, `1.0.0-next.67`) rewrites `.errorColorTheme` reads on
+`injectFormSupport()` and `TableComponent` to calls. It is syntactic and has run only in Nx tree
+tests. Run it with `et update` on a scratch copy of fut-frontend once next.67 ships, and check
+that it changes nothing else.
+
 ## Watchlist - gated on browsers
 
 Nothing here is actionable now. **Re-check support before planning any of it.** Last checked
