@@ -613,7 +613,7 @@ describe('scheduler composition scenarios', () => {
     const [review, draft] = [...host.querySelectorAll<HTMLElement>('.agenda-row')];
 
     expect(query('.et-scheduler-appointment-dot', review)).toBeTruthy();
-    expect(query('.et-scheduler-appointment-time-range', review!).textContent?.trim()).toBe('09:00–10:00');
+    expect(query('.et-scheduler-appointment-time-range', review!).textContent?.trim()).toBe('9:00 AM–10:00 AM');
     expect(query('.et-scheduler-appointment-location-text', review!).textContent?.trim()).toBe('Hall');
     expect(query('.et-scheduler-appointment-chain-count', review!).textContent?.trim()).toBe('2');
     expect(query('.et-scheduler-appointment-chain-count', draft!).textContent?.trim()).toBe('1');

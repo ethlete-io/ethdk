@@ -237,7 +237,7 @@ describe('scheduler scenarios', () => {
     const kickoff = query('.et-scheduler-appointment[title="Kickoff"]', today);
 
     expect(query('.et-scheduler-appointment-dot', kickoff)).toBeTruthy();
-    expect(query('.et-scheduler-appointment-time-range', kickoff).textContent?.trim()).toBe('09:00–10:00');
+    expect(query('.et-scheduler-appointment-time-range', kickoff).textContent?.trim()).toBe('9:00 AM–10:00 AM');
     expect(query('.et-scheduler-appointment-location-text', kickoff).textContent?.trim()).toBe('Room 1');
     expect(query('.et-scheduler-appointment-chain-count', kickoff).textContent?.trim()).toBe('2');
     expect(kickoff.hasAttribute('data-draggable')).toBe(true);
@@ -285,21 +285,21 @@ describe('scheduler scenarios', () => {
     switchView(s, 'Week', host);
     s.tick();
     expect(planner.view()).toBe('week');
-    expect(label()).toBe('13 – 19 July 2026');
+    expect(label()).toBe('July 13\u2009–\u200919, 2026');
     expect(texts('.et-scheduler-time-grid-header-date', host)).toEqual(['13', '14', '15', '16', '17', '18', '19']);
 
     button('Next', host).click();
     s.tick();
-    expect(label()).toBe('20 – 26 July 2026');
+    expect(label()).toBe('July 20\u2009–\u200926, 2026');
 
     switchView(s, 'Day', host);
     s.tick();
-    expect(label()).toBe('Wednesday, 22 July 2026');
+    expect(label()).toBe('Wednesday, July 22nd, 2026');
 
     switchView(s, 'Agenda', host);
     planner.agendaDays.set(3);
     s.tick();
-    expect(label()).toBe('22 – 24 July 2026');
+    expect(label()).toBe('July 22\u2009–\u200924, 2026');
 
     button('Next', host).click();
     s.tick();
