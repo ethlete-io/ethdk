@@ -174,6 +174,33 @@ test.describe('line chart / pointer', () => {
     await expect(page.getByRole('tooltip').locator('.et-line-chart-tooltip-label')).toHaveText('May');
   });
 
+  test('an open tooltip moves to the next x without the show delay', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const tooltip = page.getByRole('tooltip');
+
+    await slice(root, 'Mar').hover();
+    await expect(tooltip.locator('.et-chart-tooltip-label')).toHaveText('Mar');
+
+    await slice(root, 'Apr').hover();
+    await expect(tooltip.filter({ hasText: 'Apr' })).toBeVisible({ timeout: 150 });
+    await expect(tooltip).toHaveCount(1);
+  });
+
+  test('the show delay applies again after the tooltip is dismissed under the pointer', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const tooltip = page.getByRole('tooltip');
+
+    await slice(root, 'Mar').hover();
+    await expect(tooltip).toBeVisible();
+
+    await pressKey(page, 'Escape');
+    await slice(root, 'Apr').hover();
+    await settle(page, 150);
+    await expect(tooltip).toHaveCount(0);
+
+    await expect(tooltip.locator('.et-chart-tooltip-label')).toHaveText('Apr');
+  });
+
   test('leaving the plot closes the tooltip', async ({ page }) => {
     const root = await openStory(page, STORY_ID);
     const tooltip = page.getByRole('tooltip');

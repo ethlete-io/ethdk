@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideColorPalette } from '@ethlete/core';
 import '../../test-helpers';
+import { pressKey, resetOverlays, tick } from '../testing/driver-core';
 import { ChartPlotDirective } from './headless/chart-plot.directive';
 import {
   LineChartDatum,
@@ -365,6 +366,82 @@ describe('LineChartComponent', () => {
     expect(chart.slices()).toEqual([]);
     expect(chart.table().rows).toEqual([]);
     expect(element.querySelector('.et-line-chart-slice, .et-line-chart-point')).toBeNull();
+  });
+});
+
+describe('LineChartComponent hover delay', () => {
+  beforeEach(() => vi.useFakeTimers());
+
+  afterEach(() => {
+    vi.useRealTimers();
+    resetOverlays();
+  });
+
+  const hover = (target: Element, type: 'pointerenter' | 'pointerleave') => {
+    target.dispatchEvent(new PointerEvent(type, { pointerType: 'mouse' }));
+    tick();
+  };
+
+  const move = (from: Element, to: Element | null) => {
+    from.dispatchEvent(new PointerEvent('pointerout', { pointerType: 'mouse', bubbles: true, relatedTarget: to }));
+    hover(from, 'pointerleave');
+
+    if (to) hover(to, 'pointerenter');
+  };
+
+  const openTooltipLabels = () =>
+    [...document.querySelectorAll('.et-line-chart-slice[data-active]')].map((slice) =>
+      slice.getAttribute('aria-label'),
+    );
+
+  it('waits for the delay on first entry, then moves an open tooltip to the next x at once', () => {
+    const { element } = setup();
+    const chartElement = element.querySelector('et-line-chart') as Element;
+    const [jan, feb, , apr] = [...element.querySelectorAll('.et-line-chart-slice')];
+
+    if (!jan || !feb || !apr) throw new Error('the chart rendered no slices');
+
+    hover(jan, 'pointerenter');
+    expect(openTooltipLabels()).toEqual([]);
+
+    vi.advanceTimersByTime(300);
+    tick();
+    expect(openTooltipLabels()).toEqual(['Jan']);
+
+    move(jan, feb);
+    expect(openTooltipLabels()).toEqual(['Feb']);
+
+    move(feb, null);
+    hover(chartElement, 'pointerleave');
+    hover(chartElement, 'pointerenter');
+    hover(apr, 'pointerenter');
+    expect(openTooltipLabels()).toEqual([]);
+
+    vi.advanceTimersByTime(300);
+    tick();
+    expect(openTooltipLabels()).toEqual(['Apr']);
+  });
+
+  it('waits for the delay again after a tooltip is dismissed under the pointer', () => {
+    const { element } = setup();
+    const [jan, feb] = [...element.querySelectorAll('.et-line-chart-slice')];
+
+    if (!jan || !feb) throw new Error('the chart rendered no slices');
+
+    hover(jan, 'pointerenter');
+    vi.advanceTimersByTime(300);
+    tick();
+    expect(openTooltipLabels()).toEqual(['Jan']);
+
+    pressKey(document, 'Escape');
+    expect(openTooltipLabels()).toEqual([]);
+
+    move(jan, feb);
+    expect(openTooltipLabels()).toEqual([]);
+
+    vi.advanceTimersByTime(300);
+    tick();
+    expect(openTooltipLabels()).toEqual(['Feb']);
   });
 });
 

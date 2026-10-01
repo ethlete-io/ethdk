@@ -17,7 +17,7 @@ import {
   RegisteredColorThemeName,
   RuntimeError,
 } from '@ethlete/core';
-import { filter, fromEvent, tap } from 'rxjs';
+import { filter, fromEvent, merge, tap } from 'rxjs';
 import { ChartAxisLabel, ChartLegendItem, ChartRect, ChartTableModel, ChartTick } from '../chart.types';
 import { injectReportError } from '../../internals/report-error';
 import { LINE_CHART_ERROR_CODES } from '../line-chart-errors';
@@ -266,6 +266,10 @@ export class LineChartDirective implements ChartPlotHost {
   });
 
   private requestedTabStop = signal(0);
+  private skipShowDelay = signal(false);
+
+  /** @internal */
+  public skipsShowDelay = this.skipShowDelay.asReadonly();
   private sliceHandles = new Set<LineChartSliceHandle>();
 
   private isValidTimeZone = computed(() => {
@@ -531,6 +535,13 @@ export class LineChartDirective implements ChartPlotHost {
       )
       .subscribe();
 
+    merge(fromEvent(this.hostElement, 'pointerenter'), fromEvent(this.hostElement, 'pointerleave'))
+      .pipe(
+        tap(() => this.skipShowDelay.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+
     if (ngDevMode) {
       effect(() => {
         if (!this.hasMixedX()) return;
@@ -574,6 +585,11 @@ export class LineChartDirective implements ChartPlotHost {
     this.sliceHandles.add(slice);
 
     return () => this.sliceHandles.delete(slice);
+  }
+
+  /** @internal */
+  public setSkipsShowDelay(skips: boolean) {
+    this.skipShowDelay.set(skips);
   }
 
   /** @internal */

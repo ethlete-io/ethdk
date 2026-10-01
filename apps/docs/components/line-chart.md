@@ -141,7 +141,7 @@ Series colors come from the app's color palette exactly as for the [bar chart](/
 
   Tabbing back returns to the x you left. The focused x draws a ring around its column.
 
-- Hovering anywhere in an x's column, focusing it from the keyboard, or tapping it shows a crosshair, a dot on every series and a [tooltip](/components/tooltip) that lists every series at that x. It points at the topmost point. Dragging a finger across the plot moves the tooltip to the x under it; a vertical drag still scrolls the page. A tap elsewhere closes it. The hover crosshair only applies on devices that can hover, so it never sticks after a tap.
+- Hovering anywhere in an x's column, focusing it from the keyboard, or tapping it shows a crosshair, a dot on every series and a [tooltip](/components/tooltip) that lists every series at that x. It points at the topmost point. The tooltip waits for the show delay (`etLineChartSliceShowDelay`, 300ms) when the pointer first enters the plot, or after the tooltip was closed under it; while it is open, moving to another x moves it at once. Dragging a finger across the plot moves the tooltip to the x under it; a vertical drag still scrolls the page. A tap elsewhere closes it. The hover crosshair only applies on devices that can hover, so it never sticks after a tap.
 - The legend is a list of series names, each behind a swatch. Colour is never the only cue: the tooltip and every description name the series.
 - A visually hidden `<table>` repeats the data with `label` as its caption, one row per x and one column per series, so a screen reader can read the values as a table.
 - The axis labels are `aria-hidden`; the x elements and the table carry the same values.
