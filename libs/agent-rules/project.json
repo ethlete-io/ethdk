@@ -4,6 +4,10 @@
   "sourceRoot": "libs/agent-rules/src",
   "projectType": "library",
   "tags": [],
+  "namedInputs": {
+    "default": ["{projectRoot}/*", "{projectRoot}/src/**/*", "{projectRoot}/migrations/**/*", "sharedGlobals"],
+    "content": ["{projectRoot}/content/**/*"]
+  },
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
@@ -18,11 +22,13 @@
           "libs/agent-rules/migrations.json",
           "libs/agent-rules/migrations/**/*"
         ]
-      }
+      },
+      "inputs": ["production", "^production", "content"]
     },
     "lint": {
       "inputs": [
         "default",
+        "content",
         "^default",
         "{workspaceRoot}/.eslintrc.json",
         "{workspaceRoot}/.eslintignore",
@@ -37,13 +43,23 @@
       "outputs": ["{projectRoot}/{options.coverage.reportsDirectory}", "{workspaceRoot}/coverage/libs/agent-rules"],
       "options": {
         "coverage.reportsDirectory": "../../../coverage/libs/agent-rules"
-      }
+      },
+      "inputs": ["default", "^production", "content"]
     },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
         "command": "tsc -p libs/agent-rules/tsconfig.spec.json --noEmit"
-      }
+      },
+      "inputs": [
+        "default",
+        "^production",
+        "content",
+        "{workspaceRoot}/tsconfig.base.json",
+        {
+          "externalDependencies": ["typescript"]
+        }
+      ]
     }
   }
 }
