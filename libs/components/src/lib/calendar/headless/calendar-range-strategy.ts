@@ -108,8 +108,8 @@ export const DEFAULT_CALENDAR_RANGE_STRATEGY: CalendarRangeSelectionStrategy = {
     return { start: current.start, end: day };
   },
   /**
-   * Bands the span the two ends would cover, in either direction - hovering back past the open start
-   * shows the stretch between them even though picking there would start the range over.
+   * Bands the span from the open start to the hovered day. Hovering before the start bands nothing,
+   * since picking there starts the range over.
    */
   preview: (date, current) => {
     if (current.start === null || current.end !== null) {
@@ -119,6 +119,6 @@ export const DEFAULT_CALENDAR_RANGE_STRATEGY: CalendarRangeSelectionStrategy = {
     const day = startOfDay(date);
     const start = startOfDay(current.start);
 
-    return isBefore(day, start) ? { start: day, end: start } : { start, end: day };
+    return isBefore(day, start) ? { start: day, end: null } : { start, end: day };
   },
 };

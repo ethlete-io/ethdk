@@ -31,14 +31,15 @@ describe('DEFAULT_CALENDAR_RANGE_STRATEGY', () => {
     });
   });
 
-  it('previews the span between the two ends, in either direction', () => {
+  it('previews what a pick would produce: the span to a later day, a restart at an earlier one', () => {
     const open = { start: new Date(2026, 6, 10), end: null };
 
     expect(preview?.(new Date(2026, 6, 14), open)).toEqual({
       start: new Date(2026, 6, 10),
       end: new Date(2026, 6, 14),
     });
-    expect(preview?.(new Date(2026, 6, 5), open)).toEqual({ start: new Date(2026, 6, 5), end: new Date(2026, 6, 10) });
+    expect(preview?.(new Date(2026, 6, 5), open)).toEqual(select(new Date(2026, 6, 5), open));
+    expect(preview?.(new Date(2026, 6, 5), open)).toEqual({ start: new Date(2026, 6, 5), end: null });
   });
 
   it('previews nothing with no open range', () => {

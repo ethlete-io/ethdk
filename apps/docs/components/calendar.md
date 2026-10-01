@@ -108,7 +108,7 @@ The returned classes are **your** CSS, which is unlayered and therefore wins ove
 
 ## Range selection
 
-The first click starts the range, a later-or-equal second click completes it, and an earlier one restarts it. While the end is pending, hovering (or moving keyboard focus) previews the band.
+The first click starts the range, a later-or-equal second click completes it, and an earlier one restarts it. While the end is pending, hovering (or moving keyboard focus) on a later day previews the band; an earlier day bands nothing, since picking it restarts the range.
 
 <StoryEmbed id="components-date-time-calendar--range" height="420px" />
 
