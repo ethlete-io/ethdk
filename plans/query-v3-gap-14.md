@@ -243,6 +243,8 @@ request storm. Until it ships, document `invalidateQueries({ url })` after the w
 
 ## Order and open questions
 
+Status (2026-10-01): slice 1 (`etQueryButton` + `queryButtonSourceFromV2Query`) in progress. Ship item by item.
+
 Order: `etQueryButton` + `queryButtonSourceFromV2Query`, `invalidates` + tags, `createQueryGroup`,
 `etPagedQueryTrigger`, `withOptimisticUpdate`.
 
