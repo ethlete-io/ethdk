@@ -34,6 +34,8 @@ What stays two things at once:
 - A band of the repository the session left is not drawn across a stretch it handed over that is at
   least `minBandMs` long, in `mergeBlocks` and again when `reviewDay` folds a short row. A row books
   its span (ADR 0019), so cutting the blocks alone would have left the band booking the same minutes.
+  The same holds when both repositories book one ticket: the other repository's block over that
+  stretch does not continue the band by name.
   `DayRows.handedOver` carries those stretches to the review.
 - A person who watches the agent's terminal in one repository while it edits the other books that
   minute in both. Tom kept the focus rule on 2026-10-01 regardless: focus is the only sign of a person

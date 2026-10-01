@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { AttributionRule } from '../model/attribution';
 import { CollectedEvent } from '../model/event';
 import { reviewDay } from '../review/review-day';
 import { streamDay } from './stream-day';
@@ -56,8 +57,16 @@ const steered = (options: {
     ],
   );
 
-const bookedByLane = (events: CollectedEvent[]) => {
-  const day = streamDay({ events, options: { repoRoots: [APP, SPECS], baseBranches: ['main'] } });
+const ruleFor = (repoPath: string, issueKey: string): AttributionRule => ({
+  id: `rule-${repoPath}`,
+  repoPath,
+  target: { kind: 'issue', issueKey },
+  author: 'user',
+  createdAt: AT(0),
+});
+
+const bookedByLane = (events: CollectedEvent[], rules: AttributionRule[] = []) => {
+  const day = streamDay({ events, options: { repoRoots: [APP, SPECS], baseBranches: ['main'], rows: { rules } } });
   const rows = reviewDay({ rows: day.rows }).rows;
   const booked = (laneKey: string) =>
     rows.filter((row) => row.laneKey === laneKey).reduce((sum, row) => sum + row.durationMs / 60_000, 0);
@@ -78,6 +87,21 @@ describe('streamDay agent sessions in two checkouts', () => {
         to: 60,
         workedIn: (minutes) => (minutes >= 20 && minutes < 35 ? `${SPECS}/docs/spec.md` : `${APP}/src/a.ts`),
       }),
+    );
+
+    expect(booked).toEqual({ app: 45, specs: 15, overlapping: false });
+  });
+
+  it('books each minute once when both repositories are named to the same ticket', () => {
+    const booked = bookedByLane(
+      steered({
+        sessionId: 'one',
+        cwd: APP,
+        from: 0,
+        to: 60,
+        workedIn: (minutes) => (minutes >= 20 && minutes < 35 ? `${SPECS}/docs/spec.md` : `${APP}/src/a.ts`),
+      }),
+      [ruleFor(APP, 'AB-1'), ruleFor(SPECS, 'AB-1')],
     );
 
     expect(booked).toEqual({ app: 45, specs: 15, overlapping: false });

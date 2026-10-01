@@ -365,18 +365,26 @@ const siblingTime = (ordered: readonly AttributedBlock[]) => {
 };
 
 /**
- * Whether a band may take another: the gap is no wider than `maxGapMs`, no barrier falls in it, and
- * the joined band still spans no more than its own span ratio times the time it observed -
- * `maxLaneSpanRatio` while every block is one checkout, `maxSpanRatio` otherwise.
+ * Whether a band may take another: the gap is no wider than `maxGapMs`, no barrier falls in it, no
+ * block of another checkout falls in a barrier of the band's own lane, and the joined band still spans
+ * no more than its own span ratio times the time it observed - `maxLaneSpanRatio` while every block is
+ * one checkout, `maxSpanRatio` otherwise.
  *
  * The span test is what keeps the picture honest. Without it a band whose gaps another checkout filled
  * is drawn as a rectangle across the whole day while its label says fifteen minutes.
  */
-const joinable = (options: { joined: WorkGroup; gap: TimeWindow; pass: PassOptions }) => {
-  const { joined, gap, pass } = options;
+const joinable = (options: {
+  into: WorkGroup;
+  added: WorkGroup;
+  joined: WorkGroup;
+  gap: TimeWindow;
+  pass: PassOptions;
+}) => {
+  const { into, added, joined, gap, pass } = options;
   const siblingMs = (window: TimeWindow) => pass.siblingMs?.(joined, window) ?? 0;
   const span = joined.to.getTime() - joined.from.getTime() - siblingMs(joined);
   const ratio = oneLane(joined) ? pass.maxLaneSpanRatio : pass.maxSpanRatio;
+  const lane = laneKeyOf(into.blocks);
 
   return (
     gap.to.getTime() - gap.from.getTime() - siblingMs(gap) <= pass.maxGapMs &&
@@ -384,6 +392,12 @@ const joinable = (options: { joined: WorkGroup; gap: TimeWindow; pass: PassOptio
     !barred({ from: gap.from, to: gap.to, barriers: pass.barriers }) &&
     !joined.blocks.some((block) =>
       barred({ from: gap.from, to: gap.to, barriers: pass.laneBarriers[streamKey(block.context)] ?? [] }),
+    ) &&
+    !added.blocks.some(
+      (block) =>
+        !!lane &&
+        streamKey(block.context) !== lane &&
+        barred({ from: block.from, to: block.to, barriers: pass.laneBarriers[lane] ?? [] }),
     )
   );
 };
@@ -463,7 +477,7 @@ const mergePass = (options: { ordered: readonly AttributedBlock[] } & PassOption
     if (at !== undefined && previous) {
       const joined = join(previous, group);
 
-      if (joinable({ joined, gap: { from: previous.to, to: group.from }, pass })) {
+      if (joinable({ into: previous, added: group, joined, gap: { from: previous.to, to: group.from }, pass })) {
         rows[at] = joined;
         open({ row: joined, added: group, at });
         continue;
@@ -519,7 +533,7 @@ const absorbSlivers = (options: { rows: readonly WorkGroup[]; minBandMs: number;
     for (const host of hosts) {
       const joined = join(host.row, sliver);
 
-      if (!joinable({ joined, gap: gapBetween(host.row, sliver), pass })) continue;
+      if (!joinable({ into: host.row, added: sliver, joined, gap: gapBetween(host.row, sliver), pass })) continue;
 
       rows[host.at] = joined;
       taken.add(index);
