@@ -23,11 +23,7 @@ export type OptimisticUpdateContext<TArgs extends QueryArgs, TCurrent> = {
   response?: ResponseType<TArgs> | null;
 };
 
-type OptimisticCurrent<TRead extends QueryArgs> = [TRead] extends [never]
-  ? unknown
-  : 'rawResponse' extends keyof TRead
-    ? RawResponseType<TRead>
-    : ResponseType<TRead>;
+type OptimisticCurrent<TRead extends QueryArgs> = [TRead] extends [never] ? unknown : RawResponseType<TRead>;
 
 /** @see withOptimisticUpdate */
 export type WithOptimisticUpdateOptions<TArgs extends QueryArgs, TRead extends QueryArgs = never> = {

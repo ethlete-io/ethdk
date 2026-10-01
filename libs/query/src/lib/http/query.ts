@@ -22,9 +22,11 @@ export type QueryArgs = {
 
 export type ResponseType<T extends QueryArgs | null> = T extends QueryArgs ? T['response'] : never;
 export type RawResponseType<T extends QueryArgs | null> = T extends QueryArgs
-  ? T['rawResponse'] extends undefined
-    ? T['response']
-    : T['rawResponse']
+  ? 'rawResponse' extends keyof T
+    ? T['rawResponse'] extends undefined
+      ? T['response']
+      : T['rawResponse']
+    : T['response']
   : never;
 export type PathParamsType<T extends QueryArgs | null> = T extends QueryArgs ? T['pathParams'] : never;
 export type QueryParamsType<T extends QueryArgs | null> = T extends QueryArgs ? T['queryParams'] : never;

@@ -79,6 +79,10 @@ describe('query creator', () => {
       expect(typeof result).toBe('string');
     });
 
+    it('should return response type when the args declare no rawResponse', () => {
+      expectTypeOf<RawResponseType<{ response: string }>>().toEqualTypeOf<string>();
+    });
+
     it('should return rawResponse type when defined', () => {
       type TestArgs = QueryArgs & {
         response: number;
