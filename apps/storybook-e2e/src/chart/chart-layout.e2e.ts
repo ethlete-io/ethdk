@@ -85,7 +85,7 @@ test.describe('bar chart / horizontal keyboard', () => {
 });
 
 test.describe('sankey chart / labels', () => {
-  test('a first-column label sits left of its node, every other label right of it, both centred on it', async ({
+  test('a first-column label sits left of its node, a middle one on a chip over it, a last one right of it', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1024, height: 800 });
@@ -99,7 +99,9 @@ test.describe('sankey chart / labels', () => {
     const reservesLabel = await boxOf(sankeyLabel(root, 'Reserves'));
 
     expect(ticketsLabel.x + ticketsLabel.width).toBeLessThanOrEqual(tickets.x);
-    expect(revenueLabel.x).toBeGreaterThanOrEqual(revenue.x + revenue.width);
+    expect(revenueLabel.x).toBeLessThan(revenue.x);
+    expect(revenueLabel.x + revenueLabel.width).toBeGreaterThan(revenue.x + revenue.width);
+    expect(revenueLabel.x + revenueLabel.width / 2).toBeCloseTo(revenue.x + revenue.width / 2, 0);
     expect(reservesLabel.x).toBeGreaterThanOrEqual(reserves.x + reserves.width);
 
     expect(middleY(ticketsLabel)).toBeCloseTo(middleY(tickets), 0);

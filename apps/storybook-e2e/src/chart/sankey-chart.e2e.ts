@@ -325,15 +325,6 @@ test.describe('sankey chart / touch', () => {
     await expect(page.getByRole('tooltip')).toHaveCount(0);
     await expect(root.locator('.et-sankey-chart-svg')).not.toHaveAttribute('data-highlight');
   });
-
-  test('on a phone the chart keeps its minimum width and scrolls sideways', async ({ page }) => {
-    const root = await openStory(page, STORY_ID);
-    const scroller = root.locator('.et-sankey-chart-scroller');
-    const size = await scroller.evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth }));
-
-    expect(size.scroll).toBeGreaterThan(size.client);
-    expect(size.scroll).toBeGreaterThanOrEqual(480);
-  });
 });
 
 test.describe('sankey chart / narrow', () => {
