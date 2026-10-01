@@ -63,7 +63,7 @@ Observe the content (children), not the host - observing the animated host would
 
 ## Intersection
 
-`signalElementIntersection(el, options?)` / `signalHostElementIntersection(options?)` → `Signal<IntersectionObserverEntryWithDetails[]>`. Options are `IntersectionObserverInit` plus `root` (any element binding) and `enabled` (a `Signal<boolean>`, default enabled). Each entry is the native `IntersectionObserverEntry` enriched with `isAbove` / `isBelow` / `isLeft` / `isRight` / `isVisible`, and an initial entry is seeded synchronously so you don't wait for the first observer callback.
+`signalElementIntersection(el, options?)` / `signalHostElementIntersection(options?)` → `Signal<IntersectionObserverEntryWithDetails[]>`. Options are `IntersectionObserverInit` plus `root` (any element binding) and `enabled` (a `Signal<boolean>`, default enabled); `rootMargin` and `threshold` also take a signal, and a change re-creates the observer. Each entry is the native `IntersectionObserverEntry` enriched with `isAbove` / `isBelow` / `isLeft` / `isRight` / `isVisible`. An initial entry is measured right after render, so you don't wait for the first observer callback - unless a non-zero `rootMargin` is set, where the observer's own first entry is the only correct one.
 
 ## Mutations
 

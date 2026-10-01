@@ -1,4 +1,15 @@
-import { DestroyRef, ElementRef, NgZone, Signal, effect, inject, signal, untracked } from '@angular/core';
+import {
+  DestroyRef,
+  ElementRef,
+  NgZone,
+  Signal,
+  afterRenderEffect,
+  effect,
+  inject,
+  isSignal,
+  signal,
+  untracked,
+} from '@angular/core';
 import { isElementVisible } from '../scrolling';
 import {
   ElementSignalValue,
@@ -8,9 +19,12 @@ import {
   firstElementSignal,
 } from './element';
 import { signalIsRendered } from './render-utils';
+import { MaybeSignal } from './signal-data-utils';
 
-export type SignalElementIntersectionOptions = Omit<IntersectionObserverInit, 'root'> & {
+export type SignalElementIntersectionOptions = Omit<IntersectionObserverInit, 'root' | 'rootMargin' | 'threshold'> & {
   root?: SignalElementBindingType;
+  rootMargin?: MaybeSignal<string>;
+  threshold?: MaybeSignal<number | number[]>;
   enabled?: Signal<boolean>;
 };
 
@@ -50,8 +64,12 @@ const createPositionObject = (entry: IntersectionObserverEntry) => {
   };
 };
 
+const unwrap = <T>(value: MaybeSignal<T>) => (isSignal(value) ? value() : value);
+
+const isZeroMargin = (margin: string | undefined) => !margin || /^(0(px|%)?\s*)+$/.test(margin.trim());
+
 export const signalElementIntersection = (el: SignalElementBindingType, options?: SignalElementIntersectionOptions) => {
-  const { root: rootBinding, enabled, ...observerOptions } = options ?? {};
+  const { root: rootBinding, enabled, rootMargin, threshold, ...observerOptions } = options ?? {};
   const destroyRef = inject(DestroyRef);
   const elements = buildElementSignal(el);
   const root = firstElementSignal(rootBinding ? buildElementSignal(rootBinding) : createEmptyElementSignal());
@@ -63,6 +81,7 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
   const observer = signal<IntersectionObserver | null>(null);
 
   const currentlyObservedElements = new Set<HTMLElement>();
+  let observedRootMargin: string | undefined;
 
   const updateIntersections = (entries: IntersectionObserverEntry[]) => {
     let currentValues = [...elementIntersectionSignal()];
@@ -98,7 +117,13 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
     zone.run(() => elementIntersectionSignal.set(currentValues));
   };
 
-  const updateIntersectionObserver = (rendered: boolean, enabled: boolean, rootEl: HTMLElement | null) => {
+  const updateIntersectionObserver = (
+    rendered: boolean,
+    enabled: boolean,
+    rootEl: HTMLElement | null,
+    margin: string | undefined,
+    thresholdValue: number | number[] | undefined,
+  ) => {
     observer()?.disconnect();
     currentlyObservedElements.clear();
 
@@ -111,9 +136,12 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
 
     const newObserver = new IntersectionObserver((entries) => updateIntersections(entries), {
       ...observerOptions,
+      ...(margin !== undefined && { rootMargin: margin }),
+      ...(thresholdValue !== undefined && { threshold: thresholdValue }),
       root: rootEl,
     });
 
+    observedRootMargin = margin;
     observer.set(newObserver);
   };
 
@@ -131,17 +159,17 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
 
     for (const el of elements.currentElements) {
       if (currentlyObservedElements.has(el)) {
-        const existingEntryIndex = currIntersectionValue.findIndex((v) => v.target === el);
-        const existingEntry = currIntersectionValue[existingEntryIndex];
+        const existingEntry = currIntersectionValue.find((v) => v.target === el);
 
-        if (!existingEntry) {
-          console.warn('Could not find existing entry for element. The intersection observer might be broken now.', el);
-          continue;
-        }
-
-        newIntersectionValue.push(existingEntry);
+        if (existingEntry) newIntersectionValue.push(existingEntry);
         continue;
       }
+
+      currentlyObservedElements.add(el);
+      observer.observe(el);
+
+      // isElementVisible ignores rootMargin, so with one set the observer's own first entry is the only correct one.
+      if (!isZeroMargin(observedRootMargin)) continue;
 
       const initialElementVisibility = isElementVisible({
         container: rootEl,
@@ -163,9 +191,6 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
         ...intersectionEntry,
         ...createPositionObject(intersectionEntry),
       });
-
-      currentlyObservedElements.add(el);
-      observer.observe(el);
     }
 
     for (const el of elements.previousElements) {
@@ -182,11 +207,15 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
     const rootEl = root().currentElement;
     const rendered = isRendered();
     const enabled = isEnabled();
+    const margin = rootMargin === undefined ? undefined : unwrap(rootMargin);
+    const thresholdValue = threshold === undefined ? undefined : unwrap(threshold);
 
-    untracked(() => updateIntersectionObserver(rendered, enabled, rootEl));
+    untracked(() => updateIntersectionObserver(rendered, enabled, rootEl, margin, thresholdValue));
   });
 
-  effect(() => {
+  // The initial entries are measured here, not in an effect: an effect runs during change detection,
+  // before elements rendered in the same pass have their layout.
+  afterRenderEffect(() => {
     const els = elements();
     const obs = observer();
 

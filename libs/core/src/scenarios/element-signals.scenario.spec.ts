@@ -54,6 +54,31 @@ class ChatComponent {
 }
 
 @Component({
+  selector: 'et-scenario-rail',
+  template: `
+    @for (item of items(); track item) {
+      <div class="rail-item"></div>
+    }
+    <div #sentinel class="rail-sentinel"></div>
+  `,
+})
+class RailComponent {
+  items = signal<number[]>([]);
+  watching = signal(true);
+  rootMargin = signal('0px');
+  sentinel = viewChild.required<ElementRef<HTMLElement>>('sentinel');
+  intersection = signalElementIntersection(this.sentinel, { enabled: this.watching, rootMargin: this.rootMargin });
+  inView = computed(() => this.intersection()[0]?.isIntersecting ?? null);
+}
+
+const layOutRailItemsAt100px = (host: HTMLElement) => {
+  const sentinel = host.querySelector('.rail-sentinel') as HTMLElement;
+
+  sentinel.getBoundingClientRect = () =>
+    DOMRect.fromRect({ x: 0, y: host.querySelectorAll('.rail-item').length * 100, width: 100, height: 10 });
+};
+
+@Component({
   selector: 'et-scenario-crop',
   template: '',
   styles: ':host { display: block; }',
@@ -248,6 +273,66 @@ describe('element signal scenarios', () => {
       expect(resizeObserver.observed.size).toBe(0);
     } finally {
       resizeObserver.restore();
+    }
+  });
+
+  it('measures a sentinel after the items rendered with it are laid out', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(RailComponent);
+    const rail = fixture.componentInstance;
+
+    rail.watching.set(false);
+    s.flush();
+    layOutRailItemsAt100px(fixture.nativeElement);
+
+    expect(rail.inView()).toBeNull();
+
+    rail.items.set(Array.from({ length: 20 }, (_, index) => index));
+    rail.watching.set(true);
+    s.flush();
+
+    expect(rail.inView()).toBe(false);
+
+    fixture.destroy();
+  });
+
+  it('re-creates its observer when the root margin changes', () => {
+    const s = scenario();
+    const Observer = globalThis.IntersectionObserver;
+    const rootMargins: (string | undefined)[] = [];
+
+    globalThis.IntersectionObserver = class extends Observer {
+      constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
+        super(callback, options);
+        rootMargins.push(options?.rootMargin);
+      }
+    };
+
+    try {
+      const fixture = TestBed.createComponent(RailComponent);
+      const rail = fixture.componentInstance;
+
+      s.flush();
+
+      const sentinel = rail.sentinel().nativeElement;
+
+      expect(rootMargins).toEqual(['0px']);
+      expect(rail.inView()).toBe(true);
+
+      rail.rootMargin.set('200px');
+      s.flush();
+
+      expect(rootMargins).toEqual(['0px', '200px']);
+      expect(s.observedElements()).toEqual([sentinel]);
+      expect(rail.inView()).toBeNull();
+
+      s.intersect(sentinel, false);
+
+      expect(rail.inView()).toBe(false);
+
+      fixture.destroy();
+    } finally {
+      globalThis.IntersectionObserver = Observer;
     }
   });
 });
