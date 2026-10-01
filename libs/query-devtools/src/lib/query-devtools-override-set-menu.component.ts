@@ -9,7 +9,7 @@ import {
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import { injectErrorTheme, injectStyleManager, ProvideColorDirective } from '@ethlete/core';
+import { injectStyleManager, ProvideColorDirective } from '@ethlete/core';
 import {
   armQueryDevtoolsOverrideTransfer,
   countUnresolvedQueryDevtoolsOverrides,
@@ -25,6 +25,7 @@ import {
   writeQueryDevtoolsClipboard,
 } from './query-devtools-clipboard';
 import { QueryDevtoolsOverrideMenuStylesComponent } from './query-devtools-override-menu-styles.component';
+import { QueryDevtoolsErrorThemeDirective } from './query-devtools-error-theme.directive';
 
 /**
  * Copies the whole set of response overrides armed on one query to the clipboard, and pastes one back -
@@ -46,10 +47,10 @@ import { QueryDevtoolsOverrideMenuStylesComponent } from './query-devtools-overr
     MenuItemComponent,
     MenuItemShortcutComponent,
     ProvideColorDirective,
+    QueryDevtoolsErrorThemeDirective,
   ],
 })
 export class QueryDevtoolsOverrideSetMenuComponent {
-  protected errorColorTheme = injectErrorTheme();
   private hostEl = inject<ElementRef<HTMLElement>>(ElementRef);
 
   public overrides = input.required<QueryDevtoolsOverridesRecorder>();

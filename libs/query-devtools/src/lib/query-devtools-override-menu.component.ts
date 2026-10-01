@@ -9,7 +9,7 @@ import {
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import { injectErrorTheme, injectStyleManager, ProvideColorDirective } from '@ethlete/core';
+import { injectStyleManager, ProvideColorDirective } from '@ethlete/core';
 import {
   collectLeafPaths,
   detectPaginationShape,
@@ -31,6 +31,7 @@ import { MenuSearchDirective, MenuSurfaceDirective, MenuTriggerDirective } from 
 import { readQueryDevtoolsClipboard, textFromQueryDevtoolsPaste } from './query-devtools-clipboard';
 import { JsonKind, kindOf } from './query-devtools-json.component';
 import { QueryDevtoolsOverrideMenuStylesComponent } from './query-devtools-override-menu-styles.component';
+import { QueryDevtoolsErrorThemeDirective } from './query-devtools-error-theme.directive';
 
 /**
  * The per-value action menu of the query devtools value explorer: arms a path-addressed
@@ -53,10 +54,10 @@ import { QueryDevtoolsOverrideMenuStylesComponent } from './query-devtools-overr
     MenuItemShortcutComponent,
     MenuSeparatorComponent,
     ProvideColorDirective,
+    QueryDevtoolsErrorThemeDirective,
   ],
 })
 export class QueryDevtoolsOverrideMenuComponent {
-  protected errorColorTheme = injectErrorTheme();
   private hostEl = inject<ElementRef<HTMLElement>>(ElementRef);
   public value = input<unknown>();
   public path = input<JsonPath>([]);

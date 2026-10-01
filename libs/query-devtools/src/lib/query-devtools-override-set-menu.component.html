@@ -37,7 +37,15 @@
       </button>
 
       @if (error(); as err) {
-        <p [etProvideColor]="errorColorTheme" class="et-query-devtools-override-error" role="alert">{{ err }}</p>
+        <p
+          #errorTheme="etQueryDevtoolsErrorTheme"
+          [etProvideColor]="errorTheme.theme()"
+          class="et-query-devtools-override-error"
+          role="alert"
+          etQueryDevtoolsErrorTheme
+        >
+          {{ err }}
+        </p>
       } @else if (note(); as text) {
         <p class="et-query-devtools-override-note" role="status">{{ text }}</p>
       }

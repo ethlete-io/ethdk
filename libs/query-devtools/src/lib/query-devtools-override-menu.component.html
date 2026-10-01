@@ -160,7 +160,15 @@
         }
 
         @if (menuError(); as err) {
-          <p [etProvideColor]="errorColorTheme" class="et-query-devtools-override-error" role="alert">{{ err }}</p>
+          <p
+            #errorTheme="etQueryDevtoolsErrorTheme"
+            [etProvideColor]="errorTheme.theme()"
+            class="et-query-devtools-override-error"
+            role="alert"
+            etQueryDevtoolsErrorTheme
+          >
+            {{ err }}
+          </p>
         }
 
         @if (hasArmedOverrides()) {
