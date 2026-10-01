@@ -18,7 +18,6 @@ listed first. Decide them one slice at a time.
 7. Several series without a palette: all get the accent, plus a dev `console.warn`. Alternative: an error, or a built-in variation.
 8. `provideColorPalette` is one static list, so dark mode needs a second palette from the app. Should the SDK support a palette that follows the surface?
 9. Colour follows the position in `series`. As a result, filtering series repaints the rest unless each series sets `colorToken`.
-10. `BarChartDirective.baselineY` is `@deprecated` in favour of `baseline`. Recommendation: remove it, because the chart is not released yet.
 
 ### Sankey (`b64d0f519`)
 
