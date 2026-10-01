@@ -12,6 +12,7 @@ import {
   CHART_PLOT_HOST,
   ChartPlotDirective,
   ChartPlotHost,
+  defaultSankeyChartLinkKeyHint,
   LINE_CHART_ERROR_CODES,
   LineChartComponent,
   LineChartDatum,
@@ -25,6 +26,7 @@ import {
   SANKEY_CHART_ERROR_CODES,
   SankeyChartComponent,
   SankeyChartDirective,
+  SankeyChartMarkDirective,
   SankeyChartLinkInput,
   SankeyChartNodeInput,
 } from '../index';
@@ -190,12 +192,18 @@ class OwnPieComponent {
 
 @Component({
   selector: 'et-scenario-own-sankey',
-  imports: [SankeyChartDirective, ChartPlotDirective],
+  imports: [SankeyChartDirective, SankeyChartMarkDirective, ChartPlotDirective],
   template: `
     <div #chart="etSankeyChart" [nodes]="nodes" [links]="links" etSankeyChart label="Flow">
       <div class="own-sankey-plot" etChartPlot>
         @for (node of chart.renderedNodes(); track node.key) {
-          <span class="own-node">{{ node.name }}</span>
+          <span [etSankeyChartMarkKey]="node.key" class="own-node" etSankeyChartMark="node">{{ node.name }}</span>
+        }
+        @for (link of chart.renderedLinks(); track link.key) {
+          <span [etSankeyChartMarkKey]="link.key" class="own-link" etSankeyChartMark="link">{{ link.name }}</span>
+        }
+        @if (chart.linkKeyHintText(); as hint) {
+          <span class="own-hint">{{ hint.text }}</span>
         }
       </div>
     </div>
@@ -532,6 +540,37 @@ describe('chart scenarios', () => {
     const sankey = render(s, OwnSankeyComponent).host;
 
     expect(queryAll('.own-node', sankey).map(text)).toEqual(['Team A', 'Team B']);
+
+    const marks = queryAll('.own-node', sankey);
+
+    expect(marks.map((mark) => mark.getAttribute('tabindex'))).toEqual(['0', '-1']);
+
+    marks[1]!.focus();
+    s.flush();
+    expect(marks.map((mark) => mark.getAttribute('tabindex'))).toEqual(['-1', '0']);
+  });
+
+  it('writes the default key hint for a link of a headless sankey focused by keyboard', async () => {
+    const s = scenario();
+    const { host } = render(s, OwnSankeyComponent);
+    const [node] = queryAll('.own-node', host);
+    const [link] = queryAll('.own-link', host);
+
+    node!.focus();
+    s.keydown('Enter', node);
+    await s.settle();
+
+    expect(document.activeElement).toBe(link);
+    expect(link!.getAttribute('tabindex')).toBe('0');
+    expect(text(query('.own-hint', host))).toBe(
+      defaultSankeyChartLinkKeyHint({ position: 1, count: 1, sourceLabel: 'Team A', direction: 'horizontal' }),
+    );
+    expect(text(query('.own-hint', host))).toBe('1 of 1 · Esc back to Team A');
+
+    s.keydown('Escape', link);
+    await s.settle();
+    expect(document.activeElement).toBe(node);
+    expect(host.querySelector('.own-hint')).toBeNull();
   });
 
   it('measures a plot for a chart directive of the app through CHART_PLOT_HOST', () => {

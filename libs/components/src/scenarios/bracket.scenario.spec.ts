@@ -10,6 +10,8 @@ import {
   BRACKET_IMPORTS,
   BRACKET_LABELS,
   BRACKET_ROUND_HEADER_ALIGN,
+  BRACKET_SKELETON_IMPORTS,
+  BracketSkeletonComponent,
   BracketComponent,
   BracketDefaultContinueComponent,
   BracketDefaultFinalMatchComponent,
@@ -21,7 +23,13 @@ import {
   BracketMatch,
   BracketRound,
   BracketRoundSwissGroup,
+  BracketSkeletonContinueComponent,
+  BracketSkeletonFinalMatchComponent,
+  BracketSkeletonMatchComponent,
+  BracketSkeletonRoundHeaderComponent,
   createNormalizedBracketMatch,
+  doubleEliminationBracketLayout,
+  createPlaceholderBracketSource,
   DEFAULT_BRACKET_LABELS,
   EthleteBracketMatchInput,
   EthleteMatchInput,
@@ -187,6 +195,64 @@ class BracketCustomCardsComponent {
   source = generateBracketDataForEthlete(stage('home'));
   card = LinkedMatchCardComponent;
   normalizer = normalizeEthleteBracketMatch;
+}
+
+@Component({
+  selector: 'et-scenario-bracket-loading',
+  imports: [BracketComponent, BracketSkeletonComponent],
+  providers: [provideBracketConfig({ layouts: LAYOUTS, matchNormalizer: normalizeEthleteBracketMatch })],
+  template: `
+    @if (loaded()) {
+      <et-bracket
+        [source]="source"
+        [matchComponent]="card"
+        [finalMatchComponent]="card"
+        [roundHeaderComponent]="header"
+      />
+    } @else {
+      <et-bracket-skeleton
+        [shape]="{ mode: 'single-elimination', participantCount: 4 }"
+        loadingAllyText="Loading bracket"
+      />
+    }
+  `,
+})
+class BracketLoadingComponent {
+  loaded = signal(false);
+  source = generateBracketDataForEthlete(stage('home'));
+  card = LinkedMatchCardComponent;
+  header = BracketDefaultRoundHeaderComponent;
+}
+
+@Component({
+  selector: 'et-scenario-bracket-still-skeleton',
+  imports: [BRACKET_SKELETON_IMPORTS],
+  providers: [provideBracketConfig({ layouts: LAYOUTS })],
+  template: `<et-bracket-skeleton [shape]="{ mode: 'single-elimination', participantCount: 2 }" animated="false" />`,
+})
+class BracketStillSkeletonComponent {}
+
+@Component({
+  selector: 'et-scenario-bracket-own-skeleton',
+  imports: [BracketComponent],
+  providers: [provideBracketConfig({ layouts: [doubleEliminationBracketLayout()] })],
+  template: `
+    <et-bracket
+      [source]="source"
+      [matchComponent]="match"
+      [finalMatchComponent]="finalMatch"
+      [roundHeaderComponent]="header"
+      [continueComponent]="continue"
+      showContinueElement
+    />
+  `,
+})
+class BracketOwnSkeletonComponent {
+  source = createPlaceholderBracketSource({ mode: 'double-elimination', participantCount: 4, includeFinal: false });
+  match = BracketSkeletonMatchComponent;
+  finalMatch = BracketSkeletonFinalMatchComponent;
+  header = BracketSkeletonRoundHeaderComponent;
+  continue = BracketSkeletonContinueComponent;
 }
 
 describe('bracket scenarios', () => {
@@ -386,5 +452,61 @@ describe('bracket scenarios', () => {
 
     expect(() => fixture.detectChanges()).toThrow(new RegExp(`${BRACKET_ERROR_CODES.LAYOUT_NOT_REGISTERED}`));
     s.allow('errors', 'the failed first render is the behavior under test');
+  });
+
+  it('stands a loading skeleton in for the bracket and swaps to the real one', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(BracketLoadingComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+    s.flush();
+
+    expect(text(host.querySelector('.et-skeleton-ally-text'))).toBe('Loading bracket');
+    expect(host.querySelector('et-bracket')?.getAttribute('aria-hidden')).toBe('true');
+    expect(host.querySelectorAll('.et-bracket-element--match .et-bracket-skeleton-match')).toHaveLength(3);
+    expect(host.querySelectorAll('.et-bracket-skeleton-final-match')).toHaveLength(1);
+    expect(host.querySelectorAll('.et-bracket-element--header .et-bracket-skeleton-round-header')).toHaveLength(2);
+    expect(host.querySelector('[data-match-id]')?.getAttribute('data-match-id')).not.toBe('semi-1');
+
+    fixture.componentInstance.loaded.set(true);
+    s.tick();
+    s.flush();
+
+    expect(host.querySelector('et-bracket-skeleton')).toBeNull();
+    expect(host.querySelectorAll('.et-bracket-skeleton-match')).toHaveLength(0);
+    expect(
+      Array.from(host.querySelectorAll<HTMLElement>('.et-bracket-element--match')).map((c) => c.dataset['matchId']),
+    ).toEqual(['semi-1', 'semi-2', 'final-1']);
+  });
+
+  it("draws placeholder sources with the skeleton cards used as a bracket's own cards", () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(BracketOwnSkeletonComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+    s.flush();
+
+    const { matches, rounds } = fixture.componentInstance.source;
+
+    expect(host.querySelectorAll('.et-bracket-element--match')).toHaveLength(matches.length);
+    expect(host.querySelectorAll('.et-bracket-skeleton-match')).toHaveLength(matches.length);
+    expect(host.querySelectorAll('.et-bracket-skeleton-round-header')).toHaveLength(rounds.length);
+    expect(host.querySelectorAll('.et-bracket-skeleton-continue')).toHaveLength(1);
+    expect(host.querySelectorAll('.et-bracket-skeleton-side')).toHaveLength(matches.length * 2);
+  });
+
+  it('draws a still skeleton from the skeleton imports when the shimmer is off', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(BracketStillSkeletonComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.tick();
+    s.flush();
+
+    expect(host.querySelector('et-skeleton')?.classList.contains('et-skeleton--animated')).toBe(false);
+    expect(host.querySelectorAll('.et-bracket-skeleton-match')).toHaveLength(1);
+    expect(text(host.querySelector('.et-skeleton-ally-text'))).toBe('Loading…');
   });
 });
