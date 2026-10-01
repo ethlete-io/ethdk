@@ -246,8 +246,10 @@ request storm. Until it ships, document `invalidateQueries({ url })` after the w
 Status (2026-10-01): slice 1 shipped (`e4232a1b8`, `84def7337`). `QueryButtonSource` is a union: `QueryBatch` and
 `QuerySequence` have `running` + `progress`, not `loading`. `QueryButtonDirective` is not in `BUTTON_IMPORTS`
 (bundle golden). Slice 2 shipped (`5fa4b1fa5`): tags come from args only, `invalidates` on a read throws `ET2`, tag invalidations
-cross tabs. Open: a retained unused entry is not marked stale. Slices 3 (`createQueryGroup`) and 4
-(`etPagedQueryTrigger`) in progress, in parallel. Ship item by item.
+cross tabs. Open: a retained unused entry is not marked stale. Slice 3 shipped (`3c7ea31cd`, docs
+`apps/docs/query/groups.md`). Slice 4 (`etPagedQueryTrigger`) in progress. Slice 5 in progress: `withOptimisticUpdate`,
+mark unused entries stale on invalidation, the double refresh in other tabs, and the bug "`withArgs(() => null)` +
+`execute({ args })` keeps no response". Ship item by item.
 
 Order: `etQueryButton` + `queryButtonSourceFromV2Query`, `invalidates` + tags, `createQueryGroup`,
 `etPagedQueryTrigger`, `withOptimisticUpdate`.
