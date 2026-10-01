@@ -30,6 +30,9 @@ export const UNATTENDED_LABEL = 'Nobody was here';
  */
 export const EXCLUDED_LABEL = 'Not counted';
 
+/** What a band with no issue the reviewer said not to log is called. */
+export const NOT_LOGGED_LABEL = 'Not logged';
+
 /**
  * What a band with no issue is called, on the timeline and in the label of a boundary beside it.
  *
@@ -41,6 +44,7 @@ export const unnamedLabelOf = (options: { row: ReviewedRow; standInName?: string
   const { row } = options;
 
   if (row.excluded) return options.excludedReason ? `${EXCLUDED_LABEL} · ${options.excludedReason}` : EXCLUDED_LABEL;
+  if (row.state === 'rejected') return NOT_LOGGED_LABEL;
   if (row.standInId && options.standInName) return options.standInName;
   if (!row.unattended) return UNNAMED_LABEL;
 
@@ -122,6 +126,7 @@ export const rowEntryOf = (appointment: Appointment): RowEntry | null => {
 // A pin stores the confidence of the row it was cut from, so a band nothing names reads it as weak.
 const colorTokenOf = (row: ReviewedRow) => {
   if (row.excluded && !row.issueKey) return EXCLUDED_THEME;
+  if (row.state === 'rejected') return EXCLUDED_THEME;
   if (row.unattended && !row.issueKey) return EXCLUDED_THEME;
   if (isStandInRow(row)) return STAND_IN_THEME;
   if (row.edited && row.issueKey) return CONFIDENCE_THEME.certain;
@@ -201,8 +206,9 @@ export const appointmentLabel = (appointment: Appointment) => {
   const alone = entry.row.issueKey && entry.row.unattended ? ' · nobody was here' : '';
   const disputed = disputedLabelOf(entry.row);
   const shared = entry.sharedMs ? ` of ${formatDurationMs(entry.sharedMs)}` : '';
+  const skipped = entry.row.issueKey && entry.row.state === 'rejected' && !entry.row.excluded ? ' · not logged' : '';
 
-  return `${named} · ${formatDurationMs(entry.durationMs)}${shared}${alone}${disputed}${isManualRow(entry.row) ? ' · by hand' : ''}`;
+  return `${named} · ${formatDurationMs(entry.durationMs)}${shared}${alone}${disputed}${isManualRow(entry.row) ? ' · by hand' : ''}${skipped}`;
 };
 
 /** What a band adds when part of the time it draws is remote work the day does not book. See ADR 0033. */

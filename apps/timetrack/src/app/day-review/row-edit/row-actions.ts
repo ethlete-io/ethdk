@@ -51,6 +51,18 @@ export const ROW_ACTIONS: readonly RowActionDefinition[] = [
     run: ({ store, row }) => store.countCallAsWork(row),
   },
   {
+    label: "Don't log this time",
+    order: 8,
+    enabled: ({ row }) => row.state !== 'rejected' && !row.excluded,
+    run: ({ store, row }) => store.setState(row, 'rejected'),
+  },
+  {
+    label: 'Log this time',
+    order: 8,
+    enabled: ({ row }) => row.state === 'rejected' && !row.excluded,
+    run: ({ store, row }) => store.setState(row, 'accepted'),
+  },
+  {
     label: 'Ask auto mode again',
     order: 15,
     enabled: ({ autoMode, row }) => autoMode.canAsk() && !!autoMode.reaskSubjectOf(row),

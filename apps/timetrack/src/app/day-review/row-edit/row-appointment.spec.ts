@@ -62,3 +62,20 @@ describe('appointmentLabel of parallel sessions', () => {
     expect(appointmentLabel(appointmentOf({ row }))).toBe('ABC-1 · 1h 0m');
   });
 });
+
+describe('a row the reviewer said not to log', () => {
+  it('paints in the muted theme, named or not', () => {
+    expect(appointmentOf({ row: rowOf({ state: 'rejected' }) }).colorToken).toBe(EXCLUDED_THEME);
+    expect(appointmentOf({ row: rowOf({ state: 'rejected', issueKey: 'ABC-1' }) }).colorToken).toBe(EXCLUDED_THEME);
+  });
+
+  it('reads as not logged instead of not yet named', () => {
+    expect(appointmentLabel(appointmentOf({ row: rowOf({ state: 'rejected' }) }))).toBe('Not logged · 1h 0m');
+  });
+
+  it('keeps its issue and says it is not logged', () => {
+    const row = rowOf({ state: 'rejected', issueKey: 'ABC-1' });
+
+    expect(appointmentLabel(appointmentOf({ row }))).toBe('ABC-1 · 1h 0m · not logged');
+  });
+});

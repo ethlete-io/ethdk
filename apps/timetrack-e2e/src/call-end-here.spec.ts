@@ -356,3 +356,43 @@ test('a call row the call already closed shows no cut line', async ({ page }) =>
   await expect(follow(page)).toHaveCount(0);
   await expect(bands(page).first()).not.toHaveAttribute('data-growing');
 });
+
+test.describe('a call row that still grows, marked as not work', () => {
+  const skip = async (page: Page, name: string) => {
+    await bands(page).first().click({ button: 'right' });
+    await item(page, name).click();
+    await expect(page.locator('et-menu')).toBeHidden();
+  };
+
+  test('stays unlogged while the call runs on', async ({ page }) => {
+    await open(page, at(127));
+    await expect(bands(page)).toHaveCount(1);
+
+    await skip(page, "Don't log this time");
+    await page.clock.runFor(60 * 60_000);
+
+    await expect(bands(page)).toHaveCount(1);
+    await expect(bands(page).first()).toHaveAttribute('title', /^Not logged · 3h 15m$/);
+  });
+
+  test('is logged again from the same menu', async ({ page }) => {
+    await open(page, at(127));
+    await skip(page, "Don't log this time");
+
+    await skip(page, 'Log this time');
+
+    await expect(bands(page).first()).toHaveAttribute('title', /· 2h 15m$/);
+  });
+
+  test('reads as not logged instead of not yet named, on the rest of an ended call', async ({ page }) => {
+    await open(page, at(127));
+    await endHere(page);
+    await expect(bands(page).last()).toHaveAttribute('title', /^Not yet named · 15m$/);
+
+    await bands(page).last().click({ button: 'right' });
+    await item(page, "Don't log this time").click();
+    await page.clock.runFor(60 * 60_000);
+
+    await expect(bands(page).last()).toHaveAttribute('title', /^Not logged · 1h 15m$/);
+  });
+});
