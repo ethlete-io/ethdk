@@ -1,17 +1,5 @@
-import {
-  afterRenderEffect,
-  booleanAttribute,
-  computed,
-  Directive,
-  effect,
-  ElementRef,
-  inject,
-  input,
-  NgZone,
-  signal,
-  untracked,
-} from '@angular/core';
-import { injectHostElement } from '@ethlete/core';
+import { booleanAttribute, computed, Directive, effect, ElementRef, inject, input, untracked } from '@angular/core';
+import { injectHostElement, signalElementIntersection } from '@ethlete/core';
 import { AnyPagedQueryStack, PagedQueryStackDirection } from '@ethlete/query';
 import { SCROLLABLE_SCROLL_CONTAINER } from '../scrollable/headless/scrollable-scroll-container';
 
@@ -32,7 +20,6 @@ import { SCROLLABLE_SCROLL_CONTAINER } from '../scrollable/headless/scrollable-s
 })
 export class PagedQueryTriggerDirective {
   private hostElement = injectHostElement();
-  private zone = inject(NgZone);
   private scrollContainer = inject(SCROLLABLE_SCROLL_CONTAINER, { optional: true });
 
   public stack = input.required<AnyPagedQueryStack | null>({ alias: 'etPagedQueryTrigger' });
@@ -73,51 +60,26 @@ export class PagedQueryTriggerDirective {
     return this.scrollContainer()?.nativeElement ?? undefined;
   });
 
-  private observer = signal<IntersectionObserver | null>(null);
+  private intersection = signalElementIntersection(this.hostElement, {
+    root: computed(() => this.resolvedRoot() ?? null),
+    rootMargin: this.rootMargin,
+    enabled: computed(() => this.canFetch() && this.resolvedRoot() !== undefined),
+  });
 
   constructor() {
-    afterRenderEffect((onCleanup) => {
-      const root = this.resolvedRoot();
-      const rootMargin = this.rootMargin();
-
-      if (root === undefined) return;
-
-      // signalElementIntersection measures the host when it starts observing, during change detection,
-      // before new items have their layout - that entry would fetch a page the sentinel is no longer
-      // near. Only the browser's own callbacks run after layout.
-      // eslint-disable-next-line ethlete/no-native-observers -- needs post-layout entries only, see above
-      const observer = new IntersectionObserver((entries) => this.fetchIfInView(entries), { root, rootMargin });
-
-      untracked(() => this.observer.set(observer));
-
-      onCleanup(() => {
-        observer.disconnect();
-        untracked(() => this.observer.set(null));
-      });
-    });
-
     effect(() => {
-      const observer = this.observer();
+      const inView = this.intersection().at(-1)?.isIntersecting ?? false;
 
-      this.stack();
-      this.direction();
-
-      const canFetch = this.canFetch();
-
-      if (!observer) return;
-
-      // An observer reports changes only. Observing again delivers a fresh entry, so a trigger that is
-      // still in view after a page loaded fetches the next one.
-      observer.unobserve(this.hostElement);
-      if (canFetch) observer.observe(this.hostElement);
+      if (inView && untracked(() => this.canFetch())) untracked(() => this.fetch());
     });
   }
 
-  private fetchIfInView(entries: IntersectionObserverEntry[]) {
+  private fetch() {
     const stack = this.stack();
 
-    if (!stack || !entries.at(-1)?.isIntersecting || !this.canFetch()) return;
+    if (!stack) return;
 
-    this.zone.run(() => (this.direction() === 'next' ? stack.fetchNextPage() : stack.fetchPreviousPage()));
+    if (this.direction() === 'next') stack.fetchNextPage();
+    else stack.fetchPreviousPage();
   }
 }
