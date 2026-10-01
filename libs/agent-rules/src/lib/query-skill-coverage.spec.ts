@@ -54,6 +54,7 @@ const IGNORED = new Set([
   'withAutoRefreshUsedOnUnsupportedHttpMethod',
   'withLongPollingUsedOnUnsupportedHttpMethod',
   'withLongPollingUsedWithPolling',
+  'withOptimisticUpdateUsedOnRead',
   'withPollingUsedOnUnsupportedHttpMethod',
   'withQueryDevtoolsOverridePersistence',
 ]);
