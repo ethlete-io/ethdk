@@ -14,12 +14,15 @@ type PageState<TItem> = {
  * Whether a freshly settled page ends the pagination. Asking a paginated API for a page past the end
  * commonly clamps to the last one; appending that would show the tail of the list twice.
  */
-const endsPagination = <TItem>(nextSlice: TItem[], previousSlice: TItem[] | undefined) =>
+export const endsPagination = <TItem>(nextSlice: TItem[], previousSlice: TItem[] | undefined) =>
   nextSlice.length === 0 || (previousSlice !== undefined && equal(nextSlice, previousSlice));
 
-type SelectOptionsPagingConfig = {
+type SelectOptionsSearchConfig = {
   minQueryLength?: number;
   debounceTime?: number;
+};
+
+type SelectOptionsPagingConfig = SelectOptionsSearchConfig & {
   initialPage?: number;
 };
 
@@ -36,14 +39,11 @@ type SelectOptionsPagingSource<TSettled, TOption> = {
 };
 
 /**
- * The debounced search query, page counter and page fold shared by the query adapters. Call
- * `connect` with the adapter's query signals once the query is created from `query`, `page` and
- * `skipped`.
+ * The debounced search query and the `minQueryLength` gate shared by the query adapters.
  *
  * @internal
  */
-export const createSelectOptionsPaging = (config: SelectOptionsPagingConfig) => {
-  const labels = injectSelectLabels();
+export const createSelectOptionsSearch = (config: SelectOptionsSearchConfig) => {
   const rawQuery = signal('');
   const query = toSignal(toObservable(rawQuery).pipe(rxDebounceTime(config.debounceTime ?? 300)), {
     initialValue: '',
@@ -51,6 +51,20 @@ export const createSelectOptionsPaging = (config: SelectOptionsPagingConfig) => 
 
   const minQueryLength = config.minQueryLength ?? 0;
   const skipped = computed(() => query().trim().length < minQueryLength);
+
+  return { query, skipped, setQuery: (value: string) => rawQuery.set(value) };
+};
+
+/**
+ * The debounced search query, page counter and page fold shared by the legacy query adapter. Call
+ * `connect` with the adapter's query signals once the query is created from `query`, `page` and
+ * `skipped`.
+ *
+ * @internal
+ */
+export const createSelectOptionsPaging = (config: SelectOptionsPagingConfig) => {
+  const labels = injectSelectLabels();
+  const { query, skipped, setQuery } = createSelectOptionsSearch(config);
 
   const initialPage = config.initialPage ?? 1;
   // keyed off the debounced query, so the reset lands in the same tick the request re-runs
@@ -104,7 +118,7 @@ export const createSelectOptionsPaging = (config: SelectOptionsPagingConfig) => 
       }),
       hasMore,
       query,
-      setQuery: (value: string) => rawQuery.set(value),
+      setQuery,
       loadMore: () => {
         if (skipped() || source.loading() || !hasMore()) {
           return;

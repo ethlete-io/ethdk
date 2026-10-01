@@ -38,10 +38,10 @@ const firstErrorMessage = (error: QueryErrorResponse, fallback: string) => {
 };
 
 /**
- * Feeds a table's rows from an `@ethlete/query` query, server-side. Mirroring `createQueryStack`
- * (and `selectOptionsFromQuery`), it takes the `queryCreator` plus a reactive `args` builder: the
- * query is created once and re-executes as sort/page change. Bound as a table's `rowsSource`, the
- * backend does the sorting and filtering:
+ * Feeds a table's rows from an `@ethlete/query` query, server-side. Mirroring `createQueryStack`,
+ * it takes the `queryCreator` plus a reactive `args` builder: the query is created once and
+ * re-executes as sort/page change. Bound as a table's `rowsSource`, the backend does the sorting and
+ * filtering:
  *
  * ```ts
  * users = tableRowsFromQuery({

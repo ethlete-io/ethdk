@@ -1,4 +1,4 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpRequest, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { createGetQuery, createQueryClient } from '@ethlete/query';
@@ -188,6 +188,126 @@ describe('selectOptionsFromQuery', () => {
       TestBed.tick();
       httpMock.expectNone((r) => r.url.includes('/items'));
       expect(source.options()).toEqual(page1);
+    });
+
+    const param = (request: HttpRequest<unknown>, name: string) =>
+      new URL(request.urlWithParams).searchParams.get(name);
+    const pageParam = (request: HttpRequest<unknown>) => param(request, 'page');
+
+    it('requests the next page on loadMore and appends it', async () => {
+      const source = createSource();
+
+      await search(source, 'eu', { items: page1, hasMore: true });
+
+      source.loadMore();
+      TestBed.tick();
+      httpMock.expectOne((r) => pageParam(r) === '2').flush({ items: page2, hasMore: true });
+      TestBed.tick();
+
+      expect(source.options()).toEqual([...page1, ...page2]);
+      expect(source.hasMore()).toBe(true);
+    });
+
+    it('restarts at the first page when the query changes', async () => {
+      const source = createSource();
+
+      await search(source, 'eu', { items: page1, hasMore: true });
+      await loadMore(source, { items: page2, hasMore: true });
+
+      source.setQuery('euro');
+      TestBed.tick();
+      await settle();
+      TestBed.tick();
+      const request = httpMock.expectOne((r) => r.url.includes('/items'));
+      expect(param(request.request, 'q')).toBe('euro');
+      expect(pageParam(request.request)).toBe('1');
+      request.flush({ items: [euro], hasMore: false });
+      TestBed.tick();
+
+      expect(source.options()).toEqual([euro]);
+      expect(source.hasMore()).toBe(false);
+    });
+
+    it('keeps hasMore while the next page loads and turns it off on the last page', async () => {
+      const source = createSource();
+
+      await search(source, 'eu', { items: page1, hasMore: true });
+
+      source.loadMore();
+      TestBed.tick();
+      expect(source.loading()).toBe(true);
+      expect(source.hasMore()).toBe(true);
+
+      respond({ items: page2, hasMore: false });
+      TestBed.tick();
+
+      expect(source.loading()).toBe(false);
+      expect(source.hasMore()).toBe(false);
+
+      source.loadMore();
+      TestBed.tick();
+      httpMock.expectNone((r) => r.url.includes('/items'));
+    });
+
+    it('ignores a second loadMore while a page loads', async () => {
+      const source = createSource();
+
+      await search(source, 'eu', { items: page1, hasMore: true });
+
+      source.loadMore();
+      source.loadMore();
+      TestBed.tick();
+
+      respond({ items: page2, hasMore: true });
+      TestBed.tick();
+      expect(source.options()).toEqual([...page1, ...page2]);
+    });
+
+    it('sends no request and ignores loadMore below the minimum query length', async () => {
+      const source = createSource({ minQueryLength: 3 });
+
+      await search(source, 'eur', { items: page1, hasMore: true });
+
+      source.setQuery('eu');
+      TestBed.tick();
+      await settle();
+      TestBed.tick();
+      source.loadMore();
+      TestBed.tick();
+
+      httpMock.expectNone((r) => r.url.includes('/items'));
+      expect(source.options()).toEqual([]);
+      expect(source.hasMore()).toBe(false);
+    });
+
+    it('discards a page still in flight when the query changes', async () => {
+      const source = createSource();
+
+      await search(source, 'eu', { items: page1, hasMore: true });
+
+      source.loadMore();
+      TestBed.tick();
+      const stalePage = httpMock.expectOne((r) => pageParam(r) === '2');
+
+      source.setQuery('euro');
+      TestBed.tick();
+      await settle();
+      TestBed.tick();
+
+      if (!stalePage.cancelled) {
+        stalePage.flush({ items: page2, hasMore: true });
+        TestBed.tick();
+      }
+
+      expect(source.options()).not.toContainEqual(page2[0]);
+
+      httpMock
+        .expectOne((r) => param(r, 'q') === 'euro' && pageParam(r) === '1')
+        .flush({ items: [euro], hasMore: false });
+      TestBed.tick();
+
+      expect(source.options()).toEqual([euro]);
+      expect(source.hasMore()).toBe(false);
     });
   });
 });

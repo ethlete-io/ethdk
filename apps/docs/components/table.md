@@ -725,9 +725,8 @@ even the `[etTableFooter]` bar shifts when the table's own height changes.
 ## Server-side rows (query)
 
 `tableRowsFromQuery` feeds the table from an [`@ethlete/query`](/query/) query,
-server-side - mirroring `selectOptionsFromQuery`. The query is created once and
-re-executes reactively as sort/page change; pair it with `sortMode="server"` so
-the backend does the sorting:
+server-side. The query is created once and re-executes reactively as sort/page
+change; pair it with `sortMode="server"` so the backend does the sorting:
 
 ```ts
 users = tableRowsFromQuery({

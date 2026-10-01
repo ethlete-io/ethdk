@@ -1,12 +1,21 @@
-import { Signal, computed } from '@angular/core';
-import { AnyQueryCreator, QueryArgsOf, QueryErrorResponse, RequestArgs, ResponseType, withArgs } from '@ethlete/query';
-import { createSelectOptionsPaging } from './select-options-paging';
+import { Signal, computed, signal } from '@angular/core';
+import {
+  AnyQueryCreator,
+  QueryArgsOf,
+  QueryErrorResponse,
+  RequestArgs,
+  ResponseType,
+  createPagedQueryStack,
+} from '@ethlete/query';
+import { NormalizedPagination } from '@ethlete/types';
+import { injectSelectLabels } from './select-labels';
+import { createSelectOptionsSearch, endsPagination } from './select-options-paging';
 
 /** Config for {@link selectOptionsFromQuery}. */
 export type SelectOptionsFromQueryConfig<TCreator extends AnyQueryCreator, TOption> = {
   /**
-   * The query creator to run (e.g. from `createGetQuery`). Like a query stack, the query is created
-   * **once** and re-executes reactively - never per keystroke.
+   * The query creator to run (e.g. from `createGetQuery`). Its pages run on a paged query stack that
+   * restarts when the debounced search query changes - never per keystroke.
    */
   queryCreator: TCreator;
   /**
@@ -58,9 +67,9 @@ const firstErrorMessage = (error: QueryErrorResponse) => {
 };
 
 /**
- * Feeds a select's options from an `@ethlete/query` query as the user searches. Mirroring
- * `createQueryStack`, it takes the `queryCreator` plus a reactive `args` builder: the query is
- * created once and re-executes as the (debounced) search query changes. Wire the returned signals
+ * Feeds a select's options from an `@ethlete/query` query as the user searches. It takes the
+ * `queryCreator` plus a reactive `args` builder and runs them on a `createPagedQueryStack`: the stack
+ * restarts at `initialPage` as the (debounced) search query changes. Wire the returned signals
  * to the select's async inputs and render `options` yourself with `filterMode="external"`:
  *
  * ```ts
@@ -96,24 +105,75 @@ export const selectOptionsFromQuery = <TCreator extends AnyQueryCreator, TOption
   config: SelectOptionsFromQueryConfig<TCreator, TOption>,
 ): SelectOptionsFromQuery<TOption> => {
   type TArgs = QueryArgsOf<TCreator>;
+  type TResponse = NonNullable<ResponseType<TArgs>>;
 
-  const paging = createSelectOptionsPaging(config);
-
-  const query = config.queryCreator.clone({ reportErrors: false })(
-    withArgs<TArgs>(() => (paging.skipped() ? null : config.args(paging.query, paging.page))),
-  );
-
+  const labels = injectSelectLabels();
+  const search = createSelectOptionsSearch(config);
+  const initialPage = config.initialPage ?? 1;
   const toErrorMessage = config.toErrorMessage ?? firstErrorMessage;
 
-  return paging.connect({
-    settled: query.response,
-    toSlice: (response: ResponseType<TArgs> | null) => (response === null ? null : config.toOptions(response)),
-    hasMore: (response) => response !== null && !!config.toHasMore?.(response),
-    loading: computed(() => query.loading() !== null),
-    error: computed(() => {
-      const error = query.error();
+  // the page number is the response's position in the stack, so it is only valid for settled pages
+  const toPagination = (response: TResponse, responses: TResponse[]): NormalizedPagination<TOption> => {
+    const index = responses.indexOf(response);
+    const currentPage = initialPage + index;
+    const slice = config.toOptions(response);
+    const previous = responses[index - 1];
+    const ended = endsPagination(slice, previous === undefined ? undefined : config.toOptions(previous));
+    const totalPages = !ended && config.toHasMore?.(response) ? currentPage + 1 : currentPage;
 
-      return error === null ? null : toErrorMessage(error);
-    }),
+    return {
+      items: ended ? [] : slice,
+      currentPage,
+      totalPages,
+      itemsPerPage: slice.length,
+      totalHits: 0,
+    };
+  };
+
+  const stack = createPagedQueryStack({
+    queryCreator: config.queryCreator.clone({ reportErrors: false }),
+    responseNormalizer: toPagination,
+    args: (page) => (search.skipped() ? null : config.args(search.query, signal(page).asReadonly())),
+    initialPage,
   });
+
+  const latestPagination = computed(() => {
+    const responses = stack
+      .queries()
+      .map((query) => query.response())
+      .filter((response): response is TResponse => response !== null);
+    const latest = responses.at(-1);
+
+    return latest === undefined ? null : toPagination(latest, responses);
+  });
+
+  const hasMore = computed(() => {
+    const pagination = latestPagination();
+
+    return !search.skipped() && pagination !== null && pagination.currentPage < pagination.totalPages;
+  });
+
+  return {
+    options: computed(() => (search.skipped() ? [] : stack.items())),
+    loading: stack.loading,
+    error: computed(() => {
+      const error = stack.error();
+
+      if (error === null || search.skipped()) {
+        return null;
+      }
+
+      return toErrorMessage(error) ?? labels().error;
+    }),
+    hasMore,
+    query: search.query,
+    setQuery: search.setQuery,
+    loadMore: () => {
+      if (search.skipped() || !hasMore() || !stack.canFetchNextPage()) {
+        return;
+      }
+
+      stack.fetchNextPage();
+    },
+  };
 };
