@@ -60,7 +60,7 @@ Sankey triage (2026-10-01): keep the shipped defaults of 2, 4, 6, 7 and 9. Built
 8. Empty state: a hairline circle in the border colour.
 9. `size` defaults to 200. There is no preset donut ratio, and the stories use 0.6.
 
-Pie triage (2026-10-01): keep the shipped defaults of 1, 2, 4, 5, 6, 8 and 9. Built without a drawing: 7 (a share above 0 that rounds to 0 reads "<1%"). Drawn: 3 (legend), in `.ethlete/design/calls/components/pie-chart/00-legend`.
+Pie triage (2026-10-01): keep the shipped defaults of 1, 2, 4, 5, 6, 8 and 9. Built without a drawing: 7 (a share above 0 that rounds to 0 reads "<1%"). Drawn: 3 (legend), in `.ethlete/design/calls/components/pie-chart/00-legend`: **A won**, the pie keeps its own legend. Nothing to build.
 
 ### Line and area (`8a02e0a99`)
 
