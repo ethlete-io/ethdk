@@ -1,6 +1,8 @@
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 
+use crate::call_source::{call_object, Node, Value};
+
 const DEFAULT_PORT: u16 = 4402;
 
 #[derive(Debug, Serialize, PartialEq)]
@@ -62,31 +64,6 @@ fn config_path(checkout: &str) -> PathBuf {
     Path::new(checkout).join(DESIGN_DIR).join("config.json")
 }
 
-/// The value of `field: '…'`. A value that wraps over more than one line comes back as one
-/// line, because every reader of these fields shows them as prose.
-fn string_field(source: &str, field: &str) -> Option<String> {
-    let after = source.split_once(&format!("{field}:"))?.1;
-    let start = after.find('\'')?;
-    let rest = &after[start + 1..];
-    let mut value = String::new();
-    let mut escaped = false;
-
-    for character in rest.chars() {
-        if escaped {
-            value.push(character);
-            escaped = false;
-        } else if character == '\\' {
-            escaped = true;
-        } else if character == '\'' {
-            return Some(one_line(&value));
-        } else {
-            value.push(character);
-        }
-    }
-
-    None
-}
-
 /// Whitespace that holds a line break becomes one space.
 fn one_line(value: &str) -> String {
     let mut out = String::with_capacity(value.len());
@@ -115,92 +92,57 @@ fn one_line(value: &str) -> String {
 pub const WIREFRAME_MODE: &str = "wireframe";
 pub const DESIGN_MODE: &str = "design";
 
-/// The value of a field at the call's own indent. Prose that holds the same word cannot be
-/// mistaken for it, because a field nested in a round or a variant never starts at two spaces.
-fn top_field(source: &str, field: &str) -> Option<String> {
-    let at = source.find(&format!("\n  {field}: '"))?;
-
-    string_field(&source[at..], field)
+fn text_of(node: &Node, field: &str) -> Option<String> {
+    node.text(field).map(one_line)
 }
 
-fn number_field(source: &str, field: &str) -> Option<u32> {
-    let after = source.split_once(&format!("{field}:"))?.1;
-
-    after
-        .trim_start()
-        .split(|c: char| !c.is_ascii_digit())
-        .next()?
-        .parse()
-        .ok()
-}
-
-fn parse_rounds(source: &str) -> Vec<CallRound> {
-    let Some(start) = source.find(ROUNDS_HEADER) else {
-        return Vec::new();
-    };
-
-    let region = &source[start..];
-    let region = region.find(VARIANTS_HEADER).map_or(region, |end| &region[..end]);
-    let starts: Vec<usize> = region.match_indices("key:").map(|(index, _)| index).collect();
-
-    starts
+fn parse_rounds(call: &Node) -> Vec<CallRound> {
+    call.list("rounds")
         .iter()
-        .enumerate()
-        .filter_map(|(position, start)| {
-            let end = starts.get(position + 1).copied().unwrap_or(region.len());
-            let block = &region[*start..end];
-
+        .filter_map(|round| {
             Some(CallRound {
-                key: string_field(block, "key")?,
-                title: string_field(block, "title").unwrap_or_default(),
+                key: text_of(round, "key")?,
+                title: text_of(round, "title").unwrap_or_default(),
             })
         })
         .collect()
 }
 
-fn variants_region(source: &str) -> Option<&str> {
-    source.find("\n  variants: [").map(|start| &source[start..])
-}
-
-fn parse_variants(source: &str) -> Vec<CallVariant> {
-    let Some(region) = variants_region(source) else {
-        return Vec::new();
-    };
-
-    let starts: Vec<usize> = region.match_indices("key:").map(|(index, _)| index).collect();
-
-    starts
+fn parse_variants(call: &Node) -> Vec<CallVariant> {
+    call.list("variants")
         .iter()
-        .enumerate()
-        .filter_map(|(position, start)| {
-            let end = starts.get(position + 1).copied().unwrap_or(region.len());
-            let block = &region[*start..end];
-
+        .filter_map(|variant| {
             Some(CallVariant {
-                key: string_field(block, "key")?,
-                name: string_field(block, "name").unwrap_or_default(),
-                round: string_field(block, "round"),
-                verdict: string_field(block, "verdict"),
-                claim: string_field(block, "claim").unwrap_or_default(),
-                cost: string_field(block, "cost").unwrap_or_default(),
+                key: text_of(variant, "key")?,
+                name: text_of(variant, "name").unwrap_or_default(),
+                round: text_of(variant, "round"),
+                verdict: text_of(variant, "verdict"),
+                claim: text_of(variant, "claim").unwrap_or_default(),
+                cost: text_of(variant, "cost").unwrap_or_default(),
             })
         })
         .collect()
 }
 
 fn parse_call(slug: &str, source: &str) -> Call {
+    let call = call_object(source).unwrap_or(Node {
+        start: 0,
+        end: 0,
+        value: Value::Other,
+    });
+
     Call {
         slug: slug.to_owned(),
-        feature: string_field(source, "feature"),
-        eyebrow: string_field(source, "eyebrow").unwrap_or_default(),
-        headline: string_field(source, "headline").unwrap_or_default(),
-        intro: string_field(source, "intro").unwrap_or_default(),
-        frame_width: number_field(source, "frameWidth").unwrap_or_default(),
-        mode: top_field(source, "mode").unwrap_or_else(|| DESIGN_MODE.to_owned()),
+        feature: text_of(&call, "feature"),
+        eyebrow: text_of(&call, "eyebrow").unwrap_or_default(),
+        headline: text_of(&call, "headline").unwrap_or_default(),
+        intro: text_of(&call, "intro").unwrap_or_default(),
+        frame_width: call.number("frameWidth").map_or(0, |width| width as u32),
+        mode: text_of(&call, "mode").unwrap_or_else(|| DESIGN_MODE.to_owned()),
         handoff: false,
         touched: 0,
-        rounds: parse_rounds(source),
-        variants: parse_variants(source),
+        rounds: parse_rounds(&call),
+        variants: parse_variants(&call),
     }
 }
 
@@ -280,75 +222,39 @@ fn call_file(checkout: &str, slug: &str) -> Result<PathBuf, String> {
 /// Rewrite one variant's verdict in place. `verdict` of `None` removes the field, which is how
 /// a variant goes back to open.
 fn write_verdict(source: &str, variant_key: &str, verdict: Option<&str>) -> Result<String, String> {
-    let region_start = source
-        .find("\n  variants: [")
-        .ok_or_else(|| "The call declares no variants.".to_owned())?;
-    let region = &source[region_start..];
+    let call = call_object(source).ok_or_else(|| "The file declares no call.".to_owned())?;
 
-    let starts: Vec<usize> = region.match_indices("key:").map(|(index, _)| index).collect();
-    let position = starts
+    if call.property("variants").is_none() {
+        return Err("The call declares no variants.".to_owned());
+    }
+
+    let variant = call
+        .list("variants")
         .iter()
-        .position(|start| {
-            let end = starts
-                .iter()
-                .find(|next| *next > start)
-                .copied()
-                .unwrap_or(region.len());
-            string_field(&region[*start..end], "key").as_deref() == Some(variant_key)
-        })
+        .find(|variant| variant.text("key") == Some(variant_key))
         .ok_or_else(|| format!("The call declares no variant {variant_key}."))?;
+    let line_start = |at: usize| source[..at].rfind('\n').map_or(0, |offset| offset + 1);
+    let line_end = |at: usize| source[at..].find('\n').map_or(source.len(), |offset| at + offset + 1);
 
-    let start = starts[position];
-    let end = starts.get(position + 1).copied().unwrap_or(region.len());
-    let block = &region[start..end];
-
-    let replaced = match (block.find("verdict:"), verdict) {
-        (Some(at), Some(value)) => {
-            let line_end = block[at..].find('\n').map(|offset| at + offset).unwrap_or(block.len());
-            format!("{}verdict: '{value}',{}", &block[..at], &block[line_end..])
-        }
-        (Some(at), None) => {
-            let line_start = block[..at].rfind('\n').map(|offset| offset + 1).unwrap_or(0);
-            let line_end = block[at..]
-                .find('\n')
-                .map(|offset| at + offset + 1)
-                .unwrap_or(block.len());
-            format!("{}{}", &block[..line_start], &block[line_end..])
-        }
-        (None, None) => block.to_owned(),
+    let (start, end, replacement) = match (variant.property("verdict"), verdict) {
+        (Some(field), Some(value)) => (field.node.start, field.node.end, quoted(value)),
+        (Some(field), None) => (line_start(field.start), line_end(field.node.end), String::new()),
+        (None, None) => return Ok(source.to_owned()),
         (None, Some(value)) => {
-            let indent: String = region[..start].chars().rev().take_while(|c| *c == ' ').collect();
+            let key = variant
+                .property("key")
+                .ok_or_else(|| "The variant has no key.".to_owned())?;
+            let indent = &source[line_start(key.start)..key.start];
+            let at = match variant.property("load") {
+                Some(load) => line_start(load.start),
+                None => line_end(key.node.end),
+            };
 
-            match block.find("load:") {
-                Some(at) => {
-                    let line_start = block[..at].rfind('\n').map(|offset| offset + 1).unwrap_or(0);
-
-                    format!(
-                        "{}{indent}verdict: '{value}',\n{}",
-                        &block[..line_start],
-                        &block[line_start..]
-                    )
-                }
-                None => {
-                    let key_line_end = block.find('\n').map(|offset| offset + 1).unwrap_or(block.len());
-
-                    format!(
-                        "{}{indent}verdict: '{value}',\n{}",
-                        &block[..key_line_end],
-                        &block[key_line_end..]
-                    )
-                }
-            }
+            (at, at, format!("{indent}verdict: {},\n", quoted(value)))
         }
     };
 
-    Ok(format!(
-        "{}{}{}{}",
-        &source[..region_start],
-        &region[..start],
-        replaced,
-        &region[end..]
-    ))
+    Ok(format!("{}{replacement}{}", &source[..start], &source[end..]))
 }
 
 #[tauri::command]
@@ -491,25 +397,10 @@ fn array_span(source: &str, header: &str) -> Option<(usize, usize)> {
     None
 }
 
-fn keys_in(region: &str) -> Vec<String> {
-    let starts: Vec<usize> = region.match_indices("key:").map(|(index, _)| index).collect();
-
-    starts
-        .iter()
-        .enumerate()
-        .filter_map(|(position, start)| {
-            let end = starts.get(position + 1).copied().unwrap_or(region.len());
-
-            string_field(&region[*start..end], "key")
-        })
-        .collect()
-}
-
 fn round_keys(source: &str) -> Vec<String> {
-    match array_span(source, ROUNDS_HEADER) {
-        Some((start, end)) => keys_in(&source[start..end]),
-        None => Vec::new(),
-    }
+    call_object(source).map_or_else(Vec::new, |call| {
+        parse_rounds(&call).into_iter().map(|round| round.key).collect()
+    })
 }
 
 /// The next free round key. Rounds are `r1`, `r2`, and so on.
@@ -678,7 +569,11 @@ pub fn design_add_variants(
         .to_path_buf();
     let source = std::fs::read_to_string(&path).map_err(|error| format!("Unable to read the call: {error}"))?;
 
-    let used: Vec<String> = parse_variants(&source).into_iter().map(|variant| variant.key).collect();
+    let used: Vec<String> = parse_call(&slug, &source)
+        .variants
+        .into_iter()
+        .map(|variant| variant.key)
+        .collect();
     let keys = next_variant_keys(&used, count as usize, &dir);
     let round = next_round_key(&round_keys(&source));
     let written = add_variants(&source, &round, &round_title, &keys)?;
@@ -755,7 +650,12 @@ export default defineCall({
 
     #[test]
     fn a_call_that_declares_no_round_reads_none() {
-        assert!(parse_rounds("  variants: [\n    {\n      key: 'a',\n    },\n  ],").is_empty());
+        assert!(parse_call(
+            "x",
+            "defineCall({\n  variants: [\n    {\n      key: 'a',\n    },\n  ],\n});"
+        )
+        .rounds
+        .is_empty());
     }
 
     #[test]
@@ -848,6 +748,34 @@ export default defineCall({
             .collect();
 
         assert_eq!(keys, vec!["a".to_owned(), "b".to_owned()]);
+    }
+
+    const PROSE_WITH_A_KEY: &str = "'The chart keys the colour on series key: the first render hands out slots.'";
+
+    #[test]
+    fn prose_that_holds_the_word_key_is_not_a_variant() {
+        let source = CALL.replace("'The :00 goes.'", PROSE_WITH_A_KEY);
+        let call = parse_call("x", &source);
+        let keys: Vec<String> = call.variants.iter().map(|variant| variant.key.clone()).collect();
+
+        assert_eq!(keys, vec!["a".to_owned(), "b".to_owned()]);
+        assert_eq!(call.variants[1].claim, PROSE_WITH_A_KEY.trim_matches('\''));
+    }
+
+    #[test]
+    fn a_verdict_lands_on_a_variant_whose_prose_holds_the_word_key() {
+        let source = CALL.replace("'The :00 goes.'", PROSE_WITH_A_KEY);
+        let written = write_verdict(&source, "b", Some("chosen")).unwrap();
+
+        assert_eq!(parse_call("x", &written).variants[1].verdict.as_deref(), Some("chosen"));
+        assert!(written.contains("      verdict: 'chosen',\n      load: () => import('./variant-b'),"));
+    }
+
+    #[test]
+    fn a_double_quoted_claim_reads_whole() {
+        let source = CALL.replace("'The :00 goes.'", "\"The day's :00 goes.\"");
+
+        assert_eq!(parse_call("x", &source).variants[1].claim, "The day's :00 goes.");
     }
 
     #[test]
