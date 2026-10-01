@@ -261,3 +261,24 @@ Order: `etQueryButton` + `queryButtonSourceFromV2Query`, `invalidates` + tags, `
 `etPagedQueryTrigger`, `withOptimisticUpdate`.
 
 Consumer apps migrate on their own schedule, with the SDK's migration scripts.
+
+## Next: migration scripts (audit 2026-10-01)
+
+`et update` reads `libs/query/migrations.json` and `libs/cdk/migrations.json` (`libs/cli/src/lib/update/plan.ts`).
+Today the scripts barely know the four legacy APIs. Build report entries, not rewrites: every replacement needs a
+design choice or a hand edit at each call site.
+
+1. **Query button.** `libs/cdk/migration-map.json` already reports `QueryButton*` as `replaced-by`. The cdk directive
+   has no selector and lives as a `hostDirective` in a consumer wrapper, so a template rewrite is not possible.
+   Sharpen the note: name the wrapper case and `queryButtonSourceFromV2Query` (needs an injection context).
+2. **Collections and infinity queries.** No generator touches them. Add one `@ethlete/query` migration (version
+   above 6.0.0-next.54, report only) with one QV3 task per `createQueryCollection*`, `createInfinityQueryConfig`,
+   `*etInfinityQuery` and `etInfinityQueryTrigger` site. Put the docs link (`/query/groups`,
+   `/components/paged-query-trigger`) in `action`. Collection members stay legacy wrappers after
+   `migrate-to-query-v3`, so an optional shape-A rewrite to `createQueryGroup` may only act when every member is
+   already a v3 creator.
+3. **EntityStore.** Extend the follow-up at `legacy-query-creator-migration.ts:508-520` with the pointer to
+   `invalidates`, `tags` and `withOptimisticUpdate`, and scan for `EntityStore`, `createEntityStore` and `entity:`.
+
+Report format: QV3 tasks (`migrate-to-query-v3/report.ts`): `{ title, summary, action, locations, source,
+dedupeKey }`, the title imperative or "Check …", the action starts with a verb.
