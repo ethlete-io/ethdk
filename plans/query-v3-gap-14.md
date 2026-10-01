@@ -254,6 +254,7 @@ mark unused entries stale on invalidation, the double refresh in other tabs, and
 Order: `etQueryButton` + `queryButtonSourceFromV2Query`, `invalidates` + tags, `createQueryGroup`,
 `etPagedQueryTrigger`, `withOptimisticUpdate`.
 
-1. Should `hub-lookup-state` and `selectOptionsFromQuery` move onto `createPagedQueryStack` in this project?
+1. Decided (2026-10-01): `selectOptionsFromQuery` moves onto `createPagedQueryStack` (slice 6, after slice 4).
+   `hub-lookup-state` is fut code and follows in fut.
 2. Ship as one "query v3 UI helpers" project, or item by item in the order above?
 3. Verify the Dyn numbers (45 buttons, 27 collections, 18 stores) when the repo is available.
