@@ -9,15 +9,25 @@ listed first. Decide them one slice at a time.
 
 ### Slice A: bars (`6278e205b`)
 
-1. Legend: above the plot, left-aligned, wrapping, 10px rounded squares, not interactive. Alternatives: below the plot, or toggle-to-isolate.
-2. Stacked segments: a 2px surface gap (1px from each neighbour). Positive and negative stacks meet at zero with no gap.
-3. Horizontal: category labels on the left, end-aligned, at most 40% width with an ellipsis. The tooltip opens right of positive bars and left of negative ones.
-4. Grouped: bars 2px apart, and at least 20% of the band stays as air between groups.
-5. No direct labels. The dataviz skill suggests them for 4 or fewer series.
-6. The series tooltip shows key, value, series and category. A stacked tooltip has no total.
-7. Several series without a palette: all get the accent, plus a dev `console.warn`. Alternative: an error, or a built-in variation.
-8. `provideColorPalette` is one static list, so dark mode needs a second palette from the app. Should the SDK support a palette that follows the surface?
-9. Colour follows the position in `series`. As a result, filtering series repaints the rest unless each series sets `colorToken`.
+Triage 2026-10-01: calls 1-6 keep the shipped default. Calls 7-9 are drawn in
+`.ethlete/design/calls/components/bar-chart/`.
+
+- Call 7, several series without a palette (`00-series-without-palette`): **C won**. The series take steps of
+  the accent, from 100% down to a 40% mix with the surface, the same rule as the pie chart. Rejected: all in the
+  accent (series look the same), an error (stops a quick chart), accent plus patterns (busy at bar size). Not
+  built yet.
+
+- Call 8, a palette on a dark surface (`01-palette-on-dark`): **B won**. `provideColorPalette` takes one list per
+  surface theme the app registered, for example `{ default: [...], 'dark-card': [...] }` (app-owned names). Rejected:
+  one static list (weak hues on dark), a second theme per entry for a dark kind, an automatic lift by the SDK. Not
+  built yet.
+
+- Call 9, colours through a filter (`02-colour-on-filter`): **C won**. No new API: the bar chart docs name
+  `colorToken` on each series as the way to keep colours when the app filters series. Rejected: position only
+  (repaints the rest), a remembered key → slot map (differs after a reload), a palette keyed by series key.
+  Docs not written yet.
+
+To build: C of call 7 (accent steps), B of call 8 (a palette per surface), the `colorToken` docs of call 9.
 
 ### Sankey (`b64d0f519`)
 
