@@ -201,7 +201,7 @@ source$
 | `prefer-concise-angular-style-metadata`      | `styleUrl` over single-item `styleUrls`; no array around a single `styles` entry                                                                                          | 🔧  | error   |
 | `no-template-literal-before-inline-template` | No interpolated template literal above an inline `template:` - it silently disables Angular language service completions, hover and go-to-definition inside that template |     | error   |
 | `no-pipe-logic`                              | No logic inside a pipe's `transform` - extract a utility function and assign it (`transform = myUtil;`)                                                                   |     | error   |
-| `enforce-routing-view-naming`                | Routing components import from a path containing `-view` and use a class name ending in `ViewComponent`                                                                   |     | error   |
+| `enforce-routing-view-naming`                | Route objects (with a `path`) import from a path containing `-view` and use a class name ending in `ViewComponent`                                                        |     | error   |
 
 ::: info The OnPush pair is version-aware
 `require-on-push-change-detection` and `no-redundant-on-push-change-detection` are both part of `recommended` and detect the Angular version installed next to the linted file: on Angular ≤ 21 the first enforces explicit `OnPush` and the second is inert; on Angular 22+ (where `OnPush` is the default) the roles flip and the redundant metadata - including the now-unused import - is removed. To pin the version instead of detecting it, set `settings: { ethlete: { angularMajor: 21 } }` in the flat config.
