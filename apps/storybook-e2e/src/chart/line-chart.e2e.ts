@@ -26,9 +26,7 @@ async function expectSliceFocusVisible(sliceLocator: Locator): Promise<void> {
   await expect(sliceLocator).toBeFocused();
   expect(await sliceLocator.evaluate((el) => el.matches(':focus-visible'))).toBe(true);
 
-  const stroke = await sliceLocator
-    .locator('.et-line-chart-focus-ring')
-    .evaluate((el) => getComputedStyle(el).stroke);
+  const stroke = await sliceLocator.locator('.et-line-chart-focus-ring').evaluate((el) => getComputedStyle(el).stroke);
 
   expect(stroke).not.toBe('none');
   expect(stroke).not.toBe('transparent');
