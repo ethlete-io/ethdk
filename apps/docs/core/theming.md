@@ -291,6 +291,24 @@ providers: [
 
 `token` must name a registered theme; `label` is what a user reads next to the swatch, already translated. Provide it wherever the picker can see it - app-wide in `appConfig`, or on a single feature's component.
 
+A palette tuned for a light surface can lose contrast on a dark one. Pass one list per registered surface theme name instead, plus a `default` list for every other surface:
+
+```ts
+provideColorPalette({
+  default: [
+    { token: 'ocean', label: 'Training' },
+    { token: 'forest', label: 'Match' },
+  ],
+  // `dark-card` and the `-bright` themes are this example app's own registrations
+  'dark-card': [
+    { token: 'ocean-bright', label: 'Training' },
+    { token: 'forest-bright', label: 'Match' },
+  ],
+});
+```
+
+Keep the same order in every list: the position is what ties a series to its color. The charts read `injectSurfaceColorPalette()`, a signal of the list for the surface they sit on. `injectColorPalette()` always returns the `default` list, so a color picker stores the same token on every surface.
+
 Nothing in the SDK requires a palette. A component reads it with `injectColorPalette({ optional: true })` and falls back to accepting a raw theme name when there is none - see the [scheduler's color field](/components/scheduler#fields).
 
 ### Categorical colors
