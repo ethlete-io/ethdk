@@ -1013,6 +1013,14 @@ describe('RichTextEditorDom', () => {
       expect(root.innerHTML).toBe('<ol><li><br></li></ol>');
     });
 
+    it('keeps the typed number as the start of the numbered list', () => {
+      const { root, dom } = setup('<p>3.</p>');
+      caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
+
+      expect(dom.autoformat!.applyBlockAutoformat(noneReserved)).toBe(true);
+      expect(root.innerHTML).toBe('<ol start="3"><li><br></li></ol>');
+    });
+
     it('converts "## " into a heading of that level', () => {
       const { root, dom } = setup('<p>##</p>');
       caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);

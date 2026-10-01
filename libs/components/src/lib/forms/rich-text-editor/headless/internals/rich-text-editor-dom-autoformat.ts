@@ -47,10 +47,12 @@ export const createRichTextEditorAutoformat = (
     const { headings, blockquote, codeBlock } = features;
 
     let action: (() => void) | null = null;
+    let startNumber = 1;
 
     if (/^[-*+]$/.test(prefix) && !isReserved(prefix)) {
       action = () => toggleList('ul');
     } else if (/^\d{1,9}\.$/.test(prefix) && !isReserved(prefix[0] ?? '')) {
+      startNumber = Number.parseInt(prefix, 10);
       action = () => toggleList('ol');
     } else if (headings && /^#{1,3}$/.test(prefix) && !isReserved('#')) {
       action = () => headings.toggleHeading(`h${prefix.length}` as HeadingTag);
@@ -68,6 +70,12 @@ export const createRichTextEditorAutoformat = (
     action();
 
     const editableAfter = getSelection();
+    const createdList = editableAfter ? closestWithin(resolveStartNode(editableAfter.range), 'ol') : null;
+
+    if (createdList && startNumber !== 1) {
+      renderer.setAttribute(createdList, 'start', String(startNumber));
+    }
+
     const landed = editableAfter
       ? closestWithin(resolveStartNode(editableAfter.range), `li, ${HEADING_SELECTOR}`)
       : null;
