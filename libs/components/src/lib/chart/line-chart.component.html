@@ -74,6 +74,17 @@
                 class="et-line-chart-slice-target"
                 rx="4"
               />
+              <svg:rect
+                [style.--_et-line-chart-slice-x.px]="slice.target.x"
+                [style.--_et-line-chart-slice-width.px]="slice.target.width"
+                [style.--_et-line-chart-slice-position.px]="slice.position"
+                [attr.x]="slice.target.x"
+                [attr.y]="slice.target.y"
+                [attr.width]="slice.target.width"
+                [attr.height]="slice.target.height"
+                class="et-line-chart-focus-ring"
+                rx="4"
+              />
               <svg:line
                 [attr.x1]="slice.position"
                 [attr.x2]="slice.position"

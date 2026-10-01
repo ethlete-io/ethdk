@@ -35,6 +35,12 @@
     initial-value: 600ms;
   }
 
+  @property --et-line-chart-focus-ring-min-width {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
   .et-line-chart {
     display: block;
     position: relative;
@@ -135,6 +141,32 @@
       stroke-width: 2px;
     }
 
+    .et-line-chart-focus-ring {
+      --_et-line-chart-focus-ring-x: min(
+        var(--_et-line-chart-slice-x),
+        max(
+          var(--_et-line-chart-slice-position) - var(--et-line-chart-focus-ring-min-width) / 2,
+          var(--_et-line-chart-slice-x) + var(--_et-line-chart-slice-width) - var(--et-line-chart-focus-ring-min-width)
+        )
+      );
+
+      x: var(--_et-line-chart-focus-ring-x);
+      width: calc(
+        max(
+            var(--_et-line-chart-slice-x) + var(--_et-line-chart-slice-width),
+            min(
+              var(--_et-line-chart-slice-position) + var(--et-line-chart-focus-ring-min-width) / 2,
+              var(--_et-line-chart-slice-x) + var(--et-line-chart-focus-ring-min-width)
+            )
+          ) -
+          var(--_et-line-chart-focus-ring-x)
+      );
+      fill: none;
+      stroke: none;
+      stroke-width: 2px;
+      pointer-events: none;
+    }
+
     .et-line-chart-crosshair {
       stroke: var(--et-surface-color-subtle-solid, currentColor);
       stroke-width: 1px;
@@ -176,7 +208,7 @@
       }
     }
 
-    &:focus-visible .et-line-chart-slice-target {
+    &:focus-visible .et-line-chart-focus-ring {
       fill: var(--_et-line-chart-slice-tint);
       stroke: var(--et-theme-color-primary-solid, currentColor);
     }

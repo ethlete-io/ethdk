@@ -146,7 +146,9 @@ Series colors come from the app's color palette exactly as for the [bar chart](/
   | `Escape`      | Closes the tooltip |
   | `Tab`         | Leaves the chart   |
 
-  Tabbing back returns to the x you left. The focused x draws a ring around its column.
+  Tabbing back returns to the x you left. The focused x draws a ring around its column. On dense data, where an x gets only a few pixels, the ring stays at least `--et-line-chart-focus-ring-min-width` (12px) wide, centred on the x, and overlaps its neighbours; the hover and tap targets stay one per x.
+
+  <StoryEmbed id="components-data-display-line-chart--dense-daily" height="380px" />
 
 - Hovering anywhere in an x's column, focusing it from the keyboard, or tapping it shows a crosshair, a dot on every series and a [tooltip](/components/tooltip) that lists every series at that x. It points at the topmost point. The tooltip waits for the show delay (`etLineChartSliceShowDelay`, 300ms) when the pointer first enters the plot, or after the tooltip was closed under it; while it is open, moving to another x moves it at once. Dragging a finger across the plot moves the tooltip to the x under it; a vertical drag still scrolls the page. A tap elsewhere closes it. The hover crosshair only applies on devices that can hover, so it never sticks after a tap.
 - The legend is a list of series names, each behind a swatch. Colour is never the only cue: the tooltip and every description name the series.
@@ -155,16 +157,17 @@ Series colors come from the app's color palette exactly as for the [bar chart](/
 
 ## Theming
 
-Lines, areas and dots use `--et-theme-color-primary-solid` from the nearest color scope, from the theme named by `colorToken`, or from each series' palette entry - mixed with `--et-surface-background-solid` for a series that takes a step of the accent. The dots wear a ring in `--et-surface-background-solid`, a stacked band mixes its color with `--et-surface-background-solid`, the crosshair `--et-surface-color-subtle-solid`, the grid `--et-surface-border-solid`, and the axis and legend text `--et-surface-color-muted-solid`. Theme names are registered by the application - see [theming](/core/theming).
+Lines, areas and dots use `--et-theme-color-primary-solid` from the nearest color scope, from the theme named by `colorToken`, or from each series' palette entry - mixed with `--et-surface-background-solid` for a series that takes a step of the accent. The dots wear a ring in `--et-surface-background-solid`, a stacked band mixes its color with `--et-surface-background-solid`, the crosshair `--et-surface-color-subtle-solid`, the focus ring `--et-theme-color-primary-solid` over a tint of `--et-surface-interaction-solid`, the grid `--et-surface-border-solid`, and the axis and legend text `--et-surface-color-muted-solid`. Theme names are registered by the application - see [theming](/core/theming).
 
-| Token                              | Default | Description                                                                              |
-| ---------------------------------- | ------- | ---------------------------------------------------------------------------------------- |
-| `--et-line-chart-font-size`        | `12px`  | Size of the axis and legend labels.                                                      |
-| `--et-line-chart-axis-gap`         | `8px`   | Space between the plot and the axis labels, and under the legend.                        |
-| `--et-line-chart-line-width`       | `2px`   | Stroke width of the lines.                                                               |
-| `--et-line-chart-area-opacity`     | `0.12`  | Opacity of an area fill.                                                                 |
-| `--et-line-chart-stacked-area-mix` | `45%`   | Share of the series color in a stacked band, mixed with `--et-surface-background-solid`. |
-| `--et-line-chart-enter-duration`   | `600ms` | Duration of the entrance reveal.                                                         |
+| Token                                  | Default | Description                                                                              |
+| -------------------------------------- | ------- | ---------------------------------------------------------------------------------------- |
+| `--et-line-chart-font-size`            | `12px`  | Size of the axis and legend labels.                                                      |
+| `--et-line-chart-axis-gap`             | `8px`   | Space between the plot and the axis labels, and under the legend.                        |
+| `--et-line-chart-line-width`           | `2px`   | Stroke width of the lines.                                                               |
+| `--et-line-chart-area-opacity`         | `0.12`  | Opacity of an area fill.                                                                 |
+| `--et-line-chart-stacked-area-mix`     | `45%`   | Share of the series color in a stacked band, mixed with `--et-surface-background-solid`. |
+| `--et-line-chart-enter-duration`       | `600ms` | Duration of the entrance reveal.                                                         |
+| `--et-line-chart-focus-ring-min-width` | `12px`  | Narrowest width of the focus ring around the focused x.                                  |
 
 ## Error codes
 

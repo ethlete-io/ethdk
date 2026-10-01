@@ -2,7 +2,7 @@ import { Component, computed, input, ViewEncapsulation } from '@angular/core';
 import { LineChartDatum, LineChartSeries, LineChartSeriesDatum } from '../headless/line-chart.directive';
 import { LineChartComponent } from '../line-chart.component';
 
-export type LineChartStoryDataset = 'visitors' | 'tickets' | 'daily' | 'gaps' | 'channels' | 'intraday';
+export type LineChartStoryDataset = 'visitors' | 'tickets' | 'daily' | 'quarter' | 'gaps' | 'channels' | 'intraday';
 
 type StoryDataset = {
   label: string;
@@ -50,6 +50,13 @@ const DATASETS: Record<LineChartStoryDataset, StoryDataset> = {
   daily: {
     label: 'Visitors per day',
     data: DAILY_VISITORS.map((value, index) => ({ x: new Date(2025, 2, 17 + index), value })),
+  },
+  quarter: {
+    label: 'Sessions per day',
+    data: Array.from({ length: 90 }, (_, day) => ({
+      x: new Date(2025, 6, 1 + day),
+      value: Math.round((3200 + day * 14) * (day % 7 >= 5 ? 0.7 : 1) * (0.9 + ((day * 37) % 20) / 100)),
+    })),
   },
   gaps: {
     label: 'Match attendance (k)',

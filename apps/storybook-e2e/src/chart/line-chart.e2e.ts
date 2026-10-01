@@ -1,11 +1,13 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { boxOf, openStory, pressKey, settle, tap, touchDrag } from '../support';
+import { boxOf, openStory, pressKey, pressKeys, settle, tap, touchDrag } from '../support';
 
 const STORY_ID = 'components-data-display-line-chart--default';
 const MULTI_STORY_ID = 'components-data-display-line-chart--multi-series';
 const TIME_STORY_ID = 'components-data-display-line-chart--time-axis';
 const GAPS_STORY_ID = 'components-data-display-line-chart--gaps';
 const STACKED_STORY_ID = 'components-data-display-line-chart--stacked-area';
+const DENSE_STORY_ID = 'components-data-display-line-chart--dense-daily';
+const FOCUS_RING_MIN_WIDTH = 12;
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
 
 function slicesOf(root: Locator): Locator {
@@ -86,6 +88,51 @@ test.describe('line chart / keyboard', () => {
 
     await pressKey(page, 'Home');
     await expectSliceFocusVisible(slice(root, 'Jan'));
+  });
+
+  test('the focus ring on dense data is at least the minimum wide and centred on the x', async ({ page }) => {
+    const root = await openStory(page, DENSE_STORY_ID);
+
+    await pressKey(page, 'Tab');
+    await pressKeys(
+      page,
+      Array.from({ length: 45 }, () => 'ArrowRight'),
+      0,
+    );
+
+    const focused = slicesOf(root).nth(45);
+
+    await expect(focused).toBeFocused();
+
+    const ring = await boxOf(focused.locator('.et-line-chart-focus-ring'));
+    const target = await boxOf(focused.locator('.et-line-chart-slice-target'));
+    const crosshair = await boxOf(focused.locator('.et-line-chart-crosshair'));
+    const stroke = await focused.locator('.et-line-chart-focus-ring').evaluate((el) => getComputedStyle(el).stroke);
+
+    expect(target.width).toBeLessThan(FOCUS_RING_MIN_WIDTH);
+    expect(ring.width).toBeGreaterThanOrEqual(FOCUS_RING_MIN_WIDTH - 0.5);
+    expect(Math.abs(ring.x + ring.width / 2 - (crosshair.x + crosshair.width / 2))).toBeLessThanOrEqual(1);
+    expect(stroke).not.toBe('none');
+  });
+
+  test('the focus ring on sparse data covers the whole slice', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+
+    await pressKey(page, 'Tab');
+
+    for (const month of ['Jan', 'Feb']) {
+      const focused = slice(root, month);
+
+      await expect(focused).toBeFocused();
+
+      const ring = await boxOf(focused.locator('.et-line-chart-focus-ring'));
+      const target = await boxOf(focused.locator('.et-line-chart-slice-target'));
+
+      expect(Math.abs(ring.x - target.x)).toBeLessThanOrEqual(0.5);
+      expect(Math.abs(ring.width - target.width)).toBeLessThanOrEqual(0.5);
+
+      await pressKey(page, 'ArrowRight');
+    }
   });
 
   test('Tab leaves the plot from any x, and returns to the x it left', async ({ page }) => {

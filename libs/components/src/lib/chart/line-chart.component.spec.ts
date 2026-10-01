@@ -246,6 +246,36 @@ describe('LineChartComponent', () => {
     expect(tabIndexes()).toEqual(['-1', '-1', '-1', '-1', '0']);
   });
 
+  it('draws the focus ring apart from the hit areas, from the slice target and the x', () => {
+    const { host, fixture, chart, element } = setup();
+
+    host.data.set(Array.from({ length: 90 }, (_, day) => ({ x: new Date(2025, 6, 1 + day), value: day })));
+    fixture.detectChanges();
+
+    const targets = [...element.querySelectorAll<SVGRectElement>('.et-line-chart-slice-target')];
+    const rings = [...element.querySelectorAll<SVGRectElement>('.et-line-chart-focus-ring')];
+    const slice = chart.slices()[53];
+    const ring = rings[53];
+    const number = (value: string | null | undefined) => parseFloat(value ?? '');
+
+    expect(targets).toHaveLength(90);
+    expect(rings).toHaveLength(90);
+    targets.slice(1).forEach((target, index) => {
+      const previous = targets[index];
+
+      expect(number(target.getAttribute('x'))).toBeCloseTo(
+        number(previous?.getAttribute('x')) + number(previous?.getAttribute('width')),
+      );
+    });
+    expect(slice?.target.width).toBeLessThan(12);
+    expect(number(ring?.style.getPropertyValue('--_et-line-chart-slice-x'))).toBeCloseTo(slice?.target.x ?? NaN);
+    expect(number(ring?.style.getPropertyValue('--_et-line-chart-slice-width'))).toBeCloseTo(
+      slice?.target.width ?? NaN,
+    );
+    expect(number(ring?.style.getPropertyValue('--_et-line-chart-slice-position'))).toBeCloseTo(slice?.position ?? NaN);
+    expect(ring?.parentElement).toBe(targets[53]?.parentElement);
+  });
+
   it('lays instants out by time, sorted, and labels them in the chart time zone', () => {
     const { host, fixture, chart } = setup();
 

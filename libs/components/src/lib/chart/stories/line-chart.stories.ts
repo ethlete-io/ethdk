@@ -26,7 +26,10 @@ export default {
     colorToken: '',
   },
   argTypes: {
-    dataset: { control: 'inline-radio', options: ['visitors', 'tickets', 'daily', 'gaps', 'channels', 'intraday'] },
+    dataset: {
+      control: 'inline-radio',
+      options: ['visitors', 'tickets', 'daily', 'quarter', 'gaps', 'channels', 'intraday'],
+    },
     area: { control: 'boolean' },
     stacked: { control: 'boolean' },
     points: { control: 'boolean' },
@@ -66,6 +69,19 @@ export const TimeAxis: Story = {
         story:
           '`Date` x values get a time axis. The ticks pick a calendar interval that fits the width - days here, ' +
           'across the end of March and its daylight-saving change.',
+      },
+    },
+  },
+};
+
+export const DenseDaily: Story = {
+  args: { dataset: 'quarter' },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Ninety daily values, so each x gets only a few pixels of plot. The focus ring stays at least ' +
+          '`--et-line-chart-focus-ring-min-width` wide, centred on the focused x.',
       },
     },
   },
