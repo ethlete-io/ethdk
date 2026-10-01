@@ -250,8 +250,8 @@ Status (2026-10-01): slice 1 shipped (`e4232a1b8`, `84def7337`). `QueryButtonSou
 cross tabs. Open: a retained unused entry is not marked stale. Slice 3 shipped (`3c7ea31cd`, docs
 `apps/docs/query/groups.md`). Slice 4 shipped (`9a26e56ae`, `libs/components/src/lib/paged-query-trigger/`): native
 `IntersectionObserver`, because `signalElementIntersection` reads before layout and over-fetches; `root` takes no
-selector. Polling works on a paged stack, but every loaded page polls. Slice 6 (`selectOptionsFromQuery` onto
-`createPagedQueryStack`) in progress. Slice 5 shipped: `withArgs(() => null)` + `execute({ args })` fix (`004cf7294`),
+selector. Polling works on a paged stack, but every loaded page polls. Slice 6 shipped (`7ddb2dcdf`): `selectOptionsFromQuery` runs on
+`createPagedQueryStack`, non-breaking; it does not accept an existing stack. Slice 5 shipped: `withArgs(() => null)` + `execute({ args })` fix (`004cf7294`),
 unused entries marked stale (`ff5e3e855`), no double restart in other tabs (`428835be7`), `withOptimisticUpdate`
 (`b3b13858a`; `read` types `current`). Open: `query-client` golden is +637 B (slices 2 and 5). Ship item by item.
 
