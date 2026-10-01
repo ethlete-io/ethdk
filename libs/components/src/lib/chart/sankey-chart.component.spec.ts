@@ -99,16 +99,46 @@ describe('SankeyChartComponent', () => {
     expect(chart.renderedLinks().find((entry) => entry.name === 'Sponsors to Budget')?.valueText).toBe('1,000');
   });
 
-  it('puts first-column labels before their node and the others after it', () => {
+  it('puts first-column labels before their node and the last column after it', () => {
     const { chart } = setup();
     const [first, , middle, last] = chart.renderedNodes();
 
     expect(first?.labelSide).toBe('start');
     expect(first?.labelX).toBeLessThan(first?.x ?? 0);
     expect(first?.labelMaxWidth).toBe(120 - 12);
-    expect(middle?.labelSide).toBe('end');
+    expect(middle?.labelSide).toBe('center');
     expect(last?.labelSide).toBe('end');
     expect(last?.labelX).toBeGreaterThan((last?.x ?? 0) + (last?.width ?? 0));
+  });
+
+  it('centres a chip on a middle-column node of 24px or more and keeps short ones beside the node', () => {
+    const { chart } = setup();
+    const nodes = chart.renderedNodes();
+    const budget = nodes.find((node) => node.name === 'Budget');
+
+    expect(budget?.labelSide).toBe('center');
+    expect(budget?.labelX).toBe((budget?.x ?? 0) + (budget?.width ?? 0) / 2);
+    expect(budget?.labelY).toBe((budget?.y ?? 0) + (budget?.height ?? 0) / 2);
+    expect(nodes.filter((node) => node.column === 0).every((node) => node.labelSide === 'start')).toBe(true);
+    expect(nodes.filter((node) => node.column === 2).every((node) => node.labelSide === 'end')).toBe(true);
+  });
+
+  it('keeps the label beside a middle-column node shorter than 24px', () => {
+    const { fixture, chart } = setup();
+    fixture.componentInstance.nodes.update((nodes) => [...nodes, { id: 'm', label: 'Minor' }]);
+    fixture.componentInstance.links.set([
+      { source: 'a', target: 'c', value: 1000 },
+      { source: 'c', target: 'e', value: 1000 },
+      { source: 'a', target: 'm', value: 5 },
+      { source: 'm', target: 'e', value: 5 },
+    ]);
+    fixture.detectChanges();
+
+    const minor = chart.renderedNodes().find((node) => node.name === 'Minor');
+
+    expect(minor?.height).toBeLessThan(24);
+    expect(minor?.labelSide).toBe('end');
+    expect(minor?.labelX).toBe((minor?.x ?? 0) + (minor?.width ?? 0) + 6);
   });
 
   it('colors nodes by palette position and links by their source', () => {

@@ -65,7 +65,7 @@ Without a `valueFormatter`, values are formatted with `Intl.NumberFormat` in the
 
 ### Labels
 
-A node's label sits outside it, vertically centered: to the left of the node in the first column, to the right of it in every other column. The first and last columns get `labelWidth` of room; a label in a middle column gets the space up to the next column. A longer label is cut off with an ellipsis, and the full name stays in the tooltip, the accessible name and the table. Labels over ribbons get a soft halo in the surface background colour so they stay legible.
+A label in the first column sits left of its node and one in the last column right of it, vertically centered, with `labelWidth` of room. A label in a middle column sits on a chip - a bordered box in the surface background colour - centred on its node, and may be as wide as the space between two columns. A middle-column node shorter than 24px has no room for a chip, so its label sits right of the node, over the ribbons, with a soft halo in the surface background colour. A longer label is cut off with an ellipsis, and the full name stays in the tooltip, the accessible name and the table. The chip covers the node bar and the ribbon ends beneath it; the tooltip and the table still give the node's totals.
 
 ### Narrow screens
 

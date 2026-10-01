@@ -27,8 +27,8 @@ export type SankeyChartLinkInput = {
 /** Formats a value for the tooltips and the table. */
 export type SankeyChartValueFormatter = ChartValueFormatter;
 
-/** Where a node's label sits: before the node (first column) or after it. */
-export type SankeyChartLabelSide = 'start' | 'end';
+/** Where a node's label sits: before the node (first column), after it, or on a chip centred on it (tall middle-column nodes). */
+export type SankeyChartLabelSide = 'start' | 'end' | 'center';
 
 /** A node with its geometry in plot pixels, ready to render. */
 export type SankeyChartNode = {
@@ -58,7 +58,7 @@ export type SankeyChartNode = {
   /** What assistive tech reads after the name, e.g. `"In: 1,200, Out: 900"`. */
   description: string;
   labelSide: SankeyChartLabelSide;
-  /** Where the label's inner edge sits, in plot pixels: its right end for `start`, its left end for `end`. */
+  /** Where the label's inner edge sits, in plot pixels: its right end for `start`, its left end for `end`, its middle for `center`. */
   labelX: number;
   labelY: number;
   /** The widest the label may get before it is cut off. */
@@ -90,6 +90,7 @@ export type SankeyChartLink = {
 export type SankeyChartActiveMark = { kind: 'node' | 'link'; key: string };
 
 const LABEL_PADDING = 6;
+const MIN_CHIP_NODE_HEIGHT = 24;
 const TARGET_PADDING = 4;
 const MIN_NODE_HEIGHT = 1;
 
@@ -210,10 +211,25 @@ export class SankeyChartDirective implements ChartPlotHost {
         const y = entry.height < MIN_NODE_HEIGHT ? entry.y - (MIN_NODE_HEIGHT - entry.height) / 2 : entry.y;
         const incomingText = entry.incoming > 0 ? format(entry.incoming) : null;
         const outgoingText = entry.outgoing > 0 ? format(entry.outgoing) : null;
-        const labelSide: SankeyChartLabelSide = entry.column === 0 && lastColumn > 0 ? 'start' : 'end';
-        const labelX = labelSide === 'start' ? entry.x - LABEL_PADDING : entry.x + entry.width + LABEL_PADDING;
+        const isMiddle = entry.column > 0 && entry.column < lastColumn;
+        const labelSide: SankeyChartLabelSide =
+          entry.column === 0 && lastColumn > 0
+            ? 'start'
+            : isMiddle && height >= MIN_CHIP_NODE_HEIGHT
+              ? 'center'
+              : 'end';
+        const labelX =
+          labelSide === 'start'
+            ? entry.x - LABEL_PADDING
+            : labelSide === 'center'
+              ? entry.x + entry.width / 2
+              : entry.x + entry.width + LABEL_PADDING;
         const room =
-          labelSide === 'start' || entry.column === lastColumn ? labelWidth : layout.columnStep - entry.width;
+          labelSide === 'start' || entry.column === lastColumn
+            ? labelWidth
+            : labelSide === 'center'
+              ? layout.columnStep
+              : layout.columnStep - entry.width;
 
         return {
           key: node.id,

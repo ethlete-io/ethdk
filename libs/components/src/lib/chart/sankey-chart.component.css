@@ -80,6 +80,16 @@
         translate: -100% -50%;
         text-align: end;
       }
+
+      &:where([data-side='center']) {
+        box-sizing: border-box;
+        padding: 1px 6px;
+        border: 1px solid var(--et-surface-border-solid, currentColor);
+        border-radius: 4px;
+        background: var(--et-surface-background-solid, transparent);
+        text-shadow: none;
+        translate: -50% -50%;
+      }
     }
   }
 
