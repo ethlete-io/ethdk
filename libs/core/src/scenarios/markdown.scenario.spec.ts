@@ -160,4 +160,15 @@ describe('markdown scenarios', () => {
       expect(isSafeUrl(src)).toBe(true);
     }
   });
+
+  it('keeps the start number of an ordered list through a round trip', () => {
+    scenario();
+
+    expect(htmlToMarkdown('<ol start="3"><li>a</li><li>b</li></ol>')).toBe('3. a\n4. b');
+    expect(markdownToHtml('3. a\n4. b')).toBe('<ol start="3"><li>a</li><li>b</li></ol>');
+    expect(markdownToHtml('1. a\n2. b')).toBe('<ol><li>a</li><li>b</li></ol>');
+    expect(roundTrip('<ol start="5"><li>a<ol start="2"><li>b</li></ol></li></ol>')).toBe(
+      '<ol start="5"><li>a<ol start="2"><li>b</li></ol></li></ol>',
+    );
+  });
 });

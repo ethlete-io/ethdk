@@ -192,8 +192,16 @@ const processInline = (text: string): string => {
     .replace(placeholderRe('ESC'), (match, i) => escapes[+i] ?? match);
 };
 
+const parseStartNumber = (openTag: string) => {
+  const value = /\bstart\s*=\s*["']?(-?\d+)/i.exec(openTag)?.[1];
+
+  return value === undefined ? 1 : Number(value);
+};
+
 /** The first top-level `<ul>`/`<ol>` in `html`, matched with balanced nesting. */
-const findList = (html: string): { start: number; end: number; ordered: boolean; inner: string } | null => {
+const findList = (
+  html: string,
+): { start: number; end: number; ordered: boolean; startNumber: number; inner: string } | null => {
   const open = /<(ul|ol)\b[^>]*>/i.exec(html);
 
   if (!open) return null;
@@ -214,6 +222,7 @@ const findList = (html: string): { start: number; end: number; ordered: boolean;
         start: open.index,
         end: tag.lastIndex,
         ordered: openTagName.toLowerCase() === 'ol',
+        startNumber: parseStartNumber(open[0]),
         inner: html.slice(innerStart, match.index),
       };
     }
@@ -339,9 +348,9 @@ const buildBlockquoteHtml = (lines: string[]): string => {
 };
 
 /** Serializes a list's inner HTML to Markdown, indenting nested lists two spaces per level. */
-const listToMarkdown = (inner: string, ordered: boolean, depth: number): string => {
+const listToMarkdown = (inner: string, ordered: boolean, startNumber: number, depth: number): string => {
   const indent = '  '.repeat(depth);
-  let n = 1;
+  let n = startNumber;
 
   return findListItems(inner)
     .map((itemInner) => {
@@ -349,7 +358,7 @@ const listToMarkdown = (inner: string, ordered: boolean, depth: number): string 
       let nestedMarkdown = '';
 
       for (let nested = findList(content); nested; nested = findList(content)) {
-        nestedMarkdown += `\n${listToMarkdown(nested.inner, nested.ordered, depth + 1)}`;
+        nestedMarkdown += `\n${listToMarkdown(nested.inner, nested.ordered, nested.startNumber, depth + 1)}`;
         content = content.slice(0, nested.start) + content.slice(nested.end);
       }
 
@@ -361,7 +370,7 @@ const listToMarkdown = (inner: string, ordered: boolean, depth: number): string 
     .join('\n');
 };
 
-type ParsedListLine = { indent: number; ordered: boolean; text: string };
+type ParsedListLine = { indent: number; ordered: boolean; number: number; text: string };
 
 /** Parses list lines into (indent-level, ordered, text) - two leading spaces per nesting level. */
 const parseListLines = (lines: string[]): ParsedListLine[] =>
@@ -370,7 +379,12 @@ const parseListLines = (lines: string[]): ParsedListLine[] =>
       const match = /^(\s*)([-*+]|\d+\.)\s+(.*)$/.exec(line);
 
       return match
-        ? { indent: Math.floor((match[1] ?? '').length / 2), ordered: /\d/.test(match[2] ?? ''), text: match[3] ?? '' }
+        ? {
+            indent: Math.floor((match[1] ?? '').length / 2),
+            ordered: /\d/.test(match[2] ?? ''),
+            number: Number.parseInt(match[2] ?? '', 10),
+            text: match[3] ?? '',
+          }
         : null;
     })
     .filter((line): line is ParsedListLine => line !== null);
@@ -398,7 +412,10 @@ const buildListHtml = (lines: ParsedListLine[], start: number, baseIndent: numbe
 
   const tag = ordered ? 'ol' : 'ul';
 
-  return { html: `<${tag}>${items}</${tag}>`, next: i };
+  const startNumber = ordered ? (lines[start]?.number ?? 1) : 1;
+  const startAttr = startNumber === 1 ? '' : ` start="${startNumber}"`;
+
+  return { html: `<${tag}${startAttr}>${items}</${tag}>`, next: i };
 };
 
 const escapeMarkdownText = (text: string) =>
@@ -671,7 +688,7 @@ export const htmlToMarkdown = (html: string) => {
 
   // Lists - replace each top-level list with its recursively-serialized Markdown (handles nesting).
   for (let list = findList(md); list; list = findList(md)) {
-    md = `${md.slice(0, list.start)}\n${listToMarkdown(list.inner, list.ordered, 0)}\n${md.slice(list.end)}`;
+    md = `${md.slice(0, list.start)}\n${listToMarkdown(list.inner, list.ordered, list.startNumber, 0)}\n${md.slice(list.end)}`;
   }
 
   // Tables
