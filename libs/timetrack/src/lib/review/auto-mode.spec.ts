@@ -1,3 +1,4 @@
+import { resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { describe, expect, it } from 'vitest';
 import { UnnamedContext } from '../model/attribution';
 import { ActivityBlock, contextKey } from '../model/block';
@@ -19,12 +20,15 @@ import {
   autoModeContextLabel,
   autoModeReadout,
   autoModeAsks,
+  autoModeSubjectRequest,
   autoModeCreateRequest,
   autoModeCreatedKeys,
   autoModeQueuedAnswer,
   withAutoModeAnswer,
   withAutoModeCreated,
   withAutoModeRowNames,
+  withAutoModeSubjectItemsExpired,
+  withNamedContextItemsExpired,
   withStaleStandInCreatesExpired,
 } from './auto-mode';
 import { autoDescriptionRowId, withAutoModeDescription } from './auto-description';
@@ -194,6 +198,196 @@ describe('autoModeAsks', () => {
     const standIn = openStandIn({ name: 'Journey', day: '2026-08-10', now: at('07:00') });
 
     expect(asks({ standIns: [standIn] })).toEqual([{ kind: 'context', contextId: CONTEXT.id }]);
+  });
+});
+
+describe('autoModeAsks after new evidence', () => {
+  const CONFIG = resolveGitFlowConfig({});
+  const SUBJECT = { kind: 'context' as const, contextId: CONTEXT.id };
+  const commit = (subject: string) => ({ kind: 'commit' as const, at: at('08:30'), detail: subject, summary: subject });
+  const groupOf = (subjects: string[], observedMs = 3_600_000): WorkGroup => ({
+    ...GROUP,
+    observedMs,
+    blocks: [{ ...BLOCK, evidence: subjects.map(commit) }],
+  });
+  const answerFrom = (unattributed: WorkGroup[], outcome: AutoModeAnswer['outcome']): AutoModeAnswer => ({
+    subject: SUBJECT,
+    askedAtMs: 0,
+    request: autoModeSubjectRequest({
+      subject: SUBJECT,
+      contexts: [CONTEXT],
+      unattributed,
+      standIns: [],
+      config: CONFIG,
+      maskedNames: [],
+    })!,
+    outcome,
+  });
+  const morning = [groupOf(['Add the export button'])];
+  const afternoon = [groupOf(['Add the export button', 'Write the month as CSV'])];
+  const draftOutcome = drafted.outcome;
+  const asksWith = (options: {
+    unattributed: WorkGroup[];
+    answer: AutoModeAnswer;
+    approvals?: AgentApproval[];
+    rows?: Parameters<typeof autoModeAsks>[0]['rows'];
+    contexts?: UnnamedContext[];
+  }) =>
+    autoModeAsks({
+      enabled: true,
+      day: TODAY,
+      today: TODAY,
+      contexts: options.contexts ?? [CONTEXT],
+      standIns: [],
+      rows: options.rows ?? [],
+      answers: [options.answer],
+      evidence: { unattributed: options.unattributed, config: CONFIG, maskedNames: [] },
+      approvals: options.approvals ?? [],
+    });
+
+  it('asks a band again once a later commit changes what its answer was built from', () => {
+    expect(asksWith({ unattributed: afternoon, answer: answerFrom(morning, draftOutcome) })).toEqual([SUBJECT]);
+  });
+
+  it('asks nothing on a second evaluation of unchanged evidence', () => {
+    const answer = answerFrom(afternoon, draftOutcome);
+
+    expect(asksWith({ unattributed: afternoon, answer })).toEqual([]);
+    expect(asksWith({ unattributed: afternoon, answer })).toEqual([]);
+  });
+
+  it('asks nothing for a band that only grew longer', () => {
+    const longer = [groupOf(['Add the export button'], 7_200_000)];
+    const contexts = [{ ...CONTEXT, observedMs: 7_200_000 }];
+
+    expect(asksWith({ unattributed: longer, contexts, answer: answerFrom(morning, draftOutcome) })).toEqual([]);
+  });
+
+  it('asks nothing again without the evidence or the queue to judge by', () => {
+    expect(
+      autoModeAsks({
+        enabled: true,
+        day: TODAY,
+        today: TODAY,
+        contexts: [CONTEXT],
+        standIns: [],
+        rows: [],
+        answers: [answerFrom(morning, draftOutcome)],
+        evidence: { unattributed: afternoon, config: CONFIG, maskedNames: [] },
+      }),
+    ).toEqual([]);
+  });
+
+  it('leaves an answer whose create the user approved or rejected', () => {
+    const create = { op: 'jira.create' as const, summary: 'Export', description: '', projectKey: 'ABC' };
+    const queue = enqueueApproval([], {
+      id: 'a-1',
+      request: create,
+      client: AUTO_MODE_CLIENT,
+      target: autoModeApprovalTarget(TODAY, SUBJECT),
+      at: new Date(),
+      day: TODAY,
+    });
+    const answer = answerFrom(morning, { ...draftOutcome, approvalId: 'a-1' } as AutoModeAnswer['outcome']);
+
+    expect(asksWith({ unattributed: afternoon, answer, approvals: queue })).toEqual([SUBJECT]);
+
+    for (const state of ['approved', 'running', 'rejected'] as const) {
+      const approvals = markApproval(queue, { id: 'a-1', state });
+
+      expect(asksWith({ unattributed: afternoon, answer, approvals })).toEqual([]);
+    }
+
+    expect(
+      asksWith({
+        unattributed: afternoon,
+        answer: answerFrom(morning, { ...draftOutcome, createdKey: 'ABC-12' } as AutoModeAnswer['outcome']),
+      }),
+    ).toEqual([]);
+  });
+
+  it('leaves a match whose apply the user rejected', () => {
+    const answer = answerFrom(morning, { kind: 'match', issueKey: 'ABC-1' });
+    const queue = enqueueApproval([], {
+      id: 'p-1',
+      request: { op: 'autoMode.apply', day: TODAY, subject: SUBJECT, label: 'shop', issueKey: 'ABC-1' },
+      client: AUTO_MODE_CLIENT,
+      target: autoModeApplyTarget(TODAY, SUBJECT),
+      at: new Date(),
+      day: TODAY,
+    });
+
+    expect(asksWith({ unattributed: afternoon, answer, approvals: queue })).toEqual([SUBJECT]);
+    expect(
+      asksWith({ unattributed: afternoon, answer, approvals: markApproval(queue, { id: 'p-1', state: 'rejected' }) }),
+    ).toEqual([]);
+  });
+
+  it('leaves a band the user named a row of by hand', () => {
+    const rows = [{ id: unnamedRowId(afternoon[0]!), issueKey: 'ABC-7', sources: { issue: 'human' as const } }];
+
+    expect(asksWith({ unattributed: afternoon, rows, answer: answerFrom(morning, draftOutcome) })).toEqual([]);
+  });
+
+  it('renames the band an earlier match named with the match the new ask found', () => {
+    const first = autoPass(withAutoModeAnswer(EMPTY_DAY_REVIEW_EDITS, matched('ABC-1')));
+    const edits = autoPass(withAutoModeAnswer(first, matched('ABC-2')));
+
+    expect(rowsOf(edits)[0]?.issueKey).toBe('ABC-2');
+    expect(rowsOf(edits)[0]?.sources?.issue).toBe('auto');
+  });
+});
+
+describe('expiring what an old auto mode answer left waiting', () => {
+  const create = { op: 'jira.create' as const, summary: 'Export', description: '', projectKey: 'ABC' };
+  const context = (contextId: string) => ({ kind: 'context' as const, contextId });
+  const queue = [
+    { id: 'a', subject: context('c1'), apply: false },
+    { id: 'b', subject: context('c1'), apply: true },
+    { id: 'c', subject: context('c2'), apply: false },
+  ].reduce<AgentApproval[]>(
+    (items, entry) =>
+      enqueueApproval(items, {
+        id: entry.id,
+        request: entry.apply
+          ? { op: 'autoMode.apply', day: TODAY, subject: entry.subject, label: 'shop', issueKey: 'ABC-1' }
+          : create,
+        client: AUTO_MODE_CLIENT,
+        target: (entry.apply ? autoModeApplyTarget : autoModeApprovalTarget)(TODAY, entry.subject),
+        at: new Date(),
+        day: TODAY,
+      }),
+    [],
+  );
+
+  it('expires the create and apply a re-asked subject left waiting, and nothing else', () => {
+    const states = withAutoModeSubjectItemsExpired(queue, { day: TODAY, subject: context('c1') }).map(
+      (item) => item.state,
+    );
+
+    expect(states).toEqual(['expired', 'expired', 'queued']);
+  });
+
+  it('expires what waits for a context that is no longer open', () => {
+    const states = withNamedContextItemsExpired(queue, { day: TODAY, openContextIds: new Set(['c2']) }).map(
+      (item) => item.state,
+    );
+
+    expect(states).toEqual(['expired', 'expired', 'queued']);
+  });
+
+  it('leaves what waits for an open context, another day or another client alone', () => {
+    const fromCli = queue.map((item) => ({ ...item, client: 'Claude Code' }));
+
+    expect(
+      withNamedContextItemsExpired(queue, { day: TODAY, openContextIds: new Set(['c1', 'c2']) }).map((i) => i.state),
+    ).toEqual(['queued', 'queued', 'queued']);
+    expect(
+      withNamedContextItemsExpired(queue, { day: '2026-08-12', openContextIds: new Set() }).map((i) => i.state),
+    ).toEqual(['queued', 'queued', 'queued']);
+    expect(
+      withNamedContextItemsExpired(fromCli, { day: TODAY, openContextIds: new Set() }).map((i) => i.state),
+    ).toEqual(['queued', 'queued', 'queued']);
   });
 });
 

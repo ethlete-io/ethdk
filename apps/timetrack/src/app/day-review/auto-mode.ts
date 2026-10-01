@@ -28,6 +28,7 @@ import {
   autoModeQueuedAnswer,
   autoModeReadout,
   autoModeSubjectKey,
+  autoModeSubjectRequest,
   autoDescriptionAsks,
   autoDisputeApplies,
   autoDisputeAsks,
@@ -43,7 +44,6 @@ import {
   autoDescriptionRequest,
   autoDescriptionRowId,
   dayBoundaryOf,
-  draftTicket,
   favoriteProjectKeys,
   fetchJiraDoneIssueKeys$,
   fetchJiraIssues$,
@@ -53,9 +53,9 @@ import {
   localDayKey,
   reasoningOptionsOf,
   readJiraCredentials$,
-  standInWritingRequest,
-  ticketWritingRequest,
   withAutoModeAnswer,
+  withAutoModeSubjectItemsExpired,
+  withNamedContextItemsExpired,
   withAutoModeCreated,
   withAutoModeDescription,
   writeTicketWithAgent$,
@@ -146,10 +146,12 @@ const outcomeOf = (options: { wording: TicketWording | null; projectKey?: string
  * A match is applied as `auto`, or waits in the approval queue as an `autoMode.apply` where the user
  * made applying stricter; a draft waits as a `jira.create`, and the key its approval files is applied
  * the same way. Every answer is stored against the day with the payload it sent, so a band is asked
- * once. A settled code row with a ticket gets a one-line worklog description written as `auto`, once
- * per row, where applying is `local`. The rest band of a call gone off topic waits as an
- * `autoMode.hide` suggestion, once per band. A band two rungs disagree about is settled with a keep or
- * use answer the same way a match is applied, once per pair of answers; an unsure answer leaves it.
+ * again only when the evidence that payload was built from changes while the answer is still auto's,
+ * and the new answer expires what the old one left waiting. A settled code row with a ticket gets a
+ * one-line worklog description written as `auto`, once per row, where applying is `local`. The rest
+ * band of a call gone off topic waits as an `autoMode.hide` suggestion, once per band. A band two rungs
+ * disagree about is settled with a keep or use answer the same way a match is applied, once per pair of
+ * answers; an unsure answer leaves it.
  */
 const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
@@ -214,15 +216,23 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     if (!answers || dayReview.isLoading() || !dayReview.deterministic() || !dayReview.namingSettled()) return [];
     if (dayReview.dayKey() !== day) return [];
 
+    const current = settings.settings();
+
     return autoModeAsks({
       enabled: enabled(),
       day,
       today: today(),
       contexts: dayReview.unnamed(),
       ruledContextIds: new Set(dayReview.rulesByContext().keys()),
-      standIns: settings.settings().standIns,
+      standIns: current.standIns,
       rows: dayReview.rows(),
       answers,
+      evidence: {
+        unattributed: dayReview.deterministic()?.unattributed ?? [],
+        config: gitFlowConfigFor(current),
+        maskedNames: current.reasoning.maskedNames,
+      },
+      ...(approvals.isLoaded() ? { approvals: approvals.items() } : {}),
     });
   };
 
@@ -317,58 +327,58 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       ? readProjectIssues$({ ports, settings: settings.settings(), projectKey }).pipe(catchError(() => of(null)))
       : of(null);
 
-  const prepare$ = (subject: AutoModeSubject): Observable<Prepared | null> => {
+  const projectKeyOf = (subject: AutoModeSubject) => {
     const current = settings.settings();
-    const maskedNames = current.reasoning.maskedNames;
 
     if (subject.kind === 'stand-in') {
-      const standIn = current.standIns.find((entry) => entry.id === subject.standInId);
-
-      if (!standIn) return of(null);
-
-      return issues$(standIn.projectKey).pipe(
-        map((issues) => ({
-          request: standInWritingRequest({
-            standIn,
-            parents: issues?.parents ?? [],
-            issues: issues?.open ?? [],
-            maskedNames,
-          }),
-          ...(standIn.projectKey ? { projectKey: standIn.projectKey } : {}),
-        })),
-      );
+      return current.standIns.find((entry) => entry.id === subject.standInId)?.projectKey;
     }
 
     const context = dayReview.unnamed().find((entry) => entry.id === subject.contextId);
     const deterministic = dayReview.deterministic();
 
-    if (!context || !deterministic) return of(null);
+    if (!context || !deterministic) return undefined;
 
-    const projectKey =
+    return (
       inferTicketProjectKey({
         context: context.context,
         rules: current.attributionRules,
         proposals: deterministic.proposals,
         projectKeys: favoriteProjectKeys(current),
         links: projectLinks(),
-      }) ?? undefined;
-    const drafted = draftTicket({
-      context,
-      unattributed: deterministic.unattributed,
+      }) ?? undefined
+    );
+  };
+
+  const requestOf = (subject: AutoModeSubject, issues: ProjectIssues | null) => {
+    const current = settings.settings();
+    const deterministic = dayReview.deterministic();
+
+    if (subject.kind === 'context' && !deterministic) return null;
+
+    return autoModeSubjectRequest({
+      subject,
+      contexts: dayReview.unnamed(),
+      unattributed: deterministic?.unattributed ?? [],
+      standIns: current.standIns,
       config: gitFlowConfigFor(current),
+      maskedNames: current.reasoning.maskedNames,
+      parents: issues?.parents ?? [],
+      issues: issues?.open ?? [],
     });
+  };
+
+  const prepare$ = (subject: AutoModeSubject): Observable<Prepared | null> => {
+    if (!requestOf(subject, null)) return of(null);
+
+    const projectKey = projectKeyOf(subject);
 
     return issues$(projectKey).pipe(
-      map((issues) => ({
-        request: ticketWritingRequest({
-          context,
-          notes: drafted.notes,
-          parents: issues?.parents ?? [],
-          issues: issues?.open ?? [],
-          maskedNames,
-        }),
-        ...(projectKey ? { projectKey } : {}),
-      })),
+      map((issues) => {
+        const request = requestOf(subject, issues);
+
+        return request ? { request, ...(projectKey ? { projectKey } : {}) } : null;
+      }),
     );
   };
 
@@ -465,6 +475,15 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         );
       }),
       switchMap((answer) => withDone$(answer)),
+      tap(() => {
+        if (dayReview.dayKey() !== ask.day) return;
+
+        const key = autoModeSubjectKey(ask.subject);
+
+        if (dayReview.autoAnswers()?.some((held) => autoModeSubjectKey(held.subject) === key)) {
+          approvals.revise((queue) => withAutoModeSubjectItemsExpired(queue, ask));
+        }
+      }),
       switchMap((answer) => queued$(ask.day, answer)),
       switchMap((answer) => queuedApply$(ask.day, answer)),
       switchMap((answer) =>
@@ -680,6 +699,23 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         });
       }
     });
+  });
+
+  effect(() => {
+    const day = dayReview.dayKey();
+
+    if (!approvals.isLoaded() || !dayReview.autoAnswers() || dayReview.isLoading()) return;
+    if (!dayReview.deterministic() || !dayReview.namingSettled()) return;
+
+    const ruled = dayReview.rulesByContext();
+    const openContextIds = new Set(
+      dayReview
+        .unnamed()
+        .filter((context) => !ruled.has(context.id))
+        .map((context) => context.id),
+    );
+
+    untracked(() => approvals.revise((queue) => withNamedContextItemsExpired(queue, { day, openContextIds })));
   });
 
   effect(() => {

@@ -67,12 +67,17 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     saves$.next();
   };
 
-  const settle = () => {
+  const revise = (next: (current: readonly AgentApproval[]) => AgentApproval[]) => {
     const current = queue();
-    const settled = withStaleStandInCreatesExpired(settleApprovalQueue(current, today()), settings.settings().standIns);
+    const revised = next(current);
 
-    if (settled.length !== current.length || settled.some((item, index) => item !== current[index])) change(settled);
+    if (revised.length !== current.length || revised.some((item, index) => item !== current[index])) change(revised);
   };
+
+  const settle = () =>
+    revise((current) =>
+      withStaleStandInCreatesExpired(settleApprovalQueue(current, today()), settings.settings().standIns),
+    );
 
   toObservable(windowLock.isLocked)
     .pipe(
@@ -156,6 +161,9 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     approvableByAll: computed(() => approvableByAll(queue(), settings.settings().actionClasses)),
     failure: failure.asReadonly(),
     approved$: approved$.asObservable(),
+
+    /** Replaces the stored queue with what `next` makes of it. Nothing changes before the queue is read. */
+    revise,
 
     /** A `target` an item from the same client still waits for answers that item and queues nothing. */
     enqueue$: (options: {

@@ -12,7 +12,11 @@ capped at `weak`. Where nothing matches, it drafts a ticket and picks its epic, 
 in the approval queue as an `external` action. A band two rungs disagree about (ADR 0012) is settled
 the same way a match is applied, once per pair of answers, and an unsure answer leaves it. An issue
 Jira has in its done category is never applied or queued: a match or a dispute choice that names one
-leaves the band to the user. With auto mode off, ADR 0013 holds unchanged.
+leaves the band to the user. A band or stand-in is asked again when the evidence its answer was built
+from changes (a new commit, merge request or session title, not a band that only grew longer), while
+that answer is still auto mode's: no create of it approved, no apply of it approved or rejected, and
+no row of the band named by hand. The new answer expires what the old one left waiting, and so does a
+rule or a match that names the band. With auto mode off, ADR 0013 holds unchanged.
 
 What stays:
 
@@ -37,5 +41,6 @@ no op.
 - Every `local` action auto mode takes shows as `auto` on its field and has an undo.
 - A drafted parent needs a stored slot with a source, and a stand-in the user reopened needs a way
   back to `auto`. `day.rows` reports the sources, so an agent can tell a human value from an auto one.
-- Auto mode spends model calls on its own. The answer is stored against the day, so a band is asked
-  once.
+- Auto mode spends model calls on its own. The answer is stored against the day with the payload it
+  sent, so a band is asked again only when that payload's evidence changes while the answer is still
+  auto mode's.
