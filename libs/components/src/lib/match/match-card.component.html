@@ -89,5 +89,5 @@
   <!-- Always in the DOM, even while empty: a live region has to exist before the value lands in it, or
        the first score of a match that just kicked off is announced by nobody. It carries the phrased
        result rather than the drawn pair, since 'W' beside 'L' is nothing to listen to. -->
-  <span class="et-match-card-announcement" etMatchCardScore>{{ card.result() }}</span>
+  <span class="et-visually-hidden et-match-card-announcement" etMatchCardScore>{{ card.result() }}</span>
 </div>

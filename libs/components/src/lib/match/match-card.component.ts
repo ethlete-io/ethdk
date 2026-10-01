@@ -1,5 +1,11 @@
 import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
-import { ColorTheme, injectColorThemes, ProvideColorDirective, RegisteredColorThemeName } from '@ethlete/core';
+import {
+  ColorTheme,
+  injectColorThemes,
+  ProvideColorDirective,
+  RegisteredColorThemeName,
+  mountVisuallyHidden,
+} from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import {
   MatchCardDirective,
@@ -80,4 +86,8 @@ export class MatchCardComponent {
   protected liveColorTheme = computed<RegisteredColorThemeName | ColorTheme | null>(
     () => this.liveColor() ?? this.colorThemes?.find((theme) => theme.type === 'error') ?? null,
   );
+
+  constructor() {
+    mountVisuallyHidden();
+  }
 }

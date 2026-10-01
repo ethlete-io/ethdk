@@ -1,4 +1,5 @@
 import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
+import { mountVisuallyHidden } from '@ethlete/core';
 import { KBD_PLATFORM, kbdKeyLabel, KbdPlatform, kbdKeyName, parseKbdKeys } from './kbd-keys';
 
 /**
@@ -18,7 +19,7 @@ import { KBD_PLATFORM, kbdKeyLabel, KbdPlatform, kbdKeyName, parseKbdKeys } from
 @Component({
   selector: 'et-kbd',
   template: `
-    <span class="et-kbd-ally-text">{{ spokenLabel() }}</span>
+    <span class="et-visually-hidden et-kbd-ally-text">{{ spokenLabel() }}</span>
     @for (key of keyLabels(); track $index) {
       <kbd class="et-kbd-key" aria-hidden="true">{{ key }}</kbd>
     }
@@ -49,4 +50,8 @@ export class KbdComponent {
       .map((key) => kbdKeyName(key, this.resolvedPlatform()))
       .join(' '),
   );
+
+  constructor() {
+    mountVisuallyHidden();
+  }
 }

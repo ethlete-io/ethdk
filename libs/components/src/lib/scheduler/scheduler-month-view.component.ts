@@ -13,7 +13,7 @@ import {
   viewChildren,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ProvideColorDirective, injectRenderer, injectStyleManager } from '@ethlete/core';
+import { ProvideColorDirective, injectRenderer, injectStyleManager, mountVisuallyHidden } from '@ethlete/core';
 import { addDays, differenceInCalendarDays, endOfDay, format, isSameDay, startOfDay } from 'date-fns';
 import { tap, timer } from 'rxjs';
 import { MENU_IMPORTS } from '../menu';
@@ -69,6 +69,8 @@ export class SchedulerMonthViewComponent {
   private hasDragged = false;
 
   constructor() {
+    mountVisuallyHidden();
+
     injectStyleManager().mount(SchedulerAppointmentStylesComponent);
   }
 

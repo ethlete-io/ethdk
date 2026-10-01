@@ -9,7 +9,7 @@ import {
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import { ColorInteractiveDirective } from '@ethlete/core';
+import { ColorInteractiveDirective, mountVisuallyHidden } from '@ethlete/core';
 import { EYE_ICON, EYE_SLASH_ICON, IconDirective, provideIcons, TRIANGLE_EXCLAMATION_ICON } from '../../icon';
 import { PasswordInputDirective } from './headless';
 import { injectInputLabels } from './input-labels';
@@ -72,6 +72,8 @@ export class PasswordInputComponent {
   );
 
   constructor() {
+    mountVisuallyHidden();
+
     afterNextRender(() => {
       const nativeInput = this.nativeInput()?.nativeElement ?? null;
 

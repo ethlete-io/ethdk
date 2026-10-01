@@ -129,18 +129,6 @@
     border-radius: 4px;
   }
 
-  .et-match-participant-seed-label {
-    position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    margin: -1px;
-    padding: 0;
-    overflow: hidden;
-    white-space: nowrap;
-    border: 0;
-    clip-path: inset(50%);
-  }
-
   .et-match-participant:where([data-compact]) {
     --et-match-participant-emblem-size: 20px;
     --et-match-participant-gap: 8px;

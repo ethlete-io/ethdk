@@ -10,7 +10,7 @@
   <span class="et-progress-step-label"><ng-content /></span>
 
   @if (stateLabel(); as label) {
-    <span class="et-progress-step-state">{{ label }}</span>
+    <span class="et-visually-hidden et-progress-step-state">{{ label }}</span>
   }
 
   <ng-content select="[etProgressStepDescription]" />

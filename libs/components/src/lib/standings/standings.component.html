@@ -2,7 +2,7 @@
      style descendants of its container, and the host is the container. -->
 <div class="et-standings-content">
   <table class="et-standings-table">
-    <caption class="et-standings-caption">
+    <caption class="et-visually-hidden et-standings-caption">
       {{
         standings.resolvedLabels().caption
       }}
@@ -56,10 +56,10 @@
             {{ renderRow.row.position }}
             @if (renderRow.zone; as zone) {
               <!-- The band's meaning in text, so the banding isn't colour-only. -->
-              <span class="et-standings-zone-note"> {{ zone.label }}</span>
+              <span class="et-visually-hidden et-standings-zone-note"> {{ zone.label }}</span>
             }
             @if (renderRow.isHighlighted) {
-              <span class="et-standings-zone-note"> {{ labels().highlightedRow }}</span>
+              <span class="et-visually-hidden et-standings-zone-note"> {{ labels().highlightedRow }}</span>
             }
           </th>
 
@@ -86,7 +86,7 @@
                     <span [attr.data-result]="result" class="et-standings-form-result" aria-hidden="true">{{
                       labels().formResultShort(result)
                     }}</span>
-                    <span class="et-standings-form-note"> {{ labels().formResult(result) }}</span>
+                    <span class="et-visually-hidden et-standings-form-note"> {{ labels().formResult(result) }}</span>
                   }
                 </span>
               }

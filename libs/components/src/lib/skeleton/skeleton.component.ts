@@ -1,4 +1,5 @@
 import { booleanAttribute, Component, computed, input, ViewEncapsulation } from '@angular/core';
+import { mountVisuallyHidden } from '@ethlete/core';
 import { injectLoaderLabels } from '../loader';
 
 /**
@@ -17,7 +18,7 @@ import { injectLoaderLabels } from '../loader';
  */
 @Component({
   selector: 'et-skeleton',
-  template: `<span class="et-skeleton-ally-text">{{ resolvedLoadingAllyText() }}</span
+  template: `<span class="et-visually-hidden et-skeleton-ally-text">{{ resolvedLoadingAllyText() }}</span
     ><ng-content />`,
   styleUrl: './skeleton.component.css',
   encapsulation: ViewEncapsulation.None,
@@ -46,4 +47,8 @@ export class SkeletonComponent {
 
   /** The announcement in effect: this instance's `loadingAllyText`, else `LOADER_LABELS`. */
   protected resolvedLoadingAllyText = computed(() => this.loadingAllyText() ?? this.labels().loadingContent);
+
+  constructor() {
+    mountVisuallyHidden();
+  }
 }

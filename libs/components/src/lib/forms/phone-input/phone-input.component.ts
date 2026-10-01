@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, booleanAttribute, computed, inject, input } from '@angular/core';
-import { ColorInteractiveDirective, createComponentId, injectLocale } from '@ethlete/core';
+import { ColorInteractiveDirective, createComponentId, injectLocale, mountVisuallyHidden } from '@ethlete/core';
 import { IconDirective, TIMES_ICON, provideIcons } from '../../icon';
 import {
   SelectDirective,
@@ -126,6 +126,10 @@ export class PhoneInputComponent {
       $implicit: { iso2, dialCode: this.phone.dialCode(), flag: phoneCountryFlag(iso2) },
     };
   });
+
+  constructor() {
+    mountVisuallyHidden();
+  }
 
   protected handleClearClick(event: Event) {
     // clearing must not bubble into the form field's frame-click handling

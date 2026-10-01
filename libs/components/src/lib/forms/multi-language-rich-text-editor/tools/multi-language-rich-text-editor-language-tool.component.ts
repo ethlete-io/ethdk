@@ -1,5 +1,5 @@
 import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
-import { injectHasTouchInput } from '@ethlete/core';
+import { injectHasTouchInput, mountVisuallyHidden } from '@ethlete/core';
 import { CHECK_ICON, provideIcons } from '../../../icon';
 import { MENU_IMPORTS } from '../../../menu';
 import { RichTextEditorDirective } from '../../rich-text-editor';
@@ -42,6 +42,10 @@ export class MultiLanguageRichTextEditorLanguageToolComponent {
   protected disabled = computed(
     () => this.editor().disabled() || this.editor().readonly() || this.languages().length === 0,
   );
+
+  constructor() {
+    mountVisuallyHidden();
+  }
 
   /** The active language shows a leading check; others show no leading marker. */
   protected activeIcon(code: string) {

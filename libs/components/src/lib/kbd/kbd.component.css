@@ -42,21 +42,6 @@
     vertical-align: middle;
   }
 
-  /* The spelled-out chord, kept out of sight but not out of the accessibility tree - a screen reader
-     reading "⌘" announces the glyph's Unicode name, not "Command". There is no shared
-     visually-hidden class in this library, so the clip trick lives here. */
-  .et-kbd-ally-text {
-    position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    margin: -1px;
-    padding: 0;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-    border: 0;
-  }
-
   .et-kbd-key {
     display: inline-flex;
     align-items: center;

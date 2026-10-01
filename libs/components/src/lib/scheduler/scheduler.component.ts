@@ -11,7 +11,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RuntimeError, randomId, signalHostElementDimensions } from '@ethlete/core';
+import { RuntimeError, randomId, signalHostElementDimensions, mountVisuallyHidden } from '@ethlete/core';
 import { tap } from 'rxjs';
 import { addHours, format, isSameDay, setHours, setMinutes, startOfDay } from 'date-fns';
 import { BUTTON_IMPORTS } from '../button';
@@ -182,6 +182,8 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     : null;
 
   constructor() {
+    mountVisuallyHidden();
+
     effect(() => {
       const appointment = this.headless.selectedAppointment();
 

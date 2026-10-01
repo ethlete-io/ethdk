@@ -1,5 +1,5 @@
 import { Component, ElementRef, Injector, ViewEncapsulation, computed, effect, inject, input } from '@angular/core';
-import { ProvideColorDirective } from '@ethlete/core';
+import { ProvideColorDirective, mountVisuallyHidden } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import {
   CHECK_ICON,
@@ -94,6 +94,8 @@ export class ProgressStepComponent {
   protected ariaCurrent = computed(() => (this.state() === PROGRESS_STEP_STATES.CURRENT ? 'step' : null));
 
   constructor() {
+    mountVisuallyHidden();
+
     effect(() => {
       const state = this.state();
       const theme =

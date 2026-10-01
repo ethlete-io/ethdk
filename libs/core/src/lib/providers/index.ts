@@ -8,3 +8,4 @@ export * from './locale';
 export * from './renderer';
 export * from './style-manager';
 export * from './user-consent';
+export * from './visually-hidden-styles.component';

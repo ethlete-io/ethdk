@@ -1,4 +1,5 @@
 import { Component, computed, DestroyRef, inject, input, ViewEncapsulation } from '@angular/core';
+import { mountVisuallyHidden } from '@ethlete/core';
 import { injectFormFieldLabels } from './form-field-labels';
 import { CounterComponentBase, FORM_FIELD_TOKEN } from './headless';
 
@@ -31,7 +32,7 @@ const ANNOUNCE_FROM_FRACTION = 0.9;
   selector: 'et-counter',
   template: `
     <span aria-hidden="true">{{ current() }}{{ limitSuffix() }}</span>
-    <span class="et-counter-announcement" aria-live="polite">
+    <span class="et-visually-hidden et-counter-announcement" aria-live="polite">
       {{ announcement() }}
     </span>
   `,
@@ -103,6 +104,8 @@ export class CounterComponent implements CounterComponentBase {
   });
 
   constructor() {
+    mountVisuallyHidden();
+
     this.formField?.registerCounter(this);
     inject(DestroyRef).onDestroy(() => this.formField?.unregisterCounter(this));
   }

@@ -122,22 +122,6 @@
     font-size: var(--et-bracket-pick-card-slot-font-size, 13px);
   }
 
-  /* A predicted side reads in the accent ink colour, and a pick that is no longer a pressed button only
-     in `data-selected` - neither reaches a screen reader, so the words stay in the accessibility tree
-     instead. There is no shared visually-hidden class in this library, so the clip trick lives here. */
-  .et-bracket-pick-card-predicted,
-  .et-bracket-pick-card-picked {
-    position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    margin: -1px;
-    padding: 0;
-    overflow: hidden;
-    white-space: nowrap;
-    border: 0;
-    clip-path: inset(50%);
-  }
-
   .et-bracket-pick-card-empty {
     min-inline-size: 0;
     flex: 1;

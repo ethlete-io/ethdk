@@ -37,18 +37,6 @@
     background: transparent;
   }
 
-  .et-ml-rte-lang-status {
-    position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-    border: 0;
-  }
-
   .et-ml-rte-lang-dot--filled {
     /* has content: a solid accent dot */
     border-color: var(--et-theme-color-primary-solid, var(--et-surface-color-solid, currentColor));

@@ -18,6 +18,7 @@ import {
   injectRenderer,
   injectStyleManager,
   ProvideColorDirective,
+  mountVisuallyHidden,
 } from '@ethlete/core';
 import { IconButtonComponent } from '../../button/icon-button.component';
 import { FocusRingDirective } from '../../focus-ring/focus-ring.directive';
@@ -168,6 +169,8 @@ export class DropzoneComponent {
   protected readonly FORMAT_FILE_SIZE = formatFileSize;
 
   constructor() {
+    mountVisuallyHidden();
+
     const styleManager = injectStyleManager();
 
     effect(() => {

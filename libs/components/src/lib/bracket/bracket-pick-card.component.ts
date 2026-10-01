@@ -1,6 +1,12 @@
 import { booleanAttribute, Component, computed, input, output, ViewEncapsulation } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { ColorThemeInput, createComponentId, injectColorThemes, ProvideColorDirective } from '@ethlete/core';
+import {
+  ColorThemeInput,
+  createComponentId,
+  injectColorThemes,
+  ProvideColorDirective,
+  mountVisuallyHidden,
+} from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import {
   injectMatchLabels,
@@ -151,4 +157,8 @@ export class BracketPickCardComponent<TRoundData = unknown, TMatchData = unknown
       };
     });
   });
+
+  constructor() {
+    mountVisuallyHidden();
+  }
 }

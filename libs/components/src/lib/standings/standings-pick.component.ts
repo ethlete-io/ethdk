@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, ElementRef, inject, signal, ViewEncapsulation, viewChildren } from '@angular/core';
-import { DragHandleDirective, DragMoveEvent } from '@ethlete/core';
+import { DragHandleDirective, DragMoveEvent, mountVisuallyHidden } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import { injectMatchLabels, MATCH_PARTICIPANT_IMPORTS, matchParticipantDisplayName } from '../match';
 import { StandingsPickDirective, StandingsPickMarkContext, StandingsPickMove } from './headless';
@@ -114,6 +114,10 @@ export class StandingsPickComponent {
       return offset ? `0 ${offset}px` : null;
     });
   });
+
+  constructor() {
+    mountVisuallyHidden();
+  }
 
   protected startDrag(index: number) {
     if (this.pick.locked()) return;

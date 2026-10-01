@@ -1,5 +1,5 @@
 import { Component, computed, inject, ViewEncapsulation } from '@angular/core';
-import { ProvideColorDirective } from '@ethlete/core';
+import { ProvideColorDirective, mountVisuallyHidden } from '@ethlete/core';
 import { MATCH_PARTICIPANT_IMPORTS } from '../match';
 import { StandingsDirective } from './headless';
 
@@ -37,6 +37,10 @@ export class StandingsComponent {
   protected standings = inject(StandingsDirective);
 
   protected labels = computed(() => this.standings.resolvedLabels());
+
+  constructor() {
+    mountVisuallyHidden();
+  }
 
   /** Signed, because a difference of `-4` and one of `4` are the two things this column exists to tell apart. */
   protected differenceText(difference: number | null) {

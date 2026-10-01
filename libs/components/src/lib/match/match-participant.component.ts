@@ -1,4 +1,5 @@
 import { booleanAttribute, Component, computed, ElementRef, inject, input, ViewEncapsulation } from '@angular/core';
+import { mountVisuallyHidden } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import { PICTURE_IMPORTS } from '../picture';
 import { SKELETON_IMPORTS } from '../skeleton';
@@ -74,7 +75,7 @@ import { NormalizedMatchParticipant } from './match.types';
     @if (showSeed() && participant()?.seed !== null && participant()?.seed !== undefined) {
       <span class="et-match-participant-seed">
         <span aria-hidden="true">{{ participant()?.seed }}</span>
-        <span class="et-match-participant-seed-label">{{ seedLabel() }}</span>
+        <span class="et-visually-hidden et-match-participant-seed-label">{{ seedLabel() }}</span>
       </span>
     }
   `,
@@ -159,4 +160,8 @@ export class MatchParticipantComponent {
 
     return seed === null || seed === undefined ? null : this.resolvedLabels().seed(seed);
   });
+
+  constructor() {
+    mountVisuallyHidden();
+  }
 }

@@ -19,7 +19,7 @@
 
           @if (renderRow.row.isAdvancing) {
             <!-- The cut is drawn, so it needs saying too: a row-by-row reader never reaches the line. -->
-            <span class="et-standings-pick-note">{{ labels().pickAdvancingRow }}</span>
+            <span class="et-visually-hidden et-standings-pick-note">{{ labels().pickAdvancingRow }}</span>
           }
 
           @if (pick.registeredMarkTemplate(); as mark) {
@@ -59,8 +59,8 @@
   }
 </ol>
 
-<p class="et-standings-pick-announcement" aria-live="polite">{{ announcement() }}</p>
+<p class="et-visually-hidden et-standings-pick-announcement" aria-live="polite">{{ announcement() }}</p>
 
 @if (pick.locked()) {
-  <p class="et-standings-pick-note">{{ labels().pickLocked }}</p>
+  <p class="et-visually-hidden et-standings-pick-note">{{ labels().pickLocked }}</p>
 }

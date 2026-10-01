@@ -26,7 +26,7 @@
           <ng-container [ngTemplateOutlet]="sideBody" [ngTemplateOutletContext]="{ item: item }" />
 
           @if (item.selected) {
-            <span class="et-bracket-pick-card-picked">{{ pickedLabel() }}</span>
+            <span class="et-visually-hidden et-bracket-pick-card-picked">{{ pickedLabel() }}</span>
           }
         </div>
       }
@@ -58,7 +58,7 @@
   }
 
   @if (item.state === 'predicted') {
-    <span class="et-bracket-pick-card-predicted">{{ predictedLabel() }}</span>
+    <span class="et-visually-hidden et-bracket-pick-card-predicted">{{ predictedLabel() }}</span>
   }
 
   @if (item.showMark) {

@@ -25,7 +25,7 @@
           role="gridcell"
         >
           <span class="et-scheduler-month-view-cell-date" aria-hidden="true">{{ cell.date.getDate() }}</span>
-          <span class="et-scheduler-month-view-cell-label">{{ dayLabel(cell.date) }}</span>
+          <span class="et-visually-hidden et-scheduler-month-view-cell-label">{{ dayLabel(cell.date) }}</span>
 
           <!-- pointerdown is stopped on everything interactive below so a press that starts on an
                appointment or the overflow trigger does not also draw a range across the grid -->
