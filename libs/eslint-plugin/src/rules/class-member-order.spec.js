@@ -158,9 +158,9 @@ class C {
   handleFocusout() {}
 }`,
       output: `class C {
-
   // Focus remains with the moved method.
   handleFocusout() {}
+
   private calculate() {}
 }`,
       errors: [{ messageId: 'groupOrder' }],
@@ -174,8 +174,8 @@ class C {
   label = this.buildLabel();
 }`,
       output: `class C {
-
   label = this.buildLabel();
+
   buildLabel() {
     return 'ready';
   }
@@ -211,8 +211,8 @@ class C {
     {
       code: `class C { focus() {}
   private a = inject(A) }`,
-      output: `class C {
-  private a = inject(A); focus() {} }`,
+      output: `class C { private a = inject(A)
+  focus() {} }`,
       errors: [{ messageId: 'groupOrder' }],
     },
     {
@@ -241,18 +241,30 @@ class C {
       code: `class C { focus() {}
   private a = inject(A) // the a
 }`,
-      output: `class C {
-  private a = inject(A); // the a
- focus() {}
+      output: `class C { private a = inject(A) // the a
+  focus() {}
 }`,
       errors: [{ messageId: 'groupOrder' }],
     },
     {
       code: `class C { focus() {} // focuses
   private a = inject(A) }`,
-      output: `class C {
-  private a = inject(A); focus() {} // focuses
+      output: `class C { private a = inject(A)
+  focus() {} // focuses
  }`,
+      errors: [{ messageId: 'groupOrder' }],
+    },
+    {
+      code: `class C { focus() {} private a = inject(A) }`,
+      output: `class C { private a = inject(A); focus() {} }`,
+      errors: [{ messageId: 'groupOrder' }],
+    },
+    {
+      code: `class C { focus() {} private a = inject(A) // the a
+}`,
+      output: `class C { private a = inject(A); // the a
+ focus() {}
+}`,
       errors: [{ messageId: 'groupOrder' }],
     },
   ],

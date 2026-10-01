@@ -416,18 +416,24 @@ const buildClassOrderFix = (sourceCode, classBodyNode, members) => {
     rankedIndexes.has(index) ? sortedMembers[nextSortedMember++].originalIndex : index,
   );
 
+  const gaps = segmentTexts.map((text) => /^\s*/.exec(text)?.[0] ?? '');
+  const bodies = segmentTexts.map((text, index) => text.slice(gaps[index].length));
+
   const reorderedBody =
     order
       .map((originalIndex, position) => {
-        const nextIndex = order[position + 1] ?? segmentTexts.length;
-        if (nextIndex === originalIndex + 1) return segmentTexts[originalIndex];
+        const nextIndex = order[position + 1];
+        const nextText = nextIndex === undefined ? suffix : gaps[position + 1] + bodies[nextIndex];
 
-        return joinMovedSegment(
-          sourceCode,
-          classBodyNode.body[originalIndex],
-          segmentTexts[originalIndex],
-          classBodyNode.body[nextIndex] ?? null,
-          segmentTexts[nextIndex] ?? suffix,
+        return (
+          gaps[position] +
+          joinMovedSegment(
+            sourceCode,
+            classBodyNode.body[originalIndex],
+            bodies[originalIndex],
+            nextIndex === undefined ? null : classBodyNode.body[nextIndex],
+            nextText,
+          )
         );
       })
       .join('') + suffix;
