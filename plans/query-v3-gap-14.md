@@ -184,7 +184,7 @@ all three:
    the viewport as root (fifagg today), the margin does nothing inside the rail.
 
 Scope from the data: horizontal and vertical containers (the observer does not care about the axis), a
-signal-bound input so `a.canFetchNextPage() ? a : b` covers the two-query rail, and no special button mode: a
+signal-bound input so `a.isLastPageLoaded() ? b : a` covers the two-query rail, and no special button mode: a
 button is `(click)="stack.fetchNextPage()"` with `[etQueryButton]`. `direction: 'previous'` stays in the API
 (the stack supports it), but no fifagg use needs it: the chat is not a paged stack. No virtual scroll support.
 Build on `signalElementIntersection` (`libs/core/src/lib/signals/element-intersection.ts`) and place it in
@@ -247,7 +247,10 @@ Status (2026-10-01): slice 1 shipped (`e4232a1b8`, `84def7337`). `QueryButtonSou
 `QuerySequence` have `running` + `progress`, not `loading`. `QueryButtonDirective` is not in `BUTTON_IMPORTS`
 (bundle golden). Slice 2 shipped (`5fa4b1fa5`): tags come from args only, `invalidates` on a read throws `ET2`, tag invalidations
 cross tabs. Open: a retained unused entry is not marked stale. Slice 3 shipped (`3c7ea31cd`, docs
-`apps/docs/query/groups.md`). Slice 4 (`etPagedQueryTrigger`) in progress. Slice 5 in progress: `withOptimisticUpdate`,
+`apps/docs/query/groups.md`). Slice 4 shipped (`9a26e56ae`, `libs/components/src/lib/paged-query-trigger/`): native
+`IntersectionObserver`, because `signalElementIntersection` reads before layout and over-fetches; `root` takes no
+selector. Polling works on a paged stack, but every loaded page polls. Slice 6 (`selectOptionsFromQuery` onto
+`createPagedQueryStack`) in progress. Slice 5 in progress: `withOptimisticUpdate`,
 mark unused entries stale on invalidation, the double refresh in other tabs, and the bug "`withArgs(() => null)` +
 `execute({ args })` keeps no response". Ship item by item.
 
