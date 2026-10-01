@@ -35,5 +35,8 @@ What stays two things at once:
   least `minBandMs` long, in `mergeBlocks` and again when `reviewDay` folds a short row. A row books
   its span (ADR 0019), so cutting the blocks alone would have left the band booking the same minutes.
   `DayRows.handedOver` carries those stretches to the review.
+- A person who watches the agent's terminal in one repository while it edits the other books that
+  minute in both. Tom kept the focus rule on 2026-10-01 regardless: focus is the only sign of a person
+  the cut has, and dropping it would cut a person's own editor time too.
 - A shorter stretch is still cut from the blocks, so it no longer counts as observed in the repository
   the session left. It does not split that repository's band.
