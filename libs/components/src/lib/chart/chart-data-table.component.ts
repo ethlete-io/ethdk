@@ -1,4 +1,5 @@
 import { Component, input, ViewEncapsulation } from '@angular/core';
+import { mountVisuallyHidden } from '@ethlete/core';
 import { ChartTableModel } from './chart.types';
 
 @Component({
@@ -29,13 +30,16 @@ import { ChartTableModel } from './chart.types';
       </tbody>
     </table>
   `,
-  styleUrl: './chart-data-table.component.css',
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-chart-data-table',
+    class: 'et-visually-hidden et-chart-data-table',
   },
 })
 export class ChartDataTableComponent {
   public caption = input.required<string>();
   public model = input.required<ChartTableModel>();
+
+  constructor() {
+    mountVisuallyHidden();
+  }
 }
