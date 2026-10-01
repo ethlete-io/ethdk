@@ -1,13 +1,8 @@
 import { booleanAttribute, Component, computed, input, output, ViewEncapsulation } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import {
-  ColorThemeInput,
-  createComponentId,
-  injectColorThemes,
-  ProvideColorDirective,
-  mountVisuallyHidden,
-} from '@ethlete/core';
+import { ColorThemeInput, createComponentId, ProvideColorDirective, mountVisuallyHidden } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
+import { injectOptionalSemanticTheme } from '../internals/semantic-theme';
 import {
   injectMatchLabels,
   MatchParticipantComponent,
@@ -64,6 +59,7 @@ export type BracketPickCardNoteTone = (typeof BRACKET_PICK_CARD_NOTE_TONE)[keyof
 export class BracketPickCardComponent<TRoundData = unknown, TMatchData = unknown> {
   private labels = injectBracketLabels();
   private matchLabels = injectMatchLabels();
+  private errorColorTheme = injectOptionalSemanticTheme('error');
 
   public bracketMatch = input.required<BracketMatch<TRoundData, TMatchData>>();
   public normalized = input.required<NormalizedMatch>();
@@ -102,16 +98,12 @@ export class BracketPickCardComponent<TRoundData = unknown, TMatchData = unknown
 
   public pick = output<MatchParticipantSide>();
 
-  /** Resolved optionally: only an invalid note reads it, so a card in an app with none still works. */
-  private readonly ERROR_COLOR_THEME =
-    injectColorThemes({ optional: true })?.find((theme) => theme.type === 'error') ?? null;
-
   protected readonly NOTE_ID = createComponentId('et-bracket-pick-card-note');
 
   protected pickedLabel = computed(() => this.labels().pickCardPicked);
 
   protected noteColorTheme = computed<ColorThemeInput>(() =>
-    this.noteTone() === BRACKET_PICK_CARD_NOTE_TONE.INVALID ? this.ERROR_COLOR_THEME : null,
+    this.noteTone() === BRACKET_PICK_CARD_NOTE_TONE.INVALID ? this.errorColorTheme() : null,
   );
 
   protected sides = computed(() => {

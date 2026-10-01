@@ -10,14 +10,8 @@ import {
   ElementRef,
   ViewEncapsulation,
 } from '@angular/core';
-import {
-  AutoSurfaceDirective,
-  COLOR_PROVIDER,
-  ColorTheme,
-  injectAnimatedBlockSize,
-  injectErrorTheme,
-  ProvideColorDirective,
-} from '@ethlete/core';
+import { AutoSurfaceDirective, COLOR_PROVIDER, injectAnimatedBlockSize, ProvideColorDirective } from '@ethlete/core';
+import { injectOptionalSemanticTheme } from '../../internals/semantic-theme';
 import { ProgressBarComponent, SpinnerComponent } from '../../loader';
 import { RichTextEditorTriggerItem } from './rich-text-editor-trigger';
 
@@ -48,6 +42,7 @@ import { RichTextEditorTriggerItem } from './rich-text-editor-trigger';
 export class RichTextEditorTokenPopupComponent {
   private ownColorProvider = inject(ProvideColorDirective);
   private contextColorProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
+  protected errorColorTheme = injectOptionalSemanticTheme('error');
 
   public items = input.required<RichTextEditorTriggerItem[]>();
   public activeIndex = input.required<number>();
@@ -60,9 +55,6 @@ export class RichTextEditorTokenPopupComponent {
   public activateItem = output<number>();
 
   private bodyElement = viewChild<ElementRef<HTMLElement>>('body');
-
-  /** The app's error color theme, or `null` when none is registered (error text stays neutral). */
-  protected errorColorTheme: ColorTheme | null = this.resolveErrorTheme();
 
   constructor() {
     // The popup mounts in a detached overlay pane. Its surface IS the overlay's own surface, so it
@@ -83,13 +75,5 @@ export class RichTextEditorTokenPopupComponent {
 
     // Smoothly animate the panel's height as the list changes (loading → results, filtering).
     injectAnimatedBlockSize({ observe: this.bodyElement, resizingClass: 'et-rte-token-popup--resizing' });
-  }
-
-  private resolveErrorTheme(): ColorTheme | null {
-    try {
-      return injectErrorTheme();
-    } catch {
-      return null;
-    }
   }
 }

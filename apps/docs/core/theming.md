@@ -144,7 +144,7 @@ runtime. Scope a surface explicitly with `etProvideSurface` where a subtree must
 
 ### A dark-only app
 
-The smallest complete setup: dark surfaces only, one per elevation the app stacks, one accent, and an error theme (form fields resolve their error state through [`injectErrorTheme()`](#semantic-themes) and throw without one). Every name below is the app's own:
+The smallest complete setup: dark surfaces only, one per elevation the app stacks, one accent, and an error theme (form fields resolve their error state through [`injectSemanticColorTheme('error')`](#semantic-themes-per-surface) and throw without one). Every name below is the app's own:
 
 ```ts
 // surface-themes.ts
@@ -391,8 +391,10 @@ export class DeltaComponent {
 }
 ```
 
-The SDK's banner, progress step and stat tile resolve their semantic colors this way. `injectErrorTheme()`
-and its siblings stay surface-independent. The surface only picks which `.et-color--<name>` class an
+Every SDK component resolves its semantic colors this way: the form field's error and warning states,
+select, cascader, menu, alert dialog, table, match card, bracket pick card, rich text editor popup, banner,
+progress step, stat tile and the query devtools. Content in an overlay panel follows the surface the panel
+paints, not the one its trigger sits on. `injectErrorTheme()` and its siblings stay surface-independent. The surface only picks which `.et-color--<name>` class an
 element gets: CSS that reads `--et-theme-color-ink-solid` from an outer `.et-color--<name>` scope keeps
 that scope's theme until something re-provides the color.
 

@@ -31,7 +31,7 @@ including a `danger` theme with `type: 'error'`.
 `danger`, `neutral` or `dark-elevated` are just what this repo's Storybook
 registers. Never hardcode a theme-name union in component types, docs, or
 examples - present such names as app examples only. The portable handle is the
-theme **`type`** (`injectErrorTheme()` finds the app's `type: 'error'` theme),
+theme **`type`** (`injectSemanticColorTheme('error')` finds the app's `type: 'error'` theme),
 not the name.
 
 ## Tokens components may consume
@@ -78,9 +78,9 @@ the interactive element itself, never a wrapper).
   surface. Reference: `libs/components/src/lib/menu/menu.component.ts`.
 - **Semantic colors are provided via DI, not CSS.** There is no global "error
   color" variable - error/warning/success are just color themes. To render
-  something in the error color, inject `injectErrorTheme()` (throws if the app
-  registered no `type: 'error'` theme) and either bind it
-  (`[etProvideColor]="errorColorTheme"`, see form-field's error text and the
+  something in the error color, inject `injectSemanticColorTheme('error')` (a signal;
+  reading it throws if the app registered no `type: 'error'` theme) and either bind it
+  (`[etProvideColor]="errorColorTheme()"`, see form-field's error text and the
   menu search error) or force it programmatically
   (`provideColor.forceColor(theme)` / `clearForcedColor()`, see form-field's
   error state and the menu item destructive variant). Inside that scope,
@@ -89,9 +89,17 @@ the interactive element itself, never a wrapper).
   dark and light surfaces, so a surface theme names the theme serving each type:
   `semanticColorThemes: { success: 'success-on-light' }` (an extra theme registered
   without a `type`). `injectSemanticColorTheme(type)` returns a signal of that theme,
-  else the theme of that `type` - banner, progress step and stat tile use it via
-  `libs/components/src/lib/internals/semantic-theme.ts`. `injectErrorTheme()` stays
-  surface-independent. Never put surface logic into a color theme or add CSS vars for it.
+  else the theme of that `type`. Every component in `libs/components` and
+  `libs/query-devtools` uses it (helpers in `libs/components/src/lib/internals/semantic-theme.ts`;
+  `injectOptionalSemanticTheme` where a missing theme must not throw). Do not use
+  `injectErrorTheme()` and its siblings in components: they ignore the surface.
+  Never put surface logic into a color theme or add CSS vars for it.
+- **Semantic themes in overlay panels.** The lookup reads the surface of the injector
+  that calls it. Content a component declares but stamps into a detached panel (select,
+  cascader, menu content in query-devtools) must read it from inside the panel: put
+  `etSemanticThemes` (`internals/semantic-themes.directive.ts`) on the panel element and
+  bind `#ref="etSemanticThemes"`, or `viewChild` it when the content sits in a sibling
+  `ng-template` (cascader). A field on the declaring component reads the trigger's surface.
 
 ## Pitfalls
 
@@ -112,8 +120,8 @@ the interactive element itself, never a wrapper).
   theme is provided on that element (see DI point above).
 - Fallbacks: tokens resolve wherever themes are registered, but keep a static
   fallback (`var(--et-surface-border-solid, rgb(255 255 255 / 0.1))`) so
-  components degrade in theme-less setups. `injectErrorTheme()` however is a
-  hard requirement - form-field and menu already assume it.
+  components degrade in theme-less setups. A `type: 'error'` theme however is a
+  hard requirement - form-field and menu throw on rendering without one.
 - **Cascade layers, not `:where()`, are what make Tailwind utilities override
   component CSS.** Every component CSS file is wrapped in `@layer components { … }`
   - keep doing so in new/edited files. Component styles are injected unlayered
@@ -130,7 +138,7 @@ the interactive element itself, never a wrapper).
   `--et-surface-interaction-solid` ("muted until pressed" block).
 - `libs/components/src/lib/forms/form-field/form-field.component.css` +
   `.component.ts` - borders/hover from surface tokens, focus border
-  `--et-theme-color-primary-solid`, error state via `forceColor(injectErrorTheme())`.
+  `--et-theme-color-primary-solid`, error state via `forceColor(errorColorTheme())`.
 - `libs/components/src/lib/menu/` - full pattern in an overlay: context re-sync,
   surface tokens for chrome, error theme for destructive items/search error.
 

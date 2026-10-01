@@ -20,7 +20,7 @@ import { TableCellErrorTooltipDirective } from './table-cell-error-tooltip.direc
   selector: 'et-table-cell-error-mark',
   template: `
     <i
-      [etProvideColor]="feature.table.errorColorTheme"
+      [etProvideColor]="feature.table.errorColorTheme()"
       [etTooltip]="message()"
       [etTooltipDisabled]="!message()"
       [label]="message()"

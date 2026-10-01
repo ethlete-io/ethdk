@@ -88,7 +88,7 @@
 }
 
 <ng-template etSelectSurface>
-  <et-select-panel>
+  <et-select-panel #panelThemes="etSemanticThemes" etSemanticThemes>
     @if (select.showSelectAll()) {
       <et-select-all-option>{{ resolvedSelectAllLabel() }}</et-select-all-option>
     }
@@ -144,7 +144,11 @@
             [ngTemplateOutletContext]="{ $implicit: error }"
           />
         } @else {
-          <div [etProvideColor]="errorColorTheme" class="et-select-state et-select-state--error" role="alert">
+          <div
+            [etProvideColor]="panelThemes.themes.error()"
+            class="et-select-state et-select-state--error"
+            role="alert"
+          >
             {{ error }}
           </div>
         }

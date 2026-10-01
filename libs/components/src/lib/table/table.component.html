@@ -156,7 +156,7 @@
             <ng-container *ngTemplateOutlet="template; context: { $implicit: resolvedError() }" />
           } @else {
             <ng-content select="[etTableError]">
-              <i [etProvideColor]="errorColorTheme" class="et-table-error-icon" etIcon="et-triangle-exclamation"></i>
+              <i [etProvideColor]="errorColorTheme()" class="et-table-error-icon" etIcon="et-triangle-exclamation"></i>
               <span>{{ resolvedLabels().error }}</span>
             </ng-content>
           }
@@ -245,7 +245,7 @@
                        as an error, and a provider per errored cell is cheap where one per cell would not
                        be. The message rides along as `title`, which costs nothing. -->
                   <i
-                    [etProvideColor]="errorColorTheme"
+                    [etProvideColor]="errorColorTheme()"
                     [attr.title]="cell.message"
                     [label]="cell.message"
                     class="et-table-cell-error-icon"

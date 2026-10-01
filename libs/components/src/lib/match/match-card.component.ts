@@ -1,12 +1,7 @@
 import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
-import {
-  ColorTheme,
-  injectColorThemes,
-  ProvideColorDirective,
-  RegisteredColorThemeName,
-  mountVisuallyHidden,
-} from '@ethlete/core';
+import { ColorTheme, ProvideColorDirective, RegisteredColorThemeName, mountVisuallyHidden } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
+import { injectOptionalSemanticTheme } from '../internals/semantic-theme';
 import {
   MatchCardDirective,
   MatchCardGameScoresDirective,
@@ -73,18 +68,18 @@ import { MatchScoreComponent } from './match-score.component';
 export class MatchCardComponent {
   protected card = inject(MatchCardDirective);
 
-  private colorThemes = injectColorThemes({ optional: true });
+  private errorColorTheme = injectOptionalSemanticTheme('error');
 
   /**
-   * The color theme the live badge is drawn in. `null` (the default) uses the app's `type: 'error'`
-   * theme, which is the red a live badge is expected to be - and falls through to the ambient color
+   * The color theme the live badge is drawn in. `null` (the default) uses the error theme of the surface
+   * the card renders on, which is the red a live badge is expected to be - and falls through to the ambient color
    * scope in an app that registered none. Theme names are the app's own, so this takes one of them (or
    * the theme object).
    */
   public liveColor = input<RegisteredColorThemeName | ColorTheme | null>(null);
 
   protected liveColorTheme = computed<RegisteredColorThemeName | ColorTheme | null>(
-    () => this.liveColor() ?? this.colorThemes?.find((theme) => theme.type === 'error') ?? null,
+    () => this.liveColor() ?? this.errorColorTheme(),
   );
 
   constructor() {

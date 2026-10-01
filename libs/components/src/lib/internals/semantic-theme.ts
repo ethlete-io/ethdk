@@ -1,4 +1,5 @@
-import { injectSemanticColorTheme } from '@ethlete/core';
+import { computed, Signal } from '@angular/core';
+import { ColorTheme, ColorThemeType, injectColorThemes, injectSemanticColorTheme } from '@ethlete/core';
 
 export type SemanticThemeType = 'success' | 'warning' | 'error';
 
@@ -11,3 +12,11 @@ export const injectSemanticThemes = (): Record<SemanticThemeType, ReturnType<typ
   warning: injectSemanticColorTheme('warning'),
   error: injectSemanticColorTheme('error'),
 });
+
+/** Like `injectSemanticColorTheme`, but `null` instead of a throw when the app registered no theme of that type. */
+export const injectOptionalSemanticTheme = (type: ColorThemeType): Signal<ColorTheme | null> => {
+  const theme = injectSemanticColorTheme(type);
+  const isRegistered = !!injectColorThemes({ optional: true })?.some((t) => t.type === type);
+
+  return computed(() => (isRegistered ? theme() : null));
+};

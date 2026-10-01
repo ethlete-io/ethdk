@@ -50,7 +50,7 @@
             [attr.data-active]="support.errorActive() || null"
             [attr.data-direction]="support.errorDirection()"
             [attr.data-state]="support.errorState()"
-            [etProvideColor]="support.errorColorTheme"
+            [etProvideColor]="support.errorColorTheme()"
             class="et-form-field-support-content et-form-field-errors"
             etAnimatable
           >
@@ -102,7 +102,7 @@
        error color even before the field shows an error. -->
       <div
         #counterContent
-        [etProvideColor]="support.errorColorTheme"
+        [etProvideColor]="support.errorColorTheme()"
         [hidden]="!formFieldDir.registeredCounter()"
         class="et-form-field-support-counter"
       >

@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { booleanAttribute, Component, Injector, ViewEncapsulation, computed, inject, input } from '@angular/core';
-import { ColorInteractiveDirective, ProvideColorDirective, createComponentId, injectErrorTheme } from '@ethlete/core';
+import { ColorInteractiveDirective, ProvideColorDirective, createComponentId } from '@ethlete/core';
 import { CHIP_REMOVE_FOCUS_FALLBACK, CHIP_REMOVE_TAB_STOP, ChipComponent } from '../../chip';
 import { CHEVRON_ICON, IconDirective, PLUS_ICON, TIMES_ICON, provideIcons } from '../../icon';
 import { SpinnerComponent } from '../../loader';
@@ -14,6 +14,7 @@ import { SelectVirtualOptionComponent } from './select-virtual-option.component'
 import { injectFormFieldLabels } from '../../forms/form-field/form-field-labels';
 import { injectSelectLabels } from '../../forms/select/select-labels';
 import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
+import { SemanticThemesDirective } from '../../internals/semantic-themes.directive';
 
 @Component({
   selector: 'et-select',
@@ -33,6 +34,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
     ChipComponent,
     SpinnerComponent,
     ProvideColorDirective,
+    SemanticThemesDirective,
   ],
   providers: [
     provideIcons(CHEVRON_ICON, TIMES_ICON, PLUS_ICON),
@@ -105,7 +107,6 @@ export class SelectComponent {
   private formFieldLabels = injectFormFieldLabels();
 
   protected select = inject(SelectDirective);
-  protected errorColorTheme = injectErrorTheme();
 
   public loadMoreLabel = input<string | null>(null);
   public addNewLabel = input<string | null>(null);

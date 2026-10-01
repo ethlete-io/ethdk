@@ -10,7 +10,7 @@
 <!-- re-fetch failed while results are still on screen: annotate above the list without disturbing it -->
 @if (error(); as err) {
   @if (items().length > 0) {
-    <p [etProvideColor]="errorColorTheme" class="et-rte-token-popup-error" role="alert">{{ err }}</p>
+    <p [etProvideColor]="errorColorTheme()" class="et-rte-token-popup-error" role="alert">{{ err }}</p>
   }
 }
 
@@ -20,7 +20,7 @@
       <!-- nothing to show and the source failed: a centered, self-contained error state so the panel
            doesn't read as an empty box with a stray line of text -->
       <div
-        [etProvideColor]="errorColorTheme"
+        [etProvideColor]="errorColorTheme()"
         class="et-rte-token-popup-state et-rte-token-popup-state--error"
         role="alert"
       >

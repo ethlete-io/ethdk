@@ -5,7 +5,7 @@
   </div>
 
   @if (searchError(); as error) {
-    <p [id]="searchErrorId" [etProvideColor]="errorColorTheme" class="et-menu-search-error" role="alert">
+    <p [id]="searchErrorId" [etProvideColor]="errorColorTheme()" class="et-menu-search-error" role="alert">
       {{ error }}
     </p>
   }

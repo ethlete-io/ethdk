@@ -26,7 +26,6 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { filter, fromEvent, map, merge, of, Subscription, switchMap, take, tap, timer } from 'rxjs';
 import {
   fromNextFrame,
-  injectColorThemes,
   injectRenderer,
   injectStyleManager,
   ProvideColorDirective,
@@ -36,6 +35,7 @@ import {
   mountEasingTokens,
 } from '@ethlete/core';
 import { ARROW_UP_ICON } from '../icon/headless/arrow-up-icon';
+import { injectOptionalSemanticTheme } from '../internals/semantic-theme';
 import { provideIcons } from '../icon/headless/icon-provider';
 import { IconDirective } from '../icon/headless/icon.directive';
 import { TRIANGLE_EXCLAMATION_ICON } from '../icon/headless/triangle-exclamation-icon';
@@ -292,6 +292,13 @@ export class TableComponent<T> implements TableFeatureHost {
   private injectedLabels = injectTableLabels();
   private renderer = injectRenderer();
 
+  /**
+   * The error color theme of the surface the table renders on, for its own error UI (the error state, an
+   * errored cell). `null` when the app registered no `type: 'error'` theme: a table must not require one
+   * just to render a list, so the error UI then stays on the surface's own colors.
+   */
+  public errorColorTheme = injectOptionalSemanticTheme('error');
+
   /** The rows to render. */
   public data = input<readonly T[]>([]);
 
@@ -508,14 +515,6 @@ export class TableComponent<T> implements TableFeatureHost {
 
   /** The strings in effect here: the injected label set with this table's `labels` applied. */
   public resolvedLabels = computed<TableLabels>(() => ({ ...this.injectedLabels(), ...this.labels() }));
-
-  /**
-   * The app's error color theme, for the table's own error UI (the error state, an errored cell).
-   * Looked up by `type` rather than through `injectErrorTheme()`, which throws when an app registered
-   * no `type: 'error'` theme: a table must not require one just to render a list. Without one the
-   * error UI stays on the surface's own colors.
-   */
-  public errorColorTheme = injectColorThemes({ optional: true })?.find((theme) => theme.type === 'error');
 
   // UI contributed by opt-in features (filter menus, resize grips), rendered in every header cell.
   // Features register themselves (see TABLE_FEATURE_HOST) rather than being queried, so the table

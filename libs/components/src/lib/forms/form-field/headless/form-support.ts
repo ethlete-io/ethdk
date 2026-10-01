@@ -1,21 +1,9 @@
-import {
-  computed,
-  DestroyRef,
-  effect,
-  ElementRef,
-  inject,
-  Injector,
-  runInInjectionContext,
-  Signal,
-  signal,
-  untracked,
-} from '@angular/core';
+import { computed, DestroyRef, effect, ElementRef, inject, Signal, signal, untracked } from '@angular/core';
 import { ValidationError } from '@angular/forms/signals';
 import {
   AnimatableDirective,
   defineProvider,
-  injectErrorTheme,
-  injectWarningTheme,
+  injectSemanticColorTheme,
   ProvideColorDirective,
   signalElementDimensions,
   toInjectFn,
@@ -33,8 +21,8 @@ import {
 const formSupportFactory = () => {
   const provideColor = inject(ProvideColorDirective, { optional: true });
   const formFieldDir = inject(FormFieldDirective);
-  const injector = inject(Injector);
-  const errorColorTheme = injectErrorTheme();
+  const errorColorTheme = injectSemanticColorTheme('error');
+  const warningTheme = injectSemanticColorTheme('warning');
 
   const errorContent = signal<ElementRef<HTMLElement> | undefined>(undefined);
   const warningContent = signal<ElementRef<HTMLElement> | undefined>(undefined);
@@ -124,9 +112,7 @@ const formSupportFactory = () => {
 
   // resolved only once a warning renders, so a control that never warns doesn't force the app to
   // register a `type: 'warning'` theme
-  const warningColorTheme = computed(() =>
-    shouldRenderWarning() ? runInInjectionContext(injector, injectWarningTheme) : null,
-  );
+  const warningColorTheme = computed(() => (shouldRenderWarning() ? warningTheme() : null));
 
   const visibleErrors = computed(() => {
     if (semanticSupportState() === SUPPORT_CONTENT_STATE.ERROR) {
@@ -182,13 +168,13 @@ const formSupportFactory = () => {
   });
 
   effect(() => {
-    const showError = displaysError();
+    const theme = displaysError() ? errorColorTheme() : null;
 
     untracked(() => {
       if (!provideColor) return;
 
-      if (showError) {
-        provideColor.forceColor(errorColorTheme);
+      if (theme) {
+        provideColor.forceColor(theme);
 
         return;
       }

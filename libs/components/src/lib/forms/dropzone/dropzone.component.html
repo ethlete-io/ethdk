@@ -146,7 +146,7 @@
 <div class="et-visually-hidden et-dropzone-live-status" role="status" aria-live="polite">{{ liveStatusMessage() }}</div>
 
 @if (internalErrorMessages().length) {
-  <div [etProvideColor]="support.errorColorTheme" class="et-dropzone-internal-errors" role="alert">
+  <div [etProvideColor]="support.errorColorTheme()" class="et-dropzone-internal-errors" role="alert">
     @for (message of internalErrorMessages(); track $index) {
       <span class="et-dropzone-internal-error">{{ message }}</span>
     }

@@ -1,11 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, ViewEncapsulation, booleanAttribute, computed, inject, input } from '@angular/core';
-import {
-  ColorInteractiveDirective,
-  ProvideColorDirective,
-  injectErrorTheme,
-  signalDeferredLoading,
-} from '@ethlete/core';
+import { Component, ViewEncapsulation, booleanAttribute, computed, inject, input, viewChild } from '@angular/core';
+import { ColorInteractiveDirective, ProvideColorDirective, signalDeferredLoading } from '@ethlete/core';
 import { TextButtonComponent } from '../../button';
 import { FocusRingDirective } from '../../focus-ring';
 import { CHEVRON_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../icon';
@@ -27,6 +22,7 @@ import {
 import { injectFormFieldLabels } from '../form-field/form-field-labels';
 import { injectCascaderLabels } from './cascader-labels';
 import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
+import { SemanticThemesDirective } from '../../internals/semantic-themes.directive';
 
 @Component({
   selector: 'et-cascader',
@@ -49,6 +45,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
     TextButtonComponent,
     ProvideColorDirective,
     FocusRingDirective,
+    SemanticThemesDirective,
   ],
   providers: [provideIcons(CHEVRON_ICON, TIMES_ICON)],
   hostDirectives: [
@@ -90,7 +87,6 @@ export class CascaderComponent {
   private formFieldLabels = injectFormFieldLabels();
 
   protected cascader = inject<CascaderDirective>(CascaderDirective);
-  protected errorColorTheme = injectErrorTheme();
 
   /** Shows a clear (×) control while a value is selected. */
   public clearable = input(true, { transform: booleanAttribute });
@@ -98,6 +94,10 @@ export class CascaderComponent {
   public backLabel = input<string | null>(null);
   /** Placeholder of the panel's search input (shown when the data source has a `search` hook). */
   public searchPlaceholder = input<string | null>(null);
+
+  private panelThemes = viewChild(SemanticThemesDirective);
+
+  protected errorColorTheme = computed(() => this.panelThemes()?.themes.error() ?? null);
 
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
 

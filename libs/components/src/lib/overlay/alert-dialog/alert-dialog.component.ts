@@ -1,5 +1,5 @@
 import { Component, InjectionToken, ViewEncapsulation, computed, inject } from '@angular/core';
-import { ColorTheme, injectErrorTheme } from '@ethlete/core';
+import { injectSemanticColorTheme } from '@ethlete/core';
 import { ButtonComponent } from '../../button/button.component';
 import { OverlayBodyComponent } from '../overlay-body.component';
 import { OverlayFooterDirective } from '../overlay-footer.directive';
@@ -48,7 +48,7 @@ export const ALERT_DIALOG_CONTENT = new InjectionToken<AlertDialogContent>('ALER
         >
           {{ cancelLabel() }}
         </button>
-        <button [color]="confirmColor" (click)="overlayRef.close(true)" et-button variant="filled" type="button">
+        <button [color]="confirmColor()" (click)="overlayRef.close(true)" et-button variant="filled" type="button">
           {{ confirmLabel() }}
         </button>
       } @else {
@@ -84,7 +84,9 @@ export class AlertDialogComponent {
 
   protected overlayRef = inject(OVERLAY_REF);
   protected content = inject(ALERT_DIALOG_CONTENT);
-  protected confirmColor: ColorTheme | undefined = this.content.destructive ? injectErrorTheme() : undefined;
+  private errorTheme = injectSemanticColorTheme('error');
+
+  protected confirmColor = computed(() => (this.content.destructive ? this.errorTheme() : undefined));
 
   protected confirmLabel = computed(() => this.content.confirmLabel ?? this.labels().confirm);
   protected cancelLabel = computed(() => this.content.cancelLabel ?? this.labels().cancel);

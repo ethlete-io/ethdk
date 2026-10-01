@@ -40,7 +40,7 @@
 </ng-template>
 
 <ng-template etCascaderSurface>
-  <et-cascader-panel #panel>
+  <et-cascader-panel #panel etSemanticThemes>
     @if (cascader.canSearch()) {
       <div class="et-cascader-search">
         <input [placeholder]="resolvedSearchPlaceholder()" etCascaderSearch />
@@ -172,7 +172,7 @@
         }
         @case ('error') {
           <div class="et-cascader-state et-cascader-state--error" role="alert">
-            <span [etProvideColor]="errorColorTheme" class="et-cascader-state-error-message">{{
+            <span [etProvideColor]="errorColorTheme()" class="et-cascader-state-error-message">{{
               cascader.searchState().error
             }}</span>
             <button (click)="cascader.retrySearch()" et-text-button size="sm" type="button">
@@ -241,7 +241,7 @@
         }
         @case ('error') {
           <div class="et-cascader-state et-cascader-state--error" role="alert">
-            <span [etProvideColor]="errorColorTheme" class="et-cascader-state-error-message">{{ column.error }}</span>
+            <span [etProvideColor]="errorColorTheme()" class="et-cascader-state-error-message">{{ column.error }}</span>
             <button (click)="cascader.retryColumn(columnIndex)" et-text-button size="sm" type="button">
               {{ cascaderLabels().retry }}
             </button>

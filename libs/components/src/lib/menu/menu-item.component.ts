@@ -1,5 +1,5 @@
 import { Component, ViewEncapsulation, effect, inject, input, untracked } from '@angular/core';
-import { ProvideColorDirective, injectErrorTheme } from '@ethlete/core';
+import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { MenuItemDirective } from './headless';
 import { MenuItemSubmenuIconComponent } from './menu-item-submenu-icon.component';
 
@@ -31,7 +31,7 @@ export type MenuItemVariant = (typeof MENU_ITEM_VARIANTS)[keyof typeof MENU_ITEM
 })
 export class MenuItemComponent {
   private provideColor = inject(ProvideColorDirective);
-  private errorColorTheme = injectErrorTheme();
+  private errorColorTheme = injectSemanticColorTheme('error');
   private item = inject(MenuItemDirective);
 
   public variant = input<MenuItemVariant>(MENU_ITEM_VARIANTS.DEFAULT);
@@ -41,11 +41,11 @@ export class MenuItemComponent {
 
   constructor() {
     effect(() => {
-      const isDestructive = this.variant() === MENU_ITEM_VARIANTS.DESTRUCTIVE;
+      const destructiveTheme = this.variant() === MENU_ITEM_VARIANTS.DESTRUCTIVE ? this.errorColorTheme() : null;
 
       untracked(() => {
-        if (isDestructive) {
-          this.provideColor.forceColor(this.errorColorTheme);
+        if (destructiveTheme) {
+          this.provideColor.forceColor(destructiveTheme);
 
           return;
         }

@@ -47,7 +47,7 @@ A number `value` is formatted with `Intl.NumberFormat` in the app locale (`injec
 
 ## Delta colour
 
-The delta's direction comes from its sign: up, down, or unchanged at zero. `goodDirection` says which of those is good. A good delta resolves the theme your app registered with `type: 'success'` (`injectSuccessTheme()`), a bad one the `type: 'error'` theme (`injectErrorTheme()`), and the text and arrow use that scope's `--et-theme-color-ink-solid`. An unchanged delta, or any delta with `goodDirection` set to `null`, stays in the muted text colour - use `null` for a metric that has no better direction, like page views.
+The delta's direction comes from its sign: up, down, or unchanged at zero. `goodDirection` says which of those is good. A good delta resolves the `success` theme of the tile's surface, a bad one the `error` theme (`injectSemanticColorTheme()`: the theme the surface names, else the one your app registered with that `type`), and the text and arrow use that scope's `--et-theme-color-ink-solid`. An unchanged delta, or any delta with `goodDirection` set to `null`, stays in the muted text colour - use `null` for a metric that has no better direction, like page views.
 
 A theme is looked up only when a delta needs it, so an app that never shows a coloured delta registers neither. The colour only reinforces the direction: the arrow's shape and the sign carry it as well.
 

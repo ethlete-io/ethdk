@@ -74,7 +74,7 @@ export const appConfig: ApplicationConfig = {
 - **`provideColorThemesWithTailwind4(themes)`** - the accent palettes. Exactly one
   `isDefault` theme. Pass the same arrays you ran the generators on.
 - **A color theme with `type: 'error'`.** `et-form-field`, `et-select` and `et-cascader`
-  resolve their error styling through `injectErrorTheme()`, which throws
+  resolve their error styling through `injectSemanticColorTheme('error')`, which throws
   `No color theme with type "error" found` when none is registered - so every form control
   fails without it. Register `type: 'warning'` too if you use form warnings, and
   `'success'` / `'warning'` / `'error'` for `et-progress-steps` states.

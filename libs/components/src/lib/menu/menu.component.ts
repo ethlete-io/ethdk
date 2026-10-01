@@ -14,7 +14,7 @@ import {
   ProvideColorDirective,
   createComponentId,
   injectAnimatedBlockSize,
-  injectErrorTheme,
+  injectSemanticColorTheme,
 } from '@ethlete/core';
 import { MenuDirective, MenuPanelDirective } from './headless';
 
@@ -35,7 +35,7 @@ export class MenuComponent {
   private ownColorProvider = inject(ProvideColorDirective);
   private contextColorProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
   private menu = inject(MenuDirective, { optional: true });
-  protected errorColorTheme = injectErrorTheme();
+  protected errorColorTheme = injectSemanticColorTheme('error');
 
   // both must stay content-sized: the host's used size is overridden by the resize animation and
   // the scroller is sized by the host, so observing either would feed the animation back in
