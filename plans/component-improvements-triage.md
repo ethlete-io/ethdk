@@ -5,9 +5,6 @@ Live work only, ordered by what to do first. Finished items are removed; git his
 ## Chart follow-ups
 
 - Sankey: the call 10 B drawing has a muted key hint in the link tooltip ("1 of 2 · ↑↓ next link · Esc back to …"). Not built; it needs text inputs that can be translated.
-- Line: with `includeZero=false`, the public `baseline()` can fall outside the plot.
-- Line: Escape less than 300ms after an instant tooltip show lets the pending timer of the tooltip directive open it again.
-- Line: the focus ring sizes an SVG `rect` with CSS `x` and `width`. Not checked in Safari and Firefox; if they ignore it, they draw the shipped ring.
 
 ## Stat tile
 
