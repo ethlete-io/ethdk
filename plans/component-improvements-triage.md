@@ -73,7 +73,7 @@ Pie triage (2026-10-01): keep the shipped defaults of 1, 2, 4, 5, 6, 8 and 9. Bu
 7. Missing values are left out of the tooltip. An x with no values reads "–".
 8. Focus ring: a full-height rounded ring around the focused column. It gets thin on daily data.
 
-Line triage (2026-10-01): keep the shipped defaults of 2, 6 and 7. Built without a drawing: 1 (the delay applies only on first entry), 4 (`includeZero` input), 5 (locale week start). Drawn: 3 (stacked area on dark) and 8 (focus ring on dense data), in `.ethlete/design/calls/components/line-chart/`.
+Line triage (2026-10-01): keep the shipped defaults of 2, 6 and 7. Built without a drawing: 1 (the delay applies only on first entry), 4 (`includeZero` input), 5 (locale week start). Drawn: 3 (stacked area on dark) and 8 (focus ring on dense data), in `.ethlete/design/calls/components/line-chart/`: call 3 **B won**, a stacked band fills with an opaque `color-mix` of 45% series colour with the surface, and areas draw before lines; call 8 **B won**, the focus ring is at least 12px wide and centred on the x. Both built.
 
 ## Stat tile
 
