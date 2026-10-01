@@ -934,4 +934,93 @@ describe('tailwind-4-color-theme generator', () => {
       expect(tree.exists('src/styles/tw.css')).toBe(false);
     });
   });
+
+  describe('inkColorBySurfaceType', () => {
+    const SWATCH = `
+        color: { default: '220 38 38', hover: '239 68 68', active: '185 28 28', disabled: '120 52 52' },
+        onColor: { default: '255 255 255' },
+        inkColor: { default: '248 113 113' },`;
+
+    const generateCss = async (alertSwatchExtra: string) => {
+      tree.write(
+        'src/themes.ts',
+        `
+        export const BRAND = {
+          name: 'brand',
+          isDefault: true,
+          primary: { ${SWATCH} },
+        };
+
+        export const ALERT = {
+          name: 'alert',
+          primary: { ${SWATCH} ${alertSwatchExtra} },
+        };
+
+        export const THEMES = [BRAND, ALERT];
+      `,
+      );
+
+      await migrate(tree, { themesPath: 'src/themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
+
+      return tree.read('src/styles/tw.css', 'utf-8') ?? '';
+    };
+
+    it('should leave the ink output unchanged when no theme sets it', async () => {
+      const content = await generateCss('');
+
+      expect(content).toContain('--et-theme-color-ink-rgb: var(--et-color-primary-ink, var(--et-color-primary));');
+      expect(content).toContain('--color-et-theme-ink: rgb(var(--et-color-primary-ink));');
+      expect(content).not.toContain('--_et-color-ink');
+      expect(content).not.toContain('-ink-light');
+    });
+
+    it('should emit the per-type ink on the theme scope and as static utilities', async () => {
+      const content = await generateCss(`
+        inkColorBySurfaceType: {
+          light: { default: '185 28 28', hover: '153 27 27', disabled: '220 150 150' },
+        },`);
+
+      const alertScope = content.slice(content.indexOf('.et-color--alert {'));
+
+      expect(alertScope).toContain('--et-color-primary-ink-light: 185 28 28;');
+      expect(alertScope).toContain('--et-color-primary-ink-light-hover: 153 27 27;');
+      expect(alertScope).toContain('--et-color-primary-ink-light-focus: 153 27 27;');
+      expect(alertScope).toContain('--et-color-primary-ink-light-active: 153 27 27;');
+      expect(alertScope).toContain('--et-color-primary-ink-light-disabled: 220 150 150;');
+      expect(content).not.toMatch(/--et-color-primary-ink-dark: \d/);
+      expect(content).toContain('--color-et-alert-ink-light: rgb(185 28 28);');
+    });
+
+    it('should reset the per-type ink on every color scope except an inherited one', async () => {
+      const content = await generateCss(`inkColorBySurfaceType: { light: { default: '185 28 28' } },`);
+
+      expect(content).toContain(':where([class*="et-color--"]:not(.et-color--inherited)) {');
+      expect(content).toContain('--et-color-primary-ink-light: initial;');
+      expect(content).toContain('--et-color-primary-ink-dark-disabled: initial;');
+    });
+
+    it('should resolve the ink on every color and surface scope through the surface type switch', async () => {
+      const content = await generateCss(`inkColorBySurfaceType: { light: { default: '185 28 28' } },`);
+
+      const inkBlock = content.slice(content.indexOf('/* Surface-aware ink'));
+
+      expect(inkBlock).toContain(':root, :where([class*="et-color--"]), :where([class*="et-surface--"]) {');
+      expect(inkBlock).toContain(
+        '--_et-color-ink-light: var(--et-surface-if-light) var(--et-color-primary-ink-light);',
+      );
+      expect(inkBlock).toContain(
+        '--_et-color-ink: var(--_et-color-ink-light, var(--_et-color-ink-dark, var(--et-color-primary-ink, var(--et-color-primary))));',
+      );
+      expect(inkBlock).toContain('--et-theme-color-ink-rgb: var(--_et-color-ink);');
+      expect(inkBlock).toContain('--color-et-theme-ink-hover: rgb(var(--_et-color-ink-hover));');
+      expect(content.match(/--et-theme-color-ink-rgb:/g)).toHaveLength(1);
+    });
+
+    it('should warn about an unknown surface type', async () => {
+      const content = await generateCss(`inkColorBySurfaceType: { dim: { default: '185 28 28' } },`);
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('Unknown surface type "dim"'));
+      expect(content).not.toContain('--_et-color-ink');
+    });
+  });
 });

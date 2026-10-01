@@ -581,4 +581,16 @@ describe('tailwind-4-surface-theme generator', () => {
       expect(content).toContain('  color-scheme: dark;');
     });
   });
+
+  it('should emit the surface type switch the surface-aware ink resolves through', async () => {
+    tree.write('src/surface-themes.ts', CARD_AND_SHEET);
+
+    await migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
+
+    const content = tree.read('src/styles/tw.css', 'utf-8') ?? '';
+    const scope = (name: string) => content.slice(content.indexOf(`.et-surface--${name} {`)).split('}')[0];
+
+    expect(scope('card')).toContain('--et-surface-if-light: ;\n  --et-surface-if-dark: initial;');
+    expect(scope('sheet')).toContain('--et-surface-if-light: initial;\n  --et-surface-if-dark: ;');
+  });
 });

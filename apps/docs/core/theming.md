@@ -233,11 +233,57 @@ A `ColorTheme` - colors accept `"R G B"` or `"H S% L%"` strings:
 | `secondary` | `ThemeSwatch`                       | no       | Optional additional swatch.                                |
 | `tertiary`  | `ThemeSwatch`                       | no       | Optional additional swatch.                                |
 
-A `ThemeSwatch` is `{ color, onColor, inkColor? }`:
+A `ThemeSwatch` is `{ color, onColor, inkColor?, inkColorBySurfaceType? }`:
 
 - `color` - the fill: `default`, `hover`, `active`, `disabled` required, `focus` optional.
 - `onColor` - content rendered on the fill: only `default` required; missing states fall back (`focus` → `hover` → `default`).
 - `inkColor` - optional tinted text/border for transparent or tonal fills; same fallbacks as `onColor`.
+- `inkColorBySurfaceType` - optional ink per surface `type` (`light`, `dark`); see below.
+
+### Ink per surface type
+
+One ink rarely reads on both a dark and a light surface: a red that reaches 4.5:1 on a near-black
+panel falls to about 2.8:1 on white. Give the swatch a second ink for the surface type the plain
+`inkColor` fails on:
+
+```ts
+// `alert` is an app-registered example theme
+export const ALERT_THEME: ColorTheme = {
+  name: 'alert',
+  type: 'error',
+  primary: {
+    color: { default: '220 38 38', hover: '239 68 68', active: '185 28 28', disabled: '120 52 52' },
+    onColor: { default: '255 255 255' },
+    inkColor: { default: '248 113 113', hover: '252 165 165' }, // tuned for dark surfaces
+    inkColorBySurfaceType: {
+      light: { default: '185 28 28', hover: '153 27 27' }, // 6.5:1 on #fff
+    },
+  },
+};
+```
+
+`--et-theme-color-ink*`, the `etColorInteractive` state variants and the `text-et-theme-ink*`
+utilities then follow the **nearest surface**: inside a `light` surface they use the `light` map,
+everywhere else `inkColor` (and without `inkColor`, `color`). It resolves in CSS, so a light card
+inside a dark page inside a light shell switches at every level, with no JS. A theme without the
+field keeps its one ink, also inside an outer theme that has one. The static per-theme utilities
+gain `text-et-<name>-ink-light` / `-ink-dark`.
+
+Each surface scope carries the switch as two custom properties, `--et-surface-if-light` and
+`--et-surface-if-dark` (one empty, the other `initial`). The surface generator emits them from the
+theme's `type`, so **regenerate the surface stylesheet** too
+(`nx g @ethlete/core:tailwind-4-surface-theme`) before you use the field. A surface stylesheet without
+them leaves the plain `inkColor` in place everywhere. A hand-written surface scope sets them itself:
+
+```css
+.my-light-panel {
+  --et-surface-if-light: ;
+  --et-surface-if-dark: initial;
+}
+```
+
+Both generators must share the runtime prefix (`et` by default). Without any theme using the field,
+the color stylesheet is unchanged.
 
 Inside a color scope these tokens resolve (the un-suffixed variant is opacity-aware):
 

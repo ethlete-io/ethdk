@@ -60,6 +60,11 @@ Color (from the nearest `[etProvideColor]` scope):
 | `--et-theme-color-on-primary` | text/icons on a primary-filled background |
 | `--et-theme-color-ink-solid` | primary-tinted text/border on transparent/tonal fills |
 
+The ink follows the **nearest surface** when the theme's swatch sets `inkColorBySurfaceType`
+(`{ light?, dark? }` ink maps): the surface's `type` picks its map, a type without one uses `inkColor`.
+Components need nothing for it - keep reading `--et-theme-color-ink-*`, never pick an ink by
+surface in component CSS.
+
 Interaction-state variants (`--et-surface-interaction-{hover,focus,active,disabled}-solid`)
 resolve automatically per CSS state when the element has `[etSurfaceInteractive]`;
 similarly `[etColorInteractive]` re-resolves the color tokens per state (put it on

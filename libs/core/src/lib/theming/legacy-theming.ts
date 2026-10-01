@@ -7,6 +7,56 @@ import {
   ɵProvideColorThemesPrefix,
 } from './color-theme.util';
 
+const SURFACE_TYPES = ['light', 'dark'] as const;
+const INK_STATE_SUFFIXES = ['', '-hover', '-focus', '-active', '-disabled'] as const;
+
+const createSurfaceInkVars = (name: string, swatch: ThemeSwatch) =>
+  SURFACE_TYPES.map((type) => {
+    const inkMap = swatch.inkColorBySurfaceType?.[type];
+
+    if (!inkMap) return '';
+
+    const hover = inkMap.hover || inkMap.default;
+
+    return `
+  --et-color-${name}-ink-${type}: ${inkMap.default};
+  --et-color-${name}-ink-${type}-hover: ${hover};
+  --et-color-${name}-ink-${type}-focus: ${inkMap.focus || hover};
+  --et-color-${name}-ink-${type}-active: ${inkMap.active || inkMap.default};
+  --et-color-${name}-ink-${type}-disabled: ${inkMap.disabled || inkMap.default};
+  `;
+  }).join('');
+
+const createSurfaceInkCss = (themes: ColorTheme[]) => {
+  if (!themes.some((theme) => theme.primary.inkColorBySurfaceType)) return '';
+
+  const reset = SURFACE_TYPES.flatMap((type) =>
+    INK_STATE_SUFFIXES.map((suffix) => `--et-color-primary-ink-${type}${suffix}: initial;`),
+  ).join('\n');
+
+  const resolve = INK_STATE_SUFFIXES.map((suffix) => {
+    const plainInk = suffix
+      ? `var(--et-color-primary-ink${suffix}, var(--et-color-primary-ink, var(--et-color-primary)))`
+      : `var(--et-color-primary-ink, var(--et-color-primary))`;
+
+    return `${SURFACE_TYPES.map(
+      (type) =>
+        `--_et-color-ink-${type}${suffix}: var(--et-surface-if-${type}) var(--et-color-primary-ink-${type}${suffix});`,
+    ).join('\n')}
+  --_et-color-ink${suffix}: var(--_et-color-ink-light${suffix}, var(--_et-color-ink-dark${suffix}, ${plainInk}));`;
+  }).join('\n');
+
+  return `
+  :where([class*='et-color--']:not(.et-color--inherited)) {
+    ${reset}
+  }
+
+  :root, :where([class*='et-color--']), :where([class*='et-surface--']) {
+    ${resolve}
+  }
+  `;
+};
+
 /** Reads the nonce where Angular's default `CSP_NONCE` does, since these run outside any injector. */
 const createNoncedStyle = () => {
   const style = document.createElement('style');
@@ -47,7 +97,7 @@ export const createSwatchCss = (swatch: string, isAlt: boolean, data: ThemeSwatc
   --et-color-${varSuffix}-ink-focus: ${inkFocus};
   --et-color-${varSuffix}-ink-active: ${inkActive};
   --et-color-${varSuffix}-ink-disabled: ${inkDisabled};
-  `;
+  ${createSurfaceInkVars(varSuffix, data)}`;
 };
 
 /**
@@ -81,7 +131,7 @@ export const createRootThemeCss = (themes: ColorTheme[]) => {
     --et-color-${name}-ink-focus: ${inkFocus};
     --et-color-${name}-ink-active: ${inkActive};
     --et-color-${name}-ink-disabled: ${inkDisabled};
-    `;
+    ${createSurfaceInkVars(name, swatch)}`;
   };
 
   const vars: string[] = [];
@@ -108,7 +158,7 @@ export const createRootThemeCss = (themes: ColorTheme[]) => {
   :root {
     ${vars.join('\n')}
   }
-  `;
+  ${createSurfaceInkCss(themes)}`;
 
   document.getElementById('et-root-themes')?.remove();
   const style = createNoncedStyle();
@@ -201,6 +251,20 @@ export const createTailwindColorThemes = (themes: ColorTheme[], prefix = 'et') =
       disabled:
         createTailwindRgbVar(theme.primary.onColor.disabled) || createTailwindRgbVar(theme.primary.onColor.default),
     };
+
+    for (const type of SURFACE_TYPES) {
+      const inkMap = theme.primary.inkColorBySurfaceType?.[type];
+
+      if (!inkMap) continue;
+
+      twThemes[`${prefix}-${theme.name}-ink-${type}`] = {
+        DEFAULT: createTailwindRgbVar(inkMap.default),
+        hover: createTailwindRgbVar(inkMap.hover || inkMap.default),
+        focus: createTailwindRgbVar(inkMap.focus || inkMap.hover || inkMap.default),
+        active: createTailwindRgbVar(inkMap.active || inkMap.default),
+        disabled: createTailwindRgbVar(inkMap.disabled || inkMap.default),
+      };
+    }
 
     const keyInk = `${prefix}-${theme.name}-ink`;
 
