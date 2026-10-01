@@ -232,6 +232,7 @@ export const patchOpportunityPerson = patchQuery<PatchPersonArgs>(
 
 patchOpportunityPerson(
   withOptimisticUpdate({
+    read: getOpportunity,
     target: ({ args }) => ({ tag: `opportunity:${args.pathParams.uuid}` }),
     update: ({ current, args }) => ({ ...current, people: toggle(current.people, args.pathParams.peopleUuid) }),
   }),
@@ -250,9 +251,9 @@ cross tabs. Open: a retained unused entry is not marked stale. Slice 3 shipped (
 `apps/docs/query/groups.md`). Slice 4 shipped (`9a26e56ae`, `libs/components/src/lib/paged-query-trigger/`): native
 `IntersectionObserver`, because `signalElementIntersection` reads before layout and over-fetches; `root` takes no
 selector. Polling works on a paged stack, but every loaded page polls. Slice 6 (`selectOptionsFromQuery` onto
-`createPagedQueryStack`) in progress. Slice 5 in progress: `withOptimisticUpdate`,
-mark unused entries stale on invalidation, the double refresh in other tabs, and the bug "`withArgs(() => null)` +
-`execute({ args })` keeps no response". Ship item by item.
+`createPagedQueryStack`) in progress. Slice 5 shipped: `withArgs(() => null)` + `execute({ args })` fix (`004cf7294`),
+unused entries marked stale (`ff5e3e855`), no double restart in other tabs (`428835be7`), `withOptimisticUpdate`
+(`b3b13858a`; `read` types `current`). Open: `query-client` golden is +637 B (slices 2 and 5). Ship item by item.
 
 Order: `etQueryButton` + `queryButtonSourceFromV2Query`, `invalidates` + tags, `createQueryGroup`,
 `etPagedQueryTrigger`, `withOptimisticUpdate`.
