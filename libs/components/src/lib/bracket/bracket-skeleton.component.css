@@ -27,6 +27,18 @@
     inline-size: 40%;
   }
 
+  .et-bracket-skeleton-continue {
+    display: flex;
+    box-sizing: border-box;
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .et-bracket-skeleton-continue .et-bracket-skeleton-continue-bone {
+    flex: 1;
+    --et-skeleton-radius: 6px;
+  }
+
   .et-bracket-skeleton-round-header {
     display: flex;
     align-items: center;

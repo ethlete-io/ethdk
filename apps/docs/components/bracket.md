@@ -705,8 +705,8 @@ that never shows a skeleton bundles none of it.
 It reads `provideBracketConfig` like any bracket, and takes the layout inputs that change the geometry:
 `layouts`, `density`, `columnWidth`, `matchHeight`, `finalColumnWidth`, `finalMatchHeight`,
 `roundHeaderHeight`, `roundHeaderGap`, `finalRoundHeaderGap`, `columnGap`, `rowGap`, `rowRoundGap`,
-`thirdPlaceTopOffset` and `hideRoundHeaders`. Bind the same values as the bracket it replaces. Journey
-highlight and the continue element are always off.
+`thirdPlaceTopOffset`, `hideRoundHeaders`, `showContinueElement`, `continueColumnWidth` and
+`continueElementHeight`. Bind the same values as the bracket it replaces. Journey highlight is always off.
 
 The drawing is hidden from assistive tech; the [`et-skeleton`](/components/skeleton) around it
 announces the wait once. Set `loadingAllyText` for something more specific than the `LOADER_LABELS`

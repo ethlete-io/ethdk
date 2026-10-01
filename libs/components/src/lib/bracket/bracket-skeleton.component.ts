@@ -69,6 +69,19 @@ export class BracketSkeletonRoundHeaderComponent<TRoundData = unknown, TMatchDat
   public bracketRoundSwissGroup = input<BracketRoundSwissGroup<TRoundData, TMatchData> | null>(null);
 }
 
+@Component({
+  selector: 'et-bracket-skeleton-continue',
+  template: `<et-skeleton-item class="et-bracket-skeleton-continue-bone" shape="rect" />`,
+  encapsulation: ViewEncapsulation.None,
+  imports: [SKELETON_IMPORTS],
+  host: {
+    class: 'et-bracket-skeleton-continue',
+  },
+})
+export class BracketSkeletonContinueComponent<TRoundData = unknown, TMatchData = unknown> {
+  public bracketMatches = input.required<BracketMatch<TRoundData, TMatchData>[]>();
+}
+
 /**
  * A loading placeholder for `et-bracket`: the real bracket layout drawn with an empty source of the given
  * `shape` and skeleton cards, announced once through `et-skeleton`. Bind the same layout inputs as the
@@ -104,7 +117,10 @@ export class BracketSkeletonRoundHeaderComponent<TRoundData = unknown, TMatchDat
         [matchComponent]="MATCH_COMPONENT"
         [finalMatchComponent]="FINAL_MATCH_COMPONENT"
         [roundHeaderComponent]="ROUND_HEADER_COMPONENT"
-        showContinueElement="false"
+        [showContinueElement]="showContinueElement()"
+        [continueColumnWidth]="continueColumnWidth()"
+        [continueElementHeight]="continueElementHeight()"
+        [continueComponent]="CONTINUE_COMPONENT"
         aria-hidden="true"
         disableJourneyHighlight
       />
@@ -161,10 +177,20 @@ export class BracketSkeletonComponent {
   public hideRoundHeaders = input<boolean | undefined, OptionalBooleanInput>(undefined, {
     transform: optionalBooleanAttribute,
   });
+  public showContinueElement = input<boolean | undefined, OptionalBooleanInput>(undefined, {
+    transform: optionalBooleanAttribute,
+  });
+  public continueColumnWidth = input<number | undefined, OptionalNumberInput>(undefined, {
+    transform: optionalNumberAttribute,
+  });
+  public continueElementHeight = input<number | undefined, OptionalNumberInput>(undefined, {
+    transform: optionalNumberAttribute,
+  });
 
   protected source = computed(() => createPlaceholderBracketSource(this.shape()));
 
   protected readonly MATCH_COMPONENT = BracketSkeletonMatchComponent;
   protected readonly FINAL_MATCH_COMPONENT = BracketSkeletonFinalMatchComponent;
   protected readonly ROUND_HEADER_COMPONENT = BracketSkeletonRoundHeaderComponent;
+  protected readonly CONTINUE_COMPONENT = BracketSkeletonContinueComponent;
 }

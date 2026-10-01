@@ -15,6 +15,7 @@ import { testBracketLayouts } from './testing/bracket-driver';
       [layouts]="layouts"
       [loadingAllyText]="loadingAllyText()"
       [columnWidth]="columnWidth()"
+      [showContinueElement]="showContinueElement()"
     />
   `,
   imports: [BracketSkeletonComponent],
@@ -24,6 +25,7 @@ class BracketSkeletonTestHost {
   public readonly shape = signal<PlaceholderBracketShape>({ mode: 'single-elimination', participantCount: 8 });
   public readonly loadingAllyText = signal<string | null>(null);
   public readonly columnWidth = signal<number | undefined>(undefined);
+  public readonly showContinueElement = signal<boolean | undefined>(undefined);
 }
 
 const mountBracketSkeleton = () => {
@@ -72,11 +74,23 @@ describe('BracketSkeletonComponent', () => {
     expect(textOf(query(driver.fixture, '.et-skeleton-ally-text'))).toBe('Loading the bracket');
   });
 
-  it('keeps journey highlight and the continue element off', () => {
+  it('keeps journey highlight off', () => {
     const driver = mountBracketSkeleton();
 
     expect(driver.bracket().settings().disableJourneyHighlight).toBe(true);
-    expect(driver.bracket().settings().showContinueElement).toBe(false);
+  });
+
+  it('draws a skeleton continue card only when the continue element is on', () => {
+    const driver = mountBracketSkeleton();
+
+    expect(queryAll(driver.fixture, '.et-bracket-skeleton-continue')).toHaveLength(0);
+
+    driver.host.shape.set({ mode: 'double-elimination', participantCount: 8, includeFinal: false });
+    driver.host.showContinueElement.set(true);
+    driver.detectChanges();
+
+    expect(driver.bracket().settings().showContinueElement).toBe(true);
+    expect(queryAll(driver.fixture, '.et-bracket-skeleton-continue').length).toBeGreaterThan(0);
   });
 
   it('forwards the layout inputs to the bracket it draws', () => {
