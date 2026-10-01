@@ -11,13 +11,19 @@ export type SankeyLayoutLinkInput = {
   value: number;
 };
 
+/** `horizontal` runs the flow left to right in columns, `vertical` top to bottom in rows. */
+export type SankeyLayoutDirection = 'horizontal' | 'vertical';
+
 export type SankeyLayoutOptions = {
   width: number;
   height: number;
   nodeWidth: number;
   nodeGap: number;
   insetStart: number;
+  /** Room before the first and after the last column, along the flow. */
   insetEnd: number;
+  /** @default 'horizontal' */
+  direction?: SankeyLayoutDirection;
   iterations?: number;
 };
 
@@ -57,8 +63,9 @@ export type SankeyLayout = {
   nodes: SankeyLayoutNode[];
   /** Only the links with a positive value. */
   links: SankeyLayoutLink[];
+  direction: SankeyLayoutDirection;
   columnCount: number;
-  /** The distance between the left edges of two neighbouring columns. */
+  /** The distance along the flow between the starts of two neighbouring columns. */
   columnStep: number;
   pixelsPerValue: number;
   gap: number;
@@ -72,6 +79,7 @@ const MAX_GAP_SHARE = 0.5;
 export const EMPTY_SANKEY_LAYOUT: SankeyLayout = {
   nodes: [],
   links: [],
+  direction: 'horizontal',
   columnCount: 0,
   columnStep: 0,
   pixelsPerValue: 0,
@@ -249,14 +257,16 @@ const sortByBarycenter = ({ column, centers, neighbours, far }: BarycenterInput)
   return keyed.map((entry) => entry.node);
 };
 
-type Ribbon = { x0: number; x1: number; y0: number; y1: number; width: number };
+type Ribbon = { along0: number; along1: number; across0: number; across1: number; width: number };
 
-const ribbonPath = ({ x0, x1, y0, y1, width }: Ribbon) => {
-  const xm = (x0 + x1) / 2;
+const ribbonPath = ({ along0, along1, across0, across1, width }: Ribbon, direction: SankeyLayoutDirection) => {
+  const mid = (along0 + along1) / 2;
+  const at = (along: number, across: number) =>
+    direction === 'vertical' ? `${across},${along}` : `${along},${across}`;
 
   return (
-    `M${x0},${y0}C${xm},${y0} ${xm},${y1} ${x1},${y1}` +
-    `L${x1},${y1 + width}C${xm},${y1 + width} ${xm},${y0 + width} ${x0},${y0 + width}Z`
+    `M${at(along0, across0)}C${at(mid, across0)} ${at(mid, across1)} ${at(along1, across1)}` +
+    `L${at(along1, across1 + width)}C${at(mid, across1 + width)} ${at(mid, across0 + width)} ${at(along0, across0 + width)}Z`
   );
 };
 
@@ -311,11 +321,14 @@ export const computeSankeyLayout = ({
   const { edges } = readEdges(nodeInputs, linkInputs);
   const nodeCount = nodeInputs.length;
 
-  if (!nodeCount) return EMPTY_SANKEY_LAYOUT;
+  const direction = options.direction ?? 'horizontal';
+  const empty = { ...EMPTY_SANKEY_LAYOUT, direction };
+
+  if (!nodeCount) return empty;
 
   const columnOf = assignSankeyColumns(nodeCount, edges);
 
-  if (!columnOf) return EMPTY_SANKEY_LAYOUT;
+  if (!columnOf) return empty;
 
   const columnCount = Math.max(...columnOf) + 1;
   const incoming = new Array<number>(nodeCount).fill(0);
@@ -335,7 +348,9 @@ export const computeSankeyLayout = ({
 
   columnOf.forEach((column, index) => columns[column]?.push(index));
 
-  const height = Math.max(0, options.height);
+  const vertical = direction === 'vertical';
+  const length = vertical ? options.height : options.width;
+  const height = Math.max(0, vertical ? options.width : options.height);
   const tallestColumn = Math.max(...columns.map((column) => column.length));
   const gap =
     tallestColumn > 1 ? Math.max(0, Math.min(options.nodeGap, (height * MAX_GAP_SHARE) / (tallestColumn - 1))) : 0;
@@ -388,58 +403,62 @@ export const computeSankeyLayout = ({
     }
   }
 
-  const y = place(best);
+  const across = place(best);
   const step =
-    columnCount > 1
-      ? (options.width - options.insetStart - options.insetEnd - options.nodeWidth) / (columnCount - 1)
-      : 0;
+    columnCount > 1 ? (length - options.insetStart - options.insetEnd - options.nodeWidth) / (columnCount - 1) : 0;
   const order = new Array<number>(nodeCount).fill(0);
 
   best.forEach((column) => column.forEach((node, position) => (order[node] = position)));
 
-  const nodes: SankeyLayoutNode[] = nodeInputs.map((node, index) => ({
-    index,
-    id: node.id,
-    column: columnOf[index] ?? 0,
-    order: order[index] ?? 0,
-    x: options.insetStart + (columnOf[index] ?? 0) * step,
-    y: y[index] ?? 0,
-    width: options.nodeWidth,
-    height: heights[index] ?? 0,
-    incoming: incoming[index] ?? 0,
-    outgoing: outgoing[index] ?? 0,
-    value: values[index] ?? 0,
-  }));
+  const along = columnOf.map((column) => options.insetStart + column * step);
 
-  const y0 = new Map<Edge, number>();
-  const y1 = new Map<Edge, number>();
-  const byNodeY = (pick: (edge: Edge) => number) => (a: Edge, b: Edge) =>
-    (nodes[pick(a)]?.y ?? 0) - (nodes[pick(b)]?.y ?? 0) || a.index - b.index;
+  const nodes: SankeyLayoutNode[] = nodeInputs.map((node, index) => {
+    const size = heights[index] ?? 0;
+    const start = along[index] ?? 0;
+    const offset = across[index] ?? 0;
+
+    return {
+      index,
+      id: node.id,
+      column: columnOf[index] ?? 0,
+      order: order[index] ?? 0,
+      x: vertical ? offset : start,
+      y: vertical ? start : offset,
+      width: vertical ? size : options.nodeWidth,
+      height: vertical ? options.nodeWidth : size,
+      incoming: incoming[index] ?? 0,
+      outgoing: outgoing[index] ?? 0,
+      value: values[index] ?? 0,
+    };
+  });
+
+  const across0 = new Map<Edge, number>();
+  const across1 = new Map<Edge, number>();
+  const byNodeAcross = (pick: (edge: Edge) => number) => (a: Edge, b: Edge) =>
+    (across[pick(a)] ?? 0) - (across[pick(b)] ?? 0) || a.index - b.index;
 
   nodes.forEach((node) => {
-    let cursor = node.y;
+    let cursor = across[node.index] ?? 0;
 
-    for (const edge of [...(edgesOut[node.index] ?? [])].sort(byNodeY((edge) => edge.target))) {
-      y0.set(edge, cursor);
+    for (const edge of [...(edgesOut[node.index] ?? [])].sort(byNodeAcross((edge) => edge.target))) {
+      across0.set(edge, cursor);
       cursor += edge.value * pixelsPerValue;
     }
 
-    cursor = node.y;
+    cursor = across[node.index] ?? 0;
 
-    for (const edge of [...(edgesIn[node.index] ?? [])].sort(byNodeY((edge) => edge.source))) {
-      y1.set(edge, cursor);
+    for (const edge of [...(edgesIn[node.index] ?? [])].sort(byNodeAcross((edge) => edge.source))) {
+      across1.set(edge, cursor);
       cursor += edge.value * pixelsPerValue;
     }
   });
 
   const links: SankeyLayoutLink[] = edges.map((edge) => {
-    const source = nodes[edge.source] as SankeyLayoutNode;
-    const target = nodes[edge.target] as SankeyLayoutNode;
     const width = edge.value * pixelsPerValue;
-    const x0 = source.x + source.width;
-    const x1 = target.x;
-    const start = y0.get(edge) ?? source.y;
-    const end = y1.get(edge) ?? target.y;
+    const along0 = (along[edge.source] ?? 0) + options.nodeWidth;
+    const along1 = along[edge.target] ?? 0;
+    const start = across0.get(edge) ?? across[edge.source] ?? 0;
+    const end = across1.get(edge) ?? across[edge.target] ?? 0;
 
     return {
       index: edge.index,
@@ -447,17 +466,18 @@ export const computeSankeyLayout = ({
       target: edge.target,
       value: edge.value,
       width,
-      x0,
-      x1,
-      y0: start,
-      y1: end,
-      path: ribbonPath({ x0, x1, y0: start, y1: end, width }),
+      x0: vertical ? start : along0,
+      x1: vertical ? end : along1,
+      y0: vertical ? along0 : start,
+      y1: vertical ? along1 : end,
+      path: ribbonPath({ along0, along1, across0: start, across1: end, width }, direction),
     };
   });
 
   return {
     nodes: nodes.map((node) => ({ ...node, index: inputIndexes[node.index] ?? node.index })),
     links,
+    direction,
     columnCount,
     columnStep: step,
     pixelsPerValue,

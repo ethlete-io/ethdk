@@ -335,3 +335,105 @@ test.describe('sankey chart / touch', () => {
     expect(size.scroll).toBeGreaterThanOrEqual(480);
   });
 });
+
+test.describe('sankey chart / narrow', () => {
+  const NARROW_STORY_ID = 'components-data-display-sankey-chart--narrow-screen';
+  const SOURCES_NARROW = ['Sponsoring', 'Tickets', 'Media rights', 'Merchandise'];
+
+  test.use({ viewport: { width: 400, height: 900 } });
+
+  async function nodeBox(root: Locator, name: string) {
+    return boxOf(mark(root, name).locator('.et-sankey-chart-node-mark'));
+  }
+
+  test('below 480px the flow turns vertical and nothing scrolls sideways', async ({ page }) => {
+    const root = await openStory(page, NARROW_STORY_ID);
+    const chart = root.locator('et-sankey-chart');
+    const scroller = root.locator('.et-sankey-chart-scroller');
+
+    await expect(chart).toHaveAttribute('data-direction', 'vertical');
+
+    const size = await scroller.evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth }));
+
+    expect(size.scroll).toBeLessThanOrEqual(size.client);
+
+    const sources = await Promise.all(SOURCES_NARROW.map((name) => nodeBox(root, name)));
+    const budget = await nodeBox(root, 'Budget');
+
+    for (const source of sources) {
+      expect(source.y).toBeCloseTo(at(sources, 0).y, 0);
+      expect(source.height).toBeCloseTo(12, 0);
+      expect(budget.y).toBeGreaterThan(source.y + source.height);
+    }
+  });
+
+  test('labels sit above the first row and below the last, inside the plot', async ({ page }) => {
+    const root = await openStory(page, NARROW_STORY_ID);
+    const plot = await boxOf(root.locator('.et-sankey-chart-plot'));
+    const label = (name: string) => root.locator('.et-sankey-chart-label', { hasText: name });
+
+    for (const name of SOURCES_NARROW) {
+      const box = await boxOf(label(name));
+
+      expect(box.y + box.height).toBeLessThanOrEqual((await nodeBox(root, name)).y);
+    }
+
+    for (const name of ['Salaries', 'Travel', 'Facilities']) {
+      const box = await boxOf(label(name));
+      const node = await nodeBox(root, name);
+
+      expect(box.y).toBeGreaterThanOrEqual(node.y + node.height);
+    }
+
+    const boxes = await root
+      .locator('.et-sankey-chart-label')
+      .evaluateAll((labels) => labels.map((el) => el.getBoundingClientRect().toJSON() as DOMRect));
+
+    for (const box of boxes) {
+      expect(box.left).toBeGreaterThanOrEqual(plot.x - 1);
+      expect(box.right).toBeLessThanOrEqual(plot.x + plot.width + 1);
+    }
+  });
+
+  test('the arrow keys follow the turned flow: ↓↑ between rows, ←→ within a row and across links', async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(isMobile, 'pointer-only: keyboard focus');
+
+    const root = await openStory(page, NARROW_STORY_ID);
+    const focusedName = () => page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? '');
+
+    await pressKey(page, 'Tab');
+    const first = await focusedName();
+
+    expect(SOURCES_NARROW).toContain(first);
+
+    await pressKey(page, 'ArrowRight');
+    const second = await focusedName();
+
+    expect(SOURCES_NARROW).toContain(second);
+    expect((await nodeBox(root, second)).x).toBeGreaterThan((await nodeBox(root, first)).x);
+
+    await pressKey(page, 'ArrowDown');
+    await expectNodeFocusVisible(mark(root, 'Budget'));
+
+    await pressKey(page, 'Enter');
+    const firstLink = await focusedName();
+
+    expect(firstLink).toMatch(/^Budget to /);
+
+    await pressKey(page, 'ArrowRight');
+    const secondLink = await focusedName();
+    const anchorX = async (name: string) => (await boxOf(mark(root, name).locator('.et-sankey-chart-link-anchor'))).x;
+
+    expect(secondLink).toMatch(/^Budget to /);
+    expect(await anchorX(secondLink)).toBeGreaterThan(await anchorX(firstLink));
+
+    await pressKey(page, 'Escape');
+    await expect(mark(root, 'Budget')).toBeFocused();
+
+    await pressKey(page, 'ArrowUp');
+    expect(SOURCES_NARROW).toContain(await focusedName());
+  });
+});

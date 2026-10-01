@@ -1,14 +1,16 @@
 import { findSankeyKeyTarget, SankeyKeyboardLink, SankeyKeyboardNode } from './sankey-keyboard';
 
 const NODES: SankeyKeyboardNode[] = [
-  { key: 'tickets', column: 0, y: 0, height: 40 },
-  { key: 'sponsors', column: 0, y: 60, height: 40 },
-  { key: 'merch', column: 0, y: 120, height: 40 },
-  { key: 'budget', column: 1, y: 0, height: 60 },
-  { key: 'reserve', column: 1, y: 100, height: 60 },
-  { key: 'staff', column: 2, y: 20, height: 40 },
-  { key: 'travel', column: 2, y: 120, height: 40 },
+  { key: 'tickets', column: 0, x: 0, y: 0, width: 10, height: 40 },
+  { key: 'sponsors', column: 0, x: 0, y: 60, width: 10, height: 40 },
+  { key: 'merch', column: 0, x: 0, y: 120, width: 10, height: 40 },
+  { key: 'budget', column: 1, x: 100, y: 0, width: 10, height: 60 },
+  { key: 'reserve', column: 1, x: 100, y: 100, width: 10, height: 60 },
+  { key: 'staff', column: 2, x: 200, y: 20, width: 10, height: 40 },
+  { key: 'travel', column: 2, x: 200, y: 120, width: 10, height: 40 },
 ];
+
+const TURNED = NODES.map((node) => ({ ...node, x: node.y, y: node.x, width: node.height, height: node.width }));
 
 const link = (source: string, target: string): SankeyKeyboardLink => ({
   key: `${source}:${target}`,
@@ -63,6 +65,39 @@ describe('findSankeyKeyTarget', () => {
     expect(from('reserve:travel', 'link')('Home')).toEqual({ kind: 'link', key: 'reserve:staff' });
     expect(from('reserve:staff', 'link')('End')).toEqual({ kind: 'link', key: 'reserve:travel' });
     expect(from('reserve:travel', 'link')('Escape')).toEqual({ kind: 'node', key: 'reserve' });
+  });
+
+  describe('in a vertical flow', () => {
+    const turned =
+      (key: string, kind: 'node' | 'link' = 'node') =>
+      (pressed: string) =>
+        findSankeyKeyTarget(
+          { nodes: TURNED, links: LINKS, direction: 'vertical' },
+          { key: pressed, mark: { kind, key } },
+        );
+
+    it('moves left and right within a row and stops at its ends', () => {
+      expect(turned('tickets')('ArrowRight')).toEqual({ kind: 'node', key: 'sponsors' });
+      expect(turned('sponsors')('ArrowLeft')).toEqual({ kind: 'node', key: 'tickets' });
+      expect(turned('merch')('ArrowRight')).toEqual({ kind: 'node', key: 'merch' });
+      expect(turned('tickets')('ArrowLeft')).toEqual({ kind: 'node', key: 'tickets' });
+    });
+
+    it('moves down and up to the nearest node of the next row and stops at the edges', () => {
+      expect(turned('tickets')('ArrowDown')).toEqual({ kind: 'node', key: 'budget' });
+      expect(turned('merch')('ArrowDown')).toEqual({ kind: 'node', key: 'reserve' });
+      expect(turned('reserve')('ArrowDown')).toEqual({ kind: 'node', key: 'travel' });
+      expect(turned('staff')('ArrowUp')).toEqual({ kind: 'node', key: 'budget' });
+      expect(turned('tickets')('ArrowUp')).toEqual({ kind: 'node', key: 'tickets' });
+      expect(turned('travel')('ArrowDown')).toEqual({ kind: 'node', key: 'travel' });
+    });
+
+    it('cycles the outgoing links with left and right', () => {
+      expect(turned('reserve:staff', 'link')('ArrowRight')).toEqual({ kind: 'link', key: 'reserve:travel' });
+      expect(turned('reserve:staff', 'link')('ArrowLeft')).toEqual({ kind: 'link', key: 'reserve:travel' });
+      expect(turned('reserve:staff', 'link')('ArrowDown')).toBeNull();
+      expect(turned('reserve:travel', 'link')('Escape')).toEqual({ kind: 'node', key: 'reserve' });
+    });
   });
 
   it('ignores the node keys on a link and the link keys on a node', () => {

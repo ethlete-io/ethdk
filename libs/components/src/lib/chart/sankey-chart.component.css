@@ -52,6 +52,10 @@
       min-inline-size: var(--et-sankey-chart-min-width);
     }
 
+    &:where([data-direction='vertical']) .et-sankey-chart-plot {
+      min-inline-size: 0;
+    }
+
     .et-sankey-chart-svg {
       display: block;
       overflow: visible;
@@ -88,6 +92,19 @@
         border-radius: 4px;
         background: var(--et-surface-background-solid, transparent);
         text-shadow: none;
+        translate: -50% -50%;
+      }
+    }
+
+    &:where([data-direction='vertical']) .et-sankey-chart-label {
+      translate: -50% 0;
+      text-align: center;
+
+      &:where([data-side='start']) {
+        translate: -50% -100%;
+      }
+
+      &:where([data-side='center']) {
         translate: -50% -50%;
       }
     }

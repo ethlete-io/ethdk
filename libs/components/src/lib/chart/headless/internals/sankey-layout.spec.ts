@@ -142,6 +142,65 @@ describe('computeSankeyLayout', () => {
     expect(link?.x1).toBe(byId(layout, 'c').x);
   });
 
+  it('turns the flow top to bottom in the vertical direction, columns becoming rows', () => {
+    const nodes = nodesOf('a', 'b', 'c', 'd', 'e');
+    const horizontal = computeSankeyLayout({ nodes, links: flow, ...OPTIONS, width: 200, height: 400 });
+    const vertical = computeSankeyLayout({
+      nodes,
+      links: flow,
+      ...OPTIONS,
+      width: 200,
+      height: 400,
+      insetStart: 30,
+      insetEnd: 20,
+      direction: 'vertical',
+    });
+
+    expect(vertical.direction).toBe('vertical');
+    expect(vertical.columnStep).toBe((400 - 30 - 20 - 10) / 2);
+    expect(byId(vertical, 'a').y).toBe(30);
+    expect(byId(vertical, 'c').y).toBe(30 + vertical.columnStep);
+    expect(byId(vertical, 'd').y + byId(vertical, 'd').height).toBe(400 - 20);
+
+    for (const id of ['a', 'b', 'c', 'd', 'e']) {
+      const turned = byId(vertical, id);
+
+      expect(turned.height).toBe(10);
+      expect(turned.width).toBeCloseTo(turned.value * vertical.pixelsPerValue);
+    }
+
+    const [left, right] = [byId(vertical, 'a'), byId(vertical, 'b')].sort((x, y) => x.x - y.x);
+
+    expect((left?.width ?? 0) + vertical.gap + (right?.width ?? 0)).toBeCloseTo(200);
+    expect(right?.x).toBeCloseTo((left?.x ?? 0) + (left?.width ?? 0) + vertical.gap);
+    expect(vertical.pixelsPerValue).not.toBeCloseTo(horizontal.pixelsPerValue);
+  });
+
+  it('runs a vertical ribbon from the bottom edge of its source to the top edge of its target', () => {
+    const layout = computeSankeyLayout({
+      nodes: nodesOf('a', 'b', 'c', 'd', 'e'),
+      links: flow,
+      ...OPTIONS,
+      direction: 'vertical',
+    });
+    const c = byId(layout, 'c');
+    const out = layout.links.filter((link) => link.source === c.index).sort((x, y) => x.x0 - y.x0);
+
+    for (const link of layout.links) {
+      const source = layout.nodes[link.source];
+      const target = layout.nodes[link.target];
+
+      expect(link.y0).toBe((source?.y ?? 0) + 10);
+      expect(link.y1).toBe(target?.y);
+      expect(link.path).toContain(`M${link.x0},${link.y0}`);
+      expect(link.path).toContain(`L${link.x1 + link.width},${link.y1}`);
+      expect(link.path).toMatch(new RegExp(`${link.x0 + link.width},${link.y0}Z$`));
+    }
+
+    expect(out[0]?.x0).toBeCloseTo(c.x);
+    expect((out[1]?.x0 ?? 0) + (out[1]?.width ?? 0)).toBeCloseTo(c.x + c.width);
+  });
+
   it('reorders a column to remove a crossing', () => {
     const nodes = nodesOf('a', 'b', 'x', 'y');
     const links = [

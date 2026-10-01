@@ -9,7 +9,7 @@ import { SankeyChartDirective } from './headless/sankey-chart.directive';
 
 /**
  * A sankey chart: nodes in left-to-right columns, sized by what flows through them, joined by ribbons
- * as wide as their value. Hovering or focusing a node highlights its links. The chart is one tab stop: the arrow keys walk
+ * as wide as their value. Below 480px of width the flow turns top to bottom, columns becoming rows. Hovering or focusing a node highlights its links. The chart is one tab stop: the arrow keys walk
  * the nodes, Enter steps into a node's outgoing links and Escape returns. Driven by the headless
  * {@link SankeyChartDirective}.
  *
@@ -47,11 +47,14 @@ import { SankeyChartDirective } from './headless/sankey-chart.directive';
         'targetHeader',
         'valueHeader',
         'linkSeparator',
+        'direction',
+        'verticalBelow',
       ],
     },
   ],
   host: {
     class: 'et-sankey-chart',
+    '[attr.data-direction]': 'chart.flowDirection()',
   },
 })
 export class SankeyChartComponent {

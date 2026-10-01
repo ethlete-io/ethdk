@@ -1,5 +1,10 @@
 import { computed, Directive, effect, input, numberAttribute, signal } from '@angular/core';
-import { injectSurfaceColorPalette, injectLocale, RegisteredColorThemeName } from '@ethlete/core';
+import {
+  injectLocale,
+  injectSurfaceColorPalette,
+  RegisteredColorThemeName,
+  signalElementDimensions,
+} from '@ethlete/core';
 import { injectReportError } from '../../internals/report-error';
 import { ChartRect, ChartTableModel, ChartTooltipPlacement } from '../chart.types';
 import { CHART_PLOT_HOST, ChartPlotDirective, ChartPlotHost } from './chart-plot.directive';
@@ -28,7 +33,10 @@ export type SankeyChartLinkInput = {
 /** Formats a value for the tooltips and the table. */
 export type SankeyChartValueFormatter = ChartValueFormatter;
 
-/** Where a node's label sits: before the node (first column), after it, or on a chip centred on it (tall middle-column nodes). */
+/** Which way the flow runs: left to right in columns, or top to bottom in rows. */
+export type SankeyChartDirection = 'horizontal' | 'vertical';
+
+/** Where a node's label sits along the flow: before the node (first column), after it, or on a chip centred on it (large middle-column nodes). */
 export type SankeyChartLabelSide = 'start' | 'end' | 'center';
 
 /** A node with its geometry in plot pixels, ready to render. */
@@ -59,7 +67,11 @@ export type SankeyChartNode = {
   /** What assistive tech reads after the name, e.g. `"In: 1,200, Out: 900"`. */
   description: string;
   labelSide: SankeyChartLabelSide;
-  /** Where the label's inner edge sits, in plot pixels: its right end for `start`, its left end for `end`, its middle for `center`. */
+  /**
+   * Where the label is anchored, in plot pixels. Horizontal: `labelX` is its right end for `start`, its left
+   * end for `end` and its middle for `center`; `labelY` is its middle. Vertical: `labelX` is its middle;
+   * `labelY` is its bottom for `start`, its top for `end` and its middle for `center`.
+   */
   labelX: number;
   labelY: number;
   /** The widest the label may get before it is cut off. */
@@ -80,7 +92,7 @@ export type SankeyChartLink = {
   accentMix: number | null;
   width: number;
   path: string;
-  /** A zero-width rect across the ribbon at its midpoint, for the tooltip to point at. */
+  /** A rect across the ribbon at its midpoint, zero-sized along the flow, for the tooltip to point at. */
   anchor: ChartRect;
   valueText: string;
   /** e.g. `"Tickets to Revenue"`, joined by {@link SankeyChartDirective.linkSeparator}. */
@@ -91,12 +103,16 @@ export type SankeyChartLink = {
 export type SankeyChartActiveMark = { kind: 'node' | 'link'; key: string };
 
 const LABEL_PADDING = 6;
-const MIN_CHIP_NODE_HEIGHT = 24;
+const MIN_CHIP_NODE_SIZE = 24;
 const TARGET_PADDING = 4;
-const MIN_NODE_HEIGHT = 1;
+const MIN_NODE_SIZE = 1;
+const VERTICAL_LABEL_ROOM = 24;
+
+type LabelPlacement = Pick<SankeyChartNode, 'labelSide' | 'labelX' | 'labelY' | 'labelMaxWidth'>;
 
 /**
- * Headless sankey chart: lays `nodes` and `links` out as a left-to-right flow - columns by longest path
+ * Headless sankey chart: lays `nodes` and `links` out as a left-to-right flow, or top to bottom on a
+ * narrow screen (see {@link SankeyChartDirective.direction}) - columns by longest path
  * from the sources, node heights proportional to throughput, ordering that reduces crossings, and a
  * ribbon per link. Tracks the hovered or focused mark so the links around it can be highlighted.
  * The element marked `etChartPlot` reports the width the flow is laid out in.
@@ -115,7 +131,6 @@ export class SankeyChartDirective implements ChartPlotHost {
   private palette = injectSurfaceColorPalette();
   private locale = injectLocale();
   private reportError = injectReportError();
-
   /** The stages of the flow. Their order sets their palette colour and the first ordering guess. */
   public nodes = input.required<readonly SankeyChartNodeInput[]>();
 
@@ -134,8 +149,14 @@ export class SankeyChartDirective implements ChartPlotHost {
   /** Space between the nodes of one column in px. Shrinks when a column would not fit. @default 12 */
   public nodeGap = input(12, { transform: numberAttribute });
 
-  /** Room kept for the labels left of the first column and right of the last one, in px. @default 120 */
+  /** Room kept for the labels left of the first column and right of the last one in a horizontal flow, in px. @default 120 */
   public labelWidth = input(120, { transform: numberAttribute });
+
+  /** Which way the flow runs. `auto` turns it vertical while the element around `etChartPlot` is narrower than {@link verticalBelow}. @default 'auto' */
+  public direction = input<SankeyChartDirection | 'auto'>('auto');
+
+  /** The width in px below which an `auto` direction turns the flow vertical. @default 480 */
+  public verticalBelow = input(480, { transform: numberAttribute });
 
   /** Formats values for the tooltips and the table. @default the app locale's number format */
   public valueFormatter = input<SankeyChartValueFormatter | null>(null);
@@ -169,6 +190,19 @@ export class SankeyChartDirective implements ChartPlotHost {
 
   public plotWidth = computed(() => this.plot()?.width() ?? 0);
 
+  private plotContainerDimensions = signalElementDimensions(computed(() => this.plot()?.element.parentElement));
+
+  /** The direction the flow is laid out in, with `auto` resolved against the width of the element around `etChartPlot`. */
+  public flowDirection = computed<SankeyChartDirection>(() => {
+    const direction = this.direction();
+
+    if (direction !== 'auto') return direction;
+
+    const width = this.plotContainerDimensions().client?.width ?? 0;
+
+    return width > 0 && width < this.verticalBelow() ? 'vertical' : 'horizontal';
+  });
+
   /** The color theme per entry of `nodes`, resolved against the palette. */
   public nodeColors = computed(() => resolveChartSeriesColors(this.nodes(), this.palette()));
 
@@ -177,22 +211,26 @@ export class SankeyChartDirective implements ChartPlotHost {
 
   private dataError = computed(() => findSankeyDataError(this.nodes(), this.links()));
 
-  private layout = computed(() =>
-    this.dataError()
-      ? EMPTY_SANKEY_LAYOUT
-      : computeSankeyLayout({
-          nodes: this.nodes(),
-          links: this.links(),
-          width: this.plotWidth(),
-          height: this.height(),
-          nodeWidth: this.nodeWidth(),
-          nodeGap: this.nodeGap(),
-          insetStart: this.labelWidth(),
-          insetEnd: this.labelWidth(),
-        }),
-  );
+  private layout = computed(() => {
+    if (this.dataError()) return EMPTY_SANKEY_LAYOUT;
 
-  /** The nodes, column by column and top to bottom - the order the arrow keys walk them in. */
+    const direction = this.flowDirection();
+    const inset = direction === 'vertical' ? VERTICAL_LABEL_ROOM : this.labelWidth();
+
+    return computeSankeyLayout({
+      nodes: this.nodes(),
+      links: this.links(),
+      width: this.plotWidth(),
+      height: this.height(),
+      nodeWidth: this.nodeWidth(),
+      nodeGap: this.nodeGap(),
+      insetStart: inset,
+      insetEnd: inset,
+      direction,
+    });
+  });
+
+  /** The nodes, column by column and in reading order across the flow - the order the arrow keys walk them in. */
   public renderedNodes = computed<SankeyChartNode[]>(() => {
     const layout = this.layout();
     const inputs = this.nodes();
@@ -202,66 +240,119 @@ export class SankeyChartDirective implements ChartPlotHost {
     const incomingLabel = this.incomingLabel();
     const outgoingLabel = this.outgoingLabel();
     const labelWidth = this.labelWidth();
+    const plotWidth = this.plotWidth();
+    const vertical = layout.direction === 'vertical';
     const lastColumn = layout.columnCount - 1;
+    const sorted = [...layout.nodes].sort((a, b) => a.column - b.column || a.order - b.order);
 
-    return [...layout.nodes]
-      .sort((a, b) => a.column - b.column || a.order - b.order)
-      .map((entry, index) => {
-        const node = inputs[entry.index] as SankeyChartNodeInput;
-        const height = Math.max(entry.height, MIN_NODE_HEIGHT);
-        const y = entry.height < MIN_NODE_HEIGHT ? entry.y - (MIN_NODE_HEIGHT - entry.height) / 2 : entry.y;
-        const incomingText = entry.incoming > 0 ? format(entry.incoming) : null;
-        const outgoingText = entry.outgoing > 0 ? format(entry.outgoing) : null;
-        const isMiddle = entry.column > 0 && entry.column < lastColumn;
-        const labelSide: SankeyChartLabelSide =
-          entry.column === 0 && lastColumn > 0
-            ? 'start'
-            : isMiddle && height >= MIN_CHIP_NODE_HEIGHT
-              ? 'center'
-              : 'end';
-        const labelX =
+    const geometry = sorted.map((entry) => {
+      const size = vertical ? entry.width : entry.height;
+      const start = vertical ? entry.x : entry.y;
+      const shown = Math.max(size, MIN_NODE_SIZE);
+      const offset = size < MIN_NODE_SIZE ? start - (MIN_NODE_SIZE - size) / 2 : start;
+
+      return vertical
+        ? { x: offset, y: entry.y, width: shown, height: entry.height }
+        : { x: entry.x, y: offset, width: entry.width, height: shown };
+    });
+
+    const sideOf = (column: number, size: number): SankeyChartLabelSide => {
+      if (column === 0 && lastColumn > 0) return 'start';
+
+      return column > 0 && column < lastColumn && size >= MIN_CHIP_NODE_SIZE ? 'center' : 'end';
+    };
+
+    const horizontalLabel = (index: number): LabelPlacement => {
+      const entry = sorted[index] as (typeof sorted)[number];
+      const { x, y, width, height } = geometry[index] as (typeof geometry)[number];
+      const labelSide = sideOf(entry.column, height);
+      const room =
+        labelSide === 'start' || entry.column === lastColumn
+          ? labelWidth
+          : labelSide === 'center'
+            ? layout.columnStep
+            : layout.columnStep - width;
+
+      return {
+        labelSide,
+        labelX:
           labelSide === 'start'
-            ? entry.x - LABEL_PADDING
+            ? x - LABEL_PADDING
             : labelSide === 'center'
-              ? entry.x + entry.width / 2
-              : entry.x + entry.width + LABEL_PADDING;
-        const room =
-          labelSide === 'start' || entry.column === lastColumn
-            ? labelWidth
-            : labelSide === 'center'
-              ? layout.columnStep
-              : layout.columnStep - entry.width;
+              ? x + width / 2
+              : x + width + LABEL_PADDING,
+        labelY: y + height / 2,
+        labelMaxWidth: Math.max(0, room - 2 * LABEL_PADDING),
+      };
+    };
 
-        return {
-          key: node.id,
-          node,
-          index,
-          column: entry.column,
-          colorToken: colors[entry.index] ?? null,
-          accentMix: mixes[entry.index] ?? null,
-          x: entry.x,
-          y,
-          width: entry.width,
-          height,
-          target: { x: entry.x - TARGET_PADDING, y, width: entry.width + 2 * TARGET_PADDING, height },
-          placement: 'top',
-          incoming: entry.incoming,
-          outgoing: entry.outgoing,
-          incomingText,
-          outgoingText,
-          name: node.label,
-          description: [
-            incomingText === null ? null : `${incomingLabel}: ${incomingText}`,
-            outgoingText === null ? null : `${outgoingLabel}: ${outgoingText}`,
-          ]
-            .filter((part) => part !== null)
-            .join(', '),
-          labelSide,
-          labelX,
-          labelY: y + height / 2,
-          labelMaxWidth: Math.max(0, room - 2 * LABEL_PADDING),
-        };
-      });
+    const verticalLabel = (index: number): LabelPlacement => {
+      const entry = sorted[index] as (typeof sorted)[number];
+      const { x, y, width, height } = geometry[index] as (typeof geometry)[number];
+      const labelSide = sideOf(entry.column, width);
+      const center = x + width / 2;
+      const neighbourCenter = (offset: number) => {
+        const neighbour = sorted[index + offset];
+        const box = geometry[index + offset];
+
+        return neighbour?.column === entry.column && box ? box.x + box.width / 2 : null;
+      };
+      const before = neighbourCenter(-1);
+      const after = neighbourCenter(1);
+      const room = Math.min(
+        before === null ? 2 * center : center - before,
+        after === null ? 2 * (plotWidth - center) : after - center,
+      );
+
+      return {
+        labelSide,
+        labelX: center,
+        labelY:
+          labelSide === 'start'
+            ? y - LABEL_PADDING
+            : labelSide === 'center'
+              ? y + height / 2
+              : y + height + LABEL_PADDING,
+        labelMaxWidth: Math.max(0, room - LABEL_PADDING),
+      };
+    };
+
+    return sorted.map((entry, index) => {
+      const node = inputs[entry.index] as SankeyChartNodeInput;
+      const { x, y, width, height } = geometry[index] as (typeof geometry)[number];
+      const incomingText = entry.incoming > 0 ? format(entry.incoming) : null;
+      const outgoingText = entry.outgoing > 0 ? format(entry.outgoing) : null;
+      const target = vertical
+        ? { x, y: y - TARGET_PADDING, width, height: height + 2 * TARGET_PADDING }
+        : { x: x - TARGET_PADDING, y, width: width + 2 * TARGET_PADDING, height };
+
+      return {
+        key: node.id,
+        node,
+        index,
+        column: entry.column,
+        colorToken: colors[entry.index] ?? null,
+        accentMix: mixes[entry.index] ?? null,
+        x,
+        y,
+        width,
+        height,
+        target,
+        placement: 'top',
+        incoming: entry.incoming,
+        outgoing: entry.outgoing,
+        incomingText,
+        outgoingText,
+        name: node.label,
+        description: [
+          incomingText === null ? null : `${incomingLabel}: ${incomingText}`,
+          outgoingText === null ? null : `${outgoingLabel}: ${outgoingText}`,
+        ]
+          .filter((part) => part !== null)
+          .join(', '),
+        ...(vertical ? verticalLabel(index) : horizontalLabel(index)),
+      };
+    });
   });
 
   /** The links with a ribbon, by source node in node order, then top to bottom at that node. */
@@ -273,16 +364,18 @@ export class SankeyChartDirective implements ChartPlotHost {
     const separator = this.linkSeparator();
     const byId = new Map(nodes.map((node) => [node.key, node]));
     const nodeAt = (index: number) => byId.get(layout.nodes[index]?.id ?? '');
+    const vertical = layout.direction === 'vertical';
 
     return layout.links
       .map((entry) => ({ entry, source: nodeAt(entry.source), target: nodeAt(entry.target) }))
       .filter((item): item is typeof item & { source: SankeyChartNode; target: SankeyChartNode } =>
         Boolean(item.source && item.target),
       )
-      .sort((a, b) => a.source.index - b.source.index || a.entry.y0 - b.entry.y0)
+      .sort((a, b) => a.source.index - b.source.index || (vertical ? a.entry.x0 - b.entry.x0 : a.entry.y0 - b.entry.y0))
       .map(({ entry, source, target }, index) => {
         const link = inputs[entry.index] as SankeyChartLinkInput;
-        const mid = (entry.y0 + entry.y1) / 2;
+        const midX = (entry.x0 + entry.x1) / 2;
+        const midY = (entry.y0 + entry.y1) / 2;
 
         return {
           key: `${entry.index}:${link.source}:${link.target}`,
@@ -294,7 +387,9 @@ export class SankeyChartDirective implements ChartPlotHost {
           accentMix: source.accentMix,
           width: entry.width,
           path: entry.path,
-          anchor: { x: (entry.x0 + entry.x1) / 2, y: mid, width: 0, height: entry.width },
+          anchor: vertical
+            ? { x: midX, y: midY, width: entry.width, height: 0 }
+            : { x: midX, y: midY, width: 0, height: entry.width },
           valueText: format(entry.value),
           name: `${source.name} ${separator} ${target.name}`,
         };
@@ -414,7 +509,7 @@ export class SankeyChartDirective implements ChartPlotHost {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
 
     const target = findSankeyKeyTarget(
-      { nodes: this.renderedNodes(), links: this.renderedLinks() },
+      { nodes: this.renderedNodes(), links: this.renderedLinks(), direction: this.flowDirection() },
       { key: event.key, mark },
     );
 

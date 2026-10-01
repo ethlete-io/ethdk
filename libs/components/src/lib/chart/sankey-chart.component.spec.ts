@@ -1,10 +1,16 @@
+import { vi } from 'vitest';
 import { Component, ErrorHandler, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideColorPalette } from '@ethlete/core';
 import '../../test-helpers';
 import { ChartPlotDirective } from './headless/chart-plot.directive';
-import { SankeyChartDirective, SankeyChartLinkInput, SankeyChartNodeInput } from './headless/sankey-chart.directive';
+import {
+  SankeyChartDirection,
+  SankeyChartDirective,
+  SankeyChartLinkInput,
+  SankeyChartNodeInput,
+} from './headless/sankey-chart.directive';
 import { SankeyChartComponent } from './sankey-chart.component';
 
 @Component({
@@ -14,12 +20,14 @@ import { SankeyChartComponent } from './sankey-chart.component';
     [links]="links()"
     [height]="200"
     [linkSeparator]="separator()"
+    [direction]="direction()"
     label="Budget"
   />`,
   imports: [SankeyChartComponent],
 })
 class SankeyChartHostComponent {
   separator = signal('to');
+  direction = signal<SankeyChartDirection | 'auto'>('auto');
   nodes = signal<SankeyChartNodeInput[]>([
     { id: 'a', label: 'Tickets' },
     { id: 'b', label: 'Sponsors' },
@@ -36,14 +44,19 @@ class SankeyChartHostComponent {
   ]);
 }
 
-const setup = (providers: unknown[] = []) => {
+const setup = (
+  providers: unknown[] = [],
+  { width = 600, direction = 'auto' as SankeyChartDirection | 'auto' } = {},
+) => {
   TestBed.configureTestingModule({ providers: providers as never[] });
 
   const fixture = TestBed.createComponent(SankeyChartHostComponent);
+  fixture.componentInstance.direction.set(direction);
   fixture.detectChanges();
 
   const chart = fixture.debugElement.query(By.directive(SankeyChartDirective)).injector.get(SankeyChartDirective);
-  chart.plot.set({ width: signal(600) } as unknown as ChartPlotDirective);
+  const plot = (fixture.nativeElement as HTMLElement).querySelector('.et-sankey-chart-plot');
+  chart.plot.set({ width: signal(width), element: plot } as unknown as ChartPlotDirective);
   fixture.detectChanges();
 
   return { fixture, chart, element: fixture.nativeElement as HTMLElement };
@@ -208,6 +221,98 @@ describe('SankeyChartComponent', () => {
     expect(minor?.height).toBeLessThan(24);
     expect(minor?.labelSide).toBe('end');
     expect(minor?.labelX).toBe((minor?.x ?? 0) + (minor?.width ?? 0) + 6);
+  });
+
+  describe('direction', () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    const hostWidth = (width: number) =>
+      vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+        return this.classList.contains('et-sankey-chart-scroller') ? width : 0;
+      });
+
+    it('turns the flow vertical while the host is narrower than 480px', async () => {
+      hostWidth(360);
+      const { fixture, chart, element } = setup([], { width: 360 });
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(chart.flowDirection()).toBe('vertical');
+      expect(element.querySelector('et-sankey-chart')?.getAttribute('data-direction')).toBe('vertical');
+    });
+
+    it('keeps the flow horizontal from 480px and when the direction is set explicitly', async () => {
+      hostWidth(480);
+      const wide = setup();
+      await wide.fixture.whenStable();
+
+      expect(wide.chart.flowDirection()).toBe('horizontal');
+
+      TestBed.resetTestingModule();
+      hostWidth(360);
+      const forced = setup([], { width: 360, direction: 'horizontal' });
+      await forced.fixture.whenStable();
+
+      expect(forced.chart.flowDirection()).toBe('horizontal');
+    });
+
+    it('lays columns out as rows, the first labelled above and the last below', () => {
+      const { chart } = setup([], { width: 360, direction: 'vertical' });
+      const nodes = chart.renderedNodes();
+      const budget = nodes.find((node) => node.name === 'Budget');
+      const firstRow = nodes.filter((node) => node.column === 0);
+      const lastRow = nodes.filter((node) => node.column === 2);
+
+      expect(new Set(firstRow.map((node) => node.y)).size).toBe(1);
+      expect(budget?.y).toBeGreaterThan(firstRow[0]?.y ?? 0);
+      expect(budget?.height).toBe(12);
+      expect(budget?.labelSide).toBe('center');
+      expect(budget?.labelX).toBe((budget?.x ?? 0) + (budget?.width ?? 0) / 2);
+
+      for (const node of firstRow) {
+        expect(node.labelSide).toBe('start');
+        expect(node.labelX).toBe(node.x + node.width / 2);
+        expect(node.labelY).toBe(node.y - 6);
+      }
+
+      for (const node of lastRow) {
+        expect(node.labelSide).toBe('end');
+        expect(node.labelY).toBe(node.y + node.height + 6);
+        expect(node.labelX - node.labelMaxWidth / 2).toBeGreaterThanOrEqual(0);
+        expect(node.labelX + node.labelMaxWidth / 2).toBeLessThanOrEqual(360);
+      }
+
+      const [left, right] = firstRow;
+
+      expect((left?.labelX ?? 0) + (left?.labelMaxWidth ?? 0) / 2).toBeLessThanOrEqual(
+        (right?.labelX ?? 0) - (right?.labelMaxWidth ?? 0) / 2,
+      );
+    });
+
+    it('walks rows with up and down, a row with left and right, and cycles links with left and right', () => {
+      const { fixture, element, chart } = setup([], { width: 360, direction: 'vertical' });
+      const [first, second] = chart.renderedNodes();
+      const outgoing = chart.renderedLinks().filter((link) => link.source.key === 'c');
+
+      press(fixture, mark(element, first?.name ?? ''), 'ArrowRight');
+      expect(document.activeElement).toBe(mark(element, second?.name ?? ''));
+
+      press(fixture, mark(element, second?.name ?? ''), 'ArrowDown');
+      expect(document.activeElement).toBe(mark(element, 'Budget'));
+
+      press(fixture, mark(element, 'Budget'), 'Enter');
+      expect(document.activeElement).toBe(mark(element, outgoing[0]?.name ?? ''));
+      expect((outgoing[0]?.anchor.x ?? 0) < (outgoing[1]?.anchor.x ?? 0)).toBe(true);
+
+      press(fixture, document.activeElement as SVGElement, 'ArrowRight');
+      expect(document.activeElement).toBe(mark(element, outgoing[1]?.name ?? ''));
+
+      press(fixture, document.activeElement as SVGElement, 'Escape');
+      press(fixture, mark(element, 'Budget'), 'ArrowUp');
+      expect(
+        chart.renderedNodes().find((node) => node.name === document.activeElement?.getAttribute('aria-label'))?.column,
+      ).toBe(0);
+    });
   });
 
   it('colors nodes by palette position and links by their source', () => {

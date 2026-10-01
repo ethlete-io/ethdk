@@ -1,25 +1,47 @@
 export type SankeyKeyboardMark = { kind: 'node' | 'link'; key: string };
 
-export type SankeyKeyboardNode = { key: string; column: number; y: number; height: number };
+export type SankeyKeyboardNode = { key: string; column: number; x: number; y: number; width: number; height: number };
 
 export type SankeyKeyboardLink = { key: string; source: { key: string } };
 
-/** `nodes` must be column by column, top to bottom, and `links` grouped by source, top to bottom. */
+/**
+ * `nodes` must be column by column, in reading order across the flow, and `links` grouped by source in
+ * the same order. A `vertical` flow walks its columns with ↑ and ↓ and the nodes of one with ← and →.
+ */
 export type SankeyKeyboardMarks = {
   nodes: readonly SankeyKeyboardNode[];
   links: readonly SankeyKeyboardLink[];
+  direction?: 'horizontal' | 'vertical';
 };
+
+type FlowKeys = { nextColumn: string; previousColumn: string; nextInColumn: string; previousInColumn: string };
+
+const HORIZONTAL_KEYS: FlowKeys = {
+  nextColumn: 'ArrowRight',
+  previousColumn: 'ArrowLeft',
+  nextInColumn: 'ArrowDown',
+  previousInColumn: 'ArrowUp',
+};
+
+const VERTICAL_KEYS: FlowKeys = {
+  nextColumn: 'ArrowDown',
+  previousColumn: 'ArrowUp',
+  nextInColumn: 'ArrowRight',
+  previousInColumn: 'ArrowLeft',
+};
+
+const keysOf = ({ direction }: SankeyKeyboardMarks) => (direction === 'vertical' ? VERTICAL_KEYS : HORIZONTAL_KEYS);
 
 const nodeMark = (node: SankeyKeyboardNode): SankeyKeyboardMark => ({ kind: 'node', key: node.key });
 
 const linkMark = (link: SankeyKeyboardLink): SankeyKeyboardMark => ({ kind: 'link', key: link.key });
 
-const centerOf = (node: SankeyKeyboardNode) => node.y + node.height / 2;
-
 const nearestInNextColumn = (
-  { nodes }: SankeyKeyboardMarks,
+  { nodes, direction: flow }: SankeyKeyboardMarks,
   { from, direction }: { from: SankeyKeyboardNode; direction: 1 | -1 },
 ): SankeyKeyboardNode => {
+  const centerOf = (node: SankeyKeyboardNode) =>
+    flow === 'vertical' ? node.x + node.width / 2 : node.y + node.height / 2;
   const columns = [...new Set(nodes.map((node) => node.column))].sort((a, b) => a - b);
   const column = columns[columns.indexOf(from.column) + direction];
 
@@ -40,15 +62,16 @@ const nodeTarget = (
   const column = nodes.filter((entry) => entry.column === node.column);
   const position = column.indexOf(node);
   const outgoing = links.find((link) => link.source.key === node.key);
+  const keys = keysOf(marks);
 
   switch (key) {
-    case 'ArrowDown':
+    case keys.nextInColumn:
       return nodeMark(column[Math.min(position + 1, column.length - 1)] ?? node);
-    case 'ArrowUp':
+    case keys.previousInColumn:
       return nodeMark(column[Math.max(position - 1, 0)] ?? node);
-    case 'ArrowRight':
+    case keys.nextColumn:
       return nodeMark(nearestInNextColumn(marks, { from: node, direction: 1 }));
-    case 'ArrowLeft':
+    case keys.previousColumn:
       return nodeMark(nearestInNextColumn(marks, { from: node, direction: -1 }));
     case 'Home':
       return nodeMark(nodes[0] ?? node);
@@ -62,17 +85,18 @@ const nodeTarget = (
 };
 
 const linkTarget = (
-  { links }: SankeyKeyboardMarks,
+  marks: SankeyKeyboardMarks,
   { key, link }: { key: string; link: SankeyKeyboardLink },
 ): SankeyKeyboardMark | null => {
-  const siblings = links.filter((entry) => entry.source.key === link.source.key);
+  const siblings = marks.links.filter((entry) => entry.source.key === link.source.key);
   const position = siblings.indexOf(link);
   const count = siblings.length;
+  const keys = keysOf(marks);
 
   switch (key) {
-    case 'ArrowDown':
+    case keys.nextInColumn:
       return linkMark(siblings[(position + 1) % count] ?? link);
-    case 'ArrowUp':
+    case keys.previousInColumn:
       return linkMark(siblings[(position - 1 + count) % count] ?? link);
     case 'Home':
       return linkMark(siblings[0] ?? link);

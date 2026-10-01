@@ -1,5 +1,5 @@
 import { Component, computed, input, ViewEncapsulation } from '@angular/core';
-import { SankeyChartLinkInput, SankeyChartNodeInput } from '../headless/sankey-chart.directive';
+import { SankeyChartDirection, SankeyChartLinkInput, SankeyChartNodeInput } from '../headless/sankey-chart.directive';
 import { SankeyChartComponent } from '../sankey-chart.component';
 
 export type SankeyChartStoryDataset = 'match-day' | 'budget' | 'traffic';
@@ -120,6 +120,7 @@ const DATASETS: Record<SankeyChartStoryDataset, StoryDataset> = {
           [height]="height()"
           [nodeGap]="nodeGap()"
           [labelWidth]="labelWidth()"
+          [direction]="direction()"
           [colorToken]="colorToken() || null"
         />
       </div>
@@ -135,6 +136,7 @@ export class SankeyChartStorybookComponent {
   public nodeGap = input(12);
   public labelWidth = input(120);
   public colorToken = input('');
+  public direction = input<SankeyChartDirection | 'auto'>('auto');
 
   protected story = computed(() => DATASETS[this.dataset()]);
   protected boxWidth = computed(() => `min(${this.width()}px, 100%)`);

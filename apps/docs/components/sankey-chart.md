@@ -33,23 +33,25 @@ links: SankeyChartLinkInput[] = [
 
 ## Options
 
-| Input            | Type                                  | Default    | Description                                                                            |
-| ---------------- | ------------------------------------- | ---------- | -------------------------------------------------------------------------------------- |
-| `nodes`          | `readonly SankeyChartNodeInput[]`     | -          | Required. The stages: `{ id, label, colorToken? }`. `id` must be unique.               |
-| `links`          | `readonly SankeyChartLinkInput[]`     | -          | Required. The flows: `{ source, target, value }`, naming nodes by `id`. No cycles.     |
-| `label`          | `string`                              | -          | Required. Names the chart for assistive tech and captions the table view.              |
-| `height`         | `number`                              | `320`      | Height of the plot in px.                                                              |
-| `nodeWidth`      | `number`                              | `12`       | Width of a node in px.                                                                 |
-| `nodeGap`        | `number`                              | `12`       | Space between the nodes of one column in px. Shrinks when a tall column would not fit. |
-| `labelWidth`     | `number`                              | `120`      | Room for the labels left of the first column and right of the last one, in px.         |
-| `valueFormatter` | `((value: number) => string) \| null` | `null`     | Formats values in the tooltips, the descriptions and the table.                        |
-| `incomingLabel`  | `string`                              | `'In'`     | Names what flows into a node, in its tooltip and description.                          |
-| `outgoingLabel`  | `string`                              | `'Out'`    | Names what flows out of a node, in its tooltip and description.                        |
-| `sourceHeader`   | `string`                              | `'Source'` | The table view's source column header.                                                 |
-| `targetHeader`   | `string`                              | `'Target'` | The table view's target column header.                                                 |
-| `valueHeader`    | `string`                              | `'Value'`  | The table view's value column header.                                                  |
-| `linkSeparator`  | `string`                              | `'to'`     | The word between source and target in a link's name, tooltip and accessible name.      |
-| `colorToken`     | registered color theme name \| `null` | `null`     | The color theme for nodes without their own `colorToken` or a palette entry.           |
+| Input            | Type                                   | Default    | Description                                                                            |
+| ---------------- | -------------------------------------- | ---------- | -------------------------------------------------------------------------------------- |
+| `nodes`          | `readonly SankeyChartNodeInput[]`      | -          | Required. The stages: `{ id, label, colorToken? }`. `id` must be unique.               |
+| `links`          | `readonly SankeyChartLinkInput[]`      | -          | Required. The flows: `{ source, target, value }`, naming nodes by `id`. No cycles.     |
+| `label`          | `string`                               | -          | Required. Names the chart for assistive tech and captions the table view.              |
+| `height`         | `number`                               | `320`      | Height of the plot in px.                                                              |
+| `nodeWidth`      | `number`                               | `12`       | Width of a node in px.                                                                 |
+| `nodeGap`        | `number`                               | `12`       | Space between the nodes of one column in px. Shrinks when a tall column would not fit. |
+| `labelWidth`     | `number`                               | `120`      | Room for the labels left of the first column and right of the last one, in px.         |
+| `direction`      | `'auto' \| 'horizontal' \| 'vertical'` | `'auto'`   | Which way the flow runs. `auto` turns it vertical below `verticalBelow`.               |
+| `verticalBelow`  | `number`                               | `480`      | The chart width in px below which `auto` turns the flow vertical.                      |
+| `valueFormatter` | `((value: number) => string) \| null`  | `null`     | Formats values in the tooltips, the descriptions and the table.                        |
+| `incomingLabel`  | `string`                               | `'In'`     | Names what flows into a node, in its tooltip and description.                          |
+| `outgoingLabel`  | `string`                               | `'Out'`    | Names what flows out of a node, in its tooltip and description.                        |
+| `sourceHeader`   | `string`                               | `'Source'` | The table view's source column header.                                                 |
+| `targetHeader`   | `string`                               | `'Target'` | The table view's target column header.                                                 |
+| `valueHeader`    | `string`                               | `'Value'`  | The table view's value column header.                                                  |
+| `linkSeparator`  | `string`                               | `'to'`     | The word between source and target in a link's name, tooltip and accessible name.      |
+| `colorToken`     | registered color theme name \| `null`  | `null`     | The color theme for nodes without their own `colorToken` or a palette entry.           |
 
 Without a `valueFormatter`, values are formatted with `Intl.NumberFormat` in the locale from `injectLocale()` (`@ethlete/core`).
 
@@ -69,7 +71,13 @@ A label in the first column sits left of its node and one in the last column rig
 
 ### Narrow screens
 
-The plot never gets narrower than `--et-sankey-chart-min-width` (`480px`). In a narrower container the chart scrolls sideways instead of squeezing its columns together.
+Below `verticalBelow` (`480px`) of chart width, the default `direction="auto"` turns the flow top to bottom: columns become rows, ribbons run from the bottom edge of a node to the top edge of the next, and the node sizes divide the chart's width. `height` stays the height of the plot, so give a vertical chart room for its rows. The width is measured on the chart, not the viewport, so a narrow card on a wide screen turns too.
+
+In a vertical flow the first row is labelled above its nodes and the last row below them. A middle-row node at least 24px wide carries its label on a chip centred on it; a narrower one has its label below it, with the halo. Every label is centred on its node and may be as wide as the space to the neighbouring labels in its row, so labels on small nodes are cut off sooner - the tooltip, the accessible name and the table keep the full name.
+
+Set `direction="horizontal"` to keep columns at any width: the plot then never gets narrower than `--et-sankey-chart-min-width` (`480px`) and scrolls sideways. `direction="vertical"` turns the flow at any width.
+
+<StoryEmbed id="components-data-display-sankey-chart--narrow-screen" height="620px" />
 
 ### Colours
 
@@ -88,7 +96,7 @@ When the chart first renders, the nodes and labels fade in, then the ribbons. Un
 
 ## Custom template
 
-`SankeyChartDirective` (`[etSankeyChart]`) holds the geometry without markup: `renderedNodes()` (per node its rect, hit `target`, `colorToken`, `accentMix`, in/out totals and texts, `description` and label position), `renderedLinks()` (per link its ribbon `path`, `width`, midpoint `anchor`, `source`, `target`, `colorToken`, `accentMix`, `valueText` and `name`), `highlightedLinks()`, `activeNodeKey()`, `hasHighlight()`, `table()`, `plotWidth()` and `formatValue()`. Report hover with `hoverMark()`/`unhoverMark()`. Put `etSankeyChartMark="node"` or `etSankeyChartMark="link"` with `[etSankeyChartMarkKey]` (the node's `key` or the link's `key`) on each focusable mark: it reports focus, holds the chart's one tab stop (`tabStopMark()`) and handles the keys below. `focusMarkElement()` moves focus to a mark from code. Put `etChartPlot` on the element the flow is laid out in - its width is what the columns divide. Without one the directive throws `ET5100` in dev mode. Import `SankeyChartDirective`, `SankeyChartMarkDirective` and `ChartPlotDirective`.
+`SankeyChartDirective` (`[etSankeyChart]`) holds the geometry without markup: `renderedNodes()` (per node its rect, hit `target`, `colorToken`, `accentMix`, in/out totals and texts, `description` and label position), `renderedLinks()` (per link its ribbon `path`, `width`, midpoint `anchor`, `source`, `target`, `colorToken`, `accentMix`, `valueText` and `name`), `highlightedLinks()`, `activeNodeKey()`, `hasHighlight()`, `table()`, `plotWidth()`, `flowDirection()` (the direction with `auto` resolved against the width of the element around `etChartPlot`) and `formatValue()`. Report hover with `hoverMark()`/`unhoverMark()`. Put `etSankeyChartMark="node"` or `etSankeyChartMark="link"` with `[etSankeyChartMarkKey]` (the node's `key` or the link's `key`) on each focusable mark: it reports focus, holds the chart's one tab stop (`tabStopMark()`) and handles the keys below. `focusMarkElement()` moves focus to a mark from code. Put `etChartPlot` on the element the flow is laid out in - its width is what the columns divide. Without one the directive throws `ET5100` in dev mode. Import `SankeyChartDirective`, `SankeyChartMarkDirective` and `ChartPlotDirective`.
 
 ```html
 <div #chart="etSankeyChart" [nodes]="nodes" [links]="links" etSankeyChart label="Budget">
@@ -138,20 +146,20 @@ The chart is one tab stop. Tab enters on the first node - or on the mark that wa
 | `Enter`      | The node's first outgoing link, top to bottom; nothing on a sink            | -                                        |
 | `Escape`     | Closes the tooltip                                                          | Back to the link's source node           |
 
-Nodes go column by column, top to bottom; a node's outgoing links top to bottom at the node. An incoming link is reached from its source node. Screen readers in browse mode keep the arrow keys for themselves, so the table view stays the route through every link.
+Nodes go column by column, top to bottom; a node's outgoing links top to bottom at the node. In a vertical flow the keys turn with it: `↓` / `↑` move to the nearest node of the next / previous row, `→` / `←` move within a row and cycle a node's outgoing links, left to right. An incoming link is reached from its source node. Screen readers in browse mode keep the arrow keys for themselves, so the table view stays the route through every link.
 
 ## Theming
 
 Nodes and ribbons use `--et-theme-color-primary-solid` from the node's colour scope. Labels use `--et-surface-color-solid` with a halo in `--et-surface-background-solid`; the hover tint behind a node mixes `--et-surface-interaction-solid`. Theme names are registered by the application - see [theming](/core/theming).
 
-| Token                                      | Default | Description                                                    |
-| ------------------------------------------ | ------- | -------------------------------------------------------------- |
-| `--et-sankey-chart-font-size`              | `12px`  | Size of the node labels.                                       |
-| `--et-sankey-chart-min-width`              | `480px` | The narrowest the plot gets before the chart scrolls sideways. |
-| `--et-sankey-chart-link-opacity`           | `0.35`  | Fill opacity of a ribbon at rest.                              |
-| `--et-sankey-chart-link-highlight-opacity` | `0.6`   | Fill opacity of a highlighted ribbon.                          |
-| `--et-sankey-chart-link-dim-opacity`       | `0.1`   | Fill opacity of the other ribbons while a mark is highlighted. |
-| `--et-sankey-chart-enter-duration`         | `400ms` | Duration of the entrance fade; the ribbons start halfway in.   |
+| Token                                      | Default | Description                                                      |
+| ------------------------------------------ | ------- | ---------------------------------------------------------------- |
+| `--et-sankey-chart-font-size`              | `12px`  | Size of the node labels.                                         |
+| `--et-sankey-chart-min-width`              | `480px` | The narrowest a horizontal plot gets before it scrolls sideways. |
+| `--et-sankey-chart-link-opacity`           | `0.35`  | Fill opacity of a ribbon at rest.                                |
+| `--et-sankey-chart-link-highlight-opacity` | `0.6`   | Fill opacity of a highlighted ribbon.                            |
+| `--et-sankey-chart-link-dim-opacity`       | `0.1`   | Fill opacity of the other ribbons while a mark is highlighted.   |
+| `--et-sankey-chart-enter-duration`         | `400ms` | Duration of the entrance fade; the ribbons start halfway in.     |
 
 ## Error codes
 

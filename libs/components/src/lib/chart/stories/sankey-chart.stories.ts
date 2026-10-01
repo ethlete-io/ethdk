@@ -23,6 +23,7 @@ export default {
     nodeGap: 12,
     labelWidth: 120,
     colorToken: 'neutral',
+    direction: 'auto',
   },
   argTypes: {
     dataset: { control: 'inline-radio', options: ['match-day', 'budget', 'traffic'] },
@@ -31,6 +32,7 @@ export default {
     nodeGap: { control: { type: 'range', min: 0, max: 40, step: 2 } },
     labelWidth: { control: { type: 'range', min: 40, max: 200, step: 10 } },
     colorToken: { control: 'text' },
+    direction: { control: 'inline-radio', options: ['auto', 'horizontal', 'vertical'] },
   },
 } as Meta<SankeyChartStorybookComponent>;
 
@@ -58,4 +60,18 @@ export const MultiLevel: Story = {
 export const ManyNodes: Story = {
   args: { dataset: 'traffic', width: 960, height: 480 },
   decorators: [withPalette(PALETTE)],
+};
+
+export const NarrowScreen: Story = {
+  args: { dataset: 'budget', width: 360, height: 480 },
+  decorators: [withPalette(PALETTE)],
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Below 480px of width the `auto` direction turns the flow top to bottom: columns become rows, the ' +
+          'first row is labelled above, the last below, and large middle nodes carry a chip.',
+      },
+    },
+  },
 };
