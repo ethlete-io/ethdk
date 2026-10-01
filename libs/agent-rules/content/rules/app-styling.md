@@ -9,8 +9,10 @@ requires: ['@ethlete/core']
 ## Styling
 
 Every component in this workspace (views, pages, shells, shared UI in `libs/`) is laid out
-and styled with **Tailwind utility classes in its template**, including the generated
-theme utilities (`bg-et-surface-bg`, `border-et-surface-border`, `text-et-<theme>`). Do not
+and styled with **Tailwind utility classes in its template**, including the colour utilities
+the app's theme provides: the generated SDK theme utilities (`bg-et-surface-bg`,
+`border-et-surface-border`, `text-et-<theme>`) where the app generates them, or the palette its
+Tailwind config defines. Do not
 invent a BEM class system, and do not write a `.css` file for layout, spacing or
 typography a utility expresses. Every app component sets `encapsulation: ViewEncapsulation.None`,
 as the `require-view-encapsulation-none` lint rule requires. Its CSS is then global, so give the
@@ -22,10 +24,12 @@ In an existing repo, apply this to the component you are editing, not to the res
 legacy component that relies on emulated encapsulation keeps it until its CSS is scoped under a
 host class: without that scope, `ViewEncapsulation.None` leaks its CSS into every view.
 
-Write CSS only for what utilities cannot express. Keep that CSS **unlayered** or in
-`@layer utilities` — never in `@layer components`, and that includes the global stylesheet. SDK component styles are injected into
-`@layer components` at runtime, after your stylesheet, so an app rule in the same layer
-ties on layer and loses on source order.
+Write CSS only for what utilities cannot express. With Tailwind 4, keep that CSS **unlayered**
+or in `@layer utilities` — never in `@layer components`, and that includes the global
+stylesheet. SDK component styles are injected into `@layer components` at runtime, after your
+stylesheet, so an app rule in the same layer ties on layer and loses on source order. With
+Tailwind 3, `@layer` is a Tailwind directive that emits unlayered CSS, so app CSS already beats
+the SDK's layered styles.
 
 To change an SDK component's look, set its `--et-*` tokens first (documented per
 component), then use a utility class or unlayered CSS on the element — see "Overriding
@@ -36,17 +40,20 @@ The SDK sizes everything in `rem` on a **10px root**: the app's global styleshee
 `1rem` is `10px`, so the app's own `rem` values stay easy to read.
 
 The 10px root also shrinks every rem-based Tailwind scale to 62.5% of its nominal size (1.6×
-smaller): `p-4` is 10px instead of 16px, and `max-w-3xl` is 480px instead of 768px. Set
-`--spacing: 0.4rem` in the app's `@theme` so the spacing scale keeps its 4px step, as the SDK's
-own Storybook does. In an app that already uses utilities without it, setting it rescales every
-view: tell the user rather than set it. Redefine any other rem scale the app uses (`--text-*`, `--container-*`,
-`--radius-*`) the same way, or use px where a size matters. Breakpoints are not affected: a
-media query's `rem` ignores the root font size.
+smaller): `p-4` is 10px instead of 16px, and `max-w-3xl` is 480px instead of 768px. Keep the
+spacing scale on its 4px step: with Tailwind 4, set `--spacing: 0.4rem` in the app's `@theme`,
+as the SDK's own Storybook does; with Tailwind 3, redefine `theme.spacing` in
+`tailwind.config`. In an app that already uses utilities without it, the change rescales every
+view: tell the user rather than make it. Redefine any other rem scale the app uses (text,
+container, radius) the same way, or use px where a size matters. Breakpoints are not affected:
+a media query's `rem` ignores the root font size.
 
 **Never use a hardcoded colour as the primary value.** Backgrounds, text, borders and
-interaction states resolve from the surface and colour theming tokens
-(`--et-surface-*-solid`, `--et-theme-color-*`) or their generated utilities. A static
-fallback inside `var(--token, <fallback>)` is permitted, but not required.
+interaction states resolve from the app's theme: the SDK surface and colour tokens
+(`--et-surface-*-solid`, `--et-theme-color-*`) and their generated utilities, or the palette
+the app's Tailwind config defines. Never write an arbitrary colour value such as
+`bg-[#1a1a1a]` in a template. A static fallback inside `var(--token, <fallback>)` is
+permitted, but not required.
 
 Theme **names** (`brand`, `danger`, `dark-elevated`, …) are registered by this app; the SDK
 ships none. Semantic colours resolve by theme `type` (e.g. `injectErrorTheme()`).
