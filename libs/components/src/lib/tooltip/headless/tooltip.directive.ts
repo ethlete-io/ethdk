@@ -67,7 +67,7 @@ export class TooltipDirective {
   public offset = input<OffsetOptions | null>(8);
   /**
    * How close the arrow may get to the panel's corners. Must clear the panel's border radius
-   * (`--_et-tooltip-radius`, 16px) or the arrow's base rides into the rounded corner - which is what
+   * (`--_et-floating-tip-radius`, 16px) or the arrow's base rides into the rounded corner - which is what
    * happens on aligned placements (`bottom-end`, `left-start`, …) and whenever `shift` pushes a panel
    * off center near a viewport edge.
    */

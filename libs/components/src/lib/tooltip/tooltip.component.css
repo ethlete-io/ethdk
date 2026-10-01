@@ -36,10 +36,7 @@
   }
 
   .et-overlay.et-overlay--tooltip {
-    overflow: visible;
     pointer-events: none;
-    background: transparent;
-    box-shadow: none;
   }
 
   .et-overlay.et-overlay--tooltip > :not(.et-overlay-container-drag-handle):not(.et-overlay-arrow) {
@@ -48,22 +45,9 @@
   }
 
   .et-tooltip {
-    --_et-tooltip-background: var(--et-surface-background-solid, rgb(32 32 32));
-    --_et-tooltip-color: var(--et-surface-color-solid, rgb(244 244 245));
-    --_et-tooltip-border: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
-    --_et-tooltip-shadow: var(--et-anchored-panel-shadow, 0 10px 24px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.16));
-    --_et-tooltip-radius: 16px;
-    --_et-tooltip-max-width: min(34ch, calc(100vw - 24px));
-
-    position: relative;
-    display: block;
-    inline-size: max-content;
-    max-inline-size: var(--_et-tooltip-max-width);
     pointer-events: none;
     -webkit-user-select: none;
     user-select: none;
-    color: var(--_et-tooltip-color);
-    font-family: var(--et-font-family, inherit);
     font-size: var(--et-tooltip-font-size);
     font-weight: var(--et-tooltip-font-weight);
     line-height: var(--et-tooltip-line-height);
@@ -71,50 +55,10 @@
   }
 
   .et-tooltip__surface {
-    position: relative;
-    z-index: 1;
-    display: block;
-    max-inline-size: var(--_et-tooltip-max-width);
     padding: calc(var(--et-tooltip-padding-block) + 2px) calc(var(--et-tooltip-padding-inline) + 2px);
-    border-radius: var(--_et-tooltip-radius);
-    border: 1px solid var(--_et-tooltip-border);
-    background: var(--_et-tooltip-background);
-    color: var(--_et-tooltip-color);
-    box-shadow: var(--_et-tooltip-shadow);
   }
 
   .et-tooltip__content {
-    position: relative;
-    z-index: 1;
-    display: grid;
     gap: 6px;
-
-    :where(p) {
-      margin: 0;
-      opacity: 0.88;
-    }
-
-    :where(a) {
-      color: inherit;
-    }
-
-    :where(strong) {
-      display: block;
-      font-size: 14px;
-      font-weight: 700;
-      line-height: 18px;
-      letter-spacing: -0.02em;
-      opacity: 1;
-    }
-  }
-
-  .et-tooltip__text {
-    margin: 0;
-  }
-
-  .et-overlay--tooltip {
-    --et-floating-panel-enter-duration: 200ms;
-    --et-floating-panel-leave-duration: 140ms;
-    --et-floating-panel-distance: 0.45rem;
   }
 }

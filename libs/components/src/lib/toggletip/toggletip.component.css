@@ -29,32 +29,14 @@
     initial-value: 14px;
   }
 
-  .et-overlay.et-overlay--toggletip {
-    overflow: visible;
-    background: transparent;
-    box-shadow: none;
-  }
-
   .et-overlay.et-overlay--toggletip > :not(.et-overlay-container-drag-handle):not(.et-overlay-arrow) {
     display: block;
     overflow: visible;
   }
 
   .et-toggletip {
-    --_et-toggletip-background: var(--et-surface-background-solid, rgb(32 32 32));
-    --_et-toggletip-color: var(--et-surface-color-solid, rgb(244 244 245));
-    --_et-toggletip-border: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
-    --_et-toggletip-shadow: var(--et-anchored-panel-shadow, 0 10px 24px rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.16));
-    --_et-toggletip-radius: 16px;
-    --_et-toggletip-max-width: min(34ch, calc(100vw - 24px));
     --_et-toggletip-focus-ring: var(--et-theme-color-primary-solid, rgb(59 130 246));
 
-    position: relative;
-    display: block;
-    inline-size: max-content;
-    max-inline-size: var(--_et-toggletip-max-width);
-    color: var(--_et-toggletip-color);
-    font-family: var(--et-font-family, inherit);
     font-size: var(--et-toggletip-font-size);
     font-weight: 500;
     line-height: var(--et-toggletip-line-height);
@@ -62,17 +44,8 @@
   }
 
   .et-toggletip__surface {
-    position: relative;
-    z-index: 1;
-    display: block;
     min-inline-size: min(272px, calc(100vw - 24px));
-    max-inline-size: var(--_et-toggletip-max-width);
     padding: calc(var(--et-toggletip-padding-block) + 2px) calc(var(--et-toggletip-padding-inline) + 2px);
-    border-radius: var(--_et-toggletip-radius);
-    border: 1px solid var(--_et-toggletip-border);
-    background: var(--_et-toggletip-background);
-    color: var(--_et-toggletip-color);
-    box-shadow: var(--_et-toggletip-shadow);
   }
 
   /* The comfortable minimum above is for prose — a sentence or two of explanation reads badly in a narrow
@@ -83,28 +56,7 @@
   }
 
   .et-toggletip__content {
-    position: relative;
-    z-index: 1;
-    display: grid;
     gap: var(--et-toggletip-gap);
-
-    :where(p) {
-      margin: 0;
-      opacity: 0.88;
-    }
-
-    :where(a) {
-      color: inherit;
-    }
-
-    :where(strong) {
-      display: block;
-      font-size: 14px;
-      font-weight: 700;
-      line-height: 18px;
-      letter-spacing: -0.02em;
-      opacity: 1;
-    }
 
     :where([data-toggletip-body]) {
       display: grid;
@@ -119,23 +71,13 @@
       gap: 8px;
       margin-top: 2px;
       padding-top: 12px;
-      border-top: 1px solid var(--_et-toggletip-border);
+      border-top: 1px solid var(--_et-floating-tip-border);
     }
-  }
-
-  .et-toggletip__text {
-    margin: 0;
   }
 
   .et-overlay--toggletip:focus-visible .et-toggletip__surface,
   .et-toggletip:focus-visible .et-toggletip__surface {
     outline: 2px solid var(--_et-toggletip-focus-ring);
     outline-offset: 2px;
-  }
-
-  .et-overlay--toggletip {
-    --et-floating-panel-enter-duration: 200ms;
-    --et-floating-panel-leave-duration: 140ms;
-    --et-floating-panel-distance: 0.45rem;
   }
 }
