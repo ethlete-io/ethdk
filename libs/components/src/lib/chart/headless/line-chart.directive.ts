@@ -24,6 +24,7 @@ import { LINE_CHART_ERROR_CODES } from '../line-chart-errors';
 import { CHART_PLOT_HOST, ChartPlotDirective, ChartPlotHost } from './chart-plot.directive';
 import { ChartValueFormatter, resolveChartValueFormatter } from './internals/chart-format';
 import {
+  bandEnds,
   bandExtent,
   createAreaPath,
   createLinePath,
@@ -33,7 +34,7 @@ import {
   splitLineSegments,
 } from './internals/chart-line';
 import { assertChartPlot } from './internals/chart-plot-check';
-import { createLinearScale, createValueTicks, numberExtent } from './internals/chart-scale';
+import { createFittedValueTicks, createLinearScale, createValueTicks, numberExtent } from './internals/chart-scale';
 import { findSharedSeriesColor, resolveChartAccentMixes, resolveChartSeriesColors } from './internals/chart-series';
 import {
   createTimeTicks,
@@ -190,6 +191,12 @@ export class LineChartDirective implements ChartPlotHost {
   /** Stacks the series on each other - positives up, negatives down - instead of drawing each from zero. @default false */
   public stacked = input(false, { transform: booleanAttribute });
 
+  /**
+   * Whether the value axis includes zero. `false` fits the axis to the data. An area always includes
+   * zero, since it fills down to the baseline. @default true
+   */
+  public includeZero = input(true, { transform: booleanAttribute });
+
   /** Draws a dot at every point, not only at points no line segment shows. @default false */
   public points = input(false, { transform: booleanAttribute });
 
@@ -320,7 +327,13 @@ export class LineChartDirective implements ChartPlotHost {
     }),
   );
 
-  public valueTicks = computed(() => createValueTicks(bandExtent(this.bands()), this.tickCount()));
+  private fitsDataWithoutZero = computed(() => !this.includeZero() && !this.area());
+
+  public valueTicks = computed(() =>
+    this.fitsDataWithoutZero()
+      ? createFittedValueTicks(bandEnds(this.bands()), this.tickCount())
+      : createValueTicks(bandExtent(this.bands()), this.tickCount()),
+  );
 
   private valueScale = computed(() => createLinearScale(this.valueTicks().domain, [this.height(), 0]));
 
@@ -564,6 +577,15 @@ export class LineChartDirective implements ChartPlotHost {
             `[LineChartDirective] The timeZone input "${this.timeZone()}" is not an IANA time zone. ` +
               'The chart falls back to the viewer time zone.',
           ),
+        );
+      });
+
+      effect(() => {
+        if (this.includeZero() || !this.area()) return;
+
+        console.warn(
+          '[LineChartDirective] includeZero is false on an area chart. An area fills down to zero, so the value ' +
+            'axis keeps zero. Drop area, or drop includeZero.',
         );
       });
 

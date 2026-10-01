@@ -43,6 +43,7 @@ import { LineChartTooltipComponent } from './line-chart-tooltip.component';
         'label',
         'area',
         'stacked',
+        'includeZero',
         'points',
         'height',
         'tickCount',

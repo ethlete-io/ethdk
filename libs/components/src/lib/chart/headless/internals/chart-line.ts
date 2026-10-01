@@ -107,5 +107,8 @@ export const createSeriesBands = (options: {
   return bands;
 };
 
+export const bandEnds = (bands: readonly (readonly (ChartSeriesBand | null)[])[]) =>
+  bands.flatMap((series) => series.flatMap((band) => (band ? [band.end] : [])));
+
 export const bandExtent = (bands: readonly (readonly (ChartSeriesBand | null)[])[]) =>
   bands.flatMap((series) => series.flatMap((band) => (band ? [band.start, band.end] : [])));

@@ -31,6 +31,7 @@ visitors: LineChartDatum[] = [
 | `series`         | `readonly LineChartSeries[]`                                   | `[]`         | The series to draw from each datum's `values`. Empty draws one series from each datum's `value`.                                                                           |
 | `area`           | `boolean`                                                      | `false`      | Fills the space under each line.                                                                                                                                           |
 | `stacked`        | `boolean`                                                      | `false`      | Stacks the series on each other instead of drawing each from zero. Needs two or more series.                                                                               |
+| `includeZero`    | `boolean`                                                      | `true`       | Whether the value axis includes zero. `false` fits the axis to the data. An area chart always includes zero.                                                               |
 | `points`         | `boolean`                                                      | `false`      | Draws a dot at every point, not only at points no line segment shows.                                                                                                      |
 | `height`         | `number`                                                       | `240`        | Height of the plot area in px. The axis labels sit outside it.                                                                                                             |
 | `tickCount`      | `number`                                                       | `5`          | Roughly how many value-axis intervals to draw.                                                                                                                             |
@@ -59,7 +60,13 @@ Mixing `Date` and string `x` values reports `ET5120` to the `ErrorHandler` in de
 
 ## Scale and gaps
 
-The value axis always includes zero and rounds out to a 1, 2 or 5 step, like the bar chart's. Lines are 2px with round joins.
+The value axis includes zero and rounds out to a 1, 2 or 5 step, like the bar chart's. Lines are 2px with round joins.
+
+Set `includeZero` to `false` to fit the axis to the data instead, still rounded to a clean step - `[62, 87, 71]` gets the ticks `60, 65, … 90`. Use it where the change matters more than the size, such as a temperature or a price; a reader can no longer compare the heights of two points as ratios.
+
+```html
+<et-line-chart [data]="prices" [includeZero]="false" label="Price per day" />
+```
 
 A `null`, missing or non-finite value breaks the line: the series has a gap at that x, and the tooltip and the table leave it out. A point with no defined neighbour on either side gets a dot, so a lone value never disappears. `points` puts a dot on every point.
 
@@ -91,7 +98,7 @@ Series colors come from the app's color palette exactly as for the [bar chart](/
 
 ## Areas and stacking
 
-`area` fills the space between each line and the zero baseline with a light wash of the series color. With several overlapping series the washes add up, so keep it for one or two series - or stack them.
+`area` fills the space between each line and the zero baseline with a light wash of the series color. An area always includes zero, since its fill reaches down to the baseline: with `area`, `includeZero` `false` is ignored and warns in dev mode. With several overlapping series the washes add up, so keep it for one or two series - or stack them.
 
 `stacked` puts each series on top of the ones before it: its line runs at the running total and, with `area`, its fill covers only its own band. Positive values stack up from zero and negative ones down, each side on its own. A missing value leaves a gap in its own series and counts as zero for the series above it. The tooltip lists each series' own value, not the running total.
 

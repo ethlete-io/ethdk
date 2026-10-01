@@ -59,15 +59,35 @@ export const numberExtent = (values: readonly number[]): readonly [number, numbe
   return values.length ? [min, max] : [0, 0];
 };
 
-export const createValueTicks = (values: readonly number[], count: number): ChartValueTicks => {
-  let min = 0;
-  let max = 0;
+export const createValueTicks = (values: readonly number[], count: number) =>
+  valueTicks(values, { count, includeZero: true });
+
+export const createFittedValueTicks = (values: readonly number[], count: number) =>
+  valueTicks(values, { count, includeZero: false });
+
+const valueTicks = (
+  values: readonly number[],
+  { count, includeZero }: { count: number; includeZero: boolean },
+): ChartValueTicks => {
+  let min = includeZero ? 0 : Infinity;
+  let max = includeZero ? 0 : -Infinity;
 
   for (const value of values) {
     if (!Number.isFinite(value)) continue;
 
     min = Math.min(min, value);
     max = Math.max(max, value);
+  }
+
+  if (min > max) min = max = 0;
+
+  if (max === min && min !== 0) {
+    const step = niceStep(Math.abs(min), count);
+    const domainMin = roundToStep((Math.floor(min / step) - Math.floor(count / 2)) * step);
+    const domainMax = roundToStep(domainMin + step * Math.max(1, count));
+    const ticks = Array.from({ length: Math.max(1, count) + 1 }, (_, index) => roundToStep(domainMin + index * step));
+
+    return { domain: [domainMin, domainMax], step, ticks };
   }
 
   const span = max - min || 1;

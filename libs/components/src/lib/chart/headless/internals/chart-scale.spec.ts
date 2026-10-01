@@ -1,4 +1,11 @@
-import { createBandScale, createBarPath, createLinearScale, createValueTicks, numberExtent } from './chart-scale';
+import {
+  createBandScale,
+  createBarPath,
+  createFittedValueTicks,
+  createLinearScale,
+  createValueTicks,
+  numberExtent,
+} from './chart-scale';
 
 describe('createValueTicks', () => {
   it('rounds the domain out to a nice step that starts at zero', () => {
@@ -27,6 +34,24 @@ describe('createValueTicks', () => {
     expect(createValueTicks([0, 0], 5).domain).toEqual([0, 1]);
     expect(createValueTicks([], 5).domain).toEqual([0, 1]);
     expect(createValueTicks([Number.NaN, 4], 4).domain).toEqual([0, 4]);
+  });
+
+  it('fits the domain to the values when zero is left out', () => {
+    expect(createFittedValueTicks([62, 87, 71], 5)).toEqual({
+      domain: [60, 90],
+      step: 5,
+      ticks: [60, 65, 70, 75, 80, 85, 90],
+    });
+    expect(createFittedValueTicks([-80, -21], 5).domain).toEqual([-80, -20]);
+  });
+
+  it('puts a flat series inside its domain when zero is left out', () => {
+    expect(createFittedValueTicks([50, 50], 5)).toEqual({
+      domain: [30, 80],
+      step: 10,
+      ticks: [30, 40, 50, 60, 70, 80],
+    });
+    expect(createFittedValueTicks([], 5).domain).toEqual([0, 1]);
   });
 });
 

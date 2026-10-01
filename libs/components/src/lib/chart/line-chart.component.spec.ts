@@ -21,6 +21,7 @@ import { LineChartComponent } from './line-chart.component';
       [series]="series()"
       [area]="area()"
       [stacked]="stacked()"
+      [includeZero]="includeZero()"
       [height]="200"
       [timeZone]="timeZone()"
       [categoryHeader]="categoryHeader()"
@@ -41,6 +42,7 @@ class LineChartHostComponent {
   series = signal<LineChartSeries[]>([]);
   area = signal(false);
   stacked = signal(false);
+  includeZero = signal(true);
   timeZone = signal<string | null>('Europe/Berlin');
   categoryHeader = signal('Category');
   dateHeader = signal('Date');
@@ -109,6 +111,29 @@ describe('LineChartComponent', () => {
     expect(chart.lines()[0]?.linePath).toBe('');
     expect(chart.lines()[0]?.points.every((point) => point.isIsolated)).toBe(true);
     expect(element.querySelectorAll('.et-line-chart-point')).toHaveLength(2);
+  });
+
+  it('fits the value axis to the data with includeZero false', () => {
+    const { host, fixture, chart } = setup();
+
+    host.includeZero.set(false);
+    fixture.detectChanges();
+
+    expect(chart.valueTicks().domain).toEqual([40, 100]);
+    expect(chart.lines()[0]?.points.map((point) => Math.round(point.y))).toEqual([200, 0, 133, 67]);
+  });
+
+  it('keeps zero on an area chart with includeZero false and warns in dev mode', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { host, fixture, chart } = setup();
+
+    host.includeZero.set(false);
+    host.area.set(true);
+    fixture.detectChanges();
+
+    expect(chart.valueTicks().domain).toEqual([0, 100]);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('includeZero is false on an area chart'));
+    warn.mockRestore();
   });
 
   it('fills an area down to the zero baseline', () => {
