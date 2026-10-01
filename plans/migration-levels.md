@@ -1,6 +1,6 @@
 # Migration levels for `et update`
 
-Started 2026-10-01. Status: design, nothing built.
+Started 2026-10-01. Status: decided, slice 1 in progress.
 
 ## Problem
 
@@ -33,21 +33,26 @@ Add a `level` field next to `kind`. `kind` says how a migration runs; `level` sa
   Therefore the app must record what ran (for example in `.ethlete/`), because the version window no longer says it.
 - `et update` ends with one line, for example: `2 recommended and 3 optional migrations are available - run et migrations`.
 
-## Questions (with recommendations)
+## Decisions (2026-10-01)
 
-1. Field name and default: `level`, and a missing `level` means `required`, so existing manifests stay valid.
-   Recommended: yes, then set `level` on every entry explicitly.
-2. More levels? A `critical` level above `required` (security fix, data loss) only changes the wording of the output.
-   Recommended: start with three; add one when a real case needs it.
-3. Where to record a run of a non-required migration: `.ethlete/migrations.json` in the app, committed.
-   Recommended: yes; the update flow already writes under `UPDATE_DIR`.
-4. Size estimate: a generator may export a `scan` that returns the affected files without changes.
-   Recommended: optional per generator; `report-legacy-query-apis` already is such a scan.
-5. Classify every existing entry (agent-rules 5, cdk 3, components 15, contentful 2, core 5, eslint-plugin 1,
-   query 7). Recommended: `from-cdk`, `from-cdk-decisions`, `to-query-v3` and `prep-for-query-v3` become `optional`;
-   `deprecate-legacy-queries` becomes `recommended`; check the rest one by one with the user.
-6. Should `report-legacy-query-apis` then go back into `migrations.json` as `optional`? Recommended: yes, once
-   `et migrations` exists.
+1. Field `level`. A missing `level` means `required`, so old manifests stay valid. Every entry sets it explicitly.
+2. Three levels: `required`, `recommended`, `optional`. Add `critical` when a real case needs it.
+3. The app records each run of a non-required migration in `.ethlete/migrations.json`, committed.
+4. A generator may export a `scan` that returns the affected files without changes. Optional per generator.
+5. Classification:
+   - `optional`: cdk `from-cdk`, `from-cdk-decisions`; query `to-query-v3`; agent-rules `list-state-query-form`,
+     `search-query-field`, `sdk-components-over-hand-built-ui`, `nx-layout`.
+   - `recommended`: query `deprecate-legacy-queries`.
+   - `required`: all other entries. This includes query `prep-for-query-v3`, cdk `to-v5`, all 5 core entries,
+     agent-rules `app-styling-utilities` and eslint-plugin `module-augmentation-interfaces`.
+6. `report-legacy-query-apis` goes back into `migrations.json` as `optional` once `et migrations` exists.
+
+## Slices
+
+1. `level` in the manifest validator and on every entry; `et update` runs only `required`, and ends with the line
+   about the available non-required migrations.
+2. `.ethlete/migrations.json`, `et migrations` (list) and `et migrations run <package>:<name>`.
+3. `scan` support and the affected-file count; `report-legacy-query-apis` back in as `optional`; docs.
 
 ## Files
 
