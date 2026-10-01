@@ -62,6 +62,8 @@ import { rememberView, rememberedView } from './remembered';
 
 const THUMB_WIDTH = 180;
 
+const TOP_BAR_REVEAL = 8;
+
 /** The design server reports no frame height, so a tile assumes the 16:9 window a call draws. */
 const THUMB_ASPECT = 9 / 16;
 
@@ -270,7 +272,7 @@ const SETTLE_MS = 300;
                 </div>
               </div>
 
-              <div class="studio__float studio__float--top">
+              <div [class.studio__float--hidden]="topBarHidden()" class="studio__float studio__float--top">
                 <div class="studio__line">
                   <span class="studio__eyebrow">{{ open.eyebrow }}</span>
                   <span class="studio__line-text">{{ open.headline }}</span>
@@ -570,7 +572,7 @@ const SETTLE_MS = 300;
     ProvideSurfaceDirective,
     UpdateButtonComponent,
   ],
-  host: { class: 'studio' },
+  host: { class: 'studio', '(window:message)': 'trackFrameScroll($event)' },
 })
 export class CallViewComponent {
   private destroyRef = inject(DestroyRef);
@@ -586,6 +588,9 @@ export class CallViewComponent {
   protected project = signal('');
   protected slug = signal('');
   protected variantKey = signal('');
+  private scrolledDown = signal<Record<string, boolean>>({});
+  private lastScroll = new Map<string, number>();
+  protected topBarHidden = computed(() => this.scrolledDown()[this.variantKey()] ?? false);
   protected trouble = signal('');
   protected prompt = signal('');
   protected model = signal('');
@@ -848,6 +853,22 @@ export class CallViewComponent {
 
       if (rail && count) rail.scrollTop = rail.scrollHeight;
     });
+  }
+
+  protected trackFrameScroll(event: MessageEvent) {
+    const data = event.data as { type?: string; variant?: string; y?: number } | null;
+
+    if (data?.type !== 'design-explore:scroll' || typeof data.variant !== 'string' || typeof data.y !== 'number')
+      return;
+
+    const { variant, y } = data;
+    const previous = this.lastScroll.get(variant) ?? 0;
+    this.lastScroll.set(variant, y);
+
+    if (y === previous) return;
+
+    const hidden = y > TOP_BAR_REVEAL && y > previous;
+    this.scrolledDown.update((state) => (state[variant] === hidden ? state : { ...state, [variant]: hidden }));
   }
 
   protected settled(call: Call) {

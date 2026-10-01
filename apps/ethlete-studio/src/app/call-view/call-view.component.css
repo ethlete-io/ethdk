@@ -744,6 +744,7 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     min-height: 0;
+    padding-top: 4.6rem;
     overflow: auto;
   }
 
@@ -778,6 +779,16 @@
 
   .studio__float--top {
     top: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  .studio__float--hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .studio__float--hidden * {
+    pointer-events: none !important;
   }
 
   .studio__float--bottom {

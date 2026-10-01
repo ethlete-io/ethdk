@@ -36,3 +36,9 @@ const report = () => {
 
 new ResizeObserver(report).observe(document.documentElement);
 report();
+
+addEventListener(
+  'scroll',
+  () => parent.postMessage({ type: 'design-explore:scroll', variant: key, y: Math.round(scrollY) }, '*'),
+  { passive: true },
+);
