@@ -26,6 +26,12 @@ export type Migration = {
   generator?: string;
   /** `auto` only: flags handed to the generator, for example `{ skipFormat: true }`. */
   options?: Record<string, string | number | boolean>;
+  /**
+   * An Nx generator that finds the files the migration would touch and changes none. `et migrations` runs it
+   * with `--dry-run`, the migration's `options` and the env var `ETHLETE_SCAN_FILE` set to a path, and the
+   * generator writes a JSON array of the affected workspace-relative paths to that file.
+   */
+  scan?: string;
   /** Markdown next to the manifest: the recommendation for `manual`, the prompt for `assisted`. */
   instructions?: string;
   /** Path on the docs site, for example `/components/button`. */
@@ -121,6 +127,7 @@ const parseEntry = (options: { value: unknown; origin: string; index: number }) 
       description,
       generator,
       options: readOptions(value['options']),
+      scan: readString(value, 'scan'),
       instructions,
       docs: readString(value, 'docs'),
     } satisfies Migration,

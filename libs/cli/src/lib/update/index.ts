@@ -12,6 +12,7 @@ export * from './pending';
 export * from './plan';
 export * from './registry';
 export * from './run-migrations';
+export * from './scan';
 export * from './semver';
 export * from './tasks';
 export * from './update-command';

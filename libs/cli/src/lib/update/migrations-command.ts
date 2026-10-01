@@ -8,6 +8,7 @@ import { detectPackageManager } from './package-manager';
 import { installedVersion, manifestPath, readManifest } from './packages';
 import { PENDING_FILE, readPendingUpdate } from './pending';
 import { runPendingMigrations } from './run-migrations';
+import { ScanResult, runScan } from './scan';
 import { compareVersions } from './semver';
 import { docsBaseUrl, writeUpdateTasks } from './tasks';
 import { NOT_A_CHECKOUT, commitMigration, ignoreTaskList, printOutcomes } from './update-command';
@@ -68,15 +69,29 @@ const parseArgs = (argv: readonly string[]): MigrationsArgs => {
   return args;
 };
 
-const printAvailable = (options: { available: readonly AvailableMigration[]; invocation: string }) => {
-  const { available, invocation } = options;
+const scanLabel = (scan: ScanResult | undefined) => {
+  if (scan === undefined) return '';
+
+  if ('problem' in scan) return ` - affected files unknown (${scan.problem})`;
+
+  return ` - ${scan.files.length} affected file${scan.files.length === 1 ? '' : 's'}`;
+};
+
+const printAvailable = (options: {
+  available: readonly AvailableMigration[];
+  invocation: string;
+  scan: (entry: AvailableMigration) => ScanResult | undefined;
+}) => {
+  const { available, invocation, scan } = options;
 
   console.log(`${available.length} migration${available.length === 1 ? ' is' : 's are'} available:\n`);
 
   for (const entry of available) {
     const { migration, packageName, installed } = entry;
 
-    console.log(`  ${migration.level}  ${migrationKey({ packageName, name: migration.name })} (${migration.kind})`);
+    console.log(
+      `  ${migration.level}  ${migrationKey({ packageName, name: migration.name })} (${migration.kind})${scanLabel(scan(entry))}`,
+    );
     console.log(`    ${migration.description}`);
 
     if (migration.docs) console.log(`    Docs: ${docsBaseUrl(installed)}${migration.docs}`);
@@ -91,8 +106,23 @@ const list = (options: { root: string; invocation: string }) => {
 
   for (const problem of problems) console.error(`  ${problem}`);
 
-  if (available.length === 0) console.log('No recommended or optional migration is available.');
-  else printAvailable({ available, invocation });
+  if (available.length === 0) {
+    console.log('No recommended or optional migration is available.');
+
+    return problems.length > 0 ? 1 : 0;
+  }
+
+  const manifest = readManifest(root);
+  const manager = manifest && detectPackageManager({ root, manifest });
+  const scan = ({ migration }: AvailableMigration): ScanResult | undefined => {
+    if (!migration.scan) return undefined;
+
+    if (!manager) return { problem: `${manifestPath(root)} cannot be read` };
+
+    return runScan({ root, manager, migration });
+  };
+
+  printAvailable({ available, invocation, scan });
 
   return problems.length > 0 ? 1 : 0;
 };

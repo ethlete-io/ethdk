@@ -6,9 +6,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MIGRATION_RECORD_FILE, readMigrationRecord, writeMigrationRun } from './migration-record';
 import { migrationsCommand } from './migrations-command';
 import { writePendingUpdate } from './pending';
+import { SCAN_FILE_ENV } from './scan';
 import { TASKS_DATA_FILE, UPDATE_DIR } from './tasks';
 
-const spawnSync = vi.hoisted(() => vi.fn<(binary: string, args: string[]) => { status: number }>());
+const spawnSync = vi.hoisted(() =>
+  vi.fn<(binary: string, args: string[], options?: { env?: NodeJS.ProcessEnv }) => { status: number }>(),
+);
 
 const REAL_GIT = ['ls-files', 'rev-parse', 'status', 'add', 'commit', 'reset', 'check-ignore'];
 
@@ -17,10 +20,10 @@ vi.mock('child_process', async (importOriginal) => {
 
   return {
     ...actual,
-    spawnSync: (binary: string, args: string[], options?: object) =>
+    spawnSync: (binary: string, args: string[], options?: { env?: NodeJS.ProcessEnv }) =>
       binary === 'git' && REAL_GIT.includes(args[0] ?? '')
         ? actual.spawnSync(binary, args, options)
-        : spawnSync(binary, args),
+        : spawnSync(binary, args, options),
   };
 });
 
@@ -79,6 +82,31 @@ const installQuery = (root: string, version: string) => {
   mkdirSync(join(query, 'migrations'), { recursive: true });
   writeFileSync(join(query, 'migrations', 'deprecate-legacy-queries.md'), '## Replace them\n', 'utf8');
 };
+
+const addScannedMigration = (root: string) => {
+  const path = join(root, 'node_modules', '@ethlete', 'query', 'migrations.json');
+  const manifest = JSON.parse(readFileSync(path, 'utf8')) as { migrations: object[] };
+
+  manifest.migrations.push({
+    name: 'report-legacy-query-apis',
+    version: '5.42.0',
+    kind: 'auto',
+    level: 'optional',
+    description: 'List the legacy query APIs',
+    generator: '@ethlete/query:report-legacy-query-apis',
+    scan: '@ethlete/query:report-legacy-query-apis',
+  });
+  writeJson(path, manifest);
+};
+
+const scanReturns = (files: unknown) =>
+  spawnSync.mockImplementation((_binary, args, options) => {
+    const scanFile = options?.env?.[SCAN_FILE_ENV];
+
+    if (args.includes('--dry-run') && scanFile) writeFileSync(scanFile, JSON.stringify(files), 'utf8');
+
+    return { status: 0 };
+  });
 
 const makeRepo = () => {
   const root = mkdtempSync(join(tmpdir(), 'cli-migrations-command-'));
@@ -175,6 +203,37 @@ describe('et migrations', () => {
 
     expect(migrationsCommand({ argv: [], root })).toBe(0);
     expect(logged()).toBe('No recommended or optional migration is available.');
+  });
+
+  it('shows the number of affected files next to a migration with a scan, and nothing next to one without', () => {
+    const root = makeRepo();
+
+    addScannedMigration(root);
+    scanReturns(['libs/a.ts', 'libs/b.ts', 'libs/a.ts']);
+
+    expect(migrationsCommand({ argv: [], root })).toBe(0);
+    expect(logged()).toContain('  optional  @ethlete/query:report-legacy-query-apis (auto) - 2 affected files\n');
+    expect(logged()).toContain('  optional  @ethlete/query:to-query-v3 (auto)\n');
+    expect(spawnSync.mock.calls.map(([, args]) => args)).toEqual([
+      ['nx', 'generate', '@ethlete/query:report-legacy-query-apis', '--interactive=false', '--dry-run'],
+    ]);
+  });
+
+  it.each([
+    ['exits non-zero', () => spawnSync.mockReturnValue({ status: 2 }), 'yarn exited with 2'],
+    ['writes no result', () => spawnSync.mockReturnValue({ status: 0 }), 'the scan wrote no result'],
+    ['writes something else than paths', () => scanReturns({ files: 3 }), 'the scan result is not a list of paths'],
+  ])('lists a migration whose scan %s with an unknown count', (_, arrange, reason) => {
+    const root = makeRepo();
+
+    addScannedMigration(root);
+    arrange();
+
+    expect(migrationsCommand({ argv: [], root })).toBe(0);
+    expect(logged()).toContain(
+      `  optional  @ethlete/query:report-legacy-query-apis (auto) - affected files unknown (${reason})\n`,
+    );
+    expect(logged()).toContain('3 migrations are available');
   });
 
   it('reports a broken record', () => {

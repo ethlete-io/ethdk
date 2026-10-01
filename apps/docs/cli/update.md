@@ -44,6 +44,8 @@ yarn et migrations                                # recommended first: level, ki
 yarn et migrations run query:to-query-v3          # run one; the package may be named short or in full
 ```
 
+A migration that ships a [scan](#scan) shows how many files it would touch, for example `optional  @ethlete/query:report-legacy-query-apis (auto) - 12 affected files`. A migration without a scan shows no count. A scan that fails, or a repo without Nx, shows `affected files unknown` with the reason; the list itself does not fail.
+
 A run follows the flow of `et update`: a clean working tree unless `--force`, a commit of its own unless `--no-commit`, and a task in `.ethlete/update` for a `manual` or `assisted` migration. Hand an assisted task to an agent with `et update --continue --ai`. It does not run while an update is unfinished.
 
 Each run that does not fail is recorded in `.ethlete/migrations.json`, keyed by `<package>:<name>`, with the installed version and the time. Commit that file: it is how the next run knows the migration is done, so it is not ignored like `.ethlete/update/`. A `required` migration cannot run this way - `et update` runs it.
@@ -218,6 +220,7 @@ A package declares its migrations in `migrations.json` at its own root, and poin
 | `description`  | One line. It is the summary a developer reads first.                                                     |
 | `generator`    | `auto` only: the Nx generator that rewrites the code.                                                    |
 | `options`      | `auto` only: flags handed to the generator, for example `{ "skipFormat": true }`.                        |
+| `scan`         | An Nx generator that finds the affected files and changes none. See [scan](#scan).                       |
 | `instructions` | A markdown file next to the manifest: the recommendation for `manual`, the prompt for `assisted`.        |
 | `docs`         | A path on this site, for example `/components/button`.                                                   |
 
@@ -233,3 +236,7 @@ The instruction files must ship with the package. In an Angular library that mea
   "assets": ["migrations.json", { "glob": "**/*.md", "input": "migrations", "output": "./migrations" }]
 }
 ```
+
+### Scan
+
+`et migrations` runs the `scan` generator with `--dry-run`, the entry's `options`, and the environment variable `ETHLETE_SCAN_FILE` set to a path. The generator writes a JSON array of the affected workspace-relative paths to that file and changes nothing. A scan may name the migration's own generator, if that generator writes the file and returns early when the variable is set - `@ethlete/query:report-legacy-query-apis` does.

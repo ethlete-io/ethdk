@@ -57,10 +57,21 @@ describe('readPackageMigrations', () => {
         description: 'Rewrite something',
         generator: '@ethlete/core:migrate-a-change',
         options: undefined,
+        scan: undefined,
         instructions: undefined,
         docs: undefined,
       },
     ]);
+  });
+
+  it('reads the scan generator an entry names', () => {
+    const root = makeRoot();
+
+    installPackage({ root, manifest: { migrations: [entry({ scan: '@ethlete/core:scan-a-change' })] } });
+
+    expect(readPackageMigrations({ root, packageName: '@ethlete/core' }).migrations[0]?.scan).toBe(
+      '@ethlete/core:scan-a-change',
+    );
   });
 
   it('reports a package that is not installed', () => {
