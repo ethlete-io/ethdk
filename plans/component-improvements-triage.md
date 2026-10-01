@@ -46,7 +46,7 @@ Sankey triage (2026-10-01): keep the shipped defaults of 2, 4, 6, 7 and 9. Built
 
 - Call 1, middle labels (`00-middle-labels`): **B won**. A surface chip centred on the node; a node under 24px keeps the shipped label. Built.
 - Call 3, narrow screens (`01-narrow-screens`): **C won**. Below a breakpoint the flow turns vertical, columns become rows. Not built yet.
-- Call 10, keyboard (`02-keyboard-links`): **B won**. One tab stop with roving focus; arrows walk nodes, Enter steps into the outgoing links. Not built yet.
+- Call 10, keyboard (`02-keyboard-links`): **B won**. One tab stop with roving focus; arrows walk nodes, Enter steps into the outgoing links. Built.
 
 ### Pie and donut (`0a28804d3`)
 

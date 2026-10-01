@@ -6,6 +6,7 @@ import { CHART_PLOT_HOST, ChartPlotDirective, ChartPlotHost } from './chart-plot
 import { ChartValueFormatter, resolveChartValueFormatter } from './internals/chart-format';
 import { assertChartPlot } from './internals/chart-plot-check';
 import { resolveChartAccentMixes, resolveChartSeriesColors } from './internals/chart-series';
+import { findSankeyKeyTarget } from './internals/sankey-keyboard';
 import { computeSankeyLayout, EMPTY_SANKEY_LAYOUT, findSankeyDataError } from './internals/sankey-layout';
 
 /** A node of a sankey chart: a stage the flow passes through. */
@@ -191,7 +192,7 @@ export class SankeyChartDirective implements ChartPlotHost {
         }),
   );
 
-  /** The nodes, column by column and top to bottom - the order they are tab stops in. */
+  /** The nodes, column by column and top to bottom - the order the arrow keys walk them in. */
   public renderedNodes = computed<SankeyChartNode[]>(() => {
     const layout = this.layout();
     const inputs = this.nodes();
@@ -263,7 +264,7 @@ export class SankeyChartDirective implements ChartPlotHost {
       });
   });
 
-  /** The links with a ribbon, by source node in tab order, then top to bottom at that node. */
+  /** The links with a ribbon, by source node in node order, then top to bottom at that node. */
   public renderedLinks = computed<SankeyChartLink[]>(() => {
     const layout = this.layout();
     const inputs = this.links();
@@ -302,6 +303,23 @@ export class SankeyChartDirective implements ChartPlotHost {
 
   private hovered = signal<SankeyChartActiveMark | null>(null);
   private focused = signal<SankeyChartActiveMark | null>(null);
+  private requestedTabStop = signal<SankeyChartActiveMark | null>(null);
+  private markHandles = new Set<SankeyChartMarkHandle>();
+
+  /** The mark that holds the chart's one tab stop: the last focused one while it exists, else the first node. */
+  public tabStopMark = computed<SankeyChartActiveMark | null>(() => {
+    const requested = this.requestedTabStop();
+    const exists =
+      requested?.kind === 'node'
+        ? this.renderedNodes().some((node) => node.key === requested.key)
+        : requested?.kind === 'link' && this.renderedLinks().some((link) => link.key === requested.key);
+
+    if (requested && exists) return requested;
+
+    const first = this.renderedNodes()[0];
+
+    return first ? { kind: 'node', key: first.key } : null;
+  });
 
   /** The hovered mark, else the focused one. */
   public activeMark = computed(() => this.hovered() ?? this.focused());
@@ -367,9 +385,43 @@ export class SankeyChartDirective implements ChartPlotHost {
     if (this.hovered()?.key === key) this.hovered.set(null);
   }
 
-  /** Marks a node or link as focused. */
+  /** Marks a node or link as focused, and gives it the chart's tab stop. */
   public focusMark(mark: SankeyChartActiveMark) {
     this.focused.set(mark);
+    this.requestedTabStop.set(mark);
+  }
+
+  /** Moves focus to a node or link rendered with `etSankeyChartMark`. */
+  public focusMarkElement(mark: SankeyChartActiveMark) {
+    this.requestedTabStop.set(mark);
+
+    for (const handle of this.markHandles) {
+      const current = handle.mark();
+
+      if (current.kind === mark.kind && current.key === mark.key) handle.element.focus();
+    }
+  }
+
+  /** @internal */
+  public registerMark(handle: SankeyChartMarkHandle) {
+    this.markHandles.add(handle);
+
+    return () => this.markHandles.delete(handle);
+  }
+
+  /** @internal */
+  public moveFocus(event: KeyboardEvent, mark: SankeyChartActiveMark) {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+
+    const target = findSankeyKeyTarget(
+      { nodes: this.renderedNodes(), links: this.renderedLinks() },
+      { key: event.key, mark },
+    );
+
+    if (!target) return;
+
+    event.preventDefault();
+    this.focusMarkElement(target);
   }
 
   /** Clears the focus, unless another mark took it over since. */
@@ -377,3 +429,9 @@ export class SankeyChartDirective implements ChartPlotHost {
     if (this.focused()?.key === key) this.focused.set(null);
   }
 }
+
+/** @internal */
+export type SankeyChartMarkHandle = {
+  element: HTMLElement | SVGElement;
+  mark: () => SankeyChartActiveMark;
+};

@@ -1,12 +1,12 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { boxOf, openStory, pressKey, tabSequence, tap } from '../support';
+import { at, boxOf, openStory, pressKey, tap } from '../support';
 
 const STORY_ID = 'components-data-display-sankey-chart--default';
 const SOURCES = ['Tickets', 'Catering', 'Merchandise'];
 const MIDDLE = 'Match-day revenue';
 const SINKS = ['Stewards and staff', 'Security', 'Pitch and facilities', 'Reserves'];
 const NODES = [...SOURCES, MIDDLE, ...SINKS];
-const LINKS = [...SOURCES.map((source) => `${source} → ${MIDDLE}`), ...SINKS.map((sink) => `${MIDDLE} → ${sink}`)];
+const LINKS = [...SOURCES.map((source) => `${source} to ${MIDDLE}`), ...SINKS.map((sink) => `${MIDDLE} to ${sink}`)];
 
 function mark(root: Locator, name: string): Locator {
   return root.getByRole('img', { name, exact: true });
@@ -81,14 +81,75 @@ async function expectTooltipAboveMidpoint(page: Page, link: Locator): Promise<vo
 test.describe('sankey chart / keyboard', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus');
 
-  test('Tab walks the nodes column by column, top to bottom, then the links', async ({ page }) => {
+  test('the chart is one tab stop: Tab enters on the first node and the next Tab leaves', async ({ page }) => {
     const root = await openStory(page, STORY_ID);
 
     await expect(root.locator('.et-sankey-chart-node')).toHaveCount(NODES.length);
+    await expect(root.locator('.et-sankey-chart-svg [tabindex="0"]')).toHaveCount(1);
 
-    const sequence = await tabSequence(page, NODES.length + LINKS.length);
+    await pressKey(page, 'Tab');
+    await expect(mark(root, 'Tickets')).toBeFocused();
 
-    expect(sequence.map((step) => step.name)).toEqual([...NODES, ...LINKS]);
+    await pressKey(page, 'Tab');
+    await expect(root.locator('.et-sankey-chart-svg :focus')).toHaveCount(0);
+  });
+
+  test('the arrow keys walk the nodes, down a column and across to the next', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'ArrowDown');
+    await expectNodeFocusVisible(mark(root, 'Catering'));
+
+    await pressKey(page, 'ArrowRight');
+    await expectNodeFocusVisible(mark(root, MIDDLE));
+    await expectNodeTooltip(page, MIDDLE, ['In 660', 'Out 660']);
+
+    await pressKey(page, 'ArrowRight');
+    await pressKey(page, 'ArrowDown');
+    await pressKey(page, 'ArrowUp');
+    await expect(root.locator('.et-sankey-chart-node:focus')).toHaveCount(1);
+
+    await pressKey(page, 'ArrowLeft');
+    await expect(mark(root, MIDDLE)).toBeFocused();
+  });
+
+  test('Enter steps into the outgoing links, the arrows cycle them and Escape returns', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const outgoing = SINKS.map((sink) => `${MIDDLE} to ${sink}`);
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'ArrowRight');
+    await pressKey(page, 'Enter');
+
+    await expect(mark(root, at(outgoing, 0))).toBeFocused();
+    await expectLinkTooltip(page, at(outgoing, 0), '210');
+    expect(await highlightedLinks(root)).toEqual([at(outgoing, 0)]);
+
+    await pressKey(page, 'ArrowDown');
+    await expect(mark(root, at(outgoing, 1))).toBeFocused();
+
+    await pressKey(page, 'ArrowUp');
+    await pressKey(page, 'ArrowUp');
+    await expect(mark(root, at(outgoing, 3))).toBeFocused();
+
+    await pressKey(page, 'Escape');
+    await expect(mark(root, MIDDLE)).toBeFocused();
+    await expectNodeTooltip(page, MIDDLE, ['In 660', 'Out 660']);
+    await expect(page.getByRole('tooltip')).toHaveCount(1);
+  });
+
+  test('leaving the chart and coming back with Shift+Tab lands on the last focused mark', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'ArrowRight');
+    await pressKey(page, 'Enter');
+    await pressKey(page, 'ArrowDown');
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'Shift+Tab');
+
+    await expect(mark(root, `${MIDDLE} to Security`)).toBeFocused();
   });
 
   test('a keyboard-focused node shows its focus ring', async ({ page }) => {
@@ -101,17 +162,22 @@ test.describe('sankey chart / keyboard', () => {
   test('focusing a node highlights its links and dims the rest', async ({ page }) => {
     const root = await openStory(page, STORY_ID);
 
-    await tabSequence(page, 4);
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'ArrowRight');
     await expect(mark(root, MIDDLE)).toBeFocused();
 
     expect(await highlightedLinks(root)).toEqual(LINKS);
 
-    await pressKey(page, 'Shift+Tab');
+    await pressKey(page, 'ArrowLeft');
+    await pressKey(page, 'End');
+    await pressKey(page, 'Home');
+    await pressKey(page, 'ArrowDown');
+    await pressKey(page, 'ArrowDown');
     await expect(mark(root, 'Merchandise')).toBeFocused();
 
-    expect(await highlightedLinks(root)).toEqual([`Merchandise → ${MIDDLE}`]);
-    await expect.poll(() => fillOpacityOf(mark(root, `Merchandise → ${MIDDLE}`))).toBeCloseTo(0.6);
-    await expect.poll(() => fillOpacityOf(mark(root, `Tickets → ${MIDDLE}`))).toBeCloseTo(0.1);
+    expect(await highlightedLinks(root)).toEqual([`Merchandise to ${MIDDLE}`]);
+    await expect.poll(() => fillOpacityOf(mark(root, `Merchandise to ${MIDDLE}`))).toBeCloseTo(0.6);
+    await expect.poll(() => fillOpacityOf(mark(root, `Tickets to ${MIDDLE}`))).toBeCloseTo(0.1);
   });
 
   test('focusing a node opens its tooltip with its label and totals', async ({ page }) => {
@@ -120,7 +186,7 @@ test.describe('sankey chart / keyboard', () => {
     await pressKey(page, 'Tab');
     await expectNodeTooltip(page, 'Tickets', ['Out 420']);
 
-    await tabSequence(page, 3);
+    await pressKey(page, 'ArrowRight');
     await expectNodeTooltip(page, MIDDLE, ['In 660', 'Out 660']);
     await expect(page.getByRole('tooltip')).toHaveCount(1);
   });
@@ -128,11 +194,13 @@ test.describe('sankey chart / keyboard', () => {
   test('focusing a link opens its tooltip and leaves only it highlighted', async ({ page }) => {
     const root = await openStory(page, STORY_ID);
 
-    await tabSequence(page, NODES.length + 2);
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'ArrowDown');
+    await pressKey(page, 'Enter');
 
-    await expect(mark(root, `Catering → ${MIDDLE}`)).toBeFocused();
-    await expectLinkTooltip(page, `Catering → ${MIDDLE}`, '150');
-    expect(await highlightedLinks(root)).toEqual([`Catering → ${MIDDLE}`]);
+    await expect(mark(root, `Catering to ${MIDDLE}`)).toBeFocused();
+    await expectLinkTooltip(page, `Catering to ${MIDDLE}`, '150');
+    expect(await highlightedLinks(root)).toEqual([`Catering to ${MIDDLE}`]);
   });
 
   test('Escape closes the tooltip of the focused node', async ({ page }) => {
@@ -154,7 +222,7 @@ test.describe('sankey chart / pointer', () => {
 
     await mark(root, 'Security').hover();
 
-    expect(await highlightedLinks(root)).toEqual([`${MIDDLE} → Security`]);
+    expect(await highlightedLinks(root)).toEqual([`${MIDDLE} to Security`]);
     await expectNodeTooltip(page, 'Security', ['In 140']);
 
     await page.mouse.move(1, 1);
@@ -164,14 +232,14 @@ test.describe('sankey chart / pointer', () => {
 
   test('hovering a link opens its tooltip above the midpoint of the ribbon', async ({ page }) => {
     const root = await openStory(page, STORY_ID);
-    const link = mark(root, `${MIDDLE} → Reserves`);
+    const link = mark(root, `${MIDDLE} to Reserves`);
     const midpoint = await linkMidpoint(link);
 
     await page.mouse.move(midpoint.x, midpoint.y);
 
-    await expectLinkTooltip(page, `${MIDDLE} → Reserves`, '190');
+    await expectLinkTooltip(page, `${MIDDLE} to Reserves`, '190');
     await expectTooltipAboveMidpoint(page, link);
-    expect(await highlightedLinks(root)).toEqual([`${MIDDLE} → Reserves`]);
+    expect(await highlightedLinks(root)).toEqual([`${MIDDLE} to Reserves`]);
   });
 });
 
@@ -196,7 +264,7 @@ test.describe('sankey chart / accessibility', () => {
     const root = await openStory(page, STORY_ID);
 
     await expect(mark(root, MIDDLE)).toHaveAccessibleDescription('In: 660, Out: 660');
-    await expect(mark(root, `Tickets → ${MIDDLE}`)).toHaveAccessibleDescription('420');
+    await expect(mark(root, `Tickets to ${MIDDLE}`)).toHaveAccessibleDescription('420');
   });
 
   test('the table view lists every link', async ({ page }) => {
@@ -229,20 +297,20 @@ test.describe('sankey chart / touch', () => {
     await tap(mark(root, 'Catering'));
 
     await expectNodeTooltip(page, 'Catering', ['Out 150']);
-    expect(await highlightedLinks(root)).toEqual([`Catering → ${MIDDLE}`]);
+    expect(await highlightedLinks(root)).toEqual([`Catering to ${MIDDLE}`]);
   });
 
   test('a tap on a link opens its tooltip, and a tap on another moves it', async ({ page }) => {
     const root = await openStory(page, STORY_ID);
-    const first = await linkMidpoint(mark(root, `Tickets → ${MIDDLE}`));
+    const first = await linkMidpoint(mark(root, `Tickets to ${MIDDLE}`));
 
     await page.touchscreen.tap(first.x, first.y);
-    await expectLinkTooltip(page, `Tickets → ${MIDDLE}`, '420');
+    await expectLinkTooltip(page, `Tickets to ${MIDDLE}`, '420');
 
-    const second = await linkMidpoint(mark(root, `${MIDDLE} → Security`));
+    const second = await linkMidpoint(mark(root, `${MIDDLE} to Security`));
 
     await page.touchscreen.tap(second.x, second.y);
-    await expectLinkTooltip(page, `${MIDDLE} → Security`, '140');
+    await expectLinkTooltip(page, `${MIDDLE} to Security`, '140');
     await expect(page.getByRole('tooltip')).toHaveCount(1);
   });
 

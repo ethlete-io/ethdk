@@ -7,6 +7,7 @@ import { LineChartDirective } from './headless/line-chart.directive';
 import { PieChartDirective } from './headless/pie-chart.directive';
 import { LineChartComponent } from './line-chart.component';
 import { PieChartComponent } from './pie-chart.component';
+import { SankeyChartMarkDirective } from './headless/sankey-chart-mark.directive';
 import { SankeyChartDirective } from './headless/sankey-chart.directive';
 import { SankeyChartComponent } from './sankey-chart.component';
 
@@ -22,4 +23,5 @@ export const CHART_IMPORTS = [
   PieChartDirective,
   SankeyChartComponent,
   SankeyChartDirective,
+  SankeyChartMarkDirective,
 ] as const;

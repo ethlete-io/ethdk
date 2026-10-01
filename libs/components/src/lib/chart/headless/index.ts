@@ -4,4 +4,5 @@ export * from './chart-plot.directive';
 export * from './line-chart-slice.directive';
 export * from './line-chart.directive';
 export * from './pie-chart.directive';
+export * from './sankey-chart-mark.directive';
 export * from './sankey-chart.directive';

@@ -20,11 +20,11 @@
               [style.--_et-chart-accent-mix.%]="node.accentMix"
               [attr.aria-label]="node.name"
               [attr.data-active]="chart.activeNodeKey() === node.key ? '' : null"
+              [etSankeyChartMarkKey]="node.key"
               (pointerenter)="hoverNode($event, node.key)"
               (pointerleave)="chart.unhoverMark(node.key)"
-              (focus)="focusNode(node.key)"
-              (blur)="chart.blurMark(node.key)"
               class="et-sankey-chart-node"
+              etSankeyChartMark="node"
             >
               <svg:rect
                 [attr.x]="node.target.x"
@@ -56,12 +56,12 @@
               [style.--_et-chart-accent-mix.%]="link.accentMix"
               [attr.aria-label]="link.name"
               [attr.data-highlighted]="chart.highlightedLinks()[link.key] ? '' : null"
+              [etSankeyChartMarkKey]="link.key"
               (pointerenter)="hoverLink($event, link.key)"
               (pointerleave)="chart.unhoverMark(link.key)"
-              (focus)="focusLink(link.key)"
-              (blur)="chart.blurMark(link.key)"
               class="et-sankey-chart-link"
               etChartMarkPlacement="top"
+              etSankeyChartMark="link"
             >
               <svg:path [attr.d]="link.path" class="et-sankey-chart-link-mark" />
               <svg:rect

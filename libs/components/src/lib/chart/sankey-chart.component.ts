@@ -4,11 +4,13 @@ import { ChartDataTableComponent } from './chart-data-table.component';
 import { ChartTooltipComponent } from './chart-tooltip.component';
 import { ChartPlotDirective } from './headless/chart-plot.directive';
 import { ChartMarkDirective } from './headless/internals/chart-mark.directive';
+import { SankeyChartMarkDirective } from './headless/sankey-chart-mark.directive';
 import { SankeyChartDirective } from './headless/sankey-chart.directive';
 
 /**
  * A sankey chart: nodes in left-to-right columns, sized by what flows through them, joined by ribbons
- * as wide as their value. Hovering or focusing a node highlights its links. Driven by the headless
+ * as wide as their value. Hovering or focusing a node highlights its links. The chart is one tab stop: the arrow keys walk
+ * the nodes, Enter steps into a node's outgoing links and Escape returns. Driven by the headless
  * {@link SankeyChartDirective}.
  *
  * @example
@@ -25,6 +27,7 @@ import { SankeyChartDirective } from './headless/sankey-chart.directive';
     ChartPlotDirective,
     ChartTooltipComponent,
     ProvideColorDirective,
+    SankeyChartMarkDirective,
   ],
   hostDirectives: [
     {
@@ -66,13 +69,5 @@ export class SankeyChartComponent {
 
   protected hoverLink(event: PointerEvent, key: string) {
     if (event.pointerType !== 'touch') this.chart.hoverMark({ kind: 'link', key });
-  }
-
-  protected focusNode(key: string) {
-    this.chart.focusMark({ kind: 'node', key });
-  }
-
-  protected focusLink(key: string) {
-    this.chart.focusMark({ kind: 'link', key });
   }
 }

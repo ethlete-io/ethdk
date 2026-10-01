@@ -424,7 +424,7 @@ describe('chart scenarios', () => {
     const links = queryAll('.et-sankey-chart-link', host);
 
     expect(nodes.map((node) => node.getAttribute('aria-label'))).toEqual(['Academy', 'Team A', 'Team B']);
-    expect(links.map((link) => link.getAttribute('aria-label'))).toEqual(['Academy → Team A', 'Academy → Team B']);
+    expect(links.map((link) => link.getAttribute('aria-label'))).toEqual(['Academy to Team A', 'Academy to Team B']);
     expect(queryAll('.et-sankey-chart-label', host).map(text)).toEqual(['Academy', 'Team A', 'Team B']);
 
     nodes[1]!.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));

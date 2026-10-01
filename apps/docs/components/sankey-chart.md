@@ -88,16 +88,31 @@ When the chart first renders, the nodes and labels fade in, then the ribbons. Un
 
 ## Custom template
 
-`SankeyChartDirective` (`[etSankeyChart]`) holds the geometry without markup: `renderedNodes()` (per node its rect, hit `target`, `colorToken`, `accentMix`, in/out totals and texts, `description` and label position), `renderedLinks()` (per link its ribbon `path`, `width`, midpoint `anchor`, `source`, `target`, `colorToken`, `accentMix`, `valueText` and `name`), `highlightedLinks()`, `activeNodeKey()`, `hasHighlight()`, `table()`, `plotWidth()` and `formatValue()`. Report hover and focus with `hoverMark()`/`unhoverMark()` and `focusMark()`/`blurMark()`. Put `etChartPlot` on the element the flow is laid out in - its width is what the columns divide. Without one the directive throws `ET5100` in dev mode. Import `SankeyChartDirective` and `ChartPlotDirective`.
+`SankeyChartDirective` (`[etSankeyChart]`) holds the geometry without markup: `renderedNodes()` (per node its rect, hit `target`, `colorToken`, `accentMix`, in/out totals and texts, `description` and label position), `renderedLinks()` (per link its ribbon `path`, `width`, midpoint `anchor`, `source`, `target`, `colorToken`, `accentMix`, `valueText` and `name`), `highlightedLinks()`, `activeNodeKey()`, `hasHighlight()`, `table()`, `plotWidth()` and `formatValue()`. Report hover with `hoverMark()`/`unhoverMark()`. Put `etSankeyChartMark="node"` or `etSankeyChartMark="link"` with `[etSankeyChartMarkKey]` (the node's `key` or the link's `key`) on each focusable mark: it reports focus, holds the chart's one tab stop (`tabStopMark()`) and handles the keys below. `focusMarkElement()` moves focus to a mark from code. Put `etChartPlot` on the element the flow is laid out in - its width is what the columns divide. Without one the directive throws `ET5100` in dev mode. Import `SankeyChartDirective`, `SankeyChartMarkDirective` and `ChartPlotDirective`.
 
 ```html
 <div #chart="etSankeyChart" [nodes]="nodes" [links]="links" etSankeyChart label="Budget">
   <div etChartPlot>
     <svg [attr.width]="chart.plotWidth()" [attr.height]="chart.height()">
       @for (link of chart.renderedLinks(); track link.key) {
-      <svg:path [attr.d]="link.path" />
+      <svg:path
+        [attr.d]="link.path"
+        [attr.aria-label]="link.name"
+        [etSankeyChartMarkKey]="link.key"
+        etSankeyChartMark="link"
+        role="img"
+      />
       } @for (node of chart.renderedNodes(); track node.key) {
-      <svg:rect [attr.x]="node.x" [attr.y]="node.y" [attr.width]="node.width" [attr.height]="node.height" />
+      <svg:rect
+        [attr.x]="node.x"
+        [attr.y]="node.y"
+        [attr.width]="node.width"
+        [attr.height]="node.height"
+        [attr.aria-label]="node.name"
+        [etSankeyChartMarkKey]="node.key"
+        etSankeyChartMark="node"
+        role="img"
+      />
       }
     </svg>
   </div>
@@ -107,10 +122,23 @@ When the chart first renders, the nodes and labels fade in, then the ribbons. Un
 ## Accessibility
 
 - The plot is an SVG with `role="group"`, named by `label`.
-- Every node and every link is focusable (`tabindex="0"`) with `role="img"`. A node is named by its label and described by its totals (`In: 660, Out: 660`); a link is named `Source to Target` (the word is `linkSeparator`) and described by its value.
-- **Tab order: all nodes first, then all links.** Nodes go column by column, top to bottom within a column. Links follow in the order of their source node, top to bottom at that node. Focus draws a ring around the node's hit target or the ribbon's outline. Links are tab stops rather than arrow-key targets so that every mark is reachable with Tab alone, the same way as the bars of a [bar chart](/components/chart); a flow with many links therefore has many tab stops, and the table view is the quicker route through it.
+- Every node and every link has `role="img"`. A node is named by its label and described by its totals (`In: 660, Out: 660`); a link is named `Source to Target` (the word is `linkSeparator`) and described by its value. Focus draws a ring around the node's hit target or the ribbon's outline, and opens the mark's tooltip.
 - The node labels are `aria-hidden`; the marks and the table carry the same names.
 - A visually hidden `<table>` lists every link - zero links included - with `label` as its caption and `sourceHeader`, `targetHeader` and `valueHeader` as its columns.
+
+### Keyboard
+
+The chart is one tab stop. Tab enters on the first node - or on the mark that was focused last - and the next Tab leaves the chart. The arrow keys move between the marks:
+
+| Key          | On a node                                                                   | On a link                                |
+| ------------ | --------------------------------------------------------------------------- | ---------------------------------------- |
+| `↓` / `↑`    | The next / previous node in the column; stops at the ends                   | The next / previous outgoing link; wraps |
+| `→` / `←`    | The node in the next / previous column nearest in height; stops at the edge | -                                        |
+| `Home`/`End` | The first / last node of the chart                                          | The first / last outgoing link           |
+| `Enter`      | The node's first outgoing link, top to bottom; nothing on a sink            | -                                        |
+| `Escape`     | Closes the tooltip                                                          | Back to the link's source node           |
+
+Nodes go column by column, top to bottom; a node's outgoing links top to bottom at the node. An incoming link is reached from its source node. Screen readers in browse mode keep the arrow keys for themselves, so the table view stays the route through every link.
 
 ## Theming
 

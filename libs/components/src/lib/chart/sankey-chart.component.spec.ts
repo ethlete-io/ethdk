@@ -49,6 +49,23 @@ const setup = (providers: unknown[] = []) => {
   return { fixture, chart, element: fixture.nativeElement as HTMLElement };
 };
 
+const mark = (element: HTMLElement, name: string) =>
+  element.querySelector(`[role="img"][aria-label="${name}"]`) as SVGElement;
+
+const press = (fixture: { detectChanges: () => void }, target: Element, key: string) => {
+  const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+
+  target.dispatchEvent(event);
+  fixture.detectChanges();
+
+  return event;
+};
+
+const highlightedNames = (element: HTMLElement) =>
+  [...element.querySelectorAll('.et-sankey-chart-link[data-highlighted]')].map((link) =>
+    link.getAttribute('aria-label'),
+  );
+
 const PALETTE = provideColorPalette([
   { token: 'ocean', label: 'Ocean' },
   { token: 'sunset', label: 'Sunset' },
@@ -78,13 +95,65 @@ describe('SankeyChartComponent', () => {
     }
   });
 
-  it('makes every node and link a tab stop, nodes before links', () => {
-    const { element } = setup();
-    const marks = [...element.querySelectorAll('[tabindex="0"]')];
+  it('gives the chart one tab stop, on the first node', () => {
+    const { element, chart } = setup();
+    const stops = [...element.querySelectorAll('[tabindex="0"]')];
 
-    expect(marks).toHaveLength(9);
-    expect(marks.slice(0, 5).every((mark) => mark.classList.contains('et-sankey-chart-node'))).toBe(true);
-    expect(marks.slice(5).every((mark) => mark.classList.contains('et-sankey-chart-link'))).toBe(true);
+    expect(stops).toHaveLength(1);
+    expect(stops[0]?.getAttribute('aria-label')).toBe(chart.renderedNodes()[0]?.name);
+    expect(element.querySelectorAll('.et-sankey-chart-node[tabindex="-1"]')).toHaveLength(4);
+    expect(element.querySelectorAll('.et-sankey-chart-link[tabindex="-1"]')).toHaveLength(4);
+  });
+
+  it('walks the nodes with the arrow keys and moves the tab stop along', () => {
+    const { fixture, element, chart } = setup();
+    const [first, second] = chart.renderedNodes();
+
+    press(fixture, mark(element, first?.name ?? ''), 'ArrowDown');
+    expect(document.activeElement).toBe(mark(element, second?.name ?? ''));
+
+    press(fixture, mark(element, second?.name ?? ''), 'ArrowRight');
+    expect(document.activeElement).toBe(mark(element, 'Budget'));
+    expect(mark(element, 'Budget').getAttribute('tabindex')).toBe('0');
+    expect(element.querySelectorAll('[tabindex="0"]')).toHaveLength(1);
+
+    press(fixture, mark(element, 'Budget'), 'ArrowLeft');
+    expect(document.activeElement?.classList.contains('et-sankey-chart-node')).toBe(true);
+    expect(
+      chart.renderedNodes().find((node) => node.name === document.activeElement?.getAttribute('aria-label'))?.column,
+    ).toBe(0);
+  });
+
+  it('steps into the outgoing links with Enter, cycles them with the arrows and returns with Escape', () => {
+    const { fixture, element, chart } = setup();
+    const outgoing = chart.renderedLinks().filter((link) => link.source.key === 'c');
+
+    mark(element, 'Budget').focus();
+    fixture.detectChanges();
+
+    press(fixture, mark(element, 'Budget'), 'Enter');
+    expect(document.activeElement).toBe(mark(element, outgoing[0]?.name ?? ''));
+    expect(highlightedNames(element)).toEqual([outgoing[0]?.name]);
+
+    press(fixture, document.activeElement as SVGElement, 'ArrowDown');
+    expect(document.activeElement).toBe(mark(element, outgoing[1]?.name ?? ''));
+
+    press(fixture, document.activeElement as SVGElement, 'ArrowDown');
+    expect(document.activeElement).toBe(mark(element, outgoing[0]?.name ?? ''));
+
+    press(fixture, document.activeElement as SVGElement, 'Escape');
+    expect(document.activeElement).toBe(mark(element, 'Budget'));
+  });
+
+  it('leaves Enter alone on a node without outgoing links', () => {
+    const { fixture, element } = setup();
+    const salaries = mark(element, 'Salaries');
+
+    salaries.focus();
+    const event = press(fixture, salaries, 'Enter');
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(document.activeElement).toBe(salaries);
   });
 
   it('describes a node by what flows in and out, and a link by its value', () => {
