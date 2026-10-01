@@ -33,14 +33,14 @@ type FabVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS];
       </div>
     }
 
-    @if (buttonDir.loading()) {
+    @if (buttonDir.isLoading()) {
       <div class="et-button-loader" aria-hidden="true">
         <et-spinner
           [diameter]="spinnerConfig().diameter"
           [strokeWidth]="spinnerConfig().strokeWidth"
           [determinate]="buttonDir.hasProgress()"
           [track]="buttonDir.hasProgress()"
-          [value]="buttonDir.progress() ?? 0"
+          [value]="buttonDir.currentProgress() ?? 0"
           class="et-button-loader-spinner"
         />
       </div>

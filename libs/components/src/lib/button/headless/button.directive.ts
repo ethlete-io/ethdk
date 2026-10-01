@@ -8,6 +8,8 @@ import {
   inject,
   input,
   numberAttribute,
+  signal,
+  Signal,
 } from '@angular/core';
 import { SurfaceInteractiveDirective } from '@ethlete/core';
 
@@ -19,15 +21,21 @@ export const BUTTON_TYPES = {
 
 type ButtonType = (typeof BUTTON_TYPES)[keyof typeof BUTTON_TYPES];
 
+/** @internal */
+export type ButtonLoadingSource = {
+  loading: Signal<boolean>;
+  progress: Signal<number | null>;
+};
+
 @Directive({
   selector: '[etButton]',
   exportAs: 'etButton',
   hostDirectives: [SurfaceInteractiveDirective],
   host: {
-    '[attr.data-loading]': 'loading() ? true : null',
+    '[attr.data-loading]': 'isLoading() ? true : null',
     '[attr.data-pressed]': 'pressed() ? true : null',
     '[attr.disabled]': 'IS_BUTTON && disabled() ? "" : null',
-    '[attr.aria-busy]': 'loading() ? true : null',
+    '[attr.aria-busy]': 'isLoading() ? true : null',
     '[attr.aria-disabled]': 'isInactive() ? true : null',
     '[attr.aria-pressed]': 'ariaPressed()',
     '[attr.type]': 'IS_BUTTON ? type() : null',
@@ -68,9 +76,24 @@ export class ButtonDirective {
 
   protected ariaPressed = computed(() => (this.emitAriaPressed() && this.isToggle() ? String(this.pressed()) : null));
 
-  public isInactive = computed(() => this.disabled() || this.loading());
+  private loadingSources = signal<ButtonLoadingSource[]>([]);
 
-  public hasProgress = computed(() => this.progress() !== null);
+  /** `true` while the `loading` input or a sibling directive's loading source (e.g. `etQueryButton`) is loading. */
+  public isLoading = computed(() => this.loading() || this.loadingSources().some((source) => source.loading()));
+
+  /** The `progress` input, else the progress of a sibling directive's loading source. */
+  public currentProgress = computed(
+    () =>
+      this.progress() ??
+      this.loadingSources()
+        .map((source) => source.progress())
+        .find((progress) => progress !== null) ??
+      null,
+  );
+
+  public isInactive = computed(() => this.disabled() || this.isLoading());
+
+  public hasProgress = computed(() => this.currentProgress() !== null);
 
   constructor() {
     // Must stay a capture listener: at the target, capture listeners run before every bubble
@@ -84,6 +107,16 @@ export class ButtonDirective {
     );
 
     inject(DestroyRef).onDestroy(() => unlisteners.forEach((unlisten) => unlisten()));
+  }
+
+  /** @internal */
+  public registerLoadingSource(source: ButtonLoadingSource) {
+    this.loadingSources.update((sources) => [...sources, source]);
+  }
+
+  /** @internal */
+  public unregisterLoadingSource(source: ButtonLoadingSource) {
+    this.loadingSources.update((sources) => sources.filter((candidate) => candidate !== source));
   }
 
   private blockInactiveClick(event: MouseEvent) {

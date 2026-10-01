@@ -9,10 +9,10 @@ Two pieces that surface [`@ethlete/query`](/query/) state in the UI: a component
   before it reaches `query.error()`, so the successor works with the current client instead of only the
   legacy one. The `language` input is gone - strings come from `injectLocale()` and label providers - and
   your app must register a color theme with `type: 'error'` for the panel to paint itself.
-- **`[et-query-button]`** has no direct successor. Bind the query's state to the
-  [button](/components/button)'s `loading` input instead
-  (`<button [loading]="!!save.loading()" et-button>`), which gives you the spinner, the inactive state and
-  `aria-busy` - without the one-second success/failure flash.
+- **`[et-query-button]`** becomes [`etQueryButton`](/components/button#query-button) on an
+  `@ethlete/components` button (`<button [etQueryButton]="save" et-button>`), which gives you the spinner,
+  the inactive state and `aria-busy` - without the one-second success/failure flash. A legacy query goes
+  through `queryButtonSourceFromV2Query`.
 
 This page documents the CDK versions, which still receive bug fixes.
 :::

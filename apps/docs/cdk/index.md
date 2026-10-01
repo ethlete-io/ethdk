@@ -49,7 +49,7 @@ This table is the domain-level view. For a single identifier - "what does `Table
 | CDK domain                                                | Successor                                                                                   |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | Button (`[et-button]`)                                    | [Button](/components/button)                                                                |
-| Query button (`[et-query-button]`)                        | [Button](/components/button)'s `loading` input                                              |
+| Query button (`[et-query-button]`)                        | [Button](/components/button#query-button)'s `etQueryButton`                                 |
 | Overlay (dialogs, bottom sheets, responsive strategies)   | [Overlays](/components/overlays) & [Overlay openers](/components/overlay-openers)           |
 | Menu                                                      | [Menu](/components/menu)                                                                    |
 | Tooltip                                                   | [Tooltip](/components/tooltip)                                                              |

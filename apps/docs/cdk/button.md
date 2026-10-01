@@ -7,8 +7,7 @@ New code should use the [components button](/components/button) (`BUTTON_IMPORTS
 `ButtonDirective` keep their names, but the successor is a real button system: `variant`, `size` and `color`
 inputs wired into the [surface and color theming](/core/theming) systems instead of CSS-only classes, plus
 `loading`, icon buttons, FABs and text buttons. `disabled`, `type` and `pressed` carry over. For
-`[et-query-button]` there is no direct successor - bind the query to the button's `loading` input, see
-[Query button](#query-button) below. This page documents the CDK version, which still receives bug fixes.
+`[et-query-button]`, use [`etQueryButton`](/components/button#query-button). This page documents the CDK version, which still receives bug fixes.
 :::
 
 ```html

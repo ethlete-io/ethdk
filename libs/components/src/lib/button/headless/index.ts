@@ -1,5 +1,7 @@
 export * from './button-color.directive';
 export * from './button.directive';
+export * from './query-button-source-from-v2-query';
+export * from './query-button.directive';
 export * from './split-button-action.directive';
 export * from './split-button-errors';
 export * from './split-button-trigger.directive';

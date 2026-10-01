@@ -162,7 +162,7 @@ Provide them together. An auth provider injects its client from its own injector
 
 ### Templates read signals, not directives
 
-`*etQuery`, `<et-query-error>` and the query button directives are legacy-only **by design**. A current-system query already exposes everything they computed, so a template reads it directly:
+`*etQuery` and `<et-query-error>` are legacy-only **by design**. A current-system query already exposes everything they computed, so a template reads it directly:
 
 ```html
 @if (postQuery.loading()) {
@@ -189,6 +189,14 @@ Provide them together. An auth provider injects its client from its own injector
 v2 kept `loading` false during a polling or auto-refresh load and set `refreshing` instead. v3 has no `refreshing`: every execution sets `loading()`, so a spinner bound to it flashes on each tick. Show it only while there is nothing to render yet, with `@if (postQuery.loading() && !postQuery.response())`, and read a background refresh from `executionState()` (`type: 'loading'`, `hasCachedResponse: true`) and `triggeredBy()` (`'polling'`, `'auto-refresh'`). See [withPolling](/query/features#withpolling).
 
 [`queryErrorMessages(error)`](/query/errors#rendering-error-messages) flattens the single/list split of a `QueryErrorResponse` into a plain string array; `queryErrorMessage(error)` takes the first one. Use them instead of hand-rolling the branch.
+
+The cdk query button (`[et-query-button]`, `QueryButtonDirective`) becomes [`etQueryButton`](/components/button#query-button) on an `@ethlete/components` button. It shows loading and progress only, without the success and failure flash:
+
+```html
+<button [etQueryButton]="savePost" (click)="save()" et-button>Save</button>
+```
+
+Until a query is migrated, wrap it with [`queryButtonSourceFromV2Query`](/components/button#legacy-queries), which also accepts a query collection.
 
 `[etInfinityQuery]` has no replacement either - infinite lists are [paged query stacks](/query/stacks#paged-queries) now.
 

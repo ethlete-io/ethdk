@@ -1974,18 +1974,18 @@
     "to": "QUERY_ERROR_TOKEN"
   },
   "QueryButtonComponent": {
-    "docs": "/components/button",
+    "docs": "/components/button#query-button",
     "kind": "replaced-by",
-    "note": "bind the query state to the button\u2019s loading input; no one-second success/failure flash",
+    "note": "[etQueryButton] on a button; loading and progress only, no one-second success/failure flash; queryButtonSourceFromV2Query for a legacy query",
     "package": "@ethlete/components",
-    "to": "ButtonComponent"
+    "to": "QueryButtonDirective"
   },
   "QueryButtonDirective": {
-    "docs": "/components/button",
+    "docs": "/components/button#query-button",
     "kind": "replaced-by",
-    "note": "bind the query state to the button\u2019s loading input; no one-second success/failure flash",
+    "note": "[etQueryButton] on a button; loading and progress only, no one-second success/failure flash; queryButtonSourceFromV2Query for a legacy query",
     "package": "@ethlete/components",
-    "to": "ButtonDirective"
+    "to": "QueryButtonDirective"
   },
   "QueryErrorComponent": {
     "docs": "/components/query-error",

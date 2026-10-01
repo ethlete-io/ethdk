@@ -91,6 +91,44 @@ All flavors share the headless `ButtonDirective` (`[etButton]`):
 - `pressedColor` (surface / icon buttons) re-themes the button while pressed - see [neutral until pressed](#neutral-until-pressed).
 - `type` defaults to `'button'`, so forms don't submit accidentally.
 
+## Query button
+
+`etQueryButton` (in `BUTTON_IMPORTS`) binds a query to any button flavor. While the query loads, the button is in its `loading` state, and a query that reports progress drives the determinate spinner. The directive only observes: run the query from your own `(click)` handler or form submit, and report the result through a [notification](/components/notification). There is no success or failure flash.
+
+```html
+<button [etQueryButton]="deletePost" (click)="delete()" et-button>Delete</button>
+<button [etQueryButton]="createPost" [disabled]="form().invalid()" et-button type="submit">Save</button>
+```
+
+It accepts a `Query`, a [paged query stack](/query/stacks#paged-queries), a [query batch](/query/batching) and a [query sequence](/query/dependent-queries#imperative-waterfalls-dependent-mutations) directly. `null` leaves the button idle, so `[etQueryButton]="scope() === 'team' ? teamQuery : null"` picks one query of several. The `loading` and `progress` inputs keep working next to it: the button loads while either says so, and a bound `progress` wins over the query's.
+
+| Input           | Type                        | Default    | Description                                                         |
+| --------------- | --------------------------- | ---------- | ------------------------------------------------------------------- |
+| `etQueryButton` | `QueryButtonSource \| null` | (required) | The query to observe                                                |
+| `showProgress`  | `boolean`                   | `true`     | Whether a query's progress percentage turns the spinner determinate |
+
+`QueryButtonSource` is structural: either `{ loading: Signal<…> }`, where `loading()` is a boolean or an object with an optional `progress.percentage`, or `{ running: Signal<boolean>; progress: Signal<number> }`.
+
+<StoryEmbed id="components-actions-button-query--default" height="200px" />
+
+### Legacy queries
+
+A legacy (v2) query, a `createLegacyQueryCreator` query and a query collection go through `queryButtonSourceFromV2Query`, which takes a signal of the query and needs an injection context:
+
+```ts
+import { queryButtonSourceFromV2Query } from '@ethlete/components';
+
+export class DeletePostComponent {
+  public query = input<AnyV2Query | null>(null);
+
+  protected deleteSource = queryButtonSourceFromV2Query(this.query);
+}
+```
+
+```html
+<button [etQueryButton]="deleteSource" (click)="delete()" et-button>Delete</button>
+```
+
 ## Anchors
 
 Every flavor works on `<a>` for navigation with identical styling:
