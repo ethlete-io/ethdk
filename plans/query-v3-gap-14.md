@@ -243,7 +243,9 @@ request storm. Until it ships, document `invalidateQueries({ url })` after the w
 
 ## Order and open questions
 
-Status (2026-10-01): slice 1 (`etQueryButton` + `queryButtonSourceFromV2Query`) in progress. Ship item by item.
+Status (2026-10-01): slice 1 shipped (`e4232a1b8`, `84def7337`). `QueryButtonSource` is a union: `QueryBatch` and
+`QuerySequence` have `running` + `progress`, not `loading`. `QueryButtonDirective` is not in `BUTTON_IMPORTS`
+(bundle golden). Next: `invalidates` + tags. Ship item by item.
 
 Order: `etQueryButton` + `queryButtonSourceFromV2Query`, `invalidates` + tags, `createQueryGroup`,
 `etPagedQueryTrigger`, `withOptimisticUpdate`.
