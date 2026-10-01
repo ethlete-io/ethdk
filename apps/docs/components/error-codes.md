@@ -340,6 +340,7 @@ Runtime errors from the bracket data pipeline and layout engine. They indicate a
 | `ET3412` | The default cards are rendering but no `matchNormalizer` was registered.     | Add `provideBracketConfig({ matchNormalizer })` - the Ethlete feed ships `normalizeEthleteBracketMatch` - or supply your own cards.                                                                                                    |
 | `ET3413` | No registered bracket layout matches the source's tournament `mode`.         | Add the mode's factory (e.g. `doubleEliminationBracketLayout()`) to `provideBracketConfig({ layouts })` or to the `layouts` input.                                                                                                     |
 | `ET3414` | A cell the bracket draws has no card.                                        | Spread `BRACKET_DEFAULT_CARDS` into `provideBracketConfig({ ... })`, or bind a match and a round header card of your own - plus a continue card while `showContinueElement` is on.                                                     |
+| `ET3415` | `createPlaceholderBracketSource` got an unusable `participantCount`.         | Pass a power of two - at least 2 for single elimination, at least 4 for double elimination.                                                                                                                                            |
 
 ## Table (ET35xx)
 
