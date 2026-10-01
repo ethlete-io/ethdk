@@ -3,6 +3,7 @@ import {
   createTimeTickValues,
   createTimeValueFormatter,
   instantFromZonedFields,
+  localeFirstDayOfWeek,
   pickTimeInterval,
   zonedFields,
 } from './chart-time-scale';
@@ -119,6 +120,32 @@ describe('chart time scale', () => {
 
       expect(ticks.map((tick) => new Date(tick).getUTCDay())).toEqual([1, 1, 1, 1]);
       expect(wallClockOf(ticks[0] ?? 0, 'UTC')).toBe('2025-01-06 00:00');
+    });
+
+    it('starts weekly ticks on the first day of the locale week', () => {
+      const domain = [at('2025-01-01T00:00:00Z'), at('2025-01-31T00:00:00Z')] as const;
+      const weekdays = (locale: string) => {
+        const { interval, ticks } = createTimeTicks({ domain, count: 6, timeZone: 'UTC', locale });
+
+        expect(interval.unit).toBe('week');
+
+        return [...new Set(ticks.map((tick) => new Date(tick.value).getUTCDay()))];
+      };
+
+      expect(weekdays('en-US')).toEqual([0]);
+      expect(weekdays('de-DE')).toEqual([1]);
+      expect(weekdays('ar-EG')).toEqual([6]);
+    });
+
+    it('starts weekly ticks on Monday where the browser has no week info', () => {
+      const prototype = Intl.Locale.prototype as unknown as { getWeekInfo: () => unknown; readonly weekInfo: unknown };
+
+      vi.spyOn(prototype, 'getWeekInfo').mockReturnValue(undefined);
+      vi.spyOn(prototype, 'weekInfo', 'get').mockReturnValue(undefined);
+
+      expect(localeFirstDayOfWeek('en-CA')).toBe(1);
+
+      vi.restoreAllMocks();
     });
 
     it('puts monthly ticks on the first of each month across a year boundary', () => {

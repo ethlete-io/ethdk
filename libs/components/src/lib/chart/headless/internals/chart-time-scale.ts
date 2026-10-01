@@ -127,7 +127,41 @@ export const instantFromZonedFields = (fields: ChartZonedFields, timeZone: strin
 
 const weekdayOf = (fields: ChartZonedFields) => new Date(Date.UTC(fields.year, fields.month, fields.day)).getUTCDay();
 
-const floorFields = (fields: ChartZonedFields, interval: ChartTimeInterval): ChartZonedFields => {
+type ChartWeekInfo = { firstDay: number };
+
+type WeekInfoLocale = Intl.Locale & { getWeekInfo?: () => ChartWeekInfo; weekInfo?: ChartWeekInfo };
+
+const MONDAY = 1;
+
+const firstDaysOfWeek = /* @__PURE__ */ new Map<string, number>();
+
+const readFirstDayOfWeek = (locale: string) => {
+  try {
+    const intlLocale = new Intl.Locale(locale) as WeekInfoLocale;
+    const firstDay = (intlLocale.getWeekInfo?.() ?? intlLocale.weekInfo)?.firstDay;
+
+    return typeof firstDay === 'number' && firstDay >= 1 && firstDay <= 7 ? firstDay % 7 : MONDAY;
+  } catch {
+    return MONDAY;
+  }
+};
+
+/** The weekday a locale's weeks start on, `0` (Sunday) to `6`, or Monday where the browser has no week info. */
+export const localeFirstDayOfWeek = (locale: string) => {
+  let firstDay = firstDaysOfWeek.get(locale);
+
+  if (firstDay === undefined) {
+    firstDay = readFirstDayOfWeek(locale);
+    firstDaysOfWeek.set(locale, firstDay);
+  }
+
+  return firstDay;
+};
+
+const floorFields = (
+  fields: ChartZonedFields,
+  { interval, weekStartsOn }: { interval: ChartTimeInterval; weekStartsOn: number },
+): ChartZonedFields => {
   const { step } = interval;
   const floorTo = (value: number) => Math.floor(value / step) * step;
 
@@ -141,7 +175,13 @@ const floorFields = (fields: ChartZonedFields, interval: ChartTimeInterval): Cha
     case 'day':
       return { ...fields, hour: 0, minute: 0, second: 0 };
     case 'week':
-      return { ...fields, day: fields.day - ((weekdayOf(fields) + 6) % 7), hour: 0, minute: 0, second: 0 };
+      return {
+        ...fields,
+        day: fields.day - ((weekdayOf(fields) - weekStartsOn + 7) % 7),
+        hour: 0,
+        minute: 0,
+        second: 0,
+      };
     case 'month':
       return { ...fields, month: floorTo(fields.month), day: 1, hour: 0, minute: 0, second: 0 };
     case 'year':
@@ -192,8 +232,9 @@ export const createTimeTickValues = (options: {
   domain: readonly [number, number];
   interval: ChartTimeInterval;
   timeZone: string;
+  weekStartsOn?: number;
 }): number[] => {
-  const { domain, interval, timeZone } = options;
+  const { domain, interval, timeZone, weekStartsOn = MONDAY } = options;
   const [start, end] = domain;
   const values: number[] = [];
 
@@ -209,7 +250,7 @@ export const createTimeTickValues = (options: {
     return values;
   }
 
-  const origin = floorFields(zonedFields(start, timeZone), interval);
+  const origin = floorFields(zonedFields(start, timeZone), { interval, weekStartsOn });
 
   for (let i = 0; i < MAX_TICKS; i++) {
     const value = instantFromZonedFields(advanceFields(origin, { ...interval, times: i }), timeZone);
@@ -262,7 +303,8 @@ const tickLabelOptions = (interval: ChartTimeInterval, fields: ChartZonedFields)
 export const createTimeTicks = (options: ChartTimeTicksOptions): ChartTimeTicks => {
   const { domain, count, timeZone, locale } = options;
   const interval = pickTimeInterval(domain[1] - domain[0], count);
-  const ticks = createTimeTickValues({ domain, interval, timeZone }).map((value) => ({
+  const weekStartsOn = localeFirstDayOfWeek(locale);
+  const ticks = createTimeTickValues({ domain, interval, timeZone, weekStartsOn }).map((value) => ({
     value,
     text: labelFormat({ locale, timeZone, options: tickLabelOptions(interval, zonedFields(value, timeZone)) }).format(
       value,
