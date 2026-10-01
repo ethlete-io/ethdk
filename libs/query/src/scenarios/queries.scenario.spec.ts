@@ -583,6 +583,115 @@ describe('queries scenario', () => {
   });
 });
 
+describe('queries scenario: execute({ args }) on a withArgs query', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  type UserArgs = { response: { id: string }; pathParams: { id: string } };
+
+  it('keeps the args, response and execution state of a run whose withArgs source returns null', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const getUser = s.get<UserArgs>((p) => `/users/${p.id}`);
+
+    const c = s.consumer();
+    const query = c.run(() => getUser(withArgs(() => null)));
+    s.tick();
+
+    query.execute({ args: { pathParams: { id: '1' } } });
+    s.flush();
+
+    expect(s.api.requestCount('GET', '/users/1')).toBe(1);
+    expect(query.args()).toEqual({ pathParams: { id: '1' } });
+    expect(query.response()).toEqual({ id: '1' });
+    expect(query.executionState()).toEqual({ type: 'success', response: { id: '1' } });
+  });
+
+  it('keeps the response of a mutation run whose withArgs source returns null', () => {
+    const s = scenario();
+    s.api.on('POST', '/comments', ({ body }) => ({ body: { text: (body as { text: string }).text }, delay: 50 }));
+
+    const createComment = s.post<{ response: { text: string }; body: { text: string } }>('/comments');
+
+    const c = s.consumer();
+    const query = c.run(() => createComment(withArgs(() => null)));
+    s.tick();
+
+    query.execute({ args: { body: { text: 'hi' } } });
+    s.flush();
+
+    expect(s.api.requestCount('POST', '/comments')).toBe(1);
+    expect(query.args()).toEqual({ body: { text: 'hi' } });
+    expect(query.response()).toEqual({ text: 'hi' });
+    expect(query.executionState()).toEqual({ type: 'success', response: { text: 'hi' } });
+  });
+
+  it('keeps an explicit run through null re-evaluations and runs the reactive args once they are set', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const getUser = s.get<UserArgs>((p) => `/users/${p.id}`);
+    const id = signal<string | null>('1');
+    const enabled = signal(true);
+
+    const c = s.consumer();
+    const query = c.run(() =>
+      getUser(withArgs(() => (enabled() && id() !== null ? { pathParams: { id: id() ?? '' } } : null))),
+    );
+    s.flush();
+
+    id.set(null);
+    s.flush();
+    expect(query.response()).toBeNull();
+
+    query.execute({ args: { pathParams: { id: '2' } } });
+    s.flush();
+
+    enabled.set(false);
+    s.flush();
+    enabled.set(true);
+    s.flush();
+
+    expect(query.response()).toEqual({ id: '2' });
+    expect(query.args()).toEqual({ pathParams: { id: '2' } });
+
+    id.set('3');
+    s.flush();
+    id.set('4');
+    s.flush();
+    id.set('5');
+    s.flush();
+
+    expect(query.response()).toEqual({ id: '5' });
+    expect(query.args()).toEqual({ pathParams: { id: '5' } });
+    expect(['1', '2', '3', '4', '5'].map((n) => s.api.requestCount('GET', `/users/${n}`))).toEqual([1, 1, 1, 1, 1]);
+  });
+
+  it('replaces the reactive args with an explicit run until the source changes', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const getUser = s.get<UserArgs>((p) => `/users/${p.id}`);
+    const id = signal('1');
+
+    const c = s.consumer();
+    const query = c.run(() => getUser(withArgs(() => ({ pathParams: { id: id() } }))));
+    s.flush();
+
+    query.execute({ args: { pathParams: { id: '2' } } });
+    s.flush();
+
+    expect(query.args()).toEqual({ pathParams: { id: '2' } });
+    expect(query.response()).toEqual({ id: '2' });
+
+    id.set('3');
+    s.flush();
+
+    expect(query.response()).toEqual({ id: '3' });
+    expect(['1', '2', '3'].map((n) => s.api.requestCount('GET', `/users/${n}`))).toEqual([1, 1, 1]);
+  });
+});
+
 describe('queries scenario: client defaults', () => {
   const scenario = useScenario();
 

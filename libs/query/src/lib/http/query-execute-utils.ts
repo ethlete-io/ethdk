@@ -104,20 +104,27 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
 
 /**
  * Writes the args an execution runs with to `state.args`, so a later bare `execute()` re-sends them.
- * A `withArgs` source owns `state.args`, and a `withLongPolling` round must not look like a new
- * args value, so neither is written.
+ * A `withLongPolling` round must not look like a new args value, so it is not written. Over a `withArgs`
+ * source only the caller's own non-null args are written, never what a feature re-sends.
  */
 export const recordExecutionArgs = <TArgs extends QueryArgs>(
   state: QueryState<TArgs>,
   args: RequestArgs<TArgs> | null,
   options?: RunQueryExecuteOptions,
 ) => {
-  if (state.subtle.hasArgsSource() || options?.triggeredBy === LONG_POLLING_TRIGGER) return;
+  const triggeredBy = options?.triggeredBy;
 
-  state.args.set(args);
+  if (triggeredBy === LONG_POLLING_TRIGGER) return;
+
+  if (!state.subtle.hasArgsSource()) return state.args.set(args);
+
+  if (args === null || args === state.args() || (triggeredBy && FEATURE_TRIGGERS.includes(triggeredBy))) return;
+
+  state.subtle.setExplicitArgs(args);
 };
 
 const LONG_POLLING_TRIGGER = 'long-polling';
+const FEATURE_TRIGGERS = ['polling', 'auto-refresh'];
 
 const CIRCULAR_DEPENDENCY_WINDOW_MS = 100;
 const CIRCULAR_DEPENDENCY_MAX_REPEATS = 5;

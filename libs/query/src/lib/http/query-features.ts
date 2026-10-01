@@ -105,7 +105,8 @@ export const createQueryFeature = <TArgs extends QueryArgs>(config: {
  *
  * Return `null` to park the query: it is reset (`response()` and `executionState()` become `null`),
  * and polling and auto refresh pause until args are set again. A mutation that is still in flight
- * finishes first and the query parks once it has settled.
+ * finishes first and the query parks once it has settled. `execute({ args })` runs and keeps other args
+ * until this function produces new non-null ones.
  *
  * Changing arguments will automatically trigger a new execution of the query if it is eligible for auto execution (e.g. a GET request).
  */
@@ -138,6 +139,8 @@ export const withArgs = <TArgs extends QueryArgs>(
           }
 
           untracked(() => {
+            if (context.state.subtle.isExplicitArgs(currArgsNow)) return;
+
             const guard = context.state.subtle.autoExecuteGuard();
 
             if (context.flags.shouldAutoExecute && (guard === null || guard())) context.execute({ args: currArgsNow });
@@ -318,10 +321,10 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
 
       const remainingDelay = () => lastTickAt + currentInterval() - Date.now();
 
-      // Without an args source, `state.args` only changes when `execute({ args })` records them - and
-      // that execution already sent the request.
+      // Args an `execute({ args })` recorded already went out with that execution.
       const wasJustExecutedWith = (args: RequestArgs<TArgs> | null) =>
-        !context.state.subtle.hasArgsSource() && args !== null && equal(context.state.subtle.request()?.args, args);
+        context.state.subtle.isExplicitArgs(args) ||
+        (!context.state.subtle.hasArgsSource() && args !== null && equal(context.state.subtle.request()?.args, args));
 
       nestedEffect(
         () => {

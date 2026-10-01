@@ -73,6 +73,15 @@ export type QueryStateSubtle<TArgs extends QueryArgs> = {
   /** Whether {@link setArgsSource} installed a source. Without one, an execution's args are written to `state.args`. */
   hasArgsSource: Signal<boolean>;
 
+  /**
+   * Writes the args of an `execute({ args })` over the args source. They stay until the source produces new
+   * non-null args; a source that turns `null` keeps them.
+   */
+  setExplicitArgs: (args: RequestArgs<TArgs>) => void;
+
+  /** Whether `args` are the ones {@link setExplicitArgs} wrote last and the source has not replaced yet. */
+  isExplicitArgs: (args: RequestArgs<TArgs> | null) => boolean;
+
   /** @see SetupQueryStateOptions.devtoolsStats */
   devtoolsStats: QueryDevtoolsStatsRecorder | null;
 
@@ -201,11 +210,25 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
   // effect writing it. It stays writable (reset / auth-error clear it via `.set(null)`); a manual
   // set is overridden again the next time the source's dependencies change.
   const argsSource = signal<() => RequestArgs<TArgs> | null>(() => null);
-  const args = linkedSignal(() => argsSource()());
+  let explicitArgs: RequestArgs<TArgs> | null = null;
+  const args = linkedSignal<RequestArgs<TArgs> | null, RequestArgs<TArgs> | null>({
+    source: () => argsSource()(),
+    computation: (next, previous) => {
+      if (next === null && explicitArgs !== null && previous) return previous.value;
+
+      explicitArgs = null;
+
+      return next;
+    },
+  });
   const hasArgsSource = signal(false);
   const setArgsSource = (source: () => RequestArgs<TArgs> | null) => {
     argsSource.set(source);
     hasArgsSource.set(true);
+  };
+  const setExplicitArgs = (value: RequestArgs<TArgs>) => {
+    explicitArgs = value;
+    args.set(value);
   };
 
   const lastTimeExecutedAt = signal<number | null>(null);
@@ -296,6 +319,8 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
       autoExecuteGuard,
       setArgsSource,
       hasArgsSource: hasArgsSource.asReadonly(),
+      setExplicitArgs,
+      isExplicitArgs: (value) => value !== null && value === explicitArgs,
       devtoolsStats: options.devtoolsStats ?? null,
       devtoolsFormLinks: options.devtoolsFormLinks ?? null,
     },
