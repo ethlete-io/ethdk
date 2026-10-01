@@ -2,11 +2,6 @@
 
 Live work only, ordered by what to do first. Finished items are removed; git history has them.
 
-## Stat tile
-
-A new component, not started. Low priority, opportunistic. The `dataviz` guidance already covers
-stat tiles, so the design language exists. Prefer it when the next goal is a bounded new domain.
-
 ## Watchlist - gated on browsers
 
 Nothing here is actionable now. **Re-check support before planning any of it.** Last checked
