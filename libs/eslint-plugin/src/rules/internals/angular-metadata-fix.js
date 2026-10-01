@@ -195,7 +195,7 @@ const buildMetadataFix = (sourceCode, metadata, spec) => {
     return (fixer) =>
       fixer.replaceTextRange(
         [rangeStart, closingBrace.range[0]],
-        `${separator}\n${propertyIndent}${propertyText}\n${closingIndent}`,
+        `${separator}\n${propertyIndent}${propertyText}${separator === '' ? ',' : ''}\n${closingIndent}`,
       );
   }
 

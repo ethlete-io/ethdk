@@ -188,24 +188,22 @@ const buildHostBindingFix = (sourceCode, decoratorNode, memberNode, bindingKey, 
       ? getIndent(sourceCode, metadata.properties[0])
       : `${getIndent(sourceCode, closingBrace)}  `;
     const hostPropertyText = `host: { ${hostEntryText} }`;
-    const separator = metadata.properties.length > 0 ? (hasTrailingComma(sourceCode, metadata) ? '' : ',') : '';
+    const lastProperty = metadata.properties.at(-1);
 
-    if (isMultiline && metadata.properties.length > 0) {
-      const lastProperty = metadata.properties[metadata.properties.length - 1];
+    if (lastProperty) {
+      const separator = hasTrailingComma(sourceCode, metadata) ? '' : ',';
       const tokenAfterLastProperty = sourceCode.getTokenAfter(lastProperty);
       const rangeStart =
         separator === '' && tokenAfterLastProperty ? tokenAfterLastProperty.range[1] : lastProperty.range[1];
+      const replacement = isMultiline
+        ? `${separator}\n${propertyIndent}${hostPropertyText}${separator === '' ? ',' : ''}\n${closingIndent}`
+        : `${separator} ${hostPropertyText} `;
 
-      fixes.push((fixer) =>
-        fixer.replaceTextRange(
-          [rangeStart, closingBrace.range[0]],
-          `${separator}\n${propertyIndent}${hostPropertyText},\n${closingIndent}`,
-        ),
-      );
+      fixes.push((fixer) => fixer.replaceTextRange([rangeStart, closingBrace.range[0]], replacement));
     } else {
       const insertion = isMultiline
         ? `\n${propertyIndent}${hostPropertyText}\n${closingIndent}`
-        : `${metadata.properties.length > 0 ? `${separator} ` : ' '}${hostPropertyText}${metadata.properties.length > 0 ? '' : ' '}`;
+        : ` ${hostPropertyText} `;
 
       fixes.push((fixer) => fixer.insertTextBefore(closingBrace, insertion));
     }

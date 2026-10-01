@@ -140,6 +140,26 @@ import { Component, ViewEncapsulation } from '@angular/core';
 @Component({
   selector: 'my-cmp',
   template: '',
+  encapsulation: ViewEncapsulation.None,
+})
+class MyCmp {}`,
+      errors: [{ messageId: 'missing' }],
+    },
+    {
+      code: `
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'my-cmp',
+  template: ''
+})
+class MyCmp {}`,
+      output: `
+import { Component, ViewEncapsulation } from '@angular/core';
+
+@Component({
+  selector: 'my-cmp',
+  template: '',
   encapsulation: ViewEncapsulation.None
 })
 class MyCmp {}`,

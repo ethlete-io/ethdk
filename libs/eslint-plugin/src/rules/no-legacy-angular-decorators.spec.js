@@ -147,6 +147,38 @@ class Foo {
       errors: [{ messageId: 'useHostBinding' }],
     },
     {
+      code: `@Component({ selector: 'et-x', template: '' }) class Foo { @HostBinding('class.active') active = true; }`,
+      output: `@Component({ selector: 'et-x', template: '', host: { '[class.active]': 'active' } }) class Foo { active = true; }`,
+      errors: [{ messageId: 'useHostBinding' }],
+    },
+    {
+      code: `@Component({ selector: 'et-x', template: '', }) class Foo { @HostBinding('class.active') active = true; }`,
+      output: `@Component({ selector: 'et-x', template: '', host: { '[class.active]': 'active' } }) class Foo { active = true; }`,
+      errors: [{ messageId: 'useHostBinding' }],
+    },
+    {
+      code: `
+@Component({
+  selector: 'et-foo',
+  template: ''
+})
+class Foo {
+  @HostBinding('class.active') isActive = false;
+}
+`,
+      output: `
+@Component({
+  selector: 'et-foo',
+  template: '',
+  host: { '[class.active]': 'isActive' }
+})
+class Foo {
+  isActive = false;
+}
+`,
+      errors: [{ messageId: 'useHostBinding' }],
+    },
+    {
       code: `
 @Directive({
   selector: '[etFoo]',

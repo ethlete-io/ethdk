@@ -98,7 +98,7 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
   selector: 'my-cmp',
   template: '',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 class MyCmp {}`,
       errors: [{ messageId: 'missing' }],
