@@ -75,6 +75,13 @@ Pie triage (2026-10-01): keep the shipped defaults of 1, 2, 4, 5, 6, 8 and 9. Bu
 
 Line triage (2026-10-01): keep the shipped defaults of 2, 6 and 7. Built without a drawing: 1 (the delay applies only on first entry), 4 (`includeZero` input), 5 (locale week start). Drawn: 3 (stacked area on dark) and 8 (focus ring on dense data), in `.ethlete/design/calls/components/line-chart/`: call 3 **B won**, a stacked band fills with an opaque `color-mix` of 45% series colour with the surface, and areas draw before lines; call 8 **B won**, the focus ring is at least 12px wide and centred on the x. Both built.
 
+### Chart follow-ups (not started)
+
+- Sankey: the call 10 B drawing has a muted key hint in the link tooltip ("1 of 2 · ↑↓ next link · Esc back to …"). Not built; it needs text inputs that can be translated.
+- Line: with `includeZero=false`, the public `baseline()` can fall outside the plot.
+- Line: Escape less than 300ms after an instant tooltip show lets the pending timer of the tooltip directive open it again.
+- Line: the focus ring sizes an SVG `rect` with CSS `x` and `width`. Not checked in Safari and Firefox; if they ignore it, they draw the shipped ring.
+
 ## Stat tile
 
 A new component, not started. Low priority, opportunistic. The `dataviz` guidance already covers
