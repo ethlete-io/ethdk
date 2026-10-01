@@ -253,7 +253,10 @@ cross tabs. Open: a retained unused entry is not marked stale. Slice 3 shipped (
 selector. Polling works on a paged stack, but every loaded page polls. Slice 6 shipped (`7ddb2dcdf`): `selectOptionsFromQuery` runs on
 `createPagedQueryStack`, non-breaking; it does not accept an existing stack. Slice 5 shipped: `withArgs(() => null)` + `execute({ args })` fix (`004cf7294`),
 unused entries marked stale (`ff5e3e855`), no double restart in other tabs (`428835be7`), `withOptimisticUpdate`
-(`b3b13858a`; `read` types `current`). Open: `query-client` golden is +637 B (slices 2 and 5). Ship item by item.
+(`b3b13858a`; `read` types `current`). Goldens updated (`ead917717`). Follow-ups shipped: `RawResponseType`
+falls back to `response` (`fd516705a`); `signalElementIntersection` reads after layout and re-creates the observer
+on a `rootMargin` change (`fb0eedd6d`), and the trigger runs on it (`9d103adae`). All slices are done. Left: the
+fifagg migration (check the per-page polling cost there), `hub-lookup-state` in fut, the Dyn numbers. Ship item by item.
 
 Order: `etQueryButton` + `queryButtonSourceFromV2Query`, `invalidates` + tags, `createQueryGroup`,
 `etPagedQueryTrigger`, `withOptimisticUpdate`.
