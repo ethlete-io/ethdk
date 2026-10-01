@@ -454,7 +454,7 @@ describe('table core scenarios', () => {
     expect(source.hasMore()).toBe(false);
 
     errorText.set('Server said no');
-    s.tick();
+    s.flush();
     expect(query(host, '.et-table-error-cell').textContent?.trim()).toBe(DEFAULT_TABLE_LABELS.error);
   });
 
@@ -570,7 +570,15 @@ describe('table core scenarios with app labels', () => {
     roster.error.set(new Error('offline'));
     s.tick();
     expect(tableHost.hasAttribute('aria-busy')).toBe(false);
-    expect(query(host, '.et-table-error-cell').textContent?.trim()).toBe('The roster is unavailable');
+
+    const errorCell = query(host, '.et-table-error-cell');
+
+    expect(errorCell.getAttribute('aria-live')).toBe('polite');
+    expect(errorCell.textContent?.trim()).toBe('');
+
+    s.flush();
+    expect(query(host, '.et-table-error-cell')).toBe(errorCell);
+    expect(errorCell.textContent?.trim()).toBe('The roster is unavailable');
 
     roster.error.set(null);
     roster.members.set(MEMBERS);

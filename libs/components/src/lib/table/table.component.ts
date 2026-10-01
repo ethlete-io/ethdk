@@ -22,9 +22,10 @@ import {
   viewChildren,
   ViewEncapsulation,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { filter, fromEvent, merge, Subscription, take, tap, timer } from 'rxjs';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { filter, fromEvent, map, merge, of, Subscription, switchMap, take, tap, timer } from 'rxjs';
 import {
+  fromNextFrame,
   injectColorThemes,
   injectRenderer,
   injectStyleManager,
@@ -978,6 +979,14 @@ export class TableComponent<T> implements TableFeatureHost {
 
   /** Whether there is a failure to show - the error state then stands in for the body. */
   public hasError = computed(() => this.resolvedError() !== null);
+
+  // Lags hasError by a frame: a live region inserted already filled is not announced.
+  protected showErrorMessage = toSignal(
+    toObservable(this.hasError).pipe(
+      switchMap((hasError) => (hasError ? fromNextFrame().pipe(map(() => true)) : of(false))),
+    ),
+    { initialValue: false },
+  );
 
   /** Whether rows are loading: the `loading` input, or a bound {@link rowsSource} with a request out. */
   public resolvedLoading = computed(() => this.loading() || (this.rowsSource()?.loading?.() ?? false));

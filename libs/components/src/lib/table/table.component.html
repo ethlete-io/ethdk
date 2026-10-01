@@ -151,13 +151,15 @@
     <!-- The error state stands in for the whole body: rows are either trustworthy or absent. -->
     <div class="et-table-message-row" role="row">
       <div [attr.role]="cellRole()" class="et-table-error-cell" aria-live="polite">
-        @if (errorTemplate(); as template) {
-          <ng-container *ngTemplateOutlet="template; context: { $implicit: resolvedError() }" />
-        } @else {
-          <ng-content select="[etTableError]">
-            <i [etProvideColor]="errorColorTheme" class="et-table-error-icon" etIcon="et-triangle-exclamation"></i>
-            <span>{{ resolvedLabels().error }}</span>
-          </ng-content>
+        @if (showErrorMessage()) {
+          @if (errorTemplate(); as template) {
+            <ng-container *ngTemplateOutlet="template; context: { $implicit: resolvedError() }" />
+          } @else {
+            <ng-content select="[etTableError]">
+              <i [etProvideColor]="errorColorTheme" class="et-table-error-icon" etIcon="et-triangle-exclamation"></i>
+              <span>{{ resolvedLabels().error }}</span>
+            </ng-content>
+          }
         }
       </div>
     </div>

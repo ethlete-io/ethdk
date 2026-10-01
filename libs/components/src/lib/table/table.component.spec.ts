@@ -49,6 +49,12 @@ const create = (cols: TableColumns<Person>, data: Person[] = PEOPLE): ComponentF
   return fixture;
 };
 
+const revealError = async (fixture: ComponentFixture<unknown>) => {
+  fixture.detectChanges();
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  fixture.detectChanges();
+};
+
 describe('TableComponent', () => {
   it('exposes the columns in declared order', () => {
     const { componentInstance: table } = create(columns());
@@ -986,11 +992,12 @@ describe('TableComponent', () => {
       expect(host.querySelectorAll('.et-table-row:not(.et-table-row--placeholder)').length).toBe(PEOPLE.length);
     });
 
-    it('replaces the body with the error state for any error but null, undefined or false, ahead of loading', () => {
+    it('replaces the body with the error state for any error but null, undefined or false, ahead of loading', async () => {
       const fixture = create(columns());
       const host = hostOf(fixture);
 
       setStates(fixture, { error: 'boom', loading: true });
+      await revealError(fixture);
 
       expect(host.querySelector('.et-table-error-cell')?.textContent?.trim()).toBe('Could not load data');
       expect(host.querySelectorAll('.et-table-row').length).toBe(0);
@@ -1012,7 +1019,7 @@ describe('TableComponent', () => {
       expect(host.querySelectorAll('.et-table-row').length).toBe(PEOPLE.length);
     });
 
-    it('renders projected [etTableError] content instead of the default label', () => {
+    it('renders projected [etTableError] content instead of the default label', async () => {
       @Component({
         template: `
           <et-table [columns]="cols" [data]="data" error="boom">
@@ -1027,7 +1034,7 @@ describe('TableComponent', () => {
       }
 
       const fixture = TestBed.createComponent(HostComponent);
-      fixture.detectChanges();
+      await revealError(fixture);
 
       const cell = hostOf(fixture).querySelector('.et-table-error-cell');
       expect(cell?.querySelector('.retry')?.textContent).toBe('Retry');
@@ -1116,7 +1123,7 @@ describe('TableComponent', () => {
   });
 
   describe('empty & error templates', () => {
-    it('prefers the templates over the labels, and hands the error to its template', () => {
+    it('prefers the templates over the labels, and hands the error to its template', async () => {
       @Component({
         template: `
           <et-table [columns]="cols" [data]="data" [error]="error()" [emptyTemplate]="empty" [errorTemplate]="failure">
@@ -1141,11 +1148,11 @@ describe('TableComponent', () => {
       expect(host.querySelector('.et-table-empty-cell')?.textContent?.trim()).toBe('none of 0');
 
       fixture.componentInstance.error.set({ message: 'nope' });
-      fixture.detectChanges();
+      await revealError(fixture);
       expect(host.querySelector('.et-table-error-cell')?.textContent?.trim()).toBe('failed: nope');
     });
 
-    it('hands a rows source error to the template', () => {
+    it('hands a rows source error to the template', async () => {
       @Component({
         template: `
           <et-table [columns]="cols" [rowsSource]="source" [errorTemplate]="failure">
@@ -1160,7 +1167,7 @@ describe('TableComponent', () => {
       }
 
       const fixture = TestBed.createComponent(HostComponent);
-      fixture.detectChanges();
+      await revealError(fixture);
 
       expect(hostOf(fixture).querySelector('.et-table-error-cell')?.textContent?.trim()).toBe('failed: nope');
     });
