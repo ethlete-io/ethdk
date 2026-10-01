@@ -46,6 +46,12 @@
   --color-et-danger-ink-active: rgb(239 68 68);
   --color-et-danger-ink-disabled: rgb(153 75 75);
 
+  --color-et-danger-ink-light: rgb(185 28 28);
+  --color-et-danger-ink-light-hover: rgb(153 27 27);
+  --color-et-danger-ink-light-focus: rgb(153 27 27);
+  --color-et-danger-ink-light-active: rgb(127 29 29);
+  --color-et-danger-ink-light-disabled: rgb(220 150 150);
+
   /* success theme */
   --color-et-success: rgb(22 163 74);
   --color-et-success-hover: rgb(34 197 94);
@@ -64,6 +70,12 @@
   --color-et-success-ink-focus: rgb(134 239 172);
   --color-et-success-ink-active: rgb(34 197 94);
   --color-et-success-ink-disabled: rgb(62 128 86);
+
+  --color-et-success-ink-light: rgb(22 101 52);
+  --color-et-success-ink-light-hover: rgb(20 83 45);
+  --color-et-success-ink-light-focus: rgb(20 83 45);
+  --color-et-success-ink-light-active: rgb(5 46 22);
+  --color-et-success-ink-light-disabled: rgb(134 190 150);
 
   /* warning theme */
   --color-et-warning: rgb(217 119 6);
@@ -211,14 +223,27 @@
   --color-et-on-theme-active: rgb(var(--et-color-on-primary-active));
   --color-et-on-theme-disabled: rgb(var(--et-color-on-primary-disabled));
 
-  --color-et-theme-ink: rgb(var(--et-color-primary-ink));
-  --color-et-theme-ink-hover: rgb(var(--et-color-primary-ink-hover));
-  --color-et-theme-ink-focus: rgb(var(--et-color-primary-ink-focus));
-  --color-et-theme-ink-active: rgb(var(--et-color-primary-ink-active));
-  --color-et-theme-ink-disabled: rgb(var(--et-color-primary-ink-disabled));
+  --color-et-theme-ink: rgb(var(--_et-color-ink));
+  --color-et-theme-ink-hover: rgb(var(--_et-color-ink-hover));
+  --color-et-theme-ink-focus: rgb(var(--_et-color-ink-focus));
+  --color-et-theme-ink-active: rgb(var(--_et-color-ink-active));
+  --color-et-theme-ink-disabled: rgb(var(--_et-color-ink-disabled));
 }
 
 @layer base {
+  :where([class*='et-color--']:not(.et-color--inherited)) {
+    --et-color-primary-ink-light: initial;
+    --et-color-primary-ink-light-hover: initial;
+    --et-color-primary-ink-light-focus: initial;
+    --et-color-primary-ink-light-active: initial;
+    --et-color-primary-ink-light-disabled: initial;
+    --et-color-primary-ink-dark: initial;
+    --et-color-primary-ink-dark-hover: initial;
+    --et-color-primary-ink-dark-focus: initial;
+    --et-color-primary-ink-dark-active: initial;
+    --et-color-primary-ink-dark-disabled: initial;
+  }
+
   :root,
   .et-color--default,
   .et-color--brand {
@@ -259,6 +284,12 @@
     --et-color-primary-ink-focus: 252 165 165;
     --et-color-primary-ink-active: 239 68 68;
     --et-color-primary-ink-disabled: 153 75 75;
+
+    --et-color-primary-ink-light: 185 28 28;
+    --et-color-primary-ink-light-hover: 153 27 27;
+    --et-color-primary-ink-light-focus: 153 27 27;
+    --et-color-primary-ink-light-active: 127 29 29;
+    --et-color-primary-ink-light-disabled: 220 150 150;
   }
 
   .et-color--success {
@@ -279,6 +310,12 @@
     --et-color-primary-ink-focus: 134 239 172;
     --et-color-primary-ink-active: 34 197 94;
     --et-color-primary-ink-disabled: 62 128 86;
+
+    --et-color-primary-ink-light: 22 101 52;
+    --et-color-primary-ink-light-hover: 20 83 45;
+    --et-color-primary-ink-light-focus: 20 83 45;
+    --et-color-primary-ink-light-active: 5 46 22;
+    --et-color-primary-ink-light-disabled: 134 190 150;
   }
 
   .et-color--warning {
@@ -438,11 +475,6 @@
     );
     --et-theme-color-on-primary: rgb(var(--et-theme-color-on-primary-rgb) / var(--et-theme-color-on-primary-opacity));
 
-    --et-theme-color-ink-rgb: var(--et-color-primary-ink, var(--et-color-primary));
-    --et-theme-color-ink-opacity: 1;
-    --et-theme-color-ink-solid: rgb(var(--et-theme-color-ink-rgb) / var(--et-theme-color-ink-opacity));
-    --et-theme-color-ink: rgb(var(--et-theme-color-ink-rgb) / var(--et-theme-color-ink-opacity));
-
     /* Dynamic Tailwind theme colors - re-declared per color scope so that
        bg-et-theme-* utilities resolve against the nearest .et-color--*
        scope instead of the value computed once at :root. */
@@ -457,11 +489,66 @@
     --color-et-on-theme-focus: rgb(var(--et-color-on-primary-focus));
     --color-et-on-theme-active: rgb(var(--et-color-on-primary-active));
     --color-et-on-theme-disabled: rgb(var(--et-color-on-primary-disabled));
+  }
+}
 
-    --color-et-theme-ink: rgb(var(--et-color-primary-ink));
-    --color-et-theme-ink-hover: rgb(var(--et-color-primary-ink-hover));
-    --color-et-theme-ink-focus: rgb(var(--et-color-primary-ink-focus));
-    --color-et-theme-ink-active: rgb(var(--et-color-primary-ink-active));
-    --color-et-theme-ink-disabled: rgb(var(--et-color-primary-ink-disabled));
+/* Surface-aware ink: re-resolved on every color and surface scope, so the nearest surface's type picks the ink */
+@layer base {
+  :root,
+  :where([class*='et-color--']),
+  :where([class*='et-surface--']) {
+    --_et-color-ink-light: var(--et-surface-if-light) var(--et-color-primary-ink-light);
+    --_et-color-ink-dark: var(--et-surface-if-dark) var(--et-color-primary-ink-dark);
+    --_et-color-ink: var(
+      --_et-color-ink-light,
+      var(--_et-color-ink-dark, var(--et-color-primary-ink, var(--et-color-primary)))
+    );
+    --_et-color-ink-light-hover: var(--et-surface-if-light) var(--et-color-primary-ink-light-hover);
+    --_et-color-ink-dark-hover: var(--et-surface-if-dark) var(--et-color-primary-ink-dark-hover);
+    --_et-color-ink-hover: var(
+      --_et-color-ink-light-hover,
+      var(
+        --_et-color-ink-dark-hover,
+        var(--et-color-primary-ink-hover, var(--et-color-primary-ink, var(--et-color-primary)))
+      )
+    );
+    --_et-color-ink-light-focus: var(--et-surface-if-light) var(--et-color-primary-ink-light-focus);
+    --_et-color-ink-dark-focus: var(--et-surface-if-dark) var(--et-color-primary-ink-dark-focus);
+    --_et-color-ink-focus: var(
+      --_et-color-ink-light-focus,
+      var(
+        --_et-color-ink-dark-focus,
+        var(--et-color-primary-ink-focus, var(--et-color-primary-ink, var(--et-color-primary)))
+      )
+    );
+    --_et-color-ink-light-active: var(--et-surface-if-light) var(--et-color-primary-ink-light-active);
+    --_et-color-ink-dark-active: var(--et-surface-if-dark) var(--et-color-primary-ink-dark-active);
+    --_et-color-ink-active: var(
+      --_et-color-ink-light-active,
+      var(
+        --_et-color-ink-dark-active,
+        var(--et-color-primary-ink-active, var(--et-color-primary-ink, var(--et-color-primary)))
+      )
+    );
+    --_et-color-ink-light-disabled: var(--et-surface-if-light) var(--et-color-primary-ink-light-disabled);
+    --_et-color-ink-dark-disabled: var(--et-surface-if-dark) var(--et-color-primary-ink-dark-disabled);
+    --_et-color-ink-disabled: var(
+      --_et-color-ink-light-disabled,
+      var(
+        --_et-color-ink-dark-disabled,
+        var(--et-color-primary-ink-disabled, var(--et-color-primary-ink, var(--et-color-primary)))
+      )
+    );
+
+    --et-theme-color-ink-rgb: var(--_et-color-ink);
+    --et-theme-color-ink-opacity: 1;
+    --et-theme-color-ink-solid: rgb(var(--et-theme-color-ink-rgb) / var(--et-theme-color-ink-opacity));
+    --et-theme-color-ink: rgb(var(--et-theme-color-ink-rgb) / var(--et-theme-color-ink-opacity));
+
+    --color-et-theme-ink: rgb(var(--_et-color-ink));
+    --color-et-theme-ink-hover: rgb(var(--_et-color-ink-hover));
+    --color-et-theme-ink-focus: rgb(var(--_et-color-ink-focus));
+    --color-et-theme-ink-active: rgb(var(--_et-color-ink-active));
+    --color-et-theme-ink-disabled: rgb(var(--_et-color-ink-disabled));
   }
 }

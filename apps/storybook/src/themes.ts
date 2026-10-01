@@ -40,6 +40,15 @@ export const DANGER_THEME: ColorTheme = {
       active: '239 68 68',
       disabled: '153 75 75',
     },
+    inkColorBySurfaceType: {
+      light: {
+        default: '185 28 28',
+        hover: '153 27 27',
+        focus: '153 27 27',
+        active: '127 29 29',
+        disabled: '220 150 150',
+      },
+    },
   },
 };
 
@@ -64,6 +73,15 @@ export const SUCCESS_THEME: ColorTheme = {
       focus: '134 239 172',
       active: '34 197 94',
       disabled: '62 128 86',
+    },
+    inkColorBySurfaceType: {
+      light: {
+        default: '22 101 52',
+        hover: '20 83 45',
+        focus: '20 83 45',
+        active: '5 46 22',
+        disabled: '134 190 150',
+      },
     },
   },
 };
