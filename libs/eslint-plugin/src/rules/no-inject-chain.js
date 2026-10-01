@@ -25,7 +25,11 @@ const noInjectChain = {
           // Allow inject(X).method() — immediately-invoked patterns like
           // inject(DestroyRef).onDestroy(...) are intentional Angular idioms.
           const parent = node.parent;
-          if (parent && parent.type === 'CallExpression' && parent.callee === node) {
+          if (
+            parent &&
+            (parent.type === 'CallExpression' || parent.type === 'NewExpression') &&
+            parent.callee === node
+          ) {
             return;
           }
 

@@ -66,12 +66,12 @@ enum is reported without a fix. After the fix, a member used in a type position 
 
 ## Dependency injection
 
-| Rule                                 | What it enforces                                                                                                                               | Fix | Default |
-| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
-| `no-inject-chain`                    | No member access chained directly off `inject()` - assign the injected value to a `const` first; `inject(X).method()` calls are allowed        |     | error   |
-| `no-typed-injected-element-ref`      | `inject<ElementRef<HTMLElement>>(ElementRef)` - the generic goes on `inject()`, not on `ElementRef`                                            | 🔧  | error   |
-| `no-impure-top-level-provider`       | No module-scope destructuring of a factory call; optionally require `@__PURE__` on module-scope calls                                          | 🔧  | error   |
-| `no-legacy-prepare-without-injector` | A legacy query creator's `prepare()` passes an explicit `injector` when it runs from a callback, outside the injection context that created it | 🔧  | error   |
+| Rule                                 | What it enforces                                                                                                                                                  | Fix | Default |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| `no-inject-chain`                    | No member access chained directly off `inject()` - assign the injected value to a `const` first; `inject(X).method()` and `new (inject(X).Y)()` calls are allowed |     | error   |
+| `no-typed-injected-element-ref`      | `inject<ElementRef<HTMLElement>>(ElementRef)` - the generic goes on `inject()`, not on `ElementRef`                                                               | 🔧  | error   |
+| `no-impure-top-level-provider`       | No module-scope destructuring of a factory call; optionally require `@__PURE__` on module-scope calls                                                             | 🔧  | error   |
+| `no-legacy-prepare-without-injector` | A legacy query creator's `prepare()` passes an explicit `injector` when it runs from a callback, outside the injection context that created it                    | 🔧  | error   |
 
 ```ts
 // ❌ chaining off inject()

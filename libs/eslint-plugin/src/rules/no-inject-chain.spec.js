@@ -19,6 +19,7 @@ const t = inject(Foo).bar;`,
     { code: `const svc = inject(Service); svc.doSomething();` },
     // Immediately invoked — intentional Angular idiom
     { code: `inject(DestroyRef).onDestroy(() => {});` },
+    { code: `const bar = new (inject(Foo).Bar)();` },
     // Plain inject call without member access
     { code: `inject(MyService);` },
   ],
