@@ -10,6 +10,7 @@ export {
   SWISS_BRACKET_ROUND_TYPE,
   TOURNAMENT_MODE,
   createBracket,
+  createPlaceholderBracketSource,
   isBracketSlotPredictable,
   migrateBracketPicks,
   resolveBracketSlot,
@@ -76,6 +77,7 @@ export type {
   MatchParticipantShortId,
   MatchParticipantSide,
   ParticipantMatchResult,
+  PlaceholderBracketShape,
   SingleEliminationBracketRoundType,
   SwissBracketRoundType,
   TournamentMode,
@@ -96,6 +98,7 @@ export * from './bracket-default-final-match.component';
 export * from './bracket-default-match.component';
 export * from './bracket-default-round-header.component';
 export * from './bracket-rounds-list.component';
+export * from './bracket-skeleton.component';
 export * from './bracket.component';
 export * from './bracket.config';
 export * from './layouts';

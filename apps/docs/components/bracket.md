@@ -682,6 +682,41 @@ const naturalWidth = bracketNaturalWidth(source, {
 });
 ```
 
+## Loading skeleton
+
+`<et-bracket-skeleton>` stands in for a bracket whose source is still loading. It draws the real
+`et-bracket` layout from an empty source of the shape you give it, with skeleton cards, so the swap to
+the loaded bracket moves nothing. It is a separate import (`BRACKET_SKELETON_IMPORTS`), so a bracket
+that never shows a skeleton bundles none of it.
+
+```html
+@if (source(); as source) {
+<et-bracket [source]="source" [columnWidth]="220" />
+} @else {
+<et-bracket-skeleton [shape]="{ mode: 'single-elimination', participantCount: 16 }" [columnWidth]="220" />
+}
+```
+
+`shape` is `{ mode: 'single-elimination', participantCount, includeThirdPlace? }` or
+`{ mode: 'double-elimination', participantCount, includeFinal?, includeReverseFinal?, includeThirdPlace? }`.
+`participantCount` must be a power of two - at least 2, or 4 for double elimination - or it throws
+[`ET3415`](/components/error-codes#bracket-et34xx). Swiss has no skeleton.
+
+It reads `provideBracketConfig` like any bracket, and takes the layout inputs that change the geometry:
+`layouts`, `density`, `columnWidth`, `matchHeight`, `finalColumnWidth`, `finalMatchHeight`,
+`roundHeaderHeight`, `roundHeaderGap`, `finalRoundHeaderGap`, `columnGap`, `rowGap`, `rowRoundGap`,
+`thirdPlaceTopOffset` and `hideRoundHeaders`. Bind the same values as the bracket it replaces. Journey
+highlight and the continue element are always off.
+
+The drawing is hidden from assistive tech; the [`et-skeleton`](/components/skeleton) around it
+announces the wait once. Set `loadingAllyText` for something more specific than the `LOADER_LABELS`
+default, and `animated="false"` to drop the shimmer.
+
+For a skeleton of your own, `createPlaceholderBracketSource(shape)` returns the empty source on its
+own.
+
+<StoryEmbed id="components-sports-bracket-skeleton--double-elimination" height="520px" />
+
 ## Journey highlight
 
 Pointing at the bracket dims the rest of it and lights a participant's path through the
@@ -826,7 +861,8 @@ rules in its document.
 In dev and prod the bracket throws `RuntimeError`s in the **ET34xx** range when a
 `BracketDataSource` is malformed or unsupported, when no [layout](#layouts) is registered for its
 `mode` ([`ET3413`](/components/error-codes#bracket-et34xx)), or when no [card](#default-cards) is
-registered for a cell it draws (`ET3414`) - see
+registered for a cell it draws (`ET3414`), and `createPlaceholderBracketSource` throws `ET3415` for an
+unusable `participantCount` - see
 [/components/error-codes#bracket-et34xx](/components/error-codes#bracket-et34xx).
 
 ## Migrating from `@ethlete/cdk`

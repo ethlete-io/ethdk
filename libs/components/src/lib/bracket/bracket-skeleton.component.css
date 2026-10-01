@@ -1,0 +1,42 @@
+@layer components {
+  .et-bracket-skeleton-host {
+    display: block;
+  }
+
+  .et-bracket-skeleton-match {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    box-sizing: border-box;
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .et-bracket-skeleton-side {
+    flex: 1;
+    --et-skeleton-radius: 6px;
+  }
+
+  .et-bracket-skeleton-final-match {
+    align-items: center;
+    padding: 10px;
+  }
+
+  .et-bracket-skeleton-final-match .et-bracket-skeleton-final-title {
+    flex: none;
+    inline-size: 40%;
+  }
+
+  .et-bracket-skeleton-round-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .et-bracket-skeleton-round-header .et-bracket-skeleton-round-title {
+    inline-size: 50%;
+  }
+}
