@@ -44,3 +44,8 @@ From the `libs/core` scan of 2026-08-19, closed 2026-09-29.
 ## components
 
 - The rich text viewer keeps its table and image style imports (accepted 2026-09-29: base capability per AGENTS.md).
+
+## query-devtools
+
+- The status colours (`--_et-qdt-success`, `-error`, `-loading`) stay literals. Semantic themes come only from DI, and
+  the panel must stay readable in an app without them.
