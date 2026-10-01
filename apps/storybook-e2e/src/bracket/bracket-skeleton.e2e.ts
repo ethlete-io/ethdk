@@ -53,7 +53,7 @@ test.describe('bracket skeleton', () => {
     expect(skeleton.size).toEqual(loaded.size);
     expect(skeleton.matches).toEqual(loaded.matches);
 
-    const [, , width, height] = skeleton.continueCells[0];
+    const [, , width, height] = skeleton.continueCells[0] ?? [];
 
     expect(skeleton.bone).toEqual([width, height]);
   });
