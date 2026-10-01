@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
-  injectColorPalette,
+  injectSurfaceColorPalette,
   injectHostElement,
   injectLocale,
   RegisteredColorThemeName,
@@ -166,7 +166,7 @@ const finiteOrNull = (value: number | null | undefined) =>
   providers: [{ provide: CHART_PLOT_HOST, useExisting: LineChartDirective }],
 })
 export class LineChartDirective implements ChartPlotHost {
-  private palette = injectColorPalette({ optional: true });
+  private palette = injectSurfaceColorPalette();
   private locale = injectLocale();
   private hostElement = injectHostElement();
   private destroyRef = inject(DestroyRef);
@@ -244,7 +244,7 @@ export class LineChartDirective implements ChartPlotHost {
   public isStacked = computed(() => this.stacked() && this.series().length > 1);
 
   /** The color theme per entry of `series`, resolved against the palette. */
-  public seriesColors = computed(() => resolveChartSeriesColors(this.series(), this.palette));
+  public seriesColors = computed(() => resolveChartSeriesColors(this.series(), this.palette()));
 
   /** The accent mix per entry of `series`, in percent; `null` for a series with a color theme. */
   public seriesAccentMixes = computed(() => resolveChartAccentMixes(this.seriesColors()));

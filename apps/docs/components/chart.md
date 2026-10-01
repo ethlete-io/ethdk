@@ -113,7 +113,7 @@ providers: [
 ];
 ```
 
-`ocean`, `sunset` and `meadow` stand for themes the app registered. A palette is one set of colors; for a dark surface, provide a second palette with steps chosen for it, as the `GroupedDark` story does.
+`ocean`, `sunset` and `meadow` stand for themes the app registered. For hues that hold up on a dark surface, pass one list per surface theme name plus a `default` list - see [a palette per surface](/core/theming#offering-colors-to-a-user). Every chart draws with the list of the surface it sits on.
 
 #### A fixed color per category
 

@@ -1,5 +1,5 @@
 import { computed, Directive, effect, input, numberAttribute, signal } from '@angular/core';
-import { injectColorPalette, injectLocale, RegisteredColorThemeName, RuntimeError } from '@ethlete/core';
+import { injectSurfaceColorPalette, injectLocale, RegisteredColorThemeName, RuntimeError } from '@ethlete/core';
 import { ChartTableModel, ChartTooltipPlacement } from '../chart.types';
 import { PIE_CHART_ERROR_CODES } from '../pie-chart-errors';
 import { CHART_PLOT_HOST, ChartPlotDirective, ChartPlotHost } from './chart-plot.directive';
@@ -78,7 +78,7 @@ const drawnValue = (value: number) => (Number.isFinite(value) && value > 0 ? val
   providers: [{ provide: CHART_PLOT_HOST, useExisting: PieChartDirective }],
 })
 export class PieChartDirective implements ChartPlotHost {
-  private palette = injectColorPalette({ optional: true });
+  private palette = injectSurfaceColorPalette();
   private locale = injectLocale();
 
   /** The slices, in drawing order. A value of 0 draws no slice; a negative value counts as 0. */
@@ -144,7 +144,7 @@ export class PieChartDirective implements ChartPlotHost {
   /** Every datum with its color and share, in `data` order - including the ones that draw no slice. */
   public entries = computed<PieChartEntry[]>(() => {
     const data = this.data();
-    const colors = resolveChartSeriesColors(data, this.palette);
+    const colors = resolveChartSeriesColors(data, this.palette());
     const mixes = resolveChartAccentMixes(colors);
     const percents = createWholePercentages(data.map((datum) => datum.value));
     const format = this.formatValue();

@@ -1,5 +1,5 @@
 import { computed, Directive, effect, input, numberAttribute, signal } from '@angular/core';
-import { injectColorPalette, injectLocale, RegisteredColorThemeName } from '@ethlete/core';
+import { injectSurfaceColorPalette, injectLocale, RegisteredColorThemeName } from '@ethlete/core';
 import { injectReportError } from '../../internals/report-error';
 import { ChartRect, ChartTableModel, ChartTooltipPlacement } from '../chart.types';
 import { CHART_PLOT_HOST, ChartPlotDirective, ChartPlotHost } from './chart-plot.directive';
@@ -106,7 +106,7 @@ const MIN_NODE_HEIGHT = 1;
   providers: [{ provide: CHART_PLOT_HOST, useExisting: SankeyChartDirective }],
 })
 export class SankeyChartDirective implements ChartPlotHost {
-  private palette = injectColorPalette({ optional: true });
+  private palette = injectSurfaceColorPalette();
   private locale = injectLocale();
   private reportError = injectReportError();
 
@@ -161,7 +161,7 @@ export class SankeyChartDirective implements ChartPlotHost {
   public plotWidth = computed(() => this.plot()?.width() ?? 0);
 
   /** The color theme per entry of `nodes`, resolved against the palette. */
-  public nodeColors = computed(() => resolveChartSeriesColors(this.nodes(), this.palette));
+  public nodeColors = computed(() => resolveChartSeriesColors(this.nodes(), this.palette()));
 
   private dataError = computed(() => findSankeyDataError(this.nodes(), this.links()));
 

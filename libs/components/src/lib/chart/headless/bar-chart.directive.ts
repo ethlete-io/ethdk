@@ -1,5 +1,5 @@
 import { computed, Directive, effect, input, numberAttribute, signal } from '@angular/core';
-import { injectColorPalette, injectLocale, RegisteredColorThemeName } from '@ethlete/core';
+import { injectSurfaceColorPalette, injectLocale, RegisteredColorThemeName } from '@ethlete/core';
 import {
   ChartAxisLabel,
   ChartLegendItem,
@@ -132,7 +132,7 @@ const finiteOrNull = (value: number | null | undefined) =>
   providers: [{ provide: CHART_PLOT_HOST, useExisting: BarChartDirective }],
 })
 export class BarChartDirective implements ChartPlotHost {
-  private palette = injectColorPalette({ optional: true });
+  private palette = injectSurfaceColorPalette();
   private locale = injectLocale();
 
   /**
@@ -198,7 +198,7 @@ export class BarChartDirective implements ChartPlotHost {
   public isStacked = computed(() => this.layout() === 'stacked' && this.series().length > 1);
 
   /** The color theme per entry of `series`, resolved against the palette. */
-  public seriesColors = computed(() => resolveChartSeriesColors(this.series(), this.palette));
+  public seriesColors = computed(() => resolveChartSeriesColors(this.series(), this.palette()));
 
   /** The accent mix per entry of `series`, in percent; `null` for a series with a color theme. */
   public seriesAccentMixes = computed(() => resolveChartAccentMixes(this.seriesColors()));

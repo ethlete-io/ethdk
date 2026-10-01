@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { provideColorPalette } from '@ethlete/core';
+import { provideColorPalette, provideSurfaceThemesWithTailwind4, SurfaceTheme } from '@ethlete/core';
 import '../../test-helpers';
 import { BarChartComponent } from './bar-chart.component';
 import {
@@ -517,6 +517,37 @@ describe('BarChartComponent series colors', () => {
       'lava',
     ]);
     expect(chart.legendItems().map((item) => item.colorToken)).toEqual(['ocean', 'sunset', 'lava']);
+  });
+
+  it('draws with the palette list of the surface it sits on', () => {
+    const page: SurfaceTheme = {
+      name: 'page',
+      type: 'dark',
+      elevation: 0,
+      isDefault: true,
+      background: '0 0 0',
+      color: '255 255 255',
+      colorMuted: '180 180 180',
+      colorSubtle: '80 80 80',
+      border: '40 40 40',
+    };
+    const { chart } = setupSeries({
+      providers: [
+        provideSurfaceThemesWithTailwind4([page]),
+        provideColorPalette({
+          default: [
+            { token: 'ocean', label: 'Home' },
+            { token: 'sunset', label: 'Away' },
+          ],
+          page: [
+            { token: 'ocean-bright', label: 'Home' },
+            { token: 'sunset-bright', label: 'Away' },
+          ],
+        }),
+      ],
+    });
+
+    expect(chart.seriesColors()).toEqual(['ocean-bright', 'sunset-bright', null]);
   });
 
   it('keeps a single-series chart on the accent even with a palette', () => {
