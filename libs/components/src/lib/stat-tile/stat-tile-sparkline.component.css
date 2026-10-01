@@ -1,0 +1,49 @@
+@layer components {
+  @property --et-stat-tile-sparkline-height {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 32px;
+  }
+
+  @property --et-stat-tile-sparkline-line-width {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 2px;
+  }
+
+  @property --et-stat-tile-sparkline-current-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  .et-stat-tile-sparkline {
+    display: block;
+    block-size: var(--et-stat-tile-sparkline-height);
+  }
+
+  .et-stat-tile-sparkline-svg {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    overflow: visible;
+  }
+
+  .et-stat-tile-sparkline-line,
+  .et-stat-tile-sparkline-current {
+    fill: none;
+    vector-effect: non-scaling-stroke;
+    stroke-linecap: round;
+  }
+
+  .et-stat-tile-sparkline-line {
+    stroke: var(--et-surface-color-subtle-solid, currentColor);
+    stroke-width: var(--et-stat-tile-sparkline-line-width);
+    stroke-linejoin: round;
+  }
+
+  .et-stat-tile-sparkline-current {
+    stroke: var(--et-theme-color-primary-solid, currentColor);
+    stroke-width: var(--et-stat-tile-sparkline-current-size);
+  }
+}

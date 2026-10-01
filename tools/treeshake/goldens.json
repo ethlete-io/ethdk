@@ -80,6 +80,14 @@
       "entry": "import { CHART_IMPORTS } from '@ethlete/components';\nconsole.log(CHART_IMPORTS);",
       "gzip": 49382
     },
+    "stat-tile": {
+      "entry": "import { StatTileComponent } from '@ethlete/components';\nconsole.log(StatTileComponent);",
+      "gzip": 7610
+    },
+    "stat-tile-imports": {
+      "entry": "import { STAT_TILE_IMPORTS } from '@ethlete/components';\nconsole.log(STAT_TILE_IMPORTS);",
+      "gzip": 8330
+    },
     "scheduler": {
       "entry": "import { SchedulerComponent } from '@ethlete/components';\nconsole.log(SchedulerComponent);",
       "gzip": 72810

@@ -1,0 +1,111 @@
+@layer components {
+  @property --et-stat-tile-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
+
+  @property --et-stat-tile-label-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 14px;
+  }
+
+  @property --et-stat-tile-value-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 28px;
+  }
+
+  @property --et-stat-tile-value-font-weight {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 600;
+  }
+
+  @property --et-stat-tile-footer-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 13px;
+  }
+
+  @property --et-stat-tile-sparkline-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  .et-stat-tile {
+    display: flex;
+    flex-direction: column;
+    gap: var(--et-stat-tile-gap);
+    min-inline-size: 0;
+    color: var(--et-surface-color-solid, currentColor);
+    line-height: 1.4;
+
+    > .et-stat-tile-sparkline {
+      margin-block-start: calc(var(--et-stat-tile-sparkline-gap) - var(--et-stat-tile-gap));
+    }
+
+    &:where([aria-busy='true']) > .et-stat-tile-sparkline {
+      visibility: hidden;
+    }
+  }
+
+  .et-stat-tile-label {
+    font-size: var(--et-stat-tile-label-font-size);
+    color: var(--et-surface-color-muted-solid, currentColor);
+  }
+
+  .et-stat-tile-value {
+    display: block;
+    font-size: var(--et-stat-tile-value-font-size);
+    font-weight: var(--et-stat-tile-value-font-weight);
+    line-height: 1.2;
+  }
+
+  .et-stat-tile-unit {
+    font-size: 0.6em;
+    font-weight: 500;
+    color: var(--et-surface-color-muted-solid, currentColor);
+  }
+
+  .et-stat-tile-footer {
+    display: block;
+    font-size: var(--et-stat-tile-footer-font-size);
+    color: var(--et-surface-color-muted-solid, currentColor);
+  }
+
+  .et-stat-tile-delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-weight: 600;
+    white-space: nowrap;
+
+    &:where([data-sentiment='good'], [data-sentiment='bad']) {
+      color: var(--et-theme-color-ink-solid, currentColor);
+    }
+  }
+
+  .et-stat-tile-delta-icon {
+    flex: none;
+    inline-size: 0.85em;
+    block-size: 0.85em;
+    fill: currentColor;
+  }
+
+  .et-stat-tile-skeleton {
+    --et-skeleton-gap: var(--et-stat-tile-gap);
+
+    > .et-stat-tile-value-skeleton {
+      --et-skeleton-size: calc(var(--et-stat-tile-value-font-size) * 1.2);
+      inline-size: 60%;
+    }
+
+    > .et-stat-tile-delta-skeleton {
+      --et-skeleton-size: calc(var(--et-stat-tile-footer-font-size) * 1.4);
+      inline-size: 40%;
+    }
+  }
+}

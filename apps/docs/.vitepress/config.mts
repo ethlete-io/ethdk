@@ -307,6 +307,7 @@ export default defineConfig({
             { text: 'Standings', link: '/components/standings' },
             { text: 'Standings pick', link: '/components/standings-pick' },
             { text: 'Sport UI recipes', link: '/components/sport-recipes' },
+            { text: 'Stat tile', link: '/components/stat-tile' },
             { text: 'Table', link: '/components/table' },
             { text: 'Tabs', link: '/components/tabs' },
             { text: 'Timeline', link: '/components/timeline' },

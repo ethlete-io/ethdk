@@ -38,6 +38,7 @@ export * from './lib/scrollable';
 export * from './lib/scrollbar';
 export * from './lib/skeleton';
 export * from './lib/standings';
+export * from './lib/stat-tile';
 export * from './lib/stream';
 export * from './lib/table';
 export * from './lib/tabs';
