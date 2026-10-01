@@ -30,15 +30,22 @@
         <svg:g [ticks]="chart.ticks()" [length]="chart.plotWidth()" et-chart-grid />
 
         <svg:g [etProvideColor]="colorToken()" class="et-line-chart-series-layer" aria-hidden="true">
+          @if (chart.area()) {
+            @for (line of chart.lines(); track line.key) {
+              <svg:path
+                [etProvideColor]="line.colorToken"
+                [style.--_et-chart-accent-mix.%]="line.accentMix"
+                [attr.d]="line.areaPath"
+                class="et-line-chart-area"
+              />
+            }
+          }
           @for (line of chart.lines(); track line.key) {
             <svg:g
               [etProvideColor]="line.colorToken"
               [style.--_et-chart-accent-mix.%]="line.accentMix"
               class="et-line-chart-series"
             >
-              @if (chart.area()) {
-                <svg:path [attr.d]="line.areaPath" class="et-line-chart-area" />
-              }
               <svg:path [attr.d]="line.linePath" class="et-line-chart-line" />
               @for (point of line.points; track point.key) {
                 @if (point.isIsolated || chart.points()) {

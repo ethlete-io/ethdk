@@ -167,6 +167,30 @@ describe('LineChartComponent', () => {
     expect(chart.slices()[2]?.entries.map((entry) => entry.value)).toEqual([30, 15]);
   });
 
+  it('draws every stacked area before every line', () => {
+    const { host, fixture, element } = setup([provideColorPalette([])]);
+
+    host.data.set(SERIES_DATA);
+    host.series.set(SERIES);
+    host.area.set(true);
+    host.stacked.set(true);
+    fixture.detectChanges();
+
+    const layer = element.querySelector('.et-line-chart-series-layer');
+    const marks = [...(layer?.querySelectorAll('.et-line-chart-area, .et-line-chart-line') ?? [])];
+
+    expect(element.querySelector('.et-line-chart-svg')?.hasAttribute('data-stacked')).toBe(true);
+    expect(marks.map((mark) => (mark.classList.contains('et-line-chart-area') ? 'area' : 'line'))).toEqual([
+      'area',
+      'area',
+      'line',
+      'line',
+    ]);
+    expect(
+      marks.slice(0, 2).map((mark) => (mark as SVGElement).style.getPropertyValue('--_et-chart-accent-mix')),
+    ).toEqual(['100%', '40%']);
+  });
+
   it('reads out every series with a value at an x, and names it by the x', () => {
     const { host, fixture, chart, element } = setup();
 
