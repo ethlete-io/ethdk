@@ -337,8 +337,12 @@ export class LineChartDirective implements ChartPlotHost {
 
   private valueScale = computed(() => createLinearScale(this.valueTicks().domain, [this.height(), 0]));
 
-  /** The zero line's offset from the top of the plot. */
-  public baseline = computed(() => this.valueScale()(0));
+  /** The zero line's offset from the top of the plot; the domain edge nearest zero when zero is outside the value axis. */
+  public baseline = computed(() => {
+    const [min, max] = this.valueTicks().domain;
+
+    return this.valueScale()(Math.min(Math.max(0, min), max));
+  });
 
   public ticks = computed<LineChartTick[]>(() => {
     const scale = this.valueScale();

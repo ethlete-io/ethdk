@@ -62,7 +62,7 @@ Mixing `Date` and string `x` values reports `ET5120` to the `ErrorHandler` in de
 
 The value axis includes zero and rounds out to a 1, 2 or 5 step, like the bar chart's. Lines are 2px with round joins.
 
-Set `includeZero` to `false` to fit the axis to the data instead, still rounded to a clean step - `[62, 87, 71]` gets the ticks `60, 65, … 90`. Use it where the change matters more than the size, such as a temperature or a price; a reader can no longer compare the heights of two points as ratios.
+Set `includeZero` to `false` to fit the axis to the data instead, still rounded to a clean step - `[62, 87, 71]` gets the ticks `60, 65, … 90`. Use it where the change matters more than the size, such as a temperature or a price; a reader can no longer compare the heights of two points as ratios. `baseline()` then sits on the axis edge nearest zero, so it never leaves the plot.
 
 ```html
 <et-line-chart [data]="prices" [includeZero]="false" label="Price per day" />

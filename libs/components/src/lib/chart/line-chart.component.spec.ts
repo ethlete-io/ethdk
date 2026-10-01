@@ -123,6 +123,24 @@ describe('LineChartComponent', () => {
     expect(chart.lines()[0]?.points.map((point) => Math.round(point.y))).toEqual([200, 0, 133, 67]);
   });
 
+  it('clamps the baseline to the domain edge nearest zero with includeZero false', () => {
+    const { host, fixture, chart } = setup();
+
+    host.includeZero.set(false);
+    fixture.detectChanges();
+
+    expect(chart.baseline()).toBeCloseTo(200);
+
+    host.data.set([
+      { x: 'Jan', value: -40 },
+      { x: 'Feb', value: -100 },
+    ]);
+    fixture.detectChanges();
+
+    expect(chart.valueTicks().domain[1]).toBeLessThan(0);
+    expect(chart.baseline()).toBeCloseTo(0);
+  });
+
   it('keeps zero on an area chart with includeZero false and warns in dev mode', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const { host, fixture, chart } = setup();
