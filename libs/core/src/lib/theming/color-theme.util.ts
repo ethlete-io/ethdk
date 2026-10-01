@@ -1,6 +1,5 @@
 import { isDevMode } from '@angular/core';
 import { defineStaticProvider, toInjectFn, toProvideFn } from '../utils';
-import { SurfaceType } from './surface-theme.util';
 
 export type ThemeRGBColor = `${number} ${number} ${number}`;
 export type ThemeHSLColor = `${number} ${number}% ${number}%`;
@@ -35,11 +34,6 @@ export type ThemeSwatch = {
   color: ThemeColorMap;
   onColor: OnThemeColorMap;
   inkColor?: ThemeInkColorMap;
-  /**
-   * The ink on a surface of the given `type`; the nearest surface picks the map in CSS, and a type
-   * without one uses `inkColor`. Needs the surface stylesheet from `tailwind-4-surface-theme`.
-   */
-  inkColorBySurfaceType?: Partial<Record<SurfaceType, ThemeInkColorMap>>;
 };
 
 export type ColorThemeType = 'success' | 'warning' | 'error';

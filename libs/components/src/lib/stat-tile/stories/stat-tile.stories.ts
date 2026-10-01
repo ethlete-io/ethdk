@@ -29,5 +29,5 @@ export const KpiRow: Story = {
 };
 
 export const Loading: Story = {
-  render: () => ({ template: `<et-sb-stat-tile-row [surfaces]="['dark']" loading />` }),
+  render: () => ({ template: `<et-sb-stat-tile-row loading />` }),
 };

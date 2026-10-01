@@ -31,23 +31,10 @@ export type ThemeInkColorMap = {
   disabled?: ThemeColor;
 };
 
-type SurfaceType = 'light' | 'dark';
-
-const SURFACE_TYPES: readonly SurfaceType[] = ['light', 'dark'];
-
-const isSurfaceType = (value: string): value is SurfaceType => SURFACE_TYPES.some((type) => type === value);
-
-const INK_STATE_SUFFIXES = ['', '-hover', '-focus', '-active', '-disabled'] as const;
-
-type InkStateSuffix = (typeof INK_STATE_SUFFIXES)[number];
-
-const SWATCH_LEVELS = ['primary', 'secondary', 'tertiary'] as const;
-
 export type ThemeSwatch = {
   color: ThemeColorMap;
   onColor: OnThemeColorMap;
   inkColor?: ThemeInkColorMap;
-  inkColorBySurfaceType?: Partial<Record<SurfaceType, ThemeInkColorMap>>;
 };
 
 type ColorThemeType = 'success' | 'warning' | 'error';
@@ -373,15 +360,10 @@ function parseThemeSwatch(obj: ObjectLiteralExpression, sourceFile: SourceFile, 
       continue;
     }
 
-    const propName = prop.getName();
+    const propName = prop.getName() as 'color' | 'onColor' | 'inkColor';
     const initializer = prop.getInitializer();
 
     if (!initializer) {
-      continue;
-    }
-
-    if (propName === 'inkColorBySurfaceType') {
-      swatch.inkColorBySurfaceType = parseInkColorBySurfaceType(initializer, sourceFile, context);
       continue;
     }
 
@@ -405,41 +387,6 @@ function parseThemeSwatch(obj: ObjectLiteralExpression, sourceFile: SourceFile, 
   }
 
   return swatch as ThemeSwatch;
-}
-
-function parseInkColorBySurfaceType(
-  initializer: Expression,
-  sourceFile: SourceFile,
-  context: ParseContext,
-): Partial<Record<SurfaceType, ThemeInkColorMap>> | undefined {
-  const objectLiteral = unwrapTypeExpressions(initializer);
-
-  if (!objectLiteral?.isKind(SyntaxKind.ObjectLiteralExpression)) {
-    logger.warn(`⚠️  inkColorBySurfaceType in ${sourceFile.getFilePath()} must be an object literal; it is ignored.`);
-    return undefined;
-  }
-
-  const result: Partial<Record<SurfaceType, ThemeInkColorMap>> = {};
-
-  for (const prop of objectLiteral.getProperties()) {
-    if (!prop.isKind(SyntaxKind.PropertyAssignment)) continue;
-
-    const type = prop.getName();
-    const value = prop.getInitializer();
-
-    if (!isSurfaceType(type)) {
-      logger.warn(`⚠️  Unknown surface type "${type}" in inkColorBySurfaceType; expected light or dark.`);
-      continue;
-    }
-
-    const colorMap = value ? parseColorMap(value, sourceFile, context) : null;
-
-    if (colorMap) {
-      result[type] = colorMap as ThemeInkColorMap;
-    }
-  }
-
-  return Object.keys(result).length ? result : undefined;
 }
 
 const COLOR_MAP_KEYS = ['default', 'hover', 'focus', 'active', 'disabled'] as const;
@@ -666,15 +613,6 @@ function generateTailwindThemeCss(
     );
     tailwindVars.push('');
 
-    for (const type of SURFACE_TYPES) {
-      const inkMap = theme.primary.inkColorBySurfaceType?.[type];
-
-      if (inkMap) {
-        addTailwindColorVariants(tailwindVars, `${utilityPrefix}-${name}-ink-${type}`, inkMap);
-        tailwindVars.push('');
-      }
-    }
-
     if (theme.secondary) {
       addTailwindColorVariants(tailwindVars, `${utilityPrefix}-${name}-secondary`, theme.secondary.color);
       tailwindVars.push('');
@@ -701,18 +639,9 @@ function generateTailwindThemeCss(
   // once against the root color scope and inherits that concrete color into descendants - which
   // means `bg-<prefix>-theme-*` utilities would ignore nested `.<runtime>-color--*` scopes.
   // Re-declaring them per color selector makes the utilities resolve against the nearest scope.
-  const surfaceInkLevels = SWATCH_LEVELS.filter((level) => themes.some((t) => t[level]?.inkColorBySurfaceType));
-  const isSurfaceAwareInk = surfaceInkLevels.includes('primary');
-
   const dynamicColorVars: string[] = [];
-  const dynamicInkVars: string[] = [];
   addDynamicThemeColors(dynamicColorVars, utilityPrefix, runtimePrefix, 'theme', 'primary', false);
-
-  if (isSurfaceAwareInk) {
-    addResolvedInkColors(dynamicInkVars, utilityPrefix, runtimePrefix);
-  } else {
-    addDynamicInkColors(dynamicColorVars, utilityPrefix, runtimePrefix, 'theme-ink', 'primary-ink');
-  }
+  addDynamicInkColors(dynamicColorVars, utilityPrefix, runtimePrefix, 'theme-ink', 'primary-ink');
 
   if (hasSecondary) {
     addDynamicThemeColors(dynamicColorVars, utilityPrefix, runtimePrefix, 'theme-secondary', 'secondary', false);
@@ -723,11 +652,7 @@ function generateTailwindThemeCss(
   }
 
   tailwindVars.push('  /* Dynamic theme colors (references runtime CSS variables) */');
-  tailwindVars.push(...dynamicColorVars, ...dynamicInkVars);
-
-  if (surfaceInkLevels.length) {
-    themeVars.push(buildSurfaceInkReset(runtimePrefix, surfaceInkLevels));
-  }
+  tailwindVars.push(...dynamicColorVars);
 
   themes.forEach((theme) => {
     const name = createCssThemeName(theme.name);
@@ -747,21 +672,10 @@ function generateTailwindThemeCss(
 
   // Re-indent the dynamic theme colors (from 2-space `@theme` indent to the 4-space alias-block
   // indent) and drop trailing blank lines so they slot cleanly into the alias selector below.
-  const toAliasLines = (lines: string[]) => {
-    const aliasLines = lines.map((line) => (line === '' ? '' : `  ${line}`));
-    while (aliasLines.length && aliasLines[aliasLines.length - 1] === '') {
-      aliasLines.pop();
-    }
-    return aliasLines;
-  };
-  const dynamicColorAliasLines = toAliasLines(dynamicColorVars);
-
-  const inkAliasLines = `    --${runtimePrefix}-theme-color-ink-rgb: var(--${runtimePrefix}-color-primary-ink, var(--${runtimePrefix}-color-primary));
-    --${runtimePrefix}-theme-color-ink-opacity: 1;
-    --${runtimePrefix}-theme-color-ink-solid: rgb(var(--${runtimePrefix}-theme-color-ink-rgb) / var(--${runtimePrefix}-theme-color-ink-opacity));
-    --${runtimePrefix}-theme-color-ink: rgb(var(--${runtimePrefix}-theme-color-ink-rgb) / var(--${runtimePrefix}-theme-color-ink-opacity));
-
-`;
+  const dynamicColorAliasLines = dynamicColorVars.map((line) => (line === '' ? '' : `  ${line}`));
+  while (dynamicColorAliasLines.length && dynamicColorAliasLines[dynamicColorAliasLines.length - 1] === '') {
+    dynamicColorAliasLines.pop();
+  }
 
   const aliasBlock = `/* Convenience aliases (rgb + solid + opacity variants) */
 @layer base {
@@ -776,13 +690,18 @@ function generateTailwindThemeCss(
     --${runtimePrefix}-theme-color-on-primary-solid: rgb(var(--${runtimePrefix}-theme-color-on-primary-rgb) / var(--${runtimePrefix}-theme-color-on-primary-opacity));
     --${runtimePrefix}-theme-color-on-primary: rgb(var(--${runtimePrefix}-theme-color-on-primary-rgb) / var(--${runtimePrefix}-theme-color-on-primary-opacity));
 
-${isSurfaceAwareInk ? '' : inkAliasLines}    /* Dynamic Tailwind theme colors - re-declared per color scope so that
+    --${runtimePrefix}-theme-color-ink-rgb: var(--${runtimePrefix}-color-primary-ink, var(--${runtimePrefix}-color-primary));
+    --${runtimePrefix}-theme-color-ink-opacity: 1;
+    --${runtimePrefix}-theme-color-ink-solid: rgb(var(--${runtimePrefix}-theme-color-ink-rgb) / var(--${runtimePrefix}-theme-color-ink-opacity));
+    --${runtimePrefix}-theme-color-ink: rgb(var(--${runtimePrefix}-theme-color-ink-rgb) / var(--${runtimePrefix}-theme-color-ink-opacity));
+
+    /* Dynamic Tailwind theme colors - re-declared per color scope so that
        bg-${utilityPrefix}-theme-* utilities resolve against the nearest .${runtimePrefix}-color--*
        scope instead of the value computed once at :root. */
 ${dynamicColorAliasLines.join('\n')}
   }
 }
-${isSurfaceAwareInk ? buildSurfaceInkAliasBlock(runtimePrefix, toAliasLines(dynamicInkVars)) : ''}`;
+`;
 
   return `${header}@theme {
 ${tailwindVars.join('\n')}
@@ -861,58 +780,6 @@ function addDynamicInkColors(
   vars.push('');
 }
 
-function addResolvedInkColors(vars: string[], utilityPrefix: string, runtimePrefix: string): void {
-  for (const suffix of INK_STATE_SUFFIXES) {
-    vars.push(`  --color-${utilityPrefix}-theme-ink${suffix}: rgb(var(--_${runtimePrefix}-color-ink${suffix}));`);
-  }
-  vars.push('');
-}
-
-function buildSurfaceInkReset(runtimePrefix: string, levels: readonly string[]): string {
-  const lines = levels.flatMap((level) =>
-    SURFACE_TYPES.flatMap((type) =>
-      INK_STATE_SUFFIXES.map((suffix) => `  --${runtimePrefix}-color-${level}-ink-${type}${suffix}: initial;`),
-    ),
-  );
-
-  return `:where([class*="${runtimePrefix}-color--"]:not(.${runtimePrefix}-color--inherited)) {
-${lines.join('\n')}
-}
-`;
-}
-
-function buildSurfaceInkAliasBlock(runtimePrefix: string, dynamicInkAliasLines: string[]): string {
-  const resolveInk = (suffix: InkStateSuffix) => {
-    const plainInk = suffix
-      ? `var(--${runtimePrefix}-color-primary-ink${suffix}, var(--${runtimePrefix}-color-primary-ink, var(--${runtimePrefix}-color-primary)))`
-      : `var(--${runtimePrefix}-color-primary-ink, var(--${runtimePrefix}-color-primary))`;
-
-    return [
-      ...SURFACE_TYPES.map(
-        (type) =>
-          `    --_${runtimePrefix}-color-ink-${type}${suffix}: var(--${runtimePrefix}-surface-if-${type}) var(--${runtimePrefix}-color-primary-ink-${type}${suffix});`,
-      ),
-      `    --_${runtimePrefix}-color-ink${suffix}: var(--_${runtimePrefix}-color-ink-light${suffix}, var(--_${runtimePrefix}-color-ink-dark${suffix}, ${plainInk}));`,
-    ];
-  };
-
-  return `
-/* Surface-aware ink: re-resolved on every color and surface scope, so the nearest surface's type picks the ink */
-@layer base {
-  :root, :where([class*="${runtimePrefix}-color--"]), :where([class*="${runtimePrefix}-surface--"]) {
-${INK_STATE_SUFFIXES.flatMap(resolveInk).join('\n')}
-
-    --${runtimePrefix}-theme-color-ink-rgb: var(--_${runtimePrefix}-color-ink);
-    --${runtimePrefix}-theme-color-ink-opacity: 1;
-    --${runtimePrefix}-theme-color-ink-solid: rgb(var(--${runtimePrefix}-theme-color-ink-rgb) / var(--${runtimePrefix}-theme-color-ink-opacity));
-    --${runtimePrefix}-theme-color-ink: rgb(var(--${runtimePrefix}-theme-color-ink-rgb) / var(--${runtimePrefix}-theme-color-ink-opacity));
-
-${dynamicInkAliasLines.join('\n')}
-  }
-}
-`;
-}
-
 function addTailwindColorVariants(vars: string[], colorName: string, colorSet: ThemeColorMap | OnThemeColorMap): void {
   vars.push(`  --color-${colorName}: rgb(${colorSet.default});`);
 
@@ -968,21 +835,6 @@ function addThemeColorVariants(vars: string[], prefix: string, altPrefix: string
     vars.push(`  --${prefix}-color-${altPrefix}${level}-ink-focus: ${inkFocusColor};`);
     vars.push(`  --${prefix}-color-${altPrefix}${level}-ink-active: ${inkActiveColor};`);
     vars.push(`  --${prefix}-color-${altPrefix}${level}-ink-disabled: ${inkDisabledColor};`);
-
-    for (const type of SURFACE_TYPES) {
-      const inkMap = swatch.inkColorBySurfaceType?.[type];
-
-      if (!inkMap) continue;
-
-      const typeHover = inkMap.hover || inkMap.default;
-
-      vars.push('');
-      vars.push(`  --${prefix}-color-${altPrefix}${level}-ink-${type}: ${inkMap.default};`);
-      vars.push(`  --${prefix}-color-${altPrefix}${level}-ink-${type}-hover: ${typeHover};`);
-      vars.push(`  --${prefix}-color-${altPrefix}${level}-ink-${type}-focus: ${inkMap.focus || typeHover};`);
-      vars.push(`  --${prefix}-color-${altPrefix}${level}-ink-${type}-active: ${inkMap.active || inkMap.default};`);
-      vars.push(`  --${prefix}-color-${altPrefix}${level}-ink-${type}-disabled: ${inkMap.disabled || inkMap.default};`);
-    }
 
     if (theme.secondary || theme.tertiary) {
       vars.push('');

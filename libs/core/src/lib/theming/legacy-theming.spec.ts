@@ -1,4 +1,4 @@
-import { createRootThemeCss, createSwatchCss, createTailwindColorThemes, createThemeStyle } from './legacy-theming';
+import { createRootThemeCss, createThemeStyle } from './legacy-theming';
 import { ColorTheme, ThemeSwatch } from './color-theme.util';
 
 const swatch: ThemeSwatch = {
@@ -30,40 +30,5 @@ describe('legacy theming', () => {
     createRootThemeCss([THEME]);
 
     expect(document.getElementById('et-root-themes')?.hasAttribute('nonce')).toBe(false);
-  });
-
-  describe('inkColorBySurfaceType', () => {
-    const SURFACE_INK_THEME: ColorTheme = {
-      name: 'alert',
-      primary: { ...swatch, inkColorBySurfaceType: { light: { default: '7 8 9', hover: '10 11 12' } } },
-    };
-
-    it('should emit the per-type ink next to the plain ink of the swatch', () => {
-      const css = createSwatchCss('primary', false, SURFACE_INK_THEME.primary);
-
-      expect(css).toContain('--et-color-primary-ink-light: 7 8 9;');
-      expect(css).toContain('--et-color-primary-ink-light-focus: 10 11 12;');
-      expect(css).toContain('--et-color-primary-ink-light-disabled: 7 8 9;');
-      expect(css).not.toContain('-ink-dark');
-    });
-
-    it('should inject the reset and the surface switch only when a theme sets it', () => {
-      createRootThemeCss([THEME]);
-      expect(document.getElementById('et-root-themes')?.textContent).not.toContain('--_et-color-ink');
-
-      createRootThemeCss([THEME, SURFACE_INK_THEME]);
-      const css = document.getElementById('et-root-themes')?.textContent ?? '';
-
-      expect(css).toContain('--et-color-primary-ink-light: initial;');
-      expect(css).toContain('--_et-color-ink-light: var(--et-surface-if-light) var(--et-color-primary-ink-light);');
-      expect(css).toContain(":where([class*='et-surface--'])");
-    });
-
-    it('should add a Tailwind 3 ink color per surface type', () => {
-      const colors = createTailwindColorThemes([SURFACE_INK_THEME]);
-
-      expect(colors['et-alert-ink-light']?.DEFAULT).toBe('rgb(7 8 9 / <alpha-value>)');
-      expect(colors['et-alert-ink-dark']).toBeUndefined();
-    });
   });
 });

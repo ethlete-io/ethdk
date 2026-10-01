@@ -793,8 +793,6 @@ function pushSurfaceVars(vars: string[], runtimePrefix: string, theme: SurfaceTh
   vars.push(`${indent}--${runtimePrefix}-surface-color-subtle: ${theme.colorSubtle};`);
   vars.push(`${indent}--${runtimePrefix}-surface-border: ${theme.border};`);
   vars.push(`${indent}--${runtimePrefix}-surface-type: ${theme.type};`);
-  vars.push(`${indent}--${runtimePrefix}-surface-if-light:${theme.type === 'light' ? ' ' : ' initial'};`);
-  vars.push(`${indent}--${runtimePrefix}-surface-if-dark:${theme.type === 'dark' ? ' ' : ' initial'};`);
   vars.push(`${indent}--${runtimePrefix}-surface-elevation: ${theme.elevation};`);
 
   if (theme.interactionColor) {
