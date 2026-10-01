@@ -135,22 +135,29 @@ export const sessionPieces = (options: {
   }
 
   const areas = new Map([...slices].map(([session, paths]) => [session, paths.map(areaOf)]));
-  const open = new Map<string, { piece: string; to: number; area?: string }[]>();
+  const open = new Map<
+    string,
+    { piece: string; to: number; area?: string; intervals: { from: number; to: number }[] }[]
+  >();
   const found = new Map<string, SessionPiece>();
 
   for (const unit of unitsOf(sorted, areas)) {
     const onBase = !!unit.branch && baseBranches.has(unit.branch);
+    const intervals = unit.sessions.map((session) => ({ from: session.from.getTime(), to: session.to.getTime() }));
     const keys = [...(unit.area ? [`area:${unit.area}`] : []), ...(unit.branch ? [`branch:${unit.branch}`] : [])];
     const joined = keys
       .flatMap((key) => open.get(key) ?? [])
-      .filter((candidate) => candidate.to < unit.from)
+      .filter((candidate) =>
+        candidate.intervals.every((held) => intervals.every((own) => held.to < own.from || own.to < held.from)),
+      )
       .filter((candidate) => !onBase || !candidate.area || !unit.area || candidate.area === unit.area)
       .sort((left, right) => right.to - left.to)[0];
-    const entry = joined ?? { piece: unit.sessions[0]?.sessionId ?? '', to: unit.to, area: unit.area };
+    const entry = joined ?? { piece: unit.sessions[0]?.sessionId ?? '', to: unit.to, area: unit.area, intervals: [] };
     const piece = entry.piece;
 
     entry.to = Math.max(entry.to, unit.to);
     entry.area ??= unit.area;
+    entry.intervals.push(...intervals);
 
     for (const key of keys) {
       const held = open.get(key) ?? [];

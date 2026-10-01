@@ -1135,30 +1135,35 @@ export const streamDay = (options: {
    * are the same piece of work, and a key that told them apart would book those minutes twice.
    */
   const runs = sessionRuns({ samples, turns, roots });
+  const pieceKey = (repoPath: string, session: string) => `${repoPath}\n${session}`;
   const pieces = new Map(
-    [...runs].flatMap(([repoPath, held]) => [
-      ...sessionPieces({
-        sessions: held,
-        projectRoots: config.projectRoots?.[repoPath],
-        baseBranches: config.baseBranches,
-      }),
-    ]),
+    [...runs].flatMap(([repoPath, held]) =>
+      [
+        ...sessionPieces({
+          sessions: held,
+          projectRoots: config.projectRoots?.[repoPath],
+          baseBranches: config.baseBranches,
+        }),
+      ].map(([session, piece]) => [pieceKey(repoPath, session), piece] as const),
+    ),
   );
   const pieceGrains = new Set(
     [...runs].flatMap(([repoPath, held]) => {
-      const paths = held.map((run) => pieces.get(run.sessionId)?.workPath);
+      const paths = held.map((run) => pieces.get(pieceKey(repoPath, run.sessionId))?.workPath);
 
       return workPathsSplit({ paths }) ? [repoPath] : [];
     }),
   );
-  const inSession = (session: string | undefined) =>
-    session ? { session, piece: pieces.get(session)?.piece ?? session } : { session };
+  const inSession = (repoPath: string, session: string | undefined) =>
+    session ? { session, piece: pieces.get(pieceKey(repoPath, session))?.piece ?? session } : { session };
   /**
    * The directory a stretch's session worked in, where the checkout's sessions worked in more than one.
    * It outranks the commits' reading, because a commit cannot say which of two parallel sessions made it.
    */
   const pieceWorkPath = (options: { repoPath: string; session: string | undefined }) =>
-    options.session && pieceGrains.has(options.repoPath) ? pieces.get(options.session)?.workPath : undefined;
+    options.session && pieceGrains.has(options.repoPath)
+      ? pieces.get(pieceKey(options.repoPath, options.session))?.workPath
+      : undefined;
   /**
    * The branch and the directory one stretch of a checkout belongs to.
    *
@@ -1181,7 +1186,7 @@ export const streamDay = (options: {
       workPath:
         (isBase ? pieceWorkPath({ repoPath: options.repoPath, session }) : undefined) ??
         workPathFor({ ...options, branch }),
-      ...inSession(session),
+      ...inSession(options.repoPath, session),
     };
   };
   const ownSession = (options: { repoPath: string; sample: CollectedEvent }) => {

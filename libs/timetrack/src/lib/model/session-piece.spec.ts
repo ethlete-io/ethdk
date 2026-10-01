@@ -164,6 +164,16 @@ describe('sessionPieces', () => {
     ).toEqual({ a: 'a', b: 'a', c: 'a' });
   });
 
+  it('joins a session that ran between two sessions joined through a handoff to their piece', () => {
+    expect(
+      piecesOf([
+        session({ id: 'a', from: 0, to: 30, paths: ['.claude/handoffs/one.md', 'libs/eslint-plugin/a.ts'] }),
+        session({ id: 'b', from: 90, to: 120, paths: ['.claude/handoffs/one.md', 'libs/eslint-plugin/b.ts'] }),
+        session({ id: 'c', from: 40, to: 70, paths: ['libs/eslint-plugin/c.ts'] }),
+      ]),
+    ).toEqual({ a: 'a', b: 'a', c: 'a' });
+  });
+
   it('reads an app, its e2e app and its library as one project', () => {
     expect(
       piecesOf([
