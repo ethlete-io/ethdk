@@ -170,7 +170,7 @@ export const renderMigrationReportMarkdown = (tasks: readonly MigrationTask[], s
     '',
   ].join('\n');
 
-  return `${header}${renderTasksSection(tasks, scopeLabel)}\n`;
+  return `${header}\n${renderTasksSection(tasks, scopeLabel)}\n`;
 };
 
 const renderTasksSection = (tasks: readonly MigrationTask[], scopeLabel?: string) => {

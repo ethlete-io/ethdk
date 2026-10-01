@@ -498,6 +498,10 @@ export const getGqlUser = apiClient.gqlQuery({ query: USER_QUERY });
       "createLegacyQueryCreator({ name: 'legacyGetUser', creator: getUser, entity: { store: userStore, id: ({ response }) => response.id, set: ({ store, response }) => store.set(response) } });",
     );
     expect(report).toContain('Check the entity config carried onto legacyGetUser');
+    expect(report).toContain(
+      'declare `invalidates` on the mutation creators that change the entity and `tags` on the reads that show it, and add `withOptimisticUpdate`',
+    );
+    expect(report).toContain('/query/migrating-from-v2#entitystore-becomes-invalidates-and-tags');
     expect(report).toContain('Rewrite the GraphQL creator getGqlUser by hand');
     expect(report).toContain('createGqlQueryViaPost');
   });

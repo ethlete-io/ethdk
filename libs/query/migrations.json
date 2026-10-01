@@ -55,6 +55,14 @@
       "description": "queryField() is typed by its default and reads the URL into that type; fields without a default or with a non-primitive one need a queryParamToValue.",
       "instructions": "./migrations/query-field-default-types.md",
       "docs": "/query/query-forms"
+    },
+    {
+      "name": "report-legacy-query-apis",
+      "version": "6.0.0-next.55",
+      "kind": "auto",
+      "description": "List every query collection, infinity query and entity store that still needs a hand edit in query-v3-migration-tasks.md.",
+      "generator": "@ethlete/query:report-legacy-query-apis",
+      "docs": "/query/migrating-from-v2"
     }
   ]
 }

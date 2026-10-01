@@ -513,7 +513,7 @@ const analyzeLegacyQueryCreators = (
             title: `Check the entity config carried onto ${toLegacyName(creatorName)}`,
             summary: `${creatorName} had an \`entity\` config. It was moved onto the \`${toLegacyName(creatorName)}\` interop wrapper, which still writes to the EntityStore; the v3 creator \`${creatorName}\` does not, and v3 has no EntityStore.`,
             action:
-              'Keep the call sites that rely on the store on the legacy wrapper. `set` now only runs on a real response, never on `prepare()` or a failure.',
+              'Keep the call sites that rely on the store on the legacy wrapper. `set` now only runs on a real response, never on `prepare()` or a failure. To leave the store, declare `invalidates` on the mutation creators that change the entity and `tags` on the reads that show it, and add `withOptimisticUpdate` where the UI must change before the response - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2#entitystore-becomes-invalidates-and-tags.',
             locations: [
               { filePath, line: sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1 },
             ],

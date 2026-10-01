@@ -38,6 +38,12 @@ yarn nx g @ethlete/query:deprecate-legacy-queries
 
 It takes the same `--projects` / `--include` scoping, skips anything already tagged, and is safe to re-run.
 
+Query collections, infinity queries and entity stores have no mechanical rewrite: each needs a choice at the call site. `et update` past `6.0.0-next.55` runs a report-only generator that adds a task to `query-v3-migration-tasks.md` for every [query collection](#query-collections), `switchQueryCollectionState()`, [`createInfinityQueryConfig`, `*etInfinityQuery` and `etInfinityQueryTrigger`](#infinity-queries), and every [`EntityStore` and creator `entity` config](#entitystore-becomes-invalidates-and-tags), with the docs link for its replacement. It finds a symbol only through its `@ethlete/query` import, changes no source file, and keeps the tasks of earlier runs. Run it by hand with the same scoping:
+
+```bash
+yarn nx g @ethlete/query:report-legacy-query-apis
+```
+
 ## 2. Make it boot
 
 These are the difference between "it compiles" and "it works".

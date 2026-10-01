@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "report-legacy-query-apis",
+  "title": "Report legacy query collections, infinity queries and entity stores",
+  "type": "object",
+  "properties": {
+    "projects": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Nx projects to scan. Defaults to every project in the workspace.",
+      "alias": "project"
+    },
+    "include": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Path prefixes to scan, relative to the workspace root (e.g. 'libs/queries'). Unioned with `projects`. Defaults to the whole workspace.",
+      "alias": "includePath"
+    }
+  },
+  "required": []
+}
