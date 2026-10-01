@@ -9,12 +9,18 @@ export const MIGRATION_KINDS = ['auto', 'manual', 'assisted'] as const;
 
 export type MigrationKind = (typeof MIGRATION_KINDS)[number];
 
+export const MIGRATION_LEVELS = ['required', 'recommended', 'optional'] as const;
+
+export type MigrationLevel = (typeof MIGRATION_LEVELS)[number];
+
 export type Migration = {
   /** Unique inside its package, and stable: it names the migration in every report. */
   name: string;
   /** The version the change landed in. The migration is pending for an update that crosses it. */
   version: string;
   kind: MigrationKind;
+  /** Whether `et update` must run it. A manifest entry without a level is `required`. */
+  level: MigrationLevel;
   description: string;
   /** `auto` only: the Nx generator that rewrites the code, as `@ethlete/core:migrate-x`. */
   generator?: string;
@@ -72,6 +78,7 @@ const parseEntry = (options: { value: unknown; origin: string; index: number }) 
   const name = readString(value, 'name');
   const version = readString(value, 'version');
   const kind = readString(value, 'kind');
+  const level = readString(value, 'level') ?? 'required';
   const description = readString(value, 'description');
 
   if (!name) return { problem: `${at} has no "name".` };
@@ -84,6 +91,10 @@ const parseEntry = (options: { value: unknown; origin: string; index: number }) 
 
   if (!MIGRATION_KINDS.includes(kind as MigrationKind)) {
     return { problem: `${origin} "${name}" has kind "${kind}" — use one of ${MIGRATION_KINDS.join(', ')}.` };
+  }
+
+  if (!MIGRATION_LEVELS.includes(level as MigrationLevel)) {
+    return { problem: `${origin} "${name}" has level "${level}" — use one of ${MIGRATION_LEVELS.join(', ')}.` };
   }
 
   if (!description) return { problem: `${origin} "${name}" has no "description".` };
@@ -106,6 +117,7 @@ const parseEntry = (options: { value: unknown; origin: string; index: number }) 
       name,
       version,
       kind: kind as MigrationKind,
+      level: level as MigrationLevel,
       description,
       generator,
       options: readOptions(value['options']),

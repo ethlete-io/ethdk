@@ -1,5 +1,5 @@
 import { DeclaredPackage, DeclaredSite, RangeWrite, newestDeclaredVersion, rangeFor } from './packages';
-import { Migration, PackageMigrations } from './migration-manifest';
+import { Migration, MigrationLevel, PackageMigrations } from './migration-manifest';
 import { RegistryPackage, tagForInstalled } from './registry';
 import { compareVersions, isInUpdateRange, isNewer, isValidVersion } from './semver';
 
@@ -118,12 +118,7 @@ export type PendingMigration = {
   manifestPath?: string;
 };
 
-/** The migrations of one package that an update from `from` to `to` crosses. */
-export const pendingMigrations = (options: {
-  packageMigrations: PackageMigrations;
-  from: string;
-  to: string;
-}): PendingMigration[] => {
+const migrationsInRange = (options: { packageMigrations: PackageMigrations; from: string; to: string }) => {
   const { packageMigrations, from, to } = options;
 
   return packageMigrations.migrations
@@ -133,6 +128,37 @@ export const pendingMigrations = (options: {
       migration,
       manifestPath: packageMigrations.manifestPath,
     }));
+};
+
+/** The required migrations of one package that an update from `from` to `to` crosses. */
+export const pendingMigrations = (options: {
+  packageMigrations: PackageMigrations;
+  from: string;
+  to: string;
+}): PendingMigration[] => migrationsInRange(options).filter((entry) => entry.migration.level === 'required');
+
+/** The recommended and optional migrations of one package that an update from `from` to `to` crosses. */
+export const availableMigrations = (options: {
+  packageMigrations: PackageMigrations;
+  from: string;
+  to: string;
+}): PendingMigration[] => migrationsInRange(options).filter((entry) => entry.migration.level !== 'required');
+
+/** The sentence that points at the migrations `et update` did not run, or `undefined` when there are none. */
+export const availableMigrationsLine = (available: readonly PendingMigration[]) => {
+  const count = (level: MigrationLevel) => available.filter((entry) => entry.migration.level === level).length;
+  const parts = [
+    { count: count('recommended'), label: 'recommended' },
+    { count: count('optional'), label: 'optional' },
+  ]
+    .filter((part) => part.count > 0)
+    .map((part) => `${part.count} ${part.label}`);
+
+  if (parts.length === 0) return undefined;
+
+  const total = available.length;
+
+  return `${parts.join(' and ')} migration${total === 1 ? ' is' : 's are'} available - run et migrations`;
 };
 
 const packageRank = (name: string) => {

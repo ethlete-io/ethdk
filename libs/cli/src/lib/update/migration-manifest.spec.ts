@@ -53,6 +53,7 @@ describe('readPackageMigrations', () => {
         name: 'a-change',
         version: '5.0.0-next.46',
         kind: 'auto',
+        level: 'required',
         description: 'Rewrite something',
         generator: '@ethlete/core:migrate-a-change',
         options: undefined,
@@ -113,6 +114,28 @@ describe('readPackageMigrations', () => {
     installPackage({ root, manifest: { migrations: [entry({ kind: 'codemod' })] } });
 
     expect(readPackageMigrations({ root, packageName: '@ethlete/core' }).problems[0]).toContain('has kind "codemod"');
+  });
+
+  it('reads a level and defaults a missing one to required', () => {
+    const root = makeRoot();
+
+    installPackage({
+      root,
+      manifest: { migrations: [entry({ name: 'a', level: 'optional' }), entry({ name: 'b' })] },
+    });
+
+    const read = readPackageMigrations({ root, packageName: '@ethlete/core' });
+
+    expect(read.problems).toEqual([]);
+    expect(read.migrations.map((migration) => migration.level)).toEqual(['optional', 'required']);
+  });
+
+  it('reports an unknown level', () => {
+    const root = makeRoot();
+
+    installPackage({ root, manifest: { migrations: [entry({ level: 'critical' })] } });
+
+    expect(readPackageMigrations({ root, packageName: '@ethlete/core' }).problems[0]).toContain('has level "critical"');
   });
 
   it('reports an auto entry with no generator', () => {
@@ -219,6 +242,7 @@ describe('instructionsPath', () => {
           name: 'a',
           version: '1.0.0',
           kind: 'manual',
+          level: 'required',
           description: 'x',
           instructions: './migrations/a.md',
         },
@@ -230,7 +254,7 @@ describe('instructionsPath', () => {
     expect(
       instructionsPath({
         manifestPath: '/pkg/migrations.json',
-        migration: { name: 'a', version: '1.0.0', kind: 'manual', description: 'x' },
+        migration: { name: 'a', version: '1.0.0', kind: 'manual', level: 'required', description: 'x' },
       }),
     ).toBeUndefined();
   });

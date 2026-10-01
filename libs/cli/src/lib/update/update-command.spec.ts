@@ -139,6 +139,47 @@ describe('an update that moves @ethlete/cli', () => {
   });
 });
 
+describe('the migrations an update does not run', () => {
+  const withLevels = (root: string) =>
+    writeJson(join(root, 'node_modules', '@ethlete', 'core', 'migrations.json'), {
+      migrations: [
+        { name: 'must', level: 'required' },
+        { name: 'should', level: 'recommended' },
+        { name: 'could', level: 'optional' },
+        { name: 'might', level: 'optional' },
+      ].map(({ name, level }) => ({
+        name,
+        level,
+        version: '5.1.0',
+        kind: 'auto',
+        description: `Rewrite ${name}`,
+        generator: `@ethlete/core:${name}`,
+      })),
+    });
+
+  it('runs only the required one and points at the rest', async () => {
+    const root = makeRepo();
+
+    withLevels(root);
+    spawnSync.mockReturnValue({ status: 0 });
+
+    expect(await updateCommand({ argv: ['--continue'], root })).toBe(0);
+    expect(generatorsRun()).toEqual(['@ethlete/core:must']);
+    expect(console.log).toHaveBeenCalledWith(
+      expect.stringContaining('1 recommended and 2 optional migrations are available - run et migrations'),
+    );
+  });
+
+  it('prints no line when every migration is required', async () => {
+    const root = makeRepo();
+
+    spawnSync.mockReturnValue({ status: 0 });
+
+    expect(await updateCommand({ argv: ['--continue'], root })).toBe(0);
+    expect(console.log).not.toHaveBeenCalledWith(expect.stringContaining('run et migrations'));
+  });
+});
+
 describe('et update --continue', () => {
   it('does not run a codemod again that applied in the earlier run', async () => {
     const root = makeRepo();

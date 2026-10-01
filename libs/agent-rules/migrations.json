@@ -4,6 +4,7 @@
       "name": "app-styling-utilities",
       "version": "0.1.0-next.17",
       "kind": "assisted",
+      "level": "required",
       "description": "App rules in @layer components move out of that layer, so SDK styles stop overriding them.",
       "instructions": "./migrations/app-styling-utilities.md",
       "docs": "/components/setup"
@@ -12,6 +13,7 @@
       "name": "list-state-query-form",
       "version": "0.1.0-next.17",
       "kind": "manual",
+      "level": "optional",
       "description": "Lists that sync their params to the URL by hand move to defineQueryForm when they are next edited.",
       "instructions": "./migrations/list-state-query-form.md",
       "docs": "/query/query-forms"
@@ -20,6 +22,7 @@
       "name": "search-query-field",
       "version": "0.1.0-next.17",
       "kind": "assisted",
+      "level": "optional",
       "description": "A hand-debounced search that feeds a query moves to searchQueryField.",
       "instructions": "./migrations/search-query-field.md",
       "docs": "/query/query-forms"
@@ -28,6 +31,7 @@
       "name": "sdk-components-over-hand-built-ui",
       "version": "0.1.0-next.17",
       "kind": "manual",
+      "level": "optional",
       "description": "Hand-built bar charts, avatars and progress bars move to the SDK components when their view is next edited.",
       "instructions": "./migrations/sdk-components-over-hand-built-ui.md",
       "docs": "/components/"
@@ -36,6 +40,7 @@
       "name": "nx-layout",
       "version": "0.1.0-next.17",
       "kind": "manual",
+      "level": "optional",
       "description": "Compare the workspace with the Nx layout rule, and decide whether any project moves.",
       "instructions": "./migrations/nx-layout.md"
     }

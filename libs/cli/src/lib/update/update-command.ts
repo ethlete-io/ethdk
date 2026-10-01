@@ -24,6 +24,8 @@ import {
   chooseTarget,
   isDowngrade,
   orderMigrations,
+  availableMigrations,
+  availableMigrationsLine,
   pendingMigrations,
 } from './plan';
 import {
@@ -144,6 +146,7 @@ const resolveUpdates = async (options: {
 
 type CollectedMigrations = {
   pending: PendingMigration[];
+  available: PendingMigration[];
   notes: string[];
   problems: string[];
 };
@@ -154,7 +157,7 @@ const collectMigrations = (options: {
   from: Record<string, string>;
 }): CollectedMigrations => {
   const { root, updates, from } = options;
-  const collected: CollectedMigrations = { pending: [], notes: [], problems: [] };
+  const collected: CollectedMigrations = { pending: [], available: [], notes: [], problems: [] };
 
   for (const update of updates) {
     const start = from[update.name] ?? update.from;
@@ -168,6 +171,7 @@ const collectMigrations = (options: {
 
     collected.problems.push(...packageMigrations.problems);
     collected.pending.push(...pendingMigrations({ packageMigrations, from: start, to: update.to }));
+    collected.available.push(...availableMigrations({ packageMigrations, from: start, to: update.to }));
   }
 
   collected.pending = orderMigrations(collected.pending);
@@ -396,6 +400,10 @@ const runMigrationPhase = async (options: {
   });
 
   if (!nothingPending) printOutcomes(outcomes, syncFailure);
+
+  const availableLine = availableMigrationsLine(collected.available);
+
+  if (availableLine) console.log(`\n  ${availableLine}`);
 
   if (!dryRun) {
     const applied = outcomes

@@ -27,6 +27,7 @@ const migration = (overrides: Partial<Migration> = {}): Migration => ({
   name: 'a-change',
   version: '5.0.0',
   kind: 'auto',
+  level: 'required',
   description: 'Rewrite something',
   generator: '@ethlete/core:migrate-a-change',
   ...overrides,

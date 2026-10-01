@@ -46,25 +46,30 @@ const update = (options: { root: string; from: string }) => {
 };
 
 describe('the @ethlete/agent-rules migrations', () => {
-  it('leave a task per guidance fix for a repo on 0.1.0-next.13', () => {
+  it('leave a task for the required guidance fix for a repo on 0.1.0-next.13', () => {
     const root = installAgentRules();
     const { problems, written } = update({ root, from: '0.1.0-next.13' });
 
     expect(problems).toEqual([]);
-    expect(written.tasks.map((task) => `${task.name} (${task.kind})`)).toEqual([
-      'app-styling-utilities (assisted)',
-      'list-state-query-form (manual)',
-      'search-query-field (assisted)',
-      'sdk-components-over-hand-built-ui (manual)',
-      'nx-layout (manual)',
-    ]);
+    expect(written.tasks.map((task) => `${task.name} (${task.kind})`)).toEqual(['app-styling-utilities (assisted)']);
 
     for (const task of written.tasks) {
       expect(task.instructionsFile).toBeDefined();
       expect(readFileSync(join(root, task.instructionsFile ?? ''), 'utf8')).toContain('## ');
     }
 
-    expect(readFileSync(join(root, UPDATE_DIR, 'tasks.md'), 'utf8')).toContain('agent-rules — list-state-query-form');
+    expect(readFileSync(join(root, UPDATE_DIR, 'tasks.md'), 'utf8')).toContain('agent-rules — app-styling-utilities');
+  });
+
+  it('keep the other guidance fixes optional', () => {
+    const { migrations } = readPackageMigrations({ root: installAgentRules(), packageName });
+
+    expect(migrations.filter((entry) => entry.level === 'optional').map((entry) => entry.name)).toEqual([
+      'list-state-query-form',
+      'search-query-field',
+      'sdk-components-over-hand-built-ui',
+      'nx-layout',
+    ]);
   });
 
   it('leave nothing for a repo that already has them', () => {

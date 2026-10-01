@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { Migration, PackageMigrations } from './migration-manifest';
 import { DeclaredPackage, DeclaredSite } from './packages';
-import { chooseTarget, isDowngrade, orderMigrations, pendingMigrations } from './plan';
+import {
+  availableMigrations,
+  availableMigrationsLine,
+  chooseTarget,
+  isDowngrade,
+  orderMigrations,
+  pendingMigrations,
+} from './plan';
 import { RegistryPackage } from './registry';
 
 const site = (overrides: Partial<DeclaredSite> = {}): DeclaredSite => ({
@@ -29,6 +36,7 @@ const migration = (overrides: Partial<Migration> = {}): Migration => ({
   name: 'a-change',
   version: '5.0.0-next.46',
   kind: 'auto',
+  level: 'required',
   description: 'Rewrite something',
   generator: '@ethlete/core:migrate-a-change',
   ...overrides,
@@ -217,6 +225,44 @@ describe('pendingMigrations', () => {
 
   it('takes none when the versions match', () => {
     expect(pendingMigrations({ packageMigrations, from: '5.0.0-next.55', to: '5.0.0-next.55' })).toEqual([]);
+  });
+});
+
+describe('migration levels', () => {
+  const packageMigrations: PackageMigrations = {
+    packageName: '@ethlete/core',
+    problems: [],
+    migrations: [
+      migration({ name: 'must', version: '5.0.0-next.46', level: 'required' }),
+      migration({ name: 'should', version: '5.0.0-next.46', level: 'recommended' }),
+      migration({ name: 'could', version: '5.0.0-next.50', level: 'optional' }),
+      migration({ name: 'older', version: '5.0.0-next.30', level: 'optional' }),
+    ],
+  };
+  const range = { packageMigrations, from: '5.0.0-next.40', to: '5.0.0-next.55' };
+
+  it('runs only the required migrations', () => {
+    expect(pendingMigrations(range).map((entry) => entry.migration.name)).toEqual(['must']);
+  });
+
+  it('lists the others that the update crosses', () => {
+    expect(availableMigrations(range).map((entry) => entry.migration.name)).toEqual(['should', 'could']);
+  });
+
+  it('counts each level in one line', () => {
+    expect(availableMigrationsLine(availableMigrations(range))).toBe(
+      '1 recommended and 1 optional migrations are available - run et migrations',
+    );
+  });
+
+  it('leaves out a level with no migration', () => {
+    const optional = availableMigrations(range).filter((entry) => entry.migration.level === 'optional');
+
+    expect(availableMigrationsLine(optional)).toBe('1 optional migration is available - run et migrations');
+  });
+
+  it('prints nothing when none are available', () => {
+    expect(availableMigrationsLine([])).toBeUndefined();
   });
 });
 

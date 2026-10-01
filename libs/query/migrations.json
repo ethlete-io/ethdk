@@ -4,6 +4,7 @@
       "name": "to-query-v3",
       "version": "5.42.0",
       "kind": "auto",
+      "level": "optional",
       "description": "Move the legacy query system onto the new one through the interop layer.",
       "generator": "@ethlete/query:migrate-to-query-v3",
       "docs": "/query/migrating-from-v2"
@@ -12,6 +13,7 @@
       "name": "prep-for-query-v3",
       "version": "6.0.0-beta.8",
       "kind": "auto",
+      "level": "required",
       "description": "Prepare the call sites the v3 query system changes, before the move itself.",
       "generator": "@ethlete/query:prep-for-query-v3",
       "docs": "/query/migrating-from-v2"
@@ -20,6 +22,7 @@
       "name": "query-client-features",
       "version": "6.0.0-next.23",
       "kind": "auto",
+      "level": "required",
       "description": "Move the createQueryClient multiTabSync and persistence options onto opt-in features.",
       "generator": "@ethlete/query:migrate-query-client-features",
       "docs": "/query/features"
@@ -28,6 +31,7 @@
       "name": "query-opt-in-features",
       "version": "6.0.0-next.23",
       "kind": "auto",
+      "level": "required",
       "description": "Move query clients onto the opt-in error pipeline, and bearer auth onto the opt-in multi-tab sync feature.",
       "generator": "@ethlete/query:migrate-query-opt-in-features",
       "docs": "/query/features"
@@ -36,6 +40,7 @@
       "name": "deprecate-legacy-queries",
       "version": "6.0.0-next.24",
       "kind": "auto",
+      "level": "recommended",
       "description": "Mark the remaining createLegacyQueryCreator wrappers as deprecated, so their call sites surface as still on v2.",
       "generator": "@ethlete/query:deprecate-legacy-queries",
       "docs": "/query/legacy"
@@ -44,6 +49,7 @@
       "name": "search-query-field-string",
       "version": "6.0.0-next.52",
       "kind": "assisted",
+      "level": "required",
       "description": "searchQueryField() is typed string and starts at '' instead of null; writes and checks of null move to ''.",
       "instructions": "./migrations/search-query-field-string.md",
       "docs": "/query/query-forms"
@@ -52,6 +58,7 @@
       "name": "query-field-default-types",
       "version": "6.0.0-next.52",
       "kind": "assisted",
+      "level": "required",
       "description": "queryField() is typed by its default and reads the URL into that type; fields without a default or with a non-primitive one need a queryParamToValue.",
       "instructions": "./migrations/query-field-default-types.md",
       "docs": "/query/query-forms"

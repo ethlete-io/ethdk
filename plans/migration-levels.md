@@ -1,6 +1,6 @@
 # Migration levels for `et update`
 
-Started 2026-10-01. Status: decided, slice 1 in progress.
+Started 2026-10-01. Status: decided, slice 1 done.
 
 ## Problem
 
@@ -49,7 +49,7 @@ Add a `level` field next to `kind`. `kind` says how a migration runs; `level` sa
 
 ## Slices
 
-1. `level` in the manifest validator and on every entry; `et update` runs only `required`, and ends with the line
+1. (done) `level` in the manifest validator and on every entry; `et update` runs only `required`, and ends with the line
    about the available non-required migrations.
 2. `.ethlete/migrations.json`, `et migrations` (list) and `et migrations run <package>:<name>`.
 3. `scan` support and the affected-file count; `report-legacy-query-apis` back in as `optional`; docs.

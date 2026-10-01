@@ -4,6 +4,7 @@
       "name": "to-v5",
       "version": "5.0.0-beta.11",
       "kind": "auto",
+      "level": "required",
       "description": "Rewrite the v4 core API into its v5 shape.",
       "generator": "@ethlete/core:migrate-to-v5"
     },
@@ -11,6 +12,7 @@
       "name": "provider-shape",
       "version": "5.0.0-next.37",
       "kind": "auto",
+      "level": "required",
       "description": "Rewrite destructured provider tuples into the tree-shakeable definition shape.",
       "generator": "@ethlete/core:migrate-provider-shape",
       "docs": "/core/providers"
@@ -19,6 +21,7 @@
       "name": "seo-directive-removed",
       "version": "5.0.0-next.41",
       "kind": "assisted",
+      "level": "required",
       "description": "SeoDirective and SeoConfig are gone. Every call site moves to the apply*Binding function for its key.",
       "instructions": "./migrations/seo-directive-removed.md",
       "docs": "/core/seo"
@@ -27,6 +30,7 @@
       "name": "surface-interaction-swatch",
       "version": "5.0.0-next.46",
       "kind": "auto",
+      "level": "required",
       "description": "Rewrite surface theme interactionColor maps into the { color, onColor, inkColor } swatch shape.",
       "generator": "@ethlete/core:migrate-surface-interaction-swatch",
       "docs": "/core/theming"
@@ -35,6 +39,7 @@
       "name": "surface-theme-regenerate",
       "version": "5.0.0-next.46",
       "kind": "manual",
+      "level": "required",
       "description": "Regenerate the surface theme stylesheet, so the new swatch reaches the CSS variables.",
       "instructions": "./migrations/surface-theme-regenerate.md",
       "docs": "/core/theming"
