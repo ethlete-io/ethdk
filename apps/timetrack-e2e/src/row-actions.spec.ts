@@ -1,7 +1,7 @@
 import { Locator, Page } from '@playwright/test';
 import { CollectedEvent } from '@ethlete/timetrack';
 import { E2E_ISSUE_BRANCH, E2E_KEYLESS_BRANCH, E2E_REPO } from '@ethlete/timetrack/testing';
-import { E2E_DAY_KEY, E2E_NOW, expect, seedWorld, test } from './support';
+import { E2E_DAY_KEY, E2E_NOW, expect, openApprovals, seedWorld, test } from './support';
 
 const at = (clock: string) => new Date(`${E2E_DAY_KEY}T${clock}:00.000Z`);
 
@@ -65,6 +65,32 @@ test.describe('the band menu of an observed row', () => {
 
     await expect(bands(page)).toHaveCount(2);
     await expect(bands(page).first()).toHaveAttribute('title', `${proposed}`);
+  });
+});
+
+test.describe('asking auto mode again from the band menu', () => {
+  test('is offered on the unnamed band and not on the one its branch names', async ({ page }) => {
+    await bands(page).last().click({ button: 'right' });
+    await expect(item(page, 'Ask auto mode again')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('et-menu')).toBeHidden();
+
+    await bands(page).first().click({ button: 'right' });
+    await expect(item(page, 'Split in half')).toBeVisible();
+    await expect(item(page, 'Ask auto mode again')).toBeHidden();
+  });
+
+  test('asks with auto mode off, and a second press replaces the create the first one queued', async ({ page }) => {
+    for (let press = 0; press < 2; press++) {
+      await bands(page).last().click({ button: 'right' });
+      await item(page, 'Ask auto mode again').click();
+      await expect(page.locator('et-menu')).toBeHidden();
+    }
+
+    const dialog = await openApprovals(page);
+
+    await expect(dialog.locator('[data-approval]')).toHaveCount(1);
+    await expect(dialog.locator('[data-approval]')).toContainText('Files a Jira issue');
   });
 });
 

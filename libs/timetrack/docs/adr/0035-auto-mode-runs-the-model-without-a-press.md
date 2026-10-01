@@ -18,6 +18,12 @@ that answer is still auto mode's: no create of it approved, no apply of it appro
 no row of the band named by hand. The new answer expires what the old one left waiting, and so does a
 rule or a match that names the band. With auto mode off, ADR 0013 holds unchanged.
 
+**"Ask auto mode again" is a press.** A band's context menu offers it on an unnamed row, a row auto
+mode named, and an open stand-in, but never on a row whose issue the user set by hand: they reset it
+first. The press is the consent for that one subject, so it works with auto mode off and on the day on
+screen, past days included. It asks even though the evidence did not change, through the same ask:
+the same masking, the new answer replaces the stored one, and what the old one left waiting expires.
+
 What stays:
 
 - **Pseudonymisation is unchanged.** Every call masks names as ADR 0013 and 0023 decide. The prompt a

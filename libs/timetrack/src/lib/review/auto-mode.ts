@@ -250,14 +250,20 @@ const autoModeOwns = (options: { day: string; answer: AutoModeAnswer; approvals:
 
 type AskRow = Pick<ReviewedRow, 'standInId' | 'issueKey' | 'sources'> & Partial<Pick<ReviewedRow, 'id' | 'recutOf'>>;
 
-const handNamedContextIds = (options: { rows: readonly AskRow[]; unattributed: readonly WorkGroup[] }) => {
+const contextIdsByRowId = (unattributed: readonly WorkGroup[]) => {
   const contextOfRow = new Map<string, string>();
 
-  for (const group of options.unattributed) {
+  for (const group of unattributed) {
     const context = dominantContext(group.blocks);
 
     if (context) contextOfRow.set(unnamedRowId(group), contextKey(context));
   }
+
+  return contextOfRow;
+};
+
+const handNamedContextIds = (options: { rows: readonly AskRow[]; unattributed: readonly WorkGroup[] }) => {
+  const contextOfRow = contextIdsByRowId(options.unattributed);
 
   return new Set(
     options.rows.flatMap((row) => {
@@ -266,6 +272,47 @@ const handNamedContextIds = (options: { rows: readonly AskRow[]; unattributed: r
       return contextId && rowFieldSourceOf(row, 'issue') === 'human' ? [contextId] : [];
     }),
   );
+};
+
+/**
+ * The subject a press of "Ask auto mode again" on a row asks about, on any day and with auto mode off:
+ * the open stand-in the row stands for, or the unnamed context behind it. `null` for a row whose issue
+ * the user set by hand, one named by anything but auto mode, a hidden, unattended or excluded one, and
+ * one a standing rule answers. Asking again replaces the stored answer through {@link withAutoModeAnswer}
+ * and expires what the old one left waiting through {@link withAutoModeSubjectItemsExpired}.
+ */
+export const autoModeReaskSubjectOf = (options: {
+  row: Pick<ReviewedRow, 'id' | 'standInId' | 'issueKey' | 'sources' | 'hidden' | 'unattended' | 'excluded'> &
+    Partial<Pick<ReviewedRow, 'recutOf'>>;
+  day: string;
+  contexts: readonly Pick<UnnamedContext, 'id'>[];
+  ruledContextIds?: ReadonlySet<string>;
+  /** The day's unattributed groups, which say which context each unnamed row came from. */
+  unattributed: readonly WorkGroup[];
+  standIns: readonly Pick<StandIn, 'id' | 'state' | 'days' | 'resolutionSource'>[];
+}): AutoModeSubject | null => {
+  const { row } = options;
+  const source = rowFieldSourceOf(row, 'issue');
+
+  if (source === 'human' || (row.issueKey && source !== 'auto')) return null;
+  if (row.hidden || row.unattended || row.excluded) return null;
+
+  if (row.standInId) {
+    const standIn = options.standIns.find((entry) => entry.id === row.standInId);
+
+    return standIn?.state === 'open' &&
+      standIn.days.includes(options.day) &&
+      mayAutoWrite(standInResolutionSourceOf(standIn))
+      ? { kind: 'stand-in', standInId: standIn.id }
+      : null;
+  }
+
+  const contextOfRow = contextIdsByRowId(options.unattributed);
+  const contextId = contextOfRow.get(row.id) ?? contextOfRow.get(row.recutOf ?? '');
+
+  if (!contextId || options.ruledContextIds?.has(contextId)) return null;
+
+  return options.contexts.some((context) => context.id === contextId) ? { kind: 'context', contextId } : null;
 };
 
 /**

@@ -1,5 +1,6 @@
 import { Directive, computed, inject } from '@angular/core';
 import { OVERLAY_REF, OverlayRef, injectSchedulerEditSurfaceHost } from '@ethlete/components';
+import { injectAutoMode } from '../auto-mode';
 import { injectDayReview } from '../day-review';
 import { rowEntryOf } from './row-appointment';
 import { ROW_ACTIONS, RowActionContext, rowActionLabelOf } from './row-actions';
@@ -14,12 +15,13 @@ import { ROW_ACTIONS, RowActionContext, rowActionLabelOf } from './row-actions';
 export class RowActionsDirective {
   private host = injectSchedulerEditSurfaceHost('ethleteRowActions');
   private store = injectDayReview();
+  private autoMode = injectAutoMode();
   private overlayRef = inject<OverlayRef>(OVERLAY_REF, { optional: true });
 
   private context = computed<RowActionContext | null>(() => {
     const row = rowEntryOf(this.host.appointment())?.row ?? null;
 
-    return row ? { store: this.store, row, rows: this.store.rows() } : null;
+    return row ? { store: this.store, autoMode: this.autoMode, row, rows: this.store.rows() } : null;
   });
 
   constructor() {
@@ -35,7 +37,7 @@ export class RowActionsDirective {
         enabled: computed(() => {
           const context = this.context();
 
-          return !!context && action.enabled(context);
+          return !!context && action.enabled(context) && !action.disabled?.(context);
         }),
         run: () => {
           const context = this.context();

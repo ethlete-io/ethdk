@@ -37,6 +37,7 @@ import {
   formatDurationMs,
 } from '@ethlete/timetrack';
 import { debounceTime, filter, fromEvent, map, merge, tap } from 'rxjs';
+import { injectAutoMode } from './auto-mode';
 import { TimelineScroll, dayKeyOfDate, readViewState, rememberTimelineScroll } from '../view-state';
 import { formatClockTime } from './format';
 import { approvalChipOf, injectBandApprovals } from './band-approvals';
@@ -360,6 +361,7 @@ type RowDrag = {
                             @for (action of actionsFor(row); track action.order) {
                               <button
                                 [variant]="action.destructive ? 'destructive' : 'default'"
+                                [disabled]="action.disabled"
                                 (click)="action.run()"
                                 et-menu-item
                                 type="button"
@@ -770,6 +772,7 @@ export class DayTimelineComponent {
   private destroyRef = inject(DestroyRef);
   private surface = injectRowEditSurface();
   protected store = injectDayReview();
+  private autoMode = injectAutoMode();
   private settings = injectTimetrackSettings();
   private git = injectGitCollector();
   protected approvals = injectApprovalQueue();
@@ -1298,7 +1301,7 @@ export class DayTimelineComponent {
 
   /** What a band's own context menu offers, which is the list the edit surface offers as well. */
   protected actionsFor(row: ReviewedRow) {
-    return rowActionsFor({ store: this.store, row, rows: this.rows() });
+    return rowActionsFor({ store: this.store, autoMode: this.autoMode, row, rows: this.rows() });
   }
 
   protected dragging(appointment: Appointment<TimelineEntry>) {

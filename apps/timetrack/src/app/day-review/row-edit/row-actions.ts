@@ -1,10 +1,12 @@
 import { ReviewedRow, appDisplayNameOf, isManualRow } from '@ethlete/timetrack';
+import { injectAutoMode } from '../auto-mode';
 import { injectDayReview } from '../day-review';
 
 type DayReviewStore = NonNullable<ReturnType<typeof injectDayReview>>;
 
 export type RowActionContext = {
   store: DayReviewStore;
+  autoMode: NonNullable<ReturnType<typeof injectAutoMode>>;
   row: ReviewedRow;
   rows: readonly ReviewedRow[];
 };
@@ -14,6 +16,8 @@ type RowActionDefinition = {
   order: number;
   destructive?: boolean;
   enabled: (context: RowActionContext) => boolean;
+  /** Shown but not pressable, where the context menu can say so. The edit surface leaves it out. */
+  disabled?: (context: RowActionContext) => boolean;
   run: (context: RowActionContext) => void;
 };
 
@@ -45,6 +49,21 @@ export const ROW_ACTIONS: readonly RowActionDefinition[] = [
     order: 7,
     enabled: ({ store, row }) => store.excludedCallOf(row)?.excludedBy === 'no-rule',
     run: ({ store, row }) => store.countCallAsWork(row),
+  },
+  {
+    label: 'Ask auto mode again',
+    order: 15,
+    enabled: ({ autoMode, row }) => autoMode.canAsk() && !!autoMode.reaskSubjectOf(row),
+    disabled: ({ autoMode, row }) => {
+      const subject = autoMode.reaskSubjectOf(row);
+
+      return !!subject && autoMode.isAsking(subject);
+    },
+    run: ({ autoMode, row }) => {
+      const subject = autoMode.reaskSubjectOf(row);
+
+      if (subject) autoMode.askAgain(subject);
+    },
   },
   {
     label: 'Merge with the next band',
@@ -81,6 +100,7 @@ export type RowAction = {
   label: string;
   order: number;
   destructive: boolean;
+  disabled: boolean;
   run: () => void;
 };
 
@@ -95,5 +115,6 @@ export const rowActionsFor = (context: RowActionContext): RowAction[] =>
       label: rowActionLabelOf(action, context),
       order: action.order,
       destructive: action.destructive === true,
+      disabled: action.disabled?.(context) === true,
       run: () => action.run(context),
     }));

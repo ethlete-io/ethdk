@@ -27,6 +27,7 @@ import {
   autoModeHideTarget,
   autoModeQueuedAnswer,
   autoModeReadout,
+  autoModeReaskSubjectOf,
   autoModeSubjectKey,
   autoModeSubjectRequest,
   autoDescriptionAsks,
@@ -147,11 +148,11 @@ const outcomeOf = (options: { wording: TicketWording | null; projectKey?: string
  * made applying stricter; a draft waits as a `jira.create`, and the key its approval files is applied
  * the same way. Every answer is stored against the day with the payload it sent, so a band is asked
  * again only when the evidence that payload was built from changes while the answer is still auto's,
- * and the new answer expires what the old one left waiting. A settled code row with a ticket gets a
- * one-line worklog description written as `auto`, once per row, where applying is `local`. The rest
- * band of a call gone off topic waits as an `autoMode.hide` suggestion, once per band. A band two rungs
- * disagree about is settled with a keep or use answer the same way a match is applied, once per pair of
- * answers; an unsure answer leaves it.
+ * or on a press of "Ask auto mode again", and the new answer expires what the old one left waiting.
+ * A settled code row with a ticket gets a one-line worklog description written as `auto`, once per
+ * row, where applying is `local`. The rest band of a call gone off topic waits as an `autoMode.hide`
+ * suggestion, once per band. A band two rungs disagree about is settled with a keep or use answer the
+ * same way a match is applied, once per pair of answers; an unsure answer leaves it.
  */
 const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
@@ -162,8 +163,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const projectLinks = injectProjectLinks();
   const windowLock = injectWindowLock();
   const jobs$ = new Subject<Job>();
-  const pending = new Set<string>();
-  const queuedCount = signal(0);
+  const pending = signal<ReadonlySet<string>>(new Set());
   const activity = signal<readonly AutoModeActivity[]>([]);
   let nextActivityId = 0;
 
@@ -640,11 +640,24 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
 
   const queue = (job: Job) => {
-    if (pending.has(job.key)) return;
+    if (pending().has(job.key)) return;
 
-    pending.add(job.key);
-    queuedCount.set(pending.size);
+    pending.update((keys) => new Set([...keys, job.key]));
     jobs$.next(job);
+  };
+
+  const askKeyOf = (day: string, subject: AutoModeSubject) => `${day}|${autoModeSubjectKey(subject)}`;
+
+  const queueAsk = (options: { day: string; subject: AutoModeSubject; stillNeeded: () => boolean }) => {
+    const { day, subject } = options;
+
+    queue({
+      key: askKeyOf(day, subject),
+      day,
+      label: `Asks about ${labelOf(subject) || 'unnamed work'}`,
+      stillNeeded: options.stillNeeded,
+      work: () => answer$({ day, subject }),
+    });
   };
 
   // `concatMap`: one CLI at a time, the same guard the press has against spawning a second one.
@@ -672,10 +685,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
           );
         }).pipe(
           catchError(() => EMPTY),
-          finalize(() => {
-            pending.delete(job.key);
-            queuedCount.set(pending.size);
-          }),
+          finalize(() => pending.update((keys) => new Set([...keys].filter((key) => key !== job.key)))),
         ),
       ),
       takeUntilDestroyed(),
@@ -688,14 +698,10 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     untracked(() => {
       for (const subject of subjects) {
-        const ask = { day, subject };
-
-        queue({
-          key: `${day}|${autoModeSubjectKey(subject)}`,
+        queueAsk({
           day,
-          label: `Asks about ${labelOf(subject) || 'unnamed work'}`,
+          subject,
           stillNeeded: () => askedNow(day).some((held) => autoModeSubjectKey(held) === autoModeSubjectKey(subject)),
-          work: () => answer$(ask),
         });
       }
     });
@@ -861,7 +867,30 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     /** The job auto mode runs now, if any. */
     running: computed(() => activity().find((entry) => entry.state === 'running')),
     /** The jobs that wait for their turn or run now. */
-    queuedCount: queuedCount.asReadonly(),
+    queuedCount: computed(() => pending().size),
+    /** Whether the model may be asked at all, which a press of "Ask auto mode again" needs. */
+    canAsk: computed(() => settings.settings().reasoning.enabled && !windowLock.isLocked()),
+    /** What "Ask auto mode again" on a row of the day on screen asks about, or `null` where it is not offered. */
+    reaskSubjectOf: (row: ReviewedRow) =>
+      autoModeReaskSubjectOf({
+        row,
+        day: dayReview.dayKey(),
+        contexts: dayReview.unnamed(),
+        ruledContextIds: new Set(dayReview.rulesByContext().keys()),
+        unattributed: dayReview.deterministic()?.unattributed ?? [],
+        standIns: settings.settings().standIns,
+      }),
+    /** Whether an ask about the subject waits or runs on the day on screen. */
+    isAsking: (subject: AutoModeSubject) => pending().has(askKeyOf(dayReview.dayKey(), subject)),
+    /**
+     * Asks the model about one subject of the day on screen again, whether or not auto mode is on and
+     * whatever day it is: the press is the consent. The new answer replaces the stored one.
+     */
+    askAgain: (subject: AutoModeSubject) => {
+      const day = dayReview.dayKey();
+
+      queueAsk({ day, subject, stillNeeded: () => dayReview.dayKey() === day });
+    },
     /** The jobs auto mode ran in this app session, newest first. */
     activity: activity.asReadonly(),
     /** What auto mode did on the day on screen, read from the stored answers, rows, stand-ins and queue. */

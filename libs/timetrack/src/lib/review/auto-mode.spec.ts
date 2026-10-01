@@ -24,6 +24,7 @@ import {
   autoModeCreateRequest,
   autoModeCreatedKeys,
   autoModeQueuedAnswer,
+  autoModeReaskSubjectOf,
   withAutoModeAnswer,
   withAutoModeCreated,
   withAutoModeRowNames,
@@ -388,6 +389,111 @@ describe('expiring what an old auto mode answer left waiting', () => {
     expect(
       withNamedContextItemsExpired(fromCli, { day: TODAY, openContextIds: new Set() }).map((i) => i.state),
     ).toEqual(['queued', 'queued', 'queued']);
+  });
+});
+
+describe('asking auto mode again for a row', () => {
+  const CONFIG = resolveGitFlowConfig({});
+  const SUBJECT = { kind: 'context' as const, contextId: CONTEXT.id };
+  const standIn = openStandIn({ name: 'Journey', day: TODAY, now: at('07:00') });
+  const offerFor = (row: ReviewedRow, options: { day?: string; ruled?: boolean } = {}) =>
+    autoModeReaskSubjectOf({
+      row,
+      day: options.day ?? TODAY,
+      contexts: [CONTEXT],
+      ...(options.ruled ? { ruledContextIds: new Set([CONTEXT.id]) } : {}),
+      unattributed: DAY.unattributed,
+      standIns: [standIn],
+    });
+  const bandOf = (edits: DayReviewEdits) => rowsOf(edits)[0]!;
+  const standInRow = (sources?: ReviewedRow['sources']): ReviewedRow => ({
+    ...bandOf(EMPTY_DAY_REVIEW_EDITS),
+    id: 'stand-in-row',
+    standInId: standIn.id,
+    ...(sources ? { issueKey: 'ABC-6', sources } : {}),
+  });
+
+  it('offers an unnamed band, and one auto mode named, for the context behind it', () => {
+    expect(offerFor(bandOf(EMPTY_DAY_REVIEW_EDITS))).toEqual(SUBJECT);
+    expect(offerFor(bandOf(autoPass(withAutoModeAnswer(EMPTY_DAY_REVIEW_EDITS, matched('ABC-1')))))).toEqual(SUBJECT);
+  });
+
+  it('offers a band of a past day', () => {
+    expect(offerFor(bandOf(EMPTY_DAY_REVIEW_EDITS), { day: '2026-08-10' })).toEqual(SUBJECT);
+  });
+
+  it('hides it on a band the user named by hand, and on one a rule answers', () => {
+    const row = bandOf(EMPTY_DAY_REVIEW_EDITS);
+    const named = bandOf(setRowIssue({ edits: EMPTY_DAY_REVIEW_EDITS, row, issueKey: 'ABC-7', source: 'human' }));
+
+    expect(offerFor(named)).toBeNull();
+    expect(offerFor({ ...row, issueKey: 'ABC-7' })).toBeNull();
+    expect(offerFor(row, { ruled: true })).toBeNull();
+    expect(offerFor({ ...row, unattended: true })).toBeNull();
+  });
+
+  it('offers an open stand-in, and hides it once the user keyed its row or it resolved', () => {
+    expect(offerFor(standInRow())).toEqual({ kind: 'stand-in', standInId: standIn.id });
+    expect(offerFor(standInRow({ issue: 'auto' }))).toEqual({ kind: 'stand-in', standInId: standIn.id });
+    expect(offerFor(standInRow({ issue: 'human' }))).toBeNull();
+    expect(
+      autoModeReaskSubjectOf({
+        row: standInRow(),
+        day: TODAY,
+        contexts: [CONTEXT],
+        unattributed: DAY.unattributed,
+        standIns: [{ ...standIn, state: 'resolved' }],
+      }),
+    ).toBeNull();
+  });
+
+  it('replaces the answer once, expires what the old one left waiting, and asks nothing after', () => {
+    const request = autoModeSubjectRequest({
+      subject: SUBJECT,
+      contexts: [CONTEXT],
+      unattributed: DAY.unattributed,
+      standIns: [],
+      config: CONFIG,
+      maskedNames: [],
+    })!;
+    const held: AutoModeAnswer = {
+      ...drafted,
+      request,
+      outcome: { ...drafted.outcome, approvalId: 'a-1' } as AutoModeAnswer['outcome'],
+    };
+    const queue = enqueueApproval([], {
+      id: 'a-1',
+      request: { op: 'jira.create', summary: 'Export the month', description: 'One file.', projectKey: 'ABC' },
+      client: AUTO_MODE_CLIENT,
+      target: autoModeApprovalTarget(TODAY, SUBJECT),
+      at: new Date(),
+      day: TODAY,
+    });
+    const asksAfter = (answer: AutoModeAnswer, approvals: AgentApproval[]) =>
+      autoModeAsks({
+        enabled: true,
+        day: TODAY,
+        today: TODAY,
+        contexts: [CONTEXT],
+        standIns: [],
+        rows: rowsOf(EMPTY_DAY_REVIEW_EDITS),
+        answers: [answer],
+        evidence: { unattributed: DAY.unattributed, config: CONFIG, maskedNames: [] },
+        approvals,
+      });
+
+    expect(asksAfter(held, queue)).toEqual([]);
+
+    const expired = withAutoModeSubjectItemsExpired(queue, { day: TODAY, subject: SUBJECT });
+    const edits = withAutoModeAnswer(withAutoModeAnswer(EMPTY_DAY_REVIEW_EDITS, held), {
+      ...matched('ABC-2'),
+      request,
+    });
+
+    expect(expired.map((item) => item.state)).toEqual(['expired']);
+    expect(edits.auto).toHaveLength(1);
+    expect(asksAfter(edits.auto![0]!, expired)).toEqual([]);
+    expect(rowsOf(autoPass(edits))[0]?.issueKey).toBe('ABC-2');
   });
 });
 
