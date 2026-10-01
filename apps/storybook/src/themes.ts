@@ -33,6 +33,13 @@ export const DANGER_THEME: ColorTheme = {
       default: '255 255 255',
       disabled: '255 220 220',
     },
+    inkColor: {
+      default: '248 113 113',
+      hover: '252 165 165',
+      focus: '252 165 165',
+      active: '239 68 68',
+      disabled: '153 75 75',
+    },
   },
 };
 
@@ -50,6 +57,13 @@ export const SUCCESS_THEME: ColorTheme = {
     onColor: {
       default: '255 255 255',
       disabled: '221 247 231',
+    },
+    inkColor: {
+      default: '74 222 128',
+      hover: '134 239 172',
+      focus: '134 239 172',
+      active: '34 197 94',
+      disabled: '62 128 86',
     },
   },
 };

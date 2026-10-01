@@ -114,7 +114,7 @@ export class StatTileStorybookComponent {
   imports: [STAT_TILE_IMPORTS, CARD_IMPORTS],
 })
 export class StatTileRowStorybookComponent {
-  public surfaces = input<readonly string[]>(['dark', 'light']);
+  public surfaces = input<readonly string[]>(['dark']);
   public loading = input(false, { transform: booleanAttribute });
 
   protected readonly REVENUE = [3.1, 3.3, 3.2, 3.6, 3.5, 3.8, 3.7, 3.9, 4.0, 3.9, 4.1, 4.21];

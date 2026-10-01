@@ -40,11 +40,11 @@
   --color-et-on-danger-active: rgb(255 255 255);
   --color-et-on-danger-disabled: rgb(255 220 220);
 
-  --color-et-danger-ink: rgb(220 38 38);
-  --color-et-danger-ink-hover: rgb(239 68 68);
-  --color-et-danger-ink-focus: rgb(239 68 68);
-  --color-et-danger-ink-active: rgb(185 28 28);
-  --color-et-danger-ink-disabled: rgb(120 52 52);
+  --color-et-danger-ink: rgb(248 113 113);
+  --color-et-danger-ink-hover: rgb(252 165 165);
+  --color-et-danger-ink-focus: rgb(252 165 165);
+  --color-et-danger-ink-active: rgb(239 68 68);
+  --color-et-danger-ink-disabled: rgb(153 75 75);
 
   /* success theme */
   --color-et-success: rgb(22 163 74);
@@ -59,11 +59,11 @@
   --color-et-on-success-active: rgb(255 255 255);
   --color-et-on-success-disabled: rgb(221 247 231);
 
-  --color-et-success-ink: rgb(22 163 74);
-  --color-et-success-ink-hover: rgb(34 197 94);
-  --color-et-success-ink-focus: rgb(34 197 94);
-  --color-et-success-ink-active: rgb(21 128 61);
-  --color-et-success-ink-disabled: rgb(46 111 68);
+  --color-et-success-ink: rgb(74 222 128);
+  --color-et-success-ink-hover: rgb(134 239 172);
+  --color-et-success-ink-focus: rgb(134 239 172);
+  --color-et-success-ink-active: rgb(34 197 94);
+  --color-et-success-ink-disabled: rgb(62 128 86);
 
   /* warning theme */
   --color-et-warning: rgb(217 119 6);
@@ -254,11 +254,11 @@
     --et-color-on-primary-active: 255 255 255;
     --et-color-on-primary-disabled: 255 220 220;
 
-    --et-color-primary-ink: 220 38 38;
-    --et-color-primary-ink-hover: 220 38 38;
-    --et-color-primary-ink-focus: 220 38 38;
-    --et-color-primary-ink-active: 220 38 38;
-    --et-color-primary-ink-disabled: 220 38 38;
+    --et-color-primary-ink: 248 113 113;
+    --et-color-primary-ink-hover: 252 165 165;
+    --et-color-primary-ink-focus: 252 165 165;
+    --et-color-primary-ink-active: 239 68 68;
+    --et-color-primary-ink-disabled: 153 75 75;
   }
 
   .et-color--success {
@@ -274,11 +274,11 @@
     --et-color-on-primary-active: 255 255 255;
     --et-color-on-primary-disabled: 221 247 231;
 
-    --et-color-primary-ink: 22 163 74;
-    --et-color-primary-ink-hover: 22 163 74;
-    --et-color-primary-ink-focus: 22 163 74;
-    --et-color-primary-ink-active: 22 163 74;
-    --et-color-primary-ink-disabled: 22 163 74;
+    --et-color-primary-ink: 74 222 128;
+    --et-color-primary-ink-hover: 134 239 172;
+    --et-color-primary-ink-focus: 134 239 172;
+    --et-color-primary-ink-active: 34 197 94;
+    --et-color-primary-ink-disabled: 62 128 86;
   }
 
   .et-color--warning {
