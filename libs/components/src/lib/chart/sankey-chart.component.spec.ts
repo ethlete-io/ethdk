@@ -9,10 +9,17 @@ import { SankeyChartComponent } from './sankey-chart.component';
 
 @Component({
   selector: 'et-test-sankey-chart-host',
-  template: `<et-sankey-chart [nodes]="nodes()" [links]="links()" [height]="200" label="Budget" />`,
+  template: `<et-sankey-chart
+    [nodes]="nodes()"
+    [links]="links()"
+    [height]="200"
+    [linkSeparator]="separator()"
+    label="Budget"
+  />`,
   imports: [SankeyChartComponent],
 })
 class SankeyChartHostComponent {
+  separator = signal('to');
   nodes = signal<SankeyChartNodeInput[]>([
     { id: 'a', label: 'Tickets' },
     { id: 'b', label: 'Sponsors' },
@@ -84,12 +91,12 @@ describe('SankeyChartComponent', () => {
     const { chart, element } = setup();
     const budget = chart.renderedNodes().find((node) => node.key === 'c');
     const tickets = chart.renderedNodes().find((node) => node.key === 'a');
-    const link = element.querySelector('[aria-label="Sponsors → Budget"]');
+    const link = element.querySelector('[aria-label="Sponsors to Budget"]');
 
     expect(budget?.description).toBe('In: 1,300, Out: 1,300');
     expect(tickets?.description).toBe('Out: 300');
     expect(link).not.toBeNull();
-    expect(chart.renderedLinks().find((entry) => entry.name === 'Sponsors → Budget')?.valueText).toBe('1,000');
+    expect(chart.renderedLinks().find((entry) => entry.name === 'Sponsors to Budget')?.valueText).toBe('1,000');
   });
 
   it('puts first-column labels before their node and the others after it', () => {
@@ -114,6 +121,35 @@ describe('SankeyChartComponent', () => {
     expect(sponsors?.colorToken).toBe('sunset');
     expect(budget?.colorToken).toBeNull();
     expect(chart.renderedLinks().find((link) => link.source.key === 'b')?.colorToken).toBe('sunset');
+  });
+
+  it('steps the accent for nodes past the palette and gives links their source accent', () => {
+    const { chart } = setup();
+    const nodes = chart.renderedNodes();
+
+    expect(nodes.map((node) => node.accentMix)).toEqual([100, 85, 70, 55, 40]);
+
+    for (const link of chart.renderedLinks()) expect(link.accentMix).toBe(link.source.accentMix);
+  });
+
+  it('steps the accent only across nodes without a color theme', () => {
+    const { chart } = setup([PALETTE]);
+    const nodes = chart.renderedNodes();
+
+    expect(nodes.find((node) => node.key === 'a')?.accentMix).toBeNull();
+    expect(nodes.find((node) => node.key === 'b')?.accentMix).toBeNull();
+    expect(nodes.filter((node) => node.colorToken === null).map((node) => node.accentMix)).toEqual([100, 70, 40]);
+  });
+
+  it('joins a link name with the link separator', () => {
+    const { fixture, chart } = setup();
+
+    expect(chart.renderedLinks().some((link) => link.name === 'Sponsors to Budget')).toBe(true);
+
+    fixture.componentInstance.separator.set('nach');
+    fixture.detectChanges();
+
+    expect(chart.renderedLinks().some((link) => link.name === 'Sponsors nach Budget')).toBe(true);
   });
 
   it('prefers a node colorToken over its palette entry', () => {
@@ -143,7 +179,7 @@ describe('SankeyChartComponent', () => {
 
     expect(svg.hasAttribute('data-highlight')).toBe(true);
     expect(tickets.hasAttribute('data-active')).toBe(true);
-    expect(highlighted).toEqual(['Tickets → Budget']);
+    expect(highlighted).toEqual(['Tickets to Budget']);
 
     tickets.dispatchEvent(new FocusEvent('blur'));
     fixture.detectChanges();
@@ -153,7 +189,7 @@ describe('SankeyChartComponent', () => {
 
   it('highlights only the hovered link, and ignores a touch pointer', () => {
     const { fixture, element } = setup();
-    const link = element.querySelector('[aria-label="Budget → Travel"]') as SVGElement;
+    const link = element.querySelector('[aria-label="Budget to Travel"]') as SVGElement;
 
     link.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'touch' }));
     fixture.detectChanges();

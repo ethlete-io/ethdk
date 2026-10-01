@@ -5,7 +5,7 @@ import { ChartRect, ChartTableModel, ChartTooltipPlacement } from '../chart.type
 import { CHART_PLOT_HOST, ChartPlotDirective, ChartPlotHost } from './chart-plot.directive';
 import { ChartValueFormatter, resolveChartValueFormatter } from './internals/chart-format';
 import { assertChartPlot } from './internals/chart-plot-check';
-import { resolveChartSeriesColors } from './internals/chart-series';
+import { resolveChartAccentMixes, resolveChartSeriesColors } from './internals/chart-series';
 import { computeSankeyLayout, EMPTY_SANKEY_LAYOUT, findSankeyDataError } from './internals/sankey-layout';
 
 /** A node of a sankey chart: a stage the flow passes through. */
@@ -13,7 +13,7 @@ export type SankeyChartNodeInput = {
   /** Unique among the nodes. Links name their `source` and `target` by it. */
   id: string;
   label: string;
-  /** The color theme the node and its outgoing links are drawn in. @default the palette entry at the node's position, else the accent */
+  /** The color theme the node and its outgoing links are drawn in. @default the palette entry at the node's position, else a step of the accent */
   colorToken?: RegisteredColorThemeName | null;
 };
 
@@ -38,6 +38,8 @@ export type SankeyChartNode = {
   index: number;
   column: number;
   colorToken: RegisteredColorThemeName | null;
+  /** The percentage of the accent the node is drawn in when it has no color theme; `null` otherwise. */
+  accentMix: number | null;
   x: number;
   y: number;
   width: number;
@@ -73,12 +75,14 @@ export type SankeyChartLink = {
   target: SankeyChartNode;
   /** The source node's color theme. */
   colorToken: RegisteredColorThemeName | null;
+  /** The source node's {@link SankeyChartNode.accentMix}. */
+  accentMix: number | null;
   width: number;
   path: string;
   /** A zero-width rect across the ribbon at its midpoint, for the tooltip to point at. */
   anchor: ChartRect;
   valueText: string;
-  /** e.g. `"Tickets → Revenue"`. */
+  /** e.g. `"Tickets to Revenue"`, joined by {@link SankeyChartDirective.linkSeparator}. */
   name: string;
 };
 
@@ -140,6 +144,9 @@ export class SankeyChartDirective implements ChartPlotHost {
   /** Names what flows out of a node, in its tooltip and description. @default 'Out' */
   public outgoingLabel = input('Out');
 
+  /** The word between source and target in a link's name. @default 'to' */
+  public linkSeparator = input('to');
+
   /** The table view's source column header. @default 'Source' */
   public sourceHeader = input('Source');
 
@@ -163,6 +170,9 @@ export class SankeyChartDirective implements ChartPlotHost {
   /** The color theme per entry of `nodes`, resolved against the palette. */
   public nodeColors = computed(() => resolveChartSeriesColors(this.nodes(), this.palette()));
 
+  /** The accent step per entry of `nodes`; `null` for a node with a color theme. */
+  public nodeAccentMixes = computed(() => resolveChartAccentMixes(this.nodeColors()));
+
   private dataError = computed(() => findSankeyDataError(this.nodes(), this.links()));
 
   private layout = computed(() =>
@@ -185,6 +195,7 @@ export class SankeyChartDirective implements ChartPlotHost {
     const layout = this.layout();
     const inputs = this.nodes();
     const colors = this.nodeColors();
+    const mixes = this.nodeAccentMixes();
     const format = this.formatValue();
     const incomingLabel = this.incomingLabel();
     const outgoingLabel = this.outgoingLabel();
@@ -210,6 +221,7 @@ export class SankeyChartDirective implements ChartPlotHost {
           index,
           column: entry.column,
           colorToken: colors[entry.index] ?? null,
+          accentMix: mixes[entry.index] ?? null,
           x: entry.x,
           y,
           width: entry.width,
@@ -241,6 +253,7 @@ export class SankeyChartDirective implements ChartPlotHost {
     const inputs = this.links();
     const format = this.formatValue();
     const nodes = this.renderedNodes();
+    const separator = this.linkSeparator();
     const byId = new Map(nodes.map((node) => [node.key, node]));
     const nodeAt = (index: number) => byId.get(layout.nodes[index]?.id ?? '');
 
@@ -261,11 +274,12 @@ export class SankeyChartDirective implements ChartPlotHost {
           source,
           target,
           colorToken: source.colorToken,
+          accentMix: source.accentMix,
           width: entry.width,
           path: entry.path,
           anchor: { x: (entry.x0 + entry.x1) / 2, y: mid, width: 0, height: entry.width },
           valueText: format(entry.value),
-          name: `${source.name} → ${target.name}`,
+          name: `${source.name} ${separator} ${target.name}`,
         };
       });
   });

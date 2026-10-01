@@ -48,6 +48,7 @@ links: SankeyChartLinkInput[] = [
 | `sourceHeader`   | `string`                              | `'Source'` | The table view's source column header.                                                 |
 | `targetHeader`   | `string`                              | `'Target'` | The table view's target column header.                                                 |
 | `valueHeader`    | `string`                              | `'Value'`  | The table view's value column header.                                                  |
+| `linkSeparator`  | `string`                              | `'to'`     | The word between source and target in a link's name, tooltip and accessible name.      |
 | `colorToken`     | registered color theme name \| `null` | `null`     | The color theme for nodes without their own `colorToken` or a palette entry.           |
 
 Without a `valueFormatter`, values are formatted with `Intl.NumberFormat` in the locale from `injectLocale()` (`@ethlete/core`).
@@ -72,7 +73,7 @@ The plot never gets narrower than `--et-sankey-chart-min-width` (`480px`). In a 
 
 ### Colours
 
-Node `i` is drawn in its own `colorToken`, else in entry `i` of the app's [color palette](/core/theming#offering-colors-to-a-user) (`provideColorPalette`, optional), else in the chart's `colorToken`, else in the surrounding accent. A link takes its source node's colour at reduced opacity. A palette is never cycled: with more nodes than palette entries, the rest share the fallback - give the chart a `colorToken` naming a neutral theme of the app (the stories use this Storybook's `neutral`), or group nodes by giving them a `colorToken` each.
+Node `i` is drawn in its own `colorToken`, else in entry `i` of the app's [color palette](/core/theming#offering-colors-to-a-user) (`provideColorPalette`, optional), else in the chart's `colorToken`, else in a step of the surrounding accent. A link takes its source node's colour at reduced opacity. A palette is never cycled: the nodes past it share the accent in steps from full strength down to 40% (a lone node keeps the full accent), so they stay apart. Give the chart a `colorToken` to step a different theme, or give nodes a `colorToken` each to group them.
 
 <StoryEmbed id="components-data-display-sankey-chart--dark" height="520px" />
 
@@ -81,13 +82,13 @@ Node `i` is drawn in its own `colorToken`, else in entry `i` of the app's [color
 Hovering or focusing a node highlights its links and dims all others; hovering or focusing a link highlights that link alone. On a touch device, a tap focuses the mark, which opens its tooltip and highlights it the same way; a tap elsewhere closes it again. Hover highlighting ignores touch pointers, so a tap never leaves a hover state behind.
 
 - A node's tooltip names it and shows what flows in and out (`In 660`, `Out 660`), leaving out a side with no flow. It opens above the node.
-- A link's tooltip shows its value and `Source → Target`. It opens above the ribbon's midpoint.
+- A link's tooltip shows its value and `Source to Target`. It opens above the ribbon's midpoint.
 
 When the chart first renders, the nodes and labels fade in, then the ribbons. Under `prefers-reduced-motion: reduce` everything appears at once.
 
 ## Custom template
 
-`SankeyChartDirective` (`[etSankeyChart]`) holds the geometry without markup: `renderedNodes()` (per node its rect, hit `target`, `colorToken`, in/out totals and texts, `description` and label position), `renderedLinks()` (per link its ribbon `path`, `width`, midpoint `anchor`, `source`, `target`, `colorToken`, `valueText` and `name`), `highlightedLinks()`, `activeNodeKey()`, `hasHighlight()`, `table()`, `plotWidth()` and `formatValue()`. Report hover and focus with `hoverMark()`/`unhoverMark()` and `focusMark()`/`blurMark()`. Put `etChartPlot` on the element the flow is laid out in - its width is what the columns divide. Without one the directive throws `ET5100` in dev mode. Import `SankeyChartDirective` and `ChartPlotDirective`.
+`SankeyChartDirective` (`[etSankeyChart]`) holds the geometry without markup: `renderedNodes()` (per node its rect, hit `target`, `colorToken`, `accentMix`, in/out totals and texts, `description` and label position), `renderedLinks()` (per link its ribbon `path`, `width`, midpoint `anchor`, `source`, `target`, `colorToken`, `accentMix`, `valueText` and `name`), `highlightedLinks()`, `activeNodeKey()`, `hasHighlight()`, `table()`, `plotWidth()` and `formatValue()`. Report hover and focus with `hoverMark()`/`unhoverMark()` and `focusMark()`/`blurMark()`. Put `etChartPlot` on the element the flow is laid out in - its width is what the columns divide. Without one the directive throws `ET5100` in dev mode. Import `SankeyChartDirective` and `ChartPlotDirective`.
 
 ```html
 <div #chart="etSankeyChart" [nodes]="nodes" [links]="links" etSankeyChart label="Budget">
@@ -106,7 +107,7 @@ When the chart first renders, the nodes and labels fade in, then the ribbons. Un
 ## Accessibility
 
 - The plot is an SVG with `role="group"`, named by `label`.
-- Every node and every link is focusable (`tabindex="0"`) with `role="img"`. A node is named by its label and described by its totals (`In: 660, Out: 660`); a link is named `Source → Target` and described by its value.
+- Every node and every link is focusable (`tabindex="0"`) with `role="img"`. A node is named by its label and described by its totals (`In: 660, Out: 660`); a link is named `Source to Target` (the word is `linkSeparator`) and described by its value.
 - **Tab order: all nodes first, then all links.** Nodes go column by column, top to bottom within a column. Links follow in the order of their source node, top to bottom at that node. Focus draws a ring around the node's hit target or the ribbon's outline. Links are tab stops rather than arrow-key targets so that every mark is reachable with Tab alone, the same way as the bars of a [bar chart](/components/chart); a flow with many links therefore has many tab stops, and the table view is the quicker route through it.
 - The node labels are `aria-hidden`; the marks and the table carry the same names.
 - A visually hidden `<table>` lists every link - zero links included - with `label` as its caption and `sourceHeader`, `targetHeader` and `valueHeader` as its columns.
