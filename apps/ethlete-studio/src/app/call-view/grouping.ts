@@ -39,17 +39,20 @@ export const unsettledCalls = (request: CallListRequest): Call[] =>
     .filter((call) => openVariants(call) > 0)
     .sort((left, right) => right.touched - left.touched);
 
-/** Every round of a call, in the order its variants declare them, each saying whether it is settled. */
-export const roundPips = (call: Call): boolean[] => {
-  const rounds = new Map<string, boolean>();
+export const ruledLabel = (call: Call) =>
+  `${call.variants.length - openVariants(call)} of ${call.variants.length} ruled`;
 
-  for (const variant of call.variants) {
-    const key = variant.round ?? variant.key;
+export const defaultVariant = (call: Call) => {
+  const open = call.variants.find((variant) => !variant.verdict);
 
-    rounds.set(key, (rounds.get(key) ?? true) && !!variant.verdict);
-  }
+  if (open) return open.key;
 
-  return [...rounds.values()];
+  const order = call.rounds.map((round) => round.key);
+  const winners = call.variants
+    .filter((variant) => variant.verdict === 'chosen')
+    .sort((left, right) => order.indexOf(left.round ?? '') - order.indexOf(right.round ?? ''));
+
+  return winners.at(-1)?.key ?? call.variants[0]?.key ?? '';
 };
 
 const MINUTE = 60;

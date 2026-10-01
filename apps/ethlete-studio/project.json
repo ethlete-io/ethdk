@@ -53,6 +53,14 @@
         }
       }
     },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["default", "^production"],
+      "options": {
+        "command": "vitest run --config apps/ethlete-studio/vite.config.mts"
+      }
+    },
     "format-rust": {
       "executor": "nx:run-commands",
       "cache": true,

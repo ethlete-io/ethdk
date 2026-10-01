@@ -36,10 +36,10 @@ import {
 } from '../../host/design';
 import { Compose, Verb, handoffDraft, opensARound, promptDraft, verbLabel, verdictOf } from './prompt-draft';
 import {
-  openVariants,
+  defaultVariant,
   projectOf,
   projectSummaries,
-  roundPips,
+  ruledLabel,
   settledGroups,
   touchedLabel,
   unsettledCalls,
@@ -123,12 +123,7 @@ const SETTLE_MS = 300;
                 <b>{{ call.headline }}</b>
                 <span class="studio__row-foot">
                   <span class="studio__tag">{{ call.feature || 'No feature' }}</span>
-                  <span class="studio__pips">
-                    @for (settled of ROUND_PIPS(call); track $index) {
-                      <i [class.studio__pip--settled]="settled" class="studio__pip"></i>
-                    }
-                  </span>
-                  <span class="studio__count">{{ settled(call) }} of {{ call.variants.length }}</span>
+                  <span class="studio__count">{{ RULED(call) }}</span>
                 </span>
               </button>
             } @empty {
@@ -165,12 +160,7 @@ const SETTLE_MS = 300;
                         </span>
                         <b>{{ call.headline }}</b>
                         <span class="studio__row-foot">
-                          <span class="studio__pips">
-                            @for (settled of ROUND_PIPS(call); track $index) {
-                              <i [class.studio__pip--settled]="settled" class="studio__pip"></i>
-                            }
-                          </span>
-                          <span class="studio__count">{{ settled(call) }} of {{ call.variants.length }}</span>
+                          <span class="studio__count">{{ RULED(call) }}</span>
                         </span>
                       </button>
                     }
@@ -226,7 +216,7 @@ const SETTLE_MS = 300;
                   <span class="studio__round-state">open</span>
                 </header>
 
-                @for (tile of open.tiles; track tile.key) {
+                @for (tile of open.tiles; track tile.id) {
                   <ng-container [ngTemplateOutlet]="tileCard" [ngTemplateOutletContext]="{ $implicit: tile }" />
                 }
               </section>
@@ -248,7 +238,7 @@ const SETTLE_MS = 300;
 
                 @if (shownFold() === band.key) {
                   <div class="studio__fold-body">
-                    @for (tile of band.tiles; track tile.key) {
+                    @for (tile of band.tiles; track tile.id) {
                       <ng-container [ngTemplateOutlet]="tileCard" [ngTemplateOutletContext]="{ $implicit: tile }" />
                     }
                   </div>
@@ -261,7 +251,7 @@ const SETTLE_MS = 300;
             @if (variant(); as drawn) {
               <div class="studio__stage">
                 <div [style.width]="frameWidth()" class="studio__frame">
-                  @for (frame of frames(); track frame.key) {
+                  @for (frame of frames(); track frame.id) {
                     <iframe
                       [src]="frame.source"
                       [class.studio__drawing--off]="frame.key !== variantKey()"
@@ -582,12 +572,13 @@ export class CallViewComponent {
 
   /** The checkout the window showed last. The picker prefers it while Studio still keeps it. */
   protected remembered = rememberedView().checkout ?? '';
-  protected readonly ROUND_PIPS = roundPips;
+  protected readonly RULED = ruledLabel;
 
   public checkout = signal('');
   protected project = signal('');
   protected slug = signal('');
   protected variantKey = signal('');
+  private picks = new Map<string, string>();
   private scrolledDown = signal<Record<string, boolean>>({});
   private lastScroll = new Map<string, number>();
   protected topBarHidden = computed(() => this.scrolledDown()[this.variantKey()] ?? false);
@@ -744,6 +735,7 @@ export class CallViewComponent {
     const epoch = this.epoch();
 
     return call.variants.map((variant) => ({
+      id: `${call.slug} ${variant.key}`,
       key: variant.key,
       source: this.sanitizer.bypassSecurityTrustResourceUrl(
         frameUrl({ port, slug: call.slug, variant: variant.key, epoch }),
@@ -761,7 +753,11 @@ export class CallViewComponent {
 
     const sources = new Map(this.frames().map((frame) => [frame.key, frame.source]));
 
-    return call.variants.map((variant) => ({ ...variant, source: sources.get(variant.key) ?? null }));
+    return call.variants.map((variant) => ({
+      ...variant,
+      id: `${call.slug} ${variant.key}`,
+      source: sources.get(variant.key) ?? null,
+    }));
   });
 
   /**
@@ -871,10 +867,6 @@ export class CallViewComponent {
     this.scrolledDown.update((state) => (state[variant] === hidden ? state : { ...state, [variant]: hidden }));
   }
 
-  protected settled(call: Call) {
-    return call.variants.length - openVariants(call);
-  }
-
   protected touched(call: Call) {
     return touchedLabel(call.touched);
   }
@@ -962,7 +954,11 @@ export class CallViewComponent {
     rememberView({ project: '' });
   }
 
-  protected openCall(call: Call, variant = call.variants[0]?.key ?? '') {
+  protected openCall(call: Call, wanted?: string) {
+    const variant =
+      [wanted, this.picks.get(call.slug)].find((key) => !!key && call.variants.some((entry) => entry.key === key)) ??
+      defaultVariant(call);
+
     this.dismiss();
     this.fold.set(null);
     this.slug.set(call.slug);
@@ -971,6 +967,7 @@ export class CallViewComponent {
   }
 
   protected openVariant(variant: CallVariant) {
+    this.picks.set(this.slug(), variant.key);
     this.variantKey.set(variant.key);
     rememberView({ checkout: this.checkout(), slug: this.slug(), variant: variant.key });
   }
@@ -1289,7 +1286,7 @@ export class CallViewComponent {
 
     if (!call) return;
 
-    this.openCall(call, call.variants.some((entry) => entry.key === variant) ? variant : undefined);
+    this.openCall(call, variant);
   }
 
   /** A frame only draws once the port answers, so a checkout without a server gets one. */
