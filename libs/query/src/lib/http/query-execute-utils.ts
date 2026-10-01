@@ -3,6 +3,7 @@ import { QueryArgs, RequestArgs } from './query';
 import { buildQueryCacheKey } from './query-cache-utils';
 import { circularQueryDependency, queryExecutedAfterDestroyMessage } from './query-errors';
 import { CreateQueryExecuteOptions } from './query-execute';
+import { resolveQueryTags } from './query-invalidation';
 import { QueryState } from './query-state';
 
 export type ResetExecuteStateOptions<TArgs extends QueryArgs> = {
@@ -90,6 +91,7 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
     isSecure,
     isRefreshable,
     silenceUncacheableAllowCacheError: queryConfig.silenceUncacheableAllowCacheError,
+    tags: creator?.tags ? resolveQueryTags(creator.tags, args) : undefined,
   });
 
   executeState.previousKey.set(key);

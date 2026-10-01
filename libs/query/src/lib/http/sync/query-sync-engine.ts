@@ -25,10 +25,10 @@ export type QuerySyncEngine = {
   lockManager: QueryKeyLockManager;
 
   /**
-   * Tells the other tabs to refresh the queries they have in use below `url`, or all of them for
-   * `null`. What {@link QueryClient.invalidateQueries} broadcasts.
+   * Tells the other tabs to refresh the queries they have in use below `url` and tagged `tag`, or all
+   * of them for two `null`s. What {@link QueryClient.invalidateQueries} broadcasts.
    */
-  postInvalidation: (url: string | null) => void;
+  postInvalidation: (url: string | null, tag?: string | null) => void;
 
   /** Stops broadcasting and listening, and closes the channel. */
   destroy: () => void;
@@ -93,10 +93,11 @@ export const createQuerySyncEngine = (options: CreateQuerySyncEngineOptions): Qu
     // An invalidation is something the other tab's app code asked for explicitly, so unlike the
     // mutation heuristic it is not something `refreshOnMutation: false` opts out of.
     if (message.type === 'invalidate') {
-      repository.refreshInUse(createQueryInvalidationFilter({ url: message.url }), {
+      repository.refreshInUse(createQueryInvalidationFilter({ url: message.url, tag: message.tag }), {
         type: 'invalidation',
         url: message.url,
         otherTab: true,
+        ...(message.tag && { tag: message.tag }),
       });
 
       return;
@@ -113,7 +114,8 @@ export const createQuerySyncEngine = (options: CreateQuerySyncEngineOptions): Qu
     });
   };
 
-  const postInvalidation = (url: string | null) => transport.post({ type: 'invalidate', url });
+  const postInvalidation = (url: string | null, tag?: string | null) =>
+    transport.post(tag ? { type: 'invalidate', url, tag } : { type: 'invalidate', url });
 
   const eventSubscription = repository.events$.subscribe(broadcast);
   const unlisten = transport.listen(apply);

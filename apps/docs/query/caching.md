@@ -86,6 +86,7 @@ It refreshes the same set as `refreshQueriesInUse()` - reads with at least one c
 | Option      | Default | Description                                                                                                             |
 | ----------- | ------- | ----------------------------------------------------------------------------------------------------------------------- |
 | `url`       | -       | Invalidate one part of the API. Relative values resolve against `baseUrl`, like a route.                                |
+| `tag`       | -       | Invalidate the reads that declared this [tag](#tags). Given with `url`, a read has to match both.                       |
 | `filter`    | -       | Narrow further on the built `{ method, url }` of each query. Runs after `url`. **This tab only** - see below.           |
 | `otherTabs` | `true`  | Whether the user's other tabs invalidate too. Needs the [multi-tab sync](/query/multi-tab) feature; ignored without it. |
 
@@ -95,7 +96,40 @@ The options bag is a `QueryInvalidationOptions`, and `filter` a `QueryInvalidati
 
 Entries sitting out their `keepUnusedFor` window are deliberately left alone. They revalidate on their own when a consumer binds again, and refreshing what nobody is looking at is how an invalidation turns into a request storm.
 
-A `filter` is a function, so it cannot cross a `BroadcastChannel`: the other tabs narrow by `url` alone and invalidate a superset. Pair it with `otherTabs: false` when the two must agree.
+A `filter` is a function, so it cannot cross a `BroadcastChannel`: the other tabs narrow by `url` and `tag` alone and invalidate a superset. Pair it with `otherTabs: false` when the two must agree.
+
+### Invalidating from the mutation
+
+Instead of calling `invalidateQueries()` after every `execute()`, declare what a mutation invalidates on its creator. After each successful response the creator runs `invalidateQueries()` once per target:
+
+```ts
+export const getOpportunity = createGetQuery(client)<GetOpportunityArgs>((p) => `/opportunities/${p.uuid}`, {
+  tags: ({ args }) => [`opportunity:${args.pathParams.uuid}`],
+});
+
+export const patchOpportunityPerson = createPatchQuery(client)<PatchPersonArgs>(
+  (p) => `/opportunities/${p.uuid}/people/${p.peopleUuid}`,
+  { invalidates: ({ args }) => [{ tag: `opportunity:${args.pathParams.uuid}` }, { url: '/people' }] },
+);
+```
+
+`invalidates` takes a static array or a function of `{ args, response }` - the args the mutation was sent with and its response (`null` for a `204`). A target is `{ url }` or `{ tag }`, typed `QueryInvalidationTarget`. It works on the `POST`, `PUT`, `PATCH` and `DELETE` creators, their secure variants and the [GraphQL mutation creators](/query/gql), where `args.variables` holds the variables.
+
+- **Only a success invalidates.** A failed or aborted mutation invalidates nothing.
+- **Same rules as the call.** Each target is an `invalidateQueries()` call: reads in use only, in-flight requests restarted, and the user's other tabs too.
+- **Reads throw.** `invalidates` on a `GET`, `HEAD`, `OPTIONS` or GraphQL query creator throws `ET2`: a read that invalidates would do so on every load, itself included. Give the read `tags` and invalidate those from the mutation.
+
+### Tags
+
+A URL is not always enough: `PATCH /opportunities/9/people/1` also changes `/opportunities/9`, which is not below it. A read declares tags on its creator - a static array or a function of `{ args }` - and `invalidateQueries({ tag })` re-runs the reads in use that declared it:
+
+```ts
+injectApi().invalidateQueries({ tag: 'opportunity:9' });
+```
+
+Tags derive from the args, not from the response. Args are known before the request leaves, so a read is tagged while its first request is still in flight, and an invalidation restarts that request instead of letting it land data from before the write. A tag read off the response would miss exactly that read. For a list whose items change, tag the list itself (`opportunities`), or invalidate it by `url`.
+
+Two creators can share one cache entry (same route and args); the entry carries the tags of all of them. Tags are plain strings, so a tag invalidation reaches the other tabs like a `url` one. A tab still running an older deploy ignores the tag and invalidates by `url` alone - more than asked, never less.
 
 Which queries an invalidation actually hit is the one thing the queries themselves cannot report - from inside any of them it is just a refetch. The [query devtools](/query-devtools/#why-did-this-refetch) log each invalidation as one Events row listing every cache entry it re-executed, and name it back on each query's Overview under **Refetched by**.
 

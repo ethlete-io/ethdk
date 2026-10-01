@@ -24,12 +24,14 @@ import {
 } from './query-creator';
 import { QueryDependencies, setupQueryDependencies } from './query-dependencies';
 import {
+  invalidatesUsedOnRead,
   queryFeatureUsedMultipleTimes,
   silenceMissingWithArgsFeatureErrorUsedButWithArgsPresent,
   withArgsQueryFeatureMissingButRouteIsFunction,
 } from './query-errors';
 import { InternalQueryExecute } from './query-execute';
 import { QueryFeature, QueryFeatureContext, QueryFeatureFlags, QueryFeatureType } from './query-features';
+import { invalidateOnSuccess } from './query-invalidation';
 import { createQuerySnapshotFn } from './query-snapshot';
 import { QueryState, setupQueryState } from './query-state';
 
@@ -267,6 +269,14 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
     };
 
     applyQueryFeatures(options.features, featureFnContext);
+
+    const invalidates = options.creator?.invalidates;
+
+    if (invalidates) {
+      if (flags.shouldAutoExecuteMethod) throw invalidatesUsedOnRead(flags.method);
+
+      invalidateOnSuccess<TArgs>({ invalidates, state, deps });
+    }
 
     maybeExecute({ execute, flags, state });
 

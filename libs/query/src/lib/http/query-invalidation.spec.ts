@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { HttpRequest } from './http-request';
 import { QueryArgs } from './query';
-import { createQueryInvalidationFilter, isUnderInvalidatedUrl, resolveInvalidationUrl } from './query-invalidation';
+import {
+  createQueryInvalidationFilter,
+  isUnderInvalidatedUrl,
+  resolveInvalidationUrl,
+  resolveQueryTags,
+} from './query-invalidation';
 
 const BASE_URL = 'https://api.example.com/v1';
 
@@ -76,5 +81,43 @@ describe('createQueryInvalidationFilter', () => {
 
     expect(filter?.(request('https://api.example.com/v1/teams'))).toBe(false);
     expect(seen).toEqual([]);
+  });
+});
+
+describe('createQueryInvalidationFilter by tag', () => {
+  it('should match only an entry that declared the tag', () => {
+    const filter = createQueryInvalidationFilter({ url: null, tag: 'player:1' });
+
+    expect(filter?.(request('https://api.example.com/v1/players/1'), ['player:1', 'players'])).toBe(true);
+    expect(filter?.(request('https://api.example.com/v1/players/2'), ['player:2'])).toBe(false);
+    expect(filter?.(request('https://api.example.com/v1/players/3'))).toBe(false);
+  });
+
+  it('should require both the url and the tag when both are given', () => {
+    const filter = createQueryInvalidationFilter({ url: 'https://api.example.com/v1/players', tag: 'player:1' });
+
+    expect(filter?.(request('https://api.example.com/v1/players/1'), ['player:1'])).toBe(true);
+    expect(filter?.(request('https://api.example.com/v1/teams/1'), ['player:1'])).toBe(false);
+  });
+});
+
+describe('resolveQueryTags', () => {
+  it('should return static tags as they are', () => {
+    expect(resolveQueryTags(['players'], null)).toEqual(['players']);
+  });
+
+  it('should hand the args to a tags fn', () => {
+    const tags = resolveQueryTags<{ response: unknown; pathParams: { id: string } }>(
+      ({ args }) => [`player:${args.pathParams.id}`],
+      { pathParams: { id: '7' } },
+    );
+
+    expect(tags).toEqual(['player:7']);
+  });
+
+  it('should hand an empty args object to a tags fn of an argless read', () => {
+    expect(resolveQueryTags(({ args }) => [Object.keys(args).length === 0 ? 'empty' : 'args'], null)).toEqual([
+      'empty',
+    ]);
   });
 });

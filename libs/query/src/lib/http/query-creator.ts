@@ -4,6 +4,7 @@ import { HttpRequestResponseType, HttpRequestTransferCacheConfig } from './http-
 import { AnyNewQuery, PathParamsType, Query, QueryArgs, RawResponseType, ResponseType, createQuery } from './query';
 import { AnyCreateQueryClientResult } from './query-client';
 import { QueryFeature, QueryFeatureType } from './query-features';
+import { QueryInvalidatesOption, QueryTagsOption } from './query-invalidation';
 import { ShouldRetryRequestFn } from './query-retry-utils';
 
 export type RouteType<TArgs extends QueryArgs> =
@@ -26,7 +27,6 @@ export type BaseQueryCreatorOptionsSubtle = {
   useQueryRepositoryCache?: boolean;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export type BaseQueryCreatorOptions<TArgs extends QueryArgs = QueryArgs> = {
   /**
    * If true, the query loading state will include progress information.
@@ -118,6 +118,30 @@ export type BaseQueryCreatorOptions<TArgs extends QueryArgs = QueryArgs> = {
    * @default true for public queries, false for secure ones
    */
   persistence?: boolean;
+
+  /**
+   * Tags of a read, for {@link QueryClient.invalidateQueries} `{ tag }` and the `invalidates` option of a
+   * mutation. Derived from the args, so a read is tagged before its request leaves and an invalidation
+   * restarts it even while it is in flight. Has no effect on mutations.
+   *
+   * @example
+   * createGetQuery(client)<GetOpportunityArgs>((p) => `/opportunities/${p.uuid}`, {
+   *   tags: ({ args }) => [`opportunity:${args.pathParams.uuid}`],
+   * });
+   */
+  tags?: QueryTagsOption<TArgs>;
+
+  /**
+   * What a successful mutation invalidates: each target runs {@link QueryClient.invalidateQueries} once the
+   * response landed, here and in the user's other tabs. A failed mutation invalidates nothing. Throws on a
+   * read, which would invalidate on every load.
+   *
+   * @example
+   * createPatchQuery(client)<PatchPersonArgs>((p) => `/opportunities/${p.uuid}/people/${p.peopleUuid}`, {
+   *   invalidates: ({ args }) => [{ tag: `opportunity:${args.pathParams.uuid}` }, { url: '/people' }],
+   * });
+   */
+  invalidates?: QueryInvalidatesOption<TArgs>;
 
   /** Advanced query creator features. **WARNING!** Incorrectly using these features will likely **BREAK** your application. You have been warned! */
   subtle?: BaseQueryCreatorOptionsSubtle;

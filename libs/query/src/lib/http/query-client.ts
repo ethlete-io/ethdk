@@ -184,12 +184,14 @@ export type QueryClient = {
    * date - after a mutation, or a push message saying something changed server-side - and tells the
    * user's other tabs to do the same.
    *
-   * Narrow it by `url`, by `filter`, or leave it open to invalidate everything in use:
+   * Narrow it by `url`, `tag`, `filter`, or leave it open to invalidate everything in use. A mutation
+   * creator's `invalidates` option calls this for you after a successful response.
    *
    * @example
    * await createPlayer.execute({ body });
    *
    * client.invalidateQueries({ url: '/players' }); // /players, /players/1, /players?page=2
+   * client.invalidateQueries({ tag: 'player:1' }); // every read whose `tags` include it
    * client.invalidateQueries(); // everything on screen, here and in the other tabs
    *
    * Same set as {@link QueryClient.refreshQueriesInUse}: reads with at least one
@@ -298,16 +300,18 @@ export const createQueryClient = (options: CreateQueryClientConfigOptions): Quer
         refreshQueriesInUse: () => repository.refreshInUse(),
         invalidateQueries: (invalidation) => {
           const url = invalidation?.url ? resolveInvalidationUrl(options.baseUrl, invalidation.url) : null;
+          const tag = invalidation?.tag ?? null;
 
-          repository.refreshInUse(createQueryInvalidationFilter({ url, filter: invalidation?.filter }), {
+          repository.refreshInUse(createQueryInvalidationFilter({ url, tag, filter: invalidation?.filter }), {
             type: 'invalidation',
             url,
             otherTab: false,
+            ...(tag && { tag }),
           });
 
           // The resolved URL is what travels: the other tabs are the same client, so they would
           // resolve it identically, and a message that needs no interpretation cannot drift.
-          if (invalidation?.otherTabs ?? true) sync?.postInvalidation(url);
+          if (invalidation?.otherTabs ?? true) sync?.postInvalidation(url, tag);
         },
         clearPersistedQueries: () => persistenceEngine?.clear() ?? Promise.resolve(),
         whenPersistenceReady: persistenceEngine?.whenReady ?? Promise.resolve(),

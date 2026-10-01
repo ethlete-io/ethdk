@@ -1,5 +1,9 @@
+import { HttpEventType } from '@angular/common/http';
+import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { QueryMethod } from './query-creator';
+import { QueryDependencies } from './query-dependencies';
 import { QueryRepositoryRefreshFilterFn } from './query-repository';
+import { QueryState } from './query-state';
 
 /** A query of this client that an invalidation is deciding about. */
 export type QueryInvalidationCandidate = {
@@ -26,6 +30,13 @@ export type QueryInvalidationOptions = {
    * `/players/1` and `/players?page=2` - but not `/players-archive`.
    */
   url?: string;
+
+  /**
+   * Narrows the invalidation to the reads that declared this tag (see {@link BaseQueryCreatorOptions.tags}).
+   * Combined with `url`, a read has to match both.
+   */
+  tag?: string;
+
   /**
    * Narrows the invalidation further, on the built `{ method, url }` of each candidate. Runs after
    * `url` when both are given.
@@ -78,15 +89,78 @@ export const isUnderInvalidatedUrl = (queryUrl: string, invalidatedUrl: string) 
  */
 export const createQueryInvalidationFilter = (options: {
   url: string | null;
+  tag?: string | null;
   filter?: QueryInvalidationFilterFn;
 }): QueryRepositoryRefreshFilterFn | undefined => {
-  const { url, filter } = options;
+  const { url, tag, filter } = options;
 
-  if (!url && !filter) return undefined;
+  if (!url && !tag && !filter) return undefined;
 
-  return (request) => {
+  return (request, tags) => {
     if (url && !isUnderInvalidatedUrl(request.url, url)) return false;
+    if (tag && !tags?.includes(tag)) return false;
 
     return filter ? filter({ method: request.method, url: request.url }) : true;
   };
+};
+
+/** One thing a mutation invalidates: everything below a URL, or every read that declared a tag. */
+export type QueryInvalidationTarget = { url: string } | { tag: string };
+
+/** What a {@link BaseQueryCreatorOptions.invalidates} function is handed after a successful mutation. */
+export type QueryInvalidatesContext<TArgs extends QueryArgs> = {
+  /** The args the mutation was sent with. */
+  args: RequestArgs<TArgs>;
+
+  /** The mutation's response, or `null` for an empty one (a `204`). */
+  response: ResponseType<TArgs> | null;
+};
+
+// Method syntax keeps the parameter bivariant, so a creator typed for its own args still fits the
+// `CreateQueryCreatorOptions<QueryArgs>` the query internals pass around.
+type Bivariant<TContext, TResult> = { fn(context: TContext): TResult }['fn'];
+
+/** @see BaseQueryCreatorOptions.invalidates */
+export type QueryInvalidatesOption<TArgs extends QueryArgs> =
+  readonly QueryInvalidationTarget[] | Bivariant<QueryInvalidatesContext<TArgs>, readonly QueryInvalidationTarget[]>;
+
+/** What a {@link BaseQueryCreatorOptions.tags} function is handed when the read executes. */
+export type QueryTagsContext<TArgs extends QueryArgs> = {
+  /** The args the read is sent with. */
+  args: RequestArgs<TArgs>;
+};
+
+/** @see BaseQueryCreatorOptions.tags */
+export type QueryTagsOption<TArgs extends QueryArgs> =
+  readonly string[] | Bivariant<QueryTagsContext<TArgs>, readonly string[]>;
+
+/** @internal */
+export const resolveQueryTags = <TArgs extends QueryArgs>(
+  tags: QueryTagsOption<TArgs>,
+  args: RequestArgs<TArgs> | null,
+) => (typeof tags === 'function' ? tags({ args: args ?? ({} as RequestArgs<TArgs>) }) : tags);
+
+/** @internal */
+export const invalidateOnSuccess = <TArgs extends QueryArgs>(options: {
+  invalidates: QueryInvalidatesOption<TArgs>;
+  state: QueryState<TArgs>;
+  deps: QueryDependencies;
+}) => {
+  const { invalidates, state, deps } = options;
+
+  const subscription = state.events$.subscribe((event) => {
+    if (event.type !== HttpEventType.Response) return;
+
+    const targets =
+      typeof invalidates === 'function'
+        ? invalidates({
+            args: state.subtle.request()?.args ?? ({} as RequestArgs<TArgs>),
+            response: state.response(),
+          })
+        : invalidates;
+
+    for (const target of targets) deps.client.invalidateQueries(target);
+  });
+
+  deps.destroyRef.onDestroy(() => subscription.unsubscribe());
 };

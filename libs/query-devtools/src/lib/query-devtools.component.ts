@@ -2452,7 +2452,10 @@ export class QueryDevtoolsComponent implements OnInit {
   }
 
   public causeLabel(cause: QueryRefreshCause) {
-    const scope = cause.url ? this.requestPath(cause.url) : 'everything in use';
+    const scope =
+      [cause.url ? this.requestPath(cause.url) : null, cause.tag ? `tag ${cause.tag}` : null]
+        .filter((part) => part !== null)
+        .join(' · ') || 'everything in use';
     const what =
       cause.type === 'invalidation'
         ? `invalidated ${scope}`

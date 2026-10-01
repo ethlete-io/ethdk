@@ -106,7 +106,8 @@ withMultiTabSync({
 ```
 
 The mutating tab itself is untouched. Refreshing locally after a mutation stays the app's job, as it
-is without sync - auto-refreshing there would double-fetch in every app that already handles it.
+is without sync - auto-refreshing there would double-fetch in every app that already handles it. The
+creator's [`invalidates`](/query/caching#invalidating-from-the-mutation) is how to declare it once.
 
 ## Invalidating on purpose
 
@@ -124,8 +125,9 @@ Unlike the mutation heuristic this also refreshes the tab it was called in - it 
 not the client guessing from a request it happened to see - and `refreshOnMutation: false` does not
 opt out of it. `otherTabs: false` keeps a single invalidation local.
 
-What travels is the resolved URL, never the `filter` function: the receiving tabs narrow by URL alone
-and invalidate a superset of what the calling tab did.
+What travels is the resolved URL and the [tag](/query/caching#tags), never the `filter` function: the
+receiving tabs narrow by those alone and invalidate a superset of what the calling tab did. A mutation's
+[`invalidates`](/query/caching#invalidating-from-the-mutation) travels the same way.
 
 ## Configuration
 

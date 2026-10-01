@@ -322,6 +322,87 @@ describe('multi-tab sync scenario', () => {
     tabB.destroy();
   });
 
+  it('carries a tag invalidation to the other tab, where only the tagged read re-runs', async () => {
+    const s = scenario();
+    s.api.on('GET', '/teams/:id', ({ params }) => ({ body: { id: params['id'] } }));
+
+    const tabB = createTab(s);
+    const getTeamB = tabB.get<{ response: { id: string }; pathParams: { id: string } }>((p) => `/teams/${p.id}`, {
+      tags: ({ args }) => [`team:${args.pathParams.id}`],
+    });
+
+    const b = tabB.consumer();
+    b.run(() => getTeamB(withArgs(() => ({ pathParams: { id: '1' } }))));
+    b.run(() => getTeamB(withArgs(() => ({ pathParams: { id: '2' } }))));
+
+    await s.settle();
+    await flushMultiTabSync();
+
+    const postedBefore = bus.posted.length;
+
+    s.client.invalidateQueries({ tag: 'team:1' });
+    await s.settle();
+    await flushMultiTabSync();
+    await s.settle();
+
+    const invalidations = bus.posted
+      .slice(postedBefore)
+      .map((message) => message.data)
+      .filter((data) => (data as { type: string }).type === 'invalidate');
+
+    expect(invalidations).toEqual([{ v: QUERY_SYNC_PROTOCOL_VERSION, type: 'invalidate', url: null, tag: 'team:1' }]);
+    expect(s.api.requestCount('GET', '/teams/1')).toBe(2);
+    expect(s.api.requestCount('GET', '/teams/2')).toBe(1);
+
+    b.destroy();
+    tabB.destroy();
+  });
+
+  it('carries the invalidates of a mutation to the other tab', async () => {
+    const s = scenario();
+    let version = 1;
+    s.api.on('GET', '/teams/:id', ({ params }) => ({ body: { id: params['id'], v: version } }));
+    s.api.on('PATCH', '/teams/:id', () => {
+      version++;
+
+      return { body: null, status: 204 };
+    });
+
+    const patchTeam = s.patch<{ response: null; pathParams: { id: string } }>((p) => `/teams/${p.id}`, {
+      invalidates: ({ args }) => [{ tag: `team:${args.pathParams.id}` }],
+    });
+    const tabB = createTab(s);
+    const getTeamB = tabB.get<{ response: { id: string; v: number }; pathParams: { id: string } }>(
+      (p) => `/teams/${p.id}`,
+      { tags: ({ args }) => [`team:${args.pathParams.id}`] },
+    );
+
+    const a = s.consumer();
+    const b = tabB.consumer();
+    const patch = a.run(() => patchTeam(withArgs(() => ({ pathParams: { id: '1' } }))));
+    const teamB = b.run(() => getTeamB(withArgs(() => ({ pathParams: { id: '1' } }))));
+
+    await s.settle();
+    await flushMultiTabSync();
+
+    patch.execute();
+    await s.settle();
+    await flushMultiTabSync();
+    await s.settle();
+
+    expect(bus.posted.map((message) => message.data)).toContainEqual({
+      v: QUERY_SYNC_PROTOCOL_VERSION,
+      type: 'invalidate',
+      url: null,
+      tag: 'team:1',
+    });
+    expect(teamB.response()).toEqual({ id: '1', v: 2 });
+
+    a.destroy();
+    b.destroy();
+    tabB.destroy();
+  });
+
   it('keeps an invalidation local when otherTabs is false', async () => {
     const s = scenario();
     s.api.on('GET', '/players/:id', ({ params }) => ({ body: { id: params['id'] } }));

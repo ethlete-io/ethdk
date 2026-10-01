@@ -50,6 +50,12 @@ export type QuerySyncInvalidateMessage = {
    * resolved by the tab that sent it - the two tabs run the same client, so its `baseUrl` is ours.
    */
   url: string | null;
+
+  /**
+   * The tag the invalidation was narrowed to, or `null`. A tab from an older deploy ignores the field and
+   * invalidates by `url` alone, a superset.
+   */
+  tag?: string | null;
 };
 
 export type QuerySyncMessage = QuerySyncResponseMessage | QuerySyncMutationMessage | QuerySyncInvalidateMessage;
@@ -94,7 +100,9 @@ export const unwrapQuerySyncMessage = (data: unknown): QuerySyncMessage | null =
   }
 
   if (type === 'invalidate' && (typeof url === 'string' || url === null)) {
-    return { type: 'invalidate', url };
+    const tag = raw['tag'];
+
+    return { type: 'invalidate', url, tag: typeof tag === 'string' ? tag : null };
   }
 
   return null;

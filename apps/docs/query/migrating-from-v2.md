@@ -213,6 +213,25 @@ The two panels do not merge. The current one lists current-system queries, and t
 
 A v2 query collection tracked "which of these queries is currently doing something". For auth that role belongs to [`provider.executionState()`](/query/auth#execution-state); for everything else, read the queries' own `executionState()` signals and combine them in a `computed`.
 
+### EntityStore becomes `invalidates` and tags
+
+v3 has no entity store. A normalized store breaks on write-through: a `PATCH` that returns nothing, or part of the object, leaves the entity wrong, and a side effect on another object is not in the response at all. v3 refetches instead, and the [cache](/query/caching) already de-duplicates by request.
+
+Move each `entity` config's `set` to the mutation that changes the entity: declare [`invalidates`](/query/caching#invalidating-from-the-mutation) on its creator, and [`tags`](/query/caching#tags) on the reads that show it when the URL does not cover them. Don't write the response into other queries with `subtle.setResponse` - that is the store's write-through problem again, by hand.
+
+```ts
+export const getOpportunity = createGetQuery(client)<GetOpportunityArgs>((p) => `/opportunities/${p.uuid}`, {
+  tags: ({ args }) => [`opportunity:${args.pathParams.uuid}`],
+});
+
+export const patchOpportunityPerson = createPatchQuery(client)<PatchPersonArgs>(
+  (p) => `/opportunities/${p.uuid}/people/${p.peopleUuid}`,
+  { invalidates: ({ args }) => [{ tag: `opportunity:${args.pathParams.uuid}` }, { url: '/people' }] },
+);
+```
+
+A hand-written `refresh()` after a mutation becomes the same one line on the creator.
+
 ### Reactive-forms async validators
 
 [`validateWithQuery`](/query/errors#validating-against-the-server-as-the-user-types) is for signal forms only. A reactive-forms `AsyncValidatorFn` that ran a v2 query keeps working on the interop query. To move it to the current system, create the query once in an injection context and run it with `executeUntilSettled$` (a function route also needs `silenceMissingWithArgsFeatureError: true`):

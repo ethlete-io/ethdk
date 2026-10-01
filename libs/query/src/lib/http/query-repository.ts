@@ -27,6 +27,9 @@ export type QueryRefreshCause = {
   /** The URL the refresh was narrowed to (an invalidation's scope, a mutation's URL), or `null`. */
   url: string | null;
 
+  /** The tag an invalidation was narrowed to, or `null`. */
+  tag?: string | null;
+
   /** Whether another tab asked for it rather than this one. */
   otherTab: boolean;
 };
@@ -179,6 +182,9 @@ export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
    * as `idempotent`; unset, that falls back to the method not being `POST` or `PATCH`.
    */
   isRefreshable?: boolean;
+
+  /** @see BaseQueryCreatorOptions.tags */
+  tags?: readonly string[];
 };
 
 export type QueryRepositoryItem<TArgs extends QueryArgs> = {
@@ -241,10 +247,10 @@ export type QueryRepositorySubtle = {
 };
 
 /**
- * Narrows which in-use entries a {@link QueryRepository.refreshInUse} call refreshes. Returning
- * `false` leaves the entry alone.
+ * Narrows which in-use entries a {@link QueryRepository.refreshInUse} call refreshes, given the entry's
+ * request and the tags its consumers declared. Returning `false` leaves the entry alone.
  */
-export type QueryRepositoryRefreshFilterFn = (request: HttpRequest<QueryArgs>) => boolean;
+export type QueryRepositoryRefreshFilterFn = (request: HttpRequest<QueryArgs>, tags?: readonly string[]) => boolean;
 
 /** @see QueryRepository.applyExternalResponse */
 export type ApplyExternalResponseOptions = {
@@ -355,6 +361,7 @@ type ConsumerBinding = {
   isMultiTabSyncEnabled: boolean;
   isPersistEnabled: boolean;
   keepUnusedFor: number;
+  tags: readonly string[];
 };
 
 /**
@@ -362,7 +369,7 @@ type ConsumerBinding = {
  * either destroyed right away or kept for `keepUnusedFor` milliseconds so a consumer that comes back
  * (e.g. via browser back navigation) finds its data already there.
  *
- * The five policy fields below are the merge of the bound consumers, recomputed on every bind and
+ * The policy fields below are the merge of the bound consumers, recomputed on every bind and
  * unbind by {@link mergeConsumerPolicies}.
  */
 type DestroyListenerMapItem = {
@@ -385,6 +392,8 @@ type DestroyListenerMapItem = {
 
   /** How long this entry survives without consumers. `0` destroys it immediately. */
   keepUnusedFor: number;
+
+  tags: readonly string[];
 
   /** When the entry lost its last consumer - drives the eviction order of the unused-entry cap. */
   unusedSince?: number;
@@ -411,6 +420,7 @@ type BindEntryOptions = {
   isMultiTabSyncEnabled: boolean;
   isPersistEnabled: boolean;
   keepUnusedFor: number;
+  tags: readonly string[];
 };
 
 export type QueryRepositoryDependencies = {
@@ -524,6 +534,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     const keepUnusedFor = resolveKeepUnusedFor(creatorOptions, shouldCache, runQueryOptions?.keepUnusedFor);
     const isMultiTabSyncEnabled = creatorOptions?.multiTabSync !== false;
     const isSecure = options.isSecure ?? false;
+    const tags = options.tags ?? [];
 
     // A secure response needs an explicit `persistence: true` to reach the disk: leaving an
     // authenticated user's data there is a decision per endpoint, not a default. Everything else
@@ -555,6 +566,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
           isMultiTabSyncEnabled,
           isPersistEnabled,
           keepUnusedFor,
+          tags,
         });
 
         const executed =
@@ -593,6 +605,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       isMultiTabSyncEnabled,
       isPersistEnabled,
       keepUnusedFor,
+      tags,
     });
 
     // Announced after the entry is bound and its request is on its way, because the one thing that acts
@@ -671,6 +684,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     cacheEntry.isPersistEnabled = bindings.some((binding) => binding.isPersistEnabled);
     cacheEntry.isMultiTabSyncEnabled = bindings.every((binding) => binding.isMultiTabSyncEnabled);
     cacheEntry.keepUnusedFor = Math.min(...bindings.map((binding) => binding.keepUnusedFor));
+    cacheEntry.tags = bindings.flatMap((binding) => binding.tags);
   };
 
   const unbind = (key: QueryKey | null, consumerDestroyRef: DestroyRef) => {
@@ -734,7 +748,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       // end the session.
       if (!cacheEntry.isRefreshable) continue;
 
-      if (filter && !filter(cacheEntry.request)) continue;
+      if (filter && !filter(cacheEntry.request, cacheEntry.tags)) continue;
 
       refreshed.push(cacheEntry.request);
       cacheEntry.request.execute({ force: true });
@@ -784,6 +798,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       isMultiTabSyncEnabled,
       isPersistEnabled,
       keepUnusedFor,
+      tags,
     } = options;
 
     const cacheEntry = cache.get(key);
@@ -797,6 +812,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
         existingBinding.isMultiTabSyncEnabled = isMultiTabSyncEnabled;
         existingBinding.isPersistEnabled = isPersistEnabled;
         existingBinding.keepUnusedFor = keepUnusedFor;
+        existingBinding.tags = tags;
       } else {
         cacheEntry.consumers.set(consumerDestroyRef, {
           cleanup: consumerDestroyRef.onDestroy(() => unbind(key, consumerDestroyRef)),
@@ -805,6 +821,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
           isMultiTabSyncEnabled,
           isPersistEnabled,
           keepUnusedFor,
+          tags,
         });
       }
 
@@ -820,6 +837,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
             isMultiTabSyncEnabled,
             isPersistEnabled,
             keepUnusedFor,
+            tags,
           },
         ],
       ]);
@@ -868,6 +886,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
         isRefreshable,
         isMultiTabSyncEnabled,
         isPersistEnabled,
+        tags,
       });
     }
 
