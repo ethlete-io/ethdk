@@ -17,7 +17,7 @@ export const LIGHT_SURFACE: SurfaceTheme = {
   },
   background: '255 255 255',
   color: '23 23 23',
-  colorMuted: '115 115 115',
+  colorMuted: '82 82 82',
   colorSubtle: '161 161 161',
   border: '229 229 229',
 };
@@ -38,7 +38,7 @@ export const LIGHT_ELEVATED_SURFACE: SurfaceTheme = {
   },
   background: '250 250 250',
   color: '23 23 23',
-  colorMuted: '115 115 115',
+  colorMuted: '82 82 82',
   colorSubtle: '161 161 161',
   border: '229 229 229',
 };
@@ -99,7 +99,7 @@ export const DARK_ELEVATED_2_SURFACE: SurfaceTheme = {
   },
   background: '64 64 64',
   color: '250 250 250',
-  colorMuted: '161 161 161',
+  colorMuted: '212 212 212',
   colorSubtle: '115 115 115',
   border: '82 82 82',
 };
@@ -119,7 +119,7 @@ export const DARK_ELEVATED_3_SURFACE: SurfaceTheme = {
   },
   background: '90 90 90',
   color: '250 250 250',
-  colorMuted: '161 161 161',
+  colorMuted: '212 212 212',
   colorSubtle: '115 115 115',
   border: '110 110 110',
 };
