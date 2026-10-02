@@ -37,7 +37,7 @@ Color maps may spread consts (`{ ...ON_COLOR_DARK, disabled: '...' }`). The colo
 
 When several apps share one theme definition set (a monorepo) but need different defaults, pick the default at the generation invocation instead of in the definitions: `--defaultTheme=<name>` (color generator) and `--defaultLightTheme=<name>` / `--defaultDarkTheme=<name>` (surface generator, per surface `type`) make the named theme the default, overriding any `isDefault` flags - the definitions then don't need `isDefault` at all.
 
-In dev mode `provideSurfaceThemesWithTailwind4()` also warns once the page has loaded if the root font size is still the browser default - the SDK's `rem` sizes need `html { font-size: 62.5%; }`, see [Setup](/components/setup#styles).
+In dev mode `etProvideColor` warns once when no color themes are registered (add `provideColorThemesWithTailwind4()`), and `provideSurfaceThemesWithTailwind4()` also warns once the page has loaded if the root font size is still the browser default - the SDK's `rem` sizes need `html { font-size: 62.5%; }`, see [Setup](/components/setup#styles).
 
 Both provider factories and generators accept a custom prefix (default `'et'`); the provider `prefix` argument must match the generator's `runtimePrefix`.
 
@@ -432,6 +432,8 @@ the app root.
 
 The theme data carries over: a legacy `ColorTheme` (RGB triplets, `isDefault`) is the type the generators read. The setup around it changes:
 
+`yarn nx g @ethlete/core:migrate-legacy-color-themes` does step 2 and writes the rest as a checklist: it rewrites every `provideColorThemes(X)` into `provideColorThemesWithTailwind4(X)`, fixes the import, and lists in `legacy-color-themes-migration-tasks.md` the generator run per call site, the Tailwind 3 helpers left in a config, and the surface themes to add. `et update` offers it as the optional assisted migration `legacy-color-themes`.
+
 1. **Tailwind 3 → 4.** Delete the `tailwind.config.ts` color block built from `createTailwindColorThemes(THEMES, 'gg')`. Run the color generator on the same theme file with the same prefix; it emits the same `bg-gg-<name>`, `bg-gg-<name>-hover`, `text-gg-on-<name>` utilities through `@theme`:
 
    ```bash
@@ -440,7 +442,7 @@ The theme data carries over: a legacy `ColorTheme` (RGB triplets, `isDefault`) i
 
    `--prefix` names the utilities; the runtime variables keep `--et-*` unless you also pass `--runtimePrefix`.
 
-2. **Providers.** `provideColorThemes(THEMES)` becomes `...provideColorThemesWithTailwind4(THEMES)`. The runtime `<style>` injection goes away; import the generated `.css` in the global stylesheet instead.
+2. **Providers.** `provideColorThemes(THEMES)` becomes `provideColorThemesWithTailwind4(THEMES)`. The runtime `<style>` injection goes away; import the generated `.css` in the global stylesheet instead.
 
 3. **Surface themes.** A legacy app has none, and every component reads its backgrounds, text and borders from one. Start with one `light` surface (`isDefault: true`, elevation 0) built from the app's existing page background, text, muted text and border colors, plus a `light-elevated` one for cards and overlays. Add `dark` surfaces only if the app has a dark mode. Generate them with `tailwind-4-surface-theme` and register them with `provideSurfaceThemesWithTailwind4()` - see [Surface themes](#surface-themes).
 

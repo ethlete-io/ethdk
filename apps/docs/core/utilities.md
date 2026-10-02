@@ -182,7 +182,7 @@ protected save() {
 ## Gestures & input
 
 - `createSwipeTracker(startEvent)` - track a touch/mouse swipe from a start event: `update(event)` returns per-move movement/axis-lock info (`isSwiping` vs `isScrolling`), `end()` returns final movement plus px/sec velocities, `cancel()` aborts.
-- `KeyPressManager` - detects rapid repeat presses of a single key (`isPressed(event)` is `true` from the second press within 100 ms); used for type-to-repeat behaviors.
+- `KeyPressManager` - detects rapid repeat presses of a single key (`isPressed(event)` is `true` from the second press within 100 ms); used for type-to-repeat behaviors. Deprecated: it keys on `KeyboardEvent.keyCode`; compare `KeyboardEvent.key` instead.
 
 ## Logging
 
