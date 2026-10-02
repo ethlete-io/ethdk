@@ -453,3 +453,37 @@ describe('propose, on a row nobody attended', () => {
     expect(unnamed[0]).toMatchObject({ unattended: true, from: AT(30), to: AT(60) });
   });
 });
+
+describe('propose, on a row an agent ran through a break', () => {
+  const THROUGH: WorkGroup = {
+    ...group({ fromMinute: 0, observedMinutes: 180, issueKey: 'ABC-100' }),
+    attended: true,
+    evidence: [
+      { kind: 'commit', at: AT(20), detail: 'a1 feat(app): Seed the bracket', summary: 'feat(app): Seed the bracket' },
+      { kind: 'commit', at: AT(170), detail: 'b2 fix(app): Order the seeds', summary: 'fix(app): Order the seeds' },
+    ],
+  };
+  const BREAK = { from: AT(60), to: AT(107) };
+
+  it('books the part before the break and the part after it, and nothing inside it', () => {
+    const { proposals } = propose({ groups: [THROUGH], breaks: [BREAK] });
+
+    expect(
+      proposals.map(({ id, from, to, durationMs, afterBreak }) => ({ id, from, to, durationMs, afterBreak })),
+    ).toEqual([
+      { id: `ABC-100@${AT(0).toISOString()}`, from: AT(0), to: AT(60), durationMs: 60 * MINUTE, afterBreak: undefined },
+      { id: `ABC-100@${AT(105).toISOString()}`, from: AT(105), to: AT(180), durationMs: 75 * MINUTE, afterBreak: true },
+    ]);
+    expect(proposals.map((row) => row.description)).toEqual([
+      'feat(app): Seed the bracket',
+      'fix(app): Order the seeds',
+    ]);
+    expect(proposals.reduce((sum, row) => sum + row.observedMs, 0)).toBe(133 * MINUTE);
+  });
+
+  it('cuts nothing out of a stretch no break may cover', () => {
+    const { proposals } = propose({ groups: [THROUGH], breaks: [BREAK], presence: [BREAK] });
+
+    expect(proposals.map(({ from, to }) => [from, to])).toEqual([[AT(0), AT(180)]]);
+  });
+});

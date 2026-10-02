@@ -1,7 +1,7 @@
 import { GitFlowConfig } from '@ethlete/agent-rules/git-flow';
-import { ActivityBlock, dominantContext, streamKey } from '../model/block';
+import { ActivityBlock, blockDurationMs, dominantContext, streamKey } from '../model/block';
 import { WorklogProposal } from '../model/proposal';
-import { TimeWindow, mergeWindows, windowsMs } from '../model/time-window';
+import { TimeWindow, mergeWindows, subtractWindows, windowsMs, windowsOverlap } from '../model/time-window';
 import { breaksBetweenRows } from '../stream/breaks';
 import { DescribeOptions, describeWork } from './describe';
 import { CALL_LANE_KEY, laneKeyOf } from './lane';
@@ -56,6 +56,52 @@ const isAttributedRow = <T extends BoundGroup>(row: T): row is T & { group: Attr
   isAttributed(row.group);
 
 const ALL_TIME = { from: new Date(-8.64e15), to: new Date(8.64e15) };
+
+const blocksMs = (blocks: readonly ActivityBlock[]) => blocks.reduce((sum, block) => sum + blockDurationMs(block), 0);
+
+/** A part no block reaches is dropped, so a group with no blocks of its own, like a timer run's, is never cut. */
+const cutOutBreaks = (group: WorkGroup, away: readonly TimeWindow[]): (WorkGroup & { afterBreak?: true })[] => {
+  const over = away.filter((window) => windowsOverlap(window, group));
+
+  if (group.attended === false || !over.length) return [group];
+
+  const blocks = clipBlocks({ blocks: group.blocks, windows: over });
+  const pieces = subtractWindows({ windows: [group], without: over }).flatMap((window) => {
+    const inside = blocks.filter((block) => block.from >= window.from && block.to <= window.to);
+    const extent = mergeWindows(inside);
+    const first = extent[0];
+    const last = extent[extent.length - 1];
+
+    if (!first || !last) return [];
+
+    return [
+      {
+        from: window.from.getTime() === group.from.getTime() ? group.from : first.from,
+        to: window.to.getTime() === group.to.getTime() ? group.to : last.to,
+        blocks: inside,
+      },
+    ];
+  });
+
+  if (!pieces.length) return [group];
+
+  const evidenceOf = (index: number) => {
+    const from = (index && pieces[index]?.from.getTime()) || -Infinity;
+    const to = pieces[index + 1]?.from.getTime() ?? Infinity;
+
+    return group.evidence.filter((entry) => entry.at.getTime() >= from && entry.at.getTime() < to);
+  };
+
+  return pieces.map((piece, index) => ({
+    ...group,
+    ...(piece.from > group.from ? { afterBreak: true as const } : {}),
+    from: piece.from,
+    to: piece.to,
+    blocks: piece.blocks,
+    evidence: evidenceOf(index),
+    observedMs: Math.min(group.observedMs, blocksMs(piece.blocks)),
+  }));
+};
 
 /** The unattended part must keep the row's start: its id, and the user's edits on it, hang on that start. */
 const cutAtBreakEnd = <T extends BoundGroup>(options: {
@@ -199,19 +245,26 @@ export const propose = (options: {
    * reads from it how long its own session went on, which the cut rows no longer say.
    */
   sessionBlocks?: readonly ActivityBlock[];
-  /** The breaks the day held, from `breakWindows`. A row nobody attended ends with the break it starts in. */
+  /**
+   * The breaks the day held, from `breakWindows`. A row nobody attended ends with the break it starts in,
+   * and an attended row is cut where one is drawn over it.
+   */
   breaks?: readonly TimeWindow[];
   /** The stretches no break may cover: a call the user attended and a run they timed — see ADR 0030. */
   presence?: readonly TimeWindow[];
 }): ProposeResult => {
   const sessionBlocks = options.sessionBlocks ?? [];
+  const away = subtractWindows({ windows: options.breaks ?? [], without: options.presence ?? [] });
   const snapped = snapRowBounds({
-    rows: options.groups.map((group) => ({
-      group,
-      from: group.from,
-      to: group.to,
-      durationMs: roundDurationUp(group.observedMs, options.round),
-    })),
+    rows: options.groups
+      .flatMap((group) => cutOutBreaks(group, away))
+      .map(({ afterBreak, ...group }) => ({
+        group,
+        ...(afterBreak ? { afterBreak } : {}),
+        from: group.from,
+        to: group.to,
+        durationMs: roundDurationUp(group.observedMs, options.round),
+      })),
     options: options.round,
     observedMsOf: (row) => (row.group.laneKey === CALL_LANE_KEY ? row.group.observedMs : undefined),
   }).map((row) => ({

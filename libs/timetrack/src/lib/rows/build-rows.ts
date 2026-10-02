@@ -164,8 +164,8 @@ export type DayRows = {
  * A pause is cut out for the opposite reason: nothing watched it, and the samples on either side are
  * close enough together that the block builder would otherwise bridge the hole and bill it.
  *
- * A break ends a band rather than being cut out of one. The blocks on either side are real work and
- * keep their time; what a break denies is one band drawn across it.
+ * A break ends a band, and an attended band that runs through one is cut where the break is drawn:
+ * nobody was there, so the day books the work on either side and nothing inside it — see ADR 0037.
  *
  * A block that names nothing but an application on `noWorkContext` is dropped before it is
  * attributed, so a media player proposes no time and gets no lane. Which meeting a call was is read

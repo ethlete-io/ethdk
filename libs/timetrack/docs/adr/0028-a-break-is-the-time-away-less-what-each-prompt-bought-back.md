@@ -53,7 +53,7 @@ had left.
   this ADR changes nothing on this machine, because the signal never arrives.
 - **A break stops a band being drawn across a gap, and nothing more.** `barriers` in `mergeBlocks`
   bars a join over a gap; it removes no block that falls inside the break. So a break nothing ran in
-  is proposed to nobody, and a break an agent ran through keeps its blocks and stays proposed.
+  is proposed to nobody, and a break an agent ran through keeps its blocks and stays proposed. _Amended by [ADR 0037](./0037-a-break-is-cut-out-of-the-rows-it-lies-under.md): the break is now cut out of an attended row._
 - **The day's work is clipped to presence and to the gaps `breakGaps` returns.** This was the hole
   the rest of this ADR did not close: `stream-day` clipped the agent's spans to presence alone, so
   every block inside a break was deleted before the rows were built. The break then had no row to be
@@ -65,13 +65,13 @@ had left.
   attended if any attended span overlaps it, and a band that now runs through the break overlaps the
   work on both sides. The break drawn over the row is what says nobody was at the seat. This is the
   leniency `attendedAt` already documents, and it is why the row is only as honest as the prompts
-  inside it.
+  inside it. _Amended by [ADR 0037](./0037-a-break-is-cut-out-of-the-rows-it-lies-under.md): the break is now cut out of an attended row._
 - **A break an agent ran through is drawn over the row it runs under.** `breaksBetweenRows` reports a
   break as the gap the rows leave, and such a break leaves none, so it is snapped to the row increment
   and drawn in the break lane instead. Both ends round to the nearest boundary rather than outwards: a
   break is an absence reported back to the person who took it, and rounding it outwards claims more of
   one than the notifier saw. Tom chose this over cutting the break out of the rows, which would have
-  changed what the day books. Verified on 2026-09-15: the measured break 14:26-14:43 draws 14:30-14:45.
+  changed what the day books. Verified on 2026-09-15: the measured break 14:26-14:43 draws 14:30-14:45. _Amended by [ADR 0037](./0037-a-break-is-cut-out-of-the-rows-it-lies-under.md): the break is now cut out of an attended row._
 - **The allowance is one number for every prompt, and it does not know where the prompt came from.**
   A person waiting at their desk and a person steering from a phone buy back the same 15 minutes.
   That is deliberate: nothing in a Claude Code log distinguishes them. Checked on 2026-09-15 —

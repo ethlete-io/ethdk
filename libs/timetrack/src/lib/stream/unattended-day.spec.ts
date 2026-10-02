@@ -1,6 +1,11 @@
 import { resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { describe, expect, it } from 'vitest';
 import { CollectedEvent } from '../model/event';
+import { TimeWindow, clipWindows, windowsMs } from '../model/time-window';
+import { ClosedTimerRun } from '../model/timer';
+import { EMPTY_DAY_REVIEW_EDITS, PinnedRow, isNamedRow } from '../review/model';
+import { TIMER_LANE_KEY } from '../rows/lane';
+import { planTempoSync } from '../tempo/diff';
 import { breakMs, breaksBetweenRows } from './breaks';
 import { reviewDay } from '../review/review-day';
 import { streamDay } from './stream-day';
@@ -204,19 +209,21 @@ describe('streamDay, on work the user steered from a phone', () => {
     commit(175, 'docs(repo): Mark the timetrack naming gaps as built'),
   ];
 
-  it('books the time the agent worked while he steered it', () => {
+  it('books what his prompts bought back off the break, and not the rest of it', () => {
     const booked = dayOf(REMOTE).rows.proposals.filter((row) => row.issueKey === 'ET-772');
 
-    expect(booked.some((row) => row.from.getTime() <= AT(100).getTime() && row.to.getTime() >= AT(160).getTime())).toBe(
-      true,
-    );
+    expect(booked.map((row) => [row.from, row.to])).toEqual([
+      [AT(0), AT(15)],
+      [AT(60), AT(90)],
+      [AT(120), AT(180)],
+    ]);
   });
 
-  it('draws one band across the window rather than cutting it in two', () => {
-    const inside = (at: Date) => at.getTime() > AT(90).getTime() && at.getTime() < AT(170).getTime();
+  it('cuts the band where the break the prompts left begins and ends', () => {
+    const inside = (at: Date) => at.getTime() > AT(60).getTime() && at.getTime() < AT(180).getTime();
     const edges = dayOf(REMOTE).rows.proposals.flatMap((row) => [row.from, row.to].filter(inside));
 
-    expect(edges).toEqual([]);
+    expect(edges).toEqual([AT(90), AT(120)]);
   });
 
   it('draws a break no longer than the one the notifier measured', () => {
@@ -541,5 +548,131 @@ describe('streamDay, on a day still being collected while the user steers from a
 
   it('keeps a day that is over as it was without the live instant', () => {
     expect(read(AWAY).rows.remote).toEqual({ booked: [], drawn: [] });
+  });
+});
+
+describe('streamDay, on an agent that ran through three breaks nobody prompted in', () => {
+  const input = (minute: number, kind: 'input-idle' | 'input-active'): CollectedEvent => ({
+    at: AT(minute),
+    source: 'input',
+    kind,
+  });
+  const focusEvery = (from: number, to: number) =>
+    Array.from({ length: Math.floor((to - from) / 5) + 1 }, (_, step) => focus(from + step * 5));
+
+  /**
+   * 2026-10-02: one agent session ran from 09:45 to 15:00, through breaks of 12:00-12:21,
+   * 13:10-13:43 and 13:58-14:45. Nobody typed a prompt in any of them.
+   */
+  const THROUGH: CollectedEvent[] = [
+    ...focusEvery(585, 715),
+    prompt(586, 'human'),
+    ...running(585, 900),
+    commit(650, 'feat(repo): Read the bracket seeds'),
+    idle(720, 'idle-start'),
+    idle(741, 'idle-end'),
+    ...focusEvery(741, 785),
+    prompt(760, 'human'),
+    idle(790, 'idle-start'),
+    idle(823, 'idle-end'),
+    ...focusEvery(823, 835),
+    idle(838, 'idle-start'),
+    idle(885, 'idle-end'),
+    ...focusEvery(885, 900),
+    commit(895, 'fix(repo): Keep the bracket seeds in order'),
+  ];
+  const WATCHED: CollectedEvent[] = [
+    input(585, 'input-active'),
+    input(719, 'input-idle'),
+    input(741, 'input-active'),
+    input(789, 'input-idle'),
+    input(823, 'input-active'),
+    input(837, 'input-idle'),
+    input(885, 'input-active'),
+  ];
+  const read = (events: CollectedEvent[], timerRuns: ClosedTimerRun[] = []) =>
+    streamDay({
+      events: events.slice().sort((a, b) => a.at.getTime() - b.at.getTime()),
+      options: { repoRoots: [REPO], windowsSeenThroughMs: AT(960).getTime(), rows: { config: CONFIG, timerRuns } },
+    });
+  const overlapMs = (row: TimeWindow, windows: readonly TimeWindow[]) =>
+    windowsMs(clipWindows({ windows: [row], within: windows }));
+  const bookedInBreaks = (day: ReturnType<typeof read>, rows: readonly TimeWindow[]) => {
+    const drawn = breaksBetweenRows({ breaks: day.breaks, rows, presence: day.presence });
+
+    return rows.reduce((sum, row) => sum + overlapMs(row, drawn), 0);
+  };
+  const minutes = (rows: readonly { from: Date; to: Date; durationMs: number }[]) =>
+    rows.map((row) => [row.from.getHours() * 60 + row.from.getMinutes(), row.durationMs / MINUTE]);
+
+  it('books no row across a break nobody prompted in', () => {
+    const day = read(THROUGH);
+    const booked = day.rows.proposals.filter((row) => row.issueKey === 'ET-772');
+
+    expect(minutes(booked)).toEqual([
+      [585, 135],
+      [735, 60],
+      [810, 30],
+      [885, 15],
+    ]);
+    expect(bookedInBreaks(day, booked)).toBe(0);
+  });
+
+  it('cuts the breaks out of a row whose start the reviewer pinned', () => {
+    const day = read(THROUGH);
+    const [first] = day.rows.proposals;
+    const pin: PinnedRow = {
+      id: 'pin:ET-772@09:45',
+      replaces: first ? [first.id] : [],
+      issueKey: 'ET-772',
+      from: AT(585),
+      to: AT(900),
+      durationMs: 315 * MINUTE,
+      observedMs: 315 * MINUTE,
+      laneKey: first?.laneKey,
+      tracksTo: true,
+      description: 'Bracket seeds',
+      confidence: 'certain',
+      evidence: [],
+    };
+    const review = reviewDay({ rows: day.rows, edits: { ...EMPTY_DAY_REVIEW_EDITS, pinned: [pin] } });
+    const booked = review.rows.filter((row) => row.issueKey === 'ET-772' && !row.hidden);
+
+    expect(bookedInBreaks(day, booked)).toBe(0);
+    expect(booked.reduce((sum, row) => sum + row.durationMs, 0)).toBe(240 * MINUTE);
+  });
+
+  it('writes no Tempo worklog inside a break', () => {
+    const day = read(THROUGH);
+    const accepted = reviewDay({ rows: day.rows }).rows.flatMap((row) =>
+      isNamedRow(row) ? [{ ...row, state: 'accepted' as const }] : [],
+    );
+    const { creates } = planTempoSync({
+      proposals: accepted,
+      ledger: [],
+      remote: [],
+      issueIdsByKey: new Map([['ET-772', '10772']]),
+    });
+    const written = creates.map(({ proposal }) => proposal);
+
+    expect(written.length).toBeGreaterThan(1);
+    expect(bookedInBreaks(day, written)).toBe(0);
+  });
+
+  it('still books what a prompt from the phone bought back inside a break', () => {
+    const day = read([...THROUGH, ...WATCHED, prompt(860, 'human')]);
+    const booked = day.rows.proposals.filter((row) => row.issueKey === 'ET-772');
+    const third = { from: AT(838), to: AT(885) };
+
+    expect(day.rows.remote?.booked).toEqual([{ from: AT(840), to: AT(855), laneKey: expect.any(String) }]);
+    expect(booked.reduce((sum, row) => sum + overlapMs(row, [third]), 0)).toBeGreaterThanOrEqual(15 * MINUTE);
+    expect(bookedInBreaks(day, booked)).toBe(0);
+  });
+
+  it('cuts no timer run the user started inside a break', () => {
+    const run: ClosedTimerRun = { id: 'run-1', from: AT(860), to: AT(900), issueKey: 'ET-772' };
+    const timed = read(THROUGH, [run]).rows.proposals.filter((row) => row.laneKey === TIMER_LANE_KEY);
+
+    expect(timed.map((row) => [row.from.getTime() < AT(885).getTime(), row.to])).toEqual([[true, AT(900)]]);
   });
 });

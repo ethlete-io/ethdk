@@ -81,8 +81,8 @@ const overlaps = (window: TimeWindow, windows: readonly TimeWindow[]) =>
  * presence, so it never does.
  *
  * This is the whole absence, before any prompt buys its attention back. The day's work is clipped to
- * it as well as to presence, so an agent that ran through a break still builds the row its time books
- * and the break is drawn over that row. `breakWindows` is what the day reports.
+ * it as well as to presence, so the time a prompt bought back still builds a row. `breakWindows` is
+ * what the day reports, and what is cut out of the rows.
  */
 export const breakGaps = (options: {
   /** The stretches the user was at the machine, from `presenceWindows`. */
@@ -399,9 +399,9 @@ const stated = (options: {
  * leave a gap, the gap is what the break is long: the measured window says *that* somebody was away,
  * and the gap says for how long.
  *
- * A break an agent ran through leaves no gap, because the agent's own blocks build a row across it.
- * That break is still drawn, snapped to the increment itself. The row keeps booking the time and
- * carries its own unattended marking; the break says nobody was there to do it.
+ * A break a row runs through leaves no gap. That break is still drawn, snapped to the increment
+ * itself, and `propose` cuts it out of the rows the day builds; a row the reviewer pinned over one
+ * keeps it.
  *
  * A measured break outside the rows is dropped, however early the machine was left. With no rows at
  * all there is nothing to read a grid or a gap from, so the measured breaks are returned as they are.
