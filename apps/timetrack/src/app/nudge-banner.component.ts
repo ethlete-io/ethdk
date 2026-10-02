@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { BUTTON_IMPORTS } from '@ethlete/components';
+import { injectDayReview } from './day-review/day-review';
 import { injectDayNudge } from './day-nudge';
 
 /**
@@ -24,7 +25,15 @@ import { injectDayNudge } from './day-nudge';
         </p>
 
         <div class="flex items-center gap-2">
-          <a routerLink="/day" et-button variant="filled" size="sm">Review the day</a>
+          @if (pending.gap.reasons[0] === 'unsynced') {
+            <a (click)="dayReview.goToDay(pending.day)" routerLink="/sync" et-button variant="filled" size="sm">
+              Sync the day
+            </a>
+          } @else {
+            <a (click)="dayReview.goToDay(pending.day)" routerLink="/day" et-button variant="filled" size="sm">
+              Review the day
+            </a>
+          }
           <button (click)="nudge.later()" et-button variant="outline" size="sm">Later</button>
           <button (click)="nudge.notToday()" et-button variant="transparent" size="sm">Not today</button>
         </div>
@@ -36,4 +45,5 @@ import { injectDayNudge } from './day-nudge';
 })
 export class NudgeBannerComponent {
   protected nudge = injectDayNudge();
+  protected dayReview = injectDayReview();
 }
