@@ -1,6 +1,6 @@
 import { ApplicationRef, EnvironmentInjector, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { QueryArgs, ReadonlyQuery } from '@ethlete/query';
+import { AnyLegacyQuery, QueryArgs, ReadonlyQuery } from '@ethlete/query';
 import { Subject, of, throwError } from 'rxjs';
 import '../../test-helpers';
 import { NotificationConfig, NotificationManagerConfig } from './notification-config';
@@ -225,6 +225,21 @@ describe('notification promise', () => {
       flushEffects();
 
       expect(ref.entry().config).toEqual({ status: 'loading', title: 'Saving…' });
+    });
+
+    it('follows a legacy interop query through the query it wraps', () => {
+      const { executionState, query } = createFakeQuery(loadingState());
+      const legacyQuery = { newQuery: query } as unknown as AnyLegacyQuery;
+
+      promise()(legacyQuery, { loading: 'Saving…', success: 'Saved', error: (e) => `Failed: ${e.code}` });
+
+      flushEffects();
+      expect(ref.entry().config.status).toBe('loading');
+
+      executionState.set({ type: 'success', response: {} });
+      flushEffects();
+
+      expect(ref.entry().config).toEqual({ status: 'success', title: 'Saved' });
     });
   });
 });

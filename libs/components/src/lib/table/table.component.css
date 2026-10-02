@@ -305,7 +305,7 @@
     gap: 4px;
     z-index: 1;
     font-weight: 600;
-    color: var(--et-surface-color-muted-solid, CanvasText);
+    color: var(--et-table-header-color, var(--et-surface-color-muted-solid, CanvasText));
     /* Opaque (band or plain surface) so scrolling rows pass behind the pinned header. */
     background: var(--_et-table-header-bg);
     border-block-end: 1px solid var(--_et-table-header-border);
@@ -348,6 +348,7 @@
   }
 
   .et-table-cell {
+    min-block-size: var(--et-table-row-min-block-size, auto);
     border-block-end: 1px solid var(--_et-table-row-divider);
   }
 

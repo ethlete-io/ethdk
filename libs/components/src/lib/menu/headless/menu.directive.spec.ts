@@ -17,17 +17,15 @@ import { MenuDirective } from './menu.directive';
         <div class="root-panel" etMenuPanel>
           <button (click)="clicked.push('alpha')" class="item-alpha" etMenuItem type="button">Alpha</button>
           <button [disabled]="bravoDisabled()" class="item-bravo" etMenuItem type="button">Bravo</button>
-          <!-- eslint-disable ethlete/prefer-static-boolean-properties -- closeOnActivate is tri-state (boolean | undefined); a transform would collapse its unset state -->
           <button
-            [closeOnActivate]="false"
             (click)="clicked.push('charlie')"
             class="item-charlie"
+            closeOnActivate="false"
             etMenuItem
             type="button"
           >
             Charlie
           </button>
-          <!-- eslint-enable ethlete/prefer-static-boolean-properties -->
 
           @for (label of extraLabels(); track label) {
             <button class="item-extra" etMenuItem type="button">{{ label }}</button>
@@ -56,6 +54,18 @@ class MenuDirectiveTestHost {
   loop = signal(true);
   menuAutoFocus = signal(true);
 }
+
+@Component({
+  template: `
+    <div etMenu>
+      <button class="bare" closeOnActivate etMenuItem type="button">Bare</button>
+      <button class="unset" etMenuItem type="button">Unset</button>
+      <ng-template etMenuSurface />
+    </div>
+  `,
+  imports: [MenuDirective, MenuSurfaceDirective, MenuItemDirective],
+})
+class MenuItemCloseOnActivateHost {}
 
 const keydown = (element: Element, key: string) =>
   element.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
@@ -563,5 +573,18 @@ describe('MenuDirective', () => {
 
       expect(menu.openSubmenu()).toBeNull();
     });
+  });
+});
+
+describe('MenuItemDirective closeOnActivate', () => {
+  it('reads a bare attribute as true and keeps an unset input undefined', () => {
+    const fixture = TestBed.createComponent(MenuItemCloseOnActivateHost);
+    fixture.detectChanges();
+
+    const item = (selector: string) =>
+      fixture.debugElement.query(By.css(selector)).injector.get(MenuItemDirective).closeOnActivate();
+
+    expect(item('.bare')).toBe(true);
+    expect(item('.unset')).toBeUndefined();
   });
 });

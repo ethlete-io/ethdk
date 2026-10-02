@@ -242,7 +242,7 @@ applies here too, leaving the readout on its own. Because the fit measures the
 paginator's own box, a responsive paginator in a flex row grows into the row's free space
 (`flex-grow: 1`), so the window comes back when the row widens; align its items inside that
 space with `justify-content` on the paginator (e.g. `justify-end`). Or skip measurement entirely
-with `[compact]="true"` for a Material-style controls row where the paginator sits inline with a
+with `compact` for a Material-style controls row where the paginator sits inline with a
 page-size select and keeps its content size:
 
 ```html
@@ -251,7 +251,7 @@ page-size select and keeps its content size:
   <et-form-field appearance="underline" size="sm">
     <et-select [formField]="pageSize" [clearable]="false"> … </et-select>
   </et-form-field>
-  <et-pagination [(page)]="page" [totalPages]="totalPages()" [totalItems]="total()" [pageSize]="20" [compact]="true" />
+  <et-pagination [(page)]="page" [totalPages]="totalPages()" [totalItems]="total()" [pageSize]="20" compact />
 </div>
 ```
 

@@ -48,9 +48,10 @@ export const createInertQuery = <TArgs extends QueryArgs>(): Query<TArgs> => {
     ...base,
     execute: noop,
     createSnapshot,
+    url: inertSignal<string | null>(null),
     reset: noop,
     abort: () => false,
-    asReadonly: () => ({ ...base, createSnapshot }),
+    asReadonly: () => ({ ...base, createSnapshot, url: inertSignal<string | null>(null) }),
     subtle: {
       destroy: noop,
       setResponse: noop,

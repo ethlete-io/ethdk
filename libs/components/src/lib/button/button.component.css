@@ -160,6 +160,7 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      font-size: var(--et-button-icon-size, 1em);
       transition: opacity 120ms ease;
 
       &:empty {

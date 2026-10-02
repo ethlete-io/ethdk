@@ -13,7 +13,7 @@ import {
   viewChildren,
   ViewEncapsulation,
 } from '@angular/core';
-import { clamp, createComponentId, signalHostElementDimensions } from '@ethlete/core';
+import { clamp, createComponentId, optionalBooleanAttribute, signalHostElementDimensions } from '@ethlete/core';
 import { BUTTON_IMPORTS } from '../button';
 import { PaginationDirective } from './headless/pagination.directive';
 import { PaginationRangeContext } from './pagination-labels';
@@ -103,7 +103,7 @@ export class PaginationComponent {
    * decision. Use `true` for a Material-style controls row where the paginator sits inline with a
    * page-size select and a range readout. `null` (default) keeps the automatic behavior.
    */
-  public compact = input<boolean | null>(null);
+  public compact = input<boolean | null, unknown>(null, { transform: optionalBooleanAttribute });
 
   /** Maps a page number to its URL, used when `renderAs` is `'links'`. */
   public urlForPage = input<((page: number) => string) | null>(null);

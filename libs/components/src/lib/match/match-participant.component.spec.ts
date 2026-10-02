@@ -40,6 +40,14 @@ class LinkHostComponent {
   public participant = signal<NormalizedMatchParticipant | null>(TEAM);
 }
 
+@Component({
+  template: `<div [participant]="participant()" et-match-participant interactive></div>`,
+  imports: [MatchParticipantComponent],
+})
+class BareInteractiveHostComponent {
+  public participant = signal<NormalizedMatchParticipant | null>(TEAM);
+}
+
 const create = () => {
   const fixture = TestBed.createComponent(HostComponent);
 
@@ -248,6 +256,14 @@ describe('MatchParticipantComponent', () => {
 
       expect(anchor?.hasAttribute('data-interactive')).toBe(true);
       expect(anchor?.classList.contains('et-focus-ring')).toBe(true);
+    });
+
+    it('reads a bare interactive attribute as true', () => {
+      const fixture = TestBed.createComponent(BareInteractiveHostComponent);
+
+      fixture.detectChanges();
+
+      expect((fixture.nativeElement as HTMLElement).querySelector('div')?.hasAttribute('data-interactive')).toBe(true);
     });
 
     it('names itself after the participant, so the link is not its emblem alt plus the same name', () => {

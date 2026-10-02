@@ -11,7 +11,7 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { optionalBooleanAttribute, RuntimeError } from '@ethlete/core';
 import { MENU_ERROR_CODES } from '../menu-errors';
 import { MenuTriggerDirective } from './menu-trigger.directive';
 import { MenuDirective } from './menu.directive';
@@ -44,7 +44,7 @@ export class MenuItemDirective {
   private destroyRef = inject(DestroyRef);
 
   public disabled = input(false, { transform: booleanAttribute });
-  public closeOnActivate = input<boolean | undefined>(undefined);
+  public closeOnActivate = input<boolean | undefined, unknown>(undefined, { transform: optionalBooleanAttribute });
   public activate = output<MenuItemActivationEvent>();
 
   /** @internal The menu whose item list this item belongs to. */

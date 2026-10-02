@@ -265,6 +265,11 @@ export class LegacyQuery<
     this.newQuery.subtle.destroyRef.onDestroy(() => this.teardown());
   }
 
+  /** The full URL of the request the underlying query is bound to, `null` before the first execution. */
+  get url() {
+    return this.newQuery.url();
+  }
+
   get rawState() {
     return this.toQueryState(this.newQuery.executionState());
   }

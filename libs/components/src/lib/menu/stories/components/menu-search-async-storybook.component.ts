@@ -27,8 +27,7 @@ const SIMULATED_LATENCY = 700;
 
             <et-menu-radio-group [(value)]="assignedPlayer">
               @for (player of players(); track player) {
-                <!-- eslint-disable-next-line ethlete/prefer-static-boolean-properties -- closeOnActivate is tri-state (boolean | undefined); a transform would collapse its unset state -->
-                <et-menu-radio-item [value]="player" [closeOnActivate]="true">{{ player }}</et-menu-radio-item>
+                <et-menu-radio-item [value]="player" closeOnActivate>{{ player }}</et-menu-radio-item>
               } @empty {
                 @if (!error()) {
                   <p class="et-sb-menu-empty">No players found</p>

@@ -235,14 +235,14 @@ const createOrder = myApiPost<CreateOrderArgs>('/orders').clone({
 features: [withDefaultRetry({ maxAttempts: 5, maxDelayMs: 10_000 })];
 ```
 
-| Option                 | Default                          | What it does                                                               |
-| ---------------------- | -------------------------------- | -------------------------------------------------------------------------- |
-| `maxAttempts`          | `3`                              | How many retries. `0` retries indefinitely - see the warning below.        |
-| `baseDelayMs`          | `1000`                           | The delay doubles per retry, starting at twice this.                       |
-| `maxDelayMs`           | `30000`                          | Upper bound of every delay, including one a `retry-after` asked for.       |
-| `jitter`               | `0.25`                           | How far the delay is spread around its computed value. `0` makes it exact. |
-| `retryableStatusCodes` | `0`, `408`, `425`, `429`, `501`+ | Replaces the retryable statuses rather than adding to them.                |
-| `retryNonIdempotent`   | `false`                          | Also retries a `POST`, a `PATCH` and a GraphQL mutation.                   |
+| Option                 | Default                          | What it does                                                                                                                                         |
+| ---------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `maxAttempts`          | `3`                              | How many retries. `0` retries indefinitely - see the warning below.                                                                                  |
+| `baseDelayMs`          | `1000`                           | The delay doubles per retry, starting at twice this.                                                                                                 |
+| `maxDelayMs`           | `30000`                          | Upper bound of every delay, including one a `retry-after` asked for.                                                                                 |
+| `jitter`               | `0.25`                           | How far the delay is spread around its computed value. `0` makes it exact.                                                                           |
+| `retryableStatusCodes` | `0`, `408`, `425`, `429`, `501`+ | A list replaces the retryable statuses. A function `(status, byDefault) => boolean` decides per status, so `byDefault \|\| status === 500` adds one. |
+| `retryNonIdempotent`   | `false`                          | Also retries a `POST`, a `PATCH` and a GraphQL mutation.                                                                                             |
 
 That option bag is a `DefaultRetryOptions`. A hand-written policy is a `ShouldRetryRequestFn`: it takes `ShouldRetryRequestOptions` (`{ retryCount, error, method, idempotent }`) and returns a `ShouldRetryRequestResult` - either `{ retry: false }` or `{ retry: true }` with the delay to wait.
 

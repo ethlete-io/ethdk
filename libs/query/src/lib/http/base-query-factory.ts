@@ -1,5 +1,5 @@
 import { HttpEventType } from '@angular/common/http';
-import { effect, runInInjectionContext } from '@angular/core';
+import { computed, effect, runInInjectionContext } from '@angular/core';
 import { describeQueryDevtoolsFeatures } from '../devtools/query-devtools-features';
 import {
   createQueryDevtoolsFormLinksRecorder,
@@ -164,6 +164,10 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
   const wrappedId = wrapAsObservableSignal(execute.currentRepositoryKey, deps.injector);
   const wrappedExecutionState = wrapAsObservableSignal(state.executionState, deps.injector);
   const wrappedRequest = wrapAsObservableSignal(state.subtle.request.asReadonly(), deps.injector);
+  const wrappedUrl = wrapAsObservableSignal(
+    computed(() => state.subtle.request()?.url ?? null),
+    deps.injector,
+  );
 
   const asReadonly = () => {
     const roQuery: ReadonlyQuery<TArgs> = {
@@ -176,6 +180,7 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
       triggeredBy: wrappedTriggeredBy,
       id: wrappedId,
       createSnapshot,
+      url: wrappedUrl,
       executionState: wrappedExecutionState,
     };
 
@@ -193,6 +198,7 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
     triggeredBy: wrappedTriggeredBy,
     id: wrappedId,
     createSnapshot,
+    url: wrappedUrl,
     reset: execute.reset,
     abort: execute.abort,
     asReadonly,

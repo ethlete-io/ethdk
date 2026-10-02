@@ -78,13 +78,6 @@ export class TableColumnChooserComponent {
    */
   protected labels = computed(() => this.table().resolvedLabels());
 
-  /**
-   * Toggling a column leaves the menu open - hiding several in one visit is the point of the list. A
-   * field rather than a literal in the template because `closeOnActivate` is tri-state
-   * (`boolean | undefined`) and so takes a binding, not a static attribute.
-   */
-  protected readonly KEEP_MENU_OPEN = false;
-
   protected hasHidden = computed(() => this.table().visibleColumnsMeta().length < this.table().allColumns().length);
 
   /**

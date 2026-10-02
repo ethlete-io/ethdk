@@ -11,6 +11,9 @@
      the cell's own padding. A column whose cells are taller than text — a chip, an avatar — should also
      say so with `etTableCellSkeleton`, which is what makes the *first* load match too. */
   .et-table-row--placeholder .et-table-cell {
-    min-block-size: var(--_et-table-row-h, calc(1.4em + var(--et-table-cell-padding-block) * 2));
+    min-block-size: max(
+      var(--et-table-row-min-block-size, 0px),
+      var(--_et-table-row-h, calc(1.4em + var(--et-table-cell-padding-block) * 2))
+    );
   }
 }

@@ -1181,7 +1181,7 @@ to the adapter's `page` / `setPage`, and let the page-size select drive the quer
           [totalPages]="totalPages()"
           [totalItems]="rows.total()"
           [pageSize]="pageSizeForm.pageSize().value()"
-          [compact]="true"
+          compact
           (pageChange)="rows.setPage($event)"
         />
       </div>
@@ -1200,7 +1200,7 @@ right-aligned Material-style row with an external, translatable "Items per page:
 label - given `.et-table-footer-label` so it matches the paginator's own readout
 instead of being a near-miss - and an `underline` select (`[mirrorPanelWidth]="false"` keeps its option rows
 readable - a page-size trigger is narrower than "20 ✓"). In a table with a bounded
-`block-size`, the bar sits at the bottom of the box even when the rows don't fill it. With `[compact]="true"` the paginator renders as a
+`block-size`, the bar sits at the bottom of the box even when the rows don't fill it. With `compact` the paginator renders as a
 range readout plus previous/next chevrons that sit inline and hold their position
 across page changes. For its other options (links mode, paged SEO, jump-to-page,
 the width-driven auto-collapse), see the [pagination guide](/components/pagination).
@@ -2113,6 +2113,14 @@ header row and the footer bar - over whatever the appearance would have used. Bo
 it, so recolouring one cannot leave the other behind. Reach for it where the appearance's
 own band is too close to the surface under it to read as a header: `cards` on a near-black
 page, for one, where the band and the page are the same near-black.
+
+Three more knobs cover what apps restyle most:
+
+| Property                        | Default                          | Sets                                                                                                       |
+| ------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `--et-table-header-color`       | `--et-surface-color-muted-solid` | The header labels' ink.                                                                                    |
+| `--et-table-row-min-block-size` | `auto`                           | A height floor for every body row, skeleton placeholder rows included. Taller content still grows the row. |
+| `--et-table-row-selected-tint`  | `--et-theme-color-primary-solid` | The accent a selected row mixes in: 12% at rest, 18% hovered, 26% held.                                    |
 
 The header's filter and column-menu triggers are `xs` icon buttons with a 24px floor, so an
 app that scales its own `xs` below the [WCAG 2.2 target size

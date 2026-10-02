@@ -10,6 +10,7 @@ import {
   output,
   untracked,
 } from '@angular/core';
+import { optionalBooleanAttribute } from '@ethlete/core';
 import { format, isValid } from 'date-fns';
 import { injectDateLocale } from '../../forms/date-time/date-time-formats';
 import { isNativelyInteractiveElement } from '../match-interactive';
@@ -143,7 +144,7 @@ export class MatchCardDirective {
    * right whenever the card is an `<a>` or `<button>`. Set it explicitly for a host that is interactive
    * some other way - a `<div>` wired to an overlay opener with its own `role` and `tabindex`.
    */
-  public interactive = input<boolean | null>(null);
+  public interactive = input<boolean | null, unknown>(null, { transform: optionalBooleanAttribute });
 
   /**
    * Animate the headline values when they change - the score ticker and the accent flash on the side that

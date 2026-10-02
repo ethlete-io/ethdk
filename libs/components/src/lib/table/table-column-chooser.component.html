@@ -19,8 +19,8 @@
           [value]="column.key"
           [checked]="table().isColumnVisible(column.key)"
           [disabled]="isLastVisible(column.key)"
-          [closeOnActivate]="KEEP_MENU_OPEN"
           (activate)="toggle(column.key)"
+          closeOnActivate="false"
         >
           {{ column.header || column.key }}
         </et-menu-checkbox-item>
@@ -30,9 +30,9 @@
            menu under the pointer while columns are being toggled. -->
       <et-menu-separator />
       <button
-        [closeOnActivate]="KEEP_MENU_OPEN"
         [disabled]="!hasHidden()"
         (activate)="table().showAllColumns()"
+        closeOnActivate="false"
         et-menu-item
         type="button"
       >

@@ -64,6 +64,10 @@ export default [
 ];
 ```
 
+::: warning Composing the pieces? Keep `recommendedSpec`
+`recommended` carries `recommendedSpec`; the individual pieces do not. A config that spreads `recommendedTs` and `recommendedTemplate` on their own and leaves `recommendedSpec` out lints specs, stories and test harnesses with the strict rules, with no warning: `ethlete/no-async-await`, `ethlete/no-dom-query` and `max-params` then fail in tests. Add it as the last entry, after every block that sets `files: ['**/*.ts']`.
+:::
+
 ::: warning Bring your own base config
 `recommendedTs` sets severities for `@typescript-eslint/*` rules, and `recommendedAngularTs` and `recommendedTemplate` for `@angular-eslint/*` rules, but none of them register those plugins or parsers - your base config must (Nx's `flat/angular` / `flat/angular-template` presets do). A non-Angular project leaves out `recommendedAngularTs` and `recommendedTemplate` and needs no `@angular-eslint` plugin. Peer requirements: Angular and Angular ESLint >= 21, ESLint >= 9, TypeScript >= 5.9 and `@typescript-eslint/eslint-plugin >= 8`.
 :::

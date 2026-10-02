@@ -190,12 +190,13 @@ protected save() {
 
 ## Small helpers
 
-| Helper                                           | Description                                                                                              |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| `clamp(value, min?, max?)`                       | Constrain to a range - **defaults `min: 0`, `max: 100`**.                                                |
-| `round(value, precision?)`                       | Round to N decimals (default `0`).                                                                       |
-| `createComponentId('et-button')`                 | Process-unique ids per prefix (`et-button-0`, `et-button-1`, …).                                         |
-| `Translatable`                                   | `{ i18n, text }` - translation key + fallback text.                                                      |
-| `NgClassType`                                    | The value type `[ngClass]` accepts, for typing class inputs.                                             |
-| `TypedQueryList<T>` / `switchQueryListChanges()` | A `QueryList` with typed `changes`, and an RxJS operator that switches to a list's changes stream.       |
-| `setInputSignal(input, value)`                   | Imperatively write an `input()` signal. Relies on Angular signal internals - a last-resort escape hatch. |
+| Helper                                           | Description                                                                                                                        |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `clamp(value, min?, max?)`                       | Constrain to a range - **defaults `min: 0`, `max: 100`**.                                                                          |
+| `round(value, precision?)`                       | Round to N decimals (default `0`).                                                                                                 |
+| `createComponentId('et-button')`                 | Process-unique ids per prefix (`et-button-0`, `et-button-1`, …).                                                                   |
+| `Translatable`                                   | `{ i18n, text }` - translation key + fallback text.                                                                                |
+| `NgClassType`                                    | The value type `[ngClass]` accepts, for typing class inputs.                                                                       |
+| `TypedQueryList<T>` / `switchQueryListChanges()` | A `QueryList` with typed `changes`, and an RxJS operator that switches to a list's changes stream.                                 |
+| `optionalBooleanAttribute`                       | An input transform like `booleanAttribute` that keeps `null` / `undefined`, so a tri-state input takes a bare attribute as `true`. |
+| `setInputSignal(input, value)`                   | Imperatively write an `input()` signal. Relies on Angular signal internals - a last-resort escape hatch.                           |

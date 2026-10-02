@@ -1,5 +1,5 @@
 import { booleanAttribute, Component, computed, ElementRef, inject, input, ViewEncapsulation } from '@angular/core';
-import { mountVisuallyHidden } from '@ethlete/core';
+import { mountVisuallyHidden, optionalBooleanAttribute } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import { PICTURE_IMPORTS } from '../picture';
 import { SKELETON_IMPORTS } from '../skeleton';
@@ -116,7 +116,7 @@ export class MatchParticipantComponent {
    * Whether this is a click target. `null` (the default) infers it from the host element, which is right
    * whenever it sits on an `<a>` or `<button>`. Set it for a host that is interactive some other way.
    */
-  public interactive = input<boolean | null>(null);
+  public interactive = input<boolean | null, unknown>(null, { transform: optionalBooleanAttribute });
 
   /** Override this instance's strings - see {@link provideMatchLabels} for the app-wide version. */
   public labels = input<Partial<MatchLabels> | null>(null);

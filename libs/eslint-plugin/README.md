@@ -17,6 +17,10 @@ import ethlete from '@ethlete/eslint-plugin';
 export default [...ethlete.configs.recommended];
 ```
 
+Composing the configs one by one (`recommendedTs`, `recommendedAngularTs`, `recommendedTemplate`)?
+Add `ethlete.configs.recommendedSpec` as the last entry - without it, specs, stories and test
+harnesses are linted with the strict rules.
+
 ## Documentation
 
 The full rule reference (all rules, grouped, with defaults and auto-fix support) and

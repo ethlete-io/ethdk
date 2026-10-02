@@ -424,4 +424,40 @@ describe('LegacyQueryCreator.prepare', () => {
       vi.mocked(console.warn).mockRestore();
     });
   });
+
+  describe('url', () => {
+    type GetPostArgs = { response: Person; pathParams: { postId: number }; queryParams: { expand: string } };
+
+    const makePostCreator = () =>
+      createLegacyQueryCreator({
+        name: 'legacyGetPost',
+        creator: createQueryCreator<GetPostArgs>(undefined, {
+          client,
+          method: 'GET',
+          route: (p) => `/posts/${p.postId}`,
+        }),
+      });
+
+    it('is null before the first execution', () => {
+      const query = TestBed.runInInjectionContext(() =>
+        makePostCreator().prepare({ pathParams: { postId: 7 }, queryParams: { expand: 'author' } }),
+      );
+
+      expect(query.url).toBeNull();
+    });
+
+    it('reads the resolved url with path and query params', () => {
+      const query = TestBed.runInInjectionContext(() =>
+        makePostCreator().prepare({ pathParams: { postId: 7 }, queryParams: { expand: 'author' } }),
+      );
+
+      query.execute();
+
+      expect(query.url).toBe('https://api.example.com/posts/7?expand=author');
+      expect(query.newQuery.url()).toBe('https://api.example.com/posts/7?expand=author');
+      expect(query.newQuery.asReadonly().url()).toBe('https://api.example.com/posts/7?expand=author');
+
+      httpTesting.expectOne('https://api.example.com/posts/7?expand=author').flush({ id: 7, name: 'Post' });
+    });
+  });
 });

@@ -250,6 +250,14 @@ describe('PaginationComponent', () => {
     ).toBe('1–10 von 40');
   });
 
+  it('reads a bare compact attribute as true', () => {
+    const fixture = TestBed.createComponent(PaginationComponent);
+    fixture.componentRef.setInput('totalPages', 4);
+    fixture.componentRef.setInput('compact', '');
+
+    expect(fixture.componentInstance.compact()).toBe(true);
+  });
+
   it('omits the compact pager controls when hidePreviousNext is set', () => {
     const fixture = TestBed.createComponent(PaginationComponent);
     fixture.componentRef.setInput('totalPages', 5);

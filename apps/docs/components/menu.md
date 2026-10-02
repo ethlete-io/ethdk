@@ -42,7 +42,7 @@ import { MENU_IMPORTS, MENU_SEARCH_IMPORTS } from '@ethlete/components';
 ## Items
 
 - `button[et-menu-item]` / `a[et-menu-item]` - a menu row with slots for an `[etIcon]`, the label, and a trailing `<et-menu-item-shortcut>`. A row that also opens a submenu appends a chevron after that slot - see [Submenus](#submenus). `variant="destructive"` switches it to the app's error color theme (the theme registered with `type: 'error'`).
-- The headless `etMenuItem` directive exposes an `activate` output (`{ source: 'pointer' | 'keyboard-enter' | 'keyboard-space' }`) and a `closeOnActivate` input to control whether activating dismisses the menu.
+- The headless `etMenuItem` directive exposes an `activate` output (`{ source: 'pointer' | 'keyboard-enter' | 'keyboard-space' }`) and a `closeOnActivate` input to control whether activating dismisses the menu. Unset, the item type decides; a bare `closeOnActivate` attribute means `true`, `closeOnActivate="false"` keeps the menu open.
 - `<et-menu-separator />` and `<et-menu-group-label>` structure longer menus (the label is wired into group `aria-labelledby` automatically).
 
 ## Submenus
@@ -115,7 +115,7 @@ Groups and standalone items carry the usual signal-forms surface alongside `[(va
 
   <et-menu-radio-group [(value)]="assignedPlayer">
     @for (player of filteredPlayers(); track player) {
-    <et-menu-radio-item [value]="player" [closeOnActivate]="true">{{ player }}</et-menu-radio-item>
+    <et-menu-radio-item [value]="player" closeOnActivate>{{ player }}</et-menu-radio-item>
     } @empty {
     <p>No players found</p>
     }

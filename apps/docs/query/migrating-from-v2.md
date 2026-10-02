@@ -380,6 +380,7 @@ A callback on that list compiles in both versions and only behaves differently, 
 - **`abort()` has no Cancelled state.** v2 `query.abort()` maps to v3 `query.abort()`, which returns whether something was in flight. v3 has no `Cancelled` state: the aborted execution sets no response and no error, and `executionState()` goes back to what it was before that execution started (`null` if the query never settled). A legacy interop query still reports v2's `Cancelled` state.
 - **A `cacheAdapter` still only sets freshness.** The generator carries it over unchanged, so `cacheAdapter: () => 0` still sends every `execute({ options: { allowCache: true } })` to the server, as it did every v2 `execute()`. What is new is `keepUnusedFor`: an entry stays around for 5 minutes after its last consumer, and a remount shows its old response while it refetches. Set `keepUnusedFor: 0` on the client if that is not wanted. v3 also passes the adapter Angular `HttpHeaders`, so read a header with `headers.get(name)`.
 - **An `entity` config only sees real responses.** `set` runs on success - including a 204, whose body is legitimately `null` - and never on `prepare()` or on a failure that left a previous response in place.
+- **The request URL is `query.url`.** v2's private `_routeWithParams` is gone. An interop query reads the resolved URL (base, path params and query params) from `query.url`, a v3 query from the `url()` signal. Both are `null` before the first execution.
 
 ## The `Any*` types
 

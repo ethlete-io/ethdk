@@ -23,8 +23,7 @@
         (mousedown)="$event.preventDefault()"
       >
         @for (option of options(); track option.level) {
-          <!-- eslint-disable-next-line ethlete/prefer-static-boolean-properties -- closeOnActivate is tri-state (boolean | undefined); a transform would collapse its unset state -->
-          <et-menu-radio-item [value]="option.level" [closeOnActivate]="true" [icon]="option.icon">
+          <et-menu-radio-item [value]="option.level" [icon]="option.icon" closeOnActivate>
             {{ option.label }}
           </et-menu-radio-item>
         }

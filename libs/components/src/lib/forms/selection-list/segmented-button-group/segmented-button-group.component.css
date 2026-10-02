@@ -88,7 +88,7 @@
       et-segmented-button {
         --et-segmented-button-padding-x: 10px;
         --et-segmented-button-padding-y: 4px;
-        font-size: 12px;
+        --et-segmented-button-font-size: 12px;
       }
     }
 
@@ -99,7 +99,7 @@
       et-segmented-button {
         --et-segmented-button-padding-x: 18px;
         --et-segmented-button-padding-y: 8px;
-        font-size: 16px;
+        --et-segmented-button-font-size: 16px;
       }
     }
 
@@ -138,7 +138,7 @@
       --et-segmented-button-padding-y: var(--et-tab-padding-block);
       --et-segmented-button-tab-underline-size: var(--et-tab-underline-size);
       --et-segmented-button-tab-underline-radius: var(--et-tab-underline-radius);
-      font-size: var(--et-tab-font-size);
+      --et-segmented-button-font-size: var(--et-tab-font-size);
     }
 
     &[data-mixed] .et-segmented-button-group-buttons {

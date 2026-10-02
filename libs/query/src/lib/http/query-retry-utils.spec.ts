@@ -134,6 +134,27 @@ describe('createDefaultRetryFn', () => {
     expect(retryFn({ retryCount: 1, error: makeError(0), ...get })).toEqual({ retry: false });
   });
 
+  it('should add to the default retryable statuses through a predicate', () => {
+    const seen: [number, boolean][] = [];
+    const retryFn = createDefaultRetryFn({
+      retryableStatusCodes: (status, byDefault) => {
+        seen.push([status, byDefault]);
+
+        return byDefault || status === 500;
+      },
+      jitter: 0,
+    });
+
+    expect(retryFn({ retryCount: 1, error: makeError(500), ...get })).toEqual({ retry: true, delay: 2000 });
+    expect(retryFn({ retryCount: 1, error: makeError(505), ...get })).toEqual({ retry: true, delay: 2000 });
+    expect(retryFn({ retryCount: 1, error: makeError(404), ...get })).toEqual({ retry: false });
+    expect(seen).toEqual([
+      [500, false],
+      [505, true],
+      [404, false],
+    ]);
+  });
+
   it('should never retry a Pagerfanta page past the end of a collection', () => {
     const outOfRange = {
       class: 'Pagerfanta\\Exception\\OutOfRangeCurrentPageException',

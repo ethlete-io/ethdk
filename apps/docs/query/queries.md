@@ -147,6 +147,7 @@ Every state property is a signal - and every one of them is an `ObservableSignal
 | `lastTimeExecutedAt()` | `number \| null`                  | Timestamp of the latest execution.                                                                          |
 | `triggeredBy()`        | `string \| null`                  | Who triggered the execution (`null` for user-triggered, `refreshQueriesInUse()` and `invalidateQueries()`). |
 | `id()`                 | `QueryKey \| null`                | Current repository cache key.                                                                               |
+| `url()`                | `string \| null`                  | Full URL (base, path params, query params) of the bound request. `null` before the first execution.         |
 
 Methods:
 

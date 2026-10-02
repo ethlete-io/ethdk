@@ -69,6 +69,14 @@ class LinkHostComponent {
   public match = signal<NormalizedMatch>(FINISHED);
 }
 
+@Component({
+  template: `<div [match]="match()" et-match-card interactive></div>`,
+  imports: [MATCH_CARD_IMPORTS],
+})
+class BareInteractiveHostComponent {
+  public match = signal<NormalizedMatch>(FINISHED);
+}
+
 const create = () => mountMatchCard(HostComponent);
 
 describe('MatchCardComponent', () => {
@@ -485,6 +493,12 @@ describe('MatchCardComponent', () => {
       expect(element.hasAttribute('role')).toBe(false);
       expect(element.hasAttribute('data-interactive')).toBe(true);
       expect(element.getAttribute('aria-label')).toContain('FC Berlin vs Neon Esports');
+    });
+
+    it('reads a bare interactive attribute as true', () => {
+      const element = mountMatchCard(BareInteractiveHostComponent).card();
+
+      expect(element.hasAttribute('data-interactive')).toBe(true);
     });
   });
 

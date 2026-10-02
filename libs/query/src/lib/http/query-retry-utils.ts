@@ -57,12 +57,13 @@ export type DefaultRetryOptions = {
   jitter?: number;
 
   /**
-   * Which response statuses are worth retrying, replacing the defaults rather than adding to them.
-   * A connection failure is status `0`.
+   * Which response statuses are worth retrying. A list replaces the defaults; a function gets the
+   * status and whether the defaults retry it, so `(status, byDefault) => byDefault || status === 500`
+   * adds one. A connection failure is status `0`.
    *
    * @default a connection failure (`0`), `408`, `425`, `429`, and every 5xx above `500`
    */
-  retryableStatusCodes?: number[];
+  retryableStatusCodes?: number[] | ((status: number, isRetryableByDefault: boolean) => boolean);
 
   /**
    * Also retries a request that is not idempotent (see {@link ShouldRetryRequestOptions.idempotent}). A
@@ -102,8 +103,11 @@ export const createDefaultRetryFn = (options: DefaultRetryOptions = {}): ShouldR
   const retryableStatusCodes = options.retryableStatusCodes;
   const retryNonIdempotent = options.retryNonIdempotent ?? false;
 
-  const isRetryableStatus = (status: number) =>
-    retryableStatusCodes ? retryableStatusCodes.includes(status) : isRetryableByDefault(status);
+  const isRetryableStatus = (status: number) => {
+    if (typeof retryableStatusCodes === 'function') return retryableStatusCodes(status, isRetryableByDefault(status));
+
+    return retryableStatusCodes ? retryableStatusCodes.includes(status) : isRetryableByDefault(status);
+  };
 
   const backoff = (retryCount: number) => {
     const exponential = baseDelayMs * Math.pow(2, retryCount);

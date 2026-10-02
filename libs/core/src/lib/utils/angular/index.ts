@@ -3,6 +3,7 @@ export * from './destroy';
 export * from './di';
 export * from './form';
 export * from './host-listener';
+export * from './input-transforms';
 export * from './query-list-changes';
 export * from './set-input-signal';
 export * from './types';

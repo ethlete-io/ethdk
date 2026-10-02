@@ -21,6 +21,30 @@ import { OverlayDirective } from './overlay.directive';
 })
 class OverlayDirectiveTestHost {}
 
+@Component({
+  template: `
+    <div class="bare" etOverlay hasBackdrop></div>
+    <div class="off" etOverlay hasBackdrop="false"></div>
+    <div class="unset" etOverlay></div>
+  `,
+  imports: [OverlayDirective],
+})
+class OverlayHasBackdropHost {}
+
+describe('OverlayDirective hasBackdrop', () => {
+  it('reads a bare attribute as true, "false" as false and keeps an unset input undefined', () => {
+    const fixture = TestBed.createComponent(OverlayHasBackdropHost);
+    fixture.detectChanges();
+
+    const hasBackdrop = (selector: string) =>
+      fixture.debugElement.query(By.css(selector)).injector.get(OverlayDirective).hasBackdrop();
+
+    expect(hasBackdrop('.bare')).toBe(true);
+    expect(hasBackdrop('.off')).toBe(false);
+    expect(hasBackdrop('.unset')).toBeUndefined();
+  });
+});
+
 describe('OverlayDirective', () => {
   let fixture: ComponentFixture<OverlayDirectiveTestHost>;
   let host: HTMLElement;

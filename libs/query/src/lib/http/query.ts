@@ -132,6 +132,12 @@ export type Query<TArgs extends QueryArgs> = QueryBase<TArgs> & {
   /** Creates an immutable snapshot of the current query state */
   createSnapshot: () => QuerySnapshot<TArgs>;
 
+  /**
+   * The full URL (base, path params and query params) of the request the query is bound to. `null`
+   * before the first execution.
+   */
+  url: ObservableSignal<string | null>;
+
   /** Resets the query state to its initial state */
   reset: () => void;
 

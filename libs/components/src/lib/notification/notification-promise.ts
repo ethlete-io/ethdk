@@ -1,5 +1,13 @@
 import { EffectRef, Injector, effect, untracked } from '@angular/core';
-import { QueryArgs, QueryErrorResponse, ReadonlyQuery, ResponseType } from '@ethlete/query';
+import {
+  AnyLegacyQuery,
+  isLegacyQuery,
+  QueryArgs,
+  QueryArgsOf,
+  QueryErrorResponse,
+  ReadonlyQuery,
+  ResponseType,
+} from '@ethlete/query';
 import { EMPTY, EmptyError, Observable, catchError, isObservable, tap } from 'rxjs';
 import {
   NotificationConfig,
@@ -30,7 +38,8 @@ export type NotificationPromiseWork<TValue> = PromiseLike<TValue> | Observable<T
  * Opens a `loading` notification and turns it into the success or error one when the work settles -
  * the same notification, updated in place, not a second toast.
  *
- * Takes a promise, an observable, or an `@ethlete/query` query. A query is *followed*, never
+ * Takes a promise, an observable, or an `@ethlete/query` query (a `createLegacyQueryCreator` query
+ * too). A query is *followed*, never
  * executed: trigger it yourself (or let a GET auto-execute) and the notification mirrors its
  * execution state, settling on the first success or failure it sees. If the query already carries a
  * response by then, the notification skips straight to success.
@@ -62,10 +71,14 @@ export type NotificationPromiseFn = {
     query: ReadonlyQuery<TArgs>,
     content: NotificationPromiseContent<ResponseType<TArgs>, QueryErrorResponse>,
   ): NotificationRef;
+  <TQuery extends AnyLegacyQuery>(
+    query: TQuery,
+    content: NotificationPromiseContent<ResponseType<QueryArgsOf<TQuery['newQuery']>>, QueryErrorResponse>,
+  ): NotificationRef;
 };
 
 /** Anything the promise API accepts, before it has been told apart. */
-type AnyNotificationPromiseWork = NotificationPromiseWork<unknown> | ReadonlyQuery<QueryArgs>;
+type AnyNotificationPromiseWork = NotificationPromiseWork<unknown> | ReadonlyQuery<QueryArgs> | AnyLegacyQuery;
 
 type RunNotificationPromiseOptions = {
   work: AnyNotificationPromiseWork;
@@ -76,10 +89,16 @@ type RunNotificationPromiseOptions = {
   injector: Injector;
 };
 
-const isQuery = (work: AnyNotificationPromiseWork): work is ReadonlyQuery<QueryArgs> =>
+const isQuery = (work: NotificationPromiseWork<unknown> | ReadonlyQuery<QueryArgs>): work is ReadonlyQuery<QueryArgs> =>
   typeof work === 'object' && work !== null && 'executionState' in work;
 
-const runNotificationPromise = ({ work, content, open, injector }: RunNotificationPromiseOptions): NotificationRef => {
+const runNotificationPromise = ({
+  content,
+  open,
+  injector,
+  ...options
+}: RunNotificationPromiseOptions): NotificationRef => {
+  const work = isLegacyQuery<AnyLegacyQuery>(options.work) ? options.work.newQuery : options.work;
   const loading = toNotificationContent(content.loading);
   const ref = open({ ...loading, status: 'loading' });
 

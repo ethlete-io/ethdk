@@ -117,11 +117,12 @@ Each of `loading` / `success` / `error` takes a content object (a config without
 
 It accepts three kinds of work:
 
-| Work                       | Settles when                                                                                            |
-| -------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `Promise<T>`               | It resolves (value) or rejects (error)                                                                  |
-| `Observable<T>`            | It completes, carrying its last value; completing without emitting is a failure (as in `lastValueFrom`) |
-| `Query` (`@ethlete/query`) | Its execution state reaches success or failure                                                          |
+| Work                             | Settles when                                                                                            |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `Promise<T>`                     | It resolves (value) or rejects (error)                                                                  |
+| `Observable<T>`                  | It completes, carrying its last value; completing without emitting is a failure (as in `lastValueFrom`) |
+| `Query` (`@ethlete/query`)       | Its execution state reaches success or failure                                                          |
+| `createLegacyQueryCreator` query | The query it wraps (`newQuery`) reaches success or failure                                              |
 
 A query is **followed, not executed** - trigger it yourself (or let a `GET` auto-execute) and the notification mirrors its execution state, settling on the first success or failure it sees. The error callback gets the typed `QueryErrorResponse`, so [`queryErrorMessage`](/query/errors) is usually what you want in the message:
 

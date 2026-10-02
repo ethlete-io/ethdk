@@ -34,16 +34,22 @@
     --_et-focus-ring-offset: -2px;
   }
 
-  /* Selected rows carry a persistent accent tint (opaque variant on pinned cells, like stripe/hover). */
-  .et-table-row--selected .et-table-cell {
-    background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 12%, transparent);
+  /* Selected rows carry a persistent accent tint (opaque variant on pinned cells, like stripe/hover).
+     `.et-table-row.et-table-row--selected` outweighs the base sheet's stripe, hover and pressed rules
+     instead of tying with them: Angular re-appends that sheet after this one when a table mounts again. */
+  .et-table-row.et-table-row--selected {
+    --_et-table-selected-accent: var(--et-table-row-selected-tint, var(--et-theme-color-primary-solid, gray));
   }
 
-  .et-table-row--selected .et-table-cell.et-table-sticky-start,
-  .et-table-row--selected .et-table-cell.et-table-sticky-end {
+  .et-table-row.et-table-row--selected .et-table-cell {
+    background: color-mix(in srgb, var(--_et-table-selected-accent) 12%, transparent);
+  }
+
+  .et-table-row.et-table-row--selected .et-table-cell.et-table-sticky-start,
+  .et-table-row.et-table-row--selected .et-table-cell.et-table-sticky-end {
     background: color-mix(
       in srgb,
-      var(--et-theme-color-primary-solid, gray) 12%,
+      var(--_et-table-selected-accent) 12%,
       var(--_et-table-row-surface, var(--et-surface-background-solid, Canvas))
     );
   }
@@ -51,32 +57,32 @@
   /* A hovered selected row keeps its accent (slightly stronger) rather than reverting to the grey the
      base table paints on hover. */
   @media (hover: hover) {
-    .et-table-row--selected:hover .et-table-cell {
-      background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 18%, transparent);
+    .et-table-row.et-table-row--selected:hover .et-table-cell {
+      background: color-mix(in srgb, var(--_et-table-selected-accent) 18%, transparent);
     }
 
-    .et-table-row--selected:hover .et-table-cell.et-table-sticky-start,
-    .et-table-row--selected:hover .et-table-cell.et-table-sticky-end {
+    .et-table-row.et-table-row--selected:hover .et-table-cell.et-table-sticky-start,
+    .et-table-row.et-table-row--selected:hover .et-table-cell.et-table-sticky-end {
       background: color-mix(
         in srgb,
-        var(--et-theme-color-primary-solid, gray) 18%,
+        var(--_et-table-selected-accent) 18%,
         var(--_et-table-row-surface, var(--et-surface-background-solid, Canvas))
       );
     }
   }
 
   /* A held selected row escalates within its accent, for the same reason. */
-  .et-table-row--selected:where(.et-table-row--interactive, .et-table-row--link):active .et-table-cell {
-    background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 26%, transparent);
+  .et-table-row.et-table-row--selected:where(.et-table-row--interactive, .et-table-row--link):active .et-table-cell {
+    background: color-mix(in srgb, var(--_et-table-selected-accent) 26%, transparent);
   }
 
-  .et-table-row--selected:where(.et-table-row--interactive, .et-table-row--link):active
+  .et-table-row.et-table-row--selected:where(.et-table-row--interactive, .et-table-row--link):active
     .et-table-cell.et-table-sticky-start,
-  .et-table-row--selected:where(.et-table-row--interactive, .et-table-row--link):active
+  .et-table-row.et-table-row--selected:where(.et-table-row--interactive, .et-table-row--link):active
     .et-table-cell.et-table-sticky-end {
     background: color-mix(
       in srgb,
-      var(--et-theme-color-primary-solid, gray) 26%,
+      var(--_et-table-selected-accent) 26%,
       var(--_et-table-row-surface, var(--et-surface-background-solid, Canvas))
     );
   }

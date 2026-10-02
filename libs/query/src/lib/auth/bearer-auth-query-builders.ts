@@ -105,6 +105,9 @@ export type TokenRefreshQueryConfig<TArgs extends QueryArgs> = AuthQueryConfig<T
     /**
      * HTTP status codes that should trigger a retry.
      * Code 0 means network error (no internet).
+     *
+     * Unlike `createDefaultRetryFn`, the default retries a `500`: a refresh that fails for good ends the
+     * session, so waiting out a backend error is cheaper than logging the user out.
      * @default [0, 408, 425, 429, 500, 502, 503, 504]
      */
     retryableStatusCodes?: number[];

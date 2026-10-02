@@ -13,7 +13,12 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { enableAnchoredOverlayPositionExtras, injectHostElement, RuntimeError } from '@ethlete/core';
+import {
+  enableAnchoredOverlayPositionExtras,
+  injectHostElement,
+  optionalBooleanAttribute,
+  RuntimeError,
+} from '@ethlete/core';
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
 import { take, tap } from 'rxjs';
 import { OverlayConfig, OverlayAutoFocusTarget, OverlayMode, OverlayRole } from '../overlay-config';
@@ -48,7 +53,7 @@ export class OverlayDirective {
   // eslint-disable-next-line ethlete/no-native-html-input-name -- mirrors the native autofocus behaviour on open
   public autoFocus = input<OverlayAutoFocusTarget | string | false | undefined>(undefined);
   public restoreFocus = input(true, { transform: booleanAttribute });
-  public hasBackdrop = input<boolean | undefined>(undefined);
+  public hasBackdrop = input<boolean | undefined, unknown>(undefined, { transform: optionalBooleanAttribute });
   public closeOnEscape = input(true, { transform: booleanAttribute });
   public closeOnOutsidePointer = input(true, { transform: booleanAttribute });
   public closeOnNavigation = input(true, { transform: booleanAttribute });
