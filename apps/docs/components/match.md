@@ -291,7 +291,7 @@ to load, the frame draws the participant's first letter in the muted surface col
 it is nobody yet, so the frame stays blank and keeps the row's height.
 
 Nothing is needed on the consumer's side: `<et-picture>` already reports the failure (`data-state`,
-`imgError`, the `etPictureError` slot), and the participant supplies the fallback for it - so an `(error)`
+`imageError`, the `etPictureError` slot), and the participant supplies the fallback for it - so an `(error)`
 handler and a remembered broken `src` in application code can go.
 
 The emblem is drawn with `fit="contain"`, so a logo that is not square is letterboxed inside the round frame
