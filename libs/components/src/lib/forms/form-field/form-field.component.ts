@@ -32,11 +32,10 @@ import { FormErrorComponent } from './form-error.component';
 import { FormWarningComponent } from './form-warning.component';
 import { FormFieldSuffixOverlapStylesComponent } from './form-field-suffix-overlap-styles.component';
 import { FormFieldTextareaStylesComponent } from './form-field-textarea-styles.component';
+import { injectFormFieldDefaults } from './form-field-defaults';
 import {
-  FORM_FIELD_APPEARANCES,
   FORM_FIELD_FILLS,
   FORM_FIELD_LABEL_MODES,
-  FORM_FIELD_SIZES,
   FormFieldAppearance,
   FormFieldFill,
   FormFieldLabelMode,
@@ -107,10 +106,12 @@ export class FormFieldComponent {
   private surfaceThemes = injectSurfaceThemes({ optional: true });
   private styleManager = injectStyleManager();
 
-  public appearance = input<FormFieldAppearance>(FORM_FIELD_APPEARANCES.BOX);
-  public fill = input<FormFieldFill>(FORM_FIELD_FILLS.TRANSPARENT);
-  public labelMode = input<FormFieldLabelMode>(FORM_FIELD_LABEL_MODES.STATIC);
-  public size = input<FormFieldSize>(FORM_FIELD_SIZES.MD);
+  private defaults = injectFormFieldDefaults();
+
+  public appearance = input<FormFieldAppearance>(this.defaults.appearance);
+  public fill = input<FormFieldFill>(this.defaults.fill);
+  public labelMode = input<FormFieldLabelMode>(this.defaults.labelMode);
+  public size = input<FormFieldSize>(this.defaults.size);
 
   /**
    * Forces the busy state on. The field already shows it while an async validator is in flight for

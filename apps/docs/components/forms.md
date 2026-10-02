@@ -169,6 +169,19 @@ Field shell variants (as `data-*`-reflected inputs on `et-form-field`):
 | `labelMode`  | `'static' \| 'inline' \| 'floating-inside' \| 'floating-outside'` | `'static'`      |
 | `size`       | `'sm' \| 'md' \| 'lg'`                                            | `'md'`          |
 
+To change these defaults for a whole app or a subtree, call `provideFormFieldDefaults()` in its
+providers. An input set on a field still wins:
+
+```ts
+bootstrapApplication(AppComponent, {
+  providers: [provideFormFieldDefaults({ labelMode: 'floating-inside', fill: 'filled' })],
+});
+```
+
+The `size` default also applies to `et-choice-field`, `et-checkbox-group`, `et-radio-group` and
+`et-segmented-button-group`. The call is partial: what you leave out keeps the built-in default. A
+nested `provideFormFieldDefaults()` replaces the outer one, so it does not inherit the outer values.
+
 `appearance: 'underline'` is the compact one: it has no box to fill, so its frame is
 content-height and the rule sits right under the value (`sm` renders at 27px vs 42px for
 `box`). That density also means a smaller tap target - prefer `box`/`filled`, or a larger

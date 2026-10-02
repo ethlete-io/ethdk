@@ -1,7 +1,8 @@
 import { Component, computed, effect, inject, input, signal, ViewEncapsulation } from '@angular/core';
 import { createCanAnimateSignal, injectStyleManager, ProvideColorDirective } from '@ethlete/core';
 import { TabScaleStylesComponent } from '../../../tabs/tab-scale-styles.component';
-import { FORM_FIELD_SIZES, FormFieldSize } from '../../form-field/form-field.variants';
+import { injectFormFieldDefaults } from '../../form-field/form-field-defaults';
+import { FormFieldSize } from '../../form-field/form-field.variants';
 import { FormSupportComponent } from '../../form-field/partials/form-support.component';
 import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../../form-field/headless';
 import { SelectionListDirective } from '../headless';
@@ -58,7 +59,7 @@ export type SegmentedButtonGroupVariant =
 export class SegmentedButtonGroupComponent {
   private list = inject(SelectionListDirective);
   public support = injectFormSupport();
-  public size = input<FormFieldSize>(FORM_FIELD_SIZES.MD);
+  public size = input<FormFieldSize>(injectFormFieldDefaults().size);
 
   /**
    * How the selection is drawn. `'pill'` fills the selected segment; `'tabs'` underlines it instead, for a group

@@ -1,7 +1,8 @@
 import { Component, inject, input, ViewEncapsulation } from '@angular/core';
 import { createCanAnimateSignal, ProvideColorDirective } from '@ethlete/core';
 import { FormSupportComponent } from '../../form-field/partials/form-support.component';
-import { FORM_FIELD_SIZES, FormFieldSize } from '../../form-field/form-field.variants';
+import { injectFormFieldDefaults } from '../../form-field/form-field-defaults';
+import { FormFieldSize } from '../../form-field/form-field.variants';
 import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../../form-field/headless';
 import { SELECTION_LIST_MULTIPLE, SelectionListDirective } from '../headless';
 import { SelectionListOrientation } from '../selection-list.types';
@@ -48,7 +49,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
 export class CheckboxGroupComponent {
   private list = inject(SelectionListDirective);
   public support = injectFormSupport();
-  public size = input<FormFieldSize>(FORM_FIELD_SIZES.MD);
+  public size = input<FormFieldSize>(injectFormFieldDefaults().size);
 
   /**
    * Lay the options out in a row instead of a column. Horizontal wraps, and the group's label and its

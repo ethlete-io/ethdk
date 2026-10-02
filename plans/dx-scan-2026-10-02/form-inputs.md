@@ -141,6 +141,9 @@ Scope: `libs/components/src/lib/forms/{form-field,form,input,textarea,checkbox,s
 
 ## FI-06 No app-wide defaults for `et-form-field` `appearance` / `labelMode` / `size` / `fill`
 
+- Status: fixed
+- Review: ok
+
 - Where: `libs/components/src/lib/forms/form-field/form-field.component.ts:108-111`
 - Problem: every input is a literal default (`box`, `transparent`, `static`, `md`). An app whose
   design uses `labelMode="floating-inside"` has to repeat it on every `<et-form-field>`, or wrap

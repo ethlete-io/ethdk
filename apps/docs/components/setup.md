@@ -94,6 +94,9 @@ only ever looks up the `type`.
   `provideTableLabels`, `providePaginationLabels`, `provideFormFieldLabels`,
   `provideSelectLabels`. Every label is partial; omitted keys keep their English default. The
   full list is in [Localization](/components/localization).
+- **`provideFormFieldDefaults(...)`** - optional: the default `appearance`, `fill`, `labelMode` and
+  `size` of every form field, if your design differs from `box`/`transparent`/`static`/`md`
+  ([Forms](/components/forms#the-field-shell)).
 - **`provideIcons(...icons)`** - not app-wide setup: register icons on the component that
   renders them, so unused ones stay tree-shakeable ([Icon](/components/icon)).
 

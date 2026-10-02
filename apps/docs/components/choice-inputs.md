@@ -55,8 +55,8 @@ Boolean controls pair with a label inside `et-choice-field` (instead of
 - Both honor `readonly` (e.g. from a `readonly(...)` schema): the control keeps
   its normal look and stays focusable (`aria-readonly`), it just cannot be
   toggled - distinct from the dimmed `disabled` state.
-- `et-choice-field` accepts `size: 'sm' | 'md' | 'lg'` (default `'md'`), scaling
-  the control and label together.
+- `et-choice-field` accepts `size: 'sm' | 'md' | 'lg'` (default `'md'`, or the
+  `size` of `provideFormFieldDefaults()`), scaling the control and label together.
 - An `et-description` projected into `et-choice-field` renders under the label
   and joins the control's `aria-describedby`, ahead of the hint, warning or error
   the field is showing.
@@ -94,8 +94,8 @@ keyboard navigation is roving-tabindex with wrapping arrows:
   `aria-labelledby` on the group instead. Either counts as an accessible name, so
   the field's labelling guard stays quiet without a visually hidden `et-label`. A
   consumer-supplied `aria-labelledby` wins over a projected `et-label`'s id.
-- All three groups accept `size: 'sm' | 'md' | 'lg'` (default `'md'`), matching
-  the `et-form-field` size scale.
+- All three groups accept `size: 'sm' | 'md' | 'lg'` (default `'md'`, or the
+  `size` of `provideFormFieldDefaults()`), matching the `et-form-field` size scale.
 - All three groups honor `readonly`: options keep their normal focusable look,
   arrow keys, Home/End and typeahead still move focus (without the radio
   pattern's select-while-roving), but nothing can be (de)selected - distinct

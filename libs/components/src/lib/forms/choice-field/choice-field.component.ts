@@ -11,7 +11,8 @@ import { ChoiceFieldCardStylesComponent } from './choice-field-card-styles.compo
 import { SelectionCardStylesComponent } from '../selection-card-styles.component';
 import { SELECTION_CARD_CONTROL_POSITIONS, SelectionCardControlPosition } from '../selection-card.types';
 import { FormSupportComponent } from '../form-field/partials/form-support.component';
-import { FORM_FIELD_SIZES, FormFieldSize } from '../form-field/form-field.variants';
+import { injectFormFieldDefaults } from '../form-field/form-field-defaults';
+import { FormFieldSize } from '../form-field/form-field.variants';
 import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../form-field/headless';
 import { DescriptionComponent } from '../description/description.component';
 
@@ -52,7 +53,7 @@ export class ChoiceFieldComponent {
   protected formField = inject(FormFieldDirective);
 
   private styleManager = injectStyleManager();
-  public size = input<FormFieldSize>(FORM_FIELD_SIZES.MD);
+  public size = input<FormFieldSize>(injectFormFieldDefaults().size);
 
   /**
    * `'card'` turns the row into a full-width clickable panel with the label leading and the control trailing - for
