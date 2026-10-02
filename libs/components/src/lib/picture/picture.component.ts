@@ -122,10 +122,10 @@ export class PictureComponent {
   public fit = input<'contain' | 'cover' | 'fill' | 'none' | 'scale-down' | null>(null);
 
   /** The image finished loading, with the intrinsic pixel dimensions the browser decoded. */
-  public imgLoad = output<{ naturalWidth: number; naturalHeight: number }>();
+  public imageLoad = output<{ naturalWidth: number; naturalHeight: number }>();
 
   /** The image failed to load - a dead URL, a network error, an undecodable file. */
-  public imgError = output<void>();
+  public imageError = output<void>();
 
   public img = viewChild<ElementRef<HTMLImageElement>>('img');
 
@@ -219,12 +219,12 @@ export class PictureComponent {
   protected markLoaded(img: HTMLImageElement) {
     this.loadedSize.set({ width: img.naturalWidth, height: img.naturalHeight });
     this.loadState.set(PICTURE_STATES.LOADED);
-    this.imgLoad.emit({ naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight });
+    this.imageLoad.emit({ naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight });
   }
 
   protected markFailed() {
     this.loadedSize.set(null);
     this.loadState.set(PICTURE_STATES.ERROR);
-    this.imgError.emit();
+    this.imageError.emit();
   }
 }

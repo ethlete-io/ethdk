@@ -19,7 +19,7 @@ export const BUTTON_TYPES = {
   RESET: 'reset',
 } as const;
 
-type ButtonType = (typeof BUTTON_TYPES)[keyof typeof BUTTON_TYPES];
+export type ButtonType = (typeof BUTTON_TYPES)[keyof typeof BUTTON_TYPES];
 
 /** @internal */
 export type ButtonLoadingSource = {

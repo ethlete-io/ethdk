@@ -1,5 +1,6 @@
 import { Component, computed, input, model, ViewEncapsulation } from '@angular/core';
 import { injectPaginationLabels, PaginationLabels } from './pagination-labels';
+import { PAGINATION_SIZES, PaginationSize } from './pagination.types';
 
 /** The default choices, the sizes a list view is normally offered. */
 const DEFAULT_PAGE_SIZES = [10, 25, 50, 100] as const;
@@ -56,7 +57,7 @@ export class PageSizeSelectComponent {
   public pageSize = model.required<number>();
 
   /** Control density, to match the paginator it sits next to. @default 'md' */
-  public size = input<'sm' | 'md'>('md');
+  public size = input<PaginationSize>(PAGINATION_SIZES.MD);
 
   /** Override this instance's strings - see {@link providePaginationLabels} for the app-wide version. */
   public labels = input<Partial<PaginationLabels> | null>(null);

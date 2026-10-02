@@ -52,6 +52,21 @@ Key names are case-insensitive and several spellings resolve to the same key, so
 
 Anything not in the table renders as written with its first letter capitalized, so `f5` becomes `F5` and single letters are uppercased. Because `+` separates the keys, the literal plus key is spelled `plus` - `mod+plus` - or written as a `+` standing alone in a key's place: `+`, `mod++`, `mod+++shift`. Any other empty segment is dropped, so `mod++k` reads as `mod+k`.
 
+## Localizing key names
+
+The printed labels and the spoken names are English by default. `provideKbdLabels` replaces them per key, by canonical name (`ctrl`, `delete`, `esc`, …), for everything below the injector. A key you give replaces both platforms, so spread the default to change one:
+
+```ts
+import { DEFAULT_KBD_LABELS, provideKbdLabels } from '@ethlete/components';
+
+provideKbdLabels({
+  ctrl: { ...DEFAULT_KBD_LABELS.ctrl, other: { label: 'Strg', name: 'Steuerung' } },
+  delete: { ...DEFAULT_KBD_LABELS.delete, other: { label: 'Entf', name: 'Entfernen' } },
+});
+```
+
+The `+` key's entry is `plus`. `kbdKeyLabel` and `kbdKeyName` take the label set too: `kbdKeyLabel('ctrl', { platform: 'other', labels })`.
+
 ## Pinning the platform
 
 The platform is detected from the browser once, and is `'other'` wherever there is no `navigator` - so a server render and a non-Apple client agree, and only an Apple client corrects itself on hydration.

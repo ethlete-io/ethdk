@@ -10,7 +10,7 @@ import { AVATAR_IMPORTS } from '@ethlete/components';
 <et-avatar src="/jane.jpg" name="Jane Doe" />
 <et-avatar name="Jane Doe" color="brand" />
 <et-avatar name="Dr. Anna Maria Schmidt" initials="AS" />
-<et-avatar><et-icon [definition]="USER_ICON" /></et-avatar>
+<et-avatar><i etIcon="user" label="Guest"></i></et-avatar>
 ```
 
 ## Live demo
@@ -53,7 +53,7 @@ Theme names are project-specific - the SDK ships none; examples in these guides 
 `et-avatar` is also an attribute selector, so an avatar that navigates or opens something is written as the link or button it is - `routerLink`, `href` and click handlers stay on your own element, and the avatar only brings the presentation:
 
 ```html
-<!-- the link needs its own accessible name: initials are not one -->
+<!-- the initials carry `name` as their accessible name, so the link is named too; an image-only avatar is named by its alt text -->
 <a
   [routerLink]="['/users', user.id]"
   [name]="user.name"
@@ -65,7 +65,7 @@ Theme names are project-specific - the SDK ships none; examples in these guides 
 
 ## Accessibility
 
-The image's `alt` text comes from `name` (empty when unset, which is a deliberate statement that it carries no information). When you fall back to projected content instead of `name`/`src`, give that content its own accessible label (e.g. an `<et-icon>` with a hidden label, or `aria-label` on the avatar itself).
+The image's `alt` text comes from `name` (empty when unset, which is a deliberate statement that it carries no information). Initials rendered from `name` (also after a failed image load) are a `role="img"` named after `name`, so a screen reader reads "Jane Doe" rather than "J D". Explicit `initials` without a `name` are read as written. When you fall back to projected content instead of `name`/`src`, give that content its own accessible label (e.g. `<i etIcon="user" label="Guest"></i>`, or `aria-label` on the avatar itself).
 
 ## Theming
 

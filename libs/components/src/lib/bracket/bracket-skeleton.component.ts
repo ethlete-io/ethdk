@@ -97,7 +97,11 @@ export class BracketSkeletonContinueComponent<TRoundData = unknown, TMatchData =
 @Component({
   selector: 'et-bracket-skeleton',
   template: `
-    <et-skeleton [loadingAllyText]="loadingAllyText()" [animated]="animated()" class="et-bracket-skeleton">
+    <et-skeleton
+      [labels]="loadingAllyText() ? { loadingContent: loadingAllyText() ?? undefined } : null"
+      [animated]="animated()"
+      class="et-bracket-skeleton"
+    >
       <et-bracket
         [source]="source()"
         [layouts]="layouts()"

@@ -3,12 +3,10 @@ import { ColorInteractiveDirective, createCanAnimateSignal } from '@ethlete/core
 import { FocusRingDirective } from '../focus-ring';
 import { SpinnerComponent } from '../loader';
 import { ButtonStylesDirective } from './button-styles.directive';
-import { BUTTON_SIZES, BUTTON_SPINNER_CONFIG, BUTTON_VARIANTS, ButtonSize } from './button.types';
+import { BUTTON_SIZES, BUTTON_SPINNER_CONFIG, BUTTON_VARIANTS, ButtonSize, ButtonVariant } from './button.types';
 import { ButtonColorDirective, ButtonDirective } from './headless';
 
-type IconButtonVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS];
-
-const PRESSED_VARIANT_MAP: Record<IconButtonVariant, string> = {
+const PRESSED_VARIANT_MAP: Record<ButtonVariant, string> = {
   filled: 'transparent',
   outline: 'filled',
   tonal: 'filled',
@@ -62,7 +60,7 @@ const PRESSED_VARIANT_MAP: Record<IconButtonVariant, string> = {
 export class IconButtonComponent {
   protected buttonDir = inject(ButtonDirective);
 
-  public variant = input<IconButtonVariant>(BUTTON_VARIANTS.TRANSPARENT);
+  public variant = input<ButtonVariant>(BUTTON_VARIANTS.TRANSPARENT);
   public size = input<ButtonSize>(BUTTON_SIZES.MD);
 
   public canAnimate = createCanAnimateSignal();

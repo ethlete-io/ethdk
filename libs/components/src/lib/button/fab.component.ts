@@ -11,10 +11,9 @@ import {
   BUTTON_VARIANTS,
   ButtonIconAlignment,
   ButtonSize,
+  ButtonVariant,
 } from './button.types';
 import { ButtonDirective } from './headless';
-
-type FabVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS];
 
 @Component({
   selector: '[et-fab]',
@@ -77,7 +76,7 @@ type FabVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS];
 export class FabComponent {
   protected buttonDir = inject(ButtonDirective);
 
-  public variant = input<FabVariant>(BUTTON_VARIANTS.FILLED);
+  public variant = input<ButtonVariant>(BUTTON_VARIANTS.FILLED);
   public size = input<ButtonSize>(BUTTON_SIZES.MD);
   public expanded = input(false, { transform: booleanAttribute });
   public iconAlignment = input<ButtonIconAlignment>(BUTTON_ICON_ALIGNMENTS.START);

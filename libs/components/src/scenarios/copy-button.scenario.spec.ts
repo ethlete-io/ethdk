@@ -21,7 +21,7 @@ import { Scenario, useScenario } from './harness';
     <button
       #copyBtn="etCopyButton"
       [text]="link()"
-      (copySuccess)="copies.set(copies() + 1)"
+      (copySucceed)="copies.set(copies() + 1)"
       et-icon-button
       etCopyButton
       resetDelay="500"
@@ -52,7 +52,7 @@ const drain = async (s: Scenario) => {
 @Component({
   selector: 'et-scenario-invite-code',
   imports: [CopyButtonDirective],
-  template: `<button (copySuccess)="copied.push(code)" etCopyButton text="TEAM-A-42" type="button">Copy code</button>`,
+  template: `<button (copySucceed)="copied.push(code)" etCopyButton text="TEAM-A-42" type="button">Copy code</button>`,
 })
 class InviteCodeComponent {
   code = 'TEAM-A-42';

@@ -103,6 +103,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 - [Empty state](/components/empty-state) - icon/title/description/action placeholder for a section with nothing to show.
 - [Icon](/components/icon) - tree-shakeable inline-SVG icons via `provideIcons()` and `[etIcon]`.
 - [Loaders](/components/loader) - spinner, progress bar and brand loader.
+- [Skeleton](/components/skeleton) - placeholder shapes and text lines that hold a layout while it loads, announced once to screen readers.
 - [Time picker](/components/time-picker) - inline 24-hour ring time picker, single or range, with drag and keyboard selection and blocked spans.
 
 ### Forms

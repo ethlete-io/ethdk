@@ -37,7 +37,7 @@ import { PICTURE_IMPORTS } from '../picture.imports';
         <h3 class="text-large m-0">Natural size, once it is known</h3>
         <p class="text-small m-0 opacity-60">
           <code>naturalSize()</code> and <code>naturalAspectRatio()</code> report what the browser decoded, and
-          <code>imgLoad</code> carries the same numbers. Both are null until then, and after a failure.
+          <code>imageLoad</code> carries the same numbers. Both are null until then, and after a failure.
         </p>
 
         <et-picture
@@ -45,13 +45,13 @@ import { PICTURE_IMPORTS } from '../picture.imports';
           [defaultSrc]="WIDE_SRC"
           [aspectRatio]="16 / 9"
           [style.max-inline-size.px]="320"
-          (imgLoad)="loadedRatio.set($event.naturalWidth / $event.naturalHeight)"
+          (imageLoad)="loadedRatio.set($event.naturalWidth / $event.naturalHeight)"
           alt="A coloured block whose intrinsic size is reported below"
         />
 
         <p class="text-small m-0 opacity-60">
           state: {{ picture.state() }} · naturalSize: {{ picture.naturalSize()?.width }} &times;
-          {{ picture.naturalSize()?.height }} · naturalAspectRatio: {{ picture.naturalAspectRatio() }} · from imgLoad:
+          {{ picture.naturalSize()?.height }} · naturalAspectRatio: {{ picture.naturalAspectRatio() }} · from imageLoad:
           {{ loadedRatio() }}
         </p>
       </section>

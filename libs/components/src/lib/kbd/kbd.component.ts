@@ -1,6 +1,7 @@
 import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
 import { mountVisuallyHidden } from '@ethlete/core';
 import { KBD_PLATFORM, kbdKeyLabel, KbdPlatform, kbdKeyName, parseKbdKeys } from './kbd-keys';
+import { injectKbdLabels } from './kbd-labels';
 
 /**
  * A keyboard shortcut rendered as keycaps, one cap per key, with the glyphs the current platform
@@ -32,6 +33,7 @@ import { KBD_PLATFORM, kbdKeyLabel, KbdPlatform, kbdKeyName, parseKbdKeys } from
 })
 export class KbdComponent {
   private detectedPlatform = inject(KBD_PLATFORM);
+  private labels = injectKbdLabels();
 
   /** The shortcut, as keys joined by `+` - e.g. `mod+shift+k`. */
   public keys = input.required<string>();
@@ -42,12 +44,14 @@ export class KbdComponent {
   private resolvedPlatform = computed(() => this.platform() ?? this.detectedPlatform);
 
   protected keyLabels = computed(() =>
-    parseKbdKeys(this.keys()).map((key) => kbdKeyLabel(key, this.resolvedPlatform())),
+    parseKbdKeys(this.keys()).map((key) =>
+      kbdKeyLabel(key, { platform: this.resolvedPlatform(), labels: this.labels() }),
+    ),
   );
 
   protected spokenLabel = computed(() =>
     parseKbdKeys(this.keys())
-      .map((key) => kbdKeyName(key, this.resolvedPlatform()))
+      .map((key) => kbdKeyName(key, { platform: this.resolvedPlatform(), labels: this.labels() }))
       .join(' '),
   );
 

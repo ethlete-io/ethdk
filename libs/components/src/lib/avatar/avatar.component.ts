@@ -38,7 +38,7 @@ const initialsFromName = (name: string) => {
  * <et-avatar src="/jane.jpg" name="Jane Doe" />
  * <et-avatar name="Jane Doe" color="brand" />
  * <et-avatar name="Dr. Anna Maria Schmidt" initials="AS" />
- * <et-avatar><et-icon [definition]="USER_ICON" /></et-avatar>
+ * <et-avatar><i etIcon="user" label="Guest"></i></et-avatar>
  * <a [routerLink]="['/users', user.id]" [name]="user.name" et-avatar></a>
  */
 @Component({
@@ -47,7 +47,9 @@ const initialsFromName = (name: string) => {
     @if (imageVisible()) {
       <img [src]="src()" [alt]="name() ?? ''" (error)="markImageFailed()" class="et-avatar-image" />
     } @else if (displayedInitials()) {
-      <span class="et-avatar-initials">{{ displayedInitials() }}</span>
+      <span [attr.role]="name() ? 'img' : null" [attr.aria-label]="name() || null" class="et-avatar-initials">{{
+        displayedInitials()
+      }}</span>
     } @else {
       <ng-content />
     }

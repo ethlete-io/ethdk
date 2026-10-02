@@ -5,7 +5,7 @@ import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
  * the only thing a screen reader has to go on.
  *
  * One set for all of them on purpose: an app that translates "Loading" should not have to say so once
- * per component. `et-skeleton`'s `loadingAllyText` still overrides it per instance where something more
+ * per component. `et-skeleton`'s `labels` input still overrides it per instance where something more
  * specific reads better ("Loading results").
  */
 export type LoaderLabels = {

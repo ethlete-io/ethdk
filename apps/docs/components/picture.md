@@ -149,11 +149,11 @@ replacing it would restart the request. Without an error slot, a failed image ke
 broken-image rendering, which at least shows the alt text; with one, the slot covers it.
 
 `state()` exposes the same thing as a signal (`'loading' | 'loaded' | 'error'`), and the host mirrors it as
-`data-state` for styling. `imgLoad` and `imgError` fire as outputs.
+`data-state` for styling. `imageLoad` and `imageError` fire as outputs.
 
 ## What the browser reports back
 
-`imgLoad` carries the dimensions the browser decoded - `{ naturalWidth, naturalHeight }` - and the same numbers
+`imageLoad` carries the dimensions the browser decoded - `{ naturalWidth, naturalHeight }` - and the same numbers
 are readable as signals, so a template can use them without keeping a copy:
 
 - **`naturalSize()`** - `{ width, height } | null`. `null` while loading and after a failure, so `null` means
@@ -209,8 +209,8 @@ string, so only the first candidate of a relative multi-candidate srcset resolve
 | `state()`              | `Signal<PictureState>`                                    | `'loading'`, `'loaded'` or `'error'`.          |
 | `naturalSize()`        | `Signal<{ width: number; height: number } \| null>`       | Decoded intrinsic size; `null` until loaded.   |
 | `naturalAspectRatio()` | `Signal<number \| null>`                                  | Intrinsic width ÷ height; `null` until loaded. |
-| `imgLoad`              | `output<{ naturalWidth: number; naturalHeight: number }>` | The image finished loading.                    |
-| `imgError`             | `output<void>`                                            | The image failed to load.                      |
+| `imageLoad`            | `output<{ naturalWidth: number; naturalHeight: number }>` | The image finished loading.                    |
+| `imageError`           | `output<void>`                                            | The image failed to load.                      |
 
 Utilities are exported for consumers building their own markup: `extractFirstImageUrl`,
 `normalizePictureSource`, `normalizePictureSizes`, `withPictureBaseUrl`.

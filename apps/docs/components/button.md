@@ -89,7 +89,7 @@ All flavors share the headless `ButtonDirective` (`[etButton]`):
 
 - `pressed` (surface / icon / window-control buttons) makes the button a toggle. Leave it unset on a plain action; once it is bound, `aria-pressed` reports both states (`"true"` and `"false"`), so bind `false` rather than nothing for a toggle that is off. The visual **variant swaps** only while pressed (e.g. `filled` ↔ `outline`) so the toggle reads at a glance. The `emitAriaPressed` opt-out (for pressed-styled triggers that already announce state via `aria-expanded`) is bindable on the raw headless `[etButton]` and on every flavor that takes `pressed`.
 - `pressedColor` (surface / icon buttons) re-themes the button while pressed - see [neutral until pressed](#neutral-until-pressed).
-- `type` defaults to `'button'`, so forms don't submit accidentally.
+- `type` defaults to `'button'`, so forms don't submit accidentally. A wrapper that forwards it can type it as `ButtonType` (`BUTTON_TYPES`); `variant` on every button, the FAB and icon button included, is a `ButtonVariant`.
 
 ## Query button
 

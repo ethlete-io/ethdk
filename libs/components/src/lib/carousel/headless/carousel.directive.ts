@@ -7,7 +7,9 @@ import {
   effect,
   inject,
   input,
+  model,
   signal,
+  untracked,
 } from '@angular/core';
 import {
   RuntimeError,
@@ -157,7 +159,13 @@ export class CarouselDirective {
    * Prefer `provideCarouselLabels` for app-wide localization.
    */
   public labels = input<Partial<CarouselLabels> | null>(null);
+  /**
+   * The current slide (0-based). Two-way bindable: it follows the controls, dots, autoplay and swipes, and
+   * setting it scrolls to that slide like `goTo()`. An out-of-range value snaps back to the current slide.
+   */
+  public activeIndex = model(0);
   private contentScrollable = contentChild(ScrollableDirective, { descendants: true });
+
   /** @internal Set by `<et-carousel>` with the scrollable it renders - see the note below. */
   public attachedScrollable = signal<ScrollableDirective | null>(null);
 
@@ -280,26 +288,22 @@ export class CarouselDirective {
   });
 
   /**
-   * @internal Which child of the track is current, counting clones. The public `activeIndex` is this mapped
-   * back onto the slides.
+   * @internal Which child of the track is current, counting clones. `currentIndex` is this mapped back onto
+   * the slides.
    */
   public activeDomIndex = computed(() => this.requestedDomIndex() ?? this.observedDomIndex());
 
   /**
-   * The slide currently in view. Derived from how much of each slide the scroll container can see, which
-   * is what makes it follow a finger drag as readily as a button press - and from the pending target while
-   * a button press is still being animated, so the dots move with the click rather than after it. `-1`
-   * before the first measurement.
-   *
-   * A clone reports the slide it clones, so this stays a slide index however far the track has looped.
+   * @internal The slide in view, following drags and the pending target of an animated button press. `-1`
+   * before the first measurement; a clone reports the slide it clones.
    */
-  public activeIndex = computed(() => this.slideIndexOf(this.activeDomIndex()));
+  public currentIndex = computed(() => this.slideIndexOf(this.activeDomIndex()));
 
   /** Whether the first slide is the current one. True once per lap on a looping carousel. */
-  public isAtStart = computed(() => this.activeIndex() <= 0);
+  public isAtStart = computed(() => this.currentIndex() <= 0);
 
   /** Whether the last slide is the current one. True once per lap on a looping carousel. */
-  public isAtEnd = computed(() => this.activeIndex() >= this.count() - 1);
+  public isAtEnd = computed(() => this.currentIndex() >= this.count() - 1);
 
   /** Whether `previous()` would move - false at the first slide without `loop`. */
   public canGoPrevious = computed(() => this.count() > 1 && (this.loop() || !this.isAtStart()));
@@ -331,7 +335,7 @@ export class CarouselDirective {
       count: this.count,
       domCount: this.domCount,
       slideAlign: this.slideAlign,
-      activeIndex: this.activeIndex,
+      activeIndex: this.currentIndex,
     });
 
     const slideProgress = useCarouselSlideProgress({
@@ -358,6 +362,27 @@ export class CarouselDirective {
         if (settled?.crossSeam()) slideProgress.flush();
       },
       onPointerDown: () => this.requestedDomIndex.set(null),
+    });
+
+    let agreedIndex: number | null = null;
+
+    effect(() => {
+      const current = this.currentIndex();
+      const requested = this.activeIndex();
+
+      if (current < 0) return;
+
+      untracked(() => {
+        if (requested === current) {
+          agreedIndex = current;
+        } else if (requested === agreedIndex || requested < 0 || requested >= this.count()) {
+          agreedIndex = current;
+          this.activeIndex.set(current);
+        } else {
+          agreedIndex = requested;
+          this.goTo(requested);
+        }
+      });
     });
 
     let hasMountedTransitionStyles = false;

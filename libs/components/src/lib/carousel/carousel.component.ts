@@ -86,7 +86,8 @@ type CarouselSlideView = {
   hostDirectives: [
     {
       directive: CarouselDirective,
-      inputs: ['loop', 'labels', 'slideAlign', 'transition', 'transitionDriver'],
+      inputs: ['loop', 'labels', 'slideAlign', 'transition', 'transitionDriver', 'activeIndex'],
+      outputs: ['activeIndexChange'],
     },
     {
       directive: CarouselAutoplayDirective,
@@ -99,7 +100,7 @@ type CarouselSlideView = {
   },
 })
 export class CarouselComponent {
-  /** @internal Read from the template; also handy for a consumer reaching in with `viewChild`. */
+  /** The headless carousel behind this component: `count()`, `goTo()`, `next()`, `previous()` and the rest. */
   public carousel = inject(CarouselDirective);
   private autoplayDirective = inject(CarouselAutoplayDirective);
   private hostElement = injectHostElement();
@@ -172,7 +173,7 @@ export class CarouselComponent {
 
   protected dots = computed(() => {
     const count = this.carousel.count();
-    const activeIndex = this.carousel.activeIndex();
+    const activeIndex = this.carousel.currentIndex();
     const labels = this.carousel.resolvedLabels();
 
     return Array.from({ length: count }, (_, index) => ({

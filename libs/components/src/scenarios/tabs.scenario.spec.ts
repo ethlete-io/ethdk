@@ -26,6 +26,22 @@ import '../test-helpers';
 import { Scenario, useScenario } from './harness';
 
 @Component({
+  selector: 'et-scenario-remembered-tabs',
+  imports: [TAB_IMPORTS],
+  template: `
+    <et-tab-group (selectedIndexChange)="selected.set($event)" sessionMemoryKey="account">
+      <et-tab label="Profile">Profile body</et-tab>
+      <et-tab label="Billing">Billing body</et-tab>
+      <et-tab label="Security">Security body</et-tab>
+      <et-tab label="Danger zone">Danger body</et-tab>
+    </et-tab-group>
+  `,
+})
+class RememberedTabsComponent {
+  selected = signal(0);
+}
+
+@Component({
   selector: 'et-scenario-account-tabs',
   imports: [TAB_IMPORTS],
   template: `
@@ -366,7 +382,7 @@ describe('tabs scenarios', () => {
 
   it('remembers the selected tab per session memory key across remounts', () => {
     const s = scenario();
-    const first = TestBed.createComponent(AccountTabsComponent);
+    const first = TestBed.createComponent(RememberedTabsComponent);
 
     s.tick();
     s.flush();
@@ -376,7 +392,7 @@ describe('tabs scenarios', () => {
 
     expect(sessionStorage.getItem('et-tab-group:account')).toBe('3');
 
-    const second = TestBed.createComponent(AccountTabsComponent);
+    const second = TestBed.createComponent(RememberedTabsComponent);
 
     s.tick();
     s.flush();

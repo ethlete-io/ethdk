@@ -12,6 +12,19 @@ describe('paginate', () => {
     expect(paginate({ currentPage: 1, totalPages: 0 })).toEqual([]);
   });
 
+  it('returns no items when the page count is not a number', () => {
+    expect(paginate({ currentPage: 1, totalPages: Number.NaN })).toEqual([]);
+    expect(paginate({ currentPage: 1, totalPages: Number.POSITIVE_INFINITY })).toEqual([]);
+  });
+
+  it('rounds a fractional page count up', () => {
+    const items = paginate({ currentPage: 3, totalPages: 2.5 });
+
+    expect(window(items)).toEqual([1, 2, 3]);
+    expect(control(items, 'last')?.page).toBe(3);
+    expect(control(items, 'next')?.disabled).toBe(true);
+  });
+
   it('lists every page without ellipsis for small counts', () => {
     expect(window(paginate({ currentPage: 1, totalPages: 5 }))).toEqual([1, 2, 3, 4, 5]);
   });

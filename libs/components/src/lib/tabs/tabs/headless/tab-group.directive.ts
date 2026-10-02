@@ -10,13 +10,12 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { RuntimeError, canUseSessionMemory, createAutoSessionMemoryKey, createSessionMemory } from '@ethlete/core';
+import { RuntimeError, canUseSessionMemory, createSessionMemory } from '@ethlete/core';
 import { TabBarDirective } from '../../headless/tab-bar.directive';
 import { TAB_ERROR_CODES } from '../../tab-errors';
 import { TAB_GROUP_TOKEN } from './tab-group.tokens';
 import { TabPanelDirective } from './tab-panel.directive';
 
-const ET_TAB_GROUP_AUTO_SESSION_MEMORY_PREFIX = 'tab-group';
 const ET_TAB_GROUP_SESSION_MEMORY_PREFIX = 'et-tab-group:';
 
 @Directive({
@@ -29,6 +28,7 @@ export class TabGroupDirective {
 
   public preserveContent = input(true, { transform: booleanAttribute });
   public selectedIndex = model(0);
+  /** Session storage key under which the selected tab is remembered; the stored tab wins over the initial `selectedIndex`. Nothing is stored while it is `null`. */
   public sessionMemoryKey = input<string | null>(null);
   private sessionMemoryAvailable = canUseSessionMemory();
 
@@ -38,7 +38,8 @@ export class TabGroupDirective {
   /** @internal Set by composing components (e.g. et-tab-group) that render panel content themselves instead of registering [etTabPanel] directives. */
   public managesPanelsInternally = signal(false);
 
-  public restoredSessionMemoryKey = signal('');
+  /** @internal */
+  public restoredSessionMemoryKey = signal<string | null>(null);
 
   constructor() {
     effect(() => {
@@ -85,11 +86,11 @@ export class TabGroupDirective {
         return;
       }
 
-      const sessionMemoryKey = this.getResolvedSessionMemoryKey();
+      const sessionMemoryKey = this.sessionMemoryKey();
       const restoredSessionMemoryKey = this.restoredSessionMemoryKey();
       const triggerCount = this.tabBar.triggers().length;
 
-      if (triggerCount === 0 || restoredSessionMemoryKey === sessionMemoryKey) {
+      if (sessionMemoryKey === null || triggerCount === 0 || restoredSessionMemoryKey === sessionMemoryKey) {
         return;
       }
 
@@ -110,12 +111,12 @@ export class TabGroupDirective {
         return;
       }
 
-      const sessionMemoryKey = this.getResolvedSessionMemoryKey();
+      const sessionMemoryKey = this.sessionMemoryKey();
       const restoredSessionMemoryKey = this.restoredSessionMemoryKey();
       const selectedIndex = this.selectedIndex();
       const triggerCount = this.tabBar.triggers().length;
 
-      if (restoredSessionMemoryKey !== sessionMemoryKey || triggerCount === 0) {
+      if (sessionMemoryKey === null || restoredSessionMemoryKey !== sessionMemoryKey || triggerCount === 0) {
         return;
       }
 
@@ -180,16 +181,6 @@ export class TabGroupDirective {
 
   private getSessionMemoryStorageKey(sessionMemoryKey: string) {
     return `${ET_TAB_GROUP_SESSION_MEMORY_PREFIX}${sessionMemoryKey}`;
-  }
-
-  private getResolvedSessionMemoryKey() {
-    return (
-      this.sessionMemoryKey() ??
-      createAutoSessionMemoryKey({
-        element: this.elementRef.nativeElement,
-        prefix: ET_TAB_GROUP_AUTO_SESSION_MEMORY_PREFIX,
-      })
-    );
   }
 
   private getSessionMemory(sessionMemoryKey: string) {

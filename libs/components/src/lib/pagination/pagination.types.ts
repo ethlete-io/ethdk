@@ -1,5 +1,12 @@
 import { PaginationLabels } from './pagination-labels';
 
+export const PAGINATION_SIZES = {
+  SM: 'sm',
+  MD: 'md',
+} as const;
+
+export type PaginationSize = (typeof PAGINATION_SIZES)[keyof typeof PAGINATION_SIZES];
+
 /** The kind of control a {@link PaginationItem} represents. */
 export type PaginationItemType = 'first' | 'previous' | 'page' | 'ellipsis' | 'next' | 'last';
 

@@ -31,7 +31,7 @@ describe('PictureComponent', () => {
     picture = fixture.componentInstance;
     loads = [];
 
-    picture.imgLoad.subscribe((event) => loads.push(event));
+    picture.imageLoad.subscribe((event) => loads.push(event));
 
     fixture.componentRef.setInput('alt', 'A test');
     fixture.componentRef.setInput('defaultSrc', 'first.jpg');
@@ -95,7 +95,7 @@ describe('PictureComponent', () => {
       expect(picture.naturalAspectRatio()).toBeNull();
     });
 
-    it('is set from the decoded image on load, and emitted with imgLoad', () => {
+    it('is set from the decoded image on load, and emitted with imageLoad', () => {
       fireLoad(800, 400);
 
       expect(loads).toEqual([{ naturalWidth: 800, naturalHeight: 400 }]);

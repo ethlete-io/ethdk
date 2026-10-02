@@ -37,6 +37,22 @@ class TestHostComponent {
 @Component({
   imports: [TabGroupComponent, TabComponent],
   template: `
+    <et-tab-group [sessionMemoryKey]="sessionMemoryKey" (selectedIndexChange)="selectedIndex = $event">
+      <et-tab label="First">First content</et-tab>
+      <et-tab [disabled]="secondTabDisabled" label="Second">Second content</et-tab>
+      <et-tab label="Third">Third content</et-tab>
+    </et-tab-group>
+  `,
+})
+class RememberingHostComponent {
+  selectedIndex = 0;
+  sessionMemoryKey: string | null = null;
+  secondTabDisabled = false;
+}
+
+@Component({
+  imports: [TabGroupComponent, TabComponent],
+  template: `
     <div>
       @for (size of sizes; track size) {
         <div>
@@ -103,7 +119,9 @@ describe('TabGroupComponent', () => {
       value: sessionStorageMock,
     });
 
-    TestBed.configureTestingModule({ imports: [RepeatedTabGroupsHostComponent, TestHostComponent] });
+    TestBed.configureTestingModule({
+      imports: [RepeatedTabGroupsHostComponent, RememberingHostComponent, TestHostComponent],
+    });
     fixture = TestBed.createComponent(TestHostComponent);
     hostComponent = fixture.componentInstance;
   });
@@ -136,9 +154,34 @@ describe('TabGroupComponent', () => {
     expect(tablists[0]?.getAttribute('aria-orientation')).toBe('horizontal');
   });
 
+  const mountRemembering = () => {
+    fixture.destroy();
+
+    const rememberingFixture = TestBed.createComponent(RememberingHostComponent);
+
+    rememberingFixture.componentInstance.sessionMemoryKey = SESSION_MEMORY_KEY;
+    rememberingFixture.detectChanges();
+
+    const group = rememberingFixture.debugElement
+      .query(By.directive(TabGroupDirective))
+      .injector.get(TabGroupDirective);
+
+    return { rememberingFixture, group, host: rememberingFixture.componentInstance };
+  };
+
   it('restores the selected tab from session storage', () => {
     storageEntries.set(SESSION_MEMORY_STORAGE_KEY, '2');
+
+    const { group, host } = mountRemembering();
+
+    expect(group.selectedIndex()).toBe(2);
+    expect(host.selectedIndex).toBe(2);
+  });
+
+  it('lets the stored value win over a bound selectedIndex', () => {
+    storageEntries.set(SESSION_MEMORY_STORAGE_KEY, '2');
     hostComponent.sessionMemoryKey = SESSION_MEMORY_KEY;
+    hostComponent.selectedIndex = 0;
 
     fixture.detectChanges();
 
@@ -159,33 +202,38 @@ describe('TabGroupComponent', () => {
 
   it('clamps persisted indices to the available tab range', () => {
     storageEntries.set(SESSION_MEMORY_STORAGE_KEY, '99');
-    hostComponent.sessionMemoryKey = SESSION_MEMORY_KEY;
 
-    fixture.detectChanges();
+    const { group, host } = mountRemembering();
 
-    expect(getTabGroupDirective().selectedIndex()).toBe(2);
-    expect(hostComponent.selectedIndex).toBe(2);
+    expect(group.selectedIndex()).toBe(2);
+    expect(host.selectedIndex).toBe(2);
   });
 
   it('does not restore a disabled tab from session memory', () => {
     storageEntries.set(SESSION_MEMORY_STORAGE_KEY, '1');
-    hostComponent.secondTabDisabled = true;
-    hostComponent.sessionMemoryKey = SESSION_MEMORY_KEY;
+    fixture.destroy();
 
-    fixture.detectChanges();
+    const rememberingFixture = TestBed.createComponent(RememberingHostComponent);
 
-    expect(getTabGroupDirective().selectedIndex()).toBe(0);
-    expect(hostComponent.selectedIndex).toBe(0);
+    rememberingFixture.componentInstance.secondTabDisabled = true;
+    rememberingFixture.componentInstance.sessionMemoryKey = SESSION_MEMORY_KEY;
+    rememberingFixture.detectChanges();
+
+    const group = rememberingFixture.debugElement
+      .query(By.directive(TabGroupDirective))
+      .injector.get(TabGroupDirective);
+
+    expect(group.selectedIndex()).toBe(0);
+    expect(rememberingFixture.componentInstance.selectedIndex).toBe(0);
   });
 
-  it('auto-generates session memory when no key is configured', () => {
+  it('stores nothing when no key is configured', () => {
     fixture.detectChanges();
     getTriggerButtons()[1]?.click();
     fixture.detectChanges();
 
     expect(hostComponent.selectedIndex).toBe(1);
-    expect(storageEntries.size).toBe(1);
-    expect(Array.from(storageEntries.keys())[0]?.startsWith('et-tab-group:tab-group:')).toBe(true);
+    expect(storageEntries.size).toBe(0);
   });
 
   it('skips session memory when sessionStorage is unavailable', () => {
@@ -202,6 +250,7 @@ describe('TabGroupComponent', () => {
     const unavailableHost = unavailableFixture.componentInstance;
     const unavailableElement = unavailableFixture.nativeElement as HTMLElement;
 
+    unavailableHost.sessionMemoryKey = SESSION_MEMORY_KEY;
     unavailableFixture.detectChanges();
     (unavailableElement.querySelectorAll('.et-tab-group__trigger') as NodeListOf<HTMLButtonElement>)[1]?.click();
     unavailableFixture.detectChanges();
@@ -211,7 +260,7 @@ describe('TabGroupComponent', () => {
     unavailableFixture.destroy();
   });
 
-  it('generates unique session memory keys for repeated tab groups', () => {
+  it('stores nothing for repeated tab groups without a key', () => {
     fixture.destroy();
     storageEntries.clear();
 
@@ -220,17 +269,13 @@ describe('TabGroupComponent', () => {
     repeatedFixture.detectChanges();
 
     const tabGroups = getRepeatedTabGroupElements(repeatedFixture);
-    const secondTabButtons = tabGroups.map(
-      (tabGroup) => (tabGroup.querySelectorAll('.et-tab-group__trigger') as NodeListOf<HTMLButtonElement>)[1],
-    );
 
-    secondTabButtons.forEach((button) => {
-      button!.click();
+    tabGroups.forEach((tabGroup) => {
+      (tabGroup.querySelectorAll('.et-tab-group__trigger') as NodeListOf<HTMLButtonElement>)[1]?.click();
       repeatedFixture.detectChanges();
     });
 
-    expect(storageEntries.size).toBe(3);
-    expect([...storageEntries.values()]).toEqual(['1', '1', '1']);
+    expect(storageEntries.size).toBe(0);
 
     repeatedFixture.destroy();
   });

@@ -26,7 +26,7 @@ import { TAB_IMPORTS } from '@ethlete/components';
 - `selectedIndex` is a two-way model (default `0`); disabled tabs are skipped, and a selected tab that turns disabled hands the selection to its nearest enabled neighbour (the preceding one on a tie).
 - `label` + optional `icon` render the trigger, or supply a custom `ng-template etTabLabel`.
 - `preserveContent` (default `true`) keeps inactive panels rendered but `hidden` + `inert`; set it to `false` for lazy rendering of only the active panel.
-- `sessionMemoryKey` persists the selected tab across navigation in session storage.
+- `sessionMemoryKey` remembers the selected tab in session storage under that key and restores it on the next mount. Nothing is stored without a key. The stored tab wins over the initial `selectedIndex`, so leave the key unset when the index comes from the URL.
 - The tab bar lives inside a [scrollable](/components/scrollable), so overflowing tabs scroll with the active one centered. Tabs opt into that scrollable's prev/next buttons for you; they carry none of its other optional chrome.
 
 <StoryEmbed id="components-navigation-tabs-tabs--default" height="380px" />

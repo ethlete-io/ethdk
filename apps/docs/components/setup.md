@@ -5,13 +5,7 @@ through it top to bottom when you start a new app; each item says what breaks wi
 
 ```ts
 import { provideColorThemesWithTailwind4, provideLocale, provideSurfaceThemesWithTailwind4 } from '@ethlete/core';
-import {
-  provideDateFormat,
-  provideDateLocale,
-  provideOverlay,
-  providePaginationLabels,
-  provideTableLabels,
-} from '@ethlete/components';
+import { provideDateLocale, provideOverlay, providePaginationLabels, provideTableLabels } from '@ethlete/components';
 import { de } from 'date-fns/locale';
 import { COLOR_THEMES } from './theme/color-themes';
 import { SURFACE_THEMES } from './theme/surface-themes';
@@ -23,7 +17,6 @@ export const appConfig: ApplicationConfig = {
     provideOverlay(),
     provideLocale('de'),
     provideDateLocale(de),
-    provideDateFormat('yyyy-MM-dd'),
     provideTableLabels({ empty: 'Keine Ergebnisse.' }),
     providePaginationLabels({ next: 'Nächste Seite' }),
   ],
@@ -77,7 +70,9 @@ export const appConfig: ApplicationConfig = {
   resolve their error styling through `injectSemanticColorTheme('error')`, which throws
   `No color theme with type "error" found` when none is registered - so every form control
   fails without it. Register `type: 'warning'` too if you use form warnings, and
-  `'success'` / `'warning'` / `'error'` for `et-progress-steps` states.
+  `'success'` / `'warning'` / `'error'` for `et-progress-steps` states. `et-stat-tile` reads
+  `'success'` and `'error'` for its deltas, and `et-banner` reads `'success'`, `'warning'` and
+  `'error'` for those types - each throws the same way when the type is missing.
 
 Theme names (`brand`, `neongreen`, …) are yours to choose; the SDK ships none. Semantic behavior
 only ever looks up the `type`.
@@ -90,10 +85,11 @@ only ever looks up the `type`.
 - **`provideDateLocale(locale)`** - the date-fns locale for month and weekday names,
   calendars, and parsing typed dates. It does not follow `provideLocale()`; without it dates
   stay en-US ([Localization](/components/localization#_2-the-date-fns-locale)).
-- **`provideDateFormat(format)`** - only if your API does not speak the default wire format
-  `yyyy-MM-dd'T'HH:mm:ssxxx`. It is the string date controls read and write, e.g.
-  `'yyyy-MM-dd'` for calendar-day filters. `provideTimeFormat(format)` does the same for time
-  controls (default `HH:mm`).
+- **`provideDateFormat(format)`** - only if your API does not speak the default wire formats.
+  It is the string the date-only controls read and write (default `yyyy-MM-dd`).
+  `provideDateTimeFormat(format)` does the same for the date-time controls (default
+  `yyyy-MM-dd'T'HH:mm:ssxxx`), and `provideTimeFormat(format)` for the time controls (default
+  `HH:mm`).
 - **`provide<Domain>Labels(...)`** - one call per domain you use in a non-English app, e.g.
   `provideTableLabels`, `providePaginationLabels`, `provideFormFieldLabels`,
   `provideSelectLabels`. Every label is partial; omitted keys keep their English default. The

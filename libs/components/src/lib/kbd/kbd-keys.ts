@@ -1,21 +1,7 @@
 import { InjectionToken } from '@angular/core';
+import { DEFAULT_KBD_LABELS, KbdKeyRendering, KbdLabels } from './kbd-labels';
 
 export type KbdPlatform = 'apple' | 'other';
-
-type KbdKeyRendering = {
-  readonly label: string;
-  readonly name: string;
-};
-
-type KbdKeySpec = {
-  readonly apple: KbdKeyRendering;
-  readonly other: KbdKeyRendering;
-};
-
-const everywhere = (label: string, name = label): KbdKeySpec => ({
-  apple: { label, name },
-  other: { label, name },
-});
 
 const KBD_KEY_ALIASES: Record<string, string> = {
   cmd: 'meta',
@@ -33,29 +19,6 @@ const KBD_KEY_ALIASES: Record<string, string> = {
   pgup: 'pageup',
   pgdn: 'pagedown',
   plus: '+',
-};
-
-const KBD_KEY_SPECS: Record<string, KbdKeySpec> = {
-  mod: { apple: { label: '⌘', name: 'Command' }, other: { label: 'Ctrl', name: 'Control' } },
-  meta: { apple: { label: '⌘', name: 'Command' }, other: { label: 'Meta', name: 'Meta' } },
-  ctrl: { apple: { label: '⌃', name: 'Control' }, other: { label: 'Ctrl', name: 'Control' } },
-  alt: { apple: { label: '⌥', name: 'Option' }, other: { label: 'Alt', name: 'Alt' } },
-  shift: { apple: { label: '⇧', name: 'Shift' }, other: { label: 'Shift', name: 'Shift' } },
-  enter: { apple: { label: '↵', name: 'Enter' }, other: { label: 'Enter', name: 'Enter' } },
-  tab: { apple: { label: '⇥', name: 'Tab' }, other: { label: 'Tab', name: 'Tab' } },
-  backspace: { apple: { label: '⌫', name: 'Backspace' }, other: { label: 'Backspace', name: 'Backspace' } },
-  delete: { apple: { label: '⌦', name: 'Delete' }, other: { label: 'Del', name: 'Delete' } },
-  esc: /* @__PURE__ */ everywhere('Esc', 'Escape'),
-  space: /* @__PURE__ */ everywhere('Space'),
-  up: /* @__PURE__ */ everywhere('↑', 'Arrow up'),
-  down: /* @__PURE__ */ everywhere('↓', 'Arrow down'),
-  left: /* @__PURE__ */ everywhere('←', 'Arrow left'),
-  right: /* @__PURE__ */ everywhere('→', 'Arrow right'),
-  pageup: /* @__PURE__ */ everywhere('PgUp', 'Page up'),
-  pagedown: /* @__PURE__ */ everywhere('PgDn', 'Page down'),
-  home: /* @__PURE__ */ everywhere('Home'),
-  end: /* @__PURE__ */ everywhere('End'),
-  '+': /* @__PURE__ */ everywhere('+', 'Plus'),
 };
 
 /**
@@ -88,10 +51,15 @@ export const canonicalKbdKey = (key: string) => {
   return KBD_KEY_ALIASES[normalized] ?? normalized;
 };
 
-const resolveKey = (key: string, platform: KbdPlatform): KbdKeyRendering => {
+/** The platform to render for, or the platform plus a localized label set (see `provideKbdLabels`). */
+export type KbdKeyContext = KbdPlatform | { platform: KbdPlatform; labels?: KbdLabels };
+
+const resolveKey = (key: string, context: KbdKeyContext): KbdKeyRendering => {
+  const { platform, labels = DEFAULT_KBD_LABELS } = typeof context === 'string' ? { platform: context } : context;
   const trimmed = key.trim();
   const canonical = canonicalKbdKey(trimmed);
-  const spec = KBD_KEY_SPECS[canonical];
+  const labelKey = canonical === '+' ? 'plus' : canonical;
+  const spec = Object.hasOwn(labels, labelKey) ? labels[labelKey as keyof KbdLabels] : undefined;
 
   if (spec) return spec[platform];
 
@@ -124,7 +92,7 @@ export const parseKbdKeys = (keys: string): string[] => {
 };
 
 /** The glyph or word printed on a key for the given platform, e.g. `mod` → `⌘` on Apple, `Ctrl` elsewhere. */
-export const kbdKeyLabel = (key: string, platform: KbdPlatform) => resolveKey(key, platform).label;
+export const kbdKeyLabel = (key: string, context: KbdKeyContext) => resolveKey(key, context).label;
 
 /** The spoken name of a key, for the text a screen reader reads in place of the glyph. */
-export const kbdKeyName = (key: string, platform: KbdPlatform) => resolveKey(key, platform).name;
+export const kbdKeyName = (key: string, context: KbdKeyContext) => resolveKey(key, context).name;

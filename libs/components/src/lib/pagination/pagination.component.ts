@@ -18,7 +18,7 @@ import { BUTTON_IMPORTS } from '../button';
 import { PaginationDirective } from './headless/pagination.directive';
 import { PaginationRangeContext } from './pagination-labels';
 import { paginate } from './paginate';
-import { PaginateOptions, PaginationItem } from './pagination.types';
+import { PAGINATION_SIZES, PaginateOptions, PaginationItem, PaginationSize } from './pagination.types';
 
 /** How the paginator renders its page items. */
 export type PaginationRenderAs = 'buttons' | 'links';
@@ -87,7 +87,7 @@ export class PaginationComponent {
    * Control density. `'sm'` shrinks the page items below the comfortable touch size - use it in tight
    * spots like a table footer on mobile, where the default targets read larger than the rows. @default 'md'
    */
-  public size = input<'sm' | 'md'>('md');
+  public size = input<PaginationSize>(PAGINATION_SIZES.MD);
 
   /**
    * Adapt to the paginator's own width (measured, not a viewport media query). It trims the page window

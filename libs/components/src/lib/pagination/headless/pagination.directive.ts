@@ -1,5 +1,6 @@
 import { booleanAttribute, computed, Directive, input, model, numberAttribute } from '@angular/core';
 import { clamp } from '@ethlete/core';
+import { toPageCount } from '../page-count';
 import { paginate } from '../paginate';
 import { injectPaginationLabels, PaginationLabels } from '../pagination-labels';
 import { PaginationItem } from '../pagination.types';
@@ -24,8 +25,8 @@ export class PaginationDirective {
   /** The active page (1-based). Two-way bindable. */
   public page = model(1);
 
-  /** Total number of pages. */
-  public totalPages = input(1, { transform: numberAttribute });
+  /** Total number of pages. A missing or non-numeric count (`undefined` while a query loads) means no pages; a fractional one rounds up. */
+  public totalPages = input(1, { transform: (value: unknown) => toPageCount(numberAttribute(value, 0)) });
 
   /** Pages shown on each side of the current page. @default 1 */
   public siblingCount = input(1, { transform: numberAttribute });
@@ -73,9 +74,9 @@ export class PaginationDirective {
   public goTo(page: number) {
     const total = this.totalPages();
 
-    if (total <= 0) return;
+    if (total === 0 || Number.isNaN(page)) return;
 
-    this.page.set(clamp(page, 1, total));
+    this.page.set(clamp(Math.floor(page), 1, total));
   }
 
   /** Go to the first page. */

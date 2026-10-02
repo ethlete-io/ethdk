@@ -12,7 +12,13 @@ const stubClipboard = (clipboard: Partial<Clipboard> | undefined) => {
 
 @Component({
   selector: 'et-test-copy-button-host',
-  template: `<button [text]="text()" [resetDelay]="resetDelay()" (copySuccess)="copyCount = copyCount + 1" etCopyButton>
+  template: `<button
+    [text]="text()"
+    [resetDelay]="resetDelay()"
+    (copySucceed)="copyCount = copyCount + 1"
+    (copyFail)="errorCount = errorCount + 1"
+    etCopyButton
+  >
     Copy
   </button>`,
   imports: [COPY_BUTTON_IMPORTS],
@@ -21,6 +27,7 @@ class CopyButtonHostComponent {
   public text = signal('hello');
   public resetDelay = signal(1200);
   public copyCount = 0;
+  public errorCount = 0;
 }
 
 @Component({
@@ -163,5 +170,33 @@ describe('CopyButtonDirective', () => {
 
     expect(button(fixture).getAttribute('data-copied')).toBeNull();
     expect(fixture.componentInstance.copyCount).toBe(0);
+  });
+
+  it('reports a failed copy through copyFail, data-copy-failed and the live region', async () => {
+    stubClipboard({ writeText: vi.fn().mockRejectedValue(new Error('blocked')) });
+    document.execCommand = vi.fn().mockReturnValue(false);
+
+    const fixture = TestBed.createComponent(CopyButtonHostComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    button(fixture).click();
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    const directive = fixture.debugElement.query(By.directive(CopyButtonDirective)).injector.get(CopyButtonDirective);
+
+    expect(fixture.componentInstance.errorCount).toBe(1);
+    expect(directive.copyFailed()).toBe(true);
+    expect(button(fixture).getAttribute('data-copy-failed')).toBe('true');
+    expect(button(fixture).nextElementSibling?.textContent).toBe('Copy failed');
+  });
+
+  it('exposes copied() read-only', () => {
+    const fixture = TestBed.createComponent(CopyButtonHostComponent);
+    const directive = fixture.debugElement.query(By.directive(CopyButtonDirective)).injector.get(CopyButtonDirective);
+
+    expect('set' in directive.copied).toBe(false);
   });
 });

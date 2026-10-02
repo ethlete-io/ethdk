@@ -31,12 +31,12 @@ import { SKELETON_IMPORTS } from '@ethlete/components';
 
 ### Container inputs
 
-| Input             | Default  | Description                                            |
-| ----------------- | -------- | ------------------------------------------------------ |
-| `loadingAllyText` | `null` ¹ | What a screen reader announces in place of the shapes. |
-| `animated`        | `true`   | Run the shimmer. Off leaves the same shapes static.    |
+| Input      | Default  | Description                                                                                                        |
+| ---------- | -------- | ------------------------------------------------------------------------------------------------------------------ |
+| `labels`   | `null` ¹ | Per-instance `LOADER_LABELS` overrides; `loadingContent` is what a screen reader announces in place of the shapes. |
+| `animated` | `true`   | Run the shimmer. Off leaves the same shapes static.                                                                |
 
-¹ `null` falls through to [`LOADER_LABELS.loadingContent`](/components/localization) (`'Loading…'`).
+¹ `null`, or a key left out, falls through to [`LOADER_LABELS`](/components/localization) (`loadingContent`: `'Loading…'`).
 
 ### Shapes
 

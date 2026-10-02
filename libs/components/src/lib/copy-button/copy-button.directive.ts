@@ -5,6 +5,7 @@ import {
   ElementRef,
   Renderer2,
   afterNextRender,
+  computed,
   effect,
   inject,
   input,
@@ -35,7 +36,7 @@ const VISUALLY_HIDDEN = {
  * any other button) and swap the icon off `copied()`:
  *
  * @example
- * <button [text]="jsonText" et-icon-button etCopyButton #copyBtn="etCopyButton" type="button" (copySuccess)="onCopy()">
+ * <button [text]="jsonText" et-icon-button etCopyButton #copyBtn="etCopyButton" type="button" (copySucceed)="onCopy()">
  *   @if (copyBtn.copied()) {
  *     <i etIcon="et-check"></i>
  *   } @else {
@@ -48,6 +49,7 @@ const VISUALLY_HIDDEN = {
   exportAs: 'etCopyButton',
   host: {
     '[attr.data-copied]': 'copied() || null',
+    '[attr.data-copy-failed]': 'copyFailed() || null',
     '(click)': 'requestCopy()',
   },
 })
@@ -60,14 +62,22 @@ export class CopyButtonDirective {
   /** The value to copy, or a getter for it - a getter avoids re-serializing on every change detection. */
   public text = input<string | (() => string)>('');
 
-  /** How long `copied()` stays `true` after a successful copy. */
+  /** How long `copied()` (or `copyFailed()`) stays `true` after a copy attempt. */
   public resetDelay = input(1200, { transform: numberAttribute });
 
   /** Fires once the value has actually reached the clipboard. */
-  public copySuccess = output<void>();
-  private liveRegion = signal<HTMLElement | null>(null);
+  public copySucceed = output<void>();
 
-  public copied = signal(false);
+  /** Fires when the value could not be copied - an insecure context, a denied permission, or no clipboard at all. */
+  public copyFail = output<void>();
+  private liveRegion = signal<HTMLElement | null>(null);
+  private outcome = signal<'copied' | 'failed' | null>(null);
+
+  /** Whether the last copy succeeded, for `resetDelay` ms. */
+  public copied = computed(() => this.outcome() === 'copied');
+
+  /** Whether the last copy failed, for `resetDelay` ms. */
+  public copyFailed = computed(() => this.outcome() === 'failed');
 
   private reset$ = new Subject<void>();
 
@@ -92,14 +102,19 @@ export class CopyButtonDirective {
     effect(() => {
       const region = this.liveRegion();
 
-      if (region) region.textContent = this.copied() ? this.labels().copied : '';
+      if (!region) return;
+
+      const outcome = this.outcome();
+
+      region.textContent =
+        outcome === 'copied' ? this.labels().copied : outcome === 'failed' ? this.labels().copyFailed : '';
     });
 
     // Each copy restarts the countdown; switchMap drops the pending reset of the previous one.
     this.reset$
       .pipe(
         switchMap(() => timer(this.resetDelay())),
-        tap(() => this.copied.set(false)),
+        tap(() => this.outcome.set(null)),
         takeUntilDestroyed(),
       )
       .subscribe();
@@ -111,10 +126,11 @@ export class CopyButtonDirective {
     copyToClipboard(typeof text === 'function' ? text() : text)
       .pipe(
         tap((didCopy) => {
-          if (!didCopy) return;
+          this.outcome.set(didCopy ? 'copied' : 'failed');
 
-          this.copied.set(true);
-          this.copySuccess.emit();
+          if (didCopy) this.copySucceed.emit();
+          else this.copyFail.emit();
+
           this.reset$.next();
         }),
         takeUntilDestroyed(this.destroyRef),

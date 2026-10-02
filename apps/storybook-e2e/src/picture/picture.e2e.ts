@@ -334,7 +334,7 @@ test.describe('picture / structure', () => {
     await expect(root.getByText(/naturalSize:/)).toContainText('state: loaded');
     await expect(root.getByText(/naturalSize:/)).toContainText('naturalSize: 800 × 450');
     await expect(root.getByText(/naturalSize:/)).toContainText('naturalAspectRatio: 1.777');
-    await expect(root.getByText(/naturalSize:/)).toContainText('from imgLoad: 1.777');
+    await expect(root.getByText(/naturalSize:/)).toContainText('from imageLoad: 1.777');
   });
 });
 

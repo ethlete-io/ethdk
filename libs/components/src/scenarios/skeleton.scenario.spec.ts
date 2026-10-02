@@ -15,7 +15,10 @@ import { useScenario } from './harness';
   imports: [SKELETON_IMPORTS],
   template: `
     @if (loading()) {
-      <et-skeleton [animated]="animated()" [loadingAllyText]="allyText()">
+      <et-skeleton
+        [animated]="animated()"
+        [labels]="allyText() === null ? null : { loadingContent: allyText() ?? undefined }"
+      >
         <et-skeleton-item class="avatar" shape="circle" />
         <et-skeleton-item class="title" />
         <et-skeleton-text [lines]="lines()" lastLineWidth="40" />
@@ -41,7 +44,7 @@ const widths = (host: Element) =>
   selector: 'et-scenario-article-placeholder',
   imports: [SkeletonComponent, SkeletonItemComponent, SkeletonTextComponent],
   template: `
-    <et-skeleton loadingAllyText="Loading article" animated="false">
+    <et-skeleton [labels]="{ loadingContent: 'Loading article' }" animated="false">
       <et-skeleton-item shape="rect" />
       <et-skeleton-text lines="2" lastLineWidth="25" />
     </et-skeleton>

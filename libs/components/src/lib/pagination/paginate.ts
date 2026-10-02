@@ -1,4 +1,5 @@
 import { clamp } from '@ethlete/core';
+import { toPageCount } from './page-count';
 import { DEFAULT_PAGINATION_LABELS } from './pagination-labels';
 import { PaginateOptions, PaginationItem } from './pagination.types';
 
@@ -18,10 +19,11 @@ const range = (start: number, end: number): number[] =>
  * Item `label`s come from the default English labels unless `options.labels` overrides them.
  */
 export const paginate = (options: PaginateOptions): PaginationItem[] => {
-  const { totalPages, siblingCount = 1, boundaryCount = 1, hideFirstLast = false, hidePreviousNext = false } = options;
+  const { siblingCount = 1, boundaryCount = 1, hideFirstLast = false, hidePreviousNext = false } = options;
+  const totalPages = toPageCount(options.totalPages);
   const labels = { ...DEFAULT_PAGINATION_LABELS, ...options.labels };
 
-  if (totalPages <= 0) return [];
+  if (totalPages === 0) return [];
 
   const current = clamp(options.currentPage, 1, totalPages);
 

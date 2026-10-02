@@ -94,7 +94,7 @@ not for translating:
 ```html
 <et-pagination [labels]="{ navigation: 'Suchergebnisseiten' }" />
 
-<et-skeleton loadingAllyText="Lade Ergebnisse" />
+<et-skeleton [labels]="{ loadingContent: 'Lade Ergebnisse' }" />
 ```
 
 Leaving such an input unset (`null`) is what makes it fall through to the token, so an app
@@ -118,7 +118,7 @@ that provides labels needs no per-instance wiring at all.
 | `RICH_TEXT_EDITOR_LABELS` | `provideRichTextEditorLabels` | Toolbars, every tool, link editor, table/align tools, token popup                                                                                                                                         |
 | `CHIP_LABELS`             | `provideChipLabels`           | A removable chip's remove button                                                                                                                                                                          |
 | `AVATAR_LABELS`           | `provideAvatarLabels`         | The accessible name of an avatar group's `+N` overflow avatar                                                                                                                                             |
-| `COPY_BUTTON_LABELS`      | `provideCopyButtonLabels`     | The "Copied" announcement                                                                                                                                                                                 |
+| `COPY_BUTTON_LABELS`      | `provideCopyButtonLabels`     | The "Copied" and "Copy failed" announcements                                                                                                                                                              |
 | `PROGRESS_STEP_LABELS`    | `provideProgressStepLabels`   | The hidden state text of a complete, success, warning or error step                                                                                                                                       |
 | `STAT_TILE_LABELS`        | `provideStatTileLabels`       | The hidden direction word before a delta (`up`, `down`, `unchanged`) and a missing value (`noValue`)                                                                                                      |
 | `TABLE_LABELS`            | `provideTableLabels`          | Empty/error text, sorting, filtering, column menu, selection                                                                                                                                              |
@@ -131,6 +131,13 @@ that provides labels needs no per-instance wiring at all.
 | `NOTIFICATION_LABELS`     | `provideNotificationLabels`   | The dismiss button                                                                                                                                                                                        |
 | `ALERT_DIALOG_LABELS`     | `provideAlertDialogLabels`    | The confirm, cancel and acknowledge actions of `createAlertDialogOpener` dialogs                                                                                                                          |
 | `STREAM_LABELS`           | `provideStreamLabels`         | Consent gate, failure overlay, PiP placeholder and controls, frame title                                                                                                                                  |
+| `BANNER_LABELS`           | `provideBannerLabels`         | A dismissible banner's dismiss button                                                                                                                                                                     |
+| `KBD_LABELS`              | `provideKbdLabels`            | The printed label and spoken name of each named key (`Ctrl`/`Strg`, "Control"), per platform                                                                                                              |
+| `COMMAND_PALETTE_LABELS`  | `provideCommandPaletteLabels` | Search placeholder and label, the no-results and no-commands states                                                                                                                                       |
+| `MATCH_LABELS`            | `provideMatchLabels`          | Match status (`tbd`, `live`, `finished`, `scheduled`), outcomes, scores, seeds, match names                                                                                                               |
+| `STANDINGS_LABELS`        | `provideStandingsLabels`      | Table caption, column headers and their full names, form results, legend, pick mode                                                                                                                       |
+| `SCHEDULER_LABELS`        | `provideSchedulerLabels`      | Navigation, view switcher, all-day, more appointments, the appointment editor's actions                                                                                                                   |
+| `BRACKET_LABELS`          | `provideBracketLabels`        | Round headers, section names, champion, slot descriptions (winner/loser of, seed, bye, …)                                                                                                                 |
 | `QUERY_ERROR_LABELS`      | `provideQueryErrorLabels`     | Status titles/messages and retry - **English and German ship**                                                                                                                                            |
 | `FILTER_OVERLAY_LABELS`   | `provideFilterOverlayLabels`  | Result-count submit button and reset - **English and German ship**                                                                                                                                        |
 

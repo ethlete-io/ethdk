@@ -73,6 +73,7 @@ On `<et-carousel>`:
 
 | Input              | Default   | Description                                                                                   |
 | ------------------ | --------- | --------------------------------------------------------------------------------------------- |
+| `activeIndex`      | `0`       | The current slide, two-way: `[(activeIndex)]`. Setting it scrolls there like `goTo()`.        |
 | `itemSize`         | `'full'`  | How much of the track one slide takes - `'full'`, `'half'`, `'third'`, `'quarter'`, `'auto'`. |
 | `loop`             | `true`    | Cross the seam without showing it - see [Looping](#looping).                                  |
 | `slideAlign`       | `'start'` | Where the current slide rests: `'start'` or `'center'` - see [Alignment](#alignment).         |
@@ -116,6 +117,20 @@ with its neighbours peeking either side rather than a row that happens to be cut
 It makes no difference at `itemSize="full"`, where a slide fills the track either way. Centring the first
 or last slide needs content beyond it, so it comes into its own on a looping carousel - which is also
 where the transitions read best, since every effect is measured from the centre.
+
+### Binding the active slide
+
+`activeIndex` follows the controls, the dots, autoplay and swipes, so a position readout, a deep link or
+analytics can live outside the carousel. Setting it scrolls to that slide the way `goTo()` does, animated;
+an index outside the slides snaps back to the current one. For the rest of the API (`count()`, `next()`, …),
+read the component's `carousel` member through `viewChild(CarouselComponent)`.
+
+```html
+<et-carousel [(activeIndex)]="slide">
+  <ng-template [etCarouselSlide]="teams()" let-team>…</ng-template>
+</et-carousel>
+<p>Slide {{ slide() + 1 }} of {{ teams().length }}</p>
+```
 
 ## Looping
 
@@ -344,7 +359,7 @@ A hand-built carousel imports the scrollable itself, so it also needs `SCROLLABL
 </div>
 ```
 
-The directive exposes `activeIndex()`, `count()`, `isLooping()`, `isAtStart()`, `isAtEnd()`,
+The directive exposes the two-way `activeIndex` model, `count()`, `isLooping()`, `isAtStart()`, `isAtEnd()`,
 `canGoPrevious()`, `canGoNext()`, `next()`, `previous()` and `goTo(index)` - every index a slide index,
 clones mapped away. The active slide is derived from how much of each slide the scroll container can
 see, which is what makes it follow a drag as readily as a click.

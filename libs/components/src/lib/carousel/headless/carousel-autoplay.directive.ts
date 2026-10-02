@@ -140,7 +140,7 @@ export class CarouselAutoplayDirective {
 
     if (!carousel) return this.autoplayTime();
 
-    const activeIndex = carousel.activeIndex();
+    const activeIndex = carousel.currentIndex();
     // The slide itself, not one of its loop clones: they share an index, and the original is the one a
     // consumer set a duration on.
     const activeItem = carousel.items().find((item) => !item.isClone() && item.index() === activeIndex);
@@ -190,7 +190,7 @@ export class CarouselAutoplayDirective {
       () => ({
         isPlaying: this.isPlaying(),
         duration: this.duration(),
-        activeIndex: this.carousel?.activeIndex() ?? -1,
+        activeIndex: this.carousel?.currentIndex() ?? -1,
       }),
       {
         equal: (a, b) => a.isPlaying === b.isPlaying && a.duration === b.duration && a.activeIndex === b.activeIndex,

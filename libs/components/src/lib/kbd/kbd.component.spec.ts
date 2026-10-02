@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import '../../test-helpers';
 import { KBD_PLATFORM, kbdKeyLabel, KbdPlatform, kbdKeyName, parseKbdKeys } from './kbd-keys';
 import { KBD_IMPORTS } from './kbd.imports';
+import { DEFAULT_KBD_LABELS, provideKbdLabels } from './kbd-labels';
 
 @Component({
   selector: 'et-test-kbd-host',
@@ -32,6 +33,23 @@ const create = (keys?: string, platform?: KbdPlatform) => {
 };
 
 describe('KbdComponent', () => {
+  it('prints and speaks the keys provideKbdLabels localizes, and keeps the rest', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideKbdLabels({
+          ctrl: { ...DEFAULT_KBD_LABELS.ctrl, other: { label: 'Strg', name: 'Steuerung' } },
+          delete: { ...DEFAULT_KBD_LABELS.delete, other: { label: 'Entf', name: 'Entfernen' } },
+        }),
+      ],
+    });
+
+    const { caps, allyText } = create('ctrl+shift+delete', 'other');
+
+    expect(caps).toEqual(['Strg', 'Shift', 'Entf']);
+    expect(allyText).toBe('Steuerung Shift Entfernen');
+    expect(create('ctrl', 'apple').caps).toEqual(['⌃']);
+  });
+
   it('renders one keycap per key', () => {
     const { host, caps } = create('mod+shift+k', 'apple');
 

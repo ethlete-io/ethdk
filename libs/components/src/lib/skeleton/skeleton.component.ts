@@ -1,6 +1,6 @@
 import { booleanAttribute, Component, computed, input, ViewEncapsulation } from '@angular/core';
 import { mountVisuallyHidden } from '@ethlete/core';
-import { injectLoaderLabels } from '../loader';
+import { injectLoaderLabels, LoaderLabels } from '../loader';
 
 /**
  * A loading placeholder: a box (or several) standing in for content that hasn't arrived, with an
@@ -18,7 +18,7 @@ import { injectLoaderLabels } from '../loader';
  */
 @Component({
   selector: 'et-skeleton',
-  template: `<span class="et-visually-hidden et-skeleton-ally-text">{{ resolvedLoadingAllyText() }}</span
+  template: `<span class="et-visually-hidden et-skeleton-ally-text">{{ resolvedLabels().loadingContent }}</span
     ><ng-content />`,
   styleUrl: './skeleton.component.css',
   encapsulation: ViewEncapsulation.None,
@@ -29,14 +29,13 @@ import { injectLoaderLabels } from '../loader';
   },
 })
 export class SkeletonComponent {
-  private labels = injectLoaderLabels();
+  private injectedLabels = injectLoaderLabels();
 
   /**
-   * What a screen reader announces in place of the shapes, which are `aria-hidden` - they carry no
-   * information, and reading "loading" once is the whole message. `null` (the default) uses
-   * `LOADER_LABELS`' `loadingContent`; set it for something more specific ("Loading results").
+   * Per-instance overrides merged over the injected `LOADER_LABELS`. `loadingContent` is what a screen reader
+   * announces in place of the shapes - set it for something more specific (`{ loadingContent: 'Loading results' }`).
    */
-  public loadingAllyText = input<string | null>(null);
+  public labels = input<Partial<LoaderLabels> | null>(null);
 
   /**
    * Run the shimmer. Off leaves a static placeholder - the same shapes without motion, which is what
@@ -45,8 +44,8 @@ export class SkeletonComponent {
    */
   public animated = input(true, { transform: booleanAttribute });
 
-  /** The announcement in effect: this instance's `loadingAllyText`, else `LOADER_LABELS`. */
-  protected resolvedLoadingAllyText = computed(() => this.loadingAllyText() ?? this.labels().loadingContent);
+  /** The strings in effect here: the injected label set with this instance's `labels` applied. */
+  public resolvedLabels = computed<LoaderLabels>(() => ({ ...this.injectedLabels(), ...this.labels() }));
 
   constructor() {
     mountVisuallyHidden();

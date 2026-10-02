@@ -93,7 +93,7 @@ nothing while `autoCloseOthers` is on, since it would immediately undo itself, a
 
 ```html
 <et-accordion>
-  <ng-template etAccordionLabel> <et-icon name="warning" /> Unsaved changes </ng-template>
+  <ng-template etAccordionLabel> <i etIcon="et-triangle-exclamation"></i> Unsaved changes </ng-template>
   <ng-template etAccordionHint>3 items</ng-template>
 
   Your draft is kept locally until you publish it.

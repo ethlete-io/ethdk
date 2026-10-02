@@ -6,7 +6,10 @@ import { mountSkeleton } from './testing/skeleton-driver';
 
 @Component({
   template: `
-    <et-skeleton [animated]="animated()" [loadingAllyText]="loadingAllyText()">
+    <et-skeleton
+      [animated]="animated()"
+      [labels]="loadingContent() === null ? null : { loadingContent: loadingContent() ?? undefined }"
+    >
       <et-skeleton-item [shape]="itemShape()" />
       <et-skeleton-text [lines]="lines()" [lastLineWidth]="lastLineWidth()" />
     </et-skeleton>
@@ -15,7 +18,7 @@ import { mountSkeleton } from './testing/skeleton-driver';
 })
 class SkeletonTestHost {
   animated = signal(true);
-  loadingAllyText = signal<string | null>(null);
+  loadingContent = signal<string | null>(null);
   itemShape = signal<'text' | 'rect' | 'circle'>('text');
   lines = signal(3);
   lastLineWidth = signal(60);
@@ -47,10 +50,10 @@ describe('SkeletonComponent', () => {
     expect(driver.allyText()).toBe('Loading…');
   });
 
-  it('announces its own loadingAllyText over the default label', () => {
+  it('announces its own labels.loadingContent over the default label', () => {
     const driver = mountSkeleton(SkeletonTestHost);
 
-    driver.host.loadingAllyText.set('Loading results');
+    driver.host.loadingContent.set('Loading results');
     driver.detectChanges();
 
     expect(driver.allyText()).toBe('Loading results');

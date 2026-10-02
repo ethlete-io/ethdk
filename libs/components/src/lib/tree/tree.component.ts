@@ -2,7 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
 import { TREE_SELECTION_MODES, TreeDirective, TreeNodeDirective, TreeRow } from './headless';
 import { TREE_MARKERS, TreeMarker, TreeMarkerComponent } from './tree-marker.component';
-import { injectTreeLabels } from './tree-labels';
+import { injectTreeLabels, TreeLabels } from './tree-labels';
 
 const markerFor = (row: TreeRow<unknown>): TreeMarker => {
   if (row.childrenStatus === 'loading') return TREE_MARKERS.SPINNER;
@@ -43,20 +43,13 @@ const markerFor = (row: TreeRow<unknown>): TreeMarker => {
 export class TreeComponent<T = unknown> {
   protected tree = inject<TreeDirective<T>>(TreeDirective);
 
-  private labels = injectTreeLabels();
+  private injectedLabels = injectTreeLabels();
 
-  /** Shown while the root level loads. Overrides `TREE_LABELS` for this tree. */
-  public loadingLabel = input<string | null>(null);
+  /** Per-instance overrides for the tree's strings, merged over the injected `TREE_LABELS`. */
+  public labels = input<Partial<TreeLabels> | null>(null);
 
-  /** Shown when the root level loaded no nodes at all. Overrides `TREE_LABELS` for this tree. */
-  public emptyLabel = input<string | null>(null);
-
-  /** Appended to a failed level's message, to say that selecting the row loads it again. Overrides `TREE_LABELS` for this tree. */
-  public retryLabel = input<string | null>(null);
-
-  protected resolvedLoadingLabel = computed(() => this.loadingLabel() ?? this.labels().loading);
-  protected resolvedEmptyLabel = computed(() => this.emptyLabel() ?? this.labels().empty);
-  protected resolvedRetryLabel = computed(() => this.retryLabel() ?? this.labels().retry);
+  /** The strings in effect here: the injected label set with this instance's `labels` applied. */
+  public resolvedLabels = computed<TreeLabels>(() => ({ ...this.injectedLabels(), ...this.labels() }));
 
   /**
    * The rows plus their marker and template context, built together so each row's context object

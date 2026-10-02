@@ -71,6 +71,15 @@ adding a twelfth means updating that array and `schema.json`'s enum together.
   re-exported. Domain-wide infrastructure (managers, tokens, `*.imports.ts`) stays
   at the domain root. Barrels: `headless/index.ts`, then domain-root `index.ts`
   re-exports `./headless` + each component file.
+- **Output names**: `<subject?><verb>`, present tense, like Angular's `valueChange`. Drop
+  the subject when it is the component itself (`dismiss`, `remove`, `retry`); otherwise
+  name it (`nodeActivate`, `layoutChange`, `uploadFail`, `copySucceed`). No past tense,
+  no `on` prefix, no abbreviations (`imageLoad`, not `imgLoad`). Add `Request` only when
+  a public method already owns the bare name and the output reports the ask
+  (`retry()` emits `retryRequest`).
+- **Per-instance strings**: one `labels = input<Partial<XLabels> | null>(null)` merged
+  over the domain's `X_LABELS` token, exposed as `resolvedLabels`. No one-off string
+  inputs (`loadingLabel`, `retryLabel`); native `aria-label` stays an attribute.
 
 ## Conventions confirmed in the codebase
 

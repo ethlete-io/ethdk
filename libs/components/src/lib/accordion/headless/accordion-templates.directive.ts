@@ -37,7 +37,7 @@ const assertInsideAccordion = ({
  * @example
  * <et-accordion>
  *   <ng-template etAccordionLabel>
- *     <et-icon name="warning" /> Unsaved changes
+ *     <i etIcon="et-triangle-exclamation"></i> Unsaved changes
  *   </ng-template>
  *   …
  * </et-accordion>

@@ -38,6 +38,29 @@ describe('PaginationComponent', () => {
     expect(nav.querySelector('[aria-current="page"]')?.textContent?.trim()).toBe('1');
   });
 
+  it('leaves the page untouched while the page count is still unknown', () => {
+    const fixture = create();
+    const pagination = directiveOf(fixture);
+
+    fixture.componentRef.setInput('totalPages', undefined);
+    fixture.detectChanges();
+
+    pagination.next();
+    pagination.last();
+
+    expect(pagination.page()).toBe(1);
+    expect(pagination.items()).toEqual([]);
+  });
+
+  it('floors a fractional target page', () => {
+    const fixture = create();
+    const pagination = directiveOf(fixture);
+
+    pagination.goTo(2.7);
+
+    expect(pagination.page()).toBe(2);
+  });
+
   it('goes to a page (clamped) via the headless directive, driving the two-way page', () => {
     const fixture = create();
     const pagination = directiveOf(fixture);

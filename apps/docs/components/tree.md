@@ -53,18 +53,16 @@ Two nodes sharing a value expand, select and focus as one. For a file tree that 
 
 ## Options
 
-| Input            | Type                               | Default             | Description                                                                       |
-| ---------------- | ---------------------------------- | ------------------- | --------------------------------------------------------------------------------- |
-| `dataSource`     | `TreeDataSource<T> \| null`        | `null`              | The hierarchy to render. Required - a tree without one throws in dev mode.        |
-| `selectionMode`  | `'none' \| 'single' \| 'multiple'` | `'single'`          | Whether rows select, and how many at a time.                                      |
-| `value`          | `T \| T[] \| null`                 | `null`              | Two-way bindable selection. `T \| null` in single mode, `T[]` in multiple.        |
-| `expandedValues` | `readonly T[]`                     | `[]`                | Two-way bindable set of expanded branch values - the tree's only expansion state. |
-| `compareWith`    | `(a: T, b: T) => boolean`          | `(a, b) => a === b` | Value equality. Override when node values are objects.                            |
-| `disabled`       | `boolean`                          | `false`             | Nothing expands or selects; rows stay readable and reachable.                     |
-| `toErrorMessage` | `(error: unknown) => string`       | `Error.message`     | Turns a failed load into the text shown on the branch.                            |
-| `loadingLabel`   | `string \| null`                   | `null`              | Shown while the root level loads. `null` uses `TREE_LABELS.loading`.              |
-| `emptyLabel`     | `string \| null`                   | `null`              | Shown when the root loaded no nodes. `null` uses `TREE_LABELS.empty`.             |
-| `retryLabel`     | `string \| null`                   | `null`              | Appended to a failed level's message. `null` uses `TREE_LABELS.retry`.            |
+| Input            | Type                               | Default             | Description                                                                                                                                       |
+| ---------------- | ---------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dataSource`     | `TreeDataSource<T> \| null`        | `null`              | The hierarchy to render. Required - a tree without one throws in dev mode.                                                                        |
+| `selectionMode`  | `'none' \| 'single' \| 'multiple'` | `'single'`          | Whether rows select, and how many at a time.                                                                                                      |
+| `value`          | `T \| T[] \| null`                 | `null`              | Two-way bindable selection. `T \| null` in single mode, `T[]` in multiple.                                                                        |
+| `expandedValues` | `readonly T[]`                     | `[]`                | Two-way bindable set of expanded branch values - the tree's only expansion state.                                                                 |
+| `compareWith`    | `(a: T, b: T) => boolean`          | `(a, b) => a === b` | Value equality. Override when node values are objects.                                                                                            |
+| `disabled`       | `boolean`                          | `false`             | Nothing expands or selects; rows stay readable and reachable.                                                                                     |
+| `toErrorMessage` | `(error: unknown) => string`       | `Error.message`     | Turns a failed load into the text shown on the branch.                                                                                            |
+| `labels`         | `Partial<TreeLabels> \| null`      | `null`              | Per-instance overrides of `TREE_LABELS`: `loading` (root loading), `empty` (root loaded nothing), `retry` (appended to a failed level's message). |
 
 The defaults are `'Loading…'`, `'Nothing to show'` and `'select to retry'`. Localize them app-wide with
 `provideTreeLabels({ loading: 'Lädt…', empty: 'Keine Einträge', retry: 'zum Wiederholen auswählen' })` -
@@ -100,9 +98,9 @@ The two modes look different on purpose. `single` fills the one selected row wit
 
 ## Lazy loading, and what happens when it fails
 
-While a branch loads, its chevron becomes a spinner and the row is `aria-busy`. The root level shows `loadingLabel` instead of rows.
+While a branch loads, its chevron becomes a spinner and the row is `aria-busy`. The root level shows `labels.loading` instead of rows.
 
-If a load fails, the branch keeps its place and shows the message from `toErrorMessage` alongside `retryLabel`. **Activating that row again reloads it** rather than collapsing it, which is why there is no separate retry button to reach for - the row is the control, and it works with the pointer and with <kbd>Enter</kbd> alike. A collapsed failed branch reloads as soon as it is expanded again, by click or <kbd>ArrowRight</kbd>. A failed root load becomes a single row that behaves the same way, and also retries on <kbd>Space</kbd>. `retry(node)` (or `retry(null)` for the root) does it programmatically, and doubles as "refresh this branch" for a level that loaded fine.
+If a load fails, the branch keeps its place and shows the message from `toErrorMessage` alongside `labels.retry`. **Activating that row again reloads it** rather than collapsing it, which is why there is no separate retry button to reach for - the row is the control, and it works with the pointer and with <kbd>Enter</kbd> alike. A collapsed failed branch reloads as soon as it is expanded again, by click or <kbd>ArrowRight</kbd>. A failed root load becomes a single row that behaves the same way, and also retries on <kbd>Space</kbd>. `retry(node)` (or `retry(null)` for the root) does it programmatically, and doubles as "refresh this branch" for a level that loaded fine.
 
 <StoryEmbed id="components-data-display-tree--lazy-loading" height="520px" />
 

@@ -164,6 +164,25 @@ class TeamCarouselComponent {
 @Component({
   styles: [UNSTYLED_BLOCKS],
   encapsulation: ViewEncapsulation.None,
+  selector: 'et-scenario-bound-carousel',
+  imports: [CAROUSEL_IMPORTS],
+  template: `
+    <et-carousel [(activeIndex)]="slide" [loop]="false">
+      <ng-template [etCarouselSlide]="teams" let-team>
+        <h3>{{ team }}</h3>
+      </ng-template>
+    </et-carousel>
+    <p class="outside-position">Slide {{ slide() + 1 }} of {{ teams.length }}</p>
+  `,
+})
+class BoundCarouselComponent {
+  teams = ['team-a', 'team-b', 'team-c'];
+  slide = signal(1);
+}
+
+@Component({
+  styles: [UNSTYLED_BLOCKS],
+  encapsulation: ViewEncapsulation.None,
   selector: 'et-scenario-news-carousel',
   imports: [CarouselComponent, CarouselSlideDirective],
   template: `
@@ -346,6 +365,38 @@ describe('carousel scenarios', () => {
     expect(region.getAttribute('aria-label')).toBe('Featured teams');
     expect(all('.et-carousel-dot')).toHaveLength(4);
     expect(realSlides().at(-1)?.getAttribute('aria-label')).toBe('4 of 4');
+  });
+
+  it('binds the active slide two-way: starts on the bound slide, follows the controls, and moves when set', async () => {
+    const s = scenario();
+    const { scroll, measure } = layOut(s);
+    const fixture = TestBed.createComponent(BoundCarouselComponent);
+    const page = fixture.componentInstance;
+
+    await measure();
+    showOnly(s, realSlides()[0] as HTMLElement);
+    step(s);
+
+    expect(scroll.lastCall()?.options.left).toBe(SLIDE);
+    expect(page.slide()).toBe(1);
+    expect(activeDot()).toBe(1);
+
+    query<HTMLButtonElement>('[etCarouselNext]').click();
+    step(s);
+
+    expect(page.slide()).toBe(2);
+    expect(text(query('.outside-position'))).toBe('Slide 3 of 3');
+
+    page.slide.set(0);
+    step(s);
+
+    expect(scroll.lastCall()?.options.left).toBe(0);
+    expect(activeDot()).toBe(0);
+
+    page.slide.set(7);
+    step(s);
+
+    expect(page.slide()).toBe(0);
   });
 
   it('lets go of a dot the centred track cannot scroll to, so scrolling moves the dots again', async () => {

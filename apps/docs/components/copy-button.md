@@ -36,21 +36,23 @@ Every consumer already has an opinion about what the button should look like - a
 | Input        | Type                       | Default | Description                                                                                                   |
 | ------------ | -------------------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
 | `text`       | `string \| (() => string)` | `''`    | The value to copy. A getter is evaluated at copy time, so nothing is re-serialized on every change detection. |
-| `resetDelay` | `number`                   | `1200`  | How long `copied()` stays `true` after a successful copy, in ms.                                              |
+| `resetDelay` | `number`                   | `1200`  | How long `copied()` (or `copyFailed()`) stays `true` after a copy attempt, in ms.                             |
 
-| Output        | Type           | Description                               |
-| ------------- | -------------- | ----------------------------------------- |
-| `copySuccess` | `output<void>` | The value actually reached the clipboard. |
+| Output        | Type           | Description                                                                       |
+| ------------- | -------------- | --------------------------------------------------------------------------------- |
+| `copySucceed` | `output<void>` | The value actually reached the clipboard.                                         |
+| `copyFail`    | `output<void>` | The copy failed: an insecure context, a denied permission, or no clipboard (SSR). |
 
-| Member     | Type              | Purpose                                                                                     |
-| ---------- | ----------------- | ------------------------------------------------------------------------------------------- |
-| `copied()` | `Signal<boolean>` | Whether the last copy is still within its `resetDelay` window - drives the icon/label swap. |
+| Member         | Type              | Purpose                                                                                                |
+| -------------- | ----------------- | ------------------------------------------------------------------------------------------------------ |
+| `copied()`     | `Signal<boolean>` | Whether the last copy is still within its `resetDelay` window - drives the icon/label swap. Read-only. |
+| `copyFailed()` | `Signal<boolean>` | Whether the last copy failed, for the same window. Read-only.                                          |
 
 Read `exportAs="etCopyButton"` (`#copyBtn="etCopyButton"`) to reach `copied()` from the template, or `inject(CopyButtonDirective)` from a wrapping component.
 
 ## Accessibility
 
-The directive sets `data-copied` on the host while `copied()` is true - style off that attribute if you want a state beyond the icon/label swap (e.g. a tooltip). It does not manage focus. On a successful copy it announces "Copied" through a visually hidden polite live region inserted after the button (localize with `provideCopyButtonLabels({ copied: 'Kopiert' })`). Give the button a static `aria-label` (or visible text) that describes what it copies.
+The directive sets `data-copied` on the host while `copied()` is true, and `data-copy-failed` while `copyFailed()` is - style off that attribute if you want a state beyond the icon/label swap (e.g. a tooltip). It does not manage focus. On a successful copy it announces "Copied" through a visually hidden polite live region inserted after the button and a failed one as "Copy failed" (localize with `provideCopyButtonLabels({ copied: 'Kopiert', copyFailed: 'Kopieren fehlgeschlagen' })`). Give the button a static `aria-label` (or visible text) that describes what it copies.
 
 ## Theming
 

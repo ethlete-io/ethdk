@@ -124,7 +124,11 @@ class ClubTreeComponent {
   encapsulation: ViewEncapsulation.None,
   imports: [TREE_IMPORTS],
   template: `
-    <et-tree [(expandedValues)]="expanded" [dataSource]="lazy.source" loadingLabel="Loading club" retryLabel="retry">
+    <et-tree
+      [(expandedValues)]="expanded"
+      [dataSource]="lazy.source"
+      [labels]="{ loading: 'Loading club', retry: 'retry' }"
+    >
       <ng-template etTreeNodeDef let-node let-row="row">
         <span [attr.data-level]="row.level" class="custom-label">{{ node.label }}</span>
       </ng-template>
@@ -141,7 +145,7 @@ class LazyTreeComponent {
   styles: [UNSTYLED_BLOCKS],
   encapsulation: ViewEncapsulation.None,
   imports: [TreeComponent],
-  template: `<et-tree [dataSource]="source" [toErrorMessage]="toMessage" emptyLabel="No teams" />`,
+  template: `<et-tree [dataSource]="source" [toErrorMessage]="toMessage" [labels]="{ empty: 'No teams' }" />`,
 })
 class FailingRootComponent {
   attempts = 0;

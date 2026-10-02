@@ -44,6 +44,50 @@ describe('AvatarComponent', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('JD');
   });
 
+  it('names the initials after name, so a screen reader reads the name rather than the letters', () => {
+    const fixture = TestBed.createComponent(AvatarConfiguredHostComponent);
+    fixture.componentInstance.name.set('Jane Doe');
+    fixture.detectChanges();
+
+    const initials = fixture.nativeElement.querySelector('.et-avatar-initials') as HTMLElement;
+
+    expect(initials.getAttribute('role')).toBe('img');
+    expect(initials.getAttribute('aria-label')).toBe('Jane Doe');
+  });
+
+  it('keeps the name on the initials a failed image falls back to', () => {
+    const fixture = TestBed.createComponent(AvatarConfiguredHostComponent);
+    fixture.componentInstance.src.set('/broken.jpg');
+    fixture.componentInstance.name.set('Jane Doe');
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('et-avatar img').dispatchEvent(new Event('error'));
+    fixture.detectChanges();
+
+    const initials = fixture.nativeElement.querySelector('.et-avatar-initials') as HTMLElement;
+
+    expect(initials.getAttribute('aria-label')).toBe('Jane Doe');
+  });
+
+  it('leaves explicit initials without a name, and projected content, unnamed', () => {
+    const configured = TestBed.createComponent(AvatarConfiguredHostComponent);
+    configured.componentInstance.initials.set('FCb');
+    configured.detectChanges();
+
+    const initials = configured.nativeElement.querySelector('.et-avatar-initials') as HTMLElement;
+
+    expect(initials.hasAttribute('role')).toBe(false);
+    expect(initials.hasAttribute('aria-label')).toBe(false);
+
+    const projected = TestBed.createComponent(AvatarDefaultHostComponent);
+    projected.detectChanges();
+
+    const avatar = projected.nativeElement.querySelector('et-avatar') as HTMLElement;
+
+    expect(avatar.hasAttribute('aria-label')).toBe(false);
+    expect(avatar.querySelector('[role="img"]')).toBeNull();
+  });
+
   it('defaults to the md size and circle shape', () => {
     const fixture = TestBed.createComponent(AvatarDefaultHostComponent);
     fixture.detectChanges();
