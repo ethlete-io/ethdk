@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 4.0.0-next.13
+
+### Patch Changes
+
+- Mark every migration with a `level`, so `et update` runs only the required ones.
+
 ## 4.0.0-next.12
 
 ### Major Changes

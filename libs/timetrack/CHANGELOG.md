@@ -1,5 +1,24 @@
 # @ethlete/timetrack
 
+## 0.1.0-next.13
+
+### Patch Changes
+
+- A band's context menu offers "Ask auto mode again", which asks the model about that band once more, even with auto mode off.
+- Auto mode asks a band or stand-in again when new evidence changes what its answer was built from, while the answer is still its own, and expires the create the old answer left waiting.
+- When auto mode asks again and a draft replaces an earlier match, the rows that match named lose its issue at once instead of keeping it until the create is approved. Rows the user named are untouched.
+- Cut a break nobody prompted in out of the rows an agent ran through, so the day and the Tempo sync book the parts before and after it and nothing inside it.
+- Cut the rows at the edges the Break lane draws, so no booked row reaches into a drawn break and its "Nobody was here" row fills the whole break.
+- Keep the agent work inside a break as a "Nobody was here" row instead of dropping it, so the day shows it and the user can still book it.
+- A band the reviewer chose not to log no longer counts as unattributed time or raises the "Some work is not named yet" warning.
+- One agent session that works in two repositories now books each minute once, to the repository its tool calls touched.
+- Keep a session's piece per checkout, and test a session's overlap against the real intervals of a handoff-joined piece, so sequential sessions no longer merge into one long band.
+- A session that moves between two repositories named to the same ticket no longer pulls the other repository's minutes into one band.
+- A call is no longer named after a window its app left long before the microphone opened, and a `call-start` can carry the title the host read.
+- A lane no longer draws a "in the background" strip under one of its own rows that books the same minutes.
+- The day banner counts only the time a synced row grew by as not in Tempo yet, and names a synced row that changed without growing as a row changed since the sync.
+- Read no break inside a stretch the focused window held, so a commit in it no longer cuts the row in two.
+
 ## 0.1.0-next.12
 
 ### Patch Changes

@@ -1,5 +1,23 @@
 # @ethlete/query
 
+## 6.0.0-next.55
+
+### Minor Changes
+
+- Add `createQueryGroup`, a fixed set of queries of which the one executed last drives `loading()`, `error()`, `latest()`, the retry target `execute()` and `succeeded$`.
+- Add `invalidates` to mutation creators and `tags` to read creators, plus `invalidateQueries({ tag })`, so a mutation declares what it makes stale.
+- Add `withOptimisticUpdate`, which writes a mutation's expected result into the cached reads its `target` matches before the request and rolls it back on failure.
+- Add the optional, report-only `report-legacy-query-apis` generator (`nx g @ethlete/query:report-legacy-query-apis`; `et update` does not run it), which lists every query collection, infinity query and entity store in `query-v3-migration-tasks.md`, and point the entity follow-up of `migrate-to-query-v3` at `invalidates`, `tags` and `withOptimisticUpdate`.
+
+### Patch Changes
+
+- Mark every migration with a `level`, so `et update` runs only the required ones.
+- Keep the args, response and execution state of `execute({ args })` on a query whose `withArgs` returns `null`.
+- Mark an unused entry waiting out `keepUnusedFor` stale on an invalidation, so an `allowCache` execution refetches it instead of serving pre-mutation data.
+- `et migrations` offers `report-legacy-query-apis` as an optional migration, with the number of files that still use a legacy query collection, infinity query or entity store.
+- Restart a read once when a mutation's refresh and its `invalidates` targets all match it, in the mutating tab and in the other tabs.
+- `RawResponseType` resolves to the `response` type when the args declare no `rawResponse`, instead of `unknown`.
+
 ## 6.0.0-next.54
 
 ### Patch Changes

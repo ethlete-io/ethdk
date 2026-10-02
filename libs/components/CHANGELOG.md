@@ -1,5 +1,64 @@
 # Changelog
 
+## 1.0.0-next.67
+
+### Major Changes
+
+- Breaking: stop exporting the cascader tree helpers `toChildrenObservable`, `toSearchObservable`, `toPathObservable`, `nodesEqual` and `indexOfNode`. The node and data source types, `canHaveChildren` and `defaultCompareWith` stay public. `et update` runs a migration that marks the uses.
+- Breaking: every component takes its error, warning and success colors from the surface it renders on, so `injectFormSupport().errorColorTheme` and `TableComponent.errorColorTheme` are now signals; `et update` migrates their reads.
+- Breaking: stop exporting the duration input format helpers `UNIT_MS`, `deriveDurationFormatSpec`, `formatDuration` and `parseDuration`. The `DurationFormatSpec`, `DurationSegment` and `DurationUnit` types stay public. `et update` runs a migration that marks the uses.
+
+### Minor Changes
+
+- Bracket: add `<et-bracket-skeleton>` (`BRACKET_SKELETON_IMPORTS`), a loading placeholder drawn with the real bracket layout.
+- Chart: bar and line series without a palette entry or `colorToken` now take distinct steps of the accent, like the pie chart.
+- Chart: every chart draws with the `provideColorPalette` list of the surface it sits on.
+- Add `etQueryButton`, which shows a query's loading state and progress on any button, and `queryButtonSourceFromV2Query` for legacy queries; the cdk migration map now points the cdk query button at it.
+- Sankey nodes past the palette take steps of the accent, and link names read "Source to Target" with a new `linkSeparator` input.
+- Banner, progress step and stat tile take their success, warning and error colors from `injectSemanticColorTheme()`, so a surface's `semanticColorThemes` decides them.
+- The line chart's focus ring stays at least `--et-line-chart-focus-ring-min-width` (12px) wide, centred on the focused x, so it still reads as a ring on dense data.
+- The line chart has an `includeZero` input (default `true`); `false` fits the value axis to the data. An area chart always includes zero.
+- A stacked line chart band is an opaque mix of series color and surface, set by `--et-line-chart-stacked-area-mix`. `et update` migrates `--et-line-chart-stacked-area-opacity`.
+- Paged query trigger: add `etPagedQueryTrigger`, infinite scroll for a `createPagedQueryStack` in a list, the page or an `et-scrollable` rail.
+- Phone input: a bound value with an unknown dial code (`+999…`) is shown and edited in full instead of being rewritten with the fallback country's dial code; `hasUnknownDialCode` reports it.
+- A keyboard-focused Sankey chart link now shows a muted key hint in its tooltip, worded by the new `linkKeyHint` input.
+- Sankey chart: a middle-column node label now sits on a surface chip centred on its node. A node shorter than 24px keeps the label beside it. `SankeyChartLabelSide` gains `'center'`.
+- The sankey chart is one tab stop: arrow keys walk the nodes, Enter steps into a node's links. Custom templates need the new `etSankeyChartMark` directive.
+- The sankey chart turns its flow top to bottom below 480px of width; set it with the new `direction` and `verticalBelow` inputs.
+- Add a `valueKey` input to `et-select` that matches values by a derived key, so syncing thousands of data-driven object options stays linear.
+- Add `et-stat-tile` for a single headline value with a signed delta coloured by whether up is good, and `et-stat-tile-sparkline` for its trend.
+
+### Patch Changes
+
+- Calendar: hovering a day before an open range's start no longer previews a band, since picking it restarts the range.
+- Scheduler appointments draw their time, location and chain count in the full theme ink and their title at weight 600, so the secondary text clears WCAG AA.
+- Draw calendar outside-month dates and week numbers, and the select and cascader placeholder, in the muted surface colour; draw form errors, warnings and the over-limit counter in the theme ink, so all of them clear AA contrast
+- Draw the error messages of the rich text editor token popup, the dropzone, the select, the cascader and the menu search in the theme ink, like the form field messages, so they clear AA contrast on a light surface
+- Menu, select and cascader no longer ship the tooltip and toggletip styles.
+- Form field: a control inside an `@if` that is false at first render no longer throws `ET2200` in dev mode; its accessible name is checked once it appears.
+- Form fields inject the suffix overlap styles only once a clear button or busy spinner can render, so plain text inputs and textareas no longer carry them.
+- `LineChartDirective.baseline()` stays inside the plot with `includeZero` `false`: it sits on the value-axis edge nearest zero.
+- Weekly time ticks in the line chart start on the app locale's first day of the week, and on Monday where the browser reports no week info.
+- The line chart tooltip waits for its show delay only when the pointer first enters the plot; while it is open, it moves to the hovered x at once.
+- Mark every migration with a `level`, so `et update` runs only the required ones.
+- `etPagedQueryTrigger` now observes through `signalElementIntersection` instead of a native `IntersectionObserver`.
+- Phone input: the country search field now uses a shared `et-select-panel-search` style from the select panel instead of its own copy.
+- A pie chart slice with a value above 0 that rounds to 0% now reads "<1%" in the tooltip, legend, table view and screen reader text.
+- Typing `3. ` in the rich text editor now starts the numbered list at 3 instead of 1.
+- Format scheduler times and the header date with the active date locale, so a 12-hour locale shows 12-hour times.
+- Draw the scheduler month view's outside-month dates in the muted surface colour, so they clear AA contrast
+- Give each hour of the scheduler time grid its own row, so a screen reader no longer reports one row of 168 cells.
+- `selectOptionsFromQuery` now runs its pages on a `createPagedQueryStack`; its config and return type are unchanged.
+- Add a shared `et-visually-hidden` class and `mountVisuallyHidden()` to core, replacing 16 per-component copies of the clip rule in components.
+- Table: the error state's live region now exists before its message lands, so screen readers announce the error.
+- Draw links, error labels, destructive menu items, the table sort priority and the current progress step in the theme ink, so they clear AA contrast on a light surface
+- Time picker: Tab reaches an empty ring and its keys set a first time from now, and the empty hint reads "Pick a time".
+- Time range input: the bottom sheet focuses the active ring handle even while the range is empty, so focus stays in the sheet after the first tap.
+- Closing a tooltip with Escape or `hide()` cancels a hover show still waiting for its delay, so the line chart tooltip no longer reopens after an early Escape.
+- Tooltip and toggletip: share their common styles through the floating-panel stylesheet, without a visual change.
+- Updated dependencies:
+  - @ethlete/bracket@1.0.0-next.3
+
 ## 1.0.0-next.66
 
 ### Patch Changes

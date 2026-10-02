@@ -1,5 +1,23 @@
 # timetrack-app
 
+## 0.2.0-next.9
+
+### Minor Changes
+
+- A band's context menu offers "Ask auto mode again", which asks the model about that band once more, even with auto mode off.
+- The Sync view now remembers each day's last write to Tempo across reloads and restarts.
+
+### Patch Changes
+
+- Auto mode asks a band or stand-in again when new evidence changes what its answer was built from, while the answer is still its own, and expires the create the old answer left waiting.
+- On Linux a `call-start` carries the title of the call app's window, even when that window never had the focus.
+- The reminder banner opens the reminded day. A day that is not logged yet offers "Sync the day" and opens the sync view, and any other gap offers "Review the day" and opens the day view.
+- The end-of-day reminder re-reads the day as soon as a Tempo sync lands or an edit on the day screen is saved, instead of up to a minute later.
+- A band the reviewer chose not to log no longer counts as unattributed time or raises the "Some work is not named yet" warning.
+- Day: the band menu offers "Don't log this time" and "Log this time". A band not logged paints muted, and reads "Not logged" where it had no name, or adds "· not logged" after its issue.
+- A call is no longer named after a window its app left long before the microphone opened, and a `call-start` can carry the title the host read.
+- The day banner counts only the time a synced row grew by as not in Tempo yet, and names a synced row that changed without growing as a row changed since the sync.
+
 ## 0.2.0-next.8
 
 ### Minor Changes

@@ -1,5 +1,17 @@
 # @ethlete/cli
 
+## 2.1.0-next.16
+
+### Minor Changes
+
+- New `et migrations` lists the recommended and optional migrations an app has not run, and `et migrations run <package>:<name>` runs one and records it in `.ethlete/migrations.json`.
+- `et update` runs only `required` migrations and points at the recommended and optional ones it left.
+- `et migrations` shows the number of affected files next to each migration whose manifest entry names a `scan` generator.
+
+### Patch Changes
+
+- The call title bar no longer covers the top of a drawing: the drawing starts below it, and it fades out while the drawing scrolls down and back in on scroll up.
+
 ## 2.1.0-next.15
 
 ### Minor Changes

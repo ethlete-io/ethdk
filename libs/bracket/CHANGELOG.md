@@ -1,5 +1,11 @@
 # @ethlete/bracket
 
+## 1.0.0-next.3
+
+### Minor Changes
+
+- Add `createPlaceholderBracketSource(shape)`, an empty single or double elimination source for drawing a loading state.
+
 ## 1.0.0-next.2
 
 ### Minor Changes

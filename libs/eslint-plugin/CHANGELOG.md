@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.0-next.27
+
+### Patch Changes
+
+- Angular metadata fixers (`no-legacy-angular-decorators`, `require-on-push-change-detection`, `require-view-encapsulation-none`) now insert properties with the surrounding comma style and no stray spaces.
+- `class-member-order`: the fixer keeps blank lines between members in place instead of leaving one after the opening brace.
+- `no-inject-chain` no longer reports a constructor called straight off `inject()`, as in `new (inject(Foo).Bar)()`.
+- Mark every migration with a `level`, so `et update` runs only the required ones.
+- `enforce-routing-view-naming` only checks object literals that have a `path` key.
+
 ## 1.0.0-next.26
 
 ### Minor Changes

@@ -1,5 +1,13 @@
 # ethlete-studio
 
+## 0.2.0-next.3
+
+### Patch Changes
+
+- Studio reads a call file as an object literal, so prose that holds `key:` no longer adds a phantom variant and a double-quoted claim reads whole.
+- A call opens on the variant picked in it, else on its open or winning variant, and the sidebar count says how many variants are ruled.
+- The call title bar no longer covers the top of a drawing: the drawing starts below it, and it fades out while the drawing scrolls down and back in on scroll up.
+
 ## 0.2.0-next.2
 
 ### Minor Changes
