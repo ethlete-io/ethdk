@@ -13,10 +13,13 @@ with `color-mix` (it invents colours).
 - `brand-on-light` (emerald 700 ink) and `warning-on-light` (amber 800 ink) exist, chosen in the
   call `components/on-light-ink/00-brand-warning`: each theme takes the lightest step that clears
   AA on every badge. The badge story draws a `light` row with them; tonal and outline pass.
+- Filled success and warning take neutral 900 text on their shipped fills (call
+  `components/on-light-ink/01-filled-text`), so every filled badge passes on all four surfaces.
 - The scheduler stories still use fixed event `colorToken` names and have no light row.
 - Axe failures on `dark` that predate this work: scheduler date number 3.78:1, danger event time
   3.92:1, month-view outside dates `#737373`, the warning appointment text `#af620a` on
-  `#322415` 3.27:1, and badge `filled` (white on the success and warning fills).
+  `#322415` 3.27:1. The warning theme has no dark ink, so the scheduler warning time is
+  `#d97706` on `#392c1c`, 4.24:1.
 
 ## Run the error-color-theme migration on a consumer
 

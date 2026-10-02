@@ -55,7 +55,7 @@ export const SUCCESS_THEME: ColorTheme = {
       disabled: '46 111 68',
     },
     onColor: {
-      default: '255 255 255',
+      default: '23 23 23',
       disabled: '221 247 231',
     },
     inkColor: {
@@ -103,7 +103,7 @@ export const SUCCESS_ON_LIGHT_THEME: ColorTheme = {
       disabled: '46 111 68',
     },
     onColor: {
-      default: '255 255 255',
+      default: '23 23 23',
       disabled: '221 247 231',
     },
     inkColor: {
@@ -128,7 +128,7 @@ export const WARNING_THEME: ColorTheme = {
       disabled: '133 77 14',
     },
     onColor: {
-      default: '255 255 255',
+      default: '23 23 23',
       disabled: '255 237 213',
     },
   },
@@ -267,7 +267,7 @@ export const WARNING_ON_LIGHT_THEME: ColorTheme = {
       disabled: '133 77 14',
     },
     onColor: {
-      default: '255 255 255',
+      default: '23 23 23',
       disabled: '255 237 213',
     },
     inkColor: {
