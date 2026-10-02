@@ -4,6 +4,7 @@ import { boxOf, openStory, pressKey, settle, tap, viewportOf } from '../support'
 const STORY_ID = 'components-overlays-menu--default';
 const WITHOUT_HOVER_OPEN_STORY_ID = 'components-overlays-menu--without-hover-open';
 const CONTEXT_STORY_ID = 'components-overlays-menu--context-menu';
+const DIALOG_STORY_ID = 'components-overlays-menu--menu-to-dialog';
 
 /**
  * Menu items indicate focus with a `[data-active]` background highlight, not an outline or
@@ -461,6 +462,46 @@ test.describe('menu / context menu', () => {
 
     await expect(page.getByRole('menu')).toHaveCount(0);
     await expect(root.getByText('Last action: Paste')).toBeVisible();
+  });
+});
+
+test.describe('menu / opening a dialog', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard and click');
+
+  test('closing a dialog opened from a menu item with Enter returns focus to the menu trigger', async ({ page }) => {
+    const root = await openStory(page, DIALOG_STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Actions' });
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'Enter');
+    await expect(page.getByRole('menuitem', { name: 'Edit…' })).toBeFocused();
+    await pressKey(page, 'Enter');
+
+    const dialog = page.getByRole('dialog', { name: 'Edit item' });
+
+    await expect(dialog).toBeVisible();
+    await expect(page.getByRole('menu')).toHaveCount(0);
+
+    await pressKey(page, 'Escape');
+
+    await expect(dialog).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+  });
+
+  test('closing a dialog opened from a clicked menu item returns focus to the menu trigger', async ({ page }) => {
+    const root = await openStory(page, DIALOG_STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Actions' });
+
+    await trigger.click();
+    await page.getByRole('menuitem', { name: 'Edit…' }).click();
+
+    const dialog = page.getByRole('dialog', { name: 'Edit item' });
+
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', { name: 'Close' }).click();
+
+    await expect(dialog).toHaveCount(0);
+    await expect(trigger).toBeFocused();
   });
 });
 

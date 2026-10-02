@@ -37,6 +37,11 @@ notification, floating-action; guides `apps/docs/components/{overlays,overlay-op
   with a new source `'navigation'` on `NavigationStart` when a `Router` is injectable. Either way document it in
   `overlay-openers.md` and add an opener spec.
 - Breaking: yes (behavior). Decision: yes.
+- Status: fixed (wave 2, option b: `closeOnNavigation`, default `true`, on `OverlayConfig` and `[etOverlay]`; closes on a
+  `NavigationStart` to another path when `ROUTES` is provided; query-param overlays exempt; opener `afterClosed` survives a
+  host destroyed mid-close; specs in `overlay-manager.spec.ts` / `overlay-opener.spec.ts`; no app-level default exists to extend)
+- Review: ok (self-review; open risk: an overlay router with `syncUrl` that is destroyed while the navigation is still pending
+  may run its `historyGo` cleanup against that navigation)
 
 ## OV-02 A dialog opened from a menu item loses focus on close
 
@@ -56,6 +61,8 @@ notification, floating-action; guides `apps/docs/components/{overlays,overlay-op
 - Breaking: no. Decision: no.
 - Status: fixed (core runtime walks a focus-restore chain; core scenario `overlay-focus-restore.scenario.spec.ts`; menu story + e2e not added)
 - Review: ok (core runtime hunks only; menu story + e2e still open)
+- Status (wave 2): fixed - `Components/Overlays/Menu` story `MenuToDialog` + `menu / opening a dialog` e2e (keyboard and click)
+- Review (wave 2): ok (self-review; e2e passes on desktop)
 
 ## OV-03 Closing a query-param overlay pushes a history entry, so Back reopens it
 
@@ -192,7 +199,7 @@ notification, floating-action; guides `apps/docs/components/{overlays,overlay-op
 - Fix: in dev mode, warn once from `OverlayManager.open` when a modal overlay opens and the scroll blocker was never
   instantiated (a module flag set by the blocker's factory), naming `provideOverlay()`.
 - Breaking: no. Decision: no.
-- Status: fixed (warns once per document)
+- Status: fixed (warns once per document); wave 2: setup note in `overlays.md`
 - Review: ok
 
 ## OV-13 `OverlayRef` type exposes internal wiring

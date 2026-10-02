@@ -7,7 +7,7 @@ export type OverlayRuntimeRole = 'dialog' | 'alertdialog';
 export type OverlayRuntimeAutoFocusTarget = 'container' | 'first-heading' | 'first-tabbable';
 
 export type OverlayRuntimeCloseSource =
-  'api' | 'escape' | 'outside-pointer' | 'drag' | 'reference-detached' | 'replace';
+  'api' | 'escape' | 'outside-pointer' | 'drag' | 'reference-detached' | 'replace' | 'navigation';
 
 export type OverlayRuntimeCenteredPosition = {
   kind: 'center';

@@ -31,7 +31,7 @@ ref.afterClosed().subscribe(({ result, source }) => {
 | `modal`                                                    | `true`               | Modal overlays get a focus trap, and `aria-modal` when a `role` is set.                                                                                                                                      |
 | `hasBackdrop`                                              | `true`               | Render a backdrop element.                                                                                                                                                                                   |
 | `autoFocus`                                                | `'first-tabbable'`   | `'container' \| 'first-heading' \| 'first-tabbable'`, a CSS selector, or `false`.                                                                                                                            |
-| `restoreFocus`                                             | `true`               | Restore focus to the previously focused element on close, unless focus has since moved outside the overlay.                                                                                                  |
+| `restoreFocus`                                             | `true`               | Restore focus to the previously focused element on close, unless focus has since moved outside the overlay. If that element sat in an overlay that is gone, focus goes to that overlay's own restore target. |
 | `closeOnEscape`                                            | `true`               | Escape closes the top-most overlay.                                                                                                                                                                          |
 | `closeOnOutsidePointer`                                    | `!modal`             | Pointer down outside the pane closes it.                                                                                                                                                                     |
 | `passive`                                                  | `false`              | For tooltips and hover cards: the overlay below keeps Escape, outside presses and the focus trap while it shows.                                                                                             |
@@ -138,19 +138,19 @@ The active strategy can be swapped on a live overlay via `ref.updatePositionStra
 
 `mount()` returns an `OverlayRuntimeRef` (the runtime itself is typed `OverlayRuntime`):
 
-| Member                             | Description                                                                                                                      |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `close(result?, source?)`          | Close with an optional result (`source` defaults to `'api'`). Runs registered close guards first.                                |
-| `forceClose(result?, source?)`     | Close bypassing every close guard - used by a guard's owner to commit a close it vetoed.                                         |
-| `registerCloseGuard(guard)`        | Register a synchronous veto `(event) => boolean` for pending closes; returns an unregister fn.                                   |
-| `state`                            | `Signal<'mounting' \| 'mounted' \| 'closing' \| 'closed'>`                                                                       |
-| `componentInstance`                | `Signal<TComponent \| null>`                                                                                                     |
-| `id` / `config`                    | The id and the mount config the overlay was opened with.                                                                         |
-| `beforeOpened()` / `afterOpened()` | Open lifecycle observables. Each lifecycle observable replays its event, so subscribing after it still emits once.               |
-| `beforeClosed()` / `afterClosed()` | Emit `{ result, source }` - `source` is `'api' \| 'escape' \| 'outside-pointer' \| 'drag' \| 'reference-detached' \| 'replace'`. |
-| `elements`                         | The scaffold DOM (`rootElement`, `hostElement`, `paneElement`, and `backdropElement` as a signal).                               |
-| `updatePositionStrategy(strategy)` | Swap the position strategy of an open overlay. Ignored once the overlay closes.                                                  |
-| `updateBackdrop(hasBackdrop)`      | Add or remove the backdrop of an open overlay. Ignored once the overlay closes.                                                  |
+| Member                             | Description                                                                                                                                      |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `close(result?, source?)`          | Close with an optional result (`source` defaults to `'api'`). Runs registered close guards first.                                                |
+| `forceClose(result?, source?)`     | Close bypassing every close guard - used by a guard's owner to commit a close it vetoed.                                                         |
+| `registerCloseGuard(guard)`        | Register a synchronous veto `(event) => boolean` for pending closes; returns an unregister fn.                                                   |
+| `state`                            | `Signal<'mounting' \| 'mounted' \| 'closing' \| 'closed'>`                                                                                       |
+| `componentInstance`                | `Signal<TComponent \| null>`                                                                                                                     |
+| `id` / `config`                    | The id and the mount config the overlay was opened with.                                                                                         |
+| `beforeOpened()` / `afterOpened()` | Open lifecycle observables. Each lifecycle observable replays its event, so subscribing after it still emits once.                               |
+| `beforeClosed()` / `afterClosed()` | Emit `{ result, source }` - `source` is `'api' \| 'escape' \| 'outside-pointer' \| 'drag' \| 'reference-detached' \| 'replace' \| 'navigation'`. |
+| `elements`                         | The scaffold DOM (`rootElement`, `hostElement`, `paneElement`, and `backdropElement` as a signal).                                               |
+| `updatePositionStrategy(strategy)` | Swap the position strategy of an open overlay. Ignored once the overlay closes.                                                                  |
+| `updateBackdrop(hasBackdrop)`      | Add or remove the backdrop of an open overlay. Ignored once the overlay closes.                                                                  |
 
 Escape and outside-pointer closes only apply to the top-most overlay and are ignored until the enter transition has started - a click that opens an overlay can't immediately close it.
 

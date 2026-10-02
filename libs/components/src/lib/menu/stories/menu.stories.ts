@@ -1,10 +1,12 @@
 import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
-import { MenuContextStorybookComponent, MenuStorybookComponent } from './components';
+import { MenuContextStorybookComponent, MenuDialogStorybookComponent, MenuStorybookComponent } from './components';
 
 export default {
   title: 'Components/Overlays/Menu',
   component: MenuStorybookComponent,
-  decorators: [moduleMetadata({ imports: [MenuStorybookComponent, MenuContextStorybookComponent] })],
+  decorators: [
+    moduleMetadata({ imports: [MenuStorybookComponent, MenuContextStorybookComponent, MenuDialogStorybookComponent] }),
+  ],
   args: {
     placement: 'auto',
     hoverOpen: true,
@@ -41,5 +43,11 @@ export const Disabled: Story = {
 export const ContextMenu: Story = {
   render: () => ({
     template: `<et-sb-menu-context />`,
+  }),
+};
+
+export const MenuToDialog: Story = {
+  render: () => ({
+    template: `<et-sb-menu-dialog />`,
   }),
 };

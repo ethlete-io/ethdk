@@ -179,13 +179,23 @@ const attachLifecycle = <TComponent extends object, TResult>(options: AttachLife
   const { afterClosed, beforeClosed, afterOpened } = lifecycle;
 
   if (afterClosed) {
-    overlayRef
+    let closeStarted = false;
+    const subscription = overlayRef
       .afterClosed()
+      .pipe(tap((result) => afterClosed(result ?? null)))
+      .subscribe();
+    const unregister = destroyRef.onDestroy(() => {
+      if (!closeStarted) subscription.unsubscribe();
+    });
+
+    overlayRef
+      .beforeClosed()
       .pipe(
-        tap((result) => afterClosed(result ?? null)),
-        takeUntilDestroyed(destroyRef),
+        take(1),
+        tap(() => (closeStarted = true)),
       )
       .subscribe();
+    subscription.add(unregister);
   }
 
   if (beforeClosed) {
@@ -316,6 +326,7 @@ const createQueryParamOverlayOpener = <TComponent extends object, TResult>(
       definition.component,
       mergeOverlayConfigs({ viewContainerRef: fallbackViewContainerRef }, definition.config, overlayConfig, {
         bindings: [inputBinding(OVERLAY_QUERY_PARAM_INPUT_NAME, () => value)],
+        closeOnNavigation: false,
       }),
     );
 

@@ -61,6 +61,15 @@ export type OverlayConfig = {
   closeOnEscape?: boolean;
 
   /**
+   * Closes the overlay with the source `'navigation'` when an Angular Router navigation to another path
+   * starts. A navigation that only changes query params or the fragment keeps it open. Has no effect in an
+   * app without `provideRouter()`. A query-param overlay never closes this way - its URL drives it.
+   *
+   * @default true
+   */
+  closeOnNavigation?: boolean;
+
+  /**
    * Marks an overlay that never owns the interaction - a tooltip, a hover card, a drag preview.
    * The overlay below a passive one keeps answering Escape, an outside press and the focus trap
    * while it is shown.

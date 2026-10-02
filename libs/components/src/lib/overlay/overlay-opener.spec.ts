@@ -80,6 +80,19 @@ describe('query param overlay opener', () => {
     fixture.destroy();
   });
 
+  it('keeps a query-param overlay open on a path change that keeps its param', async () => {
+    const fixture = await createHost();
+
+    await setParam('42');
+    await TestBed.inject(Router).navigate(['/other'], { queryParamsHandling: 'preserve' });
+    TestBed.tick();
+    await flushFrames();
+
+    expect(openOverlayCount()).toBe(1);
+
+    fixture.destroy();
+  });
+
   it('closes an open overlay when the opener is destroyed', async () => {
     const fixture = await createHost();
 
@@ -429,6 +442,17 @@ describe('overlay opener', () => {
     const ref = host.plain.open();
 
     expect(ref.config.viewContainerRef).toBeDefined();
+  });
+
+  it('still reports a close that started before its host was destroyed', async () => {
+    const ref = host.plain.open();
+    await flushFrames();
+
+    ref.close('saved');
+    fixture.destroy();
+    await flushFrames();
+
+    expect(host.openerClosed).toEqual(['saved']);
   });
 
   it('stops calling the opener callbacks once its host is destroyed', async () => {

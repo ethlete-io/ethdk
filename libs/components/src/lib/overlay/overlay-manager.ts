@@ -1,4 +1,15 @@
-import { DOCUMENT, EnvironmentInjector, Type, computed, inject, inputBinding } from '@angular/core';
+import {
+  DOCUMENT,
+  DestroyRef,
+  EnvironmentInjector,
+  Type,
+  computed,
+  inject,
+  inputBinding,
+  untracked,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NavigationStart, ROUTES, Router } from '@angular/router';
 import {
   anchoredOverlayPosition,
   defineRootProvider,
@@ -10,6 +21,7 @@ import {
   toInjectFn,
   toProvideFn,
 } from '@ethlete/core';
+import { filter, tap } from 'rxjs';
 import { normalizeClassList } from './normalize-class-list';
 import { OVERLAY_ERROR_CODES } from './overlay-errors';
 import { warnIfOverlayScrollBlockerMissing } from './overlay-scroll-blocker-registry';
@@ -17,7 +29,7 @@ import { OverlayConfig } from './overlay-config';
 import { OverlayContainerComponent } from './overlay-container.component';
 import { OVERLAY_HAS_BACKDROP, resolveOverlayHasBackdrop } from './overlay-has-backdrop';
 import { OVERLAY_REF, OverlayRef } from './overlay-ref';
-import { createOverlayRef } from './overlay-ref-internal';
+import { createOverlayRef, getOverlayRefInternals } from './overlay-ref-internal';
 import { createOverlayStrategyController } from './strategies/overlay-strategy-controller';
 import { resolveOriginElement } from './strategies/resolve-origin-element';
 
@@ -62,6 +74,8 @@ const resolveZIndex = (origin: Element | Event | null | undefined, document: Doc
   return resolveOverlayLayer(resolved?.target instanceof Element ? resolved.target : null);
 };
 
+const stripQueryAndFragment = (url: string) => url.split(/[?#]/, 1)[0];
+
 const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
   (): OverlayManager => {
     const overlayRuntime = injectOverlayRuntime();
@@ -75,6 +89,23 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
         .map((runtimeRef) => runtimeToOverlayRef.get(runtimeRef))
         .filter((overlayRef): overlayRef is OverlayRef<object, unknown> => overlayRef !== undefined);
     });
+
+    const router = inject(ROUTES, { optional: true }) ? inject(Router) : null;
+
+    router?.events
+      .pipe(
+        filter((event) => event instanceof NavigationStart),
+        filter((event) => stripQueryAndFragment(event.url) !== stripQueryAndFragment(router.url)),
+        tap(() => {
+          for (const overlayRef of untracked(openOverlays)) {
+            if (overlayRef.config.closeOnNavigation === false) continue;
+
+            getOverlayRefInternals(overlayRef)?.closeVia('navigation');
+          }
+        }),
+        takeUntilDestroyed(inject(DestroyRef)),
+      )
+      .subscribe();
 
     const open = <TComponent extends object, TResult = unknown>(
       component: Type<TComponent>,

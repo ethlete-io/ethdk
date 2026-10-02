@@ -51,6 +51,7 @@ export class OverlayDirective {
   public hasBackdrop = input<boolean | undefined>(undefined);
   public closeOnEscape = input(true, { transform: booleanAttribute });
   public closeOnOutsidePointer = input(true, { transform: booleanAttribute });
+  public closeOnNavigation = input(true, { transform: booleanAttribute });
   public hostClass = input<string | string[] | undefined>(undefined);
   public backdropClass = input<string | string[] | undefined>(undefined);
   public panelClass = input<string | string[] | undefined>(undefined);
@@ -226,6 +227,7 @@ export class OverlayDirective {
       backdropClass: this.backdropClass(),
       closeOnEscape: this.closeOnEscape(),
       closeOnOutsidePointer: this.closeOnOutsidePointer(),
+      closeOnNavigation: this.closeOnNavigation(),
       bindings: [inputBinding('template', () => surface.templateRef), inputBinding('context', () => templateContext)],
       disableClose: this.disableClose(),
       hasBackdrop: this.hasBackdrop(),

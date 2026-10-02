@@ -93,7 +93,7 @@ So a `panelClass` on the definition and another on the opener both end up on the
 
 ## Lifecycle callbacks
 
-The opener config takes three callbacks alongside the overlay config overrides. They are subscribed per open and cleaned up automatically with the opener's injection context:
+The opener config takes three callbacks alongside the overlay config overrides. They are subscribed per open and cleaned up automatically with the opener's injection context. A close that started before the opener was destroyed still reports to `afterClosed`. A route change closes the overlay as it starts, so leaving the page does not drop the result - see [Closing on navigation](/components/overlays#closing-on-navigation):
 
 ```ts
 private product = createOverlayOpener(productOverlay, {

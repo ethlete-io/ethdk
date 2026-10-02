@@ -1,5 +1,8 @@
 import { Component, Directive } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { provideLocationMocks } from '@angular/common/testing';
+import { Router, provideRouter } from '@angular/router';
+import { OverlayRuntimeCloseSource } from '@ethlete/core';
 import '../../test-helpers';
 import { injectOverlayManager } from './overlay-manager';
 import { OverlayRef } from './overlay-ref';
@@ -100,5 +103,63 @@ describe('overlay manager plain open', () => {
     expect(() =>
       TestBed.runInInjectionContext(() => injectOverlayManager().open(PlainOverlayComponent, { customAnimated: true })),
     ).toThrow(/ET1211/);
+  });
+});
+
+describe('overlay manager closeOnNavigation', () => {
+  const sources: OverlayRuntimeCloseSource[] = [];
+
+  beforeEach(async () => {
+    sources.length = 0;
+    TestBed.configureTestingModule({
+      providers: [provideRouter([{ path: '**', children: [] }]), provideLocationMocks()],
+    });
+    await TestBed.inject(Router).navigateByUrl('/start');
+  });
+
+  afterEach(() => {
+    TestBed.runInInjectionContext(() => injectOverlayManager())
+      .openOverlays()
+      .forEach((ref) => ref.forceClose());
+  });
+
+  const open = (closeOnNavigation?: boolean) => {
+    const ref = TestBed.runInInjectionContext(() => injectOverlayManager()).open(PlainOverlayComponent, {
+      closeOnNavigation,
+    });
+
+    ref.afterClosedEvent().subscribe(({ source }) => sources.push(source));
+
+    return ref;
+  };
+
+  const openOverlayCount = () => TestBed.runInInjectionContext(() => injectOverlayManager().openOverlays().length);
+
+  it('closes an open overlay with the source navigation when the path changes', async () => {
+    open();
+    open();
+
+    await TestBed.inject(Router).navigateByUrl('/elsewhere');
+
+    expect(sources).toEqual(['navigation', 'navigation']);
+    expect(openOverlayCount()).toBe(0);
+  });
+
+  it('keeps the overlay open when only query params or the fragment change', async () => {
+    open();
+
+    await TestBed.inject(Router).navigateByUrl('/start?tab=2#section');
+
+    expect(sources).toEqual([]);
+    expect(openOverlayCount()).toBe(1);
+  });
+
+  it('keeps an overlay opened with closeOnNavigation false', async () => {
+    open(false);
+
+    await TestBed.inject(Router).navigateByUrl('/elsewhere');
+
+    expect(sources).toEqual([]);
+    expect(openOverlayCount()).toBe(1);
   });
 });
