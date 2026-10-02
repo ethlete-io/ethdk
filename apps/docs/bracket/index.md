@@ -10,6 +10,12 @@ Angular or `@ethlete/core`.
 yarn add @ethlete/bracket
 ```
 
+## Use it without Angular
+
+The package has no peer dependencies: an app on any Angular version, or on no framework at all, can
+install it today and keep its own renderer. Its types check with TypeScript 5.0 and later, under
+`moduleResolution: "bundler"` or `"node16"`. It ships as an ES module only.
+
 ## Link a source
 
 ```ts
@@ -77,3 +83,19 @@ undrawn `swiss-bucket` slots.
 Install `@ethlete/components` when the app can use the SDK's Angular version. It re-exports the public
 model and adds `<et-bracket>`, `<et-bracket-pick-card>`, Angular layout factories, theming, and
 responsive round focus. See the [complete bracket guide](/components/bracket).
+
+## Coming from the `@ethlete/components@1.0.0-next.59` model
+
+An app that copied the bracket model out of `@ethlete/components@1.0.0-next.59` (to stay off Angular 22) can replace the copy with this package and keep its own renderer:
+
+- Import `createBracket` from `@ethlete/bracket` instead of the copied `bracket.ts` / `bracket-source.ts`.
+  A source without slot provenance still links by position, as before. A hand-added
+  `previousMatchIds` option is built in now; better still, give each match `homeSource` /
+  `awaySource` slots and drop the option.
+- Replace a hand-written pick migration with `migrateBracketPicks()`. It returns the same
+  `pickByMatchId`, `movedFromByMatchId` and `strandedByMatchId` maps - see
+  [Following a pick when the pairing changes](/components/bracket-prediction#following-a-pick-when-the-pairing-changes).
+- Replace hand-written slot predicates with `isBracketSlotPredictable()` and `resolveBracketSlot()`.
+
+Once the app runs the SDK's Angular version, swap the local renderer for `<et-bracket>`,
+`<et-bracket-pick-card>` and `<et-standings-pick>`.

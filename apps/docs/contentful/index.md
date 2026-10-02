@@ -6,7 +6,7 @@ Angular components for rendering [Contentful](https://www.contentful.com/) conte
 yarn add @ethlete/contentful
 ```
 
-The package peers on `@ethlete/core`, `@ethlete/components`, `@ethlete/query` and `@contentful/rich-text-types`. Upgrading from v4? Run the codemod: `nx g @ethlete/contentful:migrate-to-contentful-v5` — it renames the changed image input, removes the dropped `useTailwindClasses` config option, adds the `@ethlete/components` dependency and writes `contentful-v5-migration-tasks.md` for anything it can't rewrite (removed image class inputs, removed renderer internals, a leftover `@ethlete/cdk` dependency).
+The package peers on `@ethlete/core`, `@ethlete/components`, `@ethlete/query` and `@contentful/rich-text-types`. Upgrading from 3.x to 4? Run the codemod: `nx g @ethlete/contentful:migrate-to-contentful-v5` (the generator name says v5, but it targets `@ethlete/contentful` 4) — it renames the changed image input, removes the dropped `useTailwindClasses` config option, adds the `@ethlete/components` dependency and writes `contentful-v5-migration-tasks.md` for anything it can't rewrite (removed image class inputs, removed renderer internals, a leftover `@ethlete/cdk` dependency).
 
 ## Setup
 

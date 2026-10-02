@@ -6,7 +6,7 @@ export const CONTENTFUL_V5_REPORT_PATH = 'contentful-v5-migration-tasks.md';
 const COMPONENTS_PACKAGE = '@ethlete/components';
 const COMPONENTS_VERSION = '^1.0.0-next.32';
 
-/** Inputs that v5 dropped — the picture element now only carries static `et-picture-*` classes. */
+/** Inputs that 4.0 dropped — the picture element now only carries static `et-picture-*` classes. */
 const REMOVED_CLASS_INPUTS = ['imgClass', 'figureClass', 'figcaptionClass', 'pictureClass'];
 
 /** Renderer internals that are no longer exported from `@ethlete/contentful`. */
@@ -258,7 +258,7 @@ const migratePackageJson = (tree: Tree, filePath: string) => {
 
 const renderReport = (tasks: ContentfulV5Task[]) =>
   [
-    '# @ethlete/contentful v5 migration tasks',
+    '# @ethlete/contentful 4 migration tasks',
     '',
     'The codemod renamed the `et-contentful-image` `hasPriority` input to `priority`, removed the dropped',
     '`useTailwindClasses` config option and made sure `@ethlete/components` is declared. The sites below',
@@ -280,7 +280,7 @@ const renderReport = (tasks: ContentfulV5Task[]) =>
   ].join('\n');
 
 export default async function migrateToContentfulV5(tree: Tree, schema: MigrationSchema) {
-  console.log('\n🔄 Migrating to @ethlete/contentful v5...');
+  console.log('\n🔄 Migrating to @ethlete/contentful 4...');
 
   const scope = createMigrationScope(tree, schema);
 

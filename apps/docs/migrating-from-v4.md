@@ -42,6 +42,9 @@ inside one version:
 | `@ethlete/query`      | `prep-for-query-v3` | renames the legacy symbols the current client collides with. [Query](/query/migrating-from-v2)                                                        |
 | `@ethlete/contentful` | `to-contentful-v5`  | image input rename, `useTailwindClasses` removal, adds `@ethlete/components`; tasks in `contentful-v5-migration-tasks.md`. [Contentful](/contentful/) |
 
+`@ethlete/types` 2 no longer exports `JsonLD`, and no migration rewrites it: import it from
+`@ethlete/core` instead.
+
 What a codemod cannot finish lands in `.ethlete/update/tasks.md` (and `tasks.json` for an agent). Work
 that list until it is empty and the app builds - it is still the cdk app, on the new versions.
 

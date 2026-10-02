@@ -252,6 +252,8 @@ directives/query.directive.ts:77` (`QueryDirectiveType = AnyV2Query | AnyLegacyQ
   predicates for `@ethlete/bracket` now; keep the local renderer (`bracket.component.ts`, grid, edges) until Angular 22,
   then use `<et-bracket>` + `<et-bracket-pick-card>` + `et-standings-pick` (the group table).
 - Breaking: no. Decision: no.
+- Status: fixed - `apps/docs/bracket/index.md` gains "Use it without Angular" (no peers, ESM only, TS 5.0+ - the built `.d.ts` checked by hand with TS 4.9 and 5.0-5.9 under bundler and node16) and "Coming from the components@1.0.0-next.59 model". No CI type-check fixture added.
+- Review: ok
 
 ## FG-13 No helper for "which participants can fill this standing-rank side"
 
@@ -290,6 +292,8 @@ candidates }`). SDK `libs/bracket/src/lib/linked/resolve-bracket-slot.ts` resolv
 - Fix: a `migrations.json` in `libs/types` with an `auto` import rewrite (`JsonLD` → `@ethlete/core`), or at least a
   line in the types guide and the types changelog.
 - Breaking: no. Decision: no.
+- Status: fixed - notes in `apps/docs/types/index.md` and `apps/docs/migrating-from-v4.md`, a types changeset. No codemod: `migrate-to-v5` has no import-rewrite map (only the one-off `createProvider` mover).
+- Review: ok
 
 ## FG-16 Contentful docs name the wrong major
 
@@ -299,3 +303,5 @@ candidates }`). SDK `libs/bracket/src/lib/linked/resolve-bracket-slot.ts` resolv
 - Problem: the lib's next major is 4 and fifagg is on 3.9. "From v4 … v5" reads as "not for you".
 - Fix: reword to "Upgrading from 3.x to 4" and keep the generator name (or alias it `migrate-to-contentful-4`).
 - Breaking: no. Decision: no.
+- Status: fixed - the real line is 3.9 -> 4.0.0-next.12; the docs say "Upgrading from 3.x to 4" and name the generator's v5 as a misnomer; the generator's log line and report heading say 4. Generator and report file names kept.
+- Review: ok

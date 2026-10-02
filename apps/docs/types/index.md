@@ -33,6 +33,11 @@ A small set of types is maintained by hand on top of the generated ones:
   - `GgLikePaginated<T>`, `DynLikePaginated<T>`, `ContentfulGqlLikePaginated<T>` - pagination shapes of other backends the SDK integrates with.
 - **`FormViolationListView`** - a list wrapper around the generated `FormViolationView`, used for API form-validation errors.
 
+### Moved to `@ethlete/core`
+
+The `JsonLD` schema.org namespace left this package in 2.0. Change `import { JsonLD } from '@ethlete/types'`
+to `import { JsonLD } from '@ethlete/core'` - no codemod rewrites it. See [SEO](/core/seo#structured-data-json-ld).
+
 ## Where it's used
 
 Every other `@ethlete/*` package sits on top of `types`. Notably, [`@ethlete/query`](/query/) uses the pagination wrappers for [paged queries](/query/stacks), and the `@ethlete/components` [bracket](/components/bracket) and [match](/components/match) Ethlete integrations (`generateBracketDataForEthlete`, …) consume the tournament structure views (`RoundStageStructureWithMatchesView`, `MatchListView`). Apps use the same types to annotate their query responses.
