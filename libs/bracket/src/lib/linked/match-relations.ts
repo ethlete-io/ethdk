@@ -1,4 +1,10 @@
-import { BracketMatchId, BracketMatchPosition, BracketRoundId } from '../core';
+import {
+  BracketMatchId,
+  BracketMatchPosition,
+  BracketRoundId,
+  BracketWarning,
+  COMMON_BRACKET_ROUND_TYPE,
+} from '../core';
 import { BracketMatchSource, BracketSlotSource } from '../integrations';
 import { Bracket, BracketMatch, BracketRound } from './bracket';
 import { BracketRoundRelation } from './round-relations';
@@ -157,6 +163,17 @@ export const generateMatchRelationPositions = <TRoundData, TMatchData>(
   }
 };
 
+const relationMatchNotFound = (options: {
+  match: { id: string; round: { id: string } };
+  feeder: string;
+  round: { id: string };
+  position: BracketMatchPosition;
+}) =>
+  new BracketRuntimeError(
+    BRACKET_ERROR_CODES.MATCH_RELATION_INVALID,
+    `Match "${options.match.id}" in round "${options.match.round.id}" has no ${options.feeder} match at position ${options.position} of round "${options.round.id}". Check the match counts of both rounds, or declare homeSource/awaySource.`,
+  );
+
 const createNothingToOneRelation = <TRoundData, TMatchData>(params: {
   match: BracketMatch<TRoundData, TMatchData>;
   relation: Extract<BracketRoundRelation<TRoundData, TMatchData>, { type: 'nothing-to-one' }>;
@@ -168,7 +185,7 @@ const createNothingToOneRelation = <TRoundData, TMatchData>(params: {
   const nextMatch = matchPositionMaps.get(relation.nextRound.id)?.get(nextRoundMatchPosition);
 
   if (!nextMatch)
-    throw new BracketRuntimeError(BRACKET_ERROR_CODES.MATCH_RELATION_INVALID, 'Next round match not found');
+    throw relationMatchNotFound({ match, feeder: 'next', round: relation.nextRound, position: nextRoundMatchPosition });
 
   return {
     type: 'nothing-to-one',
@@ -195,11 +212,21 @@ const createOneToNothingOrTwoToNothingRelation = <TRoundData, TMatchData>(params
   const previousLowerMatch = matchPositionMaps.get(relation.previousRound.id)?.get(previousLowerRoundMatchPosition);
 
   if (!previousUpperMatch)
-    throw new BracketRuntimeError(BRACKET_ERROR_CODES.MATCH_RELATION_INVALID, 'Previous round match not found');
+    throw relationMatchNotFound({
+      match,
+      feeder: 'previous',
+      round: relation.previousRound,
+      position: previousUpperRoundMatchPosition,
+    });
 
   if (previousUpperRoundMatchPosition !== previousLowerRoundMatchPosition) {
     if (!previousLowerMatch)
-      throw new BracketRuntimeError(BRACKET_ERROR_CODES.MATCH_RELATION_INVALID, 'Previous lower round match not found');
+      throw relationMatchNotFound({
+        match,
+        feeder: 'previous lower',
+        round: relation.previousRound,
+        position: previousLowerRoundMatchPosition,
+      });
 
     return {
       type: 'two-to-nothing',
@@ -243,11 +270,21 @@ const createOneToOneOrTwoToOneRelation = <TRoundData, TMatchData>(params: {
   const previousLowerMatch = matchPositionMaps.get(relation.previousRound.id)?.get(previousLowerRoundMatchPosition);
 
   if (!nextMatch)
-    throw new BracketRuntimeError(BRACKET_ERROR_CODES.MATCH_RELATION_INVALID, 'Next round match not found');
+    throw relationMatchNotFound({ match, feeder: 'next', round: relation.nextRound, position: nextRoundMatchPosition });
   if (!previousUpperMatch)
-    throw new BracketRuntimeError(BRACKET_ERROR_CODES.MATCH_RELATION_INVALID, 'Previous upper round match not found');
+    throw relationMatchNotFound({
+      match,
+      feeder: 'previous upper',
+      round: relation.previousRound,
+      position: previousUpperRoundMatchPosition,
+    });
   if (!previousLowerMatch)
-    throw new BracketRuntimeError(BRACKET_ERROR_CODES.MATCH_RELATION_INVALID, 'Previous lower round match not found');
+    throw relationMatchNotFound({
+      match,
+      feeder: 'previous lower',
+      round: relation.previousRound,
+      position: previousLowerRoundMatchPosition,
+    });
 
   if (previousUpperRoundMatchPosition === previousLowerRoundMatchPosition) {
     return {
@@ -300,11 +337,21 @@ const createTwoToOneRelation = <TRoundData, TMatchData>(params: {
     ?.get(previousLowerRoundMatchPosition);
 
   if (!nextMatch)
-    throw new BracketRuntimeError(BRACKET_ERROR_CODES.MATCH_RELATION_INVALID, 'Next round match not found');
+    throw relationMatchNotFound({ match, feeder: 'next', round: relation.nextRound, position: nextRoundMatchPosition });
   if (!previousUpperMatch)
-    throw new BracketRuntimeError(BRACKET_ERROR_CODES.MATCH_RELATION_INVALID, 'Previous upper round match not found');
+    throw relationMatchNotFound({
+      match,
+      feeder: 'previous upper',
+      round: relation.previousUpperRound,
+      position: previousUpperRoundMatchPosition,
+    });
   if (!previousLowerMatch)
-    throw new BracketRuntimeError(BRACKET_ERROR_CODES.MATCH_RELATION_INVALID, 'Previous lower round match not found');
+    throw relationMatchNotFound({
+      match,
+      feeder: 'previous lower',
+      round: relation.previousLowerRound,
+      position: previousLowerRoundMatchPosition,
+    });
 
   return {
     type: 'two-to-one',
@@ -337,9 +384,19 @@ const createTwoToNothingRelation = <TRoundData, TMatchData>(params: {
     ?.get(previousLowerRoundMatchPosition);
 
   if (!previousUpperMatch)
-    throw new BracketRuntimeError(BRACKET_ERROR_CODES.MATCH_RELATION_INVALID, 'Previous upper round match not found');
+    throw relationMatchNotFound({
+      match,
+      feeder: 'previous upper',
+      round: relation.previousUpperRound,
+      position: previousUpperRoundMatchPosition,
+    });
   if (!previousLowerMatch)
-    throw new BracketRuntimeError(BRACKET_ERROR_CODES.MATCH_RELATION_INVALID, 'Previous lower round match not found');
+    throw relationMatchNotFound({
+      match,
+      feeder: 'previous lower',
+      round: relation.previousLowerRound,
+      position: previousLowerRoundMatchPosition,
+    });
 
   return {
     type: 'two-to-nothing',
@@ -357,6 +414,7 @@ export const generateMatchRelationsNew = <TRoundData, TMatchData>(
   options: {
     source?: { matches: BracketMatchSource<TMatchData>[] };
     previousMatchIds?: (match: BracketMatchSource<TMatchData>) => string[];
+    onWarning?: (warning: BracketWarning) => void;
   } = {},
 ): BracketMatchRelation<TRoundData, TMatchData>[] => {
   const sourceMatches = options.source?.matches ?? [];
@@ -368,6 +426,7 @@ export const generateMatchRelationsNew = <TRoundData, TMatchData>(
       bracket: bracketData,
       sourceMatches,
       previousMatchIds: options.previousMatchIds ?? defaultPreviousMatchIds,
+      onWarning: options.onWarning,
     });
   }
 
@@ -465,13 +524,61 @@ const defaultPreviousMatchIds = <TMatchData>(match: BracketMatchSource<TMatchDat
     .filter((slot) => slot.role !== 'loser')
     .map((slot) => slot.matchId);
 
+const reportDeclaredGraphWarnings = <TRoundData, TMatchData>(options: {
+  bracket: Bracket<TRoundData, TMatchData>;
+  sourceMatches: BracketMatchSource<TMatchData>[];
+  previousByMatchId: Map<string, string[]>;
+  onWarning: (warning: BracketWarning) => void;
+}) => {
+  const { bracket, sourceMatches, previousByMatchId, onWarning } = options;
+  const feederIds = new Set<string>();
+
+  for (const match of sourceMatches) {
+    const referenced = new Set([
+      ...(previousByMatchId.get(match.id) ?? []),
+      ...matchOutcomeSlots(match).map((slot) => slot.matchId),
+    ]);
+
+    for (const feederId of referenced) {
+      feederIds.add(feederId);
+
+      if (bracket.matches.has(feederId as BracketMatchId)) continue;
+
+      onWarning({
+        type: 'unknown-feeder',
+        matchId: match.id,
+        feederId,
+        message: `Match "${match.id}" is fed by "${feederId}", which is not in source.matches. The connector is not drawn.`,
+      });
+    }
+  }
+
+  if (sourceMatches.length < 2) return;
+
+  for (const match of sourceMatches) {
+    const declaresFeeders = (previousByMatchId.get(match.id)?.length ?? 0) > 0 || matchOutcomeSlots(match).length > 0;
+
+    if (declaresFeeders || feederIds.has(match.id)) continue;
+    if (bracket.matches.get(match.id as BracketMatchId)?.round.type === COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE) continue;
+
+    onWarning({
+      type: 'unlinked-match',
+      matchId: match.id,
+      message: `Match "${match.id}" declares no feeders and feeds no match. A source with any match-outcome slot (or a previousMatchIds option) is linked only from what it declares, so give every match its homeSource/awaySource.`,
+    });
+  }
+};
+
 const generateDeclaredMatchRelations = <TRoundData, TMatchData>(options: {
   bracket: Bracket<TRoundData, TMatchData>;
   sourceMatches: BracketMatchSource<TMatchData>[];
   previousMatchIds: (match: BracketMatchSource<TMatchData>) => string[];
+  onWarning?: (warning: BracketWarning) => void;
 }): BracketMatchRelation<TRoundData, TMatchData>[] => {
-  const { bracket, sourceMatches, previousMatchIds } = options;
+  const { bracket, sourceMatches, previousMatchIds, onWarning } = options;
   const previousByMatchId = new Map(sourceMatches.map((match) => [match.id, previousMatchIds(match)]));
+
+  if (onWarning) reportDeclaredGraphWarnings({ bracket, sourceMatches, previousByMatchId, onWarning });
   const nextByMatchId = new Map<string, string>();
 
   // A match can feed two: a semi final feeds the final with its winner and the third place match with

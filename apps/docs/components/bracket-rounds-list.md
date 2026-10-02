@@ -17,7 +17,7 @@ there is. The [responsive switch](#responsive-switching) below is one use of it,
 
 ```ts
 import { Component } from '@angular/core';
-import { BRACKET_ROUNDS_LIST_IMPORTS, BracketDataSource, generateBracketDataForEthlete } from '@ethlete/components';
+import { BRACKET_ROUNDS_LIST_IMPORTS, generateBracketDataForEthlete } from '@ethlete/components';
 
 @Component({
   selector: 'app-match-day',
@@ -25,7 +25,7 @@ import { BRACKET_ROUNDS_LIST_IMPORTS, BracketDataSource, generateBracketDataForE
   template: `<et-bracket-rounds-list [source]="source" />`,
 })
 export class MatchDayComponent {
-  source: BracketDataSource<unknown, unknown> = generateBracketDataForEthlete(apiRounds);
+  source = generateBracketDataForEthlete(apiRounds);
 }
 ```
 
@@ -58,17 +58,18 @@ What it drops is everything a narrow column can't show: the SVG connectors and t
 
 ## Options
 
-| Input                  | Default      | Purpose                                                                               |
-| ---------------------- | ------------ | ------------------------------------------------------------------------------------- |
-| `source`               | - (required) | The resolved `BracketDataSource` - the same one `<et-bracket>` takes.                 |
-| `layouts`              | -            | Replaces the registered [layout](/components/bracket#layouts) list for this instance. |
-| `selectedRoundId`      | `null`       | Render only this round, by its id in the source. `null` stacks every round.           |
-| `hideRoundHeaders`     | `false`      | Drop the per-round headers.                                                           |
-| `roundHeaderLevel`     | `3`          | `aria-level` the default round headers announce themselves at.                        |
-| `matchNormalizer`      | -            | How to read your match data, for the default cards.                                   |
-| `matchComponent`       | -            | Your own cell for ordinary matches.                                                   |
-| `finalMatchComponent`  | -            | Your own cell for the deciding round.                                                 |
-| `roundHeaderComponent` | -            | Your own round header.                                                                |
+| Input                  | Default      | Purpose                                                                                                                                   |
+| ---------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `source`               | - (required) | The resolved `BracketDataSource` - the same one `<et-bracket>` takes.                                                                     |
+| `layouts`              | -            | Replaces the registered [layout](/components/bracket#layouts) list for this instance.                                                     |
+| `selectedRoundId`      | `null`       | Render only this round, by its id in the source. `null` stacks every round. An id the source lacks renders nothing and warns in dev mode. |
+| `previousMatchIds`     | -            | `(match) => string[]`, the feeders of each match - the same option `<et-bracket>` takes.                                                  |
+| `hideRoundHeaders`     | `false`      | Drop the per-round headers.                                                                                                               |
+| `roundHeaderLevel`     | `3`          | `aria-level` the default round headers announce themselves at.                                                                            |
+| `matchNormalizer`      | -            | How to read your match data, for the default cards.                                                                                       |
+| `matchComponent`       | -            | Your own cell for ordinary matches.                                                                                                       |
+| `finalMatchComponent`  | -            | Your own cell for the deciding round.                                                                                                     |
+| `roundHeaderComponent` | -            | Your own round header.                                                                                                                    |
 
 `layouts`, `hideRoundHeaders`, `roundHeaderLevel` and the four component slots also come from
 `provideBracketConfig` when you don't bind them, so a config registered for the bracket already

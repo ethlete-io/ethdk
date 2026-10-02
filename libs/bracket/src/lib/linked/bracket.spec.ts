@@ -6,6 +6,8 @@ import {
   SINGLE_ELIMINATION_BRACKET_ROUND_TYPE,
 } from '../core';
 import { BracketDataSource } from '../integrations';
+import { BracketRuntimeError } from '../bracket-runtime-error';
+import { BRACKET_ERROR_CODES } from '../bracket-errors';
 import { createBracket } from './bracket';
 
 const source: BracketDataSource<null, null> = {
@@ -43,6 +45,30 @@ describe('createBracket', () => {
     expect(() =>
       createBracket({ ...source, rounds: [], matches: [] }, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT }),
     ).toThrowError(/^ET3401:/);
+  });
+
+  it('throws a BracketRuntimeError that carries its code', () => {
+    const error = (() => {
+      try {
+        createBracket({ ...source, rounds: [], matches: [] }, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT });
+      } catch (thrown) {
+        return thrown;
+      }
+
+      return null;
+    })();
+
+    expect(error).toBeInstanceOf(BracketRuntimeError);
+    expect((error as BracketRuntimeError).code).toBe(BRACKET_ERROR_CODES.SOURCE_EMPTY);
+  });
+
+  it('names the unknown round id and the known ones when a match points past source.rounds', () => {
+    expect(() =>
+      createBracket(
+        { ...source, matches: [...source.matches, { ...source.matches[0]!, id: 's3', roundId: 'r9' }] },
+        { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT },
+      ),
+    ).toThrowError('ET3406: Match "s3" names round "r9", which is not in source.rounds (known: r1, r2)');
   });
 
   it('reports ET3403 for two rounds that share an id', () => {

@@ -7,9 +7,9 @@ import {
   TOURNAMENT_MODE,
   TournamentMode,
   BracketMatch,
+  BracketRuntimeError,
 } from '@ethlete/bracket';
 import { BracketDataSource, BracketMatchSource, BracketRoundSource } from './base';
-import { RuntimeError } from '@ethlete/core';
 import {
   EthleteMatchInput,
   EthleteMatchStatusInput,
@@ -73,7 +73,7 @@ export const generateRoundTypeFromEthleteRoundType = (
         case 'swiss-with-elimination':
           return SWISS_BRACKET_ROUND_TYPE.SWISS;
         default:
-          throw new RuntimeError(
+          throw new BracketRuntimeError(
             BRACKET_ERROR_CODES.MODE_UNSUPPORTED,
             `Unsupported tournament mode for a normal type round: ${tournamentMode}`,
           );
@@ -91,15 +91,14 @@ export const generateRoundTypeFromEthleteRoundType = (
   }
 };
 
-export const generateTournamentModeFromEthleteRounds = (
-  source: readonly EthleteRoundWithMatchesInput[],
-): TournamentMode => {
-  const firstMatch = source.find((round) => round.matches.length > 0)?.matches[0];
+/** Options for {@link generateBracketDataForEthlete}. */
+export type GenerateBracketDataForEthleteOptions = {
+  /** The stage's tournament mode. Wins over the mode read from the matches and round types. */
+  mode?: TournamentMode;
+};
 
-  if (!source.length) throw new RuntimeError(BRACKET_ERROR_CODES.SOURCE_EMPTY, 'No rounds found');
-  if (!firstMatch) throw new RuntimeError(BRACKET_ERROR_CODES.SOURCE_EMPTY, 'No matches found');
-
-  switch (firstMatch.matchType) {
+const tournamentModeFromStageType = (matchType: EthleteStageTypeInput): TournamentMode => {
+  switch (matchType) {
     case 'fifa_swiss':
       return TOURNAMENT_MODE.SWISS_WITH_ELIMINATION;
     case 'double_elimination':
@@ -107,20 +106,58 @@ export const generateTournamentModeFromEthleteRounds = (
     case 'single_elimination':
       return TOURNAMENT_MODE.SINGLE_ELIMINATION;
     default:
-      throw new RuntimeError(
+      throw new BracketRuntimeError(
         BRACKET_ERROR_CODES.MODE_UNSUPPORTED,
-        `Unsupported tournament mode: ${firstMatch.matchType}`,
+        `Unsupported tournament mode: ${matchType}. Pass { mode } to generateBracketDataForEthlete for a stage the bracket can draw.`,
       );
   }
 };
 
+const DOUBLE_ELIMINATION_ROUND_TYPES: readonly EthleteRoundTypeInput[] = [
+  'winner_bracket',
+  'loser_bracket',
+  'reverse_final',
+];
+
+/**
+ * Reads the tournament mode of a stage: `options.mode` when given, else the `matchType` of the first
+ * match that has one, else the round types - `winner_bracket`, `loser_bracket` or `reverse_final` make it
+ * double elimination, anything else single elimination. A swiss stage without matches needs `options.mode`.
+ */
+export const generateTournamentModeFromEthleteRounds = (
+  source: readonly EthleteRoundWithMatchesInput[],
+  options: GenerateBracketDataForEthleteOptions = {},
+): TournamentMode => {
+  if (!source.length) {
+    throw new BracketRuntimeError(
+      BRACKET_ERROR_CODES.SOURCE_EMPTY,
+      'No rounds found. Render <et-bracket-skeleton> until the stage has rounds.',
+    );
+  }
+
+  if (options.mode) return options.mode;
+
+  const stageType = source.flatMap((round) => round.matches).find((match) => match.matchType)?.matchType;
+
+  if (stageType) return tournamentModeFromStageType(stageType);
+
+  return source.some((item) => DOUBLE_ELIMINATION_ROUND_TYPES.includes(item.round.type))
+    ? TOURNAMENT_MODE.DOUBLE_ELIMINATION
+    : TOURNAMENT_MODE.SINGLE_ELIMINATION;
+};
+
+/**
+ * Builds a bracket source from an Ethlete stage. A stage published with its rounds but no matches yet
+ * draws empty rounds; pass `{ mode }` when the round types cannot tell the mode (a swiss stage before its draw).
+ */
 export const generateBracketDataForEthlete = <
   TRound extends EthleteRoundInput,
   TMatch extends EthleteBracketMatchInput,
 >(
   source: readonly EthleteRoundWithMatchesInput<TRound, TMatch>[],
+  options: GenerateBracketDataForEthleteOptions = {},
 ): BracketDataSource<TRound, TMatch> => {
-  const tournamentMode = generateTournamentModeFromEthleteRounds(source);
+  const tournamentMode = generateTournamentModeFromEthleteRounds(source, options);
 
   const bracketData: BracketDataSource<TRound, TMatch> = {
     rounds: [],
@@ -135,7 +172,7 @@ export const generateBracketDataForEthlete = <
 
   for (const currentItem of source) {
     if (roundIds.has(currentItem.round.id)) {
-      throw new RuntimeError(
+      throw new BracketRuntimeError(
         BRACKET_ERROR_CODES.DUPLICATE_ROUND,
         `Round with id ${currentItem.round.id} already exists in the bracket data.`,
       );
@@ -159,7 +196,7 @@ export const generateBracketDataForEthlete = <
 
     for (const match of currentItem.matches) {
       if (matchIds.has(match.id)) {
-        throw new RuntimeError(
+        throw new BracketRuntimeError(
           BRACKET_ERROR_CODES.DUPLICATE_MATCH,
           `Match with id ${match.id} already exists in the bracket data.`,
         );

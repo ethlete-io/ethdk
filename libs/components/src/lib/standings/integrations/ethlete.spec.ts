@@ -1,4 +1,6 @@
+import { ColorTheme } from '@ethlete/core';
 import { GroupRankingView, PlacementView } from '@ethlete/types';
+import { StandingsZone } from '../standings.types';
 import {
   EthleteGroupRankingInput,
   EthletePlacementInput,
@@ -22,6 +24,13 @@ describe('input types', () => {
   it('accept the generated @ethlete/types models', () => {
     expectTypeOf<PlacementView>().toExtend<EthletePlacementInput>();
     expectTypeOf<GroupRankingView>().toExtend<EthleteGroupRankingInput>();
+  });
+
+  it('take a color theme object for a zone, like the match card does', () => {
+    expectTypeOf<ColorTheme>().toExtend<StandingsZone['color']>();
+    expectTypeOf<ColorTheme>().toExtend<
+      NonNullable<Parameters<typeof normalizeEthleteGroupRanking>[0]['advancingColor']>
+    >();
   });
 });
 

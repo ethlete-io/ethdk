@@ -1,6 +1,9 @@
 import '../../test-helpers';
+import { By } from '@angular/platform-browser';
+import { BracketComponent } from './bracket.component';
+import { BracketRoundsListComponent } from './bracket-rounds-list.component';
 import { queryAll } from '../testing/driver-core';
-import { COMMON_BRACKET_ROUND_TYPE } from '@ethlete/bracket';
+import { BracketMatchId, COMMON_BRACKET_ROUND_TYPE } from '@ethlete/bracket';
 import { BracketDataSource } from './integrations';
 import { bracketTestDriver, testBracketLayouts } from './testing/bracket-driver';
 import { generateSingleEliminationBracket } from './stories/generate-bracket';
@@ -9,6 +12,8 @@ import { generateSingleEliminationBracket } from './stories/generate-bracket';
  * The same bracket with its opening two matches swapped - a re-seeding a live feed can ship, and one
  * that moves a journey without moving the `p<n>` short id the grid marks its cells with.
  */
+type RoundsList = BracketRoundsListComponent;
+
 const reseededOpeningRound = (source: BracketDataSource<null, null>): BracketDataSource<null, null> => {
   const [first, second] = source.matches;
 
@@ -393,5 +398,103 @@ describe('BracketComponent participant focus', () => {
     });
 
     expect(disabled.activeMatchIds()).toEqual([]);
+  });
+});
+
+describe('BracketComponent previousMatchIds', () => {
+  const crossedGraph: Record<string, string[]> = {
+    'se-r1-m0': ['se-r0-m0', 'se-r0-m2'],
+    'se-r1-m1': ['se-r0-m1', 'se-r0-m3'],
+    'se-r2-m0': ['se-r1-m0', 'se-r1-m1'],
+  };
+
+  const feedersOf = (bracket: BracketComponent | RoundsList, matchId: string) => {
+    const relation = bracket.bracketData().matches.get(matchId as BracketMatchId)?.relation;
+
+    return relation && 'previousUpperMatch' in relation
+      ? [relation.previousUpperMatch.id, relation.previousLowerMatch.id]
+      : [];
+  };
+
+  it.each(['bracket', 'rounds-list'] as const)('links the %s from the graph it is given', (component) => {
+    const driver = bracketTestDriver({
+      component,
+      source: generateSingleEliminationBracket(8),
+      layouts: testBracketLayouts,
+      previousMatchIds: (match) => crossedGraph[match.id] ?? [],
+    });
+    const host = driver.fixture.debugElement.query(
+      By.directive(component === 'bracket' ? BracketComponent : BracketRoundsListComponent),
+    ).componentInstance as BracketComponent | RoundsList;
+
+    expect(feedersOf(host, 'se-r1-m0')).toEqual(['se-r0-m0', 'se-r0-m2']);
+    expect(feedersOf(host, 'se-r1-m1')).toEqual(['se-r0-m1', 'se-r0-m3']);
+  });
+});
+
+describe('BracketComponent source warnings', () => {
+  it('warns in dev mode about a match a partial provenance leaves unlinked', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const plain = generateSingleEliminationBracket(4);
+    const source: BracketDataSource<null, null> = {
+      ...plain,
+      matches: plain.matches.map((match) =>
+        match.id === 'se-r1-m0'
+          ? {
+              ...match,
+              homeSource: {
+                kind: 'match-outcome',
+                role: 'winner',
+                matchId: 'se-r0-m0',
+                standingId: null,
+                rank: null,
+                label: null,
+              },
+              awaySource: {
+                kind: 'match-outcome',
+                role: 'winner',
+                matchId: 'se-r0-m9',
+                standingId: null,
+                rank: null,
+                label: null,
+              },
+            }
+          : match,
+      ),
+    };
+
+    bracketTestDriver({ source, layouts: testBracketLayouts });
+
+    const messages = warn.mock.calls.map(([message]) => String(message));
+
+    expect(messages.some((message) => message.includes('"se-r0-m9"'))).toBe(true);
+    expect(messages.some((message) => message.includes('Match "se-r0-m1" declares no feeders'))).toBe(true);
+
+    warn.mockRestore();
+  });
+});
+
+describe('BracketComponent unknown round ids', () => {
+  it.each([
+    ['bracket', { focusRoundId: 'Round 2' }, 'focusRoundId "Round 2"'],
+    ['bracket', { rowSpanRoundId: 'se-r9' }, 'rowSpanRoundId "se-r9"'],
+    ['rounds-list', { selectedRoundId: 'se-r9' }, 'selectedRoundId "se-r9"'],
+  ] as const)('warns once in dev mode when the %s gets %o', (component, ids, expected) => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const driver = bracketTestDriver({
+      component,
+      source: generateSingleEliminationBracket(8),
+      layouts: testBracketLayouts,
+      ...ids,
+    });
+
+    driver.detectChanges();
+
+    const matching = warn.mock.calls.filter(([message]) => String(message).includes(expected));
+
+    expect(matching).toHaveLength(1);
+    expect(String(matching[0]?.[0])).toContain('known: se-r0, se-r1, se-r2');
+
+    warn.mockRestore();
   });
 });

@@ -1,3 +1,4 @@
+import { ColorTheme, RegisteredColorThemeName } from '@ethlete/core';
 import { EthleteParticipantInput, normalizeEthleteParticipant } from '../../match';
 import { NormalizedStandingRow, StandingsZone } from '../standings.types';
 
@@ -59,8 +60,8 @@ export const normalizeEthletePlacement = (placement: EthletePlacementInput): Nor
  */
 export const normalizeEthleteGroupRanking = (options: {
   group: EthleteGroupRankingInput;
-  /** A registered color theme name for the advancing band. Omit to get no zone at all. */
-  advancingColor?: string;
+  /** A registered color theme name (or the theme object) for the advancing band. Omit to get no zone at all. */
+  advancingColor?: RegisteredColorThemeName | ColorTheme;
   advancingLabel?: string;
 }) => {
   const { group, advancingColor, advancingLabel } = options;

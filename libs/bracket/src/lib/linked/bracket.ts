@@ -141,6 +141,7 @@ export const createBracket = <TRoundData, TMatchData>(
   const matchRelations = generateMatchRelationsNew(newBracket, {
     source,
     previousMatchIds: options.previousMatchIds,
+    onWarning: options.onWarning,
   });
 
   for (const matchRelation of matchRelations) {

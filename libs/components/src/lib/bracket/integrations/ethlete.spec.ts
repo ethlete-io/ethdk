@@ -4,7 +4,12 @@ import { EthleteMatchInput } from '../../match';
 import { BracketMatchNormalizer } from '../bracket-card-context';
 import { queryAll } from '../../testing/driver-core';
 import { BRACKET_ERROR_CODES } from '../bracket-errors';
-import { COMMON_BRACKET_ROUND_TYPE, SINGLE_ELIMINATION_BRACKET_ROUND_TYPE, TOURNAMENT_MODE } from '@ethlete/bracket';
+import {
+  BracketRuntimeError,
+  COMMON_BRACKET_ROUND_TYPE,
+  SINGLE_ELIMINATION_BRACKET_ROUND_TYPE,
+  TOURNAMENT_MODE,
+} from '@ethlete/bracket';
 import { singleEliminationBracketLayout } from '../layouts';
 import { bracketTestDriver } from '../testing/bracket-driver';
 import { BracketDataSource } from './base';
@@ -111,12 +116,40 @@ describe('generateTournamentModeFromEthleteRounds', () => {
     expect(generateTournamentModeFromEthleteRounds(stage)).toBe(TOURNAMENT_MODE.SWISS_WITH_ELIMINATION);
   });
 
-  it('still rejects a stage without a single match', () => {
-    expect(() =>
-      generateTournamentModeFromEthleteRounds(stubStage([{ name: 'r1', type: 'normal', matchCount: 0 }])),
-    ).toThrow(`ET${BRACKET_ERROR_CODES.SOURCE_EMPTY}`);
+  it('reads a stage without matches off its round types', () => {
+    expect(generateTournamentModeFromEthleteRounds(stubStage([{ name: 'r1', type: 'normal', matchCount: 0 }]))).toBe(
+      TOURNAMENT_MODE.SINGLE_ELIMINATION,
+    );
 
-    expect(() => generateTournamentModeFromEthleteRounds([])).toThrow(`ET${BRACKET_ERROR_CODES.SOURCE_EMPTY}`);
+    expect(
+      generateTournamentModeFromEthleteRounds([
+        { round: { id: 'wb', name: 'WB', type: 'winner_bracket' }, matches: [] },
+        { round: { id: 'lb', name: 'LB', type: 'loser_bracket' }, matches: [] },
+        { round: { id: 'f', name: 'Final', type: 'final' }, matches: [] },
+      ]),
+    ).toBe(TOURNAMENT_MODE.DOUBLE_ELIMINATION);
+  });
+
+  it('lets the mode option win over the matches and round types', () => {
+    const stage = stubStage([{ name: 'r1', type: 'normal', matchType: 'single_elimination', matchCount: 2 }]);
+
+    expect(generateTournamentModeFromEthleteRounds(stage, { mode: TOURNAMENT_MODE.SWISS_WITH_ELIMINATION })).toBe(
+      TOURNAMENT_MODE.SWISS_WITH_ELIMINATION,
+    );
+  });
+
+  it('rejects a stage without rounds with a BracketRuntimeError that names the skeleton', () => {
+    let error: unknown;
+
+    try {
+      generateTournamentModeFromEthleteRounds([]);
+    } catch (thrown) {
+      error = thrown;
+    }
+
+    expect(error).toBeInstanceOf(BracketRuntimeError);
+    expect((error as BracketRuntimeError).code).toBe(BRACKET_ERROR_CODES.SOURCE_EMPTY);
+    expect((error as BracketRuntimeError).message).toContain('et-bracket-skeleton');
   });
 });
 
@@ -168,6 +201,24 @@ describe('generateBracketDataForEthlete', () => {
     const driver = bracketTestDriver({ source, layouts: [singleEliminationBracketLayout()] });
 
     expect(queryAll(driver.fixture, '.et-bracket-element--match').length).toBe(3);
+  });
+
+  it('draws a stage published with its rounds but no matches yet', () => {
+    const source = generateBracketDataForEthlete(
+      stubStage([
+        { name: 'r1', type: 'normal', matchCount: 0 },
+        { name: 'r2', type: 'normal', matchCount: 0 },
+        { name: 'r3', type: 'final', matchCount: 0 },
+      ]),
+    );
+
+    expect(source.mode).toBe(TOURNAMENT_MODE.SINGLE_ELIMINATION);
+    expect(source.matches).toHaveLength(0);
+
+    const driver = bracketTestDriver({ source, layouts: [singleEliminationBracketLayout()] });
+
+    expect(driver.element()).toBeTruthy();
+    expect(queryAll(driver.fixture, '.et-bracket-element--match').length).toBe(0);
   });
 
   it('reads a finished but unpublished match as completed, as the match normalizer does', () => {

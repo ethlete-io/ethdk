@@ -71,7 +71,8 @@ incomplete chain returns `null`. It deliberately ignores a later real result whe
 
 Use `createBracket(source, options)` to link the source first. Slot provenance supplies the feeder
 graph by default; for a source whose slots do not carry it, pass `previousMatchIds(match)`
-explicitly.
+explicitly - and bind the same function to `<et-bracket [previousMatchIds]>`, so the connectors it draws
+follow the graph your picks resolve against.
 
 ### Resolution policies
 
@@ -129,7 +130,7 @@ pick reaches are non-focusable text rather than a dead button. The chosen side c
 and a filled mark - or, once it is no longer a button (locked, disabled, readonly), a visually hidden
 note worded by the `pickCardPicked` label ("Your pick"); a selectable side that is not chosen shows the pick it would make on hover. A
 `predicted` side reads in the accent ink colour and carries a visually hidden “Prediction” note,
-worded by `predictedLabel`.
+worded by the `pickCardPredicted` label (or the card's `predictedLabel` input).
 
 The mark is drawn only where a pick is the point - on a selectable side, and on the chosen side even
 once it is locked. A slot nobody can ever be picked in gets no mark, so it never reads as a control.
@@ -302,7 +303,7 @@ through the bracket reaches exactly the picks they can still make.
 - **The chosen side carries `aria-pressed`**, and the filled mark next to it is `aria-hidden` - so the
   selection is announced from the control itself, not from a drawn dot.
 - **A `predicted` side says so in text.** It reads in the accent ink colour, and the
-  `predictedLabel` word (default `'Prediction'`) is in the accessibility tree but clipped out of
+  `pickCardPredicted` label (default `'Prediction'`, or the card's `predictedLabel` input) is in the accessibility tree but clipped out of
   sight, so a predicted participant is never told apart by colour alone.
 - **A side nobody stands on reads its slot** rather than being blank: `describeBracketSlot` words it,
   or `slotPredictEarlierRound` / `slotNotPredicted` does - see

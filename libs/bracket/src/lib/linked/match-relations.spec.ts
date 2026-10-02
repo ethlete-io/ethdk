@@ -1,6 +1,7 @@
 import {
   BRACKET_DATA_LAYOUT,
   BracketMatchId,
+  BracketWarning,
   DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
   SINGLE_ELIMINATION_BRACKET_ROUND_TYPE,
 } from '../core';
@@ -174,5 +175,71 @@ describe('generateMatchRelations, positional graph', () => {
         expect('nextMatch' in feeder.relation ? feeder.relation.nextMatch.id : null).toBe(match.id);
       }
     }
+  });
+});
+
+describe('generateMatchRelations, declared graph warnings', () => {
+  const warningsFor = (input: BracketDataSource<null, null>) => {
+    const warnings: BracketWarning[] = [];
+
+    createBracket(input, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT, onWarning: (warning) => warnings.push(warning) });
+
+    return warnings.map(({ type, matchId }) => `${type}:${matchId}`);
+  };
+
+  const partial: BracketDataSource<null, null> = {
+    mode: 'single-elimination',
+    rounds: [
+      { id: 'q', name: 'Quarter', type: SINGLE_ELIMINATION_BRACKET_ROUND_TYPE.SINGLE_ELIMINATION_BRACKET, data: null },
+      { id: 's', name: 'Semi', type: SINGLE_ELIMINATION_BRACKET_ROUND_TYPE.SINGLE_ELIMINATION_BRACKET, data: null },
+      { id: 'f', name: 'Final', type: 'final', data: null },
+    ],
+    matches: [
+      deMatch('q1', 'q'),
+      deMatch('q2', 'q'),
+      deMatch('q3', 'q'),
+      deMatch('q4', 'q'),
+      deMatch('s1', 's'),
+      deMatch('s2', 's'),
+      deMatch('f1', 'f', matchOutcome('s1', 'winner'), matchOutcome('s2', 'winner')),
+    ],
+  };
+
+  it('stays quiet for a source that declares every feeder', () => {
+    expect(warningsFor(source)).toEqual([]);
+    expect(warningsFor(doubleElimination)).toEqual([]);
+  });
+
+  it('names every match a partial provenance leaves unlinked', () => {
+    expect(warningsFor(partial)).toEqual([
+      'unlinked-match:q1',
+      'unlinked-match:q2',
+      'unlinked-match:q3',
+      'unlinked-match:q4',
+    ]);
+  });
+
+  it('stays quiet for a third place match a custom previousMatchIds leaves without feeders', () => {
+    const warnings: BracketWarning[] = [];
+    const previousMatchIds = (match: BracketDataSource<null, null>['matches'][number]) =>
+      match.id === 'f1' ? ['s1', 's2'] : [];
+
+    createBracket(
+      { ...source, matches: source.matches.map((match) => ({ ...match, homeSource: null, awaySource: null })) },
+      { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT, previousMatchIds, onWarning: (warning) => warnings.push(warning) },
+    );
+
+    expect(warnings).toEqual([]);
+  });
+
+  it('names a feeder id that is not in the source', () => {
+    const typo = {
+      ...source,
+      matches: source.matches.map((match) =>
+        match.id === 'f1' ? { ...match, awaySource: matchOutcome('s-2', 'winner') } : match,
+      ),
+    };
+
+    expect(warningsFor(typo)).toEqual(['unknown-feeder:f1']);
   });
 });

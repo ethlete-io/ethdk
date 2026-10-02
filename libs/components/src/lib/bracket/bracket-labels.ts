@@ -52,6 +52,8 @@ export type BracketLabels = {
   participantsLegend: string;
   /** Announced on the picked side of a locked, disabled or readonly pick card, which has no pressed button. */
   pickCardPicked: string;
+  /** Announced after the participant on a predicted pick-card side. */
+  pickCardPredicted: string;
 };
 
 /** The built-in English labels. */
@@ -80,6 +82,7 @@ export const DEFAULT_BRACKET_LABELS: BracketLabels = {
   slotNotPredicted: 'Not predicted',
   participantsLegend: 'Participants',
   pickCardPicked: 'Your pick',
+  pickCardPredicted: 'Prediction',
 };
 
 const BRACKET_LABELS_DEF = /* @__PURE__ */ defineLabels<BracketLabels>('BRACKET_LABELS', DEFAULT_BRACKET_LABELS);

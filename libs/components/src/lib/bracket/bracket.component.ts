@@ -23,6 +23,7 @@ import {
   BracketRoundHeaderComponent,
   createBracket,
   BracketSwissColors,
+  CreateBracketOptions,
 } from '@ethlete/bracket';
 import { BracketDataSource } from './integrations';
 import { MATCH_CARD_SIZES, MatchCardSize } from '../match';
@@ -43,7 +44,12 @@ import {
   optionalNumberAttribute,
 } from './bracket-input-transforms';
 import { BracketLayout } from './bracket-layout';
-import { createBracketHostLayout, createBracketHostMatchNormalizer } from './bracket-host';
+import {
+  bracketHostWarningHandler,
+  warnUnknownBracketRoundIds,
+  createBracketHostLayout,
+  createBracketHostMatchNormalizer,
+} from './bracket-host';
 import { BRACKET_DEFAULTS, BracketRoundHeaderAlign, injectBracketConfig } from './bracket.config';
 
 @Component({
@@ -61,6 +67,12 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   private config = injectBracketConfig();
 
   public source = input.required<BracketDataSource<TRoundData, TMatchData>>();
+
+  /**
+   * The matches feeding each match, upper arm first - the same option `createBracket` takes. Pass the
+   * function your own `createBracket` call uses, so the drawn lines and the resolved picks follow one graph.
+   */
+  public previousMatchIds = input<CreateBracketOptions<TMatchData>['previousMatchIds']>(undefined);
 
   public columnWidth = input<number | undefined, OptionalNumberInput>(undefined, {
     transform: optionalNumberAttribute,
@@ -252,7 +264,13 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
 
   private resolvedLayout = createBracketHostLayout(this.layouts, this.source, this.config);
 
-  public bracketData = computed(() => createBracket(this.source(), { layout: this.resolvedLayout().dataLayout }));
+  public bracketData = computed(() =>
+    createBracket(this.source(), {
+      layout: this.resolvedLayout().dataLayout,
+      previousMatchIds: this.previousMatchIds(),
+      onWarning: bracketHostWarningHandler(),
+    }),
+  );
 
   private journeyParticipants = computed(() => createBracketJourneyParticipants(this.bracketData()));
 
@@ -305,6 +323,11 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   constructor() {
     this.setupJourneyHighlight();
     this.setupLayoutStyles();
+
+    warnUnknownBracketRoundIds(this.source, {
+      focusRoundId: this.focusRoundId,
+      rowSpanRoundId: () => this.settings().rowSpanRoundId,
+    });
   }
 
   /**

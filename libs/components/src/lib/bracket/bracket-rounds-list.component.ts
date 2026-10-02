@@ -18,6 +18,7 @@ import {
   BracketRound,
   createBracket,
   BracketRoundSwissGroup,
+  CreateBracketOptions,
 } from '@ethlete/bracket';
 import { MATCH_CARD_SIZES, MatchCardSize } from '../match';
 import { BracketDataSource } from './integrations';
@@ -25,7 +26,12 @@ import { BRACKET_CARD_CONTEXT, BracketMatchNormalizer } from './bracket-card-con
 import { resolveBracketComponents, usesBracketFinalCard } from './bracket-components';
 import { injectBracketLabels } from './bracket-labels';
 import { BracketLayout } from './bracket-layout';
-import { createBracketHostLayout, createBracketHostMatchNormalizer } from './bracket-host';
+import {
+  bracketHostWarningHandler,
+  warnUnknownBracketRoundIds,
+  createBracketHostLayout,
+  createBracketHostMatchNormalizer,
+} from './bracket-host';
 import { BRACKET_DEFAULTS, injectBracketConfig } from './bracket.config';
 
 /**
@@ -90,6 +96,12 @@ export class BracketRoundsListComponent<TRoundData = unknown, TMatchData = unkno
   public source = input.required<BracketDataSource<TRoundData, TMatchData>>();
 
   /**
+   * The matches feeding each match, upper arm first - the same option `createBracket` takes. Pass the
+   * function your own `createBracket` call uses, so the drawn lines and the resolved picks follow one graph.
+   */
+  public previousMatchIds = input<CreateBracketOptions<TMatchData>['previousMatchIds']>(undefined);
+
+  /**
    * Render only this round, by its id in the source. `null` (the default) stacks every round - set it
    * from a tab bar or a select to page through a long tournament instead.
    */
@@ -142,7 +154,13 @@ export class BracketRoundsListComponent<TRoundData = unknown, TMatchData = unkno
    * two halves with synthetic ids, which is a statement about where cells sit on a canvas and means
    * nothing in a list.
    */
-  public bracketData = computed(() => createBracket(this.source(), { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT }));
+  public bracketData = computed(() =>
+    createBracket(this.source(), {
+      layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT,
+      previousMatchIds: this.previousMatchIds(),
+      onWarning: bracketHostWarningHandler(),
+    }),
+  );
 
   private components = computed(() =>
     resolveBracketComponents({
@@ -213,6 +231,10 @@ export class BracketRoundsListComponent<TRoundData = unknown, TMatchData = unkno
 
   /** The section heading sits one level above the round headers it covers. */
   protected sectionHeadingLevel = computed(() => this.resolvedRoundHeaderLevel() - 1);
+
+  constructor() {
+    warnUnknownBracketRoundIds(this.source, { selectedRoundId: this.selectedRoundId });
+  }
 
   /**
    * Which component draws a block's matches - the deciding round gets the final card here just as it does

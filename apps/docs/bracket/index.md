@@ -31,7 +31,12 @@ const bracket = createBracket(source, {
 
 Sources without either form keep the legacy positional relation behavior. The choice is made for the
 whole bracket: once any match carries a `match-outcome` slot, every match is linked from the declared
-graph, and a match without provenance gets no relation.
+graph, and a match without provenance gets no relation. Pass `onWarning` to hear about it: it is called
+with a `BracketWarning` for every match left unlinked that way and every feeder id that names no match.
+
+Every error the engine throws is a `BracketRuntimeError` with a numeric `code` from
+`BRACKET_ERROR_CODES` (`ET34xx`), so `error instanceof BracketRuntimeError` tells malformed data apart
+from a bug of your own.
 
 A round whose matches are not drawn yet is linked over: its neighbours relate to each other, and the
 round still renders as an empty column. A `'mirrored'` layout folds up to the first round it cannot

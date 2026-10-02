@@ -318,6 +318,17 @@ describe('BracketPickCardComponent', () => {
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Erst die Vorrunde tippen');
   });
+
+  it('announces a predicted side with the pickCardPredicted label', () => {
+    const fixture = mountControl(HostComponent, [provideBracketLabels({ pickCardPredicted: 'Tipp' })]);
+
+    fixture.componentInstance.match.set(normalized({ homeState: 'predicted' }));
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+
+    expect(root.querySelector('.et-bracket-pick-card-predicted')?.textContent?.trim()).toBe('Tipp');
+  });
 });
 
 describe('describeBracketSlot', () => {

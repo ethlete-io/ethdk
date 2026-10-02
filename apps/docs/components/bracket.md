@@ -57,7 +57,7 @@ export const appConfig: ApplicationConfig = {
 
 ```ts
 import { Component } from '@angular/core';
-import { BRACKET_IMPORTS, BracketDataSource, generateBracketDataForEthlete } from '@ethlete/components';
+import { BRACKET_IMPORTS, generateBracketDataForEthlete } from '@ethlete/components';
 
 @Component({
   selector: 'app-standings',
@@ -66,7 +66,7 @@ import { BRACKET_IMPORTS, BracketDataSource, generateBracketDataForEthlete } fro
 })
 export class StandingsComponent {
   // Build the source from your API payload (see Data source below)
-  source: BracketDataSource<unknown, unknown> = generateBracketDataForEthlete(apiRounds);
+  source = generateBracketDataForEthlete(apiRounds);
 }
 ```
 
@@ -201,8 +201,14 @@ type BracketDataSource<TRoundData, TMatchData> = {
 ```
 
 `home` / `away` are participant ids; the engine derives the participant graph (and each
-participant's journey) from them. Prediction sources may additionally set `homeSource` and
-`awaySource` to preserve where an empty or filled slot came from:
+participant's journey) from them.
+
+Without slot provenance the **order of the source is the bracket's structure**: list the rounds in play
+order (upper and lower rounds of a double elimination interleaved as they are played), and the matches
+of each round in bracket order, top to bottom - matches 1 and 2 of a round feed match 1 of the next.
+Declare `homeSource` / `awaySource` (or pass [`previousMatchIds`](#options)) and order stops mattering.
+
+Prediction sources may additionally set `homeSource` and `awaySource` to preserve where an empty or filled slot came from:
 
 ```ts
 {
@@ -232,6 +238,11 @@ participant's journey) from them. Prediction sources may additionally set `homeS
 }
 ```
 
+Provenance is all or nothing: once **any** match carries a `match-outcome` slot, the whole bracket is
+linked from the declared slots alone, so a match without them draws no connectors. In dev mode the
+bracket warns in the console about every match left unlinked that way and every slot `matchId` that
+names no match (`createBracket`'s `onWarning` option reports the same as a `BracketWarning`).
+
 The source kinds are `match-outcome`, `standing-rank`, `seed`, `swiss-bucket`, `bye`, and
 `external`. `label` is optional competition wording for the empty slot; the library never invents
 one. A `bye` is never selectable and automatically advances the other resolved side.
@@ -244,9 +255,9 @@ either side of it relate to each other, so a stage can be published before its l
 
 The Ethlete API integration builds the source for you:
 
-| Integration | Function                                | Input                            |
-| ----------- | --------------------------------------- | -------------------------------- |
-| Ethlete API | `generateBracketDataForEthlete(rounds)` | `EthleteRoundWithMatchesInput[]` |
+| Integration | Function                                           | Input                            |
+| ----------- | -------------------------------------------------- | -------------------------------- |
+| Ethlete API | `generateBracketDataForEthlete(rounds, { mode? })` | `EthleteRoundWithMatchesInput[]` |
 
 The input types (`EthleteRoundInput`, `EthleteBracketMatchInput`) list only the fields the integration
 reads, so the generated `RoundStageStructureWithMatchesView[]` from `@ethlete/types` fits, and so does an API
@@ -254,9 +265,21 @@ variant's own model. The function is generic: the source it returns is typed wit
 types, so the extra fields of an extended model are still there on `bracketRound().data` /
 `bracketMatch().data`.
 
-It infers the tournament mode from the stage type of the first round that has matches
+It infers the tournament mode from the stage type of the first match that has one
 (`generateTournamentModeFromEthleteRounds`), so a stage whose opening rounds are drawn but still empty
 maps fine, and a `fifa_swiss` stage is a swiss stage however many of its rounds are listed yet.
+
+A stage published with its rounds but no matches yet is not an error either: the mode is then read from
+the round types - a `winner_bracket`, `loser_bracket` or `reverse_final` round makes it double
+elimination, anything else single elimination - and the bracket draws its empty rounds. A swiss stage
+cannot be told apart that way, so pass the mode yourself; `mode` also wins whenever it is given:
+
+```ts
+generateBracketDataForEthlete(apiRounds, { mode: 'swiss-with-elimination' });
+```
+
+Only a stage with no rounds at all throws [`ET3401`](/components/error-codes#bracket-et34xx) - render
+[`<et-bracket-skeleton>`](#loading-skeleton) until it has some.
 
 A round the API types `final` is the final. A `normal` round of a single elimination stage is the final
 only when it is the **last** round of the stage - a third place round listed after it does not count -
@@ -272,43 +295,44 @@ All layout inputs are numbers (px) unless noted. Each is an **override**: leave 
 value comes from `provideBracketConfig`, then from the [density](#density) preset, then from the
 shipped default listed below. The resolved set is on the component as `settings()`.
 
-| Input                     | Default      | Purpose                                                                                      |
-| ------------------------- | ------------ | -------------------------------------------------------------------------------------------- |
-| `source`                  | - (required) | The resolved `BracketDataSource`.                                                            |
-| `layouts`                 | -            | Replaces the registered layout list for this instance - see [Layouts](#layouts).             |
-| `density`                 | `'default'`  | `'default'` or `'compact'` - see [Density](#density).                                        |
-| `columnWidth`             | `250`        | Width of a round column.                                                                     |
-| `matchHeight`             | `75`         | Height of a match card.                                                                      |
-| `columnGap`               | `60`         | Horizontal gap between round columns.                                                        |
-| `rowGap`                  | `30`         | Vertical gap between matches in a column.                                                    |
-| `rowRoundGap`             | `20`         | Vertical gap between the upper/lower halves of a double-elimination round.                   |
-| `rowSpanRoundId`          | `null`       | Round whose match count sets vertical spacing; the opening round is the default.             |
-| `focusRoundId`            | `null`       | Translates this round to the inline start without changing vertical density.                 |
-| `focusInset`              | `0`          | Room kept to the inline start of `focusRoundId` - the gutter a one-round panel navigates in. |
-| `finalColumnWidth`        | `360`        | Width of the final column - sized for the shipped final card.                                |
-| `finalMatchHeight`        | `200`        | Height of the final match card - likewise.                                                   |
-| `roundHeaderHeight`       | `50`         | Height of the round-header row.                                                              |
-| `roundHeaderGap`          | `20`         | Gap between the header row and the first match.                                              |
-| `thirdPlaceTopOffset`     | `null`       | Folds the third place into the final's column, this far below the top of the final's card.   |
-| `finalRoundHeaderGap`     | `null`       | Header-to-card gap for the final's column alone, where it is wider than `roundHeaderGap`.    |
-| `alignRoundHeaders`       | `'start'`    | `'start'` or `'center'` - where a round header sits over its column.                         |
-| `hideRoundHeaders`        | `false`      | Drop the header row entirely.                                                                |
-| `lineWidth`               | `2`          | Connector stroke width.                                                                      |
-| `lineStartingCurveAmount` | `10`         | Curve radius where a connector leaves a match.                                               |
-| `lineEndingCurveAmount`   | `0`          | Curve radius where a connector meets the next match.                                         |
-| `lineDashArray`           | `0`          | Connector dash length (`0` = solid).                                                         |
-| `lineDashOffset`          | `0`          | Connector dash offset.                                                                       |
-| `disableJourneyHighlight` | `false`      | Turn off journey highlighting and pinning entirely.                                          |
-| `focusedParticipantId`    | `null`       | Two-way. Pins a participant's journey - see [Participant focus](#participant-focus).         |
-| `swissGroupPadding`       | `10`         | Padding inside a swiss group border box.                                                     |
-| `swissGroupBorderRadius`  | `12`         | Corner radius of a swiss group border box.                                                   |
-| `swissColors`             | -            | Per-group-type colors (see [Swiss](#swiss)).                                                 |
-| `showContinueElement`     | `false`      | Append a "continue" column (see [Continue element](#continue-element)).                      |
-| `continueColumnWidth`     | `250`        | Width of the continue column.                                                                |
-| `continueElementHeight`   | `75`         | Height of the continue card.                                                                 |
-| `continueLineDashArray`   | `6`          | Dash length for the continue connectors.                                                     |
-| `matchNormalizer`         | -            | How to read your match data, for the default cards (see below).                              |
-| `roundHeaderLevel`        | `3`          | `aria-level` the default round headers announce themselves at.                               |
+| Input                     | Default      | Purpose                                                                                                                    |
+| ------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `source`                  | - (required) | The resolved `BracketDataSource`.                                                                                          |
+| `layouts`                 | -            | Replaces the registered layout list for this instance - see [Layouts](#layouts).                                           |
+| `previousMatchIds`        | -            | `(match) => string[]`, the feeders of each match - pass the one your own `createBracket` uses.                             |
+| `density`                 | `'default'`  | `'default'` or `'compact'` - see [Density](#density).                                                                      |
+| `columnWidth`             | `250`        | Width of a round column.                                                                                                   |
+| `matchHeight`             | `75`         | Height of a match card.                                                                                                    |
+| `columnGap`               | `60`         | Horizontal gap between round columns.                                                                                      |
+| `rowGap`                  | `30`         | Vertical gap between matches in a column.                                                                                  |
+| `rowRoundGap`             | `20`         | Vertical gap between the upper/lower halves of a double-elimination round.                                                 |
+| `rowSpanRoundId`          | `null`       | Round whose match count sets vertical spacing; the opening round is the default. An id the source lacks warns in dev mode. |
+| `focusRoundId`            | `null`       | Translates this round to the inline start without changing vertical density.                                               |
+| `focusInset`              | `0`          | Room kept to the inline start of `focusRoundId` - the gutter a one-round panel navigates in.                               |
+| `finalColumnWidth`        | `360`        | Width of the final column - sized for the shipped final card.                                                              |
+| `finalMatchHeight`        | `200`        | Height of the final match card - likewise.                                                                                 |
+| `roundHeaderHeight`       | `50`         | Height of the round-header row.                                                                                            |
+| `roundHeaderGap`          | `20`         | Gap between the header row and the first match.                                                                            |
+| `thirdPlaceTopOffset`     | `null`       | Folds the third place into the final's column, this far below the top of the final's card.                                 |
+| `finalRoundHeaderGap`     | `null`       | Header-to-card gap for the final's column alone, where it is wider than `roundHeaderGap`.                                  |
+| `alignRoundHeaders`       | `'start'`    | `'start'` or `'center'` - where a round header sits over its column.                                                       |
+| `hideRoundHeaders`        | `false`      | Drop the header row entirely.                                                                                              |
+| `lineWidth`               | `2`          | Connector stroke width.                                                                                                    |
+| `lineStartingCurveAmount` | `10`         | Curve radius where a connector leaves a match.                                                                             |
+| `lineEndingCurveAmount`   | `0`          | Curve radius where a connector meets the next match.                                                                       |
+| `lineDashArray`           | `0`          | Connector dash length (`0` = solid).                                                                                       |
+| `lineDashOffset`          | `0`          | Connector dash offset.                                                                                                     |
+| `disableJourneyHighlight` | `false`      | Turn off journey highlighting and pinning entirely.                                                                        |
+| `focusedParticipantId`    | `null`       | Two-way. Pins a participant's journey - see [Participant focus](#participant-focus).                                       |
+| `swissGroupPadding`       | `10`         | Padding inside a swiss group border box.                                                                                   |
+| `swissGroupBorderRadius`  | `12`         | Corner radius of a swiss group border box.                                                                                 |
+| `swissColors`             | -            | Per-group-type colors (see [Swiss](#swiss)).                                                                               |
+| `showContinueElement`     | `false`      | Append a "continue" column (see [Continue element](#continue-element)).                                                    |
+| `continueColumnWidth`     | `250`        | Width of the continue column.                                                                                              |
+| `continueElementHeight`   | `75`         | Height of the continue card.                                                                                               |
+| `continueLineDashArray`   | `6`          | Dash length for the continue connectors.                                                                                   |
+| `matchNormalizer`         | -            | How to read your match data, for the default cards (see below).                                                            |
+| `roundHeaderLevel`        | `3`          | `aria-level` the default round headers announce themselves at.                                                             |
 
 ### The final's own column
 
@@ -383,7 +407,7 @@ payload that holds nothing presentational is not a dead end - participant ids, `
 
 ```ts
 provideBracketConfig({
-  matchNormalizer: (match) => ({
+  matchNormalizer: (match: BracketMatch<MyRound, MyMatch>): NormalizedMatch => ({
     id: match.id,
     status: match.status === 'completed' ? 'finished' : 'scheduled',
     startTime: match.data.kickOff ? new Date(match.data.kickOff) : null,
@@ -399,7 +423,9 @@ provideBracketConfig({
 });
 ```
 
-`[matchNormalizer]` on `<et-bracket>` overrides the provider for one bracket.
+The config is app-wide, so it is typed for any round and match data - annotate the parameter as above,
+or a typo in `match.data` compiles. `[matchNormalizer]` on `<et-bracket>` overrides the provider for one
+bracket, and is typed with that bracket's source.
 
 ### Making cells navigate
 
@@ -417,7 +443,7 @@ anchor - the whole card becomes the link, correctly named, for free:
     }
   `,
 })
-export class BracketMatchComponent {
+export class AppBracketMatchComponent {
   bracketRound = input.required<BracketRound<RoundData, MatchData>>();
   bracketMatch = input.required<BracketMatch<RoundData, MatchData>>();
   bracketRoundSwissGroup = input.required<BracketRoundSwissGroup<RoundData, MatchData> | null>();
@@ -456,6 +482,7 @@ label set:
 | `slotUnknown`             | `'Not known yet'`                                                           |
 | `slotPredictEarlierRound` | `'Predict the earlier round first'`                                         |
 | `slotNotPredicted`        | `'Not predicted'`                                                           |
+| `pickCardPredicted`       | `'Prediction'`, announced on a predicted pick-card side                     |
 
 ## Custom cards
 
@@ -479,10 +506,13 @@ provideBracketConfig({
 | `roundHeaderComponent` | `bracketRound`, `bracketRoundSwissGroup`                 |
 | `continueComponent`    | `bracketMatches` (the matches whose winners advance)     |
 
+The linked participants carry ids only (`bracketMatch().home?.id`); names and everything else you show
+live in your own `bracketMatch().data`:
+
 ```ts
 @Component({
   selector: 'app-match-card',
-  template: `{{ bracketMatch().home?.name }} vs {{ bracketMatch().away?.name }}`,
+  template: `{{ bracketMatch().data.homeName }} vs {{ bracketMatch().data.awayName }}`,
 })
 export class MatchCardComponent {
   bracketRound = input.required<BracketRound<RoundData, MatchData>>();
@@ -858,12 +888,32 @@ rules in its document.
 
 ## Error codes
 
-In dev and prod the bracket throws `RuntimeError`s in the **ET34xx** range when a
+In dev and prod the bracket throws errors in the **ET34xx** range when a
 `BracketDataSource` is malformed or unsupported, when no [layout](#layouts) is registered for its
 `mode` ([`ET3413`](/components/error-codes#bracket-et34xx)), or when no [card](#default-cards) is
 registered for a cell it draws (`ET3414`), and `createPlaceholderBracketSource` throws `ET3415` for an
 unusable `participantCount` - see
 [/components/error-codes#bracket-et34xx](/components/error-codes#bracket-et34xx).
+
+Everything the data pipeline throws - the engine and `generateBracketDataForEthlete` - is a
+`BracketRuntimeError` with a numeric `code` from `BRACKET_ERROR_CODES`; the card and layout registration
+errors (`ET3412`-`ET3414`) are core `RuntimeError`s. `<et-bracket>` throws from inside its source
+computation and has no error state, so reject bad data before you hand it over:
+
+```ts
+protected source = computed(() => {
+  const source = generateBracketDataForEthlete(this.apiRounds());
+
+  try {
+    createBracket(source, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT });
+  } catch (error) {
+    if (error instanceof BracketRuntimeError) return null; // render "bracket unavailable"
+    throw error;
+  }
+
+  return source;
+});
+```
 
 ## Migrating from `@ethlete/cdk`
 
@@ -882,7 +932,7 @@ are naming, packaging, and how a layout is chosen:
 | Data types    | `NewBracket`, `NewBracketRound`, `NewBracketMatch`, `createNewBracket`       | `Bracket`, `BracketRound`, `BracketMatch` (build a `BracketDataSource` by hand - see [Data source](#data-source)) |
 | CSS classes   | `et-new-bracket*` / `et-bracket-new*` (+ `et-legacy` marker)                 | `et-bracket*` (no `et-legacy`)                                                                                    |
 | Color tokens  | `--bracket-line-color` (default `red`), `--bracket-swiss-group-border-color` | `--et-bracket-line-color` / `--et-bracket-swiss-group-border-color` (default `--et-surface-border-solid`)         |
-| Errors        | native `Error`                                                               | `RuntimeError` (ET34xx)                                                                                           |
+| Errors        | native `Error`                                                               | `BracketRuntimeError` / `RuntimeError` (ET34xx, with a `code`)                                                    |
 | Styling       | unlayered global CSS                                                         | wrapped in `@layer components` (utilities override without `!important`)                                          |
 
 Also note:

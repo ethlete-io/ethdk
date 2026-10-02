@@ -9,7 +9,7 @@ import { BracketLayout } from '../bracket-layout';
 import { BracketComponent } from '../bracket.component';
 import { BracketRoundHeaderAlign, provideBracketConfig } from '../bracket.config';
 import { BRACKET_DEFAULT_CARDS } from '../bracket-default-cards';
-import { BracketMatchComponent } from '@ethlete/bracket';
+import { BracketMatchComponent, CreateBracketOptions } from '@ethlete/bracket';
 import { BracketDataSource } from '../integrations';
 import { doubleEliminationBracketLayout, singleEliminationBracketLayout } from '../layouts';
 
@@ -48,6 +48,7 @@ export type BracketTestDriverOptions = {
   finalRoundHeaderGap?: number | null;
   alignRoundHeaders?: BracketRoundHeaderAlign;
   matchComponent?: BracketMatchComponent<unknown, unknown>;
+  previousMatchIds?: CreateBracketOptions<unknown>['previousMatchIds'];
   providers?: Provider[];
 };
 
@@ -70,6 +71,7 @@ const parseTranslate = (element: HTMLElement | null) => {
         [matchNormalizer]="matchNormalizer"
         [selectedRoundId]="selectedRoundId()"
         [matchComponent]="matchComponent()"
+        [previousMatchIds]="previousMatchIds"
       />
     } @else {
       <et-bracket
@@ -84,6 +86,7 @@ const parseTranslate = (element: HTMLElement | null) => {
         [thirdPlaceTopOffset]="thirdPlaceTopOffset()"
         [finalRoundHeaderGap]="finalRoundHeaderGap()"
         [alignRoundHeaders]="alignRoundHeaders()"
+        [previousMatchIds]="previousMatchIds"
       />
     }
   `,
@@ -106,6 +109,7 @@ class BracketTestHost {
   public readonly matchComponent = signal(this.options.matchComponent);
   public readonly matchNormalizer = this.options.matchNormalizer ?? testBracketMatchNormalizer;
   public readonly disableJourneyHighlight = this.options.disableJourneyHighlight ?? false;
+  public readonly previousMatchIds = this.options.previousMatchIds;
 }
 
 /**

@@ -82,7 +82,8 @@ which is what stops the two from drifting apart:
 
 `color` names one of **your** registered color themes - this library ships none and hardcodes none, so what
 "advancing" looks like is your app's decision (see [theming](/core/theming)). The row is scoped to that
-theme, so its accent bar and tint come out in it.
+theme, so its accent bar and tint come out in it. It is typed `RegisteredColorThemeName | ColorTheme`, like `et-match-card`'s `liveColor`: a
+theme object works too, and once your app registers its theme names a typo no longer compiles.
 
 Zones must not overlap: a row in two bands has no defined appearance, and dev mode throws
 [`ET4400`](/components/error-codes#standings-et44xx) naming the two zones. Set `showLegend` to `false` to

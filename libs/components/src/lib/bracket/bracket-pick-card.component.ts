@@ -85,7 +85,8 @@ export class BracketPickCardComponent<TRoundData = unknown, TMatchData = unknown
    */
   public earlierRoundsClosed = input(false, { transform: booleanAttribute });
 
-  public predictedLabel = input('Prediction');
+  /** Overrides the `pickCardPredicted` label for this card. */
+  public predictedLabel = input<string | null>(null);
 
   /**
    * One line drawn under the card, outside its box, so it never takes height from the card. What it
@@ -101,6 +102,7 @@ export class BracketPickCardComponent<TRoundData = unknown, TMatchData = unknown
   protected readonly NOTE_ID = createComponentId('et-bracket-pick-card-note');
 
   protected pickedLabel = computed(() => this.labels().pickCardPicked);
+  protected resolvedPredictedLabel = computed(() => this.predictedLabel() ?? this.labels().pickCardPredicted);
 
   protected noteColorTheme = computed<ColorThemeInput>(() =>
     this.noteTone() === BRACKET_PICK_CARD_NOTE_TONE.INVALID ? this.errorColorTheme() : null,
@@ -111,7 +113,7 @@ export class BracketPickCardComponent<TRoundData = unknown, TMatchData = unknown
     const normalized = this.normalized();
     const labels = this.labels();
     const matchLabels = this.matchLabels();
-    const predictedLabel = this.predictedLabel();
+    const predictedLabel = this.resolvedPredictedLabel();
     const isReadonly = this.readonly();
     const decidedSide = normalized.winnerSide;
     const sideItems = (['home', 'away'] as const).map((side) => {

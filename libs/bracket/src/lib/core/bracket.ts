@@ -24,9 +24,19 @@ export type GenerateBracketDataOptions = {
   layout: BracketDataLayout;
 };
 
+/**
+ * Something in a source `createBracket` accepted but probably did not mean: a feeder id that names no
+ * match, or a match the declared graph links to nothing because it carries no provenance.
+ */
+export type BracketWarning =
+  | { type: 'unknown-feeder'; matchId: string; feederId: string; message: string }
+  | { type: 'unlinked-match'; matchId: string; message: string };
+
 export type CreateBracketOptions<TMatchData> = GenerateBracketDataOptions & {
   /** The matches feeding this one, upper arm first. Slot provenance is used when omitted. */
   previousMatchIds?: (match: BracketMatchSource<TMatchData>) => string[];
+  /** Called once per {@link BracketWarning} while the bracket is linked from a declared graph. */
+  onWarning?: (warning: BracketWarning) => void;
 };
 
 const sortSourceMatchesByRoundOrder = <TRoundData, TMatchData>(

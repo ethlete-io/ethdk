@@ -65,7 +65,7 @@ export const createMatchesMapBase = <TRoundData, TMatchData>(
     if (!roundToUse)
       throw new BracketRuntimeError(
         BRACKET_ERROR_CODES.MATCH_RELATION_INVALID,
-        `Round for match with id ${match.id} not found`,
+        `Match "${match.id}" names round "${match.roundId}", which is not in source.rounds (known: ${source.rounds.map((round) => round.id).join(', ')})`,
       );
 
     const indexInRound =

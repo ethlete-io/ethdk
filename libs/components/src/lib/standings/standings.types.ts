@@ -1,3 +1,4 @@
+import { ColorTheme, RegisteredColorThemeName } from '@ethlete/core';
 import { NormalizedMatchParticipant } from '../match';
 
 /** One result in a participant's recent form. */
@@ -42,7 +43,7 @@ export type StandingsZone = {
   /** Last position, inclusive. */
   to: number;
   /** A registered color theme name (or the theme object) the band is drawn in. */
-  color: string;
+  color: RegisteredColorThemeName | ColorTheme;
   /** What the band means, for the legend. */
   label: string;
 };
